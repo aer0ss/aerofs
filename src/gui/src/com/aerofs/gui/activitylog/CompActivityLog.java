@@ -2,6 +2,7 @@ package com.aerofs.gui.activitylog;
 
 import javax.annotation.Nullable;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.gui.CompSpin;
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIParam;
@@ -39,9 +40,12 @@ import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.widgets.Label;
+import org.slf4j.Logger;
 
 public class CompActivityLog extends Composite
 {
+    private static final Logger l = Loggers.getLogger(CompActivityLog.class);
+
     private static final int MAX_RESULTS_MIN = 20;
     private static final int MAX_RESULTS_MAX = 200;
 
@@ -242,7 +246,7 @@ public class CompActivityLog extends Composite
             _pageToken = reply.hasPageToken() ? reply.getPageToken() : null;
             _maxResult = Math.min(_maxResult * 2, MAX_RESULTS_MAX);
         } catch (Exception e) {
-            Util.l(this).warn(Util.e(e));
+            l.warn(Util.e(e));
             elems = new Object[] { e };
             hasUnresolved = false;
             selection = null;

@@ -4,6 +4,7 @@
 
 package com.aerofs.gui.preferences;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.gui.CompSpin;
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIParam;
@@ -20,7 +21,7 @@ import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.sp.client.SPClientFactory;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.UIUtil;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.FocusAdapter;
 import org.eclipse.swt.events.FocusEvent;
@@ -42,7 +43,7 @@ import javax.annotation.Nullable;
 
 public class PreferencesHelper
 {
-    private final static Logger l = Util.l(PreferencesHelper.class);
+    private final static Logger l = Loggers.getLogger(PreferencesHelper.class);
 
     private final Composite _comp;
 

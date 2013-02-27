@@ -1,5 +1,6 @@
 package com.aerofs.daemon.transport.xmpp.zephyr.client.netty;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.net.ZephyrConstants;
 import com.aerofs.daemon.event.lib.imc.IResultWaiter;
@@ -24,7 +25,7 @@ import com.aerofs.proto.Transport;
 import com.aerofs.proto.Transport.PBTPHeader;
 import com.aerofs.proto.Transport.PBTPHeader.Type;
 import com.aerofs.proto.Transport.PBZephyrCandidateInfo;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
@@ -69,7 +70,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class ZephyrClientPipe extends AbstractEventLoop<IZephyrEvent>
         implements ISignalledPipe, IZephyrIOEventSink
 {
-    private static Logger l = com.aerofs.lib.Util.l(ZephyrClientPipe.class);
+    private static Logger l = Loggers.getLogger(ZephyrClientPipe.class);
 
     private final IIdentifier _id;
     private final DID _localDID;

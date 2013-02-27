@@ -5,6 +5,7 @@
 package com.aerofs.daemon.core.phy.block.cache;
 
 import com.aerofs.base.BaseUtil;
+import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.phy.block.BlockStorageDatabase;
 import com.aerofs.daemon.core.phy.block.IBlockStorageBackend;
@@ -26,7 +27,7 @@ import com.google.common.collect.Maps;
 import com.google.common.io.ByteStreams;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -51,7 +52,7 @@ public class CacheBackend implements IBlockStorageBackend
 {
     static final String TARGET_ANNOTATION = "CacheTarget";
 
-    private final static Logger l = Util.l(CacheBackend.class);
+    private final static Logger l = Loggers.getLogger(CacheBackend.class);
 
     private static int MAX_CACHE_SIZE = 1 * C.KB;
 

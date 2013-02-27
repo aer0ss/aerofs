@@ -1,5 +1,6 @@
 package com.aerofs.daemon.transport.xmpp.jingle;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.event.lib.imc.IResultWaiter;
 import com.aerofs.daemon.lib.DaemonParam;
@@ -9,8 +10,7 @@ import com.aerofs.daemon.lib.LRUCache.IEvictionListener;
 import com.aerofs.j.*;
 import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.lib.ex.ExJingle;
-import com.aerofs.lib.Util;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -51,7 +51,7 @@ import java.util.Map.Entry;
 // including dumpStat()
 //
 public class Engine implements IProxyObjectContainer {
-    private static final Logger l = Util.l(Engine.class);
+    private static final Logger l = Loggers.getLogger(Engine.class);
 
     private final TunnelSessionClient_IncomingTunnelSlot _slotIncomingTunnel =
         new TunnelSessionClient_IncomingTunnelSlot()

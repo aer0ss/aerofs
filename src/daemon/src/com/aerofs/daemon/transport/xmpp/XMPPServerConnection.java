@@ -7,6 +7,7 @@ package com.aerofs.daemon.transport.xmpp;
 
 import com.aerofs.base.Base64;
 import com.aerofs.base.BaseParam.Xmpp;
+import com.aerofs.base.Loggers;
 import com.aerofs.base.id.JabberID;
 import com.aerofs.lib.IDumpStatMisc;
 import com.aerofs.lib.Param;
@@ -14,7 +15,7 @@ import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 import org.jivesoftware.smack.ConnectionConfiguration;
 import org.jivesoftware.smack.ConnectionConfiguration.SecurityMode;
 import org.jivesoftware.smack.ConnectionListener;
@@ -336,7 +337,7 @@ public class XMPPServerConnection implements IDumpStatMisc
 
     private static String s_shaedXmpp; // sha256(scrypt(p|u)|XMPP_PASSWORD_SALT)
 
-    private static final Logger l = Util.l(XMPPServerConnection.class);
+    private static final Logger l = Loggers.getLogger(XMPPServerConnection.class);
 
     // 64 bytes
     private static final byte[] XMPP_PASSWORD_SALT = {

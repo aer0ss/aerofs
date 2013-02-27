@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.lib.db;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.net.DID2User;
 import com.aerofs.daemon.core.tc.Cat;
@@ -26,6 +27,7 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
+import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
@@ -42,6 +44,8 @@ import java.util.Set;
  */
 public class UserAndDeviceNames
 {
+    private static final Logger l = Loggers.getLogger(UserAndDeviceNames.class);
+
     public static class UserInfo
     {
         public final UserID _userId;
@@ -105,7 +109,7 @@ public class UserAndDeviceNames
         try {
             reply = getDevicesInfoFromSP_(dids);
         } catch (Exception e) {
-            Util.l(this).warn("ignored: " + Util.e(e, IOException.class));
+            l.warn("ignored: " + Util.e(e, IOException.class));
             return false;
         }
 

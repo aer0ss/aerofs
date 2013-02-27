@@ -3,9 +3,10 @@ package com.aerofs.gui.misc;
 import java.util.Collection;
 import java.util.List;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.base.id.UserID;
 import com.google.common.collect.Lists;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
@@ -38,7 +39,7 @@ import com.aerofs.ui.UIUtil;
 
 public class DlgInviteToSignUp extends AeroFSDialog implements IInputChangeListener, ISWTWorker
 {
-    private static final Logger l = Util.l(DlgInviteToSignUp.class);
+    private static final Logger l = Loggers.getLogger(DlgInviteToSignUp.class);
 
     private Button _btnOk;
     private CompEmailAddressTextBox _compAddresses;

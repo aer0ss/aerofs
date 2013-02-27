@@ -1,13 +1,14 @@
 package com.aerofs.lib;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.lib.cfg.Cfg;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import javax.annotation.Nonnull;
 
 public class Profiler
 {
-    private static final Logger l = Util.l(Profiler.class);
+    private static final Logger l = Loggers.getLogger(Profiler.class);
 
     private boolean _started;
     private long _ts;

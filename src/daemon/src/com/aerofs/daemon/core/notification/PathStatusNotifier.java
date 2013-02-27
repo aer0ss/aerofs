@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.notification;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.protocol.IDownloadStateListener;
 import com.aerofs.daemon.core.net.IUploadStateListener;
@@ -17,7 +18,7 @@ import com.aerofs.proto.PathStatus.PBPathStatus;
 import com.aerofs.proto.RitualNotifications.PBNotification;
 import com.aerofs.proto.RitualNotifications.PBNotification.Type;
 import com.aerofs.proto.RitualNotifications.PBPathStatusEvent;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import java.sql.SQLException;
 import java.util.Map;
@@ -33,7 +34,7 @@ import java.util.Set;
 public class PathStatusNotifier implements IListener, IDownloadStateListener, IUploadStateListener,
         IConflictStateListener
 {
-    private static final Logger l = Util.l(PathStatusNotifier.class);
+    private static final Logger l = Loggers.getLogger(PathStatusNotifier.class);
 
     private final PathStatus _ps;
     private final DirectoryService _ds;

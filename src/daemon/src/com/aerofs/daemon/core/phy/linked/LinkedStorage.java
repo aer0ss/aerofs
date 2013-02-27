@@ -5,11 +5,12 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.sql.SQLException;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.Param;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.cfg.CfgAbsAuxRoot;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import com.aerofs.daemon.core.linker.IgnoreList;
 import com.aerofs.daemon.core.phy.IPhysicalFile;
@@ -34,7 +35,7 @@ import com.google.inject.Inject;
 
 public class LinkedStorage implements IPhysicalStorage
 {
-    private static Logger l = Util.l(LinkedStorage.class);
+    private static Logger l = Loggers.getLogger(LinkedStorage.class);
 
     private InjectableFile.Factory _factFile;
     private IFIDMaintainer.Factory _factFIDMan;

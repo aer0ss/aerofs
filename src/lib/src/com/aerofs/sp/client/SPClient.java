@@ -1,5 +1,6 @@
 package com.aerofs.sp.client;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.base.id.UserID;
@@ -9,11 +10,11 @@ import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.protobuf.ByteString;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 public class SPClient extends SPServiceStub
 {
-    private static final Logger l = Util.l(SPClient.class);
+    private static final Logger l = Loggers.getLogger(SPClient.class);
 
     private final UserID _user;
 

@@ -1,5 +1,6 @@
 package com.aerofs.daemon.core.syncstatus;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.CoreQueue;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.verkehr.AbstractVerkehrListener;
@@ -7,11 +8,10 @@ import com.aerofs.daemon.core.verkehr.VerkehrNotificationSubscriber;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.sched.ExponentialRetry;
 import com.aerofs.lib.Param;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgLocalDID;
 import com.aerofs.proto.SpNotifications.PBSyncStatNotification;
 import com.google.inject.Inject;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 import java.util.concurrent.Callable;
@@ -22,7 +22,7 @@ import java.util.concurrent.Callable;
  */
 public class SyncStatusNotificationSubscriber
 {
-    private static final Logger l = Util.l(SyncStatusNotificationSubscriber.class);
+    private static final Logger l = Loggers.getLogger(SyncStatusNotificationSubscriber.class);
 
     private final String _topic;
     private final VerkehrListener _listener;

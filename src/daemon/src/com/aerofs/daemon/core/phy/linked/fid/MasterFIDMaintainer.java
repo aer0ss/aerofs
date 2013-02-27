@@ -1,8 +1,8 @@
 package com.aerofs.daemon.core.phy.linked.fid;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.lib.db.trans.Trans;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExFileNotFound;
 import com.aerofs.lib.id.FID;
 import com.aerofs.lib.id.SOID;
@@ -14,14 +14,14 @@ import java.sql.SQLException;
 
 import javax.annotation.Nonnull;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 /**
  * This class maintains the FID values for master branches of a file.
  */
 public class MasterFIDMaintainer implements IFIDMaintainer
 {
-    private static final Logger l = Util.l(MasterFIDMaintainer.class);
+    private static final Logger l = Loggers.getLogger(MasterFIDMaintainer.class);
 
     private final DirectoryService _ds;
     private final InjectableDriver _dr;

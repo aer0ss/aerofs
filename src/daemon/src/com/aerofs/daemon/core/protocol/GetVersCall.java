@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
@@ -21,7 +22,7 @@ import com.aerofs.lib.id.SOCID;
 import com.aerofs.lib.id.SOCKID;
 import com.aerofs.sv.client.SVClient;
 import com.google.common.collect.Maps;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import com.aerofs.daemon.core.CoreUtil;
 import com.aerofs.daemon.core.NativeVersionControl;
@@ -62,7 +63,7 @@ import static com.google.common.collect.Lists.newArrayListWithCapacity;
 
 public class GetVersCall
 {
-    private static final Logger l = Util.l(GetVersCall.class);
+    private static final Logger l = Loggers.getLogger(GetVersCall.class);
 
     private static class TickPair {
         Tick _native;

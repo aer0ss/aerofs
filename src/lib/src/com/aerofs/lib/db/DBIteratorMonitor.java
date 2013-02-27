@@ -2,12 +2,16 @@ package com.aerofs.lib.db;
 
 import java.util.Map;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.Util;
 import com.google.common.collect.Maps;
+import org.slf4j.Logger;
 
 public class DBIteratorMonitor
 {
+    private static final Logger l = Loggers.getLogger(DBIteratorMonitor.class);
+
     static int s_count;
 
     static Map<AbstractDBIterator<?>, Exception> s_iters;
@@ -36,7 +40,7 @@ public class DBIteratorMonitor
     {
         if (L.get().isStaging() && s_iters != null) {
             for (Exception e : s_iters.values()) {
-                Util.l().warn("unclosed db iterator created at:\n" + Util.e(e));
+                l.warn("unclosed db iterator created at:\n" + Util.e(e));
             }
         }
 

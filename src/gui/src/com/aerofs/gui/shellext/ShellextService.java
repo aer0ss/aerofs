@@ -1,5 +1,6 @@
 package com.aerofs.gui.shellext;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.lib.ritual.RitualClient;
 import com.aerofs.lib.ritual.RitualClientFactory;
@@ -10,7 +11,7 @@ import com.aerofs.proto.Shellext.PathStatusNotification;
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
@@ -28,7 +29,7 @@ import java.util.List;
 
 public class ShellextService
 {
-    private static final Logger l = Util.l(ShellextService.class);
+    private static final Logger l = Loggers.getLogger(ShellextService.class);
 
     private final ShellextServer _server;
     private static ShellextService _instance = null;

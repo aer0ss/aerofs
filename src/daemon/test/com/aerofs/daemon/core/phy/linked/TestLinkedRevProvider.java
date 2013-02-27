@@ -1,14 +1,13 @@
 package com.aerofs.daemon.core.phy.linked;
 
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
-
+import com.aerofs.daemon.core.phy.linked.LinkedRevProvider.LinkedRevFile;
+import com.aerofs.lib.LogUtil;
 import com.aerofs.lib.Param;
-import org.apache.log4j.Level;
+import com.aerofs.lib.Path;
+import com.aerofs.lib.id.KIndex;
+import com.aerofs.lib.injectable.InjectableFile;
+import com.aerofs.testlib.AbstractTest;
+import com.google.common.collect.Lists;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -16,12 +15,14 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
-import com.aerofs.daemon.core.phy.linked.LinkedRevProvider.LinkedRevFile;
-import com.aerofs.lib.Path;
-import com.aerofs.lib.id.KIndex;
-import com.aerofs.lib.injectable.InjectableFile;
-import com.aerofs.testlib.AbstractTest;
-import com.google.common.collect.Lists;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+
+import static com.aerofs.lib.LogUtil.Level;
 
 public class TestLinkedRevProvider extends AbstractTest
 {
@@ -39,7 +40,7 @@ public class TestLinkedRevProvider extends AbstractTest
     @Before
     public void before() throws Exception
     {
-        LinkedRevProvider.l.setLevel(Level.INFO);
+        LogUtil.setLevel(TestLinkedRevProvider.class, Level.INFO);
         _out = new PrintWriter(System.out);
 
         _factFile = new InjectableFile.Factory();
@@ -58,7 +59,7 @@ public class TestLinkedRevProvider extends AbstractTest
     @After
     public void after() throws Exception
     {
-        LinkedRevProvider.l.setLevel(null);
+        LogUtil.setLevel(TestLinkedRevProvider.class, Level.NONE);
         _out.flush();
     }
 
@@ -219,7 +220,7 @@ public class TestLinkedRevProvider extends AbstractTest
 
     private void println(Object o)
     {
-        l.info(o);
+        l.info(o.toString());
     }
 
     void listRecursively(InjectableFile f)

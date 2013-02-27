@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.HashSet;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
@@ -32,7 +33,7 @@ import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.Path;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 /**
  * This class is the access point of the subsystem that maintains objects' expulsion state.
@@ -49,7 +50,7 @@ import org.apache.log4j.Logger;
 
 public class Expulsion
 {
-    private static final Logger l = Util.l(Expulsion.class);
+    private static final Logger l = Loggers.getLogger(Expulsion.class);
     private DirectoryService _ds;
     private IPulledDeviceDatabase _pddb;
     private IExpulsionDatabase _exdb;

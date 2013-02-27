@@ -6,8 +6,9 @@ import java.io.InputStream;
 import java.sql.SQLException;
 import java.util.Arrays;
 
+import com.aerofs.base.Loggers;
 import com.google.common.base.Joiner;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import com.aerofs.daemon.core.CoreUtil;
 import com.aerofs.daemon.core.NativeVersionControl;
@@ -43,7 +44,7 @@ import com.google.inject.Inject;
  */
 public class GCCSendContent
 {
-    private static final Logger l = Util.l(GCCSendContent.class);
+    private static final Logger l = Loggers.getLogger(GCCSendContent.class);
 
     private final DirectoryService _ds;
     private final Metrics _m;

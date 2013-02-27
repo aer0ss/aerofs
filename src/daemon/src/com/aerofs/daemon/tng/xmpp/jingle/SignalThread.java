@@ -5,6 +5,7 @@
 package com.aerofs.daemon.tng.xmpp.jingle;
 
 import com.aerofs.base.BaseParam.Xmpp;
+import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.daemon.lib.DaemonParam.Jingle;
@@ -27,7 +28,7 @@ import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExJingle;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
@@ -392,5 +393,5 @@ final class SignalThread extends java.lang.Thread implements IDumpStatMisc
     private final Jid _jidSelf = JingleUnicastConnectionService.did2jid(Cfg.did());
 
     private static final byte[] ljlogpathutf8;
-    private static final Logger l = Util.l(SignalThread.class);
+    private static final Logger l = Loggers.getLogger(SignalThread.class);
 }

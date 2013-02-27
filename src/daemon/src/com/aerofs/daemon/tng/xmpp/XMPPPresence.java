@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.tng.xmpp;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.net.link.ILinkStateService;
 import com.aerofs.daemon.lib.async.ISingleThreadedPrioritizedExecutor;
@@ -20,7 +21,7 @@ import com.aerofs.lib.notifier.Notifier;
 import com.aerofs.proto.Files.PBDumpStat;
 import com.aerofs.proto.Files.PBDumpStat.Builder;
 import com.google.common.collect.ImmutableSet;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 import org.jivesoftware.smack.PacketListener;
 import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.XMPPException;
@@ -41,7 +42,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 final class XMPPPresence implements IPresenceService, IXMPPServerConnectionListener
 {
-    private static final Logger l = Util.l(XMPPPresence.class);
+    private static final Logger l = Loggers.getLogger(XMPPPresence.class);
 
     private final ISingleThreadedPrioritizedExecutor _executor;
     private final Notifier<IPeerPresenceListener> _peerPresenceNotifier = Notifier.create();

@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.tng.base;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.lib.BlockingPrioQueue;
 import com.aerofs.lib.event.Prio;
@@ -16,14 +17,13 @@ import com.aerofs.daemon.tng.base.pulse.StartPulseMessage;
 import com.aerofs.daemon.tng.base.streams.NewOutgoingStream;
 import com.aerofs.daemon.tng.ex.ExTransport;
 import com.aerofs.lib.OutArg;
-import com.aerofs.lib.Util;
 import com.aerofs.base.async.FailedFutureCallback;
 import com.aerofs.base.async.UncancellableFuture;
 import com.aerofs.lib.ex.ExNoResource;
 import com.aerofs.base.id.SID;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.ListenableFuture;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 import java.util.LinkedList;
@@ -35,7 +35,7 @@ import static com.aerofs.base.async.FutureUtil.addCallback;
 
 class Peer implements IPeer
 {
-    private static final Logger l = Util.l(Peer.class);
+    private static final Logger l = Loggers.getLogger(Peer.class);
     private static final int MAX_NUM_CONNECTIONS = 2;
 
     private final DID _did;

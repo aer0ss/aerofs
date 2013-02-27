@@ -5,10 +5,10 @@
 
 package com.aerofs.daemon.transport.lib;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.event.net.EOTpStartPulse;
-import com.aerofs.lib.Util;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import static com.aerofs.daemon.transport.lib.PulseHandlerUtil.doEOStartPulseSchedule;
 
@@ -56,5 +56,5 @@ public abstract class StartPulseBase<T extends ITransportImpl> implements IPulse
     //
 
     protected final T tp;
-    protected final Logger l = Util.l(this.getClass());
+    protected final Logger l = Loggers.getLogger(this.getClass());
 }

@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.net;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.CoreQueue;
 import com.aerofs.lib.event.IEvent;
@@ -23,7 +24,6 @@ import com.aerofs.daemon.tng.ITransportListener;
 import com.aerofs.daemon.tng.base.streams.Chunk;
 import com.aerofs.daemon.tng.ex.ExStreamAlreadyExists;
 import com.aerofs.daemon.tng.ex.ExStreamInvalid;
-import com.aerofs.lib.Util;
 import com.aerofs.base.async.FailedFutureCallback;
 import com.aerofs.base.async.FutureUtil;
 import com.aerofs.base.id.SID;
@@ -32,14 +32,14 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.ListenableFuture;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import java.io.ByteArrayInputStream;
 import java.util.Iterator;
 
 public class CoreQueueBasedTransportListener implements ITransportListener
 {
-    private static final Logger l = Util.l(CoreQueueBasedTransportListener.class);
+    private static final Logger l = Loggers.getLogger(CoreQueueBasedTransportListener.class);
 
     private final ISingleThreadedPrioritizedExecutor _executor;
     private final CoreQueue _coreQueue;

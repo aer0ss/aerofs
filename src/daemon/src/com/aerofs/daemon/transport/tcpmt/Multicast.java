@@ -1,5 +1,6 @@
 package com.aerofs.daemon.transport.tcpmt;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.event.net.EITransportMetricsUpdated;
@@ -18,7 +19,7 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.proto.Transport.PBTPHeader;
 import com.aerofs.proto.Transport.PBTPHeader.Type;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -47,7 +48,7 @@ import static com.aerofs.daemon.transport.lib.AddressUtils.getinetaddr;
 
 class Multicast implements IMaxcast
 {
-    private static final Logger l = Util.l(Multicast.class);
+    private static final Logger l = Loggers.getLogger(Multicast.class);
 
     private final TCP t;
     private final Map<NetworkInterface, MulticastSocket> _iface2sock =
@@ -153,7 +154,7 @@ class Multicast implements IMaxcast
             if (s == null) continue;
 
             l.info("linkStateChanged->mc:rem:");
-            l.info(iface);
+            l.info("-> {}", iface);
 
             close(s);
         }
@@ -163,8 +164,7 @@ class Multicast implements IMaxcast
         int i = 0;
         for (Map.Entry<NetworkInterface, MulticastSocket> e : entries) {
             int sval = (e.getValue() == null ? 0 : 1);
-            l.debug("if" + i + ": " + e.getKey().getDisplayName() + "s:" + sval);
-            l.debug(e.getKey());
+            l.debug("if{}: {} s:{} {}", i, e.getKey().getDisplayName(), sval, e.getKey());
             i++;
         }
     }

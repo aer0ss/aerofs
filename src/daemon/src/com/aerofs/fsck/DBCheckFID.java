@@ -7,6 +7,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.lib.db.dbcw.IDBCW;
 import com.google.inject.Inject;
 import com.aerofs.daemon.core.ds.OA;
@@ -17,9 +18,12 @@ import com.aerofs.lib.id.FID;
 import com.aerofs.base.id.OID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
+import org.slf4j.Logger;
 
 public class DBCheckFID
 {
+    private static final Logger l = Loggers.getLogger(DBCheckFID.class);
+
     private final IDBCW _dbcw;
 
     // TODO close these statements after use
@@ -176,7 +180,7 @@ public class DBCheckFID
 
         } else {
             assert type == OA.Type.ANCHOR;
-            Util.l().warn("anchors are not supported yet");
+            l.warn("anchors are not supported yet");
         }
     }
 }

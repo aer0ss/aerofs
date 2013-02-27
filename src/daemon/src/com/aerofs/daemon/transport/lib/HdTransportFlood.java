@@ -20,7 +20,6 @@ import java.io.IOException;
 
 public class HdTransportFlood extends AbstractHdIMC<EOTransportFlood>
 {
-
     private final TransportDiagnosisState _tds;
     private final IUnicast _u;
 
@@ -137,7 +136,7 @@ public class HdTransportFlood extends AbstractHdIMC<EOTransportFlood>
         @Override
         public void error(Exception e)
         {
-            Util.l(this).warn("remove flood seq #: " + Util.e(e));
+            l.warn("remove flood seq #: " + Util.e(e));
             _tds.removeFlood(_seqStart);
             _tds.removeFlood(_seqEnd);
         }

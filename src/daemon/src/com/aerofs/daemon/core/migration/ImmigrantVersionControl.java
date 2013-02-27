@@ -1,5 +1,6 @@
 package com.aerofs.daemon.core.migration;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.AbstractVersionControl;
 import com.aerofs.daemon.core.store.StoreDeletionOperators;
 import com.aerofs.daemon.lib.db.trans.Trans;
@@ -7,7 +8,6 @@ import com.aerofs.daemon.lib.db.ver.IImmigrantVersionDatabase;
 import com.aerofs.daemon.lib.db.ver.ImmigrantTickRow;
 import com.aerofs.daemon.lib.db.ver.TransLocalVersionAssistant;
 import com.aerofs.lib.Tick;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.Version;
 import com.aerofs.lib.cfg.CfgLocalDID;
 import com.aerofs.base.id.DID;
@@ -18,7 +18,7 @@ import com.google.inject.Inject;
 import java.sql.SQLException;
 import java.util.Map.Entry;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 /**
  * This class is very similar to NativeVersionControl in syntax, although
@@ -29,7 +29,7 @@ import org.apache.log4j.Logger;
 
 public class ImmigrantVersionControl extends AbstractVersionControl<ImmigrantTickRow>
 {
-    private static Logger l = Util.l(ImmigrantVersionControl.class);
+    private static Logger l = Loggers.getLogger(ImmigrantVersionControl.class);
 
     private final IImmigrantVersionDatabase _ivdb;
 

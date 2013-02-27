@@ -1,12 +1,12 @@
 package com.aerofs.daemon.transport.tcpmt;
 
 import com.aerofs.base.C;
+import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExDeviceOffline;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 import java.net.InetSocketAddress;
@@ -240,5 +240,5 @@ class ARP
     private final Map<DID, ARPEntry> _did2en = Maps.newConcurrentMap();
     private final CopyOnWriteArraySet<IARPChangeListener> _listeners = Sets.newCopyOnWriteArraySet();
 
-    private static final Logger l = Util.l(ARP.class);
+    private static final Logger l = Loggers.getLogger(ARP.class);
 }

@@ -5,6 +5,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Set;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.daemon.lib.exception.ExStreamInvalid;
 import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExNotDir;
@@ -20,16 +21,18 @@ import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.Path;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.id.SOKID;
+import org.slf4j.Logger;
 
 public class StoreDeleter
 {
+    private static final Logger l = Loggers.getLogger(StoreDeleter.class);
+
     private final IPhysicalStorage _ps;
     private final IStores _ss;
     private final DirectoryService _ds;
@@ -168,7 +171,7 @@ public class StoreDeleter
     private void delete_(final SIndex sidx, Path path, PhysicalOp op, Trans t)
             throws SQLException, IOException, ExStreamInvalid
     {
-        Util.l(this).debug("delete store " + sidx);
+        l.debug("delete store " + sidx);
 
         // MJ thinks (but is unsure whether) we have to do physical store deletion first, before
         // runing other deletion operators

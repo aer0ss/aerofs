@@ -5,6 +5,7 @@
 
 package com.aerofs.daemon.transport.xmpp.routing;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.daemon.event.lib.imc.IResultWaiter;
@@ -13,8 +14,7 @@ import com.aerofs.lib.sched.IScheduler;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.daemon.transport.xmpp.IPipe;
 import com.aerofs.lib.OutArg;
-import com.aerofs.lib.Util;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import java.io.IOException;
 import java.util.*;
@@ -461,5 +461,5 @@ class DIDPipeRouter<T extends IPipe>
 
     private static final int INITIAL_CONNECT_ATTEMPT_SEQ_NUM = 0;
 
-    private static final Logger l = Util.l(DIDPipeRouter.class);
+    private static final Logger l = Loggers.getLogger(DIDPipeRouter.class);
 }

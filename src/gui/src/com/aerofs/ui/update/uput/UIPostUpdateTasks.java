@@ -2,8 +2,8 @@ package com.aerofs.ui.update.uput;
 
 import java.util.ArrayList;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.labeling.L;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.Param.PostUpdate;
 import com.aerofs.lib.cfg.CfgDatabase;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
@@ -49,7 +49,7 @@ public class UIPostUpdateTasks
             if (t == null) continue;
 
             // run() must be called before getNotes()
-            Util.l(UIPostUpdateTasks.class).warn(t.getClass().getSimpleName());
+            Loggers.getLogger(UIPostUpdateTasks.class).warn(t.getClass().getSimpleName());
             t.run();
 
             // update db after each task so the finished tasks won't be executed again on the next

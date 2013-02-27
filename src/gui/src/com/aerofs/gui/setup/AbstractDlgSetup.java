@@ -4,6 +4,7 @@
 
 package com.aerofs.gui.setup;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.gui.AeroFSTitleAreaDialog;
 import com.aerofs.gui.CompSpin;
@@ -19,7 +20,7 @@ import com.aerofs.proto.ControllerProto.GetSetupSettingsReply;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.UI;
 import com.aerofs.ui.UIUtil;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import static org.eclipse.jface.dialogs.IDialogConstants.*;
 
@@ -49,7 +50,7 @@ import java.net.ConnectException;
 
 public abstract class AbstractDlgSetup extends AeroFSTitleAreaDialog
 {
-    protected static final Logger l = Util.l(AbstractDlgSetup.class);
+    protected static final Logger l = Loggers.getLogger(AbstractDlgSetup.class);
 
     /**
      * This method is called in a non-GUI thread

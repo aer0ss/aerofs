@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.net.DigestedMessage;
@@ -38,7 +39,7 @@ import com.aerofs.proto.Transport.PBStream.InvalidationReason;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.tc.Token;
@@ -55,7 +56,7 @@ import javax.annotation.Nullable;
 
 public class Download
 {
-    private static final Logger l = Util.l(Download.class);
+    private static final Logger l = Loggers.getLogger(Download.class);
     private static final FrequentDefectSender _defectSender = new FrequentDefectSender();
 
     private final To _src;

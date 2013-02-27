@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.multiplicity.singleuser;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.acl.SharedFolderAutoLeaver;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
@@ -24,16 +25,13 @@ import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.proto.RitualNotifications.PBNotification;
 import com.google.inject.Inject;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
-import javax.annotation.Nullable;
 import java.util.Collection;
-import java.util.Set;
-import java.util.concurrent.Callable;
 
 public class SingleuserStoreJoiner implements IStoreJoiner
 {
-    private final static Logger l = Util.l(SingleuserStoreJoiner.class);
+    private final static Logger l = Loggers.getLogger(SingleuserStoreJoiner.class);
 
     private final SingleuserStores _stores;
     private final ObjectCreator _oc;

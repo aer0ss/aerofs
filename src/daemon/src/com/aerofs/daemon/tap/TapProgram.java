@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.tap;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.daemon.tng.base.EventQueueBasedEventLoop;
 import com.aerofs.base.C;
 import com.aerofs.lib.IProgram;
@@ -17,7 +18,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Stage;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
@@ -38,7 +39,7 @@ import java.util.concurrent.Executors;
 
 public class TapProgram implements IProgram
 {
-    private static final Logger l = Util.l(TapProgram.class);
+    private static final Logger l = Loggers.getLogger(TapProgram.class);
 
     private Injector _tapInjector;
 

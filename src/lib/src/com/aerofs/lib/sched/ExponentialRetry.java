@@ -1,16 +1,17 @@
 package com.aerofs.lib.sched;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.Param;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import java.util.concurrent.Callable;
 
 public class ExponentialRetry
 {
-    private static final Logger l = Util.l(ExponentialRetry.class);
+    private static final Logger l = Loggers.getLogger(ExponentialRetry.class);
 
     private final IScheduler _sched;
 

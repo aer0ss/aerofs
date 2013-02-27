@@ -4,13 +4,14 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Map.Entry;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.migration.IImmigrantDetector;
 import com.aerofs.daemon.core.migration.ImmigrantVersionControl;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.exception.ExStreamInvalid;
 import com.google.inject.Inject;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import com.aerofs.daemon.core.ds.CA;
 import com.aerofs.daemon.core.ds.DirectoryService;
@@ -23,7 +24,6 @@ import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.IStores;
 import com.aerofs.lib.ContentHash;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.Version;
 import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExNotDir;
@@ -47,7 +47,7 @@ import javax.annotation.Nonnull;
  */
 public class ImmigrantDetector implements IImmigrantDetector
 {
-    static final Logger l = Util.l(ImmigrantDetector.class);
+    static final Logger l = Loggers.getLogger(ImmigrantDetector.class);
 
     private DirectoryService _ds;
     private NativeVersionControl _nvc;
@@ -132,7 +132,7 @@ public class ImmigrantDetector implements IImmigrantDetector
             Version vFrom = _nvc.getLocalVersion_(kFrom);
             ContentHash hFrom = _ds.getCAHash_(kFrom.sokid());
 
-            Util.l().debug("migrate do " + kFrom);
+            l.debug("migrate do " + kFrom);
 
             SOCKID kTo = new SOCKID(socidTo, kidx);
 

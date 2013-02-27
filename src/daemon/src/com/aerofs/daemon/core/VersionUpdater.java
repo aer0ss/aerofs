@@ -6,11 +6,12 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.protocol.NewUpdates;
 import com.aerofs.daemon.core.phy.IPhysicalFile;
 import com.aerofs.daemon.lib.db.trans.Trans;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.daemon.lib.DelayedScheduler;
@@ -28,7 +29,7 @@ import com.google.common.collect.Sets;
  */
 public class VersionUpdater
 {
-    private static final Logger l = Util.l(VersionUpdater.class);
+    private static final Logger l = Loggers.getLogger(VersionUpdater.class);
 
     // This set remembers all the branches that have been updated since the last NEW_UPDATE message
     // was sent.

@@ -1,5 +1,6 @@
 package com.aerofs.daemon.core.linker;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.object.ObjectDeleter;
@@ -16,7 +17,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import java.util.List;
 import java.util.Map;
@@ -32,7 +33,7 @@ import javax.annotation.Nullable;
  */
 public class TimeoutDeletionBuffer implements IDeletionBuffer
 {
-    private static final Logger l = Util.l(TimeoutDeletionBuffer.class);
+    private static final Logger l = Loggers.getLogger(TimeoutDeletionBuffer.class);
 
     // use linked hash map rather than hash map to speed up key iteration.
     private final Map<SOID, TimeAndHolders> _soid2th = Maps.newLinkedHashMap();

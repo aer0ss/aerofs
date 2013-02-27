@@ -2,8 +2,9 @@ package com.aerofs.daemon.core.collector.iterator.partial;
 
 import java.sql.SQLException;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.daemon.lib.db.trans.Trans;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.collector.CollectorSeq;
@@ -13,7 +14,6 @@ import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.store.Store;
 import com.aerofs.daemon.lib.db.ICollectorSequenceDatabase;
 import com.aerofs.daemon.lib.db.ICollectorSequenceDatabase.OCIDAndCS;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.id.SOCID;
 
@@ -22,7 +22,7 @@ import javax.annotation.Nullable;
 
 class IteratorPartialReplica implements IIterator
 {
-    private final static Logger l = Util.l(IteratorPartialReplica.class);
+    private final static Logger l = Loggers.getLogger(IteratorPartialReplica.class);
 
     private final ICollectorSequenceDatabase _csdb;
     private final NativeVersionControl _nvc;

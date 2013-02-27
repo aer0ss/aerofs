@@ -4,9 +4,10 @@
 
 package com.aerofs.sv.server;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.labeling.L;
 import com.aerofs.sv.common.EmailCategory;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 import javax.mail.Message;
@@ -26,7 +27,7 @@ import java.util.concurrent.Future;
 
 class EmailSender
 {
-    private static final Logger l = com.aerofs.lib.Util.l(EmailSender.class);
+    private static final Logger l = Loggers.getLogger(EmailSender.class);
 
     private static final ExecutorService executor = Executors.newSingleThreadExecutor();
 

@@ -3,11 +3,12 @@ package com.aerofs.daemon.core;
 import java.sql.SQLException;
 import java.util.List;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.store.StoreDeletionOperators;
 import com.aerofs.lib.id.SOID;
 import com.google.common.collect.Lists;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import com.aerofs.daemon.core.alias.MapAlias2Target;
 import com.aerofs.daemon.lib.db.ICollectorSequenceDatabase;
@@ -16,7 +17,6 @@ import com.aerofs.daemon.lib.db.ver.INativeVersionDatabase;
 import com.aerofs.daemon.lib.db.ver.NativeTickRow;
 import com.aerofs.daemon.lib.db.ver.TransLocalVersionAssistant;
 import com.aerofs.lib.Tick;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.Version;
 import com.aerofs.lib.cfg.CfgLocalDID;
 import com.aerofs.lib.id.SOCID;
@@ -30,7 +30,7 @@ import javax.annotation.Nullable;
 
 public class NativeVersionControl extends AbstractVersionControl<NativeTickRow>
 {
-    private static Logger l = Util.l(NativeVersionControl.class);
+    private static Logger l = Loggers.getLogger(NativeVersionControl.class);
 
     private final INativeVersionDatabase _nvdb;
     private final ICollectorSequenceDatabase _csdb;

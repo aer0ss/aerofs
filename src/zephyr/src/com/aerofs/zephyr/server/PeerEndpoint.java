@@ -5,12 +5,12 @@
 
 package com.aerofs.zephyr.server;
 
-import com.aerofs.lib.Util;
+import com.aerofs.base.Loggers;
 import com.aerofs.zephyr.core.ExAlreadyBound;
 import com.aerofs.zephyr.core.FatalIOEventHandlerException;
 import com.aerofs.zephyr.core.IIOEventHandler;
 import com.aerofs.zephyr.server.ServerConstants.EndpointState;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
@@ -643,5 +643,5 @@ public class PeerEndpoint implements IIOEventHandler
      /** state the endpoint is in */
     private ServerConstants.EndpointState _state;
 
-    private static Logger l = Util.l(PeerEndpoint.class);
+    private static Logger l = Loggers.getLogger(PeerEndpoint.class);
 }

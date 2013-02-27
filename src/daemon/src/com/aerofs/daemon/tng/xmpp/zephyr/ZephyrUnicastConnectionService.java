@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.tng.xmpp.zephyr;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.net.ZephyrConstants;
 import com.aerofs.daemon.core.net.link.ILinkStateService;
@@ -20,7 +21,6 @@ import com.aerofs.daemon.tng.xmpp.zephyr.handler.ConnectTunnelHandler;
 import com.aerofs.daemon.tng.xmpp.zephyr.handler.ConnectionProxyHandler;
 import com.aerofs.daemon.tng.xmpp.zephyr.handler.NetworkStatsMonitor;
 import com.aerofs.daemon.tng.xmpp.zephyr.handler.StrictChannelPipeline;
-import com.aerofs.lib.Util;
 import com.aerofs.base.async.FutureUtil;
 import com.aerofs.lib.notifier.SingleListenerNotifier;
 import com.aerofs.proto.Files.PBDumpStat;
@@ -31,7 +31,7 @@ import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.ListenableFuture;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 import org.jboss.netty.channel.ChannelFactory;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.handler.codec.http.HttpClientCodec;
@@ -45,7 +45,7 @@ import java.util.concurrent.Executor;
 
 public class ZephyrUnicastConnectionService implements IUnicastConnectionService, ISignallingClient
 {
-    private static final Logger l = Util.l(ZephyrUnicastConnectionService.class);
+    private static final Logger l = Loggers.getLogger(ZephyrUnicastConnectionService.class);
 
     private final ISingleThreadedPrioritizedExecutor _executor;
     private final DID _localDID;

@@ -4,15 +4,15 @@
 
 package com.aerofs.servlets.lib.db;
 
-import com.aerofs.lib.Util;
-import org.apache.log4j.Logger;
+import com.aerofs.base.Loggers;
+import org.slf4j.Logger;
 
 import java.io.IOException;
 import java.sql.SQLException;
 
 public class LocalTestDatabaseConfigurator
 {
-    private static final Logger l = Util.l(LocalTestDatabaseConfigurator.class);
+    private static final Logger l = Loggers.getLogger(LocalTestDatabaseConfigurator.class);
 
     /**
      * Runs the given bash command.

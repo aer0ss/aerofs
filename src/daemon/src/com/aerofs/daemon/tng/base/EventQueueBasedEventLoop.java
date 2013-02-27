@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.tng.base;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.lib.event.IEvent;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.daemon.event.lib.EventDispatcher;
@@ -11,10 +12,9 @@ import com.aerofs.daemon.lib.BlockingPrioQueue;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.sched.Scheduler;
 import com.aerofs.lib.OutArg;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExNoResource;
 import com.aerofs.proto.Files;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 import java.io.PrintStream;
@@ -22,7 +22,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public final class EventQueueBasedEventLoop implements IEventLoop
 {
-    private static final Logger l = Util.l(EventQueueBasedEventLoop.class);
+    private static final Logger l = Loggers.getLogger(EventQueueBasedEventLoop.class);
 
     private final AtomicBoolean _started = new AtomicBoolean(false);
     private final BlockingPrioQueue<IEvent> _eq;

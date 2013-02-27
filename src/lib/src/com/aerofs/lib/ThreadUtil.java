@@ -4,14 +4,15 @@
 
 package com.aerofs.lib;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public abstract class ThreadUtil
 {
-    private static final Logger l = Logger.getRootLogger();
+    private static final Logger l = LoggerFactory.getLogger(ThreadUtil.class);
 
     static final int INITIAL_ENUMERATION_ARRAY_SIZE = 30;
 

@@ -1,5 +1,6 @@
 package com.aerofs.gui.netutil;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.swt.widgets.Shell;
@@ -19,8 +20,11 @@ import org.eclipse.swt.events.VerifyEvent;
 import org.eclipse.swt.events.VerifyListener;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
+import org.slf4j.Logger;
 
-public class DlgNetworkUtilitySelectDevice extends AeroFSDialog {
+public class DlgNetworkUtilitySelectDevice extends AeroFSDialog
+{
+    private static final Logger l = Loggers.getLogger(DlgNetworkUtilitySelectDevice.class);
 
     private Text _txtDID;
     private Button _btnOK;
@@ -118,7 +122,7 @@ public class DlgNetworkUtilitySelectDevice extends AeroFSDialog {
             new DlgNetworkUtility(getParent(), did, strDID, null).open();
             closeDialog();
         } catch (Exception e) {
-            Util.l(this).warn(e);
+            l.warn(Util.e(e));
         }
     }
 }

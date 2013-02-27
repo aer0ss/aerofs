@@ -4,11 +4,11 @@
 
 package com.aerofs.daemon.core.net.link;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.lib.ThreadUtil;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.notifier.IListenerVisitor;
 import com.aerofs.lib.notifier.Notifier;
 import com.aerofs.sv.client.SVClient;
@@ -16,7 +16,7 @@ import com.aerofs.swig.driver.Driver;
 import com.aerofs.swig.driver.DriverConstants;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import java.net.Inet4Address;
 import java.net.InetAddress;
@@ -33,7 +33,7 @@ import static com.aerofs.lib.ThreadUtil.startDaemonThread;
  */
 public abstract class AbstractLinkStateService implements ILinkStateService
 {
-    protected static final Logger l = Util.l(AbstractLinkStateService.class);
+    protected static final Logger l = Loggers.getLogger(AbstractLinkStateService.class);
 
     private final Notifier<ILinkStateListener> _notifier = Notifier.create();
     private ImmutableSet<NetworkInterface> _ifaces = ImmutableSet.of();

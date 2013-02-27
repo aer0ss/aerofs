@@ -4,6 +4,7 @@ import java.sql.SQLException;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
@@ -16,7 +17,6 @@ import com.aerofs.daemon.lib.db.ISyncStatusDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.BitVector;
 import com.aerofs.lib.Path;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExExpelled;
 import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.base.id.OID;
@@ -24,7 +24,7 @@ import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 /**
  * SyncStatus
@@ -49,7 +49,7 @@ import org.apache.log4j.Logger;
  */
 public class LocalSyncStatus implements IStoreDeletionOperator
 {
-    private final static Logger l = Util.l(LocalSyncStatus.class);
+    private final static Logger l = Loggers.getLogger(LocalSyncStatus.class);
 
     private final DirectoryService _ds;
     private final ISyncStatusDatabase _ssdb;

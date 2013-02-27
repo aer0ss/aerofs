@@ -4,6 +4,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.db.dbcw.IDBCW;
 import com.aerofs.lib.db.dbcw.MySQLDBCW;
@@ -196,7 +197,7 @@ public class DBUtil
         try {
             if (s != null) s.close();
         } catch (SQLException e) {
-            Util.l(DBUtil.class).warn("cannot close stmt: " + e);
+            Loggers.getLogger(DBUtil.class).warn("cannot close stmt: " + e);
         }
     }
 

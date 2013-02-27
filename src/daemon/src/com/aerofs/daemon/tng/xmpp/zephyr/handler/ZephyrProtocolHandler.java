@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.tng.xmpp.zephyr.handler;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.base.net.ZephyrConstants;
 import com.aerofs.daemon.tng.ex.ExTransport;
 import com.aerofs.daemon.tng.xmpp.zephyr.IZephyrUnicastEventSink;
@@ -16,11 +17,10 @@ import com.aerofs.daemon.tng.xmpp.zephyr.message.ZephyrBindRequest;
 import com.aerofs.daemon.tng.xmpp.zephyr.message.ZephyrDataMessage;
 import com.aerofs.daemon.tng.xmpp.zephyr.message.ZephyrRegistrationMessage;
 import com.aerofs.lib.SystemUtil;
-import com.aerofs.lib.Util;
 import com.aerofs.base.async.FailedFutureCallback;
 import com.aerofs.base.async.FutureUtil;
 import com.aerofs.base.async.UncancellableFuture;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureListener;
@@ -35,7 +35,7 @@ import java.net.SocketAddress;
 
 public class ZephyrProtocolHandler extends SimpleChannelHandler
 {
-    private static final Logger l = Util.l(ZephyrProtocolHandler.class);
+    private static final Logger l = Loggers.getLogger(ZephyrProtocolHandler.class);
 
     private enum State
     {

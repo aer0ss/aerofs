@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.tng.xmpp.jingle;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.daemon.lib.PrioQueue;
@@ -20,7 +21,7 @@ import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.lib.ex.ExJingle;
 import com.aerofs.lib.ex.ExNoResource;
 import com.aerofs.base.id.DID;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -34,7 +35,7 @@ import java.io.IOException;
 //
 final class Channel implements IProxyObjectContainer
 {
-    private static final Logger l = Util.l(Channel.class);
+    private static final Logger l = Loggers.getLogger(Channel.class);
 
     static interface IClosureListener
     {

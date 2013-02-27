@@ -5,7 +5,7 @@
 
 package com.aerofs.daemon.transport.xmpp.zephyr.client.nio.statemachine;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import java.util.Set;
 

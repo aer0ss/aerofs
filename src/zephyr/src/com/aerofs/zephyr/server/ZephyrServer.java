@@ -5,12 +5,12 @@
 
 package com.aerofs.zephyr.server;
 
-import com.aerofs.lib.Util;
+import com.aerofs.base.Loggers;
 import com.aerofs.zephyr.core.BufferPool;
 import com.aerofs.zephyr.core.Dispatcher;
 import com.aerofs.zephyr.core.FatalIOEventHandlerException;
 import com.aerofs.zephyr.core.IIOEventHandler;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -95,7 +95,7 @@ public class ZephyrServer implements IIOEventHandler
             sc = _ssc.accept();
         } catch (IOException e) {
             String err = "z: srv:[" + _host + ":" + _port + "]:fail on acc";
-            l.fatal(err + ":" + e);
+            l.error(err + ":" + e);
             terminate();
             throw new FatalIOEventHandlerException(err, e);
         }
@@ -271,5 +271,5 @@ public class ZephyrServer implements IIOEventHandler
     private ServerSocketChannel _ssc;
     private boolean _inited;
 
-    private static final Logger l = Util.l(ZephyrServer.class);
+    private static final Logger l = Loggers.getLogger(ZephyrServer.class);
 }

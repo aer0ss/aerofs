@@ -10,20 +10,19 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import com.aerofs.base.BaseParam.SV;
+import com.aerofs.base.Loggers;
 import com.aerofs.base.id.UserID;
 import com.aerofs.servlets.lib.db.sql.SQLThreadLocalTransaction;
 import com.aerofs.sp.common.SubscriptionCategory;
 import com.aerofs.sp.server.lib.EmailSubscriptionDatabase;
 import com.aerofs.sp.server.lib.SPParam;
-import org.apache.log4j.Logger;
-
-import com.aerofs.lib.Util;
+import org.slf4j.Logger;
 
 import javax.inject.Inject;
 
 public class EmailReminder
 {
-    private static final Logger l = Util.l(EmailReminder.class);
+    private static final Logger l = Loggers.getLogger(EmailReminder.class);
     private final ScheduledExecutorService _executor = Executors.newScheduledThreadPool(1);
     private final InvitationReminderEmailer.Factory _emailFactory;
 

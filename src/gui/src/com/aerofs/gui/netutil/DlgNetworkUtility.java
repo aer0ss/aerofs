@@ -1,6 +1,7 @@
 package com.aerofs.gui.netutil;
 
 import com.aerofs.InternalDiagnostics;
+import com.aerofs.base.Loggers;
 import com.aerofs.lib.ritual.RitualBlockingClient;
 import com.aerofs.lib.ritual.RitualClientFactory;
 import org.eclipse.jface.dialogs.IDialogConstants;
@@ -26,8 +27,11 @@ import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.FillLayout;
+import org.slf4j.Logger;
 
-public class DlgNetworkUtility extends AeroFSJFaceDialog {
+public class DlgNetworkUtility extends AeroFSJFaceDialog
+{
+    private static final Logger l = Loggers.getLogger(DlgNetworkUtility.class);
 
     private final DID _did;
     private final String _alias;
@@ -143,7 +147,7 @@ public class DlgNetworkUtility extends AeroFSJFaceDialog {
             @Override
             public void error(Exception e)
             {
-                Util.l(this).error("cannot send results: " + Util.e(e));
+                l.error("cannot send results: " + Util.e(e));
                 _btnSubmit.setText("Failed. Try Again");
                 _btnSubmit.setEnabled(true);
                 getShell().layout();

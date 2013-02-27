@@ -8,6 +8,7 @@ import java.sql.SQLException;
 
 import static com.aerofs.lib.obfuscate.ObfuscatingFormatters.*;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.phy.linked.SharedFolderTagFileAndIcon;
 import com.aerofs.daemon.lib.exception.ExStreamInvalid;
 import com.aerofs.lib.Param;
@@ -16,7 +17,7 @@ import com.aerofs.lib.ex.ExExpelled;
 import com.aerofs.lib.ex.ExNotDir;
 import com.aerofs.lib.cfg.CfgAbsRootAnchor;
 import com.aerofs.lib.id.SOKID;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import com.aerofs.daemon.core.VersionUpdater;
 import com.aerofs.daemon.core.ds.CA;
@@ -46,7 +47,7 @@ import javax.annotation.Nullable;
 
 public class MightCreate
 {
-    private static Logger l = Util.l(MightCreate.class);
+    private static Logger l = Loggers.getLogger(MightCreate.class);
 
     private final IgnoreList _il;
     private final DirectoryService _ds;

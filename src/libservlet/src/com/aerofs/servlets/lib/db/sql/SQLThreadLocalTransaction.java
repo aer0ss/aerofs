@@ -4,12 +4,12 @@
 
 package com.aerofs.servlets.lib.db.sql;
 
-import com.aerofs.lib.Util;
+import com.aerofs.base.Loggers;
 import com.aerofs.servlets.lib.db.AbstractThreadLocalTransaction;
 import com.aerofs.servlets.lib.db.ExDbInternal;
 import com.aerofs.servlets.lib.db.IDatabaseConnectionProvider;
 import com.aerofs.servlets.lib.db.IThreadLocalTransaction;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -18,7 +18,7 @@ public class SQLThreadLocalTransaction
     extends AbstractThreadLocalTransaction<SQLException>
     implements IDatabaseConnectionProvider<Connection>, IThreadLocalTransaction<SQLException>
 {
-    private static final Logger l = Util.l(SQLThreadLocalTransaction.class);
+    private static final Logger l = Loggers.getLogger(SQLThreadLocalTransaction.class);
 
     private IDatabaseConnectionProvider<Connection> _provider;
     private ThreadLocal<Connection> _connection = new ThreadLocal<Connection>();

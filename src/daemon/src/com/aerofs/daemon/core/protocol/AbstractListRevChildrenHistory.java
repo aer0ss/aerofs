@@ -1,5 +1,6 @@
 package com.aerofs.daemon.core.protocol;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.net.DigestedMessage;
@@ -13,11 +14,13 @@ import com.aerofs.lib.notifier.ConcurrentlyModifiableListeners;
 import com.aerofs.lib.Path;
 import com.aerofs.proto.Core.PBCore;
 import com.google.common.collect.Maps;
+import org.slf4j.Logger;
 
 import java.util.Map;
 
 public abstract class AbstractListRevChildrenHistory<LISTENER>
 {
+    private static final Logger l = Loggers.getLogger(AbstractListRevChildrenHistory.class);
 
     protected class RCHListeners extends ConcurrentlyModifiableListeners<LISTENER>
     {
@@ -65,25 +68,25 @@ public abstract class AbstractListRevChildrenHistory<LISTENER>
         _sidx2s = sidx2s;
     }
 
-    public void add_(Path spath, LISTENER l) throws Exception
+    public void add_(Path spath, LISTENER listener) throws Exception
     {
         RCHListeners ls = _path2ls.get(spath);
         if (ls == null) ls = new RCHListeners(spath);
-        ls.addListener_(l);
+        ls.addListener_(listener);
 
         // have to call send_() after adding the listener as send_() needs
         // the seq number
         try {
             send_(spath);
         } catch (Exception e) {
-            ls.removeListener_(l);
+            ls.removeListener_(listener);
             throw e;
         }
 
         try {
             fetchFromLocal_(ls, spath);
         } catch (Exception e) {
-            Util.l(this).warn("fetch from local. ignored: " + Util.e(e));
+            l.warn("fetch from local. ignored: " + Util.e(e));
         }
     }
 

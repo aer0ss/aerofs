@@ -1,5 +1,6 @@
 package com.aerofs.gui.history;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.gui.AeroFSDialog;
 import com.aerofs.gui.AeroFSMessageBox;
 import com.aerofs.gui.AeroFSMessageBox.IconType;
@@ -19,7 +20,7 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.os.OSUtil;
 import com.google.common.collect.Maps;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 import org.eclipse.jface.layout.TableColumnLayout;
 import org.eclipse.jface.viewers.ColumnWeightData;
 import org.eclipse.swt.SWT;
@@ -61,7 +62,7 @@ import javax.annotation.Nullable;
 
 public class DlgHistory extends AeroFSDialog
 {
-    private static final Logger l = Util.l(DlgHistory.class);
+    private static final Logger l = Loggers.getLogger(DlgHistory.class);
 
     private final Map<Program, Image> _iconCache = Maps.newHashMap();
 

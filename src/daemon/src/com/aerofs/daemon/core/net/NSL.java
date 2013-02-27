@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.net;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.CoreUtil;
 import com.aerofs.daemon.core.UnicastInputOutputStack;
@@ -23,7 +24,7 @@ import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.proto.Core.PBCore;
 import com.google.inject.Inject;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 import java.io.ByteArrayOutputStream;
@@ -35,7 +36,7 @@ import java.util.Collection;
  */
 public class NSL
 {
-    private static final Logger l = Util.l(NSL.class);
+    private static final Logger l = Loggers.getLogger(NSL.class);
 
     private final MaxcastFilterSender _mcfs = new MaxcastFilterSender();
     private Metrics _m;

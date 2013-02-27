@@ -1,5 +1,6 @@
 package com.aerofs.gui.tray;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.gui.tray.TrayIcon.TrayPosition.Orientation;
 import com.aerofs.lib.SystemUtil;
@@ -7,7 +8,7 @@ import com.aerofs.lib.ThreadUtil;
 import com.aerofs.sv.client.SVClient;
 import com.aerofs.swig.driver.Driver;
 import com.google.common.collect.Sets;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.Event;
@@ -28,7 +29,7 @@ import java.util.Set;
 
 public class TrayIcon
 {
-    private final static Logger l = Util.l(TrayIcon.class);
+    private final static Logger l = Loggers.getLogger(TrayIcon.class);
     private final static long ANIMATION_INTERVAL = 80; // milliseconds between frames
     private final SystemTray _st;
     private final TrayItem _ti;

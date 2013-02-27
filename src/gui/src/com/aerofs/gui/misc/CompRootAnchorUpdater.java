@@ -4,6 +4,7 @@
 
 package com.aerofs.gui.misc;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIParam;
 import com.aerofs.labeling.L;
@@ -16,7 +17,7 @@ import com.aerofs.lib.os.OSUtil;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.UI;
 import com.aerofs.ui.UIUtil;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 import com.aerofs.lib.Util;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
@@ -34,7 +35,7 @@ import java.io.File;
 
 public class CompRootAnchorUpdater extends Composite
 {
-    private final static Logger l = Util.l(CompRootAnchorUpdater.class);
+    private final static Logger l = Loggers.getLogger(CompRootAnchorUpdater.class);
 
     private final InjectableFile.Factory _factFile = new InjectableFile.Factory();
 

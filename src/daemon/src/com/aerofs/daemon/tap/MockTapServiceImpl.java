@@ -1,8 +1,8 @@
 package com.aerofs.daemon.tap;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.lib.event.Prio;
-import com.aerofs.lib.Util;
 import com.aerofs.base.async.UncancellableFuture;
 import com.aerofs.base.id.SID;
 import com.aerofs.proto.Common.PBException;
@@ -18,14 +18,14 @@ import com.aerofs.proto.Transport.PBStream.InvalidationReason;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class MockTapServiceImpl implements ITapService
 {
-    private static final Logger l = Util.l(MockTapServiceImpl.class);
+    private static final Logger l = Loggers.getLogger(MockTapServiceImpl.class);
     private final AtomicBoolean _started = new AtomicBoolean(false);
 
     @Inject

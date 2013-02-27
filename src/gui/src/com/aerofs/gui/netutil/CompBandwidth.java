@@ -1,5 +1,6 @@
 package com.aerofs.gui.netutil;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.lib.Param;
 import com.aerofs.lib.ThreadUtil;
@@ -24,8 +25,11 @@ import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.widgets.Button;
+import org.slf4j.Logger;
 
-public class CompBandwidth extends Composite {
+public class CompBandwidth extends Composite
+{
+    private static final Logger l = Loggers.getLogger(CompBandwidth.class);
 
     private final DID _did;
     private final Button _btnStart;
@@ -37,8 +41,6 @@ public class CompBandwidth extends Composite {
 
     /**
      * Create the composite.
-     * @param parent
-     * @param style
      */
     public CompBandwidth(Composite parent, CompPing compPing, int style,
             DID did, String sname)
@@ -214,7 +216,7 @@ public class CompBandwidth extends Composite {
                         long bytes = bytesEnd.get() - bytesStart.get();
                         long interval = timeEnd.get() - timeStart.get();
                         comp.done(null, bytes, interval);
-                        Util.l(this).warn("flood " + _did.toStringFormal() +
+                        l.warn("flood " + _did.toStringFormal() +
                                 " (" + (send ? "send" : "recv") + "): " +
                                 bytes + " / " + interval + " = " +
                                 Util.formatBandwidth(bytes, interval));

@@ -4,6 +4,7 @@
 
 package com.aerofs.gui;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.cfg.Cfg;
@@ -27,6 +28,7 @@ import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
 import com.aerofs.ui.UIParam;
 import com.aerofs.gui.GUI.ISWTWorker;
+import org.slf4j.Logger;
 
 /**
  * Show this dialog after the user has changed the password on the web site causing the local
@@ -34,6 +36,8 @@ import com.aerofs.gui.GUI.ISWTWorker;
  */
 public class DlgRetypePassword extends AeroFSJFaceDialog
 {
+    private static final Logger l = Loggers.getLogger(DlgRetypePassword.class);
+
     private Label _status;
     private Text _passwd;
 
@@ -136,7 +140,7 @@ public class DlgRetypePassword extends AeroFSJFaceDialog
                         _passwd.setText("");
                         _passwd.setFocus();
                     } else {
-                        Util.l(this).warn("login: " + Util.e(e));
+                        l.warn("login: " + Util.e(e));
                         // If it's not a bad credential, show the error
                         _status.setText(S.PASSWORD_CHANGE_INTERNAL_ERROR);
                     }

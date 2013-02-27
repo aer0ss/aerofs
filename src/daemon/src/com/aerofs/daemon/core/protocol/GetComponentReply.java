@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.protocol;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.acl.LocalACL;
 import com.aerofs.daemon.core.alias.MapAlias2Target;
 import com.aerofs.daemon.core.alias.Aliasing;
@@ -24,7 +25,7 @@ import com.aerofs.lib.ex.ExAborted;
 import com.aerofs.lib.id.OCID;
 import com.aerofs.lib.id.SOCID;
 import com.google.inject.Inject;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.lib.ex.Exceptions;
 import com.aerofs.lib.id.CID;
@@ -38,7 +39,7 @@ import java.util.Set;
 
 public class GetComponentReply
 {
-    private static final Logger l = Util.l(GetComponentReply.class);
+    private static final Logger l = Loggers.getLogger(GetComponentReply.class);
 
     private final TransManager _tm;
     private final DirectoryService _ds;

@@ -4,11 +4,11 @@
 
 package com.aerofs.sp.server.lib.user;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.sp.server.lib.id.StripeCustomerID;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.SystemUtil;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.base.ex.ExFormatError;
@@ -29,7 +29,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableList.Builder;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import javax.annotation.Nonnull;
 import javax.inject.Inject;
@@ -42,7 +42,7 @@ import java.util.Set;
 
 public class User
 {
-    private final static Logger l = Util.l(User.class);
+    private final static Logger l = Loggers.getLogger(User.class);
 
     public static class Factory
     {

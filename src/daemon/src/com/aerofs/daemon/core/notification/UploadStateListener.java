@@ -2,6 +2,7 @@ package com.aerofs.daemon.core.notification;
 
 import java.sql.SQLException;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.net.IUploadStateListener;
 import com.aerofs.daemon.core.tc.TC;
@@ -53,7 +54,7 @@ class UploadStateListener implements IUploadStateListener
         try {
             path = ds.resolveNullable_(socid.soid());
         } catch (SQLException e) {
-            Util.l(UploadStateListener.class).warn(Util.e(e));
+            Loggers.getLogger(UploadStateListener.class).warn(Util.e(e));
             path = null;
         }
 

@@ -1,10 +1,10 @@
 package com.aerofs.daemon.core.device;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.IDeviceEvictionListener;
 import com.aerofs.daemon.lib.LRUCache;
-import com.aerofs.lib.Util;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 import javax.annotation.Nonnull;
 
 import java.util.HashSet;
@@ -31,7 +31,7 @@ public class DeviceLRU
 
     public DeviceLRU(int numDevices)
     {
-        l = Util.l(DeviceLRU.class);
+        l = Loggers.getLogger(DeviceLRU.class);
         listeners_ = new HashSet<IDeviceEvictionListener>();
 
         LRUCache.IEvictionListener<DID, Object> el =

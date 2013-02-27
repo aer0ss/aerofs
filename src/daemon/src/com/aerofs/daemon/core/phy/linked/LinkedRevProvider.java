@@ -15,12 +15,13 @@ import java.util.concurrent.TimeUnit;
 
 import com.aerofs.base.Base64;
 import com.aerofs.base.BaseUtil;
+import com.aerofs.base.Loggers;
 import com.aerofs.lib.Param;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.os.OSUtil;
 import com.google.common.collect.Maps;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import com.aerofs.daemon.core.phy.IPhysicalRevProvider;
 import com.aerofs.base.C;
@@ -52,7 +53,7 @@ public class LinkedRevProvider implements IPhysicalRevProvider
      *
      */
 
-    static final Logger l = Util.l(LinkedRevProvider.class);
+    static final Logger l = Loggers.getLogger(LinkedRevProvider.class);
 
     // public for use in DPUTMigrateRevisionSuffixToBase64
     public static class RevisionSuffix implements Serializable

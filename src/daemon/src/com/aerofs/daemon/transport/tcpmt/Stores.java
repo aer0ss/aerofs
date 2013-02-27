@@ -1,5 +1,6 @@
 package com.aerofs.daemon.transport.tcpmt;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.SID;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
@@ -19,7 +20,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.protobuf.ByteString;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 import java.util.Arrays;
@@ -110,7 +111,7 @@ class Stores implements IARPChangeListener
         }
     }
 
-    private static final Logger l = Util.l(Stores.class);
+    private static final Logger l = Loggers.getLogger(Stores.class);
 
     //
     // IMPORTANT: access to _all_ fields must be protected by synchronized (this)

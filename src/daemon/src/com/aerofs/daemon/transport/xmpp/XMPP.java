@@ -1,5 +1,6 @@
 package com.aerofs.daemon.transport.xmpp;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.lib.sched.Scheduler;
 import com.aerofs.base.Base64;
 import com.aerofs.base.ex.ExFormatError;
@@ -43,7 +44,7 @@ import com.aerofs.proto.Transport.PBStream.Type;
 import com.aerofs.proto.Transport.PBTPHeader;
 import com.aerofs.proto.Transport.PBTransportDiagnosis;
 import com.google.common.collect.ImmutableMap;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 import org.jivesoftware.smack.PacketListener;
 import org.jivesoftware.smack.SASLAuthentication;
 import org.jivesoftware.smack.XMPPConnection;
@@ -1074,7 +1075,7 @@ public abstract class XMPP implements ITransportImpl, IPipeController, IUnicast,
     private final XMPPServerConnection _xsc;
     private SignalledPipeFanout _spf;
 
-    protected static final Logger l = Util.l(XMPP.class);
+    protected static final Logger l = Loggers.getLogger(XMPP.class);
 
     //
     // constants

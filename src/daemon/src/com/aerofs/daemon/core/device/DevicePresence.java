@@ -1,5 +1,6 @@
 package com.aerofs.daemon.core.device;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.CoreExponentialRetry;
@@ -12,7 +13,7 @@ import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.CoreIMC;
 import com.aerofs.daemon.event.lib.imc.AbstractEBIMC;
@@ -39,7 +40,7 @@ import java.util.concurrent.Callable;
 
 public class DevicePresence implements IDumpStatMisc
 {
-    private static final Logger l = Util.l(DevicePresence.class);
+    private static final Logger l = Loggers.getLogger(DevicePresence.class);
 
     private final Map<DID, Device> _did2dev = Maps.newHashMap();
     private final Map<SIndex, OPMDevices> _sidx2opm = Maps.newHashMap();

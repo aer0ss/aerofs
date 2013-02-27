@@ -18,6 +18,7 @@ import javax.mail.MessagingException;
 
 import com.aerofs.base.BaseParam.SV;
 import com.aerofs.base.BaseUtil;
+import com.aerofs.base.Loggers;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.Param;
 import com.aerofs.lib.SystemUtil;
@@ -26,7 +27,7 @@ import com.aerofs.servlets.lib.db.IThreadLocalTransaction;
 import com.yammer.metrics.Metrics;
 import com.yammer.metrics.core.Meter;
 import com.yammer.metrics.core.MetricName;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import com.aerofs.base.C;
 import com.aerofs.lib.FileUtil;
@@ -55,7 +56,7 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 
 public class SVReactor
 {
-    private static final Logger l = Util.l(SVReactor.class);
+    private static final Logger l = Loggers.getLogger(SVReactor.class);
 
     private static final String DEFECT_LOG_PREFIX = "log.defect-";
     private static final int FILE_BUF_SIZE = 1 * C.MB;

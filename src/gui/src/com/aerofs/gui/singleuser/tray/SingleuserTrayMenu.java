@@ -1,5 +1,6 @@
 package com.aerofs.gui.singleuser.tray;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.gui.history.DlgHistory;
 import com.aerofs.gui.misc.DlgInviteToSignUp;
 import com.aerofs.gui.singleuser.preferences.SingleuserDlgPreferences;
@@ -12,7 +13,7 @@ import com.aerofs.gui.tray.TrayMenuPopulator;
 import com.aerofs.labeling.L;
 import com.aerofs.proto.Ritual.ListSharedFoldersReply;
 import com.aerofs.ui.UIUtil;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.MenuAdapter;
 import org.eclipse.swt.events.MenuEvent;
@@ -53,7 +54,7 @@ import static com.aerofs.proto.Sv.PBSVEvent.Type.*;
 
 public class SingleuserTrayMenu implements ITrayMenu
 {
-    static final Logger l = Util.l(SingleuserTrayMenu.class);
+    static final Logger l = Loggers.getLogger(SingleuserTrayMenu.class);
 
     private volatile int _conflictCount = 0;
 
@@ -291,7 +292,7 @@ public class SingleuserTrayMenu implements ITrayMenu
                                         try {
                                             lme.run(path);
                                         } catch (Exception e) {
-                                            Util.l(this).warn("menu handler: " + Util.e(e));
+                                            l.warn("menu handler: " + Util.e(e));
                                         }
                                     }
                                 });

@@ -5,14 +5,14 @@
 package com.aerofs.sv.client;
 
 import com.aerofs.base.BaseParam.SV;
-import com.aerofs.lib.Util;
+import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.AbstractExWirable;
 import com.aerofs.lib.ex.Exceptions;
 import com.aerofs.proto.Sv.PBSVCall;
 import com.aerofs.proto.Sv.PBSVReply;
 import com.google.common.net.HttpHeaders;
 import com.google.common.net.MediaType;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 import javax.net.ssl.HttpsURLConnection;
@@ -30,7 +30,7 @@ import static java.net.HttpURLConnection.HTTP_OK;
 
 final class SVRPCClient
 {
-    private static final Logger l = Util.l(SVRPCClient.class);
+    private static final Logger l = Loggers.getLogger(SVRPCClient.class);
 
     private final String _svurl;
 

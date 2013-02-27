@@ -3,17 +3,17 @@ package com.aerofs.gui.tray;
 import java.util.ArrayList;
 import java.util.TreeMap;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.labeling.L;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
-import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.ui.UI;
 import com.aerofs.ui.IUI.MessageType;
 
 public class Progresses {
-    private static final Logger l = Util.l(Progresses.class);
+    private static final Logger l = Loggers.getLogger(Progresses.class);
 
     private static final String TOOLTIP_PREFIX =
             (L.get().isStaging() ? "STAGING " : "") + L.PRODUCT;

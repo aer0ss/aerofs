@@ -10,9 +10,10 @@ import java.util.concurrent.RunnableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.base.id.UserID;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
@@ -30,13 +31,12 @@ import com.aerofs.lib.sched.Scheduler;
 import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.db.InMemorySQLiteDBCW;
 
 
 public class TCTestSetup
 {
-    private static final Logger l = Util.l(TCTestSetup.class);
+    private static final Logger l = Loggers.getLogger(TCTestSetup.class);
 
     public CoreQueue _q = new CoreQueue();
 

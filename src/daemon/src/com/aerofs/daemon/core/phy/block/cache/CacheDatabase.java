@@ -6,18 +6,18 @@ package com.aerofs.daemon.core.phy.block.cache;
 
 import static com.aerofs.daemon.core.phy.block.cache.CacheSchema.*;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.phy.block.BlockStorageDatabase;
 import com.aerofs.daemon.lib.db.AbstractDatabase;
 import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.ContentHash;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.db.AbstractDBIterator;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.db.PreparedStatementWrapper;
 import com.aerofs.lib.db.dbcw.IDBCW;
 import com.google.inject.Inject;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -28,7 +28,7 @@ import java.sql.SQLException;
  */
 public class CacheDatabase extends AbstractDatabase
 {
-    static final Logger l = Util.l(CacheDatabase.class);
+    static final Logger l = Loggers.getLogger(CacheDatabase.class);
 
     public CacheDatabase(IDBCW dbcw)
     {

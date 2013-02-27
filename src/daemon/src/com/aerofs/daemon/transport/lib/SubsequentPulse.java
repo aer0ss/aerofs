@@ -5,10 +5,10 @@
 
 package com.aerofs.daemon.transport.lib;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.daemon.event.net.EOTpSubsequentPulse;
-import com.aerofs.lib.Util;
 import com.aerofs.base.id.DID;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import static com.aerofs.daemon.lib.DaemonParam.MAX_PULSE_FAILURES;
 import static com.aerofs.daemon.transport.lib.PulseHandlerUtil.doEOSubsequentPulsePrePulseChecks;
@@ -53,5 +53,5 @@ public class SubsequentPulse implements IPulseHandlerImpl<EOTpSubsequentPulse>
 
     private final ITransportImpl tp;
 
-    private static final Logger l = Util.l(SubsequentPulse.class);
+    private static final Logger l = Loggers.getLogger(SubsequentPulse.class);
 }

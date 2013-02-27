@@ -2,16 +2,20 @@ package com.aerofs.gui.tray;
 
 import java.util.concurrent.Callable;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ritual.RitualBlockingClient;
 import com.aerofs.lib.ritual.RitualClientFactory;
+import org.slf4j.Logger;
 
 /**
  * TODO (WW) reissue the pause ritual command if the daemon restarts.
  */
 public class PauseOrResumeSyncing
 {
+    private static final Logger l = Loggers.getLogger(PauseOrResumeSyncing.class);
+
     // access to all member variables should be protected by synchronized (this)
     private int _pauseSeq;
     private boolean _paused;
@@ -32,7 +36,7 @@ public class PauseOrResumeSyncing
 
     private void pause_(final long timeout) throws Exception
     {
-        Util.l(this).warn("pause syncing");
+        l.warn("pause syncing");
         assert !_paused;
 
         RitualBlockingClient ritual = RitualClientFactory.newBlockingClient();
@@ -71,7 +75,7 @@ public class PauseOrResumeSyncing
 
     private void resume_() throws Exception
     {
-        Util.l(this).warn("resume syncing");
+        l.warn("resume syncing");
         assert _paused;
 
         RitualBlockingClient ritual = RitualClientFactory.newBlockingClient();

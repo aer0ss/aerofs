@@ -1,8 +1,9 @@
 package com.aerofs.daemon.core.net.throttling;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.sched.Scheduler;
-import com.aerofs.lib.Util;
+
 import javax.annotation.Nonnull;
 
 class PerDeviceLimiter extends AbstractLimiter
@@ -16,10 +17,10 @@ class PerDeviceLimiter extends AbstractLimiter
     public PerDeviceLimiter(Scheduler sched, ILimiter nextLevel, String name,
             long minBucket, long bucket, long fillRate, int pendingSize)
     {
-        super(sched, Util.l(PerDeviceLimiter.class),
+        super(sched, Loggers.getLogger(PerDeviceLimiter.class),
             minBucket, bucket, fillRate, pendingSize);
 
-        l = Util.l(PerDeviceLimiter.class);
+        l = Loggers.getLogger(PerDeviceLimiter.class);
         _nextLimiter = nextLevel;
         _name = name;
 

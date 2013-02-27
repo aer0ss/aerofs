@@ -6,6 +6,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.id.KIndex;
@@ -207,7 +208,7 @@ public class CompConflictFiles extends Composite
                     cb.setContents(new Object[] { sb.toString() },
                             new Transfer[] { TextTransfer.getInstance() });
                 } catch (SWTError e) {
-                    Util.l(CompConflictFiles.class).warn("cp 2 clipboard: " + Util.e(e));
+                    Loggers.getLogger(CompConflictFiles.class).warn("cp 2 clipboard: " + Util.e(e));
                 } finally {
                     cb.dispose();
                 }
@@ -467,7 +468,8 @@ public class CompConflictFiles extends Composite
                 try {
                     populateConflictList(ritual);
                 } catch (Exception e) {
-                    Util.l(CompConflictFiles.class).warn("search 4 conflict: " + Util.e(e));
+                    Loggers.getLogger(CompConflictFiles.class)
+                            .warn("search 4 conflict: " + Util.e(e));
                     ex = e;
                 } finally {
                     ritual.close();

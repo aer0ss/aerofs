@@ -1,6 +1,7 @@
 package com.aerofs.ui.update;
 
 import com.aerofs.base.BaseUtil;
+import com.aerofs.base.Loggers;
 import com.aerofs.lib.*;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
@@ -63,7 +64,7 @@ public class PostUpdate
 
             byte[] hash = SecUtil.hash(f);
             if (!Arrays.equals(hash, en.getValue())) {
-                Util.l(PostUpdate.class).warn(en.getKey() + " chksum mismatch." +
+                Loggers.getLogger(PostUpdate.class).warn(en.getKey() + " chksum mismatch." +
                         " expected " + BaseUtil.hexEncode(en.getValue()) +
                         " actual " + BaseUtil.hexEncode(hash));
                 return en.getKey();

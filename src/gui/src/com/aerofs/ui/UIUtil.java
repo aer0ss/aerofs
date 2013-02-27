@@ -1,6 +1,7 @@
 package com.aerofs.ui;
 
 import com.aerofs.base.BaseParam.SP;
+import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.AbstractExWirable;
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIUtil;
@@ -27,7 +28,7 @@ import com.aerofs.ui.IUI.MessageType;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.protobuf.ByteString;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 import java.io.EOFException;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -36,7 +37,7 @@ import java.net.UnknownHostException;
 
 public class UIUtil
 {
-    static final Logger l = Util.l(UIUtil.class);
+    static final Logger l = Loggers.getLogger(UIUtil.class);
 
     /**
      * convert an exception to user friendly message

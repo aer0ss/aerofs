@@ -6,6 +6,7 @@
 
 package com.aerofs.daemon.transport.tcpmt;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.lib.sched.Scheduler;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.SID;
@@ -43,7 +44,7 @@ import com.aerofs.proto.Transport.PBTPHeader;
 import com.aerofs.proto.Transport.PBTPHeader.Type;
 import com.aerofs.proto.Transport.PBTransportDiagnosis;
 import com.google.common.collect.Lists;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import java.io.ByteArrayInputStream;
 import java.io.PrintStream;
@@ -59,7 +60,7 @@ import static com.aerofs.daemon.transport.lib.PulseManager.newCheckPulseReply;
 
 public class TCP implements ITransportImpl, IPipeController, IARPChangeListener
 {
-    private static final Logger l = Util.l(TCP.class);
+    private static final Logger l = Loggers.getLogger(TCP.class);
 
     public static final int PORT_ANY = 0;
 

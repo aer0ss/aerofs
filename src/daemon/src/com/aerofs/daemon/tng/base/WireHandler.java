@@ -4,10 +4,10 @@
 
 package com.aerofs.daemon.tng.base;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.daemon.tng.base.pipeline.IPipelineContext;
-import com.aerofs.lib.Util;
 import com.aerofs.proto.Transport.PBTPHeader;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -18,7 +18,7 @@ import static com.aerofs.lib.Util.writeDelimited;
 
 final public class WireHandler extends SimplePipelineEventHandler
 {
-    private static final Logger l = Util.l(WireHandler.class);
+    private static final Logger l = Loggers.getLogger(WireHandler.class);
 
     @Override
     protected void onIncomingMessageEvent_(IPipelineContext ctx, MessageEvent messageEvent)

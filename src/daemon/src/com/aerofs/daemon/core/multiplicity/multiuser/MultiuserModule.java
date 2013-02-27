@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.multiplicity.multiuser;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.ICoreEventHandlerRegistrar;
 import com.aerofs.daemon.core.admin.HdRelocateRootAnchor.ICrossFSRelocator;
 import com.aerofs.daemon.core.admin.HdRelocateRootAnchor.MultiuserCrossFSRelocator;
@@ -19,18 +20,20 @@ import com.aerofs.daemon.core.multiplicity.multiuser.migration.NullEmigrantTarge
 import com.aerofs.daemon.core.multiplicity.multiuser.migration.NullEmigrantDetector;
 import com.aerofs.daemon.core.multiplicity.multiuser.migration.NullImmigrantCreator;
 import com.aerofs.daemon.core.multiplicity.multiuser.migration.NullImmigrantDetector;
-import com.aerofs.lib.Util;
 import com.google.inject.AbstractModule;
 import com.google.inject.internal.Scoping;
+import org.slf4j.Logger;
 
 import static com.aerofs.lib.guice.GuiceUtil.multibind;
 
 public class MultiuserModule extends AbstractModule
 {
+    private static final Logger l = Loggers.getLogger(MultiuserModule.class);
+
     @Override
     protected void configure()
     {
-        Util.l(this).info("multi user mode");
+        l.info("multi user mode");
 
         bind(Scoping.class).toInstance(Scoping.SINGLETON_INSTANCE);
 

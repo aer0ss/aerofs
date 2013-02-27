@@ -3,8 +3,9 @@ package com.aerofs.daemon.core.phy.linked;
 import java.io.IOException;
 import java.sql.SQLException;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.daemon.lib.db.trans.Trans;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import com.aerofs.daemon.core.linker.IgnoreList;
 import com.aerofs.daemon.core.phy.IPhysicalFolder;
@@ -20,7 +21,7 @@ import com.aerofs.lib.Util;
 
 public class LinkedFolder implements IPhysicalFolder
 {
-    private static Logger l = Util.l(LinkedFolder.class);
+    private static Logger l = Loggers.getLogger(LinkedFolder.class);
 
     private final SOID _soid;
     private final Path _path;

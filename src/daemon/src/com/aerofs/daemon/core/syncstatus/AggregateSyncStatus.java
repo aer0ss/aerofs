@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.syncstatus;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.DirectoryService.IDirectoryServiceListener;
 import com.aerofs.daemon.core.ds.OA;
@@ -14,7 +15,6 @@ import com.aerofs.daemon.lib.db.trans.TransLocal;
 import com.aerofs.lib.BitVector;
 import com.aerofs.lib.CounterVector;
 import com.aerofs.lib.Path;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgAggressiveChecking;
 import com.aerofs.lib.ex.ExNotDir;
 import com.aerofs.lib.ex.ExNotFound;
@@ -26,7 +26,7 @@ import com.aerofs.lib.id.SOKID;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import java.sql.SQLException;
 import java.util.List;
@@ -70,7 +70,7 @@ import java.util.Set;
  */
 public class AggregateSyncStatus implements IDirectoryServiceListener
 {
-    private static final Logger l = Util.l(AggregateSyncStatus.class);
+    private static final Logger l = Loggers.getLogger(AggregateSyncStatus.class);
 
     private final DirectoryService _ds;
     private final MapSIndex2DeviceBitMap _sidx2dbm;

@@ -6,6 +6,7 @@ package com.aerofs.daemon.core.update;
 
 import static com.aerofs.daemon.lib.db.CoreSchema.*;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.store.MapSIndex2DeviceBitMap;
 import com.aerofs.daemon.lib.db.CoreDBCW;
@@ -15,12 +16,11 @@ import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.BitVector;
 import com.aerofs.lib.CounterVector;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.db.dbcw.IDBCW;
 import com.aerofs.base.id.OID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -28,7 +28,7 @@ import java.sql.Statement;
 
 public class DPUTAddAggregateSyncColumn implements IDaemonPostUpdateTask
 {
-    private final static Logger l = Util.l(DPUTAddAggregateSyncColumn.class);
+    private final static Logger l = Loggers.getLogger(DPUTAddAggregateSyncColumn.class);
 
     private final IDBCW _dbcw;
     private final TransManager _tm;

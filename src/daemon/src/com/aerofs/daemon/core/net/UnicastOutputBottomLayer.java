@@ -1,12 +1,13 @@
 package com.aerofs.daemon.core.net;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.CoreDeviceLRU;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.lib.ex.ExAborted;
 import com.aerofs.proto.Transport.PBStream.InvalidationReason;
 import com.google.inject.Inject;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.CoreIMC;
@@ -19,13 +20,12 @@ import com.aerofs.daemon.event.net.tx.EOTxAbortStream;
 import com.aerofs.daemon.event.net.tx.EOTxEndStream;
 import com.aerofs.daemon.event.net.tx.EOUnicastMessage;
 import com.aerofs.daemon.lib.id.StreamID;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExNoResource;
 import com.aerofs.lib.ex.ExNotFound;
 
 public class UnicastOutputBottomLayer implements IUnicastOutputLayer
 {
-    private static final Logger l = Util.l(UnicastOutputBottomLayer.class);
+    private static final Logger l = Loggers.getLogger(UnicastOutputBottomLayer.class);
 
 
     public static class Factory

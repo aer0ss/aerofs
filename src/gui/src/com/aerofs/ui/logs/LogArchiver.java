@@ -4,10 +4,11 @@
 
 package com.aerofs.ui.logs;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.lib.Param;
 import com.aerofs.lib.Util;
 import com.aerofs.sv.client.SVClient;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -27,7 +28,7 @@ import static com.aerofs.ui.UIParam.DM_LOG_ARCHIVE_STARTUP_DELAY;
 
 public final class LogArchiver
 {
-    private static final Logger l = Util.l(LogArchiver.class);
+    private static final Logger l = Loggers.getLogger(LogArchiver.class);
 
     public static final FilenameFilter ROLLED_UNGZIPPED_LOG_FILTER = new FilenameFilter()
     {

@@ -4,25 +4,25 @@
 
 package com.aerofs.daemon.tng.base;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.net.tng.Preference;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.daemon.lib.id.StreamID;
 import com.aerofs.daemon.tng.IOutgoingStream;
 import com.aerofs.daemon.tng.ITransport;
-import com.aerofs.lib.Util;
 import com.aerofs.base.async.UncancellableFuture;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.SID;
 import com.aerofs.proto.Files.PBDumpStat;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.ListenableFuture;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import java.io.PrintStream;
 
 public abstract class AbstractTransport implements ITransport
 {
-    protected final Logger l = Util.l(getClass());
+    protected final Logger l = Loggers.getLogger(getClass());
 
     private final String _id;
     private final Preference _pref;

@@ -1,24 +1,24 @@
 package com.aerofs.daemon.core.object;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.*;
 import com.aerofs.daemon.core.ds.CA;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.lib.db.trans.Trans;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.Version;
 import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.id.CID;
 import com.aerofs.lib.id.SOCKID;
 import com.google.inject.Inject;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import java.io.IOException;
 import java.sql.SQLException;
 
 public class BranchDeleter
 {
-    private static final Logger l = Util.l(BranchDeleter.class);
+    private static final Logger l = Loggers.getLogger(BranchDeleter.class);
     private final NativeVersionControl _nvc;
     private final DirectoryService _ds;
 

@@ -4,7 +4,8 @@
 
 package com.aerofs.zephyr.core;
 
-import org.apache.log4j.Logger;
+import com.aerofs.base.Loggers;
+import org.slf4j.Logger;
 
 import java.io.IOException;
 import java.nio.channels.SelectableChannel;
@@ -196,5 +197,5 @@ public class ZUtil
     }
 
     /** logger */
-    private static Logger l = com.aerofs.lib.Util.l(ZUtil.class);
+    private static Logger l = Loggers.getLogger(ZUtil.class);
 }

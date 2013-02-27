@@ -24,7 +24,7 @@ class OSXUpdater extends Updater
     @Override
     public void update(String installerFilename, String newVersion, boolean hasPermissions)
     {
-        Util.l(this).info("update to version " + newVersion);
+        l.info("update to version " + newVersion);
 
         InjectableFile appRoot = _factFile.create(AppRoot.abs());
 
@@ -79,7 +79,7 @@ class OSXUpdater extends Updater
                                                 " Update Now.");
             }
         } catch (IOException e) {
-            Util.l(this).warn("update: " + e);
+            l.warn("update: " + e);
         }
     }
 }

@@ -1,15 +1,15 @@
 package com.aerofs.daemon.transport.xmpp.jingle;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExJingle;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 // see Engine.java for documentation
 
 class Tandem
 {
-    private static final Logger l = Util.l(Tandem.class);
+    private static final Logger l = Loggers.getLogger(Tandem.class);
 
     private final Channel[] _cs = new Channel[2];
     private boolean _notified = false;

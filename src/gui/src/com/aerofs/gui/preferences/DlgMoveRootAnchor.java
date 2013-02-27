@@ -4,6 +4,7 @@
 
 package com.aerofs.gui.preferences;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.gui.AeroFSDialog;
 import com.aerofs.gui.CompSpin;
 import com.aerofs.gui.GUI;
@@ -28,13 +29,16 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Shell;
 import org.jboss.netty.channel.ChannelException;
+import org.slf4j.Logger;
 
 import java.io.IOException;
 
 /**
  * openDialog() returns whether if the operation succeeds
  */
-public class DlgMoveRootAnchor extends AeroFSDialog implements ISWTWorker {
+public class DlgMoveRootAnchor extends AeroFSDialog implements ISWTWorker
+{
+    private static final Logger l = Loggers.getLogger(DlgMoveRootAnchor.class);
 
     private final String _absAnchorRoot;
     private CompSpin _compSpin;
@@ -98,7 +102,7 @@ public class DlgMoveRootAnchor extends AeroFSDialog implements ISWTWorker {
         // update root anchor in the Cfg class right away
         Cfg.init_(Cfg.absRTRoot(), false);
 
-        Util.l(this).warn("wait for heartbeat");
+        l.warn("wait for heartbeat");
 
         // wait until the daemon restarts
         while (true) {
@@ -126,7 +130,7 @@ public class DlgMoveRootAnchor extends AeroFSDialog implements ISWTWorker {
     {
         _compSpin.stop();
 
-        Util.l(this).warn(Util.e(e));
+        l.warn(Util.e(e));
 
         // Convert exception messages to readable format
         StringBuilder msg = new StringBuilder(e.getMessage() == null || e.getMessage().isEmpty() ?

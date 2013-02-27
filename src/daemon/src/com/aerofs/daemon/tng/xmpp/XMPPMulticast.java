@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.tng.xmpp;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.net.link.ILinkStateService;
 import com.aerofs.lib.event.Prio;
@@ -30,7 +31,7 @@ import com.aerofs.proto.Transport.PBTPHeader;
 import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.ListenableFuture;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 import org.jivesoftware.smack.PacketListener;
 import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.XMPPException;
@@ -73,7 +74,7 @@ import static org.jivesoftware.smack.packet.Message.Type.normal;
 final class XMPPMulticast
         implements IMaxcastService, ISignallingService, IXMPPServerConnectionListener
 {
-    private static final Logger l = Util.l(XMPPMulticast.class);
+    private static final Logger l = Loggers.getLogger(XMPPMulticast.class);
 
     private final static int MAXCAST_UNFILTERED = -1;
     private static final int HEADER_LEN = (Integer.SIZE / Byte.SIZE) * 2 + 1;

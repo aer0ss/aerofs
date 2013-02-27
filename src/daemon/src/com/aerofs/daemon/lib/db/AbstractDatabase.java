@@ -4,15 +4,16 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.lib.db.DBUtil;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import com.aerofs.lib.Util;
 import com.aerofs.lib.db.dbcw.IDBCW;
 
 public abstract class AbstractDatabase
 {
-    private static final Logger l = Util.l(AbstractDatabase.class);
+    private static final Logger l = Loggers.getLogger(AbstractDatabase.class);
     protected final IDBCW _dbcw;
 
     protected AbstractDatabase(IDBCW dbcw)

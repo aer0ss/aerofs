@@ -4,11 +4,11 @@
 
 package com.aerofs.daemon.tng.xmpp.jingle;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.daemon.lib.async.ISingleThreadedPrioritizedExecutor;
 import com.aerofs.daemon.tng.base.IUnicastConnection;
 import com.aerofs.daemon.tng.base.WireData;
-import com.aerofs.lib.Util;
 import com.aerofs.base.async.UncancellableFuture;
 import com.aerofs.lib.ex.ExJingle;
 import com.aerofs.base.id.DID;
@@ -16,13 +16,13 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import java.net.NetworkInterface;
 
 final class JingleUnicastConnection implements IUnicastConnection
 {
-    private static final Logger l = Util.l(JingleUnicastConnection.class);
+    private static final Logger l = Loggers.getLogger(JingleUnicastConnection.class);
 
     private final ISingleThreadedPrioritizedExecutor _executor;
     private final DID _remoteDID;

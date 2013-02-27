@@ -1,15 +1,15 @@
 package com.aerofs.sp.server.session;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.base.id.UserID;
-import com.aerofs.lib.Util;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import javax.servlet.http.HttpSession;
 import java.util.Set;
 
 public class SPSessionInvalidator
 {
-    private static final Logger l = Util.l(SPSessionInvalidator.class);
+    private static final Logger l = Loggers.getLogger(SPSessionInvalidator.class);
 
     private final SPActiveUserSessionTracker _userTracker;
     private final SPActiveTomcatSessionTracker _tomcatTracker;

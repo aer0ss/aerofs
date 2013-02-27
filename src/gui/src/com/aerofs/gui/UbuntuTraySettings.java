@@ -4,6 +4,7 @@
 
 package com.aerofs.gui;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.SystemUtil;
@@ -52,7 +53,7 @@ public class UbuntuTraySettings
                         " from the command line.");
             }
         } catch (IOException e) {
-            Util.l(UbuntuTraySettings.class).warn("gsettings failed: " + Util.e(e));
+            Loggers.getLogger(UbuntuTraySettings.class).warn("gsettings failed: " + Util.e(e));
         }
     }
 

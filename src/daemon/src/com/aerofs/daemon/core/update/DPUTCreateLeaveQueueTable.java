@@ -4,19 +4,19 @@
 
 package com.aerofs.daemon.core.update;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.ds.OA.Type;
 import com.aerofs.daemon.core.update.DPUTUtil.IDatabaseOperation;
 import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.daemon.lib.db.CoreSchema;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.db.DBUtil;
 import com.aerofs.lib.db.dbcw.IDBCW;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
 import com.google.common.collect.Sets;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -28,7 +28,7 @@ import static com.aerofs.daemon.lib.db.CoreSchema.*;
 
 public class DPUTCreateLeaveQueueTable implements IDaemonPostUpdateTask
 {
-    private static final Logger l = Util.l(DPUTCreateLeaveQueueTable.class);
+    private static final Logger l = Loggers.getLogger(DPUTCreateLeaveQueueTable.class);
     private final IDBCW _dbcw;
 
     public DPUTCreateLeaveQueueTable(CoreDBCW dbcw)

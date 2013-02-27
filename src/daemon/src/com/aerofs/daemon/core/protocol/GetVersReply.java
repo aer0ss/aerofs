@@ -7,6 +7,7 @@ import java.sql.SQLException;
 import java.util.ArrayDeque;
 import java.util.Queue;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.migration.ImmigrantVersionControl;
@@ -17,7 +18,7 @@ import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.ex.ExAborted;
 import com.google.inject.Inject;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import com.aerofs.daemon.core.net.DigestedMessage;
 import com.aerofs.daemon.core.net.IncomingStreams.StreamKey;
@@ -43,7 +44,7 @@ import javax.annotation.Nullable;
 
 public class GetVersReply
 {
-    private static final Logger l = Util.l(GetVersReply.class);
+    private static final Logger l = Loggers.getLogger(GetVersReply.class);
 
     private final IncomingStreams _iss;
     private final UpdateSenderFilter _pusf;

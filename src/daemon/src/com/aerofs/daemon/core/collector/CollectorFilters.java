@@ -7,13 +7,14 @@ import java.util.Set;
 import java.util.SortedMap;
 import java.util.Map.Entry;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import com.aerofs.daemon.lib.db.ICollectorFilterDatabase;
 import com.aerofs.daemon.lib.db.AbstractTransListener;
@@ -27,7 +28,7 @@ import javax.annotation.Nullable;
 
 public class CollectorFilters
 {
-    private static final Logger l = Util.l(CollectorFilters.class);
+    private static final Logger l = Loggers.getLogger(CollectorFilters.class);
 
     private final ICollectorFilterDatabase _cfdb;
     private final TransManager _tm;

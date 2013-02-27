@@ -3,9 +3,10 @@ package com.aerofs.daemon.core.phy.block.s3;
 import java.io.IOException;
 import java.util.concurrent.Callable;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.ThreadUtil;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
@@ -14,7 +15,7 @@ import com.aerofs.lib.Util;
 
 public class AWSRetry
 {
-    private static final Logger l = Util.l(AWSRetry.class);
+    private static final Logger l = Loggers.getLogger(AWSRetry.class);
 
     private static final int EXP_BACKOFF_COEFFICIENT = 2;
     private static final int MIN_WAIT_TIME = 100;
@@ -50,16 +51,16 @@ public class AWSRetry
                     l.warn("retry in " + delay + ": " + e);
                     ThreadUtil.sleepUninterruptable(delay);
                 } catch (AmazonServiceException e2) {
-                    l.warn(e2);
+                    l.warn(Util.e(e2));
                     throw new IOException(e2);
                 }
             } catch (AmazonClientException e) {
                 SystemUtil.fatal(e);
             } catch (IOException e) {
-                l.warn(e);
+                l.warn(Util.e(e));
                 throw e;
             } catch (Exception e) {
-                l.warn(e);
+                l.warn(Util.e(e));
                 throw new IOException(e);
             }
 

@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.tng.base.streams;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.daemon.lib.async.ISingleThreadedPrioritizedExecutor;
 import com.aerofs.daemon.lib.id.StreamID;
@@ -27,7 +28,7 @@ import com.aerofs.proto.Transport.PBStream;
 import com.aerofs.proto.Transport.PBStream.InvalidationReason;
 import com.aerofs.proto.Transport.PBTPHeader;
 import com.google.common.util.concurrent.FutureCallback;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import static com.aerofs.daemon.tng.base.Handlers.sendOutgoingMessage_;
 import static com.aerofs.base.async.FutureUtil.addCallback;
@@ -35,7 +36,7 @@ import static com.aerofs.proto.Transport.PBStream.InvalidationReason.STREAM_NOT_
 
 public final class StreamHandler extends SimplePipelineEventHandler
 {
-    private static final Logger l = com.aerofs.lib.Util.l(StreamHandler.class);
+    private static final Logger l = Loggers.getLogger(StreamHandler.class);
 
     private final IUnicastListener _unicastListener;
     private final ISingleThreadedPrioritizedExecutor _executor;

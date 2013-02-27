@@ -3,6 +3,7 @@ package com.aerofs.daemon.core.protocol;
 import java.sql.SQLException;
 import java.util.Map;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.CoreQueue;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.ds.DirectoryService;
@@ -17,7 +18,7 @@ import com.aerofs.lib.ex.ExNoAvailDevice;
 import com.aerofs.lib.id.SOCID;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.TC;
@@ -36,7 +37,7 @@ import javax.annotation.Nullable;
 
 public class Downloads
 {
-    private static final Logger l = Util.l(Downloads.class);
+    private static final Logger l = Loggers.getLogger(Downloads.class);
 
     /**
      * Collector makes a distinction between transient and permanent errors to avoid repeatedly
@@ -245,7 +246,7 @@ public class Downloads
                 return null;
             }
 
-            l.debug(socid);
+            l.debug("socid:{}", socid);
 
             final Download dl = _factDownload.create_(socid, to, listener, tk2);
 

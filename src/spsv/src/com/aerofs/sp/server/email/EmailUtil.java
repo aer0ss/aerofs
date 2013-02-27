@@ -4,15 +4,15 @@
 
 package com.aerofs.sp.server.email;
 
-import com.aerofs.lib.Util;
+import com.aerofs.base.Loggers;
 import com.aerofs.sv.client.SVClient;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import static com.aerofs.sp.server.lib.SPParam.*;
 
 public class EmailUtil
 {
-    private static final Logger l = Util.l(EmailUtil.class);
+    private static final Logger l = Loggers.getLogger(EmailUtil.class);
 
     public static void emailSPNotification(final String subject, final String body)
     {

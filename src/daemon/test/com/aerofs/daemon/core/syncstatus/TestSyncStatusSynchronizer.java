@@ -138,7 +138,7 @@ public class TestSyncStatusSynchronizer extends AbstractTest
         public boolean matches(Object argument)
         {
             List<T> c = (List<T>)argument;
-            Util.l(this).info("setEq: " + c + " [" + _expected + "]");
+            l.info("setEq: " + c + " [" + _expected + "]");
             return _expected.equals(Sets.newHashSet(c));
         }
     }

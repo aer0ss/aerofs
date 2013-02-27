@@ -1,5 +1,6 @@
 package com.aerofs.daemon.transport.xmpp;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.JabberID;
@@ -12,7 +13,7 @@ import com.aerofs.lib.FrequentDefectSender;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExNoResource;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 import org.jivesoftware.smack.PacketListener;
 import org.jivesoftware.smack.SmackConfiguration;
 import org.jivesoftware.smack.XMPPConnection;
@@ -33,7 +34,7 @@ import java.util.TreeSet;
 
 public class Multicast implements IMaxcast
 {
-    private static final Logger l = Util.l(Multicast.class);
+    private static final Logger l = Loggers.getLogger(Multicast.class);
 
     private final XMPP x;
 

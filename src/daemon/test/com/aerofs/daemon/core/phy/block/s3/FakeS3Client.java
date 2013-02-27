@@ -21,6 +21,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import com.aerofs.base.Loggers;
 import com.amazonaws.AmazonWebServiceRequest;
 import com.amazonaws.HttpMethod;
 import com.amazonaws.services.s3.S3ResponseMetadata;
@@ -60,7 +61,7 @@ import com.amazonaws.services.s3.model.StorageClass;
 import com.amazonaws.services.s3.model.UploadPartRequest;
 import com.amazonaws.services.s3.model.UploadPartResult;
 import com.amazonaws.services.s3.model.VersionListing;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
@@ -77,7 +78,6 @@ import com.google.common.io.ByteStreams;
 import com.aerofs.base.Base64;
 import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.LengthTrackingOutputStream;
-import com.aerofs.lib.Util;
 
 /**
  * A fake implementation of AbstractS3Client that stores objects in a directory
@@ -89,7 +89,7 @@ import com.aerofs.lib.Util;
  */
 public class FakeS3Client implements AmazonS3
 {
-    private static final Logger l = Util.l(FakeS3Client.class);
+    private static final Logger l = Loggers.getLogger(FakeS3Client.class);
 
     private final File _rootDir;
     private final File _bucketsDir;

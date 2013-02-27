@@ -4,14 +4,14 @@
 
 package com.aerofs.controller;
 
-import com.aerofs.lib.Util;
+import com.aerofs.base.Loggers;
 import com.aerofs.sp.client.IBadCredentialListener;
 import com.aerofs.proto.ControllerNotifications.Type;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 public class ControllerBadCredentialListener implements IBadCredentialListener
 {
-    private static final Logger l = Util.l(IBadCredentialListener.class);
+    private static final Logger l = Loggers.getLogger(IBadCredentialListener.class);
 
     @Override
     public void exceptionReceived()

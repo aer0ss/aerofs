@@ -3,17 +3,17 @@ package com.aerofs.daemon.core;
 import java.sql.SQLException;
 import java.util.Set;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.store.IStoreDeletionOperator;
 import com.aerofs.daemon.core.store.StoreDeletionOperators;
 import com.aerofs.daemon.lib.db.trans.Trans;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import com.aerofs.daemon.lib.db.ver.IVersionDatabase;
 import com.aerofs.daemon.lib.db.ver.AbstractTickRow;
 import com.aerofs.daemon.lib.db.ver.TransLocalVersionAssistant;
 import com.aerofs.lib.Tick;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.Version;
 import com.aerofs.lib.cfg.CfgLocalDID;
 import com.aerofs.lib.db.IDBIterator;
@@ -30,7 +30,7 @@ import javax.annotation.Nonnull;
 public abstract class AbstractVersionControl<E extends AbstractTickRow>
         implements IStoreDeletionOperator
 {
-    private static final Logger l = Util.l(AbstractVersionControl.class);
+    private static final Logger l = Loggers.getLogger(AbstractVersionControl.class);
 
     private final IVersionDatabase<E> _vdb;
     protected final CfgLocalDID _cfgLocalDID;

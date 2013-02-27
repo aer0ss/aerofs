@@ -1,6 +1,6 @@
 package com.aerofs.sp.server;
 
-import com.aerofs.lib.Util;
+import com.aerofs.base.Loggers;
 import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.base.id.UserID;
@@ -10,7 +10,7 @@ import com.aerofs.sp.server.lib.SPDatabase;
 import com.aerofs.sp.server.lib.SPParam;
 import com.aerofs.sp.server.lib.user.User;
 import com.google.protobuf.ByteString;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import javax.mail.MessagingException;
 import java.io.IOException;
@@ -25,7 +25,7 @@ public class PasswordManagement
     private final PasswordResetEmailer _passwordResetEmailer;
     private final User.Factory _factUser;
 
-    private static final Logger l = Util.l(PasswordManagement.class);
+    private static final Logger l = Loggers.getLogger(PasswordManagement.class);
 
     public PasswordManagement(SPDatabase db, User.Factory factUser,
             PasswordResetEmailer passwordResetEmailer)

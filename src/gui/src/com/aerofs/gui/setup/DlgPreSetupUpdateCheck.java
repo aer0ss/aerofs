@@ -1,5 +1,6 @@
 package com.aerofs.gui.setup;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.labeling.L;
 import com.aerofs.proto.ControllerNotifications.Type;
 import com.aerofs.proto.ControllerNotifications.UpdateNotification;
@@ -25,14 +26,16 @@ import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIParam;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.lib.S;
-import com.aerofs.lib.Util;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.UI;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.custom.StackLayout;
+import org.slf4j.Logger;
 
 public class DlgPreSetupUpdateCheck extends Shell
 {
+    private static final Logger l = Loggers.getLogger(DlgPreSetupUpdateCheck.class);
+
     private final ProgressBar _prog;
     private final Composite _composite;
     private final Label _lblDownloading;
@@ -100,7 +103,7 @@ public class DlgPreSetupUpdateCheck extends Shell
 
     private void cancel()
     {
-        Util.l(DlgPreSetupUpdateCheck.this).warn("user canceled");
+        l.warn("user canceled");
         System.exit(1);
     }
 

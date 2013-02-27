@@ -1,5 +1,6 @@
 package com.aerofs.daemon.transport.lib;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
 import com.aerofs.lib.event.IEvent;
@@ -36,7 +37,7 @@ import com.aerofs.proto.Transport.PBStream;
 import com.aerofs.proto.Transport.PBStream.Type;
 import com.aerofs.proto.Transport.PBTPHeader;
 import com.aerofs.proto.Transport.PBTransportDiagnosis;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -76,7 +77,7 @@ public class TPUtil
         }
     }
 
-    private static final Logger l = Util.l(TPUtil.class);
+    private static final Logger l = Loggers.getLogger(TPUtil.class);
 
     /* unicast header
      *

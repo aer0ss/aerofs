@@ -4,21 +4,21 @@
 
 package com.aerofs.daemon.core.phy.block;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.phy.IPhysicalFolder;
 import com.aerofs.daemon.core.phy.IPhysicalObject;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.Path;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.id.SOID;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import java.io.IOException;
 import java.sql.SQLException;
 
 class BlockFolder implements IPhysicalFolder
 {
-    private static final Logger l = Util.l(BlockFolder.class);
+    private static final Logger l = Loggers.getLogger(BlockFolder.class);
 
     final SOID _soid;
     final Path _path;

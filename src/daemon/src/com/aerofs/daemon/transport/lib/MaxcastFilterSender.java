@@ -1,11 +1,12 @@
 package com.aerofs.daemon.transport.lib;
 
-import org.apache.log4j.Logger;
+import com.aerofs.base.Loggers;
+import org.slf4j.Logger;
 
 import com.aerofs.lib.Util;
 
 public class MaxcastFilterSender {
-    private static final Logger l = Util.l(MaxcastFilterSender.class);
+    private static final Logger l = Loggers.getLogger(MaxcastFilterSender.class);
 
     private int _lastMCasttID;
 

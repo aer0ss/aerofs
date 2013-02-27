@@ -1,13 +1,16 @@
 package com.aerofs.zephyr.server;
 
-import com.aerofs.lib.Util;
+import com.aerofs.base.Loggers;
 import com.aerofs.zephyr.core.Dispatcher;
 import org.apache.log4j.xml.DOMConfigurator;
+import org.slf4j.Logger;
 
 import java.io.IOException;
 
 public class Zephyr
 {
+    private static final Logger l = Loggers.getLogger(Zephyr.class);
+
     public static void main(String args[])
             throws IOException
     {
@@ -33,14 +36,14 @@ public class Zephyr
             Dispatcher d = new Dispatcher();
             d.init_();
 
-            Util.l().info("zephyr: " + host + ":" + port);
+            l.info("zephyr: " + host + ":" + port);
             ZephyrServer z = new ZephyrServer(host, port, d);
             z.init();
 
             d.run(); // blocking run
         } catch (IOException e) {
             e.printStackTrace();
-            Util.l().error("zephyr run fail on" + host + ":" + port, e);
+            l.error("zephyr run fail on" + host + ":" + port, e);
         }
     }
 }

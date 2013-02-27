@@ -1,5 +1,6 @@
 package com.aerofs.controller;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.lib.IProgram;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
@@ -10,7 +11,7 @@ import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.protobuf.GeneratedMessageLite;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 import java.util.concurrent.BlockingQueue;
@@ -18,7 +19,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 public class ControllerProgram implements IProgram, IViewNotifier
 {
-    private static final Logger l = Util.l(ControllerProgram.class);
+    private static final Logger l = Loggers.getLogger(ControllerProgram.class);
 
     private static final BlockingQueue<RPCArgs> _queue = new LinkedBlockingQueue<RPCArgs>();
     private ControllerServiceReactor _reactor;

@@ -1,5 +1,6 @@
 package com.aerofs.sp.server.lib.organization;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.sp.server.lib.OrganizationInvitationDatabase;
 import com.aerofs.sp.server.lib.id.OrganizationID;
 import com.aerofs.sp.server.lib.id.StripeCustomerID;
@@ -18,7 +19,7 @@ import com.aerofs.sp.server.lib.user.User;
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableList.Builder;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -30,7 +31,7 @@ import java.util.List;
 
 public class Organization
 {
-    private final static Logger l = Util.l(Organization.class);
+    private final static Logger l = Loggers.getLogger(Organization.class);
 
     public static class Factory
     {

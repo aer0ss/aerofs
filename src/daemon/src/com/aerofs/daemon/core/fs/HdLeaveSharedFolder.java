@@ -5,6 +5,7 @@
 package com.aerofs.daemon.core.fs;
 
 import com.aerofs.base.BaseParam.SP;
+import com.aerofs.base.Loggers;
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.acl.ACLChecker;
 import com.aerofs.daemon.core.acl.ACLSynchronizer;
@@ -17,7 +18,6 @@ import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.event.admin.EILeaveSharedFolder;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.lib.event.Prio;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.acl.Role;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExNotShared;
@@ -25,11 +25,11 @@ import com.aerofs.lib.id.SOID;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.sp.client.SPClientFactory;
 import com.google.inject.Inject;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 public class HdLeaveSharedFolder extends AbstractHdIMC<EILeaveSharedFolder>
 {
-    private static final Logger l = Util.l(HdLeaveSharedFolder.class);
+    private static final Logger l = Loggers.getLogger(HdLeaveSharedFolder.class);
 
     private final TC _tc;
     private final DirectoryService _ds;

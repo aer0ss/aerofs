@@ -1,6 +1,7 @@
 package com.aerofs.daemon.transport.xmpp.jingle;
 
 import com.aerofs.base.BaseParam.Xmpp;
+import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.lib.IDumpStatMisc;
@@ -22,7 +23,7 @@ import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExJingle;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 import java.io.PrintStream;
@@ -332,7 +333,7 @@ public class SignalThread extends java.lang.Thread implements IDumpStatMisc
 
                 if (!_wake) {
                     // I'm paranoid
-                    l.fatal("call() too long. failed m_id:" + postMessageId + " t:" + task);
+                    l.error("call() too long. failed m_id:" + postMessageId + " t:" + task);
                     Util.logAllThreadStackTraces();
                     ExitCode.JINGLE_CALL_TOO_LONG.exit();
                 }
@@ -396,8 +397,8 @@ public class SignalThread extends java.lang.Thread implements IDumpStatMisc
                 l.error("st: t:" + task + " run fin with unhandled err: "+ Util.e(e));
                 task.error(e);
             } catch (Throwable t) {
-                l.fatal("jingle task crash and burn");
-                l.fatal(Util.e(t));
+                l.error("jingle task crash and burn");
+                l.error(Util.e(t));
                 ExitCode.JINGLE_TASK_FATAL_ERROR.exit();
             }
 
@@ -505,5 +506,5 @@ public class SignalThread extends java.lang.Thread implements IDumpStatMisc
     private final Jid _jidSelf = Jingle.did2jid(Cfg.did());
 
     private static final byte[] ljlogpathutf8;
-    private static final Logger l = Util.l(SignalThread.class);
+    private static final Logger l = Loggers.getLogger(SignalThread.class);
 }

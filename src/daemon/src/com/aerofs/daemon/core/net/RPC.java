@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.net;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.device.DevicePresence;
 import com.aerofs.daemon.core.net.link.ILinkStateListener;
 import com.aerofs.daemon.core.net.link.LinkStateService;
@@ -11,7 +12,6 @@ import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.event.net.Endpoint;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExAborted;
 import com.aerofs.lib.ex.ExNoResource;
@@ -23,7 +23,7 @@ import com.aerofs.proto.Core.PBCore;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 import java.net.NetworkInterface;
@@ -37,7 +37,7 @@ import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor
  */
 public class RPC
 {
-    private static final Logger l = Util.l(RPC.class);
+    private static final Logger l = Loggers.getLogger(RPC.class);
 
     private static class ExLinkDown extends Exception
     {

@@ -5,6 +5,7 @@
 package com.aerofs.daemon.core.net;
 
 import com.aerofs.base.BaseParam;
+import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.CoreQueue;
 import com.aerofs.daemon.core.net.link.ILinkStateListener;
@@ -26,7 +27,6 @@ import com.aerofs.daemon.transport.xmpp.Zephyr;
 import com.aerofs.lib.event.IEvent;
 import com.aerofs.lib.IDumpStatMisc;
 import com.aerofs.lib.IDumpStat;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgLocalDID;
 import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
@@ -36,7 +36,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedSet;
 import com.google.inject.Inject;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import java.io.PrintStream;
 import java.net.NetworkInterface;
@@ -52,7 +52,7 @@ import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor
  */
 public class Transports implements IDumpStat, IDumpStatMisc, IStartable
 {
-    private static final Logger l = Util.l(Transports.class);
+    private static final Logger l = Loggers.getLogger(Transports.class);
 
     public static interface ITransportImplementation
     {

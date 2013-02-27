@@ -4,11 +4,11 @@ import java.io.PrintStream;
 import java.util.LinkedList;
 import java.util.Queue;
 
-import org.apache.log4j.Logger;
+import com.aerofs.base.Loggers;
+import org.slf4j.Logger;
 
 import com.aerofs.base.C;
 import com.aerofs.lib.OutArg;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.cfg.Cfg;
 
@@ -19,7 +19,7 @@ import com.aerofs.lib.cfg.Cfg;
  * virtual function calls to each and every enqueue/dequeue operation.
  */
 public class ProfilerPrioQueue<T> extends PrioQueue<T> {
-    private static final Logger l = Util.l(ProfilerPrioQueue.class);
+    private static final Logger l = Loggers.getLogger(ProfilerPrioQueue.class);
 
     private static final long STAT_INTERVAL = 5 * C.SEC;
 

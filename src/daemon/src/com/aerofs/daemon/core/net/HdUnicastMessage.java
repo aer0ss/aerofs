@@ -1,22 +1,22 @@
 package com.aerofs.daemon.core.net;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.UnicastInputOutputStack;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.event.IEventHandler;
 import com.aerofs.daemon.event.net.rx.EIUnicastMessage;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.FrequentDefectSender;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.id.SIndex;
 import com.google.inject.Inject;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 /**
  * Handler for the {@link EIUnicastMessage} event
  */
 public class HdUnicastMessage implements IEventHandler<EIUnicastMessage>
 {
-    private static final Logger l = Util.l(HdUnicastMessage.class);
+    private static final Logger l = Loggers.getLogger(HdUnicastMessage.class);
 
     private final FrequentDefectSender _fds = new FrequentDefectSender();
     private final UnicastInputOutputStack _stack;

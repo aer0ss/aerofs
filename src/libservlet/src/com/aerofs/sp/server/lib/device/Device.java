@@ -4,6 +4,7 @@
 
 package com.aerofs.sp.server.lib.device;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.Util;
@@ -19,7 +20,7 @@ import com.aerofs.sp.server.lib.device.DeviceDatabase.ExDeviceNameAlreadyExist;
 import com.aerofs.sp.server.lib.user.User;
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 import sun.security.pkcs.PKCS10;
 
 import javax.annotation.Nonnull;
@@ -30,7 +31,7 @@ import java.sql.SQLException;
 
 public class Device
 {
-    private static final Logger l = Util.l(Device.class);
+    private static final Logger l = Loggers.getLogger(Device.class);
 
     public static class Factory
     {

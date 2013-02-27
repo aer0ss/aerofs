@@ -1,5 +1,6 @@
 package com.aerofs.gui;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.gui.AeroFSMessageBox.ButtonType;
 import com.aerofs.gui.AeroFSMessageBox.IconType;
 import com.aerofs.gui.multiuser.MultiuserDlgSetup;
@@ -22,7 +23,7 @@ import com.aerofs.sv.client.SVClient;
 import com.aerofs.ui.IUI;
 import com.aerofs.ui.UI;
 import com.aerofs.ui.UIUtil;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.swt.events.DisposeEvent;
 import org.eclipse.swt.events.DisposeListener;
@@ -36,7 +37,7 @@ import java.util.HashSet;
 
 public class GUI implements IUI
 {
-    private static final Logger l = Util.l(GUI.class);
+    private static final Logger l = Loggers.getLogger(GUI.class);
 
     private final Display _disp;
     private final Shell _sh;

@@ -2,6 +2,7 @@ package com.aerofs.daemon.core.protocol;
 
 import java.sql.SQLException;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.*;
 import com.aerofs.daemon.core.acl.LocalACL;
@@ -19,7 +20,7 @@ import com.aerofs.lib.ex.collector.ExNoComponentWithSpecifiedVersion;
 import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.lib.id.SOCID;
 import com.google.inject.Inject;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.net.DigestedMessage;
@@ -47,7 +48,7 @@ import com.aerofs.proto.Core.PBGetComCall.Builder;
 
 public class GetComponentCall
 {
-    private static final Logger l = Util.l(GetComponentCall.class);
+    private static final Logger l = Loggers.getLogger(GetComponentCall.class);
 
     private IEmigrantTargetSIDLister _emc;
     private PrefixVersionControl _pvc;

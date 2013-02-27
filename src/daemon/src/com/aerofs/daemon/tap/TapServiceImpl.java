@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.tap;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.net.PeerStreamMap;
 import com.aerofs.daemon.core.net.SVReporter;
@@ -41,13 +42,13 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import java.io.ByteArrayInputStream;
 
 public class TapServiceImpl implements ITapService
 {
-    private static final Logger l = Util.l(TapServiceImpl.class);
+    private static final Logger l = Loggers.getLogger(TapServiceImpl.class);
 
     private ITransport _transport;
     private final ISingleThreadedPrioritizedExecutor _executor;

@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.net.throttling;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.net.IIncomingStreamChunkListener;
 import com.aerofs.daemon.core.net.IncomingStreams;
@@ -15,7 +16,7 @@ import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.ex.ExNotFound;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import java.util.Map;
 
@@ -35,7 +36,7 @@ import java.util.Map;
  */
 public class IncomingStreamsThrottler implements IIncomingStreamChunkListener
 {
-    private static final Logger l = Util.l(IncomingStreamsThrottler.class);
+    private static final Logger l = Loggers.getLogger(IncomingStreamsThrottler.class);
 
     /**
      * Keeps track of chunk counts for the whole device and for individual
@@ -142,7 +143,7 @@ public class IncomingStreamsThrottler implements IIncomingStreamChunkListener
                 try {
                     _limitMonitor.pauseDevice_(did);
                 } catch (ExNotFound e) {
-                    l.error(e);
+                    l.error(Util.e(e));
                 }
             }
         }
@@ -186,7 +187,7 @@ public class IncomingStreamsThrottler implements IIncomingStreamChunkListener
                 try {
                     _limitMonitor.resumeDevice_(did);
                 } catch (ExNotFound e) {
-                    l.error(e);
+                    l.error(Util.e(e));
                 }
             }
         }

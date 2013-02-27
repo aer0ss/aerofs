@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.phy.block.s3;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.phy.block.IBlockStorageBackend;
 import com.aerofs.base.Base64;
 import com.aerofs.daemon.core.tc.TC.TCB;
@@ -22,7 +23,7 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.S3Object;
 import com.google.inject.Inject;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import javax.crypto.SecretKey;
 import java.io.BufferedOutputStream;
@@ -43,7 +44,7 @@ import java.util.concurrent.Callable;
  */
 public class S3Backend implements IBlockStorageBackend
 {
-    private static final Logger l = Util.l(S3Backend.class);
+    private static final Logger l = Loggers.getLogger(S3Backend.class);
 
     private static final String BLOCK_SUFFIX = ".chunk.gz.aes";
 
@@ -166,10 +167,10 @@ public class S3Backend implements IBlockStorageBackend
 
                 try {
                     ObjectMetadata metadata = _s3Client.getObjectMetadata(bucketName, s3Key);
-                    l.debug(metadata);
-                    if (true) return null;
+                    l.debug("md:{}", metadata);
+                    return null;
                 } catch (AmazonServiceException e) {
-                    l.debug(e);
+                    l.debug(Util.e(e));
                 }
 
                 EncoderData d = (EncoderData)encoderData;

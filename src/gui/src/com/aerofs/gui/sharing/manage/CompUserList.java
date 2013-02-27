@@ -1,6 +1,8 @@
 package com.aerofs.gui.sharing.manage;
 
 import java.util.ArrayList;
+
+import com.aerofs.base.Loggers;
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.SimpleContentProvider;
 import com.aerofs.lib.Path;
@@ -39,9 +41,12 @@ import org.eclipse.swt.events.ControlEvent;
 import org.eclipse.swt.events.MouseAdapter;
 import org.eclipse.swt.events.MouseEvent;
 import org.eclipse.swt.graphics.Point;
+import org.slf4j.Logger;
 
 public class CompUserList extends Composite
 {
+    private static final Logger l = Loggers.getLogger(CompUserList.class);
+
     public static interface ILoadListener
     {
         // this method is called within the GUI thread
@@ -212,12 +217,12 @@ public class CompUserList extends Composite
             }
             elems = srps.toArray();
         } catch (ExNoPerm e) {
-            Util.l(this).warn("no perm to list acl");
+            l.warn("no perm to list acl");
             elems = new Object[] {
                 new ExUIMessage("You are no longer a member of this shared folder.")
             };
         } catch (Exception e) {
-            Util.l(this).warn("list acl: " + Util.e(e));
+            l.warn("list acl: " + Util.e(e));
             elems = new Object[] { e };
         }
 

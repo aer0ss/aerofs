@@ -4,13 +4,14 @@
 
 package com.aerofs.lib;
 
-import org.apache.log4j.Logger;
+import com.aerofs.base.Loggers;
+import org.slf4j.Logger;
 
 import com.aerofs.sv.client.SVClient;
 
 public class FrequentDefectSender
 {
-    private static final Logger l = Util.l(FrequentDefectSender.class);
+    private static final Logger l = Loggers.getLogger(FrequentDefectSender.class);
 
     private long _lastSend;
     private int _count;

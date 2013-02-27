@@ -1,5 +1,6 @@
 package com.aerofs.daemon.core;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.net.To;
 import com.aerofs.daemon.core.protocol.GetVersCall;
@@ -16,7 +17,7 @@ import com.aerofs.lib.id.SIndex;
 import com.google.inject.Inject;
 import com.yammer.metrics.core.Meter;
 import com.yammer.metrics.core.MetricName;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.yammer.metrics.Metrics.newMeter;
@@ -24,7 +25,7 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 
 public class EIAntiEntropy extends AbstractEBSelfHandling
 {
-    private static final Logger l = Util.l(EIAntiEntropy.class);
+    private static final Logger l = Loggers.getLogger(EIAntiEntropy.class);
 
     private static final Meter _hkFullMeter =
             newMeter(new MetricName("core", "version", "ae", "hkfull"), "ae requests", MINUTES);

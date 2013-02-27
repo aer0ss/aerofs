@@ -4,6 +4,7 @@
 
 package com.aerofs.shell;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.cli.CLI;
 import com.aerofs.base.C;
 import com.aerofs.labeling.L;
@@ -20,14 +21,14 @@ import com.aerofs.ui.UI;
 import com.aerofs.ui.UIUtil;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 public class CmdDefect implements IShellCommand<ShProgram>
 {
     public static void sendDefect(RitualBlockingClient ritual, String message,
             boolean dumpFileNames)
     {
-        Logger l = Util.l(CmdDefect.class);
+        Logger l = Loggers.getLogger(CmdDefect.class);
 
         boolean cpuIssue = message.toLowerCase().contains("cpu");
 

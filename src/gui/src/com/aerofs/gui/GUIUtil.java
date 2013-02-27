@@ -2,6 +2,7 @@ package com.aerofs.gui;
 
 import javax.annotation.Nullable;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.gui.diagnosis.DlgDiagnosis;
 import com.aerofs.gui.history.DlgHistory;
 import com.aerofs.gui.sharing.DlgCreateSharedFolder;
@@ -16,7 +17,7 @@ import com.aerofs.lib.ritual.RitualClientFactory;
 import com.aerofs.proto.Objects.PBObjectAttributes;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.UI;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.VerifyEvent;
 import org.eclipse.swt.graphics.Drawable;
@@ -47,7 +48,7 @@ import java.io.IOException;
 
 public class GUIUtil
 {
-    public static final Logger l = Util.l(GUIUtil.class);
+    public static final Logger l = Loggers.getLogger(GUIUtil.class);
 
     public static String getNewText(Text txt, VerifyEvent ev)
     {

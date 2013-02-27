@@ -1,21 +1,21 @@
 package com.aerofs.daemon.core.net;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.UnicastInputOutputStack;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.event.IEventHandler;
 import com.aerofs.daemon.event.net.rx.EIMaxcastMessage;
 import com.aerofs.lib.event.Prio;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.id.SIndex;
 import com.google.inject.Inject;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 /**
  * Handler for a {@link EIMaxcastMessage}
  */
 public class HdMaxcastMessage implements IEventHandler<EIMaxcastMessage>
 {
-    private static final Logger l = Util.l(HdMaxcastMessage.class);
+    private static final Logger l = Loggers.getLogger(HdMaxcastMessage.class);
 
     private final UnicastInputOutputStack _stack;
     private final IMapSID2SIndex _sid2sidx;

@@ -4,6 +4,7 @@
 
 package com.aerofs.ui;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.lib.AppRoot;
 import com.aerofs.base.C;
 import com.aerofs.lib.FrequentDefectSender;
@@ -29,7 +30,7 @@ import com.aerofs.lib.ritual.RitualClient;
 import com.aerofs.lib.ritual.RitualClientFactory;
 import com.aerofs.swig.driver.DriverConstants;
 import com.google.common.util.concurrent.Uninterruptibles;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 import static com.aerofs.lib.SystemUtil.ExitCode.*;
 
 import java.io.IOException;
@@ -40,7 +41,7 @@ import java.util.concurrent.TimeUnit;
 
 class DefaultDaemonMonitor implements IDaemonMonitor
 {
-    private static final Logger l = Util.l(DefaultDaemonMonitor.class);
+    private static final Logger l = Loggers.getLogger(DefaultDaemonMonitor.class);
 
     private volatile boolean _stopping;
     private boolean _firstStart = true;
@@ -247,7 +248,7 @@ class DefaultDaemonMonitor implements IDaemonMonitor
             try {
                 watchDaemonProcess(proc);
             } catch (Exception e) {
-                l.info(e);
+                l.info(Util.e(e));
             }
 
             // Since we returned, the daemon has died. If this was because we stopped the daemon,

@@ -1,5 +1,6 @@
 package com.aerofs.daemon.core.linker;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.linker.event.EIMightDeleteNotification;
 import com.aerofs.daemon.core.linker.scanner.ScanSessionQueue;
 import com.aerofs.daemon.event.IEventHandler;
@@ -7,13 +8,13 @@ import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.cfg.CfgAbsRootAnchor;
 import com.aerofs.lib.Util;
 import com.google.inject.Inject;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import java.util.Collections;
 
 class HdMightDeleteNotification implements IEventHandler<EIMightDeleteNotification>
 {
-    private static final Logger l = Util.l(HdMightCreateNotification.class);
+    private static final Logger l = Loggers.getLogger(HdMightCreateNotification.class);
     private final MightDelete _md;
     private final ScanSessionQueue _ssq;
     private final IDeletionBuffer _globalBuffer;

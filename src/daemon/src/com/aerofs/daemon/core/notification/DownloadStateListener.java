@@ -2,6 +2,7 @@ package com.aerofs.daemon.core.notification;
 
 import java.sql.SQLException;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.protocol.IDownloadStateListener;
 import com.aerofs.daemon.core.tc.TC;
@@ -48,7 +49,7 @@ class DownloadStateListener implements IDownloadStateListener
         try {
             path = ds.resolveNullable_(socid.soid());
         } catch (SQLException e) {
-            Util.l(DownloadStateListener.class).warn(Util.e(e));
+            Loggers.getLogger(DownloadStateListener.class).warn(Util.e(e));
             path = null;
         }
 

@@ -24,16 +24,16 @@
 
 package com.aerofs.daemon.tng;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
-import com.aerofs.lib.Util;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import java.util.HashMap;
 import java.util.Map;
 
 public class ReceivedMaxcastFilter
 {
-    private static final Logger l = Util.l(ReceivedMaxcastFilter.class);
+    private static final Logger l = Loggers.getLogger(ReceivedMaxcastFilter.class);
     // Map of DID to maxcast IDs
     private final Map<DID, Integer> _mmcids;
 
