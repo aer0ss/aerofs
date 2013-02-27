@@ -1,10 +1,10 @@
 package com.aerofs.daemon.core.net.throttling;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.net.PeerContext;
 import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.lib.id.StreamID;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.proto.Limit;
 import org.slf4j.Logger;
@@ -38,7 +38,7 @@ class Outgoing
         return "";
     }
 
-    private static Logger l = Util.l(Outgoing.class);
+    private static Logger l = Loggers.getLogger(Outgoing.class);
 
     private final Type type_;
 

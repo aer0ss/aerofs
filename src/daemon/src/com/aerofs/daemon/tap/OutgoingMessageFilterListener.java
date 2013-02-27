@@ -4,11 +4,11 @@
 
 package com.aerofs.daemon.tap;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.daemon.lib.async.ISingleThreadedPrioritizedExecutor;
 import com.aerofs.daemon.tap.filter.IMessageFilterListener;
 import com.aerofs.daemon.tap.filter.MessageFilterRequest;
 import com.aerofs.daemon.tng.base.OutgoingAeroFSPacket;
-import com.aerofs.lib.Util;
 import com.aerofs.proto.Transport.PBTPHeader;
 import org.slf4j.Logger;
 
@@ -18,7 +18,7 @@ import java.util.Set;
 
 public class OutgoingMessageFilterListener implements IMessageFilterListener
 {
-    private static final Logger l = Util.l(OutgoingMessageFilterListener.class);
+    private static final Logger l = Loggers.getLogger(OutgoingMessageFilterListener.class);
 
     private final ISingleThreadedPrioritizedExecutor _executor;
     private final Set<PBTPHeader.Type> _denySet = new HashSet<PBTPHeader.Type>();

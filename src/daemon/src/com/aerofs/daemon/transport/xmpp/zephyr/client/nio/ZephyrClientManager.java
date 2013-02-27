@@ -5,6 +5,7 @@
 
 package com.aerofs.daemon.transport.xmpp.zephyr.client.nio;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.event.lib.imc.IResultWaiter;
 import com.aerofs.daemon.transport.lib.INetworkStats;
@@ -1062,5 +1063,5 @@ public class ZephyrClientManager implements ISignalledPipe, IIOEventHandler
     private volatile boolean _started;
 
     /** logger */
-    private static Logger l = com.aerofs.lib.Util.l(ZephyrClientManager.class);
+    private static Logger l = Loggers.getLogger(ZephyrClientManager.class);
 }

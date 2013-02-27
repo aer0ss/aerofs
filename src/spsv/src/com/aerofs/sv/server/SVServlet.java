@@ -1,6 +1,6 @@
 package com.aerofs.sv.server;
 
-import com.aerofs.lib.Util;
+import com.aerofs.base.Loggers;
 import com.aerofs.proto.Sv.PBSVCall;
 import com.aerofs.proto.Sv.PBSVReply;
 import com.aerofs.servlets.lib.db.sql.PooledSQLConnectionProvider;
@@ -23,7 +23,7 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 
 public class SVServlet extends AeroServlet
 {
-    private static final Logger l = Util.l(SVServlet.class);
+    private static final Logger l = Loggers.getLogger(SVServlet.class);
 
     private static final long serialVersionUID = 1L;
 

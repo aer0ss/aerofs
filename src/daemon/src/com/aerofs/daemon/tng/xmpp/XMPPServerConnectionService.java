@@ -5,6 +5,7 @@
 package com.aerofs.daemon.tng.xmpp;
 
 import com.aerofs.base.BaseParam.Xmpp;
+import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.net.link.ILinkStateListener;
 import com.aerofs.daemon.core.net.link.ILinkStateService;
@@ -46,7 +47,7 @@ import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor
 
 final class XMPPServerConnectionService implements ILinkStateListener, IStartable, IDebug
 {
-    private static final Logger l = Util.l(XMPPServerConnectionService.class);
+    private static final Logger l = Loggers.getLogger(XMPPServerConnectionService.class);
 
     private final String _user;
     private final String _resource;

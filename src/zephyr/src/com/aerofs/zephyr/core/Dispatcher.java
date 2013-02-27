@@ -4,7 +4,7 @@
 
 package com.aerofs.zephyr.core;
 
-import com.aerofs.lib.Util;
+import com.aerofs.base.Loggers;
 import org.slf4j.Logger;
 
 import java.io.IOException;
@@ -208,5 +208,5 @@ public class Dispatcher implements Runnable
     private volatile boolean _started = false;
     private volatile boolean _stop = false;
 
-    protected static Logger l = Util.l(Dispatcher.class);
+    protected static Logger l = Loggers.getLogger(Dispatcher.class);
 }

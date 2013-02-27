@@ -1,5 +1,6 @@
 package com.aerofs.gui.tray;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.ui.IUI.MessageType;
@@ -10,7 +11,7 @@ import org.slf4j.Logger;
 
 public class Balloons
 {
-    private static final Logger l = Util.l(Balloons.class);
+    private static final Logger l = Loggers.getLogger(Balloons.class);
 
     private final IBalloonsImpl _impl;
 

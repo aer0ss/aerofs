@@ -4,7 +4,7 @@
 
 package com.aerofs.sp.server.lib.session;
 
-import com.aerofs.lib.Util;
+import com.aerofs.base.Loggers;
 import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.sp.server.lib.user.ISessionUser;
 import com.aerofs.sp.server.lib.user.User;
@@ -20,7 +20,7 @@ public class HttpSessionUser
         extends AbstractHttpSession
         implements ISessionUser
 {
-    private static final Logger l = Util.l(HttpSessionUser.class);
+    private static final Logger l = Loggers.getLogger(HttpSessionUser.class);
     private static final String SESS_ATTR_USER  = "user";
 
     public HttpSessionUser(IHttpSessionProvider sessionProvider)

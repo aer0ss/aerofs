@@ -1,5 +1,6 @@
 package com.aerofs.daemon.core.linker.scanner;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.linker.MightCreate;
@@ -10,7 +11,6 @@ import com.aerofs.daemon.core.linker.TimeoutDeletionBuffer.Holder;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.ProgressIndicators;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgAbsRootAnchor;
 import com.aerofs.lib.ex.ExNotDir;
 import com.aerofs.lib.ex.ExNotFound;
@@ -39,7 +39,7 @@ import static com.aerofs.daemon.core.linker.MightCreate.Result.*;
 
 class ScanSession
 {
-    private static Logger l = Util.l(ScanSession.class);
+    private static Logger l = Loggers.getLogger(ScanSession.class);
 
     // Maximum number of potential updates before requesting for continuation. This threshold is
     // necessary to avoid depleting the heap. (Updates are remembered in memory until the core

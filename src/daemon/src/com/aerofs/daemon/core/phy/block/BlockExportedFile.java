@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.phy.block;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.daemon.lib.db.AbstractTransListener;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.Path;
@@ -22,7 +23,7 @@ public class BlockExportedFile
     private final SOKID _sokid;
     private final Path _path;
     private final Factory _fileFactory;
-    private static Logger l = Util.l(BlockExportedFile.class);
+    private static Logger l = Loggers.getLogger(BlockExportedFile.class);
 
     public BlockExportedFile(BlockStorage s, SOKID sokid, Path path, Factory fileFactory)
     {

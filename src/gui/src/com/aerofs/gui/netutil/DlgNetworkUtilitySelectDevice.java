@@ -1,5 +1,6 @@
 package com.aerofs.gui.netutil;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.swt.widgets.Shell;
@@ -23,7 +24,7 @@ import org.slf4j.Logger;
 
 public class DlgNetworkUtilitySelectDevice extends AeroFSDialog
 {
-    private static final Logger l = Util.l(DlgNetworkUtilitySelectDevice.class);
+    private static final Logger l = Loggers.getLogger(DlgNetworkUtilitySelectDevice.class);
 
     private Text _txtDID;
     private Button _btnOK;

@@ -1,6 +1,7 @@
 package com.aerofs.gui.shellext;
 
 import com.aerofs.base.C;
+import com.aerofs.base.Loggers;
 import com.aerofs.lib.Param;
 import com.aerofs.lib.Util;
 import org.slf4j.Logger;
@@ -33,7 +34,7 @@ import java.util.concurrent.Executors;
  */
 class ShellextServer
 {
-    private final static Logger l = Util.l(ShellextServer.class);
+    private final static Logger l = Loggers.getLogger(ShellextServer.class);
     private final int _port;
     private final ShellextService _service;
 

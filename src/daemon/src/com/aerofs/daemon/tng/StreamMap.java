@@ -4,10 +4,10 @@
 
 package com.aerofs.daemon.tng;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.daemon.lib.id.StreamID;
 import com.aerofs.daemon.tng.ex.ExStreamAlreadyExists;
 import com.aerofs.daemon.tng.ex.ExStreamInvalid;
-import com.aerofs.lib.Util;
 import org.slf4j.Logger;
 
 import java.util.concurrent.ConcurrentHashMap;
@@ -17,7 +17,7 @@ import static com.aerofs.proto.Transport.PBStream.InvalidationReason.STREAM_NOT_
 
 public final class StreamMap<Stream extends IStream> implements IStreamMap<Stream>
 {
-    private static final Logger l = Util.l(StreamMap.class);
+    private static final Logger l = Loggers.getLogger(StreamMap.class);
 
     private final ConcurrentMap<StreamID, Stream> _streams = makeMap();
 

@@ -4,7 +4,7 @@
 
 package com.aerofs.ui;
 
-import com.aerofs.lib.Util;
+import com.aerofs.base.Loggers;
 import com.aerofs.proto.ControllerNotifications;
 import com.google.protobuf.GeneratedMessageLite;
 import org.slf4j.Logger;
@@ -13,7 +13,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class RetypePasswordDialogDisplayer
 {
-    private static final Logger l = Util.l(RetypePasswordDialogDisplayer.class);
+    private static final Logger l = Loggers.getLogger(RetypePasswordDialogDisplayer.class);
 
     /**
      * This class is responsible for receiving SHOW_LOGIN_NOTIFICATIONS.  It calls login()

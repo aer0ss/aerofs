@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.net;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.UnicastInputOutputStack;
 import com.aerofs.daemon.core.tc.TC;
@@ -33,7 +34,7 @@ import java.util.Queue;
 
 public final class IncomingStreams
 {
-    private static final Logger l = Util.l(IncomingStreams.class);
+    private static final Logger l = Loggers.getLogger(IncomingStreams.class);
 
     public final static class StreamKey implements Comparable<StreamKey>
     {

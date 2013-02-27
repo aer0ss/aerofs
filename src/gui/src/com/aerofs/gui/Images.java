@@ -3,6 +3,7 @@ package com.aerofs.gui;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.lib.Param;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.*;
@@ -10,7 +11,6 @@ import org.eclipse.swt.program.Program;
 import org.eclipse.swt.widgets.Display;
 
 import com.aerofs.lib.AppRoot;
-import com.aerofs.lib.Util;
 
 import static java.lang.Math.PI;
 import static java.lang.Math.abs;
@@ -68,7 +68,7 @@ public class Images {
                 img = new Image(Display.getCurrent(), path);
                 s_imgs.put(key, img);
             } catch (Exception e) {
-                Util.l(Images.class).error("cannot load image " + path + ": " + e);
+                Loggers.getLogger(Images.class).error("cannot load image " + path + ": " + e);
             }
         }
         return img;

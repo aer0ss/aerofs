@@ -5,6 +5,7 @@
 package com.aerofs.lib.rocklog;
 
 import com.aerofs.base.C;
+import com.aerofs.base.Loggers;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.InjectableCfg;
 import com.google.common.net.HttpHeaders;
@@ -64,7 +65,7 @@ public class RockLog
     // per-instance values (technically l is shared, but, whatever)
     //
 
-    private static final Logger l = Util.l(RockLog.class);
+    private static final Logger l = Loggers.getLogger(RockLog.class);
 
     private final String _prefix;
 

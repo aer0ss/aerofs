@@ -5,17 +5,17 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.lib.ProgressIndicators;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.swig.driver.Driver;
 import org.slf4j.Logger;
 
-import com.aerofs.lib.Util;
 import com.aerofs.lib.injectable.InjectableFile;
 
 abstract class AbstractOSUtilLinuxOSX implements IOSUtil
 {
-    protected static final Logger l = Util.l(AbstractOSUtilLinuxOSX.class);
+    protected static final Logger l = Loggers.getLogger(AbstractOSUtilLinuxOSX.class);
     protected final InjectableFile.Factory _factFile;
     protected final ProgressIndicators _pi;
 

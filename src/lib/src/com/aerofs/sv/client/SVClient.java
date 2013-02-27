@@ -1,6 +1,7 @@
 package com.aerofs.sv.client;
 
 import com.aerofs.base.BaseUtil;
+import com.aerofs.base.Loggers;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.AppRoot;
 import com.aerofs.base.Base64;
@@ -63,7 +64,7 @@ import static com.aerofs.lib.cfg.CfgDatabase.Key.ROOT;
 
 public final class SVClient
 {
-    private static final Logger l = Util.l(SVClient.class);
+    private static final Logger l = Loggers.getLogger(SVClient.class);
 
     //-------------------------------------------------------------------------
     //

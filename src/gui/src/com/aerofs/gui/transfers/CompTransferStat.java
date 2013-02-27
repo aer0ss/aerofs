@@ -1,5 +1,6 @@
 package com.aerofs.gui.transfers;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.lib.ThreadUtil;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.CLabel;
@@ -21,7 +22,7 @@ import org.slf4j.Logger;
 
 public class CompTransferStat extends Composite
 {
-    private static final Logger l = Util.l(CompTransferStat.class);
+    private static final Logger l = Loggers.getLogger(CompTransferStat.class);
 
     private final Label _lblIn;
     private final Label _lblOut;

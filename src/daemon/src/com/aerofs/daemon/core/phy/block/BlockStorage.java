@@ -6,6 +6,7 @@ package com.aerofs.daemon.core.phy.block;
 
 import static com.aerofs.daemon.core.phy.block.BlockStorageDatabase.*;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.daemon.core.CoreScheduler;
@@ -65,7 +66,7 @@ import java.util.Date;
  */
 class BlockStorage implements IPhysicalStorage
 {
-    private static final Logger l = Util.l(BlockStorage.class);
+    private static final Logger l = Loggers.getLogger(BlockStorage.class);
 
     private final TC _tc;
     private final TransManager _tm;

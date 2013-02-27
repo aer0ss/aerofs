@@ -6,6 +6,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 
 import com.aerofs.InternalDiagnostics;
+import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.lib.ritual.RitualBlockingClient;
 import com.aerofs.lib.ritual.RitualClientFactory;
@@ -32,7 +33,7 @@ import org.slf4j.Logger;
 
 public class CompPing extends Composite
 {
-    private static final Logger l = Util.l(CompPing.class);
+    private static final Logger l = Loggers.getLogger(CompPing.class);
 
     private static final Long[] TIMEOUTS =
         { 1 * C.SEC, 5 * C.SEC, 10 * C.SEC, 30 * C.SEC,

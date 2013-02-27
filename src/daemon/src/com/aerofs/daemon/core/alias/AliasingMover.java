@@ -1,5 +1,6 @@
 package com.aerofs.daemon.core.alias;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.base.id.OID;
 import com.aerofs.daemon.core.Hasher;
 import com.aerofs.daemon.core.NativeVersionControl;
@@ -13,7 +14,6 @@ import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.Path;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.Version;
 import com.aerofs.lib.ex.ExAborted;
 import com.aerofs.lib.ex.ExNotFound;
@@ -36,7 +36,7 @@ import static com.google.common.base.Preconditions.checkState;
  */
 public class AliasingMover
 {
-    private static final Logger l = Util.l(AliasingMover.class);
+    private static final Logger l = Loggers.getLogger(AliasingMover.class);
 
     private final DirectoryService _ds;
     private final PrefixVersionControl _pvc;

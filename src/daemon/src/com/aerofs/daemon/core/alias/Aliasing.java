@@ -1,5 +1,6 @@
 package com.aerofs.daemon.core.alias;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.OID;
 import com.aerofs.daemon.core.VersionUpdater;
@@ -51,7 +52,7 @@ import static com.aerofs.daemon.core.protocol.GetComponentReply.*;
  */
 public class Aliasing
 {
-    private static final Logger l = Util.l(Aliasing.class);
+    private static final Logger l = Loggers.getLogger(Aliasing.class);
 
     private DirectoryService _ds;
     private NativeVersionControl _nvc;

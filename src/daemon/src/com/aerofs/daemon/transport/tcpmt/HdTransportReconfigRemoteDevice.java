@@ -1,5 +1,6 @@
 package com.aerofs.daemon.transport.tcpmt;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.daemon.event.IEventHandler;
 import com.aerofs.daemon.event.net.EOTransportReconfigRemoteDevice;
 import com.aerofs.lib.event.Prio;
@@ -11,7 +12,7 @@ import org.slf4j.Logger;
 
 class HdTransportReconfigRemoteDevice implements IEventHandler<EOTransportReconfigRemoteDevice>
 {
-    private static final Logger l = Util.l(HdTransportReconfigRemoteDevice.class);
+    private static final Logger l = Loggers.getLogger(HdTransportReconfigRemoteDevice.class);
 
     private final TCP t;
 

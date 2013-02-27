@@ -5,6 +5,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Set;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.daemon.lib.exception.ExStreamInvalid;
 import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExNotDir;
@@ -20,7 +21,6 @@ import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.Path;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
@@ -31,7 +31,7 @@ import org.slf4j.Logger;
 
 public class StoreDeleter
 {
-    private static final Logger l = Util.l(StoreDeleter.class);
+    private static final Logger l = Loggers.getLogger(StoreDeleter.class);
 
     private final IPhysicalStorage _ps;
     private final IStores _ss;

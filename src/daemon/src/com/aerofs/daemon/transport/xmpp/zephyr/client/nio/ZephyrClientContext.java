@@ -5,6 +5,7 @@
 
 package com.aerofs.daemon.transport.xmpp.zephyr.client.nio;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.event.lib.imc.IResultWaiter;
 import com.aerofs.lib.event.Prio;
@@ -662,7 +663,7 @@ public class ZephyrClientContext implements IStateContext
     Exception _haltex;
 
     /** logger for all instances of this class */
-    static Logger l = com.aerofs.lib.Util.l(ZephyrClientContext.class);
+    static Logger l = Loggers.getLogger(ZephyrClientContext.class);
 
     /** event queue into which the state machine functions feed events */
     private final Queue<StateMachineEvent> _eq;

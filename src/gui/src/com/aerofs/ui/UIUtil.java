@@ -1,6 +1,7 @@
 package com.aerofs.ui;
 
 import com.aerofs.base.BaseParam.SP;
+import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.AbstractExWirable;
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIUtil;
@@ -36,7 +37,7 @@ import java.net.UnknownHostException;
 
 public class UIUtil
 {
-    static final Logger l = Util.l(UIUtil.class);
+    static final Logger l = Loggers.getLogger(UIUtil.class);
 
     /**
      * convert an exception to user friendly message

@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.lib.db;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.net.DID2User;
 import com.aerofs.daemon.core.tc.Cat;
@@ -43,7 +44,7 @@ import java.util.Set;
  */
 public class UserAndDeviceNames
 {
-    private static final Logger l = Util.l(UserAndDeviceNames.class);
+    private static final Logger l = Loggers.getLogger(UserAndDeviceNames.class);
 
     public static class UserInfo
     {

@@ -1,5 +1,6 @@
 package com.aerofs.daemon.core.fs;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.acl.ACLSynchronizer;
 import com.aerofs.base.BaseParam.SP;
 import com.aerofs.daemon.core.tc.Cat;
@@ -14,12 +15,11 @@ import org.slf4j.Logger;
 import com.aerofs.daemon.event.admin.EIJoinSharedFolder;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.lib.event.Prio;
-import com.aerofs.lib.Util;
 import com.google.inject.Inject;
 
 public class HdJoinSharedFolder extends AbstractHdIMC<EIJoinSharedFolder>
 {
-    private static final Logger l = Util.l(HdJoinSharedFolder.class);
+    private static final Logger l = Loggers.getLogger(HdJoinSharedFolder.class);
 
     private final TC _tc;
     private final ACLSynchronizer _aclsync;

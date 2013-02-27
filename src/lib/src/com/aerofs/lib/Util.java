@@ -51,16 +51,11 @@ import static com.google.common.collect.Sets.newHashSet;
 
 public abstract class Util
 {
-    private static final Logger l = l(Util.class);
+    private static final Logger l = Loggers.getLogger(Util.class);
 
     private Util()
     {
         // private to enforce uninstantiability for this class
-    }
-
-    public static Logger l(Class<?> cls)
-    {
-        return Loggers.getLogger(cls);
     }
 
     private static String convertStackTraceToString(StackTraceElement[] stackTrace)

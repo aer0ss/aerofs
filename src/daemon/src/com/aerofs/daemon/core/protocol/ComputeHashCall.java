@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.protocol;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.CoreUtil;
 import com.aerofs.daemon.core.Hasher;
 import com.aerofs.daemon.core.NativeVersionControl;
@@ -32,7 +33,7 @@ import org.slf4j.Logger;
 
 public class ComputeHashCall
 {
-    private static Logger l = Util.l(ComputeHashCall.class);
+    private static Logger l = Loggers.getLogger(ComputeHashCall.class);
     private final RPC _rpc;
     private final NSL _nsl;
     private final Hasher _hasher;

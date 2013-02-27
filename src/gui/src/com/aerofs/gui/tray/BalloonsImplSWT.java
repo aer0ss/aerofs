@@ -1,5 +1,6 @@
 package com.aerofs.gui.tray;
 
+import com.aerofs.base.Loggers;
 import org.slf4j.Logger;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
@@ -8,11 +9,10 @@ import org.eclipse.swt.widgets.ToolTip;
 import org.eclipse.swt.widgets.TrayItem;
 
 import com.aerofs.gui.GUI;
-import com.aerofs.lib.Util;
 import com.aerofs.ui.IUI.MessageType;
 
 public class BalloonsImplSWT implements IBalloonsImpl {
-    private static final Logger l = Util.l(Balloons.class);
+    private static final Logger l = Loggers.getLogger(Balloons.class);
 
     private final TrayItem _ti;
 

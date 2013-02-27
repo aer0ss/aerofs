@@ -3,6 +3,7 @@ package com.aerofs.daemon.core.phy.block.s3;
 import java.io.IOException;
 import java.util.concurrent.Callable;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.ThreadUtil;
 import org.slf4j.Logger;
@@ -14,7 +15,7 @@ import com.aerofs.lib.Util;
 
 public class AWSRetry
 {
-    private static final Logger l = Util.l(AWSRetry.class);
+    private static final Logger l = Loggers.getLogger(AWSRetry.class);
 
     private static final int EXP_BACKOFF_COEFFICIENT = 2;
     private static final int MIN_WAIT_TIME = 100;

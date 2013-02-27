@@ -1,6 +1,7 @@
 package com.aerofs.daemon.transport.xmpp.jingle;
 
 import com.aerofs.base.BaseParam.Xmpp;
+import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.JabberID;
@@ -14,7 +15,6 @@ import com.aerofs.daemon.transport.xmpp.ISignalledPipe;
 import com.aerofs.daemon.transport.xmpp.XMPP;
 import com.aerofs.j.Jid;
 import com.aerofs.lib.InOutArg;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExJingle;
 import com.aerofs.lib.ex.ExNoResource;
 import com.aerofs.lib.os.OSUtil;
@@ -469,7 +469,7 @@ public class Jingle implements ISignalledPipe, IJingle
     private final INetworkStats ns;
     private final SignalThread _st;
 
-    private static final Logger l = Util.l(Jingle.class);
+    private static final Logger l = Loggers.getLogger(Jingle.class);
 
     private static final String SIGNAL_THREAD_THREAD_ID = "st";
     private static final String JINGLE_RESOURCE_NAME = "u";

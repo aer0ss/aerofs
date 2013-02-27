@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.net.throttling;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.net.IIncomingStreamChunkListener;
 import com.aerofs.daemon.core.net.IncomingStreams;
@@ -35,7 +36,7 @@ import java.util.Map;
  */
 public class IncomingStreamsThrottler implements IIncomingStreamChunkListener
 {
-    private static final Logger l = Util.l(IncomingStreamsThrottler.class);
+    private static final Logger l = Loggers.getLogger(IncomingStreamsThrottler.class);
 
     /**
      * Keeps track of chunk counts for the whole device and for individual

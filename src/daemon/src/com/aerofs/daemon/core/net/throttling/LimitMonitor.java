@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.net.throttling;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.CoreDeviceLRU;
 import com.aerofs.daemon.core.CoreScheduler;
@@ -16,7 +17,6 @@ import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.lib.id.StreamID;
 import com.aerofs.base.C;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.cfg.ICfgDatabaseListener;
@@ -52,7 +52,7 @@ public class LimitMonitor implements IUnicastInputLayer, ICfgDatabaseListener, I
     private static final double _BW_HISTORIC_SMOOTHING_FACTOR = 0.88; // arbitrary (alpha)
     private static final double _PENALTY_FACTOR = 1.05; // arbitrary
 
-    private static Logger l = Util.l(LimitMonitor.class);
+    private static Logger l = Loggers.getLogger(LimitMonitor.class);
 
     private class TransmitInfo
     {

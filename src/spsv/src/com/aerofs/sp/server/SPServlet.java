@@ -1,6 +1,7 @@
 package com.aerofs.sp.server;
 
 import com.aerofs.base.BaseParam.SP;
+import com.aerofs.base.Loggers;
 import com.aerofs.lib.Util;
 import com.aerofs.base.BaseParam.SV;
 import com.aerofs.lib.ex.ExAlreadyExist;
@@ -66,7 +67,7 @@ import static com.aerofs.sp.server.lib.SPParam.VERKEHR_PUBLISHER_ATTRIBUTE;
 
 public class SPServlet extends AeroServlet
 {
-    private static final Logger l = Util.l(SPServlet.class);
+    private static final Logger l = Loggers.getLogger(SPServlet.class);
 
     private static final long serialVersionUID = 1L;
 

@@ -5,6 +5,7 @@
 package com.aerofs.daemon.core.phy.block;
 
 import com.aerofs.base.BaseUtil;
+import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.phy.IPhysicalRevProvider.Child;
 import com.aerofs.daemon.core.phy.IPhysicalRevProvider.Revision;
 import com.aerofs.daemon.lib.db.AbstractDatabase;
@@ -58,7 +59,7 @@ import static com.aerofs.daemon.core.phy.block.BlockUtil.splitBlocks;
  */
 public class BlockStorageDatabase extends AbstractDatabase
 {
-    private static final Logger l = Util.l(BlockStorageDatabase.class);
+    private static final Logger l = Loggers.getLogger(BlockStorageDatabase.class);
 
     public static final long FILE_ID_NOT_FOUND = -1;
 

@@ -1,5 +1,6 @@
 package com.aerofs.daemon.core.linker.scanner;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.linker.scanner.ScanSession.Factory;
 import com.aerofs.daemon.core.tc.TC;
@@ -31,7 +32,7 @@ import java.util.Map.Entry;
 
 public class ScanSessionQueue implements IDumpStatMisc
 {
-    private static Logger l = Util.l(ScanSessionQueue.class);
+    private static Logger l = Loggers.getLogger(ScanSessionQueue.class);
     private static FrequentDefectSender fds = new FrequentDefectSender();
 
     private static class TimeKey implements Comparable<TimeKey>

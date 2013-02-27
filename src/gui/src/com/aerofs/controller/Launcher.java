@@ -10,6 +10,7 @@ import java.net.BindException;
 import java.net.ServerSocket;
 import java.sql.SQLException;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.gui.GuiScheduler;
 import com.aerofs.labeling.L;
@@ -45,7 +46,7 @@ import static com.aerofs.lib.cfg.Cfg.absRTRoot;
 
 class Launcher
 {
-    private static final Logger l = Util.l(Launcher.class);
+    private static final Logger l = Loggers.getLogger(Launcher.class);
     private static final InjectableFile.Factory s_factFile = new InjectableFile.Factory();
     private final String _rtRoot;
     static ServerSocket _ss;

@@ -5,6 +5,7 @@
 package com.aerofs.controller;
 
 import com.aerofs.base.C;
+import com.aerofs.base.Loggers;
 import com.aerofs.lib.Param;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
@@ -38,7 +39,7 @@ import static java.util.concurrent.Executors.newCachedThreadPool;
 
 public final class TransientCommandNotificationSubscriber
 {
-    private static final Logger l = Util.l(TransientCommandNotificationSubscriber.class);
+    private static final Logger l = Loggers.getLogger(TransientCommandNotificationSubscriber.class);
 
     private final String _topic;
     private final VerkehrSubscriber _subscriber;

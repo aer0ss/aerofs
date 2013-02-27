@@ -1,5 +1,6 @@
 package com.aerofs.daemon.transport.lib;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.daemon.event.lib.imc.IResultWaiter;
 import com.aerofs.lib.Profiler;
 import org.jivesoftware.smack.XMPPException;
@@ -13,7 +14,7 @@ import org.slf4j.Logger;
 
 public class HdUnicastMessage implements IEventHandler<EOUnicastMessage>
 {
-    private static final Logger l = Util.l(HdUnicastMessage.class);
+    private static final Logger l = Loggers.getLogger(HdUnicastMessage.class);
 
     private final IUnicast _ucast;
 

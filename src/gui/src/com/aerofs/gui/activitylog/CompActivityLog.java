@@ -2,6 +2,7 @@ package com.aerofs.gui.activitylog;
 
 import javax.annotation.Nullable;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.gui.CompSpin;
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIParam;
@@ -43,7 +44,7 @@ import org.slf4j.Logger;
 
 public class CompActivityLog extends Composite
 {
-    private static final Logger l = Util.l(CompActivityLog.class);
+    private static final Logger l = Loggers.getLogger(CompActivityLog.class);
 
     private static final int MAX_RESULTS_MIN = 20;
     private static final int MAX_RESULTS_MAX = 200;

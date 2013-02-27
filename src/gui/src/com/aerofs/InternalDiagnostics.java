@@ -4,6 +4,7 @@
 
 package com.aerofs;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.lib.JsonFormat;
 import com.aerofs.lib.Param;
@@ -23,7 +24,7 @@ import com.aerofs.lib.ex.ExDeviceOffline;
  */
 public class InternalDiagnostics
 {
-    static final Logger l = Util.l(InternalDiagnostics.class);
+    static final Logger l = Loggers.getLogger(InternalDiagnostics.class);
 
     public static interface IPingCallback {
         boolean toStop();

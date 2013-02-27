@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.tng.xmpp.zephyr;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.net.ZephyrConstants;
 import com.aerofs.daemon.core.net.link.ILinkStateListener;
@@ -20,7 +21,6 @@ import com.aerofs.daemon.tng.xmpp.zephyr.handler.ZephyrFrameDecoder;
 import com.aerofs.daemon.tng.xmpp.zephyr.handler.ZephyrFrameEncoder;
 import com.aerofs.daemon.tng.xmpp.zephyr.handler.ZephyrProtocolHandler;
 import com.aerofs.daemon.tng.xmpp.zephyr.message.ZephyrBindRequest;
-import com.aerofs.lib.Util;
 import com.aerofs.base.async.FailedFutureCallback;
 import com.aerofs.base.async.FutureUtil;
 import com.aerofs.base.async.UncancellableFuture;
@@ -55,7 +55,7 @@ public class ZephyrUnicastConnection
         implements IUnicastConnection, ISignallingClient, ILinkStateListener,
         IZephyrUnicastEventSink
 {
-    private static final Logger l = Util.l(ZephyrUnicastConnection.class);
+    private static final Logger l = Loggers.getLogger(ZephyrUnicastConnection.class);
 
     private final ISingleThreadedPrioritizedExecutor _executor;
 

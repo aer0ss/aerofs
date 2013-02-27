@@ -6,6 +6,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.proto.Transport.PBStream.InvalidationReason;
 import org.slf4j.Logger;
@@ -23,7 +24,7 @@ import com.aerofs.daemon.lib.exception.ExStreamInvalid;
 // may be multi-threaded.
 //
 public class StreamManager {
-    private static final Logger l = Util.l(StreamManager.class);
+    private static final Logger l = Loggers.getLogger(StreamManager.class);
 
     public static class OutgoingStream {
         final DID _did;

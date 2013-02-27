@@ -1,5 +1,6 @@
 package com.aerofs.daemon.transport.lib;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.lib.event.IEvent;
 import com.aerofs.daemon.event.lib.imc.IResultWaiter;
 import com.aerofs.daemon.lib.BlockingPrioQueue;
@@ -724,7 +725,7 @@ public class TCPProactorMT
     private final AtomicLong socketcounter = new AtomicLong();
 
     // logging
-    private static final Logger l = Util.l(TCPProactorMT.class);
+    private static final Logger l = Loggers.getLogger(TCPProactorMT.class);
 
     private static final EvSend EV_CLOSE = new EvSend(null, null);
 }

@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.Core;
@@ -109,7 +110,7 @@ import javax.annotation.Nullable;
  */
 public class RitualService implements IRitualService
 {
-    private static final Logger l = Util.l(RitualService.class);
+    private static final Logger l = Loggers.getLogger(RitualService.class);
 
     private static final Prio PRIO = Prio.HI;
 

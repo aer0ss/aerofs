@@ -4,7 +4,7 @@
 
 package com.aerofs.daemon.core.notification;
 
-import com.aerofs.lib.Util;
+import com.aerofs.base.Loggers;
 import com.aerofs.sp.client.IBadCredentialListener;
 import com.aerofs.proto.RitualNotifications.PBNotification;
 import com.aerofs.proto.RitualNotifications.PBNotification.Type;
@@ -12,7 +12,7 @@ import org.slf4j.Logger;
 
 public class DaemonBadCredentialListener implements IBadCredentialListener
 {
-    private static final Logger l = Util.l(DaemonBadCredentialListener.class);
+    private static final Logger l = Loggers.getLogger(DaemonBadCredentialListener.class);
     private final RitualNotificationServer _notifier;
 
     DaemonBadCredentialListener(RitualNotificationServer notifier)

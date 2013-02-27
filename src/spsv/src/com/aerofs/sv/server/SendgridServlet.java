@@ -4,7 +4,7 @@
 
 package com.aerofs.sv.server;
 
-import com.aerofs.lib.Util;
+import com.aerofs.base.Loggers;
 import com.aerofs.servlets.AeroServlet;
 import com.aerofs.servlets.lib.db.sql.PooledSQLConnectionProvider;
 import com.aerofs.servlets.lib.db.sql.SQLThreadLocalTransaction;
@@ -23,7 +23,7 @@ import java.sql.SQLException;
 
 public class SendgridServlet extends AeroServlet {
 
-    private static final Logger l = Util.l(SendgridServlet.class);
+    private static final Logger l = Loggers.getLogger(SendgridServlet.class);
     private final PooledSQLConnectionProvider _conProvider = new PooledSQLConnectionProvider();
     private final SQLThreadLocalTransaction _transaction =
             new SQLThreadLocalTransaction(_conProvider);

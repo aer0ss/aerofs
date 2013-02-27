@@ -1,11 +1,11 @@
 package com.aerofs.daemon.core.net;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.UnicastInputOutputStack;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.event.IEventHandler;
 import com.aerofs.daemon.event.net.rx.EIStreamBegun;
 import com.aerofs.lib.event.Prio;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.id.SIndex;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
@@ -15,7 +15,7 @@ import org.slf4j.Logger;
  */
 public class HdStreamBegun implements IEventHandler<EIStreamBegun>
 {
-    private static final Logger l = Util.l(HdStreamBegun.class);
+    private static final Logger l = Loggers.getLogger(HdStreamBegun.class);
     private final UnicastInputOutputStack _stack;
     private final IMapSID2SIndex _sid2sidx;
 

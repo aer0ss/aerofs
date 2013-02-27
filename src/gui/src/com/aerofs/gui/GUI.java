@@ -1,5 +1,6 @@
 package com.aerofs.gui;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.gui.AeroFSMessageBox.ButtonType;
 import com.aerofs.gui.AeroFSMessageBox.IconType;
 import com.aerofs.gui.multiuser.MultiuserDlgSetup;
@@ -36,7 +37,7 @@ import java.util.HashSet;
 
 public class GUI implements IUI
 {
-    private static final Logger l = Util.l(GUI.class);
+    private static final Logger l = Loggers.getLogger(GUI.class);
 
     private final Display _disp;
     private final Shell _sh;

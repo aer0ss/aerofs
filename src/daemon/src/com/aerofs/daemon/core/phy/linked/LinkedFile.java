@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.sql.SQLException;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.Param;
 import com.aerofs.lib.ex.ExFileNotFound;
@@ -17,7 +18,7 @@ import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.phy.linked.LinkedStorage.IRollbackHandler;
 import com.aerofs.daemon.core.phy.linked.fid.IFIDMaintainer;
 import com.aerofs.lib.ContentHash;
-import com.aerofs.lib.Util;
+
 import static com.aerofs.lib.Util.join;
 
 import com.aerofs.lib.cfg.CfgAbsRootAnchor;
@@ -28,7 +29,7 @@ import com.aerofs.lib.Path;
 
 public class LinkedFile implements IPhysicalFile
 {
-    private static final Logger l = Util.l(LinkedFile.class);
+    private static final Logger l = Loggers.getLogger(LinkedFile.class);
 
     private final LinkedStorage _s;
     private final IFIDMaintainer _fidm;

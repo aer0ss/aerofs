@@ -16,6 +16,7 @@ import java.net.UnknownHostException;
 import java.util.Properties;
 
 import com.aerofs.base.BaseParam.SV;
+import com.aerofs.base.Loggers;
 import com.aerofs.controller.ControllerService;
 import com.aerofs.gui.tray.TrayIcon.NotificationReason;
 import com.aerofs.labeling.L;
@@ -54,7 +55,7 @@ import javax.security.cert.X509Certificate;
 
 public abstract class Updater
 {
-    protected static final Logger l = Util.l(Updater.class);
+    protected static final Logger l = Loggers.getLogger(Updater.class);
 
     private String _installationFilename = "";
 

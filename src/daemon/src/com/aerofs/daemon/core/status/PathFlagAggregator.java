@@ -4,12 +4,12 @@
 
 package com.aerofs.daemon.core.status;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.protocol.IDownloadStateListener.Ended;
 import com.aerofs.daemon.core.protocol.IDownloadStateListener.Ongoing;
 import com.aerofs.daemon.core.protocol.IDownloadStateListener.State;
 import com.aerofs.daemon.core.net.IUploadStateListener.Value;
 import com.aerofs.lib.Path;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.id.SOCID;
 import com.aerofs.proto.PathStatus.PBPathStatus.Flag;
 import com.google.common.collect.Maps;
@@ -36,7 +36,7 @@ import java.util.Map;
  */
 public class PathFlagAggregator
 {
-    private final static Logger l = Util.l(PathFlagAggregator.class);
+    private final static Logger l = Loggers.getLogger(PathFlagAggregator.class);
 
     public final static int NoFlag = 0;
     public final static int Uploading   = Flag.UPLOADING_VALUE;

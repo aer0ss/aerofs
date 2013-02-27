@@ -4,6 +4,7 @@
 
 package com.aerofs.servlets.lib.db;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.lib.Util;
 import org.slf4j.Logger;
 
@@ -13,7 +14,7 @@ import org.slf4j.Logger;
  */
 public abstract class AbstractThreadLocalTransaction<T extends Throwable>
 {
-    private static final Logger l = Util.l(AbstractThreadLocalTransaction.class);
+    private static final Logger l = Loggers.getLogger(AbstractThreadLocalTransaction.class);
 
     protected abstract boolean isInTransaction();
     protected abstract void rollback() throws T;

@@ -5,6 +5,7 @@ import java.io.IOException;
 
 import java.lang.reflect.Field;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.LogUtil;
@@ -27,7 +28,7 @@ import com.aerofs.sv.client.SVClient;
 
 
 public class Main {
-    final static Logger l = Util.l(Main.class);
+    final static Logger l = Loggers.getLogger(Main.class);
 
     private static final Object CONTROLLER_NAME = "controller";
     private static final Object DAEMON_NAME = "daemon";

@@ -2,6 +2,7 @@ package com.aerofs.daemon.core.linker.notifier.windows;
 
 import javax.annotation.Nullable;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.lib.obfuscate.ObfuscatingFormatters;
 import org.slf4j.Logger;
 
@@ -20,7 +21,7 @@ import net.contentobjects.jnotify.JNotifyListener;
 
 public class WindowsNotifier implements INotifier, JNotifyListener
 {
-    private static Logger l = Util.l(WindowsNotifier.class);
+    private static Logger l = Loggers.getLogger(WindowsNotifier.class);
 
     private final CoreQueue _cq;
     private final InjectableJNotify _jn;

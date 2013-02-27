@@ -1,5 +1,6 @@
 package com.aerofs.lib;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.cfg.Cfg;
 import org.apache.log4j.Appender;
@@ -34,6 +35,11 @@ import java.util.List;
  */
 public abstract class LogUtil
 {
+    static
+    {
+        Loggers.init();
+    }
+
     public static enum Level
     {
         NONE  (org.apache.log4j.Level.OFF  ),

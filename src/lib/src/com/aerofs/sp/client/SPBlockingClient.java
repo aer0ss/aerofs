@@ -1,7 +1,7 @@
 package com.aerofs.sp.client;
 
 import com.aerofs.base.BaseParam.SP;
-import com.aerofs.lib.Util;
+import com.aerofs.base.Loggers;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.base.id.UserID;
@@ -17,7 +17,7 @@ import java.net.URL;
  */
 public class SPBlockingClient extends SPServiceBlockingStub
 {
-    private static final Logger l = Util.l(SPBlockingClient.class);
+    private static final Logger l = Loggers.getLogger(SPBlockingClient.class);
 
     private final UserID _user;
     private static IBadCredentialListener _bcl;

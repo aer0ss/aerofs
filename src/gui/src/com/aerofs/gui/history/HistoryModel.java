@@ -4,6 +4,7 @@
 
 package com.aerofs.gui.history;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.gui.history.HistoryModel.IDecisionMaker.Answer;
 import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.Path;
@@ -37,7 +38,7 @@ import java.util.Map;
  */
 public class HistoryModel
 {
-    private static final Logger l = Util.l(HistoryModel.class);
+    private static final Logger l = Loggers.getLogger(HistoryModel.class);
 
     private final UserID _userId;
     private RitualBlockingClient _ritual;

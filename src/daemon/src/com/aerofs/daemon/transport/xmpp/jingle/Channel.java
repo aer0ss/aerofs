@@ -1,5 +1,6 @@
 package com.aerofs.daemon.transport.xmpp.jingle;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.daemon.event.lib.imc.IResultWaiter;
 import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.lib.event.Prio;
@@ -27,7 +28,7 @@ import java.io.ByteArrayInputStream;
 //
 public class Channel implements IProxyObjectContainer
 {
-    private static final Logger l = Util.l(Channel.class);
+    private static final Logger l = Loggers.getLogger(Channel.class);
 
     static interface IClosureListener
     {

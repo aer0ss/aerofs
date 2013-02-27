@@ -1,5 +1,6 @@
 package com.aerofs.daemon.core.acl;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.IStoreJoiner;
@@ -15,7 +16,6 @@ import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.acl.Role;
 import com.aerofs.lib.acl.SubjectRolePair;
 import com.aerofs.lib.acl.SubjectRolePairs;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.ex.ExNotFound;
@@ -52,7 +52,7 @@ import static com.google.common.collect.Maps.newHashMapWithExpectedSize;
  */
 public class ACLSynchronizer
 {
-    private static final Logger l = Util.l(ACLSynchronizer.class);
+    private static final Logger l = Loggers.getLogger(ACLSynchronizer.class);
 
     private final TC _tc;
     private final TransManager _tm;

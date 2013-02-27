@@ -4,6 +4,8 @@ import java.sql.SQLException;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+
+import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.*;
 import com.aerofs.daemon.lib.db.IDID2UserDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
@@ -17,7 +19,6 @@ import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.base.id.DID;
 import com.aerofs.lib.id.SIndex;
@@ -33,7 +34,7 @@ import javax.annotation.Nullable;
  */
 public class DID2User
 {
-    private static final Logger l = Util.l(DID2User.class);
+    private static final Logger l = Loggers.getLogger(DID2User.class);
 
     private final Map<DID, Set<TCB>> _d2waiters = Maps.newHashMap();
     private final NSL _nsl;

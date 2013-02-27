@@ -1,4 +1,5 @@
 package com.aerofs.gui.tray;
+import com.aerofs.base.Loggers;
 import  com.aerofs.growl.*;
 import java.awt.image.RenderedImage;
 import java.io.File;
@@ -15,7 +16,7 @@ import com.aerofs.lib.Util;
 import com.aerofs.ui.IUI.MessageType;
 
 public class BalloonsImplGrowl implements IBalloonsImpl {
-    private static final Logger l = Util.l(Balloons.class);
+    private static final Logger l = Loggers.getLogger(Balloons.class);
     private final GrowlApplicationBridge _growl = new GrowlApplicationBridge(L.PRODUCT);
     private final NotificationType _gInfo = new NotificationType(L.PRODUCT + " Notifications");
     private final NotificationType _gWarn = new NotificationType(L.PRODUCT + " Errors");

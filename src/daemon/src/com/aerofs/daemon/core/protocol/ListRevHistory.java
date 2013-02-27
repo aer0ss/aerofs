@@ -3,6 +3,7 @@ package com.aerofs.daemon.core.protocol;
 import java.util.ArrayList;
 import java.util.Collection;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.CoreUtil;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.net.DigestedMessage;
@@ -11,7 +12,6 @@ import com.aerofs.daemon.core.phy.IPhysicalRevProvider.Revision;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.store.MapSIndex2Store;
 import com.aerofs.lib.Path;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.Version;
 import com.aerofs.lib.cfg.CfgLocalDID;
 import com.aerofs.lib.ex.ExProtocolError;
@@ -27,7 +27,7 @@ import org.slf4j.Logger;
 public class ListRevHistory
 extends AbstractListRevChildrenHistory<IListRevHistoryListener>
 {
-    private static final Logger l = Util.l(ListRevHistory.class);
+    private static final Logger l = Loggers.getLogger(ListRevHistory.class);
 
     private final IPhysicalStorage _ps;
     private final CfgLocalDID _cfgLocalDID;

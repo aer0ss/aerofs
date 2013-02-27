@@ -4,6 +4,7 @@
 
 package com.aerofs.gui.preferences;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.gui.CompSpin;
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIParam;
@@ -42,7 +43,7 @@ import javax.annotation.Nullable;
 
 public class PreferencesHelper
 {
-    private final static Logger l = Util.l(PreferencesHelper.class);
+    private final static Logger l = Loggers.getLogger(PreferencesHelper.class);
 
     private final Composite _comp;
 

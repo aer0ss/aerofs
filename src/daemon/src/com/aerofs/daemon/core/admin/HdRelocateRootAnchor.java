@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.admin;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.DirectoryService.IObjectWalker;
 import com.aerofs.daemon.core.ds.OA;
@@ -41,7 +42,7 @@ import java.util.Arrays;
 
 public class HdRelocateRootAnchor extends AbstractHdIMC<EIRelocateRootAnchor>
 {
-    private static final Logger l = Util.l(HdRelocateRootAnchor.class);
+    private static final Logger l = Loggers.getLogger(HdRelocateRootAnchor.class);
     private final InjectableFile.Factory _factFile;
     private final TransManager _tm;
     private final ICrossFSRelocator _crossFSRelocator;

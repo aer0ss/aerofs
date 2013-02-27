@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
@@ -62,7 +63,7 @@ import static com.google.common.collect.Lists.newArrayListWithCapacity;
 
 public class GetVersCall
 {
-    private static final Logger l = Util.l(GetVersCall.class);
+    private static final Logger l = Loggers.getLogger(GetVersCall.class);
 
     private static class TickPair {
         Tick _native;

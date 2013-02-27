@@ -9,12 +9,12 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
+import com.aerofs.base.Loggers;
 import com.google.inject.Inject;
 
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.lib.InOutArg;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.db.dbcw.IDBCW;
 import com.aerofs.base.id.OID;
 import com.aerofs.lib.id.SIndex;
@@ -23,7 +23,7 @@ import org.slf4j.Logger;
 
 public class DBCheckOAAndCA
 {
-    private static final Logger l = Util.l(DBCheckOAAndCA.class);
+    private static final Logger l = Loggers.getLogger(DBCheckOAAndCA.class);
 
     // TODO close these statements after use
     private PreparedStatement _psListChildren;

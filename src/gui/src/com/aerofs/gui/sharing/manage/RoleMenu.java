@@ -4,6 +4,7 @@ import java.util.Collections;
 
 import javax.annotation.Nullable;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.acl.Role;
 import com.aerofs.lib.S;
@@ -28,7 +29,7 @@ import com.aerofs.ui.UIUtil;
 
 public class RoleMenu
 {
-    private static final Logger l = Util.l(RoleMenu.class);
+    private static final Logger l = Loggers.getLogger(RoleMenu.class);
     private final Path _path;
     private final Menu _menu;
     private final UserID _subject;

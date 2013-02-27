@@ -1,5 +1,6 @@
 package com.aerofs.daemon.core.net.throttling;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.net.IUnicastOutputLayer;
@@ -8,7 +9,6 @@ import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.daemon.lib.id.StreamID;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.cfg.ICfgDatabaseListener;
@@ -17,6 +17,7 @@ import com.aerofs.lib.ex.ExNoResource;
 import com.aerofs.proto.Limit;
 import com.aerofs.proto.Transport.PBStream.InvalidationReason;
 import com.google.inject.Inject;
+
 import javax.annotation.Nonnull;
 import java.util.HashMap;
 import java.util.Map;
@@ -80,7 +81,7 @@ public class GlobalLimiter extends AbstractLimiter implements IUnicastOutputLaye
 
     private GlobalLimiter(Factory f, IUnicastOutputLayer lower)
     {
-        super(f._sched, Util.l(GlobalLimiter.class),
+        super(f._sched, Loggers.getLogger(GlobalLimiter.class),
             _MIN_UL_BW, getUploadBw_(), getUploadBw_() /* sigh */,
             _MAX_SHAPING_Q_BACKLOG);
 

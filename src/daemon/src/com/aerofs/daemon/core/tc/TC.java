@@ -7,6 +7,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.CoreEventDispatcher;
 import com.aerofs.daemon.core.CoreQueue;
 import com.aerofs.daemon.core.CoreScheduler;
@@ -36,7 +37,7 @@ import javax.annotation.Nullable;
 /** Thread Control */
 public class TC implements IDumpStatMisc
 {
-    private static final Logger l = Util.l(TC.class);
+    private static final Logger l = Loggers.getLogger(TC.class);
 
     static final long FOREVER = Long.MAX_VALUE;
 

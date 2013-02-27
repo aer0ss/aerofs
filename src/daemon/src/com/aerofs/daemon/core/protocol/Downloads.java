@@ -3,6 +3,7 @@ package com.aerofs.daemon.core.protocol;
 import java.sql.SQLException;
 import java.util.Map;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.CoreQueue;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.ds.DirectoryService;
@@ -36,7 +37,7 @@ import javax.annotation.Nullable;
 
 public class Downloads
 {
-    private static final Logger l = Util.l(Downloads.class);
+    private static final Logger l = Loggers.getLogger(Downloads.class);
 
     /**
      * Collector makes a distinction between transient and permanent errors to avoid repeatedly

@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.tap;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.net.link.ILinkStateService;
 import com.aerofs.lib.event.IEvent;
 import com.aerofs.daemon.lib.BlockingPrioQueue;
@@ -11,7 +12,6 @@ import com.aerofs.daemon.lib.async.ISingleThreadedPrioritizedExecutor;
 import com.aerofs.daemon.tng.base.EventQueueBasedEventLoop;
 import com.aerofs.daemon.tng.base.http.Proxies;
 import com.aerofs.base.BaseParam.Zephyr;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.base.id.DID;
 import com.aerofs.proto.Tap.ITapService;
@@ -27,7 +27,7 @@ import static com.aerofs.daemon.lib.DaemonParam.QUEUE_LENGTH_DEFAULT;
 
 public class TapModule extends AbstractModule
 {
-    private static final Logger l = Util.l(TapModule.class);
+    private static final Logger l = Loggers.getLogger(TapModule.class);
 
     @Override
     protected void configure()

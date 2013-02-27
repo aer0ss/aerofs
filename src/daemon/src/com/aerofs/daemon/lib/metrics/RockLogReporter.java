@@ -4,7 +4,7 @@
 
 package com.aerofs.daemon.lib.metrics;
 
-import com.aerofs.lib.Util;
+import com.aerofs.base.Loggers;
 import com.aerofs.lib.rocklog.RockLog;
 import com.yammer.metrics.Metrics;
 import com.yammer.metrics.core.Counter;
@@ -33,7 +33,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 public class RockLogReporter extends AbstractPollingReporter implements MetricProcessor<Long>
 {
-    private static final Logger l = Util.l(RockLogReporter.class);
+    private static final Logger l = Loggers.getLogger(RockLogReporter.class);
 
     private final VirtualMachineMetrics _vm;
     private @Nullable volatile com.aerofs.lib.rocklog.Metrics _rocklogMetrics; // current metric being populated

@@ -1,6 +1,7 @@
 package com.aerofs.daemon.core.net.dtls;
 
 import com.aerofs.base.BaseUtil;
+import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.net.DID2User;
 import com.aerofs.daemon.core.net.IDuplexLayer;
 import com.aerofs.daemon.core.net.IUnicastInputLayer;
@@ -35,7 +36,7 @@ import java.util.ArrayList;
 
 public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
 {
-    private static final Logger l = Util.l(DTLSLayer.class);
+    private static final Logger l = Loggers.getLogger(DTLSLayer.class);
 
     static enum Footer
     {

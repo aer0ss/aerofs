@@ -5,6 +5,7 @@
 package com.aerofs.daemon.tng.xmpp.jingle;
 
 import com.aerofs.base.BaseParam.Xmpp;
+import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.lib.async.ISingleThreadedPrioritizedExecutor;
 import com.aerofs.daemon.tng.base.IIncomingUnicastConnectionListener;
@@ -15,7 +16,6 @@ import com.aerofs.daemon.tng.xmpp.ID;
 import com.aerofs.daemon.tng.xmpp.ISignallingClient;
 import com.aerofs.daemon.tng.xmpp.ISignallingService.SignallingMessage;
 import com.aerofs.j.Jid;
-import com.aerofs.lib.Util;
 import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.lib.ex.ExJingle;
 import com.aerofs.lib.notifier.SingleListenerNotifier;
@@ -34,7 +34,7 @@ import java.util.concurrent.Executor;
 public final class JingleUnicastConnectionService
         implements IUnicastConnectionService, ISignallingClient, IJingle
 {
-    private static final Logger l = Util.l(JingleUnicastConnectionService.class);
+    private static final Logger l = Loggers.getLogger(JingleUnicastConnectionService.class);
 
     private final ISingleThreadedPrioritizedExecutor _executor;
     private final INetworkStats _networkStats;

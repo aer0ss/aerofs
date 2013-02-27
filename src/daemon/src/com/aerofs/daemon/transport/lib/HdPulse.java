@@ -5,12 +5,12 @@
 
 package com.aerofs.daemon.transport.lib;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.event.IEventHandler;
 import com.aerofs.daemon.event.net.IPulseEvent;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.ex.ExDeviceOffline;
-import com.aerofs.lib.Util;
 import org.slf4j.Logger;
 
 import static com.aerofs.daemon.transport.lib.PulseHandlerUtil.MakePulseResult;
@@ -101,5 +101,5 @@ public class HdPulse<T extends IPulseEvent> implements IEventHandler<T>
 
     private final IPulseHandlerImpl<T> ph;
 
-    private static final Logger l = Util.l(HdPulse.class);
+    private static final Logger l = Loggers.getLogger(HdPulse.class);
 }

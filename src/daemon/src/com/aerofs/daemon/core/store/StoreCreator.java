@@ -1,5 +1,6 @@
 package com.aerofs.daemon.core.store;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.migration.ImmigrantVersionControl;
@@ -8,7 +9,6 @@ import com.aerofs.daemon.lib.db.IMetaDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.Param;
 import com.aerofs.lib.Path;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
@@ -22,7 +22,7 @@ import java.sql.SQLException;
 
 public class StoreCreator
 {
-    private static final Logger l = Util.l(StoreCreator.class);
+    private static final Logger l = Loggers.getLogger(StoreCreator.class);
 
     private IStores _ss;
     private IPhysicalStorage _ps;

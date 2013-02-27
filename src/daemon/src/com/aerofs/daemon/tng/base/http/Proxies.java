@@ -4,7 +4,7 @@
 
 package com.aerofs.daemon.tng.base.http;
 
-import com.aerofs.lib.Util;
+import com.aerofs.base.Loggers;
 import org.slf4j.Logger;
 
 import java.net.InetSocketAddress;
@@ -17,7 +17,7 @@ import java.util.List;
 
 public abstract class Proxies
 {
-    private static final Logger l = Util.l(Proxies.class);
+    private static final Logger l = Loggers.getLogger(Proxies.class);
 
     private Proxies()
     {

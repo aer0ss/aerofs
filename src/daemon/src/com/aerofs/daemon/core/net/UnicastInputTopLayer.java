@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.net;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.CoreDeviceLRU;
 import com.aerofs.daemon.core.CoreUtil;
@@ -40,7 +41,7 @@ import java.util.Map;
 
 public class UnicastInputTopLayer implements IUnicastInputLayer
 {
-    private static final Logger l = Util.l(UnicastInputTopLayer.class);
+    private static final Logger l = Loggers.getLogger(UnicastInputTopLayer.class);
 
     public static class Factory
     {

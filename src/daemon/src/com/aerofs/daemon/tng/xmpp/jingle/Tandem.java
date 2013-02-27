@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.tng.xmpp.jingle;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExJingle;
 import com.aerofs.base.id.DID;
@@ -13,7 +14,7 @@ import org.slf4j.Logger;
 
 final class Tandem
 {
-    private static final Logger l = Util.l(Tandem.class);
+    private static final Logger l = Loggers.getLogger(Tandem.class);
 
     private final Channel[] _cs = new Channel[2];
     private boolean _notified = false;

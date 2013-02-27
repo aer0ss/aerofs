@@ -1,5 +1,6 @@
 package com.aerofs.daemon.core.linker;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.event.IEvent;
 import com.aerofs.daemon.core.CoreEventDispatcher;
@@ -24,7 +25,7 @@ import java.util.Set;
 
 public class Linker implements ILinker
 {
-    private static final Logger l = Util.l(Linker.class);
+    private static final Logger l = Loggers.getLogger(Linker.class);
 
     // The priority used across the linker
     public static final Prio PRIO = Prio.LO;

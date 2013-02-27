@@ -3,6 +3,7 @@ package com.aerofs.gui.sharing;
 import java.util.Collection;
 import java.util.List;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.lib.acl.Role;
 import com.aerofs.base.id.UserID;
@@ -50,7 +51,7 @@ import com.google.common.collect.Lists;
 
 public class CompInviteUsers extends Composite implements IInputChangeListener
 {
-    private static final Logger l = Util.l(CompInviteUsers.class);
+    private static final Logger l = Loggers.getLogger(CompInviteUsers.class);
     private final Button _btnOk;
     private final Text _txtNote;
 

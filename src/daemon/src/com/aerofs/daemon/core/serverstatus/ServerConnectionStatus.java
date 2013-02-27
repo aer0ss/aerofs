@@ -4,10 +4,10 @@
 
 package com.aerofs.daemon.core.serverstatus;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.serverstatus.IConnectionStatusNotifier.IListener;
 import com.aerofs.daemon.core.syncstatus.SyncStatusConnection;
 import com.aerofs.daemon.core.verkehr.VerkehrNotificationSubscriber;
-import com.aerofs.lib.Util;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -71,7 +71,7 @@ public class ServerConnectionStatus
         }
     }
 
-    private static final Logger l = Util.l(ServerConnectionStatus.class);
+    private static final Logger l = Loggers.getLogger(ServerConnectionStatus.class);
     private final Map<Server, Boolean> _status = Maps.newEnumMap(Server.class);
     private final Map<Server, List<ServiceStatusEdgeDetector>> _listeners
             = Maps.newEnumMap(Server.class);

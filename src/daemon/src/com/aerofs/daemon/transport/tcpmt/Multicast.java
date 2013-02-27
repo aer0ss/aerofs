@@ -1,5 +1,6 @@
 package com.aerofs.daemon.transport.tcpmt;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.event.net.EITransportMetricsUpdated;
@@ -47,7 +48,7 @@ import static com.aerofs.daemon.transport.lib.AddressUtils.getinetaddr;
 
 class Multicast implements IMaxcast
 {
-    private static final Logger l = Util.l(Multicast.class);
+    private static final Logger l = Loggers.getLogger(Multicast.class);
 
     private final TCP t;
     private final Map<NetworkInterface, MulticastSocket> _iface2sock =

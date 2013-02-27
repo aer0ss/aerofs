@@ -1,5 +1,6 @@
 package com.aerofs.gui.misc;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.ThreadUtil;
@@ -39,7 +40,7 @@ import static com.aerofs.gui.GUIUtil.getNewText;
 
 public class DlgDefect extends AeroFSJFaceDialog
 {
-    private static final Logger l = Util.l(DlgDefect.class);
+    private static final Logger l = Loggers.getLogger(DlgDefect.class);
 
     private static interface IContactEmailGetter
     {

@@ -1,5 +1,6 @@
 package com.aerofs.daemon.ritual;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.daemon.transport.lib.AddressUtils;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
@@ -30,7 +31,7 @@ import static com.aerofs.lib.Param.Ritual.MAX_FRAME_LENGTH;
 
 public class RitualServer
 {
-    final static Logger l = Util.l(RitualServer.class);
+    final static Logger l = Loggers.getLogger(RitualServer.class);
     private final int port = Cfg.port(Cfg.PortType.RITUAL);
     private final String host = Cfg.db().get(Key.RITUAL_BIND_ADDR);
 

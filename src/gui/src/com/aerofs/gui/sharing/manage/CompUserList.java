@@ -1,6 +1,8 @@
 package com.aerofs.gui.sharing.manage;
 
 import java.util.ArrayList;
+
+import com.aerofs.base.Loggers;
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.SimpleContentProvider;
 import com.aerofs.lib.Path;
@@ -43,7 +45,7 @@ import org.slf4j.Logger;
 
 public class CompUserList extends Composite
 {
-    private static final Logger l = Util.l(CompUserList.class);
+    private static final Logger l = Loggers.getLogger(CompUserList.class);
 
     public static interface ILoadListener
     {

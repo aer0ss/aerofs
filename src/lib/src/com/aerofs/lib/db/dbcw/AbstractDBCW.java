@@ -5,15 +5,14 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.ex.ExAlreadyExist;
 import org.slf4j.Logger;
 
-import com.aerofs.lib.Util;
-
 abstract class AbstractDBCW implements IDBCW
 {
-    public final static Logger l = Util.l(AbstractDBCW.class);
+    public final static Logger l = Loggers.getLogger(AbstractDBCW.class);
 
     private final String _url;
     private final boolean _autoCommit;

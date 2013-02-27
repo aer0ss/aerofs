@@ -5,6 +5,7 @@
 package com.aerofs.daemon.core.update;
 
 import com.aerofs.base.BaseUtil;
+import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.ds.OA.Type;
 import com.aerofs.daemon.core.update.DPUTUtil.IDatabaseOperation;
 import com.aerofs.daemon.lib.db.CoreDBCW;
@@ -40,7 +41,7 @@ import java.util.Set;
  */
 public class DPUTUpdateSIDGeneration implements IDaemonPostUpdateTask
 {
-    private final static Logger l = Util.l(DPUTUpdateSIDGeneration.class);
+    private final static Logger l = Loggers.getLogger(DPUTUpdateSIDGeneration.class);
 
     private final IDBCW _dbcw;
     private final CfgLocalUser _cfgLocalUser;

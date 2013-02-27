@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.net.DigestedMessage;
@@ -55,7 +56,7 @@ import javax.annotation.Nullable;
 
 public class Download
 {
-    private static final Logger l = Util.l(Download.class);
+    private static final Logger l = Loggers.getLogger(Download.class);
     private static final FrequentDefectSender _defectSender = new FrequentDefectSender();
 
     private final To _src;

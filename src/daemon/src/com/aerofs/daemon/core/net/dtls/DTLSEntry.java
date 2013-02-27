@@ -3,6 +3,7 @@ package com.aerofs.daemon.core.net.dtls;
 import java.io.ByteArrayInputStream;
 import java.util.Arrays;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.base.id.UserID;
 import org.slf4j.Logger;
 
@@ -24,7 +25,7 @@ import javax.annotation.Nullable;
 //
 class DTLSEntry
 {
-    private static final Logger l = Util.l(DTLSEntry.class);
+    private static final Logger l = Loggers.getLogger(DTLSEntry.class);
 
     private final DTLSEngine _engine;
     private final DTLSLayer _layer;

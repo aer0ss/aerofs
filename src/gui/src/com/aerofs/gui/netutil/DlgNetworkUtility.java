@@ -1,6 +1,7 @@
 package com.aerofs.gui.netutil;
 
 import com.aerofs.InternalDiagnostics;
+import com.aerofs.base.Loggers;
 import com.aerofs.lib.ritual.RitualBlockingClient;
 import com.aerofs.lib.ritual.RitualClientFactory;
 import org.eclipse.jface.dialogs.IDialogConstants;
@@ -30,7 +31,7 @@ import org.slf4j.Logger;
 
 public class DlgNetworkUtility extends AeroFSJFaceDialog
 {
-    private static final Logger l = Util.l(DlgNetworkUtility.class);
+    private static final Logger l = Loggers.getLogger(DlgNetworkUtility.class);
 
     private final DID _did;
     private final String _alias;

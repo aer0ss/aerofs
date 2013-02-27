@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.phy.block;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.phy.IPhysicalFile;
 import com.aerofs.daemon.core.phy.IPhysicalObject;
 import com.aerofs.daemon.core.phy.PhysicalOp;
@@ -11,7 +12,6 @@ import com.aerofs.daemon.core.phy.block.BlockStorageDatabase.FileInfo;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.Path;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExFileNotFound;
 import com.aerofs.lib.id.SOKID;
 import org.slf4j.Logger;
@@ -24,7 +24,7 @@ import java.util.Date;
 
 class BlockFile implements IPhysicalFile
 {
-    private static final Logger l = Util.l(BlockFile.class);
+    private static final Logger l = Loggers.getLogger(BlockFile.class);
 
     private final BlockStorage _s;
     final SOKID _sokid;

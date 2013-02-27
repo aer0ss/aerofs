@@ -4,6 +4,7 @@
 
 package com.aerofs.gui.syncstatus;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.gui.AeroFSDialog;
 import com.aerofs.gui.GUIParam;
 import com.aerofs.gui.GUIUtil;
@@ -45,7 +46,7 @@ import java.util.Map;
 
 public class DlgSyncStatus extends AeroFSDialog
 {
-    private static final Logger l = Util.l(DlgSyncStatus.class);
+    private static final Logger l = Loggers.getLogger(DlgSyncStatus.class);
     private final Path _path;
     private final Map<Program, Image> _iconCache = Maps.newHashMap();
 

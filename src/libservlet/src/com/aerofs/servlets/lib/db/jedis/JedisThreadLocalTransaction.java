@@ -4,7 +4,7 @@
 
 package com.aerofs.servlets.lib.db.jedis;
 
-import com.aerofs.lib.Util;
+import com.aerofs.base.Loggers;
 import com.aerofs.servlets.lib.db.AbstractThreadLocalTransaction;
 import com.aerofs.servlets.lib.db.ExDbInternal;
 import com.aerofs.servlets.lib.db.IDatabaseConnectionProvider;
@@ -21,7 +21,7 @@ public class JedisThreadLocalTransaction
     extends AbstractThreadLocalTransaction<JedisException>
     implements IThreadLocalTransaction<JedisException>
 {
-    private static final Logger l = Util.l(JedisThreadLocalTransaction.class);
+    private static final Logger l = Loggers.getLogger(JedisThreadLocalTransaction.class);
 
     private IDatabaseConnectionProvider<JedisPooledConnection> _provider;
 

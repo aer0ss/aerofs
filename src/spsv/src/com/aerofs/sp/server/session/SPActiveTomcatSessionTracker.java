@@ -4,7 +4,7 @@
 
 package com.aerofs.sp.server.session;
 
-import com.aerofs.lib.Util;
+import com.aerofs.base.Loggers;
 import com.google.common.collect.Maps;
 import org.slf4j.Logger;
 
@@ -18,7 +18,7 @@ import java.util.Map;
  */
 public class SPActiveTomcatSessionTracker
 {
-    private static final Logger l = Util.l(SPActiveTomcatSessionTracker.class);
+    private static final Logger l = Loggers.getLogger(SPActiveTomcatSessionTracker.class);
     private final Map<String, HttpSession> _sessionMap = Maps.newHashMap();
 
     public synchronized void sessionCreated(HttpSession session)

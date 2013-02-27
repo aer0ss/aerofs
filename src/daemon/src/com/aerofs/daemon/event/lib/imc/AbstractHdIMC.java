@@ -1,5 +1,6 @@
 package com.aerofs.daemon.event.lib.imc;
 
+import com.aerofs.base.Loggers;
 import org.slf4j.Logger;
 
 import com.aerofs.daemon.event.IEBIMC;
@@ -9,7 +10,7 @@ import com.aerofs.lib.Util;
 
 public abstract class AbstractHdIMC<E extends IEBIMC> implements IEventHandler<E>
 {
-    protected static final Logger l = Util.l(AbstractHdIMC.class);
+    protected static final Logger l = Loggers.getLogger(AbstractHdIMC.class);
 
     @Override
     public final void handle_(E ev, Prio prio)

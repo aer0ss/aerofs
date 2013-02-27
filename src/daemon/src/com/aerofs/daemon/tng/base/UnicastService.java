@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.tng.base;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.net.link.ILinkStateService;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.daemon.lib.async.ISingleThreadedPrioritizedExecutor;
@@ -11,7 +12,6 @@ import com.aerofs.daemon.lib.id.StreamID;
 import com.aerofs.daemon.tng.IOutgoingStream;
 import com.aerofs.daemon.tng.base.pipeline.IPipelineFactory;
 import com.aerofs.daemon.tng.ex.ExTransport;
-import com.aerofs.lib.Util;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.SID;
 import com.aerofs.proto.Files.PBDumpStat;
@@ -29,7 +29,7 @@ import java.util.Map;
 public final class UnicastService
         implements IUnicastService, IIncomingUnicastConnectionListener, IPeerPresenceListener
 {
-    private static final Logger l = Util.l(UnicastService.class);
+    private static final Logger l = Loggers.getLogger(UnicastService.class);
 
     private final IUnicastConnectionService _unicastConnectionService;
     private final PeerFactory _peerFactory;

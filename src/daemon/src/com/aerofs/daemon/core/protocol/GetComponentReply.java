@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.protocol;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.acl.LocalACL;
 import com.aerofs.daemon.core.alias.MapAlias2Target;
 import com.aerofs.daemon.core.alias.Aliasing;
@@ -38,7 +39,7 @@ import java.util.Set;
 
 public class GetComponentReply
 {
-    private static final Logger l = Util.l(GetComponentReply.class);
+    private static final Logger l = Loggers.getLogger(GetComponentReply.class);
 
     private final TransManager _tm;
     private final DirectoryService _ds;

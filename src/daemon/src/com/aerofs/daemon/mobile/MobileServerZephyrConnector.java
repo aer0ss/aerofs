@@ -4,11 +4,11 @@
 
 package com.aerofs.daemon.mobile;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.base.net.AddressResolverHandler;
 import com.aerofs.base.net.ZephyrPipeHandler;
 import com.aerofs.daemon.mobile.TransportDataExtension.TransportDataIQ;
 import com.aerofs.lib.Param;
-import com.aerofs.lib.Util;
 import com.aerofs.proto.Transport.PBTPHeader;
 import com.aerofs.proto.Transport.PBTPHeader.Type;
 import com.aerofs.proto.Transport.PBZephyrCandidateInfo;
@@ -39,7 +39,7 @@ import java.util.concurrent.Executors;
 
 public class MobileServerZephyrConnector
 {
-    private static final Logger l = Util.l(MobileServerZephyrConnector.class);
+    private static final Logger l = Loggers.getLogger(MobileServerZephyrConnector.class);
     private static final String MOBILE_SUBJECT = "mobile";
 
     static {

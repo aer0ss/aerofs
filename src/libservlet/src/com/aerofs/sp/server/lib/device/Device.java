@@ -4,6 +4,7 @@
 
 package com.aerofs.sp.server.lib.device;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.Util;
@@ -30,7 +31,7 @@ import java.sql.SQLException;
 
 public class Device
 {
-    private static final Logger l = Util.l(Device.class);
+    private static final Logger l = Loggers.getLogger(Device.class);
 
     public static class Factory
     {

@@ -5,8 +5,8 @@
 
 package com.aerofs.daemon.transport.lib;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.daemon.event.net.EOTpSubsequentPulse;
-import com.aerofs.lib.Util;
 import com.aerofs.base.id.DID;
 import org.slf4j.Logger;
 
@@ -53,5 +53,5 @@ public class SubsequentPulse implements IPulseHandlerImpl<EOTpSubsequentPulse>
 
     private final ITransportImpl tp;
 
-    private static final Logger l = Util.l(SubsequentPulse.class);
+    private static final Logger l = Loggers.getLogger(SubsequentPulse.class);
 }

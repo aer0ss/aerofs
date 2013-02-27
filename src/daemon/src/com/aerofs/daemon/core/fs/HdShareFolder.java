@@ -4,6 +4,7 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.Set;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.acl.ACLChecker;
 import com.aerofs.daemon.core.acl.ACLSynchronizer;
 import com.aerofs.daemon.core.ds.DirectoryService;
@@ -55,7 +56,7 @@ import org.slf4j.Logger;
 
 public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
 {
-    private final static Logger l = Util.l(HdShareFolder.class);
+    private final static Logger l = Loggers.getLogger(HdShareFolder.class);
 
     private final ACLChecker _acl;
     private final TC _tc;

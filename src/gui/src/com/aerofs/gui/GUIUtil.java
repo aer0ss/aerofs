@@ -2,6 +2,7 @@ package com.aerofs.gui;
 
 import javax.annotation.Nullable;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.gui.diagnosis.DlgDiagnosis;
 import com.aerofs.gui.history.DlgHistory;
 import com.aerofs.gui.sharing.DlgCreateSharedFolder;
@@ -47,7 +48,7 @@ import java.io.IOException;
 
 public class GUIUtil
 {
-    public static final Logger l = Util.l(GUIUtil.class);
+    public static final Logger l = Loggers.getLogger(GUIUtil.class);
 
     public static String getNewText(Text txt, VerifyEvent ev)
     {

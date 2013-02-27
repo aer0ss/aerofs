@@ -1,5 +1,6 @@
 package com.aerofs.controller;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.lib.IProgram;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
@@ -18,7 +19,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 public class ControllerProgram implements IProgram, IViewNotifier
 {
-    private static final Logger l = Util.l(ControllerProgram.class);
+    private static final Logger l = Loggers.getLogger(ControllerProgram.class);
 
     private static final BlockingQueue<RPCArgs> _queue = new LinkedBlockingQueue<RPCArgs>();
     private ControllerServiceReactor _reactor;

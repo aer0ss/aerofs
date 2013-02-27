@@ -1,5 +1,6 @@
 package com.aerofs.daemon.transport.lib;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
 import com.aerofs.lib.event.IEvent;
@@ -76,7 +77,7 @@ public class TPUtil
         }
     }
 
-    private static final Logger l = Util.l(TPUtil.class);
+    private static final Logger l = Loggers.getLogger(TPUtil.class);
 
     /* unicast header
      *

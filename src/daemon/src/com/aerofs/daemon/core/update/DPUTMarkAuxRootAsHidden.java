@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.update;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgAbsAuxRoot;
 import com.aerofs.lib.os.OSUtil;
@@ -16,7 +17,7 @@ import java.io.IOException;
  */
 public class DPUTMarkAuxRootAsHidden implements IDaemonPostUpdateTask
 {
-    private final static Logger l = Util.l(DPUTMigrateAuxRoot.class);
+    private final static Logger l = Loggers.getLogger(DPUTMigrateAuxRoot.class);
     private final CfgAbsAuxRoot _cfgAbsAuxRoot;
 
     DPUTMarkAuxRootAsHidden(CfgAbsAuxRoot cfgAbsAuxRoot)

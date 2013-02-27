@@ -4,17 +4,17 @@
 
 package com.aerofs.daemon.tng.base;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.daemon.tng.base.pipeline.IPipelineEvent;
 import com.aerofs.daemon.tng.base.pipeline.IPipelineEventSink;
 import com.aerofs.daemon.tng.ex.ExTransport;
-import com.aerofs.lib.Util;
 import com.aerofs.base.async.UncancellableFuture;
 import com.google.common.util.concurrent.ListenableFuture;
 import org.slf4j.Logger;
 
 final class UnicastConnectionSink implements IPipelineEventSink
 {
-    private static final Logger l = Util.l(UnicastConnectionSink.class);
+    private static final Logger l = Loggers.getLogger(UnicastConnectionSink.class);
 
     private final IUnicastConnection _unicast;
 

@@ -4,7 +4,7 @@
 
 package com.aerofs.lib.graph;
 
-import com.aerofs.lib.Util;
+import com.aerofs.base.Loggers;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
@@ -18,7 +18,7 @@ import java.util.Queue;
 
 public abstract class DirectedAcyclicGraph<V extends Comparable<V>, E extends DirectedEdge<V>>
 {
-    private static final Logger l = Util.l(DirectedAcyclicGraph.class);
+    private static final Logger l = Loggers.getLogger(DirectedAcyclicGraph.class);
 
     protected final Multimap<V, E> _mmap = TreeMultimap.create();
 

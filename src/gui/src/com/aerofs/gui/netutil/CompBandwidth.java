@@ -1,5 +1,6 @@
 package com.aerofs.gui.netutil;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.lib.Param;
 import com.aerofs.lib.ThreadUtil;
@@ -28,7 +29,7 @@ import org.slf4j.Logger;
 
 public class CompBandwidth extends Composite
 {
-    private static final Logger l = Util.l(CompBandwidth.class);
+    private static final Logger l = Loggers.getLogger(CompBandwidth.class);
 
     private final DID _did;
     private final Button _btnStart;

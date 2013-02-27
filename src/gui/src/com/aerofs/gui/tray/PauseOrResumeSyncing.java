@@ -2,6 +2,7 @@ package com.aerofs.gui.tray;
 
 import java.util.concurrent.Callable;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ritual.RitualBlockingClient;
@@ -13,7 +14,7 @@ import org.slf4j.Logger;
  */
 public class PauseOrResumeSyncing
 {
-    private static final Logger l = Util.l(PauseOrResumeSyncing.class);
+    private static final Logger l = Loggers.getLogger(PauseOrResumeSyncing.class);
 
     // access to all member variables should be protected by synchronized (this)
     private int _pauseSeq;

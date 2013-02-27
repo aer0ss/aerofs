@@ -1,12 +1,12 @@
 package com.aerofs.daemon.transport.tcpmt;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.daemon.transport.tcpmt.ARP.ARPChange;
 import com.aerofs.daemon.transport.tcpmt.ARP.IARPChangeListener;
 import com.aerofs.lib.ThreadUtil;
-import com.aerofs.lib.Util;
 import com.aerofs.proto.Transport.PBTPHeader;
 import com.aerofs.proto.Transport.PBTPHeader.Type;
 import com.google.common.collect.Lists;
@@ -22,7 +22,7 @@ import java.util.Map;
 
 class HostnameMonitor implements IARPChangeListener
 {
-    private static final Logger l = Util.l(HostnameMonitor.class);
+    private static final Logger l = Loggers.getLogger(HostnameMonitor.class);
 
     private static class Host
     {

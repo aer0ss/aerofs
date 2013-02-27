@@ -1,8 +1,8 @@
 package com.aerofs.daemon.core.mock.logical;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExNotDir;
 import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.base.id.OID;
@@ -18,7 +18,7 @@ import java.sql.SQLException;
  */
 public class LogicalObjectsPrinter
 {
-    private static final Logger l = Util.l(LogicalObjectsPrinter.class);
+    private static final Logger l = Loggers.getLogger(LogicalObjectsPrinter.class);
 
     public static void printRecursively(DirectoryService ds) throws SQLException, ExNotFound, ExNotDir
     {

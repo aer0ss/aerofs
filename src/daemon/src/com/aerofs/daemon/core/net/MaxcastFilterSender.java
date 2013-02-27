@@ -4,12 +4,12 @@
 
 package com.aerofs.daemon.core.net;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.lib.SecUtil;
-import com.aerofs.lib.Util;
 import org.slf4j.Logger;
 
 public class MaxcastFilterSender {
-    private static final Logger l = Util.l(MaxcastFilterSender.class);
+    private static final Logger l = Loggers.getLogger(MaxcastFilterSender.class);
 
     private int _lastMCasttID;
 

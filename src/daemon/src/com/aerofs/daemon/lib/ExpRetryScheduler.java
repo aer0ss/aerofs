@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.lib;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.lib.sched.Scheduler;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.Param;
@@ -21,7 +22,7 @@ import java.util.concurrent.Callable;
  */
 public class ExpRetryScheduler
 {
-    private final Logger l = Util.l(ExpRetryScheduler.class);
+    private final Logger l = Loggers.getLogger(ExpRetryScheduler.class);
 
     private final String _name;
     private final Scheduler _sched;

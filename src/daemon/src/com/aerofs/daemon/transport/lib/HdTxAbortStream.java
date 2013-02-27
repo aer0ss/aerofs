@@ -1,5 +1,6 @@
 package com.aerofs.daemon.transport.lib;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.daemon.event.IEventHandler;
 import com.aerofs.daemon.event.net.tx.EOTxAbortStream;
 import com.aerofs.lib.event.Prio;
@@ -14,7 +15,7 @@ import static com.aerofs.proto.Transport.PBTPHeader.Type.STREAM;
 
 public class HdTxAbortStream implements IEventHandler<EOTxAbortStream>
 {
-    private static final Logger l = Util.l(HdTxAbortStream.class);
+    private static final Logger l = Loggers.getLogger(HdTxAbortStream.class);
 
     private final StreamManager _sm;
     private final IUnicast _ucast;

@@ -1,5 +1,6 @@
 package com.aerofs.daemon.core.net.dtls;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.*;
@@ -32,7 +33,7 @@ import java.util.*;
 
 class DTLSCache implements IDumpStatMisc
 {
-    private static final Logger l = Util.l(DTLSCache.class);
+    private static final Logger l = Loggers.getLogger(DTLSCache.class);
 
     private SSLCtx _cliCtx;
     private final DTLSLayer _layer;

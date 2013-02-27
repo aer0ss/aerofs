@@ -1,5 +1,6 @@
 package com.aerofs.gui.setup;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.gui.AeroFSDialog;
 import com.aerofs.gui.CompSpin;
 import com.aerofs.gui.GUIParam;
@@ -44,7 +45,7 @@ import java.util.List;
 
 public class DlgJoinSharedFolders extends AeroFSDialog
 {
-    private static final Logger l = Util.l(DlgJoinSharedFolders.class);
+    private static final Logger l = Loggers.getLogger(DlgJoinSharedFolders.class);
 
     ListSharedFolderInvitationsReply _pendingFolders = null;
     CompSpin _compSpin;

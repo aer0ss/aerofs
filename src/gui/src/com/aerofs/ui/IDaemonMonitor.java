@@ -1,6 +1,6 @@
 package com.aerofs.ui;
 
-import com.aerofs.lib.Util;
+import com.aerofs.base.Loggers;
 import com.aerofs.lib.cfg.Cfg;
 import org.slf4j.Logger;
 
@@ -54,7 +54,7 @@ public interface IDaemonMonitor
          */
         private static class NoopDaemonMonitor implements IDaemonMonitor
         {
-            private static final Logger l = Util.l(NoopDaemonMonitor.class);
+            private static final Logger l = Loggers.getLogger(NoopDaemonMonitor.class);
 
             @Override
             public void start() throws Exception

@@ -2,6 +2,7 @@ package com.aerofs.daemon.core.protocol;
 
 import java.sql.SQLException;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.*;
 import com.aerofs.daemon.core.acl.LocalACL;
@@ -47,7 +48,7 @@ import com.aerofs.proto.Core.PBGetComCall.Builder;
 
 public class GetComponentCall
 {
-    private static final Logger l = Util.l(GetComponentCall.class);
+    private static final Logger l = Loggers.getLogger(GetComponentCall.class);
 
     private IEmigrantTargetSIDLister _emc;
     private PrefixVersionControl _pvc;

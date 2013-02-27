@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.tng.xmpp;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.net.link.ILinkStateService;
 import com.aerofs.daemon.lib.async.ISingleThreadedPrioritizedExecutor;
@@ -41,7 +42,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 final class XMPPPresence implements IPresenceService, IXMPPServerConnectionListener
 {
-    private static final Logger l = Util.l(XMPPPresence.class);
+    private static final Logger l = Loggers.getLogger(XMPPPresence.class);
 
     private final ISingleThreadedPrioritizedExecutor _executor;
     private final Notifier<IPeerPresenceListener> _peerPresenceNotifier = Notifier.create();

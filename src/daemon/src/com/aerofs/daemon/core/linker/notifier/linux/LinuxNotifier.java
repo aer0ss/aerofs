@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.obfuscate.ObfuscatingFormatters;
 import com.aerofs.swig.driver.Driver;
@@ -34,7 +35,7 @@ import static net.contentobjects.jnotify.linux.JNotify_linux.*;
 
 public class LinuxNotifier implements INotifier, INotifyListener
 {
-    private final static Logger l = Util.l(LinuxNotifier.class);
+    private final static Logger l = Loggers.getLogger(LinuxNotifier.class);
     final CfgAbsRootAnchor _cfgAbsRootAnchor;
     final CoreQueue _cq;
     final InjectableJNotify _jn;

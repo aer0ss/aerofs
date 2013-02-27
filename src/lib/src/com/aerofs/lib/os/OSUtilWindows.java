@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.util.HashSet;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.*;
 import com.aerofs.lib.injectable.InjectableFile;
@@ -15,7 +16,7 @@ import org.slf4j.Logger;
 
 public class OSUtilWindows implements IOSUtil
 {
-    private static final Logger l = Util.l(OSUtilWindows.class);
+    private static final Logger l = Loggers.getLogger(OSUtilWindows.class);
 
     @Override
     public String getDefaultRTRoot()

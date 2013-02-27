@@ -4,8 +4,8 @@
 
 package com.aerofs.daemon.core.verkehr;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.serverstatus.AbstractConnectionStatusNotifier;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgCACertFilename;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
@@ -37,7 +37,7 @@ import static java.util.concurrent.Executors.newCachedThreadPool;
  */
 public class VerkehrNotificationSubscriber extends AbstractConnectionStatusNotifier
 {
-    private static final Logger l = Util.l(VerkehrNotificationSubscriber.class);
+    private static final Logger l = Loggers.getLogger(VerkehrNotificationSubscriber.class);
 
     private boolean _started = false;
     private final VerkehrSubscriber _subscriber;

@@ -1,5 +1,6 @@
 package com.aerofs.servlets;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.Util;
 import org.slf4j.Logger;
@@ -9,7 +10,7 @@ import javax.servlet.http.HttpServlet;
 
 public class AeroServlet extends HttpServlet
 {
-    private static final Logger l = Util.l(AeroServlet.class);
+    private static final Logger l = Loggers.getLogger(AeroServlet.class);
 
     private static final long serialVersionUID = 1L;
 

@@ -1,5 +1,6 @@
 package com.aerofs.daemon.transport.lib;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.daemon.event.IEventHandler;
 import com.aerofs.daemon.event.net.tx.EOMaxcastMessage;
 import com.aerofs.lib.event.Prio;
@@ -11,7 +12,7 @@ import java.io.IOException;
 
 public class HdMaxcastMessage implements IEventHandler<EOMaxcastMessage>
 {
-    private static final Logger l = Util.l(HdMaxcastMessage.class);
+    private static final Logger l = Loggers.getLogger(HdMaxcastMessage.class);
 
     private final IMaxcast _mcast;
 

@@ -4,12 +4,12 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map.Entry;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.device.DevicePresence;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.event.IEventHandler;
 import com.aerofs.daemon.event.net.EIPresence;
 import com.aerofs.lib.event.Prio;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.SID;
@@ -22,7 +22,7 @@ public class HdPresence implements IEventHandler<EIPresence>
 {
     private final DevicePresence _dp;
     private final IMapSID2SIndex _sid2sidx;
-    private static final Logger l = Util.l(HdPresence.class);
+    private static final Logger l = Loggers.getLogger(HdPresence.class);
 
     @Inject
     public HdPresence(DevicePresence dp, IMapSID2SIndex sid2sidx)

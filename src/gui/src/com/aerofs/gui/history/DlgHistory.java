@@ -1,5 +1,6 @@
 package com.aerofs.gui.history;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.gui.AeroFSDialog;
 import com.aerofs.gui.AeroFSMessageBox;
 import com.aerofs.gui.AeroFSMessageBox.IconType;
@@ -61,7 +62,7 @@ import javax.annotation.Nullable;
 
 public class DlgHistory extends AeroFSDialog
 {
-    private static final Logger l = Util.l(DlgHistory.class);
+    private static final Logger l = Loggers.getLogger(DlgHistory.class);
 
     private final Map<Program, Image> _iconCache = Maps.newHashMap();
 

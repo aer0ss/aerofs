@@ -5,6 +5,7 @@
 package com.aerofs.controller;
 
 import com.aerofs.base.BaseParam.SP;
+import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.gui.GuiScheduler;
 import com.aerofs.lib.Param;
@@ -75,7 +76,7 @@ import static java.util.concurrent.Executors.newCachedThreadPool;
  */
 public final class CommandNotificationSubscriber
 {
-    private static final Logger l = Util.l(CommandNotificationSubscriber.class);
+    private static final Logger l = Loggers.getLogger(CommandNotificationSubscriber.class);
 
     private final GuiScheduler _scheduler;
     private final ExponentialRetry _er;

@@ -1,11 +1,11 @@
 package com.aerofs.daemon.core.syncstatus;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.store.DeviceBitMap;
 import com.aerofs.daemon.core.syncstatus.LocalSyncStatus.IAggregatedStatus;
 import com.aerofs.daemon.lib.db.UserAndDeviceNames;
 import com.aerofs.lib.BitVector;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.base.id.UserID;
 import com.google.common.collect.Maps;
@@ -22,7 +22,7 @@ import java.util.Map;
  */
 public class SyncStatusSummary implements IAggregatedStatus
 {
-    private static final Logger l = Util.l(SyncStatusSummary.class);
+    private static final Logger l = Loggers.getLogger(SyncStatusSummary.class);
 
     private final UserAndDeviceNames _udn;
     private final CfgLocalUser _user;

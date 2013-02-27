@@ -4,8 +4,8 @@
 
 package com.aerofs.sp.server.session;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.base.id.UserID;
-import com.aerofs.lib.Util;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import org.slf4j.Logger;
@@ -20,7 +20,7 @@ import java.util.Set;
  */
 public class SPActiveUserSessionTracker
 {
-    private static final Logger l = Util.l(SPActiveUserSessionTracker.class);
+    private static final Logger l = Loggers.getLogger(SPActiveUserSessionTracker.class);
     private final Map<String, Set<String>> _userMap = Maps.newHashMap();
 
     public synchronized void signIn(UserID userID, String sessionID)

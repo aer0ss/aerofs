@@ -1,8 +1,8 @@
 package com.aerofs.daemon.core.alias;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.daemon.lib.db.IAliasDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
-import com.aerofs.lib.Util;
 import com.aerofs.base.id.OID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
@@ -19,7 +19,7 @@ import javax.annotation.Nullable;
  */
 public class MapAlias2Target
 {
-    private static final Logger l = Util.l(MapAlias2Target.class);
+    private static final Logger l = Loggers.getLogger(MapAlias2Target.class);
 
     private final IAliasDatabase _aldb;
 

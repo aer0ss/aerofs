@@ -7,6 +7,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.lib.db.dbcw.IDBCW;
 import com.google.inject.Inject;
 import com.aerofs.daemon.core.ds.OA;
@@ -21,7 +22,7 @@ import org.slf4j.Logger;
 
 public class DBCheckFID
 {
-    private static final Logger l = Util.l(DBCheckFID.class);
+    private static final Logger l = Loggers.getLogger(DBCheckFID.class);
 
     private final IDBCW _dbcw;
 

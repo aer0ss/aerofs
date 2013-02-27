@@ -1,6 +1,7 @@
 package com.aerofs.daemon.core.syncstatus;
 
 import com.aerofs.base.BaseUtil;
+import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
@@ -96,7 +97,7 @@ import java.util.concurrent.Callable;
 public class SyncStatusSynchronizer extends AbstractDirectoryServiceListener
         implements IVersionControlListener
 {
-    private static final Logger l = Util.l(SyncStatusSynchronizer.class);
+    private static final Logger l = Loggers.getLogger(SyncStatusSynchronizer.class);
 
     private final TransManager _tm;
     private final ISyncStatusDatabase _ssdb;

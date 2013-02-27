@@ -4,12 +4,12 @@
 
 package com.aerofs.daemon.core.store;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.device.DevicePresence;
 import com.aerofs.daemon.lib.db.AbstractTransListener;
 import com.aerofs.daemon.lib.db.IStoreDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.SystemUtil;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.id.SIndex;
 import org.slf4j.Logger;
 
@@ -28,7 +28,7 @@ public class Stores implements IStores, IStoreDeletionOperator
     private MapSIndex2DeviceBitMap _sidx2dbm;
     private DevicePresence _dp;
 
-    private static final Logger l = Util.l(Stores.class);
+    private static final Logger l = Loggers.getLogger(Stores.class);
 
     @Inject
     public void inject_(IStoreDatabase sdb, SIDMap sm, MapSIndex2Store sidx2s,

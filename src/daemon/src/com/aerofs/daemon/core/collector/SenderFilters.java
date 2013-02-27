@@ -5,6 +5,7 @@ import java.sql.SQLException;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
@@ -22,7 +23,7 @@ import static com.aerofs.daemon.core.collector.SenderFilterIndex.BASE;
 
 public class SenderFilters
 {
-    private static final Logger l = Util.l(SenderFilters.class);
+    private static final Logger l = Loggers.getLogger(SenderFilters.class);
     private final ISenderFilterDatabase _sfdb;
     private final TransManager _tm;
 

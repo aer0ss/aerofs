@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.update;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.lib.Param.AuxFolder;
 import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.Param;
@@ -22,7 +23,7 @@ import java.util.Arrays;
 
 public class DPUTMigrateAuxRoot implements IDaemonPostUpdateTask
 {
-    private final static Logger l = Util.l(DPUTMigrateAuxRoot.class);
+    private final static Logger l = Loggers.getLogger(DPUTMigrateAuxRoot.class);
     private final CfgAbsAuxRoot _cfgAbsAuxRoot;
 
     DPUTMigrateAuxRoot(CfgAbsAuxRoot cfgAbsAuxRoot)

@@ -1,5 +1,6 @@
 package com.aerofs.daemon.core.notification;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.CoreQueue;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.ds.DirectoryService;
@@ -41,7 +42,7 @@ import org.slf4j.Logger;
 
 public class RitualNotificationServer implements IConnectionManager
 {
-    private static final Logger l = Util.l(RitualNotificationServer.class);
+    private static final Logger l = Loggers.getLogger(RitualNotificationServer.class);
 
     private static final Prio PRIO = Prio.HI;
 

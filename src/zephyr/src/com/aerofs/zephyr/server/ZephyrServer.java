@@ -5,7 +5,7 @@
 
 package com.aerofs.zephyr.server;
 
-import com.aerofs.lib.Util;
+import com.aerofs.base.Loggers;
 import com.aerofs.zephyr.core.BufferPool;
 import com.aerofs.zephyr.core.Dispatcher;
 import com.aerofs.zephyr.core.FatalIOEventHandlerException;
@@ -271,5 +271,5 @@ public class ZephyrServer implements IIOEventHandler
     private ServerSocketChannel _ssc;
     private boolean _inited;
 
-    private static final Logger l = Util.l(ZephyrServer.class);
+    private static final Logger l = Loggers.getLogger(ZephyrServer.class);
 }

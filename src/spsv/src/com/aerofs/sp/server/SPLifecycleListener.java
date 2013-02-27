@@ -1,7 +1,7 @@
 package com.aerofs.sp.server;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.sp.server.lib.user.User;
-import com.aerofs.lib.Util;
 import com.aerofs.servlets.lib.NoopConnectionListener;
 import com.aerofs.sp.server.lib.session.HttpSessionUser;
 import com.aerofs.sp.server.lib.session.IHttpSessionProvider;
@@ -42,7 +42,7 @@ import static java.lang.Short.parseShort;
 
 public class SPLifecycleListener implements ServletContextListener, HttpSessionListener
 {
-    private static final Logger l = Util.l(SPLifecycleListener.class);
+    private static final Logger l = Loggers.getLogger(SPLifecycleListener.class);
 
     // Trackers.
     private final SPActiveUserSessionTracker _userSessionTracker = new SPActiveUserSessionTracker();

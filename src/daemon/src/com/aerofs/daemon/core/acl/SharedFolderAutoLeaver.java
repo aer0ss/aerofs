@@ -5,6 +5,7 @@
 package com.aerofs.daemon.core.acl;
 
 import com.aerofs.base.BaseParam.SP;
+import com.aerofs.base.Loggers;
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.DirectoryService.AbstractDirectoryServiceListener;
@@ -15,7 +16,6 @@ import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.lib.db.AbstractTransListener;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransLocal;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.ex.ExBadArgs;
@@ -36,7 +36,7 @@ import java.util.Set;
  */
 public class SharedFolderAutoLeaver extends AbstractDirectoryServiceListener
 {
-    private final Logger l = Util.l(SharedFolderAutoLeaver.class);
+    private final Logger l = Loggers.getLogger(SharedFolderAutoLeaver.class);
 
     private final CfgLocalUser _localUser;
     private final DirectoryService _ds;

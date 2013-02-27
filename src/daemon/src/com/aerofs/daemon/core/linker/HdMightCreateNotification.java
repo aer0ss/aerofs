@@ -1,5 +1,6 @@
 package com.aerofs.daemon.core.linker;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.linker.MightCreate.Result;
 import com.aerofs.daemon.core.linker.event.EIMightCreateNotification;
 import com.aerofs.daemon.core.linker.scanner.ScanSessionQueue;
@@ -19,7 +20,7 @@ import java.util.Collections;
 
 class HdMightCreateNotification implements IEventHandler<EIMightCreateNotification>
 {
-    private static final Logger l = Util.l(HdMightCreateNotification.class);
+    private static final Logger l = Loggers.getLogger(HdMightCreateNotification.class);
     private final MightCreate _mc;
     private final ScanSessionQueue _ssq;
     private final IDeletionBuffer _globalBuffer;

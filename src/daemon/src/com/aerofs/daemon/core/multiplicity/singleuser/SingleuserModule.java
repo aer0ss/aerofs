@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.multiplicity.singleuser;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.admin.HdRelocateRootAnchor.ICrossFSRelocator;
 import com.aerofs.daemon.core.admin.HdRelocateRootAnchor.SingleuserCrossFSRelocator;
 import com.aerofs.daemon.core.ds.IPathResolver;
@@ -17,14 +18,13 @@ import com.aerofs.daemon.core.store.IStores;
 import com.aerofs.daemon.core.multiplicity.singleuser.migration.EmigrantDetector;
 import com.aerofs.daemon.core.multiplicity.singleuser.migration.ImmigrantCreator;
 import com.aerofs.daemon.core.multiplicity.singleuser.migration.ImmigrantDetector;
-import com.aerofs.lib.Util;
 import com.google.inject.AbstractModule;
 import com.google.inject.internal.Scoping;
 import org.slf4j.Logger;
 
 public class SingleuserModule extends AbstractModule
 {
-    private static final Logger l = Util.l(SingleuserModule.class);
+    private static final Logger l = Loggers.getLogger(SingleuserModule.class);
 
     @Override
     protected void configure()

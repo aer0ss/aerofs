@@ -1,5 +1,6 @@
 package com.aerofs.daemon.core.protocol;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.net.DigestedMessage;
@@ -19,7 +20,7 @@ import java.util.Map;
 
 public abstract class AbstractListRevChildrenHistory<LISTENER>
 {
-    private static final Logger l = Util.l(AbstractListRevChildrenHistory.class);
+    private static final Logger l = Loggers.getLogger(AbstractListRevChildrenHistory.class);
 
     protected class RCHListeners extends ConcurrentlyModifiableListeners<LISTENER>
     {

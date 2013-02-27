@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.net.tng;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.CoreDeviceLRU;
 import com.aerofs.daemon.core.net.PeerStreamMap;
 import com.aerofs.daemon.core.net.PeerStreamMap.IncomingStreamMap;
@@ -14,7 +15,6 @@ import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.lib.id.StreamID;
 import com.aerofs.daemon.tng.IIncomingStream;
 import com.aerofs.daemon.tng.IOutgoingStream;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExAborted;
 import com.aerofs.lib.ex.ExNoResource;
 import com.aerofs.lib.ex.ExNotFound;
@@ -166,5 +166,5 @@ public class UnicastOutputBottomLayer implements IUnicastOutputLayer
         }
     }
 
-    private static final Logger l = Util.l(UnicastOutputBottomLayer.class);
+    private static final Logger l = Loggers.getLogger(UnicastOutputBottomLayer.class);
 }

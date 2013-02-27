@@ -1,6 +1,6 @@
 package com.aerofs.daemon.core.mock.physical;
 
-import com.aerofs.lib.Util;
+import com.aerofs.base.Loggers;
 import com.aerofs.lib.injectable.InjectableFile;
 import org.slf4j.Logger;
 
@@ -11,7 +11,7 @@ import java.io.File;
  */
 public class PhysicalObjectsPrinter
 {
-    private static final Logger l = Util.l(PhysicalObjectsPrinter.class);
+    private static final Logger l = Loggers.getLogger(PhysicalObjectsPrinter.class);
 
     public static void printRecursively(InjectableFile f)
     {

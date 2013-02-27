@@ -5,6 +5,7 @@
 
 package com.aerofs.daemon.transport.xmpp.routing;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.event.lib.imc.IResultWaiter;
 import com.aerofs.lib.sched.IScheduler;
@@ -12,7 +13,6 @@ import com.aerofs.lib.event.Prio;
 import com.aerofs.daemon.transport.lib.IPipeDebug;
 import com.aerofs.daemon.transport.xmpp.IPipe;
 import com.aerofs.daemon.transport.xmpp.ISignalledPipe;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExNoResource;
 import com.google.common.collect.ImmutableSet;
 import org.slf4j.Logger;
@@ -232,5 +232,5 @@ public class SignalledPipeFanout implements IPipeDebug
     private final ImmutableSet<ISignalledPipe> _pipes;
     private final Map<DID, DIDPipeRouter<? extends IPipe>> _peers = new HashMap<DID, DIDPipeRouter<? extends IPipe>>();
 
-    private static final Logger l = Util.l(SignalledPipeFanout.class);
+    private static final Logger l = Loggers.getLogger(SignalledPipeFanout.class);
 }

@@ -4,6 +4,7 @@
 
 package com.aerofs.umdc;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.lib.Param;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
@@ -22,7 +23,7 @@ import static com.aerofs.daemon.lib.db.CoreSchema.T_AL;
 
 public class UMDC
 {
-    private static final Logger l = Util.l(UMDC.class);
+    private static final Logger l = Loggers.getLogger(UMDC.class);
     private IDBCW _db;
 
     public UMDC()

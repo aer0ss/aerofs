@@ -1,5 +1,6 @@
 package com.aerofs.daemon.core.multiplicity.singleuser.migration;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.migration.EmigrantUtil;
@@ -30,7 +31,7 @@ import java.util.Queue;
 
 public class EmigrantDetector implements IEmigrantDetector
 {
-    static final Logger l = Util.l(EmigrantDetector.class);
+    static final Logger l = Loggers.getLogger(EmigrantDetector.class);
 
     private final DirectoryService _ds;
     // This class uses the Downloads.downloadSync_ method to get dependent immigrant/emmigrant

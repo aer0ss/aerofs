@@ -1,6 +1,6 @@
 package com.aerofs.zephyr.server;
 
-import com.aerofs.lib.Util;
+import com.aerofs.base.Loggers;
 import com.aerofs.zephyr.core.Dispatcher;
 import org.apache.log4j.xml.DOMConfigurator;
 import org.slf4j.Logger;
@@ -9,7 +9,7 @@ import java.io.IOException;
 
 public class Zephyr
 {
-    private static final Logger l = Util.l(Zephyr.class);
+    private static final Logger l = Loggers.getLogger(Zephyr.class);
 
     public static void main(String args[])
             throws IOException

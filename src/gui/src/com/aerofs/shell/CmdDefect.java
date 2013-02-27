@@ -4,6 +4,7 @@
 
 package com.aerofs.shell;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.cli.CLI;
 import com.aerofs.base.C;
 import com.aerofs.labeling.L;
@@ -27,7 +28,7 @@ public class CmdDefect implements IShellCommand<ShProgram>
     public static void sendDefect(RitualBlockingClient ritual, String message,
             boolean dumpFileNames)
     {
-        Logger l = Util.l(CmdDefect.class);
+        Logger l = Loggers.getLogger(CmdDefect.class);
 
         boolean cpuIssue = message.toLowerCase().contains("cpu");
 

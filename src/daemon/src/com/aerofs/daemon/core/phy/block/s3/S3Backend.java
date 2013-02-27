@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.phy.block.s3;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.phy.block.IBlockStorageBackend;
 import com.aerofs.base.Base64;
 import com.aerofs.daemon.core.tc.TC.TCB;
@@ -43,7 +44,7 @@ import java.util.concurrent.Callable;
  */
 public class S3Backend implements IBlockStorageBackend
 {
-    private static final Logger l = Util.l(S3Backend.class);
+    private static final Logger l = Loggers.getLogger(S3Backend.class);
 
     private static final String BLOCK_SUFFIX = ".chunk.gz.aes";
 

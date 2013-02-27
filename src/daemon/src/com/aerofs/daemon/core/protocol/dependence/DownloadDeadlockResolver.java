@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.protocol.dependence;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.protocol.ReceiveAndApplyUpdate;
 import com.aerofs.daemon.core.protocol.ReceiveAndApplyUpdate.CausalityResult;
@@ -34,7 +35,7 @@ import java.util.ListIterator;
  */
 public class DownloadDeadlockResolver
 {
-    private static final Logger l = Util.l(DownloadDeadlockResolver.class);
+    private static final Logger l = Loggers.getLogger(DownloadDeadlockResolver.class);
 
     private final TransManager _tm;
     private final DirectoryService _ds;

@@ -1,5 +1,6 @@
 package com.aerofs.gui.singleuser.tray;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.gui.history.DlgHistory;
 import com.aerofs.gui.misc.DlgInviteToSignUp;
 import com.aerofs.gui.singleuser.preferences.SingleuserDlgPreferences;
@@ -53,7 +54,7 @@ import static com.aerofs.proto.Sv.PBSVEvent.Type.*;
 
 public class SingleuserTrayMenu implements ITrayMenu
 {
-    static final Logger l = Util.l(SingleuserTrayMenu.class);
+    static final Logger l = Loggers.getLogger(SingleuserTrayMenu.class);
 
     private volatile int _conflictCount = 0;
 

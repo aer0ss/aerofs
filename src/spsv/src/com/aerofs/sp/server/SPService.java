@@ -1,5 +1,6 @@
 package com.aerofs.sp.server;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.proto.Sp.DeleteOrganizationInvitationForUserReply;
 import com.aerofs.proto.Sp.DeleteOrganizationInvitationReply;
@@ -125,7 +126,7 @@ import java.util.concurrent.ExecutionException;
 
 public class SPService implements ISPService
 {
-    private static final Logger l = Util.l(SPService.class);
+    private static final Logger l = Loggers.getLogger(SPService.class);
 
     // the temporary user or device name used before SetPreferences is called
     private static final String UNKNOWN_DEVICE_NAME = "(unknown)";

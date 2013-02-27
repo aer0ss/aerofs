@@ -1,8 +1,8 @@
 package com.aerofs.daemon.tap;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.lib.event.Prio;
-import com.aerofs.lib.Util;
 import com.aerofs.base.async.UncancellableFuture;
 import com.aerofs.base.id.SID;
 import com.aerofs.proto.Common.PBException;
@@ -25,7 +25,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class MockTapServiceImpl implements ITapService
 {
-    private static final Logger l = Util.l(MockTapServiceImpl.class);
+    private static final Logger l = Loggers.getLogger(MockTapServiceImpl.class);
     private final AtomicBoolean _started = new AtomicBoolean(false);
 
     @Inject

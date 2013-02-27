@@ -7,6 +7,7 @@ import java.sql.SQLException;
 import java.util.ArrayDeque;
 import java.util.Queue;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.migration.ImmigrantVersionControl;
@@ -43,7 +44,7 @@ import javax.annotation.Nullable;
 
 public class GetVersReply
 {
-    private static final Logger l = Util.l(GetVersReply.class);
+    private static final Logger l = Loggers.getLogger(GetVersReply.class);
 
     private final IncomingStreams _iss;
     private final UpdateSenderFilter _pusf;

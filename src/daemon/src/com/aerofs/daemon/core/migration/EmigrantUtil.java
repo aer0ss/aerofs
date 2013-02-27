@@ -4,7 +4,7 @@
 
 package com.aerofs.daemon.core.migration;
 
-import com.aerofs.lib.Util;
+import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.id.SID;
 import com.aerofs.lib.id.SOID;
@@ -51,7 +51,8 @@ public class EmigrantUtil
             return new SID(new UniqueID(name, EMIGRANT_NAME_LEN - SID_STRING_LEN,
                     EMIGRANT_NAME_LEN));
         } catch (ExFormatError e) {
-            Util.l(EmigrantUtil.class).debug("name format error. ignored for emigration: " + name);
+            Loggers.getLogger(EmigrantUtil.class)
+                    .debug("name format error. ignored for emigration: " + name);
             return null;
         }
     }

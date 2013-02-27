@@ -1,5 +1,6 @@
 package com.aerofs.daemon.transport.tcpmt;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.event.lib.imc.IResultWaiter;
 import com.aerofs.daemon.lib.DaemonParam;
@@ -15,7 +16,6 @@ import com.aerofs.daemon.transport.lib.TCPProactorMT.IReactor;
 import com.aerofs.daemon.transport.lib.TPUtil;
 import com.aerofs.daemon.transport.tcpmt.ARP.ARPEntry;
 import com.aerofs.lib.Param;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExDeviceOffline;
 import com.aerofs.lib.ex.ExNoResource;
@@ -348,5 +348,5 @@ public class Unicast implements IConnectionManager, IUnicast, IPipeDebug
     private final TCPProactorMT _proactor;
     private final int _port;
 
-    private static final Logger l = Util.l(Unicast.class);
+    private static final Logger l = Loggers.getLogger(Unicast.class);
 }

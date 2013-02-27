@@ -10,6 +10,7 @@ import java.sql.SQLException;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.UniqueID.ExInvalidID;
@@ -41,7 +42,7 @@ import org.slf4j.Logger;
  */
 public class SharedFolderTagFileAndIcon
 {
-    private static final Logger l = Util.l(SharedFolderTagFileAndIcon.class);
+    private static final Logger l = Loggers.getLogger(SharedFolderTagFileAndIcon.class);
 
     private final InjectableDriver _dr;
     private final CfgAbsRootAnchor _cfgAbsRootAnchor;

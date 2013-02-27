@@ -8,6 +8,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.UnicastInputOutputStack;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.event.net.Endpoint;
@@ -24,7 +25,7 @@ import org.slf4j.Logger;
 //
 public class OutgoingStreams
 {
-    private static final Logger l = Util.l(OutgoingStreams.class);
+    private static final Logger l = Loggers.getLogger(OutgoingStreams.class);
 
     public final class OutgoingStream
     {

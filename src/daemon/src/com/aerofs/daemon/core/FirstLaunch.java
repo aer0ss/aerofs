@@ -5,6 +5,7 @@
 package com.aerofs.daemon.core;
 
 import com.aerofs.base.BaseParam.SP;
+import com.aerofs.base.Loggers;
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.linker.ILinker;
 import com.aerofs.daemon.core.linker.scanner.ScanCompletionCallback;
@@ -32,7 +33,7 @@ import java.sql.SQLException;
  */
 public class FirstLaunch
 {
-    private static final Logger l = Util.l(FirstLaunch.class);
+    private static final Logger l = Loggers.getLogger(FirstLaunch.class);
 
     private final AccessibleStores _as;
     private final ILinker _linker;

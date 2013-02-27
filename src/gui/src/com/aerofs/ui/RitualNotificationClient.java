@@ -5,6 +5,7 @@ import java.io.DataInputStream;
 import java.io.IOException;
 import java.net.Socket;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.lib.Param;
 import com.aerofs.lib.ThreadUtil;
 import org.slf4j.Logger;
@@ -17,7 +18,7 @@ import com.aerofs.proto.RitualNotifications.PBNotification;
 
 public class RitualNotificationClient
 {
-    private final static Logger l = Util.l(RitualNotificationClient.class);
+    private final static Logger l = Loggers.getLogger(RitualNotificationClient.class);
 
     /**
      * N.B. methods of this interface are called in an independent notification thread

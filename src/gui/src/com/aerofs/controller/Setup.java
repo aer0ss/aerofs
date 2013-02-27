@@ -12,6 +12,7 @@ import java.net.UnknownHostException;
 import java.sql.SQLException;
 import java.util.TreeMap;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.ThreadUtil;
@@ -48,7 +49,7 @@ import com.google.protobuf.ByteString;
 
 class Setup
 {
-    private static final Logger l = Util.l(Setup.class);
+    private static final Logger l = Loggers.getLogger(Setup.class);
     private final String _rtRoot;
     private final InjectableFile.Factory _factFile = new InjectableFile.Factory();
 

@@ -5,6 +5,7 @@
 
 package com.aerofs.daemon.transport.lib;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
 import com.aerofs.lib.event.IEvent;
@@ -344,5 +345,5 @@ public class PulseManager
     private final Map<DID, Integer> _msgids = new HashMap<DID, Integer>(); // msg ids that are still unanswered
     private final Map<DID, Integer> _pulsetokens = new HashMap<DID, Integer>();
 
-    private final Logger l = Util.l(PulseManager.class);
+    private final Logger l = Loggers.getLogger(PulseManager.class);
 }

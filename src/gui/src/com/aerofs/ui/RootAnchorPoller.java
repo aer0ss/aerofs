@@ -4,6 +4,7 @@
 
 package com.aerofs.ui;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.cli.CLI;
 import com.aerofs.cli.CLIRootAnchorUpdater;
 import com.aerofs.gui.GUI;
@@ -25,7 +26,7 @@ import java.io.IOException;
 
 public class RootAnchorPoller
 {
-    private static final Logger l = Util.l(RootAnchorPoller.class);
+    private static final Logger l = Loggers.getLogger(RootAnchorPoller.class);
 
     private String _oldRoot;
 

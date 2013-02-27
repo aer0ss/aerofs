@@ -4,6 +4,7 @@
 
 package com.aerofs.ui;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
@@ -13,7 +14,7 @@ import org.slf4j.Logger;
 
 public class InfoCollector
 {
-    private static final Logger l = Util.l(InfoCollector.class);
+    private static final Logger l = Loggers.getLogger(InfoCollector.class);
     private final String APP_NAME = "umdc";
 
     private void startImpl(String cmd) throws ExDaemonFailedToStart

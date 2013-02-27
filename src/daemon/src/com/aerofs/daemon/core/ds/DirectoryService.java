@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UniqueID;
@@ -56,7 +57,7 @@ import static com.google.common.base.Preconditions.checkState;
 
 public class DirectoryService implements IDumpStatMisc, IStoreDeletionOperator
 {
-    private static final Logger l = Util.l(DirectoryService.class);
+    private static final Logger l = Loggers.getLogger(DirectoryService.class);
 
     private IMetaDatabase _mdb;
     private MapAlias2Target _alias2target;

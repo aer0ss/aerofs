@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 
+import com.aerofs.base.Loggers;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Shell;
@@ -242,7 +243,8 @@ public class CompUnsyncableFiles extends Composite {
                     cb.setContents(new Object[] { sb.toString() },
                             new Transfer[] { TextTransfer.getInstance() });
                 } catch (SWTError e) {
-                    Util.l(CompUnsyncableFiles.class).warn("cp 2 clipboard: " + Util.e(e));
+                    Loggers.getLogger(CompUnsyncableFiles.class)
+                            .warn("cp 2 clipboard: " + Util.e(e));
                     return;
                 } finally {
                     cb.dispose();
@@ -366,8 +368,8 @@ public class CompUnsyncableFiles extends Composite {
                 try {
                     populateUnsyncableFilesList();
                 } catch (Exception e) {
-                    Util.l(CompUnsyncableFiles.class).warn("search 4 unsyncables: " +
-                            Util.e(e));
+                    Loggers.getLogger(CompUnsyncableFiles.class)
+                            .warn("search 4 unsyncables: " + Util.e(e));
                     ex = e;
                 }
                 final Exception exFinal = ex;

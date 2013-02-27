@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Map.Entry;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
@@ -54,7 +55,7 @@ import javax.annotation.Nullable;
  */
 public class Hasher
 {
-    private static final Logger l = Util.l(Hasher.class);
+    private static final Logger l = Loggers.getLogger(Hasher.class);
 
     private static final String FILE_MODIFIED_MSG = "Content modified while computing hash";
 

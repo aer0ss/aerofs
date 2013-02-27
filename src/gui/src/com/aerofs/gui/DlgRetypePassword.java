@@ -4,6 +4,7 @@
 
 package com.aerofs.gui;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.cfg.Cfg;
@@ -35,7 +36,7 @@ import org.slf4j.Logger;
  */
 public class DlgRetypePassword extends AeroFSJFaceDialog
 {
-    private static final Logger l = Util.l(DlgRetypePassword.class);
+    private static final Logger l = Loggers.getLogger(DlgRetypePassword.class);
 
     private Label _status;
     private Text _passwd;

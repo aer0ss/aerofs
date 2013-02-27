@@ -2,13 +2,13 @@ package com.aerofs.daemon.core.update;
 
 import javax.inject.Inject;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.store.MapSIndex2DeviceBitMap;
 import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.daemon.lib.db.IMetaDatabase;
 import com.aerofs.daemon.lib.db.IStoreDatabase;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.Param.PostUpdate;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgAbsAutoExportFolder;
 import com.aerofs.lib.cfg.CfgAbsAuxRoot;
 import com.aerofs.lib.cfg.CfgDatabase;
@@ -76,7 +76,7 @@ public class DaemonPostUpdateTasks
         for (int i = current; i < _tasks.length; i++) {
             IDaemonPostUpdateTask task = _tasks[i];
             if (task != null) {
-                Util.l(DaemonPostUpdateTasks.class).warn(task.getClass().getName());
+                Loggers.getLogger(DaemonPostUpdateTasks.class).warn(task.getClass().getName());
                 task.run();
             }
 

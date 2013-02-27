@@ -5,6 +5,7 @@
 package com.aerofs.daemon.core.update;
 
 import com.aerofs.base.BaseUtil;
+import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
@@ -12,7 +13,6 @@ import com.aerofs.base.id.UniqueID;
 import com.aerofs.daemon.core.ds.OA.Type;
 import com.aerofs.daemon.core.update.DPUTUtil.IDatabaseOperation;
 import com.aerofs.daemon.lib.db.CoreDBCW;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.db.dbcw.IDBCW;
 import com.aerofs.lib.id.SIndex;
 import com.google.common.collect.Maps;
@@ -33,7 +33,8 @@ import java.util.Map.Entry;
  */
 public class DPUTMigrateDeadAnchorsAndEmigratedNames implements IDaemonPostUpdateTask
 {
-    private static final Logger l = Util.l(DPUTMigrateDeadAnchorsAndEmigratedNames.class);
+    private static final Logger l = Loggers.getLogger(
+            DPUTMigrateDeadAnchorsAndEmigratedNames.class);
 
     private final IDBCW _dbcw;
 

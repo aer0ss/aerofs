@@ -7,6 +7,7 @@ import java.util.Map.Entry;
 import java.util.concurrent.Callable;
 import java.util.Set;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.lib.ex.collector.AbstractExPermanentError;
 import com.aerofs.lib.id.SIndex;
@@ -52,7 +53,7 @@ import javax.annotation.Nullable;
 
 public class Collector implements IDumpStatMisc
 {
-    private static final Logger l = Util.l(Collector.class);
+    private static final Logger l = Loggers.getLogger(Collector.class);
 
     private final SIndex _sidx;
     private final CollectorFilters _cfs;

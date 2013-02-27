@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeSet;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.*;
 import com.aerofs.daemon.core.net.Metrics;
 import com.aerofs.daemon.core.net.NSL;
@@ -24,7 +25,6 @@ import org.slf4j.Logger;
 import com.aerofs.daemon.core.net.DigestedMessage;
 import com.aerofs.lib.bf.BFOID;
 import com.aerofs.lib.Tick;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.id.CID;
 import com.aerofs.base.id.OID;
 import com.aerofs.lib.id.SIndex;
@@ -38,7 +38,7 @@ import com.aerofs.proto.Core.PBCore.Type;
  */
 public class NewUpdates
 {
-    private static final Logger l = Util.l(NewUpdates.class);
+    private static final Logger l = Loggers.getLogger(NewUpdates.class);
 
     private Metrics _m;
     private NativeVersionControl _nvc;

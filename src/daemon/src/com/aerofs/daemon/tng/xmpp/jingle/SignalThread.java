@@ -5,6 +5,7 @@
 package com.aerofs.daemon.tng.xmpp.jingle;
 
 import com.aerofs.base.BaseParam.Xmpp;
+import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.daemon.lib.DaemonParam.Jingle;
@@ -392,5 +393,5 @@ final class SignalThread extends java.lang.Thread implements IDumpStatMisc
     private final Jid _jidSelf = JingleUnicastConnectionService.did2jid(Cfg.did());
 
     private static final byte[] ljlogpathutf8;
-    private static final Logger l = Util.l(SignalThread.class);
+    private static final Logger l = Loggers.getLogger(SignalThread.class);
 }

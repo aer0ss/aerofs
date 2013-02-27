@@ -1,5 +1,6 @@
 package com.aerofs.daemon.core.net;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.UnicastInputOutputStack;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.tc.Cat;
@@ -11,7 +12,6 @@ import com.aerofs.daemon.event.net.rx.EIChunk;
 import com.aerofs.daemon.event.net.rx.EORxEndStream;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.SystemUtil;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.id.SIndex;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
@@ -23,7 +23,7 @@ import static com.aerofs.proto.Transport.PBStream.InvalidationReason.STORE_NOT_F
  */
 public class HdChunk implements IEventHandler<EIChunk>
 {
-    private static final Logger l = Util.l(HdChunk.class);
+    private static final Logger l = Loggers.getLogger(HdChunk.class);
     private final UnicastInputOutputStack _stack;
     private final Transports _tps;
     private final TC _tc;

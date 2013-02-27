@@ -1,7 +1,7 @@
 package com.aerofs.testlib;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.lib.LogUtil;
-import com.aerofs.lib.Util;
 import org.apache.log4j.BasicConfigurator;
 import org.junit.After;
 import org.junit.Before;
@@ -44,7 +44,7 @@ public abstract class AbstractTest extends PowerMockTestCase
         return !("no".equals(logging) || "false".equals(logging) || "off".equals(logging) || "0".equals(logging));
     }
 
-    protected static final Logger l = Util.l(AbstractTest.class);
+    protected static final Logger l = Loggers.getLogger(AbstractTest.class);
 
     @Rule
     public TestName _testName = new TestName();

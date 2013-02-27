@@ -5,6 +5,7 @@
 package com.aerofs.daemon.core;
 
 import com.aerofs.base.C;
+import com.aerofs.base.Loggers;
 import com.aerofs.daemon.lib.IStartable;
 import com.aerofs.lib.Param.Daemon;
 import com.aerofs.lib.ProgressIndicators;
@@ -28,7 +29,7 @@ final class CoreProgressWatcher implements IStartable
         assert INTERVAL_BETWEEN_CHECKS > 0 && INITIAL_DELAY > 0;
     }
 
-    private static final Logger l = Util.l(CoreProgressWatcher.class);
+    private static final Logger l = Loggers.getLogger(CoreProgressWatcher.class);
 
     private final CoreEventDispatcher _disp;
     private final ProgressIndicators _pi;

@@ -2,15 +2,15 @@ package com.aerofs.fsck;
 
 import java.sql.SQLException;
 
+import com.aerofs.base.Loggers;
 import org.slf4j.Logger;
 
 import com.aerofs.lib.InOutArg;
-import com.aerofs.lib.Util;
 import com.google.inject.Inject;
 
 public class DBChecker
 {
-    private static final Logger l = Util.l(DBChecker.class);
+    private static final Logger l = Loggers.getLogger(DBChecker.class);
     private final DBCheckOAAndCA _checkOACA;
     private final DBCheckCA _checkCA;
     private final DBCheckFID _checkFID;

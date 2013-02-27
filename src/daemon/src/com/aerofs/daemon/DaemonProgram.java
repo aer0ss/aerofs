@@ -1,5 +1,6 @@
 package com.aerofs.daemon;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.CoreModule;
 import com.aerofs.daemon.core.multiplicity.multiuser.MultiuserModule;
 import com.aerofs.daemon.core.multiplicity.singleuser.SingleuserModule;
@@ -38,7 +39,7 @@ public class DaemonProgram implements IProgram
         RockLogReporter.enable(30, SECONDS);
     }
 
-    private static final Logger l = Util.l(DaemonProgram.class);
+    private static final Logger l = Loggers.getLogger(DaemonProgram.class);
 
     private final RitualServer _ritual = new RitualServer();
 

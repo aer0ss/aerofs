@@ -4,12 +4,12 @@
 
 package com.aerofs.daemon.core.phy.block.s3;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.phy.block.AbstractChunker;
 import com.aerofs.daemon.core.phy.block.BlockInputStream;
 import com.aerofs.daemon.lib.HashStream;
 import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.SystemUtil.ExitCode;
-import com.aerofs.lib.Util;
 import com.amazonaws.AmazonServiceException;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.InputSupplier;
@@ -29,7 +29,7 @@ import java.util.Arrays;
  */
 class S3MagicChunk
 {
-    private static final Logger l = Util.l(S3MagicChunk.class);
+    private static final Logger l = Loggers.getLogger(S3MagicChunk.class);
 
     private final S3Backend _bsb;
 
