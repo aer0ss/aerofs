@@ -28,7 +28,6 @@
 class verkehr (
     $subscribe_port = 443
 ) {
-
     package { "aerofs-verkehr":
         ensure  => latest,
         require => Apt::Source["aerofs"],
