@@ -83,6 +83,7 @@ public final class CommandNotificationSubscriber
     private final String _topic;
     private final VerkehrSubscriber _subscriber;
 
+    private final VerkehrListener _listener;
     private final InjectableFile.Factory _factFile = new InjectableFile.Factory();
 
     public CommandNotificationSubscriber(GuiScheduler scheduler, DID localDevice,
@@ -91,14 +92,14 @@ public final class CommandNotificationSubscriber
         _scheduler = scheduler;
         _er = new ExponentialRetry(_scheduler);
 
-        VerkehrListener listener = new VerkehrListener();
+        _listener = new VerkehrListener();
 
         l.info("cmd: " + VERKEHR_HOST + ":" + VERKEHR_PORT);
         ClientFactory factory = new ClientFactory(VERKEHR_HOST, VERKEHR_PORT,
                 newCachedThreadPool(), newCachedThreadPool(),
                 caCertFilename, new CfgKeyManagersProvider(),
                 VERKEHR_RETRY_INTERVAL, Cfg.db().getLong(Key.TIMEOUT), new HashedWheelTimer(),
-                listener, listener, sameThreadExecutor());
+                _listener, _listener, sameThreadExecutor());
 
         this._topic = Param.CMD_CHANNEL_TOPIC_PREFIX + localDevice.toStringFormal();
         this._subscriber = factory.create();
@@ -108,6 +109,9 @@ public final class CommandNotificationSubscriber
     {
         l.info("cmd: started notification subscriber");
         _subscriber.start();
+
+        // Schedule a sync when the device first comes online.
+        _listener.scheduleSyncWithCommandServer();
     }
 
     private final class VerkehrListener implements IConnectionListener, ISubscriptionListener
@@ -117,9 +121,6 @@ public final class CommandNotificationSubscriber
         {
             l.info("cmd: subscribe topic=" + _topic);
             _subscriber.subscribe_(_topic);
-
-            // Do a sync with the server when the verkehr channel is first connected.
-            scheduleSyncWithCommandServer();
         }
 
         @Override
@@ -188,8 +189,8 @@ public final class CommandNotificationSubscriber
             int errorCount = 0;
 
             // Get the command at the head of the queue and init loop variables.
-            SPBlockingClient sp = newSPClient();
-            GetCommandQueueHeadReply head = sp.getCommandQueueHead(Cfg.did().toPB());
+            SPBlockingClient spUnauthenticated = newUnauthenticatedSPClient();
+            GetCommandQueueHeadReply head = spUnauthenticated.getCommandQueueHead(Cfg.did().toPB());
 
             long initialQueueSize = head.getQueueSize();
             boolean more = head.hasCommand();
@@ -220,7 +221,8 @@ public final class CommandNotificationSubscriber
                     l.error("cmd: unable to process in sync: " + Util.e(e));
                 }
 
-                AckCommandQueueHeadReply ack = sp.ackCommandQueueHead(
+                SPBlockingClient spAuthenticated = newAuthenticatedSPClient();
+                AckCommandQueueHeadReply ack = spAuthenticated.ackCommandQueueHead(
                         Cfg.did().toPB(), command.getEpoch(), error);
 
                 more = ack.hasCommand();
@@ -264,7 +266,7 @@ public final class CommandNotificationSubscriber
 
                     AckCommandQueueHeadReply ack = null;
                     try {
-                        SPBlockingClient sp = newSPClient();
+                        SPBlockingClient sp = newAuthenticatedSPClient();
                         ack = sp.ackCommandQueueHead(Cfg.did().toPB(), command.getEpoch(), error);
                     } catch (Exception e) {
                         error = true;
@@ -307,7 +309,15 @@ public final class CommandNotificationSubscriber
        }
     }
 
-    private static SPBlockingClient newSPClient()
+    private static SPBlockingClient newAuthenticatedSPClient()
+            throws Exception
+    {
+        SPBlockingClient sp = SPClientFactory.newBlockingClient(SP.URL, Cfg.user());
+        sp.signInRemote();
+        return sp;
+    }
+
+    private static SPBlockingClient newUnauthenticatedSPClient()
             throws Exception
     {
         SPBlockingClient sp = SPClientFactory.newBlockingClient(SP.URL, Cfg.user());
@@ -356,26 +366,17 @@ public final class CommandNotificationSubscriber
         _factFile.create(Util.join(Cfg.absRTRoot(), Param.SETTING_UP)).createNewFile();
     }
 
-    private void scheduleShutdownImplementation()
+    private void shutdownImplementation()
     {
-        // Schedule a system exit. Schedule this as opposed to doing this now so that we can ack the
-        // command on the command server.
-        _scheduler.schedule(new AbstractEBSelfHandling()
-        {
-            @Override
-            public void handle_()
-            {
-                UI.get().shutdown();
-                System.exit(0);
-            }
-        }, 0);
+        UI.get().shutdown();
+        System.exit(0);
     }
 
     private void unlinkSelf()
             throws SQLException, IOException
     {
         unlinkImplementation();
-        scheduleShutdownImplementation();
+        shutdownImplementation();
     }
 
     private void wipeImplementation()
@@ -388,6 +389,6 @@ public final class CommandNotificationSubscriber
     {
         unlinkImplementation();
         wipeImplementation();
-        scheduleShutdownImplementation();
+        shutdownImplementation();
     }
 }

@@ -1746,12 +1746,11 @@ public class SPService implements ISPService
     {
         Device device = _factDevice.create(deviceID);
 
-        _sqlTrans.begin();
-        device.throwIfNotFound();
-        device.throwIfNotOwner(_sessionUser.get());
-        _sqlTrans.commit();
-
         l.info("cmd head: " + device.id().toStringFormal());
+
+        // N.B. do not do any permission verification here. If the user has changed their password
+        // and issued an unlink command we still want the client to execute that command. Commands
+        // queued are not sensitive, as long as the ack fails.
 
         _jedisTrans.begin();
         QueueElement head = _commandQueue.head(device.id());
@@ -1786,6 +1785,7 @@ public class SPService implements ISPService
     {
         Device device = _factDevice.create(deviceID);
 
+        // N.B. verification here is very important.
         _sqlTrans.begin();
         device.throwIfNotFound();
         device.throwIfNotOwner(_sessionUser.get());

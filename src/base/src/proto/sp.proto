@@ -568,7 +568,7 @@ service SPService {
     /**
      * Get the head of the command queue for a given device.
      *
-     * Required Auth Level: user
+     * Required Auth Level: none
      *
      * Throws:
      *   ExNotFound: if the specified device does not exist or does not belong to you.

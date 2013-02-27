@@ -9,7 +9,6 @@ import com.aerofs.daemon.core.phy.block.AbstractBlockTest;
 import com.aerofs.daemon.core.phy.block.IBlockStorageBackend;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.lib.ContentHash;
-import com.aerofs.lib.Util;
 import com.google.common.collect.Maps;
 import com.google.common.io.ByteStreams;
 import org.junit.Assert;
