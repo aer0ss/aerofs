@@ -225,6 +225,11 @@ public class Device
         }
 
         return _f._certgen.generateCertificate(owner.id(), _id, csr);
+    }
 
+    public void setOSFamilyAndName(String osFamily, String osName)
+            throws SQLException, ExNotFound
+    {
+        _f._db.setOSFamilyAndName(_id, osFamily, osName);
     }
 }

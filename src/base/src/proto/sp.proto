@@ -591,6 +591,19 @@ service SPService {
       */
      rpc DeleteOrganizationInvitationForUser(DeleteOrganizationInvitationForUserCall) returns(
             DeleteOrganizationInvitationForUserReply);
+
+     /**
+      * Used only by a DaemonPostUpdateTask to set OS information for existing devices
+      *
+      * Required Auth Level: user
+      */
+     rpc SetDeviceOSFamilyAndName(SetDeviceOSFamilyAndNameCall) returns(Void);
+}
+
+message SetDeviceOSFamilyAndNameCall {
+    required bytes device_id = 1;
+    required string os_family = 2;
+    required string os_name = 3;
 }
 
 message DeleteOrganizationInvitationForUserCall {

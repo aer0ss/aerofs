@@ -305,6 +305,7 @@ public class SPService implements ISPService
         }
 
         if (deviceId != null) {
+            // TODO (WW) verify the device belong to the user
             l.info(user.id() + ": set device name: " + deviceName);
             _factDevice.create(deviceId).setName(deviceName);
             deviceNameUpdated = true;
@@ -699,9 +700,6 @@ public class SPService implements ISPService
         return createReply(reply);
     }
 
-    /**
-     * recertify should never be used.
-     */
     @Override
     public ListenableFuture<RegisterDeviceReply> registerDevice(ByteString deviceId, ByteString csr,
             Boolean recertifyDoNotUse, String osFamily, String osName, String deviceName)
@@ -732,6 +730,25 @@ public class SPService implements ISPService
                 osName, deviceName);
 
         return createReply(reply);
+    }
+
+    @Override
+    public ListenableFuture<Void> setDeviceOSFamilyAndName(ByteString deviceId,
+            String osFamily, String osName)
+            throws Exception
+    {
+        User user = _sessionUser.get();
+        Device device = _factDevice.create(deviceId);
+
+        _sqlTrans.begin();
+
+        if (!device.getOwner().equals(user)) throw new ExNoPerm("you are not the owner of the device");
+
+        device.setOSFamilyAndName(osFamily, osName);
+
+        _sqlTrans.commit();
+
+        return createVoidReply();
     }
 
     @Override

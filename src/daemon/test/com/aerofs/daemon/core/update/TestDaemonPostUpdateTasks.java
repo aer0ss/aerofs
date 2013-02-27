@@ -29,10 +29,10 @@ public class TestDaemonPostUpdateTasks extends AbstractTest
     public void shouldBeConsistentWithParam() throws Exception
     {
         /**
-         * There is a check in dput.run() that asserts the actual number of post-update tasks is
+         * There is a check in the class that asserts the actual number of post-update tasks is
          * equal to a value defined in Param.java. This test verifies that when adding a task,
          * we also update the value in Param so the assertion doesn't fail. Because the assertion
-         * happens in DaemonPostUpdateTasks's constructor, which is called during this test class's
+         * happens in the class's constructor, which is called during this test class's
          * construction, no code is needed for this test method.
          */
     }

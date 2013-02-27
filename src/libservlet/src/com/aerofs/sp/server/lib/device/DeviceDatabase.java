@@ -169,6 +169,20 @@ public class DeviceDatabase extends AbstractSQLDatabase
         }
     }
 
+    public void setOSFamilyAndName(DID deviceId, String osFamily, String osName)
+            throws SQLException, ExNotFound
+    {
+        PreparedStatement ps = prepareStatement(
+                updateWhere(T_DEVICE, C_DEVICE_ID + "=?", C_DEVICE_OS_FAMILY, C_DEVICE_OS_NAME));
+
+        ps.setString(1, osFamily);
+        ps.setString(2, osName);
+        ps.setString(3, deviceId.toStringFormal());
+
+        int count = ps.executeUpdate();
+        assert count <= 1;
+        if (count == 0) throw new ExNotFound("device " + deviceId);
+    }
 
     private ResultSet queryDevice(DID did, String... fields)
             throws SQLException, ExNotFound

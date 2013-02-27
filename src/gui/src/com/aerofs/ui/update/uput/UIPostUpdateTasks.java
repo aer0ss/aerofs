@@ -17,10 +17,21 @@ import com.aerofs.ui.IUI.MessageType;
 public class UIPostUpdateTasks
 {
     private final CfgDatabase _cfgDB;
+    private final IUIPostUpdateTask[] _tasks;
 
     public UIPostUpdateTasks(CfgDatabase cfgDB)
     {
         _cfgDB = cfgDB;
+
+        _tasks = new IUIPostUpdateTask[] {
+            new UPUTSetDeviceOSFamilyAndName()
+        };
+
+        // please update this macro whenever new tasks are added
+        assert _tasks.length == PostUpdate.UI_POST_UPDATE_TASKS;
+
+        // the zero value is required for oldest client to run all the tasks
+        assert Key.UI_POST_UPDATES.defaultValue().equals(Integer.toString(0));
     }
 
     /**
@@ -29,23 +40,14 @@ public class UIPostUpdateTasks
      */
     public boolean run() throws Exception
     {
-        // do not use a static member to avoid permanently occupying the memory
-        final IUIPostUpdateTask[] tasks = new IUIPostUpdateTask[0];
-
-        // please update this macro whenever new tasks are added
-        assert tasks.length == PostUpdate.UI_POST_UPDATE_TASKS;
-
-        // the zero value is required for oldest client to run all the tasks
-        assert Key.UI_POST_UPDATES.defaultValue().equals(Integer.toString(0));
-
         // N.B: no-op if current >= tasks.length
         int current = _cfgDB.getInt(Key.UI_POST_UPDATES);
 
         final ArrayList<String> msgs = new ArrayList<String>();
         boolean suggestReboot = false;
         boolean shutdown = false;
-        for (int i = current; i < tasks.length; i++) {
-            IUIPostUpdateTask t = tasks[i];
+        for (int i = current; i < _tasks.length; i++) {
+            IUIPostUpdateTask t = _tasks[i];
             if (t == null) continue;
 
             // run() must be called before getNotes()
