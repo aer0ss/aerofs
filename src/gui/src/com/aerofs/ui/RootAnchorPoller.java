@@ -11,6 +11,7 @@ import com.aerofs.gui.GUI;
 import com.aerofs.gui.misc.DlgRootAnchorUpdater;
 import com.aerofs.gui.shellext.ShellextService;
 import com.aerofs.labeling.L;
+import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
@@ -28,7 +29,9 @@ public class RootAnchorPoller
 {
     private static final Logger l = Loggers.getLogger(RootAnchorPoller.class);
 
+    private Thread _t = null;
     private String _oldRoot;
+    private volatile boolean _stopping = false;
 
     public void start()
     {
@@ -45,17 +48,19 @@ public class RootAnchorPoller
         // gain. So long as our polling interval is short enough that the change
         // to the root anchor location is fresh in the users mind, this will work
         // fine.
-        ThreadUtil.startDaemonThread("root-anchor-watch-worker", new Runnable()
+        _t = ThreadUtil.startDaemonThread("root-anchor-watch-worker", new Runnable()
         {
             @Override
             public void run()
             {
-                while (true) {
+                while (!_stopping) {
                     // This must be checked each time in case the rootAnchor is moved
                     File rootAnchor = new File(Cfg.absRootAnchor());
 
-                    if (l.isDebugEnabled()) l.debug("Checking for existance of root anchor at " +
-                            rootAnchor.getAbsolutePath());
+                    if (l.isDebugEnabled()) {
+                        l.debug("Checking for existance of root anchor at " +
+                                rootAnchor.getAbsolutePath());
+                    }
 
                     if (!rootAnchor.isDirectory()) {
                         l.debug("Root anchor missing at " + rootAnchor.getAbsolutePath());
@@ -67,10 +72,33 @@ public class RootAnchorPoller
                         }
                     }
 
-                    ThreadUtil.sleepUninterruptable(UIParam.ROOT_ANCHOR_POLL_INTERVAL);
+                    // Do not use uninterruptable sleep so that stop() can stop us immediately.
+                    try {
+                        Thread.sleep(UIParam.ROOT_ANCHOR_POLL_INTERVAL);
+                    } catch (InterruptedException e) {
+                        // If we were interrupted and we have not beeen stopped by the stop()
+                        // function, this is bad and we must bail.
+                        if (!_stopping) {
+                            l.error("Interrupted exception while sleeping in poller: " + Util.e(e));
+                            SystemUtil.fatal(e);
+                        }
+                    }
                 }
             }
         });
+    }
+
+    /**
+     * Stop the poller. It is important that the thread is actually stopped when this function
+     * returns, hence the use of interrupt, so that we do not end up with UI notifications if we
+     * are unlinking the device.
+     */
+    public void stop()
+    {
+        _stopping = true;
+        if (_t != null) {
+            _t.interrupt();
+        }
     }
 
     /**

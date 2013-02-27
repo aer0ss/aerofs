@@ -213,7 +213,7 @@ public final class SVClient
                 try {
                     sendEventSync(type, desc);
                 } catch (Throwable e) {
-                    l.warn("send sv event: " + Util.e(e));
+                    l.warn("send sv event: " + Util.e(e, IOException.class));
                 }
             }
         }, SVClient.class.getName() + ".event");
@@ -246,7 +246,7 @@ public final class SVClient
         try {
             getRpcClient().doRPC(call, null);
         } catch (Throwable e) {
-            l.warn("send sv event: " + Util.e(e));
+            l.warn("send sv event: " + Util.e(e, IOException.class));
         }
     }
 

@@ -111,6 +111,7 @@ message PBSVEvent {
         MOVE_ROOT = 1012;              // move root anchor
         S3_SETUP = 1013;               // S3 client setup
         REINSTALL = 1014;              // install with existing shared folders?
+        UNLINK_AND_WIPE = 1015;        // unlink and wipe device (delete root anchor).
     }
 
     required Type type = 1;
