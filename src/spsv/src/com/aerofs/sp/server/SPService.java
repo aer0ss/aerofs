@@ -1733,11 +1733,15 @@ public class SPService implements ISPService
             addToCommandQueueAndSendVerkehrMessage(peer.id(), CommandType.CLEAN_SSS_DATABASE);
         }
 
-        // Tell the actual device to perform the required local actions.
+        // Tell the actual device to perform the required local actions. Remember to flush the queue
+        // first so that this is the only command left in the queue. The ensures that if the user
+        // changes their password the unlink/wipe command can still be executed.
         if (remoteWipe) {
-            addToCommandQueueAndSendVerkehrMessage(device.id(), CommandType.UNLINK_AND_WIPE_SELF);
+            addToCommandQueueAndSendVerkehrMessage(device.id(),
+                    CommandType.UNLINK_AND_WIPE_SELF, true);
         } else {
-            addToCommandQueueAndSendVerkehrMessage(device.id(), CommandType.UNLINK_SELF);
+            addToCommandQueueAndSendVerkehrMessage(device.id(),
+                    CommandType.UNLINK_SELF, true);
         }
     }
 
@@ -1935,9 +1939,19 @@ public class SPService implements ISPService
     }
 
     private void addToCommandQueueAndSendVerkehrMessage(DID did, CommandType type)
+        throws ExecutionException, InterruptedException
+    {
+        addToCommandQueueAndSendVerkehrMessage(did, type, false);
+    }
+
+    private void addToCommandQueueAndSendVerkehrMessage(DID did, CommandType type,
+            boolean flushQueueFirst)
             throws ExecutionException, InterruptedException
     {
         _jedisTrans.begin();
+        if (flushQueueFirst) {
+            _commandQueue.delete(did);
+        }
         Epoch epoch = _commandQueue.enqueue(did, type);
         _jedisTrans.commit();
         assert epoch != null;
