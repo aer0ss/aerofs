@@ -108,7 +108,8 @@ public abstract class JabberID
             for (String token : tokens) {
                 sb.append(token).append("|");
             }
-            l.debug("JID ========>" + jid + " TOKENS ========>" + sb.toString());
+
+            l.debug("j:{} t:{}", jid, sb.toString());
         }
 
         return tokens;
