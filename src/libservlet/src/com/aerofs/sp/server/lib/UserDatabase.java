@@ -178,41 +178,9 @@ public class UserDatabase extends AbstractSQLDatabase
     }
 
     /**
-     * List all peer devices that a given user communicates with (including their own devices).
-     */
-    public ImmutableList<DID> listPeerDevices(UserID userId)
-            throws SQLException, ExFormatError
-    {
-        ImmutableList.Builder<DID> builder = ImmutableList.builder();
-
-        // => Get all users I share with.
-        //   -> Get all my shares.
-        //   -> Get all the users that are also in those shares (including myself).
-        // => Get all devices belonging to those users.
-        PreparedStatement ps = prepareStatement(
-                "select " + C_DEVICE_ID + " from " + T_DEVICE + " where " + C_DEVICE_OWNER_ID +
-                " in (select distinct " + C_AC_USER_ID + " from " + T_AC + " where " +
-                C_AC_STORE_ID + " in (select " + C_AC_STORE_ID + " from " + T_AC + " where " +
-                C_AC_USER_ID + " = ?))");
-
-        ps.setString(1, userId.getString());
-
-        ResultSet rs = ps.executeQuery();
-        try {
-            while (rs.next()) {
-                builder.add(new DID(rs.getString(1)));
-            }
-        } finally {
-            rs.close();
-        }
-
-        return builder.build();
-    }
-
-    /**
      * List all devices belonging to a the provided user.
      */
-    public ImmutableList<DID> listUserDevices(UserID userId)
+    public ImmutableList<DID> getUserDevices(UserID userId)
             throws SQLException, ExFormatError
     {
         PreparedStatement ps = prepareStatement(
@@ -239,7 +207,7 @@ public class UserDatabase extends AbstractSQLDatabase
      * @param offset Starting index of the results list from the database.
      * @param maxResults Maximum number of results returned from the database.
      */
-    public ImmutableList<DID> listUserDevices(UserID userId, int offset, int maxResults)
+    public ImmutableList<DID> getUserDevices(UserID userId, int offset, int maxResults)
             throws SQLException, ExFormatError
     {
         PreparedStatement ps = prepareStatement("select " + C_DEVICE_ID + " from " + T_DEVICE +

@@ -314,7 +314,7 @@ public class SPService implements ISPService
         // Verkehr messages and command queue related stuff.
         if (userNameUpdated || deviceNameUpdated)
         {
-            ImmutableList<Device> peerDevices = user.listPeerDevices();
+            Collection<Device> peerDevices = user.getPeerDevices();
 
             for (Device peerDevice : peerDevices) {
                 if (userNameUpdated) {
@@ -1741,7 +1741,7 @@ public class SPService implements ISPService
         builder.add(cert.serial());
         updateVerkehrCRL(builder.build());
 
-        ImmutableList<Device> peerDevices = owner.listPeerDevices();
+        Collection<Device> peerDevices = owner.getPeerDevices();
 
         // Tell peer devices to clean their sss database and refresh their certificate revocation
         // list.
@@ -1912,7 +1912,7 @@ public class SPService implements ISPService
         ListUserDevicesReply.Builder builder = ListUserDevicesReply.newBuilder();
 
         User user = _sessionUser.get();
-        DevicesAndQueryCount devicesAndQueryCount= user.listUserDevices(search, maxResults, offset);
+        DevicesAndQueryCount devicesAndQueryCount= user.getUserDevices(search, maxResults, offset);
 
         builder.setTotalCount(user.totalDeviceCount());
         builder.setFilteredCount(devicesAndQueryCount.count());

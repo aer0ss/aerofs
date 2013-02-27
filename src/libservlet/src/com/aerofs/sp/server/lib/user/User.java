@@ -178,38 +178,58 @@ public class User
         _f._udb.setName(_id, fullName);
     }
 
-    public ImmutableList<Device> listPeerDevices()
+    /**
+     * Peer devices are all devices that you sync with, including your own devices.
+     */
+    public Collection<Device> getPeerDevices()
+            throws SQLException, ExFormatError
+    {
+        // Get shared folders and all users who sync those shared folders.
+        Collection<SharedFolder> sharedFolders = getSharedFolders();
+        Set<User> peerUsers = Sets.newHashSet();
+
+        for (SharedFolder sharedFolder : sharedFolders) {
+            Collection<User> users = sharedFolder.getMembers();
+
+            for (User user : users) {
+                peerUsers.add(user);
+            }
+        }
+
+        // From the list of peer users, find the list of devices.
+        List<Device> peerDevices = Lists.newLinkedList();
+
+        for (User peerUser : peerUsers) {
+            Collection<Device> userDevices = peerUser.getUserDevices();
+
+            for (Device userDevice : userDevices) {
+                peerDevices.add(userDevice);
+            }
+        }
+
+        return peerDevices;
+    }
+
+    public ImmutableList<Device> getUserDevices()
             throws SQLException, ExFormatError
     {
         ImmutableList.Builder<Device> builder = ImmutableList.builder();
 
-        for (DID did : _f._udb.listPeerDevices(id())) {
+        for (DID did : _f._udb.getUserDevices(id())) {
             builder.add(_f._factDevice.create(did));
         }
 
         return builder.build();
     }
 
-    public ImmutableList<Device> listUserDevices()
-            throws SQLException, ExFormatError
-    {
-        ImmutableList.Builder<Device> builder = ImmutableList.builder();
-
-        for (DID did : _f._udb.listUserDevices(id())) {
-            builder.add(_f._factDevice.create(did));
-        }
-
-        return builder.build();
-    }
-
-    public DevicesAndQueryCount listUserDevices(String search, int maxResults, int offset)
+    public DevicesAndQueryCount getUserDevices(String search, int maxResults, int offset)
             throws ExBadArgs, SQLException, ExFormatError
     {
         List<DID> devices;
         int count;
 
         if (search.isEmpty()) {
-            devices = _f._udb.listUserDevices(_id, offset, maxResults);
+            devices = _f._udb.getUserDevices(_id, offset, maxResults);
             count = totalDeviceCount();
         } else {
             devices = _f._udb.searchUserDevices(_id, offset, maxResults, search);

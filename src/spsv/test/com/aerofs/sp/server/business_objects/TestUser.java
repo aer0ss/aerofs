@@ -4,10 +4,8 @@
 
 package com.aerofs.sp.server.business_objects;
 
-import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UniqueID;
-import com.aerofs.lib.ex.ExDeviceIDAlreadyExists;
 import com.aerofs.sp.server.lib.id.StripeCustomerID;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.acl.Role;
@@ -21,13 +19,13 @@ import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.aerofs.sp.server.lib.user.User;
 import com.aerofs.sp.server.lib.device.Device;
-import com.google.common.collect.ImmutableList;
 import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException;
 import junit.framework.Assert;
 import org.junit.Test;
 
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.Collection;
 
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertFalse;
@@ -189,8 +187,7 @@ public class TestUser extends AbstractBusinessObjectTest
 
     @Test
     public void shouldListPeerDevices()
-            throws SQLException, ExDeviceIDAlreadyExists, ExAlreadyExist, ExNotFound, ExFormatError,
-            IOException, ExNoPerm
+            throws Exception
     {
         User user1 = newUser();
         User user2 = newUser();
@@ -217,12 +214,29 @@ public class TestUser extends AbstractBusinessObjectTest
         sf.addMemberACL(user2, Role.EDITOR);
         sf.addMemberACL(user3, Role.EDITOR);
 
-        ImmutableList<Device> userDevices = user1.listUserDevices();
-        ImmutableList<Device> peerDevices = user1.listPeerDevices();
+        Collection<Device> userDevices = user1.getUserDevices();
+        Collection<Device> peerDevices = user1.getPeerDevices();
 
         // Only my devices.
         Assert.assertEquals(2, userDevices.size());
         // All devices that I share with (including my own devices).
         Assert.assertEquals(6, peerDevices.size());
+    }
+
+    @Test
+    public void shouldListPeerDevicesWhenNoFoldersAreShared()
+            throws Exception
+    {
+        User user1 = newUser();
+        user1.save(new byte[0], new FullName("f1", "l1"), factOrg.getDefault());
+
+        factDevice.create(new DID(UniqueID.generate())).save(user1, "", "", "Device1a");
+        factDevice.create(new DID(UniqueID.generate())).save(user1, "", "", "Device1b");
+
+        Collection<Device> userDevices = user1.getUserDevices();
+        Collection<Device> peerDevices = user1.getPeerDevices();
+
+        Assert.assertEquals(2, userDevices.size());
+        Assert.assertEquals(2, peerDevices.size());
     }
 }

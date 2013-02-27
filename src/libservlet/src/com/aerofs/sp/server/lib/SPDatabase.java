@@ -259,6 +259,7 @@ public class SPDatabase extends AbstractSQLDatabase
     public Set<UserDevice> getInterestedDevices(SID sid, UserID ownerId)
             throws SQLException, ExFormatError
     {
+        // TODO (MP) do we really need a set here?
         Set<UserDevice> result = Sets.newHashSet();
 
         // People you share with.
