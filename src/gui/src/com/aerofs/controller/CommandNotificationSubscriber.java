@@ -8,6 +8,8 @@ import com.aerofs.base.BaseParam.SP;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.gui.GuiScheduler;
+import com.aerofs.labeling.L;
+import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.Param;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
@@ -38,6 +40,7 @@ import com.google.protobuf.InvalidProtocolBufferException;
 import org.slf4j.Logger;
 import org.jboss.netty.util.HashedWheelTimer;
 
+import java.io.File;
 import java.io.IOException;
 import javax.annotation.Nullable;
 import java.sql.SQLException;
@@ -333,7 +336,7 @@ public final class CommandNotificationSubscriber
     // Command implementations.
     //
 
-    static private void invalidateUserNameCache()
+    private void invalidateUserNameCache()
             throws Exception
     {
         RitualBlockingClient ritual = RitualClientFactory.newBlockingClient();
@@ -345,7 +348,7 @@ public final class CommandNotificationSubscriber
         }
     }
 
-    static private void invalidateDeviceNameCache()
+    private void invalidateDeviceNameCache()
             throws Exception
     {
         RitualBlockingClient ritual = RitualClientFactory.newBlockingClient();
@@ -357,18 +360,47 @@ public final class CommandNotificationSubscriber
         }
     }
 
-    private void unlinkImplementation()
-            throws SQLException, IOException
+    private void unlinkSelf()
+            throws Exception
     {
+        // TODO (MP) support multi user unlink.
+        if (L.get().isMultiuser()) {
+            throw new UnsupportedOperationException();
+        }
+
         // Metrics.
         SVClient.sendEventAsync(Type.UNLINK);
         RockLog.newEvent("Unlink Device").sendAsync();
 
-        // Delete the password.
-        Cfg.db().set(Key.CRED, Key.CRED.defaultValue());
-        // Create the setup file.
-        _factFile.create(Util.join(Cfg.absRTRoot(), Param.SETTING_UP)).createNewFile();
+        unlinkImplementation();
+        shutdownImplementation();
     }
+
+
+    private void unlinkAndWipeSelf()
+            throws Exception
+    {
+        // TODO (MP) support multi user remote wipe.
+        if (L.get().isMultiuser()) {
+            throw new UnsupportedOperationException();
+        }
+
+        // Metrics.
+        SVClient.sendEventAsync(Type.UNLINK_AND_WIPE);
+        RockLog.newEvent("Unlink And Wipe Device").sendAsync();
+
+        unlinkImplementation();
+
+        // Delete Root Anchor.
+        // TODO (MP) possibly implement secure delete.
+        FileUtil.deleteIgnoreErrorRecursively(new File(Cfg.absRootAnchor()));
+
+        shutdownImplementation();
+    }
+
+    //
+    // Implementation helpers.
+    //
 
     private void shutdownImplementation()
     {
@@ -376,23 +408,28 @@ public final class CommandNotificationSubscriber
         System.exit(0);
     }
 
-    private void unlinkSelf()
+    /**
+     * Helper function to share code between the unlink and unlink & wipe commands.
+     */
+    private void unlinkImplementation()
             throws SQLException, IOException
     {
-        unlinkImplementation();
-        shutdownImplementation();
-    }
+        // Stop the daemon and other GUI services before deleting any files.
+        UI.rap().stop();
+        UI.rnc().stop();
+        UI.dm().stopIgnoreException();
 
-    private void wipeImplementation()
-    {
-        // TODO (MP) finish this...
-    }
+        // Delete revision history.
+        // TODO (MP) possibly implement secure delete.
+        FileUtil.deleteIgnoreErrorRecursively(new File(Cfg.absAuxRoot()));
 
-    private void unlinkAndWipeSelf()
-            throws SQLException, IOException
-    {
-        unlinkImplementation();
-        wipeImplementation();
-        shutdownImplementation();
+        // Delete device key and certificate.
+        FileUtil.deleteIgnoreErrorRecursively(new File(Cfg.absRTRoot(), Param.DEVICE_KEY));
+        FileUtil.deleteIgnoreErrorRecursively(new File(Cfg.absRTRoot(), Param.DEVICE_CERT));
+
+        // Delete the password.
+        Cfg.db().set(Key.CRED, Key.CRED.defaultValue());
+        // Create the setup file.
+        _factFile.create(Util.join(Cfg.absRTRoot(), Param.SETTING_UP)).createNewFile();
     }
 }
