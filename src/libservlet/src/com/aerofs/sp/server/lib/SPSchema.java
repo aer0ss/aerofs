@@ -31,6 +31,8 @@ public final class SPSchema
 
             T_DEVICE                        = "sp_device",
             C_DEVICE_ID                     = "d_id",
+            C_DEVICE_OS_FAMILY              = "d_os_family",
+            C_DEVICE_OS_NAME                = "d_os_name",
             C_DEVICE_NAME                   = "d_name",
             C_DEVICE_OWNER_ID               = "d_owner_id",
             CONSTRAINT_DEVICE_NAME_OWNER    = "d_name_owner",

@@ -109,7 +109,7 @@ public class TestSP_SignIn extends AbstractSPTest
         _tsDID = new DID(UniqueID.generate());
 
         mockCertificateGeneratorAndIncrementSerialNumber();
-        service.certifyTeamServerDevice(_tsDID.toPB(), newCSR(_tsUserID, _tsDID));
+        service.registerTeamServerDevice(_tsDID.toPB(), newCSR(_tsUserID, _tsDID), false, "", "", "");
     }
 
     private ByteString getTeamServerLocalPassword(UserID _tsUserID)

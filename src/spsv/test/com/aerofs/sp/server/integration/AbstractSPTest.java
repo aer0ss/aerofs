@@ -17,7 +17,7 @@ import com.aerofs.sp.server.AbstractTestWithDatabase;
 import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue;
 import com.aerofs.sp.server.PasswordManagement;
 import com.aerofs.sp.server.SPService;
-import com.aerofs.sp.server.email.DeviceCertifiedEmailer;
+import com.aerofs.sp.server.email.DeviceRegistrationEmailer;
 import com.aerofs.sp.server.email.PasswordResetEmailer;
 import com.aerofs.sp.server.email.RequestToSignUpEmailer;
 import com.aerofs.sp.server.lib.EmailSubscriptionDatabase;
@@ -128,7 +128,7 @@ public class AbstractSPTest extends AbstractTestWithDatabase
 
     @Spy PasswordManagement passwordManagement = new PasswordManagement(db, factUser,
             mock(PasswordResetEmailer.class));
-    @Spy DeviceCertifiedEmailer deviceCertifiedEmailer = mock(DeviceCertifiedEmailer.class);
+    @Spy DeviceRegistrationEmailer _deviceRegistrationEmailer = mock(DeviceRegistrationEmailer.class);
     @Spy RequestToSignUpEmailer _requestToSignUpEmailer = mock(RequestToSignUpEmailer.class);
 
     // Subclasses can declare a @Mock'd or @Spy'd object for

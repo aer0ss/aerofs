@@ -19,7 +19,7 @@ import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue;
 import com.aerofs.servlets.lib.db.jedis.JedisThreadLocalTransaction;
 import com.aerofs.servlets.lib.db.jedis.PooledJedisConnectionProvider;
 import com.aerofs.servlets.lib.db.sql.SQLThreadLocalTransaction;
-import com.aerofs.sp.server.email.DeviceCertifiedEmailer;
+import com.aerofs.sp.server.email.DeviceRegistrationEmailer;
 import com.aerofs.sp.server.email.RequestToSignUpEmailer;
 import com.aerofs.sp.server.lib.cert.Certificate;
 import com.aerofs.sp.server.lib.cert.CertificateDatabase;
@@ -106,7 +106,7 @@ public class LocalSPServiceReactorCaller implements SPServiceStubCallbacks
 
         PasswordManagement passwordManagement =
                 new PasswordManagement(db, factUser, mock(PasswordResetEmailer.class));
-        DeviceCertifiedEmailer deviceCertifiedEmailer = mock(DeviceCertifiedEmailer.class);
+        DeviceRegistrationEmailer deviceRegistrationEmailer = mock(DeviceRegistrationEmailer.class);
         RequestToSignUpEmailer requestToSignUpEmailer = mock(RequestToSignUpEmailer.class);
 
         ThreadLocalHttpSessionProvider sessionProvider = new ThreadLocalHttpSessionProvider();
@@ -122,7 +122,7 @@ public class LocalSPServiceReactorCaller implements SPServiceStubCallbacks
         SPService service = new SPService(db, sqlTrans, jedisTrans, new MockSessionUser(),
                 passwordManagement, certificateAuthenticator, factUser, factOrg, factOrgInvite,
                 factDevice, factCert, certdb, esdb, factSharedFolder, factEmailer,
-                deviceCertifiedEmailer, requestToSignUpEmailer, commandQueue);
+                deviceRegistrationEmailer, requestToSignUpEmailer, commandQueue);
 
         service.setUserTracker(userTracker);
         reactor = new SPServiceReactor(service);

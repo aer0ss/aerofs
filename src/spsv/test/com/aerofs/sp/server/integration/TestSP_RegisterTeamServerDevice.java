@@ -24,7 +24,7 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.verify;
 
-public class TestSP_CertifyTeamServerCertificate extends AbstractSPTest
+public class TestSP_RegisterTeamServerDevice extends AbstractSPTest
 {
     DID tsDID = new DID(UniqueID.generate());
 
@@ -50,7 +50,7 @@ public class TestSP_CertifyTeamServerCertificate extends AbstractSPTest
         assertFalse(user.getLevel().covers(AuthorizationLevel.ADMIN));
         sqlTrans.commit();
 
-        certifyTeamServerDevice(OrganizationID.DEFAULT.toTeamServerUserID());
+        registerTeamServerDevice(OrganizationID.DEFAULT.toTeamServerUserID());
     }
 
     @Test(expected = ExNoPerm.class)
@@ -65,7 +65,7 @@ public class TestSP_CertifyTeamServerCertificate extends AbstractSPTest
         user.setLevel(AuthorizationLevel.USER);
         sqlTrans.commit();
 
-        certifyTeamServerDevice(tsUserID);
+        registerTeamServerDevice(tsUserID);
     }
 
     @Test
@@ -73,7 +73,7 @@ public class TestSP_CertifyTeamServerCertificate extends AbstractSPTest
             throws Exception
     {
         UserID tsUserID = setupTeamServer();
-        certifyTeamServerDevice(tsUserID);
+        registerTeamServerDevice(tsUserID);
 
         // Can't conveniently use verify() since udb.insertUser() may be called many times during test
         // initialization.
@@ -87,7 +87,7 @@ public class TestSP_CertifyTeamServerCertificate extends AbstractSPTest
             throws Exception
     {
         UserID tsUserID = setupTeamServer();
-        certifyTeamServerDevice(tsUserID);
+        registerTeamServerDevice(tsUserID);
 
         verify(certgen).generateCertificate(eq(tsUserID), eq(tsDID), any(PKCS10.class));
 
@@ -98,12 +98,12 @@ public class TestSP_CertifyTeamServerCertificate extends AbstractSPTest
         sqlTrans.commit();
     }
 
-    private void certifyTeamServerDevice(UserID userID)
+    private void registerTeamServerDevice(UserID userID)
             throws Exception
     {
         mockCertificateGeneratorAndIncrementSerialNumber();
 
-        service.certifyTeamServerDevice(tsDID.toPB(), newCSR(userID, tsDID));
+        service.registerTeamServerDevice(tsDID.toPB(), newCSR(userID, tsDID), false, "", "", "");
     }
 
     private UserID setupTeamServer()

@@ -167,15 +167,15 @@ public class Device
     /**
      * Add the device to the db, rename using Util.nextName() if a device with the same name exists.
      */
-    public void save(User owner, String name)
+    public void save(User owner, String osFamily, String osName, String deviceName)
             throws SQLException, ExDeviceIDAlreadyExists
     {
         while (true) {
             try {
-                _f._db.insertDevice(_id, owner.id(), name);
+                _f._db.insertDevice(_id, owner.id(), osFamily, osName, deviceName);
                 break;
             } catch (ExDeviceNameAlreadyExist e) {
-                name = Util.nextName(name, "");
+                deviceName = Util.nextName(deviceName, "");
             }
         }
     }

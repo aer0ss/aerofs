@@ -14,6 +14,7 @@ import com.aerofs.proto.Cmd.CommandType;
 import com.aerofs.proto.Sp.AckCommandQueueHeadReply;
 import com.aerofs.proto.Sp.GetCommandQueueHeadReply;
 import com.aerofs.proto.Sv;
+import com.aerofs.proto.Sp.RegisterDeviceReply;
 import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue.Epoch;
 import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue.QueueElement;
 import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue.SuccessError;
@@ -21,6 +22,7 @@ import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue.QueueSize;
 import com.aerofs.servlets.lib.db.jedis.JedisThreadLocalTransaction;
 import com.aerofs.servlets.lib.db.sql.SQLThreadLocalTransaction;
 import com.aerofs.proto.Sp.PBStripeSubscriptionData;
+import com.aerofs.sp.server.email.DeviceRegistrationEmailer;
 import com.aerofs.sp.server.lib.id.StripeCustomerID;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.Param;
@@ -35,7 +37,6 @@ import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExAlreadyInvited;
 import com.aerofs.lib.ex.ExBadArgs;
 import com.aerofs.base.ex.ExBadCredential;
-import com.aerofs.lib.ex.ExDeviceIDAlreadyExists;
 import com.aerofs.lib.ex.ExEmailSendingFailed;
 import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.lib.ex.ExNotFound;
@@ -54,7 +55,6 @@ import com.aerofs.proto.Sp.ListUserDevicesReply;
 import com.aerofs.proto.Sp.PBUser;
 import com.aerofs.proto.Sp.ResolveSignUpCodeReply;
 import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue;
-import com.aerofs.sp.server.email.DeviceCertifiedEmailer;
 import com.aerofs.sp.server.email.RequestToSignUpEmailer;
 import com.aerofs.sp.server.lib.SharedFolder;
 import com.aerofs.sp.server.lib.SharedFolder.Factory;
@@ -78,7 +78,6 @@ import com.aerofs.sp.common.SubscriptionCategory;
 import com.aerofs.proto.Common.PBException;
 import com.aerofs.proto.Common.PBSubjectRolePair;
 import com.aerofs.proto.Common.Void;
-import com.aerofs.proto.Sp.CertifyDeviceReply;
 import com.aerofs.proto.Sp.GetACLReply;
 import com.aerofs.proto.Sp.GetACLReply.PBStoreACL;
 import com.aerofs.proto.Sp.GetCRLReply;
@@ -102,6 +101,7 @@ import com.aerofs.sp.server.lib.user.ISessionUser;
 import com.aerofs.sp.server.lib.user.User;
 import com.aerofs.verkehr.client.lib.admin.VerkehrAdmin;
 import com.aerofs.verkehr.client.lib.publisher.VerkehrPublisher;
+import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -114,9 +114,6 @@ import sun.security.pkcs.PKCS10;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
-import java.security.NoSuchAlgorithmException;
-import java.security.SignatureException;
-import java.security.cert.CertificateException;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Collections;
@@ -128,9 +125,6 @@ import java.util.concurrent.ExecutionException;
 public class SPService implements ISPService
 {
     private static final Logger l = Loggers.getLogger(SPService.class);
-
-    // the temporary user or device name used before SetPreferences is called
-    private static final String UNKNOWN_DEVICE_NAME = "(unknown)";
 
     // TODO (WW) remove dependency to these database objects
     private final SPDatabase _db;
@@ -162,7 +156,7 @@ public class SPService implements ISPService
     private final Certificate.Factory _factCert;
     private final SharedFolder.Factory _factSharedFolder;
 
-    private final DeviceCertifiedEmailer _deviceCertifiedEmailer;
+    private final DeviceRegistrationEmailer _deviceRegistrationEmailer;
     private final RequestToSignUpEmailer _requestToSignUpEmailer;
     private final InvitationEmailer.Factory _factEmailer;
 
@@ -176,7 +170,7 @@ public class SPService implements ISPService
             Organization.Factory factOrg, OrganizationInvitation.Factory factOrgInvite,
             Device.Factory factDevice, Certificate.Factory factCert, CertificateDatabase certdb,
             EmailSubscriptionDatabase esdb, Factory factSharedFolder,
-            InvitationEmailer.Factory factEmailer, DeviceCertifiedEmailer deviceCertifiedEmailer,
+            InvitationEmailer.Factory factEmailer, DeviceRegistrationEmailer deviceRegistrationEmailer,
             RequestToSignUpEmailer requestToSignUpEmailer, JedisEpochCommandQueue commandQueue)
     {
         // FIXME: _db shouldn't be accessible here; in fact you should only have a transaction
@@ -197,7 +191,7 @@ public class SPService implements ISPService
         _esdb = esdb;
         _factSharedFolder = factSharedFolder;
 
-        _deviceCertifiedEmailer = deviceCertifiedEmailer;
+        _deviceRegistrationEmailer = deviceRegistrationEmailer;
         _requestToSignUpEmailer = requestToSignUpEmailer;
         _factEmailer = factEmailer;
 
@@ -705,14 +699,51 @@ public class SPService implements ISPService
         return createReply(reply);
     }
 
+    /**
+     * recertify should never be used.
+     */
     @Override
-    public ListenableFuture<CertifyDeviceReply> certifyTeamServerDevice(
-            ByteString deviceId, ByteString csr)
-            throws ExNoPerm, ExNotFound, ExAlreadyExist, SQLException, SignatureException,
-            IOException, ExBadArgs, NoSuchAlgorithmException, CertificateException,
-            ExDeviceIDAlreadyExists
+    public ListenableFuture<RegisterDeviceReply> registerDevice(ByteString deviceId, ByteString csr,
+            Boolean recertifyDoNotUse, String osFamily, String osName, String deviceName)
+            throws Exception
     {
+        // WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE remove nulltoEmpty calls
+        osFamily = Strings.nullToEmpty(osFamily);
+        osName = Strings.nullToEmpty(osName);
+        deviceName = Strings.nullToEmpty(deviceName);
 
+        User user = _sessionUser.get();
+        Device device = _factDevice.create(deviceId);
+
+        CertificationResult cert = device.certify(new PKCS10(csr.toByteArray()), user);
+
+        _sqlTrans.begin();
+
+        RegisterDeviceReply reply = saveDeviceAndCertificate(device, user, osFamily, osName,
+                deviceName, cert);
+
+        // Grab these information before releasing the transaction.
+        String firstName = user.getFullName()._first;
+
+        _sqlTrans.commit();
+
+        // Sending an email doesn't need to be a part of the transaction
+        _deviceRegistrationEmailer.sendDeviceCertifiedEmail(user.id().getString(), firstName,
+                osName, deviceName);
+
+        return createReply(reply);
+    }
+
+    @Override
+    public ListenableFuture<RegisterDeviceReply> registerTeamServerDevice(ByteString deviceId,
+            ByteString csr, Boolean recertifyDoNotUse, String osFamily, String osName,
+            String deviceName)
+            throws Exception
+    {
+        // WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE remove nulltoEmpty calls
+        osFamily = Strings.nullToEmpty(osFamily);
+        osName = Strings.nullToEmpty(osName);
+        deviceName = Strings.nullToEmpty(deviceName);
 
         User user = _sessionUser.get();
 
@@ -733,20 +764,32 @@ public class SPService implements ISPService
         CertificationResult cert = device.certify(new PKCS10(csr.toByteArray()), tsUser);
 
         _sqlTrans.begin();
-        // Certify device
-        device.save(tsUser, UNKNOWN_DEVICE_NAME);
-        CertifyDeviceReply reply = addCertificate(device, cert);
+
+        RegisterDeviceReply reply = saveDeviceAndCertificate(device, tsUser, osFamily, osName,
+                deviceName, cert);
 
         // Grab these information before releasing the transaction.
-        String emailAddress = user.id().getString();
         String firstName = user.getFullName()._first;
 
         _sqlTrans.commit();
 
         // Sending an email doesn't need to be a part of the transaction
-        _deviceCertifiedEmailer.sendTeamServerDeviceCertifiedEmail(emailAddress, firstName);
+        _deviceRegistrationEmailer.sendTeamServerDeviceCertifiedEmail(user.id().getString(), firstName,
+                osName, deviceName);
 
         return createReply(reply);
+    }
+
+    private RegisterDeviceReply saveDeviceAndCertificate(Device device, User user, String osFamily,
+            String osName, String deviceName, CertificationResult cert)
+            throws Exception
+    {
+        device.save(user, osFamily, osName, deviceName);
+        device.addCertificate(cert);
+
+        return RegisterDeviceReply.newBuilder()
+                .setCert(cert.toString())
+                .build();
     }
 
     @Override
@@ -799,48 +842,6 @@ public class SPService implements ISPService
 
         return createReply(reply);
     }
-
-    /**
-     * recertify should never be used.
-     */
-    @Override
-    public ListenableFuture<CertifyDeviceReply> certifyDevice(final ByteString deviceId,
-            final ByteString csr, final Boolean recertify_do_not_use)
-            throws Exception
-    {
-        User user = _sessionUser.get();
-        Device device = _factDevice.create(deviceId);
-
-        CertificationResult cert = device.certify(new PKCS10(csr.toByteArray()), user);
-
-        _sqlTrans.begin();
-
-        // Test the device id's availability/validity
-        device.save(user, UNKNOWN_DEVICE_NAME);
-        CertifyDeviceReply reply = addCertificate(device, cert);
-
-        // Grab these information before releasing the transaction.
-        String emailAddress = user.id().getString();
-        String firstName = user.getFullName()._first;
-
-        _sqlTrans.commit();
-
-        _deviceCertifiedEmailer.sendDeviceCertifiedEmail(emailAddress, firstName);
-
-        return createReply(reply);
-    }
-
-    private CertifyDeviceReply addCertificate(Device device, CertificationResult cert)
-            throws SignatureException, IOException, NoSuchAlgorithmException, ExBadArgs, ExNotFound,
-            ExAlreadyExist, SQLException, CertificateException
-    {
-        device.addCertificate(cert);
-
-        return CertifyDeviceReply.newBuilder()
-                .setCert(cert.toString())
-                .build();
-    }
-
 
     @Override
     public ListenableFuture<Void> shareFolder(String folderName, ByteString shareId,

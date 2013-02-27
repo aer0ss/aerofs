@@ -203,13 +203,13 @@ public class TestUser extends AbstractBusinessObjectTest
         user4.save(new byte[0], new FullName("f4", "l4"), factOrg.getDefault());
 
         // The 4 devices we will expect.
-        factDevice.create(new DID(UniqueID.generate())).save(user1, "Device1a");
-        factDevice.create(new DID(UniqueID.generate())).save(user1, "Device1c");
-        factDevice.create(new DID(UniqueID.generate())).save(user2, "Device2");
-        factDevice.create(new DID(UniqueID.generate())).save(user3, "Device3a");
-        factDevice.create(new DID(UniqueID.generate())).save(user3, "Device3b");
-        factDevice.create(new DID(UniqueID.generate())).save(user3, "Device3c");
-        factDevice.create(new DID(UniqueID.generate())).save(user4, "Device4");
+        factDevice.create(new DID(UniqueID.generate())).save(user1, "", "", "Device1a");
+        factDevice.create(new DID(UniqueID.generate())).save(user1, "", "", "Device1c");
+        factDevice.create(new DID(UniqueID.generate())).save(user2, "", "", "Device2");
+        factDevice.create(new DID(UniqueID.generate())).save(user3, "", "", "Device3a");
+        factDevice.create(new DID(UniqueID.generate())).save(user3, "", "", "Device3b");
+        factDevice.create(new DID(UniqueID.generate())).save(user3, "", "", "Device3c");
+        factDevice.create(new DID(UniqueID.generate())).save(user4, "", "", "Device4");
 
         SharedFolder sf = factSharedFolder.create(SID.generate());
 

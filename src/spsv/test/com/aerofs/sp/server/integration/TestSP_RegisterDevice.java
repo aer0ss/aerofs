@@ -25,7 +25,7 @@ import static org.mockito.Mockito.verify;
 /**
  * A class to test the business logic in the certify device sp.proto RPC.
  */
-public class TestSP_CertifyDevice extends AbstractSPCertificateBasedTest
+public class TestSP_RegisterDevice extends AbstractSPCertificateBasedTest
 {
     /**
      * Test that the certificate is successfully created when all params supplied are correct.
@@ -35,7 +35,7 @@ public class TestSP_CertifyDevice extends AbstractSPCertificateBasedTest
             throws Exception
     {
         String cert;
-        cert = service.certifyDevice(_did.toPB(), newCSR(_did), false).get().getCert();
+        cert = service.registerDevice(_did.toPB(), newCSR(_did), false, "", "", "").get().getCert();
 
         sqlTrans.begin();
         assertTrue(ddb.hasDevice(_did));
@@ -57,7 +57,7 @@ public class TestSP_CertifyDevice extends AbstractSPCertificateBasedTest
     {
         // Provide the incorrect user, and clean up after the uncommitted transaction.
         ByteString csr = newCSR(UserID.fromInternal("garbage"), _did);
-        service.certifyDevice(_did.toPB(), csr, false).get().getCert();
+        service.registerDevice(_did.toPB(), csr, false, "", "", "").get().getCert();
     }
 
     @Test
@@ -67,7 +67,7 @@ public class TestSP_CertifyDevice extends AbstractSPCertificateBasedTest
         // Certify device1
         DID did1 = _did;
         String cert1;
-        cert1 = service.certifyDevice(did1.toPB(), newCSR(did1), false).get().getCert();
+        cert1 = service.registerDevice(did1.toPB(), newCSR(did1), false, "", "", "").get().getCert();
         assertTrue(cert1.equals(RETURNED_CERT));
 
         // Modify the certificate's serial number returned for device2.
@@ -76,7 +76,7 @@ public class TestSP_CertifyDevice extends AbstractSPCertificateBasedTest
         // Certify device2
         DID did2 = getNextDID(Sets.newHashSet(_did));
         String cert2;
-        cert2 = service.certifyDevice(did2.toPB(), newCSR(did2),false).get().getCert();
+        cert2 = service.registerDevice(did2.toPB(), newCSR(did2),false, "", "", "").get().getCert();
         assertTrue(cert2.equals(RETURNED_CERT));
     }
 
@@ -85,8 +85,8 @@ public class TestSP_CertifyDevice extends AbstractSPCertificateBasedTest
             throws Exception
     {
         DID did = new DID(UniqueID.generate());
-        service.certifyDevice(did.toPB(), newCSR(did), false);
-        service.certifyDevice(did.toPB(), newCSR(did), false);
+        service.registerDevice(did.toPB(), newCSR(did), false, "", "", "");
+        service.registerDevice(did.toPB(), newCSR(did), false, "", "", "");
     }
 
     private ByteString newCSR(DID did)

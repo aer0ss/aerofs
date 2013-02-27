@@ -24,6 +24,8 @@ import static com.aerofs.lib.db.DBUtil.updateWhere;
 import static com.aerofs.sp.server.lib.SPSchema.CONSTRAINT_DEVICE_NAME_OWNER;
 import static com.aerofs.sp.server.lib.SPSchema.C_DEVICE_ID;
 import static com.aerofs.sp.server.lib.SPSchema.C_DEVICE_NAME;
+import static com.aerofs.sp.server.lib.SPSchema.C_DEVICE_OS_FAMILY;
+import static com.aerofs.sp.server.lib.SPSchema.C_DEVICE_OS_NAME;
 import static com.aerofs.sp.server.lib.SPSchema.C_DEVICE_OWNER_ID;
 import static com.aerofs.sp.server.lib.SPSchema.T_DEVICE;
 
@@ -48,16 +50,20 @@ public class DeviceDatabase extends AbstractSQLDatabase
         super(provider);
     }
 
-    public void insertDevice(DID did, UserID ownerID, String name)
+    public void insertDevice(DID did, UserID ownerID, String osFamily, String osName,
+            String deviceName)
             throws SQLException, ExDeviceNameAlreadyExist, ExDeviceIDAlreadyExists
     {
         try {
             PreparedStatement ps = prepareStatement(
-                    DBUtil.insert(T_DEVICE, C_DEVICE_ID, C_DEVICE_OWNER_ID, C_DEVICE_NAME));
+                    DBUtil.insert(T_DEVICE, C_DEVICE_ID, C_DEVICE_OWNER_ID, C_DEVICE_NAME,
+                            C_DEVICE_OS_FAMILY, C_DEVICE_OS_NAME));
 
             ps.setString(1, did.toStringFormal());
             ps.setString(2, ownerID.getString());
-            ps.setString(3, name);
+            ps.setString(3, deviceName);
+            ps.setString(4, osFamily);
+            ps.setString(5, osName);
             ps.executeUpdate();
         } catch (SQLException e) {
             throwOnDeviceIDOrNameConstraintViolation(e);
@@ -131,7 +137,6 @@ public class DeviceDatabase extends AbstractSQLDatabase
         } catch (SQLException e) {
             throwOnDeviceNameConstraintViolation(e);
         }
-
     }
 
     private static void throwOnDeviceIDOrNameConstraintViolation(SQLException e)

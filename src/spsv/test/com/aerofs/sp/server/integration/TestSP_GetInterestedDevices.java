@@ -42,14 +42,14 @@ public class TestSP_GetInterestedDevices extends AbstractSPFolderPermissionTest
         sqlTrans.begin();
 
         // User 1
-        ddb.insertDevice(_deviceA1, USER_1, "Device A1");
-        ddb.insertDevice(_deviceA2, USER_1, "Device A2");
+        ddb.insertDevice(_deviceA1, USER_1, "", "", "Device A1");
+        ddb.insertDevice(_deviceA2, USER_1, "", "", "Device A2");
 
         // User 2
-        ddb.insertDevice(_deviceB1, USER_2, "Device B1");
+        ddb.insertDevice(_deviceB1, USER_2, "", "", "Device B1");
 
         // User 3
-        ddb.insertDevice(_deviceC1, USER_3, "Device C2");
+        ddb.insertDevice(_deviceC1, USER_3, "", "", "Device C2");
 
         sqlTrans.commit();
 

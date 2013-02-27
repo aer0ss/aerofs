@@ -179,11 +179,11 @@ class Setup
     {
         assert deviceName != null; // can be empty, but can't be null
 
-        DID did = CredentialUtil.certifyAndSaveDeviceKeys(userID, scrypted, sp);
+        DID did = CredentialUtil.registerDeviceAndSaveKeys(userID, scrypted, deviceName, sp);
 
         initializeConfiguration(userID, did, rootAnchorPath, s3config, scrypted);
 
-        setupCommon(did, deviceName, rootAnchorPath, sp);
+        setupCommon(rootAnchorPath);
 
         addToFavorite(rootAnchorPath);
     }
@@ -198,7 +198,8 @@ class Setup
         UserID tsUserId = UserID.fromInternal(sp.getTeamServerUserID().getId());
         byte[] tsScrypted = SecUtil.scrypt(Param.MULTIUSER_LOCAL_PASSWORD, tsUserId);
 
-        DID tsDID = CredentialUtil.certifyAndSaveTeamServerDeviceKeys(tsUserId, tsScrypted, sp);
+        DID tsDID = CredentialUtil.registerTeamServerDeviceAndSaveKeys(tsUserId, tsScrypted,
+                deviceName, sp);
 
         initializeConfiguration(tsUserId, tsDID, rootAnchorPath, s3config, tsScrypted);
         Cfg.db().set(Key.AUTO_EXPORT_FOLDER, rootAnchorPath);
@@ -207,12 +208,12 @@ class Setup
         SPBlockingClient tsSP = SPClientFactory.newBlockingClient(SP.URL, tsUserId);
         signIn(tsUserId, tsScrypted, tsSP);
 
-        setupCommon(tsDID, deviceName, rootAnchorPath, tsSP);
+        setupCommon(rootAnchorPath);
 
         Cfg.db().set(Key.MULTIUSER_CONTACT_EMAIL, userID.getString());
     }
 
-    private void setupCommon(DID did, String deviceName, String rootAnchorPath, SPBlockingClient sp)
+    private void setupCommon(String rootAnchorPath)
             throws Exception
     {
         initializeAndLaunchDaemon();
@@ -223,7 +224,7 @@ class Setup
         // Proceed with AeroFS launch
         new Launcher(_rtRoot).launch(true);
 
-        setDeviceNameAndRootAnchorIcon(did, deviceName, rootAnchorPath, sp);
+        setRootAnchorIcon(rootAnchorPath);
     }
 
     private static void signIn(UserID userId, byte[] scrypted, SPBlockingClient sp)
@@ -322,29 +323,6 @@ class Setup
         Cfg.writePortbase(_rtRoot, findPortBase());
 
         Cfg.init_(_rtRoot, true);
-    }
-
-    /**
-     * Since the operations in this method is not critical, and the users doesn't need to wait for
-     * them before start using AeroFS, we put them into a separate thread.
-     */
-    private static void setDeviceNameAndRootAnchorIcon(final DID did, final String deviceName,
-            final String rootAnchorPath, final SPBlockingClient sp)
-    {
-        ThreadUtil.startDaemonThread("setup-non-essential", new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                try {
-                    sp.setPreferences(null, null, did.toPB(), deviceName);
-                } catch (Exception e) {
-                    l.warn("set prefs: " + Util.e(e));
-                }
-
-                setRootAnchorIcon(rootAnchorPath);
-            }
-        });
     }
 
     /**

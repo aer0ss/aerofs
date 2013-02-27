@@ -14,7 +14,9 @@ import com.aerofs.lib.cfg.CfgDatabase;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.base.id.UniqueID;
 import com.aerofs.base.id.UserID;
-import com.aerofs.proto.Sp.CertifyDeviceReply;
+import com.aerofs.lib.os.IOSUtil;
+import com.aerofs.lib.os.OSUtil;
+import com.aerofs.proto.Sp.RegisterDeviceReply;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.sp.client.SPClientFactory;
 import com.aerofs.ui.UI;
@@ -81,21 +83,23 @@ public class CredentialUtil
 
     /**
      * Call this method only to setup a team server. After setup, the team server can use
-     * certifyAndSaveDeviceKeys. See sp.proto:CertifyTeamServerDevice for detail.
+     * registerDeviceAndSaveKeys. See sp.proto:CertifyTeamServerDevice for detail.
      *
-     * See certifyAndSaveDeviceKeys for the parameter list
+     * See registerDeviceAndSaveKeys for the parameter list
      */
-    static DID certifyAndSaveTeamServerDeviceKeys(UserID certUserId, byte[] scrypted,
-            SPBlockingClient sp)
+    static DID registerTeamServerDeviceAndSaveKeys(UserID certUserId, byte[] scrypted,
+            final String deviceName, SPBlockingClient sp)
             throws Exception
     {
         return certifyAndSaveDeviceKeysImpl(certUserId, scrypted, sp, new ISPCertifyDeviceCaller()
         {
             @Override
-            public CertifyDeviceReply call(SPBlockingClient sp, ByteString did, ByteString csr)
+            public RegisterDeviceReply call(SPBlockingClient sp, ByteString did, ByteString csr)
                     throws Exception
             {
-                return sp.certifyTeamServerDevice(did, csr);
+                IOSUtil osu = OSUtil.get();
+                return sp.registerTeamServerDevice(did, csr, false,
+                        osu.getOSFamily().getString(), osu.getFullOSName(), deviceName);
             }
         });
     }
@@ -105,16 +109,19 @@ public class CredentialUtil
      * @param certUserId used only to generate the certificate's CNAME, but not to sign in
      * @param scrypted used only to encrypt the private key but not to sign in
      */
-    static DID certifyAndSaveDeviceKeys(UserID certUserId, byte[] scrypted, SPBlockingClient sp)
+    static DID registerDeviceAndSaveKeys(UserID certUserId, byte[] scrypted,
+            final String deviceName, SPBlockingClient sp)
             throws Exception
     {
         return certifyAndSaveDeviceKeysImpl(certUserId, scrypted, sp, new ISPCertifyDeviceCaller()
         {
             @Override
-            public CertifyDeviceReply call(SPBlockingClient sp, ByteString did, ByteString csr)
+            public RegisterDeviceReply call(SPBlockingClient sp, ByteString did, ByteString csr)
                     throws Exception
             {
-                return sp.certifyDevice(did, csr, false);
+                IOSUtil osu = OSUtil.get();
+                return sp.registerDevice(did, csr, false, osu.getOSFamily().getString(),
+                        osu.getFullOSName(), deviceName);
             }
         });
     }
@@ -133,7 +140,7 @@ public class CredentialUtil
 
     private static interface ISPCertifyDeviceCaller
     {
-        CertifyDeviceReply call(SPBlockingClient sp, ByteString did, ByteString csr)
+        RegisterDeviceReply call(SPBlockingClient sp, ByteString did, ByteString csr)
                 throws Exception;
     }
 

@@ -71,7 +71,7 @@ public class TestDefect extends AbstractTest
         assertEquals(did.toStringFormal(), result.did);
         assertEquals(user.getString(), result.user_id);
         assertEquals(OSUtil.get().getFullOSName(), result.os_name);
-        assertEquals(OSUtil.get().getOSFamily().toString(), result.os_family);
+        assertEquals(OSUtil.get().getOSFamily().getString(), result.os_family);
         assertEquals(OSUtil.getOSArch().toString(), result.aerofs_arch);
 
         // Check that the exception is properly encoded

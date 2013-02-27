@@ -65,7 +65,7 @@ abstract class RockLogMessage
     {
         if (OSUtil.get() != null) {
             _data.put("os_name", OSUtil.get().getFullOSName());
-            _data.put("os_family", OSUtil.get().getOSFamily().toString());
+            _data.put("os_family", OSUtil.get().getOSFamily().getString());
             _data.put("aerofs_arch", OSUtil.getOSArch().toString());
         }
     }

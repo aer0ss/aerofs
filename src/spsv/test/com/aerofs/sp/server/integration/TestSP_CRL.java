@@ -37,7 +37,7 @@ public class TestSP_CRL extends AbstractSPCertificateBasedTest
     public void setupTestSP_CRL()
         throws Exception
     {
-        String cert = service.certifyDevice(_did.toPB(), newCSR(TEST_1_USER, _did), false)
+        String cert = service.registerDevice(_did.toPB(), newCSR(TEST_1_USER, _did), false, "", "", "")
                 .get().getCert();
 
         assertTrue(cert.equals(RETURNED_CERT));
