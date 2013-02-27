@@ -9,6 +9,13 @@
 # Copyright 2012-2013 Air Computing Inc, unless otherwise noted.
 #
 class redis {
+
+    define delete_lines($file, $pattern) {
+        exec { "/bin/sed -i -r -e '/$pattern/d' $file":
+            onlyif => "/bin/grep -E '$pattern' '$file'",
+        }
+    }
+
     apt::key { "dotdeb":
         ensure => present,
         key_source => "http://www.dotdeb.org/dotdeb.gpg"
