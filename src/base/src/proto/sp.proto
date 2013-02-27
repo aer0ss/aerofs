@@ -519,12 +519,11 @@ service SPService {
     /**
      * WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE: move this under GetDeviceInfo.
      *
-     * List all user devices (used in the admin panel device management page).
+     * List all the devices belonging to a specified user. If the specified user is not the
+     * current user, the current user must be the admin of the organization the specified user
+     * belongs to.
      *
-     * Required Auth Level: user
-     *
-     * Throws:
-     *   ExBadArgs: if the offset is negative or max results is too large.
+     * Required Auth Level: user or admin (see above)
      */
     rpc ListUserDevices(ListUserDevicesCall) returns(ListUserDevicesReply);
 
@@ -917,6 +916,7 @@ message GetDeviceInfoCall {
 
 message GetDeviceInfoReply {
 
+    // See also GetUserDevicesReply.PBDevice
     message PBDeviceInfo {
         // These fields are absent if:
         // 1) the device ID is not found, or
@@ -1022,33 +1022,21 @@ message DeleteOrganizationInvitationReply {
 
 // WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE: move this under the GetDeviceInfo messages.
 message ListUserDevicesCall {
-    // TODO (WW) remove search, offset, and max results
-    // Return only users whose name match this string. Empty string matches all users.
-    required string search = 1;
-
-    // Maximum number of users returned on one page.
-    required int32 max_results = 2;
-
-    // Offset to start retrieving the results.
-    required int32 offset = 3;
+    required string user_id = 1;
 }
 
 // WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE: move this under the GetDeviceInfo messages.
 message ListUserDevicesReply {
-    message PBDeviceInfo {
-        required string device_name = 1;
-        required string os = 2;
-        required bytes device_id = 3;
+
+    // See also GetDeviceInfoReply.PBDeviceInfo
+    message PBDevice {
+        required bytes device_id = 1;
+        required string device_name = 2;
+        required string os_family = 3;
+        required string os_name = 4;
     }
 
-    // List of device names.
-    repeated PBDeviceInfo device_info = 1;
-
-    // Total number of users in the database.
-    required uint32 total_count = 2;
-
-    // Total number of users in the database that match the 'search' parameter.
-    required uint32 filtered_count = 3;
+    repeated PBDevice device = 1;
 }
 
 message PBFullName {

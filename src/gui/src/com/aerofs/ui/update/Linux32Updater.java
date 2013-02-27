@@ -1,7 +1,6 @@
 package com.aerofs.ui.update;
 
 import com.aerofs.labeling.L;
-import com.aerofs.lib.Util;
 
 class Linux32Updater extends AbstractLinuxUpdater
 {

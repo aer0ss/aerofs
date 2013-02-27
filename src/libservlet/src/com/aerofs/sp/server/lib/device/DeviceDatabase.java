@@ -118,7 +118,29 @@ public class DeviceDatabase extends AbstractSQLDatabase
         }
     }
 
-   /**
+    public @Nonnull String getOSFamily(DID did)
+            throws SQLException, ExNotFound
+    {
+        ResultSet rs = queryDevice(did, C_DEVICE_OS_FAMILY);
+        try {
+            return rs.getString(1);
+        } finally {
+            rs.close();
+        }
+    }
+
+    public @Nonnull String getOSName(DID did)
+            throws SQLException, ExNotFound
+    {
+        ResultSet rs = queryDevice(did, C_DEVICE_OS_NAME);
+        try {
+            return rs.getString(1);
+        } finally {
+            rs.close();
+        }
+    }
+
+    /**
      * Trim the name before saving it to the db
      */
     public void setName(DID did, String name)

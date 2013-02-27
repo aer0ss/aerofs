@@ -7,6 +7,7 @@ import com.aerofs.proto.Sp.DeleteOrganizationInvitationReply;
 import com.aerofs.proto.Sp.InviteToOrganizationReply;
 import com.aerofs.proto.Sp.ListOrganizationInvitedUsersReply;
 import com.aerofs.proto.Sp.ListOrganizationSharedFoldersReply;
+import com.aerofs.proto.Sp.ListUserDevicesReply.PBDevice;
 import com.aerofs.proto.Sp.ListUserSharedFoldersReply;
 import com.aerofs.proto.Sp.PBSharedFolder;
 import com.aerofs.proto.Sp.PBSharedFolder.PBUserAndRole;
@@ -68,7 +69,6 @@ import com.aerofs.sp.server.lib.organization.Organization.UsersAndQueryCount;
 import com.aerofs.sp.server.lib.id.OrganizationID;
 import com.aerofs.sp.server.lib.organization.OrganizationInvitation;
 import com.aerofs.sp.server.lib.session.CertificateAuthenticator;
-import com.aerofs.sp.server.lib.user.User.DevicesAndQueryCount;
 import com.aerofs.sp.server.lib.user.User.PendingSharedFolder;
 import com.aerofs.sp.server.session.SPActiveUserSessionTracker;
 import com.aerofs.sp.server.session.SPSessionExtender;
@@ -305,9 +305,11 @@ public class SPService implements ISPService
         }
 
         if (deviceId != null) {
-            // TODO (WW) verify the device belong to the user
-            l.info(user.id() + ": set device name: " + deviceName);
-            _factDevice.create(deviceId).setName(deviceName);
+            Device device = _factDevice.create(deviceId);
+            throwIfNotOwner(user, device);
+
+            l.info("{} sets device name: {}", user, deviceName);
+            device.setName(deviceName);
             deviceNameUpdated = true;
         }
 
@@ -322,7 +324,6 @@ public class SPService implements ISPService
                     addToCommandQueueAndSendVerkehrMessage(peerDevice.id(),
                             CommandType.INVALIDATE_USER_NAME_CACHE);
                 }
-
                 if (deviceNameUpdated) {
                     l.info("cmd: inval device cache for " + peerDevice.id().toStringFormal());
                     addToCommandQueueAndSendVerkehrMessage(peerDevice.id(),
@@ -461,30 +462,63 @@ public class SPService implements ISPService
     {
         _sqlTrans.begin();
 
-        User currentUser = _sessionUser.get();
-        User specifiedUser = _factUser.createFromExternalID(userID);
+        User user = _factUser.createFromExternalID(userID);
+        throwIfSessionUserIsNotOrAdminOf(user);
 
-        if (!specifiedUser.equals(currentUser)) {
-            // if the current user is different from the specified user, the current user must be
-            // an admin of the organization the specified user belongs to.
-            currentUser.throwIfNotAdmin();
-
-            String noPermMsg = "you don't have permissions to list " + userID + "'s shared folders";
-
-            // Throw early if the specified user doesn't exist rather than relying on the following
-            // below. This is to prevent user existance testing from attackers.
-            if (!specifiedUser.exists()) throw new ExNoPerm(noPermMsg);
-
-            if (!specifiedUser.getOrganization().equals(currentUser.getOrganization())) {
-                throw new ExNoPerm(noPermMsg);
-            }
-        }
-
-        List<PBSharedFolder> pbs = sharedFolders2pb(specifiedUser.getSharedFolders());
+        List<PBSharedFolder> pbs = sharedFolders2pb(user.getSharedFolders());
 
         _sqlTrans.commit();
 
         return createReply(ListUserSharedFoldersReply.newBuilder().addAllSharedFolder(pbs).build());
+    }
+
+    @Override
+    public ListenableFuture<ListUserDevicesReply> listUserDevices(String userID)
+            throws ExNoPerm, SQLException, ExFormatError, ExNotFound, ExBadArgs
+    {
+        _sqlTrans.begin();
+
+        User user = _factUser.createFromExternalID(userID);
+        throwIfSessionUserIsNotOrAdminOf(user);
+
+        ListUserDevicesReply.Builder builder = ListUserDevicesReply.newBuilder();
+        for (Device device : user.getDevices()) {
+            builder.addDevice(PBDevice.newBuilder()
+                    .setDeviceId(ByteString.copyFrom(device.id().getBytes()))
+                    .setDeviceName(device.getName())
+                    .setOsFamily(device.getOSFamily())
+                    .setOsName(device.getOSName()));
+        }
+
+        _sqlTrans.commit();
+
+        return createReply(builder.build());
+    }
+
+    /**
+     * @throws ExNoPerm if the session user is not {@code user} nor the admin of the {@code user}'s
+     * organization
+     */
+    private void throwIfSessionUserIsNotOrAdminOf(User user)
+            throws ExNoPerm, SQLException, ExNotFound
+    {
+        User currentUser = _sessionUser.get();
+
+        if (user.equals(currentUser)) return;
+
+        // if the current user is different from the specified user, the current user must be
+        // an admin of the organization the specified user belongs to.
+        currentUser.throwIfNotAdmin();
+
+        String noPermMsg = "you don't have enough privilege";
+
+        // Throw early if the specified user doesn't exist rather than relying on the following
+        // below. This is to prevent attacker from testing user existance.
+        if (!user.exists()) throw new ExNoPerm(noPermMsg);
+
+        if (!user.getOrganization().equals(currentUser.getOrganization())) {
+            throw new ExNoPerm(noPermMsg);
+        }
     }
 
     private List<PBSharedFolder> sharedFolders2pb(Collection<SharedFolder> sfs)
@@ -742,13 +776,21 @@ public class SPService implements ISPService
 
         _sqlTrans.begin();
 
-        if (!device.getOwner().equals(user)) throw new ExNoPerm("you are not the owner of the device");
+        throwIfNotOwner(user, device);
 
         device.setOSFamilyAndName(osFamily, osName);
 
         _sqlTrans.commit();
 
         return createVoidReply();
+    }
+
+    private void throwIfNotOwner(User user, Device device)
+            throws ExNotFound, SQLException, ExNoPerm
+    {
+        if (!device.getOwner().equals(user)) {
+            throw new ExNoPerm("you are not the owner of the device");
+        }
     }
 
     @Override
@@ -1896,35 +1938,6 @@ public class SPService implements ISPService
 
         _sqlTrans.commit();
 
-        return createReply(builder.build());
-    }
-
-    @Override
-    public ListenableFuture<ListUserDevicesReply> listUserDevices(String search, Integer maxResults,
-            Integer offset)
-            throws ExNoPerm, SQLException, ExFormatError, ExNotFound, ExBadArgs
-    {
-        l.info("LUD: search=" + search + " max=" + maxResults + " offset=" + offset);
-        throwOnInvalidOffset(offset);
-        throwOnInvalidMaxResults(maxResults);
-
-        _sqlTrans.begin();
-        ListUserDevicesReply.Builder builder = ListUserDevicesReply.newBuilder();
-
-        User user = _sessionUser.get();
-        DevicesAndQueryCount devicesAndQueryCount= user.getUserDevices(search, maxResults, offset);
-
-        builder.setTotalCount(user.totalDeviceCount());
-        builder.setFilteredCount(devicesAndQueryCount.count());
-
-        for (Device device : devicesAndQueryCount.devices()) {
-            builder.addDeviceInfo(ListUserDevicesReply.PBDeviceInfo.newBuilder()
-                    .setDeviceName(device.getName())
-                    .setDeviceId(ByteString.copyFrom(device.id().getBytes()))
-                    .setOs(device.getOS()));
-        }
-
-        _sqlTrans.commit();
         return createReply(builder.build());
     }
 

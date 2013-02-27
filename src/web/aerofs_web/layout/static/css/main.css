@@ -1,3 +1,30 @@
+.clearfix {
+  *zoom: 1;
+}
+.clearfix:before,
+.clearfix:after {
+  display: table;
+  content: "";
+}
+.clearfix:after {
+  clear: both;
+}
+.hide-text {
+  font: 0/0 a;
+  color: transparent;
+  text-shadow: none;
+  background-color: transparent;
+  border: 0;
+}
+.input-block-level {
+  display: block;
+  width: 100%;
+  min-height: 28px;
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  -ms-box-sizing: border-box;
+  box-sizing: border-box;
+}
 .navbar .nav > li > a {
   font-size: 120%;
   font-weight: bold;
@@ -64,6 +91,35 @@ div.input_container.submit {
 [class^="icon-"],
 [class*=" icon-"] {
   vertical-align: -2px;
+}
+[class^="aerofs-icon-"],
+[class*=" aerofs-icon-"] {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  *margin-right: .3em;
+  line-height: 14px;
+  vertical-align: text-top;
+  background-image: url("../img/aerofs-icons.png");
+  background-position: 14px 14px;
+  background-repeat: no-repeat;
+  vertical-align: -2px;
+}
+[class^="aerofs-icon-"]:last-child,
+[class*=" aerofs-icon-"]:last-child {
+  *margin-left: 0;
+}
+.aerofs-icon-osx {
+  background-position: 0      0;
+}
+.aerofs-icon-windows {
+  background-position: -24px 0;
+}
+.aerofs-icon-linux {
+  background-position: -48px 0;
+}
+.aerofs-icon-android {
+  background-position: -72px 0;
 }
 a.btn,
 button.btn {

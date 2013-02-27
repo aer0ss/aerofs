@@ -12,7 +12,6 @@ import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.base.ex.ExFormatError;
-import com.aerofs.lib.ex.ExBadArgs;
 import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.base.id.SID;
@@ -26,7 +25,6 @@ import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.id.OrganizationID;
 import com.aerofs.sp.server.lib.organization.OrganizationInvitation;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableList.Builder;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import org.slf4j.Logger;
@@ -200,7 +198,7 @@ public class User
         List<Device> peerDevices = Lists.newLinkedList();
 
         for (User peerUser : peerUsers) {
-            Collection<Device> userDevices = peerUser.getUserDevices();
+            Collection<Device> userDevices = peerUser.getDevices();
 
             for (Device userDevice : userDevices) {
                 peerDevices.add(userDevice);
@@ -210,39 +208,16 @@ public class User
         return peerDevices;
     }
 
-    public ImmutableList<Device> getUserDevices()
+    public ImmutableList<Device> getDevices()
             throws SQLException, ExFormatError
     {
         ImmutableList.Builder<Device> builder = ImmutableList.builder();
 
-        for (DID did : _f._udb.getUserDevices(id())) {
+        for (DID did : _f._udb.getDevices(id())) {
             builder.add(_f._factDevice.create(did));
         }
 
         return builder.build();
-    }
-
-    public DevicesAndQueryCount getUserDevices(String search, int maxResults, int offset)
-            throws ExBadArgs, SQLException, ExFormatError
-    {
-        List<DID> devices;
-        int count;
-
-        if (search.isEmpty()) {
-            devices = _f._udb.getUserDevices(_id, offset, maxResults);
-            count = totalDeviceCount();
-        } else {
-            devices = _f._udb.searchUserDevices(_id, offset, maxResults, search);
-            count = _f._udb.searchDecvicesCount(_id, search);
-        }
-
-        return new DevicesAndQueryCount(devices, count);
-    }
-
-    public int totalDeviceCount()
-            throws SQLException
-    {
-        return _f._udb.listDevicesCount(_id);
     }
 
     public List<OrganizationInvitation> getOrganizationInvitations()
@@ -443,29 +418,5 @@ public class User
             throws SQLException
     {
         return _f._udb.isInvitedToSignUp(_id);
-    }
-
-    public class DevicesAndQueryCount
-    {
-        private final ImmutableList<Device> _devices;
-        private final int _count;
-
-        public DevicesAndQueryCount(Collection<DID> devices, int count)
-        {
-            Builder<Device> builder = ImmutableList.builder();
-            for (DID did : devices) builder.add(_f._factDevice.create(did));
-            _devices = builder.build();
-            _count = count;
-        }
-
-        public ImmutableList<Device> devices()
-        {
-            return _devices;
-        }
-
-        public int count()
-        {
-            return _count;
-        }
     }
 }

@@ -28,6 +28,9 @@ public class DID extends UniqueID
         super(str, start, end);
     }
 
+    /**
+     * TODO (WW) use fromInternal and fromExternal as what UserID does?
+     */
     public DID(String str) throws ExFormatError
     {
         super(str);

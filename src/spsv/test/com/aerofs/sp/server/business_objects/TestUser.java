@@ -214,7 +214,7 @@ public class TestUser extends AbstractBusinessObjectTest
         sf.addMemberACL(user2, Role.EDITOR);
         sf.addMemberACL(user3, Role.EDITOR);
 
-        Collection<Device> userDevices = user1.getUserDevices();
+        Collection<Device> userDevices = user1.getDevices();
         Collection<Device> peerDevices = user1.getPeerDevices();
 
         // Only my devices.
@@ -233,7 +233,7 @@ public class TestUser extends AbstractBusinessObjectTest
         factDevice.create(new DID(UniqueID.generate())).save(user1, "", "", "Device1a");
         factDevice.create(new DID(UniqueID.generate())).save(user1, "", "", "Device1b");
 
-        Collection<Device> userDevices = user1.getUserDevices();
+        Collection<Device> userDevices = user1.getDevices();
         Collection<Device> peerDevices = user1.getPeerDevices();
 
         Assert.assertEquals(2, userDevices.size());

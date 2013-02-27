@@ -1,5 +1,8 @@
 @import "bootstrap/variables.less";
 
+// for ie7-restore-right-whitespace
+@import "bootstrap/mixins.less";
+
 @footerHeight: 4em;
 
 .navbar .nav > li > a {
@@ -98,9 +101,38 @@ div.input_container.submit {
 }
 
 // To correct the vertical mis-alignment for icons in bootstrap.css
-[class^="icon-"], [class*=" icon-"] {
+.icon-vertical-align-fix() {
   vertical-align: -2px;
 }
+
+[class^="icon-"],
+[class*=" icon-"] {
+  .icon-vertical-align-fix();
+}
+
+[class^="aerofs-icon-"],
+[class*=" aerofs-icon-"] {
+  // The following is copied from sprites.less. Ideally we should inherit styles
+  // and avoid code duplication.
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  .ie7-restore-right-whitespace();
+  line-height: 14px;
+  vertical-align: text-top;
+  background-image: url("@{aerofsIconSpritePath}");
+  background-position: 14px 14px;
+  background-repeat: no-repeat;
+
+  // This must be at the end of the style otherwise it would be overwritten by
+  // the above vertical-align
+  .icon-vertical-align-fix();
+}
+
+.aerofs-icon-osx              { background-position: 0      0; }
+.aerofs-icon-windows          { background-position: -24px  0; }
+.aerofs-icon-linux            { background-position: -48px  0; }
+.aerofs-icon-android          { background-position: -72px  0; }
 
 // This is to correct the horizontal spacing for inputs in controls-row. The
 // current version of Stripe doesn't have controls-row support.

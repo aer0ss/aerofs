@@ -194,6 +194,7 @@
     <%
         links = [
             ('my_shared_folders', _("Shared Folders")),
+            ('my_devices', _("Devices")),
             ('accept', _("Invitations")),
         ]
     %>

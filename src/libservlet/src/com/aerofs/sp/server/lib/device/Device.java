@@ -100,10 +100,16 @@ public class Device
         return _f._db.getName(_id);
     }
 
-    public String getOS()
+    public String getOSFamily()
+            throws SQLException, ExNotFound
     {
-        // TODO (MP) need a dput to collect os info...
-        return "(unknown)";
+        return _f._db.getOSFamily(_id);
+    }
+
+    public String getOSName()
+            throws SQLException, ExNotFound
+    {
+        return _f._db.getOSName(_id);
     }
 
     public Certificate getCertificate()
