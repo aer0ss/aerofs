@@ -60,7 +60,7 @@ public class TestDirectoryService_SwapOIDs extends AbstractTest
         when(sss.isRoot_(sidx)).thenReturn(true);
         when(sss.getRoot_()).thenReturn(sidx);
 
-        final IPathResolver pr = new SingleuserPathResolver(sss, ds, null);
+        final AbstractPathResolver pr = new SingleuserPathResolver(sss, ds, null);
 
         ds.inject_(mock(IPhysicalStorage.class), mdb, mock(MapAlias2Target.class),
                 mock(TransManager.class), mock(IMapSID2SIndex.class),

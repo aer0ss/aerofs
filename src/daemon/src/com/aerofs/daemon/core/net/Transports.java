@@ -18,7 +18,7 @@ import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
 import com.aerofs.daemon.event.lib.imc.QueueBasedIMCExecutor;
 import com.aerofs.daemon.event.net.EOLinkStateChanged;
 import com.aerofs.daemon.lib.IStartable;
-import com.aerofs.daemon.mobile.MobileService;
+import com.aerofs.daemon.mobile.MobileServiceFactory;
 import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.daemon.transport.lib.MaxcastFilterReceiver;
 import com.aerofs.daemon.transport.tcpmt.TCP;
@@ -163,7 +163,7 @@ public class Transports implements IDumpStat, IDumpStatMisc, IStartable
     private final LinkStateService _lss;
 
     @Inject
-    public Transports(CfgLocalDID localdid, CoreQueue q, TC tc, LinkStateService lss, MobileService.Factory mobileServiceFactory)
+    public Transports(CfgLocalDID localdid, CoreQueue q, TC tc, LinkStateService lss, MobileServiceFactory mobileServiceFactory)
     {
         this._tc = tc;
         this._lss = lss;

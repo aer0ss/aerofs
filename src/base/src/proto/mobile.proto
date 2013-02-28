@@ -3,19 +3,19 @@ option java_package = "com.aerofs.proto";
 option optimize_for = LITE_RUNTIME; // remove reflection
 
 import "common.proto";
-import "objects.proto";
 
 service MobileService {
     // Sets the message type used in case of errors
     rpc __error__(Void) returns(PBException);
 
-    // Test if the daemon is responsive
-    rpc Heartbeat(Void) returns(Void);
-
-    // Return the list of children names as long with their attributes for a given parent folder.
-    // Throw NOT_FOUND if the parent path doesn't exist
-    // Throw NOT_DIR if the parent path is not a folder
-    rpc GetChildrenAttributes(GetChildrenAttributesCall) returns(GetChildrenAttributesReply);
+    /**
+     * Lists the children names and their attributes for a given parent folder
+     *
+     * Throws:
+     *   ExNotFound if the parent path doesn't exist
+     *   ExNotDir if the parent path isn't a directory
+     */
+    rpc ListChildren(ListChildrenCall) returns(ListChildrenReply);
 
     // Download a file
     rpc StartDownload(StartDownloadCall) returns(StartDownloadReply);
@@ -24,34 +24,52 @@ service MobileService {
     rpc DownloadPacket(DownloadPacketCall) returns(DownloadPacketReply);
 }
 
+message ListChildrenCall {
+    required PBPath path = 1;
+}
+
+message ListChildrenReply {
+    repeated PBFile children = 1;
+}
+
+message PBFile {
+    enum Type {
+        FILE = 0;
+        FOLDER = 1;
+        SHARED_FOLDER = 2;
+    }
+    required string name = 1;    // File / folder name
+    required Type type = 2;
+    optional uint64 length = 3;  // File size in bytes
+    optional uint64 mtime = 4;   // Last modification time
+}
 
 message StartDownloadCall {
-    required PBPath source = 2;
+    required PBPath path = 1;    // File to download
 }
 
 message StartDownloadReply {
-    required bytes cookie = 1;
-    required uint64 length = 2;
-    required uint64 mtime = 4;
-    optional uint32 max_packet_length = 3 [default = 102400]; // 100 K
+    required bytes cookie = 1;   // Identifier to be passed to DownloadPacketCall
+    required uint64 length = 2;  // File length
+    required uint64 mtime = 3;   // File modification time
+    required uint32 max_packet_length = 4;  // Maximum length that can be set in DownloadPacketCall
 }
 
 message DownloadPacketCall {
-    required PBPath source = 2;
-    required bytes cookie = 3;
-    required uint64 offset = 4;
-    optional uint32 length = 5 [default = 102400];  // 100 K
+    required bytes cookie = 1;   // Identifier from StartDownloadReply
+    required uint64 offset = 2;
+    required uint32 length = 3;
 }
 
 message DownloadPacketReply {
-    optional bool done = 1;
-    required bytes data = 2;
+    required bytes data = 1;
 }
 
 message DownloadCookie {
-    required uint64 length = 1;
-    required uint64 modTime = 2;
-    required PBVer version = 3;
+    required PBPath path = 1;
+    required uint64 length = 2;
+    required uint64 modTime = 3;
+    required PBVer version = 4;
 }
 
 /**

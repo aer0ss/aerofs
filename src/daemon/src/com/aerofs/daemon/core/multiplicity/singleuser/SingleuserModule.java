@@ -7,7 +7,7 @@ package com.aerofs.daemon.core.multiplicity.singleuser;
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.admin.HdRelocateRootAnchor.ICrossFSRelocator;
 import com.aerofs.daemon.core.admin.HdRelocateRootAnchor.SingleuserCrossFSRelocator;
-import com.aerofs.daemon.core.ds.IPathResolver;
+import com.aerofs.daemon.core.ds.AbstractPathResolver;
 import com.aerofs.daemon.core.migration.IEmigrantTargetSIDLister;
 import com.aerofs.daemon.core.migration.IEmigrantDetector;
 import com.aerofs.daemon.core.migration.IImmigrantCreator;
@@ -36,7 +36,7 @@ public class SingleuserModule extends AbstractModule
         binder().disableCircularProxies();
 
         bind(IStores.class).to(SingleuserStores.class);
-        bind(IPathResolver.class).to(SingleuserPathResolver.class);
+        bind(AbstractPathResolver.class).to(SingleuserPathResolver.class);
 
         bind(IEmigrantTargetSIDLister.class).to(EmigrantTargetSIDLister.class);
         bind(IEmigrantDetector.class).to(EmigrantDetector.class);

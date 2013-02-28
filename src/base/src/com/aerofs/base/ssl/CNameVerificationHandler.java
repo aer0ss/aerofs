@@ -50,10 +50,19 @@ import static org.jboss.netty.channel.Channels.future;
  */
 public class CNameVerificationHandler extends SimpleChannelHandler
 {
+    public interface CNameListener
+    {
+        /**
+         * Called after the CName verification succeeds, with the verified user id and did
+         */
+        public void onPeerVerified(UserID user, DID did);
+    }
+
     private final static Logger l = Loggers.getLogger(CNameVerificationHandler.class);
 
     private final UserID _user;
     private final DID _did;
+    private CNameListener _listener;
 
     private enum State { Handshaking, Handshaken, Failed }
     private State _state = State.Handshaking; // access must be synchronized on this
@@ -62,6 +71,11 @@ public class CNameVerificationHandler extends SimpleChannelHandler
     {
         _user = user;
         _did = did;
+    }
+
+    public void setListener(CNameListener listener)
+    {
+        _listener = listener;
     }
 
     @Override
@@ -138,6 +152,7 @@ public class CNameVerificationHandler extends SimpleChannelHandler
             }
 
             _state = State.Handshaken;
+            if (_listener != null) _listener.onPeerVerified(user, did);
 
             // Notify upstream that the connection has been established
             ctx.getPipeline().remove(this);

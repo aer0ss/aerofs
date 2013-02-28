@@ -64,7 +64,7 @@ public class DirectoryService implements IDumpStatMisc, IStoreDeletionOperator
     private IPhysicalStorage _ps;
     private IMapSID2SIndex _sid2sidx;
     private FrequentDefectSender _fds;
-    private IPathResolver _pathResolver;
+    private AbstractPathResolver _pathResolver;
     private ProgressIndicators _pi;
 
     private DBCache<Path, SOID> _cacheDS;
@@ -155,7 +155,7 @@ public class DirectoryService implements IDumpStatMisc, IStoreDeletionOperator
     @Inject
     public void inject_(IPhysicalStorage ps, IMetaDatabase mdb, MapAlias2Target alias2target,
             TransManager tm, IMapSID2SIndex sid2sidx, FrequentDefectSender fds,
-            StoreDeletionOperators storeDeletionOperators, IPathResolver pathResolver)
+            StoreDeletionOperators storeDeletionOperators, AbstractPathResolver pathResolver)
     {
         _ps = ps;
         _mdb = mdb;

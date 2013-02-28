@@ -4,8 +4,8 @@ import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExBadArgs;
 import com.aerofs.lib.ex.ExNotFile;
 import com.aerofs.proto.Common.PBPath;
-import com.aerofs.proto.Objects.PBObjectAttributes;
-import com.aerofs.proto.Objects.PBObjectAttributes.Type;
+import com.aerofs.proto.Ritual.PBObjectAttributes;
+import com.aerofs.proto.Ritual.PBObjectAttributes.Type;
 import com.google.protobuf.ByteString;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
@@ -33,11 +33,11 @@ public class CmdRm implements IShellCommand<ShProgram>
             for (String arg : cl.getArgs()) {
                 PBPath path = s.d().buildPath_(arg);
 
-                PBObjectAttributes attr = s.d().getRitualClient_()
-                        .getObjectAttributes(Cfg.user().getString(), path)
-                        .getObjectAttributes();
+            PBObjectAttributes attr = s.d().getRitualClient_()
+                    .getObjectAttributes(Cfg.user().getString(), path)
+                    .getObjectAttributes();
 
-                if (!(attr.getType() == Type.FILE || cl.hasOption('r'))) throw new ExNotFile();
+            if (!(attr.getType() == Type.FILE || cl.hasOption('r'))) throw new ExNotFile();
 
                 s.d().getRitualClient_().deleteObject(path);
             }

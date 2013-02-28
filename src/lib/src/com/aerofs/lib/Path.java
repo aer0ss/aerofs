@@ -4,6 +4,9 @@
 
 package com.aerofs.lib;
 
+import com.aerofs.base.id.SID;
+import com.aerofs.base.id.UserID;
+import com.aerofs.labeling.L;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.proto.Common.PBPath;
 import com.google.common.base.Joiner;
@@ -47,6 +50,22 @@ public class Path implements Comparable<Path>
         for (int i = 0; i < _elems.length; i++) _elems[i] = pb.getElem(i);
         _pb = pb;
         assertNoEmptyElement();
+    }
+
+    /**
+     * Constructs a new Path by taking into the user id in multiuser systems.
+     * (In AeroFS Multiuser, we prepend the root SID to the path)
+     */
+    public static Path fromPbAndUser(PBPath pb, UserID userID)
+    {
+        if (L.get().isMultiuser()) {
+            String[] elems = new String[pb.getElemCount() + 1];
+            elems[0] = SID.rootSID(userID).toStringFormal();
+            for (int i = 1; i < elems.length; i++) elems[i] = pb.getElem(i - 1);
+            return new Path(elems);
+        } else {
+            return new Path(pb);
+        }
     }
 
     private void assertNoEmptyElement()

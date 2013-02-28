@@ -8,7 +8,7 @@ import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.ICoreEventHandlerRegistrar;
 import com.aerofs.daemon.core.admin.HdRelocateRootAnchor.ICrossFSRelocator;
 import com.aerofs.daemon.core.admin.HdRelocateRootAnchor.MultiuserCrossFSRelocator;
-import com.aerofs.daemon.core.ds.IPathResolver;
+import com.aerofs.daemon.core.ds.AbstractPathResolver;
 import com.aerofs.daemon.core.migration.IEmigrantTargetSIDLister;
 import com.aerofs.daemon.core.migration.IEmigrantDetector;
 import com.aerofs.daemon.core.migration.IImmigrantCreator;
@@ -40,7 +40,7 @@ public class MultiuserModule extends AbstractModule
         binder().disableCircularProxies();
 
         bind(IStores.class).to(Stores.class);
-        bind(IPathResolver.class).to(MultiuserPathResolver.class);
+        bind(AbstractPathResolver.class).to(MultiuserPathResolver.class);
         multibind(binder(), ICoreEventHandlerRegistrar.class,
                 MultiuserCoreEventHandlerRegistrar.class);
 

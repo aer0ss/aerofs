@@ -4,8 +4,8 @@
 
 package com.aerofs.daemon.core.multiplicity.singleuser;
 
+import com.aerofs.daemon.core.ds.AbstractPathResolver;
 import com.aerofs.daemon.core.ds.DirectoryService;
-import com.aerofs.daemon.core.ds.IPathResolver;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.lib.Path;
@@ -21,7 +21,7 @@ import javax.inject.Inject;
 import java.sql.SQLException;
 import java.util.List;
 
-public class SingleuserPathResolver implements IPathResolver
+public class SingleuserPathResolver extends AbstractPathResolver
 {
     private final SingleuserStores _sss;
     private final DirectoryService _ds;
@@ -62,28 +62,7 @@ public class SingleuserPathResolver implements IPathResolver
     @Override
     public @Nullable SOID resolve_(@Nonnull Path path) throws SQLException
     {
-        SIndex sidx = _sss.getRoot_();
-        OID oid = OID.ROOT;
-        int i = 0;
-        while (i < path.elements().length) {
-            OID child = _ds.getChild_(sidx, oid, path.elements()[i]);
-            if (child == null) {
-                OA oa = _ds.getOA_(new SOID(sidx, oid));
-                if (!oa.isAnchor()) {
-                    return null;
-                } else {
-                    SOID soid = _ds.followAnchorNullable_(oa);
-                    if (soid == null) return null;
-                    sidx = soid.sidx();
-                    oid = soid.oid();
-                }
-            } else {
-                oid = child;
-                i++;
-            }
-        }
-
-        return new SOID(sidx, oid);
+        return resolvePath_(_ds, _sss.getRoot_(), path, 0);
     }
 
     /**

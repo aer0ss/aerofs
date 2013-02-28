@@ -4,14 +4,13 @@
 
 package com.aerofs.daemon.core.multiplicity.multiuser;
 
+import com.aerofs.daemon.core.ds.AbstractPathResolver;
 import com.aerofs.daemon.core.ds.DirectoryService;
-import com.aerofs.daemon.core.ds.IPathResolver;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.lib.Path;
 import com.aerofs.base.ex.ExFormatError;
-import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
@@ -23,7 +22,7 @@ import javax.inject.Inject;
 import java.sql.SQLException;
 import java.util.List;
 
-public class MultiuserPathResolver implements IPathResolver
+public class MultiuserPathResolver extends AbstractPathResolver
 {
     private final DirectoryService _ds;
     private final IMapSIndex2SID _sidx2sid;
@@ -71,13 +70,7 @@ public class MultiuserPathResolver implements IPathResolver
         SIndex sidx = _sid2sidx.getNullable_(sid);
         if (sidx == null) return null;
 
-        OID oid = OID.ROOT;
-        for (int i = 1; i < path.elements().length; i++) {
-            oid = _ds.getChild_(sidx, oid, path.elements()[i]);
-            if (oid == null) return null;
-        }
-
-        return new SOID(sidx, oid);
+        return resolvePath_(_ds, sidx, path, 1);
     }
 
     /**

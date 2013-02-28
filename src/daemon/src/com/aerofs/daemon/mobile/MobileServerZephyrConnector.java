@@ -69,10 +69,10 @@ public class MobileServerZephyrConnector
         });
     }
 
-    private final MobileService.Factory _mobileServiceFactory;
+    private final MobileServiceFactory _mobileServiceFactory;
 
     @Inject
-    public MobileServerZephyrConnector(MobileService.Factory mobileServiceFactory)
+    public MobileServerZephyrConnector(MobileServiceFactory mobileServiceFactory)
     {
         _mobileServiceFactory = mobileServiceFactory;
     }
