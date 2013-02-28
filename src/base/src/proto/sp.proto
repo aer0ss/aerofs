@@ -244,17 +244,16 @@ service SPService {
      *
      * Required Auth Level: user
      */
-    rpc GetPreferences(GetPreferencesCall) returns (GetPreferencesReply);
+    rpc GetUserPreferences(GetUserPreferencesCall) returns (GetUserPreferencesReply);
 
     /**
-     * TODO (MP) send verkehr notification(s) when we change the device name.
+     * Set a given user's preferences (name, device name, etc). Optional fields that aren't present
+     * won't be changed. The session user must be either the given user or the admin of the user's
+     * organization.
      *
-     * Set the user's preferences (name, device name, etc). Optional fields that aren't present
-     * won't be changed.
-     *
-     * Required Auth Level: user
+     * Required Auth Level: user or admin (see above)
      */
-    rpc SetPreferences(SetPreferencesCall) returns (Void);
+    rpc SetUserPreferences(SetUserPreferencesCall) returns (Void);
 
     /**
      * Get the list of users in the system
@@ -725,18 +724,23 @@ message GetHeartInvitesQuotaReply {
     required uint32 count = 1;
 }
 
-message GetPreferencesCall {
+message GetUserPreferencesCall {
     required bytes device_id = 1;
 }
 
-message GetPreferencesReply {
+message GetUserPreferencesReply {
     // TOOD (WW) use PBFullName
     required string first_name = 1;
     required string last_name = 2;
     required string device_name = 3;
 }
 
-message SetPreferencesCall {
+message SetUserPreferencesCall {
+
+    // WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE make it required and adjust field numbers.
+    // This field isoptional for backward compatibility.
+    optional string user_id = 5;
+
     // TOOD (WW) use PBFullName
     optional string first_name = 2;
     optional string last_name = 4;
@@ -792,7 +796,9 @@ message RegisterDeviceCall {
     // The following optional fields are for backward compatibility
     // WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE change them to required
 
-    // Can be 'windows', 'osx', 'linux', 'android', 'ios', and so on
+    // Can be 'Windows', 'Mac OS X', 'Linux', 'Android', 'iOS'. See OSUtil.OSFamily.toString().
+    // These strings are displayed to end users (DeviceRegistrationEmailer.java) and are used to
+    // determine the icons (devices.mako).
     optional string os_family = 4;
 
     // Detailed OS names, e.g. 'Windows XP SP 1'

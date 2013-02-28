@@ -163,7 +163,7 @@ public class CompInviteUsers extends Composite implements IInputChangeListener
                 SPBlockingClient sp = SPClientFactory.newBlockingClient(SP.URL, Cfg.user());
                 try {
                     sp.signInRemote();
-                    _fromPerson = sp.getPreferences(Cfg.did().toPB()).getFirstName();
+                    _fromPerson = sp.getUserPreferences(Cfg.did().toPB()).getFirstName();
                 } catch (Exception e) {
                     l.warn("cannot load user name: " + e);
                     _fromPerson = Cfg.user().getString();

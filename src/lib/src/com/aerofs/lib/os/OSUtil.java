@@ -11,9 +11,9 @@ import com.aerofs.sv.client.SVClient;
 public abstract class OSUtil
 {
     public static enum OSFamily {
-        WINDOWS("windows"),
-        OSX("osx"),
-        LINUX("linux");
+        WINDOWS("Windows"),
+        OSX("Mac OS X"),
+        LINUX("Linux");
 
         private String str;
         OSFamily(String str)

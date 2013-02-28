@@ -76,7 +76,7 @@ abstract class AbstractLinuxUpdater extends Updater
                 try {
                     sp.signInRemote();
 
-                    String deviceName = sp.getPreferences(Cfg.did().toPB()).getDeviceName();
+                    String deviceName = sp.getUserPreferences(Cfg.did().toPB()).getDeviceName();
 
                     final String subject = "[Action Required] Update " + L.PRODUCT +
                                 " on " + Util.quote(deviceName);

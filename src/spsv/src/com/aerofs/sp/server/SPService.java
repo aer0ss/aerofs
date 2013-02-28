@@ -84,7 +84,7 @@ import com.aerofs.proto.Sp.GetCRLReply;
 import com.aerofs.proto.Sp.GetDeviceInfoReply;
 import com.aerofs.proto.Sp.GetHeartInvitesQuotaReply;
 import com.aerofs.proto.Sp.GetOrgPreferencesReply;
-import com.aerofs.proto.Sp.GetPreferencesReply;
+import com.aerofs.proto.Sp.GetUserPreferencesReply;
 import com.aerofs.proto.Sp.GetUnsubscribeEmailReply;
 import com.aerofs.proto.Sp.GetUserCRLReply;
 import com.aerofs.proto.Sp.ISPService;
@@ -262,7 +262,7 @@ public class SPService implements ISPService
     }
 
     @Override
-    public ListenableFuture<GetPreferencesReply> getPreferences(ByteString deviceId)
+    public ListenableFuture<GetUserPreferencesReply> getUserPreferences(ByteString deviceId)
             throws Exception
     {
         _sqlTrans.begin();
@@ -271,7 +271,7 @@ public class SPService implements ISPService
         FullName fn = user.getFullName();
         Device device = _factDevice.create(deviceId);
 
-        GetPreferencesReply reply = GetPreferencesReply.newBuilder()
+        GetUserPreferencesReply reply = GetUserPreferencesReply.newBuilder()
                 .setFirstName(fn._first)
                 .setLastName(fn._last)
                 .setDeviceName(device.exists() ? device.getName() : "")
@@ -283,15 +283,17 @@ public class SPService implements ISPService
     }
 
     @Override
-    public ListenableFuture<Void> setPreferences(String firstName, String lastName,
-            ByteString deviceId, String deviceName)
+    public ListenableFuture<Void> setUserPreferences(String userID, String firstName,
+            String lastName, ByteString deviceId, String deviceName)
             throws Exception
     {
         boolean userNameUpdated = false;
         boolean deviceNameUpdated = false;
 
-        User user = _sessionUser.get();
         _sqlTrans.begin();
+
+        User user = _factUser.createFromExternalID(userID);
+        throwIfSessionUserIsNotOrAdminOf(user);
 
         if (firstName != null || lastName != null) {
             if (firstName == null || lastName == null) {
@@ -299,7 +301,7 @@ public class SPService implements ISPService
             }
 
             FullName fullName = new FullName(firstName, lastName);
-            l.info(user.id() + ": set full name: " + fullName);
+            l.info("{} set full name: {}, session user {}", user, fullName, _sessionUser.get());
             user.setName(fullName);
             userNameUpdated = true;
         }
@@ -308,7 +310,7 @@ public class SPService implements ISPService
             Device device = _factDevice.create(deviceId);
             throwIfNotOwner(user, device);
 
-            l.info("{} sets device name: {}", user, deviceName);
+            l.info("{} set device name: {}, session user {}", user, deviceName, _sessionUser.get());
             device.setName(deviceName);
             deviceNameUpdated = true;
         }
@@ -510,7 +512,8 @@ public class SPService implements ISPService
         // an admin of the organization the specified user belongs to.
         currentUser.throwIfNotAdmin();
 
-        String noPermMsg = "you don't have enough privilege";
+        // TODO (WW) use this string for all ExNoPerm's?
+        String noPermMsg = "you don't have permission to perform this action";
 
         // Throw early if the specified user doesn't exist rather than relying on the following
         // below. This is to prevent attacker from testing user existance.
@@ -761,7 +764,7 @@ public class SPService implements ISPService
 
         // Sending an email doesn't need to be a part of the transaction
         _deviceRegistrationEmailer.sendDeviceCertifiedEmail(user.id().getString(), firstName,
-                osName, deviceName);
+                osFamily, deviceName);
 
         return createReply(reply);
     }
@@ -789,7 +792,7 @@ public class SPService implements ISPService
             throws ExNotFound, SQLException, ExNoPerm
     {
         if (!device.getOwner().equals(user)) {
-            throw new ExNoPerm("you are not the owner of the device");
+            throw new ExNoPerm("your are not the owner of the device");
         }
     }
 
@@ -833,8 +836,8 @@ public class SPService implements ISPService
         _sqlTrans.commit();
 
         // Sending an email doesn't need to be a part of the transaction
-        _deviceRegistrationEmailer.sendTeamServerDeviceCertifiedEmail(user.id().getString(), firstName,
-                osName, deviceName);
+        _deviceRegistrationEmailer.sendTeamServerDeviceCertifiedEmail(user.id().getString(),
+                firstName, osFamily, deviceName);
 
         return createReply(reply);
     }

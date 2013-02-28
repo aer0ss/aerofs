@@ -5,12 +5,12 @@
 package com.aerofs.sp.server.integration;
 
 import com.aerofs.lib.ex.ExNotFound;
+import com.aerofs.proto.Sp.GetUserPreferencesReply;
 import org.junit.Before;
 import org.junit.Test;
 
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UniqueID;
-import com.aerofs.proto.Sp.GetPreferencesReply;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -36,8 +36,9 @@ public class TestSP_Preferences extends AbstractSPTest
         ddb.insertDevice(_did, USER_1, "", "", "name");
         sqlTrans.commit();
 
-        service.setPreferences("   first ", " last   ", _did.toPB(), "  device names  ").get();
-        GetPreferencesReply reply = service.getPreferences(_did.toPB()).get();
+        service.setUserPreferences(sessionUser.get().id().getString(),
+                "   first ", " last   ", _did.toPB(), "  device names  ").get();
+        GetUserPreferencesReply reply = service.getUserPreferences(_did.toPB()).get();
 
         assertTrimmed(reply.getDeviceName());
         assertTrimmed(reply.getFirstName());
@@ -48,14 +49,15 @@ public class TestSP_Preferences extends AbstractSPTest
     public void shouldThrowIfDeviceDoesntExistWhenSettingName()
             throws Exception
     {
-        service.setPreferences("first", "last", _did.toPB(), "device").get();
+        service.setUserPreferences(sessionUser.get().id().getString(),
+                "first", "last", _did.toPB(), "device").get();
     }
 
     @Test
     public void shouldReturnEmptyNameIfDeviceDoesntExistWhenGettingPref()
             throws Exception
     {
-        GetPreferencesReply reply = service.getPreferences(_did.toPB()).get();
+        GetUserPreferencesReply reply = service.getUserPreferences(_did.toPB()).get();
         assertTrue(reply.getDeviceName().isEmpty());
     }
 

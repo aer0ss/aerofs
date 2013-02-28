@@ -16,7 +16,7 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.lib.os.OSUtil;
-import com.aerofs.proto.Sp.GetPreferencesReply;
+import com.aerofs.proto.Sp.GetUserPreferencesReply;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.sp.client.SPClientFactory;
 import com.aerofs.ui.IUI.MessageType;
@@ -235,11 +235,11 @@ public class PreferencesHelper
             public void run()
             {
                 Exception e = null;
-                GetPreferencesReply r = null;
+                GetUserPreferencesReply r = null;
                 try {
                     SPBlockingClient sp = SPClientFactory.newBlockingClient(SP.URL, Cfg.user());
                     sp.signInRemote();
-                    r = sp.getPreferences(Cfg.did().toPB());
+                    r = sp.getUserPreferences(Cfg.did().toPB());
                 } catch (ExBadCredential ebc) {
                     l.warn(Util.e(ebc));
                 } catch (Exception e2) {
@@ -247,7 +247,7 @@ public class PreferencesHelper
                     e = e2;
                 }
 
-                final GetPreferencesReply reply = r;
+                final GetUserPreferencesReply reply = r;
                 final Exception eFinal = e;
                 GUI.get().safeAsyncExec(_comp, new Runnable() {
                     @Override
@@ -322,7 +322,7 @@ public class PreferencesHelper
                 try {
                     SPBlockingClient sp = SPClientFactory.newBlockingClient(SP.URL, Cfg.user());
                     sp.signInRemote();
-                    sp.setPreferences(firstName, lastName,
+                    sp.setUserPreferences(Cfg.user().getString(), firstName, lastName,
                             (deviceNameToSend != null) ? Cfg.did().toPB() : null, deviceNameToSend);
                     e = null;
                 } catch (Exception e2) {
