@@ -28,7 +28,7 @@ public class SPDatabaseParams extends DatabaseParameters
     @Override
     public String getMySQLDatabaseName()
     {
-        return "aerofs_sp";
+        return "aerofs_sp_test";
     }
 
     @Override
