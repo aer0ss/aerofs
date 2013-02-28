@@ -104,18 +104,18 @@ public class ConflictState extends AbstractDirectoryServiceListener
     public void sendSnapshot_(IConflictStateListener listener) throws SQLException
     {
         // TODO: optimize (add an index? change DB schema)
+        Map<Path, Boolean> paths = Maps.newHashMap();
         IDBIterator<SOKID> it = _ds.getAllNonMasterBranches_();
         try {
-            Map<Path, Boolean> paths = Maps.newHashMap();
             while (it.next_()) {
                 SOID soid = it.get_().soid();
                 Path path = _ds.resolveNullable_(soid);
                 if (path != null) paths.put(path, _ds.getOA_(soid).cas().size() > 1);
             }
-            listener.branchesChanged_(paths);
         } finally {
             it.close_();
         }
+        listener.branchesChanged_(paths);
     }
 
     @Override
