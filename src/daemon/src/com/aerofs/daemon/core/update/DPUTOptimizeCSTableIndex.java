@@ -4,11 +4,12 @@
 
 package com.aerofs.daemon.core.update;
 
+import com.aerofs.daemon.core.update.DPUTUtil.IDatabaseOperation;
 import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.daemon.lib.db.CoreSchema;
 import com.aerofs.lib.db.dbcw.IDBCW;
 
-import java.sql.Connection;
+import java.sql.SQLException;
 import java.sql.Statement;
 
 import static com.aerofs.daemon.lib.db.CoreSchema.*;
@@ -27,19 +28,16 @@ final class DPUTOptimizeCSTableIndex implements IDaemonPostUpdateTask
      * fixed, and the result was to be sorted by cs
      */
     @Override
-    public void run()
-            throws Exception
+    public void run() throws Exception
     {
-        Connection c = _dbcw.getConnection();
-        assert !c.getAutoCommit();
-        Statement s = c.createStatement();
-        try {
-            // Drop the old inefficient/unused index cs0 from the db and replace it
-            s.executeUpdate("drop index if exists " + T_CS + "0");
-            CoreSchema.createIndexForCSTable(s);
-        } finally {
-            s.close();
-        }
-        c.commit();
+        DPUTUtil.runDatabaseOperationAtomically_(_dbcw, new IDatabaseOperation() {
+            @Override
+            public void run_(Statement s) throws SQLException
+            {
+                // Drop the old inefficient/unused index cs0 from the db and replace it
+                s.executeUpdate("drop index if exists " + T_CS + "0");
+                CoreSchema.createIndexForCSTable(s);
+            }
+        });
     }
 }

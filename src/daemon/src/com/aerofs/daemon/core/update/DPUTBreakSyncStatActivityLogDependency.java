@@ -7,7 +7,6 @@ package com.aerofs.daemon.core.update;
 import com.aerofs.daemon.core.update.DPUTUtil.IDatabaseOperation;
 import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.daemon.lib.db.CoreSchema;
-import com.aerofs.daemon.lib.db.SyncStatusDatabase;
 import com.aerofs.lib.db.dbcw.IDBCW;
 
 import java.sql.SQLException;
@@ -25,6 +24,9 @@ import static com.aerofs.daemon.lib.db.CoreSchema.*;
  */
 public class DPUTBreakSyncStatActivityLogDependency implements IDaemonPostUpdateTask
 {
+    // Sync status bootstrap table
+    final static String T_SSBS          = "ssbs";
+
     private final IDBCW _dbcw;
 
     DPUTBreakSyncStatActivityLogDependency(CoreDBCW dbcw)
@@ -41,16 +43,12 @@ public class DPUTBreakSyncStatActivityLogDependency implements IDaemonPostUpdate
             public void run_(Statement s) throws SQLException
             {
                 // drop obsolete table
-                if (_dbcw.tableExists(DPUTUpdateSchemaForSyncStatus.T_SSBS)) {
-                    s.executeUpdate("drop table " + DPUTUpdateSchemaForSyncStatus.T_SSBS);
-                }
+                s.executeUpdate("drop table if exists " + T_SSBS);
 
                 if (!_dbcw.tableExists(T_SSPQ)) {
                     // create new table
                     CoreSchema.createSyncStatusPushQueueTable(s, _dbcw);
 
-                    // re-send version hashes for all non-expelled objects
-                    SyncStatusDatabase.markAllAdmittedObjectsAsModified(_dbcw.getConnection());
                     s.executeUpdate("update " + T_EPOCH + " set " + C_EPOCH_SYNC_PUSH + "=0");
                 }
             }
