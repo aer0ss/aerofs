@@ -3,11 +3,7 @@ package com.aerofs.daemon.core.update;
 import javax.inject.Inject;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.daemon.core.store.MapSIndex2DeviceBitMap;
 import com.aerofs.daemon.lib.db.CoreDBCW;
-import com.aerofs.daemon.lib.db.IMetaDatabase;
-import com.aerofs.daemon.lib.db.IStoreDatabase;
-import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.Param.PostUpdate;
 import com.aerofs.lib.cfg.CfgAbsAutoExportFolder;
 import com.aerofs.lib.cfg.CfgAbsAuxRoot;
@@ -25,9 +21,8 @@ public class DaemonPostUpdateTasks
     private final IDaemonPostUpdateTask[] _tasks;
 
     @Inject
-    public DaemonPostUpdateTasks(CfgDatabase cfgDB, CoreDBCW dbcw, TransManager tm,
-            IStoreDatabase sdb, IMetaDatabase mdb, MapSIndex2DeviceBitMap sidx2dbm,
-            CfgAbsAuxRoot absAuxRoot, CfgLocalUser cfgUser, CfgAbsAutoExportFolder autoExportFolder)
+    public DaemonPostUpdateTasks(CfgDatabase cfgDB, CoreDBCW dbcw, CfgAbsAuxRoot absAuxRoot,
+            CfgLocalUser cfgUser, CfgAbsAutoExportFolder autoExportFolder)
     {
         _cfgDB = cfgDB;
 
@@ -36,7 +31,7 @@ public class DaemonPostUpdateTasks
             new DPUTUpdateEpochTable(dbcw),
             new DPUTCreateActivityLogTables(dbcw),
             new DPUTUpdateSchemaForSyncStatus(dbcw),
-            new DPUTAddAggregateSyncColumn(dbcw, tm, sdb, mdb, sidx2dbm),
+            new DPUTAddAggregateSyncColumn(dbcw),
             new DPUTMakeMTimesNaturalNumbersOnly(dbcw),
             new DPUTGetEncodingStats(dbcw),
             new DPUTMigrateRevisionSuffixToBase64(absAuxRoot),
