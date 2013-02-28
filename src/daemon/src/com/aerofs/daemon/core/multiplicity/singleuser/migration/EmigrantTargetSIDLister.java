@@ -20,7 +20,6 @@ import com.aerofs.lib.id.SIndex;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 
-import static com.google.common.base.Preconditions.checkState;
 
 public class EmigrantTargetSIDLister implements IEmigrantTargetSIDLister
 {

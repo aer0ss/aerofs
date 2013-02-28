@@ -193,7 +193,7 @@ public abstract class LogUtil
         }
     }
 
-    public static void setLevel(Class clazz, Level level)
+    public static void setLevel(Class<?> clazz, Level level)
     {
         Logger.getLogger(clazz).setLevel(level.getLog4jLevel());
     }

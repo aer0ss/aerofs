@@ -29,7 +29,6 @@ import com.aerofs.daemon.lib.db.SyncStatusDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.BitVector;
 import com.aerofs.lib.Path;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.Version;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.db.InMemorySQLiteDBCW;

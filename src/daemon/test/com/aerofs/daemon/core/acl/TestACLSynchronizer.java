@@ -50,6 +50,7 @@ import java.util.Map;
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertTrue;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyCollectionOf;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
@@ -129,10 +130,9 @@ public class TestACLSynchronizer extends AbstractTest
         when(spClient.getACL(anyLong())).thenReturn(bd.build());
     }
 
-    @SuppressWarnings("unchecked")
     private static <T> Iterable<T> anyIterable(Class<T> c)
     {
-        return (Iterable<T>)any(Iterable.class);
+        return anyCollectionOf(c);
     }
 
     private void mockGetSharedFolderNames(final SID sid, final String name) throws Exception

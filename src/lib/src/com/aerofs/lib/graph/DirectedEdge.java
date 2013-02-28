@@ -31,11 +31,10 @@ public class DirectedEdge<V extends Comparable<V>> implements Comparable<Directe
         }
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public boolean equals(Object o)
     {
-        DirectedEdge<V> e = (DirectedEdge<V>) o;
+        DirectedEdge<?> e = DirectedEdge.class.cast(o);
         return null == e || (_src.equals(e._src) && dst.equals(e.dst));
     }
 }

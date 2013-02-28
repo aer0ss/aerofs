@@ -23,6 +23,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.InOrder;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 
 import java.io.ByteArrayInputStream;
 
@@ -32,7 +33,6 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyObject;
 import static org.mockito.Mockito.*;
 
-@SuppressWarnings("unchecked")
 public class TestPulseInitiatorHandler extends AbstractTest
 {
     PulseInitiatorHandler handler;
@@ -89,7 +89,7 @@ public class TestPulseInitiatorHandler extends AbstractTest
 
         handler.onOutgoing_(pipelineContext, event);
 
-        verify(pulseState).pulseStarted_(any(UncancellableFuture.class));
+        verify(pulseState).pulseStarted_(Mockito.<UncancellableFuture<Void>>any());
         verify(connection).send_(outgoingPacketCaptor.capture(),
             prioCaptor.capture());
 
@@ -111,7 +111,7 @@ public class TestPulseInitiatorHandler extends AbstractTest
         handler.onOutgoing_(pipelineContext, event);
 
         InOrder ordered = inOrder(pulseState, connection);
-        ordered.verify(pulseState).pulseStarted_(any(UncancellableFuture.class));
+        ordered.verify(pulseState).pulseStarted_(Mockito.<UncancellableFuture<Void>>any());
         ordered.verify(connection).send_(anyObject(), any(Prio.class));
 
         when(pulseState.isOngoing()).thenReturn(true);

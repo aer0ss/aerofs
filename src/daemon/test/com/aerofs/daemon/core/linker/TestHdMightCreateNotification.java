@@ -19,10 +19,9 @@ import org.junit.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 
-import java.util.Set;
-
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
+import static org.mockito.Matchers.anySetOf;
 import static org.mockito.Mockito.RETURNS_MOCKS;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -59,7 +58,6 @@ public class TestHdMightCreateNotification extends AbstractTest
         verifyZeroInteractions(ssq);
     }
 
-    @SuppressWarnings("unchecked")
     @Test
     public void shouldTriggerFullScanOnOtherExceptionsFromMightCreate()
             throws Exception
@@ -69,7 +67,7 @@ public class TestHdMightCreateNotification extends AbstractTest
 
         callHandle();
 
-        verify(ssq).scanAfterDelay_(any(Set.class), anyBoolean());
+        verify(ssq).scanAfterDelay_(anySetOf(String.class), anyBoolean());
         verifyNoMoreInteractions(ssq);
     }
 

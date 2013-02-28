@@ -37,7 +37,6 @@ import static org.mockito.Mockito.*;
 import static com.aerofs.testlib.FutureAssert.assertNoThrow;
 import static com.aerofs.testlib.FutureAssert.assertThrows;
 import static org.junit.Assert.*;
-import static org.mockito.Matchers.anyObject;
 
 public class TestStreamHandler extends AbstractTest
 {

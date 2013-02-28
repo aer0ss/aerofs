@@ -78,7 +78,7 @@ public abstract class AbstractHdExport<T extends IEBIMC> extends AbstractHdIMC<T
     }
 
     // TODO: move to helper class?
-    private <T> T callWithCoreLockReleased_(Callable<T> c, String reason) throws Exception
+    private <V> V callWithCoreLockReleased_(Callable<V> c, String reason) throws Exception
     {
         Token tk = _tc.acquireThrows_(Cat.UNLIMITED, reason);
         try {

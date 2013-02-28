@@ -34,8 +34,7 @@ public class TestUnicastPacketHandler extends AbstractTest
     public void shouldForwardIncomingObjectsThatAreNotOfTypeMessageEvent()
             throws Exception
     {
-        @SuppressWarnings("unchecked")
-        IPipelineEvent<Void> event = mock(IPipelineEvent.class);
+        IPipelineEvent<?> event = mock(IPipelineEvent.class);
 
         _handler.onIncoming_(_pipelineContext, event);
 
@@ -118,8 +117,7 @@ public class TestUnicastPacketHandler extends AbstractTest
     public void shouldForwardOutgoingObjectsThatAreNotOfTypeMessageEvent()
             throws Exception
     {
-        @SuppressWarnings("unchecked")
-        IPipelineEvent<Void> event = mock(IPipelineEvent.class);
+        IPipelineEvent<?> event = mock(IPipelineEvent.class);
 
         _handler.onOutgoing_(_pipelineContext, event);
 

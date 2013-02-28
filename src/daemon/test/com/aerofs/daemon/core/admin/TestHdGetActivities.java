@@ -10,6 +10,7 @@ import static com.aerofs.proto.Ritual.GetActivitiesReply.ActivityType.MODIFICATI
 import static com.aerofs.proto.Ritual.GetActivitiesReply.ActivityType.MOVEMENT_VALUE;
 import static junit.framework.Assert.assertTrue;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyCollectionOf;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.when;
 
@@ -127,7 +128,7 @@ public class TestHdGetActivities extends AbstractTest
 
         when(factSP.create_(any(URL.class), any(UserID.class))).thenReturn(sp);
 
-        when(sp.getDeviceInfo((Iterable<ByteString>) any())).thenAnswer(
+        when(sp.getDeviceInfo(anyCollectionOf(ByteString.class))).thenAnswer(
                 new Answer<GetDeviceInfoReply>()
                 {
                     @Override
@@ -156,12 +157,11 @@ public class TestHdGetActivities extends AbstractTest
         assertTrue(!ev._hasUnresolvedDevices);
     }
 
-    @SuppressWarnings("unchecked")
     @Test
     public void shouldHaveUnresolvedDevicesAfterContactingSPFails()
             throws Exception
     {
-        when(sp.getDeviceInfo((Iterable<ByteString>) any())).thenThrow(new Exception());
+        when(sp.getDeviceInfo(anyCollectionOf(ByteString.class))).thenThrow(new Exception());
 
         run(false);
 

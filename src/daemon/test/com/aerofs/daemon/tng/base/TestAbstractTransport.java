@@ -16,6 +16,7 @@ import com.aerofs.testlib.AbstractTest;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.ListenableFuture;
 import org.junit.Test;
+import org.mockito.Mockito;
 
 import java.util.concurrent.ExecutionException;
 
@@ -70,12 +71,11 @@ public class TestAbstractTransport extends AbstractTest
     }
 
     @Test
-    @SuppressWarnings("unchecked")
     public void shouldForwardUpdateLocalStoreInterestCallToMaxcastService()
     {
         UncancellableFuture<Void> serviceFuture = UncancellableFuture.create();
-        when(_maxcastService.updateLocalStoreInterest_(any(ImmutableSet.class),
-                any(ImmutableSet.class))).thenReturn(serviceFuture);
+        when(_maxcastService.updateLocalStoreInterest_(Mockito.<ImmutableSet<SID>>any(),
+                Mockito.<ImmutableSet<SID>>any())).thenReturn(serviceFuture);
 
         final ImmutableSet<SID> ADDED = ImmutableSet.of(new SID(SID.ZERO));
         final ImmutableSet<SID> REMOVED = ImmutableSet.of();
