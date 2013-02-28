@@ -23,6 +23,7 @@ import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.id.UserID;
 import com.aerofs.lib.os.OSUtil.Icon;
+import com.aerofs.lib.rocklog.EventType;
 import com.aerofs.lib.rocklog.RockLog;
 import com.aerofs.proto.Sv.PBSVEvent.Type;
 import org.slf4j.Logger;
@@ -99,7 +100,7 @@ class Setup
              */
             if (_factFile.create(rootAnchorPath).list() != null) {
                 SVClient.sendEventAsync(Type.REINSTALL);
-                RockLog.newEvent("Reinstall Single User Client").sendAsync();
+                RockLog.newEvent(EventType.REINSTALL_CLIENT).sendAsync();
             }
 
             PreSetupResult res = preSetup(userId, password, rootAnchorPath);
@@ -108,7 +109,7 @@ class Setup
 
             SVClient.sendEventSync(Sv.PBSVEvent.Type.SIGN_RETURNING, "");
 
-            RockLog.newEvent("Install Single User Client").sendAsync();
+            RockLog.newEvent(EventType.INSTALL_CLIENT).sendAsync();
 
         } catch (Exception e) {
             handleSetupException(userId, e);
@@ -127,9 +128,9 @@ class Setup
             // Send event for S3 Setup
             if (s3cfg != null) {
                 SVClient.sendEventAsync(Sv.PBSVEvent.Type.S3_SETUP);
-                RockLog.newEvent("Enable S3").sendAsync();
+                RockLog.newEvent(EventType.ENABLE_S3).sendAsync();
             }
-            RockLog.newEvent("Install Team Server").sendAsync();
+            RockLog.newEvent(EventType.INSTALL_TEAM_SERVER).sendAsync();
 
         } catch (Exception e) {
             handleSetupException(userId, e);

@@ -5,6 +5,9 @@ import java.util.List;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.UserID;
+import com.aerofs.lib.rocklog.EventProperty;
+import com.aerofs.lib.rocklog.EventType;
+import com.aerofs.lib.rocklog.RockLog;
 import com.google.common.collect.Lists;
 import org.slf4j.Logger;
 import org.eclipse.jface.dialogs.IDialogConstants;
@@ -168,8 +171,10 @@ public class DlgInviteToSignUp extends AeroFSDialog implements IInputChangeListe
         for (UserID userId : _userIDs) userIdStrings.add(userId.getString());
 
         sp.inviteToSignUp(userIdStrings);
-        SVClient.sendEventAsync(Sv.PBSVEvent.Type.SIGNUP_INVITE_SENT, Integer.toString(
-                _userIDs.size()));
+
+        RockLog.newEvent(EventType.SIGNUP_INVITE_SENT)
+                .addProperty(EventProperty.COUNT, Integer.toString(_userIDs.size()))
+                .sendAsync();
     }
 
     @Override
