@@ -3,7 +3,9 @@ package com.aerofs.daemon.core.phy;
 import java.io.InputStream;
 import java.util.Collection;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.lib.Path;
+import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.proto.Ritual.PBRevChild;
 import com.aerofs.proto.Ritual.PBRevision;
 import com.google.protobuf.ByteString;
@@ -80,6 +82,12 @@ public interface IPhysicalRevProvider
         {
             return (_mtime < r._mtime) ? -1 : (_mtime > r._mtime) ? 1 : 0;
         }
+
+        @Override
+        public String toString()
+        {
+            return "Rev(" + BaseUtil.utf2string(_index) + "," + _mtime + "," + _length + ")";
+        }
     }
 
     public static class RevInputStream
@@ -96,7 +104,7 @@ public interface IPhysicalRevProvider
         }
     }
 
-    public class InvalidRevisionIndexException extends Exception
+    public class InvalidRevisionIndexException extends ExNotFound
     {
         private static final long serialVersionUID = 0L;
     }
@@ -113,4 +121,8 @@ public interface IPhysicalRevProvider
      * N.B don't forget to close the returned stream after use
      */
     RevInputStream getRevInputStream_(Path path, byte[] index) throws Exception;
+
+    void deleteRevision_(Path path, byte[] index) throws Exception;
+
+    void deleteAllRevisionsUnder_(Path path) throws Exception;
 }

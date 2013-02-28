@@ -233,27 +233,34 @@ public class BlockStorageDatabase extends AbstractDatabase
     private final PreparedStatementWrapper _pswDelFileInfo = new PreparedStatementWrapper();
     public void deleteFileInfo_(long fileId, Trans t) throws SQLException
     {
-        deleteFileInfoImpl_(_pswDelFileInfo, T_FileCurr, C_FileCurr_Index, fileId, t);
+        try {
+            PreparedStatement ps = _pswDelFileInfo.get();
+            if (ps == null) {
+                _pswDelFileInfo.set(ps = c().prepareStatement(DBUtil.deleteWhere(T_FileCurr,
+                        C_FileCurr_Index + "=?")));
+            }
+            ps.setLong(1, fileId);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            _pswDelFileInfo.close();
+            throw e;
+        }
     }
 
     private final PreparedStatementWrapper _pswDelHistFileInfo = new PreparedStatementWrapper();
-    public void deleteHistFileInfo_(long fileId, Trans t) throws SQLException
-    {
-        deleteFileInfoImpl_(_pswDelHistFileInfo, T_FileHist, C_FileHist_Index, fileId, t);
-    }
-
-    private void deleteFileInfoImpl_(PreparedStatementWrapper psw, String table, String column,
-            long fileId, Trans t) throws SQLException
+    public void deleteHistFileInfo_(long fileId, long ver, Trans t) throws SQLException
     {
         try {
-            if (psw.get() == null) {
-                psw.set(c().prepareStatement(DBUtil.deleteWhere(table, column + "=?")));
+            PreparedStatement ps = _pswDelHistFileInfo.get();
+            if (ps == null) {
+                _pswDelHistFileInfo.set(ps = c().prepareStatement(DBUtil.deleteWhere(T_FileHist,
+                        C_FileHist_Index + "=? and " + C_FileHist_Ver + "=?")));
             }
-            psw.get().setLong(1, fileId);
-            psw.get().executeUpdate();
+            ps.setLong(1, fileId);
+            ps.setLong(2, ver);
+            ps.executeUpdate();
         } catch (SQLException e) {
-            psw.set(null);
-            DBUtil.close(psw.get());
+            _pswDelHistFileInfo.close();
             throw e;
         }
     }
@@ -345,7 +352,7 @@ public class BlockStorageDatabase extends AbstractDatabase
                         C_FileHist_Date + ',' +
                         C_FileHist_Len + " FROM " + T_FileHist +
                         " WHERE " + C_FileHist_Parent + "=? AND " + C_FileHist_RealName + "=?" +
-                        " ORDER BY " + C_FileHist_Date);
+                        " ORDER BY " + C_FileHist_Ver);
             }
             ps.setLong(1, dirId);
             ps.setString(2, name);

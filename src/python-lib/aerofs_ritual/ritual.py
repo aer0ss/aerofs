@@ -211,6 +211,10 @@ class _RitualServiceWrapper(object):
         pbpath = convert.absolute_to_pbpath(path)
         return self._service.export_revision(pbpath, index).dest
 
+    def delete_revision(self, path, index):
+        pbpath = convert.absolute_to_pbpath(path)
+        self._service.delete_revision(pbpath, index)
+
     def get_sync_status(self, path):
         pbpath = convert.absolute_to_pbpath(path)
         return self._service.get_sync_status(pbpath)
