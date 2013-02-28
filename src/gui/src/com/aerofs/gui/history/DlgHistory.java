@@ -19,6 +19,7 @@ import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.os.OSUtil;
+import com.aerofs.ui.IUI.MessageType;
 import com.google.common.collect.Maps;
 import org.slf4j.Logger;
 import org.eclipse.jface.layout.TableColumnLayout;
@@ -288,7 +289,7 @@ public class DlgHistory extends AeroFSDialog
             _revTree.select(item);
             refreshVersionTable(item);
         } else {
-            _revTree.select(parent);
+            if (parent != null) _revTree.select(parent);
             refreshVersionTable(parent);
         }
     }
@@ -314,7 +315,8 @@ public class DlgHistory extends AeroFSDialog
         }
         alignmentWorkaround.setLayout(layoutAlignmentWorkaround);
 
-        _revTree = new Tree(alignmentWorkaround, SWT.SINGLE | SWT.VIRTUAL | SWT.BORDER | SWT.V_SCROLL | SWT.H_SCROLL);
+        _revTree = new Tree(alignmentWorkaround,
+                SWT.SINGLE | SWT.VIRTUAL | SWT.BORDER | SWT.V_SCROLL | SWT.H_SCROLL);
         _revTree.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1));
 
         // populate first level of version tree
@@ -445,7 +447,7 @@ public class DlgHistory extends AeroFSDialog
             _statusLabel.getParent().layout();
         } else {
             _restoreBtn.setText("Restore Deleted Files...");
-            _deleteBtn.setText("Deleted Old Versions");
+            _deleteBtn.setText("Delete Old Versions");
             _deleteBtn.setEnabled(true);
             if (index == null) {
                 _statusLabel.setText(
@@ -653,6 +655,8 @@ public class DlgHistory extends AeroFSDialog
 
     private void deleteVersion(HistoryModel.Version version)
     {
+        if (!GUI.get().ask(MessageType.INFO, "Permanently delete old version?")) return;
+
         try {
             _model.delete(version);
         } catch (Exception e) {
@@ -670,8 +674,10 @@ public class DlgHistory extends AeroFSDialog
 
     private void deleteAllVersionsUnder(final ModelIndex index)
     {
+        Path p = _model.getPath(index);
         new FeedbackDialog(getShell(), "Deleting...",
-                "Deleting old versions under " + _model.getPath(index)) {
+                "Permanently delete previous versions of all files under " + p + " ?\n ",
+                "Deleting old versions under " + p) {
             @Override
             public void run() throws Exception {
                 _model.delete(index);
@@ -701,7 +707,7 @@ public class DlgHistory extends AeroFSDialog
                     _model.getPath(index).toAbsoluteString(Cfg.absRootAnchor()));
             String label = "Restoring " + Util.quote(_model.getPath(index).last()) +
                     (inPlace ? "" : "\nto " + Util.quote(path));
-            new FeedbackDialog(getShell(), "Restoring...", label) {
+            new FeedbackDialog(getShell(), "Restoring...", null, label) {
                 @Override
                 public void run() throws Exception
                 {
@@ -801,11 +807,13 @@ public class DlgHistory extends AeroFSDialog
     private abstract class FeedbackDialog extends AeroFSDialog implements ISWTWorker
     {
         protected CompSpin _compSpin;
+        private final String _confirm;
         private final String _label;
 
-        FeedbackDialog(Shell parent, String title, String label)
+        FeedbackDialog(Shell parent, String title, String confirm, String label)
         {
             super(parent, title, true, false);
+            _confirm = confirm;
             _label = label;
         }
 
@@ -818,26 +826,66 @@ public class DlgHistory extends AeroFSDialog
             GridLayout glShell = new GridLayout(2, false);
             glShell.marginHeight = GUIParam.MARGIN;
             glShell.marginWidth = GUIParam.MARGIN;
-            glShell.verticalSpacing = GUIParam.MAJOR_SPACING;
+            glShell.verticalSpacing = 0;
             shell.setLayout(glShell);
 
             _compSpin = new CompSpin(shell, SWT.NONE);
 
-            Label label = new Label(shell, SWT.WRAP);
+            final Label label = new Label(shell, SWT.WRAP);
             label.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, true, false, 1, 1));
-            label.setText(_label);
+            if (_confirm != null && !_confirm.isEmpty()) {
+                label.setText(_confirm);
 
-            shell.addListener(SWT.Show, new Listener()
-            {
-                @Override
-                public void handleEvent(Event arg0)
+                final Composite c = newButtonContainer(shell);
+                c.setLayoutData(new GridData(SWT.RIGHT, SWT.BOTTOM, true, false, 2, 1));
+
+                Button bYes = new Button(c, SWT.NONE);
+                bYes.setText("Yes");
+                bYes.addSelectionListener(new SelectionAdapter() {
+                    @Override
+                    public void widgetSelected(SelectionEvent selectionEvent)
+                    {
+                        label.setText(_label);
+                        c.setVisible(false);
+                        ((GridData)c.getLayoutData()).exclude = true;
+                        getShell().layout();
+                        getShell().pack();
+
+                        start();
+                    }
+                });
+
+                Button bNo = new Button(c, SWT.NONE);
+                bNo.setText("No");
+                bNo.addSelectionListener(new SelectionAdapter()
                 {
-                    _compSpin.start();
+                    @Override
+                    public void widgetSelected(SelectionEvent selectionEvent)
+                    {
+                        closeDialog(true);
+                    }
+                });
 
-                    GUI.get().safeWork(getShell(), FeedbackDialog.this);
-                }
-            });
+                shell.setDefaultButton(bYes);
+            } else {
+                label.setText(_label);
 
+                shell.addListener(SWT.Show, new Listener()
+                {
+                    @Override
+                    public void handleEvent(Event arg0)
+                    {
+                        start();
+                    }
+                });
+            }
+        }
+
+        protected void start()
+        {
+            Shell shell = getShell();
+
+            // prevent user from closing by pressing ESC
             shell.addListener(SWT.Traverse, new Listener() {
                 @Override
                 public void handleEvent(Event e) {
@@ -846,6 +894,11 @@ public class DlgHistory extends AeroFSDialog
                     }
                 }
             });
+
+            _compSpin.start();
+
+            // perform actual work
+            GUI.get().safeWork(shell, FeedbackDialog.this);
         }
 
         @Override
