@@ -6,6 +6,8 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.collector.ExNoComponentWithSpecifiedVersion;
 import com.aerofs.proto.Common.PBException;
 import com.aerofs.proto.Common.PBException.Type;
+import com.google.common.base.Throwables;
+import com.google.protobuf.InvalidProtocolBufferException;
 
 public class Exceptions
 {
@@ -29,15 +31,16 @@ public class Exceptions
 
     private static PBException toPBImpl(Throwable e, boolean stackTrace)
     {
+        // Convert InvalidProtocolBufferException to ExProtocolError so that we have a specific
+        // type for them rather than ExInternalError
+        if (e instanceof InvalidProtocolBufferException) e = new ExProtocolError(e.getMessage());
+
         Type type;
         if (e instanceof AbstractExWirable) {
-            type = ((AbstractExWirable) e).getWireType();
+            type = ((AbstractExWirable)e).getWireType();
         } else {
             type = Type.INTERNAL_ERROR;
         }
-
-        Throwable eRoot = e;
-        while (eRoot.getCause() != null) eRoot = eRoot.getCause();
 
         PBException.Builder bd = PBException.newBuilder().setType(type);
 
@@ -48,7 +51,7 @@ public class Exceptions
 
         String message = e.getLocalizedMessage();
         if (message != null) bd.setMessage(message);
-        if (stackTrace) bd.setStackTrace(Util.stackTrace2string(eRoot));
+        if (stackTrace) bd.setStackTrace(Util.stackTrace2string(Throwables.getRootCause(e)));
         return bd.build();
     }
 
