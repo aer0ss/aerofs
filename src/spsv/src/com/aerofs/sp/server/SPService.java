@@ -313,6 +313,7 @@ public class SPService implements ISPService
             Device device = _factDevice.create(deviceId);
             throwIfNotOwner(user, device);
 
+            // TODO (WW) print session user in log headers
             l.info("{} set device name: {}, session user {}", user, deviceName, _sessionUser.get());
             device.setName(deviceName);
             deviceNameUpdated = true;

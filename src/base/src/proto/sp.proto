@@ -451,20 +451,9 @@ service SPService {
     rpc GetAuthorizationLevel(Void) returns (GetAuthorizationLevelReply);
 
     /**
-     * Setup the team server account:
+     * Return the Team Server user id of the current organization
      *
-     *  1. If the user is in default organization, create a new organization.
-     *     Else, if the user is not an admin, throw ExNoPerm.
-     *  2. If the organization doesn't have a team server user account, create the user.
-     *  3. Return the user ID.
-     *
-     * See the Team Server design doc for design rationale.
-     *
-     * Required Auth Level: (see below, same as AddOrganization)
-     *
-     * Throws:
-     *   ExNoPerm   if the user calling is not a member of the default organization or is not
-     *                  an admin
+     * Required Auth Level: admin
      */
     rpc GetTeamServerUserID(Void) returns (GetTeamServerUserIDReply);
 

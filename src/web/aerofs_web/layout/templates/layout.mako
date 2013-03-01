@@ -208,6 +208,7 @@
         links = [
             ('admin_users', _("Members")),
             ('organization_shared_folders', _("Shared Folders")),
+            ('team_server_devices', _("Team Servers")),
             ('admin_settings', _("Settings")),
         ]
     %>
