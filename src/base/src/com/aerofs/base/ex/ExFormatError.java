@@ -9,6 +9,11 @@ public class ExFormatError extends Exception
         super(msg);
     }
 
+    public ExFormatError()
+    {
+        super();
+    }
+
     public ExFormatError(Exception e)
     {
         super(e);

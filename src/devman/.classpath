@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="gen"/>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/lib"/>
+	<classpathentry kind="lib" path="resource/server/perf4j-0.9.16.jar"/>
+	<classpathentry kind="output" path="approot/bin"/>
+</classpath>

@@ -1,0 +1,44 @@
+http:
+    port: 9019
+    maxThreads: 10
+    minThreads: 4
+    acceptorThreads: 4
+    acceptQueueSize: 20
+
+    requestLog:
+        console:
+            enabled: false
+
+        file:
+            enabled: false
+            archive: false
+            currentLogFilename: /var/log/aerofs/devman.requests.log
+            timeZone: UTC
+
+logging:
+    level: WARN
+
+    console:
+            enabled: false
+
+    file:
+        enabled: true
+        archive: false
+        currentLogFilename: /var/log/aerofs/devman.log
+        timeZone: UTC
+
+    loggers:
+        "com.aerofs.devman.server.LastSeenTimePuller": DEBUG
+        "com.aerofs.devman.server.VerkehrOnlineDevicesClient": DEBUG
+
+redis:
+    host: localhost
+    port: 6379
+
+polling:
+    initialDelayInSeconds: 10
+    intervalInSeconds: 300
+
+verkehr:
+    host: verkehr.aerofs.com
+    port: 9019

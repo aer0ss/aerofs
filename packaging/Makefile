@@ -22,6 +22,7 @@ PACKAGES= \
 	syncstat-tools \
 	jeq-tools \
 	verkehr \
+	devman \
 	vmhost \
 	web \
 	zephyr \
