@@ -58,9 +58,9 @@ public class S
             BTN_CHANGE = "Change...",
             COULDNT_UNLINK_DEVICE = "Sorry, we could not unlink your computer.",
             UNLINK_THIS_COMPUTER = "Unlink This Computer...",
-            UNLINK_THIS_COMPUTER_CONFIRM = "Unlink this computer from the " +
-                L.PRODUCT + " account and quit the program?" +
-                " Files in the " + L.PRODUCT + " folder will not be deleted.",
+            UNLINK_THIS_COMPUTER_CONFIRM = "Unlink this computer from your " + L.PRODUCT +
+                " account and quit the program?" +
+                " The computer will no longer stay in sync, but will keep files it currently has.",
             INVITATION_CODE_NOT_FOUND = "Invitation code not found",
             CHECKING_FOR_DINOSAURS = "Checking for dinosaurs...",
             PRE_SETUP_UPDATE_CHECK_FAILED = L.PRODUCT + " couldn't" +

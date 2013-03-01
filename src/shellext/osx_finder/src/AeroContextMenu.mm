@@ -83,7 +83,7 @@ NSURL* urlOfFirstNodeInVector(TFENodeVector* nodeVec);
             ++idx;
 
             if ((flags & Directory) && !(flags & RootAnchor)) {
-                NSMenuItem* share = [submenu insertItemWithTitle:NSLocalizedString(@"Share Folder...", @"Context menu")
+                NSMenuItem* share = [submenu insertItemWithTitle:NSLocalizedString(@"Share This Folder...", @"Context menu")
                                                           action:@selector(showShareFolderDialog:)
                                                    keyEquivalent:@""
                                                          atIndex:idx];

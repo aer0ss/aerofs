@@ -149,7 +149,7 @@ HRESULT ContextMenu::QueryContextMenu(HMENU hmenu, UINT position, UINT idCmdFirs
 	++entryCount;
 
 	if ((pflags & Directory) && !(pflags & RootAnchor)) {
-		AppendMenu(submenu, MF_STRING, idCmdFirst + ShareFolderMenuId, L"Share Folder...");
+		AppendMenu(submenu, MF_STRING, idCmdFirst + ShareFolderMenuId, L"Share This Folder...");
 		++entryCount;
 	}
 

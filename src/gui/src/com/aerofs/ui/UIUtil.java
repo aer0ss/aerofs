@@ -148,7 +148,7 @@ public class UIUtil
         if (!L.get().isMultiuser()) {
             SPBlockingClient sp = SPClientFactory.newBlockingClient(SP.URL, Cfg.user());
             sp.signInRemote();
-            sp.unlinkUserDevice(Cfg.did().toPB(), false);
+            sp.unlinkDevice(Cfg.did().toPB(), false);
         } else {
             // Currently only the single user unlink is supported.
             // TODO support multi user unlink.

@@ -222,7 +222,7 @@ public class SingleuserTrayMenu implements ITrayMenu
             {
                 populater.clearAllMenuItems();
 
-                populater.addMenuItem("Share Folder...",
+                populater.addMenuItem("Share New Folder...",
                         new AbstractListener(CLICKED_TASKBAR_SHARE_FOLDER)
                         {
                             @Override
