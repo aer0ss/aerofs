@@ -118,7 +118,20 @@ public class SID extends UniqueID
     }
 
     /**
-     * Translate an store SID to the original OID of the folder it was converted from.
+     * Translate an anchor OID to the original OID of the folder it was converted from.
+     */
+    public static OID anchorOID2folderOID(OID anchor)
+    {
+        assert anchor.isAnchor() : anchor.toStringFormal();
+        byte[] bs = Arrays.copyOf(anchor.getBytes(), UniqueID.LENGTH);
+        setVersionNibble(bs, 4);
+        OID oid = new OID(bs);
+        assert !oid.isAnchor();
+        return oid;
+    }
+
+    /**
+     * Translate a store SID to the original OID of the folder it was converted from.
      */
     public static OID convertedStoreSID2folderOID(SID sid)
     {

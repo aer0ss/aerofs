@@ -9,6 +9,8 @@ import java.sql.SQLException;
 import static com.aerofs.lib.obfuscate.ObfuscatingFormatters.*;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.daemon.core.first.OIDGenerator;
+import com.aerofs.daemon.core.ds.OA.Type;
 import com.aerofs.daemon.core.phy.linked.SharedFolderTagFileAndIcon;
 import com.aerofs.daemon.lib.exception.ExStreamInvalid;
 import com.aerofs.lib.Param;
@@ -60,12 +62,13 @@ public class MightCreate
     private final Analytics _a;
     private final CfgAbsRootAnchor _cfgAbsRootAnchor;
     private final SharedFolderTagFileAndIcon _sfti;
+    private final OIDGenerator _og;
 
     @Inject
     public MightCreate(IgnoreList ignoreList, DirectoryService ds, HdMoveObject hdmo,
             ObjectMover om, ObjectCreator oc, InjectableDriver driver,
             VersionUpdater vu, InjectableFile.Factory factFile, SharedFolderTagFileAndIcon sfti,
-            Analytics a, CfgAbsRootAnchor cfgAbsRootAnchor)
+            Analytics a, CfgAbsRootAnchor cfgAbsRootAnchor, OIDGenerator og)
     {
         _il = ignoreList;
         _ds = ds;
@@ -78,6 +81,7 @@ public class MightCreate
         _a = a;
         _cfgAbsRootAnchor = cfgAbsRootAnchor;
         _sfti = sfti;
+        _og = og;
     }
 
     public static enum Result {
@@ -475,21 +479,12 @@ public class MightCreate
             return false;
         } else {
             if (oaParent.isAnchor()) soidParent = _ds.followAnchorThrows_(oaParent);
-            SOID newSOID;
-            if (dir) {
-                OID newOID = _sfti.getOIDForAnchor_(pcPhysical, t);
-                if (newOID != null) {
-                    newSOID = new SOID(soidParent.sidx(), newOID);
-                    _oc.createMeta_(ANCHOR, newSOID, soidParent.oid(), pcPhysical._path.last(), 0,
-                            MAP, false, true, t);
-                } else {
-                    newSOID = _oc.create_(DIR, soidParent, pcPhysical._path.last(), MAP, t);
-                }
-            } else {
-                newSOID = _oc.create_(FILE, soidParent, pcPhysical._path.last(), MAP, t);
-            }
+            OID oid = dir ? _sfti.getOIDForAnchor_(pcPhysical, t) : null;
+            Type type = oid != null ? ANCHOR : (dir ? DIR : FILE);
+            if (oid == null) oid = _og.generate_(dir, pcPhysical._path);
+            _oc.create_(type, oid, soidParent, pcPhysical._path.last(), MAP, t);
             _a.incSaveCount();
-            l.info("created " + _ds.getOA_(newSOID) + " " + pcPhysical);
+            l.info("created " + new SOID(soidParent.sidx(), oid) + " " + pcPhysical);
             return true;
         }
     }

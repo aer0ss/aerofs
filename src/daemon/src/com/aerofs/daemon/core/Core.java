@@ -1,6 +1,7 @@
 package com.aerofs.daemon.core;
 
 import com.aerofs.daemon.core.db.CoreDBSetup;
+import com.aerofs.daemon.core.first.FirstLaunch;
 import com.aerofs.daemon.core.linker.scanner.ScanCompletionCallback;
 import com.aerofs.daemon.core.syncstatus.SyncStatusNotificationSubscriber;
 import com.aerofs.daemon.core.tc.Cat;
