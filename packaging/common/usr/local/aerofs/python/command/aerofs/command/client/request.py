@@ -55,7 +55,7 @@ class CommandRequest(object):
     """
 
     def __init__(self, user_email, ttl_hours, command_payload):
-        self._pb = aerofs.command.gen.cmd_pb2.CommandRequest()
+        self._pb = aerofs.command.gen.cmd_pb2.TransientCommandRequest()
 
         self._pb.user_email = user_email
         self._pb.ttl_hours = ttl_hours

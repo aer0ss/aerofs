@@ -12,14 +12,14 @@ class RequestApplicationObject(object):
         self._request_pusher = request_pusher
 
         self._l = aerofs.command.server.log.get_logger('cmdsrv-request', log_handler, log_level)
-        self._command_db = aerofs.command.server.db.CommandDatabase(log_handler, log_level)
+        self._command_db = aerofs.command.server.db.TransientCommandDatabase(log_handler, log_level)
 
     def __call__(self, environ, response):
         # Read the post body.
         request_body_size = int(environ['CONTENT_LENGTH'])
         bytes = environ['wsgi.input'].read(request_body_size)
 
-        command_request = aerofs.command.gen.cmd_pb2.CommandRequest()
+        command_request = aerofs.command.gen.cmd_pb2.TransientCommandRequest()
         command_request.ParseFromString(bytes)
 
         self._l.info('Received cmd request for ' + command_request.user_email)

@@ -61,7 +61,7 @@ public final class TransientCommandNotificationSubscriber
 
     public void start()
     {
-        l.info("tcmd: started notification subscriber");
+        l.debug("tcmd: started notification subscriber");
         _subscriber.start();
     }
 
@@ -77,7 +77,7 @@ public final class TransientCommandNotificationSubscriber
         @Override
         public void onNotificationReceivedFromVerkehr(String topic, @Nullable final byte[] payload)
         {
-            l.info("tcmd: notification received");
+            l.debug("tcmd: notification received");
 
             if (payload == null) {
                 l.error("tcmd: empty payload");
@@ -110,7 +110,7 @@ public final class TransientCommandNotificationSubscriber
 
                 // Skip the command if we have already executed it previously.
                 if (cmdId <= localMaxCmdId) {
-                    l.info("tcmd: skipping id " + cmdId + " (local max: " + localMaxCmdId + ")");
+                    l.debug("tcmd: skipping id " + cmdId + " (local max: " + localMaxCmdId + ")");
                     continue;
                 }
 
@@ -154,7 +154,7 @@ public final class TransientCommandNotificationSubscriber
          */
         private void logThreads() throws Exception
         {
-            l.info("tcmd: log threads");
+            l.debug("tcmd: log threads");
 
             // The delay is required by the command (see cmd.proto). It also blocks the subscriber
             // thread from processing more commands. Otherwise, multiple LOG_THREADS requests would
@@ -178,13 +178,13 @@ public final class TransientCommandNotificationSubscriber
 
         private void sendDefect()
         {
-            l.info("tcmd: send defect");
+            l.debug("tcmd: send defect");
             SVClient.logSendDefectAsync(true, "tcmd call");
         }
 
         private void checkUpdate()
         {
-            l.info("tcmd: check for updates");
+            l.debug("tcmd: check for updates");
             UI.updater().checkForUpdate(true);
         }
 
