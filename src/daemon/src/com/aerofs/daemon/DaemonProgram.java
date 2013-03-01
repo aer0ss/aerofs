@@ -29,14 +29,14 @@ import com.google.inject.Stage;
 import org.slf4j.Logger;
 
 import static com.aerofs.lib.rocklog.RockLog.BaseComponent.CLIENT;
-import static java.util.concurrent.TimeUnit.SECONDS;
+import static java.util.concurrent.TimeUnit.MINUTES;
 
 public class DaemonProgram implements IProgram
 {
     static
     {
         RockLog.init_(CLIENT);
-        RockLogReporter.enable(30, SECONDS);
+        RockLogReporter.enable(10, MINUTES);
     }
 
     private static final Logger l = Loggers.getLogger(DaemonProgram.class);
