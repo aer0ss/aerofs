@@ -274,6 +274,8 @@ public class SPService implements ISPService
         GetUserPreferencesReply reply = GetUserPreferencesReply.newBuilder()
                 .setFirstName(fn._first)
                 .setLastName(fn._last)
+                // Some early Alpha testers don't have their device information in the database.
+                // An UPUT adds the devices back only if they relaunches.
                 .setDeviceName(device.exists() ? device.getName() : "")
                 .build();
 
@@ -780,9 +782,14 @@ public class SPService implements ISPService
 
         _sqlTrans.begin();
 
-        throwIfNotOwner(user, device);
-
-        device.setOSFamilyAndName(osFamily, osName);
+        if (!device.exists()) {
+            // This is to fix problems with some early Alpha testers whose devices are not in
+            // the database.
+            device.save(user, osFamily, osName, "(no name)");
+        } else {
+            throwIfNotOwner(user, device);
+            device.setOSFamilyAndName(osFamily, osName);
+        }
 
         _sqlTrans.commit();
 
