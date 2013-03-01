@@ -292,7 +292,8 @@ public class SPService implements ISPService
 
         _sqlTrans.begin();
 
-        User user = _factUser.createFromExternalID(userID);
+        // WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE remove the test (as userID will become required)
+        User user = userID == null ? _sessionUser.get() : _factUser.createFromExternalID(userID);
         throwIfSessionUserIsNotOrAdminOf(user);
 
         if (firstName != null || lastName != null) {
