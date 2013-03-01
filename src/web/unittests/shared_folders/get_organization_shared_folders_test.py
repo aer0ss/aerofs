@@ -28,6 +28,7 @@ class GetOrganizationSharedFoldersTest(TestBase):
         self._add_shared_folder(reply)
         self._add_shared_folder(reply)
 
+        # TODO (WW) use create_autospec?
         self.sp_rpc_stub.list_user_shared_folders = Mock(return_value=reply)
 
     def _add_shared_folder(self, reply):
@@ -52,12 +53,11 @@ class GetOrganizationSharedFoldersTest(TestBase):
         from modules.shared_folders.views import \
             json_get_organization_shared_folders
 
-        request = testing.DummyRequest()
-        request.params = {
+        request = self.create_request({
             'sEcho': 'hoho',
             'iDisplayLength': 10,
             'iDisplayStart': 0
-        }
+        })
         request.session['username'] = 'test@email'
         request.session['group'] = ADMIN
 
@@ -68,11 +68,10 @@ class GetOrganizationSharedFoldersTest(TestBase):
         from modules.shared_folders.views import\
             json_get_user_shared_folders, URL_PARAM_USER
 
-        request = testing.DummyRequest()
-        request.params = {
+        request = self.create_request({
             'sEcho': 'hoho',
             URL_PARAM_USER: 'some@email'
-        }
+        })
         request.session['username'] = 'test@email'
         request.session['group'] = ADMIN
 

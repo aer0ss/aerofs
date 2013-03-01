@@ -31,30 +31,31 @@ class UserLookupTest(TestBase):
         user.first_name = "test3"
         user.last_name = "awesome"
 
+        # TODO (WW) use create_autospec?
         self.sp_rpc_stub.list_users_auth = Mock(return_value=reply)
 
     def test_find_all_users_keys(self):
         from modules.admin_panel.views import json_user_lookup
-        request = testing.DummyRequest()
-        request.params = {
+
+        request = self.create_request({
             "searchTerm": "",
             "authLevel": "USER",
             "count": 10,
             "offset": 0
-        }
+        })
 
         response = json_user_lookup(request)
         self.assertTrue(response.has_key("users"))
 
     def test_find_all_users_values(self):
         from modules.admin_panel.views import json_user_lookup
-        request = testing.DummyRequest()
-        request.params = {
+
+        request = self.create_request({
             "searchTerm": "",
             "authLevel": "USER",
             "count": 10,
             "offset": 0
-        }
+        })
 
         response = json_user_lookup(request)
         emails = response["users"]

@@ -10,6 +10,8 @@ class UsersViewTest(TestBase):
         self.setup_common()
         self.reply = ListOrganizationInvitedUsersReply()
         self.reply.user_id.append(_USER_ID)
+
+        # TODO (WW) use create_autospec?
         self.sp_rpc_stub.list_organization_invited_users = \
             Mock(return_value=self.reply)
 
