@@ -97,7 +97,7 @@ public final class CommandNotificationSubscriber
 
         _listener = new VerkehrListener();
 
-        l.info("cmd: " + VERKEHR_HOST + ":" + VERKEHR_PORT);
+        l.debug("cmd: " + VERKEHR_HOST + ":" + VERKEHR_PORT);
         ClientFactory factory = new ClientFactory(VERKEHR_HOST, VERKEHR_PORT,
                 newCachedThreadPool(), newCachedThreadPool(),
                 caCertFilename, new CfgKeyManagersProvider(),
@@ -110,7 +110,7 @@ public final class CommandNotificationSubscriber
 
     public void start()
     {
-        l.info("cmd: started notification subscriber");
+        l.debug("cmd: started notification subscriber");
         _subscriber.start();
 
         // Schedule a sync when the device first comes online.
@@ -122,7 +122,7 @@ public final class CommandNotificationSubscriber
         @Override
         public void onConnected()
         {
-            l.info("cmd: subscribe topic=" + _topic);
+            l.debug("cmd: subscribe topic=" + _topic);
             _subscriber.subscribe_(_topic);
 
             // Also schedule a sync after we subscribe to the topic to ensure we are up to date
@@ -153,7 +153,7 @@ public final class CommandNotificationSubscriber
             // stored in the db. After all operations have been completed, store the new max
             // command ID for next time and send an ack.
 
-            l.info("cmd notification: epoch=" + command.getEpoch() + " type=" + command.getType());
+            l.debug("cmd notification: epoch=" + command.getEpoch() + " type=" + command.getType());
             scheduleSingleCommandExecution(command);
         }
 
@@ -165,7 +165,7 @@ public final class CommandNotificationSubscriber
 
         private void scheduleSyncWithCommandServer()
         {
-            l.info("cmd: sync scheduled");
+            l.debug("cmd: sync scheduled");
 
             // Schedule the exponential retry execution so that we do not block the verkehr IO
             // thread.
@@ -192,7 +192,7 @@ public final class CommandNotificationSubscriber
         private void syncWithCommandServer()
                 throws Exception
         {
-            l.info("cmd: sync attempt");
+            l.debug("cmd: sync attempt");
             int errorCount = 0;
 
             // Get the command at the head of the queue and init loop variables.
@@ -203,7 +203,7 @@ public final class CommandNotificationSubscriber
             boolean more = head.hasCommand();
 
             if (!more) {
-                l.info("cmd: already up to date");
+                l.debug("cmd: already up to date");
                 return;
             }
 
@@ -250,7 +250,7 @@ public final class CommandNotificationSubscriber
             }
 
             // Everything went perfectly, sync complete.
-            l.info("cmd: sync complete");
+            l.debug("cmd: sync complete");
         }
 
         private void scheduleSingleCommandExecution(final Command command)
