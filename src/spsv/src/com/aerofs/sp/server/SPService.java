@@ -1708,81 +1708,32 @@ public class SPService implements ISPService
     }
 
     @Override
-    public ListenableFuture<Void> unlinkUserDevice(final ByteString deviceId, Boolean doRemoteWipe)
+    public ListenableFuture<Void> unlinkDevice(final ByteString deviceId, Boolean erase)
         throws Exception
     {
         _sqlTrans.begin();
 
         User user = _sessionUser.get();
         Device device = _factDevice.create(deviceId);
+        throwIfSessionUserIsNotOrAdminOf(device.getOwner());
 
-        l.info(user.id() + ": unlink " + device.id().toStringFormal());
+        // TODO (WW) print session user in log headers
+        l.info("{} unlinks {}, erase {}, session user {}", user, device, erase,
+                _sessionUser.get());
 
-        if (!device.getOwner().equals(user)) {
-            throw new ExNoPerm();
-        }
-
-        // Perform the actual certificate revocation and update the persistent command queue.
-        unlinkDeviceImplementation(device, doRemoteWipe);
+        unlinkDeviceImplementation(device, erase);
 
         _sqlTrans.commit();
 
         return createVoidReply();
-    }
-
-    // TODO: remove this (should be replaced by a cancel account call).
-    @Override
-    public ListenableFuture<Void> unlinkAllUserDevices()
-        throws Exception
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public ListenableFuture<Void> unlinkTeamServerDevice(final ByteString deviceId,
-            Boolean doRemoteWipe)
-            throws Exception
-    {
-        _sqlTrans.begin();
-
-        User user = _sessionUser.get();
-        Device device = _factDevice.create(deviceId);
-
-        l.info(user.id() + ": unlink ts " + device.id().toStringFormal());
-
-        user.throwIfNotAdmin();
-        device.throwIfNotFound();
-
-        if (!device.getOwner().id().isTeamServerID()) {
-            throw new ExBadArgs();
-        }
-
-        // Device does not belong to the same organization as the caller.
-        if (!device.getOwner().getOrganization().equals(user.getOrganization())) {
-            throw new ExNoPerm();
-        }
-
-        // Perform the actual certificate revocation and update the persistent command queue.
-        unlinkDeviceImplementation(device, doRemoteWipe);
-
-        _sqlTrans.commit();
-
-        return createVoidReply();
-    }
-
-    // TODO: remove this (should be replaced by a cancel account call).
-    @Override
-    public ListenableFuture<Void> unlinkAllTeamServerDevices()
-            throws Exception
-    {
-        throw new UnsupportedOperationException();
     }
 
     /**
-     * Helper for the two above unlink device calls. Should be called with a SQL transaction.
+     * Perform certificate revocation and update the persistent command queue. Should be called with
+     * a SQL transaction.
      * @param device the device to unlink.
      */
-    private void unlinkDeviceImplementation(Device device, boolean remoteWipe)
+    private void unlinkDeviceImplementation(Device device, boolean erase)
             throws Exception
     {
         Certificate cert = device.getCertificate();
@@ -1807,7 +1758,7 @@ public class SPService implements ISPService
         // Tell the actual device to perform the required local actions. Remember to flush the queue
         // first so that this is the only command left in the queue. The ensures that if the user
         // changes their password the unlink/wipe command can still be executed.
-        if (remoteWipe) {
+        if (erase) {
             addToCommandQueueAndSendVerkehrMessage(device.id(),
                     CommandType.UNLINK_AND_WIPE_SELF, true);
         } else {
@@ -2012,5 +1963,26 @@ public class SPService implements ISPService
         ListenableFuture<Void> succeeded = _verkehrAdmin.updateCRL(serials);
 
         verkehrFutureGet_(succeeded);
+    }
+
+    @Override
+    public ListenableFuture<Void> noop4()
+            throws Exception
+    {
+        return null;
+    }
+
+    @Override
+    public ListenableFuture<Void> noop5()
+            throws Exception
+    {
+        return null;
+    }
+
+    @Override
+    public ListenableFuture<Void> noop6()
+            throws Exception
+    {
+        return null;
     }
 }
