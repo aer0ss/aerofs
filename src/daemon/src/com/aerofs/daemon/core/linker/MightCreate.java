@@ -154,6 +154,17 @@ public class MightCreate
 
         // TODO acl checking
 
+        SOID parent = _ds.resolveNullable_(pcPhysical._path.removeLast());
+        OA oaParent = parent == null ? null : _ds.getOANullable_(parent);
+        if (oaParent == null || oaParent.isExpelled()) {
+            // if we get a notification about a path for which the parent is expelled or not
+            // present, we are most likely hitting a race between expulsion and creation so we
+            // should ignore the notification and wait for the one about the new parent, which
+            // will in turn trigger a scan
+            l.warn("expel/create race {}", obfuscatePath(pcPhysical._path));
+            return Result.IGNORED;
+        }
+
         ////////
         // Determine condition. See enum Condition
 
