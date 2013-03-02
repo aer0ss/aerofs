@@ -8,6 +8,7 @@ import com.aerofs.base.BaseParam.SP;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.gui.GuiScheduler;
+import com.aerofs.labeling.L;
 import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.Param;
 import com.aerofs.lib.Util;
@@ -19,11 +20,13 @@ import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.lib.ritual.RitualBlockingClient;
+import com.aerofs.lib.ritual.RitualClient;
 import com.aerofs.lib.ritual.RitualClientFactory;
 import com.aerofs.lib.rocklog.EventType;
 import com.aerofs.lib.rocklog.RockLog;
 import com.aerofs.lib.sched.ExponentialRetry;
 import com.aerofs.proto.Cmd.Command;
+import com.aerofs.proto.Ritual.CreateSeedFileReply;
 import com.aerofs.proto.Sp.AckCommandQueueHeadReply;
 import com.aerofs.proto.Sp.GetCommandQueueHeadReply;
 import com.aerofs.proto.Sv.PBSVEvent.Type;
@@ -35,6 +38,7 @@ import com.aerofs.verkehr.client.lib.IConnectionListener;
 import com.aerofs.verkehr.client.lib.subscriber.ClientFactory;
 import com.aerofs.verkehr.client.lib.subscriber.ISubscriptionListener;
 import com.aerofs.verkehr.client.lib.subscriber.VerkehrSubscriber;
+import com.google.common.util.concurrent.ListenableFuture;
 import com.google.protobuf.InvalidProtocolBufferException;
 import org.slf4j.Logger;
 import org.jboss.netty.util.HashedWheelTimer;
@@ -44,6 +48,7 @@ import java.io.IOException;
 import javax.annotation.Nullable;
 import java.sql.SQLException;
 import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
 
 import static com.aerofs.lib.Param.Verkehr.VERKEHR_HOST;
 import static com.aerofs.lib.Param.Verkehr.VERKEHR_PORT;
@@ -362,9 +367,41 @@ public final class CommandNotificationSubscriber
     private void unlinkSelf()
             throws Exception
     {
-        // Metrics.
-        SVClient.sendEventAsync(Type.UNLINK);
-        RockLog.newEvent(EventType.UNLINK_DEVICE).sendAsync();
+        RitualClient r = RitualClientFactory.newClient();
+
+        try {
+            // use the asynchronous Ritual API to maximize our chance of creating seed file
+            // without noticeably slowing down unlink
+            ListenableFuture<CreateSeedFileReply> reply = null;
+            try {
+                if (!L.get().isMultiuser()) reply = r.createSeedFile();
+            } catch (Exception e) {
+                // can safely ignore
+                l.info("failed to create seed file {}", Util.e(e));
+            }
+
+            // Metrics.
+            SVClient.sendEventAsync(Type.UNLINK);
+            RockLog.newEvent(EventType.UNLINK_DEVICE).sendAsync();
+
+            if (reply != null) {
+                try {
+                    // give the daemon some extra time to finish generating the seed file
+                    // NB: if the daemon is killed before the file is fully generated, the partial
+                    // seed file will be gracefully handled by sqlite and help avoid some (but not
+                    // all) aliasing upon reinstall
+                    reply.get(500, TimeUnit.MILLISECONDS);
+                    l.info("seed file created");
+                } catch (Exception e) {
+                    // can safely ignore
+                    l.info("failed to create seed file {}", Util.e(e));
+                }
+            }
+
+            unlinkImplementation();
+        } finally {
+            r.close();
+        }
 
         unlinkImplementation();
         shutdownImplementation();
