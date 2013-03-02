@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core;
 
+import com.aerofs.daemon.core.admin.HdCreateSeedFile;
 import com.aerofs.daemon.core.admin.HdDeleteACL;
 import com.aerofs.daemon.core.admin.HdDeleteRevision;
 import com.aerofs.daemon.core.admin.HdDumpStat;
@@ -51,6 +52,7 @@ import com.aerofs.daemon.core.net.HdStreamBegun;
 import com.aerofs.daemon.core.net.HdUnicastMessage;
 import com.aerofs.daemon.core.status.HdGetStatusOverview;
 import com.aerofs.daemon.core.syncstatus.HdGetSyncStatus;
+import com.aerofs.daemon.event.admin.EICreateSeedFile;
 import com.aerofs.daemon.event.admin.EIDeleteACL;
 import com.aerofs.daemon.event.admin.EIDeleteRevision;
 import com.aerofs.daemon.event.admin.EIDumpStat;
@@ -153,6 +155,7 @@ public class CoreEventHandlerRegistrar implements ICoreEventHandlerRegistrar
     private final HdDownloadPacket _hdDownloadPacket;
     private final HdInvalidateUserNameCache _hdInvalidateUserNameCache;
     private final HdInvalidateDeviceNameCache _hdInvalidateDeviceNameCache;
+    private final HdCreateSeedFile _hdCreateSeedFile;
 
     @Inject
     public CoreEventHandlerRegistrar(HdCreateObject hdco, HdMoveObject hdMoveObject,
@@ -178,7 +181,8 @@ public class CoreEventHandlerRegistrar implements ICoreEventHandlerRegistrar
             HdHeartbeat hdHeartbeat, HdGetActivities hdGetActivities,
             HdDownloadPacket hdDownloadPacket, HdLeaveSharedFolder hdLeaveSharedFolder,
             HdInvalidateUserNameCache hdInvalidateUserNameCache,
-            HdInvalidateDeviceNameCache hdInvalidateDeviceNameCache)
+            HdInvalidateDeviceNameCache hdInvalidateDeviceNameCache,
+            HdCreateSeedFile hdCreateSeedFile)
     {
         _hdco = hdco;
         _hdMoveObject = hdMoveObject;
@@ -228,6 +232,7 @@ public class CoreEventHandlerRegistrar implements ICoreEventHandlerRegistrar
         _hdDownloadPacket = hdDownloadPacket;
         _hdInvalidateUserNameCache = hdInvalidateUserNameCache;
         _hdInvalidateDeviceNameCache = hdInvalidateDeviceNameCache;
+        _hdCreateSeedFile = hdCreateSeedFile;
     }
 
     @Override
@@ -275,6 +280,7 @@ public class CoreEventHandlerRegistrar implements ICoreEventHandlerRegistrar
                 .setHandler_(EIGetActivities.class, _hdGetActivities)
                 .setHandler_(EIInvalidateUserNameCache.class, _hdInvalidateUserNameCache)
                 .setHandler_(EIInvalidateDeviceNameCache.class, _hdInvalidateDeviceNameCache)
+                .setHandler_(EICreateSeedFile.class, _hdCreateSeedFile)
 
                 // status events
                 .setHandler_(EIGetSyncStatus.class, _hdGetSyncStatus)

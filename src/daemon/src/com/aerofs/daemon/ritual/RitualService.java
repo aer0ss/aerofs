@@ -13,6 +13,7 @@ import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.linker.event.EITestPauseOrResumeLinker;
 import com.aerofs.daemon.core.phy.IPhysicalRevProvider.Child;
 import com.aerofs.daemon.core.phy.IPhysicalRevProvider.Revision;
+import com.aerofs.daemon.event.admin.EICreateSeedFile;
 import com.aerofs.daemon.event.admin.EIDeleteACL;
 import com.aerofs.daemon.event.admin.EIDeleteRevision;import com.aerofs.daemon.event.admin.EIDumpStat;
 import com.aerofs.daemon.event.admin.EIExportConflict;
@@ -67,6 +68,7 @@ import com.aerofs.proto.Common.PBPath;
 import com.aerofs.proto.Common.PBSubjectRolePair;
 import com.aerofs.proto.Common.Void;
 import com.aerofs.proto.Files.PBDumpStat;
+import com.aerofs.proto.Ritual.CreateSeedFileReply;
 import com.aerofs.proto.Ritual.DumpStatsReply;
 import com.aerofs.proto.Ritual.ExportConflictReply;
 import com.aerofs.proto.Ritual.ExportFileReply;
@@ -311,6 +313,15 @@ public class RitualService implements IRitualService
         ExitCode.SHUTDOWN_REQUESTED.exit();
 
         return createVoidReply();
+    }
+
+    @Override
+    public ListenableFuture<CreateSeedFileReply> createSeedFile()
+            throws Exception
+    {
+        EICreateSeedFile ev = new EICreateSeedFile(Core.imce());
+        ev.execute(PRIO);
+        return createReply(CreateSeedFileReply.newBuilder().setPath(ev._path).build());
     }
 
     @Override
