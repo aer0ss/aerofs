@@ -1,19 +1,13 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="TestSignupHelper" type="JUnit" factoryName="JUnit">
-    <extension name="coverage" enabled="false" merge="false" sample_coverage="true" runner="idea">
-      <pattern>
-        <option name="PATTERN" value="com.aerofs.controller.*" />
-        <option name="ENABLED" value="true" />
-      </pattern>
-    </extension>
-    <module name="gui" />
+  <configuration default="false" name="TestSP_ShareFolder" type="JUnit" factoryName="JUnit">
+    <module name="spsv" />
     <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
     <option name="ALTERNATIVE_JRE_PATH" value="" />
-    <option name="PACKAGE_NAME" value="com.aerofs.controller" />
-    <option name="MAIN_CLASS_NAME" value="com.aerofs.controller.TestSignupHelper" />
+    <option name="PACKAGE_NAME" value="com.aerofs.sp.server.integration" />
+    <option name="MAIN_CLASS_NAME" value="com.aerofs.sp.server.integration.TestSP_ShareFolder" />
     <option name="METHOD_NAME" value="" />
     <option name="TEST_OBJECT" value="class" />
-    <option name="VM_PARAMETERS" value="-ea -Djunit.mysqlSpSchemaPath=../src/spsv/resources/schemas" />
+    <option name="VM_PARAMETERS" value="-ea" />
     <option name="PARAMETERS" value="" />
     <option name="WORKING_DIRECTORY" value="file://$PROJECT_DIR$/../../approot" />
     <option name="ENV_VARIABLES" />

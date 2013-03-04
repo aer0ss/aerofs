@@ -194,6 +194,9 @@ public class User
             }
         }
 
+        // Ensure calling user is in the list.
+        peerUsers.add(this);
+
         // From the list of peer users, find the list of devices.
         List<Device> peerDevices = Lists.newLinkedList();
 
@@ -202,6 +205,34 @@ public class User
 
             for (Device userDevice : userDevices) {
                 peerDevices.add(userDevice);
+            }
+        }
+
+        return peerDevices;
+    }
+
+    /**
+     * Peer devices are all devices that you sync with, including your own devices, for a given
+     * shared folder.
+     */
+    public Collection<Device> getPeerDevices(SharedFolder sharedFolder)
+            throws SQLException, ExFormatError
+    {
+        Collection<User> peerUsers = sharedFolder.getMembers();
+        List<Device> peerDevices = Lists.newLinkedList();
+
+        for (User peerUser : peerUsers) {
+            Collection<Device> userDevices = peerUser.getDevices();
+
+            for (Device userDevice : userDevices) {
+                peerDevices.add(userDevice);
+            }
+        }
+
+        // If we're haven't already, add our devices.
+        if (!peerUsers.contains(this)) {
+            for (Device device : getDevices()) {
+                peerDevices.add(device);
             }
         }
 
