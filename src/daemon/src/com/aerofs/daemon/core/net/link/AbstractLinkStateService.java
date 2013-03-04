@@ -53,17 +53,16 @@ public abstract class AbstractLinkStateService implements ILinkStateService
 
         ImmutableSet.Builder<NetworkInterface> ifaceBuilder = ImmutableSet.builder();
 
-        int index = 0;
         for (Enumeration<NetworkInterface> e = NetworkInterface.getNetworkInterfaces();
                 e.hasMoreElements();) {
             NetworkInterface iface = e.nextElement();
-            if (isActive(iface, index++)) ifaceBuilder.add(iface);
+            if (isActive(iface)) ifaceBuilder.add(iface);
         }
 
         return ifaceBuilder.build();
     }
 
-    private boolean isActive(NetworkInterface iface, int index)
+    private boolean isActive(NetworkInterface iface)
             throws SocketException
     {
         // Can't filter by MAC address, since within a virtual machine
@@ -104,13 +103,10 @@ public abstract class AbstractLinkStateService implements ILinkStateService
 
         // This method takes a very long time on some computers. The following three info loggings
         // are to figure out which system call takes most of the time.
-        l.info("iface " + index);
         final String name = iface.getName();
-        l.info("  " + name);
         final boolean isUp = iface.isUp();
         final boolean isLoopback = iface.isLoopback();
         final boolean isVirtual = iface.isVirtual();
-        l.info("  " + isUp + " " + isLoopback + " " + isVirtual);
 
         // If debug is enabled, generate the debug message
         StringBuilder sb = new StringBuilder();
