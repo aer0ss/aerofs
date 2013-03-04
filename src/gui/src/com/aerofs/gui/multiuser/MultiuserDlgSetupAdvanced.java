@@ -11,9 +11,9 @@ import com.aerofs.lib.S;
 import com.aerofs.ui.PasswordVerifier;
 import com.aerofs.ui.PasswordVerifier.PasswordVerifierResult;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.Lists;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.custom.StackLayout;
 import org.eclipse.swt.events.ModifyEvent;
 import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.events.SelectionAdapter;
@@ -22,6 +22,7 @@ import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Listener;
@@ -29,6 +30,7 @@ import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
 
 import javax.annotation.Nullable;
+import java.util.List;
 
 public class MultiuserDlgSetupAdvanced extends AbstractDlgSetupAdvanced
 {
@@ -63,12 +65,14 @@ public class MultiuserDlgSetupAdvanced extends AbstractDlgSetupAdvanced
 
     private int _storageChoice = LOCAL_STORAGE_OPTION;
 
+    private Composite _container;
     private CompLocalStorage _compLocalStorage;
-    private Composite _compS3Storage;
+    private final List<Control> _s3Controls = Lists.newArrayList();
 
     private Label _lblS3Error;
 
-    protected MultiuserDlgSetupAdvanced(Shell parentShell, String deviceName, String absRootAnchor, S3Config s3Config, int storageChoice)
+    protected MultiuserDlgSetupAdvanced(Shell parentShell, String deviceName, String absRootAnchor,
+            S3Config s3Config, int storageChoice)
     {
         super(parentShell, deviceName, absRootAnchor);
         _s3Config = s3Config;
@@ -77,37 +81,21 @@ public class MultiuserDlgSetupAdvanced extends AbstractDlgSetupAdvanced
 
     protected void createStorageArea(Composite container)
     {
-        Composite compStorageArea  = new Composite(container, SWT.BORDER);
-        GridLayout glStorageArea = new GridLayout(2, false);
-        glStorageArea.marginWidth = GUIParam.MARGIN;
-        glStorageArea.marginHeight = GUIParam.MARGIN;
-        compStorageArea.setLayout(glStorageArea);
-        compStorageArea.setLayoutData(new GridData(SWT.FILL, SWT.TOP, false, false, 2, 1));
+        _container = container;
 
-        Label lblStorageSelector = new Label(compStorageArea, SWT.NONE);
+        Label lblStorageSelector = new Label(_container, SWT.NONE);
         lblStorageSelector.setText("Storage Option:");
 
-        final Combo storageSelector = new Combo(compStorageArea, SWT.DROP_DOWN | SWT.READ_ONLY);
+        final Combo storageSelector = new Combo(_container, SWT.DROP_DOWN | SWT.READ_ONLY);
         storageSelector.add(LOCAL_STORAGE_OPTION_TEXT, LOCAL_STORAGE_OPTION);
         storageSelector.add(S3_STORAGE_OPTION_TEXT, S3_STORAGE_OPTION);
 
-        new Label(container, SWT.NONE);
-        new Label(container, SWT.NONE);
+        _compLocalStorage = new CompLocalStorage(_container, getAbsoluteRootAnchor(),
+                LOCAL_STORAGE_EXPLANATION);
 
-        final Composite compStorage = new Composite(compStorageArea, SWT.NONE);
-        StackLayout sl = new StackLayout();
-        compStorage.setLayout(sl);
-        compStorage.setLayoutData(new GridData(SWT.FILL, SWT.TOP, false, false, 2, 1));
+        createS3StorageArea(_container);
 
-        _compLocalStorage = new CompLocalStorage(compStorage, getAbsoluteRootAnchor(), LOCAL_STORAGE_EXPLANATION);
-        GridData gdLocalStorage = new GridData(SWT.FILL, SWT.TOP, false, false, 2, 1);
-        gdLocalStorage.widthHint = WIDTH_HINT;
-        _compLocalStorage.setLayoutData(gdLocalStorage);
-
-        createS3StorageArea(compStorage);
-
-        sl.topControl = _compLocalStorage;
-        compStorage.layout();
+        updateStorageArea();
 
         storageSelector.addSelectionListener(new SelectionAdapter()
         {
@@ -150,7 +138,7 @@ public class MultiuserDlgSetupAdvanced extends AbstractDlgSetupAdvanced
                 PasswordVerifierResult result = verifyPasswords();
                 getButton(IDialogConstants.OK_ID).setEnabled(result == PasswordVerifierResult.OK);
                 _lblS3Error.setText(result.getMsg());
-                _compS3Storage.layout();
+                _container.layout();
                 return;
             default:
                 Preconditions.checkState(_storageChoice == LOCAL_STORAGE_OPTION ||
@@ -162,88 +150,96 @@ public class MultiuserDlgSetupAdvanced extends AbstractDlgSetupAdvanced
     private void updateStorageArea()
     {
         if (_storageChoice == LOCAL_STORAGE_OPTION) {
-            _compS3Storage.setVisible(false);
+            setS3Visible(false);
             _compLocalStorage.setVisible(true);
         } else {
-            _compS3Storage.setVisible(true);
             _compLocalStorage.setVisible(false);
+            setS3Visible(true);
+        }
+        _container.getShell().layout();
+        _container.getShell().pack();
+    }
+
+    public void setS3Visible(boolean visible)
+    {
+        for (Control c : _s3Controls) {
+            c.setVisible(visible);
+            ((GridData)c.getLayoutData()).exclude = !visible;
         }
     }
 
-
-
-    private Composite createS3StorageArea(Composite container)
+    private void createS3StorageArea(Composite container)
     {
-        _compS3Storage = new Composite(container, SWT.NONE);
-        GridLayout glComposite = new GridLayout(2, false);
-        glComposite.marginWidth = 0;
-        glComposite.marginHeight = 0;
-        _compS3Storage.setLayout(glComposite);
-        GridData gdS3Storage = new GridData(SWT.FILL, SWT.TOP, false, false, 2, 1);
-        gdS3Storage.widthHint = WIDTH_HINT;
-        _compS3Storage.setLayoutData(gdS3Storage);
+        addPlaceholder(container, _s3Controls);
 
-        new Label(_compS3Storage, SWT.NONE);
-        new Label(_compS3Storage, SWT.NONE);
-
-        Label lblExplanation = new Label(_compS3Storage, SWT.WRAP);
+        Label lblExplanation = new Label(container, SWT.WRAP);
         GridData gd = new GridData(SWT.LEFT, SWT.TOP, false, false, 2, 1);
         lblExplanation.setLayoutData(gd);
         lblExplanation.setText(S3_STORAGE_EXPLANATION);
+        _s3Controls.add(lblExplanation);
 
-        new Label(_compS3Storage, SWT.NONE);
-        new Label(_compS3Storage, SWT.NONE);
+        addPlaceholder(container, _s3Controls);
 
-        Label lblS3BucketId = new Label(_compS3Storage, SWT.NONE);
+        Label lblS3BucketId = new Label(container, SWT.NONE);
         lblS3BucketId.setLayoutData(new GridData(SWT.RIGHT, SWT.TOP, false, false, 1, 1));
         lblS3BucketId.setText(S.SETUP_S3_BUCKET_NAME + ":");
+        _s3Controls.add(lblS3BucketId);
 
-        _txtS3BucketId = new Text(_compS3Storage, SWT.BORDER);
+        _txtS3BucketId = new Text(container, SWT.BORDER);
         _txtS3BucketId.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 1, 1));
+        _s3Controls.add(_txtS3BucketId);
 
-        Label lblS3AccessKey = new Label(_compS3Storage, SWT.NONE);
+        Label lblS3AccessKey = new Label(container, SWT.NONE);
         lblS3AccessKey.setLayoutData(new GridData(SWT.RIGHT, SWT.TOP, false, false, 1, 1));
         lblS3AccessKey.setText(S.SETUP_S3_ACCESS_KEY + ":");
+        _s3Controls.add(lblS3AccessKey);
 
-        _txtS3AccessKey = new Text(_compS3Storage, SWT.BORDER);
+        _txtS3AccessKey = new Text(container, SWT.BORDER);
         _txtS3AccessKey.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 1, 1));
+        _s3Controls.add(_txtS3AccessKey);
 
-        Label lblS3SecretKey = new Label(_compS3Storage, SWT.NONE);
+        Label lblS3SecretKey = new Label(container, SWT.NONE);
         lblS3SecretKey.setLayoutData(new GridData(SWT.RIGHT, SWT.TOP, false, false, 1, 1));
         lblS3SecretKey.setText(S.SETUP_S3_SECRET_KEY + ":");
+        _s3Controls.add(lblS3SecretKey);
 
-        _txtS3SecretKey = new Text(_compS3Storage, SWT.BORDER);
+        _txtS3SecretKey = new Text(container, SWT.BORDER);
         _txtS3SecretKey.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 1, 1));
+        _s3Controls.add(_txtS3SecretKey);
 
-        new Label(_compS3Storage, SWT.NONE);
-        new Label(_compS3Storage, SWT.NONE);
+        addPlaceholder(container, _s3Controls);
 
-        Label lblPassphrase = new Label(_compS3Storage, SWT.WRAP);
+        Label lblPassphrase = new Label(container, SWT.WRAP);
         GridData gdPassphrase = new GridData(SWT.LEFT, SWT.TOP, false, false, 2, 1);
         lblPassphrase.setLayoutData(gdPassphrase);
         lblPassphrase.setText(S3_PASSWORD_EXPLANATION);
+        _s3Controls.add(lblPassphrase);
 
-        new Label(_compS3Storage, SWT.NONE);
-        new Label(_compS3Storage, SWT.NONE);
+        addPlaceholder(container, _s3Controls);
 
-        Label lblS3Passphrase = new Label(_compS3Storage, SWT.NONE);
+        Label lblS3Passphrase = new Label(container, SWT.NONE);
         lblS3Passphrase.setLayoutData(new GridData(SWT.RIGHT, SWT.TOP, false, false, 1, 1));
         lblS3Passphrase.setText("Passphrase:");
+        _s3Controls.add(lblS3Passphrase);
 
-        _txtS3Passphrase = new Text(_compS3Storage, SWT.BORDER | SWT.PASSWORD);
+        _txtS3Passphrase = new Text(container, SWT.BORDER | SWT.PASSWORD);
         _txtS3Passphrase.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 1, 1));
+        _s3Controls.add(_txtS3Passphrase);
 
-        Label lblS3Passphrase2 = new Label(_compS3Storage, SWT.NONE);
+        Label lblS3Passphrase2 = new Label(container, SWT.NONE);
         lblS3Passphrase2.setLayoutData(new GridData(SWT.RIGHT, SWT.TOP, false, false, 1, 1));
         lblS3Passphrase2.setText("Confirm Passphrase:");
+        _s3Controls.add(lblS3Passphrase2);
 
-        _txtS3Passphrase2 = new Text(_compS3Storage, SWT.BORDER | SWT.PASSWORD);
+        _txtS3Passphrase2 = new Text(container, SWT.BORDER | SWT.PASSWORD);
         _txtS3Passphrase2.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 1, 1));
+        _s3Controls.add(_txtS3Passphrase2);
 
-        _lblS3Error= new Label(_compS3Storage, SWT.WRAP);
+        _lblS3Error= new Label(container, SWT.WRAP);
         GridData gdError = new GridData(SWT.RIGHT, SWT.TOP, false, false, 2, 1);
         gdPassphrase.widthHint = 300;
         _lblS3Error.setLayoutData(gdError);
+        _s3Controls.add(_lblS3Error);
 
         _txtS3Passphrase.addModifyListener(new ModifyListener()
         {
@@ -262,7 +258,13 @@ public class MultiuserDlgSetupAdvanced extends AbstractDlgSetupAdvanced
                 updateOkButtonState();
             }
         });
-        return _compS3Storage;
+    }
+
+    private void addPlaceholder(Composite container, List<Control> controls)
+    {
+        Label l = new Label(container, SWT.NONE);
+        l.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 2, 1));
+        controls.add(l);
     }
 
     private PasswordVerifierResult verifyPasswords()

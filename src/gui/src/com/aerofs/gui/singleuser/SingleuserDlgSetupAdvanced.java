@@ -7,7 +7,6 @@ package com.aerofs.gui.singleuser;
 import com.aerofs.gui.setup.AbstractDlgSetupAdvanced;
 import com.aerofs.gui.setup.CompLocalStorage;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Listener;
@@ -26,7 +25,6 @@ public class SingleuserDlgSetupAdvanced extends AbstractDlgSetupAdvanced
     protected void createStorageArea(Composite container)
     {
         _compLocalStorage = new CompLocalStorage(container, getAbsoluteRootAnchor());
-        _compLocalStorage.setLayoutData(new GridData(SWT.FILL, SWT.TOP, false, false, 2, 1));
 
         getShell().addListener(SWT.Show, new Listener() {
 
