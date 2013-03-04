@@ -7,6 +7,9 @@ import com.aerofs.base.Loggers;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.lib.acl.Role;
 import com.aerofs.base.id.UserID;
+import com.aerofs.lib.rocklog.EventProperty;
+import com.aerofs.lib.rocklog.EventType;
+import com.aerofs.lib.rocklog.RockLog;
 import com.aerofs.ui.UIUtil;
 import org.slf4j.Logger;
 import org.eclipse.jface.dialogs.IDialogConstants;
@@ -41,10 +44,8 @@ import com.aerofs.lib.ritual.RitualBlockingClient;
 import com.aerofs.lib.ritual.RitualClientFactory;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.sp.client.SPClientFactory;
-import com.aerofs.sv.client.SVClient;
 import com.aerofs.proto.Common.PBPath;
 import com.aerofs.proto.Common.PBSubjectRolePair;
-import com.aerofs.proto.Sv;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.UI;
 import com.google.common.collect.Lists;
@@ -288,8 +289,9 @@ public class CompInviteUsers extends Composite implements IInputChangeListener
                     ritual.close();
                 }
 
-                SVClient.sendEventAsync(Sv.PBSVEvent.Type.INVITE_SENT,
-                        Integer.toString(subjects.size()));
+                RockLog.newEvent(EventType.FOLDER_INVITE_SENT)
+                        .addProperty(EventProperty.COUNT, Integer.toString(subjects.size()))
+                        .sendAsync();
             }
         });
     }

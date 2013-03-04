@@ -81,9 +81,9 @@ public class RockLog
         return new Defect(getInstance(), _cfg, name);
     }
 
-    public static Event newEvent(String name)
+    public static Event newEvent(EventType event)
     {
-        return new Event(getInstance(), _cfg, name);
+        return new Event(getInstance(), _cfg, event);
     }
 
     public static Metrics newMetrics()
