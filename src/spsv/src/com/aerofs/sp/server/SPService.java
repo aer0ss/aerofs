@@ -1066,6 +1066,15 @@ public class SPService implements ISPService
         // send verkehr notifications as the last step of the transaction
         publishACLs_(incrementACLEpochs_(users));
 
+        Collection<Device> peerDevices = user.getPeerDevices();
+        l.debug("size = " + peerDevices.size());
+        // Refresh CRLs for peer devices once this user joins the shared folder (since the peer user
+        // map may have changed).
+        for (Device peer : peerDevices) {
+            l.debug(peer.id().toStringFormal()+ " refresh CRL");
+            addToCommandQueueAndSendVerkehrMessage(peer.id(), CommandType.REFRESH_CRL);
+        }
+
         _sqlTrans.commit();
 
         return createVoidReply();

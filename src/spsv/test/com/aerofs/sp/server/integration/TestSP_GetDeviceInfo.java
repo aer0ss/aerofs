@@ -41,6 +41,7 @@ public class TestSP_GetDeviceInfo extends AbstractSPFolderPermissionTest
         throws Exception
     {
         mockAndCaptureVerkehrPublish();
+        mockAndCaptureVerkehrDeliverPayload();
 
         sqlTrans.begin();
 

@@ -4,6 +4,9 @@
 
 package com.aerofs.sp.server.integration;
 
+import com.aerofs.base.id.DID;
+import com.aerofs.base.id.UniqueID;
+import com.aerofs.proto.Cmd.Command;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.Param;
 import com.aerofs.lib.acl.Role;
@@ -12,11 +15,14 @@ import com.aerofs.lib.ex.ExBadArgs;
 import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
+import com.aerofs.proto.Cmd.CommandType;
 import com.aerofs.sp.server.lib.id.OrganizationID;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
+import junit.framework.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.List;
 import java.util.Set;
 
 import static junit.framework.Assert.assertEquals;
@@ -61,11 +67,13 @@ public class TestSP_ShareFolder extends AbstractSPFolderPermissionTest
     }
 
     Set<String> published;
+    List<Command> delivered;
 
     @Before
     public void setupTestSPShareFolder()
     {
         published = mockAndCaptureVerkehrPublish();
+        delivered = mockAndCaptureVerkehrDeliverPayload();
     }
 
     @Test
@@ -176,5 +184,30 @@ public class TestSP_ShareFolder extends AbstractSPFolderPermissionTest
 
         // the second call should not fail
         shareFolder(USER_1, TEST_SID_1, USER_2, Role.EDITOR);
+    }
+
+    @Test
+    public void shouldSendRefreshCRLWhenJoiningSharedFolder()
+            throws Exception
+    {
+        sqlTrans.begin();
+
+        // User 1
+        ddb.insertDevice(DID.generate(), USER_1, "", "", "Device A1");
+        ddb.insertDevice(DID.generate(), USER_1, "", "", "Device A2");
+
+        // User 2
+        ddb.insertDevice(DID.generate(), USER_2, "", "", "Device B1");
+
+        sqlTrans.commit();
+
+        shareAndJoinFolder(USER_1, TEST_SID_1, USER_2, Role.EDITOR);
+
+        // 3 refresh CRL commands.
+        Assert.assertEquals(3, delivered.size());
+
+        for (Command command : delivered) {
+            Assert.assertEquals(CommandType.REFRESH_CRL, command.getType());
+        }
     }
 }
