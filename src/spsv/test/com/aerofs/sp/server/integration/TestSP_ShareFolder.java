@@ -5,7 +5,6 @@
 package com.aerofs.sp.server.integration;
 
 import com.aerofs.base.id.DID;
-import com.aerofs.base.id.UniqueID;
 import com.aerofs.proto.Cmd.Command;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.Param;

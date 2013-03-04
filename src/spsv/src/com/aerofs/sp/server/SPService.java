@@ -1726,8 +1726,8 @@ public class SPService implements ISPService
         throwIfSessionUserIsNotOrAdminOf(device.getOwner());
 
         // TODO (WW) print session user in log headers
-        l.info("{} unlinks {}, erase {}, session user {}", user, device, erase,
-                _sessionUser.get());
+        l.info("{} unlinks {}, erase {}, session user {}", user, device.id().toStringFormal(),
+                erase, _sessionUser.get());
 
         unlinkDeviceImplementation(device, erase);
 

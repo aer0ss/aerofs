@@ -31,7 +31,7 @@ public class RequestToSignUpEmailer
         // The default page after the sign up page is billing. We set it as the default so users
         // wouldn't easily figure out by looking at the invitation URL that they can use AeroFS for
         // free immediately after signing up without paying. This can be used to bypass the
-        // invitation system for Personal uses. See src/web/moduels/signup/views.py.
+        // invitation system for Personal uses. See src/web/modules/signup/views.py.
         //
         // N.B. the parameter key string must be identical to that in signup/views.py.
         // TODO (WW) use protobuf to share constants between Python and Java code?

@@ -8,7 +8,6 @@ import com.aerofs.base.BaseParam.SP;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.gui.GuiScheduler;
-import com.aerofs.labeling.L;
 import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.Param;
 import com.aerofs.lib.Util;
@@ -363,11 +362,6 @@ public final class CommandNotificationSubscriber
     private void unlinkSelf()
             throws Exception
     {
-        // TODO (MP) support multi user unlink.
-        if (L.get().isMultiuser()) {
-            throw new UnsupportedOperationException();
-        }
-
         // Metrics.
         SVClient.sendEventAsync(Type.UNLINK);
         RockLog.newEvent(EventType.UNLINK_DEVICE).sendAsync();
@@ -376,15 +370,9 @@ public final class CommandNotificationSubscriber
         shutdownImplementation();
     }
 
-
     private void unlinkAndWipeSelf()
             throws Exception
     {
-        // TODO (MP) support multi user remote wipe.
-        if (L.get().isMultiuser()) {
-            throw new UnsupportedOperationException();
-        }
-
         // Metrics.
         SVClient.sendEventAsync(Type.UNLINK_AND_WIPE);
         RockLog.newEvent(EventType.UNLINK_AND_WIPE).sendAsync();

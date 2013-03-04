@@ -20,6 +20,7 @@ PACKAGES= \
 	sv \
 	syncstat \
 	syncstat-tools \
+	jeq-tools \
 	verkehr \
 	vmhost \
 	web \
