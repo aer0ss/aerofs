@@ -77,7 +77,8 @@ public class TestSP_CRL extends AbstractSPCertificateBasedTest
         assertTrue(reply.getSerialList().get(0) == getLastSerialNumber());
     }
 
-    public void shouldNotThrowIfRevokeDeviceCertificateMoreThanOnce()
+    @Test(expected = ExNotFound.class)
+    public void shouldThrowIfUnlinkDeviceCertificateMoreThanOnce()
             throws Exception
     {
         service.unlinkDevice(_did.toPB(), false);
