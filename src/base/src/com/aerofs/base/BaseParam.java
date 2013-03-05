@@ -60,6 +60,7 @@ public class BaseParam
     {
         public static final String WEB_BASE = "https://www.aerofs.com";
         public static final String DASH_BOARD_BASE = "https://my.aerofs.com";
+        public static final String PASSWORD_RESET_REQUEST_URL = DASH_BOARD_BASE + "/request_password_reset";
 
         // TODO (WW) use protobuf to share constants between Python and Java code?
         public static final String TEAM_MANAGEMENT_LINK = DASH_BOARD_BASE + "/admin/users";
