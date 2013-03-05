@@ -114,7 +114,7 @@ public class PersistentQueueDriver<I, O>
      * which is not true in this case. It also wouldn't do the exp-retry for us so it's not worth
      * trying to use it.
      */
-    public void scheduleScan_()
+    public void scheduleScan_(final Class<?>... excludes)
     {
         if (_scanInProgress) return;
         _sched.schedule(new AbstractEBSelfHandling() {
@@ -132,7 +132,7 @@ public class PersistentQueueDriver<I, O>
                         scanImpl_();
                         return null;
                     }
-                });
+                }, excludes);
             }
         }, 0);
     }

@@ -259,6 +259,11 @@ public class SyncStatusSynchronizer extends AbstractDirectoryServiceListener
         }
     }
 
+    void schedulePush_()
+    {
+        _pqd.scheduleScan_(IOException.class);
+    }
+
     /**
      * Schedule a pull from the sync status server with exponential retry
      */
@@ -285,7 +290,7 @@ public class SyncStatusSynchronizer extends AbstractDirectoryServiceListener
             } catch (ExSignIn e) {
                 if (onSignIn_(e._epoch)) {
                     // need to schedule a new scan to resend vh after epoch rollback
-                    _pqd.scheduleScan_();
+                    schedulePush_();
                 }
                 // immediately retry making the call now that we're signed-in
                 continue;
@@ -599,7 +604,7 @@ public class SyncStatusSynchronizer extends AbstractDirectoryServiceListener
                 @Override
                 public void committed_()
                 {
-                    _pqd.scheduleScan_();
+                    schedulePush_();
                 }
             });
             return set;
