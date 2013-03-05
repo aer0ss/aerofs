@@ -598,7 +598,8 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase
                 rs.close();
             }
         } catch (SQLException e) {
-            _psGSCC.close();
+            DBUtil.close(_psGSCC);
+            _psGSCC = null;
             throw e;
         }
     }
