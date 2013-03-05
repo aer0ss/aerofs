@@ -445,7 +445,6 @@ public class Aliasing
         }
 
         l.info("target: " + oaTarget);
-        assert oaTarget.fidIsConsistentWithCAsOrExpulsion();
 
         // Increment local version of the alias object, if required.
         if (!ar._alias.equals(soidNoNewVersion)) {
