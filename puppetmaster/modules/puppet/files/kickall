@@ -5,7 +5,7 @@ require "net/https"
 require "pry"
 require 'thread'
 
-NUMBER_OF_THREADS = 2
+NUMBER_OF_THREADS = 8
 
 class Kick
   attr_reader :update_status, :useful_logs
