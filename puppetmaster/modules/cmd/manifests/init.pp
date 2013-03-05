@@ -27,6 +27,7 @@ class cmd {
     package{[
         "aerofs-cmd-server",
         "aerofs-cmd-tools",
+        "aerofs-common",
         "python-redis"
     ]:
         ensure => latest,
