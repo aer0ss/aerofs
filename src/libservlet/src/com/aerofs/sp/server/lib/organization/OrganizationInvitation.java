@@ -4,7 +4,7 @@
 
 package com.aerofs.sp.server.lib.organization;
 
-import com.aerofs.lib.ex.ExNotFound;
+import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.UserID;
 import com.aerofs.sp.server.lib.OrganizationInvitationDatabase;
 import com.aerofs.sp.server.lib.id.OrganizationID;

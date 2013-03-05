@@ -31,7 +31,7 @@ import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.FrequentDefectSender;
 import com.aerofs.lib.ProgressIndicators;
 import com.aerofs.lib.db.IDBIterator;
-import com.aerofs.lib.ex.ExNotFound;
+import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.lib.id.*;
 
 import com.google.common.base.Joiner;
@@ -46,8 +46,8 @@ import javax.annotation.Nullable;
 
 import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.lib.IDumpStatMisc;
-import com.aerofs.lib.ex.ExAlreadyExist;
-import com.aerofs.lib.ex.ExExpelled;
+import com.aerofs.base.ex.ExAlreadyExist;
+import com.aerofs.daemon.core.ex.ExExpelled;
 import com.aerofs.lib.ex.ExNotDir;
 import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.Path;

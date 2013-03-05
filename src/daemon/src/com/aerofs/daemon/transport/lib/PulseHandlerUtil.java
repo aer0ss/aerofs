@@ -8,7 +8,7 @@ package com.aerofs.daemon.transport.lib;
 import com.aerofs.daemon.event.net.EOTpSubsequentPulse;
 import com.aerofs.daemon.event.net.IPulseEvent;
 import com.aerofs.lib.sched.Scheduler;
-import com.aerofs.lib.ex.ExNoResource;
+import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.base.id.DID;
 import org.slf4j.Logger;
 

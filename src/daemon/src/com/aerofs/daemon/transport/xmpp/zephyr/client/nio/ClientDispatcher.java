@@ -10,7 +10,7 @@ import com.aerofs.daemon.lib.BlockingPrioQueue;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.sched.Scheduler;
 import com.aerofs.lib.OutArg;
-import com.aerofs.lib.ex.ExNoResource;
+import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.zephyr.core.Dispatcher;
 
 import static com.aerofs.daemon.lib.DaemonParam.QUEUE_LENGTH_DEFAULT;

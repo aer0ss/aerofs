@@ -5,7 +5,7 @@
 package com.aerofs.sp.server.integration;
 
 import com.aerofs.sp.server.lib.id.StripeCustomerID;
-import com.aerofs.lib.ex.ExNoPerm;
+import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.proto.Sp.PBAuthorizationLevel;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import org.junit.Before;

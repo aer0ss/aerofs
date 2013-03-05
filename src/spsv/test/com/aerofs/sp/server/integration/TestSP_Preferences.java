@@ -4,7 +4,7 @@
 
 package com.aerofs.sp.server.integration;
 
-import com.aerofs.lib.ex.ExNotFound;
+import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.proto.Sp.GetUserPreferencesReply;
 import org.junit.Before;
 import org.junit.Test;

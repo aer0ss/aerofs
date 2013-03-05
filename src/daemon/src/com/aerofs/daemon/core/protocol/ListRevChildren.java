@@ -14,7 +14,7 @@ import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.store.MapSIndex2Store;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.ex.ExProtocolError;
+import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.proto.Core.PBCore;
 import com.aerofs.proto.Core.PBCore.Type;
 import com.aerofs.proto.Core.PBListRevChildrenRequest;

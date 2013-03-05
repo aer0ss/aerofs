@@ -4,7 +4,7 @@ import com.aerofs.base.BaseParam.SP;
 import com.aerofs.base.Loggers;
 import com.aerofs.lib.Util;
 import com.aerofs.base.BaseParam.SV;
-import com.aerofs.lib.ex.ExAlreadyExist;
+import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExEmailSendingFailed;
 import com.aerofs.base.id.UserID;
 import com.aerofs.proto.Sp.SPServiceReactor;

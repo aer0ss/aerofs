@@ -2,7 +2,7 @@ package com.aerofs.daemon.event.lib.imc;
 
 import com.aerofs.lib.event.IEvent;
 import com.aerofs.lib.event.Prio;
-import com.aerofs.lib.ex.ExNoResource;
+import com.aerofs.base.ex.ExNoResource;
 
 public interface IIMCExecutor {
 

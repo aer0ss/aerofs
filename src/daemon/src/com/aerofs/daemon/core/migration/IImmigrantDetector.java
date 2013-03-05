@@ -8,9 +8,9 @@ import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.exception.ExStreamInvalid;
-import com.aerofs.lib.ex.ExAlreadyExist;
+import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExNotDir;
-import com.aerofs.lib.ex.ExNotFound;
+import com.aerofs.base.ex.ExNotFound;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;

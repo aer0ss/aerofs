@@ -6,7 +6,7 @@ package com.aerofs.shell;
 
 import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.ex.ExBadArgs;
+import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.google.protobuf.ByteString;
 import org.apache.commons.cli.CommandLine;

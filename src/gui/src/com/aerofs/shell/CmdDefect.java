@@ -12,7 +12,7 @@ import com.aerofs.lib.Param;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.ex.ExBadArgs;
+import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.InternalDiagnostics;
 import com.aerofs.lib.ritual.RitualBlockingClient;
 import com.aerofs.sv.client.SVClient;

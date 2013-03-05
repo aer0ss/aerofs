@@ -6,7 +6,7 @@
 package com.aerofs.daemon.transport.xmpp;
 
 import com.aerofs.base.id.DID;
-import com.aerofs.lib.ex.ExNoResource;
+import com.aerofs.base.ex.ExNoResource;
 
 import static com.aerofs.proto.Transport.PBTPHeader;
 

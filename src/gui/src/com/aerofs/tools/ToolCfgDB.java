@@ -21,7 +21,7 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
-import com.aerofs.lib.ex.ExBadArgs;
+import com.aerofs.base.ex.ExBadArgs;
 
 public class ToolCfgDB implements ITool {
 

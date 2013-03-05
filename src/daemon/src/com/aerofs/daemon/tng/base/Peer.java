@@ -19,7 +19,7 @@ import com.aerofs.daemon.tng.ex.ExTransport;
 import com.aerofs.lib.OutArg;
 import com.aerofs.base.async.FailedFutureCallback;
 import com.aerofs.base.async.UncancellableFuture;
-import com.aerofs.lib.ex.ExNoResource;
+import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.base.id.SID;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.ListenableFuture;

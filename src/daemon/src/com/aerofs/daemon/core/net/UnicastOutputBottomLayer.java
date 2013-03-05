@@ -4,7 +4,7 @@ import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.CoreDeviceLRU;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.tc.TC;
-import com.aerofs.lib.ex.ExAborted;
+import com.aerofs.daemon.core.ex.ExAborted;
 import com.aerofs.proto.Transport.PBStream.InvalidationReason;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
@@ -20,8 +20,8 @@ import com.aerofs.daemon.event.net.tx.EOTxAbortStream;
 import com.aerofs.daemon.event.net.tx.EOTxEndStream;
 import com.aerofs.daemon.event.net.tx.EOUnicastMessage;
 import com.aerofs.daemon.lib.id.StreamID;
-import com.aerofs.lib.ex.ExNoResource;
-import com.aerofs.lib.ex.ExNotFound;
+import com.aerofs.base.ex.ExNoResource;
+import com.aerofs.base.ex.ExNotFound;
 
 public class UnicastOutputBottomLayer implements IUnicastOutputLayer
 {

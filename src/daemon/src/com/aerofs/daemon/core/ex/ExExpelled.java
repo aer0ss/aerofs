@@ -1,4 +1,4 @@
-package com.aerofs.lib.ex;
+package com.aerofs.daemon.core.ex;
 
 import com.aerofs.base.ex.AbstractExWirable;
 import com.aerofs.proto.Common.PBException;
@@ -31,6 +31,6 @@ public class ExExpelled extends AbstractExWirable
     @Override
     public Type getWireType()
     {
-        return Type.EXCLUDED;
+        return Type.EXPELLED;
     }
 }

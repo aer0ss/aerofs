@@ -4,6 +4,7 @@
 
 package com.aerofs.lib.ex;
 
+import com.aerofs.base.ex.IExObfuscated;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.lib.obfuscate.ObfuscatingFormatter.FormattedMessage;

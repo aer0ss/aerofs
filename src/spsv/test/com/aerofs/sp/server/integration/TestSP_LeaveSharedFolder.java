@@ -7,8 +7,8 @@ package com.aerofs.sp.server.integration;
 import com.aerofs.base.id.SID;
 import com.aerofs.lib.Param;
 import com.aerofs.lib.acl.Role;
-import com.aerofs.lib.ex.ExBadArgs;
-import com.aerofs.lib.ex.ExNotFound;
+import com.aerofs.base.ex.ExBadArgs;
+import com.aerofs.base.ex.ExNotFound;
 import org.junit.Before;
 import org.junit.Test;
 

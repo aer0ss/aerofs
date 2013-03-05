@@ -1,4 +1,8 @@
-package com.aerofs.lib.ex;
+/*
+ * Copyright (c) Air Computing Inc., 2013.
+ */
+
+package com.aerofs.base.ex;
 
 import com.aerofs.base.ex.AbstractExWirable;
 import com.aerofs.proto.Common.PBException;

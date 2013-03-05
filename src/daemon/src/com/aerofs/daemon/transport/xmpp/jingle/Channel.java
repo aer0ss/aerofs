@@ -15,7 +15,7 @@ import com.aerofs.j.StreamState;
 import com.aerofs.j.j;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExJingle;
-import com.aerofs.lib.ex.ExNoResource;
+import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.base.id.DID;
 import com.aerofs.proto.Transport.PBTPHeader;
 import org.slf4j.Logger;

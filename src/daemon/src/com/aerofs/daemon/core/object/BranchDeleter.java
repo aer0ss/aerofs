@@ -7,7 +7,7 @@ import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.Version;
-import com.aerofs.lib.ex.ExNotFound;
+import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.lib.id.CID;
 import com.aerofs.lib.id.SOCKID;
 import com.google.inject.Inject;

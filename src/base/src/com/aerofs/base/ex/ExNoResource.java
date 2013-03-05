@@ -1,19 +1,28 @@
-package com.aerofs.lib.ex;
+/*
+ * Copyright (c) Air Computing Inc., 2013.
+ */
+
+package com.aerofs.base.ex;
 
 import com.aerofs.base.ex.AbstractExWirable;
 import com.aerofs.proto.Common.PBException;
 import com.aerofs.proto.Common.PBException.Type;
 
-public class ExNotShared extends AbstractExWirable
+public class ExNoResource extends AbstractExWirable
 {
     private static final long serialVersionUID = 1L;
 
-    public ExNotShared()
+    public ExNoResource()
     {
         super();
     }
 
-    public ExNotShared(PBException pb)
+    public ExNoResource(String msg)
+    {
+        super(msg);
+    }
+
+    public ExNoResource(PBException pb)
     {
         super(pb);
     }
@@ -21,6 +30,6 @@ public class ExNotShared extends AbstractExWirable
     @Override
     public Type getWireType()
     {
-        return Type.NOT_SHARED;
+        return Type.NO_RESOURCE;
     }
 }

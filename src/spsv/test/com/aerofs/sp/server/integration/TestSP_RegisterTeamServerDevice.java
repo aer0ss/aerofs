@@ -5,7 +5,7 @@
 package com.aerofs.sp.server.integration;
 
 import com.aerofs.sp.server.lib.id.StripeCustomerID;
-import com.aerofs.lib.ex.ExNoPerm;
+import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UniqueID;
 import com.aerofs.base.id.UserID;

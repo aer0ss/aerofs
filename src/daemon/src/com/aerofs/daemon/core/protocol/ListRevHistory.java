@@ -14,7 +14,7 @@ import com.aerofs.daemon.core.store.MapSIndex2Store;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Version;
 import com.aerofs.lib.cfg.CfgLocalDID;
-import com.aerofs.lib.ex.ExProtocolError;
+import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.base.id.DID;
 import com.aerofs.proto.Core.PBCore;
 import com.aerofs.proto.Core.PBCore.Type;

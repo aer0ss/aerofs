@@ -4,7 +4,7 @@
 
 package com.aerofs.lib.acl;
 
-import com.aerofs.lib.ex.ExBadArgs;
+import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.id.UserID;
 import com.aerofs.proto.Common.PBSubjectRolePair;
 import com.google.common.collect.Lists;

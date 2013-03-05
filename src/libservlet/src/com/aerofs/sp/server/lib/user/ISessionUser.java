@@ -4,7 +4,7 @@
 
 package com.aerofs.sp.server.lib.user;
 
-import com.aerofs.lib.ex.ExNoPerm;
+import com.aerofs.base.ex.ExNoPerm;
 
 import javax.annotation.Nonnull;
 

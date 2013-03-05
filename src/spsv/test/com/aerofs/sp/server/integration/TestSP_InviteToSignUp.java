@@ -4,7 +4,7 @@
 
 package com.aerofs.sp.server.integration;
 
-import com.aerofs.lib.ex.ExBadArgs;
+import com.aerofs.base.ex.ExBadArgs;
 import org.junit.Test;
 import org.mockito.Mockito;
 

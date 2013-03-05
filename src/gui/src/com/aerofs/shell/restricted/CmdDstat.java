@@ -5,7 +5,7 @@ import org.apache.commons.cli.Options;
 
 import com.aerofs.lib.JsonFormat;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.ex.ExBadArgs;
+import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.proto.Files.PBDumpStat;
 import com.aerofs.proto.Files.PBDumpStat.PBTransport;
 import com.aerofs.proto.Ritual.DumpStatsReply;

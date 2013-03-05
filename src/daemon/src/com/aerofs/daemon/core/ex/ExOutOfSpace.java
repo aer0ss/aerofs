@@ -1,24 +1,19 @@
-package com.aerofs.lib.ex;
+package com.aerofs.daemon.core.ex;
 
 import com.aerofs.base.ex.AbstractExWirable;
 import com.aerofs.proto.Common.PBException;
 import com.aerofs.proto.Common.PBException.Type;
 
-public class ExNoResource extends AbstractExWirable
+public class ExOutOfSpace extends AbstractExWirable
 {
     private static final long serialVersionUID = 1L;
 
-    public ExNoResource()
+    public ExOutOfSpace()
     {
         super();
     }
 
-    public ExNoResource(String msg)
-    {
-        super(msg);
-    }
-
-    public ExNoResource(PBException pb)
+    public ExOutOfSpace(PBException pb)
     {
         super(pb);
     }
@@ -26,6 +21,6 @@ public class ExNoResource extends AbstractExWirable
     @Override
     public Type getWireType()
     {
-        return Type.NO_RESOURCE;
+        return Type.OUT_OF_SPACE;
     }
 }

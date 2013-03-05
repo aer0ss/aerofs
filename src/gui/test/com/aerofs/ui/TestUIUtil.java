@@ -4,7 +4,7 @@
 
 package com.aerofs.ui;
 
-import com.aerofs.lib.ex.IExObfuscated;
+import com.aerofs.base.ex.IExObfuscated;
 import com.aerofs.testlib.AbstractTest;
 import org.junit.Test;
 

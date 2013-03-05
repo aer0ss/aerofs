@@ -6,8 +6,8 @@ package com.aerofs.sp.server.database_objects;
 
 import com.aerofs.lib.acl.Role;
 import com.aerofs.lib.acl.SubjectRolePair;
-import com.aerofs.lib.ex.ExAlreadyExist;
-import com.aerofs.lib.ex.ExBadArgs;
+import com.aerofs.base.ex.ExAlreadyExist;
+import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.sp.server.AbstractAutoTransactionedTestWithSPDatabase;

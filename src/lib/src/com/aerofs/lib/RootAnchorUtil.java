@@ -7,9 +7,9 @@ package com.aerofs.lib;
 import com.aerofs.base.id.DID;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.ex.ExAlreadyExist;
-import com.aerofs.lib.ex.ExBadArgs;
-import com.aerofs.lib.ex.ExNoPerm;
+import com.aerofs.base.ex.ExAlreadyExist;
+import com.aerofs.base.ex.ExBadArgs;
+import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.lib.ex.ExNotDir;
 import com.aerofs.lib.ex.ExUIMessage;
 import com.aerofs.base.id.UniqueID;
@@ -37,8 +37,8 @@ public abstract class RootAnchorUtil
      * exists.
      *
      * @throws com.aerofs.lib.ex.ExNotDir if the root anchor path points to a file.
-     * @throws com.aerofs.lib.ex.ExAlreadyExist if the root anchor is nonempty
-     * @throws com.aerofs.lib.ex.ExNoPerm if AeroFS cannot read or write to root anchor
+     * @throws com.aerofs.base.ex.ExAlreadyExist if the root anchor is nonempty
+     * @throws com.aerofs.base.ex.ExNoPerm if AeroFS cannot read or write to root anchor
      * @throws com.aerofs.lib.ex.ExUIMessage if root anchor filesystem is not supported
      */
     public static void checkRootAnchor(String rootAnchor, String rtRoot,

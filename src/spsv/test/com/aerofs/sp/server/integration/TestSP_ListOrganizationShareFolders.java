@@ -8,7 +8,7 @@ import com.aerofs.proto.Sp.PBSharedFolder;
 import com.aerofs.proto.Sp.PBSharedFolder.PBUserAndRole;
 import com.aerofs.sp.server.lib.id.StripeCustomerID;
 import com.aerofs.lib.acl.Role;
-import com.aerofs.lib.ex.ExNoPerm;
+import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
 import org.junit.Before;

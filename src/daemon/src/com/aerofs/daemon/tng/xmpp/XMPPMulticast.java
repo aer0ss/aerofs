@@ -21,7 +21,7 @@ import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.base.async.UncancellableFuture;
 import com.aerofs.base.ex.ExFormatError;
-import com.aerofs.lib.ex.ExProtocolError;
+import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.base.id.SID;
 import com.aerofs.lib.notifier.IListenerVisitor;
 import com.aerofs.lib.notifier.Notifier;

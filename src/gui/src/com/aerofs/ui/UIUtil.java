@@ -3,6 +3,8 @@ package com.aerofs.ui;
 import com.aerofs.base.BaseParam.SP;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.AbstractExWirable;
+import com.aerofs.base.ex.IExObfuscated;
+import com.aerofs.controller.ExLaunchAborted;
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.gui.setup.DlgJoinSharedFolders;
@@ -236,7 +238,7 @@ public class UIUtil
                 launch(preLaunch, postLaunch);
                 break;
             }
-        } catch (ExAborted e) {
+        } catch (ExLaunchAborted e) {
             // User clicked on cancel, exit without error messages
             System.exit(0);
         } catch (Exception e) {

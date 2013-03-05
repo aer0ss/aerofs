@@ -16,9 +16,8 @@ import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.cfg.CfgKeyManagersProvider;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
-import com.aerofs.lib.ex.ExAborted;
-import com.aerofs.lib.ex.ExBadArgs;
-import com.aerofs.lib.ex.ExNoPerm;
+import com.aerofs.base.ex.ExBadArgs;
+import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.lib.ritual.RitualBlockingClient;
 import com.aerofs.lib.ritual.RitualClientFactory;
@@ -247,7 +246,7 @@ public final class CommandNotificationSubscriber
             if (more && errorCount < currentQueueSize) {
                 scheduleSyncWithCommandServer();
             } else if (errorCount > 0) {
-                throw new ExAborted("command execution failed");
+                throw new CommandFailed();
             }
 
             // Everything went perfectly, sync complete.
@@ -432,5 +431,10 @@ public final class CommandNotificationSubscriber
         Cfg.db().set(Key.CRED, Key.CRED.defaultValue());
         // Create the setup file.
         _factFile.create(Util.join(Cfg.absRTRoot(), Param.SETTING_UP)).createNewFile();
+    }
+
+    private static class CommandFailed extends Exception
+    {
+        private static final long serialVersionUID = -5178178014589079953L;
     }
 }

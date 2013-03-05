@@ -3,7 +3,7 @@ package com.aerofs.shell;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
 
-import com.aerofs.lib.ex.ExBadArgs;
+import com.aerofs.base.ex.ExBadArgs;
 
 
 public class CmdPause implements IShellCommand<ShProgram>

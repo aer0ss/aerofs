@@ -16,7 +16,7 @@ import org.slf4j.Logger;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.ex.ExProtocolError;
+import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.proto.Shellext.RootAnchorNotification;
 import com.aerofs.proto.Shellext.GreetingCall;

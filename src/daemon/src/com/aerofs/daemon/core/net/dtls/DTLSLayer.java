@@ -18,9 +18,9 @@ import com.aerofs.daemon.lib.PrioQueue;
 import com.aerofs.daemon.lib.id.StreamID;
 import com.aerofs.lib.*;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.ex.ExAborted;
+import com.aerofs.daemon.core.ex.ExAborted;
 import com.aerofs.lib.ex.ExDTLS;
-import com.aerofs.lib.ex.ExNoResource;
+import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.base.id.UserID;
 import com.aerofs.lib.injectable.InjectableFile;
 

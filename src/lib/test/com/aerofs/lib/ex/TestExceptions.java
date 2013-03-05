@@ -4,9 +4,12 @@
 
 package com.aerofs.lib.ex;
 
+import com.aerofs.base.ex.Exceptions;
+import com.aerofs.lib.Util;
 import com.aerofs.proto.Common.PBException;
 import com.aerofs.proto.Common.PBException.Type;
 import com.aerofs.testlib.AbstractTest;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.io.File;
@@ -17,6 +20,12 @@ import static org.junit.Assert.assertTrue;
 
 public class TestExceptions extends AbstractTest
 {
+    @Before
+    public void setup()
+    {
+        Util.registerLibExceptions();
+    }
+
     @Test
     public void shouldCreateObfuscatedExceptionWithObfuscatedMessage() throws Exception
     {

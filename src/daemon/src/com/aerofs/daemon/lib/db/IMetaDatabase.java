@@ -13,7 +13,7 @@ import com.aerofs.lib.BitVector;
 import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.CounterVector;
 import com.aerofs.lib.db.IDBIterator;
-import com.aerofs.lib.ex.ExAlreadyExist;
+import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.lib.id.FID;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.base.id.OID;

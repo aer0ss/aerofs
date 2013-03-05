@@ -5,8 +5,8 @@
 package com.aerofs.sp.server.business_objects;
 
 import com.aerofs.sp.server.lib.id.StripeCustomerID;
-import com.aerofs.lib.ex.ExNoPerm;
-import com.aerofs.lib.ex.ExNotFound;
+import com.aerofs.base.ex.ExNoPerm;
+import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.sp.server.lib.id.OrganizationID;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.user.User;

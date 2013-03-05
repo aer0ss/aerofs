@@ -18,7 +18,7 @@ import com.aerofs.daemon.transport.xmpp.zephyr.client.netty.exception.ExZephyrCh
 import com.aerofs.daemon.transport.xmpp.zephyr.client.netty.handler.ZephyrClientPipelineFactory;
 import com.aerofs.daemon.transport.xmpp.zephyr.client.netty.message.ZephyrBindRequest;
 import com.aerofs.lib.OutArg;
-import com.aerofs.lib.ex.ExNoResource;
+import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.proto.Files.PBDumpStat;
 import com.aerofs.proto.Files.PBDumpStat.PBTransport;
 import com.aerofs.proto.Transport;

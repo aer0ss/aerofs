@@ -16,7 +16,7 @@ import com.aerofs.lib.SystemUtil.ExitCode;
 import com.aerofs.lib.Util;
 import com.aerofs.daemon.core.phy.block.s3.S3Config.S3BucketIdConfig;
 import com.aerofs.daemon.core.phy.block.s3.S3Config.S3CryptoConfig;
-import com.aerofs.lib.ex.ExAborted;
+import com.aerofs.daemon.core.ex.ExAborted;
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.s3.AmazonS3;

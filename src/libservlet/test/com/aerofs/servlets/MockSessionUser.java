@@ -4,7 +4,7 @@
 
 package com.aerofs.servlets;
 
-import com.aerofs.lib.ex.ExNoPerm;
+import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.sp.server.lib.user.ISessionUser;
 import com.aerofs.sp.server.lib.user.User;
 

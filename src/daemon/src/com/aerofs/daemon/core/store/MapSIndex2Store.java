@@ -8,7 +8,7 @@ import javax.annotation.Nullable;
 import javax.inject.Inject;
 
 import com.aerofs.lib.Util;
-import com.aerofs.lib.ex.ExNotFound;
+import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.lib.id.SIndex;
 import com.google.common.collect.Maps;
 

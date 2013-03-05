@@ -1,7 +1,16 @@
 package com.aerofs.daemon;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.base.ex.AbstractExWirable;
+import com.aerofs.base.ex.Exceptions;
 import com.aerofs.daemon.core.CoreModule;
+import com.aerofs.daemon.core.collector.ExNoComponentWithSpecifiedVersion;
+import com.aerofs.daemon.core.ex.ExAborted;
+import com.aerofs.daemon.core.ex.ExExpelled;
+import com.aerofs.daemon.core.ex.ExNoAvailDevice;
+import com.aerofs.daemon.core.ex.ExNotShared;
+import com.aerofs.daemon.core.ex.ExOutOfSpace;
+import com.aerofs.daemon.core.ex.ExUpdateInProgress;
 import com.aerofs.daemon.core.multiplicity.multiuser.MultiuserModule;
 import com.aerofs.daemon.core.multiplicity.singleuser.SingleuserModule;
 import com.aerofs.daemon.core.phy.block.BlockStorageModules;
@@ -22,6 +31,8 @@ import com.aerofs.lib.cfg.CfgModule;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.lib.os.OSUtil.OSFamily;
 import com.aerofs.lib.rocklog.RockLog;
+import com.aerofs.proto.Common.PBException.Type;
+import com.google.common.collect.ImmutableMap;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Module;
@@ -42,6 +53,23 @@ public class DaemonProgram implements IProgram
     private static final Logger l = Loggers.getLogger(DaemonProgram.class);
 
     private final RitualServer _ritual = new RitualServer();
+
+    public DaemonProgram()
+    {
+        // Register exception types from the daemon
+        Exceptions.registerExceptionTypes(
+                new ImmutableMap.Builder<Type, Class<? extends AbstractExWirable>>()
+                        .put(Type.ABORTED,                ExAborted.class)
+                        .put(Type.EXPELLED,               ExExpelled.class)
+                        .put(Type.NO_AVAIL_DEVICE,        ExNoAvailDevice.class)
+                        .put(Type.NOT_SHARED,             ExNotShared.class)
+                        .put(Type.NO_COMPONENT_WITH_SPECIFIED_VERSION, ExNoComponentWithSpecifiedVersion.class)
+                        .put(Type.OUT_OF_SPACE,           ExOutOfSpace.class)
+                        .put(Type.UPDATE_IN_PROGRESS,     ExUpdateInProgress.class)
+                        .build());
+
+        Util.suppressStackTraces(ExAborted.class, ExNoAvailDevice.class);
+    }
 
     @Override
     public void launch_(String rtRoot, String prog, String[] args) throws Exception

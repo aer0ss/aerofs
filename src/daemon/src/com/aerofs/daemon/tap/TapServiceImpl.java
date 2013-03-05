@@ -22,7 +22,7 @@ import com.aerofs.lib.Util;
 import com.aerofs.base.async.FailedFutureCallback;
 import com.aerofs.base.async.FutureUtil;
 import com.aerofs.base.async.UncancellableFuture;
-import com.aerofs.lib.ex.Exceptions;
+import com.aerofs.base.ex.Exceptions;
 import com.aerofs.base.id.SID;
 import com.aerofs.proto.Common;
 import com.aerofs.proto.Tap;

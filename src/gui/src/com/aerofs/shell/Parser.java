@@ -1,6 +1,6 @@
 package com.aerofs.shell;
 
-import com.aerofs.lib.ex.ExBadArgs;
+import com.aerofs.base.ex.ExBadArgs;
 
 import java.util.ArrayList;
 

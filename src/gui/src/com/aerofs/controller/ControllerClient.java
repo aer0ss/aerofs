@@ -5,7 +5,7 @@
 package com.aerofs.controller;
 
 
-import com.aerofs.lib.ex.Exceptions;
+import com.aerofs.base.ex.Exceptions;
 import com.aerofs.proto.Common.PBException;
 import com.aerofs.proto.ControllerProto.ControllerServiceBlockingStub;
 import com.aerofs.proto.ControllerProto.ControllerServiceReactor;

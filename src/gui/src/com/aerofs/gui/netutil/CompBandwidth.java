@@ -16,7 +16,7 @@ import com.aerofs.base.C;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.ex.ExTimeout;
+import com.aerofs.base.ex.ExTimeout;
 import com.aerofs.ui.UIParam;
 
 import org.eclipse.swt.widgets.Label;

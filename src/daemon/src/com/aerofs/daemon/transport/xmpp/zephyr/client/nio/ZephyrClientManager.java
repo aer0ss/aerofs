@@ -21,7 +21,7 @@ import com.aerofs.lib.OutArg;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.event.Prio;
-import com.aerofs.lib.ex.ExNoResource;
+import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.proto.Files.PBDumpStat;
 import com.aerofs.proto.Files.PBDumpStat.PBTransport;
 import com.aerofs.proto.Transport;

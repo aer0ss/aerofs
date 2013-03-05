@@ -23,9 +23,9 @@ import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.sched.ExponentialRetry;
 import com.aerofs.lib.IDumpStatMisc;
-import com.aerofs.lib.ex.ExAborted;
+import com.aerofs.daemon.core.ex.ExAborted;
 import com.aerofs.lib.ex.ExDeviceOffline;
-import com.aerofs.lib.ex.ExNoResource;
+import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.rocklog.RockLog;
 

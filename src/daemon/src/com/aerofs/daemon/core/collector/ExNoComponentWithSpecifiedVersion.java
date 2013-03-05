@@ -1,4 +1,8 @@
-package com.aerofs.lib.ex.collector;
+/*
+ * Copyright (c) Air Computing Inc., 2013.
+ */
+
+package com.aerofs.daemon.core.collector;
 
 import com.aerofs.proto.Common.PBException;
 import com.aerofs.proto.Common.PBException.Type;

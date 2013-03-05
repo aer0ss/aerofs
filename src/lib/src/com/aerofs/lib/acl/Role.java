@@ -1,6 +1,6 @@
 package com.aerofs.lib.acl;
 
-import com.aerofs.lib.ex.ExBadArgs;
+import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.proto.Common.PBRole;
 
 import javax.annotation.Nonnull;

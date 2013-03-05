@@ -4,7 +4,7 @@
 
 package com.aerofs.shell.restricted;
 
-import com.aerofs.lib.ex.ExBadArgs;
+import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.shell.IShellCommand;
 import com.aerofs.shell.ShProgram;
 import com.aerofs.shell.ShellCommandRunner;

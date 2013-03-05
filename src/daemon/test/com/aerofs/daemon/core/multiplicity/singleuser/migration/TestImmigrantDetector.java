@@ -21,7 +21,7 @@ import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Tick;
 import com.aerofs.lib.Version;
-import com.aerofs.lib.ex.ExNotFound;
+import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.lib.id.*;
 import com.aerofs.testlib.AbstractTest;
 

@@ -17,7 +17,7 @@ import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.store.MapSIndex2Store;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
-import com.aerofs.lib.ex.ExAborted;
+import com.aerofs.daemon.core.ex.ExAborted;
 import com.aerofs.lib.id.SOCID;
 import com.aerofs.lib.id.SOCKID;
 import com.aerofs.sv.client.SVClient;

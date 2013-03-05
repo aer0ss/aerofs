@@ -17,7 +17,7 @@ import com.aerofs.daemon.core.net.NSL;
 import com.aerofs.daemon.core.store.MapSIndex2Store;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
-import com.aerofs.lib.ex.ExNotFound;
+import com.aerofs.base.ex.ExNotFound;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import org.slf4j.Logger;

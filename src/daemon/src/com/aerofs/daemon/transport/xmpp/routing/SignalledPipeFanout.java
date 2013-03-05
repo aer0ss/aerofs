@@ -13,7 +13,7 @@ import com.aerofs.lib.event.Prio;
 import com.aerofs.daemon.transport.lib.IPipeDebug;
 import com.aerofs.daemon.transport.xmpp.IPipe;
 import com.aerofs.daemon.transport.xmpp.ISignalledPipe;
-import com.aerofs.lib.ex.ExNoResource;
+import com.aerofs.base.ex.ExNoResource;
 import com.google.common.collect.ImmutableSet;
 import org.slf4j.Logger;
 

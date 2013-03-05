@@ -13,7 +13,7 @@ import com.aerofs.daemon.event.net.EOTransportFlood;
 import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.daemon.transport.ITransport;
-import com.aerofs.lib.ex.ExBadArgs;
+import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.proto.Core.PBCore;
 import com.aerofs.proto.Core.PBCore.Type;

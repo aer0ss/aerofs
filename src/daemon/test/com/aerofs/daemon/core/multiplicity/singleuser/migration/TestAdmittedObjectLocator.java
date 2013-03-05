@@ -5,7 +5,7 @@ import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.lib.db.IMetaDatabase;
 import com.aerofs.lib.cfg.CfgBuildType;
 import com.aerofs.lib.ex.ExNotDir;
-import com.aerofs.lib.ex.ExNotFound;
+import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.OID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;

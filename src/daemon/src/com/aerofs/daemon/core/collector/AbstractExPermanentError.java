@@ -2,7 +2,7 @@
  * Copyright (c) Air Computing Inc., 2012.
  */
 
-package com.aerofs.lib.ex.collector;
+package com.aerofs.daemon.core.collector;
 
 import com.aerofs.base.ex.AbstractExWirable;
 import com.aerofs.proto.Common.PBException;

@@ -20,7 +20,7 @@ import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.Cfg.PortType;
 import com.aerofs.lib.ex.ExDaemonFailedToStart;
 import com.aerofs.lib.ex.ExIndexing;
-import com.aerofs.lib.ex.ExTimeout;
+import com.aerofs.base.ex.ExTimeout;
 import com.aerofs.lib.ex.ExUIMessage;
 import com.aerofs.lib.injectable.InjectableDriver;
 import com.aerofs.lib.injectable.InjectableFile;

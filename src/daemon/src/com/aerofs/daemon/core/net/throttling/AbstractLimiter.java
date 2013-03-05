@@ -6,7 +6,7 @@ import com.aerofs.lib.event.Prio;
 import com.aerofs.daemon.lib.PrioQueue;
 import com.aerofs.lib.sched.Scheduler;
 import com.aerofs.lib.OutArg;
-import com.aerofs.lib.ex.ExNoResource;
+import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.proto.Limit;
 import org.slf4j.Logger;
 import javax.annotation.Nonnull;

@@ -15,7 +15,6 @@ import com.aerofs.gui.GUIUtil;
 import com.aerofs.gui.GuiScheduler;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.Param;
-import com.aerofs.lib.ex.ExAlreadyRunning;
 import com.aerofs.base.id.UserID;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.logs.LogArchiver;
@@ -30,7 +29,6 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.Cfg.PortType;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
-import com.aerofs.lib.ex.ExAborted;
 import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.lib.os.OSUtil;
@@ -106,9 +104,9 @@ class Launcher
 
     /**
      * Check if the platform is supported
-     * @throws ExAborted with an appropriate error message
+     * @throws ExLaunchAborted with an appropriate error message
      */
-    private void checkPlatformSupported() throws ExAborted
+    private void checkPlatformSupported() throws ExLaunchAborted
     {
         // Check that OS and arch are supported
         String msg = null;
@@ -124,7 +122,7 @@ class Launcher
             SVClient.logSendDefectSyncNoCfgIgnoreErrors(true, msg, null, UserID.fromInternal(
                     "unknown"),
                     "unknwon");
-            throw new ExAborted(msg);
+            throw new ExLaunchAborted(msg);
         }
 
         // On OSX, check that AeroFS is not launched from the Installer, as it would cause AeroFS
@@ -135,7 +133,7 @@ class Launcher
         //
         if (OSUtil.isOSX() && AppRoot.abs().startsWith("/Volumes/") &&
                 AppRoot.abs().contains("Installer")) {
-            throw new ExAborted("Please copy " + L.PRODUCT +
+            throw new ExLaunchAborted("Please copy " + L.PRODUCT +
                     " into your Applications folder and run it from there.");
         }
     }
@@ -216,10 +214,10 @@ class Launcher
     /**
      * Verifies that all checksums match, if we're launching AeroFS after an update
      * @throws IOException
-     * @throws ExAborted
+     * @throws ExLaunchAborted
      * @throws ExFormatError
      */
-    private void verifyChecksums() throws IOException, ExAborted, ExFormatError
+    private void verifyChecksums() throws IOException, ExLaunchAborted, ExFormatError
     {
         SVClient.sendEventAsync(PBSVEvent.Type.UPDATE, Cfg.db().get(Key.LAST_VER) +
                 " -> " + Cfg.ver() + ", " + System.getProperty("os.name"));
@@ -240,7 +238,7 @@ class Launcher
 
             if (UI.isGUI()) GUIUtil.launch(url);
 
-            throw new ExAborted();
+            throw new ExLaunchAborted();
         }
     }
 

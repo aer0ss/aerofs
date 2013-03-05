@@ -27,7 +27,7 @@ import com.aerofs.lib.db.AbstractDBIterator;
 import com.aerofs.lib.db.DBUtil;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.db.PreparedStatementWrapper;
-import com.aerofs.lib.ex.ExAlreadyExist;
+import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.lib.id.FID;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.base.id.OID;

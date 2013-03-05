@@ -4,7 +4,7 @@
 
 package com.aerofs.shell;
 
-import com.aerofs.lib.ex.ExBadArgs;
+import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.proto.Ritual.GetActivitiesReply;
 import com.aerofs.proto.Ritual.GetActivitiesReply.PBActivity;
 import org.apache.commons.cli.CommandLine;

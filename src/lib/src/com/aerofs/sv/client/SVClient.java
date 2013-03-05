@@ -2,6 +2,7 @@ package com.aerofs.sv.client;
 
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
+import com.aerofs.base.ex.Exceptions;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.AppRoot;
 import com.aerofs.base.Base64;
@@ -392,7 +393,7 @@ public final class SVClient
         l.debug("build defect");
 
         if (cause == null) cause = new Exception(desc); // FIXME (AG): bogus
-        String stackTrace = Util.stackTrace2string(cause);
+        String stackTrace = Exceptions.getStackTraceAsString(cause);
 
         if (L.get().isStaging()) {
             l.warn("##### DEFECT #####\n" + desc + "\n" + Util.e(cause));

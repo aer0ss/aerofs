@@ -9,7 +9,6 @@ import java.util.Set;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
-import com.aerofs.lib.ex.collector.AbstractExPermanentError;
 import com.aerofs.lib.id.SIndex;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Sets;

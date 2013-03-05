@@ -10,7 +10,7 @@ import com.aerofs.lib.OutArg;
 import com.aerofs.lib.StrictLock;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
-import com.aerofs.lib.ex.ExNoResource;
+import com.aerofs.base.ex.ExNoResource;
 
 public class BlockingPrioQueue<T> implements IBlockingPrioritizedEventSink<T>, IDumpStatMisc
 {

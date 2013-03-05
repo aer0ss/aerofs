@@ -1,24 +1,19 @@
-package com.aerofs.lib.ex;
+package com.aerofs.daemon.core.ex;
 
 import com.aerofs.base.ex.AbstractExWirable;
 import com.aerofs.proto.Common.PBException;
 import com.aerofs.proto.Common.PBException.Type;
 
-public class ExBadArgs extends AbstractExWirable
+public class ExNotShared extends AbstractExWirable
 {
     private static final long serialVersionUID = 1L;
 
-    public ExBadArgs()
+    public ExNotShared()
     {
         super();
     }
 
-    public ExBadArgs(String msg)
-    {
-        super(msg);
-    }
-
-    public ExBadArgs(PBException pb)
+    public ExNotShared(PBException pb)
     {
         super(pb);
     }
@@ -26,6 +21,6 @@ public class ExBadArgs extends AbstractExWirable
     @Override
     public Type getWireType()
     {
-        return Type.BAD_ARGS;
+        return Type.NOT_SHARED;
     }
 }

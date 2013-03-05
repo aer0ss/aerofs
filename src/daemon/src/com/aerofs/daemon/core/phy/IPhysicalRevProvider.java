@@ -5,7 +5,7 @@ import java.util.Collection;
 
 import com.aerofs.base.BaseUtil;
 import com.aerofs.lib.Path;
-import com.aerofs.lib.ex.ExNotFound;
+import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.proto.Ritual.PBRevChild;
 import com.aerofs.proto.Ritual.PBRevision;
 import com.google.protobuf.ByteString;

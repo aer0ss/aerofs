@@ -19,7 +19,7 @@ import org.slf4j.Logger;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
-import com.aerofs.lib.ex.ExNoResource;
+import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.lib.notifier.ConcurrentlyModifiableListeners;
 
 /**

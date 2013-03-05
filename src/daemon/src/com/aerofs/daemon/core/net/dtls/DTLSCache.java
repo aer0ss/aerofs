@@ -15,7 +15,7 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgKeyManagersProvider;
 import com.aerofs.lib.ex.ExDTLS;
-import com.aerofs.lib.ex.ExTimeout;
+import com.aerofs.base.ex.ExTimeout;
 import com.aerofs.swig.dtls.DTLSEngine;
 import com.aerofs.swig.dtls.DTLSEngine.DTLS_RETCODE;
 import com.aerofs.swig.dtls.SSLCtx;

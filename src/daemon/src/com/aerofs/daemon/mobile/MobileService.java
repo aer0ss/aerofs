@@ -12,7 +12,7 @@ import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Version;
 import com.aerofs.lib.event.Prio;
-import com.aerofs.lib.ex.Exceptions;
+import com.aerofs.base.ex.Exceptions;
 import com.aerofs.proto.Common.PBException;
 import com.aerofs.proto.Common.PBPath;
 import com.aerofs.proto.Mobile.DownloadCookie;

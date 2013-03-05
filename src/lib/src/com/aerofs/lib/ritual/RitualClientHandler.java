@@ -6,7 +6,7 @@ package com.aerofs.lib.ritual;
 
 import com.aerofs.base.C;
 import com.aerofs.base.net.AbstractRpcClientHandler;
-import com.aerofs.lib.ex.Exceptions;
+import com.aerofs.base.ex.Exceptions;
 import com.aerofs.proto.Common.PBException;
 import com.aerofs.proto.Ritual.RitualServiceStub.RitualServiceStubCallbacks;
 

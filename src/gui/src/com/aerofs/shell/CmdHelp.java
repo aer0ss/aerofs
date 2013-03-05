@@ -2,7 +2,7 @@ package com.aerofs.shell;
 
 import com.aerofs.labeling.L;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.ex.ExBadArgs;
+import com.aerofs.base.ex.ExBadArgs;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;

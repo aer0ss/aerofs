@@ -16,7 +16,7 @@ import com.aerofs.daemon.transport.xmpp.XMPP;
 import com.aerofs.j.Jid;
 import com.aerofs.lib.InOutArg;
 import com.aerofs.lib.ex.ExJingle;
-import com.aerofs.lib.ex.ExNoResource;
+import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.proto.Files;
 import com.aerofs.proto.Files.PBDumpStat.PBTransport;

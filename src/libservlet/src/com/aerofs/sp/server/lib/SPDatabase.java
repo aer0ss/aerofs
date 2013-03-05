@@ -11,8 +11,8 @@ import com.aerofs.base.id.UserID;
 import com.aerofs.lib.db.DBUtil;
 
 import com.aerofs.base.ex.ExFormatError;
-import com.aerofs.lib.ex.ExNoPerm;
-import com.aerofs.lib.ex.ExNotFound;
+import com.aerofs.base.ex.ExNoPerm;
+import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.Base64;
 import com.aerofs.lib.Util;
 import com.aerofs.servlets.lib.db.IDatabaseConnectionProvider;

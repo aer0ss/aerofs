@@ -17,7 +17,7 @@ import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.Version;
-import com.aerofs.lib.ex.ExNotFound;
+import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.lib.id.CID;
 import com.aerofs.base.id.DID;
 import com.aerofs.lib.id.KIndex;

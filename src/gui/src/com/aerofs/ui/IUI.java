@@ -89,7 +89,7 @@ public interface IUI {
 
     /**
      * Do the setup process
-     * @throws ExAborted if the user canceled the setup
+     * @throws com.aerofs.controller.ExLaunchAborted if the user canceled the setup
      */
     void setup_(String rtRoot) throws Exception;
 

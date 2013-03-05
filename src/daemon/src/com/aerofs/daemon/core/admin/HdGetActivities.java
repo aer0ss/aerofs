@@ -21,7 +21,7 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgLocalDID;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.db.IDBIterator;
-import com.aerofs.lib.ex.ExProtocolError;
+import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.base.id.UserID;
 import com.aerofs.proto.Ritual.GetActivitiesReply.PBActivity;
 import com.google.common.collect.Lists;

@@ -12,7 +12,7 @@ import com.aerofs.lib.ProgressIndicators;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.ex.ExTimeout;
+import com.aerofs.base.ex.ExTimeout;
 import com.aerofs.sv.client.SVClient;
 import com.google.inject.Inject;
 import org.slf4j.Logger;

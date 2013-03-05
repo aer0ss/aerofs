@@ -21,7 +21,7 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgAbsAuxRoot;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
-import com.aerofs.lib.ex.ExBadArgs;
+import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.lib.ex.ExInUse;
 import com.aerofs.lib.id.FID;
 import com.aerofs.lib.id.SOID;

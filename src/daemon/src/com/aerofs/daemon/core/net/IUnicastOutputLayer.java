@@ -2,8 +2,8 @@ package com.aerofs.daemon.core.net;
 
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.lib.id.StreamID;
-import com.aerofs.lib.ex.ExAborted;
-import com.aerofs.lib.ex.ExNoResource;
+import com.aerofs.daemon.core.ex.ExAborted;
+import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.proto.Transport.PBStream.InvalidationReason;
 
 public interface IUnicastOutputLayer

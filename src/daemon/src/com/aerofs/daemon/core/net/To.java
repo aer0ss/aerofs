@@ -13,7 +13,7 @@ import com.aerofs.daemon.core.store.MapSIndex2Store;
 import com.aerofs.daemon.core.store.Store;
 import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.ex.ExNoAvailDevice;
+import com.aerofs.daemon.core.ex.ExNoAvailDevice;
 import com.aerofs.lib.id.SIndex;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;

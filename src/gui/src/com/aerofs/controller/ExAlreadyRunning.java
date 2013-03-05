@@ -1,12 +1,12 @@
 /*
- * Copyright (c) Air Computing Inc., 2012.
+ * Copyright (c) Air Computing Inc., 2013.
  */
 
-package com.aerofs.lib.ex;
+package com.aerofs.controller;
 
 import com.aerofs.labeling.L;
 
-public class ExAlreadyRunning extends ExAborted
+public class ExAlreadyRunning extends ExLaunchAborted
 {
     private static final long serialVersionUID = 1L;
 

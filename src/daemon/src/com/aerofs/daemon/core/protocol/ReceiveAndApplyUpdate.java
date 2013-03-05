@@ -5,6 +5,10 @@
 package com.aerofs.daemon.core.protocol;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.base.ex.ExAlreadyExist;
+import com.aerofs.base.ex.ExNoResource;
+import com.aerofs.base.ex.ExNotFound;
+import com.aerofs.base.ex.ExTimeout;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.OID;
 import com.aerofs.daemon.core.*;
@@ -13,6 +17,8 @@ import com.aerofs.daemon.core.alias.MapAlias2Target;
 import com.aerofs.daemon.core.ds.CA;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
+import com.aerofs.daemon.core.ex.ExAborted;
+import com.aerofs.daemon.core.ex.ExOutOfSpace;
 import com.aerofs.daemon.core.net.DigestedMessage;
 import com.aerofs.daemon.core.net.IncomingStreams;
 import com.aerofs.daemon.core.net.IncomingStreams.StreamKey;

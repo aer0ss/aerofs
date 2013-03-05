@@ -4,7 +4,7 @@ import com.aerofs.daemon.core.migration.EmigrantUtil;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.multiplicity.singleuser.SingleuserStores;
-import com.aerofs.lib.ex.ExNotFound;
+import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
 import com.aerofs.lib.id.SIndex;

@@ -5,7 +5,7 @@
 package com.aerofs.lib.event;
 
 import com.aerofs.lib.IDumpStatMisc;
-import com.aerofs.lib.ex.ExNoResource;
+import com.aerofs.base.ex.ExNoResource;
 
 public interface IBlockingPrioritizedEventSink<T> extends IDumpStatMisc
 {

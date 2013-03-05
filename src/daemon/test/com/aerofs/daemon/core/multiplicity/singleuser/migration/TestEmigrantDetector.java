@@ -13,7 +13,7 @@ import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ds.OA.Type;
 import com.aerofs.daemon.core.protocol.dependence.DependencyEdge;
 import com.aerofs.lib.ex.ExNotDir;
-import com.aerofs.lib.ex.ExNotFound;
+import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.lib.id.*;
 import com.aerofs.testlib.AbstractTest;
 import org.junit.Before;

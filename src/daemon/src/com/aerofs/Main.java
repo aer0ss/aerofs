@@ -155,6 +155,8 @@ public class Main {
 
         if (Cfg.inited()) l.warn(Cfg.user() + " " + Cfg.did().toStringFormal());
 
+        Util.registerLibExceptions();
+
         // launch the program
         try {
             ((IProgram) cls.newInstance()).launch_(rtRoot, prog, progArgs);

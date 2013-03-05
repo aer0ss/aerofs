@@ -19,7 +19,7 @@ import com.aerofs.lib.Util;
 import com.aerofs.base.async.UncancellableFuture;
 import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.lib.ex.ExJingle;
-import com.aerofs.lib.ex.ExNoResource;
+import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.base.id.DID;
 import org.slf4j.Logger;
 

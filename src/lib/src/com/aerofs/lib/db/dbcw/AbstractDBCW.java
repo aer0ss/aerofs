@@ -7,7 +7,7 @@ import java.sql.Statement;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.lib.SystemUtil;
-import com.aerofs.lib.ex.ExAlreadyExist;
+import com.aerofs.base.ex.ExAlreadyExist;
 import org.slf4j.Logger;
 
 abstract class AbstractDBCW implements IDBCW

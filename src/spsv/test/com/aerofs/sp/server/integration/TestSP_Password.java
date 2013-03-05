@@ -4,7 +4,7 @@
 
 package com.aerofs.sp.server.integration;
 
-import com.aerofs.lib.ex.ExNotFound;
+import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.UserID;
 import com.aerofs.sp.server.PasswordManagement;
 import com.aerofs.sp.server.email.PasswordResetEmailer;

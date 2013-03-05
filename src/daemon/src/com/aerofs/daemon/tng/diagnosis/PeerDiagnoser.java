@@ -8,7 +8,7 @@ import com.aerofs.base.id.DID;
 import com.aerofs.daemon.tng.IPeerDiagnoser;
 import com.aerofs.daemon.tng.base.IUnicastConnection;
 import com.aerofs.daemon.tng.diagnosis.TransportDiagnosisState.FloodEntry;
-import com.aerofs.lib.ex.ExProtocolError;
+import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.proto.Transport.PBTPHeader;
 import com.aerofs.proto.Transport.PBTransportDiagnosis;
 import com.aerofs.proto.Transport.PBTransportDiagnosis.PBFloodStatReply;

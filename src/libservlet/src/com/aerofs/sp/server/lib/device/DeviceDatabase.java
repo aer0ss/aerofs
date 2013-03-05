@@ -8,7 +8,7 @@ import com.aerofs.base.id.DID;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.db.DBUtil;
 import com.aerofs.lib.ex.ExDeviceIDAlreadyExists;
-import com.aerofs.lib.ex.ExNotFound;
+import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.UserID;
 import com.aerofs.servlets.lib.db.IDatabaseConnectionProvider;
 import com.aerofs.servlets.lib.db.sql.AbstractSQLDatabase;

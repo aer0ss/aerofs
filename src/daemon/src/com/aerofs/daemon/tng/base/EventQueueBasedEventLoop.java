@@ -12,7 +12,7 @@ import com.aerofs.daemon.lib.BlockingPrioQueue;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.sched.Scheduler;
 import com.aerofs.lib.OutArg;
-import com.aerofs.lib.ex.ExNoResource;
+import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.proto.Files;
 import org.slf4j.Logger;
 

@@ -12,7 +12,7 @@ import com.aerofs.base.BaseParam.SV;
 import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExEmailSendingFailed;
-import com.aerofs.lib.ex.ExNotFound;
+import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sv.client.SVClient;
 import com.aerofs.sv.common.EmailCategory;

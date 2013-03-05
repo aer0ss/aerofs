@@ -4,16 +4,25 @@ import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.AbstractExWirable;
 import com.aerofs.base.ex.ExBadCredential;
+import com.aerofs.base.ex.Exceptions;
 import com.aerofs.lib.FileUtil.FileName;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.ex.ExAborted;
-import com.aerofs.lib.ex.ExNoAvailDevice;
-import com.aerofs.lib.ex.ExProtocolError;
-import com.aerofs.lib.ex.ExTimeout;
+import com.aerofs.base.ex.ExProtocolError;
+import com.aerofs.base.ex.ExTimeout;
+import com.aerofs.lib.ex.ExChildAlreadyShared;
+import com.aerofs.lib.ex.ExDeviceIDAlreadyExists;
+import com.aerofs.lib.ex.ExDeviceOffline;
+import com.aerofs.lib.ex.ExIndexing;
+import com.aerofs.lib.ex.ExNotDir;
+import com.aerofs.lib.ex.ExNotFile;
+import com.aerofs.lib.ex.ExParentAlreadyShared;
+import com.aerofs.lib.ex.ExUIMessage;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.os.OSUtil;
+import com.aerofs.proto.Common.PBException.Type;
 import com.aerofs.swig.driver.Driver;
 import com.aerofs.swig.driver.LogLevel;
+import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.GeneratedMessageLite;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,8 +36,6 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.InetSocketAddress;
 import java.net.SocketException;
@@ -36,6 +43,7 @@ import java.net.URLEncoder;
 import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Random;
@@ -56,6 +64,33 @@ public abstract class Util
     private Util()
     {
         // private to enforce uninstantiability for this class
+    }
+
+    private static boolean s_exceptionsRegistered = false;
+
+    /**
+     * Register exception types from lib
+     * Modules using the lib module should call this method in a static block in order to get
+     * exceptions from the wire converted back to the appropriate types
+     */
+    public static void registerLibExceptions()
+    {
+        if (s_exceptionsRegistered) return;
+
+        // Register exception types from lib
+        Exceptions.registerExceptionTypes(
+                new ImmutableMap.Builder<Type, Class<? extends AbstractExWirable>>()
+                        .put(Type.DEVICE_ID_ALREADY_EXISTS,    ExDeviceIDAlreadyExists.class)
+                        .put(Type.INDEXING,                    ExIndexing.class)
+                        .put(Type.PARENT_ALREADY_SHARED,       ExParentAlreadyShared.class)
+                        .put(Type.CHILD_ALREADY_SHARED,        ExChildAlreadyShared.class)
+                        .put(Type.DEVICE_OFFLINE,              ExDeviceOffline.class)
+                        .put(Type.NOT_DIR,                     ExNotDir.class)
+                        .put(Type.NOT_FILE,                    ExNotFile.class)
+                        .put(Type.UI_MESSAGE,                  ExUIMessage.class)
+                        .build());
+
+        s_exceptionsRegistered = true;
     }
 
     private static String convertStackTraceToString(StackTraceElement[] stackTrace)
@@ -100,14 +135,20 @@ public abstract class Util
     private static Set<Class<?>> s_suppressStackTrace = newHashSet();
     static {
         s_suppressStackTrace.add(ExTimeout.class);
-        s_suppressStackTrace.add(ExAborted.class);
-        s_suppressStackTrace.add(ExNoAvailDevice.class);
         s_suppressStackTrace.add(ExBadCredential.class);
     }
 
     private static Class<?>[] s_suppressStackTraceBaseClasses = new Class<?>[] {
         SocketException.class,
     };
+
+    /**
+     * Registered additional exception classes whose stack traces should not be printed on logs
+     */
+    public static void suppressStackTraces(Class<?>... classes)
+    {
+        Collections.addAll(s_suppressStackTrace, classes);
+    }
 
     // TODO (WW) make it private and clean up LogUtil.
     static boolean shouldPrintStackTrace(Throwable e, Class<?> ...suppressStackTrace)
@@ -136,22 +177,10 @@ public abstract class Util
     public static String e(Throwable e, Class<?> ... suppressStackTrace)
     {
         if (shouldPrintStackTrace(e, suppressStackTrace)) {
-            return stackTrace2string(e);
+            return Exceptions.getStackTraceAsString(e);
         } else {
             return e.getClass().getName() + ": " + e.getMessage();
         }
-    }
-
-    /**
-     * Use Util.e() when possible. In particular, always use e instead of this method when loging
-     * exceptions.
-     */
-    public static String stackTrace2string(Throwable e)
-    {
-        StringWriter sw = new StringWriter();
-        PrintWriter pw = new PrintWriter(sw, false);
-        AbstractExWirable.printStackTrace(e, pw);
-        return sw.toString();
     }
 
     public static String quote(Object o)

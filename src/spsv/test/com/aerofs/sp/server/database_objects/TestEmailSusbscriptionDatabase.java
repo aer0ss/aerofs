@@ -8,7 +8,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-import com.aerofs.lib.ex.ExNotFound;
+import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.UserID;
 import com.aerofs.sp.server.AbstractAutoTransactionedTestWithSPDatabase;
 import com.aerofs.sp.server.lib.EmailSubscriptionDatabase;

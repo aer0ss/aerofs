@@ -4,7 +4,7 @@ import com.aerofs.base.id.SID;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
 
-import com.aerofs.lib.ex.ExBadArgs;
+import com.aerofs.base.ex.ExBadArgs;
 
 public class CmdAccept implements IShellCommand<ShProgram>
 {

@@ -3,7 +3,7 @@ package com.aerofs.sp.client;
 import com.aerofs.base.BaseParam.SP;
 import com.aerofs.base.net.AbstractHttpRpcClient;
 import com.aerofs.base.net.IURLConnectionConfigurator;
-import com.aerofs.lib.ex.Exceptions;
+import com.aerofs.base.ex.Exceptions;
 import com.aerofs.proto.Common.PBException;
 import com.aerofs.proto.Sp.SPServiceStub.SPServiceStubCallbacks;
 

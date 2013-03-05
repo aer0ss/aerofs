@@ -3,8 +3,8 @@ package com.aerofs.daemon.core.tc;
 import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.event.lib.imc.AbstractEBIMC;
 import com.aerofs.daemon.event.lib.imc.QueueBasedIMCExecutor;
-import com.aerofs.lib.ex.ExAborted;
-import com.aerofs.lib.ex.ExNoResource;
+import com.aerofs.daemon.core.ex.ExAborted;
+import com.aerofs.base.ex.ExNoResource;
 
 public class CoreIMC {
 

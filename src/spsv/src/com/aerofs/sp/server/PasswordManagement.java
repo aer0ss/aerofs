@@ -1,8 +1,8 @@
 package com.aerofs.sp.server;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.lib.ex.ExNoPerm;
-import com.aerofs.lib.ex.ExNotFound;
+import com.aerofs.base.ex.ExNoPerm;
+import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.UserID;
 import com.aerofs.sp.common.Base62CodeGenerator;
 import com.aerofs.sp.server.email.PasswordResetEmailer;

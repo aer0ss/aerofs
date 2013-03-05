@@ -7,9 +7,9 @@ import java.util.Set;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.lib.exception.ExStreamInvalid;
-import com.aerofs.lib.ex.ExAlreadyExist;
+import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExNotDir;
-import com.aerofs.lib.ex.ExNotFound;
+import com.aerofs.base.ex.ExNotFound;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 

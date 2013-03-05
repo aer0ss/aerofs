@@ -8,7 +8,7 @@ import com.aerofs.base.id.DID;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.SecUtil;
 import com.aerofs.base.async.UncancellableFuture;
-import com.aerofs.lib.ex.ExAlreadyExist;
+import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.base.id.UserID;
 import com.aerofs.servlets.MockSessionUser;

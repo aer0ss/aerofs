@@ -1,29 +1,29 @@
-package com.aerofs.lib.ex;
+package com.aerofs.daemon.core.ex;
 
 import com.aerofs.base.ex.AbstractExWirable;
 import com.aerofs.proto.Common.PBException;
 import com.aerofs.proto.Common.PBException.Type;
 
-public class ExAborted extends AbstractExWirable
+public class ExUpdateInProgress extends AbstractExWirable
 {
     private static final long serialVersionUID = 1L;
 
-    public ExAborted()
+    public ExUpdateInProgress()
     {
         super();
     }
 
-    public ExAborted(String string)
+    public ExUpdateInProgress(String string)
     {
         super(string);
     }
 
-    public ExAborted(Throwable cause)
+    public ExUpdateInProgress(Exception cause)
     {
         super(cause);
     }
 
-    public ExAborted(PBException pb)
+    public ExUpdateInProgress(PBException pb)
     {
         super(pb);
     }
@@ -31,6 +31,7 @@ public class ExAborted extends AbstractExWirable
     @Override
     public Type getWireType()
     {
-        return Type.ABORTED;
+        return Type.UPDATE_IN_PROGRESS;
     }
+
 }

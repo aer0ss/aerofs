@@ -26,7 +26,7 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.lib.ex.ExDeviceOffline;
-import com.aerofs.lib.ex.ExProtocolError;
+import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.base.id.UserID;
 import com.aerofs.proto.Core.PBCore;

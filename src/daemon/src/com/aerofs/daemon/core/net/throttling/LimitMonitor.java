@@ -20,7 +20,7 @@ import com.aerofs.base.C;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.cfg.ICfgDatabaseListener;
-import com.aerofs.lib.ex.ExNotFound;
+import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.proto.Limit;
 import com.aerofs.proto.Transport.PBStream.InvalidationReason;
 import com.google.common.collect.Lists;

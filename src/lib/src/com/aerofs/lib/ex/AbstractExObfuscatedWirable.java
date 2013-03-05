@@ -5,6 +5,7 @@
 package com.aerofs.lib.ex;
 
 import com.aerofs.base.ex.AbstractExWirable;
+import com.aerofs.base.ex.IExObfuscated;
 import com.aerofs.lib.obfuscate.ObfuscatingFormatter.FormattedMessage;
 import com.aerofs.proto.Common.PBException;
 

@@ -4,7 +4,7 @@ import com.aerofs.lib.S;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
 
-import com.aerofs.lib.ex.ExBadArgs;
+import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.proto.Common.PBPath;
 import com.aerofs.proto.Ritual.GetSyncStatusReply;
 import com.aerofs.proto.Ritual.PBSyncStatus;

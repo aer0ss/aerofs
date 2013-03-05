@@ -18,7 +18,7 @@ import com.aerofs.daemon.lib.db.IMetaDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.ex.ExAlreadyExist;
+import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
 import com.aerofs.lib.id.SIndex;

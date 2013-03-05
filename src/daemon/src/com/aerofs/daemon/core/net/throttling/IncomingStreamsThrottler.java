@@ -13,7 +13,7 @@ import com.aerofs.daemon.lib.id.StreamID;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgDatabase;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
-import com.aerofs.lib.ex.ExNotFound;
+import com.aerofs.base.ex.ExNotFound;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import org.slf4j.Logger;

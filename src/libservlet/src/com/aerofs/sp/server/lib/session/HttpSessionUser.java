@@ -5,7 +5,7 @@
 package com.aerofs.sp.server.lib.session;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.lib.ex.ExNoPerm;
+import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.sp.server.lib.user.ISessionUser;
 import com.aerofs.sp.server.lib.user.User;
 import org.slf4j.Logger;

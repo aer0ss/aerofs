@@ -4,8 +4,8 @@
 
 package com.aerofs.sp.server.business_objects;
 
-import com.aerofs.lib.ex.ExAlreadyExist;
-import com.aerofs.lib.ex.ExBadArgs;
+import com.aerofs.base.ex.ExAlreadyExist;
+import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.sp.server.lib.id.StripeCustomerID;
 import com.aerofs.lib.FullName;
 import com.aerofs.base.id.UserID;

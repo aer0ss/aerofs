@@ -6,9 +6,9 @@ package com.aerofs.sp.server.lib;
 
 import com.aerofs.lib.Util;
 import com.aerofs.lib.db.DBUtil;
-import com.aerofs.lib.ex.ExAlreadyExist;
-import com.aerofs.lib.ex.ExBadArgs;
-import com.aerofs.lib.ex.ExNotFound;
+import com.aerofs.base.ex.ExAlreadyExist;
+import com.aerofs.base.ex.ExBadArgs;
+import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.servlets.lib.db.IDatabaseConnectionProvider;

@@ -17,7 +17,7 @@ import com.aerofs.daemon.transport.xmpp.zephyr.client.nio.statemachine.IStateEve
 import com.aerofs.daemon.transport.xmpp.zephyr.client.nio.statemachine.StateMachineEvent;
 import com.aerofs.lib.Param;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.ex.ExNoResource;
+import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.proto.Transport.PBZephyrCandidateInfo;
 import com.aerofs.zephyr.core.ExAlreadyBound;
 import org.slf4j.Logger;

@@ -1,19 +1,19 @@
-package com.aerofs.lib.ex;
+package com.aerofs.daemon.core.ex;
 
 import com.aerofs.base.ex.AbstractExWirable;
 import com.aerofs.proto.Common.PBException;
 import com.aerofs.proto.Common.PBException.Type;
 
-public class ExOutOfSpace extends AbstractExWirable
+public class ExNoAvailDevice extends AbstractExWirable
 {
     private static final long serialVersionUID = 1L;
 
-    public ExOutOfSpace()
+    public ExNoAvailDevice()
     {
         super();
     }
 
-    public ExOutOfSpace(PBException pb)
+    public ExNoAvailDevice(PBException pb)
     {
         super(pb);
     }
@@ -21,6 +21,6 @@ public class ExOutOfSpace extends AbstractExWirable
     @Override
     public Type getWireType()
     {
-        return Type.OUT_OF_SPACE;
+        return Type.NO_AVAIL_DEVICE;
     }
 }

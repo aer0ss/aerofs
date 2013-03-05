@@ -1,6 +1,7 @@
 package com.aerofs.gui;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.controller.ExLaunchAborted;
 import com.aerofs.gui.AeroFSMessageBox.ButtonType;
 import com.aerofs.gui.AeroFSMessageBox.IconType;
 import com.aerofs.gui.multiuser.MultiuserDlgSetup;
@@ -16,7 +17,6 @@ import com.aerofs.lib.OutArg;
 import com.aerofs.lib.S;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.ex.ExAborted;
 import com.aerofs.lib.ex.ExNoConsole;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.sv.client.SVClient;
@@ -545,7 +545,7 @@ public class GUI implements IUI
         AbstractDlgSetup dlg = L.get().isMultiuser() ? new MultiuserDlgSetup(_sh) :
                 new SingleuserDlgSetup(_sh);
         dlg.open();
-        if (dlg.isCancelled()) throw new ExAborted("user canceled setup");
+        if (dlg.isCancelled()) throw new ExLaunchAborted("user canceled setup");
     }
 
     public void enterMainLoop_()

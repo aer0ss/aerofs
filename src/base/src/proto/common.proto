@@ -31,64 +31,62 @@ message Void {}
  */
 message PBException {
 
-
-    //
-    // All the following exception enum types map one-to-one to subclasses of AbstractExWirable
-    // eg. BAD_ARGS is represented in Java as ExBadArgs
-    //
-
     enum Type {
-        INTERNAL_ERROR = 0;
 
         // All the following type names strictly map to Java exception types. e.g. BAD_ARGS maps to
         // ExBadArgs.
 
-        ABORTED = 2;
+        //
+        // Base exception types.
+        // Those exceptions live in com.aerofs.base.ex and are available to everybody including the
+        // Android app.
+        // Try avoiding re-using them. Defining your own types is prefered.
+        //
+
+        INTERNAL_ERROR = 0;    // Generic wrapper for non-wireable exceptions
         ALREADY_EXIST = 3;
         BAD_ARGS = 4;
         NO_PERM = 6;
-        NO_RESOURCE = 7;         // TODO (GS): Rename to something more meaningful (SYSTEM_BUSY?)
-        NOT_DIR = 8;
-        NOT_FILE = 9;
+        NO_RESOURCE = 7;
         NOT_FOUND = 10;
-        OUT_OF_SPACE = 11;
-        PROTOCOL_ERROR = 12;
+        PROTOCOL_ERROR = 12;    // Protobuf error
         TIMEOUT = 13;
-        DEVICE_OFFLINE = 14;
+        BAD_CREDENTIAL = 400;
+
+        //
+        // Core exception types.
+        // Should not be used outside the core
+        //
+
+        ABORTED = 2;
+        EXPELLED = 201;
         NO_AVAIL_DEVICE = 15;
-        CHILD_ALREADY_SHARED = 16;
-        PARENT_ALREADY_SHARED = 17;
-        // This type requires the UI to display the error message as is, without adding extra text.
-        UI_MESSAGE = 18;
-        ALREADY_INVITED = 19;
-
-        ////////////////////////////////////////////////////
-        // Core exception types
-        ////////////////////////////////////////////////////
-
+        NOT_SHARED = 200;
+        OUT_OF_SPACE = 11;
         UPDATE_IN_PROGRESS = 100;
         NO_COMPONENT_WITH_SPECIFIED_VERSION = 101;
 
-        ////////////////////////////////////////////////////
-        // Ritual exception types
-        ////////////////////////////////////////////////////
+        //
+        // Lib exception types
+        // Those exceptions live in com.aerofs.lib.ex
+        //
 
-        NOT_SHARED = 200;
-        EXCLUDED = 201;
+        // Ritual exceptions
+        NOT_DIR = 8;
+        NOT_FILE = 9;
+        DEVICE_OFFLINE = 14;
+        CHILD_ALREADY_SHARED = 16;
+        PARENT_ALREADY_SHARED = 17;
         INDEXING = 202;  // daemon is busy indexing root anchor on first launch
 
-        ////////////////////////////////////////////////////
-        // Controller exception types
-        ////////////////////////////////////////////////////
+        // Controller exceptions
+        LAUNCH_ABORTED = 300;
+        UI_MESSAGE = 18;        // This type requires the UI to display the error message as is,
+                                // without adding extra text.
 
-        FOO_BAR_BAZ_QUX = 300;
-
-        ////////////////////////////////////////////////////
-        // SP exception types
-        ////////////////////////////////////////////////////
-
-        BAD_CREDENTIAL = 400;
+        // SP exceptions
         DEVICE_ID_ALREADY_EXISTS = 401;
+        ALREADY_INVITED = 19;
     }
 
     required Type type = 1;

@@ -17,7 +17,7 @@ import com.aerofs.lib.CounterVector;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.cfg.CfgAggressiveChecking;
 import com.aerofs.lib.ex.ExNotDir;
-import com.aerofs.lib.ex.ExNotFound;
+import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.base.id.OID;
 import com.aerofs.lib.id.SIndex;

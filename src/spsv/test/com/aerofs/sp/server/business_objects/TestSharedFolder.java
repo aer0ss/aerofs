@@ -6,9 +6,9 @@ package com.aerofs.sp.server.business_objects;
 
 import com.aerofs.lib.acl.Role;
 import com.aerofs.lib.acl.SubjectRolePair;
-import com.aerofs.lib.ex.ExAlreadyExist;
-import com.aerofs.lib.ex.ExNoPerm;
-import com.aerofs.lib.ex.ExNotFound;
+import com.aerofs.base.ex.ExAlreadyExist;
+import com.aerofs.base.ex.ExNoPerm;
+import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.SID;
 import com.aerofs.sp.server.lib.SharedFolder;
 import com.aerofs.sp.server.lib.organization.Organization;

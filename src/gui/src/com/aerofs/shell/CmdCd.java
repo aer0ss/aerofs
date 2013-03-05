@@ -2,7 +2,7 @@ package com.aerofs.shell;
 
 import com.aerofs.lib.Path;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.ex.ExBadArgs;
+import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.lib.ex.ExUIMessage;
 import com.aerofs.proto.Ritual.PBObjectAttributes;
 import com.aerofs.proto.Ritual.PBObjectAttributes.Type;

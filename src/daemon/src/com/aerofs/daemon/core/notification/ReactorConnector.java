@@ -2,7 +2,7 @@ package com.aerofs.daemon.core.notification;
 
 import com.aerofs.daemon.transport.lib.TCPProactorMT.IConnector;
 import com.aerofs.daemon.transport.lib.TCPProactorMT.IReactor;
-import com.aerofs.lib.ex.ExProtocolError;
+import com.aerofs.base.ex.ExProtocolError;
 
 public class ReactorConnector implements IReactor, IConnector
 {

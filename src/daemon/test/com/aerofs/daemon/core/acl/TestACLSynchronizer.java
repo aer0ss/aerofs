@@ -22,7 +22,7 @@ import com.aerofs.lib.acl.Role;
 import com.aerofs.lib.acl.SubjectRolePair;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.db.InMemorySQLiteDBCW;
-import com.aerofs.lib.ex.ExNoPerm;
+import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.id.SID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.base.id.UserID;

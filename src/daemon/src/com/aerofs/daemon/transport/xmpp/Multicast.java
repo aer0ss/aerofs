@@ -12,7 +12,7 @@ import com.aerofs.daemon.transport.lib.IMaxcast;
 import com.aerofs.lib.FrequentDefectSender;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.ex.ExNoResource;
+import com.aerofs.base.ex.ExNoResource;
 import org.slf4j.Logger;
 import org.jivesoftware.smack.PacketListener;
 import org.jivesoftware.smack.SmackConfiguration;

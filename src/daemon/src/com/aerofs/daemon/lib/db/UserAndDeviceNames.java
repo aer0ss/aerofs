@@ -17,7 +17,7 @@ import com.aerofs.lib.FullName;
 import com.aerofs.base.BaseParam.SP;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgLocalUser;
-import com.aerofs.lib.ex.ExProtocolError;
+import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.base.id.UserID;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.proto.Sp.GetDeviceInfoReply;

@@ -10,7 +10,7 @@ import static com.aerofs.daemon.core.phy.PhysicalOp.MAP;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.cfg.CfgAbsRootAnchor;
-import com.aerofs.lib.ex.ExNotFound;
+import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.lib.id.*;
 import com.aerofs.lib.injectable.InjectableDriver;
 import com.aerofs.lib.injectable.InjectableDriver.FIDAndType;

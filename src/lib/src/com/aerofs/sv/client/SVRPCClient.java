@@ -7,7 +7,7 @@ package com.aerofs.sv.client;
 import com.aerofs.base.BaseParam.SV;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.AbstractExWirable;
-import com.aerofs.lib.ex.Exceptions;
+import com.aerofs.base.ex.Exceptions;
 import com.aerofs.proto.Sv.PBSVCall;
 import com.aerofs.proto.Sv.PBSVReply;
 import com.google.common.net.HttpHeaders;

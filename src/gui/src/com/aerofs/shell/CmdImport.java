@@ -5,7 +5,7 @@
 package com.aerofs.shell;
 
 import com.aerofs.lib.Path;
-import com.aerofs.lib.ex.ExBadArgs;
+import com.aerofs.base.ex.ExBadArgs;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
 

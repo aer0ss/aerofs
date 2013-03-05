@@ -12,7 +12,7 @@ import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.ex.ExNoResource;
+import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.lib.id.SIndex;
 import com.google.inject.Inject;
 import com.yammer.metrics.core.Meter;

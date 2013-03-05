@@ -1,7 +1,7 @@
 package com.aerofs.shell;
 
 import com.aerofs.lib.Util;
-import com.aerofs.lib.ex.ExBadArgs;
+import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.ui.UIUtil;
 import jline.console.ConsoleReader;
 import org.apache.commons.cli.CommandLine;

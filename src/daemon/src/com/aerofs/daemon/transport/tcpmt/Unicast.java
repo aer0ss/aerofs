@@ -18,7 +18,7 @@ import com.aerofs.daemon.transport.tcpmt.ARP.ARPEntry;
 import com.aerofs.lib.Param;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExDeviceOffline;
-import com.aerofs.lib.ex.ExNoResource;
+import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.proto.Files;
 import com.aerofs.proto.Transport.PBTCPUnicastPreamble;
 import com.aerofs.proto.Transport.PBTPHeader;

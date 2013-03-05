@@ -3,7 +3,7 @@ package com.aerofs.lib.db.dbcw;
 import java.sql.Connection;
 import java.sql.SQLException;
 
-import com.aerofs.lib.ex.ExAlreadyExist;
+import com.aerofs.base.ex.ExAlreadyExist;
 
 /**
  * DBCW = Database Connection Wrapper. It provides abstractions independent to implementations of

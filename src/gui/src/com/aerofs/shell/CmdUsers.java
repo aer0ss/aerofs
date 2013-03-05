@@ -5,7 +5,7 @@ import java.util.List;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.acl.Role;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.ex.ExBadArgs;
+import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.proto.Common.PBSubjectRolePair;
 import com.aerofs.proto.Ritual.GetACLReply;
 import org.apache.commons.cli.CommandLine;

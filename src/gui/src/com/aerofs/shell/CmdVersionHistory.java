@@ -10,7 +10,7 @@ import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
 
 import com.aerofs.lib.Util;
-import com.aerofs.lib.ex.ExBadArgs;
+import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.proto.Common.PBPath;
 import com.aerofs.proto.Ritual.ListRevHistoryReply;
 import com.aerofs.proto.Ritual.PBRevision;

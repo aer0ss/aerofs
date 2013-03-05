@@ -5,7 +5,7 @@
 package com.aerofs.sp.server.integration;
 
 import com.aerofs.base.id.DID;
-import com.aerofs.lib.ex.ExBadArgs;
+import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.lib.ex.ExDeviceIDAlreadyExists;
 import com.aerofs.base.id.UniqueID;
 import com.aerofs.base.id.UserID;

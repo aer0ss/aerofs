@@ -6,7 +6,7 @@ import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.event.admin.EIUpdateACL;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.lib.event.Prio;
-import com.aerofs.lib.ex.ExNotShared;
+import com.aerofs.daemon.core.ex.ExNotShared;
 import com.aerofs.lib.id.SOID;
 import com.google.inject.Inject;
 

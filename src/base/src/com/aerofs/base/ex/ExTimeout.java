@@ -1,19 +1,28 @@
-package com.aerofs.lib.ex;
+/*
+ * Copyright (c) Air Computing Inc., 2013.
+ */
+
+package com.aerofs.base.ex;
 
 import com.aerofs.base.ex.AbstractExWirable;
 import com.aerofs.proto.Common.PBException;
 import com.aerofs.proto.Common.PBException.Type;
 
-public class ExNoAvailDevice extends AbstractExWirable
+public class ExTimeout extends AbstractExWirable
 {
     private static final long serialVersionUID = 1L;
 
-    public ExNoAvailDevice()
+    public ExTimeout()
     {
         super();
     }
 
-    public ExNoAvailDevice(PBException pb)
+    public ExTimeout(String string)
+    {
+        super(string);
+    }
+
+    public ExTimeout(PBException pb)
     {
         super(pb);
     }
@@ -21,6 +30,6 @@ public class ExNoAvailDevice extends AbstractExWirable
     @Override
     public Type getWireType()
     {
-        return Type.NO_AVAIL_DEVICE;
+        return Type.TIMEOUT;
     }
 }

@@ -16,7 +16,7 @@ import com.aerofs.daemon.lib.db.UserAndDeviceNames;
 import com.aerofs.daemon.lib.db.UserAndDeviceNames.DeviceInfo;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.cfg.CfgLocalUser;
-import com.aerofs.lib.ex.ExExpelled;
+import com.aerofs.daemon.core.ex.ExExpelled;
 import com.aerofs.base.id.DID;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.base.id.UserID;

@@ -38,7 +38,7 @@ import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.BitVector;
 import com.aerofs.lib.db.InMemorySQLiteDBCW;
-import com.aerofs.lib.ex.ExAlreadyExist;
+import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.base.id.OID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;

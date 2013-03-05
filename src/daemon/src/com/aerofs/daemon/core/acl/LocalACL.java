@@ -8,7 +8,7 @@ import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.acl.Role;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.db.IDBIterator;
-import com.aerofs.lib.ex.ExNotFound;
+import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.base.id.UserID;
 import com.google.common.collect.ImmutableMap;
