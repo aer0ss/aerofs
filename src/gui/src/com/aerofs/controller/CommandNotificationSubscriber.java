@@ -22,6 +22,7 @@ import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.lib.ritual.RitualBlockingClient;
 import com.aerofs.lib.ritual.RitualClientFactory;
+import com.aerofs.lib.rocklog.EventType;
 import com.aerofs.lib.rocklog.RockLog;
 import com.aerofs.lib.sched.ExponentialRetry;
 import com.aerofs.proto.Cmd.Command;
@@ -370,7 +371,7 @@ public final class CommandNotificationSubscriber
 
         // Metrics.
         SVClient.sendEventAsync(Type.UNLINK);
-        RockLog.newEvent("Unlink Device").sendAsync();
+        RockLog.newEvent(EventType.UNLINK_DEVICE).sendAsync();
 
         unlinkImplementation();
         shutdownImplementation();
@@ -387,7 +388,7 @@ public final class CommandNotificationSubscriber
 
         // Metrics.
         SVClient.sendEventAsync(Type.UNLINK_AND_WIPE);
-        RockLog.newEvent("Unlink And Wipe Device").sendAsync();
+        RockLog.newEvent(EventType.UNLINK_AND_WIPE).sendAsync();
 
         unlinkImplementation();
 

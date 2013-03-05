@@ -12,7 +12,10 @@ public enum EventType {
     REINSTALL_CLIENT("Reinstall Single User Client"),
     ENABLE_S3("Enable S3"),
     FILE_SAVED("File Saved"),
-    FILE_CONFLICT("File Conflict");
+    FILE_CONFLICT("File Conflict"),
+    UNLINK_AND_WIPE("Unlink And Wipe Device"),
+    UNLINK_DEVICE("Unlink Device"),
+    MOVE_ROOT("Relocate Root Anchor");
 
     private final String _name;
 

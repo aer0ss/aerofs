@@ -28,6 +28,7 @@ import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.injectable.InjectableDriver;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.lib.os.OSUtil;
+import com.aerofs.lib.rocklog.EventType;
 import com.aerofs.lib.rocklog.RockLog;
 import com.aerofs.sv.client.SVClient;
 import com.aerofs.proto.Sv.PBSVEvent.Type;
@@ -66,7 +67,7 @@ public class HdRelocateRootAnchor extends AbstractHdIMC<EIRelocateRootAnchor>
         }
 
         SVClient.sendEventAsync(Type.MOVE_ROOT);
-        RockLog.newEvent("Relocate Root Anchor").sendAsync();
+        RockLog.newEvent(EventType.MOVE_ROOT).sendAsync();
 
         // Even though we expect the UI to adjust the new root anchor, users may pass in a raw path
         // through the Ritual call.
