@@ -6,7 +6,7 @@
 	<classpathentry kind="src" output="approot/bin.test" path="test"/>
 	<classpathentry kind="src" path="swig_gen"/>
 	<classpathentry exported="true" kind="lib" path="approot/lib/log4j-1.2.16.jar" sourcepath="/resource/client/src/apache-log4j-1.2.16"/>
-	<classpathentry exported="true" kind="lib" path="approot/lib/protobuf-java-2.4.1.jar" sourcepath="/resource/client/src/protobuf-2.4.1"/>
+	<classpathentry exported="true" kind="lib" path="approot/lib/protobuf-java-2.5.0.jar" sourcepath="/resource/client/src/protobuf-2.5.0"/>
 	<classpathentry exported="true" kind="lib" path="approot/lib/guava-11.0.1.jar" sourcepath="/resource/client/src/guava-11.0.1-sources.jar"/>
 	<classpathentry exported="true" kind="lib" path="approot/lib/guice-aerofs.jar" sourcepath="/resource/client/src/google-guice"/>
 	<classpathentry exported="true" kind="lib" path="approot/lib/jsr305-1.3.9.jar"/>

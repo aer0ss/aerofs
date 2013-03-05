@@ -3,6 +3,7 @@ require 'formula'
 class ProtobufObjc < Formula
   depends_on 'protobuf'
   depends_on 'automake'
+  depends_on :libtool
 
   head 'https://github.com/aerofs/protobuf-objc.git'
   homepage 'https://github.com/aerofs/protobuf-objc.git'

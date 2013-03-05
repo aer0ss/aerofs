@@ -3,7 +3,7 @@
 PLUGINS_PATH="$PWD/../../bin"
 OUT_DIR="$PWD/out"
 PB_INCLUDE_PATH="$PWD/../../proto"
-JARS=protobuf-java-2.4.1.jar:guava-11.0.1.jar
+JARS=protobuf-java-2.5.0.jar:guava-11.0.1.jar
 
 mkdir -p "$OUT_DIR"
 protoc -I="$PB_INCLUDE_PATH/" --java_out "$OUT_DIR" "$PB_INCLUDE_PATH/rpc_service.proto" \
