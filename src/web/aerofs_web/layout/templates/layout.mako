@@ -91,7 +91,7 @@
         <div class="row">
             <div class="span10 offset1">
                 <a href="/">
-                    <img src="${request.static_url('aerofs_web.layout:static/img/aerofs-logo-navbar.png')}" width="151" height="44" alt="AeroFS" />
+                    <img src="http://d2w483fi6el07z.cloudfront.net/img/logo_small.png" width="144" height="40" alt="AeroFS" />
                 </a>
 
                 %if 'username' in request.session and \
