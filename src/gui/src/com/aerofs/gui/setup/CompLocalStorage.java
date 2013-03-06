@@ -20,7 +20,6 @@ import org.eclipse.swt.widgets.DirectoryDialog;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
 
-import javax.annotation.Nullable;
 import java.util.List;
 
 public class CompLocalStorage
@@ -33,22 +32,9 @@ public class CompLocalStorage
 
     public CompLocalStorage(Composite container, String absRootAnchor)
     {
-        this(container, absRootAnchor, null);
-    }
-
-    public CompLocalStorage(Composite container, String absRootAnchor, @Nullable String explanation)
-    {
         _absRootAnchor = absRootAnchor;
 
         _container = container;
-
-        if (explanation != null) {
-            addPlaceholder();
-
-            addExplanation(explanation);
-
-            addPlaceholder();
-        }
 
         addLabel();
 
@@ -59,21 +45,6 @@ public class CompLocalStorage
         addChangeLocationButton(_txtComposite);
 
         addUserDefaultLocationButton(_txtComposite);
-    }
-
-    private void addPlaceholder()
-    {
-        Label l = new Label(_container, SWT.NONE);
-        l.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 2, 1));
-        _controls.add(l);
-    }
-
-    private void addExplanation(String explanation)
-    {
-        Label lbl = new Label(_container, SWT.WRAP);
-        lbl.setLayoutData(new GridData(SWT.LEFT, SWT.TOP, false, false, 2, 1));
-        lbl.setText(explanation);
-        _controls.add(lbl);
     }
 
     private void addUserDefaultLocationButton(Composite _txtComposite)
