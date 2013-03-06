@@ -134,7 +134,7 @@ public class DlgHistory extends AeroFSDialog
 
         createVersionTable(group);
 
-        _actionButtons = newButtonContainer(group);
+        _actionButtons = newPackedButtonContainer(group);
         _actionButtons.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
 
         _restoreBtn = new Button(_actionButtons, SWT.NONE);
@@ -221,7 +221,7 @@ public class DlgHistory extends AeroFSDialog
         sashForm.setWeights(new int[] {1, 2});
 
         // Create a composite that will hold the buttons row
-        Composite buttons = newButtonContainer(shell);
+        Composite buttons = newPackedButtonContainer(shell);
         buttons.setLayoutData(new GridData(SWT.END, SWT.CENTER, true, false, 2, 1));
 
         Button refreshBtn = new Button(buttons, SWT.NONE);
@@ -655,7 +655,10 @@ public class DlgHistory extends AeroFSDialog
 
     private void deleteVersion(HistoryModel.Version version)
     {
-        if (!GUI.get().ask(MessageType.INFO, "Permanently delete old version?")) return;
+        if (!GUI.get().ask(getShell(), MessageType.INFO,
+                "Permanently delete this old version of \"" + version.path.last() + "\"?")) {
+            return;
+        }
 
         try {
             _model.delete(version);
@@ -676,7 +679,7 @@ public class DlgHistory extends AeroFSDialog
     {
         Path p = _model.getPath(index);
         new FeedbackDialog(getShell(), "Deleting...",
-                "Permanently delete previous versions of all files under " + p + " ?\n ",
+                "Permanently delete all previous versions under \"" + p.last() + "\" ?\n ",
                 "Deleting old versions under " + p) {
             @Override
             public void run() throws Exception {
@@ -774,12 +777,17 @@ public class DlgHistory extends AeroFSDialog
         return mi;
     }
 
-    private Composite newButtonContainer(Composite parent)
+    private Composite newPackedButtonContainer(Composite parent)
+    {
+        return newButtonContainer(parent, true);
+    }
+
+    private Composite newButtonContainer(Composite parent, boolean pack)
     {
         Composite buttons = new Composite(parent, SWT.NONE);
         buttons.setLayoutData(new GridData(SWT.FILL, SWT.BOTTOM, true, false, 2, 1));
         RowLayout buttonLayout = new RowLayout();
-        buttonLayout.pack = true;
+        buttonLayout.pack = pack;
         buttonLayout.wrap = false;
         buttonLayout.fill = true;
         buttonLayout.center = true;
@@ -836,11 +844,11 @@ public class DlgHistory extends AeroFSDialog
             if (_confirm != null && !_confirm.isEmpty()) {
                 label.setText(_confirm);
 
-                final Composite c = newButtonContainer(shell);
+                final Composite c = newButtonContainer(shell, false);
                 c.setLayoutData(new GridData(SWT.RIGHT, SWT.BOTTOM, true, false, 2, 1));
 
                 Button bYes = new Button(c, SWT.NONE);
-                bYes.setText("Yes");
+                bYes.setText("   Yes   ");
                 bYes.addSelectionListener(new SelectionAdapter() {
                     @Override
                     public void widgetSelected(SelectionEvent selectionEvent)
@@ -856,7 +864,7 @@ public class DlgHistory extends AeroFSDialog
                 });
 
                 Button bNo = new Button(c, SWT.NONE);
-                bNo.setText("No");
+                bNo.setText("   No   ");
                 bNo.addSelectionListener(new SelectionAdapter()
                 {
                     @Override
