@@ -7,5 +7,5 @@ public interface ITokenReclamationListener
      * each reclamation. The caller unregisters the listener before calling
      * the method.
      */
-    void tokenReclaimed_(Cat cat);
+    void tokenReclaimed_();
 }

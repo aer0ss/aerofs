@@ -11,6 +11,7 @@ import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.db.AbstractDBIterator;
 import com.aerofs.lib.db.DBUtil;
 import com.aerofs.lib.db.IDBIterator;
+import com.aerofs.lib.db.PreparedStatementWrapper;
 import com.aerofs.lib.id.CID;
 import com.aerofs.lib.id.OCID;
 import com.aerofs.base.id.OID;
@@ -45,78 +46,62 @@ public class CollectorSequenceDatabase extends AbstractDatabase
         }
     }
 
-    private static class PreparedStatementWrapper {
-        private PreparedStatement _ps;
-    }
-
     private IDBIterator<OCIDAndCS> getFromCSImpl_(SIndex sidx, @Nullable CollectorSeq csStart,
-            PreparedStatementWrapper psw, String sql)
+            int limit, PreparedStatementWrapper psw, String sql)
             throws SQLException
     {
         try {
-            if (psw._ps == null) psw._ps = c().prepareStatement(sql);
-            psw._ps.setInt(1, sidx.getInt());
-            psw._ps.setLong(2, csStart == null ? 0 : csStart.getLong());
+            PreparedStatement ps = psw.get();
+            if (ps == null) psw.set(ps = c().prepareStatement(sql));
 
-            return new DBIterComWithKML(psw._ps.executeQuery());
+            ps.setInt(1, sidx.getInt());
+            ps.setLong(2, csStart == null ? 0 : csStart.getLong());
+            ps.setInt(3, limit);
 
+            return new DBIterComWithKML(ps.executeQuery());
         } catch (SQLException e) {
-            DBUtil.close(psw._ps);
-            psw._ps = null;
+            psw.close();
             throw e;
         }
     }
 
-    String getAllCSQuery()
-    {
-        return "select " + C_CS_CS + "," + C_CS_OID +
-                "," + C_CS_CID + " from " + T_CS +
-                " where " + C_CS_SIDX + "=? and " + C_CS_CS + ">? " +
-                " order by " + C_CS_CS;
+    String getCSQuery(@Nullable String extraCondition) {
+        return DBUtil.selectWhere(T_CS,
+                C_CS_SIDX + "=? and " + C_CS_CS + ">?" +
+                        (extraCondition == null ? "" : " and " + extraCondition),
+                C_CS_CS, C_CS_OID, C_CS_CID
+                ) +
+                " order by " + C_CS_CS +
+                " limit ?";
     }
 
     private final PreparedStatementWrapper _pswGCS = new PreparedStatementWrapper();
     @Override
-    public IDBIterator<OCIDAndCS> getAllCS_(SIndex sidx, @Nullable CollectorSeq csStart)
+    public IDBIterator<OCIDAndCS> getCS_(SIndex sidx, @Nullable CollectorSeq csStart, int limit)
         throws SQLException
     {
         // To avoid requiring a temporary b-tree for the "order by CS_CS,"
         // the CS table index was changed to have (sidx, cs, oid, cid)
-        return getFromCSImpl_(sidx, csStart, _pswGCS, getAllCSQuery());
-    }
-
-    String getAllMetaCSQuery()
-    {
-        return "select " + C_CS_CS + "," + C_CS_OID +
-                "," + C_CS_CID + " from " + T_CS +
-                " where " + C_CS_SIDX + "=? and " + C_CS_CS + ">?" +
-                " and " + C_CS_CID + "=" + CID.META.getInt() +
-                " order by " + C_CS_CS;
+        return getFromCSImpl_(sidx, csStart, limit, _pswGCS,
+                getCSQuery(null));
     }
 
     private final PreparedStatementWrapper _pswGMCS = new PreparedStatementWrapper();
     @Override
-    public IDBIterator<OCIDAndCS> getAllMetaCS_(SIndex sidx, @Nullable CollectorSeq csStart)
+    public IDBIterator<OCIDAndCS> getMetaCS_(SIndex sidx, @Nullable CollectorSeq csStart, int limit)
         throws SQLException
     {
-        return getFromCSImpl_(sidx, csStart, _pswGMCS, getAllMetaCSQuery());
-    }
-
-    String getAllNonMetaCSQuery()
-    {
-        return "select " + C_CS_CS + "," + C_CS_OID +
-                "," + C_CS_CID + " from " + T_CS +
-                " where " + C_CS_SIDX + "=? and " + C_CS_CS + ">?" +
-                " and " + C_CS_CID + "!=" + CID.META.getInt() +
-                " order by " + C_CS_CS;
+        return getFromCSImpl_(sidx, csStart, limit, _pswGMCS,
+                getCSQuery(C_CS_CID + "=" + CID.META.getInt()));
     }
 
     private final PreparedStatementWrapper _pswGNMCS = new PreparedStatementWrapper();
     @Override
-    public IDBIterator<OCIDAndCS> getAllNonMetaCS_(SIndex sidx, @Nullable CollectorSeq csStart)
-        throws SQLException
+    public IDBIterator<OCIDAndCS> getNonMetaCS_(SIndex sidx, @Nullable CollectorSeq csStart,
+            int limit) throws SQLException
     {
-        return getFromCSImpl_(sidx, csStart, _pswGNMCS, getAllNonMetaCSQuery());
+        return getFromCSImpl_(sidx, csStart, limit, _pswGNMCS,
+                getCSQuery(C_CS_CID + "!=" + CID.META.getInt()));
     }
 
     private PreparedStatement _psDCS;
