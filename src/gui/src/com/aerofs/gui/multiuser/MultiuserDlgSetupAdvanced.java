@@ -4,7 +4,6 @@
 
 package com.aerofs.gui.multiuser;
 
-import com.aerofs.gui.GUIParam;
 import com.aerofs.gui.setup.AbstractDlgSetupAdvanced;
 import com.aerofs.gui.setup.CompLocalStorage;
 import com.aerofs.lib.S;
@@ -19,7 +18,6 @@ import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.GridData;
-import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
@@ -54,12 +52,8 @@ public class MultiuserDlgSetupAdvanced extends AbstractDlgSetupAdvanced
     final static public int LOCAL_STORAGE_OPTION = 0;
     final static public int S3_STORAGE_OPTION = 1;
 
-    final private String LOCAL_STORAGE_OPTION_TEXT = "Local Storage";
-    final private String S3_STORAGE_OPTION_TEXT = "S3 Storage";
-    final private String LOCAL_STORAGE_EXPLANATION =
-            "This option stores files on the local computer.";
-    final private String S3_STORAGE_EXPLANATION =
-            "This option stores files in Amazon S3.";
+    final private String LOCAL_STORAGE_OPTION_TEXT = "Store files on local disk";
+    final private String S3_STORAGE_OPTION_TEXT = "Store files on Amazon S3";
     final private String S3_PASSWORD_EXPLANATION = S.SETUP_S3_ENCRYPTION_PASSWORD;
 
 
@@ -79,19 +73,19 @@ public class MultiuserDlgSetupAdvanced extends AbstractDlgSetupAdvanced
         _storageChoice = storageChoice;
     }
 
+    @Override
     protected void createStorageArea(Composite container)
     {
         _container = container;
 
-        Label lblStorageSelector = new Label(_container, SWT.NONE);
-        lblStorageSelector.setText("Storage Option:");
-
         final Combo storageSelector = new Combo(_container, SWT.DROP_DOWN | SWT.READ_ONLY);
         storageSelector.add(LOCAL_STORAGE_OPTION_TEXT, LOCAL_STORAGE_OPTION);
         storageSelector.add(S3_STORAGE_OPTION_TEXT, S3_STORAGE_OPTION);
+        storageSelector.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 2, 1));
 
-        _compLocalStorage = new CompLocalStorage(_container, getAbsoluteRootAnchor(),
-                LOCAL_STORAGE_EXPLANATION);
+        addPlaceholder(_container, null);
+
+        _compLocalStorage = new CompLocalStorage(_container, getAbsoluteRootAnchor());
 
         createS3StorageArea(_container);
 
@@ -170,16 +164,6 @@ public class MultiuserDlgSetupAdvanced extends AbstractDlgSetupAdvanced
 
     private void createS3StorageArea(Composite container)
     {
-        addPlaceholder(container, _s3Controls);
-
-        Label lblExplanation = new Label(container, SWT.WRAP);
-        GridData gd = new GridData(SWT.LEFT, SWT.TOP, false, false, 2, 1);
-        lblExplanation.setLayoutData(gd);
-        lblExplanation.setText(S3_STORAGE_EXPLANATION);
-        _s3Controls.add(lblExplanation);
-
-        addPlaceholder(container, _s3Controls);
-
         Label lblS3BucketId = new Label(container, SWT.NONE);
         lblS3BucketId.setLayoutData(new GridData(SWT.RIGHT, SWT.TOP, false, false, 1, 1));
         lblS3BucketId.setText(S.SETUP_S3_BUCKET_NAME + ":");
@@ -260,11 +244,11 @@ public class MultiuserDlgSetupAdvanced extends AbstractDlgSetupAdvanced
         });
     }
 
-    private void addPlaceholder(Composite container, List<Control> controls)
+    private void addPlaceholder(Composite container, @Nullable List<Control> controls)
     {
         Label l = new Label(container, SWT.NONE);
         l.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 2, 1));
-        controls.add(l);
+        if (controls != null) controls.add(l);
     }
 
     private PasswordVerifierResult verifyPasswords()
