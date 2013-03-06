@@ -93,7 +93,7 @@ public class Exceptions
         }
 
         try {
-            return exClass.getConstructor(PBException.class).newInstance(pb);
+            return exClass.getDeclaredConstructor(PBException.class).newInstance(pb);
         } catch (Exception e) {
             throw Throwables.propagate(e);
         }
