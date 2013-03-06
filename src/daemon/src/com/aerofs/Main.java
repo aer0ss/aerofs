@@ -13,6 +13,7 @@ import com.aerofs.lib.Param;
 import com.aerofs.lib.SystemUtil.ExitCode;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.base.id.UserID;
+import com.aerofs.lib.rocklog.RockLog;
 import org.slf4j.Logger;
 
 import com.google.inject.CreationException;
@@ -25,6 +26,8 @@ import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.ExNotSetup;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.sv.client.SVClient;
+
+import static com.aerofs.lib.rocklog.RockLog.BaseComponent.CLIENT;
 
 
 public class Main {
@@ -95,6 +98,8 @@ public class Main {
                     + AppRoot.abs() + " - " + Util.e(e));
         }
 
+        // Initialize RockLog
+        RockLog.init_(CLIENT);
         SystemUtil.setDefaultUncaughtExceptionHandler();
 
         try {

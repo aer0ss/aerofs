@@ -12,11 +12,6 @@ import static com.aerofs.lib.rocklog.RockLog.BaseComponent.CLIENT;
 
 public class CLIProgram implements IProgram
 {
-    static
-    {
-        RockLog.init_(CLIENT);
-    }
-
     @Override
     public void launch_(String rtRoot, String prog, String[] args) throws Exception
     {
