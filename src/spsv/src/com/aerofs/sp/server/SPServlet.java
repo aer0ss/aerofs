@@ -193,7 +193,14 @@ public class SPServlet extends AeroServlet
         initCertificateAuthenticator(req);
 
         // Receive protocol version number.
-        int protocol = _postDelegate.getProtocolVersion(req);
+        int protocol;
+        try {
+            protocol = _postDelegate.getProtocolVersion(req);
+        } catch (NumberFormatException e) {
+            l.warn("no valid protocol version found");
+            resp.sendError(400, "invalid request");
+            return;
+        }
         if (protocol != SP.SP_PROTOCOL_VERSION) {
             l.warn("protocol version mismatch. servlet: " + SP.SP_PROTOCOL_VERSION + " client: " +
                     protocol);
