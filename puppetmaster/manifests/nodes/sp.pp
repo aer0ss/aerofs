@@ -5,6 +5,7 @@ node "sp.aerofs.com" inherits default {
     }
 
     include redis::aof
+    include jeq
 
     # install sp servlet
     class{"servlet::sp":

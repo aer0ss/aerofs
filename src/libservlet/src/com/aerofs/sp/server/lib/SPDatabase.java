@@ -1,24 +1,18 @@
 package com.aerofs.sp.server.lib;
 
-import java.util.Arrays;
-
-import com.aerofs.base.BaseUtil;
+import com.aerofs.base.ex.ExNoPerm;
+import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.DID;
-import com.aerofs.base.id.SID;
 import com.aerofs.lib.S;
 import com.aerofs.base.id.UserID;
 
 import com.aerofs.lib.db.DBUtil;
 
-import com.aerofs.base.ex.ExFormatError;
-import com.aerofs.base.ex.ExNoPerm;
-import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.Base64;
 import com.aerofs.lib.Util;
 import com.aerofs.servlets.lib.db.IDatabaseConnectionProvider;
 import com.aerofs.servlets.lib.db.sql.AbstractSQLDatabase;
 import com.google.common.collect.Sets;
-import org.apache.commons.lang.builder.HashCodeBuilder;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
