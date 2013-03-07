@@ -8,7 +8,7 @@ CHANGES = open(os.path.join(here, 'CHANGES.txt')).read()
 
 # TODO: Add aerofs.python-lib here
 requires = [
-    'protobuf',
+    'protobuf==2.5.0',
     'pyramid',
     'pyramid_debugtoolbar',
     'waitress',

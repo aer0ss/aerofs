@@ -14,8 +14,8 @@ mkdir -p $PYHOME
 # Install virtualenv package and install AeroFS web package in virtualenv
 pip install virtualenv
 virtualenv $PYHOME
-$PYHOME/bin/pip install protobuf
 cd /opt/web
+$PYHOME/bin/pip install protobuf==2.5.0 --upgrade
 $PYTHON setup.py install
 
 # Install stripe module
