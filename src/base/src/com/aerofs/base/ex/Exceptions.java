@@ -93,6 +93,8 @@ public class Exceptions
         }
 
         try {
+            // Note: Class.getConstructor() returns only public constructors, so we have to use
+            // getDeclaredConstructor() as some exceptions may have package-private constructors
             return exClass.getDeclaredConstructor(PBException.class).newInstance(pb);
         } catch (Exception e) {
             throw Throwables.propagate(e);

@@ -4,6 +4,8 @@
 
 package com.aerofs.lib.ex;
 
+import com.aerofs.base.ex.AbstractExWirable;
+import com.aerofs.base.ex.ExInternalError;
 import com.aerofs.base.ex.Exceptions;
 import com.aerofs.lib.Util;
 import com.aerofs.proto.Common.PBException;
@@ -15,8 +17,10 @@ import org.junit.Test;
 import java.io.File;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class TestExceptions extends AbstractTest
 {
@@ -55,5 +59,22 @@ public class TestExceptions extends AbstractTest
         ExNotDir ex = (ExNotDir) e;
         assertEquals("OBFUSCATED MESSAGE", ex.getMessage());
         assertEquals("Secret code", ex.getPlainTextMessage());
+    }
+
+    @Test
+    public void shouldDeserializeExceptionsWithNonPublicConstructors()
+    {
+        // Precondition: check that ExInternalError's constructor is indeed non-public, otherwise
+        // this test is meaningless
+        try {
+            ExInternalError.class.getConstructor(PBException.class);
+            fail("ExInternalError constructor is public - this test is meaningless");
+        } catch (NoSuchMethodException e) {
+            // expected
+        }
+
+        Exception e1 = new Exception();
+        Exception e2 = Exceptions.fromPB(Exceptions.toPB(e1));
+        assertTrue(e2 instanceof ExInternalError);
     }
 }
