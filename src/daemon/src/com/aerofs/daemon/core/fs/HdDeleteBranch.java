@@ -58,8 +58,11 @@ public class HdDeleteBranch extends AbstractHdIMC<EIDeleteBranch>
         Version vMaster = _nvc.getLocalVersion_(kMaster);
 
         Version vB_M = vBranch.sub_(vMaster);
-        assert !vB_M.isZero_() && !vMaster.sub_(vBranch).isZero_()
-                : kBranch + " " + vBranch + " " + vMaster;
+        // aliasing may create branches whose version vector is dominated by MASTER
+        // so we cannot simply assert...
+        if (vB_M.isZero_() || !vMaster.sub_(vBranch).isZero_()) {
+            l.warn("del branch {} {} {}", kBranch, vBranch, vMaster);
+        }
 
         Trans t = _tm.begin_();
         try {
