@@ -62,7 +62,7 @@ if [ ! -f "$DIST/aerofs.jar" ]; then
     TMP_DIR=$(mktemp -d)
     trap "rm -rf \"$TMP_DIR\"" EXIT
 
-    uudecode -o /dev/stdout $0 | tar xzf - -C $TMP_DIR 2>/dev/null
+    uudecode -o /dev/stdout < "$0" | tar xzf - -C $TMP_DIR 2>/dev/null
 
     if [ $PROG == gui ]; then
         echo "Launching graphical interface... (use [AEROFS_PRODUCT_UNIX]-cli for command-line interface)"
