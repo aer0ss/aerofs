@@ -155,7 +155,7 @@ public class TokenManager implements IDumpStatMisc
         Util.verify(info._tokenSetMap.get(prio).remove(tk));
         if (notifyReclaimListener) {
             ITokenReclamationListener l = info._ls.removeFirstListener_();
-            if (l != null) l.tokenReclaimed_(info._cat);
+            if (l != null) l.tokenReclaimed_();
         }
     }
 

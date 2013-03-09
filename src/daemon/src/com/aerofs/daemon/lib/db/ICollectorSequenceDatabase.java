@@ -42,13 +42,13 @@ public interface ICollectorSequenceDatabase
      * if csStart != null; otherwise return all the kml components. The
      * components are ordered by cs
      */
-    IDBIterator<OCIDAndCS> getAllCS_(SIndex sidx, @Nullable CollectorSeq csStart)
+    IDBIterator<OCIDAndCS> getCS_(SIndex sidx, @Nullable CollectorSeq csStart, int limit)
             throws SQLException;
 
-    IDBIterator<OCIDAndCS> getAllMetaCS_(SIndex sidx, @Nullable CollectorSeq csStart)
+    IDBIterator<OCIDAndCS> getMetaCS_(SIndex sidx, @Nullable CollectorSeq csStart, int limit)
             throws SQLException;
 
-    IDBIterator<OCIDAndCS> getAllNonMetaCS_(SIndex sidx, @Nullable CollectorSeq csStart)
+    IDBIterator<OCIDAndCS> getNonMetaCS_(SIndex sidx, @Nullable CollectorSeq csStart, int limit)
             throws SQLException;
 
     void deleteCSsForStore_(SIndex sidx, Trans t) throws SQLException;

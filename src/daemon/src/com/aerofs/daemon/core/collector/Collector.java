@@ -9,6 +9,8 @@ import java.util.Set;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
+import com.aerofs.daemon.lib.db.ICollectorSequenceDatabase.OCIDAndCS;
+import com.aerofs.lib.id.OCID;
 import com.aerofs.lib.id.SIndex;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Sets;
@@ -16,30 +18,18 @@ import org.slf4j.Logger;
 
 import com.aerofs.daemon.core.CoreExponentialRetry;
 import com.aerofs.daemon.core.CoreScheduler;
-import com.aerofs.daemon.core.NativeVersionControl;
-import com.aerofs.daemon.core.collector.iterator.IIterator;
-import com.aerofs.daemon.core.collector.iterator.IIteratorFactory;
-import com.aerofs.daemon.core.collector.iterator.full.IteratorFactoryFullReplica;
-import com.aerofs.daemon.core.collector.iterator.partial.IteratorFactoryPartialReplica;
-import com.aerofs.daemon.core.ds.DirectoryService;
-import com.aerofs.daemon.core.protocol.Downloads;
 import com.aerofs.daemon.core.protocol.IDownloadCompletionListener;
-import com.aerofs.daemon.core.net.To;
 import com.aerofs.daemon.core.store.Store;
-import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.ITokenReclamationListener;
 import com.aerofs.daemon.core.tc.Token;
-import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.sched.ExponentialRetry;
 import com.aerofs.lib.IDumpStatMisc;
 import com.aerofs.daemon.lib.db.ICollectorFilterDatabase;
 import com.aerofs.daemon.lib.db.ICollectorSequenceDatabase;
-import com.aerofs.daemon.lib.db.ICollectorSequenceDatabase.OCIDAndCS;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.base.C;
-import com.aerofs.lib.InOutArg;
 import com.aerofs.lib.Param;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.bf.BFOID;
@@ -50,15 +40,14 @@ import com.google.inject.Inject;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-public class Collector implements IDumpStatMisc
+public class Collector implements IDumpStatMisc, IDownloadListenerFactory
 {
     private static final Logger l = Loggers.getLogger(Collector.class);
 
     private final SIndex _sidx;
     private final CollectorFilters _cfs;
-    private final IIteratorFactory _iterFactory;
     private int _startSeq;
-    private @Nullable OCIDAndCS _occs;    // null iff the collection is not started
+    private AbstractIterator _it;
     private int _downloads;     // # current downloads initiated by the collector
     private long _backoffInterval;
     private boolean _backoffScheduled;
@@ -66,51 +55,44 @@ public class Collector implements IDumpStatMisc
     public static class Factory
     {
         private final CoreScheduler _sched;
-        private final Downloads _dls;
         private final ICollectorSequenceDatabase _csdb;
         private final ICollectorFilterDatabase _cfdb;
-        private final NativeVersionControl _nvc;
-        private final DirectoryService _ds;
+        private final CollectorSkipRule _csr;
         private final TransManager _tm;
-        private final To.Factory _factTo;
         private final ExponentialRetry _er;
-        private final TokenManager _tokenManager;
+        private final Downloader _dl;
 
         @Inject
-        public Factory(CoreScheduler sched, Downloads dls, ICollectorSequenceDatabase csdb,
-                NativeVersionControl nvc, DirectoryService ds, TransManager tm,
-                To.Factory factTo, CoreExponentialRetry cer, ICollectorFilterDatabase cfdb,
-                TokenManager tokenManager)
+        public Factory(CoreScheduler sched, ICollectorSequenceDatabase csdb,
+                CollectorSkipRule csr, Downloader dl, TransManager tm,
+                CoreExponentialRetry cer, ICollectorFilterDatabase cfdb)
         {
             _sched = sched;
-            _dls = dls;
             _csdb = csdb;
             _cfdb = cfdb;
-            _nvc = nvc;
-            _ds = ds;
+            _csr = csr;
             _tm = tm;
-            _factTo = factTo;
             _er = cer;
-            _tokenManager = tokenManager;
+            _dl = dl;
         }
 
         public Collector create_(Store s)
         {
-            return new Collector(this, s);
+            // TODO: either inject Iterator impl or get rid of partial replica support
+            return new Collector(this, s.sidx(), Cfg.isFullReplica() ?
+                            new IteratorFullReplica(_csdb, _csr, s.sidx()) :
+                            new IteratorPartialReplica(_csdb, _csr, s));
         }
     }
 
     private final Factory _f;
 
-    private Collector(Factory f, Store s)
+    private Collector(Factory f, SIndex sidx, AbstractIterator it)
     {
         _f = f;
-        _sidx = s.sidx();
-        // TODO use injection
+        _sidx = sidx;
         _cfs = new CollectorFilters(f._cfdb, f._tm, _sidx);
-        _iterFactory = Cfg.isFullReplica() ?
-                new IteratorFactoryFullReplica(f._csdb, f._nvc, f._ds, _sidx) :
-                new IteratorFactoryPartialReplica(f._csdb, f._nvc, f._ds, s);
+        _it = it;
         resetBackoffInterval_();
     }
 
@@ -123,9 +105,9 @@ public class Collector implements IDumpStatMisc
     public void add_(DID did, @Nonnull BFOID filter, Trans t) throws SQLException
     {
         if (_cfs.addDBFilter_(did, filter, t)) {
-            l.debug("adding filter to " + did + " triggers collector 4 " + _sidx);
+            l.debug("adding filter to {} triggers collector 4 {}", did, _sidx);
             resetBackoffInterval_();
-            if (started_()) _cfs.addCSFilter_(did, _occs._cs, filter);
+            if (_it.started()) _cfs.addCSFilter_(did, _it.cs_(), filter);
             else start_(t);
         }
     }
@@ -139,9 +121,9 @@ public class Collector implements IDumpStatMisc
                     throws Exception
             {
                 if (_cfs.loadDBFilter_(did)) {
-                    l.debug(did + " online triggers collector 4 " + _sidx);
+                    l.debug("{} online triggers collector 4 {}", did, _sidx);
                     resetBackoffInterval_();
-                    if (started_()) _cfs.setCSFilterFromDB_(did, _occs._cs);
+                    if (_it.started()) _cfs.setCSFilterFromDB_(did, _it.cs_());
                     else start_(null);
                 }
 
@@ -157,18 +139,13 @@ public class Collector implements IDumpStatMisc
         _cfs.unloadAllFilters_(did);
     }
 
-    private boolean started_()
-    {
-        return _occs != null;
-    }
-
     /**
-     * start an iteration immediately. the caller must guarantee that started_()
+     * start an iteration immediately. the caller must guarantee that _it.started_()
      * returns false.
      */
     private void start_(@Nullable final Trans t)
     {
-        assert !started_();
+        assert !_it.started();
         final int startSeq = ++_startSeq;
 
         _f._er.retry("start", new Callable<Void>()
@@ -194,7 +171,7 @@ public class Collector implements IDumpStatMisc
                 // stop this retry thread if someone called start_() again
                 if (startSeq != _startSeq) return null;
 
-                assert !started_() : isFirst + " " + Collector.this;
+                assert !_it.started() : isFirst + " " + Collector.this;
                 collect_(isFirst ? t : null);
                 return null;
             }
@@ -207,9 +184,9 @@ public class Collector implements IDumpStatMisc
         // NB: we can safely fully reset the CS filter queue because the DB always contains the
         // canonical copy of the latest BF for each device and it is the union of all BF received
         // since the last cleanup (i.e. the last time collection was finalized)
-        if (started_()) {
+        if (_it.started()) {
             _cfs.deleteAllCSFilters_();
-            _cfs.setAllCSFiltersFromDB_(_occs._cs);
+            _cfs.setAllCSFiltersFromDB_(_it.cs_());
         } else {
             start_(null);
         }
@@ -222,7 +199,7 @@ public class Collector implements IDumpStatMisc
 
     private void scheduleBackoff_()
     {
-        l.debug("schedule backoff " + _backoffScheduled + " in " + _backoffInterval);
+        l.debug("schedule backoff {} in {}", _backoffScheduled, _backoffInterval);
 
         if (_backoffScheduled) return;
         _backoffScheduled = true;
@@ -232,7 +209,7 @@ public class Collector implements IDumpStatMisc
             @Override
             public void handle_()
             {
-                l.debug("backoff start " + _occs);
+                l.debug("backoff start {}", _it);
                 _backoffScheduled = false;
                 restart_();
             }
@@ -242,197 +219,171 @@ public class Collector implements IDumpStatMisc
     }
 
     /**
-     * this method can only be called by start() or collectOne()
+     * Wrap the collection loop in a transaction, if not called within a "covering" transaction
      */
-    private void collect_(@Nullable Trans t)
-            throws SQLException
+    private void collect_(@Nullable Trans covering) throws SQLException
     {
-        // depending on _occs, we may either perform a iterating continuation or
-        // start a new iteration
-        IIterator iter = _iterFactory.newIterator_(_occs == null ? null : _occs._cs);
-        InOutArg<IIterator> ioaIter = new InOutArg<IIterator>(iter);
+        Trans t = covering != null ? covering : _f._tm.begin_();
         try {
-            collectLoop_(t, ioaIter);
+            collectLoop_(t);
+
+            l.debug("collect {} ret. {}", _sidx, _it);
+            attemptToStopAndFinalizeCollection_(t);
+
+            if (t != covering) t.commit_();
         } finally {
-            ioaIter.get().close_();
-        }
-
-        l.debug("collect " + _sidx + " returns. occs = " + _occs);
-        attemptToStopAndFinalizeCollection_(t);
-    }
-
-    private void collectLoop_(Trans t, InOutArg<IIterator> ioaIter) throws SQLException
-    {
-        boolean hasEntry = false;
-        boolean firstLoop = true;
-
-        while (true) {
-            if (_occs != null) {
-                // _occs != null iff 1) we're in a continuation and just entered this while loop
-                // (firstLoop == true), or 2) the iter.next() below has picked up a new element
-                // (firstLoop == false).
-                hasEntry = true;
-
-                boolean shouldCollect;
-                if (firstLoop) {
-                    // if the occs is carried over from the last iteration due to continuation
-                    // (i.e. case 1 above), we need to check again whether the component should be
-                    // skipped since its state might have been changed after the last iteration
-                    // and before this one.
-                    SOCID socid = new SOCID(_sidx, _occs._ocid);
-                    shouldCollect = !Common.shouldSkip_(_f._nvc, _f._ds, socid);
-                } else {
-                    shouldCollect = true;
-                }
-
-                if (shouldCollect && !collectOne_(_occs)) {
-                    // wait for continuation
-                    break;
-                }
-            }
-
-            OCIDAndCS occs = ioaIter.get().next_(t);
-            if (occs != null) {
-                if (_occs == null) {
-                    // at this point the collection just started. it's noteworthy that there may be
-                    // ongoing downloads initiated by the last iteration.
-                    _cfs.setAllCSFiltersFromDB_(occs._cs);
-                    _occs = occs;
-                } else {
-                    assert _occs._cs.compareTo(occs._cs) < 0;
-                    if (!_cfs.deleteCSFilters_(_occs._cs.plusOne(), occs._cs)) {
-                        l.debug("no filter left. stop");
-                        _occs = null;
-                        break;
-                    } else {
-                        _occs = occs;
-                    }
-                }
-
-            } else if (hasEntry) {
-                ioaIter.get().close_();
-                l.debug("start over");
-                ioaIter.set(_iterFactory.newIterator_(null));
-                assert _occs != null;
-                occs = ioaIter.get().next_(t);
-                if (occs != null) {
-                    // the two can be equal if there's only one component in
-                    // the list
-                    assert _occs._cs.compareTo(occs._cs) >= 0;
-                    if (!_cfs.deleteCSFilters_(null, occs._cs) ||
-                            !_cfs.deleteCSFilters_(_occs._cs.plusOne(), null)) {
-                        l.debug("no filter left. stop");
-                        _occs = null;
-                        break;
-                    } else {
-                        _occs = occs;
-                    }
-                } else {
-                    l.debug("empty list. stop");
-                    _cfs.deleteAllCSFilters_();
-                    _occs = null;
-                    break;
-                }
-
-            } else {
-                // nothing has been collected. that means two things:
-                // 1) it's not a continuation (otherwise _occs != null
-                // when the method is called), and 2) therefore it's a
-                // new iteration, and it returns nothing.
-                // in this case, we stop
-                l.debug("empty list. stop");
-                _cfs.deleteAllCSFilters_();
-                _occs = null;
-                break;
-            }
-
-            firstLoop = false;
+            if (t != covering) t.end_();
         }
     }
 
     /**
+     * Iterate over the collector queue until collection can be finalized or a lack of Token
+     * requires a break
+     */
+    private void collectLoop_(Trans t) throws SQLException
+    {
+        if (_it.started()) {
+            // in case of continuation we need to check again whether the component should be
+            // skipped since its state might have changed since the last iteration
+            OCID ocid = _it.current_()._ocid;
+            SOCID socid = new SOCID(_sidx, ocid);
+            l.debug("cont {}", socid);
+            if (!_f._csr.shouldSkip_(socid) && !collectOne_(ocid)) {
+                // wait for continuation
+                return;
+            }
+        }
+
+        while (rotate_(t)) {
+            if (!collectOne_(_it.current_()._ocid)) {
+                // wait for continuation
+                return;
+            }
+        }
+
+        // this code is only reached if the iteration is over
+        _it.reset_();
+    }
+
+    /**
+     * Increment the collection iterator and discard BF as needed
+     * @return whether there is an item to be collected
+     */
+    private boolean rotate_(Trans t) throws SQLException
+    {
+        OCIDAndCS prevOccs = _it.current_();
+
+        if (_it.next_(t)) {
+            OCIDAndCS occs = _it.current_();
+            assert occs != null;
+            if (prevOccs == null) {
+                // at this point the collection just started. it's noteworthy that there may be
+                // ongoing downloads initiated by the last iteration.
+                l.debug("start from {}", occs);
+                _cfs.setAllCSFiltersFromDB_(occs._cs);
+            } else {
+                assert prevOccs._cs.compareTo(occs._cs) < 0;
+                if (!_cfs.deleteCSFilters_(prevOccs._cs.plusOne(), occs._cs)) {
+                    l.debug("no filter left. stop");
+                    return false;
+                }
+            }
+            return true;
+        } else if (prevOccs != null) {
+            // end of queue reached: need to start over to cleanup all successfully collected item
+            // and retry those that failed
+            l.debug("reached end at {}", prevOccs);
+            _it.reset_();
+            if (_it.next_(t)) {
+                OCIDAndCS occs = _it.current_();
+                l.debug("start over from {}", occs);
+                assert occs != null;
+                // the two can be equal if there's only one component in the list
+                assert prevOccs._cs.compareTo(occs._cs) >= 0;
+                // If the collector queue only contains one item we should make sure we do not
+                // remove any freshly added filter before we collect that item
+                // CollectorSeq.min(occs._cs, prevOccs._cs.minusOne())
+                if (!_cfs.deleteCSFilters_(null, occs._cs) ||
+                        !_cfs.deleteCSFilters_(prevOccs._cs.plusOne(), null)) {
+                    l.debug("no filter left. stop");
+                    return false;
+                }
+                return true;
+            }
+        }
+
+        l.debug("empty list. stop");
+        _cfs.deleteAllCSFilters_();
+        return false;
+    }
+
+    /**
      * Stop and finalize collection if the following conditions are met:
-     * 1) the collection iteration is done, and 2) all the downloads initiated by the iteration have
-     * finished.
+     * 1) the collection iteration is done
+     * 2) all the downloads initiated by the iteration have finished.
+     *
      * Note that before the last download finishes, there may be one or more other
      * collection iterations have started and then stopped, or still on going, which is okay.
      */
     private void attemptToStopAndFinalizeCollection_(@Nullable Trans t)
     {
-        assert _downloads >= 0;
+        assert _downloads >= 0 : _downloads;
 
-        if (!started_() && _downloads == 0) {
-            l.debug("stop clct on " + _sidx);
+        if (!_it.started() && _downloads == 0) {
+            l.debug("stop clct on {}", _sidx);
             try {
                 _cfs.cleanUpDBFilters_(t);
             } catch (SQLException e) {
                 // filters may be failed to be removed from the db which is not
                 // a big deal
-                l.debug("stop clct 4 " + _sidx + ", ignored: " + Util.e(e));
+                l.debug("stop clct 4 {}, ignored: {}", _sidx, Util.e(e));
             }
         }
     }
 
     /**
-     * @return false to stop the iteration and wait for continuation
+     * Attempt to collect a component
+     * @return false if collection failed due to lack of token, thus requiring a continuation
      */
-    private boolean collectOne_(OCIDAndCS occs)
+    private boolean collectOne_(OCID ocid)
     {
-        assert started_();
+        assert _it.started();
 
-        SOCID socid = new SOCID(_sidx, occs._ocid.oid(), occs._ocid.cid());
-        final Set<DID> dids = _cfs.getDevicesHavingComponent_(occs._ocid);
-        if (dids.isEmpty()) return true;
+        SOCID socid = new SOCID(_sidx, ocid);
+        final Set<DID> dids = _cfs.getDevicesHavingComponent_(ocid);
+        if (dids.isEmpty()) {
+            l.debug("nodev {}", socid);
+            return true;
+        }
 
-        l.debug("clct " + _sidx + occs + " " + dids);
+        l.debug("clct {} {}", socid, dids);
 
-        final Token tk;
-        if (_f._dls.isOngoing_(socid)) {
-            // no token is needed for ongoing downloads
-            tk = null;
-        } else {
-            Cat cat = _f._dls.getCat();
-            tk = _f._tokenManager.acquire_(cat, "collect " + _sidx + occs._ocid);
-            if (tk == null) {
-                l.debug("request continuation");
-                _f._tokenManager.addTokenReclamationListener_(cat, new ITokenReclamationListener()
+        boolean ok = _f._dl.downloadAsync_(socid, dids, this, new ITokenReclamationListener() {
+            @Override
+            public void tokenReclaimed_()
+            {
+                l.debug("start continuation");
+                _f._er.retry("continuation", new Callable<Void>()
                 {
                     @Override
-                    public void tokenReclaimed_(Cat cat)
+                    public Void call() throws Exception
                     {
-                        l.debug("start continuation");
-                        _f._er.retry("continuation", new Callable<Void>()
-                        {
-                            @Override
-                            public Void call() throws Exception
-                            {
-                                assert started_();
-                                collect_(null);
-                                return null;
-                            }
-                        });
+                        assert _it.started();
+                        collect_(null);
+                        return null;
                     }
                 });
-                return false;
             }
-        }
+        });
 
-        // to guarantee tk is reclaimed properly, no code should be added here
+        if (ok) ++_downloads;
+        return ok;
+    }
 
-        boolean enqueued = false;
-        try {
-            // download the component even if it's already being downloaded, so
-            // that the new destination devices can be added if they are not there
-            Util.verify(_f._dls
-                    .downloadAsync_(socid, _f._factTo.create_(dids),
-                            new CollectorDownloadListener(dids, tk), tk));
-
-            _downloads++;
-            enqueued = true;
-            return true;
-        } finally {
-            if (tk != null && !enqueued) tk.reclaim_();
-        }
+    @Override
+    public IDownloadCompletionListener create_(Set<DID> dids, @Nullable Token tk)
+    {
+        return new CollectorDownloadListener(dids, tk);
     }
 
     private class CollectorDownloadListener implements IDownloadCompletionListener
@@ -448,7 +399,8 @@ public class Collector implements IDumpStatMisc
 
         private void postDownloadCompletionTask()
         {
-            Util.verify(_downloads-- >= 0);
+            Util.verify(--_downloads >= 0);
+            l.debug("dlend: {}", _downloads);
             attemptToStopAndFinalizeCollection_(null);
         }
 
@@ -462,7 +414,7 @@ public class Collector implements IDumpStatMisc
         @Override
         public void onGeneralError_(SOCID socid, Exception e)
         {
-            l.debug("cdl " + socid + ": " + Util.e(e));
+            l.debug("cdl {}: {}", socid, Util.e(e));
             if (_tk != null) _tk.reclaim_();
 
             // For general errors, we want to re-run this collector.
@@ -516,8 +468,8 @@ public class Collector implements IDumpStatMisc
                 scheduleBackoff_();
             }
 
-            l.debug("cdl "+ socid + " didsWPerm " + didsWithPermanentErrors
-                    + " didsWOPerm " + didsWithoutPermanentErrors);
+            l.debug("cdl {} didsWPerm {} didsWOPerm {}", socid,
+                    didsWithPermanentErrors, didsWithoutPermanentErrors);
 
             postDownloadCompletionTask();
         }
@@ -537,7 +489,7 @@ public class Collector implements IDumpStatMisc
     @Override
     public void dumpStatMisc(String indent, String indentUnit, PrintStream ps)
     {
-        ps.println(indent + "occs: " + _occs + " dls: " + _downloads +
+        ps.println(indent + "it: " + _it + " dls: " + _downloads +
                 " backoff: " + _backoffScheduled);
     }
 
@@ -545,7 +497,7 @@ public class Collector implements IDumpStatMisc
     public String toString()
     {
         return "C["+ Joiner.on(' ').useForNull("null")
-                .join(_sidx, _occs, _downloads, _startSeq, _backoffScheduled) + "]";
+                .join(_sidx, _it, _downloads, _startSeq, _backoffScheduled) + "]";
     }
 
     public void deletePersistentData_(Trans t)

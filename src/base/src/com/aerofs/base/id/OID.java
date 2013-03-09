@@ -88,4 +88,9 @@ public class OID extends UniqueID
         oid.getBytes()[VERSION_BYTE] = b;
         return oid;
     }
+
+    public static OID generate()
+    {
+        return new OID(UniqueID.generate());
+    }
 }

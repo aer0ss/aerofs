@@ -36,4 +36,11 @@ public class BFOID extends BloomFilter<OID>
     {
         super(bs, HASH);
     }
+
+    public static BFOID of(OID... objects)
+    {
+        BFOID bf = new BFOID();
+        for (OID o : objects) bf.add_(o);
+        return bf;
+    }
 }
