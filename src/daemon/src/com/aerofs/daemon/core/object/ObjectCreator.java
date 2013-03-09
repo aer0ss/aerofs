@@ -51,7 +51,17 @@ public class ObjectCreator
     public SOID create_(Type type, SOID soidParent, String name, PhysicalOp op, Trans t)
             throws IOException, ExNotFound, ExAlreadyExist, SQLException, ExNotDir, ExStreamInvalid
     {
-        SOID soid = new SOID(soidParent.sidx(), new OID(UniqueID.generate()));
+        return create_(type, new OID(UniqueID.generate()), soidParent, name, op, t);
+    }
+
+    /**
+     * Create a new object. Create an empty physical file if it's a file and it's not
+     * linker-initiated.
+     */
+    public SOID create_(Type type, OID oid, SOID soidParent, String name, PhysicalOp op, Trans t)
+            throws IOException, ExNotFound, ExAlreadyExist, SQLException, ExNotDir, ExStreamInvalid
+    {
+        SOID soid = new SOID(soidParent.sidx(), oid);
         createMeta_(type, soid, soidParent.oid(), name, 0, op, false, true, t);
 
         if (type == OA.Type.FILE) {

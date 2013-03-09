@@ -2,13 +2,15 @@
  * Copyright (c) Air Computing Inc., 2013.
  */
 
-package com.aerofs.daemon.core;
+package com.aerofs.daemon.core.first;
 
 import com.aerofs.base.BaseParam.SP;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.SID;
+import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.linker.ILinker;
 import com.aerofs.daemon.core.linker.scanner.ScanCompletionCallback;
+import com.aerofs.lib.cfg.CfgDatabase;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
@@ -35,6 +37,8 @@ public class FirstLaunch
 {
     private static final Logger l = Loggers.getLogger(FirstLaunch.class);
 
+    private final CfgDatabase _cfgDB;
+    private final OIDGenerator _og;
     private final AccessibleStores _as;
     private final ILinker _linker;
     private final CoreScheduler _sched;
@@ -51,26 +55,34 @@ public class FirstLaunch
         {
             return _accessibleStores.contains(sid);
         }
+
+        void onFirstLaunchCompletion_()
+        {
+            _accessibleStores = ImmutableSet.of();
+        }
     }
 
     @Inject
-    public FirstLaunch(ILinker linker, CoreScheduler sched, AccessibleStores as)
+    public FirstLaunch(CfgDatabase cfgDB, ILinker linker, CoreScheduler sched, AccessibleStores as,
+            OIDGenerator og)
     {
         _as = as;
+        _og = og;
         _linker = linker;
         _sched = sched;
+        _cfgDB = cfgDB;
     }
 
     public boolean isFirstLaunch_()
     {
-        return Cfg.db().getBoolean(Key.FIRST_START);
+        return _cfgDB.getBoolean(Key.FIRST_START);
     }
 
     /**
      * Perform any first-launch-specific task
      * @param callback a scan completion callback that finalizes Core startup
      */
-    void onFirstLaunch_(final ScanCompletionCallback callback)
+    public void onFirstLaunch_(final ScanCompletionCallback callback)
     {
         // NB: fetcAccessibleStore needs to be performed from a Core thread in case the SP sign-in
         // fails as it causes a Ritual notification to be sent
@@ -88,13 +100,14 @@ public class FirstLaunch
                     public void done_()
                     {
                         l.info("done indexing");
-                        _as._accessibleStores = ImmutableSet.of();
+                        _as.onFirstLaunchCompletion_();
+                        _og.onFirstLaunchCompletion_();
 
                         callback.done_();
 
                         try {
                             // reset FIRST_START flag last, as it is used to reject Ritual calls
-                            Cfg.db().set(Key.FIRST_START, false);
+                            _cfgDB.set(Key.FIRST_START, false);
                         } catch (SQLException e) {
                             SystemUtil.fatal(e);
                         }
