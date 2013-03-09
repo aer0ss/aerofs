@@ -36,7 +36,7 @@ class CollectorSkipRule
     {
         if (_nvc.getKMLVersion_(socid).isZero_()) {
             // skip components with zero KML
-            l.info("skip {}: no kml", socid);
+            l.debug("skip {}: no kml", socid);
             return true;
         } else if (socid.cid().isMeta()) {
             // never skip metadata

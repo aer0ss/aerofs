@@ -482,7 +482,7 @@ public class ReceiveAndApplyUpdate
                 }
             }
         } catch (ExAlreadyExist e) {
-            l.warn(Util.e(e));
+            l.warn("name conflict");
             return resolveNameConflict_(did, soid, oidParent, meta, wasPresent, metaDiff, t,
                     noNewVersion, vRemote, soidMsg, requested, cr);
         } catch (ExNotDir e) {
@@ -957,7 +957,7 @@ public class ReceiveAndApplyUpdate
 
         if (localBranchWithMatchingContent != null &&
                 localBranchWithMatchingContent.equals(k.kidx())) {
-            l.info("content already there, avoid I/O altogether");
+            l.debug("content already there, avoid I/O altogether");
             // no point doing any file I/O...
 
             // close the stream, we're not going to read from it
