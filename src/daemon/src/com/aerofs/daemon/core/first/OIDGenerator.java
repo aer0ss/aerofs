@@ -38,7 +38,7 @@ public class OIDGenerator
     void onFirstLaunchCompletion_()
     {
         _shouldLookup = false;
-        _sdb.cleanup_();
+        if (_sdb != null) _sdb.cleanup_();
     }
 
     public OID generate_(boolean dir, Path path)
