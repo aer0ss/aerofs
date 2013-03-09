@@ -1,8 +1,10 @@
 package com.aerofs.daemon.core.linker;
 
+import com.aerofs.base.id.OID;
 import com.aerofs.daemon.core.VersionUpdater;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
+import com.aerofs.daemon.core.first.OIDGenerator;
 import com.aerofs.daemon.core.fs.HdMoveObject;
 import com.aerofs.daemon.core.linker.MightCreate.Result;
 import com.aerofs.daemon.core.mock.logical.MockDir;
@@ -62,6 +64,7 @@ public abstract class AbstractTestMightCreate extends AbstractTest
     @Mock SharedFolderTagFileAndIcon sfti;
     @Mock Trans t;
     @Mock Analytics a;
+    @Mock OIDGenerator og;
 
     @InjectMocks MightCreate mc;
 
@@ -98,15 +101,25 @@ public abstract class AbstractTestMightCreate extends AbstractTest
 
         when(il.isIgnored_("ignored")).thenReturn(true);
 
+        when(og.generate_(anyBoolean(), any(Path.class))).thenAnswer(new Answer<OID>() {
+            @Override
+            public OID answer(InvocationOnMock invocation)
+                    throws Throwable
+            {
+                return OID.generate();
+            }
+        });
+
         when(hdmo.move_(any(SOID.class), any(SOID.class), any(String.class), any(PhysicalOp.class),
-                any(Trans.class))).then(new Answer<SOID>() {
-                    @Override
-                    public SOID answer(InvocationOnMock invocation)
-                            throws Throwable
-                    {
-                        return (SOID) invocation.getArguments()[0];
-                    }
-                });
+                any(Trans.class))).then(new Answer<SOID>()
+        {
+            @Override
+            public SOID answer(InvocationOnMock invocation)
+                    throws Throwable
+            {
+                return (SOID)invocation.getArguments()[0];
+            }
+        });
     }
 
     /**

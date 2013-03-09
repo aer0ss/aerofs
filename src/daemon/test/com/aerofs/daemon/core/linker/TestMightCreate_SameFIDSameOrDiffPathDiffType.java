@@ -59,8 +59,8 @@ public class TestMightCreate_SameFIDSameOrDiffPathDiffType extends AbstractTestM
         verify(ds).setFID_(eq(soidFolder), any(FID.class), any(Trans.class));
         verify(om).moveInSameStore_(eq(soidFolder), any(OID.class), eq("f2 (4)"),
                 eq(PhysicalOp.MAP), eq(false), eq(true), any(Trans.class));
-        verify(oc).create_(eq(Type.FILE), any(SOID.class), eq("f2"), eq(PhysicalOp.MAP),
-                any(Trans.class));
+        verify(oc).create_(eq(Type.FILE), any(OID.class), any(SOID.class), eq("f2"),
+                eq(PhysicalOp.MAP), any(Trans.class));
         verify(delBuffer, never()).remove_(soidFolder);
     }
 }

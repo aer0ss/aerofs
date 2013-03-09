@@ -75,13 +75,14 @@ public class TestMightCreate_HardLinks extends AbstractTestMightCreate
         // Verify the file is created and set the DS to return the correct path
         // The DS now contains an entry for the (fSOID, fFNT._fid)
         // And the path is also stored now in the DS.
-        verify(oc).create_(Type.FILE, soidRoot, fName1, PhysicalOp.MAP, t);
+        verify(oc).create_(eq(Type.FILE), any(OID.class), eq(soidRoot), eq(fName1),
+                eq(PhysicalOp.MAP), eq(t));
 
         assign(fSOID, fFNT._fid);
         when(ds.resolveNullable_(fSOID)).thenReturn(new Path(fName1));
 
         assertEquals(Result.IGNORED, mightCreate(fName2, null));
-        verify(oc, never()).create_(any(Type.class), any(SOID.class), eq(fName2),
+        verify(oc, never()).create_(any(Type.class), any(OID.class), any(SOID.class), eq(fName2),
                 any(PhysicalOp.class), any(Trans.class));
     }
 
@@ -124,7 +125,8 @@ public class TestMightCreate_HardLinks extends AbstractTestMightCreate
         SOID soidRoot = new SOID(dirSOID.sidx(), OID.ROOT);
 
         assertEquals(Result.NEW_OR_REPLACED_FOLDER, mightCreate(nonExistingDirName, null));
-        verify(oc).create_(Type.DIR, soidRoot, nonExistingDirName, PhysicalOp.MAP, t);
+        verify(oc).create_(eq(Type.DIR), any(OID.class), eq(soidRoot), eq(nonExistingDirName),
+                eq(PhysicalOp.MAP), eq(t));
 
         // Assign the DirectoryService to return the new Path
         // as nonExistingDirName was created before existingDirName
@@ -132,8 +134,8 @@ public class TestMightCreate_HardLinks extends AbstractTestMightCreate
         when(ds.resolveNullable_(dirSOID)).thenReturn(new Path(nonExistingDirName));
 
         assertEquals(Result.IGNORED, mightCreate(existingDirName, null));
-        verify(oc, never()).create_(any(Type.class), any(SOID.class), eq(existingDirName),
-                any(PhysicalOp.class), any(Trans.class));
+        verify(oc, never()).create_(any(Type.class), any(OID.class), any(SOID.class),
+                eq(existingDirName), any(PhysicalOp.class), any(Trans.class));
     }
 
     @Test

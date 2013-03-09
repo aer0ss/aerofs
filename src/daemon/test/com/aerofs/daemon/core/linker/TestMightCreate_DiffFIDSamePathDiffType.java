@@ -51,6 +51,7 @@ public class TestMightCreate_DiffFIDSamePathDiffType extends AbstractTestMightCr
 
         verifyZeroInteractions(vu);
 
-        verify(oc).create_(eq(Type.FILE), any(SOID.class), eq("f2"), eq(PhysicalOp.MAP), eq(t));
+        verify(oc).create_(eq(Type.FILE), any(OID.class), any(SOID.class), eq("f2"),
+                eq(PhysicalOp.MAP), eq(t));
     }
 }

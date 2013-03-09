@@ -2,6 +2,7 @@ package com.aerofs.daemon.core.linker;
 
 import java.io.IOException;
 
+import com.aerofs.base.id.OID;
 import com.aerofs.daemon.core.ds.OA.Type;
 import com.aerofs.daemon.core.linker.MightCreate.Result;
 import com.aerofs.daemon.core.phy.PhysicalOp;
@@ -26,7 +27,8 @@ public class TestMightCreate_NoMatching extends AbstractTestMightCreate
 
         verifyZeroInteractions(vu, om);
 
-        verify(oc).create_(eq(Type.FILE), any(SOID.class), eq("f2 (3)"), eq(PhysicalOp.MAP), eq(t));
+        verify(oc).create_(eq(Type.FILE), any(OID.class), any(SOID.class), eq("f2 (3)"),
+                eq(PhysicalOp.MAP), eq(t));
     }
 
     @Test
