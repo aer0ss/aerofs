@@ -4,6 +4,7 @@ node "sp.aerofs.com" inherits default {
         [ hiera('dev_users') ]:
     }
 
+    include devman
     include redis::aof
     include jeq
 

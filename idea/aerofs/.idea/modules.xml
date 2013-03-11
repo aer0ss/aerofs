@@ -6,6 +6,7 @@
       <module fileurl="file://$PROJECT_DIR$/../../src/android-test/android-test.iml" filepath="$PROJECT_DIR$/../../src/android-test/android-test.iml" />
       <module fileurl="file://$PROJECT_DIR$/../../src/base/base.iml" filepath="$PROJECT_DIR$/../../src/base/base.iml" />
       <module fileurl="file://$PROJECT_DIR$/../../src/daemon/daemon.iml" filepath="$PROJECT_DIR$/../../src/daemon/daemon.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../../src/devman/devman.iml" filepath="$PROJECT_DIR$/../../src/devman/devman.iml" />
       <module fileurl="file://$PROJECT_DIR$/../../src/gui/gui.iml" filepath="$PROJECT_DIR$/../../src/gui/gui.iml" />
       <module fileurl="file://$PROJECT_DIR$/../../src/lib/lib.iml" filepath="$PROJECT_DIR$/../../src/lib/lib.iml" />
       <module fileurl="file://$PROJECT_DIR$/../../src/libjingle.binding/libjingle.binding.iml" filepath="$PROJECT_DIR$/../../src/libjingle.binding/libjingle.binding.iml" />

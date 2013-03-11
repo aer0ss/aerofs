@@ -38,7 +38,7 @@ public class TestJedisEpochCommandQueue extends AbstractJedisTest
     private final CommandType _c2 = CommandType.INVALIDATE_USER_NAME_CACHE;
 
     @Before
-    public void setupTestJedisEpochCommandQueue() throws ExFormatError
+    public void setupTestJedisEpochCommandQueue()
     {
         // Mock the system time static method.
         PowerMockito.mockStatic(System.class);

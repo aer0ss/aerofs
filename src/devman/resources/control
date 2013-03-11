@@ -1,0 +1,7 @@
+Package: aerofs-devman
+Section: java
+Priority: required
+Maintainer: AeroFS <team@aerofs.com>
+Description: AeroFS devman server package.
+Architecture: all
+Depends: default-jdk (>= 1.6)
