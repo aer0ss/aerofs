@@ -4,16 +4,10 @@
 
 package com.aerofs.daemon.core.linker;
 
-import com.aerofs.daemon.core.ds.OA.Type;
 import com.aerofs.daemon.core.linker.MightCreate.Result;
-import com.aerofs.daemon.core.phy.PhysicalOp;
-import com.aerofs.daemon.lib.db.trans.Trans;
+import static com.aerofs.daemon.core.linker.MightCreateOperations.*;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
-import com.aerofs.base.id.OID;
-import com.aerofs.lib.id.CID;
-import com.aerofs.lib.id.KIndex;
-import com.aerofs.lib.id.SOCKID;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.injectable.InjectableDriver.FIDAndType;
 import org.junit.Before;
@@ -55,9 +49,9 @@ public class TestMightCreate_HardLinks extends AbstractTestMightCreate
         SOID fSOID = ds.resolveNullable_(new Path(fName1));
         assign(fSOID, fFNT._fid);
 
-        assertEquals(Result.FILE, mightCreate(fName1, fName1));
-        assertEquals(Result.IGNORED, mightCreate(fName2, fName1));
-        assertEquals(Result.IGNORED, mightCreate(fName3, fName1));
+        assertEquals(Result.FILE, mightCreate(fName1));
+        assertEquals(Result.IGNORED, mightCreate(fName2));
+        assertEquals(Result.IGNORED, mightCreate(fName3));
     }
 
     @Test
@@ -65,25 +59,22 @@ public class TestMightCreate_HardLinks extends AbstractTestMightCreate
     {
         // fName1 is part of logicRoot in AbstractTestMightCreate so fSOID can not be null
         SOID fSOID = ds.resolveNullable_(new Path(fName1));
-        SOID soidRoot = new SOID(fSOID.sidx(), OID.ROOT);
 
         // Simulate fName1's creation in the following command.
         when(ds.resolveNullable_(new Path(fName1))).thenReturn(null);
 
-        assertEquals(Result.FILE, mightCreate(fName1, null));
+        assertEquals(Result.FILE, mightCreate(fName1));
 
         // Verify the file is created and set the DS to return the correct path
         // The DS now contains an entry for the (fSOID, fFNT._fid)
         // And the path is also stored now in the DS.
-        verify(oc).create_(eq(Type.FILE), any(OID.class), eq(soidRoot), eq(fName1),
-                eq(PhysicalOp.MAP), eq(t));
+        verifyOperationExecuted(Operation.Create, null, null, fName1);
 
         assign(fSOID, fFNT._fid);
         when(ds.resolveNullable_(fSOID)).thenReturn(new Path(fName1));
 
-        assertEquals(Result.IGNORED, mightCreate(fName2, null));
-        verify(oc, never()).create_(any(Type.class), any(OID.class), any(SOID.class), eq(fName2),
-                any(PhysicalOp.class), any(Trans.class));
+        assertEquals(Result.IGNORED, mightCreate(fName2));
+        verifyNoMoreInteractions(mcop);
     }
 
     @Test
@@ -92,20 +83,19 @@ public class TestMightCreate_HardLinks extends AbstractTestMightCreate
     {
         // fName1 is part of logicRoot in AbstractTestMightCreate so fSOID can not be null
         SOID fSOID = ds.resolveNullable_(new Path(fName1));
+        SOID fSOID2 = ds.resolveNullable_(new Path(fName2));
         assign(fSOID, fFNT._fid);
 
-        assertEquals(Result.FILE, mightCreate(fName1, fName1));
-        assertEquals(Result.IGNORED, mightCreate(fName2, fName1));
+        assertEquals(Result.FILE, mightCreate(fName1));
+        verifyOperationExecuted(Operation.Update, fName1);
+        assertEquals(Result.IGNORED, mightCreate(fName2));
 
         // Act as if fName1 is now deleted from file system by setting its FID to null.
-        // Pretend it's the start of a new scan.
-        reset(delBuffer);
         when(dr.getFIDAndType(Util.join(pRoot, fName1))).thenReturn(null);
 
-        assertEquals(Result.FILE, mightCreate(fName2, fName2));
-        verifyZeroInteractions(oc, om, hdmo);
-        SOID fSOID2 = ds.resolveNullable_(new Path(fName2));
-        verify(vu).update_(eq(new SOCKID(fSOID2, CID.CONTENT, KIndex.MASTER)), eq(t));
+        assertEquals(Result.FILE, mightCreate(fName2));
+
+        verifyOperationExecuted(Operation.Replace, fSOID, fSOID2, fName2);
     }
 
     @Test
@@ -114,28 +104,25 @@ public class TestMightCreate_HardLinks extends AbstractTestMightCreate
         SOID dirSOID = ds.resolveNullable_(new Path(existingDirName));
         assign(dirSOID, dirFNT._fid);
 
-        assertEquals(Result.IGNORED, mightCreate(nonExistingDirName, null));
-        assertEquals(Result.EXISTING_FOLDER, mightCreate(existingDirName, existingDirName));
+        assertEquals(Result.IGNORED, mightCreate(nonExistingDirName));
+        assertEquals(Result.EXISTING_FOLDER, mightCreate(existingDirName));
     }
 
     @Test
     public void shouldCreateOneFolderAndThenIgnoreOthersIfSOIDNotInDB() throws Exception
     {
         SOID dirSOID = ds.resolveNullable_(new Path(existingDirName));
-        SOID soidRoot = new SOID(dirSOID.sidx(), OID.ROOT);
 
-        assertEquals(Result.NEW_OR_REPLACED_FOLDER, mightCreate(nonExistingDirName, null));
-        verify(oc).create_(eq(Type.DIR), any(OID.class), eq(soidRoot), eq(nonExistingDirName),
-                eq(PhysicalOp.MAP), eq(t));
+        assertEquals(Result.NEW_OR_REPLACED_FOLDER, mightCreate(nonExistingDirName));
+        verifyOperationExecuted(Operation.Create, nonExistingDirName);
 
         // Assign the DirectoryService to return the new Path
         // as nonExistingDirName was created before existingDirName
         assign(dirSOID, dirFNT._fid);
         when(ds.resolveNullable_(dirSOID)).thenReturn(new Path(nonExistingDirName));
 
-        assertEquals(Result.IGNORED, mightCreate(existingDirName, null));
-        verify(oc, never()).create_(any(Type.class), any(OID.class), any(SOID.class),
-                eq(existingDirName), any(PhysicalOp.class), any(Trans.class));
+        assertEquals(Result.IGNORED, mightCreate(existingDirName));
+        verifyNoMoreInteractions(mcop);
     }
 
     @Test
@@ -145,16 +132,14 @@ public class TestMightCreate_HardLinks extends AbstractTestMightCreate
         SOID dirSOID = ds.resolveNullable_(new Path(existingDirName));
         assign(dirSOID, dirFNT._fid);
 
-        assertEquals(Result.IGNORED, mightCreate(nonExistingDirName, null));
-        assertEquals(Result.EXISTING_FOLDER, mightCreate(existingDirName, existingDirName));
+        assertEquals(Result.IGNORED, mightCreate(nonExistingDirName));
+        assertEquals(Result.EXISTING_FOLDER, mightCreate(existingDirName));
+        verifyOperationExecuted(Operation.Update, existingDirName);
 
         // Act as if existingDirName is now deleted from file system by setting its FID to null.
-        // Pretend it's the start of a new scan.
-        reset(delBuffer);
         when(dr.getFIDAndType(Util.join(pRoot, existingDirName))).thenReturn(null);
 
-        assertEquals(Result.EXISTING_FOLDER, mightCreate(nonExistingDirName, existingDirName));
-        verify(hdmo).move_(eq(dirSOID), any(SOID.class), eq(nonExistingDirName), eq(PhysicalOp.MAP),
-                eq(t));
+        assertEquals(Result.EXISTING_FOLDER, mightCreate(nonExistingDirName));
+        verifyOperationExecuted(Operation.Update, dirSOID, null, nonExistingDirName);
     }
 }

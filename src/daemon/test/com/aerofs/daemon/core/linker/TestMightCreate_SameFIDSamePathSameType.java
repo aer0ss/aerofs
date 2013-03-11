@@ -1,14 +1,14 @@
 package com.aerofs.daemon.core.linker;
 
 import com.aerofs.daemon.core.linker.MightCreate.Result;
+import static com.aerofs.daemon.core.linker.MightCreateOperations.*;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.Path;
 
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.*;
+import static org.junit.Assert.assertEquals;
 
 /**
  * Case: logical file f1 and physical file f1 are consistent with each other.
@@ -23,22 +23,21 @@ public class TestMightCreate_SameFIDSamePathSameType extends AbstractTestMightCr
     }
 
     @Test
-    public void shouldDoNothing() throws Exception
+    public void shouldUpdate() throws Exception
     {
-        mightCreate("f1", "f1");
-
-        verifyZeroInteractions(vu, om, oc);
+        mightCreate("f1");
+        verifyOperationExecuted(Operation.Update, "f1");
     }
 
     @Test
     public void shouldReturn_FILE_onFile() throws Exception
     {
-        assertTrue(mightCreate("f1", "f1") == Result.FILE);
+        assertEquals(Result.FILE, mightCreate("f1"));
     }
 
     @Test
     public void shouldReturn_OLD_FOLDER_onFolder() throws Exception
     {
-        assertTrue(mightCreate("d4", "d4") == Result.EXISTING_FOLDER);
+        assertEquals(Result.EXISTING_FOLDER, mightCreate("d4"));
     }
 }

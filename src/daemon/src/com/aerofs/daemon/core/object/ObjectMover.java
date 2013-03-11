@@ -4,6 +4,7 @@ import com.aerofs.daemon.core.*;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.expel.Expulsion;
+import com.aerofs.daemon.core.migration.IImmigrantCreator;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 
 import com.aerofs.daemon.lib.db.trans.Trans;
@@ -26,12 +27,15 @@ public class ObjectMover
     private DirectoryService _ds;
     private VersionUpdater _vu;
     private Expulsion _expulsion;
+    private IImmigrantCreator _imc;
 
     @Inject
-    public void inject_(VersionUpdater vu, DirectoryService ds, Expulsion expulsion)
+    public void inject_(VersionUpdater vu, DirectoryService ds, Expulsion expulsion,
+            IImmigrantCreator imc)
     {
         _vu = vu;
         _ds = ds;
+        _imc = imc;
         _expulsion = expulsion;
     }
 
@@ -57,5 +61,28 @@ public class ObjectMover
         }
 
         _expulsion.objectMoved_(emigrate, op, soid, pOld, t);
+    }
+
+    /**
+     * This method either moves objects within the same store, or across stores via migration,
+     * depending on whether the old sidx is the same as the new one.
+     *
+     * @return the SOID of the object after the move. This new SOID may be different from
+     * the parameter {@code soid} if migration occurs.
+     *
+     * Note: This is a method operate at the top most level, while ObjectMover and ImmigrantCreator
+     * operate at lower levels. That's why we didn't put the method to ObjectMover. Also because
+     * ObjectMover operates at a level even lower than ImmigrantCreator, having the method in
+     * ObjectMover would require this class to refer to ImmigrantCreator, which is inappropriate.
+     */
+    public SOID move_(SOID soid, SOID soidToParent, String toName, PhysicalOp op, Trans t)
+            throws Exception
+    {
+        if (soidToParent.sidx().equals(soid.sidx())) {
+            moveInSameStore_(soid, soidToParent.oid(), toName, op, false, true, t);
+            return soid;
+        } else {
+            return _imc.createImmigrantRecursively_(soid, soidToParent, toName, op, t);
+        }
     }
 }

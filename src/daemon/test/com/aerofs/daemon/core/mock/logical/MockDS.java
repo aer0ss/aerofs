@@ -21,7 +21,6 @@ import com.aerofs.lib.BitVector;
 import com.aerofs.lib.CounterVector;
 import com.aerofs.lib.Param;
 import com.aerofs.lib.Path;
-import com.aerofs.lib.ex.ExFileNotFound;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.base.id.OID;
@@ -315,11 +314,16 @@ public class MockDS
                 Trans t, IDirectoryServiceListener... listeners) throws Exception
         {
             assert _parent != null;
-            assert newParent != _parent;
             assert newParent != this;
 
             Path oldPath = getPath();
             MockDSDir oldParent = _parent;
+
+            if (newParent == oldParent) {
+                when(_oa.name()).thenReturn(newName);
+                updatePathResolution(oldPath, oldPath.removeLast().append(newName));
+                return;
+            }
 
             _parent.remove(this);
             _parent = newParent;
@@ -383,6 +387,8 @@ public class MockDS
 
     public class MockDSFile extends MockDSObject
     {
+        private final SortedMap<KIndex, CA> cas;
+
         MockDSFile(String name, MockDSDir parent) throws Exception
         {
             this(name, parent, 1);
@@ -394,8 +400,11 @@ public class MockDS
 
             when(_oa.type()).thenReturn(Type.FILE);
             when(_oa.isFile()).thenReturn(true);
+            when(_oa.isDir()).thenReturn(false);
+            when(_oa.isAnchor()).thenReturn(false);
+            when(_oa.isDirOrAnchor()).thenReturn(false);
 
-            final SortedMap<KIndex, CA> cas = Maps.newTreeMap();
+            cas = Maps.newTreeMap();
             if (_oa.isExpelled() || branches == 0) {
                 when(_oa.caMaster()).thenThrow(new AssertionError());
                 when(_oa.caMasterNullable()).thenReturn(null);
@@ -462,6 +471,19 @@ public class MockDS
             when(_ds.getSyncStatus_(eq(_soid))).thenReturn(new BitVector(sstat));
             return this;
         }
+
+        public MockDSFile caMaster(long length, long mtime)
+        {
+            return ca(KIndex.MASTER, length, mtime);
+        }
+
+        public MockDSFile ca(KIndex kidx, long length, long mtime)
+        {
+            CA ca = cas.get(kidx);
+            when(ca.length()).thenReturn(length);
+            when(ca.mtime()).thenReturn(mtime);
+            return this;
+        }
     }
 
     public class MockDSDir extends MockDSObject
@@ -495,7 +517,10 @@ public class MockDS
         private void init() throws Exception
         {
             when(_oa.type()).thenReturn(Type.DIR);
+            when(_oa.isFile()).thenReturn(false);
             when(_oa.isDir()).thenReturn(true);
+            when(_oa.isDirOrAnchor()).thenReturn(true);
+            when(_oa.isAnchor()).thenReturn(false);
 
             IPhysicalFolder pf = mock(IPhysicalFolder.class);
             when(_oa.physicalFolder()).thenReturn(pf);

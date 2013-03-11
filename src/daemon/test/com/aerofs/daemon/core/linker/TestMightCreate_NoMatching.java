@@ -2,16 +2,12 @@ package com.aerofs.daemon.core.linker;
 
 import java.io.IOException;
 
-import com.aerofs.base.id.OID;
-import com.aerofs.daemon.core.ds.OA.Type;
 import com.aerofs.daemon.core.linker.MightCreate.Result;
-import com.aerofs.daemon.core.phy.PhysicalOp;
-import com.aerofs.lib.id.SOID;
+import static com.aerofs.daemon.core.linker.MightCreateOperations.*;
 
 import org.junit.Test;
 
 import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
 
 /**
  * Case: Physical file "f2 (3)" has no corresponding logical object.
@@ -23,29 +19,26 @@ public class TestMightCreate_NoMatching extends AbstractTestMightCreate
     @Test
     public void shouldOnlyCreateNewObject() throws Exception, IOException
     {
-        mightCreate("f2 (3)", null);
+        mightCreate("f2 (3)");
 
-        verifyZeroInteractions(vu, om);
-
-        verify(oc).create_(eq(Type.FILE), any(OID.class), any(SOID.class), eq("f2 (3)"),
-                eq(PhysicalOp.MAP), eq(t));
+        verifyOperationExecuted(Operation.Create, "f2 (3)");
     }
 
     @Test
     public void shouldReturn_FILE_onFile() throws Exception
     {
-        assertTrue(mightCreate("f2 (3)", null) == Result.FILE);
+        assertEquals(Result.FILE, mightCreate("f2 (3)"));
     }
 
     @Test
     public void shouldReturn_NEW_FOLDER_onFolder() throws Exception
     {
-        assertTrue(mightCreate("d3", null) == Result.NEW_OR_REPLACED_FOLDER);
+        assertEquals(Result.NEW_OR_REPLACED_FOLDER, mightCreate("d3"));
     }
 
     @Test
     public void shouldReturn_IGNORED_onIgnored() throws Exception
     {
-        assertTrue(mightCreate("ignored", null) == Result.IGNORED);
+        assertEquals(Result.IGNORED, mightCreate("ignored"));
     }
 }

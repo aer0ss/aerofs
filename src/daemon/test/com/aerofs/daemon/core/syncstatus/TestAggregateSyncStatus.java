@@ -6,6 +6,7 @@ package com.aerofs.daemon.core.syncstatus;
 
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.ds.DirectoryService;
+import com.aerofs.daemon.core.mock.logical.IsSOIDAtPath;
 import com.aerofs.daemon.core.mock.logical.MockDS;
 import com.aerofs.daemon.core.store.MapSIndex2DeviceBitMap;
 import com.aerofs.daemon.core.store.SIDMap;
@@ -18,11 +19,9 @@ import com.aerofs.lib.id.SOID;
 import com.aerofs.base.id.UniqueID;
 import com.aerofs.testlib.AbstractTest;
 import junit.framework.Assert;
-import org.hamcrest.Description;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.ArgumentMatcher;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.internal.invocation.InvocationMatcher;
@@ -68,41 +67,6 @@ public class TestAggregateSyncStatus extends AbstractTest
     final DID d0 = new DID(UniqueID.generate());
     final DID d1 = new DID(UniqueID.generate());
     final DID d2 = new DID(UniqueID.generate());
-
-    /**
-     * Custom matcher to check the path resolution of a SOID
-     */
-    static class IsSOIDAtPath extends ArgumentMatcher<SOID>
-    {
-        private final DirectoryService _ds;
-        private final String _path;
-
-        public IsSOIDAtPath(DirectoryService ds, String path)
-        {
-            _ds = ds;
-            _path = path;
-        }
-
-        @Override
-        public boolean matches(Object argument)
-        {
-            Assert.assertNotNull(argument);
-            try {
-                Path p = _ds.resolve_((SOID) argument);
-                Assert.assertNotNull("expected " + argument + " to point to " + _path, p);
-                return _path.equalsIgnoreCase(p.toStringFormal());
-            } catch (SQLException e) {
-                Assert.fail();
-                return false;
-            }
-        }
-
-        @Override
-        public void describeTo(Description description)
-        {
-            description.appendText("<SOID @ ").appendValue(_path).appendText(">");
-        }
-    }
 
     /**
      * Helper to create SOID matcher
