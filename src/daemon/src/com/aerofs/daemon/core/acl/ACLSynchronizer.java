@@ -205,7 +205,7 @@ public class ACLSynchronizer
     {
         Set<SIndex> stores = _lacl.getAccessibleStores_();
 
-        l.debug("accessible stores: " + stores);
+        l.debug("accessible stores: {}", stores);
 
         _lacl.clear_(t);
 
@@ -290,7 +290,7 @@ public class ACLSynchronizer
             if (!acl.containsKey(sid)) {
                 acl.put(sid, new HashMap<UserID, Role>(storeACL.getSubjectRoleCount()));
                 if (isNewStore_(sid)) {
-                    l.info("new store " + sid);
+                    l.debug("new store {}", sid);
                     newStores.add(sid.toPB());
                 }
             }
@@ -324,7 +324,6 @@ public class ACLSynchronizer
                 assert storeIds.size() == reply.getFolderNameCount();
                 for (int i = 0; i < storeIds.size(); ++i) {
                     storeNames.put(new SID(storeIds.get(i)), reply.getFolderName(i));
-                    l.info("store name: " + reply.getFolderName(i));
                 }
             } finally {
                 if (tcb != null) tcb.pseudoResumed_();
