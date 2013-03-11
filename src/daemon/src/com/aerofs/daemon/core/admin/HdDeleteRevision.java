@@ -11,7 +11,7 @@ import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.lib.event.Prio;
 import com.google.inject.Inject;
 
-public class HdDeleteRevision  extends AbstractHdIMC<EIDeleteRevision>
+public class HdDeleteRevision extends AbstractHdIMC<EIDeleteRevision>
 {
     private final IPhysicalRevProvider _prp;
 
