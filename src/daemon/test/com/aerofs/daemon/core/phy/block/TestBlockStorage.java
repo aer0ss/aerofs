@@ -136,7 +136,8 @@ public class TestBlockStorage extends AbstractBlockTest
         }).when(sched).schedule(any(IEvent.class), anyLong());
 
         // shame @InjectMocks does not deal with a mix of Mock and real objects...
-        bs = new BlockStorage(auxRoot, tc,  tm, sched, fileFactory, bsb, bsdb, autoExportFolder,
+        bs = new BlockStorage();
+        bs.inject_(auxRoot, tc,  tm, sched, fileFactory, bsb, bsdb, autoExportFolder,
                 fds, lacl, sidx2sid);
         bs.init_();
     }
