@@ -1066,13 +1066,13 @@ public class SPService implements ISPService
         // send verkehr notifications as the last step of the transaction
         publishACLs_(incrementACLEpochs_(users));
 
-        // TODO (MP) enable when sharing.should_allow_sharing_between_users	is fixed.
-        /*Collection<Device> peerDevices = user.getPeerDevices();
+        Collection<Device> peerDevices = user.getPeerDevices();
         // Refresh CRLs for peer devices once this user joins the shared folder (since the peer user
         // map may have changed).
         for (Device peer : peerDevices) {
+            l.info(peer.id().toStringFormal() + ": crl refresh");
             addToCommandQueueAndSendVerkehrMessage(peer.id(), CommandType.REFRESH_CRL);
-        }*/
+        }
 
         _sqlTrans.commit();
 
@@ -1534,7 +1534,7 @@ public class SPService implements ISPService
             throws Exception
     {
         for (Map.Entry<UserID, Long> entry : epochs.entrySet()) {
-            l.info("publish notification to " + entry.getKey());
+            l.info(entry.getKey() + ": acl notification");
 
             PBACLNotification notification = PBACLNotification
                     .newBuilder()
