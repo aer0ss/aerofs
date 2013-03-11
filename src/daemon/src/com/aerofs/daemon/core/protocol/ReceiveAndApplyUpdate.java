@@ -482,7 +482,7 @@ public class ReceiveAndApplyUpdate
                 }
             }
         } catch (ExAlreadyExist e) {
-            l.warn("name conflict");
+            l.warn("name conflict {} from {}", soid, did);
             return resolveNameConflict_(did, soid, oidParent, meta, wasPresent, metaDiff, t,
                     noNewVersion, vRemote, soidMsg, requested, cr);
         } catch (ExNotDir e) {
