@@ -72,22 +72,22 @@ class BlockStorage implements IPhysicalStorage
 {
     private static final Logger l = Loggers.getLogger(BlockStorage.class);
 
-    private final TC _tc;
-    private final TransManager _tm;
-    private final CoreScheduler _sched;
-    private final InjectableFile.Factory _fileFactory;
-    private final CfgAbsAuxRoot _absAuxRoot;
+    private TC _tc;
+    private TransManager _tm;
+    private CoreScheduler _sched;
+    private InjectableFile.Factory _fileFactory;
+    private CfgAbsAuxRoot _absAuxRoot;
 
     private InjectableFile _prefixDir;
 
-    private final IBlockStorageBackend _bsb;
-    private final BlockStorageDatabase _bsdb;
+    private IBlockStorageBackend _bsb;
+    private BlockStorageDatabase _bsdb;
 
     private final BlockRevProvider _revProvider = new BlockRevProvider();
-    private final CfgAbsAutoExportFolder _exportFolder;
-    private final FrequentDefectSender _fds;
-    private final LocalACL _lacl;
-    private final IMapSIndex2SID _sidx2sid;
+    private CfgAbsAutoExportFolder _exportFolder;
+    private FrequentDefectSender _fds;
+    private LocalACL _lacl;
+    private IMapSIndex2SID _sidx2sid;
 
     private final ProgressIndicators _pi = ProgressIndicators.get();
 
@@ -98,7 +98,7 @@ class BlockStorage implements IPhysicalStorage
     }
 
     @Inject
-    public BlockStorage(CfgAbsAuxRoot absAuxRoot, TC tc, TransManager tm, CoreScheduler sched,
+    public void inject_(CfgAbsAuxRoot absAuxRoot, TC tc, TransManager tm, CoreScheduler sched,
             InjectableFile.Factory fileFactory, IBlockStorageBackend bsb, BlockStorageDatabase bsdb,
             CfgAbsAutoExportFolder absExportFolder, FrequentDefectSender fds,
             LocalACL lacl, IMapSIndex2SID sidx2sid)
