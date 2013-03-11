@@ -3,12 +3,12 @@ Device Management Interface
 ===========================
 
 Interface:
-    GET http://<host>:9019/last_seen/<did>
-    GET http://<host>:9019/polling_interval
+    GET http://<host>:9020/last_seen/<did>
+    GET http://<host>:9020/polling_interval
 
 Example:
-    GET http://sp.aerofs.com:9019/last_seen/155aa68bc35e426f9535619fb1d89d14
-    GET http://sp.aerofs.com:9019/polling_interval
+    GET http://sp.aerofs.com:9020/last_seen/155aa68bc35e426f9535619fb1d89d14
+    GET http://sp.aerofs.com:9020/polling_interval
 
 Where the polling interval is specified in seconds.
 
