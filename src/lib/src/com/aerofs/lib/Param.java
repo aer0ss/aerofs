@@ -170,7 +170,7 @@ public class Param extends BaseParam
             URL url;
             try {
                 url = new URL(L.get().isStaging() ?
-                        "https://sss-staging.aerofs.com/syncstat" :
+                        "https://staging.aerofs.com/syncstat/syncstat" :
                         "https://sss.aerofs.com/syncstat");
             } catch (MalformedURLException e) {
                 SystemUtil.fatal(e);

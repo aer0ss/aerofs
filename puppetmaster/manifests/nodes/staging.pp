@@ -10,7 +10,10 @@ node "staging.aerofs.com" inherits default {
         [ hiera('dev_users') ]:
     }
 
+    # we include the base servlet lib and assume people will deploy their own apps.
     include servlet
+
+    include redis
 
     class{"verkehr":
         subscribe_port => 80
