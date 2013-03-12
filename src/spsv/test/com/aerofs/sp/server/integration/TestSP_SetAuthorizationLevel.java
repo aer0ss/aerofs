@@ -14,7 +14,7 @@ import org.junit.Test;
 import java.sql.SQLException;
 
 import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertFalse;
+import static org.junit.Assert.fail;
 
 public class TestSP_SetAuthorizationLevel extends AbstractSPTest
 {
@@ -22,6 +22,20 @@ public class TestSP_SetAuthorizationLevel extends AbstractSPTest
     public void setup()
     {
         setSessionUser(USER_1);
+    }
+
+    @Test
+    public void shouldThrowIfSubjectNotFound()
+            throws Exception
+    {
+        // switch user_1 to a different organization
+        service.addOrganization("test", null, StripeCustomerID.TEST.getString());
+        assertEquals(service.getAuthorizationLevel().get().getLevel(), PBAuthorizationLevel.ADMIN);
+
+        try {
+            service.setAuthorizationLevel("non-existing@user", PBAuthorizationLevel.USER);
+            fail();
+        } catch (ExNoPerm e) {}
     }
 
     @Test
@@ -34,7 +48,7 @@ public class TestSP_SetAuthorizationLevel extends AbstractSPTest
 
         try {
             service.setAuthorizationLevel(USER_2.getString(), PBAuthorizationLevel.USER);
-            assertFalse(true);
+            fail();
         } catch (ExNoPerm e) {}
     }
 
@@ -53,7 +67,7 @@ public class TestSP_SetAuthorizationLevel extends AbstractSPTest
 
         try {
             service.setAuthorizationLevel(USER_1.getString(), PBAuthorizationLevel.ADMIN);
-            assertFalse(true);
+            fail();
         } catch (ExNoPerm e) {}
     }
 

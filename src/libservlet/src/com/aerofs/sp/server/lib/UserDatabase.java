@@ -209,7 +209,7 @@ public class UserDatabase extends AbstractSQLDatabase
         ResultSet rs = ps.executeQuery();
         if (!rs.next()) {
             rs.close();
-            throw new ExNotFound("user " + userId);
+            throw new ExNotFound("user " + userId + " is not found");
         } else {
             return rs;
         }

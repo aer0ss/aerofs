@@ -47,8 +47,6 @@ public class MultiuserDlgSetupAdvanced extends AbstractDlgSetupAdvanced
         public String s3Passphrase;
     }
 
-    final private int WIDTH_HINT = 400;
-
     final static public int LOCAL_STORAGE_OPTION = 0;
     final static public int S3_STORAGE_OPTION = 1;
 

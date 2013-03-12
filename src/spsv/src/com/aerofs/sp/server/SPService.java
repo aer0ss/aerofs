@@ -582,8 +582,9 @@ public class SPService implements ISPService
                 newAuth);
 
         // Verify caller and subject's organization match
-        if (!requester.getOrganization().id().equals(subject.getOrganization().id())) {
-            throw new ExNoPerm("organization mismatch");
+        if (!subject.exists() || !requester.getOrganization().equals(subject.getOrganization())) {
+            throw new ExNoPerm(subject.id().getString() + " is not a member of your team. " +
+                    "Please invite the user to your team first.");
         }
 
         if (requester.id().equals(subject.id())) {
