@@ -3,6 +3,10 @@ package com.aerofs.gui.singleuser.tray;
 import com.aerofs.base.Loggers;
 import com.aerofs.gui.history.DlgHistory;
 import com.aerofs.gui.misc.DlgInviteToSignUp;
+import com.aerofs.gui.shellext.ShellextService;
+import com.aerofs.gui.singleuser.IndexingPoller;
+import com.aerofs.gui.singleuser.IndexingPoller.IIndexingCompletionListener;
+import com.aerofs.gui.singleuser.IndexingTrayMenuSection;
 import com.aerofs.gui.singleuser.preferences.SingleuserDlgPreferences;
 import com.aerofs.gui.tray.ITrayMenu;
 import com.aerofs.gui.tray.PauseOrResumeSyncing;
@@ -12,6 +16,7 @@ import com.aerofs.gui.tray.TrayIcon.NotificationReason;
 import com.aerofs.gui.tray.TrayMenuPopulator;
 import com.aerofs.labeling.L;
 import com.aerofs.proto.Ritual.ListSharedFoldersReply;
+import com.aerofs.sv.client.SVClient;
 import com.aerofs.ui.UIUtil;
 import org.slf4j.Logger;
 import org.eclipse.swt.SWT;
@@ -50,6 +55,7 @@ import com.aerofs.ui.RitualNotificationClient.IListener;
 import com.aerofs.ui.UI;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
+
 import static com.aerofs.proto.Sv.PBSVEvent.Type.*;
 
 public class SingleuserTrayMenu implements ITrayMenu
@@ -61,10 +67,12 @@ public class SingleuserTrayMenu implements ITrayMenu
     private final Menu _menu;
     private final TrayIcon _icon;
 
+    private final IndexingPoller _indexingPoller;
+
     private boolean _enabled;
     public final TrayMenuPopulator _trayMenuPopulator;
 
-
+    private final IndexingTrayMenuSection _indexingTrayMenuSection;
     private final TransferTrayMenuSection _transferTrayMenuSection;
 
     private final PauseOrResumeSyncing _prs = new PauseOrResumeSyncing();
@@ -107,10 +115,28 @@ public class SingleuserTrayMenu implements ITrayMenu
     {
         _icon = icon;
 
+        _indexingPoller = new IndexingPoller(UI.scheduler());
+
+        // delay start of the shellext service to avoid spamming
+        // daemon with status requests while it is busy indexing...
+        _indexingPoller.addListener(new IIndexingCompletionListener() {
+            @Override
+            public void onIndexingDone()
+            {
+                try {
+                    ShellextService.get().start_();
+                } catch (Exception e) {
+                    SVClient.logSendDefectAsync(true, "cant start shellext worker", e);
+                }
+            }
+        });
+
         _menu = new Menu(GUI.get().sh(), SWT.POP_UP);
 
         _trayMenuPopulator = new TrayMenuPopulator(_menu);
 
+        _indexingTrayMenuSection = new IndexingTrayMenuSection(_menu, _trayMenuPopulator,
+                _indexingPoller);
         _transferTrayMenuSection = new TransferTrayMenuSection(_trayMenuPopulator);
 
         _menu.addMenuListener(new MenuListener()
@@ -153,6 +179,9 @@ public class SingleuserTrayMenu implements ITrayMenu
 
         if (!_enabled) {
             _trayMenuPopulator.addLaunchingMenuItem();
+            _trayMenuPopulator.addMenuSeparator();
+        } else if (!_indexingPoller.isIndexingDone()) {
+            _indexingTrayMenuSection.populate();
             _trayMenuPopulator.addMenuSeparator();
         } else {
             createSharedFoldersMenu();

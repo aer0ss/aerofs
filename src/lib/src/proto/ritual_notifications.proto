@@ -17,6 +17,7 @@ message PBNotification {
         CONFLICT_COUNT = 5;             // number of files with conflicts changed
         SHARED_FOLDER_JOIN = 6;         // joined a shared folder
         SHARED_FOLDER_KICKOUT = 7;      // kicked out of a shared folder
+        INDEXING_PROGRESS = 8;
     }
 
     required Type type = 1;
@@ -26,6 +27,7 @@ message PBNotification {
     optional PBPathStatusEvent path_status = 4;
     optional int32 conflict_count = 5;          // number of files with existing conflicts
     optional PBPath path = 6;                   // path of shared folder joined/left
+    optional PBIndexingProgress indexing_progress = 7;
 }
 
 // TODO change to PBUpload/DownloadNotification?
@@ -64,6 +66,11 @@ message PBDownloadEvent {
 message PBPathStatusEvent {
     repeated PBPath path = 1;
     repeated PBPathStatus status = 2;
+}
+
+message PBIndexingProgress {
+    required int32 files = 1;
+    required int32 folders = 2;
 }
 
 ////////

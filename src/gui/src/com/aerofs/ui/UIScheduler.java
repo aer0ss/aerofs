@@ -1,4 +1,8 @@
-package com.aerofs.gui;
+/*
+ * Copyright (c) Air Computing Inc., 2013.
+ */
+
+package com.aerofs.ui;
 
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.event.IEvent;
@@ -14,11 +18,11 @@ import java.util.concurrent.TimeUnit;
  * {@link AbstractEBSelfHandling} events are handled and they are executed serially due to the fact
  * that the thread pool we are using is single threaded.
  */
-public class GuiScheduler implements IScheduler
+public class UIScheduler implements IScheduler
 {
     private ScheduledExecutorService _executor;
 
-    public GuiScheduler()
+    public UIScheduler()
     {
         _executor = Executors.newSingleThreadScheduledExecutor(new ThreadFactory()
         {

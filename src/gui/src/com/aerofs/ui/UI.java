@@ -37,6 +37,7 @@ public class UI
     private static final RitualNotificationClient s_rnc = new RitualNotificationClient();
     private static final RootAnchorPoller s_rap = new RootAnchorPoller();
     private static final InfoCollector s_ic = new InfoCollector();
+    private static final UIScheduler s_sched = new UIScheduler();
 
     private static ControllerClient s_controller;
 
@@ -61,6 +62,8 @@ public class UI
     public static IDaemonMonitor dm() {
         return IDaemonMonitor.Factory.get();
     }
+
+    public static UIScheduler scheduler() { return s_sched; }
 
     public static InfoCollector ic() { return s_ic; }
 }

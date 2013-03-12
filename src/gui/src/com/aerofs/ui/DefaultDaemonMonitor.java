@@ -142,6 +142,11 @@ class DefaultDaemonMonitor implements IDaemonMonitor
                 // until it is completed so we ignore these exceptions and do not touch the retry
                 // counter
                 l.info("daemon indexing...");
+                // We don't want the setup dialog to wait for indexing to be done and we can safely
+                // assume that once indexing starts the daemon will become functional at some point
+                // in the future so we can safely exit the loop. The UI will be responsible for
+                // handling ExIndexing correctly.
+                break;
             } catch (Exception e) {
                 l.info("pinging daemon failed: " + e);
                 if (--retries == 0) {

@@ -40,6 +40,7 @@ public class FirstLaunch
     private final CfgDatabase _cfgDB;
     private final OIDGenerator _og;
     private final AccessibleStores _as;
+    private final ScanProgressReporter _spr;
     private final ILinker _linker;
     private final CoreScheduler _sched;
 
@@ -49,7 +50,7 @@ public class FirstLaunch
      */
     public static class AccessibleStores
     {
-        private ImmutableSet<SID> _accessibleStores = ImmutableSet.of();
+        private ImmutableSet<SID> _accessibleStores;
 
         public boolean contains(SID sid)
         {
@@ -64,26 +65,33 @@ public class FirstLaunch
 
     @Inject
     public FirstLaunch(CfgDatabase cfgDB, ILinker linker, CoreScheduler sched, AccessibleStores as,
-            OIDGenerator og)
+            OIDGenerator og, ScanProgressReporter spr)
     {
         _as = as;
         _og = og;
+        _spr = spr;
         _linker = linker;
         _sched = sched;
         _cfgDB = cfgDB;
     }
 
-    public boolean isFirstLaunch_()
-    {
-        return _cfgDB.getBoolean(Key.FIRST_START);
-    }
-
     /**
-     * Perform any first-launch-specific task
-     * @param callback a scan completion callback that finalizes Core startup
+     * Perform any first-launch-specific task, if necessary
+     *
+     * NB: the callback is NOT called if the method returns false
+     *
+     * @param callback a scan completion callback to finalize Core startup
+     * @return whether first launch will be performed
      */
-    public void onFirstLaunch_(final ScanCompletionCallback callback)
+    public boolean onFirstLaunch_(final ScanCompletionCallback callback)
     {
+        if (!_cfgDB.getBoolean(Key.FIRST_START)) {
+            // need to make sure all helper classes that abstract away various aspects of first
+            // launch logic perform their "regular" (i.e. non-first launch) behavior
+            onFirstLaunchCompletion_();
+            return false;
+        }
+
         // NB: fetcAccessibleStore needs to be performed from a Core thread in case the SP sign-in
         // fails as it causes a Ritual notification to be sent
         _sched.schedule(new AbstractEBSelfHandling()
@@ -100,8 +108,7 @@ public class FirstLaunch
                     public void done_()
                     {
                         l.info("done indexing");
-                        _as.onFirstLaunchCompletion_();
-                        _og.onFirstLaunchCompletion_();
+                        onFirstLaunchCompletion_();
 
                         callback.done_();
 
@@ -115,6 +122,15 @@ public class FirstLaunch
                 });
             }
         }, 0);
+
+        return true;
+    }
+
+    private void onFirstLaunchCompletion_()
+    {
+        _as.onFirstLaunchCompletion_();
+        _og.onFirstLaunchCompletion_();
+        _spr.onFirstLaunchCompletion_();
     }
 
     private void fetchAccessibleStores_()

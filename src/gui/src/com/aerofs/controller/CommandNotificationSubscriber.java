@@ -7,8 +7,8 @@ package com.aerofs.controller;
 import com.aerofs.base.BaseParam.SP;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
-import com.aerofs.gui.GuiScheduler;
 import com.aerofs.labeling.L;
+import com.aerofs.lib.sched.IScheduler;
 import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.Param;
 import com.aerofs.lib.Util;
@@ -85,7 +85,7 @@ public final class CommandNotificationSubscriber
 {
     private static final Logger l = Loggers.getLogger(CommandNotificationSubscriber.class);
 
-    private final GuiScheduler _scheduler;
+    private final IScheduler _scheduler;
     private final ExponentialRetry _er;
     private final String _topic;
     private final VerkehrSubscriber _subscriber;
@@ -93,7 +93,7 @@ public final class CommandNotificationSubscriber
     private final VerkehrListener _listener;
     private final InjectableFile.Factory _factFile = new InjectableFile.Factory();
 
-    public CommandNotificationSubscriber(GuiScheduler scheduler, DID localDevice,
+    public CommandNotificationSubscriber(IScheduler scheduler, DID localDevice,
             String caCertFilename)
     {
         _scheduler = scheduler;

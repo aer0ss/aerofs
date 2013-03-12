@@ -141,10 +141,11 @@ public class Core implements IModule
 
         _cpw.start_();
 
-        if (_fl.isFirstLaunch_()) {
-            _tc.start_();
+        // start Ritual notifications as we use them to report progress
+        _notifier.start_();
 
-            _fl.onFirstLaunch_(new CoreScanCompletionCallback());
+        if (_fl.onFirstLaunch_(new CoreScanCompletionCallback())) {
+            _tc.start_();
         } else {
             startAll_();
 
@@ -213,7 +214,6 @@ public class Core implements IModule
 
         _linker.start_();
         _vksub.start_();
-        _notifier.start_();
     }
 
 // SP Daemon support is temporarily disabled. Search the code base for "SP_DID" and references to

@@ -12,7 +12,6 @@ import java.sql.SQLException;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.gui.GUIUtil;
-import com.aerofs.gui.GuiScheduler;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.Param;
 import com.aerofs.base.id.UserID;
@@ -21,7 +20,6 @@ import com.aerofs.ui.logs.LogArchiver;
 import org.slf4j.Logger;
 import org.eclipse.jface.dialogs.IDialogConstants;
 
-import com.aerofs.gui.shellext.ShellextService;
 import com.aerofs.lib.AppRoot;
 import com.aerofs.base.C;
 import com.aerofs.base.BaseParam.SV;
@@ -151,8 +149,6 @@ class Launcher
     void launch(final boolean isFirstTime) throws Exception
     {
         try {
-            final GuiScheduler scheduler = new GuiScheduler();
-
             // verify checksums *before* launching the daemon to avoid reporting daemon launching
             // failures due to binary issues.
             if (PostUpdate.updated()) verifyChecksums();
@@ -174,7 +170,7 @@ class Launcher
                     // delete the socket so another instance can run while we're sending the event
                     Launcher.destroySingletonSocket();
                     // Shutdown the scheduler.
-                    scheduler.shutdown();
+                    UI.scheduler().shutdown();
                     // send sv event on exit
                     SVClient.sendEventSync(PBSVEvent.Type.EXIT, null);
                 }
@@ -200,7 +196,7 @@ class Launcher
 
             cleanNativeLogs();
 
-            startWorkerThreads(scheduler);
+            startWorkerThreads();
 
         } catch (Exception ex) {
             SVClient.logSendDefectAsync(true, "launch failed", ex);
@@ -270,23 +266,14 @@ class Launcher
         }
     }
 
-    private void startWorkerThreads(GuiScheduler scheduler)
+    private void startWorkerThreads()
     {
         if (Cfg.useArchive()) new LogArchiver(absRTRoot()).start();
-
-        if (!L.get().isMultiuser()) {
-            try {
-                // start shell extension first so it is available as early as possible
-                ShellextService.get().start_();
-            } catch (Exception e) {
-                SVClient.logSendDefectAsync(true, "cant start shellext worker", e);
-            }
-        }
 
         new TransientCommandNotificationSubscriber(Cfg.user(), Util.join(AppRoot.abs(),
                 Param.CA_CERT)).start();
 
-        new CommandNotificationSubscriber(scheduler, Cfg.did(), Util.join(AppRoot.abs(),
+        new CommandNotificationSubscriber(UI.scheduler(), Cfg.did(), Util.join(AppRoot.abs(),
                 Param.CA_CERT)).start();
 
         new BadCredentialNotifier();

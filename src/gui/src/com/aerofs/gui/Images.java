@@ -57,6 +57,10 @@ public class Images {
 
     private static final Map<String, Image> s_imgs = new HashMap<String, Image>();
 
+    // delay (ms) between each spinner frame
+    private static final int SPINNER_DELAY = 50;
+    private static Image[] s_spinner_frames;
+
     private static Cursor s_cursors[];
 
     public static Image get(String key)
@@ -81,6 +85,26 @@ public class Images {
             s_cursors[0] = new Cursor(Display.getCurrent(), SWT.CURSOR_WAIT);
         }
         return s_cursors[key];
+    }
+
+    public static int getSpinnerFrameDelay()
+    {
+        return SPINNER_DELAY;
+    }
+
+    public static Image getSpinnerFrame(int frame)
+    {
+        if (s_spinner_frames == null) {
+            // image downloaded from http://ajaxload.info/
+            ImageLoader loader = new ImageLoader();
+            loader.load(AppRoot.abs() + Param.ICONS_DIR + Images.ICON_SPIN);
+            s_spinner_frames = new Image[loader.data.length];
+            Display display = Display.getCurrent();
+            for (int i = 0; i < loader.data.length; i++) {
+                s_spinner_frames[i] = new Image(display, loader.data[i]);
+            }
+        }
+        return s_spinner_frames[frame % s_spinner_frames.length];
     }
 
     public static Image getFolderIcon()

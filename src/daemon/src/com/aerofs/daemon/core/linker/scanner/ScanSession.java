@@ -3,6 +3,7 @@ package com.aerofs.daemon.core.linker.scanner;
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
+import com.aerofs.daemon.core.first.ScanProgressReporter;
 import com.aerofs.daemon.core.linker.MightCreate;
 import com.aerofs.daemon.core.linker.MightDelete;
 import com.aerofs.daemon.core.linker.PathCombo;
@@ -59,6 +60,7 @@ class ScanSession
         private final InjectableFile.Factory _factFile;
         private final CfgAbsRootAnchor _cfgAbsRootAnchor;
         private final ProgressIndicators _pi;
+        private final ScanProgressReporter _spr;
 
         @Inject
         public Factory(DirectoryService ds,
@@ -66,11 +68,13 @@ class ScanSession
                 TransManager tm,
                 TimeoutDeletionBuffer delBuffer,
                 InjectableFile.Factory factFile,
-                CfgAbsRootAnchor cfgAbsRootAnchor)
+                CfgAbsRootAnchor cfgAbsRootAnchor,
+                ScanProgressReporter spr)
         {
             _ds = ds;
             _mc = mc;
             _tm = tm;
+            _spr = spr;
             _pi = ProgressIndicators.get();  // sigh, this should be injected...
             _delBuffer = delBuffer;
             _factFile = factFile;
@@ -161,9 +165,9 @@ class ScanSession
 
         // Scan recursively. Stop and request for continuation if needed.
         try {
+            int potentialUpdates = 0;
             Trans t = _f._tm.begin_();
             try {
-                int potentialUpdates = 0;
                 long start = System.currentTimeMillis();
                 while (!_stack.isEmpty()) {
                     potentialUpdates += scan_(_stack.pop(), t);
@@ -185,6 +189,9 @@ class ScanSession
             } finally {
                 t.end_();
             }
+
+            // on first launch, report indexing progress
+            _f._spr.folderScanned_(potentialUpdates);
         } catch (Exception e) {
             // According to {@link Holder#hold_()}, we have to remove all SOIDs held by us on *any*
             // exception. Note that the objects been removed may include those held in previous
