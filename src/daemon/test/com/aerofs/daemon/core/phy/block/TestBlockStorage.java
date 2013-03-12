@@ -4,9 +4,7 @@
 
 package com.aerofs.daemon.core.phy.block;
 
-import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.CoreScheduler;
-import com.aerofs.daemon.core.acl.LocalACL;
 import com.aerofs.daemon.core.phy.IPhysicalFile;
 import com.aerofs.daemon.core.phy.IPhysicalFolder;
 import com.aerofs.daemon.core.phy.IPhysicalPrefix;
@@ -16,11 +14,11 @@ import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.phy.block.BlockStorage.FileAlreadyExistsException;
 import com.aerofs.daemon.core.phy.block.BlockStorageDatabase.FileInfo;
 import com.aerofs.daemon.core.phy.block.IBlockStorageBackend.EncoderWrapping;
-import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
+import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
 import com.aerofs.lib.event.IEvent;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.daemon.lib.db.ITransListener;
@@ -85,8 +83,8 @@ public class TestBlockStorage extends AbstractBlockTest
     @Mock CfgAbsAuxRoot auxRoot;
     @Mock CfgAbsAutoExportFolder autoExportFolder;
     @Mock FrequentDefectSender fds;
-    @Mock IMapSIndex2SID sidx2sid;
-    @Mock LocalACL lacl;
+    @Mock ExportHelper eh;
+    @Mock IIMCExecutor iimc;
 
     // use in-memory DB
     InjectableFile.Factory fileFactory = new InjectableFile.Factory();
@@ -110,8 +108,6 @@ public class TestBlockStorage extends AbstractBlockTest
         String testTempDir = testTempDirFactory.getTestTempDir().getAbsolutePath();
         when(auxRoot.get()).thenReturn(testTempDir);
         when(autoExportFolder.get()).thenReturn(Util.join(testTempDir, "autoexport"));
-        SID sid = SID.generate();
-        when(sidx2sid.get_(any(SIndex.class))).thenReturn(sid);
 
         // no encoding is performed by the mock backend
         when(bsb.wrapForEncoding(any(OutputStream.class))).thenAnswer(new Answer<Object>()
@@ -137,8 +133,7 @@ public class TestBlockStorage extends AbstractBlockTest
 
         // shame @InjectMocks does not deal with a mix of Mock and real objects...
         bs = new BlockStorage();
-        bs.inject_(auxRoot, tc,  tm, sched, fileFactory, bsb, bsdb, autoExportFolder,
-                fds, lacl, sidx2sid);
+        bs.inject_(auxRoot, tc,  tm, sched, fileFactory, bsb, bsdb, fds, eh);
         bs.init_();
     }
 
@@ -675,8 +670,7 @@ public class TestBlockStorage extends AbstractBlockTest
         Assert.assertTrue(revChildrenEquals("",
                 new Child("foo", true),
                 new Child("foo", false)));
-        Assert.assertTrue(revChildrenEquals("foo",
-                new Child("bar", false)));
+        Assert.assertTrue(revChildrenEquals("foo", new Child("bar", false)));
         Assert.assertTrue(revHistoryEquals("foo/bar",
                 RevisionMatcher.any()));
         Assert.assertTrue(revHistoryEquals("foo",
@@ -688,8 +682,7 @@ public class TestBlockStorage extends AbstractBlockTest
                 new Child("foo", false)));
         Assert.assertTrue(revChildrenEquals("foo"));
         Assert.assertTrue(revHistoryEquals("foo/bar"));
-        Assert.assertTrue(revHistoryEquals("foo",
-                RevisionMatcher.any()));
+        Assert.assertTrue(revHistoryEquals("foo", RevisionMatcher.any()));
     }
 
     private static class DevZero extends InputStream

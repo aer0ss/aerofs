@@ -86,5 +86,6 @@ public class S
             SS_IN_PROGRESS_TOOLTIP = "Remote peer has a different version and is currently" +
                     " online. This may happen if the remote peer is using selective sync.",
             SS_OFFLINE_TOOLTIP = "Remote peer has a different version and is currently offline.",
-            INVITING = "Inviting...";
+            INVITING = "Inviting...",
+            ENABLE_FILESYSTEM_VIEW = "Show synced files on filesystem";
 }

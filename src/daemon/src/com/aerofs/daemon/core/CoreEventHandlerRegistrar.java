@@ -103,7 +103,7 @@ import com.aerofs.daemon.event.status.EIGetSyncStatus;
 import com.aerofs.daemon.mobile.EIDownloadPacket;
 import com.aerofs.daemon.mobile.HdDownloadPacket;
 
-import javax.inject.Inject;
+import com.google.inject.Inject;
 
 public class CoreEventHandlerRegistrar implements ICoreEventHandlerRegistrar
 {

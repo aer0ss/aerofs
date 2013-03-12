@@ -275,4 +275,9 @@ public abstract class AbstractLinkStateService implements ILinkStateService
 
         notifyLinkStateChange_(current);
     }
+
+    public boolean linksManuallyDowned()
+    {
+        return _markedDown;
+    }
 }
