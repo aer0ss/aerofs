@@ -73,6 +73,8 @@ public final class DeviceManagementService extends Service<DeviceManagementServi
                 new PollingIntervalResource(configuration.getPollingConfiguration().getIntervalInSeconds()));
 
         // Health check.
-        environment.addHealthCheck(new DeviceManagementServiceHealthCheck());
+        // TODO (MP) can only enable this when it is put on a different port due to verkehr and
+        // devman both running on the same staging box.
+        //environment.addHealthCheck(new DeviceManagementServiceHealthCheck());
     }
 }

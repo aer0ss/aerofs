@@ -1,5 +1,5 @@
 http:
-    port: 9019
+    port: 9020
     maxThreads: 10
     minThreads: 4
     acceptorThreads: 4
@@ -41,4 +41,4 @@ polling:
 
 verkehr:
     host: verkehr.aerofs.com
-    port: 9020
+    port: 9019
