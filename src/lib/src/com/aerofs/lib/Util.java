@@ -834,10 +834,10 @@ public abstract class Util
     /**
      * @return the total number of bytes read
      */
-    public static int copy(InputStream is, OutputStream os) throws IOException
+    public static long copy(InputStream is, OutputStream os) throws IOException
     {
         byte[] buf = new byte[Param.FILE_BUF_SIZE];
-        int total = 0;
+        long total = 0;
         int len;
         while ((len = is.read(buf)) > 0) {
             os.write(buf, 0, len);
