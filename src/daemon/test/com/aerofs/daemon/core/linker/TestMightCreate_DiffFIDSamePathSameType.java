@@ -6,7 +6,6 @@ import com.aerofs.lib.Path;
 import com.aerofs.base.id.UniqueID;
 import static com.aerofs.daemon.core.linker.MightCreateOperations.*;
 
-import org.junit.Before;
 import org.junit.Test;
 
 /*
