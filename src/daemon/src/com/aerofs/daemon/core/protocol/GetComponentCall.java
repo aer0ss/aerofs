@@ -193,22 +193,10 @@ public class GetComponentCall
         if (!vLocal.sub_(vRemote).isZero_()) {
             sendReply_(msg, k);
         } else {
-            if (l.isDebugEnabled()) {
-                l.debug("r " + vRemote + " >= l " + vLocal + ". Throw no_new_update");
-            }
-            throw new ExNoComponentWithSpecifiedVersion();
+            ExNoComponentWithSpecifiedVersion e = new ExNoComponentWithSpecifiedVersion();
+            l.debug("r {} >= l {}. Throw {}", vRemote, vLocal, e.getMessage());
+            throw e;
         }
-
-        // the kml_version field is used only as a hint for the receiver to
-        // know more available versions
-        // TODO:
-        // Version vRemoteKnown = Version.fromPB(pb.getKmlVersion()).
-        // add_(vRemote);
-        // Version vKnown = _cd.getKnownVersion_(k.socid());
-        //
-        // if (!vRemoteKnown.sub_(vKnown).isZero_()) {
-        //     l.debug("TODO add diff to db and issue a download");
-        // }
     }
 
     public void sendReply_(DigestedMessage msg, SOCKID k)

@@ -119,7 +119,7 @@ public class NewUpdates
     public void process_(DigestedMessage msg)
             throws ExNotFound, SQLException, IOException
     {
-        l.debug("recv from " + msg.ep());
+        l.debug("recv from {}", msg.ep());
 
         Trans t = _tm.begin_();
         try {
@@ -137,8 +137,8 @@ public class NewUpdates
                 Tick tick = new Tick(update.getTick());
                 if (_nvc.tickReceived_(socid, msg.did(), tick, t)) {
                     news = true;
-                    if (done.add(oid) && filter.add_(oid) && l.isDebugEnabled()) {
-                        l.debug("add oid " + oid + " to " + filter);
+                    if (done.add(oid) && filter.add_(oid)) {
+                        l.debug("add oid {} to {}", oid, filter);
                     }
                 }
             }

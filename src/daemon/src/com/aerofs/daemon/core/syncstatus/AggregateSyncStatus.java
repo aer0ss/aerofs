@@ -498,7 +498,7 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
     public void objectSyncStatusChanged_(SOID soid, BitVector oldStatus, BitVector newStatus,
             Trans t) throws SQLException
     {
-        if (l.isDebugEnabled()) l.debug("sschanged " + soid + " " + oldStatus + " " + newStatus);
+        l.debug("sschanged {} {} {}", soid, oldStatus, newStatus);
 
         OA oa = _ds.getOA_(soid);
         // expelled objects are not taken into account by aggregate sync status
