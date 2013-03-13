@@ -39,10 +39,6 @@ def main(global_config, **settings):
         default_permission='admin'
     )
 
-    # Event subscribers
-    config.add_subscriber('web.subscribers.add_renderer_globals', 'pyramid.events.BeforeRender')
-    config.add_subscriber('web.subscribers.add_localizer', 'pyramid.events.NewRequest')
-
     # Localization settings
     config.add_translation_dirs('../locale/')
 

@@ -91,7 +91,9 @@
         <div class="row">
             <div class="span10 offset1">
                 <a href="/">
-                    <img src="http://d2w483fi6el07z.cloudfront.net/img/logo_small.png" width="144" height="40" alt="AeroFS" />
+                    ## Use HTTPS to prevent browsers from complaining
+                    ## 'insecure content in a secured page'.
+                    <img src="https://d2w483fi6el07z.cloudfront.net/img/logo_small.png" width="144" height="40" alt="AeroFS" />
                 </a>
 
                 %if 'username' in request.session and \
@@ -262,3 +264,30 @@
 
 </body>
 </html>
+
+## N.B. Please read README.security.txt carefully before proceeding.
+##
+## All forms should call this function to append the CSRF token to each POST request:
+##
+##  <form>${self.csrf_token_input()} ...</form>
+##
+## The name of the field must be identical to the one in csrf.py
+##
+<%def name="csrf_token_input()">
+    <input type="hidden" name="csrf_token" value="${request.session.get_csrf_token()}"/>
+</%def>
+
+## N.B. Please read README.security.txt carefully before proceeding.
+##
+## All non-GET AJAX requests should call this function to append the CSRF token:
+##
+##  $.post(url, {
+##      ${self.csrf_token_param()},
+##      ...
+##  });
+##
+## The name of the field must be identical to the one in csrf.py
+##
+<%def name="csrf_token_param()">
+    csrf_token: "${request.session.get_csrf_token()}",
+</%def>

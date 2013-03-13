@@ -30,6 +30,10 @@ def domain_sanity_check(domain):
     """
     return len(domain) > 3 and domain.find(' ') < 0 and domain.find('.') >= 0
 
+# TODO (WW) move this three functions to security/authentication related modules
+def is_logged_in(request):
+    return 'username' in request.session
+
 def is_admin(request):
     return request.session['group'] == ADMIN
 

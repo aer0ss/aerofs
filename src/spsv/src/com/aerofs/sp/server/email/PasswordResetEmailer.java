@@ -54,17 +54,18 @@ public class PasswordResetEmailer
             throws IOException
 
     {
-        String subject = L.PRODUCT + " Password Reset Confirmation";
+        String subject = L.PRODUCT + " Password Has Changed";
 
         Email email = new Email(subject, false, null);
 
         String body = "\n" +
-                "You've successfully created a new password for your " + L.PRODUCT + " account.\n" +
+                "You have changed the password for your " + L.PRODUCT + " account.\n" +
                 "\n" +
-                "If you didn't request a password reset, " +
-                "please email " + SV.SUPPORT_EMAIL_ADDRESS + " right away.";
+                "If you didn't change the password," +
+                " please email " + SV.SUPPORT_EMAIL_ADDRESS + " immediately." +
+                " We will take necessary steps to secure your account.";
 
-        email.addSection(L.PRODUCT + " Password Reset was Successful", HEADER_SIZE.H1, body);
+        email.addSection(subject, HEADER_SIZE.H1, body);
         email.addDefaultSignature();
 
         try {
