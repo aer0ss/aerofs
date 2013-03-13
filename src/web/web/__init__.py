@@ -2,7 +2,7 @@ from pyramid.config import Configurator
 from pyramid.authentication import SessionAuthenticationPolicy
 from pyramid.authorization import ACLAuthorizationPolicy
 from pyramid_beaker import session_factory_from_settings
-from modules.login.views import groupfinder
+from modules.login.login_view import groupfinder
 from modules.login.models import RootFactory
 import re
 import modules
