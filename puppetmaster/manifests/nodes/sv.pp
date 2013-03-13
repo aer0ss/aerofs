@@ -14,7 +14,7 @@ node "sv.aerofs.com" inherits default {
     class{"analytics":}
 
     cron{"remove old defects":
-        command => 'find /var/svlogs_prod/defect/ -mtime +28 -iname log.defect\* | xargs rm',
+        command => 'find /var/svlogs_prod/defect/ -mtime +21 -iname log.defect\* | xargs rm',
         hour    => "0",
         minute  => "0"
     }
@@ -26,7 +26,7 @@ node "sv.aerofs.com" inherits default {
     }
 
     cron{"remove old logs":
-        command => 'find /var/svlogs_prod/archived/ -iname \*.gz -mtime +80 | xargs rm',
+        command => 'find /var/svlogs_prod/archived/ -iname \*.gz -mtime +60 | xargs rm',
         hour    => "0",
         minute  => "0"
     }
