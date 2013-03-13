@@ -269,7 +269,7 @@
 ##
 ## All forms should call this function to append the CSRF token to each POST request:
 ##
-##  <form>${self.csrf_token_input()} ...</form>
+##  <form method="post">${self.csrf_token_input()} ...</form>
 ##
 ## The name of the field must be identical to the one in csrf.py
 ##

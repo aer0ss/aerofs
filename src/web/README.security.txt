@@ -7,13 +7,11 @@ We use JavaScript to override the default behavior of many forms. However, if
 the browser has Javascript disabled, the form will be submitted with the default
 method GET, which encode all the fields the URL. the full URL can be displayed
 and logged on both the client and the server. It is very bad if the URL contains
-sensitive field data. Therefore, always specify method="POST" in all <form> tags.
+sensitive field data. Therefore, always specify method="post" in all <form> tags.
 
   @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-  @ Specify method="POST" in all <form> tags. @
+  @ Specify method="post" in all <form> tags. @
   @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-
-TOOD (WW) check all forms to make sure POST is specified.
 
 
 CSRF attack prevention
