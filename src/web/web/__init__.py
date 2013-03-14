@@ -2,13 +2,9 @@ from pyramid.config import Configurator
 from pyramid.authentication import SessionAuthenticationPolicy
 from pyramid.authorization import ACLAuthorizationPolicy
 from pyramid_beaker import session_factory_from_settings
-from modules.login.login_view import groupfinder
-from modules.login.models import RootFactory
-import re
-import modules
-
-# N.B. this is required for config.scan() to work, do not remove.
-from modules import *
+from views.login.login_view import groupfinder
+from root_factory import RootFactory
+import views
 
 def main(global_config, **settings):
     """
@@ -19,15 +15,10 @@ def main(global_config, **settings):
     authz_policy = ACLAuthorizationPolicy()
     admin_session_factory = session_factory_from_settings(settings)
 
-    modulePackageName = 'modules.'
-
-    # Regular expression for python builtin module names (i.e. __init__)
-    builtinfunc = re.compile('__\w+__')
-
-    # Import template directories from modules
-    for module in dir(modules):
-        if not builtinfunc.match(module):
-            settings['mako.directories'] += '\n' + modulePackageName + module + ':templates'
+    # Import template directories from views
+    for view in views.__all__:
+        settings['mako.directories'] += \
+            '\n{}.{}:templates'.format(views.__name__, view)
 
     config = Configurator(
         settings=settings,
@@ -40,26 +31,22 @@ def main(global_config, **settings):
     )
 
     # Localization settings
-    config.add_translation_dirs('../locale/')
+    config.add_translation_dirs('locale')
 
-    # Global routes
-    static_prefix = settings['static.prefix']
-    config.add_static_view(static_prefix, 'aerofs_web.layout:static/', cache_max_age=3600)
-    config.add_route('homepage', '/')
+    # Static view
+    config.add_static_view(settings['static.prefix'], 'static', cache_max_age=3600)
+
+    # Import routes from views
+    for view in views.__all__:
+        config.include('{}.{}'.format(views.__name__, view))
 
     config.scan()
+
     # Config commiting. Pyramid does some great config conflict detection. This conflict detection
     # is limited to configuration changes between commits. Since some of the default configuration
     # is overridden in modules, we have to commit the default configuration before including the
     # modules. Otherwise we get a ConfigurationConflictError.
     # See http://pyramid.readthedocs.org/en/latest/narr/advconfig.html for more details.
     config.commit()
-
-    # Import routes from modules
-    for module in dir(modules):
-        if not builtinfunc.match(module):
-            print modulePackageName + module
-            config.include(modulePackageName + module)
-            config.scan(package=modulePackageName + module)
 
     return config.make_wsgi_app()

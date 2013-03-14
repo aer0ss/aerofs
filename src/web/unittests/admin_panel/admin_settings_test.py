@@ -18,7 +18,7 @@ class AdminSettingsTest(TestBase):
         TODO (WW) this test doesn't work, and causes UserLookupTest to fail.
         REALLY?? The entire Pyramid unittest system is broken.
         """
-        from modules.admin_panel.views import admin_settings
+        from web.views.admin_panel.admin_panel_view import admin_settings
 
         request = self.create_request({
             "form.submitted": True,

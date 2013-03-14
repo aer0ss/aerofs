@@ -46,7 +46,7 @@ class SetStripCustomerSubscriptionTest(TestBase):
     def _set_subscription(self):
         # place the import here rather than file header since it has to be done
         # _after_ setup_common(). TODO (WW) a better approach?
-        from modules.payment.stripe_billing import\
+        from web.views.payment.stripe_billing import\
             set_stripe_customer_subscription
 
         set_stripe_customer_subscription(self.stripe_customer, _PLAN_ID)

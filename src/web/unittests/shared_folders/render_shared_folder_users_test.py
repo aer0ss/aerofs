@@ -11,7 +11,7 @@ class RenderSharedFolderUsersTest(unittest.TestCase):
             "test@test")
 
     def _render_shared_folder_users_with_session_user(self, first_names, session_user):
-        from modules.shared_folders.shared_folders_view import _render_shared_folder_users
+        from web.views.shared_folders.shared_folders_view import _render_shared_folder_users
 
         return _render_shared_folder_users(self._compose_user_list(first_names),
             session_user)

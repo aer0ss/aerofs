@@ -1,0 +1,46 @@
+<div id="modal" class="modal hide" tabindex="-1" role="dialog">
+    <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">×</button>
+        <h3>Manage shared folder &quot;<span id="modal-folder-name"></span>&quot;</h3>
+    </div>
+    <div class="modal-body">
+        <table id="modal-user-role-table" class="table">
+            <thead><tr><th>Member</th><th>Role</th><th></th></tr></thead>
+            <tbody></tbody>
+        </table>
+    </div>
+    <div class="modal-footer">
+        <form id="modal-invite-form" class="form-inline" method="post">
+            <span class="pull-left">
+                <input type="text" id="modal-invitee-email" placeholder="Add email">
+                <input class="btn" type="submit" value="Send Invite">
+            </span>
+            <span id="modal-spinner"></span>
+            <a href="#" class="btn" data-dismiss="modal">Close</a>
+        </form>
+    </div>
+</div>
+
+<div id="kickout-modal" class="modal hide" tabindex="-1" role="dialog">
+    <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">×</button>
+        <h3>Kick out from shared folder</h3>
+    </div>
+    <div class="modal-body">
+        ## Note: the following text should be consistent with the text in
+        ## RoleMenu.java.
+        <p>Are you sure you want to kick out
+            <span class="kickout-modal-full-name"></span>
+            (<span class="kickout-modal-email"></span>)?</p>
+        <p class="footnote">
+            This will delete the folder from the user's computers.
+            However, old content may be still accessible from the
+            user's version history.
+        </p>
+
+    </div>
+    <div class="modal-footer">
+        <a href="#" class="btn" data-dismiss="modal">Cancel</a>
+        <a href="#" id="kickout-model-confirm" class="btn btn-danger">Kick Out</a>
+    </div>
+</div>

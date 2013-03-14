@@ -1,0 +1,86 @@
+# Translations template for web.
+# Copyright (C) 2012 ORGANIZATION
+# This file is distributed under the same license as the web project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2012.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: web 0.0\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2012-07-30 15:04-0700\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 0.9.6\n"
+
+#: web/views.py:39
+msgid "You are not authorized to view this page. Please log in to continue."
+msgstr ""
+
+#: web/helper_functions.py:21
+msgid "Error: ${error}"
+msgstr ""
+
+#: web/helper_functions.py:23 modules/login/views.py:84
+msgid "Internal server error: ${error}"
+msgstr ""
+
+#: modules/admin_panel/views.py:27
+msgid "Dashboard"
+msgstr ""
+
+#: modules/admin_panel/views.py:27
+msgid "Manage users"
+msgstr ""
+
+#: modules/admin_panel/views.py:27
+msgid "Settings"
+msgstr ""
+
+#: modules/admin_panel/views.py:117
+msgid "Error: Invalid email address"
+msgstr ""
+
+#: modules/admin_panel/views.py:122
+msgid "${user} has been invited to join your organization."
+msgstr ""
+
+#: modules/admin_panel/views.py:141 modules/admin_panel/views.py:165
+msgid "Error: Invalid user id"
+msgstr ""
+
+#: modules/admin_panel/views.py:146
+msgid "${user}'s password has been reset."
+msgstr ""
+
+#: modules/admin_panel/views.py:173
+msgid "Error: Invalid authorization level"
+msgstr ""
+
+#: modules/admin_panel/views.py:179
+msgid "${user} now has ${level} privileges for your organization."
+msgstr ""
+
+#: modules/login/views.py:58
+msgid "Invalid user id"
+msgstr ""
+
+#: modules/login/views.py:87
+msgid "Error on login attempt: ${error}"
+msgstr ""
+
+#: modules/register_organization/views.py:38
+msgid "Error: Invalid company domain name, please enter a valid domain name"
+msgstr ""
+
+#: modules/register_organization/views.py:41
+msgid "Error: Please specify the full name of your company"
+msgstr ""
+
+#: modules/register_organization/views.py:54
+msgid "Internal Server Error: ${error}"
+msgstr ""

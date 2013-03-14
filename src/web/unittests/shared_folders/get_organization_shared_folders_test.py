@@ -50,7 +50,7 @@ class GetOrganizationSharedFoldersTest(TestBase):
         ur.user.last_name = 'last'
 
     def test_get_organization_shared_folders(self):
-        from modules.shared_folders.shared_folders_view import \
+        from web.views.shared_folders.shared_folders_view import \
             json_get_organization_shared_folders
 
         request = self.create_request({
@@ -65,7 +65,7 @@ class GetOrganizationSharedFoldersTest(TestBase):
         self.assertEquals(len(response['aaData']), 2)
 
     def test_get_user_shared_folders(self):
-        from modules.shared_folders.shared_folders_view import\
+        from web.views.shared_folders.shared_folders_view import\
             json_get_user_shared_folders, URL_PARAM_USER
 
         request = self.create_request({

@@ -1,7 +1,7 @@
 import unittest, os
 from pyramid import testing
 from mock import Mock, create_autospec
-from aerofs_web import helper_functions
+from web import helper_functions
 from aerofs_sp.gen.sp_pb2 import SPServiceRpcStub
 
 class TestBase(unittest.TestCase):

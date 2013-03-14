@@ -48,7 +48,7 @@ Updating Cloudfront:
 ================================================
 We use Cloudfront for our static assets, so when our local copies are changed
 they need to be updated in cloudfront too when we want to serve them in production.
-Anything stored in aerofs_web/layout/static is served from Cloudfront.
+Anything stored in web/static is served from Cloudfront.
 
 To get setup to update Cloudfront, get credentials to the aerofs.admin_panel bucket
 on S3 then run the following commands to configure your S3 environment:
