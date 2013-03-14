@@ -111,13 +111,6 @@ public class CmdHelp<T> implements IShellCommand<T>
         pw.flush();
 
         out.println();
-        out.println("MISCELLANEOUS");
-        hf.printWrapped(pw, LINE_WIDTH, INDENT_WIDTH, INDENT +
-                "Enter an empty line in the interactive mode to repeat the" +
-                " last command.");
-        pw.flush();
-
-        out.println();
         hf.printWrapped(pw, LINE_WIDTH, INDENT_WIDTH, INDENT +
                 "Need more functions? Submit feature requests at http://vote.aerofs.com.");
         hf.printWrapped(pw, LINE_WIDTH, INDENT_WIDTH, INDENT +
