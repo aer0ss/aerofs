@@ -19,7 +19,7 @@ fi
 
 # Surprising, but true: file is an optional package on some distros.
 which file > /dev/null
-if [ $? != 0 ]; then
+if [ $? -ne 0 ]; then
     echo Please install the file package first by typing:
     echo sudo apt-get install file
     exit 1
@@ -41,19 +41,19 @@ DIST="$HOME/.[AEROFS_PRODUCT_UNIX]-bin[DOT_STAGING]"
 
 if [ ! -f "$DIST/aerofs.jar" ]; then
     which ps > /dev/null
-    if [ $? != 0 ]; then
+    if [ $? -ne 0 ]; then
         echo Please install the procps package first by typing:
         echo sudo apt-get install procps
         exit 1
     fi
     which uudecode > /dev/null
-    if [ $? != 0 ]; then
+    if [ $? -ne 0 ]; then
         echo Please install the sharutils package first by typing:
         echo sudo apt-get install sharutils
         exit 1
     fi
     which java > /dev/null
-    if [ $? != 0 ]; then
+    if [ $? -ne 0 ]; then
         echo Please install Java first by typing:
         echo sudo apt-get install default-jre
         exit 1
@@ -71,18 +71,28 @@ if [ ! -f "$DIST/aerofs.jar" ]; then
     TARGET="$TMP_DIR/target"
     mv "$TMP_DIR/libswt$ARCH/libswt"*.so "$TMP_DIR"
     java -cp "$TMP_DIR/s$ARCH.jar":"$TMP_DIR" com.aerofs.downloader.Main $PROG $URL "$TARGET"
-    if [ $? != 0 ]; then
+    if [ $? -ne 0 ]; then
         exit 1
     fi
 
     tar zxf "$TARGET" -C "$TMP_DIR" 2>/dev/null
     if [ ! -d "$TMP_DIR/aerofs" ]; then
-      echo Failed during unpacking the AeroFS package.
+      echo Failed to unpack the AeroFS package.
       exit 1
     fi
 
     rm -rf "$DIST"
-    mv "$TMP_DIR/aerofs" "$DIST"
+    # We use cp rather than mv because on SELinux systems cp will relabel the
+    # target files, whereas mv will keep the /tmp label, which is noexec on
+    # some systems.
+    cp -a "$TMP_DIR/aerofs" "$DIST"
+    if [ $? -ne 0 ]; then
+        rm -rf "$DIST" "$TMP_DIR"
+        echo "Failed to copy installation to $DIST"
+        echo "Suggestion: check the permissions on $(dirname $DIST)"
+        echo "Perhaps your disk is full?"
+        exit 1
+    fi
     rm -rf "$TMP_DIR"
 
     # setup auto-start

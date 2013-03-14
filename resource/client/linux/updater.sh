@@ -47,12 +47,12 @@ if [ ! -d "$TMPDIR/aerofs" ]; then
 else 
   # Remove all files from the previous installation, then copy the new one in.
   rm -rf "$APP_ROOT"
-  mv "$TMPDIR"/aerofs "$APP_ROOT"
+  cp -a "$TMPDIR"/aerofs "$APP_ROOT"
   if [ $? -ne 0 ]; then
     # Failed to place new root.  Maybe the disk was full, or some other
     # catastrophic failure took place. AeroFS will attempt to redownload on the
     # next user-started launch.
-    rm -rf "$APP_ROOT"
+    rm -rf "$APP_ROOT" "$TMPDIR"
     exit 1
   fi
   cd "$APP_ROOT" # Java doesn't like to run from deleted folders
