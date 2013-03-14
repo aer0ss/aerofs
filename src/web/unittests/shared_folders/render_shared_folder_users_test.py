@@ -52,20 +52,6 @@ class RenderSharedFolderUsersTest(unittest.TestCase):
         str = self._render_shared_folder_users([first_name1, first_name2])
         self.assertEquals(str, first_name1 + " and " + first_name2)
 
-    def test_two_users_with_long_name_at_first(self):
-        first_name1 = self._long_name()
-        first_name2 = 'hohoho'
-
-        str = self._render_shared_folder_users([first_name1, first_name2])
-        self.assertEquals(str, first_name1 + " and " + first_name2)
-
-    def test_two_users_with_long_name_at_second(self):
-        first_name1 = 'hohoho'
-        first_name2 = self._long_name()
-
-        str = self._render_shared_folder_users([first_name1, first_name2])
-        self.assertEquals(str, first_name1 + " and " + first_name2)
-
     def test_three_users(self):
         first_name1 = 'hahaha'
         first_name2 = 'hohoho'
@@ -73,30 +59,6 @@ class RenderSharedFolderUsersTest(unittest.TestCase):
         str = self._render_shared_folder_users([first_name1, first_name2, first_name3])
         self.assertEquals(str,
             first_name1 + ", " + first_name2 + ", and " + first_name3)
-
-    def test_three_users_with_long_name_at_first(self):
-        first_name1 = self._long_name()
-        first_name2 = 'hohoho'
-        first_name3 = 'xixixi'
-
-        str = self._render_shared_folder_users([first_name1, first_name2, first_name3])
-        self.assertEquals(str, first_name1 + " and 2 others")
-
-    def test_three_users_with_long_name_at_second(self):
-        first_name1 = 'hohoho'
-        first_name2 = self._long_name()
-        first_name3 = 'xixixi'
-
-        str = self._render_shared_folder_users([first_name1, first_name2, first_name3])
-        self.assertEquals(str, first_name1 + " and 2 others")
-
-    def test_three_user_with_long_name_at_third(self):
-        first_name1 = 'hohoho'
-        first_name2 = 'xixixi'
-        first_name3 = self._long_name()
-
-        str = self._render_shared_folder_users([first_name1, first_name2, first_name3])
-        self.assertEquals(str, first_name1 + ", " + first_name2 + ", and " + first_name3)
 
     def test_three_users_with_session_user(self):
         """
@@ -117,14 +79,36 @@ class RenderSharedFolderUsersTest(unittest.TestCase):
 
         str = self._render_shared_folder_users(
             [first_name1, first_name2, first_name3, first_name4])
-        self.assertEquals(str,
-            first_name1 + ", " + first_name2 + ", " + first_name3 +
-            ", and " + first_name4)
+        self.assertEquals(str, first_name1 + ", " + first_name2 + ", " +
+                               first_name3 + ", and " + first_name4)
+
+    def test_four_users_with_session_user(self):
+        first_name1 = 'hahaha'
+        first_name2 = 'hohoho'
+        first_name3 = 'lala'
+        first_name4 = 'xixixi'
+
+        str = self._render_shared_folder_users_with_session_user(
+            [first_name1, first_name2, first_name3, first_name4],
+            self._get_user_id(2))
+        self.assertEquals(str, first_name1 + ", " + first_name2 + ", " +
+                               first_name4 + ", and me")
+
+    def test_six_users_with_session_user(self):
+        first_name1 = 'hahaha'
+        first_name2 = 'hohoho'
+        first_name3 = 'lala'
+        first_name4 = 'xixixi'
+        first_name5 = 'lalal'
+        first_name6 = 'xixixixi'
+
+        str = self._render_shared_folder_users_with_session_user(
+            [first_name1, first_name2, first_name3, first_name4, first_name5,
+             first_name6], self._get_user_id(0))
+        self.assertEquals(str, first_name2 + ", " + first_name3 + ", " +
+                               first_name4 + ", and 3 others")
 
     def test_should_escape_html(self):
         first_name = '<&>'
         str = self._render_shared_folder_users([first_name])
         self.assertEquals(str, "&lt;&amp;&gt; only")
-
-    def _long_name(self):
-        return ''.join(['a' for num in xrange(1000)])

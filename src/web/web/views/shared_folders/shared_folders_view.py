@@ -172,30 +172,29 @@ def _render_shared_folder_users(user_and_role_list, session_user):
             reordered_list.append(myself)
             break
 
-    str = ''
-    index = 0
     total = len(reordered_list)
-    for user_and_role in reordered_list:
-        index += 1
-        new_str = str
 
-        # add connectors
-        if index > 1:
-            if total == 2: new_str += " and "
-            elif index == total: new_str += ", and "
-            else: new_str += ", "
-
-        new_str += _ger_first_name(user_and_role.user, session_user)
-
-        # truncate the string if it becomes too long
-        left = total - index + 1
-        if index > 1 and left > 1 and len(new_str) > 40:
-            str += " and {} others".format(left)
-            break
-        else:
-            str = new_str
-
-    if total == 1: str += " only"
+    str = ''
+    if total == 0:
+        pass
+    elif total == 1:
+        str = _ger_first_name(reordered_list[0], session_user) + " only"
+    elif total == 2:
+        str = "{} and {}".format(
+            _ger_first_name(reordered_list[0], session_user),
+            _ger_first_name(reordered_list[1], session_user))
+    elif total < 5:
+        for i in range(total):
+            if i > 0: str += ", "
+            if i == total - 1: str += "and "
+            str += _ger_first_name(reordered_list[i], session_user)
+    else:
+        # If there are more than 5 people, print the first 3 only
+        printed = 3
+        for i in range(printed):
+            str += _ger_first_name(reordered_list[i], session_user)
+            str += ", "
+        str += "and {} others".format(total - printed)
 
     return escape(str)
 
@@ -227,9 +226,9 @@ def to_json(user_and_role_list, session_user):
     for ur in user_and_role_list:
         urs[ur.user.user_email] = {
             _USER_AND_ROLE_FIRST_NAME_KEY:
-                _ger_first_name(ur.user, session_user),
+                _ger_first_name(ur, session_user),
             _USER_AND_ROLE_LAST_NAME_KEY:
-                _get_last_name(ur.user, session_user),
+                _get_last_name(ur, session_user),
             _USER_AND_ROLE_IS_OWNER_KEY:
                 (1 if ur.role == common.OWNER else 0)
         }
@@ -237,17 +236,19 @@ def to_json(user_and_role_list, session_user):
     # dump to a compact-format JSON string
     return json.dumps(urs, separators=(',',':'))
 
-def _ger_first_name(user, session_user):
+def _ger_first_name(user_and_role, session_user):
     """
-    @param user a PBUser object
+    @param user_and_role a PBUserAndRole object
     """
+    user = user_and_role.user
     return "me" if user.user_email == session_user else user.first_name
 
-def _get_last_name(user, session_user):
+def _get_last_name(user_and_role, session_user):
     """
     otherwise.
-    @param user a PBUser object
+    @param user_and_role a PBUserAndRole object
     """
+    user = user_and_role.user
     return "" if user.user_email == session_user else user.last_name
 
 @view_config(
