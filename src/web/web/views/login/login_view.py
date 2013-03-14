@@ -7,7 +7,7 @@ from aerofs_sp.gen.sp_pb2 import SPServiceRpcStub
 from aerofs_sp.connection import SyncConnectionService
 from aerofs_sp.scrypt import scrypt
 
-from web.helper_functions import *
+from web.util import *
 
 '''
 TODO:

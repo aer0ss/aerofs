@@ -8,8 +8,8 @@ from cgi import escape
 from pyramid.view import view_config
 from aerofs_sp.gen.sp_pb2 import USER, ADMIN
 import aerofs_sp.gen.common_pb2 as common
-from web import helper_functions
-from web.helper_functions import *
+from web import util
+from web.util import *
 from aerofs_common.exception import ExceptionReply
 from ..payment.payment_view import update_stripe_subscription
 
@@ -156,7 +156,7 @@ def json_get_admins(request):
 def users_view(request):
     # It's very weird that if we use get_rpc_stub instead of
     # helper_functions.get_rpc_stub here, the unit test would fail.
-    sp = helper_functions.get_rpc_stub(request)
+    sp = util.get_rpc_stub(request)
     reply = sp.list_organization_invited_users()
     return {
         'url_param_user': URL_PARAM_USER,

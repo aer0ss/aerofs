@@ -84,7 +84,7 @@
     ##
     navigation_bars = False
 
-    from web.helper_functions import is_admin
+    from web.util import is_admin
 %>
 
     <div class="container" style="margin: 20px auto;">

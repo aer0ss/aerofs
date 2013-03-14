@@ -8,9 +8,9 @@ import logging, base64, json, urllib
 from cgi import escape
 from pyramid.view import view_config
 import aerofs_sp.gen.common_pb2 as common
-from web.helper_functions import *
+from web.util import *
 from ..admin_panel.admin_panel_view import URL_PARAM_USER, URL_PARAM_FULL_NAME
-from web import helper_functions
+from web import util
 
 log = logging.getLogger("web")
 
@@ -108,7 +108,7 @@ def json_get_organization_shared_folders(request):
 
     # It's very weird that if we use get_rpc_stub instead of
     # helper_functions.get_rpc_stub here, the unit test would fail.
-    sp = helper_functions.get_rpc_stub(request)
+    sp = util.get_rpc_stub(request)
     try:
         reply = sp.list_organization_shared_folders(count, offset)
         return _sp_reply2datatables(reply.shared_folder,
@@ -134,7 +134,7 @@ def json_get_user_shared_folders(request):
 
     # It's very weird that if we use get_rpc_stub instead of
     # helper_functions.get_rpc_stub here, the unit test would fail.
-    sp = helper_functions.get_rpc_stub(request)
+    sp = util.get_rpc_stub(request)
     try:
         reply = sp.list_user_shared_folders(specified_user)
         return _sp_reply2datatables(reply.shared_folder,

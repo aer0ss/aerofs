@@ -6,7 +6,7 @@ missing import statements.
 
 import logging
 from pyramid.view import view_config
-from web.helper_functions import *
+from web.util import *
 from web.views.payment.payment_view import update_stripe_subscription
 
 log = logging.getLogger("web")

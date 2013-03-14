@@ -5,7 +5,7 @@ from pyramid.httpexceptions import HTTPOk, HTTPServerError
 from pyramid.security import NO_PERMISSION_REQUIRED
 
 from aerofs_common.exception import ExceptionReply
-from web.helper_functions import get_error, get_rpc_stub
+from web.util import get_error, get_rpc_stub
 
 l = logging.getLogger("web")
 

@@ -1,7 +1,7 @@
 import unittest, os
 from pyramid import testing
 from mock import Mock, create_autospec
-from web import helper_functions
+from web import util
 from aerofs_sp.gen.sp_pb2 import SPServiceRpcStub
 
 class TestBase(unittest.TestCase):
@@ -17,7 +17,7 @@ class TestBase(unittest.TestCase):
 
         self.sp_rpc_stub = create_autospec(SPServiceRpcStub)
 
-        helper_functions.get_rpc_stub = Mock(return_value=self.sp_rpc_stub)
+        util.get_rpc_stub = Mock(return_value=self.sp_rpc_stub)
 
     def create_request(self, parameters):
         """

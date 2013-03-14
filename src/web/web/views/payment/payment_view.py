@@ -8,7 +8,7 @@ from pyramid.httpexceptions import HTTPFound, HTTPServerError, HTTPNoContent, HT
 from stripe import CardError, InvalidRequestError
 
 from aerofs_common.exception import ExceptionReply
-from web.helper_functions import *
+from web.util import *
 from web.views.payment import stripe_billing
 
 log = logging.getLogger(__name__)

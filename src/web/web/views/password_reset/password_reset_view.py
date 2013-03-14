@@ -11,7 +11,7 @@ from pyramid.view import view_config
 from aerofs_sp.gen.common_pb2 import PBException
 from aerofs_sp.scrypt import scrypt
 
-from web.helper_functions import *
+from web.util import *
 
 log = logging.getLogger("web")
 

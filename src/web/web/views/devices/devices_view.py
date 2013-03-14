@@ -1,5 +1,5 @@
 import logging
-from web.helper_functions import *
+from web.util import *
 from pyramid.view import view_config
 from pyramid.httpexceptions import HTTPNoContent, HTTPFound
 from ..admin_panel.admin_panel_view import URL_PARAM_USER, URL_PARAM_FULL_NAME

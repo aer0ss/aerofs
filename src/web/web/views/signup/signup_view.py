@@ -12,7 +12,7 @@ from aerofs_common.exception import ExceptionReply
 from aerofs_sp.scrypt import scrypt
 import aerofs_sp.gen.common_pb2 as common
 
-from web.helper_functions import *
+from web.util import *
 
 log = logging.getLogger("web")
 
