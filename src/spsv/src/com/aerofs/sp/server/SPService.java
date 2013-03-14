@@ -235,8 +235,12 @@ public class SPService implements ISPService
             throw SystemUtil.fatalWithReturn(enp);
         }
 
-        l.warn(user + ": " + Util.e(e, ExNoPerm.class, ExBadCredential.class, ExBadArgs.class,
-                ExAlreadyExist.class, ExNotFound.class));
+        // TODO (MP) suppress ExNotFound.class once the device deletion error is fixed.
+        l.warn(user + ": " + Util.e(e,
+                ExNoPerm.class,
+                ExBadCredential.class,
+                ExBadArgs.class,
+                ExAlreadyExist.class));
 
         // Notify SPTransaction that an exception occurred.
         _sqlTrans.handleException();
