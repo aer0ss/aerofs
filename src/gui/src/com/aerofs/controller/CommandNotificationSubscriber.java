@@ -418,6 +418,9 @@ public final class CommandNotificationSubscriber
         // Delete Root Anchor.
         // TODO (MP) possibly implement secure delete.
         FileUtil.deleteIgnoreErrorRecursively(new File(Cfg.absRootAnchor()));
+        // Also delete the entire config directory, if possible.
+        // On Windows, files we hold open may refuse to be deleted.
+        FileUtil.deleteIgnoreErrorRecursively(new File(Cfg.absRTRoot()));
 
         shutdownImplementation();
     }
