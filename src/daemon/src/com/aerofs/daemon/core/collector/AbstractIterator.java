@@ -45,9 +45,15 @@ public abstract class AbstractIterator
     private @Nullable OCIDAndCS _current;
     private int _next;
     private final ArrayList<OCIDAndCS> _seq = Lists.newArrayList();
+    private boolean _clearOnReset;
 
     // batch size used by the incremental fetch
     private final int FETCH_SIZE = 100;
+
+    // keep the memory usage of the cached data reasonable (OCIDAndCS has a 288 bytes footprint)
+    // NB: The in-memory footprint for OCIDAndCS could be brought under 256 *bits* without Java's
+    // retarded boxing... I miss good old C/C++
+    private final int SHRINK_THRESHOLD = 2000;
 
     public AbstractIterator(ICollectorSequenceDatabase csdb, CollectorSkipRule csr, SIndex sidx)
     {
@@ -71,6 +77,9 @@ public abstract class AbstractIterator
      */
     public void reset_()
     {
+        // if we had to discard some cached values we need to force a re-fetch...
+        if (_clearOnReset) _seq.clear();
+        _clearOnReset = false;
         _current = null;
         _next = 0;
     }
@@ -151,8 +160,15 @@ public abstract class AbstractIterator
      */
     private boolean fetchMore_() throws SQLException
     {
-        // TODO: shrink _seq if it becomes too large (NB: would then have to clear it on reset_)
         assert _next == _seq.size();
+
+        // shrink _seq if it becomes too large
+        if (_seq.size() > SHRINK_THRESHOLD) {
+            _seq.clear();
+            // discarding elements require refetching from the start on reset_
+            _clearOnReset = true;
+        }
+
         IDBIterator<OCIDAndCS> it = fetch_(cs_(), FETCH_SIZE);
         _seq.ensureCapacity(_seq.size() + FETCH_SIZE);
         try {
