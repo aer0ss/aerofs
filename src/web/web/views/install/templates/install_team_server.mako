@@ -113,7 +113,7 @@
     <p>
         Once installed, the server will immediately sync with your own AeroFS clients.
         To sync with colleagues and clients, simply
-        <a href="${request.route_url('admin_users')}">invite them to your team</a>.
+        <a href="${request.route_url('team_members')}">invite them to your team</a>.
         After they accept the invitation, all their AeroFS files will be synced
         to the Team Server.
     </p>

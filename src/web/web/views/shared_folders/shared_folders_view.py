@@ -9,18 +9,15 @@ from cgi import escape
 from pyramid.view import view_config
 import aerofs_sp.gen.common_pb2 as common
 from web.util import *
-from ..admin_panel.admin_panel_view import URL_PARAM_USER, URL_PARAM_FULL_NAME
+from ..team_members.team_members_view import URL_PARAM_USER, URL_PARAM_FULL_NAME
 from web import util
 
 log = logging.getLogger("web")
 
-def get_permission(pbrole):
-    return common._PBROLE.values_by_number[int(pbrole)].name
-
-def encode_store_id(sid):
+def _encode_store_id(sid):
     return base64.b32encode(sid)
 
-def decode_store_id(encoded_sid):
+def _decode_store_id(encoded_sid):
     return base64.b32decode(encoded_sid)
 
 # HTML class for links that open the Options modal
@@ -199,7 +196,7 @@ def _render_shared_folder_users(user_and_role_list, session_user):
     return escape(str)
 
 def _render_shared_folder_options_link(folder, session_user):
-    id = encode_store_id(folder.store_id)
+    id = _encode_store_id(folder.store_id)
     folder_name = folder.name
     urs = to_json(folder.user_and_role, session_user)
 
@@ -269,7 +266,7 @@ def json_add_shared_folder_perm(request):
     _ = request.translate
 
     userid = request.params['userid']
-    storeid = decode_store_id(request.params['storeid'])
+    storeid = _decode_store_id(request.params['storeid'])
     foldername = request.params['foldername']
     note = request.params.get('note') or ''
 
@@ -307,7 +304,7 @@ def json_set_shared_folder_perm(request):
     _ = request.translate
 
     userid = request.params['userid']
-    storeid = decode_store_id(request.params['storeid'])
+    storeid = _decode_store_id(request.params['storeid'])
     permission = request.params['perm']
 
     role_pair = common.PBSubjectRolePair()
@@ -332,7 +329,7 @@ def json_delete_shared_folder_perm(request):
     _ = request.translate
 
     userid = request.params['userid']
-    storeid = decode_store_id(request.params['storeid'])
+    storeid = _decode_store_id(request.params['storeid'])
 
     sp = get_rpc_stub(request)
     try:

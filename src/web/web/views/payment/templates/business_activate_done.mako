@@ -33,7 +33,7 @@
         <li class="span3">
             <div class="thumbnail">
                 <p class="badge">STEP 2</p>
-                <a href="${request.route_url('admin_users')}" target="_blank">
+                <a href="${request.route_url('team_members')}" target="_blank">
                     <h2 class="step_header">Add Team Members</h2>
                     <p>to manage their permissions and shared folders.</p>
                 </a>

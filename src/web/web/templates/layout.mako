@@ -208,10 +208,10 @@
 <%def name="render_admin_links()">
     <%
         links = [
-            ('admin_users', _("Members")),
+            ('team_members', _("Members")),
             ('organization_shared_folders', _("Shared Folders")),
             ('team_server_devices', _("Team Servers")),
-            ('admin_settings', _("Settings")),
+            ('team_settings', _("Settings")),
         ]
     %>
     % for link in links:

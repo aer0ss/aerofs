@@ -37,7 +37,7 @@
         </p>
 
         <p>
-            You can add or remove users on the <a href="${request.route_path('admin_users')}">Members</a>
+            You can add or remove users on the <a href="${request.route_path('team_members')}">Members</a>
             page.
         </p>
     %endif
