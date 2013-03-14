@@ -403,7 +403,6 @@ public final class CommandNotificationSubscriber
             r.close();
         }
 
-        unlinkImplementation();
         shutdownImplementation();
     }
 
