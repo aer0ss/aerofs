@@ -35,7 +35,7 @@ class UserLookupTest(TestBase):
         self.sp_rpc_stub.list_users_auth = Mock(return_value=reply)
 
     def test_find_all_users_keys(self):
-        from web.views.team_members.team_members_view import json_user_lookup
+        from web.views.team_settings.team_settings_view import json_user_lookup
 
         request = self.create_request({
             "searchTerm": "",
@@ -48,7 +48,7 @@ class UserLookupTest(TestBase):
         self.assertTrue(response.has_key("users"))
 
     def test_find_all_users_values(self):
-        from web.views.team_members.team_members_view import json_user_lookup
+        from web.views.team_settings.team_settings_view import json_user_lookup
 
         request = self.create_request({
             "searchTerm": "",

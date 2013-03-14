@@ -18,7 +18,7 @@ log = logging.getLogger("web")
     renderer = 'team_members.mako',
     permission = 'admin'
 )
-def team_memers(request):
+def team_members(request):
     # It's very weird that if we use get_rpc_stub instead of
     # helper_functions.get_rpc_stub here, the unit test would fail.
     sp = util.get_rpc_stub(request)

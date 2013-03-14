@@ -19,6 +19,6 @@ class UsersViewTest(TestBase):
         testing.tearDown()
 
     def test_should_call_list_organization_invited_users(self):
-        from web.views.team_members.team_members_view import users_view
-        ret = users_view(testing.DummyRequest())
+        from web.views.team_members.team_members_view import team_members
+        ret = team_members(testing.DummyRequest())
         self.assertTrue(ret['invited_users'] == [_USER_ID])
