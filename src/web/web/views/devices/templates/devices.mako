@@ -53,7 +53,7 @@
             <td>
                 <a href="#"
                    ## We don't support unlink or erase mobile devices yet
-                   %if support_unlink_erase and (d.os_family != 'Android' and d.os_family != 'iOS'):
+                   %if d.os_family != 'Android' and d.os_family != 'iOS':
                         onclick="confirmUnlinkOrErase('unlink', '${device_id}', '${d.device_name | h}'); return false;"
                         style="margin-right: 15px;"
                    %else:
@@ -65,12 +65,12 @@
                 </a>
                 <a href="#"
                     ## We don't support unlink or erase mobile devices yet
-                    %if support_unlink_erase and (d.os_family != 'Android' and d.os_family != 'iOS'):
-                               onclick="confirmUnlinkOrErase('erase', '${device_id}', '${d.device_name | h}'); return false;"
-                               style="margin-right: 15px;"
+                    %if d.os_family != 'Android' and d.os_family != 'iOS':
+                           onclick="confirmUnlinkOrErase('erase', '${device_id}', '${d.device_name | h}'); return false;"
+                           style="margin-right: 15px;"
                     %else:
-                               data-toggle="tooltip" class="coming_soon_tooltip"
-                               style="margin-right: 15px; color: grey;"
+                           data-toggle="tooltip" class="coming_soon_tooltip"
+                           style="margin-right: 15px; color: grey;"
                     %endif
                         >
                     Erase

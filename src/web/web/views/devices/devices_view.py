@@ -26,7 +26,7 @@ def my_devices(request):
     if len(devices) == 0:
         raise HTTPFound(request.route_path('no_device'))
 
-    return _devices(devices, user, True, _("Devices"))
+    return _devices(devices, user, _("Devices"))
 
 @view_config(
     route_name = 'user_devices',
@@ -42,7 +42,7 @@ def user_devices(request):
     sp = get_rpc_stub(request)
     devices = sp.list_user_devices(user).device
 
-    return _devices(devices, user, True, _("${name}'s Devices", {'name': full_name}))
+    return _devices(devices, user, _("${name}'s Devices", {'name': full_name}))
 
 @view_config(
     route_name = 'team_server_devices',
@@ -59,11 +59,10 @@ def team_server_devices(request):
     if len(devices) == 0:
         raise HTTPFound(request.route_path('install_team_server'))
 
-    return _devices(devices, ts_user, False, _("Team Servers"))
+    return _devices(devices, ts_user, _("Team Servers"))
 
-def _devices(devices, user, support_unlink_erase, page_title):
+def _devices(devices, user, page_title):
     return {
-        'support_unlink_erase': support_unlink_erase,
         'url_param_user': URL_PARAM_USER,
         'url_param_device_id': _URL_PARAM_DEVICE_ID,
         'url_param_device_name': _URL_PARAM_DEVICE_NAME,
