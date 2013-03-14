@@ -6,12 +6,14 @@ package com.aerofs.devman.server;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.devman.server.config.DeviceManagementServiceConfiguration;
+import com.aerofs.devman.server.resources.DeviceManagementServiceHealthCheck;
+import com.aerofs.devman.server.resources.DevicesResource;
+import com.aerofs.devman.server.resources.PollingIntervalResource;
 import com.aerofs.servlets.lib.db.jedis.JedisThreadLocalTransaction;
 import com.aerofs.servlets.lib.db.jedis.PooledJedisConnectionProvider;
 import com.yammer.dropwizard.Service;
 import com.yammer.dropwizard.config.Bootstrap;
 import com.yammer.dropwizard.config.Environment;
-import com.yammer.dropwizard.config.Configuration;
 import org.slf4j.Logger;
 
 import java.util.concurrent.ScheduledExecutorService;
@@ -47,11 +49,11 @@ public final class DeviceManagementService extends Service<DeviceManagementServi
 
         l.warn("verkehr host=" + configuration.getVerkehrConfiguration().getHost() + " port=" +
                 configuration.getVerkehrConfiguration().getPort());
-        final VerkehrOnlineDevicesClient vkclient = new VerkehrOnlineDevicesClient(
+        final VerkehrWebClient vkclient = new VerkehrWebClient(
                 configuration.getVerkehrConfiguration().getHost(),
                 configuration.getVerkehrConfiguration().getPort());
 
-        final LastSeenTimePuller puller = new LastSeenTimePuller(vkclient, trans);
+        final VerkehrPuller puller = new VerkehrPuller(vkclient, trans);
 
         // Last seen time  poller.
         l.warn("puller initDelay=" +
@@ -68,7 +70,7 @@ public final class DeviceManagementService extends Service<DeviceManagementServi
         environment.getObjectMapperFactory().setPropertyNamingStrategy(CAMEL_CASE_TO_LOWER_CASE_WITH_UNDERSCORES);
 
         // REST API stuff.
-        environment.addResource(new DevicesLastSeenResource(trans));
+        environment.addResource(new DevicesResource(trans));
         environment.addResource(
                 new PollingIntervalResource(configuration.getPollingConfiguration().getIntervalInSeconds()));
 

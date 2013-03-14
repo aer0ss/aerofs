@@ -25,8 +25,8 @@
         special configuration for LastSeenTimePuller
     -->
 
-    <logger name="com.aerofs.devman.server.LastSeenTimePuller" level="DEBUG"/>
-    <logger name="com.aerofs.devman.server.VerkehrOnlineDevicesClient" level="DEBUG"/>
+    <logger name="com.aerofs.devman.server.VerkehrPuller" level="DEBUG"/>
+    <logger name="com.aerofs.devman.server.VerkehrWebClient" level="DEBUG"/>
 
     <!--
         root configuration:
