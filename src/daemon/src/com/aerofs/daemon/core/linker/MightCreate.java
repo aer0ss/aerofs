@@ -137,10 +137,10 @@ public class MightCreate
 
         Set<Operation> ops = determineUpdateOperation_(sourceSOID, targetSOID, fnt);
 
+        l.info("{} {}", pcPhysical, ops);
+
         boolean createdOrReplaced = _mcop.executeOperation_(ops, sourceSOID, targetSOID, pcPhysical,
                 fnt, delBuffer, t);
-
-        l.info(pcPhysical + " " + ops + " " + createdOrReplaced);
 
         if (fnt._dir) {
             return createdOrReplaced ? Result.NEW_OR_REPLACED_FOLDER : Result.EXISTING_FOLDER;
