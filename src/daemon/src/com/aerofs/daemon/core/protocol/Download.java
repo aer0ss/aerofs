@@ -263,7 +263,7 @@ public class Download
                 // and could therefore remove the BloomFilters associated with those DIDs.
                 if (_f._nvc.getKMLVersion_(_socid).isZero_()) return replier;
 
-                l.debug("kml > 0 for " + _socid + ". dl again");
+                l.debug("kml > 0 for {}. dl again", _socid);
 
                 // The idea is that if you get to this point, you're re-running the Download having
                 // successfully resolved some KML last time. We should therefore clear out the

@@ -137,13 +137,9 @@ public class GetComponentReply
         if (type != CIDType.META) {
             metaDiff = 0;
 
-            // We should not receive content for an aliased object:
-            // GetComponentCall won't request content for an aliased object, so if socid is locally
-            // aliased, it was likely a race. Abort this download
+            // We should abort when receiving content for an aliased object
             if (_a2t.isAliased_(socid.soid())) {
-                ExAborted e = new ExAborted(socid + " aliased");
-                _fds.logSendAsync("aliased content", e);
-                throw e;
+                throw new ExAborted(socid + " aliased");
             }
 
             if (_ds.hasOA_(socid.soid())) {
