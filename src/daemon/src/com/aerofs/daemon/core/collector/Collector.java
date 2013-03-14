@@ -171,7 +171,7 @@ public class Collector implements IDumpStatMisc, IDownloadListenerFactory
                 // stop this retry thread if someone called start_() again
                 if (startSeq != _startSeq) return null;
 
-                assert !_it.started() : isFirst + " " + Collector.this;
+                assert !(isFirst && _it.started()) : isFirst + " " + Collector.this;
                 collect_(isFirst ? t : null);
                 return null;
             }
