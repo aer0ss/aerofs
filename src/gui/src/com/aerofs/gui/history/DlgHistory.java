@@ -431,7 +431,17 @@ public class DlgHistory extends AeroFSDialog
         if (index != null && !index.isDir) {
             boolean ok = fillVersionTable(_revTable, index, _statusLabel);
             if (!ok) {
-                refreshVersionTree();
+                _actionButtons.setVisible(false);
+                _actionButtons.layout();
+                setCompositeVisible(_revTableWrap, false);
+                _statusLabel.getParent().layout();
+
+                GUI.get().safeAsyncExec(_revTable, new Runnable() {
+                    @Override
+                    public void run() {
+                        refreshVersionTree();
+                    }
+                });
                 return;
             }
             _actionButtons.setVisible(ok);
