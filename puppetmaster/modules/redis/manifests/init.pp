@@ -39,7 +39,7 @@ class redis {
     }
 
     # Port information.
-    line{ "redis.conf1":
+    line{ "redis.conf-1":
         ensure => present,
         file => "/etc/redis/redis.conf",
         line => "port 6379",
@@ -47,7 +47,7 @@ class redis {
     }
 
     # PID file.
-    line{ "redis.conf2":
+    line{ "redis.conf-2":
         ensure => present,
         file => "/etc/redis/redis.conf",
         line => "pidfile /run/redis.pid",
@@ -55,13 +55,13 @@ class redis {
     }
 
     # Logging.
-    line{ "redis.conf3":
+    line{ "redis.conf-3":
         ensure => present,
         file => "/etc/redis/redis.conf",
         line => "logfile /var/log/redis/redis.log",
         require => Package["aerofs-redis-server"]
     }
-    line{ "redis.conf4":
+    line{ "redis.conf-4":
         ensure => present,
         file => "/etc/redis/redis.conf",
         line => "loglevel debug",
@@ -69,7 +69,7 @@ class redis {
     }
 
     # Database directory.
-    line{ "redis.conf5":
+    line{ "redis.conf-5":
         ensure => present,
         file => "/etc/redis/redis.conf",
         line => "dir /var/log/redis",

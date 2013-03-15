@@ -4,7 +4,7 @@ node "sss.aerofs.com" inherits default {
         [ hiera('dev_users') ]:
     }
 
-    include redis::mem
+    include redis::diskstore
 
     # Fetch variables from hiera
     $mysql_sp = hiera("mysql_sp")
