@@ -48,13 +48,16 @@ import com.aerofs.verkehr.client.lib.admin.VerkehrAdmin;
 import com.aerofs.verkehr.client.lib.publisher.VerkehrPublisher;
 import org.slf4j.Logger;
 
+import java.util.Properties;
 import javax.annotation.Nonnull;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.io.StringReader;
 import java.sql.SQLException;
+import java.security.cert.CertificateException;
 
 import static com.aerofs.sp.server.lib.SPParam.REDIS_HOST_INIT_PARAMETER;
 import static com.aerofs.sp.server.lib.SPParam.REDIS_PORT_INIT_PARAMETER;
@@ -190,7 +193,12 @@ public class SPServlet extends AeroServlet
         throws IOException
     {
         _sessionProvider.setSession(req.getSession());
-        initCertificateAuthenticator(req);
+
+        try {
+            initCertificateAuthenticator(req);
+        } catch (CertificateException e) {
+            throw new IOException(e);
+        }
 
         // Receive protocol version number.
         int protocol;
@@ -225,14 +233,21 @@ public class SPServlet extends AeroServlet
     }
 
     private void initCertificateAuthenticator(HttpServletRequest req)
+            throws CertificateException, IOException
     {
-        String authorization = req.getHeader("Authorization");
-        String serial = req.getHeader("From");
+        String verify = req.getHeader("Verify");
+        String serial = req.getHeader("Serial");
+        String dname = req.getHeader("DName");
 
-        // The "Authorization" header corresponds to the nginx variable $ssl_client_verify which
-        // is set to "SUCCESS" when nginx mutual authentication is successful.
-        if (authorization != null && serial != null) {
-            _certificateAuthenticator.set(authorization.equalsIgnoreCase("SUCCESS"), serial);
+        if (verify != null && serial != null && dname != null) {
+            Properties prop = new Properties();
+            prop.load(new StringReader(dname.replaceAll("/", "\n")));
+            String cname = (String) prop.get("CN");
+
+            // The "Verify" header corresponds to the nginx variable $ssl_client_verify which
+            // is set to "SUCCESS" when nginx mutual authentication is successful.
+            _certificateAuthenticator.set(verify.equalsIgnoreCase("SUCCESS"),
+                    Long.parseLong(serial, 16), cname);
         }
     }
 

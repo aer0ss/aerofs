@@ -2,6 +2,7 @@ package com.aerofs.sp.client;
 
 import com.aerofs.base.BaseParam.SP;
 import com.aerofs.base.Loggers;
+import com.aerofs.labeling.L;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.base.id.UserID;
@@ -55,8 +56,12 @@ public class SPBlockingClient extends SPServiceBlockingStub
      */
     public void signInRemote() throws Exception
     {
+        ByteString credentials = L.get().isMultiuser() ?
+                Cfg.did().toPB() :
+                ByteString.copyFrom(Cfg.scrypted());
+
         try {
-            super.signIn(_user.getString(), ByteString.copyFrom(Cfg.scrypted()));
+            super.signIn(_user.getString(), credentials);
         } catch (ExBadCredential e) {
             if (_bcl != null) {
                l.debug("ExBadCredential Caught, informing UI.");

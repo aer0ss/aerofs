@@ -110,11 +110,10 @@ public class Device
         return _f._db.getOSName(_id);
     }
 
-    public Certificate getCertificate()
-            throws ExNotFound, SQLException
+    public Certificate certificate()
+            throws SQLException
     {
-        long serial = _f._certdb.getSerial(_id);
-        return _f._factCert.create(serial);
+        return _f._factCert.create(_id);
     }
 
     public void setName(String name)
@@ -192,8 +191,8 @@ public class Device
         // not the CA anyway.
         _f._certdb.insertCertificate(cert.getSerial(), _id, cert.getExpiry());
 
-        l.info("created certificate for " + _id.toStringFormal() + " with serial " +
-                cert.getSerial() + " (expires on " + cert.getExpiry() + ")");
+        l.info("created certificate for " + getOwner() + ":" + _id.toStringFormal() +
+                " with serial " + cert.getSerial() + " (expires on " + cert.getExpiry() + ")");
     }
 
     /**

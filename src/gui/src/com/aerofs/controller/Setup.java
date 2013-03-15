@@ -165,8 +165,7 @@ class Setup
         // SP client to sign in. Since the default configurator is SSLURLConnectionConfigurator
         // which doesn't work with regular clients, we force a null connection configurator.
         res._sp = SPClientFactory.newBlockingClientWithNullConnectionConfigurator(SP.URL, userID);
-
-        signIn(userID, res._scrypted, res._sp);
+        res._sp.signIn(userID.getString(), ByteString.copyFrom(res._scrypted));
 
         return res;
     }
@@ -207,7 +206,7 @@ class Setup
 
         // sign in with the team server's user ID
         SPBlockingClient tsSP = SPClientFactory.newBlockingClient(SP.URL, tsUserId);
-        signIn(tsUserId, tsScrypted, tsSP);
+        tsSP.signInRemote();
 
         setupCommon(rootAnchorPath);
 
@@ -226,12 +225,6 @@ class Setup
         new Launcher(_rtRoot).launch(true);
 
         setRootAnchorIcon(rootAnchorPath);
-    }
-
-    private static void signIn(UserID userId, byte[] scrypted, SPBlockingClient sp)
-            throws Exception
-    {
-        sp.signIn(userId.getString(), ByteString.copyFrom(scrypted));
     }
 
     private void handleSetupException(UserID userId, Exception e)

@@ -77,38 +77,37 @@ public class TestSP_SignIn extends AbstractSPTest
         setupTeamServer();
 
         // Credentials do not need to be supplied here.
-        mockCertificateAuthenticatorSetAuthenticatedState();
-        service.signIn(_tsUserID.getString(), ByteString.copyFrom(new byte[0]));
+        mockCertificateAuthenticatorSetAuthenticatedState(_tsUserID, _tsDID);
+        service.signIn(_tsUserID.getString(), _tsDID.toPB());
     }
 
     @Test(expected = ExBadCredential.class)
     public void shouldNotAllowTeamServerLoginWithRevokedCertificate()
             throws Exception
     {
+        // Setup the team server (obtain device certificate).
         setSessionUser(USER_1);
-
-        // Setup the team server (obtail device certificate).
         setupTeamServer();
 
         // Revoke all device certificates including the one just created.
         service.unlinkDevice(_tsDID.toPB(), false);
 
         // Expect the sign in to fail even when the cert has been verified with nginx.
-        mockCertificateAuthenticatorSetAuthenticatedState();
-        service.signIn(_tsUserID.getString(), getTeamServerLocalPassword(_tsUserID));
+        mockCertificateAuthenticatorSetAuthenticatedState(_tsUserID, _tsDID);
+        service.signIn(_tsUserID.getString(), _tsDID.toPB());
     }
 
     private void setupTeamServer()
             throws Exception
     {
-        mockCertificateAuthenticatorSetAuthenticatedState();
-
         service.addOrganization("An Awesome Team", null, StripeCustomerID.TEST.getString());
 
         _tsUserID = UserID.fromInternal(service.getTeamServerUserID().get().getId());
         _tsDID = new DID(UniqueID.generate());
 
+        mockCertificateAuthenticatorSetAuthenticatedState(_tsUserID, _tsDID);
         mockCertificateGeneratorAndIncrementSerialNumber();
+
         service.registerTeamServerDevice(_tsDID.toPB(), newCSR(_tsUserID, _tsDID), false, "", "", "");
     }
 

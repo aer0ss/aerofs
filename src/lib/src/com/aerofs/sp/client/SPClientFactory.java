@@ -15,12 +15,6 @@ import java.net.URL;
  */
 public class SPClientFactory
 {
-    public static SPClient newClient(URL spURL, UserID user)
-    {
-        SPServiceStubCallbacks callbacks = new SPClientHandler(spURL, getDefaultConfigurator());
-        return new SPClient(callbacks, user);
-    }
-
     public static SPBlockingClient newBlockingClient(URL spURL, UserID user)
     {
         return new SPBlockingClient(new SPClientHandler(spURL, getDefaultConfigurator()), user);

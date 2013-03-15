@@ -5,6 +5,7 @@
 package com.aerofs.sp.server.lib.cert;
 
 import com.aerofs.base.id.DID;
+import com.aerofs.lib.Util;
 import com.aerofs.lib.db.DBUtil;
 import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.base.ex.ExNotFound;
@@ -20,6 +21,7 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.Date;
 
+import static com.aerofs.lib.db.DBUtil.binaryCount;
 import static com.aerofs.lib.db.DBUtil.selectWhere;
 import static com.aerofs.sp.server.lib.SPSchema.C_CERT_DEVICE_ID;
 import static com.aerofs.sp.server.lib.SPSchema.C_CERT_EXPIRE_TS;
@@ -57,31 +59,16 @@ public class CertificateDatabase extends AbstractSQLDatabase
         }
     }
 
-    public void revokeCertificateBySerial(Long serial)
+    public void revokeCertificate(DID did)
             throws SQLException
     {
-        ImmutableList.Builder<Long> builder = ImmutableList.builder();
-        builder.add(serial);
-
-        revokeCertificatesBySerials(builder.build());
-    }
-
-    public void revokeCertificatesBySerials(ImmutableList<Long> serials)
-            throws SQLException
-    {
-        // Update the revoke timestamp in the certificate table.
         PreparedStatement ps = prepareStatement("update "
                 + T_CERT + " set " + C_CERT_REVOKE_TS + " = current_timestamp, " +
                 C_CERT_EXPIRE_TS + " = " + C_CERT_EXPIRE_TS + " where " + C_CERT_REVOKE_TS +
-                " = 0 and " + C_CERT_SERIAL + " = ?");
+                " = 0 and " + C_CERT_DEVICE_ID + " = ?");
 
-        for (Long serial : serials) {
-            ps.setLong(1, serial);
-            ps.addBatch();
-        }
-
-        // Blindly execute, since revocation of the same device twice is allowed.
-        ps.executeBatch();
+        ps.setString(1, did.toStringFormal());
+        ps.execute();
     }
 
     /**
@@ -109,27 +96,34 @@ public class CertificateDatabase extends AbstractSQLDatabase
         }
     }
 
-    /**
-     * Return true if the certificate with the given serial number is revoked, false otherwise.
-     */
-    public boolean isRevoked(Long serial)
-        throws SQLException
+    public boolean isRevoked(DID did)
+        throws SQLException, ExNotFound
     {
-        // Require the > 0 because the default value for a timestamp in mysql is 0, not null.
-        PreparedStatement ps = prepareStatement(DBUtil.selectWhere(T_CERT,
-                C_CERT_SERIAL + " =? and " + C_CERT_REVOKE_TS + " > 0",
-                C_CERT_REVOKE_TS));
+        PreparedStatement ps = prepareStatement(
+                DBUtil.selectWhere(T_CERT, C_CERT_DEVICE_ID + " =?", C_CERT_REVOKE_TS));
 
-        ps.setLong(1, serial);
+        ps.setString(1, did.toStringFormal());
         ResultSet rs = ps.executeQuery();
 
         try {
-            return rs.next();
+            if (!rs.next()) {
+                throw new ExNotFound();
+            }
+
+            long revokeTime = rs.getLong(1);
+            // If the revoke timestamp is greater than 0, then the certificate has been revoked.
+            return revokeTime > 0;
         } finally {
             rs.close();
         }
     }
 
+    /**
+     * Get the serial number for a given device.
+     *
+     * @return the serial number of the device, or INVALID_SERIAL if a certificate does not exist
+     * for this specific device.
+     */
     public long getSerial(DID did)
             throws SQLException, ExNotFound
     {
@@ -140,13 +134,26 @@ public class CertificateDatabase extends AbstractSQLDatabase
         ResultSet rs = ps.executeQuery();
         try {
             if (!rs.next()) {
-                rs.close();
                 throw new ExNotFound("device " + did);
             } else {
                 return rs.getLong(1);
             }
         } finally {
             assert !rs.next();
+            rs.close();
+        }
+    }
+
+    public boolean exists(DID did)
+            throws SQLException
+    {
+        PreparedStatement ps = prepareStatement(selectWhere(T_CERT, C_CERT_DEVICE_ID + "=?",
+                "count(*)"));
+        ps.setString(1, did.toStringFormal());
+        ResultSet rs = ps.executeQuery();
+        try {
+            return binaryCount(rs);
+        } finally {
             rs.close();
         }
     }

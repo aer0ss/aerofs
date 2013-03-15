@@ -4,6 +4,7 @@
 
 package com.aerofs.sp.server.integration;
 
+import com.aerofs.base.BaseSecUtil;
 import com.aerofs.base.id.DID;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.SecUtil;
@@ -215,12 +216,14 @@ public class AbstractSPTest extends AbstractTestWithDatabase
                 new Timestamp(System.currentTimeMillis() + 1000L * 60L * 60L * 24L * 365L));
     }
 
-    protected void mockCertificateAuthenticatorSetAuthenticatedState()
+    protected void mockCertificateAuthenticatorSetAuthenticatedState(UserID userID, DID did)
             throws ExBadCredential
     {
         when(certificateAuthenticator.isAuthenticated()).thenReturn(true);
         when(certificateAuthenticator.getSerial())
                 .thenReturn(AbstractSPCertificateBasedTest._lastSerialNumber);
+        when(certificateAuthenticator.getCName())
+                .thenReturn(BaseSecUtil.getCertificateCName(userID, did));
     }
 
     protected void mockCertificateAuthenticatorSetUnauthorizedState()
@@ -228,6 +231,7 @@ public class AbstractSPTest extends AbstractTestWithDatabase
     {
         when(certificateAuthenticator.isAuthenticated()).thenReturn(false);
         when(certificateAuthenticator.getSerial()).thenThrow(new ExBadCredential());
+        when(certificateAuthenticator.getCName()).thenThrow(new ExBadCredential());
     }
 
     protected static ByteString newCSR(UserID userID, DID did)

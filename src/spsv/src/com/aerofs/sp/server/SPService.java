@@ -1,5 +1,6 @@
 package com.aerofs.sp.server;
 
+import com.aerofs.base.BaseSecUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.proto.Sp.DeleteOrganizationInvitationForUserReply;
@@ -235,12 +236,12 @@ public class SPService implements ISPService
             throw SystemUtil.fatalWithReturn(enp);
         }
 
-        // TODO (MP) suppress ExNotFound.class once the device deletion error is fixed.
         l.warn(user + ": " + Util.e(e,
                 ExNoPerm.class,
                 ExBadCredential.class,
                 ExBadArgs.class,
-                ExAlreadyExist.class));
+                ExAlreadyExist.class,
+                ExNotFound.class));
 
         // Notify SPTransaction that an exception occurred.
         _sqlTrans.handleException();
@@ -1555,7 +1556,7 @@ public class SPService implements ISPService
         }
     }
 
-   @Override
+    @Override
     public ListenableFuture<Void> signIn(String userIdString, ByteString credentials)
             throws IOException, SQLException, ExBadCredential, ExNotFound
     {
@@ -1564,8 +1565,6 @@ public class SPService implements ISPService
         User user = _factUser.createFromExternalID(userIdString);
 
         if (user.id().isTeamServerID()) {
-            l.info("TS SI: " + user);
-
             // Team servers use certificates (in this case the passed credentials don't matter).
             if (!_certificateAuthenticator.isAuthenticated())
             {
@@ -1573,7 +1572,26 @@ public class SPService implements ISPService
                 throw new ExBadCredential();
             }
 
-            Certificate cert = _factCert.create(_certificateAuthenticator.getSerial());
+            Device device = _factDevice.create(credentials);
+            l.info("TS SI: " + user.id() + ":" + device.id().toStringFormal());
+
+            String actualCName = _certificateAuthenticator.getCName();
+            String expectedCName = BaseSecUtil.getCertificateCName(user.id(), device.id());
+
+            // Can happen if one user is impersonating another user.
+            if (!actualCName.equals(expectedCName)) {
+                l.error(user + " wrong cname actual=" + actualCName + " expected=" + expectedCName);
+                throw new ExBadCredential();
+            }
+
+            Certificate cert = _factCert.create(device.id());
+
+            // Should never happen, check just for good measure.
+            if (_certificateAuthenticator.getSerial() != device.certificate().serial()) {
+                l.error(user + " serial mismatch");
+                throw new ExBadCredential();
+            }
+
             if (cert.isRevoked()) {
                 l.warn(user + " ts cert revoked");
                 throw new ExBadCredential();
@@ -1749,22 +1767,35 @@ public class SPService implements ISPService
     private void unlinkDeviceImplementation(Device device, boolean erase)
             throws Exception
     {
-        Certificate cert = device.getCertificate();
         User owner = device.getOwner();
-
-        cert.revoke();
         device.delete();
 
-        ImmutableList.Builder<Long> builder = ImmutableList.builder();
-        builder.add(cert.serial());
-        updateVerkehrCRL(builder.build());
+        Certificate cert = device.certificate();
+
+        // Do not try to revoke certs that do not exist. This will only effect devices created
+        // before the certificate tracking code was rolled out.
+        boolean certExists = cert.exists();
+        if (certExists) {
+            cert.revoke();
+
+            ImmutableList.Builder<Long> builder = ImmutableList.builder();
+            builder.add(cert.serial());
+            updateVerkehrCRL(builder.build());
+        } else {
+            l.warn(device.id() + " no cert exists. unlink anyway.");
+        }
 
         Collection<Device> peerDevices = owner.getPeerDevices();
 
         // Tell peer devices to clean their sss database and refresh their certificate revocation
         // list.
         for (Device peer : peerDevices) {
-            addToCommandQueueAndSendVerkehrMessage(peer.id(), CommandType.REFRESH_CRL);
+            // Only need to refresh the CRL if we actually deleted a cert.
+            if (certExists) {
+                addToCommandQueueAndSendVerkehrMessage(peer.id(), CommandType.REFRESH_CRL);
+            }
+
+            // Clean the sync status database regardless, since we deleted a device.
             addToCommandQueueAndSendVerkehrMessage(peer.id(), CommandType.CLEAN_SSS_DATABASE);
         }
 

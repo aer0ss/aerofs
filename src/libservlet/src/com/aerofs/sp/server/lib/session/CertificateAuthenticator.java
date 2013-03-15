@@ -4,12 +4,14 @@
 
 package com.aerofs.sp.server.lib.session;
 
+import java.security.cert.X509Certificate;
 import com.aerofs.base.ex.ExBadCredential;
 
 public class CertificateAuthenticator
         extends AbstractHttpSession
 {
     private static final String SESS_ATTR_CERTAUTH_SERIAL  = "certauth_serial";
+    private static final String SESS_ATTR_CERTAUTH_CNAME  = "certauth_cname";
 
     public CertificateAuthenticator(IHttpSessionProvider sessionProvider)
     {
@@ -22,6 +24,7 @@ public class CertificateAuthenticator
      */
     public boolean isAuthenticated()
     {
+        // Either attribute will work.
         return getSession().getAttribute(SESS_ATTR_CERTAUTH_SERIAL) != null;
     }
 
@@ -29,23 +32,34 @@ public class CertificateAuthenticator
      * Returns the serial number of the authenticated certificiate.
      * @throws com.aerofs.base.ex.ExBadCredential if the session has not been authenticated.
      */
-    public long getSerial() throws ExBadCredential
+    public long getSerial()
+            throws ExBadCredential
     {
         if (!isAuthenticated()) {
             throw new ExBadCredential();
         }
 
-        String serial = (String) getSession().getAttribute(SESS_ATTR_CERTAUTH_SERIAL);
-        assert serial != null;
-
-        // The initial conversion from long to string is done by nginx.
-        return Long.parseLong(serial, 16);
+        return (Long) getSession().getAttribute(SESS_ATTR_CERTAUTH_SERIAL);
     }
 
-    public void set(boolean authenticated, String serial)
+    /**
+     * Return the cname of the client certificate.
+     * @throws com.aerofs.base.ex.ExBadCredential if the session has not been authenticated.
+     */
+    public String getCName()
+            throws ExBadCredential
+    {
+        if (!isAuthenticated()) {
+            throw new ExBadCredential();
+        }
+        return (String) getSession().getAttribute(SESS_ATTR_CERTAUTH_CNAME);
+    }
+
+    public void set(boolean authenticated, Long serial, String cname)
     {
         if (authenticated) {
             getSession().setAttribute(SESS_ATTR_CERTAUTH_SERIAL, serial);
+            getSession().setAttribute(SESS_ATTR_CERTAUTH_CNAME, cname);
         }
     }
 }

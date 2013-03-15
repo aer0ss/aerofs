@@ -4,6 +4,7 @@
 
 package com.aerofs.sp.server.integration;
 
+import com.aerofs.sp.server.lib.device.Device;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.async.UncancellableFuture;
 import com.aerofs.base.ex.ExNoPerm;
@@ -59,6 +60,23 @@ public class TestSP_CRL extends AbstractSPCertificateBasedTest
     //
     // Tests for revokeDeviceCertificate()
     //
+
+    @Test
+    public void shouldUnlinkDeviceEvenWhenCertificateDoesNotExist()
+            throws Exception
+    {
+        DID did = DID.generate();
+        Device device = factDevice.create(did);
+
+        // Create a device without a certificate.
+        sqlTrans.begin();
+        device.save(factUser.create(USER_1), "Linux", "Ubuntu", "Ubuntu Test Device");
+        sqlTrans.commit();
+
+        // Unlinking should still work.
+        setSessionUser(USER_1);
+        service.unlinkDevice(did.toPB(), false);
+    }
 
     /**
      * Simple test to ensure that when we revoke an existing, valid device certificate,
