@@ -44,16 +44,17 @@ public abstract class AbstractIterator
 
     private @Nullable OCIDAndCS _current;
     private int _next;
+    private int _discardable;
     private final ArrayList<OCIDAndCS> _seq = Lists.newArrayList();
     private boolean _clearOnReset;
 
     // batch size used by the incremental fetch
-    private final int FETCH_SIZE = 100;
+    static final int FETCH_SIZE = 100;
 
     // keep the memory usage of the cached data reasonable (OCIDAndCS has a 288 bytes footprint)
     // NB: The in-memory footprint for OCIDAndCS could be brought under 256 *bits* without Java's
     // retarded boxing... I miss good old C/C++
-    private final int SHRINK_THRESHOLD = 2000;
+    static final int SHRINK_THRESHOLD = 2000;
 
     public AbstractIterator(ICollectorSequenceDatabase csdb, CollectorSkipRule csr, SIndex sidx)
     {
@@ -108,21 +109,22 @@ public abstract class AbstractIterator
      */
     public boolean next_(Trans t) throws SQLException
     {
-        int discardable = 0;
+        _discardable = 0;
 
         while (hasNext_()) {
             _current = _seq.get(_next);
             if (!_csr.shouldSkip_(new SOCID(_sidx, _current._ocid))) break;
             // TODO: batch CS deletion whenever possible
             _csdb.deleteCS_(_current._cs, t);
-            ++discardable;
+            ++_discardable;
             ++_next;
         }
 
         // clear items
         // NB: noop if discardable == 0
-        _seq.subList(_next - discardable, _next).clear();
-        _next -= discardable;
+        // NB: the max is needed to handle _seq being cleared under us by fetchMore_
+        _seq.subList(_next - _discardable, _next).clear();
+        _next -= _discardable;
 
         if (_next < _seq.size()) {
             // found a collectable item, move index past it
@@ -153,6 +155,7 @@ public abstract class AbstractIterator
     private void clearCache_()
     {
         _seq.clear();
+        _discardable = 0;
         _next = 0;
         // discarding elements require refetching from the start on reset_
         _clearOnReset = true;
