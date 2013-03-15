@@ -147,8 +147,15 @@ public abstract class AbstractIterator
      */
     protected void switch_()
     {
+        clearCache_();
+    }
+
+    private void clearCache_()
+    {
         _seq.clear();
         _next = 0;
+        // discarding elements require refetching from the start on reset_
+        _clearOnReset = true;
     }
 
     protected abstract IDBIterator<OCIDAndCS> fetch_(@Nullable CollectorSeq cs, int limit)
@@ -163,11 +170,7 @@ public abstract class AbstractIterator
         assert _next == _seq.size();
 
         // shrink _seq if it becomes too large
-        if (_seq.size() > SHRINK_THRESHOLD) {
-            _seq.clear();
-            // discarding elements require refetching from the start on reset_
-            _clearOnReset = true;
-        }
+        if (_seq.size() > SHRINK_THRESHOLD) clearCache_();
 
         IDBIterator<OCIDAndCS> it = fetch_(cs_(), FETCH_SIZE);
         _seq.ensureCapacity(_seq.size() + FETCH_SIZE);
