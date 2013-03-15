@@ -10,6 +10,8 @@ import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UniqueID;
 import com.aerofs.proto.Sp.GetDeviceInfoReply;
 import com.aerofs.proto.Sp.GetDeviceInfoReply.PBDeviceInfo;
+import com.aerofs.sp.server.lib.device.Device;
+import com.aerofs.sp.server.lib.user.User;
 import com.google.common.collect.ImmutableList;
 import com.google.protobuf.ByteString;
 import org.junit.Before;
@@ -30,8 +32,8 @@ public class TestSP_GetDeviceInfo extends AbstractSPFolderPermissionTest
     private static final SID TEST_SID_1 = SID.generate();
 
     // Arbitrarily test with these devices.
-    private DID _deviceB01;
-    private DID _deviceC01;
+    private Device _deviceB01;
+    private Device _deviceC01;
 
     /**
      * Add a few devices to the device table.
@@ -40,30 +42,35 @@ public class TestSP_GetDeviceInfo extends AbstractSPFolderPermissionTest
     public void setupDevices()
         throws Exception
     {
-        mockAndCaptureVerkehrPublish();
         mockAndCaptureVerkehrDeliverPayload();
 
         sqlTrans.begin();
 
         // User 1
-        ddb.insertDevice(new DID(UniqueID.generate()), USER_1, "", "", "Device A01");
-        ddb.insertDevice(new DID(UniqueID.generate()), USER_1, "", "", "Device A02");
-        ddb.insertDevice(new DID(UniqueID.generate()), USER_1, "", "", "Device A03");
+        saveDevice(USER_1, "Device A01");
+        saveDevice(USER_1, "Device A02");
+        saveDevice(USER_1, "Device A03");
 
         // User 2
-        _deviceB01 = new DID(UniqueID.generate());
-        ddb.insertDevice(_deviceB01, USER_2, "", "", "Device B01");
-        ddb.insertDevice(new DID(UniqueID.generate()), USER_2, "", "", "Device B02");
+        saveDevice(USER_1, "Device A01");
+
+        _deviceB01 = saveDevice(USER_2, "Device B01");
+        saveDevice(USER_2, "Device B02");
 
         // User 3
-        _deviceC01 = new DID(UniqueID.generate());
-        ddb.insertDevice(_deviceC01, USER_3, "", "", "Device C01");
-        ddb.insertDevice(new DID(UniqueID.generate()), USER_3, "", "", "Device C02");
+        _deviceC01 = saveDevice(USER_3, "Device C01");
+        saveDevice(USER_3, "Device C02");
 
         sqlTrans.commit();
 
         // User 1 shares with User 2, but not with User 3
         shareAndJoinFolder(USER_1, TEST_SID_1, USER_2, Role.EDITOR);
+    }
+
+    private Device saveDevice(User owner, String name)
+            throws Exception
+    {
+        return factDevice.create(new DID(UniqueID.generate())).save(owner, "", "", name);
     }
 
     /**
@@ -74,7 +81,7 @@ public class TestSP_GetDeviceInfo extends AbstractSPFolderPermissionTest
     public void shouldSucceedWhenUsersShareFiles()
             throws Exception
     {
-        GetDeviceInfoReply reply = service.getDeviceInfo(ImmutableList.of(_deviceB01.toPB())).get();
+        GetDeviceInfoReply reply = service.getDeviceInfo(ImmutableList.of(_deviceB01.id().toPB())).get();
 
         List<PBDeviceInfo> deviceInfoList = reply.getDeviceInfoList();
         assertEquals(deviceInfoList.size(), 1);
@@ -91,9 +98,9 @@ public class TestSP_GetDeviceInfo extends AbstractSPFolderPermissionTest
         assertTrue(deviceInfo.hasOwner());
 
         // The parent sets the first name and the last name to just be the test user name.
-        assertEquals(deviceInfo.getOwner().getUserEmail(), USER_2.getString());
-        assertEquals(deviceInfo.getOwner().getFirstName(), USER_2.getString());
-        assertEquals(deviceInfo.getOwner().getLastName(), USER_2.getString());
+        assertEquals(deviceInfo.getOwner().getUserEmail(), USER_2.id().getString());
+        assertEquals(deviceInfo.getOwner().getFirstName(), USER_2.id().getString());
+        assertEquals(deviceInfo.getOwner().getLastName(), USER_2.id().getString());
     }
 
     /**
@@ -105,7 +112,7 @@ public class TestSP_GetDeviceInfo extends AbstractSPFolderPermissionTest
             throws Exception
     {
         LinkedList<ByteString> dids = new LinkedList<ByteString>();
-        dids.add(_deviceC01.toPB());
+        dids.add(_deviceC01.id().toPB());
         GetDeviceInfoReply reply = service.getDeviceInfo(dids).get();
 
         List<PBDeviceInfo> deviceInfoList = reply.getDeviceInfoList();
@@ -130,8 +137,8 @@ public class TestSP_GetDeviceInfo extends AbstractSPFolderPermissionTest
         throws Exception
     {
         LinkedList<ByteString> dids = new LinkedList<ByteString>();
-        dids.add(_deviceB01.toPB());
-        dids.add(_deviceC01.toPB());
+        dids.add(_deviceB01.id().toPB());
+        dids.add(_deviceC01.id().toPB());
         GetDeviceInfoReply reply = service.getDeviceInfo(dids).get();
 
         List<PBDeviceInfo> deviceInfoList = reply.getDeviceInfoList();

@@ -30,7 +30,7 @@ public class TestSP_InviteToSignUp extends AbstractSPTest
     {
         setSessionUser(USER_1);
 
-        service.inviteToSignUp(Collections.singletonList(USER_2.getString()));
+        service.inviteToSignUp(Collections.singletonList(USER_2.id().getString()));
 
         Mockito.verifyZeroInteractions(factEmailer);
     }

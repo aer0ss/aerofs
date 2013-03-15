@@ -4,7 +4,6 @@
 
 package com.aerofs.sp.server.integration;
 
-import com.aerofs.sp.server.lib.id.StripeCustomerID;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -19,18 +18,15 @@ public class TestSP_OrganizationPreferences extends AbstractSPTest
     }
 
     @Test
-    public void shouldReturnSetOrganizationName()
+    public void shouldReturnSetOrganizationNameAndPhone()
             throws Exception
     {
-        String oldName = "hahaha";
-        String newName = "hohoho";
+        String name = "hohoho";
+        String phone = "xixixix";
 
-        service.addOrganization(oldName, null, StripeCustomerID.TEST.getString());
+        service.setOrgPreferences(name, phone);
 
-        assertEquals(service.getOrgPreferences().get().getOrganizationName(), oldName);
-
-        service.setOrgPreferences(newName, null);
-
-        assertEquals(service.getOrgPreferences().get().getOrganizationName(), newName);
+        assertEquals(service.getOrgPreferences().get().getOrganizationName(), name);
+        assertEquals(service.getOrgPreferences().get().getOrganizationContactPhone(), phone);
     }
 }

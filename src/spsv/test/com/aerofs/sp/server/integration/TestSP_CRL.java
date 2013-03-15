@@ -38,8 +38,8 @@ public class TestSP_CRL extends AbstractSPCertificateBasedTest
     public void setupTestSP_CRL()
         throws Exception
     {
-        String cert = service.registerDevice(_did.toPB(), newCSR(TEST_1_USER, _did), false, "", "", "")
-                .get().getCert();
+        String cert = service.registerDevice(device.id().toPB(), newCSR(TEST_1_USER, device),
+                false, "", "", "").get().getCert();
 
         assertTrue(cert.equals(RETURNED_CERT));
 
@@ -70,7 +70,7 @@ public class TestSP_CRL extends AbstractSPCertificateBasedTest
 
         // Create a device without a certificate.
         sqlTrans.begin();
-        device.save(factUser.create(USER_1), "Linux", "Ubuntu", "Ubuntu Test Device");
+        device.save(USER_1, "Linux", "Ubuntu", "Ubuntu Test Device");
         sqlTrans.commit();
 
         // Unlinking should still work.
@@ -87,7 +87,7 @@ public class TestSP_CRL extends AbstractSPCertificateBasedTest
             throws Exception
     {
         // Follow a typical certify-revoke cycle.
-        service.unlinkDevice(_did.toPB(), false);
+        service.unlinkDevice(device.id().toPB(), false);
 
         // Verify that only one certificate has been revoked, as expected.
         GetCRLReply reply = service.getCRL().get();
@@ -99,8 +99,8 @@ public class TestSP_CRL extends AbstractSPCertificateBasedTest
     public void shouldThrowIfUnlinkDeviceCertificateMoreThanOnce()
             throws Exception
     {
-        service.unlinkDevice(_did.toPB(), false);
-        service.unlinkDevice(_did.toPB(), false);
+        service.unlinkDevice(device.id().toPB(), false);
+        service.unlinkDevice(device.id().toPB(), false);
     }
 
     @Test(expected = ExNotFound.class)
@@ -117,7 +117,7 @@ public class TestSP_CRL extends AbstractSPCertificateBasedTest
     {
         // Switch to a different user and try to revoke the previous user's device.
         setSessionUser(TEST_2_USER);
-        service.unlinkDevice(_did.toPB(), false);
+        service.unlinkDevice(device.id().toPB(), false);
     }
 
     //
@@ -134,7 +134,7 @@ public class TestSP_CRL extends AbstractSPCertificateBasedTest
         reply = service.getCRL().get();
         assertTrue(reply.getSerialList().size() == 0);
 
-        service.unlinkDevice(_did.toPB(), false);
+        service.unlinkDevice(device.id().toPB(), false);
 
         // And after one revocation, the list will be of length 1.
         reply = service.getCRL().get();

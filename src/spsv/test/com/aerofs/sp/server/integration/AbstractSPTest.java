@@ -7,9 +7,9 @@ package com.aerofs.sp.server.integration;
 import com.aerofs.base.BaseSecUtil;
 import com.aerofs.base.id.DID;
 import com.aerofs.lib.FullName;
+import com.aerofs.lib.Param;
 import com.aerofs.lib.SecUtil;
 import com.aerofs.base.async.UncancellableFuture;
-import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.base.id.UserID;
 import com.aerofs.servlets.MockSessionUser;
@@ -35,10 +35,10 @@ import com.aerofs.sp.server.lib.device.Device;
 import com.aerofs.sp.server.lib.device.DeviceDatabase;
 import com.aerofs.sp.server.lib.OrganizationDatabase;
 import com.aerofs.sp.server.lib.UserDatabase;
-import com.aerofs.sp.server.lib.id.OrganizationID;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.organization.OrganizationInvitation;
 import static com.aerofs.sp.server.lib.user.AuthorizationLevel.*;
+import com.aerofs.sp.server.lib.session.CertificateAuthenticator;
 import com.aerofs.sp.server.lib.user.User;
 import com.aerofs.sp.server.session.SPActiveTomcatSessionTracker;
 import com.aerofs.sp.server.session.SPActiveUserSessionTracker;
@@ -60,11 +60,12 @@ import sun.security.pkcs.PKCS10;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.KeyPair;
-import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.util.Arrays;
 import java.util.Set;
 import java.util.List;
 
+import static junit.framework.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
@@ -139,14 +140,12 @@ public class AbstractSPTest extends AbstractTestWithDatabase
     // N.B. the @Mock is only necessary if the subclass will mock the object in some special way
     @InjectMocks protected SPService service;
 
-    protected static final UserID USER_1 = UserID.fromInternal("user_1");
-    protected static final byte[] USER_1_CRED = "CREDENTIALS".getBytes();
+    private Set<String> verkehrPublished;
 
-    protected static final UserID USER_2 = UserID.fromInternal("user_2");
-    protected static final byte[] USER_2_CRED = "CREDENTIALS".getBytes();
-
-    protected static final UserID USER_3 = UserID.fromInternal("user_3");
-    protected static final byte[] USER_3_CRED = "CREDENTIALS".getBytes();
+    protected final User USER_1 = factUser.create(UserID.fromInternal("user_1"));
+    protected final User USER_2 = factUser.create(UserID.fromInternal("user_2"));
+    protected final User USER_3 = factUser.create(UserID.fromInternal("user_3"));
+    protected static final byte[] CRED = "CREDENTIALS".getBytes();
 
     // Use a method name that is unlikely to conflict with setup methods in subclasses
     @Before
@@ -157,47 +156,44 @@ public class AbstractSPTest extends AbstractTestWithDatabase
         service.setVerkehrClients_(verkehrPublisher, verkehrAdmin);
         service.setSessionInvalidator(sessionInvalidator);
         service.setUserTracker(userSessionTracker);
+        verkehrPublished = mockAndCaptureVerkehrPublish();
 
         ///////////////////////////////////////////////////////////////////////////
         // The method to populate the database below is outdated. See methods in
         // AbstractBusinessObjectTest for a better approach
         ///////////////////////////////////////////////////////////////////////////
 
-        // Add all the users to the db.
         sqlTrans.begin();
 
-        factUser.create(USER_1).save(USER_1_CRED,
-                new FullName(USER_1.getString(), USER_1.getString()), factOrg.getDefault());
-        factUser.create(USER_2).save(USER_2_CRED,
-                new FullName(USER_2.getString(), USER_2.getString()), factOrg.getDefault());
-        factUser.create(USER_3).save(USER_3_CRED,
-                new FullName(USER_3.getString(), USER_3.getString()), factOrg.getDefault());
-
-        // TODO (WW) it will not be necessary after the default orgs are removed.
-        User userAdmin = factUser.createFromExternalID("admin_user");
-        userAdmin.save(USER_1_CRED,
-                new FullName(USER_1.getString(), USER_1.getString()), factOrg.getDefault());
-        userAdmin.setLevel(ADMIN);
+        saveUser(USER_1);
+        saveUser(USER_2);
+        saveUser(USER_3);
 
         sqlTrans.commit();
     }
 
-    public static void addTestUser(UserDatabase udb, UserID userId)
-            throws ExAlreadyExist, SQLException
+    /**
+     * Create a user with first name last names identical to the user id.
+     * Must be called within SQL transaction
+     */
+    public static void saveUser(User user)
+            throws Exception
     {
-        udb.insertUser(userId, new FullName("first", "last"), SecUtil.newRandomBytes(10),
-                OrganizationID.DEFAULT, USER);
+        String idString = user.id().getString();
+        user.save(CRED, new FullName(idString, idString));
     }
 
-    protected void addTestUser(UserID userId)
-            throws ExAlreadyExist, SQLException
+    protected Device saveDevice(User owner)
+            throws Exception
     {
-        addTestUser(udb, userId);
+        DID did = DID.generate();
+        return factDevice.create(did).save(owner, "", "", owner.toString() + "'s device " + did);
     }
 
-    protected void setSessionUser(UserID userId)
+    // TODO (WW) remove this method as it doesn't do much
+    protected void setSessionUser(User user)
     {
-        sessionUser.set(factUser.create(userId));
+        sessionUser.set(user);
     }
 
     protected void mockCertificateGeneratorAndIncrementSerialNumber() throws Exception
@@ -216,14 +212,14 @@ public class AbstractSPTest extends AbstractTestWithDatabase
                 new Timestamp(System.currentTimeMillis() + 1000L * 60L * 60L * 24L * 365L));
     }
 
-    protected void mockCertificateAuthenticatorSetAuthenticatedState(UserID userID, DID did)
+    protected void mockCertificateAuthenticatorSetAuthenticatedState(User user, Device device)
             throws ExBadCredential
     {
         when(certificateAuthenticator.isAuthenticated()).thenReturn(true);
         when(certificateAuthenticator.getSerial())
                 .thenReturn(AbstractSPCertificateBasedTest._lastSerialNumber);
         when(certificateAuthenticator.getCName())
-                .thenReturn(BaseSecUtil.getCertificateCName(userID, did));
+                .thenReturn(BaseSecUtil.getCertificateCName(user.id(), device.id()));
     }
 
     protected void mockCertificateAuthenticatorSetUnauthorizedState()
@@ -234,12 +230,12 @@ public class AbstractSPTest extends AbstractTestWithDatabase
         when(certificateAuthenticator.getCName()).thenThrow(new ExBadCredential());
     }
 
-    protected static ByteString newCSR(UserID userID, DID did)
+    protected static ByteString newCSR(User user, Device device)
             throws IOException, GeneralSecurityException
     {
         KeyPair kp = SecUtil.newRSAKeyPair();
-        return ByteString.copyFrom( SecUtilHelper.serverOnlyNewCSR(kp.getPublic(), kp.getPrivate(),
-                userID, did).getEncoded() );
+        return ByteString.copyFrom(SecUtilHelper.serverOnlyNewCSR(kp.getPublic(), kp.getPrivate(),
+                user.id(), device.id()).getEncoded());
     }
 
     protected Set<String> mockAndCaptureVerkehrPublish()
@@ -278,5 +274,46 @@ public class AbstractSPTest extends AbstractTestWithDatabase
                 });
 
         return payloads;
+    }
+
+    protected void assertVerkehrPublishContains(User ... users)
+    {
+        for (User user : users) {
+            if (!verkehrPublished.contains(Param.ACL_CHANNEL_TOPIC_PREFIX + user.id().getString())) {
+                fail("verkehr publish doesn't contain " + user + ". actual: " + verkehrPublished);
+            }
+        }
+    }
+
+    protected void assertVerkehrPublishOnlyContains(User ... users)
+            throws Exception
+    {
+        assertVerkehrPublishContains(users);
+
+        // get team server users
+        Set<User> tsUsers = Sets.newHashSet();
+        sqlTrans.begin();
+        for (User user : users) tsUsers.add(user.getOrganization().getTeamServerUser());
+        sqlTrans.commit();
+
+        // all the team servers must be included
+        assertVerkehrPublishContains(tsUsers.toArray(new User[tsUsers.size()]));
+
+        if (users.length + tsUsers.size() != verkehrPublished.size()) {
+            fail("verkerh publish has more than expected: " + Arrays.toString(users) +
+                    " actual: " + verkehrPublished);
+        }
+    }
+
+    protected void assertVerkehrPublishIsEmpty()
+            throws Exception
+    {
+        assertVerkehrPublishOnlyContains();
+    }
+
+    // TOOD (WW) is this method useful?
+    protected void clearVerkehrPublish()
+    {
+        verkehrPublished.clear();
     }
 }

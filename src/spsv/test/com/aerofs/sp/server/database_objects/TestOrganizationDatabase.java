@@ -30,20 +30,6 @@ public class TestOrganizationDatabase extends AbstractAutoTransactionedTestWithS
     OrganizationID orgID = new OrganizationID(123);
     private SID sid = SID.generate();
 
-    @Test(expected = ExBadArgs.class)
-    public void listSharedFolders_shouldThrowOnDefaultOrg()
-            throws SQLException, ExBadArgs
-    {
-        odb.listSharedFolders(OrganizationID.DEFAULT, 100, 0);
-    }
-
-    @Test(expected = ExBadArgs.class)
-    public void countSharedFolders_shouldThrowOnDefaultOrg()
-            throws SQLException, ExBadArgs
-    {
-        odb.countSharedFolders(OrganizationID.DEFAULT);
-    }
-
     @Test
     public void listSharedFolders_shouldSkipRootStores()
             throws SQLException, ExBadArgs, ExAlreadyExist

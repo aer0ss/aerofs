@@ -27,7 +27,6 @@ import java.sql.SQLException;
 import java.util.Collection;
 
 import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertNull;
 
 public class TestUser extends AbstractBusinessObjectTest
@@ -75,36 +74,31 @@ public class TestUser extends AbstractBusinessObjectTest
     }
 
     @Test(expected = MySQLIntegrityConstraintViolationException.class)
-    public void shouldThrowIfCreatingUserWithoutOrg()
+    public void shouldThrowIfCreatingTeamServerUserWithoutOrg()
             throws ExNoPerm, IOException, ExNotFound, SQLException, ExAlreadyExist
     {
-        saveUser(newUser(), newOrganization());
+        factUser.saveTeamServerUser(newOrganization());
     }
 
     @Test(expected = ExAlreadyExist.class)
     public void shouldThrowIfCreatingDuplicateUsers()
-            throws ExNoPerm, IOException, ExNotFound, SQLException, ExAlreadyExist
+            throws Exception
     {
         User user = newUser();
-        Organization org = saveOrganization();
-        saveUser(user, org);
-        saveUser(user, org);
+        saveUser(user);
+        saveUser(user);
     }
 
     // see User.addRootStoreAndCheckForCollision for detail
     @Test
     public void shouldCorrectRootStoreCollision()
-            throws ExNoPerm, IOException, ExNotFound, SQLException, ExAlreadyExist
+            throws Exception
     {
-        // create the playground
-        Organization org = saveOrganization();
-        Organization org2 = saveOrganization();
-
         // create the players
         User attacker = newUser("attacker");
         User attacker2 = newUser("attacker2");
-        saveUser(attacker, org);
-        saveUser(attacker2, org2);
+        saveUser(attacker);
+        saveUser(attacker2);
 
         User user = newUser();
 
@@ -116,7 +110,7 @@ public class TestUser extends AbstractBusinessObjectTest
         assertEquals(sf.getMemberRoleThrows(attacker2), Role.EDITOR);
 
         // create the ligitimate user
-        saveUser(user, org);
+        saveUser(user);
 
         // the collision should have been corrected
         assertNull(sf.getMemberRoleNullable(attacker));
@@ -134,10 +128,8 @@ public class TestUser extends AbstractBusinessObjectTest
     public void shouldUpdateTeamServerACLsOnSetOrg()
             throws Exception
     {
-        User user = newUser();
-        Organization orgOld = saveOrganization();
-        saveUser(user, orgOld);
-        User tsUserOld = newUser(orgOld.id().toTeamServerUserID());
+        User user = saveUser();
+        User tsUserOld = user.getOrganization().getTeamServerUser();
 
         SharedFolder sfRoot = factSharedFolder.create(SID.rootSID(user.id()));
         SharedFolder sf1 = factSharedFolder.create(SID.generate());
@@ -150,7 +142,7 @@ public class TestUser extends AbstractBusinessObjectTest
         assertEquals(sf2.getMemberRoleNullable(tsUserOld), Role.EDITOR);
 
         Organization orgNew = saveOrganization();
-        User tsUserNew = newUser(orgNew.id().toTeamServerUserID());
+        User tsUserNew = orgNew.getTeamServerUser();
 
         user.setOrganization(orgNew, AuthorizationLevel.USER);
 
@@ -166,15 +158,10 @@ public class TestUser extends AbstractBusinessObjectTest
     public void shouldListPeerDevices()
             throws Exception
     {
-        User user1 = newUser();
-        User user2 = newUser();
-        User user3 = newUser();
-        User user4 = newUser();
-
-        user1.save(new byte[0], new FullName("f1", "l1"), factOrg.getDefault());
-        user2.save(new byte[0], new FullName("f2", "l2"), factOrg.getDefault());
-        user3.save(new byte[0], new FullName("f3", "l3"), factOrg.getDefault());
-        user4.save(new byte[0], new FullName("f4", "l4"), factOrg.getDefault());
+        User user1 = saveUser();
+        User user2 = saveUser();
+        User user3 = saveUser();
+        User user4 = saveUser();
 
         // The 4 devices we will expect.
         factDevice.create(new DID(UniqueID.generate())).save(user1, "", "", "Device1a");
@@ -204,8 +191,7 @@ public class TestUser extends AbstractBusinessObjectTest
     public void shouldListPeerDevicesWhenNoFoldersAreShared()
             throws Exception
     {
-        User user1 = newUser();
-        user1.save(new byte[0], new FullName("f1", "l1"), factOrg.getDefault());
+        User user1 = saveUser();
 
         factDevice.create(new DID(UniqueID.generate())).save(user1, "", "", "Device1a");
         factDevice.create(new DID(UniqueID.generate())).save(user1, "", "", "Device1b");

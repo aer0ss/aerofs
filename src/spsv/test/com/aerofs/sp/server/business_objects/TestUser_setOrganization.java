@@ -4,9 +4,7 @@
 
 package com.aerofs.sp.server.business_objects;
 
-import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.lib.ex.ExNoAdminForNonEmptyTeam;
-import com.aerofs.sp.server.lib.id.StripeCustomerID;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.user.User;
 
@@ -14,39 +12,15 @@ import static com.aerofs.sp.server.lib.user.AuthorizationLevel.*;
 import org.junit.Test;
 
 import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.fail;
 
 public class TestUser_setOrganization extends AbstractBusinessObjectTest
 {
-    @Test(expected = ExNoPerm.class)
-    public void shouldThrowIfUserNoPermissionOnAddAndMoveToOrg()
-            throws Exception
-    {
-        Organization org = saveOrganization();
-        User user = newUser();
-        saveUser(user, org);
-        user.addAndMoveToOrganization("test", null, StripeCustomerID.TEST);
-    }
-
-    @Test
-    public void shouldSetUserAsAdminOnAddAndMoveToNewOrganization()
-            throws Exception
-    {
-        User user = newUser();
-        saveUser(user, factOrg.getDefault());
-        user.addAndMoveToOrganization("test", null, StripeCustomerID.TEST);
-
-        assertFalse(user.getOrganization().isDefault());
-        assertEquals(user.getLevel(), ADMIN);
-    }
-
     @Test
     public void shouldSetAuthLevel()
             throws Exception
     {
-        User user = newUser();
-        saveUser(user, factOrg.getDefault());
+        User user = saveUser();
         Organization org = saveOrganization();
         user.setOrganization(org, ADMIN);
         assertEquals(user.getLevel(), ADMIN);

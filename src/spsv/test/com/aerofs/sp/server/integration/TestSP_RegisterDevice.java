@@ -8,7 +8,7 @@ import com.aerofs.base.id.DID;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.lib.ex.ExDeviceIDAlreadyExists;
 import com.aerofs.base.id.UniqueID;
-import com.aerofs.base.id.UserID;
+import com.aerofs.sp.server.lib.device.Device;
 import com.google.common.collect.Sets;
 import com.google.protobuf.ByteString;
 import org.junit.Test;
@@ -35,13 +35,13 @@ public class TestSP_RegisterDevice extends AbstractSPCertificateBasedTest
             throws Exception
     {
         String cert;
-        cert = service.registerDevice(_did.toPB(), newCSR(_did), false, "", "", "").get().getCert();
+        cert = service.registerDevice(device.id().toPB(), newCSR(device), false, "", "", "").get().getCert();
 
         sqlTrans.begin();
-        assertTrue(ddb.hasDevice(_did));
+        assertTrue(device.exists());
         sqlTrans.commit();
 
-        verify(certgen).generateCertificate(eq(TEST_1_USER), eq(_did), any(PKCS10.class));
+        verify(certgen).generateCertificate(eq(TEST_1_USER.id()), eq(device.id()), any(PKCS10.class));
 
         // Make sure the cert is valid (what we expect).
         assertTrue(cert.equals(RETURNED_CERT));
@@ -56,8 +56,8 @@ public class TestSP_RegisterDevice extends AbstractSPCertificateBasedTest
             throws Exception
     {
         // Provide the incorrect user, and clean up after the uncommitted transaction.
-        ByteString csr = newCSR(UserID.fromInternal("garbage"), _did);
-        service.registerDevice(_did.toPB(), csr, false, "", "", "").get().getCert();
+        ByteString csr = newCSR(factUser.createFromExternalID("garbage"), device);
+        service.registerDevice(device.id().toPB(), csr, false, "", "", "").get().getCert();
     }
 
     @Test
@@ -65,18 +65,20 @@ public class TestSP_RegisterDevice extends AbstractSPCertificateBasedTest
         throws Exception
     {
         // Certify device1
-        DID did1 = _did;
+        Device device1 = device;
         String cert1;
-        cert1 = service.registerDevice(did1.toPB(), newCSR(did1), false, "", "", "").get().getCert();
+        cert1 = service.registerDevice(device1.id().toPB(), newCSR(device1), false, "", "", "")
+                .get().getCert();
         assertTrue(cert1.equals(RETURNED_CERT));
 
         // Modify the certificate's serial number returned for device2.
         mockCertificateGeneratorAndIncrementSerialNumber();
 
         // Certify device2
-        DID did2 = getNextDID(Sets.newHashSet(_did));
+        Device device2 = factDevice.create(getNextDID(Sets.newHashSet(device.id())));
         String cert2;
-        cert2 = service.registerDevice(did2.toPB(), newCSR(did2),false, "", "", "").get().getCert();
+        cert2 = service.registerDevice(device2.id().toPB(), newCSR(device2),false, "", "", "")
+                .get().getCert();
         assertTrue(cert2.equals(RETURNED_CERT));
     }
 
@@ -84,15 +86,15 @@ public class TestSP_RegisterDevice extends AbstractSPCertificateBasedTest
     public void shouldThrowIfDeviceIDAlreadyExists()
             throws Exception
     {
-        DID did = new DID(UniqueID.generate());
-        service.registerDevice(did.toPB(), newCSR(did), false, "", "", "");
-        service.registerDevice(did.toPB(), newCSR(did), false, "", "", "");
+        Device device = factDevice.create(new DID(UniqueID.generate()));
+        service.registerDevice(device.id().toPB(), newCSR(device), false, "", "", "");
+        service.registerDevice(device.id().toPB(), newCSR(device), false, "", "", "");
     }
 
-    private ByteString newCSR(DID did)
+    private ByteString newCSR(Device device)
             throws IOException, GeneralSecurityException
     {
-        return newCSR(TEST_1_USER, did);
+        return newCSR(TEST_1_USER, device);
     }
 
     /**

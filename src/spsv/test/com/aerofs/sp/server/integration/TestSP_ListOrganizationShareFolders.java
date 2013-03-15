@@ -6,11 +6,11 @@ package com.aerofs.sp.server.integration;
 
 import com.aerofs.proto.Sp.PBSharedFolder;
 import com.aerofs.proto.Sp.PBSharedFolder.PBUserAndRole;
-import com.aerofs.sp.server.lib.id.StripeCustomerID;
 import com.aerofs.lib.acl.Role;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
+import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -36,6 +36,11 @@ public class TestSP_ListOrganizationShareFolders extends AbstractSPFolderPermiss
             throws Exception
     {
         setSessionUser(USER_1);
+
+        // make USER_1 a non-admin
+        sqlTrans.begin();
+        USER_1.setOrganization(USER_2.getOrganization(), AuthorizationLevel.USER);
+        sqlTrans.commit();
 
         service.listOrganizationSharedFolders(1000, 0);
     }
@@ -67,7 +72,7 @@ public class TestSP_ListOrganizationShareFolders extends AbstractSPFolderPermiss
         for (PBSharedFolder sf : createAndListTwoSharedFolders()) {
             boolean hasOwner = false;
             for (PBUserAndRole ur : sf.getUserAndRoleList()) {
-                if (UserID.fromInternal(ur.getUser().getUserEmail()).equals(USER_1)) {
+                if (UserID.fromInternal(ur.getUser().getUserEmail()).equals(USER_1.id())) {
                     assertEquals(Role.fromPB(ur.getRole()), Role.OWNER);
                     assertFalse(hasOwner);
                     hasOwner = true;
@@ -84,7 +89,7 @@ public class TestSP_ListOrganizationShareFolders extends AbstractSPFolderPermiss
         for (PBSharedFolder sf : createAndListTwoSharedFolders()) {
             boolean hasSharee = false;
             for (PBUserAndRole ur : sf.getUserAndRoleList()) {
-                if (!UserID.fromInternal(ur.getUser().getUserEmail()).equals(USER_1)) {
+                if (!UserID.fromInternal(ur.getUser().getUserEmail()).equals(USER_1.id())) {
                     assertEquals(Role.fromPB(ur.getRole()), Role.EDITOR);
                     assertFalse(hasSharee);
                     hasSharee = true;
@@ -97,14 +102,11 @@ public class TestSP_ListOrganizationShareFolders extends AbstractSPFolderPermiss
     private List<PBSharedFolder> createAndListTwoSharedFolders()
             throws Exception
     {
-        shareAndJoinFolder(USER_1, TEST_SID_1, USER_2, Role.EDITOR);
+        shareAndJoinFolder(USER_1, SID_1, USER_2, Role.EDITOR);
 
-        shareAndJoinFolder(USER_1, TEST_SID_2, USER_3, Role.EDITOR);
+        shareAndJoinFolder(USER_1, SID_2, USER_3, Role.EDITOR);
 
         setSessionUser(USER_1);
-
-        // add a new org so user 1 can haz permissions to list folders
-        service.addOrganization("test org", null, StripeCustomerID.TEST.getString());
 
         return service.listOrganizationSharedFolders(100, 0).get().getSharedFolderList();
     }

@@ -8,8 +8,6 @@ import com.aerofs.base.BaseSecUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.lib.ex.ExNoAdminForNonEmptyTeam;
-import com.aerofs.servlets.lib.ssl.CertificateAuthenticator;
-import com.aerofs.sp.server.lib.id.StripeCustomerID;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.base.ex.ExAlreadyExist;
@@ -34,7 +32,6 @@ import org.slf4j.Logger;
 
 import javax.annotation.Nonnull;
 import javax.inject.Inject;
-import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Collection;
@@ -76,6 +73,18 @@ public class User
         public User createFromExternalID(@Nonnull String str)
         {
             return create(UserID.fromExternal(str));
+        }
+
+        public User saveTeamServerUser(Organization org)
+                throws SQLException, ExAlreadyExist
+        {
+            User tsUser = org.getTeamServerUser();
+
+            // Use an invalid password hash to prevent attackers from logging in as Team Server
+            // using _any_ password. Also see C.MULTIUSER_LOCAL_PASSWORD.
+            tsUser.saveImpl(new byte[0], new FullName("Team", "Server"), org,
+                    AuthorizationLevel.USER);
+            return tsUser;
         }
     }
 
@@ -273,18 +282,20 @@ public class User
     }
 
     /**
-     * Add the user to the database
+     * Create a new organization, add the user to the organization as an admin
      * @param shaedSP sha256(scrypt(p|u)|passwdSalt)
      * @throws ExAlreadyExist if the user ID already exists.
      */
-    public void save(byte[] shaedSP, FullName fullName, Organization org)
-            throws ExAlreadyExist, SQLException, IOException, ExNoPerm
+    public void save(byte[] shaedSP, FullName fullName)
+            throws ExAlreadyExist, SQLException
     {
-        // TODO If successful, this method should delete all the user's existing signup codes from
-        // the signup_code table
-        // TODO write a test to verify that after one successful signup,
-        // other codes fail/do not exist
-        _f._udb.insertUser(_id, fullName, shaedSP, org.id(), AuthorizationLevel.USER);
+        saveImpl(shaedSP, fullName, _f._factOrg.save(), AuthorizationLevel.ADMIN);
+    }
+
+    public void saveImpl(byte[] shaedSP, FullName fullName, Organization org, AuthorizationLevel level)
+            throws SQLException, ExAlreadyExist
+    {
+        _f._udb.insertUser(_id, fullName, shaedSP, org.id(), level);
 
         addRootStoreAndCheckForCollision();
     }
@@ -296,7 +307,7 @@ public class User
      * 2. avoid attackers hijacking existing users' root store with intentional store ID collisions.
      */
     private void addRootStoreAndCheckForCollision()
-            throws SQLException, IOException, ExAlreadyExist, ExNoPerm
+            throws SQLException
     {
         SharedFolder rootStore = _f._factSharedFolder.create(SID.rootSID(_id));
 
@@ -320,8 +331,10 @@ public class User
         try {
             rootStore.save("root store: " + _id, this);
         } catch (ExNotFound e) {
-            // The method throws ExNotFound only if the store doesn't exist, which is guaranteed not
-            // to happen by the above code.
+            // The method throws ExNotFound only if the owner doesn't exist
+            SystemUtil.fatal(e);
+        } catch (ExAlreadyExist e) {
+            // The method throws ExAlreadyExist only if the store already exists
             SystemUtil.fatal(e);
         }
     }
@@ -397,29 +410,6 @@ public class User
     }
 
     /**
-     * Add a new organization O, move the user to O, and set the user as O's admin.
-     *
-     * @throws ExNoPerm if the user is a non-admin in a non-default organization
-     */
-    public Set<UserID> addAndMoveToOrganization(final String organizationName,
-            final String organizationPhone, final StripeCustomerID stripeCustomer)
-            throws ExNoPerm, SQLException, ExNotFound, ExAlreadyExist, IOException,
-            ExNoAdminForNonEmptyTeam
-    {
-        if (!canAddOrganization()) {
-            throw new ExNoPerm("you have no permission to create new teams");
-        }
-
-        Organization org = _f._factOrg.save(organizationName, organizationPhone, stripeCustomer);
-        return setOrganization(org, AuthorizationLevel.ADMIN);
-    }
-
-    private boolean canAddOrganization() throws ExNotFound, SQLException
-    {
-        return getOrganization().isDefault() || getLevel() == AuthorizationLevel.ADMIN;
-    }
-
-    /**
      * Move the user to a new organization, set appropriate auth level, and adjust ACLs of shared
      * folders for the team server.
      */
@@ -440,10 +430,12 @@ public class User
 
         for (SharedFolder sf : sfs) users.addAll(sf.addTeamServerACL(this));
 
-        // TODO (WW) delete orgOld if it becomes empty.
-
-        // There must be at least one admin for an non-empty organization
-        orgOld.throwIfNotEmptyWithNoAdmins();
+        if (orgOld.countUsers() == 0) {
+            // TODO (WW) delete orgOld
+        } else if (orgOld.countUsers(AuthorizationLevel.ADMIN) == 0) {
+            // There must be at least one admin for an non-empty organization
+            throw new ExNoAdminForNonEmptyTeam(this.toString());
+        }
 
         return users;
     }

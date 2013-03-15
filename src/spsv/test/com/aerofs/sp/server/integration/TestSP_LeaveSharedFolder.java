@@ -5,17 +5,11 @@
 package com.aerofs.sp.server.integration;
 
 import com.aerofs.base.id.SID;
-import com.aerofs.lib.Param;
 import com.aerofs.lib.acl.Role;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.ex.ExNotFound;
-import org.junit.Before;
 import org.junit.Test;
 
-import java.util.Set;
-
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertTrue;
 import static junit.framework.Assert.fail;
 
 /**
@@ -24,80 +18,70 @@ import static junit.framework.Assert.fail;
  */
 public class TestSP_LeaveSharedFolder extends AbstractSPFolderPermissionTest
 {
-    Set<String> published;
-
-    @Before
-    public void setupTestSPShareFolder()
-    {
-        published = mockAndCaptureVerkehrPublish();
-    }
-
     @Test
     public void shouldAllowMemberToLeaveShareFolder() throws Exception
     {
-        shareAndJoinFolder(USER_1, TEST_SID_1, USER_2, Role.EDITOR);
-        published.clear();
+        shareAndJoinFolder(USER_1, SID_1, USER_2, Role.EDITOR);
+        clearVerkehrPublish();
 
-        leaveSharedFolder(USER_2, TEST_SID_1);
-        assertEquals(2, published.size());
-        assertTrue(published.contains(Param.ACL_CHANNEL_TOPIC_PREFIX + USER_1.getString()));
-        assertTrue(published.contains(Param.ACL_CHANNEL_TOPIC_PREFIX + USER_2.getString()));
+        leaveSharedFolder(USER_2, SID_1);
+        assertVerkehrPublishOnlyContains(USER_2, USER_1);
     }
 
     @Test
     public void shouldAllowAdminToLeaveShareFolder() throws Exception
     {
-        shareFolder(USER_1, TEST_SID_1, USER_2, Role.EDITOR);
+        shareFolder(USER_1, SID_1, USER_2, Role.EDITOR);
 
-        leaveSharedFolder(USER_1, TEST_SID_1);
+        leaveSharedFolder(USER_1, SID_1);
     }
 
     @Test
     public void shouldAllowPendingMemberToLeaveShareFolder() throws Exception
     {
-        shareFolder(USER_1, TEST_SID_1, USER_2, Role.EDITOR);
-        published.clear();
+        shareFolder(USER_1, SID_1, USER_2, Role.EDITOR);
+        clearVerkehrPublish();
 
-        leaveSharedFolder(USER_2, TEST_SID_1);
-        assertTrue(published.isEmpty());
+        leaveSharedFolder(USER_2, SID_1);
+        assertVerkehrPublishIsEmpty();
     }
 
     @Test
     public void shouldThrowExBadArgsWhenTryingToLeaveRootStore() throws Exception
     {
         try {
-            leaveSharedFolder(USER_1, SID.rootSID(USER_1));
+            leaveSharedFolder(USER_1, SID.rootSID(USER_1.id()));
             fail();
         } catch (ExBadArgs e) {
             sqlTrans.handleException();
         }
-        assertTrue(published.isEmpty());
+        assertVerkehrPublishIsEmpty();
     }
 
     @Test
     public void shouldThrowExNotFoundWhenNonMemberTriesToLeaveShareFolder() throws Exception
     {
-        shareFolder(USER_1, TEST_SID_1, USER_2, Role.EDITOR);
-        published.clear();
+        shareFolder(USER_1, SID_1, USER_2, Role.EDITOR);
+        clearVerkehrPublish();
 
         try {
-            leaveSharedFolder(USER_3, TEST_SID_1);
+            leaveSharedFolder(USER_3, SID_1);
             fail();
         } catch (ExNotFound e) {
             sqlTrans.handleException();
         }
-        assertTrue(published.isEmpty());
+        assertVerkehrPublishIsEmpty();
     }
 
     @Test
     public void shouldThrowExNotFoundWhenTryingToLeaveNonExistingSharedFolder() throws Exception
     {
         try {
-            leaveSharedFolder(USER_1, TEST_SID_1);
+            leaveSharedFolder(USER_1, SID_1);
             fail();
         } catch (ExNotFound e) {
             sqlTrans.handleException();
         }
-        assertTrue(published.isEmpty());
+        assertVerkehrPublishIsEmpty();
     }
 }

@@ -646,18 +646,11 @@ public class SPService implements ISPService
     {
         _sqlTrans.begin();
 
-        final User user = _sessionUser.get();
-        final Organization org = user.getOrganization();
+        final Organization org = _sessionUser.get().getOrganization();
 
-        final String name = org.getName();
-        final String contactPhone = org.getContactPhoneNullable();
-
-        final GetOrgPreferencesReply.Builder replyBuilder = GetOrgPreferencesReply.newBuilder();
-        replyBuilder.setOrganizationName(name);
-
-        if (StringUtils.isNotBlank(contactPhone)) {
-            replyBuilder.setOrganizationContactPhone(contactPhone);
-        }
+        final GetOrgPreferencesReply.Builder replyBuilder = GetOrgPreferencesReply.newBuilder()
+                .setOrganizationName(org.getName())
+                .setOrganizationContactPhone(org.getContactPhone());
 
         _sqlTrans.commit();
 
@@ -729,14 +722,13 @@ public class SPService implements ISPService
         User user = _sessionUser.get();
 
         if (!user.getLevel().covers(AuthorizationLevel.ADMIN)) {
-            // users in default organization should always get this
             throw new ExNoPerm();
         }
 
-        UserID tsUserID = user.getOrganization().id().toTeamServerUserID();
+        User tsUser = user.getOrganization().getTeamServerUser();
 
         GetTeamServerUserIDReply reply = GetTeamServerUserIDReply.newBuilder()
-                .setId(tsUserID.getString())
+                .setId(tsUser.id().getString())
                 .build();
 
         _sqlTrans.commit();
@@ -826,7 +818,7 @@ public class SPService implements ISPService
         _sqlTrans.begin();
 
         user.throwIfNotAdmin();
-        User tsUser = _factUser.create(user.getOrganization().id().toTeamServerUserID());
+        User tsUser = user.getOrganization().getTeamServerUser();
 
         _sqlTrans.commit();
 
@@ -1409,19 +1401,8 @@ public class SPService implements ISPService
     }
 
     @Override
-    public ListenableFuture<Void> addOrganization(final String organizationName,
-            final String organizationPhone, final String stripeCustomerID)
-            throws Exception
+    public ListenableFuture<Void> noop3()
     {
-        final User user = _sessionUser.get();
-
-        _sqlTrans.begin();
-
-        final StripeCustomerID stripeCustomer = StripeCustomerID.create(stripeCustomerID);
-        user.addAndMoveToOrganization(organizationName, organizationPhone, stripeCustomer);
-
-        _sqlTrans.commit();
-
         return createVoidReply();
     }
 
@@ -1664,15 +1645,14 @@ public class SPService implements ISPService
                 throw new ExBadCredential("Password doesn't match the existing account");
             }
         } else {
-            // All new users start in the default organization.
-            user.save(shaedSP, fullName, _factOrg.getDefault());
+            user.save(shaedSP, fullName);
 
             // Unsubscribe user from the aerofs invitation reminder mailing list
             _esdb.removeEmailSubscription(user.id(),
                     SubscriptionCategory.AEROFS_INVITATION_REMINDER);
 
-            // N.B. do not remove the sign up code so we can support the case in the above
-            // "if user.exist()" branch.
+            // N.B. do not remove the sign up invitation code so we can support the case in the
+            // above "if user.exist()" branch.
         }
 
         _sqlTrans.commit();

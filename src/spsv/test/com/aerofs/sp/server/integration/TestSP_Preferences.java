@@ -5,12 +5,12 @@
 package com.aerofs.sp.server.integration;
 
 import com.aerofs.base.ex.ExNotFound;
-import com.aerofs.proto.Sp.GetUserPreferencesReply;
-import org.junit.Before;
-import org.junit.Test;
-
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UniqueID;
+import com.aerofs.proto.Sp.GetUserPreferencesReply;
+import com.aerofs.sp.server.lib.device.Device;
+import org.junit.Before;
+import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -20,10 +20,9 @@ import static org.junit.Assert.assertTrue;
  */
 public class TestSP_Preferences extends AbstractSPTest
 {
-    private final DID _did = new DID(UniqueID.generate());
-
     @Before
     public void setup()
+            throws Exception
     {
         mockAndCaptureVerkehrDeliverPayload();
         setSessionUser(USER_1);
@@ -33,12 +32,12 @@ public class TestSP_Preferences extends AbstractSPTest
     public void shouldTrimUserAndDeviceNames() throws Exception
     {
         sqlTrans.begin();
-        ddb.insertDevice(_did, USER_1, "", "", "name");
+        Device device = saveDevice(USER_1);
         sqlTrans.commit();
 
         service.setUserPreferences(sessionUser.get().id().getString(),
-                "   first ", " last   ", _did.toPB(), "  device names  ").get();
-        GetUserPreferencesReply reply = service.getUserPreferences(_did.toPB()).get();
+                "   first ", " last   ", device.id().toPB(), "  device names  ").get();
+        GetUserPreferencesReply reply = service.getUserPreferences(device.id().toPB()).get();
 
         assertTrimmed(reply.getDeviceName());
         assertTrimmed(reply.getFirstName());
@@ -50,14 +49,15 @@ public class TestSP_Preferences extends AbstractSPTest
             throws Exception
     {
         service.setUserPreferences(sessionUser.get().id().getString(),
-                "first", "last", _did.toPB(), "device").get();
+                "first", "last", new DID(UniqueID.generate()).toPB(), "device").get();
     }
 
     @Test
     public void shouldReturnEmptyNameIfDeviceDoesntExistWhenGettingPref()
             throws Exception
     {
-        GetUserPreferencesReply reply = service.getUserPreferences(_did.toPB()).get();
+        GetUserPreferencesReply reply = service.getUserPreferences(
+                new DID(UniqueID.generate()).toPB()).get();
         assertTrue(reply.getDeviceName().isEmpty());
     }
 

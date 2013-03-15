@@ -4,14 +4,11 @@
 
 package com.aerofs.sp.server.integration;
 
-import com.aerofs.sp.server.lib.id.StripeCustomerID;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.proto.Sp.PBAuthorizationLevel;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import org.junit.Before;
 import org.junit.Test;
-
-import java.sql.SQLException;
 
 import static junit.framework.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -28,10 +25,6 @@ public class TestSP_SetAuthorizationLevel extends AbstractSPTest
     public void shouldThrowIfSubjectNotFound()
             throws Exception
     {
-        // switch user_1 to a different organization
-        service.addOrganization("test", null, StripeCustomerID.TEST.getString());
-        assertEquals(service.getAuthorizationLevel().get().getLevel(), PBAuthorizationLevel.ADMIN);
-
         try {
             service.setAuthorizationLevel("non-existing@user", PBAuthorizationLevel.USER);
             fail();
@@ -42,12 +35,8 @@ public class TestSP_SetAuthorizationLevel extends AbstractSPTest
     public void shouldThrowIfRequesterIsInDifferentOrgThanSubject()
             throws Exception
     {
-        // switch user_1 to a different organization
-        service.addOrganization("test", null, StripeCustomerID.TEST.getString());
-        assertEquals(service.getAuthorizationLevel().get().getLevel(), PBAuthorizationLevel.ADMIN);
-
         try {
-            service.setAuthorizationLevel(USER_2.getString(), PBAuthorizationLevel.USER);
+            service.setAuthorizationLevel(USER_2.id().getString(), PBAuthorizationLevel.USER);
             fail();
         } catch (ExNoPerm e) {}
     }
@@ -56,17 +45,15 @@ public class TestSP_SetAuthorizationLevel extends AbstractSPTest
     public void shouldThrowIfRequesterIsNotAdmin()
             throws Exception
     {
-        service.setAuthorizationLevel(USER_2.getString(), PBAuthorizationLevel.ADMIN);
+        service.setAuthorizationLevel(USER_2.id().getString(), PBAuthorizationLevel.ADMIN);
     }
 
     @Test
     public void shouldThrowIfRequesterEqualsSubject()
             throws Exception
     {
-        setUserOneAsAdmin();
-
         try {
-            service.setAuthorizationLevel(USER_1.getString(), PBAuthorizationLevel.ADMIN);
+            service.setAuthorizationLevel(USER_1.id().getString(), PBAuthorizationLevel.ADMIN);
             fail();
         } catch (ExNoPerm e) {}
     }
@@ -75,25 +62,15 @@ public class TestSP_SetAuthorizationLevel extends AbstractSPTest
     public void shouldSetAuthLevel()
             throws Exception
     {
-        setUserOneAsAdmin();
-
         sqlTrans.begin();
-        assertEquals(udb.getLevel(USER_2), AuthorizationLevel.USER);
+        USER_2.setOrganization(USER_1.getOrganization(), AuthorizationLevel.USER);
+        assertEquals(USER_2.getLevel(), AuthorizationLevel.USER);
         sqlTrans.commit();
 
-        service.setAuthorizationLevel(USER_2.getString(), PBAuthorizationLevel.ADMIN);
+        service.setAuthorizationLevel(USER_2.id().getString(), PBAuthorizationLevel.ADMIN);
 
         sqlTrans.begin();
-        assertEquals(udb.getLevel(USER_2), AuthorizationLevel.ADMIN);
-        sqlTrans.commit();
-    }
-
-    private void setUserOneAsAdmin()
-            throws SQLException
-    {
-        sqlTrans.begin();
-        udb.setLevel(USER_1, AuthorizationLevel.ADMIN);
+        assertEquals(USER_2.getLevel(), AuthorizationLevel.ADMIN);
         sqlTrans.commit();
     }
-
 }

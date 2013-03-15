@@ -2,8 +2,8 @@ CREATE TABLE `sp_organization` (
   -- We use random IDs instead of auto increment IDs only to prevent competitors from figuring out
   -- total number of orgs. It is NOT a security measure.
   `o_id` INTEGER NOT NULL, -- corresponding Java type: OrganizationID
-  `o_name` VARCHAR(80) CHARSET utf8 NOT NULL, -- organization friendly name, displayed to the user.
-                                              -- May include spaces and all.
+  `o_name` VARCHAR(80) CHARSET utf8, -- organization friendly name, displayed to the user.
+                                     -- May include spaces and all.
   `o_contact_phone` VARCHAR(50), -- trying to leave enough room to handle international phone
                                  -- numbers we are not doing any very restrained validation
                                  -- on this input

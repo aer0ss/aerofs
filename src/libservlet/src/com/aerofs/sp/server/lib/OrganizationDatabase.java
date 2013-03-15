@@ -7,7 +7,6 @@ package com.aerofs.sp.server.lib;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.db.DBUtil;
 import com.aerofs.base.ex.ExAlreadyExist;
-import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
@@ -16,6 +15,8 @@ import com.aerofs.servlets.lib.db.sql.AbstractSQLDatabase;
 import com.aerofs.sp.server.lib.id.OrganizationID;
 import com.aerofs.sp.server.lib.id.StripeCustomerID;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
+import com.google.common.base.Objects;
+import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
@@ -59,22 +60,16 @@ public class OrganizationDatabase extends AbstractSQLDatabase
     /**
      * @throws ExAlreadyExist if the organization ID already exists
      */
-    public void insert(OrganizationID organizationId, String organizationName,
-            String organizationPhone, StripeCustomerID stripeCustomerId)
+    public void insert(OrganizationID organizationId)
             throws SQLException, ExAlreadyExist
     {
         checkNotNull(organizationId, "organizationId cannot be null");
-        checkNotNull(stripeCustomerId, "stripeCustomerId cannot be null");
 
         try {
             PreparedStatement ps = prepareStatement(
-                    DBUtil.insert(T_ORGANIZATION, C_O_ID, C_O_NAME, C_O_CONTACT_PHONE,
-                            C_O_STRIPE_CUSTOMER_ID));
+                    DBUtil.insert(T_ORGANIZATION, C_O_ID));
 
             ps.setInt(1, organizationId.getInt());
-            ps.setString(2, organizationName);
-            ps.setString(3, organizationPhone);
-            ps.setString(4, stripeCustomerId.getString());
             ps.executeUpdate();
         } catch (SQLException e) {
             throwOnConstraintViolation(e, "organization ID already exists");
@@ -104,7 +99,7 @@ public class OrganizationDatabase extends AbstractSQLDatabase
     {
         ResultSet rs = queryOrg(orgID, C_O_NAME);
         try {
-            return rs.getString(1);
+            return Objects.firstNonNull(rs.getString(1), "An Awesome Team");
         } finally {
             rs.close();
         }
@@ -124,17 +119,14 @@ public class OrganizationDatabase extends AbstractSQLDatabase
     }
 
     /**
-     * @return null if the organization doesn't have a phone number. Even though insert()
-     *      does enforce non-null numbers we have legacy organizations that don't have the number.
      * @throws ExNotFound if the organization doesn't exist
      */
-    @Nullable
-    public String getContactPhoneNullable(final OrganizationID orgID) throws SQLException, ExNotFound
+    public String getContactPhone(final OrganizationID orgID) throws SQLException, ExNotFound
     {
         final ResultSet rs = queryOrg(orgID, C_O_CONTACT_PHONE);
 
         try {
-            return rs.getString(1);
+            return Strings.nullToEmpty(rs.getString(1));
         } finally {
             rs.close();
         }
@@ -408,10 +400,8 @@ public class OrganizationDatabase extends AbstractSQLDatabase
      * @param offset offset into the list of all shared folders to return from
      */
     public Collection<SID> listSharedFolders(OrganizationID orgId, int maxResults, int offset)
-            throws SQLException, ExBadArgs
+            throws SQLException
     {
-        throwIfListingSharedFoldersNotSupported(orgId);
-
         PreparedStatement ps = prepareStatement(
                 selectWhere(T_AC, C_AC_USER_ID + "=? limit ? offset ?", C_AC_STORE_ID));
 
@@ -437,10 +427,8 @@ public class OrganizationDatabase extends AbstractSQLDatabase
      * TODO (WW) this method is O(# shared folders). It can be improved.
      */
     public int countSharedFolders(OrganizationID orgId)
-            throws ExBadArgs, SQLException
+            throws SQLException
     {
-        throwIfListingSharedFoldersNotSupported(orgId);
-
         PreparedStatement ps = prepareStatement(
                 selectWhere(T_AC, C_AC_USER_ID + "=?", C_AC_STORE_ID));
 
@@ -457,16 +445,6 @@ public class OrganizationDatabase extends AbstractSQLDatabase
             return count;
         } finally {
             rs.close();
-        }
-    }
-
-    private void throwIfListingSharedFoldersNotSupported(OrganizationID orgId)
-            throws ExBadArgs
-    {
-        // We use team server ids to identify shared folders belonging to an org. Since the default
-        // org doesn't have team server ids, we can't support querying the default org.
-        if (orgId.isDefault()) {
-            throw new ExBadArgs("listing shared folders in the default org is not supported");
         }
     }
 }

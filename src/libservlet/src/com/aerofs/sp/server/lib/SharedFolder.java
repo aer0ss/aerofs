@@ -21,10 +21,10 @@ import com.google.protobuf.ByteString;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -100,9 +100,11 @@ public class SharedFolder
     /**
      * Add the shared folder to db. Also add {@code owner} as the first owner.
      * @return A map of user IDs to epochs to be published via verkehr.
+     * @throws ExAlreadyExist if the store already exists
+     * @throws ExNotFound if the owner is not found
      */
     public Set<UserID> save(String folderName, User owner)
-            throws ExNotFound, SQLException, IOException, ExAlreadyExist
+            throws ExNotFound, SQLException, ExAlreadyExist
     {
         _f._db.insert(_sid, folderName);
 
@@ -196,10 +198,7 @@ public class SharedFolder
     private boolean addTeamServerACLImpl(User user)
             throws ExNotFound, SQLException, ExAlreadyExist
     {
-        Organization org = user.getOrganization();
-        if (org.isDefault()) return false;
-
-        User tsUser = _f._factUser.create(org.id().toTeamServerUserID());
+        User tsUser = user.getOrganization().getTeamServerUser();
         if (getMemberRoleNullable(tsUser) == null) {
             SubjectRolePair srp = new SubjectRolePair(tsUser.id(), Role.EDITOR);
             _f._db.insertMemberACL(_sid, user.id(), Collections.singletonList(srp));
@@ -214,17 +213,20 @@ public class SharedFolder
     {
         // retrieve the list of affected users _before_ performing the deletion, so that all the
         // users including the deleted ones will get notifications.
-        Set<UserID> affectedUsers = _f._db.getMembers(_sid);
+        Set<UserID> members = _f._db.getMembers(_sid);
 
         _f._db.deleteMemberOrPendingACL(_sid, subjects);
 
         for (UserID userID : subjects) {
-            deleteTeamServerACLImpl(_f._factUser.create(userID));
+            // delete the team server only if the user is a member
+            if (members.contains(userID)) {
+                deleteTeamServerACLImpl(_f._factUser.create(userID));
+            }
         }
 
         throwIfNoOwnerMemberOrPendingLeft();
 
-        return affectedUsers;
+        return members;
     }
 
     /**
@@ -250,7 +252,6 @@ public class SharedFolder
             throws SQLException, ExNotFound
     {
         Organization org = user.getOrganization();
-        if (org.isDefault()) return false;
 
         for (User otherUser : getMembers()) {
             if (otherUser.equals(user)) continue;
@@ -263,7 +264,7 @@ public class SharedFolder
                     Collections.singleton(org.id().toTeamServerUserID()));
         } catch (ExNotFound e) {
             // the team server id must exists.
-            assert false : this + " " + user;
+            assert false : this + " doesn't have team server ACL for " + user;
         }
 
         return true;

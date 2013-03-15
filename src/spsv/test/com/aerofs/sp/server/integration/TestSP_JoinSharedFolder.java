@@ -5,19 +5,14 @@
 package com.aerofs.sp.server.integration;
 
 import com.aerofs.base.id.SID;
-import com.aerofs.lib.Param;
 import com.aerofs.lib.acl.Role;
 import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.proto.Common.PBFolderInvitation;
-import org.junit.Before;
 import org.junit.Test;
 
-import java.util.Set;
-
 import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertTrue;
 import static junit.framework.Assert.fail;
 
 /**
@@ -26,44 +21,33 @@ import static junit.framework.Assert.fail;
  */
 public class TestSP_JoinSharedFolder extends AbstractSPFolderPermissionTest
 {
-    Set<String> published;
-
-    @Before
-    public void setupTestSPShareFolder()
-    {
-        published = mockAndCaptureVerkehrPublish();
-    }
-
     @Test
     public void shouldJoinFolder() throws Exception
     {
-        shareFolder(USER_1, TEST_SID_1, USER_2, Role.EDITOR);
+        shareFolder(USER_1, SID_1, USER_2, Role.EDITOR);
 
-        assertEquals(1, published.size());
-        assertTrue(published.contains(Param.ACL_CHANNEL_TOPIC_PREFIX + USER_1.getString()));
-        published.clear();
+        assertVerkehrPublishOnlyContains(USER_1);
+        clearVerkehrPublish();
 
-        joinSharedFolder(USER_2, TEST_SID_1);
+        joinSharedFolder(USER_2, SID_1);
 
-        assertEquals(2, published.size());
-        assertTrue(published.contains(Param.ACL_CHANNEL_TOPIC_PREFIX + USER_1.getString()));
-        assertTrue(published.contains(Param.ACL_CHANNEL_TOPIC_PREFIX + USER_2.getString()));
+        assertVerkehrPublishOnlyContains(USER_1, USER_2);
     }
 
     @Test
     public void shouldThrowExAlreadyExistWhenJoinFolderTwice() throws Exception
     {
-        shareFolder(USER_1, TEST_SID_1, USER_2, Role.EDITOR);
-        joinSharedFolder(USER_2, TEST_SID_1);
-        published.clear();
+        shareFolder(USER_1, SID_1, USER_2, Role.EDITOR);
+        joinSharedFolder(USER_2, SID_1);
+        clearVerkehrPublish();
 
         try {
-            joinSharedFolder(USER_2, TEST_SID_1);
+            joinSharedFolder(USER_2, SID_1);
             fail();
         } catch (ExAlreadyExist e) {
             sqlTrans.handleException();
         }
-        assertTrue(published.isEmpty());
+        assertVerkehrPublishIsEmpty();
     }
 
     @Test
@@ -75,33 +59,33 @@ public class TestSP_JoinSharedFolder extends AbstractSPFolderPermissionTest
         } catch (ExNotFound e) {
             sqlTrans.handleException();
         }
-        assertTrue(published.isEmpty());
+        assertVerkehrPublishIsEmpty();
     }
 
     @Test
     public void shouldThrowExNoPermWhenTryingToJoinWithoutBeingInvited() throws Exception
     {
-        shareFolder(USER_1, TEST_SID_1, USER_2, Role.EDITOR);
-        published.clear();
+        shareFolder(USER_1, SID_1, USER_2, Role.EDITOR);
+        clearVerkehrPublish();
 
         try {
-            joinSharedFolder(USER_3, TEST_SID_1);
+            joinSharedFolder(USER_3, SID_1);
             fail();
         } catch (ExNoPerm e) {
             sqlTrans.handleException();
         }
-        assertTrue(published.isEmpty());
+        assertVerkehrPublishIsEmpty();
     }
 
     @Test
     public void shouldIgnoreInvitation() throws Exception
     {
-        shareFolder(USER_1, TEST_SID_1, USER_2, Role.EDITOR);
+        shareFolder(USER_1, SID_1, USER_2, Role.EDITOR);
 
         setSessionUser(USER_2);
         PBFolderInvitation inv = service.listPendingFolderInvitations().get().getInvitation(0);
-        assertEquals(USER_1.getString(), inv.getSharer());
-        assertEquals(TEST_SID_1, new SID(inv.getShareId()));
+        assertEquals(USER_1.id().getString(), inv.getSharer());
+        assertEquals(SID_1, new SID(inv.getShareId()));
 
         service.ignoreSharedFolderInvitation(inv.getShareId());
     }
@@ -109,13 +93,15 @@ public class TestSP_JoinSharedFolder extends AbstractSPFolderPermissionTest
     @Test
     public void shouldThrowExNoPermWhenLastAdminTriesToIgnoreInvitation() throws Exception
     {
-        shareFolder(USER_1, TEST_SID_1, USER_2, Role.EDITOR);
+        shareFolder(USER_1, SID_1, USER_2, Role.EDITOR);
 
         setSessionUser(USER_1);
-        service.leaveSharedFolder(TEST_SID_1.toPB());
+
+        // Leave first to avoid the "You have already accepted this invitation" error
+        service.leaveSharedFolder(SID_1.toPB());
 
         try {
-            service.ignoreSharedFolderInvitation(TEST_SID_1.toPB());
+            service.ignoreSharedFolderInvitation(SID_1.toPB());
             fail();
         } catch (ExNoPerm e) {
             sqlTrans.handleException();
@@ -127,7 +113,7 @@ public class TestSP_JoinSharedFolder extends AbstractSPFolderPermissionTest
     {
         setSessionUser(USER_1);
         try {
-            service.ignoreSharedFolderInvitation(TEST_SID_1.toPB());
+            service.ignoreSharedFolderInvitation(SID_1.toPB());
             fail();
         } catch (ExNotFound e) {
             sqlTrans.handleException();
@@ -137,11 +123,11 @@ public class TestSP_JoinSharedFolder extends AbstractSPFolderPermissionTest
     @Test
     public void shouldThrowExNoPermWhenTryingToIgnoreInvitationWithoutBeingInvited() throws Exception
     {
-        shareFolder(USER_1, TEST_SID_1, USER_2, Role.EDITOR);
+        shareFolder(USER_1, SID_1, USER_2, Role.EDITOR);
 
         setSessionUser(USER_3);
         try {
-            service.ignoreSharedFolderInvitation(TEST_SID_1.toPB());
+            service.ignoreSharedFolderInvitation(SID_1.toPB());
             fail();
         } catch (ExNoPerm e) {
             sqlTrans.handleException();
@@ -151,11 +137,11 @@ public class TestSP_JoinSharedFolder extends AbstractSPFolderPermissionTest
     @Test
     public void shouldThrowExNotFoundWhenTryingToIgnoreAlreadyAcceptedInvitation() throws Exception
     {
-        shareFolder(USER_1, TEST_SID_1, USER_2, Role.EDITOR);
+        shareFolder(USER_1, SID_1, USER_2, Role.EDITOR);
 
         setSessionUser(USER_1);
         try {
-            service.ignoreSharedFolderInvitation(TEST_SID_1.toPB());
+            service.ignoreSharedFolderInvitation(SID_1.toPB());
             fail();
         } catch (ExAlreadyExist e) {
             sqlTrans.handleException();

@@ -35,8 +35,6 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.sp.client.SPClientFactory;
-import com.aerofs.sv.client.SVClient;
-import com.aerofs.proto.Sv;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.UIUtil;
 

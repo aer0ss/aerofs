@@ -4,7 +4,6 @@
 
 package com.aerofs.servlets.lib.db;
 
-import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UniqueID;
 import com.aerofs.proto.Cmd.CommandType;

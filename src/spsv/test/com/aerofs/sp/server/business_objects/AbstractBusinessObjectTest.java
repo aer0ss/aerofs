@@ -7,7 +7,6 @@ package com.aerofs.sp.server.business_objects;
 import com.aerofs.sp.server.lib.cert.CertificateDatabase;
 import com.aerofs.sp.server.lib.cert.CertificateGenerator;
 import com.aerofs.sp.server.lib.device.DeviceDatabase;
-import com.aerofs.sp.server.lib.id.StripeCustomerID;
 import com.aerofs.lib.FullName;
 import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.base.ex.ExNoPerm;
@@ -79,18 +78,17 @@ abstract class AbstractBusinessObjectTest extends AbstractAutoTransactionedTestW
         return factUser.create(id);
     }
 
-    protected void saveUser(User user, Organization org)
-            throws IOException, SQLException, ExAlreadyExist, ExNoPerm
+    protected void saveUser(User user)
+            throws Exception
     {
-        user.save(new byte[0], new FullName("first", "last"), org);
+        user.save(new byte[0], new FullName("first", "last"));
     }
 
     protected User saveUser()
-            throws IOException, SQLException, ExAlreadyExist, ExNoPerm, ExNotFound
+            throws Exception
     {
         User user = newUser();
-        Organization org = saveOrganization();
-        user.save(new byte[0], new FullName("first", "last"), org);
+        saveUser(user);
         return user;
     }
 
@@ -102,9 +100,9 @@ abstract class AbstractBusinessObjectTest extends AbstractAutoTransactionedTestW
     }
 
     protected Organization saveOrganization()
-            throws ExNoPerm, IOException, ExNotFound, SQLException
+            throws Exception
     {
-        return factOrg.save("test org", null, StripeCustomerID.TEST);
+        return factOrg.save();
     }
 
     SharedFolder newSharedFolder()

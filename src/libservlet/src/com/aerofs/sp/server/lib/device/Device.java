@@ -158,12 +158,14 @@ public class Device
     }
 
     /**
-     * Add the device to the db, rename using Util.nextName() if a device with the same name exists.
+     * Add the device to the db
+     * @return this device
      */
-    public void save(User owner, String osFamily, String osName, String deviceName)
+    public Device save(User owner, String osFamily, String osName, String deviceName)
             throws SQLException, ExDeviceIDAlreadyExists
     {
         _f._db.insertDevice(_id, owner.id(), osFamily, osName, deviceName);
+        return this;
     }
 
     public void delete()

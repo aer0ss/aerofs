@@ -329,14 +329,9 @@ service SPService {
     rpc SetAuthorizationLevel(SetAuthorizationLevelCall) returns(Void);
 
     /**
-     * Create a new organization
-     *
-     * Required Auth Level: (see below)
-     *
-     * Throws:
-     *   ExNoPerm if the user calling is not a member of the default organization or is not an admin
+     * WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE: remove this.
      */
-    rpc AddOrganization(AddOrganizationCall) returns(Void);
+    rpc Noop3(Void) returns(Void);
 
     /////////
     // these are internal API calls only (meant to be called by the daemon only)
@@ -852,12 +847,6 @@ message SetAuthorizationLevelCall {
 enum PBAuthorizationLevel {
     USER       = 0;
     ADMIN      = 1;
-}
-
-message AddOrganizationCall {
-    required string organization_name = 1;
-    required string organization_contact_phone = 2;
-    required string stripe_customer_id = 3;
 }
 
 message SendPasswordResetEmailCall {

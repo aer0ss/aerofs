@@ -62,13 +62,14 @@ public class TestSP_EpochCommandQueue extends AbstractSPTest
         sqlTrans.begin();
 
         _device = factDevice.create(new DID(UniqueID.generate()));
+
         User user = factUser.create(UserID.fromExternal("something@email.com"));
-        user.save(new byte[0], new FullName("First", "Last"), factOrg.getDefault());
+        user.save(new byte[0], new FullName("First", "Last"));
         _device.save(user, "", "", "Test Device");
 
         sqlTrans.commit();
 
-        setSessionUser(user.id());
+        setSessionUser(user);
         _payloads = mockAndCaptureVerkehrDeliverPayload();
     }
 

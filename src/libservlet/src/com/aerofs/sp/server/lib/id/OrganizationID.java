@@ -15,9 +15,6 @@ import com.aerofs.base.id.UserID;
  */
 public class OrganizationID extends IntegerID
 {
-    // The default organization value must be identical to the default id specified in sp.sql.
-    static public OrganizationID DEFAULT = new OrganizationID(0);
-
     static {
         // assert the team server prefix is an invalid email address char. This check can be done
         // in UserID. But I don't really want to slow down client launch time any further.
@@ -40,10 +37,5 @@ public class OrganizationID extends IntegerID
     public String toString()
     {
         return Integer.toHexString(getInt());
-    }
-
-    public boolean isDefault()
-    {
-        return equals(DEFAULT);
     }
 }

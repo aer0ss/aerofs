@@ -17,7 +17,7 @@ public class TestSVEmailAddEvent extends AbstractSVReactorTest
     private static final Event EVENT = Event.UNSUBSCRIBE;
     private static final String DESC = "description";
     private static final String CATEGORY = "test_category";
-    private static final Long TIMESTAMP = Long.valueOf(0);
+    private static final Long TIMESTAMP = 0L;
 
     @Test
     public void shouldAddEventToDatabase()

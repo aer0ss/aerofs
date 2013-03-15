@@ -7,6 +7,8 @@ package com.aerofs.sp.server.integration;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UniqueID;
 import com.aerofs.base.id.UserID;
+import com.aerofs.sp.server.lib.device.Device;
+import com.aerofs.sp.server.lib.user.User;
 import org.junit.Before;
 
 /**
@@ -18,11 +20,11 @@ public class AbstractSPCertificateBasedTest extends AbstractSPTest
 {
     // Private static finals.
     protected static final String RETURNED_CERT = "returned_cert";
-    protected static final UserID TEST_1_USER = UserID.fromInternal("test1@aerofs.com");
-    protected static final UserID TEST_2_USER = UserID.fromInternal("test2@aerofs.com");
+    protected final User TEST_1_USER = factUser.create(UserID.fromInternal("test1@aerofs.com"));
+    protected final User TEST_2_USER = factUser.create(UserID.fromInternal("test2@aerofs.com"));
 
     // Device ID that the tests will work with.
-    protected DID _did = new DID(UniqueID.generate());
+    protected Device device = factDevice.create(new DID(UniqueID.generate()));
 
     // The serial number we will use for mocking.
     protected static long _lastSerialNumber = 564645L;
@@ -34,8 +36,8 @@ public class AbstractSPCertificateBasedTest extends AbstractSPTest
     {
         l.info("Add test users to sp_user to satisfy foreign key constraints for d_owner_id");
         sqlTrans.begin();
-        addTestUser(TEST_1_USER);
-        addTestUser(TEST_2_USER);
+        saveUser(TEST_1_USER);
+        saveUser(TEST_2_USER);
         sqlTrans.commit();
 
         mockCertificateGeneratorAndIncrementSerialNumber();

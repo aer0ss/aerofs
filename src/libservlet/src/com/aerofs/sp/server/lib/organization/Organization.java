@@ -1,15 +1,12 @@
 package com.aerofs.sp.server.lib.organization;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.lib.ex.ExNoAdminForNonEmptyTeam;
 import com.aerofs.sp.server.lib.OrganizationInvitationDatabase;
 import com.aerofs.sp.server.lib.id.OrganizationID;
 import com.aerofs.sp.server.lib.id.StripeCustomerID;
-import com.aerofs.lib.FullName;
 import com.aerofs.lib.Util;
 import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.base.ex.ExBadArgs;
-import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
@@ -25,7 +22,6 @@ import org.slf4j.Logger;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
-import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.List;
@@ -36,8 +32,6 @@ public class Organization
 
     public static class Factory
     {
-        private final Organization _default = create(OrganizationID.DEFAULT);
-
         private OrganizationDatabase _odb;
         private OrganizationInvitationDatabase _oidb;
         private User.Factory _factUser;
@@ -62,46 +56,29 @@ public class Organization
         }
 
         /**
-         * @return the default organization
-         */
-        public Organization getDefault()
-        {
-            return _default;
-        }
-
-        /**
          * Add a new organization as well as its team server account to the DB
          */
-        public Organization save(@Nonnull String organizationName, String organizationPhone,
-                StripeCustomerID stripeCustomer)
-                throws SQLException, ExNoPerm, IOException, ExNotFound
+        public Organization save()
+                throws SQLException, ExAlreadyExist
         {
             while (true) {
                 // Use a random ID only to prevent competitors from figuring out total number of
                 // orgs. It is NOT a security measure.
                 OrganizationID organizationID = new OrganizationID(Util.rand().nextInt());
                 try {
-                    _odb.insert(organizationID, organizationName, organizationPhone, stripeCustomer);
-                    Organization org = create(organizationID);
-                    saveTeamServerUser(org);
-                    l.info(org + " created");
-                    return org;
+                    _odb.insert(organizationID);
                 } catch (ExAlreadyExist e) {
                     // Ideally we should use return value rather than exceptions on expected
                     // conditions.
                     l.info("duplicate organization id " + organizationID + ". trying a new one.");
+                    continue;
                 }
+
+                Organization org = create(organizationID);
+                _factUser.saveTeamServerUser(org);
+                l.info(org + " created");
+                return org;
             }
-        }
-
-        private void saveTeamServerUser(Organization org)
-                throws ExNoPerm, IOException, ExNotFound, SQLException, ExAlreadyExist
-        {
-            User tsUser = _factUser.create(org.id().toTeamServerUserID());
-
-            // Use an invalid password hash to prevent attackers from logging in as Team Server
-            // using _any_ password. Also see C.MULTIUSER_LOCAL_PASSWORD.
-            tsUser.save(new byte[0], new FullName("Team", "Server"), org);
         }
     }
 
@@ -117,11 +94,6 @@ public class Organization
     public OrganizationID id()
     {
         return _id;
-    }
-
-    public boolean isDefault()
-    {
-        return _id.isDefault();
     }
 
     public String getName()
@@ -209,12 +181,9 @@ public class Organization
         return new UsersAndQueryCount(userIDs, count);
     }
 
-    public void throwIfNotEmptyWithNoAdmins()
-            throws ExNoAdminForNonEmptyTeam, SQLException, ExNotFound
+    public User getTeamServerUser()
     {
-        if (countUsers() > 0 && countUsers(AuthorizationLevel.ADMIN) == 0) {
-            throw new ExNoAdminForNonEmptyTeam(this.toString());
-        }
+        return _f._factUser.create(id().toTeamServerUserID());
     }
 
     public int countUsers() throws SQLException
@@ -266,13 +235,13 @@ public class Organization
     }
 
     public int countSharedFolders()
-            throws SQLException, ExBadArgs
+            throws SQLException
     {
         return _f._odb.countSharedFolders(_id);
     }
 
     public Collection<SharedFolder> listSharedFolders(int maxResults, int offset)
-            throws SQLException, ExBadArgs
+            throws SQLException
     {
         Builder<SharedFolder> builder = ImmutableList.builder();
         for (SID sid : _f._odb.listSharedFolders(_id, maxResults, offset)) {
@@ -294,12 +263,10 @@ public class Organization
     }
 
     /**
-     * @return null if the organization doesn't have a phone number
      * @throws ExNotFound if the organization doesn't exist
      */
-    @Nullable
-    public String getContactPhoneNullable() throws SQLException, ExNotFound
+    public String getContactPhone() throws SQLException, ExNotFound
     {
-        return _f._odb.getContactPhoneNullable(_id);
+        return _f._odb.getContactPhone(_id);
     }
 }

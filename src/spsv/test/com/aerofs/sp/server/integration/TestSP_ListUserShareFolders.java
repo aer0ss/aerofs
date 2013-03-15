@@ -10,8 +10,8 @@ import com.aerofs.lib.acl.Role;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.proto.Sp.PBSharedFolder;
 import com.aerofs.proto.Sp.PBSharedFolder.PBUserAndRole;
-import com.aerofs.sp.server.lib.id.StripeCustomerID;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
+import com.aerofs.sp.server.lib.user.User;
 import com.google.common.collect.Lists;
 import org.junit.Before;
 import org.junit.Test;
@@ -39,7 +39,7 @@ public class TestSP_ListUserShareFolders extends AbstractSPFolderPermissionTest
     {
         setSessionUser(USER_1);
 
-        service.listUserSharedFolders(USER_2.getString());
+        service.listUserSharedFolders(USER_2.id().getString());
     }
 
     @Test(expected = ExNoPerm.class)
@@ -57,8 +57,6 @@ public class TestSP_ListUserShareFolders extends AbstractSPFolderPermissionTest
     {
         setSessionUser(USER_1);
 
-        addOrganization();
-
         service.listUserSharedFolders("non-existing");
     }
 
@@ -68,9 +66,7 @@ public class TestSP_ListUserShareFolders extends AbstractSPFolderPermissionTest
     {
         setSessionUser(USER_1);
 
-        addOrganization();
-
-        service.listUserSharedFolders(USER_2.getString());
+        service.listUserSharedFolders(USER_2.id().getString());
     }
 
     @Test
@@ -108,14 +104,14 @@ public class TestSP_ListUserShareFolders extends AbstractSPFolderPermissionTest
         assertAllSharedFoldersHaveUser(queryCurrentUser(), USER_1);
     }
 
-    private void assertAllSharedFoldersHaveUser(Collection<PBSharedFolder> sfs, UserID userID)
+    private void assertAllSharedFoldersHaveUser(Collection<PBSharedFolder> sfs, User user)
     {
         assertFalse(sfs.isEmpty());
 
         for (PBSharedFolder sf : sfs) {
             boolean hasUser = false;
             for (PBUserAndRole ur : sf.getUserAndRoleList()) {
-                if (UserID.fromInternal(ur.getUser().getUserEmail()).equals(userID)) {
+                if (UserID.fromInternal(ur.getUser().getUserEmail()).equals(user.id())) {
                     hasUser = true;
                 }
             }
@@ -126,18 +122,15 @@ public class TestSP_ListUserShareFolders extends AbstractSPFolderPermissionTest
     private void createSharedFolders()
             throws Exception
     {
-        shareAndJoinFolder(USER_1, TEST_SID_1, USER_2, Role.EDITOR);
+        shareAndJoinFolder(USER_1, SID_1, USER_2, Role.EDITOR);
 
-        shareAndJoinFolder(USER_2, TEST_SID_2, USER_3, Role.EDITOR);
+        shareAndJoinFolder(USER_2, SID_2, USER_3, Role.EDITOR);
 
-        // make user 1 an org admin
         setSessionUser(USER_1);
-        addOrganization();
 
         // add user 2 to the org
         sqlTrans.begin();
-        factUser.create(USER_2).setOrganization(factUser.create(USER_1).getOrganization(),
-                AuthorizationLevel.USER);
+        USER_2.setOrganization(USER_1.getOrganization(), AuthorizationLevel.USER);
         sqlTrans.commit();
     }
 
@@ -146,7 +139,7 @@ public class TestSP_ListUserShareFolders extends AbstractSPFolderPermissionTest
     {
         setSessionUser(USER_1);
 
-        return service.listUserSharedFolders(USER_2.getString()).get().getSharedFolderList();
+        return service.listUserSharedFolders(USER_2.id().getString()).get().getSharedFolderList();
     }
 
     private List<PBSharedFolder> queryCurrentUser()
@@ -154,7 +147,7 @@ public class TestSP_ListUserShareFolders extends AbstractSPFolderPermissionTest
     {
         setSessionUser(USER_1);
 
-        return service.listUserSharedFolders(USER_1.getString()).get().getSharedFolderList();
+        return service.listUserSharedFolders(USER_1.id().getString()).get().getSharedFolderList();
     }
 
     private List<PBSharedFolder> queryCurrentAndOtherUsers()
@@ -164,10 +157,5 @@ public class TestSP_ListUserShareFolders extends AbstractSPFolderPermissionTest
         list.addAll(queryCurrentUser());
         list.addAll(queryOtherUser());
         return list;
-    }
-
-    private void addOrganization() throws Exception
-    {
-        service.addOrganization("test org", null, StripeCustomerID.TEST.getString());
     }
 }

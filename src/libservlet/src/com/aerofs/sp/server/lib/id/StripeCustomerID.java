@@ -5,7 +5,6 @@
 package com.aerofs.sp.server.lib.id;
 
 import com.aerofs.base.id.StringID;
-import com.google.common.annotations.VisibleForTesting;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -13,12 +12,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 // should be generic instead of type specific
 public class StripeCustomerID extends StringID
 {
-    // TODO (eric) tests in muliple jar's depend on this value, we do not have test-jars setup properly
-    // so I can not move this to the test package at this time.
-    // http://maven.apache.org/guides/mini/guide-attached-tests.html
-    @VisibleForTesting
-    public static final StripeCustomerID TEST = create("cus_17GQKmjD4CqCcM");
-
     private StripeCustomerID(final String stripeCustomerId)
     {
         super(stripeCustomerId);

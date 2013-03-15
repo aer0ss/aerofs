@@ -4,35 +4,24 @@
 
 package com.aerofs.sp.server.business_objects;
 
-import com.aerofs.sp.server.lib.id.StripeCustomerID;
-import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.sp.server.lib.id.OrganizationID;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.user.User;
 import org.junit.Test;
 
-import java.io.IOException;
 import java.sql.SQLException;
 
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertTrue;
-import static org.junit.Assert.assertFalse;
 
 public class TestOrganization extends AbstractBusinessObjectTest
 {
     @Test
-    public void saveOrganization_shouldNeverCreateDefaultOrganization()
-            throws ExNoPerm, IOException, ExNotFound, SQLException
-    {
-        assertFalse(save().isDefault());
-    }
-
-    @Test
     public void saveOrganization_shouldAddTeamServerUser()
-            throws ExNoPerm, IOException, ExNotFound, SQLException
+            throws Exception
     {
-        User tsUser = factUser.create(save().id().toTeamServerUserID());
+        User tsUser = save().getTeamServerUser();
 
         assertTrue(tsUser.exists());
     }
@@ -54,7 +43,7 @@ public class TestOrganization extends AbstractBusinessObjectTest
 
     @Test
     public void getName_shouldReturnSetName()
-            throws ExNoPerm, IOException, ExNotFound, SQLException
+            throws Exception
     {
         Organization org = save();
 
@@ -64,8 +53,8 @@ public class TestOrganization extends AbstractBusinessObjectTest
     }
 
     private Organization save()
-            throws ExNoPerm, IOException, ExNotFound, SQLException
+            throws Exception
     {
-        return factOrg.save("test", null, StripeCustomerID.TEST);
+        return factOrg.save();
     }
 }
