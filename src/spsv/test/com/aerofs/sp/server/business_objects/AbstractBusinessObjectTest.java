@@ -85,6 +85,15 @@ abstract class AbstractBusinessObjectTest extends AbstractAutoTransactionedTestW
         user.save(new byte[0], new FullName("first", "last"), org);
     }
 
+    protected User saveUser()
+            throws IOException, SQLException, ExAlreadyExist, ExNoPerm, ExNotFound
+    {
+        User user = newUser();
+        Organization org = saveOrganization();
+        user.save(new byte[0], new FullName("first", "last"), org);
+        return user;
+    }
+
     private int nextOrganizationID = 123;
 
     protected Organization newOrganization()

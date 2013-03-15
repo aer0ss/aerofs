@@ -1322,8 +1322,8 @@ public class SPService implements ISPService
             throw new ExAlreadyExist();
         }
 
-        Set<UserID> users = accepter.setOrganization(invite.getOrganization());
-        accepter.setLevel(AuthorizationLevel.USER);
+        Set<UserID> users = accepter.setOrganization(invite.getOrganization(),
+                AuthorizationLevel.USER);
 
         invite.delete();
 

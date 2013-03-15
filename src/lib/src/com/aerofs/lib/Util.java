@@ -9,10 +9,12 @@ import com.aerofs.lib.FileUtil.FileName;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.base.ex.ExTimeout;
+import com.aerofs.lib.ex.ExAlreadyInvited;
 import com.aerofs.lib.ex.ExChildAlreadyShared;
 import com.aerofs.lib.ex.ExDeviceIDAlreadyExists;
 import com.aerofs.lib.ex.ExDeviceOffline;
 import com.aerofs.lib.ex.ExIndexing;
+import com.aerofs.lib.ex.ExNoAdminForNonEmptyTeam;
 import com.aerofs.lib.ex.ExNotDir;
 import com.aerofs.lib.ex.ExNotFile;
 import com.aerofs.lib.ex.ExParentAlreadyShared;
@@ -80,14 +82,16 @@ public abstract class Util
         // Register exception types from lib
         Exceptions.registerExceptionTypes(
                 new ImmutableMap.Builder<Type, Class<? extends AbstractExWirable>>()
-                        .put(Type.DEVICE_ID_ALREADY_EXISTS,    ExDeviceIDAlreadyExists.class)
-                        .put(Type.INDEXING,                    ExIndexing.class)
-                        .put(Type.PARENT_ALREADY_SHARED,       ExParentAlreadyShared.class)
-                        .put(Type.CHILD_ALREADY_SHARED,        ExChildAlreadyShared.class)
-                        .put(Type.DEVICE_OFFLINE,              ExDeviceOffline.class)
-                        .put(Type.NOT_DIR,                     ExNotDir.class)
-                        .put(Type.NOT_FILE,                    ExNotFile.class)
-                        .put(Type.UI_MESSAGE,                  ExUIMessage.class)
+                        .put(Type.DEVICE_ID_ALREADY_EXISTS,     ExDeviceIDAlreadyExists.class)
+                        .put(Type.ALREADY_INVITED,              ExAlreadyInvited.class)
+                        .put(Type.NO_ADMIN_FOR_NON_EMPTY_TEAM,  ExNoAdminForNonEmptyTeam.class)
+                        .put(Type.INDEXING,                     ExIndexing.class)
+                        .put(Type.PARENT_ALREADY_SHARED,        ExParentAlreadyShared.class)
+                        .put(Type.CHILD_ALREADY_SHARED,         ExChildAlreadyShared.class)
+                        .put(Type.DEVICE_OFFLINE,               ExDeviceOffline.class)
+                        .put(Type.NOT_DIR,                      ExNotDir.class)
+                        .put(Type.NOT_FILE,                     ExNotFile.class)
+                        .put(Type.UI_MESSAGE,                   ExUIMessage.class)
                         .build());
 
         s_exceptionsRegistered = true;

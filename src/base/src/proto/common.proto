@@ -77,16 +77,19 @@ message PBException {
         DEVICE_OFFLINE = 14;
         CHILD_ALREADY_SHARED = 16;
         PARENT_ALREADY_SHARED = 17;
-        INDEXING = 202;  // daemon is busy indexing root anchor on first launch
+        // daemon is busy indexing root anchor on first launch
+        INDEXING = 202;
 
         // Controller exceptions
         LAUNCH_ABORTED = 300;
-        UI_MESSAGE = 18;        // This type requires the UI to display the error message as is,
-                                // without adding extra text.
+        // This type requires the UI to display the error message as is, without adding extra text.
+        UI_MESSAGE = 18;
 
         // SP exceptions
         DEVICE_ID_ALREADY_EXISTS = 401;
         ALREADY_INVITED = 19;
+        // The only admin of a team is going to leave the team with one or more non-admin members.
+        NO_ADMIN_FOR_NON_EMPTY_TEAM = 402;
     }
 
     required Type type = 1;

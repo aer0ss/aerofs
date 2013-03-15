@@ -11,6 +11,7 @@ import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.proto.Sp.PBSharedFolder;
 import com.aerofs.proto.Sp.PBSharedFolder.PBUserAndRole;
 import com.aerofs.sp.server.lib.id.StripeCustomerID;
+import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.google.common.collect.Lists;
 import org.junit.Before;
 import org.junit.Test;
@@ -135,7 +136,8 @@ public class TestSP_ListUserShareFolders extends AbstractSPFolderPermissionTest
 
         // add user 2 to the org
         sqlTrans.begin();
-        factUser.create(USER_2).setOrganization(factUser.create(USER_1).getOrganization());
+        factUser.create(USER_2).setOrganization(factUser.create(USER_1).getOrganization(),
+                AuthorizationLevel.USER);
         sqlTrans.commit();
     }
 

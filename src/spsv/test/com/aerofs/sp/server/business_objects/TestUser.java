@@ -6,7 +6,6 @@ package com.aerofs.sp.server.business_objects;
 
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UniqueID;
-import com.aerofs.sp.server.lib.id.StripeCustomerID;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.acl.Role;
 import com.aerofs.base.ex.ExAlreadyExist;
@@ -131,31 +130,9 @@ public class TestUser extends AbstractBusinessObjectTest
         newUser().signIn(new byte[0]);
     }
 
-    @Test(expected = ExNoPerm.class)
-    public void shouldThrowIfUserNoPermissionOnAddAndMoveToOrg()
-            throws ExNoPerm, IOException, ExNotFound, SQLException, ExAlreadyExist
-    {
-        Organization org = saveOrganization();
-        User user = newUser();
-        saveUser(user, org);
-        user.addAndMoveToOrganization("test", null, StripeCustomerID.TEST);
-    }
-
-    @Test
-    public void shouldSetUserAsAdminOnAddAndMoveToNewOrganization()
-            throws ExNoPerm, IOException, ExNotFound, SQLException, ExAlreadyExist
-    {
-        User user = newUser();
-        saveUser(user, factOrg.getDefault());
-        user.addAndMoveToOrganization("test", null, StripeCustomerID.TEST);
-
-        assertFalse(user.getOrganization().isDefault());
-        assertEquals(user.getLevel(), AuthorizationLevel.ADMIN);
-    }
-
     @Test
     public void shouldUpdateTeamServerACLsOnSetOrg()
-            throws ExNoPerm, IOException, ExNotFound, SQLException, ExAlreadyExist
+            throws Exception
     {
         User user = newUser();
         Organization orgOld = saveOrganization();
@@ -175,7 +152,7 @@ public class TestUser extends AbstractBusinessObjectTest
         Organization orgNew = saveOrganization();
         User tsUserNew = newUser(orgNew.id().toTeamServerUserID());
 
-        user.setOrganization(orgNew);
+        user.setOrganization(orgNew, AuthorizationLevel.USER);
 
         assertNull(sfRoot.getMemberRoleNullable(tsUserOld));
         assertNull(sf1.getMemberRoleNullable(tsUserOld));

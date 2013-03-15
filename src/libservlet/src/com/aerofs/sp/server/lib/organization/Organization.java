@@ -1,6 +1,7 @@
 package com.aerofs.sp.server.lib.organization;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.lib.ex.ExNoAdminForNonEmptyTeam;
 import com.aerofs.sp.server.lib.OrganizationInvitationDatabase;
 import com.aerofs.sp.server.lib.id.OrganizationID;
 import com.aerofs.sp.server.lib.id.StripeCustomerID;
@@ -206,6 +207,14 @@ public class Organization
         }
 
         return new UsersAndQueryCount(userIDs, count);
+    }
+
+    public void throwIfNotEmptyWithNoAdmins()
+            throws ExNoAdminForNonEmptyTeam, SQLException, ExNotFound
+    {
+        if (countUsers() > 0 && countUsers(AuthorizationLevel.ADMIN) == 0) {
+            throw new ExNoAdminForNonEmptyTeam(this.toString());
+        }
     }
 
     public int countUsers() throws SQLException

@@ -37,7 +37,7 @@ import com.aerofs.sp.server.lib.id.OrganizationID;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.organization.OrganizationInvitation;
 import com.aerofs.sp.server.lib.session.CertificateAuthenticator;
-import com.aerofs.sp.server.lib.user.AuthorizationLevel;
+import static com.aerofs.sp.server.lib.user.AuthorizationLevel.*;
 import com.aerofs.sp.server.lib.user.User;
 import com.aerofs.sp.server.session.SPActiveTomcatSessionTracker;
 import com.aerofs.sp.server.session.SPActiveUserSessionTracker;
@@ -157,14 +157,27 @@ public class AbstractSPTest extends AbstractTestWithDatabase
         service.setSessionInvalidator(sessionInvalidator);
         service.setUserTracker(userSessionTracker);
 
+        ///////////////////////////////////////////////////////////////////////////
+        // The method to populate the database below is outdated. See methods in
+        // AbstractBusinessObjectTest for a better approach
+        ///////////////////////////////////////////////////////////////////////////
+
         // Add all the users to the db.
         sqlTrans.begin();
+
         factUser.create(USER_1).save(USER_1_CRED,
                 new FullName(USER_1.getString(), USER_1.getString()), factOrg.getDefault());
         factUser.create(USER_2).save(USER_2_CRED,
                 new FullName(USER_2.getString(), USER_2.getString()), factOrg.getDefault());
         factUser.create(USER_3).save(USER_3_CRED,
                 new FullName(USER_3.getString(), USER_3.getString()), factOrg.getDefault());
+
+        // TODO (WW) it will not be necessary after the default orgs are removed.
+        User userAdmin = factUser.createFromExternalID("admin_user");
+        userAdmin.save(USER_1_CRED,
+                new FullName(USER_1.getString(), USER_1.getString()), factOrg.getDefault());
+        userAdmin.setLevel(ADMIN);
+
         sqlTrans.commit();
     }
 
@@ -172,7 +185,7 @@ public class AbstractSPTest extends AbstractTestWithDatabase
             throws ExAlreadyExist, SQLException
     {
         udb.insertUser(userId, new FullName("first", "last"), SecUtil.newRandomBytes(10),
-                OrganizationID.DEFAULT, AuthorizationLevel.USER);
+                OrganizationID.DEFAULT, USER);
     }
 
     protected void addTestUser(UserID userId)

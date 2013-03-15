@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Air Computing Inc., 2012.
+ * Copyright (c) Air Computing Inc., 2013.
  */
 
 package com.aerofs.lib.ex;
@@ -8,16 +8,16 @@ import com.aerofs.base.ex.AbstractExWirable;
 import com.aerofs.proto.Common.PBException;
 import com.aerofs.proto.Common.PBException.Type;
 
-public class ExAlreadyInvited extends AbstractExWirable
+public class ExNoAdminForNonEmptyTeam extends AbstractExWirable
 {
     private static final long serialVersionUID = 1L;
 
-    public ExAlreadyInvited()
+    public ExNoAdminForNonEmptyTeam(String msg)
     {
-        super();
+        super(msg);
     }
 
-    public ExAlreadyInvited(PBException pb)
+    public ExNoAdminForNonEmptyTeam(PBException pb)
     {
         super(pb);
     }
@@ -25,6 +25,6 @@ public class ExAlreadyInvited extends AbstractExWirable
     @Override
     public Type getWireType()
     {
-        return Type.ALREADY_INVITED;
+        return Type.NO_ADMIN_FOR_NON_EMPTY_TEAM;
     }
 }

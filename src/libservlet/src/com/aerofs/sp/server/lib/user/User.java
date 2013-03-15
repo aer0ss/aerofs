@@ -6,6 +6,7 @@ package com.aerofs.sp.server.lib.user;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
+import com.aerofs.lib.ex.ExNoAdminForNonEmptyTeam;
 import com.aerofs.sp.server.lib.id.StripeCustomerID;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.SystemUtil;
@@ -351,15 +352,15 @@ public class User
      */
     public Set<UserID> addAndMoveToOrganization(final String organizationName,
             final String organizationPhone, final StripeCustomerID stripeCustomer)
-            throws ExNoPerm, SQLException, ExNotFound, ExAlreadyExist, IOException
+            throws ExNoPerm, SQLException, ExNotFound, ExAlreadyExist, IOException,
+            ExNoAdminForNonEmptyTeam
     {
         if (!canAddOrganization()) {
             throw new ExNoPerm("you have no permission to create new teams");
         }
 
         Organization org = _f._factOrg.save(organizationName, organizationPhone, stripeCustomer);
-        setLevel(AuthorizationLevel.ADMIN);
-        return setOrganization(org);
+        return setOrganization(org, AuthorizationLevel.ADMIN);
     }
 
     private boolean canAddOrganization() throws ExNotFound, SQLException
@@ -368,11 +369,14 @@ public class User
     }
 
     /**
-     * Move the user to a new organization, and adjust ACLs of shared folders for the team server.
+     * Move the user to a new organization, set appropriate auth level, and adjust ACLs of shared
+     * folders for the team server.
      */
-    public Set<UserID> setOrganization(Organization org)
-            throws SQLException, ExNotFound, ExAlreadyExist
+    public Set<UserID> setOrganization(Organization org, AuthorizationLevel level)
+            throws SQLException, ExNotFound, ExAlreadyExist, ExNoAdminForNonEmptyTeam
     {
+        Organization orgOld = getOrganization();
+
         Collection<SharedFolder> sfs = getSharedFolders();
 
         Set<UserID> users = Sets.newHashSet();
@@ -381,7 +385,14 @@ public class User
 
         _f._udb.setOrganizationID(_id, org.id());
 
+        setLevel(level);
+
         for (SharedFolder sf : sfs) users.addAll(sf.addTeamServerACL(this));
+
+        // TODO (WW) delete orgOld if it becomes empty.
+
+        // There must be at least one admin for an non-empty organization
+        orgOld.throwIfNotEmptyWithNoAdmins();
 
         return users;
     }
