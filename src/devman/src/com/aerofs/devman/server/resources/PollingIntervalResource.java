@@ -2,8 +2,9 @@
  * Copyright (c) Air Computing Inc., 2013.
  */
 
-package com.aerofs.devman.server;
+package com.aerofs.devman.server.resources;
 
+import com.aerofs.devman.server.ResourceConstants;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;

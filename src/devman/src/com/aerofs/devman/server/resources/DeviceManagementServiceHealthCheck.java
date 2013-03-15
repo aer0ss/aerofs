@@ -2,7 +2,7 @@
  * Copyright (c) Air Computing Inc., 2013.
  */
 
-package com.aerofs.devman.server;
+package com.aerofs.devman.server.resources;
 
 import com.yammer.metrics.core.HealthCheck;
 

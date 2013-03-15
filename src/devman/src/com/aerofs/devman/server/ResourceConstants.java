@@ -7,8 +7,8 @@ public abstract class ResourceConstants
         // private to enforce uninstantiability
     }
 
-    public static final String LAST_SEEN_PATH = "last_seen";
-    public static final String LAST_SEEN_DEVICE = "did";
+    public static final String DEVICES_PATH = "devices";
+    public static final String DEVICES_SUBRESOURCE = "device"; // note no 's'.
 
     public static final String POLLING_INTERVAL_PATH = "polling_interval";
 }
