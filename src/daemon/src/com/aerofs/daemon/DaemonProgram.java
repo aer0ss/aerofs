@@ -44,12 +44,6 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 
 public class DaemonProgram implements IProgram
 {
-    static
-    {
-        RockLog.init_(CLIENT);
-        RockLogReporter.enable(10, MINUTES);
-    }
-
     private static final Logger l = Loggers.getLogger(DaemonProgram.class);
 
     private final RitualServer _ritual = new RitualServer();
@@ -69,6 +63,8 @@ public class DaemonProgram implements IProgram
                         .build());
 
         Util.suppressStackTraces(ExAborted.class, ExNoAvailDevice.class);
+
+        RockLogReporter.enable(10, MINUTES);
     }
 
     @Override
