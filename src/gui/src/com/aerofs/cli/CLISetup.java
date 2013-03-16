@@ -80,10 +80,10 @@ public class CLISetup
         }
 
         cli.notify(MessageType.INFO,
-                "+-------------------------------------------------+\n" +
-                "| You can now access " + L.PRODUCT + " functions through the |\n" +
-                "| " + Util.quote("aerofs-sh") + " command while aerofs-cli is running |\n" +
-                "+-------------------------------------------------+");
+                "---------------------------------------------------------------\n" +
+                "You can now access " + L.PRODUCT + " functions through the\n" +
+                Util.quote(S.SH_NAME) + " command while " +
+                S.CLI_NAME + " is running.");
     }
 
     private void processSetupFile(String rtRoot) throws Exception

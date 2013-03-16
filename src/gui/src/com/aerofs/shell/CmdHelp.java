@@ -1,6 +1,7 @@
 package com.aerofs.shell;
 
 import com.aerofs.labeling.L;
+import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
 import com.aerofs.base.ex.ExBadArgs;
 import org.apache.commons.cli.CommandLine;
@@ -49,9 +50,10 @@ public class CmdHelp<T> implements IShellCommand<T>
         out.println("DESCRIPTION");
 
         hf.printWrapped(pw, LINE_WIDTH, INDENT_WIDTH, INDENT +
-                "Being a client program of " + L.PRODUCT + ", " + prog +
+                "As a client program of " + L.PRODUCT + ", " + prog +
                 " requires a running " + L.PRODUCT + " CLI " +
-                "(aerofs-cli) or GUI (aerofs) process to be fully functional. " +
+                "(" + S.CLI_NAME + ") or GUI (" + L.get().productUnixName() +
+                ") process to be fully functional. " +
                 "Multiple " + prog + " instances may be executed at the same time.");
         pw.println();
 

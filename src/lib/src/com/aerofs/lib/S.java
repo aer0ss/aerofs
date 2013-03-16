@@ -74,6 +74,7 @@ public class S
             COULDNT_SEND_INVITATION = "Couldn't invite users.",
             VERSION_HISTORY = "version history",
             CLI_NAME = L.get().productUnixName() + "-cli",
+            SH_NAME = L.get().productUnixName()  + "-sh",
             TRY_AGAIN_LATER = "Please try again later.",
             PASSWORD_CHANGE_INTERNAL_ERROR = "Unable to Login. " + TRY_AGAIN_LATER,
             FAILED_FOR_ACCURACY = "Couldn't retrieve accurate results. " + TRY_AGAIN_LATER,
