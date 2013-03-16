@@ -1,3 +1,6 @@
+<%namespace name="csrf" file="csrf.mako" import="token_input, token_param"
+        inheritable="True"/>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -53,10 +56,6 @@
 
 ## this wrapper is used to keep the footer at the bottom, even if the content height is less than the window height ("sticky" footer)
 <div id="wrapper">
-
-    <div class="container">
-        <div id="empty_message_bar" class="offset5 message_container">View Message</div>
-    </div>
     <div class="container">
         <div id="message_bar" class="span6 offset3 message_container">
             % if request.session.peek_flash(queue='error_queue'):
@@ -257,37 +256,10 @@
 
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
 <script src="${request.static_url('web:static/js/jquery.easing.1.3.js')}"></script>
-<script src="${request.static_url('web:static/js/message_bar.js')}"></script>
 <script src="${request.static_url('web:static/js/bootstrap.js')}"></script>
+<script src="${request.static_url('web:static/js/aerofs.js')}"></script>
 
 <%block name="scripts"/>
 
 </body>
 </html>
-
-## N.B. Please read README.security.txt carefully before proceeding.
-##
-## All forms should call this function to append the CSRF token to each POST request:
-##
-##  <form method="post">${self.csrf_token_input()} ...</form>
-##
-## The name of the field must be identical to the one in csrf.py
-##
-<%def name="csrf_token_input()">
-    <input type="hidden" name="csrf_token" value="${request.session.get_csrf_token()}"/>
-</%def>
-
-## N.B. Please read README.security.txt carefully before proceeding.
-##
-## All non-GET AJAX requests should call this function to append the CSRF token:
-##
-##  $.post(url, {
-##      ${self.csrf_token_param()},
-##      ...
-##  });
-##
-## The name of the field must be identical to the one in csrf.py
-##
-<%def name="csrf_token_param()">
-    csrf_token: "${request.session.get_csrf_token()}",
-</%def>

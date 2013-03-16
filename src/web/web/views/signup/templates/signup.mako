@@ -8,7 +8,7 @@
     ## Always use POST to avoid disclose private information in the URL when JS
     ## is disabled.
     <form id="signupForm" method="post">
-        ${self.csrf_token_input()}
+        ${self.csrf.token_input()}
         ## signup.py needs the email address only to generate scrypt
         ## credentials. Alternatively, we can query the SP for the email address
         ## but this would add an extra round trip to SP.
@@ -88,7 +88,7 @@
                 form.setAttribute("action", "${request.route_path('login')}");
 
                 var params = {
-                    ${self.csrf_token_param()}
+                    ${self.csrf.token_param()}
                     "next" : "${next}",
                     "login" : "${email_address}",
                     "password" : $("#inputPasswd").val(),

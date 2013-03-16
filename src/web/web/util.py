@@ -2,8 +2,8 @@
 Helper functions for AeroFS website
 """
 
-import re
-import logging
+import re, logging
+from error import error
 from aerofs_sp.connection import SyncConnectionService
 from aerofs_common.exception import ExceptionReply
 from aerofs_sp.gen.sp_pb2 import SPServiceRpcStub, ADMIN
@@ -15,20 +15,25 @@ log = logging.getLogger("web")
 
 # Form validation functions
 
-# TODO (WW) remove this method since this is not really necessary
-def userid_sanity_check(userid):
+# TODO (WW) move email checking to SP, or at least use error_on_invalid_email()
+def is_valid_email(email):
     """
     Performs a very basic validation of the given userid. Returns true if the
     userid passes, false otherwise
     """
-    return re.match(r"[^@'\";]+@[^@'\";]+\.[^@'\";]+", userid)
+    return re.match(r"[^@'\";]+@[^@'\";]+\.[^@'\";]+", email)
+
+# TODO (WW) move email checking to SP
+def error_on_invalid_email(email):
+    if not is_valid_email(email):
+        error("This email doesn't seem to be real.")
 
 def domain_sanity_check(domain):
     """
     Performs a basic sanity check on a given domain name to verify that it could
     be valid. Returns true if the domain passes, false otherwise
     """
-    return len(domain) > 3 and domain.find(' ') < 0 and domain.find('.') >= 0
+    return len(domain) > 3 and domain.find(' ') < 0 <= domain.find('.')
 
 # TODO (WW) move this three functions to security/authentication related modules
 def is_logged_in(request):
@@ -70,17 +75,19 @@ def valid_password_test(request, password):
     else:
         return True, ""
 
-# Exception processing functions
-def get_error(exception): # parse RPC errors into something more user friendly
+def get_error(exception):
     """
+    DEPRECATED: use error.sp_exception2error instead
+
     Returns an error message for the given protobuf exception. Expects the
     exception to be of type 'ExceptionReply'.
     """
-    # TODO (WW) capitalize the first letter?
     return str(exception.reply.message)
 
 def parse_rpc_error_exception(request, e):
     """
+    DEPRECATED: use error.sp_exception2error instead
+
     Reads an exception of any sort generated when making an RPC call
     and returns an appropriate error message for that exception.
     """

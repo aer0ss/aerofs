@@ -16,6 +16,7 @@ def main(global_config, **settings):
     admin_session_factory = session_factory_from_settings(settings)
 
     # Import template directories from views
+    # TODO (WW) don't do this. Use renderer="<module>:templates/foo.mako" instead
     for view in views.__all__:
         settings['mako.directories'] += \
             '\n{}.{}:templates'.format(views.__name__, view)

@@ -31,7 +31,7 @@ def request_password_reset(request):
     # TOOD (WW) separate POST and GET handling to different view callables
     if request.method == 'POST' and 'form.submitted' in request.params:
         login = request.params['login']
-        if not userid_sanity_check(login):
+        if not is_valid_email(login):
             error = _("Error: Invalid email address")
         else:
             sp = get_rpc_stub(request)

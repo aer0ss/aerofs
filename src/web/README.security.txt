@@ -30,12 +30,8 @@ or other non-GET methods in view callables.
   @ No HTTP request that modifies system state should use GET. @
   @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
-To generate CSRF tokens in requests, Use the following methods in layout.mako:
-
-    o csrf_token_input()
-    o csrf_token_param()
-
-See the methods' documentation for detail.
+To generate CSRF tokens in requests, Use methods in defined in csrf.mako.
+See that file for more information.
 
 When the user is not logged in, CSRF verification is disabled. Therefore, HTTP
 requests that don't require logging in need no CSRF tokens (e.g. signup, signin

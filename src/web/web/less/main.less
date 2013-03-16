@@ -160,13 +160,6 @@ button.btn {
 // Messages
 // ------------------
 
-#empty_message_bar {
-    position: fixed;
-    top: 0;
-    padding: 8px;
-    background-color: darken(@grayLighter, 10%);
-}
-
 #message_bar {
     position: fixed;
     top: 0;
@@ -175,7 +168,9 @@ button.btn {
 div.message_container {
     cursor: pointer;
     display: none;
-    z-index: 99;
+    // Bootstrap's modals have pretty big z-index. Use a bigger index here to
+    // avoid the message being covered by modals.
+    z-index: 100000;
 }
 
 div.flash_message {

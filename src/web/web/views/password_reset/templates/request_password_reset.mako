@@ -16,7 +16,7 @@
         </p>
         <form class="form-inline" action="${request.route_path('request_password_reset')}"
                 method="post">
-            ${self.csrf_token_input()}
+            ${self.csrf.token_input()}
             <input type="text" name="login" value=""/>
             <input class="btn" type="submit" name="form.submitted" value="Send Email"/>
         </form>

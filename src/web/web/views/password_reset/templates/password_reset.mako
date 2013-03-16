@@ -16,7 +16,7 @@
                 ## Note that the server doesn't always verify the CSRF token
                 ## since the users is usually logged off when changing the password.
                 ## This is okay as the request is secured by the token below.
-                ${self.csrf_token_input()}
+                ${self.csrf.token_input()}
                 <input type="hidden" name="token" value="${token}"/>
                 <input type="hidden" name="user_id" value="${user_id}"/>
                 <div class="input_container">

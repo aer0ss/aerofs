@@ -100,7 +100,7 @@
         {
             $.post("${request.route_path('json.accept_organization_invitation')}",
                 {
-                    ${self.csrf_token_param()}
+                    ${self.csrf.token_param()}
                     id: orgID,
                     orgname: orgName
                 }, handleAjaxReply);
@@ -110,7 +110,7 @@
         {
             $.post("${request.route_path('json.ignore_organization_invitation')}",
                 {
-                    ${self.csrf_token_param()}
+                    ${self.csrf.token_param()}
                     id: orgID
                 }, handleAjaxReply);
         }
@@ -119,7 +119,7 @@
         {
             $.post("${request.route_path('json.accept_folder_invitation')}",
                 {
-                    ${self.csrf_token_param()}
+                    ${self.csrf.token_param()}
                     id: shareID,
                     foldername: folderName
                 }, handleAjaxReply);
@@ -129,7 +129,7 @@
         {
             $.post("${request.route_path('json.ignore_folder_invitation')}",
                 {
-                    ${self.csrf_token_param()}
+                    ${self.csrf.token_param()}
                     id: shareID,
                     foldername: folderName
                 }, handleAjaxReply);

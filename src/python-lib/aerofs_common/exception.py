@@ -13,10 +13,19 @@ class ExceptionReply(Exception):
         self.reply = reply
 
     def get_type(self):
+        """
+        return the numeric type value
+        """
         return self.reply.type
 
+    def get_type_name(self):
+        """
+        return the type string, e.g. "NOT_FOUND"
+        """
+        return _PBEXCEPTION_TYPE.values_by_number[self.reply.type].name
+
     def __str__(self):
-        description = "{0}".format(_PBEXCEPTION_TYPE.values_by_number[self.reply.type].name)
+        description = self.get_type_name()
         if self.reply.HasField('plain_text_message'):
             description += u": {0}".format(self.reply.plain_text_message)
         elif self.reply.HasField('message'):

@@ -1,19 +1,13 @@
 import logging
 from pyramid.httpexceptions import HTTPFound
-from pyramid.security import remember, authenticated_userid, forget, NO_PERMISSION_REQUIRED
-from pyramid.view import view_config, forbidden_view_config
+from pyramid.security import remember, forget, NO_PERMISSION_REQUIRED
+from pyramid.view import view_config
 
 from aerofs_sp.gen.sp_pb2 import SPServiceRpcStub
 from aerofs_sp.connection import SyncConnectionService
 from aerofs_sp.scrypt import scrypt
 
 from web.util import *
-
-'''
-TODO:
-Basic unit tests for each view so that we can catch stupid errors such as
-missing import statements.
-'''
 
 log = logging.getLogger("web")
 
@@ -46,22 +40,6 @@ def log_in_user(request, login, creds, stay_signed_in):
 
     return remember(request, login)
 
-@forbidden_view_config(
-    renderer="forbidden.mako"
-)
-def forbidden_view(request):
-    # do not allow a user to login if they are already logged in
-    if authenticated_userid(request): return {}
-
-    # So that we don't get annoying next=%2F in the url when we click on the home button.
-    next = request.path.strip()
-    if next and next != '/':
-        loc = request.route_url('login', _query=(('next', next),))
-    else:
-        loc = request.route_url('login')
-
-    return HTTPFound(location=loc)
-
 @view_config(
     route_name='login',
     permission=NO_PERMISSION_REQUIRED,
@@ -82,7 +60,7 @@ def login(request):
     if 'form.submitted' in request.params:
         login = request.params['login']
 
-        if not userid_sanity_check(login):
+        if not is_valid_email(login):
             error = _("Invalid user id")
             did_fail = True
         else:

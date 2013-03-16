@@ -47,16 +47,12 @@ def team_settings(request):
         except Exception as e:
             flash_error(request, parse_rpc_error_exception(request, e))
 
-    try:
-        reply = sp.get_org_preferences()
-        ret['organization_name'] = reply.organization_name
+    reply = sp.get_org_preferences()
+    ret['organization_name'] = reply.organization_name
 
-    except Exception as e:
-        flash_error(request, parse_rpc_error_exception(request, e))
-        return {
-            # prevent rendering exceptions on RPC errors.
-            'organization_name': ''
-        }
+    # Show billing links only if the user has a Stripe customer ID
+    stripe_data = sp.get_stripe_data().stripe_data
+    ret['show_billing'] = stripe_data.customer_id
 
     return ret
 
@@ -148,7 +144,7 @@ def json_set_authorization(request):
     _ = request.translate
 
     user = request.params['userid']
-    if not userid_sanity_check(user):
+    if not is_valid_email(user):
         return {'response_message': _("Error: Invalid user id"),
                 'success': False}
     level = request.params['authlevel']

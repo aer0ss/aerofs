@@ -1,17 +1,18 @@
 import logging, urllib
 from cgi import escape
+from pyramid.httpexceptions import HTTPOk
 from pyramid.view import view_config
-import aerofs_sp.gen.common_pb2 as common
+from aerofs_sp.gen.common_pb2 import PBException
 from web import util
+from web.sp_util import exception2error, ignore_exception
 from web.util import *
-from aerofs_common.exception import ExceptionReply
-from ..payment.payment_view import update_stripe_subscription
+from web.views.payment import stripe_util
 
 # URL param keys
 URL_PARAM_USER = 'user'
 URL_PARAM_FULL_NAME = 'full_name'
 
-log = logging.getLogger("web")
+log = logging.getLogger(__name__)
 
 @view_config(
     route_name = 'team_members',
@@ -24,8 +25,11 @@ def team_members(request):
     sp = util.get_rpc_stub(request)
     reply = sp.list_organization_invited_users()
     return {
+        'stripe_publishable_key': stripe_util.STRIPE_PUBLISHABLE_KEY,
         'url_param_user': URL_PARAM_USER,
-        'invited_users': reply.user_id
+        'url_param_stripe_card_token': stripe_util.URL_PARAM_STRIPE_CARD_TOKEN,
+        'invited_users': reply.user_id,
+        'weihan': 'test'
     }
 
 @view_config(
@@ -106,90 +110,43 @@ def json_invite_user(request):
     _ = request.translate
 
     user = request.params[URL_PARAM_USER]
+    error_on_invalid_email(user)
 
-    if not userid_sanity_check(user):
-        return {'response_message': _("Error: Invalid email address"),
-                'success': False}
     sp = get_rpc_stub(request)
-    try:
-        # invite the user to sign up first
-        # TODO (WW) this logic should be moved to sp.invite_to_organization()
-        try:
-            sp.invite_to_sign_up([user])
-        except ExceptionReply as e:
-            if e.get_type() == common.PBException.ALREADY_EXIST:
-                ## Ignore if the user already exists
-                pass
-            else:
-                raise e
 
-        # invite the user to the org
-        success = True
-        try:
-            stripe_subscription_data = sp.invite_to_organization(user)\
-                .stripe_subscription_data
+    # invite the user to sign up first
+    # TODO (WW) this logic should be moved to sp.invite_to_organization()
+    ignore_exception(sp.invite_to_sign_up, ([user]), PBException.ALREADY_EXIST)
 
-            # Since the organization now has one more user, adjust the
-            # subscription for the org.
-            #
-            # TODO (WW) RACE CONDITION here if other users update the user list at the
-            # same time!
-            # TODO (WW) have an automatic tool to periodically check consistency
-            # between SP and Stripe?
-            update_stripe_subscription(stripe_subscription_data)
+    # invite the user
+    reply = exception2error(sp.invite_to_organization, (user), {
+            PBException.ALREADY_EXIST:
+                _("The user is already a member of your team."),
+            PBException.ALREADY_INVITED:
+                _("The user has already been invited to your team."),
+            PBException.NO_STRIPE_CUSTOMER_ID:
+                _("Payment is required to invite more users.")
+        }
+    )
 
-            # TODO (WW) change the way success and error messages are returned
-            return {
-                'response_message': _("${user} has been invited to your team.", {'user': user}),
-                'success': True
-            }
+    stripe_util.upgrade_stripe_subscription(reply.stripe_data)
 
-        except ExceptionReply as e:
-            if e.get_type() == common.PBException.ALREADY_EXIST:
-                return {
-                    'response_message': _("${user} is already a member of your team.", {'user': user}),
-                    'success': False
-                }
-            elif e.get_type() == common.PBException.ALREADY_INVITED:
-                return {
-                    'response_message': _("${user} has already been invited to your team.", {'user': user}),
-                    'success': False
-                }
-            else:
-                raise e
-
-    except Exception as e:
-        msg = parse_rpc_error_exception(request, e)
-        return {'response_message': msg, 'success': False}
+    return HTTPOk()
 
 @view_config(
-    route_name = 'json.delete_organization_invitation_for_user',
+    route_name = 'json.delete_team_invitation',
     renderer = 'json',
     permission = 'admin',
     request_method = 'POST'
 )
-def json_delete_organization_invitation_for_user(request):
+def json_delete_team_invitation(request):
     _ = request.translate
 
     user = request.params[URL_PARAM_USER]
 
     sp = get_rpc_stub(request)
-    try:
-        stripe_subscription_data = \
-            sp.delete_organization_invitation_for_user(user)\
-                .stripe_subscription_data
+    stripe_data = sp.delete_organization_invitation_for_user(user).stripe_data
 
-        # TODO (WW) RACE CONDITION here if other users update the user list at
-        # the same time!
-        # TODO (WW) have an automatic tool to periodically check consistency
-        # between SP and Stripe?
-        update_stripe_subscription(stripe_subscription_data)
+    stripe_util.downgrade_stripe_subscription(stripe_data)
 
-        return {
-            'response_message': _("The invitation has been removed."),
-            'success': True
-        }
-
-    except Exception as e:
-        msg = parse_rpc_error_exception(request, e)
-        return {'response_message': msg, 'success': False}
+    return HTTPOk()

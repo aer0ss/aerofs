@@ -144,6 +144,18 @@ public class OrganizationDatabase extends AbstractSQLDatabase
         Util.verify(ps.executeUpdate() == 1);
     }
 
+    public void setStripeCustomerID(final OrganizationID orgID, final String stripeCustomerID)
+            throws SQLException
+    {
+        final PreparedStatement ps = prepareStatement(updateWhere(T_ORGANIZATION, C_O_ID + "=?",
+                C_O_STRIPE_CUSTOMER_ID));
+
+        ps.setString(1, stripeCustomerID);
+        ps.setInt(2, orgID.getInt());
+
+        Util.verify(ps.executeUpdate() == 1);
+    }
+
     private ResultSet queryOrg(OrganizationID orgID, String field)
             throws SQLException, ExNotFound
     {

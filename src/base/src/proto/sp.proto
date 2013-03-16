@@ -134,9 +134,11 @@ service SPService {
      * Throws:
      *   ExAlreadyExist if the email address is already a member of that organization.
      *   ExAlreadyInvited if the user has already been invited to the organization but has not yet
-     *                    accepted the invitation.
+     *                  accepted the invitation.
      *   ExNoPerm if the caller is not an organization admin.
      *   ExEmailSendingFailed if we were unable to send the email.
+     *   ExNoStripeCustomerID if the organization is on a paid plan but doesn't have a Stripe
+     *                  customer ID.
      */
      rpc InviteToOrganization(InviteToOrganizationCall) returns(InviteToOrganizationReply);
 
@@ -478,6 +480,8 @@ service SPService {
      * Web server shouldn't have handled Stripe calls. Either SP or a service that SP depends on
      * should do the job.
      *
+     * Required Auth Level: user
+     *
      * Throws:
      *   ExNotFound if the user does not have a pending invitation for the specified organization.
      */
@@ -504,12 +508,11 @@ service SPService {
     rpc ListUserDevices(ListUserDevicesCall) returns(ListUserDevicesReply);
 
     /**
-     * Retrieve the Stripe Customer ID associated with the organization that the current
-     * AeroFS user is a member of.
+     * Retrieve Stripe data of the current organization.
      *
      * Required Auth Level: admin
      */
-    rpc GetStripeCustomerID(Void) returns(GetStripeCustomerIDReply);
+    rpc GetStripeData(Void) returns(GetStripeDataReply);
 
     /**
      * WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE: move this under ListOrganizationSharedFolders
@@ -573,6 +576,17 @@ service SPService {
       * Required Auth Level: user
       */
      rpc SetDeviceOSFamilyAndName(SetDeviceOSFamilyAndNameCall) returns(Void);
+
+     /**
+      * Set the Stripe customer ID of the current organization
+      *
+      * Required Auth Level: admin
+      */
+     rpc SetStripeCustomerID(SetStripeCustomerIDCall) returns(Void);
+}
+
+message SetStripeCustomerIDCall {
+    required string stripe_customer_id = 1;
 }
 
 message SetDeviceOSFamilyAndNameCall {
@@ -587,27 +601,28 @@ message DeleteOrganizationInvitationForUserCall {
 
 message DeleteOrganizationInvitationForUserReply {
     // See InviteToOrganizationReply
-    required PBStripeSubscriptionData stripe_subscription_data = 1;
+    required PBStripeData stripe_data = 1;
 }
 
-// The data structure holds all the information that describes Stripe subscription of an
-// organization. The Web server uses it to perform Stripe transactions. Ideally, all Stripe
+// The data structure holds all the information that describes the Stripe subscription of a
+// team. The Web server uses it to perform Stripe transactions. Ideally, all Stripe
 // transactions should be done inside SP and this data structure should not be needed.
-message PBStripeSubscriptionData {
+// See src/web/README.stirpe.txt for detail.
+message PBStripeData {
     // Stripe customer ID of the organization. Absent if the organization doesn't have the ID.
-    optional string stripe_customer_id = 1;
-    // Total user count (members + remaining invited users) of the organization. It dictates the
-    // organization's subscription plan.
-    required uint32 user_count = 2;
+    // If the field is present, the caller MUST update Stripe subscription (based on quantity).
+    optional string customer_id = 1;
+    // The quantity of the subscription. It is determined by both the number of collaborators and
+    // team members. 0 for free plans.
+    required uint32 quantity = 2;
 }
 
 message ListOrganizationInvitedUsersReply {
     repeated string user_id = 1;
 }
 
-message GetStripeCustomerIDReply {
-    // The field is absent if the organization doesn't have a Customer ID.
-    optional string stripe_customer_id = 1;
+message GetStripeDataReply {
+    required PBStripeData stripe_data = 1;
 }
 
 message SignUpWithCodeCall {
@@ -650,8 +665,8 @@ message InviteToOrganizationCall {
 message InviteToOrganizationReply {
     // Return subscription data so the Web server doesn't have to make another three SP calls
     // (get customer id, get current member count, and get invited users count) to update the
-    // subscription. See PBStripeSubscriptionData for more info.
-    required PBStripeSubscriptionData stripe_subscription_data = 1;
+    // subscription. See PBStripeData for more info.
+    required PBStripeData stripe_data = 1;
 }
 
 message AcceptOrganizationInvitationCall {
@@ -988,8 +1003,8 @@ message DeleteOrganizationInvitationReply {
     // data in this reply.
     //
     // This design is not great. Ideally, SP should perform all Stripe transactions internally
-    // without the Web server's involvement. See PBStripeSubscriptionData for more information.
-    required PBStripeSubscriptionData stripe_subscription_data = 1;
+    // without the Web server's involvement. See PBStripeData for more information.
+    required PBStripeData stripe_data = 1;
 }
 
 // WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE: move this under the GetDeviceInfo messages.

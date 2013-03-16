@@ -126,12 +126,6 @@ button.btn {
   -webkit-border-radius: 3px;
   border-radius: 3px;
 }
-#empty_message_bar {
-  position: fixed;
-  top: 0;
-  padding: 8px;
-  background-color: #d5d5d5;
-}
 #message_bar {
   position: fixed;
   top: 0;
@@ -139,7 +133,7 @@ button.btn {
 div.message_container {
   cursor: pointer;
   display: none;
-  z-index: 99;
+  z-index: 100000;
 }
 div.flash_message {
   padding: 8px;

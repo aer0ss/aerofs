@@ -250,7 +250,7 @@
                 $.post(
                     "${request.route_path('json.set_shared_folder_perm')}",
                     {
-                        ${self.csrf_token_param()}
+                        ${self.csrf.token_param()}
                         ## TODO (WW) use variables to abstract parameter key strings
                         userid: email,
                         storeid: modalSID(),
@@ -290,7 +290,7 @@
                     var errorHeader = "Couldn't kick out: ";
                     $.post("${request.route_path('json.delete_shared_folder_perm')}",
                         {
-                            ${self.csrf_token_param()}
+                            ${self.csrf.token_param()}
                             ## TODO (WW) use variables to abstract parameter key strings
                             userid: email,
                             storeid: modalSID()
@@ -326,7 +326,7 @@
                 var errorHeader = "Couldn't invite: ";
                 $.post("${request.route_path('json.add_shared_folder_perm')}",
                     {
-                        ${self.csrf_token_param()}
+                        ${self.csrf.token_param()}
                         ## TODO (WW) use variables to abstract parameter key strings
                         userid: email,
                         storeid: sid,

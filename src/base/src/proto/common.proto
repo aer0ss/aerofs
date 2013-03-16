@@ -90,6 +90,7 @@ message PBException {
         ALREADY_INVITED = 19;
         // The only admin of a team is going to leave the team with one or more non-admin members.
         NO_ADMIN_FOR_NON_EMPTY_TEAM = 402;
+        NO_STRIPE_CUSTOMER_ID = 403;
     }
 
     required Type type = 1;

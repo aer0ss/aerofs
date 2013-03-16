@@ -10,7 +10,7 @@
     ## are consistent with the fields here.
 
     <form action="${request.route_path('login')}" method="post">
-        ${self.csrf_token_input()}
+        ${self.csrf.token_input()}
         <input type="hidden" name="next" value="${next}"/>
         <label for="inputEmail">Email:</label>
         <input class="input-medium" id="inputEmail" type="text" name="login"

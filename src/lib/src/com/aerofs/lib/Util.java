@@ -2,23 +2,10 @@ package com.aerofs.lib;
 
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
-import com.aerofs.base.ex.AbstractExWirable;
-import com.aerofs.base.ex.ExBadCredential;
-import com.aerofs.base.ex.Exceptions;
+import com.aerofs.base.ex.*;
+import com.aerofs.lib.ex.*;
 import com.aerofs.lib.FileUtil.FileName;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.base.ex.ExProtocolError;
-import com.aerofs.base.ex.ExTimeout;
-import com.aerofs.lib.ex.ExAlreadyInvited;
-import com.aerofs.lib.ex.ExChildAlreadyShared;
-import com.aerofs.lib.ex.ExDeviceIDAlreadyExists;
-import com.aerofs.lib.ex.ExDeviceOffline;
-import com.aerofs.lib.ex.ExIndexing;
-import com.aerofs.lib.ex.ExNoAdminForNonEmptyTeam;
-import com.aerofs.lib.ex.ExNotDir;
-import com.aerofs.lib.ex.ExNotFile;
-import com.aerofs.lib.ex.ExParentAlreadyShared;
-import com.aerofs.lib.ex.ExUIMessage;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.proto.Common.PBException.Type;
@@ -81,17 +68,24 @@ public abstract class Util
 
         // Register exception types from lib
         Exceptions.registerExceptionTypes(
-                new ImmutableMap.Builder<Type, Class<? extends AbstractExWirable>>()
-                        .put(Type.DEVICE_ID_ALREADY_EXISTS,     ExDeviceIDAlreadyExists.class)
-                        .put(Type.ALREADY_INVITED,              ExAlreadyInvited.class)
+                new ImmutableMap.Builder<Type, Class<? extends AbstractExWirable>>().put(
+                        Type.DEVICE_ID_ALREADY_EXISTS, ExDeviceIDAlreadyExists.class)
+                        .put(Type.ALREADY_INVITED, ExAlreadyInvited.class)
+                        .put(Type.INDEXING, ExIndexing.class)
+                        .put(Type.PARENT_ALREADY_SHARED, ExParentAlreadyShared.class)
+                        .put(Type.CHILD_ALREADY_SHARED, ExChildAlreadyShared.class)
+                        .put(Type.DEVICE_OFFLINE, ExDeviceOffline.class)
+                        .put(Type.NOT_DIR, ExNotDir.class)
+                        .put(Type.NOT_FILE, ExNotFile.class)
+                        .put(Type.UI_MESSAGE, ExUIMessage.class)
+
+                        // The following exceptions are consumed by Python clients only. No need to
+                        // list them here for the time being.
+                        /*
                         .put(Type.NO_ADMIN_FOR_NON_EMPTY_TEAM,  ExNoAdminForNonEmptyTeam.class)
-                        .put(Type.INDEXING,                     ExIndexing.class)
-                        .put(Type.PARENT_ALREADY_SHARED,        ExParentAlreadyShared.class)
-                        .put(Type.CHILD_ALREADY_SHARED,         ExChildAlreadyShared.class)
-                        .put(Type.DEVICE_OFFLINE,               ExDeviceOffline.class)
-                        .put(Type.NOT_DIR,                      ExNotDir.class)
-                        .put(Type.NOT_FILE,                     ExNotFile.class)
-                        .put(Type.UI_MESSAGE,                   ExUIMessage.class)
+                        .put(Type.NO_STRIPE_CUSTOMER_ID,        ExNoStripeCustomerID.class)
+                        */
+
                         .build());
 
         s_exceptionsRegistered = true;

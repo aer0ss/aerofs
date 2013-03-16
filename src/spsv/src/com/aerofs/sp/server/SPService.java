@@ -2,8 +2,10 @@ package com.aerofs.sp.server;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExFormatError;
+import com.aerofs.lib.ex.ExNoStripeCustomerID;
 import com.aerofs.proto.Sp.DeleteOrganizationInvitationForUserReply;
 import com.aerofs.proto.Sp.DeleteOrganizationInvitationReply;
+import com.aerofs.proto.Sp.GetStripeDataReply;
 import com.aerofs.proto.Sp.InviteToOrganizationReply;
 import com.aerofs.proto.Sp.ListOrganizationInvitedUsersReply;
 import com.aerofs.proto.Sp.ListOrganizationSharedFoldersReply;
@@ -14,6 +16,7 @@ import com.aerofs.proto.Sp.PBSharedFolder.PBUserAndRole;
 import com.aerofs.proto.Cmd.CommandType;
 import com.aerofs.proto.Sp.AckCommandQueueHeadReply;
 import com.aerofs.proto.Sp.GetCommandQueueHeadReply;
+import com.aerofs.proto.Sp.PBStripeData;
 import com.aerofs.proto.Sv;
 import com.aerofs.proto.Sp.RegisterDeviceReply;
 import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue.Epoch;
@@ -50,7 +53,6 @@ import com.aerofs.proto.Cmd.Command;
 import com.aerofs.proto.Common.PBFolderInvitation;
 import com.aerofs.proto.Sp.GetAuthorizationLevelReply;
 import com.aerofs.proto.Sp.GetOrganizationInvitationsReply;
-import com.aerofs.proto.Sp.GetStripeCustomerIDReply;
 import com.aerofs.proto.Sp.GetTeamServerUserIDReply;
 import com.aerofs.proto.Sp.GetSharedFolderNamesReply;
 import com.aerofs.proto.Sp.ListUserDevicesReply;
@@ -125,6 +127,8 @@ import java.util.concurrent.ExecutionException;
 public class SPService implements ISPService
 {
     private static final Logger l = Loggers.getLogger(SPService.class);
+
+    private static final int MAX_FREE_MEMBER_COUNTS = 3;
 
     // TODO (WW) remove dependency to these database objects
     private final SPDatabase _db;
@@ -792,6 +796,21 @@ public class SPService implements ISPService
         return createVoidReply();
     }
 
+    @Override
+    public ListenableFuture<Void> setStripeCustomerID(String stripeCustomerId)
+            throws Exception
+    {
+        if (Strings.isNullOrEmpty(stripeCustomerId)) throw new ExBadArgs();
+
+        _sqlTrans.begin();
+        User user = _sessionUser.get();
+        user.throwIfNotAdmin();
+        user.getOrganization().setStripeCustomerID(stripeCustomerId);
+        _sqlTrans.commit();
+
+        return createVoidReply();
+    }
+
     private void throwIfNotOwner(User user, Device device)
             throws ExNotFound, SQLException, ExNoPerm
     {
@@ -1254,7 +1273,7 @@ public class SPService implements ISPService
     @Override
     public ListenableFuture<InviteToOrganizationReply> inviteToOrganization(String userIdString)
             throws SQLException, ExNoPerm, ExNotFound, IOException, ExEmailSendingFailed,
-            ExAlreadyExist, ExAlreadyInvited
+            ExAlreadyExist, ExAlreadyInvited, ExNoStripeCustomerID
     {
         _sqlTrans.begin();
 
@@ -1267,27 +1286,28 @@ public class SPService implements ISPService
         l.info("Send organization invite by " + inviter + " to " + invitee);
 
         if (invitee.exists() && invitee.getOrganization().equals(org)) {
-            l.warn(invitee + " already a member.");
+            l.warn(invitee + " is already a member.");
             throw new ExAlreadyExist();
         }
 
         OrganizationInvitation invite = _factOrgInvite.create(invitee.id(), org.id());
 
         if (invite.exists()) {
-            l.warn(invitee + " already invited.");
+            l.warn(invitee + " is already invited.");
             throw new ExAlreadyInvited();
         }
 
         _factOrgInvite.save(inviter.id(), invitee.id(), org.id());
-        _factEmailer.createOrganizationInvitationEmailer(inviter, invitee, org).send();
 
-        PBStripeSubscriptionData sd = getStripeSubscriptionData(org);
+        PBStripeData sd = getStripeData(org);
+        throwIfSubscriptionIsRequiredAndNoCustomerID(sd);
+
+        // send the email last (esp. after subscription is verified)
+        _factEmailer.createOrganizationInvitationEmailer(inviter, invitee, org).send();
 
         _sqlTrans.commit();
 
-        return createReply(InviteToOrganizationReply.newBuilder()
-                .setStripeSubscriptionData(sd)
-                .build());
+        return createReply(InviteToOrganizationReply.newBuilder().setStripeData(sd).build());
     }
 
     @Override
@@ -1338,13 +1358,12 @@ public class SPService implements ISPService
 
         _factOrgInvite.create(user.id(), organization.id()).delete();
 
-        PBStripeSubscriptionData sd = getStripeSubscriptionData(organization);
+        PBStripeData sd = getStripeData(organization);
 
         _sqlTrans.commit();
 
-        return createReply(DeleteOrganizationInvitationReply.newBuilder()
-                .setStripeSubscriptionData(sd)
-                .build());
+        return createReply(
+                DeleteOrganizationInvitationReply.newBuilder().setStripeData(sd).build());
     }
 
     @Override
@@ -1361,39 +1380,50 @@ public class SPService implements ISPService
 
         _factOrgInvite.create(UserID.fromExternal(userID), org.id()).delete();
 
-        PBStripeSubscriptionData sd = getStripeSubscriptionData(org);
+        PBStripeData sd = getStripeData(org);
 
         _sqlTrans.commit();
 
         return createReply(DeleteOrganizationInvitationForUserReply.newBuilder()
-                .setStripeSubscriptionData(sd)
+                .setStripeData(sd)
                 .build());
     }
 
-    private PBStripeSubscriptionData getStripeSubscriptionData(Organization org)
+    private PBStripeData getStripeData(Organization org)
             throws SQLException, ExNotFound
     {
-        PBStripeSubscriptionData.Builder builder = PBStripeSubscriptionData.newBuilder();
         StripeCustomerID scid = org.getStripeCustomerIDNullable();
-        if (scid != null) builder.setStripeCustomerId(scid.getString());
+        int count = org.countOrganizationInvitations() + org.countUsers();
 
-        builder.setUserCount(org.countOrganizationInvitations() + org.countUsers());
+        PBStripeData.Builder builder = PBStripeData.newBuilder()
+                .setQuantity(count > MAX_FREE_MEMBER_COUNTS ? count : 0);
+        if (scid != null) builder.setCustomerId(scid.getString());
         return builder.build();
     }
 
+    /**
+     * throw ExNoStripeCustomerID if the parameter indicates a paid plan but doesn't have a Stripe
+     * customer ID. See the definition of PBStripeData for more info.
+     */
+    private void throwIfSubscriptionIsRequiredAndNoCustomerID(PBStripeData sd)
+            throws ExNoStripeCustomerID
+    {
+        if (sd.getQuantity() > 0 && !sd.hasCustomerId()) {
+            throw new ExNoStripeCustomerID();
+        }
+    }
+
     @Override
-    public ListenableFuture<GetStripeCustomerIDReply> getStripeCustomerID()
-            throws Exception
+    public ListenableFuture<GetStripeDataReply> getStripeData()
+            throws SQLException, ExNoPerm, ExNotFound
     {
         _sqlTrans.begin();
 
         User user = _sessionUser.get();
         user.throwIfNotAdmin();
 
-        StripeCustomerID stripeCustomerID = user.getOrganization().getStripeCustomerIDNullable();
-
-        GetStripeCustomerIDReply.Builder builder = GetStripeCustomerIDReply.newBuilder();
-        if (stripeCustomerID != null) builder.setStripeCustomerId(stripeCustomerID.getString());
+        GetStripeDataReply.Builder builder = GetStripeDataReply.newBuilder()
+                .setStripeData(getStripeData(user.getOrganization()));
 
         _sqlTrans.commit();
 

@@ -1,6 +1,8 @@
 <%inherit file="layout.mako"/>
 <%! navigation_bars = True; %>
 
+<%include file="activate_credit_card.mako"/>
+
 <h2>${page_title}</h2>
 
 <table class="table">
@@ -167,7 +169,7 @@
 
             $.post('${request.route_path('json.rename_device')}',
                 {
-                    ${self.csrf_token_param()}
+                    ${self.csrf.token_param()}
                     '${url_param_user}': '${user}',
                     '${url_param_device_id}': device_id,
                     '${url_param_device_name}': newName
@@ -199,7 +201,7 @@
                         '${request.route_path('json.unlink_device')}' :
                         '${request.route_path('json.erase_device')}',
                 {
-                    ${self.csrf_token_param()}
+                    ${self.csrf.token_param()}
                     '${url_param_device_id}': device_id
                 }
             )

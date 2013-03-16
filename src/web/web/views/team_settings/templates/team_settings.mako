@@ -1,6 +1,8 @@
 <%inherit file="layout.mako"/>
 <%! navigation_bars = True; %>
 
+<%namespace name="credit_card_modal" file="credit_card_modal.mako"/>
+
 <%block name="css">
     <link href="${request.static_url('web:static/css/datatables_bootstrap.css')}"
           rel="stylesheet">
@@ -11,7 +13,7 @@
     ## TODO (WW) use form-horizontal when adding new fields. see login.mako
     <form class="form-inline" action="${request.route_path('team_settings')}" method="post">
     <div class="input_container">
-        ${self.csrf_token_input()}
+        ${self.csrf.token_input()}
         <input id="organization_name" type="text" name="organization_name" value="${organization_name}"/>
         <input class="btn" type="submit" name="form.submitted" value="Update" />
     </div>
@@ -33,12 +35,12 @@
     </div>
 </div>
 
-<div class="page_block">
-    <h2>Subscription and Billing</h2>
-    <p><a href="${request.route_path('manage_subscription')}">Manage Subscription</a></p>
-    <p><a href="${request.route_path('manage_credit_card')}">Manage Credit Card</a></p>
-    <p><a href="${request.route_path('payments')}">View Billing History</a></p>
-</div>
+%if show_billing:
+    <div class="page_block">
+        <h2>Billing</h2>
+        <a href="${request.route_path('manage_payment')}">Manage subscription and payment</a>
+    </div>
+%endif
 
 <%block name="scripts">
     <script src="https://ajax.aspnetcdn.com/ajax/jquery.dataTables/1.8.2/jquery.dataTables.min.js"></script>
@@ -116,7 +118,7 @@
                         authlevel = "ADMIN";
                 $.post("${request.route_path('json.set_authorization')}",
                         {
-                        ${self.csrf_token_param()}
+                        ${self.csrf.token_param()}
                             userid: userid,
                             authlevel: authlevel
                         }
@@ -144,7 +146,7 @@
                         authlevel = "USER";
                 $.post("${request.route_path('json.set_authorization')}",
                         {
-                        ${self.csrf_token_param()}
+                        ${self.csrf.token_param()}
                             userid: userid,
                             authlevel: authlevel
                         }

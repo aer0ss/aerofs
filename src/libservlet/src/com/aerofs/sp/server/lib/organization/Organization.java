@@ -114,6 +114,12 @@ public class Organization
         _f._odb.setContactPhone(_id, contactPhone);
     }
 
+    public void setStripeCustomerID(@Nonnull String stripeCustomerID)
+            throws SQLException
+    {
+        _f._odb.setStripeCustomerID(_id, stripeCustomerID);
+    }
+
     @Override
     public int hashCode()
     {

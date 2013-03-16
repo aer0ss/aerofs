@@ -7,7 +7,7 @@ missing import statements.
 import logging
 from pyramid.view import view_config
 from web.util import *
-from web.views.payment.payment_view import update_stripe_subscription
+from web.views.payment import stripe_util
 
 log = logging.getLogger("web")
 
@@ -94,17 +94,10 @@ def ignore_organization_invitation(request):
     sp = get_rpc_stub(request)
 
     try:
-        stripe_subscription_data = sp.delete_organization_invitation(organization_id)\
-                .stripe_subscription_data
+        stripe_data = sp.delete_organization_invitation(organization_id)\
+                .stripe_data
 
-        # Since the organization now has one less user, adjust the subscription
-        # for the org.
-        #
-        # TODO (WW) RACE CONDITION here if other users update the user list at the
-        # same time!
-        # TODO (WW) have an automatic tool to periodically check consistency
-        # between SP and Stripe?
-        update_stripe_subscription(stripe_subscription_data)
+        stripe_util.downgrade_stripe_subscription(stripe_data)
 
         msg = _("The invitation has been ignored.")
 

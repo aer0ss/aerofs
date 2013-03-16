@@ -1,6 +1,8 @@
 <%inherit file="layout.mako"/>
 <%! navigation_bars = True; %>
 
+<%namespace name="credit_card_modal" file="credit_card_modal.mako"/>
+
 <%block name="css">
     <link href="${request.static_url('web:static/css/datatables_bootstrap.css')}"
           rel="stylesheet">
@@ -28,20 +30,43 @@
 
     <div class="span8">
         <form class="form-inline" id="invite_form" method="post">
-            ${self.csrf_token_input()}
-            <input type="text" id="new_user_input" name="${url_param_user}" placeHolder="Add email"/>
+            <input type="text" id="invite_user_email" placeHolder="Add email"/>
             <input id='invite_button' class="btn" type="submit" value="Send Invite"/>
         </form>
     </div>
 </div>
 
+<%credit_card_modal:html>
+    <%def name="title()">
+        Please activate your AeroFS subscription
+    </%def>
+    <%def name="description()">
+        <p>
+            A subscription is required for a team with more than three members.
+            We do our best to keep pricing simple &mdash; $10/user/month.
+            That means that you'll pay $40/month for four users, $50/month
+            for five users, and so on.
+            <a href="https://www.aerofs.com/pricing" target="_blank">More info on pricing</a>.
+        </p>
+
+        <p>
+            To proceed, please enter your payment method below. We will adjust your
+            subscription automatically as you add or remove team members, so you
+            never have to worry!
+        </p>
+    </%def>
+    <%def name="okay_button_text()">
+        Continue
+    </%def>
+</%credit_card_modal:html>
+
 <%block name="scripts">
+    <%credit_card_modal:javascript/>
+
     <script src="https://ajax.aspnetcdn.com/ajax/jquery.dataTables/1.8.2/jquery.dataTables.min.js"></script>
     <script src="${request.static_url('web:static/js/datatables_extensions.js')}"></script>
-    <script>
+    <script type="text/javascript">
         $(document).ready(function() {
-            mixpanel.track_forms("#invite-form", "Invited User to Team");
-
             $('#users_table').dataTable({
                 ## Features
                 "bProcessing": true,
@@ -78,53 +103,77 @@
             });
 
             $('#invite_form').submit(function(e) {
-                ## Must serialize data _before_ disabling the button
-                var serializedData = $(this).serialize();
+                inviteUser();
+                return false;
+            });
+
+            ## done and fail are callbacks for successful and failed cases. They
+            ## can be None.
+            function inviteUser(done, fail) {
                 $('#invite_button').attr('disabled', 'disabled');
+                var $email = $('#invite_user_email')
+                var email = $email.val()
 
-                $.post("${request.route_path('json.invite_user')}",
-                    serializedData
-                )
-                .done(function(data) {
-                    if (handleAjaxReply(data)) {
-                        ## Invitation succeeded
-                        var user_id = $('#new_user_input').val();
-                        $('#new_user_input').val('');
-                        addInvitedUserRow(user_id);
-
-                        mixpanel.track("Invited User to Team");
-                    }
+                $.post("${request.route_path('json.invite_user')}", {
+                    ${self.csrf.token_param()}
+                    "${url_param_user}": email
                 })
-                .fail(function (jqXHR, textStatus, errorThrown) {
-                    showErrorMessage(errorThrown);
+                .done(function(data) {
+                    addInvitedUserRow(email);
+                    $email.val('');
+                    showSuccessMessage("The user has been invited.");
+                    if (done) done();
+
+                    mixpanel.track("Invited User to Team");
+                })
+                .fail(function (xhr) {
+                    if (getErrorTypeNullable(xhr) == 'NO_STRIPE_CUSTOMER_ID') {
+                        inputCreditCardInfo(newStripeCustomer);
+                    } else {
+                        showErrorMessageFromResponse(xhr);
+                    }
+                    if (fail) fail();
                 })
                 .always(function() {
+                    ## Note: the button is enabled even if the payment dialog is
+                    ## brought up (by inputCreditCardInfo() above).
                     $('#invite_button').removeAttr('disabled');
                 });
+            }
 
-                e.preventDefault();
-            });
+            ## This method follows the contract defined by inputCreditCardInfo()
+            function newStripeCustomer(token, done, fail) {
+                $.post("${request.route_path('json.new_stripe_customer')}", {
+                    ${self.csrf.token_param()}
+                    "${url_param_stripe_card_token}": token
+                })
+                .done(function() {
+                    ## retry inviting after the Stripe customer ID is set
+                    inviteUser(done, fail);
+                })
+                .fail(function(xhr) {
+                    showErrorMessageFromResponse(xhr);
+                    fail();
+                });
+            }
 
             $('.remove_invitation').live("click", function() {
                 var $link = $(this);
-                var user_id = $(this).data("user");
+                var email = $(this).data("user");
                 $.post(
-                    "${request.route_path('json.delete_organization_invitation_for_user')}",
+                    "${request.route_path('json.delete_team_invitation')}",
                     {
-                        ${self.csrf_token_param()}
-                        "${url_param_user}": user_id
+                        ${self.csrf.token_param()}
+                        "${url_param_user}": email
                     }
                 )
-                .done(function(data) {
-                    if (handleAjaxReply(data)) {
-                        ## Remove the user row
-                        $link.closest('tr').remove();
-                    }
+                .done(function() {
+                    ## Remove the user row
+                    $link.closest('tr').remove();
+                    showSuccessMessage("The user has been removed.");
                 })
-                .fail(function (jqXHR, textStatus, errorThrown) {
-                    showErrorMessage(errorThrown);
-                });
-                ## Prevent default action of the link.
+                .fail(showErrorMessageFromResponse);
+
                 return false;
             });
 
@@ -149,16 +198,6 @@
             %for user_id in invited_users:
                 addInvitedUserRow("${user_id}");
             %endfor
-
-            function handleAjaxReply(data) {
-                if (data.success) {
-                    showSuccessMessage(data.response_message);
-                    return true;
-                } else {
-                    showErrorMessage(data.response_message);
-                    return false;
-                }
-            }
         });
     </script>
 </%block>
