@@ -118,12 +118,7 @@ public class Main {
             } else {
                 System.out.println("failed in main(): " + Util.e(e)); // l.error does not work here.
             }
-            if (Cfg.inited()) {
-                SVClient.logSendDefectSyncIgnoreErrors(true, "failed in main()", e);
-            } else {
-                SVClient.logSendDefectSyncNoCfgIgnoreErrors(true, "failed in main()", e,
-                        UserID.UNKNOWN, rtRoot);
-            }
+            SVClient.logSendDefectSyncIgnoreErrors(true, "failed in main()", e);
 
             ExitCode.FAIL_TO_LAUNCH.exit();
         }

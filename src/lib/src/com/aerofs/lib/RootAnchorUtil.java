@@ -98,7 +98,7 @@ public abstract class RootAnchorUtil
             String r = remote.get() != null && remote.get() ? "remote " : "";
             // sync instead of async to make sure we get it
             SVClient.logSendDefectSyncNoCfgIgnoreErrors(true, "unsupported fs: " + r + type,
-                    null, UserID.fromInternal("n/a"), rtRoot);
+                    null, UserID.UNKNOWN, rtRoot);
 
             throw new ExUIMessage(L.PRODUCT + " doesn't support " + r + type +
                     " filesystems on " + OSUtil.getOSName() + " at this moment");

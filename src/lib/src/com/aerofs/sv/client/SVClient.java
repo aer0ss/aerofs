@@ -1,11 +1,15 @@
 package com.aerofs.sv.client;
 
+import com.aerofs.base.Base64;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
+import com.aerofs.base.ex.AbstractExWirable;
 import com.aerofs.base.ex.Exceptions;
+import com.aerofs.base.id.DID;
+import com.aerofs.base.id.UniqueID;
+import com.aerofs.base.id.UserID;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.AppRoot;
-import com.aerofs.base.Base64;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.Param;
 import com.aerofs.lib.SystemUtil;
@@ -13,10 +17,6 @@ import com.aerofs.lib.SystemUtil.ExitCode;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
-import com.aerofs.base.ex.AbstractExWirable;
-import com.aerofs.base.id.DID;
-import com.aerofs.base.id.UniqueID;
-import com.aerofs.base.id.UserID;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.lib.rocklog.RockLog;
 import com.aerofs.proto.Sv.PBSVCall;
@@ -30,7 +30,6 @@ import com.aerofs.proto.Sv.PBSVHeader;
 import com.aerofs.sv.common.EmailCategory;
 import org.slf4j.Logger;
 
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.BufferedWriter;
 import java.io.DataInputStream;
@@ -52,9 +51,9 @@ import java.util.Stack;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-import static com.aerofs.lib.Param.LAST_SENT_DEFECT;
 import static com.aerofs.lib.FileUtil.deleteOrOnExit;
 import static com.aerofs.lib.Param.FILE_BUF_SIZE;
+import static com.aerofs.lib.Param.LAST_SENT_DEFECT;
 import static com.aerofs.lib.ThreadUtil.startDaemonThread;
 import static com.aerofs.lib.Util.crc32;
 import static com.aerofs.lib.Util.deleteOldHeapDumps;
@@ -179,7 +178,6 @@ public final class SVClient
                     "core db",
                     null,
                     newHeader(),
-                    Cfg.dumpDb(),
                     absRTRoot(),
                     null,
                     false,
@@ -280,7 +278,6 @@ public final class SVClient
                             desc,
                             cause,
                             header,
-                            Cfg.dumpDb(),
                             absRTRoot(),
                             null,
                             true,
@@ -305,7 +302,6 @@ public final class SVClient
                 desc,
                 cause,
                 newHeader(),
-                Cfg.dumpDb(),
                 absRTRoot(),
                 secret,
                 true,
@@ -331,7 +327,6 @@ public final class SVClient
                     context,
                     cause,
                     newHeader(),
-                    Cfg.dumpDb(),
                     absRTRoot(),
                     null,
                     false,
@@ -352,7 +347,6 @@ public final class SVClient
                     context,
                     cause,
                     newHeader(user, null, rtRoot),
-                    Collections.<Key, String>emptyMap(),
                     rtRoot,
                     null,
                     true,
@@ -381,7 +375,6 @@ public final class SVClient
             String desc,
             @Nullable Throwable cause,
             PBSVHeader header,
-            @Nonnull Map<Key, String> cfgDB,
             String rtRoot,
             @Nullable String secret,
             final boolean sendLogs,
@@ -415,6 +408,7 @@ public final class SVClient
 
         StringBuilder sbDesc = createDefectDescription(desc, secret);
 
+        Map<Key, String> cfgDB = Cfg.inited() ? Cfg.dumpDb() : Collections.<Key, String>emptyMap();
         PBSVDefect pbDefect = createPBDefect(isAutoBug, header, cfgDB, rtRoot, stackTrace, sbDesc);
 
         File defectFilesZip = compressDefectLogs(rtRoot, sendLogs, sendDB, sendHeapDumps,
@@ -770,9 +764,8 @@ public final class SVClient
 
     private static PBSVHeader newHeader()
     {
-        assert Cfg.inited();
-
-        return newHeader(Cfg.user(), Cfg.did(), absRTRoot());
+        return Cfg.inited() ? newHeader(Cfg.user(), Cfg.did(), absRTRoot())
+                            : newHeader(UserID.UNKNOWN, null, "unknown");
     }
 
     // FIXME (AG): I can get rid of this by creating a static block with a header initializer

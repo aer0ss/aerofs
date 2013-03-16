@@ -117,9 +117,7 @@ class Launcher
         }
 
         if (msg != null) {
-            SVClient.logSendDefectSyncNoCfgIgnoreErrors(true, msg, null, UserID.fromInternal(
-                    "unknown"),
-                    "unknwon");
+            SVClient.logSendDefectSyncNoCfgIgnoreErrors(true, msg, null, UserID.UNKNOWN, "unknown");
             throw new ExLaunchAborted(msg);
         }
 

@@ -230,11 +230,9 @@ public abstract class SystemUtil
                     @Override
                     public void uncaughtException(Thread t, Throwable e)
                     {
-                        SVClient.logSendDefectSyncIgnoreErrors(true,
-                                "uncaught exception from " + t.getName() +
-                                        ". program exits now.", e);
-                        // must abort the process as the abnormal thread can
-                        // no longer run properly
+                        SVClient.logSendDefectSyncIgnoreErrors(true, "uncaught exception from "
+                                + t.getName() + ". program exits now.", e);
+                        // must abort the process as the abnormal thread can no longer run properly
                         fatal(e);
                     }
                 }
