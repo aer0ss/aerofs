@@ -14,11 +14,14 @@ import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.base.id.UserID;
 import com.aerofs.base.ex.ExBadArgs;
+import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.ritual.RitualBlockingClient;
 import com.aerofs.proto.Ritual.ExportRevisionReply;
 import com.aerofs.proto.Ritual.GetChildrenAttributesReply;
+import com.aerofs.proto.Ritual.GetObjectAttributesReply;
 import com.aerofs.proto.Ritual.ListRevChildrenReply;
 import com.aerofs.proto.Ritual.ListRevHistoryReply;
+import com.aerofs.proto.Ritual.PBBranch;
 import com.aerofs.proto.Ritual.PBObjectAttributes;
 import com.aerofs.proto.Ritual.PBObjectAttributes.Type;
 import com.aerofs.proto.Ritual.PBRevChild;
@@ -233,14 +236,25 @@ public class HistoryModel
                 revs.add(new Version(path, r.getIndex(), r.getLength(), r.getMtime()));
             }
             if (!index.isDeleted) {
-                // For non-deleted files, add current version
-                File f = new File(path.toAbsoluteString(Cfg.absRootAnchor()));
-                Version current = new Version(path, null, f.length(), FileUtil.lastModified(f));
-                current.tmpFile = f.getAbsolutePath();
-                revs.add(current);
+                GetObjectAttributesReply oa = _ritual.getObjectAttributes(
+                        _userId.getString(), path.toPB());
+                for (PBBranch branch : oa.getObjectAttributes().getBranchList())
+                {
+                    if (branch.getKidx() == KIndex.MASTER.getInt())
+                    {
+                        Version current = new Version(path, null,
+                                branch.getLength(), branch.getMtime());
+                        // TODO(jP) : This won't work with block storage - expects the
+                        // file is already a valid export destination for restore.
+                        current.tmpFile = path.toAbsoluteString(Cfg.absRootAnchor());
+                        revs.add(current);
+                        break;
+                    }
+                }
             }
         } catch (Exception e) {
             l.warn(Util.e(e));
+            revs = null;
         }
         return revs;
     }
