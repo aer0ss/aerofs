@@ -59,7 +59,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
-public class MightCreateOperationsTest extends AbstractMightCreateTest
+public class TestMightCreateOperations extends AbstractMightCreateTest
 {
     @Mock OIDGenerator og;
     @Mock ObjectMover om;
