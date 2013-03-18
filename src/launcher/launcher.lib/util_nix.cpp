@@ -24,7 +24,7 @@ bool file_exists(const std::string& file)
     return false;
 }
 
-bool create_jvm(JavaVM **pvm, void **penv, void *args)
+bool create_jvm(const tstring& approot, JavaVM **pvm, void **penv, void *args)
 {
     jint result = JNI_CreateJavaVM(pvm, penv, args);
     if (result < 0) {

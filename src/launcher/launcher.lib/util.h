@@ -26,7 +26,7 @@ tstring dir_name(const tstring& path);
 
 // Implemented in the platform-specific util
 bool file_exists(const tstring& file);
-bool create_jvm(JavaVM **pvm, void **penv, void *args);
+bool create_jvm(const tstring& approot, JavaVM **pvm, void **penv, void *args);
 tstring list_jars(const tstring& jars_path);
 
 #endif // UTIL_H

@@ -31,6 +31,7 @@ VERSION_FILE=version
 # Copy files to approot
 mkdir -p "$APPROOT"
 rm -rf "$APPROOT"/Growl.framework # Symlinks prevent cp from overwriting the files
+rm -rf "$APPROOT"/jre  # jre contains some read-only files that would make cp fail
 cp -R "$ASIS"/common/* "$APPROOT"/
 cp -R "$ASIS"/s3/lib/* "$APPROOT"/lib/
 cp -R "$ASIS"/$OS/* "$APPROOT"/

@@ -18,6 +18,7 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.os.OSUtil;
+import com.aerofs.lib.rocklog.Defect.Priority;
 import com.aerofs.lib.rocklog.RockLog;
 import com.aerofs.proto.Sv.PBSVCall;
 import com.aerofs.proto.Sv.PBSVCall.Type;
@@ -47,6 +48,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.MissingResourceException;
 import java.util.Stack;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -394,6 +396,17 @@ public final class SVClient
             return;
         }
 
+        // If we have any LinkageError (NoClassDefFoundError or UnsatisfiedLinkError) or
+        // MissingResourceException, this probably indicates that our stripped-down version of
+        // OpenJDK is missing something. Send a different RockLog defect to make sure we catch it.
+        if (cause instanceof LinkageError || cause instanceof MissingResourceException) {
+            RockLog.newDefect("system.classnotfound").setException(cause)
+                    .setPriority(Priority.Fatal).send();
+        } else {
+            RockLog.newDefect("SV: " + desc).setMessage(desc).setException(cause).send();
+        }
+
+
         // apend the business user tag string for multiuser systems.
         if (L.get().isMultiuser()) {
             desc = Param.BUSINESS_USER_EMAIL_TAG + " " + desc;
@@ -403,8 +416,6 @@ public final class SVClient
         boolean ignoreDefect = isAutoBug && isLastSentDefect(cause.getMessage(), stackTrace) && !sendDB;
         l.error((ignoreDefect ? "repeating last" : "sending") + " defect: " + desc + ": " + Util.e(cause));
         if (ignoreDefect) return;
-
-        RockLog.newDefect("SV: " + desc).setMessage(desc).setException(cause).send();
 
         StringBuilder sbDesc = createDefectDescription(desc, secret);
 

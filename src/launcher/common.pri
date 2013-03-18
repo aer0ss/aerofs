@@ -17,6 +17,13 @@ linux-g++-64 {
 win32 {
     OS = "win"
     DEFINES += WIN32
+
+    # Link statically with MSVC C++ runtime library to avoid depending on MSVC100.DLL and MSVCR100.DLL
+    QMAKE_CXXFLAGS_RELEASE -= -MD
+    QMAKE_CXXFLAGS_RELEASE += -MT
+    QMAKE_CXXFLAGS_DEBUG -= -MD
+    QMAKE_CXXFLAGS_DEBUG += -MT
+
 }
 
 CONFIG -= qt

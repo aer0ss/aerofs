@@ -35,36 +35,6 @@
 
 !macroend
 
-
-/**
-Checks if we can install without admin privileges (at the cost of some features such as icon overlay),
-or if we absolutely need admin rights (to install the JRE, for example)
-
-Returns: $0 = "0" if we can continue without being admin, "1" otherwise
-*/
-Function isAdminRequired
-    # Require admin if JRE is not installed
-    Push "${JRE_VERSION}"
-    Call DetectJRE
-    Pop $0
-    Pop $1
-    ${If} $0 != "OK"
-        StrCpy $0 "1"
-        Return
-    ${EndIf}
-
-    # Require admin if some redistributables need to be installed
-    !insertmacro isVCRedistInstalled
-    ${If} $0 != "YES"
-        StrCpy $0 "1"
-        Return
-    ${EndIf}
-
-    # End of checks, admin is not required
-    StrCpy $0 "0"
-    Return
-FunctionEnd
-
 /**
  * Rename a file by appending a suffix and a numeric id to it.
  *

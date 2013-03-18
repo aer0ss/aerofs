@@ -2,20 +2,21 @@
 
 # usage: run <rtroot> <app> [args]
 
-if [ x`uname -s | grep -i 'cygwin\|mingw'` != x ]; then
-    S=';'
-else
-    EXEC=exec
-    S=':'
-fi
-
 # derive PPWD
 PPWD=`dirname $0`
 
 # convert '/cygdrive/X/' to 'X:/'. otherwise JVM wouldn't recognize the path
 PPWD=`echo $PPWD | sed -e 's|/cygdrive/\([a-zA-Z]\)/|\1:/|'`
 
-S3ROOT="$PPWD/../java/aerofs.s3"
+if [ x`uname -s | grep -i 'cygwin\|mingw'` != x ]; then
+    S=';'
+    JAVA="$PPWD/jre/bin/java"
+else
+    EXEC=exec
+    S=':'
+    JAVA="java"
+fi
+
 
 OS=`"$PPWD"/os`
 
@@ -43,15 +44,10 @@ elif [ x`echo $OS | grep linux` != x ]; then
     export LD_LIBRARY_PATH=$PPWD:$JRE_LIB:$JRE_LIB/server:$LD_LIBRARY_PATH
 fi
 
-CP="$PPWD/bin"
-for i in "$PPWD"/lib/*.jar "$S3ROOT"/lib/*.jar; do
-    CP="$CP$S$i"
-done
+CP="$PPWD/bin$S$PPWD/lib/*"
 
 VMARGS_DBG="$VMARGS -Xmx64m -XX:+UseConcMarkSweepGC -XX:+HeapDumpOnOutOfMemoryError -Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=5005"
 VMARGS_PROD="$VMARGS -Xmx64m -XX:+UseConcMarkSweepGC -XX:+HeapDumpOnOutOfMemoryError"
-#VMARGS="$VMARGS -agentlib:hprof=cpu=samples,depth=16"
-#VMARGS="$VMARGS -agentlib:hprof=heap=sites,depth=16"
 
 # set DEBUG to "gdb --args" to run in debugger
-$EXEC $DEBUG java $VMARGS_PROD -Djava.library.path="$PPWD" -ea -cp "$CP" com.aerofs.Main "$@"
+$EXEC $DEBUG $JAVA $VMARGS_PROD -Djava.library.path="$PPWD" -ea -cp "$CP" com.aerofs.Main "$@"

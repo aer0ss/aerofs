@@ -26,5 +26,4 @@ linux {
 win32 {
     SOURCES += util_win.cpp
     QMAKE_CXXFLAGS += -DUNICODE -D_UNICODE
-
 }

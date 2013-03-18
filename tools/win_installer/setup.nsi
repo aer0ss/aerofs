@@ -31,18 +31,12 @@ SetOverwrite try
 !define MUI_ICON "${AEROFS_IN_FOLDER}\icons\logo.ico"
 !define MUI_UNFINISHPAGE_NOAUTOCLOSE
 
-# Java Runtime Environment
-!define JRE_VERSION "1.6"
-!define JRE_URL "http://javadl.sun.com/webapps/download/AutoDL?BundleId=63691"  # Java 7u4 - url from: http://www.java.com/en/download/manual.jsp
-
 # Included files
 !include LogicLib.nsh
 !include Library.nsh
-!include vcredist.nsh
 !include common.nsh
 !include Sections.nsh
 !include MUI2.nsh
-!include jre.nsh
 !include UAC.nsh
 !include WinVer.nsh
 
@@ -91,20 +85,11 @@ uac_tryagain:
     ${AndIf} $1 = 3
     ${OrIf} $0 = 1223
         # User declined to give admin privileges. Offer to retry
-        Call isAdminRequired
-        ${If} $0 <> 0
-            StrCpy $9 "$(^Name) cannot be installed without administrator rights. \
-                Would you like to try entering your administrator password again? \
-                If you click no, the installation will be canceled."
-            MessageBox MB_YESNO|mb_IconExclamation|mb_TopMost|mb_SetForeground $9 /SD IDNO IDYES uac_tryagain IDNO 0
-            Quit # If the user chooses not te retry, quit
-        ${Else}
-            StrCpy $9 "$(^Name) installer needs administrator rights to install some features. \
-                Would you like to try entering your administrator password again? \
-                If you click no, those features will be disabled."
-            MessageBox MB_YESNO|mb_IconExclamation|mb_TopMost|mb_SetForeground $9 /SD IDNO IDYES uac_tryagain IDNO 0
-            Return # If the user chooses not to retry, continue without admin privileges
-        ${EndIf}
+        StrCpy $9 "$(^Name) installer needs administrator rights to install some features. \
+            Would you like to try entering your administrator password again? \
+            If you click no, those features will be disabled."
+        MessageBox MB_YESNO|mb_IconExclamation|mb_TopMost|mb_SetForeground $9 /SD IDNO IDYES uac_tryagain IDNO 0
+        Return # If the user chooses not to retry, continue without admin privileges
     ${EndIf}
 
     # All other cases, simply try to proceed with the installation
@@ -126,6 +111,8 @@ Function .onInit
     LogSet on
     LogText "Installing $(^Name) ${VERSION}..."
 
+    InitPluginsDir
+
     # Save original user info so that we can retrieve it later while running as admin
     UserInfo::GetName
     Pop $0
@@ -141,37 +128,18 @@ FunctionEnd
 
 /**
  *  This is the main section
- *  If we the user has granted us admin rights, we will call preInstall_privileged and postInstall_privileged
- *  functions with admin rights, otherwise, will call them as the current user.
+ *  If we the user has granted us admin rights, we will call postInstall_privileged
+ *  with admin rights, otherwise, will call it as the current user.
  */
 Section -Main
     ${If} ${UAC_IsInnerInstance}
-        Call preInstall_privileged
         !insertmacro UAC_AsUser_Call Function install_unprivileged ${UAC_SYNCREGISTERS}
         Call postInstall_privileged
     ${Else}
-        Call preInstall_privileged
         Call install_unprivileged
         Call postInstall_privileged
     ${EndIf}
 SectionEnd
-
-/**
- *  pre-install
- *  Code in this function may or may not run with admin privileges, depending on whether the user has
- *  granted us admin rights. Even if we aren't admin, we should try nonetheless and fail silently.
- */
-Function preInstall_privileged
-
-    InitPluginsDir
-
-    call DownloadAndInstallJREIfNecessary
-
-    # Install the VC++ runtime libraries
-    !insertmacro checkAndinstallVCRedists
-
-FunctionEnd
-
 
 /**
  *  This function will be called in the regular user context.

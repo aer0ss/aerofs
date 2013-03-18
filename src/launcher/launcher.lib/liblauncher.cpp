@@ -47,7 +47,6 @@ static _TCHAR** g_args;
 int launch(JNIEnv* env, const char* class_name, _TCHAR* argv[]);
 bool get_executable_path(tstring& path, tstring& errmsg);
 tstring construct_classpath(const tstring& approot);
-//tstring list_jars(const tstring& jars_path);
 vector<tstring> get_default_options();
 bool parse_options(_TCHAR*** pargv, vector<tstring>* options);
 
@@ -211,7 +210,7 @@ bool launcher_create_jvm(const _TCHAR* approot, _TCHAR** args, JavaVM** pjvm, JN
     }
 #endif
 
-    bool result = create_jvm(pjvm, (void**)penv, &vm_args);
+    bool result = create_jvm(approot, pjvm, (void**)penv, &vm_args);
 
     delete vmopt;
 #ifdef _WIN32
@@ -344,7 +343,6 @@ tstring construct_classpath(const tstring& approot)
 
     return classpath;
 }
-
 
 /**
  * Returns the absolute canonical path to the currently running executable.
