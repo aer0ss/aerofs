@@ -5,6 +5,7 @@
 package com.aerofs.daemon.core.linker.scanner;
 
 import com.aerofs.daemon.core.ds.DirectoryService;
+import com.aerofs.daemon.core.first.ScanProgressReporter;
 import com.aerofs.daemon.core.linker.MightCreate;
 import com.aerofs.daemon.core.linker.TimeoutDeletionBuffer;
 import com.aerofs.daemon.core.linker.TimeoutDeletionBuffer.Holder;
@@ -31,6 +32,7 @@ public abstract class AbstractTestScanSession extends AbstractTest
     @Mock Holder h;
     @Mock InjectableFile.Factory factFile;
     @Mock CfgAbsRootAnchor cfgAbsRootAnchor;
+    @Mock ScanProgressReporter spr;
     @InjectMocks ScanSession.Factory factSS;
 
     protected final String pRoot;
