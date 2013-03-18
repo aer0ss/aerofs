@@ -33,10 +33,7 @@ import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-/**
- *
- */
-public class MightCreateTest extends AbstractMightCreateTest
+public class TestMightCreate extends AbstractMightCreateTest
 {
     @Mock Trans t;
     @Mock IDeletionBuffer delBuffer;
