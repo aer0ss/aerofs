@@ -7,6 +7,7 @@ import com.aerofs.base.ex.IExObfuscated;
 import com.aerofs.controller.ExLaunchAborted;
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIUtil;
+import com.aerofs.gui.setup.DlgJoinSharedFolders;
 import com.aerofs.gui.setup.DlgTutorial;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.*;
@@ -294,6 +295,13 @@ public class UIUtil
         if (shouldShowTutorial()) {
             // Show the user tutorial on OS X and Windows
             new DlgTutorial(GUI.get().sh()).openDialog();
+        }
+
+        // TODO (WW) don't show this dialog
+        if (UI.isGUI()) {
+            // Check if there are any shared folder invitations to accept
+            new DlgJoinSharedFolders(GUI.get().sh()).showDialogIfNeeded();
+            // TODO (GS): Needs a similar class for CLI, too
         }
 
         finishLaunch(postLaunch);
