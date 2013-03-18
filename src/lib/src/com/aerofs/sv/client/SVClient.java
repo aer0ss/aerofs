@@ -403,9 +403,11 @@ public final class SVClient
             RockLog.newDefect("system.classnotfound").setException(cause)
                     .setPriority(Priority.Fatal).send();
         } else {
-            RockLog.newDefect("SV: " + desc).setMessage(desc).setException(cause).send();
+            // Note: we can't pick a good defect name here since we don't know who created this
+            // defect, so we use the generic "svdefect" string. See doc in newDefect() for more
+            // info about defect names.
+            RockLog.newDefect("svdefect").setMessage(desc).setException(cause).send();
         }
-
 
         // apend the business user tag string for multiuser systems.
         if (L.get().isMultiuser()) {

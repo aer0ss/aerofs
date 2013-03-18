@@ -29,53 +29,33 @@ public class RockLog
      */
     public static enum BaseComponent
     {
-        CLIENT
-        {
-            @Override
-            public String toString()
-            {
-                return "client";
-            }
-        },
-        SERVER
-        {
-            @Override
-            public String toString()
-            {
-                return "server";
-            }
-        }
+        CLIENT { @Override public String toString() { return "client"; } },
+        SERVER { @Override public String toString() { return "server"; } }
     }
 
-    //
-    // constants
-    //
-
+    private static final Logger l = Loggers.getLogger(RockLog.class);
     private static final int SOCKET_TIMEOUT = (int) (10 * C.SEC);
     private static final String ROCKLOG_URL = "http://rocklog.aerofs.com";
     private static final InjectableCfg _cfg = new InjectableCfg();
 
-    //
-    // singleton instance
-    //
-
     private static RockLog _instance;
-
-    //
-    // per-instance values (technically l is shared, but, whatever)
-    //
-
-    private static final Logger l = Loggers.getLogger(RockLog.class);
-
     private final String _prefix;
 
-    /*
-    TODO (GS)
-        - do not resend automatic defects
-        - zip and send logs
-        - send Cfg DB in the defect
+    /**
+     * The defect name allows us to easily search and aggregate defects in RockLog.
+     *
+     * How to pick a good defect name:
+     *
+     * - NO SPACES
+     * - Short string that describes what component failed
+     * - Use dots to create hierarchies
+     *
+     * Good names:
+     * "daemon.linker.someMethod", "system.nolaunch"
+     *
+     * Bad names:
+     * "Name With Spaces", "daemon.linker.someMethod_failed" <-- "failed" is redundant
      */
-
     public static Defect newDefect(String name)
     {
         return new Defect(getInstance(), _cfg, name);
@@ -126,7 +106,6 @@ public class RockLog
     void send(RockLogMessage message)
     {
         try {
-            l.trace("send RockLog message...");
             rpc(message.getJSON().getBytes(), ROCKLOG_URL + message.getURLPath());
         } catch (Throwable e) {
             l.warn("fail send RockLog message: " + Util.e(e, IOException.class));
