@@ -267,13 +267,19 @@ class _RitualServiceWrapper(object):
         return self._service.get_activities(True, 1, None).page_token
 
     def shutdown(self):
-        try:
-            self._service.shutdown()
-        except socket.error:
-            # the daemon is expected to disconnect the socket when shutting down
-            pass
-        else:
-            raise IOError("the daemon didn't shut down properly")
+        while True:
+            try:
+                self._service.shutdown()
+            except exception.ExceptionReply as e:
+                if e.get_type() == PBException.INDEXING:
+                    continue
+                raise
+            except socket.error:
+                # the daemon is expected to disconnect the socket when shutting down
+                pass
+            else:
+                raise IOError("the daemon didn't shut down properly")
+            break
 
     def test_pause_linker(self):
         self._service.test_pause_linker()
