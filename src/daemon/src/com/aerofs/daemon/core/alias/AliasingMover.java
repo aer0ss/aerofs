@@ -368,6 +368,15 @@ public class AliasingMover
         OA oaAlias = _ds.getOANullable_(alias);
         OA oaTarget = _ds.getOANullable_(target);
 
+        if (oaAlias != null) {
+            // if the alias was explicitly expelled we need to remove it from the table of expelled
+            // objects to avoid problems in HdListExpelledObjects
+            // if the target is remote, then we will propagate the expelled state from the alias
+            // so we also need to add the target to the table of expelled objects to avoid inconsi-
+            // stency between said table and the OA flags
+            _expulsion.objectAliased_(oaAlias, oaTarget == null ? target : null, t);
+        }
+
         if (oaTarget == null) {
             assert oaAlias != null : alias + " " + target;
             l.info("remote target: fast path");
@@ -386,13 +395,6 @@ public class AliasingMover
                 _pvc.deleteAllPrefixVersions_(alias, t);
                 _nvc.moveAllLocalVersions_(cAlias, cTarget, t);
             }
-
-            // if the alias was explicitly expelled and the target is remote, we need to:
-            // 1. remove  alias from the expelled objects list to avoid AE in HdListExpelledObjects
-            // 2. add target to the expelled objects list to avoid inconsistency between OA flags
-            // and the expelled objects list
-            // NB: MUST be called *after* replaceOID_
-            _expulsion.objectAliased_(alias, target, t);
         } else {
             if (oaTarget.isDir()) {
                 moveChildrenFromAliasToTargetDir_(alias, target, t);
