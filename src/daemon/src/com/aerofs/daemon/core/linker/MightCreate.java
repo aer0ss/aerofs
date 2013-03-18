@@ -209,7 +209,17 @@ public class MightCreate
     private Set<Operation> determineUpdateOperation_(@Nullable SOID sourceSOID,
             @Nullable SOID targetSOID, FIDAndType fnt) throws SQLException
     {
-        if (targetSOID == null) return EnumSet.of(sourceSOID == null ? Create : Update);
+        if (targetSOID == null) {
+            if (sourceSOID == null) return EnumSet.of(Create);
+            OA sourceOA = _ds.getOA_(sourceSOID);
+            if (sourceOA.isDirOrAnchor() == fnt._dir) return EnumSet.of(Update);
+            // same FID, diff path, diff types
+            // This may happen if 1) the OS deletes an object and soon reuses the same FID to
+            // create a new object of a different type (this has been observed on a Ubuntu test
+            // VM). This can also happen 2) on filesystems with ephemeral FIDs such as FAT on
+            // Linux. In either case, we need to assign the logical object with a random FID
+            return EnumSet.of(Create, RandomizeSourceFID);
+        }
 
         OA targetOA = _ds.getOA_(targetSOID);
         Set<Operation> ops = shouldRenameTarget_(targetOA, fnt._dir);
@@ -243,6 +253,6 @@ public class MightCreate
         // the future. The assertion is needed for the "fnt._dir == ...isDirOrAnchor()"
         // check below.
         assert targetOA.isDirOrAnchor() != targetOA.isFile();
-        return targetOA.isDirOrAnchor() == dir ? null : EnumSet.of(RenameTarget, RandomizeFID);
+        return targetOA.isDirOrAnchor() == dir ? null : EnumSet.of(RenameTarget);
     }
 }

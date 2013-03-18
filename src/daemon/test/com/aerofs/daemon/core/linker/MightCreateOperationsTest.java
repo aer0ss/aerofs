@@ -21,8 +21,11 @@ import com.aerofs.lib.analytics.Analytics;
 import com.aerofs.lib.cfg.CfgAbsRootAnchor;
 import com.aerofs.lib.id.CID;
 import com.aerofs.lib.id.FID;
+import com.aerofs.lib.id.KIndex;
+import com.aerofs.lib.id.SOCID;
 import com.aerofs.lib.id.SOCKID;
 import com.aerofs.lib.id.SOID;
+import com.aerofs.lib.id.SOKID;
 import com.aerofs.lib.injectable.InjectableDriver;
 import com.aerofs.lib.injectable.InjectableDriver.FIDAndType;
 import com.aerofs.lib.injectable.InjectableFile;
@@ -46,7 +49,9 @@ import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.argThat;
 import static org.mockito.Matchers.eq;
 
+import java.io.File;
 import java.sql.SQLException;
+import java.util.Arrays;
 import java.util.EnumSet;
 
 import static org.mockito.Mockito.mock;
@@ -54,31 +59,22 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
-public class MightCreateOperationsTest extends AbstractTest
+public class MightCreateOperationsTest extends AbstractMightCreateTest
 {
-    @Mock DirectoryService ds;
     @Mock OIDGenerator og;
     @Mock ObjectMover om;
     @Mock ObjectCreator oc;
-    @Mock InjectableDriver dr;
     @Mock VersionUpdater vu;
     @Mock InjectableFile.Factory factFile;
     @Mock SharedFolderTagFileAndIcon sfti;
     @Mock Analytics analytics;
     @Mock IDeletionBuffer delBuffer;
-    @Mock Trans t;
-    @Mock CfgAbsRootAnchor cfgAbsRootanchor;
 
     @InjectMocks MightCreateOperations mcop;
 
     @Before
     public void setUp() throws Exception
     {
-        when(cfgAbsRootanchor.get()).thenReturn("/AeroFS");
-
-        // 64bit fid: 8 bytes
-        when(dr.getFIDLength()).thenReturn(8);
-
         // setup a basic object tree for tests
         final MockDS mds = new MockDS(ds);
         mds.root()
@@ -114,43 +110,6 @@ public class MightCreateOperationsTest extends AbstractTest
         );
     }
 
-    /**
-     * Helper to create SOID matcher
-     */
-    SOID soidAt(String path)
-    {
-        return argThat(new IsSOIDAtPath(ds, path));
-    }
-
-    FIDAndType generateFileFnt() throws SQLException
-    {
-        return generateFileFnt(null);
-    }
-
-    FIDAndType generateDirFnt() throws SQLException
-    {
-        return generateDirFnt(null);
-    }
-
-    FIDAndType generateDirFnt(@Nullable SOID soid) throws SQLException
-    {
-        return new FIDAndType(generateFID(soid), true);
-    }
-
-    FIDAndType generateFileFnt(@Nullable SOID soid) throws SQLException
-    {
-        return new FIDAndType(generateFID(soid), false);
-    }
-
-    FID generateFID(@Nullable SOID soid) throws SQLException
-    {
-        byte[] bs = new byte[dr.getFIDLength()];
-        Util.rand().nextBytes(bs);
-        FID fid = new FID(bs);
-        if (soid != null) when(ds.getSOIDNullable_(eq(fid))).thenReturn(soid);
-        return fid;
-    }
-
     void fileModified(Path path) throws Exception
     {
         fileModified(path, true);
@@ -168,16 +127,43 @@ public class MightCreateOperationsTest extends AbstractTest
         InjectableFile f = mock(InjectableFile.class);
         CA ca = ds.getOA_(soid).caMaster();
         when(f.wasModifiedSince(ca.mtime(), ca.length())).thenReturn(modified);
-        when(factFile.create(Util.join(cfgAbsRootanchor.get(), physical))).thenReturn(f);
+        when(factFile.create(Util.join(cfgAbsRootAnchor.get(), physical))).thenReturn(f);
     }
 
     private void op(String path, FIDAndType fnt, Operation op, Operation... flags) throws Exception
     {
-        PathCombo pc = new PathCombo(cfgAbsRootanchor, Path.fromString(path));
+        PathCombo pc = new PathCombo(cfgAbsRootAnchor, Path.fromString(path));
         SOID src = ds.getSOIDNullable_(fnt._fid);
         SOID dst = ds.resolveNullable_(pc._path);
         l.info("mcop {} {}", src, dst);
         mcop.executeOperation_(EnumSet.of(op, flags), src, dst, pc, fnt, delBuffer, t);
+    }
+
+    private InjectableFile mockPhy(boolean dir, String... pathElems)
+    {
+        String parentPath = Util.join(Arrays.copyOf(pathElems, pathElems.length - 1));
+        String absPath = Util.join(pathElems);
+        InjectableFile f = mock(InjectableFile.class);
+        when(f.isDirectory()).thenReturn(dir);
+        when(f.isFile()).thenReturn(!dir);
+        when(f.exists()).thenReturn(true);
+        when(f.getAbsolutePath()).thenReturn(absPath);
+        when(f.getParent()).thenReturn(parentPath);
+        when(factFile.create(absPath)).thenReturn(f);
+        when(factFile.create(parentPath, pathElems[pathElems.length - 1])).thenReturn(f);
+        return f;
+    }
+
+    private InjectableFile mockPhyDir(String... pathElems)
+    {
+        return mockPhy(true, pathElems);
+    }
+
+    private InjectableFile mockPhyFile(InjectableFile parent, String name)
+    {
+        InjectableFile f =  mockPhy(false, parent.getAbsolutePath(), name);
+        when(factFile.create(parent, name)).thenReturn(f);
+        return f;
     }
 
     @Test
@@ -310,18 +296,86 @@ public class MightCreateOperationsTest extends AbstractTest
     @Test
     public void shouldRenameTarget() throws Exception
     {
+        FIDAndType fnt = generateFileFnt();
 
+        InjectableFile parent = mockPhyDir(cfgAbsRootAnchor.get(), "foo");
+        mockPhyFile(parent, "bar");
+        mockPhyFile(parent, "bar (2)");
+        when(mockPhyFile(parent, "bar (3)").exists()).thenReturn(false);
+
+        op("foo/bar", fnt, Create, RenameTarget);
+
+        verify(om).moveInSameStore_(soidAt("foo/bar"), oidAt("foo"), eq("bar (3)"), eq(MAP),
+                eq(false), eq(true), eq(t));
+        verify(oc).create_(eq(FILE), any(OID.class), soidAt("foo"), eq("bar"), eq(MAP), eq(t));
+        verifyZeroInteractions(delBuffer, vu);
     }
 
     @Test
-    public void shouldRandomizeFID() throws Exception
+    public void shouldRenameTargetAndRandomizeTargetFID() throws Exception
     {
+        Path path = Path.fromString("foo/bar");
+        SOID soid = ds.resolveNullable_(path);
+        FIDAndType fnt = generateFileFnt(soid);
 
+        InjectableFile parent = mockPhyDir(cfgAbsRootAnchor.get(), "foo");
+        mockPhyFile(parent, "bar");
+        when(mockPhyFile(parent, "bar (2)").exists()).thenReturn(false);
+
+        op("foo/bar", fnt, Create, RenameTarget);
+
+        verify(ds).setFID_(eq(soid), any(FID.class), eq(t));
+        verify(om).moveInSameStore_(soidAt("foo/bar"), oidAt("foo"), eq("bar (2)"), eq(MAP),
+                eq(false), eq(true), eq(t));
+        verify(oc).create_(eq(FILE), any(OID.class), soidAt("foo"), eq("bar"), eq(MAP), eq(t));
+        verifyZeroInteractions(delBuffer, vu);
     }
 
     @Test
-    public void shouldCleanupSource() throws Exception
+    public void shouldRandomizeSourceFID() throws Exception
     {
+        Path path = Path.fromString("foo/bar");
+        SOID soid = ds.resolveNullable_(path);
+        FIDAndType fnt = generateFileFnt(soid);
 
+        op("new", fnt, Create, RandomizeSourceFID);
+
+        verify(ds).setFID_(eq(soid), any(FID.class), eq(t));
+        verify(oc).create_(eq(FILE), any(OID.class), soidAt(""), eq("new"), eq(MAP), eq(t));
+        verifyZeroInteractions(delBuffer, om, vu);
+    }
+
+    @Test
+    public void shouldReplaceFolderAndCleanupSource() throws Exception
+    {
+        Path path = Path.fromString("foo");
+        SOID source = ds.resolveNullable_(path);
+        FIDAndType fnt = generateDirFnt(source);
+
+        SOID target = ds.resolveNullable_(Path.fromString("baz"));
+
+        op("baz", fnt, Replace);
+
+        verify(ds).setFID_(eq(source), any(FID.class), eq(t));
+        verify(ds).setFID_(eq(target), eq(fnt._fid), eq(t));
+        verifyZeroInteractions(vu, om, oc);
+    }
+
+    @Test
+    public void shouldReplaceFileAndCleanupSource() throws Exception
+    {
+        Path path = Path.fromString("foo/bar/hello");
+        SOID source = ds.resolveNullable_(path);
+        FIDAndType fnt = generateFileFnt(source);
+
+        SOID target = ds.resolveNullable_(Path.fromString("foo/bar/world"));
+
+        op("foo/bar/world", fnt, Replace);
+
+        verify(ds).setFID_(eq(source), any(FID.class), eq(t));
+        verify(ds).setCA_(new SOKID(source, KIndex.MASTER), -1L, 0L, null, t);
+        verify(ds).setFID_(eq(target), eq(fnt._fid), eq(t));
+        verify(vu).update_(new SOCKID(target, CID.CONTENT), t);
+        verifyZeroInteractions(vu, om, oc);
     }
 }

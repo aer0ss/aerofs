@@ -41,11 +41,8 @@ public class TestMightCreate_SameFIDDiffPathSameType extends AbstractTestMightCr
         String namef2 = "f2";
         shouldRenameFromf1(namef2);
 
-        // NB: this test is fucked up: it's supposed to exercise a file move-over
-        // but the target path is also in a state of type mismatch...
-        // TODO: clean up the test battery...
         verifyOperationExecuted(
-                EnumSet.of(Operation.Update, Operation.RenameTarget, Operation.RandomizeFID),
+                EnumSet.of(Operation.Update, Operation.RenameTarget),
                 namef2);
     }
 

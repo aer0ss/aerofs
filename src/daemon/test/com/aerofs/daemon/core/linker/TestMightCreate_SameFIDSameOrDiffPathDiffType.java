@@ -54,7 +54,7 @@ public class TestMightCreate_SameFIDSameOrDiffPathDiffType extends AbstractTestM
         mightCreate("f2");
 
         verifyOperationExecuted(
-                EnumSet.of(Operation.Create, Operation.RenameTarget, Operation.RandomizeFID),
+                EnumSet.of(Operation.Create, Operation.RenameTarget),
                 soidFolder, soidFolder, "f2");
     }
 }

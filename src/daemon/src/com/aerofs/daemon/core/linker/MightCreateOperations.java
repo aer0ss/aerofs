@@ -78,9 +78,9 @@ class MightCreateOperations
 
         // the following "flags" can be combined with some of the above ops
         RenameTarget,
-        RandomizeFID;
+        RandomizeSourceFID;
 
-        static private final EnumSet<Operation> PRE = EnumSet.of(RenameTarget, RandomizeFID);
+        static private final EnumSet<Operation> PRE = EnumSet.of(RenameTarget, RandomizeSourceFID);
         static private final EnumSet<Operation> CORE = EnumSet.complementOf(PRE);
 
         // extract core operation (assume exactly one core operation is present)
@@ -112,18 +112,10 @@ class MightCreateOperations
     public boolean executeOperation_(Set<Operation> ops, SOID sourceSOID, SOID targetSOID,
             PathCombo pc, FIDAndType fnt, IDeletionBuffer delBuffer, Trans t) throws Exception
     {
-        if (ops.contains(Operation.RandomizeFID)) {
-            // The target object has the same FID but different type than the physical object.
-            // This may happen if 1) the OS deletes an object and soon reuses the same FID to
-            // create a new object of a different type (this has been observed on a Ubuntu test
-            // VM). This can also happen 2) on filesystems with ephemeral FIDs such as FAT on
-            // Linux. In either case, we assign the logical object with a random FID and proceed
-            // to the condition determination code.
-            assignRandomFID_(targetSOID, t);
-        }
+        if (ops.contains(Operation.RandomizeSourceFID)) assignRandomFID_(sourceSOID, t);
 
         if (ops.contains(Operation.RenameTarget)) {
-            renameConflictingLogicalObject_(_ds.getOA_(targetSOID), pc, t);
+            renameConflictingLogicalObject_(_ds.getOA_(targetSOID), pc, fnt._fid, t);
         }
 
         switch (Operation.core(ops)) {
@@ -168,7 +160,7 @@ class MightCreateOperations
      * @param pc the path to the logical object, must be identical to what _ds.resolve_(oa) would
      * return
      */
-    private void renameConflictingLogicalObject_(@Nonnull OA oa, PathCombo pc, Trans t)
+    private void renameConflictingLogicalObject_(@Nonnull OA oa, PathCombo pc, FID fid, Trans t)
             throws Exception
     {
         l.info("rename conflict " + oa.soid() + ":" + pc);
@@ -180,10 +172,10 @@ class MightCreateOperations
 
         // generate a new name for the logical object
         String name = oa.name();
+        String pParent = _factFile.create(pc._absPath).getParent();
         while (true) {
             name = Util.nextFileName(name);
             // avoid names that are taken by either logical or physical objects
-            String pParent = _factFile.create(pc._absPath).getParent();
             InjectableFile f = _factFile.create(pParent, name);
             if (f.exists()) continue;
             OID child = _ds.getChild_(oa.soid().sidx(), oa.parent(), name);
@@ -192,6 +184,12 @@ class MightCreateOperations
         }
 
         l.info("move for confict " + oa.soid() + ":" + pc + "->" + obfuscatePath(name));
+
+        // randomize FID in case of conflict
+        FID fidTarget = oa.fid();
+        if (fidTarget != null && fidTarget.equals(fid)) {
+            assignRandomFID_(oa.soid(), t);
+        }
 
         // rename the logical object
         _om.moveInSameStore_(oa.soid(), oa.parent(), name, MAP, false, true, t);
@@ -320,7 +318,8 @@ class MightCreateOperations
         // and timestamp. We work around that by assigning a negative size to the MASTER branch
         // of the source to make sure detectAndApplyModification_ will consider any content that
         // appear at the path of the source object to be a modification
-        if (_ds.getOA_(sourceSOID).isFile()) {
+        OA sourceOA = _ds.getOA_(sourceSOID);
+        if (sourceOA.isFile() && sourceOA.caMasterNullable() != null) {
             _ds.setCA_(new SOKID(sourceSOID, KIndex.MASTER), -1L, 0L, null, t);
         }
     }
