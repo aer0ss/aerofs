@@ -65,7 +65,8 @@ def _render_user_options_link(request, user):
                   'title="Coming soon" style="color: grey;"'
 
     email = urllib.quote_plus(user.user_email)
-    full_name = urllib.quote_plus(user.first_name + ' ' + user.last_name)
+    full_name = urllib.quote_plus(user.first_name.encode('utf-8') + ' ' + \
+                                  user.last_name.encode('utf-8'))
 
     shared_folders_url = '{}?{}={}&{}={}'.format(
         request.route_url('user_shared_folders'),
