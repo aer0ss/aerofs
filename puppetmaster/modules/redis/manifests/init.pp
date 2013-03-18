@@ -64,7 +64,7 @@ class redis {
     line{ "redis.conf-4":
         ensure => present,
         file => "/etc/redis/redis.conf",
-        line => "loglevel debug",
+        line => "loglevel notice",
         require => Package["aerofs-redis-server"]
     }
 
