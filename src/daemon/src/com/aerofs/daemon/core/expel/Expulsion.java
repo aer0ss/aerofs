@@ -35,6 +35,9 @@ import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
 /**
  * This class is the access point of the subsystem that maintains objects' expulsion state.
  *
@@ -158,18 +161,20 @@ public class Expulsion
     }
 
     /**
-     * @pre the alias object was just replaced by the target using DirectoryService.replaceOID
+     * @pre the alias object exists locally
+     * @param target remote target OID, null if the target is locally present
      */
-    public void objectAliased_(SOID alias, SOID target, Trans t) throws SQLException
+    public void objectAliased_(@Nonnull OA oaAlias, @Nullable SOID target, Trans t)
+            throws SQLException
     {
         // if the alias was explicitly expelled we need to make sure the target takes over:
         // 1) leaving an alias in the expulsion table would lead to assertion failures when
-        // the UI tires to list expelled objects
+        // the UI tries to list expelled objects
         // 2) not expelling the target would cause the expelled files/folders to reappear, to
         // the extreme confusion/dismay of the user
-        if (Util.test(_ds.getOA_(target).flags(), OA.FLAG_EXPELLED_ORG)) {
-            _exdb.deleteExpelledObject_(alias, t);
-            _exdb.insertExpelledObject_(target, t);
+        if (Util.test(oaAlias.flags(), OA.FLAG_EXPELLED_ORG)) {
+            _exdb.deleteExpelledObject_(oaAlias.soid(), t);
+            if (target != null) _exdb.insertExpelledObject_(target, t);
         }
     }
 

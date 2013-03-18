@@ -32,7 +32,12 @@ public class HdListExpelledObjects extends AbstractHdIMC<EIListExpelledObjects>
         IDBIterator<SOID> iter = _expulsion.getExpelledObjects_();
         try {
             while (iter.next_()) {
-                Path path = _ds.resolve_(iter.get_());
+                SOID soid = iter.get_();
+                Path path = _ds.resolveNullable_(soid);
+                if (path == null) {
+                    l.warn("invalid expulsion entry {}", soid);
+                    continue;
+                }
                 // skip stuff in the trash
                 if (path.elements().length < 1 || !path.elements()[0].equals(Param.TRASH)) {
                     bdExpelled.add(path);

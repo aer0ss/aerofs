@@ -52,6 +52,7 @@ public class DaemonPostUpdateTasks
             new DPUTRenameTeamServerAutoExportFolders(autoExportFolder),
             new DPUTSkipFirstLaunch(),
             new DPUTRenameRootDirs(dbcw),
+            null,  // used to be DPUTFixExpelledAlias
             new DPUTFixExpelledAlias(dbcw)
             // new tasks go here
         };
