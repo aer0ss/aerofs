@@ -24,7 +24,7 @@ class redis::diskstore inherits redis {
     line{ "redis.conf-diskstore-3":
         ensure => present,
         file => "/etc/redis/redis.conf",
-        line => "cache-flush-delay 60",
+        line => "cache-flush-delay 5",
         require => Package["aerofs-redis-server"]
     }
     # TODO (MP) calculate as a percentage of the system memory. 4 gigs for now.
