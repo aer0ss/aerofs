@@ -182,12 +182,6 @@ public class OSUtilWindows implements IOSUtil
     }
 
     @Override
-    public String getShellExtensionChecksum()
-    {
-        return "";
-    }
-
-    @Override
     public boolean isShellExtensionInstalled()
     {
         return false;

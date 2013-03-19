@@ -189,12 +189,6 @@ public class OSUtilLinux extends AbstractOSUtilLinuxOSX
     }
 
     @Override
-    public String getShellExtensionChecksum()
-    {
-        return "";
-    }
-
-    @Override
     public void installShellExtension(boolean silently)
     {
         // Shell extensions not yet implemented on Linux
