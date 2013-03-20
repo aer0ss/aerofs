@@ -80,8 +80,7 @@ def login(request):
     error = ''
 
     if 'form.submitted' in request.params:
-        # Remember to normalize the email address.
-        login = request.params['login'].lower()
+        login = request.params['login']
 
         if not userid_sanity_check(login):
             error = _("Invalid user id")
