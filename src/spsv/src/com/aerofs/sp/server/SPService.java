@@ -24,6 +24,7 @@ import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue.QueueSize;
 import com.aerofs.servlets.lib.db.jedis.JedisThreadLocalTransaction;
 import com.aerofs.servlets.lib.db.sql.SQLThreadLocalTransaction;
 import com.aerofs.proto.Sp.PBStripeSubscriptionData;
+import com.aerofs.servlets.lib.ssl.CertificateAuthenticator;
 import com.aerofs.sp.server.email.DeviceRegistrationEmailer;
 import com.aerofs.sp.server.lib.id.StripeCustomerID;
 import com.aerofs.lib.FullName;
@@ -69,7 +70,6 @@ import com.aerofs.sp.server.lib.SPDatabase.DeviceInfo;
 import com.aerofs.sp.server.lib.organization.Organization.UsersAndQueryCount;
 import com.aerofs.sp.server.lib.id.OrganizationID;
 import com.aerofs.sp.server.lib.organization.OrganizationInvitation;
-import com.aerofs.sp.server.lib.session.CertificateAuthenticator;
 import com.aerofs.sp.server.lib.user.User.PendingSharedFolder;
 import com.aerofs.sp.server.session.SPActiveUserSessionTracker;
 import com.aerofs.sp.server.session.SPSessionExtender;
@@ -149,7 +149,7 @@ public class SPService implements ISPService
     private final ISessionUser _sessionUser;
 
     private final PasswordManagement _passwordManagement;
-    private final CertificateAuthenticator _certificateAuthenticator;
+    private final CertificateAuthenticator _certauth;
     private final User.Factory _factUser;
     private final Organization.Factory _factOrg;
     private final OrganizationInvitation.Factory _factOrgInvite;
@@ -183,7 +183,7 @@ public class SPService implements ISPService
         _jedisTrans = jedisTrans;
         _sessionUser = sessionUser;
         _passwordManagement = passwordManagement;
-        _certificateAuthenticator = certificateAuthenticator;
+        _certauth = certificateAuthenticator;
         _factUser = factUser;
         _factOrg = factOrg;
         _factOrgInvite = factOrgInvite;
@@ -1565,40 +1565,18 @@ public class SPService implements ISPService
         User user = _factUser.createFromExternalID(userIdString);
 
         if (user.id().isTeamServerID()) {
-            // Team servers use certificates (in this case the passed credentials don't matter).
-            if (!_certificateAuthenticator.isAuthenticated())
-            {
-                l.warn(user + " ts not authenticated");
+            // Team servers use certificates (in this case the passed credentials represent the
+            // device ID).
+            Device device;
+            try {
+                device = _factDevice.create(DID.fromExternal(credentials.toByteArray()));
+            } catch (ExFormatError e) {
+                l.error(user + ": did malformed");
                 throw new ExBadCredential();
             }
 
-            Device device = _factDevice.create(credentials);
-            l.info("TS SI: " + user.id() + ":" + device.id().toStringFormal());
-
-            String actualCName = _certificateAuthenticator.getCName();
-            String expectedCName = BaseSecUtil.getCertificateCName(user.id(), device.id());
-
-            // Can happen if one user is impersonating another user.
-            if (!actualCName.equals(expectedCName)) {
-                l.error(user + " wrong cname actual=" + actualCName + " expected=" + expectedCName);
-                throw new ExBadCredential();
-            }
-
-            Certificate cert = _factCert.create(device.id());
-
-            // Should never happen, check just for good measure.
-            if (_certificateAuthenticator.getSerial() != device.certificate().serial()) {
-                l.error(user + " serial mismatch");
-                throw new ExBadCredential();
-            }
-
-            if (cert.isRevoked()) {
-                l.warn(user + " ts cert revoked");
-                throw new ExBadCredential();
-            }
+            user.signInWithCertificate(_certauth, device);
         } else {
-            l.info("User SI: " + userIdString);
-
             // Regular users still use username/password credentials.
             user.signIn(SPParam.getShaedSP(credentials.toByteArray()));
         }

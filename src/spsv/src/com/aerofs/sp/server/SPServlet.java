@@ -14,11 +14,11 @@ import com.aerofs.servlets.lib.db.jedis.JedisThreadLocalTransaction;
 import com.aerofs.servlets.lib.db.jedis.PooledJedisConnectionProvider;
 import com.aerofs.servlets.lib.db.sql.PooledSQLConnectionProvider;
 import com.aerofs.servlets.lib.db.sql.SQLThreadLocalTransaction;
+import com.aerofs.servlets.lib.ssl.CertificateAuthenticator;
 import com.aerofs.sp.server.SPService.InviteToSignUpResult;
 import com.aerofs.sp.server.email.DeviceRegistrationEmailer;
 import com.aerofs.sp.server.email.RequestToSignUpEmailer;
 import com.aerofs.sp.server.lib.EmailSubscriptionDatabase;
-import com.aerofs.sp.server.lib.session.CertificateAuthenticator;
 import com.aerofs.sp.server.lib.session.HttpSessionUser;
 import com.aerofs.sp.server.lib.OrganizationInvitationDatabase;
 import com.aerofs.sp.server.lib.SharedFolder;
@@ -92,7 +92,7 @@ public class SPServlet extends AeroServlet
     private final HttpSessionUser _sessionUser = new HttpSessionUser(_sessionProvider);
 
     private final CertificateGenerator _certgen = new CertificateGenerator();
-    private final CertificateAuthenticator _certificateAuthenticator =
+    private final CertificateAuthenticator _certauth =
             new CertificateAuthenticator(_sessionProvider);
 
     private final Organization.Factory _factOrg = new Organization.Factory();
@@ -124,9 +124,9 @@ public class SPServlet extends AeroServlet
     private final JedisEpochCommandQueue _commandQueue = new JedisEpochCommandQueue(_jedisTrans);
 
     private final SPService _service = new SPService(_db, _sqlTrans, _jedisTrans, _sessionUser,
-            _passwordManagement, _certificateAuthenticator, _factUser, _factOrg, _factOrgInvite,
-            _factDevice, _factCert, _certdb, _esdb, _factSharedFolder, _factEmailer,
-            _deviceRegistrationEmailer, _requestToSignUpEmailer, _commandQueue);
+            _passwordManagement, _certauth, _factUser, _factOrg, _factOrgInvite, _factDevice,
+            _factCert, _certdb, _esdb, _factSharedFolder, _factEmailer, _deviceRegistrationEmailer,
+            _requestToSignUpEmailer, _commandQueue);
     private final SPServiceReactor _reactor = new SPServiceReactor(_service);
 
     private final DoPostDelegate _postDelegate = new DoPostDelegate(SP.SP_POST_PARAM_PROTOCOL,
@@ -193,12 +193,7 @@ public class SPServlet extends AeroServlet
         throws IOException
     {
         _sessionProvider.setSession(req.getSession());
-
-        try {
-            initCertificateAuthenticator(req);
-        } catch (CertificateException e) {
-            throw new IOException(e);
-        }
+        _certauth.init(req);
 
         // Receive protocol version number.
         int protocol;
@@ -230,25 +225,6 @@ public class SPServlet extends AeroServlet
         }
 
         _postDelegate.sendReply(resp, bytes);
-    }
-
-    private void initCertificateAuthenticator(HttpServletRequest req)
-            throws CertificateException, IOException
-    {
-        String verify = req.getHeader("Verify");
-        String serial = req.getHeader("Serial");
-        String dname = req.getHeader("DName");
-
-        if (verify != null && serial != null && dname != null) {
-            Properties prop = new Properties();
-            prop.load(new StringReader(dname.replaceAll("/", "\n")));
-            String cname = (String) prop.get("CN");
-
-            // The "Verify" header corresponds to the nginx variable $ssl_client_verify which
-            // is set to "SUCCESS" when nginx mutual authentication is successful.
-            _certificateAuthenticator.set(verify.equalsIgnoreCase("SUCCESS"),
-                    Long.parseLong(serial, 16), cname);
-        }
     }
 
     // parameter format: aerofs=love&from=<email>&from=<email>&to=<email>

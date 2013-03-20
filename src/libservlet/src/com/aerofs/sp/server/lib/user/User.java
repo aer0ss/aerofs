@@ -4,9 +4,11 @@
 
 package com.aerofs.sp.server.lib.user;
 
+import com.aerofs.base.BaseSecUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.lib.ex.ExNoAdminForNonEmptyTeam;
+import com.aerofs.servlets.lib.ssl.CertificateAuthenticator;
 import com.aerofs.sp.server.lib.id.StripeCustomerID;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.SystemUtil;
@@ -18,6 +20,7 @@ import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.sp.common.Base62CodeGenerator;
+import com.aerofs.sp.server.lib.cert.Certificate;
 import com.aerofs.sp.server.lib.OrganizationInvitationDatabase;
 import com.aerofs.sp.server.lib.SharedFolder;
 import com.aerofs.sp.server.lib.UserDatabase;
@@ -332,15 +335,64 @@ public class User
     public void signIn(byte[] shaedSP)
             throws SQLException, ExBadCredential
     {
+        l.warn("SI: " + toString());
+
         try {
             if (!isCredentialCorrect(shaedSP)) {
-                l.warn(this + ": bad password.");
+                l.warn(toString() + ": bad password.");
                 throw new ExBadCredential();
             }
         } catch (ExNotFound e) {
             // Throw a bad credential as opposed to a not found to prevent brute force guessing of
             // user IDs.
-            l.warn(this + ": not found.");
+            l.warn(toString() + ": not found.");
+            throw new ExBadCredential();
+        }
+    }
+
+    /**
+     * Attempt to sign in using the certificate provided by the user.
+     *
+     * @param certauth the certificate authenticator object for this specific session.
+     * @param device the device the user claims this request is originating from.
+     *
+     * @throws ExBadCredential if the sign in failed due to expired certificate, missing device,
+     * or missing user.
+     */
+    public void signInWithCertificate(CertificateAuthenticator certauth, Device device)
+            throws SQLException, ExBadCredential, ExNotFound
+    {
+        // Team servers use certificates (in this case the passed credentials don't matter).
+        if (!certauth.isAuthenticated())
+        {
+            l.warn(toString() + ": cert not authenticated");
+            throw new ExBadCredential();
+        }
+
+        l.warn("SI (cert): " + toString() + ":" + device.id().toStringFormal());
+
+        String actualCName = certauth.getCName();
+        String expectedCName = BaseSecUtil.getCertificateCName(id(), device.id());
+
+        // Can happen if one user is impersonating another user.
+        if (!actualCName.equals(expectedCName)) {
+            l.error(toString() + ": wrong cname actual=" + actualCName + " expected=" + expectedCName);
+            throw new ExBadCredential();
+        }
+
+        // Should never happen, check just for good measure.
+        if (certauth.getSerial() != device.certificate().serial()) {
+            l.error(toString() + ": serial mismatch");
+            throw new ExBadCredential();
+        }
+
+        if (device.certificate().isRevoked()) {
+            l.warn(toString() + ": cert revoked");
+            throw new ExBadCredential();
+        }
+
+        if (!device.getOwner().equals(this)) {
+            l.warn(toString() + ": device does not belong to user.");
             throw new ExBadCredential();
         }
     }

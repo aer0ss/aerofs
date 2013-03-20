@@ -52,10 +52,9 @@ public class TestSP_SignIn extends AbstractSPTest
             throws Exception
     {
         UserID _tsUserID = new OrganizationID(123).toTeamServerUserID();
-        ByteString tsUserPass = getTeamServerLocalPassword(_tsUserID);
 
         mockCertificateAuthenticatorSetUnauthorizedState();
-        service.signIn(_tsUserID.getString(), tsUserPass);
+        service.signIn(_tsUserID.getString(), getTeamServerLocalPassword(_tsUserID));
     }
 
     @Test(expected = ExBadCredential.class)

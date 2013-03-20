@@ -12,8 +12,8 @@ service SyncStatusService {
      * Sign in to the SyncStat server.
      *
      * Throws:
-     *   ExBadCredential if the username/password combination is incorrect.
-     *   ExNoPerm if the given device does not belong to the calling user.
+     *   ExBadCredential if the username/password combination is incorrect, certificate sign in
+     *                   failed, or if the device does not belong to the calling user.
      *   ExNotFound if the given device does not exist.
      *   ExFormatError if the cookie DID is malformed.
      */

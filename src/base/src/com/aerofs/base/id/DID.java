@@ -6,6 +6,7 @@ import com.google.protobuf.ByteString;
 /**
  * device id
  */
+// TODO (MP) remove public constructors use fromExternal() fromInternal().
 public class DID extends UniqueID
 {
     public DID(ByteString bstr)
@@ -28,9 +29,6 @@ public class DID extends UniqueID
         super(str, start, end);
     }
 
-    /**
-     * TODO (WW) use fromInternal and fromExternal as what UserID does?
-     */
     public DID(String str) throws ExFormatError
     {
         super(str);
@@ -39,5 +37,19 @@ public class DID extends UniqueID
     public static DID generate()
     {
         return new DID(UniqueID.generate());
+    }
+
+    public static DID fromExternal(byte[] bs) throws ExFormatError
+    {
+        if (bs.length != UniqueID.LENGTH) {
+            throw new ExFormatError();
+        }
+
+        return new DID(bs);
+    }
+
+    public static DID fromInternal(byte[] bs) throws ExFormatError
+    {
+        return fromExternal(bs);
     }
 }

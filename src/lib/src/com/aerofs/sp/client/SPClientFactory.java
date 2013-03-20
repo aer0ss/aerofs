@@ -11,7 +11,7 @@ import java.net.URL;
  * A class wrapping SP*Client factory methods
  * They return a new instance to a client to the SP Service.
  * See doc in SPBlockingClient for more information.
- * TODO (WW) remove this class and use SP*Client.Factory instead.
+ * TODO (WW) remove this class and use SPBlockingClient.Factory instead.
  */
 public class SPClientFactory
 {

@@ -2,10 +2,16 @@
  * Copyright (c) Air Computing Inc., 2012.
  */
 
-package com.aerofs.sp.server.lib.session;
+package com.aerofs.servlets.lib.ssl;
 
-import java.security.cert.X509Certificate;
 import com.aerofs.base.ex.ExBadCredential;
+import com.aerofs.sp.server.lib.session.AbstractHttpSession;
+import com.aerofs.sp.server.lib.session.IHttpSessionProvider;
+
+import javax.servlet.http.HttpServletRequest;
+import java.io.StringReader;
+import java.util.Properties;
+import java.io.IOException;
 
 public class CertificateAuthenticator
         extends AbstractHttpSession
@@ -16,6 +22,28 @@ public class CertificateAuthenticator
     public CertificateAuthenticator(IHttpSessionProvider sessionProvider)
     {
         super(sessionProvider);
+    }
+
+    /**
+     * Initialize the certificate authenticator using a given http servlet request. Pulls request
+     * headers from the request and sets session related information.
+     */
+    public void init(HttpServletRequest req)
+            throws IOException
+    {
+        String verify = req.getHeader("Verify");
+        String serial = req.getHeader("Serial");
+        String dname = req.getHeader("DName");
+
+        if (verify != null && serial != null && dname != null) {
+            Properties prop = new Properties();
+            prop.load(new StringReader(dname.replaceAll("/", "\n")));
+            String cname = (String) prop.get("CN");
+
+            // The "Verify" header corresponds to the nginx variable $ssl_client_verify which
+            // is set to "SUCCESS" when nginx mutual authentication is successful.
+            set(verify.equalsIgnoreCase("SUCCESS"), Long.parseLong(serial, 16), cname);
+        }
     }
 
     /**
