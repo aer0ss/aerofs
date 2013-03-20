@@ -9,13 +9,6 @@
 # Copyright 2012-2013 Air Computing Inc, unless otherwise noted.
 #
 class redis {
-
-    define delete_lines($file, $pattern) {
-        exec { "/bin/sed -i -r -e '/$pattern/d' $file":
-            onlyif => "/bin/grep -E '$pattern' '$file'",
-        }
-    }
-
     apt::key { "dotdeb":
         ensure => present,
         key_source => "http://www.dotdeb.org/dotdeb.gpg"
@@ -30,7 +23,7 @@ class redis {
         require     => Apt::Key["dotdeb"]
     }
 
-    # Until redis 2.6 is rolled out publicly, we have to use our own build.
+    # Until redis incorporated our custom changes, we have to use our own build.
     package{"aerofs-redis-server":
         ensure => latest,
         require => [
@@ -38,42 +31,11 @@ class redis {
         ]
     }
 
-    # Port information.
-    line{ "redis.conf-1":
-        ensure => present,
-        file => "/etc/redis/redis.conf",
-        line => "port 6379",
-        require => Package["aerofs-redis-server"]
-    }
-
-    # PID file.
-    line{ "redis.conf-2":
-        ensure => present,
-        file => "/etc/redis/redis.conf",
-        line => "pidfile /run/redis.pid",
-        require => Package["aerofs-redis-server"]
-    }
-
-    # Logging.
-    line{ "redis.conf-3":
-        ensure => present,
-        file => "/etc/redis/redis.conf",
-        line => "logfile /var/log/redis/redis.log",
-        require => Package["aerofs-redis-server"]
-    }
-    line{ "redis.conf-4":
-        ensure => present,
-        file => "/etc/redis/redis.conf",
-        line => "loglevel notice",
-        require => Package["aerofs-redis-server"]
-    }
-
-    # Database directory.
-    line{ "redis.conf-5":
-        ensure => present,
-        file => "/etc/redis/redis.conf",
-        line => "dir /var/log/redis",
-        require => Package["aerofs-redis-server"]
+    service { "redis-server":
+        ensure  => "running",
+        provider   => 'upstart',
+        enable  => "true",
+        require => Package["aerofs-redis-server"],
     }
 
     # System-related config.
@@ -83,4 +45,11 @@ class redis {
          line => "vm.overcommit_memory = 1",
          require => Package["aerofs-redis-server"]
     }
+
+    # Variables for inherited class templates.
+    $redis_database_dir = "/data/redis"
+    $redis_pidfile = "/run/redis.pid"
+    $redis_logfile = "/var/log/redis/redis.log"
+    $redis_port = 6379
+    $redis_loglevel = "notice"
 }
