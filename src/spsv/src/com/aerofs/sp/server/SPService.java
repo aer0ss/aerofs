@@ -1069,9 +1069,6 @@ public class SPService implements ISPService
         // reset pending bit to make user a member of the shared folder
         Set<UserID> users = sf.setMember(user);
 
-        // send verkehr notifications as the last step of the transaction
-        publishACLs_(incrementACLEpochs_(users));
-
         Collection<Device> peerDevices = user.getPeerDevices();
         // Refresh CRLs for peer devices once this user joins the shared folder (since the peer user
         // map may have changed).
@@ -1079,6 +1076,9 @@ public class SPService implements ISPService
             l.info(peer.id().toStringFormal() + ": crl refresh");
             addToCommandQueueAndSendVerkehrMessage(peer.id(), CommandType.REFRESH_CRL);
         }
+
+        // send verkehr notifications as the last step of the transaction
+        publishACLs_(incrementACLEpochs_(users));
 
         _sqlTrans.commit();
 
