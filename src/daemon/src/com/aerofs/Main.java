@@ -12,7 +12,6 @@ import com.aerofs.lib.LogUtil;
 import com.aerofs.lib.Param;
 import com.aerofs.lib.SystemUtil.ExitCode;
 import com.aerofs.lib.SystemUtil;
-import com.aerofs.base.id.UserID;
 import com.aerofs.lib.rocklog.RockLog;
 import org.slf4j.Logger;
 

@@ -51,10 +51,10 @@ public class InvitationEmailer
          *
          * TODO (WW) use a separate method rather than a null inviter for AeroFS initiated invites.
          */
-        public InvitationEmailer createSignUpInvitationEmailer(@Nullable final String inviter,
-                final String invitee, final String inviterName, @Nullable final String folderName,
-                @Nullable String note, final String signUpCode)
-                throws IOException
+        public InvitationEmailer createSignUpInvitationEmailer(final User inviter,
+                final User invitee, @Nullable final String folderName, @Nullable String note,
+                final String signUpCode)
+                throws IOException, SQLException, ExNotFound
         {
             String url = RequestToSignUpEmailer.getSignUpLink(signUpCode);
 
@@ -64,20 +64,17 @@ public class InvitationEmailer
                     : "Invitation to " + L.PRODUCT;
 
             final Email email = new Email(subject, false, null);
+            final NameStrings nsInviter = new NameStrings(inviter);
 
-            if (inviter != null) {
-                composeUserInitiatedSignUpInvitationEmail(inviter, inviterName, folderName, note,
-                        url, email);
-            } else {
-                composeAeroFSInitiatedSignUpInvitationEmail(url, email);
-            }
+            composeSignUpInvitationEmail(nsInviter, folderName, note, url, email);
 
             return new InvitationEmailer(new Callable<Void>()
             {
                 @Override
                 public Void call() throws Exception
                 {
-                    SVClient.sendEmail(SV.SUPPORT_EMAIL_ADDRESS, inviterName, invitee, null, subject,
+                    SVClient.sendEmail(SV.SUPPORT_EMAIL_ADDRESS, nsInviter.nameOnly(),
+                            invitee.id().getString(), null, subject,
                             email.getTextEmail(), email.getHTMLEmail(), true,
                             EmailCategory.FOLDERLESS_INVITE);
 
@@ -90,37 +87,12 @@ public class InvitationEmailer
             });
         }
 
-        private void composeAeroFSInitiatedSignUpInvitationEmail(String url, Email email)
+        private void composeSignUpInvitationEmail(NameStrings nsInviter, String folderName,
+                String note, String url, Email email)
                 throws IOException
         {
             String body = "\n" +
-                "Hi,\n" +
-                "\n" +
-                "You've recently signed up to test " + L.PRODUCT + " (" + SP.WEB_BASE + ").\n" +
-                "\n" +
-                L.PRODUCT + " allows you to sync, share, and collaborate on files privately" +
-                " and securely.\n" +
-                "Any data that you put inside your " + L.PRODUCT + " folder" +
-                " will be synced *only* with your personal\n" +
-                "devices, and anyone you invite to share files with you.\n" +
-                "\n" +
-                "You can now download " + L.PRODUCT + " at:\n" +
-                "\n" +
-                url;
-
-            email.addSection("You've been invited to " + L.PRODUCT + "!", HEADER_SIZE.H1, body);
-            email.addDefaultSignature();
-        }
-
-        private void composeUserInitiatedSignUpInvitationEmail(String inviter, String inviterName,
-                String folderName, String note, String url, Email email)
-                throws IOException
-        {
-            String nameAndEmail = inviterName.isEmpty() ? inviter : inviterName + " (" +
-                    inviter + ")";
-
-            String body = "\n" +
-                nameAndEmail + " has invited you to " +
+                nsInviter.nameAndEmail() + " has invited you to " +
                 (folderName != null ? "a shared " + L.PRODUCT + " folder " + Util.quote(folderName)
                          : L.PRODUCT) +
                 (isNoteEmpty(note) ? "." : ":\n\n" + note) + "\n" +
@@ -133,8 +105,7 @@ public class InvitationEmailer
                 "\n" + url;
 
             // If fromPerson is empty (user didn't set his name), use his email address instead
-            String nameOrEmail = inviterName.isEmpty() ? inviter : inviterName;
-            email.addSection(nameOrEmail + " invited you to " + L.PRODUCT + "!",
+            email.addSection(nsInviter.nameOnly() + " invited you to " + L.PRODUCT + "!",
                     HEADER_SIZE.H1, body);
             email.addDefaultSignature();
         }
@@ -144,28 +115,27 @@ public class InvitationEmailer
             return Strings.nullToEmpty(note).trim().isEmpty();
         }
 
-        public InvitationEmailer createFolderInvitationEmailer(@Nonnull final String from,
-                final String to, final String fromPerson, @Nullable final String folderName,
+        public InvitationEmailer createFolderInvitationEmailer(@Nonnull final User sharer,
+                final User sharee, @Nullable final String folderName,
                 @Nullable final String note, final SID sid)
-                throws IOException
+                throws IOException, SQLException, ExNotFound
         {
             final String subject = "Join my " + L.PRODUCT + " folder";
 
             final Email email = new Email(subject, false, null);
 
-            String nameAndEmail = fromPerson.isEmpty() ? from : fromPerson + " (" + from + ")";
+            final NameStrings nsSharer = new NameStrings(sharer);
+
             String body = "\n" +
-                    nameAndEmail + " has invited you to a shared " + L.PRODUCT +
+                    nsSharer.nameAndEmail() + " has invited you to a shared " + L.PRODUCT +
                     " folder" +
                     (isNoteEmpty(note) ? "." : (":\n\n" + note)) + "\n" +
                     "\n" +
                     "Click on this link to view and accept the invitation: " +
                     ACCEPT_INVITATION_LINK;
 
-            // If fromPerson is empty (user didn't set his name), use his email address instead
-            String nameOrEmail = fromPerson.isEmpty() ? from : fromPerson;
             email.addSection(
-                    nameOrEmail + " wants to share " + Util.quote(folderName) + " with you.",
+                    nsSharer.nameOnly() + " wants to share " + Util.quote(folderName) + " with you.",
                     HEADER_SIZE.H1, body);
             email.addDefaultSignature();
 
@@ -175,8 +145,8 @@ public class InvitationEmailer
                 public Void call() throws Exception
                 {
                     SVClient.sendEmail(SV.SUPPORT_EMAIL_ADDRESS,
-                            fromPerson,
-                            to,
+                            nsSharer.nameOnly(),
+                            sharee.id().getString(),
                             null,
                             subject,
                             email.getTextEmail(),
@@ -185,7 +155,7 @@ public class InvitationEmailer
                             EmailCategory.FOLDER_INVITE
                     );
 
-                    EmailUtil.emailSPNotification(from + " shared " + folderName + " with " + to,
+                    EmailUtil.emailSPNotification(sharer + " shared " + folderName + " with " + sharee,
                             "code " + sid.toStringFormal());
 
                     return null;
@@ -201,22 +171,12 @@ public class InvitationEmailer
 
             final Email email = new Email(subject);
 
-            FullName inviterFullName = inviter.getFullName();
-            final String inviterName, inviterLongName;
-            if (inviterFullName.isFirstOrLastNameEmpty()) {
-                inviterName = inviterLongName = inviter.id().getString();
-            } else {
-                inviterName = inviterFullName.toString();
-                inviterLongName = inviterName + " (" + inviter.id().getString() + ")";
-            }
+            final NameStrings ns = new NameStrings(inviter);
 
             String body = "\n" +
-                    inviterLongName + " has invited you to join the team on AeroFS.\n" +
+                    ns.nameAndEmail() + " has invited you to join the team on AeroFS.\n" +
                     "\n" +
                     "Click on this link to view the invitation: " + ACCEPT_INVITATION_LINK + "\n" +
-                    "\n" +
-                    "Once you join the team, all the files in your " + S.ROOT_ANCHOR + " will be" +
-                    " synced to the team's AeroFS Team Server.\n" +
                     "\n" +
                     "If you do not wish to join the team, simply ignore this email.";
 
@@ -230,7 +190,7 @@ public class InvitationEmailer
                 {
                     SVClient.sendEmail(
                             SV.SUPPORT_EMAIL_ADDRESS,
-                            inviterName,
+                            ns.nameOnly(),
                             invitee.id().getString(),
                             null,
                             subject,
@@ -243,6 +203,34 @@ public class InvitationEmailer
                     return null;
                 }
             });
+        }
+
+        private class NameStrings
+        {
+            private String _inviterName;
+            private String _inviterLongName;
+
+            public NameStrings(User inviter)
+                    throws SQLException, ExNotFound
+            {
+                FullName inviterFullName = inviter.getFullName();
+                if (inviterFullName.isFirstOrLastNameEmpty()) {
+                    _inviterName = _inviterLongName = inviter.id().getString();
+                } else {
+                    _inviterName = inviterFullName.toString();
+                    _inviterLongName = _inviterName + " (" + inviter.id().getString() + ")";
+                }
+            }
+
+            public String nameOnly()
+            {
+                return _inviterName;
+            }
+
+            public String nameAndEmail()
+            {
+                return _inviterLongName;
+            }
         }
     }
 

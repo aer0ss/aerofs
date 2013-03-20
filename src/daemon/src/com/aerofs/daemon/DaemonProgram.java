@@ -30,7 +30,6 @@ import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.cfg.CfgModule;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.lib.os.OSUtil.OSFamily;
-import com.aerofs.lib.rocklog.RockLog;
 import com.aerofs.proto.Common.PBException.Type;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Guice;
@@ -39,7 +38,6 @@ import com.google.inject.Module;
 import com.google.inject.Stage;
 import org.slf4j.Logger;
 
-import static com.aerofs.lib.rocklog.RockLog.BaseComponent.CLIENT;
 import static java.util.concurrent.TimeUnit.MINUTES;
 
 public class DaemonProgram implements IProgram

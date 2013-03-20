@@ -1007,20 +1007,11 @@ public class SPService implements ISPService
         InvitationEmailer emailer;
         if (sharee.exists()) {
             // send folder invitation email
-            emailer = _factEmailer.createFolderInvitationEmailer(sharer.id().getString(),
-                    sharee.id().getString(), sharer.getFullName()._first, folderName, note, sf.id());
+            emailer = _factEmailer.createFolderInvitationEmailer(sharer, sharee, folderName, note, sf.id());
         } else {
-            emailer = inviteToSignUp(sharee, sharer, folderName, note);
+            emailer = inviteToSignUp(sharee, sharer, folderName, note)._emailer;
         }
         return emailer;
-    }
-
-    private InvitationEmailer inviteToSignUp(User invitee, User inviter,
-            @Nullable String folderName, @Nullable String note)
-            throws SQLException, IOException, ExNotFound
-    {
-        return inviteToSignUp(invitee, inviter, inviter.getFullName()._first, folderName, note).
-                _emailer;
     }
 
     static class InviteToSignUpResult
@@ -1038,9 +1029,9 @@ public class SPService implements ISPService
     /**
      * Call this method to use an inviter name different from inviter.getFullName()._first
      */
-    InviteToSignUpResult inviteToSignUp(User invitee, User inviter, String inviterName,
-            @Nullable String folderName, @Nullable String note)
-            throws SQLException, IOException
+    InviteToSignUpResult inviteToSignUp(User invitee, User inviter, @Nullable String folderName,
+            @Nullable String note)
+            throws SQLException, IOException, ExNotFound
     {
         assert !invitee.exists();
 
@@ -1048,8 +1039,8 @@ public class SPService implements ISPService
 
         _esdb.insertEmailSubscription(invitee.id(), SubscriptionCategory.AEROFS_INVITATION_REMINDER);
 
-        InvitationEmailer emailer = _factEmailer.createSignUpInvitationEmailer(
-                inviter.id().getString(), invitee.id().getString(), inviterName, folderName, note, code);
+        InvitationEmailer emailer = _factEmailer.createSignUpInvitationEmailer(inviter, invitee,
+                folderName, note, code);
 
         return new InviteToSignUpResult(emailer, code);
     }
@@ -1259,7 +1250,7 @@ public class SPService implements ISPService
             if (invitee.exists()) {
                 l.info(inviter + " invites " + invitee + ": already exists. skip.");
             } else {
-                emailers.add(inviteToSignUp(invitee, inviter, null, null));
+                emailers.add(inviteToSignUp(invitee, inviter, null, null)._emailer);
             }
         }
 

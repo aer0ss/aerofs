@@ -4,7 +4,6 @@
 
 package com.aerofs.gui.singleuser;
 
-import com.aerofs.base.Loggers;
 import com.aerofs.gui.AbstractSpinAnimator;
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.singleuser.IndexingPoller.IIndexingCompletionListener;
@@ -17,12 +16,9 @@ import com.aerofs.ui.UI;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.MenuItem;
-import org.slf4j.Logger;
 
 public class IndexingTrayMenuSection implements IListener, IIndexingCompletionListener
 {
-    private static final Logger l = Loggers.getLogger(IndexingTrayMenuSection.class);
-
     private final Menu _menu;
     private MenuItem _indexingStats1;
     private MenuItem _indexingStats2;

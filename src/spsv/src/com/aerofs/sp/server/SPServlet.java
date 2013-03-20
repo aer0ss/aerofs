@@ -2,11 +2,10 @@ package com.aerofs.sp.server;
 
 import com.aerofs.base.BaseParam.SP;
 import com.aerofs.base.Loggers;
+import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.lib.Util;
-import com.aerofs.base.BaseParam.SV;
 import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExEmailSendingFailed;
-import com.aerofs.base.id.UserID;
 import com.aerofs.proto.Sp.SPServiceReactor;
 import com.aerofs.servlets.AeroServlet;
 import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue;
@@ -49,6 +48,7 @@ import com.aerofs.verkehr.client.lib.publisher.VerkehrPublisher;
 import org.slf4j.Logger;
 
 import javax.annotation.Nonnull;
+import java.util.Properties;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -247,16 +247,19 @@ public class SPServlet extends AeroServlet
     protected void handleSignUpInvite(HttpServletRequest req, HttpServletResponse rsp)
             throws IOException
     {
-        String fromPerson = req.getParameter("fromPerson");
-        String to = req.getParameter("to");
-        if (fromPerson == null || to == null) {
+        String from = req.getParameter("inviter");
+        String to = req.getParameter("invitee");
+
+        if (from == null || to == null) {
             rsp.getWriter().println("incomplete request.");
             return;
         }
 
         try {
-            String signUpCode = inviteFromScript(fromPerson, to);
-            rsp.getWriter().println("done: " + fromPerson + " -> " + to + ", code: " + signUpCode);
+            User inviter = _factUser.createFromExternalID(from);
+            User invitee = _factUser.createFromExternalID(to);
+            String signUpCode = inviteFromScript(invitee, inviter);
+            rsp.getWriter().println("done: " + from + " -> " + to + ", code: " + signUpCode);
         } catch (ExAlreadyExist e) {
             rsp.getWriter().println("skip " + to);
         } catch (Exception e) {
@@ -270,23 +273,18 @@ public class SPServlet extends AeroServlet
      * This exists only to support the invitation artifact script.
      * TODO it should be removed when the tools/invite script is removed
      * Perhaps it can be dumped into an Invite.java if it is ever created.
-     * @param inviterName inviter's name
      * @return the signup code
      */
-    private String inviteFromScript(@Nonnull String inviterName, @Nonnull String inviteeIdString)
-            throws ExAlreadyExist, SQLException, IOException, ExEmailSendingFailed
+    private String inviteFromScript(User invitee, User inviter)
+            throws ExAlreadyExist, SQLException, IOException, ExEmailSendingFailed, ExNotFound
     {
-        User invitee = _factUser.createFromExternalID(inviteeIdString);
-
         // Check that the invitee isn't already a user
         if (invitee.exists()) throw new ExAlreadyExist("user already exists");
 
         // Check that we haven't already invited this user
         if (invitee.isInvitedToSignUp()) throw new ExAlreadyExist("user already invited");
 
-        User inviter = _factUser.create(UserID.fromInternal(SV.SUPPORT_EMAIL_ADDRESS));
-        InviteToSignUpResult res = _service.inviteToSignUp(invitee, inviter, inviterName, null,
-                null);
+        InviteToSignUpResult res = _service.inviteToSignUp(invitee, inviter, null, null);
         res._emailer.send();
         return res._signUpCode;
     }

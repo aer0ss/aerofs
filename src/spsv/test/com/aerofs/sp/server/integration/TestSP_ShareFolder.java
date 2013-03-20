@@ -165,8 +165,8 @@ public class TestSP_ShareFolder extends AbstractSPFolderPermissionTest
             throws Exception
     {
         verify(factEmailer, shouldBeSent ? times(1) : never())
-                .createFolderInvitationEmailer(eq(sharer.id().getString()), eq(sharee.id().getString()),
-                        eq(sharer.id().getString()), eq(sid.toStringFormal()), eq(""), any(SID.class));
+                .createFolderInvitationEmailer(eq(sharer), eq(sharee), eq(sid.toStringFormal()),
+                        eq(""), any(SID.class));
     }
 
     private void verifyNewUserAccountInvitation(User sharer, User sharee, SID sid,
@@ -174,7 +174,7 @@ public class TestSP_ShareFolder extends AbstractSPFolderPermissionTest
             throws Exception
     {
         verify(factEmailer, shouldBeInvited ? times(1) : never())
-                .createSignUpInvitationEmailer(eq(sharer.id().getString()), eq(sharee.id().getString()),
-                        eq(sharer.id().getString()), eq(sid.toStringFormal()), eq(""), anyString());
+                .createSignUpInvitationEmailer(eq(sharer), eq(sharee), eq(sid.toStringFormal()),
+                        eq(""), anyString());
     }
 }

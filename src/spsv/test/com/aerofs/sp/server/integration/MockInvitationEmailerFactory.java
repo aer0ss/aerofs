@@ -15,24 +15,22 @@ import javax.annotation.Nullable;
 public class MockInvitationEmailerFactory extends InvitationEmailer.Factory
 {
     @Override
-    public InvitationEmailer createSignUpInvitationEmailer(@Nullable final String inviter,
-            final String invitee, final String inviterName, @Nullable final String folderName,
-            @Nullable final String note, final String signUpCode)
+    public InvitationEmailer createSignUpInvitationEmailer(User inviter, User invitee,
+            String folderName, String note, String signUpCode)
     {
         return createNullEmailer();
     }
 
     @Override
-    public InvitationEmailer createFolderInvitationEmailer(@Nonnull final String from,
-            final String to, final String fromPerson, @Nullable final String folderName,
-            @Nullable final String note, final SID sid)
+    public InvitationEmailer createFolderInvitationEmailer(User inviter, User invitee,
+            String folderName, String note, SID sid)
     {
         return createNullEmailer();
     }
 
     @Override
-    public InvitationEmailer createOrganizationInvitationEmailer(@Nonnull final User inviter,
-            @Nonnull final User invitee, @Nonnull final Organization organization)
+    public InvitationEmailer createOrganizationInvitationEmailer(User inviter, User invitee,
+            Organization organization)
     {
         return createNullEmailer();
     }
