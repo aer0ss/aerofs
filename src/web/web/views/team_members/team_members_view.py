@@ -119,7 +119,7 @@ def json_invite_user(request):
     ignore_exception(sp.invite_to_sign_up, ([user]), PBException.ALREADY_EXIST)
 
     # invite the user
-    reply = exception2error(sp.invite_to_organization, (user), {
+    reply = exception2error(sp.invite_to_organization, user, {
             PBException.ALREADY_EXIST:
                 _("The user is already a member of your team."),
             PBException.ALREADY_INVITED:

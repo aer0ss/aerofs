@@ -82,6 +82,8 @@ def password_reset(request):
                 sp.reset_password(token, scrypted)
                 success = True
             except PBException as e:
+                # TODO (WW) What? We don't throw PBExceptions.
+                # Use ExceptionReply instead, or don't catch exceptions at all
                 if e.type == PBException.NOT_FOUND:
                     not_found = True
                 error = str(e)

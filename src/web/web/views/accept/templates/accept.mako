@@ -18,17 +18,15 @@
 </%def>
 
 <%def name="render_team_invitations()">
-    <div class="row page_block">
-        <div class="span6">
-            <h2 style="margin-bottom: 15px;">Team Invitations (${len(team_invitations)})</h2>
-            <table class="table" style="border: 1px dotted #ccc;">
-                <tbody>
-                    % for invite in team_invitations:
-                        ${render_team_invitation_row(invite)}
-                    % endfor
-                </tbody>
-            </table>
-        </div>
+    <div class="page_block">
+        <h2 style="margin-bottom: 15px;">Team Invitations (${len(team_invitations)})</h2>
+        <table class="table" style="border: 1px dotted #ccc;">
+            <tbody>
+                % for invite in team_invitations:
+                    ${render_team_invitation_row(invite)}
+                % endfor
+            </tbody>
+        </table>
     </div>
 </%def>
 

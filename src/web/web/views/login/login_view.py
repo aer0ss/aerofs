@@ -1,4 +1,5 @@
 import logging
+from aerofs_sp.gen.common_pb2 import PBException
 from pyramid.httpexceptions import HTTPFound
 from pyramid.security import remember, forget, NO_PERMISSION_REQUIRED
 from pyramid.view import view_config
@@ -9,7 +10,7 @@ from aerofs_sp.scrypt import scrypt
 
 from web.util import *
 
-log = logging.getLogger("web")
+log = logging.getLogger(__name__)
 
 def groupfinder(userid, request):
     return [request.session.get('group')]
@@ -54,36 +55,32 @@ def login(request):
 
     next = request.params.get('next') or referrer
     login = ''
-    did_fail = False
-    error = ''
 
-    if 'form.submitted' in request.params:
+    if 'form_submitted' in request.params:
+        # Remember to normalize the email address.
         login = request.params['login']
+        password = request.params['password']
+        hashed_password = scrypt(password, login)
+        stay_signed_in = 'stay_signed_in' in request.params
 
-        if not is_valid_email(login):
-            error = _("Invalid user id")
-            did_fail = True
-        else:
-            password = request.params['password']
-            hashedPassword = scrypt(password, login) # hash password before sending it to sp
-
-            staySignedIn = False
-            if "staySignedIn" in request.params:
-                staySignedIn = True
-
+        try:
             try:
-                headers = log_in_user(request, login, hashedPassword, staySignedIn)
+                headers = log_in_user(request, login, hashed_password, stay_signed_in)
                 return HTTPFound(location=next, headers=headers)
-            except Exception as e:
-                error = parse_rpc_error_exception(request, e)
-                did_fail=True
+            except ExceptionReply as e:
+                if e.get_type() == PBException.BAD_CREDENTIAL:
+                    flash_error(request, _("Email or password is incorrect."))
+                else:
+                    raise e
+        except Exception as e:
+            log.error("error during logging in:", exc_info=e)
+            flash_error(request, _("An error occurred processing your request." +
+                   " Please try again later. Contact support@aerofs.com if the" +
+                   " problem persists."))
 
-    if did_fail:
-        flash_error(request, _("Failed login attempt: ${error}", {'error': error}))
     return {
         'login': login,
-        'next': next,
-        'failed_attempt': did_fail,
+        'next': next
     }
 
 @view_config(

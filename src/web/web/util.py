@@ -112,21 +112,12 @@ def get_rpc_stub(request):
         con = SyncConnectionService(settings['sp.url'], settings['sp.version'])
     return SPServiceRpcStub(con)
 
-# Message reporting functions (for message bar)
-
 def flash_error(request, error_msg):
     """
     Adds the given error message to the error message queue, which is dumped to
     the message bar the next time a page is rendered.
     """
     request.session.flash(error_msg, 'error_queue')
-
-def errors_in_flash_queue(request):
-    """
-    Returns true if there are errors waiting in the error queue to be shown, and
-    false if the queue is empty.
-    """
-    return len(request.session.peek_flash('error_queue')) > 0
 
 def flash_success(request, success_msg):
     """
@@ -135,12 +126,17 @@ def flash_success(request, success_msg):
     """
     request.session.flash(success_msg, 'success_queue')
 
-def successes_in_flash_queue(request):
+def get_last_flash_message_and_empty_queue(request):
     """
-    Returns true if there are success messages waiting in the success queue,
-    and false if the queue is empty.
+    Return None if there is no flash message in the queue, otherwise empty
+    flash queues, and return the tuple of (last message, whether the message is
+    a success or error message). Always return the success message if both
+    success and error queues have messages.
     """
-    return len(request.session.peek_flash('success_queue')) > 0
+    errors = request.session.pop_flash(queue='error_queue')
+    sucesses = request.session.pop_flash(queue='success_queue')
+    return (sucesses[-1], True) if sucesses else \
+            ((errors[-1], False) if errors else None)
 
 def reload_auth_level(request):
     """

@@ -12,29 +12,36 @@
     <form action="${request.route_path('login')}" method="post">
         ${self.csrf.token_input()}
         <input type="hidden" name="next" value="${next}"/>
-        <label for="inputEmail">Email:</label>
-        <input class="input-medium" id="inputEmail" type="text" name="login"
+        <label for="input_email">Email:</label>
+        <input class="input-medium" id="input_email" type="text" name="login"
             %if login:
                 value="${login}"
             %endif
         >
-        <label for="inputPasswd">Password:</label>
-        <input class="input-medium" id="inputPasswd" type="password" name="password">
+        <label for="input_passwd">Password:</label>
+        <input class="input-medium" id="input_passwd" type="password" name="password">
         <label class="checkbox">
-            <input type="checkbox" name="staySignedIn" value="staySignedIn"
+            <input type="checkbox" name="stay_signed_in" value="staySignedIn"
                    checked="checked"> Remember me
         </label>
-        <input class="btn" type="submit" name="form.submitted" value="Sign In"/>
+        <input class="btn" type="submit" name="form_submitted" value="Sign In"/>
     </form>
 
-    <p><a href="${request.route_path('request_password_reset')}">Forgot your password?</a></p>
+    <p><a href="${request.route_path('request_password_reset')}">
+        Forgot your password?</a></p>
 
 </div>
 
 <%block name="scripts">
     <script type="text/javascript">
         $(document).ready(function() {
-            $('#inputEmail').focus();
+            %if login:
+                ## focus on the password field if the email is already filled
+                $('#input_passwd').focus();
+            %else:
+                $('#input_email').focus();
+            %endif
+
         });
     </script>
 </%block>

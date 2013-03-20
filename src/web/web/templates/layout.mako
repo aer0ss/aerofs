@@ -54,27 +54,6 @@
 
 <body>
 
-## this wrapper is used to keep the footer at the bottom, even if the content height is less than the window height ("sticky" footer)
-<div id="wrapper">
-    <div class="container">
-        <div id="message_bar" class="span6 offset3 message_container">
-            % if request.session.peek_flash(queue='error_queue'):
-                % for message in request.session.pop_flash(queue='error_queue'):
-                    <div class="flash_message error_message">
-                        ${message}
-                    </div>
-                % endfor
-            % endif
-            % if request.session.peek_flash(queue='success_queue'):
-                % for message in request.session.pop_flash(queue='success_queue'):
-                    <div class="flash_message success_message">
-                        ${message}
-                    </div>
-                % endfor
-            % endif
-        </div>
-    </div>
-
 <%!
     ## Set navigation_bars = True in renderer pages to enable top and left
     ## navigation bars. If navigation bars are enabled, the entire content of
@@ -83,8 +62,14 @@
     ##
     navigation_bars = False
 
-    from web.util import is_admin
+    from web.util import is_admin, get_last_flash_message_and_empty_queue
 %>
+
+## this wrapper is used to keep the footer at the bottom, even if the content height is less than the window height ("sticky" footer)
+<div id="wrapper">
+    <div class="container">
+        <div id="message_bar" class="span6 offset3 message_container" />
+    </div>
 
     <div class="container" style="margin: 20px auto;">
         <div class="row">
@@ -258,6 +243,22 @@
 <script src="${request.static_url('web:static/js/jquery.easing.1.3.js')}"></script>
 <script src="${request.static_url('web:static/js/bootstrap.js')}"></script>
 <script src="${request.static_url('web:static/js/aerofs.js')}"></script>
+
+<%
+    ret = get_last_flash_message_and_empty_queue(request)
+%>
+
+%if ret:
+    <script type="text/javascript">
+        $(document).ready(function() {
+            %if ret[1]:
+                showSuccessMessage("${ret[0] | h}");
+            %else:
+                showErrorMessage("${ret[0] | h}");
+            %endif
+        });
+    </script>
+%endif
 
 <%block name="scripts"/>
 

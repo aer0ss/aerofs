@@ -37,7 +37,7 @@ public class S
 
             GUI_LOADING              = "Loading...",
 
-            BAD_CREDENTIAL_CAP       = "Username/password combination is incorrect",
+            BAD_CREDENTIAL_CAP       = "Email or password is incorrect",
 
             DONT_SHOW_THIS_MESSAGE_AGAIN = "Don't show me again.",
             FILE_OPEN_FAIL = "The file couldn't be opened.",
