@@ -2,6 +2,7 @@ package com.aerofs.lib.os;
 
 import java.io.File;
 import java.io.IOException;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -12,6 +13,8 @@ import com.aerofs.lib.OutArg;
 import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
+import com.aerofs.lib.cfg.Cfg;
+import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.swig.driver.Driver;
 import com.aerofs.swig.driver.DriverConstants;
@@ -160,8 +163,10 @@ public class OSUtilOSX extends AbstractOSUtilLinuxOSX
 
     private int _shellextPort;
 
-    @Override
-    public String getShellExtensionChecksum()
+    /*
+     * Returns the checksum of the currently installed shell extension
+     */
+    private String getShellExtensionChecksum()
     {
         File f = new File(AppRoot.abs() + "/" + FINDEREXT_BUNDLE +
                 "/Contents/MacOS/AeroFSFinderExtension");
@@ -176,6 +181,14 @@ public class OSUtilOSX extends AbstractOSUtilLinuxOSX
     @Override
     public void installShellExtension(boolean silently) throws IOException, SecurityException
     {
+        String oldChecksum = Cfg.db().get(Key.SHELLEXT_CHECKSUM);
+        String checksum = getShellExtensionChecksum();
+
+        l.debug("Comparing checksums: " + oldChecksum + " -> " + checksum);
+
+        // The checksums match, there's nothing to do
+        if (checksum.equals(oldChecksum)) return;
+
         l.debug("Installing the Finder extension");
 
         // Check that the we didn't forget to ship the Finder extension with AeroFS
@@ -223,6 +236,12 @@ public class OSUtilOSX extends AbstractOSUtilLinuxOSX
 
         if (_shellextPort > 0) {
             startShellExtension(_shellextPort);
+        }
+
+        try {
+            Cfg.db().set(Key.SHELLEXT_CHECKSUM, checksum);
+        } catch (SQLException ex) {
+            l.warn("Failed to update shellext checksum", ex);
         }
     }
 

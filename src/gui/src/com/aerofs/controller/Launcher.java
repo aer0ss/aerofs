@@ -174,16 +174,12 @@ class Launcher
                 }
             }));
 
+            // Re-install the shell extension if it was updated
             if (PostUpdate.updated()) {
-                // Re-install the shell extension if it was updated
-                String checksum = OSUtil.get().getShellExtensionChecksum();
-                if (!checksum.equals(Cfg.db().get(Key.SHELLEXT_CHECKSUM))) {
-                    try {
-                        OSUtil.get().installShellExtension(true);
-                        Cfg.db().set(Key.SHELLEXT_CHECKSUM, checksum);
-                    } catch (Exception e) {
-                        l.warn("Shell extension failed to install post-update: " + Util.e(e));
-                    }
+                try {
+                    OSUtil.get().installShellExtension(true);
+                } catch (Exception e) {
+                    l.warn("Shell extension failed to install post-update: " + Util.e(e));
                 }
             }
 

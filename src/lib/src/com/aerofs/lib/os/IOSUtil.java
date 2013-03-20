@@ -78,16 +78,6 @@ public interface IOSUtil
     void markHiddenSystemFile(String absPath) throws IOException;
 
     /**
-     * Returns a checksum string that identifies the current version of the shell extension.
-     * After an update, we compare this checksum against the one stored in the db to determine
-     * if the shell extension was updated too, and if it was we will call installShellExtension()
-     *
-     * If there is any error, or if this method isn't available for the target platform, return
-     * an empty string
-     */
-    String getShellExtensionChecksum();
-
-    /**
      * Installs the Shell Extension
      * @param silently true is this method should not prompt the user for admin privileges or
      * anything.
