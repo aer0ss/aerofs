@@ -9,50 +9,30 @@
 # Copyright 2012-2013 Air Computing Inc, unless otherwise noted.
 #
 class redis::diskstore inherits redis {
-    line{ "redis.conf-diskstore-1":
-        ensure => present,
-        file => "/etc/redis/redis.conf",
-        line => "diskstore-enabled yes",
-        require => Package["aerofs-redis-server"]
-    }
-    line{ "redis.conf-diskstore-2":
-        ensure => present,
-        file => "/etc/redis/redis.conf",
-        line => "diskstore-path /var/log/redis/store",
-        require => Package["aerofs-redis-server"]
-    }
-    line{ "redis.conf-diskstore-3":
-        ensure => present,
-        file => "/etc/redis/redis.conf",
-        line => "cache-flush-delay 5",
-        require => Package["aerofs-redis-server"]
-    }
-    # TODO (MP) calculate as a percentage of the system memory. 4 gigs for now.
-    line{ "redis.conf-diskstore-memory-4":
-        ensure => present,
-        file => "/etc/redis/redis.conf",
-        line => "cache-max-memory 4294967296",
-        require => Package["aerofs-redis-server"]
-    }
+    # Needs to be a subdirectory of the existing database dir.
+    $redis_store_dir = "${redis_database_dir}/store"
 
-    delete_lines{ "redis.conf-diskstore-delete-1":
-        file => "/etc/redis/redis.conf",
-        pattern => "appendonly.*",
-        require => Package["aerofs-redis-server"]
-    }
-    delete_lines{ "redis.conf-diskstore-delete-2":
-        file => "/etc/redis/redis.conf",
-        pattern => "appendfilename.*",
-        require => Package["aerofs-redis-server"]
-    }
-    delete_lines{ "redis.conf-diskstore-delete-3":
-        file => "/etc/redis/redis.conf",
-        pattern => "save.*",
-        require => Package["aerofs-redis-server"]
-    }
-    delete_lines{ "redis.conf-diskstore-delete-4":
-        file => "/etc/redis/redis.conf",
-        pattern => "dbfilename.*",
-        require => Package["aerofs-redis-server"]
+    # Annoying that this is specified as a string, have to parse it.
+    $mem = inline_template("<%
+        mem,unit = scope.lookupvar('::memorysize').split
+        mem = mem.to_f
+        # Normalize mem to KiB
+        case unit
+            when nil:  mem *= (1<<0)
+            when 'kB': mem *= (1<<10)
+            when 'MB': mem *= (1<<20)
+            when 'GB': mem *= (1<<30)
+            when 'TB': mem *= (1<<40)
+        end
+        %><%= mem.to_i %>")
+
+    $redis_cache_max_memory = $mem / 2
+
+    servlet::config::file{"/etc/redis/redis.conf":
+        content => template(
+            "redis/diskstore.conf.erb"
+        ),
+        require => Package["aerofs-redis-server"],
+        notify  => Service["redis-server"]
     }
 }
