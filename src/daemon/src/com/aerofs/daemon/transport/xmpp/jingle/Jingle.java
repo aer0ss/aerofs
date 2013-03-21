@@ -194,7 +194,6 @@ public class Jingle implements ISignalledPipe, IJingle
 
     private void connectionStateChanged(boolean up)
     {
-        disconnectAll_();
         _st.linkStateChanged(up);
     }
 
