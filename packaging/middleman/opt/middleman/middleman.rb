@@ -43,8 +43,8 @@ webrick_options = {
     :DocumentRoot       => "/ruby/htdocs",
     :SSLEnable          => true,
     :SSLVerifyClient    => OpenSSL::SSL::VERIFY_NONE,
-    :SSLCertificate     => OpenSSL::X509::Certificate.new(  File.open('/opt/middleman/myssl.crt').read),
-    :SSLPrivateKey      => OpenSSL::PKey::RSA.new(          File.open('/opt/middleman/myssl.key').read),
+    :SSLCertificate     => OpenSSL::X509::Certificate.new(  File.open('/opt/middleman/fakes3.crt').read),
+    :SSLPrivateKey      => OpenSSL::PKey::RSA.new(          File.open('/opt/middleman/fakes3.key').read),
     :SSLCertName        => [ [ "CN",WEBrick::Utils::getservername ] ]
 }
 
