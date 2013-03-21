@@ -1,6 +1,7 @@
 package com.aerofs.daemon.transport.lib;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.daemon.transport.TransportThreadGroup;
 import com.aerofs.lib.event.IEvent;
 import com.aerofs.daemon.event.lib.imc.IResultWaiter;
 import com.aerofs.daemon.lib.BlockingPrioQueue;
@@ -86,7 +87,7 @@ public class TCPProactorMT
     {
         l.info("start " + _name + ": listening port " + getListeningPort());
 
-        new Thread(new Runnable() {
+        new Thread(TransportThreadGroup.get(), new Runnable() {
             @Override
             public void run()
             {
@@ -241,7 +242,7 @@ public class TCPProactorMT
     // peer
     private void receive(final Peer p, final Socket s, final boolean borrowed)
     {
-        new Thread(new Runnable() {
+        new Thread(TransportThreadGroup.get(), new Runnable() {
             @Override
             public void run()
             {
@@ -327,7 +328,7 @@ public class TCPProactorMT
 
             if (p._sendthd == null) {
                 final Peer p2 = p;
-                p._sendthd = new Thread(new Runnable() {
+                p._sendthd = new Thread(TransportThreadGroup.get(), new Runnable() {
                     @Override
                     public void run()
                     {

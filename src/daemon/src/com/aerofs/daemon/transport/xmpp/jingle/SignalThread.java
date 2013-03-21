@@ -4,6 +4,7 @@ import com.aerofs.base.BaseParam.Xmpp;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.lib.DaemonParam;
+import com.aerofs.daemon.transport.TransportThreadGroup;
 import com.aerofs.lib.IDumpStatMisc;
 import com.aerofs.daemon.transport.xmpp.XMPPServerConnection;
 import com.aerofs.j.Jid;
@@ -52,6 +53,7 @@ public class SignalThread extends java.lang.Thread implements IDumpStatMisc
 
     SignalThread(IJingle ij)
     {
+        super(TransportThreadGroup.get(), "lj-sig");
         this.ij = ij;
     }
 

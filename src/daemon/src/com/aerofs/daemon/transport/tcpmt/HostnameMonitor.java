@@ -3,6 +3,7 @@ package com.aerofs.daemon.transport.tcpmt;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.lib.DaemonParam;
+import com.aerofs.daemon.transport.TransportThreadGroup;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.daemon.transport.tcpmt.ARP.ARPChange;
 import com.aerofs.daemon.transport.tcpmt.ARP.IARPChangeListener;
@@ -54,7 +55,7 @@ class HostnameMonitor implements IARPChangeListener
 
     public void start()
     {
-        new Thread(new Runnable() {
+        new Thread(TransportThreadGroup.get(), new Runnable() {
             @Override
             public void run()
             {

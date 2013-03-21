@@ -7,6 +7,7 @@
 package com.aerofs.daemon.transport.tcpmt;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.daemon.transport.TransportThreadGroup;
 import com.aerofs.lib.sched.Scheduler;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.SID;
@@ -211,7 +212,7 @@ public class TCP implements ITransportImpl, IPipeController, IARPChangeListener
         _mcast.start_();
         _hm.start();
 
-        new Thread(new Runnable() {
+        new Thread(TransportThreadGroup.get(), new Runnable() {
             @Override
             public void run()
             {

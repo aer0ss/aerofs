@@ -7,6 +7,7 @@ import com.aerofs.daemon.event.net.EITransportMetricsUpdated;
 import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.event.net.rx.EIMaxcastMessage;
 import com.aerofs.daemon.lib.DaemonParam;
+import com.aerofs.daemon.transport.TransportThreadGroup;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.daemon.lib.exception.ExBadCRC;
 import com.aerofs.daemon.transport.lib.CRCByteArrayInputStream;
@@ -114,7 +115,7 @@ class Multicast implements IMaxcast
 
                 l.info("linkStateChanged->mc:add:" + iface.getName());
 
-                new Thread(new Runnable() {
+                new Thread(TransportThreadGroup.get(), new Runnable() {
                     @Override
                     public void run()
                     {

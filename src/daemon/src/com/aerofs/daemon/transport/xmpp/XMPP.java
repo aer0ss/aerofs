@@ -1,6 +1,7 @@
 package com.aerofs.daemon.transport.xmpp;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.daemon.transport.TransportThreadGroup;
 import com.aerofs.lib.sched.Scheduler;
 import com.aerofs.base.Base64;
 import com.aerofs.base.ex.ExFormatError;
@@ -149,7 +150,7 @@ public abstract class XMPP implements ITransportImpl, IPipeController, IUnicast,
     {
         assert _dispthr == null : ("cannot start dispatcher twice");
 
-        _dispthr = new Thread(new Runnable()
+        _dispthr = new Thread(TransportThreadGroup.get(), new Runnable()
         {
             @Override
             public void run()
