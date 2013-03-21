@@ -1,6 +1,5 @@
 package com.aerofs.sp.server;
 
-import com.aerofs.base.BaseSecUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.proto.Sp.DeleteOrganizationInvitationForUserReply;
@@ -154,7 +153,6 @@ public class SPService implements ISPService
     private final Organization.Factory _factOrg;
     private final OrganizationInvitation.Factory _factOrgInvite;
     private final Device.Factory _factDevice;
-    private final Certificate.Factory _factCert;
     private final SharedFolder.Factory _factSharedFolder;
 
     private final DeviceRegistrationEmailer _deviceRegistrationEmailer;
@@ -169,7 +167,7 @@ public class SPService implements ISPService
             PasswordManagement passwordManagement,
             CertificateAuthenticator certificateAuthenticator, User.Factory factUser,
             Organization.Factory factOrg, OrganizationInvitation.Factory factOrgInvite,
-            Device.Factory factDevice, Certificate.Factory factCert, CertificateDatabase certdb,
+            Device.Factory factDevice, CertificateDatabase certdb,
             EmailSubscriptionDatabase esdb, Factory factSharedFolder,
             InvitationEmailer.Factory factEmailer, DeviceRegistrationEmailer deviceRegistrationEmailer,
             RequestToSignUpEmailer requestToSignUpEmailer, JedisEpochCommandQueue commandQueue)
@@ -188,7 +186,6 @@ public class SPService implements ISPService
         _factOrg = factOrg;
         _factOrgInvite = factOrgInvite;
         _factDevice = factDevice;
-        _factCert = factCert;
         _esdb = esdb;
         _factSharedFolder = factSharedFolder;
 

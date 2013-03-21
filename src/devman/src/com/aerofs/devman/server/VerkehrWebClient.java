@@ -5,7 +5,6 @@
 package com.aerofs.devman.server;
 
 import com.aerofs.base.ex.ExFormatError;
-import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.DID;
 import com.aerofs.lib.Param;
 import org.json.simple.JSONArray;
@@ -13,7 +12,6 @@ import org.json.simple.JSONValue;
 import org.json.simple.JSONObject;
 import com.google.common.collect.Lists;
 
-import java.net.UnknownHostException;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.InetAddress;
@@ -73,7 +71,6 @@ public class VerkehrWebClient
     // Public functions.
     //
 
-    @SuppressWarnings("unchecked")
     public Collection<OnlineDeviceInfo> getOnlineDevicesInfo()
             throws IOException, ExFormatError
     {

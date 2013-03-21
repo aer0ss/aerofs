@@ -20,7 +20,6 @@ import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.sp.common.Base62CodeGenerator;
-import com.aerofs.sp.server.lib.cert.Certificate;
 import com.aerofs.sp.server.lib.OrganizationInvitationDatabase;
 import com.aerofs.sp.server.lib.SharedFolder;
 import com.aerofs.sp.server.lib.UserDatabase;

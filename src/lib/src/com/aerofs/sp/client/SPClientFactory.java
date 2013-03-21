@@ -4,7 +4,6 @@ import com.aerofs.base.net.IURLConnectionConfigurator;
 import com.aerofs.base.net.NullURLConnectionConfigurator;
 import com.aerofs.labeling.L;
 import com.aerofs.base.id.UserID;
-import com.aerofs.proto.Sp.SPServiceStub.SPServiceStubCallbacks;
 import java.net.URL;
 
 /**

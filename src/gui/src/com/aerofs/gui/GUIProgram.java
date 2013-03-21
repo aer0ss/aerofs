@@ -10,13 +10,10 @@ import com.aerofs.labeling.L;
 import com.aerofs.lib.IProgram;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.os.OSUtil;
-import com.aerofs.lib.rocklog.RockLog;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.ui.UI;
 import org.eclipse.swt.widgets.MessageBox;
 import org.eclipse.swt.widgets.Shell;
-
-import static com.aerofs.lib.rocklog.RockLog.BaseComponent.CLIENT;
 
 public class GUIProgram implements IProgram
 {

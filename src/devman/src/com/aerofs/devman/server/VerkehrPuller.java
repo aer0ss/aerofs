@@ -6,8 +6,6 @@ package com.aerofs.devman.server;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExFormatError;
-import com.aerofs.base.ex.ExNotFound;
-import com.aerofs.base.id.DID;
 import com.aerofs.devman.server.VerkehrWebClient.OnlineDeviceInfo;
 import com.aerofs.devman.server.db.IPAddressDatabase;
 import com.aerofs.devman.server.db.LastSeenDatabase;
@@ -17,7 +15,6 @@ import com.amazonaws.util.json.JSONException;
 import org.slf4j.Logger;
 
 import java.io.IOException;
-import java.net.InetAddress;
 import java.util.Collection;
 
 /**

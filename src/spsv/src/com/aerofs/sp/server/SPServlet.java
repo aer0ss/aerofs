@@ -48,16 +48,13 @@ import com.aerofs.verkehr.client.lib.admin.VerkehrAdmin;
 import com.aerofs.verkehr.client.lib.publisher.VerkehrPublisher;
 import org.slf4j.Logger;
 
-import java.util.Properties;
 import javax.annotation.Nonnull;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.io.StringReader;
 import java.sql.SQLException;
-import java.security.cert.CertificateException;
 
 import static com.aerofs.sp.server.lib.SPParam.REDIS_HOST_INIT_PARAMETER;
 import static com.aerofs.sp.server.lib.SPParam.REDIS_PORT_INIT_PARAMETER;
@@ -125,7 +122,7 @@ public class SPServlet extends AeroServlet
 
     private final SPService _service = new SPService(_db, _sqlTrans, _jedisTrans, _sessionUser,
             _passwordManagement, _certauth, _factUser, _factOrg, _factOrgInvite, _factDevice,
-            _factCert, _certdb, _esdb, _factSharedFolder, _factEmailer, _deviceRegistrationEmailer,
+            _certdb, _esdb, _factSharedFolder, _factEmailer, _deviceRegistrationEmailer,
             _requestToSignUpEmailer, _commandQueue);
     private final SPServiceReactor _reactor = new SPServiceReactor(_service);
 
