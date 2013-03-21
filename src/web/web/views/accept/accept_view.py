@@ -72,6 +72,9 @@ def accept_organization_invitation(request):
 
     try:
         sp.accept_organization_invitation(int(organization_id))
+
+        reload_auth_level(request)
+
         msg = _("You are now a member of \"${organization_name}\".",
                 {'organization_name': organization_name})
 

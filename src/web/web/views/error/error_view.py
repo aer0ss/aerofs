@@ -4,7 +4,7 @@ from aerofs_sp.gen.common_pb2 import PBException
 from pyramid.exceptions import NotFound
 from pyramid.security import NO_PERMISSION_REQUIRED, authenticated_userid
 from pyramid.view import view_config, forbidden_view_config
-from pyramid.httpexceptions import HTTPFound
+from pyramid.httpexceptions import HTTPFound, HTTPForbidden
 
 log = logging.getLogger(__name__)
 
@@ -32,7 +32,7 @@ def forbidden_view(request):
         request.response_status = 403
         return {}
     else:
-        return _login(request)
+        return _login_required(request)
 
 @view_config(
     context=ExceptionReply,
@@ -46,7 +46,7 @@ def protobuf_exception_view(context, request):
     # TODO (WW) use a different type, i.e. NOT_AUTHENTICATED, since SP throws
     # NO_PERM for other reasons as well.
     if context.get_type() == PBException.NO_PERM:
-        return _login(request)
+        return _login_required(request)
     else:
         request.response_status = 500
         return {}
@@ -62,18 +62,24 @@ def exception_view(context, request):
     request.response_status = 500
     return {}
 
-def _login(request):
-    log.warn("redirect to login page")
+def _login_required(request):
+
+    log.warn("request to login (xhr={})".format(request.is_xhr))
+
+    # Return an plain 403 page if it's an AJAX request. Also look at how
+    # aerofs.js:showErrorMessageFromResponse handles 403 errors.
+    #
+    # TODO (WW) Ideally we should return the login page with 403 as the code,
+    # regardless whether it's an XHR. But how?
+    if request.is_xhr: return HTTPForbidden()
 
     # So that we don't get annoying next=%2F in the url when we click on the
     # home button.
+    # TODO (WW) include request parameters to the next URL
     next = request.path.strip()
     if next and next != '/':
         loc = request.route_url('login', _query=(('next', next),))
     else:
         loc = request.route_url('login')
 
-    # TODO (WW) If this is returned to an AJAX request, the caller will treat
-    # the request as successful because of the status code of HTTPFound. How to
-    # return an error code with the login page as the content?
     return HTTPFound(location=loc)

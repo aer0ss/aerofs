@@ -12,14 +12,14 @@
         ## signup.py needs the email address only to generate scrypt
         ## credentials. Alternatively, we can query the SP for the email address
         ## but this would add an extra round trip to SP.
-        <input type="hidden" name="emailAddress" value="${email_address}"/>
-        <input type="hidden" name="code" value="${code}"/>
+        <input type="hidden" name="${url_param_email}" value="${email_address}"/>
+        <input type="hidden" name="${url_param_signup_code}" value="${code}"/>
         <label for="inputFirstName">First name:</label>
-        <input class="input-medium" id="inputFirstName" type="text" name="firstName">
+        <input class="input-medium" id="inputFirstName" type="text" name="${url_param_first_name}">
         <label for="inputLastName">Last name:</label>
-        <input class="input-medium" id="inputLastName" type="text" name="lastName">
+        <input class="input-medium" id="inputLastName" type="text" name="${url_param_last_name}">
         <label for="inputPasswd">Password:</label>
-        <input class="input-medium" id="inputPasswd" type="password" name="password">
+        <input class="input-medium" id="inputPasswd" type="password" name="${url_param_password}">
 
         <span class="help-block footnote" style="margin-top: 10px;">
             By signing up you agree to AeroFS <a href="http://www.aerofs.com/tos" target="_blank">Terms of Service</a>
@@ -89,13 +89,14 @@
 
                 var params = {
                     ${self.csrf.token_param()}
-                    "next" : "${next}",
-                    "login" : "${email_address}",
-                    "password" : $("#inputPasswd").val(),
-                    "form.submitted" : ""
+                    ${url_param_next} : "${next}",
+                    ${url_param_email} : "${email_address}",
+                    ${url_param_password} : $("#inputPasswd").val(),
+                    ${url_param_remember_me}: "",
+                    ${url_param_form_submitted} : ""
                 };
 
-                for (key in params) {
+                for (var key in params) {
                     var hiddenField = document.createElement("input");
                     hiddenField.setAttribute("type", "hidden");
                     hiddenField.setAttribute("name", key);

@@ -69,7 +69,6 @@ import com.aerofs.sp.server.lib.cert.CertificateGenerator.CertificationResult;
 import com.aerofs.sp.server.lib.device.Device;
 import com.aerofs.sp.server.lib.SPDatabase.DeviceInfo;
 import com.aerofs.sp.server.lib.organization.Organization.UsersAndQueryCount;
-import com.aerofs.sp.server.lib.id.OrganizationID;
 import com.aerofs.sp.server.lib.organization.OrganizationInvitation;
 import com.aerofs.sp.server.lib.user.User.PendingSharedFolder;
 import com.aerofs.sp.server.session.SPActiveUserSessionTracker;
@@ -241,8 +240,7 @@ public class SPService implements ISPService
                 ExNoPerm.class,
                 ExBadCredential.class,
                 ExBadArgs.class,
-                ExAlreadyExist.class,
-                ExNotFound.class));
+                ExAlreadyExist.class));
 
         // Notify SPTransaction that an exception occurred.
         _sqlTrans.handleException();
@@ -624,7 +622,7 @@ public class SPService implements ISPService
         List<GetOrganizationInvitationsReply.OrganizationInvitation> invitationsWireable =
                 Lists.newArrayList();
 
-        for (OrganizationInvitation invite :invitations) {
+        for (OrganizationInvitation invite : invitations) {
             GetOrganizationInvitationsReply.OrganizationInvitation.Builder builder =
                     GetOrganizationInvitationsReply.OrganizationInvitation.newBuilder();
 
@@ -944,7 +942,7 @@ public class SPService implements ISPService
 
         _sqlTrans.begin();
 
-        Set<UserID> users = addSharedFolderIfNecessary(folderName, sf, sharer);
+        Set<UserID> users = saveSharedFolderIfNecessary(folderName, sf, sharer);
 
         List<InvitationEmailer> emailers = createFolderInvitationAndEmailer(folderName, note, sf,
                 sharer, srps);
@@ -959,7 +957,7 @@ public class SPService implements ISPService
         return createVoidReply();
     }
 
-    private Set<UserID> addSharedFolderIfNecessary(String folderName, SharedFolder sf, User sharer)
+    private Set<UserID> saveSharedFolderIfNecessary(String folderName, SharedFolder sf, User sharer)
             throws ExNotFound, SQLException, ExNoPerm, IOException, ExAlreadyExist
     {
         if (sf.exists()) {
@@ -1009,7 +1007,7 @@ public class SPService implements ISPService
             // send folder invitation email
             emailer = _factEmailer.createFolderInvitationEmailer(sharer, sharee, folderName, note, sf.id());
         } else {
-            emailer = inviteToSignUp(sharee, sharer, folderName, note)._emailer;
+            emailer = inviteToSignUp(sharer, sharee, folderName, note)._emailer;
         }
         return emailer;
     }
@@ -1029,7 +1027,7 @@ public class SPService implements ISPService
     /**
      * Call this method to use an inviter name different from inviter.getFullName()._first
      */
-    InviteToSignUpResult inviteToSignUp(User invitee, User inviter, @Nullable String folderName,
+    InviteToSignUpResult inviteToSignUp(User inviter, User invitee, @Nullable String folderName,
             @Nullable String note)
             throws SQLException, IOException, ExNotFound
     {
@@ -1250,7 +1248,7 @@ public class SPService implements ISPService
             if (invitee.exists()) {
                 l.info(inviter + " invites " + invitee + ": already exists. skip.");
             } else {
-                emailers.add(inviteToSignUp(invitee, inviter, null, null)._emailer);
+                emailers.add(inviteToSignUp(inviter, invitee, null, null)._emailer);
             }
         }
 
@@ -1269,87 +1267,116 @@ public class SPService implements ISPService
         _sqlTrans.begin();
 
         User inviter = _sessionUser.get();
-        inviter.throwIfNotAdmin();
-
         User invitee = _factUser.create(UserID.fromExternal(userIdString));
         Organization org = inviter.getOrganization();
 
-        l.info("Send organization invite by " + inviter + " to " + invitee);
+        l.info("{} sends team invite to {}", inviter, invitee);
 
-        if (invitee.exists() && invitee.getOrganization().equals(org)) {
-            l.warn(invitee + " is already a member.");
-            throw new ExAlreadyExist();
+        inviter.throwIfNotAdmin();
+
+        InvitationEmailer emailer;
+        if (!invitee.exists()) {
+            // The user doesn't exist. Send him a sign-up invitation email only, and associate the
+            // signup code with the team invitation. See signUpWithCode() on how this association is
+            // consumed.
+            InviteToSignUpResult res = inviteToSignUp(inviter, invitee, null, null);
+            inviteToTeam(inviter, invitee, org, res._signUpCode);
+            emailer = res._emailer;
+        } else {
+            // The user exists. Send him a team invitation email.
+            if (invitee.getOrganization().equals(org)) {
+                throw new ExAlreadyExist(invitee + " is already a member of the team");
+            }
+            emailer = inviteToTeam(inviter, invitee, org, null);
         }
-
-        OrganizationInvitation invite = _factOrgInvite.create(invitee.id(), org.id());
-
-        if (invite.exists()) {
-            l.warn(invitee + " is already invited.");
-            throw new ExAlreadyInvited();
-        }
-
-        _factOrgInvite.save(inviter.id(), invitee.id(), org.id());
 
         PBStripeData sd = getStripeData(org);
         throwIfSubscriptionIsRequiredAndNoCustomerID(sd);
 
-        // send the email last (esp. after subscription is verified)
-        _factEmailer.createOrganizationInvitationEmailer(inviter, invitee, org).send();
-
         _sqlTrans.commit();
+
+        // send the email after transaction since it may take some time and it's okay to fail
+        emailer.send();
 
         return createReply(InviteToOrganizationReply.newBuilder().setStripeData(sd).build());
     }
 
+    /**
+     * Note that the invitee may not exist when the method is called.
+     *
+     * @param signUpCode The signUp code to be associated with the team invitation. As soon as the
+     *  user signs up with the associated code, the system will automatically accept the team
+     *  invitation. See signUpWithCode().
+     */
+    InvitationEmailer inviteToTeam(User inviter, User invitee, Organization org,
+            @Nullable String signUpCode)
+            throws ExAlreadyExist, SQLException, ExNotFound, ExAlreadyInvited, IOException
+    {
+        OrganizationInvitation invite = _factOrgInvite.create(invitee, org);
+
+        if (invite.exists()) throw new ExAlreadyInvited();
+
+        _factOrgInvite.save(inviter, invitee, org, signUpCode);
+
+        return _factEmailer.createOrganizationInvitationEmailer(inviter, invitee, org);
+    }
+
     @Override
-    public ListenableFuture<Void> acceptOrganizationInvitation(Integer organizationID)
+    public ListenableFuture<Void> acceptOrganizationInvitation(Integer orgID)
             throws Exception
     {
         _sqlTrans.begin();
 
         User accepter = _sessionUser.get();
-        Organization organization = _factOrg.create(new OrganizationID(organizationID));
-        l.info("Accept org invite by " + accepter);
+        Organization org = _factOrg.create(orgID);
 
-        OrganizationInvitation invite = _factOrgInvite.create(accepter.id(), organization.id());
-
-        // Check to see if the user was actually invited to this organization.
-        if (!invite.exists()) {
-            throw new ExNotFound();
-        }
-
-        // Are we already part of the target organization?
-        if (accepter.getOrganization().equals(organization)) {
-            throw new ExAlreadyExist();
-        }
-
-        Set<UserID> users = accepter.setOrganization(invite.getOrganization(),
-                AuthorizationLevel.USER);
-
-        invite.delete();
-
-        // send verkehr notification as the last step of the transaction
-        publishACLs_(incrementACLEpochs_(users));
+        acceptTeamInvitation(accepter, org);
 
         _sqlTrans.commit();
 
         return createVoidReply();
     }
 
+    /**
+     * N.B. Since this method calls publishACLs, Callers must call this method as the last step
+     * before committing the transaction.
+     */
+    private void acceptTeamInvitation(User accepter, Organization org)
+            throws Exception
+    {
+        l.info("{} accept org invite to {}", accepter, org);
+
+        OrganizationInvitation invite = _factOrgInvite.create(accepter, org);
+
+        // Check to see if the user was actually invited to this organization.
+        if (!invite.exists()) throw new ExNotFound();
+
+        // No-op if the user is already part of the target team
+        Set<UserID> users = null;
+        if (!accepter.getOrganization().equals(org)) {
+            users = accepter.setOrganization(invite.getOrganization(), AuthorizationLevel.USER);
+        }
+
+        invite.delete();
+
+        // send verkehr notification as the last step of the transaction
+        if (users != null) publishACLs_(incrementACLEpochs_(users));
+    }
+
     @Override
     public ListenableFuture<DeleteOrganizationInvitationReply> deleteOrganizationInvitation(
-            Integer organizationID)
+            Integer orgID)
             throws SQLException, ExNoPerm, ExNotFound
     {
         _sqlTrans.begin();
 
         User user = _sessionUser.get();
-        Organization organization = _factOrg.create(new OrganizationID(organizationID));
+        Organization org = _factOrg.create(orgID);
         l.info("Delete org invite by " + user);
 
-        _factOrgInvite.create(user.id(), organization.id()).delete();
+        _factOrgInvite.create(user, org).delete();
 
-        PBStripeData sd = getStripeData(organization);
+        PBStripeData sd = getStripeData(org);
 
         _sqlTrans.commit();
 
@@ -1369,15 +1396,14 @@ public class SPService implements ISPService
 
         Organization org = user.getOrganization();
 
-        _factOrgInvite.create(UserID.fromExternal(userID), org.id()).delete();
+        _factOrgInvite.create(_factUser.createFromExternalID(userID), org).delete();
 
         PBStripeData sd = getStripeData(org);
 
         _sqlTrans.commit();
 
-        return createReply(DeleteOrganizationInvitationForUserReply.newBuilder()
-                .setStripeData(sd)
-                .build());
+        return createReply(
+                DeleteOrganizationInvitationForUserReply.newBuilder().setStripeData(sd).build());
     }
 
     private PBStripeData getStripeData(Organization org)
@@ -1637,11 +1663,8 @@ public class SPService implements ISPService
     @Override
     public ListenableFuture<Void> signUpWithCode(String signUpCode, ByteString credentials,
             String firstName, String lastName)
-            throws SQLException, ExAlreadyExist, ExNotFound, ExBadArgs, IOException, ExNoPerm,
-            ExBadCredential
+            throws Exception
     {
-        l.info("signUp with code " + signUpCode);
-
         // Sanitize names
         firstName = firstName.trim();
         lastName = lastName.trim();
@@ -1666,21 +1689,47 @@ public class SPService implements ISPService
                 throw new ExBadCredential("Password doesn't match the existing account");
             }
         } else {
-            user.save(shaedSP, fullName);
-
-            // Unsubscribe user from the aerofs invitation reminder mailing list
-            _esdb.removeEmailSubscription(user.id(),
-                    SubscriptionCategory.AEROFS_INVITATION_REMINDER);
-
-            // N.B. do not remove the sign up invitation code so we can support the case in the
-            // above "if user.exist()" branch.
+            signUpWithCodeImpl(signUpCode, user, fullName, shaedSP);
         }
 
+        // signUpWithCodeImpl() above must be the last step of the transaction. See the last step in
+        // that method for detail.
         _sqlTrans.commit();
 
         SVClient.sendEventAsync(Sv.PBSVEvent.Type.SIGN_UP, "id: " + user.id().getString());
 
         return createVoidReply();
+    }
+
+    private void signUpWithCodeImpl(String signUpCode, User user, FullName fullName, byte[] shaedSP)
+            throws Exception
+    {
+        l.info("sign up {} with code {}", user, signUpCode);
+
+        user.save(shaedSP, fullName);
+
+        // Unsubscribe user from the aerofs invitation reminder mailing list
+        _esdb.removeEmailSubscription(user.id(), SubscriptionCategory.AEROFS_INVITATION_REMINDER);
+
+        // N.B. do not remove the sign up invitation code so we can support the case in the
+        // above "if user.exist()" branch.
+
+        // Accept team invitation if there is one associated with the signup code.
+        OrganizationInvitation oi = _factOrgInvite.getBySignUpCodeNullable(signUpCode);
+        if (oi == null) return;
+
+        l.info("{} automatically accepts team invitation to {}", user, oi.getOrganization());
+
+        if (!oi.getInvitee().equals(user)) {
+            l.error("the org invite ({} => {} to {}) associated with the signup code {} " +
+                    "doesn't match the signup user {}. how possible?", oi.getInviter(),
+                    oi.getInvitee(), oi.getOrganization(), signUpCode, user);
+            throw new ExNotFound();
+        }
+
+        // this must be the last step in the transaciton. See the last step in
+        // acceptTeamInvitation() for detail.
+        acceptTeamInvitation(user, oi.getOrganization());
     }
 
     @Override

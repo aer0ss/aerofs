@@ -54,8 +54,10 @@ function normalize(message)
 
 function showErrorMessageFromResponse(xhr) {
     if (xhr.status == 400) {
-        // We only use 400 for expected errors
+        // We only use 400 for expected JSON error replies
         showErrorMessage($.parseJSON(xhr.responseText).message);
+    } else if (xhr.status == 403) {
+        window.location.href = "/login?next=" + encodeURIComponent(document.URL);
     } else {
         showErrorMessage("An error occurred processing your request." +
             " Please try again later. Contact support@aerofs.com if the" +

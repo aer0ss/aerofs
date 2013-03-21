@@ -90,11 +90,14 @@ CREATE TABLE `sp_organization_invite` (
   `m_to` VARCHAR(320) NOT NULL, -- i.e. invitee
   `m_org_id` INTEGER NOT NULL,
   `m_from` VARCHAR(320), -- i.e. inviter
+  `m_signup_code` CHAR(8),  -- the signup code associated with the organization
   `m_ts` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`m_to`, `m_org_id`),
   INDEX `m_ts_idx` (`m_ts`),
   INDEX `m_org_id_idx` (`m_org_id`), -- for OrganizationInvitationDatabase.getInvitedUsers()
-  CONSTRAINT `m_org_foreign` FOREIGN KEY (`m_org_id`) REFERENCES `sp_organization` (`o_id`)
+  UNIQUE INDEX `m_signup_code_idx` (`m_signup_code`), -- for OrganizationInvitationDatabase.getInvitationForSignupCode()
+  CONSTRAINT `m_org_foreign` FOREIGN KEY (`m_org_id`) REFERENCES `sp_organization` (`o_id`),
+  CONSTRAINT `m_signup_code_foreign` FOREIGN KEY (`m_signup_code`) REFERENCES `sp_signup_code` (`t_code`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 CREATE TABLE `sp_email_subscriptions` (

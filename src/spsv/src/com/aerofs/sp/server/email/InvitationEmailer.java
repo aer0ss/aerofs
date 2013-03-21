@@ -9,7 +9,6 @@ import com.aerofs.lib.FullName;
 import com.aerofs.labeling.L;
 import com.aerofs.base.BaseParam.SP;
 import com.aerofs.base.BaseParam.SV;
-import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExEmailSendingFailed;
 import com.aerofs.base.ex.ExNotFound;

@@ -15,6 +15,8 @@ import com.google.common.collect.ImmutableCollection.Builder;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 
+import javax.annotation.Nullable;
+import java.sql.Types;
 import java.util.List;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -24,6 +26,7 @@ import java.sql.SQLException;
 import static com.aerofs.lib.db.DBUtil.binaryCount;
 import static com.aerofs.lib.db.DBUtil.count;
 import static com.aerofs.lib.db.DBUtil.selectWhere;
+import static com.aerofs.sp.server.lib.SPSchema.C_OI_SIGNUP_CODE;
 import static com.aerofs.sp.server.lib.SPSchema.C_OI_INVITEE;
 import static com.aerofs.sp.server.lib.SPSchema.C_OI_INVITER;
 import static com.aerofs.sp.server.lib.SPSchema.C_OI_ORG_ID;
@@ -36,15 +39,18 @@ public class OrganizationInvitationDatabase extends AbstractSQLDatabase
         super(provider);
     }
 
-    public void insert(UserID inviter, UserID invitee, OrganizationID org)
+    public void insert(UserID inviter, UserID invitee, OrganizationID org,
+            @Nullable String signUpCode)
             throws SQLException
     {
         PreparedStatement ps = prepareStatement(
-                DBUtil.insert(T_OI, C_OI_INVITER, C_OI_INVITEE, C_OI_ORG_ID));
+                DBUtil.insert(T_OI, C_OI_INVITER, C_OI_INVITEE, C_OI_ORG_ID, C_OI_SIGNUP_CODE));
 
         ps.setString(1, inviter.getString());
         ps.setString(2, invitee.getString());
         ps.setInt(3, org.getInt());
+        if (signUpCode == null) ps.setNull(4, Types.VARCHAR);
+        else ps.setString(4, signUpCode);
 
         ps.executeUpdate();
     }
@@ -94,17 +100,41 @@ public class OrganizationInvitationDatabase extends AbstractSQLDatabase
 
         ps.setString(1, invitee.getString());
         ResultSet rs = ps.executeQuery();
-
-        List<OrganizationID> result = Lists.newLinkedList();
         try {
+            List<OrganizationID> result = Lists.newLinkedList();
             while (rs.next()) {
                 result.add(new OrganizationID(rs.getInt(1)));
             }
+            return result;
         } finally {
             rs.close();
         }
+    }
 
-        return result;
+    static public class GetBySignUpCodeResult {
+        public UserID _userID;
+        public OrganizationID _orgID;
+    };
+
+    public @Nullable GetBySignUpCodeResult getBySignUpCodeNullable(String signUpCode)
+            throws SQLException
+    {
+        PreparedStatement ps = prepareStatement(selectWhere(T_OI, C_OI_SIGNUP_CODE + "=?",
+                C_OI_ORG_ID, C_OI_INVITEE));
+
+        ps.setString(1, signUpCode);
+        ResultSet rs = ps.executeQuery();
+        try {
+            if (!rs.next()) return null;
+            GetBySignUpCodeResult res = new GetBySignUpCodeResult();
+            res._orgID = new OrganizationID(rs.getInt(1));
+            res._userID =  UserID.fromExternal(rs.getString(2));
+            // There must be at most one result because there is a unique constraint on C_OI_SIGNUP_CODE
+            assert !rs.next();
+            return res;
+        } finally {
+            rs.close();
+        }
     }
 
     /**

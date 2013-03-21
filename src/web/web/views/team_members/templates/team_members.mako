@@ -10,30 +10,22 @@
           rel="stylesheet">
 </%block>
 
-<div class="row page_block">
-    <div class="span7">
-        <h2>Team Members</h2>
-        <table id="users_table" class="table">
-            ## thead is required by datatables
-            <thead style="display: none;"><tr><th></th><th></th><th></th></tr></thead>
-            <tbody></tbody>
-        </table>
-    </div>
+<div class="page_block">
+    <h2>Team Members</h2>
+    <table id="users_table" class="table">
+        ## thead is required by datatables
+        <thead style="display: none;"><tr><th></th><th></th><th></th></tr></thead>
+        <tbody></tbody>
+    </table>
 
-    <div class="span4">
-        <div id="invited_users_table_div">
-            <h2>Invited Users</h2>
-            <table class="table"><tbody id='invited_users_tbody'>
-            </tbody></table>
-        </div>
-    </div>
+    <h2>Users Invited to Team</h2>
+    <table class="table"><tbody id='invited_users_tbody'>
+    </tbody></table>
 
-    <div class="span8">
-        <form class="form-inline" id="invite_form" method="post">
-            <input type="text" id="invite_user_email" placeHolder="Add email"/>
-            <input id='invite_button' class="btn" type="submit" value="Send Invite"/>
-        </form>
-    </div>
+    <form class="form-inline" id="invite_form" method="post">
+        <input type="text" id="invite_user_email" placeHolder="Add email"/>
+        <input id='invite_button' class="btn" type="submit" value="Send Invite"/>
+    </form>
 </div>
 
 <%credit_card_modal:html>
@@ -75,7 +67,7 @@
                 "bLengthChange": false,
 
                 ## Parameters
-                "sDom": "<'datatable_body't><'row'<'span1'r><'span6'pi>>",
+                "sDom": "<'datatable_body't><'row'<'span1'r><'span7'pi>>",
                 "sAjaxSource": "${request.route_path("json.get_users")}",
                 "sPaginationType": "bootstrap",
                 "iDisplayLength": 20,

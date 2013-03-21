@@ -55,6 +55,11 @@ public class Organization
             return new Organization(this, id);
         }
 
+        public Organization create(int id)
+        {
+            return create(new OrganizationID(id));
+        }
+
         /**
          * Add a new organization as well as its team server account to the DB
          */
@@ -64,17 +69,17 @@ public class Organization
             while (true) {
                 // Use a random ID only to prevent competitors from figuring out total number of
                 // orgs. It is NOT a security measure.
-                OrganizationID organizationID = new OrganizationID(Util.rand().nextInt());
+                OrganizationID orgID = new OrganizationID(Util.rand().nextInt());
                 try {
-                    _odb.insert(organizationID);
+                    _odb.insert(orgID);
                 } catch (ExAlreadyExist e) {
                     // Ideally we should use return value rather than exceptions on expected
                     // conditions.
-                    l.info("duplicate organization id " + organizationID + ". trying a new one.");
+                    l.info("duplicate organization id " + orgID + ". trying a new one.");
                     continue;
                 }
 
-                Organization org = create(organizationID);
+                Organization org = create(orgID);
                 _factUser.saveTeamServerUser(org);
                 l.info(org + " created");
                 return org;
@@ -229,7 +234,7 @@ public class Organization
     {
         ImmutableCollection.Builder<OrganizationInvitation> builder = ImmutableList.builder();
         for (UserID userID : _f._oidb.getInvitedUsers(_id)) {
-            builder.add(_f._factOrgInvite.create(userID, _id));
+            builder.add(_f._factOrgInvite.create(_f._factUser.create(userID), this));
         }
         return builder.build();
     }

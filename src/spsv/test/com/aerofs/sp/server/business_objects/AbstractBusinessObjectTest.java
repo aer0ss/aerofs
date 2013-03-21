@@ -96,7 +96,7 @@ abstract class AbstractBusinessObjectTest extends AbstractAutoTransactionedTestW
 
     protected Organization newOrganization()
     {
-        return factOrg.create(new OrganizationID(nextOrganizationID++));
+        return factOrg.create(nextOrganizationID++);
     }
 
     protected Organization saveOrganization()

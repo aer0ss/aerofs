@@ -13,8 +13,15 @@ from aerofs_sp.scrypt import scrypt
 import aerofs_sp.gen.common_pb2 as common
 
 from web.util import *
+from web.views.login.login_view import *
 
-log = logging.getLogger("web")
+log = logging.getLogger(__name__)
+
+# N.B. the string 'c' is also used in RequestToSignUpEmailer.java
+# TODO (WW) use protobuf to share constants between Python and Java code?
+URL_PARAM_SIGNUP_CODE = 'c'
+URL_PARAM_FIRST_NAME = 'first_name'
+URL_PARAM_LAST_NAME = 'last_name'
 
 @view_config(
     route_name='signup',
@@ -24,22 +31,22 @@ log = logging.getLogger("web")
 def signup(request):
     _ = request.translate
 
-    # the parameter key string must be identical to the one in
-    # RequestToSignUpEmailer.java
-    # TODO (WW) use protobuf to share constants between Python and Java code?
-    code = request.params.get('c')
-
-    # Set default to billing. See RequestToSignUpEmailer.java for rationale
-    # the parameter key string must be identical to the one in
-    # RequestToSignUpEmailer.java
-    # TODO (WW) use protobuf to share constants between Python and Java code?
-    next = request.params.get('next') or request.route_path('business_activate')
+    code = request.params.get(URL_PARAM_SIGNUP_CODE)
+    next = request.params.get(URL_PARAM_NEXT) or '/'
 
     if not code: raise HTTPBadRequest()
 
     try:
         sp = get_rpc_stub(request)
         return {
+            'url_param_signup_code': URL_PARAM_SIGNUP_CODE,
+            'url_param_form_submitted': URL_PARAM_FORM_SUBMITTED,
+            'url_param_email': URL_PARAM_EMAIL,
+            'url_param_first_name': URL_PARAM_FIRST_NAME,
+            'url_param_last_name': URL_PARAM_LAST_NAME,
+            'url_param_password': URL_PARAM_PASSWORD,
+            'url_param_remember_me': URL_PARAM_REMEMBER_ME,
+            'url_param_next': URL_PARAM_NEXT,
             'email_address' : sp.resolve_sign_up_code(code).email_address,
             'code' : code,
             'next' : next
@@ -63,11 +70,11 @@ def signup(request):
 def json_signup(request):
     _ = request.translate
 
-    code = request.params['code']
-    email_address = request.params['emailAddress']
-    first_name = request.params['firstName']
-    last_name = request.params['lastName']
-    password = request.params['password']
+    code = request.params[URL_PARAM_SIGNUP_CODE]
+    email_address = request.params[URL_PARAM_EMAIL]
+    first_name = request.params[URL_PARAM_FIRST_NAME]
+    last_name = request.params[URL_PARAM_LAST_NAME]
+    password = request.params[URL_PARAM_PASSWORD]
 
     (is_valid_password, invalid_message) = valid_password_test(request, password)
     if not is_valid_password:

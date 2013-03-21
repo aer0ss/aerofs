@@ -41,6 +41,13 @@ def log_in_user(request, login, creds, stay_signed_in):
 
     return remember(request, login)
 
+# URL param keys.
+URL_PARAM_FORM_SUBMITTED = 'form_submitted'
+URL_PARAM_EMAIL = 'email'
+URL_PARAM_PASSWORD = 'password'
+URL_PARAM_REMEMBER_ME = 'remember_me'
+URL_PARAM_NEXT = 'next' # N.B. the string "next" is also used in aerofs.js.
+
 @view_config(
     route_name='login',
     permission=NO_PERMISSION_REQUIRED,
@@ -56,12 +63,14 @@ def login(request):
     next = request.params.get('next') or referrer
     login = ''
 
-    if 'form_submitted' in request.params:
+    # N.B. the all following parameter keys are used by signup.mako as well.
+    # Keep them consistent!
+    if URL_PARAM_FORM_SUBMITTED in request.params:
         # Remember to normalize the email address.
-        login = request.params['login']
-        password = request.params['password']
+        login = request.params[URL_PARAM_EMAIL]
+        password = request.params[URL_PARAM_PASSWORD]
         hashed_password = scrypt(password, login)
-        stay_signed_in = 'stay_signed_in' in request.params
+        stay_signed_in = URL_PARAM_REMEMBER_ME in request.params
 
         try:
             try:
@@ -79,8 +88,13 @@ def login(request):
                    " problem persists."))
 
     return {
+        'url_param_form_submitted': URL_PARAM_FORM_SUBMITTED,
+        'url_param_email': URL_PARAM_EMAIL,
+        'url_param_password': URL_PARAM_PASSWORD,
+        'url_param_remember_me': URL_PARAM_REMEMBER_ME,
+        'url_param_next': URL_PARAM_NEXT,
         'login': login,
-        'next': next
+        'next': next,
     }
 
 @view_config(

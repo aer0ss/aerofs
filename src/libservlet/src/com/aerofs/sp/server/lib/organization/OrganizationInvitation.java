@@ -5,12 +5,12 @@
 package com.aerofs.sp.server.lib.organization;
 
 import com.aerofs.base.ex.ExNotFound;
-import com.aerofs.base.id.UserID;
 import com.aerofs.sp.server.lib.OrganizationInvitationDatabase;
-import com.aerofs.sp.server.lib.id.OrganizationID;
+import com.aerofs.sp.server.lib.OrganizationInvitationDatabase.GetBySignUpCodeResult;
 import com.aerofs.sp.server.lib.user.User;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import java.sql.SQLException;
 
@@ -37,33 +37,40 @@ public class OrganizationInvitation
             _factOrg = factOrg;
         }
 
-        /**
-         * TODO (WW) use User and Organization objects rather than ID objects
-         */
-        public OrganizationInvitation create(@Nonnull UserID invitee, @Nonnull OrganizationID orgID)
+        public OrganizationInvitation create(@Nonnull User invitee, @Nonnull Organization org)
         {
-            return new OrganizationInvitation(_db, _factUser, invitee, _factOrg.create(orgID));
+            return new OrganizationInvitation(_db, _factUser, invitee, org);
         }
 
         /**
-         * TODO (WW) use User and Organization objects rather than ID objects
+         * @param signUpCode an optional signUp code associated with the organization invitation.
+         *  When the invited user signs up with this signup code the system will automatically
+         *  accept the organization inviation on behalf of the user.
          */
-        public OrganizationInvitation save(@Nonnull UserID inviter, @Nonnull UserID invitee,
-                @Nonnull OrganizationID orgID)
+        public OrganizationInvitation save(@Nonnull User inviter, @Nonnull User invitee,
+                @Nonnull Organization org, @Nullable String signUpCode)
                 throws SQLException
         {
-            _db.insert(inviter, invitee, orgID);
-            return create(invitee, orgID);
+            _db.insert(inviter.id(), invitee.id(), org.id(), signUpCode);
+            return create(invitee, org);
+        }
+
+        public @Nullable OrganizationInvitation getBySignUpCodeNullable(String signUpCode)
+                throws SQLException
+        {
+            GetBySignUpCodeResult res = _db.getBySignUpCodeNullable(signUpCode);
+            if (res == null) return null;
+            else return create(_factUser.create(res._userID), _factOrg.create(res._orgID));
         }
     }
 
     private OrganizationInvitation(OrganizationInvitationDatabase db, User.Factory factUser,
-            UserID invitee, Organization org)
+            User invitee, Organization org)
     {
         _db = db;
         _factUser = factUser;
 
-        _invitee = _factUser.create(invitee);
+        _invitee = invitee;
         _org = org;
     }
 

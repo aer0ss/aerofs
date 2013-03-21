@@ -48,8 +48,8 @@ public class TestSP_OrganizationMovement extends AbstractSPTest
         GetOrganizationInvitationsReply pending = service.getOrganizationInvitations().get();
 
         // Accept the invite.
-        Organization org = factOrg.create(new OrganizationID(
-                pending.getOrganizationInvitationsList().get(0).getOrganizationId()));
+        Organization org = factOrg.create(
+                pending.getOrganizationInvitationsList().get(0).getOrganizationId());
         acceptOrganizationInvitation(org, user);
 
         return org;
@@ -67,8 +67,8 @@ public class TestSP_OrganizationMovement extends AbstractSPTest
         GetOrganizationInvitationsReply pending = service.getOrganizationInvitations().get();
 
         // Ignore the invite.
-        Organization org = factOrg.create(new OrganizationID(
-                pending.getOrganizationInvitationsList().get(0).getOrganizationId()));
+        Organization org = factOrg.create(
+                pending.getOrganizationInvitationsList().get(0).getOrganizationId());
         service.deleteOrganizationInvitation(org.id().getInt());
 
         return org;

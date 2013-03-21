@@ -261,7 +261,7 @@ public class SPServlet extends AeroServlet
             String signUpCode = inviteFromScript(invitee, inviter);
             rsp.getWriter().println("done: " + from + " -> " + to + ", code: " + signUpCode);
         } catch (ExAlreadyExist e) {
-            rsp.getWriter().println("skip " + to);
+            rsp.getWriter().println("skip: " + e);
         } catch (Exception e) {
             l.error("handleSignUpInvite: ", e);
             throw new IOException(e);
@@ -284,7 +284,7 @@ public class SPServlet extends AeroServlet
         // Check that we haven't already invited this user
         if (invitee.isInvitedToSignUp()) throw new ExAlreadyExist("user already invited");
 
-        InviteToSignUpResult res = _service.inviteToSignUp(invitee, inviter, null, null);
+        InviteToSignUpResult res = _service.inviteToSignUp(inviter, invitee, null, null);
         res._emailer.send();
         return res._signUpCode;
     }

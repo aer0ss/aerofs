@@ -114,10 +114,6 @@ def json_invite_user(request):
 
     sp = get_rpc_stub(request)
 
-    # invite the user to sign up first
-    # TODO (WW) this logic should be moved to sp.invite_to_organization()
-    ignore_exception(sp.invite_to_sign_up, ([user]), PBException.ALREADY_EXIST)
-
     # invite the user
     reply = exception2error(sp.invite_to_organization, user, {
             PBException.ALREADY_EXIST:

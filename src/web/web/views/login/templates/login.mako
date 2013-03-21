@@ -11,20 +11,20 @@
 
     <form action="${request.route_path('login')}" method="post">
         ${self.csrf.token_input()}
-        <input type="hidden" name="next" value="${next}"/>
+        <input type="hidden" name="${url_param_next}" value="${next}"/>
         <label for="input_email">Email:</label>
-        <input class="input-medium" id="input_email" type="text" name="login"
+        <input class="input-medium" id="input_email" type="text" name="${url_param_email}"
             %if login:
                 value="${login}"
             %endif
         >
         <label for="input_passwd">Password:</label>
-        <input class="input-medium" id="input_passwd" type="password" name="password">
+        <input class="input-medium" id="input_passwd" type="password" name="${url_param_password}">
         <label class="checkbox">
-            <input type="checkbox" name="stay_signed_in" value="staySignedIn"
+            <input type="checkbox" name="${url_param_remember_me}" value="staySignedIn"
                    checked="checked"> Remember me
         </label>
-        <input class="btn" type="submit" name="form_submitted" value="Sign In"/>
+        <input class="btn" type="submit" name="${url_param_form_submitted}" value="Sign In"/>
     </form>
 
     <p><a href="${request.route_path('request_password_reset')}">

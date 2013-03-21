@@ -30,7 +30,7 @@ public class TestOrganization extends AbstractBusinessObjectTest
     public void setName_shouldAssertForNonExistingOrg()
             throws SQLException
     {
-        Organization org = factOrg.create(new OrganizationID(123));
+        Organization org = factOrg.create(123);
         org.setName("hoho");
     }
 
@@ -38,7 +38,7 @@ public class TestOrganization extends AbstractBusinessObjectTest
     public void getName_shouldThrowForNonExistingOrg()
             throws SQLException, ExNotFound
     {
-        factOrg.create(new OrganizationID(123)).getName();
+        factOrg.create(123).getName();
     }
 
     @Test

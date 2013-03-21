@@ -270,12 +270,9 @@ public class User
 
         List<OrganizationInvitation> result = Lists.newLinkedList();
         for (OrganizationID orgID : _f._odb.getInvitedOrganizations(id())) {
-            if (organization.id().equals(orgID)) {
-                continue;
-            }
+            if (organization.id().equals(orgID)) continue;
 
-            OrganizationInvitation invite = _f._factOrgInvite.create(id(), orgID);
-            result.add(invite);
+            result.add(_f._factOrgInvite.create(this, _f._factOrg.create(orgID)));
         }
 
         return result;

@@ -1,8 +1,6 @@
 <%inherit file="layout.mako"/>
 <%! navigation_bars = True; %>
 
-<%include file="activate_credit_card.mako"/>
-
 <h2>${page_title}</h2>
 
 <table class="table">

@@ -20,19 +20,17 @@
 </form>
 </div>
 
-<div class="row page_block">
-    <div class="span6">
-        <h2>Team Administrators</h2>
-        <table id="admins_table" class="table">
-            ## thead is required by datatables
-            <thead style="display: none;"><tr><th></th><th></th><th></th></tr></thead>
-            <tbody></tbody>
-        </table>
-        <form class="form-inline" id="add_admin_form" method="post">
-            <input id="add-admin-input" type="text" placeholder="Member Email">
-            <input class="btn" type="submit" value="Add Admin"/>
-        </form>
-    </div>
+<div class="page_block">
+    <h2>Team Administrators</h2>
+    <table id="admins_table" class="table">
+        ## thead is required by datatables
+        <thead style="display: none;"><tr><th></th><th></th><th></th></tr></thead>
+        <tbody></tbody>
+    </table>
+    <form class="form-inline" id="add_admin_form" method="post">
+        <input id="add-admin-input" type="text" placeholder="Member Email">
+        <input class="btn" type="submit" value="Add Admin"/>
+    </form>
 </div>
 
 %if show_billing:
