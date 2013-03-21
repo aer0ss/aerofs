@@ -1,5 +1,6 @@
 def includeme(config):
-    # The "/devices" string must be identical to the one in DeviceRegistrationEmailer.java.
+    # The "/devices" and "/admin/team_servers" strings are also used in
+    # DeviceRegistrationEmailer.java. Keep them consistent!
     # TODO (WW) use protobuf to share constants between Python and Java code?
     config.add_route('my_devices', '/devices')
     config.add_route('no_device', '/no_device')

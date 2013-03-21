@@ -22,26 +22,26 @@ public class DeviceRegistrationEmailer
             String osFamily, String deviceName)
             throws IOException
     {
-        sendDeviceCertifiedEmailImpl(L.PRODUCT + " Team Server", emailAddress, firstName,
-                osFamily, deviceName);
+        // N.B. the URI string must be identical to that in devices/__init__.py.
+        sendDeviceCertifiedEmailImpl(L.PRODUCT + " Team Server", emailAddress, firstName, osFamily,
+                deviceName, "Team Servers at " + SP.DASH_BOARD_BASE + "/admin/team_servers");
     }
 
     public void sendDeviceCertifiedEmail(String emailAddress, String firstName,
             String osFamily, String deviceName)
             throws IOException
     {
-        sendDeviceCertifiedEmailImpl(L.PRODUCT, emailAddress, firstName, osFamily, deviceName);
+        // N.B. the URI string must be identical to that in devices/__init__.py.
+        sendDeviceCertifiedEmailImpl(L.PRODUCT, emailAddress, firstName, osFamily, deviceName,
+                "your devices at " + SP.DASH_BOARD_BASE + "/devices");
     }
 
     public void sendDeviceCertifiedEmailImpl(String product, String emailAddress, String firstName,
-            String osFamily, String deviceName)
+            String osFamily, String deviceName, String manageDeviceStringAndURL)
             throws IOException
     {
         String subject = product + " Installed on Your Device " + Util.quote(deviceName);
         Email email = new Email(subject);
-
-        // N.B. the URI string must be identical to that in devices/__init__.py.
-        String url = SP.DASH_BOARD_BASE + "/devices";
 
         String body = "\n" +
                 "Hi " + firstName + ",\n" +
@@ -53,7 +53,7 @@ public class DeviceRegistrationEmailer
                 SV.SUPPORT_EMAIL_ADDRESS +
                 " immediately and we will take the necessary steps to secure your account.\n" +
                 "\n" +
-                "You can manage your devices at " + url + ".";
+                "You can manage " + manageDeviceStringAndURL + ".";
 
         email.addSection(subject, HEADER_SIZE.H1, body);
         email.addDefaultSignature();
