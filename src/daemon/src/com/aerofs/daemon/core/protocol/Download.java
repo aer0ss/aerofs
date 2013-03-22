@@ -172,7 +172,7 @@ public class Download
                 @Override
                 public void notify_(IDownloadCompletionListener l)
                 {
-                    l.okay_(_socid, from);
+                    l.onDownloadSuccess_(_socid, from);
                 }
             });
             returnValue = null;
@@ -250,12 +250,21 @@ public class Download
                 started = true;
                 _f._dlstate.started_(_socid);
 
-                DigestedMessage msg = _f._gcc.remoteRequestComponent_(_socid, _src, _tk);
+                final DigestedMessage msg = _f._gcc.remoteRequestComponent_(_socid, _src, _tk);
                 replier = msg.did();
 
                 // TODO (MJ) I have a dream: that we can distinguish between locally vs. remotely
                 // generated exceptions
                 _f._gcr.processReply_(_socid, msg, _requested, _tk);
+
+                notifyListeners_(new IDownloadCompletionListenerVisitor()
+                {
+                    @Override
+                    public void notify_(IDownloadCompletionListener l)
+                    {
+                        l.onPartialDownloadSuccess(_socid, msg.did());
+                    }
+                });
 
                 // If there are more KMLs for _socid, the Collector algorithm would ensure a new
                 // Download object is created to resolve the KMLs. However, the Collector has

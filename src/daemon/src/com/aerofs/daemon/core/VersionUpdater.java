@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Set;
 
+import javax.annotation.Nonnull;
 import javax.inject.Inject;
 
 import com.aerofs.base.Loggers;
@@ -19,6 +20,8 @@ import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.SOCKID;
 import com.aerofs.lib.Util;
 import com.google.common.collect.Sets;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * This class increments version vectors due to local component updates. It also maintains
@@ -72,7 +75,7 @@ public class VersionUpdater
     /**
      * Use this method to increment non-alias versions.
      */
-    public void update_(SOCKID k, Trans t)
+    public void update_(SOCKID k, @Nonnull Trans t)
         throws SQLException, IOException
     {
         updateImpl_(k, false, t);
@@ -81,17 +84,17 @@ public class VersionUpdater
     /**
      * Use this method to increment alias versions.
      */
-    public void updateAliased_(SOCKID k, Trans t)
+    public void updateAliased_(SOCKID k, @Nonnull Trans t)
         throws SQLException, IOException
     {
         updateImpl_(k, true, t);
     }
 
-    private void updateImpl_(SOCKID k, boolean alias, Trans t)
+    private void updateImpl_(SOCKID k, boolean alias, @Nonnull Trans t)
         throws SQLException, IOException
     {
-        if (l.isDebugEnabled()) l.debug("update " + k);
-        assert t != null;
+        checkNotNull(t);
+        l.debug("update {}", k);
 
         _nvc.updateMyVersion_(k, alias, t);
 

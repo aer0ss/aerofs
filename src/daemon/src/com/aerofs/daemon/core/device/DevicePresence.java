@@ -11,6 +11,7 @@ import com.aerofs.daemon.core.store.MapSIndex2Store;
 import com.aerofs.daemon.core.store.Store;
 import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
@@ -34,6 +35,7 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.Callable;
@@ -44,6 +46,7 @@ public class DevicePresence implements IDumpStatMisc
 
     private final Map<DID, Device> _did2dev = Maps.newHashMap();
     private final Map<SIndex, OPMDevices> _sidx2opm = Maps.newHashMap();
+    private final List<IDevicePresenceListener> _listeners = Lists.newArrayList();
 
     private final Transports _tps;
     private final CoreScheduler _sched;
@@ -64,6 +67,11 @@ public class DevicePresence implements IDumpStatMisc
         _sidx2sid = sidx2sid;
     }
 
+    public void addListener(IDevicePresenceListener listener)
+    {
+        _listeners.add(listener);
+    }
+
     public void online_(ITransport tp, DID did, Collection<SIndex> sidcs)
     {
         l.info("online " + did + tp + " 4 " + sidcs);
@@ -74,8 +82,16 @@ public class DevicePresence implements IDumpStatMisc
             _did2dev.put(did, dev);
         }
 
+        boolean wasFormerlyAvailable = dev.isAvailable_();
+
         Collection<SIndex> sidcsOnline = dev.online_(tp, sidcs);
         onlineImpl_(dev, sidcsOnline);
+
+        if (!wasFormerlyAvailable && dev.isAvailable_()) {
+            for (IDevicePresenceListener listener : _listeners) {
+                listener.deviceOnline_(did);
+            }
+        }
     }
 
     public void offline_(ITransport tp, DID did, Collection<SIndex> sidcs)
@@ -84,11 +100,20 @@ public class DevicePresence implements IDumpStatMisc
         if (dev == null) return;
         l.info("offline " + did + tp + " 4 " + sidcs);
 
+        boolean wasFormerlyAvailable = dev.isAvailable_();
+
         Collection<SIndex> sidcsOffline = dev.offline_(tp, sidcs);
         offlineImpl_(did, sidcsOffline);
         if (!dev.isAvailable_()) {
             _did2dev.remove(did);
+
+            if (wasFormerlyAvailable) {
+                for (IDevicePresenceListener listener: _listeners) {
+                    listener.deviceOffline_(did);
+                }
+            }
         }
+
     }
 
     /**

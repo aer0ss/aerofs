@@ -405,11 +405,14 @@ public class Collector implements IDumpStatMisc, IDownloadListenerFactory
         }
 
         @Override
-        public void okay_(SOCID socid, DID from)
+        public void onDownloadSuccess_(SOCID socid, DID from)
         {
             if (_tk != null) _tk.reclaim_();
             postDownloadCompletionTask();
         }
+
+        @Override
+        public void onPartialDownloadSuccess(SOCID socid, DID didFrom) { }
 
         @Override
         public void onGeneralError_(SOCID socid, Exception e)

@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.sql.SQLException;
 import java.util.ArrayDeque;
+import java.util.List;
 import java.util.Queue;
 
 import com.aerofs.base.Loggers;
@@ -17,6 +18,7 @@ import com.aerofs.daemon.lib.db.IPulledDeviceDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.daemon.core.ex.ExAborted;
+import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 
@@ -54,6 +56,8 @@ public class GetVersReply
     private final MapSIndex2Store _sidx2s;
     private final IPulledDeviceDatabase _pulleddb;
 
+    private final List<IPullUpdatesListener> _listeners = Lists.newArrayList();
+
     @Inject
     public GetVersReply(TransManager tm, NativeVersionControl nvc,
             ImmigrantVersionControl ivc, UpdateSenderFilter pusf,
@@ -67,6 +71,11 @@ public class GetVersReply
         _iss = iss;
         _sidx2s = sidx2s;
         _pulleddb = pddb;
+    }
+
+    public void addListener(IPullUpdatesListener listener)
+    {
+        _listeners.add(listener);
     }
 
     void processReply_(DigestedMessage msg, Token tk) throws Exception
@@ -84,9 +93,7 @@ public class GetVersReply
 
             SIndex sidx = msg.sidx();
 
-            if (l.isDebugEnabled()) {
-                l.debug("recv from " + msg.ep() + " for " + sidx + " " + filter);
-            }
+            l.debug("recv from {} for {} {}", msg.ep(), sidx, filter);
 
             if (msg.streamKey() == null) {
                 processAtomicReply_(sidx, msg.did(), msg.is(), filter);
@@ -101,6 +108,10 @@ public class GetVersReply
                 // the peer to update the sender filter for us.
                 _pusf.send_(sidx, pb.getSenderFilterIndex(), pb.getSenderFilterUpdateSeq(),
                         msg.did());
+            }
+
+            for (IPullUpdatesListener listener : _listeners) {
+                listener.receivedPullUpdateFrom_(msg.did());
             }
 
         } finally {

@@ -10,7 +10,13 @@ import java.util.Map;
  */
 public interface IDownloadCompletionListener
 {
-    void okay_(SOCID socid, DID from);
+    /**
+     * Called following the successful download of socid from didFrom
+     * (but this does not indicate all available DIDs have been queried)
+     */
+    void onPartialDownloadSuccess(SOCID socid, DID didFrom);
+
+    void onDownloadSuccess_(SOCID socid, DID from);
 
     /**
      * Called when the download failed with errors recorded for each attempted device

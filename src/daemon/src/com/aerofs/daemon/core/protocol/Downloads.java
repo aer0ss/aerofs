@@ -113,11 +113,14 @@ public class Downloads
         }
 
         @Override
-        public void okay_(SOCID socid, DID from)
+        public void onDownloadSuccess_(SOCID socid, DID from)
         {
             _from = from;
             if (_tcb != null) _tcb.resume_();
         }
+
+        @Override
+        public void onPartialDownloadSuccess(SOCID socid, DID didFrom) { }
 
         private void abortWithError(Exception e)
         {

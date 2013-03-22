@@ -78,7 +78,7 @@ public class MockAsyncDownload implements Answer<Boolean>
     /**
      * Simulate successful download from the given device
      */
-    void ok(DID sender) { _dcl.okay_(_socid, sender); completed(); }
+    void ok(DID sender) { _dcl.onDownloadSuccess_(_socid, sender); completed(); }
 
     /**
      * Simulate download failure with a general error
