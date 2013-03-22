@@ -2,8 +2,8 @@ package com.aerofs.daemon.core.multiplicity.singleuser.migration;
 
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
-import com.aerofs.daemon.lib.db.IMetaDatabase;
-import com.aerofs.lib.cfg.CfgBuildType;
+import com.aerofs.daemon.core.store.IStores;
+import com.aerofs.lib.cfg.CfgAggressiveChecking;
 import com.aerofs.lib.ex.ExNotDir;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.OID;
@@ -11,14 +11,13 @@ import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.base.id.UniqueID;
 import com.aerofs.testlib.AbstractTest;
+import com.google.common.collect.ImmutableSet;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 
 import java.sql.SQLException;
-import java.util.HashSet;
-import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -27,9 +26,9 @@ import static org.mockito.Mockito.when;
 
 public class TestAdmittedObjectLocator extends AbstractTest
 {
-    @Mock IMetaDatabase mdb;
+    @Mock IStores stores;
     @Mock DirectoryService ds;
-    @Mock CfgBuildType cfgBuildType;
+    @Mock CfgAggressiveChecking cfgAggressiveChecking;
     @Mock OA oaAdmitted;
     @Mock OA oaExpelled1;
     @Mock OA oaExpelled2;
@@ -52,10 +51,8 @@ public class TestAdmittedObjectLocator extends AbstractTest
         mockOA(oaExpelled1, soidExpelled1, true);
         mockOA(oaExpelled2, soidExpelled2, true);
 
-        when(mdb.getSIndexes_(oid, sidxAdmitted))
-                .thenReturn(newSet(sidxExpelled1, sidxExpelled2));
-        when(mdb.getSIndexes_(oid, sidxExpelled1))
-                .thenReturn(newSet(sidxExpelled2, sidxAdmitted));
+        when(stores.getAll_())
+                .thenReturn(ImmutableSet.of(sidxAdmitted, sidxExpelled1, sidxExpelled2));
     }
 
     private void mockOA(OA oa, SOID soid, boolean expelled) throws SQLException
@@ -64,13 +61,7 @@ public class TestAdmittedObjectLocator extends AbstractTest
         when(oa.soid()).thenReturn(soid);
         when(oa.isExpelled()).thenReturn(expelled);
         when(ds.getOA_(soid)).thenReturn(oa);
-    }
-
-    private static Set<SIndex> newSet(SIndex ... sidxs)
-    {
-        Set<SIndex> ret = new HashSet<SIndex>(sidxs.length);
-        for (SIndex sidx : sidxs) ret.add(sidx);
-        return ret;
+        when(ds.getOANullable_(soid)).thenReturn(oa);
     }
 
     ////////
@@ -85,15 +76,15 @@ public class TestAdmittedObjectLocator extends AbstractTest
 
     private void setupDoubleAdmittedObjects() throws SQLException
     {
-        when(cfgBuildType.isStaging()).thenReturn(true);
+        when(cfgAggressiveChecking.get()).thenReturn(true);
 
         OA oaAdmitted2 = mock(OA.class);
         SIndex sidxAdmitted2 = new SIndex(99);
         SOID soidAdmitted2 = new SOID(sidxAdmitted2, oid);
         mockOA(oaAdmitted2, soidAdmitted2, false);
 
-        when(mdb.getSIndexes_(oid, sidxExpelled1))
-                .thenReturn(newSet(sidxAdmitted, sidxAdmitted2, sidxExpelled1, sidxExpelled2));
+        when(stores.getAll_()).thenReturn(
+                ImmutableSet.of(sidxAdmitted, sidxAdmitted2, sidxExpelled1, sidxExpelled2));
     }
 
     @Test (expected = AssertionError.class)
@@ -116,7 +107,6 @@ public class TestAdmittedObjectLocator extends AbstractTest
     {
         assertNull(aol.locate_(oid, sidxAdmitted, type));
 
-        when(mdb.getSIndexes_(oid, sidxAdmitted)).thenReturn(newSet(sidxExpelled1, sidxExpelled2));
         assertNull(aol.locate_(oid, sidxAdmitted, type));
     }
 
