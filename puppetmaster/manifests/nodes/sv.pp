@@ -14,8 +14,7 @@ node "sv.aerofs.com" inherits default {
     class{"analytics":}
 
     cron{"remove old defects":
-        command => 'find /var/svlogs_prod/defect/ -mtime +21 -iname log.defect\* | xargs rm',
-        hour    => "0",
+        command => '/usr/local/bin/clean_defects',
         minute  => "0"
     }
 

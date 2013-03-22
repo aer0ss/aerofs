@@ -1,0 +1,34 @@
+#!/usr/bin/env python
+import subprocess
+
+MAX_DAYS_TO_KEEP = 21
+MIN_DAYS_TO_KEEP = 10
+
+def get_percent_free():
+    try:
+        output = subprocess.check_output("df -h | grep /data | awk '{ print $5 }'", shell=True)
+        percent = int(output.strip().strip("%"))
+        print "/data is {0}% in use".format(percent)
+        return percent
+    except subprocess.CalledProcessError as e:
+        print e.output
+        raise e
+
+def clean_defects(days_to_keep):
+    print "removing everything older than {0} days old".format(days_to_keep)
+    subprocess.check_output('find /var/svlogs_prod/defect/ -mtime +{0} -iname log.defect\* | xargs -r rm'.format(days_to_keep), shell=True)
+
+def main():
+    """
+    We always clean things over MAX_DAYS_TO_KEEP days old. We always keep things less than MIN_DAYS_TO_KEEP days
+    old. For everything in between, we keep as much as we can while maintaining 5 % free
+    """
+    days_to_keep = MAX_DAYS_TO_KEEP
+    clean_defects(days_to_keep)
+    days_to_keep = days_to_keep - 1
+    while get_percent_free() > 95 and days_to_keep > MIN_DAYS_TO_KEEP:
+        clean_defects(days_to_keep)
+        days_to_keep = days_to_keep - 1
+
+if __name__ == "__main__":
+    exit(main())
