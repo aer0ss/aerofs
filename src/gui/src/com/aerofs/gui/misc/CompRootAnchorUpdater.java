@@ -37,8 +37,6 @@ public class CompRootAnchorUpdater extends Composite
 {
     private final static Logger l = Loggers.getLogger(CompRootAnchorUpdater.class);
 
-    private final InjectableFile.Factory _factFile = new InjectableFile.Factory();
-
     public CompRootAnchorUpdater(Composite parent)
     {
         super(parent, SWT.NONE);
@@ -164,7 +162,7 @@ public class CompRootAnchorUpdater extends Composite
     {
         if (GUI.get().ask(getShell(), MessageType.WARN, S.UNLINK_THIS_COMPUTER_CONFIRM)) {
             try {
-                UIUtil.scheduleUnlinkAndExit(_factFile);
+                UIUtil.scheduleUnlinkAndExit();
             } catch (Exception e) {
                 GUI.get().show(MessageType.ERROR, "Couldn't unlink the computer " + UIUtil.e2msg(e));
             }

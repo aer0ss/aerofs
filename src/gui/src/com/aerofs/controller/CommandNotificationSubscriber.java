@@ -367,41 +367,11 @@ public final class CommandNotificationSubscriber
     private void unlinkSelf()
             throws Exception
     {
-        RitualClient r = RitualClientFactory.newClient();
+        // Metrics.
+        SVClient.sendEventAsync(Type.UNLINK);
+        RockLog.newEvent(EventType.UNLINK_DEVICE).sendAsync();
 
-        try {
-            // use the asynchronous Ritual API to maximize our chance of creating seed file
-            // without noticeably slowing down unlink
-            ListenableFuture<CreateSeedFileReply> reply = null;
-            try {
-                if (!L.get().isMultiuser()) reply = r.createSeedFile();
-            } catch (Exception e) {
-                // can safely ignore
-                l.info("failed to create seed file {}", Util.e(e));
-            }
-
-            // Metrics.
-            SVClient.sendEventAsync(Type.UNLINK);
-            RockLog.newEvent(EventType.UNLINK_DEVICE).sendAsync();
-
-            if (reply != null) {
-                try {
-                    // give the daemon some extra time to finish generating the seed file
-                    // NB: if the daemon is killed before the file is fully generated, the partial
-                    // seed file will be gracefully handled by sqlite and help avoid some (but not
-                    // all) aliasing upon reinstall
-                    reply.get(500, TimeUnit.MILLISECONDS);
-                    l.info("seed file created");
-                } catch (Exception e) {
-                    // can safely ignore
-                    l.info("failed to create seed file {}", Util.e(e));
-                }
-            }
-
-            unlinkImplementation();
-        } finally {
-            r.close();
-        }
+        unlinkImplementation();
 
         shutdownImplementation();
     }

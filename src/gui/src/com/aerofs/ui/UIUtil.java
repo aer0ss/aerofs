@@ -17,18 +17,21 @@ import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.*;
 import com.aerofs.lib.id.CID;
 import com.aerofs.base.id.UserID;
-import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.lib.os.OSUtil;
 
+import com.aerofs.lib.ritual.RitualClient;
+import com.aerofs.lib.ritual.RitualClientFactory;
 import com.aerofs.proto.Common;
 import com.aerofs.proto.Common.PBPath;
 import com.aerofs.proto.ControllerProto.GetInitialStatusReply;
+import com.aerofs.proto.Ritual.CreateSeedFileReply;
 import com.aerofs.proto.RitualNotifications.PBSOCID;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.sp.client.SPClientFactory;
 import com.aerofs.ui.IUI.MessageType;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
 import com.google.protobuf.ByteString;
 import org.slf4j.Logger;
 import java.io.EOFException;
@@ -36,6 +39,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.util.concurrent.TimeUnit;
 
 public class UIUtil
 {
@@ -137,6 +141,15 @@ public class UIUtil
         return comp;
     }
 
+    // Time, in miliseconds, given to the daemon to populate a seed file before making the SP call
+    // to unlink the device
+    // NB: we will wait AT MOST that amount of time but if the seed file is populated before that
+    // timeout we may wait considerably less.
+    // Tests show that seed files are populated at ~30k objects per second. We can probably expect
+    // at least 500ms latency for the SP interaction (unlink, vk notification, pull command, ack
+    // command)
+    private static final int SEED_FILE_CREATION_TIMEOUT = 5500;
+
     /**
      * Schedule unlink and exit (via the command server).
      *
@@ -144,13 +157,34 @@ public class UIUtil
      * via the command server so the device is properly cleaned up on the server and on other peer
      * devices.
      */
-    public static void scheduleUnlinkAndExit(InjectableFile.Factory factFile)
+    public static void scheduleUnlinkAndExit()
             throws Exception
     {
         if (!L.get().isMultiuser()) {
-            SPBlockingClient sp = SPClientFactory.newBlockingClient(SP.URL, Cfg.user());
-            sp.signInRemote();
-            sp.unlinkDevice(Cfg.did().toPB(), false);
+            // try creating a seed file (use async ritual API to leverage SP call latency)
+            ListenableFuture<CreateSeedFileReply> reply = null;
+            RitualClient ritual = RitualClientFactory.newClient();
+
+            try {
+                try {
+                    reply = ritual.createSeedFile();
+                } catch (Exception e) {
+                    l.info("failed to create seed file: {}", Util.e(e));
+                }
+
+                try {
+                    // give the daemon some room to create the seed file before making the SP call
+                    if (reply != null) reply.get(SEED_FILE_CREATION_TIMEOUT, TimeUnit.MILLISECONDS);
+                } catch (Exception e) {
+                    l.info("failed to create seed file: {}", Util.e(e));
+                }
+
+                SPBlockingClient sp = SPClientFactory.newBlockingClient(SP.URL, Cfg.user());
+                sp.signInRemote();
+                sp.unlinkDevice(Cfg.did().toPB(), false);
+            } finally {
+                ritual.close();
+            }
         } else {
             // Currently only the single user unlink is supported.
             // TODO support multi user unlink.

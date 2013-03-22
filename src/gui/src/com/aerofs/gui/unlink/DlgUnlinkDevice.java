@@ -121,7 +121,7 @@ public class DlgUnlinkDevice extends AeroFSDialog implements ISWTWorker
     public void run()
             throws Exception
     {
-        UIUtil.scheduleUnlinkAndExit(new Factory());
+        UIUtil.scheduleUnlinkAndExit();
     }
 
     @Override

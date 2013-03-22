@@ -30,8 +30,6 @@ public class CLIRootAnchorUpdater
             "If you deleted the " + L.PRODUCT + " folder, or want to start over, " +
             "choose \"Unlink\". You will be asked to setup AeroFS the next time you launch.";
 
-    private final InjectableFile.Factory _factFile = new InjectableFile.Factory();
-
     public CLIRootAnchorUpdater(CLI cli)
     {
         _cli = cli;
@@ -136,7 +134,7 @@ public class CLIRootAnchorUpdater
         } else {
             try {
                 // Unlink this account from the computer and shut down the application
-                UIUtil.scheduleUnlinkAndExit(_factFile);
+                UIUtil.scheduleUnlinkAndExit();
             } catch (Exception e) {
                 _cli.show(MessageType.ERROR, "Couldn't unlink the computer " + UIUtil.e2msg(e));
             }
