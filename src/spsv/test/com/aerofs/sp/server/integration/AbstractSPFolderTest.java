@@ -15,7 +15,7 @@ import java.util.List;
 
 import static junit.framework.Assert.assertFalse;
 
-public class AbstractSPFolderPermissionTest extends AbstractSPTest
+public class AbstractSPFolderTest extends AbstractSPTest
 {
     protected static final SID SID_1 = SID.generate();
     protected static final SID SID_2 = SID.generate();

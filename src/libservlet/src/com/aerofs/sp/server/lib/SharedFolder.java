@@ -318,10 +318,29 @@ public class SharedFolder
         if (!_f._db.hasOwnerMemberOrPending(_sid)) throw new ExNoPerm("there must be at least one owner");
     }
 
-    public void throwIfNotOwnerAndNotAdmin(User user)
+    /**
+     * A user has privileges to chagne ACLs if and only if:
+     *  1. the user is the owner of the folder, or
+     *  2. the user is the team admin of at least one non-pending owner of the folder.
+     */
+    public void throwIfNoPrivilegeToChangeACL(User user)
             throws SQLException, ExNoPerm, ExNotFound
     {
-        if (!isOwner(user) && !user.isAdmin()) throw new ExNoPerm();
+        // Bypass the following expensive tests for common cases.
+        if (isOwner(user)) return;
+
+        // See if the user is the team admin of a non-pending owner of the folder.
+        if (user.isAdmin()) {
+            Organization org = user.getOrganization();
+            for (SubjectRolePair srp: getMemberACL()) {
+                if (srp._role.covers(Role.OWNER)) {
+                    User member = _f._factUser.create(srp._subject);
+                    if (member.getOrganization().equals(org)) return;
+                }
+            }
+        }
+
+        throw new ExNoPerm();
     }
 
     private boolean isOwner(User user)

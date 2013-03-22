@@ -27,7 +27,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * A class to test the get device info SP call.
  */
-public class TestSP_GetDeviceInfo extends AbstractSPFolderPermissionTest
+public class TestSP_GetDeviceInfo extends AbstractSPFolderTest
 {
     private static final SID TEST_SID_1 = SID.generate();
 

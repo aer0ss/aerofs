@@ -10,14 +10,16 @@ import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.id.SID;
-import com.aerofs.base.id.UserID;
 import com.aerofs.proto.Cmd.CommandType;
+import com.aerofs.proto.Common.PBSubjectRolePair;
+import com.aerofs.proto.Sp.GetACLReply;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.aerofs.sp.server.lib.user.User;
 import junit.framework.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.Collections;
 import java.util.List;
 
 import static junit.framework.Assert.fail;
@@ -28,15 +30,8 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-/**
- * Test basic functionality and permission enforcement of SP's shareFolder call, but don't test its
- * ability to set ACL entries (that testing is done by TestSP_ACL)
- */
-public class TestSP_ShareFolder extends AbstractSPFolderPermissionTest
+public class TestSP_ShareFolder extends AbstractSPACLTest
 {
-    // don't register this one, use it to test sharing with non-AeroFS users
-    private User USER_4 = factUser.create(UserID.fromInternal("user_4"));
-
     List<Command> delivered;
 
     @Before
@@ -64,19 +59,20 @@ public class TestSP_ShareFolder extends AbstractSPFolderPermissionTest
     }
 
     @Test
-    public void shouldInviteNonAeroFSUserWhenSharingAFolderWithThem()
+    public void shouldInviteNonAeroFSUser()
             throws Exception
     {
-        // user 4 hasn't actually been added to the db yet so this should trigger an invite to them
-        shareFolder(USER_1, SID_1, USER_4, Role.EDITOR);
+        User user = newUser();
+        // the new hasn't actually been added to the db yet so this should trigger an invite to them
+        shareFolder(USER_1, SID_1, user, Role.EDITOR);
 
         assertVerkehrPublishOnlyContains(USER_1);
-        verifyFolderInvitation(USER_1, USER_4, SID_1, false);
-        verifyNewUserAccountInvitation(USER_1, USER_4, SID_1, true);
+        verifyFolderInvitation(USER_1, user, SID_1, false);
+        verifyNewUserAccountInvitation(USER_1, user, SID_1, true);
     }
 
     @Test
-    public void shouldThrowExNoPermWhenEditorTriesToInviteToFolder()
+    public void shouldThrowWhenEditorTriesToInviteToFolder()
             throws Exception
     {
         shareAndJoinFolder(USER_1, SID_1, USER_2, Role.EDITOR);
@@ -155,6 +151,82 @@ public class TestSP_ShareFolder extends AbstractSPFolderPermissionTest
         for (Command command : delivered) {
             Assert.assertEquals(CommandType.REFRESH_CRL, command.getType());
         }
+    }
+
+    @Test(expected = ExBadArgs.class)
+    public void shouldThrowOnEmptyInviteeList()
+            throws Exception
+    {
+        sessionUser.set(USER_1);
+        service.shareFolder("folder", SID_1.toPB(), Collections.<PBSubjectRolePair>emptyList(),
+                "").get();
+    }
+    @Test
+    public void shouldAllowToShareIfNoACLExists()
+            throws Exception
+    {
+        shareFolder(USER_1, SID_1, USER_2, Role.OWNER);
+
+        GetACLReply reply = service.getACL(0L).get();
+
+        assertGetACLReplyIncrementsEpochBy(reply, 1);
+        assertACLOnlyContains(getSingleACL(SID_1, reply), USER_1, Role.OWNER);
+        assertVerkehrPublishOnlyContains(USER_1);
+    }
+
+    @Test
+    public void shouldAllowOwnerToShareAndNotifyAllAffectedUsers()
+            throws Exception
+    {
+        // create shared folder and invite a first user
+        shareFolder(USER_1, SID_1, USER_2, Role.OWNER);
+        assertVerkehrPublishOnlyContains(USER_1);
+        clearVerkehrPublish();
+
+        // inviteee joins
+        joinSharedFolder(USER_2, SID_1);
+        assertVerkehrPublishOnlyContains(USER_1, USER_2);
+        clearVerkehrPublish();
+
+        // now lets see if the other person can add a third person
+        sqlTrans.begin();
+        User user = saveUser();
+        sqlTrans.commit();
+
+        shareAndJoinFolder(USER_2, SID_1, user, Role.EDITOR);
+        assertVerkehrPublishOnlyContains(USER_1, USER_2, user);
+        clearVerkehrPublish();
+
+        // now let's see what the acls are like
+        setSessionUser(USER_1);
+        GetACLReply reply = service.getACL(0L).get();
+
+        assertGetACLReplyIncrementsEpochBy(reply, 3);
+
+        assertACLOnlyContains(getSingleACL(SID_1, reply),
+                new UserAndRole(USER_1, Role.OWNER),
+                new UserAndRole(USER_2, Role.OWNER),
+                new UserAndRole(user, Role.EDITOR));
+    }
+
+    @Test
+    public void shouldForbidNonOwnerToShare()
+            throws Exception
+    {
+        // share folder and invite a new editor
+        shareAndJoinFolder(USER_1, SID_1, USER_2, Role.EDITOR);
+
+        sqlTrans.begin();
+        // set USER_2 as non-admin
+        USER_2.setOrganization(USER_1.getOrganization(), AuthorizationLevel.USER);
+        sqlTrans.commit();
+
+        try {
+            // get the editor to try and make some role changes
+            shareAndJoinFolder(USER_2, SID_1, newUser(), Role.EDITOR);
+            // must not reach here
+            org.junit.Assert.fail();
+        } catch (ExNoPerm e) {}
     }
 
     /**

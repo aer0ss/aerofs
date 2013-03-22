@@ -22,10 +22,7 @@ import java.util.List;
 import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertTrue;
 
-/**
- * This class doesn't test the ability to set ACL entries (which is is done by TestSP_ACL)
- */
-public class TestSP_ListUserShareFolders extends AbstractSPFolderPermissionTest
+public class TestSP_ListUserShareFolders extends AbstractSPFolderTest
 {
     @Before
     public void setup()

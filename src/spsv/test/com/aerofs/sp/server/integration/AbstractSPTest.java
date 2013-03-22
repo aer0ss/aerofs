@@ -142,9 +142,11 @@ public class AbstractSPTest extends AbstractTestWithDatabase
 
     private Set<String> verkehrPublished;
 
-    protected final User USER_1 = factUser.create(UserID.fromInternal("user_1"));
-    protected final User USER_2 = factUser.create(UserID.fromInternal("user_2"));
-    protected final User USER_3 = factUser.create(UserID.fromInternal("user_3"));
+    // N.B. These users are DEPRECATED. Do not use them in the new code. Use newUser(), saveUser()
+    // instead.
+    protected final User USER_1 /* DEPRECATED */ = factUser.create(UserID.fromInternal("user_1"));
+    protected final User USER_2 /* DEPRECATED */ = factUser.create(UserID.fromInternal("user_2"));
+    protected final User USER_3 /* DEPRECATED */ = factUser.create(UserID.fromInternal("user_3"));
     protected static final byte[] CRED = "CREDENTIALS".getBytes();
 
     // Use a method name that is unlikely to conflict with setup methods in subclasses
@@ -170,6 +172,21 @@ public class AbstractSPTest extends AbstractTestWithDatabase
         saveUser(USER_3);
 
         sqlTrans.commit();
+    }
+
+    protected User newUser()
+    {
+        return factUser.createFromExternalID("user" + Integer.toString(nextUserID++) + "@email");
+    }
+
+    private int nextUserID = 123;
+
+    protected User saveUser()
+            throws Exception
+    {
+        User user = newUser();
+        saveUser(user);
+        return user;
     }
 
     /**
@@ -267,7 +284,7 @@ public class AbstractSPTest extends AbstractTestWithDatabase
                     public Object answer(InvocationOnMock invocation)
                             throws Throwable
                     {
-                        byte[] bytes = (byte[]) invocation.getArguments()[1];
+                        byte[] bytes = (byte[])invocation.getArguments()[1];
                         payloads.add(Command.parseFrom(bytes));
                         return UncancellableFuture.createSucceeded(null);
                     }

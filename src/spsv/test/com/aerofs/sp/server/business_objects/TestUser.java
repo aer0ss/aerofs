@@ -29,6 +29,7 @@ import java.util.Collection;
 
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNull;
+import static junit.framework.Assert.fail;
 
 public class TestUser extends AbstractBusinessObjectTest
 {
@@ -67,11 +68,16 @@ public class TestUser extends AbstractBusinessObjectTest
         newUser().setLevel(AuthorizationLevel.ADMIN);
     }
 
-    @Test(expected = ExNoAdmin.class)
+    @Test
     public void setLevel_shouldThrowIfNoMoreAdmin()
             throws Exception
     {
-        saveUser().setLevel(AuthorizationLevel.USER);
+        User user = saveUser();
+
+        try {
+            user.setLevel(AuthorizationLevel.USER);
+            fail();
+        } catch (ExNoAdmin e) {}
     }
 
     @Test(expected = AssertionError.class)
@@ -130,36 +136,6 @@ public class TestUser extends AbstractBusinessObjectTest
             throws SQLException, ExBadCredential
     {
         newUser().signIn(new byte[0]);
-    }
-
-    @Test
-    public void shouldUpdateTeamServerACLsOnSetOrg()
-            throws Exception
-    {
-        User user = saveUser();
-        User tsUserOld = user.getOrganization().getTeamServerUser();
-
-        SharedFolder sfRoot = factSharedFolder.create(SID.rootSID(user.id()));
-        SharedFolder sf1 = factSharedFolder.create(SID.generate());
-        SharedFolder sf2 = factSharedFolder.create(SID.generate());
-        sf1.save("haha", user);
-        sf2.save("haha", user);
-
-        assertEquals(sfRoot.getMemberRoleNullable(tsUserOld), Role.EDITOR);
-        assertEquals(sf1.getMemberRoleNullable(tsUserOld), Role.EDITOR);
-        assertEquals(sf2.getMemberRoleNullable(tsUserOld), Role.EDITOR);
-
-        Organization orgNew = saveOrganization();
-        User tsUserNew = orgNew.getTeamServerUser();
-
-        user.setOrganization(orgNew, AuthorizationLevel.USER);
-
-        assertNull(sfRoot.getMemberRoleNullable(tsUserOld));
-        assertNull(sf1.getMemberRoleNullable(tsUserOld));
-        assertNull(sf2.getMemberRoleNullable(tsUserOld));
-        assertEquals(sfRoot.getMemberRoleNullable(tsUserNew), Role.EDITOR);
-        assertEquals(sf1.getMemberRoleNullable(tsUserNew), Role.EDITOR);
-        assertEquals(sf2.getMemberRoleNullable(tsUserNew), Role.EDITOR);
     }
 
     @Test

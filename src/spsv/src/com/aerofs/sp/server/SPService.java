@@ -3,7 +3,6 @@ package com.aerofs.sp.server;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.lib.ex.ExNoStripeCustomerID;
-import com.aerofs.proto.Common;
 import com.aerofs.proto.Common.PBRole;
 import com.aerofs.proto.Sp.AcceptOrganizationInvitationReply;
 import com.aerofs.proto.Sp.DeleteOrganizationInvitationForUserReply;
@@ -964,7 +963,7 @@ public class SPService implements ISPService
             throws ExNotFound, SQLException, ExNoPerm, IOException, ExAlreadyExist
     {
         if (sf.exists()) {
-            sf.throwIfNotOwnerAndNotAdmin(sharer);
+            sf.throwIfNoPrivilegeToChangeACL(sharer);
             return Collections.emptySet();
         }
 
@@ -1521,7 +1520,7 @@ public class SPService implements ISPService
         // notification that is newer than what it should be (i.e. we skip an update
 
         _sqlTrans.begin();
-        sf.throwIfNotOwnerAndNotAdmin(user);
+        sf.throwIfNoPrivilegeToChangeACL(user);
         User subject = _factUser.createFromExternalID(subjectString);
         // always call this method as the last step of the transaction
         publishACLs_(sf.updateMemberACL(subject, Role.fromPB(role)));
@@ -1540,7 +1539,7 @@ public class SPService implements ISPService
         User subject = _factUser.createFromExternalID(subjectString);
 
         _sqlTrans.begin();
-        sf.throwIfNotOwnerAndNotAdmin(user);
+        sf.throwIfNoPrivilegeToChangeACL(user);
         // always call this method as the last step of the transaction
         publishACLs_(sf.deleteMemberOrPendingACL(subject));
         _sqlTrans.commit();

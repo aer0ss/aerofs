@@ -12,11 +12,7 @@ import org.junit.Test;
 
 import static junit.framework.Assert.fail;
 
-/**
- * Test basic functionality and permission enforcement of SP's shareFolder call, but don't test its
- * ability to set ACL entries (that testing is done by TestSP_ACL)
- */
-public class TestSP_LeaveSharedFolder extends AbstractSPFolderPermissionTest
+public class TestSP_LeaveSharedFolder extends AbstractSPFolderTest
 {
     @Test
     public void shouldAllowMemberToLeaveShareFolder() throws Exception
