@@ -4,20 +4,45 @@ import java.sql.Driver;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Properties;
 
 import com.aerofs.base.C;
 import com.aerofs.lib.SystemUtil;
+import com.aerofs.lib.os.OSUtil;
+import org.sqlite.SQLiteConfig;
+import org.sqlite.SQLiteConfig.JournalMode;
+import org.sqlite.SQLiteConfig.LockingMode;
+import org.sqlite.SQLiteConfig.SynchronousMode;
+import org.sqlite.SQLiteJDBCLoader;
+import org.sqlite.SQLiteJDBCLoader.INativeLibraryLoader;
 
 public class SQLiteDBCW extends AbstractDBCW implements IDBCW
 {
-    private final boolean _exclusiveLocking;
-    private final boolean _wal;
+    static {
+        SQLiteJDBCLoader.setCustomLoader(new INativeLibraryLoader() {
+            @Override
+            public boolean loadLibrary()
+                    throws Exception
+            {
+                OSUtil.get().loadLibrary("sqlitejdbc");
+                return true;
+            }
+        });
+    }
+
+    private static Properties makeProperties(boolean exclusiveLocking, boolean wal)
+    {
+        SQLiteConfig cfg = new SQLiteConfig();
+        cfg.enforceForeignKeys(false);
+        //cfg.setSynchronous(SynchronousMode.NORMAL);
+        if (wal) cfg.setJournalMode(JournalMode.WAL);
+        if (exclusiveLocking) cfg.setLockingMode(LockingMode.EXCLUSIVE);
+        return cfg.toProperties();
+    }
 
     public SQLiteDBCW(String url, boolean autoCommit, boolean exclusiveLocking, boolean wal)
     {
-        super(url, autoCommit);
-        _exclusiveLocking = exclusiveLocking;
-        _wal = wal;
+        super(url, autoCommit, makeProperties(exclusiveLocking, wal));
 
         try {
             Class.forName("org.sqlite.JDBC").asSubclass(Driver.class);
@@ -33,33 +58,6 @@ public class SQLiteDBCW extends AbstractDBCW implements IDBCW
         // the SQLiteJDBC library sets the timeout value through the Statement command
         // see sqlite3_busy_timeout() c code.
         stmt.setQueryTimeout((int)(C.YEAR / 1000));
-
-        stmt.execute("pragma foreign_keys=false");
-
-        if (_exclusiveLocking) {
-            stmt.execute("pragma locking_mode=exclusive");
-        }
-
-        if (_wal) {
-            boolean assertsEnabled = false;
-            assert assertsEnabled = true;  // intentional side-effect
-            if (!assertsEnabled) {
-                stmt.execute("pragma journal_mode=wal");
-            } else {
-                ResultSet rs = stmt.executeQuery("pragma journal_mode=wal");
-                try {
-                    if (!rs.next()) throw new SQLException("no results returned");
-
-                    String str = rs.getString(1);
-                    // we allow both in-memory database and persistent database with WAL enabled
-                    if (!str.equals("wal") && !str.equals("memory")) {
-                        throw new SQLException("unexcepted mode: " + str);
-                    }
-                } finally {
-                    rs.close();
-                }
-            }
-        }
     }
 
     @Override
