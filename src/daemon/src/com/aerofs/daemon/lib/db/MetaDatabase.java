@@ -414,37 +414,6 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase
         }
     }
 
-    private static Collection<SIndex> queryGetSIndexes_(PreparedStatement ps) throws SQLException
-    {
-        ResultSet rs = ps.executeQuery();
-        try {
-            ArrayList<SIndex> sidxs = new ArrayList<SIndex>(16);
-            while (rs.next()) sidxs.add(new SIndex(rs.getInt(1)));
-            return sidxs;
-        } finally {
-            rs.close();
-        }
-    }
-
-    private PreparedStatement _psGSIX;
-    @Override
-    public Collection<SIndex> getSIndexes_(OID oid, SIndex sidxExcluded) throws SQLException
-    {
-        try {
-            if (_psGSIX == null) _psGSIX = c().prepareStatement(
-                    "select " + C_OA_SIDX + " from " + T_OA +
-                    " where " + C_OA_SIDX + "!=? and " + C_OA_OID + "=?");
-
-            _psGSIX.setInt(1, sidxExcluded.getInt());
-            _psGSIX.setBytes(2, oid.getBytes());
-            return queryGetSIndexes_(_psGSIX);
-        } catch (SQLException e) {
-            DBUtil.close(_psGSIX);
-            _psGSIX = null;
-            throw e;
-        }
-    }
-
     private PreparedStatement _psGetOA;
     @Override
     public @Nullable OA getOA_(SOID soid) throws SQLException

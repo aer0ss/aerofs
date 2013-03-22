@@ -15,7 +15,6 @@ import com.aerofs.daemon.core.object.ObjectCreator;
 import com.aerofs.daemon.core.object.ObjectDeleter;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.store.IStoreJoiner;
-import com.aerofs.daemon.lib.db.IMetaDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
@@ -42,12 +41,11 @@ public class SingleuserStoreJoiner implements IStoreJoiner
     private final CfgRootSID _cfgRootSID;
     private final RitualNotificationServer _rns;
     private final SharedFolderAutoLeaver _lod;
-    private final IMetaDatabase _mdb;
 
     @Inject
     public SingleuserStoreJoiner(DirectoryService ds, SingleuserStores stores, ObjectCreator oc,
             ObjectDeleter od, ObjectSurgeon os, CfgRootSID cfgRootSID, RitualNotificationServer rns,
-            SharedFolderAutoLeaver lod, IMetaDatabase mdb)
+            SharedFolderAutoLeaver lod)
     {
         _ds = ds;
         _oc = oc;
@@ -57,7 +55,6 @@ public class SingleuserStoreJoiner implements IStoreJoiner
         _cfgRootSID = cfgRootSID;
         _rns = rns;
         _lod = lod;
-        _mdb = mdb;
     }
 
     @Override
@@ -162,15 +159,14 @@ public class SingleuserStoreJoiner implements IStoreJoiner
 
         OID oid = SID.storeSID2anchorOID(sid);
 
-        // we abuse the db query designed for AdmittedObjectLocator
-        // NB: we cannot rely on parent relationships for the sidx as the anchor might be expelled
-        // NB: we cannot use AdmittedObjectLocator as any explicitly expelled (but non-deleted)
-        // anchor needs to be deleted and AOL would simply ignore them...
-        Collection<SIndex> sidxs = _mdb.getSIndexes_(oid, new SIndex(-1));
+        // delete any existing anchor (even if explicitly expelled)
+        Collection<SIndex> sidxs = _stores.getAll_();
 
         for (SIndex sidxWithanchor : sidxs) {
             SOID soid = new SOID(sidxWithanchor, oid);
-            OA oa = _ds.getOA_(soid);
+            OA oa = _ds.getOANullable_(soid);
+            if (oa == null) continue;
+
             assert oa.soid().oid().equals(oid);
             assert oa.type() == Type.ANCHOR;
             deleteAnchorIfNeeded_(oa, t);

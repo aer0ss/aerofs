@@ -48,11 +48,6 @@ public interface IMetaDatabase
             Trans t) throws ExAlreadyExist, SQLException;
 
     /**
-     * @return the index of all the stores that contain the given OID except {@code sidxExcluded}.
-     */
-    Collection<SIndex> getSIndexes_(OID oid, SIndex sidxExcluded) throws SQLException;
-
-    /**
      * @return null if not found
      */
     @Nullable OA getOA_(SOID soid) throws SQLException;
