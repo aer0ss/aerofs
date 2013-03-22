@@ -18,6 +18,7 @@ import org.slf4j.Logger;
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URISyntaxException;
 import java.security.InvalidKeyException;
 import java.sql.SQLException;
 import java.util.Arrays;
@@ -60,6 +61,12 @@ class S3MagicChunk
                  * See support-182 for the full error stack.
                  */
                 ExitCode.S3_JAVA_KEY_LENGTH_MAYBE_TOO_LIMITED.exit();
+            } else if (getCauseOfClass(e, URISyntaxException.class) != null) {
+                // This can happen when there are illegal characters such as spaces in the bucket
+                // name, because the bucket name will be used as the hostname part of a URL.
+                ExitCode.S3_BAD_CREDENTIALS.exit();
+            } else {
+                throw e;
             }
         }
     }
