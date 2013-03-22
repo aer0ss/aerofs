@@ -7,7 +7,7 @@ package com.aerofs.sp.server.lib.user;
 import com.aerofs.base.BaseSecUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
-import com.aerofs.lib.ex.ExNoAdminForNonEmptyTeam;
+import com.aerofs.lib.ex.ExNoAdmin;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.base.ex.ExAlreadyExist;
@@ -177,9 +177,11 @@ public class User
 
     // TODO (WW) throw ExNotFound if the user doesn't exist?
     public void setLevel(AuthorizationLevel auth)
-            throws SQLException
+            throws SQLException, ExNotFound, ExNoAdmin
     {
         _f._udb.setLevel(_id, auth);
+
+        if (auth != AuthorizationLevel.ADMIN) getOrganization().throwIfNoAdmin();
     }
 
     // TODO (WW) throw ExNotFound if the user doesn't exist?
@@ -410,8 +412,8 @@ public class User
      * Move the user to a new organization, set appropriate auth level, and adjust ACLs of shared
      * folders for the team server.
      */
-    public Set<UserID> setOrganization(Organization org, AuthorizationLevel level)
-            throws SQLException, ExNotFound, ExAlreadyExist, ExNoAdminForNonEmptyTeam
+    public Collection<UserID> setOrganization(Organization org, AuthorizationLevel level)
+            throws SQLException, ExNotFound, ExAlreadyExist, ExNoAdmin
     {
         Organization orgOld = getOrganization();
 
@@ -429,9 +431,8 @@ public class User
 
         if (orgOld.countUsers() == 0) {
             // TODO (WW) delete orgOld
-        } else if (orgOld.countUsers(AuthorizationLevel.ADMIN) == 0) {
-            // There must be at least one admin for an non-empty organization
-            throw new ExNoAdminForNonEmptyTeam(this.toString());
+        } else {
+            orgOld.throwIfNoAdmin();
         }
 
         return users;

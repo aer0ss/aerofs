@@ -1,15 +1,17 @@
-"""
-TODO:
-Basic unit tests for each view so that we can catch stupid errors such as
-missing import statements.
-"""
 
 import logging
+from aerofs_sp.gen.common_pb2 import PBException
+from pyramid.httpexceptions import HTTPOk
 from pyramid.view import view_config
+from web.sp_util import exception2error
 from web.util import *
 from web.views.payment import stripe_util
 
-log = logging.getLogger("web")
+log = logging.getLogger(__name__)
+
+URL_PARAM_ORG_ID = 'org_id'
+URL_PARAM_SHARE_ID = 'sid'
+URL_PARAM_JOINED_TEAM_NAME = 'new_team'
 
 @view_config(
     route_name='accept',
@@ -19,10 +21,28 @@ log = logging.getLogger("web")
 def accept(request):
     _ = request.translate
 
+    return _accept_page_template_variables(request)
+
+@view_config(
+    route_name='accept_team_invitation_done',
+    permission='user',
+    renderer='accept.mako'
+)
+def accept_team_invitation_done(request):
+    _ = request.translate
+    team_name = request.params[URL_PARAM_JOINED_TEAM_NAME]
+    flash_success(request, _("You are now a member of ${team}", {'team': team_name}))
+    return _accept_page_template_variables(request)
+
+def _accept_page_template_variables(request):
     return {
         'team_invitations': get_organization_invitations(request),
         'folder_invitations': get_folder_invitations(request),
-        'success': True}
+        'url_param_org_id': URL_PARAM_ORG_ID,
+        'url_param_share_id': URL_PARAM_SHARE_ID,
+        'url_param_joined_team_name': URL_PARAM_JOINED_TEAM_NAME,
+        'i_am_admin': is_admin(request)
+    }
 
 def get_organization_invitations(request):
     sp = get_rpc_stub(request)
@@ -55,59 +75,41 @@ def get_folder_invitations(request):
     return results
 
 @view_config(
-    route_name = 'json.accept_organization_invitation',
+    route_name = 'json.accept_team_invitation',
     renderer = 'json',
     permission = 'user',
     request_method = 'POST'
 )
-def accept_organization_invitation(request):
+def accept_team_invitation(request):
     _ = request.translate
 
-    organization_name = request.params['orgname']
-    organization_id = request.params['id']
-
-    log.info("org id " + organization_id + " org name " + organization_name)
+    org_id = int(request.params[URL_PARAM_ORG_ID])
 
     sp = get_rpc_stub(request)
+    reply = exception2error(sp.accept_organization_invitation, org_id, {
+        PBException.NO_ADMIN: _("no admin for the team")
+    })
 
-    try:
-        sp.accept_organization_invitation(int(organization_id))
+    # downgrade subscription for the user's previous org
+    stripe_util.downgrade_stripe_subscription(reply.stripe_data)
 
-        reload_auth_level(request)
+    reload_auth_level(request)
 
-        msg = _("You are now a member of \"${organization_name}\".",
-                {'organization_name': organization_name})
-
-        return {'response_message': msg, 'success': True}
-    except Exception as e:
-        msg = parse_rpc_error_exception(request, e)
-        return {'response_message': msg, 'success': False}
+    return HTTPOk()
 
 @view_config(
-    route_name = 'json.ignore_organization_invitation',
+    route_name = 'json.ignore_team_invitation',
     renderer = 'json',
     permission = 'user',
     request_method = 'POST'
 )
-def ignore_organization_invitation(request):
+def ignore_team_invitation(request):
     _ = request.translate
 
-    organization_id = int(request.params['id'])
-
+    org_id = int(request.params[URL_PARAM_ORG_ID])
     sp = get_rpc_stub(request)
-
-    try:
-        stripe_data = sp.delete_organization_invitation(organization_id)\
-                .stripe_data
-
-        stripe_util.downgrade_stripe_subscription(stripe_data)
-
-        msg = _("The invitation has been ignored.")
-
-        return {'response_message': msg, 'success': True}
-    except Exception as e:
-        msg = parse_rpc_error_exception(request, e)
-        return {'response_message': msg, 'success': False}
+    stripe_data = sp.delete_organization_invitation(org_id).stripe_data
+    stripe_util.downgrade_stripe_subscription(stripe_data)
 
 @view_config(
     route_name = 'json.accept_folder_invitation',
@@ -118,20 +120,9 @@ def ignore_organization_invitation(request):
 def accept_folder_invitation(request):
     _ = request.translate
 
-    share_id = request.params['id'].decode('hex')
-    folder_name = request.params['foldername']
-
+    share_id = request.params[URL_PARAM_SHARE_ID].decode('hex')
     sp = get_rpc_stub(request)
-
-    try:
-        sp.join_shared_folder(share_id)
-        msg = _("You are now a member of the \"${folder_name}\" shared folder.",
-                {'folder_name': folder_name})
-
-        return {'response_message': msg, 'success': True}
-    except Exception as e:
-        msg = parse_rpc_error_exception(request, e)
-        return {'response_message': msg, 'success': False}
+    sp.join_shared_folder(share_id)
 
 @view_config(
     route_name = 'json.ignore_folder_invitation',
@@ -142,17 +133,6 @@ def accept_folder_invitation(request):
 def ignore_folder_invitation(request):
     _ = request.translate
 
-    share_id = request.params['id'].decode('hex')
-    folder_name = request.params['foldername']
-
+    share_id = request.params[URL_PARAM_SHARE_ID].decode('hex')
     sp = get_rpc_stub(request)
-
-    try:
-        sp.ignore_shared_folder_invitation(share_id)
-        msg = _("Invitation to \"${folder_name}\" has been ignored.",
-                {'folder_name': folder_name})
-
-        return {'response_message': msg, 'success': True}
-    except Exception as e:
-        msg = parse_rpc_error_exception(request, e)
-        return {'response_message': msg, 'success': False}
+    sp.ignore_shared_folder_invitation(share_id)

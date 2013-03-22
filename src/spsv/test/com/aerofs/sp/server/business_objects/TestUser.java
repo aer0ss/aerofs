@@ -13,6 +13,7 @@ import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.SID;
+import com.aerofs.lib.ex.ExNoAdmin;
 import com.aerofs.sp.server.lib.SharedFolder;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
@@ -60,10 +61,17 @@ public class TestUser extends AbstractBusinessObjectTest
     }
 
     @Test(expected = AssertionError.class)
-    public void shouldAssertIfUserNotFoundOnSetLevel()
-            throws ExNotFound, SQLException
+    public void setLevel_shouldAssertIfUserNotFound()
+            throws Exception
     {
         newUser().setLevel(AuthorizationLevel.ADMIN);
+    }
+
+    @Test(expected = ExNoAdmin.class)
+    public void setLevel_shouldThrowIfNoMoreAdmin()
+            throws Exception
+    {
+        saveUser().setLevel(AuthorizationLevel.USER);
     }
 
     @Test(expected = AssertionError.class)

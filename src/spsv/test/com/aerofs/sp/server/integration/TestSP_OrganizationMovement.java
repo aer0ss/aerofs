@@ -10,7 +10,6 @@ import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.proto.Sp.PBAuthorizationLevel;
 import com.aerofs.proto.Sp.GetAuthorizationLevelReply;
 import com.aerofs.proto.Sp.GetOrganizationInvitationsReply;
-import com.aerofs.sp.server.lib.id.OrganizationID;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.aerofs.sp.server.lib.user.User;
@@ -96,7 +95,7 @@ public class TestSP_OrganizationMovement extends AbstractSPTest
     }
 
     @Test
-    public void shouldThrowExNoPermIfUserIsNotAdmin()
+    public void inviteToOrganization_shouldThrowExNoPermIfUserIsNotAdmin()
             throws Exception
     {
         setSessionUser(USER_1);
@@ -113,13 +112,11 @@ public class TestSP_OrganizationMovement extends AbstractSPTest
     }
 
     @Test
-    public void shouldThrowExAlreadyInvitedIfUserHasAlreadyBeenInvited()
+    public void inviteToOrganization_shouldThrowExAlreadyInvitedIfUserHasAlreadyBeenInvited()
             throws Exception
     {
         setSessionUser(USER_1);
-
         sendInvitation(USER_2);
-
         try {
             sendInvitation(USER_2);
             fail();
@@ -127,11 +124,10 @@ public class TestSP_OrganizationMovement extends AbstractSPTest
     }
 
     @Test
-    public void shouldThrowExNotFoundIfUserIsAlreadyAccepted()
+    public void acceptOrganizationInvitation_shouldThrowExNotFoundIfUserIsAlreadyAccepted()
             throws Exception
     {
         setSessionUser(USER_1);
-
         sendInvitation(USER_2);
         setSessionUser(USER_2);
         Organization org = acceptFirstInvitation(USER_2);
@@ -143,7 +139,7 @@ public class TestSP_OrganizationMovement extends AbstractSPTest
     }
 
     @Test
-    public void shouldThrowExNotFoundIfUserNotInvitedToTargetOrganization()
+    public void acceptOrganizationInvitation_shouldThrowExNotFoundIfUserNotInvitedToTargetOrganization()
             throws Exception
     {
         setSessionUser(USER_1);
@@ -160,7 +156,7 @@ public class TestSP_OrganizationMovement extends AbstractSPTest
     }
 
     @Test
-    public void shouldDowngradeToNonAdminWhenMovingOrganization()
+    public void acceptOrganizationInvitation_shouldDowngradeToNonAdminWhenMovingOrganization()
             throws Exception
     {
         // Make user 1 and admin of a new organization.
@@ -181,7 +177,7 @@ public class TestSP_OrganizationMovement extends AbstractSPTest
     }
 
     @Test
-    public void shouldThowExNotFoundWhenTryingToAcceptIgnoredInvitation()
+    public void acceptOrganizationInvitation_shouldThowExNotFoundWhenTryingToAcceptIgnoredInvitation()
             throws Exception
     {
         setSessionUser(USER_1);

@@ -1,145 +1,243 @@
 <%inherit file="layout.mako"/>
 <%! navigation_bars = True; %>
 
-% if len(team_invitations) == 0 and len(folder_invitations) == 0:
-    ${render_no_invitation()}
-% else:
-    % if len(team_invitations) != 0:
-        ${render_team_invitations()}
-    % endif
-
-    % if len(folder_invitations) != 0:
-        ${render_folder_invitations()}
-    % endif
-% endif
-
-<%def name="render_no_invitation()">
+<div class="hidden page_block" id="no-invitation-div">
     <h2>No Pending Invitations</h2>
-</%def>
+</div>
 
-<%def name="render_team_invitations()">
-    <div class="page_block">
-        <h2 style="margin-bottom: 15px;">Team Invitations (${len(team_invitations)})</h2>
-        <table class="table" style="border: 1px dotted #ccc;">
-            <tbody>
-                % for invite in team_invitations:
-                    ${render_team_invitation_row(invite)}
+<div class="hidden page_block" id="team-invitations-div">
+    <h2 style="margin-bottom: 15px;">Team Invitations</h2>
+    <table class="table" style="border: 1px dotted #ccc;">
+        <tbody id="team-invitations-tbody">
+            % for invite in team_invitations:
+                ${render_team_invitation_row(invite)}
+            % endfor
+        </tbody>
+    </table>
+</div>
+
+<div class="hidden page_block" id="folder-invitations-div">
+    <h2 style="margin-bottom: 15px;">Shared Folder Invitations</h2>
+    <table class="table" style="border: 1px dotted #ccc;">
+        <tbody id="folder-invitations-tbody">
+                % for invite in folder_invitations:
+                ${render_folder_invitation_row(invite)}
                 % endfor
-            </tbody>
-        </table>
-    </div>
-</%def>
+        </tbody>
+    </table>
+</div>
 
 <%def name="render_team_invitation_row(invite)">
     <%
         inviter = invite['inviter']
-        orgID = invite['organization_id']
-        orgName = invite['organization_name']
+        org_id = invite['organization_id']
+        org_name = invite['organization_name']
     %>
 
     <tr>
         <td>
             <span class="invitation_title" style="display: block; margin-bottom: 3px;">
-                Invitation to team "${orgName}"
+                Invitation to team "${org_name | h}"
             </span>
             <span style="margin-left: 20px;">
-                by ${inviter}
+                by ${inviter | h}
             </span>
         </td>
         <td style="text-align: right; vertical-align: middle;">
-            <a class="btn" href="#" onclick="acceptOrganizationInvite('${orgID}', '${orgName}')">Accept</a>
-            <a class="btn" href="#" onclick="ignoreOrganizationInvite('${orgID}')">Ignore</a>
+            <a class="btn accept-team-invite" href="#" data-org-id="${org_id}" data-org-name="${org_name | h}">Accept</a>
+            <a class="btn ignore-team-invite" href="#" data-org-id="${org_id}">Ignore</a>
         </td>
     </tr>
-</%def>
-
-<%def name="render_folder_invitations()">
-    <div class="row page_block">
-        <div class="span6">
-            <h2 style="margin-bottom: 15px;">Shared Folder Invitations (${len(folder_invitations)})</h2>
-            <table class="table" style="border: 1px dotted #ccc;">
-                <tbody>
-                    % for invite in folder_invitations:
-                        ${render_folder_invitation_row(invite)}
-                    % endfor
-                </tbody>
-            </table>
-        </div>
-    </div>
 </%def>
 
 <%def name="render_folder_invitation_row(invite)">
     <%
         sharer = invite['sharer']
-        shareID = invite['share_id']
-        folderName = invite['folder_name']
+        share_id = invite['share_id']
+        folder_name = invite['folder_name']
     %>
 
     <tr>
         <td>
             <span class="invitation_title" style="display: block; margin-bottom: 3px;">
-                Invitation to folder "${folderName}"
+                Invitation to folder "${folder_name | h}"
             </span>
             <span style="margin-left: 20px;">
-                by ${sharer}
+                by ${sharer | h}
             </span>
         </td>
         <td style="text-align: right; vertical-align: middle;">
-            <a class="btn" href="#" onclick="acceptFolderInvite('${shareID}', '${folderName}')">Accept</a>
-            <a class="btn" href="#" onclick="ignoreFolderInvite('${shareID}', '${folderName}')">Ignore</a>
+            <a class="btn accept-folder-invite" href="#" data-share-id="${share_id}" data-folder-name="${folder_name | h}">Accept</a>
+            <a class="btn ignore-folder-invite" href="#" data-share-id="${share_id}">Ignore</a>
         </td>
     </tr>
 </%def>
 
+<div id="join-team-modal" class="modal hide" tabindex="-1" role="dialog">
+    <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">×</button>
+        <h3>Confirm Leaving the Current Team</h3>
+    </div>
+    <div class="modal-body">
+        <p>
+            Accepting this invitation will require leaving your current team.
+            Are you sure you want to proceed?
+
+            If you continue,
+            %if i_am_admin:
+                you will no longer be able to administrate the current team.
+                </p><p>Additionally,
+            %endif
+            the AeroFS Team Servers of your current team will
+            automatically delete your files that are not shared with other
+            team members. The Team Servers of the new team will sync all your
+            files once this change is complete.
+        </p>
+        <p>
+            Files on your own AeroFS devices will not be affected by this change.
+        </p>
+    </div>
+    <div class="modal-footer">
+        <a href="#" class="btn" data-dismiss="modal">Cancel</a>
+        <a href="#" id="join-team-model-confirm" class="btn">Leave my team and join the new team</a>
+    </div>
+</div>
+
+<div id="no-admin-for-team-modal" class="modal hide" tabindex="-1" role="dialog">
+    <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">×</button>
+        <h3 class="text-error"><img class="icon-vertical-align-fix"
+                src="${request.static_url('web:static/img/warning_16.png')}"
+                width="16px" height="16px">
+            Please Assign an Administrator</h3>
+    </div>
+    <div class="modal-body">
+        <p>
+            Unfortunately, you can't leave your current team since you are the
+            only administrator of the team. Please assign another team
+            member to an administrator before accepting the invitation.
+        </p>
+
+        <p class="footnote">Teams with no admin will be eaten by dinosaurs.</p>
+    </div>
+    <div class="modal-footer">
+        <a href="#" class="btn" data-dismiss="modal">Close</a>
+        <a href="${request.route_path('team_settings')}" class="btn">Assign Administrators</a>
+    </div>
+</div>
+
+
 <%block name="scripts">
     <script type="text/javascript">
+        $(document).ready(function() {
+            refreshElements();
 
-        function acceptOrganizationInvite(orgID, orgName)
-        {
-            $.post("${request.route_path('json.accept_organization_invitation')}",
-                {
-                    ${self.csrf.token_param()}
-                    id: orgID,
-                    orgname: orgName
-                }, handleAjaxReply);
+            var $acceptTeamInviteButton;
+
+            $(".accept-team-invite").click(function() {
+                $acceptTeamInviteButton = $(this);
+                $("#join-team-modal").modal("show");
+            });
+
+            $("#join-team-model-confirm").click(function() {
+                $.post("${request.route_path('json.accept_team_invitation')}",
+                    {
+                        ${self.csrf.token_param()}
+                        "${url_param_org_id}": $acceptTeamInviteButton.data('org-id')
+                    }
+                )
+                .done(function() {
+                    ## Since the user's auth level may have changed resulting in
+                    ## changes in the navigation menu, refresh the entire page
+                    ## instead of only removing the invitation row.
+                    window.location.href =
+                            "${request.route_path('accept_team_invitation_done')}?" +
+                            "${url_param_joined_team_name}=" +
+                            encodeURIComponent($acceptTeamInviteButton.data('org-name'));
+                })
+                .fail(function(xhr) {
+                    $("#join-team-modal").modal("hide");
+                    if (getErrorTypeNullable(xhr) == 'NO_ADMIN') {
+                        $("#no-admin-for-team-modal").modal("show");
+                    } else {
+                        showErrorMessageFromResponse(xhr);
+                    }
+                });
+
+                return false;
+            });
+
+            $(".ignore-team-invite").click(function() {
+                var $this = $(this);
+                $.post("${request.route_path('json.ignore_team_invitation')}",
+                    {
+                        ${self.csrf.token_param()}
+                        "${url_param_org_id}": $(this).data('org-id')
+                    }
+                )
+                .done(function() {
+                    showSuccessMessage("The invitation has been ignored.");
+                    removeRow($this);
+                })
+                .fail(showErrorMessageFromResponse);
+
+                return false;
+            });
+
+            $(".accept-folder-invite").click(function() {
+                var $this = $(this);
+                $.post("${request.route_path('json.accept_folder_invitation')}",
+                    {
+                        ${self.csrf.token_param()}
+                        "${url_param_share_id}": $this.data('share-id')
+                    }
+                )
+                .done(function() {
+                    showSuccessMessage("You have joined the folder \"" +
+                            $this.data('folder-name') + "\".");
+                    removeRow($this);
+                })
+                .fail(showErrorMessageFromResponse);
+
+                return false;
+            });
+
+            $('.ignore-folder-invite').click(function() {
+                var $this = $(this);
+                $.post("${request.route_path('json.ignore_folder_invitation')}",
+                    {
+                        ${self.csrf.token_param()}
+                        "${url_param_share_id}": $(this).data('share-id')
+                    }
+                )
+                .done(function() {
+                    showSuccessMessage("The invitation has been ignored.");
+                    removeRow($this);
+                })
+                .fail(showErrorMessageFromResponse);
+
+                return false;
+            });
+        });
+
+        function removeRow($elem) {
+            $elem.closest('tr').remove();
+            refreshElements();
         }
 
-        function ignoreOrganizationInvite(orgID)
-        {
-            $.post("${request.route_path('json.ignore_organization_invitation')}",
-                {
-                    ${self.csrf.token_param()}
-                    id: orgID
-                }, handleAjaxReply);
+        function refreshElements() {
+            var teamInvites = $("#team-invitations-tbody").find("tr").length;
+            var folderInvites = $("#folder-invitations-tbody").find("tr").length;
+
+            setVisible($("#team-invitations-div"), teamInvites > 0);
+            setVisible($("#folder-invitations-div"), folderInvites > 0);
+            setVisible($("#no-invitation-div"),
+                    teamInvites == 0 && folderInvites == 0);
         }
 
-        function acceptFolderInvite(shareID, folderName)
-        {
-            $.post("${request.route_path('json.accept_folder_invitation')}",
-                {
-                    ${self.csrf.token_param()}
-                    id: shareID,
-                    foldername: folderName
-                }, handleAjaxReply);
-        }
-
-        function ignoreFolderInvite(shareID, folderName)
-        {
-            $.post("${request.route_path('json.ignore_folder_invitation')}",
-                {
-                    ${self.csrf.token_param()}
-                    id: shareID,
-                    foldername: folderName
-                }, handleAjaxReply);
-        }
-
-        function handleAjaxReply(data) {
-            if (data.success) {
-                ## alert(data.response_message);
-                window.location.reload();
-            } else {
-                showErrorMessage(data.response_message);
-            }
+        function setVisible($elem, visible) {
+            if (visible) $elem.removeClass("hidden");
+            else $elem.addClass("hidden");
         }
 
     </script>

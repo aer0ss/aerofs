@@ -34,15 +34,13 @@ function cancelSlideUpTimer() {
 }
 
 // Slide the bar up in 4 seconds
-function delayedSlideUp($bar)
-{
+function delayedSlideUp($bar) {
     slideUpTimer = window.setTimeout(function() {
         $bar.slideUp("normal", "easeInOutBack");
     }, 4000);
 }
 
-function normalize(message)
-{
+function normalize(message) {
     message = message.charAt(0).toUpperCase() + message.slice(1);
     var last = message.slice(-1);
 

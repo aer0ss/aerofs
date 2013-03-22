@@ -251,10 +251,12 @@
 %if ret:
     <script type="text/javascript">
         $(document).ready(function() {
+            ## No need to encode message texts here. jQuery will do the job for
+            ## us in show*Message() methods.
             %if ret[1]:
-                showSuccessMessage("${ret[0] | h}");
+                showSuccessMessage("${ret[0]}");
             %else:
-                showErrorMessage("${ret[0] | h}");
+                showErrorMessage("${ret[0]}");
             %endif
         });
     </script>

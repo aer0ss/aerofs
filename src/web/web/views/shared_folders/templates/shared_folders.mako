@@ -319,7 +319,7 @@
             $('#modal-invite-form').submit(function(ev) {
                 startModalSpinner();
 
-                var email = $('#modal-invitee-email').val();
+                var email = $('#modal-invitee-email').val().trim();
                 var sid = modalSID();
                 var name = modalFolderName();
 

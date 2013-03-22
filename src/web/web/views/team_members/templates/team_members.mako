@@ -104,7 +104,7 @@
             function inviteUser(done, fail) {
                 $('#invite_button').attr('disabled', 'disabled');
                 var $email = $('#invite_user_email')
-                var email = $email.val()
+                var email = $email.val().trim();
 
                 $.post("${request.route_path('json.invite_user')}", {
                     ${self.csrf.token_param()}

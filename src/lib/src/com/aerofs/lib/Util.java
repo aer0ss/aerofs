@@ -82,7 +82,7 @@ public abstract class Util
                         // The following exceptions are consumed by Python clients only. No need to
                         // list them here for the time being.
                         /*
-                        .put(Type.NO_ADMIN_FOR_NON_EMPTY_TEAM,  ExNoAdminForNonEmptyTeam.class)
+                        .put(Type.NO_ADMIN,                     ExNoAdmin.class)
                         .put(Type.NO_STRIPE_CUSTOMER_ID,        ExNoStripeCustomerID.class)
                         */
 

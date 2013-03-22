@@ -151,9 +151,11 @@ service SPService {
      *
      * Throws:
      *   ExNotFound if the user does not have a pending invitation for the specified organization.
-     *   ExAlreadyExist if the user is already a member of the target organization.
+     *   ExBadArgs if the user is already a member of the target organization.
+     *   ExNoAdminForNonEmptyTeam if the team would have no admins but non-admin members.
      */
-    rpc AcceptOrganizationInvitation(AcceptOrganizationInvitationCall) returns(Void);
+    rpc AcceptOrganizationInvitation(AcceptOrganizationInvitationCall)
+            returns(AcceptOrganizationInvitationReply);
 
    /**
      * Shares a folder with another user.
@@ -663,7 +665,7 @@ message InviteToOrganizationCall {
 }
 
 message InviteToOrganizationReply {
-    // Return subscription data so the Web server doesn't have to make another three SP calls
+    // Return Stripe data so the Web server doesn't have to make another three SP calls
     // (get customer id, get current member count, and get invited users count) to update the
     // subscription. See PBStripeData for more info.
     required PBStripeData stripe_data = 1;
@@ -671,6 +673,12 @@ message InviteToOrganizationReply {
 
 message AcceptOrganizationInvitationCall {
     required int32 organization_id = 1;
+}
+
+message AcceptOrganizationInvitationReply {
+    // Return Stripe data for the user's _previous_ team, so the Web server can downgrade
+    // subscription for that team.
+    required PBStripeData stripe_data = 1;
 }
 
 message ShareFolderCall {

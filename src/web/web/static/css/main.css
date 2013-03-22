@@ -88,6 +88,9 @@ div.input_container.submit {
   float: right;
   margin-right: 10px;
 }
+.icon-vertical-align-fix {
+  vertical-align: -2px;
+}
 [class^="icon-"],
 [class*=" icon-"] {
   vertical-align: -2px;

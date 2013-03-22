@@ -4,7 +4,7 @@
 
 package com.aerofs.sp.server.business_objects;
 
-import com.aerofs.lib.ex.ExNoAdminForNonEmptyTeam;
+import com.aerofs.lib.ex.ExNoAdmin;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.user.User;
 
@@ -47,7 +47,7 @@ public class TestUser_setOrganization extends AbstractBusinessObjectTest
         try {
             user1.setOrganization(org, ADMIN);
             fail();
-        } catch (ExNoAdminForNonEmptyTeam e) {
+        } catch (ExNoAdmin e) {
         }
     }
 }

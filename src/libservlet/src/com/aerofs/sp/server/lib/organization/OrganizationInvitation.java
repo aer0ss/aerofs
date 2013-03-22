@@ -14,6 +14,9 @@ import javax.annotation.Nullable;
 import javax.inject.Inject;
 import java.sql.SQLException;
 
+/**
+ * TODO (WW) index invitations with invitation code, similar to signUp code?
+ */
 public class OrganizationInvitation
 {
     private final OrganizationInvitationDatabase _db;

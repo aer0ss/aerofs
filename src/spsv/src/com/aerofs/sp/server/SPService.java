@@ -3,6 +3,7 @@ package com.aerofs.sp.server;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.lib.ex.ExNoStripeCustomerID;
+import com.aerofs.proto.Sp.AcceptOrganizationInvitationReply;
 import com.aerofs.proto.Sp.DeleteOrganizationInvitationForUserReply;
 import com.aerofs.proto.Sp.DeleteOrganizationInvitationReply;
 import com.aerofs.proto.Sp.GetStripeDataReply;
@@ -948,7 +949,7 @@ public class SPService implements ISPService
                 sharer, srps);
 
         // send verkehr notification as the last step of the transaction
-        publishACLs_(incrementACLEpochs_(users));
+        publishACLs_(users);
 
         _sqlTrans.commit();
 
@@ -1074,8 +1075,8 @@ public class SPService implements ISPService
             addToCommandQueueAndSendVerkehrMessage(peer.id(), CommandType.REFRESH_CRL);
         }
 
-        // send verkehr notifications as the last step of the transaction
-        publishACLs_(incrementACLEpochs_(users));
+        // always call this method as the last step of the transaction
+        publishACLs_(users);
 
         _sqlTrans.commit();
 
@@ -1135,8 +1136,8 @@ public class SPService implements ISPService
             // set pending bit
             Set<UserID> users = sf.setPending(user);
 
-            // send verkehr notifications as the last step of the transaction
-            publishACLs_(incrementACLEpochs_(users));
+            // always call this method as the last step of the transaction
+            publishACLs_(users);
         }
 
         _sqlTrans.commit();
@@ -1322,26 +1323,32 @@ public class SPService implements ISPService
     }
 
     @Override
-    public ListenableFuture<Void> acceptOrganizationInvitation(Integer orgID)
+    public ListenableFuture<AcceptOrganizationInvitationReply> acceptOrganizationInvitation(Integer orgID)
             throws Exception
     {
         _sqlTrans.begin();
 
         User accepter = _sessionUser.get();
-        Organization org = _factOrg.create(orgID);
+        Organization orgOld = accepter.getOrganization();
+        Organization orgNew = _factOrg.create(orgID);
 
-        acceptTeamInvitation(accepter, org);
+        Collection<UserID> users = acceptTeamInvitation(accepter, orgNew);
+
+        // retrieve the stripe data for the old team _after_ the user moves out.
+        PBStripeData sd = getStripeData(orgOld);
+
+        publishACLs_(users);
 
         _sqlTrans.commit();
 
-        return createVoidReply();
+        return createReply(AcceptOrganizationInvitationReply.newBuilder()
+                .setStripeData(sd).build());
     }
 
     /**
-     * N.B. Since this method calls publishACLs, Callers must call this method as the last step
-     * before committing the transaction.
+     * @return a collection of users to be passed into publishACLs_()
      */
-    private void acceptTeamInvitation(User accepter, Organization org)
+    private Collection<UserID> acceptTeamInvitation(User accepter, Organization org)
             throws Exception
     {
         l.info("{} accept org invite to {}", accepter, org);
@@ -1351,16 +1358,13 @@ public class SPService implements ISPService
         // Check to see if the user was actually invited to this organization.
         if (!invite.exists()) throw new ExNotFound();
 
-        // No-op if the user is already part of the target team
-        Set<UserID> users = null;
-        if (!accepter.getOrganization().equals(org)) {
-            users = accepter.setOrganization(invite.getOrganization(), AuthorizationLevel.USER);
+        if (accepter.getOrganization().equals(org)) {
+            throw new ExBadArgs(accepter + " is already part of the team");
         }
 
         invite.delete();
 
-        // send verkehr notification as the last step of the transaction
-        if (users != null) publishACLs_(incrementACLEpochs_(users));
+        return accepter.setOrganization(invite.getOrganization(), AuthorizationLevel.USER);
     }
 
     @Override
@@ -1500,20 +1504,11 @@ public class SPService implements ISPService
         _sqlTrans.begin();
         sf.throwIfNotOwnerAndNotAdmin(user);
         Set<UserID> users = sf.updateMemberACL(srps);
-        // send verkehr notification as the last step of the transaction
-        publishACLs_(incrementACLEpochs_(users));
+        // always call this method as the last step of the transaction
+        publishACLs_(users);
         _sqlTrans.commit();
 
         return createVoidReply();
-    }
-
-    private Map<UserID, Long> incrementACLEpochs_(Set<UserID> users) throws SQLException
-    {
-        Map<UserID, Long> m = Maps.newHashMap();
-        for (UserID u : users) {
-            m.put(u, _factUser.create(u).incrementACLEpoch());
-        }
-        return m;
     }
 
     @Override
@@ -1529,8 +1524,8 @@ public class SPService implements ISPService
         _sqlTrans.begin();
         sf.throwIfNotOwnerAndNotAdmin(user);
         Set<UserID> users = sf.deleteMemberOrPendingACL(subjects);
-        // send verkehr notification as the last step of the transaction
-        publishACLs_(incrementACLEpochs_(users));
+        // always call this method as the last step of the transaction
+        publishACLs_(users);
         _sqlTrans.commit();
 
         return createVoidReply();
@@ -1558,17 +1553,17 @@ public class SPService implements ISPService
     }
 
     /**
-     * Publish verkehr notificaitons.
-     * @param epochs Map of user ID to their new ACL epoch.
+     * Publish ACL verkehr notificaitons for the specified users.
+     *
+     * NB. always call this method as the last step of the database transaction!
      */
-    private void publishACLs_(Map<UserID, Long> epochs)
+    private void publishACLs_(Collection<UserID> users)
             throws Exception
     {
-        for (Map.Entry<UserID, Long> entry : epochs.entrySet()) {
+        for (Map.Entry<UserID, Long> entry : incrementACLEpochs_(users).entrySet()) {
             l.info(entry.getKey() + ": acl notification");
 
-            PBACLNotification notification = PBACLNotification
-                    .newBuilder()
+            PBACLNotification notification = PBACLNotification.newBuilder()
                     .setAclEpoch(entry.getValue())
                     .build();
 
@@ -1579,6 +1574,15 @@ public class SPService implements ISPService
 
             verkehrFutureGet_(published);
         }
+    }
+
+    private Map<UserID, Long> incrementACLEpochs_(Collection<UserID> users) throws SQLException
+    {
+        Map<UserID, Long> m = Maps.newHashMap();
+        for (UserID u : users) {
+            m.put(u, _factUser.create(u).incrementACLEpoch());
+        }
+        return m;
     }
 
     @Override
@@ -1679,7 +1683,7 @@ public class SPService implements ISPService
 
         UserID userID = _db.getSignUpCode(signUpCode);
         User user = _factUser.create(userID);
-
+        Collection<UserID> users;
         if (user.exists()) {
             // If the user already exists and the password matches the existing password, we do an
             // no-op. This is needed for the business users to retry signing up using the link in
@@ -1688,12 +1692,14 @@ public class SPService implements ISPService
             if (!user.isCredentialCorrect(shaedSP)) {
                 throw new ExBadCredential("Password doesn't match the existing account");
             }
+            users = Collections.emptyList();
         } else {
-            signUpWithCodeImpl(signUpCode, user, fullName, shaedSP);
+            users = signUpWithCodeImpl(signUpCode, user, fullName, shaedSP);
         }
 
-        // signUpWithCodeImpl() above must be the last step of the transaction. See the last step in
-        // that method for detail.
+        // always call this method as the last step of the transaction
+        publishACLs_(users);
+
         _sqlTrans.commit();
 
         SVClient.sendEventAsync(Sv.PBSVEvent.Type.SIGN_UP, "id: " + user.id().getString());
@@ -1701,7 +1707,11 @@ public class SPService implements ISPService
         return createVoidReply();
     }
 
-    private void signUpWithCodeImpl(String signUpCode, User user, FullName fullName, byte[] shaedSP)
+    /**
+     * @return a collection of users to be passed to publishACLs_()
+     */
+    private Collection<UserID> signUpWithCodeImpl(String signUpCode, User user, FullName fullName,
+            byte[] shaedSP)
             throws Exception
     {
         l.info("sign up {} with code {}", user, signUpCode);
@@ -1716,7 +1726,7 @@ public class SPService implements ISPService
 
         // Accept team invitation if there is one associated with the signup code.
         OrganizationInvitation oi = _factOrgInvite.getBySignUpCodeNullable(signUpCode);
-        if (oi == null) return;
+        if (oi == null) return Collections.emptyList();
 
         l.info("{} automatically accepts team invitation to {}", user, oi.getOrganization());
 
@@ -1727,9 +1737,7 @@ public class SPService implements ISPService
             throw new ExNotFound();
         }
 
-        // this must be the last step in the transaciton. See the last step in
-        // acceptTeamInvitation() for detail.
-        acceptTeamInvitation(user, oi.getOrganization());
+        return acceptTeamInvitation(user, oi.getOrganization());
     }
 
     @Override

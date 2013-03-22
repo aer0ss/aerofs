@@ -8,16 +8,16 @@ import com.aerofs.base.ex.AbstractExWirable;
 import com.aerofs.proto.Common.PBException;
 import com.aerofs.proto.Common.PBException.Type;
 
-public class ExNoAdminForNonEmptyTeam extends AbstractExWirable
+public class ExNoAdmin extends AbstractExWirable
 {
     private static final long serialVersionUID = 1L;
 
-    public ExNoAdminForNonEmptyTeam(String msg)
+    public ExNoAdmin(String msg)
     {
         super(msg);
     }
 
-    public ExNoAdminForNonEmptyTeam(PBException pb)
+    public ExNoAdmin(PBException pb)
     {
         super(pb);
     }
@@ -25,6 +25,6 @@ public class ExNoAdminForNonEmptyTeam extends AbstractExWirable
     @Override
     public Type getWireType()
     {
-        return Type.NO_ADMIN_FOR_NON_EMPTY_TEAM;
+        return Type.NO_ADMIN;
     }
 }

@@ -11,9 +11,13 @@ class ExceptionReplyTest(unittest.TestCase):
         TODO (WW) test actual JavaScripts?
         """
 
-        pbe = PBException()
-        pbe.type = PBException.NO_STRIPE_CUSTOMER_ID
+        map = {
+            PBException.NO_STRIPE_CUSTOMER_ID: "NO_STRIPE_CUSTOMER_ID",
+            PBException.NO_ADMIN: "NO_ADMIN"
+        }
 
-        er = ExceptionReply(pbe)
-
-        self.assertEquals(er.get_type_name(), "NO_STRIPE_CUSTOMER_ID")
+        for i in map:
+            pbe = PBException()
+            pbe.type = i
+            er = ExceptionReply(pbe)
+            self.assertEquals(er.get_type_name(), map[i])

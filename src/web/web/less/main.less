@@ -100,14 +100,18 @@ div.input_container.submit {
   margin-right: 10px;
 }
 
-// To correct the vertical mis-alignment for icons in bootstrap.css
-.icon-vertical-align-fix() {
+// To correct the vertical mis-alignment for icons
+.vertical-align-fix() {
   vertical-align: -2px;
+}
+
+.icon-vertical-align-fix {
+  .vertical-align-fix();
 }
 
 [class^="icon-"],
 [class*=" icon-"] {
-  .icon-vertical-align-fix();
+  .vertical-align-fix();
 }
 
 [class^="aerofs-icon-"],
@@ -126,7 +130,7 @@ div.input_container.submit {
 
   // This must be at the end of the style otherwise it would be overwritten by
   // the above vertical-align
-  .icon-vertical-align-fix();
+  .vertical-align-fix();
 }
 
 .aerofs-icon-osx              { background-position: 0      0; }

@@ -47,7 +47,7 @@
     <script type="text/javascript">
         $(document).ready(function() {
 
-        ## Get all the admins and display them on the data table
+            ## Get all the admins and display them on the data table
             $("#admins_table").dataTable({
             ## Features
                 "bProcessing": true,
@@ -68,7 +68,7 @@
                 "fnServerData": dataTableAJAXCallback
             });
 
-        ## Typeahead search for adding an admin
+            ## Typeahead search for adding an admin
             $("#add-admin-input").typeahead({"items": 4}).on("keyup", function(e) {
                 e.stopPropagation();
                 e.preventDefault();
@@ -110,9 +110,9 @@
                 }
             });
 
-        ## Adding an admin
+            ## Adding an admin
             $("#add_admin_form").submit(function(e) {
-                var userid = $("#add-admin-input").val(),
+                var userid = $("#add-admin-input").val().trim(),
                         authlevel = "ADMIN";
                 $.post("${request.route_path('json.set_authorization')}",
                         {
@@ -138,7 +138,7 @@
                 e.preventDefault();
             });
 
-        ## Remove an admin from the table
+            ## Remove an admin from the table
             $("#admins_table").on("click", "a.remove-admin-btn", function() {
                 var userid = $(this).data('email'),
                         authlevel = "USER";
