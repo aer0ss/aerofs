@@ -8,7 +8,6 @@ import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.acl.Role;
 import com.aerofs.daemon.core.ex.ExNotShared;
 import com.aerofs.lib.id.SOID;
-import com.aerofs.base.id.UserID;
 import com.aerofs.sv.client.SVClient;
 import com.aerofs.proto.Sv.PBSVEvent.Type;
 import com.google.inject.Inject;
@@ -33,10 +32,8 @@ public class HdDeleteACL extends AbstractHdIMC<EIDeleteACL>
         if (!soid.oid().isRoot()) throw new ExNotShared();
 
         // log kickouts
-        for (UserID subject : ev._subjects) {
-            SVClient.sendEventAsync(Type.KICKOUT, subject.getString());
-        }
+        SVClient.sendEventAsync(Type.KICKOUT, ev._subject.getString());
 
-        _aclsync.delete_(soid.sidx(), ev._subjects);
+        _aclsync.delete_(soid.sidx(), ev._subject);
     }
 }

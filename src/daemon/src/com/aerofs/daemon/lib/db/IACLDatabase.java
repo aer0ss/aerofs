@@ -42,11 +42,11 @@ public interface IACLDatabase
      * Delete entries from the acl for the specified {@code sid}
      *
      * @param sidx {@code SIndex} for the store from which these roles should be deleted
-     * @param subjects a list of users who should be removed from this store's acl
+     * @param subject the user who should be removed from this store's acl
      * @param t transaction (this method can only be called as part of a transaction)
      * @throws SQLException if there are db errors during the update
      */
-    void delete_(SIndex sidx, Iterable<UserID> subjects, Trans t) throws SQLException;
+    void delete_(SIndex sidx, UserID subject, Trans t) throws SQLException;
 
     /**
      * Clear all the entries for the given store

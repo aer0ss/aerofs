@@ -3,6 +3,8 @@ package com.aerofs.sp.server;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.lib.ex.ExNoStripeCustomerID;
+import com.aerofs.proto.Common;
+import com.aerofs.proto.Common.PBRole;
 import com.aerofs.proto.Sp.AcceptOrganizationInvitationReply;
 import com.aerofs.proto.Sp.DeleteOrganizationInvitationForUserReply;
 import com.aerofs.proto.Sp.DeleteOrganizationInvitationReply;
@@ -1104,7 +1106,7 @@ public class SPService implements ISPService
         }
 
         // Ignore the invitation by deleting the ACL.
-        sf.deleteMemberOrPendingACL(Collections.singleton(user.id()));
+        sf.deleteMemberOrPendingACL(user);
 
         _sqlTrans.commit();
 
@@ -1488,14 +1490,31 @@ public class SPService implements ISPService
     }
 
     @Override
-    public ListenableFuture<Void> updateACL(final ByteString storeId,
-            final List<PBSubjectRolePair> subjectRoleList)
+    public ListenableFuture<Void> updateACLDeprecated(ByteString storeId,
+            List<PBSubjectRolePair> subjectRole)
+            throws Exception
+    {
+        for (PBSubjectRolePair srp : subjectRole) {
+            updateACL(storeId, srp.getSubject(), srp.getRole());
+        }
+        return createVoidReply();
+    }
+
+    @Override
+    public ListenableFuture<Void> deleteACLDEprecated(ByteString storeId, List<String> subjectList)
+            throws Exception
+    {
+        for (String subject: subjectList) deleteACL(storeId, subject);
+        return createVoidReply();
+    }
+
+    @Override
+    public ListenableFuture<Void> updateACL(final ByteString storeId, String subjectString,
+            PBRole role)
             throws Exception
     {
         User user = _sessionUser.get();
         SharedFolder sf = _factSharedFolder.create(storeId);
-
-        List<SubjectRolePair> srps = SubjectRolePairs.listFromPB(subjectRoleList);
 
         // making the modification to the database, and then getting the current acl list should
         // be done in a single atomic operation. Otherwise, it is possible for us to send out a
@@ -1503,29 +1522,27 @@ public class SPService implements ISPService
 
         _sqlTrans.begin();
         sf.throwIfNotOwnerAndNotAdmin(user);
-        Set<UserID> users = sf.updateMemberACL(srps);
+        User subject = _factUser.createFromExternalID(subjectString);
         // always call this method as the last step of the transaction
-        publishACLs_(users);
+        publishACLs_(sf.updateMemberACL(subject, Role.fromPB(role)));
         _sqlTrans.commit();
 
         return createVoidReply();
     }
 
     @Override
-    public ListenableFuture<Void> deleteACL(final ByteString storeId,
-            final List<String> subjectList)
+    public ListenableFuture<Void> deleteACL(final ByteString storeId, String subjectString)
             throws Exception
     {
         User user = _sessionUser.get();
         SharedFolder sf = _factSharedFolder.create(storeId);
 
-        List<UserID> subjects = UserID.fromExternal(subjectList);
+        User subject = _factUser.createFromExternalID(subjectString);
 
         _sqlTrans.begin();
         sf.throwIfNotOwnerAndNotAdmin(user);
-        Set<UserID> users = sf.deleteMemberOrPendingACL(subjects);
         // always call this method as the last step of the transaction
-        publishACLs_(users);
+        publishACLs_(sf.deleteMemberOrPendingACL(subject));
         _sqlTrans.commit();
 
         return createVoidReply();

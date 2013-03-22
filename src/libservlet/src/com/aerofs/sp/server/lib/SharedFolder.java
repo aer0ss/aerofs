@@ -24,7 +24,6 @@ import javax.annotation.Nullable;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -208,20 +207,18 @@ public class SharedFolder
         }
     }
 
-    public Set<UserID> deleteMemberOrPendingACL(Collection<UserID> subjects)
+    public Set<UserID> deleteMemberOrPendingACL(User user)
             throws SQLException, ExNotFound, ExNoPerm
     {
         // retrieve the list of affected users _before_ performing the deletion, so that all the
         // users including the deleted ones will get notifications.
         Set<UserID> members = _f._db.getMembers(_sid);
 
-        _f._db.deleteMemberOrPendingACL(_sid, subjects);
+        _f._db.deleteMemberOrPendingACL(_sid, user.id());
 
-        for (UserID userID : subjects) {
-            // delete the team server only if the user is a member
-            if (members.contains(userID)) {
-                deleteTeamServerACLImpl(_f._factUser.create(userID));
-            }
+        // delete the team server only if the user is a member
+        if (members.contains(user.id())) {
+            deleteTeamServerACLImpl(_f._factUser.create(user.id()));
         }
 
         throwIfNoOwnerMemberOrPendingLeft();
@@ -260,8 +257,7 @@ public class SharedFolder
         }
 
         try {
-            _f._db.deleteMemberOrPendingACL(_sid,
-                    Collections.singleton(org.id().toTeamServerUserID()));
+            _f._db.deleteMemberOrPendingACL(_sid, org.id().toTeamServerUserID());
         } catch (ExNotFound e) {
             // the team server id must exists.
             assert false : this + " doesn't have team server ACL for " + user;
@@ -289,10 +285,10 @@ public class SharedFolder
      * @return new ACL epochs for each affected user id, to be published via verkehr
      * @throws ExNotFound if trying to add new users to the store or update a pending user's ACL
      */
-    public Set<UserID> updateMemberACL(List<SubjectRolePair> srps)
+    public Set<UserID> updateMemberACL(User user, Role role)
             throws ExNoPerm, ExNotFound, SQLException
     {
-        _f._db.updateMemberACL(_sid, srps);
+        _f._db.updateMemberACL(_sid, user.id(), role);
 
         throwIfNoOwnerMemberOrPendingLeft();
 

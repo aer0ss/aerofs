@@ -342,8 +342,10 @@ service SPService {
     // Required Auth Level: user for all of them
 
     rpc GetACL(GetACLCall) returns (GetACLReply);
-    rpc UpdateACL(UpdateACLCall) returns (Void);
-    rpc DeleteACL(DeleteACLCall) returns (Void);
+
+    // WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE remove these and move the new UpdateACL/DeleteACL calls to here
+    rpc UpdateACLDeprecated(UpdateACLDeprecatedCall) returns (Void);
+    rpc DeleteACLDEprecated(DeleteACLDeprecatedCall) returns (Void);
 
     /**
      * Get the certificate revocations relevant to a specific user, based on the certificate
@@ -585,6 +587,10 @@ service SPService {
       * Required Auth Level: admin
       */
      rpc SetStripeCustomerID(SetStripeCustomerIDCall) returns(Void);
+
+     // WAIT_FOR_SP_PROCOTOL_VERSION_CHAGNE move them to in place of UpdateACL/DeleteACL_Deprecated
+     rpc UpdateACL(UpdateACLCall) returns (Void);
+     rpc DeleteACL(DeleteACLCall) returns (Void);
 }
 
 message SetStripeCustomerIDCall {
@@ -768,10 +774,23 @@ message GetACLReply {
 
 message UpdateACLCall {
     required bytes store_id = 1;
-    repeated PBSubjectRolePair subject_role = 2;
+    required string subject = 2;
+    required PBRole role = 3;
 }
 
 message DeleteACLCall {
+    required bytes store_id = 1;
+    required string subject = 2;
+}
+
+// WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE remove this
+message UpdateACLDeprecatedCall {
+    required bytes store_id = 1;
+    repeated PBSubjectRolePair subject_role = 2;
+}
+
+// WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE remove this
+message DeleteACLDeprecatedCall {
     required bytes store_id = 1;
     repeated string subject_list = 2;
 }

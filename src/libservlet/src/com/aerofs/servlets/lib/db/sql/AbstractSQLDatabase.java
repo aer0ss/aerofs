@@ -60,32 +60,4 @@ public abstract class AbstractSQLDatabase
     {
         return getConnection().prepareStatement(sql);
     }
-
-    public static class ExBatchSizeMismatch extends SQLException
-    {
-        private static final long serialVersionUID = 0;
-
-        ExBatchSizeMismatch(String s) { super(s); }
-    }
-
-    /**
-     * Execute a batch DB update and check for size mismatch in the result
-     */
-    protected static void executeBatch(PreparedStatement ps, int batchSize,
-            int expectedRowsAffectedPerBatchEntry)
-            throws SQLException
-    {
-        int[] batchUpdates = ps.executeBatch();
-        if (batchUpdates.length != batchSize) {
-            throw new ExBatchSizeMismatch("mismatch in batch size exp:" + batchSize + " act:"
-                    + batchUpdates.length);
-        }
-
-        for (int rowsPerBatchEntry : batchUpdates) {
-            if (rowsPerBatchEntry != expectedRowsAffectedPerBatchEntry) {
-                throw new ExBatchSizeMismatch("unexpected number of affected rows " +
-                        "exp:" + expectedRowsAffectedPerBatchEntry + " act:" + rowsPerBatchEntry);
-            }
-        }
-    }
 }

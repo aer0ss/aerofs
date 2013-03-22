@@ -95,7 +95,7 @@ public class ACLDatabase extends AbstractDatabase implements IACLDatabase
 
     private PreparedStatement _psDel;
     @Override
-    public void delete_(SIndex sidx, Iterable<UserID> subjects, Trans t) throws SQLException
+    public void delete_(SIndex sidx, UserID subject, Trans t) throws SQLException
     {
         try {
             if (_psDel == null) {
@@ -105,12 +105,8 @@ public class ACLDatabase extends AbstractDatabase implements IACLDatabase
             }
 
             _psDel.setInt(1, sidx.getInt());
-            for (UserID subject : subjects) {
-                _psDel.setString(2, subject.getString());
-                _psDel.addBatch();
-            }
-            _psDel.executeBatch();
-
+            _psDel.setString(2, subject.getString());
+            _psDel.executeUpdate();
         } catch (SQLException e) {
             DBUtil.close(_psDel);
             _psDel = null;

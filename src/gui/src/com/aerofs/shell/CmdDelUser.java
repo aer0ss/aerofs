@@ -1,13 +1,10 @@
 package com.aerofs.shell;
 
-import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.base.ex.ExBadArgs;
+import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.proto.Common.PBPath;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
-
-import java.util.Collections;
-import java.util.List;
 
 public class CmdDelUser implements IShellCommand<ShProgram>
 {
@@ -42,7 +39,6 @@ public class CmdDelUser implements IShellCommand<ShProgram>
         if (cl.getArgList().size() != 2) throw new ExBadArgs();
 
         PBPath path = s.d().buildPath_(cl.getArgs()[0]);
-        List<String> subjects = Collections.singletonList(cl.getArgs()[1]);
-        s.d().getRitualClient_().deleteACL(Cfg.user().getString(), path, subjects);
+        s.d().getRitualClient_().deleteACL(Cfg.user().getString(), path, cl.getArgs()[1]);
     }
 }

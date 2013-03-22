@@ -387,13 +387,14 @@ message GetACLReply {
 message UpdateACLCall {
     required string user = 1;
     required PBPath path = 2;
-    repeated PBSubjectRolePair subject_role = 3;
+    required string subject = 3;
+    required PBRole role = 4;
 }
 
 message DeleteACLCall {
     required string user = 1;
     required PBPath path = 2;
-    repeated string subject = 3;
+    required string subject = 3;
 }
 
 message RelocateCall {

@@ -26,7 +26,7 @@ import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.id.SID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.base.id.UserID;
-import com.aerofs.proto.Common.PBSubjectRolePair;
+import com.aerofs.proto.Common.PBRole;
 import com.aerofs.proto.Sp.GetACLReply;
 import com.aerofs.proto.Sp.GetACLReply.PBStoreACL;
 import com.aerofs.proto.Sp.GetSharedFolderNamesReply;
@@ -185,9 +185,9 @@ public class TestACLSynchronizer extends AbstractTest
         when(sidx2sid.get_(eq(sidx))).thenReturn(sid1);
         when(sidx2sid.getNullable_(eq(sidx))).thenReturn(sid1);
 
-        aclsync.update_(sidx, ImmutableMap.of(user1, Role.EDITOR));
+        aclsync.update_(sidx, user1, Role.EDITOR);
 
-        verify(spClient).updateACL(eq(sid1.toPB()), anyIterable(PBSubjectRolePair.class));
+        verify(spClient).updateACL(eq(sid1.toPB()), any(String.class), any(PBRole.class));
         assertEquals(ImmutableMap.of(user1, Role.EDITOR), lacl.get_(sidx));
     }
 
@@ -198,18 +198,18 @@ public class TestACLSynchronizer extends AbstractTest
         when(sidx2sid.get_(eq(sidx))).thenReturn(sid1);
         when(sidx2sid.getNullable_(eq(sidx))).thenReturn(sid1);
 
-        when(spClient.updateACL(any(ByteString.class), anyIterable(PBSubjectRolePair.class)))
+        when(spClient.updateACL(any(ByteString.class), any(String.class), any(PBRole.class)))
                 .thenThrow(new ExNoPerm());
 
         boolean ok = false;
         try {
-            aclsync.update_(sidx, ImmutableMap.of(user1, Role.EDITOR));
+            aclsync.update_(sidx, user1, Role.EDITOR);
         } catch (ExNoPerm e) {
             ok = true;
         }
         assertTrue(ok);
 
-        verify(spClient).updateACL(eq(sid1.toPB()), anyIterable(PBSubjectRolePair.class));
+        verify(spClient).updateACL(eq(sid1.toPB()), any(String.class), any(PBRole.class));
         assertTrue(lacl.get_(sidx).isEmpty());
     }
 
@@ -221,9 +221,9 @@ public class TestACLSynchronizer extends AbstractTest
         when(sidx2sid.getNullable_(eq(sidx))).thenReturn(sid1);
         lacl.set_(sidx, ImmutableMap.of(user1, Role.EDITOR), t);
 
-        aclsync.delete_(sidx, Collections.singleton(user1));
+        aclsync.delete_(sidx, user1);
 
-        verify(spClient).deleteACL(eq(sid1.toPB()), anyIterable(String.class));
+        verify(spClient).deleteACL(eq(sid1.toPB()), any(String.class));
         assertTrue(lacl.get_(sidx).isEmpty());
     }
 
@@ -235,18 +235,18 @@ public class TestACLSynchronizer extends AbstractTest
         when(sidx2sid.getNullable_(eq(sidx))).thenReturn(sid1);
         lacl.set_(sidx, ImmutableMap.of(user1, Role.EDITOR), t);
 
-        when(spClient.deleteACL(any(ByteString.class), anyIterable(String.class)))
+        when(spClient.deleteACL(any(ByteString.class), any(String.class)))
                 .thenThrow(new ExNoPerm());
 
         boolean ok = false;
         try {
-            aclsync.delete_(sidx, Collections.singleton(user1));
+            aclsync.delete_(sidx, user1);
         } catch (ExNoPerm e) {
             ok = true;
         }
         assertTrue(ok);
 
-        verify(spClient).deleteACL(eq(sid1.toPB()), anyIterable(String.class));
+        verify(spClient).deleteACL(eq(sid1.toPB()), any(String.class));
         assertEquals(ImmutableMap.of(user1, Role.EDITOR), lacl.get_(sidx));
     }
 

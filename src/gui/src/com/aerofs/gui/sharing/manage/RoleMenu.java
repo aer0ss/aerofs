@@ -1,7 +1,5 @@
 package com.aerofs.gui.sharing.manage;
 
-import java.util.Collections;
-
 import javax.annotation.Nullable;
 
 import com.aerofs.base.Loggers;
@@ -110,11 +108,10 @@ public class RoleMenu
             try {
                 if (role == null) {
                     ritual.deleteACL(Cfg.user().getString(), _path.toPB(),
-                            Collections.singletonList(_subject.getString()));
+                            _subject.getString());
                 } else {
-                    SubjectRolePair srp = new SubjectRolePair(_subject, role);
-                    ritual.updateACL(Cfg.user().getString(), _path.toPB(),
-                            Collections.singletonList(srp.toPB()));
+                    ritual.updateACL(Cfg.user().getString(), _path.toPB(), _subject.getString(),
+                            role.toPB());
                 }
                 _compUserList.load(ritual);
 

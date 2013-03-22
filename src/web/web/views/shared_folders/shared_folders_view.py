@@ -303,17 +303,14 @@ def json_set_shared_folder_perm(request):
     """
     _ = request.translate
 
-    userid = request.params['userid']
     storeid = _decode_store_id(request.params['storeid'])
-    permission = request.params['perm']
-
-    role_pair = common.PBSubjectRolePair()
-    role_pair.subject = userid
-    role_pair.role = common._PBROLE.values_by_name[permission].number
+    userid = request.params['userid']
+    # TODO (WW) a smarter way to retrieve the role number
+    role = common._PBROLE.values_by_name[request.params['perm']].number
 
     sp = get_rpc_stub(request)
     try:
-        sp.update_acl(storeid, [role_pair])
+        sp.update_acl(storeid, userid, role)
         return {'success': True}
     except Exception as e:
         error = parse_rpc_error_exception(request, e)
@@ -328,12 +325,12 @@ def json_set_shared_folder_perm(request):
 def json_delete_shared_folder_perm(request):
     _ = request.translate
 
-    userid = request.params['userid']
     storeid = _decode_store_id(request.params['storeid'])
+    userid = request.params['userid']
 
     sp = get_rpc_stub(request)
     try:
-        sp.delete_acl(storeid, [userid])
+        sp.delete_acl(storeid, userid)
         return {'success': True}
     except Exception as e:
         error = parse_rpc_error_exception(request, e)

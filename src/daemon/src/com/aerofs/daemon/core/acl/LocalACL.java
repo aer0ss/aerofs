@@ -119,10 +119,10 @@ public class LocalACL
     /**
      * Internal use only. Clients should use {@link ACLSynchronizer}.
      */
-    void delete_(SIndex sidx, Iterable<UserID> subjects, Trans t)
+    void delete_(SIndex sidx, UserID subject, Trans t)
             throws SQLException, ExNotFound
     {
-        _adb.delete_(sidx, subjects, t);
+        _adb.delete_(sidx, subject, t);
 
         invalidate_(sidx);
     }

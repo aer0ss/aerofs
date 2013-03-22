@@ -5,7 +5,6 @@
 package com.aerofs.sp.server.business_objects;
 
 import com.aerofs.lib.acl.Role;
-import com.aerofs.lib.acl.SubjectRolePair;
 import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExNotFound;
@@ -17,7 +16,6 @@ import com.google.common.collect.Lists;
 import org.junit.Test;
 
 import java.sql.SQLException;
-import java.util.Collections;
 import java.util.List;
 
 import static junit.framework.Assert.assertEquals;
@@ -199,10 +197,10 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
 
         User user1 = saveUser();
         sf.addMemberACL(user1, Role.OWNER);
-        sf.updateMemberACL(singleSRP(owner, Role.EDITOR));
+        sf.updateMemberACL(owner, Role.EDITOR);
 
         try {
-            sf.deleteMemberOrPendingACL(Collections.singleton(user1.id()));
+            sf.deleteMemberOrPendingACL(user1);
             assertTrue(false);
         } catch (ExNoPerm e) {
             sqlTrans.handleException();
@@ -218,7 +216,7 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
         User user = saveUser();
 
         try {
-            sf.deleteMemberOrPendingACL(Collections.singleton(user.id()));
+            sf.deleteMemberOrPendingACL(user);
             assertTrue(false);
         } catch (ExNotFound e) {
             sqlTrans.handleException();
@@ -246,7 +244,7 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
         assertEquals(sf.getMemberRoleNullable(tsUser), Role.EDITOR);
 
         // why 5? owner, user1, user2, owner's team server, user1 & 2's team server id
-        assertEquals(sf.deleteMemberOrPendingACL(Collections.singleton(user1.id())).size(), 5);
+        assertEquals(sf.deleteMemberOrPendingACL(user1).size(), 5);
 
         assertNull(sf.getMemberRoleNullable(user1));
 
@@ -254,7 +252,7 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
         assertEquals(sf.getMemberRoleNullable(tsUser), Role.EDITOR);
 
         // why 4? owner, user2, owner's team server, user2's team server id
-        assertEquals(sf.deleteMemberOrPendingACL(Collections.singleton(user2.id())).size(), 4);
+        assertEquals(sf.deleteMemberOrPendingACL(user2).size(), 4);
 
         assertNull(sf.getMemberRoleNullable(user2));
 
@@ -294,7 +292,7 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
 
         // now, delete user2
         // why 5? owner, user1, user2, owner's team server, user1 & 2's team server
-        assertEquals(sf.deleteMemberOrPendingACL(Collections.singletonList(user2.id())).size(), 5);
+        assertEquals(sf.deleteMemberOrPendingACL(user2).size(), 5);
 
         // why 4? owner, user1, owner's team server, user1's team server
         assertEquals(sf.deleteTeamServerACL(user1).size(), 4);
@@ -314,10 +312,10 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
         sf.addMemberACL(user1, Role.OWNER);
 
         // why 4? owner, user, owner's team server, user's team server
-        assertEquals(sf.updateMemberACL(singleSRP(owner, Role.EDITOR)).size(), 4);
+        assertEquals(sf.updateMemberACL(owner, Role.EDITOR).size(), 4);
 
         try {
-            sf.updateMemberACL(singleSRP(user1, Role.EDITOR));
+            sf.updateMemberACL(user1, Role.EDITOR);
             assertTrue(false);
         } catch (ExNoPerm e) {
             sqlTrans.handleException();
@@ -332,7 +330,7 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
 
         User user = saveUser();
 
-        sf.updateMemberACL(singleSRP(user, Role.EDITOR));
+        sf.updateMemberACL(user, Role.EDITOR);
     }
 
     @Test
@@ -349,11 +347,11 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
 
         // intentionally make a no-op change
         // wh 6? owner, user1, user2, and their perspective team servers
-        assertEquals(sf.updateMemberACL(singleSRP(user1, Role.EDITOR)).size(), 6);
+        assertEquals(sf.updateMemberACL(user1, Role.EDITOR).size(), 6);
         assertEquals(sf.getMemberRoleNullable(user1), Role.EDITOR);
 
         // wh 6? owner, user1, user2, and their perspective team servers
-        assertEquals(sf.updateMemberACL(singleSRP(user2, Role.EDITOR)).size(), 6);
+        assertEquals(sf.updateMemberACL(user2, Role.EDITOR).size(), 6);
         assertEquals(sf.getMemberRoleNullable(user2), Role.EDITOR);
     }
 
@@ -361,11 +359,6 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
             throws ExNotFound, SQLException
     {
         return user.getOrganization().getTeamServerUser();
-    }
-
-    private List<SubjectRolePair> singleSRP(User user, Role role)
-    {
-        return Collections.singletonList(new SubjectRolePair(user.id(), role));
     }
 
     private SharedFolder saveUserAndSharedFolder()

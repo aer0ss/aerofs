@@ -5,9 +5,6 @@
 package com.aerofs.base.id;
 
 import com.aerofs.base.ex.ExFormatError;
-import com.google.common.collect.Lists;
-
-import java.util.List;
 
 public class UserID extends StringID
 {
@@ -66,26 +63,6 @@ public class UserID extends StringID
     public boolean isAeroFSUser()
     {
         return getString().endsWith(AEROFS_EMAIL_DOMAIN);
-    }
-
-    /**
-     * This method is used mostly to convert a list of user IDs to Protubuf messages
-     */
-    public static List<String> toStrings(Iterable<UserID> userIDs)
-    {
-        List<String> strs = Lists.newArrayListWithExpectedSize(8);
-        for (UserID userId : userIDs) strs.add(userId.getString());
-        return strs;
-    }
-
-    /**
-     * Call fromExternal() on a list of strings
-     */
-    public static List<UserID> fromExternal(List<String> strs)
-    {
-        List<UserID> userIDs = Lists.newArrayListWithExpectedSize(8);
-        for (String userId : strs) userIDs.add(UserID.fromExternal(userId));
-        return userIDs;
     }
 
     private UserID(String str)

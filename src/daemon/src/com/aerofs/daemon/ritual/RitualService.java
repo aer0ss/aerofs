@@ -66,6 +66,7 @@ import com.aerofs.lib.id.KIndex;
 import com.aerofs.base.id.UserID;
 import com.aerofs.proto.Common;
 import com.aerofs.proto.Common.PBPath;
+import com.aerofs.proto.Common.PBRole;
 import com.aerofs.proto.Common.PBSubjectRolePair;
 import com.aerofs.proto.Common.Void;
 import com.aerofs.proto.Files.PBDumpStat;
@@ -335,7 +336,8 @@ public class RitualService implements IRitualService
         ev.execute(PRIO);
 
         TransportPingReply.Builder bd = TransportPingReply.newBuilder();
-        if (ev.rtt() != null) bd.setRtt(ev.rtt());
+        Long rtt = ev.rtt();
+        if (rtt != null) bd.setRtt(rtt);
         return createReply(bd.build());
     }
 
@@ -410,29 +412,25 @@ public class RitualService implements IRitualService
     }
 
     @Override
-    public ListenableFuture<Void> updateACL(String user, PBPath path, List<PBSubjectRolePair> srps)
+    public ListenableFuture<Void> updateACL(String user, PBPath path, String subject, PBRole role)
             throws Exception
     {
         // TODO: accepting {@code user} as input is sort of OK as long as the GUI is the only
-        // Ritual client but it will become a major security issue if/when Ritual is open-sourced
-        Map<UserID, Role> map = Maps.newTreeMap();
-        for (PBSubjectRolePair srp : srps) {
-            map.put(UserID.fromExternal(srp.getSubject()), Role.fromPB(srp.getRole()));
-        }
-
-        EIUpdateACL ev = new EIUpdateACL(UserID.fromExternal(user), new Path(path), map, Core.imce());
+        // Ritual client but it will become a major security issue if/when Ritual becomes open API
+        EIUpdateACL ev = new EIUpdateACL(UserID.fromExternal(user), new Path(path),
+                UserID.fromExternal(subject), Role.fromPB(role), Core.imce());
         ev.execute(PRIO);
         return createVoidReply();
     }
 
     @Override
-    public ListenableFuture<Void> deleteACL(String user, PBPath path, List<String> subjects)
+    public ListenableFuture<Void> deleteACL(String user, PBPath path, String subject)
             throws Exception
     {
         // TODO: accepting {@code user} as input is sort of OK as long as the GUI is the only
         // Ritual client but it will become a major security issue if/when Ritual is open-sourced
         EIDeleteACL ev = new EIDeleteACL(UserID.fromExternal(user), new Path(path),
-                UserID.fromExternal(subjects), Core.imce());
+                UserID.fromExternal(subject), Core.imce());
         ev.execute(PRIO);
         return createVoidReply();
     }
@@ -541,11 +539,12 @@ public class RitualService implements IRitualService
     {
         EIGetAttr ev = new EIGetAttr(Cfg.user(), Core.imce(), new Path(path));
         ev.execute(PRIO);
-        if (ev._oa == null) throw new ExNotFound();
+        OA oa = ev._oa;
+        if (oa == null) throw new ExNotFound();
 
         TestGetObjectIdentifierReply reply = TestGetObjectIdentifierReply.newBuilder()
-                .setSidx(ev._oa.soid().sidx().getInt())
-                .setOid(ev._oa.soid().oid().toPB())
+                .setSidx(oa.soid().sidx().getInt())
+                .setOid(oa.soid().oid().toPB())
                 .build();
 
         return createReply(reply);
@@ -595,7 +594,8 @@ public class RitualService implements IRitualService
         GetActivitiesReply.Builder bdReply = GetActivitiesReply.newBuilder()
                 .addAllActivity(ev._activities)
                 .setHasUnresolvedDevices(ev._hasUnresolvedDevices);
-        if (ev._replyPageToken != null) bdReply.setPageToken(ev._replyPageToken);
+        Long replyPageToken = ev._replyPageToken;
+        if (replyPageToken != null) bdReply.setPageToken(replyPageToken);
         return createReply(bdReply.build());
     }
 

@@ -9,13 +9,13 @@ public class EIDeleteACL extends AbstractEBIMC
 {
     public final UserID _user;
     public final Path _path;
-    public final Iterable<UserID> _subjects;
+    public final UserID _subject;
 
-    public EIDeleteACL(UserID user, Path path, Iterable<UserID> subjects, IIMCExecutor imce)
+    public EIDeleteACL(UserID user, Path path, UserID subject, IIMCExecutor imce)
     {
         super(imce);
         _path = path;
         _user = user;
-        _subjects = subjects;
+        _subject = subject;
     }
 }

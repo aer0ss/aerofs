@@ -23,7 +23,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
@@ -116,6 +115,7 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
 
         try {
             // throw if any query's affected rows != 1, meaning ACL entry already exists
+            // TODO (WW) this is not a proper design. Reconsider.
             executeBatch(ps, pairCount, 1); // update the roles for all users
         } catch (ExBatchSizeMismatch e) {
             /**
@@ -126,6 +126,35 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
              * receive an email about it)
              */
             throw new ExAlreadyExist();
+        }
+    }
+
+    private static class ExBatchSizeMismatch extends SQLException
+    {
+        private static final long serialVersionUID = 0;
+
+        ExBatchSizeMismatch(String s) { super(s); }
+    }
+
+    /**
+     * Execute a batch DB update and check for size mismatch in the result
+     * TODO (WW) this method is not a proper design. Reconsider.
+     */
+    private static void executeBatch(PreparedStatement ps, int batchSize,
+            int expectedRowsAffectedPerBatchEntry)
+            throws SQLException
+    {
+        int[] batchUpdates = ps.executeBatch();
+        if (batchUpdates.length != batchSize) {
+            throw new ExBatchSizeMismatch("mismatch in batch size exp:" + batchSize + " act:"
+                    + batchUpdates.length);
+        }
+
+        for (int rowsPerBatchEntry : batchUpdates) {
+            if (rowsPerBatchEntry != expectedRowsAffectedPerBatchEntry) {
+                throw new ExBatchSizeMismatch("unexpected number of affected rows " +
+                        "exp:" + expectedRowsAffectedPerBatchEntry + " act:" + rowsPerBatchEntry);
+            }
         }
     }
 
@@ -233,23 +262,15 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
         }
     }
 
-    public void deleteMemberOrPendingACL(SID sid, Collection<UserID> subjects)
+    public void deleteMemberOrPendingACL(SID sid, UserID userID)
             throws ExNotFound, SQLException
     {
         PreparedStatement ps = prepareStatement(
                 deleteWhere(T_AC, C_AC_STORE_ID + "=? and " + C_AC_USER_ID + "=?"));
 
-        for (UserID subject : subjects) {
-            ps.setBytes(1, sid.getBytes());
-            ps.setString(2, subject.getString());
-            ps.addBatch();
-        }
-
-        try {
-            executeBatch(ps, subjects.size(), 1);
-        } catch (ExBatchSizeMismatch e) {
-            throw new ExNotFound();
-        }
+        ps.setBytes(1, sid.getBytes());
+        ps.setString(2, userID.getString());
+        if (ps.executeUpdate() != 1) throw new ExNotFound();
     }
 
     public boolean hasOwnerMemberOrPending(SID sid)
@@ -270,36 +291,26 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
         }
     }
 
-    public void updateMemberACL(SID sid, Iterable<SubjectRolePair> pairs)
+    public void updateMemberACL(SID sid, UserID userID, Role role)
             throws SQLException, ExNotFound
     {
         PreparedStatement ps = prepareStatement(updateWhere(T_AC,
                 C_AC_STORE_ID + "=? and " + C_AC_USER_ID + "=? and " + C_AC_PENDING + "=?",
                 C_AC_ROLE));
 
-        int pairCount = 0;
-        for (SubjectRolePair pair : pairs) {
-            ps.setInt(1, pair._role.ordinal());
-            ps.setBytes(2, sid.getBytes());
-            ps.setString(3, pair._subject.getString());
-            ps.setBoolean(4, false);        // ignore pending entries
-            ps.addBatch();
-            ++pairCount;
-        }
+        ps.setInt(1, role.ordinal());
+        ps.setBytes(2, sid.getBytes());
+        ps.setString(3, userID.getString());
+        ps.setBoolean(4, false);        // ignore pending entries
 
-        try {
-            // throw if any query's affected rows != 1, meaning ACL entry doesn't exist
-            executeBatch(ps, pairCount, 1); // update the roles for all users
-        } catch (ExBatchSizeMismatch e) {
-            /**
-             * We enforce a strict API distinction between ACL creation and ACL update
-             * To ensure that SP calls are not abused (i.e shareFolder should not be used to change
-             * existing permissions and updateACL should not give access to new users (as it would
-             * leave the DB in an intermediate state where users have access to a folder but did not
-             * receive an email about it)
-             */
-            throw new ExNotFound();
-        }
+        /**
+         * We enforce a strict API distinction between ACL creation and ACL update
+         * To ensure that SP calls are not abused (i.e shareFolder should not be used to change
+         * existing permissions and updateACL should not give access to new users (as it would
+         * leave the DB in an intermediate state where users have access to a folder but did not
+         * receive an email about it)
+         */
+        if (ps.executeUpdate() != 1) throw new ExNotFound();
     }
 
     public void delete(SID sid)

@@ -166,7 +166,7 @@ public class TestSP_ACL extends AbstractSPFolderPermissionTest
         // now have the second guy delete the third
 
         setSessionUser(USER_2);
-        service.deleteACL(SID_1.toPB(), Arrays.asList(USER_3.id().getString())).get();
+        service.deleteACL(SID_1.toPB(), USER_3.id().getString()).get();
 
         // expect first, second and third guy all to be notified
 
@@ -208,7 +208,7 @@ public class TestSP_ACL extends AbstractSPFolderPermissionTest
         setSessionUser(USER_1);
 
         try {
-            service.deleteACL(SID_1.toPB(), Arrays.asList(USER_2.id().getString())).get();
+            service.deleteACL(SID_1.toPB(), USER_2.id().getString()).get();
             // must not reach here
             fail();
         } catch (ExNotFound e) {
@@ -235,7 +235,7 @@ public class TestSP_ACL extends AbstractSPFolderPermissionTest
         setSessionUser(USER_2);
 
         try {
-            service.deleteACL(SID_1.toPB(), Arrays.asList(USER_1.id().getString())).get();
+            service.deleteACL(SID_1.toPB(), USER_1.id().getString()).get();
             // must not reach here
             fail();
         } catch (ExNoPerm e) {}
@@ -335,7 +335,7 @@ public class TestSP_ACL extends AbstractSPFolderPermissionTest
 
         // update ACL for user 3 as user 1
         setSessionUser(USER_1);
-        service.updateACL(SID_1.toPB(), toPB(USER_3, Role.OWNER));
+        service.updateACL(SID_1.toPB(), USER_3.id().getString(), Role.OWNER.toPB());
 
         // check that notifications were published on update
         assertVerkehrPublishOnlyContains(USER_1, USER_3);
@@ -363,7 +363,7 @@ public class TestSP_ACL extends AbstractSPFolderPermissionTest
         setSessionUser(USER_1);
         try {
             // should fail with ExNotFound
-            service.updateACL(SID_1.toPB(), toPB(USER_3, Role.OWNER));
+            service.updateACL(SID_1.toPB(), USER_3.id().getString(), Role.OWNER.toPB());
             // must not reach here
             fail();
         } catch (Exception e) {
@@ -392,7 +392,7 @@ public class TestSP_ACL extends AbstractSPFolderPermissionTest
         setSessionUser(USER_3);
         try {
             // should fail with ExNoPerm
-            service.updateACL(SID_1.toPB(), toPB(USER_1, Role.EDITOR));
+            service.updateACL(SID_1.toPB(), USER_1.id().getString(), Role.EDITOR.toPB());
             // the code must not reach here
             fail();
         } catch (ExNoPerm e) {

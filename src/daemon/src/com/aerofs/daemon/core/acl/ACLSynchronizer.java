@@ -15,7 +15,6 @@ import com.aerofs.labeling.L;
 import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.acl.Role;
 import com.aerofs.lib.acl.SubjectRolePair;
-import com.aerofs.lib.acl.SubjectRolePairs;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.base.ex.ExNotFound;
@@ -95,12 +94,12 @@ public class ACLSynchronizer
         _factSP = factSP;
     }
 
-    private void commitToLocal_(SIndex sidx, Map<UserID, Role> subject2role)
+    private void commitToLocal_(SIndex sidx, UserID userID, Role role)
             throws SQLException, ExNotFound
     {
         Trans t = _tm.begin_();
         try {
-            _lacl.set_(sidx, subject2role, t);
+            _lacl.set_(sidx, Collections.singletonMap(userID, role), t);
             t.commit_();
         } finally {
             t.end_();
@@ -336,12 +335,11 @@ public class ACLSynchronizer
     /**
      * Update ACLs via the SP.updateACL call
      */
-    public void update_(SIndex sidx, Map<UserID, Role> subject2role)
+    public void update_(SIndex sidx, UserID subject, Role role)
             throws Exception
     {
         // first, resolve the sid and prepare data for protobuf
         SID sid = resolveSIndex_(sidx);
-        List<PBSubjectRolePair> roles = SubjectRolePairs.mapToPB(subject2role);
 
         // make the SP call (done before adding entries to the local database to avoid changing the
         // local database if the SP call fails)
@@ -351,17 +349,17 @@ public class ACLSynchronizer
             tcb = tk.pseudoPause_("spacl");
             SPBlockingClient sp = _factSP.create_(_cfgLocalUser.get());
             sp.signInRemote();
-            sp.updateACL(sid.toPB(), roles);
+            sp.updateACL(sid.toPB(), subject.getString(), role.toPB());
         } finally {
             if (tcb != null) tcb.pseudoResumed_();
             tk.reclaim_();
         }
 
         // add new entries to the local database
-        commitToLocal_(sidx, subject2role);
+        commitToLocal_(sidx, subject, role);
     }
 
-    public void delete_(SIndex sidx, Iterable<UserID> subjects)
+    public void delete_(SIndex sidx, UserID subject)
             throws Exception
     {
         //
@@ -377,7 +375,7 @@ public class ACLSynchronizer
             tcb = tk.pseudoPause_("spacl");
             SPBlockingClient sp = _factSP.create_(_cfgLocalUser.get());
             sp.signInRemote();
-            sp.deleteACL(sid.toPB(), UserID.toStrings(subjects));
+            sp.deleteACL(sid.toPB(), subject.getString());
         } finally {
             if (tcb != null) tcb.pseudoResumed_();
             tk.reclaim_();
@@ -390,7 +388,7 @@ public class ACLSynchronizer
 
         Trans t = _tm.begin_();
         try {
-            _lacl.delete_(sidx, subjects, t);
+            _lacl.delete_(sidx, subject, t);
             t.commit_();
         } finally {
             t.end_();
