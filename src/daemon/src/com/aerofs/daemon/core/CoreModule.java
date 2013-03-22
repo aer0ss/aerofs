@@ -4,6 +4,7 @@ import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.DirectoryServiceImpl;
 import com.aerofs.daemon.core.ds.ObjectSurgeon;
 import com.aerofs.daemon.lib.db.CoreSchema;
+import com.aerofs.daemon.lib.db.IMetaDatabaseWalker;
 import com.aerofs.daemon.lib.db.ISchema;
 import com.aerofs.daemon.core.linker.IDeletionBuffer;
 import com.aerofs.daemon.core.linker.TimeoutDeletionBuffer;
@@ -72,6 +73,7 @@ public class CoreModule extends AbstractModule
         bind(INativeVersionDatabase.class).to(NativeVersionDatabase.class);
         bind(IImmigrantVersionDatabase.class).to(ImmigrantVersionDatabase.class);
         bind(IMetaDatabase.class).to(MetaDatabase.class);
+        bind(IMetaDatabaseWalker.class).to(MetaDatabase.class);
         bind(IPulledDeviceDatabase.class).to(PulledDeviceDatabase.class);
         bind(IAliasDatabase.class).to(AliasDatabase.class);
         bind(IPrefixVersionDatabase.class).to(PrefixVersionDatabase.class);

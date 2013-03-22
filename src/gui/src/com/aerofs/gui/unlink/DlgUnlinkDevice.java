@@ -3,7 +3,6 @@ package com.aerofs.gui.unlink;
 import com.aerofs.gui.CompSpin;
 import com.aerofs.gui.GUI.ISWTWorker;
 import com.aerofs.lib.S;
-import com.aerofs.lib.injectable.InjectableFile.Factory;
 import com.aerofs.ui.IUI.MessageType;
 import org.eclipse.swt.custom.CLabel;
 import org.eclipse.swt.widgets.Label;

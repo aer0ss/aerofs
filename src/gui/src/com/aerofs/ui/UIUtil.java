@@ -145,7 +145,7 @@ public class UIUtil
     // to unlink the device
     // NB: we will wait AT MOST that amount of time but if the seed file is populated before that
     // timeout we may wait considerably less.
-    // Tests show that seed files are populated at ~30k objects per second. We can probably expect
+    // Tests show that seed files are populated at ~60k objects per second. We can probably expect
     // at least 500ms latency for the SP interaction (unlink, vk notification, pull command, ack
     // command)
     private static final int SEED_FILE_CREATION_TIMEOUT = 5500;

@@ -1,7 +1,6 @@
 package com.aerofs.daemon.lib.db;
 
 import java.sql.SQLException;
-import java.util.Collection;
 import java.util.Set;
 
 import javax.annotation.Nonnull;

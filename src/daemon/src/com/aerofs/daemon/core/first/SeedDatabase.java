@@ -59,24 +59,27 @@ public class SeedDatabase extends AbstractDatabase
             C_SEED_TYPE = "s_t",
             C_SEED_OID  = "s_o";
 
-    private static String seedFilePath()
+    private static String seedFilePath(String suffix)
     {
-        return Cfg.absRTRoot() + File.separator + "seed";
+        return Cfg.absRTRoot() + File.separator + "seed" + (suffix.isEmpty() ? "" : "-" + suffix);
     }
 
-    private SeedDatabase()
+    private final String _path;
+
+    private SeedDatabase(String suffix)
     {
-        super(new SQLiteDBCW("jdbc:sqlite:" + seedFilePath(), false, true, true));
+        super(new SQLiteDBCW("jdbc:sqlite:" + seedFilePath(suffix), false, true, true));
+        _path = seedFilePath(suffix);
     }
 
-    static @Nullable SeedDatabase load_()
+    static @Nullable SeedDatabase load_(String suffix)
     {
-        if (!new File(seedFilePath()).exists()) {
+        if (!new File(seedFilePath(suffix)).exists()) {
             return null;
         }
 
         l.info("seed file found");
-        SeedDatabase db = new SeedDatabase();
+        SeedDatabase db = new SeedDatabase(suffix);
         try {
             db._dbcw.init_();
             if (db._dbcw.tableExists(T_SEED)) return db;
@@ -115,15 +118,15 @@ public class SeedDatabase extends AbstractDatabase
         } catch (SQLException e) {
             // can safely ignore
         }
-        new File(seedFilePath()).delete();
+        new File(_path).delete();
     }
 
     /**
      * setup schema prior to populating the db
      */
-    static SeedDatabase create_() throws SQLException
+    static SeedDatabase create_(String suffix) throws SQLException
     {
-        SeedDatabase db = new SeedDatabase();
+        SeedDatabase db = new SeedDatabase(suffix);
         try {
             db._dbcw.init_();
             Statement s = db.c().createStatement();
@@ -139,12 +142,13 @@ public class SeedDatabase extends AbstractDatabase
             }
         } catch (SQLException e) {
             db.cleanup_();
+            throw e;
         }
         return db;
     }
 
     private PreparedStatement _psSetOID;
-    void setOID_(Path path, boolean dir, OID oid) throws SQLException
+    void setOID_(String path, boolean dir, OID oid) throws SQLException
     {
         try {
             if (_psSetOID == null) {
@@ -152,7 +156,7 @@ public class SeedDatabase extends AbstractDatabase
                         C_SEED_PATH, C_SEED_TYPE, C_SEED_OID));
             }
 
-            _psSetOID.setString(1, path.toStringFormal());
+            _psSetOID.setString(1, path);
             _psSetOID.setInt(2, dir ? 1 : 0);
             _psSetOID.setBytes(3, oid.getBytes());
 
@@ -169,6 +173,6 @@ public class SeedDatabase extends AbstractDatabase
     {
         c().commit();
         _dbcw.fini_();
-        return seedFilePath();
+        return _path;
     }
 }

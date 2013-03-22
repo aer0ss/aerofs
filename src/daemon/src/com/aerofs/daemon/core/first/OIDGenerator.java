@@ -6,8 +6,10 @@ package com.aerofs.daemon.core.first;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.OID;
+import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UniqueID;
 import com.aerofs.lib.Path;
+import com.aerofs.lib.cfg.CfgLocalUser;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 
@@ -28,9 +30,9 @@ public class OIDGenerator
     private final SeedDatabase _sdb;
 
     @Inject
-    public OIDGenerator()
+    public OIDGenerator(CfgLocalUser localUser)
     {
-        _sdb = SeedDatabase.load_();
+        _sdb = SeedDatabase.load_(SID.rootSID(localUser.get()).toStringFormal());
         _shouldLookup = _sdb != null;
         if (_shouldLookup) l.info("seed file loaded");
     }

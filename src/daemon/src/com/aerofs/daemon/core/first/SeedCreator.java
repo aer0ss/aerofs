@@ -6,21 +6,22 @@ package com.aerofs.daemon.core.first;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExAlreadyExist;
-import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
-import com.aerofs.daemon.core.ds.DirectoryService;
-import com.aerofs.daemon.core.ds.DirectoryService.ObjectWalkerAdapter;
 import com.aerofs.daemon.core.ds.OA;
+import com.aerofs.daemon.core.ds.OA.Type;
+import com.aerofs.daemon.core.store.IMapSID2SIndex;
+import com.aerofs.daemon.core.store.IMapSIndex2SID;
+import com.aerofs.daemon.lib.db.IMetaDatabaseWalker;
+import com.aerofs.daemon.lib.db.IMetaDatabaseWalker.TypeNameOID;
 import com.aerofs.daemon.lib.exception.ExStreamInvalid;
-import com.aerofs.lib.Path;
+import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExNotDir;
-import com.aerofs.lib.id.SOID;
+import com.aerofs.lib.id.SIndex;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 
-import javax.annotation.Nullable;
 import java.io.IOException;
 import java.sql.SQLException;
 
@@ -33,29 +34,30 @@ public class SeedCreator
 {
     private static final Logger l = Loggers.getLogger(SeedCreator.class);
 
-    private final DirectoryService _ds;
+    private final IMetaDatabaseWalker _mdbw;
+    private final IMapSIndex2SID _sidx2sid;
+    private final IMapSID2SIndex _sid2sidx;
 
     @Inject
-    public SeedCreator(DirectoryService ds)
+    public SeedCreator(IMetaDatabaseWalker mdbw, IMapSIndex2SID sidx2sid, IMapSID2SIndex sid2sidx)
     {
-        _ds = ds;
+        _mdbw = mdbw;
+        _sidx2sid = sidx2sid;
+        _sid2sidx = sid2sidx;
     }
 
     /**
      * Create a seed file from the current contents of the database
      * @return Absolute path of the created seed file
      */
-    public String create_() throws Exception
+    public String create_(SIndex sidx) throws Exception
     {
-        // TODO: adapt for multi user?
-        SOID soid = _ds.resolveNullable_(new Path());
-        if (soid == null) throw new ExBadArgs("Cannot seed multi-user setup");
-
         l.info("creating seed");
         try {
-            final SeedDatabase sdb = SeedDatabase.create_();
+            final SeedDatabase sdb = SeedDatabase.create_(_sidx2sid.get_(sidx).toStringFormal());
             try {
-                populate_(soid, sdb);
+                populate_(sidx, sdb);
+                // TODO: include SID into seed file name
                 return sdb.save_();
             } catch (Exception e) {
                 l.info("failed to populate seed", e);
@@ -68,37 +70,42 @@ public class SeedCreator
         }
     }
 
-    private void populate_(SOID root, final SeedDatabase sdb)
+    private void populate_(SIndex sidx, final SeedDatabase sdb)
             throws ExNotFound, SQLException, IOException, ExNotDir, ExStreamInvalid, ExAlreadyExist
     {
         l.info("populating seed");
 
-        // TODO: ds.walk_ is blocking but the seed file does not necessarily need an atomic
-        // walk to be useful -> consider ways to break down this operation?
-        _ds.walk_(root, new Path(), new ObjectWalkerAdapter<Path>() {
-            @Override
-            @Nullable
-            public Path prefixWalk_(Path parentPath, OA oa) throws SQLException
-            {
-                if (oa.isExpelled()) return null;
-                if (oa.soid().oid().isRoot()) return parentPath;
-
-                OID oid = oa.soid().oid();
-                Path p = parentPath.append(oa.name());
-                if (oa.isAnchor()) {
-                    // If a valid tag file is present, this entry in the seed file will not
-                    // be used during the first scan. However, if the tag file is absent and
-                    // the shared folder is still around on another device, migration will kick
-                    // in eventually
-                    sdb.setOID_(p, true, SID.anchorOID2folderOID(oid));
-                } else {
-                    sdb.setOID_(p, oa.isDir(), oid);
-                    // TODO: store MASTER versions and content hash as well
-                }
-                return p;
-            }
-        });
+        populateImpl_(sidx, OID.ROOT, Type.DIR, "", sdb);
 
         l.info("seed populated");
+    }
+
+    private void populateImpl_(SIndex sidx, OID oid, OA.Type type, String path, SeedDatabase sdb)
+            throws SQLException
+    {
+        switch (type) {
+        case ANCHOR:
+            // If a valid tag file is present, this entry in the seed file will not
+            // be used during the first scan. However, if the tag file is absent and
+            // the shared folder is still around on another device, migration will kick
+            // in eventually
+            sdb.setOID_(path, true, SID.anchorOID2folderOID(oid));
+            populateImpl_(_sid2sidx.getLocalOrAbsentNullable_(SID.anchorOID2storeSID(oid)),
+                    OID.ROOT, Type.DIR, path, sdb);
+            break;
+        case DIR:
+            if (oid.isTrash()) return;
+            if (!oid.isRoot()) sdb.setOID_(path, true, oid);
+            for (TypeNameOID tno : _mdbw.getTypedChildren_(sidx, oid)) {
+                populateImpl_(sidx, tno._oid, tno._type,
+                        path.isEmpty() ? tno._name : Util.join(path, tno._name), sdb);
+            }
+            break;
+        case FILE:
+            sdb.setOID_(path, false, oid);
+            break;
+        default:
+            throw new AssertionError();
+        }
     }
 }

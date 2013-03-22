@@ -7,7 +7,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
@@ -18,6 +17,7 @@ import javax.annotation.Nullable;
 
 import com.aerofs.daemon.core.ds.CA;
 import com.aerofs.daemon.core.ds.OA;
+import com.aerofs.daemon.core.ds.OA.Type;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.BitVector;
 import com.aerofs.lib.ContentHash;
@@ -36,13 +36,14 @@ import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.id.SOKID;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 
 /*
  * When possible, use the DirectoryService class which provides a high-level wrapper for this class.
  */
-public class MetaDatabase extends AbstractDatabase implements IMetaDatabase
+public class MetaDatabase extends AbstractDatabase implements IMetaDatabase, IMetaDatabaseWalker
 {
     @Inject
     public MetaDatabase(CoreDBCW dbcw)
@@ -587,6 +588,41 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase
         } catch (SQLException e) {
             DBUtil.close(_psGetChildren);
             _psGetChildren = null;
+            throw e;
+        }
+    }
+
+    private PreparedStatement _psGetTypedChildren;
+    @Override
+    public Collection<TypeNameOID> getTypedChildren_(SIndex sidx, OID parent)
+            throws SQLException
+    {
+        try {
+            if (_psGetTypedChildren == null) _psGetTypedChildren = c()
+                    .prepareStatement(DBUtil.selectWhere(T_OA,
+                            C_OA_SIDX + "=? and " + C_OA_PARENT + "=?",
+                            C_OA_OID, C_OA_NAME, C_OA_TYPE));
+            _psGetTypedChildren.setInt(1, sidx.getInt());
+            _psGetTypedChildren.setBytes(2, parent.getBytes());
+            ResultSet rs = _psGetTypedChildren.executeQuery();
+            try {
+                boolean rootParent = parent.isRoot();
+                // Most callers of this method simply iterate over the set, so if performance is
+                // an issue, consider using a LinkedHashSet
+                Collection<TypeNameOID> children = Lists.newArrayList();
+                while (rs.next()) {
+                    OID oid = new OID(rs.getBytes(1));
+                    if (rootParent && oid.isRoot()) continue;
+                    children.add(new TypeNameOID(rs.getString(2), oid, Type.valueOf(rs.getInt(3))));
+                }
+                return children;
+            } finally {
+                rs.close();
+            }
+
+        } catch (SQLException e) {
+            DBUtil.close(_psGetTypedChildren);
+            _psGetTypedChildren = null;
             throw e;
         }
     }

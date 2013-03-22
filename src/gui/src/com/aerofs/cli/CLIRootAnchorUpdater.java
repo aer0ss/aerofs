@@ -11,7 +11,6 @@ import com.aerofs.lib.S;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.ex.ExNoConsole;
-import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.UIUtil;
 
