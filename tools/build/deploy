@@ -27,10 +27,13 @@ fi
 #
 ###############################################################################
 function notify_successful_deployment() {
-    echo ">> notifying team of successful deployment"
+    echo ">> notifying team of successful deployment via email"
     kssh $RELEASE_SERVER_LOGIN $RELEASE_SERVER_SHELL << ENDCMDS
         echo ' ' | mail -s "[$MODE] $RELEASE_VERSION deployed by $USER" team@aerofs.com
 ENDCMDS
+    echo ">> notifying team of successful deployment via HipChat"
+    echo "$(whoami) pushed $MODE $RELEASE_VERSION" |
+        $(git rev-parse --show-cdup)puppetmaster/modules/hipchat/files/hipchat_room_message -c green -t 6124360a8cd9355ff9b9927b51cea4 -r 93246 -f "Deploy"
 }
 
 ###############################################################################
