@@ -72,3 +72,8 @@ function getInternalErrorText() {
 function getErrorTypeNullable(xhr) {
     return xhr.status == 400 ? $.parseJSON(xhr.responseText).type : null;
 }
+
+function setVisible($elem, visible) {
+    if (visible) $elem.removeClass("hidden");
+    else $elem.addClass("hidden");
+}

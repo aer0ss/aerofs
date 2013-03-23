@@ -234,11 +234,5 @@
             setVisible($("#no-invitation-div"),
                     teamInvites == 0 && folderInvites == 0);
         }
-
-        function setVisible($elem, visible) {
-            if (visible) $elem.removeClass("hidden");
-            else $elem.addClass("hidden");
-        }
-
     </script>
 </%block>

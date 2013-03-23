@@ -10,6 +10,8 @@ import com.aerofs.proto.Sp.DeleteOrganizationInvitationReply;
 import com.aerofs.proto.Sp.GetStripeDataReply;
 import com.aerofs.proto.Sp.InviteToOrganizationReply;
 import com.aerofs.proto.Sp.ListOrganizationInvitedUsersReply;
+import com.aerofs.proto.Sp.ListOrganizationMembersReply;
+import com.aerofs.proto.Sp.ListOrganizationMembersReply.PBUserAndLevel;
 import com.aerofs.proto.Sp.ListOrganizationSharedFoldersReply;
 import com.aerofs.proto.Sp.ListUserDevicesReply.PBDevice;
 import com.aerofs.proto.Sp.ListUserSharedFoldersReply;
@@ -71,7 +73,6 @@ import com.aerofs.sp.server.lib.cert.CertificateDatabase;
 import com.aerofs.sp.server.lib.cert.CertificateGenerator.CertificationResult;
 import com.aerofs.sp.server.lib.device.Device;
 import com.aerofs.sp.server.lib.SPDatabase.DeviceInfo;
-import com.aerofs.sp.server.lib.organization.Organization.UsersAndQueryCount;
 import com.aerofs.sp.server.lib.organization.OrganizationInvitation;
 import com.aerofs.sp.server.lib.user.User.PendingSharedFolder;
 import com.aerofs.sp.server.session.SPActiveUserSessionTracker;
@@ -93,7 +94,6 @@ import com.aerofs.proto.Sp.GetUnsubscribeEmailReply;
 import com.aerofs.proto.Sp.GetUserCRLReply;
 import com.aerofs.proto.Sp.ISPService;
 import com.aerofs.proto.Sp.ListPendingFolderInvitationsReply;
-import com.aerofs.proto.Sp.ListUsersReply;
 import com.aerofs.proto.SpNotifications.PBACLNotification;
 import com.aerofs.proto.Sp.PBAuthorizationLevel;
 import com.aerofs.sp.server.email.InvitationEmailer;
@@ -354,8 +354,8 @@ public class SPService implements ISPService
     }
 
     @Override
-    public ListenableFuture<ListUsersReply> listUsers(String search, Integer maxResults,
-            Integer offset)
+    public ListenableFuture<ListOrganizationMembersReply> listOrganizationMembers(
+            Integer maxResults, Integer offset)
             throws Exception
     {
         throwOnInvalidOffset(offset);
@@ -367,11 +367,9 @@ public class SPService implements ISPService
         user.throwIfNotAdmin();
 
         Organization org = user.getOrganization();
-        UsersAndQueryCount listAndCount = org.listUsers(search, maxResults, offset);
 
-        ListUsersReply reply = ListUsersReply.newBuilder()
-                .addAllUsers(users2pb(listAndCount.users()))
-                .setFilteredCount(listAndCount.count())
+        ListOrganizationMembersReply reply = ListOrganizationMembersReply.newBuilder()
+                .addAllUserAndLevel(users2pb(org.listUsers(maxResults, offset)))
                 .setTotalCount(org.countUsers())
                 .build();
 
@@ -380,48 +378,17 @@ public class SPService implements ISPService
         return createReply(reply);
     }
 
-    @Override
-    public ListenableFuture<ListUsersReply> listUsersAuth(String search,
-            PBAuthorizationLevel authLevel, Integer maxResults, Integer offset)
-        throws Exception
-    {
-        throwOnInvalidOffset(offset);
-        throwOnInvalidMaxResults(maxResults);
-
-        _sqlTrans.begin();
-
-        User user = _sessionUser.get();
-        user.throwIfNotAdmin();
-
-        Organization org = user.getOrganization();
-        AuthorizationLevel level = AuthorizationLevel.fromPB(authLevel);
-
-        UsersAndQueryCount listAndCount = org.listUsersAuth(search, level, maxResults, offset);
-
-        ListUsersReply reply = ListUsersReply.newBuilder()
-                .addAllUsers(users2pb(listAndCount.users()))
-                .setFilteredCount(listAndCount.count())
-                .setTotalCount(org.countUsers(level))
-                .build();
-
-        _sqlTrans.commit();
-
-        return createReply(reply);
-    }
-
-    private static List<PBUser> users2pb(Collection<User> users)
+    private static List<PBUserAndLevel> users2pb(Collection<User> users)
             throws SQLException, ExNotFound
     {
-        List<PBUser> pbusers = Lists.newArrayListWithCapacity(users.size());
+        List<PBUserAndLevel> pb = Lists.newArrayListWithCapacity(users.size());
         for (User user : users) {
-            FullName fn = user.getFullName();
-            pbusers.add(PBUser.newBuilder()
-                    .setUserEmail(user.id().getString())
-                    .setFirstName(fn._first)
-                    .setLastName(fn._last)
+            pb.add(PBUserAndLevel.newBuilder()
+                    .setUser(user2pb(user))
+                    .setLevel(user.getLevel().toPB())
                     .build());
         }
-        return pbusers;
+        return pb;
     }
 
     @Override
@@ -592,10 +559,21 @@ public class SPService implements ISPService
 
         builder.addUserAndRole(PBUserAndRole.newBuilder()
                 .setRole(srp._role.toPB())
-                .setUser(PBUser.newBuilder()
-                        .setUserEmail(subject.id().getString())
-                        .setFirstName(fn._first)
-                        .setLastName(fn._last)));
+                .setUser(user2pb(subject, fn)));
+    }
+
+    private static PBUser.Builder user2pb(User user)
+            throws SQLException, ExNotFound
+    {
+        return user2pb(user, user.getFullName());
+    }
+
+    private static PBUser.Builder user2pb(User user, FullName fn)
+    {
+        return PBUser.newBuilder()
+                .setUserEmail(user.id().getString())
+                .setFirstName(fn._first)
+                .setLastName(fn._last);
     }
 
     @Override
@@ -2139,4 +2117,12 @@ public class SPService implements ISPService
     {
         return null;
     }
+
+    @Override
+    public ListenableFuture<Void> noop7()
+            throws Exception
+    {
+        return null;
+    }
+
 }

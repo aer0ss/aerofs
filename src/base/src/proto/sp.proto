@@ -260,26 +260,17 @@ service SPService {
     rpc SetUserPreferences(SetUserPreferencesCall) returns (Void);
 
     /**
-     * Get the list of users in the system
-     * Used by the admin panel
+     * List members of the current organization
      *
      * Required Auth Level: admin
      *
      * Throws:
      *   ExNoPerm if the user does not have admin privileges
      */
-    rpc ListUsers(ListUsersCall) returns(ListUsersReply);
+    rpc ListOrganizationMembers(ListOrganizationMembersCall) returns(ListOrganizationMembersReply);
 
-    /**
-     * Get the list of users with the desired authentication level in the system
-     * Used by the admin panel
-     *
-     * Required Auth Level: admin
-     *
-     * Throws:
-     *   ExNoPerm if the user does not have admin privileges
-     */
-    rpc ListUsersAuth(ListUsersAuthCall) returns(ListUsersReply);
+    // WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE remove it
+    rpc noop7(Void) returns(Void);
 
     /**
      * Sends an email to a user with instructions to reset his password. The user
@@ -831,42 +822,26 @@ message RegisterDeviceReply {
     required string cert = 1;
 }
 
-message ListUsersCall {
-    // Return only users whose name match this string. Empty string matches all users.
-    optional string search = 1;
-
-    // Maximum number of users returned on one page.
-    // The SP server should enforce a reasonable upper bound for this parameter (like 1000).
-    required uint32 max_results = 2;
+message ListOrganizationMembersCall {
+    // Maximum number of entries returned on one page.
+    // The SP server should enforce a reasonable upper bound for this parameter.
+    required uint32 max_results = 1;
 
     // Offset to start retrieving the results.
-    required uint32 offset = 3;
+    required uint32 offset = 2;
 }
 
-message ListUsersReply {
-    // A subset of the users. There will be at most 'max_results' users.
-    repeated PBUser users = 1;
+message ListOrganizationMembersReply {
+    message PBUserAndLevel {
+        required PBUser user = 1;
+        required PBAuthorizationLevel level = 2;
+    }
+
+    // There will be at most 'max_results' entries
+    repeated PBUserAndLevel user_and_level = 1;
 
     // Total number of users in the database.
     required uint32 total_count = 2;
-
-    // Total number of users in the database that match the 'search' parameter.
-    required uint32 filtered_count = 3;
-}
-
-message ListUsersAuthCall {
-    // TODO (WW) remove search, auth_level, max_result, and offset
-    // Return only admins whose name match this string. Empty string matches all admins.
-    optional string search = 1;
-
-    // Authentication level of the users that we want to fetch.
-    required PBAuthorizationLevel auth_level = 2;
-
-    // Maximum number of admins returned on one page.
-    required uint32 max_results = 3;
-
-    // Offet to start retrieving the results.
-    required uint32 offset = 4;
 }
 
 message GetAuthorizationLevelReply {

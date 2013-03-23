@@ -25,7 +25,6 @@ import javax.annotation.Nullable;
 import javax.inject.Inject;
 import java.sql.SQLException;
 import java.util.Collection;
-import java.util.List;
 
 public class Organization
 {
@@ -144,55 +143,6 @@ public class Organization
         return "org #" + _id;
     }
 
-    public class UsersAndQueryCount
-    {
-        private final ImmutableList<User> _users;
-        private final int _count;
-
-        public UsersAndQueryCount(Collection<UserID> userIDs, int count)
-        {
-            Builder<User> builder = ImmutableList.builder();
-            for (UserID userID : userIDs) builder.add(_f._factUser.create(userID));
-            _users = builder.build();
-            _count = count;
-        }
-
-        public ImmutableList<User> users()
-        {
-            return _users;
-        }
-
-        public int count()
-        {
-            return _count;
-        }
-    }
-
-    /**
-     * @param search Null or empty string when we want to find all the users.
-     */
-    public UsersAndQueryCount listUsersAuth(@Nullable String search,
-            AuthorizationLevel authLevel, int maxResults, int offset)
-            throws SQLException, ExBadArgs
-    {
-        if (search == null) search = "";
-
-        assert offset >= 0;
-
-        List<UserID> userIDs;
-        int count;
-        if (search.isEmpty()) {
-            userIDs = _f._odb.listUsersWithAuthorization(_id, offset, maxResults, authLevel);
-            count = _f._odb.listUsersWithAuthorizationCount(authLevel, _id);
-        } else {
-            assert !search.isEmpty();
-            userIDs = _f._odb.searchUsersWithAuthorization(_id, offset, maxResults, authLevel, search);
-            count = _f._odb.searchUsersWithAuthorizationCount(authLevel, _id, search);
-        }
-
-        return new UsersAndQueryCount(userIDs, count);
-    }
-
     public User getTeamServerUser()
     {
         return _f._factUser.create(id().toTeamServerUserID());
@@ -203,33 +153,26 @@ public class Organization
         return _f._odb.countUsers(_id);
     }
 
-    public int countUsers(AuthorizationLevel authLevel)
+    public int countUsersAtLevel(AuthorizationLevel authLevel)
             throws SQLException
     {
-        return _f._odb.listUsersWithAuthorizationCount(authLevel, _id);
+        return _f._odb.countUsersAtLevel(authLevel, _id);
     }
 
-    public UsersAndQueryCount listUsers(@Nullable String search, int maxResults, int offset)
+    public ImmutableList<User> listUsers(int maxResults, int offset)
             throws SQLException, ExBadArgs
     {
-        if (search == null) search = "";
-
-        List<UserID> userIDs;
-        int count;
-        if (search.isEmpty()) {
-            userIDs = _f._odb.listUsers(_id, offset, maxResults);
-            count = countUsers();
-        } else {
-            userIDs = _f._odb.searchUsers(_id, offset, maxResults, search);
-            count = _f._odb.searchUsersCount(_id, search);
+        Builder<User> builder = ImmutableList.builder();
+        for (UserID userID : _f._odb.listUsers(_id, offset, maxResults)) {
+            builder.add(_f._factUser.create(userID));
         }
-        return new UsersAndQueryCount(userIDs, count);
+        return builder.build();
     }
 
     public void throwIfNoAdmin()
             throws SQLException, ExNoAdmin
     {
-        if (countUsers(AuthorizationLevel.ADMIN) == 0) {
+        if (countUsersAtLevel(AuthorizationLevel.ADMIN) == 0) {
             // There must be at least one admin for an non-empty organization
             throw new ExNoAdmin(this.toString());
         }

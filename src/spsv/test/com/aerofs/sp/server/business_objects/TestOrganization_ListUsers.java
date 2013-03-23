@@ -8,7 +8,6 @@ import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.lib.FullName;
 import com.aerofs.base.id.UserID;
-import com.aerofs.sp.server.lib.organization.Organization.UsersAndQueryCount;
 import com.aerofs.sp.server.lib.id.OrganizationID;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
@@ -17,6 +16,8 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.sql.SQLException;
+import java.util.Collection;
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -67,10 +68,6 @@ public class TestOrganization_ListUsers extends AbstractBusinessObjectTest
         }
     }
 
-    // ================================
-    // = listUser block               =
-    // ================================
-
     @Test
     public void shouldNotListTeamServerUsers()
             throws SQLException, ExAlreadyExist, ExBadArgs
@@ -78,7 +75,7 @@ public class TestOrganization_ListUsers extends AbstractBusinessObjectTest
         udb.insertUser(orgId.toTeamServerUserID(), new FullName("", ""), "".getBytes(),
                 orgId, AuthorizationLevel.USER);
 
-        for (User u : org.listUsers(null, TOTAL_USERS, 0).users()) {
+        for (User u : org.listUsers(TOTAL_USERS, 0)) {
             assertFalse(u.id().isTeamServerID());
         }
     }
@@ -87,10 +84,8 @@ public class TestOrganization_ListUsers extends AbstractBusinessObjectTest
     public void shouldListAllUsersForListUsers()
             throws Exception
     {
-        // search term null means search for all
-        UsersAndQueryCount pair = org.listUsers(null, TOTAL_USERS, 0);
-        assertEquals(TOTAL_USERS, pair.users().size());
-        assertEquals(TOTAL_USERS, pair.count());
+        Collection<User> users = org.listUsers(TOTAL_USERS, 0);
+        assertEquals(TOTAL_USERS, users.size());
     }
 
     @Test
@@ -99,14 +94,14 @@ public class TestOrganization_ListUsers extends AbstractBusinessObjectTest
     {
         final int offset = 4;
         final int maxResults = 6;
-        UsersAndQueryCount subsetPair = org.listUsers(null, maxResults, offset);
-        UsersAndQueryCount allPair = org.listUsers(null, TOTAL_USERS, 0);
-        assertEquals(maxResults, subsetPair.users().size());
-        assertEquals(TOTAL_USERS, allPair.users().size());
+        List<User> subsetUsers = org.listUsers(maxResults, offset);
+        List<User> allUsers = org.listUsers(TOTAL_USERS, 0);
+        assertEquals(maxResults, subsetUsers.size());
+        assertEquals(TOTAL_USERS, allUsers.size());
 
         for (int index = 0; index < maxResults; index++) {
-            User subsetUser = subsetPair.users().get(index);
-            User allUser = allPair.users().get(index + offset);
+            User subsetUser = subsetUsers.get(index);
+            User allUser = allUsers.get(index + offset);
             assertEquals(allUser, subsetUser);
         }
     }
@@ -115,80 +110,6 @@ public class TestOrganization_ListUsers extends AbstractBusinessObjectTest
     public void shouldFindNoUsersWhenOrgIdIsNotInDB()
             throws Exception
     {
-        UsersAndQueryCount pair = invalidOrg.listUsers(null, 10, 0);
-        assertTrue(pair.users().isEmpty());
-    }
-
-    // ================================
-    // = searchUsers block            =
-    // ================================
-
-    @Test
-    public void shouldListSubSetOfUsersThatMatchSearchKey()
-            throws Exception
-    {
-        UsersAndQueryCount pair = org.listUsers("user", TOTAL_USERS, 0);
-        assertEquals(NUMBER_OF_USERS, pair.users().size());
-        for (User user : pair.users()) {
-            assertTrue(user.id().getString().contains("user"));
-            assertFalse(user.id().getString().contains("admin"));
-        }
-
-        assertEquals(NUMBER_OF_USERS, pair.count());
-    }
-
-    // ====================================
-    // = listUsersWithAuthorization block =
-    // ====================================
-
-    @Test
-    public void shouldListSubSetOfAllUsersWithUserLevelAuth()
-            throws Exception
-    {
-        // search term is null if we want to find all the users.
-        UsersAndQueryCount pair = org.listUsersAuth(null, AuthorizationLevel.USER,
-                TOTAL_USERS, 0);
-        assertEquals(NUMBER_OF_USERS, pair.users().size());
-        for (User user : pair.users()) {
-            assertTrue(user.id().getString().contains("user"));
-            assertFalse(user.id().getString().contains("admin"));
-        }
-        assertEquals(NUMBER_OF_USERS, pair.count());
-    }
-
-    // ======================================
-    // = searchUsersWithAuthorization block =
-    // ======================================
-
-    @Test
-    public void shouldListUser1ForSearchUsersWithAuthorization()
-            throws Exception
-    {
-        UsersAndQueryCount pair = org.listUsersAuth("user1@", AuthorizationLevel.USER,
-                TOTAL_USERS, 0);
-
-        assertEquals(1, pair.users().size());
-        assertEquals(UserID.fromInternal("user1@test.com"), pair.users().get(0).id());
-        assertEquals(1, pair.count());
-    }
-
-    @Test
-    public void shouldFindUsersWithPercentageSignForSearchUsersWithAuthorization()
-            throws Exception
-    {
-        UsersAndQueryCount pair = org.listUsersAuth("user%", AuthorizationLevel.USER,
-                TOTAL_USERS, 0);
-
-        assertEquals(NUMBER_OF_USERS, pair.users().size());
-    }
-
-    @Test
-    public void shouldNotFindUserWhenSearchCouldMatchButAuthLevelDiffers()
-            throws Exception
-    {
-        UsersAndQueryCount pair = org.listUsersAuth("user1",
-                AuthorizationLevel.ADMIN, TOTAL_USERS, 0);
-
-        assertTrue(pair.users().isEmpty());
+        assertTrue(invalidOrg.listUsers(10, 0).isEmpty());
     }
 }

@@ -216,104 +216,6 @@ public class OrganizationDatabase extends AbstractSQLDatabase
 
     /**
      * @param orgId ID of the organization.
-     * @param offset Starting index of the results list from the database.
-     * @param maxResults Maximum number of results returned from the database.
-     * @param search Search term that we want to match in user id.
-     * @return List of users that contains the {@code search} term as part of their user IDs.
-     * The users are under the organization {@code orgId}, and the list is between
-     * [offset, offset + maxResults].
-     */
-    public List<UserID> searchUsers(OrganizationID orgId, int offset, int maxResults, String search)
-            throws SQLException
-    {
-        PreparedStatement psSLU = prepareStatement("select " + C_USER_ID + " from " + T_USER +
-                " where " + C_USER_ORG_ID + "=? and " + C_USER_ID + " like ? " +
-                andNotTeamServer() + " order by " + C_USER_ID + " limit ? offset ?");
-
-        psSLU.setInt(1, orgId.getInt());
-        psSLU.setString(2, "%" + search + "%");
-        psSLU.setInt(3, maxResults);
-        psSLU.setInt(4, offset);
-
-        ResultSet rs = psSLU.executeQuery();
-        try {
-            return usersResultSet2List(rs);
-        } finally {
-            rs.close();
-        }
-    }
-
-    /**
-     * @param orgId ID of the organization.
-     * @param offset Starting index of the results list from the database.
-     * @param maxResults Maximum number of results returned from the database.
-     * @param authLevel Authorization level of the users.
-     * @return List of users with the given authorization level {@code authLevel} under
-     * the organization {@code orgId} between [offset, offset + maxResults].
-     */
-    public List<UserID> listUsersWithAuthorization(OrganizationID orgId, int offset, int maxResults,
-            AuthorizationLevel authLevel)
-            throws SQLException
-    {
-        PreparedStatement psLUA = prepareStatement(
-                "select " + C_USER_ID + " from " + T_USER +
-                        " where " + C_USER_ORG_ID + "=? and " +
-                        C_USER_AUTHORIZATION_LEVEL + "=? " + andNotTeamServer() +
-                        "order by " + C_USER_ID + " limit ? offset ?"
-        );
-
-        psLUA.setInt(1, orgId.getInt());
-        psLUA.setInt(2, authLevel.ordinal());
-        psLUA.setInt(3, maxResults);
-        psLUA.setInt(4, offset);
-
-        ResultSet rs = psLUA.executeQuery();
-        try {
-            return usersResultSet2List(rs);
-        } finally {
-            rs.close();
-        }
-    }
-
-    /**
-     * @param orgId ID of the organization.
-     * @param offset Starting index of the results list from the database.
-     * @param maxResults Maximum number of results returned from the database.
-     * @param authLevel Authorization level of the users.
-     * @param search String representing the search term that we want to match in user id.
-     * @return List of users that contains the {@code search} term as part of their user IDs and
-     * have the authorization level {@code authLevel}.
-     * The users are under the organization {@code orgId}, and the list is between
-     * [offset, offset + maxResults].
-     */
-    public List<UserID> searchUsersWithAuthorization(OrganizationID orgId, int offset,
-            int maxResults, AuthorizationLevel authLevel, String search)
-            throws SQLException
-    {
-        PreparedStatement psSUA = prepareStatement(
-                "select " + C_USER_ID + " from " + T_USER +
-                        " where " + C_USER_ORG_ID + "=? and " +
-                        C_USER_ID + " like ? and " +
-                        C_USER_AUTHORIZATION_LEVEL + "=? " + andNotTeamServer() +
-                        "order by " + C_USER_ID + " limit ? offset ?"
-        );
-
-        psSUA.setInt(1, orgId.getInt());
-        psSUA.setString(2, "%" + search + "%");
-        psSUA.setInt(3, authLevel.ordinal());
-        psSUA.setInt(4, maxResults);
-        psSUA.setInt(5, offset);
-
-        ResultSet rs = psSUA.executeQuery();
-        try {
-            return usersResultSet2List(rs);
-        } finally {
-            rs.close();
-        }
-    }
-
-    /**
-     * @param orgId ID of the organization.
      * @return Number of users in the organization {@code orgId}.
      */
     public int countUsers(OrganizationID orgId)
@@ -332,73 +234,21 @@ public class OrganizationDatabase extends AbstractSQLDatabase
     }
 
     /**
-     * @param orgId ID of the organization.
-     * @param search Search term that we want to match in user id.
-     * @return Number of users in the organization {@code orgId}
-     * with user ids containing the search term {@code search}.
-     */
-    public int searchUsersCount(OrganizationID orgId, String search)
-            throws SQLException
-    {
-        PreparedStatement psSCU = prepareStatement("select count(*) from " +
-                T_USER + " where " + C_USER_ORG_ID + "=? and " + C_USER_ID + " like ?" +
-                andNotTeamServer());
-
-        psSCU.setInt(1, orgId.getInt());
-        psSCU.setString(2, "%" + search + "%");
-
-        ResultSet rs = psSCU.executeQuery();
-        try {
-            return count(rs);
-        } finally {
-            rs.close();
-        }
-    }
-
-    /**
      * @param authlevel Authorization level of the users.
      * @param orgId ID of the organization.
      * @return Number of users in the organization with the given authorization level.
      */
-    public int listUsersWithAuthorizationCount(AuthorizationLevel authlevel, OrganizationID orgId)
+    public int countUsersAtLevel(AuthorizationLevel authlevel, OrganizationID orgId)
             throws SQLException
     {
-        PreparedStatement psLUAC = prepareStatement("select count(*) from " +
+        PreparedStatement ps = prepareStatement("select count(*) from " +
                 T_USER + " where " + C_USER_ORG_ID + "=? and " +
                 C_USER_AUTHORIZATION_LEVEL + "=?" + andNotTeamServer());
 
-        psLUAC.setInt(1, orgId.getInt());
-        psLUAC.setInt(2, authlevel.ordinal());
+        ps.setInt(1, orgId.getInt());
+        ps.setInt(2, authlevel.ordinal());
 
-        ResultSet rs = psLUAC.executeQuery();
-        try {
-            return count(rs);
-        } finally {
-            rs.close();
-        }
-    }
-
-    /**
-     * @param authLevel Authorization level of the users.
-     * @param orgId ID of the organization.
-     * @param search Search term that we want to match in user id.
-     * @return Number of users in the organization {@code orgId} with user ids
-     * containing the search term {@code search} and authorization level {@code authLevel}.
-     */
-    public int searchUsersWithAuthorizationCount(AuthorizationLevel authLevel,
-            OrganizationID orgId, String search)
-            throws SQLException
-    {
-        PreparedStatement psSUAC = prepareStatement(
-                "select count(*) from " + T_USER + " where " + C_USER_ORG_ID + "=? and " +
-                        C_USER_ID + " like ? and " +
-                        C_USER_AUTHORIZATION_LEVEL + "=?" + andNotTeamServer());
-
-        psSUAC.setInt(1, orgId.getInt());
-        psSUAC.setString(2, "%" + search + "%");
-        psSUAC.setInt(3, authLevel.ordinal());
-
-        ResultSet rs = psSUAC.executeQuery();
+        ResultSet rs = ps.executeQuery();
         try {
             return count(rs);
         } finally {
