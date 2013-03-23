@@ -224,23 +224,49 @@ public class SPServlet extends AeroServlet
         _postDelegate.sendReply(resp, bytes);
     }
 
-    // parameter format: aerofs=love&from=<email>&from=<email>&to=<email>
+    private void initCertificateAuthenticator(HttpServletRequest req)
+            throws CertificateException, IOException
+    {
+        String verify = req.getHeader("Verify");
+        String serial = req.getHeader("Serial");
+        String dname = req.getHeader("DName");
+
+        if (verify != null && serial != null && dname != null) {
+            Properties prop = new Properties();
+            prop.load(new StringReader(dname.replaceAll("/", "\n")));
+            String cname = (String) prop.get("CN");
+
+            // The "Verify" header corresponds to the nginx variable $ssl_client_verify which
+            // is set to "SUCCESS" when nginx mutual authentication is successful.
+            _certificateAuthenticator.set(verify.equalsIgnoreCase("SUCCESS"),
+                    Long.parseLong(serial, 16), cname);
+        }
+    }
+
+    // parameter format: aerofs=love&inviter=<email>&invitee=<email>
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse rsp)
             throws IOException
     {
         try {
-            _sqlTrans.begin();
-            if ("love".equals(req.getParameter("aerofs"))) {
-                handleSignUpInvite(req, rsp);
+            if ("lovemore".equals(req.getParameter("aerofs"))) {
+                _service.migrateDefaultOrgUsers();
+            } else {
+                _sqlTrans.begin();
+                if ("love".equals(req.getParameter("aerofs"))) {
+                    handleSignUpInvite(req, rsp);
+                }
+                _sqlTrans.commit();
             }
-            _sqlTrans.commit();
         } catch (SQLException e) {
             _sqlTrans.handleException();
             throw new IOException(e);
         } catch (IOException e) {
             _sqlTrans.handleException();
             throw e;
+        } catch (Exception e) {
+            _sqlTrans.handleException();
+            throw new IOException(e);
         }
     }
 

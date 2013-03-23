@@ -32,6 +32,7 @@ import org.slf4j.Logger;
 
 import javax.annotation.Nonnull;
 import javax.inject.Inject;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Collection;
@@ -85,6 +86,12 @@ public class User
             tsUser.saveImpl(new byte[0], new FullName("Team", "Server"), org,
                     AuthorizationLevel.USER);
             return tsUser;
+        }
+
+        public ResultSet getDefaultOrgUsers()
+                throws SQLException
+        {
+            return _udb.getDefaultOrgUsers();
         }
     }
 
@@ -422,7 +429,9 @@ public class User
 
         Set<UserID> users = Sets.newHashSet();
 
-        for (SharedFolder sf : sfs) users.addAll(sf.deleteTeamServerACL(this));
+        if (orgOld.id().getInt() != 0) {
+            for (SharedFolder sf : sfs) users.addAll(sf.deleteTeamServerACL(this));
+        }
 
         _f._udb.setOrganizationID(_id, org.id());
 
@@ -432,7 +441,7 @@ public class User
 
         if (orgOld.countUsers() == 0) {
             // TODO (WW) delete orgOld
-        } else if (levelOld.covers(AuthorizationLevel.ADMIN)) {
+        } else if (orgOld.id().getInt() != 0 && levelOld.covers(AuthorizationLevel.ADMIN)) {
             // There must be one admin left for a non-empty team
             orgOld.throwIfNoAdmin();
         }
