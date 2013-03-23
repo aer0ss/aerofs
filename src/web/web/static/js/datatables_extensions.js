@@ -2,7 +2,7 @@
  * Datatables helper functions
  */
 
-function refreshPage() {
+function forceLogout() {
     var sessionCookieName = "session"; // Delete session reference to send user back to login page
     document.cookie = sessionCookieName + '=; expires=Thu, 01 Jan 1970 00:00:01 GMT; path=/';
     document.location.reload(true);
@@ -18,9 +18,11 @@ function dataTableAJAXCallback(sUrl, aoData, fnCallback, oSettings) {
         "url": sUrl,
         "data": aoData,
         "success": function(json) {
+            // TODO remove this block
             if (json.error) {
-                if (json.error.search("no perm") >= 0) { // permission issue, refresh the page for login form
-                    refreshPage();
+                // permission issue, force logout
+                if (json.error.search("no perm") >= 0) {
+                    forceLogout();
                 } else {
                     showErrorMessage(json.error);
                 }
@@ -31,21 +33,7 @@ function dataTableAJAXCallback(sUrl, aoData, fnCallback, oSettings) {
         "dataType": "json",
         "cache": false,
         "type": oSettings.sServerMethod,
-        "error": function(xhr, error, thrown) {
-            // Server returned a malformed response, most likely due to session expiration
-            if (error == "parsererror") {
-                if (xhr.responseText.search("<!DOCTYPE html>") == 0) { // login page was returned
-                    refreshPage(); // display login page to user
-                } else { // server returned malformed JSON
-                    showErrorMessage("Server returned a malformed response, please refresh this page and " +
-                        "try again. If this issue persists, please contact support for more assistance.");
-                    console.log(thrown);
-                    console.log(xhr);
-                }
-            } else {
-                refreshPage();
-            }
-        }
+        "error": showErrorMessageFromResponse
     });
 }
 

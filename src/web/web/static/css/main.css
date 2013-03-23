@@ -77,11 +77,12 @@ div.input_container.submit {
 .full_name {
   font-weight: bold;
 }
-.table th {
-  font-weight: inherit;
-}
 .datatable_body {
   margin-bottom: 15px;
+}
+.label {
+  font-size: 70%;
+  margin-left: 7px;
 }
 .dataTables_info {
   display: inline;

@@ -11,6 +11,7 @@ import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
+import com.aerofs.sp.server.lib.user.User;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -93,6 +94,30 @@ public class TestSP_ListOrganizationShareFolders extends AbstractSPFolderTest
                 }
             }
             assertTrue(hasSharee);
+        }
+    }
+
+    @Test
+    public void shouldSetOwnedByTeamFlagIfAndOnlyIfOwnedByTeam()
+            throws Exception
+    {
+        SID sid1 = SID.generate();
+        SID sid2 = SID.generate();
+        shareAndJoinFolder(USER_1, sid1, USER_2, Role.EDITOR);
+        shareAndJoinFolder(USER_2, sid2, USER_3, Role.EDITOR);
+
+        // add an admin to USER_2's team
+        sqlTrans.begin();
+        User admin = saveUser();
+        admin.setOrganization(USER_2.getOrganization(), AuthorizationLevel.ADMIN);
+        sqlTrans.commit();
+
+        setSessionUser(admin);
+        for (PBSharedFolder sf : service.listOrganizationSharedFolders(100, 0)
+                .get().getSharedFolderList()) {
+            SID sid = new SID(sf.getStoreId());
+            if (sid1.equals(sid)) assertFalse(sf.getOwnedByTeam());
+            if (sid2.equals(sid)) assertTrue(sf.getOwnedByTeam());
         }
     }
 

@@ -176,8 +176,8 @@ public class SharedFolder
 
 
     /**
-     * Add the user's team server ID to the ACL. No-op if the user belongs to the default org or
-     * there are other users on the shared folder belonging to the same team server.
+     * Add the user's team server ID to the ACL. No-op if there are other users on the shared folder
+     * belonging to the same team server.
      */
     public Set<UserID> addTeamServerACL(User user)
             throws ExNotFound, ExAlreadyExist, SQLException
@@ -227,8 +227,8 @@ public class SharedFolder
     }
 
     /**
-     * Remove the user's team server ID to the ACL. No-op if the user belongs to the default org or
-     * there are other users on the shared folder belonging to the same team server.
+     * Remove the user's team server ID to the ACL. No-op if there are other users on the shared
+     * folder belonging to the same team server.
      */
     public Set<UserID> deleteTeamServerACL(User user)
             throws SQLException, ExNotFound

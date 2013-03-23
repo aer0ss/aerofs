@@ -32,7 +32,7 @@ def forbidden_view(request):
         request.response_status = 403
         return {}
     else:
-        return _login_required(request)
+        return _force_login(request)
 
 @view_config(
     context=ExceptionReply,
@@ -46,7 +46,7 @@ def protobuf_exception_view(context, request):
     # TODO (WW) use a different type, i.e. NOT_AUTHENTICATED, since SP throws
     # NO_PERM for other reasons as well.
     if context.get_type() == PBException.NO_PERM:
-        return _login_required(request)
+        return _force_login(request)
     else:
         request.response_status = 500
         return {}
@@ -62,7 +62,7 @@ def exception_view(context, request):
     request.response_status = 500
     return {}
 
-def _login_required(request):
+def _force_login(request):
 
     log.warn("request to login (xhr={})".format(request.is_xhr))
 
@@ -71,6 +71,9 @@ def _login_required(request):
     #
     # TODO (WW) Ideally we should return the login page with 403 as the code,
     # regardless whether it's an XHR. But how?
+    #
+    # TODO (WW) the browser should cache forbidden errors and automatically
+    # redirect to login page. Also see datatables.js:forceLogout().
     if request.is_xhr: return HTTPForbidden()
 
     # So that we don't get annoying next=%2F in the url when we click on the

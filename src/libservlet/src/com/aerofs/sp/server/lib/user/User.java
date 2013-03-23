@@ -181,7 +181,7 @@ public class User
     {
         _f._udb.setLevel(_id, auth);
 
-        if (auth != AuthorizationLevel.ADMIN) getOrganization().throwIfNoAdmin();
+        if (!auth.covers(AuthorizationLevel.ADMIN)) getOrganization().throwIfNoAdmin();
     }
 
     // TODO (WW) throw ExNotFound if the user doesn't exist?
@@ -416,6 +416,7 @@ public class User
             throws SQLException, ExNotFound, ExAlreadyExist, ExNoAdmin
     {
         Organization orgOld = getOrganization();
+        AuthorizationLevel levelOld = getLevel();
 
         Collection<SharedFolder> sfs = getSharedFolders();
 
@@ -431,7 +432,8 @@ public class User
 
         if (orgOld.countUsers() == 0) {
             // TODO (WW) delete orgOld
-        } else {
+        } else if (levelOld.covers(AuthorizationLevel.ADMIN)) {
+            // There must be one admin left for a non-empty team
             orgOld.throwIfNoAdmin();
         }
 

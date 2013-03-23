@@ -26,6 +26,7 @@ _OPEN_MODAL_CLASS = 'open-modal'
 # HTML data attributes used for links that opens the shared folder Options modal
 _LINK_DATA_SID = 's'
 _LINK_DATA_NAME = 'n'
+_LINK_DATA_PRIVILEGED = 'p'
 _LINK_DATA_USER_AND_ROLE_LIST = 'r'
 
 # JSON keys
@@ -43,9 +44,8 @@ def my_shared_folders(request):
 
     session_user = get_session_user(request)
 
-    return _shared_folders(False, False, session_user,
-            _("Shared Folders"),
-            _json_get_user_shared_folders_url(request, session_user))
+    return _shared_folders(False, session_user, _("Shared Folders"),
+            request.route_url('json.get_my_shared_folders'))
 
 @view_config(
     route_name = 'user_shared_folders',
@@ -57,61 +57,9 @@ def user_shared_folders(request):
     user = request.params[URL_PARAM_USER]
     full_name = request.params[URL_PARAM_FULL_NAME]
 
-    return _shared_folders(False, True, get_session_user(request),
+    return _shared_folders(False, get_session_user(request),
         _("${name}'s Shared Folders", {'name': full_name}),
         _json_get_user_shared_folders_url(request, user))
-
-@view_config(
-    route_name = 'organization_shared_folders',
-    renderer = 'shared_folders.mako',
-    permission = 'admin'
-)
-def organization_shared_folders(request):
-    _ = request.translate
-
-    return _shared_folders(True, True, get_session_user(request),
-            _("Team's Shared Folders"),
-            request.route_url('json.get_organization_shared_folders'))
-
-def _shared_folders(datatables_paginate, admin_privilege, session_user,
-                    page_title, datatables_request_route_url):
-    return {
-        # constants
-        'open_modal_class': _OPEN_MODAL_CLASS,
-        'link_data_sid': _LINK_DATA_SID,
-        'link_data_name': _LINK_DATA_NAME,
-        'link_data_user_and_role_list': _LINK_DATA_USER_AND_ROLE_LIST,
-        'user_and_role_first_name_key': _USER_AND_ROLE_FIRST_NAME_KEY,
-        'user_and_role_last_name_key': _USER_AND_ROLE_LAST_NAME_KEY,
-        'user_and_role_is_owner_key': _USER_AND_ROLE_IS_OWNER_KEY,
-
-        # variables
-        'session_user': session_user,
-        'admin_privilege': admin_privilege,
-        'datatables_paginate': datatables_paginate,
-        'page_title': page_title,
-        'datatables_request_route_url': datatables_request_route_url
-    }
-
-@view_config(
-    route_name = 'json.get_organization_shared_folders',
-    renderer = 'json',
-    permission = 'admin'
-)
-def json_get_organization_shared_folders(request):
-    echo = request.params['sEcho']
-    count = int(request.params['iDisplayLength'])
-    offset = int(request.params['iDisplayStart'])
-
-    # It's very weird that if we use get_rpc_stub instead of
-    # helper_functions.get_rpc_stub here, the unit test would fail.
-    sp = util.get_rpc_stub(request)
-    try:
-        reply = sp.list_organization_shared_folders(count, offset)
-        return _sp_reply2datatables(reply.shared_folder,
-            reply.total_count, echo, get_session_user(request))
-    except Exception as e:
-        return {'error': parse_rpc_error_exception(request, e)}
 
 def _json_get_user_shared_folders_url(request, user):
     return '{}?{}={}'.format(
@@ -119,6 +67,68 @@ def _json_get_user_shared_folders_url(request, user):
         URL_PARAM_USER,
         urllib.quote_plus(user)
     )
+
+@view_config(
+    route_name = 'team_shared_folders',
+    renderer = 'shared_folders.mako',
+    permission = 'admin'
+)
+def team_shared_folders(request):
+    _ = request.translate
+
+    return _shared_folders(True, get_session_user(request),
+            _("Team's Shared Folders"),
+            request.route_url('json.get_team_shared_folders'))
+
+def _shared_folders(datatables_paginate, session_user,
+                    page_title, datatables_request_route_url):
+    return {
+        # constants
+        'open_modal_class': _OPEN_MODAL_CLASS,
+        'link_data_sid': _LINK_DATA_SID,
+        'link_data_name': _LINK_DATA_NAME,
+        'link_data_privileged': _LINK_DATA_PRIVILEGED,
+        'link_data_user_and_role_list': _LINK_DATA_USER_AND_ROLE_LIST,
+        'user_and_role_first_name_key': _USER_AND_ROLE_FIRST_NAME_KEY,
+        'user_and_role_last_name_key': _USER_AND_ROLE_LAST_NAME_KEY,
+        'user_and_role_is_owner_key': _USER_AND_ROLE_IS_OWNER_KEY,
+
+        # variables
+        'session_user': session_user,
+        'datatables_paginate': datatables_paginate,
+        'page_title': page_title,
+        'datatables_request_route_url': datatables_request_route_url
+    }
+
+@view_config(
+    route_name = 'json.get_my_shared_folders',
+    renderer = 'json',
+    permission = 'user'
+)
+def json_get_my_shared_folders(request):
+    echo = request.params['sEcho']
+
+    # It's very weird that if we use get_rpc_stub instead of
+    # helper_functions.get_rpc_stub here, the unit test would fail.
+    sp = util.get_rpc_stub(request)
+    session_user = get_session_user(request)
+    reply = sp.list_user_shared_folders(session_user)
+    return _sp_reply2datatables(reply.shared_folder,
+        _session_user_privileger, _session_user_labeler,
+        len(reply.shared_folder), echo, session_user)
+
+def _session_user_privileger(folder, session_user):
+    for user_and_role in folder.user_and_role:
+        if user_and_role.role == common.OWNER and\
+           user_and_role.user.user_email == session_user:
+            # The label text and style must be consistent with the label
+            # generated in shared_folders.mako.
+            return True
+    return False
+
+def _session_user_labeler(privileged):
+    # label text and style must match the labels generated in shared_folder.mako.
+    return '<span class="label tooltip_owned_by_me">owner</span>' if privileged else ''
 
 @view_config(
     route_name = 'json.get_user_shared_folders',
@@ -132,20 +142,55 @@ def json_get_user_shared_folders(request):
     # It's very weird that if we use get_rpc_stub instead of
     # helper_functions.get_rpc_stub here, the unit test would fail.
     sp = util.get_rpc_stub(request)
-    try:
-        reply = sp.list_user_shared_folders(specified_user)
-        return _sp_reply2datatables(reply.shared_folder,
-            len(reply.shared_folder), echo, get_session_user(request))
-    except Exception as e:
-        return {'error': parse_rpc_error_exception(request, e)}
+    reply = sp.list_user_shared_folders(specified_user)
+    return _sp_reply2datatables(reply.shared_folder,
+        _session_team_privileger, _session_team_labeler,
+        len(reply.shared_folder), echo, get_session_user(request))
 
-def _sp_reply2datatables(shared_folders, total_count, echo, session_user):
+@view_config(
+    route_name = 'json.get_team_shared_folders',
+    renderer = 'json',
+    permission = 'admin'
+)
+def json_get_team_shared_folders(request):
+    echo = request.params['sEcho']
+    count = int(request.params['iDisplayLength'])
+    offset = int(request.params['iDisplayStart'])
+
+    # It's very weird that if we use get_rpc_stub instead of
+    # helper_functions.get_rpc_stub here, the unit test would fail.
+    sp = util.get_rpc_stub(request)
+    reply = sp.list_organization_shared_folders(count, offset)
+    return _sp_reply2datatables(reply.shared_folder,
+        _session_team_privileger, _session_team_labeler,
+        reply.total_count, echo, get_session_user(request))
+
+def _session_team_privileger(folder, session_user):
+    return folder.owned_by_team
+
+def _session_team_labeler(privileged):
+    if not privileged: return ''
+    # label text and style must match the labels generated in shared_folder.mako.
+    return '<span class="label tooltip_owned_by_team">owned by team</span>' \
+            if privileged else ''
+
+def _sp_reply2datatables(folders, privileger, labeler, total_count, echo, session_user):
+    """
+    @param privileger a callback function to determine if the session user has
+        privileges to modify ACL of the folder
+    @param labeler a callback function to render appropriate labels for the
+        folder given the privilage
+    """
     data = []
-    for folder in shared_folders:
+    for folder in folders:
+        privileged = privileger(folder, session_user)
         data.append({
-            'name': _render_shared_folder_options_link(folder, session_user),
+            'name': escape(folder.name),
+            'label': labeler(privileged),
             'users': _render_shared_folder_users(folder.user_and_role,
-                session_user)
+                session_user),
+            'options': _render_shared_folder_options_link(folder, session_user,
+                privileged),
         })
 
     return {
@@ -195,12 +240,13 @@ def _render_shared_folder_users(user_and_role_list, session_user):
 
     return escape(str)
 
-def _render_shared_folder_options_link(folder, session_user):
+def _render_shared_folder_options_link(folder, session_user, privileged):
+    """
+    @param privileged whether the session user has the privilege to modify ACL
+    """
     id = _encode_store_id(folder.store_id)
-    folder_name = folder.name
     urs = to_json(folder.user_and_role, session_user)
-
-    escaped_folder_name = escape(folder_name)
+    escaped_folder_name = escape(folder.name)
 
     # The data tags must be consistent with the ones in loadModalData() in
     # shared_folder.mako.
@@ -208,13 +254,13 @@ def _render_shared_folder_options_link(folder, session_user):
     # quotes.
     #
     # N.B. need to sub out quotes for proper rendering of the dialog.
-    return u'<a href="#" class="{}" data-{}="{}" data-{}="{} "' \
-           u'data-{}="{}">{}</a>'.format(
+    return u'<a href="#" class="{}" data-{}="{}" data-{}="{}"' \
+           u'data-{}="{}" data-{}="{}">Options</a>'.format(
             _OPEN_MODAL_CLASS,
             _LINK_DATA_SID, escape(id),
+            _LINK_DATA_PRIVILEGED, 1 if privileged else 0,
             _LINK_DATA_NAME, escaped_folder_name,
-            _LINK_DATA_USER_AND_ROLE_LIST, escape(urs).replace('"', '&#34;'),
-            escaped_folder_name)
+            _LINK_DATA_USER_AND_ROLE_LIST, escape(urs).replace('"', '&#34;'))
 
 def to_json(user_and_role_list, session_user):
 

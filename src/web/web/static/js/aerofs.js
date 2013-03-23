@@ -57,12 +57,16 @@ function showErrorMessageFromResponse(xhr) {
     } else if (xhr.status == 403) {
         window.location.href = "/login?next=" + encodeURIComponent(document.URL);
     } else {
-        showErrorMessage("An error occurred processing your request." +
-            " Please try again later. Contact support@aerofs.com if the" +
-            " problem persists.");
-        console.log("status " + xhr.status + " " + xhr.statusText +
-            ": responseText: " + xhr.responseText);
+        showErrorMessage(getInternalErrorText());
+        console.log("status: " + xhr.status +
+            " statusText: " + xhr.statusText + " responseText: " + xhr.responseText);
     }
+}
+
+function getInternalErrorText() {
+    return "Sorry! An error occurred processing your request. Please refresh" +
+        " the page and try again. If this issue persists contact" +
+        " support@aerofs.com for further assistance."
 }
 
 function getErrorTypeNullable(xhr) {

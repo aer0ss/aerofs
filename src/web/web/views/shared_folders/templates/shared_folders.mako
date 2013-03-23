@@ -40,7 +40,7 @@
         </div>
 
         <table id="folders_table" class="table">
-            <thead><tr><th>Folder</th><th>Members</th></tr></thead>
+            <thead><tr><th>Folder</th><th></th><th>Members</th><th></th></tr></thead>
             <tbody></tbody>
         </table>
     </div>
@@ -82,11 +82,20 @@
                 },
                 "aoColumns": [
                     { "mDataProp": "name" },
-                    { "mDataProp": "users" }
+                    { "mDataProp": "label" },
+                    { "mDataProp": "users" },
+                    { "mDataProp": "options" }
                 ],
 
                 ## Callbacks
-                "fnServerData": dataTableAJAXCallback
+                "fnServerData": function(sUrl, aoData, fnCallback, oSettings) {
+                    var cb = function(json) {
+                        fnCallback(json);
+                        registerOwnedByMeTooltips();
+                        registerOwnedByTeamTooltips();
+                    }
+                    dataTableAJAXCallback(sUrl, aoData, cb, oSettings);
+                }
             });
 
             function refreshTable() {
@@ -113,6 +122,10 @@
                 return $link.data('${link_data_sid}');
             }
 
+            function modalPrivileged() {
+                return $link.data('${link_data_privileged}');
+            }
+
             function modalFolderName() {
                 return $link.data('${link_data_name}');
             }
@@ -126,41 +139,41 @@
                 $('#modal-folder-name').text(modalFolderName());
 
                 ## Clear the user-role table
-                $table = $('#modal-user-role-table');
+                var $table = $('#modal-user-role-table');
                 $table.find('tbody').find('tr').remove();
+
+                var privileged = modalPrivileged();
+
+                ## Enable or disable the invitation form depending on the privilege
+                var $inviteUserInputs = $("#invite-user-inputs");
+                if (privileged) $inviteUserInputs.removeClass("hidden");
+                else $inviteUserInputs.addClass("hidden");
 
                 ## Populate the table
                 var urs = modalUserAndRoleList();
-                var iAmOwner = '${session_user}' in urs ?
-                        urs['${session_user}'].${user_and_role_is_owner_key} :
-                        false;
-
                 for (var email in urs) {
                     var ur = urs[email];
                     var isOwner = ur.${user_and_role_is_owner_key};
-                    var fullName = ur.${user_and_role_first_name_key} + " " +
+                    var name = ur.${user_and_role_first_name_key} + " " +
                             ur.${user_and_role_last_name_key};
-                    var role = isOwner ? "Owner" : "Editor";
+                    ## label text and style must match the labels generated in
+                    ## shared_folders_view.py:_session_user_labeler
+                    var label = isOwner ? "<span class='label tooltip_owner'>owner</label>" : "";
 
                     var options;
-                    %if admin_privilege:
-                        options = renderPrivilegedUserOptions(email, fullName, isOwner);
-                    %else:
-                        if (email === '${session_user}') {
-                            ## Show no options for the session user
-                            options = '';
-                        } else if (iAmOwner) {
-                            options = renderPrivilegedUserOptions(email, fullName, isOwner);
-                        } else {
-                            options = renderUnprivilegedUserOptions(email);
-                        }
-                    %endif
+                    if (email === '${session_user}') {
+                        ## Show no options for the session user
+                        options = '';
+                    } else {
+                        options = privileged ?
+                            renderPrivilegedUserOptions(email, name, isOwner) :
+                            renderUnprivilegedUserOptions(email);
+                    }
 
                     $table.find('> tbody:last').append(
                         ## TODO (WW) use proper jQuery methods to add elements
                         '<tr class="tooltip_email" title="' + email + '">' +
-                            '<td>' + fullName + '</td>' +
-                            '<td>' + role + '</td>' +
+                            '<td>' + name + label + '</td>' +
                             '<td>' + options + '</td>' +
                         '</tr>'
                     );
@@ -176,7 +189,7 @@
             function renderPrivilegedUserOptions(email, fullName, isOwner) {
                 var common = ' href="#" data-email="' + email + '" ';
                 var toggleRole = isOwner?
-                    '<a' + common + 'class="modal-make-editor">Make Editor</a>' :
+                    '<a' + common + 'class="modal-make-editor">Remove as Owner</a>' :
                     '<a' + common + 'class="modal-make-owner">Make Owner</a>';
 
                 return renderOptionsDropDown(
@@ -184,7 +197,7 @@
                     renderSendEmailMenuItem(email) +
                     '<li class="divider"></li>' +
                     '<li><a' + common + 'data-full-name="' + fullName +
-                        '" class="modal-kickout">' + 'Kick Out</a></li>'
+                        '" class="modal-remove">Remove</a></li>'
                 );
             }
 
@@ -202,9 +215,33 @@
                 return '<li><a href="mailto:' + email + '" target="_blank">Send Email</a></li>';
             }
 
+            function regiterEmailTooltips() {
+                $('.tooltip_email').tooltip({placement: 'left'});
+            }
+
+            function registerOwnerTooltips() {
+                $('.tooltip_owner').tooltip({placement: 'top', 'title' :
+                        'An owner of a folder can add and remove other members' +
+                        ' and owners of the folder.'});
+            }
+
+            function registerOwnedByMeTooltips() {
+                $('.tooltip_owned_by_me').tooltip({placement: 'top', 'title' :
+                        'You are an owner of this folder. You can add and' +
+                        ' remove other members and owners of the folder.'});
+            }
+
+            function registerOwnedByTeamTooltips() {
+                $('.tooltip_owned_by_team').tooltip({placement: 'top', 'title' :
+                        'This folder is owned by at least one member of your' +
+                        ' team. As a team admin, you can' +
+                        ' manage this folder as if your are a folder owner.'});
+            }
+
             ## Set event handlers and activities for elements in the table
             function activateModelTableElements() {
-                $('.tooltip_email').tooltip({placement: 'left'});
+                regiterEmailTooltips();
+                registerOwnerTooltips();
 
                 $('.modal-make-editor').click(function() {
                     hideEmailTooltips();
@@ -224,9 +261,9 @@
                     });
                 });
 
-                $('.modal-kickout').click(function() {
+                $('.modal-remove').click(function() {
                     hideEmailTooltips();
-                    confirmKickout($(this).data('email'), $(this).data('full-name'));
+                    confirmRemoveUser($(this).data('email'), $(this).data('full-name'));
                 });
             }
 
@@ -271,23 +308,23 @@
                 });
             }
 
-            function confirmKickout(email, fullName) {
+            function confirmRemoveUser(email, fullName) {
 
-                $('.kickout-modal-full-name').text(fullName);
-                $('.kickout-modal-email').text(email);
+                $('.remove-modal-full-name').text(fullName);
+                $('.remove-modal-email').text(email);
 
                 $('#modal').modal('hide');
-                $('#kickout-modal').modal('show');
+                $('#remove-modal').modal('show');
 
-                var $confirm = $('#kickout-model-confirm');
+                var $confirm = $('#remove-model-confirm');
                 $confirm.off('click');
                 $confirm.click(function() {
                     ## the 'hidden' handler below brings up the main modal once
-                    ## the kickout modal is hidden
-                    $('#kickout-modal').modal('hide');
+                    ## the remove modal is hidden
+                    $('#remove-modal').modal('hide');
                     startModalSpinner();
 
-                    var errorHeader = "Couldn't kick out: ";
+                    var errorHeader = "Couldn't remove: ";
                     $.post("${request.route_path('json.delete_shared_folder_perm')}",
                         {
                             ${self.csrf.token_param()}
@@ -312,7 +349,7 @@
                 });
             }
 
-            $('#kickout-modal').on('hidden', function() {
+            $('#remove-modal').on('hidden', function() {
                 $('#modal').modal('show');
             })
 
@@ -349,56 +386,6 @@
                 ev.preventDefault();
             });
 
-            ## Return whether the call is successful
-            ## TODO (WW) refactor this method and its callers. The way it
-            ## handles success and error responses is very ad hoc. Below are
-            ## Eric's comments:
-            ##
-            ##I don't like the error handling being done in the "done" callback.
-            ##You could do something like this (untested).
-            ##
-            ##$.ajax( {
-            ##    type: 'POST',
-            ##    url: '${request.rout_path('json.add_folder_parm')}',
-            ##    data: data,
-            ##    dataType: 'json'
-            ##} )
-            ##        .then( function ( response, textStatus, jqXHR ) {
-            ##            if ( !response.success ) {
-            ##                return $.Deferred.reject( jqXHR, textStatus, response );
-            ##            }
-            ##        } )
-            ##        .done( function ( response ) {
-            ##            refreshTable();
-            ##        } )
-            ##        .fail( function ( jqXHR, textStatus, error ) {
-            ##            displayModalError( "Couldn't kick out the user: ", error );
-            ##        } );
-            ##.always( function () {
-            ##    stopModalSpinner( '' );
-            ##} );
-            ##
-            ##This code is easier to read because it does not break expectations
-            ##about the done callback. "then" is used to process the AJAX result
-            ##and make a decision about whether or not it is an error. If all is
-            ##good we just let jQuery call the next "done" callback in the chain.
-            ##If there is an error we signal the failure by returning a new
-            ##rejected "Deffered" object. When a rejected Deferred instance is
-            ##return jQuery will call the "fail" callbacks remaining in the
-            ##callback chain. If the original AJAX response is an error the
-            ##"then" callback will be skipped and the "fail" callback will be
-            ##executed directly.
-            ##
-            ##one additional idea that would help improve readability. If you
-            ##provide nicely named functions that return the actual callback
-            ##function you could write code like this which I would consider
-            ##highly readable.
-            ##        $.ajax( { .... } )
-            ##    .then( rejectOnError() )
-            ##    .done( refreshTable() )
-            ##    .fail( displayModalError() )
-            ##    .always( stopModalSpinner() );
-            ##
             function handleAjaxReply(response, errorHeader) {
                 ## Expects two parameters in server response, 'success' and
                 ## 'response_message'

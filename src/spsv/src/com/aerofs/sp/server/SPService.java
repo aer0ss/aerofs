@@ -14,6 +14,7 @@ import com.aerofs.proto.Sp.ListOrganizationSharedFoldersReply;
 import com.aerofs.proto.Sp.ListUserDevicesReply.PBDevice;
 import com.aerofs.proto.Sp.ListUserSharedFoldersReply;
 import com.aerofs.proto.Sp.PBSharedFolder;
+import com.aerofs.proto.Sp.PBSharedFolder.Builder;
 import com.aerofs.proto.Sp.PBSharedFolder.PBUserAndRole;
 import com.aerofs.proto.Cmd.CommandType;
 import com.aerofs.proto.Sp.AckCommandQueueHeadReply;
@@ -438,7 +439,7 @@ public class SPService implements ISPService
 
         int sharedFolderCount = org.countSharedFolders();
 
-        List<PBSharedFolder> pbs = sharedFolders2pb(org.listSharedFolders(maxResults, offset));
+        List<PBSharedFolder> pbs = sharedFolders2pb(org.listSharedFolders(maxResults, offset), org);
 
         _sqlTrans.commit();
 
@@ -477,7 +478,8 @@ public class SPService implements ISPService
         User user = _factUser.createFromExternalID(userID);
         throwIfSessionUserIsNotOrAdminOf(user);
 
-        List<PBSharedFolder> pbs = sharedFolders2pb(user.getSharedFolders());
+        List<PBSharedFolder> pbs = sharedFolders2pb(user.getSharedFolders(),
+                _sessionUser.get().getOrganization());
 
         _sqlTrans.commit();
 
@@ -534,43 +536,65 @@ public class SPService implements ISPService
         }
     }
 
-    private List<PBSharedFolder> sharedFolders2pb(Collection<SharedFolder> sfs)
+    /**
+     * @param sessionOrg the organization of the session user
+     */
+    private List<PBSharedFolder> sharedFolders2pb(Collection<SharedFolder> sfs,
+            Organization sessionOrg)
             throws ExNoPerm, ExNotFound, SQLException
     {
         // A cache to avoid excessive database queries. This should be obsolete with memcached.
-        Map<UserID, FullName> user2name = Maps.newHashMap();
+        Map<User, FullName> user2nameCache = Maps.newHashMap();
 
         List<PBSharedFolder> pbs = Lists.newArrayListWithCapacity(sfs.size());
         for (SharedFolder sf : sfs) {
+
             // skip root stores. N.B. Organization.listSharedFolders never return root stores
             if (sf.id().isRoot()) continue;
 
             PBSharedFolder.Builder builder = PBSharedFolder.newBuilder()
                     .setStoreId(sf.id().toPB())
-                    .setName(sf.getName());
+                    .setName(sf.getName())
+                    .setOwnedByTeam(false);
 
+            // fill in folder members
             for (SubjectRolePair srp : sf.getMemberACL()) {
-                UserID subject = srp._subject;
-                if (subject.isTeamServerID()) continue;
-
-                // retrieve the full name
-                FullName fn = user2name.get(subject);
-                if (fn == null) {
-                    fn = _factUser.create(subject).getFullName();
-                    user2name.put(subject, fn);
-                }
-
-                builder.addUserAndRole(PBUserAndRole.newBuilder()
-                        .setRole(srp._role.toPB())
-                        .setUser(PBUser.newBuilder()
-                            .setUserEmail(subject.getString())
-                            .setFirstName(fn._first)
-                            .setLastName(fn._last)));
+                sharedFolderMember2pb(sessionOrg, user2nameCache, builder, srp);
             }
 
             pbs.add(builder.build());
         }
         return pbs;
+    }
+
+    private void sharedFolderMember2pb(Organization sessionOrg,
+            Map<User, FullName> user2nameCache, Builder builder, SubjectRolePair srp)
+            throws ExNotFound, SQLException
+    {
+        // don't add team server to the list.
+        if (srp._subject.isTeamServerID()) return;
+
+        User subject = _factUser.create(srp._subject);
+
+        // the folder is owned by the session organization if an owner of the folder belongs to
+        // the org.
+        if (srp._role.covers(Role.OWNER) && subject.getOrganization().equals(sessionOrg)) {
+            builder.setOwnedByTeam(true);
+        }
+
+        // retrieve the full name
+        FullName fn = user2nameCache.get(subject);
+        if (fn == null) {
+            fn = subject.getFullName();
+            user2nameCache.put(subject, fn);
+        }
+
+        builder.addUserAndRole(PBUserAndRole.newBuilder()
+                .setRole(srp._role.toPB())
+                .setUser(PBUser.newBuilder()
+                        .setUserEmail(subject.id().getString())
+                        .setFirstName(fn._first)
+                        .setLastName(fn._last)));
     }
 
     @Override

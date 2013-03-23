@@ -89,8 +89,8 @@ def _render_user_options_link(request, user):
             '<a class="dropdown-toggle" ' \
                     'data-toggle="dropdown" href="#">Options</a>' \
             '<ul class="dropdown-menu" role="menu">' \
-                '<li><a href="' + shared_folders_url + '">Shared Folders</a>' \
-                '<li><a href="' + devices_url + '">Devices</a>'\
+                '<li><a href="' + shared_folders_url + '">View Shared Folders</a>' \
+                '<li><a href="' + devices_url + '">View Devices</a>'\
                 '<li class="divider"></li>' \
                 '<li><a' + coming_soon + 'href="#">Remove</a>'\
             '</ul>' \

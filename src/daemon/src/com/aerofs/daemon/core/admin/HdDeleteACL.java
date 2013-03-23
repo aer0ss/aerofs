@@ -31,7 +31,6 @@ public class HdDeleteACL extends AbstractHdIMC<EIDeleteACL>
         SOID soid = _acl.checkThrows_(ev._user, ev._path, Role.OWNER);
         if (!soid.oid().isRoot()) throw new ExNotShared();
 
-        // log kickouts
         SVClient.sendEventAsync(Type.KICKOUT, ev._subject.getString());
 
         _aclsync.delete_(soid.sidx(), ev._subject);

@@ -192,8 +192,8 @@
 <%def name="render_admin_links()">
     <%
         links = [
-            ('team_members', _("Members")),
-            ('organization_shared_folders', _("Shared Folders")),
+            ('team_members', _("Team Members")),
+            ('team_shared_folders', _("Shared Folders")),
             ('team_server_devices', _("Team Servers")),
             ('team_settings', _("Settings")),
         ]

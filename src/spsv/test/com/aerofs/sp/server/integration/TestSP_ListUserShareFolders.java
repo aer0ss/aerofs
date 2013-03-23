@@ -5,9 +5,11 @@
 package com.aerofs.sp.server.integration;
 
 import com.aerofs.base.id.SID;
+import com.aerofs.base.id.UniqueID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.lib.acl.Role;
 import com.aerofs.base.ex.ExNoPerm;
+import com.aerofs.proto.Common.PBSubjectRolePair;
 import com.aerofs.proto.Sp.PBSharedFolder;
 import com.aerofs.proto.Sp.PBSharedFolder.PBUserAndRole;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
@@ -99,6 +101,29 @@ public class TestSP_ListUserShareFolders extends AbstractSPFolderTest
         assertAllSharedFoldersHaveUser(queryOtherUser(), USER_2);
 
         assertAllSharedFoldersHaveUser(queryCurrentUser(), USER_1);
+    }
+
+    @Test
+    public void shouldSetOwnedByTeamFlagIfAndOnlyIfOwnedByTeam()
+            throws Exception
+    {
+        SID sid1 = SID.generate();
+        SID sid2 = SID.generate();
+        shareAndJoinFolder(USER_1, sid1, USER_2, Role.EDITOR);
+        shareAndJoinFolder(USER_2, sid2, USER_3, Role.EDITOR);
+
+        // add an admin to USER_2's team
+        sqlTrans.begin();
+        User admin = saveUser();
+        admin.setOrganization(USER_2.getOrganization(), AuthorizationLevel.ADMIN);
+        sqlTrans.commit();
+
+        setSessionUser(admin);
+        for (PBSharedFolder sf : service.listUserSharedFolders(USER_2.id().getString()).get().getSharedFolderList()) {
+            SID sid = new SID(sf.getStoreId());
+            if (sid1.equals(sid)) assertFalse(sf.getOwnedByTeam());
+            if (sid2.equals(sid)) assertTrue(sf.getOwnedByTeam());
+        }
     }
 
     private void assertAllSharedFoldersHaveUser(Collection<PBSharedFolder> sfs, User user)

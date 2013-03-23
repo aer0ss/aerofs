@@ -975,7 +975,9 @@ message PBSharedFolder {
 
     required bytes store_id = 1;
     required string name = 2;
-    repeated PBUserAndRole user_and_role = 3;
+    // Whether any team member of the session user's team owns the folder
+    required bool owned_by_team = 3;
+    repeated PBUserAndRole user_and_role = 4;
 }
 
 message GetOrganizationInvitationsReply {

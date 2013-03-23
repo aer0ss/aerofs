@@ -3,17 +3,17 @@
 <div id="modal" class="modal hide" tabindex="-1" role="dialog">
     <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal">×</button>
-        <h3>Manage shared folder &quot;<span id="modal-folder-name"></span>&quot;</h3>
+        <h3>Members of Folder &quot;<span id="modal-folder-name"></span>&quot;</h3>
     </div>
     <div class="modal-body">
         <table id="modal-user-role-table" class="table">
-            <thead><tr><th>Member</th><th>Role</th><th></th></tr></thead>
+            <thead><tr><th>Member</th><th></th></tr></thead>
             <tbody></tbody>
         </table>
     </div>
     <div class="modal-footer">
         <form id="modal-invite-form" class="form-inline" method="post">
-            <span class="pull-left">
+            <span id="invite-user-inputs" class="pull-left">
                 <input type="text" id="modal-invitee-email" placeholder="Add email">
                 <input class="btn" type="submit" value="Send Invite">
             </span>
@@ -23,26 +23,26 @@
     </div>
 </div>
 
-<div id="kickout-modal" class="modal hide" tabindex="-1" role="dialog">
+<div id="remove-modal" class="modal hide" tabindex="-1" role="dialog">
     <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal">×</button>
-        <h3>Kick out from shared folder</h3>
+        <h3>Remove From Folder</h3>
     </div>
     <div class="modal-body">
         ## Note: the following text should be consistent with the text in
         ## RoleMenu.java.
-        <p>Are you sure you want to kick out
-            <span class="kickout-modal-full-name"></span>
-            (<span class="kickout-modal-email"></span>)?</p>
+        <p>Are you sure you want to remove
+            <span class="remove-modal-full-name"></span>
+            (<span class="remove-modal-email"></span>) from the shared folder?</p>
         <p class="footnote">
-            This will delete the folder from the user's computers.
+            This will delete the folder from the person's computers.
             However, old content may be still accessible from the
-            user's version history.
+            person's version history.
         </p>
 
     </div>
     <div class="modal-footer">
         <a href="#" class="btn" data-dismiss="modal">Cancel</a>
-        <a href="#" id="kickout-model-confirm" class="btn btn-danger">Kick Out</a>
+        <a href="#" id="remove-model-confirm" class="btn btn-danger">Remove</a>
     </div>
 </div>

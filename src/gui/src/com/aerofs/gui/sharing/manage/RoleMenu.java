@@ -54,7 +54,7 @@ public class RoleMenu
 
         if (srp._role != Role.EDITOR) {
             MenuItem miEditor = new MenuItem(_menu, SWT.PUSH);
-            miEditor.setText("Make Editor");
+            miEditor.setText("Remove as Owner");
             miEditor.addSelectionListener(new SelectionAdapter() {
                 @Override
                 public void widgetSelected(SelectionEvent e)
@@ -65,18 +65,18 @@ public class RoleMenu
         }
 
         MenuItem miKickout = new MenuItem(_menu, SWT.PUSH);
-        miKickout.setText("Kick Out");
+        miKickout.setText("Remove");
         miKickout.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e)
             {
                 if (GUI.get().ask(_compUserList.getShell(), MessageType.QUESTION,
                         // The text should be consistent with the text in shared_folders.mako
-                        "Are you sure you want to kick out " + _subject + "?\n" +
+                        "Are you sure you want to remove " + _subject + " from the shared folder?\n" +
                         "\n" +
-                        "This will delete the folder from the user's computers." +
+                        "This will delete the folder from the person's computers." +
                         " However, old content may be still accessible from the" +
-                        " user's version history.")) {
+                        " person's version history.")) {
                     select(null);
                 }
             }
