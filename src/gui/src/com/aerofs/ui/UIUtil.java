@@ -332,7 +332,7 @@ public class UIUtil
         }
 
         // TODO (WW) don't show this dialog
-        if (UI.isGUI()) {
+        if (UI.isGUI() && !L.get().isMultiuser()) {
             // Check if there are any shared folder invitations to accept
             new DlgJoinSharedFolders(GUI.get().sh()).showDialogIfNeeded();
             // TODO (GS): Needs a similar class for CLI, too

@@ -6,6 +6,8 @@ import com.aerofs.gui.CompSpin;
 import com.aerofs.gui.GUIParam;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
+import com.aerofs.lib.event.AbstractEBSelfHandling;
+import com.aerofs.lib.ex.ExIndexing;
 import com.aerofs.lib.ritual.RitualBlockingClient;
 import com.aerofs.lib.ritual.RitualClient;
 import com.aerofs.lib.ritual.RitualClientFactory;
@@ -94,8 +96,18 @@ public class DlgJoinSharedFolders extends AeroFSDialog
                     {
                         ritual.close();
 
-                        l.warn("list pending folders:" + Util.e(throwable));
-                        UI.get().show(MessageType.ERROR, throwable.toString());
+                        if (!(throwable instanceof ExIndexing)) {
+                            l.warn("list pending folders:" + Util.e(throwable));
+                            UI.get().show(MessageType.ERROR, throwable.toString());
+                        } else {
+                            UI.scheduler().schedule(new AbstractEBSelfHandling() {
+                                @Override
+                                public void handle_()
+                                {
+                                    showDialog(silent);
+                                }
+                            }, 1000);
+                        }
                     }
                 });
     }
