@@ -57,10 +57,11 @@ public class CompExclusionList extends Composite
         try {
             m._excluded = new HashSet<Path>();
             for (PBPath path : ritual.listExcludedFolders().getPathList()) {
-                Util.verify(m._excluded.add(new Path(path)));
+                Util.verify(m._excluded.add(Path.fromPB(path)));
             }
 
-            Path root = new Path();
+            // TODO: multiroot support
+            Path root = Path.root(Cfg.rootSID());
             m._all = new HashSet<Path>();
             GetChildrenAttributesReply reply = ritual.getChildrenAttributes(Cfg.user().getString(),
                     root.toPB());

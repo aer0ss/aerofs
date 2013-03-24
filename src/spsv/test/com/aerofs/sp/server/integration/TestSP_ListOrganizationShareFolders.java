@@ -48,7 +48,7 @@ public class TestSP_ListOrganizationShareFolders extends AbstractSPFolderTest
             throws Exception
     {
         for (PBSharedFolder sf : createAndListTwoSharedFolders()) {
-            assertFalse(new SID(sf.getStoreId()).isRoot());
+            assertFalse(new SID(sf.getStoreId()).isUserRoot());
         }
     }
 

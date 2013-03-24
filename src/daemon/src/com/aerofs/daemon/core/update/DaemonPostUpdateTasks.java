@@ -53,7 +53,8 @@ public class DaemonPostUpdateTasks
             new DPUTSkipFirstLaunch(),
             new DPUTRenameRootDirs(dbcw),
             null,  // used to be DPUTFixExpelledAlias
-            new DPUTFixExpelledAlias(dbcw)
+            new DPUTFixExpelledAlias(dbcw),
+            new DPUTUpdateCfgDatabaseForMultiroot(_cfgDB)
             // new tasks go here
         };
 

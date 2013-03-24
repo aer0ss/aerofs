@@ -46,7 +46,7 @@ public class PathStatusNotificationForwarder
         int n = ev.getPathCount();
         assert n == ev.getStatusCount();
         for (int i = 0; i < n; ++i) {
-            String path = new Path(ev.getPath(i)).toAbsoluteString(Cfg.absRootAnchor());
+            String path = Path.fromPB(ev.getPath(i)).toAbsoluteString(Cfg.absDefaultRootAnchor());
             _service.notifyPathStatus(path, ev.getStatus(i));
         }
     }

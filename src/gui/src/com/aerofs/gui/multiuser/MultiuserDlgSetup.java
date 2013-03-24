@@ -36,7 +36,7 @@ public class MultiuserDlgSetup extends AbstractDlgSetup
             throws Exception
     {
         PBS3Config config = getS3Config(UserID.fromExternal(userID));
-        // TODO: (PH) We should set absRootAnchor to null if we are an S3 installation, but
+        // TODO: (PH) We should set absDefaultRootAnchor to null if we are an S3 installation, but
         // the proto requires it. Eventually this results in an empty root anchor being created.
         String absRootAnchor = getAbsRootAnchor();
         UI.controller().setupMultiuser(userID, new String(passwd), absRootAnchor,

@@ -41,7 +41,7 @@ public class RootAnchorPoller
             return;
         }
 
-        _oldRoot = Cfg.absRootAnchor();
+        _oldRoot = Cfg.absDefaultRootAnchor();
 
         // We poll for the existance of the root anchor. We used to use
         // JNotify for this but it cause problems and only gave a negligible
@@ -55,7 +55,7 @@ public class RootAnchorPoller
             {
                 while (!_stopping) {
                     // This must be checked each time in case the rootAnchor is moved
-                    File rootAnchor = new File(Cfg.absRootAnchor());
+                    File rootAnchor = new File(Cfg.absDefaultRootAnchor());
 
                     if (l.isDebugEnabled()) {
                         l.debug("Checking for existance of root anchor at " +
@@ -150,13 +150,13 @@ public class RootAnchorPoller
         // configuration.
         Cfg.init_(Cfg.absRTRoot(), false);
 
-        File rootAnchor = new File(Cfg.absRootAnchor());
+        File rootAnchor = new File(Cfg.absDefaultRootAnchor());
         if (!rootAnchor.isDirectory()) return false;
 
         ShellextService.get().notifyRootAnchor();
 
-        updateFavorite(_oldRoot, Cfg.absRootAnchor());
-        _oldRoot = Cfg.absRootAnchor();
+        updateFavorite(_oldRoot, Cfg.absDefaultRootAnchor());
+        _oldRoot = Cfg.absDefaultRootAnchor();
 
         return true;
     }

@@ -37,4 +37,5 @@ public interface IMapSIndex2SID
      */
     @Nonnull SID getAbsent_(SIndex sidx) throws SQLException;
 
+    @Nonnull SID getLocalOrAbsent_(SIndex sidx) throws SQLException;
 }

@@ -8,7 +8,7 @@ import java.sql.SQLException;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.lib.db.trans.Trans;
-import com.aerofs.lib.Param;
+import static com.aerofs.lib.Param.AuxFolder.CONFLICT;
 import com.aerofs.lib.ex.ExFileNotFound;
 import org.slf4j.Logger;
 
@@ -21,7 +21,6 @@ import com.aerofs.lib.ContentHash;
 
 import static com.aerofs.lib.Util.join;
 
-import com.aerofs.lib.cfg.CfgAbsRootAnchor;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.SOKID;
 import com.aerofs.lib.injectable.InjectableFile;
@@ -38,17 +37,15 @@ public class LinkedFile implements IPhysicalFile
     final Path _path;
     final SOKID _sokid;
 
-    public LinkedFile(CfgAbsRootAnchor cfgAbsRootAnchor, InjectableFile.Factory factFile,
-            IFIDMaintainer.Factory factFIDMan, LinkedStorage s, SOKID sokid, Path path,
-            String pathAuxRoot)
+    public LinkedFile(LinkedStorage s, SOKID sokid, Path path)
     {
         _s = s;
         _path = path;
         _sokid = sokid;
-        _f = factFile.create(sokid.kidx().equals(KIndex.MASTER) ?
-                join(cfgAbsRootAnchor.get(), join(path.elements())) :
-                join(pathAuxRoot, Param.AuxFolder.CONFLICT._name, LinkedStorage.makeAuxFileName(sokid)));
-        _fidm = factFIDMan.create_(sokid, _f);
+        _f = _s._factFile.create(sokid.kidx().equals(KIndex.MASTER) ?
+                join(_s._lrm.absRootAnchor_(path.sid()), join(path.elements())) :
+                join(_s._cfgAbsAuxRoot.get(), CONFLICT._name, LinkedStorage.makeAuxFileName(sokid)));
+        _fidm = _s._factFIDMan.create_(sokid, _f);
     }
 
     @SuppressWarnings("fallthrough")

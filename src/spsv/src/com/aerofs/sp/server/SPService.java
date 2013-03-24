@@ -538,7 +538,7 @@ public class SPService implements ISPService
         for (SharedFolder sf : sfs) {
 
             // skip root stores. N.B. Organization.listSharedFolders never return root stores
-            if (sf.id().isRoot()) continue;
+            if (sf.id().isUserRoot()) continue;
 
             PBSharedFolder.Builder builder = PBSharedFolder.newBuilder()
                     .setStoreId(sf.id().toPB())
@@ -970,7 +970,7 @@ public class SPService implements ISPService
             throws Exception
     {
         SharedFolder sf = _factSharedFolder.create(shareId);
-        if (sf.id().isRoot()) throw new ExBadArgs("Cannot share root");
+        if (sf.id().isUserRoot()) throw new ExBadArgs("Cannot share root");
 
         User sharer = _sessionUser.get();
         List<SubjectRolePair> srps = SubjectRolePairs.listFromPB(rolePairs);
@@ -1170,7 +1170,7 @@ public class SPService implements ISPService
 
         if (!sf.exists()) throw new ExNotFound("No such shared folder");
 
-        if (sf.id().isRoot()) throw new ExBadArgs("Cannot leave root folder");
+        if (sf.id().isUserRoot()) throw new ExBadArgs("Cannot leave root folder");
 
         // silently ignore leave call from pending users as multiple device of the same user
         // may make the call depending on the relative speeds of deletion propagation vs ACL

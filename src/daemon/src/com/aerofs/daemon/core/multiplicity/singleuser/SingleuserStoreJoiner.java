@@ -63,7 +63,7 @@ public class SingleuserStoreJoiner implements IStoreJoiner
         // ignore changes on the root store.
         if (sid.equals(_cfgRootSID.get())) return;
 
-        SIndex root = _stores.getRoot_();
+        SIndex root = _stores.getUserRoot_();
 
         /**
          * If the original folder is already present in the root store we should not auto-join but
@@ -141,7 +141,7 @@ public class SingleuserStoreJoiner implements IStoreJoiner
 
         _rns.sendEvent_(PBNotification.newBuilder()
                 .setType(PBNotification.Type.SHARED_FOLDER_JOIN)
-                .setPath(Path.fromString(folderName).toPB())
+                .setPath(new Path(_cfgRootSID.get(), folderName).toPB())
                 .build());
     }
 

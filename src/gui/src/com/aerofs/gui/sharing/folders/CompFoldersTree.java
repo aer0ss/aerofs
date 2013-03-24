@@ -4,6 +4,7 @@ import javax.annotation.Nullable;
 
 import com.aerofs.lib.Path;
 
+import com.aerofs.lib.cfg.Cfg;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.TreeViewer;
 import org.eclipse.jface.viewers.ViewerSorter;
@@ -37,7 +38,8 @@ public class CompFoldersTree extends Composite
         _v.setLabelProvider(new LabelProvider());
         _v.setContentProvider(_cp);
         _v.setSorter(new ViewerSorter());
-        _v.setInput(_cp.getChildren(new Path()));
+        // TODO: multiroot support?
+        _v.setInput(_cp.getChildren(Path.root(Cfg.rootSID())));
 
         _v.getTree().addSelectionListener(new SelectionListener() {
 

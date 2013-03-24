@@ -62,10 +62,10 @@ public class StoreCreator
     /**
      * Create a store with no parent. See comments in IStores for detail
      */
-    public void createRootStore_(SID sid, Path rootStorePath, Trans t)
+    public void createRootStore_(SID sid, Trans t)
             throws SQLException, IOException, ExAlreadyExist
     {
-        createStoreImpl_(sid, rootStorePath, t);
+        createStoreImpl_(sid, Path.root(sid), t);
     }
 
     /**
@@ -95,7 +95,7 @@ public class StoreCreator
 
         _nvc.restoreStore_(sidx, t);
         _ivc.restoreStore_(sidx, t);
-        _ps.createStore_(sidx, path, t);
+        _ps.createStore_(sidx, t);
         _ss.add_(sidx, t);
 
         return sidx;

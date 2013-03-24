@@ -107,9 +107,9 @@ public class CmdTransfers implements IShellCommand<ShProgram>
         // print path
         String str;
         if (debug) {
-            str = new Path(ev.getPath()).toString();
+            str = Path.fromPB(ev.getPath()).toString();
         } else {
-            Path path = new Path(ev.getPath());
+            Path path = Path.fromPB(ev.getPath());
             str = UIUtil.getUserFriendlyPath(ev.getSocid(), ev.getPath(), path);
         }
         ps.println(str);
@@ -135,9 +135,9 @@ public class CmdTransfers implements IShellCommand<ShProgram>
         // print path
         String str;
         if (debug) {
-            str = new Path(ev.getPath()).toString();
+            str = Path.fromPB(ev.getPath()).toString();
         } else {
-            Path path = new Path(ev.getPath());
+            Path path = Path.fromPB(ev.getPath());
             str = UIUtil.getUserFriendlyPath(ev.getSocid(), ev.getPath(), path);
         }
         ps.println(str);

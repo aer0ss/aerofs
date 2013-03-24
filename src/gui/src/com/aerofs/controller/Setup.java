@@ -14,6 +14,7 @@ import java.util.TreeMap;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
+import com.aerofs.base.id.SID;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.cfg.Cfg.PortType;
@@ -282,7 +283,7 @@ class Setup
         fDB.deleteOrThrowIfExist();
 
         // Create Root Anchor
-        InjectableFile fRootAnchor = _factFile.create(Cfg.absRootAnchor());
+        InjectableFile fRootAnchor = _factFile.create(Cfg.absDefaultRootAnchor());
         if (!fRootAnchor.exists()) fRootAnchor.mkdirs();
 
         UI.dm().start();
@@ -313,6 +314,15 @@ class Setup
         CfgDatabase db = Cfg.db();
         db.recreateSchema_();
         db.set(map);
+
+        // TODO: distinguish between BlockStorage and FlatLinkedStorage in multiuser setup
+        if (!L.get().isMultiuser()) {
+            // make sure the default root anchor is correctly set in the db
+            // NB: this does not remove external roots
+            SID sid = SID.rootSID(userId);
+            db.removeRoot_(sid);
+            db.addRoot_(sid, rootAnchorPath);
+        }
 
         Cfg.writePortbase(_rtRoot, findPortBase());
 

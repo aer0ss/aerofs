@@ -70,7 +70,7 @@ public class CmdConflicts implements IShellCommand<ShProgram>
         s.out().println("-------------------------------");
 
         for (PBPath p : pathList) {
-            if (printPath) s.out().println(new Path(p).toString());
+            if (printPath) s.out().println(Path.fromPB(p).toString());
             PBObjectAttributes attr = r.getObjectAttributes(Cfg.user().getString(), p)
                     .getObjectAttributes();
             for (PBBranch b : attr.getBranchList()) {

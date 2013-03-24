@@ -5,6 +5,7 @@
 package com.aerofs.gui.history;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.base.id.SID;
 import com.aerofs.gui.history.HistoryModel.IDecisionMaker.Answer;
 import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.Path;
@@ -44,6 +45,7 @@ public class HistoryModel
 {
     private static final Logger l = Loggers.getLogger(HistoryModel.class);
 
+    private final SID _root;
     private final UserID _userId;
     private RitualBlockingClient _ritual;
     private final RitualBlockingClient.Factory _factory;
@@ -111,6 +113,7 @@ public class HistoryModel
 
     public HistoryModel()
     {
+        _root = Cfg.rootSID();
         _userId = Cfg.user();
         _factory = new RitualBlockingClient.Factory();
         _ritual = _factory.create();
@@ -118,6 +121,8 @@ public class HistoryModel
 
     public HistoryModel(CfgLocalUser userId, RitualBlockingClient.Factory factory)
     {
+        // TODO: multiroot support
+        _root = SID.rootSID(userId.get());
         _userId = userId.get();
         _factory = factory;
         _ritual = _factory.create();
@@ -139,7 +144,7 @@ public class HistoryModel
             elems.add(0, index.name);
             index = index.parent;
         }
-        return new Path(elems);
+        return new Path(_root, elems);
     }
 
     /**
@@ -246,7 +251,7 @@ public class HistoryModel
                                 branch.getLength(), branch.getMtime());
                         // TODO(jP) : This won't work with block storage - expects the
                         // file is already a valid export destination for restore.
-                        current.tmpFile = path.toAbsoluteString(Cfg.absRootAnchor());
+                        current.tmpFile = path.toAbsoluteString(Cfg.absDefaultRootAnchor());
                         revs.add(current);
                         break;
                     }

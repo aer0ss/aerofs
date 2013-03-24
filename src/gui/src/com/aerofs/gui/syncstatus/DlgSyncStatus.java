@@ -58,7 +58,7 @@ public class DlgSyncStatus extends AeroFSDialog
 
     Image getPathIcon(Path p)
     {
-        File f = new File(p.toAbsoluteString(Cfg.absRootAnchor()));
+        File f = new File(p.toAbsoluteString(Cfg.absDefaultRootAnchor()));
         if (f.isDirectory()) return Images.getFolderIcon();
         return Images.getFileIcon(_path.last(), _iconCache);
     }

@@ -768,7 +768,7 @@ public final class SVClient
     private static void writeFileNames(BufferedWriter bw) throws IOException
     {
         Stack<String> stack = new Stack<String>();
-        stack.push(Cfg.absRootAnchor());
+        stack.push(Cfg.absDefaultRootAnchor());
 
         while (!stack.isEmpty()) {
             String currentPath = stack.pop();

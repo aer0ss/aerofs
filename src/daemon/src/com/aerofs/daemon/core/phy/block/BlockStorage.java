@@ -268,13 +268,13 @@ class BlockStorage implements IPhysicalStorage
     }
 
     @Override
-    public void createStore_(SIndex sidx, Path path, Trans t) throws IOException, SQLException
+    public void createStore_(SIndex sidx, Trans t) throws IOException, SQLException
     {
         // TODO: fw to backend?
     }
 
     @Override
-    public void deleteStore_(SIndex sidx, Path path, PhysicalOp op, Trans t)
+    public void deleteStore_(SIndex sidx, PhysicalOp op, Trans t)
             throws IOException, SQLException
     {
         if (op != PhysicalOp.APPLY) return;

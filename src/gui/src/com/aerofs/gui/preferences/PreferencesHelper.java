@@ -79,7 +79,7 @@ public class PreferencesHelper
                 String root = getRootAnchorPathFromDirectoryDialog();
                 if (root == null) return; //User hit cancel
                 if (moveRootAnchor(root)) {
-                    txtRootAnchor.setText(Cfg.absRootAnchor());
+                    txtRootAnchor.setText(Cfg.absDefaultRootAnchor());
                 } else {
                     selectAndMoveRootAnchor(txtRootAnchor);
                 }
@@ -92,7 +92,7 @@ public class PreferencesHelper
      */
     private boolean moveRootAnchor(String rootParent)
     {
-        String pathOld = Cfg.absRootAnchor();
+        String pathOld = Cfg.absDefaultRootAnchor();
         String pathNew = RootAnchorUtil.adjustRootAnchor(rootParent);
 
         try {
@@ -240,7 +240,7 @@ public class PreferencesHelper
     {
         // set field values on SHOW instead of the ctor to avoid the
         // dialog stretched.
-        _txtRootAnchor.setText(Cfg.absRootAnchor());
+        _txtRootAnchor.setText(Cfg.absDefaultRootAnchor());
 
         _txtDeviceName.setEditable(false);
         if (_txtFirstName != null) _txtFirstName.setEditable(false);

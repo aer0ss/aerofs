@@ -48,7 +48,7 @@ extends AbstractListRevChildrenHistory<IListRevHistoryListener>
         return CoreUtil.newCore(Type.LIST_REV_HISTORY_REQUEST)
             .setListRevHistoryRequest(PBListRevHistoryRequest.newBuilder()
                 .setSeq(getSeq_(path))
-                .addAllObjectPathElement(path.asList()));
+                .setPath(path.toPB()));
     }
 
     @Override
@@ -64,7 +64,7 @@ extends AbstractListRevChildrenHistory<IListRevHistoryListener>
                 .newBuilder()
                 .setSeq(req.getSeq());
 
-        Path path = new Path(req.getObjectPathElementList());
+        Path path = Path.fromPB(req.getPath());
         for (Revision en : _ps.getRevProvider().listRevHistory_(path)) {
             bd.addIndex(ByteString.copyFrom(en._index))
                 .addVersion(Version.empty().toPB_())

@@ -19,6 +19,7 @@ import java.sql.SQLException;
 import java.util.Set;
 
 import com.aerofs.base.id.DID;
+import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.TC;
@@ -105,14 +106,17 @@ public class TestHdGetActivities extends AbstractTest
                 to, set, null);
     }
 
+    private static SID rootSID = SID.rootSID(UserID.fromInternal("foo@bar.baz"));
+    private Path mkpath(String path) { return Path.fromString(rootSID, path); }
+
     @SuppressWarnings("unchecked")
     @Before
     public void setup()
             throws Exception
     {
         dbcw.init_();
-        addActivity(CREATION_VALUE, new Path("a"), null, did1, did2, did3);
-        addActivity(MOVEMENT_VALUE, new Path("a"), new Path("b"), did1, did2, did3);
+        addActivity(CREATION_VALUE, mkpath("a"), null, did1, did2, did3);
+        addActivity(MOVEMENT_VALUE, mkpath("a"), mkpath("b"), did1, did2, did3);
 
         al = new ActivityLog(ds, nvc, aldb);
         UserAndDeviceNames didinfo = new UserAndDeviceNames(cfgLocalUser, tc,  tm, d2u, udndb, factSP);
@@ -259,7 +263,7 @@ public class TestHdGetActivities extends AbstractTest
     public void shouldShowFullNameOnly()
             throws Exception
     {
-        addActivity(CREATION_VALUE, new Path("a"), null, did1);
+        addActivity(CREATION_VALUE, mkpath("a"), null, did1);
         when(d2u.getFromLocalNullable_(did1)).thenReturn(UserID.fromInternal("user@gmail"));
         when(udndb.getUserNameNullable_(UserID.fromInternal("user@gmail")))
                 .thenReturn(new FullName("A", "B"));
@@ -272,7 +276,7 @@ public class TestHdGetActivities extends AbstractTest
     public void shouldShowFirstNameOnlyInBriefMode()
             throws Exception
     {
-        addActivity(CREATION_VALUE, new Path("a"), null, did1);
+        addActivity(CREATION_VALUE, mkpath("a"), null, did1);
         when(d2u.getFromLocalNullable_(did1)).thenReturn(UserID.fromInternal("user@gmail"));
         when(udndb.getUserNameNullable_(UserID.fromInternal("user@gmail")))
                 .thenReturn(new FullName("A", "B"));
@@ -345,7 +349,7 @@ public class TestHdGetActivities extends AbstractTest
     public void shouldShowTargetAndDestinationParentOnMovement()
             throws Exception
     {
-        addActivity(MOVEMENT_VALUE, new Path("a"), new Path("b", "c"), did1);
+        addActivity(MOVEMENT_VALUE, mkpath("a"), mkpath("b/c"), did1);
 
         run(false);
         assertTrue(firstMsg().endsWith("moved file or folder \"a\" to \"b/c\""));
@@ -364,7 +368,7 @@ public class TestHdGetActivities extends AbstractTest
     public void shouldNotShowModificationWithCreation()
             throws Exception
     {
-        addActivity(CREATION_VALUE | MODIFICATION_VALUE, new Path("a"), null, did1);
+        addActivity(CREATION_VALUE | MODIFICATION_VALUE, mkpath("a"), null, did1);
 
         run(true);
         assertTrue(firstMsg().endsWith("unknown device added file or folder \"a\""));
@@ -375,7 +379,7 @@ public class TestHdGetActivities extends AbstractTest
     public void shouldNotShowMovementWithDeletion()
             throws Exception
     {
-        addActivity(DELETION_VALUE | MOVEMENT_VALUE, new Path("a"), new Path("b"), did1);
+        addActivity(DELETION_VALUE | MOVEMENT_VALUE, mkpath("a"), mkpath("b"), did1);
 
         run(true);
         assertTrue(firstMsg().endsWith("unknown device deleted file or folder \"a\""));

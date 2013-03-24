@@ -202,6 +202,7 @@ public class ShProgram implements IProgram, ICallback
     public static PBPath buildPath_(List<String> path)
             throws ExBadArgs
     {
-        return PBPath.newBuilder().addAllElem(path).build();
+        // TODO: multiroot support
+        return PBPath.newBuilder().setSid(Cfg.rootSID().toPB()).addAllElem(path).build();
     }
 }

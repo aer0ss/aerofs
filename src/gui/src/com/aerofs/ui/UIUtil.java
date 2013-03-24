@@ -348,7 +348,7 @@ public class UIUtil
                 @Override
                 public void run()
                 {
-                    GUIUtil.launch(Cfg.absRootAnchor());
+                    GUIUtil.launch(Cfg.absDefaultRootAnchor());
                 }
             };
         }

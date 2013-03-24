@@ -20,7 +20,7 @@ public class CLIRootAnchorUpdater
 {
     private CLI _cli;
     private final String _relocateMsg = "Your " + L.PRODUCT + " folder was not found in" +
-            " the original location:\n" + Cfg.absRootAnchor() + ".\n" +
+            " the original location:\n" + Cfg.absDefaultRootAnchor() + ".\n" +
             "Would you like to select a new folder location?";
 
     private final String _unlinkOrQuitMsg = "If you want to move the " + L.PRODUCT + " folder " +
@@ -90,7 +90,7 @@ public class CLIRootAnchorUpdater
                 String rootPath = readLine();
                 if (rootPath == null) return; // leave ret as null
 
-                String oldRootPath = Cfg.absRootAnchor();
+                String oldRootPath = Cfg.absDefaultRootAnchor();
                 String newRootPath = RootAnchorUtil.adjustRootAnchor(rootPath);
 
                 try {

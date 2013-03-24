@@ -63,7 +63,7 @@ public class ExportHelper implements ICfgDatabaseListener
     {
         SID sid = _sidx2sid.get_(sidx);
         String storeTitle = sid.toStringFormal();
-        if (sid.isRoot()) {
+        if (sid.isUserRoot()) {
             // Loop over ACL entries, find non-self user, make folder with that name
             try {
                 for (UserID uid : _lacl.get_(sidx).keySet()) {

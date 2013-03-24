@@ -10,11 +10,11 @@ public class HdReloadConfig extends AbstractHdIMC<EIReloadConfig>
     @Override
     protected void handleThrows_(EIReloadConfig ev, Prio prio) throws Exception
     {
-        String old = Cfg.absRootAnchor();
+        String old = Cfg.absDefaultRootAnchor();
 
         Cfg.init_(Cfg.absRTRoot(), false);
 
         // moving of root anchor is done in HdRelocateRootAnchor
-        assert Cfg.absRootAnchor().equals(old);
+        assert Cfg.absDefaultRootAnchor().equals(old);
     }
 }

@@ -17,7 +17,7 @@ public class CmdExcluded implements IShellCommand<ShProgram>
         if (cl.getArgs().length != 0) throw new ExBadArgs();
 
         List<PBPath> paths = s.d().getRitualClient_().listExcludedFolders().getPathList();
-        for (PBPath path : paths) s.out().println(new Path(path));
+        for (PBPath path : paths) s.out().println(Path.fromPB(path));
     }
 
     @Override

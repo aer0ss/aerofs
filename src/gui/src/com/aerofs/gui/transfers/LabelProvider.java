@@ -52,7 +52,7 @@ extends org.eclipse.jface.viewers.LabelProvider implements ITableLabelProvider
                 if (!ev.hasPath() || UIUtil.isSystemFile(ev.getPath())) {
                     return Images.get(Images.ICON_METADATA);
                 } else {
-                    Path path = new Path(ev.getPath());
+                    Path path = Path.fromPB(ev.getPath());
                     return Images.getFileIcon(path.last(), _iconCache);
                 }
             }
@@ -68,7 +68,7 @@ extends org.eclipse.jface.viewers.LabelProvider implements ITableLabelProvider
                 if (!ev.hasPath() || UIUtil.isSystemFile(ev.getPath())) {
                     return Images.get(Images.ICON_METADATA);
                 } else {
-                    Path path = new Path(ev.getPath());
+                    Path path = Path.fromPB(ev.getPath());
                     return Images.getFileIcon(path.last(), _iconCache);
                 }
             }
@@ -126,7 +126,7 @@ extends org.eclipse.jface.viewers.LabelProvider implements ITableLabelProvider
         if (pbpath == null) {
             return _showSOCID ? formatSOCID(pbsocid) : S.LBL_UNKNOWN_FILE;
         } else {
-            String text = UIUtil.getUserFriendlyPath(pbsocid, pbpath, new Path(pbpath));
+            String text = UIUtil.getUserFriendlyPath(pbsocid, pbpath, Path.fromPB(pbpath));
 
             if (text.startsWith("/")) text = text.substring(1);
             if (_showSOCID) text = formatSOCID(pbsocid) + " - " + text;

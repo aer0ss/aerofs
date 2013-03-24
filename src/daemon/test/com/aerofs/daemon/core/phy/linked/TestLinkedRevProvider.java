@@ -1,5 +1,6 @@
 package com.aerofs.daemon.core.phy.linked;
 
+import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.phy.linked.LinkedRevProvider.LinkedRevFile;
 import com.aerofs.lib.LogUtil;
 import com.aerofs.lib.Param;
@@ -37,6 +38,8 @@ public class TestLinkedRevProvider extends AbstractTest
     private PrintWriter _out;
     private LinkedRevProvider _localRevProvider;
 
+    final SID rootSID = SID.generate();
+
     @Before
     public void before() throws Exception
     {
@@ -69,7 +72,7 @@ public class TestLinkedRevProvider extends AbstractTest
         InjectableFile test1 = _factFile.create(_dataDir, "test1");
         writeFile(test1, "test1");
         LinkedRevFile localRevFile = _localRevProvider.newLocalRevFile_(
-            Path.fromAbsoluteString(_dataDir.getPath(), test1.getPath()), test1.getPath(),
+            Path.fromAbsoluteString(rootSID, _dataDir.getPath(), test1.getPath()), test1.getPath(),
             new KIndex(0));
         Assert.assertTrue(test1.isFile());
         Assert.assertEquals(1, _dataDir.list().length);
@@ -86,7 +89,7 @@ public class TestLinkedRevProvider extends AbstractTest
         InjectableFile test1 = _factFile.create(_dataDir, "test1");
         writeFile(test1, "test1");
         LinkedRevFile localRevFile = _localRevProvider.newLocalRevFile_(
-            Path.fromAbsoluteString(_dataDir.getPath(), test1.getPath()), test1.getPath(),
+            Path.fromAbsoluteString(rootSID, _dataDir.getPath(), test1.getPath()), test1.getPath(),
             new KIndex(0));
         Assert.assertTrue(test1.isFile());
         Assert.assertEquals(1, _dataDir.list().length);
@@ -133,7 +136,7 @@ public class TestLinkedRevProvider extends AbstractTest
 
         test1.setLastModified(backThen.getTime());
         LinkedRevFile localRevFile = _localRevProvider.newLocalRevFile_(
-            Path.fromAbsoluteString(_dataDir.getPath(), test1.getPath()), test1.getPath(),
+            Path.fromAbsoluteString(rootSID, _dataDir.getPath(), test1.getPath()), test1.getPath(),
             new KIndex(0));
         Assert.assertTrue(test1.isFile());
         Assert.assertEquals(1, _dataDir.list().length);
@@ -195,7 +198,7 @@ public class TestLinkedRevProvider extends AbstractTest
                 writeFile(file, name);
                 file.setLastModified(backThen.getTime());
                 LinkedRevFile localRevFile = _localRevProvider.newLocalRevFile_(
-                    Path.fromAbsoluteString(_dataDir.getPath(), file.getPath()), file.getPath(),
+                    Path.fromAbsoluteString(rootSID, _dataDir.getPath(), file.getPath()), file.getPath(),
                     new KIndex(0));
                 localRevFile.save_();
             }

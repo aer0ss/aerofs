@@ -5,6 +5,7 @@
 package com.aerofs.daemon.core.admin;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.DirectoryService.IObjectWalker;
 import com.aerofs.daemon.core.ds.OA;
@@ -71,13 +72,14 @@ public class HdRelocateRootAnchor extends AbstractHdIMC<EIRelocateRootAnchor>
 
         // Even though we expect the UI to adjust the new root anchor, users may pass in a raw path
         // through the Ritual call.
-        move_(Cfg.absRootAnchor(), RootAnchorUtil.adjustRootAnchor(ev._newRootAnchor));
+        move_(Cfg.rootSID(), Cfg.absDefaultRootAnchor(),
+                RootAnchorUtil.adjustRootAnchor(ev._newRootAnchor));
     }
 
     /**
      * Linker is 'disabled' during this method since the Core runs as single threaded process
      */
-    private void move_(String absOldRoot, String absNewRoot) throws Exception
+    private void move_(SID sid, String absOldRoot, String absNewRoot) throws Exception
     {
         // Sanity checking.
         RootAnchorUtil.checkNewRootAnchor(absOldRoot, absNewRoot);
@@ -112,6 +114,7 @@ public class HdRelocateRootAnchor extends AbstractHdIMC<EIRelocateRootAnchor>
         try {
             relocator.doWork(t);
             Cfg.db().set(Key.ROOT, absNewRoot);
+            Cfg.db().moveRoot_(sid, absNewRoot);
             // Since the default behavior is to set the autoexport dir to be the root
             // anchor, when we relocate the data at the root anchor, we also wind up
             // relocating the data in the autoexport folder.  Since the user probably
@@ -306,7 +309,8 @@ public class HdRelocateRootAnchor extends AbstractHdIMC<EIRelocateRootAnchor>
         public void afterRootCopy(Trans t)
                 throws Exception
         {
-            updateFID(_ds.resolveThrows_(new Path()), _newRoot.getAbsolutePath(), t);
+            // TODO: handle all root stores..
+            updateFID(_ds.resolveThrows_(Path.root(Cfg.rootSID())), _newRoot.getAbsolutePath(), t);
         }
 
         private void updateFID(SOID newRootSOID, String absNewRoot, final Trans t) throws Exception

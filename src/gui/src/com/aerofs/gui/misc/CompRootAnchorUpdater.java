@@ -58,7 +58,7 @@ public class CompRootAnchorUpdater extends Composite
         errorLabel.setLayoutData(gdErrorLabel);
         errorLabel.setText(
                 "Your " + L.PRODUCT + " folder was not found in the original location:\n" +
-                Cfg.absRootAnchor() + "\n\n" +
+                Cfg.absDefaultRootAnchor() + "\n\n" +
                 "If you moved the folder, click \"" + NEW_LOCATION_TEXT + "\" " +
                 "below, and specify the new location.\n\n" +
                 "If you deleted the folder, or want to start over, click " +
@@ -124,7 +124,7 @@ public class CompRootAnchorUpdater extends Composite
 
         if (rootPath == null) return false;
 
-        String oldRootPath = Cfg.absRootAnchor();
+        String oldRootPath = Cfg.absDefaultRootAnchor();
         String newRootPath = RootAnchorUtil.adjustRootAnchor(rootPath);
         try {
             RootAnchorUtil.checkNewRootAnchor(oldRootPath, newRootPath);

@@ -633,7 +633,7 @@ public class DlgHistory extends AeroFSDialog
         fDlg.setFilterNames(new String[]{"All files"});
         fDlg.setFilterExtensions(new String[]{"*.*"});
         fDlg.setFilterPath(
-                Util.join(Cfg.absRootAnchor(), Util.join(version.path.removeLast().elements())));
+                Util.join(Cfg.absDefaultRootAnchor(), Util.join(version.path.removeLast().elements())));
         fDlg.setFileName(version.path.last());
         fDlg.setOverwrite(true); // The OS will show a warning if the user chooses an existing name
 
@@ -657,7 +657,7 @@ public class DlgHistory extends AeroFSDialog
         //   * it might be time consuming
         //   * it can be terribly annoying because it discards to expansion state of tree items
         //   outside of the selected path
-        if (Path.isUnder(Cfg.absRootAnchor(), dst)) {
+        if (Path.isUnder(Cfg.absDefaultRootAnchor(), dst)) {
             // TODO: optimize refresh when restoring a file to a previous version of itself
             refreshVersionTree();
         }
@@ -703,7 +703,7 @@ public class DlgHistory extends AeroFSDialog
         DirectoryDialog dDlg = new DirectoryDialog(getShell(), SWT.SHEET);
         dDlg.setMessage("Select destination folder in which deleted files from the source folder " +
                 "will be restored.");
-        dDlg.setFilterPath(Util.join(Cfg.absRootAnchor(),
+        dDlg.setFilterPath(Util.join(Cfg.absDefaultRootAnchor(),
                 Util.join(_model.getPath(index).removeLast().elements())));
         final String path = dDlg.open();
         if (path == null) return;
@@ -717,7 +717,7 @@ public class DlgHistory extends AeroFSDialog
         } else {
             // the actual restore operation is started in a separate thread by the feedback dialog
             final boolean inPlace = Util.join(path, index.name).equals(
-                    _model.getPath(index).toAbsoluteString(Cfg.absRootAnchor()));
+                    _model.getPath(index).toAbsoluteString(Cfg.absDefaultRootAnchor()));
             String label = "Restoring " + Util.quote(_model.getPath(index).last()) +
                     (inPlace ? "" : "\nto " + Util.quote(path));
             new FeedbackDialog(getShell(), "Restoring...", null, label) {

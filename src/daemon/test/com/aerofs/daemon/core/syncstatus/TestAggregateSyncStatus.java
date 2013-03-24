@@ -5,6 +5,7 @@
 package com.aerofs.daemon.core.syncstatus;
 
 import com.aerofs.base.id.DID;
+import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.mock.logical.IsSOIDAtPath;
 import com.aerofs.daemon.core.mock.logical.MockDS;
@@ -58,8 +59,10 @@ public class TestAggregateSyncStatus extends AbstractTest
     @Mock MapSIndex2DeviceBitMap sidx2dbm;
     @Mock CfgAggressiveChecking config;
 
-    @InjectMocks MockDS mds;
+    MockDS mds;
     @InjectMocks AggregateSyncStatus agsync;
+
+    final SID rootSID = SID.generate();
 
     /**
      * A couple of remote device IDs to test sync status
@@ -73,7 +76,7 @@ public class TestAggregateSyncStatus extends AbstractTest
      */
     SOID soidAt(String path)
     {
-        return argThat(new IsSOIDAtPath(ds, path));
+        return argThat(new IsSOIDAtPath(ds, rootSID, path));
     }
 
     /**
@@ -141,7 +144,7 @@ public class TestAggregateSyncStatus extends AbstractTest
 
     void assertAggregateSyncStatusVectorEquals(String path, boolean... status) throws Exception
     {
-        SOID soid = ds.resolveThrows_(Path.fromString(path));
+        SOID soid = ds.resolveThrows_(Path.fromString(rootSID, path));
         Assert.assertEquals(new BitVector(status), agsync.getAggregateSyncStatusVector_(soid));
     }
 
@@ -155,6 +158,7 @@ public class TestAggregateSyncStatus extends AbstractTest
         dsVerificationMode = new StrictlyOrderedNonGreedyVerification();
 
         // stub device list of root store
+        mds = new MockDS(rootSID, ds, sm, sm, sidx2dbm);
         mds.dids(d0, d1, d2);
     }
 

@@ -15,7 +15,8 @@ import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.UniqueID.ExInvalidID;
 import com.aerofs.daemon.core.first.FirstLaunch.AccessibleStores;
-import com.aerofs.daemon.core.linker.PathCombo;
+import com.aerofs.daemon.core.phy.linked.linker.LinkerRootMap;
+import com.aerofs.daemon.core.phy.linked.linker.PathCombo;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.lib.db.AbstractTransListener;
@@ -24,7 +25,6 @@ import com.aerofs.lib.Param;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.cfg.CfgAbsRootAnchor;
 import com.aerofs.base.id.SID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.injectable.InjectableDriver;
@@ -45,19 +45,19 @@ public class SharedFolderTagFileAndIcon
     private static final Logger l = Loggers.getLogger(SharedFolderTagFileAndIcon.class);
 
     private final InjectableDriver _dr;
-    private final CfgAbsRootAnchor _cfgAbsRootAnchor;
+    private final LinkerRootMap _lrm;
     private final IMapSIndex2SID _sidx2sid;
     private final IMapSID2SIndex _sid2sidx;
     private final InjectableFile.Factory _factFile;
     private final AccessibleStores _accessibleStoresOnFirstLaunch;
 
     @Inject
-    public SharedFolderTagFileAndIcon(InjectableDriver dr, CfgAbsRootAnchor cfgAbsRootAnchor,
+    public SharedFolderTagFileAndIcon(InjectableDriver dr, LinkerRootMap lrm,
             IMapSIndex2SID sidx2sid, IMapSID2SIndex sid2sidx, InjectableFile.Factory factFile,
             AccessibleStores accessibleStoresOnFirstLaunch)
     {
         _dr = dr;
-        _cfgAbsRootAnchor = cfgAbsRootAnchor;
+        _lrm = lrm;
         _sidx2sid = sidx2sid;
         _sid2sidx = sid2sidx;
         _factFile = factFile;
@@ -110,7 +110,7 @@ public class SharedFolderTagFileAndIcon
 
     private void addTagFileAndIconImpl(SIndex sidx, Path path) throws IOException, SQLException
     {
-        String absPath = path.toAbsoluteString(_cfgAbsRootAnchor.get());
+        String absPath = path.toAbsoluteString(_lrm.absRootAnchor_(path.sid()));
         if (!OSUtil.isLinux()) {
             _dr.setFolderIcon(absPath, OSUtil.getIconPath(Icon.SharedFolder));
         }
@@ -144,7 +144,7 @@ public class SharedFolderTagFileAndIcon
     public void deleteTagFileAndIconIn(Path path) throws IOException
     {
         l.info("del sf tag in " + path);
-        deleteTagFileAndIcon(path.toAbsoluteString(_cfgAbsRootAnchor.get()));
+        deleteTagFileAndIcon(path.toAbsoluteString(_lrm.absRootAnchor_(path.sid())));
     }
 
     private void deleteTagFileAndIcon(String absPath) throws IOException

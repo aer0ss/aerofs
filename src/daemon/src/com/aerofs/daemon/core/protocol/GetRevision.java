@@ -58,7 +58,7 @@ public class GetRevision
         PBCore core = CoreUtil.newCall(Type.GET_REVISION_CALL)
             .setGetRevisionCall(
                 PBGetRevisionCall.newBuilder()
-                    .addAllObjectPathElement(path.asList())
+                    .setPath(path.toPB())
                     .setIndex(ByteString.copyFrom(index))
             ).build();
 
@@ -73,7 +73,7 @@ public class GetRevision
 
         byte[] index = pb.getIndex().toByteArray();
         IPhysicalRevProvider provider = _ps.getRevProvider();
-        RevInputStream ris = provider.getRevInputStream_(new Path(pb.getObjectPathElementList()), index);
+        RevInputStream ris = provider.getRevInputStream_(Path.fromPB(pb.getPath()), index);
 
         PBCore core = CoreUtil.newReply(msg.pb())
                 .setGetRevisionReply(PBGetRevisionReply.newBuilder()

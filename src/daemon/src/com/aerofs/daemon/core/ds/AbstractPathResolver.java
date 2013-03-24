@@ -5,6 +5,8 @@
 package com.aerofs.daemon.core.ds;
 
 import com.aerofs.base.id.OID;
+import com.aerofs.daemon.core.store.IMapSID2SIndex;
+import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
@@ -35,45 +37,51 @@ import java.util.List;
  */
 public abstract class AbstractPathResolver
 {
+    protected final DirectoryService _ds;
+    protected final IMapSIndex2SID _sidx2sid;
+    protected final IMapSID2SIndex _sid2sidx;
+
+    protected AbstractPathResolver(DirectoryService ds, IMapSIndex2SID sidx2sid,
+            IMapSID2SIndex sid2sidx)
+    {
+        _ds = ds;
+        _sidx2sid = sidx2sid;
+        _sid2sidx = sid2sidx;
+    }
+
     /**
      * @return The path where the OA locates. The first element in the returned list is the last
      * element of the path; the second element is the second last path element, and so on. This
      * convention is to simplify the implementation of this method.
      */
     @Nonnull
-    public abstract List<String> resolve_(@Nonnull OA oa) throws SQLException;
+    protected abstract Path resolve_(@Nonnull OA oa) throws SQLException;
+
+    protected Path makePath_(SIndex sidx, List<String> elems) throws SQLException
+    {
+        // The first element in the list is the last element in the path. The following code creates
+        // the path by reversing the list order
+        String[] path = new String[elems.size()];
+        for (int i = 0; i < path.length; i++) path[i] = elems.get(path.length - i - 1);
+        return new Path(_sidx2sid.get_(sidx), path);
+    }
 
     /**
      * @return The SOID the Path refers to. Return null if the path is not found.
      */
-    @Nullable
-    public abstract SOID resolve_(@Nonnull Path path) throws SQLException;
-
-    /**
-     * Helper method to resolve a path into a SOID, following any anchors that may be present in the
-     * path.
-     *
-     * @param ds       an instance of DirectoryService to be used for the resolution
-     * @param sidx     the root store index that this path is refering to
-     * @param path     the path to resolve
-     * @param startAt  the path element to start the resolution from. E.g., if this is 1, the first
-     *                 element in the path will be skipped.
-     *
-     * @return         null if the path is not found, or a new SOID corresponding to that path
-     *
-     * @throws SQLException
-     */
-    public static @Nullable SOID resolvePath_(DirectoryService ds, SIndex sidx, Path path, int startAt)
-            throws SQLException
+    public @Nullable SOID resolve_(@Nonnull Path path) throws SQLException
     {
+        SIndex sidx = _sid2sidx.getNullable_(path.sid());
+        if (sidx == null) return null;
+
         OID oid = OID.ROOT;
-        int i = startAt;
+        int i = 0;
         while (i < path.elements().length) {
-            OID child = ds.getChild_(sidx, oid, path.elements()[i]);
+            OID child = _ds.getChild_(sidx, oid, path.elements()[i]);
             if (child == null) {
-                OA oa = ds.getOA_(new SOID(sidx, oid));
+                OA oa = _ds.getOA_(new SOID(sidx, oid));
                 if (oa.isAnchor()) {
-                    SOID soid = ds.followAnchorNullable_(oa);
+                    SOID soid = _ds.followAnchorNullable_(oa);
                     if (soid == null) return null;
                     sidx = soid.sidx();
                     oid = soid.oid();

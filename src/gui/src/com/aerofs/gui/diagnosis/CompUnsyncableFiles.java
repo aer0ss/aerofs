@@ -114,7 +114,7 @@ public class CompUnsyncableFiles extends Composite {
 
             Entry en = (Entry) element;
 
-            int start = Cfg.absRootAnchor().length() + 1;
+            int start = Cfg.absDefaultRootAnchor().length() + 1;
             String path = en._path.length() > start ? en._path.substring(start)
                     : en._path;
             return GUIUtil.shortenText(_gc, path, _table.getClientArea().width,
@@ -394,7 +394,7 @@ public class CompUnsyncableFiles extends Composite {
     {
         if (!OSUtil.isWindows()) {
             final InOutArg<Integer> count = new InOutArg<Integer>(0);
-            listSpecialFilesRecursive(Cfg.absRootAnchor(),
+            listSpecialFilesRecursive(Cfg.absDefaultRootAnchor(),
                     new IListSpecialFileCallback() {
                 @Override
                 public boolean add(String path, Type type)

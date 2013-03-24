@@ -8,7 +8,7 @@ import com.aerofs.daemon.core.phy.block.IBlockStorageBackend;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.cfg.CfgAbsRootAnchor;
+import com.aerofs.lib.cfg.CfgAbsDefaultRoot;
 import com.aerofs.lib.ex.ExFileNotFound;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.google.common.io.ByteStreams;
@@ -36,7 +36,7 @@ public class LocalBackend implements IBlockStorageBackend
     private final InjectableFile _rootDir;
 
     @Inject
-    public LocalBackend(CfgAbsRootAnchor absRootAnchor, InjectableFile.Factory fileFactory)
+    public LocalBackend(CfgAbsDefaultRoot absRootAnchor, InjectableFile.Factory fileFactory)
     {
         _fileFactory = fileFactory;
         _rootDir = _fileFactory.create(absRootAnchor.get());

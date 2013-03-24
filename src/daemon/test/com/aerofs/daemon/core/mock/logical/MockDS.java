@@ -91,7 +91,7 @@ public class MockDS
     {
         private final Path _path;
 
-        IsEqualPathIgnoringCase(Path path) {_path = path;}
+        IsEqualPathIgnoringCase(Path path) { _path = path;}
 
         // In reality, when passed a path of same name, but different case, the DS returns the SOID
         // for the case that is stored in the DB. This matcher helps reflect that behaviour
@@ -102,19 +102,19 @@ public class MockDS
         }
     }
 
-    public MockDS(DirectoryService ds) throws  Exception
+    public MockDS(SID rootSID, DirectoryService ds) throws  Exception
     {
-        this(ds, null, null, null);
+        this(rootSID, ds, null, null, null);
     }
 
-    public MockDS(DirectoryService ds, @Nullable IMapSID2SIndex sid2sidx,
+    public MockDS(SID rootSID, DirectoryService ds, @Nullable IMapSID2SIndex sid2sidx,
             @Nullable IMapSIndex2SID sidx2sid) throws  Exception
     {
-        this(ds, sid2sidx, sidx2sid, null);
+        this(rootSID, ds, sid2sidx, sidx2sid, null);
     }
 
     @Inject
-    public MockDS(DirectoryService ds, @Nullable IMapSID2SIndex sid2sidx,
+    public MockDS(SID rootSID, DirectoryService ds, @Nullable IMapSID2SIndex sid2sidx,
             @Nullable IMapSIndex2SID sidx2sid, @Nullable MapSIndex2DeviceBitMap sidx2dbm)
             throws  Exception
     {
@@ -127,14 +127,14 @@ public class MockDS
 
         // mock root store
         SIndex sidx = new SIndex(_nextSidx++);
-        _sid = SID.generate(); // TODO: use valid root store id
+        _sid = rootSID;
         _root = new MockDSDir(OA.ROOT_DIR_NAME, null, new SOID(sidx, OID.ROOT));
         _trash = new MockDSDir(Param.TRASH, _root, true, new SOID(sidx, OID.TRASH));
 
         mockSIDMap(_sid, sidx);
 
         // mock path resolution for root
-        when(_ds.resolveNullable_(argThat(new IsEqualPathIgnoringCase(new Path()))))
+        when(_ds.resolveNullable_(argThat(new IsEqualPathIgnoringCase(Path.root(_sid)))))
                 .thenReturn(_root.soid());
 
         /*
@@ -191,6 +191,8 @@ public class MockDS
                 any(Trans.class));
 
     }
+
+    public SID rootSID() { return _sid; }
 
     /**
      * Mock SID<->SIndex mapping
@@ -294,7 +296,7 @@ public class MockDS
         public Path getPath()
         {
             if (_parent == null)
-                return new Path();
+                return Path.root(_sid);
             Path p = _parent.getPath();
             return _soid.oid().isRoot() ? p : p.append(_name);
         }
@@ -847,7 +849,7 @@ public class MockDS
 
     public void touch(String p, Trans t, IDirectoryServiceListener... listeners) throws Exception
     {
-        Path path = Path.fromString(p);
+        Path path = Path.fromString(_sid, p);
         MockDSDir d = cd(path.removeLast());
         MockDSFile f = d.file(path.last());
         for (IDirectoryServiceListener listener : listeners)
@@ -856,7 +858,7 @@ public class MockDS
 
     public void mkdir(String p, Trans t, IDirectoryServiceListener... listeners) throws Exception
     {
-        Path path = Path.fromString(p);
+        Path path = Path.fromString(_sid, p);
         MockDSDir d = cd(path.removeLast());
         MockDSDir f = d.dir(path.last());
         for (IDirectoryServiceListener listener : listeners)
@@ -865,7 +867,7 @@ public class MockDS
 
     public void delete(String p, Trans t, IDirectoryServiceListener... listeners) throws Exception
     {
-        Path path = Path.fromString(p);
+        Path path = Path.fromString(_sid, p);
         MockDSDir d = cd(path.removeLast());
         MockDSObject c = d.child(path.last());
         c.delete(t, listeners);
@@ -874,8 +876,8 @@ public class MockDS
     public void move(String org, String dst, Trans t, IDirectoryServiceListener... listeners)
             throws Exception
     {
-        Path from = Path.fromString(org);
-        Path to = Path.fromString(dst);
+        Path from = Path.fromString(_sid, org);
+        Path to = Path.fromString(_sid, dst);
         MockDSDir dfrom = cd(from.removeLast());
         MockDSObject c = dfrom.child(from.last());
 
@@ -886,7 +888,7 @@ public class MockDS
     public void sync(String p, BitVector newStatus, Trans t, IDirectoryServiceListener... listeners)
             throws Exception
     {
-        Path path = Path.fromString(p);
+        Path path = Path.fromString(_sid, p);
         MockDSDir d = cd(path.removeLast());
         MockDSObject c = d.child(path.last());
         BitVector oldStatus = c.ss(newStatus);

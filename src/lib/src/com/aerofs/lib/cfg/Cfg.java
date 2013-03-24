@@ -60,7 +60,7 @@ public class Cfg
     private static boolean _isAggressiveCheckingEnabled;
     private static boolean _useHistory;
     private static boolean _useXFF;
-    private static String _absRootAnchor;
+    private static String _absDefaultRootAnchor;
     private static String _absAuxRoot;
     private static String _ver;
     private static X509Certificate _cert;
@@ -113,8 +113,8 @@ public class Cfg
         // watch for filesystem changes on OSX.
         File rootAnchor = new File(_db.get(Key.ROOT));
         assert rootAnchor.isAbsolute();
-        _absRootAnchor = rootAnchor.getCanonicalPath();
-        _absAuxRoot = absAuxRootForPath(_absRootAnchor, _did);
+        _absDefaultRootAnchor = rootAnchor.getCanonicalPath();
+        _absAuxRoot = absAuxRootForPath(_absDefaultRootAnchor, _did);
 
         _portbase = readPortbase();
         _rootSID = SID.rootSID(_user);
@@ -341,9 +341,9 @@ public class Cfg
     /**
      * @return absolute path to the anchor of the root store
      */
-    public static String absRootAnchor()
+    public static String absDefaultRootAnchor()
     {
-        return _absRootAnchor;
+        return _absDefaultRootAnchor;
     }
 
     //-------------------------------------------------------------------------

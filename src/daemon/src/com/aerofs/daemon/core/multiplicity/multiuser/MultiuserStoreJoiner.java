@@ -24,13 +24,14 @@ public class MultiuserStoreJoiner implements IStoreJoiner
     @Override
     public void joinStore_(SIndex sidx, SID sid, String folderName, Trans t) throws Exception
     {
-        if (sid.isRoot()) _sc.createRootStore_(sid, MultiuserPathResolver.getStorePath(sid), t);
+        // hmm, why do we only autjoin root stores?
+        if (sid.isUserRoot()) _sc.createRootStore_(sid, t);
     }
 
     @Override
     public void leaveStore_(SIndex sidx, SID sid, Trans t) throws Exception
     {
-        if (sid.isRoot()) {
+        if (sid.isUserRoot()) {
             // TODO:
         }
     }

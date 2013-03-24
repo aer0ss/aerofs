@@ -34,6 +34,11 @@ public class InjectableJNotify
         return JNotify_macosx.addWatch(path);
     }
 
+    public boolean macosx_removeWatch(int watchID)
+    {
+        return JNotify_macosx.removeWatch(watchID);
+    }
+
     public int linux_addWatch(String path, int mask) throws JNotifyException
     {
         return JNotify_linux.addWatch(path, mask);

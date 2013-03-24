@@ -73,7 +73,7 @@ public class TestSP_ListUserShareFolders extends AbstractSPFolderTest
         createSharedFolders();
 
         for (PBSharedFolder sf : queryCurrentAndOtherUsers()) {
-            assertFalse(new SID(sf.getStoreId()).isRoot());
+            assertFalse(new SID(sf.getStoreId()).isUserRoot());
         }
     }
 

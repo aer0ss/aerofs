@@ -6,7 +6,6 @@ package com.aerofs.daemon.core.multiplicity.multiuser;
 
 import com.aerofs.daemon.core.store.StoreCreator;
 import com.aerofs.daemon.lib.db.trans.Trans;
-import com.aerofs.lib.Path;
 import com.aerofs.base.id.SID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.base.id.UserID;
@@ -15,7 +14,6 @@ import org.junit.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 
-import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -38,7 +36,7 @@ public class TestMultiuserStoreJoiner extends AbstractTest
         SID rootSID = SID.rootSID(userID);
         msj.joinStore_(sidx, rootSID, "test", t);
 
-        verify(sc).createRootStore_(eq(rootSID), any(Path.class), eq(t));
+        verify(sc).createRootStore_(eq(rootSID), eq(t));
     }
 
     @Test

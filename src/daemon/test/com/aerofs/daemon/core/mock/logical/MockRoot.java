@@ -1,5 +1,6 @@
 package com.aerofs.daemon.core.mock.logical;
 
+import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.mock.logical.MockDS.MockDSAnchor;
 import com.aerofs.daemon.core.mock.logical.MockDS.MockDSDir;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
@@ -51,10 +52,10 @@ public class MockRoot
         _children = children;
     }
 
-    public void mock(DirectoryService ds, @Nullable IMapSID2SIndex sid2sidx,
+    public void mock(SID rootSID, DirectoryService ds, @Nullable IMapSID2SIndex sid2sidx,
             @Nullable IMapSIndex2SID sidx2sid) throws Exception
     {
-        mds = new MockDS(ds, sid2sidx, sidx2sid);
+        mds = new MockDS(rootSID, ds, sid2sidx, sidx2sid);
         for (AbstractMockLogicalObject o : _children) {
             mock(mds.root(), o);
         }

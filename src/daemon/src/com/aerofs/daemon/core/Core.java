@@ -2,18 +2,19 @@ package com.aerofs.daemon.core;
 
 import com.aerofs.daemon.core.db.CoreDBSetup;
 import com.aerofs.daemon.core.first.FirstLaunch;
-import com.aerofs.daemon.core.linker.scanner.ScanCompletionCallback;
+import com.aerofs.daemon.core.phy.ScanCompletionCallback;
 import com.aerofs.daemon.core.syncstatus.SyncStatusNotificationSubscriber;
 import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.core.verkehr.VerkehrNotificationSubscriber;
 import com.aerofs.lib.SystemUtil;
+import com.aerofs.lib.cfg.Cfg;
 import com.google.inject.Inject;
 
 import com.aerofs.daemon.IModule;
 import com.aerofs.daemon.core.acl.ACLNotificationSubscriber;
-import com.aerofs.daemon.core.linker.ILinker;
+import com.aerofs.daemon.core.phy.ILinker;
 import com.aerofs.daemon.core.migration.ImmigrantVersionControl;
 import com.aerofs.daemon.core.net.Transports;
 import com.aerofs.daemon.core.net.link.LinkStateService;
@@ -24,6 +25,8 @@ import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.update.DaemonPostUpdateTasks;
 import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
 import com.aerofs.daemon.lib.db.CoreDBCW;
+
+import java.io.IOException;
 
 public class Core implements IModule
 {
@@ -101,10 +104,10 @@ public class Core implements IModule
         _nvc.init_();
         _ivc.init_();
         _ps.init_();
+        _linker.init_();
         _ss.init_();
         _tps.init_();
         _stack.init_();
-        _linker.init_();
         _aclsub.init_();
         _sssub.init_();
         _notifier.init_();

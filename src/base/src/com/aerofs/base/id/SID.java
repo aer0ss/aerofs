@@ -77,7 +77,7 @@ public class SID extends UniqueID
         assert isValid() : toStringFormal();
     }
 
-    public boolean isRoot()
+    public boolean isUserRoot()
     {
         return getVersionNibble(getBytes()) == 3;
     }
@@ -100,7 +100,7 @@ public class SID extends UniqueID
         byte[] bs = BaseSecUtil.newMessageDigestMD5().digest(oid.getBytes());
         setVersionNibble(bs, 0);
         SID sid = new SID(bs);
-        assert !sid.isRoot();
+        assert !sid.isUserRoot();
         return sid;
     }
 
@@ -113,7 +113,7 @@ public class SID extends UniqueID
         byte[] bs = Arrays.copyOf(oid.getBytes(), UniqueID.LENGTH);
         setVersionNibble(bs, 0);
         SID sid = new SID(bs);
-        assert !sid.isRoot();
+        assert !sid.isUserRoot();
         return sid;
     }
 
@@ -135,7 +135,7 @@ public class SID extends UniqueID
      */
     public static OID convertedStoreSID2folderOID(SID sid)
     {
-        assert !sid.isRoot() : sid.toStringFormal();
+        assert !sid.isUserRoot() : sid.toStringFormal();
         byte[] bs = Arrays.copyOf(sid.getBytes(), UniqueID.LENGTH);
         setVersionNibble(bs, 4);
         OID oid = new OID(bs);
@@ -148,7 +148,7 @@ public class SID extends UniqueID
      */
     public static OID storeSID2anchorOID(SID sid)
     {
-        assert !sid.isRoot() : sid.toStringFormal();
+        assert !sid.isUserRoot() : sid.toStringFormal();
         OID oid = new OID(sid.getBytes());
         assert oid.isAnchor();
         return oid;
@@ -162,7 +162,7 @@ public class SID extends UniqueID
     {
         assert oid.isAnchor() : oid.toStringFormal();
         SID sid = new SID(oid.getBytes());
-        assert !sid.isRoot();
+        assert !sid.isUserRoot();
         return sid;
     }
 
@@ -176,7 +176,7 @@ public class SID extends UniqueID
         byte[] bs = md.digest(ROOT_SID_SALT);
         setVersionNibble(bs, 3);
         SID sid = new SID(bs);
-        assert sid.isRoot();
+        assert sid.isUserRoot();
         return sid;
     }
 

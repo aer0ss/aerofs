@@ -31,7 +31,7 @@ public class HdCreateSeedFile extends AbstractHdIMC<EICreateSeedFile>
         if (L.get().isMultiuser()) {
             // TODO ?
         } else {
-            ev.setResult_(_sc.create_(((SingleuserStores)_stores).getRoot_()));
+            ev.setResult_(_sc.create_(((SingleuserStores)_stores).getUserRoot_()));
         }
     }
 }

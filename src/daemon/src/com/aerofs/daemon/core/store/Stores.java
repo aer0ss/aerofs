@@ -22,6 +22,7 @@ import java.util.concurrent.Callable;
 
 public class Stores implements IStores, IStoreDeletionOperator
 {
+    // TODO: cache hierarchy information?
     protected IStoreDatabase _sdb;
     private SIDMap _sm;
     private MapSIndex2Store _sidx2s;

@@ -189,7 +189,7 @@ public class ControllerService implements IControllerService
                 .setVersion(Cfg.ver())
                 .setUserName(Cfg.user().getString())
                 .setDeviceId(Cfg.did().toStringFormal())
-                .setRootAnchor(Cfg.absRootAnchor())
+                .setRootAnchor(Cfg.absDefaultRootAnchor())
                 .build();
 
         GetConfigReply reply = GetConfigReply.newBuilder()

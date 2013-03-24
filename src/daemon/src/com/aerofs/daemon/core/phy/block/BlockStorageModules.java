@@ -5,8 +5,8 @@
 package com.aerofs.daemon.core.phy.block;
 
 import com.aerofs.daemon.lib.db.ISchema;
-import com.aerofs.daemon.core.linker.ILinker;
-import com.aerofs.daemon.core.linker.ILinker.NullLinker;
+import com.aerofs.daemon.core.phy.ILinker;
+import com.aerofs.daemon.core.phy.ILinker.NullLinker;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.google.inject.AbstractModule;
 import com.google.inject.Module;

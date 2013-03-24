@@ -4,8 +4,8 @@
 
 package com.aerofs.shell;
 
-import com.aerofs.lib.Path;
 import com.aerofs.base.ex.ExBadArgs;
+import com.aerofs.proto.Common.PBPath;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
 
@@ -44,8 +44,8 @@ public class CmdImport implements IShellCommand<ShProgram>
         if (args.length != 2) throw new ExBadArgs("Expected two arguments");
 
         File source = new File(args[0]);
-        Path dest = new Path(s.d().buildPathElemList_(args[1]));
+        PBPath dest = s.d().buildPath_(args[1]);
 
-        s.d().getRitualClient_().importFile(dest.toPB(), source.getAbsolutePath());
+        s.d().getRitualClient_().importFile(dest, source.getAbsolutePath());
     }
 }

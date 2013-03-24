@@ -1,6 +1,7 @@
 package com.aerofs.daemon.core.mock.logical;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.lib.ex.ExNotDir;
@@ -20,9 +21,10 @@ public class LogicalObjectsPrinter
 {
     private static final Logger l = Loggers.getLogger(LogicalObjectsPrinter.class);
 
-    public static void printRecursively(DirectoryService ds) throws SQLException, ExNotFound, ExNotDir
+    public static void printRecursively(SID sid, DirectoryService ds)
+            throws SQLException, ExNotFound, ExNotDir
     {
-        printRecursively(ds.resolveNullable_(new Path()), ds);
+        printRecursively(ds.resolveNullable_(Path.root(sid)), ds);
     }
 
     private static void printRecursively(SOID soid, DirectoryService ds)

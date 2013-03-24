@@ -62,9 +62,9 @@ public class DPUTMigrateAuxRoot implements IDaemonPostUpdateTask
     private String getOldAuxRoot() throws IOException
     {
         if (OSUtil.isWindows()) {
-            return getOldAuxRootWin(Cfg.absRootAnchor());
+            return getOldAuxRootWin(Cfg.absDefaultRootAnchor());
         } else {
-            return getOldAuxRootOSXLinux(Cfg.absRootAnchor());
+            return getOldAuxRootOSXLinux(Cfg.absDefaultRootAnchor());
         }
     }
 

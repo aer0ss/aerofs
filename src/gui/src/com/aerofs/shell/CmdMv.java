@@ -15,7 +15,7 @@ public class CmdMv implements IShellCommand<ShProgram>
         if (cl.getArgs().length != 2) throw new ExBadArgs();
 
         PBPath to = s.d().buildPath_(cl.getArgs()[1]);
-        if (new Path(to).isEmpty()) throw new ExBadArgs("incorrect destination path");
+        if (Path.fromPB(to).isEmpty()) throw new ExBadArgs("incorrect destination path");
 
         s.d().getRitualClient_().moveObject(s.d().buildPath_(cl.getArgs()[0]), to);
     }

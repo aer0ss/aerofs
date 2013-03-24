@@ -4,6 +4,7 @@
 
 package com.aerofs.gui.history;
 
+import com.aerofs.base.id.SID;
 import com.aerofs.gui.history.HistoryModel.ModelIndex;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.cfg.CfgLocalUser;
@@ -87,7 +88,7 @@ public class TestHistoryModel extends AbstractTest
         @Override
         public boolean matches(Object o)
         {
-            return (o instanceof PBPath) ? _p.equals(new Path((PBPath)o)) : false;
+            return (o instanceof PBPath) ? _p.equals(Path.fromPB((PBPath)o)) : false;
         }
     }
 
@@ -97,7 +98,7 @@ public class TestHistoryModel extends AbstractTest
     @Test
     public void shouldPopulateFirstLevel() throws Exception
     {
-        Path root = new Path();
+        Path root = Path.root(SID.rootSID(user.get()));
         when(ritual.listRevChildren(any(PBPath.class))).thenReturn(ListRevChildrenReply.newBuilder()
                 .addChild(PBRevChild.newBuilder().setName("d0").setIsDir(true))
                 .addChild(PBRevChild.newBuilder().setName("d1").setIsDir(true))

@@ -119,7 +119,7 @@ public class CompConflictFiles extends Composite
 
             switch (columnIndex) {
             case 0:
-                return GUIUtil.shortenText(_gc, en._path.toStringFormal(),
+                return GUIUtil.shortenText(_gc, en._path.toStringRelative(),
                         _table.getClientArea().width, false);
             default:
                 return "";
@@ -198,7 +198,7 @@ public class CompConflictFiles extends Composite
                     if (count++ != 0) {
                         sb.append(OSUtil.isWindows() ? "\r\n" : "\n");
                     }
-                    sb.append(en._path.toStringFormal());
+                    sb.append(en._path.toStringRelative());
                 }
 
                 if (count == 0) return;
@@ -383,7 +383,7 @@ public class CompConflictFiles extends Composite
     private void openLocal() throws Exception
     {
         for (Entry en : getSelectedEntries()) {
-            String path = en._path.toAbsoluteString(Cfg.absRootAnchor());
+            String path = en._path.toAbsoluteString(Cfg.absDefaultRootAnchor());
             if (!GUIUtil.launch(path)) {
                 throw new Exception(S.FILE_OPEN_FAIL);
             }
@@ -507,7 +507,7 @@ public class CompConflictFiles extends Composite
             for (PBBranch b : attr.getBranchList()) {
                 if (b.getKidx() == KIndex.MASTER.getInt()) continue;
 
-                addEntry(new Entry(new Path(conflict.getPath()), b.getKidx()));
+                addEntry(new Entry(Path.fromPB(conflict.getPath()), b.getKidx()));
             }
         }
     }

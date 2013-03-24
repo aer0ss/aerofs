@@ -2,18 +2,18 @@ option java_package = "com.aerofs.proto";
 option optimize_for = LITE_RUNTIME; // remove reflection
 
 /**
- * PBPath specifies an *absolute* path of a object under AeroFS root.
- *
- * {@link com.aci.aerofs.lib.fsi.FSIUtil} provides several helper functions to
- * ease generation, access, and comparison of PBSOPath objects.
+ * PBPath specifies an *absolute* path of a object within a given root store
  */
 message PBPath {
+    // root store in which the object resides
+    required bytes sid = 1;
+
     /**
      * A list of object path elements. The 0th element refers to the object
      * directly under the root of the store, the 1st element to the object under
      * the 0th one, and so on. An empty list refers to the store's root.
      */
-    repeated string elem = 1;
+    repeated string elem = 2;
 }
 
 message PBVer {

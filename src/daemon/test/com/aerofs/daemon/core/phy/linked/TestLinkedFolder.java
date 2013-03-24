@@ -1,28 +1,14 @@
 package com.aerofs.daemon.core.phy.linked;
 
-import com.aerofs.daemon.core.ds.DirectoryService;
-import com.aerofs.daemon.core.linker.IgnoreList;
 import com.aerofs.daemon.core.phy.IPhysicalFolder;
-import com.aerofs.daemon.core.phy.linked.LinkedFolder;
-import com.aerofs.daemon.core.phy.linked.fid.IFIDMaintainer;
 import com.aerofs.lib.Path;
-import com.aerofs.lib.cfg.CfgAbsRootAnchor;
 import com.aerofs.lib.id.SOKID;
-import com.aerofs.lib.injectable.InjectableDriver;
-import com.aerofs.lib.injectable.InjectableFile.Factory;
-
-import static org.mockito.Mockito.mock;
 
 public class TestLinkedFolder extends AbstractTestLinkedObject<IPhysicalFolder>
 {
-    String pathAux = "baz";
-
     @Override
-    protected IPhysicalFolder createPhysicalObject(CfgAbsRootAnchor cfgAbsRootAnchor,
-            Factory factFile, InjectableDriver dr, DirectoryService ds, IgnoreList il,
-            SOKID sokid, Path path)
+    protected IPhysicalFolder createPhysicalObject(LinkedStorage s, SOKID sokid, Path path)
     {
-        return new LinkedFolder(cfgAbsRootAnchor, factFile, new IFIDMaintainer.Factory(dr, ds),
-                il, mock(SharedFolderTagFileAndIcon.class), sokid.soid(), path);
+        return new LinkedFolder(s, sokid.soid(), path);
     }
 }

@@ -66,7 +66,7 @@ class MobileService implements IMobileService, CNameListener
             throws Exception
     {
         checkNotNull(_remoteUser);
-        Path path = Path.fromPbAndUser(pbPath, _remoteUser);
+        Path path = Path.fromPB(pbPath);
 
         EIGetChildrenAttr ev = new EIGetChildrenAttr(_remoteUser, path, Core.imce());
         ev.execute(PRIO);
@@ -86,7 +86,7 @@ class MobileService implements IMobileService, CNameListener
             throws Exception
     {
         checkNotNull(_remoteUser);
-        Path path = Path.fromPbAndUser(pbPath, _remoteUser);
+        Path path = Path.fromPB(pbPath);
 
         EIDownloadPacket ev = new EIDownloadPacket(_remoteUser, _imce, path, -1, -1);
         ev.execute(PRIO);
@@ -106,7 +106,8 @@ class MobileService implements IMobileService, CNameListener
         checkNotNull(_remoteUser);
         DownloadCookie inCookie = DownloadCookie.parseFrom(cookie);
 
-        EIDownloadPacket ev = new EIDownloadPacket(_remoteUser, _imce, new Path(inCookie.getPath()),
+        EIDownloadPacket ev = new EIDownloadPacket(_remoteUser, _imce,
+                Path.fromPB(inCookie.getPath()),
                 offset, length);
         ev._inFileLength = inCookie.getLength();
         ev._inFileModTime = inCookie.getModTime();

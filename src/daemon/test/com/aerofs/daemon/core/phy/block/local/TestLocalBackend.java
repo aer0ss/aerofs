@@ -7,7 +7,7 @@ package com.aerofs.daemon.core.phy.block.local;
 import com.aerofs.daemon.core.phy.block.AbstractBlockTest;
 import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
-import com.aerofs.lib.cfg.CfgAbsRootAnchor;
+import com.aerofs.lib.cfg.CfgAbsDefaultRoot;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.google.common.io.ByteStreams;
 import org.junit.Assert;
@@ -23,7 +23,7 @@ import static org.mockito.Mockito.when;
 
 public class TestLocalBackend extends AbstractBlockTest
 {
-    @Mock CfgAbsRootAnchor absRootAnchor;
+    @Mock CfgAbsDefaultRoot absRootAnchor;
 
     LocalBackend bsb;
 

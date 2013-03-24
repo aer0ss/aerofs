@@ -72,7 +72,7 @@ public class ShellextService
         ShellextNotification notification = ShellextNotification.newBuilder()
                 .setType(Type.ROOT_ANCHOR)
                 .setRootAnchor(RootAnchorNotification.newBuilder()
-                    .setPath(Cfg.absRootAnchor())
+                    .setPath(Cfg.absDefaultRootAnchor())
                     .setUser(Cfg.user().getString()))
                 .build();
 
@@ -149,18 +149,24 @@ public class ShellextService
         notifyRootAnchor();
     }
 
+    private Path mkpath(String absRoot, String absPath)
+    {
+        // TODO: support multiroot
+        return Path.fromAbsoluteString(Cfg.rootSID(), absRoot, absPath);
+    }
+
     /**
      * @param absPath the absolute path
      */
     private void shareFolder(final String absPath)
     {
-        String absRootAnchor = Cfg.absRootAnchor();
+        String absRootAnchor = Cfg.absDefaultRootAnchor();
         if (!Path.isUnder(absRootAnchor, absPath)) {
             l.warn("shellext provided an external path " + absPath);
             return;
         }
 
-        GUIUtil.createOrManageSharedFolder(Path.fromAbsoluteString(absRootAnchor, absPath));
+        GUIUtil.createOrManageSharedFolder(mkpath(absRootAnchor, absPath));
     }
 
     /**
@@ -168,47 +174,46 @@ public class ShellextService
      */
     private void syncStatus(final String absPath)
     {
-        String absRootAnchor = Cfg.absRootAnchor();
+        String absRootAnchor = Cfg.absDefaultRootAnchor();
         if (!Path.isUnder(absRootAnchor, absPath)) {
             l.warn("shellext provided an external path " + absPath);
             return;
         }
 
-        GUIUtil.showSyncStatus(Path.fromAbsoluteString(absRootAnchor, absPath));
+        GUIUtil.showSyncStatus(mkpath(absRootAnchor, absPath));
     }
 
     private void versionHistory(final String absPath)
     {
-        String absRootAnchor = Cfg.absRootAnchor();
+        String absRootAnchor = Cfg.absDefaultRootAnchor();
         if (!Path.isUnder(absRootAnchor, absPath)) {
             l.warn("shellext provided an external path " + absPath);
             return;
         }
 
-        GUIUtil.showVersionHistory(Path.fromAbsoluteString(absRootAnchor, absPath));
+        GUIUtil.showVersionHistory(mkpath(absRootAnchor, absPath));
     }
 
     private void conflictResolution(final String absPath)
     {
-        String absRootAnchor = Cfg.absRootAnchor();
+        String absRootAnchor = Cfg.absDefaultRootAnchor();
         if (!Path.isUnder(absRootAnchor, absPath)) {
             l.warn("shellext provided an external path " + absPath);
             return;
         }
 
-        GUIUtil.showConflictResolutionDialog(Path.fromAbsoluteString(absRootAnchor, absPath));
+        GUIUtil.showConflictResolutionDialog(mkpath(absRootAnchor, absPath));
     }
 
     private void getStatus(final String absPath)
     {
-        String absRoot = Cfg.absRootAnchor();
+        String absRoot = Cfg.absDefaultRootAnchor();
         if (!Path.isUnder(absRoot, absPath)) {
             l.warn("shellext provided an external path " + absPath);
             return;
         }
 
-        final List<PBPath> pbPaths = Lists.newArrayList(
-                Path.fromAbsoluteString(absRoot, absPath).toPB());
+        final List<PBPath> pbPaths = Lists.newArrayList(mkpath(absRoot, absPath).toPB());
 
         if (_ritual == null) {
             _ritual = RitualClientFactory.newClient();
