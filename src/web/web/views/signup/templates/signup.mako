@@ -4,9 +4,18 @@
     <h1 style="text-align: center">Create an account</h1>
 </div>
 
+<div class="span4 offset4">
+    <div class="well well-small" style="margin: 0 auto;">
+        <div style="text-align: center;">
+            You will sign up using email:<br>
+            <strong>${email_address}</strong>
+        </div>
+    </div>
+    <br>
+</div>
+
 <div class="span7 offset5">
-    ## Always use POST to avoid disclose private information in the URL when JS
-    ## is disabled.
+    ## Always use POST to avoid disclose passwords in the URL when JS is disabled.
     <form id="signupForm" method="post">
         ${self.csrf.token_input()}
         ## signup.py needs the email address only to generate scrypt
@@ -15,11 +24,11 @@
         <input type="hidden" name="${url_param_email}" value="${email_address}"/>
         <input type="hidden" name="${url_param_signup_code}" value="${code}"/>
         <label for="inputFirstName">First name:</label>
-        <input class="input-medium" id="inputFirstName" type="text" name="${url_param_first_name}">
+        <input class="span2" id="inputFirstName" type="text" name="${url_param_first_name}">
         <label for="inputLastName">Last name:</label>
-        <input class="input-medium" id="inputLastName" type="text" name="${url_param_last_name}">
+        <input class="span2" id="inputLastName" type="text" name="${url_param_last_name}">
         <label for="inputPasswd">Password:</label>
-        <input class="input-medium" id="inputPasswd" type="password" name="${url_param_password}">
+        <input class="span2" id="inputPasswd" type="password" name="${url_param_password}">
 
         <span class="help-block footnote" style="margin-top: 10px;">
             By signing up you agree to AeroFS <a href="http://www.aerofs.com/tos" target="_blank">Terms of Service</a>
