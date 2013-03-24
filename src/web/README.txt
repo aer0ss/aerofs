@@ -61,13 +61,18 @@ And now, to actually update the files stored in S3:
 $ cd src/web
 $ ./update_cloudfront
 
-Updating Libraries:
+Updating Bootstrap:
 ==================
-If you decide to download a new version of bootstrap.js note that the following modification
-needs to be applied under the Typeahead object for the function lookup:
-if (this.query === "") {
-    items = this.source;
-    if (items.length > 0) {
-        return this.render(items.slice(0, this.options.items)).show();
-    }
-}
+A. Update JS and images
+----
+1. Download prebuilt Bootstrap from http://twitter.github.com/bootstrap/assets/bootstrap.zip
+2. Copy bootstrap.min.js and files under img to src/web/web/static/{js,img}
+
+B. Update LESS and CSS
+----
+1. Download the latest release at https://github.com/twitter/bootstrap/zipball/master
+2. Copy the entire less folder from the downloaded zip to src/web/web/less/bootstrap
+3. Add the following _to the end_ of variables.less:
+    @import "../aerofs-variables.less";
+4. Recompile bootstrap.less, responsive.less, and aerofs.less into css files
+   using tools like http://incident57.com/less/.

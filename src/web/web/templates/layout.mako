@@ -13,7 +13,7 @@
     <link href='https://fonts.googleapis.com/css?family=Open+Sans:300,400,600' rel='stylesheet' type='text/css'>
     <link href="${request.static_url('web:static/css/bootstrap.css')}" rel="stylesheet">
     <link href="${request.static_url('web:static/css/responsive.css')}" rel="stylesheet">
-    <link href="${request.static_url('web:static/css/main.css')}" rel="stylesheet">
+    <link href="${request.static_url('web:static/css/aerofs.css')}" rel="stylesheet">
     <%block name="css"/>
 
     ## Le HTML5 shim, for IE6-8 support of HTML5 elements
@@ -241,7 +241,7 @@
 
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
 <script src="${request.static_url('web:static/js/jquery.easing.1.3.js')}"></script>
-<script src="${request.static_url('web:static/js/bootstrap.js')}"></script>
+<script src="${request.static_url('web:static/js/bootstrap.min.js')}"></script>
 <script src="${request.static_url('web:static/js/aerofs.js')}"></script>
 
 <%

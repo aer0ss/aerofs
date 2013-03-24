@@ -76,7 +76,7 @@
 <div id="join-team-modal" class="modal hide" tabindex="-1" role="dialog">
     <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal">×</button>
-        <h3>Confirm Leaving the Current Team</h3>
+        <h4>Confirm Leaving the Current Team</h4>
     </div>
     <div class="modal-body">
         <p>

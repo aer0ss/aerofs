@@ -10,20 +10,13 @@
   font-weight:bold;
 }
 
-h3 {
-    font-weight:600;
+// We use h4 for modal titles. A normal font weight is not pretty for titles.
+h4 {
+  font-weight:600;
 }
 
 // Form-related elements
 // ------------------
-
-div.org_input_block {
-    margin-top: 30px;
-}
-
-span.required_field {
-    color: @red;
-}
 
 div.input_container {
     margin-top: 10px;
@@ -45,7 +38,6 @@ div.input_container.submit {
     margin-top: 25px;
 }
 
-// These overwrite the default behavior
 .nav-list > .active > a, .nav-list > .active > a:hover {
   background: transparent;
   text-shadow: none;
@@ -69,13 +61,6 @@ div.input_container.submit {
 
 .btn.active {
   color: rgba(255,255,255,.75);
-}
-
-.btn {
-  // Since the default buttons are dark blues which makes them look bigger,
-  // their height needs to be shortened a bit. Bootstrap's default is
-  // @baseLineHeight = @baseFontSize * 1.5.
-  line-height: @baseFontSize * 1.4;
 }
 
 .full_name {
@@ -138,29 +123,6 @@ div.input_container.submit {
 .aerofs-icon-windows          { background-position: -24px  0; }
 .aerofs-icon-linux            { background-position: -48px  0; }
 .aerofs-icon-android          { background-position: -72px  0; }
-
-// This is to correct the horizontal spacing for inputs in controls-row. The
-// current version of Stripe doesn't have controls-row support.
-//
-// TODO: remove this correction when upgrading Stripe.
-//
-// Note 1. This is disabled as no form uses this feature yet.
-// Note 2. This is copied from bootstrap.less, and is therefore not responsive.
-//
-// .controls-row [class*="span"] + [class*="span"] {
-//    margin-left: 16px;
-//}
-
-// Make <a> and <button> buttons round cornered. The current version of
-// Bootstrap only makes <input> buttons so.
-//
-// TODO: remove this correction when upgrading Stripe.
-//
-a.btn,
-button.btn {
-  -webkit-border-radius: @inputBorderRadius;
-  border-radius: @inputBorderRadius;
-}
 
 // Messages
 // ------------------
@@ -238,8 +200,4 @@ footer {
     // color: @base1;
     color: gray;
     text-align: right;
-}
-
-.sidebar-nav {
-
 }

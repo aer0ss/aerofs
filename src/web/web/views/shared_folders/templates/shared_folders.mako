@@ -2,7 +2,7 @@
 <%! navigation_bars = True; %>
 
 <%block name="css">
-    <link href="${request.static_url('web:static/css/datatables_bootstrap.css')}"
+    <link href="${request.static_url('web:static/css/datatables-bootstrap.css')}"
           rel="stylesheet">
     <style type="text/css">
         #modal .modal-body {

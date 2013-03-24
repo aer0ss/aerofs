@@ -7,7 +7,7 @@
             <div id="credit-card-modal" class="modal hide" tabindex="-1" role="dialog">
                 <div class="modal-header">
                     <button type="button" class="close" data-dismiss="modal">×</button>
-                    <h3>${caller.title()}</h3>
+                    <h4>${caller.title()}</h4>
                 </div>
                 <div class="modal-body">
                     ${caller.description()}

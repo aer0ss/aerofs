@@ -4,9 +4,7 @@
 <%namespace name="credit_card_modal" file="credit_card_modal.mako"/>
 
 <%block name="css">
-    <link href="${request.static_url('web:static/css/datatables_bootstrap.css')}"
-          rel="stylesheet">
-    <link href="${request.static_url('web:static/css/datatables.css')}"
+    <link href="${request.static_url('web:static/css/datatables-bootstrap.css')}"
           rel="stylesheet">
 </%block>
 

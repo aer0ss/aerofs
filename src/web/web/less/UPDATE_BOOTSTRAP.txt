@@ -1,0 +1,3 @@
+See README.txt on how to update the Bootstrap library.
+
+N.B. Never modify files under the bootstrap library. Modify aerofs*.less to override library settings.
