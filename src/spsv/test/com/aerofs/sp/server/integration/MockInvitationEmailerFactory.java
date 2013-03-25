@@ -9,9 +9,6 @@ import com.aerofs.sp.server.email.InvitationEmailer;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.user.User;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
 public class MockInvitationEmailerFactory extends InvitationEmailer.Factory
 {
     @Override

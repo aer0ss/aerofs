@@ -47,8 +47,6 @@ import com.aerofs.verkehr.client.lib.admin.VerkehrAdmin;
 import com.aerofs.verkehr.client.lib.publisher.VerkehrPublisher;
 import org.slf4j.Logger;
 
-import javax.annotation.Nonnull;
-import java.util.Properties;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -222,25 +220,6 @@ public class SPServlet extends AeroServlet
         }
 
         _postDelegate.sendReply(resp, bytes);
-    }
-
-    private void initCertificateAuthenticator(HttpServletRequest req)
-            throws CertificateException, IOException
-    {
-        String verify = req.getHeader("Verify");
-        String serial = req.getHeader("Serial");
-        String dname = req.getHeader("DName");
-
-        if (verify != null && serial != null && dname != null) {
-            Properties prop = new Properties();
-            prop.load(new StringReader(dname.replaceAll("/", "\n")));
-            String cname = (String) prop.get("CN");
-
-            // The "Verify" header corresponds to the nginx variable $ssl_client_verify which
-            // is set to "SUCCESS" when nginx mutual authentication is successful.
-            _certificateAuthenticator.set(verify.equalsIgnoreCase("SUCCESS"),
-                    Long.parseLong(serial, 16), cname);
-        }
     }
 
     // parameter format: aerofs=love&inviter=<email>&invitee=<email>

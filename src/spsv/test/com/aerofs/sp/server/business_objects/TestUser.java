@@ -4,21 +4,20 @@
 
 package com.aerofs.sp.server.business_objects;
 
-import com.aerofs.base.id.DID;
-import com.aerofs.base.id.UniqueID;
-import com.aerofs.lib.FullName;
-import com.aerofs.lib.acl.Role;
 import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExNotFound;
+import com.aerofs.base.id.DID;
 import com.aerofs.base.id.SID;
+import com.aerofs.base.id.UniqueID;
+import com.aerofs.lib.FullName;
+import com.aerofs.lib.acl.Role;
 import com.aerofs.lib.ex.ExNoAdmin;
 import com.aerofs.sp.server.lib.SharedFolder;
-import com.aerofs.sp.server.lib.organization.Organization;
+import com.aerofs.sp.server.lib.device.Device;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.aerofs.sp.server.lib.user.User;
-import com.aerofs.sp.server.lib.device.Device;
 import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException;
 import junit.framework.Assert;
 import org.junit.Test;

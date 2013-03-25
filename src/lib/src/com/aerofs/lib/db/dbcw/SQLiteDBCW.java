@@ -12,7 +12,6 @@ import com.aerofs.lib.os.OSUtil;
 import org.sqlite.SQLiteConfig;
 import org.sqlite.SQLiteConfig.JournalMode;
 import org.sqlite.SQLiteConfig.LockingMode;
-import org.sqlite.SQLiteConfig.SynchronousMode;
 import org.sqlite.SQLiteJDBCLoader;
 import org.sqlite.SQLiteJDBCLoader.INativeLibraryLoader;
 

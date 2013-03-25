@@ -5,11 +5,9 @@
 package com.aerofs.sp.server.integration;
 
 import com.aerofs.base.id.SID;
-import com.aerofs.base.id.UniqueID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.lib.acl.Role;
 import com.aerofs.base.ex.ExNoPerm;
-import com.aerofs.proto.Common.PBSubjectRolePair;
 import com.aerofs.proto.Sp.PBSharedFolder;
 import com.aerofs.proto.Sp.PBSharedFolder.PBUserAndRole;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;

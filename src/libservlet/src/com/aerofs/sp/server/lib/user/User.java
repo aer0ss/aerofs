@@ -17,6 +17,7 @@ import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
+import com.aerofs.servlets.lib.ssl.CertificateAuthenticator;
 import com.aerofs.sp.common.Base62CodeGenerator;
 import com.aerofs.sp.server.lib.OrganizationInvitationDatabase;
 import com.aerofs.sp.server.lib.SharedFolder;
@@ -279,9 +280,9 @@ public class User
 
         List<OrganizationInvitation> result = Lists.newLinkedList();
         for (OrganizationID orgID : _f._odb.getInvitedOrganizations(id())) {
-            if (organization.id().equals(orgID)) continue;
-
-            result.add(_f._factOrgInvite.create(this, _f._factOrg.create(orgID)));
+            if (!organization.id().equals(orgID)) {
+                result.add(_f._factOrgInvite.create(this, _f._factOrg.create(orgID)));
+            }
         }
 
         return result;
