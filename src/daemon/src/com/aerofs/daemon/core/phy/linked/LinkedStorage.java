@@ -10,6 +10,7 @@ import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.Param;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.cfg.CfgAbsAuxRoot;
+import com.aerofs.lib.cfg.CfgStoragePolicy;
 import org.slf4j.Logger;
 
 import com.aerofs.daemon.core.linker.IgnoreList;
@@ -41,6 +42,7 @@ public class LinkedStorage implements IPhysicalStorage
     private IFIDMaintainer.Factory _factFIDMan;
     private CfgAbsRootAnchor _cfgAbsRootAnchor;
     private CfgAbsAuxRoot _cfgAbsAuxRoot;
+    private CfgStoragePolicy _cfgStoragePolicy;
     private IgnoreList _il;
     private LinkedRevProvider _revProvider;
     private SharedFolderTagFileAndIcon _sfti;
@@ -50,6 +52,7 @@ public class LinkedStorage implements IPhysicalStorage
             IFIDMaintainer.Factory factFIDMan,
             CfgAbsRootAnchor cfgAbsRootAnchor,
             CfgAbsAuxRoot cfgAbsAuxRoot,
+            CfgStoragePolicy cfgStoragePolicy,
             IgnoreList il,
             LinkedRevProvider revProvider,
             SharedFolderTagFileAndIcon sfti)
@@ -58,6 +61,7 @@ public class LinkedStorage implements IPhysicalStorage
         _factFIDMan = factFIDMan;
         _cfgAbsRootAnchor = cfgAbsRootAnchor;
         _cfgAbsAuxRoot = cfgAbsAuxRoot;
+        _cfgStoragePolicy = cfgStoragePolicy;
         _il = il;
         _revProvider = revProvider;
         _sfti = sfti;
@@ -146,6 +150,14 @@ public class LinkedStorage implements IPhysicalStorage
                 if (rev != null) rev.rollback_();
             }
         });
+
+        // wait until commit in case we need to put this file back (as in a delete operation
+        // that rolls back). This is an unsubtle limit - more nuanced storage policies will
+        // be implemented by the history cleaner.
+        if (!_cfgStoragePolicy.useHistory())
+        {
+            deleteOnCommit(rev, f._f, t);
+        }
     }
 
     @Override
@@ -202,7 +214,34 @@ public class LinkedStorage implements IPhysicalStorage
         });
     }
 
-    public static void moveWithRollback_(final InjectableFile from, final InjectableFile to, Trans t)
+    /**
+     * Install a committing_ handler to remove a LinkedRevFile instance.
+     * Not used outside of LinkedStorage, so no need to generalize this yet.
+     *
+     * NOTE: we don't throw from here - an error at transaction cleanup shouldn't kill the world
+     *
+     * @param rev Rev file to be cleaned up
+     * @param orig Original file name that rev derived from - only used in exception handling
+     * @param t Active transaction
+     */
+    private static void deleteOnCommit(
+            final LinkedRevFile rev, final InjectableFile orig, Trans t)
+    {
+        t.addListener_(new AbstractTransListener() {
+            @Override
+            public void committed_()
+            {
+                try {
+                    rev.delete_();
+                } catch (IOException ioe) {
+                    l.warn(Util.e(ioe));
+                }
+            }
+        });
+    }
+
+    public static void moveWithRollback_(
+            final InjectableFile from, final InjectableFile to, Trans t)
             throws IOException
     {
         from.moveInSameFileSystem(to);

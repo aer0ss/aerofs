@@ -152,6 +152,13 @@ public class LinkedRevProvider implements IPhysicalRevProvider
             _fRev.moveInSameFileSystem(_fOrg);
             changeSpace(-_fOrg.getLength());
         }
+
+        void delete_() throws IOException
+        {
+            long sz = _fRev.getLength();
+            _fRev.delete();
+            changeSpace(-sz);
+        }
     }
 
     private final InjectableFile.Factory _factFile;
