@@ -52,11 +52,6 @@
     <script src="${request.static_url('web:static/js/spin.min.js')}"></script>
     <script type="text/javascript">
         $(document).ready(function() {
-
-            ## Since the tooltip has multiple lines, show it below the main text
-            ## to avoid it going off the page top.
-            $('#shared_folder_tooltip').tooltip({placement : 'bottom'});
-
             $('#folders_table').dataTable({
                 ## Features
                 "bProcessing": true,
@@ -158,7 +153,8 @@
                             ur.${user_and_role_last_name_key};
                     ## label text and style must match the labels generated in
                     ## shared_folders_view.py:_session_user_labeler
-                    var label = isOwner ? "<span class='label tooltip_owner'>owner</label>" : "";
+                    var label = isOwner ? '<span data-toggle="tooltip"' +
+                            ' class="label tooltip_owner">owner</label>' : "";
 
                     var options;
                     if (email === '${session_user}') {
@@ -172,8 +168,11 @@
 
                     $table.find('> tbody:last').append(
                         ## TODO (WW) use proper jQuery methods to add elements
-                        '<tr class="tooltip_email" title="' + email + '">' +
-                            '<td>' + name + label + '</td>' +
+                        '<tr>' +
+                            '<td>' +
+                                '<span data-toggle="tooltip" class="tooltip_email" title="' + email + '">' +
+                                    name +
+                                '</span>' + label + '</td>' +
                             '<td>' + options + '</td>' +
                         '</tr>'
                     );
@@ -215,27 +214,35 @@
                 return '<li><a href="mailto:' + email + '" target="_blank">Send Email</a></li>';
             }
 
-            function regiterEmailTooltips() {
-                $('.tooltip_email').tooltip({placement: 'left'});
-            }
-
-            function registerOwnerTooltips() {
-                $('.tooltip_owner').tooltip({placement: 'top', 'title' :
-                        'An owner of a folder can add and remove other members' +
-                        ' and owners of the folder.'});
-            }
-
             function registerOwnedByMeTooltips() {
-                $('.tooltip_owned_by_me').tooltip({placement: 'top', 'title' :
+                $('.tooltip_owned_by_me').tooltip({'title' :
                         'You are an owner of this folder. You can add and' +
                         ' remove other members and owners of the folder.'});
             }
 
             function registerOwnedByTeamTooltips() {
-                $('.tooltip_owned_by_team').tooltip({placement: 'top', 'title' :
+                $('.tooltip_owned_by_team').tooltip({'title' :
                         'This folder is owned by at least one member of your' +
                         ' team. As a team admin, you can' +
                         ' manage this folder as if your are a folder owner.'});
+            }
+
+            function registerOwnerTooltips() {
+                $('.tooltip_owner').tooltip({
+                    ## To avoid tooltips being cut off by the modal boundary.
+                    ## See https://github.com/twitter/bootstrap/pull/6378
+                    container: '#modal',
+                    'title' : 'An owner of a folder can add and remove other' +
+                        ' members and owners of the folder.'
+                });
+            }
+
+            function regiterEmailTooltips() {
+                $('.tooltip_email').tooltip({
+                    ## To avoid tooltips being cut off by the modal boundary.
+                    ## See https://github.com/twitter/bootstrap/pull/6378
+                    container: '#modal'
+                });
             }
 
             ## Set event handlers and activities for elements in the table
@@ -244,7 +251,6 @@
                 registerOwnerTooltips();
 
                 $('.modal-make-editor').click(function() {
-                    hideEmailTooltips();
                     var email = $(this).data('email');
                     setRole(email, 'EDITOR', function() {
                         modalUserAndRoleList()[email]
@@ -253,7 +259,6 @@
                 });
 
                 $('.modal-make-owner').click(function() {
-                    hideEmailTooltips();
                     var email = $(this).data('email');
                     setRole(email, 'OWNER', function() {
                         modalUserAndRoleList()[email]
@@ -262,22 +267,11 @@
                 });
 
                 $('.modal-remove').click(function() {
-                    hideEmailTooltips();
                     confirmRemoveUser($(this).data('email'), $(this).data('full-name'));
                 });
             }
 
-            ## Call this method before potentially destroying tooltip
-            ## enabled table elements. Otherwise active tooltip may dangle
-            ## and become orphaned once the element is destroyed.
-            function hideEmailTooltips() {
-                $('.tooltip_email').tooltip('hide');
-            }
-
             var $modal = $('#modal');
-            $modal.on('hide', function() {
-                hideEmailTooltips();
-            });
             $modal.on('shown', function() {
                 $("#modal-invitee-email").focus();
             });
@@ -354,7 +348,7 @@
             }
 
             $('#remove-modal').on('hidden', function() {
-                $('#modal').modal('show');
+                $modal.modal('show');
             })
 
             $('#modal-invite-form').submit(function(ev) {
@@ -413,9 +407,7 @@
             }
 
             function displayModalError(errorHeader, error) {
-                ## TODO (WW) better error displaying. Use showErrorMessage() and
-                ## a large z-index for the message bar so it can float atop the modal.
-                alert(errorHeader + error + ".");
+                showErrorMessage(errorHeader + error + ".");
             }
 
             ## spin.js jQuery plugin copied from http://fgnass.github.com/spin.js/

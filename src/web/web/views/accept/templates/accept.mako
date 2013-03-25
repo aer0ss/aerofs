@@ -136,7 +136,7 @@
     <div class="modal-footer">
         <a href="#" class="btn" data-dismiss="modal">Close</a>
         <a href="${request.route_path('team_members')}" class="btn btn-primary">
-            View team members</a>
+            View Team Members</a>
     </div>
 </div>
 

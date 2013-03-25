@@ -128,7 +128,7 @@ def _session_user_privileger(folder, session_user):
 
 def _session_user_labeler(privileged):
     # label text and style must match the labels generated in shared_folder.mako.
-    return '<span class="label tooltip_owned_by_me">owner</span>' if privileged else ''
+    return '<span class="label tooltip_owned_by_me" data-toggle="tooltip">owner</span>' if privileged else ''
 
 @view_config(
     route_name = 'json.get_user_shared_folders',
@@ -171,7 +171,7 @@ def _session_team_privileger(folder, session_user):
 def _session_team_labeler(privileged):
     if not privileged: return ''
     # label text and style must match the labels generated in shared_folder.mako.
-    return '<span class="label tooltip_owned_by_team">owned by team</span>' \
+    return '<span class="label tooltip_owned_by_team" data-toggle="tooltip">owned by team</span>' \
             if privileged else ''
 
 def _sp_reply2datatables(folders, privileger, labeler, total_count, echo, session_user):

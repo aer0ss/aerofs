@@ -1,8 +1,5 @@
 @import "bootstrap/variables.less";
 
-// for ie7-restore-right-whitespace
-@import "bootstrap/mixins.less";
-
 @footerHeight: 4em;
 
 .navbar .nav > li > a {
@@ -57,9 +54,17 @@ div.input_container.submit {
   margin-bottom: 15px;
 }
 
+// Use smaller fonts for labels, and push labels away from main text (assuming
+// labels are always to the right of text).
 .label {
   font-size: 70%;
   margin-left: 7px;
+}
+
+// Override Bootstrap's @grayLighter background color
+.nav > li > a:hover,
+.nav > li > a:focus {
+  background-color: inherit;
 }
 
 // Force dataTables info text (e.g. "1-10 of 100") stay close to pagination
@@ -84,6 +89,11 @@ div.input_container.submit {
 [class^="icon-"],
 [class*=" icon-"] {
   .vertical-align-fix();
+}
+
+// Copied from mixins.less
+.ie7-restore-right-whitespace() {
+  *margin-right: .3em;
 }
 
 [class^="aerofs-icon-"],
