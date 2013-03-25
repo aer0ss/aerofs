@@ -18,7 +18,7 @@
                 </div>
                 <div class="modal-footer">
                     <a href="#" class="btn" data-dismiss="modal">Cancel</a>
-                    <button class="btn" id="credit-card-submit" type="submit">
+                    <button class="btn btn-primary" id="credit-card-submit" type="submit">
                         ${caller.okay_button_text()}
                     </button>
                 </div>

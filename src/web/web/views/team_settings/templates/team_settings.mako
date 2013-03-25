@@ -15,11 +15,12 @@
 <div class="page_block">
     ## TODO (WW) use form-horizontal when adding new fields. see login.mako
     Change team name:
-    <form class="form-inline" action="${request.route_path('team_settings')}" method="post">
+    <form class="form-inline" id="update-name-form" action="${request.route_path('team_settings')}" method="post">
         <div class="input_container">
             ${self.csrf.token_input()}
+            <input type="hidden" name="form.submitted">
             <input id="organization_name" type="text" name="organization_name" value="${organization_name}"/>
-            <input class="btn" type="submit" name="form.submitted" value="Update" />
+            <input class="btn" id="update-name-button" type="submit" value="Update" />
         </div>
     </form>
 </div>
@@ -34,6 +35,11 @@
     <script type="text/javascript">
         $(document).ready(function() {
             $('#organization_name').focus();
+
+            $("#update-name-form").submit(function() {
+                $("#update-name-button").attr("disabled", "disabled");
+                return true;
+            });
         });
     </script>
 </%block>

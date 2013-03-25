@@ -17,8 +17,16 @@
         <form class="form-inline" action="${request.route_path('request_password_reset')}"
                 method="post">
             ${self.csrf.token_input()}
-            <input type="text" name="login" value=""/>
+            <input type="text" id="email-input" name="login" value=""/>
             <input class="btn" type="submit" name="form.submitted" value="Send Email"/>
         </form>
     %endif
 </div>
+
+<%block name="scripts">
+    <script type="text/javascript">
+        $(document).ready(function() {
+            $("#email-input").focus();
+        });
+    </script>
+</%block>

@@ -21,9 +21,10 @@
 // -------------------------
 // Note: we use aerofs.less to override buttons' foreground colors
 
-@btnBackground:                     @base01;
-@btnBackgroundHighlight:            spin(@btnBackground, 15%);
-@btnBorder:                         @btnBackground;
+@btnPrimaryBackground:              @base01;
+// Since @btnPrimaryBackground has been changed, copy this line from
+// variable.less to update @btnPrimaryBackgroundHighlight.
+@btnPrimaryBackgroundHighlight:     spin(@btnPrimaryBackground, 20%);
 
 // AeroFS specific variables
 // -------------------------

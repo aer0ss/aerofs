@@ -274,9 +274,13 @@
                 $('.tooltip_email').tooltip('hide');
             }
 
-            $('#modal').on('hide', function() {
+            var $modal = $('#modal');
+            $modal.on('hide', function() {
                 hideEmailTooltips();
-            })
+            });
+            $modal.on('shown', function() {
+                $("#modal-invitee-email").focus();
+            });
 
             ## @param dataUpdater the function that updates HTML data on
             ## successful RPC calls

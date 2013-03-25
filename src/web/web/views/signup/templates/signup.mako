@@ -25,7 +25,7 @@
             By signing up you agree to AeroFS <a href="http://www.aerofs.com/tos" target="_blank">Terms of Service</a>
         </span>
 
-        <button id="submitButton" class="btn" type="submit">Sign Up</button>
+        <button id="submitButton" class="btn btn-primary" type="submit">Sign Up</button>
     </form>
 </div>
 
@@ -48,8 +48,8 @@
                 ## inputs are excluded from serialized data.
                 var serializedData = $form.serialize();
 
-                var $inputs = $form.find("input, select, button, textarea");
-                $inputs.prop("disabled", true);
+                var $submitButton = $("#submitButton");
+                $submitButton.attr("disabled", "disabled");
 
                 $.post("${request.route_path('json.signup')}",
                     serializedData
@@ -77,7 +77,7 @@
 
                 function displayError(error) {
                     showErrorMessage(error);
-                    $inputs.prop("disabled", false);
+                    $submitButton.removeAttr("disabled");
                 }
             });
 

@@ -1,6 +1,16 @@
 <%inherit file="layout.mako"/>
 <%! navigation_bars = True; %>
 
+<%block name="css">
+    <style type="text/css">
+        ## Buttons are vertically placed when the horizontal space is too small.
+        ## This style gives vertical spacing between buttons.
+        .btn-vspacing {
+            margin-bottom: 5px;
+        }
+    </style>
+</%block>
+
 <div class="hidden page_block" id="no-invitation-div">
     <h2>No Pending Invitations</h2>
 </div>
@@ -44,8 +54,9 @@
             </span>
         </td>
         <td style="text-align: right; vertical-align: middle;">
-            <a class="btn accept-team-invite" href="#" data-org-id="${org_id}" data-org-name="${org_name | h}">Accept</a>
-            <a class="btn ignore-team-invite" href="#" data-org-id="${org_id}">Ignore</a>
+            <a class="btn btn-primary btn-vspacing accept-team-invite" href="#"
+               data-org-id="${org_id}" data-org-name="${org_name | h}">Accept</a>
+            <a class="btn btn-vspacing ignore-team-invite" href="#" data-org-id="${org_id}">Ignore</a>
         </td>
     </tr>
 </%def>
@@ -67,8 +78,9 @@
             </span>
         </td>
         <td style="text-align: right; vertical-align: middle;">
-            <a class="btn accept-folder-invite" href="#" data-share-id="${share_id}" data-folder-name="${folder_name | h}">Accept</a>
-            <a class="btn ignore-folder-invite" href="#" data-share-id="${share_id}">Ignore</a>
+            <a class="btn btn-primary btn-vspacing accept-folder-invite" href="#"
+               data-share-id="${share_id}" data-folder-name="${folder_name | h}">Accept</a>
+            <a class="btn btn-vspacing ignore-folder-invite" href="#" data-share-id="${share_id}">Ignore</a>
         </td>
     </tr>
 </%def>
@@ -99,17 +111,18 @@
     </div>
     <div class="modal-footer">
         <a href="#" class="btn" data-dismiss="modal">Cancel</a>
-        <a href="#" id="join-team-model-confirm" class="btn">Leave my team and join the new team</a>
+        <a href="#" id="join-team-model-confirm" class="btn btn-primary">
+            Leave my team and join the new team</a>
     </div>
 </div>
 
 <div id="no-admin-for-team-modal" class="modal hide" tabindex="-1" role="dialog">
     <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal">×</button>
-        <h3 class="text-error"><img class="icon-vertical-align-fix"
+        <h4 class="text-error"><img class="icon-vertical-align-fix"
                 src="${request.static_url('web:static/img/warning_16.png')}"
                 width="16px" height="16px">
-            Please Assign an Administrator</h3>
+            Please Assign an Administrator</h4>
     </div>
     <div class="modal-body">
         <p>
@@ -122,7 +135,8 @@
     </div>
     <div class="modal-footer">
         <a href="#" class="btn" data-dismiss="modal">Close</a>
-        <a href="${request.route_path('team_settings')}" class="btn">Assign Administrators</a>
+        <a href="${request.route_path('team_members')}" class="btn btn-primary">
+            View team members</a>
     </div>
 </div>
 

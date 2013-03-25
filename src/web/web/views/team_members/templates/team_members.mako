@@ -19,7 +19,8 @@
     <h2>Invite People to Team</h2>
     <form class="form-inline" id="invite_form" method="post">
         <input type="text" id="invite_user_email" placeHolder="Add email"/>
-        <input id='invite_button' class="btn" type="submit" value="Send Invite"/>
+        <input id='invite_button' class="btn btn-primary" type="submit"
+               value="Send Invite"/>
     </form>
     <table class="table"><tbody id='invited_users_tbody'></tbody></table>
 </div>
@@ -110,7 +111,9 @@
             ## done and fail are callbacks for successful and failed cases. They
             ## can be None.
             function inviteUser(done, fail) {
-                $('#invite_button').attr('disabled', 'disabled');
+                var $inviteButton = $('#invite_button');
+                $inviteButton.attr('disabled', 'disabled');
+
                 var $email = $('#invite_user_email')
                 var email = $email.val().trim();
 
@@ -137,7 +140,7 @@
                 .always(function() {
                     ## Note: the button is enabled even if the payment dialog is
                     ## brought up (by inputCreditCardInfo() above).
-                    $('#invite_button').removeAttr('disabled');
+                    $inviteButton.removeAttr('disabled');
                 });
             }
 

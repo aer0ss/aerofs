@@ -9,9 +9,10 @@
     ## N.B. signup.mock manually creates this form. Make sure the fields there
     ## are consistent with the fields here.
 
-    <form action="${request.route_path('login')}" method="post">
+    <form id="signin_form" action="${request.route_path('login')}" method="post">
         ${self.csrf.token_input()}
-        <input type="hidden" name="${url_param_next}" value="${next}"/>
+        <input type="hidden" name="${url_param_next}" value="${next}">
+        <input type="hidden" name="${url_param_form_submitted}" value="1">
         <label for="input_email">Email:</label>
         <input class="input-medium" id="input_email" type="text" name="${url_param_email}"
             %if login:
@@ -24,7 +25,7 @@
             <input type="checkbox" name="${url_param_remember_me}" value="staySignedIn"
                    checked="checked"> Remember me
         </label>
-        <input class="btn" type="submit" name="${url_param_form_submitted}" value="Sign In"/>
+        <input id="signin_button" class="btn btn-primary" type="submit" value="Sign In"/>
     </form>
 
     <p><a href="${request.route_path('request_password_reset')}">
@@ -42,6 +43,10 @@
                 $('#input_email').focus();
             %endif
 
+            $('#signin_form').submit(function() {
+                $("#signin_button").attr("disabled", "disabled");
+                return true;
+            });
         });
     </script>
 </%block>
