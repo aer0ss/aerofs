@@ -104,6 +104,8 @@
             $('.${open_modal_class}').live('click', function () {
                 $link = $(this);
                 refreshModal();
+                ## Remove previous spinner text
+                resetModalSpinner();
                 $('#modal').modal('show');
             });
 
@@ -354,7 +356,8 @@
             $('#modal-invite-form').submit(function(ev) {
                 startModalSpinner();
 
-                var email = $('#modal-invitee-email').val().trim();
+                ## Since IE doesn't support String.trim(), use $.trim()
+                var email = $.trim($('#modal-invitee-email').val());
                 var sid = modalSID();
                 var name = modalFolderName();
 
@@ -397,11 +400,15 @@
                 }
             }
 
+            function resetModalSpinner() {
+                var txt = $('#modal-spinner').text('');
+                if (txt.data().spinner) txt.data().spinner.stop();
+            }
+
             function startModalSpinner() {
                 $('#modal-spinner').text('').spin(spinnerOpts);
             }
 
-            ##
             function stopModalSpinner(text) {
                 $('#modal-spinner').text(text).data().spinner.stop();
             }

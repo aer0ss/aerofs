@@ -22,5 +22,5 @@
 ## The name of the field must be identical to the one in csrf.py
 ##
 <%def name="token_param()">
-    csrf_token: "${request.session.get_csrf_token()}",
+    "csrf_token": "${request.session.get_csrf_token()}",
 </%def>

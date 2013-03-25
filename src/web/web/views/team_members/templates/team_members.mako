@@ -115,7 +115,8 @@
                 $inviteButton.attr('disabled', 'disabled');
 
                 var $email = $('#invite_user_email')
-                var email = $email.val().trim();
+                ## Since IE doesn't support String.trim(), use $.trim()
+                var email = $.trim($email.val());
 
                 $.post("${request.route_path('json.invite_user')}", {
                     ${self.csrf.token_param()}
@@ -185,8 +186,9 @@
                         .text('Remove Invitation')
                         .data('user', user_id)
                         .attr({
-                            class: 'remove_invitation',
-                            href: '#'
+                            ## IE 8 requires quotes on JSON keys
+                            'class': 'remove_invitation',
+                            'href': '#'
                         });
 
                 $('#invited_users_tbody').append(
