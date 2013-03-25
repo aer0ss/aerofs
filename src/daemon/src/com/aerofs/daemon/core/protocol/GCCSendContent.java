@@ -39,6 +39,8 @@ import com.aerofs.proto.Core.PBGetComReply.Builder;
 import com.aerofs.proto.Transport.PBStream.InvalidationReason;
 import com.google.inject.Inject;
 
+import javax.annotation.Nullable;
+
 /**
  * GCC: GetComponentCall
  */
@@ -69,7 +71,8 @@ public class GCCSendContent
 
     // raw file bytes are appended after BPCore
     void send_(Endpoint ep, SOCKID k, PBCore.Builder bdCore, Builder bdReply, Version vLocal,
-            long prefixLen, Version vPrefix) throws Exception
+            long prefixLen, Version vPrefix, @Nullable ContentHash remoteHash, Version vRemote)
+            throws Exception
     {
         // guaranteed by the caller
         assert _ds.isPresent_(k);
@@ -87,15 +90,32 @@ public class GCCSendContent
         // Send hash if available.
         int hashLength = 0;
         ContentHash h = _ds.getCAHash_(k.sokid());
+        boolean contentIsSame = false;
+        if (h == null) {
+            if (!vRemote.sub_(vLocal).isZero_()) {
+                // TODO: automatically compute missing hash if requested version does not dominate
+                // advertised remote version?
+                // This would avoid having to interrupt the transfer on receiver side to request the
+                // hash, saving disk bandwidth, network bandwidth, two round trips and cpu cycles...
+            }
+        }
         if (h != null) {
-            hashLength = h.toPB().size();
-            l.debug("Sending hash length: " + hashLength);
-            bdReply.setHashLength(hashLength);
+            if (remoteHash != null && h.equals(remoteHash)) {
+                contentIsSame = true;
+                bdReply.setIsContentSame(true);
+                l.info("Content same");
+            } else {
+                hashLength = h.toPB().size();
+                l.debug("Sending hash length: {}", hashLength);
+                bdReply.setHashLength(hashLength);
+            }
         }
 
         PBCore core = bdCore.setGetComReply(bdReply).build();
         ByteArrayOutputStream os = Util.writeDelimited(core);
-        if (os.size() + hashLength + fileLength <= _m.getMaxUnicastSize_()) {
+        if (os.size() <= _m.getMaxUnicastSize_() && contentIsSame) {
+            sendContentSame_(ep.did(), k, os, core);
+        } else if (os.size() + hashLength + fileLength <= _m.getMaxUnicastSize_()) {
             sendSmall_(ep.did(), k, os, core, vLocal, mtime, fileLength, h, pf);
         } else {
             long newPrefixLen = vLocal.equals(vPrefix) ? prefixLen : 0;
@@ -145,6 +165,12 @@ public class GCCSendContent
         }
         to.write(buf, 0, total);
         return total;
+    }
+
+    private void sendContentSame_(DID did, SOCKID k, ByteArrayOutputStream os, PBCore reply)
+            throws Exception
+    {
+        _nsl.sendUnicast_(did, k.sidx(), CoreUtil.typeString(reply), reply.getRpcid(), os);
     }
 
     private void sendSmall_(DID did, SOCKID k, ByteArrayOutputStream os, PBCore reply, Version v,

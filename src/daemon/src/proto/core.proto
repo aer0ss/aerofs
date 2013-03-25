@@ -133,6 +133,7 @@ message PBGetVersCall {
     repeated bytes device_id = 1;
     repeated uint64 knowledge_tick = 2 [packed=true];
     repeated uint64 immigrant_knowledge_tick = 3 [packed=true];
+
     // the requester would like all filters from BASE
     optional bool from_base = 4 [default = false];
 }
@@ -179,6 +180,9 @@ message PBGetComCall {
 
     // valid only if prefix_length > 0
     optional PBVer prefix_version = 5;
+
+    // provide optional content hash to avoid unnecessary IO
+    optional bytes hash_content = 6;
 }
 
 message PBComputeHashCall {
@@ -206,6 +210,8 @@ message PBGetComReply {
 
     // The length of the hash_content which follows this PBGetComReply, if it exists.
     optional uint32 hash_length = 7;
+
+    optional bool is_content_same = 8 [default = false];
 
     // followed by: optional bytes hash_content
     // followed by: optional bytes file_content

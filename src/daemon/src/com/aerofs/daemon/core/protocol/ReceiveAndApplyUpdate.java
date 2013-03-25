@@ -139,6 +139,8 @@ public class ReceiveAndApplyUpdate
         public boolean _conflictRename;
         // the branches to be deleted. never be null
         public final Collection<KIndex> _kidcsDel;
+        // if content I/O should be avoided
+        public final boolean _avoidContentIO;
 
         @Nullable public final ContentHash _hash;
 
@@ -146,12 +148,26 @@ public class ReceiveAndApplyUpdate
 
         CausalityResult(KIndex kidx, Version vAddLocal, Version vLocal)
         {
-            this(kidx, vAddLocal, Collections.<KIndex>emptyList(), false, null, vLocal);
+            this(kidx, vAddLocal, vLocal, false);
+        }
+
+        CausalityResult(KIndex kidx, Version vAddLocal, Version vLocal, boolean avoidContentIO)
+        {
+            this(kidx, vAddLocal, Collections.<KIndex>emptyList(), false, null, vLocal,
+                    avoidContentIO);
         }
 
         CausalityResult(@Nonnull KIndex kidx, @Nonnull Version vAddLocal,
+                @Nonnull Collection<KIndex> kidcsDel, boolean incrementVersion,
+                @Nullable ContentHash h, @Nonnull Version vLocal)
+        {
+            this(kidx, vAddLocal, kidcsDel, incrementVersion, h, vLocal, false);
+        }
+
+
+        CausalityResult(@Nonnull KIndex kidx, @Nonnull Version vAddLocal,
             @Nonnull Collection<KIndex> kidcsDel, boolean incrementVersion,
-            @Nullable ContentHash h, @Nonnull Version vLocal)
+            @Nullable ContentHash h, @Nonnull Version vLocal, boolean avoidContentIO)
         {
             _kidx = kidx;
             _vAddLocal = vAddLocal;
@@ -160,6 +176,7 @@ public class ReceiveAndApplyUpdate
             _hash = h;
             _vLocal = vLocal;
             _conflictRename = false;
+            _avoidContentIO = avoidContentIO;
         }
 
         @Override
@@ -320,7 +337,12 @@ public class ReceiveAndApplyUpdate
     {
         final PBGetComReply reply = msg.pb().getGetComReply();
         final @Nullable ContentHash hRemote;
-        if (reply.hasHashLength()) {
+        if (reply.hasIsContentSame() && reply.getIsContentSame()) {
+            // requested remote version has same content as the MASTER version we had when we made
+            // the request -> add version to MASTER without any file I/O
+            Version vMaster = _nvc.getLocalVersion_(new SOCKID(soid, CID.CONTENT, KIndex.MASTER));
+            return new CausalityResult(KIndex.MASTER, vRemote.sub_(vMaster), vMaster, true);
+        } else if (reply.hasHashLength()) {
             l.debug("hash included");
 
             if (msg.streamKey() != null) {
@@ -955,8 +977,8 @@ public class ReceiveAndApplyUpdate
         KIndex localBranchWithMatchingContent = res._hash == null ? null :
                 findBranchWithMatchingContent_(k.soid(), res._hash);
 
-        if (localBranchWithMatchingContent != null &&
-                localBranchWithMatchingContent.equals(k.kidx())) {
+        if (res._avoidContentIO || (localBranchWithMatchingContent != null &&
+                localBranchWithMatchingContent.equals(k.kidx()))) {
             l.debug("content already there, avoid I/O altogether");
             // no point doing any file I/O...
 

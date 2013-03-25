@@ -12,6 +12,7 @@ import com.aerofs.daemon.core.migration.IEmigrantTargetSIDLister;
 import com.aerofs.daemon.core.net.RPC;
 import com.aerofs.daemon.core.net.NSL;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
+import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.acl.Role;
@@ -89,10 +90,9 @@ public class GetComponentCall
         // Several of the version control and physical storage classes require a branch, not socid.
         // We know that downloads will only ever act on the master branch.
         SOCKID sockid = new SOCKID(socid, KIndex.MASTER);
-        if (l.isDebugEnabled()) l.debug("req gcc for " + socid);
+        l.debug("req gcc for {}", socid);
 
         Version vLocal = _nvc.getLocalVersion_(sockid);
-
         PBGetComCall.Builder bd = PBGetComCall.newBuilder()
             .setObjectId(socid.oid().toPB())
             .setComId(socid.cid().getInt())
@@ -100,7 +100,9 @@ public class GetComponentCall
         // TODO (DF): Look into how the receiver uses the localVersion. Should we send all
         // versions?  Does the receiver care for which branch we're sending versions?
 
-        if (socid.cid().equals(CID.CONTENT)) setIncrementalDownloadInfo_(socid, bd);
+        if (socid.cid().equals(CID.CONTENT)) {
+            setIncrementalDownloadInfo_(socid, bd);
+        }
 
         PBCore call = CoreUtil.newCall(Type.GET_COM_CALL)
             .setGetComCall(bd).build();
@@ -140,6 +142,9 @@ public class GetComponentCall
         }
     }
 
+    // maximum content hash size advertised in a GetComponentCall
+    private final int HASH_THRESHOLD = 64 * ContentHash.UNIT_LENGTH;
+
     private void setIncrementalDownloadInfo_(SOCID socid, Builder bd)
             throws SQLException, ExNotFound
     {
@@ -147,15 +152,22 @@ public class GetComponentCall
         if (oa == null) return;
         assert oa.isFile();
 
+        SOCKID branch = new SOCKID(socid, KIndex.MASTER);
+
+        ContentHash h = _ds.getCAHash_(branch.sokid());
+        if (h != null && h.toPB().size() <= HASH_THRESHOLD) {
+            bd.setHashContent(h.toPB());
+            l.info("advertise hash in gcc {}", socid);
+        }
+
         // TODO (DF): is this a reasonable usage of IPhysicalStorage?
         // I can't tell if prefix files should even track branches
-        SOCKID branch = new SOCKID(socid, KIndex.MASTER);
         IPhysicalPrefix prefix = _ps.newPrefix_(branch);
         long len = prefix.getLength_();
         if (len == 0) return;
 
         Version vPre = _pvc.getPrefixVersion_(branch.soid(), branch.kidx());
-        l.debug("prefix ver " + vPre + " len " + len);
+        l.debug("prefix ver {} len {}", vPre, len);
 
         bd.setPrefixLength(len);
         bd.setPrefixVersion(vPre.toPB_());
@@ -168,7 +180,7 @@ public class GetComponentCall
         PBGetComCall pb = msg.pb().getGetComCall();
 
         SOCKID k = new SOCKID(msg.sidx(), new OID(pb.getObjectId()), new CID(pb.getComId()));
-        l.info("gcc for " + k + " from " + msg.ep());
+        l.info("gcc for {} from {}", k, msg.ep());
 
         // Give up if the requested SOCKID is not present locally (either meta or content)
         // N.B. An aliased object is reported not present, but we should not throw if the
@@ -177,7 +189,7 @@ public class GetComponentCall
         // aliased objects?
         if (!_ds.isPresent_(k) &&
             !(k.cid().isMeta() && _ds.hasAliasedOA_(k.soid()))) {
-            l.debug(k + " not present. Throwing");
+            l.debug("{} not present. Throwing", k);
             throw new ExNoComponentWithSpecifiedVersion();
         }
 
@@ -202,7 +214,7 @@ public class GetComponentCall
     public void sendReply_(DigestedMessage msg, SOCKID k)
         throws Exception
     {
-        l.debug("send to " + msg.ep() + " for " + k);
+        l.debug("send to {} for {}", msg.ep(), k);
 
         Version vLocal = _nvc.getLocalVersion_(k);
 
@@ -211,12 +223,16 @@ public class GetComponentCall
         PBGetComReply.Builder bdReply = PBGetComReply.newBuilder()
             .setVersion(vLocal.toPB_());
 
+        PBGetComCall pbgcc = msg.pb().getGetComCall();
+
+        ContentHash h = pbgcc.hasHashContent() ? new ContentHash(pbgcc.getHashContent()) : null;
+
         if (k.cid().isMeta()) {
             sendMeta_(msg.did(), k, bdCore, bdReply);
         } else if (k.cid().equals(CID.CONTENT)) {
             _sendContent.send_(msg.ep(), k, bdCore, bdReply, vLocal,
-                    msg.pb().getGetComCall().getPrefixLength(),
-                    Version.fromPB(msg.pb().getGetComCall().getPrefixVersion()));
+                    pbgcc.getPrefixLength(), Version.fromPB(pbgcc.getPrefixVersion()),
+                    h, Version.fromPB(pbgcc.getLocalVersion()));
         } else {
             SystemUtil.fatal("unsupported CID: " + k.cid());
         }
@@ -254,8 +270,8 @@ public class GetComponentCall
             bdMeta.setTargetOid(targetOID.toPB());
             Version vTarget = _nvc.getLocalVersion_(new SOCKID(k.sidx(), targetOID, CID.META));
             bdMeta.setTargetVersion(vTarget.toPB_());
-            l.debug("Sending target oid: " + targetOID + " target version: "
-                   + vTarget + " alias SOCKID: " + k);
+            l.debug("Sending target oid: {} target version: {} alias SOCKID: {}",
+                    targetOID, vTarget, k);
         }
 
         ////////
