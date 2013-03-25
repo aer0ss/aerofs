@@ -154,7 +154,7 @@ public class GetComponentCall
 
         SOCKID branch = new SOCKID(socid, KIndex.MASTER);
 
-        ContentHash h = _ds.getCAHash_(branch.sokid());
+        ContentHash h = oa.caMasterNullable() != null ? _ds.getCAHash_(branch.sokid()) : null;
         if (h != null && h.toPB().size() <= HASH_THRESHOLD) {
             bd.setHashContent(h.toPB());
             l.info("advertise hash in gcc {}", socid);
