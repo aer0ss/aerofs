@@ -22,6 +22,7 @@ PACKAGES= \
 	syncstat-tools \
 	jeq-tools \
 	verkehr \
+	bootstrap \
 	devman \
 	vmhost \
 	web \
