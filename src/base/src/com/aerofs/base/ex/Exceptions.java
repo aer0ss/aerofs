@@ -27,6 +27,7 @@ public class Exceptions
     static {
         // Initialize the map with the base types
         _types.put(Type.ALREADY_EXIST,       ExAlreadyExist.class);
+        _types.put(Type.EMPTY_EMAIL_ADDRESS, ExEmptyEmailAddress.class);
         _types.put(Type.BAD_ARGS,            ExBadArgs.class);
         _types.put(Type.NO_PERM,             ExNoPerm.class);
         _types.put(Type.NO_RESOURCE,         ExNoResource.class);

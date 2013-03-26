@@ -1,6 +1,10 @@
 <%inherit file="layout.mako"/>
 <%! navigation_bars = True; %>
 
+<%namespace name="shared_folder_modals" file="shared_folder_modals.mako" />
+
+<%namespace name="credit_card_modal" file="credit_card_modal.mako"/>
+
 <%block name="css">
     <link href="${request.static_url('web:static/css/datatables-bootstrap.css')}"
           rel="stylesheet">
@@ -28,8 +32,6 @@
     </style>
 </%block>
 
-<%include file="shared_folder_modals.html" />
-
 <div class="row page_block">
     <div class="span8">
         <h2>${page_title}</h2>
@@ -46,7 +48,44 @@
     </div>
 </div>
 
+<%shared_folder_modals:main_modals/>
+
+%if is_admin:
+    ## Admins can input credit card on their own
+    <%credit_card_modal:html>
+        <%def name="title()">
+            <%credit_card_modal:default_title/>
+        </%def>
+        <%def name="description()">
+            <p>
+                ## Note: the following text should be consistent with the text
+                ## in CompInviteUsers.java.
+                The free plan allows <strong>one</strong> external collaborator
+                per shared folder. If you'd like to invite unlimited external
+                collaborators, please upgrade to the paid plan
+                ($10/team member/month).
+                <a href="https://www.aerofs.com/pricing" target="_blank">Compare plans</a>.
+            </p>
+
+            <%credit_card_modal:default_description/>
+        </%def>
+        <%def name="okay_button_text()">
+            <%credit_card_modal:default_okay_button_text/>
+        </%def>
+    </%credit_card_modal:html>
+
+%else:
+    ## Non-admins must admins to input credit card
+    <%shared_folder_modals:ask_admin_modal/>
+%endif
+
 <%block name="scripts">
+
+    ## Only admins can input credit card
+    %if is_admin:
+        <%credit_card_modal:javascript/>
+    %endif
+
     <script src="https://ajax.aspnetcdn.com/ajax/jquery.dataTables/1.8.2/jquery.dataTables.min.js"></script>
     <script src="${request.static_url('web:static/js/datatables_extensions.js')}"></script>
     <script src="${request.static_url('web:static/js/spin.min.js')}"></script>
@@ -100,13 +139,12 @@
             ## The Options link that opens the modal. It holds all the data
             ## required by the modal.
             var $link;
+            var $modal = $('#modal');
 
             $('.${open_modal_class}').live('click', function () {
                 $link = $(this);
                 refreshModal();
-                ## Remove previous spinner text
-                resetModalSpinner();
-                $('#modal').modal('show');
+                $modal.modal('show');
             });
 
             ## N.B. updates to the return value will be propagated back to the
@@ -273,9 +311,15 @@
                 });
             }
 
-            var $modal = $('#modal');
             $modal.on('shown', function() {
                 $("#modal-invitee-email").focus();
+            });
+
+            $modal.on('hidden', function() {
+                ## Stop spinner
+                resetModalSpinner();
+                ## Remove previous invited email
+                $("#modal-invitee-email").val('');
             });
 
             ## @param dataUpdater the function that updates HTML data on
@@ -289,9 +333,9 @@
                     {
                         ${self.csrf.token_param()}
                         ## TODO (WW) use variables to abstract parameter key strings
-                        userid: email,
-                        storeid: modalSID(),
-                        perm: role
+                        "userid": email,
+                        "storeid": modalSID(),
+                        "perm": role
                     }
                 )
                 .done(function(response) {
@@ -304,7 +348,7 @@
                     displayModalError(errorHeader, errorThrown);
                 })
                 .always(function() {
-                    stopModalSpinner('');
+                    stopModalSpinner();
                 });
             }
 
@@ -313,7 +357,7 @@
                 $('.remove-modal-full-name').text(fullName);
                 $('.remove-modal-email').text(email);
 
-                $('#modal').modal('hide');
+                $modal.modal('hide');
                 $('#remove-modal').modal('show');
 
                 var $confirm = $('#remove-model-confirm');
@@ -344,7 +388,7 @@
                         displayModalError(errorHeader, errorThrown);
                     })
                     .always(function() {
-                        stopModalSpinner('');
+                        stopModalSpinner();
                     });
                 });
             }
@@ -354,38 +398,66 @@
             })
 
             $('#modal-invite-form').submit(function(ev) {
-                startModalSpinner();
-
                 ## Since IE doesn't support String.trim(), use $.trim()
                 var email = $.trim($('#modal-invitee-email').val());
+                inviteToFolder(email);
+                return false;
+            });
+
+            ## done and always are callbacks for AJAX success and completion.
+            ## They can be None.
+            ## Pass the email as a parameter rather than the method extracting
+            ## from the input field on its own, since paymentRequiredToInvite()
+            ## hides the main modal before calling this method, which causes the
+            ## field to be cleaned up.
+            function inviteToFolder(email, done, always) {
+                startModalSpinner();
                 var sid = modalSID();
                 var name = modalFolderName();
 
                 var errorHeader = "Couldn't invite: ";
-                $.post("${request.route_path('json.add_shared_folder_perm')}",
-                    {
+                $.post("${request.route_path('json.add_shared_folder_perm')}", {
                         ${self.csrf.token_param()}
-                        ## TODO (WW) use variables to abstract parameter key strings
-                        userid: email,
-                        storeid: sid,
-                        foldername: name
+                        "user_id": email,
+                        "store_id": sid,
+                        "folder_name": name
                     }
-                )
-                .done(function(response) {
-                    if (handleAjaxReply(response, errorHeader)) {
-                        stopModalSpinner('Invitation sent.');
-                        $('#modal-invitee-email').val('');
+                ).done(function(response) {
+                    showSuccessMessage('Invitation has been sent.');
+                    $('#modal-invitee-email').val('');
+                    if (done) done();
+                }).fail(function (xhr) {
+                    if (getErrorTypeNullable(xhr) == "NO_STRIPE_CUSTOMER_ID") {
+                        paymentRequiredToInvite(email);
                     } else {
-                        stopModalSpinner('');
+                        showErrorMessageFromResponse(xhr);
                     }
-                })
-                .fail(function (jqXHR, textStatus, errorThrown) {
-                    displayModalError(errorHeader, errorThrown);
-                    stopModalSpinner('');
+                }).always(function() {
+                    if (always) always();
+                    stopModalSpinner();
+                });
+            }
+
+            ## Restore the main modal once sub-modals are hidden.
+            %if is_admin:
+                getCreditCardModal()
+            %else:
+                $("#ask-admin-modal")
+            %endif
+                .on("hidden", function() {
+                    $modal.modal("show");
                 });
 
-                ev.preventDefault();
-            });
+            function paymentRequiredToInvite(email) {
+                $modal.modal("hide");
+                %if is_admin:
+                    inputCreditCardInfoAndCreateStripeCustomer(function(done, always) {
+                        inviteToFolder(email, done, always);
+                    });
+                %else:
+                    $("#ask-admin-modal").modal("show");
+                %endif
+            }
 
             function handleAjaxReply(response, errorHeader) {
                 ## Expects two parameters in server response, 'success' and
@@ -401,16 +473,16 @@
             }
 
             function resetModalSpinner() {
-                var txt = $('#modal-spinner').text('');
-                if (txt.data().spinner) txt.data().spinner.stop();
+                var spin = $('#modal-spinner');
+                if (spin.data().spinner) spin.data().spinner.stop();
             }
 
             function startModalSpinner() {
-                $('#modal-spinner').text('').spin(spinnerOpts);
+                $('#modal-spinner').spin(spinnerOpts);
             }
 
-            function stopModalSpinner(text) {
-                $('#modal-spinner').text(text).data().spinner.stop();
+            function stopModalSpinner() {
+                $('#modal-spinner').data().spinner.stop();
             }
 
             function displayModalError(errorHeader, error) {

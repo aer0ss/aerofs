@@ -8,9 +8,14 @@ import logging, base64, json, urllib
 from cgi import escape
 from pyramid.view import view_config
 import aerofs_sp.gen.common_pb2 as common
+from web.sp_util import exception2error
 from web.util import *
 from ..team_members.team_members_view import URL_PARAM_USER, URL_PARAM_FULL_NAME
 from web import util
+from aerofs_sp.gen.common_pb2 import PBException
+
+from web.views.payment.stripe_util\
+    import URL_PARAM_STRIPE_CARD_TOKEN, STRIPE_PUBLISHABLE_KEY
 
 log = logging.getLogger("web")
 
@@ -42,9 +47,7 @@ _USER_AND_ROLE_IS_OWNER_KEY = 'owner'
 def my_shared_folders(request):
     _ = request.translate
 
-    session_user = get_session_user(request)
-
-    return _shared_folders(False, session_user, _("Shared Folders"),
+    return _shared_folders(False, request, _("Shared Folders"),
             request.route_url('json.get_my_shared_folders'))
 
 @view_config(
@@ -57,7 +60,7 @@ def user_shared_folders(request):
     user = request.params[URL_PARAM_USER]
     full_name = request.params[URL_PARAM_FULL_NAME]
 
-    return _shared_folders(False, get_session_user(request),
+    return _shared_folders(False, request,
         _("${name}'s Shared Folders", {'name': full_name}),
         _json_get_user_shared_folders_url(request, user))
 
@@ -76,11 +79,11 @@ def _json_get_user_shared_folders_url(request, user):
 def team_shared_folders(request):
     _ = request.translate
 
-    return _shared_folders(True, get_session_user(request),
+    return _shared_folders(True, request,
             _("Team's Shared Folders"),
             request.route_url('json.get_team_shared_folders'))
 
-def _shared_folders(datatables_paginate, session_user,
+def _shared_folders(datatables_paginate, request,
                     page_title, datatables_request_route_url):
     return {
         # constants
@@ -94,10 +97,13 @@ def _shared_folders(datatables_paginate, session_user,
         'user_and_role_is_owner_key': _USER_AND_ROLE_IS_OWNER_KEY,
 
         # variables
-        'session_user': session_user,
+        'session_user': get_session_user(request),
+        'is_admin': is_admin(request),
         'datatables_paginate': datatables_paginate,
         'page_title': page_title,
-        'datatables_request_route_url': datatables_request_route_url
+        'datatables_request_route_url': datatables_request_route_url,
+        'stripe_publishable_key': STRIPE_PUBLISHABLE_KEY,
+        'url_param_stripe_card_token': URL_PARAM_STRIPE_CARD_TOKEN
     }
 
 @view_config(
@@ -311,25 +317,26 @@ def json_add_shared_folder_perm(request):
     """
     _ = request.translate
 
-    userid = request.params['userid']
-    storeid = _decode_store_id(request.params['storeid'])
-    foldername = request.params['foldername']
+    user_id = request.params['user_id']
+    store_id = _decode_store_id(request.params['store_id'])
+    folder_name = request.params['folder_name']
     note = request.params.get('note') or ''
 
     role_pair = common.PBSubjectRolePair()
-    role_pair.subject = userid
+    role_pair.subject = user_id
     # editor by default when added
     # TODO (WW) why not simply use common.EDITOR?
     role_pair.role = common._PBROLE.values_by_name['EDITOR'].number
 
     sp = get_rpc_stub(request)
-    try:
-        sp.share_folder(foldername, storeid, [role_pair], note)
-        return {'success': True}
-    except Exception as e:
-        error = parse_rpc_error_exception(request, e)
-        return {'success': False,
-                'response_message': error}
+    exception2error(sp.share_folder, (folder_name, store_id, [role_pair], note), {
+        PBException.EMPTY_EMAIL_ADDRESS:
+            _("The email address can't be empty"),
+        PBException.NO_STRIPE_CUSTOMER_ID:
+            _("Payment is required to invite more collaborators"),
+        PBException.NO_PERM:
+            _("You don't have permission to invite people to this folder")
+    })
 
 @view_config(
     route_name = 'json.set_shared_folder_perm',

@@ -50,6 +50,7 @@ service SPService {
      * Required Auth Level: none
      *
      * Throws:
+     *   ExEmptyEmailAddress if the user id is empty
      *   ExBadCredential if username/password combination is incorrect, or in the case of the team
      *                   server, if they have not signed in successfully using mutual
      *                   authentication.
@@ -120,6 +121,7 @@ service SPService {
      *
      * Throws:
      *   ExBadArgs if the caller does not specify one or more invitees.
+     *   ExEmptyEmailAddress if the user id is empty
      *   ExEmailSendingFailed if we were unable to send the invitation email.
      *   ExNoPerm if the user has used up their invitation quota.
      */
@@ -132,12 +134,13 @@ service SPService {
      * be moved in the new organization.
      *
      * Throws:
+     *   ExEmptyEmailAddress if the user id is empty
      *   ExAlreadyExist if the email address is already a member of that organization.
      *   ExAlreadyInvited if the user has already been invited to the organization but has not yet
      *                  accepted the invitation.
      *   ExNoPerm if the caller is not an organization admin.
      *   ExEmailSendingFailed if we were unable to send the email.
-     *   ExNoStripeCustomerID if the organization is on a paid plan but doesn't have a Stripe
+     *   ExNoStripeCustomerID if payment is required but the current team doesn't have a Stripe
      *                  customer ID.
      */
      rpc InviteToOrganization(InviteToOrganizationCall) returns(InviteToOrganizationReply);
@@ -157,25 +160,22 @@ service SPService {
     rpc AcceptOrganizationInvitation(AcceptOrganizationInvitationCall)
             returns(AcceptOrganizationInvitationReply);
 
-   /**
+    /**
      * Shares a folder with another user.
      *
-     * If the user doesn't exist yet, this method will automatically call InviteToSignUp
+     * If the user doesn't exist yet, this method calls InviteToSignUp.
      * If the invitee email address is outside the organization's allowed domain, he
      * will be invited to the default organization. If the user is authorized to share
      * with the invitee, they will be sent an email notification.
      *
-     * Only the sharer is added to the ACL for the newly created store. Invitees will be added
-     * later, when they join the folder.
+     * See docs/design/sharing_and_migration.txt for high-level design.
      *
      * Required Auth Level: user
      *
      * Throws:
-     *   ExNoPerm if the sharee is (or would be created) in a different organization *and*
-     *            sharing outside the organization isn't allowed for either the sharer or sharee
      *   ExNoPerm if the sharer isn't authorized to modify ACLs for the given SID
-     *   TODO change the exception type below
-     *   ExNoPerm if the caller's email address needs to be verified first.
+     *   ExNoStripeCustomerID if payment is required but the current team doesn't have a Stripe
+     *                  customer ID.
      */
     rpc ShareFolder(ShareFolderCall) returns(Void);
 
@@ -499,6 +499,8 @@ service SPService {
      * belongs to.
      *
      * Required Auth Level: user or admin (see above)
+     *
+     * Throws: ExEmptyEmailAddress if the user id is empty
      */
     rpc ListUserDevices(ListUserDevicesCall) returns(ListUserDevicesReply);
 
@@ -561,6 +563,8 @@ service SPService {
       * Delete organization invitation for a given user.
       *
       * Required Auth Level: admin
+      *
+      * Throws: ExEmptyEmailAddress if the user id is empty
       */
      rpc DeleteOrganizationInvitationForUser(DeleteOrganizationInvitationForUserCall) returns(
             DeleteOrganizationInvitationForUserReply);
@@ -579,9 +583,32 @@ service SPService {
       */
      rpc SetStripeCustomerID(SetStripeCustomerIDCall) returns(Void);
 
-     // WAIT_FOR_SP_PROCOTOL_VERSION_CHAGNE move them to in place of UpdateACL/DeleteACL_Deprecated
+     // WAIT_FOR_SP_PROCOTOL_VERSION_CHANGE move them to in place of UpdateACL/DeleteACL_Deprecated
+     /**
+      * Update the ACL for an existing member of a shared folder
+      *
+      * Required Auth Level: user
+      *
+      * Throws: ExNotFound if the user is not a member of the specified folder
+      */
      rpc UpdateACL(UpdateACLCall) returns (Void);
+
+     // WAIT_FOR_SP_PROCOTOL_VERSION_CHANGE move them to in place of UpdateACL/DeleteACL_Deprecated
+     /**
+      * Delete the ACL for an existing member or an pending user of a shared folder
+      *
+      * Required Auth Level: user
+      *
+      * Throws: ExNotFound if the user is not a member or pending user of the specified folder
+      */
      rpc DeleteACL(DeleteACLCall) returns (Void);
+
+     /**
+      * Delete the Stripe customer ID of the current organization
+      *
+      * Required Auth Level: admin
+      */
+     rpc DeleteStripeCustomerID(Void) returns (Void);
 }
 
 message SetStripeCustomerIDCall {
@@ -609,10 +636,9 @@ message DeleteOrganizationInvitationForUserReply {
 // See src/web/README.stirpe.txt for detail.
 message PBStripeData {
     // Stripe customer ID of the organization. Absent if the organization doesn't have the ID.
-    // If the field is present, the caller MUST update Stripe subscription (based on quantity).
+    // If the field is present, the caller MUST update Stripe subscription based on quantity.
     optional string customer_id = 1;
-    // The quantity of the subscription. It is determined by both the number of collaborators and
-    // team members. 0 for free plans.
+    // The quantity of the subscription. It is identical to the number of team members.
     required uint32 quantity = 2;
 }
 

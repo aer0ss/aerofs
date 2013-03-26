@@ -91,7 +91,7 @@ def accept_team_invitation(request):
     })
 
     # downgrade subscription for the user's previous org
-    stripe_util.downgrade_stripe_subscription(reply.stripe_data)
+    stripe_util.update_stripe_subscription(reply.stripe_data)
 
     reload_auth_level(request)
 
@@ -109,7 +109,7 @@ def ignore_team_invitation(request):
     org_id = int(request.params[URL_PARAM_ORG_ID])
     sp = get_rpc_stub(request)
     stripe_data = sp.delete_organization_invitation(org_id).stripe_data
-    stripe_util.downgrade_stripe_subscription(stripe_data)
+    stripe_util.update_stripe_subscription(stripe_data)
 
 @view_config(
     route_name = 'json.accept_folder_invitation',

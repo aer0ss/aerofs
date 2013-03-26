@@ -83,7 +83,7 @@ public class BaseParam
                 // in staging, the SP war is deployed under /sp by defualt
                 // allowing users to deploy their own sp war's (e.g. /yuriSP/sp, /weihanSP/sp, etc.)
                 url = L.get().isStaging() ?
-                        new URL("https://staging.aerofs.com/sp/sp") :
+                        new URL("https://staging.aerofs.com/sp.weihan/sp") :
                         new URL("https://sp.aerofs.com/sp");
             } catch (MalformedURLException e) {
                 throw new Error(e);

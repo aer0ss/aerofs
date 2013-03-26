@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import com.aerofs.base.ex.ExEmptyEmailAddress;
 import com.aerofs.base.id.UserID;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Text;
@@ -63,7 +64,11 @@ public class CompEmailAddressTextBox extends Composite
         for (String token : tokens) {
             if (token.isEmpty()) {
             } else if (Util.isValidEmailAddress(token)) {
-                _userIDs.add(UserID.fromExternal(token));
+                try {
+                    _userIDs.add(UserID.fromExternal(token));
+                } catch (ExEmptyEmailAddress e) {
+                    _invalidAddresses++;
+                }
             } else {
                 _invalidAddresses++;
             }

@@ -1,6 +1,7 @@
 package com.aerofs.sp.server;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.base.ex.ExEmptyEmailAddress;
 import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.lib.ex.ExNoStripeCustomerID;
 import com.aerofs.proto.Common.PBRole;
@@ -105,6 +106,7 @@ import com.aerofs.sp.server.lib.user.User;
 import com.aerofs.verkehr.client.lib.admin.VerkehrAdmin;
 import com.aerofs.verkehr.client.lib.publisher.VerkehrPublisher;
 import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -129,8 +131,6 @@ import java.util.concurrent.ExecutionException;
 public class SPService implements ISPService
 {
     private static final Logger l = Loggers.getLogger(SPService.class);
-
-    private static final int MAX_FREE_MEMBER_COUNTS = 3;
 
     // TODO (WW) remove dependency to these database objects
     private final SPDatabase _db;
@@ -168,6 +168,14 @@ public class SPService implements ISPService
     private final JedisEpochCommandQueue _commandQueue;
     private final JedisThreadLocalTransaction _jedisTrans;
 
+    // Remember to udpate text in team_members.mako, team_settings.mako, and pricing.mako when
+    // changing this number.
+    private int _maxFreeMembersPerTeam = 3;
+
+    // Remember to udpate text in shared_foler.mako, shared_folder_modals.mako, team_settings.mako,
+    // and pricing.mako when changing this number.
+    private int _maxFreeCollaboratorsPerFolder = 1;
+
     SPService(SPDatabase db, SQLThreadLocalTransaction sqlTrans,
             JedisThreadLocalTransaction jedisTrans, ISessionUser sessionUser,
             PasswordManagement passwordManagement,
@@ -200,6 +208,16 @@ public class SPService implements ISPService
         _factEmailer = factEmailer;
 
         _commandQueue = commandQueue;
+    }
+
+    /**
+     * For testing only. Don't use in production.
+     * TODO (WW) use configuration service.
+     */
+    public void setMaxFreeUserCounts(int maxFreeMembersPerTeam, int maxFreeCollaboratorsPerFolder)
+    {
+        _maxFreeMembersPerTeam = maxFreeMembersPerTeam;
+        _maxFreeCollaboratorsPerFolder = maxFreeCollaboratorsPerFolder;
     }
 
     public void setVerkehrClients_(VerkehrPublisher verkehrPublisher, VerkehrAdmin verkehrAdmin)
@@ -455,7 +473,7 @@ public class SPService implements ISPService
 
     @Override
     public ListenableFuture<ListUserDevicesReply> listUserDevices(String userID)
-            throws ExNoPerm, SQLException, ExFormatError, ExNotFound, ExBadArgs
+            throws ExNoPerm, SQLException, ExFormatError, ExNotFound, ExEmptyEmailAddress
     {
         _sqlTrans.begin();
 
@@ -813,6 +831,19 @@ public class SPService implements ISPService
         return createVoidReply();
     }
 
+    @Override
+    public ListenableFuture<Void> deleteStripeCustomerID()
+            throws Exception
+    {
+        _sqlTrans.begin();
+        User user = _sessionUser.get();
+        user.throwIfNotAdmin();
+        user.getOrganization().deleteStripeCustomerID();
+        _sqlTrans.commit();
+
+        return createVoidReply();
+    }
+
     private void throwIfNotOwner(User user, Device device)
             throws ExNotFound, SQLException, ExNoPerm
     {
@@ -941,15 +972,17 @@ public class SPService implements ISPService
         User sharer = _sessionUser.get();
         List<SubjectRolePair> srps = SubjectRolePairs.listFromPB(rolePairs);
 
-        l.info(sharer + " shares " + sf + " with " + srps.size() + " users");
+        l.info(sharer + " shares " + sf + " with " + srps);
         if (srps.isEmpty()) throw new ExBadArgs("must specify one or more sharee");
 
         _sqlTrans.begin();
 
-        Set<UserID> users = saveSharedFolderIfNecessary(folderName, sf, sharer);
+        Collection<UserID> users = saveSharedFolderIfNecessary(folderName, sf, sharer);
 
         List<InvitationEmailer> emailers = createFolderInvitationAndEmailer(folderName, note, sf,
                 sharer, srps);
+
+        throwIfPaymentRequiredAndNoCustomerID(sharer.getOrganization(), sf, srps2users(srps));
 
         // send verkehr notification as the last step of the transaction
         publishACLs_(users);
@@ -961,7 +994,15 @@ public class SPService implements ISPService
         return createVoidReply();
     }
 
-    private Set<UserID> saveSharedFolderIfNecessary(String folderName, SharedFolder sf, User sharer)
+    ImmutableCollection<User> srps2users(Collection<SubjectRolePair> srps)
+    {
+        ImmutableCollection.Builder<User> builder = ImmutableList.builder();
+        for (SubjectRolePair srp : srps) builder.add(_factUser.create(srp._subject));
+        return builder.build();
+    }
+
+    private Collection<UserID> saveSharedFolderIfNecessary(String folderName, SharedFolder sf,
+            User sharer)
             throws ExNotFound, SQLException, ExNoPerm, IOException, ExAlreadyExist
     {
         if (sf.exists()) {
@@ -1068,7 +1109,7 @@ public class SPService implements ISPService
         }
 
         // reset pending bit to make user a member of the shared folder
-        Set<UserID> users = sf.setMember(user);
+        Collection<UserID> users = sf.setMember(user);
 
         Collection<Device> peerDevices = user.getPeerDevices();
         // Refresh CRLs for peer devices once this user joins the shared folder (since the peer user
@@ -1137,7 +1178,7 @@ public class SPService implements ISPService
             }
 
             // set pending bit
-            Set<UserID> users = sf.setPending(user);
+            Collection<UserID> users = sf.setPending(user);
 
             // always call this method as the last step of the transaction
             publishACLs_(users);
@@ -1232,7 +1273,8 @@ public class SPService implements ISPService
 
     @Override
     public ListenableFuture<Void> inviteToSignUp(List<String> userIdStrings)
-            throws SQLException, ExBadArgs, ExEmailSendingFailed, ExNotFound, IOException, ExNoPerm
+            throws SQLException, ExBadArgs, ExEmailSendingFailed, ExNotFound, IOException, ExNoPerm,
+            ExEmptyEmailAddress
     {
         if (userIdStrings.isEmpty()) {
             throw new ExBadArgs("Must specify one or more invitees");
@@ -1266,7 +1308,7 @@ public class SPService implements ISPService
     @Override
     public ListenableFuture<InviteToOrganizationReply> inviteToOrganization(String userIdString)
             throws SQLException, ExNoPerm, ExNotFound, IOException, ExEmailSendingFailed,
-            ExAlreadyExist, ExAlreadyInvited, ExNoStripeCustomerID
+            ExAlreadyExist, ExAlreadyInvited, ExNoStripeCustomerID, ExEmptyEmailAddress
     {
         _sqlTrans.begin();
 
@@ -1295,7 +1337,7 @@ public class SPService implements ISPService
         }
 
         PBStripeData sd = getStripeData(org);
-        throwIfSubscriptionIsRequiredAndNoCustomerID(sd);
+        throwIfPaymentRequiredAndNoCustomerID(sd);
 
         _sqlTrans.commit();
 
@@ -1430,7 +1472,7 @@ public class SPService implements ISPService
     @Override
     public ListenableFuture<DeleteOrganizationInvitationForUserReply> deleteOrganizationInvitationForUser(
             String userID)
-            throws SQLException, ExNoPerm, ExNotFound
+            throws SQLException, ExNoPerm, ExNotFound, ExEmptyEmailAddress
     {
         _sqlTrans.begin();
 
@@ -1449,28 +1491,72 @@ public class SPService implements ISPService
                 DeleteOrganizationInvitationForUserReply.newBuilder().setStripeData(sd).build());
     }
 
+    /**
+     * Return a StripeData object for the specified org based on its team size and # collaborators.
+     */
     private PBStripeData getStripeData(Organization org)
             throws SQLException, ExNotFound
     {
-        StripeCustomerID scid = org.getStripeCustomerIDNullable();
-        int count = org.countOrganizationInvitations() + org.countUsers();
-
         PBStripeData.Builder builder = PBStripeData.newBuilder()
-                .setQuantity(count > MAX_FREE_MEMBER_COUNTS ? count : 0);
+                .setQuantity(org.countOrganizationInvitations() + org.countUsers());
+
+        StripeCustomerID scid = org.getStripeCustomerIDNullable();
         if (scid != null) builder.setCustomerId(scid.getString());
+
         return builder.build();
     }
 
     /**
-     * throw ExNoStripeCustomerID if the parameter indicates a paid plan but doesn't have a Stripe
-     * customer ID. See the definition of PBStripeData for more info.
+     * Throw if the PBStripeData object indicates a paid plan but doesn't have a Stripe customer ID.
      */
-    private void throwIfSubscriptionIsRequiredAndNoCustomerID(PBStripeData sd)
+    private void throwIfPaymentRequiredAndNoCustomerID(PBStripeData sd)
             throws ExNoStripeCustomerID
     {
-        if (sd.getQuantity() > 0 && !sd.hasCustomerId()) {
+        if (sd.getQuantity() > _maxFreeMembersPerTeam && !sd.hasCustomerId()) {
             throw new ExNoStripeCustomerID();
         }
+    }
+
+    /**
+     * Throw if the shared folder exceeds maximum # collaborators, there are collaborators in the
+     * invitees list, and the org doesn't have a Stripe
+     * customer ID.
+     */
+    private void throwIfPaymentRequiredAndNoCustomerID(Organization org, SharedFolder sf,
+            Collection<User> invitees)
+            throws ExNoStripeCustomerID, SQLException, ExNotFound
+    {
+        // Okay if the customer is paying
+        if (org.getStripeCustomerIDNullable() != null) return;
+
+        // Okay if no collaborators are invited
+        boolean collaboratorInvited = false;
+        for (User invitee : invitees) {
+            if (isCollaborator(org, invitee)) {
+                collaboratorInvited = true;
+                break;
+            }
+        }
+        if (!collaboratorInvited) return;
+
+        int collaborators = 0;
+        for (User user : sf.getAllUsers()) {
+            if (isCollaborator(org, user) && ++collaborators > _maxFreeCollaboratorsPerFolder) {
+                throw new ExNoStripeCustomerID();
+            }
+        }
+    }
+
+    /**
+     * Return whether the user is an external collaborator of the org
+     */
+    private boolean isCollaborator(Organization org, User user)
+            throws SQLException, ExNotFound
+    {
+        // !user.exists() is needed for users who are pending user of a shared folder and haven't
+        // signed up yet.
+        return !user.id().isTeamServerID() &&
+                (!user.exists() || !user.getOrganization().equals(org));
     }
 
     @Override
@@ -1641,7 +1727,8 @@ public class SPService implements ISPService
 
     @Override
     public ListenableFuture<Void> signIn(String userIdString, ByteString credentials)
-            throws IOException, SQLException, ExBadCredential, ExNotFound
+            throws IOException, SQLException, ExBadCredential, ExNotFound, ExBadArgs,
+            ExEmptyEmailAddress
     {
         _sqlTrans.begin();
 

@@ -2,10 +2,10 @@ import logging, base64
 from pyramid.view import view_config
 import aerofs_sp.gen.common_pb2 as common
 from web.util import *
+from web.views.payment.stripe_util \
+    import URL_PARAM_STRIPE_CARD_TOKEN, STRIPE_PUBLISHABLE_KEY
 
 # URL param keys
-from web.views.team_members.team_members_view import render_full_name
-
 URL_PARAM_USER = 'user'
 URL_PARAM_FULL_NAME = 'full_name'
 
@@ -19,6 +19,17 @@ def encode_store_id(sid):
 
 def decode_store_id(encoded_sid):
     return base64.b32decode(encoded_sid)
+
+@view_config(
+    route_name = 'start_subscription',
+    renderer = 'team_settings.mako',
+    permission = 'admin'
+)
+def start_subscription(request):
+    ret = team_settings(request)
+    # The page respects this flag only if not has_customer_id
+    ret['upgrade'] = True
+    return ret
 
 @view_config(
     route_name = 'team_settings',
@@ -50,6 +61,8 @@ def team_settings(request):
 
     # Show billing links only if the user has a Stripe customer ID
     stripe_data = sp.get_stripe_data().stripe_data
-    ret['show_billing'] = stripe_data.customer_id
+    ret['has_customer_id'] = stripe_data.customer_id
+    ret['stripe_publishable_key'] = STRIPE_PUBLISHABLE_KEY
+    ret['url_param_stripe_card_token'] = URL_PARAM_STRIPE_CARD_TOKEN
 
     return ret

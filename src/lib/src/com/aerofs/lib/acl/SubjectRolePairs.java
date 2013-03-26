@@ -5,10 +5,10 @@
 package com.aerofs.lib.acl;
 
 import com.aerofs.base.ex.ExBadArgs;
+import com.aerofs.base.ex.ExEmptyEmailAddress;
 import com.aerofs.base.id.UserID;
 import com.aerofs.proto.Common.PBSubjectRolePair;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 
 import java.util.List;
 import java.util.Map;
@@ -18,7 +18,8 @@ import java.util.Map;
  */
 public final class SubjectRolePairs
 {
-    public static List<SubjectRolePair> listFromPB(List<PBSubjectRolePair> pbl) throws ExBadArgs
+    public static List<SubjectRolePair> listFromPB(List<PBSubjectRolePair> pbl)
+            throws ExBadArgs, ExEmptyEmailAddress
     {
         List<SubjectRolePair> l = Lists.newArrayListWithCapacity(pbl.size());
         for (PBSubjectRolePair pb : pbl) l.add(new SubjectRolePair(pb));
@@ -32,14 +33,5 @@ public final class SubjectRolePairs
             roles.add(new SubjectRolePair(pair.getKey(), pair.getValue()).toPB());
         }
         return roles;
-    }
-
-    public static Map<UserID, Role> mapFromPB(List<PBSubjectRolePair> pbl) throws ExBadArgs
-    {
-        Map<UserID, Role> m = Maps.newHashMap();
-        for (PBSubjectRolePair pb : pbl) {
-            m.put(UserID.fromExternal(pb.getSubject()), Role.fromPB(pb.getRole()));
-        }
-        return m;
     }
 }

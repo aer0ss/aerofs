@@ -14,8 +14,10 @@ import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.user.User;
+import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableList.Builder;
+import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
 
@@ -25,7 +27,6 @@ import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 
 public class SharedFolder
 {
@@ -102,7 +103,7 @@ public class SharedFolder
      * @throws ExAlreadyExist if the store already exists
      * @throws ExNotFound if the owner is not found
      */
-    public Set<UserID> save(String folderName, User owner)
+    public ImmutableCollection<UserID> save(String folderName, User owner)
             throws ExNotFound, SQLException, ExAlreadyExist
     {
         _f._db.insert(_sid, folderName);
@@ -124,7 +125,7 @@ public class SharedFolder
      * @return A set of user IDs for which epoch should be increased and published via verkehr
      * @throws ExAlreadyExist if the user is already added.
      */
-    public Set<UserID> addMemberACL(User user, Role role)
+    public ImmutableCollection<UserID> addMemberACL(User user, Role role)
             throws ExAlreadyExist, SQLException, ExNotFound
     {
         if (isMemberOrPending(user)) throw new ExAlreadyExist(user + " is already invited");
@@ -149,9 +150,9 @@ public class SharedFolder
     /**
      * Set a user as pending
      */
-    public Set<UserID> setPending(User user) throws SQLException, ExNotFound
+    public ImmutableCollection<UserID> setPending(User user) throws SQLException, ExNotFound
     {
-        Set<UserID> affectedUsers = _f._db.getMembers(_sid);
+        ImmutableCollection<UserID> affectedUsers = _f._db.getMembers(_sid);
 
         _f._db.setPending(_sid, user.id(), true);
 
@@ -165,7 +166,8 @@ public class SharedFolder
     /**
      * Set a user as member
      */
-    public Set<UserID> setMember(User user) throws SQLException, ExNotFound, ExAlreadyExist
+    public ImmutableCollection<UserID> setMember(User user)
+            throws SQLException, ExNotFound, ExAlreadyExist
     {
         _f._db.setPending(_sid, user.id(), false);
 
@@ -179,13 +181,13 @@ public class SharedFolder
      * Add the user's team server ID to the ACL. No-op if there are other users on the shared folder
      * belonging to the same team server.
      */
-    public Set<UserID> addTeamServerACL(User user)
+    public ImmutableCollection<UserID> addTeamServerACL(User user)
             throws ExNotFound, ExAlreadyExist, SQLException
     {
         if (addTeamServerACLImpl(user)) {
             return _f._db.getMembers(_sid);
         } else {
-            return Collections.emptySet();
+            return ImmutableSet.of();
         }
     }
 
@@ -207,12 +209,12 @@ public class SharedFolder
         }
     }
 
-    public Set<UserID> deleteMemberOrPendingACL(User user)
+    public ImmutableCollection<UserID> deleteMemberOrPendingACL(User user)
             throws SQLException, ExNotFound, ExNoPerm
     {
         // retrieve the list of affected users _before_ performing the deletion, so that all the
         // users including the deleted ones will get notifications.
-        Set<UserID> members = _f._db.getMembers(_sid);
+        ImmutableCollection<UserID> members = _f._db.getMembers(_sid);
 
         _f._db.deleteMemberOrPendingACL(_sid, user.id());
 
@@ -230,15 +232,15 @@ public class SharedFolder
      * Remove the user's team server ID to the ACL. No-op if there are other users on the shared
      * folder belonging to the same team server.
      */
-    public Set<UserID> deleteTeamServerACL(User user)
+    public ImmutableCollection<UserID> deleteTeamServerACL(User user)
             throws SQLException, ExNotFound
     {
-        Set<UserID> affectedUsers = _f._db.getMembers(_sid);
+        ImmutableCollection<UserID> affectedUsers = _f._db.getMembers(_sid);
 
         if (deleteTeamServerACLImpl(user)) {
             return affectedUsers;
         } else {
-            return Collections.emptySet();
+            return ImmutableSet.of();
         }
     }
 
@@ -266,26 +268,44 @@ public class SharedFolder
         return true;
     }
 
-    public Collection<User> getMembers()
+    /**
+     * N.B the return value include Team Servers
+     */
+    public ImmutableCollection<User> getMembers()
             throws SQLException
     {
-        Builder<User> builder = ImmutableList.builder();
-        for (UserID userID : _f._db.getMembers(_sid)) {
-            builder.add(_f._factUser.create(userID));
-        }
-        return builder.build();
+        return userIDs2users(_f._db.getMembers(_sid));
     }
 
+    public ImmutableCollection<User> userIDs2users(Collection<UserID> userIDs)
+    {
+        Builder<User> builder = ImmutableList.builder();
+        for (UserID userID : userIDs) builder.add(_f._factUser.create(userID));
+        return builder.build();
+
+    }
+
+    /**
+     * N.B the return value include Team Servers
+     */
     public List<SubjectRolePair> getMemberACL() throws SQLException
     {
         return _f._db.getMemberACL(_sid);
     }
 
     /**
+     * N.B the return value include Team Servers
+     */
+    public ImmutableCollection<User> getAllUsers() throws SQLException
+    {
+        return userIDs2users(_f._db.getAllUsers(_sid));
+    }
+
+    /**
      * @return new ACL epochs for each affected user id, to be published via verkehr
      * @throws ExNotFound if trying to add new users to the store or update a pending user's ACL
      */
-    public Set<UserID> updateMemberACL(User user, Role role)
+    public ImmutableCollection<UserID> updateMemberACL(User user, Role role)
             throws ExNoPerm, ExNotFound, SQLException
     {
         _f._db.updateMemberACL(_sid, user.id(), role);
@@ -315,7 +335,9 @@ public class SharedFolder
     private void throwIfNoOwnerMemberOrPendingLeft()
             throws ExNoPerm, SQLException
     {
-        if (!_f._db.hasOwnerMemberOrPending(_sid)) throw new ExNoPerm("there must be at least one owner");
+        if (!_f._db.hasOwnerMemberOrPending(_sid)) {
+            throw new ExNoPerm("there must be at least one owner");
+        }
     }
 
     /**

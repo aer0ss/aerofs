@@ -128,7 +128,7 @@ public class OrganizationInvitationDatabase extends AbstractSQLDatabase
             if (!rs.next()) return null;
             GetBySignUpCodeResult res = new GetBySignUpCodeResult();
             res._orgID = new OrganizationID(rs.getInt(1));
-            res._userID =  UserID.fromExternal(rs.getString(2));
+            res._userID =  UserID.fromInternal(rs.getString(2));
             // There must be at most one result because there is a unique constraint on C_OI_SIGNUP_CODE
             assert !rs.next();
             return res;

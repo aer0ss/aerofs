@@ -53,7 +53,7 @@ public class TestSP_InviteToOrganization extends AbstractSPTest
     public void shouldThrowIfNoStripeCustomrIDWhenExceedingFreePlan()
             throws Exception
     {
-        inviteMaximalFreeUsers();
+        inviteMaximumFreeUsers();
 
         try {
             service.inviteToOrganization("paid@invitee.com");
@@ -65,16 +65,17 @@ public class TestSP_InviteToOrganization extends AbstractSPTest
     public void shouldNotThrowIfStripeCustomerIDIsPresentWhenExceedingFreePlan()
             throws Exception
     {
-        inviteMaximalFreeUsers();
+        inviteMaximumFreeUsers();
 
         service.setStripeCustomerID("123");
 
         service.inviteToOrganization("paid@invitee.com");
     }
 
-    private void inviteMaximalFreeUsers()
+    private void inviteMaximumFreeUsers()
             throws Exception
     {
+        service.setMaxFreeUserCounts(3, Integer.MAX_VALUE);
         // Current we allow at most three members for free
         service.inviteToOrganization("free@rider1.com");
         service.inviteToOrganization("free@rider2.com");

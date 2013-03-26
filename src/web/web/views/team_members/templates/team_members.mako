@@ -27,25 +27,20 @@
 
 <%credit_card_modal:html>
     <%def name="title()">
-        Please activate your AeroFS subscription
+        <%credit_card_modal:default_title/>
     </%def>
     <%def name="description()">
         <p>
-            A subscription is required for a team with more than three members.
-            We do our best to keep pricing simple &mdash; $10/user/month.
-            That means that you'll pay $40/month for four users, $50/month
-            for five users, and so on.
-            <a href="https://www.aerofs.com/pricing" target="_blank">More info on pricing</a>.
+            The free plan allows <strong>three</strong> team members. If you'd
+            like to add additional team members, please upgrade to the paid plan
+            ($10/team member/month).
+            <a href="https://www.aerofs.com/pricing" target="_blank">Compare plans</a>.
         </p>
 
-        <p>
-            To proceed, please enter your payment method below. We will adjust your
-            subscription automatically as you add or remove team members, so you
-            never have to worry!
-        </p>
+        <%credit_card_modal:default_description/>
     </%def>
     <%def name="okay_button_text()">
-        Continue
+        <%credit_card_modal:default_okay_button_text/>
     </%def>
 </%credit_card_modal:html>
 
@@ -97,10 +92,10 @@
             function registerUserRowTooltips() {
                 $('.coming_soon_link').tooltip({placement: 'right'});
                 $('.tooltip_admin').tooltip({placement: 'top', 'title' :
-                        'An admin of your team has access to all administrative' +
-                        ' functions for the team, such as provisioning' +
-                        ' Team Servers, managing team members and shared folders,' +
-                        ' add/remove other admins, and so on.'});
+                        'An admin of your team has access to administrative' +
+                        ' functions for the team: provision' +
+                        ' Team Servers, manage team members and shared folders,' +
+                        ' add/remove other admins, manage payment, and so on.'});
             }
 
             $('#invite_form').submit(function(e) {
@@ -108,9 +103,9 @@
                 return false;
             });
 
-            ## done and fail are callbacks for successful and failed cases. They
-            ## can be None.
-            function inviteUser(done, fail) {
+            ## done and always are callbacks for AJAX success and completion.
+            ## They can be None.
+            function inviteUser(done, always) {
                 var $inviteButton = $('#invite_button');
                 $inviteButton.attr('disabled', 'disabled');
 
@@ -121,24 +116,22 @@
                 $.post("${request.route_path('json.invite_user')}", {
                     ${self.csrf.token_param()}
                     "${url_param_user}": email
-                })
-                .done(function(data) {
+                }).done(function(data) {
                     addInvitedUserRow(email);
                     $email.val('');
                     showSuccessMessage("The user has been invited.");
                     if (done) done();
 
                     mixpanel.track("Invited User to Team");
-                })
-                .fail(function (xhr) {
+
+                }).fail(function (xhr) {
                     if (getErrorTypeNullable(xhr) == 'NO_STRIPE_CUSTOMER_ID') {
                         inputCreditCardInfoAndCreateStripeCustomer(inviteUser);
                     } else {
                         showErrorMessageFromResponse(xhr);
                     }
-                    if (fail) fail();
-                })
-                .always(function() {
+                }).always(function() {
+                    if (always) always();
                     ## Note: the button is enabled even if the payment dialog is
                     ## brought up (by inputCreditCardInfo() above).
                     $inviteButton.removeAttr('disabled');

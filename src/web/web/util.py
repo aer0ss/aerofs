@@ -134,8 +134,8 @@ def get_last_flash_message_and_empty_queue(request):
     success and error queues have messages.
     """
     errors = request.session.pop_flash(queue='error_queue')
-    sucesses = request.session.pop_flash(queue='success_queue')
-    return (sucesses[-1], True) if sucesses else \
+    successes = request.session.pop_flash(queue='success_queue')
+    return (successes[-1], True) if successes else \
             ((errors[-1], False) if errors else None)
 
 def reload_auth_level(request):
@@ -151,14 +151,14 @@ def reload_auth_level(request):
     authlevel = int(sp.get_authorization_level().level)
     request.session['group'] = authlevel
 
-def send_internal_email(subject, content):
+def send_internal_email(subject, body):
     """
     Send an email to team@aerofs.com. Errors are ignored.
     """
     fromEmail = 'Pyramid Server <support@aerofs.com>'
     toEmail = 'team@aerofs.com'
 
-    msg = MIMEText(content)
+    msg = MIMEText(body)
     msg['Subject'] = subject
     msg['From'] = fromEmail
     msg['To'] = toEmail
@@ -170,5 +170,6 @@ def send_internal_email(subject, content):
         s.sendmail(fromEmail, [toEmail], msg.as_string())
         s.quit()
     except Exception, e:
-        log.error("send_internal_email failed and ignored: {}\n"
-                  "subject: {} content: {}".format(subject, content, e))
+        log.error("send_internal_email failed and ignored:\n"
+                  "subject: {}\nbody: {}\n".format(subject, body),
+                  exc_info=e)

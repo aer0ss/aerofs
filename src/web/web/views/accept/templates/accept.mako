@@ -94,19 +94,21 @@
         <p>
             Accepting this invitation will require leaving your current team.
             Are you sure you want to proceed?
-
+        </p>
+        <p>
             If you continue,
             %if i_am_admin:
                 you will no longer be able to administrate the current team.
-                </p><p>Additionally,
+                Additionally,
             %endif
-            the AeroFS Team Servers of your current team will
+            the Team Servers of your current team will
             automatically delete your files that are not shared with other
             team members. The Team Servers of the new team will sync all your
             files once this change is complete.
         </p>
         <p>
-            Files on your own AeroFS devices will not be affected by this change.
+            Files and shared folders on your own AeroFS devices will not be
+            affected.
         </p>
     </div>
     <div class="modal-footer">
@@ -128,7 +130,7 @@
         <p>
             Unfortunately, you can't leave your current team since you are the
             only administrator of the team. Please assign another team
-            member to an administrator before accepting the invitation.
+            member as an administrator before accepting the invitation.
         </p>
 
         <p class="footnote">Teams with no admin will be eaten by dinosaurs.</p>

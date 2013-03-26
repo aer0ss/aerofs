@@ -33,11 +33,11 @@ function cancelSlideUpTimer() {
     if (slideUpTimer) window.clearTimeout(slideUpTimer);
 }
 
-// Slide the bar up in 4 seconds
+// Slide the bar up in 8 seconds
 function delayedSlideUp($bar) {
     slideUpTimer = window.setTimeout(function() {
         $bar.slideUp("normal", "easeInOutBack");
-    }, 4000);
+    }, 8000);
 }
 
 function normalize(message) {

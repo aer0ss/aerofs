@@ -7,7 +7,7 @@
 <div class="span4 offset4">
     <div class="well well-small" style="margin: 0 auto;">
         <div style="text-align: center;">
-            You will sign up using email:<br>
+            You will sign up using this email:<br>
             <strong>${email_address}</strong>
         </div>
     </div>

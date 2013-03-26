@@ -4,6 +4,7 @@
 
 package com.aerofs.base.id;
 
+import com.aerofs.base.ex.ExEmptyEmailAddress;
 import com.aerofs.base.ex.ExFormatError;
 
 public class UserID extends StringID
@@ -20,8 +21,11 @@ public class UserID extends StringID
      * Use this constructor to hold UserIDs provided by external input channels like APIs, UI, etc.
      */
     public static UserID fromExternal(String str)
+            throws ExEmptyEmailAddress
     {
-        // TODO (WW) throw or assert if str is empty?
+        // Don't check for validity of email adress characters. It is too expensive. Do the check
+        // at API entry points.
+        if (str.isEmpty()) throw new ExEmptyEmailAddress();
         return new UserID(str.toLowerCase());
     }
 

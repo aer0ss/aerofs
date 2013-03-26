@@ -7,9 +7,11 @@ import com.aerofs.base.Loggers;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.lib.acl.Role;
 import com.aerofs.base.id.UserID;
+import com.aerofs.lib.ex.ExNoStripeCustomerID;
 import com.aerofs.lib.rocklog.EventProperty;
 import com.aerofs.lib.rocklog.EventType;
 import com.aerofs.lib.rocklog.RockLog;
+import com.aerofs.proto.Sp.PBAuthorizationLevel;
 import com.aerofs.ui.UIUtil;
 import org.slf4j.Logger;
 import org.eclipse.jface.dialogs.IDialogConstants;
@@ -253,18 +255,17 @@ public class CompInviteUsers extends Composite implements IInputChangeListener
                 } else if (e instanceof ExParentAlreadyShared) {
                     msg = "You can't share a folder under an already shared folder.";
                 } else if (e instanceof ExNoPerm) {
-                    // Note: we can get an ExNoPerm from Ritual or SP
-                    // TODO (GS): This error message should be improved if ExNoPerm because user
-                    // tried to invite outside the organization and org is closed sharing
-                    // (in this case should say something about sharing outside not allowed)
                     msg = "You don't have permission to invite users to this folder";
+                } else if (e instanceof ExNoStripeCustomerID) {
+                    msg = null;
+                    showPaymentDialog();
                 } else {
+                    l.warn(Util.e(e));
                     msg = S.COULDNT_SEND_INVITATION + " " + S.TRY_AGAIN_LATER + "\n\n" +
                             "Error message: " + UIUtil.e2msgSentenceNoBracket(e);
                 }
 
-                l.warn(Util.e(e));
-                GUI.get().show(getShell(), MessageType.ERROR, msg);
+                if (msg != null) GUI.get().show(getShell(), MessageType.ERROR, msg);
             }
 
             @Override
@@ -292,6 +293,59 @@ public class CompInviteUsers extends Composite implements IInputChangeListener
                 RockLog.newEvent(EventType.FOLDER_INVITE_SENT)
                         .addProperty(EventProperty.COUNT, Integer.toString(subjects.size()))
                         .sendAsync();
+            }
+
+            void showPaymentDialog()
+            {
+                // N.B. This link must be consistent with pyramid settings
+                String upgradeURL = "https://my.aerofs.com/upgrade";
+
+                if (isAdmin()) {
+                    // Note: the following messages should be consistent with the messages in
+                    // shared_folder.mako:credit_card_modal:html
+                    if (GUI.get().ask(getShell(), MessageType.INFO,
+                            "The free plan allows one external collaborator per shared" +
+                            " folder. If you'd like to invite unlimited external" +
+                            " collaborators, please upgrade to the paid plan" +
+                            " ($10/team member/month).\n\n" +
+                            "Do you want to upgrade now?",
+                            "Upgrade Now", "Cancel")) {
+                        GUIUtil.launch(upgradeURL);
+                    }
+                } else {
+                    // Note: the following messages should be consistent with the messages in
+                    // shared_folder_modals.mako.
+                    if (GUI.get().ask(getShell(), MessageType.INFO,
+                            "To add more collaborators to this folder, a paid plan is" +
+                            " required for your team. Please contact your team administrator to" +
+                            " upgrade the plan.",
+                            "Email Admin with Instructions...", "Close")) {
+                        String subject =
+                                "Upgrade our AeroFS plan";
+                        String body =
+                                "Hi,\n\nI would like to invite more external collaborators to a shared" +
+                                " folder, which requires a paid AeroFS plan. Could we upgrade" +
+                                " the plan for our team?" +
+                                " We can upgrade through this link:\n\n" +
+                                upgradeURL +
+                                "\n\nThank you!";
+                        String url = "mailto:?subject=" + Util.urlEncode(subject) + "&body=" +
+                                Util.urlEncode(body);
+                        GUIUtil.launch(url);
+                    }
+                }
+            }
+
+            boolean isAdmin()
+            {
+                SPBlockingClient sp = SPClientFactory.newBlockingClient(SP.URL, Cfg.user());
+                try {
+                    sp.signInRemote();
+                    return sp.getAuthorizationLevel().getLevel() == PBAuthorizationLevel.ADMIN;
+                } catch (Exception e) {
+                    // In most common cases the user is an admin of his own team.
+                    return true;
+                }
             }
         });
     }

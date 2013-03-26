@@ -79,6 +79,8 @@ def login(request):
             except ExceptionReply as e:
                 if e.get_type() == PBException.BAD_CREDENTIAL:
                     flash_error(request, _("Email or password is incorrect."))
+                elif e.get_type() == PBException.EMPTY_EMAIL_ADDRESS:
+                    flash_error(request, _("The email address cannot be empty."))
                 else:
                     raise e
         except Exception as e:

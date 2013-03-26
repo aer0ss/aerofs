@@ -14,15 +14,20 @@ import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.servlets.lib.db.IDatabaseConnectionProvider;
 import com.aerofs.servlets.lib.db.sql.AbstractSQLDatabase;
+import com.google.common.collect.ImmutableCollection;
+import com.google.common.collect.ImmutableCollection.Builder;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import javax.annotation.concurrent.Immutable;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
@@ -216,12 +221,12 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
         }
     }
 
-    public Set<UserID> getMembers(SID sid) throws SQLException
+    public ImmutableCollection<UserID> getMembers(SID sid) throws SQLException
     {
         return getUsers(sid, false);
     }
 
-    private Set<UserID> getUsers(SID sid, boolean pending)
+    private ImmutableCollection<UserID> getUsers(SID sid, boolean pending)
             throws SQLException
     {
         PreparedStatement ps = prepareStatement(
@@ -232,9 +237,30 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
 
         ResultSet rs = ps.executeQuery();
         try {
-            Set<UserID> subjects = Sets.newHashSet();
-            while (rs.next()) subjects.add(UserID.fromInternal(rs.getString(1)));
-            return subjects;
+            Builder<UserID> users = ImmutableList.builder();
+            while (rs.next()) users.add(UserID.fromInternal(rs.getString(1)));
+            return users.build();
+        } finally {
+            rs.close();
+        }
+    }
+
+    /**
+     * All all the users, including members and pending users
+     */
+    public ImmutableCollection<UserID> getAllUsers(SID sid)
+            throws SQLException
+    {
+        PreparedStatement ps = prepareStatement(
+                selectWhere(T_AC, C_AC_STORE_ID + "=?", C_AC_USER_ID));
+
+        ps.setBytes(1, sid.getBytes());
+
+        ResultSet rs = ps.executeQuery();
+        try {
+            Builder<UserID> users = ImmutableList.builder();
+            while (rs.next()) users.add(UserID.fromInternal(rs.getString(1)));
+            return users.build();
         } finally {
             rs.close();
         }
@@ -303,13 +329,6 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
         ps.setString(3, userID.getString());
         ps.setBoolean(4, false);        // ignore pending entries
 
-        /**
-         * We enforce a strict API distinction between ACL creation and ACL update
-         * To ensure that SP calls are not abused (i.e shareFolder should not be used to change
-         * existing permissions and updateACL should not give access to new users (as it would
-         * leave the DB in an intermediate state where users have access to a folder but did not
-         * receive an email about it)
-         */
         if (ps.executeUpdate() != 1) throw new ExNotFound();
     }
 

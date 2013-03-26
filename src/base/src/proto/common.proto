@@ -44,6 +44,7 @@ message PBException {
         //
 
         INTERNAL_ERROR = 0;    // Generic wrapper for non-wireable exceptions
+        EMPTY_EMAIL_ADDRESS = 1;
         ALREADY_EXIST = 3;
         BAD_ARGS = 4;
         NO_PERM = 6;

@@ -12,24 +12,34 @@ from stripe_util import URL_PARAM_STRIPE_CARD_TOKEN
 
 log = logging.getLogger(__name__)
 
+URL_PARAM_CHANCE = 'chance'
+URL_PARAM_FEEDBACK = 'feedback'
+
 @view_config(
-    route_name='manage_payment',
+    route_name='start_subscription_done',
     permission='admin',
     request_method='GET',
-    renderer='manage_payment.mako'
+    renderer='manage_subscription.mako'
 )
-def manage_payment(request):
+def start_subscription_done(request):
+    flash_success(request, "Thank you! Your AeroFS plan has been upgraded.")
+    return manage_subscription(request)
+
+@view_config(
+    route_name='manage_subscription',
+    permission='admin',
+    request_method='GET',
+    renderer='manage_subscription.mako'
+)
+def manage_subscription(request):
     stripe_customer, quantity = _get_stripe_customer_and_quantity(request)
     card = stripe_customer.active_card
 
     return {
-        # Set quantity to 0 if the team doesn't have a subscription.
-        # The team may have a custmoer ID and a non-zero quantity but no
-        # subscription, if the team:
-        #   1. is an old team before the new payment workflow, or
-        #   2. has been manually removed subscriptoin by us.
-        # See README.stripe.txt for more info.
-        'quantity': quantity if stripe_customer.subscription else 0,
+        'url_param_chance': URL_PARAM_CHANCE,
+        'url_param_feedback': URL_PARAM_FEEDBACK,
+
+        'quantity': quantity,
         'unit_price_dollars': 10,
         'stripe_publishable_key': stripe_util.STRIPE_PUBLISHABLE_KEY,
         'url_param_stripe_card_token': URL_PARAM_STRIPE_CARD_TOKEN,
@@ -51,7 +61,7 @@ def _get_stripe_customer_and_quantity(request):
     sp = get_rpc_stub(request)
     stripe_data = sp.get_stripe_data().stripe_data
     if not stripe_data.customer_id:
-        raise HTTPBadRequest(detail="You have no payment method on file.")
+        raise HTTPBadRequest(detail="You are not a paying customer.")
 
     return stripe_util.get_stripe_customer(stripe_data.customer_id), stripe_data.quantity
 
@@ -84,18 +94,20 @@ def json_create_stripe_customer(request):
     log.info("create_stripe_customer " + email)
     stripe_customer_id = None
     try:
-        stripe_customer_id = stripe_util.new_stripe_customer(
+        stripe_customer_id = stripe_util.create_stripe_customer(
             email, stripe_card_token).id
     except CardError as e:
         error(stripe_util.get_card_error_message(e))
 
     sp = get_rpc_stub(request)
     sp.set_stripe_customer_id(stripe_customer_id)
+    stripe_util.update_stripe_subscription(sp.get_stripe_data().stripe_data)
 
 @view_config(
     route_name='json.update_credit_card',
     permission='admin',
-    request_method='POST'
+    request_method='POST',
+    renderer='json'
 )
 def json_update_credit_card(request):
     stripe_customer, _ = _get_stripe_customer_and_quantity(request)
@@ -108,9 +120,25 @@ def json_update_credit_card(request):
     except CardError as e:
         error(stripe_util.get_card_error_message(e))
 
-    # WW: there is a case here where the Stripe Customer ID we have in
-    # our DB is bad for some reason, the account becomes delinquent and the user
-    # attempts to update their CC. Since the Stripe Customer ID we have is bad
-    # we will fail here.  What we should do is flush that data and just create
-    # a new Stripe Customer. - Eric
-    return HTTPOk()
+@view_config(
+    route_name='json.cancel_subscription',
+    permission='admin',
+    request_method='POST',
+    renderer='json'
+)
+def json_cancel_subscription(request):
+    chance = URL_PARAM_CHANCE in request.params
+    feedback = request.params[URL_PARAM_FEEDBACK]
+
+    if not chance:
+        stripe_customer, _ = _get_stripe_customer_and_quantity(request)
+        stripe_customer.delete()
+        sp = get_rpc_stub(request)
+        sp.delete_stripe_customer_id()
+
+    # The AeroFS team uses BUSINESS_USER as a tag to filter priority emails
+    title = "[BUSINESS_USER] {} paid plan cancellation {}".format(
+            get_session_user(request),
+            "- CHANCE WITHIN 24 HRS" if chance else "(members to be removed)")
+
+    send_internal_email(title, "feedback: {}".format(feedback))

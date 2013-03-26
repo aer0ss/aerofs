@@ -1,5 +1,6 @@
 package com.aerofs.sp.server.integration;
 
+import com.aerofs.base.ex.ExEmptyEmailAddress;
 import com.aerofs.lib.Param;
 import com.aerofs.lib.acl.Role;
 import com.aerofs.base.ex.ExBadArgs;
@@ -121,6 +122,7 @@ public abstract class AbstractSPACLTest extends AbstractSPFolderTest
 
     // FIXME: [sigh] think up a more efficient way
     private void assertACLContains(List<PBSubjectRolePair> pairs, User subject, Role role)
+            throws ExEmptyEmailAddress
     {
         boolean found = false;
 

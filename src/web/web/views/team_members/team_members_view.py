@@ -160,6 +160,8 @@ def json_invite_user(request):
 
     # invite the user
     reply = exception2error(sp.invite_to_organization, user, {
+            PBException.EMPTY_EMAIL_ADDRESS:
+                _("The email address can't be empty."),
             PBException.ALREADY_EXIST:
                 _("The user is already a member of your team."),
             PBException.ALREADY_INVITED:
@@ -169,7 +171,7 @@ def json_invite_user(request):
         }
     )
 
-    stripe_util.upgrade_stripe_subscription(reply.stripe_data)
+    stripe_util.update_stripe_subscription(reply.stripe_data)
 
     return HTTPOk()
 
@@ -187,7 +189,7 @@ def json_delete_team_invitation(request):
     sp = get_rpc_stub(request)
     stripe_data = sp.delete_organization_invitation_for_user(user).stripe_data
 
-    stripe_util.downgrade_stripe_subscription(stripe_data)
+    stripe_util.update_stripe_subscription(stripe_data)
 
     return HTTPOk()
 

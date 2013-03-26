@@ -26,12 +26,13 @@ import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.organization.OrganizationInvitation;
 import com.aerofs.sp.server.lib.user.User;
 import com.aerofs.sp.server.lib.cert.Certificate;
+import org.junit.Before;
 import org.mockito.Spy;
 
 import java.io.IOException;
 import java.sql.SQLException;
 
-abstract class AbstractBusinessObjectTest extends AbstractAutoTransactionedTestWithSPDatabase
+public abstract class AbstractBusinessObjectTest extends AbstractAutoTransactionedTestWithSPDatabase
 {
     @Spy protected final SPDatabase db = new SPDatabase(sqlTrans);
     @Spy protected final OrganizationDatabase odb = new OrganizationDatabase(sqlTrans);
@@ -60,7 +61,15 @@ abstract class AbstractBusinessObjectTest extends AbstractAutoTransactionedTestW
         factDevice.inject(ddb, cdb, cgen, factUser, factCert);
     }
 
-    private int nextUserID = 123;
+    private int nextUserID;
+    private int nextOrganizationID;
+
+    @Before
+    public void setupBusinessObjectTest()
+    {
+        nextOrganizationID = 1;
+        nextUserID = 1;
+    }
 
     protected User newUser()
     {
@@ -90,8 +99,6 @@ abstract class AbstractBusinessObjectTest extends AbstractAutoTransactionedTestW
         saveUser(user);
         return user;
     }
-
-    private int nextOrganizationID = 123;
 
     protected Organization newOrganization()
     {

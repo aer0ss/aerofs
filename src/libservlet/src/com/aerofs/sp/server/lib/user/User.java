@@ -6,6 +6,7 @@ package com.aerofs.sp.server.lib.user;
 
 import com.aerofs.base.BaseSecUtil;
 import com.aerofs.base.Loggers;
+import com.aerofs.base.ex.ExEmptyEmailAddress;
 import com.aerofs.base.id.DID;
 import com.aerofs.lib.ex.ExNoAdmin;
 import com.aerofs.lib.FullName;
@@ -73,6 +74,7 @@ public class User
         }
 
         public User createFromExternalID(@Nonnull String str)
+                throws ExEmptyEmailAddress
         {
             return create(UserID.fromExternal(str));
         }

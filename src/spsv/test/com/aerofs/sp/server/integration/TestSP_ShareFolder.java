@@ -1,9 +1,10 @@
 /*
- * Copyright (c) Air Computing Inc., 2012.
+ * Copyright (c) Air Computing Inc., 2013.
  */
 
 package com.aerofs.sp.server.integration;
 
+import com.aerofs.lib.ex.ExNoStripeCustomerID;
 import com.aerofs.proto.Cmd.Command;
 import com.aerofs.lib.acl.Role;
 import com.aerofs.base.ex.ExAlreadyExist;
@@ -13,6 +14,7 @@ import com.aerofs.base.id.SID;
 import com.aerofs.proto.Cmd.CommandType;
 import com.aerofs.proto.Common.PBSubjectRolePair;
 import com.aerofs.proto.Sp.GetACLReply;
+import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.aerofs.sp.server.lib.user.User;
 import junit.framework.Assert;
@@ -207,6 +209,98 @@ public class TestSP_ShareFolder extends AbstractSPACLTest
                 new UserAndRole(USER_1, Role.OWNER),
                 new UserAndRole(USER_2, Role.OWNER),
                 new UserAndRole(user, Role.EDITOR));
+    }
+
+    @Test
+    public void shouldThrowIfPaymentIsRequired()
+            throws Exception
+    {
+        service.setMaxFreeUserCounts(Integer.MAX_VALUE, 3);
+
+        sqlTrans.begin();
+        User u1 = saveUser();
+        User u2 = saveUser();
+        User u3 = saveUser();
+        User u4 = saveUser();
+        User u5 = saveUser();
+        // move them to one org
+        Organization org = u1.getOrganization();
+        u2.setOrganization(org, AuthorizationLevel.USER);
+        u3.setOrganization(org, AuthorizationLevel.USER);
+        u4.setOrganization(org, AuthorizationLevel.USER);
+        u5.setOrganization(org, AuthorizationLevel.USER);
+        sqlTrans.commit();
+
+        SID sid = SID.generate();
+
+        // These calls must succeed
+        shareAndJoinFolder(u1, sid, u2, Role.OWNER);
+        shareAndJoinFolder(u1, sid, u3, Role.OWNER);
+        shareAndJoinFolder(u1, sid, u4, Role.OWNER);
+
+        shareFolder(u1, sid, newUser(), Role.EDITOR);
+        shareFolder(u2, sid, newUser(), Role.EDITOR);
+
+        // An unrelated folder should not affect the following operation
+        shareFolder(u3, SID.generate(), newUser(), Role.EDITOR);
+
+        shareFolder(u3, sid, newUser(), Role.EDITOR);
+
+        try {
+            shareFolder(u2, sid, newUser(), Role.EDITOR);
+            fail();
+        } catch (ExNoStripeCustomerID e) {
+            sqlTrans.handleException();
+        }
+
+        try {
+            shareFolder(u4, sid, newUser(), Role.OWNER);
+            fail();
+        } catch (ExNoStripeCustomerID e) {
+            sqlTrans.handleException();
+        }
+
+        // Should still be able to invite members
+        shareAndJoinFolder(u1, sid, u5, Role.OWNER);
+    }
+
+    @Test
+    public void shouldAllowAddingMembersEvenIfCollaboratorsExceedFreePlan()
+            throws Exception
+    {
+        sqlTrans.begin();
+        User u1 = saveUser();
+        User u2 = saveUser();
+        User u3 = saveUser();
+        // move them to one org
+        Organization org = u1.getOrganization();
+        u2.setOrganization(org, AuthorizationLevel.USER);
+        u3.setOrganization(org, AuthorizationLevel.USER);
+        sqlTrans.commit();
+
+        SID sid = SID.generate();
+
+        shareAndJoinFolder(u1, sid, u2, Role.OWNER);
+
+        // we can invite unlimited collaborators
+
+        shareFolder(u1, sid, newUser(), Role.EDITOR);
+        shareFolder(u2, sid, newUser(), Role.EDITOR);
+        shareFolder(u1, sid, newUser(), Role.OWNER);
+        shareFolder(u2, sid, newUser(), Role.OWNER);
+
+        // now limit the plan
+        service.setMaxFreeUserCounts(Integer.MAX_VALUE, 3);
+
+        try {
+            shareFolder(u1, sid, newUser(), Role.EDITOR);
+            fail();
+        } catch (ExNoStripeCustomerID e) {
+            sqlTrans.handleException();
+        }
+
+        // Should still be able to invite members
+        shareAndJoinFolder(u2, sid, u3, Role.OWNER);
     }
 
     @Test

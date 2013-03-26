@@ -25,13 +25,14 @@ CREATE TABLE `sp_shared_folder` (
 
 CREATE TABLE `sp_acl` (
   `a_sid` BINARY(16) NOT NULL,
-  `a_id` VARCHAR(320) NOT NULL,  -- TODO (WW) add a foreign key to user ids
+  `a_id` VARCHAR(320) NOT NULL,
   `a_role` TINYINT NOT NULL,
   `a_pending` BOOLEAN NOT NULL DEFAULT FALSE,
   `a_sharer` VARCHAR(320),
   PRIMARY KEY (`a_sid`,`a_id`),
-  INDEX `a_sid` (`a_sid`),
   INDEX `a_id` (`a_id`),
+  -- Note: the foreign key implicitly create an index on a_sid
+  -- for an org. See http://dev.mysql.com/doc/refman/4.1/en/innodb-foreign-key-constraints.html
   CONSTRAINT `a_sid_foreign` FOREIGN KEY (`a_sid`) REFERENCES `sp_shared_folder` (`sf_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1; -- latin1 because a_id is email address
 
@@ -46,6 +47,8 @@ CREATE TABLE `sp_user` (
   `u_org_id` INTEGER NOT NULL,
   `u_acl_epoch` BIGINT NOT NULL,
   PRIMARY KEY (`u_id`),
+  -- Note: the foreign key implicitly creates an index on u_org_id, which helps list or count users
+  -- for an org. See http://dev.mysql.com/doc/refman/4.1/en/innodb-foreign-key-constraints.html
   CONSTRAINT `u_org_foreign` FOREIGN KEY (`u_org_id`) REFERENCES `sp_organization` (`o_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
@@ -93,9 +96,11 @@ CREATE TABLE `sp_organization_invite` (
   `m_signup_code` CHAR(8),  -- the signup code associated with the organization
   `m_ts` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`m_to`, `m_org_id`),
+  UNIQUE KEY (`m_signup_code`),
   INDEX `m_ts_idx` (`m_ts`),
-  INDEX `m_org_id_idx` (`m_org_id`), -- for OrganizationInvitationDatabase.getInvitedUsers()
-  UNIQUE INDEX `m_signup_code_idx` (`m_signup_code`), -- for OrganizationInvitationDatabase.getInvitationForSignupCode()
+  -- Note: the foreign keys implicitly create indices on m_org_id and m_signup_code, which helps
+  -- OrganizationInvitationDatabase.getInvitedUsers() and getInvitationForSignupCode().
+  -- See http://dev.mysql.com/doc/refman/4.1/en/innodb-foreign-key-constraints.html
   CONSTRAINT `m_org_foreign` FOREIGN KEY (`m_org_id`) REFERENCES `sp_organization` (`o_id`),
   CONSTRAINT `m_signup_code_foreign` FOREIGN KEY (`m_signup_code`) REFERENCES `sp_signup_code` (`t_code`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;

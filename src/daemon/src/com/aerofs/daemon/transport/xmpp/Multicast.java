@@ -125,7 +125,7 @@ public class Multicast implements IMaxcast
                 muc = new MultiUserChat(conn, roomName);
 
                 try {
-                    l.info("gri:" + roomName);
+                    l.info("gri {}", sid);
                     MultiUserChat.getRoomInfo(conn, roomName);
                 } catch (XMPPException e) {
                     if (e.getXMPPError() != null && e.getXMPPError().getCode() == 404) {
@@ -166,7 +166,7 @@ public class Multicast implements IMaxcast
 
     private void joinRoom(MultiUserChat muc) throws XMPPException
     {
-        l.info("joining " + muc.getRoom());
+        l.info("joining {}", shortenRoomStringForLogging(muc));
 
         // requesting no history
         DiscussionHistory history = new DiscussionHistory();
@@ -200,7 +200,14 @@ public class Multicast implements IMaxcast
             throw new XMPPException(e);
         }
 
-        l.info("room joined");
+        l.info("joined");
+    }
+
+    private String shortenRoomStringForLogging(MultiUserChat muc)
+    {
+        String room = muc.getRoom();
+        int at = room.indexOf('@');
+        return at == -1 ? room : room.substring(0, at);
     }
 
     private void createRoom(MultiUserChat muc) throws XMPPException
@@ -221,7 +228,7 @@ public class Multicast implements IMaxcast
             throw new XMPPException(e);
         }
 
-        l.info("room created");
+        l.info("created");
     }
 
     private void recvMessage(Message msg) throws IOException, ExFormatError,

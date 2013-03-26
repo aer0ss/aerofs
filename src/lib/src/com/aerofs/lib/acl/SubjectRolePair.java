@@ -1,6 +1,7 @@
 package com.aerofs.lib.acl;
 
 import com.aerofs.base.ex.ExBadArgs;
+import com.aerofs.base.ex.ExEmptyEmailAddress;
 import com.aerofs.base.id.UserID;
 import com.aerofs.proto.Common.PBSubjectRolePair;
 
@@ -12,7 +13,7 @@ public final class SubjectRolePair
     public final Role _role;
     @Nullable private PBSubjectRolePair _pb;
 
-    public SubjectRolePair(PBSubjectRolePair pb) throws ExBadArgs
+    public SubjectRolePair(PBSubjectRolePair pb) throws ExBadArgs, ExEmptyEmailAddress
     {
         this._role = Role.fromPB(pb.getRole());
         this._subject = UserID.fromExternal(pb.getSubject());
@@ -35,5 +36,11 @@ public final class SubjectRolePair
         }
 
         return _pb;
+    }
+
+    @Override
+    public String toString()
+    {
+        return _subject + ": " + _role;
     }
 }

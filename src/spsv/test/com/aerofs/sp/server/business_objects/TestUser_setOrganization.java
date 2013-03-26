@@ -71,6 +71,18 @@ public class TestUser_setOrganization extends AbstractBusinessObjectTest
     }
 
     @Test
+    public void shouldThrowIfNoAdminForSameTeam()
+            throws Exception
+    {
+        User user = saveUser();
+
+        try {
+            user.setOrganization(user.getOrganization(), USER);
+            fail();
+        } catch (ExNoAdmin e) {}
+    }
+
+    @Test
     public void shouldUpdateTeamServerACLs()
             throws Exception
     {

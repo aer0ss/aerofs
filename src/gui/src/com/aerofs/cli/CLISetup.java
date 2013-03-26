@@ -7,6 +7,7 @@ import java.util.Properties;
 
 import com.aerofs.base.Base64;
 import com.aerofs.base.BaseParam.SP;
+import com.aerofs.base.ex.ExEmptyEmailAddress;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.RootAnchorUtil;
 import com.aerofs.lib.S;
@@ -168,7 +169,8 @@ public class CLISetup
                 _deviceName, null);
     }
 
-    private void getUser(CLI cli) throws ExNoConsole
+    private void getUser(CLI cli)
+            throws ExNoConsole, ExEmptyEmailAddress
     {
         _userID = UserID.fromExternal(cli.askText(S.SETUP_USER_ID, null));
     }
@@ -218,16 +220,14 @@ public class CLISetup
                     S.SETUP_S3_ENCRYPTION_PASSWORD);
         }
 
-        if (s3BucketId != null) {
-            String scrypted = Base64.encodeBytes(SecUtil.scrypt(s3EncryptionPassword, _userID));
+        String scrypted = Base64.encodeBytes(SecUtil.scrypt(s3EncryptionPassword, _userID));
 
-            _s3config = PBS3Config.newBuilder()
-                    .setBucketId(s3BucketId)
-                    .setAccessKey(s3AccessKey)
-                    .setSecretKey(s3SecretKey)
-                    .setEncryptionKey(scrypted)
-                    .build();
-        }
+        _s3config = PBS3Config.newBuilder()
+                .setBucketId(s3BucketId)
+                .setAccessKey(s3AccessKey)
+                .setSecretKey(s3SecretKey)
+                .setEncryptionKey(scrypted)
+                .build();
     }
 
     private char[] inputAndConfirmPasswd(CLI cli, String prompt) throws ExNoConsole

@@ -50,6 +50,12 @@ def ignore_exception(func, params, types):
         else: return None
 
 def _call(func, params):
-    # use func() if params is an empty list; calling func(params) in this case
-    # would become func(()). Is there a better way?
-    return func(params) if params else func()
+    if isinstance(params, (list, tuple)):
+        # use "splat" operator to expand the list into arguments
+        return func(*params)
+    elif params:
+        return func(params)
+    else:
+        # use func() if params is an empty list; calling func(params) in this
+        # case would become func(()). Is there a better way?
+        return func()

@@ -140,22 +140,26 @@ public class AbstractSPTest extends AbstractTestWithDatabase
 
     private Set<String> verkehrPublished;
 
-    // N.B. These users are DEPRECATED. Do not use them in the new code. Use newUser(), saveUser()
-    // instead.
+    // N.B. These users are DEPRECATED. Do not use them in the new code. Use newUser(), saveUser(), etc.
     protected final User USER_1 /* DEPRECATED */ = factUser.create(UserID.fromInternal("user_1"));
     protected final User USER_2 /* DEPRECATED */ = factUser.create(UserID.fromInternal("user_2"));
     protected final User USER_3 /* DEPRECATED */ = factUser.create(UserID.fromInternal("user_3"));
     protected static final byte[] CRED = "CREDENTIALS".getBytes();
+
+    private int nextUserID;
 
     // Use a method name that is unlikely to conflict with setup methods in subclasses
     @Before
     public void setupAbstractSPServiceTest()
             throws Exception
     {
-        // Verkehr setup.
+        nextUserID = 1;
+
         service.setVerkehrClients_(verkehrPublisher, verkehrAdmin);
         service.setSessionInvalidator(sessionInvalidator);
         service.setUserTracker(userSessionTracker);
+        service.setMaxFreeUserCounts(Integer.MAX_VALUE, Integer.MAX_VALUE);
+
         verkehrPublished = mockAndCaptureVerkehrPublish();
 
         ///////////////////////////////////////////////////////////////////////////
@@ -172,13 +176,25 @@ public class AbstractSPTest extends AbstractTestWithDatabase
         sqlTrans.commit();
     }
 
+    /**
+     * Create a new User object without saving the user to the db
+     */
     protected User newUser()
     {
-        return factUser.createFromExternalID("user" + Integer.toString(nextUserID++) + "@email");
+        return factUser.create(UserID.fromInternal("u" + Integer.toString(nextUserID++) + "@email"));
     }
 
-    private int nextUserID = 123;
-
+    /**
+     * Craete a new User object and save it to the db
+     *
+     * N.B. SQL transaction is required for this method:
+     *
+     *      _sqlTrans.begin();
+     *      ...
+     *      User u = saveUser();
+     *      ...
+     *      _sqlTrans.commit();
+     */
     protected User saveUser()
             throws Exception
     {

@@ -18,7 +18,8 @@ public class ExNoStripeCustomerID extends AbstractExWirable
 
     public ExNoStripeCustomerID()
     {
-        super();
+        // This message is for old clients that don't handle this exception specially.
+        super("payment is required");
     }
 
     public ExNoStripeCustomerID(PBException pb)

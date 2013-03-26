@@ -1,7 +1,6 @@
 ## This file is intended to be included by other files.
 
 <%def name="html()">
-
     <form method="post" id="credit-card-form">
         <fieldset>
             <div id="credit-card-modal" class="modal hide" tabindex="-1" role="dialog">
@@ -12,6 +11,7 @@
                 <div class="modal-body">
                     ${caller.description()}
 
+                    ## The same style as the form in manage_subscription.mako
                     <div style="margin-left: 80px; margin-top: 16.5pt;">
                         ${_input_fields()}
                     </div>
@@ -25,6 +25,22 @@
             </div>
         </fieldset>
     </form>
+</%def>
+
+<%def name="default_title()">
+    Please upgrade your AeroFS plan
+</%def>
+
+<%def name="default_description()">
+    <p>
+        Please enter your payment information below. We will adjust your
+        subscription automatically as you add or remove team members, so you
+        never have to worry!
+    </p>
+</%def>
+
+<%def name="default_okay_button_text()">
+    Continue
 </%def>
 
 <%def name="_input_fields()">
@@ -119,9 +135,9 @@
         ## The callback accepts the following function signature:
         ##      onStripeCardTokenCreated(token, done, fail);
         ##  token: the credit card token
-        ##  done, fail: functions the callback should call on success and
-        ##              failure. It's the callback' responsibility to display
-        ##              error messages on failures.
+        ##  done, always: functions the callback should call on success and
+        ##              after execution. It's the callback' responsibility to
+        ##              display error messages on failures.
         function inputCreditCardInfo(callback) {
             onStripeCardTokenCreated = callback;
             enableSubmission();
@@ -137,25 +153,29 @@
         ##
         ## The callback accepts the following function signature:
         ##      onCustomerCreated(done, fail);
-        ##  done, fail: functions the callback should call on success and
-        ##              failure. It's the callback' responsibility to display
-        ##              error messages on failures.
+        ##  done, always: functions the callback should call on success and
+        ##              after execution. It's the callback' responsibility to
+        ##              display error messages on failures.
+        ## The callback can be None
         function inputCreditCardInfoAndCreateStripeCustomer(callback) {
-            inputCreditCardInfo(function(token, done, fail) {
+            inputCreditCardInfo(function(token, done, always) {
                 $.post("${request.route_path('json.create_stripe_customer')}", {
                     ${csrf.token_param()}
                     "${url_param_stripe_card_token}": token
-                })
-                .done(function() {
+                }).done(function() {
                     ## retry inviting after the Stripe customer ID is set
-                    callback(done, fail);
-                })
-                .fail(function(xhr) {
+                    if (callback) callback(done, always);
+                    else done();
+                }).fail(function(xhr) {
                     showErrorMessageFromResponse(xhr);
-                    fail();
+                }).always(function() {
+                    if (!callback) always();
                 });
             });
         }
 
+        function getCreditCardModal() {
+            return $('#credit-card-modal');
+        }
     </script>
 </%def>

@@ -125,6 +125,12 @@ public class Organization
         _f._odb.setStripeCustomerID(_id, stripeCustomerID);
     }
 
+    public void deleteStripeCustomerID()
+            throws SQLException
+    {
+        _f._odb.setStripeCustomerID(_id, null);
+    }
+
     @Override
     public int hashCode()
     {

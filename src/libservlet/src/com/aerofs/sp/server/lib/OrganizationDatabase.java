@@ -26,6 +26,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
@@ -144,13 +145,16 @@ public class OrganizationDatabase extends AbstractSQLDatabase
         Util.verify(ps.executeUpdate() == 1);
     }
 
-    public void setStripeCustomerID(final OrganizationID orgID, final String stripeCustomerID)
+    public void setStripeCustomerID(final OrganizationID orgID,
+            @Nullable final String stripeCustomerID)
             throws SQLException
     {
         final PreparedStatement ps = prepareStatement(updateWhere(T_ORGANIZATION, C_O_ID + "=?",
                 C_O_STRIPE_CUSTOMER_ID));
 
-        ps.setString(1, stripeCustomerID);
+        if (stripeCustomerID != null) ps.setString(1, stripeCustomerID);
+        else ps.setNull(1, Types.VARCHAR);
+
         ps.setInt(2, orgID.getInt());
 
         Util.verify(ps.executeUpdate() == 1);
