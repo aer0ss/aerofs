@@ -67,6 +67,16 @@ class _RitualServiceWrapper(object):
         srps = self._convert_acl(acl)
         return self._service.share_folder(pbpath, srps, note)
 
+    @staticmethod
+    def _convert_acl(acl):
+        srps = []
+        for key in acl:
+            srp = PBSubjectRolePair()
+            srp.subject = key
+            srp.role = acl[key]
+            srps.append(srp)
+        return srps
+
     def list_shared_folders(self):
         r = []
         for p in self._service.list_shared_folders().path:
@@ -148,31 +158,13 @@ class _RitualServiceWrapper(object):
         pbpath = self.wait_path(path)
         return self._service.test_get_object_identifier(pbpath)
 
-    def update_acl(self, path, acl):
-        """
-        @param acl a dict of {subject:role}
-                   subject is a string
-                   role is defined in ritual_pb2 (e.g. EDITOR)
-        """
+    def update_acl(self, path, subject, role):
         pbpath = self.wait_path(path)
-        self._service.update_acl(self._user, pbpath, self._convert_acl(acl))
+        self._service.update_acl(self._user, pbpath, subject, role)
 
-    @staticmethod
-    def _convert_acl(acl):
-        srps = []
-        for key in acl:
-            srp = PBSubjectRolePair()
-            srp.subject = key
-            srp.role = acl[key]
-            srps.append(srp)
-        return srps
-
-    def delete_acl(self, path, subjects):
-        """
-        @param subjects a list of subjects
-        """
+    def delete_acl(self, path, subject):
         pbpath = self.wait_path(path)
-        self._service.delete_acl(self._user, pbpath, subjects)
+        self._service.delete_acl(self._user, pbpath, subject)
 
     def get_acl(self, path):
         """
