@@ -32,11 +32,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
-/**
- *
- */
 @RunWith(value = Parameterized.class)
-public class AbstractIteratorTest extends AbstractTest
+public class TestAbstractIterator extends AbstractTest
 {
     @Mock Trans t;
     @Mock ICollectorSequenceDatabase csdb;
@@ -48,7 +45,7 @@ public class AbstractIteratorTest extends AbstractTest
     private final long firstCS;
     private final long lastCS;
 
-    public AbstractIteratorTest(long firstCS, long lastCS)
+    public TestAbstractIterator(long firstCS, long lastCS)
     {
         this.firstCS = firstCS;
         this.lastCS = lastCS;

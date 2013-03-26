@@ -5,6 +5,7 @@
 package com.aerofs.gui.singleuser;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.lib.Util;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.ex.ExIndexing;
 import com.aerofs.lib.ritual.RitualClient;
@@ -17,6 +18,7 @@ import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import org.slf4j.Logger;
 
+import java.nio.channels.ClosedChannelException;
 import java.util.List;
 
 /**
@@ -88,7 +90,8 @@ public class IndexingPoller
             {
                 r.close();
                 if (!(t instanceof ExIndexing)) {
-                    l.warn("failed to ping daemon {}", t);
+                    l.warn("failed to ping daemon {}",
+                            Util.e(t, ClosedChannelException.class));
                 }
                 schedulePingDaemon();
             }

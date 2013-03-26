@@ -50,7 +50,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
-public class CollectorTest extends AbstractTest
+public class TestCollector extends AbstractTest
 {
     @Mock Trans t;
     @Mock TransManager tm;
