@@ -16,7 +16,6 @@ import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.FileUtil;
-import com.aerofs.lib.FrequentDefectSender;
 import com.aerofs.lib.acl.Role;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
@@ -50,12 +49,11 @@ public class GetComponentReply
     private final MapAlias2Target _a2t;
     private final LocalACL _lacl;
     private final IEmigrantDetector _emd;
-    private final FrequentDefectSender _fds;
 
     @Inject
     public GetComponentReply(TransManager tm, DirectoryService ds, IncomingStreams iss,
             ReceiveAndApplyUpdate ru, MetaDiff mdiff, Aliasing al, MapAlias2Target a2t,
-            LocalACL lacl, IEmigrantDetector emd, FrequentDefectSender fds)
+            LocalACL lacl, IEmigrantDetector emd)
     {
         _tm = tm;
         _ds = ds;
@@ -66,7 +64,6 @@ public class GetComponentReply
         _a2t = a2t;
         _lacl = lacl;
         _emd = emd;
-        _fds = fds;
     }
 
     public static OA.Type fromPB(PBMeta.Type type)

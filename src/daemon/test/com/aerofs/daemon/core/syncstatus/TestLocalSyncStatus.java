@@ -4,7 +4,6 @@ import java.sql.SQLException;
 
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.alias.MapAlias2Target;
-import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.DirectoryServiceImpl;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.store.DescendantStores;
