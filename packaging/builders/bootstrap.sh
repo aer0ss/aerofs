@@ -18,6 +18,7 @@ mkdir -p $OPT
 cp ../out.ant/artifacts/bootstrap/*.jar $OPT
 cp $RESOURCES/logback.xml $OPT
 cp $RESOURCES/bootstrap.tasks $OPT
+cp -r $RESOURCES/scripts $OPT
 
 mkdir -p $INIT
 cp $RESOURCES/bootstrap $INIT
