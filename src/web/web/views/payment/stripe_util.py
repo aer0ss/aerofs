@@ -69,15 +69,11 @@ def _update_stripe_subscription(stripe_data, upgrade):
 
     sc = get_stripe_customer(stripe_data.customer_id)
     if stripe_data.quantity == 0:
-        # Only cancel subscription only if there is one; otherwise Stripe will
+        # Cancel subscription only if there is one; otherwise Stripe will
         # complain.
         if sc.subscription: sc.cancel_subscription()
     elif upgrade or sc.subscription:
         # Do nothing if the customer doesn't have subscription and the
         # subscription is about to downgrade. This is merely to cater the case
         # where we have manually removed the subscription for the customer.
-        plan = _get_stripe_plan_id(stripe_data.quantity)
-        sc.update_subscription(plan=plan)
-
-def _get_stripe_plan_id(quantity):
-    return ''.join(["business_", str(quantity), "user"])
+        sc.update_subscription(plan='business_v1', quantity=stripe_data.quantity)
