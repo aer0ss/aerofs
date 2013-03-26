@@ -2,10 +2,8 @@ server {
     listen 1029 default;
     server_name ca;
 
-    location /staging {
-        proxy_pass http://localhost:9001;
-    }
-
+    # TODO (MP) I would eventually like to see this prefix go away, once we
+    # ditch staging entirely.
     location /prod {
         proxy_pass http://localhost:9002;
     }

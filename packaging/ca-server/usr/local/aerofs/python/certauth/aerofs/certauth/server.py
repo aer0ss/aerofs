@@ -21,13 +21,20 @@ class ApplicationObject(object):
 
     def __call__(self, environ, response):
 
-        certname = environ['QUERY_STRING']
+        query_string = environ['QUERY_STRING']
         try:
             try:
                 request_body_size = int(environ['CONTENT_LENGTH'])
                 csr = environ['wsgi.input'].read(request_body_size)
             except ValueError:
                 raise aerofs.certauth.openssl.ExBadRequest("No POST body");
+
+            split_query_string = query_string.split('=')
+
+            if len(split_query_string) != 2:
+                raise aerofs.certauth.openssl.ExBadRequest("Bad query string");
+
+            certname = 'certs/' + split_query_string[1]
             ret =  self._openssl.newcert(certname, csr)
 
         # Catch certain exceptions for debugging purposes. Don't catch

@@ -3,6 +3,7 @@ Classes related to executing openssl functions.
 """
 
 import os
+import os.path
 import time
 import datetime
 import subprocess
@@ -62,6 +63,9 @@ class OpenSSLWrapper(object):
         fh = open(self._csr(certname), 'w')
         fh.write(csr)
         fh.close()
+
+        if os.path.exists(self._cert(certname)):
+            raise ExInternalServerError("Certificate already exists")
 
         cmd = ['/usr/bin/openssl', 'ca', '-batch', '-config',
             self._openssl_cnf(), '-notext', '-startdate', self._time(),
