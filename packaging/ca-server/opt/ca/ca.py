@@ -14,18 +14,18 @@ import sys
 import aerofs.certauth.server
 
 def usage():
-    print "usage: " + sys.argv[0] + " <cadir> <port>"
+    print "usage: " + sys.argv[0] + " <cadir>"
     sys.exit(1)
 
 if __name__ == "__main__":
-    if len(sys.argv) != 3:
+    if len(sys.argv) != 2:
         usage()
 
     cadir = sys.argv[1]
-    port = sys.argv[2]
+    port = 9002
 
-    ca = aerofs.certauth.server.CertificateAuthorityServer(cadir, int(port))
-    print "Serving locally on port " + port + "..."
+    ca = aerofs.certauth.server.CertificateAuthorityServer(cadir, port)
+    print "Serving locally on port " + str(port) + "..."
 
     try:
         ca.serve_forever()

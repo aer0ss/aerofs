@@ -12,7 +12,7 @@ usage()
 
     echo "Usage: $0 [options] <crt_filename>"
     echo "Available options:"
-    echo " -e <email_address> Email address for stale crt notification. [default=$email_default]"
+    echo " -e <email_address> Email address for stale cert notification. [default=$email_default]"
     echo " -d <days>          Certificate expiration interval (eg. if cert_date < days). [default=$days_default]"
     echo " -n                 Do not send an email notification."
     echo " -h                 Display this help message."
@@ -112,5 +112,5 @@ then
         fi
     fi
 else
-    echo "Certificate OK."
+    echo "Certificate OK (expires in $diff_days days)."
 fi
