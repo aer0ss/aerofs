@@ -1,8 +1,13 @@
 package com.aerofs.daemon.core.synctime;
 
+import com.aerofs.base.Loggers;
+import org.slf4j.Logger;
+
 class TimeToSync
 {
-    static final int TOTAL_BUCKETS = 256;
+    static final int TOTAL_BINS = 256;
+
+    private static final Logger l = Loggers.getLogger(TimeToSync.class);
 
     private final long _syncTimeMillis;
 
@@ -16,11 +21,12 @@ class TimeToSync
      * 21.25 was chosen to place 4096 seconds in the top bin (255). 4096 is just over an hour.
      * 21.25 = 255 / log2(4096)
      */
-    int toBucketIndex()
+    int toBinIndex()
     {
-        int syncTimeSeconds = (int) _syncTimeMillis / 1000;
+        if (_syncTimeMillis < 1000) return 0;
 
-        return Math.min(TOTAL_BUCKETS - 1,
+        int syncTimeSeconds = (int) _syncTimeMillis / 1000;
+        return Math.min(TOTAL_BINS - 1,
                 85 * (31 - Integer.numberOfLeadingZeros(syncTimeSeconds)) / 4);
     }
 
