@@ -80,6 +80,14 @@ public class CollectorFilters
         _sidx = sidx;
     }
 
+    boolean hasFiltersFor_(DID did)
+    {
+        DeviceEntry dev = _did2dev.get(did);
+        // TODO (MJ) there might be some invariant that none of the filters in _did2dev are empty,
+        // else they'd be replaced with a null pointer.
+        return (dev != null && dev._dbFilter != null && !dev._dbFilter.isEmpty_());
+    }
+
     /**
      * the method can be called regardless of if the device is loaded or unloaded
      *

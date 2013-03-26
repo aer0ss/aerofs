@@ -60,7 +60,7 @@ public class NewUpdates
         _sidx2s = sidx2s;
     }
 
-    public void addListener(IPushUpdatesListener listener)
+    public void addListener_(IPushUpdatesListener listener)
     {
         _listeners.add(listener);
     }
