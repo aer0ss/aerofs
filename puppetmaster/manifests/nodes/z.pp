@@ -67,6 +67,7 @@ node "z.arrowfs.org" inherits default {
   # every 10 minutes
   pagerduty::probe::base{[
     # Production
+    "rocklog url http://rocklog.aerofs.com/",
     "web url http://www.aerofs.com",
     "sv url https://sv.aerofs.com/sv_beta/sv",
     "sss url https://sss.aerofs.com/syncstat 10",
