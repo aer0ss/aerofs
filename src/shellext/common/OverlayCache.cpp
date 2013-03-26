@@ -261,7 +261,8 @@ void OverlayCache::insert(const std::wstring& key, int value)
     }
 }
 
-void OverlayCache::trim() {
+void OverlayCache::trim()
+{
     while (0 < m_limit && m_limit < m_entryCount) {
         Node* t = m_head->prev;
         m_head->prev = t->prev;

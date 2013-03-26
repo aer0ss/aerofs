@@ -119,7 +119,7 @@ inline bool str_ends_with(const std::wstring& str, const std::wstring& suffix)
   */
 inline std::string hexencode(std::string arg) {
 	std::stringstream ss;
-	for (int i = 0 ; i < arg.size() ;i++) {
+	for (size_t i = 0; i < arg.size(); i++) {
 		ss << std::hex << (unsigned int)((unsigned char)arg[i]);
 	}
 	return ss.str();

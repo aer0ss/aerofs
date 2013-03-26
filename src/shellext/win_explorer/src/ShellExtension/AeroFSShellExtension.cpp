@@ -206,8 +206,9 @@ Overlay AeroFSShellExtension::overlay(const std::wstring& path)
 	return (Overlay)status;
 }
 
- void AeroFSShellExtension::evicted(const std::wstring& key, int value) const {
-	SHChangeNotify(SHCNE_UPDATEITEM, SHCNF_PATH | SHCNF_FLUSHNOWAIT, key.c_str(), NULL);
+ void AeroFSShellExtension::evicted(const std::wstring& key, int value) const
+ {
+	 refreshShellItem(key, false);
  }
 
 
@@ -241,7 +242,7 @@ void AeroFSShellExtension::onPathStatusNotification(const PathStatusNotification
 		// update cache
 		m_cache->insert(path, newOverlay);
 		// mark overlay as dirty
-		SHChangeNotify(SHCNE_UPDATEITEM, SHCNF_PATH | SHCNF_FLUSHNOWAIT, path.c_str(), NULL);
+		refreshShellItem(path, false);
 	}
 }
 
@@ -278,9 +279,20 @@ void AeroFSShellExtension::clearCache()
 {
 	// clear cache
 	m_cache->clear();
+	refreshShellItem(m_rootAnchor, true);
+}
 
-	// Tell the shell to refresh the icons
-	SHChangeNotify(SHCNE_ASSOCCHANGED, SHCNF_IDLIST, NULL, NULL);
+/**
+Tell the shell to refresh the icon overlay a single item (file or folder)
+
+If recursive is false, only the icon for the item pointed by path will be refreshed.
+If recursive is true, all icons under the item pointed by path, including the item itself,
+will be refreshed.
+*/
+void AeroFSShellExtension::refreshShellItem(const std::wstring& path, bool recursive) const
+{
+	LONG action = recursive ? SHCNE_UPDATEDIR : SHCNE_UPDATEITEM;
+	SHChangeNotify(action, SHCNF_PATH | SHCNF_FLUSHNOWAIT, path.c_str(), NULL);
 }
 
 void AeroFSShellExtension::showSyncStatusDialog(const std::wstring& path)
@@ -411,7 +423,7 @@ STDAPI DllUnregisterServer(void)
 	DEBUG_LOG(" ========== UNREG SERVER ===========");
 	HRESULT hr = _instance.DllUnregisterServer(FALSE);
 	SHChangeNotify(SHCNE_ASSOCCHANGED, SHCNF_IDLIST, NULL, NULL);
-	// Force the sheel extension module to be unloaded to allow a different
+	// Force the shell extension module to be unloaded to allow a different
 	// (presumably newer) version to be loaded instead. Without this call the
 	// old version will be kept in memory by Explorer until reboot.
 	// NB: this will only take effect after all explorer windows are closed

@@ -66,6 +66,7 @@ private:
 	void setUserId(const std::string& user);
 	void onPathStatusNotification(const PathStatusNotification& fstatus);
 	void clearCache();
+	void refreshShellItem(const std::wstring& path, bool recursive) const;
 
 	virtual void evicted(const std::wstring& key, int value) const;
 
