@@ -43,7 +43,7 @@ echo ">>> Generating CSR"
 openssl req -new \
     -key "$SERVER_PKCS8_KEY_FILENAME" \
     -out "$SERVER_CSR_FILENAME" \
-    -subj "/C=US/ST=CA/L=SF/O=aerofs.com/OU=na/CN=$SERVER_NAME.aerofs.com"
+    -subj "/C=US/ST=CA/L=SF/O=aerofs.com/OU=na/CN=$SERVER_NAME"
 
 echo ">>> Submitting request to CA"
 
@@ -53,7 +53,7 @@ echo ">>> Submitting request to CA"
 curl --silent -X POST \
     --data-binary @"$SERVER_NAME"".csr" \
     --output "$SERVER_X509CERT_FILENAME" \
-    "$CA_URL""?newcert=""$RANDOM-$SERVER_NAME.aerofs.com"
+    "$CA_URL""?newcert=""$RANDOM-$SERVER_NAME"
 
 CERTIFICATE_STRING='-----BEGIN CERTIFICATE-----'
 
