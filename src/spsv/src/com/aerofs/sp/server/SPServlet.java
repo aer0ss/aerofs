@@ -148,10 +148,10 @@ public class SPServlet extends AeroServlet
                 getServletContext().getInitParameter(REDIS_HOST_INIT_PARAMETER),
                 Short.parseShort(getServletContext().getInitParameter(REDIS_PORT_INIT_PARAMETER)));
 
-        //initialize Email Reminder code
         PooledSQLConnectionProvider erConProvider = new PooledSQLConnectionProvider();
         erConProvider.init_(dbResourceName);
 
+        // Initialize Email Reminder code
         InvitationReminderEmailer.Factory emailReminderFactory = new Factory();
 
         EmailReminder er = new EmailReminder(_esdb, _sqlTrans, emailReminderFactory);

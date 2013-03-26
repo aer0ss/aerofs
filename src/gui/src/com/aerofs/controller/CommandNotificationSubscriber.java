@@ -326,9 +326,7 @@ public final class CommandNotificationSubscriber
     private static SPBlockingClient newUnauthenticatedSPClient()
             throws Exception
     {
-        SPBlockingClient sp = SPClientFactory.newBlockingClient(SP.URL, Cfg.user());
-        sp.signInRemote();
-        return sp;
+        return SPClientFactory.newBlockingClient(SP.URL, Cfg.user());
     }
 
     //
