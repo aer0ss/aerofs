@@ -19,6 +19,7 @@ import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
+import com.aerofs.lib.cfg.CfgStoragePolicy;
 import com.aerofs.lib.event.IEvent;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.daemon.lib.db.ITransListener;
@@ -82,6 +83,7 @@ public class TestBlockStorage extends AbstractBlockTest
     @Mock CoreScheduler sched;
     @Mock CfgAbsAuxRoot auxRoot;
     @Mock CfgAbsAutoExportFolder autoExportFolder;
+    @Mock CfgStoragePolicy storagePolicy;
     @Mock FrequentDefectSender fds;
     @Mock ExportHelper eh;
     @Mock IIMCExecutor iimc;
@@ -94,6 +96,7 @@ public class TestBlockStorage extends AbstractBlockTest
     @Mock IBlockStorageBackend bsb;
 
     BlockStorage bs;
+    boolean useHistory;
 
     @Before
     public void setUp() throws Exception
@@ -108,6 +111,14 @@ public class TestBlockStorage extends AbstractBlockTest
         String testTempDir = testTempDirFactory.getTestTempDir().getAbsolutePath();
         when(auxRoot.get()).thenReturn(testTempDir);
         when(autoExportFolder.get()).thenReturn(Util.join(testTempDir, "autoexport"));
+        when(storagePolicy.useHistory()).thenAnswer(new Answer<Boolean>() {
+            @Override
+            public Boolean answer(InvocationOnMock invocation)
+                    throws Throwable
+            {
+                return useHistory;
+            }
+        });
 
         // no encoding is performed by the mock backend
         when(bsb.wrapForEncoding(any(OutputStream.class))).thenAnswer(new Answer<Object>()
@@ -133,8 +144,10 @@ public class TestBlockStorage extends AbstractBlockTest
 
         // shame @InjectMocks does not deal with a mix of Mock and real objects...
         bs = new BlockStorage();
-        bs.inject_(auxRoot, tc,  tm, sched, fileFactory, bsb, bsdb, fds, eh);
+        bs.inject_(auxRoot, storagePolicy, tc,  tm, sched, fileFactory, bsb, bsdb, fds, eh);
         bs.init_();
+
+        useHistory = true;
     }
 
     @After
@@ -184,7 +197,9 @@ public class TestBlockStorage extends AbstractBlockTest
         return true;
     }
 
-    private void store(String path, SOKID sokid, byte[] content, boolean wasPresent, long mtime)
+    private ContentHash store(
+            String path, SOKID sokid,
+            byte[] content, boolean wasPresent, long mtime)
             throws Exception
     {
         SOCKID sockid = new SOCKID(sokid, CID.CONTENT);
@@ -195,8 +210,10 @@ public class TestBlockStorage extends AbstractBlockTest
         out.write(content);
         out.close();
 
-        prefix.prepare_(tk);
+        ContentHash hash = prefix.prepare_(tk);
         bs.apply_(prefix, file, wasPresent, mtime, t);
+
+        return hash;
     }
 
     private byte[] fetch(String path, SOKID sokid) throws Exception
@@ -575,6 +592,68 @@ public class TestBlockStorage extends AbstractBlockTest
         Assert.assertTrue(revChildrenEquals("", new Child("foo", true)));
         Assert.assertTrue(revChildrenEquals("foo", new Child("bar", false)));
         Assert.assertTrue(revHistoryEquals("foo/bar", RevisionMatcher.any()));
+    }
+
+    @Test
+    public void shouldNotCreateHistoryOnCreationIfDisabled() throws Exception
+    {
+        Assert.assertTrue(revChildrenEquals(""));
+
+        useHistory = false;
+
+        SOKID sokid = newSOKID();
+        createFile("foo/bar", sokid);
+        store("foo/bar", sokid, new byte[0], true, 0L);
+
+        Assert.assertTrue(revChildrenEquals(""));
+    }
+
+    @Test
+    public void shouldNotCreateHistoryOnDeletionIfDisabled() throws Exception
+    {
+        Assert.assertTrue(revChildrenEquals(""));
+
+        useHistory = false;
+
+        SOKID sokid = newSOKID();
+        createFile("foo/bar", sokid);
+        deleteFile("foo/bar", sokid);
+
+        Assert.assertTrue(revChildrenEquals(""));
+    }
+
+    @Test
+    public void shouldDerefContentsOnReplaceIfHistoryDisabled() throws Exception
+    {
+        byte[] content0 = new byte[] { 9, 8, 7, 6 };
+        byte[] content1 = new byte[] { 1, 1, 2, 3 };
+        String testPath = "foo/deref/replace";
+        SOKID sokid = newSOKID();
+
+        useHistory = false;
+
+        ContentHash bKey0 = store(testPath, sokid, content0, false, 0);
+        ContentHash bKey1 = store(testPath, sokid, content1, true, 1);
+
+        Assert.assertEquals(0, bsdb.getBlockCount_(bKey0));
+        Assert.assertNotSame(0, bsdb.getBlockCount_(bKey1));
+    }
+
+    @Test
+    public void shouldDerefContentsOnDeleteIfHistoryDisabled() throws Exception
+    {
+        SOKID sokid = newSOKID();
+        byte[] content = new byte[] { 0, 1, 2, 3 };
+        String testPath = "foo/bar/baz";
+
+        useHistory = false;
+
+        ContentHash bKey = store(testPath, sokid, content, false, 0);
+        Assert.assertNotSame(0, bsdb.getBlockCount_(bKey));
+
+        deleteFile(testPath, sokid);
+
+        Assert.assertEquals(0, bsdb.getBlockCount_(bKey));
     }
 
     @Test

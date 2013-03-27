@@ -719,20 +719,27 @@ public class BlockStorageDatabase extends AbstractDatabase
     }
 
     /**
+     * If the "existingFile" argument exists, back it up in the history. This will
+     * create the history hierarchy as needed.
+     * If the file does not exist, this is a no-op.
+     * Note there are no changes to ref counts for chunks used by existingFile.
+     */
+    void preserveFileInfo(Path path, FileInfo existingFile, Trans t) throws SQLException
+    {
+        if (FileInfo.exists(existingFile)) {
+            long dirId = getOrCreateHistDirByPath_(path.removeLast(), t);
+            saveOldFileInfo_(dirId, path.last(), existingFile, t);
+        }
+    }
+
+    /**
      * Update file info after successful file update
      *
      * If the current file info is valid, back it up in the history, creating hierarchy as neeeded
      * Increment ref count for chunks used by the new file info
      */
-    public void updateFileInfo(Path path, FileInfo info, Trans t) throws SQLException
+    void updateFileInfo(Path path, FileInfo info, Trans t) throws SQLException
     {
-        // first, back up any current file info
-        FileInfo oldInfo = getFileInfo_(info._id);
-        if (FileInfo.exists(oldInfo)) {
-            long dirId = getOrCreateHistDirByPath_(path.removeLast(), t);
-            saveOldFileInfo_(dirId, path.last(), oldInfo, t);
-        }
-
         // update file info
         writeNewFileInfo_(info, t);
         for (ContentHash chunk : splitBlocks(info._chunks)) {

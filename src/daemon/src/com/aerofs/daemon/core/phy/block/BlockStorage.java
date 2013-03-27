@@ -23,6 +23,7 @@ import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.lib.ProgressIndicators;
+import com.aerofs.lib.cfg.CfgStoragePolicy;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.daemon.lib.db.AbstractTransListener;
 import com.aerofs.daemon.lib.db.trans.Trans;
@@ -71,6 +72,7 @@ class BlockStorage implements IPhysicalStorage
     private CoreScheduler _sched;
     private InjectableFile.Factory _fileFactory;
     private CfgAbsAuxRoot _absAuxRoot;
+    private CfgStoragePolicy _storagePolicy;
 
     private InjectableFile _prefixDir;
 
@@ -90,7 +92,8 @@ class BlockStorage implements IPhysicalStorage
     }
 
     @Inject
-    public void inject_(CfgAbsAuxRoot absAuxRoot, TC tc, TransManager tm, CoreScheduler sched,
+    public void inject_(CfgAbsAuxRoot absAuxRoot, CfgStoragePolicy storagePolicy,
+            TC tc, TransManager tm, CoreScheduler sched,
             InjectableFile.Factory fileFactory, IBlockStorageBackend bsb, BlockStorageDatabase bsdb,
             FrequentDefectSender fds, ExportHelper eh)
     {
@@ -99,6 +102,7 @@ class BlockStorage implements IPhysicalStorage
         _sched = sched;
         _fileFactory = fileFactory;
         _absAuxRoot = absAuxRoot;
+        _storagePolicy = storagePolicy;
         _bsb = bsb;
         _bsdb = bsdb;
         _fds = fds;
@@ -174,6 +178,9 @@ class BlockStorage implements IPhysicalStorage
      * By the time this method is called:
      *      1. the prefix file should be fully downloaded
      *      2. the contents of the prefix file should have been chunked and stored by the backend
+     *
+     * TODO(jP): if a rollback occurs, check for new chunks in the backend that are not ref'ed
+     * by anybody. Currently they are orphaned.
      */
     @Override
     public long apply_(IPhysicalPrefix prefix, IPhysicalFile file, boolean wasPresent, long mtime,
@@ -196,8 +203,8 @@ class BlockStorage implements IPhysicalStorage
             if (!FileInfo.exists(oldInfo)) throw new FileNotFoundException(file.toString());
         }
 
-        // no need to explicitely specify version, DB auto-increments it
-        _bsdb.updateFileInfo(to._path, new FileInfo(id, -1, length, mtime, from._hash), t);
+        // no need to explicitly specify version, DB auto-increments it
+        updateFileInfo(to._path, new FileInfo(id, -1, length, mtime, from._hash), t);
         if (l.isDebugEnabled()) l.debug("inserted " + from._hash.toHex());
 
         // We figure out the proper export path here before the transaction commits and capture it
@@ -219,6 +226,38 @@ class BlockStorage implements IPhysicalStorage
         });
 
         return mtime;
+    }
+
+    /**
+     * Update file information in the block storage database.
+     *
+     * If history storage is enabled, and the FileInfo describes an existing
+     * resource, the existing resource will be moved to history.
+     *
+     * The new file info is written to the internal db, and ref count is incremented
+     * for all chunks used by the new file.
+     *
+     * If history storage is disabled, this will decrement refs for the chunks used
+     * in the outgoing version.
+     * TODO(jP): backend management on commit/rollback:
+     *  - on commit, if any chunks in the old file now have a zero ref count,
+     *    ask the backend to delete the chunks. This will have to be in a new txn.
+     *    Only current version of this is in removeDeadBlocks. But that seems kind of
+     *    brute-force when we know the list of chunks being updated.
+     */
+    private void updateFileInfo(Path newPath, FileInfo newFile, Trans t) throws SQLException
+    {
+        FileInfo oldFile = _bsdb.getFileInfo_(newFile._id);
+
+        if (_storagePolicy.useHistory()) {
+            _bsdb.preserveFileInfo(newPath, oldFile, t);
+        } else {
+            if (FileInfo.exists(oldFile)) {
+                derefBlocks_(oldFile._chunks, t);
+            }
+        }
+
+        _bsdb.updateFileInfo(newPath, newFile, t);
     }
 
     private boolean exportEnabled()
@@ -453,7 +492,7 @@ class BlockStorage implements IPhysicalStorage
 
         FileInfo info = new FileInfo(id, 0, 0, new Date().getTime(),
                 EMPTY_FILE_CHUNKS);
-        _bsdb.updateFileInfo(file._path, info, t);
+        updateFileInfo(file._path, info, t);
     }
 
     void delete_(BlockFile file, Trans t) throws IOException, SQLException
@@ -462,7 +501,7 @@ class BlockStorage implements IPhysicalStorage
         if (!FileInfo.exists(oldInfo)) throw new FileNotFoundException(toString());
 
         FileInfo info = FileInfo.newDeletedFileInfo(oldInfo._id, new Date().getTime());
-        _bsdb.updateFileInfo(file._path, info, t);
+        updateFileInfo(file._path, info, t);
     }
 
     void move_(BlockFile from, BlockFile to, Trans t) throws IOException, SQLException
@@ -493,7 +532,7 @@ class BlockStorage implements IPhysicalStorage
 
         FileInfo toInfo = new FileInfo(toId, -1, fromInfo._length, new Date().getTime(),
                 fromInfo._chunks);
-        _bsdb.updateFileInfo(toPath, toInfo, t);
+        updateFileInfo(toPath, toInfo, t);
 
         if (toId != fromInfo._id) {
             delete_(from, t);
