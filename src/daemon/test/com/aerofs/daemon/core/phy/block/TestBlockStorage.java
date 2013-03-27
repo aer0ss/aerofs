@@ -197,7 +197,7 @@ public class TestBlockStorage extends AbstractBlockTest
         return true;
     }
 
-    private ContentHash store(
+    private void store(
             String path, SOKID sokid,
             byte[] content, boolean wasPresent, long mtime)
             throws Exception
@@ -210,10 +210,8 @@ public class TestBlockStorage extends AbstractBlockTest
         out.write(content);
         out.close();
 
-        ContentHash hash = prefix.prepare_(tk);
+        prefix.prepare_(tk);
         bs.apply_(prefix, file, wasPresent, mtime, t);
-
-        return hash;
     }
 
     private byte[] fetch(String path, SOKID sokid) throws Exception
@@ -632,11 +630,11 @@ public class TestBlockStorage extends AbstractBlockTest
 
         useHistory = false;
 
-        ContentHash bKey0 = store(testPath, sokid, content0, false, 0);
-        ContentHash bKey1 = store(testPath, sokid, content1, true, 1);
+        store(testPath, sokid, content0, false, 0);
+        store(testPath, sokid, content1, true, 1);
 
-        Assert.assertEquals(0, bsdb.getBlockCount_(bKey0));
-        Assert.assertNotSame(0, bsdb.getBlockCount_(bKey1));
+        Assert.assertEquals(0, bsdb.getBlockCount_(contentHash(content0)));
+        Assert.assertNotSame(0, bsdb.getBlockCount_(contentHash(content1)));
     }
 
     @Test
@@ -648,12 +646,70 @@ public class TestBlockStorage extends AbstractBlockTest
 
         useHistory = false;
 
-        ContentHash bKey = store(testPath, sokid, content, false, 0);
-        Assert.assertNotSame(0, bsdb.getBlockCount_(bKey));
+        store(testPath, sokid, content, false, 0);
+        Assert.assertNotSame(0, bsdb.getBlockCount_(contentHash(content)));
 
         deleteFile(testPath, sokid);
 
-        Assert.assertEquals(0, bsdb.getBlockCount_(bKey));
+        Assert.assertEquals(0, bsdb.getBlockCount_(contentHash(content)));
+    }
+
+    @Test
+    public void shouldCleanBlocksOnDeleteIfHistoryDisabled() throws Exception
+    {
+        final List<ITransListener> listeners = Lists.newArrayList();
+        byte[] content = new byte[] { 1, 3, 5, 9 };
+        String testPath = "foo/clean/deleteme";
+        SOKID sokid = newSOKID();
+
+        doAnswer(new Answer<Void>() {
+            @Override
+            public Void answer(InvocationOnMock invocation) throws Throwable
+            {
+                listeners.add((ITransListener)invocation.getArguments()[0]);
+                return null;
+            }
+        }).when(t).addListener_(any(ITransListener.class));
+
+        useHistory = false;
+
+        store(testPath, sokid, content, false, 0);
+        deleteFile(testPath, sokid);
+
+        for (ITransListener l : listeners) l.committed_();
+
+        verify(bsb).deleteBlock(forKey(content), any(Token.class));
+        Assert.assertEquals(0, bsdb.getBlockCount_(contentHash(content)));
+    }
+
+    @Test
+    public void shouldCleanBlocksOnReplaceIfHistoryDisabled() throws Exception
+    {
+        final List<ITransListener> listeners = Lists.newArrayList();
+        byte[] content0 = new byte[] { 8, 6, 7, 5 };
+        byte[] content1 = new byte[] { 3, 0, 9, 9 };
+        String testPath = "foo/clean/replaceme";
+        SOKID sokid = newSOKID();
+
+        doAnswer(new Answer<Void>()
+        {
+            @Override
+            public Void answer(InvocationOnMock invocation) throws Throwable {
+                listeners.add((ITransListener)invocation.getArguments()[0]);
+                return null;
+            }
+        }).when(t).addListener_(any(ITransListener.class));
+
+        useHistory = false;
+
+        store(testPath, sokid, content0, false, 0);
+        store(testPath, sokid, content1, true, 1);
+
+        for (ITransListener l : listeners) l.committed_();
+
+        Assert.assertEquals(0, bsdb.getBlockCount_(contentHash(content0)));
+        verify(bsb, times(1)).deleteBlock(forKey(content0), any(Token.class));
+        verify(bsb, never()).deleteBlock(forKey(content1), any(Token.class));
     }
 
     @Test

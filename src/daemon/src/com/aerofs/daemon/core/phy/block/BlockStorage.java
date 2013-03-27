@@ -204,7 +204,7 @@ class BlockStorage implements IPhysicalStorage
         }
 
         // no need to explicitly specify version, DB auto-increments it
-        updateFileInfo(to._path, new FileInfo(id, -1, length, mtime, from._hash), t);
+        updateFileInfo_(to._path, new FileInfo(id, -1, length, mtime, from._hash), t);
         if (l.isDebugEnabled()) l.debug("inserted " + from._hash.toHex());
 
         // We figure out the proper export path here before the transaction commits and capture it
@@ -239,22 +239,16 @@ class BlockStorage implements IPhysicalStorage
      *
      * If history storage is disabled, this will decrement refs for the chunks used
      * in the outgoing version.
-     * TODO(jP): backend management on commit/rollback:
-     *  - on commit, if any chunks in the old file now have a zero ref count,
-     *    ask the backend to delete the chunks. This will have to be in a new txn.
-     *    Only current version of this is in removeDeadBlocks. But that seems kind of
-     *    brute-force when we know the list of chunks being updated.
      */
-    private void updateFileInfo(Path newPath, FileInfo newFile, Trans t) throws SQLException
+    private void updateFileInfo_(Path newPath, FileInfo newFile, Trans t) throws SQLException
     {
         FileInfo oldFile = _bsdb.getFileInfo_(newFile._id);
 
         if (_storagePolicy.useHistory()) {
             _bsdb.preserveFileInfo(newPath, oldFile, t);
-        } else {
-            if (FileInfo.exists(oldFile)) {
-                derefBlocks_(oldFile._chunks, t);
-            }
+        } else if (FileInfo.exists(oldFile)) {
+            derefBlocks_(oldFile._chunks, t);
+            scheduleBlockCleaner_(t);
         }
 
         _bsdb.updateFileInfo(newPath, newFile, t);
@@ -300,6 +294,28 @@ class BlockStorage implements IPhysicalStorage
             it.close_();
         }
 
+        scheduleBlockCleaner_(t);
+    }
+
+    /**
+     * TODO: cleaning blocks is currently ad-hoc - improve this model.
+     *
+     * We get here from deleteStore as well as from apply/delete with version-history
+     * disabled.
+     *
+     * Each invocation calls removeDeadBlocks, which starts by iterating all the dead blocks.
+     *
+     * Two possible improvements:
+     *  - when deref'ing blocks, build a list of cleanable blocks in transaction-local memory
+     *    and pass it to the cleaner. Avoids iteration, but may be a large chunk of memory
+     *    for updates to big files.
+     *  - treat the block cleaner as a garbage-collector. Any work that deref's blocks just
+     *    pings the block cleaner, and when he has built enough of a backlog he runs.
+     *    As long as the dead-block iterator is cheap enough, this model is more tunable.
+     *
+     */
+    private void scheduleBlockCleaner_(Trans t)
+    {
         // TODO: cleanup hist dir info?
         // TODO: cleanup index?
         // pro: reduce disk usage for deleted stores
@@ -492,7 +508,7 @@ class BlockStorage implements IPhysicalStorage
 
         FileInfo info = new FileInfo(id, 0, 0, new Date().getTime(),
                 EMPTY_FILE_CHUNKS);
-        updateFileInfo(file._path, info, t);
+        updateFileInfo_(file._path, info, t);
     }
 
     void delete_(BlockFile file, Trans t) throws IOException, SQLException
@@ -501,7 +517,7 @@ class BlockStorage implements IPhysicalStorage
         if (!FileInfo.exists(oldInfo)) throw new FileNotFoundException(toString());
 
         FileInfo info = FileInfo.newDeletedFileInfo(oldInfo._id, new Date().getTime());
-        updateFileInfo(file._path, info, t);
+        updateFileInfo_(file._path, info, t);
     }
 
     void move_(BlockFile from, BlockFile to, Trans t) throws IOException, SQLException
@@ -532,7 +548,7 @@ class BlockStorage implements IPhysicalStorage
 
         FileInfo toInfo = new FileInfo(toId, -1, fromInfo._length, new Date().getTime(),
                 fromInfo._chunks);
-        updateFileInfo(toPath, toInfo, t);
+        updateFileInfo_(toPath, toInfo, t);
 
         if (toId != fromInfo._id) {
             delete_(from, t);
