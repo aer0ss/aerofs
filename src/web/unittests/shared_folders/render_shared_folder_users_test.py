@@ -4,6 +4,14 @@ from aerofs_common._gen.common_pb2 import OWNER
 
 BASE_USER_ID = 'hahaha@ahaha'
 
+# Some bizzare unicode names
+NAME1 = u'1\U00008000'
+NAME2 = u'2\u1234'
+NAME3 = u'3\u4321'
+NAME4 = u'4\u8652'
+NAME5 = u'5\xac'
+NAME6 = u'6\x12'
+
 class RenderSharedFolderUsersTest(unittest.TestCase):
 
     def _render_shared_folder_users(self, first_names):
@@ -37,76 +45,49 @@ class RenderSharedFolderUsersTest(unittest.TestCase):
         self.assertEquals(str, '')
 
     def test_one_user(self):
-        first_name = 'hahaha'
-        str = self._render_shared_folder_users([first_name])
-        self.assertEquals(str, first_name + " only")
+        str = self._render_shared_folder_users([NAME1])
+        self.assertEquals(str, NAME1 + " only")
 
     def test_one_user_with_session_user(self):
         str = self._render_shared_folder_users_with_session_user(["hahahaha"],
             self._get_user_id(0))
         self.assertEquals(str, "me only")
 
-    def test_two_users(self):
-        first_name1 = 'hahaha'
-        first_name2 = 'hohoho'
-        str = self._render_shared_folder_users([first_name1, first_name2])
-        self.assertEquals(str, first_name1 + " and " + first_name2)
+    def test_two_users_with_unicode(self):
+        str = self._render_shared_folder_users([NAME1, NAME2])
+        self.assertEquals(str, NAME1 + " and " + NAME2)
 
     def test_three_users(self):
-        first_name1 = 'hahaha'
-        first_name2 = 'hohoho'
-        first_name3 = 'xixixi'
-        str = self._render_shared_folder_users([first_name1, first_name2, first_name3])
+        str = self._render_shared_folder_users([NAME1, NAME2, NAME3])
         self.assertEquals(str,
-            first_name1 + ", " + first_name2 + ", and " + first_name3)
+            NAME1 + ", " + NAME2 + ", and " + NAME3)
 
     def test_three_users_with_session_user(self):
         """
         The method under test should always place "me" last.
         """
-        first_name1 = 'hahaha'
-        first_name2 = 'hohoho'
-        first_name3 = 'xixixi'
         str = self._render_shared_folder_users_with_session_user(
-            [first_name1, first_name2, first_name3], self._get_user_id(1))
-        self.assertEquals(str, first_name1 + ", " + first_name3 + ", and me")
+            [NAME1, NAME2, NAME3], self._get_user_id(1))
+        self.assertEquals(str, NAME1 + ", " + NAME3 + ", and me")
 
     def test_four_users(self):
-        first_name1 = 'hahaha'
-        first_name2 = 'hohoho'
-        first_name3 = 'xixixi'
-        first_name4 = 'qqqqqq'
-
         str = self._render_shared_folder_users(
-            [first_name1, first_name2, first_name3, first_name4])
-        self.assertEquals(str, first_name1 + ", " + first_name2 + ", " +
-                               first_name3 + ", and " + first_name4)
+            [NAME1, NAME2, NAME3, NAME4])
+        self.assertEquals(str, NAME1 + ", " + NAME2 + ", " +
+                               NAME3 + ", and " + NAME4)
 
     def test_four_users_with_session_user(self):
-        first_name1 = 'hahaha'
-        first_name2 = 'hohoho'
-        first_name3 = 'lala'
-        first_name4 = 'xixixi'
-
         str = self._render_shared_folder_users_with_session_user(
-            [first_name1, first_name2, first_name3, first_name4],
+            [NAME1, NAME2, NAME3, NAME4],
             self._get_user_id(2))
-        self.assertEquals(str, first_name1 + ", " + first_name2 + ", " +
-                               first_name4 + ", and me")
+        self.assertEquals(str, NAME1 + ", " + NAME2 + ", " +
+                               NAME4 + ", and me")
 
     def test_six_users_with_session_user(self):
-        first_name1 = 'hahaha'
-        first_name2 = 'hohoho'
-        first_name3 = 'lala'
-        first_name4 = 'xixixi'
-        first_name5 = 'lalal'
-        first_name6 = 'xixixixi'
-
         str = self._render_shared_folder_users_with_session_user(
-            [first_name1, first_name2, first_name3, first_name4, first_name5,
-             first_name6], self._get_user_id(0))
-        self.assertEquals(str, first_name2 + ", " + first_name3 + ", " +
-                               first_name4 + ", and 3 others")
+            [NAME1, NAME2, NAME3, NAME4, NAME4, NAME6], self._get_user_id(0))
+        self.assertEquals(str, NAME2 + ", " + NAME3 + ", " +
+                               NAME4 + ", and 3 others")
 
     def test_should_escape_html(self):
         first_name = '<&>'

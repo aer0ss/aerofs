@@ -220,21 +220,21 @@ def _render_shared_folder_users(user_and_role_list, session_user):
     if total == 0:
         pass
     elif total == 1:
-        str = _ger_first_name(reordered_list[0], session_user) + " only"
+        str = _get_first_name(reordered_list[0], session_user) + " only"
     elif total == 2:
-        str = "{} and {}".format(
-            _ger_first_name(reordered_list[0], session_user),
-            _ger_first_name(reordered_list[1], session_user))
+        str = u"{} and {}".format(
+            _get_first_name(reordered_list[0], session_user),
+            _get_first_name(reordered_list[1], session_user))
     elif total < 5:
         for i in range(total):
             if i > 0: str += ", "
             if i == total - 1: str += "and "
-            str += _ger_first_name(reordered_list[i], session_user)
+            str += _get_first_name(reordered_list[i], session_user)
     else:
         # If there are more than 5 people, print the first 3 only
         printed = 3
         for i in range(printed):
-            str += _ger_first_name(reordered_list[i], session_user)
+            str += _get_first_name(reordered_list[i], session_user)
             str += ", "
         str += "and {} others".format(total - printed)
 
@@ -269,7 +269,7 @@ def to_json(user_and_role_list, session_user):
     for ur in user_and_role_list:
         urs[ur.user.user_email] = {
             _USER_AND_ROLE_FIRST_NAME_KEY:
-                _ger_first_name(ur, session_user),
+                _get_first_name(ur, session_user),
             _USER_AND_ROLE_LAST_NAME_KEY:
                 _get_last_name(ur, session_user),
             _USER_AND_ROLE_IS_OWNER_KEY:
@@ -279,7 +279,7 @@ def to_json(user_and_role_list, session_user):
     # dump to a compact-format JSON string
     return json.dumps(urs, separators=(',',':'))
 
-def _ger_first_name(user_and_role, session_user):
+def _get_first_name(user_and_role, session_user):
     """
     @param user_and_role a PBUserAndRole object
     """
