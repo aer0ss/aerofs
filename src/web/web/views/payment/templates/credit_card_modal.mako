@@ -142,7 +142,7 @@
         ##              error messages on failures.
         function inputCreditCardInfoAndCreateStripeCustomer(callback) {
             inputCreditCardInfo(function(token, done, fail) {
-                $.post("${request.route_path('json.new_stripe_customer')}", {
+                $.post("${request.route_path('json.create_stripe_customer')}", {
                     ${csrf.token_param()}
                     "${url_param_stripe_card_token}": token
                 })
