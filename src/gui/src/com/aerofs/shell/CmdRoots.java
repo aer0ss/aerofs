@@ -4,23 +4,25 @@
 
 package com.aerofs.shell;
 
-import com.aerofs.base.ex.ExBadArgs;
-import com.aerofs.proto.Ritual.CreateSeedFileReply;
+import com.aerofs.base.id.SID;
+import com.aerofs.lib.cfg.Cfg;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
 
-public class CmdSeed implements IShellCommand<ShProgram>
+import java.util.Map.Entry;
+
+public class CmdRoots implements IShellCommand<ShProgram>
 {
     @Override
     public String getName()
     {
-        return "seed";
+        return "roots";
     }
 
     @Override
     public String getDescription()
     {
-        return "Create a seed file";
+        return "list all AeroFS roots";
     }
 
     @Override
@@ -38,9 +40,10 @@ public class CmdSeed implements IShellCommand<ShProgram>
     @Override
     public void execute(ShellCommandRunner<ShProgram> s, CommandLine cl) throws Exception
     {
-        if (cl.getArgs().length != 0) throw new ExBadArgs();
-
-        CreateSeedFileReply reply = s.d().getRitualClient_().createSeedFile(s.d().getPwd_().sid().toPB());
-        s.out().println("seed file: " + reply.getPath());
+        s.out().println("             Root id             |       Absolute Path       ");
+        s.out().println("-------------------------------------------------------------");
+        for (Entry<SID, String> e : Cfg.getRoots().entrySet()) {
+            s.out().println(e.getKey().toStringFormal() + " | " + e.getValue());
+        }
     }
 }

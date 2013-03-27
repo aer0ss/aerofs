@@ -16,6 +16,7 @@ import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.SID;
 import com.aerofs.labeling.L;
+import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.StorageType;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.cfg.Cfg.PortType;
@@ -275,20 +276,27 @@ class Setup
             l.warn("cleaning up the old daemon failed: " + Util.e(e));
         }
 
-        // Create Aux Root
-        InjectableFile auxRoot = _factFile.create(Cfg.absAuxRoot());
-        if (auxRoot.exists()) auxRoot.deleteOrThrowIfExistRecursively();
-        auxRoot.mkdirs();
-        OSUtil.get().markHiddenSystemFile(auxRoot.getAbsolutePath());
+        // Create default root anchor, if missing
+        _factFile.create(Cfg.absDefaultRootAnchor()).ensureDirExists();
+
+        // TODO: use a dot-prefixed default root for S3 storage to hide it on *nix
+        // hide default root for S3 storage (it only contains the aux root)
+        if (Cfg.storageType() == StorageType.S3) {
+            OSUtil.get().markHiddenSystemFile(Cfg.absDefaultRootAnchor());
+        }
+
+        // Cleanup aux root, if present, create if missing
+        // NB: Linked TeamServer does not need a default aux root as each store is treated as an
+        // external root
+        if (!(L.get().isMultiuser() && Cfg.storageType() == StorageType.LINKED)) {
+            File aux = RootAnchorUtil.cleanAuxRootForPath(Cfg.absDefaultRootAnchor(), Cfg.rootSID());
+            FileUtil.ensureDirExists(aux);
+            OSUtil.get().markHiddenSystemFile(aux.getAbsolutePath());
+        }
 
         // Remove database file (the daemon will setup the schema if it detects a missing DB)
         InjectableFile fDB = _factFile.create(_rtRoot, Param.CORE_DATABASE);
         fDB.deleteOrThrowIfExist();
-
-        if (Cfg.storageType() != StorageType.S3) {
-            // Create Root Anchor
-            _factFile.create(Cfg.absDefaultRootAnchor()).ensureDirExists();
-        }
 
         UI.dm().start();
     }
@@ -322,7 +330,7 @@ class Setup
 
         if (storageType == StorageType.LINKED && !L.get().isMultiuser()) {
             // make sure the default root anchor is correctly set in the db
-            // NB: this does not remove external roots
+            // NB: this does not remove any existing external roots from the db
             SID sid = SID.rootSID(userId);
             db.removeRoot(sid);
             db.addRoot(sid, rootAnchorPath);

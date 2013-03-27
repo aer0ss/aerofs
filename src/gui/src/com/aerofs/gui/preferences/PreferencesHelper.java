@@ -93,7 +93,7 @@ public class PreferencesHelper
     private boolean moveRootAnchor(String rootParent)
     {
         String pathOld = Cfg.absDefaultRootAnchor();
-        String pathNew = RootAnchorUtil.adjustRootAnchor(rootParent);
+        String pathNew = RootAnchorUtil.adjustRootAnchor(rootParent, null);
 
         try {
             RootAnchorUtil.checkNewRootAnchor(pathOld, pathNew);

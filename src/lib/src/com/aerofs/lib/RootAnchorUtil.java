@@ -5,11 +5,13 @@
 package com.aerofs.lib;
 
 import com.aerofs.base.id.DID;
+import com.aerofs.base.id.SID;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.ex.ExNoPerm;
+import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.ex.ExNotDir;
 import com.aerofs.lib.ex.ExUIMessage;
 import com.aerofs.base.id.UniqueID;
@@ -18,9 +20,12 @@ import com.aerofs.lib.os.OSUtil;
 import com.aerofs.sv.client.SVClient;
 import com.google.common.collect.ImmutableMap;
 
+import javax.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
+import java.sql.SQLException;
 import java.util.Map;
+import java.util.Map.Entry;
 
 public abstract class RootAnchorUtil
 {
@@ -45,47 +50,42 @@ public abstract class RootAnchorUtil
             StorageType storageType, boolean allowNonEmptyFolder)
             throws IOException, ExNoPerm, ExNotDir, ExAlreadyExist, ExUIMessage
     {
-        // S3 storage does not need a valid root anchor (it does need a valid aux root though...)
-        if (storageType != StorageType.S3) {
-            File fRootAnchor = new File(rootAnchor);
+        File fRootAnchor = new File(rootAnchor);
 
-            // Check if it's a file or a non-empty folder
-            if (fRootAnchor.isFile()) {
-                throw new ExNotDir("A file at the desired location {} already exists", fRootAnchor);
+        // Check if it's a file or a non-empty folder
+        if (fRootAnchor.isFile()) {
+            throw new ExNotDir("A file at the desired location {} already exists", fRootAnchor);
 
-            } else if (!allowNonEmptyFolder) {
-                String[] children = fRootAnchor.list();
-                // children is null if fRootAnchor is not a directory.
+        } else if (!allowNonEmptyFolder) {
+            String[] children = fRootAnchor.list();
+            // children is null if fRootAnchor is not a directory.
 
-                // NOTE: (GS) This can be a problem on OS X and Windows since it's very likely that the
-                // user has .DS_Store, Icon\r, desktop.ini, Thumbs.db, or some other hidden system file.
-                // We should probably do something to handle those gracefully.
-                if (children != null && children.length > 0) {
-                    throw new ExAlreadyExist(rootAnchor + " is a non-empty folder");
-                }
-            }
-
-            File fToCheck = fRootAnchor.exists() ? fRootAnchor : fRootAnchor.getParentFile();
-
-            // Check if we have read and write permissions
-            // Don't bother checking on Windows because:
-            //   - Java reports both false positives and false negatives on Windows
-            //   - The file picker dialog will warn the user if he tries to pick a directory to which
-            //     he doesn't have permissions
-            if (!OSUtil.isWindows()) {
-                if (!fToCheck.canRead()) throwExNoPerm(Perm.READ, fToCheck);
-                if (!fToCheck.canWrite()) throwExNoPerm(Perm.WRITE, fToCheck);
-            }
-
-            // Check if it's a supported filesystem. We only support filesystems that have persistent
-            // i-node numbers. This is to allow the linker to work propoerly.
-            // This is not needed for Mutliuser.
-            if (Cfg.useFSTypeCheck(rtRoot)) {
-                checkFilesystemType(rtRoot, fToCheck);
+            // NOTE: (GS) This can be a problem on OS X and Windows since it's very likely that the
+            // user has .DS_Store, Icon\r, desktop.ini, Thumbs.db, or some other hidden system file.
+            // We should probably do something to handle those gracefully.
+            if (children != null && children.length > 0) {
+                throw new ExAlreadyExist(rootAnchor + " is a non-empty folder");
             }
         }
 
-        checkAuxRoot(rootAnchor);
+        File fToCheck = fRootAnchor.exists() ? fRootAnchor : fRootAnchor.getParentFile();
+
+        // Check if we have read and write permissions
+        // Don't bother checking on Windows because:
+        //   - Java reports both false positives and false negatives on Windows
+        //   - The file picker dialog will warn the user if he tries to pick a directory to which
+        //     he doesn't have permissions
+        if (!OSUtil.isWindows()) {
+            if (!fToCheck.canRead()) throwExNoPerm(Perm.READ, fToCheck);
+            if (!fToCheck.canWrite()) throwExNoPerm(Perm.WRITE, fToCheck);
+        }
+
+        // Check if it's a supported filesystem. We only support filesystems that have persistent
+        // i-node numbers. This is to allow the linker to work propoerly.
+        // This is not needed for Mutliuser.
+        if (storageType == StorageType.LINKED && Cfg.useFSTypeCheck(rtRoot)) {
+            checkFilesystemType(rtRoot, fToCheck);
+        }
     }
 
     private static void checkFilesystemType(String rtRoot, File fToCheck)
@@ -108,35 +108,11 @@ public abstract class RootAnchorUtil
         }
     }
 
-    private static void checkAuxRoot(String rootAnchor)
-            throws ExAlreadyExist, ExNoPerm, IOException
+    public static File cleanAuxRootForPath(String rootAnchor, SID sid)
     {
-        File auxRoot = new File(Cfg.absAuxRootForPath(rootAnchor, Cfg.inited() ? Cfg.did()
-                : new DID(UniqueID.ZERO)));
-
-        // Check that the aux root doesn't already exist.
-        //
-        // It should never already exist because:
-        // - if we are reinstalling AeroFS over an existing installation, a new did will be
-        //   generated, so the aux root folder name will be different.
-        // - if we are relocating the root anchor, the parent folder will be different (since we
-        //   enforce that the root anchor ends with /AeroFS, it's impossible to relocate the
-        //   root anchor within the same parent folder.)
-        //
-        // But of course Murphy's law tell us that us that this _will_ happen to some users.
-        // Deleting the aux root is safe and it's the easiest way to deal with this.
-        if (auxRoot.exists()) {
-            FileUtil.deleteOrThrowIfExistRecursively(auxRoot);
-        }
-
-        // Check that we have enough permissions to read and write to the aux root
-
-        if (!auxRoot.mkdir()) throwExNoPerm(Perm.WRITE, auxRoot.getParentFile());
-        if (!OSUtil.isWindows()) {
-            if (!auxRoot.canRead()) throwExNoPerm(Perm.READ, auxRoot);
-            if (!auxRoot.canWrite()) throwExNoPerm(Perm.WRITE, auxRoot);
-        }
-        FileUtil.delete(auxRoot);
+        File dir = new File(Cfg.absAuxRootForPath(rootAnchor, sid));
+        FileUtil.deleteIgnoreErrorRecursively(dir);
+        return dir;
     }
 
     private enum Perm {READ, WRITE}
@@ -164,12 +140,22 @@ public abstract class RootAnchorUtil
         String canonOldRoot = new File(rootOld).getCanonicalPath();
         String canonNewRoot = new File(rootNew).getCanonicalPath();
 
-        if (canonOldRoot.equals(canonNewRoot)) {
-            throw new ExBadArgs("The new location is identical to the old location");
+        checkNewCanonRoot(canonNewRoot, canonOldRoot, "the old location");
+
+        for (String absPath : Cfg.getRoots().values()) {
+            checkNewCanonRoot(canonNewRoot, absPath, "an existing root");
+        }
+    }
+
+    private static void checkNewCanonRoot(String canonNewRoot, String canonExistingRoot,
+            String locationLabel) throws ExBadArgs, IOException
+    {
+        if (canonExistingRoot.equals(canonNewRoot)) {
+            throw new ExBadArgs("The new location is identical to " + locationLabel);
         }
 
-        if (contains(canonNewRoot, canonOldRoot)) {
-            throw new ExBadArgs("The new location overlaps with the old location");
+        if (contains(canonNewRoot, canonExistingRoot)) {
+            throw new ExBadArgs("The new location overlaps with " + locationLabel);
         }
     }
 
@@ -187,15 +173,54 @@ public abstract class RootAnchorUtil
      * @param root may be relative
      * @return an adjusted, absolute root anchor path
      */
-    public static String adjustRootAnchor(String root)
+    public static String adjustRootAnchor(String root, @Nullable SID sid)
     {
         root = new File(root).getAbsolutePath();
         root = Util.removeTailingSeparator(root);
+
+        // only enforce branded root anchor suffix for default root
+        if (sid != null) return root;
+
         String rootAnchorName = L.get().rootAnchorName();
         if (!root.toLowerCase().endsWith(File.separator + rootAnchorName.toLowerCase())) {
             root += File.separator + rootAnchorName;
         }
-
         return root;
+    }
+
+    public static void updateAbsRootCfg(@Nullable SID sid, String newAbsPath) throws SQLException
+    {
+        if (sid == null) {
+            String oldAbsPath = Cfg.db().get(Key.ROOT);
+
+            Cfg.db().set(Key.ROOT, newAbsPath);
+            if (Cfg.storageType() == StorageType.LINKED) {
+                // when using linked storage we need to update implicit root(s)
+
+                if (L.get().isMultiuser()) {
+                    // linked storage in multiuser may have many implicit roots
+                    for (Entry<SID, String> e : Cfg.getRoots().entrySet()) {
+                        moveRootIfUnder(e.getKey(), e.getValue(), oldAbsPath, newAbsPath);
+                    }
+                } else {
+                    // in singleuser mode the user root store is the only implicit root
+                    Cfg.moveRoot(Cfg.rootSID(), newAbsPath);
+                }
+            }
+        } else {
+            assert Cfg.storageType() == StorageType.LINKED;
+            Cfg.moveRoot(sid, newAbsPath);
+        }
+    }
+
+    private static void moveRootIfUnder(SID sid, String absRoot,
+            String oldParentRoot, String newParentRoot) throws SQLException {
+        if (Path.isUnder(oldParentRoot, absRoot)) {
+            int len = oldParentRoot.length();
+            String rootRelPath = absRoot.substring(len +
+                    (absRoot.charAt(len) == File.separatorChar ? 1 : 0));
+
+            Cfg.moveRoot(sid, Util.join(newParentRoot, rootRelPath));
+        }
     }
 }

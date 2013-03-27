@@ -10,6 +10,7 @@ import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.phy.block.BlockStorageDatabase;
 import com.aerofs.daemon.core.phy.block.IBlockStorageBackend;
 import com.aerofs.daemon.core.tc.Token;
+import com.aerofs.lib.cfg.CfgAbsDefaultAuxRoot;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.daemon.lib.DelayedScheduler;
 import com.aerofs.daemon.lib.db.trans.Trans;
@@ -18,7 +19,6 @@ import com.aerofs.base.C;
 import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.cfg.CfgAbsAuxRoot;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.base.ex.ExFormatError;
 import com.google.common.cache.Cache;
@@ -62,7 +62,7 @@ public class CacheBackend implements IBlockStorageBackend
     private static final double FREE_SPACE_LOW = 0.32;
     private static final double FREE_SPACE_HIGH = 0.36;
 
-    private final CfgAbsAuxRoot _absAuxRoot;
+    private final CfgAbsDefaultAuxRoot _absAuxRoot;
 
     private final TransManager _tm;
     private final CoreScheduler _sched;
@@ -108,7 +108,7 @@ public class CacheBackend implements IBlockStorageBackend
     private final SpaceFreer _spaceFreer = new SpaceFreer();
 
     @Inject
-    public CacheBackend(CfgAbsAuxRoot absAuxRoot, TransManager tm, CoreScheduler sched,
+    public CacheBackend(CfgAbsDefaultAuxRoot absAuxRoot, TransManager tm, CoreScheduler sched,
             CacheDatabase cdb, @Named(TARGET_ANNOTATION) IBlockStorageBackend bsb)
     {
         _absAuxRoot = absAuxRoot;

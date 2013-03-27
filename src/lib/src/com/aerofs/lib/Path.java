@@ -155,7 +155,7 @@ public class Path implements Comparable<Path>
         return FORMAL_SEP + toStringFormal();
     }
 
-    private final static String FORMAL_STORE_SEP = ":";
+    private final static char FORMAL_STORE_SEP = ':';
 
     // We use a formal separator which may be different from the native file path separator. This
     // is to ensure that we keep consistent paths amongst Operating Systems when users interact
@@ -191,12 +191,22 @@ public class Path implements Comparable<Path>
     public static Path fromStringFormal(String strFormal)
     {
         try {
-            SID sid = new SID(BaseUtil.hexDecode(strFormal, 0, UniqueID.LENGTH * 2));
-            return new Path(sid, splitPath(strFormal.substring(UniqueID.LENGTH * 2 + 1),
-                    FORMAL_SEP_PATTERN));
+            return fromStringFormalThrows(strFormal);
         } catch (ExFormatError e) {
             throw new AssertionError(e);
         }
+    }
+
+    private static final int SID_LENGTH = UniqueID.LENGTH * 2;
+    public static Path fromStringFormalThrows(String strFormal) throws ExFormatError
+    {
+        if (strFormal.length() < SID_LENGTH + 1
+                || strFormal.charAt(SID_LENGTH) != FORMAL_STORE_SEP) {
+            throw new ExFormatError();
+        }
+        SID sid = new SID(BaseUtil.hexDecode(strFormal, 0, SID_LENGTH));
+        return new Path(sid, splitPath(strFormal.substring(SID_LENGTH + 1),
+                FORMAL_SEP_PATTERN));
     }
 
     public static Path fromString(SID sid, String strFormal)

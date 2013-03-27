@@ -4,14 +4,12 @@
 
 package com.aerofs.shell;
 
-import java.util.List;
-
+import com.aerofs.lib.Path;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
 
 import com.aerofs.lib.Util;
 import com.aerofs.base.ex.ExBadArgs;
-import com.aerofs.proto.Common.PBPath;
 import com.aerofs.proto.Ritual.ListRevHistoryReply;
 import com.aerofs.proto.Ritual.PBRevision;
 
@@ -43,14 +41,13 @@ public class CmdVersionHistory implements IShellCommand<ShProgram>
         String[] args = cl.getArgs();
         if (args.length != 1) throw new ExBadArgs();
 
-        listRevHistory(s, s.d().buildPathElemList_(args[0]));
+        listRevHistory(s, s.d().buildPath_(args[0]));
     }
 
-    private static void listRevHistory(ShellCommandRunner<ShProgram> s, List<String> path)
+    private static void listRevHistory(ShellCommandRunner<ShProgram> s, Path path)
             throws Exception
     {
-        PBPath parent = ShProgram.buildPath_(path);
-        ListRevHistoryReply reply = s.d().getRitualClient_().listRevHistory(parent);
+        ListRevHistoryReply reply = s.d().getRitualClient_().listRevHistory(path.toPB());
 
         s.out().println("Version index                   Size      Last Modified");
         s.out().println("-------------------------------------------------------");

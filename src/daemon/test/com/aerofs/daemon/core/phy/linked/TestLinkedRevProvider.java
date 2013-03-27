@@ -2,12 +2,16 @@ package com.aerofs.daemon.core.phy.linked;
 
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.phy.linked.LinkedRevProvider.LinkedRevFile;
+import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.LogUtil;
 import com.aerofs.lib.Param;
 import com.aerofs.lib.Path;
+import com.aerofs.lib.cfg.Cfg;
+import com.aerofs.lib.cfg.CfgAbsRoots;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.testlib.AbstractTest;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import org.junit.After;
 import org.junit.Assert;
@@ -15,6 +19,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+import org.mockito.Mock;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -24,16 +29,19 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import static com.aerofs.lib.LogUtil.Level;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class TestLinkedRevProvider extends AbstractTest
 {
+    @Mock private CfgAbsRoots cfgAbsRoots;
+
     @Rule
     public TemporaryFolder tempFolder = new TemporaryFolder();
 
     private InjectableFile.Factory factFile;
     private InjectableFile rootDir;
     private InjectableFile dataDir;
-    private InjectableFile auxDir;
     private InjectableFile revDir;
     private PrintWriter out;
     private LinkedRevProvider localRevProvider;
@@ -43,6 +51,8 @@ public class TestLinkedRevProvider extends AbstractTest
     @Before
     public void before() throws Exception
     {
+        AppRoot.set("dummy");
+
         LogUtil.setLevel(TestLinkedRevProvider.class, Level.INFO);
         out = new PrintWriter(System.out);
 
@@ -51,14 +61,19 @@ public class TestLinkedRevProvider extends AbstractTest
         rootDir = factFile.create(tempFolder.getRoot().getPath());
         dataDir = factFile.create(rootDir, "data");
         dataDir.mkdirs();
-        InjectableFile auxDir = factFile.create(rootDir, Param.AUXROOT_PREFIX);
-        InjectableFile revRootDir = factFile.create(auxDir, Param.AuxFolder.REVISION._name);
-        revDir = factFile.create(revRootDir, rootSID.toStringFormal());
+        String auxDir = Cfg.absAuxRootForPath(dataDir.getAbsolutePath(), rootSID);
+        revDir = factFile.create(auxDir, Param.AuxFolder.REVISION._name);
         revDir.mkdirs();
 
-        localRevProvider = new LinkedRevProvider(factFile);
+        when(cfgAbsRoots.get(rootSID)).thenReturn(rootDir.getAbsolutePath());
+        when(cfgAbsRoots.get()).thenReturn(ImmutableMap.of(rootSID, rootDir.getAbsolutePath()));
+
+        LinkedStorage s = mock(LinkedStorage.class);
+        when(s.auxRootForStore_(rootSID)).thenReturn(auxDir);
+
+        localRevProvider = new LinkedRevProvider(s, factFile);
         localRevProvider._startCleanerScheduler = false;
-        localRevProvider.init_(auxDir.getPath());
+        localRevProvider.init_();
     }
 
     @After
@@ -112,7 +127,7 @@ public class TestLinkedRevProvider extends AbstractTest
         final List<InjectableFile> deletedFiles = Lists.newArrayList();
         LinkedRevProvider.Cleaner cleaner = localRevProvider.new Cleaner() {
             @Override
-            long getSpaceLimit()
+            long getSpaceLimit(String absRoot)
             {
                 return 0;
             }
@@ -147,7 +162,7 @@ public class TestLinkedRevProvider extends AbstractTest
         Assert.assertTrue(!test1.isFile());
         Assert.assertEquals(0, dataDir.list().length);
         Assert.assertEquals(1, revDir.list().length);
-        cleaner.run();
+        cleaner.run(revDir.getAbsolutePath());
         Assert.assertEquals(1, deletedFiles.size());
         Assert.assertTrue(!test1.isFile());
         Assert.assertEquals(0, dataDir.list().length);
@@ -175,7 +190,7 @@ public class TestLinkedRevProvider extends AbstractTest
     {
         LinkedRevProvider.Cleaner cleaner = localRevProvider.new Cleaner() {
             @Override
-            long getSpaceLimit()
+            long getSpaceLimit(String absPath)
             {
                 return 0;
             }
@@ -206,7 +221,7 @@ public class TestLinkedRevProvider extends AbstractTest
             }
         }
 
-        LinkedRevProvider.Cleaner.RunData runData = cleaner.new RunData();
+        LinkedRevProvider.Cleaner.RunData runData = cleaner.new RunData(revDir.getAbsolutePath());
         runData._sorter.setMaxSize(10);
         runData.run();
         listRecursively(rootDir);

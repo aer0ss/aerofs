@@ -63,29 +63,30 @@ public class WindowsNotifier implements INotifier, JNotifyListener
     public void fileCreated(int wd, String root, String name)
     {
         log("create", name, null);
-        mightCreate(wd, root, name);
+        if (!Linker.isInternalPath(name)) mightCreate(wd, root, name);
     }
 
     @Override
     public void fileDeleted(int wd, String root, String name)
     {
         log("delete", name, null);
-        mightDelete(wd, root, name);
+        if (!Linker.isInternalPath(name)) mightDelete(wd, root, name);
     }
 
     @Override
     public void fileModified(int wd, String root, String name)
     {
         log("modify", name, null);
-        mightCreate(wd, root, name);
+        if (!Linker.isInternalPath(name)) mightCreate(wd, root, name);
     }
 
     @Override
     public void fileRenamed(int wd, String root, String from, String to)
     {
         log("rename", from, to);
-        mightDelete(wd, root, from);
-        mightCreate(wd, root, to);
+
+        if (!Linker.isInternalPath(from)) mightDelete(wd, root, from);
+        if (!Linker.isInternalPath(to)) mightCreate(wd, root, to);
     }
 
     private static void log(String operation, String name, @Nullable String to)

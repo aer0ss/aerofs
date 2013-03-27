@@ -1,15 +1,15 @@
 package com.aerofs.shell;
 
-import java.util.ArrayList;
 import java.util.List;
 
+import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
+import com.google.common.collect.Lists;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
 
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.id.KIndex;
-import com.aerofs.proto.Common.PBPath;
 import com.aerofs.proto.Ritual.GetChildrenAttributesReply;
 import com.aerofs.proto.Ritual.ListRevChildrenReply;
 import com.aerofs.proto.Ritual.PBBranch;
@@ -25,14 +25,14 @@ public class CmdList implements IShellCommand<ShProgram>
         boolean longFormat = cl.hasOption('l');
         boolean history = cl.hasOption('h');
 
-        ArrayList<List<String>> paths = new ArrayList<List<String>>();
+        List<Path> paths = Lists.newArrayList();
         for (String arg : cl.getArgs()) {
-            paths.add(s.d().buildPathElemList_(arg));
+            paths.add(s.d().buildPath_(arg));
         }
 
-        if (paths.isEmpty()) paths.add(s.d().getPwdElements_());
+        if (paths.isEmpty()) paths.add(s.d().getPwd_());
 
-        for (List<String> path : paths) {
+        for (Path path : paths) {
             if (history) {
                 listHistory(s, path, longFormat);
             } else {
@@ -42,12 +42,11 @@ public class CmdList implements IShellCommand<ShProgram>
     }
 
     private static void list(ShellCommandRunner<ShProgram> s,
-                             List<String> path, boolean longFormat)
+                             Path path, boolean longFormat)
             throws Exception
     {
-        PBPath parent = ShProgram.buildPath_(path);
         GetChildrenAttributesReply reply = s.d().getRitualClient_().getChildrenAttributes(
-                Cfg.user().getString(), parent);
+                Cfg.user().getString(), path.toPB());
 
         for (int i = 0; i < reply.getChildrenNameCount(); i++) {
             String name = reply.getChildrenName(i);
@@ -97,11 +96,10 @@ public class CmdList implements IShellCommand<ShProgram>
     }
 
     private static void listHistory(ShellCommandRunner<ShProgram> s,
-            List<String> path, boolean longFormat)
+            Path path, boolean longFormat)
             throws Exception
     {
-        PBPath parent = ShProgram.buildPath_(path);
-        ListRevChildrenReply reply = s.d().getRitualClient_().listRevChildren(parent);
+        ListRevChildrenReply reply = s.d().getRitualClient_().listRevChildren(path.toPB());
 
         for (PBRevChild child : reply.getChildList()) {
             if (longFormat) {

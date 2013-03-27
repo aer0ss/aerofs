@@ -24,7 +24,9 @@ import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
+import com.aerofs.lib.Param;
 import com.aerofs.lib.ProgressIndicators;
+import com.aerofs.lib.cfg.CfgAbsDefaultAuxRoot;
 import com.aerofs.lib.cfg.CfgStoragePolicy;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.daemon.lib.db.AbstractTransListener;
@@ -32,10 +34,8 @@ import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.FrequentDefectSender;
-import com.aerofs.lib.Param;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.cfg.CfgAbsAuxRoot;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.daemon.core.ex.ExAborted;
 import com.aerofs.base.ex.ExNotFound;
@@ -74,7 +74,6 @@ class BlockStorage implements IPhysicalStorage
     private TransManager _tm;
     private CoreScheduler _sched;
     private InjectableFile.Factory _fileFactory;
-    private CfgAbsAuxRoot _absAuxRoot;
     private CfgStoragePolicy _storagePolicy;
 
     private InjectableFile _prefixDir;
@@ -95,7 +94,7 @@ class BlockStorage implements IPhysicalStorage
     }
 
     @Inject
-    public void inject_(CfgAbsAuxRoot absAuxRoot, CfgStoragePolicy storagePolicy,
+    public void inject_(CfgAbsDefaultAuxRoot absDefaultAuxRoot, CfgStoragePolicy storagePolicy,
             TC tc, TransManager tm, CoreScheduler sched,
             InjectableFile.Factory fileFactory, IBlockStorageBackend bsb, BlockStorageDatabase bsdb,
             FrequentDefectSender fds, ExportHelper eh)
@@ -104,18 +103,20 @@ class BlockStorage implements IPhysicalStorage
         _tm = tm;
         _sched = sched;
         _fileFactory = fileFactory;
-        _absAuxRoot = absAuxRoot;
         _storagePolicy = storagePolicy;
         _bsb = bsb;
         _bsdb = bsdb;
         _fds = fds;
         _eh = eh;
+
+        final String prefixDirPath = Objects.firstNonNull(exportRoot(), absDefaultAuxRoot.get());
+        _prefixDir = _fileFactory.create(prefixDirPath, Param.AuxFolder.PREFIX._name);
     }
 
     @Override
     public void init_() throws IOException
     {
-        initPrefixDirAndEnsureItExists();
+        ensurePrefixDirExists();
         initializeBlockStorage();
         rescheduleFullExportIfExportPartiallyCompleted();
     }
@@ -148,11 +149,9 @@ class BlockStorage implements IPhysicalStorage
         }
     }
 
-    private void initPrefixDirAndEnsureItExists()
+    private void ensurePrefixDirExists()
             throws IOException
     {
-        final String _prefixDirectoryPath = Objects.firstNonNull(exportRoot(), _absAuxRoot.get());
-        _prefixDir = _fileFactory.create(_prefixDirectoryPath, Param.AuxFolder.PREFIX._name);
         _prefixDir.ensureDirExists();
     }
 

@@ -9,7 +9,7 @@ import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.FrequentDefectSender;
 import com.aerofs.lib.Param;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.cfg.CfgAbsAuxRoot;
+import com.aerofs.lib.cfg.CfgAbsDefaultAuxRoot;
 
 import java.io.File;
 import java.io.IOException;
@@ -29,11 +29,8 @@ public class DPUTMigrateRevisionSuffixToBase64 implements IDaemonPostUpdateTask
     private final DateFormat _dateFormat = new SimpleDateFormat(DATE_FORMAT);
     private final FrequentDefectSender _fds = new FrequentDefectSender();
 
-    private final CfgAbsAuxRoot _absAuxRoot;
-
-    DPUTMigrateRevisionSuffixToBase64(CfgAbsAuxRoot absAuxRoot)
+    DPUTMigrateRevisionSuffixToBase64()
     {
-        _absAuxRoot = absAuxRoot;
     }
 
     /**
@@ -88,6 +85,7 @@ public class DPUTMigrateRevisionSuffixToBase64 implements IDaemonPostUpdateTask
     @Override
     public void run() throws Exception
     {
-        fixFolder(new File(Util.join(_absAuxRoot.get(), Param.AuxFolder.REVISION._name)));
+        fixFolder(new File(Util.join(DPUTMigrateAuxRoot.getOldAuxRoot(),
+                Param.AuxFolder.REVISION._name)));
     }
 }

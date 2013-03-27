@@ -84,7 +84,7 @@ public class DlgMoveRootAnchor extends AeroFSDialog implements ISWTWorker
     {
         RitualBlockingClient ritual = RitualClientFactory.newBlockingClient();
         try {
-            ritual.relocate(RootAnchorUtil.adjustRootAnchor(_absAnchorRoot));
+            ritual.relocate(RootAnchorUtil.adjustRootAnchor(_absAnchorRoot, null), null);
         } catch (ChannelException e) {
             // ChannelException or IOException (depending on the OS) is thrown when the daemon exits
             // which is a result of a successful move.

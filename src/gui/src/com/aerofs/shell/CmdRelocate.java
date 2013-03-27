@@ -44,6 +44,7 @@ public class CmdRelocate implements IShellCommand<ShProgram>
             throw new ExBadArgs();
         }
 
-        s.d().getRitualClient_().relocate(RootAnchorUtil.adjustRootAnchor(cl.getArgs()[0]));
+        s.d().getRitualClient_().relocate(RootAnchorUtil.adjustRootAnchor(cl.getArgs()[0], null),
+                null);
     }
 }

@@ -19,8 +19,7 @@ public class IgnoreList
                 "Icon\r",
                 ".DS_Store",
                 "desktop.ini",
-                "Thumbs.db",
-                Param.SHARED_FOLDER_TAG);
+                "Thumbs.db");
     }
 
     /**
@@ -62,6 +61,6 @@ public class IgnoreList
         // network overhead so we ignore these files
         if (name.charAt(0) == '.' && name.endsWith(".kate-swp")) return true;
 
-        return _set.contains(name);
+        return Linker.isInternalFile(name) || _set.contains(name);
     }
 }

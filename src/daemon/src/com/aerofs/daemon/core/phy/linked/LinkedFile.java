@@ -44,7 +44,7 @@ public class LinkedFile implements IPhysicalFile
         _sokid = sokid;
         _f = _s._factFile.create(sokid.kidx().equals(KIndex.MASTER) ?
                 join(_s._lrm.absRootAnchor_(path.sid()), join(path.elements())) :
-                join(_s._cfgAbsAuxRoot.get(), CONFLICT._name, LinkedStorage.makeAuxFileName(sokid)));
+                join(_s.auxRootForStore_(path.sid()), CONFLICT._name, LinkedStorage.makeAuxFileName(sokid)));
         _fidm = _s._factFIDMan.create_(sokid, _f);
     }
 

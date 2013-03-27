@@ -41,7 +41,7 @@ public class CmdUsers implements IShellCommand<ShProgram>
     {
         if (cl.getArgs().length != 1) throw new ExBadArgs();
 
-        PBPath path = s.d().buildPath_(cl.getArgs()[0]);
+        PBPath path = s.d().buildPBPath_(cl.getArgs()[0]);
 
         GetACLReply reply = s.d().getRitualClient_().getACL(Cfg.user().getString(), path);
 

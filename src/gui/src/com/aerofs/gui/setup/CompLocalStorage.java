@@ -79,7 +79,7 @@ public class CompLocalStorage
                 dd.setMessage("Select " + S.ROOT_ANCHOR);
                 String root = dd.open();
                 if (root != null) {
-                    _absRootAnchor = RootAnchorUtil.adjustRootAnchor(root);
+                    _absRootAnchor = RootAnchorUtil.adjustRootAnchor(root, null);
                     _txtRoot.setText(_absRootAnchor);
                 }
             }

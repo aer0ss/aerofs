@@ -5,13 +5,13 @@
 package com.aerofs.daemon.core.update;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.base.id.DID;
 import com.aerofs.lib.Param.AuxFolder;
 import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.Param;
 import com.aerofs.lib.SystemUtil.ExitCode;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.cfg.CfgAbsAuxRoot;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.sv.client.SVClient;
 import com.aerofs.swig.driver.Driver;
@@ -24,11 +24,9 @@ import java.util.Arrays;
 public class DPUTMigrateAuxRoot implements IDaemonPostUpdateTask
 {
     private final static Logger l = Loggers.getLogger(DPUTMigrateAuxRoot.class);
-    private final CfgAbsAuxRoot _cfgAbsAuxRoot;
 
-    DPUTMigrateAuxRoot(CfgAbsAuxRoot cfgAbsAuxRoot)
+    DPUTMigrateAuxRoot()
     {
-        _cfgAbsAuxRoot = cfgAbsAuxRoot;
     }
 
     @Override
@@ -36,7 +34,7 @@ public class DPUTMigrateAuxRoot implements IDaemonPostUpdateTask
     {
         try {
             final String oldAuxRoot = getOldAuxRoot();
-            final String newAuxRoot = _cfgAbsAuxRoot.get();
+            final String newAuxRoot = deprecatedAbsAuxRoot();
             FileUtil.mkdirs(new File(newAuxRoot));
             OSUtil.get().markHiddenSystemFile(newAuxRoot);
 
@@ -59,7 +57,7 @@ public class DPUTMigrateAuxRoot implements IDaemonPostUpdateTask
         }
     }
 
-    private String getOldAuxRoot() throws IOException
+    static String getOldAuxRoot() throws IOException
     {
         if (OSUtil.isWindows()) {
             return getOldAuxRootWin(Cfg.absDefaultRootAnchor());
@@ -68,15 +66,40 @@ public class DPUTMigrateAuxRoot implements IDaemonPostUpdateTask
         }
     }
 
+
+    static String deprecatedAbsAuxRoot()
+    {
+        return deprecatedAbsAuxRootForPath(Cfg.absDefaultRootAnchor(), Cfg.did());
+    }
+
+    public static final String DEPRECATED_AUXROOT_PREFIX = ".aerofs.";
+
+    /**
+     * @return the location of the aux root for a given path
+     * @param did to use to generate the path
+     * This is needed because during setup we want to use this method to check if we have the
+     * permission to create the aux root folder, but don't have the real did yet.
+     */
+    // new aux root location at the time this DPUT was created
+    // later deprecated when aux root was moved under root anchor
+    private static String deprecatedAbsAuxRootForPath(String path, DID did)
+    {
+        String shortDid = did.toStringFormal().substring(0, 6);
+        File parent = new File(path).getParentFile();
+        File auxRoot = new File(parent, DEPRECATED_AUXROOT_PREFIX + shortDid);
+        return auxRoot.getAbsolutePath();
+    }
+
+
     /////////////////////////////////////////////////////////
     //
     // Old code from OSUtil to get the path to the aux root
     //
     ////////////////////////////////////////////////////////
 
-    private String OLD_AUXROOT_PARENT = ".aerofs.aux";
+    private static String OLD_AUXROOT_PARENT = ".aerofs.aux";
 
-    private String getOldAuxRootWin(String path) throws IOException
+    private static String getOldAuxRootWin(String path) throws IOException
     {
         String def = new File(Cfg.absRTRoot()).getCanonicalPath();
         char driveDef = Character.toUpperCase(def.charAt(0));
@@ -91,7 +114,7 @@ public class DPUTMigrateAuxRoot implements IDaemonPostUpdateTask
         }
     }
 
-    private String getOldAuxRootOSXLinux(String path) throws IOException
+    private static String getOldAuxRootOSXLinux(String path) throws IOException
     {
         String def = Cfg.absRTRoot();
         String mntDef = getMountPoint(def);
@@ -103,7 +126,7 @@ public class DPUTMigrateAuxRoot implements IDaemonPostUpdateTask
         }
     }
 
-    private String getMountPoint(String path) throws IOException
+    private static String getMountPoint(String path) throws IOException
     {
         File f = new File(path);
         int bufferLen = Driver.getMountIdLength();

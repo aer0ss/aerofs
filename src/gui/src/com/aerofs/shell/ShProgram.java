@@ -3,10 +3,13 @@ package com.aerofs.shell;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.aerofs.base.ex.ExFormatError;
+import com.aerofs.base.id.SID;
 import com.aerofs.labeling.L;
 import com.aerofs.base.C;
 import com.aerofs.lib.IProgram;
 import com.aerofs.base.BaseParam.SP;
+import com.aerofs.lib.Path;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.lib.ritual.RitualBlockingClient;
@@ -26,7 +29,9 @@ public class ShProgram implements IProgram, ICallback
     static final String DEBUG_FLAG = "DEBUG";
 
     private static final String PROG = L.get().productUnixName() + "-sh";
-    private List<String> _pwd;
+
+    private Path _pwd;
+
     private RitualBlockingClient _ritual;
     private SPBlockingClient _sp;
     private long _spRenewal;
@@ -36,7 +41,7 @@ public class ShProgram implements IProgram, ICallback
     public void launch_(String rtRoot, String prog, String[] args)
     {
         try {
-            _pwd = new ArrayList<String>();
+            _pwd = Path.root(Cfg.rootSID());
 
             // FIXME: replace with the builder pattern to add commands
 
@@ -118,6 +123,8 @@ public class ShProgram implements IProgram, ICallback
         _s.addCommand_(new CmdConflicts());
         _s.addCommand_(new CmdResolve());
 
+        _s.addCommand_(new CmdRoots());
+
         // TODO(huguesb): remove conditional when seed files are exposed to users
         if (Cfg.user().isAeroFSUser()) {
             _s.addCommand_(new CmdSeed());
@@ -137,72 +144,50 @@ public class ShProgram implements IProgram, ICallback
 
     // return the abolute path. path can be null to represent pwd
     // use "a/b/c" to present relative paths, and "/a/b/c" for absolute paths
-    public List<String> buildPathElemList_(String path) throws ExBadArgs
+    public Path buildPath_(String path) throws ExBadArgs
     {
         if (path == null) return _pwd;
 
-        List<String> stack = new ArrayList<String>();
+        try {
+            return Path.fromStringFormalThrows(path);
+        } catch (ExFormatError e) {
+            // not a valid absolute formal (i.e store-prefixed) path
+        }
 
-        // if it's a relative path, ...
-        if (!path.startsWith(SEP)) stack.addAll(_pwd);
+        Path r = path.startsWith(SEP) ? Path.root(_pwd.sid()) : _pwd;
 
         String[] tokens = path.split(SEP);
         for (String token : tokens) {
             if (token.isEmpty()) continue;
-
             if (token.equals("..")) {
-                if (stack.size() == 0) throw new ExBadArgs("invalid path");
-                stack.remove(stack.size() - 1);
+                if (r.isEmpty()) throw new ExBadArgs("invalid path");
+                r = r.removeLast();
             } else {
-                stack.add(token);
+                r = r.append(token);
             }
         }
 
-        return stack;
+        return r;
     }
 
-    public void setPwdElements_(List<String> path)
+    public PBPath buildPBPath_(String path) throws ExBadArgs
     {
-        _pwd = path;
+        return buildPath_(path).toPB();
     }
 
-    public List<String> getPwdElements_()
+    public Path getPwd_()
     {
         return _pwd;
     }
 
-    public String getPwd_()
+    public void setPwd_(Path pwd)
     {
-        StringBuilder sb = new StringBuilder();
-
-        if (getPwdElements_().size() == 0) {
-            sb.append("/");
-        } else {
-            for (String token : getPwdElements_()) {
-                sb.append("/");
-                sb.append(token);
-            }
-        }
-
-        return sb.toString();
+        _pwd = pwd;
     }
 
     @Override
     public String getPrompt_()
     {
-        return getPwd_() + "> ";
-    }
-
-    public PBPath buildPath_(String path)
-            throws ExBadArgs
-    {
-        return buildPath_(buildPathElemList_(path));
-    }
-
-    public static PBPath buildPath_(List<String> path)
-            throws ExBadArgs
-    {
-        // TODO: multiroot support
-        return PBPath.newBuilder().setSid(Cfg.rootSID().toPB()).addAllElem(path).build();
+        return _pwd.toStringFormal() + "> ";
     }
 }

@@ -21,7 +21,7 @@ public interface IPhysicalStorage
 
     IPhysicalFolder newFolder_(SOID soid, Path path);
 
-    IPhysicalPrefix newPrefix_(SOCKID k);
+    IPhysicalPrefix newPrefix_(SOCKID k) throws SQLException;
 
     /**
      * Move the completely downloaded prefix in place of the file.

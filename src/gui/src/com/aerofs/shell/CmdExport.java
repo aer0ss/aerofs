@@ -116,8 +116,7 @@ public class CmdExport implements IShellCommand<ShProgram>
             throw new ExBadArgs("history and conflict options are mutually exclusive");
         }
 
-        // TODO: multiroot support
-        Path source = new Path(Cfg.rootSID(), s.d().buildPathElemList_(args[0]));
+        Path source = s.d().buildPath_(args[0]);
         File dest = new File(args[1]);
         if (dest.isDirectory() && !source.isEmpty()) {
             dest = new File(dest, source.last());

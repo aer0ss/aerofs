@@ -4,16 +4,22 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.Map.Entry;
+import java.util.Set;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.phy.linked.linker.LinkerRootMap;
+import com.aerofs.daemon.core.store.IMapSIndex2SID;
+import com.aerofs.daemon.core.store.IStores;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.Param;
 import com.aerofs.lib.SystemUtil;
-import com.aerofs.lib.cfg.CfgAbsAuxRoot;
+import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgStoragePolicy;
 import com.aerofs.lib.cfg.CfgAbsRoots;
+import com.aerofs.lib.os.OSUtil;
+import com.google.common.collect.Iterables;
 import org.slf4j.Logger;
 
 import com.aerofs.daemon.core.phy.linked.linker.IgnoreList;
@@ -45,44 +51,62 @@ public class LinkedStorage implements IPhysicalStorage
     final InjectableFile.Factory _factFile;
     final IFIDMaintainer.Factory _factFIDMan;
     final SharedFolderTagFileAndIcon _sfti;
-    final CfgAbsAuxRoot _cfgAbsAuxRoot;
     private final CfgStoragePolicy _cfgStoragePolicy;
     protected final CfgAbsRoots _cfgAbsRoots;
+    private final IStores _stores;
+    private final IMapSIndex2SID _sidx2sid;
     private final LinkedRevProvider _revProvider;
 
     @Inject
     public LinkedStorage(InjectableFile.Factory factFile,
             IFIDMaintainer.Factory factFIDMan,
             LinkerRootMap lrm,
+            IStores stores,
+            IMapSIndex2SID sidx2sid,
             CfgAbsRoots cfgAbsRoots,
-            CfgAbsAuxRoot cfgAbsAuxRoot,
             CfgStoragePolicy cfgStoragePolicy,
             IgnoreList il,
-            LinkedRevProvider revProvider,
             SharedFolderTagFileAndIcon sfti)
     {
         _il = il;
         _lrm = lrm;
         _factFile = factFile;
         _factFIDMan = factFIDMan;
-        _cfgAbsAuxRoot = cfgAbsAuxRoot;
         _cfgStoragePolicy = cfgStoragePolicy;
-        _revProvider = revProvider;
         _sfti = sfti;
+        _stores = stores;
+        _sidx2sid = sidx2sid;
         _cfgAbsRoots = cfgAbsRoots;
+        _revProvider = new LinkedRevProvider(this, factFile);
     }
 
     @Override
     public void init_() throws IOException
     {
-        // create aux folders. other codes assume these folders already exist.
-        // TODO: auxroot for each root (*inside* the root?)
-        for (AuxFolder af : Param.AuxFolder.values()) {
-            _factFile.create(Util.join(_cfgAbsAuxRoot.get(), af._name)).ensureDirExists();
+        for (Entry<SID, String> e : _cfgAbsRoots.get().entrySet()) {
+            ensureSaneAuxRoot_(e.getKey(), e.getValue());
         }
 
-        _revProvider.init_(_cfgAbsAuxRoot.get());
+        _revProvider.init_();
     }
+
+    protected void ensureSaneAuxRoot_(SID sid, String absRoot) throws IOException
+    {
+        ensureSaneAuxRoot_(Cfg.absAuxRootForPath(absRoot, sid));
+    }
+
+    private void ensureSaneAuxRoot_(String absAuxRoot) throws IOException
+    {
+        l.info("aux root {}", absAuxRoot);
+
+        // create aux folders. other codes assume these folders already exist.
+        for (AuxFolder af : Param.AuxFolder.values()) {
+            _factFile.create(Util.join(absAuxRoot, af._name)).ensureDirExists();
+        }
+
+        OSUtil.get().markHiddenSystemFile(absAuxRoot);
+    }
+
 
     @Override
     public IPhysicalFile newFile_(SOKID sokid, Path path)
@@ -97,9 +121,34 @@ public class LinkedStorage implements IPhysicalStorage
     }
 
     @Override
-    public IPhysicalPrefix newPrefix_(SOCKID k)
+    public IPhysicalPrefix newPrefix_(SOCKID k) throws SQLException
     {
-        return new LinkedPrefix(_factFile, k, _cfgAbsAuxRoot.get());
+        return new LinkedPrefix(_factFile, k, auxRootForStore_(k.sidx()));
+    }
+
+    // in FlatLinkedStorage, each store has a physical root but in regular LinkedStorage
+    // we want to allow some amount of nested sharing (1 level under a user root store)
+    // with the obvious restriction that such a nested share can have at most one parent
+    protected SIndex rootSIndex_(SIndex sidx) throws SQLException
+    {
+        Set<SIndex> parents = _stores.getParents_(sidx);
+        assert parents.isEmpty() || parents.size() == 1 : sidx + " " + parents;
+        return parents.isEmpty() ? sidx : rootSIndex_(Iterables.getOnlyElement(parents));
+    }
+
+    private SID rootSID_(SIndex sidx) throws SQLException
+    {
+        return _sidx2sid.get_(rootSIndex_(sidx));
+    }
+
+    private String auxRootForStore_(SIndex sidx) throws SQLException
+    {
+        return auxRootForStore_(rootSID_(sidx));
+    }
+
+    String auxRootForStore_(SID root)
+    {
+        return Cfg.absAuxRootForPath(_cfgAbsRoots.get(root), root);
     }
 
     @Override
@@ -123,8 +172,9 @@ public class LinkedStorage implements IPhysicalStorage
         // delete aux files other than revision files. no need to register for deletion rollback
         // since these files are not important.
         String prefix = makeAuxFilePrefix(sidx);
-        deleteFiles_(Param.AuxFolder.CONFLICT, prefix);
-        deleteFiles_(Param.AuxFolder.PREFIX, prefix);
+        String absAuxRoot = auxRootForStore_(sidx);
+        deleteFiles_(absAuxRoot, Param.AuxFolder.CONFLICT, prefix);
+        deleteFiles_(absAuxRoot, Param.AuxFolder.PREFIX, prefix);
     }
 
     void promoteToAnchor_(SOID soid, Path path, Trans t) throws SQLException, IOException
@@ -139,9 +189,10 @@ public class LinkedStorage implements IPhysicalStorage
                 path.toAbsoluteString(_lrm.absRootAnchor_(path.sid())), t);
     }
 
-    private void deleteFiles_(AuxFolder af, final String prefix) throws IOException
+    private void deleteFiles_(String absAuxRoot, AuxFolder af, final String prefix)
+            throws IOException
     {
-        InjectableFile folder = _factFile.create(Util.join(_cfgAbsAuxRoot.get(), af._name));
+        InjectableFile folder = _factFile.create(Util.join(absAuxRoot, af._name));
         InjectableFile[] fs = folder.listFiles(new FilenameFilter() {
             @Override
             public boolean accept(File dir, String name)

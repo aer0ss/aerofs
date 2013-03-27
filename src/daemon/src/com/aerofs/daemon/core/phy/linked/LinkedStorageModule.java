@@ -1,6 +1,8 @@
 package com.aerofs.daemon.core.phy.linked;
 
 import com.aerofs.daemon.core.ICoreEventHandlerRegistrar;
+import com.aerofs.daemon.core.admin.HdRelocateRootAnchor.CrossFSRelocator;
+import com.aerofs.daemon.core.admin.HdRelocateRootAnchor.SameFSRelocator;
 import com.aerofs.daemon.core.phy.linked.linker.IDeletionBuffer;
 import com.aerofs.daemon.core.phy.linked.linker.ILinkerFilter;
 import com.aerofs.daemon.core.phy.linked.linker.LinkerEventHandlerRegistar;
@@ -36,7 +38,11 @@ public class LinkedStorageModule extends AbstractModule
         bind(ILinkerFilter.class).to(_flat
                 ? ILinkerFilter.FilterUnderAnchor.class
                 : ILinkerFilter.AcceptAll.class);
+
         bind(ILinker.class).to(Linker.class);
         bind(IDeletionBuffer.class).to(TimeoutDeletionBuffer.class);
+
+        bind(SameFSRelocator.class).to(LinkedSameFSRelocator.class);
+        bind(CrossFSRelocator.class).to(LinkedCrossFSRelocator.class);
     }
 }

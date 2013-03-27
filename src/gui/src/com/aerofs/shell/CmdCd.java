@@ -18,9 +18,7 @@ public class CmdCd implements IShellCommand<ShProgram>
     {
         if (cl.getArgs().length != 1) throw new ExBadArgs();
 
-        List<String> pathElements = s.d().buildPathElemList_(cl.getArgs()[0]);
-        // TODO: multiroot support
-        Path path = new Path(Cfg.rootSID(), pathElements);
+        Path path = s.d().buildPath_(cl.getArgs()[0]);
 
         if (!path.isEmpty()) {
             PBObjectAttributes attr = s.d().getRitualClient_()
@@ -30,7 +28,7 @@ public class CmdCd implements IShellCommand<ShProgram>
             }
         }
 
-        s.d().setPwdElements_(pathElements);
+        s.d().setPwd_(path);
     }
 
     @Override

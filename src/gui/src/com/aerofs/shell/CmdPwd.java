@@ -12,7 +12,7 @@ public class CmdPwd implements IShellCommand<ShProgram>
     {
         if (cl.getArgs().length != 0) throw new ExBadArgs();
 
-        s.out().println(s.d().getPwd_());
+        s.out().println(s.d().getPwd_().toStringFormal());
     }
 
     @Override

@@ -10,12 +10,12 @@ import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.phy.block.ExportHelper;
 import com.aerofs.daemon.core.phy.linked.fid.IFIDMaintainer;
 import com.aerofs.daemon.core.phy.linked.linker.IgnoreList;
-import com.aerofs.daemon.core.phy.linked.linker.Linker;
 import com.aerofs.daemon.core.phy.linked.linker.LinkerRootMap;
+import com.aerofs.daemon.core.store.IMapSIndex2SID;
+import com.aerofs.daemon.core.store.IStores;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.cfg.CfgAbsAuxRoot;
 import com.aerofs.lib.cfg.CfgAbsDefaultRoot;
 import com.aerofs.lib.cfg.CfgAbsRoots;
 import com.aerofs.lib.cfg.CfgStoragePolicy;
@@ -42,17 +42,16 @@ public class FlatLinkedStorage extends LinkedStorage
     public FlatLinkedStorage(InjectableFile.Factory factFile,
             IFIDMaintainer.Factory factFIDMan,
             LinkerRootMap lrm,
+            IStores stores,
+            IMapSIndex2SID sidx2sid,
             CfgAbsRoots cfgAbsRoots,
             CfgAbsDefaultRoot cfgAbsDefaultRoot,
             CfgStoragePolicy cfgStoragePolicy,
-            CfgAbsAuxRoot cfgAbsAuxRoot,
             IgnoreList il,
-            LinkedRevProvider revProvider,
             SharedFolderTagFileAndIcon sfti,
             ExportHelper eh)
     {
-        super(factFile, factFIDMan, lrm, cfgAbsRoots, cfgAbsAuxRoot, cfgStoragePolicy, il,
-                revProvider, sfti);
+        super(factFile, factFIDMan, lrm, stores, sidx2sid, cfgAbsRoots, cfgStoragePolicy, il, sfti);
         _eh = eh;
         _usersDir = _factFile.create(Util.join(cfgAbsDefaultRoot.get(), USERS_DIR));
         _sharedDir = _factFile.create(Util.join(cfgAbsDefaultRoot.get(), SHARED_DIR));
@@ -81,6 +80,8 @@ public class FlatLinkedStorage extends LinkedStorage
         d.ensureDirExists();
 
         String absPath = d.getAbsolutePath();
+        ensureSaneAuxRoot_(sid, absPath);
+
         _sfti.addTagFileAndIconIn(sid, absPath, t);
         _lrm.link_(sid, absPath, t);
     }
@@ -90,6 +91,12 @@ public class FlatLinkedStorage extends LinkedStorage
             throws IOException, SQLException
     {
         _lrm.unlink_(sid, t);
+    }
+
+    @Override
+    protected SIndex rootSIndex_(SIndex sidx) throws SQLException
+    {
+        return sidx;
     }
 
     private InjectableFile storeRoot_(SIndex sidx, SID sid)

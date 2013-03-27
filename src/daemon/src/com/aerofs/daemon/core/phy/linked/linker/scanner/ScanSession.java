@@ -272,7 +272,7 @@ class ScanSession
             soidParent = _f._ds.resolveNullable_(pcParent._path);
             if (soidParent != null) break;
             // The resolution above must have succeeded if the path is empty.
-            assert !pcParent._path.isEmpty();
+            assert !pcParent._path.isEmpty() : pcParent._absPath + " " + soidParent;
             pcParent = new PathCombo(_root.absRootAnchor(), pcParent._path.removeLast());
         }
 

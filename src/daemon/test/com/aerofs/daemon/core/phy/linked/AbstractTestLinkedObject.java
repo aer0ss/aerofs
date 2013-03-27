@@ -10,19 +10,18 @@ import com.aerofs.daemon.core.phy.linked.linker.IgnoreList;
 import com.aerofs.daemon.core.phy.IPhysicalObject;
 import static com.aerofs.daemon.core.phy.PhysicalOp.MAP;
 
-import com.aerofs.daemon.core.phy.linked.linker.Linker;
 import com.aerofs.daemon.core.phy.linked.linker.LinkerRootMap;
+import com.aerofs.daemon.core.store.IMapSIndex2SID;
+import com.aerofs.daemon.core.store.IStores;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.Path;
 import com.aerofs.base.ex.ExNotFound;
-import com.aerofs.lib.cfg.CfgAbsAuxRoot;
 import com.aerofs.lib.cfg.CfgAbsRoots;
 import com.aerofs.lib.cfg.CfgStoragePolicy;
 import com.aerofs.lib.id.*;
 import com.aerofs.lib.injectable.InjectableDriver;
 import com.aerofs.lib.injectable.InjectableDriver.FIDAndType;
 import com.aerofs.lib.injectable.InjectableFile;
-import com.aerofs.lib.injectable.InjectableFile.Factory;
 import com.aerofs.testlib.AbstractTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -71,12 +70,9 @@ public abstract class AbstractTestLinkedObject<T extends IPhysicalObject> extend
         when(ds.getOANullable_(soid)).thenReturn(oa);
         when(oa.fid()).thenReturn(fid);
 
-        CfgAbsAuxRoot auxRoot = mock(CfgAbsAuxRoot.class);
-        when(auxRoot.get()).thenReturn("baz");
-
         s = new LinkedStorage(factFile, new IFIDMaintainer.Factory(dr, ds), lrm,
-                mock(CfgAbsRoots.class), auxRoot, mock(CfgStoragePolicy.class),
-                il, mock(LinkedRevProvider.class), mock(SharedFolderTagFileAndIcon.class));
+                mock(IStores.class), mock(IMapSIndex2SID.class), mock(CfgAbsRoots.class),
+                mock(CfgStoragePolicy.class), il, mock(SharedFolderTagFileAndIcon.class));
 
         obj = createPhysicalObject(s, sokid, path);
     }

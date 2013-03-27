@@ -60,7 +60,7 @@ public class CmdConflicts implements IShellCommand<ShProgram>
         boolean printPath = args.length != 1;
         List<PBPath> pathList = Lists.newArrayList();
         if (args.length > 0) {
-            for (String arg : args) pathList.add(s.d().buildPath_(arg));
+            for (String arg : args) pathList.add(s.d().buildPBPath_(arg));
         } else {
             ListConflictsReply reply = r.listConflicts();
             for (ConflictedPath p : reply.getConflictList()) pathList.add(p.getPath());

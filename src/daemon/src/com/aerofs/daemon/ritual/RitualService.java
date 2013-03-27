@@ -317,10 +317,10 @@ public class RitualService implements IRitualService
     }
 
     @Override
-    public ListenableFuture<CreateSeedFileReply> createSeedFile()
+    public ListenableFuture<CreateSeedFileReply> createSeedFile(ByteString sid)
             throws Exception
     {
-        EICreateSeedFile ev = new EICreateSeedFile(Core.imce());
+        EICreateSeedFile ev = new EICreateSeedFile(new SID(sid), Core.imce());
         ev.execute(PRIO);
         return createReply(CreateSeedFileReply.newBuilder().setPath(ev._path).build());
     }
@@ -598,9 +598,10 @@ public class RitualService implements IRitualService
     }
 
     @Override
-    public ListenableFuture<Void> relocate(String newAbsRootAnchor) throws Exception
+    public ListenableFuture<Void> relocate(String newAbsRootAnchor, @Nullable ByteString sid) throws Exception
     {
-        new EIRelocateRootAnchor(newAbsRootAnchor, Core.imce()).execute(PRIO);
+        new EIRelocateRootAnchor(newAbsRootAnchor, sid == null ? null : new SID(sid), Core.imce())
+                .execute(PRIO);
         return createVoidReply();
     }
 

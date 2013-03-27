@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.multiplicity.singleuser;
 
+import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.StoreCreator;
 import com.aerofs.daemon.core.store.Stores;
 import com.aerofs.daemon.lib.db.trans.Trans;
@@ -27,14 +28,17 @@ public class SingleuserStores extends Stores
 {
     private TransManager _tm;
     private StoreCreator _sc;
+    private IMapSID2SIndex _sid2sidx;
     private CfgRootSID _cfgRootSID;
     private SIndex _userRoot;
 
     @Inject
-    public void inject_(TransManager tm, StoreCreator sc, CfgRootSID cfgRootSID)
+    public void inject_(TransManager tm, StoreCreator sc, IMapSID2SIndex sid2sidx,
+            CfgRootSID cfgRootSID)
     {
         _tm = tm;
         _sc = sc;
+        _sid2sidx = sid2sidx;
         _cfgRootSID = cfgRootSID;
     }
 
@@ -64,13 +68,7 @@ public class SingleuserStores extends Stores
     private void setUserRootStore_() throws SQLException
     {
         assert _userRoot == null;
-        for (SIndex sidx : super.getAll_()) {
-            if (super.getParents_(sidx).isEmpty()) {
-                assert _userRoot == null;
-                _userRoot = sidx;
-            }
-        }
-        assert _userRoot != null;
+        _userRoot = _sid2sidx.get_(_cfgRootSID.get());
     }
 
     @Override
@@ -99,13 +97,4 @@ public class SingleuserStores extends Stores
         assert _userRoot != null;
         return _userRoot;
     }
-
-    /*
-    @Override
-    public boolean isRoot_(SIndex sidx)
-    {
-        // TODO: add infr for multiroot?
-        return _userRoot.equals(sidx);
-    }
-    */
 }

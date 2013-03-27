@@ -14,16 +14,18 @@ import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.phy.linked.fid.IFIDMaintainer;
 import com.aerofs.daemon.core.phy.linked.linker.IgnoreList;
 import com.aerofs.daemon.core.phy.linked.linker.LinkerRootMap;
+import com.aerofs.daemon.core.store.IMapSIndex2SID;
+import com.aerofs.daemon.core.store.IStores;
 import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
+import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.LogUtil;
 import com.aerofs.lib.LogUtil.Level;
 import com.aerofs.lib.Param;
 import com.aerofs.lib.Path;
-import com.aerofs.lib.Util;
-import com.aerofs.lib.cfg.CfgAbsAuxRoot;
+import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgAbsRoots;
 import com.aerofs.lib.cfg.CfgStoragePolicy;
 import com.aerofs.lib.ex.ExFileIO;
@@ -38,6 +40,7 @@ import com.aerofs.lib.injectable.InjectableDriver;
 import com.aerofs.lib.injectable.InjectableDriver.FIDAndType;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.testlib.AbstractTest;
+import com.google.common.collect.ImmutableMap;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -62,7 +65,7 @@ public class TestLinkedStorage extends AbstractTest
     // a big stack of mocks needed for a LinkedStorage instance...
     @Mock private DirectoryService ds;
     @Mock private InjectableDriver dr;
-    @Mock private CfgAbsAuxRoot cfgAbsAuxRoot;
+    @Mock private CfgAbsRoots cfgAbsRoots;
     @Mock private CfgStoragePolicy cfgStoragePolicy;
     @Mock private IgnoreList il;
     @Mock private OA oa;
@@ -78,38 +81,41 @@ public class TestLinkedStorage extends AbstractTest
 
     private InjectableFile.Factory factFile;
     private InjectableFile rootDir;
-    private InjectableFile dataDir;
     private InjectableFile revDir;
     private LinkedStorage storage;
     private TransManager tm;
     private boolean useHistory;
 
+    private final SIndex sidx = new SIndex(1);
     private final SID rootSID = SID.generate();
 
     @Before
     public void before() throws Exception
     {
+        AppRoot.set("foo");
         LogUtil.setLevel(TestLinkedStorage.class, Level.INFO);
 
         factFile = new InjectableFile.Factory();
-        rootDir = factFile.create(tempFolder.getRoot().getPath());
-        dataDir = factFile.create(rootDir, "data");
-        dataDir.mkdirs();
-        InjectableFile _auxDir = factFile.create(rootDir, Param.AUXROOT_PREFIX);
-        InjectableFile _revRootDir = factFile.create(_auxDir, Param.AuxFolder.REVISION._name);
-        revDir = factFile.create(_revRootDir, rootSID.toStringFormal());
+        InjectableFile tmpDir = factFile.create(tempFolder.getRoot().getPath());
+        rootDir = factFile.create(tmpDir, "data");
+        rootDir.mkdirs();
+        String auxDir = Cfg.absAuxRootForPath(rootDir.getAbsolutePath(), rootSID);
+        revDir = factFile.create(auxDir, Param.AuxFolder.REVISION._name);
         revDir.mkdirs();
+
+        l.info("{} {}", rootDir.getAbsolutePath(), revDir.getAbsolutePath());
 
         // these mocks are used to set up the LinkedStorage but also when
         // committing/ending transactions.
         when(dbcw.get()).then(RETURNS_MOCKS);
         when(dr.getFIDAndType(any(String.class))).thenReturn(new FIDAndType(fid, false));
-        when(cfgAbsAuxRoot.get()).thenReturn(_auxDir.getAbsolutePath());
         when(ds.getOA_(soid)).thenReturn(oa);
         when(ds.getOANullable_(soid)).thenReturn(oa);
         when(oa.fid()).thenReturn(fid);
 
-        when(lrm.absRootAnchor_(rootSID)).thenReturn(tempFolder.getRoot().getAbsolutePath());
+        when(lrm.absRootAnchor_(rootSID)).thenReturn(rootDir.getAbsolutePath());
+        when(cfgAbsRoots.get(rootSID)).thenReturn(rootDir.getAbsolutePath());
+        when(cfgAbsRoots.get()).thenReturn(ImmutableMap.of(rootSID, rootDir.getAbsolutePath()));
 
         when(cfgStoragePolicy.useHistory()).thenAnswer(new Answer<Boolean>()
         {
@@ -121,9 +127,11 @@ public class TestLinkedStorage extends AbstractTest
             }
         });
 
-        storage = new LinkedStorage(factFile, new IFIDMaintainer.Factory(dr, ds),
-                lrm, mock(CfgAbsRoots.class), cfgAbsAuxRoot, cfgStoragePolicy,
-                il, new LinkedRevProvider(factFile), null);
+        IMapSIndex2SID sidx2sid = mock(IMapSIndex2SID.class);
+        when(sidx2sid.get_(sidx)).thenReturn(rootSID);
+
+        storage = new LinkedStorage(factFile, new IFIDMaintainer.Factory(dr, ds), lrm,
+                mock(IStores.class), sidx2sid, cfgAbsRoots, cfgStoragePolicy, il, null);
         storage.init_();
 
         tm = new TransManager(new Trans.Factory(dbcw));
@@ -207,7 +215,7 @@ public class TestLinkedStorage extends AbstractTest
 
         // update & check that the revision dir is populated:
         SOCKID sockid = new SOCKID(sokid,  CID.CONTENT);
-        prefix = new LinkedPrefix(factFile, sockid, cfgAbsAuxRoot.get());
+        prefix = new LinkedPrefix(factFile, sockid, storage.auxRootForStore_(rootSID));
         FileUtil.createNewFile(new File(prefix._f.getAbsolutePath()));
 
         txn = tm.begin_();
@@ -232,7 +240,7 @@ public class TestLinkedStorage extends AbstractTest
         checkRevDirContents(0);
 
         SOCKID sockid = new SOCKID(sokid,  CID.CONTENT);
-        prefix = new LinkedPrefix(factFile, sockid, cfgAbsAuxRoot.get());
+        prefix = new LinkedPrefix(factFile, sockid, storage.auxRootForStore_(rootSID));
         FileUtil.createNewFile(new File(prefix._f.getAbsolutePath()));
 
         txn = tm.begin_();
@@ -304,7 +312,7 @@ public class TestLinkedStorage extends AbstractTest
         // revisions dir:
         SOCKID sockid = new SOCKID(sokid,  CID.CONTENT);
 
-        prefix = new LinkedPrefix(factFile, sockid, cfgAbsAuxRoot.get());
+        prefix = new LinkedPrefix(factFile, sockid, storage.auxRootForStore_(rootSID));
         FileUtil.createNewFile(new File(prefix._f.getAbsolutePath()));
 
         txn = tm.begin_();
@@ -315,7 +323,7 @@ public class TestLinkedStorage extends AbstractTest
         checkRevDirContents(0);
 
         // test the original file is replaced on rollback:
-        prefix = new LinkedPrefix(factFile, sockid, cfgAbsAuxRoot.get());
+        prefix = new LinkedPrefix(factFile, sockid, storage.auxRootForStore_(rootSID));
         FileUtil.createNewFile(new File(prefix._f.getAbsolutePath()));
         txn = tm.begin_();
         storage.apply_(prefix, pfile, true, 0, txn);

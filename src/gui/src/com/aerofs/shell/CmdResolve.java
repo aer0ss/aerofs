@@ -48,7 +48,7 @@ public class CmdResolve implements IShellCommand<ShProgram>
         String[] args = cl.getArgs();
         if (args.length != 1) throw new ExBadArgs();
 
-        PBPath path = s.d().buildPath_(args[0]);
+        PBPath path = s.d().buildPBPath_(args[0]);
         RitualBlockingClient r = s.d().getRitualClient_();
 
         String branch = cl.getOptionValue('b');

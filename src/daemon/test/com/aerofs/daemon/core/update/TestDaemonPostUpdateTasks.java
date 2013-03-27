@@ -2,7 +2,7 @@ package com.aerofs.daemon.core.update;
 
 import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.daemon.lib.db.IStoreDatabase;
-import com.aerofs.lib.cfg.CfgAbsAuxRoot;
+import com.aerofs.lib.cfg.CfgAbsDefaultAuxRoot;
 import com.aerofs.lib.db.InMemorySQLiteDBCW;
 import org.junit.Test;
 import org.mockito.InjectMocks;
@@ -19,7 +19,7 @@ public class TestDaemonPostUpdateTasks extends AbstractTest
     @Mock CfgDatabase cfgDB;
     @Mock CoreDBCW dbcw;
     @Mock IStoreDatabase sdb;
-    @Mock CfgAbsAuxRoot absAuxRoot;
+    @Mock CfgAbsDefaultAuxRoot absAuxRoot;
 
     InMemorySQLiteDBCW idbcw = new InMemorySQLiteDBCW();
 

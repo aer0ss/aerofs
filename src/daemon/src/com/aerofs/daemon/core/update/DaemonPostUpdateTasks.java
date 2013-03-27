@@ -6,7 +6,7 @@ import com.aerofs.base.Loggers;
 import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.lib.Param.PostUpdate;
 import com.aerofs.lib.cfg.CfgAbsAutoExportFolder;
-import com.aerofs.lib.cfg.CfgAbsAuxRoot;
+import com.aerofs.lib.cfg.CfgAbsDefaultAuxRoot;
 import com.aerofs.lib.cfg.CfgDatabase;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.cfg.CfgLocalUser;
@@ -21,8 +21,8 @@ public class DaemonPostUpdateTasks
     private final IDaemonPostUpdateTask[] _tasks;
 
     @Inject
-    public DaemonPostUpdateTasks(CfgDatabase cfgDB, CoreDBCW dbcw, CfgAbsAuxRoot absAuxRoot,
-            CfgLocalUser cfgUser, CfgAbsAutoExportFolder autoExportFolder)
+    public DaemonPostUpdateTasks(CfgDatabase cfgDB, CoreDBCW dbcw,  CfgLocalUser cfgUser,
+            CfgAbsAutoExportFolder autoExportFolder)
     {
         _cfgDB = cfgDB;
 
@@ -34,7 +34,7 @@ public class DaemonPostUpdateTasks
             new DPUTAddAggregateSyncColumn(dbcw),
             new DPUTMakeMTimesNaturalNumbersOnly(dbcw),
             new DPUTGetEncodingStats(dbcw),
-            new DPUTMigrateRevisionSuffixToBase64(absAuxRoot),
+            new DPUTMigrateRevisionSuffixToBase64(),
             null, // used to be DPUTResetSyncStatus (for redis migation issue)
             null, // used to be DPUTRestSyncStatus (account for change in vh computation)
             null, // used to be DPUTRestSyncStatus (account for aliasing related crash)
@@ -43,19 +43,18 @@ public class DaemonPostUpdateTasks
             null, // used to be DPUTBreakSyncStatActivityLogDependency with missing commit()
             new DPUTBreakSyncStatActivityLogDependency(dbcw),
             new DPUTResetSyncStatus(dbcw), // bug in AggregateSyncStatus.objectMoved_
-            new DPUTMigrateAuxRoot(absAuxRoot),
+            new DPUTMigrateAuxRoot(),
             new DPUTUpdateSIDGeneration(cfgUser, dbcw),
             null,  // used to be DPUTMigrateDeadAnchorsAndEmigratedNames
             new DPUTMigrateDeadAnchorsAndEmigratedNames(dbcw),
-            new DPUTMarkAuxRootAsHidden(absAuxRoot),
+            new DPUTMarkAuxRootAsHidden(),
             new DPUTCreateLeaveQueueTable(dbcw),
             new DPUTRenameTeamServerAutoExportFolders(autoExportFolder),
             new DPUTSkipFirstLaunch(),
             new DPUTRenameRootDirs(dbcw),
             null,  // used to be DPUTFixExpelledAlias
             new DPUTFixExpelledAlias(dbcw),
-            new DPUTUpdateCfgDatabaseForMultiroot(_cfgDB),
-            new DPUTMigrateRevisionForMultiRoot(absAuxRoot)
+            new DPUTMigrateAuxRootUnderRootAnchor()
             // new tasks go here
         };
 

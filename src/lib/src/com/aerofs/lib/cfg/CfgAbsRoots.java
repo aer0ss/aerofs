@@ -7,6 +7,7 @@ package com.aerofs.lib.cfg;
 import com.aerofs.base.id.SID;
 import com.google.inject.Inject;
 
+import javax.annotation.Nullable;
 import java.sql.SQLException;
 import java.util.Map;
 
@@ -15,31 +16,28 @@ import java.util.Map;
  */
 public class CfgAbsRoots
 {
-    private final CfgDatabase _db;
-
-    @Inject
-    public CfgAbsRoots(CfgDatabase db)
+    public Map<SID, String> get()
     {
-        _db = db;
+        return Cfg.getRoots();
     }
 
-    public Map<SID, String> get() throws SQLException
+    public @Nullable String get(SID sid)
     {
-        return _db.getRoots();
+        return Cfg.getRoot(sid);
     }
 
     public void add(SID sid, String absPath) throws SQLException
     {
-        _db.addRoot(sid, absPath);
+        Cfg.addRoot(sid, absPath);
     }
 
     public void remove(SID sid) throws SQLException
     {
-        _db.removeRoot(sid);
+        Cfg.removeRoot(sid);
     }
 
     public void move(SID sid, String newAbsPath) throws SQLException
     {
-        _db.moveRoot(sid, newAbsPath);
+        Cfg.moveRoot(sid, newAbsPath);
     }
 }

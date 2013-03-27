@@ -10,7 +10,7 @@ import com.aerofs.daemon.core.phy.block.IBlockStorageBackend;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.ContentHash;
-import com.aerofs.lib.cfg.CfgAbsAuxRoot;
+import com.aerofs.lib.cfg.CfgAbsDefaultAuxRoot;
 import com.aerofs.lib.db.InMemorySQLiteDBCW;
 import com.google.common.io.ByteStreams;
 import org.junit.After;
@@ -35,7 +35,7 @@ public class TestCacheBackend extends AbstractBlockTest
     @Mock Trans t;
     @Mock TransManager tm;
     @Mock CoreScheduler sched;
-    @Mock CfgAbsAuxRoot auxRoot;
+    @Mock CfgAbsDefaultAuxRoot auxRoot;
 
     // use in-memory DB
     InMemorySQLiteDBCW idbcw = new InMemorySQLiteDBCW();

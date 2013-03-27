@@ -71,7 +71,6 @@ public class LinuxNotifier implements INotifier, INotifyListener
 
     private final Map<Integer, LinkerRoot> _id2root = Maps.newConcurrentMap();
 
-
     public LinuxNotifier(CoreQueue cq, InjectableJNotify jn)
     {
         _cq = cq;
@@ -154,6 +153,10 @@ public class LinuxNotifier implements INotifier, INotifyListener
         } else {
             dir = new File(getWatchPath(parent), name);
         }
+
+        // avoid watching internal folders
+        if (Linker.isInternalFile(dir.getName())) return -1;
+
         // inotify never gives 0 as a watch number.  -1 is used for errors.
         int watch_id = -1;
         synchronized (this) {
@@ -318,6 +321,8 @@ public class LinuxNotifier implements INotifier, INotifyListener
             int cookie) throws JNotifyException
     {
         logEvent(name, id, mask);
+
+        if (Linker.isInternalFile(name)) return;
 
         List<IEvent> events = buildCoreEventList(name, id, mask, cookie);
 

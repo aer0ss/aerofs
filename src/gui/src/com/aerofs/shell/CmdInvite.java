@@ -57,7 +57,7 @@ public class CmdInvite implements IShellCommand<ShProgram>
 
         String role = cl.getOptionValue('r', Role.EDITOR.getDescription());
 
-        PBPath path = s.d().buildPath_(cl.getArgs()[0]);
+        PBPath path = s.d().buildPBPath_(cl.getArgs()[0]);
         SubjectRolePair srp = new SubjectRolePair(UserID.fromExternal(cl.getArgs()[1]),
                 Role.fromString(role));
 

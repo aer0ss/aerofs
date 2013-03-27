@@ -44,7 +44,7 @@ public class CmdImport implements IShellCommand<ShProgram>
         if (args.length != 2) throw new ExBadArgs("Expected two arguments");
 
         File source = new File(args[0]);
-        PBPath dest = s.d().buildPath_(args[1]);
+        PBPath dest = s.d().buildPBPath_(args[1]);
 
         s.d().getRitualClient_().importFile(dest, source.getAbsolutePath());
     }

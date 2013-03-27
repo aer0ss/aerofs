@@ -10,9 +10,9 @@ import com.aerofs.daemon.core.phy.ILinker.NullLinker;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.google.inject.AbstractModule;
 import com.google.inject.Module;
-import com.google.inject.Scopes;
 import com.google.inject.binder.AnnotatedBindingBuilder;
 import com.google.inject.binder.LinkedBindingBuilder;
+import com.google.inject.internal.Scoping;
 import com.google.inject.util.Modules;
 
 import static com.aerofs.lib.guice.GuiceUtil.multibind;
@@ -88,8 +88,10 @@ public class BlockStorageModules
             @Override
             protected void configure()
             {
-                bind(IPhysicalStorage.class).to(BlockStorage.class).in(Scopes.SINGLETON);
-                bind(ILinker.class).to(NullLinker.class).in(Scopes.SINGLETON);
+                bind(Scoping.class).toInstance(Scoping.SINGLETON_INSTANCE);
+
+                bind(IPhysicalStorage.class).to(BlockStorage.class);
+                bind(ILinker.class).to(NullLinker.class);
 
                 // make sure the storage-specific schema is created on setup
                 multibind(binder(), ISchema.class, BlockStorageSchema.class);

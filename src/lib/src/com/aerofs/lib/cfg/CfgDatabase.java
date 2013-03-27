@@ -251,13 +251,13 @@ public class CfgDatabase
             s.executeUpdate("create table " + T_CFG + "(" +
                     C_CFG_KEY + " text not null primary key," +
                     C_CFG_VALUE + " text not null) " + _dbcw.charSet());
-            createRootTable_(s);
+            createRootTableIfAbsent_(s);
         } finally {
             s.close();
         }
     }
 
-    public void createRootTable_(Statement enclosing) throws SQLException
+    public void createRootTableIfAbsent_(Statement enclosing) throws SQLException
     {
         Statement s = enclosing != null ? enclosing : _dbcw.getConnection().createStatement();
         try {
@@ -305,7 +305,7 @@ public class CfgDatabase
         }
     }
 
-    public synchronized Map<SID, String> getRoots() throws SQLException
+    synchronized Map<SID, String> getRoots() throws SQLException
     {
         Statement s = _dbcw.getConnection().createStatement();
         try {
@@ -322,6 +322,24 @@ public class CfgDatabase
         }
     }
 
+    synchronized @Nullable String getRoot(SID sid) throws SQLException
+    {
+        PreparedStatement ps = _dbcw.getConnection().prepareStatement(DBUtil.selectWhere(T_ROOT,
+                C_ROOT_SID + "=?", C_ROOT_PATH));
+        try {
+            ps.setBytes(1, sid.getBytes());
+            ResultSet rs = ps.executeQuery();
+            try {
+                return rs.next() ? rs.getString(1) : null;
+            } finally {
+                rs.close();
+            }
+        } finally {
+            ps.close();
+        }
+    }
+
+    // NB: public only for use in Setup.java
     public synchronized void addRoot(SID sid, String absPath) throws SQLException
     {
         PreparedStatement ps = _dbcw.getConnection().prepareStatement(
@@ -335,6 +353,7 @@ public class CfgDatabase
         }
     }
 
+    // NB: public only for use in Setup.java
     public synchronized void removeRoot(SID sid) throws SQLException
     {
         PreparedStatement ps = _dbcw.getConnection().prepareStatement(
@@ -347,7 +366,7 @@ public class CfgDatabase
         }
     }
 
-    public synchronized void moveRoot(SID sid, String newAbsPath) throws SQLException
+    synchronized void moveRoot(SID sid, String newAbsPath) throws SQLException
     {
         PreparedStatement ps = _dbcw.getConnection().prepareStatement(
                 DBUtil.updateWhere(T_ROOT, C_ROOT_SID + "=?", C_ROOT_PATH));

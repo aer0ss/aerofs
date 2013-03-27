@@ -17,6 +17,7 @@ import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 
+import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.List;
@@ -32,6 +33,22 @@ public class Linker implements ILinker, LinkerRootMap.IListener
     private final CoreScheduler _sched;
     private final INotifier _notifier;
     private final LinkerRootMap _lrm;
+
+    /**
+     * @return whether the name indicate an internal file/folder and should therefore be ignored
+     *
+     * This is used to filter out tag file (.aerofs), aux root (.aerofs.aux) and any other internal
+     * file/folder that might be used in the future (.aerofs.seed comes to mind)
+     */
+    public static boolean isInternalFile(String name)
+    {
+        return name.startsWith(".aerofs");
+    }
+
+    public static boolean isInternalPath(String path)
+    {
+        return path.contains(File.separator + ".aerofs");
+    }
 
     @Inject
     public Linker(CoreScheduler sched, INotifier.Factory factNotifier, LinkerRoot.Factory factLR,
@@ -71,12 +88,14 @@ public class Linker implements ILinker, LinkerRootMap.IListener
         l.info("add root watch {}", root);
         root._watchId = _notifier.addRootWatch_(root);
 
-        _sched.schedule(new AbstractEBSelfHandling() {
+        _sched.schedule(new AbstractEBSelfHandling()
+        {
             @Override
             public void handle_()
             {
                 l.info("begin scan {}", root.sid());
-                root.recursiveScanImmediately_(new ScanCompletionCallback() {
+                root.recursiveScanImmediately_(new ScanCompletionCallback()
+                {
                     @Override
                     public void done_()
                     {

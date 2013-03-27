@@ -86,6 +86,8 @@ public class OSXNotifier implements INotifier, FSEventListener
         assert b != null;
         assert name.length() > root.length();
 
+        if (Linker.isInternalPath(name)) return;
+
         // OSX uses a variant of Normal Form D therefore @param{name} can be in NFD.
         // @see{http://developer.apple.com/library/mac/#qa/qa1173/_index.html}
         // however the paths stored in the MetaDatabase are in Normal Form C.

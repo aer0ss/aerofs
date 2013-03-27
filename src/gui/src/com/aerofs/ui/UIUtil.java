@@ -160,6 +160,7 @@ public class UIUtil
     public static void scheduleUnlinkAndExit()
             throws Exception
     {
+        // TODO: support multiroot and flat linked storage
         if (!L.get().isMultiuser()) {
             // try creating a seed file (use async ritual API to leverage SP call latency)
             ListenableFuture<CreateSeedFileReply> reply = null;
@@ -167,7 +168,7 @@ public class UIUtil
 
             try {
                 try {
-                    reply = ritual.createSeedFile();
+                    reply = ritual.createSeedFile(Cfg.rootSID().toPB());
                 } catch (Exception e) {
                     l.info("failed to create seed file: {}", Util.e(e));
                 }
