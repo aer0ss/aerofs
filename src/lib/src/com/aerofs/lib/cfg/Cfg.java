@@ -10,6 +10,7 @@ import com.aerofs.labeling.L;
 import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.Param;
 import com.aerofs.lib.SecUtil;
+import com.aerofs.lib.StorageType;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.Versions;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
@@ -68,6 +69,7 @@ public class Cfg
     private static byte[] _scrypted;
     private static boolean _inited;
     private static int _portbase;
+    private static @Nullable StorageType _storageType;
 
     private static final long _profilerStartingThreshold;
     private static final CfgDatabase _db = new CfgDatabase();
@@ -115,6 +117,7 @@ public class Cfg
         assert rootAnchor.isAbsolute();
         _absDefaultRootAnchor = rootAnchor.getCanonicalPath();
         _absAuxRoot = absAuxRootForPath(_absDefaultRootAnchor, _did);
+        _storageType = StorageType.fromString(_db.getNullable(Key.STORAGE_TYPE));
 
         _portbase = readPortbase();
         _rootSID = SID.rootSID(_user);
@@ -241,6 +244,20 @@ public class Cfg
     public static SID rootSID()
     {
         return _rootSID;
+    }
+
+    public static StorageType defaultStorageType()
+    {
+        return L.get().isMultiuser()
+                ? (Cfg.db().getNullable(Key.S3_BUCKET_ID) != null
+                           ? StorageType.S3
+                           : StorageType.LOCAL)
+                : StorageType.LINKED;
+    }
+
+    public static StorageType storageType()
+    {
+        return _storageType != null ? _storageType : defaultStorageType();
     }
 
     // SP Daemon support is temporarily disabled. Search the code base for "SP_DID" and references

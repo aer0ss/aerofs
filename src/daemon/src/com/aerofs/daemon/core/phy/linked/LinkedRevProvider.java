@@ -186,12 +186,17 @@ public class LinkedRevProvider implements IPhysicalRevProvider
         }
     }
 
+    String revPath(Path path)
+    {
+        return Util.join(_pathBase, path.sid().toStringFormal(), Util.join(path.elements()));
+    }
+
     // called from LocalStorage
     LinkedRevFile newLocalRevFile_(Path path, String absPath, KIndex kidx) throws IOException
     {
         InjectableFile f = _factFile.create(absPath);
-        RevInfo rev = new RevInfo(Util.join(_pathBase, Util.join(path.removeLast().elements())),
-                f.getName(), kidx.getInt(), f.lastModified(), f.getLengthOrZeroIfNotFile());
+        RevInfo rev = new RevInfo(revPath(path.removeLast()), f.getName(), kidx.getInt(),
+                f.lastModified(), f.getLengthOrZeroIfNotFile());
 
         String pathRev = rev.getAbsolutePath();
 
@@ -206,7 +211,7 @@ public class LinkedRevProvider implements IPhysicalRevProvider
     public Collection<Child> listRevChildren_(Path path)
             throws Exception
     {
-        String auxPath = Util.join(_pathBase, Util.join(path.elements()));
+        String auxPath = revPath(path);
         Set<Child> children = Sets.newHashSet();
 
         InjectableFile parent = _factFile.create(auxPath);
@@ -237,8 +242,7 @@ public class LinkedRevProvider implements IPhysicalRevProvider
         if (path.isEmpty())
             return Collections.emptyList();
 
-        String parentPath = Util.join(path.removeLast().elements());
-        String auxPath = Util.join(_pathBase, parentPath);
+        String auxPath = revPath(path.removeLast());
 
         InjectableFile parent = _factFile.create(auxPath);
         SortedMap<Long, Revision> revisions = Maps.newTreeMap();
@@ -267,9 +271,8 @@ public class LinkedRevProvider implements IPhysicalRevProvider
 
     private InjectableFile getRevFile_(Path path, byte[] index)
     {
-        String auxPath = Util.join(path.elements())
-                + RevisionSuffix.SEPARATOR + BaseUtil.utf2string(index);
-        return _factFile.create(_pathBase, auxPath);
+        String auxPath = revPath(path) + RevisionSuffix.SEPARATOR + BaseUtil.utf2string(index);
+        return _factFile.create(auxPath);
     }
 
     private InjectableFile getExistingRevFile_(Path path, byte[] index)
@@ -300,7 +303,7 @@ public class LinkedRevProvider implements IPhysicalRevProvider
     @Override
     public void deleteAllRevisionsUnder_(Path path) throws Exception
     {
-        InjectableFile dir = _factFile.create(_pathBase, Util.join(path.elements()));
+        InjectableFile dir = _factFile.create(revPath(path));
         dir.deleteOrThrowIfExistRecursively();
     }
 

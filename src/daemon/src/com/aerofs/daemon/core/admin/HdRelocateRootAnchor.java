@@ -83,7 +83,7 @@ public class HdRelocateRootAnchor extends AbstractHdIMC<EIRelocateRootAnchor>
     {
         // Sanity checking.
         RootAnchorUtil.checkNewRootAnchor(absOldRoot, absNewRoot);
-        RootAnchorUtil.checkRootAnchor(absNewRoot, Cfg.absRTRoot(), false);
+        RootAnchorUtil.checkRootAnchor(absNewRoot, Cfg.absRTRoot(), Cfg.storageType(), false);
 
         InjectableFile fNewRoot = _factFile.create(absNewRoot);
         InjectableFile fOldRoot = _factFile.create(absOldRoot);
@@ -114,7 +114,7 @@ public class HdRelocateRootAnchor extends AbstractHdIMC<EIRelocateRootAnchor>
         try {
             relocator.doWork(t);
             Cfg.db().set(Key.ROOT, absNewRoot);
-            Cfg.db().moveRoot_(sid, absNewRoot);
+            Cfg.db().moveRoot(sid, absNewRoot);
             // Since the default behavior is to set the autoexport dir to be the root
             // anchor, when we relocate the data at the root anchor, we also wind up
             // relocating the data in the autoexport folder.  Since the user probably

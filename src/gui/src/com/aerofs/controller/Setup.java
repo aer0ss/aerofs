@@ -16,6 +16,7 @@ import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.SID;
 import com.aerofs.labeling.L;
+import com.aerofs.lib.StorageType;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.cfg.Cfg.PortType;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
@@ -90,7 +91,7 @@ class Setup
      * See setupNewUser's comments for more.
      */
     void setupSingleuser(UserID userId, char[] password, String rootAnchorPath, String deviceName,
-            PBS3Config s3cfg)
+            StorageType storageType, PBS3Config s3cfg)
             throws Exception
     {
         try {
@@ -104,9 +105,10 @@ class Setup
                 RockLog.newEvent(EventType.REINSTALL_CLIENT).sendAsync();
             }
 
-            PreSetupResult res = preSetup(userId, password, rootAnchorPath);
+            PreSetupResult res = preSetup(userId, password, rootAnchorPath, storageType);
 
-            setupSingluserImpl(userId, rootAnchorPath, deviceName, s3cfg, res._scrypted, res._sp);
+            setupSingluserImpl(userId, rootAnchorPath, deviceName, storageType, s3cfg,
+                    res._scrypted, res._sp);
 
             SVClient.sendEventSync(Sv.PBSVEvent.Type.SIGN_RETURNING, "");
 
@@ -118,13 +120,13 @@ class Setup
     }
 
     void setupMultiuser(UserID userId, char[] password, String rootAnchorPath, String deviceName,
-            PBS3Config s3cfg)
+            StorageType storageType, PBS3Config s3cfg)
             throws Exception
     {
         try {
-            PreSetupResult res = preSetup(userId, password, rootAnchorPath);
+            PreSetupResult res = preSetup(userId, password, rootAnchorPath, storageType);
 
-            setupMultiuserImpl(userId, rootAnchorPath, deviceName, s3cfg, res._sp);
+            setupMultiuserImpl(userId, rootAnchorPath, deviceName, storageType, s3cfg, res._sp);
 
             // Send event for S3 Setup
             if (s3cfg != null) {
@@ -150,12 +152,13 @@ class Setup
     /**
      * Perform pre-setup sanity checks and generate information needed by later setup steps
      */
-    private PreSetupResult preSetup(UserID userID, char[] password, String rootAnchorPath)
+    private PreSetupResult preSetup(UserID userID, char[] password, String rootAnchorPath,
+            StorageType storageType)
             throws Exception
     {
         assert !rootAnchorPath.isEmpty();
 
-        RootAnchorUtil.checkRootAnchor(rootAnchorPath, _rtRoot, true);
+        RootAnchorUtil.checkRootAnchor(rootAnchorPath, _rtRoot, storageType, true);
 
         createSettingUpFlagFile();
 
@@ -175,14 +178,14 @@ class Setup
      * @param sp must have been signed in
      */
     private void setupSingluserImpl(UserID userID, String rootAnchorPath, String deviceName,
-            PBS3Config s3config, byte[] scrypted, SPBlockingClient sp)
+            StorageType storageType, PBS3Config s3config, byte[] scrypted, SPBlockingClient sp)
             throws Exception
     {
         assert deviceName != null; // can be empty, but can't be null
 
         DID did = CredentialUtil.registerDeviceAndSaveKeys(userID, scrypted, deviceName, sp);
 
-        initializeConfiguration(userID, did, rootAnchorPath, s3config, scrypted);
+        initializeConfiguration(userID, did, rootAnchorPath, storageType, s3config, scrypted);
 
         setupCommon(rootAnchorPath);
 
@@ -190,7 +193,7 @@ class Setup
     }
 
     private void setupMultiuserImpl(UserID userID, String rootAnchorPath, String deviceName,
-            PBS3Config s3config, SPBlockingClient sp)
+            StorageType storageType, PBS3Config s3config, SPBlockingClient sp)
             throws Exception
     {
         assert deviceName != null; // can be empty, but can't be null
@@ -202,7 +205,7 @@ class Setup
         DID tsDID = CredentialUtil.registerTeamServerDeviceAndSaveKeys(tsUserId, tsScrypted,
                 deviceName, sp);
 
-        initializeConfiguration(tsUserId, tsDID, rootAnchorPath, s3config, tsScrypted);
+        initializeConfiguration(tsUserId, tsDID, rootAnchorPath, storageType, s3config, tsScrypted);
         Cfg.db().set(Key.AUTO_EXPORT_FOLDER, rootAnchorPath);
 
         // sign in with the team server's user ID
@@ -282,9 +285,10 @@ class Setup
         InjectableFile fDB = _factFile.create(_rtRoot, Param.CORE_DATABASE);
         fDB.deleteOrThrowIfExist();
 
-        // Create Root Anchor
-        InjectableFile fRootAnchor = _factFile.create(Cfg.absDefaultRootAnchor());
-        if (!fRootAnchor.exists()) fRootAnchor.mkdirs();
+        if (Cfg.storageType() != StorageType.S3) {
+            // Create Root Anchor
+            _factFile.create(Cfg.absDefaultRootAnchor()).ensureDirExists();
+        }
 
         UI.dm().start();
     }
@@ -293,7 +297,7 @@ class Setup
      * initialize the configuration database and the in-memory Cfg object
      */
     private void initializeConfiguration(UserID userId, DID did, String rootAnchorPath,
-            PBS3Config s3config, byte[] scrypted)
+            StorageType storageType, PBS3Config s3config, byte[] scrypted)
             throws SQLException, IOException, ExFormatError, ExBadCredential, ExNotSetup
     {
         TreeMap<Key, String> map = Maps.newTreeMap();
@@ -301,6 +305,7 @@ class Setup
         map.put(Key.DEVICE_ID, did.toStringFormal());
         map.put(Key.CRED, SecUtil.scrypted2encryptedBase64(scrypted));
         map.put(Key.ROOT, rootAnchorPath);
+        map.put(Key.STORAGE_TYPE, storageType.name());
         map.put(Key.LAST_VER, Cfg.ver());
         map.put(Key.DAEMON_POST_UPDATES, Integer.toString(PostUpdate.DAEMON_POST_UPDATE_TASKS));
         map.put(Key.UI_POST_UPDATES, Integer.toString(PostUpdate.UI_POST_UPDATE_TASKS));
@@ -315,13 +320,12 @@ class Setup
         db.recreateSchema_();
         db.set(map);
 
-        // TODO: distinguish between BlockStorage and FlatLinkedStorage in multiuser setup
-        if (!L.get().isMultiuser()) {
+        if (storageType == StorageType.LINKED && !L.get().isMultiuser()) {
             // make sure the default root anchor is correctly set in the db
             // NB: this does not remove external roots
             SID sid = SID.rootSID(userId);
-            db.removeRoot_(sid);
-            db.addRoot_(sid, rootAnchorPath);
+            db.removeRoot(sid);
+            db.addRoot(sid, rootAnchorPath);
         }
 
         Cfg.writePortbase(_rtRoot, findPortBase());

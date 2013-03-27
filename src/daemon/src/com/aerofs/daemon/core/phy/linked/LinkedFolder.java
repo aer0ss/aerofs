@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.sql.SQLException;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.base.id.SID;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import org.slf4j.Logger;
 
@@ -151,14 +152,16 @@ public class LinkedFolder implements IPhysicalFolder
     }
 
     @Override
-    public void promoteToAnchor_(Trans t) throws IOException, SQLException
+    public void promoteToAnchor_(PhysicalOp op, Trans t) throws IOException, SQLException
     {
+        if (op != PhysicalOp.APPLY) return;
         _s.promoteToAnchor_(_soid, _path, t);
     }
 
     @Override
-    public void demoteToRegularFolder_(Trans t) throws IOException, SQLException
+    public void demoteToRegularFolder_(PhysicalOp op, Trans t) throws IOException, SQLException
     {
+        if (op != PhysicalOp.APPLY) return;
         _s.demoteToRegularFolder_(_soid, _path, t);
     }
 

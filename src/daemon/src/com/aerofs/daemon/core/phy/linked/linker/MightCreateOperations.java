@@ -167,7 +167,7 @@ class MightCreateOperations
         l.info("rename conflict {} {}", oa.soid(), pc);
 
         // can't rename the root
-        assert pc._path.elements().length > 0;
+        assert !pc._path.isEmpty();
         assert pc._path.equalsIgnoreCase(_ds.resolve_(oa)) :
                 "pc._path " + pc._path + " does not match resolved oa " + _ds.resolve_(oa);
 

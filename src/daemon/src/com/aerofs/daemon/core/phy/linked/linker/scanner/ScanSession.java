@@ -5,6 +5,7 @@ import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.first.ScanProgressReporter;
 import com.aerofs.daemon.core.phy.linked.linker.LinkerRoot;
+import com.aerofs.daemon.core.phy.linked.linker.ILinkerFilter;
 import com.aerofs.daemon.core.phy.linked.linker.MightCreate;
 import com.aerofs.daemon.core.phy.linked.linker.MightDelete;
 import com.aerofs.daemon.core.phy.linked.linker.PathCombo;
@@ -60,6 +61,7 @@ class ScanSession
         private final InjectableFile.Factory _factFile;
         private final ProgressIndicators _pi;
         private final ScanProgressReporter _spr;
+        private final ILinkerFilter _filter;
 
         @Inject
         public Factory(DirectoryService ds,
@@ -67,7 +69,8 @@ class ScanSession
                 TransManager tm,
                 TimeoutDeletionBuffer delBuffer,
                 InjectableFile.Factory factFile,
-                ScanProgressReporter spr)
+                ScanProgressReporter spr,
+                ILinkerFilter filter)
         {
             _ds = ds;
             _mc = mc;
@@ -76,6 +79,7 @@ class ScanSession
             _pi = ProgressIndicators.get();  // sigh, this should be injected...
             _delBuffer = delBuffer;
             _factFile = factFile;
+            _filter = filter;
         }
 
         public ScanSession create_(LinkerRoot root, Set<String> absPaths, boolean recursive)
@@ -274,7 +278,11 @@ class ScanSession
 
         if (l.isInfoEnabled()) l.info("on " + soidParent + ":" + pcParent);
 
-        addLogicalChildrenToDeletionBuffer_(soidParent);
+
+        OA oaParent = _f._ds.getOA_(soidParent);
+        if (_f._filter.shouldIgnoreChilren_(pcParent, oaParent)) return 0;
+
+        addLogicalChildrenToDeletionBuffer_(oaParent);
 
         // compose the list of physical children
         String[] nameChildren = _f._factFile.create(pcParent._absPath).list();
@@ -308,11 +316,11 @@ class ScanSession
         return potentialUpdates;
     }
 
-    private void addLogicalChildrenToDeletionBuffer_(SOID soidParent)
+    private void addLogicalChildrenToDeletionBuffer_(OA oaParent)
             throws SQLException, ExNotDir, ExNotFound
     {
         // the caller guarantees that the OA is not null
-        OA oaParent = _f._ds.getOA_(soidParent);
+        SOID soidParent = oaParent.soid();
         if (oaParent.isAnchor()) {
             // assign the anchored store's root folder as the parent. Note that soidParent may be
             // null if the anchor is expelled.

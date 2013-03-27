@@ -9,6 +9,7 @@ import com.aerofs.gui.GUI;
 import com.aerofs.gui.preferences.PreferencesHelper;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.S;
+import com.aerofs.lib.StorageType;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.ritual.RitualBlockingClient;
@@ -24,7 +25,6 @@ import org.eclipse.swt.widgets.Composite;
 
 public class MultiuserCompPreferences extends Composite
 {
-    private final Button _btnAutoExportEnabled;
     public MultiuserCompPreferences(Composite parent)
     {
         super(parent, SWT.NONE);
@@ -44,19 +44,20 @@ public class MultiuserCompPreferences extends Composite
 
         helper.createRelocationLabelAndText();
 
-        // Autoexport (show files on filesystem) row
-        _btnAutoExportEnabled = new Button(this, SWT.CHECK);
-        _btnAutoExportEnabled.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, false, 2, 1));
-        _btnAutoExportEnabled.setText(S.ENABLE_FILESYSTEM_VIEW);
-        _btnAutoExportEnabled.setSelection(Cfg.db().getNullable(Key.AUTO_EXPORT_FOLDER) != null);
-        _btnAutoExportEnabled.addSelectionListener(new SelectionAdapter()
-        {
-            @Override
-            public void widgetSelected(SelectionEvent e)
-            {
-                setExportFolder(_btnAutoExportEnabled.getSelection());
-            }
-        });
+        if (Cfg.storageType() != StorageType.LINKED) {
+            // Autoexport (show files on filesystem) row
+            final Button autoExport = new Button(this, SWT.CHECK);
+            autoExport.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, false, 2, 1));
+            autoExport.setText(S.ENABLE_FILESYSTEM_VIEW);
+            autoExport.setSelection(Cfg.db().getNullable(Key.AUTO_EXPORT_FOLDER) != null);
+            autoExport.addSelectionListener(new SelectionAdapter() {
+                @Override
+                public void widgetSelected(SelectionEvent e)
+                {
+                    setExportFolder(autoExport.getSelection());
+                }
+            });
+        }
 
         // Spinner row
 

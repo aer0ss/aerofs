@@ -42,44 +42,47 @@ public abstract class RootAnchorUtil
      * @throws com.aerofs.lib.ex.ExUIMessage if root anchor filesystem is not supported
      */
     public static void checkRootAnchor(String rootAnchor, String rtRoot,
-            boolean allowNonEmptyFolder)
+            StorageType storageType, boolean allowNonEmptyFolder)
             throws IOException, ExNoPerm, ExNotDir, ExAlreadyExist, ExUIMessage
     {
-        File fRootAnchor = new File(rootAnchor);
+        // S3 storage does not need a valid root anchor (it does need a valid aux root though...)
+        if (storageType != StorageType.S3) {
+            File fRootAnchor = new File(rootAnchor);
 
-        // Check if it's a file or a non-empty folder
-        if (fRootAnchor.isFile()) {
-            throw new ExNotDir("A file at the desired location {} already exists", fRootAnchor);
+            // Check if it's a file or a non-empty folder
+            if (fRootAnchor.isFile()) {
+                throw new ExNotDir("A file at the desired location {} already exists", fRootAnchor);
 
-        } else if (!allowNonEmptyFolder) {
-            String[] children = fRootAnchor.list();
-            // children is null if fRootAnchor is not a directory.
+            } else if (!allowNonEmptyFolder) {
+                String[] children = fRootAnchor.list();
+                // children is null if fRootAnchor is not a directory.
 
-            // NOTE: (GS) This can be a problem on OS X and Windows since it's very likely that the
-            // user has .DS_Store, Icon\r, desktop.ini, Thumbs.db, or some other hidden system file.
-            // We should probably do something to handle those gracefully.
-            if (children != null && children.length > 0) {
-                throw new ExAlreadyExist(rootAnchor + " is a non-empty folder");
+                // NOTE: (GS) This can be a problem on OS X and Windows since it's very likely that the
+                // user has .DS_Store, Icon\r, desktop.ini, Thumbs.db, or some other hidden system file.
+                // We should probably do something to handle those gracefully.
+                if (children != null && children.length > 0) {
+                    throw new ExAlreadyExist(rootAnchor + " is a non-empty folder");
+                }
             }
-        }
 
-        File fToCheck = fRootAnchor.exists() ? fRootAnchor : fRootAnchor.getParentFile();
+            File fToCheck = fRootAnchor.exists() ? fRootAnchor : fRootAnchor.getParentFile();
 
-        // Check if we have read and write permissions
-        // Don't bother checking on Windows because:
-        //   - Java reports both false positives and false negatives on Windows
-        //   - The file picker dialog will warn the user if he tries to pick a directory to which
-        //     he doesn't have permissions
-        if (!OSUtil.isWindows()) {
-            if (!fToCheck.canRead()) throwExNoPerm(Perm.READ, fToCheck);
-            if (!fToCheck.canWrite()) throwExNoPerm(Perm.WRITE, fToCheck);
-        }
+            // Check if we have read and write permissions
+            // Don't bother checking on Windows because:
+            //   - Java reports both false positives and false negatives on Windows
+            //   - The file picker dialog will warn the user if he tries to pick a directory to which
+            //     he doesn't have permissions
+            if (!OSUtil.isWindows()) {
+                if (!fToCheck.canRead()) throwExNoPerm(Perm.READ, fToCheck);
+                if (!fToCheck.canWrite()) throwExNoPerm(Perm.WRITE, fToCheck);
+            }
 
-        // Check if it's a supported filesystem. We only support filesystems that have persistent
-        // i-node numbers. This is to allow the linker to work propoerly.
-        // This is not needed for Mutliuser.
-        if (!L.get().isMultiuser() && Cfg.useFSTypeCheck(rtRoot)) {
-            checkFilesystemType(rtRoot, fToCheck);
+            // Check if it's a supported filesystem. We only support filesystems that have persistent
+            // i-node numbers. This is to allow the linker to work propoerly.
+            // This is not needed for Mutliuser.
+            if (Cfg.useFSTypeCheck(rtRoot)) {
+                checkFilesystemType(rtRoot, fToCheck);
+            }
         }
 
         checkAuxRoot(rootAnchor);

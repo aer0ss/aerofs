@@ -2,7 +2,7 @@
  * Copyright (c) Air Computing Inc., 2013.
  */
 
-package com.aerofs.daemon.core.acl;
+package com.aerofs.daemon.core.multiplicity.singleuser;
 
 import com.aerofs.base.BaseParam.SP;
 import com.aerofs.base.Loggers;
@@ -34,7 +34,7 @@ import java.util.Set;
  * When an anchor is deleted, the local user should automatically leave the corresponding shared
  * folder (mostly to avoid automatically re-joining it when a new device is installed).
  */
-public class SharedFolderAutoLeaver extends DirectoryServiceAdapter
+class SharedFolderAutoLeaver extends DirectoryServiceAdapter
 {
     private final Logger l = Loggers.getLogger(SharedFolderAutoLeaver.class);
 

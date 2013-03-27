@@ -23,23 +23,23 @@ public class CfgAbsRoots
         _db = db;
     }
 
-    public Map<SID, String> get_() throws SQLException
+    public Map<SID, String> get() throws SQLException
     {
-        return _db.getRoots_();
+        return _db.getRoots();
     }
 
-    public void add_(SID sid, String absPath) throws SQLException
+    public void add(SID sid, String absPath) throws SQLException
     {
-        _db.addRoot_(sid, absPath);
+        _db.addRoot(sid, absPath);
     }
 
-    public void remove_(SID sid) throws SQLException
+    public void remove(SID sid) throws SQLException
     {
-        _db.removeRoot_(sid);
+        _db.removeRoot(sid);
     }
 
-    public void move_(SID sid, String newAbsPath) throws SQLException
+    public void move(SID sid, String newAbsPath) throws SQLException
     {
-        _db.moveRoot_(sid, newAbsPath);
+        _db.moveRoot(sid, newAbsPath);
     }
 }

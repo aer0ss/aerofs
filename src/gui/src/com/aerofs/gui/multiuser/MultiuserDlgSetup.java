@@ -14,6 +14,7 @@ import com.aerofs.gui.setup.AbstractDlgSetup;
 import com.aerofs.gui.setup.AbstractDlgSetupAdvanced;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.SecUtil;
+import com.aerofs.lib.StorageType;
 import com.aerofs.proto.ControllerProto.PBS3Config;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.UI;
@@ -23,7 +24,7 @@ public class MultiuserDlgSetup extends AbstractDlgSetup
 {
     private S3Config _s3Config;
     private MultiuserDlgSetupAdvanced _advanced;
-    private int _storageChoice = MultiuserDlgSetupAdvanced.LOCAL_STORAGE_OPTION;
+    private StorageType _storageChoice = StorageType.LOCAL;
 
     public MultiuserDlgSetup(Shell parentShell)
             throws Exception
@@ -36,11 +37,8 @@ public class MultiuserDlgSetup extends AbstractDlgSetup
             throws Exception
     {
         PBS3Config config = getS3Config(UserID.fromExternal(userID));
-        // TODO: (PH) We should set absDefaultRootAnchor to null if we are an S3 installation, but
-        // the proto requires it. Eventually this results in an empty root anchor being created.
-        String absRootAnchor = getAbsRootAnchor();
-        UI.controller().setupMultiuser(userID, new String(passwd), absRootAnchor,
-                getDeviceName(), config);
+        UI.controller().setupMultiuser(userID, new String(passwd), getAbsRootAnchor(),
+                getDeviceName(), _storageChoice.name(), config);
     }
 
     @Override
@@ -56,13 +54,14 @@ public class MultiuserDlgSetup extends AbstractDlgSetup
 
     protected AbstractDlgSetupAdvanced createAdvancedSetupDialog()
     {
-        _advanced = new MultiuserDlgSetupAdvanced(getShell(), getDeviceName(), getAbsRootAnchor(), _s3Config, _storageChoice);
+        _advanced = new MultiuserDlgSetupAdvanced(getShell(), getDeviceName(), getAbsRootAnchor(),
+                _s3Config, _storageChoice);
         return _advanced;
     }
 
     private PBS3Config getS3Config(UserID userID)
     {
-        if (_storageChoice == MultiuserDlgSetupAdvanced.S3_STORAGE_OPTION) {
+        if (_storageChoice == StorageType.S3) {
             String scrypted = Base64.encodeBytes(
                     SecUtil.scrypt(_s3Config.s3Passphrase.toCharArray(), userID));
             return PBS3Config.newBuilder()

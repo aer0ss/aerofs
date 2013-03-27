@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.phy.linked.linker;
 
+import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.phy.linked.linker.MightCreate.Result;
 import com.aerofs.daemon.core.phy.linked.linker.MightCreateOperations.Operation;
 import com.aerofs.daemon.core.mock.logical.MockDS;
@@ -114,6 +115,14 @@ public class TestMightCreate extends AbstractMightCreateTest
     public void shouldIgnoreFileWithExpelledParent() throws Exception
     {
         Assert.assertEquals(Result.IGNORED, mightCreate("d-expelled/f", generateFileFnt()));
+    }
+
+    @Test
+    public void shouldHonorFilter() throws Exception
+    {
+        OA oa = ds.getOA_(ds.resolveNullable_(mkpath("d0")));
+        when(mcf.shouldIgnoreChilren_(any(PathCombo.class), eq(oa))).thenReturn(true);
+        Assert.assertEquals(Result.IGNORED, mightCreate("d0/f", generateFileFnt()));
     }
 
     @Test

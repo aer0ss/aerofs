@@ -2,7 +2,7 @@
  * Copyright (c) Air Computing Inc., 2013.
  */
 
-package com.aerofs.daemon.core.acl;
+package com.aerofs.daemon.core.multiplicity.singleuser;
 
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.lib.db.AbstractDatabase;
@@ -22,7 +22,7 @@ import static com.aerofs.daemon.lib.db.CoreSchema.*;
 /**
  * Database backend for {@link SharedFolderAutoLeaver}
  */
-public class SharedFolderLeaveQueueDatabase extends AbstractDatabase
+class SharedFolderLeaveQueueDatabase extends AbstractDatabase
 {
     @Inject
     public SharedFolderLeaveQueueDatabase(CoreDBCW dbcw)

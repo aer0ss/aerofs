@@ -10,6 +10,7 @@ import com.aerofs.gui.Images;
 import com.aerofs.gui.setup.AbstractDlgSetup;
 import com.aerofs.gui.setup.AbstractDlgSetupAdvanced;
 import com.aerofs.labeling.L;
+import com.aerofs.lib.StorageType;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.swt.widgets.Shell;
 
@@ -32,8 +33,9 @@ public class SingleuserDlgSetup extends AbstractDlgSetup
     public void setup(String userID, char[] passwd)
             throws Exception
     {
+        // TODO: support other storage types?
         UI.controller().setupSingleuser(userID, new String(passwd), getAbsRootAnchor(),
-                getDeviceName(), null);
+                getDeviceName(), StorageType.LINKED.name(), null);
 
         // setup shell extension
         while (true) {

@@ -143,9 +143,9 @@ public class TestStoreDeleter extends AbstractTest
     {
         delete(PhysicalOp.APPLY);
 
-        verifyStoreDeletion(sidxRoot);
-        verifyStoreDeletion(sidxChild);
-        verifyStoreDeletion(sidxGrandChild);
+        verifyStoreDeletion(sidxRoot, sidRoot);
+        verifyStoreDeletion(sidxChild, sidChild);
+        verifyStoreDeletion(sidxGrandChild, sidGrandChild);
     }
 
     @Test
@@ -174,8 +174,8 @@ public class TestStoreDeleter extends AbstractTest
     @Test (expected = ExArbitrary.class)
     public void shouldThrowOnException() throws Exception
     {
-        doThrow(new ExArbitrary())
-                .when(ps).deleteStore_(eq(sidxGrandChild), any(PhysicalOp.class), eq(t));
+        doThrow(new ExArbitrary()).when(ps).deleteStore_(
+                eq(sidxGrandChild), eq(sidGrandChild),any(PhysicalOp.class), eq(t));
 
         delete(PhysicalOp.APPLY);
     }
@@ -185,9 +185,9 @@ public class TestStoreDeleter extends AbstractTest
         sd.removeParentStoreReference_(sidxRoot, sidxRootParent, pOldRoot, op, t);
     }
 
-    private void verifyStoreDeletion(SIndex sidx) throws SQLException, IOException
+    private void verifyStoreDeletion(SIndex sidx, SID sid) throws SQLException, IOException
     {
-        verify(ps).deleteStore_(eq(sidx), any(PhysicalOp.class), eq(t));
+        verify(ps).deleteStore_(eq(sidx), eq(sid), any(PhysicalOp.class), eq(t));
         verify(_operators).runAll_(sidx, t);
     }
 }

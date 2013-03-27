@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.sql.SQLException;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.phy.linked.linker.LinkerRootMap;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.Param;
@@ -108,13 +109,14 @@ public class LinkedStorage implements IPhysicalStorage
     }
 
     @Override
-    public void createStore_(SIndex sidx, Trans t) throws IOException, SQLException
+    public void createStore_(SIndex sidx, SID sid, Trans t) throws IOException, SQLException
     {
 
     }
 
     @Override
-    public void deleteStore_(SIndex sidx, PhysicalOp op, Trans t) throws IOException
+    public void deleteStore_(SIndex sidx, SID sid, PhysicalOp op, Trans t)
+            throws IOException, SQLException
     {
         if (op != PhysicalOp.APPLY) return;
 
@@ -125,19 +127,16 @@ public class LinkedStorage implements IPhysicalStorage
         deleteFiles_(Param.AuxFolder.PREFIX, prefix);
     }
 
-    void promoteToAnchor_(SOID soid, Path path, Trans t)
-            throws SQLException, IOException
+    void promoteToAnchor_(SOID soid, Path path, Trans t) throws SQLException, IOException
     {
-        assert soid.oid().isRoot() : soid + " " + path;
-        if (!path.isEmpty()) _sfti.addTagFileAndIconIn(soid.sidx(), path, t);
+        _sfti.addTagFileAndIconIn(SID.anchorOID2storeSID(soid.oid()),
+                path.toAbsoluteString(_lrm.absRootAnchor_(path.sid())), t);
     }
 
-    void demoteToRegularFolder_(SOID soid, Path path, Trans t)
-            throws SQLException, IOException
+    void demoteToRegularFolder_(SOID soid, Path path, Trans t) throws SQLException, IOException
     {
-        assert soid.oid().isRoot() : soid + " " + path;
-        assert !path.isEmpty();
-        _sfti.removeTagFileAndIconIn(soid.sidx(), path, t);
+        _sfti.removeTagFileAndIconIn(SID.anchorOID2storeSID(soid.oid()),
+                path.toAbsoluteString(_lrm.absRootAnchor_(path.sid())), t);
     }
 
     private void deleteFiles_(AuxFolder af, final String prefix) throws IOException

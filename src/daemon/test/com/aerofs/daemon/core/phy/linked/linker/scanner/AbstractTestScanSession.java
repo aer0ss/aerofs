@@ -8,6 +8,7 @@ import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.first.ScanProgressReporter;
 import com.aerofs.daemon.core.phy.linked.linker.LinkerRoot;
+import com.aerofs.daemon.core.phy.linked.linker.ILinkerFilter;
 import com.aerofs.daemon.core.phy.linked.linker.MightCreate;
 import com.aerofs.daemon.core.phy.linked.linker.TimeoutDeletionBuffer;
 import com.aerofs.daemon.core.phy.linked.linker.TimeoutDeletionBuffer.Holder;
@@ -33,6 +34,7 @@ public abstract class AbstractTestScanSession extends AbstractTest
     @Mock Holder h;
     @Mock InjectableFile.Factory factFile;
     @Mock ScanProgressReporter spr;
+    @Mock ILinkerFilter filter;
     @InjectMocks ScanSession.Factory factSS;
 
     protected final String pRoot;

@@ -106,7 +106,10 @@ public class CfgDatabase
         MULTIUSER_CONTACT_EMAIL("multiuser_contact_email", ""),
 
         // first start of the daemon
-        FIRST_START("first_start", true)
+        FIRST_START("first_start", true),
+
+        // storage type
+        STORAGE_TYPE("storage_type", null)
         ;
 
         private final String _str;
@@ -302,7 +305,7 @@ public class CfgDatabase
         }
     }
 
-    public Map<SID, String> getRoots_() throws SQLException
+    public synchronized Map<SID, String> getRoots() throws SQLException
     {
         Statement s = _dbcw.getConnection().createStatement();
         try {
@@ -319,7 +322,7 @@ public class CfgDatabase
         }
     }
 
-    public void addRoot_(SID sid, String absPath) throws SQLException
+    public synchronized void addRoot(SID sid, String absPath) throws SQLException
     {
         PreparedStatement ps = _dbcw.getConnection().prepareStatement(
                 DBUtil.insert(T_ROOT, C_ROOT_SID, C_ROOT_PATH));
@@ -332,7 +335,7 @@ public class CfgDatabase
         }
     }
 
-    public void removeRoot_(SID sid) throws SQLException
+    public synchronized void removeRoot(SID sid) throws SQLException
     {
         PreparedStatement ps = _dbcw.getConnection().prepareStatement(
                 DBUtil.deleteWhere(T_ROOT, C_ROOT_SID + "=?"));
@@ -344,7 +347,7 @@ public class CfgDatabase
         }
     }
 
-    public void moveRoot_(SID sid, String newAbsPath) throws SQLException
+    public synchronized void moveRoot(SID sid, String newAbsPath) throws SQLException
     {
         PreparedStatement ps = _dbcw.getConnection().prepareStatement(
                 DBUtil.updateWhere(T_ROOT, C_ROOT_SID + "=?", C_ROOT_PATH));

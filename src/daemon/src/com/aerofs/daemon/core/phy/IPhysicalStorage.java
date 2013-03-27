@@ -3,6 +3,7 @@ package com.aerofs.daemon.core.phy;
 import java.io.IOException;
 import java.sql.SQLException;
 
+import com.aerofs.base.id.SID;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.id.SIndex;
@@ -44,7 +45,7 @@ public interface IPhysicalStorage
      * NB: No assumptions should be made about pathes. Any code that require path information
      * should take place in the folder to anchor promotion method
      */
-    void createStore_(SIndex sidx, Trans t) throws IOException, SQLException;
+    void createStore_(SIndex sidx, SID sid, Trans t) throws IOException, SQLException;
 
     /**
      * Perform necessary operations on the physical storage for deleting a store. The implementation
@@ -53,5 +54,5 @@ public interface IPhysicalStorage
      * NB: No assumptions should be made about pathes. All physical objects in the store are deleted
      * prior to this method being called
      */
-    void deleteStore_(SIndex sidx, PhysicalOp op, Trans t) throws IOException, SQLException;
+    void deleteStore_(SIndex sidx, SID sid, PhysicalOp op, Trans t) throws IOException, SQLException;
 }

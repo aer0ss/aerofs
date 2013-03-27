@@ -856,6 +856,7 @@ public class TestBlockStorage extends AbstractBlockTest
     public void shouldRemoveFilesWhenDeletingStore() throws Exception
     {
         SIndex sidx = new SIndex(1);
+        SID sid = SID.generate();
         long id = bsdb.getOrCreateFileIndex_("1-foo", t);
 
         // setup db: 1 file with 1 chunk
@@ -877,7 +878,7 @@ public class TestBlockStorage extends AbstractBlockTest
             }
         }).when(t).addListener_(any(ITransListener.class));
 
-        bs.deleteStore_(sidx, PhysicalOp.APPLY, t);
+        bs.deleteStore_(sidx, sid, PhysicalOp.APPLY, t);
 
         // check that block was deref'ed
         Assert.assertEquals(0, bsdb.getBlockCount_(b._key));

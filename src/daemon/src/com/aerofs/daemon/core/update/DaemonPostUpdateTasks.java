@@ -54,7 +54,8 @@ public class DaemonPostUpdateTasks
             new DPUTRenameRootDirs(dbcw),
             null,  // used to be DPUTFixExpelledAlias
             new DPUTFixExpelledAlias(dbcw),
-            new DPUTUpdateCfgDatabaseForMultiroot(_cfgDB)
+            new DPUTUpdateCfgDatabaseForMultiroot(_cfgDB),
+            new DPUTMigrateRevisionForMultiRoot(absAuxRoot)
             // new tasks go here
         };
 

@@ -22,6 +22,7 @@ import com.aerofs.lib.LogUtil;
 import com.aerofs.lib.LogUtil.Level;
 import com.aerofs.lib.Param;
 import com.aerofs.lib.Path;
+import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgAbsAuxRoot;
 import com.aerofs.lib.cfg.CfgAbsRoots;
 import com.aerofs.lib.cfg.CfgStoragePolicy;
@@ -95,7 +96,9 @@ public class TestLinkedStorage extends AbstractTest
         dataDir = factFile.create(rootDir, "data");
         dataDir.mkdirs();
         InjectableFile _auxDir = factFile.create(rootDir, Param.AUXROOT_PREFIX);
-        revDir = factFile.create(_auxDir, Param.AuxFolder.REVISION._name);
+        InjectableFile _revRootDir = factFile.create(_auxDir, Param.AuxFolder.REVISION._name);
+        revDir = factFile.create(_revRootDir, rootSID.toStringFormal());
+        revDir.mkdirs();
 
         // these mocks are used to set up the LinkedStorage but also when
         // committing/ending transactions.

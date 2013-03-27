@@ -93,16 +93,14 @@ public class ImmigrantCreator implements IImmigrantCreator
                     throws SQLException, IOException, ExNotFound, ExAlreadyExist, ExNotDir,
                     ExStreamInvalid
             {
+                // do not walk trash
+                if (oaFrom.soid().oid().isTrash()) return null;
+
                 // when walking across store boundary (i.e through an anchor), we do not need
                 // to re-create the root dir in the destination, however we need to make sure
                 // any physical trace of the former anchor disappears
-                if (oaFrom.soid().oid().isRoot()) {
-                    _ps.newFolder_(oaFrom.soid(), _ds.resolve_(soidToParent))
-                            .demoteToRegularFolder_(t);
-                    return soidToParent;
-                }
-                // do not walk trash
-                if (oaFrom.soid().oid().isTrash()) return null;
+                if (oaFrom.soid().oid().isRoot()) return soidToParent;
+                if (oaFrom.isAnchor()) oaFrom.physicalFolder().demoteToRegularFolder_(op, t);
 
                 SOID soidTo = new SOID(soidToParent.sidx(), migratedOID(oaFrom.soid().oid()));
                 String name = soidFromRoot.equals(oaFrom.soid()) ? toRootName : oaFrom.name();

@@ -3,6 +3,7 @@ package com.aerofs.daemon.core.phy.linked.linker;
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
+import com.aerofs.daemon.core.phy.linked.linker.ILinkerFilter.AcceptAll;
 import com.aerofs.daemon.core.phy.linked.linker.MightCreate.Result;
 import com.aerofs.daemon.core.mock.logical.MockDir;
 import com.aerofs.daemon.core.mock.logical.MockFile;
@@ -10,7 +11,6 @@ import com.aerofs.daemon.core.mock.logical.MockRoot;
 import com.aerofs.daemon.core.mock.physical.MockPhysicalDir;
 import com.aerofs.daemon.core.mock.physical.MockPhysicalFile;
 import com.aerofs.daemon.core.phy.linked.SharedFolderTagFileAndIcon;
-import com.aerofs.daemon.core.phy.linked.linker.scanner.ScanSessionQueue;
 import com.aerofs.daemon.core.store.SIDMap;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
@@ -25,9 +25,7 @@ import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.testlib.AbstractTest;
 
 import com.google.common.collect.Sets;
-import org.junit.After;
 import org.junit.Before;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
@@ -110,7 +108,7 @@ public abstract class AbstractTestMightCreate extends AbstractTest
 
         when(lrm.absRootAnchor_(rootSID)).thenReturn(pRoot);
 
-        mc = new MightCreate(il, ds, dr, sfti, mcop, lrm);
+        mc = new MightCreate(il, ds, dr, sfti, mcop, lrm, new AcceptAll());
 
         osRoot.mock(factFile, dr);
         logicRoot.mock(rootSID, ds, null, null);

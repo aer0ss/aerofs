@@ -221,16 +221,17 @@ public class ACLSynchronizer
             // create a new SIndex if needed
             SIndex sidx = getOrCreateSIndex_(sid, t);
 
-            if (!stores.contains(sidx) && !noAutoJoin) {
+            // invalidates the cache
+            // NB: needs to be done *BEFORE* auto-join
+            _lacl.set_(sidx, roles, t);
+
+            if (!stores.contains(sidx) && (_sidx2sid.getNullable_(sidx) == null) && !noAutoJoin) {
                 // not known and accessible: auto-join
                 assert serverACLReturn._newStoreNames.containsKey(sid) : sid;
                 String folderName = serverACLReturn._newStoreNames.get(sid);
                 _storeJoiner.joinStore_(sidx, sid, folderName, t);
             }
             stores.remove(sidx);
-
-            // invalidates the cache
-            _lacl.set_(sidx, roles, t);
         }
 
         // leave stores to which we no longer have access

@@ -6,6 +6,7 @@ import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.DirectoryService.ObjectWalkerAdapter;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.migration.IImmigrantDetector;
+import com.aerofs.daemon.core.phy.IPhysicalFolder;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.store.StoreCreator;
 import com.aerofs.daemon.lib.db.trans.Trans;
@@ -76,9 +77,11 @@ class ExpelledToAdmittedAdjuster implements IExpulsionAdjuster
                 case ANCHOR:
                     boolean immigrated = _imd.detectAndPerformImmigration_(oa, op, t);
                     if (!immigrated) {
-                        oa.physicalFolder().create_(op, t);
-                        SID sid = SID.anchorOID2storeSID(oa.soid().oid());
-                        _sc.addParentStoreReference_(sid, oa.soid().sidx(), _ds.resolve_(oa), t);
+                        IPhysicalFolder pf = oa.physicalFolder();
+                        pf.create_(op, t);
+                        _sc.addParentStoreReference_(SID.anchorOID2storeSID(oa.soid().oid()),
+                                oa.soid().sidx(), t);
+                        pf.promoteToAnchor_(op, t);
                     }
                     return null;
                 default:

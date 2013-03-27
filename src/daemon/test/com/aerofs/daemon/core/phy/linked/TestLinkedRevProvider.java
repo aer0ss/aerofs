@@ -28,15 +28,15 @@ import static com.aerofs.lib.LogUtil.Level;
 public class TestLinkedRevProvider extends AbstractTest
 {
     @Rule
-    public TemporaryFolder _tempFolder = new TemporaryFolder();
+    public TemporaryFolder tempFolder = new TemporaryFolder();
 
-    private InjectableFile.Factory _factFile;
-    private InjectableFile _rootDir;
-    private InjectableFile _dataDir;
-    private InjectableFile _auxDir;
-    private InjectableFile _revDir;
-    private PrintWriter _out;
-    private LinkedRevProvider _localRevProvider;
+    private InjectableFile.Factory factFile;
+    private InjectableFile rootDir;
+    private InjectableFile dataDir;
+    private InjectableFile auxDir;
+    private InjectableFile revDir;
+    private PrintWriter out;
+    private LinkedRevProvider localRevProvider;
 
     final SID rootSID = SID.generate();
 
@@ -44,71 +44,73 @@ public class TestLinkedRevProvider extends AbstractTest
     public void before() throws Exception
     {
         LogUtil.setLevel(TestLinkedRevProvider.class, Level.INFO);
-        _out = new PrintWriter(System.out);
+        out = new PrintWriter(System.out);
 
-        _factFile = new InjectableFile.Factory();
+        factFile = new InjectableFile.Factory();
 
-        _rootDir = _factFile.create(_tempFolder.getRoot().getPath());
-        _dataDir = _factFile.create(_rootDir, "data");
-        _dataDir.mkdirs();
-        _auxDir = _factFile.create(_rootDir, "aux");
-        _revDir = _factFile.create(_auxDir, Param.AuxFolder.REVISION._name);
+        rootDir = factFile.create(tempFolder.getRoot().getPath());
+        dataDir = factFile.create(rootDir, "data");
+        dataDir.mkdirs();
+        InjectableFile auxDir = factFile.create(rootDir, Param.AUXROOT_PREFIX);
+        InjectableFile revRootDir = factFile.create(auxDir, Param.AuxFolder.REVISION._name);
+        revDir = factFile.create(revRootDir, rootSID.toStringFormal());
+        revDir.mkdirs();
 
-        _localRevProvider = new LinkedRevProvider(_factFile);
-        _localRevProvider._startCleanerScheduler = false;
-        _localRevProvider.init_(_auxDir.getPath());
+        localRevProvider = new LinkedRevProvider(factFile);
+        localRevProvider._startCleanerScheduler = false;
+        localRevProvider.init_(auxDir.getPath());
     }
 
     @After
     public void after() throws Exception
     {
         LogUtil.setLevel(TestLinkedRevProvider.class, Level.NONE);
-        _out.flush();
+        out.flush();
     }
 
     @Test
     public void shouldSaveRevFileInAuxDirectory() throws Exception
     {
-        InjectableFile test1 = _factFile.create(_dataDir, "test1");
+        InjectableFile test1 = factFile.create(dataDir, "test1");
         writeFile(test1, "test1");
-        LinkedRevFile localRevFile = _localRevProvider.newLocalRevFile_(
-            Path.fromAbsoluteString(rootSID, _dataDir.getPath(), test1.getPath()), test1.getPath(),
+        LinkedRevFile localRevFile = localRevProvider.newLocalRevFile_(
+            Path.fromAbsoluteString(rootSID, dataDir.getPath(), test1.getPath()), test1.getPath(),
             new KIndex(0));
         Assert.assertTrue(test1.isFile());
-        Assert.assertEquals(1, _dataDir.list().length);
-        Assert.assertEquals(0, _revDir.list().length);
+        Assert.assertEquals(1, dataDir.list().length);
+        Assert.assertEquals(0, revDir.list().length);
         localRevFile.save_();
         Assert.assertTrue(!test1.isFile());
-        Assert.assertEquals(0, _dataDir.list().length);
-        Assert.assertEquals(1, _revDir.list().length);
+        Assert.assertEquals(0, dataDir.list().length);
+        Assert.assertEquals(1, revDir.list().length);
     }
 
     @Test
     public void shouldRollbackToOriginalLocation() throws Exception
     {
-        InjectableFile test1 = _factFile.create(_dataDir, "test1");
+        InjectableFile test1 = factFile.create(dataDir, "test1");
         writeFile(test1, "test1");
-        LinkedRevFile localRevFile = _localRevProvider.newLocalRevFile_(
-            Path.fromAbsoluteString(rootSID, _dataDir.getPath(), test1.getPath()), test1.getPath(),
+        LinkedRevFile localRevFile = localRevProvider.newLocalRevFile_(
+            Path.fromAbsoluteString(rootSID, dataDir.getPath(), test1.getPath()), test1.getPath(),
             new KIndex(0));
         Assert.assertTrue(test1.isFile());
-        Assert.assertEquals(1, _dataDir.list().length);
-        Assert.assertEquals(0, _revDir.list().length);
+        Assert.assertEquals(1, dataDir.list().length);
+        Assert.assertEquals(0, revDir.list().length);
         localRevFile.save_();
         Assert.assertTrue(!test1.isFile());
-        Assert.assertEquals(0, _dataDir.list().length);
-        Assert.assertEquals(1, _revDir.list().length);
+        Assert.assertEquals(0, dataDir.list().length);
+        Assert.assertEquals(1, revDir.list().length);
         localRevFile.rollback_();
         Assert.assertTrue(test1.isFile());
-        Assert.assertEquals(1, _dataDir.list().length);
-        Assert.assertEquals(0, _revDir.list().length);
+        Assert.assertEquals(1, dataDir.list().length);
+        Assert.assertEquals(0, revDir.list().length);
     }
 
     @Test
     public void shouldCleanOldFiles() throws Exception
     {
         final List<InjectableFile> deletedFiles = Lists.newArrayList();
-        LinkedRevProvider.Cleaner cleaner = _localRevProvider.new Cleaner() {
+        LinkedRevProvider.Cleaner cleaner = localRevProvider.new Cleaner() {
             @Override
             long getSpaceLimit()
             {
@@ -130,26 +132,26 @@ public class TestLinkedRevProvider extends AbstractTest
 
         Date now = new Date();
         Date backThen = new Date(now.getTime() - age);
-        InjectableFile test1 = _factFile.create(_dataDir, "test1");
+        InjectableFile test1 = factFile.create(dataDir, "test1");
         writeFile(test1, "test1");
         test1.setLastModified(backThen.getTime());
 
         test1.setLastModified(backThen.getTime());
-        LinkedRevFile localRevFile = _localRevProvider.newLocalRevFile_(
-            Path.fromAbsoluteString(rootSID, _dataDir.getPath(), test1.getPath()), test1.getPath(),
+        LinkedRevFile localRevFile = localRevProvider.newLocalRevFile_(
+            Path.fromAbsoluteString(rootSID, dataDir.getPath(), test1.getPath()), test1.getPath(),
             new KIndex(0));
         Assert.assertTrue(test1.isFile());
-        Assert.assertEquals(1, _dataDir.list().length);
-        Assert.assertEquals(0, _revDir.list().length);
+        Assert.assertEquals(1, dataDir.list().length);
+        Assert.assertEquals(0, revDir.list().length);
         localRevFile.save_();
         Assert.assertTrue(!test1.isFile());
-        Assert.assertEquals(0, _dataDir.list().length);
-        Assert.assertEquals(1, _revDir.list().length);
+        Assert.assertEquals(0, dataDir.list().length);
+        Assert.assertEquals(1, revDir.list().length);
         cleaner.run();
         Assert.assertEquals(1, deletedFiles.size());
         Assert.assertTrue(!test1.isFile());
-        Assert.assertEquals(0, _dataDir.list().length);
-        Assert.assertEquals(0, _revDir.list().length);
+        Assert.assertEquals(0, dataDir.list().length);
+        Assert.assertEquals(0, revDir.list().length);
     }
 
     private InjectableFile makeNestedDirs(InjectableFile base, int i, int len)
@@ -162,7 +164,7 @@ public class TestLinkedRevProvider extends AbstractTest
         InjectableFile dir = base;
         for (int n = 1; n < chars.length; n += 2) {
             String sub = new String(chars, 0, Math.min(n + 2, chars.length));
-            dir = _factFile.create(dir, sub);
+            dir = factFile.create(dir, sub);
             dir.mkdirIgnoreError();
         }
         return dir;
@@ -171,7 +173,7 @@ public class TestLinkedRevProvider extends AbstractTest
     @Test
     public void shouldCleanLotsOfFilesWithExternalSorter() throws Exception
     {
-        LinkedRevProvider.Cleaner cleaner = _localRevProvider.new Cleaner() {
+        LinkedRevProvider.Cleaner cleaner = localRevProvider.new Cleaner() {
             @Override
             long getSpaceLimit()
             {
@@ -191,14 +193,14 @@ public class TestLinkedRevProvider extends AbstractTest
         int dirLen = String.valueOf(numDirs - 1).length();
 
         for (int di = 0; di < numDirs; ++di) {
-            InjectableFile dir = makeNestedDirs(_dataDir, di, dirLen);
+            InjectableFile dir = makeNestedDirs(dataDir, di, dirLen);
             for (int fi = 0; fi < numFiles; ++fi) {
                 String name = "f" + fi;
-                InjectableFile file = _factFile.create(dir, name);
+                InjectableFile file = factFile.create(dir, name);
                 writeFile(file, name);
                 file.setLastModified(backThen.getTime());
-                LinkedRevFile localRevFile = _localRevProvider.newLocalRevFile_(
-                    Path.fromAbsoluteString(rootSID, _dataDir.getPath(), file.getPath()), file.getPath(),
+                LinkedRevFile localRevFile = localRevProvider.newLocalRevFile_(
+                    Path.fromAbsoluteString(rootSID, dataDir.getPath(), file.getPath()), file.getPath(),
                     new KIndex(0));
                 localRevFile.save_();
             }
@@ -207,7 +209,7 @@ public class TestLinkedRevProvider extends AbstractTest
         LinkedRevProvider.Cleaner.RunData runData = cleaner.new RunData();
         runData._sorter.setMaxSize(10);
         runData.run();
-        listRecursively(_rootDir);
+        listRecursively(rootDir);
     }
 
     private void writeFile(InjectableFile file, String contents) throws IOException

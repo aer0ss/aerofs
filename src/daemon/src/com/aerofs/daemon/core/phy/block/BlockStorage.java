@@ -8,6 +8,7 @@ import static com.aerofs.daemon.core.phy.block.BlockStorageDatabase.*;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.phy.IPhysicalFile;
 import com.aerofs.daemon.core.phy.IPhysicalFolder;
@@ -268,13 +269,13 @@ class BlockStorage implements IPhysicalStorage
     }
 
     @Override
-    public void createStore_(SIndex sidx, Trans t) throws IOException, SQLException
+    public void createStore_(SIndex sidx, SID sid, Trans t) throws IOException, SQLException
     {
         // TODO: fw to backend?
     }
 
     @Override
-    public void deleteStore_(SIndex sidx, PhysicalOp op, Trans t)
+    public void deleteStore_(SIndex sidx, SID sid, PhysicalOp op, Trans t)
             throws IOException, SQLException
     {
         if (op != PhysicalOp.APPLY) return;

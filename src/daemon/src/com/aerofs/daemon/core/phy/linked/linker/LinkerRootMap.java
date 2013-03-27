@@ -6,6 +6,8 @@ package com.aerofs.daemon.core.phy.linked.linker;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.SID;
+import com.aerofs.daemon.lib.db.AbstractTransListener;
+import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
@@ -76,7 +78,7 @@ public class LinkerRootMap
     void init_()
     {
         try {
-            for (Entry<SID, String> e : _cfgAbsRoots.get_().entrySet()) {
+            for (Entry<SID, String> e : _cfgAbsRoots.get().entrySet()) {
                 IOException ex = add_(e.getKey(), e.getValue());
                 if (ex != null) {
                     l.warn("failed to add root {} {} {}", e.getKey(), e.getValue(), Util.e(ex));
@@ -104,11 +106,23 @@ public class LinkerRootMap
      *
      * Update conf DB and create a new {@code LinkerRoot}
      */
-    public void link_(SID sid, String absRoot) throws IOException, SQLException
+    public void link_(final SID sid, String absRoot, Trans t) throws IOException, SQLException
     {
         IOException e = add_(sid, absRoot);
         if (e != null) throw e;
-        _cfgAbsRoots.add_(sid, absRoot);
+        _cfgAbsRoots.add(sid, absRoot);
+
+        t.addListener_(new AbstractTransListener() {
+            @Override
+            public void aborted_()
+            {
+                try {
+                    _cfgAbsRoots.remove(sid);
+                } catch (SQLException e) {
+                    SystemUtil.fatal(e);
+                }
+            }
+        });
     }
 
     /**
@@ -116,11 +130,26 @@ public class LinkerRootMap
      *
      * Update conf DB and cleanup any existing {@code LinkerRoot}
      */
-    public void unlink_(SID sid) throws IOException, SQLException
+    public void unlink_(final SID sid, Trans t) throws IOException, SQLException
     {
+        final String absPath = absRootAnchor_(sid);
+        if (absPath == null) return;
+
         IOException e = remove_(sid);
         if (e != null) throw e;
-        _cfgAbsRoots.remove_(sid);
+        _cfgAbsRoots.remove(sid);
+
+        t.addListener_(new AbstractTransListener() {
+            @Override
+            public void aborted_()
+            {
+                try {
+                    _cfgAbsRoots.add(sid, absPath);
+                } catch (SQLException e) {
+                    SystemUtil.fatal(e);
+                }
+            }
+        });
     }
 
     public @Nullable String absRootAnchor_(SID sid)
@@ -142,6 +171,7 @@ public class LinkerRootMap
     private IOException add_(SID sid, String absRoot)
     {
         assert !_map.containsKey(sid) : _map.get(sid) + " " + absRoot;
+        l.info("add root {} {}", sid, absRoot);
 
         try {
             LinkerRoot root = _factLR.create_(sid, absRoot);

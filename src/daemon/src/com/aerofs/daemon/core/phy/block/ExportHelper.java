@@ -59,25 +59,12 @@ public class ExportHelper implements ICfgDatabaseListener
         Cfg.db().addListener(this);
     }
 
-    public String storeFullName(SIndex sidx)
+    public String storeFullName_(SIndex sidx)
     {
         SID sid = _sidx2sid.get_(sidx);
         String storeTitle = sid.toStringFormal();
         if (sid.isUserRoot()) {
-            // Loop over ACL entries, find non-self user, make folder with that name
-            try {
-                for (UserID uid : _lacl.get_(sidx).keySet()) {
-                    if (!uid.isTeamServerID()) {
-                        assert SID.rootSID(uid).equals(sid);
-                        storeTitle = purifyEmail(uid.getString());
-                        break;
-                    }
-                }
-            } catch (SQLException e) {
-                // LocalACL.get_ shouldn't throw here - it shouldn't be possible to receive events
-                // about a store for which we have no ACL.
-                SystemUtil.fatal("lacl get " + sidx + " " + sid + " " + e);
-            }
+            storeTitle = purifyEmail(storeOwner_(sidx, sid).getString());
         } else {
             // Shared folders look like:
             // shared-folder-c12d379fed050c36bfd3496675a4fe47
@@ -86,7 +73,25 @@ public class ExportHelper implements ICfgDatabaseListener
         return storeTitle;
     }
 
-    private String purifyEmail(String email)
+    public UserID storeOwner_(SIndex sidx, SID sid)
+    {
+        // Loop over ACL entries, find non-self user, make folder with that name
+        try {
+            for (UserID uid : _lacl.get_(sidx).keySet()) {
+                if (!uid.isTeamServerID()) {
+                    assert SID.rootSID(uid).equals(sid);
+                    return uid;
+                }
+            }
+        } catch (SQLException e) {
+            // LocalACL.get_ shouldn't throw here - it shouldn't be possible to receive events
+            // about a store for which we have no ACL.
+            SystemUtil.fatal("lacl get " + sidx + " " + sid + " " + e);
+        }
+        throw new AssertionError("store not accessible " + sidx + " " + sid);
+    }
+
+    public String purifyEmail(String email)
     {
         // Email addresses can have characters that are forbidden in file names.  Here, we strip
         // out the characters listed at
@@ -148,7 +153,7 @@ public class ExportHelper implements ICfgDatabaseListener
         // TODO (DF): symlink (or make a "Where are my files.txt" file) for anchors
         // Note that BlockPrefix is given by:
         // <Export root>/p/<prefix file>
-        return Util.join(exportContentDir(exportRoot()), storeFullName(sidx));
+        return Util.join(exportContentDir(exportRoot()), storeFullName_(sidx));
     }
 
     @Nullable public String exportContentDir(String exportRoot)

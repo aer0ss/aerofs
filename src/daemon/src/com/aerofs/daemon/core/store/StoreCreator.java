@@ -4,9 +4,12 @@ import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.migration.ImmigrantVersionControl;
+import com.aerofs.daemon.core.phy.IPhysicalFolder;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
+import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.lib.db.IMetaDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
+import com.aerofs.labeling.L;
 import com.aerofs.lib.Param;
 import com.aerofs.lib.Path;
 import com.aerofs.base.ex.ExAlreadyExist;
@@ -46,15 +49,20 @@ public class StoreCreator
     /**
      * Add {@code sidxParent} as {@code sid}'s parent. Create the child store if it doesn't exist.
      */
-    public void addParentStoreReference_(SID sid, SIndex sidxParent, Path path, Trans t)
+    public void addParentStoreReference_(SID sid, SIndex sidxParent, Trans t)
             throws ExAlreadyExist, SQLException, IOException
     {
         SIndex sidx = _sid2sidx.getNullable_(sid);
         if (sidx == null) {
-            sidx = createStoreImpl_(sid, path, t);
+            sidx = createStoreImpl_(sid, t);
             assert _ss.getParents_(sidx).isEmpty() : sidx + " " + sid;
         } else {
-            assert !_ss.getParents_(sidx).isEmpty() : sidx + " " + sid;
+            // adding ref to the root store of a user is never fine
+            // adding ref to a regular store that used to have no parent is:
+            //   * fine in multiuser because the underlying storage is flat
+            //   * problematic in singleuser because it indicates duplication
+            assert !sid.isUserRoot() && (L.get().isMultiuser() || !_ss.getParents_(sidx).isEmpty())
+                    : sidx + " " + sid;
         }
         _ss.addParent_(sidx, sidxParent, t);
     }
@@ -65,14 +73,13 @@ public class StoreCreator
     public void createRootStore_(SID sid, Trans t)
             throws SQLException, IOException, ExAlreadyExist
     {
-        createStoreImpl_(sid, Path.root(sid), t);
+        createStoreImpl_(sid, t);
     }
 
     /**
      * Create a store.
-     * @param path the location where the
      */
-    private SIndex createStoreImpl_(SID sid, Path path, Trans t)
+    private SIndex createStoreImpl_(SID sid, Trans t)
             throws SQLException, ExAlreadyExist, IOException
     {
         // Note that during store creation, all in-memory data structures may not be fully set up
@@ -91,11 +98,9 @@ public class StoreCreator
         // create trash directory
         _mdb.insertOA_(sidx, OID.TRASH, OID.ROOT, Param.TRASH, OA.Type.DIR, OA.FLAG_EXPELLED_ORG, t);
 
-        _ps.newFolder_(new SOID(sidx, OID.ROOT), path).promoteToAnchor_(t);
-
         _nvc.restoreStore_(sidx, t);
         _ivc.restoreStore_(sidx, t);
-        _ps.createStore_(sidx, t);
+        _ps.createStore_(sidx, sid, t);
         _ss.add_(sidx, t);
 
         return sidx;

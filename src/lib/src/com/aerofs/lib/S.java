@@ -97,5 +97,8 @@ public class S
                     " online. This may happen if the remote peer is using selective sync.",
             SS_OFFLINE_TOOLTIP = "Remote peer has a different version and is currently offline.",
             INVITING = "Inviting...",
+            LINKED_DESCRIPTION = "Store files on the local disk",
+            LOCAL_DESCRIPTION = "Store compressed files on the local disk",
+            S3_DESCRIPTION = "Store files on Amazon S3",
             ENABLE_FILESYSTEM_VIEW = "Show synced files on filesystem";
 }

@@ -10,7 +10,6 @@ import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.mock.logical.IsSOIDAtPath;
 import com.aerofs.daemon.core.mock.logical.MockDS;
-import com.aerofs.daemon.core.phy.linked.linker.LinkerRoot.Factory;
 import com.aerofs.daemon.core.phy.linked.linker.scanner.ScanSessionQueue;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.Path;
@@ -23,9 +22,7 @@ import com.aerofs.testlib.AbstractTest;
 import org.hamcrest.Description;
 import org.junit.Before;
 import org.mockito.ArgumentMatcher;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Spy;
 
 import javax.annotation.Nullable;
 import java.sql.SQLException;
@@ -41,6 +38,7 @@ public class AbstractMightCreateTest extends AbstractTest
     @Mock InjectableDriver dr;
     @Mock ScanSessionQueue.Factory factSSQ;
     @Mock LinkerRootMap lrm;
+    @Mock ILinkerFilter mcf;
 
     MockDS mds;
     static final String absRootAnchor = "/AeroFS";

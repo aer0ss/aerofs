@@ -54,10 +54,12 @@ public class MightCreate
     private final SharedFolderTagFileAndIcon _sfti;
     private final MightCreateOperations _mcop;
     private final LinkerRootMap _lrm;
+    private final ILinkerFilter _filter;
 
     @Inject
     public MightCreate(IgnoreList ignoreList, DirectoryService ds, InjectableDriver driver,
-            SharedFolderTagFileAndIcon sfti, MightCreateOperations mcop, LinkerRootMap lrm)
+            SharedFolderTagFileAndIcon sfti, MightCreateOperations mcop, LinkerRootMap lrm,
+            ILinkerFilter filter)
     {
         _il = ignoreList;
         _ds = ds;
@@ -65,6 +67,7 @@ public class MightCreate
         _sfti = sfti;
         _mcop = mcop;
         _lrm = lrm;
+        _filter = filter;
     }
 
     public static enum Result {
@@ -74,6 +77,20 @@ public class MightCreate
                                 // logical object already exists before the method call
         FILE,                   // the physical object is a file
         IGNORED,                // the physical object is ignored
+    }
+
+    public boolean shouldIgnoreChildren_(PathCombo pc, @Nullable SOID parent) throws SQLException
+    {
+        OA oaParent = parent == null ? null : _ds.getOANullable_(parent);
+        if (oaParent == null || oaParent.isExpelled()) {
+            // if we get a notification about a path for which the parent is expelled or not
+            // present, we are most likely hitting a race between expulsion and creation so we
+            // should ignore the notification and wait for the one about the new parent, which
+            // will in turn trigger a scan
+            l.warn("expel/create race under {}", parent);
+            return true;
+        }
+        return _filter.shouldIgnoreChilren_(pc, oaParent);
     }
 
     /**
@@ -87,7 +104,7 @@ public class MightCreate
     public Result mightCreate_(PathCombo pcPhysical, IDeletionBuffer delBuffer, Trans t)
             throws Exception
     {
-        if (deleteIfInvalidTagFile(pcPhysical._path) || _il.isIgnored_(pcPhysical._path.last())) {
+        if (deleteIfInvalidTagFile(pcPhysical) || _il.isIgnored_(pcPhysical._path.last())) {
             return Result.IGNORED;
         }
 
@@ -101,15 +118,7 @@ public class MightCreate
         // TODO acl checking
 
         SOID parent = _ds.resolveNullable_(pcPhysical._path.removeLast());
-        OA oaParent = parent == null ? null : _ds.getOANullable_(parent);
-        if (oaParent == null || oaParent.isExpelled()) {
-            // if we get a notification about a path for which the parent is expelled or not
-            // present, we are most likely hitting a race between expulsion and creation so we
-            // should ignore the notification and wait for the one about the new parent, which
-            // will in turn trigger a scan
-            l.warn("expel/create race {}", obfuscatePath(pcPhysical._path));
-            return Result.IGNORED;
-        }
+        if (shouldIgnoreChildren_(pcPhysical,  parent)) return Result.IGNORED;
 
         // See class-level comment for vocabulary definitions
         SOID sourceSOID = _ds.getSOIDNullable_(fnt._fid);
@@ -150,15 +159,19 @@ public class MightCreate
     /**
      * Delete invalid tag file/folder
      */
-    private boolean deleteIfInvalidTagFile(Path path) throws IOException, SQLException
+    private boolean deleteIfInvalidTagFile(PathCombo pc) throws IOException, SQLException
     {
-        if (!path.last().equals(Param.SHARED_FOLDER_TAG)) return false;
+        if (!pc._path.last().equals(Param.SHARED_FOLDER_TAG)) return false;
 
         // Remove any invalid tag file (i.e tag file under non-anchor)
-        SOID parent = _ds.resolveNullable_(path.removeLast());
+        SOID parent = _ds.resolveNullable_(pc._path.removeLast());
         if (parent != null) {
             OA oa = _ds.getOA_(parent);
-            if (!oa.isAnchor()) _sfti.deleteTagFileAndIconIn(path.removeLast());
+            // inside the defualt root resolveNullable_ will find an anchor, in an external root
+            // it will find the root dir
+            if (!(oa.isAnchor() || oa.soid().oid().isRoot())) {
+                _sfti.deleteTagFileAndIconIn(pc._absPath);
+            }
         }
         return true;
     }

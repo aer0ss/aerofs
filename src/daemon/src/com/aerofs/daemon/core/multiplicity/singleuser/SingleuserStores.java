@@ -10,6 +10,7 @@ import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.base.ex.ExAlreadyExist;
+import com.aerofs.lib.cfg.CfgRootSID;
 import com.aerofs.lib.id.SIndex;
 
 import javax.annotation.Nonnull;

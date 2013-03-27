@@ -132,7 +132,7 @@ public class Param extends BaseParam
     {
         // These variables are saved here rather than *PostUpdateTasks classes so that both
         // UI and processes can access them.
-        public static final int DAEMON_POST_UPDATE_TASKS = 28;
+        public static final int DAEMON_POST_UPDATE_TASKS = 29;
         public static final int UI_POST_UPDATE_TASKS = 1;
     }
 

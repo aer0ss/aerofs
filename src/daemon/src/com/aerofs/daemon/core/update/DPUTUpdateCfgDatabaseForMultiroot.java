@@ -28,9 +28,9 @@ public class DPUTUpdateCfgDatabaseForMultiroot implements IDaemonPostUpdateTask
     {
         l.info("update conf for multiroot");
         _cfgDB.createRootTable_(null);
-        if (_cfgDB.getRoots_().isEmpty()) {
+        if (_cfgDB.getRoots().isEmpty()) {
             l.info("add default root {} {}", Cfg.rootSID(), Cfg.absDefaultRootAnchor());
-            _cfgDB.addRoot_(Cfg.rootSID(), Cfg.absDefaultRootAnchor());
+            _cfgDB.addRoot(Cfg.rootSID(), Cfg.absDefaultRootAnchor());
         }
     }
 }

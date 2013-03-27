@@ -12,6 +12,7 @@ import com.aerofs.labeling.L;
 import com.aerofs.lib.RootAnchorUtil;
 import com.aerofs.lib.S;
 import com.aerofs.lib.SecUtil;
+import com.aerofs.lib.StorageType;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgDatabase;
 import com.aerofs.lib.ex.ExNoConsole;
@@ -150,8 +151,11 @@ public class CLISetup
 
         cli.progress("Performing magic");
 
+        // TODO: support LINKED in cli setup
+        StorageType storageType = _s3config != null ? StorageType.S3 : StorageType.LOCAL;
+
         UI.controller().setupMultiuser(_userID.getString(), new String(_passwd), _anchorRoot,
-                _deviceName, _s3config);
+                _deviceName, storageType.name(), _s3config);
     }
 
     private void setupSingleuser(CLI cli) throws Exception
@@ -165,8 +169,11 @@ public class CLISetup
 
         cli.progress("Performing magic");
 
+        // TODO: support other backends?
+        StorageType storageType = StorageType.LINKED;
+
         UI.controller().setupSingleuser(_userID.getString(), new String(_passwd), _anchorRoot,
-                _deviceName, null);
+                _deviceName, storageType.name(), null);
     }
 
     private void getUser(CLI cli)

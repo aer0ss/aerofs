@@ -5,7 +5,6 @@
 package com.aerofs.daemon.core.multiplicity.singleuser;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.daemon.core.acl.SharedFolderAutoLeaver;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ds.OA.Type;
@@ -14,13 +13,16 @@ import com.aerofs.daemon.core.notification.RitualNotificationServer;
 import com.aerofs.daemon.core.object.ObjectCreator;
 import com.aerofs.daemon.core.object.ObjectDeleter;
 import com.aerofs.daemon.core.phy.PhysicalOp;
+import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.IStoreJoiner;
+import com.aerofs.daemon.core.store.StoreDeleter;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
 import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
+import com.aerofs.lib.cfg.CfgRootSID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.proto.RitualNotifications.PBNotification;
@@ -37,30 +39,34 @@ public class SingleuserStoreJoiner implements IStoreJoiner
     private final ObjectCreator _oc;
     private final ObjectDeleter _od;
     private final ObjectSurgeon _os;
+    private final StoreDeleter _sd;
     private final DirectoryService _ds;
     private final CfgRootSID _cfgRootSID;
     private final RitualNotificationServer _rns;
     private final SharedFolderAutoLeaver _lod;
+    private final IMapSIndex2SID _sidx2sid;
 
     @Inject
     public SingleuserStoreJoiner(DirectoryService ds, SingleuserStores stores, ObjectCreator oc,
             ObjectDeleter od, ObjectSurgeon os, CfgRootSID cfgRootSID, RitualNotificationServer rns,
-            SharedFolderAutoLeaver lod)
+            SharedFolderAutoLeaver lod, StoreDeleter sd, IMapSIndex2SID sidx2sid)
     {
         _ds = ds;
         _oc = oc;
         _od = od;
         _os = os;
+        _sd = sd;
         _stores = stores;
         _cfgRootSID = cfgRootSID;
         _rns = rns;
         _lod = lod;
+        _sidx2sid = sidx2sid;
     }
 
     @Override
     public void joinStore_(SIndex sidx, SID sid, String folderName, Trans t) throws Exception
     {
-        // ignore changes on the root store.
+        // ignore changes on the root store
         if (sid.equals(_cfgRootSID.get())) return;
 
         SIndex root = _stores.getUserRoot_();
@@ -148,18 +154,14 @@ public class SingleuserStoreJoiner implements IStoreJoiner
     @Override
     public void leaveStore_(SIndex sidx, SID sid, Trans t) throws Exception
     {
-        /**
-         * Because there is currently no ACL stored for root stores, we will be asked to leave the
-         * root store on every ACL update. Simply ignore that for the time being. When we do store
-         * ACL for root stores (for team server's benefit) we should switch to an assert...
-         */
+        // ignore changes on the root store
         if (sid.equals(_cfgRootSID.get())) return;
 
         l.info("leaving share: " + sidx + " " + sid);
 
         OID oid = SID.storeSID2anchorOID(sid);
 
-        // delete any existing anchor (even if explicitly expelled)
+        // delete any existing anchor (even expelled ones)
         Collection<SIndex> sidxs = _stores.getAll_();
 
         for (SIndex sidxWithanchor : sidxs) {
@@ -170,6 +172,11 @@ public class SingleuserStoreJoiner implements IStoreJoiner
             assert oa.soid().oid().equals(oid);
             assert oa.type() == Type.ANCHOR;
             deleteAnchorIfNeeded_(oa, t);
+        }
+
+        // special treatment for root stores
+        if (_sidx2sid.getNullable_(sidx) != null &&_stores.isRoot_(sidx)) {
+            _sd.deleteRootStore_(sidx, t);
         }
     }
 
