@@ -1,16 +1,16 @@
 package com.aerofs.gui.transfers;
 
-import com.aerofs.base.id.DID;
 import com.aerofs.gui.Images;
 import com.aerofs.lib.Path;
+import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.id.SOCID;
 import com.aerofs.proto.Common.PBPath;
 import com.aerofs.proto.RitualNotifications.PBDownloadEvent;
 import com.aerofs.proto.RitualNotifications.PBDownloadEvent.State;
 import com.aerofs.proto.RitualNotifications.PBSOCID;
 import com.aerofs.proto.RitualNotifications.PBUploadEvent;
 import com.aerofs.ui.UIUtil;
+import com.google.common.base.Objects;
 import org.eclipse.jface.viewers.ITableLabelProvider;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Image;
@@ -98,7 +98,8 @@ extends org.eclipse.jface.viewers.LabelProvider implements ITableLabelProvider
 
     private String getText(PBSOCID pbsocid, PBPath pbpath, Path path)
     {
-        return _view.shortenPath(UIUtil.getUserFriendlyPath(pbsocid, pbpath, path));
+        String text = _view.shortenPath(UIUtil.getUserFriendlyPath(pbsocid, pbpath, path));
+        return text.startsWith("/") ? text.substring(1) : text;
     }
 
     @Override
@@ -111,12 +112,12 @@ extends org.eclipse.jface.viewers.LabelProvider implements ITableLabelProvider
                 if (ev.hasPath()) {
                     return getText(ev.getSocid(), ev.getPath(), new Path(ev.getPath()));
                 } else {
-                    return new SOCID(ev.getSocid()).toString();
+                    return S.LBL_UNKNOWN_FILE;
                 }
             case CompTransfersTable.COL_PROG:
                 return Util.formatProgress(ev.getDone(), ev.getTotal());
             case CompTransfersTable.COL_DEVICE:
-                return new DID(ev.getDeviceId()).toString();
+                return Objects.firstNonNull(ev.getDisplayName(), S.LBL_UNKNOWN_DEVICE);
             default: return "";
             }
 
@@ -127,12 +128,12 @@ extends org.eclipse.jface.viewers.LabelProvider implements ITableLabelProvider
                 if (ev.hasPath()) {
                     return getText(ev.getSocid(), ev.getPath(), new Path(ev.getPath()));
                 } else {
-                    return new SOCID(ev.getSocid()).toString();
+                    return S.LBL_UNKNOWN_FILE;
                 }
             case CompTransfersTable.COL_PROG:
                 return downloadStateToProgressString(ev);
             case CompTransfersTable.COL_DEVICE:
-                return ev.hasDeviceId() ? new DID(ev.getDeviceId()).toString() : "";
+                return Objects.firstNonNull(ev.getDisplayName(), S.LBL_UNKNOWN_DEVICE);
             default: return "";
             }
 

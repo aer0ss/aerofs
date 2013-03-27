@@ -138,7 +138,7 @@ public class UserAndDeviceNameDatabase
 
     private PreparedStatement _psCUNC;
     @Override
-    public void clearUserNameCache()
+    public void clearUserNameCache_()
             throws SQLException
     {
         try {
@@ -155,7 +155,7 @@ public class UserAndDeviceNameDatabase
 
     private PreparedStatement _psCDNC;
     @Override
-    public void clearDeviceNameCache()
+    public void clearDeviceNameCache_()
             throws SQLException
     {
         try {

@@ -24,7 +24,7 @@ import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
-import com.aerofs.daemon.lib.db.UserAndDeviceNames;
+import com.aerofs.daemon.core.UserAndDeviceNames;
 import com.aerofs.daemon.lib.db.IActivityLogDatabase;
 import com.aerofs.base.id.UserID;
 import org.junit.Before;

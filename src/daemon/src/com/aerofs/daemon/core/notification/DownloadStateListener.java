@@ -2,38 +2,71 @@ package com.aerofs.daemon.core.notification;
 
 import java.sql.SQLException;
 
+import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.protocol.IDownloadStateListener;
 import com.aerofs.daemon.core.tc.TC;
+import com.aerofs.daemon.core.UserAndDeviceNames;
 import com.aerofs.lib.Path;
+import com.aerofs.lib.Throttler;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.id.SOCID;
 import com.aerofs.proto.RitualNotifications.PBDownloadEvent;
 import com.aerofs.proto.RitualNotifications.PBNotification;
 import com.aerofs.proto.RitualNotifications.PBSOCID;
 import com.aerofs.proto.RitualNotifications.PBNotification.Type;
+import com.google.common.base.Predicate;
+
+import javax.annotation.Nullable;
 
 class DownloadStateListener implements IDownloadStateListener
 {
     private final RitualNotificationServer _notifier;
     private final DirectoryService _ds;
     private final TC _tc;
+    private final UserAndDeviceNames _nr; // name resolver
 
-    DownloadStateListener(RitualNotificationServer notifier, DirectoryService ds, TC tc)
+    private final Throttler<SOCID, State> _throttler = new Throttler.Builder<SOCID, State>()
+            .setDelay(1 * C.SEC)
+            .setThrottleFilter(new Predicate<State>()
+            {
+                @Override
+                public boolean apply(@Nullable State state)
+                {
+                    return state instanceof Ongoing;
+                }
+            })
+            .setUntrackFilter(new Predicate<State>()
+            {
+                @Override
+                public boolean apply(@Nullable State state)
+                {
+                    return state instanceof Ended;
+                }
+            })
+            .build();
+
+    DownloadStateListener(RitualNotificationServer notifier, DirectoryService ds, TC tc,
+            UserAndDeviceNames nr)
     {
         _notifier = notifier;
         _ds = ds;
         _tc = tc;
+        _nr = nr;
     }
 
     @Override
     public void stateChanged_(SOCID socid, State state)
     {
-        _notifier.sendEvent_(state2pb_(_tc, _ds, socid, state));
+        if (_throttler.shouldThrottle(socid, state)) return;
+
+        _notifier.sendEvent_(state2pb_(_tc, _ds, _nr, socid, state));
     }
 
-    static PBNotification state2pb_(TC tc, DirectoryService ds, SOCID socid, State state)
+    static PBNotification state2pb_(TC tc, DirectoryService ds, UserAndDeviceNames nr,
+            SOCID socid, State state)
     {
         assert tc.isCoreThread();
 
@@ -65,9 +98,13 @@ class DownloadStateListener implements IDownloadStateListener
         } else {
             assert state instanceof Ongoing;
             bd.setState(PBDownloadEvent.State.ONGOING);
+
+            DID did = ((Ongoing) state)._ep.did();
+
+            bd.setDeviceId(did.toPB());
+            bd.setDisplayName(nr.getDisplayName_(did));
             bd.setDone(((Ongoing) state)._done);
             bd.setTotal(((Ongoing) state)._total);
-            bd.setDeviceId(((Ongoing) state)._ep.did().toPB());
         }
 
         return PBNotification.newBuilder()

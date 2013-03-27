@@ -18,8 +18,8 @@ import java.sql.SQLException;
  */
 public interface IUserAndDeviceNameDatabase
 {
-    void clearUserNameCache() throws SQLException;
-    void clearDeviceNameCache() throws SQLException;
+    void clearUserNameCache_() throws SQLException;
+    void clearDeviceNameCache_() throws SQLException;
 
     /**
      * @param name null if it is not revealed by SP. See getDeviceNameNullable_ for detail

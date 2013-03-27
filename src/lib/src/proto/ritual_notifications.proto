@@ -38,6 +38,13 @@ message PBUploadEvent {
     required uint64 done = 4;   // done == total means completion,
                                 // either failure or success
     required uint64 total = 5;
+
+    // the name to display for the device we are transfering file from/to
+    //   it is the device name if the local user owns the device,
+    //   else it is the username of the owner of the device.
+    // it is optional and the UI should use default label if the display
+    //   is not provided.
+    optional string display_name = 6;
 }
 
 message PBDownloadEvent {
@@ -61,6 +68,10 @@ message PBDownloadEvent {
 
     // for ended state only
     optional bool okay = 7;
+
+    // for ongoing state only
+    // see PBUploadEvent.display_name for details
+    optional string display_name = 8;
 }
 
 message PBPathStatusEvent {

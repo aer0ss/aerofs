@@ -30,7 +30,7 @@ public class CompTransfersTable extends Composite
     private final DelayedUIRunner _dr;
     private final TableColumn _tcPath;
     private final GC _gc;
-    private final TransferState _ts = new TransferState(false);
+    private final TransferState _ts;
 
     // the global RNC is not useful as we need to retrieve the full list of current transfers here.
     private final RitualNotificationClient _rnc = new RitualNotificationClient();
@@ -63,6 +63,7 @@ public class CompTransfersTable extends Composite
         super(parent, style);
         setLayout(new FillLayout(SWT.HORIZONTAL));
 
+        _ts = new TransferState(false);
         _tv = new TableViewer(this, SWT.BORDER | SWT.FULL_SELECTION);
         _tv.setUseHashlookup(true);
         _tv.setContentProvider(new ContentProvider());
@@ -141,5 +142,10 @@ public class CompTransfersTable extends Composite
     public String getDeviceString(DID did)
     {
         return did.toString();
+    }
+
+    public void showMetaDataTransfers(boolean enable)
+    {
+        _ts.enableTrackingMetaData(enable);
     }
 }

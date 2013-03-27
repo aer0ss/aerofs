@@ -5,8 +5,10 @@
 package com.aerofs.gui.tray;
 
 import com.aerofs.gui.GUI;
+import com.aerofs.gui.GUIUtil.AbstractListener;
 import com.aerofs.gui.Images;
 import com.aerofs.gui.TransferState;
+import com.aerofs.gui.transfers.DlgTransfers;
 import com.aerofs.lib.DelayedRunner;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.os.OSUtil;
@@ -20,6 +22,7 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.MenuItem;
 
 import java.util.Map;
@@ -31,6 +34,23 @@ public class TransferTrayMenuSection
     private MenuItem _transferStats2;    // menu item used to display information about
                                          // ongoing transfers - line 2
     private Object _transferProgress;    // non-null if transfer is in progress
+
+    private DlgTransfers _transferDialog;
+    private AbstractListener _listener = new AbstractListener(null)
+    {
+        @Override
+        protected void handleEventImpl(Event event)
+        {
+            if (_transferDialog == null) _transferDialog = new DlgTransfers(GUI.get().sh());
+            _transferDialog.showMetaDataTransfers((event.stateMask & SWT.SHIFT) != 0);
+
+            if (_transferDialog.isDisposed()) {
+                _transferDialog.openDialog();
+            } else {
+                _transferDialog.forceActive();
+            }
+        }
+    };
 
     private final TrayMenuPopulator _trayMenuPopulator;
 
@@ -44,8 +64,7 @@ public class TransferTrayMenuSection
 
     public void populate()
     {
-        _transferStats1 = _trayMenuPopulator.addMenuItem("", null);
-        _transferStats1.setEnabled(false);
+        _transferStats1 = _trayMenuPopulator.addMenuItem("", _listener);
         _transferStats2 = null;
         updateTransferMenus();
     }
@@ -83,8 +102,7 @@ public class TransferTrayMenuSection
         if (dlCount > 0 && ulCount > 0) {
             if (_transferStats2 == null) {
                 _transferStats2 = _trayMenuPopulator.addMenuItemAfterItem(
-                        "", _transferStats1, null);
-                _transferStats2.setEnabled(false);
+                        "", _transferStats1, _listener);
             }
             menuItem = _transferStats2;
         } else {
@@ -124,7 +142,7 @@ public class TransferTrayMenuSection
     private void showStats(MenuItem menuItem, String action, int count, long done, long total)
     {
         if (count > 0) {
-            menuItem.setText(String.format("%s %s file%s (%s)",
+            menuItem.setText(String.format("%s %s file%s... (%s)",
                     action, count, count > 1 ? "s" : "",
                     Util.formatProgress(done, total)));
 

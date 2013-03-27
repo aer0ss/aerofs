@@ -10,7 +10,7 @@ import com.aerofs.daemon.core.serverstatus.ServerConnectionStatus;
 import com.aerofs.daemon.core.serverstatus.ServerConnectionStatus.Server;
 import com.aerofs.daemon.core.syncstatus.LocalSyncStatus;
 import com.aerofs.daemon.core.syncstatus.SyncStatusSummary;
-import com.aerofs.daemon.lib.db.UserAndDeviceNames;
+import com.aerofs.daemon.core.UserAndDeviceNames;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.cfg.CfgLocalUser;

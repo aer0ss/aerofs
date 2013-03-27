@@ -14,6 +14,7 @@ import com.aerofs.daemon.core.syncstatus.AggregateSyncStatus;
 import com.aerofs.daemon.core.syncstatus.SyncStatusSynchronizer;
 import com.aerofs.daemon.core.syncstatus.SyncStatusSynchronizer.IListener;
 import com.aerofs.daemon.core.tc.TC;
+import com.aerofs.daemon.core.UserAndDeviceNames;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.daemon.transport.lib.TCPProactorMT;
@@ -63,11 +64,13 @@ public class RitualNotificationServer implements IConnectionManager
     private final TC _tc;
     private final ServerConnectionStatus _scs;
     private final ConflictState _cl;
+    private final UserAndDeviceNames _nr;
 
     @Inject
     public RitualNotificationServer(CoreQueue cq, CoreScheduler sched, TC tc, DirectoryService ds,
             DownloadState dls, UploadState uls, PathStatus so, ServerConnectionStatus scs,
-            SyncStatusSynchronizer sss, AggregateSyncStatus agss, ConflictState cl)
+            SyncStatusSynchronizer sss, AggregateSyncStatus agss, ConflictState cl,
+            UserAndDeviceNames nr)
     {
         _cq = cq;
         _sched = sched;
@@ -81,12 +84,13 @@ public class RitualNotificationServer implements IConnectionManager
         _scs = scs;
         _cl = cl;
         _psn = new PathStatusNotifier(this, _ds, _so);
+        _nr = nr;
     }
 
     public void init_() throws IOException
     {
-        _dls.addListener_(new DownloadStateListener(this, _ds, _tc));
-        _uls.addListener_(new UploadStateListener(this, _ds, _tc));
+        _dls.addListener_(new DownloadStateListener(this, _ds, _tc, _nr));
+        _uls.addListener_(new UploadStateListener(this, _ds, _tc, _nr));
 
         // Merged status notifier listens on all input sources
         final PathStatusNotifier sn = new PathStatusNotifier(this, _ds, _so);
@@ -172,7 +176,7 @@ public class RitualNotificationServer implements IConnectionManager
         _proactor.reuseForOutgoingConnection(from, c);
 
         // must enqueue since this method is called by non-core threads
-        _cq.enqueueBlocking(new EISendSnapshot(_tc, this, from, _dls, _uls, _psn, _ds), PRIO);
+        _cq.enqueueBlocking(new EISendSnapshot(_tc, this, from, _dls, _uls, _psn, _ds, _nr), PRIO);
 
         return rc;
     }

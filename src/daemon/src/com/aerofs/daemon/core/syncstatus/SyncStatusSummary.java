@@ -4,7 +4,7 @@ import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.store.DeviceBitMap;
 import com.aerofs.daemon.core.syncstatus.LocalSyncStatus.IAggregatedStatus;
-import com.aerofs.daemon.lib.db.UserAndDeviceNames;
+import com.aerofs.daemon.core.UserAndDeviceNames;
 import com.aerofs.lib.BitVector;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.base.id.UserID;

@@ -15,12 +15,9 @@ import org.eclipse.swt.layout.FillLayout;
 
 public class SingleuserDlgPreferences extends AeroFSDialog
 {
-    private final boolean _showTransfers;
-
-    public SingleuserDlgPreferences(Shell parent, boolean showTransfers)
+    public SingleuserDlgPreferences(Shell parent)
     {
         super(parent, S.PREFERENCES, false, false);
-        _showTransfers = showTransfers;
     }
 
     @Override
@@ -30,7 +27,7 @@ public class SingleuserDlgPreferences extends AeroFSDialog
             shell = new Shell(getParent(), getStyle());
         shell.setLayout(new FillLayout(SWT.HORIZONTAL));
 
-        new SingleuserCompPreferences(shell, _showTransfers);
+        new SingleuserCompPreferences(shell);
 
         shell.pack();
     }

@@ -513,10 +513,10 @@ public class SingleuserTrayMenu implements ITrayMenu
 
     private SingleuserDlgPreferences _dlgPref;
 
-    public void openDlgPreferences(boolean showTransfers)
+    public void openDlgPreferences()
     {
         if (_dlgPref == null || _dlgPref.isDisposed()) {
-            _dlgPref = new SingleuserDlgPreferences(GUI.get().sh(), showTransfers);
+            _dlgPref = new SingleuserDlgPreferences(GUI.get().sh());
             _dlgPref.openDialog();
         } else {
             _dlgPref.forceActive();
@@ -531,8 +531,7 @@ public class SingleuserTrayMenu implements ITrayMenu
                     @Override
                     protected void handleEventImpl(Event event)
                     {
-                        boolean shift = (event.stateMask & SWT.SHIFT) != 0;
-                        openDlgPreferences(shift);
+                        openDlgPreferences();
                     }
                 });
     }

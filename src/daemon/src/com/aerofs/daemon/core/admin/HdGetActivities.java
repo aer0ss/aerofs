@@ -12,7 +12,7 @@ import com.aerofs.daemon.core.net.DID2User;
 import com.aerofs.daemon.event.admin.EIGetActivities;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.lib.event.Prio;
-import com.aerofs.daemon.lib.db.UserAndDeviceNames;
+import com.aerofs.daemon.core.UserAndDeviceNames;
 import com.aerofs.daemon.lib.db.IActivityLogDatabase.ActivityRow;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.Path;
@@ -87,7 +87,7 @@ public class HdGetActivities extends AbstractHdIMC<EIGetActivities>
 
         // There are unresolved devices. Retrieve their information from SP and then compose the
         // activities again.
-        if (_udinfo.updateLocalDeviceInfo(Lists.newArrayList(res._unresolvedDIDs))) {
+        if (_udinfo.updateLocalDeviceInfo_(Lists.newArrayList(res._unresolvedDIDs))) {
             // try again only if the call to SP succeeded
             res = getActivitiesLocally_(brief, maxResults, pageToken);
             // Even though we've successfully retrieved information from SP, some devices can still

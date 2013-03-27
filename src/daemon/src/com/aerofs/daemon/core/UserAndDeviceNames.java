@@ -1,8 +1,8 @@
 /*
- * Copyright (c) Air Computing Inc., 2012.
+ * Copyright (c) Air Computing Inc., 2013.
  */
 
-package com.aerofs.daemon.lib.db;
+package com.aerofs.daemon.core;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
@@ -11,10 +11,12 @@ import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
+import com.aerofs.daemon.lib.db.IUserAndDeviceNameDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.FullName;
 import com.aerofs.base.BaseParam.SP;
+import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.base.ex.ExProtocolError;
@@ -29,14 +31,14 @@ import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
 import org.slf4j.Logger;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-// FIXME TODO (WW): DO NOT put business logic in database packages (daemon.lib.db). Move this class.
 
 /**
  * Wrapper around DID2User and UserAndDeviceNameDatabase that can make SP calls when the content
@@ -103,7 +105,7 @@ public class UserAndDeviceNames
      * @return false if the call to SP failed
      * @throws ExProtocolError SP results cannot be interpreted unambiguously
      */
-    public boolean updateLocalDeviceInfo(List<DID> dids) throws SQLException, ExProtocolError
+    public boolean updateLocalDeviceInfo_(List<DID> dids) throws SQLException, ExProtocolError
     {
         GetDeviceInfoReply reply;
         try {
@@ -207,7 +209,7 @@ public class UserAndDeviceNames
             return resolved;
         }
 
-        if (updateLocalDeviceInfo(Lists.newArrayList(unresolved))) {
+        if (updateLocalDeviceInfo_(Lists.newArrayList(unresolved))) {
             resolved.clear();
             getDeviceInfoMapLocally_(dids, resolved, unresolved);
         }
@@ -223,7 +225,7 @@ public class UserAndDeviceNames
         UserID owner = _d2u.getFromLocalNullable_(did);
 
         // SP call if local DB doesn't have the info
-        if (owner == null && updateLocalDeviceInfo(Lists.newArrayList(did))) {
+        if (owner == null && updateLocalDeviceInfo_(Lists.newArrayList(did))) {
             owner = _d2u.getFromLocalNullable_(did);
         }
 
@@ -246,15 +248,60 @@ public class UserAndDeviceNames
         return _udndb.getUserNameNullable_(userId);
     }
 
-    public void clearUserNameCache()
+    public void clearUserNameCache_()
             throws SQLException
     {
-        _udndb.clearUserNameCache();
+        _udndb.clearUserNameCache_();
     }
 
-    public void clearDeviceNameCache()
+    public void clearDeviceNameCache_()
             throws SQLException
     {
-        _udndb.clearDeviceNameCache();
+        _udndb.clearDeviceNameCache_();
+    }
+
+    /**
+     * Resolve the DID into either username or device name depending on if the owner
+     *   is the local user. It will make SP calls to update local database if necessary,
+     *   and it will return the proper unknown label if it's unable to resolve the DID.
+     *
+     * @param did
+     * @return the username of the owner of the device if it's not the local user
+     *   or the device name of the device if it is the local user
+     *   or the proper error label if we are unable to resolve the DID.
+     */
+    public @Nonnull String getDisplayName_(DID did)
+    {
+        try {
+            UserID owner = getDeviceOwnerNullable_(did);
+
+            if (owner == null) return S.LBL_UNKNOWN_USER;
+            else if (owner.equals(_localUser.get())) {
+                String devicename = getDeviceNameNullable_(did);
+
+                if (devicename == null) {
+                    List<DID> unresolved = Collections.singletonList(did);
+                    if (updateLocalDeviceInfo_(unresolved)) {
+                        devicename = getDeviceNameNullable_(did);
+                    }
+                }
+
+                return devicename == null ? S.LBL_UNKNOWN_DEVICE : devicename;
+            } else {
+                FullName username = getUserNameNullable_(owner);
+
+                if (username == null) {
+                    List<DID> unresolved = Collections.singletonList(did);
+                    if (updateLocalDeviceInfo_(unresolved)) {
+                        username = getUserNameNullable_(owner);
+                    }
+                }
+
+                return username == null ? S.LBL_UNKNOWN_USER : username.toString();
+            }
+        } catch (Exception ex) {
+            l.warn("Failed to lookup display name for {}", did, ex);
+            return S.LBL_UNKNOWN_USER;
+        }
     }
 }

@@ -8,7 +8,6 @@ import com.aerofs.gui.GUI;
 import com.aerofs.gui.exclusion.DlgExclusion;
 import com.aerofs.gui.preferences.PreferencesHelper;
 import com.aerofs.gui.transfers.DlgThrottling;
-import com.aerofs.gui.transfers.DlgTransfers;
 import com.aerofs.gui.unlink.DlgUnlinkDevice;
 import com.aerofs.lib.S;
 import com.aerofs.lib.cfg.Cfg;
@@ -35,7 +34,7 @@ public class SingleuserCompPreferences extends Composite
     private final Label _lblId;
     private boolean _deviceIDShown;
 
-    public SingleuserCompPreferences(Composite parent, boolean showTransfers)
+    public SingleuserCompPreferences(Composite parent)
     {
         super(parent, SWT.NONE);
 
@@ -119,13 +118,13 @@ public class SingleuserCompPreferences extends Composite
 
         new Label(this, SWT.NONE);
         Composite btnsComposite = new Composite(this, SWT.NONE);
-        createButtons(btnsComposite, showTransfers);
+        createButtons(btnsComposite);
         new Label(this, SWT.NONE);
 
         helper.registerShellListeners();
     }
 
-    private void createButtons(Composite composite, boolean showTransfers)
+    private void createButtons(Composite composite)
     {
         GridLayout gl_composite_1 = new GridLayout(1, false);
         gl_composite_1.marginLeft = OSUtil.isOSX() ? -6 : 0;
@@ -158,21 +157,6 @@ public class SingleuserCompPreferences extends Composite
                 new DlgThrottling(getShell(), true).openDialog();
             }
         });
-
-        if (showTransfers) {
-            Button btnShowTransfers = new Button(composite, SWT.NONE);
-            btnShowTransfers.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
-            btnShowTransfers.addSelectionListener(new SelectionAdapter()
-            {
-                @Override
-                public void widgetSelected(SelectionEvent arg0)
-                {
-                    new DlgTransfers(GUI.get().sh()).openDialog();
-                }
-            });
-            btnShowTransfers.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
-            btnShowTransfers.setText("Show Transfers...");
-        }
 
         new Label(composite, SWT.NONE);
 
