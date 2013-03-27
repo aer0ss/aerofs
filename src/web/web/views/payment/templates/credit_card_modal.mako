@@ -93,10 +93,29 @@
             }
         });
 
+        function enableSubmission() {
+            $('#credit-card-submit').prop('disabled', false);
+        }
+
+        function disableSubmission() {
+            $('#credit-card-submit').prop('disabled', true);
+        }
+
+        function clearFields() {
+            $('#card-number').val("");
+            $('#card-cvc').val("");
+            $('#card-expiry-month').val("");
+            $('#card-expiry-year').val("");
+        }
+
         ## See the comment above inputCreditCardInfo() for the contract of the
         ## callback function.
         var onStripeCardTokenCreated;
 
+        ## Prompt the user to input card info, create a Stripe token for the
+        ## card, and pass it to the callback function on successful execution.
+        ## On failures, error messages are printed using showErrorMessage().
+        ##
         ## The callback accepts the following function signature:
         ##      onStripeCardTokenCreated(token, done, fail);
         ##  token: the credit card token
@@ -111,19 +130,31 @@
             $('#credit-card-modal').modal('show');
         }
 
-        function enableSubmission() {
-            $('#credit-card-submit').prop('disabled', false);
-        }
-
-        function disableSubmission() {
-            $('#credit-card-submit').prop('disabled', true);
-        }
-
-        function clearFields() {
-            $('#card-number').val("");
-            $('#card-cvc').val("");
-            $('#card-expiry-month').val("");
-            $('#card-expiry-year').val("");
+        ## Prompt the user to input card info, create a Stripe token for the
+        ## card, create a Stripe customer using the token, and call the callback
+        ## on successful execution. On failures, error messages are displayed
+        ## using showErrorMessage().
+        ##
+        ## The callback accepts the following function signature:
+        ##      onCustomerCreated(done, fail);
+        ##  done, fail: functions the callback should call on success and
+        ##              failure. It's the callback' responsibility to display
+        ##              error messages on failures.
+        function inputCreditCardInfoAndCreateStripeCustomer(callback) {
+            inputCreditCardInfo(function(token, done, fail) {
+                $.post("${request.route_path('json.new_stripe_customer')}", {
+                    ${csrf.token_param()}
+                    "${url_param_stripe_card_token}": token
+                })
+                .done(function() {
+                    ## retry inviting after the Stripe customer ID is set
+                    callback(done, fail);
+                })
+                .fail(function(xhr) {
+                    showErrorMessageFromResponse(xhr);
+                    fail();
+                });
+            });
         }
 
     </script>

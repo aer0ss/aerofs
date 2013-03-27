@@ -132,7 +132,7 @@
                 })
                 .fail(function (xhr) {
                     if (getErrorTypeNullable(xhr) == 'NO_STRIPE_CUSTOMER_ID') {
-                        inputCreditCardInfo(newStripeCustomer);
+                        inputCreditCardInfoAndCreateStripeCustomer(inviteUser);
                     } else {
                         showErrorMessageFromResponse(xhr);
                     }
@@ -142,22 +142,6 @@
                     ## Note: the button is enabled even if the payment dialog is
                     ## brought up (by inputCreditCardInfo() above).
                     $inviteButton.removeAttr('disabled');
-                });
-            }
-
-            ## This method follows the contract defined by inputCreditCardInfo()
-            function newStripeCustomer(token, done, fail) {
-                $.post("${request.route_path('json.new_stripe_customer')}", {
-                    ${self.csrf.token_param()}
-                    "${url_param_stripe_card_token}": token
-                })
-                .done(function() {
-                    ## retry inviting after the Stripe customer ID is set
-                    inviteUser(done, fail);
-                })
-                .fail(function(xhr) {
-                    showErrorMessageFromResponse(xhr);
-                    fail();
                 });
             }
 

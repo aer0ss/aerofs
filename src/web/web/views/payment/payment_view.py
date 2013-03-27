@@ -72,16 +72,16 @@ def _get_invoices(stripe_customer):
     return invoices
 
 @view_config(
-    route_name='json.new_stripe_customer',
+    route_name='json.create_stripe_customer',
     permission='admin',
     renderer='json',
     request_method='POST',
 )
-def json_new_stripe_customer(request):
+def json_create_stripe_customer(request):
     stripe_card_token = request.params[URL_PARAM_STRIPE_CARD_TOKEN]
     email = get_session_user(request)
 
-    log.info("new_stripe_customer " + email)
+    log.info("create_stripe_customer " + email)
     stripe_customer_id = None
     try:
         stripe_customer_id = stripe_util.new_stripe_customer(
