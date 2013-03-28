@@ -55,7 +55,7 @@ If you want to run the RockLog server locally, here's what you need to do:
     $ cd ~/repos/aerofs/src/rocklog
     $ virtualenv env
     $ source env/bin/activate
-    $ pip install flask pyelasticsearch
+    $ pip install flask pyelasticsearch mysql-python
     $ python rocklog.py
 
 From now on, RockLog will be listening to requests on port 5000, processing

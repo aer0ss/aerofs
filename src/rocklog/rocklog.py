@@ -4,15 +4,17 @@ import time
 import base64
 import simplejson
 import requests
+import time
+import MySQLdb
 from flask import Flask
 from flask import request
 from flask import jsonify
 from pyelasticsearch import ElasticSearch
 from retrace_client import RetraceClient
 
-
 ELASTIC_SEARCH_URL = 'http://localhost:9200'
 CARBON_ADDRESS = ('metrics.aerofs.com', 2003)
+HOSTED_GRAPHITE_ADDRESS = ('carbon.hostedgraphite.com', 2003)
 MIXPANEL_URL = "http://api.mixpanel.com/track/"
 
 EXPECTED_CONTENT_TYPE = 'application/json'
@@ -28,10 +30,17 @@ app.debug = True
 
 es = ElasticSearch('http://localhost:9200/')
 
-# assume that if the socket dies the flask app will die and gunicorn will restart it
-carbon = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-carbon.connect(CARBON_ADDRESS)
+if "MYSQLHOST" in app.config:
+    mysql_enabled = True
 
+# assume that if the socket dies the flask app will die and gunicorn will restart it
+carbon = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+carbon.connect(CARBON_ADDRESS)
+carbon.settimeout(.005)
+
+hosted_graphite = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+hosted_graphite.connect(HOSTED_GRAPHITE_ADDRESS)
+hosted_graphite.settimeout(.005)
 
 class InvalidContentType(Exception):
     pass
@@ -52,6 +61,8 @@ def defects():
     try:
         defect = request.json
 
+        inject_user_data(defect)
+
         if EXCEPTION_KEY in defect:
             retracer = RetraceClient(50123, defect[VERSION_KEY])
             defect[EXCEPTION_KEY] = decode_exception(defect[EXCEPTION_KEY], retracer)
@@ -66,9 +77,8 @@ def defects():
         # TODO: Return a defect number in the response to allow posting the logs for this defect at a later time
         return success_response()
     except Exception as e:
-        app.logger.error("fail request err:%s" % e)
+        app.logger.error("fail request err:%s" % (e))
         raise
-
 
 @app.route('/metrics', methods=['POST'])
 def metrics():
@@ -76,7 +86,6 @@ def metrics():
         check_valid_request(request)
     except InvalidContentType as e:
         return error_response(415, 'not JSON')
-
     try:
 
         #
@@ -84,6 +93,8 @@ def metrics():
         #
 
         metric = request.json
+
+        inject_user_data(metric)
 
         save_to_graphite(metric)
 
@@ -99,7 +110,6 @@ def metrics():
         #
         # now save this flattened object to elasticsearch
         #
-
         save_to_elasticsearch('metric', metric)
 
         return success_response()
@@ -117,6 +127,8 @@ def events():
 
     try:
         event = request.json
+
+        inject_user_data(event)
 
         save_to_elasticsearch('event', event)
         save_to_mixpanel(event)
@@ -144,26 +156,29 @@ def make_index(index_prefix):
     index_name = index_prefix + '-' + now.strftime('%Y-%m-%d')
     return index_name
 
-
 def save_to_graphite(request_body):
-    # common timestamp used for all metrics sent to graphite
-    timestamp = request_body[TIMESTAMP_KEY]
+    try:
+        # common timestamp used for all metrics sent to graphite
+        timestamp = request_body[TIMESTAMP_KEY]
 
-    # an example of a date that comes from the java side: 2013-02-06T15:18:35.556-0800
-    # NOTE: we send all times to RockLog in UTC
-    # date format: %Y-%m-%dT%H:%M:%S (we can't support ms and strftime doesn't understand tz)
+        # an example of a date that comes from the java side: 2013-02-06T15:18:35.556-0800
+        # NOTE: we send all times to RockLog in UTC
+        # date format: %Y-%m-%dT%H:%M:%S (we can't support ms and strftime doesn't understand tz)
 
-    utc_offset = timestamp[-4:]
-    if utc_offset != "0000":
-        raise RuntimeError("timestamp not utc o:" + utc_offset)
+        utc_offset = timestamp[-4:]
+        if utc_offset != "0000":
+            raise RuntimeError("timestamp not utc o:" + utc_offset)
 
-    epoch = int(time.mktime(time.strptime(timestamp[:-9], "%Y-%m-%dT%H:%M:%S")))
+        epoch = int(time.mktime(time.strptime(timestamp[:-9], "%Y-%m-%dT%H:%M:%S")))
 
-    # build out the string to send to graphite
-    metrics = request_body[METRICS_KEY]
-    graphite_data = ''.join(["%s %s %s\n" % (metric, value, epoch) for metric, value in metrics.items()])
-    app.logger.debug(graphite_data)
-    carbon.sendall(graphite_data)
+        # build out the string to send to graphite
+        metrics = request_body[METRICS_KEY]
+        #graphite_data = ''.join(["%s %s %s\n" % (metric, value, epoch) for metric, value in metrics.items()])
+        #carbon.sendall(graphite_data)
+        graphite_data = ''.join(["%s %s %s\n" % ("5c5c66fc-6773-4008-a488-c889bdb60d9a." + metric, value, epoch) for metric, value in metrics.items()])
+        hosted_graphite.sendall(graphite_data)
+    except Exception as e:
+        app.logger.error("fail socket err:%s" % e)
 
 def error_response(code, msg):
     resp = jsonify({'ok': False, 'status': code, 'message': msg})
@@ -185,7 +200,11 @@ def decode_exception(exception, rc):
     """
     if not exception: return ""
 
-    result = rc.retrace(exception['type'])['classname'] + ': ' + exception['message'] + '\n'
+    if "message" in exception:
+        message = exception['message']
+    else:
+        message = ""
+    result = rc.retrace(exception['type'])['classname'] + ': ' + message + '\n'
     result += '\n'.join([stackframe_to_string(frame, rc) for frame in exception.get('stacktrace', [])])
     if exception.get('cause', {}):
         result += '\n\nCaused by: ' + decode_exception(exception['cause'], rc)
@@ -196,6 +215,24 @@ def decode_exception(exception, rc):
 def stackframe_to_string(frame, rc):
     r = rc.retrace(frame['class'], frame['method'], frame['line'])
     return r['classname'] + '.' + r['methodname'] + ':' + str(frame['line'])
+
+def inject_user_data(message):
+    if not mysql_enabled:
+        return
+    try:
+        user_id = message["user_id"]
+        mysqldb = MySQLdb.connect(
+                host=app.config["MYSQLHOST"],
+                user=app.config["MYSQLUSER"],
+                passwd=app.config["MYSQLPASSWORD"],
+                db=app.config["MYSQLDB"])
+        cur = mysqldb.cursor()
+        cur.execute("select u_id_created_ts from sp_user where u_id=%s", (user_id))
+        message["user_created_at"] = cur.fetchone()[0].isoformat()
+        cur.close()
+        mysqldb.close()
+    except Exception as e:
+        app.logger.warn(e)
 
 def save_to_mixpanel(event):
     # We don't want event_name in the properties and as the event (it's redundant)
@@ -210,6 +247,8 @@ def save_to_mixpanel(event):
     }
 
     params["properties"]["token"] = app.config["MIXPANEL_TOKEN"]
+    if "user_id" in params["properties"]:
+        params["properties"]["distinct_id"] = params["properties"]["user_id"]
 
     data = base64.b64encode(simplejson.dumps(params))
 
