@@ -1,6 +1,5 @@
 package com.aerofs.daemon.core.synctime;
 
-
 class TimeToSync
 {
     static final int TOTAL_BINS = 256;
@@ -30,5 +29,11 @@ class TimeToSync
     public boolean equals(Object o)
     {
         return ((TimeToSync) o)._syncTimeMillis == _syncTimeMillis;
+    }
+
+    @Override
+    public String toString()
+    {
+        return Long.toString(_syncTimeMillis);
     }
 }

@@ -47,7 +47,7 @@ import static com.google.common.base.Preconditions.checkState;
  * TODO (MJ) perhaps the checkpointing could be done earlier, perhaps adding an event when a Bloom
  * filter is deleted from the Collector.
  */
-public class TimeToSyncCollector implements
+class TimeToSyncCollector implements
         IDevicePresenceListener, IPushUpdatesListener, IPullUpdatesListener,
         IDownloadCompletionListener
 {
@@ -55,9 +55,6 @@ public class TimeToSyncCollector implements
     //            before _deviceCheckoutPoint[did]
     private final Map<DID, Long> _deviceCheckPoint;
     private final Table<DID, SOCID, Long> _updateTimes;
-
-    // The size of _updateTimes is bounded:
-    private static final int MAX_UPDATE_TIMES = 1000;
 
     private final RemoteUpdates _ru;
     private final TimeToSyncHistogram _histogram;
@@ -75,8 +72,8 @@ public class TimeToSyncCollector implements
         _ru = ru;
 
         _deviceCheckPoint = Maps.newHashMap();
-        _updateTimes =
-                new MemoryLimitedLinkedHashMapBasedTable<DID, SOCID, Long>(MAX_UPDATE_TIMES);
+        _updateTimes = new MemoryLimitedLinkedHashMapBasedTable<DID, SOCID, Long> (
+                Params.UPDATE_TIMES_TABLE_SIZE_UPPER_BOUND);
 
         addListeners_(devicePresence, newUpdates, getVersReply, downloadFactory);
     }
@@ -105,6 +102,7 @@ public class TimeToSyncCollector implements
     public void deviceOffline_(DID did)
     {
         _updateTimes.row(did).clear();
+        _updateTimes.rowMap().remove(did);
         checkNotNull(_deviceCheckPoint.remove(did), did);
     }
 
@@ -123,7 +121,7 @@ public class TimeToSyncCollector implements
             // There are no updates to download from did, so move the checkpoint forward
             _deviceCheckPoint.put(did, _time.currentTimeMillis());
             _updateTimes.row(did).clear();
-            if (_updateTimes.rowKeySet().contains(did)) l.debug("keyset contains {}", did);
+            _updateTimes.rowMap().remove(did);
         }
     }
 

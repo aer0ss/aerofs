@@ -5,13 +5,13 @@
 package com.aerofs.daemon.core.synctime;
 
 import com.aerofs.base.id.OID;
+import com.aerofs.synctime.api.ClientSideHistogram;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
 import java.util.List;
 import java.util.Map;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 
 /**
@@ -25,7 +25,12 @@ import static com.google.common.base.Preconditions.checkState;
 class TimeToSyncHistogramSingleDID
 {
     // TODO (MJ): automatic threshold adjustment (ArrowConfig perhaps??)
-    private static final int THRESHOLD = TimeToSync.TOTAL_BINS * 7 / 8;
+    // For now, since the server doesn't record OIDs anyway, set the threshold to the total
+    // number of bins, to save client memory
+    // TODO (MJ): when using the overthreshold mpas, consider limiting the total capacity
+    // of the Histogram to avoid OOMs (perhaps by invoking a POST to the server)
+    // Also move this variable to Params.java. At this point there is no need
+    private static final int THRESHOLD = TimeToSync.TOTAL_BINS;
 
     private final int [] _subthreshold;
 
@@ -57,13 +62,23 @@ class TimeToSyncHistogramSingleDID
 
     int frequencyAtBin(int bin)
     {
-        checkArgument(0 <= bin && bin < TimeToSync.TOTAL_BINS);
-
         if (bin < THRESHOLD) {
             return _subthreshold[bin];
         } else {
             return frequencyOverThreshold_(bin);
         }
+    }
+
+    ClientSideHistogram toJSONableHistogram()
+    {
+        int [] counts = new int[size()];
+        for (int i = 0; i < counts.length; i++) counts[i] = frequencyAtBin(i);
+        return new ClientSideHistogram(counts);
+    }
+
+    public int size()
+    {
+        return _subthreshold.length + _overthreshold.size();
     }
 
     private int frequencyOverThreshold_(int bin)
