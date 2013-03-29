@@ -34,6 +34,7 @@ import com.aerofs.lib.id.SOKID;
 import com.aerofs.lib.injectable.InjectableDriver;
 import com.aerofs.lib.injectable.InjectableDriver.FIDAndType;
 import com.aerofs.lib.injectable.InjectableFile;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
@@ -86,7 +87,7 @@ class MightCreateOperations
         // extract core operation (assume exactly one core operation is present)
         static private Operation core(Set<Operation> ops)
         {
-            return Sets.intersection(ops, Operation.CORE).iterator().next();
+            return Iterables.getOnlyElement(Sets.intersection(ops, Operation.CORE));
         }
     }
 
