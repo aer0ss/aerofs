@@ -16,11 +16,6 @@ public class Param extends BaseParam
     public static final long EXP_RETRY_MIN_DEFAULT           = 2 * C.SEC;
     public static final long EXP_RETRY_MAX_DEFAULT           = 60 * C.SEC;
 
-    // AeroFS people can use this string in their email filters to signify emails related to
-    // business cases. There are non-Java code using this string as well. When chaning this string,
-    // make sure to search the entire repository for it.
-    public static final String BUSINESS_USER_EMAIL_TAG = "[BUSINESS_USER]";
-
     ////////
     // file and folder names
 
