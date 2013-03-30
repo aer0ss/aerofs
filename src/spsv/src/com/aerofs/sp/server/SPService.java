@@ -787,7 +787,7 @@ public class SPService implements ISPService
 
         // Sending an email doesn't need to be a part of the transaction
         _deviceRegistrationEmailer.sendDeviceCertifiedEmail(user.id().getString(), firstName,
-                osFamily, deviceName);
+                osFamily, deviceName, device.id());
 
         return createReply(reply);
     }
@@ -893,7 +893,7 @@ public class SPService implements ISPService
 
         // Sending an email doesn't need to be a part of the transaction
         _deviceRegistrationEmailer.sendTeamServerDeviceCertifiedEmail(user.id().getString(),
-                firstName, osFamily, deviceName);
+                firstName, osFamily, deviceName, device.id());
 
         return createReply(reply);
     }

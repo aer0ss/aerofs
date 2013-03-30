@@ -6,6 +6,7 @@ package com.aerofs.sp.server.email;
 
 import com.aerofs.base.BaseParam.SP;
 import com.aerofs.base.BaseParam.SV;
+import com.aerofs.base.id.DID;
 import com.aerofs.labeling.L;
 import com.aerofs.base.ex.AbstractExWirable;
 import com.aerofs.lib.Util;
@@ -19,25 +20,25 @@ import java.io.IOException;
 public class DeviceRegistrationEmailer
 {
     public void sendTeamServerDeviceCertifiedEmail(String emailAddress, String firstName,
-            String osFamily, String deviceName)
+            String osFamily, String deviceName, DID did)
             throws IOException
     {
         // N.B. the URI string must be identical to that in devices/__init__.py.
         sendDeviceCertifiedEmailImpl(L.PRODUCT + " Team Server", emailAddress, firstName, osFamily,
-                deviceName, "Team Servers at " + SP.DASH_BOARD_BASE + "/admin/team_servers");
+                deviceName, "Team Servers at " + SP.DASH_BOARD_BASE + "/admin/team_servers", did);
     }
 
     public void sendDeviceCertifiedEmail(String emailAddress, String firstName,
-            String osFamily, String deviceName)
+            String osFamily, String deviceName, DID did)
             throws IOException
     {
         // N.B. the URI string must be identical to that in devices/__init__.py.
         sendDeviceCertifiedEmailImpl(L.PRODUCT, emailAddress, firstName, osFamily, deviceName,
-                "your devices at " + SP.DASH_BOARD_BASE + "/devices");
+                "your devices at " + SP.DASH_BOARD_BASE + "/devices", did);
     }
 
     public void sendDeviceCertifiedEmailImpl(String product, String emailAddress, String firstName,
-            String osFamily, String deviceName, String manageDeviceStringAndURL)
+            String osFamily, String deviceName, String manageDeviceStringAndURL, DID did)
             throws IOException
     {
         String subject = product + " Installed on Your Device " + Util.quote(deviceName);
@@ -66,6 +67,7 @@ public class DeviceRegistrationEmailer
             throw new IOException(e);
         }
 
-        EmailUtil.emailSPNotification(emailAddress + " device certified email.", "");
+        EmailUtil.emailSPNotification(emailAddress + " device certified email.",
+                "device id: " + did.toStringFormal());
     }
 }
