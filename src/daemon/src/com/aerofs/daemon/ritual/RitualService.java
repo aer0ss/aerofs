@@ -610,7 +610,7 @@ public class RitualService implements IRitualService
     public ListenableFuture<Void> invalidateDeviceNameCache()
             throws Exception
     {
-        new EIInvalidateUserNameCache().execute(PRIO);
+        new EIInvalidateDeviceNameCache().execute(PRIO);
         return createVoidReply();
     }
 
@@ -618,7 +618,7 @@ public class RitualService implements IRitualService
     public ListenableFuture<Void> invalidateUserNameCache()
             throws Exception
     {
-        new EIInvalidateDeviceNameCache().execute(PRIO);
+        new EIInvalidateUserNameCache().execute(PRIO);
         return createVoidReply();
     }
 
