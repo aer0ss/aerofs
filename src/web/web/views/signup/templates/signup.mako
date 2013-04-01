@@ -98,7 +98,8 @@
 
                 var params = {
                     ${self.csrf.token_param()}
-                    ${url_param_next} : "${next}",
+                    ## redirect to the install page right after signing up
+                    ${url_param_next} : "${request.route_url('install')}",
                     ${url_param_email} : "${email_address}",
                     ${url_param_password} : $("#inputPasswd").val(),
                     ${url_param_remember_me}: "",

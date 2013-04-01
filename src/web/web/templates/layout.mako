@@ -7,7 +7,7 @@
     <meta charset="utf-8">
     <title>AeroFS</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="shortcut icon" href="${request.static_url('web:static/favicon.ico')}">
+    <link rel="shortcut icon" href="${request.static_url('web:static/img/favicon.ico')}">
 
     ## stylesheets
     <link href='https://fonts.googleapis.com/css?family=Open+Sans:300,400,600' rel='stylesheet' type='text/css'>

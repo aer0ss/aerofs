@@ -9,7 +9,7 @@ from web.util import get_rpc_stub
 l = logging.getLogger("web")
 
 @view_config(
-    route_name = 'json.request_to_sign_up_with_business_plan',
+    route_name = 'json.request_to_sign_up',
     renderer = 'json',
     permission = NO_PERMISSION_REQUIRED,
     request_method = 'POST'
@@ -18,6 +18,6 @@ def request_to_sign_up_with_business_plan(request):
     email_address = request.params['email_address']
 
     sp = get_rpc_stub(request)
-    sp.request_to_sign_up_with_business_plan(email_address)
+    sp.request_to_sign_up(email_address)
 
     return HTTPOk()

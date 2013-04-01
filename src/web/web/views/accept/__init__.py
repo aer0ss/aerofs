@@ -1,6 +1,5 @@
 def includeme(config):
     config.add_route('accept', '/accept')
-    config.add_route('json.get_invites', '/accept/get'),
     config.add_route('json.accept_team_invitation', '/accept/accept_team')
     config.add_route('json.accept_folder_invitation', '/accept/accept_folder')
     config.add_route('json.ignore_team_invitation', '/accept/ignore_team')

@@ -1240,32 +1240,23 @@ public class SPService implements ISPService
     }
 
     @Override
-    public ListenableFuture<Void> requestToSignUpWithBusinessPlan(String emailAddress)
+    public ListenableFuture<Void> requestToSignUp(String emailAddress)
             throws Exception
     {
         User user = _factUser.createFromExternalID(emailAddress);
 
         _sqlTrans.begin();
 
-        @Nullable String signUpCode;
-        if (user.exists()) {
-            signUpCode = null;
-            // no-op instead of throwing to avoid leaking email information to attackers
-        } else {
-            signUpCode = user.addSignUpCode();
-            // Retrieve the email address from the user id in case the original address is not
-            // normalized.
-            emailAddress = user.id().getString();
-        }
+        @Nullable String signUpCode = user.exists() ? null : user.addSignUpCode();
 
         _sqlTrans.commit();
 
-        // Send the email out of the transaction
-        if (signUpCode == null) {
-            _requestToSignUpEmailer.sendRequestToActivateBusinessPlan(emailAddress);
-        } else {
-            _requestToSignUpEmailer.sendRequestToSignUpAndActivateBusinessPlan(emailAddress,
-                    signUpCode);
+        // Send the email out of the transaction. If the user already exists, no-op instead of
+        // throwing to avoid leaking email information to attackers
+        if (signUpCode != null) {
+            // Retrieve the email address from the user id in case the original address is not
+            // normalized.
+            _requestToSignUpEmailer.sendRequestToSignUp(user.id().getString(), signUpCode);
         }
 
         return createVoidReply();

@@ -12,5 +12,4 @@ expose REST APIs. I hope this happens sooner than Soon TM.
 """
 
 def includeme(config):
-  config.add_route('json.request_to_sign_up_with_business_plan',
-      '/api/request_to_sign_up_with_business_plan')
+  config.add_route('json.request_to_sign_up', '/api/request_to_sign_up')

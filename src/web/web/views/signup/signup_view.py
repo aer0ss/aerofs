@@ -32,7 +32,6 @@ def signup(request):
     _ = request.translate
 
     code = request.params.get(URL_PARAM_SIGNUP_CODE)
-    next = request.params.get(URL_PARAM_NEXT) or '/'
 
     if not code: raise HTTPBadRequest()
 
@@ -49,7 +48,6 @@ def signup(request):
             'url_param_next': URL_PARAM_NEXT,
             'email_address' : sp.resolve_sign_up_code(code).email_address,
             'code' : code,
-            'next' : next
         }
     except ExceptionReply:
         # I can use HTTPServerError. But the error will be commonly caused by

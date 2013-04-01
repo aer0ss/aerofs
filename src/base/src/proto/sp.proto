@@ -18,15 +18,11 @@ service SPService {
     rpc __error__(Void) returns(PBException);
 
     /**
-     * Request to sign up a user and enable business plan. The method sends an email to the user
-     * with a sign-up link. After the user signs up, the user is directed to the payment page.
-     *
-     * No-op if the user exists. Do not throw ExAlreadyExist to avoid leaking email information to
-     * attackers.
+     * Similar to InviteToSignUp except that no inviter is included in the email sent to the user.
      *
      * Required Auth Level: none
      */
-    rpc RequestToSignUpWithBusinessPlan(RequestToSignUpWithBusinessPlanCall) returns(Void);
+    rpc RequestToSignUp(RequestToSignUpCall) returns(Void);
 
     /**
      * Sign up a user using a signup code.
@@ -112,10 +108,8 @@ service SPService {
     rpc RegisterDevice(RegisterDeviceCall) returns (RegisterDeviceReply);
 
     /**
-     * Invite a person to become an AeroFS user. The will be entered into the default organization
-     * The person will receive an email instructing him/her to download AeroFS. The email will also
-     * contain a sign-up code to be used in the SignUpWithCode call. The user is silently
-     * ignored if she is already an AeroFS user.
+     * Send the specified user a signup invitation email. The request is silently ignored if the
+     * user is already an AeroFS user.
      *
      * Required Auth Level: user
      *
@@ -164,9 +158,6 @@ service SPService {
      * Shares a folder with another user.
      *
      * If the user doesn't exist yet, this method calls InviteToSignUp.
-     * If the invitee email address is outside the organization's allowed domain, he
-     * will be invited to the default organization. If the user is authorized to share
-     * with the invitee, they will be sent an email notification.
      *
      * See docs/design/sharing_and_migration.txt for high-level design.
      *
@@ -398,7 +389,7 @@ service SPService {
 
     /**
      * Gets a list of organizations the user has been invited to, excluding their current
-     * organization and the default organization.
+     * organization.
      *
      * Required Auth Level: user
      */
@@ -679,7 +670,7 @@ message InviteToSignUpCall {
     repeated string email_addresses = 1;
 }
 
-message RequestToSignUpWithBusinessPlanCall {
+message RequestToSignUpCall {
     required string email_address = 1;
 }
 

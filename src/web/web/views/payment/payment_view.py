@@ -103,6 +103,10 @@ def json_create_stripe_customer(request):
     sp.set_stripe_customer_id(stripe_customer_id)
     stripe_util.update_stripe_subscription(sp.get_stripe_data().stripe_data)
 
+    # The AeroFS team uses BUSINESS_USER as a tag to filter priority emails
+    send_internal_email("[BUSINESS_USER] {} activated paid plan".format(
+        get_session_user(request)), "Congrats, Team!")
+
 @view_config(
     route_name='json.update_credit_card',
     permission='admin',
