@@ -47,6 +47,16 @@ class ejabberd(
         notify  => Service["ejabberd"],
     }
 
+    file { "/etc/ejabberd/ejabberd.pem":
+        ensure  => "present",
+        owner   => "root",
+        group   => "ejabberd",
+        mode    => "640",
+        source  => "puppet:///${aerofs_ssl_dir}/ejabberd.pem",
+        require => Package["ejabberd"],
+        notify  => Service["ejabberd"],
+    }
+
     file { "/etc/ejabberd/auth_all":
         source => "puppet:///modules/ejabberd/auth_all",
         mode   => "755",
