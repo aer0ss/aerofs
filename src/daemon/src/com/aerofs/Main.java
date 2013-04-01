@@ -10,6 +10,7 @@ import com.aerofs.labeling.L;
 import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.LogUtil;
 import com.aerofs.lib.Param;
+import com.aerofs.lib.ProgramInformation;
 import com.aerofs.lib.SystemUtil.ExitCode;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.rocklog.RockLog;
@@ -28,8 +29,8 @@ import com.aerofs.sv.client.SVClient;
 
 import static com.aerofs.lib.rocklog.RockLog.BaseComponent.CLIENT;
 
-
-public class Main {
+public class Main
+{
     final static Logger l = Loggers.getLogger(Main.class);
 
     private static final Object CONTROLLER_NAME = "controller";
@@ -97,7 +98,7 @@ public class Main {
                     + AppRoot.abs() + " - " + Util.e(e));
         }
 
-        // Initialize RockLog
+        ProgramInformation.init_(prog); // FIXME (AG): what happens if the program name is bad?
         RockLog.init_(CLIENT);
         SystemUtil.setDefaultUncaughtExceptionHandler();
 

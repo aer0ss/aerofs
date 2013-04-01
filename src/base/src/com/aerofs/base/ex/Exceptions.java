@@ -4,6 +4,8 @@
 
 package com.aerofs.base.ex;
 
+import com.aerofs.base.BaseSecUtil;
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.proto.Common.PBException;
 import com.aerofs.proto.Common.PBException.Type;
@@ -14,10 +16,13 @@ import org.slf4j.Logger;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.security.MessageDigest;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+
+import static com.google.common.base.Charsets.US_ASCII;
 
 public class Exceptions
 {
@@ -128,5 +133,28 @@ public class Exceptions
         PrintWriter pw = new PrintWriter(sw, false);
         AbstractExWirable.printStackTrace(e, pw);
         return sw.toString();
+    }
+
+    /**
+     * This method returns a hash string that should remain identical for multiple instances of the
+     * same exception, even if the exception message is different.
+     */
+    public static String getChecksum(Throwable e)
+    {
+        MessageDigest md = BaseSecUtil.newMessageDigestMD5();
+        for (Throwable t : Throwables.getCausalChain(e)) {
+            md.update(getASCIIBytes(t.getClass().getName()));
+            for (StackTraceElement el : t.getStackTrace()) {
+                md.update(getASCIIBytes(el.getClassName()));
+                md.update(getASCIIBytes(el.getMethodName()));
+                md.update(getASCIIBytes(Integer.toString(el.getLineNumber())));
+            }
+        }
+        return BaseUtil.hexEncode(md.digest());
+    }
+
+    private static byte[] getASCIIBytes(String string)
+    {
+        return string.getBytes(US_ASCII);
     }
 }
