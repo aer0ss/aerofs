@@ -47,6 +47,11 @@ class ejabberd(
         notify  => Service["ejabberd"],
     }
 
+    $aerofs_ssl_dir = hiera("environment","") ? {
+        "staging"   => "aerofs_ssl/staging",
+        default     => "aerofs_ssl"
+    }
+
     file { "/etc/ejabberd/ejabberd.pem":
         ensure  => "present",
         owner   => "root",
