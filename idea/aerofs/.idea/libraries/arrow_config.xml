@@ -1,7 +1,7 @@
 <component name="libraryTable">
   <library name="arrow-config">
     <CLASSES>
-      <root url="jar://$PROJECT_DIR$/../../resource/server/arrow-config-5.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../resource/server/arrow-config-6.jar!/" />
     </CLASSES>
     <JAVADOC />
     <SOURCES />
