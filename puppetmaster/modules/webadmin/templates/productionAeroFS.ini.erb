@@ -4,6 +4,11 @@ wsgi-file = /opt/web/production.wsgi
 socket = :8080
 master = true
 
+# We need this because we have big cookies
+# We have big cookies because we use mixpanel, optimizely, etc.
+# along with our own beaker encrypted blob
+buffer-size = 8192
+
 # Set these based on capacity of server, but because some of
 # our code is stateful (namely in-memory session storage) more
 # processes could cause problems
