@@ -1,19 +1,180 @@
 @import "bootstrap/variables.less";
-
-@footerHeight: 4em;
-
-.navbar .nav > li > a {
-  font-size:120%;
-  font-weight:bold;
-}
+@import "bootstrap/mixins.less";    // for buttonBackground()
 
 // We use h4 for modal titles. A normal font weight is not pretty for titles.
 h4 {
   font-weight:600;
 }
 
-// Form-related elements
-// ------------------
+////////
+// Make the footer stick to the bottom
+
+@footerHeight: 4em;
+@footerPaddingTop: 10px;
+
+html, body {
+  height: 100%;
+}
+
+#wrapper {
+  min-height: 100%;
+  margin-bottom: -@footerHeight;
+}
+
+#footer-push {
+  // Add extra height to leave a decent margin between the bottom of main body
+  // and footer.
+  height: @footerHeight + 2em;
+}
+
+footer {
+  height: @footerHeight;
+  // background: @base02;
+  // color: @base1;
+  color: @grayLight;
+  font-size: 85%;
+}
+
+// Also see #top-nav-span
+#footer-span {
+  border-top: @headerFooterSeparator;
+  padding-top: @footerPaddingTop;
+}
+
+////////
+// Page layout
+
+@headerFooterSeparator: 1px solid #e5e5e5;
+
+@blockSeparator: 1px solid #d3d3d3;
+
+.top-divider {
+  border-top: @blockSeparator;
+}
+
+.top-divider-margin {
+  margin-top: 20px;
+  padding-top: 20px;
+}
+
+.right-divider {
+  border-right: @blockSeparator;
+}
+
+.page_block + .page_block {
+  margin-top: 30px;
+}
+
+////////
+// Nav bars
+
+// Also see #footer-span
+#top-nav-span {
+  // Add a light-grey line under the top nav bar.
+  border-bottom: @headerFooterSeparator;
+}
+
+.top-nav {
+  // Undo the large bottom margin for the top nav bar.
+  margin-bottom: inherit;
+}
+
+.top-nav > li + li {
+  // Pull down all but the first item (i.e. the logo) in the top nav bar
+  margin-top: 14px;
+  font-weight: bold;
+}
+
+// Override Bootstrap's style for active navigation items
+.left-nav > .active > a,
+.left-nav > .active > a:hover {
+  background: transparent;
+  text-shadow: none;
+  font-weight: bolder;
+  color: @linkColorHover;
+}
+
+// Override Bootstrap's @grayLighter background color
+.nav > li > a:hover,
+.nav > li > a:focus {
+  background-color: inherit;
+}
+
+// Override Bootstrap's grey background defined for .nav > li > a:hover/focus
+// '#' instead of '.' is needed for overriding to work (since ids are more
+// specific than classes).
+#nav-btn-sign-up {
+  // Values of the last two parameters are copied from Bootstrap's .btn style.
+  .buttonBackground(@yellow, spin(@yellow, -5%), @grayDark, 0 1px 1px rgba(255,255,255,.75));
+}
+
+////////
+// For the front page only. Save it here
+
+form#fp-sign-up-form .input-placeholder {
+  position: absolute;
+  // These two values are determined empirically
+  top: 13px;
+  left: 22px;
+  font-size: @fontSizeLarge;
+  color: @grayLight;
+}
+
+// Use .btn-large's stype for the input fields on the front page
+form#fp-sign-up-form input {
+  padding: @paddingLarge;
+  font-size: @fontSizeLarge;
+  .border-radius(@borderRadiusLarge);
+  // Undo Bootstrap's height for input fields, and calculate height based on
+  // text size and padding (the same as how btn-large's height is calculated)
+  height: inherit;
+  margin-bottom: 20px;
+}
+
+h1#fp-heading {
+  // Similar style to Bootstrap's .hero-unit > h1.
+  font-size: 60px;
+  color: @heroUnitHeadingColor;
+  line-height: 1.2;
+  letter-spacing: -1px;
+}
+
+p#fp-tag-line {
+  // The same color as Bootstrap's h1 > small.
+  font-size: 120%;
+  color: @grayLight;
+}
+
+img.fp-icon {
+  position: absolute;
+  top: -27px;
+  left: 111px;
+}
+
+ul.fp-thumbnails .thumbnail {
+  position: relative;
+  padding-top: 30px;
+}
+
+////////
+// Thumbnails
+
+.thumbnail {
+  background-color: white;
+}
+
+ul.big-thumbnails .thumbnail {
+  .border-radius(@borderRadiusLarge);
+  padding-left: 15px;
+  padding-right: 15px;
+}
+
+ul.big-thumbnails .thumbnail h4 {
+  text-align: center;
+}
+
+////////
+// Forms
 
 div.input_container {
     margin-top: 10px;
@@ -35,93 +196,8 @@ div.input_container.submit {
     margin-top: 25px;
 }
 
-.nav-list > .active > a, .nav-list > .active > a:hover {
-  background: transparent;
-  text-shadow: none;
-  font-weight: bolder;
-  color: @linkColorHover;
-}
-
-.page_block {
-  margin-bottom: 30px;
-}
-
-.full_name {
-  font-weight: bold;
-}
-
-.datatable_body {
-  margin-bottom: 15px;
-}
-
-// Use smaller fonts for labels, and push labels away from main text (assuming
-// labels are always to the right of text).
-.label {
-  font-size: 70%;
-  margin-left: 7px;
-}
-
-// Override Bootstrap's @grayLighter background color
-.nav > li > a:hover,
-.nav > li > a:focus {
-  background-color: inherit;
-}
-
-// Force dataTables info text (e.g. "1-10 of 100") stay close to pagination
-// buttons. The sDom parameter must place the text _after_ pagination,
-// e.g. "<'span3'pi>". See invocations to dataTable() in shared_folder.mako,
-// team_members.mako, etc for examples.
-.dataTables_info {
-  display: inline;
-  float: right;
-  margin-right: 10px;
-}
-
-// To correct the vertical mis-alignment for icons
-.vertical-align-fix() {
-  vertical-align: -2px;
-}
-
-.icon-vertical-align-fix {
-  .vertical-align-fix();
-}
-
-[class^="icon-"],
-[class*=" icon-"] {
-  .vertical-align-fix();
-}
-
-// Copied from mixins.less
-.ie7-restore-right-whitespace() {
-  *margin-right: .3em;
-}
-
-[class^="aerofs-icon-"],
-[class*=" aerofs-icon-"] {
-  // The following is copied from sprites.less. Ideally we should inherit styles
-  // and avoid code duplication.
-  display: inline-block;
-  width: 14px;
-  height: 14px;
-  .ie7-restore-right-whitespace();
-  line-height: 14px;
-  vertical-align: text-top;
-  background-image: url("@{aerofsIconSpritePath}");
-  background-position: 14px 14px;
-  background-repeat: no-repeat;
-
-  // This must be at the end of the style otherwise it would be overwritten by
-  // the above vertical-align
-  .vertical-align-fix();
-}
-
-.aerofs-icon-osx              { background-position: 0      0; }
-.aerofs-icon-windows          { background-position: -24px  0; }
-.aerofs-icon-linux            { background-position: -48px  0; }
-.aerofs-icon-android          { background-position: -72px  0; }
-
+////////
 // Messages
-// ------------------
 
 #message_bar {
     position: fixed;
@@ -173,26 +249,92 @@ div.jumbo_banner > h2 {
   font-size: 80%;
 }
 
-// Make the footer stick to the bottom
-// ------------------
+////////
+// Icons
 
-html, body {
-    height: 100%;
+// To correct the vertical mis-alignment for icons
+.vertical-align-fix() {
+  vertical-align: -2px;
 }
 
-#wrapper {
-    min-height: 100%;
-    margin-bottom: -@footerHeight;
+.icon-vertical-align-fix {
+  .vertical-align-fix();
 }
 
-#footer-push {
-    height: @footerHeight;
+[class^="icon-"],
+[class*=" icon-"] {
+  .vertical-align-fix();
 }
 
-footer {
-    height: @footerHeight;
-    // background: @base02;
-    // color: @base1;
-    color: gray;
-    text-align: right;
+// Copied from mixins.less
+.ie7-restore-right-whitespace() {
+  *margin-right: .3em;
+}
+
+[class^="aerofs-icon-"],
+[class*=" aerofs-icon-"] {
+  // The following is copied from sprites.less. Ideally we should inherit styles
+  // and avoid code duplication.
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  .ie7-restore-right-whitespace();
+  line-height: 14px;
+  vertical-align: text-top;
+  background-image: url("@{aerofsIconSpritePath}");
+  background-position: 14px 14px;
+  background-repeat: no-repeat;
+
+  // This must be at the end of the style otherwise it would be overwritten by
+  // the above vertical-align
+  .vertical-align-fix();
+}
+
+.aerofs-icon-osx              { background-position: 0      0; }
+.aerofs-icon-windows          { background-position: -24px  0; }
+.aerofs-icon-linux            { background-position: -48px  0; }
+.aerofs-icon-android          { background-position: -72px  0; }
+
+////////
+// Datatables
+
+.datatable_body {
+  margin-bottom: 15px;
+}
+
+// Force dataTables info text (e.g. "1-10 of 100") stay close to pagination
+// buttons. The sDom parameter must place the text _after_ pagination,
+// e.g. "<'span3'pi>". See invocations to dataTable() in shared_folder.mako,
+// team_members.mako, etc for examples.
+.dataTables_info {
+  display: inline;
+  float: right;
+  margin-right: 10px;
+}
+
+////////
+// Misc
+
+.full_name {
+  font-weight: bold;
+}
+
+// Use smaller fonts for labels, and push labels away from main text (assuming
+// labels are always to the right of text).
+.label {
+  font-size: 70%;
+  margin-left: 7px;
+}
+
+blockquote {
+  border-left-color: darken(@bodyBackground, 10%);
+}
+
+.accordion-group {
+  background-color: white;
+}
+
+// Override Bootstrap's red
+code {
+  color: @codeColor;
 }

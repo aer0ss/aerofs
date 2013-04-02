@@ -1,36 +1,34 @@
-<%inherit file="layout.mako"/>
+<%inherit file="marketing_layout.mako"/>
 
-<div class="span12">
-    <h1 style="text-align: center">Sign In to AeroFS</h1>
-</div>
-<div class="span7 offset5">
-    <br>
+<div class="row">
+    <div class="span12">
+        <h1 style="text-align: center">Sign In to AeroFS</h1>
+    </div>
+    <div class="span7 offset5">
+        <br>
 
-    ## N.B. signup.mock manually creates this form. Make sure the fields there
-    ## are consistent with the fields here.
+        ## N.B. signup.mock manually creates this form. Make sure the fields there
+        ## are consistent with the fields here.
 
-    <form id="signin_form" action="${request.route_path('login')}" method="post">
-        ${self.csrf.token_input()}
-        <input type="hidden" name="${url_param_next}" value="${next}">
-        <input type="hidden" name="${url_param_form_submitted}" value="1">
-        <label for="input_email">Email:</label>
-        <input class="input-medium" id="input_email" type="text" name="${url_param_email}"
-            %if login:
-                value="${login}"
-            %endif
-        >
-        <label for="input_passwd">Password:</label>
-        <input class="input-medium" id="input_passwd" type="password" name="${url_param_password}">
-        <label class="checkbox">
-            <input type="checkbox" name="${url_param_remember_me}" value="staySignedIn"
-                   checked="checked"> Remember me
-        </label>
-        <input id="signin_button" class="btn btn-primary" type="submit" value="Sign In"/>
-    </form>
-
-    <p><a href="${request.route_path('request_password_reset')}">
-        Forgot your password?</a></p>
-
+        <form id="signin_form" action="${request.route_path('login')}" method="post">
+            ${self.csrf.token_input()}
+            <input type="hidden" name="${url_param_next}" value="${next}">
+            <input type="hidden" name="${url_param_form_submitted}" value="1">
+            <label for="input_email">Email</label>
+            <input class="input-medium" id="input_email" type="text" name="${url_param_email}"
+                %if login:
+                    value="${login}"
+                %endif
+            >
+            <label for="input_passwd">Password <a tabindex="-1" href="${request.route_path('request_password_reset')}">(I forgot)</a></label>
+            <input class="input-medium" id="input_passwd" type="password" name="${url_param_password}">
+            <label class="checkbox">
+                <input type="checkbox" name="${url_param_remember_me}" value="staySignedIn"
+                       checked="checked"> Remember me
+            </label>
+            <input id="signin_button" class="btn btn-primary" type="submit" value="Sign In"/>
+        </form>
+    </div>
 </div>
 
 <%block name="scripts">

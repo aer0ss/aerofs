@@ -21,6 +21,8 @@ service SPService {
      * Similar to InviteToSignUp except that no inviter is included in the email sent to the user.
      *
      * Required Auth Level: none
+     *
+     * Throws: ExEmptyEmailAddress is the email address is empty
      */
     rpc RequestToSignUp(RequestToSignUpCall) returns(Void);
 

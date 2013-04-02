@@ -40,6 +40,11 @@ _USER_AND_ROLE_LAST_NAME_KEY = 'last_name'
 _USER_AND_ROLE_IS_OWNER_KEY = 'owner'
 
 @view_config(
+    route_name = 'dashboard_home',
+    renderer = 'shared_folders.mako',
+    permission = 'user'
+)
+@view_config(
     route_name = 'my_shared_folders',
     renderer = 'shared_folders.mako',
     permission = 'user'

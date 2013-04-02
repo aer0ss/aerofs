@@ -1,10 +1,9 @@
-<%inherit file="layout.mako"/>
-<%! navigation_bars = True; %>
+<%inherit file="dashboard_layout.mako"/>
 
 <%namespace name="credit_card_modal" file="credit_card_modal.mako"/>
 
 <%block name="css">
-    <link href="${request.static_url('web:static/css/datatables-bootstrap.css')}"
+    <link href="${request.static_path('web:static/css/datatables-bootstrap.css')}"
           rel="stylesheet">
 </%block>
 
@@ -44,7 +43,7 @@
     <p>
         <a class="btn btn-primary" href="#"
            onclick="upgrade(); return false;">Upgrade</a>
-        <a class="btn btn-link" href="https://www.aerofs.com/pricing"
+        <a class="btn btn-link" href="${request.route_path('pricing')}"
            target="_blank">Compare plans</a>
     </p>
 
@@ -59,7 +58,7 @@
         <%def name="description()">
             <p>
                 You are upgrading to a paid plan of $10/team member/month.<br>
-                <a href="https://www.aerofs.com/pricing" target="_blank">More info on plans</a>.
+                <a href="${request.route_path('pricing')}" target="_blank">More info on plans</a>.
             </p>
 
             <%credit_card_modal:default_description/>

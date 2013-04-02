@@ -34,8 +34,13 @@ def main(global_config, **settings):
     # Localization settings
     config.add_translation_dirs('locale')
 
-    # Static view
+    # Static views
     config.add_static_view(settings['static.prefix'], 'static', cache_max_age=3600)
+    config.add_static_view(settings['installer.prefix'], 'installer')
+
+    # The home page for the dashboard and marketing contents.
+    config.add_route('dashboard_home', '/home')
+    config.add_route('marketing_home', '/')
 
     # Import routes from views
     for view in views.__all__:

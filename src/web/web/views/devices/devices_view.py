@@ -57,7 +57,7 @@ def team_server_devices(request):
     devices = sp.list_user_devices(ts_user).device
 
     if len(devices) == 0:
-        raise HTTPFound(request.route_path('install_team_server'))
+        raise HTTPFound(request.route_path('no_team_server_device'))
 
     return _devices(devices, ts_user, _("Team Servers"))
 
@@ -77,6 +77,14 @@ def _devices(devices, user, page_title):
     renderer='no_device.mako'
 )
 def no_device(request):
+    return {}
+
+@view_config(
+    route_name = 'no_team_server_device',
+    permission = 'admin',
+    renderer='no_team_server_device.mako'
+)
+def no_team_server_device(request):
     return {}
 
 @view_config(

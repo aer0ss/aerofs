@@ -11,6 +11,7 @@ from pyramid.view import view_config
 from aerofs_common.exception import ExceptionReply
 from aerofs_sp.scrypt import scrypt
 import aerofs_sp.gen.common_pb2 as common
+from web.sp_util import exception2error
 
 from web.util import *
 from web.views.login.login_view import *
@@ -83,6 +84,9 @@ def json_signup(request):
     try:
         sp = get_rpc_stub(request)
         sp.sign_up_with_code(code, cred, first_name, last_name)
+
+        flash_success(request, "Hooray, you've signed up AeroFS!")
+
         return HTTPOk()
     except ExceptionReply as e:
         if e.get_type() == common.PBException.BAD_CREDENTIAL:
@@ -94,3 +98,22 @@ def json_signup(request):
         else:
             msg = get_error(e)
         return { 'error' : msg }
+
+@view_config(
+    route_name = 'json.request_to_signup',
+    renderer = 'json',
+    permission = NO_PERMISSION_REQUIRED,
+    # See the comments in index.mako for the reason why we use GET but not POST
+    request_method = 'GET'
+)
+def json_request_to_sign_up(request):
+    _ = request.translate
+    email_address = request.params[URL_PARAM_EMAIL]
+    empty_email_message = _("Please enter an email address")
+    if not email_address: error(empty_email_message)
+
+    sp = get_rpc_stub(request)
+    exception2error(sp.request_to_sign_up, email_address, {
+        PBException.EMPTY_EMAIL_ADDRESS: empty_email_message,
+        PBException.INVALID_EMAIL_ADDRESS: _("Please enter a valid email address")
+    })

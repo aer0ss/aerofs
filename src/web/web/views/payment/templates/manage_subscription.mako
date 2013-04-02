@@ -1,5 +1,4 @@
-<%inherit file="layout.mako"/>
-<%! navigation_bars = True; %>
+<%inherit file="dashboard_layout.mako"/>
 
 <%namespace name="credit_card_modal" file="credit_card_modal.mako"/>
 
@@ -162,7 +161,8 @@
             Whichever plan you are on, the AeroFS team loves you.</p>
     </div>
     <div class="modal-footer">
-        <a href="/" class="btn btn-primary">Go to Home Page</a>
+        <a href="${request.route_path('dashboard_home')}" class="btn btn-primary">
+            Go to Home Page</a>
     </div>
 </div>
 

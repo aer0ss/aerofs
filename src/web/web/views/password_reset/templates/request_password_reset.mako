@@ -1,26 +1,28 @@
-<%inherit file="layout.mako"/>
+<%inherit file="marketing_layout.mako"/>
 
-<div class="span6 offset3">
+<div class="row">
+    <div class="span6 offset3">
 
-    %if success:
-        <h2>Please Check Your Email</h2>
-        <div id="success_msg">
-            If the email address you entered is associated with an AeroFS account,
-            an email has been sent to that address with instructions to reset the password.
-        </div>
-    %else:
-        <h2>AeroFS Password Reset</h2>
-        <p>
-            Please enter the email address you use with AeroFS. You will receive
-            an email with a link to reset your password.
-        </p>
-        <form class="form-inline" action="${request.route_path('request_password_reset')}"
-                method="post">
-            ${self.csrf.token_input()}
-            <input type="text" id="email-input" name="login" value=""/>
-            <input class="btn" type="submit" name="form.submitted" value="Send Email"/>
-        </form>
-    %endif
+        %if success:
+            <h2>Please Check Your Email</h2>
+            <div id="success_msg">
+                If the email address you entered is associated with an AeroFS account,
+                an email has been sent to that address with instructions to reset the password.
+            </div>
+        %else:
+            <h2>Reset Password</h2>
+            <p>
+                Please enter the email address you use with AeroFS. You will receive
+                an email with a link to reset your password.
+            </p>
+            <form class="form-inline" action="${request.route_path('request_password_reset')}"
+                    method="post">
+                ${self.csrf.token_input()}
+                <input type="text" id="email-input" name="login" value=""/>
+                <input class="btn" type="submit" name="form.submitted" value="Send Email"/>
+            </form>
+        %endif
+    </div>
 </div>
 
 <%block name="scripts">

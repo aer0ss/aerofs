@@ -1,10 +1,9 @@
-<%inherit file="layout.mako"/>
-<%! navigation_bars = True; %>
+<%inherit file="dashboard_layout.mako"/>
 
 <%namespace name="credit_card_modal" file="credit_card_modal.mako"/>
 
 <%block name="css">
-    <link href="${request.static_url('web:static/css/datatables-bootstrap.css')}"
+    <link href="${request.static_path('web:static/css/datatables-bootstrap.css')}"
           rel="stylesheet">
 </%block>
 
@@ -34,7 +33,7 @@
             The free plan allows <strong>three</strong> team members. If you'd
             like to add additional team members, please upgrade to the paid plan
             ($10/team member/month).
-            <a href="https://www.aerofs.com/pricing" target="_blank">Compare plans</a>.
+            <a href="${request.route_path('pricing')}" target="_blank">Compare plans</a>.
         </p>
 
         <%credit_card_modal:default_description/>
@@ -48,7 +47,7 @@
     <%credit_card_modal:javascript/>
 
     <script src="https://ajax.aspnetcdn.com/ajax/jquery.dataTables/1.8.2/jquery.dataTables.min.js"></script>
-    <script src="${request.static_url('web:static/js/datatables_extensions.js')}"></script>
+    <script src="${request.static_path('web:static/js/datatables_extensions.js')}"></script>
     <script type="text/javascript">
         $(document).ready(function() {
             $('#invite_user_email').focus();

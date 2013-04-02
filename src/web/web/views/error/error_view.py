@@ -78,7 +78,7 @@ def _force_login(request):
     # home button.
     # TODO (WW) include request parameters to the next URL
     next = request.path.strip()
-    if next and next != '/':
+    if next:
         loc = request.route_url('login', _query=(('next', next),))
     else:
         loc = request.route_url('login')

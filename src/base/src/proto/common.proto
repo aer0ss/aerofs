@@ -95,6 +95,7 @@ message PBException {
         NO_STRIPE_CUSTOMER_ID = 403;
         // The user needs to log in
         NOT_AUTHENTICATED = 404;
+        INVALID_EMAIL_ADDRESS = 405;
     }
 
     required Type type = 1;

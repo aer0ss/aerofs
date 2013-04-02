@@ -1,41 +1,47 @@
-<%inherit file="layout.mako"/>
+<%inherit file="marketing_layout.mako"/>
 
-<div class="span12">
-    <h1 style="text-align: center">Create an account</h1>
-</div>
-
-<div class="span4 offset4">
-    <div class="well well-small" style="margin: 0 auto;">
-        <div style="text-align: center;">
-            You will sign up using this email:<br>
-            <strong>${email_address}</strong>
-        </div>
+<div class="row">
+    <div class="span12">
+        <h1 style="text-align: center">Create an account</h1>
     </div>
-    <br>
 </div>
 
-<div class="span7 offset5">
-    ## Always use POST to avoid disclose passwords in the URL when JS is disabled.
-    <form id="signupForm" method="post">
-        ${self.csrf.token_input()}
-        ## signup.py needs the email address only to generate scrypt
-        ## credentials. Alternatively, we can query the SP for the email address
-        ## but this would add an extra round trip to SP.
-        <input type="hidden" name="${url_param_email}" value="${email_address}"/>
-        <input type="hidden" name="${url_param_signup_code}" value="${code}"/>
-        <label for="inputFirstName">First name:</label>
-        <input class="span2" id="inputFirstName" type="text" name="${url_param_first_name}">
-        <label for="inputLastName">Last name:</label>
-        <input class="span2" id="inputLastName" type="text" name="${url_param_last_name}">
-        <label for="inputPasswd">Password:</label>
-        <input class="span2" id="inputPasswd" type="password" name="${url_param_password}">
+<div class="row">
+    <div class="span4 offset4">
+        <div class="well well-small" style="margin: 0 auto;">
+            <div style="text-align: center;">
+                You will sign up using this email:<br>
+                <strong>${email_address}</strong>
+            </div>
+        </div>
+        <br>
+    </div>
+</div>
 
-        <span class="help-block footnote" style="margin-top: 10px;">
-            By signing up you agree to AeroFS <a href="http://www.aerofs.com/tos" target="_blank">Terms of Service</a>
-        </span>
+<div class="row">
+    <div class="span7 offset5">
+        ## Always use POST to avoid disclose passwords in the URL when JS is disabled.
+        <form id="signupForm" method="post">
+            ${self.csrf.token_input()}
+            ## signup.py needs the email address only to generate scrypt
+            ## credentials. Alternatively, we can query the SP for the email address
+            ## but this would add an extra round trip to SP.
+            <input type="hidden" name="${url_param_email}" value="${email_address}"/>
+            <input type="hidden" name="${url_param_signup_code}" value="${code}"/>
+            <label for="inputFirstName">First name:</label>
+            <input class="span2" id="inputFirstName" type="text" name="${url_param_first_name}">
+            <label for="inputLastName">Last name:</label>
+            <input class="span2" id="inputLastName" type="text" name="${url_param_last_name}">
+            <label for="inputPasswd">Password:</label>
+            <input class="span2" id="inputPasswd" type="password" name="${url_param_password}">
 
-        <button id="submitButton" class="btn btn-primary" type="submit">Sign Up</button>
-    </form>
+            <span class="help-block footnote" style="margin-top: 10px;">
+                By signing up you agree to AeroFS <a href="${request.route_path('terms')}#tos" target="_blank">Terms of Service</a>
+            </span>
+
+            <button id="submitButton" class="btn btn-primary" type="submit">Sign Up</button>
+        </form>
+    </div>
 </div>
 
 <%block name="scripts">
@@ -99,9 +105,9 @@
                 var params = {
                     ${self.csrf.token_param()}
                     ## redirect to the install page right after signing up
-                    ${url_param_next} : "${request.route_url('install')}",
-                    ${url_param_email} : "${email_address}",
-                    ${url_param_password} : $("#inputPasswd").val(),
+                    ${url_param_next}: "${request.route_url('download')}",
+                    ${url_param_email}: "${email_address}",
+                    ${url_param_password}: $("#inputPasswd").val(),
                     ${url_param_remember_me}: "",
                     ${url_param_form_submitted} : ""
                 };

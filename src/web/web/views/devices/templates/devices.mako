@@ -1,5 +1,4 @@
-<%inherit file="layout.mako"/>
-<%! navigation_bars = True; %>
+<%inherit file="dashboard_layout.mako"/>
 
 <h2>${page_title}</h2>
 

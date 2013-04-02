@@ -55,14 +55,16 @@ URL_PARAM_NEXT = 'next' # N.B. the string "next" is also used in aerofs.js.
 )
 def login(request):
     _ = request.translate
-    referrer = request.url
-    if referrer == request.resource_url(request.context, 'login'):
-        # Never use the login form itself as referrer.
-        referrer = '/'
 
-    next = request.params.get('next') or referrer
+    next = request.params.get('next')
+
+    if not next:
+        next = request.url
+        if next == request.resource_url(request.context, 'login'):
+            # Never redirect to the login page itself.
+            next = request.route_path('dashboard_home')
+
     login = ''
-
     # N.B. the all following parameter keys are used by signup.mako as well.
     # Keep them consistent!
     if URL_PARAM_FORM_SUBMITTED in request.params:

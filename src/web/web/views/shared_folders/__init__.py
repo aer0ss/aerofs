@@ -1,7 +1,7 @@
 def includeme(config):
     config.add_route('team_shared_folders', '/admin/team_shared_folders')
     config.add_route('user_shared_folders', '/admin/user_shared_folders')
-    config.add_route('my_shared_folders', '/')
+    config.add_route('my_shared_folders', '/shared_folders')
 
     config.add_route('json.get_my_shared_folders', '/get_my_shared_folders')
     config.add_route('json.get_user_shared_folders', '/get_user_shared_folders')

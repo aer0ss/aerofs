@@ -15,14 +15,15 @@ public class UserID extends StringID
     private static final String AEROFS_EMAIL_DOMAIN = "@aerofs.com";
 
     /**
-     * This method normalizes {@code str}, ie. convert {@code str} to lower case, before using it to
-     * construct the UserID.
+     * This method normalizes {@code str}, ie. trim and convert {@code str} to lower case before
+     * using it to construct the UserID.
      *
      * Use this constructor to hold UserIDs provided by external input channels like APIs, UI, etc.
      */
     public static UserID fromExternal(String str)
             throws ExEmptyEmailAddress
     {
+        str = str.trim();
         // Don't check for validity of email adress characters. It is too expensive. Do the check
         // at API entry points.
         if (str.isEmpty()) throw new ExEmptyEmailAddress();

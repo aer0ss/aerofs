@@ -3,6 +3,7 @@ package com.aerofs.sp.server;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExEmptyEmailAddress;
 import com.aerofs.base.ex.ExFormatError;
+import com.aerofs.lib.ex.ExInvalidEmailAddress;
 import com.aerofs.lib.ex.ExNoStripeCustomerID;
 import com.aerofs.lib.ex.ExNotAuthenticated;
 import com.aerofs.proto.Common.PBRole;
@@ -1245,6 +1246,10 @@ public class SPService implements ISPService
     public ListenableFuture<Void> requestToSignUp(String emailAddress)
             throws Exception
     {
+        if (!Util.isValidEmailAddress(emailAddress)) {
+            throw new ExInvalidEmailAddress();
+        }
+
         User user = _factUser.createFromExternalID(emailAddress);
 
         _sqlTrans.begin();
@@ -1457,8 +1462,7 @@ public class SPService implements ISPService
 
         _sqlTrans.commit();
 
-        return createReply(
-                DeleteOrganizationInvitationReply.newBuilder().setStripeData(sd).build());
+        return createReply(DeleteOrganizationInvitationReply.newBuilder().setStripeData(sd).build());
     }
 
     @Override

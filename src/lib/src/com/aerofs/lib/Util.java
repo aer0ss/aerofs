@@ -86,6 +86,7 @@ public abstract class Util
                         // list them here for the time being.
                         /*
                         .put(Type.NO_ADMIN_OR_OWNER, ExNoAdminOrOwner.class)
+                        .put(Type.INVALID_EMAIL_ADDRESS, ExInvalidEmailAddress.class)
                         */
 
                         .build());
@@ -456,7 +457,9 @@ public abstract class Util
         return (ch >> 7) == 0;
     }
 
-
+    /**
+     * If the caller hopes to throw an exception on invalid emails, use ExInvalidEmailAddress
+     */
     public static boolean isValidEmailAddress(String email)
     {
         boolean hasAt = false;

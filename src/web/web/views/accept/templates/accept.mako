@@ -1,5 +1,4 @@
-<%inherit file="layout.mako"/>
-<%! navigation_bars = True; %>
+<%inherit file="dashboard_layout.mako"/>
 
 <%block name="css">
     <style type="text/css">
@@ -122,7 +121,7 @@
     <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal">×</button>
         <h4 class="text-error"><img class="icon-vertical-align-fix"
-                src="${request.static_url('web:static/img/warning_16.png')}"
+                src="${request.static_path('web:static/img/warning_16.png')}"
                 width="16px" height="16px">
             Please Assign an Administrator</h4>
     </div>

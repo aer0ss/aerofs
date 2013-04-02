@@ -114,15 +114,15 @@ def get_rpc_stub(request):
 
 def flash_error(request, error_msg):
     """
-    Adds the given error message to the error message queue, which is dumped to
-    the message bar the next time a page is rendered.
+    Adds the given error message to the error message queue. Call
+    get_last_flash_message_and_empty_queue() to retrieve the message.
     """
     request.session.flash(error_msg, 'error_queue')
 
 def flash_success(request, success_msg):
     """
-    Adds the given message to the success message queue, which is dumped to the
-    message bar the next time a page is rendered.
+    Adds the given message to the success message queue, Call
+    get_last_flash_message_and_empty_queue() to retrieve the message.
     """
     request.session.flash(success_msg, 'success_queue')
 

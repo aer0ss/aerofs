@@ -1,8 +1,10 @@
-<%inherit file="layout.mako"/>
+<%inherit file="marketing_layout.mako"/>
 
-<div class="span6 offset3">
-    <h2>500 Internal Server Error</h2>
-    <p id="error_text"></p>
+<div class="row">
+    <div class="span6 offset3">
+        <h2>500 Internal Server Error</h2>
+        <p id="error_text"></p>
+    </div>
 </div>
 
 <%block name="scripts">
