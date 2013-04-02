@@ -15,7 +15,8 @@ node "sv.aerofs.com" inherits default {
 
     cron{"remove old defects":
         command => '/usr/local/bin/clean_defects',
-        minute  => "0"
+        minute  => "0",
+        hour    => "*",
     }
 
     cron{"remove empty defects":
