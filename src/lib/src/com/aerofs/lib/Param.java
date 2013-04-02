@@ -46,7 +46,7 @@ public class Param extends BaseParam
     public static final String PROFILER                = "profiler";
     public static final String NO_FS_TYPE_CHECK        = "nofstypecheck";
     public static final String SHARED_FOLDER_TAG       = ".aerofs";
-    public static final String LAST_SENT_DEFECT        = "lsd";
+    public static final String RECENT_EXCEPTIONS       = "rex";
 
     /**
      * AuxRoot (auxiliary root) is the location where AeroFS stores temporary, conflict, and history

@@ -17,6 +17,7 @@ import com.aerofs.lib.SystemUtil.ExitCode;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
+import com.aerofs.lib.ex.RecentExceptions;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.lib.rocklog.Defect.Priority;
 import com.aerofs.lib.rocklog.RockLog;
@@ -33,11 +34,8 @@ import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 import java.io.BufferedWriter;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.FilenameFilter;
@@ -55,7 +53,6 @@ import java.util.zip.ZipOutputStream;
 
 import static com.aerofs.lib.FileUtil.deleteOrOnExit;
 import static com.aerofs.lib.Param.FILE_BUF_SIZE;
-import static com.aerofs.lib.Param.LAST_SENT_DEFECT;
 import static com.aerofs.lib.ThreadUtil.startDaemonThread;
 import static com.aerofs.lib.Util.crc32;
 import static com.aerofs.lib.Util.deleteOldHeapDumps;
@@ -87,16 +84,14 @@ public final class SVClient
     //
     // See "Effective Java, 2nd Edition (Joshua Bloch) pg. 283
     //
-
-    private static final class SVRPCClientHolder
-    {
-        private static final SVRPCClient client = new SVRPCClient("https://sv.aerofs.com:443/sv_beta/sv");
-    }
+    private static final SVRPCClient client = new SVRPCClient("https://sv.aerofs.com:443/sv_beta/sv");
 
     private static SVRPCClient getRpcClient()
     {
-        return SVRPCClientHolder.client;
+        return client;
     }
+
+    private static final RecentExceptions recentExceptions = RecentExceptions.getInstance();
 
     //-------------------------------------------------------------------------
     //
@@ -410,7 +405,7 @@ public final class SVClient
         }
 
         // always send non-automatic defects and database requests
-        boolean ignoreDefect = isAutoBug && isLastSentDefect(cause.getMessage(), stackTrace) && !sendDB;
+        boolean ignoreDefect = isAutoBug && recentExceptions.isRecent(cause) && !sendDB;
         l.error((ignoreDefect ? "repeating last" : "sending") + " defect: " + desc + ": " + Util.e(cause));
         if (ignoreDefect) return;
 
@@ -445,7 +440,7 @@ public final class SVClient
         // clean up state locally
         //
 
-        setLastSentDefect(cause.getMessage(), stackTrace);
+        recentExceptions.add(cause);
 
         if (Cfg.inited() && sendHeapDumps) deleteOldHeapDumps();
 
@@ -725,48 +720,6 @@ public final class SVClient
             }
         } finally {
             zipos.close();
-        }
-    }
-
-    private static boolean isLastSentDefect(String message, String stack)
-            throws IOException
-    {
-        if (!Cfg.inited()) return false;
-
-        final String lastSentDefectFile = join(absRTRoot(), LAST_SENT_DEFECT);
-
-        try {
-            DataInputStream is = new DataInputStream(new FileInputStream(lastSentDefectFile));
-            try {
-                return (message + stack).equals(is.readUTF());
-            } finally {
-                is.close();
-            }
-        } catch (FileNotFoundException e) {
-            l.warn("file not found:" + lastSentDefectFile);
-        } catch (Throwable e) {
-            l.warn("lsd (bad trip): " + Util.e(e));
-        }
-
-        return false;
-    }
-
-    private static void setLastSentDefect(String message, String stack)
-            throws IOException
-    {
-        if (!Cfg.inited()) return;
-
-        final String lastSentDefectFile = join(absRTRoot(), LAST_SENT_DEFECT);
-
-        try {
-            DataOutputStream os = new DataOutputStream(new FileOutputStream(lastSentDefectFile));
-            try {
-                os.writeUTF(message + stack);
-            } finally {
-                os.close();
-            }
-        } catch (Throwable e) {
-            l.warn("fail lsd (bad trip): " + Util.e(e));
         }
     }
 

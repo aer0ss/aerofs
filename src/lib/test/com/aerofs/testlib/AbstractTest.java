@@ -2,6 +2,7 @@ package com.aerofs.testlib;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.lib.LogUtil;
+import com.aerofs.lib.ProgramInformation;
 import org.apache.log4j.BasicConfigurator;
 import org.junit.After;
 import org.junit.Before;
@@ -19,12 +20,14 @@ import java.util.List;
 
 public abstract class AbstractTest extends PowerMockTestCase
 {
-    private static boolean _loggingInited;
+    private static boolean _inited;
 
     @BeforeClass
-    public static void initLog4J()
+    public static void init()
     {
-        if (!_loggingInited) {
+        ProgramInformation.init_("unit-tests");
+
+        if (!_inited) {
             String enableLoggingProperty = System.getProperty("com.aerofs.test.logging");
             if (isLoggingEnabled(enableLoggingProperty)) {
                 BasicConfigurator.configure();
@@ -35,7 +38,7 @@ public abstract class AbstractTest extends PowerMockTestCase
                 LogUtil.disableLog4J();
             }
 
-            _loggingInited = true;
+            _inited = true;
         }
     }
 
