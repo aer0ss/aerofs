@@ -4,17 +4,18 @@
 
 package com.aerofs.lib;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
+/**
+ * This class returns information about the currently running program (daemon, gui, cli, sh, etc...)
+ */
 public final class ProgramInformation
 {
     private static ProgramInformation _programInformation;
 
     private final String _programName;
 
-    public static ProgramInformation getCurrent()
+    public static ProgramInformation get()
     {
-        return checkNotNull(_programInformation);
+        return _programInformation;
     }
 
     public static void init_(String programName)

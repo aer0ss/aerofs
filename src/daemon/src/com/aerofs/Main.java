@@ -98,7 +98,7 @@ public class Main
                     + AppRoot.abs() + " - " + Util.e(e));
         }
 
-        ProgramInformation.init_(prog); // FIXME (AG): what happens if the program name is bad?
+        ProgramInformation.init_(prog);
         RockLog.init_(CLIENT);
         SystemUtil.setDefaultUncaughtExceptionHandler();
 
