@@ -239,28 +239,38 @@ public class SVReactor
         }
 
         // create defect file directory
-        File parent = new File(_pathDefect);
-        if (!parent.exists()) {
-            if (!parent.mkdirs()) {
-                throw new IOException("cannot create " + parent.getAbsolutePath());
+        File defectRoot = new File(_pathDefect);
+        File userDefectFolder = new File(defectRoot, header.getUser());
+        String did = header.hasDeviceId() ? BaseUtil.hexEncode(header.getDeviceId().toByteArray()) :
+                "unknown";
+        File didDefectFolder = new File(userDefectFolder, did);
+        File thisDefectFile = new File(didDefectFolder, DEFECT_LOG_PREFIX + id + ".zip");
+
+        if (!didDefectFolder.exists()) {
+            if (!didDefectFolder.mkdirs()) {
+                throw new IOException("cannot create " + didDefectFolder.getAbsolutePath());
             }
         }
 
         // save defect logs
         byte[] bs = new byte[FILE_BUF_SIZE];
         int len;
-        FileOutputStream zlogos = new FileOutputStream(
-                _pathDefect + File.separator + DEFECT_LOG_PREFIX + id + ".zip");
+        FileOutputStream zlogos = new FileOutputStream(thisDefectFile);
         try {
             while ((len = is.read(bs)) > 0) { zlogos.write(bs, 0, len); }
         } finally {
             zlogos.close();
         }
+        // Add symbolic link to the file from the root folder.  This way, old scripts that refer
+        // to defects by defect ID can still find the defect at the expected location
+        // But Java's File sucks and can't create symlinks, so we shell out to ln -s :(
+        // syntax: ln -s <existing file> <folder to create symlink in>
+        SystemUtil.execBackground("ln", "-s", thisDefectFile.getAbsolutePath(),
+                defectRoot.getAbsolutePath());
 
         // send notification email
         String body = desc
-                + "\n\n" + header.getVersion() + " on dev " + (header.hasDeviceId() ?
-                     BaseUtil.hexEncode(header.getDeviceId().toByteArray()) : "(unknown)")
+                + "\n\n" + header.getVersion() + " on dev " + did
                 + "\n" + defect.getCfgDb()
                 + "\n\n" + javaEnv.toString();
 
