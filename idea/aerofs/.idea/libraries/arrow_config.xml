@@ -1,7 +1,11 @@
 <component name="libraryTable">
   <library name="arrow-config">
     <CLASSES>
-      <root url="jar://$PROJECT_DIR$/../../resource/server/arrow-config-6.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../resource/client/common/lib/archaius-core-0.5.6.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../resource/client/common/lib/jcl-over-slf4j-1.7.2.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../resource/client/common/lib/commons-lang-2.6.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../resource/client/common/lib/commons-configuration-1.8.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../resource/client/common/lib/arrow-config-11-SNAPSHOT.jar!/" />
     </CLASSES>
     <JAVADOC />
     <SOURCES />

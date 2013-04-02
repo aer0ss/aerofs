@@ -12,5 +12,11 @@ dump.rdb
 env
 *.pyc
 resource/dropwizard
+resource/arrow-config
 aerofsj-build*
 converter-build*
+resource/client/common/lib/archaius-core-0.5.6.jar
+resource/client/common/lib/arrow-config-11-SNAPSHOT.jar
+resource/client/common/lib/commons-configuration-1.8.jar
+resource/client/common/lib/commons-lang-2.6.jar
+resource/client/common/lib/jcl-over-slf4j-1.7.2.jar

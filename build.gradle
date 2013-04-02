@@ -1,0 +1,53 @@
+/*
+ * Copyright (c) Air Computing Inc., 2013.
+ */
+
+apply plugin: 'java'
+
+repositories {
+    maven {
+        url 'http://repos.arrowfs.org/nexus/content/repositories/snapshots/' // our nexus repo
+    }
+    mavenCentral() // use maven-central as a backup
+}
+
+configurations {
+    all*.exclude module: 'slf4j-api'          // for all configurations, exclude slf4j because we ship our own
+}
+
+/**
+ * Define the dependencies for arrow-config
+ */
+dependencies {
+    compile('org.arrowfs:arrow-config:11-SNAPSHOT') {
+        exclude module: 'findbugs'            // exclude transitive dependencies for findbugs
+        exclude module: 'slf4j-api'           // exclude older version of slf4j-api
+        exclude module: 'guava'               // exclude guava in preference of our own version
+        exclude module: 'commons-logging'     // exclude commons logging because we use slf4j
+    }
+
+    compile('org.slf4j:jcl-over-slf4j:1.7.2') // replace commons-logging with slf4j redirection
+}
+
+/**
+ * IMPORTANT: I split the downloading and copying into two steps
+ * because gradle deletes the sync directory on every run
+ * FIXME (AG): understand exactly why this happens
+ */
+
+/**
+ * IMPORTANT: private! do not call externally!
+ * copy jars from the maven cache into the sync directory
+ */
+task syncDependencies(type: Sync) {
+    from configurations.compile
+    into "$projectDir/resource/arrow-config"
+}
+
+/**
+ * copy the dependency jars into the final location (client/common/lib)
+ */
+task libs(type: Copy, dependsOn: syncDependencies) {
+    from "$projectDir/resource/arrow-config"
+    into "$projectDir/resource/client/common/lib"
+}
