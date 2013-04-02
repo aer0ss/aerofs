@@ -8,7 +8,9 @@ import com.aerofs.lib.id.SOCID;
 import com.aerofs.proto.RitualNotifications.PBDownloadEvent;
 import com.aerofs.proto.RitualNotifications.PBNotification;
 import com.aerofs.proto.RitualNotifications.PBUploadEvent;
+import com.google.common.base.Predicate;
 import com.google.common.collect.HashBasedTable;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Table;
 
@@ -20,6 +22,14 @@ public class TransferState
 
     private final boolean _onlyTrackOngoingDownloads;
     private boolean _trackMetaDataTransfers = false;
+
+    private final Predicate<SOCID> _isMeta = new Predicate<SOCID>() {
+        @Override
+        public boolean apply(SOCID socid)
+        {
+            return socid.cid().isMeta();
+        }
+    };
 
     public TransferState(boolean onlyTrackOngoingDownloads)
     {
@@ -34,19 +44,11 @@ public class TransferState
         //   and we will have to remove those entries when we disable
         //   meta-data tracking
         if (!_trackMetaDataTransfers) {
-            for (SOCID socid : _dls.keySet()) {
-                if (socid.cid().equals(CID.META)) {
-                    _dls.remove(socid);
-                }
-            }
-
-            for (SOCID socid : _uls.rowKeySet()) {
-                if (socid.cid().equals(CID.META)) {
-                    for (DID did : _uls.row(socid).keySet()) {
-                        _uls.remove(socid, did);
-                    }
-                }
-            }
+            // use guava because:
+            // 1. it's a lot more readable
+            // 2. it uses Iterator correctly to avoid ConcurrentModificationException
+            Iterables.removeIf(_dls.keySet(), _isMeta);
+            Iterables.removeIf(_uls.rowKeySet(), _isMeta);
         }
     }
 
