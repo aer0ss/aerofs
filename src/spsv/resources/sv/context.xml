@@ -11,12 +11,12 @@
               auth="Container"
               type="javax.sql.DataSource"
 
-              username="aerofs_spsv"
+              username="aerofs_sv"
               password="password"
 
               driverClassName="com.mysql.jdbc.Driver"
 
-              url="jdbc:mysql://localhost/aerofs_sv_beta"
+              url="jdbc:mysql://stagingdb.mysql.aws.aerofs.com/aerofs_sv"
 
               maxActive="8"
               maxIdle="4"

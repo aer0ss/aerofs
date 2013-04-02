@@ -1,13 +1,18 @@
 package com.aerofs.sv.server;
 
 
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Map;
@@ -205,6 +210,15 @@ public class SVReactor
         PBSVDefect defect = call.getDefect();
         PBSVHeader header = call.getHeader();
 
+        // Check blacklist.  We have a blacklist to allow us to mitigate resource consumption by
+        // overenthusiastic clients.  However, we should never reject a priority defect.
+        if (defect.getAutomatic() && isBlackListed(header.getUser())) {
+            l.warn("rejecting defect from blacklisted client {} {}", header.getUser(),
+                    header.getDeviceId());
+            throw new IOException("Bug report collection disabled for " + header.getUser() +
+                    " due to excessive resource usage");
+        }
+
         StringBuilder javaEnv = new StringBuilder();
         for (int i = 0; i < defect.getJavaEnvNameCount(); i++) {
             javaEnv.append(defect.getJavaEnvName(i));
@@ -278,6 +292,42 @@ public class SVReactor
             id + ": " + header.getUser();
 
         emailSVNotification(subject, body);
+    }
+
+    private boolean isBlackListed(String user)
+    {
+        String blacklistPath = "/etc/sv/blacklist.conf";
+        BufferedReader br = null;
+        // Blacklist should avoid blocking all defects on unexpected errors.
+        boolean toReturn = false;
+        try {
+            br = new BufferedReader(new InputStreamReader(new FileInputStream(blacklistPath),
+                    Charset.forName("UTF-8")));
+            String line;
+            while ((line = br.readLine()) != null) {
+                if (user.equals(line)) {
+                    // This user was found in the blacklist.
+                    toReturn = true;
+                    break;
+                }
+            }
+        } catch (FileNotFoundException e) {
+            // If no blacklist file found, no users should be marked as blacklisted
+            l.warn("blacklist: Couldn't open {}", blacklistPath);
+            return false;
+        } catch (IOException e) {
+            l.warn("blacklist: IOException reading {}", blacklistPath);
+            return false;
+        } finally {
+            if (br != null) {
+                try {
+                    br.close();
+                } catch (IOException e) {
+                    // ignored, file is being closed already
+                }
+            }
+        }
+        return toReturn;
     }
 
     private void emailCustomerSupport(String desc, int id, String contactEmail)
