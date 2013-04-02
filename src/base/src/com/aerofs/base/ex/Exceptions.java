@@ -22,8 +22,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import static com.google.common.base.Charsets.US_ASCII;
-
 public class Exceptions
 {
     private static final Logger l = Loggers.getLogger(Exceptions.class);
@@ -141,20 +139,20 @@ public class Exceptions
      */
     public static String getChecksum(Throwable e)
     {
+        // Compute the checksum by md5'ing the class exception name as well as the stack trace
+        // note: getBytes() can return anything in any encoding, don't make assumptions. But it will
+        // be consistent within a platform, and that's what matters.
+        // (In other words: if we have classes with unicode chararecters in the names, then the
+        // checksum may vary across paltforms)
         MessageDigest md = BaseSecUtil.newMessageDigestMD5();
         for (Throwable t : Throwables.getCausalChain(e)) {
-            md.update(getASCIIBytes(t.getClass().getName()));
+            md.update(t.getClass().getName().getBytes());
             for (StackTraceElement el : t.getStackTrace()) {
-                md.update(getASCIIBytes(el.getClassName()));
-                md.update(getASCIIBytes(el.getMethodName()));
-                md.update(getASCIIBytes(Integer.toString(el.getLineNumber())));
+                md.update(el.getClassName().getBytes());
+                md.update(el.getMethodName().getBytes());
+                md.update(Integer.toString(el.getLineNumber()).getBytes());
             }
         }
         return BaseUtil.hexEncode(md.digest());
-    }
-
-    private static byte[] getASCIIBytes(String string)
-    {
-        return string.getBytes(US_ASCII);
     }
 }

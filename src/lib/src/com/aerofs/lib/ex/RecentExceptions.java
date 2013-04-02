@@ -79,7 +79,9 @@ public class RecentExceptions
 
     private String getRexFilename()
     {
-        return ProgramInformation.getCurrent().getProgramName() + "-" + Param.RECENT_EXCEPTIONS;
+        String programName = (ProgramInformation.get() != null)
+                ? ProgramInformation.get().getProgramName() : "unknown-program";
+        return programName +  "-" + Param.RECENT_EXCEPTIONS;
     }
 
     /**
@@ -90,8 +92,6 @@ public class RecentExceptions
         try {
             String checksum = Exceptions.getChecksum(t);
             Long timestamp = _exceptions.get(checksum);
-            l.debug("check e chk:{} ts:{}", checksum, timestamp);
-
             return (timestamp != null && System.currentTimeMillis() - timestamp < _interval);
         } catch (Throwable e) {
             l.warn("rex is recent failed: ", e);
@@ -105,25 +105,10 @@ public class RecentExceptions
     public synchronized void add(Throwable t)
     {
         try {
-            String checksum = Exceptions.getChecksum(t);
-            long timestamp = System.currentTimeMillis();
+            _exceptions.put(Exceptions.getChecksum(t), System.currentTimeMillis());
 
-            Long prev = _exceptions.put(checksum, timestamp);
-            l.debug("attempt insert t chk:{} ts:{} ovr:{}", checksum, timestamp, (prev == null ? "N" : "Y"));
-
-            //
             // Remove older entries
-            //
-
             Set<Entry<String, Long>> entries = _exceptions.entrySet();
-
-            if (l.isDebugEnabled()) {
-                l.debug("contents:");
-                for (Entry<String, Long> entry : entries) {
-                    l.debug("\tchk:{} ts:{}\n", entry.getKey(), entry.getValue());
-                }
-            }
-
             while (_exceptions.size() > RECENT_EXCEPTIONS_COUNT) {
                 entries.remove(Collections.min(entries, _comparator));
             }
