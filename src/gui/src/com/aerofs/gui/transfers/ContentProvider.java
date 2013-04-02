@@ -1,12 +1,11 @@
 package com.aerofs.gui.transfers;
 
+import com.aerofs.proto.RitualNotifications.PBDownloadEvent;
+import com.aerofs.proto.RitualNotifications.PBUploadEvent;
 import org.eclipse.jface.viewers.IStructuredContentProvider;
 import org.eclipse.jface.viewers.Viewer;
 
-
 import com.aerofs.gui.TransferState;
-import com.aerofs.proto.RitualNotifications.PBDownloadEvent;
-import com.aerofs.proto.RitualNotifications.PBUploadEvent;
 
 public class ContentProvider implements IStructuredContentProvider
 {

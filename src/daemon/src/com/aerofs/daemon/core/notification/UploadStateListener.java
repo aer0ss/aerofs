@@ -12,15 +12,12 @@ import com.aerofs.daemon.core.UserAndDeviceNames;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Throttler;
 import com.aerofs.lib.Util;
+import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.id.SOCID;
 import com.aerofs.proto.RitualNotifications.PBNotification;
 import com.aerofs.proto.RitualNotifications.PBSOCID;
 import com.aerofs.proto.RitualNotifications.PBUploadEvent;
 import com.aerofs.proto.RitualNotifications.PBNotification.Type;
-import com.google.common.base.Predicate;
-import com.google.common.base.Predicates;
-
-import javax.annotation.Nullable;
 
 class UploadStateListener implements IUploadStateListener
 {
@@ -29,18 +26,8 @@ class UploadStateListener implements IUploadStateListener
     private final TC _tc;
     private final UserAndDeviceNames _nr; // name resolver
 
-    private final Throttler<Key, Value> _throttler = new Throttler.Builder<Key, Value>()
-            .setDelay(1 * C.SEC)
-            .setThrottleFilter(new Predicate<Value>()
-            {
-                @Override
-                public boolean apply(@Nullable Value value)
-                {
-                    return value != null && value._done < value._total;
-                }
-            })
-            .setUntrackFilter(Predicates.<Value>alwaysTrue())
-            .build();
+    private final Throttler<Key> _throttler = new Throttler<Key>(1 * C.SEC);
+    private final boolean _useTransferFilter = Cfg.useTransferFilter();
 
     UploadStateListener(RitualNotificationServer notifier, DirectoryService ds, TC tc,
             UserAndDeviceNames nr)
@@ -54,7 +41,13 @@ class UploadStateListener implements IUploadStateListener
     @Override
     public void stateChanged_(Key key, Value value)
     {
-        if (_throttler.shouldThrottle(key, value)) return;
+        if (_useTransferFilter && key._socid.cid().isMeta()) return;
+
+        if (value._done < value._total) {
+            if (_throttler.shouldThrottle(key)) return;
+        } else {
+            _throttler.untrack(key);
+        }
 
         _notifier.sendEvent_(state2pb_(_tc, _ds, _nr, key, value));
     }

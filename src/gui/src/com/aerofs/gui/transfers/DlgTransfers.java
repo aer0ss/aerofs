@@ -11,7 +11,7 @@ import org.eclipse.swt.layout.FillLayout;
 public class DlgTransfers extends AeroFSDialog
 {
     private CompTransfers _comp;
-    private boolean _showMetaData = false;
+    private boolean _showSOCID;
 
     /**
      * @param path the path to the folder to be shared, relative to the root anchor path.
@@ -30,13 +30,12 @@ public class DlgTransfers extends AeroFSDialog
         shell.setLayout(new FillLayout(SWT.HORIZONTAL));
 
         _comp = new CompTransfers(shell);
-        _comp.showMetaDataTransfer(_showMetaData);
+        _comp.showSOCID(_showSOCID);
     }
 
-    // NOTE: only effective before the dialog is opened!
-    public void showMetaDataTransfers(boolean enable)
+    public void showSOCID(boolean enable)
     {
-        _showMetaData = enable;
-        if (_comp != null) _comp.showMetaDataTransfer(_showMetaData);
+        _showSOCID = enable;
+        if (_comp != null) _comp.showSOCID(_showSOCID);
     }
 }

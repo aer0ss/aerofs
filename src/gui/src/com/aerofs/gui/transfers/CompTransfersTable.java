@@ -30,7 +30,11 @@ public class CompTransfersTable extends Composite
     private final DelayedUIRunner _dr;
     private final TableColumn _tcPath;
     private final GC _gc;
+
+    // TODO: consolidate the code to use the same TransferState as TransferTrayMenuSection
     private final TransferState _ts;
+
+    private final LabelProvider _label;
 
     // the global RNC is not useful as we need to retrieve the full list of current transfers here.
     private final RitualNotificationClient _rnc = new RitualNotificationClient();
@@ -63,11 +67,11 @@ public class CompTransfersTable extends Composite
         super(parent, style);
         setLayout(new FillLayout(SWT.HORIZONTAL));
 
-        _ts = new TransferState(false);
+        _ts = new TransferState();
         _tv = new TableViewer(this, SWT.BORDER | SWT.FULL_SELECTION);
         _tv.setUseHashlookup(true);
         _tv.setContentProvider(new ContentProvider());
-        _tv.setLabelProvider(new LabelProvider(this));
+        _tv.setLabelProvider(_label = new LabelProvider(this));
 
         final Table table = _tv.getTable();
         table.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_WHITE));
@@ -144,8 +148,9 @@ public class CompTransfersTable extends Composite
         return did.toString();
     }
 
-    public void showMetaDataTransfers(boolean enable)
+    public void showSOCID(boolean enable)
     {
-        _ts.enableTrackingMetaData(enable);
+        _label.showSOCID(enable);
+        if (!isDisposed()) _tv.refresh();
     }
 }
