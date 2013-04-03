@@ -120,7 +120,7 @@ public class Downloads
         }
 
         @Override
-        public void onPartialDownloadSuccess(SOCID socid, DID didFrom) { }
+        public void onPartialDownloadSuccess_(SOCID socid, DID didFrom) { }
 
         private void abortWithError(Exception e)
         {

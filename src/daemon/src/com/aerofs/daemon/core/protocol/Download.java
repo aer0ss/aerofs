@@ -7,6 +7,7 @@ package com.aerofs.daemon.core.protocol;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -36,6 +37,8 @@ import com.aerofs.daemon.core.ex.ExUpdateInProgress;
 import com.aerofs.daemon.core.collector.ExNoComponentWithSpecifiedVersion;
 import com.aerofs.lib.notifier.ConcurrentlyModifiableListeners;
 import com.aerofs.proto.Transport.PBStream.InvalidationReason;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
@@ -94,6 +97,8 @@ public class Download
         private final To.Factory _factTo;
         private final NativeVersionControl _nvc;
 
+        private final List<IDownloadCompletionListener> _listeners = Lists.newArrayList();
+
         @Inject
         public Factory(TC tc, DirectoryService ds, MapSIndex2Store sidx2s,
                 Downloads dls, DownloadState dlstate, GetComponentCall gcc, GetComponentReply gcr,
@@ -112,18 +117,27 @@ public class Download
 
         Download create_(SOCID socid, To src, IDownloadCompletionListener listener, Token tk)
         {
-            return new Download(this, socid, src, listener, tk);
+            ImmutableList.Builder<IDownloadCompletionListener> listenersBuilder =
+                    ImmutableList.builder();
+            listenersBuilder.add(listener).addAll(_listeners);
+
+            return new Download(this, socid, src, listenersBuilder.build(), tk);
+        }
+
+        public void addListener_(IDownloadCompletionListener l)
+        {
+            _listeners.add(l);
         }
     }
 
-    private Download(Factory f, SOCID socid, To src, IDownloadCompletionListener l, Token tk)
+    private Download(Factory f, SOCID socid, To src, List<IDownloadCompletionListener> ls, Token tk)
     {
         _f = f;
         _socid = socid;
         _tk = tk;
         _src = src;
         _prio = _f._tc.prio();
-        _ls.addListener_(l);
+        for (IDownloadCompletionListener l : ls) _ls.addListener_(l);
     }
 
     public void include_(To src, IDownloadCompletionListener listener)
@@ -262,7 +276,7 @@ public class Download
                     @Override
                     public void notify_(IDownloadCompletionListener l)
                     {
-                        l.onPartialDownloadSuccess(_socid, msg.did());
+                        l.onPartialDownloadSuccess_(_socid, msg.did());
                     }
                 });
 

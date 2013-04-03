@@ -67,7 +67,7 @@ public class DevicePresence implements IDumpStatMisc
         _sidx2sid = sidx2sid;
     }
 
-    public void addListener(IDevicePresenceListener listener)
+    public void addListener_(IDevicePresenceListener listener)
     {
         _listeners.add(listener);
     }

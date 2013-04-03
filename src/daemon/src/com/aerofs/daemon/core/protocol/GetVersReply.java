@@ -73,7 +73,7 @@ public class GetVersReply
         _pulleddb = pddb;
     }
 
-    public void addListener(IPullUpdatesListener listener)
+    public void addListener_(IPullUpdatesListener listener)
     {
         _listeners.add(listener);
     }

@@ -14,7 +14,7 @@ public interface IDownloadCompletionListener
      * Called following the successful download of socid from didFrom
      * (but this does not indicate all available DIDs have been queried)
      */
-    void onPartialDownloadSuccess(SOCID socid, DID didFrom);
+    void onPartialDownloadSuccess_(SOCID socid, DID didFrom);
 
     void onDownloadSuccess_(SOCID socid, DID from);
 

@@ -139,6 +139,11 @@ public class Collector implements IDumpStatMisc, IDownloadListenerFactory
         _cfs.unloadAllFilters_(did);
     }
 
+    boolean hasUpdatesFrom_(DID did)
+    {
+        return _cfs.hasFiltersFor_(did);
+    }
+
     /**
      * start an iteration immediately. the caller must guarantee that _it.started_()
      * returns false.
@@ -412,7 +417,7 @@ public class Collector implements IDumpStatMisc, IDownloadListenerFactory
         }
 
         @Override
-        public void onPartialDownloadSuccess(SOCID socid, DID didFrom) { }
+        public void onPartialDownloadSuccess_(SOCID socid, DID didFrom) { }
 
         @Override
         public void onGeneralError_(SOCID socid, Exception e)
