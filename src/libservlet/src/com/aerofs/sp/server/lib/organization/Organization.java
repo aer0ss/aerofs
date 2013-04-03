@@ -1,7 +1,7 @@
 package com.aerofs.sp.server.lib.organization;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.lib.ex.ExNoAdmin;
+import com.aerofs.lib.ex.ExNoAdminOrOwner;
 import com.aerofs.sp.server.lib.OrganizationInvitationDatabase;
 import com.aerofs.sp.server.lib.id.OrganizationID;
 import com.aerofs.sp.server.lib.id.StripeCustomerID;
@@ -176,11 +176,11 @@ public class Organization
     }
 
     public void throwIfNoAdmin()
-            throws SQLException, ExNoAdmin
+            throws SQLException, ExNoAdminOrOwner
     {
         if (countUsersAtLevel(AuthorizationLevel.ADMIN) == 0) {
             // There must be at least one admin for an non-empty organization
-            throw new ExNoAdmin(this.toString());
+            throw new ExNoAdminOrOwner(this.toString());
         }
     }
 

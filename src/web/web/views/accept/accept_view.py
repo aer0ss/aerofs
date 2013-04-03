@@ -87,7 +87,7 @@ def accept_team_invitation(request):
 
     sp = get_rpc_stub(request)
     reply = exception2error(sp.accept_organization_invitation, org_id, {
-        PBException.NO_ADMIN: _("no admin for the team")
+        PBException.NO_ADMIN_OR_OWNER: _("no admin for the team")
     })
 
     # downgrade subscription for the user's previous org
@@ -135,4 +135,9 @@ def ignore_folder_invitation(request):
 
     share_id = request.params[URL_PARAM_SHARE_ID].decode('hex')
     sp = get_rpc_stub(request)
-    sp.ignore_shared_folder_invitation(share_id)
+
+    exception2error(sp.ignore_shared_folder_invitation, share_id, {
+        PBException.NO_ADMIN_OR_OWNER:
+            "Sorry, you cannot leave the shared folder since you are the only owner. "
+            "(We are working hard to improve this part.)"
+    })

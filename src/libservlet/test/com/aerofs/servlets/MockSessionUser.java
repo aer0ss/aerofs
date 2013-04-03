@@ -4,7 +4,7 @@
 
 package com.aerofs.servlets;
 
-import com.aerofs.base.ex.ExNoPerm;
+import com.aerofs.lib.ex.ExNotAuthenticated;
 import com.aerofs.sp.server.lib.user.ISessionUser;
 import com.aerofs.sp.server.lib.user.User;
 
@@ -30,9 +30,9 @@ public class MockSessionUser implements ISessionUser
 
     @Override
     public @Nonnull User get()
-            throws ExNoPerm
+            throws ExNotAuthenticated
     {
-        if (_user == null) throw new ExNoPerm();
+        if (_user == null) throw new ExNotAuthenticated();
         return _user;
     }
 

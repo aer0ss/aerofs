@@ -6,6 +6,7 @@ import com.aerofs.base.ex.*;
 import com.aerofs.lib.ex.*;
 import com.aerofs.lib.FileUtil.FileName;
 import com.aerofs.lib.cfg.Cfg;
+import com.aerofs.lib.ex.ExNotAuthenticated;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.proto.Common.PBException.Type;
@@ -79,11 +80,12 @@ public abstract class Util
                         .put(Type.NOT_FILE, ExNotFile.class)
                         .put(Type.UI_MESSAGE, ExUIMessage.class)
                         .put(Type.NO_STRIPE_CUSTOMER_ID, ExNoStripeCustomerID.class)
+                        .put(Type.NOT_AUTHENTICATED, ExNotAuthenticated.class)
 
                         // The following exceptions are consumed by Python clients only. No need to
                         // list them here for the time being.
                         /*
-                        .put(Type.NO_ADMIN, ExNoAdmin.class)
+                        .put(Type.NO_ADMIN_OR_OWNER, ExNoAdminOrOwner.class)
                         */
 
                         .build());

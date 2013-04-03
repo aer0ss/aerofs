@@ -5,7 +5,7 @@
 package com.aerofs.sp.server.lib.session;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.base.ex.ExNoPerm;
+import com.aerofs.lib.ex.ExNotAuthenticated;
 import com.aerofs.sp.server.lib.user.ISessionUser;
 import com.aerofs.sp.server.lib.user.User;
 import org.slf4j.Logger;
@@ -40,12 +40,12 @@ public class HttpSessionUser
     }
 
     @Override
-    public @Nonnull User get() throws ExNoPerm
+    public @Nonnull User get() throws ExNotAuthenticated
     {
         User user = getNullable();
         if (user == null) {
             l.info("not authenticated: session " + getSession().getId());
-            throw new ExNoPerm();
+            throw new ExNotAuthenticated();
         } else {
             return user;
         }

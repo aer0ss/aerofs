@@ -42,10 +42,8 @@ def forbidden_view(request):
 def protobuf_exception_view(context, request):
     log.error("default handling for ExceptionReply:", exc_info=context)
 
-    # SP throws NO_PERM if the user is not logged in.
-    # TODO (WW) use a different type, i.e. NOT_AUTHENTICATED, since SP throws
-    # NO_PERM for other reasons as well.
-    if context.get_type() == PBException.NO_PERM:
+    # SP throws NOT_AUTHENTICATED if the user is not logged in.
+    if context.get_type() == PBException.NOT_AUTHENTICATED:
         return _force_login(request)
     else:
         request.response_status = 500

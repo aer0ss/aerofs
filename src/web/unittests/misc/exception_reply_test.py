@@ -13,7 +13,8 @@ class ExceptionReplyTest(unittest.TestCase):
 
         map = {
             PBException.NO_STRIPE_CUSTOMER_ID: "NO_STRIPE_CUSTOMER_ID",
-            PBException.NO_ADMIN: "NO_ADMIN"
+            PBException.NO_ADMIN_OR_OWNER: "NO_ADMIN_OR_OWNER",
+            PBException.NOT_AUTHENTICATED: "NOT_AUTHENTICATED"
         }
 
         for i in map:

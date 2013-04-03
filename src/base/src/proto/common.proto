@@ -89,9 +89,12 @@ message PBException {
         // SP exceptions
         DEVICE_ID_ALREADY_EXISTS = 401;
         ALREADY_INVITED = 19;
-        // The only admin of a team is going to leave the team.
-        NO_ADMIN = 402;
+        // The only admin of a team is going to leave the team, or the only owner of a shared folder
+        // is going to leave the shared folder
+        NO_ADMIN_OR_OWNER = 402;
         NO_STRIPE_CUSTOMER_ID = 403;
+        // The user needs to log in
+        NOT_AUTHENTICATED = 404;
     }
 
     required Type type = 1;

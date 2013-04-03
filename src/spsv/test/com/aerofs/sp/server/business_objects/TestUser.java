@@ -13,7 +13,7 @@ import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UniqueID;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.acl.Role;
-import com.aerofs.lib.ex.ExNoAdmin;
+import com.aerofs.lib.ex.ExNoAdminOrOwner;
 import com.aerofs.sp.server.lib.SharedFolder;
 import com.aerofs.sp.server.lib.device.Device;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
@@ -76,7 +76,7 @@ public class TestUser extends AbstractBusinessObjectTest
         try {
             user.setLevel(AuthorizationLevel.USER);
             fail();
-        } catch (ExNoAdmin e) {}
+        } catch (ExNoAdminOrOwner e) {}
     }
 
     @Test(expected = AssertionError.class)

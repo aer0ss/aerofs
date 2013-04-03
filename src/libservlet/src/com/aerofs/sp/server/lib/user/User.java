@@ -8,7 +8,7 @@ import com.aerofs.base.BaseSecUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExEmptyEmailAddress;
 import com.aerofs.base.id.DID;
-import com.aerofs.lib.ex.ExNoAdmin;
+import com.aerofs.lib.ex.ExNoAdminOrOwner;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.base.ex.ExAlreadyExist;
@@ -187,7 +187,7 @@ public class User
 
     // TODO (WW) throw ExNotFound if the user doesn't exist?
     public void setLevel(AuthorizationLevel auth)
-            throws SQLException, ExNotFound, ExNoAdmin
+            throws SQLException, ExNotFound, ExNoAdminOrOwner
     {
         _f._udb.setLevel(_id, auth);
 
@@ -423,7 +423,7 @@ public class User
      * folders for the team server.
      */
     public Collection<UserID> setOrganization(Organization org, AuthorizationLevel level)
-            throws SQLException, ExNotFound, ExAlreadyExist, ExNoAdmin
+            throws SQLException, ExNotFound, ExAlreadyExist, ExNoAdminOrOwner
     {
         Organization orgOld = getOrganization();
         AuthorizationLevel levelOld = getLevel();

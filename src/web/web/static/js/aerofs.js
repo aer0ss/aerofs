@@ -55,6 +55,7 @@ function showErrorMessageFromResponse(xhr) {
         // We only use 400 for expected JSON error replies
         showErrorMessage($.parseJSON(xhr.responseText).message);
     } else if (xhr.status == 403) {
+        // See error_view.py:_force_login on how 403 is generated
         window.location.href = "/login?next=" + encodeURIComponent(document.URL);
     } else {
         showErrorMessage(getInternalErrorText());

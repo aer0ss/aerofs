@@ -4,6 +4,7 @@ import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExEmptyEmailAddress;
 import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.lib.ex.ExNoStripeCustomerID;
+import com.aerofs.lib.ex.ExNotAuthenticated;
 import com.aerofs.proto.Common.PBRole;
 import com.aerofs.proto.Sp.AcceptOrganizationInvitationReply;
 import com.aerofs.proto.Sp.DeleteOrganizationInvitationForUserReply;
@@ -253,8 +254,8 @@ public class SPService implements ISPService
         String user;
         try {
             user = _sessionUser.exists() ? _sessionUser.get().id().getString() : "user unknown";
-        } catch (ExNoPerm enp) {
-            throw SystemUtil.fatalWithReturn(enp);
+        } catch (ExNotAuthenticated e2) {
+            throw SystemUtil.fatalWithReturn(e2);
         }
 
         l.warn(user + ": " + Util.e(e,
@@ -473,7 +474,8 @@ public class SPService implements ISPService
 
     @Override
     public ListenableFuture<ListUserDevicesReply> listUserDevices(String userID)
-            throws ExNoPerm, SQLException, ExFormatError, ExNotFound, ExEmptyEmailAddress
+            throws ExNotAuthenticated, ExNoPerm, SQLException, ExFormatError, ExNotFound,
+            ExEmptyEmailAddress
     {
         _sqlTrans.begin();
 
@@ -499,7 +501,7 @@ public class SPService implements ISPService
      * organization
      */
     private void throwIfSessionUserIsNotOrAdminOf(User user)
-            throws ExNoPerm, SQLException, ExNotFound
+            throws ExNoPerm, SQLException, ExNotFound, ExNotAuthenticated
     {
         User currentUser = _sessionUser.get();
 
@@ -1264,8 +1266,8 @@ public class SPService implements ISPService
 
     @Override
     public ListenableFuture<Void> inviteToSignUp(List<String> userIdStrings)
-            throws SQLException, ExBadArgs, ExEmailSendingFailed, ExNotFound, IOException, ExNoPerm,
-            ExEmptyEmailAddress
+            throws SQLException, ExBadArgs, ExEmailSendingFailed, ExNotFound, IOException,
+            ExNotAuthenticated, ExEmptyEmailAddress
     {
         if (userIdStrings.isEmpty()) {
             throw new ExBadArgs("Must specify one or more invitees");
@@ -1298,8 +1300,7 @@ public class SPService implements ISPService
 
     @Override
     public ListenableFuture<InviteToOrganizationReply> inviteToOrganization(String userIdString)
-            throws SQLException, ExNoPerm, ExNotFound, IOException, ExEmailSendingFailed,
-            ExAlreadyExist, ExAlreadyInvited, ExNoStripeCustomerID, ExEmptyEmailAddress
+            throws Exception
     {
         _sqlTrans.begin();
 
@@ -1442,7 +1443,7 @@ public class SPService implements ISPService
     @Override
     public ListenableFuture<DeleteOrganizationInvitationReply> deleteOrganizationInvitation(
             Integer orgID)
-            throws SQLException, ExNoPerm, ExNotFound
+            throws SQLException, ExNotAuthenticated, ExNotFound
     {
         _sqlTrans.begin();
 
@@ -1463,7 +1464,7 @@ public class SPService implements ISPService
     @Override
     public ListenableFuture<DeleteOrganizationInvitationForUserReply> deleteOrganizationInvitationForUser(
             String userID)
-            throws SQLException, ExNoPerm, ExNotFound, ExEmptyEmailAddress
+            throws SQLException, ExNoPerm, ExNotFound, ExEmptyEmailAddress, ExNotAuthenticated
     {
         _sqlTrans.begin();
 
@@ -1552,7 +1553,7 @@ public class SPService implements ISPService
 
     @Override
     public ListenableFuture<GetStripeDataReply> getStripeData()
-            throws SQLException, ExNoPerm, ExNotFound
+            throws SQLException, ExNoPerm, ExNotFound, ExNotAuthenticated
     {
         _sqlTrans.begin();
 
@@ -1575,7 +1576,7 @@ public class SPService implements ISPService
 
     @Override
     public ListenableFuture<GetACLReply> getACL(final Long epoch)
-            throws SQLException, ExNoPerm
+            throws SQLException, ExNoPerm, ExNotAuthenticated
     {
         User user = _sessionUser.get();
         GetACLReply.Builder bd = GetACLReply.newBuilder();

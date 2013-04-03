@@ -9,6 +9,7 @@ import com.aerofs.lib.acl.Role;
 import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExNotFound;
+import com.aerofs.lib.ex.ExNoAdminOrOwner;
 import com.aerofs.proto.Common.PBFolderInvitation;
 import org.junit.Test;
 
@@ -87,7 +88,7 @@ public class TestSP_JoinSharedFolder extends AbstractSPFolderTest
     }
 
     @Test
-    public void shouldThrowExNoPermWhenLastAdminTriesToIgnoreInvitation() throws Exception
+    public void shouldThrowWhenLastAdminTriesToIgnoreInvitation() throws Exception
     {
         shareFolder(USER_1, SID_1, USER_2, Role.EDITOR);
 
@@ -99,7 +100,7 @@ public class TestSP_JoinSharedFolder extends AbstractSPFolderTest
         try {
             service.ignoreSharedFolderInvitation(SID_1.toPB());
             fail();
-        } catch (ExNoPerm e) {
+        } catch (ExNoAdminOrOwner e) {
             sqlTrans.handleException();
         }
     }

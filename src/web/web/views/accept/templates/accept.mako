@@ -173,7 +173,7 @@
                 })
                 .fail(function(xhr) {
                     $("#join-team-modal").modal("hide");
-                    if (getErrorTypeNullable(xhr) == 'NO_ADMIN') {
+                    if (getErrorTypeNullable(xhr) == 'NO_ADMIN_OR_OWNER') {
                         $("#no-admin-for-team-modal").modal("show");
                     } else {
                         showErrorMessageFromResponse(xhr);

@@ -8,16 +8,16 @@ import com.aerofs.base.ex.AbstractExWirable;
 import com.aerofs.proto.Common.PBException;
 import com.aerofs.proto.Common.PBException.Type;
 
-public class ExNoAdmin extends AbstractExWirable
+public class ExNoAdminOrOwner extends AbstractExWirable
 {
     private static final long serialVersionUID = 1L;
 
-    public ExNoAdmin(String msg)
+    public ExNoAdminOrOwner(String msg)
     {
         super(msg);
     }
 
-    public ExNoAdmin(PBException pb)
+    public ExNoAdminOrOwner(PBException pb)
     {
         super(pb);
     }
@@ -25,6 +25,6 @@ public class ExNoAdmin extends AbstractExWirable
     @Override
     public Type getWireType()
     {
-        return Type.NO_ADMIN;
+        return Type.NO_ADMIN_OR_OWNER;
     }
 }

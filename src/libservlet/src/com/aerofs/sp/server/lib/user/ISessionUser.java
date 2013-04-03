@@ -4,7 +4,7 @@
 
 package com.aerofs.sp.server.lib.user;
 
-import com.aerofs.base.ex.ExNoPerm;
+import com.aerofs.lib.ex.ExNotAuthenticated;
 
 import javax.annotation.Nonnull;
 
@@ -15,9 +15,9 @@ public interface ISessionUser
 {
     /**
      * @return the user of this session
-     * @throws ExNoPerm if no user has been set for the session (i.e. does not exist).
+     * @throws ExNotAuthenticated if no user has been set for the session (i.e. does not exist).
      */
-    @Nonnull User get() throws ExNoPerm;
+    @Nonnull User get() throws ExNotAuthenticated;
 
     /**
      * Return whether set() has been called

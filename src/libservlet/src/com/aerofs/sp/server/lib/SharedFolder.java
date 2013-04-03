@@ -12,6 +12,7 @@ import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
+import com.aerofs.lib.ex.ExNoAdminOrOwner;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.user.User;
 import com.google.common.collect.ImmutableCollection;
@@ -210,7 +211,7 @@ public class SharedFolder
     }
 
     public ImmutableCollection<UserID> deleteMemberOrPendingACL(User user)
-            throws SQLException, ExNotFound, ExNoPerm
+            throws SQLException, ExNotFound, ExNoAdminOrOwner
     {
         // retrieve the list of affected users _before_ performing the deletion, so that all the
         // users including the deleted ones will get notifications.
@@ -306,7 +307,7 @@ public class SharedFolder
      * @throws ExNotFound if trying to add new users to the store or update a pending user's ACL
      */
     public ImmutableCollection<UserID> updateMemberACL(User user, Role role)
-            throws ExNoPerm, ExNotFound, SQLException
+            throws ExNoAdminOrOwner, ExNotFound, SQLException
     {
         _f._db.updateMemberACL(_sid, user.id(), role);
 
@@ -333,10 +334,10 @@ public class SharedFolder
     }
 
     private void throwIfNoOwnerMemberOrPendingLeft()
-            throws ExNoPerm, SQLException
+            throws ExNoAdminOrOwner, SQLException
     {
         if (!_f._db.hasOwnerMemberOrPending(_sid)) {
-            throw new ExNoPerm("there must be at least one owner");
+            throw new ExNoAdminOrOwner("there must be at least one owner");
         }
     }
 

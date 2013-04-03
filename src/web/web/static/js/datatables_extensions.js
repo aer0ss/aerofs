@@ -21,7 +21,7 @@ function dataTableAJAXCallback(sUrl, aoData, fnCallback, oSettings) {
             // TODO remove this block
             if (json.error) {
                 // permission issue, force logout
-                if (json.error.search("no perm") >= 0) {
+                if (json.error.search("not authenticated") >= 0) {
                     forceLogout();
                 } else {
                     showErrorMessage(json.error);

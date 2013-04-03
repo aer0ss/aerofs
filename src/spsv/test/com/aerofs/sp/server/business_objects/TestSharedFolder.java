@@ -9,6 +9,7 @@ import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.SID;
+import com.aerofs.lib.ex.ExNoAdminOrOwner;
 import com.aerofs.sp.server.lib.SharedFolder;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.aerofs.sp.server.lib.user.User;
@@ -202,7 +203,7 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
         try {
             sf.deleteMemberOrPendingACL(user1);
             assertTrue(false);
-        } catch (ExNoPerm e) {
+        } catch (ExNoAdminOrOwner e) {
             sqlTrans.handleException();
         }
     }
@@ -317,7 +318,7 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
         try {
             sf.updateMemberACL(user1, Role.EDITOR);
             assertTrue(false);
-        } catch (ExNoPerm e) {
+        } catch (ExNoAdminOrOwner e) {
             sqlTrans.handleException();
         }
     }
