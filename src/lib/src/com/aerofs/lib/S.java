@@ -39,9 +39,14 @@ public class S
 
             BAD_CREDENTIAL_CAP       = "Email or password is incorrect",
 
-            LBL_UNKNOWN_USER        = "Unknown user",
-            LBL_UNKNOWN_DEVICE      = "Unknown device",
-            LBL_UNKNOWN_FILE        = "Unknown file",
+            LBL_UNKNOWN_USER         = "Unknown user",
+            LBL_UNKNOWN_DEVICE       = "Unknown device",
+            LBL_UNKNOWN_FILE         = "Incoming file",
+
+            LBL_NO_ACTIVE_TRANSFERS  = "No active transfers...",
+            LBL_TRANSFERRING         = "transferring files...",
+            LBL_UPLOADING            = "Uploading",
+            LBL_DOWNLOADING          = "Downloading",
 
             DONT_SHOW_THIS_MESSAGE_AGAIN = "Don't show me again.",
             FILE_OPEN_FAIL = "The file couldn't be opened.",

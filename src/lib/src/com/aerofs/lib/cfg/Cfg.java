@@ -59,6 +59,7 @@ public class Cfg
     private static boolean _useAutoUpdate;
     private static boolean _isAggressiveCheckingEnabled;
     private static boolean _useHistory;
+    private static boolean _useXFF;
     private static String _absRootAnchor;
     private static String _absAuxRoot;
     private static String _ver;
@@ -125,6 +126,7 @@ public class Cfg
         _useAutoUpdate = disabledByFile(rtRoot, Param.NOAUTOUPDATE);
         _isAggressiveCheckingEnabled = enabledByFile(rtRoot, Param.AGGRESSIVE_CHECKS);
         _useHistory = disabledByFile(rtRoot,  Param.NOHISTORY);
+        _useXFF = disabledByFile(rtRoot, Param.NOXFF);
 
         _inited = true;
     }
@@ -291,6 +293,11 @@ public class Cfg
     public static boolean isAggressiveCheckingEnabled()
     {
         return _isAggressiveCheckingEnabled;
+    }
+
+    public static boolean useTransferFilter()
+    {
+        return _useXFF;
     }
 
     public static boolean useFSTypeCheck(String rtRoot)

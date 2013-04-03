@@ -12,14 +12,12 @@ import com.aerofs.daemon.core.UserAndDeviceNames;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Throttler;
 import com.aerofs.lib.Util;
+import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.id.SOCID;
 import com.aerofs.proto.RitualNotifications.PBDownloadEvent;
 import com.aerofs.proto.RitualNotifications.PBNotification;
 import com.aerofs.proto.RitualNotifications.PBSOCID;
 import com.aerofs.proto.RitualNotifications.PBNotification.Type;
-import com.google.common.base.Predicate;
-
-import javax.annotation.Nullable;
 
 class DownloadStateListener implements IDownloadStateListener
 {
@@ -28,25 +26,8 @@ class DownloadStateListener implements IDownloadStateListener
     private final TC _tc;
     private final UserAndDeviceNames _nr; // name resolver
 
-    private final Throttler<SOCID, State> _throttler = new Throttler.Builder<SOCID, State>()
-            .setDelay(1 * C.SEC)
-            .setThrottleFilter(new Predicate<State>()
-            {
-                @Override
-                public boolean apply(@Nullable State state)
-                {
-                    return state instanceof Ongoing;
-                }
-            })
-            .setUntrackFilter(new Predicate<State>()
-            {
-                @Override
-                public boolean apply(@Nullable State state)
-                {
-                    return state instanceof Ended;
-                }
-            })
-            .build();
+    private final Throttler<SOCID> _throttler = new Throttler<SOCID>(1 * C.SEC);
+    private final boolean _useTransferFilter = Cfg.useTransferFilter();
 
     DownloadStateListener(RitualNotificationServer notifier, DirectoryService ds, TC tc,
             UserAndDeviceNames nr)
@@ -60,7 +41,13 @@ class DownloadStateListener implements IDownloadStateListener
     @Override
     public void stateChanged_(SOCID socid, State state)
     {
-        if (_throttler.shouldThrottle(socid, state)) return;
+        if (_useTransferFilter && socid.cid().isMeta()) return;
+
+        if (state instanceof Ongoing) {
+            if (_throttler.shouldThrottle(socid)) return;
+        } else if (state instanceof Ended) {
+            _throttler.untrack(socid);
+        } else if (_useTransferFilter) return;
 
         _notifier.sendEvent_(state2pb_(_tc, _ds, _nr, socid, state));
     }

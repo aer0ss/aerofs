@@ -64,8 +64,8 @@ public class CompTransfers extends Composite
         // Disable the check that prevents subclassing of SWT components
     }
 
-    public void showMetaDataTransfer(boolean enable)
+    public void showSOCID(boolean enable)
     {
-        _view.showMetaDataTransfers(enable);
+        _view.showSOCID(enable);
     }
 }

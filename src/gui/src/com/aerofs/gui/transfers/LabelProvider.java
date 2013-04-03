@@ -4,6 +4,7 @@ import com.aerofs.gui.Images;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
+import com.aerofs.lib.id.SOCID;
 import com.aerofs.proto.Common.PBPath;
 import com.aerofs.proto.RitualNotifications.PBDownloadEvent;
 import com.aerofs.proto.RitualNotifications.PBDownloadEvent.State;
@@ -28,9 +29,16 @@ extends org.eclipse.jface.viewers.LabelProvider implements ITableLabelProvider
     private final Map<Integer, Image> _progressCache = new HashMap<Integer, Image>();
     private final CompTransfersTable _view;
 
+    private boolean _showSOCID;
+
     LabelProvider(CompTransfersTable view)
     {
         _view = view;
+    }
+
+    public void showSOCID(boolean enable)
+    {
+        _showSOCID = enable;
     }
 
     @Override
@@ -98,8 +106,12 @@ extends org.eclipse.jface.viewers.LabelProvider implements ITableLabelProvider
 
     private String getText(PBSOCID pbsocid, PBPath pbpath, Path path)
     {
-        String text = _view.shortenPath(UIUtil.getUserFriendlyPath(pbsocid, pbpath, path));
-        return text.startsWith("/") ? text.substring(1) : text;
+        String text = UIUtil.getUserFriendlyPath(pbsocid, pbpath, path);
+        if (text.startsWith("/"))
+            text = text.substring(1);
+        if (_showSOCID)
+            text = new SOCID(pbsocid).toString() + " / " + text;
+        return _view.shortenPath(text);
     }
 
     @Override
@@ -112,7 +124,7 @@ extends org.eclipse.jface.viewers.LabelProvider implements ITableLabelProvider
                 if (ev.hasPath()) {
                     return getText(ev.getSocid(), ev.getPath(), new Path(ev.getPath()));
                 } else {
-                    return S.LBL_UNKNOWN_FILE;
+                    return _showSOCID ? new SOCID(ev.getSocid()).toString() : S.LBL_UNKNOWN_FILE;
                 }
             case CompTransfersTable.COL_PROG:
                 return Util.formatProgress(ev.getDone(), ev.getTotal());
@@ -128,7 +140,7 @@ extends org.eclipse.jface.viewers.LabelProvider implements ITableLabelProvider
                 if (ev.hasPath()) {
                     return getText(ev.getSocid(), ev.getPath(), new Path(ev.getPath()));
                 } else {
-                    return S.LBL_UNKNOWN_FILE;
+                    return _showSOCID ? new SOCID(ev.getSocid()).toString() : S.LBL_UNKNOWN_FILE;
                 }
             case CompTransfersTable.COL_PROG:
                 return downloadStateToProgressString(ev);

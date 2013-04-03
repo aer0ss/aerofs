@@ -29,6 +29,7 @@ public class Param extends BaseParam
     public static final String NOZEPHYR                = "nozephyr";
     public static final String NOAUTOUPDATE            = "noautoupdate";
     public static final String NOHISTORY               = "nohistory";
+    public static final String NOXFF                   = "noxff";
     public static final String LOL                     = "lol";
     public static final String AGGRESSIVE_CHECKS       = "ac";
     public static final String VERSION                 = "version";

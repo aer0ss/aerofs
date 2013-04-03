@@ -10,6 +10,7 @@ import com.aerofs.gui.Images;
 import com.aerofs.gui.TransferState;
 import com.aerofs.gui.transfers.DlgTransfers;
 import com.aerofs.lib.DelayedRunner;
+import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.proto.RitualNotifications.PBDownloadEvent;
@@ -42,7 +43,8 @@ public class TransferTrayMenuSection
         protected void handleEventImpl(Event event)
         {
             if (_transferDialog == null) _transferDialog = new DlgTransfers(GUI.get().sh());
-            _transferDialog.showMetaDataTransfers((event.stateMask & SWT.SHIFT) != 0);
+
+            _transferDialog.showSOCID(Util.test(event.stateMask, SWT.SHIFT));
 
             if (_transferDialog.isDisposed()) {
                 _transferDialog.openDialog();
@@ -55,7 +57,9 @@ public class TransferTrayMenuSection
     private final TrayMenuPopulator _trayMenuPopulator;
 
     private final Map<Integer, Image> _pieChartCache = Maps.newHashMap();
-    private final TransferState _ts = new TransferState(true);
+
+    // TODO: consolidate the code to use the same TransferState as CompTransfersTable
+    private final TransferState _ts = new TransferState();
 
     public TransferTrayMenuSection(TrayMenuPopulator trayMenuPopulator)
     {
@@ -118,10 +122,10 @@ public class TransferTrayMenuSection
         boolean transferring = dlCount != 0 || ulCount != 0;
 
         if (transferring) {
-            showStats(_transferStats1, "Downloading", dlCount, dlBytesDone, dlBytesTotal);
-            showStats(menuItem, "Uploading", ulCount, ulBytesDone, ulBytesTotal);
+            showStats(_transferStats1, S.LBL_DOWNLOADING, dlCount, dlBytesDone, dlBytesTotal);
+            showStats(menuItem, S.LBL_UPLOADING, ulCount, ulBytesDone, ulBytesTotal);
         } else {
-            _transferStats1.setText("No active transfers");
+            _transferStats1.setText(S.LBL_NO_ACTIVE_TRANSFERS);
             _transferStats1.setImage(null);
         }
 
@@ -129,7 +133,7 @@ public class TransferTrayMenuSection
 
         if (transferring) {
             if (_transferProgress == null) {
-                _transferProgress = GUI.get().addProgress("transferring files", false);
+                _transferProgress = GUI.get().addProgress(S.LBL_TRANSFERRING, false);
             }
         } else {
             if (_transferProgress != null) {
