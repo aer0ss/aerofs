@@ -231,8 +231,8 @@ class _RitualServiceWrapper(object):
         pbpath = convert.absolute_to_pbpath(path)
         return self._service.get_path_status(pbpath)
 
-    def relocate(self, absolute_path):
-        self._service.relocate(absolute_path, None)
+    def relocate(self, absolute_path, sid=None):
+        self._service.relocate(absolute_path, sid)
 
     def pause_syncing(self):
         self._service.pause_syncing()
