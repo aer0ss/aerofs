@@ -4,9 +4,9 @@ import javax.annotation.Nullable;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.lib.Path;
-import com.aerofs.lib.acl.Role;
+import com.aerofs.base.acl.Role;
 import com.aerofs.lib.S;
-import com.aerofs.lib.acl.SubjectRolePair;
+import com.aerofs.base.acl.SubjectRolePair;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.base.id.UserID;

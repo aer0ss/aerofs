@@ -6,7 +6,7 @@ import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.event.fs.EIGetAttr;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.lib.event.Prio;
-import com.aerofs.lib.acl.Role;
+import com.aerofs.base.acl.Role;
 import com.aerofs.lib.id.SOID;
 import com.google.inject.Inject;
 

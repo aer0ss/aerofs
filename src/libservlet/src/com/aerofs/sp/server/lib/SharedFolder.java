@@ -5,8 +5,8 @@
 package com.aerofs.sp.server.lib;
 
 import com.aerofs.lib.SystemUtil;
-import com.aerofs.lib.acl.Role;
-import com.aerofs.lib.acl.SubjectRolePair;
+import com.aerofs.base.acl.Role;
+import com.aerofs.base.acl.SubjectRolePair;
 import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExNotFound;

@@ -5,7 +5,7 @@
 package com.aerofs.sp.server.business_objects;
 
 import com.aerofs.base.id.SID;
-import com.aerofs.lib.acl.Role;
+import com.aerofs.base.acl.Role;
 import com.aerofs.lib.ex.ExNoAdminOrOwner;
 import com.aerofs.sp.server.lib.SharedFolder;
 import com.aerofs.sp.server.lib.organization.Organization;
@@ -30,7 +30,7 @@ public class TestUser_setOrganization extends AbstractBusinessObjectTest
         user.setOrganization(org, ADMIN);
         assertEquals(user.getLevel(), ADMIN);
 
-        // Create a new org with an admin otherwise setOrganization would fail with ExNoAdminOrOwner.
+        // Create a new org with an admin otherwise setOrganization would fail with ExNoAdmin.
         User admin = saveUser();
         user.setOrganization(admin.getOrganization(), USER);
         assertEquals(user.getLevel(), USER);
@@ -99,7 +99,7 @@ public class TestUser_setOrganization extends AbstractBusinessObjectTest
         assertEquals(sf1.getMemberRoleNullable(tsUserOld), Role.EDITOR);
         assertEquals(sf2.getMemberRoleNullable(tsUserOld), Role.EDITOR);
 
-        // Create a new org with an admin otherwise setOrganization would fail with ExNoAdminOrOwner.
+        // Create a new org with an admin otherwise setOrganization would fail with ExNoAdmin.
         User admin = saveUser();
         Organization orgNew = admin.getOrganization();
         User tsUserNew = orgNew.getTeamServerUser();

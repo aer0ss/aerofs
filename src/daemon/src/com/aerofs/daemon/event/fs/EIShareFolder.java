@@ -3,7 +3,7 @@ package com.aerofs.daemon.event.fs;
 import java.util.Map;
 
 import com.aerofs.daemon.core.Core;
-import com.aerofs.lib.acl.Role;
+import com.aerofs.base.acl.Role;
 import com.aerofs.lib.Path;
 import com.aerofs.base.id.UserID;
 

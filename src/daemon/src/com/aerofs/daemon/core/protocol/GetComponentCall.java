@@ -15,7 +15,7 @@ import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.SystemUtil;
-import com.aerofs.lib.acl.Role;
+import com.aerofs.base.acl.Role;
 import com.aerofs.daemon.core.ex.ExAborted;
 import com.aerofs.daemon.core.collector.ExNoComponentWithSpecifiedVersion;
 import com.aerofs.base.ex.ExNoPerm;

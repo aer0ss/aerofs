@@ -18,7 +18,7 @@ import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.event.admin.EILeaveSharedFolder;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.lib.event.Prio;
-import com.aerofs.lib.acl.Role;
+import com.aerofs.base.acl.Role;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.daemon.core.ex.ExNotShared;
 import com.aerofs.lib.id.SOID;

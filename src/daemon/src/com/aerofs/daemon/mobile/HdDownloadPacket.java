@@ -17,7 +17,7 @@ import com.aerofs.daemon.core.phy.IPhysicalFile;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.daemon.lib.exception.ExStreamInvalid;
-import com.aerofs.lib.acl.Role;
+import com.aerofs.base.acl.Role;
 import com.aerofs.lib.Version;
 import com.aerofs.lib.id.CID;
 import com.aerofs.lib.id.KIndex;

@@ -2,7 +2,7 @@ package com.aerofs.gui.sharing.manage;
 
 import org.eclipse.jface.viewers.ColumnLabelProvider;
 
-import com.aerofs.lib.acl.SubjectRolePair;
+import com.aerofs.base.acl.SubjectRolePair;
 
 class ArrowLabelProvider extends ColumnLabelProvider
 {

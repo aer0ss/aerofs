@@ -2,7 +2,7 @@
  * Copyright (c) Air Computing Inc., 2012.
  */
 
-package com.aerofs.lib.acl;
+package com.aerofs.base.acl;
 
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.ex.ExEmptyEmailAddress;
@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Convenience methods to manipulate collections of {@link com.aerofs.lib.acl.SubjectRolePair}
+ * Convenience methods to manipulate collections of {@link com.aerofs.base.acl.SubjectRolePair}
  */
 public final class SubjectRolePairs
 {

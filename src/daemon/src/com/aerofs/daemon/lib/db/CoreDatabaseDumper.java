@@ -17,7 +17,7 @@ import com.aerofs.daemon.core.collector.CollectorSeq;
 import com.aerofs.daemon.core.collector.SenderFilterIndex;
 import com.aerofs.lib.BitVector;
 import com.aerofs.lib.CounterVector;
-import com.aerofs.lib.acl.Role;
+import com.aerofs.base.acl.Role;
 import com.aerofs.lib.Tick;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.bf.BFOID;

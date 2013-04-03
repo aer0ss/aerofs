@@ -55,7 +55,7 @@ import com.aerofs.daemon.event.status.EIGetSyncStatus;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.SystemUtil.ExitCode;
 import com.aerofs.lib.Path;
-import com.aerofs.lib.acl.Role;
+import com.aerofs.base.acl.Role;
 import com.aerofs.lib.Util;
 import com.aerofs.base.async.UncancellableFuture;
 import com.aerofs.lib.cfg.Cfg;

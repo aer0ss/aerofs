@@ -7,7 +7,7 @@ import com.aerofs.gui.GUI;
 import com.aerofs.gui.SimpleContentProvider;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.ThreadUtil;
-import com.aerofs.lib.acl.Role;
+import com.aerofs.base.acl.Role;
 import com.aerofs.base.id.UserID;
 import com.aerofs.lib.ritual.RitualBlockingClient;
 import com.aerofs.lib.ritual.RitualClientFactory;
@@ -16,7 +16,7 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.ScrollBar;
 
 import com.aerofs.lib.S;
-import com.aerofs.lib.acl.SubjectRolePair;
+import com.aerofs.base.acl.SubjectRolePair;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.base.ex.ExNoPerm;

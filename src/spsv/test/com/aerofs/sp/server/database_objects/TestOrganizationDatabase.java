@@ -4,8 +4,8 @@
 
 package com.aerofs.sp.server.database_objects;
 
-import com.aerofs.lib.acl.Role;
-import com.aerofs.lib.acl.SubjectRolePair;
+import com.aerofs.base.acl.Role;
+import com.aerofs.base.acl.SubjectRolePair;
 import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.id.SID;

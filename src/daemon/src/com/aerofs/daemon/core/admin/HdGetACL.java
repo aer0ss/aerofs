@@ -5,7 +5,7 @@ import com.aerofs.daemon.core.acl.LocalACL;
 import com.aerofs.daemon.event.admin.EIGetACL;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.lib.event.Prio;
-import com.aerofs.lib.acl.Role;
+import com.aerofs.base.acl.Role;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.base.id.UserID;
 import com.google.common.collect.ImmutableMap;

@@ -1,4 +1,4 @@
-package com.aerofs.lib.acl;
+package com.aerofs.base.acl;
 
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.ex.ExEmptyEmailAddress;
