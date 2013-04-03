@@ -16,15 +16,12 @@ import com.aerofs.daemon.core.protocol.IPullUpdatesListener;
 import com.aerofs.daemon.core.protocol.IPushUpdatesListener;
 import com.aerofs.daemon.core.protocol.NewUpdates;
 import com.aerofs.lib.id.SOCID;
-import com.google.common.base.Supplier;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Table;
-import com.google.common.collect.Tables;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 
 import java.sql.SQLException;
-import java.util.HashMap;
 import java.util.Map;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -47,7 +44,6 @@ import static com.google.common.base.Preconditions.checkState;
  *
  * For more on the motivation and thought process behind time-to-sync, see time_to_sync.txt
  *
- * TODO (MJ) the memory-management of _updateTimes has yet to be completed
  * TODO (MJ) perhaps the checkpointing could be done earlier, perhaps adding an event when a Bloom
  * filter is deleted from the Collector.
  */
@@ -57,9 +53,11 @@ public class TimeToSyncCollector implements
 {
     // Invariant: there should be no _updateTimes[did][:] with time (Long)
     //            before _deviceCheckoutPoint[did]
-    private final Map<DID, Long> _deviceCheckPoint = Maps.newHashMap();
+    private final Map<DID, Long> _deviceCheckPoint;
     private final Table<DID, SOCID, Long> _updateTimes;
 
+    // The size of _updateTimes is bounded:
+    private static final int MAX_UPDATE_TIMES = 1000;
 
     private final RemoteUpdates _ru;
     private final TimeToSyncHistogram _histogram;
@@ -68,27 +66,17 @@ public class TimeToSyncCollector implements
     private static final Logger l = Loggers.getLogger(TimeToSyncCollector.class);
 
     @Inject
-    TimeToSyncCollector(TimeToSyncHistogram histogram, TimeRetriever timeRetriever,
-            RemoteUpdates ru, DevicePresence devicePresence, NewUpdates newUpdates,
-            GetVersReply getVersReply, Factory downloadFactory)
+    TimeToSyncCollector(TimeToSyncHistogram histogram,
+            TimeRetriever timeRetriever, RemoteUpdates ru, DevicePresence devicePresence,
+            NewUpdates newUpdates, GetVersReply getVersReply, Factory downloadFactory)
     {
         _histogram = histogram;
         _time = timeRetriever;
-
         _ru = ru;
 
-        _updateTimes = Tables.newCustomTable(new HashMap<DID, Map<SOCID, Long>>(),
-                new Supplier<Map<SOCID, Long>>()
-                {
-                    @Override
-                    public Map<SOCID, Long> get()
-                    {
-                        // Use a LinkedHashMap in _updateTimes so that the order in which
-                        // elements were added to the internal map is known
-                        // (i.e. in order of update time).
-                        return Maps.newLinkedHashMap();
-                    }
-                });
+        _deviceCheckPoint = Maps.newHashMap();
+        _updateTimes =
+                new MemoryLimitedLinkedHashMapBasedTable<DID, SOCID, Long>(MAX_UPDATE_TIMES);
 
         addListeners_(devicePresence, newUpdates, getVersReply, downloadFactory);
     }
@@ -101,7 +89,6 @@ public class TimeToSyncCollector implements
         getVersReply.addListener_(this);
         downloadFactory.addListener_(this);
     }
-
 
     @Override
     public void deviceOnline_(DID did)
@@ -118,12 +105,8 @@ public class TimeToSyncCollector implements
     public void deviceOffline_(DID did)
     {
         _updateTimes.row(did).clear();
-        Long prev = _deviceCheckPoint.remove(did);
-
-        // If notified that the device is offline, it should have a previously-recorded checkpoint
-        checkNotNull(prev, did);
+        checkNotNull(_deviceCheckPoint.remove(did), did);
     }
-
 
     @Override
     public void receivedPushUpdate_(SOCID socid, DID didFrom)
@@ -140,6 +123,7 @@ public class TimeToSyncCollector implements
             // There are no updates to download from did, so move the checkpoint forward
             _deviceCheckPoint.put(did, _time.currentTimeMillis());
             _updateTimes.row(did).clear();
+            if (_updateTimes.rowKeySet().contains(did)) l.debug("keyset contains {}", did);
         }
     }
 
