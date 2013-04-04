@@ -59,10 +59,10 @@ public class TimeoutDeletionBuffer implements IDeletionBuffer
             return _holders != null && !_holders.isEmpty();
         }
 
-        void addHolder_(Holder h)
+        boolean addHolder_(Holder h)
         {
             if (_holders == null) _holders = Sets.newHashSet();
-            Util.verify(_holders.add(h));
+            return _holders.add(h);
         }
 
         /**
@@ -121,7 +121,8 @@ public class TimeoutDeletionBuffer implements IDeletionBuffer
                 th = new TimeAndHolders();
                 _soid2th.put(soid, th);
             }
-            th.addHolder_(this);
+            boolean added = th.addHolder_(this);
+            assert added : soid + " " + this;
         }
 
         /**

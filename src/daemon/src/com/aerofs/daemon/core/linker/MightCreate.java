@@ -137,7 +137,7 @@ public class MightCreate
 
         Set<Operation> ops = determineUpdateOperation_(sourceSOID, targetSOID, fnt);
 
-        l.info("{} {}", pcPhysical, ops);
+        l.info("{} {} {} {}", pcPhysical, ops, sourceSOID, targetSOID);
 
         boolean createdOrReplaced = _mcop.executeOperation_(ops, sourceSOID, targetSOID, pcPhysical,
                 fnt, delBuffer, t);

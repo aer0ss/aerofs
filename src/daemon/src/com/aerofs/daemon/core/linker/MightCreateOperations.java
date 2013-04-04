@@ -142,7 +142,7 @@ class MightCreateOperations
      */
     private void assignRandomFID_(SOID soid, Trans t) throws SQLException
     {
-        l.info("set random fid for " + soid);
+        l.info("set random fid for {}", soid);
         byte[] bs = new byte[_dr.getFIDLength()];
         while (true) {
             Util.rand().nextBytes(bs);
@@ -164,7 +164,7 @@ class MightCreateOperations
     private void renameConflictingLogicalObject_(@Nonnull OA oa, PathCombo pc, FID fid, Trans t)
             throws Exception
     {
-        l.info("rename conflict " + oa.soid() + ":" + pc);
+        l.info("rename conflict {} {}", oa.soid(), pc);
 
         // can't rename the root
         assert pc._path.elements().length > 0;
@@ -184,7 +184,7 @@ class MightCreateOperations
             break;
         }
 
-        l.info("move for confict " + oa.soid() + ":" + pc + "->" + obfuscatePath(name));
+        l.info("move for confict {} {}->{}", oa.soid(), pc, obfuscatePath(name));
 
         // randomize FID in case of conflict
         FID fidTarget = oa.fid();
@@ -252,7 +252,7 @@ class MightCreateOperations
 
 
             // move the logical object
-            l.info("move " + soid + ":" + obfuscatePath(pLogical) + "->" + obfuscatePath(pPhysical));
+            l.info("move {} {}->{}", soid, obfuscatePath(pLogical), obfuscatePath(pPhysical));
             Path pathToParent = pPhysical.removeLast();
             SOID soidToParent = _ds.resolveThrows_(pathToParent);
             OA oaToParent = _ds.getOA_(soidToParent);
@@ -279,7 +279,7 @@ class MightCreateOperations
         if (sourceSOID != null) cleanup_(sourceSOID, targetSOID, t);
 
         // Link the physical object to the logical object by replacing the FID.
-        l.info("replace " + targetSOID + ":" + pc);
+        l.info("replace {} {}", targetSOID, pc);
 
         // update the FID of that object
         _ds.setFID_(targetSOID, fnt._fid, t);
@@ -302,7 +302,7 @@ class MightCreateOperations
         // a shared folder *after* some metadata was retrieved but before content could be
         // downloaded. It also helps avoiding unnecessary transfers in such a scenario and
         // can reduce the amount of aliasing performed.
-        l.info("move over " + sourceSOID + " " + targetSOID);
+        l.info("move over {} {}", sourceSOID, targetSOID);
 
         // We have to change the FID associated with the source object before we assign it to
         // the target.
@@ -341,11 +341,11 @@ class MightCreateOperations
         if (ca == null) {
             // The master CA is absent. This may happen when a file's metadata has been downloaded
             // but the content hasn't been so. Create the master CA in this case.
-            l.warn("absent master CA on " + soid + ". create it");
+            l.warn("create master CA for {}", soid);
             _ds.createCA_(soid, KIndex.MASTER, t);
         }
 
-        l.info("modify " + soid);
+        l.info("modify {}", soid);
         _vu.update_(new SOCKID(soid, CID.CONTENT), t);
         _a.incSaveCount();
     }
