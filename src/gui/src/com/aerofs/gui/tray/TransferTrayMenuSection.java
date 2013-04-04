@@ -83,17 +83,17 @@ public class TransferTrayMenuSection
 
         synchronized (_ts) {
             for (PBDownloadEvent dl : _ts.downloads_().values()) {
-                // guaranteed by updateDownloadState
-                assert dl.getState() == State.ONGOING;
-                dlCount++;
-                dlBytesDone += dl.getDone();
-                dlBytesTotal += dl.getTotal();
+                // only aggregate stats from ongoing downloads
+                if (dl.getState() == State.ONGOING) {
+                    dlCount++;
+                    dlBytesDone += dl.getDone();
+                    dlBytesTotal += dl.getTotal();
+                }
             }
 
             for (PBUploadEvent ul : _ts.uploads_().values()) {
-                // guaranteed by updateUploadState
-                assert ul.getDone() != ul.getTotal();
-                if (ul.getDone() > 0 && ul.getDone() != ul.getTotal()) {
+                // only aggregate stats from started and unfinished uploads
+                if (ul.getDone() > 0 && ul.getDone() < ul.getTotal()) {
                     ulCount++;
                     ulBytesDone += ul.getDone();
                     ulBytesTotal += ul.getTotal();
