@@ -18,6 +18,7 @@ import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.program.Program;
 import org.eclipse.swt.widgets.Display;
 
+import javax.annotation.Nullable;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -104,14 +105,39 @@ extends org.eclipse.jface.viewers.LabelProvider implements ITableLabelProvider
         }
     }
 
-    private String getText(PBSOCID pbsocid, PBPath pbpath, Path path)
+    /**
+     * This method takes fields from an upload or download event and format the text for
+     *   display in the path column. The formatting does the following:
+     *
+     *  - It will attempt to resolve path to get the filename of the file being transferred.
+     *  - If showSOCID is on, it will prepend the path with SOCID if the path can be resolved,
+     *    and it will return the SOCID if the path cannot be resolved.
+     *  - It will display the default text if the path cannot be resolved and showSOCID is off.
+     *  - Regardless what the text is, it will shorten the text and add ellipses to make it
+     *    fit in the column.
+     *
+     * @param pbsocid: the SOCID field in the upload/download event.
+     * @param pbpath: the path field in the upload/download event if it's available,
+     *   null otherwise.
+     * @return formatted text to display in the path column.
+     */
+    private String formatPathText(PBSOCID pbsocid, @Nullable PBPath pbpath)
     {
-        String text = UIUtil.getUserFriendlyPath(pbsocid, pbpath, path);
-        if (text.startsWith("/"))
-            text = text.substring(1);
-        if (_showSOCID)
-            text = new SOCID(pbsocid).toString() + " / " + text;
-        return _view.shortenPath(text);
+        if (pbpath == null) {
+            return _showSOCID ? formatSOCID(pbsocid) : S.LBL_UNKNOWN_FILE;
+        } else {
+            String text = UIUtil.getUserFriendlyPath(pbsocid, pbpath, new Path(pbpath));
+
+            if (text.startsWith("/")) text = text.substring(1);
+            if (_showSOCID) text = formatSOCID(pbsocid) + " - " + text;
+
+            return _view.shortenPath(text);
+        }
+    }
+
+    private String formatSOCID(PBSOCID pbsocid)
+    {
+        return new SOCID(pbsocid).toString();
     }
 
     @Override
@@ -121,11 +147,7 @@ extends org.eclipse.jface.viewers.LabelProvider implements ITableLabelProvider
             PBUploadEvent ev = (PBUploadEvent) element;
             switch (columnIndex) {
             case CompTransfersTable.COL_PATH:
-                if (ev.hasPath()) {
-                    return getText(ev.getSocid(), ev.getPath(), new Path(ev.getPath()));
-                } else {
-                    return _showSOCID ? new SOCID(ev.getSocid()).toString() : S.LBL_UNKNOWN_FILE;
-                }
+                return formatPathText(ev.getSocid(), ev.hasPath() ? ev.getPath() : null);
             case CompTransfersTable.COL_PROG:
                 return Util.formatProgress(ev.getDone(), ev.getTotal());
             case CompTransfersTable.COL_DEVICE:
@@ -137,11 +159,7 @@ extends org.eclipse.jface.viewers.LabelProvider implements ITableLabelProvider
             PBDownloadEvent ev = (PBDownloadEvent) element;
             switch (columnIndex) {
             case CompTransfersTable.COL_PATH:
-                if (ev.hasPath()) {
-                    return getText(ev.getSocid(), ev.getPath(), new Path(ev.getPath()));
-                } else {
-                    return _showSOCID ? new SOCID(ev.getSocid()).toString() : S.LBL_UNKNOWN_FILE;
-                }
+                return formatPathText(ev.getSocid(), ev.hasPath() ? ev.getPath() : null);
             case CompTransfersTable.COL_PROG:
                 return downloadStateToProgressString(ev);
             case CompTransfersTable.COL_DEVICE:
