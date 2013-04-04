@@ -6,10 +6,11 @@ package com.aerofs.daemon.core.synctime;
 
 import com.aerofs.base.id.OID;
 import com.aerofs.testlib.AbstractTest;
-import com.google.common.collect.DiscreteDomains;
+import com.google.common.collect.ContiguousSet;
+import com.google.common.collect.DiscreteDomain;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterators;
-import com.google.common.collect.Ranges;
+import com.google.common.collect.Range;
 import com.google.common.collect.Sets;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -95,8 +96,8 @@ public class TestTimeToSyncHistogramSingleDID extends AbstractTest
     private Set<Integer> allBinsExcluding(Integer... bins)
     {
         Set<Integer> excluded = ImmutableSet.copyOf(Iterators.forArray(bins));
-        return Sets.difference(
-                Ranges.closedOpen(0, TimeToSync.TOTAL_BINS).asSet(DiscreteDomains.integers()),
+        return Sets.difference(ContiguousSet.create(Range.closedOpen(0, TimeToSync.TOTAL_BINS),
+                DiscreteDomain.integers()),
                 excluded);
     }
 
