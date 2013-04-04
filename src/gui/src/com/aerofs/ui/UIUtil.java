@@ -4,22 +4,25 @@ import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.AbstractExWirable;
 import com.aerofs.base.ex.IExObfuscated;
+import com.aerofs.base.id.UserID;
 import com.aerofs.controller.ExLaunchAborted;
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.gui.setup.DlgJoinSharedFolders;
 import com.aerofs.gui.setup.DlgTutorial;
 import com.aerofs.labeling.L;
-import com.aerofs.lib.*;
+import com.aerofs.lib.AppRoot;
+import com.aerofs.lib.FullName;
 import com.aerofs.lib.JsonFormat.ParseException;
+import com.aerofs.lib.Param;
+import com.aerofs.lib.Path;
+import com.aerofs.lib.SystemUtil;
+import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.ex.*;
+import com.aerofs.lib.ex.ExNoConsole;
+import com.aerofs.lib.ex.ExUIMessage;
 import com.aerofs.lib.id.CID;
-import com.aerofs.base.id.UserID;
 import com.aerofs.lib.os.OSUtil;
-
-import com.aerofs.lib.ritual.RitualClient;
-import com.aerofs.lib.ritual.RitualClientFactory;
 import com.aerofs.proto.Common;
 import com.aerofs.proto.Common.PBPath;
 import com.aerofs.proto.ControllerProto.GetInitialStatusReply;
@@ -33,6 +36,7 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.protobuf.ByteString;
 import org.slf4j.Logger;
+
 import java.io.EOFException;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -163,28 +167,17 @@ public class UIUtil
         if (!L.isMultiuser()) {
             // try creating a seed file (use async ritual API to leverage SP call latency)
             ListenableFuture<CreateSeedFileReply> reply = null;
-            RitualClient ritual = RitualClientFactory.newClient();
 
             try {
-                try {
-                    reply = ritual.createSeedFile(Cfg.rootSID().toPB());
-                } catch (Exception e) {
-                    l.info("failed to create seed file: {}", Util.e(e));
-                }
-
-                try {
-                    // give the daemon some room to create the seed file before making the SP call
-                    if (reply != null) reply.get(SEED_FILE_CREATION_TIMEOUT, TimeUnit.MILLISECONDS);
-                } catch (Exception e) {
-                    l.info("failed to create seed file: {}", Util.e(e));
-                }
-
-                SPBlockingClient sp = SPClientFactory.newBlockingClient(Cfg.user());
-                sp.signInRemote();
-                sp.unlinkDevice(Cfg.did().toPB(), false);
-            } finally {
-                ritual.close();
+                // give the daemon some room to create the seed file before making the SP call
+                UI.ritual().createSeedFile(Cfg.rootSID().toPB(), SEED_FILE_CREATION_TIMEOUT, TimeUnit.MILLISECONDS);
+            } catch (Exception e) {
+                l.info("failed to create seed file: {}", Util.e(e));
             }
+
+            SPBlockingClient sp = SPClientFactory.newBlockingClient(Cfg.user());
+            sp.signInRemote();
+            sp.unlinkDevice(Cfg.did().toPB(), false);
         } else {
             // Currently only the single user unlink is supported.
             // TODO support multi user unlink.

@@ -5,29 +5,26 @@
 package com.aerofs.controller;
 
 import com.aerofs.base.C;
-import com.aerofs.base.BaseParam.SP;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.SID;
+import com.aerofs.lib.FileUtil;
+import com.aerofs.lib.Param;
 import com.aerofs.lib.RootAnchorUtil;
 import com.aerofs.lib.StorageType;
 import com.aerofs.lib.ThreadUtil;
-import com.aerofs.lib.sched.IScheduler;
-import com.aerofs.lib.FileUtil;
-import com.aerofs.lib.Param;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.cfg.CfgKeyManagersProvider;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.injectable.InjectableFile;
-import com.aerofs.lib.ritual.RitualBlockingClient;
-import com.aerofs.lib.ritual.RitualClientFactory;
 import com.aerofs.lib.rocklog.EventType;
 import com.aerofs.lib.rocklog.RockLog;
 import com.aerofs.lib.sched.ExponentialRetry;
+import com.aerofs.lib.sched.IScheduler;
 import com.aerofs.proto.Cmd.Command;
 import com.aerofs.proto.Sp.AckCommandQueueHeadReply;
 import com.aerofs.proto.Sp.GetCommandQueueHeadReply;
@@ -41,6 +38,7 @@ import com.aerofs.verkehr.client.lib.subscriber.ClientFactory;
 import com.aerofs.verkehr.client.lib.subscriber.ISubscriptionListener;
 import com.aerofs.verkehr.client.lib.subscriber.VerkehrSubscriber;
 import com.google.protobuf.InvalidProtocolBufferException;
+import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jboss.netty.util.HashedWheelTimer;
 import org.slf4j.Logger;
 
@@ -56,7 +54,6 @@ import static com.aerofs.lib.Param.Verkehr.VERKEHR_HOST;
 import static com.aerofs.lib.Param.Verkehr.VERKEHR_PORT;
 import static com.aerofs.lib.Param.Verkehr.VERKEHR_RETRY_INTERVAL;
 import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor;
-import static java.util.concurrent.Executors.newCachedThreadPool;
 
 /**
  * This is the verkehr command notification subscriber.
@@ -95,7 +92,10 @@ public final class CommandNotificationSubscriber
     private final VerkehrListener _listener;
     private final InjectableFile.Factory _factFile = new InjectableFile.Factory();
 
-    public CommandNotificationSubscriber(IScheduler scheduler, DID localDevice,
+    public CommandNotificationSubscriber(
+            ClientSocketChannelFactory clientChannelFactory,
+            IScheduler scheduler,
+            DID localDevice,
             String caCertFilename)
     {
         _scheduler = scheduler;
@@ -105,7 +105,7 @@ public final class CommandNotificationSubscriber
 
         l.debug("cmd: " + VERKEHR_HOST + ":" + VERKEHR_PORT);
         ClientFactory factory = new ClientFactory(VERKEHR_HOST, VERKEHR_PORT,
-                newCachedThreadPool(), newCachedThreadPool(),
+                clientChannelFactory,
                 caCertFilename, new CfgKeyManagersProvider(),
                 VERKEHR_RETRY_INTERVAL, Cfg.db().getLong(Key.TIMEOUT), new HashedWheelTimer(),
                 _listener, _listener, sameThreadExecutor());
@@ -355,25 +355,13 @@ public final class CommandNotificationSubscriber
     private void invalidateUserNameCache()
             throws Exception
     {
-        RitualBlockingClient ritual = RitualClientFactory.newBlockingClient();
-
-        try {
-            ritual.invalidateUserNameCache();
-        } finally {
-            ritual.close();
-        }
+        UI.ritual().invalidateUserNameCache();
     }
 
     private void invalidateDeviceNameCache()
             throws Exception
     {
-        RitualBlockingClient ritual = RitualClientFactory.newBlockingClient();
-
-        try {
-            ritual.invalidateDeviceNameCache();
-        } finally {
-            ritual.close();
-        }
+        UI.ritual().invalidateDeviceNameCache();
     }
 
     private void unlinkSelf()
@@ -423,12 +411,7 @@ public final class CommandNotificationSubscriber
         Util.logAllThreadStackTraces();
 
         // Log threads for the daemon process
-        RitualBlockingClient ritual = RitualClientFactory.newBlockingClient();
-        try {
-            ritual.logThreads();
-        } finally {
-            ritual.close();
-        }
+        UI.ritual().logThreads();
     }
 
     //

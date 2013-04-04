@@ -4,7 +4,6 @@ import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
 import com.aerofs.lib.Param;
 import com.aerofs.lib.Util;
-import org.slf4j.Logger;
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
@@ -18,12 +17,12 @@ import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
 import org.jboss.netty.channel.group.ChannelGroup;
 import org.jboss.netty.channel.group.DefaultChannelGroup;
-import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
+import org.jboss.netty.channel.socket.ServerSocketChannelFactory;
 import org.jboss.netty.handler.codec.frame.LengthFieldBasedFrameDecoder;
 import org.jboss.netty.handler.codec.frame.LengthFieldPrepender;
+import org.slf4j.Logger;
 
 import java.net.InetSocketAddress;
-import java.util.concurrent.Executors;
 
 /**
  * This is the class that handles communication with the shell extension.
@@ -36,11 +35,13 @@ class ShellextServer
 {
     private final static Logger l = Loggers.getLogger(ShellextServer.class);
     private final int _port;
+    private final ServerSocketChannelFactory _serverChannelFactory;
     private final ShellextService _service;
 
-    protected ShellextServer(ShellextService service, int port)
+    protected ShellextServer(int port, ServerSocketChannelFactory serverChannelFactory, ShellextService service)
     {
         _port = port;
+        _serverChannelFactory = serverChannelFactory;
         _service = service;
     }
 
@@ -66,12 +67,10 @@ class ShellextServer
 
     protected void start_()
     {
-        ServerBootstrap bootstrap = new ServerBootstrap(
-                new NioServerSocketChannelFactory(Executors.newCachedThreadPool(),
-                        Executors.newCachedThreadPool()));
-
+        ServerBootstrap bootstrap = new ServerBootstrap(_serverChannelFactory);
         bootstrap.setPipelineFactory(_factory);
         bootstrap.bind(new InetSocketAddress(Param.LOCALHOST_ADDR, _port));
+
         l.info("ShellextServer started on port " + _port);
     }
 

@@ -1,33 +1,33 @@
 package com.aerofs.shell;
 
+import com.aerofs.ChannelFactories;
+import com.aerofs.base.C;
+import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.labeling.L;
-import com.aerofs.base.C;
 import com.aerofs.lib.IProgram;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.lib.ritual.RitualBlockingClient;
-import com.aerofs.lib.ritual.RitualClientFactory;
-import com.aerofs.shell.restricted.CmdTestMultiuserJoinRootStore;
-import com.aerofs.sp.client.SPBlockingClient;
-import com.aerofs.sp.client.SPClientFactory;
+import com.aerofs.lib.ritual.RitualClientProvider;
 import com.aerofs.proto.Common.PBPath;
 import com.aerofs.shell.ShellCommandRunner.ICallback;
 import com.aerofs.shell.restricted.CmdDstat;
+import com.aerofs.shell.restricted.CmdTestMultiuserJoinRootStore;
+import com.aerofs.sp.client.SPBlockingClient;
+import com.aerofs.sp.client.SPClientFactory;
 import com.aerofs.ui.UIUtil;
 
 public class ShProgram implements IProgram, ICallback
 {
-    public static final String SEP = "/";
-
     static final String DEBUG_FLAG = "DEBUG";
 
+    private static final String SEP = "/";
     private static final String PROG = L.productUnixName() + "-sh";
 
-    private Path _pwd;
+    private final RitualClientProvider _ritualProvider = new RitualClientProvider(ChannelFactories.getClientChannelFactory());
 
-    private RitualBlockingClient _ritual;
+    private Path _pwd;
     private SPBlockingClient _sp;
     private long _spRenewal;
     private ShellCommandRunner<ShProgram> _s;
@@ -51,21 +51,21 @@ public class ShProgram implements IProgram, ICallback
             System.out.println(PROG + ": " + UIUtil.e2msgNoBracket(e));
         }
 
-        if (_ritual != null) _ritual.close();
-
         // If we want the program to exit when it returns from main(), then we'd have to call
-        // releaseExternalResources() on Netty's channel factory inside RitualClientFactory.
+        // releaseExternalResources() on Netty's channel factory inside RitualClientProvider.
         // But because this call can hang if a channel isn't closed or someone might forget to
         // call it, it's just safer to call SystemUtil.exit()
         System.exit(0);
     }
 
+    public RitualClientProvider getRitualProvider_()
+    {
+        return _ritualProvider;
+    }
+
     public RitualBlockingClient getRitualClient_()
     {
-        if (_ritual == null) {
-            _ritual = RitualClientFactory.newBlockingClient();
-        }
-       return _ritual;
+        return _ritualProvider.getBlockingClient();
     }
 
     /**

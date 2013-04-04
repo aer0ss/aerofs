@@ -5,42 +5,42 @@
 package com.aerofs.controller;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.base.id.DID;
-import com.aerofs.base.id.SID;
-import com.aerofs.labeling.L;
-import com.aerofs.lib.FileUtil;
-import com.aerofs.lib.StorageType;
-import com.aerofs.lib.ThreadUtil;
-import com.aerofs.lib.cfg.Cfg.PortType;
-import com.aerofs.lib.cfg.CfgDatabase.Key;
-import com.aerofs.lib.cfg.ExNotSetup;
 import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.base.ex.ExFormatError;
+import com.aerofs.base.id.DID;
+import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
-import com.aerofs.lib.os.OSUtil.Icon;
-import com.aerofs.lib.rocklog.EventType;
-import com.aerofs.lib.rocklog.RockLog;
-import com.aerofs.proto.Sv.PBSVEvent.Type;
-import org.slf4j.Logger;
-
+import com.aerofs.labeling.L;
+import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.Param;
 import com.aerofs.lib.Param.PostUpdate;
 import com.aerofs.lib.RootAnchorUtil;
 import com.aerofs.lib.SecUtil;
+import com.aerofs.lib.StorageType;
+import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
+import com.aerofs.lib.cfg.Cfg.PortType;
 import com.aerofs.lib.cfg.CfgDatabase;
+import com.aerofs.lib.cfg.CfgDatabase.Key;
+import com.aerofs.lib.cfg.ExNotSetup;
 import com.aerofs.lib.injectable.InjectableDriver;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.lib.os.OSUtil;
+import com.aerofs.lib.os.OSUtil.Icon;
+import com.aerofs.lib.rocklog.EventType;
+import com.aerofs.lib.rocklog.RockLog;
+import com.aerofs.proto.ControllerProto.PBS3Config;
+import com.aerofs.proto.Sv;
+import com.aerofs.proto.Sv.PBSVEvent.Type;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.sp.client.SPClientFactory;
 import com.aerofs.sv.client.SVClient;
-import com.aerofs.proto.ControllerProto.PBS3Config;
-import com.aerofs.proto.Sv;
 import com.aerofs.ui.UI;
 import com.google.common.collect.Maps;
 import com.google.protobuf.ByteString;
+import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
+import org.slf4j.Logger;
 
 import java.io.File;
 import java.io.IOException;
@@ -50,16 +50,20 @@ import java.net.UnknownHostException;
 import java.sql.SQLException;
 import java.util.TreeMap;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 class Setup
 {
     private static final Logger l = Loggers.getLogger(Setup.class);
+
     private final String _rtRoot;
     private final InjectableFile.Factory _factFile = new InjectableFile.Factory();
+    private final ClientSocketChannelFactory _clientChannelFactory;
 
-    public Setup(String rtRoot)
+    public Setup(String rtRoot, ClientSocketChannelFactory clientChannelFactory)
     {
-        assert rtRoot != null;
-        _rtRoot = rtRoot;
+        _rtRoot = checkNotNull(rtRoot);
+        _clientChannelFactory = clientChannelFactory;
     }
 
     /**
@@ -226,7 +230,7 @@ class Setup
         _factFile.create(_rtRoot, Param.SETTING_UP).deleteOrOnExit();
 
         // Proceed with AeroFS launch
-        new Launcher(_rtRoot).launch(true);
+        new Launcher(_rtRoot, _clientChannelFactory).launch(true);
 
         setRootAnchorIcon(rootAnchorPath);
     }

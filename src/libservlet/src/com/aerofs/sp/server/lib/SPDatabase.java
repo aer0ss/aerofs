@@ -1,18 +1,17 @@
 package com.aerofs.sp.server.lib;
 
+import com.aerofs.base.Base64;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExNotFound;
-import com.aerofs.lib.S;
 import com.aerofs.base.id.UserID;
-
-import com.aerofs.lib.db.DBUtil;
-
-import com.aerofs.base.Base64;
+import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
+import com.aerofs.lib.db.DBUtil;
 import com.aerofs.servlets.lib.db.IDatabaseConnectionProvider;
 import com.aerofs.servlets.lib.db.sql.AbstractSQLDatabase;
 import com.google.common.collect.Sets;
 
+import javax.annotation.Nonnull;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -20,9 +19,19 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.Set;
 
-import static com.aerofs.sp.server.lib.SPSchema.*;
-
-import javax.annotation.Nonnull;
+import static com.aerofs.sp.server.lib.SPSchema.C_AC_STORE_ID;
+import static com.aerofs.sp.server.lib.SPSchema.C_AC_USER_ID;
+import static com.aerofs.sp.server.lib.SPSchema.C_PASS_TOKEN;
+import static com.aerofs.sp.server.lib.SPSchema.C_PASS_TS;
+import static com.aerofs.sp.server.lib.SPSchema.C_PASS_USER;
+import static com.aerofs.sp.server.lib.SPSchema.C_TI_TIC;
+import static com.aerofs.sp.server.lib.SPSchema.C_TI_TO;
+import static com.aerofs.sp.server.lib.SPSchema.C_USER_CREDS;
+import static com.aerofs.sp.server.lib.SPSchema.C_USER_ID;
+import static com.aerofs.sp.server.lib.SPSchema.T_AC;
+import static com.aerofs.sp.server.lib.SPSchema.T_PASSWORD_RESET;
+import static com.aerofs.sp.server.lib.SPSchema.T_TI;
+import static com.aerofs.sp.server.lib.SPSchema.T_USER;
 
 // TODO (WW) move ALL methods to appropriate classes.
 // DO NOT ADD NEW METHODS.

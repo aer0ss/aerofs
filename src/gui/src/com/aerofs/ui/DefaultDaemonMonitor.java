@@ -5,11 +5,12 @@
 package com.aerofs.ui;
 
 import com.aerofs.base.BaseParam.WWW;
-import com.aerofs.base.Loggers;
-import com.aerofs.lib.AppRoot;
 import com.aerofs.base.C;
-import com.aerofs.lib.FrequentDefectSender;
+import com.aerofs.base.Loggers;
+import com.aerofs.base.ex.ExTimeout;
 import com.aerofs.labeling.L;
+import com.aerofs.lib.AppRoot;
+import com.aerofs.lib.FrequentDefectSender;
 import com.aerofs.lib.Param;
 import com.aerofs.lib.Param.Daemon;
 import com.aerofs.lib.S;
@@ -20,24 +21,26 @@ import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.Cfg.PortType;
 import com.aerofs.lib.ex.ExDaemonFailedToStart;
 import com.aerofs.lib.ex.ExIndexing;
-import com.aerofs.base.ex.ExTimeout;
 import com.aerofs.lib.ex.ExUIMessage;
 import com.aerofs.lib.injectable.InjectableDriver;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.lib.os.OSUtil;
-import com.aerofs.lib.ritual.RitualBlockingClient;
-import com.aerofs.lib.ritual.RitualClient;
-import com.aerofs.lib.ritual.RitualClientFactory;
 import com.aerofs.swig.driver.DriverConstants;
-import com.google.common.util.concurrent.Uninterruptibles;
 import org.slf4j.Logger;
-import static com.aerofs.lib.SystemUtil.ExitCode.*;
 
 import java.io.IOException;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.util.concurrent.TimeUnit;
+
+import static com.aerofs.lib.SystemUtil.ExitCode.DPUT_MIGRATE_AUX_ROOT_FAILED;
+import static com.aerofs.lib.SystemUtil.ExitCode.RELOCATE_ROOT_ANCHOR;
+import static com.aerofs.lib.SystemUtil.ExitCode.S3_BAD_CREDENTIALS;
+import static com.aerofs.lib.SystemUtil.ExitCode.S3_JAVA_KEY_LENGTH_MAYBE_TOO_LIMITED;
+import static com.aerofs.lib.SystemUtil.ExitCode.SHUTDOWN_REQUESTED;
+import static com.aerofs.lib.SystemUtil.ExitCode.WINDOWS_SHUTTING_DOWN;
+import static com.aerofs.lib.SystemUtil.ExitCode.getMessage;
 
 class DefaultDaemonMonitor implements IDaemonMonitor
 {
@@ -133,12 +136,11 @@ class DefaultDaemonMonitor implements IDaemonMonitor
                 }
             }
 
-            RitualBlockingClient ritual = RitualClientFactory.newBlockingClient();
             try {
                 // Ping the daemon to see if it has started up and is listening for RPCs.
                 // ritual.heartbeat() will throw immediately if it can't connect to the daemon
                 l.info("hb daemon");
-                ritual.heartbeat();
+                UI.ritual().heartbeat();
                 l.info("daemon started");
                 break;
             } catch (ExIndexing e) {
@@ -159,8 +161,6 @@ class DefaultDaemonMonitor implements IDaemonMonitor
                     l.error("pinging daemon took too long. giving up");
                     throw new ExTimeout();
                 }
-            } finally {
-                ritual.close();
             }
 
             l.info("sleep for " + UIParam.DAEMON_CONNECTION_RETRY_INTERVAL + " ms");
@@ -301,17 +301,16 @@ class DefaultDaemonMonitor implements IDaemonMonitor
      * @return true if the heart beat succeeded, false otherwise
      */
     private boolean tryHeartBeat() {
-        RitualClient ritual = RitualClientFactory.newClient();
+        boolean succeeded = false;
+
         try {
-            Uninterruptibles.getUninterruptibly(ritual.heartbeat(),
-                    Daemon.HEARTBEAT_TIMEOUT, TimeUnit.MILLISECONDS);
+            UI.ritual().heartbeat(Daemon.HEARTBEAT_TIMEOUT, TimeUnit.MILLISECONDS);
+            succeeded = true;
         } catch (Exception e) {
             _fdsHeartbeatGone.logSendAsync("daemon hb gone. " + e);
-            return false;
-        } finally {
-            ritual.close();
         }
-        return true;
+
+        return succeeded;
     }
 
     /**

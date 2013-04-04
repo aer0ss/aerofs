@@ -1,8 +1,8 @@
 package com.aerofs.lib.ritual;
 
-import java.io.Closeable;
-
 import com.aerofs.proto.Ritual.RitualServiceStub;
+
+import java.io.Closeable;
 
 /**
  * This is a future-based, asynchronous client interface to Ritual.
@@ -26,16 +26,5 @@ public class RitualClient extends RitualServiceStub implements Closeable
     public void close()
     {
         _handler.disconnect();
-    }
-
-    /**
-     * For DI
-     */
-    public static class Factory
-    {
-        public RitualClient create()
-        {
-            return RitualClientFactory.newClient();
-        }
     }
 }

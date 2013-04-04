@@ -2,36 +2,34 @@ package com.aerofs.gui.misc;
 
 import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.base.Loggers;
+import com.aerofs.gui.AeroFSJFaceDialog;
+import com.aerofs.gui.GUIParam;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.labeling.L;
+import com.aerofs.lib.S;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
+import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
-import com.aerofs.lib.ritual.RitualBlockingClient;
-import com.aerofs.lib.ritual.RitualClientFactory;
 import com.aerofs.shell.CmdDefect;
+import com.aerofs.ui.UI;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.SelectionAdapter;
+import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.ShellAdapter;
 import org.eclipse.swt.events.ShellEvent;
 import org.eclipse.swt.events.VerifyEvent;
 import org.eclipse.swt.events.VerifyListener;
+import org.eclipse.swt.layout.GridData;
+import org.eclipse.swt.layout.GridLayout;
+import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
-import org.eclipse.swt.widgets.Shell;
-import com.aerofs.gui.AeroFSJFaceDialog;
-import com.aerofs.gui.GUIParam;
-import com.aerofs.lib.S;
-import com.aerofs.lib.cfg.Cfg;
-
-import org.eclipse.swt.events.SelectionAdapter;
-import org.eclipse.swt.events.SelectionEvent;
-import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Label;
-import org.eclipse.swt.layout.GridData;
-import org.eclipse.swt.widgets.Text;
-import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Link;
+import org.eclipse.swt.widgets.Shell;
+import org.eclipse.swt.widgets.Text;
 import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
@@ -201,12 +199,7 @@ public class DlgDefect extends AeroFSJFaceDialog
                         l.warn("set contact email, ignored: " + Util.e(e));
                     }
 
-                    RitualBlockingClient ritual = RitualClientFactory.newBlockingClient();
-                    try {
-                        CmdDefect.sendDefect(ritual, msg, dumpDaemonStatus);
-                    } finally {
-                        ritual.close();
-                    }
+                    CmdDefect.sendDefect(UI.ritual(), msg, dumpDaemonStatus);
                 }
             });
         }

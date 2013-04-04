@@ -1,35 +1,32 @@
 package com.aerofs.gui.netutil;
 
+import com.aerofs.InternalDiagnostics;
+import com.aerofs.InternalDiagnostics.IPingCallback;
+import com.aerofs.base.C;
+import com.aerofs.base.Loggers;
+import com.aerofs.base.id.DID;
+import com.aerofs.gui.GUI;
+import com.aerofs.gui.GUIParam;
+import com.aerofs.gui.GUIUtil;
+import com.aerofs.lib.Util;
+import com.aerofs.sv.client.SVClient;
+import com.aerofs.ui.UI;
+import com.aerofs.ui.UIParam;
+import com.swtdesigner.SWTResourceManager;
+import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.SelectionAdapter;
+import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.layout.GridData;
+import org.eclipse.swt.layout.GridLayout;
+import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Label;
+import org.eclipse.swt.widgets.Scale;
+import org.slf4j.Logger;
+
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.LinkedList;
-
-import com.aerofs.InternalDiagnostics;
-import com.aerofs.base.Loggers;
-import com.aerofs.base.id.DID;
-import com.aerofs.lib.ritual.RitualBlockingClient;
-import com.aerofs.lib.ritual.RitualClientFactory;
-import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.layout.GridLayout;
-
-import com.aerofs.gui.GUI;
-import com.aerofs.gui.GUIParam;
-import com.aerofs.gui.GUIUtil;
-import com.aerofs.base.C;
-import com.aerofs.lib.Util;
-import com.aerofs.InternalDiagnostics.IPingCallback;
-import com.aerofs.sv.client.SVClient;
-import com.aerofs.ui.UIParam;
-
-import org.eclipse.swt.widgets.Label;
-import org.eclipse.swt.SWT;
-import org.eclipse.swt.layout.GridData;
-import org.eclipse.swt.widgets.Scale;
-import org.eclipse.swt.events.SelectionAdapter;
-import org.eclipse.swt.events.SelectionEvent;
-import com.swtdesigner.SWTResourceManager;
-import org.slf4j.Logger;
 
 public class CompPing extends Composite
 {
@@ -169,9 +166,8 @@ public class CompPing extends Composite
             @Override
             public void run()
             {
-                RitualBlockingClient ritual = RitualClientFactory.newBlockingClient();
                 try {
-                    InternalDiagnostics.ping(ritual, _did, true, new IPingCallback()
+                    InternalDiagnostics.ping(UI.ritual(), _did, true, new IPingCallback()
                     {
                         @Override
                         public boolean toStop()
@@ -200,7 +196,6 @@ public class CompPing extends Composite
                 } catch (Exception e) {
                     updateUI(e, false, null, _samples);
                 } finally {
-                    ritual.close();
                     logStat();
                 }
             }

@@ -4,39 +4,39 @@
 
 package com.aerofs.controller;
 
+import com.aerofs.base.BaseParam.WWW;
+import com.aerofs.base.C;
+import com.aerofs.base.Loggers;
+import com.aerofs.base.ex.ExFormatError;
+import com.aerofs.base.id.UserID;
+import com.aerofs.gui.GUIUtil;
+import com.aerofs.labeling.L;
+import com.aerofs.lib.AppRoot;
+import com.aerofs.lib.Param;
+import com.aerofs.lib.Util;
+import com.aerofs.lib.cfg.Cfg;
+import com.aerofs.lib.cfg.Cfg.PortType;
+import com.aerofs.lib.cfg.CfgDatabase.Key;
+import com.aerofs.lib.injectable.InjectableFile;
+import com.aerofs.lib.os.OSUtil;
+import com.aerofs.proto.ControllerProto.GetInitialStatusReply;
+import com.aerofs.proto.ControllerProto.GetInitialStatusReply.Status;
+import com.aerofs.proto.Sv.PBSVEvent;
+import com.aerofs.sv.client.SVClient;
+import com.aerofs.ui.IUI.MessageType;
+import com.aerofs.ui.UI;
+import com.aerofs.ui.logs.LogArchiver;
+import com.aerofs.ui.update.PostUpdate;
+import com.aerofs.ui.update.uput.UIPostUpdateTasks;
+import org.eclipse.jface.dialogs.IDialogConstants;
+import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
+import org.slf4j.Logger;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.BindException;
 import java.net.ServerSocket;
 import java.sql.SQLException;
-
-import com.aerofs.base.BaseParam.WWW;
-import com.aerofs.base.Loggers;
-import com.aerofs.gui.GUIUtil;
-import com.aerofs.labeling.L;
-import com.aerofs.lib.Param;
-import com.aerofs.base.id.UserID;
-import com.aerofs.ui.IUI.MessageType;
-import com.aerofs.ui.logs.LogArchiver;
-import org.slf4j.Logger;
-import org.eclipse.jface.dialogs.IDialogConstants;
-
-import com.aerofs.lib.AppRoot;
-import com.aerofs.base.C;
-import com.aerofs.lib.Util;
-import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.cfg.Cfg.PortType;
-import com.aerofs.lib.cfg.CfgDatabase.Key;
-import com.aerofs.base.ex.ExFormatError;
-import com.aerofs.lib.injectable.InjectableFile;
-import com.aerofs.lib.os.OSUtil;
-import com.aerofs.sv.client.SVClient;
-import com.aerofs.proto.ControllerProto.GetInitialStatusReply;
-import com.aerofs.proto.ControllerProto.GetInitialStatusReply.Status;
-import com.aerofs.proto.Sv.PBSVEvent;
-import com.aerofs.ui.UI;
-import com.aerofs.ui.update.PostUpdate;
-import com.aerofs.ui.update.uput.UIPostUpdateTasks;
 
 import static com.aerofs.lib.cfg.Cfg.absRTRoot;
 
@@ -44,12 +44,15 @@ class Launcher
 {
     private static final Logger l = Loggers.getLogger(Launcher.class);
     private static final InjectableFile.Factory s_factFile = new InjectableFile.Factory();
-    private final String _rtRoot;
-    static ServerSocket _ss;
 
-    Launcher(String rtRoot)
+    private static ServerSocket _ss;
+    private final String _rtRoot;
+    private final ClientSocketChannelFactory _clientChannelFactory;
+
+    Launcher(String rtRoot, ClientSocketChannelFactory clientChannelFactory)
     {
         _rtRoot = rtRoot;
+        _clientChannelFactory = clientChannelFactory;
     }
 
     public static void destroySingletonSocket()
@@ -270,8 +273,13 @@ class Launcher
     {
         if (Cfg.useArchive()) new LogArchiver(absRTRoot()).start();
 
-        new CommandNotificationSubscriber(UI.scheduler(), Cfg.did(), Util.join(AppRoot.abs(),
-                Param.CA_CERT)).start();
+        new CommandNotificationSubscriber(
+                _clientChannelFactory,
+                UI.scheduler(),
+                Cfg.did(),
+                Util.join(AppRoot.abs(),
+                Param.CA_CERT))
+            .start();
 
         new BadCredentialNotifier();
 

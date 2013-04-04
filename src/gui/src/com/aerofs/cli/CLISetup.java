@@ -1,13 +1,9 @@
 package com.aerofs.cli;
 
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.util.Properties;
-
 import com.aerofs.base.Base64;
 import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.base.ex.ExEmptyEmailAddress;
+import com.aerofs.base.id.UserID;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.RootAnchorUtil;
 import com.aerofs.lib.S;
@@ -16,7 +12,6 @@ import com.aerofs.lib.StorageType;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgDatabase;
 import com.aerofs.lib.ex.ExNoConsole;
-import com.aerofs.base.id.UserID;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.proto.ControllerProto.GetSetupSettingsReply;
 import com.aerofs.proto.ControllerProto.PBS3Config;
@@ -24,6 +19,11 @@ import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.PasswordVerifier;
 import com.aerofs.ui.PasswordVerifier.PasswordVerifierResult;
 import com.aerofs.ui.UI;
+
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.util.Properties;
 
 public class CLISetup
 {

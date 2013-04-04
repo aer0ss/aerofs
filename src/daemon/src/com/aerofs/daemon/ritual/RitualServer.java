@@ -1,10 +1,10 @@
 package com.aerofs.daemon.ritual;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.base.async.FutureUtil;
 import com.aerofs.daemon.transport.lib.AddressUtils;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
-import com.aerofs.base.async.FutureUtil;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.ex.ExIndexing;
@@ -14,38 +14,46 @@ import com.aerofs.proto.Ritual.RitualServiceReactor.ServiceRpcTypes;
 import com.aerofs.proto.RpcService;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.ListenableFuture;
-import org.slf4j.Logger;
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
-import org.jboss.netty.channel.*;
-import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
+import org.jboss.netty.channel.Channel;
+import org.jboss.netty.channel.ChannelHandlerContext;
+import org.jboss.netty.channel.ChannelPipeline;
+import org.jboss.netty.channel.ChannelPipelineFactory;
+import org.jboss.netty.channel.Channels;
+import org.jboss.netty.channel.ExceptionEvent;
+import org.jboss.netty.channel.MessageEvent;
+import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
+import org.jboss.netty.channel.socket.ServerSocketChannelFactory;
 import org.jboss.netty.handler.codec.frame.LengthFieldBasedFrameDecoder;
 import org.jboss.netty.handler.codec.frame.LengthFieldPrepender;
+import org.slf4j.Logger;
 
 import java.net.InetSocketAddress;
-import java.util.concurrent.Executors;
 
 import static com.aerofs.lib.Param.Ritual.LENGTH_FIELD_SIZE;
 import static com.aerofs.lib.Param.Ritual.MAX_FRAME_LENGTH;
 
 public class RitualServer
 {
-    final static Logger l = Loggers.getLogger(RitualServer.class);
+    private static final Logger l = Loggers.getLogger(RitualServer.class);
+
     private final int port = Cfg.port(Cfg.PortType.RITUAL);
     private final String host = Cfg.db().get(Key.RITUAL_BIND_ADDR);
 
-    public RitualServer()
+    private final ServerSocketChannelFactory _serverChannelFactory;
+
+    public RitualServer(ServerSocketChannelFactory serverChannelFactory)
     {
+        _serverChannelFactory = serverChannelFactory;
     }
 
     public void start_()
     {
         // Configure the server.
 
-        ServerBootstrap bootstrap = new ServerBootstrap(
-                new NioServerSocketChannelFactory(Executors.newCachedThreadPool(),
-                        Executors.newCachedThreadPool()));
+        ServerBootstrap bootstrap = new ServerBootstrap(_serverChannelFactory);
 
         // Set up the pipeline factory.
         // RitualServerHandler is the class that will receive the bytes from the client
@@ -75,7 +83,6 @@ public class RitualServer
     }
 
     /**
-     * @internal
      * This is the Netty class that receives the data from the client
      * It handles the data to the Reactor, and writes back the reply to the client
      */

@@ -4,15 +4,15 @@
 
 package com.aerofs.sp.server.integration;
 
-import com.aerofs.proto.Sp.GetDeviceInfoReply;
-import com.aerofs.sp.server.lib.device.Device;
-import com.aerofs.base.id.DID;
 import com.aerofs.base.async.UncancellableFuture;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExNotFound;
+import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UniqueID;
-import com.aerofs.proto.Sp.GetCRLReply;
 import com.aerofs.proto.Common.Void;
+import com.aerofs.proto.Sp.GetCRLReply;
+import com.aerofs.proto.Sp.GetDeviceInfoReply;
+import com.aerofs.sp.server.lib.device.Device;
 import com.google.common.collect.ImmutableList;
 import org.junit.Before;
 import org.junit.Test;
@@ -21,9 +21,9 @@ import org.testng.Assert;
 import java.util.Collection;
 import java.util.Collections;
 
-import static org.mockito.Mockito.when;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.when;
 
 /**
  * A class to test unlinking operations on SP.

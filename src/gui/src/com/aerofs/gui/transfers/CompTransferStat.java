@@ -1,7 +1,14 @@
 package com.aerofs.gui.transfers;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.gui.GUI;
+import com.aerofs.gui.GUIParam;
+import com.aerofs.gui.Images;
 import com.aerofs.lib.ThreadUtil;
+import com.aerofs.lib.Util;
+import com.aerofs.proto.Files.PBDumpStat;
+import com.aerofs.proto.Files.PBDumpStat.PBTransport;
+import com.aerofs.ui.UI;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.CLabel;
 import org.eclipse.swt.events.PaintEvent;
@@ -9,15 +16,6 @@ import org.eclipse.swt.events.PaintListener;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Label;
-
-import com.aerofs.gui.GUI;
-import com.aerofs.gui.GUIParam;
-import com.aerofs.gui.Images;
-import com.aerofs.lib.Util;
-import com.aerofs.lib.ritual.RitualBlockingClient;
-import com.aerofs.lib.ritual.RitualClientFactory;
-import com.aerofs.proto.Files.PBDumpStat;
-import com.aerofs.proto.Files.PBDumpStat.PBTransport;
 import org.slf4j.Logger;
 
 public class CompTransferStat extends Composite
@@ -90,9 +88,8 @@ public class CompTransferStat extends Composite
 
             String strIn, strOut;
 
-            RitualBlockingClient ritual = RitualClientFactory.newBlockingClient();
             try {
-                PBDumpStat data = ritual.dumpStats(TEMPLATE).getStats();
+                PBDumpStat data = UI.ritual().dumpStats(TEMPLATE).getStats();
                 long in = 0, out = 0;
                 for (PBTransport tp : data.getTpList()) {
                     in += tp.getBytesIn();
@@ -117,8 +114,6 @@ public class CompTransferStat extends Composite
                 l.warn("can't refresh stat: " + Util.e(e));
                 strIn = Util.formatBandwidth(0, 0);
                 strOut = Util.formatBandwidth(0, 0);
-            } finally {
-                ritual.close();
             }
 
             final String strInFinal = strIn;

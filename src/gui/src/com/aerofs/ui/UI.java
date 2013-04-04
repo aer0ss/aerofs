@@ -1,8 +1,12 @@
 package com.aerofs.ui;
 
 import com.aerofs.controller.ControllerClient;
-import com.aerofs.ui.update.Updater;
 import com.aerofs.gui.GUI;
+import com.aerofs.lib.ritual.IRitualClientProvider;
+import com.aerofs.lib.ritual.RitualBlockingClient;
+import com.aerofs.lib.ritual.RitualClient;
+import com.aerofs.lib.ritual.RitualClientProvider;
+import com.aerofs.ui.update.Updater;
 
 /**
  * Global access points for all the singleton classes used in the Java UI
@@ -13,13 +17,15 @@ import com.aerofs.gui.GUI;
  * ie: do not include something in this class if you answer "no" to the question: "Would we
  * still need it if we had only native UIs?"
  */
-public class UI
+public final class UI
 {
     private static IUI _ui;
+    private static RitualClientProvider _ritualProvider;
 
-    public static void set(IUI ui)
+    public static void init(IUI ui, RitualClientProvider ritualProvider)
     {
         _ui = ui;
+        _ritualProvider = ritualProvider;
     }
 
     public static IUI get()
@@ -59,11 +65,15 @@ public class UI
     }
 
     // TODO (GS): Move to ControllerService
-    public static IDaemonMonitor dm() {
-        return IDaemonMonitor.Factory.get();
-    }
+    public static IDaemonMonitor dm() { return IDaemonMonitor.Factory.get(); }
 
     public static UIScheduler scheduler() { return s_sched; }
 
     public static InfoCollector ic() { return s_ic; }
+
+    public static IRitualClientProvider ritualClientProvider() { return _ritualProvider; }
+
+    public static RitualBlockingClient ritual() { return _ritualProvider.getBlockingClient(); }
+
+    public static RitualClient ritualNonBlocking() { return _ritualProvider.getNonBlockingClient(); }
 }

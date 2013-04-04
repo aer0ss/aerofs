@@ -4,13 +4,14 @@
 
 package com.aerofs.daemon.tap;
 
-import com.aerofs.base.Loggers;
-import com.aerofs.daemon.tng.base.EventQueueBasedEventLoop;
+import com.aerofs.ChannelFactories;
 import com.aerofs.base.C;
+import com.aerofs.base.Loggers;
+import com.aerofs.base.async.FutureUtil;
+import com.aerofs.daemon.tng.base.EventQueueBasedEventLoop;
 import com.aerofs.lib.IProgram;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
-import com.aerofs.base.async.FutureUtil;
 import com.aerofs.proto.Tap;
 import com.aerofs.proto.Tap.ITapService;
 import com.google.common.util.concurrent.FutureCallback;
@@ -18,7 +19,6 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Stage;
-import org.slf4j.Logger;
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
@@ -30,13 +30,13 @@ import org.jboss.netty.channel.Channels;
 import org.jboss.netty.channel.ExceptionEvent;
 import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
-import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
 import org.jboss.netty.handler.codec.frame.LengthFieldBasedFrameDecoder;
 import org.jboss.netty.handler.codec.frame.LengthFieldPrepender;
+import org.slf4j.Logger;
 
 import java.net.InetSocketAddress;
-import java.util.concurrent.Executors;
 
+@SuppressWarnings("unused")
 public class TapProgram implements IProgram
 {
     private static final Logger l = Loggers.getLogger(TapProgram.class);
@@ -58,9 +58,7 @@ public class TapProgram implements IProgram
 
         _tapInjector = Guice.createInjector(Stage.PRODUCTION, new TapModule());
 
-        ServerBootstrap bootstrap = new ServerBootstrap(
-                new NioServerSocketChannelFactory(Executors.newCachedThreadPool(),
-                        Executors.newCachedThreadPool()));
+        ServerBootstrap bootstrap = new ServerBootstrap(ChannelFactories.getServerChannelFactory());
 
         bootstrap.setPipelineFactory(new ChannelPipelineFactory()
         {

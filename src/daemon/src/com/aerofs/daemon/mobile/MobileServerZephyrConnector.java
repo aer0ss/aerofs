@@ -12,7 +12,6 @@ import com.aerofs.daemon.mobile.TransportDataExtension.TransportDataIQ;
 import com.aerofs.proto.Transport.PBTPHeader;
 import com.aerofs.proto.Transport.PBTPHeader.Type;
 import com.aerofs.proto.Transport.PBZephyrCandidateInfo;
-import org.slf4j.Logger;
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
@@ -21,7 +20,6 @@ import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.channel.Channels;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
-import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 import org.jivesoftware.smack.Connection;
 import org.jivesoftware.smack.PacketListener;
 import org.jivesoftware.smack.filter.AndFilter;
@@ -32,10 +30,10 @@ import org.jivesoftware.smack.packet.IQ;
 import org.jivesoftware.smack.packet.Message;
 import org.jivesoftware.smack.packet.Packet;
 import org.jivesoftware.smack.util.StringUtils;
+import org.slf4j.Logger;
 
 import javax.inject.Inject;
 import java.net.InetSocketAddress;
-import java.util.concurrent.Executors;
 
 public class MobileServerZephyrConnector
 {
@@ -46,15 +44,22 @@ public class MobileServerZephyrConnector
         TransportDataExtension.init();
     }
 
-    private final ClientSocketChannelFactory _channelFactory =
-            new NioClientSocketChannelFactory(Executors.newCachedThreadPool(),
-                    Executors.newCachedThreadPool());
+    private final ClientBootstrap _bootstrap;
 
-    private final ClientBootstrap _bootstrap = new ClientBootstrap(_channelFactory);
+    @Inject
+    public MobileServerZephyrConnector(MobileServiceFactory mobileServiceFactory, ClientSocketChannelFactory clientChannelFactory)
     {
-        _bootstrap.setOption("keepAlive", true);
-        _bootstrap.setOption("tcpNoDelay", true);
-        _bootstrap.setPipelineFactory(new ChannelPipelineFactory()
+        _bootstrap = newClientBootstrap(mobileServiceFactory, clientChannelFactory);
+    }
+
+    private static ClientBootstrap newClientBootstrap(final MobileServiceFactory mobileServiceFactory, ClientSocketChannelFactory clientChannelFactory)
+    {
+        ClientBootstrap bootstrap = new ClientBootstrap(clientChannelFactory);
+
+        bootstrap.setOption("keepAlive", true);
+        bootstrap.setOption("tcpNoDelay", true);
+
+        bootstrap.setPipelineFactory(new ChannelPipelineFactory()
         {
             @Override
             public ChannelPipeline getPipeline()
@@ -63,18 +68,12 @@ public class MobileServerZephyrConnector
                 ChannelPipeline p = Channels.pipeline();
                 p.addLast("resolver", new AddressResolverHandler(null));
                 p.addLast("zephyrPipeHandler", new ZephyrPipeHandler());
-                _mobileServiceFactory.appendToPipeline(p);
+                mobileServiceFactory.appendToPipeline(p);
                 return p;
             }
         });
-    }
 
-    private final MobileServiceFactory _mobileServiceFactory;
-
-    @Inject
-    public MobileServerZephyrConnector(MobileServiceFactory mobileServiceFactory)
-    {
-        _mobileServiceFactory = mobileServiceFactory;
+        return bootstrap;
     }
 
     private InetSocketAddress getZephyrAddress()

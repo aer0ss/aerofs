@@ -5,11 +5,12 @@
 package com.aerofs.gui.history;
 
 import com.aerofs.base.id.SID;
+import com.aerofs.base.id.UserID;
 import com.aerofs.gui.history.HistoryModel.ModelIndex;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.id.KIndex;
-import com.aerofs.base.id.UserID;
+import com.aerofs.lib.ritual.IRitualClientProvider;
 import com.aerofs.lib.ritual.RitualBlockingClient;
 import com.aerofs.proto.Common.PBPath;
 import com.aerofs.proto.Ritual.GetChildrenAttributesReply;
@@ -43,8 +44,8 @@ import static org.mockito.Mockito.when;
 public class TestHistoryModel extends AbstractTest
 {
     @Mock CfgLocalUser user;
+    @Mock IRitualClientProvider ritualProvider;
     @Mock RitualBlockingClient ritual;
-    @Mock RitualBlockingClient.Factory factory;
 
     HistoryModel model;
 
@@ -52,9 +53,9 @@ public class TestHistoryModel extends AbstractTest
     public void setup() throws Exception
     {
         when(user.get()).thenReturn(UserID.fromInternal("foo@bar.baz"));
-        when(factory.create()).thenReturn(ritual);
+        when(ritualProvider.getBlockingClient()).thenReturn(ritual);
 
-        model = new HistoryModel(user, factory);
+        model = new HistoryModel(ritualProvider, user.get());
     }
 
     @After

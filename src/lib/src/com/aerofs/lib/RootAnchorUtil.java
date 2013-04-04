@@ -4,16 +4,16 @@
 
 package com.aerofs.lib;
 
-import com.aerofs.base.id.SID;
-import com.aerofs.labeling.L;
-import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.ex.ExNoPerm;
+import com.aerofs.base.id.SID;
+import com.aerofs.base.id.UserID;
+import com.aerofs.labeling.L;
+import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.ex.ExNotDir;
 import com.aerofs.lib.ex.ExUIMessage;
-import com.aerofs.base.id.UserID;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.sv.client.SVClient;
 import com.google.common.collect.ImmutableMap;

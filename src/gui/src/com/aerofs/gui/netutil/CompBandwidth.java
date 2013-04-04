@@ -1,30 +1,28 @@
 package com.aerofs.gui.netutil;
 
+import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
+import com.aerofs.base.ex.ExTimeout;
 import com.aerofs.base.id.DID;
-import com.aerofs.lib.Param;
-import com.aerofs.lib.ThreadUtil;
-import com.aerofs.lib.ritual.RitualBlockingClient;
-import com.aerofs.lib.ritual.RitualClientFactory;
-import com.aerofs.proto.Ritual.TransportFloodQueryReply;
-import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.layout.GridLayout;
-
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIParam;
-import com.aerofs.base.C;
 import com.aerofs.lib.OutArg;
+import com.aerofs.lib.Param;
+import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.base.ex.ExTimeout;
+import com.aerofs.lib.ritual.RitualBlockingClient;
+import com.aerofs.proto.Ritual.TransportFloodQueryReply;
+import com.aerofs.ui.UI;
 import com.aerofs.ui.UIParam;
-
-import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.layout.GridData;
+import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
+import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Label;
 import org.slf4j.Logger;
 
 public class CompBandwidth extends Composite
@@ -115,24 +113,21 @@ public class CompBandwidth extends Composite
             @Override
             public void run()
             {
-                RitualBlockingClient ritual = RitualClientFactory.newBlockingClient();
                 _compPing.suspend();
                 try {
                     try {
-                        thdRun(_compUploadStatus, true, ritual);
+                        thdRun(_compUploadStatus, true, UI.ritual());
                     } catch (Exception e) {
                         _compUploadStatus.done(e, 0, 0);
                     }
 
                     try {
-                        thdRun(_compDownloadStatus, false, ritual);
+                        thdRun(_compDownloadStatus, false, UI.ritual());
                     } catch (Exception e) {
                         _compDownloadStatus.done(e, 0, 0);
                     }
 
                 } finally {
-                    ritual.close();
-
                     // re-enable the start button
                     GUI.get().safeAsyncExec(CompBandwidth.this, new Runnable() {
                         @Override

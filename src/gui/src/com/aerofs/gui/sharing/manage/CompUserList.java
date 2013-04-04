@@ -1,47 +1,44 @@
 package com.aerofs.gui.sharing.manage;
 
-import java.util.ArrayList;
-
 import com.aerofs.base.Loggers;
+import com.aerofs.base.acl.Role;
+import com.aerofs.base.acl.SubjectRolePair;
+import com.aerofs.base.ex.ExNoPerm;
+import com.aerofs.base.id.UserID;
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.SimpleContentProvider;
 import com.aerofs.lib.Path;
-import com.aerofs.lib.ThreadUtil;
-import com.aerofs.base.acl.Role;
-import com.aerofs.base.id.UserID;
-import com.aerofs.lib.ritual.RitualBlockingClient;
-import com.aerofs.lib.ritual.RitualClientFactory;
-import com.aerofs.proto.Common.PBSubjectRolePair;
-import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.ScrollBar;
-
 import com.aerofs.lib.S;
-import com.aerofs.base.acl.SubjectRolePair;
+import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.base.ex.ExNoPerm;
-import com.aerofs.lib.os.OSUtil;
-import com.aerofs.proto.Ritual.GetACLReply;
-import com.aerofs.ui.UIUtil;
 import com.aerofs.lib.ex.ExUIMessage;
+import com.aerofs.lib.os.OSUtil;
+import com.aerofs.proto.Common.PBSubjectRolePair;
+import com.aerofs.proto.Ritual.GetACLReply;
+import com.aerofs.ui.UI;
+import com.aerofs.ui.UIUtil;
 import com.google.common.collect.Lists;
-
-import org.eclipse.swt.SWT;
-import org.eclipse.swt.layout.FillLayout;
-import org.eclipse.swt.widgets.Table;
 import org.eclipse.jface.viewers.StructuredSelection;
 import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.TableViewerColumn;
 import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.jface.viewers.ViewerCell;
 import org.eclipse.jface.viewers.ViewerComparator;
-import org.eclipse.swt.widgets.TableColumn;
+import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.ControlAdapter;
 import org.eclipse.swt.events.ControlEvent;
 import org.eclipse.swt.events.MouseAdapter;
 import org.eclipse.swt.events.MouseEvent;
 import org.eclipse.swt.graphics.Point;
+import org.eclipse.swt.layout.FillLayout;
+import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.ScrollBar;
+import org.eclipse.swt.widgets.Table;
+import org.eclipse.swt.widgets.TableColumn;
 import org.slf4j.Logger;
+
+import java.util.ArrayList;
 
 public class CompUserList extends Composite
 {
@@ -185,18 +182,13 @@ public class CompUserList extends Composite
 
     private void thdLoadAsync()
     {
-        RitualBlockingClient ritual = RitualClientFactory.newBlockingClient();
-        try {
-            load(ritual);
-        } finally {
-            ritual.close();
-        }
+        load();
     }
 
     /**
      * This method can be called in either UI or non-UI threads
      */
-    void load(RitualBlockingClient ritual)
+    void load()
     {
         _rSelf = null;
         _users = 0;
@@ -204,7 +196,7 @@ public class CompUserList extends Composite
         Object[] elems;
         try {
             ArrayList<SubjectRolePair> srps = Lists.newArrayList();
-            GetACLReply reply = ritual.getACL(Cfg.user().getString(), _path.toPB());
+            GetACLReply reply = UI.ritual().getACL(Cfg.user().getString(), _path.toPB());
             _users = reply.getSubjectRoleCount();
             for (int i = 0; i < _users; i++) {
                 PBSubjectRolePair srp = reply.getSubjectRole(i);

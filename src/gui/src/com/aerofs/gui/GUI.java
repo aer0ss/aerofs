@@ -8,11 +8,12 @@ import com.aerofs.gui.multiuser.MultiuserDlgSetup;
 import com.aerofs.gui.multiuser.tray.MultiuserMenuProvider;
 import com.aerofs.gui.setup.AbstractDlgSetup;
 import com.aerofs.gui.setup.DlgPreSetupUpdateCheck;
+import com.aerofs.gui.shellext.ShellextService;
 import com.aerofs.gui.singleuser.SingleuserDlgSetup;
 import com.aerofs.gui.singleuser.tray.SingleuserMenuProvider;
 import com.aerofs.gui.tray.SystemTray;
-import com.aerofs.lib.InOutArg;
 import com.aerofs.labeling.L;
+import com.aerofs.lib.InOutArg;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.S;
 import com.aerofs.lib.ThreadUtil;
@@ -23,13 +24,13 @@ import com.aerofs.sv.client.SVClient;
 import com.aerofs.ui.IUI;
 import com.aerofs.ui.UI;
 import com.aerofs.ui.UIUtil;
-import org.slf4j.Logger;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.swt.events.DisposeEvent;
 import org.eclipse.swt.events.DisposeListener;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Widget;
+import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
@@ -41,10 +42,13 @@ public class GUI implements IUI
 
     private final Display _disp;
     private final Shell _sh;
+    private final ShellextService _sextservice;
     private SystemTray _st;
     private final String _rtRoot;
 
     public SystemTray st() { return _st; }
+
+    public ShellextService shellext() { return _sextservice; }
 
     public static GUI get()
     {
@@ -60,9 +64,11 @@ public class GUI implements IUI
     /**
      * the caller thread will become the UI thread
      */
-    GUI(String rtRoot) throws IOException
+    GUI(String rtRoot, ShellextService sextservice) throws IOException
     {
         _rtRoot = rtRoot;
+        _sextservice = sextservice;
+
         try {
             _disp = Display.getDefault();
         } catch (NullPointerException e) {
@@ -463,7 +469,6 @@ public class GUI implements IUI
     {
         return askImpl(_sh, false, mt, format, yesLabel, noLabel, duration);
     }
-
 
     // where run() is called in a different thread, okay and error are
     // called within the UI thread.

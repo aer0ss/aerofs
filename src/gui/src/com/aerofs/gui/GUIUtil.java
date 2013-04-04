@@ -1,7 +1,5 @@
 package com.aerofs.gui;
 
-import javax.annotation.Nullable;
-
 import com.aerofs.base.Loggers;
 import com.aerofs.gui.diagnosis.DlgDiagnosis;
 import com.aerofs.gui.history.DlgHistory;
@@ -11,14 +9,15 @@ import com.aerofs.gui.syncstatus.DlgSyncStatus;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.SystemUtil;
+import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.ritual.RitualBlockingClient;
-import com.aerofs.lib.ritual.RitualClientFactory;
+import com.aerofs.lib.os.OSUtil;
 import com.aerofs.proto.Ritual.PBObjectAttributes;
 import com.aerofs.proto.Sv;
+import com.aerofs.sv.client.SVClient;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.UI;
-import org.slf4j.Logger;
+import com.swtdesigner.SWTResourceManager;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.VerifyEvent;
 import org.eclipse.swt.graphics.Drawable;
@@ -38,12 +37,9 @@ import org.eclipse.swt.widgets.Monitor;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.Text;
+import org.slf4j.Logger;
 
-import com.aerofs.lib.Util;
-import com.aerofs.lib.os.OSUtil;
-import com.aerofs.sv.client.SVClient;
-import com.swtdesigner.SWTResourceManager;
-
+import javax.annotation.Nullable;
 import java.io.IOException;
 
 public class GUIUtil
@@ -276,9 +272,8 @@ public class GUIUtil
     {
         final boolean create;
 
-        RitualBlockingClient ritual = RitualClientFactory.newBlockingClient();
         try {
-            PBObjectAttributes.Type type = ritual.getObjectAttributes(Cfg.user().getString(),
+            PBObjectAttributes.Type type = UI.ritual().getObjectAttributes(Cfg.user().getString(),
                     path.toPB())
                     .getObjectAttributes()
                     .getType();
@@ -286,8 +281,6 @@ public class GUIUtil
         } catch (Exception e) {
             l.warn(Util.e(e));
             return;
-        } finally {
-            ritual.close();
         }
 
         if (path.isEmpty()) {

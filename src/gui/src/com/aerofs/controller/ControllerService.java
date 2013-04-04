@@ -4,12 +4,12 @@
 
 package com.aerofs.controller;
 
-import com.aerofs.lib.StorageType;
-import com.aerofs.lib.ThreadUtil;
 import com.aerofs.base.async.UncancellableFuture;
-import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.base.ex.Exceptions;
 import com.aerofs.base.id.UserID;
+import com.aerofs.lib.StorageType;
+import com.aerofs.lib.ThreadUtil;
+import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.proto.Common;
 import com.aerofs.proto.Common.PBException;
 import com.aerofs.proto.ControllerNotifications.Type;
@@ -21,6 +21,7 @@ import com.aerofs.proto.ControllerProto.PBConfig;
 import com.aerofs.proto.ControllerProto.PBS3Config;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.protobuf.GeneratedMessageLite;
+import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 
 /**
  * Implementation of the controller.proto service
@@ -34,7 +35,6 @@ import com.google.protobuf.GeneratedMessageLite;
 public class ControllerService implements IControllerService
 {
     private static ControllerService s_instance = null;
-    private final String _rtRoot;
     private final IViewNotifier _notifier;
     private final Launcher _launcher;
     private final Setup _setup;
@@ -52,20 +52,20 @@ public class ControllerService implements IControllerService
      * This method must be called at the beginning of every *Program class (GUIProgram,
      * CLIProgram, etc)
      * @param rtRoot the rt root
-     * @param notifier: who the controller will send notifications to.
+     * @param clientChannelFactory socket factory used to create client sockets
+     * @param notifier : who the controller will send notifications to.
      */
-    public static void init(String rtRoot, IViewNotifier notifier)
+    public static void init(String rtRoot, ClientSocketChannelFactory clientChannelFactory, IViewNotifier notifier)
     {
         assert s_instance == null;
-        s_instance = new ControllerService(rtRoot, notifier);
+        s_instance = new ControllerService(rtRoot, clientChannelFactory, notifier);
     }
 
-    private ControllerService(String rtRoot, IViewNotifier notifier)
+    private ControllerService(String rtRoot, ClientSocketChannelFactory clientChannelFactory, IViewNotifier notifier)
     {
-        _rtRoot = rtRoot;
         _notifier = notifier;
-        _launcher = new Launcher(_rtRoot);
-        _setup = new Setup(_rtRoot);
+        _launcher = new Launcher(rtRoot, clientChannelFactory);
+        _setup = new Setup(rtRoot, clientChannelFactory);
     }
 
     /**

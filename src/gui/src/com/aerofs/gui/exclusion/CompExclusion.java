@@ -1,27 +1,24 @@
 package com.aerofs.gui.exclusion;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.lib.Util;
-import com.aerofs.lib.ritual.RitualBlockingClient;
-import com.aerofs.lib.ritual.RitualClientFactory;
-import org.slf4j.Logger;
-import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.widgets.Composite;
-import org.eclipse.jface.dialogs.IDialogConstants;
-
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIParam;
 import com.aerofs.lib.Path;
+import com.aerofs.lib.Util;
 import com.aerofs.ui.IUI.MessageType;
+import com.aerofs.ui.UI;
 import com.aerofs.ui.UIUtil;
-
+import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.layout.GridData;
-import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.FillLayout;
+import org.eclipse.swt.layout.GridData;
+import org.eclipse.swt.layout.GridLayout;
+import org.eclipse.swt.widgets.Button;
+import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Label;
+import org.slf4j.Logger;
 
 public class CompExclusion extends Composite
 {
@@ -83,13 +80,12 @@ public class CompExclusion extends Composite
                             " computers. Do you want to continue?")) return;
                 }
 
-                RitualBlockingClient ritual = RitualClientFactory.newBlockingClient();
                 try {
                     for (Path path : ops._exclude) {
-                        ritual.excludeFolder(path.toPB());
+                        UI.ritual().excludeFolder(path.toPB());
                     }
                     for (Path path : ops._include) {
-                        ritual.includeFolder(path.toPB());
+                        UI.ritual().includeFolder(path.toPB());
                     }
 
                     getShell().close();
@@ -98,8 +94,6 @@ public class CompExclusion extends Composite
                     l.warn("exclude folders: " + Util.e(e));
                     GUI.get().show(getShell(), MessageType.ERROR, "Couldn't complete the request " +
                             UIUtil.e2msg(e));
-                } finally {
-                    ritual.close();
                 }
             }
         });

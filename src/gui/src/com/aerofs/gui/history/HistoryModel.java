@@ -5,17 +5,17 @@
 package com.aerofs.gui.history;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.id.SID;
+import com.aerofs.base.id.UserID;
 import com.aerofs.gui.history.HistoryModel.IDecisionMaker.Answer;
 import com.aerofs.lib.FileUtil;
+import com.aerofs.lib.FileUtil.FileName;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.FileUtil.FileName;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.cfg.CfgLocalUser;
-import com.aerofs.base.id.UserID;
-import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.lib.id.KIndex;
+import com.aerofs.lib.ritual.IRitualClientProvider;
 import com.aerofs.lib.ritual.RitualBlockingClient;
 import com.aerofs.proto.Ritual.ExportRevisionReply;
 import com.aerofs.proto.Ritual.GetChildrenAttributesReply;
@@ -27,7 +27,6 @@ import com.aerofs.proto.Ritual.PBObjectAttributes;
 import com.aerofs.proto.Ritual.PBObjectAttributes.Type;
 import com.aerofs.proto.Ritual.PBRevChild;
 import com.aerofs.proto.Ritual.PBRevision;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.protobuf.ByteString;
 import org.slf4j.Logger;
@@ -38,6 +37,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.collect.Lists.newArrayList;
+
 /**
  * A model of the version history information
  */
@@ -45,10 +47,9 @@ public class HistoryModel
 {
     private static final Logger l = Loggers.getLogger(HistoryModel.class);
 
-    private final SID _root;
+    private final IRitualClientProvider _ritualProvider;
     private final UserID _userId;
-    private RitualBlockingClient _ritual;
-    private final RitualBlockingClient.Factory _factory;
+    private final SID _root;
 
     private List<ModelIndex> topLevel = null;
 
@@ -60,7 +61,7 @@ public class HistoryModel
         public long size;
         public long mtime;
 
-        Version(Path p, ByteString i, long s, long t)
+        Version(Path p, @Nullable ByteString i, long s, long t)
         {
             path = p;
             index = i;
@@ -111,27 +112,25 @@ public class HistoryModel
         }
     }
 
-    public HistoryModel()
+    public HistoryModel(IRitualClientProvider ritualProvider)
     {
-        _root = Cfg.rootSID();
-        _userId = Cfg.user();
-        _factory = new RitualBlockingClient.Factory();
-        _ritual = _factory.create();
+        this(ritualProvider, Cfg.user());
+
+        // [sigh] sucks that I have to do this after object construction
+        checkArgument(SID.rootSID(Cfg.user()).equals(Cfg.rootSID()));
     }
 
-    public HistoryModel(CfgLocalUser userId, RitualBlockingClient.Factory factory)
+    public HistoryModel(IRitualClientProvider ritualProvider, UserID userId)
     {
         // TODO: multiroot support
-        _root = SID.rootSID(userId.get());
-        _userId = userId.get();
-        _factory = factory;
-        _ritual = _factory.create();
+        _ritualProvider = ritualProvider;
+        _userId = userId;
+        _root = SID.rootSID(userId);
     }
 
     public void clear()
     {
         topLevel = null;
-        _ritual = _factory.create();
     }
 
     /**
@@ -139,7 +138,7 @@ public class HistoryModel
      */
     public Path getPath(@Nullable ModelIndex index)
     {
-        List<String> elems = Lists.newArrayList();
+        List<String> elems = newArrayList();
         while (index != null) {
             elems.add(0, index.name);
             index = index.parent;
@@ -192,9 +191,9 @@ public class HistoryModel
         List<ModelIndex> children = null;
         try {
             Path path = getPath(parent);
-            ListRevChildrenReply reply = _ritual.listRevChildren(path.toPB());
+            ListRevChildrenReply reply = ritual().listRevChildren(path.toPB());
             assert reply != null;
-            children = Lists.newArrayList();
+            children = newArrayList();
 
             ModelIndex idx;
             Map<ModelIndex, ModelIndex> cm = Maps.newHashMap();
@@ -205,7 +204,7 @@ public class HistoryModel
 
             if (parent == null || !parent.isDeleted) {
                 // TODO(huguesb): do we really need to pass user ids through Ritual?
-                GetChildrenAttributesReply ca = _ritual.getChildrenAttributes(_userId.getString(),
+                GetChildrenAttributesReply ca = ritual().getChildrenAttributes(_userId.getString(),
                         path.toPB());
                 assert ca != null;
                 for (int i = 0; i < ca.getChildrenNameCount(); i++) {
@@ -219,7 +218,7 @@ public class HistoryModel
                 }
             }
 
-            children = Lists.newArrayList(cm.values());
+            children = newArrayList(cm.values());
             Collections.sort(children);
         } catch (Exception e) {
             l.warn(Util.e(e));
@@ -233,16 +232,15 @@ public class HistoryModel
     @Nullable List<Version> versions(ModelIndex index)
     {
         Path path = getPath(index);
-        List<Version> revs = null;
+        List<Version> revs = newArrayList();
         try {
-            ListRevHistoryReply reply = _ritual.listRevHistory(path.toPB());
-            revs = Lists.newArrayList();
+            ListRevHistoryReply reply = ritual().listRevHistory(path.toPB());
             for (PBRevision r : reply.getRevisionList()) {
                 revs.add(new Version(path, r.getIndex(), r.getLength(), r.getMtime()));
             }
             if (!index.isDeleted) {
-                GetObjectAttributesReply oa = _ritual.getObjectAttributes(
-                        _userId.getString(), path.toPB());
+                GetObjectAttributesReply oa = ritual().getObjectAttributes(_userId.getString(),
+                        path.toPB());
                 for (PBBranch branch : oa.getObjectAttributes().getBranchList())
                 {
                     if (branch.getKidx() == KIndex.MASTER.getInt())
@@ -264,6 +262,11 @@ public class HistoryModel
         return revs;
     }
 
+    private RitualBlockingClient ritual()
+    {
+        return _ritualProvider.getBlockingClient();
+    }
+
     /**
      * Exports a version to a temporary file
      * NOTE: the current version is never exported, the tmpFile variable points directly to it
@@ -271,7 +274,7 @@ public class HistoryModel
     void export(Version version) throws Exception
     {
         if (version.tmpFile != null) return;
-        ExportRevisionReply reply = _ritual.exportRevision(version.path.toPB(), version.index);
+        ExportRevisionReply reply = ritual().exportRevision(version.path.toPB(), version.index);
         version.tmpFile = reply.getDest();
         // Make sure users won't try to make changes to the temp file: their changes would be lost
         new File(version.tmpFile).setReadOnly();
@@ -280,12 +283,12 @@ public class HistoryModel
     public void delete(Version version) throws Exception
     {
         if (version.index == null) throw new ExBadArgs();
-        _ritual.deleteRevision(version.path.toPB(), version.index);
+        ritual().deleteRevision(version.path.toPB(), version.index);
     }
 
     public void delete(ModelIndex index) throws Exception
     {
-        _ritual.deleteRevision(getPath(index).toPB(), null);
+        ritual().deleteRevision(getPath(index).toPB(), null);
         // TODO: avoid complete model refresh...
     }
 

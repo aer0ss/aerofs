@@ -10,16 +10,17 @@ import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgCACertFilename;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.cfg.CfgKeyManagersProvider;
+import com.aerofs.proto.Common.Void;
 import com.aerofs.verkehr.client.lib.IConnectionListener;
 import com.aerofs.verkehr.client.lib.subscriber.ClientFactory;
 import com.aerofs.verkehr.client.lib.subscriber.ISubscriptionListener;
 import com.aerofs.verkehr.client.lib.subscriber.VerkehrSubscriber;
-import com.aerofs.proto.Common.Void;
 import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.inject.Inject;
-import org.slf4j.Logger;
+import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jboss.netty.util.HashedWheelTimer;
+import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 import java.util.Map;
@@ -30,7 +31,6 @@ import static com.aerofs.lib.Param.Verkehr.VERKEHR_PORT;
 import static com.aerofs.lib.Param.Verkehr.VERKEHR_RETRY_INTERVAL;
 import static com.google.common.util.concurrent.Futures.addCallback;
 import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor;
-import static java.util.concurrent.Executors.newCachedThreadPool;
 
 /**
  * Single verkehr connection for all topics the daemon subscribes to
@@ -49,11 +49,11 @@ public class VerkehrNotificationSubscriber extends AbstractConnectionStatusNotif
     }
 
     @Inject
-    public VerkehrNotificationSubscriber(CfgCACertFilename cacert)
+    public VerkehrNotificationSubscriber(ClientSocketChannelFactory clientSocketChannelFactory, CfgCACertFilename cacert)
     {
         VerkehrListener listener = new VerkehrListener();
         ClientFactory factory = new ClientFactory(VERKEHR_HOST, VERKEHR_PORT,
-                newCachedThreadPool(), newCachedThreadPool(),
+                clientSocketChannelFactory,
                 cacert.get(), new CfgKeyManagersProvider(),
                 VERKEHR_RETRY_INTERVAL, Cfg.db().getLong(Key.TIMEOUT), new HashedWheelTimer(),
                 listener, listener, sameThreadExecutor());

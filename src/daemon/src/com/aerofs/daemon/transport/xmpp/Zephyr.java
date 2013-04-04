@@ -5,13 +5,10 @@
 package com.aerofs.daemon.transport.xmpp;
 
 import com.aerofs.base.ex.ExFormatError;
+import com.aerofs.base.ex.ExNoResource;
+import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.JabberID;
-import com.aerofs.daemon.mobile.MobileServiceFactory;
-import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
-import com.aerofs.lib.event.IEvent;
-import com.aerofs.lib.event.AbstractEBSelfHandling;
-import com.aerofs.lib.event.Prio;
 import com.aerofs.daemon.mobile.MobileServerZephyrConnector;
 import com.aerofs.daemon.transport.lib.INetworkStats.BasicStatsCounter;
 import com.aerofs.daemon.transport.lib.MaxcastFilterReceiver;
@@ -19,8 +16,10 @@ import com.aerofs.daemon.transport.xmpp.zephyr.client.nio.ZephyrClientManager;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
-import com.aerofs.base.ex.ExNoResource;
-import com.aerofs.base.ex.ExProtocolError;
+import com.aerofs.lib.event.AbstractEBSelfHandling;
+import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
+import com.aerofs.lib.event.IEvent;
+import com.aerofs.lib.event.Prio;
 import com.aerofs.proto.Transport.PBTPHeader;
 import com.aerofs.proto.Transport.PBTPHeader.Type;
 import org.jivesoftware.smack.PacketListener;
@@ -52,9 +51,9 @@ public class Zephyr extends XMPP implements ISignallingChannel
         setPipe_(zcm);
     }
 
-    public void setMobileServiceFactory(MobileServiceFactory mobileServiceFactory)
+    public void setMobileServerZephyrConnector(MobileServerZephyrConnector mobileServerZephyrConnector)
     {
-        _msc = new MobileServerZephyrConnector(mobileServiceFactory);
+        _msc = mobileServerZephyrConnector;
     }
 
     @Override

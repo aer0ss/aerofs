@@ -18,24 +18,26 @@ import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
 import com.aerofs.daemon.event.lib.imc.QueueBasedIMCExecutor;
 import com.aerofs.daemon.event.net.EOLinkStateChanged;
 import com.aerofs.daemon.lib.IStartable;
+import com.aerofs.daemon.mobile.MobileServerZephyrConnector;
 import com.aerofs.daemon.mobile.MobileServiceFactory;
 import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.daemon.transport.lib.MaxcastFilterReceiver;
 import com.aerofs.daemon.transport.tcpmt.TCP;
 import com.aerofs.daemon.transport.xmpp.Jingle;
 import com.aerofs.daemon.transport.xmpp.Zephyr;
-import com.aerofs.lib.event.IEvent;
-import com.aerofs.lib.IDumpStatMisc;
 import com.aerofs.lib.IDumpStat;
+import com.aerofs.lib.IDumpStatMisc;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgLocalDID;
 import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
+import com.aerofs.lib.event.IEvent;
 import com.aerofs.proto.Files.PBDumpStat;
 import com.aerofs.proto.Files.PBDumpStat.Builder;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedSet;
 import com.google.inject.Inject;
+import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.slf4j.Logger;
 
 import java.io.PrintStream;
@@ -163,7 +165,8 @@ public class Transports implements IDumpStat, IDumpStatMisc, IStartable
     private final LinkStateService _lss;
 
     @Inject
-    public Transports(CfgLocalDID localdid, CoreQueue q, TC tc, LinkStateService lss, MobileServiceFactory mobileServiceFactory)
+    public Transports(CfgLocalDID localdid, CoreQueue q, TC tc, LinkStateService lss,
+            MobileServiceFactory mobileServiceFactory, ClientSocketChannelFactory clientChannelFactory)
     {
         this._tc = tc;
         this._lss = lss;
@@ -180,8 +183,11 @@ public class Transports implements IDumpStat, IDumpStatMisc, IStartable
 
                 // [sigh] hack because the enums assume that all transports take the same params
                 // FIXME (AG): revert to the old style of construction without enums
+                // FIXME (AG): I should have MobileServerZephyrConnector connect directly to XmppServerConnection
                 if (i == TransportImplementation.ZEPHYR) {
-                    ((Zephyr) tp).setMobileServiceFactory(mobileServiceFactory);
+                    ((Zephyr) tp).setMobileServerZephyrConnector(
+                            new MobileServerZephyrConnector(
+                                    mobileServiceFactory, clientChannelFactory));
                 }
 
                 l.info("add transport " + tp);

@@ -1,20 +1,37 @@
 package com.aerofs.gui.sharing;
 
-import java.util.Collection;
-import java.util.List;
-
 import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.base.Loggers;
-import com.aerofs.gui.GUIUtil;
 import com.aerofs.base.acl.Role;
+import com.aerofs.base.acl.SubjectRolePair;
+import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.id.UserID;
+import com.aerofs.gui.CompEmailAddressTextBox;
+import com.aerofs.gui.CompEmailAddressTextBox.IInputChangeListener;
+import com.aerofs.gui.CompSpin;
+import com.aerofs.gui.GUI;
+import com.aerofs.gui.GUI.ISWTWorker;
+import com.aerofs.gui.GUIParam;
+import com.aerofs.gui.GUIUtil;
+import com.aerofs.lib.Path;
+import com.aerofs.lib.S;
+import com.aerofs.lib.Util;
+import com.aerofs.lib.cfg.Cfg;
+import com.aerofs.lib.ex.ExChildAlreadyShared;
 import com.aerofs.lib.ex.ExNoStripeCustomerID;
+import com.aerofs.lib.ex.ExParentAlreadyShared;
 import com.aerofs.lib.rocklog.EventProperty;
 import com.aerofs.lib.rocklog.EventType;
 import com.aerofs.lib.rocklog.RockLog;
+import com.aerofs.proto.Common.PBPath;
+import com.aerofs.proto.Common.PBSubjectRolePair;
 import com.aerofs.proto.Sp.PBAuthorizationLevel;
+import com.aerofs.sp.client.SPBlockingClient;
+import com.aerofs.sp.client.SPClientFactory;
+import com.aerofs.ui.IUI.MessageType;
+import com.aerofs.ui.UI;
 import com.aerofs.ui.UIUtil;
-import org.slf4j.Logger;
+import com.google.common.collect.Lists;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
@@ -27,30 +44,10 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
+import org.slf4j.Logger;
 
-import com.aerofs.gui.CompEmailAddressTextBox;
-import com.aerofs.gui.CompEmailAddressTextBox.IInputChangeListener;
-import com.aerofs.gui.CompSpin;
-import com.aerofs.gui.GUI;
-import com.aerofs.gui.GUI.ISWTWorker;
-import com.aerofs.gui.GUIParam;
-import com.aerofs.lib.Path;
-import com.aerofs.lib.S;
-import com.aerofs.base.acl.SubjectRolePair;
-import com.aerofs.lib.Util;
-import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.ex.ExChildAlreadyShared;
-import com.aerofs.base.ex.ExNoPerm;
-import com.aerofs.lib.ex.ExParentAlreadyShared;
-import com.aerofs.lib.ritual.RitualBlockingClient;
-import com.aerofs.lib.ritual.RitualClientFactory;
-import com.aerofs.sp.client.SPBlockingClient;
-import com.aerofs.sp.client.SPClientFactory;
-import com.aerofs.proto.Common.PBPath;
-import com.aerofs.proto.Common.PBSubjectRolePair;
-import com.aerofs.ui.IUI.MessageType;
-import com.aerofs.ui.UI;
-import com.google.common.collect.Lists;
+import java.util.Collection;
+import java.util.List;
 
 public class CompInviteUsers extends Composite implements IInputChangeListener
 {
@@ -278,17 +275,12 @@ public class CompInviteUsers extends Composite implements IInputChangeListener
             @Override
             public void run() throws Exception
             {
-                RitualBlockingClient ritual = RitualClientFactory.newBlockingClient();
-                try {
-                    PBPath pbpath = _path.toPB();
-                    List<PBSubjectRolePair> srps = Lists.newArrayList();
-                    for (UserID subject : subjects) {
-                        srps.add(new SubjectRolePair(subject, Role.EDITOR).toPB());
-                    }
-                    ritual.shareFolder(pbpath, srps, note);
-                } finally {
-                    ritual.close();
+                PBPath pbpath = _path.toPB();
+                List<PBSubjectRolePair> srps = Lists.newArrayList();
+                for (UserID subject : subjects) {
+                    srps.add(new SubjectRolePair(subject, Role.EDITOR).toPB());
                 }
+                UI.ritual().shareFolder(pbpath, srps, note);
 
                 RockLog.newEvent(EventType.FOLDER_INVITE_SENT)
                         .addProperty(EventProperty.COUNT, Integer.toString(subjects.size()))

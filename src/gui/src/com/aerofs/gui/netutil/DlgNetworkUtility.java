@@ -2,31 +2,29 @@ package com.aerofs.gui.netutil;
 
 import com.aerofs.InternalDiagnostics;
 import com.aerofs.base.Loggers;
-import com.aerofs.lib.ritual.RitualBlockingClient;
-import com.aerofs.lib.ritual.RitualClientFactory;
-import org.eclipse.jface.dialogs.IDialogConstants;
-import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Control;
-import org.eclipse.swt.widgets.Shell;
-
+import com.aerofs.base.id.DID;
 import com.aerofs.gui.AeroFSJFaceDialog;
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUI.ISWTWorker;
 import com.aerofs.gui.GUIParam;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.base.id.DID;
 import com.aerofs.sv.client.SVClient;
-import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.widgets.TabFolder;
+import com.aerofs.ui.UI;
+import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.widgets.Label;
-import org.eclipse.swt.widgets.TabItem;
-import org.eclipse.swt.layout.GridData;
-import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.FillLayout;
+import org.eclipse.swt.layout.GridData;
+import org.eclipse.swt.layout.GridLayout;
+import org.eclipse.swt.widgets.Button;
+import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Control;
+import org.eclipse.swt.widgets.Label;
+import org.eclipse.swt.widgets.Shell;
+import org.eclipse.swt.widgets.TabFolder;
+import org.eclipse.swt.widgets.TabItem;
 import org.slf4j.Logger;
 
 public class DlgNetworkUtility extends AeroFSJFaceDialog
@@ -127,13 +125,12 @@ public class DlgNetworkUtility extends AeroFSJFaceDialog
             @Override
             public void run() throws Exception
             {
-                RitualBlockingClient ritual = RitualClientFactory.newBlockingClient();
-                try {
-                    SVClient.logSendDefectSync(false, "network diagnosis results",
-                            new Exception(), InternalDiagnostics.dumpFullDaemonStatus(ritual), false);
-                } finally {
-                    ritual.close();
-                }
+                SVClient.logSendDefectSync(
+                        false,
+                        "network diagnosis results",
+                        new Exception(),
+                        InternalDiagnostics.dumpFullDaemonStatus(UI.ritual()),
+                        false);
             }
 
             @Override

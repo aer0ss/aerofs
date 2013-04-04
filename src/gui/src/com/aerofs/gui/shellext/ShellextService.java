@@ -1,39 +1,40 @@
 package com.aerofs.gui.shellext;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.gui.GUIUtil;
-import com.aerofs.lib.ritual.RitualClient;
-import com.aerofs.lib.ritual.RitualClientFactory;
-import com.aerofs.proto.Common.PBPath;
-import com.aerofs.proto.PathStatus.PBPathStatus;
-import com.aerofs.proto.Ritual.GetPathStatusReply;
-import com.aerofs.proto.Shellext.PathStatusNotification;
-import com.google.common.collect.Lists;
-import com.google.common.util.concurrent.FutureCallback;
-import com.google.common.util.concurrent.Futures;
-import org.slf4j.Logger;
-
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.lib.os.OSUtil;
-import com.aerofs.proto.Shellext.RootAnchorNotification;
+import com.aerofs.lib.ritual.RitualClientProvider;
+import com.aerofs.proto.Common.PBPath;
+import com.aerofs.proto.PathStatus.PBPathStatus;
+import com.aerofs.proto.Ritual.GetPathStatusReply;
 import com.aerofs.proto.Shellext.GreetingCall;
+import com.aerofs.proto.Shellext.PathStatusNotification;
+import com.aerofs.proto.Shellext.RootAnchorNotification;
 import com.aerofs.proto.Shellext.ShellextCall;
 import com.aerofs.proto.Shellext.ShellextNotification;
 import com.aerofs.proto.Shellext.ShellextNotification.Type;
+import com.google.common.collect.Lists;
+import com.google.common.util.concurrent.FutureCallback;
 import com.google.protobuf.InvalidProtocolBufferException;
+import org.jboss.netty.channel.socket.ServerSocketChannelFactory;
+import org.slf4j.Logger;
 
 import java.util.List;
+
+import static com.google.common.util.concurrent.Futures.addCallback;
 
 public class ShellextService
 {
     private static final Logger l = Loggers.getLogger(ShellextService.class);
 
-    private final ShellextServer _server;
-    private static ShellextService _instance = null;
-    private RitualClient _ritual = null;
+    private final ServerSocketChannelFactory _serverChannelFactory;
+    private final RitualClientProvider _ritualProvider;
+
+    private ShellextServer _server;
 
     /**
      * Used to make sure we are communicating with the right version of the shell extension
@@ -41,22 +42,23 @@ public class ShellextService
      */
     private final static int PROTOCOL_VERSION = 5;
 
-    public static ShellextService get()
-    {
-        if (_instance == null) _instance = new ShellextService();
-        return _instance;
-    }
 
-    private ShellextService()
+    public ShellextService(ServerSocketChannelFactory serverChannelFactory, RitualClientProvider ritualProvider)
     {
+        _serverChannelFactory = serverChannelFactory;
+        _ritualProvider = ritualProvider;
+
         new PathStatusNotificationForwarder(this);
-        _server = new ShellextServer(this, Cfg.port(Cfg.PortType.UI));
     }
 
     public void start_()
     {
-        _server.start_();
-        OSUtil.get().startShellExtension(getPort());
+        if (_server == null) {
+            _server = new ShellextServer(Cfg.port(Cfg.PortType.UI), _serverChannelFactory, this);
+            _server.start_();
+
+            OSUtil.get().startShellExtension(getPort());
+        }
     }
 
     public int getPort()
@@ -213,30 +215,26 @@ public class ShellextService
             return;
         }
 
-        final List<PBPath> pbPaths = Lists.newArrayList(mkpath(absRoot, absPath).toPB());
-
-        if (_ritual == null) {
-            _ritual = RitualClientFactory.newClient();
-        }
-
+        //
         // make asynchronous ritual call and send shellext notifications when reply received
-        Futures.addCallback(_ritual.getPathStatus(pbPaths),
-                new FutureCallback<GetPathStatusReply>()
-                {
-                    @Override
-                    public void onSuccess(GetPathStatusReply reply)
-                    {
-                        assert reply.getStatusCount() == 1 : reply.getStatusCount();
-                        notifyPathStatus(absPath, reply.getStatus(0));
-                    }
+        //
 
-                    @Override
-                    public void onFailure(Throwable throwable)
-                    {
-                        l.warn("ss overview fetch for shellext: " + Util.e(throwable));
-                        _ritual = null;
-                        // TODO: send clear cache? retry?
-                    }
-                });
+        final List<PBPath> pbPaths = Lists.newArrayList(mkpath(absRoot, absPath).toPB());
+        addCallback(_ritualProvider.getNonBlockingClient().getPathStatus(pbPaths), new FutureCallback<GetPathStatusReply>()
+        {
+            @Override
+            public void onSuccess(GetPathStatusReply reply)
+            {
+                assert reply.getStatusCount() == 1 : reply.getStatusCount();
+                notifyPathStatus(absPath, reply.getStatus(0));
+            }
+
+            @Override
+            public void onFailure(Throwable throwable)
+            {
+                l.warn("ss overview fetch for shellext: " + Util.e(throwable));
+                // TODO: send clear cache? retry?
+            }
+        });
     }
 }

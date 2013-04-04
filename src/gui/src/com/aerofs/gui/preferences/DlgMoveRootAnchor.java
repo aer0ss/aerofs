@@ -17,9 +17,8 @@ import com.aerofs.lib.S;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.ritual.RitualBlockingClient;
-import com.aerofs.lib.ritual.RitualClientFactory;
 import com.aerofs.ui.IUI.MessageType;
+import com.aerofs.ui.UI;
 import com.aerofs.ui.UIParam;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridData;
@@ -82,9 +81,8 @@ public class DlgMoveRootAnchor extends AeroFSDialog implements ISWTWorker
     @Override
     public void run() throws Exception
     {
-        RitualBlockingClient ritual = RitualClientFactory.newBlockingClient();
         try {
-            ritual.relocate(RootAnchorUtil.adjustRootAnchor(_absAnchorRoot, null), null);
+            UI.ritual().relocate(RootAnchorUtil.adjustRootAnchor(_absAnchorRoot, null), null);
         } catch (ChannelException e) {
             // ChannelException or IOException (depending on the OS) is thrown when the daemon exits
             // which is a result of a successful move.
@@ -95,8 +93,6 @@ public class DlgMoveRootAnchor extends AeroFSDialog implements ISWTWorker
             // hold true in future implementations.
         } catch (IOException e) {
             // See above.
-        } finally {
-            ritual.close();
         }
 
         // update root anchor in the Cfg class right away
@@ -106,14 +102,11 @@ public class DlgMoveRootAnchor extends AeroFSDialog implements ISWTWorker
 
         // wait until the daemon restarts
         while (true) {
-            ritual = RitualClientFactory.newBlockingClient();
             try {
-                ritual.heartbeat();
+                UI.ritual().heartbeat();
                 break;
             } catch (Exception e) {
                 ThreadUtil.sleepUninterruptable(UIParam.DAEMON_CONNECTION_RETRY_INTERVAL);
-            } finally {
-                ritual.close();
             }
         }
     }

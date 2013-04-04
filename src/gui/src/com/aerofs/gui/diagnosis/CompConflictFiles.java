@@ -1,63 +1,62 @@
 package com.aerofs.gui.diagnosis;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-
 import com.aerofs.base.Loggers;
+import com.aerofs.gui.CompSpin;
+import com.aerofs.gui.GUI;
+import com.aerofs.gui.GUIUtil;
+import com.aerofs.gui.Images;
 import com.aerofs.lib.Path;
+import com.aerofs.lib.S;
+import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.id.KIndex;
+import com.aerofs.lib.injectable.InjectableFile;
+import com.aerofs.lib.os.OSUtil;
 import com.aerofs.lib.ritual.RitualBlockingClient;
 import com.aerofs.proto.Ritual.ListConflictsReply;
 import com.aerofs.proto.Ritual.ListConflictsReply.ConflictedPath;
 import com.aerofs.proto.Ritual.PBBranch;
 import com.aerofs.proto.Ritual.PBObjectAttributes;
-import org.eclipse.swt.widgets.Event;
-import org.eclipse.swt.widgets.FileDialog;
-import org.eclipse.swt.widgets.Listener;
-import org.eclipse.swt.widgets.Shell;
-import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.SWT;
-import org.eclipse.swt.SWTError;
-import org.eclipse.swt.dnd.TextTransfer;
-import org.eclipse.swt.dnd.Transfer;
-import org.eclipse.swt.widgets.Table;
+import com.aerofs.ui.IUI.MessageType;
+import com.aerofs.ui.UI;
+import com.aerofs.ui.UIUtil;
 import org.eclipse.jface.viewers.IStructuredContentProvider;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.ITableLabelProvider;
 import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.Viewer;
-import org.eclipse.swt.layout.GridData;
-import org.eclipse.swt.program.Program;
-import org.eclipse.swt.widgets.Button;
+import org.eclipse.swt.SWT;
+import org.eclipse.swt.SWTError;
 import org.eclipse.swt.dnd.Clipboard;
+import org.eclipse.swt.dnd.TextTransfer;
+import org.eclipse.swt.dnd.Transfer;
 import org.eclipse.swt.events.DisposeEvent;
 import org.eclipse.swt.events.DisposeListener;
 import org.eclipse.swt.events.KeyAdapter;
 import org.eclipse.swt.events.KeyEvent;
+import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
-
-import com.aerofs.gui.CompSpin;
-import com.aerofs.gui.GUI;
-import com.aerofs.gui.GUIUtil;
-import com.aerofs.gui.Images;
-import com.aerofs.lib.S;
-import com.aerofs.lib.Util;
-import com.aerofs.lib.injectable.InjectableFile;
-import com.aerofs.lib.os.OSUtil;
-import com.aerofs.ui.UIUtil;
-import com.aerofs.ui.IUI.MessageType;
-import org.eclipse.swt.events.SelectionAdapter;
+import org.eclipse.swt.layout.GridData;
+import org.eclipse.swt.layout.GridLayout;
+import org.eclipse.swt.program.Program;
+import org.eclipse.swt.widgets.Button;
+import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Event;
+import org.eclipse.swt.widgets.FileDialog;
+import org.eclipse.swt.widgets.Listener;
+import org.eclipse.swt.widgets.Shell;
+import org.eclipse.swt.widgets.Table;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
 public class CompConflictFiles extends Composite
 {
@@ -157,7 +156,6 @@ public class CompConflictFiles extends Composite
     private final boolean _showSystemFiles;
     private Button _btnOpenConflict;
     private final InjectableFile.Factory _factFile = new InjectableFile.Factory();
-    private final RitualBlockingClient.Factory _factRitual = new RitualBlockingClient.Factory();
 
     static {
         // needed for DriverConstants etc
@@ -392,53 +390,35 @@ public class CompConflictFiles extends Composite
 
     private void openConflict() throws Exception
     {
-        RitualBlockingClient ritual = _factRitual.create();
-
-        try {
-            for (Entry en : getSelectedEntries()) {
-                if (!GUIUtil.launch(en.getExportedFilePath(ritual))) {
-                    throw new Exception(S.FILE_OPEN_FAIL);
-                }
+        for (Entry en : getSelectedEntries()) {
+            if (!GUIUtil.launch(en.getExportedFilePath(UI.ritual()))) {
+                throw new Exception(S.FILE_OPEN_FAIL);
             }
-        } finally {
-            ritual.close();
         }
     }
 
     private void saveAs() throws Exception
     {
-        RitualBlockingClient ritual = _factRitual.create();
+        for (Entry en : getSelectedEntries()) {
+            FileDialog dlg = new FileDialog(_shell, SWT.SHEET | SWT.SAVE);
+            dlg.setFileName(en._path.last());
+            dlg.setOverwrite(true);
+            String path = dlg.open();
+            if (path == null) break;
 
-        try {
-            for (Entry en : getSelectedEntries()) {
-                FileDialog dlg = new FileDialog(_shell, SWT.SHEET | SWT.SAVE);
-                dlg.setFileName(en._path.last());
-                dlg.setOverwrite(true);
-                String path = dlg.open();
-                if (path == null) break;
-
-                InjectableFile fSrc = _factFile.create(en.getExportedFilePath(ritual));
-                InjectableFile fDest = _factFile.create(path);
-                fSrc.copy(fDest, false, false);
-            }
-        } finally {
-            ritual.close();
+            InjectableFile fSrc = _factFile.create(en.getExportedFilePath(UI.ritual()));
+            InjectableFile fDest = _factFile.create(path);
+            fSrc.copy(fDest, false, false);
         }
     }
 
     private void deleteConflict() throws Exception
     {
-        RitualBlockingClient ritual = _factRitual.create();
-
-        try {
-            for (Entry en : getSelectedEntries()) {
-                ritual.deleteConflict(en._path.toPB(), en._kidx);
-                removeEntry(en);
-            }
-            selectionChanged();
-        } finally {
-            ritual.close();
+        for (Entry en : getSelectedEntries()) {
+            UI.ritual().deleteConflict(en._path.toPB(), en._kidx);
+            removeEntry(en);
         }
+        selectionChanged();
     }
 
     List<Entry> getSelectedEntries()
@@ -464,15 +444,12 @@ public class CompConflictFiles extends Composite
             public void run()
             {
                 Exception ex = null;
-                RitualBlockingClient ritual = _factRitual.create();
                 try {
-                    populateConflictList(ritual);
+                    populateConflictList(UI.ritual());
                 } catch (Exception e) {
                     Loggers.getLogger(CompConflictFiles.class)
                             .warn("search 4 conflict: " + Util.e(e));
                     ex = e;
-                } finally {
-                    ritual.close();
                 }
 
                 final Exception exFinal = ex;

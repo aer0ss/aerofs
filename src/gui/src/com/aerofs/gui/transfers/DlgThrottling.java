@@ -1,30 +1,35 @@
 package com.aerofs.gui.transfers;
 
-import org.eclipse.jface.dialogs.IDialogConstants;
-import org.eclipse.swt.events.*;
-import org.eclipse.swt.widgets.Shell;
-
+import com.aerofs.base.C;
 import com.aerofs.gui.AeroFSDialog;
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIParam;
 import com.aerofs.gui.GUIUtil;
-import com.aerofs.base.C;
-import static com.aerofs.lib.Param.Throttling.*;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
-import com.aerofs.lib.ritual.RitualBlockingClient;
-import com.aerofs.lib.ritual.RitualClientFactory;
-import com.aerofs.ui.UIUtil;
 import com.aerofs.ui.IUI.MessageType;
-import org.eclipse.swt.layout.GridLayout;
+import com.aerofs.ui.UI;
+import com.aerofs.ui.UIUtil;
+import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.layout.GridData;
-import org.eclipse.swt.widgets.Button;
-import org.eclipse.swt.widgets.Label;
-import org.eclipse.swt.widgets.Text;
-import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.events.FocusAdapter;
+import org.eclipse.swt.events.FocusEvent;
+import org.eclipse.swt.events.SelectionAdapter;
+import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.events.VerifyEvent;
+import org.eclipse.swt.events.VerifyListener;
 import org.eclipse.swt.layout.FillLayout;
+import org.eclipse.swt.layout.GridData;
+import org.eclipse.swt.layout.GridLayout;
+import org.eclipse.swt.widgets.Button;
+import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Label;
+import org.eclipse.swt.widgets.Shell;
+import org.eclipse.swt.widgets.Text;
+
+import static com.aerofs.lib.Param.Throttling.MIN_BANDWIDTH_UI;
+import static com.aerofs.lib.Param.Throttling.UNLIMITED_BANDWIDTH;
 
 public class DlgThrottling extends AeroFSDialog {
 
@@ -432,12 +437,7 @@ public class DlgThrottling extends AeroFSDialog {
             db.set(Key.MAX_DOWN_RATE_LIMITED, _maxDownRate);
             db.set(Key.MAX_UP_RATE_LIMITED, _maxUpRate);
 
-            RitualBlockingClient ritual = RitualClientFactory.newBlockingClient();
-            try {
-                ritual.reloadConfig();
-            } finally {
-                ritual.close();
-            }
+            UI.ritual().reloadConfig();
 
             closeDialog();
         } catch (Exception e) {

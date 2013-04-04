@@ -14,13 +14,11 @@ import com.aerofs.lib.Path;
 import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.ritual.RitualBlockingClient;
-import com.aerofs.lib.ritual.RitualClientFactory;
 import com.aerofs.proto.Ritual.GetSyncStatusReply;
 import com.aerofs.proto.Ritual.PBSyncStatus;
 import com.aerofs.proto.Ritual.PBSyncStatus.Status;
+import com.aerofs.ui.UI;
 import com.google.common.collect.Maps;
-import org.slf4j.Logger;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.ScrolledComposite;
 import org.eclipse.swt.events.FocusEvent;
@@ -40,6 +38,7 @@ import org.eclipse.swt.widgets.Layout;
 import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.ToolTip;
+import org.slf4j.Logger;
 
 import java.io.File;
 import java.util.Map;
@@ -190,13 +189,10 @@ public class DlgSyncStatus extends AeroFSDialog
         c.setLayout(listLayout);
 
         GetSyncStatusReply reply = null;
-        RitualBlockingClient ritual = RitualClientFactory.newBlockingClient();
         try {
-            reply = ritual.getSyncStatus(_path.toPB());
+            reply = UI.ritual().getSyncStatus(_path.toPB());
         } catch (Exception e) {
             l.warn(Util.e(e));
-        } finally {
-            ritual.close();
         }
 
         // do not show sync status when servers are known to be down or when daemon is dead

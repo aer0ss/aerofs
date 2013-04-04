@@ -10,7 +10,6 @@ import com.aerofs.cli.CLI;
 import com.aerofs.cli.CLIRootAnchorUpdater;
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.misc.DlgRootAnchorUpdater;
-import com.aerofs.gui.shellext.ShellextService;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.StorageType;
 import com.aerofs.lib.SystemUtil;
@@ -18,8 +17,6 @@ import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.os.OSUtil;
-import com.aerofs.lib.ritual.RitualBlockingClient;
-import com.aerofs.lib.ritual.RitualClientFactory;
 import com.aerofs.ui.IUI.MessageType;
 import org.slf4j.Logger;
 
@@ -174,7 +171,7 @@ public class RootAnchorPoller
 
         if (!new File(absPath).isDirectory()) return false;
 
-        ShellextService.get().notifyRootAnchor();
+        GUI.get().shellext().notifyRootAnchor();
 
         // only maintain favorite for default root
         if (sid == null) updateFavorite(oldAbsPath, absPath);
@@ -201,13 +198,10 @@ public class RootAnchorPoller
      */
     private void blockingRitualCall()
     {
-        RitualBlockingClient ritual = RitualClientFactory.newBlockingClient();
         try {
-            ritual.heartbeat();
+            UI.ritual().heartbeat();
         } catch (Exception e) {
             l.warn("Rpc call failure ignored: " + Util.e(e, Exception.class));
-        } finally {
-            ritual.close();
         }
         UI.dm().stopIgnoreException();
         UI.rnc().pause();

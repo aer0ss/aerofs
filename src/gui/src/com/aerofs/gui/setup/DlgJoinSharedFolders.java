@@ -8,9 +8,6 @@ import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.ex.ExIndexing;
-import com.aerofs.lib.ritual.RitualBlockingClient;
-import com.aerofs.lib.ritual.RitualClient;
-import com.aerofs.lib.ritual.RitualClientFactory;
 import com.aerofs.proto.Common.PBFolderInvitation;
 import com.aerofs.proto.Ritual.ListSharedFolderInvitationsReply;
 import com.aerofs.ui.IUI.MessageType;
@@ -18,8 +15,6 @@ import com.aerofs.ui.UI;
 import com.aerofs.ui.UIUtil;
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.FutureCallback;
-import com.google.common.util.concurrent.Futures;
-import org.slf4j.Logger;
 import org.eclipse.jface.layout.TableColumnLayout;
 import org.eclipse.jface.viewers.ColumnPixelData;
 import org.eclipse.jface.viewers.IStructuredContentProvider;
@@ -42,8 +37,11 @@ import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.TableItem;
+import org.slf4j.Logger;
 
 import java.util.List;
+
+import static com.google.common.util.concurrent.Futures.addCallback;
 
 public class DlgJoinSharedFolders extends AeroFSDialog
 {
@@ -68,48 +66,46 @@ public class DlgJoinSharedFolders extends AeroFSDialog
     // todo: spinner while waiting for list of invitations
     private void showDialog(final boolean silent)
     {
-        final RitualClient ritual = RitualClientFactory.newClient();
-        Futures.addCallback(ritual.listSharedFolderInvitations(),
-                new FutureCallback<ListSharedFolderInvitationsReply>()
-                {
-                    @Override
-                    public void onSuccess(ListSharedFolderInvitationsReply reply)
+        // FIXME (AG): this would be way less verbose with the blocking client
+
+        addCallback(UI.ritualNonBlocking().listSharedFolderInvitations(), new FutureCallback<ListSharedFolderInvitationsReply>()
+        {
+            @Override
+            public void onSuccess(ListSharedFolderInvitationsReply reply)
+            {
+                _pendingFolders = reply; // FIXME (AG): I'm pretty sure this is wrong
+                if (_pendingFolders.getInvitationCount() > 0) {
+                    UI.get().asyncExec(new Runnable()
                     {
-                        ritual.close();
-
-                        _pendingFolders = reply;
-                        if (_pendingFolders.getInvitationCount() > 0) {
-                            UI.get().asyncExec(new Runnable() {
-                                @Override
-                                public void run()
-                                {
-                                    openDialog();
-                                }
-                            });
-                        } else if (!silent) {
-                            UI.get().show(MessageType.INFO, "No invitations to accept");
+                        @Override
+                        public void run()
+                        {
+                            openDialog();
                         }
-                    }
+                    });
+                } else if (!silent) {
+                    UI.get().show(MessageType.INFO, "No invitations to accept");
+                }
+            }
 
-                    @Override
-                    public void onFailure(Throwable throwable)
+            @Override
+            public void onFailure(Throwable throwable)
+            {
+                if (!(throwable instanceof ExIndexing)) {
+                    l.warn("list pending folders:" + Util.e(throwable));
+                    UI.get().show(MessageType.ERROR, throwable.toString());
+                } else {
+                    UI.scheduler().schedule(new AbstractEBSelfHandling()
                     {
-                        ritual.close();
-
-                        if (!(throwable instanceof ExIndexing)) {
-                            l.warn("list pending folders:" + Util.e(throwable));
-                            UI.get().show(MessageType.ERROR, throwable.toString());
-                        } else {
-                            UI.scheduler().schedule(new AbstractEBSelfHandling() {
-                                @Override
-                                public void handle_()
-                                {
-                                    showDialog(silent);
-                                }
-                            }, 1000);
+                        @Override
+                        public void handle_()
+                        {
+                            showDialog(silent);
                         }
-                    }
-                });
+                    }, 1000);
+                }
+            }
+        });
     }
 
     @Override
@@ -239,11 +235,10 @@ public class DlgJoinSharedFolders extends AeroFSDialog
         }
 
         Object prog = UI.get().addProgress("Joining folders", true);
-        RitualBlockingClient ritual  = RitualClientFactory.newBlockingClient();
         try {
             for (PBFolderInvitation inv : invitations) {
                 try {
-                    ritual.joinSharedFolder(inv.getShareId());
+                    UI.ritual().joinSharedFolder(inv.getShareId());
                 } catch (Exception e) {
                     l.warn("join folder " + inv.getFolderName() + Util.e(e));
                     UI.get().notify(MessageType.ERROR, "Couldn't join the folder "
@@ -251,7 +246,6 @@ public class DlgJoinSharedFolders extends AeroFSDialog
                 }
             }
         } finally {
-            ritual.close();
             UI.get().removeProgress(prog);
         }
     }

@@ -1,25 +1,21 @@
 package com.aerofs.gui.sharing.folders;
 
-import java.util.List;
-import java.util.Map;
-
-import org.eclipse.jface.viewers.ITreeContentProvider;
-import org.eclipse.jface.viewers.Viewer;
-
 import com.aerofs.lib.Path;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.ritual.RitualBlockingClient;
-import com.aerofs.lib.ritual.RitualClientFactory;
 import com.aerofs.proto.Ritual.GetChildrenAttributesReply;
 import com.aerofs.proto.Ritual.PBObjectAttributes;
 import com.aerofs.proto.Ritual.PBObjectAttributes.Type;
+import com.aerofs.ui.UI;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import org.eclipse.jface.viewers.ITreeContentProvider;
+import org.eclipse.jface.viewers.Viewer;
+
+import java.util.List;
+import java.util.Map;
 
 public class ContentProvider implements ITreeContentProvider
 {
-    final RitualBlockingClient _ritual = RitualClientFactory.newBlockingClient();
-
     @Override
     public Object[] getElements(Object arg0)
     {
@@ -50,8 +46,8 @@ public class ContentProvider implements ITreeContentProvider
         List<Path> ret = _cache.get(parent);
         if (ret == null) {
             ret = Lists.newArrayList();
-            GetChildrenAttributesReply reply = _ritual.getChildrenAttributes(Cfg.user().getString(),
-                    parent.toPB());
+            GetChildrenAttributesReply reply = UI.ritual().getChildrenAttributes(
+                    Cfg.user().getString(), parent.toPB());
             for (int i = 0; i < reply.getChildrenNameCount(); i++) {
                 PBObjectAttributes oa = reply.getChildrenAttributes(i);
                 if (oa.getType() != Type.FILE && !oa.getExcluded()) {
@@ -92,6 +88,6 @@ public class ContentProvider implements ITreeContentProvider
     @Override
     public void dispose()
     {
-        _ritual.close();
+        // noop
     }
 }

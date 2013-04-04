@@ -3,9 +3,6 @@ package com.aerofs.daemon.core;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.DirectoryServiceImpl;
 import com.aerofs.daemon.core.ds.ObjectSurgeon;
-import com.aerofs.daemon.lib.db.CoreSchema;
-import com.aerofs.daemon.lib.db.IMetaDatabaseWalker;
-import com.aerofs.daemon.lib.db.ISchema;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.SIDMap;
@@ -15,6 +12,7 @@ import com.aerofs.daemon.lib.db.ActivityLogDatabase;
 import com.aerofs.daemon.lib.db.AliasDatabase;
 import com.aerofs.daemon.lib.db.CollectorFilterDatabase;
 import com.aerofs.daemon.lib.db.CollectorSequenceDatabase;
+import com.aerofs.daemon.lib.db.CoreSchema;
 import com.aerofs.daemon.lib.db.DID2UserDatabase;
 import com.aerofs.daemon.lib.db.ExpulsionDatabase;
 import com.aerofs.daemon.lib.db.IACLDatabase;
@@ -25,8 +23,10 @@ import com.aerofs.daemon.lib.db.ICollectorSequenceDatabase;
 import com.aerofs.daemon.lib.db.IDID2UserDatabase;
 import com.aerofs.daemon.lib.db.IExpulsionDatabase;
 import com.aerofs.daemon.lib.db.IMetaDatabase;
+import com.aerofs.daemon.lib.db.IMetaDatabaseWalker;
 import com.aerofs.daemon.lib.db.IPulledDeviceDatabase;
 import com.aerofs.daemon.lib.db.ISIDDatabase;
+import com.aerofs.daemon.lib.db.ISchema;
 import com.aerofs.daemon.lib.db.ISenderFilterDatabase;
 import com.aerofs.daemon.lib.db.IStoreDatabase;
 import com.aerofs.daemon.lib.db.ISyncStatusDatabase;
@@ -49,9 +49,17 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.internal.Scoping;
 import com.google.inject.multibindings.Multibinder;
+import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 
 public class CoreModule extends AbstractModule
 {
+    private final ClientSocketChannelFactory _clientChannelFactory;
+
+    public CoreModule(ClientSocketChannelFactory clientChannelFactory)
+    {
+        _clientChannelFactory = clientChannelFactory;
+    }
+
     @Override
     protected void configure()
     {
@@ -96,5 +104,11 @@ public class CoreModule extends AbstractModule
     public CoreIMCExecutor provideCoreIMCExecutor(CoreQueue q)
     {
         return new CoreIMCExecutor(new QueueBasedIMCExecutor(q));
+    }
+
+    @Provides
+    public ClientSocketChannelFactory provideClientSocketChannelFactory()
+    {
+        return _clientChannelFactory;
     }
 }

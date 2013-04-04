@@ -1,46 +1,42 @@
 package com.aerofs.gui.activitylog;
 
-import javax.annotation.Nullable;
-
 import com.aerofs.base.Loggers;
 import com.aerofs.gui.CompSpin;
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIParam;
 import com.aerofs.gui.GUIUtil;
+import com.aerofs.lib.Path;
+import com.aerofs.lib.S;
 import com.aerofs.lib.ThreadUtil;
-import com.aerofs.lib.ritual.RitualBlockingClient;
-import com.aerofs.lib.ritual.RitualClientFactory;
+import com.aerofs.lib.Util;
+import com.aerofs.lib.cfg.Cfg;
+import com.aerofs.lib.os.OSUtil;
 import com.aerofs.proto.Common.PBPath;
 import com.aerofs.proto.Ritual.GetActivitiesReply;
 import com.aerofs.proto.Ritual.GetActivitiesReply.PBActivity;
 import com.aerofs.ui.UI;
-
-import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.ScrollBar;
-
-import com.aerofs.lib.Path;
-import com.aerofs.lib.S;
-import com.aerofs.lib.Util;
-import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.os.OSUtil;
-import org.eclipse.swt.SWT;
-import org.eclipse.swt.widgets.Table;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.TableViewerColumn;
-import org.eclipse.swt.widgets.TableColumn;
+import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.ControlAdapter;
 import org.eclipse.swt.events.ControlEvent;
-import org.eclipse.swt.events.SelectionListener;
-import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.layout.GridData;
-import org.eclipse.swt.layout.FillLayout;
-import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.events.SelectionListener;
+import org.eclipse.swt.layout.FillLayout;
+import org.eclipse.swt.layout.GridData;
+import org.eclipse.swt.layout.GridLayout;
+import org.eclipse.swt.widgets.Button;
+import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Label;
+import org.eclipse.swt.widgets.ScrollBar;
+import org.eclipse.swt.widgets.Table;
+import org.eclipse.swt.widgets.TableColumn;
 import org.slf4j.Logger;
+
+import javax.annotation.Nullable;
 
 public class CompActivityLog extends Composite
 {
@@ -222,25 +218,15 @@ public class CompActivityLog extends Composite
         }
     }
 
-    private void thdLoadMoreAsync(Integer selection)
-    {
-        RitualBlockingClient ritual = RitualClientFactory.newBlockingClient();
-        try {
-            loadMore(ritual, selection);
-        } finally {
-            ritual.close();
-        }
-    }
-
     /**
      * This method can be called in either UI or non-UI threads
      */
-    void loadMore(RitualBlockingClient ritual, Integer selection)
+    private void thdLoadMoreAsync(Integer selection)
     {
         Object[] elems;
         boolean hasUnresolved;
         try {
-            GetActivitiesReply reply = ritual.getActivities(false, _maxResult, _pageToken);
+            GetActivitiesReply reply = UI.ritual().getActivities(false, _maxResult, _pageToken);
             elems = reply.getActivityList().toArray();
             hasUnresolved = reply.getHasUnresolvedDevices();
             _pageToken = reply.hasPageToken() ? reply.getPageToken() : null;

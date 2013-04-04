@@ -1,32 +1,29 @@
 package com.aerofs;
 
-import java.io.File;
-import java.io.IOException;
-
-import java.lang.reflect.Field;
-
 import com.aerofs.base.Loggers;
 import com.aerofs.base.properties.Configuration;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.AppRoot;
+import com.aerofs.lib.IProgram;
+import com.aerofs.lib.IProgram.ExProgramNotFound;
 import com.aerofs.lib.LogUtil;
 import com.aerofs.lib.Param;
 import com.aerofs.lib.ProgramInformation;
-import com.aerofs.lib.SystemUtil.ExitCode;
 import com.aerofs.lib.SystemUtil;
-import com.aerofs.lib.rocklog.RockLog;
-import org.slf4j.Logger;
-
-import com.google.inject.CreationException;
-import com.google.inject.spi.Message;
-
-import com.aerofs.lib.IProgram;
+import com.aerofs.lib.SystemUtil.ExitCode;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.IProgram.ExProgramNotFound;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.ExNotSetup;
 import com.aerofs.lib.os.OSUtil;
+import com.aerofs.lib.rocklog.RockLog;
 import com.aerofs.sv.client.SVClient;
+import com.google.inject.CreationException;
+import com.google.inject.spi.Message;
+import org.slf4j.Logger;
+
+import java.io.File;
+import java.io.IOException;
+import java.lang.reflect.Field;
 
 import static com.aerofs.lib.rocklog.RockLog.BaseComponent.CLIENT;
 
@@ -34,7 +31,6 @@ public class Main
 {
     final static Logger l = Loggers.getLogger(Main.class);
 
-    private static final Object CONTROLLER_NAME = "controller";
     private static final Object DAEMON_NAME = "daemon";
     private static final Object FSCK_NAME = "fsck";
     private static final Object UMDC_NAME = "umdc";
@@ -103,7 +99,12 @@ public class Main
                     + AppRoot.abs() + " - " + Util.e(e));
         }
 
+        //
+        // INITIALIZE MAJOR COMPONENTS HERE!!!!!
+        //
+
         ProgramInformation.init_(prog);
+        ChannelFactories.init_();
         RockLog.init_(CLIENT);
         SystemUtil.setDefaultUncaughtExceptionHandler();
 
@@ -133,12 +134,10 @@ public class Main
             throws Exception
     {
         boolean ui = prog.equals(Param.GUI_NAME) || prog.equals(Param.CLI_NAME);
-        boolean controller = prog.equals(CONTROLLER_NAME);
 
         Class<?> cls;
         // a fast path to UI
         if (ui) cls = Class.forName("com.aerofs.Program");
-        else if (controller) cls = Class.forName("com.aerofs.controller.ControllerProgram");
         else if (prog.equals(DAEMON_NAME)) cls = com.aerofs.daemon.DaemonProgram.class;
         else if (prog.equals(FSCK_NAME)) cls = com.aerofs.fsck.FSCKProgram.class;
         else if (prog.equals(UMDC_NAME)) cls = com.aerofs.umdc.UMDCProgram.class;
@@ -150,11 +149,11 @@ public class Main
         // load config
         if (!Cfg.inited()) {
             try {
-                Cfg.init_(rtRoot, ui || controller || prog.equals(DAEMON_NAME));
+                Cfg.init_(rtRoot, ui || prog.equals(DAEMON_NAME));
                 l.debug("id " + Cfg.did().toStringFormal() + (Cfg.isSP() ? " SP mode" : ""));
             } catch (ExNotSetup e) {
                 // gui and cli will run setup itself
-                if (!ui && !controller) throw e;
+                if (!ui) throw e;
             }
         }
 

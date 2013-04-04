@@ -12,9 +12,8 @@ import com.aerofs.lib.S;
 import com.aerofs.lib.StorageType;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
-import com.aerofs.lib.ritual.RitualBlockingClient;
-import com.aerofs.lib.ritual.RitualClientFactory;
 import com.aerofs.ui.IUI.MessageType;
+import com.aerofs.ui.UI;
 import com.aerofs.ui.UIUtil;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
@@ -82,12 +81,8 @@ public class MultiuserCompPreferences extends Composite
                     Cfg.db().set(Key.AUTO_EXPORT_FOLDER, null);
                 }
             }
-            RitualBlockingClient ritual = RitualClientFactory.newBlockingClient();
-            try {
-                ritual.reloadConfig();
-            } finally {
-                ritual.close();
-            }
+
+            UI.ritual().reloadConfig();
         } catch (Exception e) {
             GUI.get().show(getShell(), MessageType.ERROR, "Couldn't change filesystem view option "
                     + UIUtil.e2msg(e));

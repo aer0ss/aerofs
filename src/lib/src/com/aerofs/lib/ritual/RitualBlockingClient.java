@@ -1,8 +1,8 @@
 package com.aerofs.lib.ritual;
 
-import java.io.Closeable;
-
 import com.aerofs.proto.Ritual.RitualServiceBlockingStub;
+
+import java.io.Closeable;
 
 /**
  * This is a synchronous client interface to Ritual
@@ -26,16 +26,5 @@ public class RitualBlockingClient extends RitualServiceBlockingStub implements C
     public void close()
     {
         _handler.disconnect();
-    }
-
-    /**
-     * For DI
-     */
-    public static class Factory
-    {
-        public RitualBlockingClient create()
-        {
-            return RitualClientFactory.newBlockingClient();
-        }
     }
 }

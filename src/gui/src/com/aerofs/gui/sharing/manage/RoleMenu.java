@@ -1,19 +1,17 @@
 package com.aerofs.gui.sharing.manage;
 
-import javax.annotation.Nullable;
-
 import com.aerofs.base.Loggers;
-import com.aerofs.lib.Path;
 import com.aerofs.base.acl.Role;
-import com.aerofs.lib.S;
 import com.aerofs.base.acl.SubjectRolePair;
+import com.aerofs.base.id.UserID;
+import com.aerofs.gui.GUI;
+import com.aerofs.lib.Path;
+import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.base.id.UserID;
-import com.aerofs.lib.ritual.RitualBlockingClient;
-import com.aerofs.lib.ritual.RitualClientFactory;
-
-import org.slf4j.Logger;
+import com.aerofs.ui.IUI.MessageType;
+import com.aerofs.ui.UI;
+import com.aerofs.ui.UIUtil;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
@@ -21,9 +19,9 @@ import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.MenuItem;
-import com.aerofs.gui.GUI;
-import com.aerofs.ui.IUI.MessageType;
-import com.aerofs.ui.UIUtil;
+import org.slf4j.Logger;
+
+import javax.annotation.Nullable;
 
 public class RoleMenu
 {
@@ -103,22 +101,15 @@ public class RoleMenu
     private void select(@Nullable Role role)
     {
         _menu.dispose();
-        try {
-            RitualBlockingClient ritual = RitualClientFactory.newBlockingClient();
-            try {
-                if (role == null) {
-                    ritual.deleteACL(Cfg.user().getString(), _path.toPB(),
-                            _subject.getString());
-                } else {
-                    ritual.updateACL(Cfg.user().getString(), _path.toPB(), _subject.getString(),
-                            role.toPB());
-                }
-                _compUserList.load(ritual);
 
-            } finally {
-                ritual.close();
+        try {
+            if (role == null) {
+                UI.ritual().deleteACL(Cfg.user().getString(), _path.toPB(), _subject.getString());
+            } else {
+                UI.ritual().updateACL(Cfg.user().getString(), _path.toPB(), _subject.getString(), role.toPB());
             }
 
+            _compUserList.load();
         } catch (Exception e) {
             l.warn(Util.e(e));
             GUI.get().show(_compUserList.getShell(), MessageType.ERROR,

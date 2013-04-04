@@ -4,25 +4,37 @@
 //
 package com.aerofs.gui;
 
+import com.aerofs.ChannelFactories;
 import com.aerofs.controller.ControllerBadCredentialListener;
 import com.aerofs.controller.ControllerService;
+import com.aerofs.gui.shellext.ShellextService;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.IProgram;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.os.OSUtil;
+import com.aerofs.lib.ritual.RitualClientProvider;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.ui.UI;
 import org.eclipse.swt.widgets.MessageBox;
 import org.eclipse.swt.widgets.Shell;
+import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 
 public class GUIProgram implements IProgram
 {
+    private static final String WINDOWS_UNSATISFIED_LINK_ERROR_MESSAGE =
+            L.product() +
+                    " cannot launch because the Microsoft Visual " +
+                    "C++ 2010 redistributable package is not installed. Please go to the " +
+                    "following URL to download and install it:\n\nhttp://ae.ro/msvc2010";
+
+    private static final String WINDOWS_MISSING_MSVC_DLL_EXCEPTION_MESSAGE =
+            "aerofsd.dll could not load because MSVC 2010 redistributables are missing";
+
     @Override
     public void launch_(String rtRoot, String prog, String[] args) throws Exception
     {
         try {
-            // "gc" is the name of the log file for the aerofsd library loaded by the GUI
-            Util.initDriver("gc");
+            Util.initDriver("gc"); // "gc" is the log file that aerofsd will write to
         } catch (UnsatisfiedLinkError linkError) {
             // On Windows, a common cause of failure is that the MSVC 2010 redistributables aren't
             // installed. Display a message box to the user so that he can fix the problem
@@ -30,20 +42,27 @@ public class GUIProgram implements IProgram
                 try {
                     System.loadLibrary("msvcp100");
                 } catch (UnsatisfiedLinkError e1) {
+                    linkError = new UnsatisfiedLinkError(WINDOWS_MISSING_MSVC_DLL_EXCEPTION_MESSAGE);
+
                     MessageBox msgBox = new MessageBox(new Shell());
-                    msgBox.setMessage(L.product() + " cannot launch because the Microsoft Visual " +
-                            "C++ 2010 redistributable package is not installed. Please go to the " +
-                            "following URL to download and install it:\n\nhttp://ae.ro/msvc2010");
+                    msgBox.setMessage(WINDOWS_UNSATISFIED_LINK_ERROR_MESSAGE);
                     msgBox.open();
-                    linkError = new UnsatisfiedLinkError("aerofsd.dll could not load because " +
-                            "MSVC 2010 redistributables are missing");
                 }
             }
             throw linkError;
         }
-        ControllerService.init(rtRoot, UI.notifier());
+
+        //
+        // FIXME (AG): The below is practically identical to code in CLIProgram
+        //
+
+        ClientSocketChannelFactory clientChannelFactory = ChannelFactories.getClientChannelFactory();
+        ControllerService.init(rtRoot, clientChannelFactory, UI.notifier());
         SPBlockingClient.setListener(new ControllerBadCredentialListener());
-        UI.set(new GUI(rtRoot));
+        RitualClientProvider ritualProvider = new RitualClientProvider(clientChannelFactory);
+        ShellextService sextservice = new ShellextService(ChannelFactories.getServerChannelFactory(), ritualProvider);
+        UI.init(new GUI(rtRoot, sextservice), ritualProvider);
+
         GUI.get().enterMainLoop_();
     }
 }

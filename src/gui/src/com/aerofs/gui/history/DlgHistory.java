@@ -12,16 +12,16 @@ import com.aerofs.gui.GUIUtil;
 import com.aerofs.gui.Images;
 import com.aerofs.gui.history.HistoryModel.IDecisionMaker;
 import com.aerofs.gui.history.HistoryModel.ModelIndex;
-import com.aerofs.lib.FileUtil;
 import com.aerofs.labeling.L;
+import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.ui.IUI.MessageType;
+import com.aerofs.ui.UI;
 import com.google.common.collect.Maps;
-import org.slf4j.Logger;
 import org.eclipse.jface.layout.TableColumnLayout;
 import org.eclipse.jface.viewers.ColumnWeightData;
 import org.eclipse.swt.SWT;
@@ -34,11 +34,14 @@ import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.layout.RowData;
 import org.eclipse.swt.layout.RowLayout;
 import org.eclipse.swt.program.Program;
+import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.DirectoryDialog;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.FileDialog;
+import org.eclipse.swt.widgets.Group;
+import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.MenuItem;
@@ -49,17 +52,13 @@ import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.swt.widgets.Tree;
 import org.eclipse.swt.widgets.TreeItem;
+import org.slf4j.Logger;
 
+import javax.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-import org.eclipse.swt.widgets.Label;
-import org.eclipse.swt.widgets.Group;
-import org.eclipse.swt.widgets.Button;
-
-import javax.annotation.Nullable;
-
 
 public class DlgHistory extends AeroFSDialog
 {
@@ -83,15 +82,14 @@ public class DlgHistory extends AeroFSDialog
 
     public DlgHistory(Shell parent)
     {
-        super(parent, "Version History", false, true);
-        _model = new HistoryModel();
-        _basePath = null;
+        this(parent, null);
     }
 
     public DlgHistory(Shell parent, Path path)
     {
         super(parent, "Version History", false, true);
-        _model = new HistoryModel();
+
+        _model = new HistoryModel(UI.ritualClientProvider());
         _basePath = path;
     }
 
