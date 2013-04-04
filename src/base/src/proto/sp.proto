@@ -533,7 +533,7 @@ service SPService {
      * Required Auth Level: none
      *
      * Throws:
-     *   ExNotFound: if the specified device does not exist or does not belong to you.
+     *   ExNotFound: if the specified device does not exist.
      */
     rpc GetCommandQueueHead(GetCommandQueueHeadCall) returns(GetCommandQueueHeadReply);
 

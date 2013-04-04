@@ -159,7 +159,7 @@ public class CNameVerificationHandler extends SimpleChannelHandler
             ((ChannelFuture)ctx.getAttachment()).setSuccess();
             fireChannelConnected(ctx, ctx.getChannel().getRemoteAddress());
 
-            l.debug("cname verified");
+            l.debug("cname verified {} - {}", user, did);
             break;
         }
     }
