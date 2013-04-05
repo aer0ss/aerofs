@@ -85,7 +85,7 @@ def json_signup(request):
         sp = get_rpc_stub(request)
         sp.sign_up_with_code(code, cred, first_name, last_name)
 
-        flash_success(request, "Hooray, you've signed up AeroFS!")
+        flash_success(request, "Way to go! you've signed up for AeroFS.")
 
         return HTTPOk()
     except ExceptionReply as e:

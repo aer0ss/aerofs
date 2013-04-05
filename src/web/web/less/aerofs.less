@@ -109,54 +109,6 @@ footer {
 }
 
 ////////
-// For the front page only. Save it here
-
-form#fp-sign-up-form .input-placeholder {
-  position: absolute;
-  // These two values are determined empirically
-  top: 13px;
-  left: 22px;
-  font-size: @fontSizeLarge;
-  color: @grayLight;
-}
-
-// Use .btn-large's stype for the input fields on the front page
-form#fp-sign-up-form input {
-  padding: @paddingLarge;
-  font-size: @fontSizeLarge;
-  .border-radius(@borderRadiusLarge);
-  // Undo Bootstrap's height for input fields, and calculate height based on
-  // text size and padding (the same as how btn-large's height is calculated)
-  height: inherit;
-  margin-bottom: 20px;
-}
-
-h1#fp-heading {
-  // Similar style to Bootstrap's .hero-unit > h1.
-  font-size: 60px;
-  color: @heroUnitHeadingColor;
-  line-height: 1.2;
-  letter-spacing: -1px;
-}
-
-p#fp-tag-line {
-  // The same color as Bootstrap's h1 > small.
-  font-size: 120%;
-  color: @grayLight;
-}
-
-img.fp-icon {
-  position: absolute;
-  top: -27px;
-  left: 111px;
-}
-
-ul.fp-thumbnails .thumbnail {
-  position: relative;
-  padding-top: 30px;
-}
-
-////////
 // Thumbnails
 
 .thumbnail {
@@ -337,4 +289,65 @@ blockquote {
 // Override Bootstrap's red
 code {
   color: @codeColor;
+}
+
+
+////////////////
+// Page-specific styles. Save them here instead of in mako files to take
+// advantage of LESS variables.
+
+////////
+// The front page
+
+form#fp-sign-up-form .input-placeholder {
+  position: absolute;
+// These two values are determined empirically
+  top: 13px;
+  left: 22px;
+  font-size: @fontSizeLarge;
+  color: @grayLight;
+}
+
+// Use .btn-large's stype for the input fields on the front page
+form#fp-sign-up-form input {
+  padding: @paddingLarge;
+  font-size: @fontSizeLarge;
+  .border-radius(@borderRadiusLarge);
+// Undo Bootstrap's height for input fields, and calculate height based on
+// text size and padding (the same as how btn-large's height is calculated)
+  height: inherit;
+  margin-bottom: 20px;
+}
+
+h1#fp-heading {
+// Similar style to Bootstrap's .hero-unit > h1.
+  font-size: 60px;
+  color: @heroUnitHeadingColor;
+  line-height: 1.2;
+  letter-spacing: -1px;
+}
+
+p#fp-tag-line {
+// The same color as Bootstrap's h1 > small.
+  font-size: 120%;
+  color: @grayLight;
+}
+
+img.fp-icon {
+  position: absolute;
+  top: -27px;
+  left: 111px;
+}
+
+ul.fp-thumbnails .thumbnail {
+  position: relative;
+  padding-top: 30px;
+}
+
+////////
+// The Features page
+
+#features-tabs .active a {
+  border-right-color: @yellow;
+  background-color: white;
 }
