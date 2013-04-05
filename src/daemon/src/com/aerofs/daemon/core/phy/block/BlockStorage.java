@@ -5,6 +5,7 @@
 package com.aerofs.daemon.core.phy.block;
 
 import static com.aerofs.daemon.core.phy.block.BlockStorageDatabase.*;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.CoreScheduler;
@@ -48,6 +49,7 @@ import com.google.common.io.Files;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -372,10 +374,18 @@ class BlockStorage implements IPhysicalStorage
         return _bsdb.getOrCreateFileIndex_(makeFileName(sokid), t);
     }
 
-    FileInfo getFileInfo_(SOKID sokid) throws SQLException
+    @Nullable FileInfo getFileInfoNullable_(SOKID sokid) throws SQLException
     {
         return _bsdb.getFileInfo_(_bsdb.getFileIndex_(makeFileName(sokid)));
     }
+
+    @Nonnull FileInfo getFileInfo_(SOKID sokid) throws SQLException
+    {
+        FileInfo fi = getFileInfoNullable_(sokid);
+        checkNotNull(fi, sokid);
+        return fi;
+    }
+
 
     public InputStream readChunks(ContentHash hash) throws IOException
     {
@@ -513,7 +523,7 @@ class BlockStorage implements IPhysicalStorage
 
     void delete_(BlockFile file, Trans t) throws IOException, SQLException
     {
-        FileInfo oldInfo = getFileInfo_(file._sokid);
+        FileInfo oldInfo = getFileInfoNullable_(file._sokid);
         if (!FileInfo.exists(oldInfo)) throw new FileNotFoundException(toString());
 
         FileInfo info = FileInfo.newDeletedFileInfo(oldInfo._id, new Date().getTime());
@@ -533,7 +543,7 @@ class BlockStorage implements IPhysicalStorage
             if (!fromPath.equals(toPath)) l.debug(fromPath + " -> " + toPath);
         }
 
-        FileInfo fromInfo = getFileInfo_(fromObjId);
+        FileInfo fromInfo = getFileInfoNullable_(fromObjId);
         if (!FileInfo.exists(fromInfo)) throw new FileNotFoundException(toString());
 
         long toId;
@@ -654,6 +664,7 @@ class BlockStorage implements IPhysicalStorage
     private void removeFile_(long id, Trans t) throws SQLException
     {
         FileInfo info = _bsdb.getFileInfo_(id);
+        checkNotNull(info, id);
         derefBlocks_(info._chunks, t);
         _bsdb.deleteFileInfo_(id, t);
     }

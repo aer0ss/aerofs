@@ -25,6 +25,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import org.slf4j.Logger;
 
+import javax.annotation.Nullable;
 import java.nio.ByteBuffer;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -192,7 +193,7 @@ public class BlockStorageDatabase extends AbstractDatabase
     }
 
     private PreparedStatement _psGetFileInfo;
-    public FileInfo getFileInfo_(long fileId) throws SQLException
+    public @Nullable FileInfo getFileInfo_(long fileId) throws SQLException
     {
         PreparedStatement ps = _psGetFileInfo;
         try {
