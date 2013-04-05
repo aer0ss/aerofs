@@ -128,6 +128,13 @@ ul.big-thumbnails .thumbnail h4 {
 ////////
 // Forms
 
+// The default form position is 'fixed'. For very long forms users may need to
+// scroll down the page to reveal the bottom part of the form. But ideally we
+// shouldn't have very long forms.
+.absolute-form {
+    position: absolute;
+}
+
 div.input_container {
     margin-top: 10px;
 }
@@ -304,7 +311,7 @@ code {
 
 form#fp-sign-up-form .input-placeholder {
   position: absolute;
-// These two values are determined empirically
+  // These two values are determined empirically
   top: 13px;
   left: 22px;
   font-size: @fontSizeLarge;
@@ -316,14 +323,14 @@ form#fp-sign-up-form input {
   padding: @paddingLarge;
   font-size: @fontSizeLarge;
   .border-radius(@borderRadiusLarge);
-// Undo Bootstrap's height for input fields, and calculate height based on
-// text size and padding (the same as how btn-large's height is calculated)
+  // Undo Bootstrap's height for input fields, and calculate height based on
+  // text size and padding (the same as how btn-large's height is calculated)
   height: inherit;
   margin-bottom: 20px;
 }
 
 h1#fp-heading {
-// Similar style to Bootstrap's .hero-unit > h1.
+  // Similar style to Bootstrap's .hero-unit > h1.
   font-size: 60px;
   color: @heroUnitHeadingColor;
   line-height: 1.2;
@@ -331,7 +338,7 @@ h1#fp-heading {
 }
 
 p#fp-tag-line {
-// The same color as Bootstrap's h1 > small.
+  // The same color as Bootstrap's h1 > small.
   font-size: 120%;
   color: @grayLight;
 }

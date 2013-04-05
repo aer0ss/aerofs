@@ -5,6 +5,6 @@ o Use btn-primary only for positive features, e.g. add a user, join a team, etc.
 
 o Disable buttons on form submission:
             $('#foo-form').submit(function() {
-                $("#submit-foo-button").attr("disabled", "disabled");
+                setEnabled($("#submit-foo-button"), false);
                 return true;
             });

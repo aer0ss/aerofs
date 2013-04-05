@@ -78,3 +78,8 @@ function setVisible($elem, visible) {
     if (visible) $elem.removeClass("hidden");
     else $elem.addClass("hidden");
 }
+
+function setEnabled($elem, enabled) {
+    if (enabled) $elem.removeAttr("disabled");
+    else $elem.attr("disabled", "disabled");
+}

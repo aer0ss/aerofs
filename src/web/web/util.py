@@ -158,6 +158,9 @@ def send_internal_email(subject, body):
     fromEmail = 'Pyramid Server <support@aerofs.com>'
     toEmail = 'team@aerofs.com'
 
+    log.info("send_internal_email:\n"
+              "subject: {}\nbody: {}\n".format(subject, body))
+
     msg = MIMEText(body)
     msg['Subject'] = subject
     msg['From'] = fromEmail
@@ -170,6 +173,4 @@ def send_internal_email(subject, body):
         s.sendmail(fromEmail, [toEmail], msg.as_string())
         s.quit()
     except Exception, e:
-        log.error("send_internal_email failed and ignored:\n"
-                  "subject: {}\nbody: {}\n".format(subject, body),
-                  exc_info=e)
+        log.error("send_internal_email failed and ignored", exc_info=e)
