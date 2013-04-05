@@ -1,5 +1,6 @@
 package com.aerofs.gui.misc;
 
+import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.labeling.L;
 import com.aerofs.proto.ControllerNotifications.Type;
 import com.aerofs.proto.ControllerNotifications.UpdateNotification;
@@ -13,7 +14,6 @@ import com.aerofs.gui.CompSpin;
 import com.aerofs.gui.GUIParam;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.gui.Images;
-import com.aerofs.base.BaseParam.SP;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.S;
 import com.aerofs.ui.UI;
@@ -85,7 +85,7 @@ public class DlgAbout extends AeroFSDialog
             @Override
             public void widgetSelected(SelectionEvent e)
             {
-                GUIUtil.launch(e.text.equals("Web site") ? SP.WEB_BASE :
+                GUIUtil.launch(e.text.equals("Web site") ? WWW.MARKETING_HOST_URL :
                         "http://support.aerofs.com/knowledgebase/articles/93285-release-notes");
             }
         });

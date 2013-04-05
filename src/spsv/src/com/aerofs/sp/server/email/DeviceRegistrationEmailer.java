@@ -4,8 +4,7 @@
 
 package com.aerofs.sp.server.email;
 
-import com.aerofs.base.BaseParam.SP;
-import com.aerofs.base.BaseParam.SV;
+import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.base.id.DID;
 import com.aerofs.labeling.L;
 import com.aerofs.base.ex.AbstractExWirable;
@@ -25,7 +24,7 @@ public class DeviceRegistrationEmailer
     {
         // N.B. the URI string must be identical to that in devices/__init__.py.
         sendDeviceCertifiedEmailImpl(L.PRODUCT + " Team Server", emailAddress, firstName, osFamily,
-                deviceName, "Team Servers at " + SP.DASH_BOARD_BASE + "/admin/team_servers", did);
+                deviceName, "Team Servers at " + WWW.DASHBOARD_HOST_URL + "/admin/team_servers", did);
     }
 
     public void sendDeviceCertifiedEmail(String emailAddress, String firstName,
@@ -34,7 +33,7 @@ public class DeviceRegistrationEmailer
     {
         // N.B. the URI string must be identical to that in devices/__init__.py.
         sendDeviceCertifiedEmailImpl(L.PRODUCT, emailAddress, firstName, osFamily, deviceName,
-                "your devices at " + SP.DASH_BOARD_BASE + "/devices", did);
+                "your devices at " + WWW.DASHBOARD_HOST_URL + "/devices", did);
     }
 
     public void sendDeviceCertifiedEmailImpl(String product, String emailAddress, String firstName,
@@ -51,7 +50,7 @@ public class DeviceRegistrationEmailer
                 Util.quote(deviceName) + ".\n" +
                 "\n" +
                 "If this device does not belong to you, please email us at " +
-                SV.SUPPORT_EMAIL_ADDRESS +
+                WWW.SUPPORT_EMAIL_ADDRESS +
                 " immediately and we will take the necessary steps to secure your account.\n" +
                 "\n" +
                 "You can manage " + manageDeviceStringAndURL + ".";
@@ -60,7 +59,7 @@ public class DeviceRegistrationEmailer
         email.addDefaultSignature();
 
         try {
-            SVClient.sendEmail(SV.SUPPORT_EMAIL_ADDRESS, SPParam.SP_EMAIL_NAME,
+            SVClient.sendEmail(WWW.SUPPORT_EMAIL_ADDRESS, SPParam.SP_EMAIL_NAME,
                     emailAddress, null, subject, email.getTextEmail(), email.getHTMLEmail(),
                     true, EmailCategory.DEVICE_CERTIFIED);
         } catch (AbstractExWirable e) {

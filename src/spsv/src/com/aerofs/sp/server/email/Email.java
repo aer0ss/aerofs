@@ -4,7 +4,7 @@
 
 package com.aerofs.sp.server.email;
 
-import com.aerofs.base.BaseParam.SV;
+import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.labeling.L;
 
 import javax.annotation.Nullable;
@@ -13,7 +13,7 @@ import java.io.IOException;
 public class Email implements IEmail
 {
     static final String DEFAULT_PS = "Have questions or comments? Email us at " +
-            SV.SUPPORT_EMAIL_ADDRESS;
+            WWW.SUPPORT_EMAIL_ADDRESS;
 
     private final HTMLEmail _htmlEmail;
     private final TextEmail _textEmail;

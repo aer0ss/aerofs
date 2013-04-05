@@ -4,7 +4,7 @@
 
 package com.aerofs.gui.setup;
 
-import com.aerofs.base.BaseParam.SP;
+import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.gui.AeroFSTitleAreaDialog;
@@ -204,7 +204,7 @@ public abstract class AbstractDlgSetup extends AeroFSTitleAreaDialog
             @Override
             public void widgetSelected(SelectionEvent e)
             {
-                GUIUtil.launch(SP.PASSWORD_RESET_REQUEST_URL);
+                GUIUtil.launch(WWW.PASSWORD_RESET_REQUEST_URL);
             }
         });
 

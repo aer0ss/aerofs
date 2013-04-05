@@ -21,7 +21,7 @@ import java.util.regex.Pattern;
 
 import javax.mail.MessagingException;
 
-import com.aerofs.base.BaseParam.SV;
+import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.labeling.L;
@@ -337,7 +337,7 @@ public class SVReactor
         String msg =  eom >= 0 ? desc.substring(0, eom) : desc;
 
         Future<Void> f = EmailSender.sendEmail(contactEmail, contactEmail,
-                SV.SUPPORT_EMAIL_ADDRESS, null, L.PRODUCT + " Problem # " + id, msg, null, true,
+                WWW.SUPPORT_EMAIL_ADDRESS, null, L.PRODUCT + " Problem # " + id, msg, null, true,
                 EmailCategory.SUPPORT);
         try {
             f.get(); // block to make sure email reaches support system

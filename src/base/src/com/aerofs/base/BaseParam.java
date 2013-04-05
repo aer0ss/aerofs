@@ -44,27 +44,40 @@ public class BaseParam
         }
     }
 
-    public static class SV
+    public static class WWW
     {
         public static final String
-                DOWNLOAD_LINK = SP.WEB_BASE + "/download",
-                DOWNLOAD_BASE = "https://cache.client." + (L.get().isStaging() ? "stg." : "") + "aerofs.com",
-                NOCACHE_DOWNLOAD_BASE = "https://nocache.client." + (L.get().isStaging() ? "stg." : "") + "aerofs.com",
-                SUPPORT_EMAIL_ADDRESS = "support@aerofs.com";
 
-        public static final long CONNECT_TIMEOUT = 1 * C.MIN;
-        public static final long READ_TIMEOUT = 30 * C.SEC;
+                // The host URL for marketing pages
+                MARKETING_HOST_URL = "https://www.aerofs.com",
+                // The host URL for dashboard pages
+                DASHBOARD_HOST_URL = MARKETING_HOST_URL,
+
+                // N.B. These links must be consistent with Pyramid configurations
+                // TODO (WW) use protobuf to share constants between Python and Java code?
+                PASSWORD_RESET_REQUEST_URL = DASHBOARD_HOST_URL + "/request_password_reset",
+                UPGRADE_URL = DASHBOARD_HOST_URL + "/upgrade",
+                TEAM_MANAGEMENT_URL = DASHBOARD_HOST_URL + "/admin/users",
+                DOWNLOAD_URL = MARKETING_HOST_URL + "/download",
+
+                // CDN for AeroFS installers
+                INSTALLER_CDN_HOST_URL =
+                        "https://cache.client." + (L.get().isStaging() ? "stg." : "") + "aerofs.com",
+                NOCACHE_INSTALLER_CDN_HOST_URL =
+                        "https://nocache.client." + (L.get().isStaging() ? "stg." : "") + "aerofs.com",
+
+                SUPPORT_EMAIL_ADDRESS = "support@aerofs.com";
+    }
+
+    public static class SV
+    {
+        public static final long
+                CONNECT_TIMEOUT = 1 * C.MIN,
+                READ_TIMEOUT = 30 * C.SEC;
     }
 
     public static class SP
     {
-        public static final String WEB_BASE = "https://www.aerofs.com";
-        public static final String DASH_BOARD_BASE = "https://my.aerofs.com";
-        public static final String PASSWORD_RESET_REQUEST_URL = DASH_BOARD_BASE + "/request_password_reset";
-
-        // TODO (WW) use protobuf to share constants between Python and Java code?
-        public static final String TEAM_MANAGEMENT_LINK = DASH_BOARD_BASE + "/admin/users";
-
         public static final String SP_POST_PARAM_PROTOCOL  = "protocol_vers";
         public static final String SP_POST_PARAM_DATA      = "data";
 

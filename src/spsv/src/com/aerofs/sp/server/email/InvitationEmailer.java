@@ -4,11 +4,10 @@
 
 package com.aerofs.sp.server.email;
 
+import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.base.id.SID;
 import com.aerofs.lib.FullName;
 import com.aerofs.labeling.L;
-import com.aerofs.base.BaseParam.SP;
-import com.aerofs.base.BaseParam.SV;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExEmailSendingFailed;
 import com.aerofs.base.ex.ExNotFound;
@@ -29,7 +28,7 @@ import java.util.concurrent.Callable;
 // and/or merging.
 public class InvitationEmailer
 {
-    private final static String ACCEPT_INVITATION_LINK = SP.DASH_BOARD_BASE + "/accept";
+    private final static String ACCEPT_INVITATION_LINK = WWW.DASHBOARD_HOST_URL + "/accept";
 
     public static class Factory
     {
@@ -72,7 +71,7 @@ public class InvitationEmailer
                 @Override
                 public Void call() throws Exception
                 {
-                    SVClient.sendEmail(SV.SUPPORT_EMAIL_ADDRESS, nsInviter.nameOnly(),
+                    SVClient.sendEmail(WWW.SUPPORT_EMAIL_ADDRESS, nsInviter.nameOnly(),
                             invitee.id().getString(), null, subject,
                             email.getTextEmail(), email.getHTMLEmail(), true,
                             EmailCategory.FOLDERLESS_INVITE);
@@ -98,7 +97,7 @@ public class InvitationEmailer
                 "\n" +
                 L.PRODUCT + " is a file syncing, sharing, and collaboration tool that" +
                 " lets you sync files privately without using public cloud. You can learn more" +
-                " about it at " + SP.WEB_BASE + "." + "\n" +
+                " about it at " + WWW.MARKETING_HOST_URL + "." + "\n" +
                 "\n" +
                 "Get started with " + L.PRODUCT + " at:\n" +
                 "\n" + url;
@@ -143,7 +142,7 @@ public class InvitationEmailer
                 @Override
                 public Void call() throws Exception
                 {
-                    SVClient.sendEmail(SV.SUPPORT_EMAIL_ADDRESS,
+                    SVClient.sendEmail(WWW.SUPPORT_EMAIL_ADDRESS,
                             nsSharer.nameOnly(),
                             sharee.id().getString(),
                             null,
@@ -188,7 +187,7 @@ public class InvitationEmailer
                 public Void call() throws Exception
                 {
                     SVClient.sendEmail(
-                            SV.SUPPORT_EMAIL_ADDRESS,
+                            WWW.SUPPORT_EMAIL_ADDRESS,
                             ns.nameOnly(),
                             invitee.id().getString(),
                             null,

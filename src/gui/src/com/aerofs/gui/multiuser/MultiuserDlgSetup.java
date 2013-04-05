@@ -5,7 +5,7 @@
 package com.aerofs.gui.multiuser;
 
 import com.aerofs.base.Base64;
-import com.aerofs.base.BaseParam.SP;
+import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.base.id.UserID;
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIUtil;
@@ -50,7 +50,7 @@ public class MultiuserDlgSetup extends AbstractDlgSetup
                 "Do you want to invite users to your team now?" +
                 " You can also do it later on the " + L.PRODUCT + " web site.",
                 "Invite Users", "Later")) {
-            GUIUtil.launch(SP.TEAM_MANAGEMENT_LINK);
+            GUIUtil.launch(WWW.TEAM_MANAGEMENT_URL);
         }
     }
 

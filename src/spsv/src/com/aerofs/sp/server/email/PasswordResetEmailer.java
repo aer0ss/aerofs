@@ -4,10 +4,10 @@
 
 package com.aerofs.sp.server.email;
 
+import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
-import com.aerofs.base.BaseParam.SV;
 import com.aerofs.base.ex.AbstractExWirable;
 import com.aerofs.base.id.UserID;
 import com.aerofs.sp.server.lib.SPParam;
@@ -40,7 +40,7 @@ public class PasswordResetEmailer
         email.addDefaultSignature();
 
         try {
-            SVClient.sendEmail(SV.SUPPORT_EMAIL_ADDRESS, SPParam.SP_EMAIL_NAME, userId.getString(),
+            SVClient.sendEmail(WWW.SUPPORT_EMAIL_ADDRESS, SPParam.SP_EMAIL_NAME, userId.getString(),
                     null, subject, email.getTextEmail(), email.getHTMLEmail(), true,
                     EmailCategory.PASSWORD_RESET);
         } catch (AbstractExWirable e) {
@@ -62,14 +62,14 @@ public class PasswordResetEmailer
                 "You have changed the password for your " + L.PRODUCT + " account.\n" +
                 "\n" +
                 "If you didn't change the password," +
-                " please email " + SV.SUPPORT_EMAIL_ADDRESS + " immediately." +
+                " please email " + WWW.SUPPORT_EMAIL_ADDRESS + " immediately." +
                 " We will take necessary steps to secure your account.";
 
         email.addSection(subject, HEADER_SIZE.H1, body);
         email.addDefaultSignature();
 
         try {
-            SVClient.sendEmail(SV.SUPPORT_EMAIL_ADDRESS, SPParam.SP_EMAIL_NAME, userId.getString(),
+            SVClient.sendEmail(WWW.SUPPORT_EMAIL_ADDRESS, SPParam.SP_EMAIL_NAME, userId.getString(),
                     null, subject, email.getTextEmail(), email.getHTMLEmail(), true,
                     EmailCategory.PASSWORD_RESET);
         } catch (AbstractExWirable e) {

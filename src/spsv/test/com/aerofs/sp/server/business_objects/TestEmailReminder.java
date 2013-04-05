@@ -4,8 +4,8 @@
 
 package com.aerofs.sp.server.business_objects;
 
+import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.base.C;
-import com.aerofs.base.BaseParam.SV;
 import com.aerofs.base.id.UserID;
 import com.aerofs.sp.common.Base62CodeGenerator;
 import com.aerofs.sp.common.SubscriptionCategory;
@@ -156,7 +156,7 @@ public class TestEmailReminder extends AbstractBusinessObjectTest
         for (UserID user: users) {
             String tokenId = esdb.getTokenId(user, SubscriptionCategory.AEROFS_INVITATION_REMINDER);
 
-            verify(_emailFactory, mode).createReminderEmail(eq(SV.SUPPORT_EMAIL_ADDRESS),
+            verify(_emailFactory, mode).createReminderEmail(eq(WWW.SUPPORT_EMAIL_ADDRESS),
                     eq(SPParam.SP_EMAIL_NAME), eq(user.getString()), anyString(), eq(tokenId));
 
         }

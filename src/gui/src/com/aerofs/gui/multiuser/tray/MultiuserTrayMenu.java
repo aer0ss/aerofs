@@ -4,6 +4,7 @@
 
 package com.aerofs.gui.multiuser.tray;
 
+import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.gui.GUIUtil.AbstractListener;
@@ -13,7 +14,6 @@ import com.aerofs.gui.tray.TransferTrayMenuSection;
 import com.aerofs.gui.tray.TrayIcon;
 import com.aerofs.gui.tray.TrayMenuPopulator;
 import com.aerofs.labeling.L;
-import com.aerofs.base.BaseParam.SP;
 import com.aerofs.proto.ControllerNotifications.UpdateNotification.Status;
 import com.aerofs.proto.RitualNotifications.PBNotification;
 import com.aerofs.proto.RitualNotifications.PBNotification.Type;
@@ -144,7 +144,7 @@ public class MultiuserTrayMenu implements ITrayMenu
             @Override
             protected void handleEventImpl(Event event)
             {
-                GUIUtil.launch(SP.TEAM_MANAGEMENT_LINK);
+                GUIUtil.launch(WWW.TEAM_MANAGEMENT_URL);
             }
         });
     }

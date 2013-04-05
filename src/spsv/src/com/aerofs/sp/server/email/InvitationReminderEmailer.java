@@ -7,8 +7,8 @@ package com.aerofs.sp.server.email;
 import java.io.IOException;
 import java.util.concurrent.Callable;
 
+import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.labeling.L;
-import com.aerofs.base.BaseParam.SP;
 import com.aerofs.sv.client.SVClient;
 import com.aerofs.sv.common.EmailCategory;
 import com.aerofs.sp.server.email.IEmail.HEADER_SIZE;
@@ -30,7 +30,7 @@ public class InvitationReminderEmailer
                     "Hi there!\n" +
                     "\n" +
                     "You've recently been invited to try out " + L.PRODUCT +
-                    " (" + SP.WEB_BASE + ") \n" +
+                    " (" + WWW.MARKETING_HOST_URL + ") \n" +
                     "\n " +
                     "We realize you might be quite busy and may have missed our invitation email" +
                     " so we want to remind you that your invitation is still waiting!\n" +

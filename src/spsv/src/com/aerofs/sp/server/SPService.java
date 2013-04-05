@@ -1,5 +1,6 @@
 package com.aerofs.sp.server;
 
+import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExEmptyEmailAddress;
 import com.aerofs.base.ex.ExFormatError;
@@ -43,7 +44,6 @@ import com.aerofs.lib.acl.Role;
 import com.aerofs.lib.acl.SubjectRolePair;
 import com.aerofs.lib.acl.SubjectRolePairs;
 import com.aerofs.lib.Util;
-import com.aerofs.base.BaseParam.SV;
 import com.aerofs.base.async.UncancellableFuture;
 import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExAlreadyInvited;
@@ -940,7 +940,7 @@ public class SPService implements ISPService
     {
         _sqlTrans.begin();
 
-        SVClient.sendEmail(SV.SUPPORT_EMAIL_ADDRESS, SPParam.SP_EMAIL_NAME,
+        SVClient.sendEmail(WWW.SUPPORT_EMAIL_ADDRESS, SPParam.SP_EMAIL_NAME,
                 _sessionUser.get().id().getString(), null, UserID.fromExternal(userId).getString(),
                 body, null, true, null);
 

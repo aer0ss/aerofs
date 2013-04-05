@@ -4,6 +4,7 @@
 
 package com.aerofs.ui;
 
+import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.base.Loggers;
 import com.aerofs.lib.AppRoot;
 import com.aerofs.base.C;
@@ -11,7 +12,6 @@ import com.aerofs.lib.FrequentDefectSender;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.Param;
 import com.aerofs.lib.Param.Daemon;
-import com.aerofs.base.BaseParam.SV;
 import com.aerofs.lib.S;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.ThreadUtil;
@@ -94,7 +94,7 @@ class DefaultDaemonMonitor implements IDaemonMonitor
                                 " crypto key strength, please download the Unlimited Strength" +
                                 " Jurisdiction Policy Files at http://bit.ly/UlsKO6. " +
                                 L.PRODUCT + " requires full strength AES-256 for a better margin" +
-                                " of safety. Contact us at " + SV.SUPPORT_EMAIL_ADDRESS +
+                                " of safety. Contact us at " + WWW.SUPPORT_EMAIL_ADDRESS +
                                 " for more questions.");
                     } else if (OSUtil.isWindows() && exitCode == WINDOWS_SHUTTING_DOWN) {
                         /*

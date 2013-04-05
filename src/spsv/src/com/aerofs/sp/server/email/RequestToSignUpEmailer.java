@@ -4,8 +4,7 @@
 
 package com.aerofs.sp.server.email;
 
-import com.aerofs.base.BaseParam.SP;
-import com.aerofs.base.BaseParam.SV;
+import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.base.ex.AbstractExWirable;
 import com.aerofs.labeling.L;
 import com.aerofs.sp.server.email.IEmail.HEADER_SIZE;
@@ -20,7 +19,7 @@ public class RequestToSignUpEmailer
     static String getSignUpLink(String signUpCode)
     {
         // N.B. the parameter key string must be identical to that in signup/views.py.
-        return SP.DASH_BOARD_BASE + "/signup?c=" + signUpCode;
+        return WWW.DASHBOARD_HOST_URL + "/signup?c=" + signUpCode;
     }
 
     public void sendRequestToSignUp(String emailAddress, String signUpCode)
@@ -38,7 +37,7 @@ public class RequestToSignUpEmailer
         email.addDefaultSignature();
 
         try {
-            SVClient.sendEmail(SV.SUPPORT_EMAIL_ADDRESS, SPParam.SP_EMAIL_NAME, emailAddress, null,
+            SVClient.sendEmail(WWW.SUPPORT_EMAIL_ADDRESS, SPParam.SP_EMAIL_NAME, emailAddress, null,
                     "Complete your " + L.PRODUCT + " sign up", email.getTextEmail(),
                     email.getHTMLEmail(), true,
                     EmailCategory.REQUEST_TO_SIGN_UP);

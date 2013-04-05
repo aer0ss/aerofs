@@ -1,7 +1,7 @@
 package com.aerofs.lib;
 
+import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.labeling.L;
-import com.aerofs.base.BaseParam.SP;
 
 public class S
 {
@@ -75,8 +75,8 @@ public class S
             PRE_SETUP_UPDATE_CHECK_FAILED = L.PRODUCT + " couldn't" +
                 " download updates. Please make sure the computer is" +
                 " connected to the Internet and run " + L.PRODUCT + " again.",
-            PRIVACY_URL = SP.WEB_BASE + "/privacy",
-            PASSWORD_RESET_URL = SP.DASH_BOARD_BASE + "/password_reset",
+            PRIVACY_URL = WWW.MARKETING_HOST_URL + "/privacy",
+            PASSWORD_RESET_URL = WWW.DASHBOARD_HOST_URL + "/password_reset",
             // use trailing spaces to force right margins
             TYPE_EMAIL_ADDRESSES = "Enter email addresses here, separated by commas:   ",
             INVITATION_WAS_SENT = "Invited successfully.",

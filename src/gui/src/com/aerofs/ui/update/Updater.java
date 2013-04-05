@@ -15,7 +15,7 @@ import java.net.URLConnection;
 import java.net.UnknownHostException;
 import java.util.Properties;
 
-import com.aerofs.base.BaseParam.SV;
+import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.base.Loggers;
 import com.aerofs.controller.ControllerService;
 import com.aerofs.gui.tray.TrayIcon.NotificationReason;
@@ -248,7 +248,7 @@ public abstract class Updater
     public static String getServerVersion()
             throws IOException
     {
-        URL url = new URL(SV.NOCACHE_DOWNLOAD_BASE + "/" + "current.ver");
+        URL url = new URL(WWW.NOCACHE_INSTALLER_CDN_HOST_URL + "/" + "current.ver");
         URLConnection conn = newAWSConnection(url);
         BufferedInputStream in = new BufferedInputStream(conn.getInputStream());
 
@@ -272,7 +272,7 @@ public abstract class Updater
         dir.mkdirIgnoreError(); // start by trying to create the temporary download folder
 
         try {
-            URLConnection conn = newAWSConnection(new URL(SV.DOWNLOAD_BASE + "/" + filename));
+            URLConnection conn = newAWSConnection(new URL(WWW.INSTALLER_CDN_HOST_URL + "/" + filename));
             conn.setReadTimeout((int) Cfg.timeout());
 
             int updateFileExpectedSize = conn.getContentLength();

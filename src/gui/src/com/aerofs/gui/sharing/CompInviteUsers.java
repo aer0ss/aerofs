@@ -3,6 +3,7 @@ package com.aerofs.gui.sharing;
 import java.util.Collection;
 import java.util.List;
 
+import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.base.Loggers;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.lib.acl.Role;
@@ -297,9 +298,6 @@ public class CompInviteUsers extends Composite implements IInputChangeListener
 
             void showPaymentDialog()
             {
-                // N.B. This link must be consistent with pyramid settings
-                String upgradeURL = "https://my.aerofs.com/upgrade";
-
                 if (isAdmin()) {
                     // Note: the following messages should be consistent with the messages in
                     // shared_folder.mako:credit_card_modal:html
@@ -310,7 +308,7 @@ public class CompInviteUsers extends Composite implements IInputChangeListener
                             " ($10/team member/month).\n\n" +
                             "Do you want to upgrade now?",
                             "Upgrade Now", "Cancel")) {
-                        GUIUtil.launch(upgradeURL);
+                        GUIUtil.launch(WWW.UPGRADE_URL);
                     }
                 } else {
                     // Note: the following messages should be consistent with the messages in
@@ -327,7 +325,7 @@ public class CompInviteUsers extends Composite implements IInputChangeListener
                                 " folder, which requires a paid AeroFS plan. Could we upgrade" +
                                 " the plan for our team?" +
                                 " We can upgrade through this link:\n\n" +
-                                upgradeURL +
+                                WWW.UPGRADE_URL +
                                 "\n\nThank you!";
                         String url = "mailto:?subject=" + Util.urlEncode(subject) + "&body=" +
                                 Util.urlEncode(body);

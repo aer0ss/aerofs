@@ -1,6 +1,7 @@
 package com.aerofs.ui;
 
 import com.aerofs.base.BaseParam.SP;
+import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.AbstractExWirable;
 import com.aerofs.base.ex.IExObfuscated;
@@ -12,7 +13,6 @@ import com.aerofs.gui.setup.DlgTutorial;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.*;
 import com.aerofs.lib.JsonFormat.ParseException;
-import com.aerofs.base.BaseParam.SV;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.*;
 import com.aerofs.lib.id.CID;
@@ -240,7 +240,7 @@ public class UIUtil
     }
 
     private static String LAUNCH_ERROR_STRING = "Sorry, " + L.PRODUCT + " couldn't launch." +
-            " Please contact us at " + SV.SUPPORT_EMAIL_ADDRESS;
+            " Please contact us at " + WWW.SUPPORT_EMAIL_ADDRESS;
 
     /**
      * Helper method to perform launch for the Java UIs (ie: CLI and GUI)

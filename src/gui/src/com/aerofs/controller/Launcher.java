@@ -10,6 +10,7 @@ import java.net.BindException;
 import java.net.ServerSocket;
 import java.sql.SQLException;
 
+import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.base.Loggers;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.labeling.L;
@@ -22,7 +23,6 @@ import org.eclipse.jface.dialogs.IDialogConstants;
 
 import com.aerofs.lib.AppRoot;
 import com.aerofs.base.C;
-import com.aerofs.base.BaseParam.SV;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.Cfg.PortType;
@@ -215,7 +215,7 @@ class Launcher
         // After an update, verify that all checksums match
         String failedFile = PostUpdate.verifyChecksum();
         if (failedFile != null) {
-            String url = SV.DOWNLOAD_LINK;
+            String url = WWW.DOWNLOAD_URL;
             String msg = L.PRODUCT + " couldn't launch because some program files are corrupted." +
                     " Please " +
                     (UI.isGUI() ? "click " + IDialogConstants.OK_LABEL : "go to " + url) +

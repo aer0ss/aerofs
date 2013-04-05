@@ -4,7 +4,7 @@
 
 package com.aerofs.sp.common;
 
-import com.aerofs.base.BaseParam.SP;
+import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.lib.SystemUtil;
 
 import java.net.MalformedURLException;
@@ -18,7 +18,7 @@ public class SubscriptionParams
     static {
         URL url;
         try {
-            url = new URL(SP.DASH_BOARD_BASE + "/unsubscribe?" + UNSUB_TOKEN + "=");
+            url = new URL(WWW.DASHBOARD_HOST_URL + "/unsubscribe?" + UNSUB_TOKEN + "=");
         } catch (MalformedURLException e) {
             SystemUtil.fatal(e);
             url = null;
