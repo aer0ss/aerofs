@@ -41,7 +41,7 @@ public class TestMultiuserStoreJoiner extends AbstractTest
             throws Exception
     {
         SID rootSID = SID.rootSID(userID);
-        msj.joinStore_(sidx, rootSID, "test", t);
+        msj.joinStore_(sidx, rootSID, "test", false, t);
 
         verify(sc).createRootStore_(eq(rootSID), eq(t));
     }
@@ -51,7 +51,7 @@ public class TestMultiuserStoreJoiner extends AbstractTest
             throws Exception
     {
         SID rootSID = SID.generate();
-        msj.joinStore_(sidx, rootSID, "test", t);
+        msj.joinStore_(sidx, rootSID, "test", false, t);
 
         verify(sc).createRootStore_(eq(rootSID), eq(t));
     }
@@ -62,13 +62,13 @@ public class TestMultiuserStoreJoiner extends AbstractTest
     {
         SID rootSID = SID.rootSID(userID);
         when(cfgRootSID.get()).thenReturn(rootSID);
-        msj.joinStore_(sidx, rootSID, "test", t);
+        msj.joinStore_(sidx, rootSID, "test", false, t);
 
         verifyZeroInteractions(sc);
     }
 
     @Test
-    public void joinStore_shouldLeaveRootStore()
+    public void leaveStore_shouldLeaveRootStore()
             throws Exception
     {
         SID sid = SID.generate();
@@ -79,7 +79,7 @@ public class TestMultiuserStoreJoiner extends AbstractTest
     }
 
     @Test
-    public void joinStore_shouldNotLeaveNonRootStore()
+    public void leaveStore_shouldNotLeaveNonRootStore()
             throws Exception
     {
         SID sid = SID.generate();

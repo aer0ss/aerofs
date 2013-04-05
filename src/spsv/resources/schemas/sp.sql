@@ -29,6 +29,7 @@ CREATE TABLE `sp_acl` (
   `a_role` TINYINT NOT NULL,
   `a_pending` BOOLEAN NOT NULL DEFAULT FALSE,
   `a_sharer` VARCHAR(320),
+  `a_external` BOOLEAN NOT NULL DEFAULT FALSE,
   PRIMARY KEY (`a_sid`,`a_id`),
   INDEX `a_id` (`a_id`),
   -- Note: the foreign key implicitly create an index on a_sid

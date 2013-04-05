@@ -96,6 +96,8 @@ message PBException {
         // The user needs to log in
         NOT_AUTHENTICATED = 404;
         INVALID_EMAIL_ADDRESS = 405;
+        CANNOT_INVITE_SELF = 406;
+        INVITEE_LIST_EMPTY = 407;
     }
 
     required Type type = 1;

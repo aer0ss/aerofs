@@ -32,6 +32,7 @@ import static com.aerofs.lib.db.DBUtil.count;
 import static com.aerofs.lib.db.DBUtil.deleteWhere;
 import static com.aerofs.lib.db.DBUtil.selectWhere;
 import static com.aerofs.lib.db.DBUtil.updateWhere;
+import static com.aerofs.sp.server.lib.SPSchema.C_AC_EXTERNAL;
 import static com.aerofs.sp.server.lib.SPSchema.C_AC_PENDING;
 import static com.aerofs.sp.server.lib.SPSchema.C_AC_ROLE;
 import static com.aerofs.sp.server.lib.SPSchema.C_AC_SHARER;
@@ -172,6 +173,37 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
         int rows = ps.executeUpdate();
 
         if (rows != 1) throw new ExNotFound();
+    }
+
+    public void setExternal(SID sid, UserID userId, boolean external)
+            throws SQLException, ExNotFound
+    {
+        PreparedStatement ps = prepareStatement(updateWhere(T_AC,
+                C_AC_STORE_ID + "=? and " + C_AC_USER_ID + "=?", C_AC_EXTERNAL));
+
+        ps.setBoolean(1, external);
+        ps.setBytes(2, sid.getBytes());
+        ps.setString(3, userId.getString());
+
+        int rows = ps.executeUpdate();
+
+        if (rows != 1) throw new ExNotFound();
+    }
+
+    public boolean isExternal(SID sid, UserID id) throws SQLException
+    {
+        PreparedStatement ps = prepareStatement(selectWhere(T_AC,
+                C_AC_STORE_ID + "=? and " + C_AC_USER_ID + "=?", C_AC_EXTERNAL));
+
+        ps.setBytes(1, sid.getBytes());
+        ps.setString(2, id.getString());
+
+        ResultSet rs = ps.executeQuery();
+        try {
+            return rs.next() ? rs.getBoolean(1) : false;
+        } finally {
+            rs.close();
+        }
     }
 
     public @Nullable Role getMemberRoleNullable(SID sid, UserID userId)

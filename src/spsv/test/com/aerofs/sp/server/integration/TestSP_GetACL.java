@@ -11,7 +11,9 @@ import com.aerofs.proto.Sp.GetACLReply.PBStoreACL;
 import com.aerofs.sp.server.lib.user.User;
 import org.junit.Test;
 
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.fail;
 
 public class TestSP_GetACL extends AbstractSPACLTest
@@ -71,9 +73,7 @@ public class TestSP_GetACL extends AbstractSPACLTest
 
         leaveSharedFolder(USER_2, SID_1);
 
-        checkACL(
-                new UserAndRole(USER_1, Role.OWNER),
-                new UserAndRole(USER_3, Role.OWNER));
+        checkACL(new UserAndRole(USER_1, Role.OWNER), new UserAndRole(USER_3, Role.OWNER));
 
         leaveSharedFolder(USER_1, SID_1);
 
@@ -82,6 +82,106 @@ public class TestSP_GetACL extends AbstractSPACLTest
 
         setSessionUser(USER_3);
         checkACL(USER_3, Role.OWNER);
+    }
+
+    @Test
+    public void shouldReturnExternalFlagFalseAfterSharing() throws Exception
+    {
+        shareFolder(USER_1, SID_1, USER_2, Role.EDITOR);
+
+        assertFalse(isExternal(USER_1, SID_1));
+    }
+
+    @Test
+    public void shouldReturnExternalFlagTrueAfterSharingExternal() throws Exception
+    {
+        shareFolderExternal(USER_1, SID_1, USER_2, Role.EDITOR);
+
+        assertTrue(isExternal(USER_1, SID_1));
+    }
+
+    @Test
+    public void shouldReturnExternalFlagFalseAfterJoining() throws Exception
+    {
+        shareFolder(USER_1, SID_1, USER_2, Role.EDITOR);
+        joinSharedFolder(USER_2, SID_1);
+
+        assertFalse(isExternal(USER_2, SID_1));
+    }
+
+    @Test
+    public void shouldReturnExternalFlagFalseAfterJoiningRegardlessOfOwnerFlag() throws Exception
+    {
+        shareFolderExternal(USER_1, SID_1, USER_2, Role.EDITOR);
+        joinSharedFolder(USER_2, SID_1);
+
+        assertFalse(isExternal(USER_2, SID_1));
+    }
+
+    @Test
+    public void shouldReturnExternalFlagTrueAfterJoiningExternal() throws Exception
+    {
+        shareFolder(USER_1, SID_1, USER_2, Role.EDITOR);
+        joinSharedFolderExternal(USER_2, SID_1);
+
+        assertTrue(isExternal(USER_2, SID_1));
+    }
+
+    @Test
+    public void shouldReturnExternalFlagTrueAfterJoiningExternalRegardlessOfOwnerFlag() throws Exception
+    {
+        shareFolderExternal(USER_1, SID_1, USER_2, Role.EDITOR);
+        joinSharedFolderExternal(USER_2, SID_1);
+
+        assertTrue(isExternal(USER_2, SID_1));
+    }
+
+    @Test
+    public void shouldNotAlterExternalFlagAfterFirstShareExternal() throws Exception
+    {
+        shareFolderExternal(USER_1, SID_1, USER_2, Role.EDITOR);
+        shareFolder(USER_1, SID_1, USER_3, Role.EDITOR);
+
+        assertTrue(isExternal(USER_1, SID_1));
+    }
+
+    @Test
+    public void shouldNotAlterExternalFlagAfterFirstShare() throws Exception
+    {
+        shareFolder(USER_1, SID_1, USER_2, Role.EDITOR);
+        shareFolderExternal(USER_1, SID_1, USER_3, Role.EDITOR);
+
+        assertFalse(isExternal(USER_1, SID_1));
+    }
+
+    @Test
+    public void shouldAllowJoinAfterLeaveExternal() throws Exception
+    {
+        shareFolderExternal(USER_1, SID_1, USER_2, Role.EDITOR);
+        leaveSharedFolder(USER_1, SID_1);
+        joinSharedFolder(USER_1, SID_1);
+
+        assertFalse(isExternal(USER_1, SID_1));
+    }
+
+    @Test
+    public void shouldAllowJoinExternalAfterLeave() throws Exception
+    {
+        shareFolder(USER_1, SID_1, USER_2, Role.EDITOR);
+        leaveSharedFolder(USER_1, SID_1);
+        joinSharedFolderExternal(USER_1, SID_1);
+
+        assertTrue(isExternal(USER_1, SID_1));
+    }
+
+    private boolean isExternal(User user, SID sid) throws Exception
+    {
+        setSessionUser(user);
+        GetACLReply reply = service.getACL(0L).get();
+        for (PBStoreACL sacl : reply.getStoreAclList()) {
+            if (new SID(sacl.getStoreId()).equals(sid)) return sacl.getExternal();
+        }
+        throw new IllegalStateException();
     }
 
     private void checkACL(User user, Role role) throws Exception

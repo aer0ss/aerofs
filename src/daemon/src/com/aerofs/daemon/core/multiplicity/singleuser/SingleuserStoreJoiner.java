@@ -64,7 +64,8 @@ public class SingleuserStoreJoiner implements IStoreJoiner
     }
 
     @Override
-    public void joinStore_(SIndex sidx, SID sid, String folderName, Trans t) throws Exception
+    public void joinStore_(SIndex sidx, SID sid, String folderName, boolean external, Trans t)
+            throws Exception
     {
         // ignore changes on the root store
         if (sid.equals(_cfgRootSID.get())) return;
@@ -132,6 +133,11 @@ public class SingleuserStoreJoiner implements IStoreJoiner
 
         // make sure we don't have an old "leave request" queued
         _lod.removeFromQueue_(sid, t);
+
+        if (external) {
+            // TODO: add to a list somewhere in the db so that GUI can query and join as needed
+            return;
+        }
 
         while (true) {
             try {

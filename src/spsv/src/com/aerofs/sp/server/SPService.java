@@ -22,6 +22,8 @@ import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExAlreadyInvited;
 import com.aerofs.lib.ex.ExEmailSendingFailed;
+import com.aerofs.base.ex.ExCannotInviteSelf;
+import com.aerofs.base.ex.ExInviteeListEmpty;
 import com.aerofs.lib.ex.ExInvalidEmailAddress;
 import com.aerofs.lib.ex.ExNoStripeCustomerID;
 import com.aerofs.lib.ex.ExNotAuthenticated;
@@ -966,21 +968,25 @@ public class SPService implements ISPService
 
     @Override
     public ListenableFuture<Void> shareFolder(String folderName, ByteString shareId,
-            List<PBSubjectRolePair> rolePairs, @Nullable String note)
+            List<PBSubjectRolePair> rolePairs, @Nullable String note, @Nullable Boolean ext)
             throws Exception
     {
+        // vanquish the null pointer
+        final boolean external = ext != null && ext;
+
         SharedFolder sf = _factSharedFolder.create(shareId);
         if (sf.id().isUserRoot()) throw new ExBadArgs("Cannot share root");
 
         User sharer = _sessionUser.get();
         List<SubjectRolePair> srps = SubjectRolePairs.listFromPB(rolePairs);
 
-        l.info(sharer + " shares " + sf + " with " + srps);
-        if (srps.isEmpty()) throw new ExBadArgs("must specify one or more sharee");
+        l.info(sharer + " shares " + sf + "[" + external + "] with " + srps);
+        // only allow empty invitee list when doing out-of-defaultRoot sharing
+        if (srps.isEmpty() && !external) throw new ExInviteeListEmpty();
 
         _sqlTrans.begin();
 
-        Collection<UserID> users = saveSharedFolderIfNecessary(folderName, sf, sharer);
+        Collection<UserID> users = saveSharedFolderIfNecessary(folderName, sf, sharer, external);
 
         List<InvitationEmailer> emailers = createFolderInvitationAndEmailer(folderName, note, sf,
                 sharer, srps);
@@ -1005,7 +1011,7 @@ public class SPService implements ISPService
     }
 
     private Collection<UserID> saveSharedFolderIfNecessary(String folderName, SharedFolder sf,
-            User sharer)
+            User sharer, boolean external)
             throws ExNotFound, SQLException, ExNoPerm, IOException, ExAlreadyExist
     {
         if (sf.exists()) {
@@ -1014,12 +1020,14 @@ public class SPService implements ISPService
         }
 
         // The store doesn't exist. Create it and add the user as the owner.
-        return sf.save(folderName, sharer);
+        Collection<UserID> l =  sf.save(folderName, sharer);
+        sf.setExternal(sharer, external);
+        return l;
     }
 
     private List<InvitationEmailer> createFolderInvitationAndEmailer(String folderName, String note,
             SharedFolder sf, User sharer, List<SubjectRolePair> srps)
-            throws SQLException, IOException, ExNotFound, ExAlreadyExist, ExBadArgs
+            throws SQLException, IOException, ExNotFound, ExAlreadyExist, ExCannotInviteSelf
     {
         // The sending of invitation emails is deferred to the end of the transaction to ensure
         // that all business logic checks pass and the changes are sucessfully committed to the DB
@@ -1029,9 +1037,8 @@ public class SPService implements ISPService
         for (SubjectRolePair srp : srps) {
             User sharee = _factUser.create(srp._subject);
             if (sharee.equals(sharer)) {
-                // TODO (WW) change to: throw new ExBadArgs("are you trying to invite yourself?");
                 l.warn(sharer + " tried to invite himself");
-                continue;
+                throw new ExCannotInviteSelf();
             }
 
             emailers.add(createFolderInvitationAndEmailer(sf, sharer, sharee, srp._role, note,
@@ -1092,8 +1099,12 @@ public class SPService implements ISPService
     }
 
     @Override
-    public ListenableFuture<Void> joinSharedFolder(ByteString sid) throws Exception
+    public ListenableFuture<Void> joinSharedFolder(ByteString sid, @Nullable Boolean ext)
+            throws Exception
     {
+        // vanquish the null pointer
+        final boolean external = ext != null && ext;
+
         _sqlTrans.begin();
 
         User user = _sessionUser.get();
@@ -1113,6 +1124,9 @@ public class SPService implements ISPService
 
         // reset pending bit to make user a member of the shared folder
         Collection<UserID> users = sf.setMember(user);
+
+        // set the external bit for consistent auto-join behavior across devices
+        sf.setExternal(user, external);
 
         Collection<Device> peerDevices = user.getPeerDevices();
         // Refresh CRLs for peer devices once this user joins the shared folder (since the peer user
@@ -1595,6 +1609,7 @@ public class SPService implements ISPService
                 l.info("add s:" + sf.id());
                 PBStoreACL.Builder aclBuilder = PBStoreACL.newBuilder();
                 aclBuilder.setStoreId(sf.id().toPB());
+                aclBuilder.setExternal(sf.isExternal(user));
                 for (SubjectRolePair srp : sf.getMemberACL()) {
                     l.info("add j:" + srp._subject + " r:" + srp._role.getDescription());
                     aclBuilder.addSubjectRole(srp.toPB());

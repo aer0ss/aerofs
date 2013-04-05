@@ -167,6 +167,8 @@ service SPService {
      *
      * Throws:
      *   ExNoPerm if the sharer isn't authorized to modify ACLs for the given SID
+     *   ExCannotInviteSelf if the sharer appears in the list of sharees
+     *   ExInviteeListEmpty if the list of invitees is empty AND the external flag is false
      *   ExNoStripeCustomerID if payment is required but the current team doesn't have a Stripe
      *                  customer ID.
      */
@@ -712,10 +714,15 @@ message ShareFolderCall {
 
     // Message to the person
     optional string note = 4;
+
+    // whether the sharer created the share outside his root anchor
+    // ignored when adding new members to an existing shared folder
+    optional bool external = 5 [default = false];
 }
 
 message JoinSharedFolderCall {
     required bytes shared_id = 1;
+    optional bool external = 2 [default = false];
 }
 
 message IgnoreSharedFolderCall {
@@ -776,6 +783,7 @@ message GetACLReply {
     message PBStoreACL {
         required bytes store_id = 1;
         repeated PBSubjectRolePair subject_role = 2;
+        required bool external = 3;
     }
 
     repeated PBStoreACL store_acl = 1;
