@@ -24,7 +24,7 @@ public class DeviceRegistrationEmailer
     {
         // N.B. the URI string must be identical to that in devices/__init__.py.
         sendDeviceCertifiedEmailImpl(L.PRODUCT + " Team Server", emailAddress, firstName, osFamily,
-                deviceName, "Team Servers at " + WWW.DASHBOARD_HOST_URL + "/admin/team_servers", did);
+                deviceName, "Team Servers at " + WWW.TEAM_SERVER_DEVICES_URL, did);
     }
 
     public void sendDeviceCertifiedEmail(String emailAddress, String firstName,
@@ -33,7 +33,7 @@ public class DeviceRegistrationEmailer
     {
         // N.B. the URI string must be identical to that in devices/__init__.py.
         sendDeviceCertifiedEmailImpl(L.PRODUCT, emailAddress, firstName, osFamily, deviceName,
-                "your devices at " + WWW.DASHBOARD_HOST_URL + "/devices", did);
+                "your devices at " + WWW.DEVICES_URL, did);
     }
 
     public void sendDeviceCertifiedEmailImpl(String product, String emailAddress, String firstName,

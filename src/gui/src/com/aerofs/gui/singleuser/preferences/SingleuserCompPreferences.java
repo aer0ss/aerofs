@@ -4,6 +4,7 @@
 
 package com.aerofs.gui.singleuser.preferences;
 
+import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.exclusion.DlgExclusion;
 import com.aerofs.gui.preferences.PreferencesHelper;
@@ -78,6 +79,10 @@ public class SingleuserCompPreferences extends Composite
         // Device name row
 
         helper.createDeviceNameLabelAndText();
+
+        // Manage devices row
+
+        helper.createManageDevices("Manage all your devices", WWW.DEVICES_URL);
 
         // Root anchor relocation row
 

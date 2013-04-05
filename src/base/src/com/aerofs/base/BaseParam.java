@@ -57,7 +57,9 @@ public class BaseParam
                 // TODO (WW) use protobuf to share constants between Python and Java code?
                 PASSWORD_RESET_REQUEST_URL = DASHBOARD_HOST_URL + "/request_password_reset",
                 UPGRADE_URL = DASHBOARD_HOST_URL + "/upgrade",
-                TEAM_MANAGEMENT_URL = DASHBOARD_HOST_URL + "/admin/users",
+                TEAM_MEMBERS_URL = DASHBOARD_HOST_URL + "/admin/users",
+                DEVICES_URL = DASHBOARD_HOST_URL + "/devices",
+                TEAM_SERVER_DEVICES_URL = DASHBOARD_HOST_URL + "/admin/team_servers",
                 DOWNLOAD_URL = MARKETING_HOST_URL + "/download",
 
                 // CDN for AeroFS installers

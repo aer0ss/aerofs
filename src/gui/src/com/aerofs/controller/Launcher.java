@@ -215,10 +215,10 @@ class Launcher
         // After an update, verify that all checksums match
         String failedFile = PostUpdate.verifyChecksum();
         if (failedFile != null) {
-            String url = WWW.DOWNLOAD_URL;
             String msg = L.PRODUCT + " couldn't launch because some program files are corrupted." +
                     " Please " +
-                    (UI.isGUI() ? "click " + IDialogConstants.OK_LABEL : "go to " + url) +
+                    (UI.isGUI() ? "click " + IDialogConstants.OK_LABEL : "go to " +
+                            WWW.DOWNLOAD_URL) +
                     " to download and install " + L.PRODUCT + " again. " +
                     "All your data will be intact during re-installation.";
 
@@ -226,7 +226,7 @@ class Launcher
                     new File(failedFile).length()));
             UI.get().show(MessageType.ERROR, msg);
 
-            if (UI.isGUI()) GUIUtil.launch(url);
+            if (UI.isGUI()) GUIUtil.launch(WWW.DOWNLOAD_URL);
 
             throw new ExLaunchAborted();
         }

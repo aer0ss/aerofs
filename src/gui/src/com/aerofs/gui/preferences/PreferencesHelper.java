@@ -9,6 +9,7 @@ import com.aerofs.gui.CompSpin;
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIParam;
 import com.aerofs.base.BaseParam.SP;
+import com.aerofs.gui.GUIUtil;
 import com.aerofs.lib.RootAnchorUtil;
 import com.aerofs.lib.S;
 import com.aerofs.lib.ThreadUtil;
@@ -21,6 +22,7 @@ import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.sp.client.SPClientFactory;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.UIUtil;
+import org.eclipse.swt.widgets.Link;
 import org.slf4j.Logger;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.FocusAdapter;
@@ -203,6 +205,24 @@ public class PreferencesHelper
             public void focusLost(FocusEvent focusEvent)
             {
                 updateUserAndDeviceName(_txtDeviceName);
+            }
+        });
+
+        new Label(_comp, SWT.NONE);
+    }
+
+    public void createManageDevices(String text, final String url)
+    {
+        new Label(_comp, SWT.NONE);
+
+        Link link = new Link(_comp, SWT.NONE);
+        link.setText("<a>" + text + "</a>");
+        link.addSelectionListener(new SelectionAdapter()
+        {
+            @Override
+            public void widgetSelected(SelectionEvent e)
+            {
+                GUIUtil.launch(url);
             }
         });
 
