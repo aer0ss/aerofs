@@ -22,7 +22,7 @@
 </div>
 
 <%block name="top_navigation_bar">
-    <li><a href="#">Blog</a></li>
+    <li><a href="http://blog.aerofs.com">Blog</a></li>
     <li><a href="http://support.aerofs.com" target="_blank">Support</a></li>
     <li class="pull-right"><a href="${request.route_path('logout')}">Sign out</a></li>
     <li class="pull-right disabled"><a href="#">${request.session['username']}</a></li>

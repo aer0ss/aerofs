@@ -20,7 +20,7 @@
                     value="${login}"
                 %endif
             >
-            <label for="input_passwd">Password <a tabindex="-1" href="${request.route_path('request_password_reset')}">(I forgot)</a></label>
+            <label for="input_passwd">Password</label>
             <input class="input-medium" id="input_passwd" type="password" name="${url_param_password}">
             <label class="checkbox">
                 <input type="checkbox" name="${url_param_remember_me}" value="staySignedIn"
@@ -28,6 +28,8 @@
             </label>
             <input id="signin_button" class="btn btn-primary" type="submit" value="Sign In"/>
         </form>
+
+        <a href="${request.route_path('request_password_reset')}">Forgot your password?</a>
     </div>
 </div>
 

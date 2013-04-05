@@ -4,7 +4,7 @@
     <div id="modal" class="modal hide" tabindex="-1" role="dialog">
         <div class="modal-header">
             <button type="button" class="close" data-dismiss="modal">×</button>
-            <h4>Options for Folder &quot;<span id="modal-folder-name"></span>&quot;</h4>
+            <h4>Options for folder &quot;<span id="modal-folder-name"></span>&quot;</h4>
         </div>
         <div class="modal-body">
             <table id="modal-user-role-table" class="table">
@@ -29,7 +29,7 @@
     <div id="remove-modal" class="modal hide" tabindex="-1" role="dialog">
         <div class="modal-header">
             <button type="button" class="close" data-dismiss="modal">×</button>
-            <h4>Remove From Folder</h4>
+            <h4>Remove from folder</h4>
         </div>
         <div class="modal-body">
             ## Note: the following text should be consistent with the text in
