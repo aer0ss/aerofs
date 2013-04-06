@@ -34,7 +34,7 @@ def log_in_user(request, login, creds, stay_signed_in):
         log.debug("Extending session.")
         sp.extend_session()
 
-    request.session['SPCookie'] = con._cookies
+    request.session['SPSession'] = con._session
     request.session['username'] = login
 
     reload_auth_level(request)

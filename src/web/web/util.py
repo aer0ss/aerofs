@@ -103,11 +103,11 @@ def parse_rpc_error_exception(request, e):
 def get_rpc_stub(request):
     """
     Returns an SPServiceRPCStub suitable for making RPC calls. Expects
-    request.session['SPCookie'] to be set (should be by login)
+    request.session['SPSession'] to be set (should be by login)
     """
     settings = request.registry.settings
-    if 'SPCookie' in request.session: # attempt session recovery
-        con = SyncConnectionService(settings['sp.url'], settings['sp.version'], request.session['SPCookie'])
+    if 'SPSession' in request.session: # attempt session recovery
+        con = SyncConnectionService(settings['sp.url'], settings['sp.version'], request.session['SPSession'])
     else:
         con = SyncConnectionService(settings['sp.url'], settings['sp.version'])
     return SPServiceRpcStub(con)
