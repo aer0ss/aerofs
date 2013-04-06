@@ -51,7 +51,7 @@ public class VerkehrPuller implements Runnable
              updateDatabaseUsingVerkehr();
              l.debug("verkehr pull: done");
          } catch(Exception e) {
-             l.error("puller error: " + Util.e(e));
+             l.error("puller error: " + e);
              _trans.cleanUp();
          }
     }

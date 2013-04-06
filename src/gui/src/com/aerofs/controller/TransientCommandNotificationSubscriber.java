@@ -6,17 +6,16 @@ package com.aerofs.controller;
 
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
-import com.aerofs.lib.Param;
+import com.aerofs.base.id.UserID;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.cfg.CfgKeyManagersProvider;
-import com.aerofs.base.id.UserID;
 import com.aerofs.lib.ritual.RitualBlockingClient;
 import com.aerofs.lib.ritual.RitualClientFactory;
-import com.aerofs.proto.Cmd.TransientCommands;
 import com.aerofs.proto.Cmd.TransientCommand;
+import com.aerofs.proto.Cmd.TransientCommands;
 import com.aerofs.sv.client.SVClient;
 import com.aerofs.ui.UI;
 import com.aerofs.verkehr.client.lib.IConnectionListener;
@@ -24,13 +23,14 @@ import com.aerofs.verkehr.client.lib.subscriber.ClientFactory;
 import com.aerofs.verkehr.client.lib.subscriber.ISubscriptionListener;
 import com.aerofs.verkehr.client.lib.subscriber.VerkehrSubscriber;
 import com.google.protobuf.InvalidProtocolBufferException;
-import org.slf4j.Logger;
 import org.jboss.netty.util.HashedWheelTimer;
+import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 import java.sql.SQLException;
 import java.util.Iterator;
 
+import static com.aerofs.base.BaseParam.VerkehrTopics.CMD_CHANNEL_TOPIC_PREFIX;
 import static com.aerofs.lib.Param.Verkehr.VERKEHR_HOST;
 import static com.aerofs.lib.Param.Verkehr.VERKEHR_PORT;
 import static com.aerofs.lib.Param.Verkehr.VERKEHR_RETRY_INTERVAL;
@@ -55,7 +55,7 @@ public final class TransientCommandNotificationSubscriber
                 VERKEHR_RETRY_INTERVAL, Cfg.db().getLong(Key.TIMEOUT), new HashedWheelTimer(),
                 listener, listener, sameThreadExecutor());
 
-        this._topic = Param.CMD_CHANNEL_TOPIC_PREFIX + userId.getString();
+        this._topic = CMD_CHANNEL_TOPIC_PREFIX + userId.getString();
         this._subscriber = factory.create();
     }
 

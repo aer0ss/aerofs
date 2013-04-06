@@ -8,10 +8,9 @@
       <sourceFolder url="file://$MODULE_DIR$/test" isTestSource="true" />
     </content>
     <orderEntry type="inheritedJdk" />
-    <orderEntry type="module" module-name="lib" />
     <orderEntry type="module" module-name="libservlet" />
-    <orderEntry type="library" name="dropwizard" level="project" />
     <orderEntry type="library" name="json-simple" level="project" />
+    <orderEntry type="library" name="dropwizard" level="project" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
 </module>

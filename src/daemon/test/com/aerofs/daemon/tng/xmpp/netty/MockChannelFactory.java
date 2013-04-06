@@ -24,6 +24,10 @@ public class MockChannelFactory implements ClientSocketChannelFactory
     }
 
     @Override
+    public void shutdown()
+    {}
+
+    @Override
     public void releaseExternalResources()
     {}
 

@@ -5,10 +5,9 @@ import com.aerofs.daemon.core.CoreQueue;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.verkehr.AbstractVerkehrListener;
 import com.aerofs.daemon.core.verkehr.VerkehrNotificationSubscriber;
+import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.sched.ExponentialRetry;
-import com.aerofs.lib.Param;
-import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.proto.SpNotifications.PBACLNotification;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
@@ -16,6 +15,8 @@ import org.slf4j.Logger;
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.concurrent.Callable;
+
+import static com.aerofs.base.BaseParam.VerkehrTopics.ACL_CHANNEL_TOPIC_PREFIX;
 
 public final class ACLNotificationSubscriber
 {
@@ -29,7 +30,7 @@ public final class ACLNotificationSubscriber
     public ACLNotificationSubscriber(VerkehrNotificationSubscriber subscriber,
             CfgLocalUser localUser, CoreQueue q, CoreScheduler sched, ACLSynchronizer aclsync)
     {
-        _topic = Param.ACL_CHANNEL_TOPIC_PREFIX + localUser.get().getString();
+        _topic = ACL_CHANNEL_TOPIC_PREFIX + localUser.get().getString();
         _subscriber = subscriber;
         _listener = new VerkehrListener(q, new ExponentialRetry(sched), aclsync);
     }

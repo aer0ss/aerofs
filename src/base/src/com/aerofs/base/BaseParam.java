@@ -112,4 +112,12 @@ public class BaseParam
         public static final byte[] MAGIC_BYTES = "MOBL".getBytes();
         public static final int VERSION_NUMBER = 3;
     }
+
+    public static class VerkehrTopics
+    {
+        public static final String TOPIC_SEPARATOR = "/";
+        public static final String CMD_CHANNEL_TOPIC_PREFIX = "cmd" + TOPIC_SEPARATOR;
+        public static final String ACL_CHANNEL_TOPIC_PREFIX = "acl" + TOPIC_SEPARATOR;
+        public static final String SSS_CHANNEL_TOPIC_PREFIX = "sss" + TOPIC_SEPARATOR;
+    }
 }

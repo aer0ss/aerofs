@@ -6,21 +6,23 @@ package com.aerofs.devman.server;
 
 import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.id.DID;
-import com.aerofs.lib.Param;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONValue;
-import org.json.simple.JSONObject;
 import com.google.common.collect.Lists;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.JSONValue;
 
 import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.Reader;
 import java.net.InetAddress;
 import java.net.URL;
-import java.io.InputStream;
-import java.io.IOException;
-import java.io.Reader;
 import java.nio.charset.Charset;
 import java.util.Collection;
+
+import static com.aerofs.base.BaseParam.VerkehrTopics.SSS_CHANNEL_TOPIC_PREFIX;
+import static com.aerofs.base.BaseParam.VerkehrTopics.TOPIC_SEPARATOR;
 
 /**
  * Client for the vekrehr REST API.
@@ -97,8 +99,8 @@ public class VerkehrWebClient
             for (int j = 0; j < topics.size(); j++) {
                 String topic = (String) topics.get(j);
 
-                if (topic.startsWith(Param.SSS_CHANNEL_TOPIC_PREFIX)) {
-                    String[] split = topic.split(Param.TOPIC_SEPARATOR);
+                if (topic.startsWith(SSS_CHANNEL_TOPIC_PREFIX)) {
+                    String[] split = topic.split(TOPIC_SEPARATOR);
 
                     if (split.length != 2) {
                         throw new ExFormatError();

@@ -6,6 +6,8 @@ package com.aerofs.controller;
 
 import com.aerofs.base.BaseParam.SP;
 import com.aerofs.base.Loggers;
+import com.aerofs.base.ex.ExBadArgs;
+import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.SID;
 import com.aerofs.lib.RootAnchorUtil;
@@ -18,14 +20,13 @@ import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.cfg.CfgKeyManagersProvider;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
-import com.aerofs.base.ex.ExBadArgs;
-import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.lib.ritual.RitualBlockingClient;
 import com.aerofs.lib.ritual.RitualClientFactory;
 import com.aerofs.lib.rocklog.EventType;
 import com.aerofs.lib.rocklog.RockLog;
 import com.aerofs.lib.sched.ExponentialRetry;
+import com.aerofs.lib.sched.IScheduler;
 import com.aerofs.proto.Cmd.Command;
 import com.aerofs.proto.Sp.AckCommandQueueHeadReply;
 import com.aerofs.proto.Sp.GetCommandQueueHeadReply;
@@ -39,16 +40,17 @@ import com.aerofs.verkehr.client.lib.subscriber.ClientFactory;
 import com.aerofs.verkehr.client.lib.subscriber.ISubscriptionListener;
 import com.aerofs.verkehr.client.lib.subscriber.VerkehrSubscriber;
 import com.google.protobuf.InvalidProtocolBufferException;
-import org.slf4j.Logger;
 import org.jboss.netty.util.HashedWheelTimer;
+import org.slf4j.Logger;
 
+import javax.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
-import javax.annotation.Nullable;
 import java.sql.SQLException;
 import java.util.Map.Entry;
 import java.util.concurrent.Callable;
 
+import static com.aerofs.base.BaseParam.VerkehrTopics.CMD_CHANNEL_TOPIC_PREFIX;
 import static com.aerofs.lib.Param.Verkehr.VERKEHR_HOST;
 import static com.aerofs.lib.Param.Verkehr.VERKEHR_PORT;
 import static com.aerofs.lib.Param.Verkehr.VERKEHR_RETRY_INTERVAL;
@@ -107,7 +109,7 @@ public final class CommandNotificationSubscriber
                 VERKEHR_RETRY_INTERVAL, Cfg.db().getLong(Key.TIMEOUT), new HashedWheelTimer(),
                 _listener, _listener, sameThreadExecutor());
 
-        this._topic = Param.CMD_CHANNEL_TOPIC_PREFIX + localDevice.toStringFormal();
+        this._topic = CMD_CHANNEL_TOPIC_PREFIX + localDevice.toStringFormal();
         this._subscriber = factory.create();
     }
 

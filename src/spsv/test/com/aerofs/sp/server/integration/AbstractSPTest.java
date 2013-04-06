@@ -5,36 +5,36 @@
 package com.aerofs.sp.server.integration;
 
 import com.aerofs.base.BaseSecUtil;
-import com.aerofs.base.id.DID;
-import com.aerofs.lib.FullName;
-import com.aerofs.lib.Param;
-import com.aerofs.lib.SecUtil;
 import com.aerofs.base.async.UncancellableFuture;
 import com.aerofs.base.ex.ExBadCredential;
+import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UserID;
+import com.aerofs.lib.FullName;
+import com.aerofs.lib.SecUtil;
+import com.aerofs.proto.Cmd.Command;
 import com.aerofs.servlets.MockSessionUser;
 import com.aerofs.servlets.SecUtilHelper;
+import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue;
 import com.aerofs.servlets.lib.ssl.CertificateAuthenticator;
 import com.aerofs.sp.server.AbstractTestWithDatabase;
-import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue;
 import com.aerofs.sp.server.PasswordManagement;
 import com.aerofs.sp.server.SPService;
 import com.aerofs.sp.server.email.DeviceRegistrationEmailer;
 import com.aerofs.sp.server.email.PasswordResetEmailer;
 import com.aerofs.sp.server.email.RequestToSignUpEmailer;
 import com.aerofs.sp.server.lib.EmailSubscriptionDatabase;
+import com.aerofs.sp.server.lib.OrganizationDatabase;
 import com.aerofs.sp.server.lib.OrganizationInvitationDatabase;
 import com.aerofs.sp.server.lib.SPDatabase;
 import com.aerofs.sp.server.lib.SharedFolder;
 import com.aerofs.sp.server.lib.SharedFolderDatabase;
+import com.aerofs.sp.server.lib.UserDatabase;
 import com.aerofs.sp.server.lib.cert.Certificate;
 import com.aerofs.sp.server.lib.cert.CertificateDatabase;
 import com.aerofs.sp.server.lib.cert.CertificateGenerator;
 import com.aerofs.sp.server.lib.cert.CertificateGenerator.CertificationResult;
 import com.aerofs.sp.server.lib.device.Device;
 import com.aerofs.sp.server.lib.device.DeviceDatabase;
-import com.aerofs.sp.server.lib.OrganizationDatabase;
-import com.aerofs.sp.server.lib.UserDatabase;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.organization.OrganizationInvitation;
 import com.aerofs.sp.server.lib.user.User;
@@ -43,9 +43,8 @@ import com.aerofs.sp.server.session.SPActiveUserSessionTracker;
 import com.aerofs.sp.server.session.SPSessionInvalidator;
 import com.aerofs.verkehr.client.lib.admin.VerkehrAdmin;
 import com.aerofs.verkehr.client.lib.publisher.VerkehrPublisher;
-import com.aerofs.proto.Cmd.Command;
-import com.beust.jcommander.internal.Sets;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import com.google.protobuf.ByteString;
 import org.junit.Before;
 import org.mockito.InjectMocks;
@@ -60,9 +59,10 @@ import java.security.GeneralSecurityException;
 import java.security.KeyPair;
 import java.sql.Timestamp;
 import java.util.Arrays;
-import java.util.Set;
 import java.util.List;
+import java.util.Set;
 
+import static com.aerofs.base.BaseParam.VerkehrTopics.ACL_CHANNEL_TOPIC_PREFIX;
 import static junit.framework.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
@@ -310,7 +310,7 @@ public class AbstractSPTest extends AbstractTestWithDatabase
     protected void assertVerkehrPublishContains(User ... users)
     {
         for (User user : users) {
-            if (!verkehrPublished.contains(Param.ACL_CHANNEL_TOPIC_PREFIX + user.id().getString())) {
+            if (!verkehrPublished.contains(ACL_CHANNEL_TOPIC_PREFIX + user.id().getString())) {
                 fail("verkehr publish doesn't contain " + user + ". actual: " + verkehrPublished);
             }
         }

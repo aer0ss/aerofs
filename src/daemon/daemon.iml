@@ -8,7 +8,6 @@
       <sourceFolder url="file://$MODULE_DIR$/test" isTestSource="true" />
     </content>
     <orderEntry type="inheritedJdk" />
-    <orderEntry type="module" module-name="base" exported="" />
     <orderEntry type="module" module-name="lib" />
     <orderEntry type="module" module-name="libjingle.binding" />
     <orderEntry type="module" module-name="zephyr" />
@@ -21,8 +20,6 @@
     <orderEntry type="library" name="metrics" level="project" />
     <orderEntry type="library" scope="TEST" name="junit" level="project" />
     <orderEntry type="library" scope="TEST" name="powermockito" level="project" />
-    <orderEntry type="library" name="smack" level="project" />
-    <orderEntry type="library" name="smackx" level="project" />
     <orderEntry type="library" scope="TEST" name="junit" level="project" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
