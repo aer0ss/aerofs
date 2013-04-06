@@ -513,9 +513,9 @@ public abstract class Updater
                     final long duration = 60;
                     _skipUpdate = !((GUI)UI.get()).ask(MessageType.INFO,
                             S.IMPORTANT_UPDATE_DOWNLOADED + " Apply it now?\n" +
-                            "Skipping this version may cause " + L.PRODUCT +
+                            "Skipping this version may cause " + L.product() +
                             " to stop syncing with other computers.\n\n" +
-                            L.PRODUCT + " is going to update automatically" +
+                            L.product() + " is going to update automatically" +
                             " in %d seconds.",
                             "Apply Update", "Not Now (files may stop syncing)",
                             duration);
@@ -536,7 +536,7 @@ public abstract class Updater
     private void execUpdate(String newVersion, boolean hasPermissions)
     {
         if (!UI.isGUI()) {
-            UI.get().show(MessageType.WARN, L.PRODUCT +
+            UI.get().show(MessageType.WARN, L.product() +
                                             " may shut down to apply an update. A new process will" +
                                             " be started at the background after the update.");
         }

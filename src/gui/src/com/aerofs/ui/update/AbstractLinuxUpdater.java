@@ -37,7 +37,7 @@ abstract class AbstractLinuxUpdater extends Updater
             throws IOException
     {
         final String appRoot = new File(AppRoot.abs()).getAbsolutePath();
-        InjectableFile upFile = s_factFile.createTempFile(L.get().productUnixName() +
+        InjectableFile upFile = s_factFile.createTempFile(L.productUnixName() +
                                                   "update" + newVer, "$$$");
 
         s_factFile.create(Util.join(appRoot, "updater.sh")).copy(upFile, false, false);
@@ -60,10 +60,10 @@ abstract class AbstractLinuxUpdater extends Updater
         } else {
             // the updater has no permissions to write approot
             String text = "An Update has been downloaded" +
-                    " for your " + L.PRODUCT + ", but you do not have sufficient" +
+                    " for your " + L.product() + ", but you do not have sufficient" +
                     " permission to apply it. Please *recursively* grant" +
                     " yourself write permission to " + appRoot + " at your" +
-                    " earliest convenience, and " + L.PRODUCT + " will" +
+                    " earliest convenience, and " + L.product() + " will" +
                     " try again later. Files might stop syncing without the update.";
 
             try {
@@ -78,16 +78,16 @@ abstract class AbstractLinuxUpdater extends Updater
 
                     String deviceName = sp.getUserPreferences(Cfg.did().toPB()).getDeviceName();
 
-                    final String subject = "[Action Required] Update " + L.PRODUCT +
+                    final String subject = "[Action Required] Update " + L.product() +
                                 " on " + Util.quote(deviceName);
 
                     final String body = "Hello,\n\n" + text +
                                         "\n\n" +
                                         "Best,\n" +
-                                        "The " + L.PRODUCT +
+                                        "The " + L.product() +
                                         " Support Team\n\n" +
                                         "P.S. This is an auto-generated email by your own " +
-                                        L.PRODUCT + " Client :)";
+                                        L.product() + " Client :)";
                     sp.emailUser(subject, body);
                 } catch (Exception e2) {
                     l.warn("can't send email. ignored: " + Util.e(e));

@@ -34,7 +34,7 @@ public class SPParam
     public static final long VERKEHR_ACK_TIMEOUT = 1 * C.SEC; // milliseconds
 
     // Email related constants.
-    public static final String SP_EMAIL_NAME = L.PRODUCT;
+    public static final String SP_EMAIL_NAME = L.product();
     public static final String SP_NOTIFICATION_SENDER = "sp@aerofs.com";
     public static final String SP_NOTIFICATION_RECEIVER = "team@aerofs.com";
 

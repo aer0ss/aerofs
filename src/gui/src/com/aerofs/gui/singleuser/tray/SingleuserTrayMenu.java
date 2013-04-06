@@ -203,7 +203,7 @@ public class SingleuserTrayMenu implements ITrayMenu
 
         _trayMenuPopulator.addMenuSeparator();
 
-        _trayMenuPopulator.addExitMenuItem(L.PRODUCT);
+        _trayMenuPopulator.addExitMenuItem(L.product());
     }
 
     private void addConflictsMenuItem(int conflictCount)
@@ -226,7 +226,7 @@ public class SingleuserTrayMenu implements ITrayMenu
 
     private void addOpenFolderMenuItem()
     {
-        _trayMenuPopulator.addMenuItem("Open " + L.PRODUCT + " Folder",
+        _trayMenuPopulator.addMenuItem("Open " + L.product() + " Folder",
                 new AbstractListener(CLICKED_TASKBAR_OPEN_AEROFS)
                 {
                     @Override

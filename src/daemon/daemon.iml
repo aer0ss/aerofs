@@ -18,6 +18,7 @@
     <orderEntry type="library" name="log4j" level="project" />
     <orderEntry type="library" name="slf4j-log4j12" level="project" />
     <orderEntry type="library" name="metrics" level="project" />
+    <orderEntry type="library" name="arrow-config" level="project" />
     <orderEntry type="library" scope="TEST" name="junit" level="project" />
     <orderEntry type="library" scope="TEST" name="powermockito" level="project" />
     <orderEntry type="library" scope="TEST" name="junit" level="project" />

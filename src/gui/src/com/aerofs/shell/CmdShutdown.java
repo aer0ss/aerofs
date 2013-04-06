@@ -23,7 +23,7 @@ public class CmdShutdown implements IShellCommand<ShProgram>
     @Override
     public String getDescription()
     {
-        return "shutdown " + L.PRODUCT + " and exit the current process";
+        return "shutdown " + L.product() + " and exit the current process";
     }
 
     @Override

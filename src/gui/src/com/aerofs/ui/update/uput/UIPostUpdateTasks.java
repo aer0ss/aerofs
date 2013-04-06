@@ -69,21 +69,21 @@ public class UIPostUpdateTasks
             for (String msg : msgs) sb.append(msg + "\n\n");
 
             UI.get().show(MessageType.WARN,
-                    "Important message from " + L.PRODUCT + ":\n\n" + sb);
+                    "Important message from " + L.product() + ":\n\n" + sb);
         }
 
         if (suggestReboot) {
             UI.get().show(MessageType.INFO,
                     "A reboot of this computer is highly " +
-                    "recommended for the latest " + L.PRODUCT +
+                    "recommended for the latest " + L.product() +
                     " update to work properly.");
         }
 
         if (shutdown) {
             UI.dm().stopIgnoreException();
             UI.get().show(MessageType.INFO,
-                    L.PRODUCT + " will have to shutdown to apply an update." +
-                    " Please restart " + L.PRODUCT + " manually. Sorry" +
+                    L.product() + " will have to shutdown to apply an update." +
+                    " Please restart " + L.product() + " manually. Sorry" +
                     " for the inconvenience.");
         }
 

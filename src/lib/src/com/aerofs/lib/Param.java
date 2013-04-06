@@ -145,8 +145,8 @@ public class Param extends BaseParam
 
     public static class Verkehr
     {
-        public static final String VERKEHR_HOST = L.get().isStaging() ? "staging.aerofs.com" : "verkehr.aerofs.com";
-        public static final short VERKEHR_PORT = (short) (L.get().isStaging() ? 80 : 443);
+        public static final String VERKEHR_HOST = L.isStaging() ? "staging.aerofs.com" : "verkehr.aerofs.com";
+        public static final short VERKEHR_PORT = (short) (L.isStaging() ? 80 : 443);
         public static final long VERKEHR_RETRY_INTERVAL = 5 * C.SEC;
     }
 
@@ -160,7 +160,7 @@ public class Param extends BaseParam
         static {
             URL url;
             try {
-                url = new URL(L.get().isStaging() ?
+                url = new URL(L.isStaging() ?
                         "https://staging.aerofs.com/syncstat/syncstat" :
                         "https://sss.aerofs.com/syncstat");
             } catch (MalformedURLException e) {

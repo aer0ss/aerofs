@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.sql.SQLException;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.base.id.SID;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import org.slf4j.Logger;
 

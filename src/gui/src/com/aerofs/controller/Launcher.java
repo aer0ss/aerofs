@@ -75,7 +75,7 @@ class Launcher
             }
         } catch (Exception e) {
             String msg = e.getLocalizedMessage() != null ? e.getLocalizedMessage()
-                    : "Sorry, an internal error happened, preventing " + L.PRODUCT + " to launch";
+                    : "Sorry, an internal error happened, preventing " + L.product() + " to launch";
             reply.setStatus(Status.NOT_LAUNCHABLE);
             reply.setErrorMessage(msg);
             if (!(e instanceof ExAlreadyRunning)) {
@@ -109,11 +109,11 @@ class Launcher
         // Check that OS and arch are supported
         String msg = null;
         if (OSUtil.get() == null) {
-            msg = "Sorry, " + L.PRODUCT + " has yet to support " + OSUtil.getOSName() + ".";
+            msg = "Sorry, " + L.product() + " has yet to support " + OSUtil.getOSName() + ".";
         }
 
         if (OSUtil.getOSArch() == null) {
-            msg = "Sorry, " + L.PRODUCT + " has yet to support your computer's architecture.";
+            msg = "Sorry, " + L.product() + " has yet to support your computer's architecture.";
         }
 
         if (msg != null) {
@@ -129,7 +129,7 @@ class Launcher
         //
         if (OSUtil.isOSX() && AppRoot.abs().startsWith("/Volumes/") &&
                 AppRoot.abs().contains("Installer")) {
-            throw new ExLaunchAborted("Please copy " + L.PRODUCT +
+            throw new ExLaunchAborted("Please copy " + L.product() +
                     " into your Applications folder and run it from there.");
         }
     }
@@ -215,11 +215,11 @@ class Launcher
         // After an update, verify that all checksums match
         String failedFile = PostUpdate.verifyChecksum();
         if (failedFile != null) {
-            String msg = L.PRODUCT + " couldn't launch because some program files are corrupted." +
+            String msg = L.product() + " couldn't launch because some program files are corrupted." +
                     " Please " +
                     (UI.isGUI() ? "click " + IDialogConstants.OK_LABEL : "go to " +
                             WWW.DOWNLOAD_URL) +
-                    " to download and install " + L.PRODUCT + " again. " +
+                    " to download and install " + L.product() + " again. " +
                     "All your data will be intact during re-installation.";
 
             SVClient.logSendDefectAsync(true, msg, new Exception(failedFile + " chksum failed" +

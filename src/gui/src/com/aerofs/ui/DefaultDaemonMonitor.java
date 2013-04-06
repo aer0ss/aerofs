@@ -91,12 +91,12 @@ class DefaultDaemonMonitor implements IDaemonMonitor
                                 " the correct bucket name and AWS access and secret key.");
                     } else if (exitCode == S3_JAVA_KEY_LENGTH_MAYBE_TOO_LIMITED.getNumber()) {
                         throw new ExUIMessage(
-                                L.PRODUCT + " couldn't launch due to issues with your " +
+                                L.product() + " couldn't launch due to issues with your " +
                                 S.S3_ENCRYPTION_PASSWORD + ". If your Java runtime" +
                                 " is provided by Oracle with limited" +
                                 " crypto key strength, please download the Unlimited Strength" +
                                 " Jurisdiction Policy Files at http://bit.ly/UlsKO6. " +
-                                L.PRODUCT + " requires full strength AES-256 for a better margin" +
+                                L.product() + " requires full strength AES-256 for a better margin" +
                                 " of safety. Contact us at " + WWW.SUPPORT_EMAIL_ADDRESS +
                                 " for more questions.");
                     } else if (OSUtil.isWindows() && exitCode == WINDOWS_SHUTTING_DOWN) {
@@ -121,9 +121,9 @@ class DefaultDaemonMonitor implements IDaemonMonitor
                         // TODO: legacy migration code, should be removed when we think all users
                         // have updated past the DPUT in question (or decide not to support upgrade
                         // from such fossilized clients)
-                        throw new ExUIMessage(L.PRODUCT + " couldn't launch because it couldn't " +
+                        throw new ExUIMessage(L.product() + " couldn't launch because it couldn't " +
                                 "write to: \"" + Cfg.absDefaultAuxRoot() + "\"\n\nPlease make sure that " +
-                                L.PRODUCT + " has the appropriate permissions to write to that " +
+                                L.product() + " has the appropriate permissions to write to that " +
                                 "folder.");
                     } else {
                         throw new IOException(getMessage(exitCode));

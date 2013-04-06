@@ -602,7 +602,7 @@ public class ReceiveAndApplyUpdate
             // inconsistent with other peers.
             //
             l.debug("folder->anchor conversion detected: " + soidLocal + "->" + soidRemote);
-            String newName = L.PRODUCT + " temporary folder - do not remove";
+            String newName = L.product() + " temporary folder - do not remove";
 
             while (_ds.resolveNullable_(pParent.append(newName)) != null) {
                 newName = Util.nextFileName(newName);

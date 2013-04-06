@@ -84,21 +84,21 @@ public class DlgTutorial extends AeroFSDialog
 
     private StepData[] _steps = {
             // Step 1
-            new StepData("Welcome to " + L.PRODUCT + "!",
-                    L.PRODUCT + " creates a special folder on your computer. All the files you" +
+            new StepData("Welcome to " + L.product() + "!",
+                    L.product() + " creates a special folder on your computer. All the files you" +
                             " put there will be synced with all your other computers.",
                     "tutorial1.png", null, null),
 
             // Step 2
-            new StepData("The " + L.PRODUCT + " Icon",
-                    "The blue arrow on your screen shows the location of the " + L.PRODUCT + " icon." +
-                            " Click the icon to open your " + L.PRODUCT + " folder and manage your preferences.",
+            new StepData("The " + L.product() + " Icon",
+                    "The blue arrow on your screen shows the location of the " + L.product() + " icon." +
+                            " Click the icon to open your " + L.product() + " folder and manage your preferences.",
                     "tutorial2.png", _showArrow, _closeArrow),
 
             // Step 3
             new StepData("Share folders with people you know",
-                    "You can share any folder in " + L.PRODUCT + " with friends or colleagues, " +
-                            "even if they're not using " + L.PRODUCT + " yet.",
+                    "You can share any folder in " + L.product() + " with friends or colleagues, " +
+                            "even if they're not using " + L.product() + " yet.",
                     "tutorial3.png", null, null)
 
             // Step 4
@@ -107,7 +107,7 @@ public class DlgTutorial extends AeroFSDialog
 
     public DlgTutorial(Shell parentShell)
     {
-        super(parentShell, L.PRODUCT, false, false);
+        super(parentShell, L.product(), false, false);
     }
 
     private void setStep(int step)

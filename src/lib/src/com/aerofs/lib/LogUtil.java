@@ -218,7 +218,7 @@ public abstract class LogUtil
         System.setProperty(PROP_RTROOT, rtRoot);
         System.setProperty(PROP_APP, app);
 
-        if (L.get().isStaging()) {
+        if (L.isStaging()) {
             ClassLoader cl = Thread.currentThread().getContextClassLoader();
             URL url = cl.getResource(LOG4J_PROPERTIES_FILE);
             if (url != null) {
@@ -231,12 +231,12 @@ public abstract class LogUtil
             Logger.getRootLogger().addAppender(new NullAppender());
         } else {
             setupLog4JLayoutAndAppenders(rtRoot + File.separator + app + Param.LOG_FILE_EXT,
-                    L.get().isStaging(), true);
+                    L.isStaging(), true);
         }
 
         String strDate = new SimpleDateFormat("yyyyMMdd").format(new Date());
         l.debug(app + " ========================================================\n" +
-            Cfg.ver() + (L.get().isStaging() ? " staging " : " ") +
+            Cfg.ver() + (L.isStaging() ? " staging " : " ") +
             strDate + " " + AppRoot.abs() + " " + new File(rtRoot).getAbsolutePath());
 
         if (Cfg.useProfiler()) {

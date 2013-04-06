@@ -68,8 +68,8 @@ class Setup
      */
     String getDefaultAnchorRoot()
     {
-        String parent = L.get().isStaging() ? _rtRoot : OSUtil.get().getDefaultRootAnchorParent();
-        return new File(parent, L.get().rootAnchorName()).getAbsolutePath();
+        String parent = L.isStaging() ? _rtRoot : OSUtil.get().getDefaultRootAnchorParent();
+        return new File(parent, L.rootAnchorName()).getAbsolutePath();
     }
 
     /**
@@ -288,7 +288,7 @@ class Setup
         // Cleanup aux root, if present, create if missing
         // NB: Linked TeamServer does not need a default aux root as each store is treated as an
         // external root
-        if (!(L.get().isMultiuser() && Cfg.storageType() == StorageType.LINKED)) {
+        if (!(L.isMultiuser() && Cfg.storageType() == StorageType.LINKED)) {
             File aux = RootAnchorUtil.cleanAuxRootForPath(Cfg.absDefaultRootAnchor(), Cfg.rootSID());
             FileUtil.ensureDirExists(aux);
             OSUtil.get().markHiddenSystemFile(aux.getAbsolutePath());
@@ -328,7 +328,7 @@ class Setup
         db.recreateSchema_();
         db.set(map);
 
-        if (storageType == StorageType.LINKED && !L.get().isMultiuser()) {
+        if (storageType == StorageType.LINKED && !L.isMultiuser()) {
             // make sure the default root anchor is correctly set in the db
             // NB: this does not remove any existing external roots from the db
             SID sid = SID.rootSID(userId);
@@ -376,7 +376,7 @@ class Setup
     private static int findPortBase()
             throws IOException
     {
-        int portbase = L.get().defaultPortbase();
+        int portbase = L.defaultPortbase();
 
         // try 100 times only
         for (int i = 0; i < 100; i++) {

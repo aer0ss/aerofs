@@ -37,6 +37,8 @@ import java.util.Map.Entry;
 import java.util.Scanner;
 
 /**
+ * @deprecated: Please use ArrowConfig instead.
+ *
  * This class is unfriendly to dependency injection and should be eventually removed. Use Cfg*
  * classes instead.
  */
@@ -124,7 +126,7 @@ public class Cfg
         _storageType = StorageType.fromString(_db.getNullable(Key.STORAGE_TYPE));
 
         if (storageType() == StorageType.LINKED) {
-            if (!L.get().isMultiuser()) {
+            if (!L.isMultiuser()) {
                 // upgrade schema if needed
                 // NB: ideally this would have been done in a DPUT unfortunately Cfg is loaded before
                 // DPUT are run so this is not a viable option...
@@ -269,7 +271,7 @@ public class Cfg
 
     public static StorageType defaultStorageType()
     {
-        return L.get().isMultiuser()
+        return L.isMultiuser()
                 ? (_db.getNullable(Key.S3_BUCKET_ID) != null
                            ? StorageType.S3
                            : StorageType.LOCAL)
@@ -373,7 +375,7 @@ public class Cfg
 
     public static boolean useArchive()
     {
-        return !isSP() && !L.get().isStaging();
+        return !isSP() && !L.isStaging();
     }
 
     /**

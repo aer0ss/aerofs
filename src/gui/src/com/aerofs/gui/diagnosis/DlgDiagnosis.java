@@ -53,7 +53,7 @@ public class DlgDiagnosis extends AeroFSDialog
         gd_lblNewLabel_2.widthHint = 357;
         lblNewLabel_2.setLayoutData(gd_lblNewLabel_2);
         lblNewLabel_2.setText("Files may not be synced if they are in conflict or not supported by " +
-                L.PRODUCT + ". Please review these files below.");
+                L.product() + ". Please review these files below.");
 
         Label lblConflictFiles = new Label(shell, SWT.NONE);
         lblConflictFiles.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, false, 4, 1));

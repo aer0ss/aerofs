@@ -185,7 +185,7 @@ public class ACLSynchronizer
          * TODO: sanitize SP db around syncdet runs and remove this nasty hack
          */
         File noJoinFlagFile = new File(Cfg.absRTRoot(), "nojoin");
-        boolean noAutoJoin = noJoinFlagFile.exists() && !L.get().isMultiuser();
+        boolean noAutoJoin = noJoinFlagFile.exists() && !L.isMultiuser();
 
         Trans t = _tm.begin_();
         try {

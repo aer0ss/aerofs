@@ -28,7 +28,7 @@ public class SPClientFactory
 
     static IURLConnectionConfigurator getDefaultConfigurator()
     {
-        return L.get().isMultiuser() ?
+        return L.isMultiuser() ?
                 SSLURLConnectionConfigurator.SSL_URL_CONNECTION_CONFIGURATOR :
                 NullURLConnectionConfigurator.NULL_URL_CONNECTION_CONFIGURATOR;
     }

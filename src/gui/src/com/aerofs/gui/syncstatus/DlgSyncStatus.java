@@ -80,7 +80,7 @@ public class DlgSyncStatus extends AeroFSDialog
         shell.setSize(300, 250);
         shell.setLayout(grid);
 
-        addLabelPreImage(_path.isEmpty() ? L.get().rootAnchorName() : _path.last(),
+        addLabelPreImage(_path.isEmpty() ? L.rootAnchorName() : _path.last(),
                 getPathIcon(_path), shell);
 
         ScrolledComposite sc = new ScrolledComposite(shell, SWT.V_SCROLL | SWT.BORDER);

@@ -109,7 +109,7 @@ public class OA
     public String toString()
     {
         return "s " + _soid + " p " + _parent + " n "
-                + (L.get().isStaging() ? _name : Util.crc32(_name))
+                + (L.isStaging() ? _name : Util.crc32(_name))
                 + " f " + String.format("%08X", _flags) + " fid " + _fid + " cas " + _cas;
     }
 

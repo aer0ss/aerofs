@@ -146,7 +146,7 @@ public class RootAnchorPoller
                 UI.rnc().resume(); // restart ritual notification client
             } catch (Exception e1) {
                 GUI.get().show(MessageType.ERROR,
-                        "An error occured while starting up " + L.PRODUCT +
+                        "An error occured while starting up " + L.product() +
                                 " " + UIUtil.e2msg(e1));
                 l.warn(Util.e(e1));
             }

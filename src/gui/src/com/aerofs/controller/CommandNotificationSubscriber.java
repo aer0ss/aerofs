@@ -26,7 +26,6 @@ import com.aerofs.lib.ritual.RitualClientFactory;
 import com.aerofs.lib.rocklog.EventType;
 import com.aerofs.lib.rocklog.RockLog;
 import com.aerofs.lib.sched.ExponentialRetry;
-import com.aerofs.lib.sched.IScheduler;
 import com.aerofs.proto.Cmd.Command;
 import com.aerofs.proto.Sp.AckCommandQueueHeadReply;
 import com.aerofs.proto.Sp.GetCommandQueueHeadReply;

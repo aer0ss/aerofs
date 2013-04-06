@@ -103,7 +103,7 @@ public class MultiuserTrayMenu implements ITrayMenu
         }
 
         createHelpMenu();
-        _populator.addExitMenuItem(L.PRODUCT);
+        _populator.addExitMenuItem(L.product());
     }
 
     public void createHelpMenu()

@@ -461,7 +461,7 @@ public class DlgHistory extends AeroFSDialog
             _deleteBtn.setEnabled(true);
             if (index == null) {
                 _statusLabel.setText(
-                        L.PRODUCT + " keeps previous versions of a file when receiving new" +
+                        L.product() + " keeps previous versions of a file when receiving new" +
                                 " updates from remote devices. When disk space runs low, old versions may" +
                                 " be deleted to save space.\n\n" +
                                 "Select a file in the left column to view all the versions stored on this" +

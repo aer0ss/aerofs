@@ -31,8 +31,8 @@ public class OSUtilOSX extends AbstractOSUtilLinuxOSX
     @Override
     public final String getDefaultRTRoot()
     {
-        String path = System.getenv("HOME") + "/Library/Application Support/" + L.PRODUCT;
-        if (L.get().isStaging()) path += ".staging";
+        String path = System.getenv("HOME") + "/Library/Application Support/" + L.product();
+        if (L.isStaging()) path += ".staging";
         return path;
     }
 
@@ -211,7 +211,7 @@ public class OSUtilOSX extends AbstractOSUtilLinuxOSX
                 ArrayList<String> commands = new ArrayList<String>();
                 commands.add("mkdir -p " + destination.getPath());
                 commands.add("chown $USER " + destination.getPath());
-                runWithAdminPrivileges(L.PRODUCT + " needs your password to install the "
+                runWithAdminPrivileges(L.product() + " needs your password to install the "
                         + getShellExtensionName() + ".", commands);
             } else {
                 throw new SecurityException("Needs admin privileges");

@@ -76,7 +76,7 @@ public class MultiuserCompPreferences extends Composite
                     GUI.get().show(getShell(), MessageType.INFO, "You are enabling filesystem " +
                             "view of your files. You will be able to view files stored under " +
                             exportPath + "\n\nIt may take a while for all files to appear, and " +
-                            L.PRODUCT + " may seem unresponsive during that time.");
+                            L.product() + " may seem unresponsive during that time.");
                     Cfg.db().set(Key.AUTO_EXPORT_FOLDER, exportPath);
                 } else {
                     Cfg.db().set(Key.AUTO_EXPORT_FOLDER, null);

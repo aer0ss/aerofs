@@ -12,6 +12,6 @@ public class ExNotSetup extends Exception
     @Override
     public String getMessage()
     {
-        return L.PRODUCT + " hasn't set up yet";
+        return L.product() + " hasn't set up yet";
     }
 }

@@ -7,7 +7,7 @@
 #
 # This file should be included with the following syntax:
 #
-# include include/common $MODE
+# include include/common $MODE $PRODUCT
 #
 ###############################################################################
 
@@ -25,6 +25,7 @@ readonly ERRBADARGS=17
 readonly ERRBADMODE=18
 readonly ERRBADPASS=19
 readonly ERRS3=20
+readonly ERRBADPRODUCT=21
 
 ###############################################################################
 #
@@ -46,6 +47,20 @@ readonly BUILD_OUTPUT_DIR="${GIT_ROOT}/out.ant"
 
 # Local resource directory (where prebuilt binaries exist)
 readonly CLIENT_RESOURCES_DIR="${GIT_ROOT}/resource/client"
+
+# Properties File
+if [[ "$PRODUCT" != "CLIENT" && "$PRODUCT" != "TEAM_SERVER" ]]; then
+    echo "error: invalid build product $PRODUCT. Expected CLIENT or TEAM_SERVER." >&2
+    exit $ERRBADPRODUCT
+fi
+if [[ "$PRODUCT" == "CLIENT" ]]; then
+    readonly PROPERTIES_FILE="$CLIENT_RESOURCES_DIR"/common/labeling-client.properties
+else
+    readonly PROPERTIES_FILE="$CLIENT_RESOURCES_DIR"/common/labeling-teamserver.properties
+fi
+
+readonly GET_PROPERTY="${BUILD_SCRIPT_DIR}/arrow-config/get_property.groovy"
+readonly GET_PROPERTY_DEPENDENCIES="${BUILD_OUTPUT_DIR}/arrow-config/dependencies.groovy"
 
 # Local release directory
 readonly LOCAL_RELEASE_DIR="${BUILD_OUTPUT_DIR}/release"
@@ -182,12 +197,10 @@ function compute_next_release_version() {
 ######################################################################
 
 function compute_product_names() {
-    readonly AEROFS_PRODUCT=$(java -cp \
-        ${BUILD_OUTPUT_DIR}/bin com.aerofs.labeling.excluded.ProductName)
-    readonly AEROFS_PRODUCT_SPACEFREE=$(java -cp \
-        ${BUILD_OUTPUT_DIR}/bin com.aerofs.labeling.excluded.ProductSpaceFreeName)
-    readonly AEROFS_PRODUCT_UNIX=$(java -cp \
-        ${BUILD_OUTPUT_DIR}/bin com.aerofs.labeling.excluded.ProductUnixName)
+    $GET_PROPERTY_DEPENDENCIES
+    readonly AEROFS_PRODUCT=$($GET_PROPERTY $PROPERTIES_FILE labeling.product)
+    readonly AEROFS_PRODUCT_SPACEFREE=$($GET_PROPERTY $PROPERTIES_FILE labeling.productSpaceFreeName)
+    readonly AEROFS_PRODUCT_UNIX=$($GET_PROPERTY $PROPERTIES_FILE labeling.productUnixName)
 }
 
 ###############################################################################

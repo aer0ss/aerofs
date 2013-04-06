@@ -25,20 +25,20 @@ public class RequestToSignUpEmailer
     public void sendRequestToSignUp(String emailAddress, String signUpCode)
             throws IOException
     {
-        Email email = new Email("Complete your " + L.PRODUCT + " sign up");
+        Email email = new Email("Complete your " + L.product() + " sign up");
         String body = "\n" +
-                "Please click this link to proceed signing up for " + L.PRODUCT + ":\n" +
+                "Please click this link to proceed signing up for " + L.product() + ":\n" +
                 "\n" +
                 getSignUpLink(signUpCode) + "\n" +
                 "\n" +
-                "Simply ignore this email if you didn't request an " + L.PRODUCT + " account.";
+                "Simply ignore this email if you didn't request an " + L.product() + " account.";
 
         email.addSection("You're almost ready to go!", HEADER_SIZE.H1, body);
         email.addDefaultSignature();
 
         try {
             SVClient.sendEmail(WWW.SUPPORT_EMAIL_ADDRESS, SPParam.SP_EMAIL_NAME, emailAddress, null,
-                    "Complete your " + L.PRODUCT + " sign up", email.getTextEmail(),
+                    "Complete your " + L.product() + " sign up", email.getTextEmail(),
                     email.getHTMLEmail(), true,
                     EmailCategory.REQUEST_TO_SIGN_UP);
         } catch (AbstractExWirable e) {

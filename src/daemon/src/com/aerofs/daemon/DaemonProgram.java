@@ -89,7 +89,7 @@ public class DaemonProgram implements IProgram
     {
         ///GuiceUtil.enableLogging();
 
-        Module multiplicityModule  = L.get().isMultiuser()
+        Module multiplicityModule  = L.isMultiuser()
                 ? new MultiuserModule()
                 : new SingleuserModule();
 
@@ -108,7 +108,7 @@ public class DaemonProgram implements IProgram
         StorageType storageType = Cfg.storageType();
         switch (storageType) {
         case LINKED:
-            return new LinkedStorageModule(L.get().isMultiuser());
+            return new LinkedStorageModule(L.isMultiuser());
         case LOCAL:
             /**
              * NB: Do not change the proxy chain in a backward incompatible way unless you write

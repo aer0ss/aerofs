@@ -32,7 +32,7 @@ public class CmdDefect implements IShellCommand<ShProgram>
 
         boolean cpuIssue = message.toLowerCase().contains("cpu");
 
-        Object prog = UI.get().addProgress(cpuIssue ? "Sampling " + L.PRODUCT +
+        Object prog = UI.get().addProgress(cpuIssue ? "Sampling " + L.product() +
                 " CPU usage" : "Submitting", true);
 
         if (cpuIssue) logThreads(ritual, l);
@@ -99,7 +99,7 @@ public class CmdDefect implements IShellCommand<ShProgram>
     @Override
     public String getDescription()
     {
-        return "report an issue to the " + L.PRODUCT + " team";
+        return "report an issue to the " + L.product() + " team";
     }
 
     @Override

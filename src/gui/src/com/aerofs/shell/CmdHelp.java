@@ -50,9 +50,9 @@ public class CmdHelp<T> implements IShellCommand<T>
         out.println("DESCRIPTION");
 
         hf.printWrapped(pw, LINE_WIDTH, INDENT_WIDTH, INDENT +
-                "As a client program of " + L.PRODUCT + ", " + prog +
-                " requires a running " + L.PRODUCT + " CLI " +
-                "(" + S.CLI_NAME + ") or GUI (" + L.get().productUnixName() +
+                "As a client program of " + L.product() + ", " + prog +
+                " requires a running " + L.product() + " CLI " +
+                "(" + S.CLI_NAME + ") or GUI (" + L.productUnixName() +
                 ") process to be fully functional. " +
                 "Multiple " + prog + " instances may be executed at the same time.");
         pw.println();

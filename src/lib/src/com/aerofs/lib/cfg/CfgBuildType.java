@@ -9,6 +9,6 @@ public class CfgBuildType
 {
     public boolean isStaging()
     {
-        return L.get().isStaging();
+        return L.isStaging();
     }
 }

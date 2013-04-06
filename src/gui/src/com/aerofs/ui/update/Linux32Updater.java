@@ -6,7 +6,7 @@ class Linux32Updater extends AbstractLinuxUpdater
 {
     Linux32Updater()
     {
-        super(L.get().productUnixName() + "-%s-x86.tgz");
+        super(L.productUnixName() + "-%s-x86.tgz");
     }
 
     @Override

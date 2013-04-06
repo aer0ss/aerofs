@@ -18,7 +18,7 @@ class OSXUpdater extends Updater
 
     OSXUpdater()
     {
-        super(L.get().productUnixName() + "-osx-%s.zip");
+        super(L.productUnixName() + "-osx-%s.zip");
     }
 
     @Override
@@ -38,7 +38,7 @@ class OSXUpdater extends Updater
         packageRoot = packageRoot.getParentFile();
 
         try {
-            InjectableFile upFile = _factFile.createTempFile(L.get().productUnixName() +
+            InjectableFile upFile = _factFile.createTempFile(L.productUnixName() +
                                                      "update" + newVersion, "$$$");
 
             _factFile.create(appRoot, "updater.sh").copy(upFile, false, false);
@@ -69,13 +69,13 @@ class OSXUpdater extends Updater
                 SystemUtil.execForeground(username, "stat", "-f", "%Su",
                         packageRoot.getAbsolutePath());
 
-                UI.get().show(MessageType.WARN, L.PRODUCT +
+                UI.get().show(MessageType.WARN, L.product() +
                                                 " updates can only be applied from the account which" +
-                                                " first installed " + L.PRODUCT + " (\"" +
+                                                " first installed " + L.product() + " (\"" +
                                                 username.get().trim() +
                                                 "\"). Please switch to that" +
                                                 " account and check for updates by going to " +
-                                                L.PRODUCT + " Help -> About " + L.PRODUCT + " ->" +
+                                                L.product() + " Help -> About " + L.product() + " ->" +
                                                 " Update Now.");
             }
         } catch (IOException e) {

@@ -76,13 +76,16 @@ function copy_resources_to_local_release_directories() {
 
     # Copy S3 libs if necessary
     cp -R "${CLIENT_RESOURCES_DIR}/s3/lib"/* "${AEROFS_RELEASE_LINUX_DIR}/lib/"
-    if [ "${AEROFS_PRODUCT_UNIX}"="aerofsts" ]; then
+    if [ "${AEROFS_PRODUCT_UNIX}" == "aerofsts" ]; then
         cp -R "${CLIENT_RESOURCES_DIR}/s3/lib"/* "${AEROFS_RELEASE_WIN_DIR}/lib/"
         cp -R "${CLIENT_RESOURCES_DIR}/s3/lib"/* "${AEROFS_RELEASE_OSX_DIR}/lib/"
+	cp "${CLIENT_RESOURCES_DIR}/common/labeling-teamserver.properties" "${AEROFS_RELEASE_DIR}/labeling.properties"
     elif [ "${AEROFS_PRODUCT_UNIX}"!="aerofs" ]; then
         echo "ERROR: Aerofs product unix is not one of aerofsts, aerofs"
         echo "Exiting"
         exit 1
+    else
+        cp "${CLIENT_RESOURCES_DIR}/common/labeling-client.properties" "${AEROFS_RELEASE_DIR}/labeling.properties"
     fi
 
     # N.B. We put the run scripts from the installer package in the actual aerofs
@@ -164,15 +167,6 @@ function copy_java_class_files() {
         # TODO: (WW) Verify this package is valid before removing
         rm -rf "${local_BIN}/com/aerofs/tools"
     fi
-
-    # Remove unused labeling classes. See comments in the L class
-    # We first make sure we are removing the correct package.
-    local local_LABELING_EXCLUDED="${local_BIN}/com/aerofs/labeling/excluded"
-    if [ ! -f "${local_LABELING_EXCLUDED}/AeroFSSingleuser.class" ]; then
-        echo "error: missing labeling package ${local_LABELING_EXCLUDED}"
-        exit 1
-    fi
-    rm -rf "${local_LABELING_EXCLUDED}"
 }
 
 ######################################################################
@@ -232,6 +226,9 @@ function create_java_jar() {
     for i in "$CLIENT_RESOURCES_DIR"/s3/lib/*.jar; do
         echo " lib/$(basename "$i") " >> "$local_TEMP_MANIFEST"
     done
+
+    # labeling
+    echo " labeling.properties " >> "$local_TEMP_MANIFEST"
 
     # Package a jar with the contents of com subdirectory of the local release directory (all the class files)
     jar cfm "${AEROFS_RELEASE_DIR}/aerofs.unobf.jar" "$local_TEMP_MANIFEST" -C "${LOCAL_RELEASE_DIR}/bin" com

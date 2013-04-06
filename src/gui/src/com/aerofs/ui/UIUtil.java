@@ -161,7 +161,7 @@ public class UIUtil
             throws Exception
     {
         // TODO: support multiroot and flat linked storage
-        if (!L.get().isMultiuser()) {
+        if (!L.isMultiuser()) {
             // try creating a seed file (use async ritual API to leverage SP call latency)
             ListenableFuture<CreateSeedFileReply> reply = null;
             RitualClient ritual = RitualClientFactory.newClient();
@@ -196,7 +196,7 @@ public class UIUtil
     private static String getUserFriendlyID(PBSOCID pbsocid)
     {
         ByteString oid = pbsocid.getOid();
-        if (L.get().isStaging()) {
+        if (L.isStaging()) {
             // for internal use we want the first 3 oid bytes (like git)
             return String.format("%1$02X%2$X", oid.byteAt(0), oid.byteAt(1) & 0xF);
         } else {
@@ -240,7 +240,7 @@ public class UIUtil
         }
     }
 
-    private static String LAUNCH_ERROR_STRING = "Sorry, " + L.PRODUCT + " couldn't launch." +
+    private static String LAUNCH_ERROR_STRING = "Sorry, " + L.product() + " couldn't launch." +
             " Please contact us at " + WWW.SUPPORT_EMAIL_ADDRESS;
 
     /**
@@ -333,7 +333,7 @@ public class UIUtil
         }
 
         // TODO (WW) don't show this dialog
-        if (UI.isGUI() && !L.get().isMultiuser()) {
+        if (UI.isGUI() && !L.isMultiuser()) {
             // Check if there are any shared folder invitations to accept
             new DlgJoinSharedFolders(GUI.get().sh()).showDialogIfNeeded();
             // TODO (GS): Needs a similar class for CLI, too
@@ -343,7 +343,7 @@ public class UIUtil
 
         Runnable onClick = null;
 
-        if (!L.get().isMultiuser()) {
+        if (!L.isMultiuser()) {
             onClick = new Runnable()
             {
                 @Override
@@ -359,7 +359,7 @@ public class UIUtil
 
     private static boolean shouldShowTutorial()
     {
-        return !L.get().isMultiuser() && UI.isGUI() && (OSUtil.isOSX() || OSUtil.isWindows());
+        return !L.isMultiuser() && UI.isGUI() && (OSUtil.isOSX() || OSUtil.isWindows());
     }
 
     private static void logAndShowLaunchError(Throwable e)
@@ -371,7 +371,7 @@ public class UIUtil
 
     private static void finishLaunch(Runnable postLaunch)
     {
-        if (!L.get().isMultiuser()) {
+        if (!L.isMultiuser()) {
             // Starts the service that displays notifications when files are updated
             new FileChangeNotification();
         }

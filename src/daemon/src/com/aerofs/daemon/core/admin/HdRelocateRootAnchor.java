@@ -246,14 +246,14 @@ public class HdRelocateRootAnchor extends AbstractHdIMC<EIRelocateRootAnchor>
                 afterRootRelocation(t);
 
                 // TeamServer does not have a default aux root
-                if (!(_isDefaultRoot && L.get().isMultiuser())) {
+                if (!(_isDefaultRoot && L.isMultiuser())) {
                     _oldAuxRoot.moveInSameFileSystem(_newAuxRoot);
                 }
             } catch (IOException e) {
                 if (OSUtil.isWindows()) {
-                    throw new ExInUse("files in the " + L.PRODUCT + " folder are in use. " +
+                    throw new ExInUse("files in the " + L.product() + " folder are in use. " +
                             "Please close all programs interacting with files in " +
-                            L.PRODUCT);
+                            L.product());
                 }
                 throw e;
             }
@@ -263,7 +263,7 @@ public class HdRelocateRootAnchor extends AbstractHdIMC<EIRelocateRootAnchor>
         public void rollback() throws Exception
         {
             // TeamServer does not have a default aux root
-            if (!(_isDefaultRoot && L.get().isMultiuser()) && _newAuxRoot.exists()) {
+            if (!(_isDefaultRoot && L.isMultiuser()) && _newAuxRoot.exists()) {
                 _newAuxRoot.moveInSameFileSystem(_oldAuxRoot);
             }
             if (_newRoot.exists()) _newRoot.moveInSameFileSystem(_oldRoot);
@@ -301,7 +301,7 @@ public class HdRelocateRootAnchor extends AbstractHdIMC<EIRelocateRootAnchor>
             afterRootRelocation(t);
 
             // TeamServer does not have a default aux root
-            if (!(_isDefaultRoot && L.get().isMultiuser())) {
+            if (!(_isDefaultRoot && L.isMultiuser())) {
                 OSUtil.get().copyRecursively(_oldAuxRoot, _newAuxRoot, false, false);
                 OSUtil.get().markHiddenSystemFile(_newAuxRoot.getAbsolutePath());
             }
@@ -311,7 +311,7 @@ public class HdRelocateRootAnchor extends AbstractHdIMC<EIRelocateRootAnchor>
         public void rollback() throws Exception
         {
             // TeamServer does not have a default aux root
-            if (!(_isDefaultRoot && L.get().isMultiuser())) {
+            if (!(_isDefaultRoot && L.isMultiuser())) {
                 deleteFolder(_newAuxRoot);
             }
             deleteFolder(_newRoot);
@@ -326,7 +326,7 @@ public class HdRelocateRootAnchor extends AbstractHdIMC<EIRelocateRootAnchor>
             deleteFolder(_oldRoot);
 
             // TeamServer does not have a default aux root
-            if (!(_isDefaultRoot && L.get().isMultiuser())) {
+            if (!(_isDefaultRoot && L.isMultiuser())) {
                 deleteFolder(_oldAuxRoot);
             }
         }

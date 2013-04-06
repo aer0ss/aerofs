@@ -28,7 +28,7 @@ public class ShProgram implements IProgram, ICallback
 
     static final String DEBUG_FLAG = "DEBUG";
 
-    private static final String PROG = L.get().productUnixName() + "-sh";
+    private static final String PROG = L.productUnixName() + "-sh";
 
     private Path _pwd;
 
@@ -46,7 +46,7 @@ public class ShProgram implements IProgram, ICallback
             // FIXME: replace with the builder pattern to add commands
 
             _s = new ShellCommandRunner<ShProgram>(this, this, PROG,
-                    L.PRODUCT + " Shell, the command-line console for " + L.PRODUCT,
+                    L.product() + " Shell, the command-line console for " + L.product(),
                     args);
 
             initCommands_();
@@ -136,7 +136,7 @@ public class ShProgram implements IProgram, ICallback
         }
 
         // restricted
-        if (L.get().isStaging() || Cfg.isSP()) {
+        if (L.isStaging() || Cfg.isSP()) {
             _s.addCommand_(new CmdDstat());
             _s.addCommand_(new CmdTestMultiuserJoinRootStore());
         }

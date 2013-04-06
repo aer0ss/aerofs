@@ -10,7 +10,6 @@ import com.aerofs.lib.OutArg;
 import com.aerofs.lib.RootAnchorUtil;
 import com.aerofs.lib.S;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.ex.ExNoConsole;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.UIUtil;
@@ -28,8 +27,8 @@ public class CLIRootAnchorUpdater
     private final String _relocateMsg;
     private final String _unlinkOrQuitMsg = "If you want to move the missing folder " +
             "back to its original location, choose \"Quit\", move it back to its original" +
-            " location, and launch " + L.PRODUCT + " again.\n" +
-            "If you deleted the " + L.PRODUCT + " folder, or want to start over, " +
+            " location, and launch " + L.product() + " again.\n" +
+            "If you deleted the " + L.product() + " folder, or want to start over, " +
             "choose \"Unlink\". You will be asked to setup AeroFS the next time you launch.";
 
     public CLIRootAnchorUpdater(CLI cli, String oldAbsPath, @Nullable SID sid)
@@ -106,7 +105,7 @@ public class CLIRootAnchorUpdater
             @Override
             public void run()
             {
-                _cli.out().print("Enter the new " + L.PRODUCT + " folder location: ");
+                _cli.out().print("Enter the new " + L.product() + " folder location: ");
                 String rootPath = readLine();
                 if (rootPath == null) return; // leave ret as null
 
@@ -124,12 +123,12 @@ public class CLIRootAnchorUpdater
                 try {
                     RootAnchorUtil.updateAbsRootCfg(_sid, newRootPath);
                     Cfg.init_(Cfg.absRTRoot(), false);
-                    _cli.show(MessageType.INFO, L.PRODUCT +
+                    _cli.show(MessageType.INFO, L.product() +
                             "' new location was updated succesfully!");
                     ret.set(true);
                 } catch (Exception e) {
                     _cli.show(MessageType.ERROR, "An error occured while applying " +
-                            "the new location for the " + L.PRODUCT +
+                            "the new location for the " + L.product() +
                             " folder " + UIUtil.e2msg(e));
                     ret.set(false);
                 }

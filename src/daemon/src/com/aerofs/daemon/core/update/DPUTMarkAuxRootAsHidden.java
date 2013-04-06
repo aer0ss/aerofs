@@ -6,7 +6,6 @@ package com.aerofs.daemon.core.update;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.os.OSUtil;
 import org.slf4j.Logger;
 

@@ -1,12 +1,8 @@
 package com.aerofs.daemon.core.phy.linked.linker;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.phy.ILinker;
-import com.aerofs.daemon.core.phy.linked.LinkedStorage;
-import com.aerofs.daemon.core.phy.linked.linker.LinkerRootMap.IListener;
 import com.aerofs.lib.SystemUtil;
-import com.aerofs.lib.cfg.CfgAbsRoots;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.phy.linked.linker.notifier.INotifier;
@@ -19,9 +15,7 @@ import org.slf4j.Logger;
 
 import java.io.File;
 import java.io.IOException;
-import java.sql.SQLException;
 import java.util.List;
-import java.util.Map.Entry;
 
 public class Linker implements ILinker, LinkerRootMap.IListener
 {

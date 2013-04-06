@@ -31,7 +31,7 @@ public class GUIProgram implements IProgram
                     System.loadLibrary("msvcp100");
                 } catch (UnsatisfiedLinkError e1) {
                     MessageBox msgBox = new MessageBox(new Shell());
-                    msgBox.setMessage(L.PRODUCT + " cannot launch because the Microsoft Visual " +
+                    msgBox.setMessage(L.product() + " cannot launch because the Microsoft Visual " +
                             "C++ 2010 redistributable package is not installed. Please go to the " +
                             "following URL to download and install it:\n\nhttp://ae.ro/msvc2010");
                     msgBox.open();

@@ -103,7 +103,7 @@ public abstract class RootAnchorUtil
             SVClient.logSendDefectSyncNoCfgIgnoreErrors(true, "unsupported fs: " + r + type,
                     null, UserID.UNKNOWN, rtRoot);
 
-            throw new ExUIMessage(L.PRODUCT + " doesn't support " + r + type +
+            throw new ExUIMessage(L.product() + " doesn't support " + r + type +
                     " filesystems on " + OSUtil.getOSName() + " at this moment");
         }
     }
@@ -118,7 +118,7 @@ public abstract class RootAnchorUtil
     private enum Perm {READ, WRITE}
     private static void throwExNoPerm(Perm perm, File file) throws ExNoPerm
     {
-        throw new ExNoPerm(L.PRODUCT + " doesn't have sufficient permissions to " +
+        throw new ExNoPerm(L.product() + " doesn't have sufficient permissions to " +
                 perm.toString().toLowerCase() + " files under " + file);
     }
 
@@ -181,7 +181,7 @@ public abstract class RootAnchorUtil
         // only enforce branded root anchor suffix for default root
         if (sid != null) return root;
 
-        String rootAnchorName = L.get().rootAnchorName();
+        String rootAnchorName = L.rootAnchorName();
         if (!root.toLowerCase().endsWith(File.separator + rootAnchorName.toLowerCase())) {
             root += File.separator + rootAnchorName;
         }
@@ -197,7 +197,7 @@ public abstract class RootAnchorUtil
             if (Cfg.storageType() == StorageType.LINKED) {
                 // when using linked storage we need to update implicit root(s)
 
-                if (L.get().isMultiuser()) {
+                if (L.isMultiuser()) {
                     // linked storage in multiuser may have many implicit roots
                     for (Entry<SID, String> e : Cfg.getRoots().entrySet()) {
                         moveRootIfUnder(e.getKey(), e.getValue(), oldAbsPath, newAbsPath);

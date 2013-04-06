@@ -15,7 +15,7 @@ class WindowsUpdater extends Updater
 {
     WindowsUpdater()
     {
-        super(L.get().productSpaceFreeName() + "Install-%s.exe");
+        super(L.productSpaceFreeName() + "Install-%s.exe");
     }
 
     @Override

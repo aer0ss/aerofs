@@ -7,7 +7,6 @@ import java.util.Set;
 
 import static com.aerofs.daemon.core.phy.linked.linker.MightCreateOperations.Operation.*;
 import static com.aerofs.daemon.core.phy.linked.linker.MightCreateOperations.*;
-import static com.aerofs.lib.obfuscate.ObfuscatingFormatters.obfuscatePath;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.phy.linked.SharedFolderTagFileAndIcon;

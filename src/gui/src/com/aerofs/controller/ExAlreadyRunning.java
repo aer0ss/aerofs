@@ -12,6 +12,6 @@ public class ExAlreadyRunning extends ExLaunchAborted
 
     public ExAlreadyRunning()
     {
-        super(L.PRODUCT + " is already running.");
+        super(L.product() + " is already running.");
     }
 }

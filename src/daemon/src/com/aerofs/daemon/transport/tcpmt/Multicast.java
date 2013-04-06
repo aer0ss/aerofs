@@ -107,7 +107,7 @@ class Multicast implements IMaxcast
                 // bind to *:TCP_MCAST_PORT
                 final MulticastSocket s = new MulticastSocket(DaemonParam.TCP.MCAST_PORT);
                 s.setNetworkInterface(iface);
-                s.setLoopbackMode(!L.get().isStaging());
+                s.setLoopbackMode(!L.isStaging());
                 s.joinGroup(InetAddress.getByName(DaemonParam.TCP.MCAST_ADDRESS));
 
                 MulticastSocket old = _iface2sock.put(iface, s);

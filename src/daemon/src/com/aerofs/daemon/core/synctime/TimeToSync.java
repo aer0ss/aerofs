@@ -7,8 +7,6 @@ class TimeToSync
 {
     static final int TOTAL_BINS = 256;
 
-    private static final Logger l = Loggers.getLogger(TimeToSync.class);
-
     private final long _syncTimeMillis;
 
     TimeToSync(long syncTimeMillis)

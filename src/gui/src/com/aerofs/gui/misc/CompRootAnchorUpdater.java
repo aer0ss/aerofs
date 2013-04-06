@@ -70,10 +70,10 @@ public class CompRootAnchorUpdater extends Composite
                 "below, and specify the new location.\n\n" +
                 "If you deleted the folder, or want to start over, click " +
                 "\"" + S.UNLINK_THIS_COMPUTER + "\". You will be asked to setup " +
-                L.PRODUCT + " the next time you launch.\n\n" +
+                L.product() + " the next time you launch.\n\n" +
                 "If you want to move the folder back to its original location, " +
                 "click \"" + QUIT_BUTTON_TEXT + "\", move it back to its location, and launch " +
-                L.PRODUCT + " again.");
+                L.product() + " again.");
 
         Composite composite = new Composite(this, SWT.NONE);
         composite.setLayout(new FillLayout(SWT.HORIZONTAL));

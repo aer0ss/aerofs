@@ -45,7 +45,7 @@ public class SingleuserDlgSetup extends AbstractDlgSetup
             } catch (SecurityException e) {
                 if (!UI.get()
                         .ask(MessageType.QUESTION,
-                                L.PRODUCT + " needs your authorization to install the " +
+                                L.product() + " needs your authorization to install the " +
                                         OSUtil.get().getShellExtensionName() + ".\n\n" +
                                         "Would you like to retry entering your password?\n" +
                                         "If you click Cancel, the " +

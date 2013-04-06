@@ -66,7 +66,7 @@ public class DlgMoveRootAnchor extends AeroFSDialog implements ISWTWorker
         Label lblMovingTheAerofs = new Label(shell, SWT.NONE);
         lblMovingTheAerofs.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false, 1, 1));
         lblMovingTheAerofs.setText("Moving files and " + S.VERSION_HISTORY +
-                ". Please do not quit " + L.PRODUCT + ".");
+                ". Please do not quit " + L.product() + ".");
 
         getShell().addListener(SWT.Show, new Listener() {
             @Override

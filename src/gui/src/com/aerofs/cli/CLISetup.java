@@ -71,14 +71,14 @@ public class CLISetup
         processSetupFile(rtRoot);
 
         if (!OSUtil.isLinux() && !_isUnattendedSetup) {
-            cli.confirm(MessageType.WARN, L.PRODUCT + " CLI is not officially supported" +
+            cli.confirm(MessageType.WARN, L.product() + " CLI is not officially supported" +
                     " on non-Linux platforms. Specifically, GUI will be started" +
                     " up on the next automatic update.");
         }
 
-        cli.show(MessageType.INFO, "Welcome to " + L.PRODUCT + ".");
+        cli.show(MessageType.INFO, "Welcome to " + L.product() + ".");
 
-        if (L.get().isMultiuser()) {
+        if (L.isMultiuser()) {
             setupMultiuser(cli);
         } else {
             setupSingleuser(cli);
@@ -86,7 +86,7 @@ public class CLISetup
 
         cli.notify(MessageType.INFO,
                 "---------------------------------------------------------------\n" +
-                "You can now access " + L.PRODUCT + " functions through the\n" +
+                "You can now access " + L.product() + " functions through the\n" +
                 Util.quote(S.SH_NAME) + " command while " +
                 S.CLI_NAME + " is running.");
     }

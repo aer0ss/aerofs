@@ -94,7 +94,7 @@ public class DlgDefect extends AeroFSJFaceDialog
         _sendDiagnosticData.setSelection(true);
         _sendDiagnosticData.setText("Send metadata (including file names)");
 
-        if (L.get().isMultiuser()) {
+        if (L.isMultiuser()) {
             // no plaintext file names can be collected with multiuser installs
             _sendDiagnosticData.setVisible(false);
         }
@@ -136,7 +136,7 @@ public class DlgDefect extends AeroFSJFaceDialog
 
         GridData gridData = new GridData(SWT.FILL, SWT.CENTER, true, false, 1, 1);
 
-        if (L.get().isMultiuser()) {
+        if (L.isMultiuser()) {
             final Text txtEmailAddress = new Text(composite, SWT.BORDER);
             txtEmailAddress.setLayoutData(gridData);
             txtEmailAddress.setText(Cfg.db().get(Key.MULTIUSER_CONTACT_EMAIL));

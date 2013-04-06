@@ -2,7 +2,6 @@ package com.aerofs.daemon.core.phy.linked.linker;
 
 import java.util.Set;
 
-import com.aerofs.lib.Param;
 import com.google.common.collect.ImmutableSet;
 
 /**

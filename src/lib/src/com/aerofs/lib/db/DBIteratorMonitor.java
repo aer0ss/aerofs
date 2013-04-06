@@ -21,14 +21,14 @@ public class DBIteratorMonitor
         assert s_count > 0;
         s_count--;
 
-        if (L.get().isStaging()) Util.verify(s_iters.remove(iter));
+        if (L.isStaging()) Util.verify(s_iters.remove(iter));
     }
 
     public static void addActiveIterator_(AbstractDBIterator<?> iter)
     {
         s_count++;
 
-        if (L.get().isStaging()) {
+        if (L.isStaging()) {
             if (s_iters == null) s_iters = Maps.newHashMap();
             Exception e = new Exception();
             e.fillInStackTrace();
@@ -38,7 +38,7 @@ public class DBIteratorMonitor
 
     public static void assertNoActiveIterators_()
     {
-        if (L.get().isStaging() && s_iters != null) {
+        if (L.isStaging() && s_iters != null) {
             for (Exception e : s_iters.values()) {
                 l.warn("unclosed db iterator created at:\n" + Util.e(e));
             }

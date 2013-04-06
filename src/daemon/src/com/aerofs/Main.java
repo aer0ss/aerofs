@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 
 import java.lang.reflect.Field;
+import java.util.List;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.labeling.L;
@@ -14,6 +15,12 @@ import com.aerofs.lib.ProgramInformation;
 import com.aerofs.lib.SystemUtil.ExitCode;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.rocklog.RockLog;
+import com.google.common.collect.Lists;
+import com.netflix.config.DynamicConfiguration;
+import org.arrowfs.config.ArrowConfiguration;
+import org.arrowfs.config.sources.DynamicPropertiesConfiguration;
+import org.arrowfs.config.sources.PropertiesConfiguration;
+import org.arrowfs.config.sources.SystemConfiguration;
 import org.slf4j.Logger;
 
 import com.google.inject.CreationException;
@@ -28,6 +35,7 @@ import com.aerofs.lib.os.OSUtil;
 import com.aerofs.sv.client.SVClient;
 
 import static com.aerofs.lib.rocklog.RockLog.BaseComponent.CLIENT;
+import static com.google.common.collect.Lists.newArrayList;
 
 public class Main
 {
@@ -105,7 +113,7 @@ public class Main
         try {
             launchProgram(rtRoot, prog, appArgs);
         } catch (Throwable e) {
-            if (L.get().isStaging()) {
+            if (L.isStaging()) {
                 if (e instanceof CreationException) {
                     CreationException ce = (CreationException)e;
                     for (Message m : ce.getErrorMessages()) {
@@ -155,6 +163,8 @@ public class Main
 
         if (Cfg.inited()) l.warn(Cfg.user() + " " + Cfg.did().toStringFormal());
 
+        initializeArrowConfig();
+
         Util.registerLibExceptions();
 
         // launch the program
@@ -191,5 +201,30 @@ public class Main
             rtRootFile.setWritable(true, true);     // chmod o+w
             rtRootFile.setExecutable(true, true);   // chmod o+x
         }
+    }
+
+    // has to be initialized after Cfg
+    // TODO (eric) remove dependency on Cfg
+    private static void initializeArrowConfig()
+    {
+        ArrowConfiguration.initialize(ArrowConfiguration.builder()
+                .addConfiguration(SystemConfiguration.newInstance(), "system")
+                .addConfiguration(
+                        DynamicPropertiesConfiguration.newInstance(getDynamicPropertyPaths(),
+                                60000), "dynamic-properties")
+                .build());
+    }
+
+    private static List<String> getDynamicPropertyPaths() {
+        final String aeroPropertiesPath = Cfg.absRTRoot() + "/aerofs.properties";
+        return newArrayList( aeroPropertiesPath );
+    }
+
+    private static List<String> getPropertyPaths() {
+        // TODO (eric) should just be "labeling.properties" which would look on the classpath, but
+        // I'm not sure how to get labeling.properties to be embedded into the resulting JAR and
+        // included on the classpath, our build process is complicated
+        final String labelingResource = "labeling.properties";
+        return newArrayList( labelingResource );
     }
 }

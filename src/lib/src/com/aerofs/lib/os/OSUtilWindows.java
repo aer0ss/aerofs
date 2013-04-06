@@ -22,8 +22,8 @@ public class OSUtilWindows implements IOSUtil
     public String getDefaultRTRoot()
     {
         // use space-free name to be consistent with the AppRoot name.
-        String name = L.get().productSpaceFreeName();
-        if (L.get().isStaging()) name += ".staging";
+        String name = L.productSpaceFreeName();
+        if (L.isStaging()) name += ".staging";
 
         String path = System.getenv("APPDATA");
         return (path == null ? "C:" : path) + "\\" + name;

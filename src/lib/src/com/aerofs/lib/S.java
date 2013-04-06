@@ -14,15 +14,15 @@ public class S
 
             LBL_UPDATE_CHECKING      = "Checking for Update...",
             LBL_UPDATE_ONGOING       = "Downloading new update...",
-            LBL_UPDATE_LATEST        = "Your " + L.PRODUCT + " is up to date.",
+            LBL_UPDATE_LATEST        = "Your " + L.product() + " is up to date.",
             LBL_UPDATE_APPLY         = "A new update has been downloaded.",
             LBL_UPDATE_ERROR         = "An error was encountered.",
 
             SETUP_USER_ID            = "Email",
             SETUP_PASSWD             = "Password",
             SETUP_DEV_ALIAS          = "Computer name",
-            ROOT_ANCHOR              = L.get().isMultiuser() ? "Data Storage folder" :
-                L.PRODUCT + " folder",
+            ROOT_ANCHOR              = L.isMultiuser() ? "Data Storage folder" :
+                L.product() + " folder",
 
             SETUP_S3                 = "Do you wish to set up this client to use Amazon S3 for " +
                 "storage (EXPERIMENTAL)?",
@@ -55,11 +55,11 @@ public class S
             WHY_ARENT_MY_FILES_SYNCED = "Why Aren't My Files Synced?",
             REPORT_A_PROBLEM = "Report a Problem",
             REQUEST_A_FEATURE = "Request a Feature",
-            DEFAULT_DIALOG_TITLE = L.PRODUCT,
-            DIALOG_TITLE_SUFFIX = " - " + L.PRODUCT,
+            DEFAULT_DIALOG_TITLE = L.product(),
+            DIALOG_TITLE_SUFFIX = " - " + L.product(),
 
             IMPORTANT_UPDATE_DOWNLOADED =
-                "An important update has been downloaded for " + L.PRODUCT + ".",
+                "An important update has been downloaded for " + L.product() + ".",
             NO_CONSOLE = "No console is found.",
             VENDOR = "Air Computing Inc.",
             COPYRIGHT = "2010-2013 " + VENDOR + " All Rights Reserved.",
@@ -67,14 +67,14 @@ public class S
             BTN_CHANGE = "Change...",
             COULDNT_UNLINK_DEVICE = "Sorry, we could not unlink your computer.",
             UNLINK_THIS_COMPUTER = "Unlink This Computer...",
-            UNLINK_THIS_COMPUTER_CONFIRM = "Unlink this computer from your " + L.PRODUCT +
+            UNLINK_THIS_COMPUTER_CONFIRM = "Unlink this computer from your " + L.product() +
                 " account and quit the program?" +
                 " The computer will no longer stay in sync, but will keep files it currently has.",
             INVITATION_CODE_NOT_FOUND = "Invitation code not found",
             CHECKING_FOR_DINOSAURS = "Checking for dinosaurs...",
-            PRE_SETUP_UPDATE_CHECK_FAILED = L.PRODUCT + " couldn't" +
+            PRE_SETUP_UPDATE_CHECK_FAILED = L.product() + " couldn't" +
                 " download updates. Please make sure the computer is" +
-                " connected to the Internet and run " + L.PRODUCT + " again.",
+                " connected to the Internet and run " + L.product() + " again.",
             PRIVACY_URL = WWW.MARKETING_HOST_URL + "/privacy",
             PASSWORD_RESET_URL = WWW.DASHBOARD_HOST_URL + "/password_reset",
             // use trailing spaces to force right margins
@@ -82,8 +82,8 @@ public class S
             INVITATION_WAS_SENT = "Invited successfully.",
             COULDNT_SEND_INVITATION = "Couldn't invite users.",
             VERSION_HISTORY = "version history",
-            CLI_NAME = L.get().productUnixName() + "-cli",
-            SH_NAME = L.get().productUnixName()  + "-sh",
+            CLI_NAME = L.productUnixName() + "-cli",
+            SH_NAME = L.productUnixName()  + "-sh",
             TRY_AGAIN_LATER = "Please try again later.",
             PASSWORD_CHANGE_INTERNAL_ERROR = "Unable to Login. " + TRY_AGAIN_LATER,
             FAILED_FOR_ACCURACY = "Couldn't retrieve accurate results. " + TRY_AGAIN_LATER,

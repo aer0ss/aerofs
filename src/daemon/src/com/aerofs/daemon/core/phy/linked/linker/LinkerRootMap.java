@@ -186,7 +186,7 @@ public class LinkerRootMap
     public void move_(SID sid, String oldAbsPath, String newAbsPath, Trans t)
             throws IOException, SQLException
     {
-        if (sid.equals(Cfg.rootSID()) && L.get().isMultiuser()) {
+        if (sid.equals(Cfg.rootSID()) && L.isMultiuser()) {
             // special case: on TeamServer the defaultAbsRoot itself is not associated with a
             // LinkerRoot (as the rootSID is unused) but instead it contains user homes and shared
             // folders, each being associated with its own LinkerRoot

@@ -44,12 +44,12 @@ public class UbuntuTraySettings
                 }
 
                 GUI.get().show(MessageType.INFO,
-                        L.PRODUCT + " has updated your system settings to allow " +
-                        "displaying the " + L.PRODUCT +
+                        L.product() + " has updated your system settings to allow " +
+                        "displaying the " + L.product() +
                         " icon in the tray menu. If you don't see " +
                         "the tray icon, please log out of your session and log back in.\n\n" +
                         "Alternatively, you can use the 'aerofs-sh' command to use " +
-                        L.PRODUCT +
+                        L.product() +
                         " from the command line.");
             }
         } catch (IOException e) {

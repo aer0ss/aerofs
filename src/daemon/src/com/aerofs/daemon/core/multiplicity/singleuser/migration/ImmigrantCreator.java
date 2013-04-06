@@ -38,18 +38,16 @@ import static com.aerofs.daemon.core.ds.OA.FLAG_EXPELLED_ORG_OR_INH;
 public class ImmigrantCreator implements IImmigrantCreator
 {
     private DirectoryService _ds;
-    private IPhysicalStorage _ps;
     private ObjectCreator _oc;
     private ObjectMover _om;
     private ObjectDeleter _od;
     private IMapSIndex2SID _sidx2sid;
 
     @Inject
-    public void inject_(DirectoryService ds, IPhysicalStorage ps, IMapSIndex2SID sidx2sid,
+    public void inject_(DirectoryService ds, IMapSIndex2SID sidx2sid,
             ObjectMover om, ObjectDeleter od, ObjectCreator oc)
     {
         _ds = ds;
-        _ps = ps;
         _sidx2sid = sidx2sid;
         _om = om;
         _od = od;

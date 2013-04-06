@@ -46,7 +46,7 @@ public class MultiuserDlgSetup extends AbstractDlgSetup
     {
         if (GUI.get().ask(MessageType.QUESTION,
                 "Do you want to invite users to your team now?" +
-                " You can also do it later on the " + L.PRODUCT + " web site.",
+                " You can also do it later on the " + L.product() + " web site.",
                 "Invite Users", "Later")) {
             GUIUtil.launch(WWW.TEAM_MEMBERS_URL);
         }

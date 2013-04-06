@@ -29,26 +29,26 @@ public class InvitationReminderEmailer
             final String body = "\n" +
                     "Hi there!\n" +
                     "\n" +
-                    "You've recently been invited to try out " + L.PRODUCT +
+                    "You've recently been invited to try out " + L.product() +
                     " (" + WWW.MARKETING_HOST_URL + ") \n" +
                     "\n " +
                     "We realize you might be quite busy and may have missed our invitation email" +
                     " so we want to remind you that your invitation is still waiting!\n" +
                     "\n" +
-                    "As a quick refresher: " + L.PRODUCT + " allows you to sync, share, and" +
+                    "As a quick refresher: " + L.product() + " allows you to sync, share, and" +
                     " collaborate on files privately and securely.\n" +
                     "\n" +
-                    "Any data that you put inside your " + L.PRODUCT + " will be synced *only*" +
+                    "Any data that you put inside your " + L.product() + " will be synced *only*" +
                     " with your personal devices, and anyone you invite to share with you.\n" +
                     "\n" +
-                    "You can download " + L.PRODUCT + " at:\n" +
+                    "You can download " + L.product() + " at:\n" +
                     "\n" +
                     url;
 
 
             final Email email = new Email(subject, true, unsubscribeId);
 
-            email.addSection("Reminder: You're invited to " + L.PRODUCT +"!", HEADER_SIZE.H1, body);
+            email.addSection("Reminder: You're invited to " + L.product() +"!", HEADER_SIZE.H1, body);
             email.addDefaultSignature();
 
             return new InvitationReminderEmailer(new Callable<Void>()

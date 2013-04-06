@@ -219,7 +219,7 @@ public final class SVClient
 
     public static void sendEventSync(PBSVEvent.Type type, @Nullable String desc)
     {
-        if (L.get().isStaging()) {
+        if (L.isStaging()) {
             l.debug("sv event sending disabled on staging");
             return;
         }
@@ -385,7 +385,7 @@ public final class SVClient
         if (cause == null) cause = new Exception(desc); // FIXME (AG): bogus
         String stackTrace = Exceptions.getStackTraceAsString(cause);
 
-        if (L.get().isStaging()) {
+        if (L.isStaging()) {
             l.warn("##### DEFECT #####\n" + desc + "\n" + Util.e(cause));
             l.warn("(sv defect sending disabled on staging.)");
             return;
@@ -523,7 +523,7 @@ public final class SVClient
     private static PBSVDefect createPBDefect(boolean isAutoBug, PBSVHeader header,
             Map<Key, String> cfgDB, String rtRoot, String stackTrace, StringBuilder sbDesc)
     {
-        String contactEmail = L.get().isMultiuser() ? cfgDB.get(Key.MULTIUSER_CONTACT_EMAIL) :
+        String contactEmail = L.isMultiuser() ? cfgDB.get(Key.MULTIUSER_CONTACT_EMAIL) :
                 header.getUser();
 
         Builder bdDefect = PBSVDefect

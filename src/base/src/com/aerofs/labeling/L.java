@@ -21,13 +21,40 @@ package com.aerofs.labeling;
  */
 public class L
 {
-    private final static ILabeling s_l = new GeneratedLabeling();
-
-    // these constants provide easy access to commonly used values
-    public final static String PRODUCT = s_l.product();
-
-    public static ILabeling get()
+    private static ILabeling get()
     {
-        return s_l;
+        return LazyHolder.s_l;
+    }
+
+    public static boolean isStaging() {
+        return get().isStaging();
+    }
+
+    public static boolean isMultiuser() {
+        return get().isMultiuser();
+    }
+
+    public static String product() {
+        return get().product();
+    }
+
+    public static String productSpaceFreeName() {
+        return get().productSpaceFreeName();
+    }
+
+    public static String productUnixName() {
+        return get().productUnixName();
+    }
+
+    public static String rootAnchorName() {
+        return get().rootAnchorName();
+    }
+
+    public static int defaultPortbase() {
+        return get().defaultPortbase();
+    }
+
+    private static class LazyHolder {
+        private static ILabeling s_l = new PropertiesLabeling();
     }
 }

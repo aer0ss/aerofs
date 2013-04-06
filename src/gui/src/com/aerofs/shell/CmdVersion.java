@@ -12,7 +12,7 @@ public class CmdVersion implements IShellCommand<ShProgram>
     @Override
     public void execute(ShellCommandRunner<ShProgram> s, CommandLine cl) throws Exception
     {
-        s.out().println(L.PRODUCT + " " + Cfg.ver());
+        s.out().println(L.product() + " " + Cfg.ver());
         s.out().println("Copyright " + S.COPYRIGHT);
     }
 
@@ -25,7 +25,7 @@ public class CmdVersion implements IShellCommand<ShProgram>
     @Override
     public String getDescription()
     {
-        return "display " + L.PRODUCT + " version infomation";
+        return "display " + L.product() + " version infomation";
     }
 
     @Override

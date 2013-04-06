@@ -61,7 +61,7 @@ public class StoreCreator
             // adding ref to a regular store that used to have no parent is:
             //   * fine in multiuser because the underlying storage is flat
             //   * problematic in singleuser because it indicates duplication
-            assert !sid.isUserRoot() && (L.get().isMultiuser() || !_ss.getParents_(sidx).isEmpty())
+            assert !sid.isUserRoot() && (L.isMultiuser() || !_ss.getParents_(sidx).isEmpty())
                     : sidx + " " + sid;
         }
         _ss.addParent_(sidx, sidxParent, t);

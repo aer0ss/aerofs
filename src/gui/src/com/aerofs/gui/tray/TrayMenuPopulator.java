@@ -110,7 +110,7 @@ public class TrayMenuPopulator
 
         addMenuSeparator();
 
-        addMenuItem("About " + L.PRODUCT, new AbstractListener(null)
+        addMenuItem("About " + L.product(), new AbstractListener(null)
         {
             @Override
             protected void handleEventImpl(Event event)

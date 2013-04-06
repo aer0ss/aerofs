@@ -232,7 +232,7 @@ public class Core implements IModule
 //                throw new ExFormatError("must set " + Key.TCP_ENDPOINT + " for sp");
 //            }
 //
-//            if (!tcpEndpoint.equals(L.get().spEndpoint())) {
+//            if (!tcpEndpoint.equals(L.spEndpoint())) {
 //                throw new ExFormatError("sp tcp endpoint values doesn't match");
 //            }
 //
@@ -240,7 +240,7 @@ public class Core implements IModule
 //            // configure SP's transport. TODO move it to TCP?
 //            for (ITransport tp : _tps.getAll_()) {
 //                tp.q().enqueueThrows(
-//                        new EOTransportReconfigRemoteDevice(L.get().spEndpoint(), SP_DID),
+//                        new EOTransportReconfigRemoteDevice(L.spEndpoint(), SP_DID),
 //                        _tc.prio());
 //            }
 //        }

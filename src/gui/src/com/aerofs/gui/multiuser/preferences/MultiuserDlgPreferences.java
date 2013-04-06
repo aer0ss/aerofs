@@ -16,7 +16,7 @@ public class MultiuserDlgPreferences extends AeroFSDialog
 {
     public MultiuserDlgPreferences(Shell parent)
     {
-        super(parent, L.PRODUCT + " " + S.PREFERENCES, false, false);
+        super(parent, L.product() + " " + S.PREFERENCES, false, false);
     }
     @Override
     protected void open(Shell shell)

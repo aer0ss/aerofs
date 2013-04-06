@@ -45,7 +45,7 @@ public class DlgPreSetupUpdateCheck extends Shell
     public DlgPreSetupUpdateCheck(Shell shell)
     {
         super(shell, SWT.DIALOG_TRIM | GUIUtil.alwaysOnTop());
-        setText("Setup " + L.PRODUCT);
+        setText("Setup " + L.product());
 
         GridLayout gridLayout = new GridLayout(1, false);
         // same as GUIDownloader
@@ -59,7 +59,7 @@ public class DlgPreSetupUpdateCheck extends Shell
         _composite.setLayout(_sl);
 
         _lblDownloading = new Label(_composite, SWT.NONE);
-        _lblDownloading.setText("Downloading updates. " + L.PRODUCT +
+        _lblDownloading.setText("Downloading updates. " + L.product() +
                 " will automatically restart...  ");
 
         Label lblChecking = new Label(_composite, SWT.NONE);

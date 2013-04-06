@@ -56,7 +56,7 @@ public class SPBlockingClient extends SPServiceBlockingStub
      */
     public void signInRemote() throws Exception
     {
-        ByteString credentials = L.get().isMultiuser() ?
+        ByteString credentials = L.isMultiuser() ?
                 Cfg.did().toPB() :
                 ByteString.copyFrom(Cfg.scrypted());
 

@@ -16,10 +16,10 @@ public class Progresses {
     private static final Logger l = Loggers.getLogger(Progresses.class);
 
     private static final String TOOLTIP_PREFIX =
-            (L.get().isStaging() ? "STAGING " : "") + L.PRODUCT;
+            (L.isStaging() ? "STAGING " : "") + L.product();
     private static final String DEFAULT_TOOLTIP =
             TOOLTIP_PREFIX + " " + Cfg.ver() +
-            (OSUtil.isOSX() ? "" : "\nDouble click to open " + L.PRODUCT + " folder");
+            (OSUtil.isOSX() ? "" : "\nDouble click to open " + L.product() + " folder");
 
     private final TreeMap<Integer, Progress> _progs =
         new TreeMap<Integer, Progress>();

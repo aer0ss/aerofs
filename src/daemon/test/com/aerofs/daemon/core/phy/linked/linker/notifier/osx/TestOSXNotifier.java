@@ -4,14 +4,7 @@ import java.util.Set;
 
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.CoreQueue;
-import com.aerofs.daemon.core.phy.linked.linker.IDeletionBuffer;
 import com.aerofs.daemon.core.phy.linked.linker.LinkerRoot;
-import com.aerofs.daemon.core.phy.linked.linker.LinkerRootMap;
-import com.aerofs.daemon.core.phy.linked.linker.MightCreate;
-import com.aerofs.daemon.core.phy.linked.linker.MightDelete;
-import com.aerofs.daemon.core.phy.linked.linker.scanner.ScanSessionQueue;
-import com.aerofs.daemon.lib.db.trans.Trans;
-import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.event.IEvent;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.event.Prio;

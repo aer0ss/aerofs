@@ -61,7 +61,7 @@ class EmailSender
         MimeMessage msg;
         MimeMultipart multiPart = createMultipartEmail(textBody, htmlBody);
         msg = composeMessage(from,
-                (fromName == null) ? L.PRODUCT : fromName,
+                (fromName == null) ? L.product() : fromName,
                 to,
                 replyTo,
                 subject);
@@ -85,7 +85,7 @@ class EmailSender
 
         msg.setFrom(new InternetAddress(from, fromName));
         msg.setRecipients(Message.RecipientType.TO, InternetAddress.parse(to, false));
-        if (L.get().isStaging()) {
+        if (L.isStaging()) {
             msg.setSubject("[STAGING] " + subject, CHARSET);
         } else {
             msg.setSubject(subject, CHARSET);

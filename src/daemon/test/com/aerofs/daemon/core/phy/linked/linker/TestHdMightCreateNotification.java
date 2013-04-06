@@ -5,7 +5,6 @@
 package com.aerofs.daemon.core.phy.linked.linker;
 
 import com.aerofs.base.id.SID;
-import com.aerofs.daemon.core.phy.linked.linker.LinkerRoot.Factory;
 import com.aerofs.daemon.core.phy.linked.linker.event.EIMightCreateNotification;
 import com.aerofs.daemon.core.phy.linked.linker.scanner.ScanSessionQueue;
 import com.aerofs.lib.Util;
@@ -15,7 +14,6 @@ import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.testlib.AbstractTest;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InjectMocks;

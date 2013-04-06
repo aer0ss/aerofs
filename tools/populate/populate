@@ -23,7 +23,7 @@ PPWD="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 APPROOT="$1"
 ASIS="$2"
 MODE="${3:-'STAGING'}"
-MULTIPLICITY="${4:-'CLIENT'}"
+PRODUCT="${4:-'CLIENT'}"
 OS="${5:-`"$PPWD"/os`}"
 
 VERSION_FILE=version
@@ -32,9 +32,16 @@ VERSION_FILE=version
 mkdir -p "$APPROOT"
 rm -rf "$APPROOT"/Growl.framework # Symlinks prevent cp from overwriting the files
 rm -rf "$APPROOT"/jre  # jre contains some read-only files that would make cp fail
+rm -f "$APPROOT"/labeling.properties
 cp -R "$ASIS"/common/* "$APPROOT"/
 cp -R "$ASIS"/s3/lib/* "$APPROOT"/lib/
 cp -R "$ASIS"/$OS/* "$APPROOT"/
+
+if [ "$PRODUCT" == "TEAM_SERVER" ]; then
+    cp "$APPROOT"/labeling-teamserver.properties "$APPROOT"/labeling.properties
+else
+    cp "$APPROOT"/labeling-client.properties "$APPROOT"/labeling.properties
+fi
 
 if [ "$MODE" == "CI" ]; then
     # Set-up a CI environment
@@ -51,11 +58,11 @@ else
     rm "$APPROOT"/cacert-ci.pem
     rm "$APPROOT"/cacert-prod.pem
     mv "$APPROOT"/cacert-staging.pem "$APPROOT"/cacert.pem
+    echo "labeling.isStaging=true" >> "$APPROOT"/labeling.properties
 fi
-
-if [ "$MULTIPLICITY" == "TEAM_SERVER" ]; then
-    touch "$APPROOT"/ts
-fi
+   
+rm "$APPROOT"/labeling-teamserver.properties
+rm "$APPROOT"/labeling-client.properties
 
 # Common to both staging and CI
 

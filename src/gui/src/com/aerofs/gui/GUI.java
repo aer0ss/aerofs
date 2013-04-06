@@ -86,7 +86,7 @@ public class GUI implements IUI
         _sh = new Shell(_disp);
         // setting the size to 0 would disable the tab key in the setup dialog
         _sh.setSize(1, 1);
-        _sh.setText(L.PRODUCT);
+        _sh.setText(L.product());
         GUIUtil.setShellIcon(_sh);
         GUIUtil.centerShell(_sh);
 
@@ -118,7 +118,7 @@ public class GUI implements IUI
     private void preLaunch()
     {
         // Create the system tray
-        if (L.get().isMultiuser()) {
+        if (L.isMultiuser()) {
             _st = new SystemTray(new MultiuserMenuProvider());
         } else {
             _st = new SystemTray(new SingleuserMenuProvider());
@@ -152,7 +152,7 @@ public class GUI implements IUI
 
     private boolean shellExtensionShouldBeInstalled()
     {
-        return !L.get().isMultiuser() && OSUtil.get().isShellExtensionAvailable() &&
+        return !L.isMultiuser() && OSUtil.get().isShellExtensionAvailable() &&
                 !OSUtil.get().isShellExtensionInstalled();
     }
 
@@ -542,7 +542,7 @@ public class GUI implements IUI
     @Override
     public void setup_(String rtRoot) throws Exception
     {
-        AbstractDlgSetup dlg = L.get().isMultiuser() ? new MultiuserDlgSetup(_sh) :
+        AbstractDlgSetup dlg = L.isMultiuser() ? new MultiuserDlgSetup(_sh) :
                 new SingleuserDlgSetup(_sh);
         dlg.open();
         if (dlg.isCancelled()) throw new ExLaunchAborted("user canceled setup");
@@ -617,7 +617,7 @@ public class GUI implements IUI
     @Override
     public void notify(MessageType mt, String msg, Runnable onClick)
     {
-        notify(mt, L.PRODUCT, msg, onClick);
+        notify(mt, L.product(), msg, onClick);
     }
 
     @Override

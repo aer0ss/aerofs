@@ -26,7 +26,7 @@ public class BaseParam
 
         public static InetSocketAddress xmppAddress()
         {
-            return L.get().isStaging() ?
+            return L.isStaging() ?
                     InetSocketAddress.createUnresolved("staging.aerofs.com", 9328) :
                     InetSocketAddress.createUnresolved("x.aerofs.com", 443);
         }
@@ -38,7 +38,7 @@ public class BaseParam
 
         public static InetSocketAddress zephyrAddress()
         {
-            return L.get().isStaging() ?
+            return L.isStaging() ?
                     InetSocketAddress.createUnresolved("staging.aerofs.com", 8888) :
                     InetSocketAddress.createUnresolved("zephyr.aerofs.com", 443);
         }
@@ -64,9 +64,9 @@ public class BaseParam
 
                 // CDN for AeroFS installers
                 INSTALLER_CDN_HOST_URL =
-                        "https://cache.client." + (L.get().isStaging() ? "stg." : "") + "aerofs.com",
+                        "https://cache.client." + (L.isStaging() ? "stg." : "") + "aerofs.com",
                 NOCACHE_INSTALLER_CDN_HOST_URL =
-                        "https://nocache.client." + (L.get().isStaging() ? "stg." : "") + "aerofs.com",
+                        "https://nocache.client." + (L.isStaging() ? "stg." : "") + "aerofs.com",
 
                 SUPPORT_EMAIL_ADDRESS = "support@aerofs.com";
     }
@@ -97,7 +97,7 @@ public class BaseParam
             try {
                 // in staging, the SP war is deployed under /sp by defualt
                 // allowing users to deploy their own sp war's (e.g. /yuriSP/sp, /weihanSP/sp, etc.)
-                url = L.get().isStaging() ?
+                url = L.isStaging() ?
                         new URL("https://staging.aerofs.com/sp/sp") :
                         new URL("https://sp.aerofs.com/sp");
             } catch (MalformedURLException e) {

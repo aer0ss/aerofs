@@ -41,7 +41,7 @@ public class CompFolders extends Composite
         GridData gd_lblNewLabel = new GridData(SWT.CENTER, SWT.CENTER, false, false, 1, 1);
         gd_lblNewLabel.heightHint = 26;
         lblNewLabel.setLayoutData(gd_lblNewLabel);
-        lblNewLabel.setText("Select an " + L.PRODUCT + " folder to share:");
+        lblNewLabel.setText("Select an " + L.product() + " folder to share:");
 
         _compList = new CompFoldersTree(this, new IListener() {
             @Override

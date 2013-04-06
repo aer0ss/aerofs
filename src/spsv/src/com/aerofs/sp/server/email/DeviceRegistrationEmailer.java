@@ -23,7 +23,7 @@ public class DeviceRegistrationEmailer
             throws IOException
     {
         // N.B. the URI string must be identical to that in devices/__init__.py.
-        sendDeviceCertifiedEmailImpl(L.PRODUCT + " Team Server", emailAddress, firstName, osFamily,
+        sendDeviceCertifiedEmailImpl(L.product() + " Team Server", emailAddress, firstName, osFamily,
                 deviceName, "Team Servers at " + WWW.TEAM_SERVER_DEVICES_URL, did);
     }
 
@@ -32,7 +32,7 @@ public class DeviceRegistrationEmailer
             throws IOException
     {
         // N.B. the URI string must be identical to that in devices/__init__.py.
-        sendDeviceCertifiedEmailImpl(L.PRODUCT, emailAddress, firstName, osFamily, deviceName,
+        sendDeviceCertifiedEmailImpl(L.product(), emailAddress, firstName, osFamily, deviceName,
                 "your devices at " + WWW.DEVICES_URL, did);
     }
 
