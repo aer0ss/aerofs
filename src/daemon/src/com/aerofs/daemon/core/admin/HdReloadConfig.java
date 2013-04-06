@@ -1,5 +1,6 @@
 package com.aerofs.daemon.core.admin;
 
+import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.daemon.event.admin.EIReloadConfig;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.lib.event.Prio;
@@ -10,11 +11,13 @@ public class HdReloadConfig extends AbstractHdIMC<EIReloadConfig>
     @Override
     protected void handleThrows_(EIReloadConfig ev, Prio prio) throws Exception
     {
-        String old = Cfg.absRootAnchor();
+        String old = Cfg.absDefaultRootAnchor();
 
         Cfg.init_(Cfg.absRTRoot(), false);
 
         // moving of root anchor is done in HdRelocateRootAnchor
-        assert Cfg.absRootAnchor().equals(old);
+        if (!old.equals(Cfg.absDefaultRootAnchor())) {
+            throw new ExBadArgs("Root anchor must be changed explictly");
+        }
     }
 }

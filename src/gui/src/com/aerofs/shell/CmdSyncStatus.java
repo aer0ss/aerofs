@@ -36,7 +36,7 @@ public class CmdSyncStatus implements IShellCommand<ShProgram> {
             throws Exception {
         String[] args = cl.getArgs();
         if (args.length != 1) throw new ExBadArgs();
-        PBPath path = s.d().buildPath_(args[0]);
+        PBPath path = s.d().buildPBPath_(args[0]);
         GetSyncStatusReply reply = s.d().getRitualClient_().getSyncStatus(path);
 
         // do not show sync status when servers are known to be down

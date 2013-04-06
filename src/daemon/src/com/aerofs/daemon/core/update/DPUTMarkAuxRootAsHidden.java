@@ -6,7 +6,7 @@ package com.aerofs.daemon.core.update;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.cfg.CfgAbsAuxRoot;
+import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.os.OSUtil;
 import org.slf4j.Logger;
 
@@ -18,11 +18,9 @@ import java.io.IOException;
 public class DPUTMarkAuxRootAsHidden implements IDaemonPostUpdateTask
 {
     private final static Logger l = Loggers.getLogger(DPUTMigrateAuxRoot.class);
-    private final CfgAbsAuxRoot _cfgAbsAuxRoot;
 
-    DPUTMarkAuxRootAsHidden(CfgAbsAuxRoot cfgAbsAuxRoot)
+    DPUTMarkAuxRootAsHidden()
     {
-        _cfgAbsAuxRoot = cfgAbsAuxRoot;
     }
 
     @Override
@@ -30,7 +28,7 @@ public class DPUTMarkAuxRootAsHidden implements IDaemonPostUpdateTask
     {
         try {
             if (OSUtil.isWindows()) {
-                OSUtil.get().markHiddenSystemFile(_cfgAbsAuxRoot.get());
+                OSUtil.get().markHiddenSystemFile(DPUTMigrateAuxRoot.deprecatedAbsAuxRoot());
             }
         } catch (IOException e) {
             l.warn("Ignoring: " + Util.e(e));

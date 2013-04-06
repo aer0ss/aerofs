@@ -20,7 +20,7 @@ class PathObfuscater implements IObfuscator<Path>
     @Override
     public String obfuscate(Path object)
     {
-        return _obfuscatorImpl.obfuscate(new File(object.toStringFormal()));
+        return object.sid() + _obfuscatorImpl.obfuscate(new File(object.toStringRelative()));
     }
 
     @Override

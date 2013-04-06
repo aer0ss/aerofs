@@ -98,9 +98,9 @@ public class ActivityLogDatabase extends AbstractDatabase implements IActivityLo
             SIndex sidx = new SIndex(_rs.getInt(2));
             OID oid = new OID(_rs.getBytes(3));
             int activities = _rs.getInt(4);
-            Path path = Path.fromString(_rs.getString(5));
+            Path path = Path.fromStringFormal(_rs.getString(5));
             String strTo = _rs.getString(6);
-            Path pathTo = _rs.wasNull() ? null : Path.fromString(strTo);
+            Path pathTo = _rs.wasNull() ? null : Path.fromStringFormal(strTo);
             Set<DID> dids = convertDIDs(_rs.getBytes(7));
             long time = _rs.getLong(8);
 

@@ -4,6 +4,7 @@
 
 package com.aerofs.cli;
 
+import com.aerofs.base.id.SID;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.RootAnchorUtil;
@@ -14,24 +15,29 @@ import com.aerofs.lib.ex.ExNoConsole;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.UIUtil;
 
+import javax.annotation.Nullable;
 import java.io.IOError;
 
 public class CLIRootAnchorUpdater
 {
     private CLI _cli;
-    private final String _relocateMsg = "Your " + L.PRODUCT + " folder was not found in" +
-            " the original location:\n" + Cfg.absRootAnchor() + ".\n" +
-            "Would you like to select a new folder location?";
 
-    private final String _unlinkOrQuitMsg = "If you want to move the " + L.PRODUCT + " folder " +
+    private final String _oldAbsPath;
+    private final @Nullable SID _sid;
+
+    private final String _relocateMsg;
+    private final String _unlinkOrQuitMsg = "If you want to move the missing folder " +
             "back to its original location, choose \"Quit\", move it back to its original" +
             " location, and launch " + L.PRODUCT + " again.\n" +
             "If you deleted the " + L.PRODUCT + " folder, or want to start over, " +
             "choose \"Unlink\". You will be asked to setup AeroFS the next time you launch.";
 
-    public CLIRootAnchorUpdater(CLI cli)
+    public CLIRootAnchorUpdater(CLI cli, String oldAbsPath, @Nullable SID sid)
     {
         _cli = cli;
+        _oldAbsPath = oldAbsPath;
+        _sid = sid;
+        _relocateMsg = relocateQuestion(oldAbsPath, sid);
     }
 
     /**
@@ -51,6 +57,20 @@ public class CLIRootAnchorUpdater
             _cli.shutdown();
             System.exit(0);
         }
+    }
+
+    private static String folderDescription(@Nullable SID sid)
+    {
+        return sid == null
+                ? "Your " + S.ROOT_ANCHOR
+                : "One of your shared folders";
+    }
+
+    private static String relocateQuestion(String oldAbsPath, @Nullable SID sid)
+    {
+        return folderDescription(sid)
+                + " was not found in the original location:\n" + oldAbsPath + ".\n"
+                + "Would you like to select a new folder location?";
     }
 
     /**
@@ -90,11 +110,10 @@ public class CLIRootAnchorUpdater
                 String rootPath = readLine();
                 if (rootPath == null) return; // leave ret as null
 
-                String oldRootPath = Cfg.absRootAnchor();
-                String newRootPath = RootAnchorUtil.adjustRootAnchor(rootPath);
+                String newRootPath = RootAnchorUtil.adjustRootAnchor(rootPath, _sid);
 
                 try {
-                    RootAnchorUtil.checkNewRootAnchor(oldRootPath, newRootPath);
+                    RootAnchorUtil.checkNewRootAnchor(_oldAbsPath, newRootPath);
                 } catch (Exception e) {
                     _cli.show(MessageType.WARN, UIUtil.e2msg(e) +
                             ". Please select a different folder.\n");
@@ -103,7 +122,7 @@ public class CLIRootAnchorUpdater
                 }
 
                 try {
-                    Cfg.db().set(Key.ROOT, newRootPath);
+                    RootAnchorUtil.updateAbsRootCfg(_sid, newRootPath);
                     Cfg.init_(Cfg.absRTRoot(), false);
                     _cli.show(MessageType.INFO, L.PRODUCT +
                             "' new location was updated succesfully!");

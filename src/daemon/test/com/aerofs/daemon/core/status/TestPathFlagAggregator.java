@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.status;
 
+import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.protocol.IDownloadStateListener.Ended;
 import com.aerofs.daemon.core.protocol.IDownloadStateListener.Ongoing;
 import com.aerofs.daemon.core.protocol.IDownloadStateListener.Started;
@@ -66,6 +67,8 @@ public class TestPathFlagAggregator extends AbstractTest
 
     @InjectMocks PathFlagAggregator tsa;
 
+    SID rootSID = SID.generate();
+
     SOID createSOID() throws Exception
     {
         return new SOID(new SIndex(1), new OID(UniqueID.generate()));
@@ -73,7 +76,7 @@ public class TestPathFlagAggregator extends AbstractTest
 
     void simulateTransferStart(int d, SOID soid, String p) throws Exception
     {
-        Path path = Path.fromString(p);
+        Path path = Path.fromString(rootSID, p);
         if (d == Downloading) {
             tsa.changeFlagsOnDownloadNotification_(new SOCID(soid, CID.CONTENT), path,
                     Started.SINGLETON);
@@ -89,7 +92,7 @@ public class TestPathFlagAggregator extends AbstractTest
 
     void simulateTransferProgress(int d, SOID soid, String p, int percent) throws Exception
     {
-        Path path = Path.fromString(p);
+        Path path = Path.fromString(rootSID, p);
         assert percent > 0 && percent < 100;
         if (d == Downloading) {
             tsa.changeFlagsOnDownloadNotification_(new SOCID(soid, CID.CONTENT), path,
@@ -104,7 +107,7 @@ public class TestPathFlagAggregator extends AbstractTest
 
     void simulateTransferEnd(int d, SOID soid, @Nullable String p) throws Exception
     {
-        Path path = p == null ? null : Path.fromString(p);
+        Path path = p == null ? null : Path.fromString(rootSID, p);
         if (d == Downloading) {
             tsa.changeFlagsOnDownloadNotification_(new SOCID(soid, CID.CONTENT), path,
                     Ended.SINGLETON_OKAY);
@@ -119,7 +122,7 @@ public class TestPathFlagAggregator extends AbstractTest
     private void assertStateEquals(int state, String... pathList)
     {
         for (String path : pathList) {
-            Assert.assertEquals(state, tsa.state_(Path.fromString(path)));
+            Assert.assertEquals(state, tsa.state_(Path.fromString(rootSID, path)));
         }
     }
 

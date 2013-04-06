@@ -15,31 +15,31 @@ public class CmdRm implements IShellCommand<ShProgram>
     @Override
     public void execute(ShellCommandRunner<ShProgram> s, CommandLine cl) throws Exception
     {
-        if (cl.getArgs().length == 0) throw new ExBadArgs();
+        final String[] args = cl.getArgs();
+        if (args.length == 0) throw new ExBadArgs();
 
         if (cl.hasOption('h')) {
             if (cl.hasOption('r')) {
-                for (String arg : cl.getArgs()) {
-                    PBPath path = s.d().buildPath_(arg);
-                    s.d().getRitualClient_().deleteRevision(path, null);
+                for (String arg : args) {
+                    s.d().getRitualClient_().deleteRevision(s.d().buildPBPath_(arg), null);
                 }
             } else {
-                if (cl.getArgs().length != 2) throw new ExBadArgs();
-                PBPath path = s.d().buildPath_(cl.getArgs()[0]);
-                ByteString index = ByteString.copyFromUtf8(cl.getArgs()[1]);
-                s.d().getRitualClient_().deleteRevision(path, index);
+                if (args.length != 2) throw new ExBadArgs();
+                s.d().getRitualClient_().deleteRevision(
+                        s.d().buildPBPath_(args[0]),
+                        ByteString.copyFromUtf8(args[1]));
             }
         } else {
-            for (String arg : cl.getArgs()) {
-                PBPath path = s.d().buildPath_(arg);
+            for (String arg : args) {
+                PBPath path = s.d().buildPBPath_(arg);
 
-            PBObjectAttributes attr = s.d().getRitualClient_()
-                    .getObjectAttributes(Cfg.user().getString(), path)
-                    .getObjectAttributes();
+                PBObjectAttributes attr = s.d().getRitualClient_()
+                        .getObjectAttributes(Cfg.user().getString(), path)
+                        .getObjectAttributes();
 
-            if (!(attr.getType() == Type.FILE || cl.hasOption('r'))) throw new ExNotFile();
+                if (!(attr.getType() == Type.FILE || cl.hasOption('r'))) throw new ExNotFile();
 
-                s.d().getRitualClient_().deleteObject(path);
+                    s.d().getRitualClient_().deleteObject(path);
             }
         }
     }

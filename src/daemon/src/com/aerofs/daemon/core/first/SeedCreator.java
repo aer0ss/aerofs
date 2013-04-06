@@ -6,6 +6,7 @@ package com.aerofs.daemon.core.first;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExAlreadyExist;
+import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
@@ -35,14 +36,12 @@ public class SeedCreator
     private static final Logger l = Loggers.getLogger(SeedCreator.class);
 
     private final IMetaDatabaseWalker _mdbw;
-    private final IMapSIndex2SID _sidx2sid;
     private final IMapSID2SIndex _sid2sidx;
 
     @Inject
-    public SeedCreator(IMetaDatabaseWalker mdbw, IMapSIndex2SID sidx2sid, IMapSID2SIndex sid2sidx)
+    public SeedCreator(IMetaDatabaseWalker mdbw, IMapSID2SIndex sid2sidx)
     {
         _mdbw = mdbw;
-        _sidx2sid = sidx2sid;
         _sid2sidx = sid2sidx;
     }
 
@@ -50,14 +49,16 @@ public class SeedCreator
      * Create a seed file from the current contents of the database
      * @return Absolute path of the created seed file
      */
-    public String create_(SIndex sidx) throws Exception
+    public String create_(SID sid) throws Exception
     {
+        SIndex sidx = _sid2sidx.getNullable_(sid);
+        if (sidx == null) throw new ExBadArgs("Cannot create seed for " + sid.toStringFormal());
+
         l.info("creating seed");
         try {
-            final SeedDatabase sdb = SeedDatabase.create_(_sidx2sid.get_(sidx).toStringFormal());
+            final SeedDatabase sdb = SeedDatabase.create_(sid.toStringFormal());
             try {
                 populate_(sidx, sdb);
-                // TODO: include SID into seed file name
                 return sdb.save_();
             } catch (Exception e) {
                 l.info("failed to populate seed", e);

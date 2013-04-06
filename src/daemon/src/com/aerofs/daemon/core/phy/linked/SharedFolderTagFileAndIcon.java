@@ -15,7 +15,8 @@ import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.UniqueID.ExInvalidID;
 import com.aerofs.daemon.core.first.FirstLaunch.AccessibleStores;
-import com.aerofs.daemon.core.linker.PathCombo;
+import com.aerofs.daemon.core.phy.linked.linker.LinkerRootMap;
+import com.aerofs.daemon.core.phy.linked.linker.PathCombo;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.lib.db.AbstractTransListener;
@@ -24,7 +25,6 @@ import com.aerofs.lib.Param;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.cfg.CfgAbsRootAnchor;
 import com.aerofs.base.id.SID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.injectable.InjectableDriver;
@@ -45,20 +45,15 @@ public class SharedFolderTagFileAndIcon
     private static final Logger l = Loggers.getLogger(SharedFolderTagFileAndIcon.class);
 
     private final InjectableDriver _dr;
-    private final CfgAbsRootAnchor _cfgAbsRootAnchor;
-    private final IMapSIndex2SID _sidx2sid;
     private final IMapSID2SIndex _sid2sidx;
     private final InjectableFile.Factory _factFile;
     private final AccessibleStores _accessibleStoresOnFirstLaunch;
 
     @Inject
-    public SharedFolderTagFileAndIcon(InjectableDriver dr, CfgAbsRootAnchor cfgAbsRootAnchor,
-            IMapSIndex2SID sidx2sid, IMapSID2SIndex sid2sidx, InjectableFile.Factory factFile,
-            AccessibleStores accessibleStoresOnFirstLaunch)
+    public SharedFolderTagFileAndIcon(InjectableDriver dr, InjectableFile.Factory factFile,
+            IMapSID2SIndex sid2sidx, AccessibleStores accessibleStoresOnFirstLaunch)
     {
         _dr = dr;
-        _cfgAbsRootAnchor = cfgAbsRootAnchor;
-        _sidx2sid = sidx2sid;
         _sid2sidx = sid2sidx;
         _factFile = factFile;
         _accessibleStoresOnFirstLaunch = accessibleStoresOnFirstLaunch;
@@ -68,17 +63,17 @@ public class SharedFolderTagFileAndIcon
      * Add the tag file and overlay icon for a shared folder, assuming path is the root of the
      * shared store identified by {@code sidx}.
      */
-    public void addTagFileAndIconIn(SIndex sidx, final Path path, Trans t)
+    public void addTagFileAndIconIn(SID sid, final String absPath, Trans t)
             throws IOException, SQLException
     {
-        addTagFileAndIconImpl(sidx, path);
+        addTagFileAndIconIn(sid, absPath);
 
         t.addListener_(new AbstractTransListener() {
             @Override
             public void aborted_()
             {
                 try {
-                    deleteTagFileAndIconIn(path);
+                    deleteTagFileAndIconIn(absPath);
                 } catch (IOException e) {
                     SystemUtil.fatal("unrecoverable: " + Util.e(e));
                 }
@@ -90,17 +85,17 @@ public class SharedFolderTagFileAndIcon
      * Delete the tag file and overlay icon for a shared folder, assuming path is the root of the
      * shared store identified by {@code sidx}.
      */
-    public void removeTagFileAndIconIn(final SIndex sidx, final Path path, Trans t)
+    public void removeTagFileAndIconIn(final SID sid, final String absPath, Trans t)
             throws IOException
     {
-        deleteTagFileAndIconIn(path);
+        deleteTagFileAndIconIn(absPath);
 
         t.addListener_(new AbstractTransListener() {
             @Override
             public void aborted_()
             {
                 try {
-                    addTagFileAndIconImpl(sidx, path);
+                    addTagFileAndIconIn(sid, absPath);
                 } catch (Exception e) {
                     SystemUtil.fatal("unrecoverable: " + Util.e(e));
                 }
@@ -108,17 +103,13 @@ public class SharedFolderTagFileAndIcon
         });
     }
 
-    private void addTagFileAndIconImpl(SIndex sidx, Path path) throws IOException, SQLException
+    private void addTagFileAndIconIn(SID sid, String absPath) throws IOException
     {
-        String absPath = path.toAbsoluteString(_cfgAbsRootAnchor.get());
+        l.info("add sf tag for {} in {}", sid, absPath);
+
         if (!OSUtil.isLinux()) {
             _dr.setFolderIcon(absPath, OSUtil.getIconPath(Icon.SharedFolder));
         }
-
-        SID sid = _sidx2sid.getNullable_(sidx);
-        // this method may be called during store creation when the sidx hasn't been added to the
-        // in-memory store list, therefore we have to fall back to getAbsent.
-        if (sid == null) sid = _sidx2sid.getAbsent_(sidx);
 
         String absPathTagFile = Util.join(absPath, Param.SHARED_FOLDER_TAG);
 
@@ -138,17 +129,9 @@ public class SharedFolderTagFileAndIcon
         OSUtil.get().markHiddenSystemFile(absPathTagFile);
     }
 
-    /**
-     * @param path to the directory containing the Param#SHARED_FOLDER_TAG
-     */
-    public void deleteTagFileAndIconIn(Path path) throws IOException
+    public void deleteTagFileAndIconIn(String absPath) throws IOException
     {
-        l.info("del sf tag in " + path);
-        deleteTagFileAndIcon(path.toAbsoluteString(_cfgAbsRootAnchor.get()));
-    }
-
-    private void deleteTagFileAndIcon(String absPath) throws IOException
-    {
+        l.info("del sf tag in {}", absPath);
         _dr.setFolderIcon(absPath, "");
 
         deleteTagFile(Util.join(absPath, Param.SHARED_FOLDER_TAG));
@@ -171,7 +154,7 @@ public class SharedFolderTagFileAndIcon
             return SID.storeSID2anchorOID(sid);
         } else {
             l.info("first-launch: invalid tag " + sid + " " + pc._path);
-            deleteTagFileAndIcon(pc._absPath);
+            deleteTagFileAndIconIn(pc._absPath);
             return null;
         }
     }

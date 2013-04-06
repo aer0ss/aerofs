@@ -3,6 +3,7 @@ package com.aerofs.daemon.core.phy;
 import java.io.IOException;
 import java.sql.SQLException;
 
+import com.aerofs.base.id.SID;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.id.SIndex;
@@ -20,7 +21,7 @@ public interface IPhysicalStorage
 
     IPhysicalFolder newFolder_(SOID soid, Path path);
 
-    IPhysicalPrefix newPrefix_(SOCKID k);
+    IPhysicalPrefix newPrefix_(SOCKID k) throws SQLException;
 
     /**
      * Move the completely downloaded prefix in place of the file.
@@ -40,18 +41,18 @@ public interface IPhysicalStorage
 
     /**
      * Perform necessary operations on the physical storage for creating a store.
-     * @param path During store creation, the system mat not be in a consistent state and therefore
-     * we pass the path as a parameter rather than letting the implementation query
-     * DirectoryService. The path is empty for root stores.
+     *
+     * NB: No assumptions should be made about pathes. Any code that require path information
+     * should take place in the folder to anchor promotion method
      */
-    void createStore_(SIndex sidx, Path path, Trans t) throws IOException, SQLException;
+    void createStore_(SIndex sidx, SID sid, Trans t) throws IOException, SQLException;
 
     /**
      * Perform necessary operations on the physical storage for deleting a store. The implementation
      * should at least delete prefix files belonging to the store
-     * @param path During store deletion, the system may not be in a consistent state and therefore
-     * we pass the path as a parameter rather than letting the implementation to query
-     * DirectoryService.
+     *
+     * NB: No assumptions should be made about pathes. All physical objects in the store are deleted
+     * prior to this method being called
      */
-    void deleteStore_(SIndex sidx, Path path, PhysicalOp op, Trans t) throws IOException, SQLException;
+    void deleteStore_(SIndex sidx, SID sid, PhysicalOp op, Trans t) throws IOException, SQLException;
 }

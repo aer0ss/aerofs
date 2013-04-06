@@ -60,7 +60,7 @@ public class CmdConflicts implements IShellCommand<ShProgram>
         boolean printPath = args.length != 1;
         List<PBPath> pathList = Lists.newArrayList();
         if (args.length > 0) {
-            for (String arg : args) pathList.add(s.d().buildPath_(arg));
+            for (String arg : args) pathList.add(s.d().buildPBPath_(arg));
         } else {
             ListConflictsReply reply = r.listConflicts();
             for (ConflictedPath p : reply.getConflictList()) pathList.add(p.getPath());
@@ -70,7 +70,7 @@ public class CmdConflicts implements IShellCommand<ShProgram>
         s.out().println("-------------------------------");
 
         for (PBPath p : pathList) {
-            if (printPath) s.out().println(new Path(p).toString());
+            if (printPath) s.out().println(Path.fromPB(p).toString());
             PBObjectAttributes attr = r.getObjectAttributes(Cfg.user().getString(), p)
                     .getObjectAttributes();
             for (PBBranch b : attr.getBranchList()) {

@@ -281,7 +281,7 @@ public class OrganizationDatabase extends AbstractSQLDatabase
             while (rs.next()) {
                 SID sid = new SID(rs.getBytes(1));
                 // skip root stores
-                if (!sid.isRoot()) Util.verify(set.add(sid));
+                if (!sid.isUserRoot()) Util.verify(set.add(sid));
             }
             return set;
         } finally {
@@ -306,7 +306,7 @@ public class OrganizationDatabase extends AbstractSQLDatabase
             while (rs.next()) {
                 SID sid = new SID(rs.getBytes(1));
                 // skip root stores
-                if (!sid.isRoot()) count++;
+                if (!sid.isUserRoot()) count++;
             }
             return count;
         } finally {

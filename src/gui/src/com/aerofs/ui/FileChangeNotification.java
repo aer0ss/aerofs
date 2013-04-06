@@ -116,7 +116,7 @@ public class FileChangeNotification
         }
         String msg = sb.toString();
 
-        final String path = (new Path(_recents.get(0))).toAbsoluteString(Cfg.absRootAnchor());
+        final String path = (Path.fromPB(_recents.get(0))).toAbsoluteString(Cfg.absDefaultRootAnchor());
         UI.get().notify(MessageType.INFO, title, msg, new Runnable() {
             @Override
             public void run()

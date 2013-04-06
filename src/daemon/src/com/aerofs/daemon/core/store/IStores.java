@@ -49,9 +49,6 @@ public interface IStores
      * @return true if the store is a root store.
      *
      * Invariant: a root store has an empty parent list: isRoot(S) == getParents_(S).isEmpty()
-     *
-     * There is a single root in single-user system, where more roots can exist in multi-user
-     * systems. In either case, there is one-to-one mapping between users to root stores.
      */
     boolean isRoot_(SIndex sidx) throws SQLException;
 

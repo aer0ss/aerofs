@@ -3,12 +3,12 @@ package com.aerofs.daemon.core.syncstatus;
 import java.sql.SQLException;
 
 import com.aerofs.base.id.DID;
+import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.alias.MapAlias2Target;
 import com.aerofs.daemon.core.ds.DirectoryServiceImpl;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.store.DescendantStores;
 import com.aerofs.daemon.core.store.DeviceBitMap;
-import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.StoreDeletionOperators;
 import com.aerofs.daemon.core.store.IStores;
 import com.aerofs.daemon.core.store.MapSIndex2DeviceBitMap;
@@ -58,7 +58,6 @@ public class TestLocalSyncStatus extends AbstractTest
     @Mock MapAlias2Target alias2target;
     @Mock IStores stores;
     @Mock DescendantStores dss;
-    @Mock IMapSIndex2SID sidx2sid;
     @Mock AggregateSyncStatus assc;
     @Mock FrequentDefectSender fds;
     @Mock StoreDeletionOperators sdo;
@@ -72,6 +71,7 @@ public class TestLocalSyncStatus extends AbstractTest
 
     LocalSyncStatus lsync;
 
+    final SID sid = SID.generate();
     final SIndex sidx = new SIndex(1);
     final DID d0 = new DID(UniqueID.generate());
     final DID d1 = new DID(UniqueID.generate());
@@ -88,8 +88,10 @@ public class TestLocalSyncStatus extends AbstractTest
 
         when(tm.begin_()).thenReturn(t);
 
+        when(sm.get_(sidx)).thenReturn(sid);
+
         DirectoryServiceImpl ds = new DirectoryServiceImpl();
-        SingleuserPathResolver pathResolver = new SingleuserPathResolver(sss, ds, sidx2sid);
+        SingleuserPathResolver pathResolver = new SingleuserPathResolver(sss, ds, sm, sm);
         ds.inject_(ps, mdb, alias2target, tm, sm, fds, sdo, pathResolver);
         lsync = new LocalSyncStatus(ds, ssdb, sidx2dbm, assc, sdo, dss);
     }

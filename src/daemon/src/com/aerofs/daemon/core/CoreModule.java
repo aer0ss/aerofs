@@ -6,8 +6,6 @@ import com.aerofs.daemon.core.ds.ObjectSurgeon;
 import com.aerofs.daemon.lib.db.CoreSchema;
 import com.aerofs.daemon.lib.db.IMetaDatabaseWalker;
 import com.aerofs.daemon.lib.db.ISchema;
-import com.aerofs.daemon.core.linker.IDeletionBuffer;
-import com.aerofs.daemon.core.linker.TimeoutDeletionBuffer;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.SIDMap;
@@ -69,7 +67,6 @@ public class CoreModule extends AbstractModule
 
         bind(IMapSIndex2SID.class).to(SIDMap.class);
         bind(IMapSID2SIndex.class).to(SIDMap.class);
-        bind(IDeletionBuffer.class).to(TimeoutDeletionBuffer.class);
         bind(INativeVersionDatabase.class).to(NativeVersionDatabase.class);
         bind(IImmigrantVersionDatabase.class).to(ImmigrantVersionDatabase.class);
         bind(IMetaDatabase.class).to(MetaDatabase.class);

@@ -12,7 +12,9 @@ import com.aerofs.labeling.L;
 import com.aerofs.lib.RootAnchorUtil;
 import com.aerofs.lib.S;
 import com.aerofs.lib.SecUtil;
+import com.aerofs.lib.StorageType;
 import com.aerofs.lib.Util;
+import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase;
 import com.aerofs.lib.ex.ExNoConsole;
 import com.aerofs.base.id.UserID;
@@ -48,7 +50,8 @@ public class CLISetup
             PROP_USERID = "userid",
             PROP_PASSWORD = "password",
             PROP_DEVICE = "device",
-            PROP_ROOT = "root";
+            PROP_ROOT = "root",
+            PROP_STORAGE_TYPE = "storage_type";
 
     private boolean _isUnattendedSetup;
 
@@ -56,6 +59,7 @@ public class CLISetup
     private char[] _passwd;
     private String _anchorRoot = null;
     private String _deviceName = null;
+    private StorageType _storageType = null;
     private PBS3Config _s3config = null;
 
     CLISetup(CLI cli, String rtRoot) throws Exception
@@ -112,6 +116,7 @@ public class CLISetup
         _passwd = props.getProperty(PROP_PASSWORD).toCharArray();
         _anchorRoot = props.getProperty(PROP_ROOT, _anchorRoot);
         _deviceName = props.getProperty(PROP_DEVICE, _deviceName);
+        _storageType = StorageType.fromString(props.getProperty(PROP_STORAGE_TYPE));
 
         s3BucketId = props.getProperty(CfgDatabase.Key.S3_BUCKET_ID.keyString());
         if (s3BucketId != null) {
@@ -150,8 +155,12 @@ public class CLISetup
 
         cli.progress("Performing magic");
 
+        if (_storageType == null) {
+            _storageType = _s3config != null ? StorageType.S3 : StorageType.LOCAL;
+        }
+
         UI.controller().setupMultiuser(_userID.getString(), new String(_passwd), _anchorRoot,
-                _deviceName, _s3config);
+                _deviceName, _storageType.name(), _s3config);
     }
 
     private void setupSingleuser(CLI cli) throws Exception
@@ -165,8 +174,10 @@ public class CLISetup
 
         cli.progress("Performing magic");
 
+        if (_storageType == null) _storageType = StorageType.LINKED;
+
         UI.controller().setupSingleuser(_userID.getString(), new String(_passwd), _anchorRoot,
-                _deviceName, null);
+                _deviceName, _storageType.name(), null);
     }
 
     private void getUser(CLI cli)
@@ -185,7 +196,7 @@ public class CLISetup
     private void getRootAnchor(CLI cli) throws Exception
     {
         String input = cli.askText(S.ROOT_ANCHOR, _anchorRoot);
-        String root = RootAnchorUtil.adjustRootAnchor(input);
+        String root = RootAnchorUtil.adjustRootAnchor(input, null);
         if (!input.equals(root)) {
             cli.confirm(MessageType.INFO,
                     "The path has been adjusted to " + Util.quote(root) + ".");

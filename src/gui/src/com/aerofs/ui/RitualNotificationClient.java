@@ -30,6 +30,7 @@ public class RitualNotificationClient
 
     private boolean _started; // for debugging only
 
+    private volatile boolean _paused;
     private volatile boolean _stopping;
 
     // access protected by synchronized (_ls)
@@ -59,7 +60,10 @@ public class RitualNotificationClient
                     if (_stopping) break;
 
                     l.info("reconnect in " + UIParam.DAEMON_CONNECTION_RETRY_INTERVAL + " ms");
-                    ThreadUtil.sleepUninterruptable(UIParam.DAEMON_CONNECTION_RETRY_INTERVAL);
+
+                    do {
+                        ThreadUtil.sleepUninterruptable(UIParam.DAEMON_CONNECTION_RETRY_INTERVAL);
+                    } while (_paused);
                 }
             }
         });
@@ -68,6 +72,16 @@ public class RitualNotificationClient
     public void stop()
     {
         _stopping = true;
+    }
+
+    public void pause()
+    {
+        _paused = true;
+    }
+
+    public void resume()
+    {
+        _paused = false;
     }
 
     private void thdRecv_() throws IOException

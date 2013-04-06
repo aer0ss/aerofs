@@ -4,10 +4,10 @@
 
 package com.aerofs.daemon.core.mock.logical;
 
+import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.id.SOID;
-import junit.framework.Assert;
 import org.hamcrest.Description;
 import org.mockito.ArgumentMatcher;
 
@@ -19,25 +19,21 @@ import java.sql.SQLException;
 public class IsSOIDAtPath extends ArgumentMatcher<SOID>
 {
     private final DirectoryService _ds;
-    private final String _path;
+    private final Path _path;
 
-    public IsSOIDAtPath(DirectoryService ds, String path)
+    public IsSOIDAtPath(DirectoryService ds, SID rootSID, String path)
     {
         _ds = ds;
-        _path = path;
+        _path = Path.fromString(rootSID, path);
     }
 
     @Override
-    public boolean matches(Object argument)
+    public boolean matches(Object item)
     {
-        Assert.assertNotNull(argument);
         try {
-            Path p = _ds.resolve_((SOID) argument);
-            Assert.assertNotNull("expected " + argument + " to point to " + _path, p);
-            return _path.equalsIgnoreCase(p.toStringFormal());
+            return item.equals(_ds.resolveNullable_(_path));
         } catch (SQLException e) {
-            Assert.fail();
-            return false;
+            throw new AssertionError();
         }
     }
 

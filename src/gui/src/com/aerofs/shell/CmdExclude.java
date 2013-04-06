@@ -1,7 +1,6 @@
 package com.aerofs.shell;
 
 import com.aerofs.base.ex.ExBadArgs;
-import com.aerofs.proto.Common.PBPath;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
 
@@ -13,8 +12,7 @@ public class CmdExclude implements IShellCommand<ShProgram>
     {
         if (cl.getArgs().length != 1) throw new ExBadArgs();
 
-        PBPath path = s.d().buildPath_(cl.getArgs()[0]);
-        s.d().getRitualClient_().excludeFolder(path);
+        s.d().getRitualClient_().excludeFolder(s.d().buildPBPath_(cl.getArgs()[0]));
     }
 
     @Override

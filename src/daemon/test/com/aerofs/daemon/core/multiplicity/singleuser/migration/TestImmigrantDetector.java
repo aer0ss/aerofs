@@ -58,6 +58,8 @@ public class TestImmigrantDetector extends AbstractTest
 
     @InjectMocks ImmigrantDetector imd;
 
+    static final SID rootSID = SID.generate();
+
     SIndex sidxParent = new SIndex(-123);
     OID oid = SID.storeSID2anchorOID(SID.generate());
     SIndex sidxFrom = new SIndex(3);
@@ -73,8 +75,8 @@ public class TestImmigrantDetector extends AbstractTest
     SID sidFrom = SID.generate();
     SID sidTo = SID.generate();
     SID sidAnchored = SID.anchorOID2storeSID(oid);
-    Path pFrom = new Path("fooFrom", "barFrom", "bazFrom");
-    Path pTo = new Path("fooTo", "barTo", "bazTo");
+    Path pFrom = new Path(rootSID, "fooFrom", "barFrom", "bazFrom");
+    Path pTo = new Path(rootSID, "fooTo", "barTo", "bazTo");
     Version vKMLFrom = Version.of(DID.generate(), new Tick(100));
     Version vKMLTo = Version.of(DID.generate(), new Tick(100));
     PhysicalOp op = PhysicalOp.APPLY;

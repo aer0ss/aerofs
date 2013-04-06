@@ -5,6 +5,7 @@
 package com.aerofs.daemon.core.phy.block;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.phy.IPhysicalFolder;
 import com.aerofs.daemon.core.phy.IPhysicalObject;
 import com.aerofs.daemon.core.phy.PhysicalOp;
@@ -57,8 +58,8 @@ class BlockFolder implements IPhysicalFolder
     }
 
     @Override
-    public void promoteToAnchor_(Trans t) throws IOException, SQLException {}
+    public void promoteToAnchor_(PhysicalOp op, Trans t) throws IOException, SQLException {}
 
     @Override
-    public void demoteToRegularFolder_(Trans t) throws IOException, SQLException {}
+    public void demoteToRegularFolder_(PhysicalOp op, Trans t) throws IOException, SQLException {}
 }

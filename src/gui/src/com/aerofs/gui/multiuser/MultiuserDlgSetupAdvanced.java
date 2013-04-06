@@ -6,7 +6,10 @@ package com.aerofs.gui.multiuser;
 
 import com.aerofs.gui.setup.AbstractDlgSetupAdvanced;
 import com.aerofs.gui.setup.CompLocalStorage;
+import com.aerofs.labeling.L;
 import com.aerofs.lib.S;
+import com.aerofs.lib.StorageType;
+import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.ui.PasswordVerifier;
 import com.aerofs.ui.PasswordVerifier.PasswordVerifierResult;
 import com.google.common.base.Preconditions;
@@ -47,15 +50,9 @@ public class MultiuserDlgSetupAdvanced extends AbstractDlgSetupAdvanced
         public String s3Passphrase;
     }
 
-    final static public int LOCAL_STORAGE_OPTION = 0;
-    final static public int S3_STORAGE_OPTION = 1;
-
-    final private String LOCAL_STORAGE_OPTION_TEXT = "Store files on local disk";
-    final private String S3_STORAGE_OPTION_TEXT = "Store files on Amazon S3";
     final private String S3_PASSWORD_EXPLANATION = S.SETUP_S3_ENCRYPTION_PASSWORD;
 
-
-    private int _storageChoice = LOCAL_STORAGE_OPTION;
+    private StorageType _storageChoice = StorageType.LOCAL;
 
     private Composite _container;
     private CompLocalStorage _compLocalStorage;
@@ -64,7 +61,7 @@ public class MultiuserDlgSetupAdvanced extends AbstractDlgSetupAdvanced
     private Label _lblS3Error;
 
     protected MultiuserDlgSetupAdvanced(Shell parentShell, String deviceName, String absRootAnchor,
-            S3Config s3Config, int storageChoice)
+            S3Config s3Config, StorageType storageChoice)
     {
         super(parentShell, deviceName, absRootAnchor);
         _s3Config = s3Config;
@@ -77,8 +74,11 @@ public class MultiuserDlgSetupAdvanced extends AbstractDlgSetupAdvanced
         _container = container;
 
         final Combo storageSelector = new Combo(_container, SWT.DROP_DOWN | SWT.READ_ONLY);
-        storageSelector.add(LOCAL_STORAGE_OPTION_TEXT, LOCAL_STORAGE_OPTION);
-        storageSelector.add(S3_STORAGE_OPTION_TEXT, S3_STORAGE_OPTION);
+        for (StorageType t : StorageType.values()) {
+            // TODO: enable option for prod builds
+            if (t == StorageType.LINKED && !L.get().isStaging()) continue;
+            storageSelector.add(t.description(), t.ordinal());
+        }
         storageSelector.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 2, 1));
 
         addPlaceholder(_container, null);
@@ -94,7 +94,7 @@ public class MultiuserDlgSetupAdvanced extends AbstractDlgSetupAdvanced
             @Override
             public void widgetSelected(SelectionEvent selectionEvent)
             {
-                _storageChoice = storageSelector.getSelectionIndex();
+                _storageChoice = StorageType.fromOrdinal(storageSelector.getSelectionIndex());
                 updateStorageArea();
                 updateOkButtonState();
             }
@@ -113,7 +113,7 @@ public class MultiuserDlgSetupAdvanced extends AbstractDlgSetupAdvanced
                     _txtS3Passphrase2.setText(_s3Config.s3Passphrase);
                 }
                 _compLocalStorage.setAbsRootAnchor(getAbsoluteRootAnchor());
-                storageSelector.select(_storageChoice);
+                storageSelector.select(_storageChoice.ordinal());
                 updateStorageArea();
                 updateOkButtonState();
             }
@@ -123,30 +123,35 @@ public class MultiuserDlgSetupAdvanced extends AbstractDlgSetupAdvanced
     private void updateOkButtonState()
     {
         switch (_storageChoice) {
-            case LOCAL_STORAGE_OPTION:
-                getButton(IDialogConstants.OK_ID).setEnabled(true);
-                return;
-            case S3_STORAGE_OPTION:
-                PasswordVerifierResult result = verifyPasswords();
-                getButton(IDialogConstants.OK_ID).setEnabled(result == PasswordVerifierResult.OK);
-                _lblS3Error.setText(result.getMsg());
-                _container.layout();
-                return;
-            default:
-                Preconditions.checkState(_storageChoice == LOCAL_STORAGE_OPTION ||
-                        _storageChoice == S3_STORAGE_OPTION, "Unimplemented Storage Option");
-                break;
+        case LINKED:
+        case LOCAL:
+            getButton(IDialogConstants.OK_ID).setEnabled(true);
+            break;
+        case S3:
+            PasswordVerifierResult result = verifyPasswords();
+            getButton(IDialogConstants.OK_ID).setEnabled(result == PasswordVerifierResult.OK);
+            _lblS3Error.setText(result.getMsg());
+            _container.layout();
+            break;
+        default:
+            throw new AssertionError("Unimplemented StorageType " + _storageChoice);
         }
     }
 
     private void updateStorageArea()
     {
-        if (_storageChoice == LOCAL_STORAGE_OPTION) {
+        switch (_storageChoice) {
+        case LINKED:
+        case LOCAL:
             setS3Visible(false);
             _compLocalStorage.setVisible(true);
-        } else {
+            break;
+        case S3:
             _compLocalStorage.setVisible(false);
             setS3Visible(true);
+            break;
+        default:
+            throw new AssertionError("Unimplemented StorageType " + _storageChoice);
         }
         _container.getShell().layout();
         _container.getShell().pack();
@@ -269,7 +274,7 @@ public class MultiuserDlgSetupAdvanced extends AbstractDlgSetupAdvanced
         return _s3Config;
     }
 
-    protected int getStorageChoice()
+    protected StorageType getStorageChoice()
     {
         return _storageChoice;
     }

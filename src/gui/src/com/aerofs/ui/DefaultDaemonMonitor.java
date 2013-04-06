@@ -77,6 +77,9 @@ class DefaultDaemonMonitor implements IDaemonMonitor
 
         int retries = UIParam.DM_LAUNCH_PING_RETRIES;
         while (true) {
+            // the RootAnchorPoller can stop the daemon before a successful ping
+            if (_stopping) return proc;
+
             if (proc != null) {
                 try {
                     int exitCode = proc.exitValue();
@@ -115,8 +118,11 @@ class DefaultDaemonMonitor implements IDaemonMonitor
                            This exit code may happen when we try to run the DPUTMigrateAuxRoot task
                            Therefore, it can only happen here, not in onDaemonDeath()
                          */
+                        // TODO: legacy migration code, should be removed when we think all users
+                        // have updated past the DPUT in question (or decide not to support upgrade
+                        // from such fossilized clients)
                         throw new ExUIMessage(L.PRODUCT + " couldn't launch because it couldn't " +
-                                "write to: \"" + Cfg.absAuxRoot() + "\"\n\nPlease make sure that " +
+                                "write to: \"" + Cfg.absDefaultAuxRoot() + "\"\n\nPlease make sure that " +
                                 L.PRODUCT + " has the appropriate permissions to write to that " +
                                 "folder.");
                     } else {
@@ -168,6 +174,12 @@ class DefaultDaemonMonitor implements IDaemonMonitor
     public void start()
             throws IOException, ExUIMessage, ExDaemonFailedToStart, ExTimeout
     {
+        // if we were stopped, simply let the monitor thread restart the daemon
+        if (!_firstStart && _stopping) {
+            _stopping = false;
+            return;
+        }
+
         // Cleanup any previous existing daemons
         try {
             kill();
@@ -178,9 +190,8 @@ class DefaultDaemonMonitor implements IDaemonMonitor
 
         l.info("starting daemon");
 
-        final Process proc = startDaemon();
-
         _stopping = false;
+        final Process proc = startDaemon();
 
         if (_firstStart) {
             // start the monitor thread
@@ -260,8 +271,9 @@ class DefaultDaemonMonitor implements IDaemonMonitor
             // do not restart the daemon
             if (_stopping) {
                 l.info("pause a bit as we're stopping");
-                ThreadUtil.sleepUninterruptable(UIParam.DM_RESTART_MONITORING_INTERVAL);
-                continue;
+                while (_stopping) {
+                    ThreadUtil.sleepUninterruptable(UIParam.DM_RESTART_MONITORING_INTERVAL);
+                }
             }
 
             // Attempt to restart the daemon
@@ -276,6 +288,7 @@ class DefaultDaemonMonitor implements IDaemonMonitor
                 }
 
                 l.warn("restart in " + UIParam.DM_RESTART_INTERVAL);
+
                 ThreadUtil.sleepUninterruptable(UIParam.DM_RESTART_INTERVAL);
             }
         }

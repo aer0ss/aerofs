@@ -7,6 +7,9 @@ package com.aerofs.controller;
 import com.aerofs.base.BaseParam.SP;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
+import com.aerofs.base.id.SID;
+import com.aerofs.lib.RootAnchorUtil;
+import com.aerofs.lib.StorageType;
 import com.aerofs.lib.sched.IScheduler;
 import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.Param;
@@ -43,6 +46,7 @@ import java.io.File;
 import java.io.IOException;
 import javax.annotation.Nullable;
 import java.sql.SQLException;
+import java.util.Map.Entry;
 import java.util.concurrent.Callable;
 
 import static com.aerofs.lib.Param.Verkehr.VERKEHR_HOST;
@@ -380,7 +384,7 @@ public final class CommandNotificationSubscriber
 
         // Delete Root Anchor.
         // TODO (MP) possibly implement secure delete.
-        FileUtil.deleteIgnoreErrorRecursively(new File(Cfg.absRootAnchor()));
+        FileUtil.deleteIgnoreErrorRecursively(new File(Cfg.absDefaultRootAnchor()));
         // Also delete the entire config directory, if possible.
         // On Windows, files we hold open may refuse to be deleted.
         FileUtil.deleteIgnoreErrorRecursively(new File(Cfg.absRTRoot()));
@@ -409,9 +413,15 @@ public final class CommandNotificationSubscriber
         UI.rnc().stop();
         UI.dm().stopIgnoreException();
 
-        // Delete revision history.
         // TODO (MP) possibly implement secure delete.
-        FileUtil.deleteIgnoreErrorRecursively(new File(Cfg.absAuxRoot()));
+        // Delete aux roots (partial downloads, conflicts and revision history)
+        if (Cfg.storageType() == StorageType.LINKED) {
+            for (Entry<SID, String> e : Cfg.getRoots().entrySet()) {
+                RootAnchorUtil.cleanAuxRootForPath(e.getValue(), e.getKey());
+            }
+        } else {
+            RootAnchorUtil.cleanAuxRootForPath(Cfg.absDefaultRootAnchor(), Cfg.rootSID());
+        }
 
         // Delete device key and certificate.
         FileUtil.deleteIgnoreErrorRecursively(new File(Cfg.absRTRoot(), Param.DEVICE_KEY));

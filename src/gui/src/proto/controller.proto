@@ -140,9 +140,10 @@ message SetupExistingUserCall {
     required string password = 2;
     required string root_anchor = 3;
     required string device_name = 4;
+    required string storage_type = 5;
 
     // S3
-    optional PBS3Config s3_config = 5;
+    optional PBS3Config s3_config = 6;
 }
 
 message SendPasswordResetEmailCall {

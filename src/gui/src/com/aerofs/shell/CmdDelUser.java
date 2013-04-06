@@ -1,8 +1,8 @@
 package com.aerofs.shell;
 
 import com.aerofs.base.ex.ExBadArgs;
+import com.aerofs.lib.Path;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.proto.Common.PBPath;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
 
@@ -38,7 +38,7 @@ public class CmdDelUser implements IShellCommand<ShProgram>
     {
         if (cl.getArgList().size() != 2) throw new ExBadArgs();
 
-        PBPath path = s.d().buildPath_(cl.getArgs()[0]);
-        s.d().getRitualClient_().deleteACL(Cfg.user().getString(), path, cl.getArgs()[1]);
+        Path path = s.d().buildPath_(cl.getArgs()[0]);
+        s.d().getRitualClient_().deleteACL(Cfg.user().getString(), path.toPB(), cl.getArgs()[1]);
     }
 }

@@ -49,15 +49,14 @@ public class Param extends BaseParam
     public static final String SHARED_FOLDER_TAG       = ".aerofs";
     public static final String RECENT_EXCEPTIONS       = "rex";
 
+
     /**
      * AuxRoot (auxiliary root) is the location where AeroFS stores temporary, conflict, and history
      * files for a given path that hosts AeroFS physical files.
      *
-     * AuxRoot has the same parent folder as RootAnchor to ensure they are on the same filesystem.
-     * AuxRoot's name is AUXROOT_PREFIX + the first 6 characters of the device id, to avoid
-     * conflicting AuxRoots in case of multiple installations
+     * AuxRoot is directly under RootAnchor to ensure they are on the same filesystem.
      */
-    public static final String AUXROOT_PREFIX = ".aerofs.";
+    public static final String AUXROOT_NAME = ".aerofs.aux";
 
     public static enum AuxFolder
     {
@@ -132,7 +131,7 @@ public class Param extends BaseParam
     {
         // These variables are saved here rather than *PostUpdateTasks classes so that both
         // UI and processes can access them.
-        public static final int DAEMON_POST_UPDATE_TASKS = 27;
+        public static final int DAEMON_POST_UPDATE_TASKS = 28;
         public static final int UI_POST_UPDATE_TASKS = 1;
     }
 

@@ -17,7 +17,7 @@ public class CmdShared implements IShellCommand<ShProgram>
         if (cl.getArgs().length != 0) throw new ExBadArgs();
 
         List<PBPath> paths = s.d().getRitualClient_().listSharedFolders().getPathList();
-        for (PBPath path : paths) s.out().println(new Path(path));
+        for (PBPath path : paths) s.out().println(Path.fromPB(path));
     }
 
     @Override

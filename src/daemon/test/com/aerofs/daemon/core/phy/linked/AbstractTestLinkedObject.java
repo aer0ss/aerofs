@@ -1,21 +1,27 @@
 package com.aerofs.daemon.core.phy.linked;
 
 import com.aerofs.base.id.OID;
+import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UniqueID;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
-import com.aerofs.daemon.core.linker.IgnoreList;
+import com.aerofs.daemon.core.phy.linked.fid.IFIDMaintainer;
+import com.aerofs.daemon.core.phy.linked.linker.IgnoreList;
 import com.aerofs.daemon.core.phy.IPhysicalObject;
 import static com.aerofs.daemon.core.phy.PhysicalOp.MAP;
+
+import com.aerofs.daemon.core.phy.linked.linker.LinkerRootMap;
+import com.aerofs.daemon.core.store.IMapSIndex2SID;
+import com.aerofs.daemon.core.store.IStores;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.Path;
-import com.aerofs.lib.cfg.CfgAbsRootAnchor;
 import com.aerofs.base.ex.ExNotFound;
+import com.aerofs.lib.cfg.CfgAbsRoots;
+import com.aerofs.lib.cfg.CfgStoragePolicy;
 import com.aerofs.lib.id.*;
 import com.aerofs.lib.injectable.InjectableDriver;
 import com.aerofs.lib.injectable.InjectableDriver.FIDAndType;
 import com.aerofs.lib.injectable.InjectableFile;
-import com.aerofs.lib.injectable.InjectableFile.Factory;
 import com.aerofs.testlib.AbstractTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -31,14 +37,18 @@ public abstract class AbstractTestLinkedObject<T extends IPhysicalObject> extend
     @Mock private DirectoryService ds;
     @Mock private InjectableDriver dr;
     @Mock private Trans t;
-    @Mock private CfgAbsRootAnchor cfgAbsRootAnchor;
+    @Mock private LinkerRootMap lrm;
     @Mock private InjectableFile.Factory factFile;
     @Mock private IgnoreList il;
     @Mock private OA oa;
 
+    LinkedStorage s;
+
+    static final SID rootSID = SID.generate();
+
     SOID soid = new SOID(new SIndex(1), new OID(UniqueID.generate()));
     SOKID sokid = new SOKID(soid, KIndex.MASTER);
-    Path path = new Path("foo", "bar");
+    Path path = new Path(rootSID, "foo", "bar");
     private final FID fid = new FID(new byte[0]);
 
     private T obj;
@@ -46,22 +56,25 @@ public abstract class AbstractTestLinkedObject<T extends IPhysicalObject> extend
     /**
      * @return the specialized physical object under test
      */
-    protected abstract T createPhysicalObject(CfgAbsRootAnchor cfgAbsRootAnchor, Factory factFile,
-            InjectableDriver dr, DirectoryService ds, IgnoreList il, SOKID sokid, Path path);
+    protected abstract T createPhysicalObject(LinkedStorage s, SOKID sokid, Path path);
 
     @Before
     public void setupAbstractTestLocalObject() throws IOException, SQLException, ExNotFound
     {
         when(dr.getFIDAndType(any(String.class))).thenReturn(new FIDAndType(fid, false));
 
-        when(cfgAbsRootAnchor.get()).thenReturn("");
+        when(lrm.absRootAnchor_(rootSID)).thenReturn("");
         when(factFile.create(any(String.class))).then(RETURNS_MOCKS);
 
         when(ds.getOA_(soid)).thenReturn(oa);
         when(ds.getOANullable_(soid)).thenReturn(oa);
         when(oa.fid()).thenReturn(fid);
 
-        obj = createPhysicalObject(cfgAbsRootAnchor, factFile, dr, ds, il, sokid, path);
+        s = new LinkedStorage(factFile, new IFIDMaintainer.Factory(dr, ds), lrm,
+                mock(IStores.class), mock(IMapSIndex2SID.class), mock(CfgAbsRoots.class),
+                mock(CfgStoragePolicy.class), il, mock(SharedFolderTagFileAndIcon.class));
+
+        obj = createPhysicalObject(s, sokid, path);
     }
 
     @Test
@@ -85,7 +98,7 @@ public abstract class AbstractTestLinkedObject<T extends IPhysicalObject> extend
     @Test
     public void shouldNotUpdateFIDWhenMovingTheSameObject() throws IOException, SQLException
     {
-        T obj2 = createPhysicalObject(cfgAbsRootAnchor, factFile, dr, ds, il, sokid, path);
+        T obj2 = createPhysicalObject(s, sokid, path);
 
         obj.move_(obj2, MAP, t);
 
@@ -98,7 +111,7 @@ public abstract class AbstractTestLinkedObject<T extends IPhysicalObject> extend
         SOID soid2 = new SOID(soid.sidx(), new OID(UniqueID.generate()));
         SOKID sokid2 = new SOKID(soid2, KIndex.MASTER);
 
-        T obj2 = createPhysicalObject(cfgAbsRootAnchor, factFile, dr, ds, il, sokid2, path);
+        T obj2 = createPhysicalObject(s, sokid2, path);
 
         obj.move_(obj2, MAP, t);
 

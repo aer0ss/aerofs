@@ -10,7 +10,7 @@ import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.Core;
 import com.aerofs.daemon.core.ds.CA;
 import com.aerofs.daemon.core.ds.OA;
-import com.aerofs.daemon.core.linker.event.EITestPauseOrResumeLinker;
+import com.aerofs.daemon.core.phy.linked.linker.event.EITestPauseOrResumeLinker;
 import com.aerofs.daemon.core.phy.IPhysicalRevProvider.Child;
 import com.aerofs.daemon.core.phy.IPhysicalRevProvider.Revision;
 import com.aerofs.daemon.event.admin.EICreateSeedFile;
@@ -144,7 +144,7 @@ public class RitualService implements IRitualService
         for (PBSubjectRolePair srp : srps) {
             acl.put(UserID.fromExternal(srp.getSubject()), Role.fromPB(srp.getRole()));
         }
-        EIShareFolder ev = new EIShareFolder(Cfg.user(), new Path(path), acl,
+        EIShareFolder ev = new EIShareFolder(Cfg.user(), Path.fromPB(path), acl,
                 emailNote);
         ev.execute(PRIO);
 
@@ -173,7 +173,7 @@ public class RitualService implements IRitualService
     public ListenableFuture<Void> leaveSharedFolder(PBPath path)
             throws Exception
     {
-        new EILeaveSharedFolder(new Path(path)).execute(PRIO);
+        new EILeaveSharedFolder(Path.fromPB(path)).execute(PRIO);
         return createVoidReply();
     }
 
@@ -208,7 +208,7 @@ public class RitualService implements IRitualService
     public ListenableFuture<GetObjectAttributesReply> getObjectAttributes(
             String user, PBPath path) throws Exception
     {
-        EIGetAttr ev = new EIGetAttr(UserID.fromExternal(user), Core.imce(), new Path(path));
+        EIGetAttr ev = new EIGetAttr(UserID.fromExternal(user), Core.imce(), Path.fromPB(path));
         ev.execute(PRIO);
         if (ev._oa == null) throw new ExNotFound();
 
@@ -222,7 +222,7 @@ public class RitualService implements IRitualService
     public ListenableFuture<GetChildrenAttributesReply> getChildrenAttributes(String user,
             PBPath path) throws Exception
     {
-        EIGetChildrenAttr ev = new EIGetChildrenAttr(UserID.fromExternal(user), new Path(path),
+        EIGetChildrenAttr ev = new EIGetChildrenAttr(UserID.fromExternal(user), Path.fromPB(path),
                 Core.imce());
         ev.execute(PRIO);
 
@@ -238,7 +238,7 @@ public class RitualService implements IRitualService
     @Override
     public ListenableFuture<Void> excludeFolder(PBPath path) throws Exception
     {
-        EISetExpelled ev = new EISetExpelled(new Path(path), true);
+        EISetExpelled ev = new EISetExpelled(Path.fromPB(path), true);
         ev.execute(PRIO);
         return createVoidReply();
     }
@@ -246,7 +246,7 @@ public class RitualService implements IRitualService
     @Override
     public ListenableFuture<Void> includeFolder(PBPath path) throws Exception
     {
-        EISetExpelled ev = new EISetExpelled(new Path(path), false);
+        EISetExpelled ev = new EISetExpelled(Path.fromPB(path), false);
         ev.execute(PRIO);
         return createVoidReply();
     }
@@ -265,7 +265,7 @@ public class RitualService implements IRitualService
     @Override
     public ListenableFuture<Void> importFile(PBPath destination, String source) throws Exception
     {
-        EIImportFile ev = new EIImportFile(new Path(destination), source, Core.imce());
+        EIImportFile ev = new EIImportFile(Path.fromPB(destination), source, Core.imce());
         ev.execute(PRIO);
         return createVoidReply();
     }
@@ -273,7 +273,7 @@ public class RitualService implements IRitualService
     @Override
     public ListenableFuture<ExportFileReply> exportFile(PBPath source) throws Exception
     {
-        Path src = new Path(source);
+        Path src = Path.fromPB(source);
         EIExportFile ev = new EIExportFile(Core.imce(), src);
         ev.execute(PRIO);
 
@@ -284,7 +284,7 @@ public class RitualService implements IRitualService
     @Override
     public ListenableFuture<Void> createObject(PBPath path, Boolean dir) throws Exception
     {
-        EICreateObject ev = new EICreateObject(Cfg.user(), Core.imce(), new Path(path), dir);
+        EICreateObject ev = new EICreateObject(Cfg.user(), Core.imce(), Path.fromPB(path), dir);
         ev.execute(PRIO);
         if (ev._exist) throw new ExAlreadyExist();
         return createVoidReply();
@@ -293,7 +293,7 @@ public class RitualService implements IRitualService
     @Override
     public ListenableFuture<Void> deleteObject(PBPath path) throws Exception
     {
-        EIDeleteObject ev = new EIDeleteObject(Cfg.user(), Core.imce(), new Path(path));
+        EIDeleteObject ev = new EIDeleteObject(Cfg.user(), Core.imce(), Path.fromPB(path));
         ev.execute(PRIO);
         return createVoidReply();
     }
@@ -301,9 +301,8 @@ public class RitualService implements IRitualService
     @Override
     public ListenableFuture<Void> moveObject(PBPath pathFrom, PBPath pathTo) throws Exception
     {
-        Path to = new Path(pathTo);
-        EIMoveObject ev = new EIMoveObject(Cfg.user(), Core.imce(),
-                new Path(pathFrom), to.removeLast(), to.last());
+        Path to = Path.fromPB(pathTo);
+        EIMoveObject ev = new EIMoveObject(Cfg.user(), Core.imce(), Path.fromPB(pathFrom), to.removeLast(), to.last());
         ev.execute(PRIO);
         return createVoidReply();
     }
@@ -318,10 +317,10 @@ public class RitualService implements IRitualService
     }
 
     @Override
-    public ListenableFuture<CreateSeedFileReply> createSeedFile()
+    public ListenableFuture<CreateSeedFileReply> createSeedFile(ByteString sid)
             throws Exception
     {
-        EICreateSeedFile ev = new EICreateSeedFile(Core.imce());
+        EICreateSeedFile ev = new EICreateSeedFile(new SID(sid), Core.imce());
         ev.execute(PRIO);
         return createReply(CreateSeedFileReply.newBuilder().setPath(ev._path).build());
     }
@@ -396,7 +395,7 @@ public class RitualService implements IRitualService
     @Override
     public ListenableFuture<GetACLReply> getACL(String user, PBPath path) throws Exception
     {
-        EIGetACL ev = new EIGetACL(UserID.fromExternal(user), new Path(path), Core.imce());
+        EIGetACL ev = new EIGetACL(UserID.fromExternal(user), Path.fromPB(path), Core.imce());
         ev.execute(PRIO);
 
         // we only get here if the event suceeded properly
@@ -417,7 +416,7 @@ public class RitualService implements IRitualService
     {
         // TODO: accepting {@code user} as input is sort of OK as long as the GUI is the only
         // Ritual client but it will become a major security issue if/when Ritual becomes open API
-        EIUpdateACL ev = new EIUpdateACL(UserID.fromExternal(user), new Path(path),
+        EIUpdateACL ev = new EIUpdateACL(UserID.fromExternal(user), Path.fromPB(path),
                 UserID.fromExternal(subject), Role.fromPB(role), Core.imce());
         ev.execute(PRIO);
         return createVoidReply();
@@ -429,7 +428,7 @@ public class RitualService implements IRitualService
     {
         // TODO: accepting {@code user} as input is sort of OK as long as the GUI is the only
         // Ritual client but it will become a major security issue if/when Ritual is open-sourced
-        EIDeleteACL ev = new EIDeleteACL(UserID.fromExternal(user), new Path(path),
+        EIDeleteACL ev = new EIDeleteACL(UserID.fromExternal(user), Path.fromPB(path),
                 UserID.fromExternal(subject), Core.imce());
         ev.execute(PRIO);
         return createVoidReply();
@@ -438,7 +437,7 @@ public class RitualService implements IRitualService
     @Override
     public ListenableFuture<ListRevChildrenReply> listRevChildren(PBPath path) throws Exception
     {
-        EIListRevChildren ev = new EIListRevChildren(new Path(path), Core.imce());
+        EIListRevChildren ev = new EIListRevChildren(Path.fromPB(path), Core.imce());
         ev.execute(PRIO);
         ListRevChildrenReply.Builder bd = ListRevChildrenReply.newBuilder();
         for (Child child : ev.getChildren()) bd.addChild(child.toPB());
@@ -448,7 +447,7 @@ public class RitualService implements IRitualService
     @Override
     public ListenableFuture<ListRevHistoryReply> listRevHistory(PBPath path) throws Exception
     {
-        EIListRevHistory ev = new EIListRevHistory(new Path(path), Core.imce());
+        EIListRevHistory ev = new EIListRevHistory(Path.fromPB(path), Core.imce());
         ev.execute(PRIO);
         ListRevHistoryReply.Builder bd = ListRevHistoryReply.newBuilder();
         for (Revision rev : ev.getRevisions()) bd.addRevision(rev.toPB());
@@ -458,7 +457,7 @@ public class RitualService implements IRitualService
     @Override
     public ListenableFuture<ExportRevisionReply> exportRevision(PBPath path, ByteString index) throws Exception
     {
-        EIExportRevision ev = new EIExportRevision(Core.imce(), new Path(path), index.toByteArray());
+        EIExportRevision ev = new EIExportRevision(Core.imce(), Path.fromPB(path), index.toByteArray());
         ev.execute(PRIO);
         return createReply(ExportRevisionReply.newBuilder()
                 .setDest(ev._dst.getAbsolutePath()).build());
@@ -468,7 +467,7 @@ public class RitualService implements IRitualService
     public ListenableFuture<Void> deleteRevision(PBPath path, @Nullable ByteString index)
             throws Exception
     {
-        new EIDeleteRevision(Core.imce(), new Path(path),
+        new EIDeleteRevision(Core.imce(), Path.fromPB(path),
                 index == null ? null : index.toByteArray()).execute(PRIO);
         return createVoidReply();
     }
@@ -486,7 +485,7 @@ public class RitualService implements IRitualService
     public ListenableFuture<ExportConflictReply> exportConflict(PBPath path, Integer kindex)
             throws Exception
     {
-        EIExportConflict ev = new EIExportConflict(Core.imce(), new Path(path), new KIndex(kindex));
+        EIExportConflict ev = new EIExportConflict(Core.imce(), Path.fromPB(path), new KIndex(kindex));
         ev.execute(PRIO);
         return createReply(ExportConflictReply.newBuilder()
                 .setDest(ev._dst.getAbsolutePath()).build());
@@ -495,8 +494,7 @@ public class RitualService implements IRitualService
     @Override
     public ListenableFuture<Void> deleteConflict(PBPath path, Integer kindex) throws Exception
     {
-        EIDeleteBranch ev = new EIDeleteBranch(Cfg.user(), Core.imce(),
-                new Path(path), new KIndex(kindex));
+        EIDeleteBranch ev = new EIDeleteBranch(Cfg.user(), Core.imce(), Path.fromPB(path), new KIndex(kindex));
         ev.execute(PRIO);
         return createVoidReply();
     }
@@ -512,7 +510,7 @@ public class RitualService implements IRitualService
     @Override
     public ListenableFuture<GetSyncStatusReply> getSyncStatus(PBPath path) throws Exception
     {
-        EIGetSyncStatus ev = new EIGetSyncStatus(new Path(path), Core.imce());
+        EIGetSyncStatus ev = new EIGetSyncStatus(Path.fromPB(path), Core.imce());
         ev.execute(PRIO);
         GetSyncStatusReply.Builder bd = GetSyncStatusReply.newBuilder();
         bd.setIsServerUp(ev._isServerUp);
@@ -525,7 +523,7 @@ public class RitualService implements IRitualService
             throws Exception
     {
         List<Path> pathList = Lists.newArrayList();
-        for (PBPath pbPath : pbPaths) pathList.add(new Path(pbPath));
+        for (PBPath pbPath : pbPaths) pathList.add(Path.fromPB(pbPath));
         EIGetStatusOverview ev = new EIGetStatusOverview(pathList, Core.imce());
         ev.execute(PRIO);
         GetPathStatusReply.Builder bd = GetPathStatusReply.newBuilder();
@@ -537,7 +535,7 @@ public class RitualService implements IRitualService
     public ListenableFuture<TestGetObjectIdentifierReply> testGetObjectIdentifier(PBPath path)
             throws Exception
     {
-        EIGetAttr ev = new EIGetAttr(Cfg.user(), Core.imce(), new Path(path));
+        EIGetAttr ev = new EIGetAttr(Cfg.user(), Core.imce(), Path.fromPB(path));
         ev.execute(PRIO);
         OA oa = ev._oa;
         if (oa == null) throw new ExNotFound();
@@ -600,9 +598,10 @@ public class RitualService implements IRitualService
     }
 
     @Override
-    public ListenableFuture<Void> relocate(String newAbsRootAnchor) throws Exception
+    public ListenableFuture<Void> relocate(String newAbsRootAnchor, @Nullable ByteString sid) throws Exception
     {
-        new EIRelocateRootAnchor(newAbsRootAnchor, Core.imce()).execute(PRIO);
+        new EIRelocateRootAnchor(newAbsRootAnchor, sid == null ? null : new SID(sid), Core.imce())
+                .execute(PRIO);
         return createVoidReply();
     }
 

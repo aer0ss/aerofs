@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.phy.block;
 
+import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.phy.IPhysicalFile;
 import com.aerofs.daemon.core.phy.IPhysicalFolder;
@@ -19,6 +20,7 @@ import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
+import com.aerofs.lib.cfg.CfgAbsDefaultAuxRoot;
 import com.aerofs.lib.cfg.CfgStoragePolicy;
 import com.aerofs.lib.event.IEvent;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
@@ -31,7 +33,6 @@ import com.aerofs.lib.Param;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgAbsAutoExportFolder;
-import com.aerofs.lib.cfg.CfgAbsAuxRoot;
 import com.aerofs.lib.db.InMemorySQLiteDBCW;
 import com.aerofs.lib.id.CID;
 import com.aerofs.lib.id.KIndex;
@@ -81,7 +82,7 @@ public class TestBlockStorage extends AbstractBlockTest
     @Mock TCB tcb;
     @Mock TransManager tm;
     @Mock CoreScheduler sched;
-    @Mock CfgAbsAuxRoot auxRoot;
+    @Mock CfgAbsDefaultAuxRoot auxRoot;
     @Mock CfgAbsAutoExportFolder autoExportFolder;
     @Mock CfgStoragePolicy storagePolicy;
     @Mock FrequentDefectSender fds;
@@ -97,6 +98,9 @@ public class TestBlockStorage extends AbstractBlockTest
 
     BlockStorage bs;
     boolean useHistory;
+
+    static final SID rootSID = SID.generate();
+    Path mkpath(String path) { return Path.fromString(rootSID, path); }
 
     @Before
     public void setUp() throws Exception
@@ -168,27 +172,27 @@ public class TestBlockStorage extends AbstractBlockTest
 
     private void createFile(String path, SOKID sokid) throws Exception
     {
-        IPhysicalFile file = bs.newFile_(sokid, Path.fromString(path));
+        IPhysicalFile file = bs.newFile_(sokid, mkpath(path));
         file.create_(PhysicalOp.APPLY, t);
     }
 
     private void deleteFile(String path, SOKID sokid) throws Exception
     {
-        IPhysicalFile file = bs.newFile_(sokid, Path.fromString(path));
+        IPhysicalFile file = bs.newFile_(sokid, mkpath(path));
         file.delete_(PhysicalOp.APPLY, t);
     }
 
     private void moveFile(String pathFrom, SOKID sokidFrom, String pathTo, SOKID sokidTo)
             throws Exception
     {
-        IPhysicalFile from = bs.newFile_(sokidFrom, Path.fromString(pathFrom));
-        IPhysicalFile to = bs.newFile_(sokidTo, Path.fromString(pathTo));
+        IPhysicalFile from = bs.newFile_(sokidFrom, mkpath(pathFrom));
+        IPhysicalFile to = bs.newFile_(sokidTo, mkpath(pathTo));
         from.move_(to, PhysicalOp.APPLY, t);
     }
 
     private boolean exists(String path, SOKID sokid) throws IOException
     {
-        IPhysicalFile file = bs.newFile_(sokid, Path.fromString(path));
+        IPhysicalFile file = bs.newFile_(sokid, mkpath(path));
         try {
             file.newInputStream_().close();
         } catch (FileNotFoundException e) {
@@ -204,7 +208,7 @@ public class TestBlockStorage extends AbstractBlockTest
     {
         SOCKID sockid = new SOCKID(sokid, CID.CONTENT);
         IPhysicalPrefix prefix = bs.newPrefix_(sockid);
-        IPhysicalFile file = bs.newFile_(sokid, Path.fromString(path));
+        IPhysicalFile file = bs.newFile_(sokid, mkpath(path));
 
         OutputStream out = prefix.newOutputStream_(false);
         out.write(content);
@@ -216,7 +220,7 @@ public class TestBlockStorage extends AbstractBlockTest
 
     private byte[] fetch(String path, SOKID sokid) throws Exception
     {
-        IPhysicalFile file = bs.newFile_(sokid, Path.fromString(path));
+        IPhysicalFile file = bs.newFile_(sokid, mkpath(path));
         InputStream in = file.newInputStream_();
         return ByteStreams.toByteArray(in);
     }
@@ -224,7 +228,7 @@ public class TestBlockStorage extends AbstractBlockTest
 
     private boolean revChildrenEquals(String path, Child... children) throws Exception
     {
-        Collection<Child> result = bs.getRevProvider().listRevChildren_(Path.fromString(path));
+        Collection<Child> result = bs.getRevProvider().listRevChildren_(mkpath(path));
         return Sets.newHashSet(result).equals(Sets.newHashSet(children));
     }
 
@@ -258,7 +262,7 @@ public class TestBlockStorage extends AbstractBlockTest
 
     private boolean revHistoryEquals(String path, RevisionMatcher... revisions) throws Exception
     {
-        Collection<Revision> result = bs.getRevProvider().listRevHistory_(Path.fromString(path));
+        Collection<Revision> result = bs.getRevProvider().listRevHistory_(mkpath(path));
         int i = 0;
         for (Revision r : result) {
             Assert.assertTrue("r" + i + ":" + r, revisions[i].matches(r));
@@ -270,12 +274,12 @@ public class TestBlockStorage extends AbstractBlockTest
     private byte[] fetchRev(String path, byte[] index) throws Exception
     {
         return ByteStreams.toByteArray(
-                bs.getRevProvider().getRevInputStream_(Path.fromString(path), index)._is);
+                bs.getRevProvider().getRevInputStream_(mkpath(path), index)._is);
     }
 
     private byte[] revIndex(String path, int idx) throws Exception
     {
-        Object[] r = bs.getRevProvider().listRevHistory_(Path.fromString(path)).toArray();
+        Object[] r = bs.getRevProvider().listRevHistory_(mkpath(path)).toArray();
         return ((Revision)r[idx < 0 ? r.length + idx : idx])._index;
     }
 
@@ -286,12 +290,12 @@ public class TestBlockStorage extends AbstractBlockTest
 
     private void delRev(String path, int idx) throws Exception
     {
-        bs.getRevProvider().deleteRevision_(Path.fromString(path), revIndex(path, idx));
+        bs.getRevProvider().deleteRevision_(mkpath(path), revIndex(path, idx));
     }
 
     private void delAllRevUnder(String path) throws Exception
     {
-        bs.getRevProvider().deleteAllRevisionsUnder_(Path.fromString(path));
+        bs.getRevProvider().deleteAllRevisionsUnder_(mkpath(path));
     }
 
     @Test
@@ -515,14 +519,14 @@ public class TestBlockStorage extends AbstractBlockTest
     @Test
     public void shouldIgnoreFolderFolderCreationConflict() throws Exception
     {
-        bs.newFolder_(newSOID(), Path.fromString("foo/bar")).create_(PhysicalOp.APPLY, t);
-        bs.newFolder_(newSOID(), Path.fromString("foo/bar")).create_(PhysicalOp.APPLY, t);
+        bs.newFolder_(newSOID(), mkpath("foo/bar")).create_(PhysicalOp.APPLY, t);
+        bs.newFolder_(newSOID(), mkpath("foo/bar")).create_(PhysicalOp.APPLY, t);
     }
 
     @Test
     public void shouldIgnoreFolderFileCreationConflict() throws Exception
     {
-        bs.newFolder_(newSOID(), Path.fromString("foo/bar")).create_(PhysicalOp.APPLY, t);
+        bs.newFolder_(newSOID(), mkpath("foo/bar")).create_(PhysicalOp.APPLY, t);
         createFile("foo/bar", newSOKID());
     }
 
@@ -530,20 +534,20 @@ public class TestBlockStorage extends AbstractBlockTest
     public void shouldIgnoreFileFolderCreationConflict() throws Exception
     {
         createFile("foo/bar", newSOKID());
-        bs.newFolder_(newSOID(), Path.fromString("foo/bar")).create_(PhysicalOp.APPLY, t);
+        bs.newFolder_(newSOID(), mkpath("foo/bar")).create_(PhysicalOp.APPLY, t);
     }
 
     @Test
     public void shouldIgnoreFolderDeletion() throws Exception
     {
-        bs.newFolder_(newSOID(), Path.fromString("foo/bar")).delete_(PhysicalOp.APPLY, t);
+        bs.newFolder_(newSOID(), mkpath("foo/bar")).delete_(PhysicalOp.APPLY, t);
     }
 
     @Test
     public void shouldIgnoreFolderMovement() throws Exception
     {
-        IPhysicalFolder to = bs.newFolder_(newSOID(), Path.fromString("hellow/world"));
-        bs.newFolder_(newSOID(), Path.fromString("foo/bar")).move_(to, PhysicalOp.APPLY, t);
+        IPhysicalFolder to = bs.newFolder_(newSOID(), mkpath("hellow/world"));
+        bs.newFolder_(newSOID(), mkpath("foo/bar")).move_(to, PhysicalOp.APPLY, t);
     }
 
     @Test
@@ -852,6 +856,7 @@ public class TestBlockStorage extends AbstractBlockTest
     public void shouldRemoveFilesWhenDeletingStore() throws Exception
     {
         SIndex sidx = new SIndex(1);
+        SID sid = SID.generate();
         long id = bsdb.getOrCreateFileIndex_("1-foo", t);
 
         // setup db: 1 file with 1 chunk
@@ -859,7 +864,7 @@ public class TestBlockStorage extends AbstractBlockTest
         FileInfo info = new FileInfo(id, -1, b._content.length, 0, b._key);
         bsdb.prePutBlock_(b._key, b._content.length, t);
         bsdb.postPutBlock_(b._key, t);
-        bsdb.updateFileInfo(Path.fromString("foo/bar/baz"), info, t);
+        bsdb.updateFileInfo(mkpath("foo/bar/baz"), info, t);
 
         final List<ITransListener> listeners = Lists.newArrayList();
         doAnswer(new Answer<Void>()
@@ -873,7 +878,7 @@ public class TestBlockStorage extends AbstractBlockTest
             }
         }).when(t).addListener_(any(ITransListener.class));
 
-        bs.deleteStore_(sidx, new Path(), PhysicalOp.APPLY, t);
+        bs.deleteStore_(sidx, sid, PhysicalOp.APPLY, t);
 
         // check that block was deref'ed
         Assert.assertEquals(0, bsdb.getBlockCount_(b._key));

@@ -4,16 +4,15 @@ import java.io.IOException;
 import java.sql.SQLException;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.base.id.SID;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import org.slf4j.Logger;
 
-import com.aerofs.daemon.core.linker.IgnoreList;
 import com.aerofs.daemon.core.phy.IPhysicalFolder;
 import com.aerofs.daemon.core.phy.IPhysicalObject;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.phy.linked.LinkedStorage.IRollbackHandler;
 import com.aerofs.daemon.core.phy.linked.fid.IFIDMaintainer;
-import com.aerofs.lib.cfg.CfgAbsRootAnchor;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.lib.Path;
@@ -27,19 +26,17 @@ public class LinkedFolder implements IPhysicalFolder
     private final Path _path;
     private final InjectableFile _f;
     private final IFIDMaintainer _fidm;
-    private final IgnoreList _il;
-    private final SharedFolderTagFileAndIcon _sfti;
 
-    public LinkedFolder(CfgAbsRootAnchor cfgAbsRootAnchor, InjectableFile.Factory factFile,
-            IFIDMaintainer.Factory factFIDMan, IgnoreList il, SharedFolderTagFileAndIcon sfti,
-            SOID soid, Path path)
+    private final LinkedStorage _s;
+
+    public LinkedFolder(LinkedStorage s, SOID soid, Path path)
     {
+        _s = s;
         _soid = soid;
         _path = path;
-        _f = factFile.create(Util.join(cfgAbsRootAnchor.get(), Util.join(path.elements())));
-        _fidm = factFIDMan.create_(soid, _f);
-        _il = il;
-        _sfti = sfti;
+        _f = _s._factFile.create(Util.join(_s._lrm.absRootAnchor_(path.sid()),
+                Util.join(path.elements())));
+        _fidm = _s._factFIDMan.create_(soid, _f);
     }
 
     @SuppressWarnings("fallthrough")
@@ -149,24 +146,23 @@ public class LinkedFolder implements IPhysicalFolder
         InjectableFile[] children = _f.listFiles();
         if (children != null) {
             for (InjectableFile child : children) {
-                if (_il.isIgnored_(child.getName())) child.deleteOrThrowIfExistRecursively();
+                if (_s._il.isIgnored_(child.getName())) child.deleteOrThrowIfExistRecursively();
             }
         }
     }
 
     @Override
-    public void promoteToAnchor_(Trans t) throws IOException, SQLException
+    public void promoteToAnchor_(PhysicalOp op, Trans t) throws IOException, SQLException
     {
-        assert _soid.oid().isRoot() : _soid;
-        if (!_path.isEmpty()) _sfti.addTagFileAndIconIn(_soid.sidx(), _path, t);
+        if (op != PhysicalOp.APPLY) return;
+        _s.promoteToAnchor_(_soid, _path, t);
     }
 
     @Override
-    public void demoteToRegularFolder_(Trans t) throws IOException, SQLException
+    public void demoteToRegularFolder_(PhysicalOp op, Trans t) throws IOException, SQLException
     {
-        assert _soid.oid().isRoot() : _soid;
-        assert !_path.isEmpty();
-        _sfti.removeTagFileAndIconIn(_soid.sidx(), _path, t);
+        if (op != PhysicalOp.APPLY) return;
+        _s.demoteToRegularFolder_(_soid, _path, t);
     }
 
     @Override

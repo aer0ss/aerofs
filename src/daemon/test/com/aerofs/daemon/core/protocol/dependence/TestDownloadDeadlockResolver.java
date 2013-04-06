@@ -5,6 +5,7 @@
 package com.aerofs.daemon.core.protocol.dependence;
 
 import com.aerofs.base.id.DID;
+import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.protocol.ReceiveAndApplyUpdate;
@@ -48,6 +49,8 @@ public class TestDownloadDeadlockResolver extends AbstractTest
 
     @InjectMocks private DownloadDeadlockResolver _ddr;
 
+    final static SID rootSID = SID.generate();
+
     private final SIndex _sidx = new SIndex(1);
     private final SOCID _socidLocalChild = new SOCID(_sidx, new OID(UniqueID.generate()), CID.META);
     private final SOCID _socidRemAncestor = new SOCID(_sidx, new OID(UniqueID.generate()), CID.META);
@@ -61,7 +64,7 @@ public class TestDownloadDeadlockResolver extends AbstractTest
         OA oa = mock(OA.class);
         when(_ds.getOA_(soid)).thenReturn(oa);
         when(_ds.getOANullable_(soid)).thenReturn(oa);
-        when(_ds.resolve_(oa)).thenReturn(new Path("dummy/" + soid));
+        when(_ds.resolve_(oa)).thenReturn(Path.fromString(rootSID, "dummy/" + soid));
         return oa;
     }
 

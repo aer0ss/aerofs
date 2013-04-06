@@ -16,6 +16,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import com.aerofs.base.C;
+import com.aerofs.base.id.SID;
 import com.aerofs.lib.Param;
 import com.aerofs.lib.Versions;
 import com.aerofs.lib.db.DBUtil;
@@ -105,7 +106,10 @@ public class CfgDatabase
         MULTIUSER_CONTACT_EMAIL("multiuser_contact_email", ""),
 
         // first start of the daemon
-        FIRST_START("first_start", true)
+        FIRST_START("first_start", true),
+
+        // storage type
+        STORAGE_TYPE("storage_type", null)
         ;
 
         private final String _str;
@@ -193,6 +197,11 @@ public class CfgDatabase
     private static final String C_CFG_KEY = "k";
     private static final String C_CFG_VALUE = "v";
 
+    private static final String T_ROOT = "r";
+    private static final String C_ROOT_SID = "s";
+    private static final String C_ROOT_PATH = "p";
+
+
     // all the variables are protected by synchronized (this)
     private IDBCW _dbcw;
     private final EnumMap<Key, String> _map = Maps.newEnumMap(Key.class);
@@ -242,8 +251,21 @@ public class CfgDatabase
             s.executeUpdate("create table " + T_CFG + "(" +
                     C_CFG_KEY + " text not null primary key," +
                     C_CFG_VALUE + " text not null) " + _dbcw.charSet());
+            createRootTableIfAbsent_(s);
         } finally {
             s.close();
+        }
+    }
+
+    public void createRootTableIfAbsent_(Statement enclosing) throws SQLException
+    {
+        Statement s = enclosing != null ? enclosing : _dbcw.getConnection().createStatement();
+        try {
+            s.executeUpdate("create table if not exists " + T_ROOT + "(" +
+                    C_ROOT_SID + " blob not null primary key," +
+                    C_ROOT_PATH + " text not null) " + _dbcw.charSet());
+        } finally {
+            if (s != enclosing) s.close();
         }
     }
 
@@ -254,8 +276,7 @@ public class CfgDatabase
 
         Statement s = _dbcw.getConnection().createStatement();
         try {
-            ResultSet rs = s.executeQuery("select " + C_CFG_KEY + "," + C_CFG_VALUE + " from " +
-                    T_CFG);
+            ResultSet rs = s.executeQuery(DBUtil.select(T_CFG, C_CFG_KEY, C_CFG_VALUE));
             try {
                 while (rs.next()) {
                     String str = rs.getString(1);
@@ -281,6 +302,80 @@ public class CfgDatabase
             else throw e;
         } finally {
             s.close();
+        }
+    }
+
+    synchronized Map<SID, String> getRoots() throws SQLException
+    {
+        Statement s = _dbcw.getConnection().createStatement();
+        try {
+            ResultSet rs = s.executeQuery(DBUtil.select(T_ROOT, C_ROOT_SID, C_ROOT_PATH));
+            try {
+                Map<SID, String> roots = Maps.newHashMap();
+                while (rs.next()) roots.put(new SID(rs.getBytes(1)), rs.getString(2));
+                return roots;
+            } finally {
+                rs.close();
+            }
+        } finally {
+            s.close();
+        }
+    }
+
+    synchronized @Nullable String getRoot(SID sid) throws SQLException
+    {
+        PreparedStatement ps = _dbcw.getConnection().prepareStatement(DBUtil.selectWhere(T_ROOT,
+                C_ROOT_SID + "=?", C_ROOT_PATH));
+        try {
+            ps.setBytes(1, sid.getBytes());
+            ResultSet rs = ps.executeQuery();
+            try {
+                return rs.next() ? rs.getString(1) : null;
+            } finally {
+                rs.close();
+            }
+        } finally {
+            ps.close();
+        }
+    }
+
+    // NB: public only for use in Setup.java
+    public synchronized void addRoot(SID sid, String absPath) throws SQLException
+    {
+        PreparedStatement ps = _dbcw.getConnection().prepareStatement(
+                DBUtil.insert(T_ROOT, C_ROOT_SID, C_ROOT_PATH));
+        try {
+            ps.setBytes(1, sid.getBytes());
+            ps.setString(2, absPath);
+            ps.executeUpdate();
+        } finally {
+            ps.close();
+        }
+    }
+
+    // NB: public only for use in Setup.java
+    public synchronized void removeRoot(SID sid) throws SQLException
+    {
+        PreparedStatement ps = _dbcw.getConnection().prepareStatement(
+                DBUtil.deleteWhere(T_ROOT, C_ROOT_SID + "=?"));
+        try {
+            ps.setBytes(1, sid.getBytes());
+            ps.executeUpdate();
+        } finally {
+            ps.close();
+        }
+    }
+
+    synchronized void moveRoot(SID sid, String newAbsPath) throws SQLException
+    {
+        PreparedStatement ps = _dbcw.getConnection().prepareStatement(
+                DBUtil.updateWhere(T_ROOT, C_ROOT_SID + "=?", C_ROOT_PATH));
+        try {
+            ps.setString(1, newAbsPath);
+            ps.setBytes(2, sid.getBytes());
+            ps.executeUpdate();
+        } finally {
+            ps.close();
         }
     }
 

@@ -8,6 +8,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.Map.Entry;
 import java.util.Random;
 import java.util.Set;
 import java.util.SortedMap;
@@ -16,9 +17,12 @@ import java.util.concurrent.TimeUnit;
 import com.aerofs.base.Base64;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
+import com.aerofs.base.id.SID;
 import com.aerofs.lib.Param;
+import com.aerofs.lib.Param.AuxFolder;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.ThreadUtil;
+import com.aerofs.lib.cfg.CfgAbsRoots;
 import com.aerofs.lib.os.OSUtil;
 import com.google.common.collect.Maps;
 import org.slf4j.Logger;
@@ -161,37 +165,42 @@ public class LinkedRevProvider implements IPhysicalRevProvider
         }
     }
 
+    private final LinkedStorage _s;
     private final InjectableFile.Factory _factFile;
-    private String _pathBase;
+
     boolean _startCleanerScheduler = true;
     CleanerScheduler _cleanerScheduler;
     long _spaceDelta;
 
 
     @Inject
-    public LinkedRevProvider(InjectableFile.Factory factFile)
+    public LinkedRevProvider(LinkedStorage s, InjectableFile.Factory factFile)
     {
+        _s = s;
         _factFile = factFile;
     }
 
     // called from LocalStorage
-    void init_(String pathAuxRoot) throws IOException
+    void init_() throws IOException
     {
-        _pathBase = Util.join(pathAuxRoot, Param.AuxFolder.REVISION._name);
-        InjectableFile fBase = _factFile.create(_pathBase);
-        if (!fBase.exists()) fBase.mkdirs();
         if (_startCleanerScheduler) {
             _cleanerScheduler = new CleanerScheduler();
             _cleanerScheduler.start();
         }
     }
 
+    String revPath(Path path)
+    {
+        return Util.join(_s.auxRootForStore_(path.sid()), AuxFolder.REVISION._name,
+                Util.join(path.elements()));
+    }
+
     // called from LocalStorage
     LinkedRevFile newLocalRevFile_(Path path, String absPath, KIndex kidx) throws IOException
     {
         InjectableFile f = _factFile.create(absPath);
-        RevInfo rev = new RevInfo(Util.join(_pathBase, Util.join(path.removeLast().elements())),
-                f.getName(), kidx.getInt(), f.lastModified(), f.getLengthOrZeroIfNotFile());
+        RevInfo rev = new RevInfo(revPath(path.removeLast()), f.getName(), kidx.getInt(),
+                f.lastModified(), f.getLengthOrZeroIfNotFile());
 
         String pathRev = rev.getAbsolutePath();
 
@@ -206,7 +215,7 @@ public class LinkedRevProvider implements IPhysicalRevProvider
     public Collection<Child> listRevChildren_(Path path)
             throws Exception
     {
-        String auxPath = Util.join(_pathBase, Util.join(path.elements()));
+        String auxPath = revPath(path);
         Set<Child> children = Sets.newHashSet();
 
         InjectableFile parent = _factFile.create(auxPath);
@@ -237,8 +246,7 @@ public class LinkedRevProvider implements IPhysicalRevProvider
         if (path.isEmpty())
             return Collections.emptyList();
 
-        String parentPath = Util.join(path.removeLast().elements());
-        String auxPath = Util.join(_pathBase, parentPath);
+        String auxPath = revPath(path.removeLast());
 
         InjectableFile parent = _factFile.create(auxPath);
         SortedMap<Long, Revision> revisions = Maps.newTreeMap();
@@ -267,9 +275,8 @@ public class LinkedRevProvider implements IPhysicalRevProvider
 
     private InjectableFile getRevFile_(Path path, byte[] index)
     {
-        String auxPath = Util.join(path.elements())
-                + RevisionSuffix.SEPARATOR + BaseUtil.utf2string(index);
-        return _factFile.create(_pathBase, auxPath);
+        String auxPath = revPath(path) + RevisionSuffix.SEPARATOR + BaseUtil.utf2string(index);
+        return _factFile.create(auxPath);
     }
 
     private InjectableFile getExistingRevFile_(Path path, byte[] index)
@@ -300,7 +307,7 @@ public class LinkedRevProvider implements IPhysicalRevProvider
     @Override
     public void deleteAllRevisionsUnder_(Path path) throws Exception
     {
-        InjectableFile dir = _factFile.create(_pathBase, Util.join(path.elements()));
+        InjectableFile dir = _factFile.create(revPath(path));
         dir.deleteOrThrowIfExistRecursively();
     }
 
@@ -353,27 +360,35 @@ public class LinkedRevProvider implements IPhysicalRevProvider
         private void loop()
         {
             while (true) {
-                try {
-                    synchronized (this) {
-                        if (Thread.interrupted()) return;
-                        if (_thread == null) return;
-                        if (!_trigger) {
-                            long sleepMillis = getSleepMillis();
-                            TimeUnit.MILLISECONDS.timedWait(this, sleepMillis);
-                        }
-                        if (Thread.interrupted()) return;
-                        if (_thread == null) return;
-                        _trigger = false;
-                    }
-                    _cleaner.run();
-                } catch (InterruptedException e) {
-                    l.warn("cleaner interrupted: " + Util.e(e));
-                    return;
-                } catch (Exception e) {
-                    l.error("cleaner error: " + Util.e(e));
+                for (SID sid : _s._cfgAbsRoots.get().keySet()) {
+                    sweep(Util.join(_s.auxRootForStore_(sid), AuxFolder.REVISION._name));
                 }
             }
         }
+
+        private void sweep(String absRevRoot)
+        {
+            try {
+                synchronized (this) {
+                    if (Thread.interrupted()) return;
+                    if (_thread == null) return;
+                    if (!_trigger) {
+                        long sleepMillis = getSleepMillis();
+                        TimeUnit.MILLISECONDS.timedWait(this, sleepMillis);
+                    }
+                    if (Thread.interrupted()) return;
+                    if (_thread == null) return;
+                    _trigger = false;
+                }
+                _cleaner.run(absRevRoot);
+            } catch (InterruptedException e) {
+                l.warn("cleaner interrupted: " + Util.e(e));
+                return;
+            } catch (Exception e) {
+                l.error("cleaner error: " + Util.e(e));
+            }
+        }
+
 
         /** Run between 3 and 5 in the morning in the local time zone */
         private long getSleepMillis()
@@ -392,20 +407,21 @@ public class LinkedRevProvider implements IPhysicalRevProvider
     }
 
 
+    // TODO: need a cleaner per root?
     class Cleaner {
         long _ageLimitMillis = TimeUnit.DAYS.toMillis(7);
         int _delayEvery = 10;
         long _delayMillis = 10;
         long _minSpaceLimit = 100 * C.MB;
 
-        public void run() throws IOException, InterruptedException {
-            RunData runData = new RunData();
+        public void run(String absRoot) throws IOException, InterruptedException {
+            RunData runData = new RunData(absRoot);
             runData.run();
         }
 
         /** Delete old revs when using more than this much space */
-        long getSpaceLimit() {
-            InjectableFile root = _factFile.create(_pathBase);
+        long getSpaceLimit(String absPath) {
+            InjectableFile root = _factFile.create(absPath);
             long totalSpace = root.getTotalSpace();
             long usableSpace = root.getUsableSpace();
             // allow at least 100 MB, at most min of 1/5 of total space and usable free space
@@ -432,12 +448,19 @@ public class LinkedRevProvider implements IPhysicalRevProvider
         /**
          * The data for one sweep of the cleaner
          */
-        class RunData {
+        class RunData
+        {
             long _totalSize;
             long _fileCount;
             long _dirCount;
             Date _startTime = new Date();
             int _delayCount;
+            final String _absRevRoot;
+
+            RunData(String absRoot)
+            {
+                _absRevRoot = absRoot;
+            }
 
             ExternalSorter<RevInfo> _sorter =
                     new ExternalSorter<RevInfo>(RevInfo.CHRONOLOGICAL);
@@ -463,14 +486,14 @@ public class LinkedRevProvider implements IPhysicalRevProvider
             }
 
             void walk() throws InterruptedException, IOException {
-                InjectableFile root = _factFile.create(_pathBase);
+                InjectableFile root = _factFile.create(_absRevRoot);
                 walk(root);
             }
 
             void delete() throws InterruptedException, IOException {
                 // add in overhead
                 long space = _totalSize + (2 * C.KB * _fileCount);
-                long spaceLimit = getSpaceLimit();
+                long spaceLimit = getSpaceLimit(_absRevRoot);
                 l.debug("space: " + Util.formatSize(space));
                 l.debug("limit: " + Util.formatSize(spaceLimit));
                 if (space < spaceLimit) return;

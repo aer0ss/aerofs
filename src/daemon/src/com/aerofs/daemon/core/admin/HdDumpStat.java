@@ -6,7 +6,6 @@ import java.io.PrintStream;
 import com.aerofs.daemon.core.CoreQueue;
 import com.aerofs.daemon.core.device.DevicePresence;
 import com.aerofs.daemon.core.ds.DirectoryService;
-import com.aerofs.daemon.core.linker.scanner.ScanSessionQueue;
 import com.aerofs.daemon.core.protocol.DownloadState;
 import com.aerofs.daemon.core.net.Transports;
 import com.aerofs.daemon.core.net.UploadState;
@@ -30,12 +29,10 @@ public class HdDumpStat extends AbstractHdIMC<EIDumpStat>
     private final CoreQueue _q;
     private final DevicePresence _dp;
     private final TokenManager _tokenManager;
-    private final ScanSessionQueue _ssq;
 
     @Inject
     public HdDumpStat(DevicePresence dp, CoreQueue q, UploadState ulstate, DownloadState dlstate,
-            DirectoryService ds, TC tc, Transports tps, TokenManager tokenManager,
-            ScanSessionQueue ssq)
+            DirectoryService ds, TC tc, Transports tps, TokenManager tokenManager)
     {
         _dp = dp;
         _q = q;
@@ -45,7 +42,6 @@ public class HdDumpStat extends AbstractHdIMC<EIDumpStat>
         _tc = tc;
         _tps = tps;
         _tokenManager = tokenManager;
-        _ssq = ssq;
     }
 
     @Override
@@ -92,8 +88,9 @@ public class HdDumpStat extends AbstractHdIMC<EIDumpStat>
             ps.println(indent + "dp");
             _dp.dumpStatMisc(indent2, indentUnit, ps);
 
-            ps.println(indent + "ssq");
-            _ssq.dumpStatMisc(indent2, indentUnit, ps);
+            // TODO:
+            //ps.println(indent + "ssq");
+            //_ssq.dumpStatMisc(indent2, indentUnit, ps);
 
             ps.println(indent + "tps");
             _tps.dumpStatMisc(indent2, indentUnit, ps);

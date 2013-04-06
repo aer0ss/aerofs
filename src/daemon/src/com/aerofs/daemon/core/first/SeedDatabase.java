@@ -99,7 +99,7 @@ public class SeedDatabase extends AbstractDatabase
                         C_SEED_PATH + "=? and " + C_SEED_TYPE + "=?", C_SEED_OID));
             }
 
-            _psGetOID.setString(1, path.toStringFormal());
+            _psGetOID.setString(1, path.toStringRelative());
             _psGetOID.setInt(2, dir ? 1 : 0);
 
             ResultSet rs = _psGetOID.executeQuery();

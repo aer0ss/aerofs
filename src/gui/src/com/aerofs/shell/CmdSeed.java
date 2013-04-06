@@ -40,7 +40,7 @@ public class CmdSeed implements IShellCommand<ShProgram>
     {
         if (cl.getArgs().length != 0) throw new ExBadArgs();
 
-        CreateSeedFileReply reply = s.d().getRitualClient_().createSeedFile();
+        CreateSeedFileReply reply = s.d().getRitualClient_().createSeedFile(s.d().getPwd_().sid().toPB());
         s.out().println("seed file: " + reply.getPath());
     }
 }

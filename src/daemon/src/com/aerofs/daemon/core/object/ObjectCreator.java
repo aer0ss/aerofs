@@ -9,6 +9,7 @@ import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ds.OA.Type;
 import com.aerofs.daemon.core.expel.Expulsion;
 import com.aerofs.daemon.core.migration.IImmigrantDetector;
+import com.aerofs.daemon.core.phy.IPhysicalFolder;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.store.StoreCreator;
 import com.aerofs.daemon.lib.db.trans.Trans;
@@ -114,9 +115,10 @@ public class ObjectCreator
             if (oa.isDir()) {
                 oa.physicalFolder().create_(op, t);
             } else if (oa.isAnchor()) {
-                oa.physicalFolder().create_(op, t);
-                _sc.addParentStoreReference_(SID.anchorOID2storeSID(soid.oid()), soid.sidx(),
-                        _ds.resolve_(oa), t);
+                IPhysicalFolder pf = oa.physicalFolder();
+                pf.create_(op, t);
+                _sc.addParentStoreReference_(SID.anchorOID2storeSID(oa.soid().oid()), oa.soid().sidx(), t);
+                pf.promoteToAnchor_(op, t);
             } else {
                 assert oa.isFile();
             }

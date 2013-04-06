@@ -174,7 +174,7 @@ public class CompActivityLog extends Composite
 
     private void revealFile(PBPath path)
     {
-        String str = new Path(path).toAbsoluteString(Cfg.absRootAnchor());
+        String str = Path.fromPB(path).toAbsoluteString(Cfg.absDefaultRootAnchor());
         OSUtil.get().showInFolder(str);
     }
 

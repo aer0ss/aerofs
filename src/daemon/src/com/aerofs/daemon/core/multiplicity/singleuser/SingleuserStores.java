@@ -4,12 +4,14 @@
 
 package com.aerofs.daemon.core.multiplicity.singleuser;
 
+import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.StoreCreator;
 import com.aerofs.daemon.core.store.Stores;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.base.ex.ExAlreadyExist;
+import com.aerofs.lib.cfg.CfgRootSID;
 import com.aerofs.lib.id.SIndex;
 
 import javax.annotation.Nonnull;
@@ -26,14 +28,17 @@ public class SingleuserStores extends Stores
 {
     private TransManager _tm;
     private StoreCreator _sc;
+    private IMapSID2SIndex _sid2sidx;
     private CfgRootSID _cfgRootSID;
-    private SIndex _root;
+    private SIndex _userRoot;
 
     @Inject
-    public void inject_(TransManager tm, StoreCreator sc, CfgRootSID cfgRootSID)
+    public void inject_(TransManager tm, StoreCreator sc, IMapSID2SIndex sid2sidx,
+            CfgRootSID cfgRootSID)
     {
         _tm = tm;
         _sc = sc;
+        _sid2sidx = sid2sidx;
         _cfgRootSID = cfgRootSID;
     }
 
@@ -44,14 +49,14 @@ public class SingleuserStores extends Stores
 
         if (!_sdb.hasAny_()) createRootStore_();
 
-        setRootStore_();
+        setUserRootStore_();
     }
 
     private void createRootStore_() throws SQLException, IOException
     {
         Trans t = _tm.begin_();
         try {
-            _sc.createRootStore_(_cfgRootSID.get(), SingleuserPathResolver.getRootStorePath(), t);
+            _sc.createRootStore_(_cfgRootSID.get(), t);
             t.commit_();
         } catch (ExAlreadyExist e) {
             SystemUtil.fatal(e);
@@ -60,16 +65,10 @@ public class SingleuserStores extends Stores
         }
     }
 
-    private void setRootStore_() throws SQLException
+    private void setUserRootStore_() throws SQLException
     {
-        assert _root == null;
-        for (SIndex sidx : super.getAll_()) {
-            if (super.getParents_(sidx).isEmpty()) {
-                assert _root == null;
-                _root = sidx;
-            }
-        }
-        assert _root != null;
+        assert _userRoot == null;
+        _userRoot = _sid2sidx.get_(_cfgRootSID.get());
     }
 
     @Override
@@ -81,8 +80,8 @@ public class SingleuserStores extends Stores
     }
 
     /**
-     * @return the parent of the given store. For single-user systems, a non-root store has and only
-     * has one parent.
+     * @return the parent of the given store. For single-user systems, a non-root store has exactly
+     * one parent.
      *
      * @pre The store is not a root store
      */
@@ -93,15 +92,9 @@ public class SingleuserStores extends Stores
         return ret.iterator().next();
     }
 
-    public @Nonnull SIndex getRoot_()
+    public @Nonnull SIndex getUserRoot_()
     {
-        assert _root != null;
-        return _root;
-    }
-
-    @Override
-    public boolean isRoot_(SIndex sidx)
-    {
-        return _root.equals(sidx);
+        assert _userRoot != null;
+        return _userRoot;
     }
 }

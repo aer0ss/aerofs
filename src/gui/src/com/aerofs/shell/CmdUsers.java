@@ -1,11 +1,9 @@
 package com.aerofs.shell;
 
-import java.util.List;
-
-import com.aerofs.lib.Path;
 import com.aerofs.base.acl.Role;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.base.ex.ExBadArgs;
+import com.aerofs.proto.Common.PBPath;
 import com.aerofs.proto.Common.PBSubjectRolePair;
 import com.aerofs.proto.Ritual.GetACLReply;
 import org.apache.commons.cli.CommandLine;
@@ -43,10 +41,9 @@ public class CmdUsers implements IShellCommand<ShProgram>
     {
         if (cl.getArgs().length != 1) throw new ExBadArgs();
 
-        List<String> path = s.d().buildPathElemList_(cl.getArgs()[0]);
+        PBPath path = s.d().buildPBPath_(cl.getArgs()[0]);
 
-        GetACLReply reply = s.d().getRitualClient_().getACL(Cfg.user().getString(),
-                new Path(path).toPB());
+        GetACLReply reply = s.d().getRitualClient_().getACL(Cfg.user().getString(), path);
 
         for (int i = 0; i < reply.getSubjectRoleCount(); i++) {
             PBSubjectRolePair pair = reply.getSubjectRole(i);

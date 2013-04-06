@@ -159,7 +159,7 @@ service RitualService {
     // Shutdown the Daemon process. It is used by AeroFS GUI and CLI when quitting.
     rpc Shutdown(Void) returns(Void);
 
-    rpc CreateSeedFile(Void) returns(CreateSeedFileReply);
+    rpc CreateSeedFile(CreateSeedFileCall) returns(CreateSeedFileReply);
 
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -399,6 +399,7 @@ message DeleteACLCall {
 
 message RelocateCall {
     required string absolute_path = 1;
+    optional bytes store_id = 2;
 }
 
 message GetActivitiesCall {
@@ -500,6 +501,10 @@ message GetPathStatusCall {
 
 message GetPathStatusReply {
     repeated PBPathStatus status = 2;
+}
+
+message CreateSeedFileCall {
+    required bytes store_id = 1;
 }
 
 message CreateSeedFileReply {

@@ -92,19 +92,19 @@ public class SingleuserTrayMenu implements ITrayMenu
                 // TODO: schedule GUI update in case the menu is currently visible?
                 break;
             case Type.SHARED_FOLDER_JOIN_VALUE:
-                final Path p = new Path(pb.getPath());
+                final Path p = Path.fromPB(pb.getPath());
                 UI.get().notify(MessageType.INFO,
                         "You have joined \"" + p.last() + "\"", new Runnable() {
                     @Override
                     public void run()
                     {
-                        GUIUtil.launch(p.toAbsoluteString(Cfg.absRootAnchor()));
+                        GUIUtil.launch(p.toAbsoluteString(Cfg.absDefaultRootAnchor()));
                     }
                 });
                 break;
             case Type.SHARED_FOLDER_KICKOUT_VALUE:
                 UI.get().notify(MessageType.INFO,
-                        "You have left \"" + new Path(pb.getPath()) + "\"");
+                        "You have left \"" + Path.fromPB(pb.getPath()) + "\"");
                 break;
             default: break;
             }
@@ -232,7 +232,7 @@ public class SingleuserTrayMenu implements ITrayMenu
                     @Override
                     protected void handleEventImpl(Event event)
                     {
-                        GUIUtil.launch(Cfg.absRootAnchor());
+                        GUIUtil.launch(Cfg.absDefaultRootAnchor());
                     }
                 });
     }
@@ -301,7 +301,7 @@ public class SingleuserTrayMenu implements ITrayMenu
                     {
                         loading.dispose();
                         for (PBPath pbpath : reply.getPathList()) {
-                            addSharedFolderEntry(new Path(pbpath));
+                            addSharedFolderEntry(Path.fromPB(pbpath));
                         }
                         if (reply.getPathCount() == 0) {
                             sharedTrayMenuPopulator.addMenuItem("No shared folder", null)
@@ -385,9 +385,8 @@ public class SingleuserTrayMenu implements ITrayMenu
                                         protected void handleEventImpl(Event event)
                                         {
                                             if (a.hasPath()) {
-                                                String path = new Path(
-                                                        a.getPath()).toAbsoluteString(
-                                                        Cfg.absRootAnchor());
+                                                String path = Path.fromPB(a.getPath())
+                                                        .toAbsoluteString(Cfg.absDefaultRootAnchor());
                                                 OSUtil.get().showInFolder(path);
                                             } else {
                                                 new DlgActivityLog(GUI.get().sh(),

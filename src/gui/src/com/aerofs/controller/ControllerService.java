@@ -4,6 +4,7 @@
 
 package com.aerofs.controller;
 
+import com.aerofs.lib.StorageType;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.base.async.UncancellableFuture;
 import com.aerofs.lib.cfg.Cfg;
@@ -126,22 +127,22 @@ public class ControllerService implements IControllerService
 
     @Override
     public ListenableFuture<Common.Void> setupSingleuser(String userId, String password,
-            String rootAnchor, String deviceName, PBS3Config s3config)
+            String rootAnchor, String deviceName, String storageType, PBS3Config s3config)
             throws Exception
     {
         _setup.setupSingleuser(UserID.fromExternal(userId), password.toCharArray(), rootAnchor,
-                deviceName, s3config);
+                deviceName, StorageType.fromString(storageType), s3config);
         return UncancellableFuture.createSucceeded(Common.Void.getDefaultInstance());
     }
 
 
     @Override
     public ListenableFuture<Common.Void> setupMultiuser(String userId, String password,
-            String rootAnchor, String deviceName, PBS3Config s3config)
+            String rootAnchor, String deviceName, String storageType, PBS3Config s3config)
             throws Exception
     {
         _setup.setupMultiuser(UserID.fromExternal(userId), password.toCharArray(), rootAnchor,
-                deviceName, s3config);
+                deviceName, StorageType.fromString(storageType), s3config);
         return UncancellableFuture.createSucceeded(Common.Void.getDefaultInstance());
     }
 
@@ -189,7 +190,7 @@ public class ControllerService implements IControllerService
                 .setVersion(Cfg.ver())
                 .setUserName(Cfg.user().getString())
                 .setDeviceId(Cfg.did().toStringFormal())
-                .setRootAnchor(Cfg.absRootAnchor())
+                .setRootAnchor(Cfg.absDefaultRootAnchor())
                 .build();
 
         GetConfigReply reply = GetConfigReply.newBuilder()

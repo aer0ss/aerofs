@@ -75,6 +75,13 @@ public class SIDMap implements IMapSIndex2SID, IMapSID2SIndex
     }
 
     @Override
+    public @Nonnull SID getLocalOrAbsent_(SIndex sidx) throws SQLException
+    {
+        SID sid = getNullable_(sidx);
+        return sid != null ? sid : getAbsent_(sidx);
+    }
+
+    @Override
     public @Nullable SIndex getLocalOrAbsentNullable_(SID sid) throws SQLException
     {
         return _db.getSIndex_(sid);

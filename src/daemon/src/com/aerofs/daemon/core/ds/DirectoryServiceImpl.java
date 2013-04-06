@@ -168,13 +168,7 @@ public class DirectoryServiceImpl extends DirectoryService implements ObjectSurg
     @Override
     @Nonnull public Path resolve_(@Nonnull OA oa) throws SQLException
     {
-        List<String> elems = _pathResolver.resolve_(oa);
-
-        // The first element in the list is the last element in the path. The following code creates
-        // the path by reversing the list order
-        String[] path = new String[elems.size()];
-        for (int i = 0; i < path.length; i++) path[i] = elems.get(path.length - i - 1);
-        return new Path(path);
+        return _pathResolver.resolve_(oa);
     }
 
     private final IDataReader<SOID, OA> _readerOA =

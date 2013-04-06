@@ -4,9 +4,10 @@
 
 package com.aerofs.lib;
 
+import com.aerofs.base.BaseUtil;
+import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.id.SID;
-import com.aerofs.base.id.UserID;
-import com.aerofs.labeling.L;
+import com.aerofs.base.id.UniqueID;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.proto.Common.PBPath;
 import com.google.common.base.Joiner;
@@ -21,15 +22,16 @@ import java.util.regex.Pattern;
  */
 public class Path implements Comparable<Path>
 {
+    private final SID _sid;
     private final String[] _elems;
-    private List<String> _list;
-    private PBPath _pb;
 
     /**
      * N.B we do NOT save a local copy of the {@code elems} array. DO NOT modify the array!
      */
-    public Path(String... elems)
+    public Path(SID sid, String... elems)
     {
+        assert sid != null;
+        _sid = sid;
         _elems = elems;
         assertNoEmptyElement();
     }
@@ -37,35 +39,26 @@ public class Path implements Comparable<Path>
     /**
      * avoid using this method when possible. it's expensive
      */
-    public Path(List<String> elems)
+    public Path(SID sid, List<String> elems)
     {
+        assert sid != null;
+        _sid = sid;
         _elems = new String[elems.size()];
         elems.toArray(_elems);
         assertNoEmptyElement();
     }
 
-    public Path(PBPath pb)
+    private static final String[] _root = new String[0];
+    public static Path root(SID sid)
     {
-        _elems = new String[pb.getElemCount()];
-        for (int i = 0; i < _elems.length; i++) _elems[i] = pb.getElem(i);
-        _pb = pb;
-        assertNoEmptyElement();
+        return new Path(sid, _root);
     }
 
-    /**
-     * Constructs a new Path by taking into the user id in multiuser systems.
-     * (In AeroFS Multiuser, we prepend the root SID to the path)
-     */
-    public static Path fromPbAndUser(PBPath pb, UserID userID)
+    public static Path fromPB(PBPath pb)
     {
-        if (L.get().isMultiuser()) {
-            String[] elems = new String[pb.getElemCount() + 1];
-            elems[0] = SID.rootSID(userID).toStringFormal();
-            for (int i = 1; i < elems.length; i++) elems[i] = pb.getElem(i - 1);
-            return new Path(elems);
-        } else {
-            return new Path(pb);
-        }
+        String[] elems = new String[pb.getElemCount()];
+        for (int i = 0; i < elems.length; i++) elems[i] = pb.getElem(i);
+        return new Path(new SID(pb.getSid()), elems);
     }
 
     private void assertNoEmptyElement()
@@ -73,15 +66,14 @@ public class Path implements Comparable<Path>
         for (String elem : _elems) assert !elem.isEmpty();
     }
 
+    public SID sid()
+    {
+        return _sid;
+    }
+
     public String[] elements()
     {
         return _elems;
-    }
-
-    public List<String> asList()
-    {
-        if (_list == null) _list = Arrays.asList(_elems);
-        return _list;
     }
 
     @Override
@@ -94,19 +86,20 @@ public class Path implements Comparable<Path>
     {
         String[] elemsNew = Arrays.copyOf(_elems, _elems.length + 1);
         elemsNew[_elems.length] = elem;
-        return new Path(elemsNew);
+        return new Path(_sid, elemsNew);
     }
 
     public Path removeLast()
     {
         assert _elems.length > 0;
-        return new Path(Arrays.copyOf(_elems, _elems.length - 1));
+        return new Path(_sid, Arrays.copyOf(_elems, _elems.length - 1));
     }
 
     @Override
     public boolean equals(Object o)
     {
-        return this == o || (o != null && o instanceof Path && Arrays.equals(_elems, ((Path) o)._elems));
+        return this == o || (o != null && _sid.equals(((Path)o)._sid) &&
+                                     Arrays.equals(_elems, ((Path) o)._elems));
     }
 
     public boolean equalsIgnoreCase(Path path)
@@ -140,12 +133,10 @@ public class Path implements Comparable<Path>
 
     public PBPath toPB()
     {
-        if (_pb == null) {
-            PBPath.Builder bd = PBPath.newBuilder();
-            for (String elem : _elems) bd.addElem(elem);
-            _pb = bd.build();
-        }
-        return _pb;
+        PBPath.Builder bd = PBPath.newBuilder();
+        bd.setSid(_sid.toPB());
+        for (String elem : _elems) bd.addElem(elem);
+        return bd.build();
     }
 
     @Override
@@ -164,6 +155,8 @@ public class Path implements Comparable<Path>
         return FORMAL_SEP + toStringFormal();
     }
 
+    private final static char FORMAL_STORE_SEP = ':';
+
     // We use a formal separator which may be different from the native file path separator. This
     // is to ensure that we keep consistent paths amongst Operating Systems when users interact
     // with aerofs-sh.
@@ -177,22 +170,48 @@ public class Path implements Comparable<Path>
     private final static Pattern FORMAL_SEP_PATTERN = File.separator.equals(FORMAL_SEP) ?
             FILE_SEP_PATTERN : Pattern.compile(FORMAL_SEP);
 
+
+    public String toStringRelative()
+    {
+        return FORMAL_SEP_JOINER.join(_elems);
+    }
+
     /**
-     * Unlike toString(), the returned string by this method is machine ready and can be used by
-     * other methods like fromString().
+     * @return machine-readable string encoding of the path
      */
     public String toStringFormal()
     {
         assertNoEmptyElement();
-        return FORMAL_SEP_JOINER.join(_elems);
+        return _sid.toStringFormal() + FORMAL_STORE_SEP + toStringRelative();
     }
 
     /**
      * Convert a string returned from Path.toStringFormal() to a Path object
      */
-    public static Path fromString(String strFormal)
+    public static Path fromStringFormal(String strFormal)
     {
-        return new Path(splitPath(strFormal, FORMAL_SEP_PATTERN));
+        try {
+            return fromStringFormalThrows(strFormal);
+        } catch (ExFormatError e) {
+            throw new AssertionError(e);
+        }
+    }
+
+    private static final int SID_LENGTH = UniqueID.LENGTH * 2;
+    public static Path fromStringFormalThrows(String strFormal) throws ExFormatError
+    {
+        if (strFormal.length() < SID_LENGTH + 1
+                || strFormal.charAt(SID_LENGTH) != FORMAL_STORE_SEP) {
+            throw new ExFormatError();
+        }
+        SID sid = new SID(BaseUtil.hexDecode(strFormal, 0, SID_LENGTH));
+        return new Path(sid, splitPath(strFormal.substring(SID_LENGTH + 1),
+                FORMAL_SEP_PATTERN));
+    }
+
+    public static Path fromString(SID sid, String strFormal)
+    {
+        return new Path(sid, splitPath(strFormal, FORMAL_SEP_PATTERN));
     }
 
     /**
@@ -212,13 +231,13 @@ public class Path implements Comparable<Path>
      * Convert an absolute path string to a Path object relative to {@code absRoot}.
      * @pre isUnder(absRoot, absPath) returns true
      */
-    public static Path fromAbsoluteString(String absRoot, String absPath)
+    public static Path fromAbsoluteString(SID sid, String absRoot, String absPath)
     {
         assert isUnder(absRoot, absPath) : absRoot + " " + absPath;
         // strip root from the path. +1 to remove the separator
         String relative = absPath.substring(Math.min(absRoot.length() + 1, absPath.length()));
         relative = Util.removeTailingSeparator(relative);
-        return new Path(splitPath(relative, FILE_SEP_PATTERN));
+        return new Path(sid, splitPath(relative, FILE_SEP_PATTERN));
     }
 
     /**
@@ -239,6 +258,8 @@ public class Path implements Comparable<Path>
      */
     public boolean isUnder(Path path)
     {
+        if (!_sid.equals(path._sid)) return false;
+
         String[] mine= elements();
         String[] his = path.elements();
         if (his.length >= mine.length) return false;

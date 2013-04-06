@@ -17,7 +17,7 @@ public class CmdLeave implements IShellCommand<ShProgram>
         if (cl.getArgs().length == 0) throw new ExBadArgs();
 
         for (String arg : cl.getArgs()) {
-            s.d().getRitualClient_().leaveSharedFolder(s.d().buildPath_(arg));
+            s.d().getRitualClient_().leaveSharedFolder(s.d().buildPBPath_(arg));
         }
     }
 

@@ -23,6 +23,7 @@ import com.aerofs.daemon.lib.metrics.RockLogReporter;
 import com.aerofs.daemon.ritual.RitualServer;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.IProgram;
+import com.aerofs.lib.StorageType;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
@@ -88,39 +89,44 @@ public class DaemonProgram implements IProgram
     {
         ///GuiceUtil.enableLogging();
 
-        Module storageModule;
-        Module multiplicityModule;
-        if (L.get().isMultiuser()) {
-            multiplicityModule = new MultiuserModule();
+        Module multiplicityModule  = L.get().isMultiuser()
+                ? new MultiuserModule()
+                : new SingleuserModule();
+
+        Stage stage = Stage.PRODUCTION;
+
+        Injector injCore = Guice.createInjector(stage, new CfgModule(), multiplicityModule,
+                new CoreModule(), storageModule());
+
+        Injector injDaemon = Guice.createInjector(stage, new DaemonModule(injCore));
+
+        return injDaemon.getInstance(Daemon.class);
+    }
+
+    private Module storageModule()
+    {
+        StorageType storageType = Cfg.storageType();
+        switch (storageType) {
+        case LINKED:
+            return new LinkedStorageModule(L.get().isMultiuser());
+        case LOCAL:
             /**
              * NB: Do not change the proxy chain in a backward incompatible way unless you write
              * a DPUT to convert all user data.
              */
-            storageModule = BlockStorageModules.proxy(new LocalBackendModule(),
+            return BlockStorageModules.proxy(new LocalBackendModule(),
                     new GZipBackendModule());
-        } else {
-            multiplicityModule = new SingleuserModule();
-            storageModule = new LinkedStorageModule();
-        }
-
-        if (Cfg.db().getNullable(Key.S3_BUCKET_ID) != null) {
+        case S3:
             /**
              * NB: Do not ever change the proxy chain in a backward incompatible way unless you
              * write a DPUT to convert all (known) user data. Note that you'd have to change the
              * storage schema on the S3 side to avoid conflicts with unknown user data (i.e blocks
              * leftover from previous installs of S3 client on the same bucket).
              */
-            storageModule = BlockStorageModules.proxy(new S3BackendModule(),
+            return BlockStorageModules.proxy(new S3BackendModule(),
                     new CacheBackendModule(), new GZipBackendModule());
+        default:
+            throw new AssertionError("unsupport storage backend " + storageType);
         }
-
-        Stage stage = Stage.PRODUCTION;
-
-        Injector injCore = Guice.createInjector(stage, new CfgModule(), multiplicityModule,
-                new CoreModule(), storageModule);
-
-        Injector injDaemon = Guice.createInjector(stage, new DaemonModule(injCore));
-
-        return injDaemon.getInstance(Daemon.class);
     }
 }

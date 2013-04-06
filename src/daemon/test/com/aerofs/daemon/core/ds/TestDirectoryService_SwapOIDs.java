@@ -5,6 +5,7 @@
 package com.aerofs.daemon.core.ds;
 
 import com.aerofs.base.id.OID;
+import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UniqueID;
 import com.aerofs.daemon.core.alias.MapAlias2Target;
 import com.aerofs.daemon.core.ds.OA.Type;
@@ -12,6 +13,7 @@ import com.aerofs.daemon.core.multiplicity.singleuser.SingleuserPathResolver;
 import com.aerofs.daemon.core.multiplicity.singleuser.SingleuserStores;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
+import com.aerofs.daemon.core.store.SIDMap;
 import com.aerofs.daemon.core.store.StoreDeletionOperators;
 import com.aerofs.daemon.lib.db.IMetaDatabase;
 import com.aerofs.daemon.lib.db.MetaDatabase;
@@ -34,13 +36,16 @@ import static org.mockito.Mockito.when;
 
 public class TestDirectoryService_SwapOIDs extends AbstractTest
 {
+    @Mock SIDMap sm;
+
     private final InMemorySQLiteDBCW dbcw = new InMemorySQLiteDBCW();
     private final IMetaDatabase mdb = new MetaDatabase(dbcw.getCoreDBCW());
 
     // System under test
     private final DirectoryServiceImpl ds = new DirectoryServiceImpl();
 
-    SIndex sidx = new SIndex(1);
+    final SID sid = SID.generate();
+    final SIndex sidx = new SIndex(1);
     @Mock Trans t;
 
     private OID o1 = new OID(UniqueID.generate());
@@ -58,9 +63,12 @@ public class TestDirectoryService_SwapOIDs extends AbstractTest
         SingleuserStores sss = mock(SingleuserStores.class);
         // Make sidx a root
         when(sss.isRoot_(sidx)).thenReturn(true);
-        when(sss.getRoot_()).thenReturn(sidx);
+        when(sss.getUserRoot_()).thenReturn(sidx);
 
-        final AbstractPathResolver pr = new SingleuserPathResolver(sss, ds, null);
+        when(sm.get_(sid)).thenReturn(sidx);
+        when(sm.get_(sidx)).thenReturn(sid);
+
+        final AbstractPathResolver pr = new SingleuserPathResolver(sss, ds, sm, sm);
 
         ds.inject_(mock(IPhysicalStorage.class), mdb, mock(MapAlias2Target.class),
                 mock(TransManager.class), mock(IMapSID2SIndex.class),

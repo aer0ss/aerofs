@@ -114,7 +114,7 @@ public class UniqueID implements Comparable<UniqueID>, IBFKey
 
     public UniqueID(byte[] bs)
     {
-        assert bs.length == LENGTH;
+        assert bs.length == LENGTH : BaseUtil.hexEncode(bs);
         _bs = bs;
     }
 

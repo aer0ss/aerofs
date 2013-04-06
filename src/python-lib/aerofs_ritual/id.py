@@ -10,7 +10,7 @@ def soid_from_pb(get_object_identifier_reply):
 def unique_id_from_hexstring(hexstring):
     return UniqueID(unhexlify(hexstring))
 
-def get_root_sid(user_id):
+def get_root_sid_array(user_id):
     """Given a user id (email address), returns the root store id for that user."""
     m = hashlib.md5()
     m.update(user_id)
@@ -21,7 +21,13 @@ def get_root_sid(user_id):
     unchanged_nibble = d[VERSION_BYTE] & 0x0f
     version_nibble = 0x30
     d[VERSION_BYTE] = version_nibble | unchanged_nibble
-    return "".join([ "%02x" % i for i in d ])
+    return d
+
+def get_root_sid_bytes(user_id):
+    return "".join([chr(i) for i in get_root_sid_array(user_id)])
+
+def get_root_sid(user_id):
+    return "".join(["%02x" % i for i in get_root_sid_array(user_id)])
 
 class SOID:
     def __init__(self, sidx, oid):

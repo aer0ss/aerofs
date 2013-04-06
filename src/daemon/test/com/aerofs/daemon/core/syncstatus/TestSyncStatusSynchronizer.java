@@ -51,7 +51,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentMatcher;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
@@ -83,13 +82,14 @@ public class TestSyncStatusSynchronizer extends AbstractTest
     @Mock SIDMap sm;
     @Mock MapSIndex2DeviceBitMap sidx2dbm;
 
-    @InjectMocks MockDS mds;
+    MockDS mds;
 
     InMemorySQLiteDBCW idbcw = new InMemorySQLiteDBCW();
     SyncStatusDatabase ssdb = new SyncStatusDatabase(idbcw.getCoreDBCW());
 
     SyncStatusSynchronizer sync;
 
+    final SID rootSID = SID.generate();
     SOID o_r, o_f1, o_d2, o_f22, o_a23, o_d231, o_f232, o_a233;
 
     // remote DIDs
@@ -110,7 +110,7 @@ public class TestSyncStatusSynchronizer extends AbstractTest
 
     private SOID resolve(String s) throws Exception
     {
-        SOID soid = ds.resolveNullable_(Path.fromString(s));
+        SOID soid = ds.resolveNullable_(Path.fromString(rootSID, s));
         Assert.assertNotNull(soid);
         Assert.assertNotNull(soid.sidx());
         Assert.assertNotNull(soid.oid());
@@ -177,6 +177,7 @@ public class TestSyncStatusSynchronizer extends AbstractTest
         idbcw.init_();
 
         // stub object hierarchy
+        mds = new MockDS(rootSID, ds, sm, sm, sidx2dbm);
         mds.dids(d0).root()
                 .file("f1").parent()
                 .dir("d2")

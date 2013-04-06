@@ -64,7 +64,7 @@ public class TrayIcon
                 @Override
                 public void handleEventImpl(Event event)
                 {
-                    GUIUtil.launch(Cfg.absRootAnchor());
+                    GUIUtil.launch(Cfg.absDefaultRootAnchor());
                 }
             });
         }
