@@ -1,0 +1,12 @@
+In /opt/ca (this directory) run ./deploy <ca_files_directory> where
+the ca_files_directory is usually just "prod".
+
+This will create a new directory named "prod" which contains some
+openssl related things. You will be prompted to create a ca cert password.
+
+Then export capass=<whatever_password_you_specified> and run ./ca.py (be sure to
+delete your bash history for security purposes).
+
+Then run /opt/ca/ca.py <ca_files_directory>
+
+That's it, enjoy!
