@@ -48,7 +48,7 @@ def signup(request):
             'url_param_remember_me': URL_PARAM_REMEMBER_ME,
             'url_param_next': URL_PARAM_NEXT,
             'email_address' : sp.resolve_sign_up_code(code).email_address,
-            'code' : code,
+            'code' : code
         }
     except ExceptionReply:
         # I can use HTTPServerError. But the error will be commonly caused by
@@ -84,8 +84,6 @@ def json_signup(request):
     try:
         sp = get_rpc_stub(request)
         sp.sign_up_with_code(code, cred, first_name, last_name)
-
-        flash_success(request, "Way to go! you've signed up for AeroFS.")
 
         return HTTPOk()
     except ExceptionReply as e:

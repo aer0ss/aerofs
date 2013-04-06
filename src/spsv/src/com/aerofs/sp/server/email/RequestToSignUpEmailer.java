@@ -27,7 +27,7 @@ public class RequestToSignUpEmailer
     {
         Email email = new Email("Complete your " + L.PRODUCT + " sign up");
         String body = "\n" +
-                "Please click this link to proceed signing up " + L.PRODUCT + ":\n" +
+                "Please click this link to proceed signing up for " + L.PRODUCT + ":\n" +
                 "\n" +
                 getSignUpLink(signUpCode) + "\n" +
                 "\n" +

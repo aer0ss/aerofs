@@ -22,8 +22,8 @@
 </div>
 
 <%block name="top_navigation_bar">
-    <li><a href="http://blog.aerofs.com">Blog</a></li>
     <li><a href="http://support.aerofs.com" target="_blank">Support</a></li>
+    <li><a href="http://blog.aerofs.com" target="_blank">Blog</a></li>
     <li class="pull-right"><a href="${request.route_path('logout')}">Sign out</a></li>
     <li class="pull-right disabled"><a href="#">${request.session['username']}</a></li>
     % if is_admin(request):
@@ -51,7 +51,7 @@
         </a>
         <ul class="dropdown-menu">
             <li><a href="${request.route_path('download')}">
-                Desktop Client
+                Client Application
             </a></li>
             <li><a href="${request.route_path('download_team_server')}">
                 Team Server

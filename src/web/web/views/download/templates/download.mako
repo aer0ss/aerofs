@@ -1,87 +1,115 @@
 <%inherit file="dashboard_layout.mako"/>
 
+<%block name="css">
+    <style type="text/css">
+        .btn-large {
+            margin-top: 60px;
+            padding-left: 70px;
+            padding-right: 70px;
+        }
+        .subtitle {
+            font-size: 70%;
+        }
+        .download-message {
+            font-style: italic;
+            font-size: 120%;
+        }
+        .description-block {
+            margin-top: 60px;
+            padding-top: 20px;
+        }
+    </style>
+</%block>
+
 <%
-    # (WW) Ideally all python logic should go to views.py. But I'm not sure for
-    # this case since all the logic here are very presentational. We can
-    # refactor the code later if needed.
-
-    win_data = {
-        'id': 'win',
-        'name': 'Windows',
-        'url': request.static_path('web:installer/' + exe),
-        'steps': [
-            ('Run the installer', 'Click on the .exe file that just downloaded.'),
-            ('Click Yes', 'Click Yes to accept the User Account Control settings dialog.'),
-            ('Follow the Installation Instructions', 'Follow the instructions to get {} setup on your computer!'.format(program))
-        ]
-    }
-    osx_data = {
-        'id': 'osx',
-        'name': 'Mac OS X',
-        'url': request.static_path('web:installer/' + dmg),
-        'steps': [
-            ('Run the installer', 'Click on the .dmg file that just downloaded.'),
-            ('Drag the icon', 'Drag the {} icon into your Applications folder to copy it to your computer.'.format(program)),
-            ('Double-Click the icon', 'Double click the {} icon in your Applications folder to launch the program!'.format(program))
-        ]
-    }
-    deb_url = request.static_path('web:installer/' + deb)
-    tgz_url = request.static_path('web:installer/' + tgz)
-    linux_data = {
-        'id': 'linux',
-        'name': 'Linux',
-        'url': deb_url,
-        'header_note': 'Non-Ubuntu users can also download the <a href="{}"> tgz archive</a>.'.format(tgz_url),
-        'steps': [
-            ('Download ' + program, '<strong>Command-line users</strong>: please use this URL for .deb <code>{}</code> and this URL for .tgz: <code>{}</code>'.format(deb_url, tgz_url)),
-            ('Install ' + program, 'Use your favorite package manager to install the deb package, or simply uncompress the tgz archive.'),
-            ('Run ' + program, 'Click Applications > Internet > {0} and run! Or use <code>$ {1}</code> to start {0} daemon process, and <code>$ {2}</code> to access its functions interactively.'.format(program, cli, sh))
-        ]
-    }
-
-    if os == 'osx':
-        data = osx_data
-        also_available = (win_data, linux_data)
-    elif os == 'linux':
-        data = linux_data
-        also_available = (win_data, osx_data)
+    if is_team_server:
+        program = 'Team Server'
+        downloading_path = request.route_path('downloading_team_server')
+        description_mako = 'download_team_server_description.mako'
     else:
-        data = win_data
-        also_available = (osx_data, linux_data)
+        program = 'AeroFS'
+        downloading_path = request.route_path('downloading')
+        description_mako = 'download_description.mako'
+
+    os_names = {
+        'osx': 'Mac OS X',
+        'win': 'Windows',
+        'linux': 'Linux'
+    }
+
+    def downloading_url(os):
+        return '{}?{}={}'.format(downloading_path, url_param_os, os)
+
+    # don't use params[] to avoid KeyError exceptions
+    # N.B. this string is hard coded in some source files. Search for 'msg_type'
+    # to find them
+    msg_type = request.params.get('msg_type')
+    if msg_type == 'signup':
+        headline = False
+        signup_tagline = True
+        no_device_tagline = False
+    elif msg_type == 'no_device':
+        headline = True
+        signup_tagline = False
+        no_device_tagline = True
+    else:
+        headline = True
+        signup_tagline = False
+        no_device_tagline = False
 %>
 
-## Use an iframe to start download automatically
-## http://stackoverflow.com/questions/156686/how-to-start-automatic-download-of-a-file-in-internet-explorer
-<iframe width="1" height="1" frameborder="0" src="${data['url']}"></iframe>
-
-<h2>Downloading ${program}...</h2>
-<p>
-    ${program} download should automatically start within seconds. If it doesn't,
-    <a href="${data['url']}">click here</a> to restart.
-</p>
-%if 'header_note' in data:
-    <p>${data['header_note'] | n}</p>
+## Header and sub-header
+%if headline:
+    <h2>Install ${program}</h2>
 %endif
+
+%if signup_tagline:
+    <p class="download-message text-success" style="margin-top: 30px;">
+        Way to go! you've signed up for AeroFS. Install it now.
+    </p>
+%endif
+
+%if no_device_tagline:
+    <p class="download-message muted">
+        %if is_team_server:
+            Your team doesn't have ${program} installed. Install it now?
+        %else:
+            You don't have devices installed with ${program} yet. Install it now?
+        %endif
+    </p>
+%endif
+
+## The big button
 <p>
-    Also available for <a href="?os=${also_available[0]['id']}">${also_available[0]['name']}</a>
-    and <a href="?os=${also_available[1]['id']}">${also_available[1]['name']}</a>.
+    <a class="btn btn-primary btn-large" href="${downloading_url(os)}">
+        Download ${program}<br><span class="subtitle">for ${os_names[os]}</span></a>
 </p>
 
-<div class="row-fluid top-divider top-divider-margin" style="padding-top: 40px;"></div>
+## Also available for...
+<p>
+    <%
+        if os == 'osx':
+          also_available = ('win', 'linux')
+        elif os == 'linux':
+            also_available = ('win', 'osx')
+        else:
+            also_available = ('osx', 'linux')
 
-%for i in range(len(data['steps'])):
-    ${instruction(data['steps'][i], i)}
-%endfor
+        avail1 = '<a href="{}">{}</a>'.format(downloading_url(also_available[0]),
+            os_names[also_available[0]])
+        avail2 = '<a href="{}">{}</a>'.format(downloading_url(also_available[1]),
+            os_names[also_available[1]])
+    %>
+    Also available for
+    %if is_team_server:
+        ${avail1 | n} and ${avail2 | n}.
+    %else:
+        ${avail1 | n}, ${avail2 | n}, and
+        <a href="https://play.google.com/store/apps/details?id=com.aerofs.android" target="_blank">Android</a>.
+    %endif
+</p>
 
-<%def name="instruction(step, index)">
-    <div class="row-fluid page_block">
-        <div class="span6">
-            <img src="${request.static_path('web:static/img/download/{}{}.png'
-            .format(data['id'], index))}">
-        </div>
-        <div class="span6">
-            <h4>${index + 1}. ${data['steps'][index][0]}</h4>
-            <p>${data['steps'][index][1] | n}</p>
-        </div>
-    </div>
-</%def>
+## Descriptions
+<div class="top-divider description-block">
+    <%include file="${description_mako}"/>
+</div>

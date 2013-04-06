@@ -105,11 +105,11 @@
                 var params = {
                     ${self.csrf.token_param()}
                     ## redirect to the install page right after signing up
-                    ${url_param_next}: "${request.route_url('download')}",
-                    ${url_param_email}: "${email_address}",
-                    ${url_param_password}: $("#inputPasswd").val(),
-                    ${url_param_remember_me}: "",
-                    ${url_param_form_submitted} : ""
+                    "${url_param_next}": "${request.route_url('download')}?msg_type=signup",
+                    "${url_param_email}": "${email_address}",
+                    "${url_param_password}": $("#inputPasswd").val(),
+                    "${url_param_remember_me}": "",
+                    "${url_param_form_submitted}": ""
                 };
 
                 for (var key in params) {
