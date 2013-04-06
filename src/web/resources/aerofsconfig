@@ -13,6 +13,10 @@ server {
 
 	error_page 503 /maintenance;
 
+    location /downloads {
+            rewrite ^/downloads/(.*)$ https://s3.amazonaws.com/nocache.client.aerofs.com/$1 permanent;
+    }
+
 	location / {
 		if (-f /opt/web/maintenance) {
 			return 503;
