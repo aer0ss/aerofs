@@ -85,7 +85,6 @@ import com.aerofs.sp.server.email.InvitationEmailer;
 import com.aerofs.sp.server.email.RequestToSignUpEmailer;
 import com.aerofs.sp.server.lib.EmailSubscriptionDatabase;
 import com.aerofs.sp.server.lib.SPDatabase;
-import com.aerofs.sp.server.lib.SPDatabase.DeviceInfo;
 import com.aerofs.sp.server.lib.SPParam;
 import com.aerofs.sp.server.lib.SharedFolder;
 import com.aerofs.sp.server.lib.SharedFolder.Factory;
@@ -2098,17 +2097,18 @@ public class SPService implements ISPService
 
         GetDeviceInfoReply.Builder builder = GetDeviceInfoReply.newBuilder();
         for (ByteString did : dids) {
-            DeviceInfo info = _db.getDeviceInfo(new DID(did));
+            Device device = _factDevice.create(did);
+            User owner = device.getOwner();
 
             // If there is a permission error or the device does not exist, simply provide an empty
             // device info object.
-            if (info != null && sharedUsers.contains(info._ownerID)) {
+            if (device.exists() && sharedUsers.contains(owner.id())) {
                 builder.addDeviceInfo(GetDeviceInfoReply.PBDeviceInfo.newBuilder()
-                    .setDeviceName(info._deviceName)
+                    .setDeviceName(device.getName())
                     .setOwner(PBUser.newBuilder()
-                        .setUserEmail(info._ownerID.getString())
-                        .setFirstName(info._ownerFirstName)
-                        .setLastName(info._ownerLastName)));
+                        .setUserEmail(owner.id().getString())
+                        .setFirstName(owner.getFullName()._first)
+                        .setLastName(owner.getFullName()._last)));
             } else {
                 builder.addDeviceInfo(EMPTY_DEVICE_INFO);
             }

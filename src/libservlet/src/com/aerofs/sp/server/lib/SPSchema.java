@@ -36,6 +36,7 @@ public final class SPSchema
             C_DEVICE_OS_NAME                = "d_os_name",
             C_DEVICE_NAME                   = "d_name",
             C_DEVICE_OWNER_ID               = "d_owner_id",
+            C_DEVICE_UNLINKED               = "d_unlinked",
 
             // TODO rename TI BI and FI to reflect new table/column names
             T_TI                            = "sp_signup_code",

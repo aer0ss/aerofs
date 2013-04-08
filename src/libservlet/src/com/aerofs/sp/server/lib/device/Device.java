@@ -175,7 +175,7 @@ public class Device
             throw new ExNotFound();
         }
 
-        _f._db.deleteDevice(_id);
+        _f._db.markUnlinked(_id);
     }
 
     /**

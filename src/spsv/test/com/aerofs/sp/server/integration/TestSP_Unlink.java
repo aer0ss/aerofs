@@ -4,6 +4,7 @@
 
 package com.aerofs.sp.server.integration;
 
+import com.aerofs.proto.Sp.GetDeviceInfoReply;
 import com.aerofs.sp.server.lib.device.Device;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.async.UncancellableFuture;
@@ -16,26 +17,21 @@ import com.google.common.collect.ImmutableList;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.testng.Assert;
+
+import java.util.Collections;
 
 import static org.mockito.Mockito.when;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 
 /**
- * A class to test certificate revocation list operations on the SP (revocation of certificates,
- * access to the revocation list, etc.).
+ * A class to test unlinking operations on SP.
  */
-public class TestSP_CRL extends AbstractSPCertificateBasedTest
+public class TestSP_Unlink extends AbstractSPCertificateBasedTest
 {
-    //
-    // Utilities
-    //
-
-    /**
-     * Utility to set up one device and thus create a single entry in the certificate table.
-     */
     @Before
-    public void setupTestSP_CRL()
+    public void setupTestSP_Unlink()
         throws Exception
     {
         String cert = service.registerDevice(device.id().toPB(), newCSR(TEST_1_USER, device),
@@ -57,10 +53,6 @@ public class TestSP_CRL extends AbstractSPCertificateBasedTest
                 .thenReturn(UncancellableFuture.<Void>createSucceeded(null));
     }
 
-    //
-    // Tests for revokeDeviceCertificate()
-    //
-
     @Test
     public void shouldUnlinkDeviceEvenWhenCertificateDoesNotExist()
             throws Exception
@@ -78,12 +70,8 @@ public class TestSP_CRL extends AbstractSPCertificateBasedTest
         service.unlinkDevice(did.toPB(), false);
     }
 
-    /**
-     * Simple test to ensure that when we revoke an existing, valid device certificate,
-     * it is indeed revoked successfully.
-     */
     @Test
-    public void shouldRevokeDeviceCertificateSuccessfully()
+    public void shouldUnlinkSuccessfully()
             throws Exception
     {
         // Follow a typical certify-revoke cycle.
@@ -95,8 +83,8 @@ public class TestSP_CRL extends AbstractSPCertificateBasedTest
         assertTrue(reply.getSerialList().get(0) == getLastSerialNumber());
     }
 
-    @Test(expected = ExNotFound.class)
-    public void shouldThrowIfUnlinkDeviceCertificateMoreThanOnce()
+    @Test
+    public void shouldNotThrowIfUnlinkDeviceCertificateMoreThanOnce()
             throws Exception
     {
         service.unlinkDevice(device.id().toPB(), false);
@@ -104,7 +92,7 @@ public class TestSP_CRL extends AbstractSPCertificateBasedTest
     }
 
     @Test(expected = ExNotFound.class)
-    public void shouldNotRevokeDeviceCertificateWhenDeviceDoesNotExist()
+    public void shouldNotUnlinkWhenDeviceDoesNotExist()
             throws Exception
     {
         // Try to revoke the certificate without first certifying the device
@@ -112,7 +100,7 @@ public class TestSP_CRL extends AbstractSPCertificateBasedTest
     }
 
     @Test(expected = ExNoPerm.class)
-    public void shouldNotRevokeDeviceCertificateWhenWrongOwner()
+    public void shouldNotUnlinkWhenWrongOwner()
             throws Exception
     {
         // Switch to a different user and try to revoke the previous user's device.
@@ -120,9 +108,23 @@ public class TestSP_CRL extends AbstractSPCertificateBasedTest
         service.unlinkDevice(device.id().toPB(), false);
     }
 
-    //
-    // Tests for getCRL()
-    //
+    @Test
+    public void shouldStillGetDeviceInfoAfterUnlinking()
+            throws Exception
+    {
+        // Verify we can get device info before unlinking.
+        GetDeviceInfoReply reply =
+                service.getDeviceInfo(Collections.nCopies(1, device.id().toPB())).get();
+        Assert.assertEquals(1, reply.getDeviceInfoCount());
+        Assert.assertEquals(true, reply.getDeviceInfoList().get(0).hasDeviceName());
+
+        service.unlinkDevice(device.id().toPB(), false);
+
+        // Verify we can get device info after unlinking.
+        reply = service.getDeviceInfo(Collections.nCopies(1, device.id().toPB())).get();
+        Assert.assertEquals(1, reply.getDeviceInfoCount());
+        Assert.assertEquals(true, reply.getDeviceInfoList().get(0).hasDeviceName());
+    }
 
     @Test
     public void shouldGetFullCRLSuccessfullyAfterOneRevocation()
@@ -140,16 +142,5 @@ public class TestSP_CRL extends AbstractSPCertificateBasedTest
         reply = service.getCRL().get();
         assertTrue(reply.getSerialList().size() == 1);
         assertTrue(reply.getSerialList().get(0) == getLastSerialNumber());
-    }
-
-    //
-    // Tests for getUserCRL()
-    //
-
-    @Ignore
-    @Test
-    public void shouldGetUserCRLSuccessfully()
-    {
-        // TODO (MP) finish this test...
     }
 }

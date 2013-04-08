@@ -111,56 +111,6 @@ public class SPDatabase extends AbstractSQLDatabase
         }
     }
 
-    // TODO (WW) use DeviceRow. query user names using a separate query
-    public static class DeviceInfo
-    {
-        public UserID _ownerID;
-        public String _ownerFirstName;
-        public String _ownerLastName;
-        public String _deviceName;
-    }
-
-    /**
-     * TODO (WW) refactor this method. move it to DeviceDatabase
-     * Get the device info for a given device ID.
-     *
-     * Note: we're not using the getDevice() method here because it does not include the first and
-     * last name. I don't want to add first and last name to that call because it will slow things
-     * down and is not required in the other places that user getDevice().
-     *
-     * @param did the device ID we are going to search for.
-     * @return the device info corresponding to the supplied device ID. If no such device exists,
-     * then return null.
-     */
-    public @Nullable DeviceInfo getDeviceInfo(DID did) throws SQLException
-    {
-        // Need to join the user and the device table.
-        PreparedStatement psGDI = prepareStatement(
-                "select dev." + C_DEVICE_NAME + ", dev." + C_DEVICE_OWNER_ID + ", user." +
-                C_USER_FIRST_NAME + ", user." + C_USER_LAST_NAME + " from " + T_DEVICE +
-                " dev join " + T_USER + " user on dev." + C_DEVICE_OWNER_ID + " = user." +
-                C_USER_ID + " where dev." + C_DEVICE_ID + " = ?"
-        );
-
-        psGDI.setString(1, did.toStringFormal());
-
-        ResultSet rs = psGDI.executeQuery();
-        try {
-            if (rs.next()) {
-                DeviceInfo di = new DeviceInfo();
-                di._deviceName = rs.getString(1);
-                di._ownerID = UserID.fromInternal(rs.getString(2));
-                di._ownerFirstName = rs.getString(3);
-                di._ownerLastName = rs.getString(4);
-                return di;
-            } else {
-                return null;
-            }
-        } finally {
-            rs.close();
-        }
-    }
-
     /**
      * Get the shared users set for a given user (i.e. the set of users that the supplied user
      * shares with).
