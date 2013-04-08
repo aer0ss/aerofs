@@ -156,7 +156,13 @@ class Launcher
             // that folder is missing
             UI.rap().start();
 
-            if (!isFirstTime) {
+            if (isFirstTime) {
+                // need to bind to singleton port
+                assert _ss == null;
+                checkNoOtherInstanceRunning();
+            } else {
+                // should already be bound to singleton port
+                assert _ss != null;
                 UI.dm().start();
                 SVClient.sendEventAsync(PBSVEvent.Type.SIGN_IN);
             }
