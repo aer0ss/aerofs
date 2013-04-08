@@ -1,5 +1,6 @@
 package com.aerofs.gui.misc;
 
+import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.base.Loggers;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.labeling.L;
@@ -106,7 +107,7 @@ public class DlgDefect extends AeroFSJFaceDialog
             @Override
             public void widgetSelected(SelectionEvent arg0)
             {
-                GUIUtil.launch(S.PRIVACY_URL);
+                GUIUtil.launch(WWW.MARKETING_HOST_URL + "/terms#privacy");
             }
         });
 
