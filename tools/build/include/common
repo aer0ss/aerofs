@@ -48,6 +48,8 @@ readonly BUILD_OUTPUT_DIR="${GIT_ROOT}/out.ant"
 # Local resource directory (where prebuilt binaries exist)
 readonly CLIENT_RESOURCES_DIR="${GIT_ROOT}/resource/client"
 
+# CLIENT or TEAM_SERVER, identifies which labeling.properties will be used
+# during the build process
 readonly PRODUCT="${2:-}"
 
 # Properties File
