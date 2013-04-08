@@ -53,7 +53,7 @@ echo ">>> Submitting request to CA"
 curl --silent -X POST \
     --data-binary @"$SERVER_NAME"".csr" \
     --output "$SERVER_X509CERT_FILENAME" \
-    "$CA_URL""?newcert=""$RANDOM-$SERVER_NAME"
+    "$CA_URL""?""$RANDOM-$SERVER_NAME"
 
 CERTIFICATE_STRING='-----BEGIN CERTIFICATE-----'
 
