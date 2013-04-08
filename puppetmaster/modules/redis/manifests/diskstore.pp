@@ -28,7 +28,7 @@ class redis::diskstore inherits redis {
 
     $redis_cache_max_memory = $mem / 2
 
-    servlet::config::file{"/etc/redis/redis.conf":
+    file{"/etc/redis/redis.conf":
         content => template(
             "redis/diskstore.conf.erb"
         ),

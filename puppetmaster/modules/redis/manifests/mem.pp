@@ -10,7 +10,7 @@
 #
 class redis::mem inherits redis {
 
-    servlet::config::file{"/etc/redis/redis.conf":
+    file{"/etc/redis/redis.conf":
         content => template(
             "redis/mem.conf.erb"
         ),
