@@ -48,6 +48,8 @@ readonly BUILD_OUTPUT_DIR="${GIT_ROOT}/out.ant"
 # Local resource directory (where prebuilt binaries exist)
 readonly CLIENT_RESOURCES_DIR="${GIT_ROOT}/resource/client"
 
+readonly PRODUCT="${2:-}"
+
 # Properties File
 if [[ "$PRODUCT" != "CLIENT" && "$PRODUCT" != "TEAM_SERVER" ]]; then
     echo "error: invalid build product $PRODUCT. Expected CLIENT or TEAM_SERVER." >&2
@@ -58,9 +60,6 @@ if [[ "$PRODUCT" == "CLIENT" ]]; then
 else
     readonly PROPERTIES_FILE="$CLIENT_RESOURCES_DIR"/common/labeling-teamserver.properties
 fi
-
-readonly GET_PROPERTY="${BUILD_SCRIPT_DIR}/arrow-config/get_property.groovy"
-readonly GET_PROPERTY_DEPENDENCIES="${BUILD_OUTPUT_DIR}/arrow-config/dependencies.groovy"
 
 # Local release directory
 readonly LOCAL_RELEASE_DIR="${BUILD_OUTPUT_DIR}/release"
@@ -197,7 +196,13 @@ function compute_next_release_version() {
 ######################################################################
 
 function compute_product_names() {
+    readonly GET_PROPERTY_LOGBACK_CONFIG="${BUILD_SCRIPT_DIR}/arrow-config/logback.xml"
+    readonly GET_PROPERTY="groovy -Dlogback.configurationFile=$GET_PROPERTY_LOGBACK_CONFIG ${BUILD_SCRIPT_DIR}/arrow-config/get_property.groovy"
+    readonly GET_PROPERTY_DEPENDENCIES="${BUILD_SCRIPT_DIR}/arrow-config/dependencies.groovy"
+
+    echo "getting dependencies"
     $GET_PROPERTY_DEPENDENCIES
+    echo "getting product names"
     readonly AEROFS_PRODUCT=$($GET_PROPERTY $PROPERTIES_FILE labeling.product)
     readonly AEROFS_PRODUCT_SPACEFREE=$($GET_PROPERTY $PROPERTIES_FILE labeling.productSpaceFreeName)
     readonly AEROFS_PRODUCT_UNIX=$($GET_PROPERTY $PROPERTIES_FILE labeling.productUnixName)

@@ -8,21 +8,22 @@
 #
 ###############################################################################
 
-include include/common ${1:-}
+include include/common ${1:-} ${2:-}
 
 ###############################################################################
 #
 # arguments and usage
 #
 ###############################################################################
-if [[ $# -ne 2 ]]; then
+if [[ $# -ne 3 ]]; then
     echo "usage: $0 [build mode] [release version]" >&2
     echo " " >&2
     echo "[build mode]: STAGING or PROD" >&2
+    echo "[build client]: CLIENT or TEAM_SERVER" >&2
     echo "[release version]: major.minor.build" >&2
     echo " " >&2
-    echo "example: $0 STAGING 0.4.98" >&2
-    echo "example: $0 PROD 0.4.99" >&2
+    echo "example: $0 STAGING CLIENT 0.4.98" >&2
+    echo "example: $0 PROD TEAM_SERVER 0.4.99" >&2
     exit $ERRBADARGS
 fi
 
@@ -80,8 +81,8 @@ function copy_resources_to_local_release_directories() {
         cp -R "${CLIENT_RESOURCES_DIR}/s3/lib"/* "${AEROFS_RELEASE_WIN_DIR}/lib/"
         cp -R "${CLIENT_RESOURCES_DIR}/s3/lib"/* "${AEROFS_RELEASE_OSX_DIR}/lib/"
 	cp "${CLIENT_RESOURCES_DIR}/common/labeling-teamserver.properties" "${AEROFS_RELEASE_DIR}/labeling.properties"
-    elif [ "${AEROFS_PRODUCT_UNIX}"!="aerofs" ]; then
-        echo "ERROR: Aerofs product unix is not one of aerofsts, aerofs"
+    elif [ "${AEROFS_PRODUCT_UNIX}" != "aerofs" ]; then
+        echo "ERROR: Aerofs product unix is ${AEROFS_PRODUCT_UNIX}, not one of aerofsts, aerofs"
         echo "Exiting"
         exit 1
     else

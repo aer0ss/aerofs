@@ -67,6 +67,8 @@ org.apache.catalina.core.ContainerBase.[Catalina].level = DEBUG
 org.apache.catalina.core.ContainerBase.[Catalina].handlers = java.util.logging.ConsoleHandler
 EOF
 
+cp -R "$RESOURCES"/labeling.properties "$INSTALL"/WEB-INF/classes/labeling.properties
+
 CONTEXT_FILENAME="ROOT.xml"
 # Since we can't deploy sv to root (due to alpha and staging systems), we deploy
 # it at sv_beta

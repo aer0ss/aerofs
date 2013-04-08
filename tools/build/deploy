@@ -5,19 +5,20 @@
 # General includes
 #
 ###############################################################################
-include include/common ${1:-}
+include include/common ${1:-} ${2:-}
 
 ###############################################################################
 #
 # usage and parameters
 #
 ###############################################################################
-if [[ $# -ne 1 ]]; then
+if [[ $# -ne 2 ]]; then
     echo "usage: $0 [build mode]" >&2
     echo " " >&2
     echo "[build mode]: STAGING or PROD" >&2
+    echo "[build client]: CLIENT or TEAM_SERVER" >&2
     echo " " >&2
-    echo "example: $0 STAGING" >&2
+    echo "example: $0 STAGING CLIENT" >&2
     exit $ERRBADARGS
 fi
 
