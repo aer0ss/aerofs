@@ -1,59 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <module type="JAVA_MODULE" version="4">
-  <component name="FacetManager">
-    <facet type="web" name="sp_staging">
-      <configuration>
-        <descriptors>
-          <deploymentDescriptor name="web.xml" url="file://$MODULE_DIR$/resources/sp_staging/web.xml" />
-        </descriptors>
-        <webroots>
-          <root url="file://$MODULE_DIR$/resources/sp_staging" relative="/WEB-INF" />
-        </webroots>
-        <sourceRoots>
-          <root url="file://$MODULE_DIR$/src" />
-        </sourceRoots>
-      </configuration>
-    </facet>
-    <facet type="web" name="sv_prod">
-      <configuration>
-        <descriptors>
-          <deploymentDescriptor name="web.xml" url="file://$MODULE_DIR$/resources/sv_prod/web.xml" />
-        </descriptors>
-        <webroots>
-          <root url="file://$MODULE_DIR$/resources/sv_prod" relative="/WEB-INF" />
-        </webroots>
-        <sourceRoots>
-          <root url="file://$MODULE_DIR$/src" />
-        </sourceRoots>
-      </configuration>
-    </facet>
-    <facet type="web" name="sp_prod">
-      <configuration>
-        <descriptors>
-          <deploymentDescriptor name="web.xml" url="file://$MODULE_DIR$/resources/sp_prod/web.xml" />
-        </descriptors>
-        <webroots>
-          <root url="file://$MODULE_DIR$/resources/sp_prod" relative="/WEB-INF" />
-        </webroots>
-        <sourceRoots>
-          <root url="file://$MODULE_DIR$/src" />
-        </sourceRoots>
-      </configuration>
-    </facet>
-    <facet type="web" name="sv_staging">
-      <configuration>
-        <descriptors>
-          <deploymentDescriptor name="web.xml" url="file://$MODULE_DIR$/resources/sv_staging/web.xml" />
-        </descriptors>
-        <webroots>
-          <root url="file://$MODULE_DIR$/resources/sv_staging" relative="/WEB-INF" />
-        </webroots>
-        <sourceRoots>
-          <root url="file://$MODULE_DIR$/src" />
-        </sourceRoots>
-      </configuration>
-    </facet>
-  </component>
   <component name="NewModuleRootManager" inherit-compiler-output="true">
     <exclude-output />
     <content url="file://$MODULE_DIR$">
