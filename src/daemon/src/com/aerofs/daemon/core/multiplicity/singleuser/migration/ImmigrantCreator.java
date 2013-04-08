@@ -98,7 +98,6 @@ public class ImmigrantCreator implements IImmigrantCreator
                 // to re-create the root dir in the destination, however we need to make sure
                 // any physical trace of the former anchor disappears
                 if (oaFrom.soid().oid().isRoot()) return soidToParent;
-                if (oaFrom.isAnchor()) oaFrom.physicalFolder().demoteToRegularFolder_(op, t);
 
                 SOID soidTo = new SOID(soidToParent.sidx(), migratedOID(oaFrom.soid().oid()));
                 String name = soidFromRoot.equals(oaFrom.soid()) ? toRootName : oaFrom.name();
@@ -121,6 +120,15 @@ public class ImmigrantCreator implements IImmigrantCreator
                     assert oaFrom.isExpelled() || oaToExisting.isExpelled() :
                             oaFrom + " " + oaToExisting;
                     _om.moveInSameStore_(soidTo, soidToParent.oid(), name, op, false, true, t);
+                }
+
+                // remove the tag file from the destination to gracefully handle both MAP and APPLY
+                if (oaFrom.isAnchor()) {
+                    // the IPhysicalFolder needs to be created with the anchor OID
+                    // but we cannot simply reuse that of the old OA because it probably does not
+                    // point to the correct path...
+                    _ps.newFolder_(oaFrom.soid(), _ds.resolve_(soidTo))
+                            .demoteToRegularFolder_(op, t);
                 }
 
                 return soidTo;

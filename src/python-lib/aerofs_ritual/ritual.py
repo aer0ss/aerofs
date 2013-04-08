@@ -264,6 +264,7 @@ class _RitualServiceWrapper(object):
                 self._service.shutdown()
             except exception.ExceptionReply as e:
                 if e.get_type() == PBException.INDEXING:
+                    time.sleep(1)
                     continue
                 raise
             except socket.error:
