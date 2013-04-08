@@ -153,14 +153,12 @@ public class LinkedFolder implements IPhysicalFolder
     @Override
     public void promoteToAnchor_(PhysicalOp op, Trans t) throws IOException, SQLException
     {
-        if (op != PhysicalOp.APPLY) return;
         _s.promoteToAnchor_(_soid, _path, t);
     }
 
     @Override
     public void demoteToRegularFolder_(PhysicalOp op, Trans t) throws IOException, SQLException
     {
-        if (op != PhysicalOp.APPLY) return;
         _s.demoteToRegularFolder_(_soid, _path, t);
     }
 

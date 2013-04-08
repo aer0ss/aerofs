@@ -1,5 +1,6 @@
 package com.aerofs.daemon.core.phy.linked.linker;
 
+import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.EnumSet;
@@ -169,7 +170,7 @@ public class MightCreate
             // inside the defualt root resolveNullable_ will find an anchor, in an external root
             // it will find the root dir
             if (!(oa.isAnchor() || oa.soid().oid().isRoot())) {
-                _sfti.deleteTagFileAndIconIn(pc._absPath);
+                _sfti.deleteTagFileAndIconIn(new File(pc._absPath).getPath());
             }
         }
         return true;
