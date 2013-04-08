@@ -29,12 +29,7 @@ class ApplicationObject(object):
             except ValueError:
                 raise aerofs.certauth.openssl.ExBadRequest("No POST body");
 
-            split_query_string = query_string.split('=')
-
-            if len(split_query_string) != 2:
-                raise aerofs.certauth.openssl.ExBadRequest("Bad query string");
-
-            certname = 'certs/' + split_query_string[1]
+            certname = 'certs/' + query_string
             ret =  self._openssl.newcert(certname, csr)
 
         # Catch certain exceptions for debugging purposes. Don't catch
