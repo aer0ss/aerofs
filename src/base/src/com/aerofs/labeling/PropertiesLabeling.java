@@ -29,43 +29,43 @@ class PropertiesLabeling implements ILabeling
     @Override
     public boolean isStaging()
     {
-        return config.getBoolean( "labeling.isStaging" );
+        return config.getBoolean( "labeling.isStaging", false );
     }
 
     @Override
     public boolean isMultiuser()
     {
-        return config.getBoolean( "labeling.isMultiuser" );
+        return config.getBoolean( "labeling.isMultiuser", false );
     }
 
     @Override
     public String product()
     {
-        return config.getString( "labeling.product" );
+        return config.getString( "labeling.product", "AeroFS" );
     }
 
     @Override
     public String productSpaceFreeName()
     {
-        return config.getString( "labeling.productSpaceFreeName" );
+        return config.getString( "labeling.productSpaceFreeName", "AeroFS" );
     }
 
     @Override
     public String productUnixName()
     {
-        return config.getString( "labeling.productUnixName" );
+        return config.getString( "labeling.productUnixName", "aerofs" );
     }
 
     @Override
     public String rootAnchorName()
     {
-        return config.getString( "labeling.rootAnchorName" );
+        return config.getString( "labeling.rootAnchorName", "AeroFS" );
     }
 
     @Override
     public int defaultPortbase()
     {
-        return config.getInt( "labeling.defaultPortBase" );
+        return config.getInt( "labeling.defaultPortBase", 50193 );
     }
 
     @Override
