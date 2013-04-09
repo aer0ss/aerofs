@@ -17,6 +17,7 @@ import com.aerofs.lib.obfuscate.ObfuscatingFormatters;
 import com.google.common.base.Function;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
 import javax.annotation.Nonnull;
@@ -27,6 +28,7 @@ import org.slf4j.Logger;
 
 import java.io.PrintStream;
 import java.sql.SQLException;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
@@ -148,6 +150,8 @@ public class ScanSessionQueue implements IDumpStatMisc
 
     // whether there is an ongoing scan session
     private boolean _ongoing;
+    // callbacks to be fired when the current session ends
+    private List<ScanCompletionCallback> _callbacks = Lists.newArrayList();
 
     ScanSessionQueue(Factory f, LinkerRoot root)
     {
@@ -227,6 +231,14 @@ public class ScanSessionQueue implements IDumpStatMisc
         return time;
     }
 
+    private void schedule_(long delay, long time, final ScanCompletionCallback callback)
+    {
+        assert delay >= 0;
+
+        _callbacks.add(callback);
+        schedule_(delay, time);
+    }
+
     /**
      * Schedule an event that runs the next scan session. No-op if the next session has been
      * scheduled.
@@ -234,7 +246,7 @@ public class ScanSessionQueue implements IDumpStatMisc
      * @param delay relative timeout
      * @param time absolute timeout
      */
-    private void schedule_(long delay, long time, final ScanCompletionCallback callback)
+    private void schedule_(long delay, long time)
     {
         assert delay >= 0;
 
@@ -261,7 +273,7 @@ public class ScanSessionQueue implements IDumpStatMisc
 
                 assert !_ongoing;
                 _ongoing = true;
-                runAll_(callback);
+                runAll_();
             }
         }, delay);
     }
@@ -270,7 +282,7 @@ public class ScanSessionQueue implements IDumpStatMisc
      * The method runs all the scan sessions one after another. It schedules the current session and
      * returns if it can't be run immediately (due to failure, continuation, or required delays).
      */
-    private void runAll_(final ScanCompletionCallback callback)
+    private void runAll_()
     {
         assert _ongoing;
 
@@ -280,7 +292,7 @@ public class ScanSessionQueue implements IDumpStatMisc
             if (tk._time > now) {
                 // Reset _ongoing first so schedule_() won't be an no-op.
                 _ongoing = false;
-                schedule_(tk._time - now, tk._time, callback);
+                schedule_(tk._time - now, tk._time);
                 return;
 
             } else {
@@ -294,18 +306,23 @@ public class ScanSessionQueue implements IDumpStatMisc
 
                 final ScanSession ss = _f._factSS.create_(_root,
                         pk._absPaths, pk._recursive);
-                if (!run_(tk, pk, ss, callback)) return;
+                if (!run_(tk, pk, ss)) return;
             }
         }
 
+        List<ScanCompletionCallback> callbacks = _callbacks;
         _ongoing = false;
-        _f._sched.schedule(new AbstractEBSelfHandling() {
-            @Override
-            public void handle_()
-            {
-                callback.done_();
-            }
-        }, 0);
+        _callbacks = Lists.newArrayList();
+
+        for (final ScanCompletionCallback callback : callbacks) {
+            _f._sched.schedule(new AbstractEBSelfHandling() {
+                @Override
+                public void handle_()
+                {
+                    callback.done_();
+                }
+            }, 0);
+        }
     }
 
     /**
@@ -315,8 +332,7 @@ public class ScanSessionQueue implements IDumpStatMisc
      *
      * @return whether the caller should run subsequent sessions in the queue.
      */
-    private boolean run_(final TimeKey tk, final PathKey pk, final ScanSession ss,
-            final ScanCompletionCallback callback)
+    private boolean run_(final TimeKey tk, final PathKey pk, final ScanSession ss)
     {
         if (_root.wasRemoved()) return true;
 
@@ -331,7 +347,7 @@ public class ScanSessionQueue implements IDumpStatMisc
                     {
                         // N.B. run_() doesn't call schedule_() if the scan session fails. It relies
                         // on runAll_() to do the work.
-                        if (run_(tk, pk, ss, callback)) runAll_(callback);
+                        if (run_(tk, pk, ss)) runAll_();
                     }
                 };
 
