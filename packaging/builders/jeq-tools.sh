@@ -1,4 +1,4 @@
-#!/bin/bash -u -e
+#!/bin/bash -ue
 
 OPT=jeq-tools/opt/jeq-tools
 mkdir -p $OPT

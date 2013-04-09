@@ -1,4 +1,4 @@
-#!/bin/bash -u -e
+#!/bin/bash -ue
 
 OPT=syncstat-tools/opt/syncstat-tools
 mkdir -p $OPT

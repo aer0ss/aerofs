@@ -1,7 +1,7 @@
-#!/bin/bash -u -e
+#!/bin/bash -ue
 
 # Constants
-APT_SERVER=aerofs@apt.aerofs.com
+APT_SERVER=apt.aerofs.com
 
 # Standard usage function.
 # Echo:
@@ -40,6 +40,7 @@ DEBS_FOLDER=debs-$DEST
 
 # Copy the debs over and add them to the apt repository. Make sure the deb
 # dropbox is clean before we perform the update (and clean up when we're done).
+ssh $APT_SERVER "mkdir -p ~/$DEBS_FOLDER"
 ssh $APT_SERVER "rm -f ~/$DEBS_FOLDER/*"
 scp debs/* $APT_SERVER:~/$DEBS_FOLDER/
 ssh $APT_SERVER \
@@ -48,10 +49,10 @@ ssh $APT_SERVER \
     for deb in \$(ls ~/$DEBS_FOLDER/*.deb); \
     do \
         echo signing \$deb; \
-        dpkg-sig --sign builder \$deb; \
+        sudo dpkg-sig --sign builder \$deb -g --homedir=/root/.gnupg; \
     done; \
     cp ~/$DEBS_FOLDER/*.ver /var/www/ubuntu/$DEST/versions; \
-    reprepro includedeb precise ~/$DEBS_FOLDER/*.deb; \
+    sudo reprepro --gnupghome=/root/.gnupg includedeb precise ~/$DEBS_FOLDER/*.deb; \
     rm -f ~/$DEBS_FOLDER/*"
 
 if [ $MODE != "STAGING" ]

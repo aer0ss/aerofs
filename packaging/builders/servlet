@@ -1,4 +1,4 @@
-#!/bin/bash -u -e
+#!/bin/bash -ue
 
 if [[ $# -ne 4 || "$1x" == "x" || "$2x" == "x" || "$3x" == "x"  || "$4x" == "x" ]]
 then
