@@ -2074,7 +2074,6 @@ public class SPService implements ISPService
 
         l.info("cmd ack reply: " + device.id().toStringFormal() + " size=" + size.getSize());
         return createReply(reply);
-
     }
 
     private static final GetDeviceInfoReply.PBDeviceInfo EMPTY_DEVICE_INFO =
