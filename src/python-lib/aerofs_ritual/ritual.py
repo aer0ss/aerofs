@@ -129,10 +129,16 @@ class _RitualServiceWrapper(object):
 
     def import_file(self, target, source):
         pbpath = convert.absolute_to_pbpath(target)
+        self.import_pbpath(pbpath, source)
+
+    def import_pbpath(self, pbpath, source):
         self._service.import_file(pbpath, source)
 
     def export_file(self, path):
         pbpath = convert.absolute_to_pbpath(path)
+        self.export_pbpath(pbpath)
+
+    def export_pbpath(self, pbpath):
         try:
             return self._service.export_file(pbpath).dest
         except exception.ExceptionReply as e:
@@ -143,10 +149,16 @@ class _RitualServiceWrapper(object):
 
     def create_object(self, path, directory):
         pbpath = convert.absolute_to_pbpath(path)
+        self.create_pbpath(pbpath, directory)
+
+    def create_pbpath(self, pbpath, directory):
         self._service.create_object(pbpath, directory)
 
     def delete_object(self, path):
         pbpath = convert.absolute_to_pbpath(path)
+        self.delete_pbpath(pbpath)
+
+    def delete_pbpath(self, pbpath):
         self._service.delete_object(pbpath)
 
     def move_object(self, pathFrom, pathTo):
@@ -285,10 +297,10 @@ class _RitualServiceWrapper(object):
 
     def wait_path(self, path):
         pbpath = convert.absolute_to_pbpath(path)
-        self._wait_path(pbpath)
+        self.wait_pbpath(pbpath)
         return pbpath
 
-    def _wait_path(self, pbpath):
+    def wait_pbpath(self, pbpath):
         """
         Wait until the Daemon has recognized the given path
         """
@@ -304,6 +316,9 @@ class _RitualServiceWrapper(object):
 
     def wait_path_to_disappear(self, path):
         pbpath = convert.absolute_to_pbpath(path)
+        self.wait_pbpath_to_disappear(pbpath)
+
+    def wait_pbpath_to_disappear(self, pbpath):
         try:
             while True:
                 self._service.get_object_attributes(self._user, pbpath)

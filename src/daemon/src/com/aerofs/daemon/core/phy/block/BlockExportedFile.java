@@ -65,11 +65,6 @@ public class BlockExportedFile
     public String exportedAbsPath()
     {
         String storeRoot = _s.storeExportFolder(_sokid.sidx());
-        // Note: the first element of _path is the SID.toStringFormal().
-        // We already take care of that bit in storeExportFolder, so we
-        // drop the first path element here.
-        String[] elems = _path.elements();
-        String relPath = Util.join(Arrays.copyOfRange(elems, 1, elems.length));
-        return Util.join(storeRoot, relPath);
+        return Util.join(storeRoot, Util.join(_path.elements()));
     }
 }

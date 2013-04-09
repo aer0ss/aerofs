@@ -24,10 +24,14 @@ class _SPServiceWrapper(object):
         self._service = rpc_service
 
     def sign_in(self):
-        user_id = local_actor().aero_userid
-        password = local_actor().aero_password
+        self.sign_in(local_actor())
+
+    def sign_in(self, actor):
+        user_id = actor.aero_userid
+        password = actor.aero_password
         scrypted_password = scrypt(password, user_id)
         self._service.sign_in(user_id, scrypted_password)
+
 
     def list_shared_folders(self):
         sids = []
