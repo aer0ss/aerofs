@@ -69,4 +69,8 @@ public class SPParam
     // SP Constants go here
 
     public static final long PASSWORD_RESET_TOKEN_VALID_DURATION = 1 * C.DAY;
+
+    // Also see URLs defined in BaseParam.WWW
+    public static final String WWW_CDN_HOST_URL = "https://d37fxzwppxbuun.cloudfront.net";
+
 }

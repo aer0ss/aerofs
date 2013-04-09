@@ -62,7 +62,7 @@ public class BaseParam
                 TEAM_SERVER_DEVICES_URL = DASHBOARD_HOST_URL + "/admin/team_servers",
                 DOWNLOAD_URL = MARKETING_HOST_URL + "/download",
 
-                // CDN for AeroFS installers
+                // CDN for AeroFS installers. Also see SPParam.WWW_CDN_HOST_URL
                 INSTALLER_CDN_HOST_URL =
                         "https://cache.client." + (L.isStaging() ? "stg." : "") + "aerofs.com",
                 NOCACHE_INSTALLER_CDN_HOST_URL =

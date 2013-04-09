@@ -2,6 +2,7 @@ package com.aerofs.sp.server.email;
 
 import com.aerofs.lib.S;
 import com.aerofs.sp.common.SubscriptionParams;
+import com.aerofs.sp.server.lib.SPParam;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
@@ -17,7 +18,7 @@ public class HTMLEmail implements IEmail {
         "           <table cellpadding=\"0\" cellspacing=\"0\">" +
         "               <tr>" +
         "                   <td style=\"padding:10px 0\">" +
-        "                       <a href=\"\"><img src=\"http://www.aerofs.com/img/logo.png\"></a>" +
+        "                       <a href=\"\"><img src=\"" + SPParam.WWW_CDN_HOST_URL + "/img/logo.png\"></a>" +
         "                   </td>" +
         "               </tr>" +
         "           </table>" +
