@@ -14,12 +14,10 @@ import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgAbsRoots;
-import com.aerofs.lib.injectable.InjectableFile;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
-import sun.tools.tree.IfStatement;
 
 import javax.annotation.Nullable;
 import java.io.File;
