@@ -1,11 +1,10 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="TestSP_CRL" type="JUnit" factoryName="JUnit">
-    <extension name="coverage" enabled="false" merge="false" sample_coverage="true" runner="idea" />
+  <configuration default="false" name="TestSP_Unlink" type="JUnit" factoryName="JUnit">
     <module name="spsv" />
     <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
     <option name="ALTERNATIVE_JRE_PATH" value="" />
     <option name="PACKAGE_NAME" value="com.aerofs.sp.server.integration" />
-    <option name="MAIN_CLASS_NAME" value="com.aerofs.sp.server.integration.TestSP_CRL" />
+    <option name="MAIN_CLASS_NAME" value="com.aerofs.sp.server.integration.TestSP_Unlink" />
     <option name="METHOD_NAME" value="" />
     <option name="TEST_OBJECT" value="class" />
     <option name="VM_PARAMETERS" value="-ea" />

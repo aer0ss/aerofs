@@ -26,6 +26,7 @@ import static com.aerofs.sp.server.lib.SPSchema.C_DEVICE_NAME;
 import static com.aerofs.sp.server.lib.SPSchema.C_DEVICE_OS_FAMILY;
 import static com.aerofs.sp.server.lib.SPSchema.C_DEVICE_OS_NAME;
 import static com.aerofs.sp.server.lib.SPSchema.C_DEVICE_OWNER_ID;
+import static com.aerofs.sp.server.lib.SPSchema.C_DEVICE_UNLINKED;
 import static com.aerofs.sp.server.lib.SPSchema.T_DEVICE;
 
 /**
@@ -68,12 +69,16 @@ public class DeviceDatabase extends AbstractSQLDatabase
         }
     }
 
-    public void deleteDevice(DID did)
+    public void markUnlinked(DID did)
             throws SQLException
     {
-        PreparedStatement ps = prepareStatement(DBUtil.deleteWhere(T_DEVICE, C_DEVICE_ID + "=?"));
-        ps.setString(1, did.toStringFormal());
-        ps.executeUpdate();
+        PreparedStatement psUpdateUnlinkedFlag = prepareStatement(DBUtil.updateWhere(T_DEVICE,
+                C_DEVICE_ID + "=?", C_DEVICE_UNLINKED));
+
+        psUpdateUnlinkedFlag.setBoolean(1, true);
+        psUpdateUnlinkedFlag.setString(2, did.toStringFormal());
+
+        psUpdateUnlinkedFlag.executeUpdate();
     }
 
     public boolean hasDevice(DID did)

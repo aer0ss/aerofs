@@ -41,6 +41,7 @@ import static com.aerofs.sp.server.lib.SPSchema.C_AC_STORE_ID;
 import static com.aerofs.sp.server.lib.SPSchema.C_AC_USER_ID;
 import static com.aerofs.sp.server.lib.SPSchema.C_DEVICE_ID;
 import static com.aerofs.sp.server.lib.SPSchema.C_DEVICE_OWNER_ID;
+import static com.aerofs.sp.server.lib.SPSchema.C_DEVICE_UNLINKED;
 import static com.aerofs.sp.server.lib.SPSchema.C_TI_TIC;
 import static com.aerofs.sp.server.lib.SPSchema.C_TI_TO;
 import static com.aerofs.sp.server.lib.SPSchema.C_TI_TS;
@@ -189,8 +190,8 @@ public class UserDatabase extends AbstractSQLDatabase
     public ImmutableList<DID> getDevices(UserID userId)
             throws SQLException, ExFormatError
     {
-        PreparedStatement ps = prepareStatement(
-                selectWhere(T_DEVICE, C_DEVICE_OWNER_ID + "=?", C_DEVICE_ID));
+        PreparedStatement ps = prepareStatement(selectWhere(T_DEVICE,
+                C_DEVICE_OWNER_ID + "=? and " + C_DEVICE_UNLINKED + "=0", C_DEVICE_ID));
 
         ps.setString(1, userId.getString());
 
