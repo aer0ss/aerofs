@@ -18,7 +18,7 @@ done
 # Web repo and python-lib copy
 mkdir -p $OPT
 mkdir -p $EXTRA
-cp -r ../src/web/ $OPT
+cp -r ../src/web/* $OPT
 cp -r ../src/python-lib $EXTRA
 
 # Nginx configuration
