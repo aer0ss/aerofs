@@ -323,7 +323,7 @@ public final class CommandNotificationSubscriber
     private static SPBlockingClient newAuthenticatedSPClient()
             throws Exception
     {
-        SPBlockingClient sp = SPClientFactory.newBlockingClient(SP.URL, Cfg.user());
+        SPBlockingClient sp = SPClientFactory.newBlockingClient(Cfg.user());
         sp.signInRemote();
         return sp;
     }
@@ -331,7 +331,7 @@ public final class CommandNotificationSubscriber
     private static SPBlockingClient newUnauthenticatedSPClient()
             throws Exception
     {
-        return SPClientFactory.newBlockingClient(SP.URL, Cfg.user());
+        return SPClientFactory.newBlockingClient(Cfg.user());
     }
 
     //

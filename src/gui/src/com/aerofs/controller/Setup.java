@@ -169,7 +169,7 @@ class Setup
         // When setting up Team Servers, the ID of the user who sets up the server is used with this
         // SP client to sign in. Since the default configurator is SSLURLConnectionConfigurator
         // which doesn't work with regular clients, we force a null connection configurator.
-        res._sp = SPClientFactory.newBlockingClientWithNullConnectionConfigurator(SP.URL, userID);
+        res._sp = SPClientFactory.newBlockingClientWithNullConnectionConfigurator(userID);
         res._sp.signIn(userID.getString(), ByteString.copyFrom(res._scrypted));
 
         return res;
@@ -210,7 +210,7 @@ class Setup
         Cfg.db().set(Key.AUTO_EXPORT_FOLDER, rootAnchorPath);
 
         // sign in with the team server's user ID
-        SPBlockingClient tsSP = SPClientFactory.newBlockingClient(SP.URL, tsUserId);
+        SPBlockingClient tsSP = SPClientFactory.newBlockingClient(tsUserId);
         tsSP.signInRemote();
 
         setupCommon(rootAnchorPath);

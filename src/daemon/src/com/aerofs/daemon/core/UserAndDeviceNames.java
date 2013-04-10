@@ -151,7 +151,7 @@ public class UserAndDeviceNames
         TCB tcb = null;
         try {
             tcb = tk.pseudoPause_("sp-devinfo");
-            SPBlockingClient sp = _factSP.create_(SP.URL, _localUser.get());
+            SPBlockingClient sp = _factSP.create_(_localUser.get());
             sp.signInRemote();
             List<ByteString> pb = Lists.newArrayListWithExpectedSize(dids.size());
             for (DID did : dids) pb.add(did.toPB());

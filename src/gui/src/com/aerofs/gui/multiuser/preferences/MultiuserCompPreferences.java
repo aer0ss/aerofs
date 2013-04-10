@@ -38,7 +38,7 @@ public class MultiuserCompPreferences extends Composite
 
         // Manage devices row
 
-        helper.createManageDevices("Manage all Team Servers", WWW.TEAM_SERVER_DEVICES_URL);
+        helper.createManageDevices("Manage all Team Servers", WWW.TEAM_SERVER_DEVICES_URL.get());
 
         // Root anchor relocation row
 

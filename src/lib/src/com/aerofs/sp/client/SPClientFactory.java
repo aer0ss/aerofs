@@ -1,9 +1,13 @@
 package com.aerofs.sp.client;
 
+import com.aerofs.base.BaseParam.SP;
 import com.aerofs.base.net.IURLConnectionConfigurator;
 import com.aerofs.base.net.NullURLConnectionConfigurator;
+import com.aerofs.base.properties.DynamicUrlProperty;
 import com.aerofs.labeling.L;
 import com.aerofs.base.id.UserID;
+
+import java.net.MalformedURLException;
 import java.net.URL;
 
 /**
@@ -14,15 +18,14 @@ import java.net.URL;
  */
 public class SPClientFactory
 {
-    public static SPBlockingClient newBlockingClient(URL spURL, UserID user)
+    public static SPBlockingClient newBlockingClient(UserID user)
     {
-        return new SPBlockingClient(new SPClientHandler(spURL, getDefaultConfigurator()), user);
+        return new SPBlockingClient(new SPClientHandler(SP.URL.get(), getDefaultConfigurator()), user);
     }
 
-    public static SPBlockingClient newBlockingClientWithNullConnectionConfigurator(URL spURL,
-            UserID user)
+    public static SPBlockingClient newBlockingClientWithNullConnectionConfigurator(UserID user)
     {
-        return new SPBlockingClient(new SPClientHandler(spURL,
+        return new SPBlockingClient(new SPClientHandler(SP.URL.get(),
                 NullURLConnectionConfigurator.NULL_URL_CONNECTION_CONFIGURATOR), user);
     }
 

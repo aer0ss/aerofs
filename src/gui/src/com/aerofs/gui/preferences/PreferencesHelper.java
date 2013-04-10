@@ -257,7 +257,7 @@ public class PreferencesHelper
                 Exception e = null;
                 GetUserPreferencesReply r = null;
                 try {
-                    SPBlockingClient sp = SPClientFactory.newBlockingClient(SP.URL, Cfg.user());
+                    SPBlockingClient sp = SPClientFactory.newBlockingClient(Cfg.user());
                     sp.signInRemote();
                     r = sp.getUserPreferences(Cfg.did().toPB());
                 } catch (ExBadCredential ebc) {
@@ -340,7 +340,7 @@ public class PreferencesHelper
             {
                 Exception e;
                 try {
-                    SPBlockingClient sp = SPClientFactory.newBlockingClient(SP.URL, Cfg.user());
+                    SPBlockingClient sp = SPClientFactory.newBlockingClient(Cfg.user());
                     sp.signInRemote();
                     sp.setUserPreferences(Cfg.user().getString(), firstName, lastName,
                             (deviceNameToSend != null) ? Cfg.did().toPB() : null, deviceNameToSend);

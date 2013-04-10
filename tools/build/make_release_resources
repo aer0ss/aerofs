@@ -64,6 +64,7 @@ function copy_resources_to_local_release_directories() {
     mkdir -p "${AEROFS_RELEASE_INST_DIR}/"
 
     # Copy "resource/client" files
+    cp "${CLIENT_RESOURCE_DIR}/common/*.properties" "${AEROFS_RELEASE_DIR}/"
     cp -R "${CLIENT_RESOURCES_DIR}/common"/* "${AEROFS_RELEASE_DIR}/"
     cp -R "${CLIENT_RESOURCES_DIR}/osx"/* "${AEROFS_RELEASE_OSX_DIR}/"
     cp -R "${CLIENT_RESOURCES_DIR}/win"/* "${AEROFS_RELEASE_WIN_DIR}/"
@@ -88,8 +89,6 @@ function copy_resources_to_local_release_directories() {
         echo "ERROR: Aerofs product unix is ${AEROFS_PRODUCT_UNIX}, not one of aerofsts, aerofs"
         echo "Exiting"
         exit 1
-    else
-        cp "${CLIENT_RESOURCES_DIR}/common/labeling-client.properties" "${AEROFS_RELEASE_DIR}/labeling.properties"
     fi
 
 
@@ -233,8 +232,11 @@ function create_java_jar() {
         echo " lib/$(basename "$i") " >> "$local_TEMP_MANIFEST"
     done
 
-    # labeling
+    # properties files
     echo " labeling.properties " >> "$local_TEMP_MANIFEST"
+    echo " configuration.properties " >> "$local_TEMP_MANIFEST"
+    echo " configuration-stg.properties " >> "$local_TEMP_MANIFEST"
+    echo " strings.properties " >> "$local_TEMP_MANIFEST"
 
     # Package a jar with the contents of com subdirectory of the local release directory (all the class files)
     jar cfm "${AEROFS_RELEASE_DIR}/aerofs.unobf.jar" "$local_TEMP_MANIFEST" -C "${LOCAL_RELEASE_DIR}/bin" com

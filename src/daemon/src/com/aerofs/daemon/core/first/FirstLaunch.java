@@ -136,7 +136,7 @@ public class FirstLaunch
     private void fetchAccessibleStores_()
     {
         try {
-            SPBlockingClient sp = SPClientFactory.newBlockingClient(SP.URL, Cfg.user());
+            SPBlockingClient sp = SPClientFactory.newBlockingClient(Cfg.user());
             sp.signInRemote();
             ImmutableSet.Builder<SID> stores = ImmutableSet.builder();
             for (PBStoreACL sacl : sp.getACL(0L).getStoreAclList()) {

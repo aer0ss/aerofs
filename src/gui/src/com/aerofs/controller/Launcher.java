@@ -232,7 +232,7 @@ class Launcher
                     new File(failedFile).length()));
             UI.get().show(MessageType.ERROR, msg);
 
-            if (UI.isGUI()) GUIUtil.launch(WWW.DOWNLOAD_URL);
+            if (UI.isGUI()) GUIUtil.launch(WWW.DOWNLOAD_URL.get());
 
             throw new ExLaunchAborted();
         }

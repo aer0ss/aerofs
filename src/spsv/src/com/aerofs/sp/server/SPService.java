@@ -940,7 +940,7 @@ public class SPService implements ISPService
     {
         _sqlTrans.begin();
 
-        SVClient.sendEmail(WWW.SUPPORT_EMAIL_ADDRESS, SPParam.SP_EMAIL_NAME,
+        SVClient.sendEmail(WWW.SUPPORT_EMAIL_ADDRESS.get(), SPParam.SP_EMAIL_NAME,
                 _sessionUser.get().id().getString(), null, UserID.fromExternal(userId).getString(),
                 body, null, true, null);
 

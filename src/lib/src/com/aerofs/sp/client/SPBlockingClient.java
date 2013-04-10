@@ -11,6 +11,7 @@ import com.aerofs.proto.Sp.SPServiceStub.SPServiceStubCallbacks;
 import com.google.protobuf.ByteString;
 import org.slf4j.Logger;
 
+import java.net.MalformedURLException;
 import java.net.URL;
 
 /**
@@ -34,9 +35,9 @@ public class SPBlockingClient extends SPServiceBlockingStub
                     SPClientFactory.getDefaultConfigurator()), user);
         }
 
-        public SPBlockingClient create_(UserID user)
+        public SPBlockingClient create_(UserID user) throws MalformedURLException
         {
-            return create_(SP.URL, user);
+            return create_(SP.URL.get(), user);
         }
     }
 

@@ -180,7 +180,7 @@ public class UIUtil
                     l.info("failed to create seed file: {}", Util.e(e));
                 }
 
-                SPBlockingClient sp = SPClientFactory.newBlockingClient(SP.URL, Cfg.user());
+                SPBlockingClient sp = SPClientFactory.newBlockingClient(Cfg.user());
                 sp.signInRemote();
                 sp.unlinkDevice(Cfg.did().toPB(), false);
             } finally {

@@ -41,7 +41,7 @@ public class HdJoinSharedFolder extends AbstractHdIMC<EIJoinSharedFolder>
         try {
             tcb = tk.pseudoPause_("sp-join");
             // join the shared folder through SP
-            SPBlockingClient sp = SPClientFactory.newBlockingClient(SP.URL, Cfg.user());
+            SPBlockingClient sp = SPClientFactory.newBlockingClient(Cfg.user());
             sp.signInRemote();
             sp.joinSharedFolder(ev._sid.toPB());
         } finally {

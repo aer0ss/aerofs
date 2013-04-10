@@ -61,7 +61,7 @@ public class HdLeaveSharedFolder extends AbstractHdIMC<EILeaveSharedFolder>
         try {
             tcb = tk.pseudoPause_("sp-leave");
             // join the shared folder through SP
-            SPBlockingClient sp = SPClientFactory.newBlockingClient(SP.URL, Cfg.user());
+            SPBlockingClient sp = SPClientFactory.newBlockingClient(Cfg.user());
             sp.signInRemote();
             sp.leaveSharedFolder(sid.toPB());
         } finally {

@@ -16,6 +16,10 @@ import org.slf4j.LoggerFactory;
 
 import static com.google.common.collect.Lists.newArrayList;
 
+/*
+ * Sources properties from labeling.properties on the classpath.  Make sure that you update
+ * values in labeling*.properties in resource/client/common/ if you edit this file.
+ */
 class PropertiesLabeling implements ILabeling
 {
 
