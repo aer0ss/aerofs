@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.HashSet;
+import java.util.regex.Pattern;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.labeling.L;
@@ -104,22 +105,30 @@ public class OSUtilWindows implements IOSUtil
         }
     }
 
-    final static private HashSet<Character> INVALID_FILENAME_CHARS;
+    final static private Pattern RESERVED_FILENAME_PATTERN;
+    final static private Pattern INVALID_FILENAME_CHARS;
 
     static {
-        char[] cs = { '/', '\\', ':', '*', '?', '"', '<', '>', '|' };
-        INVALID_FILENAME_CHARS = new HashSet<Character>(cs.length);
-        for (char c : cs) { INVALID_FILENAME_CHARS.add(c); }
+        RESERVED_FILENAME_PATTERN = Pattern.compile(
+                "^(\\.*|CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])$",
+                Pattern.CASE_INSENSITIVE);
+        INVALID_FILENAME_CHARS = Pattern.compile("[/\\\\:*?\"<>|]");
     }
 
-    // the caller should throw ExInvalidCharacter if exception is needed
+    /**
+     * Check if this filename has a chance at being valid on Windows.
+     * Specific failures checked for are: illegal characters for filenames
+     * on Windows, as well as reserved filenames (COM1, NUL, PRN...)
+     * or a filename made up of dots.
+     *
+     * See http://msdn.microsoft.com/en-us/library/windows/desktop/aa365247(v=vs.85).aspx
+     *
+     * The caller should throw ExInvalidCharacter if an exception is needed.
+     */
     public static boolean isValidFileName(String name)
     {
-        for (int i = 0; i < name.length(); i++) {
-            if (INVALID_FILENAME_CHARS.contains(name.charAt(i))) return false;
-        }
-
-        return true;
+        return ! (INVALID_FILENAME_CHARS.matcher(name).find()
+                 || RESERVED_FILENAME_PATTERN.matcher(name).find());
     }
 
     @Override
