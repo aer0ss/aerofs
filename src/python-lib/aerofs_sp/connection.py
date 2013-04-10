@@ -11,7 +11,7 @@ class SyncConnectionService(object):
     """
     Define a synchronous RPC connection
     """
-    def __init__(self, http_url, protocol_version, session=None):
+    def __init__(self, http_url, protocol_version, cookies=None):
         """
         http_url is a string starting with "https://"
         protocol_version an int representing the version shared w the server
@@ -20,16 +20,14 @@ class SyncConnectionService(object):
         self._param_protocol = 'protocol_vers'
         self._param_data = 'data'
         self._protocol_version = protocol_version
-        self._session = session if session else requests.Session()
+        self._session = requests.Session()
+        if cookies:
+            self._session.cookies = cookies
 
     def do_rpc(self, bytes):
         post_data = {self._param_protocol : self._protocol_version,
                      self._param_data : base64.b64encode(bytes)}
-        print "A"
-        print self._session
         r = self._session.post(self._url, data=post_data)
-        print self._session
-        print "Z"
 
         if r.status_code != 200:
             # SP server returned an HTTP error
