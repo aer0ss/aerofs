@@ -49,8 +49,8 @@ readonly BUILD_OUTPUT_DIR="${GIT_ROOT}/out.ant"
 readonly CLIENT_RESOURCES_DIR="${GIT_ROOT}/resource/client"
 
 # CLIENT or TEAM_SERVER, identifies which labeling.properties will be used
-# during the build process
-readonly PRODUCT="${2:-}"
+# during the build process. Default to client
+readonly PRODUCT="${2:-CLIENT}"
 
 # Properties File
 if [[ "$PRODUCT" != "CLIENT" && "$PRODUCT" != "TEAM_SERVER" ]]; then
