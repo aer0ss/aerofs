@@ -4,6 +4,8 @@
 
 package com.aerofs.controller;
 
+import com.aerofs.base.C;
+import com.aerofs.base.BaseParam.SP;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.ex.ExNoPerm;
@@ -11,6 +13,7 @@ import com.aerofs.base.id.DID;
 import com.aerofs.base.id.SID;
 import com.aerofs.lib.RootAnchorUtil;
 import com.aerofs.lib.StorageType;
+import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.sched.IScheduler;
 import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.Param;
@@ -313,10 +316,22 @@ public final class CommandNotificationSubscriber
                 case CLEAN_SSS_DATABASE:
                     // TODO (MP) finish this - for now ignore.
                     break;
+                case UPLOAD_DATABASE:
+                    UI.ic().startUploadDatabase();
+                    break;
+                case CHECK_UPDATE:
+                    UI.updater().checkForUpdate(true);
+                    break;
+                case SEND_DEFECT:
+                    SVClient.logSendDefectAsync(true, "cmd call");
+                    break;
+                case LOG_THREADS:
+                    logThreads();
+                    break;
                 default:
                     throw new Exception("cmd type unknown");
             }
-       }
+        }
     }
 
     private static SPBlockingClient newAuthenticatedSPClient()
@@ -390,6 +405,30 @@ public final class CommandNotificationSubscriber
         FileUtil.deleteIgnoreErrorRecursively(new File(Cfg.absRTRoot()));
 
         shutdownImplementation();
+    }
+
+    private void logThreads() throws Exception
+    {
+        l.debug("tcmd: log threads");
+
+        // The delay is required by the command (see cmd.proto). It also blocks the subscriber
+        // thread from processing more commands. Otherwise, multiple LOG_THREADS requests would
+        // be processed at the same time, defeating the purpose of the delay. However, this
+        // approach has an undesired side effect: processing of other command types are also
+        // blocked. If it becomes a problem, we can work around by, e.g., having a dedicated
+        // request queue for LOG_THREADS, or by changing the semantics of the command.
+        ThreadUtil.sleepUninterruptable(5 * C.SEC);
+
+        // Log threads for the current process
+        Util.logAllThreadStackTraces();
+
+        // Log threads for the daemon process
+        RitualBlockingClient ritual = RitualClientFactory.newBlockingClient();
+        try {
+            ritual.logThreads();
+        } finally {
+            ritual.close();
+        }
     }
 
     //

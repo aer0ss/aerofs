@@ -270,9 +270,6 @@ class Launcher
     {
         if (Cfg.useArchive()) new LogArchiver(absRTRoot()).start();
 
-        new TransientCommandNotificationSubscriber(Cfg.user(), Util.join(AppRoot.abs(),
-                Param.CA_CERT)).start();
-
         new CommandNotificationSubscriber(UI.scheduler(), Cfg.did(), Util.join(AppRoot.abs(),
                 Param.CA_CERT)).start();
 

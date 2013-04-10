@@ -10,6 +10,7 @@ sp
 sv
 syncstat
 rocklog
+cmd-server
 
 # Python stuff:
 *.pyc

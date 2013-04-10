@@ -1,5 +1,0 @@
-#!/bin/bash
-
-# Stop the command server and nginx if they are running.
-service nginx stop || true
-service aerofs-cmd-server stop || true

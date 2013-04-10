@@ -1,0 +1,14 @@
+#!/bin/bash
+
+# first stop cmd-server if it is running
+service cmd-server stop || true
+
+# create the required user, if it hasn't been created yet.
+info=$(id cmd-server 2>/dev/null)
+if [ "$info" = "" ]
+then
+    useradd -m -s /bin/bash cmd-server
+fi
+
+# create required directories with required permissions
+mkdir -p /var/log/aerofs

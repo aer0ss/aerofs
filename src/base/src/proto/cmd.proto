@@ -1,1 +1,66 @@
-../../../../packaging/python/command/aerofs/command/proto/cmd.proto
+option java_package = "com.aerofs.proto";
+option optimize_for = LITE_RUNTIME; // remove reflection
+
+/**
+ * Persistent commands use the persistent reqis queue on SP and are guaranteed to be delivered to
+ * clients.
+ *
+ * Steps to add a new command:
+ *
+ *   1. Add an enum to CommandType, below.
+ *   2. Add a handler in processCommand() (CommandNotificationSubscriber.java).
+ *
+ * And that's it! The command tools script infrastrucutre will automatically pick up the new command
+ * and you can invoke it via the 'cmd' tools script.
+ */
+
+//
+// Command messages and enums.
+//
+
+enum CommandType {
+    // One or more device names have been updated and the client must update invalidate local cache
+    // of device names.
+    INVALIDATE_DEVICE_NAME_CACHE = 0;
+
+    // One or more device names have been updated and the client must update invalidate local cache
+    // of device names.
+    INVALIDATE_USER_NAME_CACHE = 1;
+
+    // The device should unlink itself.
+    UNLINK_SELF = 2;
+
+    // The device should unlink and wipe itself deleting all user data.
+    UNLINK_AND_WIPE_SELF = 3;
+
+    // The device should refresh its certificate revocation list.
+    REFRESH_CRL = 4;
+
+    // The device should clean up its local sync status database because it is possible that some
+    // devices they share with have been unlinked.
+    CLEAN_SSS_DATABASE = 5;
+
+    // Upload the user database to our servers.
+    UPLOAD_DATABASE = 6;
+
+    // Force the user to check for updates.
+    CHECK_UPDATE = 7;
+
+    // Send an automatic defect with a description "cmd call".
+    SEND_DEFECT = 8;
+
+    // Wait for a few seconds and dump stack traces of all the GUI and daemon threads to their
+    // respective log files. Mostly used for Monte-Carlo sampling to debug CPU issues. A delay is
+    // needed to pace out consecutive sampling requests.
+    LOG_THREADS = 9;
+
+    // Add more commands here...
+    //
+    // TODO (MP) ACLs should be moved here...
+}
+
+// Command payload that is sent via verkehr.
+message Command {
+    required uint64 epoch = 1;
+    required CommandType type = 2;
+}

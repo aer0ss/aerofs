@@ -1,0 +1,93 @@
+#!/usr/bin/python
+
+import json
+import logging
+import MySQLdb
+import sys
+import requests
+import requests.exceptions
+from config import config
+
+logger = logging.getLogger("cmd")
+
+def is_command_allowed(command):
+    return "UNLINK" not in command
+
+def get_devices(user, spconn):
+    devices=[]
+    spcursor = spconn.cursor()
+    try:
+        spcursor.execute("""select d_id from sp_device where d_owner_id like %s""", (user,))
+
+        row = spcursor.fetchone()
+        while row != None:
+            devices.append(row)
+            row = spcursor.fetchone()
+
+        return devices
+    except Exception as err:
+        logger.warning('fail get devices err:%s' %err)
+        raise err
+    finally:
+        spcursor.close()
+
+def make_connection(user, host, password, dbname):
+    logger.debug('make db connection %s@%s/%s' %(user, host, dbname))
+    conn = MySQLdb.connect(user=user, host=host, passwd=password, db=dbname)
+    return conn
+
+def setup_logger():
+    logging.basicConfig(level=logging.WARN)
+
+if __name__ == '__main__':
+    if len(sys.argv) != 3:
+        url = 'http://c.aerofs.com:9020/command_types'
+
+        have_commands = True
+        try:
+            r = requests.get(url)
+            commands = json.loads(r.text)
+        except requests.exceptions.ConnectionError:
+            have_commands = False
+
+        print("Usage: %s <did> <command>" %(sys.argv[0]))
+        print
+
+        if have_commands:
+            print("Available commands:")
+            for command in commands:
+                if is_command_allowed(command):
+                    print "    - " + command
+            print
+
+        print 'Example: cmd 1a58b7e189da495bb64302a626777b07 SEND_DEFECT'
+        sys.exit(1)
+
+    setup_logger()
+
+    try:
+        spconn = make_connection('aerofs_sp_ro', config["sp_database"], config["aerofs_sp_ro_password"], 'aerofs_sp')
+    except:
+        print('cannot connect to db')
+        sys.exit(1)
+
+    did = sys.argv[1]
+    command = sys.argv[2]
+
+    if not is_command_allowed(command):
+        print 'ERROR: command not allowed.'
+        sys.exit(1)
+
+    logger.debug('get info for:%s' %did)
+    url = 'http://c.aerofs.com:9020/devices/%s/enqueue/%s' %(did, command)
+    try:
+        r = requests.post(url)
+    except requests.exceptions.ConnectionError:
+        print 'ERROR: cannot connect to c.aerofs.com REST service.'
+        sys.exit(1)
+
+    if r.status_code != 204 and r.status_code != 200:
+        print 'ERROR: HTTP server returned code %s.' %(r.status_code)
+        sys.exit(1)
+
+    print 'SUCCESS: command scheduled.'

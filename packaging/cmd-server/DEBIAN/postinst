@@ -1,5 +1,0 @@
-#!/bin/bash
-
-# Start the command server and nginx.
-service aerofs-cmd-server start
-service nginx start
