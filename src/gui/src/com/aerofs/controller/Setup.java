@@ -280,10 +280,8 @@ class Setup
         _factFile.create(Cfg.absDefaultRootAnchor()).ensureDirExists();
 
         // TODO: use a dot-prefixed default root for S3 storage to hide it on *nix
-        // hide default root for S3 storage (it only contains the aux root)
-        if (Cfg.storageType() == StorageType.S3) {
-            OSUtil.get().markHiddenSystemFile(Cfg.absDefaultRootAnchor());
-        }
+        // TODO: hide default root for S3 storage (it only contains the aux root)
+        // NB: markHiddenSystemFile asserts on *nix if the fname does not start with a dot...
 
         // Cleanup aux root, if present, create if missing
         // NB: Linked TeamServer does not need a default aux root as each store is treated as an
