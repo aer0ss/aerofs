@@ -18,6 +18,7 @@ done
 # Web repo and python-lib copy
 mkdir -p $OPT
 mkdir -p $EXTRA
+# N.B. (PH) this will not copy dotfiles
 cp -r ../src/web/* $OPT
 cp -r ../src/python-lib $EXTRA
 
