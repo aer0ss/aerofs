@@ -40,7 +40,7 @@ public class PasswordResetEmailer
         email.addDefaultSignature();
 
         try {
-            SVClient.sendEmail(WWW.SUPPORT_EMAIL_ADDRESS, SPParam.SP_EMAIL_NAME, userId.getString(),
+            SVClient.sendEmail(WWW.SUPPORT_EMAIL_ADDRESS.get(), SPParam.SP_EMAIL_NAME, userId.getString(),
                     null, subject, email.getTextEmail(), email.getHTMLEmail(), true,
                     EmailCategory.PASSWORD_RESET);
         } catch (AbstractExWirable e) {
@@ -69,7 +69,7 @@ public class PasswordResetEmailer
         email.addDefaultSignature();
 
         try {
-            SVClient.sendEmail(WWW.SUPPORT_EMAIL_ADDRESS, SPParam.SP_EMAIL_NAME, userId.getString(),
+            SVClient.sendEmail(WWW.SUPPORT_EMAIL_ADDRESS.get(), SPParam.SP_EMAIL_NAME, userId.getString(),
                     null, subject, email.getTextEmail(), email.getHTMLEmail(), true,
                     EmailCategory.PASSWORD_RESET);
         } catch (AbstractExWirable e) {

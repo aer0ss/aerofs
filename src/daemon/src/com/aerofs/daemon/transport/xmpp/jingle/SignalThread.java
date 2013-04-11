@@ -13,7 +13,6 @@ import com.aerofs.j.MessageHandlerBase;
 import com.aerofs.j.XmppClient_StateChangeSlot;
 import com.aerofs.j.XmppEngine;
 import com.aerofs.j.XmppMain;
-import com.aerofs.lib.IDumpStatMisc;
 import com.aerofs.lib.InOutArg;
 import com.aerofs.lib.Param;
 import com.aerofs.lib.SystemUtil;
@@ -171,7 +170,7 @@ public class SignalThread extends java.lang.Thread implements IDumpStatMisc
         // The xmpp server address is an unresolved hostname.
         // We avoid resolving the hostname ourselves and let
         // SMACK do the DNS query on its thread.
-        InetSocketAddress address = Xmpp.xmppAddress();
+        InetSocketAddress address = Xmpp.ADDRESS.getUnresolved();
         // TODO (WW) XmppMain() should use int rather than short as the datatype of jingleRelayPort
         // as Java's unsigned short may overflow on big port numbers.
         _main = new XmppMain(

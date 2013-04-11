@@ -187,7 +187,7 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
         TCB tcb = null;
         try {
             tcb = tk.pseudoPause_("sp-share");
-            SPBlockingClient sp = SPClientFactory.newBlockingClient(SP.URL, Cfg.user());
+            SPBlockingClient sp = SPClientFactory.newBlockingClient(Cfg.user());
             sp.signInRemote();
             sp.shareFolder(folderName, sid.toPB(), roles, emailNote);
         } finally {

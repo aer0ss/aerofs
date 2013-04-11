@@ -103,7 +103,7 @@ public class XMPPServerConnection implements IDumpStatMisc
         // The xmpp server address is an unresolved hostname.
         // We avoid resolving the hostname ourselves and let
         // SMACK do the DNS query on its thread.
-        InetSocketAddress address = Xmpp.xmppAddress();
+        InetSocketAddress address = Xmpp.ADDRESS.getUnresolved();
         ConnectionConfiguration cc = new ConnectionConfiguration(
                 address.getHostName(), address.getPort());
         cc.setServiceName(Xmpp.SERVER_DOMAIN);

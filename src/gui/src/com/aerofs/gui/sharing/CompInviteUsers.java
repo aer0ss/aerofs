@@ -164,7 +164,7 @@ public class CompInviteUsers extends Composite implements IInputChangeListener
             @Override
             public void run()
             {
-                SPBlockingClient sp = SPClientFactory.newBlockingClient(SP.URL, Cfg.user());
+                SPBlockingClient sp = SPClientFactory.newBlockingClient(Cfg.user());
                 try {
                     sp.signInRemote();
                     _fromPerson = sp.getUserPreferences(Cfg.did().toPB()).getFirstName();
@@ -308,7 +308,7 @@ public class CompInviteUsers extends Composite implements IInputChangeListener
                             " ($10/team member/month).\n\n" +
                             "Do you want to upgrade now?",
                             "Upgrade Now", "Cancel")) {
-                        GUIUtil.launch(WWW.UPGRADE_URL);
+                        GUIUtil.launch(WWW.UPGRADE_URL.get());
                     }
                 } else {
                     // Note: the following messages should be consistent with the messages in
@@ -336,7 +336,7 @@ public class CompInviteUsers extends Composite implements IInputChangeListener
 
             boolean isAdmin()
             {
-                SPBlockingClient sp = SPClientFactory.newBlockingClient(SP.URL, Cfg.user());
+                SPBlockingClient sp = SPClientFactory.newBlockingClient(Cfg.user());
                 try {
                     sp.signInRemote();
                     return sp.getAuthorizationLevel().getLevel() == PBAuthorizationLevel.ADMIN;

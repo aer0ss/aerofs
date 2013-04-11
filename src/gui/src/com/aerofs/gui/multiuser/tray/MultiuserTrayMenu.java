@@ -144,7 +144,7 @@ public class MultiuserTrayMenu implements ITrayMenu
             @Override
             protected void handleEventImpl(Event event)
             {
-                GUIUtil.launch(WWW.TEAM_MEMBERS_URL);
+                GUIUtil.launch(WWW.TEAM_MEMBERS_URL.get());
             }
         });
     }

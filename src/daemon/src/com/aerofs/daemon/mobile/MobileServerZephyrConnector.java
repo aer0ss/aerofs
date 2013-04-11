@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.mobile;
 
+import com.aerofs.base.BaseParam.Zephyr;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.net.AddressResolverHandler;
 import com.aerofs.base.net.ZephyrPipeHandler;
@@ -79,7 +80,7 @@ public class MobileServerZephyrConnector
 
     private InetSocketAddress getZephyrAddress()
     {
-        return Param.Zephyr.zephyrAddress();
+        return Zephyr.ADDRESS.getUnresolved();
     }
 
     // called from XMPP

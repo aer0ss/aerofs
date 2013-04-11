@@ -1,6 +1,7 @@
 package com.aerofs.sp.server;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.base.properties.Configuration;
 import com.aerofs.sp.server.lib.user.User;
 import com.aerofs.servlets.lib.NoopConnectionListener;
 import com.aerofs.sp.server.lib.session.HttpSessionUser;
@@ -59,6 +60,8 @@ public class SPLifecycleListener implements ServletContextListener, HttpSessionL
     @Override
     public void contextInitialized(ServletContextEvent servletContextEvent)
     {
+        Configuration.Server.initialize();
+
         ServletContext ctx = servletContextEvent.getServletContext();
 
         l.info("verkehr host:" + ctx.getInitParameter(VERKEHR_HOST_INIT_PARAMETER) +

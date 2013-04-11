@@ -37,10 +37,8 @@ import java.util.Map.Entry;
 import java.util.Scanner;
 
 /**
- * @deprecated: Please use ArrowConfig instead.
- *
- * This class is unfriendly to dependency injection and should be eventually removed. Use Cfg*
- * classes instead.
+ * This class is unfriendly to dependency injection and should be eventually removed.
+ * User Dynamic*Properties from ArrowConfiguration instead.
  */
 public class Cfg
 {

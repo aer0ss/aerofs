@@ -37,7 +37,7 @@ public class RequestToSignUpEmailer
         email.addDefaultSignature();
 
         try {
-            SVClient.sendEmail(WWW.SUPPORT_EMAIL_ADDRESS, SPParam.SP_EMAIL_NAME, emailAddress, null,
+            SVClient.sendEmail(WWW.SUPPORT_EMAIL_ADDRESS.get(), SPParam.SP_EMAIL_NAME, emailAddress, null,
                     "Complete your " + L.brand() + " sign up", email.getTextEmail(),
                     email.getHTMLEmail(), true,
                     EmailCategory.REQUEST_TO_SIGN_UP);

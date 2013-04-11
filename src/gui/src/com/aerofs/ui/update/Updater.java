@@ -15,7 +15,6 @@ import java.net.URLConnection;
 import java.net.UnknownHostException;
 import java.util.Properties;
 
-import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.base.Loggers;
 import com.aerofs.controller.ControllerService;
 import com.aerofs.gui.tray.TrayIcon.NotificationReason;
@@ -23,10 +22,12 @@ import com.aerofs.labeling.L;
 import com.aerofs.lib.*;
 import com.aerofs.lib.ex.ExFileIO;
 import com.aerofs.lib.os.OSUtil;
+import com.aerofs.lib.rocklog.RockLog;
 import com.aerofs.proto.ControllerNotifications.Type;
 import com.aerofs.proto.ControllerNotifications.UpdateNotification;
 import com.aerofs.proto.ControllerNotifications.UpdateNotification.Builder;
 import com.aerofs.proto.ControllerNotifications.UpdateNotification.Status;
+import com.netflix.config.DynamicStringProperty;
 import org.slf4j.Logger;
 
 import com.aerofs.gui.GUI;
@@ -55,8 +56,6 @@ import javax.security.cert.X509Certificate;
 
 public abstract class Updater
 {
-    protected static final Logger l = Loggers.getLogger(Updater.class);
-
     private String _installationFilename = "";
 
     private boolean _ongoing = false;
@@ -248,14 +247,28 @@ public abstract class Updater
     public static String getServerVersion()
             throws IOException
     {
-        URL url = new URL(WWW.NOCACHE_INSTALLER_CDN_HOST_URL + "/" + "current.ver");
-        URLConnection conn = newAWSConnection(url);
-        BufferedInputStream in = new BufferedInputStream(conn.getInputStream());
+        final String serverVersionUrl = VERSION_URL.get();
+        try {
+            l.debug("Reading Server Version from " + serverVersionUrl);
 
-        Properties props = new Properties();
-        props.load(in);
+            final URL url = new URL(serverVersionUrl);
+            final URLConnection conn = newAWSConnection(url);
+            final BufferedInputStream in = new BufferedInputStream(conn.getInputStream());
 
-        return props.getProperty("Version");
+            final Properties props = new Properties();
+            props.load(in);
+
+            final String version = props.getProperty("Version");
+            l.debug("Server Version Response " + version);
+
+            return version;
+        } catch (final IOException e) {
+            l.error("Error reading server version from {}", serverVersionUrl, e);
+            RockLog.newDefect("com.aerofs.ui.update.Updater.readServerVersion")
+                    .setException(e)
+                    .send();
+            throw e;
+        }
     }
 
     /**
@@ -263,7 +276,8 @@ public abstract class Updater
      *
      * @return true if there's a new version downloaded.
      */
-    private boolean downloadUpdate(String filename, String ver)
+    private boolean downloadUpdate(final String installerUrl, String filename, String ver)
+            throws IOException
     {
         assert filename != null;
 
@@ -272,7 +286,7 @@ public abstract class Updater
         dir.mkdirIgnoreError(); // start by trying to create the temporary download folder
 
         try {
-            URLConnection conn = newAWSConnection(new URL(WWW.INSTALLER_CDN_HOST_URL + "/" + filename));
+            URLConnection conn = newAWSConnection(new URL(new URL(installerUrl), filename));
             conn.setReadTimeout((int) Cfg.timeout());
 
             int updateFileExpectedSize = conn.getContentLength();
@@ -337,21 +351,26 @@ public abstract class Updater
 
             // _installationFilename should be file name only, to be passed to Updater.
             _installationFilename = filename;
-
-        } catch (Exception e) {
-            l.warn("download err: " + Util.e(e));
-
-            // in the case of errors I think we should _always_ remove the tmp folder because we
-            // don't know what condition it's in
-            boolean deleted = dir.deleteIgnoreErrorRecursively();
-            if (!deleted) {
-                l.warn("could not delete temp folder:" + dir.toString());
-            }
-
+        } catch (final Exception e) {
+            l.error("Error downloading update from {}", installerUrl, e);
+            RockLog.newDefect("com.aerofs.ui.update.Updater.downloadUpdate")
+                    .setException(e)
+                    .send();
+            removeTempDownloadDirectory(dir);
             return false;
         }
 
         return true;
+    }
+
+    private void removeTempDownloadDirectory(InjectableFile dir)
+    {
+        // in the case of errors I think we should _always_ remove the tmp folder because we
+        // don't know what condition it's in
+        boolean deleted = dir.deleteIgnoreErrorRecursively();
+        if (!deleted) {
+            l.warn("could not delete temp folder:" + dir.toString());
+        }
     }
 
     /**
@@ -449,7 +468,7 @@ public abstract class Updater
 
                 // IMPORTANT: _installationFilename is set by checkForDownloadedUpdate()
                 String installationFilename = createFilename(_installerFilenameFormat, verServer);
-                if (!downloadUpdate(installationFilename, verServer)) {
+                if (!downloadUpdate(INSTALLER_URL.get(), installationFilename, verServer)) {
                     throw new Exception("cannot download installer");
                 }
             }
@@ -584,4 +603,16 @@ public abstract class Updater
     {
         return String.format(filenameFormat, version);
     }
+
+    protected static final Logger l = Loggers.getLogger(Updater.class);
+
+    private static final String PROD_SERVER_VERSION_URL = "https://nocache.client.aerofs.com/current.ver";
+    // staging value: https://nocache.client.stg.aerofs.com/current.ver
+    private static final DynamicStringProperty VERSION_URL =
+            new DynamicStringProperty("updater.version_url", PROD_SERVER_VERSION_URL);
+
+    private static final String PROD_INSTALLER_URL = "https://cache.client.aerofs.com";
+    // staging value: https://cache.client.stg.aerofs.com
+    public static final DynamicStringProperty INSTALLER_URL =
+            new DynamicStringProperty("updater.installer_url", PROD_INSTALLER_URL);
 }

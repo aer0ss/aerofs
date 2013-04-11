@@ -156,7 +156,7 @@ public class TestEmailReminder extends AbstractBusinessObjectTest
         for (UserID user: users) {
             String tokenId = esdb.getTokenId(user, SubscriptionCategory.AEROFS_INVITATION_REMINDER);
 
-            verify(_emailFactory, mode).createReminderEmail(eq(WWW.SUPPORT_EMAIL_ADDRESS),
+            verify(_emailFactory, mode).createReminderEmail(eq(WWW.SUPPORT_EMAIL_ADDRESS.get()),
                     eq(SPParam.SP_EMAIL_NAME), eq(user.getString()), anyString(), eq(tokenId));
 
         }

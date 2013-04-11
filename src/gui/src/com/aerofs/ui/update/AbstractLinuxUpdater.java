@@ -72,7 +72,7 @@ abstract class AbstractLinuxUpdater extends Updater
                 UI.get().show(MessageType.INFO,
                         "Could not confirm with the" + " user. Send an email instead.");
 
-                SPBlockingClient sp = SPClientFactory.newBlockingClient(SP.URL, Cfg.user());
+                SPBlockingClient sp = SPClientFactory.newBlockingClient(Cfg.user());
                 try {
                     sp.signInRemote();
 

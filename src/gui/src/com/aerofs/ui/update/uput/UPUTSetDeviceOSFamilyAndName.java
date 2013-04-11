@@ -22,7 +22,7 @@ public class UPUTSetDeviceOSFamilyAndName implements IUIPostUpdateTask
             throws Exception
     {
         try {
-            SPBlockingClient sp = SPClientFactory.newBlockingClient(SP.URL, Cfg.user());
+            SPBlockingClient sp = SPClientFactory.newBlockingClient(Cfg.user());
             sp.signInRemote();
             IOSUtil osu = OSUtil.get();
             sp.setDeviceOSFamilyAndName(Cfg.did().toPB(), osu.getOSFamily().getString(),

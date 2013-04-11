@@ -71,7 +71,7 @@ public class InvitationEmailer
                 @Override
                 public Void call() throws Exception
                 {
-                    SVClient.sendEmail(WWW.SUPPORT_EMAIL_ADDRESS, nsInviter.nameOnly(),
+                    SVClient.sendEmail(WWW.SUPPORT_EMAIL_ADDRESS.get(), nsInviter.nameOnly(),
                             invitee.id().getString(), null, subject,
                             email.getTextEmail(), email.getHTMLEmail(), true,
                             EmailCategory.FOLDERLESS_INVITE);
@@ -97,7 +97,7 @@ public class InvitationEmailer
                 "\n" +
                 L.brand() + " is a file syncing, sharing, and collaboration tool that" +
                 " lets you sync files privately without using public cloud. You can learn more" +
-                " about it at " + WWW.MARKETING_HOST_URL + "." + "\n" +
+                " about it at " + WWW.MARKETING_HOST_URL.get() + "." + "\n" +
                 "\n" +
                 "Get started with " + L.brand() + " at:\n" +
                 "\n" + url;
@@ -142,7 +142,7 @@ public class InvitationEmailer
                 @Override
                 public Void call() throws Exception
                 {
-                    SVClient.sendEmail(WWW.SUPPORT_EMAIL_ADDRESS,
+                    SVClient.sendEmail(WWW.SUPPORT_EMAIL_ADDRESS.get(),
                             nsSharer.nameOnly(),
                             sharee.id().getString(),
                             null,
@@ -187,7 +187,7 @@ public class InvitationEmailer
                 public Void call() throws Exception
                 {
                     SVClient.sendEmail(
-                            WWW.SUPPORT_EMAIL_ADDRESS,
+                            WWW.SUPPORT_EMAIL_ADDRESS.get(),
                             ns.nameOnly(),
                             invitee.id().getString(),
                             null,

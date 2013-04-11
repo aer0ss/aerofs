@@ -66,7 +66,7 @@ class SharedFolderAutoLeaver extends DirectoryServiceAdapter
         {
             TCB tcb = tk.pseudoPause_("sp-leave");
             try {
-                SPBlockingClient sp = SPClientFactory.newBlockingClient(SP.URL, _localUser.get());
+                SPBlockingClient sp = SPClientFactory.newBlockingClient(_localUser.get());
                 sp.signInRemote();
                 try {
                     sp.leaveSharedFolder(sid.toPB());

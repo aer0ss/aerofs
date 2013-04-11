@@ -12,6 +12,7 @@
     <orderEntry type="library" exported="" name="javax.inject" level="project" />
     <orderEntry type="library" exported="" name="jsr305" level="project" />
     <orderEntry type="library" exported="" name="guava" level="project" />
+    <orderEntry type="library" exported="" name="arrow-config" level="project" />
     <orderEntry type="library" exported="" name="netty" level="project" />
     <orderEntry type="library" exported="" name="protobuf" level="project" />
     <orderEntry type="library" exported="" name="slf4j-api" level="project" />
@@ -21,7 +22,6 @@
     <orderEntry type="library" scope="TEST" name="junit" level="project" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" scope="TEST" name="mockito" level="project" />
-    <orderEntry type="library" name="arrow-config" level="project" />
   </component>
 </module>
 

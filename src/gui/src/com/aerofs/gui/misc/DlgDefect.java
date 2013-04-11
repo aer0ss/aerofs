@@ -107,7 +107,7 @@ public class DlgDefect extends AeroFSJFaceDialog
             @Override
             public void widgetSelected(SelectionEvent arg0)
             {
-                GUIUtil.launch(WWW.MARKETING_HOST_URL + "/terms#privacy");
+                GUIUtil.launch(WWW.TOS_URL.get());
             }
         });
 

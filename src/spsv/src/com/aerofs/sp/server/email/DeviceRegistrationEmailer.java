@@ -59,7 +59,7 @@ public class DeviceRegistrationEmailer
         email.addDefaultSignature();
 
         try {
-            SVClient.sendEmail(WWW.SUPPORT_EMAIL_ADDRESS, SPParam.SP_EMAIL_NAME,
+            SVClient.sendEmail(WWW.SUPPORT_EMAIL_ADDRESS.get(), SPParam.SP_EMAIL_NAME,
                     emailAddress, null, subject, email.getTextEmail(), email.getHTMLEmail(),
                     true, EmailCategory.DEVICE_CERTIFIED);
         } catch (AbstractExWirable e) {

@@ -83,7 +83,7 @@ public class ShProgram implements IProgram, ICallback
         long now = System.currentTimeMillis();
         if (_sp == null || now - _spRenewal > 5 * C.MIN) {
             Cfg.init_(Cfg.absRTRoot(), true);
-            _sp = SPClientFactory.newBlockingClient(SP.URL, Cfg.user());
+            _sp = SPClientFactory.newBlockingClient(Cfg.user());
             _sp.signInRemote();
             _spRenewal = now;
         }

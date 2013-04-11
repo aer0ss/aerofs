@@ -82,7 +82,7 @@ public class SingleuserCompPreferences extends Composite
 
         // Manage devices row
 
-        helper.createManageDevices("Manage all your devices", WWW.DEVICES_URL);
+        helper.createManageDevices("Manage all your devices", WWW.DEVICES_URL.get());
 
         // Root anchor relocation row
 
