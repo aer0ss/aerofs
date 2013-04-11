@@ -57,7 +57,7 @@ CREATE TABLE `sp_device` (
   -- TODO (MJ) why is d_id a CHAR(32) but sf_id (store id) is a BINARY(16)?
   `d_owner_id` VARCHAR(320) NOT NULL, -- this is the email address (u_id) in sp_user table
   `d_os_family` VARCHAR(32) NOT NULL,
-  `d_os_name` VARCHAR(100) NOT NULL,
+  `d_os_name` VARCHAR(100) NOT NULL, -- the result from IOSUtil.getFullOSName()
   `d_ts` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `d_name` VARCHAR(320) CHARACTER SET utf8 NOT NULL,
   `d_unlinked` BOOL DEFAULT FALSE,

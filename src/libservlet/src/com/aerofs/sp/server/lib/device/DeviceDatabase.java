@@ -30,7 +30,7 @@ import static com.aerofs.sp.server.lib.SPSchema.C_DEVICE_UNLINKED;
 import static com.aerofs.sp.server.lib.SPSchema.T_DEVICE;
 
 /**
- * N.B. only User.java may refer to this class
+ * N.B. only Device.java may refer to this class
  */
 public class DeviceDatabase extends AbstractSQLDatabase
 {

@@ -110,7 +110,11 @@ public abstract class OSUtil
         return _os;
     }
 
-    // return null if not supported
+    /**
+     * @return null if not supported
+     *
+     * Use IOSUtil.getFullOSName() to retrieve more detailed OS names.
+     */
     public static String getOSName()
     {
         return System.getProperty("os.name");

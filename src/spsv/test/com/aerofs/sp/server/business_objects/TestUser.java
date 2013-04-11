@@ -33,28 +33,28 @@ import static junit.framework.Assert.fail;
 public class TestUser extends AbstractBusinessObjectTest
 {
     @Test(expected = ExNotFound.class)
-    public void shouldThrowIfUserNotFoundOnGetOrganization()
+    public void getOrganization_shouldThrowIfUserNotFound()
             throws ExNotFound, SQLException
     {
         newUser().getOrganization();
     }
 
     @Test(expected = ExNotFound.class)
-    public void shouldThrowIfUserNotFoundOnGetFullName()
+    public void getFullName_shouldThrowIfUserNotFound()
             throws ExNotFound, SQLException
     {
         newUser().getFullName();
     }
 
     @Test(expected = ExNotFound.class)
-    public void shouldThrowIfUserNotFoundOnGetShaedSP()
+    public void getShaedSP_shouldThrowIfUserNotFound()
             throws ExNotFound, SQLException
     {
         newUser().isCredentialCorrect(new byte[0]);
     }
 
     @Test(expected = ExNotFound.class)
-    public void shouldThrowIfUserNotFoundOnGetLevel()
+    public void getLevel_shouldThrowIfUserNotFound()
             throws ExNotFound, SQLException
     {
         newUser().getLevel();
@@ -80,21 +80,21 @@ public class TestUser extends AbstractBusinessObjectTest
     }
 
     @Test(expected = AssertionError.class)
-    public void shouldAssertIfUserNotFoundOnSetName()
+    public void setName_shouldAssertIfUserNotFound()
             throws ExNotFound, SQLException
     {
         newUser().setName(new FullName("first", "last"));
     }
 
     @Test(expected = MySQLIntegrityConstraintViolationException.class)
-    public void shouldThrowIfCreatingTeamServerUserWithoutOrg()
-            throws ExNoPerm, IOException, ExNotFound, SQLException, ExAlreadyExist
+    public void saveteamServerUser_shouldThrowIfWithoutOrg()
+            throws Exception
     {
         factUser.saveTeamServerUser(newOrganization());
     }
 
     @Test(expected = ExAlreadyExist.class)
-    public void shouldThrowIfCreatingDuplicateUsers()
+    public void save_shouldThrowIfCreatingDuplicate()
             throws Exception
     {
         User user = newUser();
@@ -104,7 +104,7 @@ public class TestUser extends AbstractBusinessObjectTest
 
     // see User.addRootStoreAndCheckForCollision for detail
     @Test
-    public void shouldCorrectRootStoreCollision()
+    public void save_shouldCorrectRootStoreCollision()
             throws Exception
     {
         // create the players
@@ -131,14 +131,14 @@ public class TestUser extends AbstractBusinessObjectTest
     }
 
     @Test(expected = ExBadCredential.class)
-    public void shouldThrowBadCredentialIfUserNotFoundOnSignIn()
+    public void signIn_shouldThrowBadCredentialIfUserNotFound()
             throws SQLException, ExBadCredential
     {
         newUser().signIn(new byte[0]);
     }
 
     @Test
-    public void shouldListPeerDevices()
+    public void getPeerDevices_shouldListPeerDevices()
             throws Exception
     {
         User user1 = saveUser();
@@ -171,7 +171,7 @@ public class TestUser extends AbstractBusinessObjectTest
     }
 
     @Test
-    public void shouldListPeerDevicesWhenNoFoldersAreShared()
+    public void getPeerDevices_shouldListPeerDevicesWhenNoFoldersAreShared()
             throws Exception
     {
         User user1 = saveUser();
