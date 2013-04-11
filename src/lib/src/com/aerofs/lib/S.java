@@ -43,8 +43,8 @@ public class S
             LBL_UNKNOWN_DEVICE       = "Unknown device",
             LBL_UNKNOWN_FILE         = "Incoming file",
 
-            LBL_NO_ACTIVE_TRANSFERS  = "No active transfers...",
-            LBL_TRANSFERRING         = "transferring files...",
+            LBL_NO_ACTIVE_TRANSFERS  = "No active transfers",
+            LBL_TRANSFERRING         = "transferring files",
             LBL_UPLOADING            = "Uploading",
             LBL_DOWNLOADING          = "Downloading",
 

@@ -39,6 +39,12 @@ class PropertiesLabeling implements ILabeling
     }
 
     @Override
+    public String brand()
+    {
+        return config.getString( "labeling.brand", "AeroFS" );
+    }
+
+    @Override
     public String product()
     {
         return config.getString( "labeling.product", "AeroFS" );
@@ -71,6 +77,7 @@ class PropertiesLabeling implements ILabeling
     @Override
     public String toString() {
         return Objects.toStringHelper(this)
+                .add("brand", brand())
                 .add("isStaging", isStaging())
                 .add("isMultiuser", isMultiuser())
                 .add("product", product())

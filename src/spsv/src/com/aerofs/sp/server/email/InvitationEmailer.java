@@ -58,8 +58,8 @@ public class InvitationEmailer
 
             // TODO Ideally static email contents should be separate from Java files.
             final String subject = (folderName != null)
-                    ? "Join my " + L.product() + " folder"
-                    : "Invitation to " + L.product();
+                    ? "Join my " + L.brand() + " folder"
+                    : "Invitation to " + L.brand();
 
             final Email email = new Email(subject, false, null);
             final NameStrings nsInviter = new NameStrings(inviter);
@@ -91,19 +91,19 @@ public class InvitationEmailer
         {
             String body = "\n" +
                 nsInviter.nameAndEmail() + " has invited you to " +
-                (folderName != null ? "a shared " + L.product() + " folder " + Util.quote(folderName)
-                         : L.product()) +
+                (folderName != null ? "a shared " + L.brand() + " folder " + Util.quote(folderName)
+                         : L.brand()) +
                 (isNoteEmpty(note) ? "." : ":\n\n" + note) + "\n" +
                 "\n" +
-                L.product() + " is a file syncing, sharing, and collaboration tool that" +
+                L.brand() + " is a file syncing, sharing, and collaboration tool that" +
                 " lets you sync files privately without using public cloud. You can learn more" +
                 " about it at " + WWW.MARKETING_HOST_URL + "." + "\n" +
                 "\n" +
-                "Get started with " + L.product() + " at:\n" +
+                "Get started with " + L.brand() + " at:\n" +
                 "\n" + url;
 
             // If fromPerson is empty (user didn't set his name), use his email address instead
-            email.addSection(nsInviter.nameOnly() + " invited you to " + L.product() + "!",
+            email.addSection(nsInviter.nameOnly() + " invited you to " + L.brand() + "!",
                     HEADER_SIZE.H1, body);
             email.addDefaultSignature();
         }
@@ -118,14 +118,14 @@ public class InvitationEmailer
                 @Nullable final String note, final SID sid)
                 throws IOException, SQLException, ExNotFound
         {
-            final String subject = "Join my " + L.product() + " folder";
+            final String subject = "Join my " + L.brand() + " folder";
 
             final Email email = new Email(subject, false, null);
 
             final NameStrings nsSharer = new NameStrings(sharer);
 
             String body = "\n" +
-                    nsSharer.nameAndEmail() + " has invited you to a shared " + L.product() +
+                    nsSharer.nameAndEmail() + " has invited you to a shared " + L.brand() +
                     " folder" +
                     (isNoteEmpty(note) ? "." : (":\n\n" + note)) + "\n" +
                     "\n" +

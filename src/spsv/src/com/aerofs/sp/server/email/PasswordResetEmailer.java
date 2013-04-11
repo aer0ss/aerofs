@@ -25,7 +25,7 @@ public class PasswordResetEmailer
             throws IOException
 
     {
-        String subject = L.product() + " Password Request";
+        String subject = L.brand() + " Password Request";
 
         Email email = new Email(subject, false ,null);
 
@@ -36,7 +36,7 @@ public class PasswordResetEmailer
                "to reset your password:\n\n" + url + "\n\n" +
                 "If you didn't request this email please ignore this message.";
 
-        email.addSection(L.product() + " Password Request", HEADER_SIZE.H1, body);
+        email.addSection(L.brand() + " Password Request", HEADER_SIZE.H1, body);
         email.addDefaultSignature();
 
         try {
@@ -54,12 +54,12 @@ public class PasswordResetEmailer
             throws IOException
 
     {
-        String subject = L.product() + " Password Has Changed";
+        String subject = L.brand() + " Password Has Changed";
 
         Email email = new Email(subject, false, null);
 
         String body = "\n" +
-                "You have changed the password for your " + L.product() + " account.\n" +
+                "You have changed the password for your " + L.brand() + " account.\n" +
                 "\n" +
                 "If you didn't change the password," +
                 " please email " + WWW.SUPPORT_EMAIL_ADDRESS + " immediately." +

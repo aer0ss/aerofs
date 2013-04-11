@@ -54,6 +54,6 @@ public class Email implements IEmail
 
     public void addDefaultSignature() throws IOException
     {
-        addSignature("Happy Syncing,", "The " + L.product() + " Team", Email.DEFAULT_PS);
+        addSignature("Happy Syncing,", "The " + L.brand() + " Team", Email.DEFAULT_PS);
     }
 }

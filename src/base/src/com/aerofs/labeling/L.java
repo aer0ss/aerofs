@@ -26,6 +26,10 @@ public class L
         return LazyHolder.s_l;
     }
 
+    public static String brand() {
+        return get().brand();
+    }
+
     public static boolean isStaging() {
         return get().isStaging();
     }

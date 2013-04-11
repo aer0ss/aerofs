@@ -9,6 +9,8 @@ package com.aerofs.labeling;
  */
 public interface ILabeling
 {
+    String brand();
+
     boolean isStaging();
 
     boolean isMultiuser();

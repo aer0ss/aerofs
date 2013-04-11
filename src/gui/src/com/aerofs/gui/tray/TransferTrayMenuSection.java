@@ -146,7 +146,7 @@ public class TransferTrayMenuSection
     private void showStats(MenuItem menuItem, String action, int count, long done, long total)
     {
         if (count > 0) {
-            menuItem.setText(String.format("%s %s file%s... (%s)",
+            menuItem.setText(String.format("%s %s file%s (%s)",
                     action, count, count > 1 ? "s" : "",
                     Util.formatProgress(done, total)));
 

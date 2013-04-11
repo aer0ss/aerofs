@@ -61,7 +61,7 @@ class EmailSender
         MimeMessage msg;
         MimeMultipart multiPart = createMultipartEmail(textBody, htmlBody);
         msg = composeMessage(from,
-                (fromName == null) ? L.product() : fromName,
+                (fromName == null) ? L.brand() : fromName,
                 to,
                 replyTo,
                 subject);

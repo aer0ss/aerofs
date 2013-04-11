@@ -337,7 +337,7 @@ public class SVReactor
         String msg =  eom >= 0 ? desc.substring(0, eom) : desc;
 
         Future<Void> f = EmailSender.sendEmail(contactEmail, contactEmail,
-                WWW.SUPPORT_EMAIL_ADDRESS, null, L.product() + " Problem # " + id, msg, null, true,
+                WWW.SUPPORT_EMAIL_ADDRESS, null, L.brand() + " Problem # " + id, msg, null, true,
                 EmailCategory.SUPPORT);
         try {
             f.get(); // block to make sure email reaches support system
