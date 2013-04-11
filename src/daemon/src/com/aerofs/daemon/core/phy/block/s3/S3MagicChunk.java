@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.phy.block.s3;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.phy.block.AbstractChunker;
 import com.aerofs.daemon.core.phy.block.BlockInputStream;
@@ -127,7 +128,9 @@ class S3MagicChunk
         }
 
         if (!Arrays.equals(magic, bytes)) {
-            throw new IOException("Incorrect magic chunk");
+            throw new IOException("Incorrect magic chunk: expected "
+                    + BaseUtil.hexEncode(magic) + " actual "
+                    + BaseUtil.hexEncode(bytes));
         }
     }
 
