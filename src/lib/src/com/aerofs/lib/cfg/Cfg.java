@@ -122,6 +122,7 @@ public class Cfg
         _absDefaultRootAnchor = rootAnchor.getCanonicalPath();
         _absDefaultAuxRoot = absAuxRootForPath(_absDefaultRootAnchor, _rootSID);
         _storageType = StorageType.fromString(_db.getNullable(Key.STORAGE_TYPE));
+        _absRoots = Maps.newHashMap();
 
         if (storageType() == StorageType.LINKED) {
             if (!L.isMultiuser()) {
@@ -134,7 +135,6 @@ public class Cfg
                 }
             }
 
-            _absRoots = Maps.newHashMap();
             for (Entry<SID, String> e : _db.getRoots().entrySet()) {
                 _absRoots.put(e.getKey(), new File(e.getValue()).getCanonicalPath());
             }
