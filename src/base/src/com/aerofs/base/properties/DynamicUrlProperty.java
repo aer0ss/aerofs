@@ -6,10 +6,7 @@ package com.aerofs.base.properties;
 
 import com.netflix.config.DynamicStringProperty;
 import org.arrowfs.config.properties.DynamicProperty;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
 
@@ -91,7 +88,4 @@ public class DynamicUrlProperty implements DynamicProperty<URL>
             delegate.addCallback( callback );
         }
     }
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(DynamicInetSocketAddress.class);
-
 }

@@ -5,7 +5,6 @@
 package com.aerofs.daemon.core.phy.block;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.phy.IPhysicalFolder;
 import com.aerofs.daemon.core.phy.IPhysicalObject;
 import com.aerofs.daemon.core.phy.PhysicalOp;

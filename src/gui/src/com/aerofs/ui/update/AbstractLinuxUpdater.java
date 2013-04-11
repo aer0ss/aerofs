@@ -6,7 +6,6 @@ import java.io.IOException;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.*;
 
-import com.aerofs.base.BaseParam.SP;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExNoConsole;
 import com.aerofs.lib.injectable.InjectableFile;

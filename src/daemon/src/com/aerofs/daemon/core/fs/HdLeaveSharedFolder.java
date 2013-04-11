@@ -4,7 +4,6 @@
 
 package com.aerofs.daemon.core.fs;
 
-import com.aerofs.base.BaseParam.SP;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.acl.ACLChecker;

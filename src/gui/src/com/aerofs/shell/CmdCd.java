@@ -9,8 +9,6 @@ import com.aerofs.proto.Ritual.PBObjectAttributes.Type;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
 
-import java.util.List;
-
 public class CmdCd implements IShellCommand<ShProgram>
 {
     @Override

@@ -4,7 +4,6 @@
 
 package com.aerofs.lib;
 
-import com.aerofs.base.id.DID;
 import com.aerofs.base.id.SID;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.cfg.Cfg;
@@ -14,7 +13,6 @@ import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.ex.ExNotDir;
 import com.aerofs.lib.ex.ExUIMessage;
-import com.aerofs.base.id.UniqueID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.sv.client.SVClient;

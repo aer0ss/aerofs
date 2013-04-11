@@ -31,7 +31,6 @@ import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
-import com.aerofs.base.BaseParam.SP;
 import com.aerofs.base.acl.Role;
 import com.aerofs.base.acl.SubjectRolePairs;
 import com.aerofs.lib.Util;

@@ -1,7 +1,6 @@
 package com.aerofs.shell;
 
 import com.aerofs.base.ex.ExBadArgs;
-import com.aerofs.proto.Common.PBPath;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
 

@@ -6,12 +6,9 @@ package com.aerofs.base;
 
 import com.aerofs.base.properties.DynamicInetSocketAddress;
 import com.aerofs.base.properties.DynamicUrlProperty;
-import com.aerofs.labeling.L;
 import com.netflix.config.DynamicStringProperty;
 
 import java.net.InetSocketAddress;
-import java.net.MalformedURLException;
-import java.net.URL;
 
 /**
  * Base parameters for the servers, the desktop app and the Android client.

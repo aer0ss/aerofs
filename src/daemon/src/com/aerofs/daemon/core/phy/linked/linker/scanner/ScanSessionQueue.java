@@ -5,7 +5,6 @@ import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.phy.ScanCompletionCallback;
 import com.aerofs.daemon.core.phy.linked.linker.LinkerRoot;
-import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.lib.FrequentDefectSender;
 import com.aerofs.lib.IDumpStatMisc;
 import com.aerofs.lib.Param;

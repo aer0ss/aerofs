@@ -2,7 +2,6 @@ package com.aerofs.sp.server.lib;
 
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExNotFound;
-import com.aerofs.base.id.DID;
 import com.aerofs.lib.S;
 import com.aerofs.base.id.UserID;
 
@@ -24,7 +23,6 @@ import java.util.Set;
 import static com.aerofs.sp.server.lib.SPSchema.*;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 // TODO (WW) move ALL methods to appropriate classes.
 // DO NOT ADD NEW METHODS.

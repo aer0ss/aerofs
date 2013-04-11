@@ -15,6 +15,7 @@ import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ritual.RitualBlockingClient;
 import com.aerofs.lib.ritual.RitualClientFactory;
 import com.aerofs.proto.Ritual.PBObjectAttributes;
+import com.aerofs.proto.Sv;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.UI;
 import org.slf4j.Logger;
@@ -41,7 +42,6 @@ import org.eclipse.swt.widgets.Text;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.sv.client.SVClient;
-import com.aerofs.proto.Sv;
 import com.swtdesigner.SWTResourceManager;
 
 import java.io.IOException;

@@ -4,17 +4,13 @@
 
 package com.aerofs.base.properties;
 
-import com.aerofs.base.Loggers;
 import com.aerofs.labeling.L;
 import org.arrowfs.config.ArrowConfiguration;
-import org.arrowfs.config.ArrowConfiguration.Builder;
-import org.arrowfs.config.sources.DynamicPropertiesConfiguration;
 import org.arrowfs.config.sources.PropertiesConfiguration;
 import org.arrowfs.config.sources.SystemConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
 import java.util.List;
 
 import static com.google.common.collect.Lists.newArrayList;

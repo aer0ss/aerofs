@@ -15,7 +15,6 @@ import com.aerofs.proto.Sp.GetCRLReply;
 import com.aerofs.proto.Common.Void;
 import com.google.common.collect.ImmutableList;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.testng.Assert;
 

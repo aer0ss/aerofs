@@ -5,7 +5,6 @@
 package com.aerofs.sp.server.lib.cert;
 
 import com.aerofs.base.id.DID;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.db.DBUtil;
 import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.base.ex.ExNotFound;

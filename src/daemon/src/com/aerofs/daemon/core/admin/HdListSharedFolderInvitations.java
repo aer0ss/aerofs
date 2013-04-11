@@ -4,7 +4,6 @@
 
 package com.aerofs.daemon.core.admin;
 
-import com.aerofs.base.BaseParam.SP;
 import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;

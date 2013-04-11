@@ -8,8 +8,6 @@ import com.google.common.base.Splitter;
 import com.google.common.collect.Iterables;
 import com.netflix.config.DynamicStringProperty;
 import org.arrowfs.config.properties.DynamicProperty;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
 
@@ -111,7 +109,4 @@ public class DynamicInetSocketAddress implements DynamicProperty<InetSocketAddre
             delegate.addCallback( callback );
         }
     }
-
-    private static final Logger LOGGER = LoggerFactory.getLogger( DynamicInetSocketAddress.class );
-
 }

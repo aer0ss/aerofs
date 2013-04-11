@@ -9,7 +9,6 @@ import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.core.verkehr.VerkehrNotificationSubscriber;
 import com.aerofs.lib.SystemUtil;
-import com.aerofs.lib.cfg.Cfg;
 import com.google.inject.Inject;
 
 import com.aerofs.daemon.IModule;
@@ -26,7 +25,6 @@ import com.aerofs.daemon.core.update.DaemonPostUpdateTasks;
 import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
 import com.aerofs.daemon.lib.db.CoreDBCW;
 
-import java.io.IOException;
 
 public class Core implements IModule
 {

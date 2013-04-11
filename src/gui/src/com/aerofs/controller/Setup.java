@@ -4,14 +4,6 @@
 
 package com.aerofs.controller;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.BindException;
-import java.net.ServerSocket;
-import java.net.UnknownHostException;
-import java.sql.SQLException;
-import java.util.TreeMap;
-
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.SID;
@@ -33,7 +25,6 @@ import org.slf4j.Logger;
 
 import com.aerofs.lib.Param;
 import com.aerofs.lib.Param.PostUpdate;
-import com.aerofs.base.BaseParam.SP;
 import com.aerofs.lib.RootAnchorUtil;
 import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.Util;
@@ -50,6 +41,14 @@ import com.aerofs.proto.Sv;
 import com.aerofs.ui.UI;
 import com.google.common.collect.Maps;
 import com.google.protobuf.ByteString;
+
+import java.io.File;
+import java.io.IOException;
+import java.net.BindException;
+import java.net.ServerSocket;
+import java.net.UnknownHostException;
+import java.sql.SQLException;
+import java.util.TreeMap;
 
 class Setup
 {

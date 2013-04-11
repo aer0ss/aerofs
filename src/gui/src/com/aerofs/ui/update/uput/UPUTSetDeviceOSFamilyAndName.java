@@ -4,7 +4,6 @@
 
 package com.aerofs.ui.update.uput;
 
-import com.aerofs.base.BaseParam.SP;
 import com.aerofs.base.Loggers;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.os.IOSUtil;

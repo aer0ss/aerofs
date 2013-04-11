@@ -9,7 +9,6 @@ import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.devman.server.VerkehrWebClient.OnlineDeviceInfo;
 import com.aerofs.devman.server.db.IPAddressDatabase;
 import com.aerofs.devman.server.db.LastSeenDatabase;
-import com.aerofs.lib.Util;
 import com.aerofs.servlets.lib.db.jedis.JedisThreadLocalTransaction;
 import com.amazonaws.util.json.JSONException;
 import org.slf4j.Logger;

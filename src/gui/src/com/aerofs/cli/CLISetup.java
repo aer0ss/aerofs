@@ -14,7 +14,6 @@ import com.aerofs.lib.S;
 import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.StorageType;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase;
 import com.aerofs.lib.ex.ExNoConsole;
 import com.aerofs.base.id.UserID;

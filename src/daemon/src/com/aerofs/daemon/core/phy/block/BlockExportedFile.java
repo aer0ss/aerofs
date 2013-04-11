@@ -14,7 +14,6 @@ import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.lib.injectable.InjectableFile.Factory;
 import org.slf4j.Logger;
 
-import java.util.Arrays;
 
 public class BlockExportedFile
 {

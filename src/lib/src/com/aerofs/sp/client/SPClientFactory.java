@@ -3,12 +3,9 @@ package com.aerofs.sp.client;
 import com.aerofs.base.BaseParam.SP;
 import com.aerofs.base.net.IURLConnectionConfigurator;
 import com.aerofs.base.net.NullURLConnectionConfigurator;
-import com.aerofs.base.properties.DynamicUrlProperty;
 import com.aerofs.labeling.L;
 import com.aerofs.base.id.UserID;
 
-import java.net.MalformedURLException;
-import java.net.URL;
 
 /**
  * A class wrapping SP*Client factory methods

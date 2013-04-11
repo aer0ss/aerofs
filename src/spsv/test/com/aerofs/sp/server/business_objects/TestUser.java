@@ -6,7 +6,6 @@ package com.aerofs.sp.server.business_objects;
 
 import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.base.ex.ExBadCredential;
-import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.SID;
@@ -22,7 +21,6 @@ import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationExceptio
 import junit.framework.Assert;
 import org.junit.Test;
 
-import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Collection;
 

@@ -11,7 +11,6 @@ import com.aerofs.gui.GUIParam;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.RootAnchorUtil;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.ui.IUI.MessageType;

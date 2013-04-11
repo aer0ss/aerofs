@@ -5,9 +5,6 @@
 package com.aerofs.labeling;
 
 import com.google.common.base.Objects;
-import com.netflix.config.DynamicBooleanProperty;
-import com.netflix.config.DynamicIntProperty;
-import com.netflix.config.DynamicStringProperty;
 import org.apache.commons.configuration.AbstractConfiguration;
 import org.arrowfs.config.ArrowConfiguration;
 import org.arrowfs.config.sources.PropertiesConfiguration;

@@ -8,7 +8,6 @@ import com.aerofs.base.Loggers;
 import com.aerofs.gui.CompSpin;
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIParam;
-import com.aerofs.base.BaseParam.SP;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.lib.RootAnchorUtil;
 import com.aerofs.lib.S;

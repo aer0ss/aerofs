@@ -6,7 +6,6 @@ import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.phy.linked.linker.LinkerRoot;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.obfuscate.ObfuscatingFormatters;
-import com.google.common.collect.HashBiMap;
 import com.google.common.collect.Maps;
 import org.slf4j.Logger;
 

@@ -1,7 +1,5 @@
 package com.aerofs.daemon.core.synctime;
 
-import com.aerofs.base.Loggers;
-import org.slf4j.Logger;
 
 class TimeToSync
 {

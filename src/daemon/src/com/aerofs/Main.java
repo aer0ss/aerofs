@@ -29,7 +29,6 @@ import com.aerofs.lib.os.OSUtil;
 import com.aerofs.sv.client.SVClient;
 
 import static com.aerofs.lib.rocklog.RockLog.BaseComponent.CLIENT;
-import static com.google.common.collect.Lists.newArrayList;
 
 public class Main
 {

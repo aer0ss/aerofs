@@ -1,14 +1,9 @@
 package com.aerofs.shell;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import com.aerofs.base.ex.ExFormatError;
-import com.aerofs.base.id.SID;
 import com.aerofs.labeling.L;
 import com.aerofs.base.C;
 import com.aerofs.lib.IProgram;
-import com.aerofs.base.BaseParam.SP;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.base.ex.ExBadArgs;

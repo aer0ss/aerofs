@@ -9,7 +9,6 @@ import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.FrequentDefectSender;
 import com.aerofs.lib.Param;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.cfg.CfgAbsDefaultAuxRoot;
 
 import java.io.File;
 import java.io.IOException;

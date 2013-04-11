@@ -2,7 +2,6 @@ package com.aerofs.daemon.core.fs;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.acl.ACLSynchronizer;
-import com.aerofs.base.BaseParam.SP;
 import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.tc.TC.TCB;

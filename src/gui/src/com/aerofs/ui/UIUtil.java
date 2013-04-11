@@ -1,6 +1,5 @@
 package com.aerofs.ui;
 
-import com.aerofs.base.BaseParam.SP;
 import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.AbstractExWirable;

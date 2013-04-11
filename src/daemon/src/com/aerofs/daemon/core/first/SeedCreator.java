@@ -13,7 +13,6 @@ import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ds.OA.Type;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
-import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.lib.db.IMetaDatabaseWalker;
 import com.aerofs.daemon.lib.db.IMetaDatabaseWalker.TypeNameOID;
 import com.aerofs.daemon.lib.exception.ExStreamInvalid;

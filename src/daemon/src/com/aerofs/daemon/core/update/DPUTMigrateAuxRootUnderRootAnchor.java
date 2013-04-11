@@ -5,7 +5,6 @@
 package com.aerofs.daemon.core.update;
 
 import com.aerofs.lib.FileUtil;
-import com.aerofs.lib.StorageType;
 import com.aerofs.lib.cfg.Cfg;
 
 import java.io.File;

@@ -336,7 +336,6 @@ public class TestLinkedStorage extends AbstractTest
     @Test
     public void shouldHandleCommitError() throws IOException, SQLException
     {
-        LinkedPrefix prefix;
         IPhysicalFile pfile;
         int revs =  revDir.listFiles().length;
 

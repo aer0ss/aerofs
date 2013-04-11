@@ -5,7 +5,6 @@
 package com.aerofs.lib.cfg;
 
 import com.aerofs.base.id.SID;
-import com.google.inject.Inject;
 
 import javax.annotation.Nullable;
 import java.sql.SQLException;
