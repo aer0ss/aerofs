@@ -57,6 +57,7 @@ if [[ "$PRODUCT" != "CLIENT" && "$PRODUCT" != "TEAM_SERVER" ]]; then
     echo "error: invalid build product $PRODUCT. Expected CLIENT or TEAM_SERVER." >&2
     exit $ERRBADPRODUCT
 fi
+
 if [[ "$PRODUCT" == "TEAM_SERVER" ]]; then
     readonly PROPERTIES_FILE="$CLIENT_RESOURCES_DIR"/common/labeling-teamserver.properties
 else
@@ -198,13 +199,13 @@ function compute_next_release_version() {
 ######################################################################
 
 function compute_product_names() {
+    echo ">> computing product name"
+
     readonly GET_PROPERTY_LOGBACK_CONFIG="${BUILD_SCRIPT_DIR}/arrow-config/logback.xml"
     readonly GET_PROPERTY="groovy -Dlogback.configurationFile=$GET_PROPERTY_LOGBACK_CONFIG ${BUILD_SCRIPT_DIR}/arrow-config/get_property.groovy"
     readonly GET_PROPERTY_DEPENDENCIES="${BUILD_SCRIPT_DIR}/arrow-config/dependencies.groovy"
 
-    echo "getting dependencies"
     $GET_PROPERTY_DEPENDENCIES
-    echo "getting product names"
     readonly AEROFS_PRODUCT=$($GET_PROPERTY $PROPERTIES_FILE labeling.product)
     readonly AEROFS_PRODUCT_SPACEFREE=$($GET_PROPERTY $PROPERTIES_FILE labeling.productSpaceFreeName)
     readonly AEROFS_PRODUCT_UNIX=$($GET_PROPERTY $PROPERTIES_FILE labeling.productUnixName)

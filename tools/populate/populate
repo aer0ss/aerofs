@@ -21,6 +21,7 @@ fi
 PPWD="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 APPROOT="$1"
+PROPERTIES_DIR="$APPROOT/resources"
 ASIS="$2"
 MODE="${3:-'STAGING'}"
 PRODUCT="${4:-'CLIENT'}"
@@ -32,16 +33,24 @@ VERSION_FILE=version
 mkdir -p "$APPROOT"
 rm -rf "$APPROOT"/Growl.framework # Symlinks prevent cp from overwriting the files
 rm -rf "$APPROOT"/jre  # jre contains some read-only files that would make cp fail
-# we want all properties files in approot to be rewritten, so delete them here
-rm -f "$APPROOT"/*.properties
 
 cp -R "$ASIS"/common/* "$APPROOT"/
 cp -R "$ASIS"/s3/lib/* "$APPROOT"/lib/
 cp -R "$ASIS"/$OS/* "$APPROOT"/
 
+#
+# handle properties
+#
+
+# we want none of the properties files in approot, so remove them
+mkdir -p "$PROPERTIES_DIR"
+mv "$APPROOT"/*.properties "$PROPERTIES_DIR"
+
 if [ "$PRODUCT" == "TEAM_SERVER" ]; then
-    cp "$APPROOT"/labeling-teamserver.properties "$APPROOT"/labeling.properties
+    mv "$PROPERTIES_DIR"/labeling-teamserver.properties "$PROPERTIES_DIR"/labeling.properties
 fi
+
+# build mode
 
 if [ "$MODE" == "CI" ]; then
     # Set-up a CI environment
@@ -58,10 +67,9 @@ else
     rm "$APPROOT"/cacert-ci.pem
     rm "$APPROOT"/cacert-prod.pem
     mv "$APPROOT"/cacert-staging.pem "$APPROOT"/cacert.pem
-    echo "labeling.isStaging=true" >> "$APPROOT"/labeling.properties
+    echo "labeling.isStaging=true" >> "$PROPERTIES_DIR"/labeling.properties
 fi
    
-rm "$APPROOT"/labeling-teamserver.properties
 
 # Common to both staging and CI
 

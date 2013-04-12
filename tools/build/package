@@ -48,11 +48,11 @@ if is_prod ; then
 fi
 
 compute_next_release_version
-echo '+--------------------------'
-echo '| ' $RELEASE_VERSION $MODE
-echo '+--------------------------'
+echo '+---------------------------------'
+echo '| ' $RELEASE_VERSION $PRODUCT $MODE
+echo '+---------------------------------'
 
-call make_release_resources $MODE $PRODUCT $RELEASE_VERSION 
+call make_release_resources $MODE $PRODUCT $RELEASE_VERSION
 call make_client_installers $MODE $PRODUCT $RELEASE_VERSION "$PASSPHRASE"
 echo ">> successfully built $MODE $PRODUCT release version $RELEASE_VERSION"
 exit 0

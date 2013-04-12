@@ -101,7 +101,7 @@ public final class Configuration
     }
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Configuration.class);
-    private static final String STRINGS_RESOURCE = "strings.properties";
-    private static final String CONFIGURATION_RESOURCE = "configuration.properties";
-    private static final String STAGING_CONFIGURATION_RESOURCE = "configuration-stg.properties";
+    private static final String STRINGS_RESOURCE = "resources/strings.properties";
+    private static final String CONFIGURATION_RESOURCE = "resources/configuration.properties";
+    private static final String STAGING_CONFIGURATION_RESOURCE = "resources/configuration-stg.properties";
 }

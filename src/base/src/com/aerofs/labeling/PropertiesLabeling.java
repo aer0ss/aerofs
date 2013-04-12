@@ -21,7 +21,7 @@ class PropertiesLabeling implements ILabeling
 {
 
     final AbstractConfiguration config =
-            PropertiesConfiguration.newInstance( newArrayList( "labeling.properties") );
+            PropertiesConfiguration.newInstance( newArrayList( "resources/labeling.properties") );
 
     PropertiesLabeling() {
         LOGGER.debug(ArrowConfiguration.configurationAsMap( config ).toString());
