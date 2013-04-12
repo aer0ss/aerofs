@@ -95,6 +95,9 @@ public class BlockStorageModules
 
                 // make sure the storage-specific schema is created on setup
                 multibind(binder(), ISchema.class, BlockStorageSchema.class);
+
+                // need at least one bound class or Guice chokes...
+                multibind(binder(), IBlockStorageInitable.class, IBlockStorageInitable.Dummy.class);
             }
         }, base);
     }
