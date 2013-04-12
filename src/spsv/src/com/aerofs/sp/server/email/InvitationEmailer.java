@@ -28,7 +28,7 @@ import java.util.concurrent.Callable;
 // and/or merging.
 public class InvitationEmailer
 {
-    private final static String ACCEPT_INVITATION_LINK = WWW.DASHBOARD_HOST_URL + "/accept";
+    private final static String ACCEPT_INVITATION_LINK = WWW.DASHBOARD_HOST_URL.get() + "/accept";
 
     public static class Factory
     {

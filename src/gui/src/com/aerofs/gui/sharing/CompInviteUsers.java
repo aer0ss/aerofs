@@ -324,7 +324,7 @@ public class CompInviteUsers extends Composite implements IInputChangeListener
                                 " folder, which requires a paid AeroFS plan. Could we upgrade" +
                                 " the plan for our team?" +
                                 " We can upgrade through this link:\n\n" +
-                                WWW.UPGRADE_URL +
+                                WWW.UPGRADE_URL.get() +
                                 "\n\nThank you!";
                         String url = "mailto:?subject=" + Util.urlEncode(subject) + "&body=" +
                                 Util.urlEncode(body);

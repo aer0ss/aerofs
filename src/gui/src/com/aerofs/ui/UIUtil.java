@@ -240,7 +240,7 @@ public class UIUtil
     }
 
     private static String LAUNCH_ERROR_STRING = "Sorry, " + L.product() + " couldn't launch." +
-            " Please contact us at " + WWW.SUPPORT_EMAIL_ADDRESS;
+            " Please contact us at " + WWW.SUPPORT_EMAIL_ADDRESS.get();
 
     /**
      * Helper method to perform launch for the Java UIs (ie: CLI and GUI)

@@ -24,7 +24,7 @@ public class DeviceRegistrationEmailer
     {
         // N.B. the URI string must be identical to that in devices/__init__.py.
         sendDeviceCertifiedEmailImpl(L.brand() + " Team Server", emailAddress, firstName, osFamily,
-                deviceName, "Team Servers at " + WWW.TEAM_SERVER_DEVICES_URL, did);
+                deviceName, "Team Servers at " + WWW.TEAM_SERVER_DEVICES_URL.get(), did);
     }
 
     public void sendDeviceCertifiedEmail(String emailAddress, String firstName,
@@ -33,7 +33,7 @@ public class DeviceRegistrationEmailer
     {
         // N.B. the URI string must be identical to that in devices/__init__.py.
         sendDeviceCertifiedEmailImpl(L.brand(), emailAddress, firstName, osFamily, deviceName,
-                "your devices at " + WWW.DEVICES_URL, did);
+                "your devices at " + WWW.DEVICES_URL.get(), did);
     }
 
     public void sendDeviceCertifiedEmailImpl(String product, String emailAddress, String firstName,
@@ -50,7 +50,7 @@ public class DeviceRegistrationEmailer
                 Util.quote(deviceName) + ".\n" +
                 "\n" +
                 "If this device does not belong to you, please email us at " +
-                WWW.SUPPORT_EMAIL_ADDRESS +
+                WWW.SUPPORT_EMAIL_ADDRESS.get() +
                 " immediately and we will take the necessary steps to secure your account.\n" +
                 "\n" +
                 "You can manage " + manageDeviceStringAndURL + ".";

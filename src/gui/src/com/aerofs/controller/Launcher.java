@@ -224,7 +224,7 @@ class Launcher
             String msg = L.product() + " couldn't launch because some program files are corrupted." +
                     " Please " +
                     (UI.isGUI() ? "click " + IDialogConstants.OK_LABEL : "go to " +
-                            WWW.DOWNLOAD_URL) +
+                            WWW.DOWNLOAD_URL.get()) +
                     " to download and install " + L.product() + " again. " +
                     "All your data will be intact during re-installation.";
 

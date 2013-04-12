@@ -19,7 +19,7 @@ public class RequestToSignUpEmailer
     static String getSignUpLink(String signUpCode)
     {
         // N.B. the parameter key string must be identical to that in signup/views.py.
-        return WWW.DASHBOARD_HOST_URL + "/signup?c=" + signUpCode;
+        return WWW.DASHBOARD_HOST_URL.get() + "/signup?c=" + signUpCode;
     }
 
     public void sendRequestToSignUp(String emailAddress, String signUpCode)

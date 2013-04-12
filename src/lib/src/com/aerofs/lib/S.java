@@ -75,7 +75,7 @@ public class S
             PRE_SETUP_UPDATE_CHECK_FAILED = L.product() + " couldn't" +
                 " download updates. Please make sure the computer is" +
                 " connected to the Internet and run " + L.product() + " again.",
-            PASSWORD_RESET_URL = WWW.DASHBOARD_HOST_URL + "/password_reset",
+            PASSWORD_RESET_URL = WWW.DASHBOARD_HOST_URL.get() + "/password_reset",
             // use trailing spaces to force right margins
             TYPE_EMAIL_ADDRESSES = "Enter email addresses here, separated by commas:   ",
             INVITATION_WAS_SENT = "Invited successfully.",

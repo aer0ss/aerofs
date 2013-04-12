@@ -188,7 +188,7 @@ public class CLISetup
     private void getPassword(CLI cli) throws Exception
     {
         cli.show(MessageType.INFO, "If you forgot your password, go to " +
-                WWW.PASSWORD_RESET_REQUEST_URL + " to reset it.");
+                WWW.PASSWORD_RESET_REQUEST_URL.get() + " to reset it.");
         _passwd =  cli.askPasswd(S.SETUP_PASSWD);
     }
 
