@@ -31,7 +31,7 @@ import java.util.concurrent.TimeUnit;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class RockLogReporter extends AbstractPollingReporter implements MetricProcessor<Long>
+public final class RockLogReporter extends AbstractPollingReporter implements MetricProcessor<Long>
 {
     private static final Logger l = Loggers.getLogger(RockLogReporter.class);
 
@@ -62,9 +62,7 @@ public class RockLogReporter extends AbstractPollingReporter implements MetricPr
             addApplicationMetrics_();
             addVirtualMachineMetrics_();
 
-            checkNotNull(_rocklogMetrics);  // won't be null, but here to silence IDE warning
-
-            _rocklogMetrics.send();
+            checkNotNull(_rocklogMetrics).send();
         } catch (Exception e) {
             l.error("fail send metrics err:" + e);
         } finally {
@@ -82,7 +80,7 @@ public class RockLogReporter extends AbstractPollingReporter implements MetricPr
     public void processCounter(MetricName metricName, Counter counter, Long timestamp)
             throws Exception
     {
-        String name = metricNameToString_(metricName);
+        String name = metricNameToUnsanitizedString_(metricName);
         addLong_(name, "count", counter.count());
     }
 
@@ -90,7 +88,7 @@ public class RockLogReporter extends AbstractPollingReporter implements MetricPr
     public void processMeter(MetricName metricName, Metered metered, Long value)
             throws Exception
     {
-        String name = metricNameToString_(metricName);
+        String name = metricNameToUnsanitizedString_(metricName);
         addMeter_(name, metered);
     }
 
@@ -98,7 +96,7 @@ public class RockLogReporter extends AbstractPollingReporter implements MetricPr
     public void processHistogram(MetricName metricName, Histogram histogram, Long timestamp)
             throws Exception
     {
-        String name = metricNameToString_(metricName);
+        String name = metricNameToUnsanitizedString_(metricName);
         addSummarizable_(name, histogram);
         addSampling_(name, histogram);
     }
@@ -107,7 +105,7 @@ public class RockLogReporter extends AbstractPollingReporter implements MetricPr
     public void processTimer(MetricName metricName, Timer timer, Long timestamp)
             throws Exception
     {
-        String name = metricNameToString_(metricName);
+        String name = metricNameToUnsanitizedString_(metricName);
         addSummarizable_(name, timer);
         addSampling_(name, timer);
     }
@@ -116,11 +114,11 @@ public class RockLogReporter extends AbstractPollingReporter implements MetricPr
     public void processGauge(MetricName metricName, Gauge<?> gauge, Long timestamp)
             throws Exception
     {
-        String name = metricNameToString_(metricName);
+        String name = metricNameToUnsanitizedString_(metricName);
         addObject_(name, gauge);
     }
 
-    private String metricNameToString_(MetricName metricName)
+    private String metricNameToUnsanitizedString_(MetricName metricName)
     {
         StringBuilder sb = new StringBuilder()
                 .append(metricName.getGroup())
@@ -136,10 +134,10 @@ public class RockLogReporter extends AbstractPollingReporter implements MetricPr
     private void addMeter_(String metricName, Metered metered)
     {
         addLong_(metricName, "count", metered.count());
-        addFloat_(metricName, "meanRate", metered.meanRate());
-        addFloat_(metricName, "1MinuteRate", metered.oneMinuteRate());
-        addFloat_(metricName, "5MinuteRate", metered.fiveMinuteRate());
-        addFloat_(metricName, "15MinuteRate", metered.fifteenMinuteRate());
+        addFloat_(metricName, "mean_rate", metered.meanRate());
+        addFloat_(metricName, "1_minute_rate", metered.oneMinuteRate());
+        addFloat_(metricName, "5_minute_rate", metered.fiveMinuteRate());
+        addFloat_(metricName, "15_minute_rate", metered.fifteenMinuteRate());
     }
 
     private void addSummarizable_(String metricName, Summarizable summarizable)
@@ -154,19 +152,26 @@ public class RockLogReporter extends AbstractPollingReporter implements MetricPr
     {
         final Snapshot snapshot = sampling.getSnapshot();
         addFloat_(metricName, "median", snapshot.getMedian());
-        addFloat_(metricName, "75percentile", snapshot.get75thPercentile());
-        addFloat_(metricName, "95percentile", snapshot.get95thPercentile());
-        addFloat_(metricName, "98percentile", snapshot.get98thPercentile());
-        addFloat_(metricName, "99percentile", snapshot.get99thPercentile());
-        addFloat_(metricName, "999percentile", snapshot.get999thPercentile());
+        addFloat_(metricName, "75_percentile", snapshot.get75thPercentile());
+        addFloat_(metricName, "95_percentile", snapshot.get95thPercentile());
+        addFloat_(metricName, "98_percentile", snapshot.get98thPercentile());
+        addFloat_(metricName, "99_percentile", snapshot.get99thPercentile());
+        addFloat_(metricName, "999_percentile", snapshot.get999thPercentile());
+    }
+
+    /**
+     * IMPORTANT: this should be the _only_ place where we add a metric to _rocklogMetrics
+     * This is also the place where we do a final sanitization
+     */
+    private void addMetricForTransmission(String metricName, Object value)
+    {
+        checkNotNull(_rocklogMetrics).addMetric(sanitizeString(metricName), value);
     }
 
     private void addLong_(String metricName, String component, long value)
     {
-        checkNotNull(_rocklogMetrics);
-
         String key = metricName + "." + component;
-        _rocklogMetrics.addMetric(key, value);
+        addMetricForTransmission(key, value);
     }
 
     private void addFloat_(String metricName, String component, double value)
@@ -179,16 +184,12 @@ public class RockLogReporter extends AbstractPollingReporter implements MetricPr
             return;
         }
 
-        checkNotNull(_rocklogMetrics);
-
-        _rocklogMetrics.addMetric(fullMetricName, value);
+        addMetricForTransmission(fullMetricName, value);
     }
 
     private void addObject_(String key, Gauge<?> gauge)
     {
-        checkNotNull(_rocklogMetrics);
-
-        _rocklogMetrics.addMetric(key, String.format("%s", gauge));
+        addMetricForTransmission(key, String.format("%s", gauge));
     }
 
     private void addApplicationMetrics_()
@@ -214,7 +215,7 @@ public class RockLogReporter extends AbstractPollingReporter implements MetricPr
         addFloat_("jvm.memory", "heap_usage", _vm.heapUsage());
         addFloat_("jvm.memory", "non_heap_usage", _vm.nonHeapUsage());
         for (Map.Entry<String, Double> pool : _vm.memoryPoolUsage().entrySet()) {
-            addFloat_("jvm.memory.memory_pool_usages", pool.getKey(), pool.getValue());
+            addFloat_("jvm.memory.memory_pool_usages", sanitizeString(pool.getKey()), pool.getValue());
         }
 
         addLong_("jvm", "daemon_thread_count", _vm.daemonThreadCount());
@@ -226,11 +227,11 @@ public class RockLogReporter extends AbstractPollingReporter implements MetricPr
         }
 
         for (Map.Entry<Thread.State, Double> entry : _vm.threadStatePercentages().entrySet()) {
-            addFloat_("jvm.thread-states", entry.getKey().toString().toLowerCase(), entry.getValue());
+            addFloat_("jvm.thread-states", sanitizeString(entry.getKey().toString().toLowerCase()), entry.getValue());
         }
 
         for (Map.Entry<String, VirtualMachineMetrics.GarbageCollectorStats> entry : _vm.garbageCollectors().entrySet()) {
-            final String name = "jvm.gc." + entry.getKey();
+            final String name = sanitizeString("jvm.gc." + entry.getKey());
             addLong_(name, "time", entry.getValue().getTime(TimeUnit.MILLISECONDS));
             addLong_(name, "runs", entry.getValue().getRuns());
         }
@@ -239,5 +240,10 @@ public class RockLogReporter extends AbstractPollingReporter implements MetricPr
     private static boolean isWindows()
     {
         return System.getProperty("os.name").toLowerCase().contains("win");
+    }
+
+    private static String sanitizeString(String s)
+    {
+        return s.replace(' ', '_');
     }
 }
