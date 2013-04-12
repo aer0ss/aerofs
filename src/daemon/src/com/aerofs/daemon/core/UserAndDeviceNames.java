@@ -106,11 +106,16 @@ public class UserAndDeviceNames
     // TODO (huguesb): refactor HdGetActivities and make this private
     /**
      * Make an SP RPC call to obtain information about a list of DIDs
+     *
+     * This call can potentially hammer SP. The SP login attemps are throttled
+     *   to once every 30 minutes if we ever failed.
+     *
      * @return false if the call to SP failed
      * @throws ExProtocolError SP results cannot be interpreted unambiguously
      */
     public boolean updateLocalDeviceInfo_(List<DID> dids) throws SQLException, ExProtocolError
     {
+        // immediate return "failed to update" if we ever retry in 30 minutes
         if (_lastSPLoginFailureTime > 0
                 && Math.abs(System.currentTimeMillis() - _lastSPLoginFailureTime) < 30 * C.MIN)
             return false;
@@ -118,11 +123,9 @@ public class UserAndDeviceNames
         GetDeviceInfoReply reply;
         try {
             reply = getDevicesInfoFromSP_(dids);
-        } catch (ExBadCredential ex) {
-            _lastSPLoginFailureTime = System.currentTimeMillis();
-            l.warn("ignored: " + Util.e(ex, IOException.class));
-            return false;
         } catch (Exception e) {
+            // track the timestamp if we ever failed to update from SP
+            _lastSPLoginFailureTime = System.currentTimeMillis();
             l.warn("ignored: " + Util.e(e, IOException.class));
             return false;
         }
