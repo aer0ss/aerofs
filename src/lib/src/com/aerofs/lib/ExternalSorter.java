@@ -303,7 +303,7 @@ public class ExternalSorter<T> implements Closeable
                     }
                 }
             };
-            _pq = new PriorityQueue<PeekingInput<T>>(sources.size(), inputComparator);
+            _pq = new PriorityQueue<PeekingInput<T>>(Math.max(1, sources.size()), inputComparator);
             try {
                 for (Input<? extends T> it : sources) {
                     PeekingInput<T> pi = peekingInput(it);
