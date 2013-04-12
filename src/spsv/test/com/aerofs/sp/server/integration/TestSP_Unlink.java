@@ -18,6 +18,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.testng.Assert;
 
+import java.util.Collection;
 import java.util.Collections;
 
 import static org.mockito.Mockito.when;
@@ -141,5 +142,43 @@ public class TestSP_Unlink extends AbstractSPCertificateBasedTest
         reply = service.getCRL().get();
         assertTrue(reply.getSerialList().size() == 1);
         assertTrue(reply.getSerialList().get(0) == getLastSerialNumber());
+    }
+
+    @Test
+    public void getPeerDevicesShouldNotReturnUnlinkedDevice()
+            throws Exception
+    {
+        Collection<Device> devices;
+
+        sqlTrans.begin();
+        devices = TEST_1_USER.getPeerDevices();
+        sqlTrans.commit();
+        Assert.assertEquals(1, devices.size());
+
+        service.unlinkDevice(device.id().toPB(), false);
+
+        sqlTrans.begin();
+        devices = TEST_1_USER.getPeerDevices();
+        sqlTrans.commit();
+        Assert.assertEquals(0, devices.size());
+    }
+
+    @Test
+    public void getDevicesShouldNotReturnUnlinkedDevice()
+            throws Exception
+    {
+        Collection<Device> devices;
+
+        sqlTrans.begin();
+        devices = TEST_1_USER.getDevices();
+        sqlTrans.commit();
+        Assert.assertEquals(1, devices.size());
+
+        service.unlinkDevice(device.id().toPB(), false);
+
+        sqlTrans.begin();
+        devices = TEST_1_USER.getDevices();
+        sqlTrans.commit();
+        Assert.assertEquals(0, devices.size());
     }
 }
