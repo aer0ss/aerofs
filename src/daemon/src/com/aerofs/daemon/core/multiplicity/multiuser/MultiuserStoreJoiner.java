@@ -32,7 +32,8 @@ public class MultiuserStoreJoiner implements IStoreJoiner
     }
 
     @Override
-    public void joinStore_(SIndex sidx, SID sid, String folderName, Trans t) throws Exception
+    public void joinStore_(SIndex sidx, SID sid, String folderName, boolean external, Trans t)
+            throws Exception
     {
         // sigh... we create a root store for TeamServer clients to simplify the server-side
         // code so we have to explicitly ignore it here because:

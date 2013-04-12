@@ -33,6 +33,7 @@ import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
 import org.slf4j.Logger;
 
+import javax.annotation.Nullable;
 import java.io.File;
 import java.sql.SQLException;
 import java.util.Collections;
@@ -63,18 +64,28 @@ public class ACLSynchronizer
     private final CfgLocalUser _cfgLocalUser;
     private final SPBlockingClient.Factory _factSP;
 
+    private static class StoreACL
+    {
+        public @Nullable String _name;
+        public final boolean _external;
+        public final Map<UserID, Role> _roles;
+
+        StoreACL(boolean ext)
+        {
+            _external = ext;
+            _roles = Maps.newHashMap();
+        }
+    }
+
     private class ServerACLReturn
     {
         final long  _serverEpoch;
-        final Map<SID, Map<UserID, Role>> _acl;
-        final Map<SID, String> _newStoreNames;
+        final Map<SID, StoreACL> _acl;
 
-        private ServerACLReturn(long serverEpoch, Map<SID, Map<UserID, Role>> acl,
-                Map<SID, String> newStoreNames)
+        private ServerACLReturn(long serverEpoch, Map<SID, StoreACL> acl)
         {
             _serverEpoch = serverEpoch;
             _acl = acl;
-            _newStoreNames = newStoreNames;
         }
     }
 
@@ -208,9 +219,10 @@ public class ACLSynchronizer
 
         _lacl.clear_(t);
 
-        for (Map.Entry<SID, Map<UserID, Role>> entry : serverACLReturn._acl.entrySet()) {
+        for (Map.Entry<SID, StoreACL> entry : serverACLReturn._acl.entrySet()) {
             SID sid = entry.getKey();
-            Map<UserID, Role> roles = entry.getValue();
+            StoreACL storeACL = entry.getValue();
+            Map<UserID, Role> roles = storeACL._roles;
 
             // the local user should always be present in the ACL for each store in the reply
             if (!roles.containsKey(_cfgLocalUser.get())) {
@@ -227,9 +239,8 @@ public class ACLSynchronizer
 
             if (!stores.contains(sidx) && (_sidx2sid.getNullable_(sidx) == null) && !noAutoJoin) {
                 // not known and accessible: auto-join
-                assert serverACLReturn._newStoreNames.containsKey(sid) : sid;
-                String folderName = serverACLReturn._newStoreNames.get(sid);
-                _storeJoiner.joinStore_(sidx, sid, folderName, t);
+                assert storeACL._name != null : sid;
+                _storeJoiner.joinStore_(sidx, sid, storeACL._name, storeACL._external, t);
             }
             stores.remove(sidx);
         }
@@ -273,39 +284,36 @@ public class ACLSynchronizer
         }
 
         long serverEpoch = aclReply.getEpoch();
+        Map<SID, StoreACL> acl = newHashMapWithExpectedSize(aclReply.getStoreAclCount());
         l.info("server return acl with epoch:" + serverEpoch);
 
         if (aclReply.getStoreAclCount() == 0) {
-            return new ServerACLReturn(serverEpoch, Collections.<SID, Map<UserID, Role>>emptyMap(),
-                    Collections.<SID, String>emptyMap());
+            return new ServerACLReturn(serverEpoch, acl);
         }
 
         // keep track of new stores: we need to query their names from SP
         List<ByteString> newStores = Lists.newArrayList();
-        Map<SID, Map<UserID, Role>> acl = newHashMapWithExpectedSize(aclReply.getStoreAclCount());
         for (PBStoreACL storeACL : aclReply.getStoreAclList()) {
             SID sid = new SID(storeACL.getStoreId());
 
-            // if the acl map doesn't already contain an entry for this sid, then add an empty
-            // hash map for this
-            // FWIW, it's longer to use "newHashMapWithExpectedSize" here than to simply call new
-
             if (!acl.containsKey(sid)) {
-                acl.put(sid, new HashMap<UserID, Role>(storeACL.getSubjectRoleCount()));
+                acl.put(sid, new StoreACL(storeACL.getExternal()));
                 if (isNewStore_(sid)) {
                     l.debug("new store {}", sid);
                     newStores.add(sid.toPB());
                 }
             }
 
-            Map<UserID, Role> subjectToRoleMap = acl.get(sid);
+            Map<UserID, Role> subjectToRoleMap = acl.get(sid)._roles;
             for (PBSubjectRolePair pbPair : storeACL.getSubjectRoleList()) {
                 SubjectRolePair srp = new SubjectRolePair(pbPair);
                 subjectToRoleMap.put(srp._subject, srp._role);
             }
         }
 
-        return new ServerACLReturn(serverEpoch, acl, getStoreNames_(sp, newStores));
+        getStoreNames_(sp, newStores, acl);
+
+        return new ServerACLReturn(serverEpoch, acl);
     }
 
     private boolean isNewStore_(SID sid) throws SQLException
@@ -314,10 +322,10 @@ public class ACLSynchronizer
         return (sidx == null || _lacl.get_(sidx).get(_cfgLocalUser.get()) == null);
     }
 
-    private Map<SID, String> getStoreNames_(SPBlockingClient sp, List<ByteString> storeIds)
+    private void getStoreNames_(SPBlockingClient sp, List<ByteString> storeIds,
+            Map<SID, StoreACL> acl)
             throws Exception
     {
-        Map<SID, String> storeNames = Maps.newHashMap();
         if (!storeIds.isEmpty()) {
             Token tk = _tc.acquireThrows_(Cat.UNLIMITED, "spfoldername");
             TCB tcb = null;
@@ -326,14 +334,13 @@ public class ACLSynchronizer
                 GetSharedFolderNamesReply reply = sp.getSharedFolderNames(storeIds);
                 assert storeIds.size() == reply.getFolderNameCount();
                 for (int i = 0; i < storeIds.size(); ++i) {
-                    storeNames.put(new SID(storeIds.get(i)), reply.getFolderName(i));
+                    acl.get(new SID(storeIds.get(i)))._name = reply.getFolderName(i);
                 }
             } finally {
                 if (tcb != null) tcb.pseudoResumed_();
                 tk.reclaim_();
             }
         }
-        return storeNames;
     }
 
     /**

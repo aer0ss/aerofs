@@ -38,11 +38,16 @@ import com.google.protobuf.ByteString;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
 import org.mockito.Mock;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
 import java.net.URL;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
@@ -58,6 +63,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
+@RunWith(value = Parameterized.class)
 public class TestACLSynchronizer extends AbstractTest
 {
     @Mock TC tc;
@@ -86,6 +92,22 @@ public class TestACLSynchronizer extends AbstractTest
     UserID user2 = UserID.fromInternal("user2@foo.bar");
 
     SID sid1 = SID.generate();
+
+    private final boolean external;
+
+    public TestACLSynchronizer(boolean external)
+    {
+        this.external = external;
+    }
+
+    @Parameters
+    public static Collection<Object[]> data() {
+        return Arrays.asList(
+                new Object[][]{
+                        {false},
+                        {true},
+                });
+    }
 
     @Before
     public void setUp() throws Exception
@@ -118,7 +140,9 @@ public class TestACLSynchronizer extends AbstractTest
 
     private PBStoreACL storeACL(SID sid, SubjectRolePair... roles)
     {
-        PBStoreACL.Builder bd = PBStoreACL.newBuilder().setStoreId(sid.toPB());
+        PBStoreACL.Builder bd = PBStoreACL.newBuilder()
+                .setStoreId(sid.toPB())
+                .setExternal(external);
         for (SubjectRolePair r : roles) bd.addSubjectRole(r.toPB());
         return bd.build();
     }
@@ -270,7 +294,7 @@ public class TestACLSynchronizer extends AbstractTest
         newRoles.put(user1, Role.OWNER);
         newRoles.put(user2, Role.EDITOR);
 
-        verify(storeJoiner).joinStore_(eq(sidx), eq(sid1), eq("shared"), eq(t));
+        verify(storeJoiner).joinStore_(eq(sidx), eq(sid1), eq("shared"), eq(external), eq(t));
     }
 
     @Test

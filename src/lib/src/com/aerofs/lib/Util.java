@@ -69,8 +69,8 @@ public abstract class Util
 
         // Register exception types from lib
         Exceptions.registerExceptionTypes(
-                new ImmutableMap.Builder<Type, Class<? extends AbstractExWirable>>().put(
-                        Type.DEVICE_ID_ALREADY_EXISTS, ExDeviceIDAlreadyExists.class)
+                new ImmutableMap.Builder<Type, Class<? extends AbstractExWirable>>()
+                        .put(Type.DEVICE_ID_ALREADY_EXISTS, ExDeviceIDAlreadyExists.class)
                         .put(Type.ALREADY_INVITED, ExAlreadyInvited.class)
                         .put(Type.INDEXING, ExIndexing.class)
                         .put(Type.PARENT_ALREADY_SHARED, ExParentAlreadyShared.class)
@@ -81,6 +81,8 @@ public abstract class Util
                         .put(Type.UI_MESSAGE, ExUIMessage.class)
                         .put(Type.NO_STRIPE_CUSTOMER_ID, ExNoStripeCustomerID.class)
                         .put(Type.NOT_AUTHENTICATED, ExNotAuthenticated.class)
+                        .put(Type.CANNOT_INVITE_SELF, ExCannotInviteSelf.class)
+                        .put(Type.INVITEE_LIST_EMPTY, ExInviteeListEmpty.class)
 
                         // The following exceptions are consumed by Python clients only. No need to
                         // list them here for the time being.

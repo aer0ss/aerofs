@@ -19,7 +19,7 @@ public interface IStoreJoiner
      * Create logical/physical objects necessary to complete joining a store to which
      * we recently got access.
      */
-    void joinStore_(SIndex sidx, SID sid, String folderName, Trans t) throws Exception;
+    void joinStore_(SIndex sidx, SID sid, String folderName, boolean external, Trans t) throws Exception;
 
     /**
      * Remove logical/physical objects to complete kickout of a store to which we recently lost

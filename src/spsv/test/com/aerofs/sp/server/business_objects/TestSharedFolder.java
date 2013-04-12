@@ -154,6 +154,23 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
     }
 
     @Test
+    public void setPending_shouldNotRemoveTeamServerIfOWNER()
+            throws Exception
+    {
+        User user = saveUser();
+        SharedFolder sf = saveSharedFolder(getTeamServerUser(user));
+        assertEquals(sf.getMemberRoleNullable(getTeamServerUser(user)), Role.OWNER);
+
+        // make sure TS not downgraded by adding a user
+        sf.addMemberACL(user, Role.EDITOR);
+        assertEquals(sf.getMemberRoleNullable(getTeamServerUser(user)), Role.OWNER);
+
+        // make sure TS not kicked out when last org member leaves
+        sf.setPending(user);
+        assertEquals(sf.getMemberRoleNullable(getTeamServerUser(user)), Role.OWNER);
+    }
+
+    @Test
     public void setMember_shouldAddTeamServer()
             throws Exception
     {
@@ -258,6 +275,23 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
         assertNull(sf.getMemberRoleNullable(user2));
 
         assertNull(sf.getMemberRoleNullable(tsUser));
+    }
+
+    @Test
+    public void deleteMemberOrPendingACL_shouldNotRemoveTeamServerIfOWNER()
+            throws Exception
+    {
+        User user = saveUser();
+        SharedFolder sf = saveSharedFolder(getTeamServerUser(user));
+        assertEquals(sf.getMemberRoleNullable(getTeamServerUser(user)), Role.OWNER);
+
+        // make sure TS not downgraded by adding a user
+        sf.addMemberACL(user, Role.EDITOR);
+        assertEquals(sf.getMemberRoleNullable(getTeamServerUser(user)), Role.OWNER);
+
+        // make sure TS not kicked out when last org member leaves
+        sf.deleteMemberOrPendingACL(user);
+        assertEquals(sf.getMemberRoleNullable(getTeamServerUser(user)), Role.OWNER);
     }
 
     @Test(expected = AssertionError.class)

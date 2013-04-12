@@ -177,6 +177,21 @@ public class SharedFolder
         return _f._db.getMembers(_sid);
     }
 
+    /**
+     * Mark shared folder as external root for a given user
+     *
+     * NB: the external flag should be set upon sharing/joining and never modified afterwards
+     */
+    public void setExternal(User user, boolean external)
+            throws SQLException, ExNotFound, ExAlreadyExist
+    {
+        _f._db.setExternal(_sid, user.id(), external);
+    }
+
+    public boolean isExternal(User user) throws SQLException
+    {
+        return _f._db.isExternal(_sid, user.id());
+    }
 
     /**
      * Add the user's team server ID to the ACL. No-op if there are other users on the shared folder
@@ -252,6 +267,11 @@ public class SharedFolder
             throws SQLException, ExNotFound
     {
         Organization org = user.getOrganization();
+
+        // the TeamServer user can only be an OWNER of a shared folder if the shared folder
+        // was created from a TeamServer, in which case we don't want the TeamServer ACL to be
+        // affected by the coming and going of users of the organization
+        if (getMemberRoleNullable(org.getTeamServerUser()) == Role.OWNER) return false;
 
         for (User otherUser : getMembers()) {
             if (otherUser.equals(user)) continue;

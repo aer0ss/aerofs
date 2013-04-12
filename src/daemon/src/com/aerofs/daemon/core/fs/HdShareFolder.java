@@ -188,7 +188,8 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
             tcb = tk.pseudoPause_("sp-share");
             SPBlockingClient sp = SPClientFactory.newBlockingClient(Cfg.user());
             sp.signInRemote();
-            sp.shareFolder(folderName, sid.toPB(), roles, emailNote);
+            // TODO: support sharing external root
+            sp.shareFolder(folderName, sid.toPB(), roles, emailNote, false);
         } finally {
             if (tcb != null) tcb.pseudoResumed_();
             tk.reclaim_();

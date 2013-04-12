@@ -50,19 +50,40 @@ public class AbstractSPFolderTest extends AbstractSPTest
      *
      * The folder name is always sid.toStringFormal(). This is required by getSharedFolderCode().
      */
-    protected void shareFolder(User sharer, SID sid, User sharee, Role role)
+    protected void shareFolder(User sharer, SID sid, User sharee, Role role) throws Exception
+    {
+        shareFolderImpl(sharer, sid, sharee, role, false);
+    }
+
+    protected void shareFolderExternal(User sharer, SID sid, User sharee, Role role)
+            throws Exception
+    {
+        shareFolderImpl(sharer, sid, sharee, role, true);
+    }
+
+    private void shareFolderImpl(User sharer, SID sid, User sharee, Role role, boolean ext)
             throws Exception
     {
         setSessionUser(sharer);
-        service.shareFolder(sid.toStringFormal(), sid.toPB(), toPB(sharee, role), "");
+        service.shareFolder(sid.toStringFormal(), sid.toPB(), toPB(sharee, role), "", ext);
     }
 
     protected void joinSharedFolder(User sharee, SID sid) throws Exception
     {
+        joinSharedFolderImpl(sharee, sid, false);
+    }
+
+    protected void joinSharedFolderExternal(User sharee, SID sid) throws Exception
+    {
+        joinSharedFolderImpl(sharee, sid, true);
+    }
+
+    protected void joinSharedFolderImpl(User sharee, SID sid, boolean ext) throws Exception
+    {
         User oldUser = sessionUser.exists() ? sessionUser.get() : null;
 
         setSessionUser(sharee);
-        service.joinSharedFolder(sid.toPB());
+        service.joinSharedFolder(sid.toPB(), ext);
 
         if (oldUser != null) setSessionUser(oldUser);
     }
