@@ -12,7 +12,7 @@ def get_devices(user, spconn):
   devices=[]
   spcursor = spconn.cursor()
   try:
-    spcursor.execute("""select d_id, d_name from sp_device where d_owner_id like %s""", (user,))
+    spcursor.execute("""select d_id, d_name from sp_device where d_owner_id like %s and d_unlinked=0""", (user,))
 
     row = spcursor.fetchone()
     while row != None:
