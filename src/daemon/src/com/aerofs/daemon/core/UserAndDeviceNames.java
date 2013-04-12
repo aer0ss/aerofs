@@ -120,7 +120,7 @@ public class UserAndDeviceNames
             reply = getDevicesInfoFromSP_(dids);
         } catch (ExBadCredential ex) {
             _lastSPLoginFailureTime = System.currentTimeMillis();
-            l.warn("ignored: " + Util.e(e, IOException.class));
+            l.warn("ignored: " + Util.e(ex, IOException.class));
             return false;
         } catch (Exception e) {
             l.warn("ignored: " + Util.e(e, IOException.class));
