@@ -4,6 +4,8 @@
 
 package com.aerofs.gui.tray;
 
+import org.eclipse.swt.widgets.UbuntuTrayItem;
+
 public class SystemTray
 {
     private final TrayIcon _icon;
@@ -16,7 +18,9 @@ public class SystemTray
         _icon = new TrayIcon(this);
         _progs = new Progresses(this);
         _bm = new Balloons(_icon);
-        _menu = menuProvider.createMenu(_icon);
+        _menu = menuProvider.createMenu(_icon, UbuntuTrayItem.supported() ?
+                RebuildDisposition.REBUILD : RebuildDisposition.REUSE);
+        _menu.addListener(_icon);
      }
 
     public Balloons getBalloons()
@@ -51,5 +55,4 @@ public class SystemTray
     {
         if (_menu != null) _menu.setVisible(b);
     }
-
 }

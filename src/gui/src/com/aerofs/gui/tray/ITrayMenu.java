@@ -9,4 +9,5 @@ public interface ITrayMenu
     public void setVisible(boolean b);
     public void enable();
     public void dispose();
+    public void addListener(ITrayMenuListener l);
 }

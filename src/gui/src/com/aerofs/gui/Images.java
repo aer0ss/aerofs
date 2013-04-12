@@ -5,6 +5,7 @@ import java.util.Map;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.lib.Param;
+import com.google.common.base.Objects;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.program.Program;
@@ -246,20 +247,21 @@ public class Images {
 
     /**
      * @param index may by 0, 1, 2, ... Ignored if progress == false
-     * @return
+     * @return icon name
      */
-    public static Image getTrayIcon(boolean notification, int index)
+    public static String getTrayIconName(boolean notification, int index)
     {
         final int TRAY_ICON_COUNT = 14;
-
         StringBuilder sb = new StringBuilder("tray");
         if (notification) sb.append("n");
-
         sb.append(index % TRAY_ICON_COUNT);
-        sb.append(".png");
+        return sb.toString();
+    }
 
-        Image img = get(sb.toString());
-        return img == null ? get("tray0.png") : img;
+    public static Image getTrayIcon(String iconName)
+    {
+        Image img = get(iconName + ".png");
+        return img != null ? img : get("tray0.png");
     }
 
     /**

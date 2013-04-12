@@ -67,14 +67,14 @@ public class BalloonsImplSWT implements IBalloonsImpl {
     @Override
     public boolean hasVisibleBalloon()
     {
-        return !_ti.isDisposed() && _ti.getToolTip() != null
+        return _ti != null && !_ti.isDisposed() && _ti.getToolTip() != null
                 && !_ti.getToolTip().isDisposed()
                 && _ti.getToolTip().isVisible();
     }
 
     private void open(ToolTip tip)
     {
-        if (!_ti.isDisposed()) {
+        if (_ti != null && !_ti.isDisposed()) {
             _ti.setToolTip(tip);
             tip.setVisible(true);
         }
@@ -82,7 +82,7 @@ public class BalloonsImplSWT implements IBalloonsImpl {
 
     private void closeCurrent()
     {
-        if (!_ti.isDisposed() && _ti.getToolTip() != null
+        if (_ti != null && !_ti.isDisposed() && _ti.getToolTip() != null
                 && !_ti.getToolTip().isDisposed()) {
             ToolTip tt = _ti.getToolTip();
             _ti.setToolTip(null);

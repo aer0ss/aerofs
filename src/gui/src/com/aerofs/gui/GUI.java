@@ -141,8 +141,6 @@ public class GUI implements IUI
         SystemTray st = GUI.get().st();
         if (st != null) st.enableMenu();
 
-        if (OSUtil.isLinux()) UbuntuTraySettings.checkAndUpdateUbuntuTraySettings();
-
         // Offer to install the shell extension if it's not installed
         if (shellExtensionShouldBeInstalled()) {
             try {

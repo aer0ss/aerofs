@@ -5,6 +5,7 @@
 package com.aerofs.gui.tray;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.gui.GUI;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.ex.ExIndexing;
@@ -28,9 +29,9 @@ import static com.google.common.util.concurrent.Futures.addCallback;
 public class IndexingPoller
 {
     private static final Logger l = Loggers.getLogger(IndexingPoller.class);
+    private final IScheduler _sched;
 
     private volatile boolean _isIndexingDone;
-    private final IScheduler _sched;
 
     public interface IIndexingCompletionListener
     {
@@ -58,7 +59,8 @@ public class IndexingPoller
 
     private void schedulePingDaemon()
     {
-        _sched.schedule(new AbstractEBSelfHandling() {
+        _sched.schedule(new AbstractEBSelfHandling()
+        {
             @Override
             public void handle_()
             {
@@ -75,13 +77,16 @@ public class IndexingPoller
             public void onSuccess(Common.Void aVoid)
             {
                 l.info("indexing done");
-
-                synchronized (IndexingPoller.this) {
-                    _isIndexingDone = true;
-                    for (IIndexingCompletionListener listener : _listeners) {
-                        listener.onIndexingDone();
+                GUI.get().asyncExec(new Runnable() {
+                    @Override
+                    public void run()
+                    {
+                        _isIndexingDone = true;
+                        for (IIndexingCompletionListener listener : _listeners) {
+                            listener.onIndexingDone();
+                        }
                     }
-                }
+                });
             }
 
             @Override
@@ -90,7 +95,6 @@ public class IndexingPoller
                 if (!(t instanceof ExIndexing)) {
                     l.warn("failed to ping daemon {}", Util.e(t, ClosedChannelException.class));
                 }
-
                 schedulePingDaemon();
             }
         });

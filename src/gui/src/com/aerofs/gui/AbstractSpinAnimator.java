@@ -7,6 +7,8 @@ package com.aerofs.gui;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.widgets.Widget;
 
+import javax.annotation.Nullable;
+
 /**
  * Helper class to integrate a nice-looking spinner in arbitrary UI components that can display an
  * Image.
@@ -16,9 +18,13 @@ public abstract class AbstractSpinAnimator
     private int _idx;
     private boolean _animating;
 
-    private final Widget _w;
+    // We need to support a null widget for cases relating to the tray menu where the widget may
+    // not exist.  The semantics are:
+    // 1) if a widget is provided, the timer dies with it
+    // 2) if a null is provided, the timer does not die until stop() is called.
+    private final @Nullable Widget _w;
 
-    public AbstractSpinAnimator(Widget w)
+    public AbstractSpinAnimator(@Nullable Widget w)
     {
         _w = w;
     }
@@ -38,10 +44,10 @@ public abstract class AbstractSpinAnimator
         @Override
         public void run()
         {
-            if (_w.isDisposed() || !_animating) return;
+            if ((_w != null && _w.isDisposed()) || !_animating) return;
 
             setImage(Images.getSpinnerFrame(_idx++));
-            _w.getDisplay().timerExec(Images.getSpinnerFrameDelay(), _animator);
+            GUI.get().disp().timerExec(Images.getSpinnerFrameDelay(), _animator);
         }
     };
 
