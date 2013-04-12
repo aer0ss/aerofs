@@ -69,7 +69,6 @@ public class DynamicUrlProperty implements DynamicProperty<URL>
         return cachedValue;
     }
 
-    @Override
     public URL get()
     {
         return getValue();

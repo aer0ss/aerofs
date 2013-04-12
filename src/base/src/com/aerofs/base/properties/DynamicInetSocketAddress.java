@@ -80,7 +80,6 @@ public class DynamicInetSocketAddress implements DynamicProperty<InetSocketAddre
         return cachedValue;
     }
 
-    @Override
     public InetSocketAddress get()
     {
         return getValue();

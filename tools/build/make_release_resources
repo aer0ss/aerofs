@@ -64,7 +64,7 @@ function copy_resources_to_local_release_directories() {
     mkdir -p "${AEROFS_RELEASE_INST_DIR}/"
 
     # Copy "resource/client" files
-    cp "${CLIENT_RESOURCE_DIR}/common/*.properties" "${AEROFS_RELEASE_DIR}/"
+    cp "${CLIENT_RESOURCES_DIR}"/common/*.properties "${AEROFS_RELEASE_DIR}/"
     cp -R "${CLIENT_RESOURCES_DIR}/common"/* "${AEROFS_RELEASE_DIR}/"
     cp -R "${CLIENT_RESOURCES_DIR}/osx"/* "${AEROFS_RELEASE_OSX_DIR}/"
     cp -R "${CLIENT_RESOURCES_DIR}/win"/* "${AEROFS_RELEASE_WIN_DIR}/"
@@ -76,7 +76,6 @@ function copy_resources_to_local_release_directories() {
     cp "${CLIENT_RESOURCES_DIR}"/linux.inst/aerofs "${AEROFS_RELEASE_INST_DIR}/${AEROFS_PRODUCT_UNIX}"
     mv "${AEROFS_RELEASE_LINUX_DIR}/aerofs.desktop" "${AEROFS_RELEASE_LINUX_DIR}/${AEROFS_PRODUCT_UNIX}.desktop"
 
-    rm "${AEROFS_RELEASE_DIR}/labeling-client.properties"
     rm "${AEROFS_RELEASE_DIR}/labeling-teamserver.properties"
 
     # Copy S3 libs if necessary

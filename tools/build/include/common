@@ -57,10 +57,10 @@ if [[ "$PRODUCT" != "CLIENT" && "$PRODUCT" != "TEAM_SERVER" ]]; then
     echo "error: invalid build product $PRODUCT. Expected CLIENT or TEAM_SERVER." >&2
     exit $ERRBADPRODUCT
 fi
-if [[ "$PRODUCT" == "CLIENT" ]]; then
-    readonly PROPERTIES_FILE="$CLIENT_RESOURCES_DIR"/common/labeling-client.properties
-else
+if [[ "$PRODUCT" == "TEAM_SERVER" ]]; then
     readonly PROPERTIES_FILE="$CLIENT_RESOURCES_DIR"/common/labeling-teamserver.properties
+else
+    readonly PROPERTIES_FILE="$CLIENT_RESOURCES_DIR"/common/labeling.properties
 fi
 
 # Local release directory
