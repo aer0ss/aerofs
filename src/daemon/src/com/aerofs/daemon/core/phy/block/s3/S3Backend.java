@@ -25,6 +25,7 @@ import com.amazonaws.services.s3.model.S3Object;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 
+import javax.annotation.Nullable;
 import javax.crypto.SecretKey;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
@@ -73,8 +74,6 @@ public class S3Backend implements IBlockStorageBackend
         } catch (InvalidKeySpecException e) {
             ExitCode.S3_BAD_CREDENTIALS.exit();
         }
-
-        new S3MagicChunk(this).init_();
     }
 
     @Override
@@ -194,12 +193,12 @@ public class S3Backend implements IBlockStorageBackend
     }
 
     @Override
-    public void deleteBlock(final ContentHash key, Token tk) throws IOException
+    public void deleteBlock(final ContentHash key, @Nullable Token tk) throws IOException
     {
         try {
             TCB tcb = null;
             try {
-                tcb = tk.pseudoPause_("s3-del");
+                tcb = tk != null ? tk.pseudoPause_("s3-del") : null;
                 AWSRetry.retry(new Callable<Void>()
                 {
                     @Override

@@ -59,6 +59,7 @@ import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.Set;
 
 /**
  * IPhysicalStorage interface to a block-based storage backend
@@ -84,6 +85,7 @@ class BlockStorage implements IPhysicalStorage
     private final BlockRevProvider _revProvider = new BlockRevProvider();
     private FrequentDefectSender _fds;
     private ExportHelper _eh;
+    private Set<IBlockStorageInitable> _initables;
 
     private final ProgressIndicators _pi = ProgressIndicators.get();
 
@@ -97,7 +99,7 @@ class BlockStorage implements IPhysicalStorage
     public void inject_(CfgAbsDefaultAuxRoot absDefaultAuxRoot, CfgStoragePolicy storagePolicy,
             TC tc, TransManager tm, CoreScheduler sched,
             InjectableFile.Factory fileFactory, IBlockStorageBackend bsb, BlockStorageDatabase bsdb,
-            FrequentDefectSender fds, ExportHelper eh)
+            FrequentDefectSender fds, ExportHelper eh, Set<IBlockStorageInitable> initables)
     {
         _tc = tc;
         _tm = tm;
@@ -108,6 +110,7 @@ class BlockStorage implements IPhysicalStorage
         _bsdb = bsdb;
         _fds = fds;
         _eh = eh;
+        _initables = initables;
 
         final String prefixDirPath = Objects.firstNonNull(exportRoot(), absDefaultAuxRoot.get());
         _prefixDir = _fileFactory.create(prefixDirPath, Param.AuxFolder.PREFIX._name);
@@ -119,6 +122,8 @@ class BlockStorage implements IPhysicalStorage
         ensurePrefixDirExists();
         initializeBlockStorage();
         rescheduleFullExportIfExportPartiallyCompleted();
+
+        for (IBlockStorageInitable i : _initables) i.init_(_bsb);
     }
 
     private void rescheduleFullExportIfExportPartiallyCompleted()

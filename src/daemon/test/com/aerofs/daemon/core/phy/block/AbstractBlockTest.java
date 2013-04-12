@@ -48,6 +48,11 @@ public class AbstractBlockTest extends AbstractTest
         }
     }
 
+    protected static TestBlock newEmptyBlock()
+    {
+        return new TestBlock(new byte[0]);
+    }
+
     protected static TestBlock newBlock()
     {
         return new TestBlock(UniqueID.generate().getBytes());

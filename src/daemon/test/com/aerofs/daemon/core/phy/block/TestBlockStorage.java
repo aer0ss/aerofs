@@ -60,6 +60,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 import static org.mockito.Matchers.any;
@@ -148,7 +149,8 @@ public class TestBlockStorage extends AbstractBlockTest
 
         // shame @InjectMocks does not deal with a mix of Mock and real objects...
         bs = new BlockStorage();
-        bs.inject_(auxRoot, storagePolicy, tc,  tm, sched, fileFactory, bsb, bsdb, fds, eh);
+        bs.inject_(auxRoot, storagePolicy, tc,  tm, sched, fileFactory, bsb, bsdb, fds, eh,
+                Collections.<IBlockStorageInitable>emptySet());
         bs.init_();
 
         useHistory = true;

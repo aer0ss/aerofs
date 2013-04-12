@@ -1,13 +1,15 @@
 /*
- * Copyright (c) Air Computing Inc., 2012.
+ * Copyright (c) Air Computing Inc., 2013.
  */
 
 package com.aerofs.daemon.core.phy.block.s3;
 
 import com.aerofs.daemon.core.phy.block.BlockStorageModules.AbstractBackendModule;
+import com.aerofs.daemon.core.phy.block.IBlockStorageInitable;
 import com.aerofs.lib.cfg.CfgDatabase;
 import com.aerofs.daemon.core.phy.block.s3.S3Config.S3EncryptionPasswordConfig;
 import com.aerofs.daemon.core.phy.block.s3.S3Config.S3EncryptionPasswordConfig.S3EncryptionPasswordFromDB;
+import com.aerofs.lib.guice.GuiceUtil;
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.services.s3.AmazonS3;
@@ -21,6 +23,8 @@ public class S3BackendModule extends AbstractBackendModule
     protected void configure()
     {
         bindBackend().to(S3Backend.class).in(Scopes.SINGLETON);
+
+        GuiceUtil.multibind(binder(), IBlockStorageInitable.class, S3MagicChunk.class);
     }
 
     @Provides

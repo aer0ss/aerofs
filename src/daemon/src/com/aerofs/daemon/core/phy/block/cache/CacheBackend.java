@@ -29,6 +29,7 @@ import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import org.slf4j.Logger;
 
+import javax.annotation.Nullable;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -204,7 +205,7 @@ public class CacheBackend implements IBlockStorageBackend
     }
 
     @Override
-    public void deleteBlock(ContentHash key, Token tk) throws IOException
+    public void deleteBlock(ContentHash key, @Nullable Token tk) throws IOException
     {
         try {
             deleteFromCache_(key);

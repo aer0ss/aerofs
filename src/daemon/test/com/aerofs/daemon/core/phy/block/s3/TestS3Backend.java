@@ -34,7 +34,9 @@ public class TestS3Backend extends AbstractBlockTest
     {
         bsb = new S3Backend(s3TestConfig.getS3Client(testTempDirFactory),
                 s3TestConfig.getBucketIdConfig(), s3TestConfig.getS3CryptoConfig());
+        S3MagicChunk magic = new S3MagicChunk();
         bsb.init_();
+        magic.init_(bsb);
     }
 
     @After
@@ -61,6 +63,14 @@ public class TestS3Backend extends AbstractBlockTest
                 Assert.assertTrue(ae.getStatusCode() == 404 && ae.getErrorCode().equals("NoSuchKey"));
             }
         }
+    }
+
+    // The magic chunk is an empty block, we should always be able to fetch it after S3Backend.init_
+    @Test
+    public void shouldFetchEmptyBlock() throws Exception
+    {
+        TestBlock b = newEmptyBlock();
+        Assert.assertArrayEquals(b._content, ByteStreams.toByteArray(bsb.getBlock(b._key)));
     }
 
     @Test

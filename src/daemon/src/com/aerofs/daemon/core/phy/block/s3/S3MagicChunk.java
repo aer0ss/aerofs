@@ -8,15 +8,21 @@ import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.phy.block.AbstractChunker;
 import com.aerofs.daemon.core.phy.block.BlockInputStream;
+import com.aerofs.daemon.core.phy.block.IBlockStorageBackend;
+import com.aerofs.daemon.core.phy.block.IBlockStorageInitable;
+import com.aerofs.daemon.core.tc.Cat;
+import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.lib.HashStream;
 import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.SystemUtil.ExitCode;
 import com.amazonaws.AmazonServiceException;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.InputSupplier;
+import com.google.inject.Inject;
 import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URISyntaxException;
@@ -28,20 +34,27 @@ import java.util.Arrays;
  * The magic chunk is just an encoded empty chunk that's used to check that the client
  * has access to the S3 bucket and that the S3 encryption password is correct. If the chunk
  * doesn't exist yet it will be uploaded.
+ *
+ * Because the S3 backend might be wrapped by arbitray proxy backends, this class cannot simply
+ * be owned and initialized by the S3Backend itself. Instead it needs to use the outermost
+ * backend in the proxy chain. Doing this without creating a cyclic dependency in Guice requires
+ * some creativity. The approach taken was to use multibind to add arbitrary (unordered) init_ tasks
+ * to BlockStorage through the IBlockStorageInitable interface.
  */
-class S3MagicChunk
+class S3MagicChunk implements IBlockStorageInitable
 {
     private static final Logger l = Loggers.getLogger(S3MagicChunk.class);
 
-    private final S3Backend _bsb;
+    private IBlockStorageBackend _bsb;
 
-    S3MagicChunk(S3Backend bsb)
+    private static final byte[] MAGIC = {};
+    private static ContentHash MAGIC_HASH;
+
+    @Override
+    public void init_(IBlockStorageBackend bsb) throws IOException
     {
         _bsb = bsb;
-    }
 
-    public void init_() throws IOException
-    {
         try {
             checkMagicChunk();
         } catch (AmazonServiceException e) {
@@ -77,11 +90,29 @@ class S3MagicChunk
      */
     private void checkMagicChunk() throws IOException, AmazonServiceException
     {
-        byte[] magic = {};
+        HashStream hs = HashStream.newFileHasher();
+        hs.update(MAGIC, 0, MAGIC.length);
+        hs.close();
+        MAGIC_HASH = hs.getHashAttrib();
 
         try {
-            downloadMagicChunk(magic);
+            downloadMagicChunk();
             return;
+        } catch (EOFException e) {
+            // one-time magic chunk fix
+            // A refactor of the S3 backend broke the magic chunk logic a while back but it
+            // went unnoticed because the exception was erroneously swallowed until another
+            // refactor changed that
+            // The problem was that the magic chunk is simply a regular (empty) chunk and
+            // should therefore be stored/fetched using the whole backend proxy chain but
+            // which did not matter as long as encryption and compression where performed
+            // by the S3Backend itself but when GZipBackend was pulled out to be reused by
+            // LocalBackend this class was not updated and still used the S3Backend directly
+            // which broke the encoding of new magic chunks and decoding of old ones.
+            // "New" (i.e uncompressed) magic chunks created during between that change and
+            // this fix therefore need to be deleted and re-uploaded
+            l.info("magic chunk fix");
+            _bsb.deleteBlock(MAGIC_HASH, null);
         } catch (IOException e) {
             AmazonServiceException cause = getCauseOfClass(e, AmazonServiceException.class);
             if (cause == null) {
@@ -94,8 +125,8 @@ class S3MagicChunk
         }
 
         try {
-            uploadMagicChunk(magic);
-            downloadMagicChunk(magic);
+            uploadMagicChunk();
+            downloadMagicChunk();
         } catch (IOException e) {
             AmazonServiceException cause = getCauseOfClass(e, AmazonServiceException.class);
             if (cause == null) throw e;
@@ -113,32 +144,28 @@ class S3MagicChunk
         return null;
     }
 
-    private void downloadMagicChunk(byte[] magic) throws IOException
+    private void downloadMagicChunk() throws IOException
     {
-        HashStream hs = HashStream.newFileHasher();
-        hs.update(magic, 0, magic.length);
-        hs.close();
-        ContentHash hash = hs.getHashAttrib();
         byte[] bytes;
-        InputStream in = new BlockInputStream(_bsb, hash);
+        InputStream in = new BlockInputStream(_bsb, MAGIC_HASH);
         try {
             bytes = ByteStreams.toByteArray(in);
         } finally {
             in.close();
         }
 
-        if (!Arrays.equals(magic, bytes)) {
+        if (!Arrays.equals(MAGIC, bytes)) {
             throw new IOException("Incorrect magic chunk: expected "
-                    + BaseUtil.hexEncode(magic) + " actual "
+                    + BaseUtil.hexEncode(MAGIC) + " actual "
                     + BaseUtil.hexEncode(bytes));
         }
     }
 
-    private void uploadMagicChunk(byte[] magic) throws IOException
+    private void uploadMagicChunk() throws IOException
     {
         InputSupplier<? extends InputStream> input =
-                ByteStreams.newInputStreamSupplier(magic);
-        long length = magic.length;
+                ByteStreams.newInputStreamSupplier(MAGIC);
+        long length = MAGIC.length;
         AbstractChunker upload = new AbstractChunker(input, length, _bsb) {
             @Override
             protected void prePutBlock_(Block block) throws SQLException
@@ -151,7 +178,10 @@ class S3MagicChunk
         upload.setSkipEmpty(false);
         try {
             ContentHash hash = upload.splitAndStore_();
-            l.debug("magic hash: " + hash);
+            if (!hash.equals(MAGIC_HASH)) {
+                throw new IOException("Upload returns magic hash: " + hash.toHex()
+                        + " expected: " + MAGIC_HASH.toHex());
+            }
         } catch (SQLException e) {
             throw new IOException(e);
         }

@@ -13,6 +13,7 @@ import com.aerofs.lib.ex.ExFileNotFound;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.google.common.io.ByteStreams;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -77,7 +78,7 @@ public class LocalBackend implements IBlockStorageBackend
     }
 
     @Override
-    public void deleteBlock(ContentHash key, Token tk) throws IOException
+    public void deleteBlock(ContentHash key, @Nullable Token tk) throws IOException
     {
         InjectableFile block = getBlockFile(key);
         if (block.exists()) block.delete();

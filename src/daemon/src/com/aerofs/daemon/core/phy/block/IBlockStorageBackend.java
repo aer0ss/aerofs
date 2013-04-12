@@ -64,5 +64,5 @@ public interface IBlockStorageBackend
     /**
      * Remove a block from the storage backend
      */
-    void deleteBlock(ContentHash key, Token tk) throws IOException;
+    void deleteBlock(ContentHash key, @Nullable Token tk) throws IOException;
 }
