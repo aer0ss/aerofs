@@ -2,6 +2,7 @@
 Classes related to the certificate authority server implementation.
 """
 
+import os
 import socket
 import wsgiref.simple_server
 import aerofs.certauth.openssl
@@ -12,6 +13,7 @@ Application object parameter to make_server. Does HTTP request handling.
 class ApplicationObject(object):
 
     def __init__(self, cadir):
+        self._cadir = cadir
         self._openssl = aerofs.certauth.openssl.OpenSSLWrapper(cadir)
 
     def _set_response(self, response, code, length):
@@ -21,7 +23,18 @@ class ApplicationObject(object):
 
     def __call__(self, environ, response):
 
+        path_info = environ['PATH_INFO']
         query_string = environ['QUERY_STRING']
+
+        if len(os.path.split(path_info)) > 0 and os.path.split(path_info)[-1] == "cacert.pem":
+            cacert = ""
+            with open(self._cadir + '/ca-cert.pem') as cafile:
+                for line in cafile:
+                    cacert += line
+
+            self._set_response(response, "200 OK", len(cacert))
+            return cacert
+
         try:
             try:
                 request_body_size = int(environ['CONTENT_LENGTH'])
