@@ -19,6 +19,7 @@ void generateReactorSwitchCase(const MethodDescriptor* method, io::Printer* prin
 string CamelCaseToCapitalizedUnderscores(const string& input);
 string methodEnumName(const MethodDescriptor* method);
 string serviceInterfaceName(const ServiceDescriptor* service, bool fullyQualified);
+void generateBlockingMethod(const map<string, string>& vars, const bool has_arguments, const bool include_timeout, io::Printer* printer);
 
 /**
   Generate the public Service interface
@@ -182,10 +183,11 @@ void ServiceGenerator::generateBlockingStub(const ServiceDescriptor* service, io
     for (int i = 1; i < service->method_count(); i++) {
 
         const MethodDescriptor* method = service->method(i);
+        const int method_argument_count = method->input_type()->field_count();
 
         // generate a string with all the arguments separated by comma
         stringstream args;
-        for (int i = 0; i < method->input_type()->field_count(); i++) {
+        for (int i = 0; i < method_argument_count; i++) {
             if (i > 0) {
                 args << ", ";
             }
@@ -199,22 +201,40 @@ void ServiceGenerator::generateBlockingStub(const ServiceDescriptor* service, io
         vars["ReplyClass"] = ClassName(method->output_type());
         vars["args"] = args.str();
 
-        printer->Print(vars,
-                       "\n"
-                       "public $ReplyClass$ $methodName$($signature$) throws Exception\n"
-                       "{\n"
-                       "  try {\n"
-                       "    return com.google.common.util.concurrent.Futures.get(_stub.$methodName$($args$), Exception.class);\n"
-                       "  } catch (Exception e) {\n"
-                       "    if (e.getCause() instanceof Exception) {throw (Exception)e.getCause();}\n"
-                       "    else {throw e;}\n"
-                       "  }\n"
-                       "}\n"
-                       );
+        const bool has_arguments = method_argument_count > 0;
+        generateBlockingMethod(vars, has_arguments, false, printer);
+        generateBlockingMethod(vars, has_arguments, true, printer);
     }
 
     printer->Outdent();
     printer->Print("}\n");
+}
+
+void generateBlockingMethod(const map<string, string>& vars, const bool has_arguments, const bool include_timeout, io::Printer* printer)
+{
+    string method_signature = include_timeout
+            ? (has_arguments
+                    ? "public $ReplyClass$ $methodName$($signature$, long timeout, java.util.concurrent.TimeUnit unit) throws Exception\n"
+                    : "public $ReplyClass$ $methodName$(long timeout, java.util.concurrent.TimeUnit unit) throws Exception\n"
+                    )
+            : "public $ReplyClass$ $methodName$($signature$) throws Exception\n";
+
+    string blocking_get_call = include_timeout
+            ? "    return com.google.common.util.concurrent.Futures.get(_stub.$methodName$($args$), timeout, unit, Exception.class);\n"
+            : "    return com.google.common.util.concurrent.Futures.get(_stub.$methodName$($args$), Exception.class);\n";
+
+    printer->Print("\n");
+    printer->Print(vars, method_signature.c_str());
+    printer->Print("{\n"
+                   "  try {\n"
+                   );
+    printer->Print(vars, blocking_get_call.c_str());
+    printer->Print("  } catch (Exception e) {\n"
+                   "    if (e.getCause() instanceof Exception) {throw (Exception)e.getCause();}\n"
+                   "    else {throw e;}\n"
+                   "  }\n"
+                   "}\n"
+                   );
 }
 
 /**
