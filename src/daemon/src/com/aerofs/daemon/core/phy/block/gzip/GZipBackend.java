@@ -74,7 +74,7 @@ public class GZipBackend implements IBlockStorageBackend
     }
 
     @Override
-    public void deleteBlock(ContentHash key, Token tk) throws IOException
+    public void deleteBlock(ContentHash key, @Nullable Token tk) throws IOException
     {
         _bsb.deleteBlock(key, tk);
     }

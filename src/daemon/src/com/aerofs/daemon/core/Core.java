@@ -109,22 +109,6 @@ public class Core implements IModule
         _aclsub.init_();
         _sssub.init_();
         _notifier.init_();
-
-// SP Daemon support is temporarily disabled. Search the code base for "SP_DID" and references to
-// Cfg.isSP() when restoring the function.
-//
-//        _sched.schedule(new AbstractEBSelfHandling()
-//        {
-//            @Override
-//            public void handle_()
-//            {
-//                try {
-//                    initCore_();
-//                } catch (Exception e) {
-//                    SystemUtil.fatal(e);
-//                }
-//            }
-//        }, 0);
     }
 
     // It's a hack. FIXME using injection
@@ -216,31 +200,4 @@ public class Core implements IModule
         _linker.start_();
         _vksub.start_();
     }
-
-// SP Daemon support is temporarily disabled. Search the code base for "SP_DID" and references to
-// Cfg.isSP() when restoring the function.
-//
-//    // this method is called in a core thread
-//    private void initCore_()
-//            throws ExNoResource, IOException, ExFormatError
-//    {
-//        if (Cfg.isSP()) {
-//            String tcpEndpoint = Cfg.db().getNullable(Key.TCP_ENDPOINT);
-//            if (tcpEndpoint == null) {
-//                throw new ExFormatError("must set " + Key.TCP_ENDPOINT + " for sp");
-//            }
-//
-//            if (!tcpEndpoint.equals(L.spEndpoint())) {
-//                throw new ExFormatError("sp tcp endpoint values doesn't match");
-//            }
-//
-//        } else {
-//            // configure SP's transport. TODO move it to TCP?
-//            for (ITransport tp : _tps.getAll_()) {
-//                tp.q().enqueueThrows(
-//                        new EOTransportReconfigRemoteDevice(L.spEndpoint(), SP_DID),
-//                        _tc.prio());
-//            }
-//        }
-//    }
 }

@@ -56,16 +56,16 @@ public class BlockStorageModules
     /**
      * Create a Module with arbitrary chaining of proxy backends on top of a basic storage backend
      *
-     * proxy(new S3BackendModule(), new CacheBackend())
+     * proxy(new S3BackendModule(), new CacheBackendModule())
      *
      * will proxy the S3 backend through a cache
      *
      * hypothetical
      *
-     * proxy(new GDriveBackend(),
-     *       new EncryptedBackend(), new CacheBackend(), new CompressionBackend())
+     * proxy(new GDriveBackendModule(),
+     *       new CompressionBackendModule(), new CacheBackendModule(), new EncryptedBackendModule())
      *
-     * would proxy Google Drive backend, firsth through compression, then a cache and finally
+     * would proxy Google Drive backend, firsth throug compression, then a cache and finally
      * encryption (i.e. data would still be encrypted but no longer compressed in the cache)
      */
     public static Module proxy(AbstractBackendModule base, AbstractProxyBackendModule... proxies)
