@@ -337,8 +337,6 @@ public class TestLinkedStorage extends AbstractTest
     public void shouldHandleCommitError() throws IOException, SQLException
     {
         IPhysicalFile pfile;
-        int revs =  revDir.listFiles().length;
-
         useHistory = false;
 
         Trans txn = tm.begin_();

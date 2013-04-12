@@ -25,7 +25,6 @@ public class Param extends BaseParam
     public static final String NODM                    = "nodm";
     public static final String NOSTUN                  = "nostun";
     public static final String NOTCP                   = "notcp";
-    public static final String NOXMPP                  = "noxmpp";
     public static final String NOZEPHYR                = "nozephyr";
     public static final String NOAUTOUPDATE            = "noautoupdate";
     public static final String NOHISTORY               = "nohistory";

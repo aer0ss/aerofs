@@ -55,7 +55,6 @@ public class Cfg
     private static SID _rootSID;
     private static boolean _useDM;
     private static boolean _useTCP;
-    private static boolean _useXMPP;
     private static boolean _useJingle;
     private static boolean _useZephyr;
     private static boolean _useAutoUpdate;
@@ -143,7 +142,6 @@ public class Cfg
         _portbase = readPortbase();
         _useDM = disabledByFile(rtRoot, Param.NODM);
         _useTCP = disabledByFile(rtRoot, Param.NOTCP);
-        _useXMPP = disabledByFile(rtRoot, Param.NOXMPP);
         _useJingle = disabledByFile(rtRoot, Param.NOSTUN);
         _useZephyr = disabledByFile(rtRoot, Param.NOZEPHYR);
         _useAutoUpdate = disabledByFile(rtRoot, Param.NOAUTOUPDATE);
@@ -295,11 +293,6 @@ public class Cfg
     public static boolean useTCP()
     {
         return _useTCP;
-    }
-
-    public static boolean useXMPP()
-    {
-        return _useXMPP;
     }
 
     public static boolean useJingle()

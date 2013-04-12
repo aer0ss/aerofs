@@ -88,7 +88,7 @@ public class Transports implements IDumpStat, IDumpStatMisc, IStartable
             @Override
             public boolean isEnabled()
             {
-                return Cfg.useXMPP() && Cfg.useJingle();
+                return Cfg.useJingle();
             }
         },
         ZEPHYR(BaseParam.Zephyr.TRANSPORT_ID)
@@ -102,7 +102,7 @@ public class Transports implements IDumpStat, IDumpStatMisc, IStartable
             @Override
             public boolean isEnabled()
             {
-                return Cfg.useXMPP() && Cfg.useZephyr();
+                return Cfg.useZephyr();
             }
         },
         NOOPTP("n") // FIXME (AG): remove this!
