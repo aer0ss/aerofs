@@ -50,11 +50,11 @@ if __name__ == '__main__':
         except requests.exceptions.ConnectionError:
             have_commands = False
 
-        print("Usage: %s <user_email> <command_type>" %(sys.argv[0]))
+        print("Usage: %s <user_email> <command>" %(sys.argv[0]))
         print
 
         if have_commands:
-            print("Available command types:")
+            print("Available commands:")
             for command in commands:
                 if is_command_allowed(command):
                     print "    - " + command
