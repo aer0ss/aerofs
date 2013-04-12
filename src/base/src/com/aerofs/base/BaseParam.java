@@ -39,7 +39,7 @@ public class BaseParam
         // this value is dynamic but clients will not pick up the new value on failure
         public static final DynamicInetSocketAddress ADDRESS =
                 new DynamicInetSocketAddress("base.zephyr.address",
-                        InetSocketAddress.createUnresolved("zephyr.aerofs.com", 443));
+                        InetSocketAddress.createUnresolved("relay.aerofs.com", 443));
     }
 
     public static class WWW

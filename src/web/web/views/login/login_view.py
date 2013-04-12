@@ -15,7 +15,7 @@ log = logging.getLogger(__name__)
 def groupfinder(userid, request):
     return [request.session.get('group')]
 
-def log_in_user(request, login, creds, stay_signed_in):
+def _log_in_user(request, login, creds, stay_signed_in):
     """
     Logs in the given user with the given hashed password (creds) and returns a
     set of headers to create a session for the user. Could potentially throw any
@@ -27,11 +27,10 @@ def log_in_user(request, login, creds, stay_signed_in):
     con = SyncConnectionService(settings['sp.url'], settings['sp.version'])
     sp = SPServiceRpcStub(con)
 
-    log.debug("Log in user " + str(login))
     sp.sign_in(login, creds)
 
     if stay_signed_in:
-        log.debug("Extending session.")
+        log.debug("Extending session")
         sp.extend_session()
 
     request.session['sp_cookies'] = con._session.cookies
@@ -76,10 +75,12 @@ def login(request):
 
         try:
             try:
-                headers = log_in_user(request, login, hashed_password, stay_signed_in)
+                headers = _log_in_user(request, login, hashed_password, stay_signed_in)
+                log.debug(login + " logged in")
                 return HTTPFound(location=next, headers=headers)
             except ExceptionReply as e:
                 if e.get_type() == PBException.BAD_CREDENTIAL:
+                    log.warn(login + " attempts to login w/ bad password")
                     flash_error(request, _("Email or password is incorrect."))
                 elif e.get_type() == PBException.EMPTY_EMAIL_ADDRESS:
                     flash_error(request, _("The email address cannot be empty."))
