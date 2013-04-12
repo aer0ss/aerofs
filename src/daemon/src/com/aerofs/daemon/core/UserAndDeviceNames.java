@@ -4,7 +4,9 @@
 
 package com.aerofs.daemon.core;
 
+import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
+import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.net.DID2User;
 import com.aerofs.daemon.core.tc.Cat;
@@ -16,6 +18,7 @@ import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.S;
+import com.aerofs.lib.Throttler;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.base.ex.ExProtocolError;
@@ -86,6 +89,8 @@ public class UserAndDeviceNames
     private final IUserAndDeviceNameDatabase _udndb;
     private final SPBlockingClient.Factory _factSP;
 
+    private long _lastSPLoginFailureTime;
+
     @Inject
     public UserAndDeviceNames(CfgLocalUser localUser, TC tc, TransManager tm, DID2User d2u,
             IUserAndDeviceNameDatabase udndb, SPBlockingClient.Factory factSP)
@@ -106,9 +111,17 @@ public class UserAndDeviceNames
      */
     public boolean updateLocalDeviceInfo_(List<DID> dids) throws SQLException, ExProtocolError
     {
+        if (_lastSPLoginFailureTime > 0
+                && Math.abs(System.currentTimeMillis() - _lastSPLoginFailureTime) < 30 * C.MIN)
+            return false;
+
         GetDeviceInfoReply reply;
         try {
             reply = getDevicesInfoFromSP_(dids);
+        } catch (ExBadCredential ex) {
+            _lastSPLoginFailureTime = System.currentTimeMillis();
+            l.warn("ignored: " + Util.e(e, IOException.class));
+            return false;
         } catch (Exception e) {
             l.warn("ignored: " + Util.e(e, IOException.class));
             return false;
