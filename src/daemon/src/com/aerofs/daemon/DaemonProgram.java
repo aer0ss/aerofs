@@ -123,7 +123,7 @@ public class DaemonProgram implements IProgram
              * leftover from previous installs of S3 client on the same bucket).
              */
             return BlockStorageModules.proxy(new S3BackendModule(),
-                    new GZipBackendModule(), new CacheBackendModule());
+                    new CacheBackendModule(), new GZipBackendModule());
         default:
             throw new AssertionError("unsupport storage backend " + storageType);
         }
