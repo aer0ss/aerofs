@@ -109,7 +109,7 @@ public class OSUtilWindows implements IOSUtil
 
     static {
         RESERVED_FILENAME_PATTERN = Pattern.compile(
-                "^(\\.*|CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])$",
+                "(\\.+|CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])",
                 Pattern.CASE_INSENSITIVE);
         INVALID_FILENAME_CHARS = Pattern.compile("[/\\\\:*?\"<>|]");
     }
@@ -126,8 +126,20 @@ public class OSUtilWindows implements IOSUtil
      */
     public static boolean isValidFileName(String name)
     {
-        return ! (INVALID_FILENAME_CHARS.matcher(name).find()
-                 || RESERVED_FILENAME_PATTERN.matcher(name).find());
+        return !(INVALID_FILENAME_CHARS.matcher(name).find()
+                 || RESERVED_FILENAME_PATTERN.matcher(name).matches());
+    }
+
+    /**
+     * If the input name is not a valid file name, return a valid name derived from it
+     *
+     * 1. append a " - reserved" suffix to reserved names (old MSDOS relics)
+     * 2. replace any invalid characters by an underscore
+     */
+    public static String cleanName(String name)
+    {
+        if (RESERVED_FILENAME_PATTERN.matcher(name).matches()) return name + " - reserved";
+        return INVALID_FILENAME_CHARS.matcher(name).replaceAll("_");
     }
 
     @Override

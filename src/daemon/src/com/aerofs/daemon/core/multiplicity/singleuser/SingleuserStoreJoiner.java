@@ -25,6 +25,8 @@ import com.aerofs.base.id.SID;
 import com.aerofs.lib.cfg.CfgRootSID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
+import com.aerofs.lib.os.OSUtil;
+import com.aerofs.lib.os.OSUtilWindows;
 import com.aerofs.proto.RitualNotifications.PBNotification;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
@@ -129,8 +131,6 @@ public class SingleuserStoreJoiner implements IStoreJoiner
             }
         }
 
-        l.info("joining share: " + sidx + " " + folderName);
-
         // make sure we don't have an old "leave request" queued
         _lod.removeFromQueue_(sid, t);
 
@@ -139,21 +139,26 @@ public class SingleuserStoreJoiner implements IStoreJoiner
             return;
         }
 
+        // TODO: this should be a physical storage property rather than OSUtil
+        String cleanName = OSUtil.isWindows() ? OSUtilWindows.cleanName(folderName) : folderName;
+
+        l.info("joining share: " + sidx + " " + cleanName);
+
         while (true) {
             try {
-                _oc.createMeta_(Type.ANCHOR, anchor, OID.ROOT, folderName, 0, PhysicalOp.APPLY,
+                _oc.createMeta_(Type.ANCHOR, anchor, OID.ROOT, cleanName, 0, PhysicalOp.APPLY,
                         false, updateVersion, t);
                 break;
             } catch (ExAlreadyExist e) {
-                folderName = Util.nextFileName(folderName);
+                cleanName = Util.nextFileName(cleanName);
             }
         }
 
-        l.debug("joined " + sid + " at " + folderName);
+        l.debug("joined " + sid + " at " + cleanName);
 
         _rns.sendEvent_(PBNotification.newBuilder()
                 .setType(PBNotification.Type.SHARED_FOLDER_JOIN)
-                .setPath(new Path(_cfgRootSID.get(), folderName).toPB())
+                .setPath(new Path(_cfgRootSID.get(), cleanName).toPB())
                 .build());
     }
 
