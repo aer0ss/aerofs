@@ -27,6 +27,7 @@ import com.aerofs.base.id.SID;
 import com.aerofs.lib.cfg.CfgRootSID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
+import com.aerofs.lib.os.CfgOS;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.lib.os.OSUtilWindows;
 import com.aerofs.proto.RitualNotifications.PBNotification;
@@ -50,11 +51,12 @@ public class SingleuserStoreJoiner implements IStoreJoiner
     private final RitualNotificationServer _rns;
     private final SharedFolderAutoLeaver _lod;
     private final IMapSIndex2SID _sidx2sid;
+    private final CfgOS _cfgOS;
 
     @Inject
     public SingleuserStoreJoiner(DirectoryService ds, SingleuserStores stores, ObjectCreator oc,
             ObjectDeleter od, ObjectSurgeon os, CfgRootSID cfgRootSID, RitualNotificationServer rns,
-            SharedFolderAutoLeaver lod, StoreDeleter sd, IMapSIndex2SID sidx2sid)
+            SharedFolderAutoLeaver lod, StoreDeleter sd, IMapSIndex2SID sidx2sid, CfgOS cfgOS)
     {
         _ds = ds;
         _oc = oc;
@@ -66,6 +68,7 @@ public class SingleuserStoreJoiner implements IStoreJoiner
         _rns = rns;
         _lod = lod;
         _sidx2sid = sidx2sid;
+        _cfgOS = cfgOS;
     }
 
     @Override
@@ -143,7 +146,7 @@ public class SingleuserStoreJoiner implements IStoreJoiner
         }
 
         // TODO: this should be a physical storage property rather than OSUtil
-        String cleanName = OSUtil.isWindows() ? OSUtilWindows.cleanName(folderName) : folderName;
+        String cleanName = _cfgOS.isWindows() ? OSUtilWindows.cleanName(folderName) : folderName;
 
         l.info("joining share: " + sidx + " " + cleanName);
 
@@ -210,7 +213,8 @@ public class SingleuserStoreJoiner implements IStoreJoiner
         final Path path = _ds.resolve_(oa);
         _od.delete_(oa.soid(), PhysicalOp.APPLY, t);
 
-        t.addListener_(new AbstractTransListener() {
+        t.addListener_(new AbstractTransListener()
+        {
             @Override
             public void committed_()
             {

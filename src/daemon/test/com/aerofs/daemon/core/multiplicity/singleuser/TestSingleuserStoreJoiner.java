@@ -22,17 +22,13 @@ import com.aerofs.lib.Path;
 import com.aerofs.lib.cfg.CfgRootSID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
-import com.aerofs.lib.os.OSUtil;
+import com.aerofs.lib.os.CfgOS;
+import com.aerofs.testlib.AbstractTest;
 import com.google.common.collect.ImmutableSet;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
@@ -40,9 +36,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(OSUtil.class)
-public class TestSingleuserStoreJoiner
+public class TestSingleuserStoreJoiner extends AbstractTest
 {
     @Mock Trans t;
 
@@ -56,6 +50,7 @@ public class TestSingleuserStoreJoiner
     @Mock RitualNotificationServer rns;
     @Mock SharedFolderAutoLeaver lod;
     @Mock IMapSIndex2SID sidx2sid;
+    @Mock CfgOS cfgOS;
 
     @InjectMocks SingleuserStoreJoiner ssj;
 
@@ -104,8 +99,7 @@ public class TestSingleuserStoreJoiner
     {
         SID sid = SID.generate();
 
-        PowerMockito.mockStatic(OSUtil.class);
-        Mockito.when(OSUtil.isWindows()).thenReturn(false);
+        when(cfgOS.isWindows()).thenReturn(false);
 
         ssj.joinStore_(sidx, sid, "*test", false, t);
 
@@ -121,8 +115,7 @@ public class TestSingleuserStoreJoiner
         SID sid = SID.generate();
 
         // pretend to be on windows to test name-cleaning
-        PowerMockito.mockStatic(OSUtil.class);
-        Mockito.when(OSUtil.isWindows()).thenReturn(true);
+        when(cfgOS.isWindows()).thenReturn(true);
 
         ssj.joinStore_(sidx, sid, "*test", false, t);
 
