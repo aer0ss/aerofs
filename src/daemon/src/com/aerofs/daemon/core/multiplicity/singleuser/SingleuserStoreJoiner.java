@@ -16,6 +16,8 @@ import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.IStoreJoiner;
 import com.aerofs.daemon.core.store.StoreDeleter;
+import com.aerofs.daemon.lib.db.AbstractTransListener;
+import com.aerofs.daemon.lib.db.ITransListener;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
@@ -31,6 +33,7 @@ import com.aerofs.proto.RitualNotifications.PBNotification;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 
+import java.sql.SQLException;
 import java.util.Collection;
 
 public class SingleuserStoreJoiner implements IStoreJoiner
@@ -156,10 +159,17 @@ public class SingleuserStoreJoiner implements IStoreJoiner
 
         l.debug("joined " + sid + " at " + cleanName);
 
-        _rns.sendEvent_(PBNotification.newBuilder()
-                .setType(PBNotification.Type.SHARED_FOLDER_JOIN)
-                .setPath(new Path(_cfgRootSID.get(), cleanName).toPB())
-                .build());
+        final Path path = new Path(_cfgRootSID.get(), cleanName);
+        t.addListener_(new AbstractTransListener() {
+            @Override
+            public void committed_()
+            {
+                _rns.sendEvent_(PBNotification.newBuilder()
+                        .setType(PBNotification.Type.SHARED_FOLDER_JOIN)
+                        .setPath(path.toPB())
+                        .build());
+            }
+        });
     }
 
     @Override
@@ -197,12 +207,18 @@ public class SingleuserStoreJoiner implements IStoreJoiner
         // NB: isDeleted may be expensive and !expelled => !deleted
         if (oa.isExpelled() && _ds.isDeleted_(oa)) return;
 
-        Path path = _ds.resolve_(oa);
+        final Path path = _ds.resolve_(oa);
         _od.delete_(oa.soid(), PhysicalOp.APPLY, t);
 
-        _rns.sendEvent_(PBNotification.newBuilder()
-                .setType(PBNotification.Type.SHARED_FOLDER_KICKOUT)
-                .setPath(path.toPB())
-                .build());
+        t.addListener_(new AbstractTransListener() {
+            @Override
+            public void committed_()
+            {
+                _rns.sendEvent_(PBNotification.newBuilder()
+                        .setType(PBNotification.Type.SHARED_FOLDER_KICKOUT)
+                        .setPath(path.toPB())
+                        .build());
+            }
+        });
     }
 }
