@@ -41,7 +41,7 @@ public class HdUnicastMessage implements IEventHandler<EIUnicastMessage>
             // causing the remote peer to timeout and start pulsing
             //
 
-            _fds.logSendAsync("no local sidx for incoming uc sid:" + ev._sid);
+            _fds.logSendAsync("no local sidx for incoming uc at " + ev._ep + " sid: " + ev._sid);
         } else {
             PeerContext pc = new PeerContext(ev._ep, sidx);
             RawMessage r = new RawMessage(ev.is(), ev.wireLength());
