@@ -20,6 +20,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.mockito.Mock;
+import org.powermock.api.mockito.PowerMockito;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -34,6 +35,7 @@ import static org.mockito.Mockito.when;
 
 public class TestLinkedRevProvider extends AbstractTest
 {
+    @Mock LinkedRevProvider.TimeSource ts;
     @Mock private CfgAbsRoots cfgAbsRoots;
 
     @Rule
@@ -74,6 +76,8 @@ public class TestLinkedRevProvider extends AbstractTest
         localRevProvider = new LinkedRevProvider(s, factFile);
         localRevProvider._startCleanerScheduler = false;
         localRevProvider.init_();
+
+        PowerMockito.mockStatic(System.class);
     }
 
     @After
@@ -151,6 +155,9 @@ public class TestLinkedRevProvider extends AbstractTest
         writeFile(test1, "test1");
         test1.setLastModified(backThen.getTime());
 
+        localRevProvider._ts = ts;
+        when(ts.getTime()).thenReturn(backThen.getTime());
+
         test1.setLastModified(backThen.getTime());
         LinkedRevFile localRevFile = localRevProvider.newLocalRevFile_(
             Path.fromAbsoluteString(rootSID, dataDir.getPath(), test1.getPath()), test1.getPath(),
@@ -158,10 +165,14 @@ public class TestLinkedRevProvider extends AbstractTest
         Assert.assertTrue(test1.isFile());
         Assert.assertEquals(1, dataDir.list().length);
         Assert.assertEquals(0, revDir.list().length);
+
         localRevFile.save_();
         Assert.assertTrue(!test1.isFile());
         Assert.assertEquals(0, dataDir.list().length);
         Assert.assertEquals(1, revDir.list().length);
+
+        when(ts.getTime()).thenReturn(now.getTime());
+
         cleaner.run(revDir.getAbsolutePath());
         Assert.assertEquals(1, deletedFiles.size());
         Assert.assertTrue(!test1.isFile());
@@ -202,6 +213,9 @@ public class TestLinkedRevProvider extends AbstractTest
         Date now = new Date();
         Date backThen = new Date(now.getTime() - age);
 
+        localRevProvider._ts = ts;
+        when(ts.getTime()).thenReturn(backThen.getTime());
+
         int numDirs = 5;
         int numFiles = 10;
 
@@ -220,6 +234,8 @@ public class TestLinkedRevProvider extends AbstractTest
                 localRevFile.save_();
             }
         }
+
+        when(ts.getTime()).thenReturn(now.getTime());
 
         LinkedRevProvider.Cleaner.RunData runData = cleaner.new RunData(revDir.getAbsolutePath());
         runData._sorter.setMaxSize(10);

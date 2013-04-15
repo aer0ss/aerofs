@@ -169,6 +169,14 @@ public class LinkedRevProvider implements IPhysicalRevProvider
     CleanerScheduler _cleanerScheduler;
     long _spaceDelta;
 
+    // sigh, can't use PowerMock in the daemon due to OSUtil so we have to use this
+    // stupid wrapper to be able to test the cleaner...
+    class TimeSource {
+        long getTime() { return System.currentTimeMillis(); }
+    }
+
+    TimeSource _ts = new TimeSource();
+
 
     @Inject
     public LinkedRevProvider(LinkedStorage s, InjectableFile.Factory factFile)
@@ -197,7 +205,7 @@ public class LinkedRevProvider implements IPhysicalRevProvider
     {
         InjectableFile f = _factFile.create(absPath);
         RevInfo rev = new RevInfo(revPath(path.removeLast()), f.getName(), kidx.getInt(),
-                f.lastModified(), f.getLengthOrZeroIfNotFile());
+                _ts.getTime(), f.lastModified(), f.getLengthOrZeroIfNotFile());
 
         String pathRev = rev.getAbsolutePath();
 
@@ -403,8 +411,6 @@ public class LinkedRevProvider implements IPhysicalRevProvider
         }
     }
 
-
-    // TODO: need a cleaner per root?
     class Cleaner {
         long _ageLimitMillis = TimeUnit.DAYS.toMillis(7);
         int _delayEvery = 10;
@@ -450,7 +456,7 @@ public class LinkedRevProvider implements IPhysicalRevProvider
             long _totalSize;
             long _fileCount;
             long _dirCount;
-            Date _startTime = new Date();
+            long _startTime = _ts.getTime();
             int _delayCount;
             final String _absRevRoot;
 
@@ -523,7 +529,7 @@ public class LinkedRevProvider implements IPhysicalRevProvider
                     RevInfo revInfo = RevInfo.fromRevisionFileNullable(file);
                     if (revInfo != null) {
                         _totalSize += revInfo._length;
-                        if (_startTime.compareTo(new Date(revInfo._suffix._rtime)) > 0) {
+                        if (_startTime > revInfo._suffix._rtime) {
                             l.debug("Old file: " + revInfo);
                             _sorter.add(revInfo);
                         }
@@ -595,9 +601,9 @@ public class LinkedRevProvider implements IPhysicalRevProvider
             return Util.join(_path, _name) + RevisionSuffix.SEPARATOR + index();
         }
 
-        public RevInfo(String revBase, String name, int kidx, long mtime, long length)
+        public RevInfo(String revBase, String name, int kidx, long rtime, long mtime, long length)
         {
-            this(revBase, name, new RevisionSuffix(kidx, mtime, new Date().getTime()), length);
+            this(revBase, name, new RevisionSuffix(kidx, mtime, rtime), length);
         }
 
         public RevInfo(String revBase, String name, RevisionSuffix suffix, long length)
