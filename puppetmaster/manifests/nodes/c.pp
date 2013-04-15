@@ -7,4 +7,12 @@ node "c.aerofs.com" inherits default {
 
     include cmd
     include dbtools
+    include github-enterprise-tools
+
+    cron {"Backup github":
+        command => "/usr/local/bin/backup_github",
+        user => root,
+        hour => 0,
+        minute => 0,
+    }
 }
