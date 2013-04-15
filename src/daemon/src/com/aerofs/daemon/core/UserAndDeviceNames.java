@@ -6,7 +6,6 @@ package com.aerofs.daemon.core;
 
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
-import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.net.DID2User;
 import com.aerofs.daemon.core.tc.Cat;
@@ -18,7 +17,6 @@ import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.S;
-import com.aerofs.lib.Throttler;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.base.ex.ExProtocolError;
@@ -107,7 +105,7 @@ public class UserAndDeviceNames
     /**
      * Make an SP RPC call to obtain information about a list of DIDs
      *
-     * This call can potentially hammer SP. The SP login attemps are throttled
+     * This call can potentially hammer SP. Hence SP calls are throttled
      *   to once every 30 minutes if we ever failed.
      *
      * @return false if the call to SP failed
@@ -115,7 +113,7 @@ public class UserAndDeviceNames
      */
     public boolean updateLocalDeviceInfo_(List<DID> dids) throws SQLException, ExProtocolError
     {
-        // immediate return "failed to update" if we ever retry in 30 minutes
+        // immediately return "failed to update" if we ever retry in 30 minutes
         if (_lastSPLoginFailureTime > 0
                 && Math.abs(System.currentTimeMillis() - _lastSPLoginFailureTime) < 30 * C.MIN)
             return false;
@@ -129,6 +127,10 @@ public class UserAndDeviceNames
             l.warn("ignored: " + Util.e(e, IOException.class));
             return false;
         }
+
+        // if we made it here, that means we have succeeded in getting a response from SP
+        // reset the failure time so we don't attempt to throttle later
+        _lastSPLoginFailureTime = 0;
 
         if (reply.getDeviceInfoCount() != dids.size()) {
             throw new ExProtocolError("server reply count mismatch (" +
