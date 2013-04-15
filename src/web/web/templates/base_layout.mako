@@ -48,8 +48,8 @@
         e,d])};b.__SV=1.2}})(document,window.mixpanel||[]);
         mixpanel.init("${request.registry.settings['mixpanel.api_key']}");
 
-        %if 'username' in request.session:
-            mixpanel.identify("${request.session['username']}");
+        %if 'team_id' in request.session:
+            mixpanel.identify("${request.session['team_id']}");
         %endif
         mixpanel.track('Page Viewed', {'Title' : document.title, 'URL' : window.location.pathname});
     </script>

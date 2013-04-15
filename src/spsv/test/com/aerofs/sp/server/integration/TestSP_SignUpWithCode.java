@@ -6,14 +6,20 @@ package com.aerofs.sp.server.integration;
 
 import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.base.id.UserID;
+import com.aerofs.proto.Sp.SignUpWithCodeReply;
 import com.aerofs.sp.common.SubscriptionCategory;
+import com.aerofs.sp.server.lib.id.OrganizationID;
 import com.aerofs.sp.server.lib.user.User;
+import com.google.common.util.concurrent.ListenableFuture;
 import com.google.protobuf.ByteString;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.sql.SQLException;
 
+import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertFalse;
+import static junit.framework.Assert.assertTrue;
 import static junit.framework.Assert.fail;
 
 public class TestSP_SignUpWithCode extends AbstractSPTest
@@ -55,9 +61,30 @@ public class TestSP_SignUpWithCode extends AbstractSPTest
         }
     }
 
-    void signUp()
+    @Test
+    public void shouldReturnExistingTeam()
+        throws Exception
+    {
+        ListenableFuture<SignUpWithCodeReply> firstResp = signUp();
+        ListenableFuture<SignUpWithCodeReply> secondResp = signUp();
+
+        String firstOrgIDRecv = firstResp.get().getOrgId();
+        String secondOrgIDRecv = secondResp.get().getOrgId();
+
+        sqlTrans.begin();
+        String orgIDExpected = factUser.create(userID).getOrganization().id().toHexString();
+        sqlTrans.commit();
+
+        assertEquals(firstOrgIDRecv,orgIDExpected);
+        assertEquals(secondOrgIDRecv,firstOrgIDRecv);
+        assertFalse(firstResp.get().getExistingTeam());
+        assertTrue(secondResp.get().getExistingTeam());
+    }
+
+
+    ListenableFuture<SignUpWithCodeReply> signUp()
             throws Exception
     {
-        service.signUpWithCode(code, ByteString.copyFrom(creds), "A", "B");
+        return service.signUpWithCode(code, ByteString.copyFrom(creds), "A", "B");
     }
 }

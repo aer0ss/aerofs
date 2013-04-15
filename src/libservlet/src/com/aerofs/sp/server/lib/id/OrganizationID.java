@@ -29,12 +29,17 @@ public class OrganizationID extends IntegerID
     public UserID toTeamServerUserID()
     {
         StringBuilder sb = new StringBuilder().append(UserID.TEAM_SERVER_PREFIX);
-        sb.append(Integer.toHexString(getInt()));
+        sb.append(toHexString());
         return UserID.fromInternal(sb.toString());
     }
 
     @Override
     public String toString()
+    {
+        return Integer.toHexString(getInt());
+    }
+
+    public String toHexString()
     {
         return Integer.toHexString(getInt());
     }

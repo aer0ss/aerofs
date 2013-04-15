@@ -88,10 +88,7 @@ public class TestMixpanelAPI
         // Send the request to the server
         Map<String, String> properties = Maps.newHashMap();
         properties.put("hello", "world");
-        mixpanelAPI.track(TEST_EVENT, TEST_USER, properties).get();
-
-        mixpanelAPI.close();
-        mixpanelAPI.awaitTermination(5, TimeUnit.SECONDS);
+        mixpanelAPI.track(TEST_EVENT, TEST_USER, properties);
     }
 
     @Test
@@ -115,13 +112,10 @@ public class TestMixpanelAPI
 
         // Try to track an event and ensure we report a failure
         try {
-            mixpanelAPI.track(TEST_EVENT, TEST_USER, null).get();
+            mixpanelAPI.track(TEST_EVENT, TEST_USER, null);
             fail();
-        } catch (ExecutionException e) {
-            assertEquals(IOException.class, e.getCause().getClass());
+        } catch (Exception e) {
+            assertEquals(IOException.class, e.getClass());
         }
-
-        mixpanelAPI.close();
-        mixpanelAPI.awaitTermination(5, TimeUnit.SECONDS);
     }
 }

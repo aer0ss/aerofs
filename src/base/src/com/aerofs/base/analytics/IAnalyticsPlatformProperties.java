@@ -48,4 +48,11 @@ public interface IAnalyticsPlatformProperties
      * Timestamp at which the user was created, or 0 if not available
      */
     long getSignupDate();
+
+    /**
+     * User's current team
+     *
+     * An Exception may be thrown if an SP event cannot be executed
+     */
+    String getOrgID() throws Exception;
 }

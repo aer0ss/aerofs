@@ -47,6 +47,7 @@ import com.aerofs.proto.Sp.GetCommandQueueHeadReply;
 import com.aerofs.proto.Sp.GetDeviceInfoReply;
 import com.aerofs.proto.Sp.GetHeartInvitesQuotaReply;
 import com.aerofs.proto.Sp.GetOrgPreferencesReply;
+import com.aerofs.proto.Sp.GetOrganizationIDReply;
 import com.aerofs.proto.Sp.GetOrganizationInvitationsReply;
 import com.aerofs.proto.Sp.GetSharedFolderNamesReply;
 import com.aerofs.proto.Sp.GetStripeDataReply;
@@ -74,6 +75,7 @@ import com.aerofs.proto.Sp.RecertifyDeviceReply;
 import com.aerofs.proto.Sp.RegisterDeviceReply;
 import com.aerofs.proto.Sp.RemoveUserFromOrganizationReply;
 import com.aerofs.proto.Sp.ResolveSignUpCodeReply;
+import com.aerofs.proto.Sp.SignUpWithCodeReply;
 import com.aerofs.proto.SpNotifications.PBACLNotification;
 import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue;
 import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue.Epoch;
@@ -97,6 +99,7 @@ import com.aerofs.sp.server.lib.cert.Certificate;
 import com.aerofs.sp.server.lib.cert.CertificateDatabase;
 import com.aerofs.sp.server.lib.cert.CertificateGenerator.CertificationResult;
 import com.aerofs.sp.server.lib.device.Device;
+import com.aerofs.sp.server.lib.id.OrganizationID;
 import com.aerofs.sp.server.lib.id.StripeCustomerID;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.organization.OrganizationInvitation;
@@ -386,6 +389,24 @@ public class SPService implements ISPService
         _sqlTrans.commit();
 
         return createVoidReply();
+    }
+
+    @Override
+    public ListenableFuture<GetOrganizationIDReply> getOrganizationID()
+            throws Exception
+    {
+        _sqlTrans.begin();
+        User user = _sessionUser.get();
+
+        String orgID = user.getOrganization().id().toHexString();
+        _sqlTrans.commit();
+
+        GetOrganizationIDReply reply = GetOrganizationIDReply.newBuilder()
+                                                             .setOrgId(orgID)
+                                                             .build();
+
+        return createReply(reply);
+
     }
 
     @Override
@@ -1908,7 +1929,7 @@ public class SPService implements ISPService
     }
 
     @Override
-    public ListenableFuture<Void> signUpWithCode(String signUpCode, ByteString credentials,
+    public ListenableFuture<SignUpWithCodeReply> signUpWithCode(String signUpCode, ByteString credentials,
             String firstName, String lastName)
             throws Exception
     {
@@ -1921,6 +1942,8 @@ public class SPService implements ISPService
         FullName fullName = new FullName(firstName, lastName);
 
         byte[] shaedSP = SPParam.getShaedSP(credentials.toByteArray());
+
+        boolean existingTeam;
 
         _sqlTrans.begin();
 
@@ -1936,10 +1959,14 @@ public class SPService implements ISPService
                 throw new ExBadCredential("Password doesn't match the existing account");
             }
             users = Collections.emptyList();
+            existingTeam = true;
         } else {
-            users = signUpWithCodeImpl(signUpCode, user, fullName, shaedSP);
+            SignUpWithCodeImplResult result = signUpWithCodeImpl(signUpCode, user, fullName, shaedSP);
+            users = result.users;
+            existingTeam = result.existingTeam;
         }
 
+        OrganizationID orgID = user.getOrganization().id();
         // always call this method as the last step of the transaction
         publishACLs_(users);
 
@@ -1947,13 +1974,37 @@ public class SPService implements ISPService
 
         _analytics.track(new SignUpEvent(user.id()));
 
-        return createVoidReply();
+        return createReply(SignUpWithCodeReply.newBuilder()
+                .setOrgId(orgID.toHexString())
+                .setExistingTeam(existingTeam)
+                .build());
     }
 
+    private class SignUpWithCodeImplResult
+    {
+        private final Collection<UserID> users;
+        private final boolean existingTeam; // is the user joining a new team or an existing team?
+
+        private SignUpWithCodeImplResult(Collection<UserID> users, boolean existingTeam)
+        {
+            this.users = users;
+            this.existingTeam = existingTeam;
+        }
+
+        private Collection<UserID> getUsers()
+        {
+            return users;
+        }
+
+        private boolean isExistingTeam()
+        {
+            return existingTeam;
+        }
+    }
     /**
      * @return a collection of users to be passed to publishACLs_()
      */
-    private Collection<UserID> signUpWithCodeImpl(String signUpCode, User user, FullName fullName,
+    private SignUpWithCodeImplResult signUpWithCodeImpl(String signUpCode, User user, FullName fullName,
             byte[] shaedSP)
             throws Exception
     {
@@ -1969,18 +2020,20 @@ public class SPService implements ISPService
 
         // Accept team invitation if there is one associated with the signup code.
         OrganizationInvitation oi = _factOrgInvite.getBySignUpCodeNullable(signUpCode);
-        if (oi == null) return Collections.emptyList();
+        if (oi == null) {
+            return new SignUpWithCodeImplResult(Collections.<UserID>emptyList(), false);
 
-        l.info("{} automatically accepts team invitation to {}", user, oi.getOrganization());
+        } else {
+            l.info("{} automatically accepts team invitation to {}", user, oi.getOrganization());
 
-        if (!oi.getInvitee().equals(user)) {
-            l.error("the org invite ({} => {} to {}) associated with the signup code {} " +
-                    "doesn't match the signup user {}. how possible?", oi.getInviter(),
-                    oi.getInvitee(), oi.getOrganization(), signUpCode, user);
-            throw new ExNotFound();
+            if (!oi.getInvitee().equals(user)) {
+                l.error("the org invite ({} => {} to {}) associated with the signup code {} " +
+                        "doesn't match the signup user {}. how possible?", oi.getInviter(),
+                        oi.getInvitee(), oi.getOrganization(), signUpCode, user);
+                throw new ExNotFound();
+            }
+            return new SignUpWithCodeImplResult(acceptTeamInvitation(user, oi.getOrganization()), true);
         }
-
-        return acceptTeamInvitation(user, oi.getOrganization());
     }
 
     @Override

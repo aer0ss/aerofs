@@ -66,4 +66,15 @@ public class SPAnalyticsProperties implements IAnalyticsPlatformProperties
             return 0;
         }
     }
+
+    @Nullable
+    @Override
+    public String getOrgID()
+    {
+        try {
+            return _sessionUser.get().getOrganization().id().toHexString();
+        } catch (Throwable e) {
+            return null;
+        }
+    }
 }

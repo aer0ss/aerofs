@@ -47,7 +47,7 @@ public class MixpanelAPI
     private static final int SOCKET_TIMEOUT = (int) (10 * C.SEC);
 
     private final String _token;
-    private final ListeningExecutorService _executor;
+
     private final String _apiEndpoint;
 
     /**
@@ -66,17 +66,6 @@ public class MixpanelAPI
     {
         _token = checkNotNull(token);
         _apiEndpoint = checkNotNull(apiEndpoint);
-        _executor = MoreExecutors.listeningDecorator(
-                Executors.newSingleThreadExecutor(new ThreadFactory()
-                {
-                    @Override
-                    public @Nonnull Thread newThread(@Nonnull Runnable r)
-                    {
-                        Thread t = new Thread(r);
-                        t.setPriority(Thread.MIN_PRIORITY);
-                        return t;
-                    }
-                }));
     }
 
     /**
@@ -91,74 +80,39 @@ public class MixpanelAPI
      * @param additionalProperties
      *          additional custom properties in a name-value map
      */
-    public ListenableFuture<Void> track(final String event, @Nullable final String distinctId,
+    public void track(final String event, @Nullable final String distinctId,
             @Nullable final Map<String, String> additionalProperties)
+                throws IOException
     {
-        return _executor.submit(new Callable<Void>()
-        {
-            @Override
-            public Void call() throws Exception
-            {
-                JsonObject json = new JsonObject();
-                json.addProperty("event", checkNotNull(event));
 
-                JsonObject properties = new JsonObject();
-                json.add("properties", properties);
+            JsonObject json = new JsonObject();
+            json.addProperty("event", checkNotNull(event));
 
-                // Add the properties
-                properties.addProperty("token", _token);
-                if (distinctId != null) properties.addProperty("distinct_id", distinctId);
-                if (additionalProperties != null) {
-                    for (Entry<String, String> entry : additionalProperties.entrySet()) {
-                        properties.addProperty(entry.getKey(), entry.getValue());
-                    }
+            JsonObject properties = new JsonObject();
+            json.add("properties", properties);
+
+            // Add the properties
+            properties.addProperty("token", _token);
+            if (distinctId != null) properties.addProperty("distinct_id", distinctId);
+            if (additionalProperties != null) {
+                for (Entry<String, String> entry : additionalProperties.entrySet()) {
+                    properties.addProperty(entry.getKey(), entry.getValue());
                 }
-
-                final String message = json.toString();
-                final String url = _apiEndpoint + Base64.encodeBytes(message.getBytes());
-
-                HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
-                conn.setConnectTimeout(SOCKET_TIMEOUT);
-                conn.setReadTimeout(SOCKET_TIMEOUT);
-
-                String reply = BaseUtil.httpRequest(conn, null);
-                if (!reply.equals("1")) {
-                    throw new IOException("mixpanel failed. Reply: " + reply + " for url: " + url);
-                }
-
-                l.debug("mixpanel send ok: {} ", url);
-
-                return null;
             }
-        });
-    }
 
-    public void close()
-    {
-        if (!_executor.isShutdown()) {
-            _executor.shutdown();
-        }
-    }
+            final String message = json.toString();
+            final String url = _apiEndpoint + Base64.encodeBytes(message.getBytes());
 
-    /**
-     * Call it after close() to wait until all events are fully sent to Mixpanel.
-     */
-    public void awaitTermination(long timeout, TimeUnit unit)
-    {
-        try {
-            _executor.awaitTermination(timeout, unit);
-        } catch (InterruptedException e) {
-            l.warn("Didn't terminate after " + timeout + " " + unit.toString());
-        }
-    }
+            HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
+            conn.setConnectTimeout(SOCKET_TIMEOUT);
+            conn.setReadTimeout(SOCKET_TIMEOUT);
 
-    @Override
-    protected void finalize() throws Throwable
-    {
-        try {
-            close();
-        } finally {
-            super.finalize();
-        }
+            String reply = BaseUtil.httpRequest(conn, null);
+            if (!reply.equals("1")) {
+                throw new IOException("mixpanel failed. Reply: " + reply + " for url: " + url);
+            }
+
+            l.debug("mixpanel send ok: {} ", url);
+
     }
 }

@@ -4,12 +4,17 @@
 
 package com.aerofs.lib.analytics;
 
+import com.aerofs.base.C;
+import com.aerofs.base.Loggers;
 import com.aerofs.base.analytics.IAnalyticsPlatformProperties;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.os.OSUtil;
+import com.aerofs.sp.client.SPBlockingClient;
+import com.aerofs.sp.client.SPBlockingClient.Factory;
+import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 
@@ -19,6 +24,8 @@ import javax.annotation.Nullable;
  */
 public class DesktopAnalyticsProperties implements IAnalyticsPlatformProperties
 {
+    private static final Logger l = Loggers.getLogger(DesktopAnalyticsProperties.class);
+
     @Override
     public @Nullable UserID getUser()
     {
@@ -53,5 +60,26 @@ public class DesktopAnalyticsProperties implements IAnalyticsPlatformProperties
     public long getSignupDate()
     {
         return Cfg.db().getLong(Key.SIGNUP_DATE);
+    }
+
+    private long _lastSPOrgIDCheck;
+    private String _orgID;
+
+    @Override
+    public String getOrgID()
+            throws Exception
+    {
+        if (_orgID == null || ((System.currentTimeMillis() - _lastSPOrgIDCheck) >= 1 * C.DAY))
+        {
+            SPBlockingClient sp = new Factory().create_(Cfg.user());
+            sp.signInRemote();
+
+            _orgID = sp.getOrganizationID().getOrgId();
+            _lastSPOrgIDCheck = System.currentTimeMillis();
+            l.info("orgID: {}", _orgID);
+        }
+
+        return _orgID;
+
     }
 }

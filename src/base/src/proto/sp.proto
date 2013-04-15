@@ -40,7 +40,7 @@ service SPService {
      *   ExNotFound if the targeted signup code was not found
      *   ExBadCredential if the user exists and the password doesn't match the existing user
      */
-    rpc SignUpWithCode(SignUpWithCodeCall) returns(Void);
+    rpc SignUpWithCode(SignUpWithCodeCall) returns(SignUpWithCodeReply);
 
     /**
      * Sign into the SP server. Return the authorization level of the caller.
@@ -651,6 +651,14 @@ service SPService {
      *         ExNotFound if the specified device does not exist for the given organization.
      */
     rpc RecertifyTeamServerDevice(RecertifyDeviceCall) returns (RecertifyDeviceReply);
+
+    /**
+     * Get User's Organization ID
+     *
+     * Required Auth Level: user
+     */
+    rpc GetOrganizationID(Void) returns(GetOrganizationIDReply);
+
 }
 
 message SetStripeCustomerIDCall {
@@ -698,6 +706,11 @@ message SignUpWithCodeCall {
     // TOOD (WW) use PBFullName
     required string first_name = 4;
     required string last_name = 5;
+}
+
+message SignUpWithCodeReply {
+    required string org_id = 1;
+    required bool existing_team = 2; // is the user joining an existing team, or a new team?
 }
 
 message SignInCall {
@@ -925,6 +938,10 @@ message ListOrganizationMembersReply {
 
     // Total number of users in the database.
     required uint32 total_count = 2;
+}
+
+message GetOrganizationIDReply {
+    required string org_id = 1;
 }
 
 message GetAuthorizationLevelReply {

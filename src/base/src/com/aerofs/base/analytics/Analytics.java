@@ -11,14 +11,23 @@ import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.ListeningExecutorService;
+import com.google.common.util.concurrent.MoreExecutors;
 import org.slf4j.Logger;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Map;
 import java.util.TimeZone;
+import java.util.concurrent.Callable;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * This class is responsible for sending events to our analytics backend. Currently, we use
@@ -27,11 +36,13 @@ import java.util.TimeZone;
 public class Analytics
 {
     private static final Logger l = Loggers.getLogger(Analytics.class);
-    private static final String MIXPANEL_TOKEN="592e47220d721ecd03e323a92fd712cf";
+    private static final String MIXPANEL_TOKEN="be2b9a3bb410c5183c66523483cb27de";
+    private final ListeningExecutorService _executor;
 
     private static class Properties
     {
         private static final String
+                TEAM_ID     = "team_id",
                 USER_ID     = "user_id",
                 DID         = "did",
                 VERSION     = "version",
@@ -50,6 +61,20 @@ public class Analytics
         _properties = properties;
         _mixpanel = new MixpanelAPI(MIXPANEL_TOKEN);
         _dateformat.setTimeZone(TimeZone.getTimeZone("UTC"));
+
+        _executor = MoreExecutors.listeningDecorator(
+                Executors.newSingleThreadExecutor(new ThreadFactory()
+                {
+                    @Override
+                    public
+                    @Nonnull
+                    Thread newThread(@Nonnull Runnable r)
+                    {
+                        Thread t = new Thread(r);
+                        t.setPriority(Thread.MIN_PRIORITY);
+                        return t;
+                    }
+                }));
     }
 
     /**
@@ -72,32 +97,49 @@ public class Analytics
         });
     }
 
-    private ListenableFuture<Void> trackImpl(IAnalyticsEvent event)
+    private ListenableFuture<Void> trackImpl(final IAnalyticsEvent event)
     {
-        Map<String, String> properties = Maps.newHashMap();
+        return _executor.submit(new Callable<Void>()
+        {
+            @Override
+            public Void call()
+                    throws Exception
+            {
+                Map<String, String> properties = Maps.newHashMap();
 
-        UserID user = _properties.getUser();
-        DID did = _properties.getDid();
+                UserID user = _properties.getUser();
+                DID did = _properties.getDid();
 
-        String userStr = (user != null) ? user.getString() : null;
-        String didStr = (did != null) ? did.toStringFormal() : null;
+                String userStr = (user != null) ? user.getString() : null;
+                String didStr = (did != null) ? did.toStringFormal() : null;
 
-        // Add the default properties that we send with all events
-        addIfNonNull(properties, Properties.USER_ID, userStr);
-        addIfNonNull(properties, Properties.DID, didStr);
-        addIfNonNull(properties, Properties.VERSION, _properties.getVersion());
-        addIfNonNull(properties, Properties.OS_FAMILY, _properties.getOSFamily());
-        addIfNonNull(properties, Properties.OS_NAME, _properties.getOSName());
+                // teamID cannot be null. If the teamID is null, we should not put things into
+                // Analytics as the teamID is used as a unique identifier.
 
-        long signupDate = _properties.getSignupDate();
-        if (signupDate > 0) {
-            properties.put(Properties.SIGNUP_DATE, _dateformat.format(new Date(signupDate)));
-        }
+                String teamID = checkNotNull(_properties.getOrgID());
 
-        // Add any additional property supplied by the event
-        event.saveProperties(properties);
+                // Add the default properties that we send with all events
+                addIfNonNull(properties, Properties.USER_ID, userStr);
+                addIfNonNull(properties, Properties.DID, didStr);
+                addIfNonNull(properties, Properties.VERSION, _properties.getVersion());
+                addIfNonNull(properties, Properties.OS_FAMILY, _properties.getOSFamily());
+                addIfNonNull(properties, Properties.OS_NAME, _properties.getOSName());
+                addIfNonNull(properties, Properties.TEAM_ID, teamID);
 
-        return _mixpanel.track(event.getName(), userStr, properties);
+                long signupDate = _properties.getSignupDate();
+                if (signupDate > 0) {
+                    properties.put(Properties.SIGNUP_DATE, _dateformat.format(new Date(signupDate)));
+                }
+
+                // Add any additional property supplied by the event
+                event.saveProperties(properties);
+
+                _mixpanel.track(event.getName(), teamID, properties);
+
+                return null;
+            }
+        });
+
     }
 
     private void addIfNonNull(Map<String, String> properties, String key, @Nullable String value)

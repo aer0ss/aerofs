@@ -74,10 +74,12 @@
                     if (error) {
                         displayError(error);
                     } else {
-                        ## Track the signup in mixpanel.
-                        mixpanel.alias("${email_address}");
-                        mixpanel.name_tag("${email_address}");
-                        mixpanel.track("Signed Up");
+                        ## automatically sign in once the AJAX call succeeds
+
+                        if (response['existing_team'] == false) mixpanel.alias(response['team_id']);
+                        mixpanel.name_tag(response['team_id']);
+
+                        mixpanel.track("Signed Up", {'user_id': '${email_address}'});
 
                         ## Wait 300 ms for the Mixpanel call to succeed and then proceed to sign in.
                         ## This is the delay they recommend in their track_forms API.

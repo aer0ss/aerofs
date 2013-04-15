@@ -83,9 +83,12 @@ def json_signup(request):
 
     try:
         sp = get_rpc_stub(request)
-        sp.sign_up_with_code(code, cred, first_name, last_name)
+        result = sp.sign_up_with_code(code, cred, first_name, last_name)
 
-        return HTTPOk()
+        return {
+            'team_id': result.org_id,
+            'existing_team': result.existing_team
+        }
     except ExceptionReply as e:
         if e.get_type() == common.PBException.BAD_CREDENTIAL:
             msg = "The account already exists.<br>" \
