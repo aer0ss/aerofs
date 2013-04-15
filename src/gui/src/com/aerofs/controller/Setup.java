@@ -325,14 +325,6 @@ class Setup
         db.recreateSchema_();
         db.set(map);
 
-        if (storageType == StorageType.LINKED && !L.isMultiuser()) {
-            // make sure the default root anchor is correctly set in the db
-            // NB: this does not remove any existing external roots from the db
-            SID sid = SID.rootSID(userId);
-            db.removeRoot(sid);
-            db.addRoot(sid, rootAnchorPath);
-        }
-
         Cfg.writePortbase(_rtRoot, findPortBase());
 
         Cfg.init_(_rtRoot, true);

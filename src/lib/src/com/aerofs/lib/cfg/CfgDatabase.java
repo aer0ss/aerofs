@@ -248,6 +248,7 @@ public class CfgDatabase
         Statement s = _dbcw.getConnection().createStatement();
         try {
             s.executeUpdate("drop table if exists " + T_CFG);
+            s.executeUpdate("drop table if exists " + T_ROOT);
             s.executeUpdate("create table " + T_CFG + "(" +
                     C_CFG_KEY + " text not null primary key," +
                     C_CFG_VALUE + " text not null) " + _dbcw.charSet());
