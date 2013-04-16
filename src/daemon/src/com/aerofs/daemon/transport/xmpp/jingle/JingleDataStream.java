@@ -26,6 +26,10 @@ import org.slf4j.Logger;
 import java.io.ByteArrayInputStream;
 
 import static com.aerofs.daemon.lib.DaemonParam.Jingle.QUEUE_LENGTH;
+import static com.aerofs.j.StreamEvent.SE_CLOSE;
+import static com.aerofs.j.StreamEvent.SE_OPEN;
+import static com.aerofs.j.StreamEvent.SE_READ;
+import static com.aerofs.j.StreamEvent.SE_WRITE;
 
 // A JingleDataStream object represents a bidirectional jingle stream
 //
@@ -49,7 +53,6 @@ public class JingleDataStream implements IProxyObjectContainer
     private final DID did;
     private final StreamInterface _streamInterface;
     private boolean _writable;
-    private boolean _firstwrite = false;
     private long _bytesIn;
 
     private final PrioQueue<SendData> _q = new PrioQueue<SendData>(QUEUE_LENGTH);
@@ -109,26 +112,30 @@ public class JingleDataStream implements IProxyObjectContainer
         return did;
     }
 
+    private static boolean hasStreamFlag(int actualEvent, StreamEvent expectedEvent)
+    {
+        return (actualEvent & expectedEvent.swigValue()) != 0;
+    }
+
+    @SuppressWarnings("unused")
     private void onStreamEvent_(StreamInterface streamInterface, int event, int error)
         throws Exception
     {
-        if ((event & StreamEvent.SE_WRITE.swigValue()) != 0) {
-            if (!_firstwrite) {
-                _firstwrite = true;
-                _connectionListener.connected_(JingleDataStream.this);
-            }
-
+        if (hasStreamFlag(event, SE_WRITE)) {
             _writable = true;
-
             write_();
         }
 
-        if ((event & StreamEvent.SE_READ.swigValue()) != 0)  {
+        if (hasStreamFlag(event, SE_READ)) {
             read_();
         }
 
-        if ((event & StreamEvent.SE_CLOSE.swigValue()) != 0) {
-            throw new ExJingle("recv SE_CLOSE error " + error);
+        if (hasStreamFlag(event, SE_WRITE) && hasStreamFlag(event, SE_READ) && hasStreamFlag(event, SE_OPEN)) {
+            _connectionListener.connected_(JingleDataStream.this);
+        }
+
+        if (hasStreamFlag(event, SE_CLOSE)) {
+            throw new ExJingle("jds: stream err:" + error);
         }
     }
 

@@ -75,7 +75,6 @@ class Tandem
                     _jingleDataStreams[i] = null;
                 }
             }
-
         } else {
             // cannot add outgoing streams for more than once
             for (JingleDataStream p2 : _jingleDataStreams) assert p2 == null || p2.isIncoming();
@@ -92,8 +91,10 @@ class Tandem
         assert _jingleDataStreams[0] != null;
         DID did = _jingleDataStreams[0].did();
 
-        if (!_notified) ij.peerConnected(did);
-        _notified = true;
+        if (!_notified) {
+            _notified = true;
+            ij.peerConnected(did);
+        }
     }
 
     boolean isConnected_()

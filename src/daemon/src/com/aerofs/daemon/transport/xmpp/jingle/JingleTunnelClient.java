@@ -80,11 +80,9 @@ public class JingleTunnelClient implements IProxyObjectContainer
             _st.delayedDelete_(jds);
 
             DID did = jds.did();
+            Tandem t = checkNotNull(_cache.get_(did));
 
-            Tandem t = _cache.get_(did);
-            checkNotNull(t);
             t.remove_(jds);
-
             if (t.isEmpty_()) {
                 l.debug("eng: remove tandem d:" + did);
 
@@ -109,7 +107,7 @@ public class JingleTunnelClient implements IProxyObjectContainer
         @Override
         public void connected_(JingleDataStream jingleDataStream)
         {
-            l.debug("eng: connected jds:" + jingleDataStream + " d:" + jingleDataStream.did());
+            l.debug("eng: connected  d:{}", jingleDataStream.did());
 
             DID did = jingleDataStream.did();
             Tandem t = _cache.get_(did);
@@ -143,7 +141,7 @@ public class JingleTunnelClient implements IProxyObjectContainer
         this._st = st;
     }
 
-    private void add_(DID did, JingleDataStream p)
+    private void add_(DID did, JingleDataStream jingleDataStream)
     {
         _st.assertThread();
         assert !_closed;
@@ -153,7 +151,7 @@ public class JingleTunnelClient implements IProxyObjectContainer
             t = new Tandem(_ij);
             _cache.put_(did, t);
         }
-        t.add_(p);
+        t.add_(jingleDataStream);
     }
 
     private void onIncomingTunnel_(TunnelSessionClient client, Jid jid, SWIGTYPE_p_cricket__Session sess)
@@ -170,13 +168,13 @@ public class JingleTunnelClient implements IProxyObjectContainer
             return;
         }
 
+        l.debug("eng: new channel d:{}", did);
+
         StreamInterface s = client.AcceptTunnel(sess);
-        l.debug("eng: new channel d:" + did);
         JingleDataStream jingleDataStream = new JingleDataStream(_ij, s, did, true, _cclosl, _cconl);
         add_(did, jingleDataStream);
 
-        // see the comments on top
-        _ij.closePeerStreams(did, true, true);
+        _ij.closePeerStreams(did, true, true); // see comments at top
     }
 
     boolean isClosed_()
