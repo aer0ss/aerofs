@@ -473,24 +473,33 @@ public abstract class FileUtil
         if (!f.delete()) deleteOnExit(f);
     }
 
-    // TODO (MJ) The following *IfNotNFC(...) methods barely belong in this class.
+    // TODO (MJ) This method barely belongs in this class.
     // Once we determine what we're doing about (and handle) Normalization for string compares,
     // they can be moved or removed and replace with definitive asserts.
     public static void logIfNotNFC(String name, String extraLogs)
     {
-        reportIfNotNFC(name, extraLogs, true);
-    }
+        String error;
+        try {
+            error = Normalizer.isNormalized(name, Form.NFC) ? null : "Not NFC";
+        } catch (ArrayIndexOutOfBoundsException e) {
+            /** Two users have hit this bizaar exception so far:
 
-    private static void reportIfNotNFC(String name, String extraLogs, boolean shouldLogOnly)
-    {
-        if (!Normalizer.isNormalized(name, Form.NFC)) {
-            final String msg = Joiner.on(' ').useForNull("null").join(
-                    "Not NFC:",
+             java.lang.ArrayIndexOutOfBoundsException: 9
+                 at sun.text.normalizer.NormalizerImpl.strCompare(NormalizerImpl.java:2183)
+                 at sun.text.normalizer.NormalizerImpl.quickCheck(NormalizerImpl.java:894)
+                 at sun.text.normalizer.NormalizerBase$NFCMode.quickCheck(NormalizerBase.java:428)
+                 at sun.text.normalizer.NormalizerBase.isNormalized(NormalizerBase.java:1651)
+                 at sun.text.normalizer.NormalizerBase.isNormalized(NormalizerBase.java:1632)
+                 at java.text.Normalizer.isNormalized(Normalizer.java:163)
+             */
+            error = "Not NFC: isNormalized() failed: " + e;
+        }
+
+        if (error != null) {
+            _defectSender.logSendAsync(Joiner.on(' ').useForNull("null").join(
+                    error,
                     BaseUtil.hexEncode(BaseUtil.string2utf(name)),
-                    extraLogs);
-
-            if (shouldLogOnly) _defectSender.logSendAsync(msg);
-            else assert false : msg;
+                    extraLogs));
         }
     }
 }
