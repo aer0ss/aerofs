@@ -101,6 +101,14 @@ public class TestSP_GetACL extends AbstractSPACLTest
     }
 
     @Test
+    public void shouldNotIncludeExternalFolderInReply() throws Exception
+    {
+        shareFolderExternal(USER_1, SID_1, USER_2, Role.EDITOR);
+
+        assertEquals(0, service.getACLExcludeExternal(0L).get().getStoreAclCount());
+    }
+
+    @Test
     public void shouldReturnExternalFlagFalseAfterJoining() throws Exception
     {
         shareFolder(USER_1, SID_1, USER_2, Role.EDITOR);

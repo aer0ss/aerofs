@@ -138,7 +138,7 @@ public class FirstLaunch
             SPBlockingClient sp = SPClientFactory.newBlockingClient(Cfg.user());
             sp.signInRemote();
             ImmutableSet.Builder<SID> stores = ImmutableSet.builder();
-            for (PBStoreACL sacl : sp.getACL(0L).getStoreAclList()) {
+            for (PBStoreACL sacl : sp.getACLExcludeExternal(0L).getStoreAclList()) {
                 stores.add(new SID(sacl.getStoreId()));
             }
             _as._accessibleStores = stores.build();
