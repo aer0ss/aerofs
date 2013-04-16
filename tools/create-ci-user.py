@@ -1,3 +1,5 @@
+#!/usr/bin/python
+
 import os
 import sys
 from subprocess import check_output
@@ -28,7 +30,7 @@ def create_user(username, password):
 
 if __name__ == "__main__":
     if len(sys.argv) < 3:
-        print "usage: {0} <email> <password>".format(sys.argv[0])
+        print "Usage: {0} <username> <password>".format(sys.argv[0])
         exit(1)
     create_user(sys.argv[1], sys.argv[2])
     exit(0)

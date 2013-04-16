@@ -5,10 +5,10 @@ readonly ERRBADMODE=18
 
 #
 # usage:
-#   abspath [path]
+#   abspath <path>
 #
 # parameters:
-#   [path]: any path for which to get the absolute path
+#   <path>: any path for which to get the absolute path
 #
 # example:
 #   abspath ~
@@ -19,10 +19,10 @@ function abspath() {
 
 #
 # usage:
-#   to_lower [string]
+#   to_lower <string>
 #
 # parameters:
-#   [string]: any ascii string to convert to lowercase
+#   <string>: any ascii string to convert to lowercase
 #
 # example:
 #   to_lower HELLO_WORLD
