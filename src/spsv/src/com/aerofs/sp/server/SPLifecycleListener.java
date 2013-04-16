@@ -60,8 +60,6 @@ public class SPLifecycleListener implements ServletContextListener, HttpSessionL
     @Override
     public void contextInitialized(ServletContextEvent servletContextEvent)
     {
-        Configuration.Server.initialize();
-
         ServletContext ctx = servletContextEvent.getServletContext();
 
         l.info("verkehr host:" + ctx.getInitParameter(VERKEHR_HOST_INIT_PARAMETER) +

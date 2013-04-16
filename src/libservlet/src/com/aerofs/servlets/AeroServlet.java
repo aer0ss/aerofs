@@ -1,6 +1,7 @@
 package com.aerofs.servlets;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.base.properties.Configuration;
 import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.Util;
 import org.slf4j.Logger;
@@ -16,6 +17,9 @@ public class AeroServlet extends HttpServlet
 
     protected void init_() throws ServletException
     {
+        // initialize ArrowConfiguration
+        Configuration.Server.initialize();
+
         try {
             // setup App Root
             // TODO (WW) is it still needed after removal of dynamic labeling?
