@@ -6,11 +6,13 @@ package com.aerofs.base.properties;
 
 import com.aerofs.labeling.L;
 import org.arrowfs.config.ArrowConfiguration;
+import org.arrowfs.config.sources.DynamicPropertiesConfiguration;
 import org.arrowfs.config.sources.PropertiesConfiguration;
 import org.arrowfs.config.sources.SystemConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.util.List;
 
 import static com.google.common.collect.Lists.newArrayList;
@@ -78,13 +80,10 @@ public final class Configuration
             ArrowConfiguration.initialize(
                     ArrowConfiguration.builder()
                             .addConfiguration(SystemConfiguration.newInstance(), "system")
-// TODO (eric) at the time of writing we are not using aerofs.properties, but I believe that we will
-//             soon... there is some debate about whether or not polling the file system every 60s
-//             is a negative or not
-//                            .addConfiguration(
-//                                    DynamicPropertiesConfiguration.newInstance(
-//                                            getDynamicPropertyPaths(absoluteRuntimeRoot), 60000),
-//                                    "dynamic-properties")
+                            .addConfiguration(
+                                    DynamicPropertiesConfiguration.newInstance(
+                                            getDynamicPropertyPaths(absoluteRuntimeRoot), 60000),
+                                    "dynamic-properties")
                             .addConfiguration(
                                     PropertiesConfiguration.newInstance(getStaticPropertyPaths()),
                                     "static-properties")
@@ -92,12 +91,11 @@ public final class Configuration
             LOGGER.debug("Client configuration initialized");
         }
 
-//        TODO (eric) see above commented out DynamicPropertiesConfiguration initialization
-//        private static List<String> getDynamicPropertyPaths(final String absoluteRuntimeRoot) {
-//            final String aerofsPropertiesAbsolutePath =
-//                    new File(absoluteRuntimeRoot, "aerofs.properties").getAbsolutePath();
-//            return newArrayList( aerofsPropertiesAbsolutePath );
-//        }
+        private static List<String> getDynamicPropertyPaths(final String absoluteRuntimeRoot) {
+            final String aerofsPropertiesAbsolutePath =
+                    new File(absoluteRuntimeRoot, "aerofs.properties").getAbsolutePath();
+            return newArrayList( aerofsPropertiesAbsolutePath );
+        }
     }
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Configuration.class);
