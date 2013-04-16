@@ -55,6 +55,7 @@ import java.util.Map;
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertTrue;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyCollectionOf;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyString;
@@ -151,7 +152,7 @@ public class TestACLSynchronizer extends AbstractTest
     {
         GetACLReply.Builder bd = GetACLReply.newBuilder().setEpoch(epoch);
         for (PBStoreACL acl : acls) bd.addStoreAcl(acl);
-        when(spClient.getACL(anyLong())).thenReturn(bd.build());
+        when(spClient.getACLExcludeExternal(anyLong())).thenReturn(bd.build());
     }
 
     private static <T> Iterable<T> anyIterable(Class<T> c)
@@ -193,12 +194,13 @@ public class TestACLSynchronizer extends AbstractTest
     {
         adb.setEpoch_(10L, t);
         when(stores.getAll_()).thenReturn(Collections.<SIndex>emptySet());
-        when(spClient.getACL(anyLong())).thenReturn(GetACLReply.newBuilder().setEpoch(15L).build());
+        when(spClient.getACLExcludeExternal(anyLong()))
+                .thenReturn(GetACLReply.newBuilder().setEpoch(15L).build());
 
         aclsync.syncToLocal_(42L);
 
         verify(spClient).signInRemote();
-        verify(spClient).getACL(10L);
+        verify(spClient).getACLExcludeExternal(10L);
         assertEquals(15L, adb.getEpoch_());
     }
 
@@ -288,7 +290,7 @@ public class TestACLSynchronizer extends AbstractTest
 
         aclsync.syncToLocal_();
 
-        verify(spClient).getACL(anyLong());
+        verify(spClient).getACLExcludeExternal(anyLong());
 
         Map<UserID, Role> newRoles = Maps.newHashMap();
         newRoles.put(user1, Role.OWNER);
@@ -311,7 +313,7 @@ public class TestACLSynchronizer extends AbstractTest
 
         aclsync.syncToLocal_();
 
-        verify(spClient).getACL(anyLong());
+        verify(spClient).getACLExcludeExternal(anyLong());
         verify(storeJoiner).leaveStore_(sidx, sid1, t);
     }
 
@@ -329,7 +331,7 @@ public class TestACLSynchronizer extends AbstractTest
 
         aclsync.syncToLocal_();
 
-        verify(spClient).getACL(anyLong());
+        verify(spClient).getACLExcludeExternal(anyLong());
         verifyNoMoreInteractions(storeJoiner);
     }
 
@@ -347,7 +349,7 @@ public class TestACLSynchronizer extends AbstractTest
 
         aclsync.syncToLocal_();
 
-        verify(spClient).getACL(anyLong());
+        verify(spClient).getACLExcludeExternal(anyLong());
         verify(storeJoiner).leaveStore_(sidx, sid1, t);
     }
 }

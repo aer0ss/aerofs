@@ -1593,7 +1593,20 @@ public class SPService implements ISPService
     }
 
     @Override
+    public ListenableFuture<GetACLReply> getACLExcludeExternal(final Long epoch)
+            throws SQLException, ExNoPerm, ExNotAuthenticated
+    {
+        return getACLImpl(epoch, false);
+    }
+
+    @Override
     public ListenableFuture<GetACLReply> getACL(final Long epoch)
+            throws SQLException, ExNoPerm, ExNotAuthenticated
+    {
+        return getACLImpl(epoch, true);
+    }
+
+    private ListenableFuture<GetACLReply> getACLImpl(final Long epoch, boolean includeExternal)
             throws SQLException, ExNoPerm, ExNotAuthenticated
     {
         User user = _sessionUser.get();
@@ -1603,15 +1616,21 @@ public class SPService implements ISPService
 
         long userEpoch = user.getACLEpoch();
         if (userEpoch == epoch) {
-            l.info("no updates - matching epoch:" + epoch);
+            l.info("no updates - matching epoch: {}", epoch);
         } else {
             for (SharedFolder sf : user.getSharedFolders()) {
-                l.info("add s:" + sf.id());
+                boolean isExternal = sf.isExternal(user);
+                // omit external shared folders if the caller is not capable of handling them
+                if (isExternal && !includeExternal) {
+                    l.info("ign ext: {}", sf.id());
+                    continue;
+                }
+                l.info("add s: {}", sf.id());
                 PBStoreACL.Builder aclBuilder = PBStoreACL.newBuilder();
                 aclBuilder.setStoreId(sf.id().toPB());
                 aclBuilder.setExternal(sf.isExternal(user));
                 for (SubjectRolePair srp : sf.getMemberACL()) {
-                    l.info("add j:" + srp._subject + " r:" + srp._role.getDescription());
+                    l.info("add j:{} r:{}", srp._subject, srp._role.getDescription());
                     aclBuilder.addSubjectRole(srp.toPB());
                 }
                 bd.addStoreAcl(aclBuilder);
