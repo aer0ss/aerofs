@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Set;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.daemon.core.acl.ACLChecker;
 import com.aerofs.daemon.core.acl.ACLSynchronizer;
 import com.aerofs.daemon.core.ds.DirectoryService;
@@ -28,13 +29,14 @@ import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.event.fs.EIShareFolder;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
+import com.aerofs.lib.cfg.CfgAbsRoots;
+import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.base.acl.Role;
 import com.aerofs.base.acl.SubjectRolePairs;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExChildAlreadyShared;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.lib.ex.ExParentAlreadyShared;
@@ -48,7 +50,6 @@ import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.sp.client.SPBlockingClient;
-import com.aerofs.sp.client.SPClientFactory;
 import com.aerofs.proto.Common.PBSubjectRolePair;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
@@ -69,11 +70,15 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
     private final IStores _ss;
     private final DescendantStores _dss;
     private final ACLSynchronizer _aclsync;
+    private final SPBlockingClient.Factory _factSP;
+    private final CfgLocalUser _localUser;
+    private final CfgAbsRoots _absRoots;
 
     @Inject
-    public HdShareFolder(ACLChecker acl, TC tc, TransManager tm, ObjectCreator oc, DirectoryService ds,
-            IImmigrantCreator imc, ObjectMover om, ObjectDeleter od, IMapSID2SIndex sid2sidx,
-            IStores ss, DescendantStores dss, ACLSynchronizer aclsync)
+    public HdShareFolder(ACLChecker acl, TC tc, TransManager tm, ObjectCreator oc,
+            DirectoryService ds, IImmigrantCreator imc, ObjectMover om, ObjectDeleter od,
+            IMapSID2SIndex sid2sidx, IStores ss, DescendantStores dss, ACLSynchronizer aclsync,
+            SPBlockingClient.Factory factSP, CfgLocalUser localUser, CfgAbsRoots cfgAbsRoots)
     {
         _ss = ss;
         _acl = acl;
@@ -87,6 +92,9 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
         _sid2sidx = sid2sidx;
         _dss = dss;
         _aclsync = aclsync;
+        _factSP = factSP;
+        _localUser = localUser;
+        _absRoots = cfgAbsRoots;
     }
 
     @Override
@@ -94,20 +102,34 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
     {
         l.info("sharing: " + ev._path);
 
-        OA oa = checkSanity_(ev._path);
-
-        checkACL_(ev.user(), ev._path);
-
-        // calculate the SID
-        boolean alreadyShared = false;
+        OA oa;
         SID sid;
-        if (oa.isAnchor()) {
-            alreadyShared = true;
-            sid = SID.anchorOID2storeSID(oa.soid().oid());
-        } else if (oa.isDir()) {
-            sid = SID.folderOID2convertedStoreSID(oa.soid().oid());
+        boolean alreadyShared = false;
+
+        if (ev._path.sid().isUserRoot()) {
+            // physical root is a user root store: the root itself cannot be shared but one level of
+            // nested sharing is allowed (i.e folders under the root can be shared)
+            oa = checkSanity_(ev._path);
+            checkACL_(ev.user(), ev._path);
+
+            if (oa.isAnchor()) {
+                alreadyShared = true;
+                sid = SID.anchorOID2storeSID(oa.soid().oid());
+            } else if (oa.isDir()) {
+                sid = SID.folderOID2convertedStoreSID(oa.soid().oid());
+            } else {
+                throw new ExNotDir();
+            }
         } else {
-            throw new ExNotDir();
+            // physical root is an external shared folder: the root can be shared an no nested
+            // sharing is allowed as it would break consistency (an external shared folder for
+            // one user may be located under the root anchor for another)
+            if (!ev._path.isEmpty()) throw new ExParentAlreadyShared();
+            alreadyShared = true;
+            sid = ev._path.sid();
+            oa = null;
+            // check that the sid is a valid external root
+            if (_absRoots.get(sid) == null) throw new ExBadArgs();
         }
 
         //
@@ -137,7 +159,8 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
         // while remote failures will prevent the system from being in a half-state
         //
 
-        callSP_(sid, ev._path.last(), SubjectRolePairs.mapToPB(ev._subject2role), ev._emailNote);
+        String name = Util.sharedFolderName(ev._path, _absRoots);
+        callSP_(sid, name, SubjectRolePairs.mapToPB(ev._subject2role), ev._emailNote);
 
         if (!alreadyShared) convertToSharedFolder_(ev._path, oa, sid);
 
@@ -186,9 +209,9 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
         TCB tcb = null;
         try {
             tcb = tk.pseudoPause_("sp-share");
-            SPBlockingClient sp = SPClientFactory.newBlockingClient(Cfg.user());
+            SPBlockingClient sp = _factSP.create_(_localUser.get());
             sp.signInRemote();
-            // TODO: support sharing external root
+            // external shared folders are create by HdLinkRoot only
             sp.shareFolder(folderName, sid.toPB(), roles, emailNote, false);
         } finally {
             if (tcb != null) tcb.pseudoResumed_();

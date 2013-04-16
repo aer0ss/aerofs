@@ -117,7 +117,8 @@ public class ObjectCreator
             } else if (oa.isAnchor()) {
                 IPhysicalFolder pf = oa.physicalFolder();
                 pf.create_(op, t);
-                _sc.addParentStoreReference_(SID.anchorOID2storeSID(oa.soid().oid()), oa.soid().sidx(), t);
+                _sc.addParentStoreReference_(SID.anchorOID2storeSID(oa.soid().oid()),
+                        oa.soid().sidx(), oa.name(), t);
                 pf.promoteToAnchor_(op, t);
             } else {
                 assert oa.isFile();

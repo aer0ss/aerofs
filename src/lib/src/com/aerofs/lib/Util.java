@@ -3,6 +3,7 @@ package com.aerofs.lib;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.*;
+import com.aerofs.lib.cfg.CfgAbsRoots;
 import com.aerofs.lib.ex.*;
 import com.aerofs.lib.FileUtil.FileName;
 import com.aerofs.lib.cfg.Cfg;
@@ -73,6 +74,7 @@ public abstract class Util
                         .put(Type.DEVICE_ID_ALREADY_EXISTS, ExDeviceIDAlreadyExists.class)
                         .put(Type.ALREADY_INVITED, ExAlreadyInvited.class)
                         .put(Type.INDEXING, ExIndexing.class)
+                        .put(Type.NOT_SHARED, ExNotShared.class)
                         .put(Type.PARENT_ALREADY_SHARED, ExParentAlreadyShared.class)
                         .put(Type.CHILD_ALREADY_SHARED, ExChildAlreadyShared.class)
                         .put(Type.DEVICE_OFFLINE, ExDeviceOffline.class)
@@ -873,5 +875,17 @@ public abstract class Util
         } else {
             return path;
         }
+    }
+
+    /**
+     * Derive the name of a shared folder from its Path
+     * This is necessary to handle external roots, whose Path are empty and whose name are dervied
+     * from the physical folder they are linked too.
+     *
+     * Classes that need to be unit-tested cannot access Cfg directly...
+     */
+    public static String sharedFolderName(Path path, CfgAbsRoots absRoots)
+    {
+        return path.isEmpty() ? new File(absRoots.get(path.sid())).getName() : path.last();
     }
 }

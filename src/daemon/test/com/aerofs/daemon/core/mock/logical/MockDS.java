@@ -79,9 +79,9 @@ public class MockDS
     private final @Nullable MapSIndex2DeviceBitMap _sidx2dbm;
 
     private int _nextSidx;
-    private final SID _sid;
-    private final MockDSDir _root;
-    private final MockDSDir _trash;
+    private final SID _rootSID;
+
+    private final Map<SID, MockDSRoot> _roots = Maps.newHashMap();
 
     /**
      * A Mockito argument matcher for matching Paths in a case-insensitive way (as the
@@ -124,18 +124,7 @@ public class MockDS
         _sidx2dbm = sidx2dbm;
 
         _nextSidx = 1;
-
-        // mock root store
-        SIndex sidx = new SIndex(_nextSidx++);
-        _sid = rootSID;
-        _root = new MockDSDir(OA.ROOT_DIR_NAME, null, new SOID(sidx, OID.ROOT));
-        _trash = new MockDSDir(Param.TRASH, _root, true, new SOID(sidx, OID.TRASH));
-
-        mockSIDMap(_sid, sidx);
-
-        // mock path resolution for root
-        when(_ds.resolveNullable_(argThat(new IsEqualPathIgnoringCase(Path.root(_sid)))))
-                .thenReturn(_root.soid());
+        _rootSID = rootSID;
 
         /*
          * update mocks reactively
@@ -192,8 +181,6 @@ public class MockDS
 
     }
 
-    public SID rootSID() { return _sid; }
-
     /**
      * Mock SID<->SIndex mapping
      */
@@ -240,8 +227,7 @@ public class MockDS
 
             // basic DS mocking
 
-            boolean root = (parent == null);
-            Path path = getPath();
+            boolean root = this instanceof MockDSRoot;
 
             ////////
             // mock OA
@@ -262,7 +248,6 @@ public class MockDS
             when(_ds.getOA_(eq(_soid))).thenReturn(_oa);
             when(_ds.getOANullable_(eq(_soid))).thenReturn(_oa);
             when(_ds.getAliasedOANullable_(eq(_soid))).thenReturn(_oa);
-            when(_ds.resolve_(_oa)).thenReturn(path);
 
             when(_ds.getSyncStatus_(eq(_soid))).thenReturn(new BitVector());
             when(_ds.getRawSyncStatus_(eq(_soid))).thenReturn(new BitVector());
@@ -270,6 +255,8 @@ public class MockDS
             // The path of a root object should be resolved into the anchor's SOID. So we skip
             // mocking the path resolution for roots.
             if (!root) {
+                Path path = getPath();
+                when(_ds.resolve_(_oa)).thenReturn(path);
                 mockPathResolution(path, _soid);
             }
         }
@@ -295,13 +282,11 @@ public class MockDS
 
         public Path getPath()
         {
-            if (_parent == null)
-                return Path.root(_sid);
             Path p = _parent.getPath();
             return _soid.oid().isRoot() ? p : p.append(_name);
         }
 
-        private void mockPathResolution(Path path, @Nullable SOID soid) throws Exception
+        protected void mockPathResolution(Path path, @Nullable SOID soid) throws Exception
         {
             if (soid == null) {
                 when(_ds.resolveNullable_(argThat(new IsEqualPathIgnoringCase(path))))
@@ -370,12 +355,14 @@ public class MockDS
         {
             // deleting is moving to the trash of the current store
             MockDSDir d = _parent;
-            while (d != null && !(d instanceof MockDSAnchor)) {
+            while (d != null && !(d instanceof MockDSAnchor || d instanceof MockDSRoot)) {
                 d = d._parent;
             }
 
-            move(d != null ? ((MockDSAnchor) d)._trash : _trash, _soid.oid().toStringFormal(),
-                    t,  listeners);
+            MockDSDir trash = d instanceof MockDSAnchor
+                    ? ((MockDSAnchor)d)._trash : ((MockDSRoot)d)._trash;
+
+            move(trash, _soid.oid().toStringFormal(), t,  listeners);
         }
 
         public BitVector ss(BitVector newStatus) throws Exception
@@ -732,6 +719,9 @@ public class MockDS
             if (_sidx2dbm != null) {
                 when(_sidx2dbm.getDeviceMapping_(eq(sidx))).thenReturn(new DeviceBitMap());
             }
+
+            // make sure we resolve...
+            mockPathResolution(getPath(), _soid);
         }
 
         @Override
@@ -811,6 +801,36 @@ public class MockDS
         }
     }
 
+    public class MockDSRoot extends MockDSDir
+    {
+        SID _sid;
+        MockDSDir _trash;
+
+        public MockDSRoot(SID sid, SIndex sidx) throws Exception
+        {
+            super(OA.ROOT_DIR_NAME, null, new SOID(sidx, OID.ROOT));
+
+            _sid = sid;
+            _trash = new MockDSDir(Param.TRASH, this, true, new SOID(sidx, OID.TRASH));
+
+            mockSIDMap(sid, sidx);
+
+            when(_ds.resolve_(_oa)).thenReturn(Path.root(_sid));
+
+            // mock path resolution for root and trash
+            when(_ds.resolveNullable_(Path.root(sid))).thenReturn(soid());
+            when(_ds.resolveNullable_(
+                    argThat(new IsEqualPathIgnoringCase(Path.fromString(sid, Param.TRASH)))))
+                    .thenReturn(_trash.soid());
+        }
+
+        @Override
+        public Path getPath()
+        {
+            return Path.root(_sid);
+        }
+    }
+
     public MockDS dids(DID... dids) throws Exception
     {
         return dbm(new DeviceBitMap(dids));
@@ -819,21 +839,26 @@ public class MockDS
     public MockDS dbm(DeviceBitMap dbm) throws Exception
     {
         assert _sidx2dbm != null;
-        when(_sidx2dbm.getDeviceMapping_(eq(_root.soid().sidx()))).thenReturn(dbm);
+        when(_sidx2dbm.getDeviceMapping_(eq(root().soid().sidx()))).thenReturn(dbm);
         return this;
     }
 
-    public SID sid()
+    public MockDSDir root() throws Exception
     {
-        return _sid;
+        return root(_rootSID);
     }
 
-    public MockDSDir root()
+    public MockDSDir root(SID sid) throws Exception
     {
-        return _root;
+        MockDSRoot root = _roots.get(sid);
+        if (root == null) {
+            root = new MockDSRoot(sid, new SIndex(_nextSidx++));
+            _roots.put(sid, root);
+        }
+        return root;
     }
 
-    public MockDSDir cd(Path path)
+    public MockDSDir cd(Path path) throws Exception
     {
         MockDSDir d = root();
         for (String e : path.elements()) {
@@ -849,7 +874,7 @@ public class MockDS
 
     public void touch(String p, Trans t, IDirectoryServiceListener... listeners) throws Exception
     {
-        Path path = Path.fromString(_sid, p);
+        Path path = Path.fromString(_rootSID, p);
         MockDSDir d = cd(path.removeLast());
         MockDSFile f = d.file(path.last());
         for (IDirectoryServiceListener listener : listeners)
@@ -858,7 +883,7 @@ public class MockDS
 
     public void mkdir(String p, Trans t, IDirectoryServiceListener... listeners) throws Exception
     {
-        Path path = Path.fromString(_sid, p);
+        Path path = Path.fromString(_rootSID, p);
         MockDSDir d = cd(path.removeLast());
         MockDSDir f = d.dir(path.last());
         for (IDirectoryServiceListener listener : listeners)
@@ -867,7 +892,7 @@ public class MockDS
 
     public void delete(String p, Trans t, IDirectoryServiceListener... listeners) throws Exception
     {
-        Path path = Path.fromString(_sid, p);
+        Path path = Path.fromString(_rootSID, p);
         MockDSDir d = cd(path.removeLast());
         MockDSObject c = d.child(path.last());
         c.delete(t, listeners);
@@ -876,8 +901,8 @@ public class MockDS
     public void move(String org, String dst, Trans t, IDirectoryServiceListener... listeners)
             throws Exception
     {
-        Path from = Path.fromString(_sid, org);
-        Path to = Path.fromString(_sid, dst);
+        Path from = Path.fromString(_rootSID, org);
+        Path to = Path.fromString(_rootSID, dst);
         MockDSDir dfrom = cd(from.removeLast());
         MockDSObject c = dfrom.child(from.last());
 
@@ -888,7 +913,7 @@ public class MockDS
     public void sync(String p, BitVector newStatus, Trans t, IDirectoryServiceListener... listeners)
             throws Exception
     {
-        Path path = Path.fromString(_sid, p);
+        Path path = Path.fromString(_rootSID, p);
         MockDSDir d = cd(path.removeLast());
         MockDSObject c = d.child(path.last());
         BitVector oldStatus = c.ss(newStatus);

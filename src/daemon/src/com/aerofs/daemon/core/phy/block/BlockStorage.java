@@ -273,7 +273,8 @@ class BlockStorage implements IPhysicalStorage
     }
 
     @Override
-    public void createStore_(SIndex sidx, SID sid, Trans t) throws IOException, SQLException
+    public void createStore_(SIndex sidx, SID sid, String name, Trans t)
+            throws IOException, SQLException
     {
         // TODO: fw to backend?
     }

@@ -63,7 +63,7 @@ public class AbstractMightCreateTest extends AbstractTest
      */
     SOID soidAt(String path)
     {
-        return argThat(new IsSOIDAtPath(ds, rootSID, path));
+        return argThat(new IsSOIDAtPath(ds, rootSID, path, false));
     }
 
     /**

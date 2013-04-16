@@ -8,6 +8,7 @@ import com.aerofs.base.id.DID;
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.mock.logical.IsSOIDAtPath;
+import com.aerofs.daemon.core.mock.logical.LogicalObjectsPrinter;
 import com.aerofs.daemon.core.mock.logical.MockDS;
 import com.aerofs.daemon.core.store.MapSIndex2DeviceBitMap;
 import com.aerofs.daemon.core.store.SIDMap;
@@ -76,7 +77,7 @@ public class TestAggregateSyncStatus extends AbstractTest
      */
     SOID soidAt(String path)
     {
-        return argThat(new IsSOIDAtPath(ds, rootSID, path));
+        return argThat(new IsSOIDAtPath(ds, rootSID, path, true));
     }
 
     /**
@@ -145,6 +146,7 @@ public class TestAggregateSyncStatus extends AbstractTest
     void assertAggregateSyncStatusVectorEquals(String path, boolean... status) throws Exception
     {
         SOID soid = ds.resolveThrows_(Path.fromString(rootSID, path));
+        l.info("{} {}", soid, path);
         Assert.assertEquals(new BitVector(status), agsync.getAggregateSyncStatusVector_(soid));
     }
 
@@ -467,9 +469,11 @@ public class TestAggregateSyncStatus extends AbstractTest
                                 .file("hello").ss(true, false, false).parent()
                                 .file("world").ss(true, true, false);
 
+        LogicalObjectsPrinter.printRecursively(rootSID, ds);
+
         // check that aggregate status vector is derived properly from aggregate status counters
         assertAggregateSyncStatusVectorEquals("foo/bar/baz", true, false, false);
-        assertAggregateSyncStatusVectorEquals("foo/bar", true, false, false);
+        assertAggregateSyncStatusVectorEquals("foo/bar", true, true, true); // ss:anchor / agss:root
         assertAggregateSyncStatusVectorEquals("foo", true, true, true);
         assertAggregateSyncStatusVectorEquals("", true, true, true);
 
@@ -482,7 +486,7 @@ public class TestAggregateSyncStatus extends AbstractTest
 
         // check that aggregate status vector is derived properly from aggregate status counters
         assertAggregateSyncStatusVectorEquals("foo/bar/baz", false, true, false);
-        assertAggregateSyncStatusVectorEquals("foo/bar", false, true, false);
+        assertAggregateSyncStatusVectorEquals("foo/bar", true, true, true); // ss:anchor / agss:root
         assertAggregateSyncStatusVectorEquals("foo", true, true, true);
         assertAggregateSyncStatusVectorEquals("", true, true, true);
     }

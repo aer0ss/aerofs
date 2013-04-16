@@ -45,12 +45,12 @@ public class StoreCreator
     /**
      * Add {@code sidxParent} as {@code sid}'s parent. Create the child store if it doesn't exist.
      */
-    public void addParentStoreReference_(SID sid, SIndex sidxParent, Trans t)
+    public void addParentStoreReference_(SID sid, SIndex sidxParent, String name, Trans t)
             throws ExAlreadyExist, SQLException, IOException
     {
         SIndex sidx = _sid2sidx.getNullable_(sid);
         if (sidx == null) {
-            sidx = createStoreImpl_(sid, t);
+            sidx = createStoreImpl_(sid, name, t);
             assert _ss.getParents_(sidx).isEmpty() : sidx + " " + sid;
         } else {
             // adding ref to the root store of a user is never fine
@@ -66,16 +66,16 @@ public class StoreCreator
     /**
      * Create a store with no parent. See comments in IStores for detail
      */
-    public void createRootStore_(SID sid, Trans t)
+    public SIndex createRootStore_(SID sid, String name, Trans t)
             throws SQLException, IOException, ExAlreadyExist
     {
-        createStoreImpl_(sid, t);
+        return createStoreImpl_(sid, name, t);
     }
 
     /**
      * Create a store.
      */
-    private SIndex createStoreImpl_(SID sid, Trans t)
+    private SIndex createStoreImpl_(SID sid, String name, Trans t)
             throws SQLException, ExAlreadyExist, IOException
     {
         // Note that during store creation, all in-memory data structures may not be fully set up
@@ -96,7 +96,7 @@ public class StoreCreator
 
         _nvc.restoreStore_(sidx, t);
         _ivc.restoreStore_(sidx, t);
-        _ps.createStore_(sidx, sid, t);
+        _ps.createStore_(sidx, sid, name, t);
         _ss.add_(sidx, t);
 
         return sidx;

@@ -311,9 +311,8 @@ class Setup
             map.put(Key.S3_ENCRYPTION_PASSWORD, s3config.getEncryptionKey());
         }
 
-        CfgDatabase db = Cfg.db();
-        db.recreateSchema_();
-        db.set(map);
+        Cfg.recreateSchema_();
+        Cfg.db().set(map);
 
         Cfg.writePortbase(_rtRoot, findPortBase());
 

@@ -45,7 +45,7 @@ public interface IPhysicalStorage
      * NB: No assumptions should be made about pathes. Any code that require path information
      * should take place in the folder to anchor promotion method
      */
-    void createStore_(SIndex sidx, SID sid, Trans t) throws IOException, SQLException;
+    void createStore_(SIndex sidx, SID sid, String name, Trans t) throws IOException, SQLException;
 
     /**
      * Perform necessary operations on the physical storage for deleting a store. The implementation

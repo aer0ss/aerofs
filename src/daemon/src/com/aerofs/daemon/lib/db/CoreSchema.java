@@ -207,6 +207,11 @@ public class CoreSchema implements ISchema
             C_SPQ_IDX       = "spq_i",
             C_SPQ_SID       = "spq_s",
 
+            // pending external folders
+            T_PENDING_ROOT      = "pr",
+            C_PENDING_ROOT_SID  = "pr_s",
+            C_PENDING_ROOT_NAME = "pr_n",
+
             // DID-to-User mapping
             T_D2U            = "d",
             C_D2U_DID        = "d_d",       // DID
@@ -546,6 +551,7 @@ public class CoreSchema implements ISchema
         createActivityLogTables(s, _dbcw);
         createSyncStatusPushQueueTable(s, _dbcw);
         createLeaveQueueTable(s, _dbcw);
+        createPendingRootTable(s, _dbcw);
     }
 
     @Override
@@ -595,6 +601,15 @@ public class CoreSchema implements ISchema
                 C_SPQ_SID + dbcw.uniqueIdType() + " not null" +
                 ")");
     }
+
+    public static void createPendingRootTable(Statement s, IDBCW dbcw) throws SQLException
+    {
+        s.executeUpdate("create table " + T_PENDING_ROOT + "(" +
+                C_PENDING_ROOT_SID + dbcw.uniqueIdType() + " not null primary key," +
+                C_PENDING_ROOT_NAME + " text not null" +
+                ")" + dbcw.charSet());
+    }
+
 
     public static void createActivityLogTables(Statement s, IDBCW dbcw) throws SQLException
     {

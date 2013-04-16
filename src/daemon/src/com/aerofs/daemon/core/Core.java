@@ -2,6 +2,7 @@ package com.aerofs.daemon.core;
 
 import com.aerofs.daemon.core.db.CoreDBSetup;
 import com.aerofs.daemon.core.first.FirstLaunch;
+import com.aerofs.daemon.core.notification.RitualNotificationWirings;
 import com.aerofs.daemon.core.phy.ScanCompletionCallback;
 import com.aerofs.daemon.core.syncstatus.SyncStatusNotificationSubscriber;
 import com.aerofs.daemon.core.tc.Cat;
@@ -42,6 +43,7 @@ public class Core implements IModule
     private final SyncStatusNotificationSubscriber _sssub;
     private final UnicastInputOutputStack _stack;
     private final ILinker _linker;
+    private final RitualNotificationWirings _notifierWirings;
     private final RitualNotificationServer _notifier;
     private final DaemonPostUpdateTasks _dput;
     private final CoreDBSetup _dbsetup;
@@ -63,6 +65,7 @@ public class Core implements IModule
             SyncStatusNotificationSubscriber sssub,
             UnicastInputOutputStack stack,
             RitualNotificationServer notifier,
+            RitualNotificationWirings notifierWirings,
             ILinker linker,
             DaemonPostUpdateTasks dput,
             CoreDBSetup dbsetup,
@@ -85,6 +88,7 @@ public class Core implements IModule
         _stack = stack;
         _linker = linker;
         _notifier = notifier;
+        _notifierWirings = notifierWirings;
         _dput = dput;
         _dbsetup = dbsetup;
         _cpw = cpw;
@@ -108,6 +112,7 @@ public class Core implements IModule
         _stack.init_();
         _aclsub.init_();
         _sssub.init_();
+        _notifierWirings.init_();
         _notifier.init_();
     }
 

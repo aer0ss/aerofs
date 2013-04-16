@@ -23,18 +23,16 @@ class UploadStateListener implements IUploadStateListener
 {
     private final RitualNotificationServer _notifier;
     private final DirectoryService _ds;
-    private final TC _tc;
     private final UserAndDeviceNames _nr; // name resolver
 
     private final Throttler<Key> _throttler = new Throttler<Key>(1 * C.SEC);
     private final boolean _useTransferFilter = Cfg.useTransferFilter();
 
-    UploadStateListener(RitualNotificationServer notifier, DirectoryService ds, TC tc,
+    UploadStateListener(RitualNotificationServer notifier, DirectoryService ds,
             UserAndDeviceNames nr)
     {
         _notifier = notifier;
         _ds = ds;
-        _tc = tc;
         _nr = nr;
     }
 
@@ -49,14 +47,12 @@ class UploadStateListener implements IUploadStateListener
             _throttler.untrack(key);
         }
 
-        _notifier.sendEvent_(state2pb_(_tc, _ds, _nr, key, value));
+        _notifier.sendEvent_(state2pb_(_ds, _nr, key, value));
     }
 
-    static PBNotification state2pb_(TC tc, DirectoryService ds, UserAndDeviceNames nr,
+    static PBNotification state2pb_(DirectoryService ds, UserAndDeviceNames nr,
             Key key, Value value)
     {
-        assert tc.isCoreThread();
-
         SOCID socid = key._socid;
         PBSOCID pbsocid = PBSOCID.newBuilder()
                 .setSidx(socid.sidx().getInt())

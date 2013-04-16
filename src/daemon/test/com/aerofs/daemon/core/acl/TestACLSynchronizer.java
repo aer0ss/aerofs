@@ -151,7 +151,7 @@ public class TestACLSynchronizer extends AbstractTest
     {
         GetACLReply.Builder bd = GetACLReply.newBuilder().setEpoch(epoch);
         for (PBStoreACL acl : acls) bd.addStoreAcl(acl);
-        when(spClient.getACLExcludeExternal(anyLong())).thenReturn(bd.build());
+        when(spClient.getACL(anyLong())).thenReturn(bd.build());
     }
 
     private static <T> Iterable<T> anyIterable(Class<T> c)
@@ -193,13 +193,13 @@ public class TestACLSynchronizer extends AbstractTest
     {
         adb.setEpoch_(10L, t);
         when(stores.getAll_()).thenReturn(Collections.<SIndex>emptySet());
-        when(spClient.getACLExcludeExternal(anyLong()))
+        when(spClient.getACL(anyLong()))
                 .thenReturn(GetACLReply.newBuilder().setEpoch(15L).build());
 
         aclsync.syncToLocal_(42L);
 
         verify(spClient).signInRemote();
-        verify(spClient).getACLExcludeExternal(10L);
+        verify(spClient).getACL(10L);
         assertEquals(15L, adb.getEpoch_());
     }
 
@@ -289,7 +289,7 @@ public class TestACLSynchronizer extends AbstractTest
 
         aclsync.syncToLocal_();
 
-        verify(spClient).getACLExcludeExternal(anyLong());
+        verify(spClient).getACL(anyLong());
 
         Map<UserID, Role> newRoles = Maps.newHashMap();
         newRoles.put(user1, Role.OWNER);
@@ -312,7 +312,7 @@ public class TestACLSynchronizer extends AbstractTest
 
         aclsync.syncToLocal_();
 
-        verify(spClient).getACLExcludeExternal(anyLong());
+        verify(spClient).getACL(anyLong());
         verify(storeJoiner).leaveStore_(sidx, sid1, t);
     }
 
@@ -330,7 +330,7 @@ public class TestACLSynchronizer extends AbstractTest
 
         aclsync.syncToLocal_();
 
-        verify(spClient).getACLExcludeExternal(anyLong());
+        verify(spClient).getACL(anyLong());
         verifyNoMoreInteractions(storeJoiner);
     }
 
@@ -348,7 +348,7 @@ public class TestACLSynchronizer extends AbstractTest
 
         aclsync.syncToLocal_();
 
-        verify(spClient).getACLExcludeExternal(anyLong());
+        verify(spClient).getACL(anyLong());
         verify(storeJoiner).leaveStore_(sidx, sid1, t);
     }
 }

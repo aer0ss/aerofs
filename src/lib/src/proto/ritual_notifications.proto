@@ -18,6 +18,8 @@ message PBNotification {
         SHARED_FOLDER_JOIN = 6;         // joined a shared folder
         SHARED_FOLDER_KICKOUT = 7;      // kicked out of a shared folder
         INDEXING_PROGRESS = 8;
+        SHARED_FOLDER_PENDING = 9;      // list of pending roots changed
+        ROOTS_CHANGED = 10;             // roots changed (added/removed/moved)
     }
 
     required Type type = 1;

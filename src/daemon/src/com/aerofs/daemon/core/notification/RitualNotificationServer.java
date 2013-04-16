@@ -33,12 +33,14 @@ import com.google.common.collect.HashBiMap;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.sql.SQLException;
+import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
 
 import javax.inject.Inject;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
 import org.slf4j.Logger;
 
 public class RitualNotificationServer implements IConnectionManager
@@ -52,100 +54,25 @@ public class RitualNotificationServer implements IConnectionManager
     // Access is protected by synchronized (_map)
     private final BiMap<InetSocketAddress, ReactorConnector> _map = HashBiMap.create();
 
-    private final CoreQueue _cq;
-    private final CoreScheduler _sched;
-    private final DownloadState _dls;
-    private final UploadState _uls;
-    private final PathStatusNotifier _psn;
-    private final PathStatus _so;
-    private final SyncStatusSynchronizer _sss;
-    private final AggregateSyncStatus _agss;
-    private final DirectoryService _ds;
-    private final TC _tc;
-    private final ServerConnectionStatus _scs;
-    private final ConflictState _cl;
-    private final UserAndDeviceNames _nr;
+    interface IConnectionListener
+    {
+        void onIncomingconnection(InetSocketAddress from);
+    }
+
+    private final List<IConnectionListener> _listeners = Lists.newArrayList();
 
     @Inject
-    public RitualNotificationServer(CoreQueue cq, CoreScheduler sched, TC tc, DirectoryService ds,
-            DownloadState dls, UploadState uls, PathStatus so, ServerConnectionStatus scs,
-            SyncStatusSynchronizer sss, AggregateSyncStatus agss, ConflictState cl,
-            UserAndDeviceNames nr)
+    public RitualNotificationServer()
     {
-        _cq = cq;
-        _sched = sched;
-        _dls = dls;
-        _uls = uls;
-        _so = so;
-        _sss = sss;
-        _agss = agss;
-        _ds = ds;
-        _tc = tc;
-        _scs = scs;
-        _cl = cl;
-        _psn = new PathStatusNotifier(this, _ds, _so);
-        _nr = nr;
+    }
+
+    void addListener_(IConnectionListener listener)
+    {
+        _listeners.add(listener);
     }
 
     public void init_() throws IOException
     {
-        _dls.addListener_(new DownloadStateListener(this, _ds, _tc, _nr));
-        _uls.addListener_(new UploadStateListener(this, _ds, _tc, _nr));
-
-        // Merged status notifier listens on all input sources
-        final PathStatusNotifier sn = new PathStatusNotifier(this, _ds, _so);
-        _dls.addListener_(sn);
-        _uls.addListener_(sn);
-        _agss.addListener_(sn);
-        _cl.addListener_(sn);
-
-        _sched.schedule(new AbstractEBSelfHandling() {
-            @Override
-            public void handle_()
-            {
-                try {
-                    _cl.sendSnapshot_(sn);
-                } catch (SQLException e) {
-                    l.warn("Failed to send conflict snapshot", e);
-                }
-            }
-        }, 0);
-
-        // detect apparition of new device in a store to send CLEAR_CACHE message
-        _sss.addListener_(new IListener() {
-            @Override
-            public void devicesChanged(Set<SIndex> stores)
-            {
-                clearStatusCache_();
-            }
-        });
-
-        // detect change of server availability to send CLEAR_CACHE message
-        _scs.addListener(new IServiceStatusListener() {
-            @Override
-            public boolean isAvailable(ImmutableMap<Server, Boolean> status)
-            {
-                return status.get(Server.VERKEHR) && status.get(Server.SYNCSTAT);
-            }
-
-            @Override
-            public void available() {
-                l.info("sss available");
-                // sync status back up: must clear cache in shellext to avoid false negatives
-                // this callback is never called with the core lock held, must schedule...
-                scheduleClearStatusCache();
-            }
-
-            @Override
-            public void unavailable()
-            {
-                l.info("sss unavailable");
-                // sync status down: must clear cache in shellext to avoid showing outdated status
-                // this callback is never called with the core lock held, must schedule...
-                scheduleClearStatusCache();
-            }
-        }, Server.VERKEHR, Server.SYNCSTAT);
-
         SPBlockingClient.setListener(new DaemonBadCredentialListener(this));
 
         _proactor = new TCPProactorMT("notifier", this,
@@ -175,8 +102,7 @@ public class RitualNotificationServer implements IConnectionManager
 
         _proactor.reuseForOutgoingConnection(from, c);
 
-        // must enqueue since this method is called by non-core threads
-        _cq.enqueueBlocking(new EISendSnapshot(_tc, this, from, _dls, _uls, _psn, _ds, _nr), PRIO);
+        for (IConnectionListener listner : _listeners) listner.onIncomingconnection(from);
 
         return rc;
     }
@@ -202,9 +128,6 @@ public class RitualNotificationServer implements IConnectionManager
 
     void sendSnapshot_(InetSocketAddress to, PBNotification ... pbs)
     {
-        // only core threads can access cr._snapshotSent
-        assert _tc.isCoreThread();
-
         ReactorConnector cr;
         synchronized (_map) { cr = _map.get(to); }
 
@@ -221,32 +144,22 @@ public class RitualNotificationServer implements IConnectionManager
         }
     }
 
-    private void scheduleClearStatusCache()
-    {
-        // this is kinda retarted but due to the snapshot logic notifications can only be sent from
-        // a core thread, even though other synchronization is used
-        // TODO: investigate a refactoring that removes this requirement
-        _sched.schedule(new AbstractEBSelfHandling() {
-            @Override
-            public void handle_()
-            {
-                clearStatusCache_();
-            }
-        }, 0);
-    }
-
-    private void clearStatusCache_()
+    void clearStatusCache_()
     {
         sendEvent_(PBNotification.newBuilder()
                 .setType(Type.CLEAR_STATUS)
                 .build());
     }
 
+    public void rootsChanged_()
+    {
+        sendEvent_(PBNotification.newBuilder()
+                .setType(Type.ROOTS_CHANGED)
+                .build());
+    }
+
     public void sendEvent_(PBNotification pb)
     {
-        // only core threads can access cr._snapshotSent
-        assert _tc.isCoreThread();
-
         synchronized (_map) {
             for (Entry<InetSocketAddress, ReactorConnector> en : _map.entrySet()) {
                 if (!en.getValue()._snapshotSent) {

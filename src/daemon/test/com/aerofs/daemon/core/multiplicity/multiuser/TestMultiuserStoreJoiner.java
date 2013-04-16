@@ -43,7 +43,7 @@ public class TestMultiuserStoreJoiner extends AbstractTest
         SID rootSID = SID.rootSID(userID);
         msj.joinStore_(sidx, rootSID, "test", false, t);
 
-        verify(sc).createRootStore_(eq(rootSID), eq(t));
+        verify(sc).createRootStore_(eq(rootSID), eq("test"), eq(t));
     }
 
     @Test
@@ -53,7 +53,7 @@ public class TestMultiuserStoreJoiner extends AbstractTest
         SID rootSID = SID.generate();
         msj.joinStore_(sidx, rootSID, "test", false, t);
 
-        verify(sc).createRootStore_(eq(rootSID), eq(t));
+        verify(sc).createRootStore_(eq(rootSID), eq("test"), eq(t));
     }
 
     @Test

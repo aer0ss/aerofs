@@ -6,7 +6,9 @@ package com.aerofs.daemon.core.phy.linked.linker;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.SID;
+import com.aerofs.daemon.core.notification.RitualNotificationServer;
 import com.aerofs.daemon.lib.db.AbstractTransListener;
+import com.aerofs.daemon.lib.db.PendingRootDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.Path;
@@ -36,6 +38,8 @@ public class LinkerRootMap
     private static final Logger l = Loggers.getLogger(LinkerRootMap.class);
 
     private final CfgAbsRoots _cfgAbsRoots;
+    private final PendingRootDatabase _prdb;
+    private final RitualNotificationServer _rns;
 
     private LinkerRoot.Factory _factLR;
     private final Map<SID, LinkerRoot> _map = Maps.newHashMap();
@@ -56,9 +60,12 @@ public class LinkerRootMap
     private List<IListener> _listeners = Lists.newArrayList();
 
     @Inject
-    public LinkerRootMap(CfgAbsRoots cfgAbsRoots)
+    public LinkerRootMap(CfgAbsRoots cfgAbsRoots, PendingRootDatabase prdb,
+            RitualNotificationServer rns)
     {
+        _prdb = prdb;
         _cfgAbsRoots = cfgAbsRoots;
+        _rns = rns;
     }
 
     // work around circular dep using explicit injection of the factory
@@ -67,7 +74,7 @@ public class LinkerRootMap
         _factLR = factLR;
     }
 
-    void addListener_(IListener listener)
+    public void addListener_(IListener listener)
     {
         _listeners.add(listener);
     }
@@ -92,11 +99,23 @@ public class LinkerRootMap
      */
     public @Nullable SID rootForAbsPath_(String absPath)
     {
-        // TODO: use Map<String, LinkerRoot> (what of case-sensitivity then?)
+        // TODO: use a more efficient O(log n) algorithm...
         for (LinkerRoot root : getAllRoots_()) {
             if (Path.isUnder(root.absRootAnchor(), absPath)) return root.sid();
         }
         return null;
+    }
+
+    /**
+     * @return the {@code LinkerRoot} under which the path resides
+     */
+    public boolean isAnyRootUnder_(String absPath)
+    {
+        // TODO: use a more efficient O(log n) algorithm...
+        for (LinkerRoot root : getAllRoots_()) {
+            if (Path.isUnder(absPath, root.absRootAnchor())) return true;
+        }
+        return false;
     }
 
     /**
@@ -109,6 +128,7 @@ public class LinkerRootMap
         IOException e = add_(sid, absRoot);
         if (e != null) throw e;
         _cfgAbsRoots.add(sid, absRoot);
+        _prdb.removePendingRoot(sid, t);
 
         t.addListener_(new AbstractTransListener() {
             @Override
@@ -119,6 +139,12 @@ public class LinkerRootMap
                 } catch (SQLException e) {
                     SystemUtil.fatal(e);
                 }
+            }
+
+            @Override
+            public void committed_()
+            {
+                _rns.rootsChanged_();
             }
         });
     }
@@ -147,6 +173,12 @@ public class LinkerRootMap
                     SystemUtil.fatal(e);
                 }
             }
+
+            @Override
+            public void committed_()
+            {
+                _rns.rootsChanged_();
+            }
         });
     }
 
@@ -172,6 +204,12 @@ public class LinkerRootMap
                 } catch (SQLException e) {
                     SystemUtil.fatal(e);
                 }
+            }
+
+            @Override
+            public void committed_()
+            {
+                _rns.rootsChanged_();
             }
         });
     }

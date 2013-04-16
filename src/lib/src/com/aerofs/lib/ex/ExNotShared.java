@@ -1,4 +1,4 @@
-package com.aerofs.daemon.core.ex;
+package com.aerofs.lib.ex;
 
 import com.aerofs.base.ex.AbstractExWirable;
 import com.aerofs.proto.Common.PBException;

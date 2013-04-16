@@ -110,6 +110,7 @@ public class Path implements Comparable<Path>
     {
         if (this == path) return true;
         if (path == null) return false;
+        if (!_sid.equals(path._sid)) return false;
 
         String [] s1 = this.elements();
         String [] s2 = path.elements();

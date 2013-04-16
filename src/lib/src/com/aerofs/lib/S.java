@@ -98,5 +98,7 @@ public class S
             LINKED_DESCRIPTION = "Store files on the local disk",
             LOCAL_DESCRIPTION = "Store compressed files on the local disk",
             S3_DESCRIPTION = "Store files on Amazon S3",
-            ENABLE_FILESYSTEM_VIEW = "Show synced files on filesystem";
+            ENABLE_FILESYSTEM_VIEW = "Show synced files on filesystem",
+            USERS_DIR = "users",
+            SHARED_DIR = "shared";
 }

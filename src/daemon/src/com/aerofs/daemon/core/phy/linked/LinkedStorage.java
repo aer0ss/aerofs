@@ -8,7 +8,9 @@ import java.util.Map.Entry;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.SID;
+import com.aerofs.daemon.core.phy.linked.linker.LinkerRoot;
 import com.aerofs.daemon.core.phy.linked.linker.LinkerRootMap;
+import com.aerofs.daemon.core.phy.linked.linker.LinkerRootMap.IListener;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.IStores;
 import com.aerofs.daemon.lib.db.trans.Trans;
@@ -40,7 +42,7 @@ import com.aerofs.lib.id.SOKID;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.google.inject.Inject;
 
-public class LinkedStorage implements IPhysicalStorage
+public class LinkedStorage implements IPhysicalStorage, IListener
 {
     protected static Logger l = Loggers.getLogger(LinkedStorage.class);
 
@@ -76,6 +78,8 @@ public class LinkedStorage implements IPhysicalStorage
         _sidx2sid = sidx2sid;
         _cfgAbsRoots = cfgAbsRoots;
         _revProvider = new LinkedRevProvider(this, factFile);
+
+        _lrm.addListener_(this);
     }
 
     @Override
@@ -86,6 +90,17 @@ public class LinkedStorage implements IPhysicalStorage
         }
 
         _revProvider.init_();
+    }
+
+    @Override
+    public void addingRoot_(LinkerRoot root) throws IOException
+    {
+        ensureSaneAuxRoot_(root.sid(), root.absRootAnchor());
+    }
+
+    @Override
+    public void removingRoot_(LinkerRoot root) throws IOException
+    {
     }
 
     protected void ensureSaneAuxRoot_(SID sid, String absRoot) throws IOException
@@ -146,9 +161,9 @@ public class LinkedStorage implements IPhysicalStorage
     }
 
     @Override
-    public void createStore_(SIndex sidx, SID sid, Trans t) throws IOException, SQLException
+    public void createStore_(SIndex sidx, SID sid, String name, Trans t)
+            throws IOException, SQLException
     {
-
     }
 
     @Override

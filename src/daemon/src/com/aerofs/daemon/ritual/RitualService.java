@@ -48,6 +48,8 @@ import com.aerofs.daemon.event.fs.EIDeleteObject;
 import com.aerofs.daemon.event.fs.EIGetAttr;
 import com.aerofs.daemon.event.fs.EIGetChildrenAttr;
 import com.aerofs.daemon.event.fs.EIImportFile;
+import com.aerofs.daemon.event.fs.EILinkRoot;
+import com.aerofs.daemon.event.fs.EIListPendingRoots;
 import com.aerofs.daemon.event.fs.EIMoveObject;
 import com.aerofs.daemon.event.fs.EIShareFolder;
 import com.aerofs.daemon.event.status.EIGetStatusOverview;
@@ -82,8 +84,11 @@ import com.aerofs.proto.Ritual.GetObjectAttributesReply;
 import com.aerofs.proto.Ritual.GetPathStatusReply;
 import com.aerofs.proto.Ritual.GetSyncStatusReply;
 import com.aerofs.proto.Ritual.IRitualService;
+import com.aerofs.proto.Ritual.LinkRootReply;
 import com.aerofs.proto.Ritual.ListConflictsReply;
 import com.aerofs.proto.Ritual.ListExcludedFoldersReply;
+import com.aerofs.proto.Ritual.ListPendingRootsReply;
+import com.aerofs.proto.Ritual.ListPendingRootsReply.PendingRoot;
 import com.aerofs.proto.Ritual.ListRevChildrenReply;
 import com.aerofs.proto.Ritual.ListRevHistoryReply;
 import com.aerofs.proto.Ritual.ListSharedFolderInvitationsReply;
@@ -133,6 +138,38 @@ public class RitualService implements IRitualService
     public Common.PBException encodeError(Throwable e)
     {
         return Exceptions.toPBWithStackTrace(e);
+    }
+
+    @Override
+    public ListenableFuture<LinkRootReply> linkRoot(String path)
+            throws Exception
+    {
+        EILinkRoot ev = new EILinkRoot(path, null);
+        ev.execute(PRIO);
+        return createReply(LinkRootReply.newBuilder().setSid(ev.sid().toPB()).build());
+    }
+
+    @Override
+    public ListenableFuture<Void> linkPendingRoot(String path, ByteString sid)
+            throws Exception
+    {
+        EILinkRoot ev = new EILinkRoot(path, new SID(sid));
+        ev.execute(PRIO);
+        return createVoidReply();
+    }
+
+    @Override
+    public ListenableFuture<ListPendingRootsReply> listPendingRoots() throws Exception
+    {
+        EIListPendingRoots ev = new EIListPendingRoots(Core.imce());
+        ev.execute(PRIO);
+        ListPendingRootsReply.Builder bd = ListPendingRootsReply.newBuilder();
+        for (Entry<SID, String> e : ev.pending().entrySet()) {
+            bd.addRoot(PendingRoot.newBuilder()
+                    .setSid(e.getKey().toPB())
+                    .setName(e.getValue()));
+        }
+        return createReply(bd.build());
     }
 
     @Override

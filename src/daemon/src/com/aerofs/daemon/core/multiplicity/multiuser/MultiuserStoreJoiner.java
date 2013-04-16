@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Air Computing Inc., 2012.
+ * Copyright (c) Air Computing Inc., 2013.
  */
 
 package com.aerofs.daemon.core.multiplicity.multiuser;
@@ -42,7 +42,7 @@ public class MultiuserStoreJoiner implements IStoreJoiner
         if (sid.equals(_cfgRootSID.get())) return;
 
         // every store is a root store, until it is referenced by an anchor in another store
-        _sc.createRootStore_(sid, t);
+        _sc.createRootStore_(sid, folderName, t);
     }
 
     @Override

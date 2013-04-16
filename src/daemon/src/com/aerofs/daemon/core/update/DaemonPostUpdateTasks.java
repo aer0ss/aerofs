@@ -53,8 +53,9 @@ public class DaemonPostUpdateTasks
             new DPUTRenameRootDirs(dbcw),
             null,  // used to be DPUTFixExpelledAlias
             new DPUTFixExpelledAlias(dbcw),
-            new DPUTMigrateAuxRootUnderRootAnchor(),
-            new DPUTCreateCAIndex(dbcw)
+            new DPUTPerPhyRootAuxRoot(),
+            new DPUTCreateCAIndex(dbcw),
+            new DPUTCreatePendingRootTable(dbcw)
             // new tasks go here
         };
 

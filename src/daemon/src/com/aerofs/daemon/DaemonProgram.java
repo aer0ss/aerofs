@@ -9,7 +9,6 @@ import com.aerofs.daemon.core.collector.ExNoComponentWithSpecifiedVersion;
 import com.aerofs.daemon.core.ex.ExAborted;
 import com.aerofs.daemon.core.ex.ExExpelled;
 import com.aerofs.daemon.core.ex.ExNoAvailDevice;
-import com.aerofs.daemon.core.ex.ExNotShared;
 import com.aerofs.daemon.core.ex.ExOutOfSpace;
 import com.aerofs.daemon.core.ex.ExUpdateInProgress;
 import com.aerofs.daemon.core.multiplicity.multiuser.MultiuserModule;
@@ -52,7 +51,6 @@ public class DaemonProgram implements IProgram
                         .put(Type.ABORTED,                ExAborted.class)
                         .put(Type.EXPELLED,               ExExpelled.class)
                         .put(Type.NO_AVAIL_DEVICE,        ExNoAvailDevice.class)
-                        .put(Type.NOT_SHARED,             ExNotShared.class)
                         .put(Type.NO_COMPONENT_WITH_SPECIFIED_VERSION, ExNoComponentWithSpecifiedVersion.class)
                         .put(Type.OUT_OF_SPACE,           ExOutOfSpace.class)
                         .put(Type.UPDATE_IN_PROGRESS,     ExUpdateInProgress.class)

@@ -244,12 +244,12 @@ public class HdRelocateRootAnchor extends AbstractHdIMC<EIRelocateRootAnchor>
             try {
                 _oldRoot.moveInSameFileSystem(_newRoot);
 
-                afterRootRelocation(t);
-
                 // TeamServer does not have a default aux root
                 if (!(_isDefaultRoot && L.isMultiuser())) {
                     _oldAuxRoot.moveInSameFileSystem(_newAuxRoot);
                 }
+
+                afterRootRelocation(t);
             } catch (IOException e) {
                 if (OSUtil.isWindows()) {
                     throw new ExInUse("files in the " + L.product() + " folder are in use. " +
@@ -299,13 +299,13 @@ public class HdRelocateRootAnchor extends AbstractHdIMC<EIRelocateRootAnchor>
                 OSUtil.get().copyRecursively(_oldRoot, _newRoot, true, true);
             }
 
-            afterRootRelocation(t);
-
             // TeamServer does not have a default aux root
             if (!(_isDefaultRoot && L.isMultiuser())) {
                 OSUtil.get().copyRecursively(_oldAuxRoot, _newAuxRoot, false, false);
                 OSUtil.get().markHiddenSystemFile(_newAuxRoot.getAbsolutePath());
             }
+
+            afterRootRelocation(t);
         }
 
         @Override

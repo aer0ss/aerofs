@@ -23,18 +23,16 @@ class DownloadStateListener implements IDownloadStateListener
 {
     private final RitualNotificationServer _notifier;
     private final DirectoryService _ds;
-    private final TC _tc;
     private final UserAndDeviceNames _nr; // name resolver
 
     private final Throttler<SOCID> _throttler = new Throttler<SOCID>(1 * C.SEC);
     private final boolean _useTransferFilter = Cfg.useTransferFilter();
 
-    DownloadStateListener(RitualNotificationServer notifier, DirectoryService ds, TC tc,
+    DownloadStateListener(RitualNotificationServer notifier, DirectoryService ds,
             UserAndDeviceNames nr)
     {
         _notifier = notifier;
         _ds = ds;
-        _tc = tc;
         _nr = nr;
     }
 
@@ -49,14 +47,12 @@ class DownloadStateListener implements IDownloadStateListener
             _throttler.untrack(socid);
         } else if (_useTransferFilter) return;
 
-        _notifier.sendEvent_(state2pb_(_tc, _ds, _nr, socid, state));
+        _notifier.sendEvent_(state2pb_(_ds, _nr, socid, state));
     }
 
-    static PBNotification state2pb_(TC tc, DirectoryService ds, UserAndDeviceNames nr,
+    static PBNotification state2pb_(DirectoryService ds, UserAndDeviceNames nr,
             SOCID socid, State state)
     {
-        assert tc.isCoreThread();
-
         PBSOCID pbsocid = PBSOCID.newBuilder()
             .setSidx(socid.sidx().getInt())
             .setOid(socid.oid().toPB())

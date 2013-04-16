@@ -57,7 +57,7 @@ public class SingleuserStores extends Stores
     {
         Trans t = _tm.begin_();
         try {
-            _sc.createRootStore_(_cfgRootSID.get(), t);
+            _sc.createRootStore_(_cfgRootSID.get(), "", t);
             t.commit_();
         } catch (ExAlreadyExist e) {
             SystemUtil.fatal(e);

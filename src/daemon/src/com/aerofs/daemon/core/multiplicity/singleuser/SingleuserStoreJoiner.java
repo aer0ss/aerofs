@@ -17,6 +17,7 @@ import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.IStoreJoiner;
 import com.aerofs.daemon.core.store.StoreDeleter;
 import com.aerofs.daemon.lib.db.AbstractTransListener;
+import com.aerofs.daemon.lib.db.PendingRootDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
@@ -49,11 +50,13 @@ public class SingleuserStoreJoiner implements IStoreJoiner
     private final SharedFolderAutoLeaver _lod;
     private final IMapSIndex2SID _sidx2sid;
     private final CfgOS _cfgOS;
+    private final PendingRootDatabase _prdb;
 
     @Inject
     public SingleuserStoreJoiner(DirectoryService ds, SingleuserStores stores, ObjectCreator oc,
             ObjectDeleter od, ObjectSurgeon os, CfgRootSID cfgRootSID, RitualNotificationServer rns,
-            SharedFolderAutoLeaver lod, StoreDeleter sd, IMapSIndex2SID sidx2sid, CfgOS cfgOS)
+            SharedFolderAutoLeaver lod, StoreDeleter sd, IMapSIndex2SID sidx2sid, CfgOS cfgOS,
+            PendingRootDatabase prdb)
     {
         _ds = ds;
         _oc = oc;
@@ -66,6 +69,7 @@ public class SingleuserStoreJoiner implements IStoreJoiner
         _lod = lod;
         _sidx2sid = sidx2sid;
         _cfgOS = cfgOS;
+        _prdb = prdb;
     }
 
     @Override
@@ -74,6 +78,21 @@ public class SingleuserStoreJoiner implements IStoreJoiner
     {
         // ignore changes on the root store
         if (sid.equals(_cfgRootSID.get())) return;
+
+        // make sure we don't have an old "leave request" queued
+        _lod.removeFromQueue_(sid, t);
+
+        // external folders are not auto-joined (user interaction is needed)
+        if (external) {
+            l.info("pending {} {}", sid, folderName);
+            _prdb.addPendingRoot(sid, folderName, t);
+
+            // notify UI
+            _rns.sendEvent_(PBNotification.newBuilder()
+                    .setType(PBNotification.Type.SHARED_FOLDER_PENDING)
+                    .build());
+            return;
+        }
 
         SIndex root = _stores.getUserRoot_();
 
@@ -134,14 +153,6 @@ public class SingleuserStoreJoiner implements IStoreJoiner
             }
         }
 
-        // make sure we don't have an old "leave request" queued
-        _lod.removeFromQueue_(sid, t);
-
-        if (external) {
-            // TODO: add to a list somewhere in the db so that GUI can query and join as needed
-            return;
-        }
-
         // TODO: this should be a physical storage property rather than OSUtil
         String cleanName = _cfgOS.isWindows() ? OSUtilWindows.cleanName(folderName) : folderName;
 
@@ -180,6 +191,9 @@ public class SingleuserStoreJoiner implements IStoreJoiner
 
         l.info("leaving share: " + sidx + " " + sid);
 
+        // remove any pending external root
+        _prdb.removePendingRoot(sid, t);
+
         OID oid = SID.storeSID2anchorOID(sid);
 
         // delete any existing anchor (even expelled ones)
@@ -210,8 +224,7 @@ public class SingleuserStoreJoiner implements IStoreJoiner
         final Path path = _ds.resolve_(oa);
         _od.delete_(oa.soid(), PhysicalOp.APPLY, t);
 
-        t.addListener_(new AbstractTransListener()
-        {
+        t.addListener_(new AbstractTransListener() {
             @Override
             public void committed_()
             {

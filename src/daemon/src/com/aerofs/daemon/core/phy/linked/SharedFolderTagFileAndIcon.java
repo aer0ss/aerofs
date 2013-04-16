@@ -155,6 +155,12 @@ public class SharedFolderTagFileAndIcon
         }
     }
 
+    public boolean isSharedFolderRoot(InjectableFile dir, SID sid) throws IOException
+    {
+        InjectableFile tag = _factFile.create(dir, Param.SHARED_FOLDER_TAG);
+        return tag.exists() && tag.isFile() && sid.equals(sidFromTagFile(tag.getAbsolutePath()));
+    }
+
     private boolean isAccessibleAndAbsent_(SID sid) throws SQLException
     {
         // if the store is already known we should not try to create an anchor for it to avoid

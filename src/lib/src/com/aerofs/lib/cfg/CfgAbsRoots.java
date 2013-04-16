@@ -10,9 +10,6 @@ import javax.annotation.Nullable;
 import java.sql.SQLException;
 import java.util.Map;
 
-/**
- *
- */
 public class CfgAbsRoots
 {
     public Map<SID, String> get()
@@ -22,7 +19,7 @@ public class CfgAbsRoots
 
     public @Nullable String get(SID sid)
     {
-        return Cfg.getRoot(sid);
+        return Cfg.getRootPath(sid);
     }
 
     public void add(SID sid, String absPath) throws SQLException

@@ -15,6 +15,7 @@ import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.IStores;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.Path;
+import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgAbsDefaultRoot;
 import com.aerofs.lib.cfg.CfgAbsRoots;
@@ -32,8 +33,6 @@ import java.sql.SQLException;
  */
 public class FlatLinkedStorage extends LinkedStorage
 {
-    private static final String USERS_DIR = "users";
-    private static final String SHARED_DIR = "shared";
     private final InjectableFile _usersDir;
     private final InjectableFile _sharedDir;
     private final ExportHelper _eh;
@@ -53,8 +52,8 @@ public class FlatLinkedStorage extends LinkedStorage
     {
         super(factFile, factFIDMan, lrm, stores, sidx2sid, cfgAbsRoots, cfgStoragePolicy, il, sfti);
         _eh = eh;
-        _usersDir = _factFile.create(Util.join(cfgAbsDefaultRoot.get(), USERS_DIR));
-        _sharedDir = _factFile.create(Util.join(cfgAbsDefaultRoot.get(), SHARED_DIR));
+        _usersDir = _factFile.create(Util.join(cfgAbsDefaultRoot.get(), S.USERS_DIR));
+        _sharedDir = _factFile.create(Util.join(cfgAbsDefaultRoot.get(), S.SHARED_DIR));
     }
 
     @Override
@@ -71,17 +70,21 @@ public class FlatLinkedStorage extends LinkedStorage
     }
 
     @Override
-    public void createStore_(SIndex sidx, SID sid, Trans t) throws IOException, SQLException
+    public void createStore_(SIndex sidx, SID sid, String name, Trans t)
+            throws IOException, SQLException
     {
-        l.info("create store {} {}", sidx, sid.toStringFormal());
+        // when the user explictly links an external root (as opposed to implictly when the daemon
+        // auto-joins a folder) the linking will already be done by the time this method is called
+        // and we couldn't do it here anyway because we wouldn't know the correct full path...
+        if (_lrm.absRootAnchor_(sid) != null) {
+            l.info("explicit linking {} {}", sidx, sid);
+            return;
+        }
 
-        // create root
-        InjectableFile d = storeRoot_(sidx, sid);
-        d.ensureDirExists();
+        l.info("create store {} {} {}", sidx, sid.toStringFormal(), name);
 
-        String absPath = d.getAbsolutePath();
+        String absPath = ensureStoreRootExists_(sidx, sid, name);
         ensureSaneAuxRoot_(sid, absPath);
-
         _sfti.addTagFileAndIconIn(sid, absPath, t);
         _lrm.link_(sid, absPath, t);
     }
@@ -90,10 +93,18 @@ public class FlatLinkedStorage extends LinkedStorage
     public void deleteStore_(SIndex sidx, SID sid, PhysicalOp op, Trans t)
             throws IOException, SQLException
     {
+        _sfti.deleteTagFileAndIconIn(_lrm.absRootAnchor_(sid));
         _lrm.unlink_(sid, t);
     }
 
-    private InjectableFile storeRoot_(SIndex sidx, SID sid)
+    private String ensureStoreRootExists_(SIndex sidx, SID sid, String name) throws IOException
+    {
+        InjectableFile d = storeRoot_(sidx, sid, name);
+        d.ensureDirExists();
+        return d.getAbsolutePath();
+    }
+
+    private InjectableFile storeRoot_(SIndex sidx, SID sid, String name) throws IOException
     {
         if (sid.isUserRoot()) {
             // root in $defaultAbsRoot/users
@@ -101,7 +112,16 @@ public class FlatLinkedStorage extends LinkedStorage
             return _factFile.create(_usersDir, _eh.purifyEmail(uid.getString()));
         } else {
             // root in $defaultAbsRoot/shared
-            return _factFile.create(_sharedDir, sid.toStringFormal());
+
+            InjectableFile d = _factFile.create(_sharedDir, name);
+
+            while (d.exists()) {
+                // dir already exists, only allow if it contains a valid tag file matching the SID
+                if (d.isDirectory() && _sfti.isSharedFolderRoot(d, sid)) return d;
+                l.info("conflicting folder");
+                d = _factFile.create(_sharedDir, Util.nextFileName(d.getName()));
+            }
+            return d;
         }
     }
 

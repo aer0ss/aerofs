@@ -153,95 +153,18 @@ public class CfgDatabase
         }
     }
 
-    private static class DatabaseParams implements IDatabaseParams
-    {
-        private final boolean _inMemory;
-
-        DatabaseParams(boolean inMemory)
-        {
-            _inMemory = inMemory;
-        }
-
-        @Override
-        public boolean isMySQL()
-        {
-            return false;
-        }
-
-        @Override
-        public String url()
-        {
-            return "jdbc:sqlite:" + (_inMemory ? ":memory:" : Cfg.absRTRoot() + File.separator +
-                    Param.CFG_DATABASE);
-        }
-
-        @Override
-        public boolean sqliteExclusiveLocking()
-        {
-            return false;
-        }
-
-        @Override
-        public boolean sqliteWALMode()
-        {
-            return false;
-        }
-
-        @Override
-        public boolean autoCommit()
-        {
-            return true;
-        }
-    }
-
     private static final String T_CFG = "c";
     private static final String C_CFG_KEY = "k";
     private static final String C_CFG_VALUE = "v";
 
-    private static final String T_ROOT = "r";
-    private static final String C_ROOT_SID = "s";
-    private static final String C_ROOT_PATH = "p";
-
-
     // all the variables are protected by synchronized (this)
-    private IDBCW _dbcw;
+    private final IDBCW _dbcw;
     private final EnumMap<Key, String> _map = Maps.newEnumMap(Key.class);
     private final List<ICfgDatabaseListener> _listeners = Lists.newArrayList();
-    private final boolean _inMemory;
 
-    CfgDatabase()
+    CfgDatabase(IDBCW dbcw)
     {
-        this(false);
-    }
-
-    // TODO use DI to inject DBCW (similar to CoreDBCW)! It's not possible right now because UI
-    // is not injectified
-    CfgDatabase(boolean inMemory)
-    {
-        _inMemory = inMemory;
-    }
-
-    /**
-     * Nop if this method has been called and succeeded before
-     */
-    void init_() throws SQLException
-    {
-        if (_dbcw != null) return;
-
-        _dbcw = DBUtil.newDBCW(new DatabaseParams(_inMemory));
-        _dbcw.init_();
-    }
-
-    /**
-     * This object is not usable after this method is called, because we don't clean up prepared
-     * statements which are no longer valid after their associated database connection is closed.
-     */
-    void fini_() throws SQLException
-    {
-        if (_dbcw == null) return;
-
-        _dbcw.fini_();
-        _dbcw = null;
+        _dbcw = dbcw;
     }
 
     public void recreateSchema_() throws SQLException
@@ -249,25 +172,11 @@ public class CfgDatabase
         Statement s = _dbcw.getConnection().createStatement();
         try {
             s.executeUpdate("drop table if exists " + T_CFG);
-            s.executeUpdate("drop table if exists " + T_ROOT);
             s.executeUpdate("create table " + T_CFG + "(" +
                     C_CFG_KEY + " text not null primary key," +
                     C_CFG_VALUE + " text not null) " + _dbcw.charSet());
-            createRootTableIfAbsent_(s);
         } finally {
             s.close();
-        }
-    }
-
-    public void createRootTableIfAbsent_(Statement enclosing) throws SQLException
-    {
-        Statement s = enclosing != null ? enclosing : _dbcw.getConnection().createStatement();
-        try {
-            s.executeUpdate("create table if not exists " + T_ROOT + "(" +
-                    C_ROOT_SID + " blob not null primary key," +
-                    C_ROOT_PATH + " text not null) " + _dbcw.charSet());
-        } finally {
-            if (s != enclosing) s.close();
         }
     }
 
@@ -304,80 +213,6 @@ public class CfgDatabase
             else throw e;
         } finally {
             s.close();
-        }
-    }
-
-    synchronized Map<SID, String> getRoots() throws SQLException
-    {
-        Statement s = _dbcw.getConnection().createStatement();
-        try {
-            ResultSet rs = s.executeQuery(DBUtil.select(T_ROOT, C_ROOT_SID, C_ROOT_PATH));
-            try {
-                Map<SID, String> roots = Maps.newHashMap();
-                while (rs.next()) roots.put(new SID(rs.getBytes(1)), rs.getString(2));
-                return roots;
-            } finally {
-                rs.close();
-            }
-        } finally {
-            s.close();
-        }
-    }
-
-    synchronized @Nullable String getRoot(SID sid) throws SQLException
-    {
-        PreparedStatement ps = _dbcw.getConnection().prepareStatement(DBUtil.selectWhere(T_ROOT,
-                C_ROOT_SID + "=?", C_ROOT_PATH));
-        try {
-            ps.setBytes(1, sid.getBytes());
-            ResultSet rs = ps.executeQuery();
-            try {
-                return rs.next() ? rs.getString(1) : null;
-            } finally {
-                rs.close();
-            }
-        } finally {
-            ps.close();
-        }
-    }
-
-    // NB: public only for use in Setup.java
-    public synchronized void addRoot(SID sid, String absPath) throws SQLException
-    {
-        PreparedStatement ps = _dbcw.getConnection().prepareStatement(
-                DBUtil.insert(T_ROOT, C_ROOT_SID, C_ROOT_PATH));
-        try {
-            ps.setBytes(1, sid.getBytes());
-            ps.setString(2, absPath);
-            ps.executeUpdate();
-        } finally {
-            ps.close();
-        }
-    }
-
-    // NB: public only for use in Setup.java
-    public synchronized void removeRoot(SID sid) throws SQLException
-    {
-        PreparedStatement ps = _dbcw.getConnection().prepareStatement(
-                DBUtil.deleteWhere(T_ROOT, C_ROOT_SID + "=?"));
-        try {
-            ps.setBytes(1, sid.getBytes());
-            ps.executeUpdate();
-        } finally {
-            ps.close();
-        }
-    }
-
-    synchronized void moveRoot(SID sid, String newAbsPath) throws SQLException
-    {
-        PreparedStatement ps = _dbcw.getConnection().prepareStatement(
-                DBUtil.updateWhere(T_ROOT, C_ROOT_SID + "=?", C_ROOT_PATH));
-        try {
-            ps.setString(1, newAbsPath);
-            ps.setBytes(2, sid.getBytes());
-            ps.executeUpdate();
-        } finally {
-            ps.close();
         }
     }
 

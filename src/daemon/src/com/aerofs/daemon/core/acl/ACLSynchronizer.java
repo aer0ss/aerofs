@@ -276,7 +276,7 @@ public class ACLSynchronizer
             tcb = tk.pseudoPause_("spacl");
             sp = _factSP.create_(_cfgLocalUser.get());
             sp.signInRemote();
-            aclReply = sp.getACLExcludeExternal(localEpoch);
+            aclReply = sp.getACL(localEpoch);
         } finally {
             if (tcb != null) tcb.pseudoResumed_();
             tk.reclaim_();

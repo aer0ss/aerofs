@@ -27,10 +27,9 @@ class EISendSnapshot extends AbstractEBSelfHandling
     private final UploadState _uls;
     private final PathStatusNotifier _psn;
     private final DirectoryService _ds;
-    private final TC _tc;
     private final UserAndDeviceNames _nr;
 
-    EISendSnapshot(TC tc, RitualNotificationServer notifier, InetSocketAddress to,
+    EISendSnapshot(RitualNotificationServer notifier, InetSocketAddress to,
             DownloadState dls, UploadState uls, PathStatusNotifier psn, DirectoryService ds,
             UserAndDeviceNames nr)
     {
@@ -40,7 +39,6 @@ class EISendSnapshot extends AbstractEBSelfHandling
         _uls = uls;
         _psn = psn;
         _ds = ds;
-        _tc = tc;
         _nr = nr;
     }
 
@@ -53,11 +51,11 @@ class EISendSnapshot extends AbstractEBSelfHandling
         PBNotification pbs[] = new PBNotification[dls.size() + uls.size()];
         int idx = 0;
         for (Entry<SOCID, State> en : dls.entrySet()) {
-            pbs[idx++] = DownloadStateListener.state2pb_(_tc, _ds, _nr, en.getKey(), en.getValue());
+            pbs[idx++] = DownloadStateListener.state2pb_(_ds, _nr, en.getKey(), en.getValue());
         }
 
         for (Entry<Key, Value> en : uls.entrySet()) {
-            pbs[idx++] = UploadStateListener.state2pb_(_tc, _ds, _nr, en.getKey(), en.getValue());
+            pbs[idx++] = UploadStateListener.state2pb_(_ds, _nr, en.getKey(), en.getValue());
         }
 
         _notifier.sendSnapshot_(_to, pbs);

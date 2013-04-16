@@ -56,6 +56,15 @@ class _RitualServiceWrapper(object):
     def heartbeat(self):
         self._service.heartbeat()
 
+    def link_root(self, path):
+        return self._service.link_root(path).sid
+
+    def link_pending_root(self, path, sid):
+        self._service.link_pending_root(path, sid)
+
+    def list_pending_roots(self):
+        return self._service.list_pending_roots().root
+
     def share_folder(self, path, acl = {}, note = ""):
         """
         @param acl a dict of {subject:role}

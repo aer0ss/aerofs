@@ -14,6 +14,9 @@ import com.aerofs.lib.StorageType;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.Versions;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
+import com.aerofs.lib.db.DBUtil;
+import com.aerofs.lib.db.IDatabaseParams;
+import com.aerofs.lib.db.dbcw.IDBCW;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
 
@@ -62,7 +65,6 @@ public class Cfg
     private static boolean _useHistory;
     private static boolean _useXFF;
     private static String _absDefaultRootAnchor;
-    private static Map<SID, String> _absRoots;
     private static String _absDefaultAuxRoot;
     private static String _ver;
     private static X509Certificate _cert;
@@ -73,10 +75,13 @@ public class Cfg
     private static @Nullable StorageType _storageType;
 
     private static final long _profilerStartingThreshold;
-    private static final CfgDatabase _db = new CfgDatabase();
 
-    // we have to set it before init_() because the setup process may need the value.
-    private static long _timeout = _db.getLong(Key.TIMEOUT);
+    private static IDBCW _dbcw;
+    private static CfgDatabase _db;
+    private static RootDatabase _rdb;
+
+    // default value might be needed before init_
+    private static long _timeout = Long.parseLong(Key.TIMEOUT.defaultValue());
 
     static {
         long pst;
@@ -97,13 +102,13 @@ public class Cfg
      * @param readPasswd enable passwd initialization only if needed as it's expensive
      * @throws ExNotSetup if the device.conf is not found
      */
-    public static void init_(String rtRoot, boolean readPasswd)
+    public static synchronized void init_(String rtRoot, boolean readPasswd)
             throws ExFormatError, IOException, ExBadCredential, SQLException, ExNotSetup
     {
         // initialize rtroot first so it's available even if the method failed later
         _absRTRoot = new File(rtRoot).getAbsolutePath();
 
-        _db.init_();
+        initDB_();
         _db.reload();
 
         _user = UserID.fromInternal(_db.get(Key.USER_ID));
@@ -120,24 +125,18 @@ public class Cfg
         _absDefaultRootAnchor = rootAnchor.getCanonicalPath();
         _absDefaultAuxRoot = absAuxRootForPath(_absDefaultRootAnchor, _rootSID);
         _storageType = StorageType.fromString(_db.getNullable(Key.STORAGE_TYPE));
-        _absRoots = Maps.newHashMap();
 
         if (storageType() == StorageType.LINKED) {
             if (!L.isMultiuser()) {
                 // upgrade schema if needed
                 // NB: ideally this would have been done in a DPUT unfortunately Cfg is loaded before
                 // DPUT are run so this is not a viable option...
-                _db.createRootTableIfAbsent_(null);
-                if (_db.getRoot(_rootSID) == null) {
-                    _db.addRoot(_rootSID, _absDefaultRootAnchor);
+                _rdb.createRootTableIfAbsent_(null);
+                if (_rdb.getRoot(_rootSID) == null) {
+                    _rdb.addRoot(_rootSID, _absDefaultRootAnchor);
                 }
             }
-
-            for (Entry<SID, String> e : _db.getRoots().entrySet()) {
-                _absRoots.put(e.getKey(), new File(e.getValue()).getCanonicalPath());
-            }
         }
-
 
         _portbase = readPortbase();
         _useDM = disabledByFile(rtRoot, Param.NODM);
@@ -150,6 +149,59 @@ public class Cfg
         _useXFF = disabledByFile(rtRoot, Param.NOXFF);
 
         _inited = true;
+    }
+
+    /**
+     * Nop if this method has been called and succeeded before
+     */
+    private static void initDB_() throws SQLException
+    {
+        if (_dbcw == null) {
+            _dbcw = DBUtil.newDBCW(new DatabaseParams());
+            _dbcw.init_();
+
+            _db = new CfgDatabase(_dbcw);
+            _rdb = new RootDatabase(_dbcw);
+        }
+    }
+
+    public static void recreateSchema_() throws SQLException
+    {
+        _db.recreateSchema_();
+        _rdb.recreateSchema_();
+    }
+
+    private static class DatabaseParams implements IDatabaseParams
+    {
+        @Override
+        public boolean isMySQL()
+        {
+            return false;
+        }
+
+        @Override
+        public String url()
+        {
+            return "jdbc:sqlite:" + (Cfg.absRTRoot() + File.separator + Param.CFG_DATABASE);
+        }
+
+        @Override
+        public boolean sqliteExclusiveLocking()
+        {
+            return false;
+        }
+
+        @Override
+        public boolean sqliteWALMode()
+        {
+            return false;
+        }
+
+        @Override
+        public boolean autoCommit()
+        {
+            return true;
+        }
     }
 
     private static boolean disabledByFile(String rtRoot, String filename)
@@ -376,36 +428,54 @@ public class Cfg
         return _absDefaultRootAnchor;
     }
 
-    public static Map<SID, String> getRoots()
+    public static synchronized Map<SID, String> getRoots()
     {
-        // need to create a copy to allow caller to make changes during iteration
-        return Maps.newHashMap(_absRoots);
+        try {
+            return _rdb.getRoots();
+        } catch (SQLException e) {
+            // we do not tolerate exception when reading the config db
+            throw new AssertionError(e);
+        }
     }
 
-    public static @Nullable String getRoot(SID sid)
+    public static synchronized @Nullable String getRootPath(SID sid)
     {
-        return _absRoots.get(sid);
+        try {
+            return _rdb.getRoot(sid);
+        } catch (SQLException e) {
+            // we do not tolerate exception when reading the config db
+            throw new AssertionError(e);
+        }
     }
 
-    public static void addRoot(SID sid, String absPath) throws SQLException
+    static synchronized void addRoot(SID sid, String absPath) throws SQLException
     {
-        assert !_absRoots.containsKey(sid) : sid + " " + absPath;
-        _db.addRoot(sid, absPath);
-        _absRoots.put(sid, absPath);
+        try {
+            _rdb.addRoot(sid, absPath);
+        } catch (SQLException e) {
+            // we do not tolerate exception when reading the config db
+            throw new AssertionError(e);
+        }
     }
 
-    public static void removeRoot(SID sid) throws SQLException
+    static synchronized void removeRoot(SID sid) throws SQLException
     {
-        assert _absRoots.containsKey(sid) : sid;
-        _db.removeRoot(sid);
-        _absRoots.remove(sid);
+        try {
+            _rdb.removeRoot(sid);
+        } catch (SQLException e) {
+            // we do not tolerate exception when reading the config db
+            throw new AssertionError(e);
+        }
     }
 
-    public static void moveRoot(SID sid, String newAbsPath) throws SQLException
+    public static synchronized void moveRoot(SID sid, String newAbsPath) throws SQLException
     {
-        assert _absRoots.containsKey(sid) : sid + " " + newAbsPath;
-        _db.moveRoot(sid, newAbsPath);
-        _absRoots.put(sid, newAbsPath);
+        try {
+            _rdb.moveRoot(sid, newAbsPath);
+        } catch (SQLException e) {
+            // we do not tolerate exception when reading the config db
+            throw new AssertionError(e);
+        }
     }
 
     //-------------------------------------------------------------------------
