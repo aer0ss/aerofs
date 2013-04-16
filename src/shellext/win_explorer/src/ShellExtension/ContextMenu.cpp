@@ -145,7 +145,7 @@ HRESULT ContextMenu::QueryContextMenu(HMENU hmenu, UINT position, UINT idCmdFirs
 		++entryCount;
 	}
 
-	AppendMenu(submenu, MF_STRING, idCmdFirst + VersionHistoryMenuId, L"Version History...");
+	AppendMenu(submenu, MF_STRING, idCmdFirst + VersionHistoryMenuId, L"Sync History...");
 	++entryCount;
 
 	if ((pflags & Directory) && !(pflags & RootAnchor)) {

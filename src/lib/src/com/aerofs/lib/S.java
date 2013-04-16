@@ -80,7 +80,6 @@ public class S
             TYPE_EMAIL_ADDRESSES = "Enter email addresses here, separated by commas:   ",
             INVITATION_WAS_SENT = "Invited successfully.",
             COULDNT_SEND_INVITATION = "Couldn't invite users.",
-            VERSION_HISTORY = "version history",
             CLI_NAME = L.productUnixName() + "-cli",
             SH_NAME = L.productUnixName()  + "-sh",
             TRY_AGAIN_LATER = "Please try again later.",

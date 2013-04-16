@@ -17,12 +17,12 @@ public class CmdVersionHistory implements IShellCommand<ShProgram>
 {
     @Override
     public String getName() {
-        return "vh";
+        return "history";
     }
 
     @Override
     public String getDescription() {
-        return "list version history of a file. see also 'ls -h' and 'export -h' commands";
+        return "list sync history of a file. see also 'ls -h' and 'export -h' commands";
     }
 
     @Override

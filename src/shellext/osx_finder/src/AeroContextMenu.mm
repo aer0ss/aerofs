@@ -74,7 +74,7 @@ NSURL* urlOfFirstNodeInVector(TFENodeVector* nodeVec);
                 ++idx;
             }
 
-            NSMenuItem* history = [submenu insertItemWithTitle:NSLocalizedString(@"Version History...", @"Context menu")
+            NSMenuItem* history = [submenu insertItemWithTitle:NSLocalizedString(@"Sync History...", @"Context menu")
                                                          action:@selector(showVersionHistoryDialog:)
                                                   keyEquivalent:@""
                                                         atIndex:idx];

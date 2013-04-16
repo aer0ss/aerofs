@@ -153,7 +153,7 @@ OSErr AeroLoadHandler(const AppleEvent* event, AppleEvent* reply, long refcon)
 }
 
 /**
- * Implementation of the "Version History" context menu item
+ * Implementation of the "Sync History" context menu item
  * The sender must set its represented object to the path of the folder
  */
 - (void)showVersionHistoryDialog:(id)sender

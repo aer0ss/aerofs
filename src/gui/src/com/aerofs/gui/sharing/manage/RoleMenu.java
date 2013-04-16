@@ -74,7 +74,7 @@ public class RoleMenu
                         "\n" +
                         "This will delete the folder from the person's computers." +
                         " However, old content may be still accessible from the" +
-                        " person's version history.")) {
+                        " person's sync history.")) {
                     select(null);
                 }
             }

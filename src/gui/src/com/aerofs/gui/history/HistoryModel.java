@@ -41,7 +41,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.Lists.newArrayList;
 
 /**
- * A model of the version history information
+ * A model of the sync history information
  */
 public class HistoryModel
 {

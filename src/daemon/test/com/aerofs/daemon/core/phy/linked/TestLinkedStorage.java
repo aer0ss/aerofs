@@ -250,7 +250,7 @@ public class TestLinkedStorage extends AbstractTest
         checkRevDirContents(0);
     }
 
-    // test behavior of delete when version history is disabled.
+    // test behavior of delete when sync history is disabled.
     @Test
     public void shouldNotUseHistoryOnDelete() throws IOException, SQLException
     {
@@ -293,7 +293,7 @@ public class TestLinkedStorage extends AbstractTest
         FileUtil.getLength(new File(pfile.getAbsPath_()));
     }
 
-    // test behavior of apply_ when version history is disabled
+    // test behavior of apply_ when sync history is disabled
     @Test
     public void shouldNotUseHistoryOnApply() throws IOException, SQLException
     {

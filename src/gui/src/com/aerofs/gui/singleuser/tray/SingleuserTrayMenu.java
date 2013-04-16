@@ -433,7 +433,7 @@ public class SingleuserTrayMenu implements ITrayMenu
 
     private void addVersionHistoryMenuItem()
     {
-        _trayMenuPopulator.addMenuItem("Version History...", new AbstractListener(null)
+        _trayMenuPopulator.addMenuItem("Sync History...", new AbstractListener(null)
         {
             @Override
             protected void handleEventImpl(Event event)

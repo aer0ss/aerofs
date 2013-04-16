@@ -133,7 +133,7 @@ public class CmdList implements IShellCommand<ShProgram>
     {
         return new Options()
                 .addOption("l", "long", false, "use long format")
-                .addOption("h", "history", false, "list version history tree." +
-                        " see also 'vh' and 'export -h' commands");
+                .addOption("h", "history", false, "list sync history tree." +
+                        " see also 'history' and 'export -h' commands");
     }
 }

@@ -40,7 +40,7 @@ public class CmdExport implements IShellCommand<ShProgram>
     {
         return new Options()
                 .addOption("h", "history", true, "export a past version. the argument" +
-                        " specifies the version index. see also 'ls -h' and 'vh' commands")
+                        " specifies the version index. see also 'ls -h' and 'history' commands")
                 .addOption("b", "branch", true, "export a conflict branch. the argument" +
                         " specifies the conflict branch. see also 'conflicts' command");
     }

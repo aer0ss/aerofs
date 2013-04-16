@@ -87,7 +87,7 @@ public class DlgHistory extends AeroFSDialog
 
     public DlgHistory(Shell parent, Path path)
     {
-        super(parent, "Version History", false, true);
+        super(parent, "Sync History", false, true);
 
         _model = new HistoryModel(UI.ritualClientProvider());
         _basePath = path;
@@ -592,7 +592,7 @@ public class DlgHistory extends AeroFSDialog
     private boolean fillVersionTable(Table revTable, ModelIndex index, Label status)
     {
         Path path = _model.getPath(index);
-        status.setText("Version history of " + Util.quote(path.last()));
+        status.setText("Sync history of " + Util.quote(path.last()));
 
         List<HistoryModel.Version> versions = _model.versions(index);
         revTable.removeAll();
