@@ -48,11 +48,14 @@ ssh $APT_SERVER \
     cd /var/www/ubuntu/$DEST/; \
     for deb in \$(ls ~/$DEBS_FOLDER/*.deb); \
     do \
-        echo signing \$deb; \
+        echo Signing \$deb; \
         sudo dpkg-sig --sign builder \$deb -g --homedir=/root/.gnupg; \
     done; \
+    echo Copy debs to /var/www; \
     cp ~/$DEBS_FOLDER/*.ver /var/www/ubuntu/$DEST/versions; \
+    echo Call reprepro includedeb; \
     sudo reprepro --gnupghome=/root/.gnupg includedeb precise ~/$DEBS_FOLDER/*.deb; \
+    echo Remove old debs; \
     rm -f ~/$DEBS_FOLDER/*"
 
 if [ $MODE != "STAGING" ]

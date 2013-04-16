@@ -158,7 +158,7 @@ def move_root(opts):
 
 if __name__ == '__main__':
     if len(sys.argv) == 1:
-        print "usage: 'getstats help' for more details"
+        print "Usage: 'getstats help' for more details."
         sys.exit(1)
     cmd = sys.argv[1]
     if not cmd in commands:

@@ -35,7 +35,7 @@ def setup_logger():
 
 if __name__ == '__main__':
   if len(sys.argv) != 2:
-    print("usage: %s [device id]" %(sys.argv[0]))
+    print("Usage: %s <did>" %(sys.argv[0]))
     sys.exit(1)
 
   setup_logger()
