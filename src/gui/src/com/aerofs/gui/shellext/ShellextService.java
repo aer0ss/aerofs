@@ -47,8 +47,6 @@ public class ShellextService
     {
         _serverChannelFactory = serverChannelFactory;
         _ritualProvider = ritualProvider;
-
-        new PathStatusNotificationForwarder(this);
     }
 
     public void start_()
@@ -56,6 +54,8 @@ public class ShellextService
         if (_server == null) {
             _server = new ShellextServer(Cfg.port(Cfg.PortType.UI), _serverChannelFactory, this);
             _server.start_();
+
+            new PathStatusNotificationForwarder(this);
 
             OSUtil.get().startShellExtension(getPort());
         }
