@@ -80,7 +80,6 @@ public class JingleDataStream implements IProxyObjectContainer
         public void onEvent(StreamInterface s, int event, int error)
         {
             try {
-                l.info("stream e:" + event);
                 onStreamEvent_(s, event, error);
             } catch (Exception e) {
                 close_(e);
