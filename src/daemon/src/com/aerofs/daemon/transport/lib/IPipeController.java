@@ -22,12 +22,10 @@ public interface IPipeController
      * An <code>IPipe</code> instance should call this method when a connection
      * is established to a peer
      *
-     * @param did {@link DID} of the peer the <code>IPipe</code> connected to
-     * @param type Whether or not the connection to the peer is readable or
-     * both readable and writable
+     * @param did {@link com.aerofs.base.id.DID} of the peer the <code>IPipe</code> connected to
      * @param pipe instance of <code>IPipe</code> on which the connection was made
      */
-    public void peerConnected(DID did, IPipe.ConnectionType type, IPipe pipe);
+    public void peerConnected(DID did, IPipe pipe);
 
     /**
      * An <code>IPipe</code> instance should call this method when a connection

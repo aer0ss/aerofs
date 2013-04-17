@@ -358,7 +358,7 @@ public abstract class XMPP implements ITransportImpl, IPipeController, IUnicast,
     //--------------------------------------------------------------------------
 
     @Override
-    public final void peerConnected(final DID d, IPipe.ConnectionType type, final IPipe p)
+    public final void peerConnected(final DID d, final IPipe p)
     {
         assertNonDispThread();
 

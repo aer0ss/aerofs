@@ -302,7 +302,7 @@ public class Jingle implements ISignalledPipe, IJingle
     {
         _st.assertThread();
 
-        pc.peerConnected(did, ConnectionType.WRITABLE, this);
+        pc.peerConnected(did, this);
     }
 
     @Override

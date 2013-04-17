@@ -377,7 +377,7 @@ public class TCP implements ITransportImpl, IPipeController, IARPChangeListener
     }
 
     @Override
-    public void peerConnected(DID did, IPipe.ConnectionType type, IPipe p)
+    public void peerConnected(DID did, IPipe p)
     {
         assert false : "tcp unimplemented method";
     }

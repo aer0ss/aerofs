@@ -622,7 +622,7 @@ public class ZephyrClientManager implements ISignalledPipe, IIOEventHandler
         assertDispThread();
 
         _pc.closePeerStreams(d, true, true); // terminate sessions that may be lying around
-        _pc.peerConnected(d, ConnectionType.WRITABLE, this); // FIXME (AG): actually both readable/writable
+        _pc.peerConnected(d, this);
     }
 
     void remoteDisconnected_(DID d)

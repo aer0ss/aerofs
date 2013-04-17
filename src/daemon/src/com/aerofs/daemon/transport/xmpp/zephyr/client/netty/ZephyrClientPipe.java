@@ -1,11 +1,11 @@
 package com.aerofs.daemon.transport.xmpp.zephyr.client.netty;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.net.ZephyrConstants;
 import com.aerofs.daemon.event.lib.imc.IResultWaiter;
 import com.aerofs.daemon.lib.DaemonParam;
-import com.aerofs.lib.event.Prio;
 import com.aerofs.daemon.transport.lib.IIdentifier;
 import com.aerofs.daemon.transport.lib.INetworkStats;
 import com.aerofs.daemon.transport.lib.IPipeController;
@@ -18,14 +18,13 @@ import com.aerofs.daemon.transport.xmpp.zephyr.client.netty.exception.ExZephyrCh
 import com.aerofs.daemon.transport.xmpp.zephyr.client.netty.handler.ZephyrClientPipelineFactory;
 import com.aerofs.daemon.transport.xmpp.zephyr.client.netty.message.ZephyrBindRequest;
 import com.aerofs.lib.OutArg;
-import com.aerofs.base.ex.ExNoResource;
+import com.aerofs.lib.event.Prio;
 import com.aerofs.proto.Files.PBDumpStat;
 import com.aerofs.proto.Files.PBDumpStat.PBTransport;
 import com.aerofs.proto.Transport;
 import com.aerofs.proto.Transport.PBTPHeader;
 import com.aerofs.proto.Transport.PBTPHeader.Type;
 import com.aerofs.proto.Transport.PBZephyrCandidateInfo;
-import org.slf4j.Logger;
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
@@ -36,6 +35,7 @@ import org.jboss.netty.channel.ChannelFutureListener;
 import org.jboss.netty.channel.DefaultChannelFuture;
 import org.jboss.netty.channel.group.ChannelGroup;
 import org.jboss.netty.channel.group.DefaultChannelGroup;
+import org.slf4j.Logger;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -51,6 +51,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import static com.google.common.base.Preconditions.checkArgument;
 
 /**
  * Represents connections to a Zephyr relay server, implemented using
@@ -120,6 +122,8 @@ public class ZephyrClientPipe extends AbstractEventLoop<IZephyrEvent>
             Proxy proxy)
     {
         super(DaemonParam.QUEUE_LENGTH_DEFAULT);
+
+        checkArgument(false, "DO NOT USE THIS UNLESS THE SIGNALLING IMPLEMENTATION IS CHANGED");
 
         assert id != null : ("IIdentifier is null");
         assert localDID != null : ("Local DID is null");
@@ -554,13 +558,6 @@ public class ZephyrClientPipe extends AbstractEventLoop<IZephyrEvent>
                 // Record the zid from the registration process
                 ctx.setLocalZid_(zid);
 
-                // Report to the above layer (IPipeController) that the connection
-                // is readable (can receive data)
-                _controller.peerConnected(
-                        ctx.getRemoteDID_(),
-                        ConnectionType.READABLE,
-                        ZephyrClientPipe.this);
-
                 // Send this client's Zid to the peer
                 sendZidToPeer_(ctx);
 
@@ -602,10 +599,7 @@ public class ZephyrClientPipe extends AbstractEventLoop<IZephyrEvent>
                 logInfo(channel, "Channel bound " + ctx);
 
                 // Notify the above layer(pipe controller) of a writable peer-to-peer connection
-                _controller.peerConnected(
-                        ctx.getRemoteDID_(),
-                        ConnectionType.WRITABLE,
-                        ZephyrClientPipe.this);
+                _controller.peerConnected(ctx.getRemoteDID_(), ZephyrClientPipe.this);
             }
 
         }, Prio.LO);

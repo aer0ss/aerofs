@@ -5,13 +5,13 @@
 
 package com.aerofs.daemon.transport.xmpp;
 
-import java.net.NetworkInterface;
-import java.util.Set;
-
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.transport.lib.IIdentifier;
 import com.aerofs.daemon.transport.lib.IPipeDebug;
 import com.aerofs.daemon.transport.lib.IUnicast;
-import com.aerofs.base.id.DID;
+
+import java.net.NetworkInterface;
+import java.util.Set;
 
 /**
  * Implemented by classes that provide a connected transport channel to a peer.
@@ -28,18 +28,6 @@ import com.aerofs.base.id.DID;
  */
 public interface IPipe extends IIdentifier, IUnicast, IPipeDebug
 {
-    /**
-     * Represents the different connection types an {@link IPipe} can be in.
-     * <code>READABLE</code> represents an {@link IPipe} that can only receive
-     * data and <code>WRITABLE</code> represents an {@link IPipe} that can
-     * both receive and write data.
-     */
-    public enum ConnectionType
-    {
-        READABLE,
-        WRITABLE,
-    }
-
     /**
      * Sets up data structures for this <code>IPipe</code>. Implementations
      * <strong>SHOULD</strong> assume that by this phase all member variables
