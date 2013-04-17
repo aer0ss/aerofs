@@ -19,6 +19,7 @@ import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.ex.RecentExceptions;
 import com.aerofs.lib.os.OSUtil;
+import com.aerofs.lib.rocklog.Defect;
 import com.aerofs.lib.rocklog.Defect.Priority;
 import com.aerofs.lib.rocklog.RockLog;
 import com.aerofs.proto.Sv.PBSVCall;
@@ -395,13 +396,14 @@ public final class SVClient
         // MissingResourceException, this probably indicates that our stripped-down version of
         // OpenJDK is missing something. Send a different RockLog defect to make sure we catch it.
         if (cause instanceof LinkageError || cause instanceof MissingResourceException) {
-            RockLog.newDefect("system.classnotfound").setException(cause)
-                    .setPriority(Priority.Fatal).send();
+            RockLog.newDefect("system.classnotfound").setException(cause).send();
         } else {
             // Note: we can't pick a good defect name here since we don't know who created this
             // defect, so we use the generic "svdefect" string. See doc in newDefect() for more
             // info about defect names.
-            RockLog.newDefect("svdefect").setMessage(desc).setException(cause).send();
+
+            Defect.Priority priority = isAutoBug ? Priority.Auto : Priority.User;
+            RockLog.newDefect("svdefect").setMessage(desc).setPriority(priority).setException(cause).send();
         }
 
         // always send non-automatic defects and database requests

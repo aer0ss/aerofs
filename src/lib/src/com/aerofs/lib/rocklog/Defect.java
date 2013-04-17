@@ -39,7 +39,7 @@ public class Defect extends RockLogMessage
     private static final String PRIORITY_KEY = "priority";
     private static final String TAGS_KEY = "@tags";
 
-    public enum Priority { Info, Warning, Fatal }
+    public enum Priority {Auto, User}
 
     Defect(RockLog rockLog, InjectableCfg cfg, String name)
     {
@@ -47,7 +47,7 @@ public class Defect extends RockLogMessage
 
         // TODO (GS): add cfg DB
 
-        setPriority(Priority.Fatal); // Defects have the highest priority by default
+        setPriority(Priority.Auto);
 
         addData(NAME_KEY, name);
     }
