@@ -141,26 +141,6 @@ public class NSL
                 }
             }
         }
-
-// SP Daemon support is temporarily disabled. Search the code base for "SP_DID" and references to
-// Cfg.isSP() when restoring the function.
-//
-//        if (_sidx2s.get_(sidx).getOnlinePotentialMemberDevices_().isEmpty() &&
-//                !Cfg.did().equals(SP_DID)) {
-//            // manually send a maxcast to SP if the store has no member devices yet. this is a
-//            // workaround for the situation where a device joins a store and the only online device
-//            // is the SP. because the SP doesn't listen to XMPP multicast and it's not a MUOD for
-//            // TCP, there is no other way to reach SP.
-//            //
-//            // BUGBUG if the peer issues two client messages within DTLS handshake
-//            // timeout, and SP joins the store (from other peers) after the first message
-//            // and before the second message, because SP ignores the DTLS handshake
-//            // request issued for the first message, the second message will be
-//            // queued up until handshake times out at the client side.
-//            //
-//            l.info("mc " + sidx + " -> sp");
-//            sendUnicast_(SP_DID, type, rpcid, sidx, bs);
-//        }
     }
 
     private @Nullable Endpoint send_(To to, String type, int rpcid, SIndex sidx, byte[] bs) throws Exception
