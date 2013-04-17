@@ -82,7 +82,7 @@ function notify_safetynet_clients_of_update() {
     # NOTE: The command client only sends one email at a time, so we need
     # to loop over the users
     for email in $local_USERS; do
-        ssh $COMMAND_SERVER "cmd -t CHECK_UPDATE -h $SAFETYNET_CMD_TTL -u $email"
+        ssh $COMMAND_SERVER "cmd-user $email CHECK_UPDATE"
     done
 }
 

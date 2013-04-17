@@ -42,6 +42,5 @@ readonly SYNCDET_PARAMS="--config=$SAFETYNET_CONFIG_PATH $SAFETYNET_SYNCDET_DEPL
 #
 ###############################################################################
 readonly COMMAND_SERVER="c.aerofs.com"
-readonly SAFETYNET_CMD_TTL=1
 
 fi # endif
