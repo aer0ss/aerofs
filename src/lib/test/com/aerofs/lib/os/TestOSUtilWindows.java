@@ -19,26 +19,31 @@ public class TestOSUtilWindows
                 "con", "CON", "PRN", "AUX",
                 "NUL", "COM1", "COM9", "LPT1",
                 "LPT9", "foo<", "foo>",
+                "CLOCK$",
                 "foo:", "foo\"", "foo/",
                 "foo\\", "foo|", "foo?", "foo*",
-                "...", "....", "....."
+                "...", "....", ".....",
+                "LPT1.txt", "CON.whatever", "nul.something"
         };
 
         for (String s : IllegalNames) {
-            Assert.assertFalse(OSUtilWindows.isValidFileName(s));
+            Assert.assertFalse("Should be illegal: " + s, OSUtilWindows.isValidFileName(s));
         }
     }
     @Test
     public void shouldAllowValidFiles()
     {
         String[] LegalNames = {
-                "_con", ".con",
+                "_con", ".con", " con",
+                "...con.txt",
                 "foo,", "lpt0",
-                "null", "null.nul", "...foo.foo"
+                "CLOCK", "CLOCK.x", "CLOCK1", ".CLOCK$",
+                "null", "null.nul", "...foo.foo",
+                ".txt", "...txt"
         };
-        for (String s : LegalNames)
-        {
-            Assert.assertTrue(OSUtilWindows.isValidFileName(s));
+
+        for (String s : LegalNames) {
+            Assert.assertTrue("Should be legal: " + s, OSUtilWindows.isValidFileName(s));
         }
     }
 
