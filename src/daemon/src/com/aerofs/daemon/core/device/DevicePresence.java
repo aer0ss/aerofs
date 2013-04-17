@@ -1,34 +1,34 @@
 package com.aerofs.daemon.core.device;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.CoreExponentialRetry;
 import com.aerofs.daemon.core.CoreScheduler;
+import com.aerofs.daemon.core.ex.ExAborted;
 import com.aerofs.daemon.core.net.Transports;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.MapSIndex2Store;
 import com.aerofs.daemon.core.store.Store;
-import com.aerofs.daemon.core.tc.TC;
-import com.aerofs.lib.event.AbstractEBSelfHandling;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.google.inject.Inject;
-import org.slf4j.Logger;
 import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.CoreIMC;
+import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.event.lib.imc.AbstractEBIMC;
 import com.aerofs.daemon.event.net.EOStartPulse;
 import com.aerofs.daemon.event.net.EOUpdateStores;
 import com.aerofs.daemon.transport.ITransport;
-import com.aerofs.lib.Util;
-import com.aerofs.lib.sched.ExponentialRetry;
 import com.aerofs.lib.IDumpStatMisc;
-import com.aerofs.daemon.core.ex.ExAborted;
+import com.aerofs.lib.Util;
+import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.ex.ExDeviceOffline;
-import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.rocklog.RockLog;
+import com.aerofs.lib.sched.ExponentialRetry;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.inject.Inject;
+import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 import java.io.PrintStream;
@@ -143,7 +143,7 @@ public class DevicePresence implements IDumpStatMisc
 
         if (dev.isBeingPulsed_(tp)) return;
 
-        l.info("start pulse " + did + " " + tp);
+        l.info("d:{} t:{} start pulse", did, tp);
 
         RockLog.newMetrics().addMetric("net.pulse." + tp + ".count", 1).sendAsync();
 
@@ -157,7 +157,7 @@ public class DevicePresence implements IDumpStatMisc
             AbstractEBIMC ev = new EOStartPulse(_tps.getIMCE_(tp), did);
             CoreIMC.enqueueBlocking_(ev, _tc, Cat.UNLIMITED);
         } catch (Exception e) {
-            l.warn("can't start pulse: " + Util.e(e));
+            l.warn("d:{} t:{} fail start pulse err:{}", did, tp, Util.e(e));
             pulseStopped_(tp, did);
         }
     }

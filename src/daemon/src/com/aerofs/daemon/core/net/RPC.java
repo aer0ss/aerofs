@@ -5,7 +5,12 @@
 package com.aerofs.daemon.core.net;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.base.ex.ExNoResource;
+import com.aerofs.base.ex.ExProtocolError;
+import com.aerofs.base.ex.ExTimeout;
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.device.DevicePresence;
+import com.aerofs.daemon.core.ex.ExAborted;
 import com.aerofs.daemon.core.net.link.ILinkStateListener;
 import com.aerofs.daemon.core.net.link.LinkStateService;
 import com.aerofs.daemon.core.tc.TC;
@@ -13,11 +18,6 @@ import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.daemon.core.ex.ExAborted;
-import com.aerofs.base.ex.ExNoResource;
-import com.aerofs.base.ex.ExProtocolError;
-import com.aerofs.base.ex.ExTimeout;
-import com.aerofs.base.id.DID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.proto.Core.PBCore;
 import com.google.common.collect.ImmutableSet;
@@ -116,8 +116,7 @@ public class RPC
                 ep = _nsl.send_(to, sidx, call);
                 return recvReply_(call.getRpcid(), to, tk, reason);
             } catch (ExTimeout e) {
-                logRpcTimeout(ep, call, e);
-                if (ep != null) _dp.startPulse_(ep.tp(), ep.did());
+                handleTimeout_(call, ep, e);
             }
         }
     }
@@ -130,15 +129,15 @@ public class RPC
             ep = _nsl.sendUnicast_(did, sidx, call);
             return recvReply_(call.getRpcid(), null, tk, reason);
         } catch (ExTimeout e) {
-            logRpcTimeout(ep, call, e);
-            if (ep != null) _dp.startPulse_(ep.tp(), ep.did());
+            handleTimeout_(call, ep, e);
             throw e;
         }
     }
 
-    private static void logRpcTimeout(Endpoint ep, PBCore call, ExTimeout e)
+    private void handleTimeout_(PBCore call, Endpoint ep, ExTimeout e)
     {
-        l.warn(ep + " " + typeString(call) + " timeout. start pulse");
+        l.warn(ep + " " + typeString(call) + " timeout");
+        if (ep != null) _dp.startPulse_(ep.tp(), ep.did());
     }
 
     /**
