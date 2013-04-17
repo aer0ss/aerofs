@@ -9,7 +9,7 @@ import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.lib.cfg.InjectableCfg;
 import com.aerofs.lib.os.OSUtil;
-import com.aerofs.lib.rocklog.TestDefect.JsonDefect.Priority;
+import com.aerofs.lib.rocklog.Defect.Priority;
 import com.aerofs.testlib.AbstractTest;
 import com.google.gson.Gson;
 import com.google.gson.annotations.SerializedName;
@@ -66,7 +66,7 @@ public class TestDefect extends AbstractTest
         // TODO (GS): Check timestamp
         assertEquals("test-defect", result.name);
         assertEquals("hello", result.message);
-        assertEquals(Priority.Fatal, result.priority); // defects should have Fatal priority by default
+        assertEquals(Priority.Auto, result.priority);
         assertEquals(version, result.version);
         assertEquals(did.toStringFormal(), result.did);
         assertEquals(user.getString(), result.user_id);
@@ -98,8 +98,7 @@ public class TestDefect extends AbstractTest
         public String name;
         @SerializedName("@message") public String message;
         @SerializedName("@timestamp") public String timestamp;
-        public enum Priority { Info, Warning, Fatal }
-        public Priority priority;
+        public Defect.Priority priority;
         public String version;
         public String os_name;
         public String os_family;
