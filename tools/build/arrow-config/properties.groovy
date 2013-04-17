@@ -8,7 +8,7 @@
   @GrabResolver(name='thirdparty', root='http://repos.arrowfs.org/nexus/content/repositories/thirdparty/'),
   @GrabResolver(name='releases', root='http://repos.arrowfs.org/nexus/content/repositories/releases/'),
   @GrabResolver(name='snapshots', root='http://repos.arrowfs.org/nexus/content/repositories/snapshots/'),
-  @Grab('org.arrowfs:arrow-config:11-SNAPSHOT')
+  @Grab('org.arrowfs:arrow-config:12-SNAPSHOT')
 ])
 import org.arrowfs.config.ArrowConfiguration
 import org.arrowfs.config.sources.PropertiesConfiguration

@@ -19,7 +19,7 @@ configurations {
  * Define the dependencies for arrow-config
  */
 dependencies {
-    compile('org.arrowfs:arrow-config:11-SNAPSHOT') {
+    compile('org.arrowfs:arrow-config:12-SNAPSHOT') {
         exclude module: 'findbugs'            // exclude transitive dependencies for findbugs
         exclude module: 'slf4j-api'           // exclude older version of slf4j-api
         exclude module: 'guava'               // exclude guava in preference of our own version
