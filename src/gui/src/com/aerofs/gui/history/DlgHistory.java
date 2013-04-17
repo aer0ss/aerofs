@@ -4,9 +4,8 @@ import com.aerofs.base.Loggers;
 import com.aerofs.gui.AeroFSDialog;
 import com.aerofs.gui.AeroFSMessageBox;
 import com.aerofs.gui.AeroFSMessageBox.IconType;
-import com.aerofs.gui.CompSpin;
+import com.aerofs.gui.TaskDialog;
 import com.aerofs.gui.GUI;
-import com.aerofs.gui.GUI.ISWTWorker;
 import com.aerofs.gui.GUIParam;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.gui.Images;
@@ -32,7 +31,6 @@ import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.layout.RowData;
-import org.eclipse.swt.layout.RowLayout;
 import org.eclipse.swt.program.Program;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
@@ -132,7 +130,7 @@ public class DlgHistory extends AeroFSDialog
 
         createVersionTable(group);
 
-        _actionButtons = newPackedButtonContainer(group);
+        _actionButtons = GUIUtil.newPackedButtonContainer(group);
         _actionButtons.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
 
         _restoreBtn = new Button(_actionButtons, SWT.NONE);
@@ -219,7 +217,7 @@ public class DlgHistory extends AeroFSDialog
         sashForm.setWeights(new int[] {1, 2});
 
         // Create a composite that will hold the buttons row
-        Composite buttons = newPackedButtonContainer(shell);
+        Composite buttons = GUIUtil.newPackedButtonContainer(shell);
         buttons.setLayoutData(new GridData(SWT.END, SWT.CENTER, true, false, 2, 1));
 
         Button refreshBtn = new Button(buttons, SWT.NONE);
@@ -686,7 +684,7 @@ public class DlgHistory extends AeroFSDialog
     private void deleteAllVersionsUnder(final ModelIndex index)
     {
         Path p = _model.getPath(index);
-        new FeedbackDialog(getShell(), "Deleting...",
+        new HistoryTaskDialog(getShell(), "Deleting...",
                 "Permanently delete all previous versions under \"" + p.last() + "\" ?\n ",
                 "Deleting old versions under " + p) {
             @Override
@@ -718,7 +716,7 @@ public class DlgHistory extends AeroFSDialog
                     _model.getPath(index).toAbsoluteString(Cfg.absDefaultRootAnchor()));
             String label = "Restoring " + Util.quote(_model.getPath(index).last()) +
                     (inPlace ? "" : "\nto " + Util.quote(path));
-            new FeedbackDialog(getShell(), "Restoring...", null, label) {
+            new HistoryTaskDialog(getShell(), "Restoring...", null, label) {
                 @Override
                 public void run() throws Exception
                 {
@@ -785,160 +783,25 @@ public class DlgHistory extends AeroFSDialog
         return mi;
     }
 
-    private Composite newPackedButtonContainer(Composite parent)
+    private abstract class HistoryTaskDialog extends TaskDialog
     {
-        return newButtonContainer(parent, true);
-    }
-
-    private Composite newButtonContainer(Composite parent, boolean pack)
-    {
-        Composite buttons = new Composite(parent, SWT.NONE);
-        buttons.setLayoutData(new GridData(SWT.FILL, SWT.BOTTOM, true, false, 2, 1));
-        RowLayout buttonLayout = new RowLayout();
-        buttonLayout.pack = pack;
-        buttonLayout.wrap = false;
-        buttonLayout.fill = true;
-        buttonLayout.center = true;
-        buttonLayout.marginBottom = 0;
-        buttonLayout.marginTop = 0;
-        buttonLayout.marginHeight = 0;
-        buttonLayout.marginLeft = 0;
-        buttonLayout.marginRight = 0;
-        buttonLayout.marginWidth = 0;
-        buttonLayout.spacing = GUIParam.BUTTON_HORIZONTAL_SPACING;
-        if (OSUtil.isOSX()) {
-            // workaround broken margins on OSX
-            buttonLayout.marginLeft = -4;
-            buttonLayout.marginRight = -4;
-            buttonLayout.marginTop = 4;
-            buttonLayout.marginBottom = -6;
-        }
-        buttons.setLayout(buttonLayout);
-        return buttons;
-    }
-
-    /**
-     * Simple sheet dialog controlling a long running operation
-     */
-    private abstract class FeedbackDialog extends AeroFSDialog implements ISWTWorker
-    {
-        protected CompSpin _compSpin;
-        private final String _confirm;
-        private final String _label;
-
-        FeedbackDialog(Shell parent, String title, String confirm, String label)
+        HistoryTaskDialog(Shell parent, String title, String confirm, String label)
         {
-            super(parent, title, true, false);
-            _confirm = confirm;
-            _label = label;
-        }
-
-        @Override
-        protected void open(Shell shell)
-        {
-            if (GUIUtil.isWindowBuilderPro()) // $hide$
-                shell = new Shell(getParent(), getStyle());
-
-            GridLayout glShell = new GridLayout(2, false);
-            glShell.marginHeight = GUIParam.MARGIN;
-            glShell.marginWidth = GUIParam.MARGIN;
-            glShell.verticalSpacing = 0;
-            shell.setLayout(glShell);
-
-            _compSpin = new CompSpin(shell, SWT.NONE);
-
-            final Label label = new Label(shell, SWT.WRAP);
-            label.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, true, false, 1, 1));
-            if (_confirm != null && !_confirm.isEmpty()) {
-                label.setText(_confirm);
-
-                final Composite c = newButtonContainer(shell, false);
-                c.setLayoutData(new GridData(SWT.RIGHT, SWT.BOTTOM, true, false, 2, 1));
-
-                Button bYes = new Button(c, SWT.NONE);
-                bYes.setText("   Yes   ");
-                bYes.addSelectionListener(new SelectionAdapter() {
-                    @Override
-                    public void widgetSelected(SelectionEvent selectionEvent)
-                    {
-                        label.setText(_label);
-                        c.setVisible(false);
-                        ((GridData)c.getLayoutData()).exclude = true;
-                        getShell().layout();
-                        getShell().pack();
-
-                        start();
-                    }
-                });
-
-                Button bNo = new Button(c, SWT.NONE);
-                bNo.setText("   No   ");
-                bNo.addSelectionListener(new SelectionAdapter()
-                {
-                    @Override
-                    public void widgetSelected(SelectionEvent selectionEvent)
-                    {
-                        closeDialog(true);
-                    }
-                });
-
-                shell.setDefaultButton(bYes);
-            } else {
-                label.setText(_label);
-
-                shell.addListener(SWT.Show, new Listener()
-                {
-                    @Override
-                    public void handleEvent(Event arg0)
-                    {
-                        start();
-                    }
-                });
-            }
-        }
-
-        protected void start()
-        {
-            Shell shell = getShell();
-
-            // prevent user from closing by pressing ESC
-            shell.addListener(SWT.Traverse, new Listener() {
-                @Override
-                public void handleEvent(Event e) {
-                    if (e.detail == SWT.TRAVERSE_ESCAPE) {
-                        e.doit = false;
-                    }
-                }
-            });
-
-            _compSpin.start();
-
-            // perform actual work
-            GUI.get().safeWork(shell, FeedbackDialog.this);
+            super(parent, title, confirm, label);
         }
 
         @Override
         public void okay()
         {
-            _compSpin.stop();
-
+            super.okay();
             refreshVersionTree();
-
-            closeDialog(true);
         }
 
         @Override
         public void error(Exception e)
         {
-            _compSpin.stop();
-
-            new AeroFSMessageBox(getShell(), true, e.getLocalizedMessage(), IconType.ERROR)
-                    .open();
-
-            // refresh in case of partial restore
+            super.error(e);
             refreshVersionTree();
-
-            closeDialog(false);
         }
     }
 }

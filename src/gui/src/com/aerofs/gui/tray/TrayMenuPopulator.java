@@ -23,10 +23,13 @@ import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.MenuItem;
 
+// TODO: move utility methods to AbstractTrayMenu and remove this class
 public class TrayMenuPopulator
 {
-    private static final ClickEvent APPLY_UPDATE_CLICKED = new ClickEvent(Action.APPLY_UPDATE, Source.TASKBAR);
-    private static final ClickEvent EXIT_CLICKED = new ClickEvent(Action.EXIT, Source.TASKBAR);
+    private static final ClickEvent APPLY_UPDATE_CLICKED
+            = new ClickEvent(Action.APPLY_UPDATE, Source.TASKBAR);
+    private static final ClickEvent EXIT_CLICKED
+            = new ClickEvent(Action.EXIT, Source.TASKBAR);
 
     private final Menu _rootMenu;
 

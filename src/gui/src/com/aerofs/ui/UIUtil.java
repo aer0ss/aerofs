@@ -166,11 +166,12 @@ public class UIUtil
         // TODO: support multiroot and flat linked storage
         if (!L.isMultiuser()) {
             // try creating a seed file (use async ritual API to leverage SP call latency)
-            ListenableFuture<CreateSeedFileReply> reply = null;
+            ListenableFuture<CreateSeedFileReply> reply = UI.ritualNonBlocking()
+                    .createSeedFile(Cfg.rootSID().toPB());
 
             try {
                 // give the daemon some room to create the seed file before making the SP call
-                UI.ritual().createSeedFile(Cfg.rootSID().toPB(), SEED_FILE_CREATION_TIMEOUT, TimeUnit.MILLISECONDS);
+                reply.get(SEED_FILE_CREATION_TIMEOUT, TimeUnit.MILLISECONDS);
             } catch (Exception e) {
                 l.info("failed to create seed file: {}", Util.e(e));
             }

@@ -1,0 +1,590 @@
+/*
+ * Copyright (c) Air Computing Inc., 2013.
+ */
+
+package com.aerofs.gui.sharing;
+
+import com.aerofs.base.Loggers;
+import com.aerofs.base.acl.Role;
+import com.aerofs.gui.AbstractSpinAnimator;
+import com.aerofs.gui.AeroFSDialog;
+import com.aerofs.gui.TaskDialog;
+import com.aerofs.gui.GUI;
+import com.aerofs.gui.GUIParam;
+import com.aerofs.gui.GUIUtil;
+import com.aerofs.gui.sharing.manage.CompUserList;
+import com.aerofs.gui.sharing.manage.CompUserList.ILoadListener;
+import com.aerofs.labeling.L;
+import com.aerofs.lib.Path;
+import com.aerofs.lib.S;
+import com.aerofs.lib.Util;
+import com.aerofs.lib.cfg.Cfg;
+import com.aerofs.lib.ex.ExChildAlreadyShared;
+import com.aerofs.lib.ex.ExParentAlreadyShared;
+import com.aerofs.proto.Common.PBPath;
+import com.aerofs.proto.Ritual.ListSharedFoldersReply;
+import com.aerofs.ui.IUI.MessageType;
+import com.aerofs.ui.UI;
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
+import org.eclipse.swt.SWT;
+import org.eclipse.swt.custom.SashForm;
+import org.eclipse.swt.events.SelectionAdapter;
+import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.graphics.Point;
+import org.eclipse.swt.graphics.Rectangle;
+import org.eclipse.swt.layout.FillLayout;
+import org.eclipse.swt.layout.GridData;
+import org.eclipse.swt.layout.GridLayout;
+import org.eclipse.swt.layout.RowLayout;
+import org.eclipse.swt.widgets.Button;
+import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Control;
+import org.eclipse.swt.widgets.DirectoryDialog;
+import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Event;
+import org.eclipse.swt.widgets.Label;
+import org.eclipse.swt.widgets.Listener;
+import org.eclipse.swt.widgets.Shell;
+import org.eclipse.swt.widgets.Table;
+import org.eclipse.swt.widgets.TableItem;
+import org.slf4j.Logger;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.util.List;
+
+public class DlgManageSharedFolders extends AeroFSDialog
+{
+    private static final Logger l = Loggers.getLogger(DlgManageSharedFolders.class);
+
+    private final @Nullable Path _path;
+
+    private FolderList _folderList;
+    private MemberList _memberList;
+
+    public DlgManageSharedFolders(Shell parent)
+    {
+        super(parent, "Manage Shared Folders", false, true);
+        _path = null;
+    }
+    public DlgManageSharedFolders(Shell parent, @Nonnull Path path)
+    {
+        super(parent, "Manage " + GUIUtil.sharedFolderName(path), false, true);
+        _path = path;
+    }
+
+    @Override
+    protected void open(Shell sh)
+    {
+        if (GUIUtil.isWindowBuilderPro()) // $hide$
+            sh = new Shell(getParent(), getStyle());
+
+        final Shell shell = sh;
+        GridLayout grid = new GridLayout(1, false);
+        grid.marginHeight = GUIParam.MARGIN;
+        grid.marginWidth = GUIParam.MARGIN;
+        grid.horizontalSpacing = 4;
+        grid.verticalSpacing = 4;
+        shell.setLayout(grid);
+
+        if (_path == null) {
+            SashForm sashForm = new SashForm(shell, SWT.HORIZONTAL | SWT.SMOOTH);
+            GridData sashData = new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1);
+            sashData.widthHint = 450;
+            sashData.heightHint = 300;
+            sashForm.setLayoutData(sashData);
+            sashForm.setSashWidth(7);
+
+            _folderList = new FolderList(sashForm, SWT.NONE);
+            _memberList = new MemberList(sashForm, SWT.NONE);
+
+            // set default proportion between version tree and version table
+            // NOTE: must be done AFTER children have been added to the SashForm
+            sashForm.setWeights(new int[] {2, 3});
+
+            refreshFolderList();
+        } else {
+            _folderList = null;
+            _memberList = new MemberList(shell, SWT.NONE);
+            GridData gd = new GridData(SWT.FILL, SWT.FILL, true, true);
+            gd.widthHint = 250;
+            gd.heightHint = 300;
+            _memberList.setLayoutData(gd);
+
+            refreshMemberList(_path, true);
+        }
+    }
+
+    void refreshFolderList()
+    {
+        _folderList.setLoading(true);
+        _memberList.setPath(null, false);
+
+        Futures.addCallback(UI.ritualNonBlocking().listSharedFolders(),
+                new FutureCallback<ListSharedFoldersReply>() {
+            @Override
+            public void onSuccess(final ListSharedFoldersReply reply)
+            {
+                GUI.get().safeAsyncExec(_folderList, new Runnable() {
+                    @Override
+                    public void run()
+                    {
+                        _folderList.setLoading(false);
+                        _folderList.fill(reply.getPathList());
+                    }
+                });
+            }
+
+            @Override
+            public void onFailure(Throwable t)
+            {
+                GUI.get().show(getShell(), MessageType.ERROR,
+                        "Failed to retrieve shared folders: " + t);
+            }
+        });
+    }
+
+    private void refreshMemberList(Path path, boolean invite)
+    {
+        _memberList.setPath(path, invite);
+    }
+
+    public void shareFolder()
+    {
+        DirectoryDialog dlg = new DirectoryDialog(getShell(), SWT.SHEET);
+        dlg.setFilterPath(Cfg.absDefaultRootAnchor());
+        dlg.setMessage("Select folder to share");
+        final String path = dlg.open();
+
+        if (path != null) {
+            new TaskDialog(getShell(), "Sharing folder", null, "Sharing " + path) {
+                @Override
+                public void run() throws Exception
+                {
+                    try {
+                        UI.ritual().linkRoot(path);
+                    } catch (ExChildAlreadyShared e) {
+                        UI.get().show(MessageType.ERROR,
+                                "There is already a shared folder under that folder");
+                    } catch (ExParentAlreadyShared e) {
+                        UI.get().show(MessageType.ERROR,
+                                "This folder is already under a shared folder");
+                    } catch (Exception e) {
+                        UI.get().show(MessageType.ERROR, "Could not share folder: " + e);
+                    }
+                }
+
+                @Override
+                public void okay()
+                {
+                    super.okay();
+                    refreshFolderList();
+                }
+
+                @Override
+                public void error(Exception e)
+                {
+                    super.error(e);
+                    refreshFolderList();
+                }
+            }.openDialog();
+        }
+    }
+
+    private void leave(final Path path)
+    {
+        new TaskDialog(getShell(), "Leave Shared Folder",
+                "Leaving a shared folder will delete its content on all your devices "
+                    + "but will not affect other members.\nIf you change you mind you "
+                    + "can rejoin the shared folder on the web interface.\n\n"
+                    + "Are you sure you want to leave \"" + GUIUtil.sharedFolderName(path) + "\" ?\n ",
+                "Leaving " + GUIUtil.sharedFolderName(path)) {
+            @Override
+            public void run() throws Exception
+            {
+                UI.ritual().leaveSharedFolder(path.toPB());
+            }
+
+            @Override
+            public void okay()
+            {
+                super.okay();
+                refreshFolderList();
+            }
+
+            @Override
+            public void error(Exception e)
+            {
+                super.error(e);
+                refreshFolderList();
+            }
+        }.openDialog();
+    }
+
+    private class FolderList extends Composite
+    {
+        private final Table _d;
+        private final Button _btnPlus;
+        private final Button _btnMinus;
+
+        private final AbstractSpinAnimator _animator = new AbstractSpinAnimator(this) {
+            @Override
+            protected void setImage(Image img)
+            {
+                _d.getItem(0).setImage(img);
+            }
+        };
+
+        private static final String PATH_DATA = "Path";
+        private static final String ABS_PATH_DATA = "AbsPath";
+
+        public FolderList(Composite composite, int i)
+        {
+            super(composite, i);
+
+            GridLayout l = new GridLayout(1, false);
+            l.marginBottom = 0;
+            l.marginTop = 0;
+            l.marginRight = 0;
+            l.marginLeft = 0;
+            l.marginHeight = 0;
+            l.marginWidth = 0;
+            setLayout(l);
+
+            Label lbl = new Label(this, SWT.NONE);
+            lbl.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
+            lbl.setText("Shared Folders:");
+
+            Composite c = newTableWrapper(this);
+            c.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
+
+            _d = new Table(c, SWT.SINGLE | SWT.BORDER | SWT.H_SCROLL | SWT.H_SCROLL);
+            _d.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
+            _d.addSelectionListener(new SelectionAdapter() {
+                @Override
+                public void widgetSelected(SelectionEvent e)
+                {
+                    TableItem i = (TableItem)e.item;
+                    Path path = i != null ? (Path)i.getData(PATH_DATA) : null;
+                    refreshMemberList(path, false);
+                }
+
+                @Override
+                public void widgetDefaultSelected(SelectionEvent e)
+                {
+                    TableItem i = (TableItem)e.item;
+                    if (i == null) return;
+
+                    GUIUtil.launch((String)i.getData(ABS_PATH_DATA));
+                }
+            });
+
+            new TableToolTip(_d, ABS_PATH_DATA);
+
+            Composite bar = GUIUtil.newPackedButtonContainer(c);
+            bar.setLayoutData(new GridData(SWT.FILL, SWT.BOTTOM, true, false));
+
+            _btnPlus = new Button(bar, SWT.PUSH);
+            _btnPlus.setText("Add...");
+            _btnPlus.setToolTipText("Share a folder");
+            _btnPlus.addSelectionListener(new SelectionAdapter() {
+                @Override
+                public void widgetSelected(SelectionEvent selectionEvent)
+                {
+                    shareFolder();
+                }
+            });
+
+            if (L.isMultiuser()) {
+                // Team Server cannot leave folders
+                // TODO: use expulsion under the hood to filter out some shared folders?
+                _btnMinus = null;
+            } else {
+                _btnMinus = new Button(bar, SWT.PUSH);
+                _btnMinus.setText("Leave");
+                _btnMinus.setToolTipText("Leave a shared folder");
+                _btnMinus.addSelectionListener(new SelectionAdapter() {
+                    @Override
+                    public void widgetSelected(SelectionEvent selectionEvent)
+                    {
+                        Path path = _folderList.selection();
+                        if (path != null) leave(path);
+                    }
+                });
+            }
+        }
+
+        void fill(List<PBPath> paths)
+        {
+            _d.setItemCount(paths.size());
+            int i = 0;
+            for (PBPath p : paths) {
+                Path path = Path.fromPB(p);
+                String root = Cfg.getRootPath(path.sid());
+                if (root == null) {
+                    l.warn("unknown root " + path.sid());
+                    continue;
+                }
+                TableItem item = _d.getItem(i++);
+                item.setText(0, GUIUtil.sharedFolderName(path));
+                item.setData(PATH_DATA, path);
+                item.setData(ABS_PATH_DATA, path.toAbsoluteString(root));
+            }
+
+            _d.select(0);
+            refreshMemberList(selection(), false);
+        }
+
+        @Nullable Path selection()
+        {
+            TableItem[] items = _d.getSelection();
+            return items.length != 1 ? null : (Path)items[0].getData(PATH_DATA);
+        }
+
+        public void setLoading(boolean loading)
+        {
+            _d.removeAll();
+
+            if (loading) {
+                _d.setItemCount(1);
+
+                TableItem item = _d.getItem(0);
+                item.setText(0, S.GUI_LOADING);
+                _animator.start();
+            } else {
+                _animator.stop();
+            }
+        }
+    }
+
+    private class MemberList extends Composite
+    {
+        private final Label _lbl;
+        private final CompUserList _userList;
+        private final Composite _btnBar;
+        private final Button _btnPlus;
+
+        public MemberList(Composite composite, int i)
+        {
+            super(composite, i);
+
+            GridLayout l = new GridLayout(1, false);
+            l.marginBottom = 0;
+            l.marginTop = 0;
+            l.marginRight = 0;
+            l.marginLeft = 0;
+            l.marginHeight = 0;
+            l.marginWidth = 0;
+            setLayout(l);
+
+            _lbl = new Label(this, SWT.NONE);
+            _lbl.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
+
+            Composite c = newTableWrapper(this);
+            c.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
+
+            _userList = new CompUserList(c);
+            _userList.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
+
+            _btnBar = GUIUtil.newPackedButtonContainer(c);
+            _btnBar.setLayoutData(new GridData(SWT.RIGHT, SWT.BOTTOM, true, false));
+
+            _btnPlus = new Button(_btnBar, SWT.PUSH);
+            _btnPlus.setText("Invite Others...");
+            _btnPlus.setToolTipText("Invite another user to join the shared folder");
+            _btnPlus.addSelectionListener(new SelectionAdapter() {
+                @Override
+                public void widgetSelected(SelectionEvent selectionEvent)
+                {
+                    new DlgInvite(getShell(), _path == null ? _folderList.selection() : _path)
+                            .openDialog();
+                }
+            });
+        }
+
+        private void setVisible(Control c, boolean visible)
+        {
+            c.setVisible(visible);
+            ((GridData)c.getLayoutData()).exclude = !visible;
+        }
+
+        void setPath(@Nullable Path path, final boolean invite)
+        {
+            boolean valid = path != null;
+            setVisible(_userList, valid);
+            setVisible(_btnBar, valid);
+            _btnPlus.setGrayed(true);
+            if (valid) {
+                _userList.load(path, new ILoadListener() {
+                    @Override
+                    public void loaded(int membersCount, Role localUserRole)
+                    {
+                        // gray out invite button when not admin, except on Team Server where
+                        // the ACL check is slightly more complicated...
+                        boolean admin = (localUserRole == Role.OWNER)
+                                || Cfg.user().isTeamServerID();
+                        _btnPlus.setGrayed(!admin);
+                        _btnPlus.setEnabled(admin);
+                        if (invite) {
+                            if (admin) {
+                                _btnPlus.notifyListeners(SWT.Selection, new Event());
+                            }
+                        }
+                    }
+                });
+                _lbl.setText("Members:");
+            } else {
+                _lbl.setText("Select one the shared folders in the list to view its members");
+            }
+
+            layout(true, true);
+        }
+    }
+
+    private Composite newTableWrapper(Composite parent)
+    {
+        Composite c = new Composite(parent, SWT.NONE);
+        GridLayout lc = new GridLayout(1, false);
+        lc.marginBottom = 0;
+        lc.marginTop = 0;
+        lc.marginRight = 0;
+        lc.marginLeft = 0;
+        lc.marginHeight = 0;
+        lc.marginWidth = 0;
+        lc.horizontalSpacing = 0;
+        lc.verticalSpacing = 0;
+        c.setLayout(lc);
+        return c;
+    }
+
+    private Composite newButtonBar(Composite parent)
+    {
+        Composite bar = new Composite(parent, SWT.NONE);
+        RowLayout bl = new RowLayout(SWT.HORIZONTAL);
+        bl.fill = true;
+        bl.pack = false;
+        bl.spacing = 0;
+        bl.marginTop = 0;
+        bl.marginLeft = 0;
+        bl.marginRight = 0;
+        bl.marginBottom = 0;
+        bl.marginHeight = 0;
+        bl.marginWidth = 0;
+        bar.setLayout(bl);
+        return bar;
+    }
+
+    private static class DlgInvite extends AeroFSDialog
+    {
+        private final Path _path;
+
+        public DlgInvite(Shell parent, Path path)
+        {
+            super(parent, "Invite Members to " + Util.quote(GUIUtil.sharedFolderName(path)),
+                    true, false);
+            _path = path;
+        }
+
+        @Override
+        protected void open(Shell shell)
+        {
+            if (GUIUtil.isWindowBuilderPro()) {
+                shell = new Shell(getParent(), getStyle());
+            }
+
+            shell.setLayout(new FillLayout(SWT.HORIZONTAL));
+
+            CompInviteUsers.createForExistingSharedFolder(shell, _path);
+        }
+    }
+
+    /**
+     * Helper class to add custom dynamic tooltip to each item of a Table
+     */
+    private static class TableToolTip implements Listener
+    {
+        private Shell _tip = null;
+        private Label _label = null;
+        private final Table _table;
+        private final String _toolTipData;
+
+        TableToolTip(Table table, String toolTipData)
+        {
+            _table = table;
+            _toolTipData = toolTipData;
+
+            _table.setToolTipText("");
+            _table.addListener(SWT.Dispose, this);
+            _table.addListener(SWT.KeyDown, this);
+            _table.addListener(SWT.MouseMove, this);
+            _table.addListener(SWT.MouseHover, this);
+        }
+
+        @Override
+        public void handleEvent(Event event) {
+            switch (event.type) {
+            case SWT.Dispose:
+            case SWT.KeyDown:
+            case SWT.MouseMove:
+                if (_tip == null) break;
+                _tip.dispose();
+                _tip = null;
+                _label = null;
+                break;
+            case SWT.MouseHover:
+                Display display = _table.getDisplay();
+                TableItem item = _table.getItem(new Point(event.x, event.y));
+                if (item != null) {
+                    if (_tip != null  && !_tip.isDisposed ()) _tip.dispose();
+                    _tip = new Shell(_table.getShell(), SWT.ON_TOP | SWT.NO_FOCUS | SWT.TOOL);
+                    _tip.setBackground(display.getSystemColor(SWT.COLOR_INFO_BACKGROUND));
+
+                    FillLayout layout = new FillLayout();
+                    layout.marginWidth = 2;
+                    _tip.setLayout(layout);
+
+                    _label = new Label(_tip, SWT.NONE);
+                    _label.setForeground(display.getSystemColor(SWT.COLOR_INFO_FOREGROUND));
+                    _label.setBackground(display.getSystemColor(SWT.COLOR_INFO_BACKGROUND));
+                    _label.setData("_TABLEITEM", item);
+                    _label.setText((String)item.getData(_toolTipData));
+                    _label.addListener(SWT.MouseExit, labelListener);
+                    _label.addListener(SWT.MouseDown, labelListener);
+
+                    Point size = _tip.computeSize(SWT.DEFAULT, SWT.DEFAULT);
+                    Rectangle rect = item.getBounds(0);
+                    Point pt = _table.toDisplay(rect.x, rect.y);
+                    _tip.setBounds(pt.x, pt.y, size.x, size.y);
+                    _tip.setVisible(true);
+                }
+                break;
+            default:
+                break;
+            }
+        }
+
+        private final Listener labelListener = new Listener () {
+            @Override
+            public void handleEvent(Event event) {
+                Label label = (Label)event.widget;
+                switch (event.type) {
+                case SWT.MouseDown:
+                    Event e = new Event();
+                    e.item = (TableItem)label.getData("_TABLEITEM");
+                    // Assuming table is single select, set the selection as if
+                    // the mouse down event went through to the table
+                    _table.setSelection(new TableItem [] {(TableItem) e.item});
+                    _table.notifyListeners(SWT.Selection, e);
+                    _tip.dispose();
+                    _table.setFocus();
+                    break;
+                case SWT.MouseExit:
+                    _tip.dispose();
+                    break;
+                }
+            }
+        };
+    }
+}

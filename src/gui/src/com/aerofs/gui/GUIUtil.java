@@ -2,6 +2,7 @@ package com.aerofs.gui;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.analytics.IAnalyticsEvent;
+import com.aerofs.base.id.SID;
 import com.aerofs.gui.diagnosis.DlgDiagnosis;
 import com.aerofs.gui.history.DlgHistory;
 import com.aerofs.gui.sharing.DlgCreateSharedFolder;
@@ -29,7 +30,9 @@ import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.graphics.TextLayout;
 import org.eclipse.swt.layout.GridLayout;
+import org.eclipse.swt.layout.RowLayout;
 import org.eclipse.swt.program.Program;
+import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Listener;
@@ -40,7 +43,10 @@ import org.eclipse.swt.widgets.Text;
 import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
+import java.io.File;
 import java.io.IOException;
+import java.util.Map;
+import java.util.Map.Entry;
 
 public class GUIUtil
 {
@@ -266,6 +272,41 @@ public class GUIUtil
     }
 
     /**
+     * Derive the name of a shared folder from its Path
+     * This is necessary to handle external roots, whose Path are empty and whose name are dervied
+     * from the physical folder they are linked too.
+     */
+    public static String sharedFolderName(Path path)
+    {
+        return path.isEmpty() ? new File(Cfg.getRootPath(path.sid())).getName() : path.last();
+    }
+
+    /**
+     * @return logical Path corresponding to the given absolute physical path
+     *
+     * This method takes external roots into account.
+     *
+     * If the input is not under any of the physical roots, this method returns null
+     */
+    public static @Nullable Path getPath(String absPath)
+    {
+        try {
+            String canonicalPath = new File(absPath).getCanonicalPath();
+
+            Map<SID, String> roots = Cfg.getRoots();
+            for (Entry<SID, String> e : roots.entrySet()) {
+                String rootAbsPath = e.getValue();
+                if (Path.isUnder(rootAbsPath, canonicalPath)) {
+                    return Path.fromAbsoluteString(e.getKey(), rootAbsPath, canonicalPath);
+                }
+            }
+        } catch (IOException e) {
+            l.warn(Util.e(e));
+        }
+        return null;
+    }
+
+    /**
      * This method can be run in a non-UI thread
      */
     public static void createOrManageSharedFolder(final Path path)
@@ -368,5 +409,45 @@ public class GUIUtil
         } else {
             return Program.launch(pathOrUri);
         }
+    }
+
+    /**
+     * @return a container for a row of buttons in which the buttons are packed (preferred size)
+     */
+    public static Composite newPackedButtonContainer(Composite parent)
+    {
+        return newButtonContainer(parent, true);
+    }
+
+    /**
+     * @return a Composite suitable for hosting a row of buttons
+     *
+     * This method takes care of SWT and platform specific crazyness re margins and spacing...
+     */
+    public static Composite newButtonContainer(Composite parent, boolean pack)
+    {
+        Composite buttons = new Composite(parent, SWT.NONE);
+        RowLayout buttonLayout = new RowLayout();
+        buttonLayout.pack = pack;
+        buttonLayout.wrap = false;
+        buttonLayout.fill = true;
+        buttonLayout.center = true;
+        buttonLayout.marginBottom = 0;
+        buttonLayout.marginTop = 0;
+        buttonLayout.marginHeight = 0;
+        buttonLayout.marginLeft = 0;
+        buttonLayout.marginRight = 0;
+        buttonLayout.marginWidth = 0;
+        buttonLayout.spacing = GUIParam.BUTTON_HORIZONTAL_SPACING;
+
+        if (OSUtil.isOSX()) {
+            // workaround broken margins on OSX
+            buttonLayout.marginLeft = -4;
+            buttonLayout.marginRight = -4;
+            buttonLayout.marginTop = 4;
+            buttonLayout.marginBottom = -6;
+        }
+        buttons.setLayout(buttonLayout);
+        return buttons;
     }
 }

@@ -8,9 +8,20 @@ import com.aerofs.base.id.UserID;
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.SimpleContentProvider;
 import com.aerofs.lib.Path;
-import com.aerofs.lib.S;
-import com.aerofs.lib.ThreadUtil;
+import com.aerofs.base.acl.Role;
+import com.aerofs.base.id.UserID;
 import com.aerofs.lib.Util;
+import com.aerofs.lib.ritual.RitualBlockingClient;
+import com.aerofs.lib.ritual.RitualClient;
+import com.aerofs.proto.Common.PBSubjectRolePair;
+import com.aerofs.ui.IUI.MessageType;
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
+import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.ScrollBar;
+
+import com.aerofs.lib.S;
+import com.aerofs.base.acl.SubjectRolePair;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExUIMessage;
 import com.aerofs.lib.os.OSUtil;
@@ -18,7 +29,10 @@ import com.aerofs.proto.Common.PBSubjectRolePair;
 import com.aerofs.proto.Ritual.GetACLReply;
 import com.aerofs.ui.UI;
 import com.aerofs.ui.UIUtil;
-import com.google.common.collect.Lists;
+
+import org.eclipse.swt.SWT;
+import org.eclipse.swt.layout.FillLayout;
+import org.eclipse.swt.widgets.Table;
 import org.eclipse.jface.viewers.StructuredSelection;
 import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.TableViewerColumn;
@@ -38,7 +52,7 @@ import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
 import org.slf4j.Logger;
 
-import java.util.ArrayList;
+import javax.annotation.Nullable;
 
 public class CompUserList extends Composite
 {
@@ -47,26 +61,22 @@ public class CompUserList extends Composite
     public static interface ILoadListener
     {
         // this method is called within the GUI thread
-        void loaded();
+        void loaded(int memberCount, Role localUserRole);
     }
 
-    private TableViewer _tv;
+    private final TableViewer _tv;
 
-    private TableColumn _tcIcon;
-    private TableColumn _tcSubject;
-    private TableColumn _tcRole;
-    private TableColumn _tcArrow;
+    private final TableColumn _tcIcon;
+    private final TableColumn _tcSubject;
+    private final TableColumn _tcRole;
+    private final TableColumn _tcArrow;
 
-    private Role _rSelf;
     private Path _path;
-    private final ILoadListener _ll;
+    private Role _rSelf;
 
-    public CompUserList(Composite parent, Path path, ILoadListener ll)
+    public CompUserList(Composite parent)
     {
         super(parent, SWT.NONE);
-
-        _path = path;
-        _ll = ll;
 
         setLayout(new FillLayout(SWT.HORIZONTAL));
         _tv = new TableViewer(this, SWT.BORDER | SWT.FULL_SELECTION);
@@ -111,7 +121,7 @@ public class CompUserList extends Composite
                 SubjectRolePair srp = (SubjectRolePair) elem;
                 if (!canChangeACL(srp)) return;
 
-                new RoleMenu(CompUserList.this, srp, _tv.getTable(), _path).open();
+                new RoleMenu(CompUserList.this, srp, _tv.getTable()).open();
             }
         });
 
@@ -131,22 +141,6 @@ public class CompUserList extends Composite
                 recalcUserColumnWidth();
             }
         });
-
-        _tv.setInput(new Object[] { S.GUI_LOADING });
-
-        loadAsync();
-    }
-
-    private void loadAsync()
-    {
-        ThreadUtil.startDaemonThread("userlist-async-load", new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                thdLoadAsync();
-            }
-        });
     }
 
     public boolean canChangeACL(SubjectRolePair srp)
@@ -155,7 +149,6 @@ public class CompUserList extends Composite
     }
 
     private boolean _recalcing;
-    private int _users;
 
     private void recalcUserColumnWidth()
     {
@@ -180,67 +173,88 @@ public class CompUserList extends Composite
         }
     }
 
-    private void thdLoadAsync()
-    {
-        load();
-    }
-
     /**
      * This method can be called in either UI or non-UI threads
      */
-    void load()
+    public void load(Path path, final @Nullable ILoadListener listener)
     {
+        // TODO: spinner?
+        _tv.setInput(new Object[] { S.GUI_LOADING });
+
+        _path = path;
         _rSelf = null;
-        _users = 0;
 
-        Object[] elems;
-        try {
-            ArrayList<SubjectRolePair> srps = Lists.newArrayList();
-            GetACLReply reply = UI.ritual().getACL(Cfg.user().getString(), _path.toPB());
-            _users = reply.getSubjectRoleCount();
-            for (int i = 0; i < _users; i++) {
-                PBSubjectRolePair srp = reply.getSubjectRole(i);
-                UserID subject = UserID.fromExternal(srp.getSubject());
-                Role role = Role.fromPB(srp.getRole());
-
-                srps.add(new SubjectRolePair(subject, role));
-
-                if (subject.equals(Cfg.user())) _rSelf = role;
-            }
-            elems = srps.toArray();
-        } catch (ExNoPerm e) {
-            l.warn("no perm to list acl");
-            elems = new Object[] {
-                new ExUIMessage("You are no longer a member of this shared folder.")
-            };
-        } catch (Exception e) {
-            l.warn("list acl: " + Util.e(e));
-            elems = new Object[] { e };
-        }
-
-        final Object[] elemsFinal = elems;
-        GUI.get().safeAsyncExec(this, new Runnable() {
+        Futures.addCallback(UI.ritualNonBlocking().getACL(Cfg.user().getString(), path.toPB()),
+                new FutureCallback<GetACLReply>() {
             @Override
-            public void run()
+            public void onSuccess(GetACLReply reply)
             {
-                _tv.setInput(elemsFinal);
-                recalcUserColumnWidth();
-                _ll.loaded();
+                try {
+                    final Object[] elems = new Object[reply.getSubjectRoleCount()];
+
+                    for (int i = 0; i < elems.length; i++) {
+                        PBSubjectRolePair srp = reply.getSubjectRole(i);
+                        UserID subject = UserID.fromExternal(srp.getSubject());
+                        Role role = Role.fromPB(srp.getRole());
+
+                        elems[i] = new SubjectRolePair(subject, role);
+
+                        if (subject.equals(Cfg.user())) _rSelf = role;
+                    }
+
+                    GUI.get().safeAsyncExec(CompUserList.this, new Runnable() {
+                        @Override
+                        public void run()
+                        {
+                            _tv.setInput(elems);
+                            recalcUserColumnWidth();
+                            if (listener != null) listener.loaded(elems.length, _rSelf);
+                        }
+                    });
+                } catch (Exception e) {
+                    GUI.get().show(getShell(), MessageType.ERROR,
+                            "Failed to retrieve user list: " + e);
+                }
+            }
+
+            @Override
+            public void onFailure(Throwable t)
+            {
+                GUI.get().safeAsyncExec(CompUserList.this, new Runnable() {
+                    @Override
+                    public void run()
+                    {
+                        _tv.setInput(new Object[] {});
+                    }
+                });
+
+                if (t instanceof ExNoPerm) {
+                    GUI.get().show(getShell(), MessageType.ERROR,
+                            "You are no longer a member of this shared folder");
+                } else {
+                    GUI.get().show(getShell(), MessageType.ERROR,
+                            "Failed to retrieve user list: " + t);
+                }
             }
         });
     }
 
-    /**
-     * @return 0 before the user list is fully loaded
-     */
-    int getUsersCount()
+    public void setRole(UserID subject, Role role)
     {
-        return _users;
-    }
-
-    @Override
-    protected void checkSubclass()
-    {
-        // Disable the check that prevents subclassing of SWT components
+        try {
+            if (role == null) {
+                UI.ritual().deleteACL(Cfg.user().getString(), _path.toPB(),
+                        subject.getString());
+            } else {
+                UI.ritual().updateACL(Cfg.user().getString(), _path.toPB(), subject.getString(),
+                        role.toPB());
+            }
+            load(_path, null);
+        } catch (Exception e) {
+            l.warn(Util.e(e));
+            GUI.get().show(getShell(), MessageType.ERROR,
+                    "Couldn't edit the user. " + S.TRY_AGAIN_LATER + "\n\n" +
+                            "Error message: " + UIUtil.e2msgSentenceNoBracket(e));
+        }
     }
 }
