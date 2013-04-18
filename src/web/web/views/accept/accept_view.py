@@ -122,7 +122,7 @@ def accept_folder_invitation(request):
 
     share_id = request.params[URL_PARAM_SHARE_ID].decode('hex')
     sp = get_rpc_stub(request)
-    sp.join_shared_folder(share_id)
+    sp.join_shared_folder(share_id, None)
 
 @view_config(
     route_name = 'json.ignore_folder_invitation',
