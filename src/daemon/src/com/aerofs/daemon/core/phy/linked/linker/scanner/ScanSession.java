@@ -335,8 +335,7 @@ class ScanSession
                 SOID soid = new SOID(soidParent.sidx(), oid);
                 OA oa = _f._ds.getOA_(soid);
                 if (!MightDelete.shouldNotDelete(oa)) {
-                    // TODO: switch back to debug when AE in TimeoutDeletionBuffer is fixed
-                    l.info("hold_ on {}", soid);
+                    l.debug("hold_ on {}", soid);
                     _holder.hold_(soid);
                 }
                 _f._pi.incrementMonotonicProgress();
