@@ -144,7 +144,10 @@ public class MightCreate
 
         Set<Operation> ops = determineUpdateOperation_(sourceSOID, targetSOID, fnt);
 
-        l.info("{} {} {} {}", pcPhysical, ops, sourceSOID, targetSOID);
+        // reduce log volume by ignoring updateo p on existing object
+        if (!(sourceSOID != null && sourceSOID.equals(targetSOID) && ops.equals(EnumSet.of(Update)))) {
+            l.info("{} {} {} {}", pcPhysical, ops, sourceSOID, targetSOID);
+        }
 
         boolean createdOrReplaced = _mcop.executeOperation_(ops, sourceSOID, targetSOID, pcPhysical,
                 fnt, delBuffer, t);
