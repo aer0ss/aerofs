@@ -497,7 +497,7 @@ public class User
     }
 
     /**
-     * generate a signup invitation code and add it to the database
+     * Generate a signup invitation code and add it to the database.
      * @return the signup code
      * @pre the user doesn't exist
      */
