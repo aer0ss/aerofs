@@ -180,12 +180,6 @@ public class TimeoutDeletionBuffer implements IDeletionBuffer
         _soid2th.remove(soid);
     }
 
-    @Override
-    public boolean contains_(SOID soid)
-    {
-        return _soid2th.containsKey(soid);
-    }
-
     public Holder newHolder()
     {
         return new Holder();

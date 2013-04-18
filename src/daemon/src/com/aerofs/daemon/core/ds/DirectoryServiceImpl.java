@@ -654,7 +654,6 @@ public class DirectoryServiceImpl extends DirectoryService implements ObjectSurg
     @Override
     public IDBIterator<SOKID> getAllNonMasterBranches_() throws SQLException
     {
-        // TODO: if performance becomes a concern, add an index to the CA table
         return _mdb.getAllNonMasterBranches_();
     }
 

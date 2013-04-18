@@ -21,9 +21,4 @@ public interface IDeletionBuffer
      * Remove the SOID from the buffer, so that it will not be deleted.
      */
     void remove_(SOID soid);
-
-    /**
-     * @return true if the buffer contains the SOID
-     */
-    boolean contains_(SOID soid);
 }

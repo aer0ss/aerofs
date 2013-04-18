@@ -103,7 +103,6 @@ public class ConflictState extends DirectoryServiceAdapter
      */
     public void sendSnapshot_(IConflictStateListener listener) throws SQLException
     {
-        // TODO: optimize (add an index? change DB schema)
         Map<Path, Boolean> paths = Maps.newHashMap();
         IDBIterator<SOKID> it = _ds.getAllNonMasterBranches_();
         try {

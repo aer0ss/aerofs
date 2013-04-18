@@ -29,7 +29,7 @@ public class PathStatusNotificationForwarder
             {
                 switch (pb.getType()) {
                 case PATH_STATUS:
-                    onStatusNotification_(pb.getPathStatus());
+                    onStatusNotification(pb.getPathStatus());
                     break;
                 case CLEAR_STATUS:
                     _service.notifyClearCache();
@@ -41,7 +41,7 @@ public class PathStatusNotificationForwarder
         });
     }
 
-    private void onStatusNotification_(PBPathStatusEvent ev)
+    private void onStatusNotification(PBPathStatusEvent ev)
     {
         int n = ev.getPathCount();
         assert n == ev.getStatusCount();
