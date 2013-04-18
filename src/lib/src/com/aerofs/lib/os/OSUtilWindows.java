@@ -108,9 +108,19 @@ public class OSUtilWindows implements IOSUtil
     final static private Pattern INVALID_FILENAME_CHARS;
 
     static {
+        // "I know, I'll use regexes!" Well, now you have two problems.
+        // Note the use of groups; this pattern matches:
+        // - a filename made up entirely of "."s (the first group),
+        // OR
+        //   - one of the Illegal Filenames,
+        //   or one of the Illegal Filenames with a suffix.
+        // The ? on the final group makes the suffix optional (zero or one of these)
+        // and does not apply to the first, ".+" group.
         RESERVED_FILENAME_PATTERN = Pattern.compile(
-                "(\\.+|CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])",
+                "(\\.+)|((CON|CLOCK\\$|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(\\..*)?)",
                 Pattern.CASE_INSENSITIVE);
+
+        // This regex is simpler, just checking for certain characters that are forbidden.
         INVALID_FILENAME_CHARS = Pattern.compile("[/\\\\:*?\"<>|]");
     }
 
