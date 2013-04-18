@@ -26,6 +26,7 @@ import com.aerofs.labeling.L;
 import com.aerofs.lib.IProgram;
 import com.aerofs.lib.StorageType;
 import com.aerofs.lib.SystemUtil;
+import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgModule;
@@ -82,7 +83,13 @@ public class DaemonProgram implements IProgram
         l.error("daemon main thread halted");
 
         // I don't understand why mac needs this
-        if (OSUtil.get().getOSFamily() == OSFamily.OSX) SystemUtil.halt();
+        if (OSUtil.get().getOSFamily() == OSFamily.OSX) halt();
+    }
+
+    private void halt()
+    {
+        Object obj = new Object();
+        synchronized (obj) { ThreadUtil.waitUninterruptable(obj); }
     }
 
     private Daemon inject_()

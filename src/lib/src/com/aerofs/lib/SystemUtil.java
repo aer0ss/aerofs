@@ -8,6 +8,7 @@ import com.aerofs.sv.client.SVClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nonnull;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -205,13 +206,7 @@ public abstract class SystemUtil
         }
     }
 
-    public static void halt()
-    {
-        Integer i = new Integer(0);
-        synchronized (i) { ThreadUtil.waitUninterruptable(i); }
-    }
-
-    public static Process execBackground(String ... cmds) throws IOException
+    public static @Nonnull Process execBackground(String ... cmds) throws IOException
     {
         ProcessBuilder pb = new ProcessBuilder(cmds);
         l.debug("execBackground: " + pb.command());
