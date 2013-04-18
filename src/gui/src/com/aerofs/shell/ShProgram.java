@@ -144,7 +144,7 @@ public class ShProgram implements IProgram, ICallback
         if (path == null) return _pwd;
 
         try {
-            return Path.fromStringFormalThrows(path);
+            return Path.fromStringFormal(path);
         } catch (ExFormatError e) {
             // not a valid absolute formal (i.e store-prefixed) path
         }

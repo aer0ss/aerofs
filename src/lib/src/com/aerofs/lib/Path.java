@@ -185,20 +185,8 @@ public class Path implements Comparable<Path>
         return _sid.toStringFormal() + FORMAL_STORE_SEP + toStringRelative();
     }
 
-    /**
-     * Convert a string returned from Path.toStringFormal() to a Path object
-     */
-    public static Path fromStringFormal(String strFormal)
-    {
-        try {
-            return fromStringFormalThrows(strFormal);
-        } catch (ExFormatError e) {
-            throw new AssertionError(e);
-        }
-    }
-
     private static final int SID_LENGTH = UniqueID.LENGTH * 2;
-    public static Path fromStringFormalThrows(String strFormal) throws ExFormatError
+    public static Path fromStringFormal(String strFormal) throws ExFormatError
     {
         if (strFormal.length() < SID_LENGTH + 1
                 || strFormal.charAt(SID_LENGTH) != FORMAL_STORE_SEP) {
