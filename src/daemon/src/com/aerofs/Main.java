@@ -15,7 +15,6 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.ExNotSetup;
 import com.aerofs.lib.os.OSUtil;
-import com.aerofs.lib.rocklog.RockLog;
 import com.aerofs.sv.client.SVClient;
 import com.google.inject.CreationException;
 import com.google.inject.spi.Message;
@@ -25,7 +24,6 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
 
-import static com.aerofs.lib.rocklog.RockLog.BaseComponent.CLIENT;
 
 public class Main
 {
@@ -105,7 +103,6 @@ public class Main
 
         ProgramInformation.init_(prog);
         ChannelFactories.init_();
-        RockLog.init_(CLIENT);
         SystemUtil.setDefaultUncaughtExceptionHandler();
 
         try {

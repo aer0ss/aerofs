@@ -5,6 +5,9 @@
 package com.aerofs.daemon.core.protocol;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.base.analytics.Analytics;
+import com.aerofs.base.analytics.IAnalyticsEvent;
+import com.aerofs.base.analytics.AnalyticsEvents.FileConflictEvent;
 import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.base.ex.ExNotFound;
@@ -46,7 +49,7 @@ import com.aerofs.lib.Path;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.Version;
-import com.aerofs.lib.analytics.Analytics;
+import com.aerofs.lib.analytics.AnalyticsEventCounter;
 import com.aerofs.lib.ex.*;
 import com.aerofs.lib.id.*;
 import com.aerofs.proto.Core.PBGetComReply;
@@ -97,14 +100,14 @@ public class ReceiveAndApplyUpdate
     private BranchDeleter _bd;
     private TransManager _tm;
     private MapSIndex2Store _sidx2s;
-    private Analytics _a;
+    private AnalyticsEventCounter _conflictCounter;
 
     @Inject
     public void inject_(DirectoryService ds, PrefixVersionControl pvc, NativeVersionControl nvc,
             Hasher hasher, VersionUpdater vu, ObjectCreator oc, ObjectMover om,
             IPhysicalStorage ps, DownloadState dlState, ComputeHashCall computeHashCall, StoreCreator sc,
             IncomingStreams iss, Metrics m, Aliasing al, BranchDeleter bd, TransManager tm,
-            MapSIndex2Store sidx2s, MapAlias2Target alias2target, Analytics a)
+            MapSIndex2Store sidx2s, MapAlias2Target alias2target, Analytics analytics)
     {
         _ds = ds;
         _pvc = pvc;
@@ -124,7 +127,14 @@ public class ReceiveAndApplyUpdate
         _tm = tm;
         _sidx2s = sidx2s;
         _a2t = alias2target;
-        _a = a;
+        _conflictCounter = new AnalyticsEventCounter("analytics-file-conflict", analytics)
+        {
+            @Override
+            public IAnalyticsEvent createEvent(int count)
+            {
+                return new FileConflictEvent(count);
+            }
+        };
     }
 
     public static class CausalityResult
@@ -1045,7 +1055,7 @@ public class ReceiveAndApplyUpdate
                     // record creation of conflict branch here instead of in DirectoryService
                     // Aliasing and Migration may recreate them and we only want to record each
                     // conflict once
-                    _a.incConflictCount();
+                    _conflictCounter.inc();
                 }
                 _ds.createCA_(k.soid(), k.kidx(), t);
             }

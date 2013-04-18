@@ -167,6 +167,12 @@ public class User
         return _f._udb.getFullName(_id);
     }
 
+    public long getSignupDate()
+            throws SQLException, ExNotFound
+    {
+        return _f._udb.getSignupDate(_id);
+    }
+
     public boolean isCredentialCorrect(byte[] shaedSP)
             throws ExNotFound, SQLException
     {

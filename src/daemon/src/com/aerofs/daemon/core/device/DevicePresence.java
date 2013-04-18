@@ -54,10 +54,11 @@ public class DevicePresence implements IDumpStatMisc
     private final ExponentialRetry _cer;
     private final MapSIndex2Store _sidx2s;
     private final IMapSIndex2SID _sidx2sid;
+    private final RockLog _rockLog;
 
     @Inject
     public DevicePresence(TC tc, CoreScheduler sched, Transports tps, CoreExponentialRetry cer,
-            MapSIndex2Store sidx2s, IMapSIndex2SID sidx2sid)
+            MapSIndex2Store sidx2s, IMapSIndex2SID sidx2sid, RockLog rockLog)
     {
         _tc = tc;
         _sched = sched;
@@ -65,6 +66,7 @@ public class DevicePresence implements IDumpStatMisc
         _cer = cer;
         _sidx2s = sidx2s;
         _sidx2sid = sidx2sid;
+        _rockLog = rockLog;
     }
 
     public void addListener_(IDevicePresenceListener listener)
@@ -145,7 +147,7 @@ public class DevicePresence implements IDumpStatMisc
 
         l.info("d:{} t:{} start pulse", did, tp);
 
-        RockLog.newMetrics().addMetric("net.pulse." + tp + ".count", 1).sendAsync();
+        _rockLog.newMetrics().addMetric("net.pulse." + tp + ".count", 1).sendAsync();
 
         offlineImpl_(did, dev.pulseStarted_(tp));
 

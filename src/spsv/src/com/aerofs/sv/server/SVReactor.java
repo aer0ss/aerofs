@@ -47,7 +47,6 @@ import com.aerofs.sv.server.raven.RavenUtils;
 import com.aerofs.sv.common.EmailCategory;
 import com.aerofs.proto.Sv.PBSVCall;
 import com.aerofs.proto.Sv.PBSVDefect;
-import com.aerofs.proto.Sv.PBSVEvent;
 import com.aerofs.proto.Sv.PBSVGzippedLog;
 import com.aerofs.proto.Sv.PBSVHeader;
 import com.aerofs.proto.Sv.PBSVReply;
@@ -105,9 +104,6 @@ public class SVReactor
             case GZIPPED_LOG:
                 gzippedLog(call, is);
                 break;
-            case EVENT:
-                event(call, client);
-                break;
             case EMAIL:
                 email(call);
                 break;
@@ -124,19 +120,6 @@ public class SVReactor
         }
 
         return bdReply.build();
-    }
-
-    private void event(PBSVCall call, String client)
-        throws ExProtocolError, SQLException
-    {
-        Util.checkPB(call.hasEvent(), PBSVEvent.class);
-
-        PBSVEvent ev = call.getEvent();
-        PBSVHeader header = call.getHeader();
-
-        _transaction.begin();
-        _db.insertEvent(header, ev.getType(), ev.hasDesc() ? ev.getDesc() : null, client);
-        _transaction.commit();
     }
 
     private void email(PBSVCall call)

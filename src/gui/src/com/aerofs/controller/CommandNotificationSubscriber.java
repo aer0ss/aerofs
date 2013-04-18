@@ -6,6 +6,7 @@ package com.aerofs.controller;
 
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
+import com.aerofs.base.analytics.AnalyticsEvents.SimpleEvents;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.id.DID;
@@ -21,14 +22,11 @@ import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.cfg.CfgKeyManagersProvider;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.injectable.InjectableFile;
-import com.aerofs.lib.rocklog.EventType;
-import com.aerofs.lib.rocklog.RockLog;
 import com.aerofs.lib.sched.ExponentialRetry;
 import com.aerofs.lib.sched.IScheduler;
 import com.aerofs.proto.Cmd.Command;
 import com.aerofs.proto.Sp.AckCommandQueueHeadReply;
 import com.aerofs.proto.Sp.GetCommandQueueHeadReply;
-import com.aerofs.proto.Sv.PBSVEvent.Type;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.sp.client.SPClientFactory;
 import com.aerofs.sv.client.SVClient;
@@ -367,9 +365,7 @@ public final class CommandNotificationSubscriber
     private void unlinkSelf()
             throws Exception
     {
-        // Metrics.
-        SVClient.sendEventAsync(Type.UNLINK);
-        RockLog.newEvent(EventType.UNLINK_DEVICE).sendAsync();
+        UI.analytics().track(SimpleEvents.UNLINK_DEVICE);
 
         unlinkImplementation();
 
@@ -379,9 +375,7 @@ public final class CommandNotificationSubscriber
     private void unlinkAndWipeSelf()
             throws Exception
     {
-        // Metrics.
-        SVClient.sendEventAsync(Type.UNLINK_AND_WIPE);
-        RockLog.newEvent(EventType.UNLINK_AND_WIPE).sendAsync();
+        UI.analytics().track(SimpleEvents.UNLINK_AND_WIPE);
 
         unlinkImplementation();
 

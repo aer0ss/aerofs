@@ -5,31 +5,29 @@
 package com.aerofs.daemon.core.admin;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.base.analytics.Analytics;
+import com.aerofs.base.analytics.AnalyticsEvents.SimpleEvents;
+import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.event.admin.EIRelocateRootAnchor;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
-import com.aerofs.lib.StorageType;
-import com.aerofs.lib.cfg.CfgAbsDefaultRoot;
-import com.aerofs.lib.cfg.CfgAbsRoots;
-import com.aerofs.lib.event.Prio;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.labeling.L;
-import com.aerofs.lib.SystemUtil.ExitCode;
 import com.aerofs.lib.RootAnchorUtil;
+import com.aerofs.lib.StorageType;
+import com.aerofs.lib.SystemUtil.ExitCode;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
+import com.aerofs.lib.cfg.CfgAbsDefaultRoot;
+import com.aerofs.lib.cfg.CfgAbsRoots;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
-import com.aerofs.base.ex.ExBadArgs;
+import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.ex.ExInUse;
 import com.aerofs.lib.injectable.InjectableDriver;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.lib.os.OSUtil;
-import com.aerofs.lib.rocklog.EventType;
-import com.aerofs.lib.rocklog.RockLog;
-import com.aerofs.sv.client.SVClient;
-import com.aerofs.proto.Sv.PBSVEvent.Type;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 
@@ -47,11 +45,13 @@ public class HdRelocateRootAnchor extends AbstractHdIMC<EIRelocateRootAnchor>
     private final TransManager _tm;
     private final SameFSRelocator _sameFSRelocator;
     private final CrossFSRelocator _crossFSRelocator;
+    private final Analytics _analytics;
+
 
     @Inject
     public HdRelocateRootAnchor(InjectableFile.Factory factFile, TransManager tm,
             SameFSRelocator sameFSRelocator, CrossFSRelocator crossFSRelocator,
-            CfgAbsDefaultRoot cfgAbsDefaultRoot, CfgAbsRoots cfgAbsRoots)
+            CfgAbsDefaultRoot cfgAbsDefaultRoot, CfgAbsRoots cfgAbsRoots, Analytics analytics)
     {
         _cfgAbsDefaultRoot = cfgAbsDefaultRoot;
         _cfgAbsRoots = cfgAbsRoots;
@@ -59,6 +59,7 @@ public class HdRelocateRootAnchor extends AbstractHdIMC<EIRelocateRootAnchor>
         _tm = tm;
         _sameFSRelocator = sameFSRelocator;
         _crossFSRelocator = crossFSRelocator;
+        _analytics = analytics;
     }
 
     @Override
@@ -70,8 +71,8 @@ public class HdRelocateRootAnchor extends AbstractHdIMC<EIRelocateRootAnchor>
             throw new ExBadArgs("absolute path expected");
         }
 
-        SVClient.sendEventAsync(Type.MOVE_ROOT);
-        RockLog.newEvent(EventType.MOVE_ROOT).sendAsync();
+        // Since the daemon will be restarted, we must track the event synchronously
+        _analytics.trackSync(SimpleEvents.MOVE_ROOT);
 
         @Nullable SID sid = ev._sid;
         // Even though we expect the UI to adjust the new root anchor, users may pass in a raw path

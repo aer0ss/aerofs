@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.phy.linked.linker;
 
+import com.aerofs.base.analytics.Analytics;
 import com.aerofs.base.id.OID;
 import com.aerofs.daemon.core.VersionUpdater;
 import com.aerofs.daemon.core.ds.CA;
@@ -15,7 +16,6 @@ import com.aerofs.daemon.core.object.ObjectMover;
 import com.aerofs.daemon.core.phy.linked.SharedFolderTagFileAndIcon;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.analytics.Analytics;
 import com.aerofs.lib.id.CID;
 import com.aerofs.lib.id.FID;
 import com.aerofs.lib.id.KIndex;

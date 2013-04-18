@@ -4,10 +4,9 @@ import java.util.Collection;
 import java.util.List;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.base.analytics.AnalyticsEvents.SignupInviteSentEvent;
 import com.aerofs.base.id.UserID;
-import com.aerofs.lib.rocklog.EventProperty;
-import com.aerofs.lib.rocklog.EventType;
-import com.aerofs.lib.rocklog.RockLog;
+import com.aerofs.ui.UI;
 import com.google.common.collect.Lists;
 import org.slf4j.Logger;
 import org.eclipse.jface.dialogs.IDialogConstants;
@@ -169,9 +168,7 @@ public class DlgInviteToSignUp extends AeroFSDialog implements IInputChangeListe
 
         sp.inviteToSignUp(userIdStrings);
 
-        RockLog.newEvent(EventType.SIGNUP_INVITE_SENT)
-                .addProperty(EventProperty.COUNT, Integer.toString(_userIDs.size()))
-                .sendAsync();
+        UI.analytics().track(new SignupInviteSentEvent(_userIDs.size()));
     }
 
     @Override

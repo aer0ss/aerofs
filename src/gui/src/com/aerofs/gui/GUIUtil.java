@@ -1,6 +1,7 @@
 package com.aerofs.gui;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.base.analytics.IAnalyticsEvent;
 import com.aerofs.gui.diagnosis.DlgDiagnosis;
 import com.aerofs.gui.history.DlgHistory;
 import com.aerofs.gui.sharing.DlgCreateSharedFolder;
@@ -13,7 +14,6 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.proto.Ritual.PBObjectAttributes;
-import com.aerofs.proto.Sv;
 import com.aerofs.sv.client.SVClient;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.UI;
@@ -56,19 +56,19 @@ public class GUIUtil
         return oldText.substring(0, ev.start) + ev.text + oldText.substring(ev.end);
     }
 
-    public static abstract class AbstractListener implements Listener {
+    public static abstract class AbstractListener implements Listener
+    {
+        IAnalyticsEvent _analyticsEvent;
 
-        Sv.PBSVEvent.Type _eventType;
-
-        public AbstractListener(@Nullable Sv.PBSVEvent.Type t)
+        public AbstractListener(@Nullable IAnalyticsEvent analyticsEvent)
         {
-            _eventType = t;
+            _analyticsEvent = analyticsEvent;
         }
 
         @Override
         public void handleEvent(Event event)
         {
-            if (_eventType != null) SVClient.sendEventAsync(_eventType);
+            if (_analyticsEvent != null) UI.analytics().track(_analyticsEvent);
             handleEventImpl(event);
         }
 

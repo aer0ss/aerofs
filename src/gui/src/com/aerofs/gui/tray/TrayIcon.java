@@ -1,6 +1,9 @@
 package com.aerofs.gui.tray;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.base.analytics.AnalyticsEvents.ClickEvent;
+import com.aerofs.base.analytics.AnalyticsEvents.ClickEvent.Action;
+import com.aerofs.base.analytics.AnalyticsEvents.ClickEvent.Source;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.gui.tray.TrayIcon.TrayPosition.Orientation;
 import com.aerofs.lib.SystemUtil;
@@ -21,7 +24,6 @@ import com.aerofs.gui.Images;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.os.OSUtil;
-import com.aerofs.proto.Sv;
 
 import javax.annotation.Nullable;
 import java.lang.reflect.Method;
@@ -29,8 +31,11 @@ import java.util.Set;
 
 public class TrayIcon
 {
-    private final static Logger l = Loggers.getLogger(TrayIcon.class);
-    private final static long ANIMATION_INTERVAL = 80; // milliseconds between frames
+    private static final Logger l = Loggers.getLogger(TrayIcon.class);
+    private static final long ANIMATION_INTERVAL = 80; // milliseconds between frames
+    private static final ClickEvent TRAY_ICON_DEFAULT_ACTION = new ClickEvent( Action.TRAY_ICON_DEFAULT_ACTION, Source.TASKBAR);
+    private static final ClickEvent TRAY_ICON_CLICKED = new ClickEvent(Action.TRAY_ICON, Source.TASKBAR);
+
     private final SystemTray _st;
     private final TrayItem _ti;
     private Thread _thdSpinning;
@@ -60,7 +65,7 @@ public class TrayIcon
         });
 
         if (!OSUtil.isOSX()) {
-            _ti.addListener(SWT.DefaultSelection, new AbstractListener(Sv.PBSVEvent.Type.CLICKED_TASKBAR_DEFAULT_SELECTION) {
+            _ti.addListener(SWT.DefaultSelection, new AbstractListener(TRAY_ICON_DEFAULT_ACTION) {
                 @Override
                 public void handleEventImpl(Event event)
                 {
@@ -68,7 +73,7 @@ public class TrayIcon
                 }
             });
         }
-        _ti.addListener(SWT.MenuDetect, new AbstractListener(Sv.PBSVEvent.Type.CLICKED_TASKBAR) {
+        _ti.addListener(SWT.MenuDetect, new AbstractListener(TRAY_ICON_CLICKED) {
             @Override
             public void handleEventImpl(Event event)
             {

@@ -9,6 +9,7 @@ public final class SPSchema
 
             T_USER                          = "sp_user",
             C_USER_ID                       = "u_id",
+            C_USER_SIGNUP_TS                = "u_id_created_ts",
             C_USER_FIRST_NAME               = "u_first_name",
             C_USER_LAST_NAME                = "u_last_name",
             C_USER_ORG_ID                   = "u_org_id",

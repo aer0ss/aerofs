@@ -10,7 +10,6 @@ message PBSVCall {
 
     enum Type {
         DEFECT = 0;
-        EVENT = 1;
         GZIPPED_LOG = 4;
         EMAIL = 6;
     }
@@ -21,7 +20,6 @@ message PBSVCall {
 
     optional PBSVDefect defect = 3;
     optional PBSVGzippedLog gzipped_log = 5;
-    optional PBSVEvent event = 6;
     optional PBSVEmail email = 8;
 }
 
@@ -58,64 +56,6 @@ message PBSVGzippedLog {
     required string name = 1;
 
     // followed by a gzipped log
-}
-
-message PBSVEvent {
-
-    //if adding a new event here, please remember to update the mysql aerofs_sv database
-    //with the new enums
-
-    enum Type {
-
-        CLICKED_TASKBAR = 100;
-        CLICKED_TASKBAR_OPEN_AEROFS = 101;
-        CLICKED_TASKBAR_SHARE_FOLDER = 102;
-        CLICKED_TASKBAR_ACCEPT_INVITE = 103;
-        CLICKED_TASKBAR_MANAGER_SHARED_FOLDER = 104;
-        CLICKED_TASKBAR_TRANSFERS = 105;
-        CLICKED_TASKBAR_PREFERENCES = 106;
-
-        CLICKED_TASKBAR_INVITE_TO_SIGNUP = 107;
-
-        CLICKED_TASKBAR_EXIT = 108;
-        CLICKED_TASKBAR_DEFAULT_SELECTION = 109;
-        CLICKED_TASKBAR_APPLY_UPDATE = 110;
-
-        CLICKED_TASKBAR_PAUSE_SYNCING = 111;
-
-        CLICKED_TASKBAR_WHY_NOT_SYNCED = 120;
-        CLICKED_TASKBAR_RESOLVE_CONFLICTS = 121;
-        CLICKED_TASKBAR_MANAGE_TEAM = 122;
-
-        CLICKED_SHELLEXT = 200;
-        CLICKED_SHELLEXT_INVITE_FOLDER = 201;
-
-        INVITE_SENT = 300;
-        SIGNUP_INVITE_SENT = 301;
-
-        FILE_SAVED = 0;
-        FILE_CONFLICT = 1;             // create conflict branch
-
-        SIGN_UP = 1000;
-        SIGN_RETURNING = 1001;
-        SIGN_IN = 1002;
-        EXIT = 1003;
-        CREATE_STORE = 1004;
-        JOIN_STORE = 1005;             // initial request to join
-        JOIN_STORE_OK = 1006;          // join successfully
-        UPDATE = 1007;                 // the program is updated
-        EXCLUDE = 1008;                // exclude a folder from sync
-        INCLUDE = 1009;                // readmit an excluded folder
-        KICKOUT = 1010;                // kicked-out from a shared folder
-        UNLINK = 1011;                 // unlink device (reinstall on next run)
-        MOVE_ROOT = 1012;              // move root anchor
-        S3_SETUP = 1013;               // S3 client setup
-        REINSTALL = 1014;              // install with existing shared folders?
-        UNLINK_AND_WIPE = 1015;        // unlink and wipe device (delete root anchor).
-    }
-
-    required Type type = 1;
-    optional string desc = 2;
 }
 
 message PBSVEmail {

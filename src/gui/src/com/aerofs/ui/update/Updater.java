@@ -22,7 +22,6 @@ import com.aerofs.labeling.L;
 import com.aerofs.lib.*;
 import com.aerofs.lib.ex.ExFileIO;
 import com.aerofs.lib.os.OSUtil;
-import com.aerofs.lib.rocklog.RockLog;
 import com.aerofs.proto.ControllerNotifications.Type;
 import com.aerofs.proto.ControllerNotifications.UpdateNotification;
 import com.aerofs.proto.ControllerNotifications.UpdateNotification.Builder;
@@ -264,7 +263,7 @@ public abstract class Updater
             return version;
         } catch (final IOException e) {
             l.error("Error reading server version from {}", serverVersionUrl, e);
-            RockLog.newDefect("com.aerofs.ui.update.Updater.readServerVersion")
+            UI.rockLog().newDefect("updater.readServerVersion")
                     .setException(e)
                     .send();
             throw e;
@@ -353,7 +352,7 @@ public abstract class Updater
             _installationFilename = filename;
         } catch (final Exception e) {
             l.error("Error downloading update from {}", installerUrl, e);
-            RockLog.newDefect("com.aerofs.ui.update.Updater.downloadUpdate")
+            UI.rockLog().newDefect("updater.downloadUpdate")
                     .setException(e)
                     .send();
             removeTempDownloadDirectory(dir);

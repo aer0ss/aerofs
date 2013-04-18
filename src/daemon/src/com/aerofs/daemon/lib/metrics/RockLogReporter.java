@@ -36,28 +36,32 @@ public final class RockLogReporter extends AbstractPollingReporter implements Me
     private static final Logger l = Loggers.getLogger(RockLogReporter.class);
 
     private final VirtualMachineMetrics _vm;
+    private final RockLog _rockLog;
     private @Nullable volatile com.aerofs.lib.rocklog.Metrics _rocklogMetrics; // current metric being populated
 
-    public static void enable(long period, TimeUnit unit)
+    public static void enable(RockLog rockLog, long period, TimeUnit unit)
     {
         // NOTE: don't need to keep reporter around because our parent starts a background thread
         // that holds a reference to the reporter object
 
-        RockLogReporter reporter = new RockLogReporter(VirtualMachineMetrics.getInstance(), Metrics.defaultRegistry(), "rocklog");
+        RockLogReporter reporter = new RockLogReporter(rockLog, VirtualMachineMetrics.getInstance(),
+                Metrics.defaultRegistry(), "rocklog");
         reporter.start(period, unit);
     }
 
-    protected RockLogReporter(VirtualMachineMetrics vmMetrics, MetricsRegistry registry, String name)
+    protected RockLogReporter(RockLog rockLog, VirtualMachineMetrics vmMetrics,
+            MetricsRegistry registry, String name)
     {
         super(registry, name);
-        this._vm = vmMetrics;
+        _rockLog = rockLog;
+        _vm = vmMetrics;
     }
 
     @Override
     public void run()
     {
         try {
-            _rocklogMetrics = RockLog.newMetrics();
+            _rocklogMetrics = _rockLog.newMetrics();
 
             addApplicationMetrics_();
             addVirtualMachineMetrics_();
@@ -180,7 +184,7 @@ public final class RockLogReporter extends AbstractPollingReporter implements Me
 
         if (Double.isNaN(value)) {
             l.warn("nan m:" + fullMetricName + " v:" + value);
-            RockLog.newDefect("rocklog.conversion.nan").addData("metric", fullMetricName).sendAsync();
+            _rockLog.newDefect("rocklog.conversion.nan").addData("metric", fullMetricName).sendAsync();
             return;
         }
 

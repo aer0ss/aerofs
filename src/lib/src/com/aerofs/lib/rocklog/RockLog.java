@@ -4,42 +4,39 @@
 
 package com.aerofs.lib.rocklog;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.InjectableCfg;
 import com.google.common.net.HttpHeaders;
 import org.slf4j.Logger;
 
-import java.io.BufferedInputStream;
-import java.io.DataInputStream;
+import javax.inject.Inject;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-import static java.net.HttpURLConnection.HTTP_OK;
 
 public class RockLog
 {
-    /**
-     * Describes what high-level grouping (desktop-client, server, mobile) RockLog
-     * is being instantiated in. This allows us to properly collate metrics on the server.
-     */
-    public static enum BaseComponent
-    {
-        CLIENT { @Override public String toString() { return "client"; } },
-        SERVER { @Override public String toString() { return "server"; } }
-    }
-
     private static final Logger l = Loggers.getLogger(RockLog.class);
     private static final int SOCKET_TIMEOUT = (int) (10 * C.SEC);
-    private static final String ROCKLOG_URL = "http://rocklog.aerofs.com";
-    private static final InjectableCfg _cfg = new InjectableCfg();
+    private static final String DEFAULT_ROCKLOG_URL = "http://rocklog.aerofs.com";
 
-    private static RockLog _instance;
-    private final String _prefix;
+    private final String _rocklogUrl;
+    private final InjectableCfg _cfg;
+
+    @Inject
+    public RockLog()
+    {
+        this(DEFAULT_ROCKLOG_URL, new InjectableCfg());
+    }
+
+    RockLog(String rocklogUrl, InjectableCfg cfg)
+    {
+        _rocklogUrl = rocklogUrl;
+        _cfg = cfg;
+    }
 
     /**
      * The defect name allows us to easily search and aggregate defects in RockLog.
@@ -56,39 +53,14 @@ public class RockLog
      * Bad names:
      * "Name With Spaces", "daemon.linker.someMethod_failed" <-- "failed" is redundant
      */
-    public static Defect newDefect(String name)
+    public Defect newDefect(String name)
     {
-        return new Defect(getInstance(), _cfg, name);
+        return new Defect(this, _cfg, name);
     }
 
-    public static Event newEvent(EventType event)
+    public Metrics newMetrics()
     {
-        return new Event(getInstance(), _cfg, event);
-    }
-
-    public static Metrics newMetrics()
-    {
-        return new Metrics(getInstance(), _cfg);
-    }
-
-    /**
-     * call in single-threaded mode only
-     */
-    public static void init_(BaseComponent component)
-    {
-        if (_instance == null) {
-            _instance = new RockLog(component.toString());
-        }
-    }
-
-    static RockLog getInstance()
-    {
-        return checkNotNull(_instance);
-    }
-
-    private RockLog(String prefix)  // prevent explicit initialization
-    {
-        _prefix = prefix;
+        return new Metrics(this, _cfg);
     }
 
     void sendAsync(final RockLogMessage message)
@@ -103,28 +75,24 @@ public class RockLog
         },"rocklog-send").start();
     }
 
-    void send(RockLogMessage message)
+    boolean send(RockLogMessage message)
     {
         try {
-            rpc(message.getJSON().getBytes(), ROCKLOG_URL + message.getURLPath());
+            rpc(message.getJSON(), _rocklogUrl + message.getURLPath());
+            return true;
         } catch (Throwable e) {
-            l.warn("fail send RockLog message: " + Util.e(e, IOException.class));
+            l.warn("fail send RockLog message: {}", e.toString()); // we don't want the stack trace
+            return false;
         }
     }
 
-    private void rpc(byte[] data, String url) throws Exception
+    private void rpc(String data, String url) throws Exception
     {
-        HttpURLConnection rocklogConnection = getRockLogConnection(url, data.length);
-
-        try {
-            send(rocklogConnection, data);
-            recv(rocklogConnection);
-        } finally {
-            rocklogConnection.disconnect();
-        }
+        HttpURLConnection rocklogConnection = getRockLogConnection(url);
+        BaseUtil.httpRequest(rocklogConnection, data);
     }
 
-    private HttpURLConnection getRockLogConnection(String url, int contentLength)
+    private HttpURLConnection getRockLogConnection(String url)
             throws IOException
     {
         URL rocklogURL = new URL(url);
@@ -134,48 +102,9 @@ public class RockLog
         rocklogConnection.setConnectTimeout(SOCKET_TIMEOUT);
         rocklogConnection.setReadTimeout(SOCKET_TIMEOUT);
         rocklogConnection.setRequestProperty(HttpHeaders.CONTENT_TYPE, "application/json");
-        rocklogConnection.setFixedLengthStreamingMode(contentLength);
         rocklogConnection.setDoOutput(true);
         rocklogConnection.connect();
 
         return rocklogConnection;
-    }
-
-    private void send(HttpURLConnection conn, byte[] requestBody) throws IOException
-    {
-        OutputStream os = null;
-        try {
-            os = conn.getOutputStream();
-            os.write(requestBody);
-        } finally {
-            if (os != null) os.close();
-        }
-    }
-
-    private void recv(HttpURLConnection conn) throws IOException
-    {
-        int code = conn.getResponseCode();
-        if (code != HTTP_OK) {
-            throw new IOException("fail send RockLog message code: " + code);
-        }
-
-        DataInputStream is = null;
-        byte[] responseBuffer = new byte[1024];
-        try {
-            is = new DataInputStream(new BufferedInputStream(conn.getInputStream()));
-            // doing it this way (i.e. not looking at content-length) handles gzipped input properly
-            // see: http://developer.android.com/reference/java/net/HttpURLConnection.html
-            while (is.read() != -1) {
-                // noinspection ResultOfMethodCallIgnored
-                is.read(responseBuffer); // read the full response, but ignore it
-            }
-        } finally {
-            if (is != null) is.close();
-        }
-    }
-
-    String getPrefix()
-    {
-        return _prefix;
     }
 }

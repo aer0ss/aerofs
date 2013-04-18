@@ -15,7 +15,6 @@
     <orderEntry type="library" exported="" name="guice-aerofs" level="project" />
     <orderEntry type="library" exported="" name="guice-multibindings-aerofs" level="project" />
     <orderEntry type="library" exported="" name="jnotify-aerofs" level="project" />
-    <orderEntry type="library" exported="" name="gson" level="project" />
     <orderEntry type="library" exported="" name="aws" level="project" />
     <orderEntry type="library" exported="" name="sqlite-jdbc" level="project" />
     <orderEntry type="library" exported="" scope="TEST" name="powermockito" level="project" />

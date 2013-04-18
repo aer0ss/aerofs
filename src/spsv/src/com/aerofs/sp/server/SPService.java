@@ -5,6 +5,8 @@ import com.aerofs.base.Loggers;
 import com.aerofs.base.acl.Role;
 import com.aerofs.base.acl.SubjectRolePair;
 import com.aerofs.base.acl.SubjectRolePairs;
+import com.aerofs.base.analytics.Analytics;
+import com.aerofs.base.analytics.AnalyticsEvents.SignUpEvent;
 import com.aerofs.base.async.UncancellableFuture;
 import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.base.ex.ExBadArgs;
@@ -72,7 +74,6 @@ import com.aerofs.proto.Sp.PBUser;
 import com.aerofs.proto.Sp.RegisterDeviceReply;
 import com.aerofs.proto.Sp.ResolveSignUpCodeReply;
 import com.aerofs.proto.SpNotifications.PBACLNotification;
-import com.aerofs.proto.Sv;
 import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue;
 import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue.Epoch;
 import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue.QueueElement;
@@ -131,6 +132,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
 import static com.aerofs.base.BaseParam.VerkehrTopics.ACL_CHANNEL_TOPIC_PREFIX;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public class SPService implements ISPService
 {
@@ -171,6 +173,7 @@ public class SPService implements ISPService
 
     private final JedisEpochCommandQueue _commandQueue;
     private final JedisThreadLocalTransaction _jedisTrans;
+    private final Analytics _analytics;
 
     // Remember to udpate text in team_members.mako, team_settings.mako, and pricing.mako when
     // changing this number.
@@ -188,7 +191,8 @@ public class SPService implements ISPService
             Device.Factory factDevice, CertificateDatabase certdb,
             EmailSubscriptionDatabase esdb, Factory factSharedFolder,
             InvitationEmailer.Factory factEmailer, DeviceRegistrationEmailer deviceRegistrationEmailer,
-            RequestToSignUpEmailer requestToSignUpEmailer, JedisEpochCommandQueue commandQueue)
+            RequestToSignUpEmailer requestToSignUpEmailer, JedisEpochCommandQueue commandQueue,
+            Analytics analytics)
     {
         // FIXME: _db shouldn't be accessible here; in fact you should only have a transaction
         // factory that gives you transactions....
@@ -212,6 +216,7 @@ public class SPService implements ISPService
         _factEmailer = factEmailer;
 
         _commandQueue = commandQueue;
+        _analytics = checkNotNull(analytics);
     }
 
     /**
@@ -291,26 +296,29 @@ public class SPService implements ISPService
     }
 
     @Override
-    public ListenableFuture<GetUserPreferencesReply> getUserPreferences(ByteString deviceId)
+    public ListenableFuture<GetUserPreferencesReply> getUserPreferences(@Nullable ByteString deviceId)
             throws Exception
     {
         _sqlTrans.begin();
 
         User user = _sessionUser.get();
         FullName fn = user.getFullName();
-        Device device = _factDevice.create(deviceId);
 
-        GetUserPreferencesReply reply = GetUserPreferencesReply.newBuilder()
+        GetUserPreferencesReply.Builder reply = GetUserPreferencesReply.newBuilder()
                 .setFirstName(fn._first)
                 .setLastName(fn._last)
-                // Some early Alpha testers don't have their device information in the database.
-                // An UPUT adds the devices back only if they relaunches.
-                .setDeviceName(device.exists() ? device.getName() : "")
-                .build();
+                .setSignupDate(user.getSignupDate());
+
+        if (deviceId != null) {
+            // Some early Alpha testers don't have their device information in the database.
+            // An UPUT adds the devices back only if they relaunches.
+            Device device = _factDevice.create(deviceId);
+            reply.setDeviceName(device.exists() ? device.getName() : "");
+        }
 
         _sqlTrans.commit();
 
-        return createReply(reply);
+        return createReply(reply.build());
     }
 
     @Override
@@ -1873,7 +1881,7 @@ public class SPService implements ISPService
 
         _sqlTrans.commit();
 
-        SVClient.sendEventAsync(Sv.PBSVEvent.Type.SIGN_UP, "id: " + user.id().getString());
+        _analytics.track(new SignUpEvent(user.id()));
 
         return createVoidReply();
     }

@@ -5,6 +5,9 @@
 package com.aerofs.gui.multiuser.tray;
 
 import com.aerofs.base.BaseParam.WWW;
+import com.aerofs.base.analytics.AnalyticsEvents.ClickEvent;
+import com.aerofs.base.analytics.AnalyticsEvents.ClickEvent.Action;
+import com.aerofs.base.analytics.AnalyticsEvents.ClickEvent.Source;
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.gui.GUIUtil.AbstractListener;
@@ -25,11 +28,12 @@ import org.eclipse.swt.events.MenuListener;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Menu;
 
-import static com.aerofs.proto.Sv.PBSVEvent.Type.CLICKED_TASKBAR_MANAGE_TEAM;
-import static com.aerofs.proto.Sv.PBSVEvent.Type.CLICKED_TASKBAR_PREFERENCES;
 
 public class MultiuserTrayMenu implements ITrayMenu
 {
+    private static final ClickEvent PREFERENCES_CLICKED = new ClickEvent(Action.PREFERENCES, Source.TASKBAR);
+    private static final ClickEvent MANAGE_TEAM_CLICKED = new ClickEvent(Action.MANAGE_TEAM, Source.TASKBAR);
+
     private final Menu _menu;
     private final TrayIcon _icon;
 
@@ -127,7 +131,7 @@ public class MultiuserTrayMenu implements ITrayMenu
 
     public void addPreferencesMenuItem()
     {
-        _populator.addPreferencesMenuItem(new AbstractListener(CLICKED_TASKBAR_PREFERENCES)
+        _populator.addPreferencesMenuItem(new AbstractListener(PREFERENCES_CLICKED)
         {
             @Override
             protected void handleEventImpl(Event event)
@@ -139,7 +143,7 @@ public class MultiuserTrayMenu implements ITrayMenu
 
     private void addManageTeamMenuItem()
     {
-        _populator.addMenuItem("Manage Team", new AbstractListener(CLICKED_TASKBAR_MANAGE_TEAM)
+        _populator.addMenuItem("Manage Team", new AbstractListener(MANAGE_TEAM_CLICKED)
         {
             @Override
             protected void handleEventImpl(Event event)

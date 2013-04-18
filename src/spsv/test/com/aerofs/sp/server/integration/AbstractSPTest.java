@@ -5,6 +5,7 @@
 package com.aerofs.sp.server.integration;
 
 import com.aerofs.base.BaseSecUtil;
+import com.aerofs.base.analytics.Analytics;
 import com.aerofs.base.async.UncancellableFuture;
 import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.base.id.DID;
@@ -130,6 +131,8 @@ public class AbstractSPTest extends AbstractTestWithDatabase
             mock(PasswordResetEmailer.class));
     @Spy DeviceRegistrationEmailer _deviceRegistrationEmailer = mock(DeviceRegistrationEmailer.class);
     @Spy RequestToSignUpEmailer _requestToSignUpEmailer = mock(RequestToSignUpEmailer.class);
+
+    @Mock Analytics analytics;
 
     // Subclasses can declare a @Mock'd or @Spy'd object for
     // - PasswordManagement,

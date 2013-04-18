@@ -20,12 +20,10 @@ import com.aerofs.daemon.core.phy.block.gzip.GZipBackendModule;
 import com.aerofs.daemon.core.phy.block.local.LocalBackendModule;
 import com.aerofs.daemon.core.phy.block.s3.S3BackendModule;
 import com.aerofs.daemon.core.phy.linked.LinkedStorageModule;
-import com.aerofs.daemon.lib.metrics.RockLogReporter;
 import com.aerofs.daemon.ritual.RitualServer;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.IProgram;
 import com.aerofs.lib.StorageType;
-import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
@@ -39,8 +37,6 @@ import com.google.inject.Injector;
 import com.google.inject.Module;
 import com.google.inject.Stage;
 import org.slf4j.Logger;
-
-import static java.util.concurrent.TimeUnit.MINUTES;
 
 public class DaemonProgram implements IProgram
 {
@@ -63,8 +59,6 @@ public class DaemonProgram implements IProgram
                         .build());
 
         Util.suppressStackTraces(ExAborted.class, ExNoAvailDevice.class);
-
-        RockLogReporter.enable(10, MINUTES);
     }
 
     @Override

@@ -762,14 +762,15 @@ message GetHeartInvitesQuotaReply {
 }
 
 message GetUserPreferencesCall {
-    required bytes device_id = 1;
+    optional bytes device_id = 1; // if absent, no device-specific information will be returned
 }
 
 message GetUserPreferencesReply {
     // TOOD (WW) use PBFullName
     required string first_name = 1;
     required string last_name = 2;
-    required string device_name = 3;
+    optional string device_name = 3; // absent if did wasn't specified
+    optional uint64 signup_date = 4;
 }
 
 message SetUserPreferencesCall {

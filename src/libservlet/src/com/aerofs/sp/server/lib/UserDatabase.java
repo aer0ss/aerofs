@@ -52,6 +52,7 @@ import static com.aerofs.sp.server.lib.SPSchema.C_USER_FIRST_NAME;
 import static com.aerofs.sp.server.lib.SPSchema.C_USER_ID;
 import static com.aerofs.sp.server.lib.SPSchema.C_USER_LAST_NAME;
 import static com.aerofs.sp.server.lib.SPSchema.C_USER_ORG_ID;
+import static com.aerofs.sp.server.lib.SPSchema.C_USER_SIGNUP_TS;
 import static com.aerofs.sp.server.lib.SPSchema.T_AC;
 import static com.aerofs.sp.server.lib.SPSchema.T_DEVICE;
 import static com.aerofs.sp.server.lib.SPSchema.T_TI;
@@ -158,6 +159,18 @@ public class UserDatabase extends AbstractSQLDatabase
             rs.close();
         }
     }
+
+    public long getSignupDate(UserID userId)
+            throws SQLException, ExNotFound
+    {
+        ResultSet rs = queryUser(userId, C_USER_SIGNUP_TS);
+        try {
+            return rs.getTimestamp(1).getTime();
+        } finally {
+            rs.close();
+        }
+    }
+
 
     public @Nonnull byte[] getShaedSP(UserID userId)
             throws SQLException, ExNotFound

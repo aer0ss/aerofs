@@ -70,9 +70,9 @@ abstract class RockLogMessage
         }
     }
 
-    public void send()
+    public boolean send()
     {
-        _rockLog.send(this);
+        return _rockLog.send(this);
     }
 
     public void sendAsync()
@@ -90,11 +90,6 @@ abstract class RockLogMessage
     String getJSON()
     {
         return new Gson().toJson(_data);
-    }
-
-    protected RockLog getRockLog()
-    {
-        return _rockLog;
     }
 
     abstract String getURLPath();

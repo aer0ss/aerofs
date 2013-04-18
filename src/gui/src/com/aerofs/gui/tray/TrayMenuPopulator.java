@@ -4,6 +4,9 @@
 
 package com.aerofs.gui.tray;
 
+import com.aerofs.base.analytics.AnalyticsEvents.ClickEvent;
+import com.aerofs.base.analytics.AnalyticsEvents.ClickEvent.Action;
+import com.aerofs.base.analytics.AnalyticsEvents.ClickEvent.Source;
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.gui.GUIUtil.AbstractListener;
@@ -20,11 +23,11 @@ import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.MenuItem;
 
-import static com.aerofs.proto.Sv.PBSVEvent.Type.CLICKED_TASKBAR_APPLY_UPDATE;
-import static com.aerofs.proto.Sv.PBSVEvent.Type.CLICKED_TASKBAR_EXIT;
-
 public class TrayMenuPopulator
 {
+    private static final ClickEvent APPLY_UPDATE_CLICKED = new ClickEvent(Action.APPLY_UPDATE, Source.TASKBAR);
+    private static final ClickEvent EXIT_CLICKED = new ClickEvent(Action.EXIT, Source.TASKBAR);
+
     private final Menu _rootMenu;
 
     public TrayMenuPopulator(Menu rootMenu)
@@ -123,7 +126,7 @@ public class TrayMenuPopulator
     public void addApplyUpdateMenuItem()
     {
         addWarningMenuItem(S.BTN_APPLY_UPDATE,
-                new AbstractListener(CLICKED_TASKBAR_APPLY_UPDATE)
+                new AbstractListener(APPLY_UPDATE_CLICKED)
                 {
                     @Override
                     protected void handleEventImpl(Event event)
@@ -142,7 +145,7 @@ public class TrayMenuPopulator
     public void addExitMenuItem(String fullProductName)
     {
         addMenuItem((OSUtil.isWindows() ? "Exit" : "Quit") + " " +
-               fullProductName, new AbstractListener(CLICKED_TASKBAR_EXIT)
+               fullProductName, new AbstractListener(EXIT_CLICKED)
         {
             @Override
             protected void handleEventImpl(Event event)

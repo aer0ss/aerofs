@@ -36,7 +36,6 @@ import org.slf4j.Logger;
 
 import java.net.InetSocketAddress;
 
-@SuppressWarnings("unused")
 public class TapProgram implements IProgram
 {
     private static final Logger l = Loggers.getLogger(TapProgram.class);

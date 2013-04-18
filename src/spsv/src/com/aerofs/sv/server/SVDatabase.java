@@ -11,11 +11,9 @@ import com.aerofs.sv.common.Event;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Types;
 
 import com.aerofs.lib.Util;
 import com.aerofs.lib.db.DBUtil;
-import com.aerofs.proto.Sv.PBSVEvent;
 import com.aerofs.proto.Sv.PBSVHeader;
 
 import static com.aerofs.sv.server.SVSchema.*;
@@ -79,37 +77,6 @@ public class SVDatabase extends AbstractSQLDatabase
             keys.close();
         }
     }
-
-    /**
-     * @param desc may be null
-     * @return the unique id of the event
-     */
-    public int insertEvent(PBSVHeader header, PBSVEvent.Type type, String desc, String client)
-            throws SQLException
-    {
-        PreparedStatement psAddEvent = getConnection().prepareStatement(
-                "insert into " + T_EV + "(" + C_HDRS + "," + C_EV_TYPE +
-                        "," + C_EV_DESC + ") values (" + C_HDR_VALUES + ",?,?)",
-                PreparedStatement.RETURN_GENERATED_KEYS);
-
-        setHeader(psAddEvent, header, client);
-
-        psAddEvent.setInt(C_HDR_NEXT_COL_INDEX + 0, type.getNumber());
-
-        if (desc == null) psAddEvent.setNull(C_HDR_NEXT_COL_INDEX + 1, Types.BLOB);
-        else psAddEvent.setString(C_HDR_NEXT_COL_INDEX + 1, desc);
-
-        Util.verify(psAddEvent.executeUpdate() == 1);
-
-        ResultSet keys = psAddEvent.getGeneratedKeys();
-        try {
-            Util.verify(keys.next());
-            return keys.getInt(1);
-        } finally {
-            keys.close();
-        }
-    }
-
 
     /**
      * add email event to the database

@@ -7,6 +7,8 @@ package com.aerofs.controller;
 import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
+import com.aerofs.base.analytics.AnalyticsEvents.SimpleEvents;
+import com.aerofs.base.analytics.AnalyticsEvents.UpdateEvent;
 import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.id.UserID;
 import com.aerofs.gui.GUIUtil;
@@ -21,7 +23,6 @@ import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.proto.ControllerProto.GetInitialStatusReply;
 import com.aerofs.proto.ControllerProto.GetInitialStatusReply.Status;
-import com.aerofs.proto.Sv.PBSVEvent;
 import com.aerofs.sv.client.SVClient;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.UI;
@@ -167,7 +168,7 @@ class Launcher
                 // should already be bound to singleton port
                 assert _ss != null;
                 UI.dm().start();
-                SVClient.sendEventAsync(PBSVEvent.Type.SIGN_IN);
+                UI.analytics().track(SimpleEvents.SIGN_IN);
             }
 
             Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
@@ -178,8 +179,8 @@ class Launcher
                     Launcher.destroySingletonSocket();
                     // Shutdown the scheduler.
                     UI.scheduler().shutdown();
-                    // send sv event on exit
-                    SVClient.sendEventSync(PBSVEvent.Type.EXIT, null);
+                    // send event on exit synchronously
+                    UI.analytics().trackSync(SimpleEvents.EXIT);
                 }
             }));
 
@@ -218,8 +219,7 @@ class Launcher
      */
     private void verifyChecksums() throws IOException, ExLaunchAborted, ExFormatError
     {
-        SVClient.sendEventAsync(PBSVEvent.Type.UPDATE, Cfg.db().get(Key.LAST_VER) +
-                " -> " + Cfg.ver() + ", " + System.getProperty("os.name"));
+        UI.analytics().track(new UpdateEvent(Cfg.db().get(Key.LAST_VER)));
 
         // After an update, verify that all checksums match
         String failedFile = PostUpdate.verifyChecksum();

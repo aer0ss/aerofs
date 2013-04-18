@@ -1,11 +1,14 @@
 package com.aerofs.ui;
 
+import com.aerofs.base.analytics.Analytics;
 import com.aerofs.controller.ControllerClient;
 import com.aerofs.gui.GUI;
+import com.aerofs.lib.analytics.DesktopAnalyticsProperties;
 import com.aerofs.lib.ritual.IRitualClientProvider;
 import com.aerofs.lib.ritual.RitualBlockingClient;
 import com.aerofs.lib.ritual.RitualClient;
 import com.aerofs.lib.ritual.RitualClientProvider;
+import com.aerofs.lib.rocklog.RockLog;
 import com.aerofs.ui.update.Updater;
 
 /**
@@ -44,6 +47,8 @@ public final class UI
     private static final RootAnchorPoller s_rap = new RootAnchorPoller();
     private static final InfoCollector s_ic = new InfoCollector();
     private static final UIScheduler s_sched = new UIScheduler();
+    private static final Analytics s_analytics = new Analytics(new DesktopAnalyticsProperties());
+    private static final RockLog s_rockLog = new RockLog();
 
     private static ControllerClient s_controller;
 
@@ -76,4 +81,8 @@ public final class UI
     public static RitualBlockingClient ritual() { return _ritualProvider.getBlockingClient(); }
 
     public static RitualClient ritualNonBlocking() { return _ritualProvider.getNonBlockingClient(); }
+
+    public static Analytics analytics() { return s_analytics; }
+
+    public static RockLog rockLog() { return s_rockLog; }
 }

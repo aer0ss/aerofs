@@ -5,7 +5,6 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Map.Entry;
-import java.util.Set;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.SID;
@@ -19,7 +18,6 @@ import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgStoragePolicy;
 import com.aerofs.lib.cfg.CfgAbsRoots;
 import com.aerofs.lib.os.OSUtil;
-import com.google.common.collect.Iterables;
 import org.slf4j.Logger;
 
 import com.aerofs.daemon.core.phy.linked.linker.IgnoreList;

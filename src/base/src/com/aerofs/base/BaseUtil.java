@@ -6,8 +6,17 @@ package com.aerofs.base;
 
 import com.aerofs.base.ex.ExFormatError;
 
+import javax.annotation.Nullable;
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
 import java.nio.charset.Charset;
+import java.util.Scanner;
+
+import static com.google.common.base.Preconditions.checkNotNull;
+import static java.net.HttpURLConnection.HTTP_OK;
 
 public class BaseUtil
 {
@@ -98,5 +107,59 @@ public class BaseUtil
         }
 
         return dirSize;
+    }
+
+
+    /**
+     * Simple helper function to perform an HTTP request on a HttpURLConnection
+     * Note: this function does not deal with character encodings properly. You should only
+     * use it if you know that it won't be an issue.
+     *
+     * @param postData data to be POSTed to the HTTP server. If null, we will issue a GET instead.
+     * @return the response from the server.
+     * @throws IOException if the server doesn't respond with code 200, or if any other error occur
+     */
+    public static String httpRequest(HttpURLConnection connection, @Nullable String postData)
+            throws IOException
+    {
+        final String CHARSET = "ISO-8859-1"; // This is the default HTTP charset
+
+        OutputStream os = null;
+        InputStream is = null;
+        try {
+            // Send
+            if (postData != null && !postData.isEmpty()) {
+                os = connection.getOutputStream();
+                os.write(postData.getBytes(CHARSET));
+            }
+
+            // Receive
+            int code = connection.getResponseCode();
+            if (code != HTTP_OK) {
+                throw new IOException("HTTP request failed. Code: " + code);
+            }
+
+            is = connection.getInputStream();
+            return streamToString(is, CHARSET);
+        } catch (IOException e) {
+            connection.disconnect();
+            throw e;
+        } finally {
+            if (os != null) os.close();
+            if (is != null) is.close();
+        }
+    }
+
+    /**
+     * Convert an input stream into a string using the specified charset.
+     * Does not close the stream
+     */
+    private static String streamToString(InputStream is, String charset)
+    {
+        // See http://stackoverflow.com/a/5445161/365596
+        // Basically, \A matches only the beginning of the input, thus making the Scanner return the
+        // whole string
+        java.util.Scanner scanner = new Scanner(is, checkNotNull(charset)).useDelimiter("\\A");
+        return scanner.hasNext() ? scanner.next() : "";
     }
 }

@@ -16,11 +16,6 @@ class SVSchema {
     static final String C_DEF_CFG       = "def_cfg";
     static final String C_DEF_JAVA_ENV  = "def_java_env";
 
-    static final String T_EV            = "sv_event";
-    static final String C_EV_TYPE       = "ev_type";
-    static final String C_EV_ALIAS      = "ev_alias";
-    static final String C_EV_DESC       = "ev_desc";
-
     static final String T_EE            = "email_event";
     static final String C_EE_ID         = "ee_id";
     static final String C_EE_EMAIL      = "ee_email";

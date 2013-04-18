@@ -4,6 +4,7 @@ import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.acl.Role;
 import com.aerofs.base.acl.SubjectRolePair;
+import com.aerofs.base.analytics.AnalyticsEvents.FolderInviteSentEvent;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.id.UserID;
 import com.aerofs.gui.CompEmailAddressTextBox;
@@ -20,9 +21,6 @@ import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExChildAlreadyShared;
 import com.aerofs.lib.ex.ExNoStripeCustomerID;
 import com.aerofs.lib.ex.ExParentAlreadyShared;
-import com.aerofs.lib.rocklog.EventProperty;
-import com.aerofs.lib.rocklog.EventType;
-import com.aerofs.lib.rocklog.RockLog;
 import com.aerofs.proto.Common.PBPath;
 import com.aerofs.proto.Common.PBSubjectRolePair;
 import com.aerofs.proto.Sp.PBAuthorizationLevel;
@@ -282,9 +280,7 @@ public class CompInviteUsers extends Composite implements IInputChangeListener
                 }
                 UI.ritual().shareFolder(pbpath, srps, note);
 
-                RockLog.newEvent(EventType.FOLDER_INVITE_SENT)
-                        .addProperty(EventProperty.COUNT, Integer.toString(subjects.size()))
-                        .sendAsync();
+                UI.analytics().track(new FolderInviteSentEvent(subjects.size()));
             }
 
             void showPaymentDialog()

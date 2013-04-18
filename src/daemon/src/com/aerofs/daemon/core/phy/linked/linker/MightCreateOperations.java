@@ -5,6 +5,9 @@
 package com.aerofs.daemon.core.phy.linked.linker;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.base.analytics.Analytics;
+import com.aerofs.base.analytics.IAnalyticsEvent;
+import com.aerofs.base.analytics.AnalyticsEvents.FileSavedEvent;
 import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.OID;
@@ -23,7 +26,7 @@ import com.aerofs.daemon.lib.exception.ExStreamInvalid;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.analytics.Analytics;
+import com.aerofs.lib.analytics.AnalyticsEventCounter;
 import com.aerofs.lib.ex.ExNotDir;
 import com.aerofs.lib.id.CID;
 import com.aerofs.lib.id.FID;
@@ -68,7 +71,7 @@ class MightCreateOperations
     private final InjectableFile.Factory _factFile;
     private final SharedFolderTagFileAndIcon _sfti;
     private final InjectableDriver _dr;
-    private final Analytics _a;
+    private final AnalyticsEventCounter _saveCounter;
 
     static enum Operation
     {
@@ -94,7 +97,7 @@ class MightCreateOperations
     @Inject
     public MightCreateOperations(DirectoryService ds, ObjectMover om, ObjectCreator oc,
             InjectableDriver driver, VersionUpdater vu, InjectableFile.Factory factFile,
-            SharedFolderTagFileAndIcon sfti, Analytics a, OIDGenerator og)
+            SharedFolderTagFileAndIcon sfti, Analytics analytics, OIDGenerator og)
     {
         _ds = ds;
         _og = og;
@@ -104,7 +107,14 @@ class MightCreateOperations
         _factFile = factFile;
         _sfti = sfti;
         _dr = driver;
-        _a = a;
+        _saveCounter = new AnalyticsEventCounter("analytics-save-file", analytics)
+        {
+            @Override
+            public IAnalyticsEvent createEvent(int count)
+            {
+                return new FileSavedEvent(count);
+            }
+        };
     }
 
     /**
@@ -219,7 +229,7 @@ class MightCreateOperations
         Type type = oid != null ? ANCHOR : (dir ? DIR : FILE);
         if (oid == null) oid = _og.generate_(dir, pc._path);
         _oc.create_(type, oid, soidParent, pc._path.last(), MAP, t);
-        _a.incSaveCount();
+        _saveCounter.inc();
         l.info("created {} {}", new SOID(soidParent.sidx(), oid), pc);
         return true;
     }
@@ -351,6 +361,6 @@ class MightCreateOperations
 
         l.info("modify {}", soid);
         _vu.update_(new SOCKID(soid, CID.CONTENT), t);
-        _a.incSaveCount();
+        _saveCounter.inc();
     }
 }

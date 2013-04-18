@@ -1,5 +1,7 @@
 package com.aerofs.daemon.core.admin;
 
+import com.aerofs.base.analytics.Analytics;
+import com.aerofs.base.analytics.AnalyticsEvents.SimpleEvents;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.expel.Expulsion;
 import com.aerofs.daemon.event.admin.EISetExpelled;
@@ -8,8 +10,6 @@ import com.aerofs.lib.event.Prio;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.id.SOID;
-import com.aerofs.sv.client.SVClient;
-import com.aerofs.proto.Sv.PBSVEvent.Type;
 import com.google.inject.Inject;
 
 public class HdSetExpelled extends AbstractHdIMC<EISetExpelled>
@@ -17,13 +17,15 @@ public class HdSetExpelled extends AbstractHdIMC<EISetExpelled>
     private final Expulsion _expulsion;
     private final DirectoryService _ds;
     private final TransManager _tm;
+    private final Analytics _analytics;
 
     @Inject
-    public HdSetExpelled(Expulsion expulsion, DirectoryService ds, TransManager tm)
+    public HdSetExpelled(Expulsion expulsion, DirectoryService ds, TransManager tm, Analytics analytics)
     {
         _expulsion = expulsion;
         _ds = ds;
         _tm = tm;
+        _analytics = analytics;
     }
 
     @Override
@@ -32,7 +34,7 @@ public class HdSetExpelled extends AbstractHdIMC<EISetExpelled>
         SOID soid = _ds.resolveThrows_(ev._path);
         Trans t = _tm.begin_();
         Throwable rollbackCause = null;
-        SVClient.sendEventAsync(ev._expelled ? Type.EXCLUDE : Type.INCLUDE);
+        _analytics.track(ev._expelled ? SimpleEvents.EXCLUDE_FOLDER : SimpleEvents.INCLUDE_FOLDER);
         try {
             _expulsion.setExpelled_(ev._expelled, soid, t);
             t.commit_();

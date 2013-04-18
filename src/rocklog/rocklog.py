@@ -1,11 +1,8 @@
 import datetime
 import socket
 import time
-import base64
 import simplejson
-import requests
 import time
-import MySQLdb
 from flask import Flask
 from flask import request
 from flask import jsonify
@@ -15,7 +12,6 @@ from retrace_client import RetraceClient
 ELASTIC_SEARCH_URL = 'http://localhost:9200'
 CARBON_ADDRESS = ('metrics.aerofs.com', 2003)
 HOSTED_GRAPHITE_ADDRESS = ('carbon.hostedgraphite.com', 2003)
-MIXPANEL_URL = "http://api.mixpanel.com/track/"
 
 EXPECTED_CONTENT_TYPE = 'application/json'
 MESSAGE_KEY = '@message'
@@ -29,9 +25,6 @@ app.config.from_pyfile("rocklog.cfg")
 app.debug = True
 
 es = ElasticSearch('http://localhost:9200/')
-
-if "MYSQLHOST" in app.config:
-    mysql_enabled = True
 
 # assume that if the socket dies the flask app will die and gunicorn will restart it
 carbon = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -60,8 +53,6 @@ def defects():
 
     try:
         defect = request.json
-
-        inject_user_data(defect)
 
         if EXCEPTION_KEY in defect:
             retracer = RetraceClient(50123, defect[VERSION_KEY])
@@ -94,8 +85,6 @@ def metrics():
 
         metric = request.json
 
-        inject_user_data(metric)
-
         save_to_graphite(metric)
 
         #
@@ -116,28 +105,6 @@ def metrics():
     except Exception as e:
         app.logger.error("fail request err:%s" % e)
         raise
-
-
-@app.route('/events', methods=['POST'])
-def events():
-    try:
-        check_valid_request(request)
-    except InvalidContentType as e:
-        return error_response(415, 'not JSON')
-
-    try:
-        event = request.json
-
-        inject_user_data(event)
-
-        save_to_elasticsearch('event', event)
-        save_to_mixpanel(event)
-
-        return success_response()
-    except Exception as e:
-        app.logger.error("fail request err:%s" % e)
-        raise
-
 
 def check_valid_request(request):
     content_type = request.headers['Content-Type']
@@ -215,44 +182,6 @@ def decode_exception(exception, rc):
 def stackframe_to_string(frame, rc):
     r = rc.retrace(frame['class'], frame['method'], frame['line'])
     return r['classname'] + '.' + r['methodname'] + ':' + str(frame['line'])
-
-def inject_user_data(message):
-    if not mysql_enabled:
-        return
-    try:
-        user_id = message["user_id"]
-        mysqldb = MySQLdb.connect(
-                host=app.config["MYSQLHOST"],
-                user=app.config["MYSQLUSER"],
-                passwd=app.config["MYSQLPASSWORD"],
-                db=app.config["MYSQLDB"])
-        cur = mysqldb.cursor()
-        cur.execute("select u_id_created_ts from sp_user where u_id=%s", (user_id))
-        message["user_created_at"] = cur.fetchone()[0].isoformat()
-        cur.close()
-        mysqldb.close()
-    except Exception as e:
-        app.logger.warn(e)
-
-def save_to_mixpanel(event):
-    # We don't want event_name in the properties and as the event (it's redundant)
-    name = event["event_name"]
-    del event["event_name"]
-    # We don't want @timestamp in the properties (too unique to be meaningful and mixpanel does its own timestamp)
-    if TIMESTAMP_KEY in event: del event[TIMESTAMP_KEY]
-
-    params = {
-        "event": name,
-        "properties": event
-    }
-
-    params["properties"]["token"] = app.config["MIXPANEL_TOKEN"]
-    if "user_id" in params["properties"]:
-        params["properties"]["distinct_id"] = params["properties"]["user_id"]
-
-    data = base64.b64encode(simplejson.dumps(params))
-
-    requests.get(MIXPANEL_URL, params={"data":data})
 
 if __name__ == "__main__":
     app.run()

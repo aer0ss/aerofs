@@ -27,7 +27,6 @@ import com.aerofs.proto.Sv.PBSVCall.Type;
 import com.aerofs.proto.Sv.PBSVDefect;
 import com.aerofs.proto.Sv.PBSVDefect.Builder;
 import com.aerofs.proto.Sv.PBSVEmail;
-import com.aerofs.proto.Sv.PBSVEvent;
 import com.aerofs.proto.Sv.PBSVGzippedLog;
 import com.aerofs.proto.Sv.PBSVHeader;
 import com.aerofs.sv.common.EmailCategory;
@@ -93,6 +92,12 @@ public final class SVClient
     }
 
     private static final RecentExceptions recentExceptions = RecentExceptions.getInstance();
+
+    // Create a new instance of RockLog for SVClient
+    // Ideally we would use a shared instance provided in the SVClient constructor, but since all
+    // SVClient methods are static, that won't work... Or we could have something like
+    // SVClient.init(RockLog), but I'm not fan of init methods either.
+    private static final RockLog rockLog = new RockLog();
 
     //-------------------------------------------------------------------------
     //
@@ -184,66 +189,6 @@ public final class SVClient
                     false);
         } catch (Throwable e) {
             l.warn("dump core db:" + Util.e(e));
-        }
-    }
-
-    //-------------------------------------------------------------------------
-    //
-    // SEND EVENT
-    //
-    //-------------------------------------------------------------------------
-
-    public static void sendEventAsync(PBSVEvent.Type type)
-    {
-        sendEventAsync(type, null);
-    }
-
-    /**
-     * @param desc optional description of the event
-     */
-    public static void sendEventAsync(final PBSVEvent.Type type, @Nullable final String desc)
-    {
-        Thread eventSender = new Thread(new Runnable() {
-            @Override
-            public void run()
-            {
-                try {
-                    sendEventSync(type, desc);
-                } catch (Throwable e) {
-                    l.warn("send sv event: " + Util.e(e, IOException.class));
-                }
-            }
-        }, SVClient.class.getName() + ".event");
-
-        eventSender.start();
-    }
-
-    public static void sendEventSync(PBSVEvent.Type type, @Nullable String desc)
-    {
-        if (L.isStaging()) {
-            l.debug("sv event sending disabled on staging");
-            return;
-        }
-
-        l.debug("send event type:" + type);
-
-        PBSVEvent.Builder bdEvent = PBSVEvent
-                .newBuilder()
-                .setType(type);
-
-        if (desc != null) bdEvent.setDesc(desc);
-
-        PBSVCall call = PBSVCall
-                .newBuilder()
-                .setType(Type.EVENT)
-                .setHeader(newHeader())
-                .setEvent(bdEvent)
-                .build();
-
-        try {
-            getRpcClient().doRPC(call, null);
-        } catch (Throwable e) {
-            l.warn("send sv event: " + Util.e(e, IOException.class));
         }
     }
 
@@ -396,14 +341,14 @@ public final class SVClient
         // MissingResourceException, this probably indicates that our stripped-down version of
         // OpenJDK is missing something. Send a different RockLog defect to make sure we catch it.
         if (cause instanceof LinkageError || cause instanceof MissingResourceException) {
-            RockLog.newDefect("system.classnotfound").setException(cause).send();
+            rockLog.newDefect("system.classnotfound").setException(cause).send();
         } else {
             // Note: we can't pick a good defect name here since we don't know who created this
             // defect, so we use the generic "svdefect" string. See doc in newDefect() for more
             // info about defect names.
 
             Defect.Priority priority = isAutoBug ? Priority.Auto : Priority.User;
-            RockLog.newDefect("svdefect").setMessage(desc).setPriority(priority).setException(cause).send();
+            rockLog.newDefect("svdefect").setMessage(desc).setPriority(priority).setException(cause).send();
         }
 
         // always send non-automatic defects and database requests

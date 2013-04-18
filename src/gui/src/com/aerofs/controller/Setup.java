@@ -5,8 +5,8 @@
 package com.aerofs.controller;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.base.analytics.AnalyticsEvents.SimpleEvents;
 import com.aerofs.base.ex.ExBadCredential;
-import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.labeling.L;
@@ -22,16 +22,12 @@ import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.Cfg.PortType;
 import com.aerofs.lib.cfg.CfgDatabase;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
-import com.aerofs.lib.cfg.ExNotSetup;
 import com.aerofs.lib.injectable.InjectableDriver;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.lib.os.OSUtil.Icon;
-import com.aerofs.lib.rocklog.EventType;
-import com.aerofs.lib.rocklog.RockLog;
 import com.aerofs.proto.ControllerProto.PBS3Config;
-import com.aerofs.proto.Sv;
-import com.aerofs.proto.Sv.PBSVEvent.Type;
+import com.aerofs.proto.Sp.GetUserPreferencesReply;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.sp.client.SPClientFactory;
 import com.aerofs.sv.client.SVClient;
@@ -46,15 +42,15 @@ import java.io.IOException;
 import java.net.BindException;
 import java.net.ServerSocket;
 import java.net.UnknownHostException;
-import java.sql.SQLException;
 import java.util.TreeMap;
 
+import static com.aerofs.base.analytics.AnalyticsEvents.SimpleEvents.INSTALL_CLIENT;
+import static com.aerofs.base.analytics.AnalyticsEvents.SimpleEvents.REINSTALL_CLIENT;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 class Setup
 {
     private static final Logger l = Loggers.getLogger(Setup.class);
-
     private final String _rtRoot;
     private final InjectableFile.Factory _factFile = new InjectableFile.Factory();
     private final ClientSocketChannelFactory _clientChannelFactory;
@@ -103,19 +99,14 @@ class Setup
              * "seeded" install which is pretty much equivalent for us). Log that event to determine
              * how badly we need to restore shared folders unpon reinstall.
              */
-            if (_factFile.create(rootAnchorPath).list() != null) {
-                SVClient.sendEventAsync(Type.REINSTALL);
-                RockLog.newEvent(EventType.REINSTALL_CLIENT).sendAsync();
-            }
+            boolean isReinstall = (_factFile.create(rootAnchorPath).list() != null);
 
             PreSetupResult res = preSetup(userId, password, rootAnchorPath, storageType);
 
             setupSingluserImpl(userId, rootAnchorPath, deviceName, storageType, s3cfg,
                     res._scrypted, res._sp);
 
-            SVClient.sendEventSync(Sv.PBSVEvent.Type.SIGN_RETURNING, "");
-
-            RockLog.newEvent(EventType.INSTALL_CLIENT).sendAsync();
+            UI.analytics().track(isReinstall ? REINSTALL_CLIENT : INSTALL_CLIENT);
 
         } catch (Exception e) {
             handleSetupException(userId, e);
@@ -133,10 +124,9 @@ class Setup
 
             // Send event for S3 Setup
             if (s3cfg != null) {
-                SVClient.sendEventAsync(Sv.PBSVEvent.Type.S3_SETUP);
-                RockLog.newEvent(EventType.ENABLE_S3).sendAsync();
+                UI.analytics().track(SimpleEvents.ENABLE_S3);
             }
-            RockLog.newEvent(EventType.INSTALL_TEAM_SERVER).sendAsync();
+            UI.analytics().track(SimpleEvents.INSTALL_TEAM_SERVER);
 
         } catch (Exception e) {
             handleSetupException(userId, e);
@@ -188,7 +178,7 @@ class Setup
 
         DID did = CredentialUtil.registerDeviceAndSaveKeys(userID, scrypted, deviceName, sp);
 
-        initializeConfiguration(userID, did, rootAnchorPath, storageType, s3config, scrypted);
+        initializeConfiguration(userID, did, rootAnchorPath, storageType, s3config, scrypted, sp);
 
         setupCommon(rootAnchorPath);
 
@@ -208,12 +198,8 @@ class Setup
         DID tsDID = CredentialUtil.registerTeamServerDeviceAndSaveKeys(tsUserId, tsScrypted,
                 deviceName, sp);
 
-        initializeConfiguration(tsUserId, tsDID, rootAnchorPath, storageType, s3config, tsScrypted);
+        initializeConfiguration(tsUserId, tsDID, rootAnchorPath, storageType, s3config, tsScrypted, sp);
         Cfg.db().set(Key.AUTO_EXPORT_FOLDER, rootAnchorPath);
-
-        // sign in with the team server's user ID
-        SPBlockingClient tsSP = SPClientFactory.newBlockingClient(tsUserId);
-        tsSP.signInRemote();
 
         setupCommon(rootAnchorPath);
 
@@ -305,8 +291,8 @@ class Setup
      * initialize the configuration database and the in-memory Cfg object
      */
     private void initializeConfiguration(UserID userId, DID did, String rootAnchorPath,
-            StorageType storageType, PBS3Config s3config, byte[] scrypted)
-            throws SQLException, IOException, ExFormatError, ExBadCredential, ExNotSetup
+            StorageType storageType, PBS3Config s3config, byte[] scrypted, SPBlockingClient userSp)
+            throws Exception
     {
         TreeMap<Key, String> map = Maps.newTreeMap();
         map.put(Key.USER_ID, userId.getString());
@@ -317,6 +303,7 @@ class Setup
         map.put(Key.LAST_VER, Cfg.ver());
         map.put(Key.DAEMON_POST_UPDATES, Integer.toString(PostUpdate.DAEMON_POST_UPDATE_TASKS));
         map.put(Key.UI_POST_UPDATES, Integer.toString(PostUpdate.UI_POST_UPDATE_TASKS));
+        map.put(Key.SIGNUP_DATE, Long.toString(getUserSignUpDate(userSp)));
         if (s3config != null) {
             map.put(Key.S3_BUCKET_ID, s3config.getBucketId());
             map.put(Key.S3_ACCESS_KEY, s3config.getAccessKey());
@@ -331,6 +318,16 @@ class Setup
         Cfg.writePortbase(_rtRoot, findPortBase());
 
         Cfg.init_(_rtRoot, true);
+    }
+
+    /**
+     * Retrieve the user sign-up date from SP
+     */
+    private long getUserSignUpDate(SPBlockingClient sp)
+            throws Exception
+    {
+        GetUserPreferencesReply reply = sp.getUserPreferences(null);
+        return reply.getSignupDate();
     }
 
     /**

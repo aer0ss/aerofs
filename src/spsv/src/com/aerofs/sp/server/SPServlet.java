@@ -2,6 +2,7 @@ package com.aerofs.sp.server;
 
 import com.aerofs.base.BaseParam.SP;
 import com.aerofs.base.Loggers;
+import com.aerofs.base.analytics.Analytics;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.lib.Util;
 import com.aerofs.base.ex.ExAlreadyExist;
@@ -118,10 +119,12 @@ public class SPServlet extends AeroServlet
             new JedisThreadLocalTransaction(_jedisConProvider);
     private final JedisEpochCommandQueue _commandQueue = new JedisEpochCommandQueue(_jedisTrans);
 
+    private final Analytics _analytics = new Analytics(new SPAnalyticsProperties(_sessionUser));
+
     private final SPService _service = new SPService(_db, _sqlTrans, _jedisTrans, _sessionUser,
             _passwordManagement, _certauth, _factUser, _factOrg, _factOrgInvite, _factDevice,
             _certdb, _esdb, _factSharedFolder, _factEmailer, _deviceRegistrationEmailer,
-            _requestToSignUpEmailer, _commandQueue);
+            _requestToSignUpEmailer, _commandQueue, _analytics);
     private final SPServiceReactor _reactor = new SPServiceReactor(_service);
 
     private final DoPostDelegate _postDelegate = new DoPostDelegate(SP.SP_POST_PARAM_PROTOCOL,

@@ -1,5 +1,6 @@
 package com.aerofs.daemon.core;
 
+import com.aerofs.base.analytics.IAnalyticsPlatformProperties;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.DirectoryServiceImpl;
 import com.aerofs.daemon.core.ds.ObjectSurgeon;
@@ -44,6 +45,7 @@ import com.aerofs.daemon.lib.db.ver.IPrefixVersionDatabase;
 import com.aerofs.daemon.lib.db.ver.ImmigrantVersionDatabase;
 import com.aerofs.daemon.lib.db.ver.NativeVersionDatabase;
 import com.aerofs.daemon.lib.db.ver.PrefixVersionDatabase;
+import com.aerofs.lib.analytics.DesktopAnalyticsProperties;
 import com.aerofs.lib.guice.GuiceUtil;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
@@ -93,6 +95,7 @@ public class CoreModule extends AbstractModule
         bind(IDID2UserDatabase.class).to(DID2UserDatabase.class);
         bind(IUserAndDeviceNameDatabase.class).to(UserAndDeviceNameDatabase.class);
         bind(ISyncStatusDatabase.class).to(SyncStatusDatabase.class);
+        bind(IAnalyticsPlatformProperties.class).to(DesktopAnalyticsProperties.class);
 
         // we use multibindings to allow splitting DB schemas cleanly, only setting up
         // exactly as much as required depending on Module instantiation and preventing

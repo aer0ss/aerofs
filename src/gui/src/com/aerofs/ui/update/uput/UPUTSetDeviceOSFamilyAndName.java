@@ -8,9 +8,9 @@ import com.aerofs.base.Loggers;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.os.IOSUtil;
 import com.aerofs.lib.os.OSUtil;
-import com.aerofs.lib.rocklog.RockLog;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.sp.client.SPClientFactory;
+import com.aerofs.ui.UI;
 import org.slf4j.Logger;
 
 public class UPUTSetDeviceOSFamilyAndName implements IUIPostUpdateTask
@@ -28,7 +28,7 @@ public class UPUTSetDeviceOSFamilyAndName implements IUIPostUpdateTask
                     osu.getFullOSName());
         } catch (Throwable e) {
             l.warn("Failed to set Device OS Family and Name");
-            RockLog.newDefect("ui.set_device_info").setException(e).sendAsync();
+            UI.rockLog().newDefect("ui.set_device_info").setException(e).sendAsync();
         }
     }
 

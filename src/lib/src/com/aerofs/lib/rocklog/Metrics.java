@@ -38,7 +38,7 @@ public class Metrics extends RockLogMessage
 
     private String getFullyQualifiedMetricName(String key)
     {
-        return getRockLog().getPrefix() + "." + key;
+        return "client." + key;
     }
 
     @Override
