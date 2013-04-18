@@ -28,6 +28,7 @@ import com.aerofs.lib.os.OSUtil;
 import com.aerofs.swig.driver.DriverConstants;
 import org.slf4j.Logger;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.net.Socket;
 import java.net.SocketException;
@@ -55,12 +56,12 @@ class DefaultDaemonMonitor implements IDaemonMonitor
     private final InjectableDriver _driver = new InjectableDriver();
     private final InjectableFile.Factory _factFile = new InjectableFile.Factory();
 
-    /** waits until daemon starts and the key is set, or until timeout occurs
+    /**
+     * Waits until daemon starts. Throw if the daemon fails to start or timeout occurs.
      *
-     * @return the daemon process. N.B. The caller shouldn't use the returned value to reliably
-     * detect daemon crashes as the process may be a wrapper of the daemon process.
+     * @return the daemon process.
      */
-    private Process startDaemon()
+    private @Nonnull Process startDaemon()
             throws ExUIMessage, IOException, ExTimeout, ExDaemonFailedToStart
     {
         String aerofsd;
@@ -83,91 +84,111 @@ class DefaultDaemonMonitor implements IDaemonMonitor
             // the RootAnchorPoller can stop the daemon before a successful ping
             if (_stopping) return proc;
 
-            if (proc != null) {
-                try {
-                    int exitCode = proc.exitValue();
-                    // TODO (WW) merge the following code into onDaemonDeath, and instead of
-                    // relying on the caller to show an error message, onDaemonDeath does it?
-                    if (exitCode == S3_BAD_CREDENTIALS.getNumber()) {
-                        throw new ExUIMessage(
-                                "The S3 credentials were incorrect. Please check that you have" +
-                                " the correct bucket name and AWS access and secret key.");
-                    } else if (exitCode == S3_JAVA_KEY_LENGTH_MAYBE_TOO_LIMITED.getNumber()) {
-                        throw new ExUIMessage(
-                                L.product() + " couldn't launch due to issues with your " +
-                                S.S3_ENCRYPTION_PASSWORD + ". If your Java runtime" +
-                                " is provided by Oracle with limited" +
-                                " crypto key strength, please download the Unlimited Strength" +
-                                " Jurisdiction Policy Files at http://bit.ly/UlsKO6. " +
-                                L.product() + " requires full strength AES-256 for a better margin" +
-                                " of safety. Contact us at " + WWW.SUPPORT_EMAIL_ADDRESS.get() +
-                                " for more questions.");
-                    } else if (OSUtil.isWindows() && exitCode == WINDOWS_SHUTTING_DOWN) {
-                        /*
-                        We get this exit code on Windows in the following situation:
-                            1. Windows kills the daemon because the system is shutting down
-                            2. onDaemonDeath gets called with a normal exit code and tries to
-                               restart the daemon
-                            3. Windows block the new process creation and returns this special
-                               exit code.
+            throwIfDaemonExits(proc);
 
-                            So we only get this exit code here, never in onDaemonDeath()
-                        */
-                        l.warn("Ignoring exit code " + WINDOWS_SHUTTING_DOWN
-                                + " - Windows is shutting down");
-
-                    } else if (exitCode == DPUT_MIGRATE_AUX_ROOT_FAILED.getNumber()) {
-                        /*
-                           This exit code may happen when we try to run the DPUTMigrateAuxRoot task
-                           Therefore, it can only happen here, not in onDaemonDeath()
-                         */
-                        // TODO: legacy migration code, should be removed when we think all users
-                        // have updated past the DPUT in question (or decide not to support upgrade
-                        // from such fossilized clients)
-                        throw new ExUIMessage(L.product() + " couldn't launch because it couldn't " +
-                                "write to: \"" + Cfg.absDefaultAuxRoot() + "\"\n\nPlease make sure that " +
-                                L.product() + " has the appropriate permissions to write to that " +
-                                "folder.");
-                    } else {
-                        throw new IOException(getMessage(exitCode));
-                    }
-                } catch (IllegalThreadStateException e) {
-                    // the process is still running
-                }
-            }
-
-            try {
-                // Ping the daemon to see if it has started up and is listening for RPCs.
-                // ritual.heartbeat() will throw immediately if it can't connect to the daemon
-                l.info("hb daemon");
-                UI.ritual().heartbeat();
-                l.info("daemon started");
-                break;
-            } catch (ExIndexing e) {
-                // On the first launch, the daemon needs to do a first full scan to make sure all
-                // shared folders already present in the root anchor can be properly re-joined
-                // This first scan might take a while and Ritual will throw ExIndexing on all calls
-                // until it is completed so we ignore these exceptions and do not touch the retry
-                // counter
-                l.info("daemon indexing...");
-                // We don't want the setup dialog to wait for indexing to be done and we can safely
-                // assume that once indexing starts the daemon will become functional at some point
-                // in the future so we can safely exit the loop. The UI will be responsible for
-                // handling ExIndexing correctly.
-                break;
-            } catch (Exception e) {
-                l.info("pinging daemon failed: " + e);
+            if (isDaemonReady()) {
+                return proc;
+            } else {
                 if (--retries == 0) {
-                    l.error("pinging daemon took too long. giving up");
+                    l.error("daemon launch timed out");
                     throw new ExTimeout();
                 }
             }
 
-            l.info("sleep for " + UIParam.DAEMON_CONNECTION_RETRY_INTERVAL + " ms");
+            l.info("sleep for {} ms", UIParam.DAEMON_CONNECTION_RETRY_INTERVAL);
             ThreadUtil.sleepUninterruptable(UIParam.DAEMON_CONNECTION_RETRY_INTERVAL);
         }
+    }
 
-        return proc;
+    /**
+     * Silently return if the specified daemon process is still running, or exits because Windows is
+     * shutting down. Otherwise throw appropriate error messages.
+     */
+    private void throwIfDaemonExits(Process proc)
+            throws ExUIMessage, IOException
+    {
+        int exitCode;
+        try {
+            exitCode = proc.exitValue();
+        } catch (IllegalThreadStateException e) {
+            // the process is still running
+            return;
+        }
+
+        // TODO (WW) merge the following code into onDaemonDeath, and instead of
+        // relying on the caller to show an error message, onDaemonDeath does it?
+        if (exitCode == S3_BAD_CREDENTIALS.getNumber()) {
+            throw new ExUIMessage(
+                    "The S3 credentials were incorrect. Please check that you have" +
+                    " the correct bucket name and AWS access and secret key.");
+        } else if (exitCode == S3_JAVA_KEY_LENGTH_MAYBE_TOO_LIMITED.getNumber()) {
+            throw new ExUIMessage(
+                    L.product() + " couldn't launch due to issues with your " +
+                    S.S3_ENCRYPTION_PASSWORD + ". If your Java runtime" +
+                    " is provided by Oracle with limited" +
+                    " crypto key strength, please download the Unlimited Strength" +
+                    " Jurisdiction Policy Files at http://bit.ly/UlsKO6. " +
+                    L.product() + " requires full strength AES-256 for a better margin" +
+                    " of safety. Contact us at " + WWW.SUPPORT_EMAIL_ADDRESS.get() +
+                    " for more questions.");
+        } else if (OSUtil.isWindows() && exitCode == WINDOWS_SHUTTING_DOWN) {
+            /*
+            We get this exit code on Windows in the following situation:
+                1. Windows kills the daemon because the system is shutting down
+                2. onDaemonDeath gets called with a normal exit code and tries to
+                   restart the daemon
+                3. Windows block the new process creation and returns this special
+                   exit code.
+
+                So we only get this exit code here, never in onDaemonDeath()
+            */
+            l.warn("Ignoring exit code " + WINDOWS_SHUTTING_DOWN
+                    + " - Windows is shutting down");
+
+        } else if (exitCode == DPUT_MIGRATE_AUX_ROOT_FAILED.getNumber()) {
+            /*
+               This exit code may happen when we try to run the DPUTMigrateAuxRoot task
+               Therefore, it can only happen here, not in onDaemonDeath()
+             */
+            // TODO: legacy migration code, should be removed when we think all users
+            // have updated past the DPUT in question (or decide not to support upgrade
+            // from such fossilized clients)
+            throw new ExUIMessage(L.product() + " couldn't launch because it couldn't " +
+                    "write to: \"" + Cfg.absDefaultAuxRoot() + "\"\n\nPlease make sure that " +
+                    L.product() + " has the appropriate permissions to write to that " +
+                    "folder.");
+        } else {
+            throw new IOException(getMessage(exitCode));
+        }
+    }
+
+    /**
+     * @return whether the daemon process has successfully launched.
+     */
+    private boolean isDaemonReady()
+    {
+        try {
+            // Ping the daemon to see if it has started up and is listening for RPCs.
+            // ritual.heartbeat() will throw immediately if it can't connect to the daemon
+            UI.ritual().heartbeat();
+            l.info("daemon is ready");
+            return true;
+        } catch (ExIndexing e) {
+            // On the first launch, the daemon needs to do a first full scan to make sure all
+            // shared folders already present in the root anchor can be properly re-joined
+            // This first scan might take a while and Ritual will throw ExIndexing on all calls
+            // until it is completed so we ignore these exceptions and do not touch the retry
+            // counter
+            l.info("daemon indexing...");
+            // We don't want the setup dialog to wait for indexing to be done and we can safely
+            // assume that once indexing starts the daemon will become functional at some point
+            // in the future so we can safely exit the loop. The UI will be responsible for
+            // handling ExIndexing correctly.
+            return true;
+        } catch (Exception e) {
+            l.info("pinging daemon: " + e);
+            return false;
+        }
     }
 
     @Override
@@ -191,19 +212,17 @@ class DefaultDaemonMonitor implements IDaemonMonitor
         l.info("starting daemon");
 
         _stopping = false;
-        final Process proc = startDaemon();
+        final @Nonnull Process proc = startDaemon();
 
         if (_firstStart) {
             // start the monitor thread
-            Thread thd = new Thread(new Runnable() {
+            ThreadUtil.startDaemonThread("daemon-monitor", new Runnable() {
                 @Override
                 public void run()
                 {
                     thdMonitor(proc);
                 }
-            }, "dm");
-            thd.setDaemon(true);
-            thd.start();
+            });
 
             // Shutdown hook to ensure that the daemon is stopped when this program quits. When
             // we exit through the GUI, a daemon monitor stop is called as well. This is okay -
@@ -223,10 +242,8 @@ class DefaultDaemonMonitor implements IDaemonMonitor
 
     /**
      * Sends a defect report of the daemon's death with the exit code of the daemon's process.
-     *
-     * @param exitCode null if unknown
      */
-    private void onDaemonDeath(final Integer exitCode)
+    private void onDaemonDeath(final int exitCode)
     {
         // Daemon is intentionally shut down to prevent inconsistencies after moving root anchor.
         // Daemon will restart in new Cfg state
@@ -239,27 +256,24 @@ class DefaultDaemonMonitor implements IDaemonMonitor
             SHUTDOWN_REQUESTED.exit();
         }
 
-        ThreadUtil.startDaemonThread("onDaemonDeath", new Runnable()
-        {
+        ThreadUtil.startDaemonThread("onDaemonDeath", new Runnable() {
             @Override
             public void run()
             {
                 // wait so that the daemon.log sent along the defect will
                 // contain the lines logged right before the death.
                 ThreadUtil.sleepUninterruptable(5 * C.SEC);
-                _fdsDeath.logSendAsync(
-                        "daemon died" + (exitCode == null ? "" : ": " + getMessage(exitCode)));
+                _fdsDeath.logSendAsync("daemon died: " + getMessage(exitCode));
             }
         });
     }
 
     /**
      * Monitors the daemon process and restarts it if necessary. Executed in its own thread.
-     *
-     * @param proc May be null. See the return value of startDaemon()
      */
-    private void thdMonitor(Process proc)
+    private void thdMonitor(@Nonnull Process proc)
     {
+        //noinspection InfiniteLoopStatement
         while (true) {
             try {
                 watchDaemonProcess(proc);
@@ -319,7 +333,7 @@ class DefaultDaemonMonitor implements IDaemonMonitor
      * @param proc The daemon process
      * @throws Exception
      */
-    private void watchDaemonProcess(Process proc) throws Exception
+    private void watchDaemonProcess(@Nonnull Process proc) throws Exception
     {
         Socket s = new Socket(Param.LOCALHOST_ADDR, Cfg.port(PortType.RITUAL_NOTIFICATION));
         try {
@@ -349,16 +363,11 @@ class DefaultDaemonMonitor implements IDaemonMonitor
 
         if (!_stopping) {
             // Since we didn't cause the daemon to stop, find the error code and report it
-
-            if (proc != null) {
-                try {
-                    int code = proc.waitFor();
-                    onDaemonDeath(code);
-                } catch (InterruptedException e) {
-                    SystemUtil.fatal(e);
-                }
-            } else {
-                onDaemonDeath(null);
+            try {
+                int code = proc.waitFor();
+                onDaemonDeath(code);
+            } catch (InterruptedException e) {
+                SystemUtil.fatal(e);
             }
         }
     }
