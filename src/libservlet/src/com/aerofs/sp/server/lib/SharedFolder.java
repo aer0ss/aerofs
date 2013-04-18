@@ -373,7 +373,8 @@ public class SharedFolder
         if (isOwner(user)) return;
 
         // See if the user is the team admin of a non-pending owner of the folder.
-        if (user.isAdmin()) {
+        // NB: TeamServer user is treated as an org admin as it can only be setup by an org admin...
+        if (user.isAdmin() || user.id().isTeamServerID()) {
             Organization org = user.getOrganization();
             for (SubjectRolePair srp: getMemberACL()) {
                 if (srp._role.covers(Role.OWNER)) {
