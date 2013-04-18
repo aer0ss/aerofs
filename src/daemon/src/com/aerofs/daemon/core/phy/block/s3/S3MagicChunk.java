@@ -10,15 +10,12 @@ import com.aerofs.daemon.core.phy.block.AbstractChunker;
 import com.aerofs.daemon.core.phy.block.BlockInputStream;
 import com.aerofs.daemon.core.phy.block.IBlockStorageBackend;
 import com.aerofs.daemon.core.phy.block.IBlockStorageInitable;
-import com.aerofs.daemon.core.tc.Cat;
-import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.lib.HashStream;
 import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.SystemUtil.ExitCode;
 import com.amazonaws.AmazonServiceException;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.InputSupplier;
-import com.google.inject.Inject;
 import org.slf4j.Logger;
 
 import javax.annotation.Nullable;

@@ -17,7 +17,6 @@ import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.IStoreJoiner;
 import com.aerofs.daemon.core.store.StoreDeleter;
 import com.aerofs.daemon.lib.db.AbstractTransListener;
-import com.aerofs.daemon.lib.db.ITransListener;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
@@ -28,13 +27,11 @@ import com.aerofs.lib.cfg.CfgRootSID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.os.CfgOS;
-import com.aerofs.lib.os.OSUtil;
 import com.aerofs.lib.os.OSUtilWindows;
 import com.aerofs.proto.RitualNotifications.PBNotification;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 
-import java.sql.SQLException;
 import java.util.Collection;
 
 public class SingleuserStoreJoiner implements IStoreJoiner
