@@ -93,12 +93,6 @@ public class FlatLinkedStorage extends LinkedStorage
         _lrm.unlink_(sid, t);
     }
 
-    @Override
-    protected SIndex rootSIndex_(SIndex sidx) throws SQLException
-    {
-        return sidx;
-    }
-
     private InjectableFile storeRoot_(SIndex sidx, SID sid)
     {
         if (sid.isUserRoot()) {

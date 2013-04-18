@@ -21,6 +21,8 @@ import java.util.Set;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.NativeVersionControl;
+import com.aerofs.daemon.core.store.IMapSIndex2SID;
+import com.aerofs.daemon.core.store.IStores;
 import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.tc.TC.TCB;
@@ -79,11 +81,13 @@ public class TestHdGetActivities extends AbstractTest
     @Mock Trans t;
     @Mock UserAndDeviceNameDatabase udndb;
     @Mock NativeVersionControl nvc;
+    @Mock IStores stores;
+    @Mock IMapSIndex2SID sidx2sid;
 
     HdGetActivities hd;
 
     InMemorySQLiteDBCW dbcw = new InMemorySQLiteDBCW();
-    IActivityLogDatabase aldb = new ActivityLogDatabase(dbcw.getCoreDBCW());
+    IActivityLogDatabase aldb;
     ActivityLog al;
 
     EIGetActivities ev;
@@ -106,6 +110,7 @@ public class TestHdGetActivities extends AbstractTest
                 to, set, null);
     }
 
+    private static SIndex rootSidx = new SIndex(1);
     private static SID rootSID = SID.rootSID(UserID.fromInternal("foo@bar.baz"));
     private Path mkpath(String path) { return Path.fromString(rootSID, path); }
 
@@ -114,6 +119,10 @@ public class TestHdGetActivities extends AbstractTest
     public void setup()
             throws Exception
     {
+        when(stores.getPhysicalRoot_(any(SIndex.class))).thenReturn(rootSidx);
+        when(sidx2sid.get_(rootSidx)).thenReturn(rootSID);
+        aldb = new ActivityLogDatabase(dbcw.getCoreDBCW(), stores, sidx2sid);
+
         dbcw.init_();
         addActivity(CREATION_VALUE, mkpath("a"), null, did1, did2, did3);
         addActivity(MOVEMENT_VALUE, mkpath("a"), mkpath("b"), did1, did2, did3);

@@ -70,4 +70,13 @@ public interface IStores
      * @return the set of all the stores that are present locally
      */
     @Nonnull Set<SIndex> getAll_() throws SQLException;
+
+    /**
+     * @return the physical root store under which this store resides
+     *
+     * On a multiuser system, stores can have multiple parents but the physical store hierarchy is
+     * flat so each store has its own physical root. On a singleuser system, each can have at most
+     * one parent so the physical root is found by a straightforward walk up the store hierachy
+     */
+    SIndex getPhysicalRoot_(SIndex sidx) throws SQLException;
 }

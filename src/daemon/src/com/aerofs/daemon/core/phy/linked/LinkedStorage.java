@@ -126,19 +126,9 @@ public class LinkedStorage implements IPhysicalStorage
         return new LinkedPrefix(_factFile, k, auxRootForStore_(k.sidx()));
     }
 
-    // in FlatLinkedStorage, each store has a physical root but in regular LinkedStorage
-    // we want to allow some amount of nested sharing (1 level under a user root store)
-    // with the obvious restriction that such a nested share can have at most one parent
-    protected SIndex rootSIndex_(SIndex sidx) throws SQLException
-    {
-        Set<SIndex> parents = _stores.getParents_(sidx);
-        assert parents.isEmpty() || parents.size() == 1 : sidx + " " + parents;
-        return parents.isEmpty() ? sidx : rootSIndex_(Iterables.getOnlyElement(parents));
-    }
-
     private SID rootSID_(SIndex sidx) throws SQLException
     {
-        return _sidx2sid.get_(rootSIndex_(sidx));
+        return _sidx2sid.get_(_stores.getPhysicalRoot_(sidx));
     }
 
     private String auxRootForStore_(SIndex sidx) throws SQLException

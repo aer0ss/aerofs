@@ -24,6 +24,9 @@ import java.util.Set;
 import javax.annotation.Nullable;
 
 import com.aerofs.base.id.DID;
+import com.aerofs.base.id.SID;
+import com.aerofs.daemon.core.store.IMapSIndex2SID;
+import com.aerofs.daemon.core.store.IStores;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
@@ -42,10 +45,15 @@ import com.google.inject.Inject;
  */
 public class ActivityLogDatabase extends AbstractDatabase implements IActivityLogDatabase
 {
+    private final IStores _stores;
+    private final IMapSIndex2SID _sidx2sid;
+
     @Inject
-    public ActivityLogDatabase(CoreDBCW dbcw)
+    public ActivityLogDatabase(CoreDBCW dbcw, IStores stores, IMapSIndex2SID sidx2sid)
     {
         super(dbcw.get());
+        _stores = stores;
+        _sidx2sid = sidx2sid;
     }
 
     private static void assertValidity(int activities, @Nullable Path pathTo, Set<DID> dids)
@@ -71,8 +79,8 @@ public class ActivityLogDatabase extends AbstractDatabase implements IActivityLo
             _psAA.setInt(1, soid.sidx().getInt());
             _psAA.setBytes(2, soid.oid().getBytes());
             _psAA.setInt(3, activities);
-            _psAA.setString(4, path.toStringFormal());
-            if (pathTo != null) _psAA.setString(5, pathTo.toStringFormal());
+            _psAA.setString(4, path.toStringRelative());
+            if (pathTo != null) _psAA.setString(5, pathTo.toStringRelative());
             else _psAA.setNull(5, Types.BLOB);
             _psAA.setBytes(6, convertDIDs(dids));
             _psAA.setLong(7, System.currentTimeMillis());
@@ -84,7 +92,7 @@ public class ActivityLogDatabase extends AbstractDatabase implements IActivityLo
         }
     }
 
-    private static class DBIterActivityRow extends AbstractDBIterator<ActivityRow>
+    private class DBIterActivityRow extends AbstractDBIterator<ActivityRow>
     {
         DBIterActivityRow(ResultSet rs)
         {
@@ -96,11 +104,12 @@ public class ActivityLogDatabase extends AbstractDatabase implements IActivityLo
         {
             long idx = _rs.getLong(1);
             SIndex sidx = new SIndex(_rs.getInt(2));
+            SID sid = _sidx2sid.get_(_stores.getPhysicalRoot_(sidx));
             OID oid = new OID(_rs.getBytes(3));
             int activities = _rs.getInt(4);
-            Path path = Path.fromStringFormal(_rs.getString(5));
+            Path path = Path.fromString(sid, _rs.getString(5));
             String strTo = _rs.getString(6);
-            Path pathTo = _rs.wasNull() ? null : Path.fromStringFormal(strTo);
+            Path pathTo = _rs.wasNull() ? null : Path.fromString(sid, strTo);
             Set<DID> dids = convertDIDs(_rs.getBytes(7));
             long time = _rs.getLong(8);
 

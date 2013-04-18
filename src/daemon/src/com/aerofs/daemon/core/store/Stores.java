@@ -11,6 +11,7 @@ import com.aerofs.daemon.lib.db.IStoreDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.id.SIndex;
+import com.google.common.collect.Iterables;
 import org.slf4j.Logger;
 
 import javax.annotation.Nonnull;
@@ -91,6 +92,13 @@ public class Stores implements IStores, IStoreDeletionOperator
     public @Nonnull Set<SIndex> getAll_() throws SQLException
     {
         return _sdb.getAll_();
+    }
+
+    @Override
+    public SIndex getPhysicalRoot_(SIndex sidx) throws SQLException
+    {
+        // default implementation for multiuser system, overriden in SingleuserStores
+        return sidx;
     }
 
     @Override

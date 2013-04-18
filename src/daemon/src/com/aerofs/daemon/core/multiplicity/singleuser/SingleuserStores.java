@@ -13,6 +13,7 @@ import com.aerofs.lib.SystemUtil;
 import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.lib.cfg.CfgRootSID;
 import com.aerofs.lib.id.SIndex;
+import com.google.common.collect.Iterables;
 
 import javax.annotation.Nonnull;
 import javax.inject.Inject;
@@ -77,6 +78,14 @@ public class SingleuserStores extends Stores
         Set<SIndex> ret = super.getParents_(sidx);
         assert ret.size() <= 1;
         return ret;
+    }
+
+    @Override
+    public SIndex getPhysicalRoot_(SIndex sidx) throws SQLException
+    {
+        Set<SIndex> parents = getParents_(sidx);
+        assert parents.isEmpty() || parents.size() == 1 : sidx + " " + parents;
+        return parents.isEmpty() ? sidx : getPhysicalRoot_(Iterables.getOnlyElement(parents));
     }
 
     /**
