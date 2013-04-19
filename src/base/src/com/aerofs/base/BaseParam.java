@@ -5,9 +5,10 @@
 package com.aerofs.base;
 
 import com.aerofs.base.properties.DynamicInetSocketAddress;
-import com.aerofs.base.properties.DynamicUrlProperty;
 import com.netflix.config.DynamicStringProperty;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.net.InetSocketAddress;
 
 /**
@@ -44,39 +45,39 @@ public class BaseParam
 
     public static class WWW
     {
-        private static final String AEROFSURL = "https://www.aerofs.com";
+        private static final String URL = "https://www.aerofs.com";
 
         public static final DynamicStringProperty SUPPORT_EMAIL_ADDRESS =
                 new DynamicStringProperty("base.www.support_email_address", "support@aerofs.com");
 
         public static final DynamicStringProperty MARKETING_HOST_URL =
-                new DynamicStringProperty("base.www.marketing_host_url", AEROFSURL);
+                new DynamicStringProperty("base.www.marketing_host_url", URL);
 
         public static final DynamicStringProperty DASHBOARD_HOST_URL =
-                new DynamicStringProperty("base.www.dashboard_host_url", AEROFSURL);
+                new DynamicStringProperty("base.www.dashboard_host_url", URL);
 
         public static final DynamicStringProperty PASSWORD_RESET_REQUEST_URL =
                 new DynamicStringProperty("base.www.password_reset_request_url",
-                        AEROFSURL + "/request_password_reset");
+                        URL + "/request_password_reset");
 
         public static final DynamicStringProperty UPGRADE_URL =
-                new DynamicStringProperty("base.www.upgrade_url", AEROFSURL + "/upgrade");
+                new DynamicStringProperty("base.www.upgrade_url", URL + "/upgrade");
 
         public static final DynamicStringProperty TEAM_MEMBERS_URL =
-                new DynamicStringProperty("base.www.team_members_url", AEROFSURL + "/admin/users");
+                new DynamicStringProperty("base.www.team_members_url", URL + "/admin/users");
 
         public static final DynamicStringProperty DEVICES_URL =
-                new DynamicStringProperty("base.www.devices_url", AEROFSURL + "/devices");
+                new DynamicStringProperty("base.www.devices_url", URL + "/devices");
 
         public static final DynamicStringProperty TEAM_SERVER_DEVICES_URL =
                 new DynamicStringProperty("base.www.team_server_devices_url",
-                        AEROFSURL + "/admin/team_servers");
+                        URL + "/admin/team_servers");
 
         public static final DynamicStringProperty DOWNLOAD_URL =
-                new DynamicStringProperty("base.www.download_url", AEROFSURL + "/download");
+                new DynamicStringProperty("base.www.download_url", URL + "/download");
 
         public static final DynamicStringProperty TOS_URL =
-                new DynamicStringProperty("base.www.tos_url", AEROFSURL + "/terms#privacy");
+                new DynamicStringProperty("base.www.tos_url", URL + "/terms#privacy");
     }
 
     public static class SV
@@ -98,15 +99,39 @@ public class BaseParam
         // 4) code with a "WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE" comment
         public static final int SP_PROTOCOL_VERSION = 20;
 
-        // staging value: "https://staging.aerofs.com/sp/sp"
-        public static final DynamicUrlProperty URL =
-                new DynamicUrlProperty("base.sp_url", "https://sp.aerofs.com/sp");
+        public static final DynamicStringProperty HOST =
+                new DynamicStringProperty("base.sp.host", "sp.aerofs.com");
+
+        public static URL url()
+        {
+            URL url;
+
+            try {
+                url = new URL("https://" + HOST.get() + "/sp");
+            } catch (MalformedURLException e) {
+                throw new RuntimeException(e);
+            }
+
+            return url;
+        }
+    }
+
+    public static class CA
+    {
+        public static final DynamicStringProperty HOST =
+                new DynamicStringProperty("base.ca.host", "joan.aerofs.com");
     }
 
     public static class MobileService
     {
         public static final byte[] MAGIC_BYTES = "MOBL".getBytes();
         public static final int VERSION_NUMBER = 3;
+    }
+
+    public static class Verkehr
+    {
+        public static final DynamicStringProperty HOST =
+                new DynamicStringProperty("base.verkehr.host", "verkehr.aerofs.com");
     }
 
     public static class VerkehrTopics
