@@ -19,7 +19,7 @@ public class DlgCreateSharedFolder extends AeroFSDialog
      */
     public DlgCreateSharedFolder(Shell parent, Path path)
     {
-        super(parent, "Share Folder " + Util.quote(path.last()), false, false);
+        super(parent, "Share Folder " + Util.quote(GUIUtil.sharedFolderName(path)), false, false);
         _path = path;
     }
 

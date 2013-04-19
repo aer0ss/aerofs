@@ -73,8 +73,6 @@ public class MultiuserDlgSetupAdvanced extends AbstractDlgSetupAdvanced
 
         final Combo storageSelector = new Combo(_container, SWT.DROP_DOWN | SWT.READ_ONLY);
         for (StorageType t : StorageType.values()) {
-            // TODO: enable option for prod builds
-            if (t == StorageType.LINKED && !L.isStaging()) continue;
             storageSelector.add(t.description(), t.ordinal());
         }
         storageSelector.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 2, 1));

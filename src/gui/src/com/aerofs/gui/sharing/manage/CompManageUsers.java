@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) Air Computing Inc., 2013.
+ */
+
 package com.aerofs.gui.sharing.manage;
 
 import org.eclipse.swt.layout.GridLayout;
@@ -32,7 +36,8 @@ public class CompManageUsers extends Composite
         glShell.marginWidth = GUIParam.MARGIN;
         setLayout(glShell);
 
-        _compUserList = new CompUserList(this, _path, ll);
+        _compUserList = new CompUserList(this);
+        _compUserList.load(_path, ll);
 
         GridData gd__compAddresses = new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1);
         gd__compAddresses.heightHint = 60;
@@ -60,10 +65,5 @@ public class CompManageUsers extends Composite
                 getShell().close();
             }
         });
-    }
-
-    public int getUsersCount()
-    {
-        return _compUserList.getUsersCount();
     }
 }

@@ -1,5 +1,6 @@
 package com.aerofs.gui.sharing;
 
+import com.aerofs.base.acl.Role;
 import org.eclipse.swt.widgets.Shell;
 
 import com.aerofs.gui.AeroFSDialog;
@@ -25,7 +26,8 @@ public class DlgManageSharedFolder extends AeroFSDialog
      */
     public DlgManageSharedFolder(Shell parent, Path path)
     {
-        super(parent, "Manage Shared Folder " + Util.quote(path.last()), false, true);
+        super(parent, "Manage Shared Folder " + Util.quote(GUIUtil.sharedFolderName(path)),
+                false, true);
         _path = path;
     }
 
@@ -53,13 +55,12 @@ public class DlgManageSharedFolder extends AeroFSDialog
 
         _compManageUsers = new CompManageUsers(tabFolder, _path, new ILoadListener() {
             @Override
-            public void loaded()
+            public void loaded(int membersCounts, Role localUserRole)
             {
-                tbtmManage.setText("Members (" + _compManageUsers.getUsersCount() + ")");
+                tbtmManage.setText("Members (" + membersCounts + ")");
             }
         });
 
         tbtmManage.setControl(_compManageUsers);
-
     }
 }

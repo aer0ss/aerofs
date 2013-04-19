@@ -187,7 +187,7 @@ public class CompInviteUsers extends Composite implements IInputChangeListener
     {
         if (_fromPerson == null) return;
 
-        String note = getDefaultInvitationNote(_path.last(), _fromPerson);
+        String note = getDefaultInvitationNote(GUIUtil.sharedFolderName(_path), _fromPerson);
         _txtNote.setText(note);
         _txtNote.setEditable(true);
 

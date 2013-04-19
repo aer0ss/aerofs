@@ -71,6 +71,8 @@ public class ShellextService
      */
     public void notifyRootAnchor()
     {
+        if (_server == null) return;
+
         ShellextNotification notification = ShellextNotification.newBuilder()
                 .setType(Type.ROOT_ANCHOR)
                 .setRootAnchor(RootAnchorNotification.newBuilder()

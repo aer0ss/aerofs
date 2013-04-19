@@ -1,10 +1,10 @@
 package com.aerofs.gui.singleuser.tray;
 
 import com.aerofs.base.C;
-import com.aerofs.base.Loggers;
 import com.aerofs.base.analytics.AnalyticsEvents.ClickEvent;
 import com.aerofs.base.analytics.AnalyticsEvents.ClickEvent.Action;
 import com.aerofs.base.analytics.AnalyticsEvents.ClickEvent.Source;
+import com.aerofs.gui.AeroFSDialog;
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIExecutor;
 import com.aerofs.gui.GUIUtil;
@@ -16,13 +16,10 @@ import com.aerofs.gui.history.DlgHistory;
 import com.aerofs.gui.misc.DlgInviteToSignUp;
 import com.aerofs.gui.sharing.DlgManageSharedFolder;
 import com.aerofs.gui.sharing.folders.DlgFolders;
-import com.aerofs.gui.singleuser.IndexingPoller;
-import com.aerofs.gui.singleuser.IndexingPoller.IIndexingCompletionListener;
-import com.aerofs.gui.singleuser.IndexingTrayMenuSection;
 import com.aerofs.gui.singleuser.preferences.SingleuserDlgPreferences;
-import com.aerofs.gui.tray.ITrayMenu;
+import com.aerofs.gui.tray.AbstractTrayMenu;
+import com.aerofs.gui.tray.IndexingPoller.IIndexingCompletionListener;
 import com.aerofs.gui.tray.PauseOrResumeSyncing;
-import com.aerofs.gui.tray.TransferTrayMenuSection;
 import com.aerofs.gui.tray.TrayIcon;
 import com.aerofs.gui.tray.TrayIcon.NotificationReason;
 import com.aerofs.gui.tray.TrayMenuPopulator;
@@ -49,79 +46,34 @@ import com.google.common.util.concurrent.Futures;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.MenuAdapter;
 import org.eclipse.swt.events.MenuEvent;
-import org.eclipse.swt.events.MenuListener;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.MenuItem;
-import org.slf4j.Logger;
 
-public class SingleuserTrayMenu implements ITrayMenu
+public class SingleuserTrayMenu extends AbstractTrayMenu implements IListener
 {
-    private static final Logger l = Loggers.getLogger(SingleuserTrayMenu.class);
-    private static final ClickEvent RESOLVE_CONFLICTS = new ClickEvent(Action.RESOLVE_CONFLICTS, Source.TASKBAR);
-    private static final ClickEvent OPEN_AEROFS_FOLDER = new ClickEvent(Action.OPEN_AEROFS_FOLDER, Source.TASKBAR);
-    private static final ClickEvent PAUSE_SYNCING = new ClickEvent(Action.PAUSE_SYNCING, Source.TASKBAR);
-    private static final ClickEvent RESUME_SYNCING = new ClickEvent(Action.RESUME_SYNCING, Source.TASKBAR);
-    private static final ClickEvent SHARE_FOLDER = new ClickEvent(Action.SHARE_FOLDER, Source.TASKBAR);
-    private static final ClickEvent MANAGE_SHARED_FOLDER = new ClickEvent(Action.MANAGE_SHARED_FOLDER, Source.TASKBAR);
-    private static final ClickEvent INVITE_TO_SIGNUP = new ClickEvent(Action.INVITE_TO_SIGNUP, Source.TASKBAR);
-    private static final ClickEvent WHY_NOT_SYNCED = new ClickEvent(Action.WHY_NOT_SYNCED, Source.TASKBAR);
-    private static final ClickEvent PREFERENCES = new ClickEvent(Action.PREFERENCES, Source.TASKBAR);
+    private static final ClickEvent RESOLVE_CONFLICTS
+            = new ClickEvent(Action.RESOLVE_CONFLICTS, Source.TASKBAR);
+    private static final ClickEvent PAUSE_SYNCING
+            = new ClickEvent(Action.PAUSE_SYNCING, Source.TASKBAR);
+    private static final ClickEvent RESUME_SYNCING
+            = new ClickEvent(Action.RESUME_SYNCING, Source.TASKBAR);
+    private static final ClickEvent SHARE_FOLDER
+            = new ClickEvent(Action.SHARE_FOLDER, Source.TASKBAR);
+    private static final ClickEvent MANAGE_SHARED_FOLDER
+            = new ClickEvent(Action.MANAGE_SHARED_FOLDER, Source.TASKBAR);
+    private static final ClickEvent INVITE_TO_SIGNUP
+            = new ClickEvent(Action.INVITE_TO_SIGNUP, Source.TASKBAR);
+    private static final ClickEvent WHY_NOT_SYNCED
+            = new ClickEvent(Action.WHY_NOT_SYNCED, Source.TASKBAR);
 
     private volatile int _conflictCount = 0;
 
-    private final Menu _menu;
-    private final TrayIcon _icon;
-
-    private final IndexingPoller _indexingPoller;
-
-    private boolean _enabled;
-    public final TrayMenuPopulator _trayMenuPopulator;
-
-    private final IndexingTrayMenuSection _indexingTrayMenuSection;
-    private final TransferTrayMenuSection _transferTrayMenuSection;
-
     private final PauseOrResumeSyncing _prs = new PauseOrResumeSyncing();
-
-    private final IListener _l = new IListener() {
-        @Override
-        public void onNotificationReceived(PBNotification pb) {
-            switch (pb.getType().getNumber()) {
-            case Type.DOWNLOAD_VALUE:
-            case Type.UPLOAD_VALUE:
-                _transferTrayMenuSection.update(pb);
-                break;
-            case Type.CONFLICT_COUNT_VALUE:
-                assert pb.hasConflictCount();
-                _conflictCount = pb.getConflictCount();
-                _icon.showNotification(NotificationReason.CONFLICT, pb.getConflictCount() > 0);
-                // TODO: schedule GUI update in case the menu is currently visible?
-                break;
-            case Type.SHARED_FOLDER_JOIN_VALUE:
-                final Path p = Path.fromPB(pb.getPath());
-                UI.get().notify(MessageType.INFO,
-                        "You have joined \"" + p.last() + "\"", new Runnable() {
-                    @Override
-                    public void run()
-                    {
-                        GUIUtil.launch(p.toAbsoluteString(Cfg.absDefaultRootAnchor()));
-                    }
-                });
-                break;
-            case Type.SHARED_FOLDER_KICKOUT_VALUE:
-                UI.get().notify(MessageType.INFO,
-                        "You have left \"" + Path.fromPB(pb.getPath()) + "\"");
-                break;
-            default: break;
-            }
-        }
-    };
 
     SingleuserTrayMenu(TrayIcon icon)
     {
-        _icon = icon;
-
-        _indexingPoller = new IndexingPoller(UI.scheduler());
+        super(icon);
 
         // delay start of the shellext service to avoid spamming
         // daemon with status requests while it is busy indexing...
@@ -129,8 +81,7 @@ public class SingleuserTrayMenu implements ITrayMenu
             @Override
             public void onIndexingDone()
             {
-                GUI.get().asyncExec(new Runnable()
-                {
+                GUI.get().asyncExec(new Runnable() {
                     @Override
                     public void run()
                     {
@@ -144,38 +95,16 @@ public class SingleuserTrayMenu implements ITrayMenu
             }
         });
 
-        _menu = new Menu(GUI.get().sh(), SWT.POP_UP);
-
-        _trayMenuPopulator = new TrayMenuPopulator(_menu);
-
-        _indexingTrayMenuSection = new IndexingTrayMenuSection(_menu, _trayMenuPopulator,
-                _indexingPoller);
-        _transferTrayMenuSection = new TransferTrayMenuSection(_trayMenuPopulator);
-
-        _menu.addMenuListener(new MenuListener()
-        {
-            @Override
-            public void menuShown(MenuEvent event)
-            {
-                _trayMenuPopulator.clearAllMenuItems();
-                loadMenu();
-            }
-
-            @Override
-            public void menuHidden(MenuEvent arg0)
-            {
-                _icon.clearNotifications();
-            }
-        });
-        UI.rnc().addListener(_l);
+        UI.rnc().addListener(this);
     }
 
+    @Override
     public void loadMenu()
     {
         boolean hasWarnings = false;
 
         if (UI.updater().getUpdateStatus() == Status.APPLY) {
-            _trayMenuPopulator.addApplyUpdateMenuItem();
+            _populator.addApplyUpdateMenuItem();
             hasWarnings = true;
         }
 
@@ -184,29 +113,29 @@ public class SingleuserTrayMenu implements ITrayMenu
             hasWarnings = true;
         }
 
-        if (hasWarnings) _trayMenuPopulator.addMenuSeparator();
+        if (hasWarnings) _populator.addMenuSeparator();
 
         addOpenFolderMenuItem();
 
-        _trayMenuPopulator.addMenuSeparator();
+        _populator.addMenuSeparator();
 
         if (!_enabled) {
-            _trayMenuPopulator.addLaunchingMenuItem();
-            _trayMenuPopulator.addMenuSeparator();
+            _populator.addLaunchingMenuItem();
+            _populator.addMenuSeparator();
         } else if (!_indexingPoller.isIndexingDone()) {
             _indexingTrayMenuSection.populate();
-            _trayMenuPopulator.addMenuSeparator();
+            _populator.addMenuSeparator();
         } else {
             createSharedFoldersMenu();
             createRecentActivitesMenu();
             addVersionHistoryMenuItem();
 
-            _trayMenuPopulator.addMenuSeparator();
+            _populator.addMenuSeparator();
 
             _transferTrayMenuSection.populate();
             addPauseOrResumeSyncingMenuItem();
 
-            _trayMenuPopulator.addMenuSeparator();
+            _populator.addMenuSeparator();
 
             addPreferencesMenuItem();
         }
@@ -214,9 +143,43 @@ public class SingleuserTrayMenu implements ITrayMenu
         createHelpMenu();
         addInviteToSignUpMenuItem();
 
-        _trayMenuPopulator.addMenuSeparator();
+        _populator.addMenuSeparator();
 
-        _trayMenuPopulator.addExitMenuItem(L.product());
+        _populator.addExitMenuItem(L.product());
+    }
+
+    @Override
+    protected AeroFSDialog preferencesDialog()
+    {
+        return new SingleuserDlgPreferences(GUI.get().sh());
+    }
+
+    @Override
+    public void onNotificationReceived(PBNotification pb) {
+        switch (pb.getType().getNumber()) {
+        case Type.CONFLICT_COUNT_VALUE:
+            assert pb.hasConflictCount();
+            _conflictCount = pb.getConflictCount();
+            _icon.showNotification(NotificationReason.CONFLICT, pb.getConflictCount() > 0);
+            // TODO: schedule GUI update in case the menu is currently visible?
+            break;
+        case Type.SHARED_FOLDER_JOIN_VALUE:
+            final Path p = Path.fromPB(pb.getPath());
+            UI.get().notify(MessageType.INFO,
+                    "You have joined \"" + p.last() + "\"", new Runnable() {
+                @Override
+                public void run()
+                {
+                    GUIUtil.launch(p.toAbsoluteString(Cfg.absDefaultRootAnchor()));
+                }
+            });
+            break;
+        case Type.SHARED_FOLDER_KICKOUT_VALUE:
+            UI.get().notify(MessageType.INFO,
+                    "You have left \"" + Path.fromPB(pb.getPath()) + "\"");
+            break;
+        default: break;
+        }
     }
 
     private void addConflictsMenuItem(int conflictCount)
@@ -224,7 +187,7 @@ public class SingleuserTrayMenu implements ITrayMenu
         String label = UIUtil.prettyLabelWithCount(conflictCount, "A Conflict Was Found",
                 "Conflicts Were Found");
 
-        _trayMenuPopulator.addWarningMenuItem(label,
+        _populator.addWarningMenuItem(label,
                 new AbstractListener(RESOLVE_CONFLICTS)
                 {
                     @Override
@@ -237,36 +200,27 @@ public class SingleuserTrayMenu implements ITrayMenu
                 });
     }
 
-    private void addOpenFolderMenuItem()
+    static interface ISharedFolderMenuExecutor
     {
-        _trayMenuPopulator.addMenuItem("Open " + L.product() + " Folder",
-                new AbstractListener(OPEN_AEROFS_FOLDER)
-                {
-                    @Override
-                    protected void handleEventImpl(Event event)
-                    {
-                        GUIUtil.launch(Cfg.absDefaultRootAnchor());
-                    }
-                });
+        void run(Path path);
     }
 
-    private void createSharedFoldersMenu()
+    // keep old dialog on regular client for now...
+    @Override
+    protected void createSharedFoldersMenu()
     {
         MenuItem mi = new MenuItem(_menu, SWT.CASCADE);
         mi.setText("Shared Folders");
         final Menu menuManage = new Menu(_menu.getShell(), SWT.DROP_DOWN);
         mi.setMenu(menuManage);
         final TrayMenuPopulator populater = new TrayMenuPopulator(menuManage);
-        menuManage.addMenuListener(new MenuAdapter()
-        {
+        menuManage.addMenuListener(new MenuAdapter() {
             @Override
             public void menuShown(MenuEvent event)
             {
                 populater.clearAllMenuItems();
-
                 populater.addMenuItem("Share New Folder...",
-                        new AbstractListener(SHARE_FOLDER)
-                        {
+                        new AbstractListener(SHARE_FOLDER) {
                             @Override
                             protected void handleEventImpl(Event event)
                             {
@@ -276,8 +230,7 @@ public class SingleuserTrayMenu implements ITrayMenu
 
                 populater.addMenuSeparator();
 
-                addSharedFoldersSubmenu(menuManage, new ISharedFolderMenuExecutor()
-                {
+                addSharedFoldersSubmenu(menuManage, new ISharedFolderMenuExecutor() {
                     @Override
                     public void run(Path path)
                     {
@@ -291,37 +244,36 @@ public class SingleuserTrayMenu implements ITrayMenu
     private void addSharedFoldersSubmenu(Menu submenu, final ISharedFolderMenuExecutor lme)
     {
         final TrayMenuPopulator sharedTrayMenuPopulator = new TrayMenuPopulator(submenu);
-
         final MenuItem loading = sharedTrayMenuPopulator.addMenuItem(S.GUI_LOADING, null);
         loading.setEnabled(false);
 
-        // asynchronously fetch results, as GetActivities call may be slow. (see ritual.proto)
-        Futures.addCallback(UI.ritualNonBlocking().listSharedFolders(), new FutureCallback<ListSharedFoldersReply>()
-        {
-            @Override
-            public void onFailure(Throwable e)
-            {
-                loading.dispose();
-                sharedTrayMenuPopulator.addErrorMenuItem("Couldn't list shared folders");
-                l.warn(Util.e(e));
-            }
+        Futures.addCallback(UI.ritualNonBlocking().listSharedFolders(),
+                new FutureCallback<ListSharedFoldersReply>() {
+                    @Override
+                    public void onFailure(Throwable e)
+                    {
+                        loading.dispose();
+                        sharedTrayMenuPopulator.addErrorMenuItem("Couldn't list shared folders");
+                        l.warn(Util.e(e));
+                    }
 
-            @Override
-            public void onSuccess(ListSharedFoldersReply reply)
-            {
-                loading.dispose();
-                for (PBPath pbpath : reply.getPathList()) {
-                    addSharedFolderEntry(Path.fromPB(pbpath));
-                }
-                if (reply.getPathCount() == 0) {
-                    sharedTrayMenuPopulator.addMenuItem("No shared folder", null).setEnabled(false);
-                }
-            }
+                    @Override
+                    public void onSuccess(ListSharedFoldersReply reply)
+                    {
+                        loading.dispose();
+                        for (PBPath pbpath : reply.getPathList()) {
+                            addSharedFolderEntry(Path.fromPB(pbpath));
+                        }
+                        if (reply.getPathCount() == 0) {
+                            sharedTrayMenuPopulator.addMenuItem("No shared folder", null)
+                                    .setEnabled(false);
+                        }
+                    }
 
                     private void addSharedFolderEntry(final Path path)
                     {
-                        sharedTrayMenuPopulator.addMenuItem(path.last(),
-                                new AbstractListener(MANAGE_SHARED_FOLDER)
+                        sharedTrayMenuPopulator.addMenuItem(GUIUtil.sharedFolderName(path),
+                                new GUIUtil.AbstractListener(MANAGE_SHARED_FOLDER)
                                 {
                                     @Override
                                     protected void handleEventImpl(Event event)
@@ -362,15 +314,14 @@ public class SingleuserTrayMenu implements ITrayMenu
         activitiesTrayMenuPopulator.addMenuItem(S.GUI_LOADING, null).setEnabled(false);
 
         // asynchronously fetch results, as GetActivities call may be slow. (see ritual.proto)
-        Futures.addCallback(UI.ritualNonBlocking().getActivities(true, 5, null), new FutureCallback<GetActivitiesReply>()
-        {
-
+        Futures.addCallback(UI.ritualNonBlocking().getActivities(true, 5, null),
+                new FutureCallback<GetActivitiesReply>()
+                {
                     @Override
                     public void onFailure(Throwable e)
                     {
                         activitiesTrayMenuPopulator.clearAllMenuItems();
                         activitiesTrayMenuPopulator.addErrorMenuItem(S.COULDNT_LIST_ACTIVITIES);
-
                         l.warn(Util.e(e));
                         done();
                     }
@@ -392,7 +343,8 @@ public class SingleuserTrayMenu implements ITrayMenu
                                         {
                                             if (a.hasPath()) {
                                                 String path = Path.fromPB(a.getPath())
-                                                        .toAbsoluteString(Cfg.absDefaultRootAnchor());
+                                                        .toAbsoluteString(
+                                                                Cfg.absDefaultRootAnchor());
                                                 OSUtil.get().showInFolder(path);
                                             } else {
                                                 new DlgActivityLog(GUI.get().sh(),
@@ -403,18 +355,18 @@ public class SingleuserTrayMenu implements ITrayMenu
                             added = true;
                         }
 
-                if (added && reply.getHasUnresolvedDevices()) {
-                    MenuItem mi = activitiesTrayMenuPopulator.addMenuItem(S.FAILED_FOR_ACCURACY,
-                            null);
-                    mi.setEnabled(false);
-                    mi.setImage(Images.get(Images.ICON_WARNING));
-                }
+                        if (added && reply.getHasUnresolvedDevices()) {
+                            MenuItem mi = activitiesTrayMenuPopulator.addMenuItem(
+                                    S.FAILED_FOR_ACCURACY, null);
+                            mi.setEnabled(false);
+                            mi.setImage(Images.get(Images.ICON_WARNING));
+                        }
 
-                if (!added) {
-                    MenuItem mi = activitiesTrayMenuPopulator.addMenuItem("No recent activity",
-                            null);
-                    mi.setEnabled(false);
-                }
+                        if (!added) {
+                            MenuItem mi = activitiesTrayMenuPopulator.addMenuItem(
+                                    "No recent activity", null);
+                            mi.setEnabled(false);
+                        }
 
                         done();
                     }
@@ -423,22 +375,22 @@ public class SingleuserTrayMenu implements ITrayMenu
                     {
                         activitiesTrayMenuPopulator.addMenuSeparator();
 
-                activitiesTrayMenuPopulator.addMenuItem("Show More...", new AbstractListener(null)
-                {
-                    @Override
-                    protected void handleEventImpl(Event event)
-                    {
-                        new DlgActivityLog(GUI.get().sh(), null).openDialog();
+                        activitiesTrayMenuPopulator.addMenuItem("Show More...",
+                                new AbstractListener(null)
+                                {
+                                    @Override
+                                    protected void handleEventImpl(Event event)
+                                    {
+                                        new DlgActivityLog(GUI.get().sh(), null).openDialog();
+                                    }
+                                });
                     }
-                });
-            }
-        }, new GUIExecutor(menu));
+                }, new GUIExecutor(menu));
     }
 
     private void addVersionHistoryMenuItem()
     {
-        _trayMenuPopulator.addMenuItem("Sync History...", new AbstractListener(null)
-        {
+        _populator.addMenuItem("Sync History...", new AbstractListener(null) {
             @Override
             protected void handleEventImpl(Event event)
             {
@@ -451,7 +403,7 @@ public class SingleuserTrayMenu implements ITrayMenu
     {
         final boolean paused = _prs.isPaused();
         String strPauseOrResume = paused ? "Resume Syncing" : "Pause syncing for an hour";
-        _trayMenuPopulator.addMenuItem(strPauseOrResume,
+        _populator.addMenuItem(strPauseOrResume,
                 new AbstractListener(paused ? RESUME_SYNCING : PAUSE_SYNCING)
                 {
                     @Override
@@ -471,7 +423,7 @@ public class SingleuserTrayMenu implements ITrayMenu
 
     private void addInviteToSignUpMenuItem()
     {
-        MenuItem mi = _trayMenuPopulator.addMenuItem(
+        MenuItem mi = _populator.addMenuItem(
                 (OSUtil.isLinux() ? "\u2665 " : "") + "Invite a Friend to AeroFS...",
                 new AbstractListener(INVITE_TO_SIGNUP)
                 {
@@ -485,16 +437,9 @@ public class SingleuserTrayMenu implements ITrayMenu
         if (!OSUtil.isLinux()) mi.setImage(Images.get(Images.ICON_HEART));
     }
 
-
-
-    static interface ISharedFolderMenuExecutor
-    {
-        void run(Path path);
-    }
-
     public void createHelpMenu()
     {
-        Menu helpMenu = _trayMenuPopulator.createHelpMenu();
+        Menu helpMenu = _populator.createHelpMenu();
         TrayMenuPopulator helpTrayMenuPopulator = new TrayMenuPopulator(helpMenu);
         if (_enabled) {
             helpTrayMenuPopulator.addMenuItem(S.WHY_ARENT_MY_FILES_SYNCED,
@@ -511,51 +456,5 @@ public class SingleuserTrayMenu implements ITrayMenu
             helpTrayMenuPopulator.addMenuSeparator();
         }
         helpTrayMenuPopulator.addHelpMenuItems();
-    }
-
-    private SingleuserDlgPreferences _dlgPref;
-
-    public void openDlgPreferences()
-    {
-        if (_dlgPref == null || _dlgPref.isDisposed()) {
-            _dlgPref = new SingleuserDlgPreferences(GUI.get().sh());
-            _dlgPref.openDialog();
-        } else {
-            _dlgPref.forceActive();
-        }
-    }
-
-    public void addPreferencesMenuItem()
-    {
-        _trayMenuPopulator.addPreferencesMenuItem(
-                new AbstractListener(PREFERENCES)
-                {
-                    @Override
-                    protected void handleEventImpl(Event event)
-                    {
-                        openDlgPreferences();
-                    }
-                });
-    }
-
-    @Override
-    public void setVisible(boolean b)
-    {
-        _menu.setVisible(b);
-    }
-
-    @Override
-    public void enable()
-    {
-        _enabled = true;
-    }
-
-    @Override
-    public void dispose()
-    {
-        // TODO remove listeners
-        _trayMenuPopulator.dispose();
-
-        _transferTrayMenuSection.dispose();
     }
 }

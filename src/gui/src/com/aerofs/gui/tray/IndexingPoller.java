@@ -2,7 +2,7 @@
  * Copyright (c) Air Computing Inc., 2013.
  */
 
-package com.aerofs.gui.singleuser;
+package com.aerofs.gui.tray;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.lib.Util;

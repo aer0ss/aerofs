@@ -2,11 +2,12 @@
  * Copyright (c) Air Computing Inc., 2013.
  */
 
-package com.aerofs.gui.singleuser;
+package com.aerofs.gui.tray;
 
 import com.aerofs.gui.AbstractSpinAnimator;
 import com.aerofs.gui.GUI;
-import com.aerofs.gui.singleuser.IndexingPoller.IIndexingCompletionListener;
+import com.aerofs.gui.tray.IndexingPoller;
+import com.aerofs.gui.tray.IndexingPoller.IIndexingCompletionListener;
 import com.aerofs.gui.tray.TrayMenuPopulator;
 import com.aerofs.proto.RitualNotifications.PBIndexingProgress;
 import com.aerofs.proto.RitualNotifications.PBNotification;

@@ -26,15 +26,13 @@ import javax.annotation.Nullable;
 public class RoleMenu
 {
     private static final Logger l = Loggers.getLogger(RoleMenu.class);
-    private final Path _path;
     private final Menu _menu;
     private final UserID _subject;
     private final CompUserList _compUserList;
 
-    public RoleMenu(CompUserList compUserList, SubjectRolePair srp, Control ctrl, Path path)
+    public RoleMenu(CompUserList compUserList, SubjectRolePair srp, Control ctrl)
     {
         _menu = new Menu(ctrl);
-        _path = path;
         _subject = srp._subject;
         _compUserList = compUserList;
 
@@ -101,20 +99,6 @@ public class RoleMenu
     private void select(@Nullable Role role)
     {
         _menu.dispose();
-
-        try {
-            if (role == null) {
-                UI.ritual().deleteACL(Cfg.user().getString(), _path.toPB(), _subject.getString());
-            } else {
-                UI.ritual().updateACL(Cfg.user().getString(), _path.toPB(), _subject.getString(), role.toPB());
-            }
-
-            _compUserList.load();
-        } catch (Exception e) {
-            l.warn(Util.e(e));
-            GUI.get().show(_compUserList.getShell(), MessageType.ERROR,
-                    "Couldn't edit the user. " + S.TRY_AGAIN_LATER + "\n\n" +
-                    "Error message: " + UIUtil.e2msgSentenceNoBracket(e));
-        }
+        _compUserList.setRole(_subject, role);
     }
 }

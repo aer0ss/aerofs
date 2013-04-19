@@ -199,7 +199,6 @@ class Setup
                 deviceName, sp);
 
         initializeConfiguration(tsUserId, tsDID, rootAnchorPath, storageType, s3config, tsScrypted, sp);
-        Cfg.db().set(Key.AUTO_EXPORT_FOLDER, rootAnchorPath);
 
         setupCommon(rootAnchorPath);
 
