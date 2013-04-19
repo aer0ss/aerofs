@@ -112,12 +112,15 @@ public class BaseParam
         public static final DynamicStringProperty HOST =
                 new DynamicStringProperty("base.sp.host", "sp.aerofs.com");
 
+        public static final DynamicStringProperty CONTEXT =
+                new DynamicStringProperty("base.sp.context", "");
+
         public static URL url()
         {
             URL url;
 
             try {
-                url = new URL("https://" + HOST.get() + "/sp");
+                url = new URL("https://" + HOST.get() + CONTEXT.get() + "/sp");
             } catch (MalformedURLException e) {
                 throw new RuntimeException(e);
             }
