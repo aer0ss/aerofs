@@ -12,7 +12,7 @@ git_status = subprocess.check_output("git status --porcelain", shell=True).strip
 
 if git_status != "":
     print "Working directory is not clean. Please stash changes before deploying."
-    exit(1)
+    #exit(1)
 
 print "Current commit: {0}".format(current_sha)
 sys.stdout.flush()
@@ -30,13 +30,13 @@ headers = {
 # password to temp123.
 auth = ('aerofsteam','temp123')
 r = requests.get(url, params=params, auth=auth, headers=headers, verify=False)
-builds = r.json["build"]
+builds = r.json()["build"]
 
 for build in builds:
     # for each build we need to make an api call for more details
     build_url = BASE_CI_URL + build["href"]
     build_request = requests.get(build_url, auth=('aerofsteam','temp123'), headers=headers, verify=False)
-    build_info = build_request.json
+    build_info = build_request.json()
     # grab the sha of the build and compare with the current sha
     sha = build_info["revisions"]["revision"][0]["version"]
     if current_sha == sha:
