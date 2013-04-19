@@ -5,7 +5,7 @@
 package com.aerofs.base;
 
 import com.aerofs.base.properties.DynamicInetSocketAddress;
-import com.aerofs.labeling.L;
+import com.aerofs.base.properties.DynamicUrlProperty;
 import com.netflix.config.DynamicStringProperty;
 
 import java.net.MalformedURLException;
@@ -46,15 +46,12 @@ public class BaseParam
 
     public static class WWW
     {
-        public static final DynamicStringProperty HOST =
-                new DynamicStringProperty("base.www.host", "www.aerofs.com");
+        public static final DynamicUrlProperty URL =
+                new DynamicUrlProperty("base.www.url", "https://www.aerofs.com");
 
-        /**
-         * Don't actually need a URL object here because we only use this as a link in emails.
-         */
         public static String url()
         {
-            return "https://" + HOST.get();
+            return URL.get().toExternalForm();
         }
 
         public static final DynamicStringProperty SUPPORT_EMAIL_ADDRESS =
@@ -109,39 +106,14 @@ public class BaseParam
         // 4) code with a "WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE" comment
         public static final int SP_PROTOCOL_VERSION = 20;
 
-        public static final DynamicStringProperty HOST =
-                new DynamicStringProperty("base.sp.host", "sp.aerofs.com");
-
-        public static final DynamicStringProperty CONTEXT =
-                new DynamicStringProperty("base.sp.context", "");
-
-        public static URL url()
-        {
-            URL url;
-
-            try {
-                url = new URL("https://" + HOST.get() + CONTEXT.get() + "/sp");
-            } catch (MalformedURLException e) {
-                throw new RuntimeException(e);
-            }
-
-            return url;
-        }
+        public static final DynamicUrlProperty URL =
+                new DynamicUrlProperty("base.sp.url", "https://sp.aerofs.com/sp");
     }
 
     public static class CA
     {
-        public static final DynamicStringProperty HOST =
-                new DynamicStringProperty("base.ca.host", "joan.aerofs.com");
-
-        public static final DynamicStringProperty PORT =
-                new DynamicStringProperty("base.ca.port", "1029");
-
-        public static String url()
-        {
-            // TODO (MP) when staging dies this can just be "/prod" or simply "/".
-            return "http://" + HOST.get() + ":" + PORT.get() + (L.isStaging() ? "/staging" : "/prod");
-        }
+        public static final DynamicUrlProperty URL =
+                new DynamicUrlProperty("base.ca.url", "http://joan.aerofs.com:1029/prod");
     }
 
     public static class MobileService
