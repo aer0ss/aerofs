@@ -23,6 +23,7 @@ import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertNull;
 import static junit.framework.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class TestSharedFolder extends AbstractBusinessObjectTest
 {
@@ -121,6 +122,45 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
 
         // why 4? owner, user, owner's team server, user's team server id
         assertEquals(sf.getMembers().size(), 4);
+    }
+
+    @Test
+    public void shouldAllowTeamServerIfOneMemberOfSameOrgIsOWNER() throws Exception
+    {
+        User owner = saveUser();
+        SharedFolder sf = saveSharedFolder(owner);
+
+        User ts = owner.getOrganization().getTeamServerUser();
+        sf.throwIfNoPrivilegeToChangeACL(ts);
+    }
+
+    @Test
+    public void shouldRejectTeamServerIfNoMemberOfSameOrg() throws Exception
+    {
+        User owner = saveUser();
+        SharedFolder sf = saveSharedFolder(owner);
+        User user = saveUser();
+
+        User ts = user.getOrganization().getTeamServerUser();
+        try {
+            sf.throwIfNoPrivilegeToChangeACL(ts);
+            fail();
+        } catch (ExNoPerm e) {}
+    }
+
+    @Test
+    public void shouldRejectTeamServerIfNoMemberOfSameOrgIsOWNER() throws Exception
+    {
+        User owner = saveUser();
+        SharedFolder sf = saveSharedFolder(owner);
+        User user = saveUser();
+        sf.addMemberACL(user, Role.EDITOR);
+
+        User ts = user.getOrganization().getTeamServerUser();
+        try {
+            sf.throwIfNoPrivilegeToChangeACL(ts);
+            fail();
+        } catch (ExNoPerm e) {}
     }
 
     @Test
