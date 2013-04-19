@@ -19,6 +19,7 @@ import com.aerofs.lib.StorageType;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
+import com.aerofs.lib.cfg.CfgCACertificateProvider;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.cfg.CfgKeyManagersProvider;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
@@ -29,7 +30,6 @@ import com.aerofs.proto.Cmd.Command;
 import com.aerofs.proto.Sp.AckCommandQueueHeadReply;
 import com.aerofs.proto.Sp.GetCommandQueueHeadReply;
 import com.aerofs.sp.client.SPBlockingClient;
-import com.aerofs.sp.client.SPClientFactory;
 import com.aerofs.sv.client.SVClient;
 import com.aerofs.ui.UI;
 import com.aerofs.verkehr.client.lib.IConnectionListener;
@@ -92,8 +92,7 @@ public final class CommandNotificationSubscriber
     public CommandNotificationSubscriber(
             ClientSocketChannelFactory clientChannelFactory,
             IScheduler scheduler,
-            DID localDevice,
-            String caCertFilename)
+            DID localDevice)
     {
         _scheduler = scheduler;
         _er = new ExponentialRetry(_scheduler);
@@ -101,10 +100,15 @@ public final class CommandNotificationSubscriber
         _listener = new VerkehrListener();
 
         l.debug("cmd: " + Verkehr.HOST.get() + ":" + Verkehr.SUBSCRIBE_PORT.get());
-        ClientFactory factory = new ClientFactory(Verkehr.HOST.get(),
-                Short.parseShort(Verkehr.SUBSCRIBE_PORT.get()), clientChannelFactory,
-                caCertFilename, new CfgKeyManagersProvider(),
-                VERKEHR_RETRY_INTERVAL, Cfg.db().getLong(Key.TIMEOUT), new HashedWheelTimer(),
+        ClientFactory factory = new ClientFactory(
+                Verkehr.HOST.get(),
+                Short.parseShort(Verkehr.SUBSCRIBE_PORT.get()),
+                clientChannelFactory,
+                new CfgCACertificateProvider(),
+                new CfgKeyManagersProvider(),
+                VERKEHR_RETRY_INTERVAL,
+                Cfg.db().getLong(Key.TIMEOUT),
+                new HashedWheelTimer(),
                 _listener, _listener, sameThreadExecutor());
 
         this._topic = CMD_CHANNEL_TOPIC_PREFIX + localDevice.toStringFormal();
@@ -334,7 +338,7 @@ public final class CommandNotificationSubscriber
     private static SPBlockingClient newAuthenticatedSPClient()
             throws Exception
     {
-        SPBlockingClient sp = SPClientFactory.newBlockingClient(Cfg.user());
+        SPBlockingClient sp = SPBlockingClient.Factory.create_(Cfg.user());
         sp.signInRemote();
         return sp;
     }
@@ -342,7 +346,7 @@ public final class CommandNotificationSubscriber
     private static SPBlockingClient newUnauthenticatedSPClient()
             throws Exception
     {
-        return SPClientFactory.newBlockingClient(Cfg.user());
+        return SPBlockingClient.Factory.create_(Cfg.user());
     }
 
     //

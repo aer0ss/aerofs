@@ -17,7 +17,6 @@ import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.proto.Sp.GetACLReply.PBStoreACL;
 import com.aerofs.sp.client.SPBlockingClient;
-import com.aerofs.sp.client.SPClientFactory;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
@@ -135,7 +134,7 @@ public class FirstLaunch
     private void fetchAccessibleStores_()
     {
         try {
-            SPBlockingClient sp = SPClientFactory.newBlockingClient(Cfg.user());
+            SPBlockingClient sp = SPBlockingClient.Factory.create_(Cfg.user());
             sp.signInRemote();
             ImmutableSet.Builder<SID> stores = ImmutableSet.builder();
             for (PBStoreACL sacl : sp.getACLExcludeExternal(0L).getStoreAclList()) {

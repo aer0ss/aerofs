@@ -32,9 +32,9 @@ public class SSLEngineFactory
     private final boolean _clientMode;
     private final String _algorithm;
     private final String _keystoreType;
-    private final IPrivateKeyProvider _keyProvider;
-    private final Certificate _trustedCA;
-    private final CRL _crl;
+    private final @Nullable IPrivateKeyProvider _keyProvider;
+    private final @Nullable ICertificateProvider _trustedCA;
+    private final @Nullable CRL _crl;
     private volatile SSLContext _context;
     private final Object _contextLock = new Object();
 
@@ -70,7 +70,7 @@ public class SSLEngineFactory
      *                     checking that it's a valid cert in the first place.
      */
     public SSLEngineFactory(Mode mode, Platform platform, @Nullable IPrivateKeyProvider keyProvider,
-            @Nullable Certificate trustedCA, @Nullable CRL crl)
+            @Nullable ICertificateProvider trustedCA, @Nullable CRL crl)
     {
         checkArgument(trustedCA != null || crl == null, "crl must be null if trustedCA is null");
 
@@ -99,6 +99,15 @@ public class SSLEngineFactory
     {
     }
 
+    public SSLContext getSSLContext()
+            throws Exception
+    {
+        synchronized (_contextLock) {
+            if (_context == null) init();
+            return _context;
+        }
+    }
+
     public SSLEngine getSSLEngine() throws Exception
     {
         return getSSLEngineImpl(null, 0);
@@ -111,8 +120,8 @@ public class SSLEngineFactory
 
     /**
      * Resets the SSLContext. A new SSLContext will be created automatically next time getEngine()
-     * is called. You must call this method if the private key or the certificate returned by
-     * your IPrivateKeyProvider changed.
+     * or getSSLContext() is called. You must call this method if the private key or the certificate
+     * returned by your IPrivateKeyProvider changed.
      */
     public void resetContext()
     {
@@ -141,7 +150,7 @@ public class SSLEngineFactory
             if (_context == null) init();
 
             engine = (host != null) ? _context.createSSLEngine(host, port)
-                                              : _context.createSSLEngine();
+                    : _context.createSSLEngine();
         }
 
         engine.setUseClientMode(_clientMode);
@@ -154,20 +163,22 @@ public class SSLEngineFactory
         return engine;
     }
 
-
     /**
      * Creates the KeyManager, which hold _this peer_'s credentials
      */
-    private KeyManager[] getKeyManagers(IPrivateKeyProvider keyProvider) throws Exception
+    private KeyManager[] getKeyManagers(@Nullable IPrivateKeyProvider keyProvider)
+            throws Exception
     {
         if (keyProvider == null) return null;
 
         KeyStore keyStore = KeyStore.getInstance(_keystoreType);
         keyStore.load(null, KEYSTORE_PASSWORD); // initialize the keystore
 
-        // load our key in the keystore, and initialize the KeyManagerFactory with it
+        // Load our key in the keystore, and initialize the KeyManagerFactory with it.
+        checkNotNull(keyProvider.getCert());
+        checkNotNull(keyProvider.getPrivateKey());
 
-        keyStore.setKeyEntry("my_keys", keyProvider.getPrivateKey(), KEYSTORE_PASSWORD,
+        keyStore.setKeyEntry("aerofs_private_key", keyProvider.getPrivateKey(), KEYSTORE_PASSWORD,
                 new Certificate[]{keyProvider.getCert()});
 
         KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(_algorithm);
@@ -177,31 +188,37 @@ public class SSLEngineFactory
     }
 
     /**
-     * Creates the TrustManager, which holds the certs of roots CAs you trust
+     * Creates the TrustManager, which holds the certs of root CAs you trust.
      */
-    private TrustManager[] getTrustManagers(Certificate caCert, CRL crl) throws Exception
+    private TrustManager[] getTrustManagers(@Nullable ICertificateProvider trustedCA, CRL crl)
+            throws Exception
     {
-        if (caCert == null) return null;
+        if (trustedCA == null) return null;
 
         KeyStore keyStore = KeyStore.getInstance(_keystoreType);
         keyStore.load(null, KEYSTORE_PASSWORD);  // initialize the keystore
 
-        // load the CA cert in the keystore, and initialize the TrustManagerFactory with it
-        keyStore.setCertificateEntry("ca_cert", caCert);
+        // Load the CA cert in the keystore, and initialize the TrustManagerFactory with it.
+        checkNotNull(trustedCA.getCert());
+
+        keyStore.setCertificateEntry("aerofs_cacert", trustedCA.getCert());
         TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(_algorithm);
         trustManagerFactory.init(keyStore);
-
         TrustManager[] trustManagers = trustManagerFactory.getTrustManagers();
 
-        if (crl == null) return trustManagers;
+        if (crl == null) {
+            return trustManagers;
+        }
 
         // IMPORTANT: our cert checking comes in two phases:
-        // 1. Delegate to a real X509 trust manager to check if the cert is valid and has been
-        //    issued by the trusted CA
-        // 2. Check if its serial number has been revoked
         //
-        // Below, we try and find a real X509 trust manager to be used in (1)
+        // 1. Delegate to a real X509 trust manager to check if the cert is valid and has been
+        //    issued by the trusted CA.
+        // 2. Check if its serial number has been revoked.
+        //
+        // Below, we try and find a real X509 trust manager to be used in (1).
         X509TrustManager x509TrustManager = null;
+
         for (TrustManager tm : trustManagers) {
             if (tm instanceof X509TrustManager) {
                 x509TrustManager = (X509TrustManager) tm;

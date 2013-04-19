@@ -20,7 +20,6 @@ import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.Cfg.PortType;
-import com.aerofs.lib.cfg.CfgDatabase;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.injectable.InjectableDriver;
 import com.aerofs.lib.injectable.InjectableFile;
@@ -28,8 +27,8 @@ import com.aerofs.lib.os.OSUtil;
 import com.aerofs.lib.os.OSUtil.Icon;
 import com.aerofs.proto.ControllerProto.PBS3Config;
 import com.aerofs.proto.Sp.GetUserPreferencesReply;
+import com.aerofs.sp.client.OneWayAuthURLConnectionConfigurator;
 import com.aerofs.sp.client.SPBlockingClient;
-import com.aerofs.sp.client.SPClientFactory;
 import com.aerofs.sv.client.SVClient;
 import com.aerofs.ui.UI;
 import com.google.common.collect.Maps;
@@ -159,9 +158,11 @@ class Setup
         res._scrypted = SecUtil.scrypt(password, userID);
 
         // When setting up Team Servers, the ID of the user who sets up the server is used with this
-        // SP client to sign in. Since the default configurator is SSLURLConnectionConfigurator
+        // SP client to sign in. Since the default configurator uses mutual authentication,
         // which doesn't work with regular clients, we force a null connection configurator.
-        res._sp = SPClientFactory.newBlockingClientWithNullConnectionConfigurator(userID);
+        res._sp = SPBlockingClient.Factory.create_(Cfg.user(),
+                SPBlockingClient.ONE_WAY_AUTH_CONNECTION_CONFIGURATOR);
+
         res._sp.signIn(userID.getString(), ByteString.copyFrom(res._scrypted));
 
         return res;

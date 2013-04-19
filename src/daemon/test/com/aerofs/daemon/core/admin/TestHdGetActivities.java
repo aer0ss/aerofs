@@ -144,7 +144,7 @@ public class TestHdGetActivities extends AbstractTest
 
         when(tm.begin_()).thenReturn(t);
 
-        when(factSP.create_(any(URL.class), any(UserID.class))).thenReturn(sp);
+        when(factSP.create_(any(UserID.class))).thenReturn(sp);
         when(factSP.create_(any(UserID.class))).thenReturn(sp);
 
         when(sp.getDeviceInfo(anyCollectionOf(ByteString.class))).thenAnswer(

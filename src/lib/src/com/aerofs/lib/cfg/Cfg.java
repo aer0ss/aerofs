@@ -35,7 +35,6 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.sql.SQLException;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Scanner;
 
 /**
@@ -68,6 +67,7 @@ public class Cfg
     private static String _absDefaultAuxRoot;
     private static String _ver;
     private static X509Certificate _cert;
+    private static X509Certificate _cacert;
     private static PrivateKey _privKey;
     private static byte[] _scrypted;
     private static boolean _inited;
@@ -542,6 +542,9 @@ public class Cfg
         }
     }
 
+    /**
+     * Get the device certificate.
+     */
     public static X509Certificate cert() throws IOException, CertificateException
     {
         if (_cert == null) {
@@ -554,6 +557,20 @@ public class Cfg
             }
         }
         return _cert;
+    }
+
+    public static X509Certificate cacert() throws IOException, CertificateException
+    {
+        if (_cacert == null) {
+            InputStream in = new FileInputStream(AppRoot.abs() + File.separator + Param.CA_CERT);
+            try {
+                CertificateFactory cf = CertificateFactory.getInstance("X.509");
+                _cacert = (X509Certificate) cf.generateCertificate(in);
+            } finally {
+                in.close();
+            }
+        }
+        return _cacert;
     }
 
     @Nonnull public static Map<Key, String> dumpDb()

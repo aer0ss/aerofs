@@ -13,7 +13,6 @@ import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.sp.client.SPBlockingClient;
-import com.aerofs.sp.client.SPClientFactory;
 import com.google.inject.Inject;
 
 public class HdListSharedFolderInvitations extends AbstractHdIMC<EIListSharedFolderInvitations>
@@ -35,7 +34,7 @@ public class HdListSharedFolderInvitations extends AbstractHdIMC<EIListSharedFol
         TCB tcb = null;
         try {
             tcb = tk.pseudoPause_("list-invitations");
-            SPBlockingClient sp = SPClientFactory.newBlockingClient(_localUser.get());
+            SPBlockingClient sp = SPBlockingClient.Factory.create_(_localUser.get());
             sp.signInRemote();
             ev.setResult_(sp.listPendingFolderInvitations().getInvitationList());
         } finally {

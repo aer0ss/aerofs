@@ -19,11 +19,9 @@ import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.base.acl.Role;
-import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExNotShared;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.sp.client.SPBlockingClient;
-import com.aerofs.sp.client.SPClientFactory;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 

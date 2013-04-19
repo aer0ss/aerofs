@@ -27,7 +27,10 @@ class SyncConnectionService(object):
     def do_rpc(self, bytes):
         post_data = {self._param_protocol : self._protocol_version,
                      self._param_data : base64.b64encode(bytes)}
-        r = self._session.post(self._url, data=post_data)
+
+        # Verification is not required here since we only use this library for debugging and server to server
+        # access. If we were to use this code client side, we would need to add verification here.
+        r = self._session.post(self._url, data=post_data, verify=False)
 
         if r.status_code != 200:
             # SP server returned an HTTP error

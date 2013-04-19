@@ -5,6 +5,7 @@
 package com.aerofs.command.server;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.base.ssl.FileBasedCertificateProvider;
 import com.aerofs.command.server.config.CommandServerServiceConfiguration;
 import com.aerofs.command.server.resources.CommandServerServiceHealthCheck;
 import com.aerofs.command.server.resources.CommandTypesResource;
@@ -64,7 +65,7 @@ public final class CommandServerService extends Service<CommandServerServiceConf
                         configuration.getVerkehrConfiguration().getPort(),
                         boss,
                         workers,
-                        configuration.getVerkehrConfiguration().getCertFile(),
+                        new FileBasedCertificateProvider(configuration.getVerkehrConfiguration().getCertFile()),
                         VERKEHR_RECONNECT_DELAY,
                         VERKEHR_ACK_TIMEOUT,
                         timer,

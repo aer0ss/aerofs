@@ -29,7 +29,6 @@ import com.aerofs.proto.ControllerProto.GetInitialStatusReply;
 import com.aerofs.proto.Ritual.CreateSeedFileReply;
 import com.aerofs.proto.RitualNotifications.PBSOCID;
 import com.aerofs.sp.client.SPBlockingClient;
-import com.aerofs.sp.client.SPClientFactory;
 import com.aerofs.ui.IUI.MessageType;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
@@ -176,7 +175,7 @@ public class UIUtil
                 l.info("failed to create seed file: {}", Util.e(e));
             }
 
-            SPBlockingClient sp = SPClientFactory.newBlockingClient(Cfg.user());
+            SPBlockingClient sp = SPBlockingClient.Factory.create_(Cfg.user());
             sp.signInRemote();
             sp.unlinkDevice(Cfg.did().toPB(), false);
         } else {

@@ -276,9 +276,7 @@ class Launcher
         new CommandNotificationSubscriber(
                 _clientChannelFactory,
                 UI.scheduler(),
-                Cfg.did(),
-                Util.join(AppRoot.abs(),
-                Param.CA_CERT))
+                Cfg.did())
             .start();
 
         new BadCredentialNotifier();

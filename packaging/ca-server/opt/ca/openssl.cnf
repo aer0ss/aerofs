@@ -24,7 +24,7 @@ preserve                = no
 policy                  = policy_match
 
 [ policy_match ]
-countryName             = match
+countryName             = optional
 stateOrProvinceName     = supplied
 organizationName        = supplied
 organizationalUnitName  = optional

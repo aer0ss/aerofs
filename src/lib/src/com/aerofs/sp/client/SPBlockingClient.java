@@ -2,6 +2,7 @@ package com.aerofs.sp.client;
 
 import com.aerofs.base.BaseParam.SP;
 import com.aerofs.base.Loggers;
+import com.aerofs.base.net.IURLConnectionConfigurator;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.base.ex.ExBadCredential;
@@ -11,9 +12,6 @@ import com.aerofs.proto.Sp.SPServiceStub.SPServiceStubCallbacks;
 import com.google.protobuf.ByteString;
 import org.slf4j.Logger;
 
-import java.net.MalformedURLException;
-import java.net.URL;
-
 /**
  * This is a synchronous interface
  */
@@ -21,23 +19,43 @@ public class SPBlockingClient extends SPServiceBlockingStub
 {
     private static final Logger l = Loggers.getLogger(SPBlockingClient.class);
 
+    public static final IURLConnectionConfigurator MUTUAL_AUTH_CONNECTION_CONFIGURATOR =
+            new MutualAuthURLConnectionConfigurator();
+    public static final IURLConnectionConfigurator ONE_WAY_AUTH_CONNECTION_CONFIGURATOR =
+            new OneWayAuthURLConnectionConfigurator();
+
     private final UserID _user;
     private static IBadCredentialListener _bcl;
 
     /**
      * Compared to SPClientFactory, which will be removed in the future, this Factory enables DI
+     * (although not strictly needed at this time, we follow this pattern anyway).
      */
     public static class Factory
     {
-        public SPBlockingClient create_(URL spURL, UserID user)
+        static IURLConnectionConfigurator getDefaultConfigurator()
         {
-            return new SPBlockingClient(new SPClientHandler(spURL,
-                    SPClientFactory.getDefaultConfigurator()), user);
+            return L.isMultiuser() ?
+                    MUTUAL_AUTH_CONNECTION_CONFIGURATOR :
+                    ONE_WAY_AUTH_CONNECTION_CONFIGURATOR;
         }
 
-        public SPBlockingClient create_(UserID user) throws MalformedURLException
+        public static SPBlockingClient create_(UserID user)
         {
-            return create_(SP.URL.get(), user);
+            return new SPBlockingClient(new SPClientHandler(SP.URL.get(), getDefaultConfigurator()),
+                    user);
+        }
+
+        public static SPBlockingClient create_(UserID user, IURLConnectionConfigurator configurator)
+        {
+            return new SPBlockingClient(new SPClientHandler(SP.URL.get(), configurator), user);
+        }
+
+        public static SPBlockingClient create_(IURLConnectionConfigurator configurator)
+        {
+            // Use an invalid UserID, since the caller will not be using signInRemote().
+            return new SPBlockingClient(new SPClientHandler(SP.URL.get(), configurator),
+                    UserID.fromInternal(""));
         }
     }
 

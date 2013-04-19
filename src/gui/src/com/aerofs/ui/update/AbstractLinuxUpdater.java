@@ -10,7 +10,6 @@ import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExNoConsole;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.sp.client.SPBlockingClient;
-import com.aerofs.sp.client.SPClientFactory;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.UI;
 
@@ -71,7 +70,7 @@ abstract class AbstractLinuxUpdater extends Updater
                 UI.get().show(MessageType.INFO,
                         "Could not confirm with the" + " user. Send an email instead.");
 
-                SPBlockingClient sp = SPClientFactory.newBlockingClient(Cfg.user());
+                SPBlockingClient sp = SPBlockingClient.Factory.create_(Cfg.user());
                 try {
                     sp.signInRemote();
 

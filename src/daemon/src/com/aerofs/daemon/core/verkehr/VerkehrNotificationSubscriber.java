@@ -8,7 +8,7 @@ import com.aerofs.base.BaseParam.Verkehr;
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.serverstatus.AbstractConnectionStatusNotifier;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.cfg.CfgCACertFilename;
+import com.aerofs.lib.cfg.CfgCACertificateProvider;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.cfg.CfgKeyManagersProvider;
 import com.aerofs.proto.Common.Void;
@@ -48,13 +48,18 @@ public class VerkehrNotificationSubscriber extends AbstractConnectionStatusNotif
     }
 
     @Inject
-    public VerkehrNotificationSubscriber(ClientSocketChannelFactory clientSocketChannelFactory, CfgCACertFilename cacert)
+    public VerkehrNotificationSubscriber(ClientSocketChannelFactory clientSocketChannelFactory)
     {
         VerkehrListener listener = new VerkehrListener();
-        ClientFactory factory = new ClientFactory(Verkehr.HOST.get(),
-                Short.parseShort(Verkehr.SUBSCRIBE_PORT.get()), clientSocketChannelFactory,
-                cacert.get(), new CfgKeyManagersProvider(),
-                VERKEHR_RETRY_INTERVAL, Cfg.db().getLong(Key.TIMEOUT), new HashedWheelTimer(),
+        ClientFactory factory = new ClientFactory(
+                Verkehr.HOST.get(),
+                Short.parseShort(Verkehr.SUBSCRIBE_PORT.get()),
+                clientSocketChannelFactory,
+                new CfgCACertificateProvider(),
+                new CfgKeyManagersProvider(),
+                VERKEHR_RETRY_INTERVAL,
+                Cfg.db().getLong(Key.TIMEOUT),
+                new HashedWheelTimer(),
                 listener, listener, sameThreadExecutor());
 
         _subscriber = factory.create();

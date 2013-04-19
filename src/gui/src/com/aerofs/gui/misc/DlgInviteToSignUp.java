@@ -32,7 +32,6 @@ import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.sp.client.SPBlockingClient;
-import com.aerofs.sp.client.SPClientFactory;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.UIUtil;
 
@@ -160,7 +159,7 @@ public class DlgInviteToSignUp extends AeroFSDialog implements IInputChangeListe
     @Override
     public void run() throws Exception
     {
-        SPBlockingClient sp = SPClientFactory.newBlockingClient(Cfg.user());
+        SPBlockingClient sp = SPBlockingClient.Factory.create_(Cfg.user());
         sp.signInRemote();
 
         List<String> userIdStrings = Lists.newArrayListWithCapacity(_userIDs.size());

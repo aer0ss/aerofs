@@ -8,7 +8,6 @@ import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.sp.client.SPBlockingClient;
-import com.aerofs.sp.client.SPClientFactory;
 import org.slf4j.Logger;
 
 import com.aerofs.daemon.event.admin.EIJoinSharedFolder;
@@ -40,7 +39,7 @@ public class HdJoinSharedFolder extends AbstractHdIMC<EIJoinSharedFolder>
         try {
             tcb = tk.pseudoPause_("sp-join");
             // join the shared folder through SP
-            SPBlockingClient sp = SPClientFactory.newBlockingClient(Cfg.user());
+            SPBlockingClient sp = SPBlockingClient.Factory.create_(Cfg.user());
             sp.signInRemote();
             sp.joinSharedFolder(ev._sid.toPB(), false);
         } finally {

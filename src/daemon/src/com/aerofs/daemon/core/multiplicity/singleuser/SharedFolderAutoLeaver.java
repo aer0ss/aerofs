@@ -21,7 +21,6 @@ import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.sp.client.SPBlockingClient;
-import com.aerofs.sp.client.SPClientFactory;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
@@ -65,7 +64,7 @@ class SharedFolderAutoLeaver extends DirectoryServiceAdapter
         {
             TCB tcb = tk.pseudoPause_("sp-leave");
             try {
-                SPBlockingClient sp = SPClientFactory.newBlockingClient(_localUser.get());
+                SPBlockingClient sp = SPBlockingClient.Factory.create_(_localUser.get());
                 sp.signInRemote();
                 try {
                     sp.leaveSharedFolder(sid.toPB());

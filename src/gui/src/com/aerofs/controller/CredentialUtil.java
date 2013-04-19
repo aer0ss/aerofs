@@ -17,7 +17,6 @@ import com.aerofs.lib.os.IOSUtil;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.proto.Sp.RegisterDeviceReply;
 import com.aerofs.sp.client.SPBlockingClient;
-import com.aerofs.sp.client.SPClientFactory;
 import com.aerofs.ui.UI;
 import com.google.protobuf.ByteString;
 
@@ -35,7 +34,7 @@ public class CredentialUtil
     static void sendPasswordResetEmail(String userid)
             throws Exception
     {
-        SPBlockingClient sp = SPClientFactory.newBlockingClient(Cfg.user());
+        SPBlockingClient sp = SPBlockingClient.Factory.create_(Cfg.user());
         sp.sendPasswordResetEmail(userid);
     }
 
@@ -43,14 +42,14 @@ public class CredentialUtil
             throws Exception
     {
         byte[] scrypted = SecUtil.scrypt(password, userId);
-        SPBlockingClient sp = SPClientFactory.newBlockingClient(Cfg.user());
+        SPBlockingClient sp = SPBlockingClient.Factory.create_(Cfg.user());
         sp.resetPassword(token, ByteString.copyFrom(scrypted));
     }
 
     static void changePassword(UserID userID, char[] oldPassword, char[] newPassword)
         throws Exception
     {
-        SPBlockingClient sp = SPClientFactory.newBlockingClient(Cfg.user());
+        SPBlockingClient sp = SPBlockingClient.Factory.create_(Cfg.user());
         sp.signInRemote();
         byte[] oldScrypted = SecUtil.scrypt(oldPassword, userID);
         byte[] newScrypted = SecUtil.scrypt(newPassword, userID);
@@ -64,7 +63,7 @@ public class CredentialUtil
     static void updateStoredPassword(UserID userId, char[] password)
             throws Exception
     {
-        SPBlockingClient sp = SPClientFactory.newBlockingClient(Cfg.user());
+        SPBlockingClient sp = SPBlockingClient.Factory.create_(Cfg.user());
         byte[] scrypted = SecUtil.scrypt(password, userId);
         // use signIn instead of sign_in remote ( we haven't updated Cfg yet )
         sp.signIn(Cfg.user().getString(), ByteString.copyFrom(scrypted));

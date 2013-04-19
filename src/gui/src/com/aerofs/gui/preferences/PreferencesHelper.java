@@ -18,7 +18,6 @@ import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.proto.Sp.GetUserPreferencesReply;
 import com.aerofs.sp.client.SPBlockingClient;
-import com.aerofs.sp.client.SPClientFactory;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.UIUtil;
 import org.eclipse.swt.widgets.Link;
@@ -256,7 +255,7 @@ public class PreferencesHelper
                 Exception e = null;
                 GetUserPreferencesReply r = null;
                 try {
-                    SPBlockingClient sp = SPClientFactory.newBlockingClient(Cfg.user());
+                    SPBlockingClient sp = SPBlockingClient.Factory.create_(Cfg.user());
                     sp.signInRemote();
                     r = sp.getUserPreferences(Cfg.did().toPB());
                 } catch (ExBadCredential ebc) {
@@ -339,7 +338,7 @@ public class PreferencesHelper
             {
                 Exception e;
                 try {
-                    SPBlockingClient sp = SPClientFactory.newBlockingClient(Cfg.user());
+                    SPBlockingClient sp = SPBlockingClient.Factory.create_(Cfg.user());
                     sp.signInRemote();
                     sp.setUserPreferences(Cfg.user().getString(), firstName, lastName,
                             (deviceNameToSend != null) ? Cfg.did().toPB() : null, deviceNameToSend);

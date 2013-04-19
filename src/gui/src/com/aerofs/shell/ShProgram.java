@@ -15,7 +15,6 @@ import com.aerofs.shell.ShellCommandRunner.ICallback;
 import com.aerofs.shell.restricted.CmdDstat;
 import com.aerofs.shell.restricted.CmdTestMultiuserJoinRootStore;
 import com.aerofs.sp.client.SPBlockingClient;
-import com.aerofs.sp.client.SPClientFactory;
 import com.aerofs.ui.UIUtil;
 
 import java.io.File;
@@ -80,7 +79,7 @@ public class ShProgram implements IProgram, ICallback
         long now = System.currentTimeMillis();
         if (_sp == null || now - _spRenewal > 5 * C.MIN) {
             Cfg.init_(Cfg.absRTRoot(), true);
-            _sp = SPClientFactory.newBlockingClient(Cfg.user());
+            _sp = SPBlockingClient.Factory.create_(Cfg.user());
             _sp.signInRemote();
             _spRenewal = now;
         }

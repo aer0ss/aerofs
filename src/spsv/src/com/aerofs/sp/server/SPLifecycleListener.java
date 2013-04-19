@@ -3,6 +3,8 @@ package com.aerofs.sp.server;
 import com.aerofs.base.BaseParam.Verkehr;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.properties.Configuration;
+import com.aerofs.base.ssl.FileBasedCertificateProvider;
+import com.aerofs.base.ssl.ICertificateProvider;
 import com.aerofs.sp.server.lib.user.User;
 import com.aerofs.servlets.lib.NoopConnectionListener;
 import com.aerofs.sp.server.lib.session.HttpSessionUser;
@@ -74,7 +76,7 @@ public class SPLifecycleListener implements ServletContextListener, HttpSessionL
         short publishPort = parseShort(Verkehr.PUBLISH_PORT.get());
         short adminPort = parseShort(Verkehr.ADMIN_PORT.get());
 
-        String cacert =  getCacertPath(ctx);
+        ICertificateProvider cacertProvider = new FileBasedCertificateProvider(getCacertPath(ctx));
 
         Executor boss = Executors.newCachedThreadPool();
         Executor workers = Executors.newCachedThreadPool();
@@ -83,13 +85,13 @@ public class SPLifecycleListener implements ServletContextListener, HttpSessionL
         // FIXME (AG): HMMMMMMMM...notice how similar the admin is to a publisher?
         // FIXME (AG): really we should simply store the factories
 
-        VerkehrPublisher publisher = getPublisher(Verkehr.HOST.get(), publishPort, cacert, boss,
-                workers, timer, new NoopConnectionListener(), sameThreadExecutor());
+        VerkehrPublisher publisher = getPublisher(Verkehr.HOST.get(), publishPort, cacertProvider,
+                boss, workers, timer, new NoopConnectionListener(), sameThreadExecutor());
         publisher.start();
         ctx.setAttribute(VERKEHR_PUBLISHER_ATTRIBUTE, publisher);
 
-        VerkehrAdmin admin = getAdmin(Verkehr.HOST.get(), adminPort, cacert, boss, workers, timer,
-                new NoopConnectionListener(), sameThreadExecutor());
+        VerkehrAdmin admin = getAdmin(Verkehr.HOST.get(), adminPort, cacertProvider, boss, workers,
+                timer, new NoopConnectionListener(), sameThreadExecutor());
         admin.start();
         ctx.setAttribute(VERKEHR_ADMIN_ATTRIBUTE, admin);
 
@@ -100,7 +102,7 @@ public class SPLifecycleListener implements ServletContextListener, HttpSessionL
     }
 
     private VerkehrAdmin getAdmin(String host, short adminPort,
-            String cacert,
+            ICertificateProvider cacertProvider,
             Executor bossExecutor, Executor ioWorkerExecutor,
             HashedWheelTimer timer,
             IConnectionListener listener, Executor listenerExecutor)
@@ -108,7 +110,7 @@ public class SPLifecycleListener implements ServletContextListener, HttpSessionL
         com.aerofs.verkehr.client.lib.admin.ClientFactory adminFactory =
                 new com.aerofs.verkehr.client.lib.admin.ClientFactory(host, adminPort,
                         bossExecutor, ioWorkerExecutor,
-                        cacert,
+                        cacertProvider,
                         VERKEHR_RECONNECT_DELAY,
                         VERKEHR_ACK_TIMEOUT,
                         timer,
@@ -118,7 +120,7 @@ public class SPLifecycleListener implements ServletContextListener, HttpSessionL
     }
 
     private VerkehrPublisher getPublisher(String host, short publishPort,
-            String cacert,
+            ICertificateProvider cacertProvider,
             Executor bossExecutor, Executor ioWorkerExecutor,
             HashedWheelTimer timer,
             IConnectionListener listener, Executor listenerExecutor)
@@ -126,7 +128,7 @@ public class SPLifecycleListener implements ServletContextListener, HttpSessionL
         com.aerofs.verkehr.client.lib.publisher.ClientFactory publisherFactory =
                 new com.aerofs.verkehr.client.lib.publisher.ClientFactory(host, publishPort,
                         bossExecutor, ioWorkerExecutor,
-                        cacert,
+                        cacertProvider,
                         VERKEHR_RECONNECT_DELAY,
                         VERKEHR_ACK_TIMEOUT,
                         timer,

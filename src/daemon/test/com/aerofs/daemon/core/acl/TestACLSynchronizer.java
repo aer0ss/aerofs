@@ -119,7 +119,7 @@ public class TestACLSynchronizer extends AbstractTest
         when(cfgLocalUser.get()).thenReturn(user1);
 
         when(factSP.create_(any(UserID.class))).thenReturn(spClient);
-        when(factSP.create_(any(URL.class), any(UserID.class))).thenReturn(spClient);
+        when(factSP.create_(any(UserID.class))).thenReturn(spClient);
 
         when(tm.begin_()).thenReturn(t);
         when(tc.acquireThrows_(any(Cat.class), anyString())).thenReturn(tk);

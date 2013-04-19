@@ -9,7 +9,6 @@ import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.os.IOSUtil;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.sp.client.SPBlockingClient;
-import com.aerofs.sp.client.SPClientFactory;
 import com.aerofs.ui.UI;
 import org.slf4j.Logger;
 
@@ -21,7 +20,7 @@ public class UPUTSetDeviceOSFamilyAndName implements IUIPostUpdateTask
             throws Exception
     {
         try {
-            SPBlockingClient sp = SPClientFactory.newBlockingClient(Cfg.user());
+            SPBlockingClient sp = SPBlockingClient.Factory.create_(Cfg.user());
             sp.signInRemote();
             IOSUtil osu = OSUtil.get();
             sp.setDeviceOSFamilyAndName(Cfg.did().toPB(), osu.getOSFamily().getString(),
