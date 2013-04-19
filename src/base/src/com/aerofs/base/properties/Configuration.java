@@ -5,10 +5,10 @@
 package com.aerofs.base.properties;
 
 import com.aerofs.labeling.L;
-import org.arrowfs.config.ArrowConfiguration;
-import org.arrowfs.config.sources.DynamicPropertiesConfiguration;
-import org.arrowfs.config.sources.PropertiesConfiguration;
-import org.arrowfs.config.sources.SystemConfiguration;
+import com.aerofs.config.DynamicConfiguration;
+import com.aerofs.config.sources.DynamicPropertiesConfiguration;
+import com.aerofs.config.sources.PropertiesConfiguration;
+import com.aerofs.config.sources.SystemConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,13 +36,13 @@ public final class Configuration
     public static class Server
     {
         public static void initialize() {
-            ArrowConfiguration.initialize(
-                    ArrowConfiguration.builder()
+            DynamicConfiguration.initialize(
+                    DynamicConfiguration.builder()
                             .addConfiguration(
                                     PropertiesConfiguration.newInstance(getStaticPropertyPaths()),
                                     "static-properties")
                             .build());
-            LOGGER.debug("Server configuration initialized");
+            LOGGER.info("Server configuration initialized: " + DynamicConfiguration.getInstance());
         }
     }
 
@@ -77,8 +77,8 @@ public final class Configuration
     public static class Client
     {
         public static void initialize(final String absoluteRuntimeRoot) {
-            ArrowConfiguration.initialize(
-                    ArrowConfiguration.builder()
+            DynamicConfiguration.initialize(
+                    DynamicConfiguration.builder()
                             .addConfiguration(SystemConfiguration.newInstance(), "system")
                             .addConfiguration(
                                     DynamicPropertiesConfiguration.newInstance(

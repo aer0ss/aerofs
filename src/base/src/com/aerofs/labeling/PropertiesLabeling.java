@@ -4,10 +4,10 @@
 
 package com.aerofs.labeling;
 
+import com.aerofs.config.DynamicConfigurationUtil;
+import com.aerofs.config.sources.PropertiesConfiguration;
 import com.google.common.base.Objects;
 import org.apache.commons.configuration.AbstractConfiguration;
-import org.arrowfs.config.ArrowConfiguration;
-import org.arrowfs.config.sources.PropertiesConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,10 +21,10 @@ class PropertiesLabeling implements ILabeling
 {
 
     final AbstractConfiguration config =
-            PropertiesConfiguration.newInstance( newArrayList( "resources/labeling.properties") );
+            PropertiesConfiguration.newInstance(newArrayList("resources/labeling.properties"));
 
     PropertiesLabeling() {
-        LOGGER.debug(ArrowConfiguration.configurationAsMap( config ).toString());
+        LOGGER.debug(DynamicConfigurationUtil.configurationAsMap(config).toString());
     }
 
     @Override

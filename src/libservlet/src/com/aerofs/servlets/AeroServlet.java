@@ -17,9 +17,6 @@ public class AeroServlet extends HttpServlet
 
     protected void init_() throws ServletException
     {
-        // initialize ArrowConfiguration
-        Configuration.Server.initialize();
-
         try {
             // setup App Root
             // TODO (WW) is it still needed after removal of dynamic labeling?

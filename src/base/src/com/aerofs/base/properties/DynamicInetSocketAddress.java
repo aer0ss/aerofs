@@ -4,10 +4,10 @@
 
 package com.aerofs.base.properties;
 
+import com.aerofs.config.properties.DynamicProperty;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Iterables;
 import com.netflix.config.DynamicStringProperty;
-import org.arrowfs.config.properties.DynamicProperty;
 
 import java.net.InetSocketAddress;
 

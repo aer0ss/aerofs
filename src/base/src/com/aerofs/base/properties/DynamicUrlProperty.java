@@ -4,8 +4,8 @@
 
 package com.aerofs.base.properties;
 
+import com.aerofs.config.properties.DynamicProperty;
 import com.netflix.config.DynamicStringProperty;
-import org.arrowfs.config.properties.DynamicProperty;
 
 import java.net.MalformedURLException;
 import java.net.URL;

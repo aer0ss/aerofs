@@ -1,6 +1,7 @@
 package com.aerofs.sp.server;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.base.properties.Configuration;
 import com.aerofs.sp.server.lib.user.User;
 import com.aerofs.servlets.lib.NoopConnectionListener;
 import com.aerofs.sp.server.lib.session.HttpSessionUser;
@@ -59,6 +60,11 @@ public class SPLifecycleListener implements ServletContextListener, HttpSessionL
     @Override
     public void contextInitialized(ServletContextEvent servletContextEvent)
     {
+        // this Stackoverflow answer describes why it is most appropriate to do global/application
+        // wide initialization within contextInitialized http://stackoverflow.com/a/2364451/3957
+        // initialize ArrowConfiguration
+        Configuration.Server.initialize();
+
         ServletContext ctx = servletContextEvent.getServletContext();
 
         l.info("verkehr host:" + ctx.getInitParameter(VERKEHR_HOST_INIT_PARAMETER) +
