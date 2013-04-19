@@ -144,8 +144,6 @@ public class Param extends BaseParam
 
     public static class Verkehr
     {
-        public static final String VERKEHR_HOST = L.isStaging() ? "staging.aerofs.com" : "verkehr.aerofs.com";
-        public static final short VERKEHR_PORT = (short) (L.isStaging() ? 80 : 443);
         public static final long VERKEHR_RETRY_INTERVAL = 5 * C.SEC;
     }
 

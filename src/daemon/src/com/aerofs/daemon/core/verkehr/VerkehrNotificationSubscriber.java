@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.verkehr;
 
+import com.aerofs.base.BaseParam.Verkehr;
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.serverstatus.AbstractConnectionStatusNotifier;
 import com.aerofs.lib.cfg.Cfg;
@@ -26,8 +27,6 @@ import javax.annotation.Nullable;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import static com.aerofs.lib.Param.Verkehr.VERKEHR_HOST;
-import static com.aerofs.lib.Param.Verkehr.VERKEHR_PORT;
 import static com.aerofs.lib.Param.Verkehr.VERKEHR_RETRY_INTERVAL;
 import static com.google.common.util.concurrent.Futures.addCallback;
 import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor;
@@ -52,8 +51,8 @@ public class VerkehrNotificationSubscriber extends AbstractConnectionStatusNotif
     public VerkehrNotificationSubscriber(ClientSocketChannelFactory clientSocketChannelFactory, CfgCACertFilename cacert)
     {
         VerkehrListener listener = new VerkehrListener();
-        ClientFactory factory = new ClientFactory(VERKEHR_HOST, VERKEHR_PORT,
-                clientSocketChannelFactory,
+        ClientFactory factory = new ClientFactory(Verkehr.HOST.get(),
+                Short.parseShort(Verkehr.SUBSCRIBE_PORT.get()), clientSocketChannelFactory,
                 cacert.get(), new CfgKeyManagersProvider(),
                 VERKEHR_RETRY_INTERVAL, Cfg.db().getLong(Key.TIMEOUT), new HashedWheelTimer(),
                 listener, listener, sameThreadExecutor());

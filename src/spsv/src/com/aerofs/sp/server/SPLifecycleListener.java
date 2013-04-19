@@ -1,5 +1,6 @@
 package com.aerofs.sp.server;
 
+import com.aerofs.base.BaseParam.Verkehr;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.properties.Configuration;
 import com.aerofs.sp.server.lib.user.User;
@@ -33,10 +34,7 @@ import static com.aerofs.sp.server.lib.SPParam.SESSION_USER_TRACKER;
 import static com.aerofs.sp.server.lib.SPParam.VERKEHR_ACK_TIMEOUT;
 import static com.aerofs.sp.server.lib.SPParam.VERKEHR_CACERT_INIT_PARAMETER;
 import static com.aerofs.sp.server.lib.SPParam.VERKEHR_ADMIN_ATTRIBUTE;
-import static com.aerofs.sp.server.lib.SPParam.VERKEHR_ADMIN_PORT_INIT_PARAMETER;
-import static com.aerofs.sp.server.lib.SPParam.VERKEHR_HOST_INIT_PARAMETER;
 import static com.aerofs.sp.server.lib.SPParam.VERKEHR_PUBLISHER_ATTRIBUTE;
-import static com.aerofs.sp.server.lib.SPParam.VERKEHR_PUBLISH_PORT_INIT_PARAMETER;
 import static com.aerofs.sp.server.lib.SPParam.VERKEHR_RECONNECT_DELAY;
 import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor;
 import static java.lang.Short.parseShort;
@@ -67,16 +65,14 @@ public class SPLifecycleListener implements ServletContextListener, HttpSessionL
 
         ServletContext ctx = servletContextEvent.getServletContext();
 
-        l.info("verkehr host:" + ctx.getInitParameter(VERKEHR_HOST_INIT_PARAMETER) +
-                " pub port:" + ctx.getInitParameter(VERKEHR_PUBLISH_PORT_INIT_PARAMETER) +
-                " adm port:" + ctx.getInitParameter(VERKEHR_ADMIN_PORT_INIT_PARAMETER) +
+        l.info("verkehr host:" + Verkehr.HOST.get() +
+                " pub port:" + Verkehr.PUBLISH_PORT.get() +
+                " adm port:" + Verkehr.ADMIN_PORT.get() +
                 " cacert:" + ctx.getInitParameter(VERKEHR_CACERT_INIT_PARAMETER)
         );
 
-        String host = ctx.getInitParameter(VERKEHR_HOST_INIT_PARAMETER);
-
-        short publishPort = parseShort(ctx.getInitParameter(VERKEHR_PUBLISH_PORT_INIT_PARAMETER));
-        short adminPort = parseShort(ctx.getInitParameter(VERKEHR_ADMIN_PORT_INIT_PARAMETER));
+        short publishPort = parseShort(Verkehr.PUBLISH_PORT.get());
+        short adminPort = parseShort(Verkehr.ADMIN_PORT.get());
 
         String cacert =  getCacertPath(ctx);
 
@@ -87,12 +83,12 @@ public class SPLifecycleListener implements ServletContextListener, HttpSessionL
         // FIXME (AG): HMMMMMMMM...notice how similar the admin is to a publisher?
         // FIXME (AG): really we should simply store the factories
 
-        VerkehrPublisher publisher = getPublisher(host, publishPort, cacert, boss, workers, timer,
-                new NoopConnectionListener(), sameThreadExecutor());
+        VerkehrPublisher publisher = getPublisher(Verkehr.HOST.get(), publishPort, cacert, boss,
+                workers, timer, new NoopConnectionListener(), sameThreadExecutor());
         publisher.start();
         ctx.setAttribute(VERKEHR_PUBLISHER_ATTRIBUTE, publisher);
 
-        VerkehrAdmin admin = getAdmin(host, adminPort, cacert, boss, workers, timer,
+        VerkehrAdmin admin = getAdmin(Verkehr.HOST.get(), adminPort, cacert, boss, workers, timer,
                 new NoopConnectionListener(), sameThreadExecutor());
         admin.start();
         ctx.setAttribute(VERKEHR_ADMIN_ATTRIBUTE, admin);

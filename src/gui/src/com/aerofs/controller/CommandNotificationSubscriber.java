@@ -4,6 +4,7 @@
 
 package com.aerofs.controller;
 
+import com.aerofs.base.BaseParam.Verkehr;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.analytics.AnalyticsEvents.SimpleEvents;
@@ -48,8 +49,6 @@ import java.util.Map.Entry;
 import java.util.concurrent.Callable;
 
 import static com.aerofs.base.BaseParam.VerkehrTopics.CMD_CHANNEL_TOPIC_PREFIX;
-import static com.aerofs.lib.Param.Verkehr.VERKEHR_HOST;
-import static com.aerofs.lib.Param.Verkehr.VERKEHR_PORT;
 import static com.aerofs.lib.Param.Verkehr.VERKEHR_RETRY_INTERVAL;
 import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor;
 
@@ -101,9 +100,9 @@ public final class CommandNotificationSubscriber
 
         _listener = new VerkehrListener();
 
-        l.debug("cmd: " + VERKEHR_HOST + ":" + VERKEHR_PORT);
-        ClientFactory factory = new ClientFactory(VERKEHR_HOST, VERKEHR_PORT,
-                clientChannelFactory,
+        l.debug("cmd: " + Verkehr.HOST.get() + ":" + Verkehr.SUBSCRIBE_PORT.get());
+        ClientFactory factory = new ClientFactory(Verkehr.HOST.get(),
+                Short.parseShort(Verkehr.SUBSCRIBE_PORT.get()), clientChannelFactory,
                 caCertFilename, new CfgKeyManagersProvider(),
                 VERKEHR_RETRY_INTERVAL, Cfg.db().getLong(Key.TIMEOUT), new HashedWheelTimer(),
                 _listener, _listener, sameThreadExecutor());

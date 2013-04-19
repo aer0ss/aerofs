@@ -7,9 +7,6 @@ package com.aerofs.base;
 import com.aerofs.base.properties.DynamicInetSocketAddress;
 import com.aerofs.base.properties.DynamicUrlProperty;
 import com.netflix.config.DynamicStringProperty;
-
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.net.InetSocketAddress;
 
 /**
@@ -126,6 +123,13 @@ public class BaseParam
     {
         public static final DynamicStringProperty HOST =
                 new DynamicStringProperty("base.verkehr.host", "verkehr.aerofs.com");
+
+        public static final DynamicStringProperty PUBLISH_PORT =
+                new DynamicStringProperty("base.verkehr.port.publish", "9293");
+        public static final DynamicStringProperty ADMIN_PORT =
+                new DynamicStringProperty("base.verkehr.port.admin", "25234");
+        public static final DynamicStringProperty SUBSCRIBE_PORT =
+                new DynamicStringProperty("base.verkehr.port.subscribe", "443");
     }
 
     public static class VerkehrTopics
