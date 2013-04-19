@@ -5,6 +5,7 @@
 package com.aerofs.base;
 
 import com.aerofs.base.properties.DynamicInetSocketAddress;
+import com.aerofs.labeling.L;
 import com.netflix.config.DynamicStringProperty;
 
 import java.net.MalformedURLException;
@@ -129,6 +130,15 @@ public class BaseParam
     {
         public static final DynamicStringProperty HOST =
                 new DynamicStringProperty("base.ca.host", "joan.aerofs.com");
+
+        public static final DynamicStringProperty PORT =
+                new DynamicStringProperty("base.ca.port", "1029");
+
+        public static String url()
+        {
+            // TODO (MP) when staging dies this can just be "/prod" or simply "/".
+            return "http://" + HOST.get() + ":" + PORT.get() + (L.isStaging() ? "/staging" : "/prod");
+        }
     }
 
     public static class MobileService

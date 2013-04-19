@@ -1,5 +1,6 @@
 package com.aerofs.sp.server.lib.cert;
 
+import com.aerofs.base.BaseParam.CA;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.C;
 import com.aerofs.base.id.DID;
@@ -75,8 +76,6 @@ public class CertificateGenerator implements ICertificateGenerator
         }
     }
 
-    private String _caURL;
-
     /**
      * Create a certificate for the given user, device ID and CSR bytes.
      *
@@ -104,7 +103,7 @@ public class CertificateGenerator implements ICertificateGenerator
 
         URLConnection conn;
         try {
-            conn = (new URL(_caURL + "?" + userId + '-' + did.toStringFormal())).openConnection();
+            conn = (new URL(CA.url() + "?" + userId + '-' + did.toStringFormal())).openConnection();
         }
         catch (MalformedURLException e) {
             // Wrap in malformed URL exceptions, re-throw as IO exception so that we can cleanly
@@ -144,10 +143,5 @@ public class CertificateGenerator implements ICertificateGenerator
 
         // If bs is invalid a certificate exception will be thrown.
         return new CertificationResult(bs);
-    }
-
-    public void setCAURL_(String caURL)
-    {
-        _caURL = caURL;
     }
 }

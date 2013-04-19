@@ -136,7 +136,6 @@ public class SPServlet extends AeroServlet
         super.init(config);
         init_();
 
-        _certgen.setCAURL_(getServletContext().getInitParameter("ca_url"));
         _service.setVerkehrClients_(getVerkehrPublisher(), getVerkehrAdmin());
 
         _service.setUserTracker(getUserTracker());
