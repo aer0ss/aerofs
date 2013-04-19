@@ -98,8 +98,8 @@ public class Path implements Comparable<Path>
     @Override
     public boolean equals(Object o)
     {
-        return this == o || (o != null && _sid.equals(((Path)o)._sid) &&
-                                     Arrays.equals(_elems, ((Path) o)._elems));
+        return this == o || (o != null && o instanceof Path &&
+                    _sid.equals(((Path)o)._sid) && Arrays.equals(_elems, ((Path) o)._elems));
     }
 
     public boolean equalsIgnoreCase(Path path)
