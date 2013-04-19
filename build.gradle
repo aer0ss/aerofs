@@ -5,10 +5,14 @@
 apply plugin: 'java'
 
 repositories {
-    maven {
-        url 'http://repos.arrowfs.org/nexus/content/repositories/snapshots/' // our nexus repo
-    }
-    mavenCentral() // use maven-central as a backup
+    mavenLocal()
+    maven { url 'http://repos.arrowfs.org/nexus/content/repositories/central/' }
+    maven { url 'http://repos.arrowfs.org/nexus/content/repositories/apache-snapshots/' }
+    maven { url 'http://repos.arrowfs.org/nexus/content/repositories/codehaus-snapshots/' }
+    maven { url 'http://repos.arrowfs.org/nexus/content/repositories/google-api-client-libraries/' }
+    maven { url 'http://repos.arrowfs.org/nexus/content/repositories/thirdparty/' }
+    maven { url 'http://repos.arrowfs.org/nexus/content/repositories/releases/' }
+    maven { url 'http://repos.arrowfs.org/nexus/content/repositories/snapshots/' }
 }
 
 configurations {
@@ -16,10 +20,10 @@ configurations {
 }
 
 /**
- * Define the dependencies for arrow-config
+ * Define the dependencies for dynamic-config
  */
 dependencies {
-    compile('org.arrowfs:arrow-config:12-SNAPSHOT') {
+    compile('com.aerofs.dynamic-config:dynamic-config-client:0.1') {
         exclude module: 'findbugs'            // exclude transitive dependencies for findbugs
         exclude module: 'slf4j-api'           // exclude older version of slf4j-api
         exclude module: 'guava'               // exclude guava in preference of our own version
@@ -42,13 +46,13 @@ dependencies {
  */
 task syncDependencies(type: Sync) {
     from configurations.compile
-    into "$projectDir/resource/arrow-config"
+    into "$projectDir/resource/dynamic-config"
 }
 
 /**
  * copy the dependency jars into the final location (client/common/lib)
  */
 task libs(type: Copy, dependsOn: syncDependencies) {
-    from "$projectDir/resource/arrow-config"
+    from "$projectDir/resource/dynamic-config"
     into "$projectDir/resource/client/common/lib"
 }

@@ -201,9 +201,9 @@ function compute_next_release_version() {
 function compute_product_names() {
     echo ">> computing product name"
 
-    readonly GET_PROPERTY_LOGBACK_CONFIG="${BUILD_SCRIPT_DIR}/arrow-config/logback.xml"
-    readonly GET_PROPERTY="groovy -Dlogback.configurationFile=$GET_PROPERTY_LOGBACK_CONFIG ${BUILD_SCRIPT_DIR}/arrow-config/get_property.groovy"
-    readonly GET_PROPERTY_DEPENDENCIES="${BUILD_SCRIPT_DIR}/arrow-config/dependencies.groovy"
+    readonly GET_PROPERTY_LOGBACK_CONFIG="${BUILD_SCRIPT_DIR}/dynamic-config/logback.xml"
+    readonly GET_PROPERTY="groovy -Dlogback.configurationFile=$GET_PROPERTY_LOGBACK_CONFIG ${BUILD_SCRIPT_DIR}/dynamic-config/get_property.groovy"
+    readonly GET_PROPERTY_DEPENDENCIES="${BUILD_SCRIPT_DIR}/dynamic-config/dependencies.groovy"
 
     $GET_PROPERTY_DEPENDENCIES
     readonly AEROFS_PRODUCT=$($GET_PROPERTY $PROPERTIES_FILE labeling.product)

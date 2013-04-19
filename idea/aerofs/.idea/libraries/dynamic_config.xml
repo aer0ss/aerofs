@@ -1,10 +1,10 @@
 <component name="libraryTable">
-  <library name="arrow-config">
+  <library name="dynamic-config">
     <CLASSES>
       <root url="jar://$PROJECT_DIR$/../../resource/client/common/lib/commons-lang-2.6.jar!/" />
       <root url="jar://$PROJECT_DIR$/../../resource/client/common/lib/commons-configuration-1.8.jar!/" />
       <root url="jar://$PROJECT_DIR$/../../resource/client/common/lib/jcl-over-slf4j-1.7.4.jar!/" />
-      <root url="jar://$PROJECT_DIR$/../../resource/client/common/lib/arrow-config-12-SNAPSHOT.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../resource/client/common/lib/dynamic-config-client-0.1.jar!/" />
       <root url="jar://$PROJECT_DIR$/../../resource/client/common/lib/archaius-core-0.5.8.jar!/" />
     </CLASSES>
     <JAVADOC />
