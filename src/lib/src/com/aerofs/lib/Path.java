@@ -98,6 +98,10 @@ public class Path implements Comparable<Path>
     @Override
     public boolean equals(Object o)
     {
+        // Don't remove the "o instanceof Path" in the test below.
+        // SWT calls Path.equals() somewhere when you list children of a folder under your
+        // AeroFS folder in the "Share New Folder..." dialog.
+        // This caused a ClassCastException deep in the bowels of SWT/jface.
         return this == o || (o != null && o instanceof Path &&
                     _sid.equals(((Path)o)._sid) && Arrays.equals(_elems, ((Path) o)._elems));
     }
