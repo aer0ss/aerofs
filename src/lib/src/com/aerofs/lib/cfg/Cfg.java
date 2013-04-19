@@ -126,15 +126,12 @@ public class Cfg
         _absDefaultAuxRoot = absAuxRootForPath(_absDefaultRootAnchor, _rootSID);
         _storageType = StorageType.fromString(_db.getNullable(Key.STORAGE_TYPE));
 
-        if (storageType() == StorageType.LINKED) {
-            if (!L.isMultiuser()) {
-                // upgrade schema if needed
-                // NB: ideally this would have been done in a DPUT unfortunately Cfg is loaded before
-                // DPUT are run so this is not a viable option...
-                _rdb.createRootTableIfAbsent_(null);
-                if (_rdb.getRoot(_rootSID) == null) {
-                    _rdb.addRoot(_rootSID, _absDefaultRootAnchor);
-                }
+        if (storageType() == StorageType.LINKED && !L.isMultiuser()) {
+            // upgrade schema if needed
+            // NB: ideally this would have been done in a DPUT unfortunately Cfg is loaded before
+            // DPUT are run so this is not a viable option...
+            if (_rdb.getRoot(_rootSID) == null) {
+                _rdb.addRoot(_rootSID, _absDefaultRootAnchor);
             }
         }
 
@@ -162,6 +159,11 @@ public class Cfg
 
             _db = new CfgDatabase(_dbcw);
             _rdb = new RootDatabase(_dbcw);
+
+            // the conf database cannot simply be updated in a DPUT or UPUT
+            // this table is created during setup but clients that were installed also need it so
+            // we create it during init if it's absent
+            _rdb.createRootTableIfAbsent_(null);
         }
     }
 

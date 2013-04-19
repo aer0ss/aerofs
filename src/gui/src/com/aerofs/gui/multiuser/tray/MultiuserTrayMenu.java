@@ -61,7 +61,9 @@ public class MultiuserTrayMenu extends AbstractTrayMenu
             _indexingTrayMenuSection.populate();
             _populator.addMenuSeparator();
         } else {
-            createSharedFoldersMenu();
+            if (Cfg.storageType() == StorageType.LINKED) {
+                createSharedFoldersMenu();
+            }
             _populator.addMenuSeparator();
 
             _transferTrayMenuSection.populate();
