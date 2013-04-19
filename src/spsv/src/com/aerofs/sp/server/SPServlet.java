@@ -46,6 +46,7 @@ import com.aerofs.sp.server.session.SPSessionExtender;
 import com.aerofs.sp.server.session.SPSessionInvalidator;
 import com.aerofs.verkehr.client.lib.admin.VerkehrAdmin;
 import com.aerofs.verkehr.client.lib.publisher.VerkehrPublisher;
+import org.arrowfs.config.properties.DynamicOptionalStringProperty;
 import org.slf4j.Logger;
 
 import javax.servlet.ServletConfig;
@@ -130,6 +131,11 @@ public class SPServlet extends AeroServlet
     private final DoPostDelegate _postDelegate = new DoPostDelegate(SP.SP_POST_PARAM_PROTOCOL,
             SP.SP_POST_PARAM_DATA);
 
+    private static final DynamicOptionalStringProperty REDIS_HOST =
+            new DynamicOptionalStringProperty("sp.redis.host");
+    private static final DynamicOptionalStringProperty REDIS_PORT =
+            new DynamicOptionalStringProperty("sp.redis.port");
+
     @Override
     public void init(ServletConfig config) throws ServletException
     {
@@ -146,9 +152,12 @@ public class SPServlet extends AeroServlet
                 getServletContext().getInitParameter(SP_DATABASE_REFERENCE_PARAMETER);
 
         _sqlConProvider.init_(dbResourceName);
+
+        String redisHost = REDIS_HOST.get().or(getServletContext().getInitParameter(REDIS_HOST_INIT_PARAMETER));
+        String redisPort = REDIS_PORT.get().or(getServletContext().getInitParameter(REDIS_PORT_INIT_PARAMETER));
         _jedisConProvider.init_(
-                getServletContext().getInitParameter(REDIS_HOST_INIT_PARAMETER),
-                Short.parseShort(getServletContext().getInitParameter(REDIS_PORT_INIT_PARAMETER)));
+                redisHost,
+                Short.parseShort(redisPort));
 
         PooledSQLConnectionProvider erConProvider = new PooledSQLConnectionProvider();
         erConProvider.init_(dbResourceName);
