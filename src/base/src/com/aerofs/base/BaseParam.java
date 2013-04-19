@@ -45,39 +45,48 @@ public class BaseParam
 
     public static class WWW
     {
-        private static final String URL = "https://www.aerofs.com";
+        public static final DynamicStringProperty HOST =
+                new DynamicStringProperty("base.www.host", "www.aerofs.com");
+
+        /**
+         * Don't actually need a URL object here because we only use this as a link in emails.
+         */
+        public static String url()
+        {
+            return "https://" + HOST.get();
+        }
 
         public static final DynamicStringProperty SUPPORT_EMAIL_ADDRESS =
                 new DynamicStringProperty("base.www.support_email_address", "support@aerofs.com");
 
         public static final DynamicStringProperty MARKETING_HOST_URL =
-                new DynamicStringProperty("base.www.marketing_host_url", URL);
+                new DynamicStringProperty("base.www.marketing_host_url", url());
 
         public static final DynamicStringProperty DASHBOARD_HOST_URL =
-                new DynamicStringProperty("base.www.dashboard_host_url", URL);
+                new DynamicStringProperty("base.www.dashboard_host_url", url());
 
         public static final DynamicStringProperty PASSWORD_RESET_REQUEST_URL =
                 new DynamicStringProperty("base.www.password_reset_request_url",
-                        URL + "/request_password_reset");
+                        url() + "/request_password_reset");
 
         public static final DynamicStringProperty UPGRADE_URL =
-                new DynamicStringProperty("base.www.upgrade_url", URL + "/upgrade");
+                new DynamicStringProperty("base.www.upgrade_url", url() + "/upgrade");
 
         public static final DynamicStringProperty TEAM_MEMBERS_URL =
-                new DynamicStringProperty("base.www.team_members_url", URL + "/admin/users");
+                new DynamicStringProperty("base.www.team_members_url", url() + "/admin/users");
 
         public static final DynamicStringProperty DEVICES_URL =
-                new DynamicStringProperty("base.www.devices_url", URL + "/devices");
+                new DynamicStringProperty("base.www.devices_url", url() + "/devices");
 
         public static final DynamicStringProperty TEAM_SERVER_DEVICES_URL =
                 new DynamicStringProperty("base.www.team_server_devices_url",
-                        URL + "/admin/team_servers");
+                        url() + "/admin/team_servers");
 
         public static final DynamicStringProperty DOWNLOAD_URL =
-                new DynamicStringProperty("base.www.download_url", URL + "/download");
+                new DynamicStringProperty("base.www.download_url", url() + "/download");
 
         public static final DynamicStringProperty TOS_URL =
-                new DynamicStringProperty("base.www.tos_url", URL + "/terms#privacy");
+                new DynamicStringProperty("base.www.tos_url", url() + "/terms#privacy");
     }
 
     public static class SV
