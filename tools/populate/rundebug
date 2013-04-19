@@ -1,0 +1,433 @@
+#!/bin/bash
+
+typeset AppRootDefault=~/repos/aerofs/approot
+typeset AppRoot=$AppRootDefault
+typeset RtBaseDefault=~/repos/aerofs/approot
+typeset RtBase=$RtBaseDefault
+typeset RtRoot=
+
+# Globals
+typeset JavaCmd
+typeset JrePath
+typeset PathSep
+typeset Platform
+typeset UserDefault=$USER
+typeset UserFolder=$UserDefault
+typeset -i DoKill=0
+typeset -i DoList=0
+typeset -i DoMagicKill=0
+typeset -i DoNothing=0
+typeset -i DoStart=1
+typeset -i PortBaseDefault=5000
+typeset -i PortBase=$PortBaseDefault
+typeset -i StartDaemon=0
+typeset -i StartGui=0
+typeset -i UseDebugger=0
+typeset -i Verbose=0
+typeset -i VeryVerbose=0
+
+Usage()
+{
+    [ $VeryVerbose -ne 0 ] && set -x
+
+    [ $# -gt 0 ] && echo "$@"
+    echo ""
+    echo "$(basename $0) -u user -p PortBase [ -dDgG ] [-knsvV ] [ -a approot ] [ -r rtroot ]"
+    echo "      -u <user>   Per-user folder to be created under rtroot (default $UserDefault)"
+    echo "      -a <dir>    Approot (default $AppRootDefault)"
+    echo "      -r <dir>    RTROOT (default $RtBaseDefault)"
+    echo "      -p <port>   Starting port (default $PortBaseDefault)"
+    echo "      -j <path>   Use an alternate JRE (default os-dependent)"
+    echo "      -d          Start daemon"
+    echo "      -D          Debug daemon"
+    echo "      -g          Start gui"
+    echo "      -G          Debug gui"
+    echo ""
+    echo "      -f          Force; kill any existing VMs before starting."
+    echo "      -k          Kill existing processes by PID files"
+    echo "      -K          Kill-all; kill any user VMs found under RTROOT."
+    echo "      -l          List; list running VMS found under RTROOT."
+    echo "      -n          Do nothing; show what would happen."
+    echo ""
+    echo "      -v          Enable script verbosity"
+    echo "      -V          Enable crazy script verbosity"
+    echo ""
+    echo "      Current approot is $AppRoot"
+    echo "      RTROOT folders will be created under $RtBase"
+    echo "      If debugging is enabled, the VM will be started suspended with a JDWP listener at:"
+    echo "          port $((PortBase+5)) for the daemon"
+    echo "          port $((PortBase+10)) for the GUI"
+    echo ""
+    echo "Launches the daemon and/or gui processes for the given approot/rtroot."
+    echo "Stdout and stderr are redirected to rtroot/daemon.out and rtroot/gui.out"
+    echo ""
+}
+
+
+DoArgs()
+{
+
+    while getopts "a:dDfgGj:kKlnp:r:u:vV" OPTION
+    do
+        case $OPTION in
+        a)
+            typeset apprel=$OPTARG
+            if [ $apprel == ${apprel#/} ]
+            then
+                AppRoot=$PWD/$apprel
+            else
+                AppRoot=$apprel
+            fi
+            ;;
+        d)
+            StartDaemon=1
+            ;;
+        D)
+            StartDaemon=1
+            UseDebugger=1
+            ;;
+        f)
+            DoKill=1
+            ;;
+        g)
+            StartGui=1
+            ;;
+        G)
+            StartGui=1
+            UseDebugger=1
+            ;;
+        j)
+            JrePath=$OPTARG
+            ;;
+        k)
+            DoKill=1
+            DoStart=0
+            ;;
+        K)
+            DoMagicKill=1
+            DoStart=0
+            ;;
+        l)
+            DoList=1
+            DoStart=0
+            ;;
+        n)
+            DoNothing=1
+            ;;
+        p)
+            PortBase=$OPTARG
+            ;;
+        r)
+            typeset rtrel=$OPTARG
+            if [ $rtrel == ${rtrel#/} ]
+            then
+                RtBase=$PWD/$rtrel
+            else
+                RtBase=$rtrel
+            fi
+            ;;
+        u)
+            UserFolder=$OPTARG
+            ;;
+        v)
+            Verbose=1
+            ;;
+        V)
+            VeryVerbose=1
+            ;;
+        *)
+            DieUsage "Unrecognized option $OPTARG"
+            ;;
+        esac
+    done
+
+    RtRoot="$RtBase/$UserFolder"
+
+    if [ $Verbose -eq 1 -o $DoNothing -eq 1 ]
+    then
+        echo ""
+        echo "Approot : $AppRoot"
+        echo "RtRoot : $RtRoot"
+        echo "PB port: $PortBase"
+        echo "Daemon debugger port: $((PortBase + 5))"
+        echo "GUI debugger port: $((PortBase + 10))"
+        echo ""
+    fi
+
+    if [ -n "$JrePath" -a ! -d "$JrePath" ]
+    then
+        DieUsage "That's a BAD MR KITTY!!! Given JRE path $JrePath does not exist."
+    fi
+
+    # amazingly this test works on Windows where the path is java.exe;
+    # apparently MSYSGIT bash handles it using Futuristic Magic(tm)
+    if [ -n "$JrePath" -a ! -x "$JrePath"/bin/java ]
+    then
+        DieUsage "No Java for you - one year!!! Can't find an executable at $JrePath/bin/java."
+    fi
+
+    if [ ! -d "$AppRoot" ]
+    then
+        DieUsage "You can see no approot here. Given approot $AppRoot does not exist."
+    fi
+
+    if [ $DoStart -eq 1 -a $StartGui -eq 0 -a $StartDaemon -eq 0 ]
+    then
+        Die "Hey, nothing to start!  Use -d/-D/-g/-G to choose Daemon, GUI, or both."
+    fi
+
+    [ ! -d "$RtRoot" ] && mkdir -p "$RtRoot"
+    [ ! -d "$RtRoot" ] && Die "$RtRoot does not exist."
+}
+
+DieUsage()
+{
+    Usage "$@"
+    exit 1
+}
+
+Die()
+{
+    echo "ERROR: $@"
+    exit 2
+}
+
+DoExec()
+{
+    [ $Verbose -eq 1 ] && echo $@
+    [ $DoNothing -eq 0 ] && $@
+}
+
+GetOs()
+{
+    # POSIX Defaults, overridden for Windows
+    PathSep=":"
+    JavaCmd="java"
+
+    if [ `uname -s` == Darwin ]
+    then
+        Platform=osx
+    elif [ `uname -s` == Linux ]; then
+        if [ `uname -m` == x86_64 ]; then
+            Platform=linux64
+        else
+            Platform=linux32
+        fi
+    else
+        Platform=win
+        PathSep=";"
+        JavaCmd="$AppRoot/jre/bin/java"
+    fi
+
+    if [ -n "$JrePath" ]
+    then
+        JavaCmd="$JrePath/bin/java"
+    fi
+    [ $Verbose -ne 0 ] && echo "Using Java executable: ${JavaCmd}"
+
+}
+
+# $1 : PID file to check for
+#
+ComplainIfPidFile()
+{
+    [ $VeryVerbose -ne 0 ] && set -x
+    [ $Verbose -ne 0 ] && echo "Checking PID file ${pidfile}"
+    [ $# -ne 1 ] && Die "I'll show YOU complaining. Where are my arguments?!"
+
+    typeset pidfile="$1"
+    if [ -f "$pidfile" ]
+    then
+        echo ""
+        echo "Ewww! A PID file!"
+        echo ""
+        echo "I cowardly refuse to start another process until you deal with it."
+        echo "Consider my helpful and convenient -f or -k options, and try again."
+        echo ""
+
+        Die "Found existing PID file at ${pidfile}."
+    fi
+}
+
+StartClient()
+{
+    [ $VeryVerbose -ne 0 ] && set -x
+
+    GetOs
+
+    typeset VMARGS
+    # FIX THIS jP: This is so annoying. Using "." thanks to Windows,
+    # and a bizarre effect of finding the parent directory that we
+    # exercise in AppRoot. I can't even go into it right now, too painful.
+    typeset ClassPath="./bin${PathSep}./lib/*"
+
+    if [ $Platform == osx ]; then
+        VMARGS="$VMARGS -XstartOnFirstThread"
+        export DYLD_LIBRARY_PATH=${AppRoot}:$DYLD_LIBRARY_PATH
+    elif [ ${Platform} == "linux32" -o ${Platform} == "linux64" ]
+    then
+        # set LD_LIBRARY_PATH
+        if [ "$Platform" == "linux64" ]
+        then
+            ARCH=64
+            JRE_LIB_ARCH=amd64
+        else
+            ARCH=32
+            JRE_LIB_ARCH=i386
+        fi
+        JRE_BASE="$(dirname $(dirname $(readlink -f $(which java))))"
+        # Oracle ships two "java" executables in the JDK package - one in the
+        # jre/bin/ folder, and the other just in the bin/ folder.  This finds the
+        # jre even if the JDK java binary is the first one on the user's PATH.
+        if [ -d "$JRE_BASE/jre" ]; then
+            JRE_BASE="$JRE_BASE/jre"
+        fi
+        JRE_LIB="$JRE_BASE/lib/$JRE_LIB_ARCH"
+        export LD_LIBRARY_PATH=$AppRoot:$JRE_LIB:$JRE_LIB/server:$LD_LIBRARY_PATH
+    else
+        export PATH=$AppRoot:$PATH
+    fi
+
+    VMARGS="$VMARGS -Xmx64m -XX:+UseConcMarkSweepGC -XX:+HeapDumpOnOutOfMemoryError"
+
+    if [ $UseDebugger -eq 1 ]
+    then
+        typeset -i DebugPort
+        if [ $StartDaemon -eq 1 ]
+        then
+            DebugPort=$((PortBase+5))
+        else
+            DebugPort=$((PortBase+10))
+        fi
+
+        DebugArgs="-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=${DebugPort} "
+    fi
+
+    echo ${PortBase} > $RtRoot/pb
+
+    _pw=$PWD
+
+    cd $AppRoot
+    if [ $StartDaemon -eq 1 ]
+    then
+        ComplainIfPidFile "$RtRoot/.daemon.pid"
+
+        typeset args="$VMARGS $DebugArgs -Djava.library.path=$RtRoot -ea -cp $ClassPath \
+            com.aerofs.Main $RtRoot daemon "
+        [ $Verbose -eq 1 ] && echo "DoExec: $JavaCmd $args"
+        if [ $DoNothing -eq 0 ]
+        then
+            $JavaCmd $args > $RtRoot/daemon.out 2>&1 &
+            echo $! > $RtRoot/.daemon.pid
+        fi
+
+        echo ""
+        echo "Started daemon for RTROOT $RtRoot"
+        echo "Redirected output to $RtRoot/daemon.out"
+        [ $UseDebugger -eq 1 ] && echo "DEBUGGER: running at port $DebugPort."
+        echo ""
+
+    fi
+
+    if [ $StartGui -eq 1 ]
+    then
+        ComplainIfPidFile "$RtRoot/.gui.pid"
+
+        typeset args="$VMARGS $DebugArgs -Djava.library.path=$AppRoot -ea -cp $ClassPath \
+            com.aerofs.Main $RtRoot gui "
+        [ $Verbose -eq 1 ] && echo "DoExec: $JavaCmd $args"
+        if [ $DoNothing -eq 0 ]
+        then
+            $JavaCmd $args > $RtRoot/gui.out 2>&1 &
+            echo $! > $RtRoot/.gui.pid
+        fi
+
+        echo ""
+        echo "Started GUI with RTROOT $RtRoot"
+        echo "Output redirected to $RtRoot/gui.out"
+        [ $UseDebugger -eq 1 ] && echo "DEBUGGER: running at port $DebugPort."
+        echo ""
+    fi
+
+    cd $_pw
+}
+
+#
+# Kill any VM by pid file found under $RtBase/<user>/.<something>.pid
+#
+KillMagic()
+{
+    for pidfile in "$RtBase"/*/.gui.pid "$RtBase"/*/.daemon.pid
+    do
+        if [ -f "$pidfile" ]
+        then
+            echo "Attempting to kill client process $(cat "$pidfile")..."
+            DoExec kill $(cat "$pidfile")  ||:
+            DoExec rm -f "$pidfile"
+        fi
+    done
+}
+
+#
+# Kill VM by pid file found under $RtRoot/.<something>.pid
+#
+KillClients()
+{
+    for pidfile in "$RtRoot/.gui.pid" "$RtRoot/.daemon.pid"
+    do
+        if [ -f "$pidfile" ]
+        then
+            echo "Attempting to kill client process $(cat "$pidfile")..."
+            DoExec kill $(cat "$pidfile")  ||:
+            DoExec rm -f "$pidfile"
+        fi
+    done
+}
+
+#
+# List VMs by pid file found under $RtBase/.<something>.pid
+#
+ListClients()
+{
+    for userdir in "$RtBase"/*
+    do
+        if [ -f "$userdir"/.daemon.pid ]
+        then
+            typeset pid=$(cat "$userdir"/.daemon.pid)
+            ps -p $pid > /dev/null
+            if [ $? -eq 0 ]
+            then
+                echo "Found pid file for Daemon running at $userdir (currently running)."
+            else
+                echo "Found pid file for Daemon running at $userdir."
+            fi
+        fi
+
+        if [ -f "$userdir"/.gui.pid ]
+        then
+            typeset pid=$(cat "$userdir"/.gui.pid)
+            ps -p $pid > /dev/null
+            if [ $? -eq 0 ]
+            then
+                echo "Found pid file for GUI    running at $userdir (currently running)."
+            else
+                echo "Found pid file for GUI    running at $userdir."
+            fi
+        fi
+    done
+}
+
+Main()
+{
+    DoArgs $@
+    [ $VeryVerbose -ne 0 ] && set -x
+
+    [ $DoList -eq 1 ] && ListClients
+    [ $DoKill -eq 1 ] && KillClients
+    [ $DoMagicKill -eq 1 ] && KillMagic
+    [ $DoStart -eq 1 ] && StartClient
+
+    return 0
+}
+
+Main "$@";
