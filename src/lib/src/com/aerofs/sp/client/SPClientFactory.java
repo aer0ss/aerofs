@@ -17,12 +17,12 @@ public class SPClientFactory
 {
     public static SPBlockingClient newBlockingClient(UserID user)
     {
-        return new SPBlockingClient(new SPClientHandler(SP.url(), getDefaultConfigurator()), user);
+        return new SPBlockingClient(new SPClientHandler(SP.URL.get(), getDefaultConfigurator()), user);
     }
 
     public static SPBlockingClient newBlockingClientWithNullConnectionConfigurator(UserID user)
     {
-        return new SPBlockingClient(new SPClientHandler(SP.url(),
+        return new SPBlockingClient(new SPClientHandler(SP.URL.get(),
                 NullURLConnectionConfigurator.NULL_URL_CONNECTION_CONFIGURATOR), user);
     }
 

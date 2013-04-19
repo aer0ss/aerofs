@@ -608,10 +608,10 @@ public abstract class Updater
     private static final String PROD_SERVER_VERSION_URL = "https://nocache.client.aerofs.com/current.ver";
     // staging value: https://nocache.client.stg.aerofs.com/current.ver
     private static final DynamicStringProperty VERSION_URL =
-            new DynamicStringProperty("updater.version_url", PROD_SERVER_VERSION_URL);
+            new DynamicStringProperty("updater.version.url", PROD_SERVER_VERSION_URL);
 
     private static final String PROD_INSTALLER_URL = "https://cache.client.aerofs.com";
     // staging value: https://cache.client.stg.aerofs.com
     public static final DynamicStringProperty INSTALLER_URL =
-            new DynamicStringProperty("updater.installer_url", PROD_INSTALLER_URL);
+            new DynamicStringProperty("updater.installer.url", PROD_INSTALLER_URL);
 }

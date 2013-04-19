@@ -37,7 +37,7 @@ public class SPBlockingClient extends SPServiceBlockingStub
 
         public SPBlockingClient create_(UserID user) throws MalformedURLException
         {
-            return create_(SP.url(), user);
+            return create_(SP.URL.get(), user);
         }
     }
 
