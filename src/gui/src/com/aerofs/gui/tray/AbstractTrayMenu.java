@@ -87,6 +87,7 @@ public abstract class AbstractTrayMenu implements ITrayMenu, ITrayMenuComponentL
 
         if (Cfg.storageType() == StorageType.LINKED) {
             _indexingPoller = new IndexingPoller(UI.scheduler());
+            _indexingTrayMenuSection = new IndexingTrayMenuSection(_indexingPoller);
             _indexingPoller.addListener(new IIndexingCompletionListener()
             {
                 @Override
@@ -102,7 +103,6 @@ public abstract class AbstractTrayMenu implements ITrayMenu, ITrayMenuComponentL
                     });
                 }
             });
-            _indexingTrayMenuSection = new IndexingTrayMenuSection(_indexingPoller);
             _indexingTrayMenuSection.addListener(this);
         } else {
             _indexingPoller = null;

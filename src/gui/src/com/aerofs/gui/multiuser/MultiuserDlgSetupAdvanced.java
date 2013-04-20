@@ -74,8 +74,6 @@ public class MultiuserDlgSetupAdvanced extends AbstractDlgSetupAdvanced
 
         final Combo storageSelector = new Combo(_container, SWT.DROP_DOWN | SWT.READ_ONLY);
         for (StorageType t : StorageType.values()) {
-            // TODO: enable linked TS
-            if (t == StorageType.LINKED && !L.isStaging()) continue;
             _enabledStorageTypes.add(t);
             storageSelector.add(t.description());
         }

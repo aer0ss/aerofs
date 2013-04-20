@@ -49,6 +49,8 @@ public class CfgDatabase
         ROOT("root", null),
         TIMEOUT("timeout", 45 * C.SEC),
         NOTIFY("notify", true),
+
+        @Deprecated
         AUTO_EXPORT_FOLDER("autoexport_folder", null),
 
         // bind address for the Ritual socket. Use "*" to bind to all local addresses.

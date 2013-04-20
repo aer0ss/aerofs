@@ -9,6 +9,8 @@ import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.phy.ILinker;
 import com.aerofs.daemon.core.phy.ScanCompletionCallback;
+import com.aerofs.labeling.L;
+import com.aerofs.lib.StorageType;
 import com.aerofs.lib.cfg.CfgDatabase;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.SystemUtil;
@@ -97,11 +99,13 @@ public class FirstLaunch
             @Override
             public void handle_()
             {
-                fetchAccessibleStores_();
+                // shared folder restoration on first scan only makes sense on regular clients
+                if (Cfg.storageType() == StorageType.LINKED && !L.isMultiuser()) {
+                    fetchAccessibleStores_();
+                }
 
                 l.info("start indexing");
-                _linker.scan(new ScanCompletionCallback()
-                {
+                _linker.scan(new ScanCompletionCallback() {
                     @Override
                     public void done_()
                     {
@@ -143,7 +147,8 @@ public class FirstLaunch
             }
             _as._accessibleStores = stores.build();
         } catch (Exception e) {
-            SystemUtil.fatal("Unable to fetch accessible stores: " + Util.e(e));
+            _as._accessibleStores = ImmutableSet.of();
+            l.warn("Unable to fetch accessible stores: " + Util.e(e));
         }
     }
 }

@@ -5,7 +5,6 @@ import javax.inject.Inject;
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.lib.Param.PostUpdate;
-import com.aerofs.lib.cfg.CfgAbsAutoExportFolder;
 import com.aerofs.lib.cfg.CfgDatabase;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.cfg.CfgLocalUser;
@@ -26,7 +25,7 @@ public class DaemonPostUpdateTasks
 
     @Inject
     public DaemonPostUpdateTasks(CfgDatabase cfgDB, CoreDBCW dbcw,  CfgLocalUser cfgUser,
-            CfgAbsAutoExportFolder autoExportFolder, Set<RunAtLeastOnce> once)
+            Set<RunAtLeastOnce> once)
     {
         _cfgDB = cfgDB;
         _once = once;
@@ -54,7 +53,7 @@ public class DaemonPostUpdateTasks
             new DPUTMigrateDeadAnchorsAndEmigratedNames(dbcw),
             new DPUTMarkAuxRootAsHidden(),
             new DPUTCreateLeaveQueueTable(dbcw),
-            new DPUTRenameTeamServerAutoExportFolders(autoExportFolder),
+            null,  // used to be DPUTRenameTeamServerAutoExportFolders (obsoleted by linked TS)
             new DPUTSkipFirstLaunch(),
             new DPUTRenameRootDirs(dbcw),
             null,  // used to be DPUTFixExpelledAlias

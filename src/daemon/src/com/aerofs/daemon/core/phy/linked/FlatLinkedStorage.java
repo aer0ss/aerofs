@@ -6,8 +6,8 @@ package com.aerofs.daemon.core.phy.linked;
 
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
+import com.aerofs.daemon.core.acl.LocalACL;
 import com.aerofs.daemon.core.phy.PhysicalOp;
-import com.aerofs.daemon.core.phy.block.ExportHelper;
 import com.aerofs.daemon.core.phy.linked.fid.IFIDMaintainer;
 import com.aerofs.daemon.core.phy.linked.linker.IgnoreList;
 import com.aerofs.daemon.core.phy.linked.linker.LinkerRootMap;
@@ -16,6 +16,7 @@ import com.aerofs.daemon.core.store.IStores;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.S;
+import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgAbsDefaultRoot;
 import com.aerofs.lib.cfg.CfgAbsRoots;
@@ -35,7 +36,7 @@ public class FlatLinkedStorage extends LinkedStorage
 {
     private final InjectableFile _usersDir;
     private final InjectableFile _sharedDir;
-    private final ExportHelper _eh;
+    private final LocalACL _lacl;
 
     @Inject
     public FlatLinkedStorage(InjectableFile.Factory factFile,
@@ -48,10 +49,10 @@ public class FlatLinkedStorage extends LinkedStorage
             CfgStoragePolicy cfgStoragePolicy,
             IgnoreList il,
             SharedFolderTagFileAndIcon sfti,
-            ExportHelper eh)
+            LocalACL lacl)
     {
         super(factFile, factFIDMan, lrm, stores, sidx2sid, cfgAbsRoots, cfgStoragePolicy, il, sfti);
-        _eh = eh;
+        _lacl = lacl;
         _usersDir = _factFile.create(Util.join(cfgAbsDefaultRoot.get(), S.USERS_DIR));
         _sharedDir = _factFile.create(Util.join(cfgAbsDefaultRoot.get(), S.SHARED_DIR));
     }
@@ -108,8 +109,8 @@ public class FlatLinkedStorage extends LinkedStorage
     {
         if (sid.isUserRoot()) {
             // root in $defaultAbsRoot/users
-            UserID uid = _eh.storeOwner_(sidx, sid);
-            return _factFile.create(_usersDir, _eh.purifyEmail(uid.getString()));
+            UserID uid = storeOwner_(sidx, sid);
+            return _factFile.create(_usersDir, purifyEmail(uid.getString()));
         } else {
             // root in $defaultAbsRoot/shared
 
@@ -123,6 +124,39 @@ public class FlatLinkedStorage extends LinkedStorage
             }
             return d;
         }
+    }
+
+
+    public UserID storeOwner_(SIndex sidx, SID sid)
+    {
+        // Loop over ACL entries, find non-self user, make folder with that name
+        try {
+            for (UserID uid : _lacl.get_(sidx).keySet()) {
+                if (!uid.isTeamServerID()) {
+                    assert SID.rootSID(uid).equals(sid);
+                    return uid;
+                }
+            }
+        } catch (SQLException e) {
+            // LocalACL.get_ shouldn't throw here - it shouldn't be possible to receive events
+            // about a store for which we have no ACL.
+            SystemUtil.fatal("lacl get " + sidx + " " + sid + " " + e);
+        }
+        throw new AssertionError("store not accessible " + sidx + " " + sid);
+    }
+
+    public String purifyEmail(String email)
+    {
+        // Email addresses can have characters that are forbidden in file names.  Here, we strip
+        // out the characters listed at
+        // http://msdn.microsoft.com/en-us/library/windows/desktop/aa365247(v=vs.85).aspx
+        // (which conveniently also covers all the characters forbidden on Unix systems)
+        // I'm not going to deal with NFC/NFD here because that's over-the-top and the autoexport
+        // folder is write-only, so it shouldn't matter.
+
+        // Note: regex replacement is 3x as fast as chaining String.replace()
+        // Note: the backslash is double-escaped: once for the compiler, and once for the regex.
+        return email.replaceAll("[<>:\"/\\\\|?*]", "_");
     }
 
     @Override

@@ -43,49 +43,10 @@ public class MultiuserCompPreferences extends Composite
 
         helper.createRelocationLabelAndText();
 
-        if (Cfg.storageType() != StorageType.LINKED) {
-            // Autoexport (show files on filesystem) row
-            final Button autoExport = new Button(this, SWT.CHECK);
-            autoExport.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, false, 2, 1));
-            autoExport.setText(S.ENABLE_FILESYSTEM_VIEW);
-            autoExport.setSelection(Cfg.db().getNullable(Key.AUTO_EXPORT_FOLDER) != null);
-            autoExport.addSelectionListener(new SelectionAdapter() {
-                @Override
-                public void widgetSelected(SelectionEvent e)
-                {
-                    setExportFolder(autoExport.getSelection());
-                }
-            });
-        }
-
         // Spinner row
 
         helper.createSpinner();
 
         helper.registerShellListeners();
-    }
-
-    private void setExportFolder(Boolean enabled)
-    {
-        try {
-            if (enabled != null) {
-                if (enabled) {
-                    // Enabling export, warn user
-                    String exportPath = Cfg.db().get(Key.ROOT);
-                    GUI.get().show(getShell(), MessageType.INFO, "You are enabling filesystem " +
-                            "view of your files. You will be able to view files stored under " +
-                            exportPath + "\n\nIt may take a while for all files to appear, and " +
-                            L.product() + " may seem unresponsive during that time.");
-                    Cfg.db().set(Key.AUTO_EXPORT_FOLDER, exportPath);
-                } else {
-                    Cfg.db().set(Key.AUTO_EXPORT_FOLDER, null);
-                }
-            }
-
-            UI.ritual().reloadConfig();
-        } catch (Exception e) {
-            GUI.get().show(getShell(), MessageType.ERROR, "Couldn't change filesystem view option "
-                    + UIUtil.e2msg(e));
-        }
     }
 }

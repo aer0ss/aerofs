@@ -28,11 +28,8 @@ import com.aerofs.daemon.lib.db.ITransListener;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.ContentHash;
-import com.aerofs.lib.FrequentDefectSender;
 import com.aerofs.lib.Param;
 import com.aerofs.lib.Path;
-import com.aerofs.lib.Util;
-import com.aerofs.lib.cfg.CfgAbsAutoExportFolder;
 import com.aerofs.lib.db.InMemorySQLiteDBCW;
 import com.aerofs.lib.id.CID;
 import com.aerofs.lib.id.KIndex;
@@ -84,10 +81,7 @@ public class TestBlockStorage extends AbstractBlockTest
     @Mock TransManager tm;
     @Mock CoreScheduler sched;
     @Mock CfgAbsDefaultAuxRoot auxRoot;
-    @Mock CfgAbsAutoExportFolder autoExportFolder;
     @Mock CfgStoragePolicy storagePolicy;
-    @Mock FrequentDefectSender fds;
-    @Mock ExportHelper eh;
     @Mock IIMCExecutor iimc;
 
     // use in-memory DB
@@ -115,7 +109,6 @@ public class TestBlockStorage extends AbstractBlockTest
         when(tk.pseudoPause_(anyString())).thenReturn(tcb);
         String testTempDir = testTempDirFactory.getTestTempDir().getAbsolutePath();
         when(auxRoot.get()).thenReturn(testTempDir);
-        when(autoExportFolder.get()).thenReturn(Util.join(testTempDir, "autoexport"));
         when(storagePolicy.useHistory()).thenAnswer(new Answer<Boolean>() {
             @Override
             public Boolean answer(InvocationOnMock invocation)
@@ -149,7 +142,7 @@ public class TestBlockStorage extends AbstractBlockTest
 
         // shame @InjectMocks does not deal with a mix of Mock and real objects...
         bs = new BlockStorage();
-        bs.inject_(auxRoot, storagePolicy, tc,  tm, sched, fileFactory, bsb, bsdb, fds, eh,
+        bs.inject_(auxRoot, storagePolicy, tc, tm, sched, fileFactory, bsb, bsdb,
                 Collections.<IBlockStorageInitable>emptySet());
         bs.init_();
 

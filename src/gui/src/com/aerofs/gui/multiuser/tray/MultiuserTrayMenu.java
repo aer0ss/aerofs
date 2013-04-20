@@ -24,6 +24,7 @@ import com.aerofs.lib.StorageType;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.proto.ControllerNotifications.UpdateNotification.Status;
 import com.aerofs.ui.UI;
+import com.google.common.base.Preconditions;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Menu;
 
@@ -74,17 +75,16 @@ public class MultiuserTrayMenu extends AbstractTrayMenu implements ITrayMenu, IT
         if (!_enabled) {
             populator.addLaunchingMenuItem();
             populator.addMenuSeparator();
+        } else if (_indexingPoller != null && !_indexingPoller.isIndexingDone()) {
+            // until indexing is done, all Ritual calls will fail, therefore there's no point
+            // displaying shared folders and transfers entries
+            Preconditions.checkNotNull(_indexingTrayMenuSection);
+            _indexingTrayMenuSection.populateMenu(menu);
+            populator.addMenuSeparator();
         } else {
-            if (Cfg.storageType() == StorageType.LINKED) {
-                if (_indexingPoller != null && !_indexingPoller.isIndexingDone() &&
-                        _indexingTrayMenuSection != null) {
-                    _indexingTrayMenuSection.populateMenu(menu);
-                    populator.addMenuSeparator();
-                } else {
-                    createSharedFoldersMenu(menu);
-                    populator.addMenuSeparator();
-                }
-            }
+            createSharedFoldersMenu(menu);
+            populator.addMenuSeparator();
+
             _transferTrayMenuSection.populateMenu(menu);
             populator.addMenuSeparator();
             addPreferencesMenuItem(populator);

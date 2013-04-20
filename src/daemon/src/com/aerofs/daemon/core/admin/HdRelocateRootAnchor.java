@@ -128,17 +128,6 @@ public class HdRelocateRootAnchor extends AbstractHdIMC<EIRelocateRootAnchor>
 
             if (isDefaultRoot) {
                 Cfg.db().set(Key.ROOT, absNewRoot);
-                // Since the default behavior is to set the autoexport dir to be the root
-                // anchor, when we relocate the data at the root anchor, we also wind up
-                // relocating the data in the autoexport folder.  Since the user probably
-                // wanted to move both in such a scenario, we should update the config key.
-                // TODO (DF): It might make more sense (once we expose the autoexport folder
-                // as a separate concept) if we check that the autoexport folder is *under*
-                // the root anchor, and then update the path relative to the root anchor...
-                // but that doesn't seem necessary at this point.
-                if (absOldRoot.equals(Cfg.absAutoExportFolder())) {
-                    Cfg.db().set(Key.AUTO_EXPORT_FOLDER, absNewRoot);
-                }
             }
 
             t.commit_();

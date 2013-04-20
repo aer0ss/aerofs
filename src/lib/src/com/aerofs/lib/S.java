@@ -25,7 +25,7 @@ public class S
                 L.product() + " folder",
 
             SETUP_S3                 = "Do you wish to set up this client to use Amazon S3 for " +
-                "storage (EXPERIMENTAL)?",
+                "storage?",
             SETUP_S3_BUCKET_NAME     = "S3 bucket name",
             SETUP_S3_ACCESS_KEY      = "S3 access key",
             SETUP_S3_SECRET_KEY      = "S3 secret key",
@@ -98,7 +98,9 @@ public class S
             LINKED_DESCRIPTION = "Store files on the local disk",
             LOCAL_DESCRIPTION = "Store compressed files on the local disk",
             S3_DESCRIPTION = "Store files on Amazon S3",
-            ENABLE_FILESYSTEM_VIEW = "Show synced files on filesystem",
             USERS_DIR = "users",
-            SHARED_DIR = "shared";
+            SHARED_DIR = "shared",
+
+            CHILD_ALREADY_SHARED = "You can't share a folder that contains a shared folder.",
+            PARENT_ALREADY_SHARED = "You can't share a folder under an already shared folder.";
 }

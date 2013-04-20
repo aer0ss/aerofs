@@ -83,8 +83,6 @@ class BlockStorage implements IPhysicalStorage
     private BlockStorageDatabase _bsdb;
 
     private final BlockRevProvider _revProvider = new BlockRevProvider();
-    private FrequentDefectSender _fds;
-    private ExportHelper _eh;
     private Set<IBlockStorageInitable> _initables;
 
     private final ProgressIndicators _pi = ProgressIndicators.get();
@@ -97,9 +95,9 @@ class BlockStorage implements IPhysicalStorage
 
     @Inject
     public void inject_(CfgAbsDefaultAuxRoot absDefaultAuxRoot, CfgStoragePolicy storagePolicy,
-            TC tc, TransManager tm, CoreScheduler sched,
-            InjectableFile.Factory fileFactory, IBlockStorageBackend bsb, BlockStorageDatabase bsdb,
-            FrequentDefectSender fds, ExportHelper eh, Set<IBlockStorageInitable> initables)
+            TC tc, TransManager tm, CoreScheduler sched, InjectableFile.Factory fileFactory,
+            IBlockStorageBackend bsb, BlockStorageDatabase bsdb,
+            Set<IBlockStorageInitable> initables)
     {
         _tc = tc;
         _tm = tm;
@@ -108,11 +106,9 @@ class BlockStorage implements IPhysicalStorage
         _storagePolicy = storagePolicy;
         _bsb = bsb;
         _bsdb = bsdb;
-        _fds = fds;
-        _eh = eh;
         _initables = initables;
 
-        final String prefixDirPath = Objects.firstNonNull(exportRoot(), absDefaultAuxRoot.get());
+        final String prefixDirPath = absDefaultAuxRoot.get();
         _prefixDir = _fileFactory.create(prefixDirPath, Param.AuxFolder.PREFIX._name);
     }
 
@@ -121,27 +117,9 @@ class BlockStorage implements IPhysicalStorage
     {
         ensurePrefixDirExists();
         initializeBlockStorage();
-        rescheduleFullExportIfExportPartiallyCompleted();
 
         for (IBlockStorageInitable i : _initables) i.init_(_bsb);
     }
-
-    private void rescheduleFullExportIfExportPartiallyCompleted()
-            throws IOException
-    {
-        if (exportEnabled() && _eh.isExportOngoing()) {
-            // Schedule a full export continuation
-            scheduleFullExport();
-        }
-    }
-
-    private void scheduleFullExport()
-            throws IOException
-    {
-        l.info("bs: queueing full reexport");
-        _eh.scheduleFullExportNow();
-    }
-
 
     private void initializeBlockStorage()
             throws IOException
@@ -163,13 +141,13 @@ class BlockStorage implements IPhysicalStorage
     @Override
     public IPhysicalFile newFile_(SOKID sokid, Path path)
     {
-        return new BlockFileAdapter(this, sokid, path, _fileFactory, _fds);
+        return new BlockFile(this, sokid, path);
     }
 
     @Override
     public IPhysicalFolder newFolder_(SOID soid, Path path)
     {
-        return new BlockFolderAdapter(this, soid, path, _fileFactory);
+        return new BlockFolder(soid, path);
     }
 
     @Override
@@ -194,8 +172,7 @@ class BlockStorage implements IPhysicalStorage
             Trans t) throws IOException, SQLException
     {
         final BlockPrefix from = (BlockPrefix)prefix;
-        final BlockFileAdapter targetAdapter = (BlockFileAdapter)file;
-        final BlockFile to = targetAdapter.blockFile;
+        final BlockFile to = (BlockFile)file;
 
         Preconditions.checkArgument(from._sockid.sokid().equals(to._sokid),
                 "tried to move prefix " + from + " to storage loc for " + to);
@@ -214,21 +191,11 @@ class BlockStorage implements IPhysicalStorage
         updateFileInfo_(to._path, new FileInfo(id, -1, length, mtime, from._hash), t);
         if (l.isDebugEnabled()) l.debug("inserted " + from._hash.toHex());
 
-        // We figure out the proper export path here before the transaction commits and capture it
-        // in the transaction listener to avoid having to deal with SQLExceptions in the
-        // transaction commit hook.  We check if export is enabled to avoid computing the path if
-        // it won't be used anyway, since it involves scanning the ACL table.
-        // DF: I couldn't come up with a good way to make this pluggable, so I'm leaving it here
-        //     for now.
-        final InjectableFile exportedFile = exportEnabled() ?
-                _fileFactory.create(targetAdapter.exportedAbsPath()) : null;
-        // If transaction succeeds:
-        //   if export enabled, move prefix file to export folder
-        //   otherwise, delete the prefix file
+        // If transaction succeeds, delete the prefix file
         t.addListener_(new AbstractTransListener() {
             @Override
             public void committed_() {
-                targetAdapter.onCommit(from, exportedFile);
+                from._f.deleteIgnoreError();
             }
         });
 
@@ -259,11 +226,6 @@ class BlockStorage implements IPhysicalStorage
         }
 
         _bsdb.updateFileInfo(newPath, newFile, t);
-    }
-
-    private boolean exportEnabled()
-    {
-        return _eh.exportEnabled();
     }
 
     @Override
@@ -355,15 +317,6 @@ class BlockStorage implements IPhysicalStorage
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
-    @Nullable public String exportRoot()
-    {
-        return _eh.exportRoot();
-    }
-
-    @Nullable public String storeExportFolder(SIndex sidx)
-    {
-        return _eh.storeExportFolder(sidx);
-    }
 
     private String storePrefix(SIndex sidx)
     {
