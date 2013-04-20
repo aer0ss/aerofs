@@ -209,7 +209,7 @@ public class UIUtil
         } else if (pbsocid.getCid() == CID.META.getInt()) {
             text = "metadata (" + getUserFriendlyID(pbsocid) + ") for " + path;
         } else {
-            text = path.toStringFormal();
+            text = path.toStringRelative();
         }
 
         return text;
