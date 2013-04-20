@@ -13,17 +13,10 @@ import java.io.File;
  * The aux root used to be a folder named .aerofs.${first 6 hex digits of DID} at the same level as
  * the root anchor
  *
- * It is now .aerofs.aux under the root anchor
+ * It is now .aerofs.aux.${first 6 hex digits of SID} at the same level of each store root.
  *
- * The is change has a number of benefits:
- *   - much reduced likelihood of permission issues on aux root
- *   - much reduced likelihood of aux root and root anchor being on different partitions
- *   - no disconnect between size of root anchor and size of revision folder
- *   - much simpler code for root relocation
- *   - each external root implicitly gets its own aux root without extra work
- *
- * The end result is that we'll be able to support external roots on arbitrary partitions (as long
- * as the underlying FS is supported), even at the root of a partition
+ * In the future we would ideally store it under the store root but that requires more work to
+ * correctly filter out notifications.
  */
 public class DPUTPerPhyRootAuxRoot implements IDaemonPostUpdateTask
 {
@@ -33,6 +26,10 @@ public class DPUTPerPhyRootAuxRoot implements IDaemonPostUpdateTask
         String oldAuxRoot = DPUTMigrateAuxRoot.deprecatedAbsAuxRoot();
         String newAuxRoot = Cfg.absDefaultAuxRoot();
 
-        FileUtil.rename(new File(oldAuxRoot), new File(newAuxRoot));
+        // don't try moving if the source does not exist: the physical storage will ensure that the
+        // new aux root exists
+        if (new File(oldAuxRoot).exists()) {
+            FileUtil.rename(new File(oldAuxRoot), new File(newAuxRoot));
+        }
     }
 }
