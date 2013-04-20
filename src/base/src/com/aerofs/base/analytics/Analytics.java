@@ -8,6 +8,8 @@ import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UserID;
 import com.google.common.collect.Maps;
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import org.slf4j.Logger;
 
@@ -55,7 +57,17 @@ public class Analytics
      */
     public void track(IAnalyticsEvent event)
     {
-        trackImpl(event);
+        Futures.addCallback(trackImpl(event), new FutureCallback<Void>()
+        {
+            @Override
+            public void onSuccess(Void v) { }
+
+            @Override
+            public void onFailure(Throwable e)
+            {
+                logError(e);
+            }
+        });
     }
 
     /**
@@ -66,8 +78,13 @@ public class Analytics
         try {
             trackImpl(event).get();
         } catch (Exception e) {
-            l.warn("sending analytics failed: {}", e.getMessage()); // do not print stack trace
+            logError(e);
         }
+    }
+
+    private void logError(Throwable e)
+    {
+        l.warn("sending analytics failed: {}", e.getMessage()); // do not print stack trace
     }
 
     private ListenableFuture<Void> trackImpl(IAnalyticsEvent event)

@@ -37,7 +37,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class MixpanelAPI
 {
     private static final Logger l = Loggers.getLogger(MixpanelAPI.class);
-    private static final String MIXPANEL_API_ENDPOINT = "http://api.mixpanel.com/track/?data=";
+    private static final String MIXPANEL_API_ENDPOINT = "https://api.mixpanel.com/track/?data=";
     private static final int SOCKET_TIMEOUT = (int) (10 * C.SEC);
 
     private final String _token;
@@ -111,8 +111,6 @@ public class MixpanelAPI
                 final String message = json.toString();
                 final String url = _apiEndpoint + Base64.encodeBytes(message.getBytes());
 
-                l.debug("mixpanel send: {} ", url);
-
                 HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
                 conn.setConnectTimeout(SOCKET_TIMEOUT);
                 conn.setReadTimeout(SOCKET_TIMEOUT);
@@ -122,7 +120,8 @@ public class MixpanelAPI
                     throw new IOException("mixpanel failed. Reply: " + reply + " for url: " + url);
                 }
 
-                l.debug("mixpanel event reported successfully");
+                l.debug("mixpanel send ok: {} ", url);
+
                 return null;
             }
         });
