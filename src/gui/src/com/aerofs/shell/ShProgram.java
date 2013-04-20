@@ -18,6 +18,8 @@ import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.sp.client.SPClientFactory;
 import com.aerofs.ui.UIUtil;
 
+import java.io.File;
+
 public class ShProgram implements IProgram, ICallback
 {
     static final String DEBUG_FLAG = "DEBUG";
@@ -183,6 +185,7 @@ public class ShProgram implements IProgram, ICallback
     @Override
     public String getPrompt_()
     {
-        return _pwd.toStringFormal() + "> ";
+        return (_pwd.isEmpty() ? new File(Cfg.getRootPath(_pwd.sid())).getName() : _pwd.last())
+                + "> ";
     }
 }

@@ -22,7 +22,7 @@ public class CmdRoots implements IShellCommand<ShProgram>
     @Override
     public String getDescription()
     {
-        return "list all AeroFS roots";
+        return "list all AeroFS roots. Cross-root pathes are of the form rootid:/absolute/path";
     }
 
     @Override
