@@ -36,6 +36,7 @@ import java.net.SocketTimeoutException;
 import java.util.concurrent.TimeUnit;
 
 import static com.aerofs.lib.SystemUtil.ExitCode.DPUT_MIGRATE_AUX_ROOT_FAILED;
+import static com.aerofs.lib.SystemUtil.ExitCode.JNOTIFY_WATCH_CREATION_FAILED;
 import static com.aerofs.lib.SystemUtil.ExitCode.RELOCATE_ROOT_ANCHOR;
 import static com.aerofs.lib.SystemUtil.ExitCode.S3_BAD_CREDENTIALS;
 import static com.aerofs.lib.SystemUtil.ExitCode.S3_JAVA_KEY_LENGTH_MAYBE_TOO_LIMITED;
@@ -157,6 +158,12 @@ class DefaultDaemonMonitor implements IDaemonMonitor
                     "write to: \"" + Cfg.absDefaultAuxRoot() + "\"\n\nPlease make sure that " +
                     L.product() + " has the appropriate permissions to write to that " +
                     "folder.");
+        } else if (exitCode == JNOTIFY_WATCH_CREATION_FAILED.getNumber()) {
+            // TODO: multiroot support (diagnose which root is failing)
+            throw new ExUIMessage(L.product() + " couldn't launch because it couldn't "
+                    + "watch for file changes under \"" + Cfg.absDefaultRootAnchor() + "\"\n\n"
+                    + "Please make sure that " + L.product() + " has the appropriate permissions to"
+                    + " access that folder.");
         } else {
             throw new IOException(getMessage(exitCode));
         }

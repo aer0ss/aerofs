@@ -46,7 +46,10 @@ public abstract class SystemUtil
 
         // Java may have a limited encryption key length due to export restriction. See the users of
         // this enum for more information.
-        S3_JAVA_KEY_LENGTH_MAYBE_TOO_LIMITED();
+        S3_JAVA_KEY_LENGTH_MAYBE_TOO_LIMITED(),
+
+        // Failed to create a jnotify watch on the root anchor (or an external root)
+        JNOTIFY_WATCH_CREATION_FAILED();
 
         // Exit code when we try to relaunch the daemon while Windows is shutting down
         // Windows will abort the process creation with this code

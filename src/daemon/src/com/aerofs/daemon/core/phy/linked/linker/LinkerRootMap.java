@@ -13,6 +13,7 @@ import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.SystemUtil;
+import com.aerofs.lib.SystemUtil.ExitCode;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgAbsRoots;
@@ -89,7 +90,8 @@ public class LinkerRootMap
         for (Entry<SID, String> e : _cfgAbsRoots.get().entrySet()) {
             IOException ex = add_(e.getKey(), e.getValue());
             if (ex != null) {
-                l.warn("failed to add root {} {} {}", e.getKey(), e.getValue(), Util.e(ex));
+                l.error("failed to add root {} {} {}", e.getKey(), e.getValue(), Util.e(ex));
+                ExitCode.JNOTIFY_WATCH_CREATION_FAILED.exit();
             }
         }
     }
