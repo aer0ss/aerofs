@@ -28,7 +28,7 @@ retrace()
 
 main()
 {
-    $BASE/getmap $VER $BASE
+    $BASE/get-map $VER $BASE
 
     for DEFECT in $DEFECTS; do
         TARGET_FOLDER="defect-$DEFECT" # puts this into the pwd

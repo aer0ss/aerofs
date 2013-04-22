@@ -20,4 +20,4 @@ else
 fi
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-"$SCRIPT_DIR"/getdefects $VER $DEFECT
+"$SCRIPT_DIR"/get-defects $VER $DEFECT
