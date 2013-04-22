@@ -50,36 +50,76 @@ public class OSUtilLinux extends AbstractOSUtilLinuxOSX
     @Override
     public String getFullOSName()
     {
-        if (_fullOSName != null) return _fullOSName;
+        if (_fullOSName == null) {
 
-        // Try to read the distro name from some known places
-        String result = readFirstFile("/etc", Pattern.compile(".*release$"));
-        if (result.isEmpty()) result = readFirstFile("/etc", Pattern.compile("^issue$"));
-        if (result.isEmpty()) result = readFirstFile("/etc", Pattern.compile(".*version$"));
+            // Try to read the distro name from some known places
+            String result = readFirstFile("/etc", Pattern.compile(".*release$"));
+            if (result.isEmpty()) result = readFirstFile("/etc", Pattern.compile("^issue$"));
+            if (result.isEmpty()) result = readFirstFile("/etc", Pattern.compile(".*version$"));
 
-        // TODO (GS): Keeping this log line for a while to see what sort of distro strings we get
-        // Remove it after Dec 2012
-        l.info("Linux distro name: " + result);
+            _fullOSName = parseDistroName(result);
+        }
 
-        // Parse os-release's PRETTY_NAME field
-        Matcher m = Pattern.compile("PRETTY_NAME=\"?([^\"]*)\"?$").matcher(result);
-        if (m.find()) result = m.group(1);
+        return _fullOSName;
+    }
 
-        // Parse lsb-release's DISTRIB_DESCRIPTION field
-        m = Pattern.compile("DISTRIB_DESCRIPTION=\"?([^\"]*)\"?$").matcher(result);
-        if (m.find()) result = m.group(1);
+    /**
+     * Helper function to parse a human-readable name out of the distro information that we got
+     * from parsing a couple of well-known files
+     * @return Some nice string, or "Linux" in the worst case
+     */
+    static String parseDistroName(final String distroInfo)
+    {
+        // Try to get the distro name from a couple of known properties
+        String distroName = parseProperty("PRETTY_NAME", distroInfo);
+        if (distroName.isEmpty()) distroName = parseProperty("DISTRIB_DESCRIPTION", distroInfo);
+        if (distroName.isEmpty()) distroName = parseProperty("NAME", distroInfo);
+        if (distroName.isEmpty()) distroName = parseProperty("DISTRIB_ID", distroInfo);
 
-        // If we have multiple lines, keep only the first line
-        // (which we know is non-empty since result has been trimmed by readFirstFile())
-        result = result.split("\n")[0];
+        // If all that fails, use the first non-empty, non-comment, non-starting with "LSB_VERSION"
+        // line. (Because the LSB_VERSION field is full of useless information)
+        if (distroName.isEmpty()) {
+            for (String aLine : distroInfo.split("\n")) {
+                String line = aLine.trim();
+                if (!line.isEmpty() && !line.startsWith("LSB_VERSION") && !line.startsWith("#")) {
+                    distroName = line;
+                    break;
+                }
+            }
+        }
 
         // Remove /etc/issue's format characters
-        result = result.replaceAll("\\\\[a-zA-Z]", "");
+        distroName = distroName.replaceAll("\\\\[a-zA-Z]", "");
 
-        result = result.trim();
+        // Remove empty parenthesis (which is a result of removing format characters above)
+        distroName = distroName.replace("()", "");
 
-        _fullOSName = !result.isEmpty() ? result : "Linux";
-        return _fullOSName;
+        // Ensure that there is at least one alphabetical character. (We had cases where the name
+        // was just a release date - only numbers)
+        Matcher letters = Pattern.compile("[a-zA-Z]").matcher(distroName);
+        if (!letters.find()) {
+            distroName = "";
+        }
+
+        // Trim and ensure a reasonable length
+        distroName = distroName.trim();
+        if (distroName.length() > 100) {
+            distroName = distroName.substring(0, 100);
+        }
+
+        return !distroName.isEmpty() ? distroName : "Linux";
+    }
+
+    private static String parseProperty(final String propertyName, final String distroName)
+    {
+        /*
+            Regexp explanation:
+            Match the property name, followed by '=', followed by an optional double-quote, then
+            capture non-greedily all characters, and stop as soon as a double-quote or a newline is
+            found.
+         */
+        Matcher m = Pattern.compile(propertyName + "=\"?(.*?)[\"\\n]").matcher(distroName);
+        return m.find() ? m.group(1) : "";
     }
 
     /**
