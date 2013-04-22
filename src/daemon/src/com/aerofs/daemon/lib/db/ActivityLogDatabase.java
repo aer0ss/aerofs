@@ -100,6 +100,15 @@ public class ActivityLogDatabase extends AbstractDatabase implements IActivityLo
         }
 
         @Override
+        public boolean next_() throws SQLException
+        {
+            if (!_rs.next()) return false;
+
+            // ignore entries relative to absent stores
+            return _sidx2sid.getNullable_(new SIndex(_rs.getInt(2))) != null || next_();
+        }
+
+        @Override
         public ActivityRow get_() throws SQLException
         {
             long idx = _rs.getLong(1);

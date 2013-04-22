@@ -30,6 +30,7 @@ import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.core.UserAndDeviceNames;
 import com.aerofs.daemon.lib.db.IActivityLogDatabase;
 import com.aerofs.base.id.UserID;
+import com.google.common.collect.ImmutableSet;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -98,16 +99,19 @@ public class TestHdGetActivities extends AbstractTest
 
     UserID me = UserID.fromInternal("hahaah");
 
-    int idx;
     private void addActivity(int type, Path from, Path to, DID ... dids)
             throws SQLException
     {
         Set<DID> set = Sets.newTreeSet();
         for (DID did : dids) set.add(did);
 
-        idx++;
-        aldb.insertActivity_(new SOID(new SIndex(idx), new OID(UniqueID.generate())), type, from,
-                to, set, null);
+        addActivity(new SOID(rootSidx, new OID(UniqueID.generate())), type, from, to, set);
+    }
+
+    private void addActivity(SOID soid, int type, Path from, Path to, Set<DID> dids)
+            throws SQLException
+    {
+        aldb.insertActivity_(soid, type, from, to, dids, null);
     }
 
     private static SIndex rootSidx = new SIndex(1);
@@ -121,6 +125,7 @@ public class TestHdGetActivities extends AbstractTest
     {
         when(stores.getPhysicalRoot_(any(SIndex.class))).thenReturn(rootSidx);
         when(sidx2sid.get_(rootSidx)).thenReturn(rootSID);
+        when(sidx2sid.getNullable_(rootSidx)).thenReturn(rootSID);
         aldb = new ActivityLogDatabase(dbcw.getCoreDBCW(), stores, sidx2sid);
 
         dbcw.init_();
@@ -393,6 +398,16 @@ public class TestHdGetActivities extends AbstractTest
 
         run(true);
         assertTrue(firstMsg().endsWith("unknown device deleted file or folder \"a\""));
+    }
+
+    @Test
+    public void shouldIgnoreActivityInExpelledStore() throws Exception
+    {
+        addActivity(new SOID(new SIndex(42), OID.generate()), CREATION_VALUE,
+                mkpath("expelled/foobar"), null, ImmutableSet.of(did1));
+
+        run(true);
+        assertTrue(firstMsg().endsWith("renamed file or folder \"b\""));
     }
 
 
