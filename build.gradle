@@ -30,8 +30,6 @@ dependencies {
         exclude module: 'commons-logging'     // exclude commons logging because we use slf4j
         exclude group:  'ch.qos.logback'      // exclude logback because we use slf4j/log4j
     }
-
-    compile('org.slf4j:jcl-over-slf4j:1.7.2') // replace commons-logging with slf4j redirection
 }
 
 /**

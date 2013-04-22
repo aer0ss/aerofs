@@ -19,4 +19,3 @@ resource/client/common/lib/archaius-core-*
 resource/client/common/lib/dynamic-config-*
 resource/client/common/lib/commons-configuration-1.8.jar
 resource/client/common/lib/commons-lang-2.6.jar
-resource/client/common/lib/jcl-over-slf4j-1.7.2.jar
