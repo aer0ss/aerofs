@@ -53,7 +53,7 @@
                 <a href="#"
                    ## We don't support unlink or erase mobile devices yet
                    %if d.os_family != 'Android' and d.os_family != 'iOS':
-                        onclick="confirmUnlinkOrErase('unlink', '${device_id}', '${d.device_name | h}'); return false;"
+                        onclick='confirmUnlinkOrErase("unlink", "${device_id}", "${d.device_name | h}"); return false;'
                         style="margin-right: 15px;"
                    %else:
                         data-toggle="tooltip" class="coming_soon_tooltip"
@@ -65,7 +65,7 @@
                 <a href="#"
                     ## We don't support unlink or erase mobile devices yet
                     %if d.os_family != 'Android' and d.os_family != 'iOS':
-                           onclick="confirmUnlinkOrErase('erase', '${device_id}', '${d.device_name | h}'); return false;"
+                           onclick='confirmUnlinkOrErase("erase", "${device_id}", "${d.device_name | h}"); return false;'
                            style="margin-right: 15px;"
                     %else:
                            data-toggle="tooltip" class="coming_soon_tooltip"
