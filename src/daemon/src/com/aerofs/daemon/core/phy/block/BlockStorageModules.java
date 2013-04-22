@@ -13,6 +13,7 @@ import com.google.inject.Module;
 import com.google.inject.binder.AnnotatedBindingBuilder;
 import com.google.inject.binder.LinkedBindingBuilder;
 import com.google.inject.internal.Scoping;
+import com.google.inject.multibindings.Multibinder;
 import com.google.inject.util.Modules;
 
 import static com.aerofs.lib.guice.GuiceUtil.multibind;
@@ -96,8 +97,7 @@ public class BlockStorageModules
                 // make sure the storage-specific schema is created on setup
                 multibind(binder(), ISchema.class, BlockStorageSchema.class);
 
-                // need at least one bound class or Guice chokes...
-                multibind(binder(), IBlockStorageInitable.class, IBlockStorageInitable.Dummy.class);
+                Multibinder.newSetBinder(binder(), IBlockStorageInitable.class);
             }
         }, base);
     }
