@@ -7,6 +7,7 @@ package com.aerofs.daemon.core.phy.linked.linker;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.SID;
+import com.aerofs.daemon.core.first.OIDGenerator;
 import com.aerofs.daemon.core.phy.ScanCompletionCallback;
 import com.aerofs.daemon.core.phy.linked.linker.MightCreate.Result;
 import com.aerofs.daemon.core.phy.linked.linker.scanner.ScanSessionQueue;
@@ -57,6 +58,8 @@ public class LinkerRoot
 
     private final SID _sid;
     private final String _absRootAnchor;
+
+    final OIDGenerator _og;
     int _watchId;
 
     /**
@@ -77,6 +80,7 @@ public class LinkerRoot
         _sid = sid;
         _absRootAnchor = absRootAnchor;
         _ssq = _f._factSSQ.create_(this);
+        _og = new OIDGenerator(absRootAnchor);
     }
 
     public SID sid()
@@ -97,6 +101,11 @@ public class LinkerRoot
     public boolean wasRemoved()
     {
         return _removed;
+    }
+
+    public OIDGenerator OIDGenerator()
+    {
+        return _og;
     }
 
     @Override
@@ -124,7 +133,7 @@ public class LinkerRoot
             MightCreate.Result res;
             Trans t = _f._tm.begin_();
             try {
-                res = _f._mc.mightCreate_(pc, _f._globalBuffer, t);
+                res = _f._mc.mightCreate_(pc, _f._globalBuffer, _og, t);
                 t.commit_();
             } catch (ExFileNotFound e) {
                 // We may get a not found exception if a file was created and deleted or moved very
@@ -162,12 +171,20 @@ public class LinkerRoot
         _ssq.scanImmediately_(batch, recurse);
     }
 
-    void recursiveScanImmediately_(ScanCompletionCallback callback)
+    void recursiveScanImmediately_(final ScanCompletionCallback callback)
     {
         if (_removed) {
             callback.done_();
         } else {
-            _ssq.recursiveScanImmediately_(Collections.singleton(_absRootAnchor), callback);
+            _ssq.recursiveScanImmediately_(Collections.singleton(_absRootAnchor),
+                    new ScanCompletionCallback() {
+                @Override
+                public void done_()
+                {
+                    _og.onScanCompletion_();
+                    callback.done_();
+                }
+            });
         }
     }
 }

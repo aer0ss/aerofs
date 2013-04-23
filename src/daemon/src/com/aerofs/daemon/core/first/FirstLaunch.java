@@ -38,7 +38,6 @@ public class FirstLaunch
     private static final Logger l = Loggers.getLogger(FirstLaunch.class);
 
     private final CfgDatabase _cfgDB;
-    private final OIDGenerator _og;
     private final AccessibleStores _as;
     private final ScanProgressReporter _spr;
     private final ILinker _linker;
@@ -65,10 +64,9 @@ public class FirstLaunch
 
     @Inject
     public FirstLaunch(CfgDatabase cfgDB, ILinker linker, CoreScheduler sched, AccessibleStores as,
-            OIDGenerator og, ScanProgressReporter spr)
+            ScanProgressReporter spr)
     {
         _as = as;
-        _og = og;
         _spr = spr;
         _linker = linker;
         _sched = sched;
@@ -131,7 +129,6 @@ public class FirstLaunch
     private void onFirstLaunchCompletion_()
     {
         _as.onFirstLaunchCompletion_();
-        _og.onFirstLaunchCompletion_();
         _spr.onFirstLaunchCompletion_();
     }
 

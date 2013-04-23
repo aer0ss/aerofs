@@ -64,7 +64,6 @@ class MightCreateOperations
     private static Logger l = Loggers.getLogger(MightCreateOperations.class);
 
     private final DirectoryService _ds;
-    private final OIDGenerator _og;
     private final ObjectMover _om;
     private final ObjectCreator _oc;
     private final VersionUpdater _vu;
@@ -97,10 +96,9 @@ class MightCreateOperations
     @Inject
     public MightCreateOperations(DirectoryService ds, ObjectMover om, ObjectCreator oc,
             InjectableDriver driver, VersionUpdater vu, InjectableFile.Factory factFile,
-            SharedFolderTagFileAndIcon sfti, Analytics analytics, OIDGenerator og)
+            SharedFolderTagFileAndIcon sfti, Analytics analytics)
     {
         _ds = ds;
-        _og = og;
         _oc = oc;
         _om = om;
         _vu = vu;
@@ -121,7 +119,8 @@ class MightCreateOperations
      * @return whether an object was created or replaced
      */
     public boolean executeOperation_(Set<Operation> ops, SOID sourceSOID, SOID targetSOID,
-            PathCombo pc, FIDAndType fnt, IDeletionBuffer delBuffer, Trans t) throws Exception
+            PathCombo pc, FIDAndType fnt, IDeletionBuffer delBuffer, OIDGenerator og, Trans t)
+            throws Exception
     {
         if (ops.contains(Operation.RandomizeSourceFID)) assignRandomFID_(sourceSOID, t);
 
@@ -131,7 +130,7 @@ class MightCreateOperations
 
         switch (Operation.core(ops)) {
         case Create:
-            createLogicalObject_(pc, fnt._dir, t);
+            createLogicalObject_(pc, fnt._dir, og, t);
             return true;
         case Update:
             assert sourceSOID != null;
@@ -209,7 +208,7 @@ class MightCreateOperations
     /**
      * @return whether a new logical object corresponding to the physical object is created
      */
-    private boolean createLogicalObject_(PathCombo pc, boolean dir, Trans t)
+    private boolean createLogicalObject_(PathCombo pc, boolean dir, OIDGenerator og, Trans t)
             throws ExNotFound, SQLException, ExExpelled, IOException, ExAlreadyExist, ExNotDir,
             ExStreamInvalid
     {
@@ -227,7 +226,7 @@ class MightCreateOperations
         // create the object
         OID oid = dir ? _sfti.getOIDForAnchor_(pc, t) : null;
         Type type = oid != null ? ANCHOR : (dir ? DIR : FILE);
-        if (oid == null) oid = _og.generate_(dir, pc._path);
+        if (oid == null) oid = og.generate_(dir, pc._path);
         _oc.create_(type, oid, soidParent, pc._path.last(), MAP, t);
         _saveCounter.inc();
         l.info("created {} {}", new SOID(soidParent.sidx(), oid), pc);

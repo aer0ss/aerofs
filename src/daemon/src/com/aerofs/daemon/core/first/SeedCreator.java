@@ -48,14 +48,14 @@ public class SeedCreator
      * Create a seed file from the current contents of the database
      * @return Absolute path of the created seed file
      */
-    public String create_(SID sid) throws Exception
+    public String create_(SID sid, String path) throws Exception
     {
         SIndex sidx = _sid2sidx.getNullable_(sid);
         if (sidx == null) throw new ExBadArgs("Cannot create seed for " + sid.toStringFormal());
 
         l.info("creating seed");
         try {
-            final SeedDatabase sdb = SeedDatabase.create_(sid.toStringFormal());
+            final SeedDatabase sdb = SeedDatabase.create_(path);
             try {
                 populate_(sidx, sdb);
                 return sdb.save_();

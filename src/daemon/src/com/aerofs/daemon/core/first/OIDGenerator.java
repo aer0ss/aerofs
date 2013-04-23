@@ -8,7 +8,9 @@ import com.aerofs.base.Loggers;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UniqueID;
+import com.aerofs.lib.Param;
 import com.aerofs.lib.Path;
+import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
@@ -27,20 +29,22 @@ public class OIDGenerator
 
     boolean _shouldLookup;
 
-    private final SeedDatabase _sdb;
+    private SeedDatabase _sdb;
 
-    @Inject
-    public OIDGenerator(CfgLocalUser localUser)
+    public OIDGenerator(String absPath)
     {
-        _sdb = SeedDatabase.load_(SID.rootSID(localUser.get()).toStringFormal());
+        _sdb = SeedDatabase.load_(Util.join(absPath, Param.SEED_FILE_NAME));
         _shouldLookup = _sdb != null;
         if (_shouldLookup) l.info("seed file loaded");
     }
 
-    void onFirstLaunchCompletion_()
+    public void onScanCompletion_()
     {
         _shouldLookup = false;
-        if (_sdb != null) _sdb.cleanup_();
+        if (_sdb != null) {
+            _sdb.cleanup_();
+            _sdb = null;
+        }
     }
 
     public OID generate_(boolean dir, Path path)
@@ -48,7 +52,7 @@ public class OIDGenerator
         if (_shouldLookup) {
             try {
                 OID oid = _sdb.getOID_(path, dir);
-                l.info("lookup: {} {}", path.toStringFormal(), oid);
+                l.debug("lookup: {} {}", path.toStringFormal(), oid);
                 if (oid != null) return oid;
             } catch (SQLException e) {
                 // can safely ignore seed-related errors

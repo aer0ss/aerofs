@@ -50,7 +50,6 @@ public class Param extends BaseParam
     public static final String SHARED_FOLDER_TAG       = ".aerofs";
     public static final String RECENT_EXCEPTIONS       = "rex";
 
-
     /**
      * AuxRoot (auxiliary root) is the location where AeroFS stores temporary, conflict, and history
      * files for a given path that hosts AeroFS physical files.
@@ -58,6 +57,12 @@ public class Param extends BaseParam
      * AuxRoot is directly under RootAnchor to ensure they are on the same filesystem.
      */
     public static final String AUXROOT_NAME = ".aerofs.aux";
+
+    /**
+     * Seed files are small SQLite dbs used to reduce the impact of aliasing. They are created on
+     * unlink and used on the first scan after a reinstall.
+     */
+    public static final String SEED_FILE_NAME = ".aerofs.seed";
 
     public static enum AuxFolder
     {

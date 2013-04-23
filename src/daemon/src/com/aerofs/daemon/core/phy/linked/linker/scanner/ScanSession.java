@@ -292,7 +292,8 @@ class ScanSession
         int potentialUpdates = 0;
         for (String nameChild : nameChildren) {
             PathCombo pcChild = pcParent.append(nameChild);
-            MightCreate.Result res = _f._mc.mightCreate_(pcChild, _f._delBuffer, t);
+            MightCreate.Result res = _f._mc.mightCreate_(pcChild, _f._delBuffer,
+                    _root.OIDGenerator(), t);
 
             if ((res == NEW_OR_REPLACED_FOLDER || (_recursive && res == EXISTING_FOLDER))
                 && isScannableDir(pcChild._absPath)) {

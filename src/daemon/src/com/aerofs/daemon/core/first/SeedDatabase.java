@@ -59,27 +59,22 @@ public class SeedDatabase extends AbstractDatabase
             C_SEED_TYPE = "s_t",
             C_SEED_OID  = "s_o";
 
-    private static String seedFilePath(String suffix)
-    {
-        return Cfg.absRTRoot() + File.separator + "seed" + (suffix.isEmpty() ? "" : "-" + suffix);
-    }
-
     private final String _path;
 
-    private SeedDatabase(String suffix)
+    private SeedDatabase(String path)
     {
-        super(new SQLiteDBCW("jdbc:sqlite:" + seedFilePath(suffix), false, true, true));
-        _path = seedFilePath(suffix);
+        super(new SQLiteDBCW("jdbc:sqlite:" + path, false, true, true));
+        _path = path;
     }
 
-    static @Nullable SeedDatabase load_(String suffix)
+    static @Nullable SeedDatabase load_(String path)
     {
-        if (!new File(seedFilePath(suffix)).exists()) {
+        if (!new File(path).exists()) {
             return null;
         }
 
-        l.info("seed file found");
-        SeedDatabase db = new SeedDatabase(suffix);
+        l.info("seed file found {}", path);
+        SeedDatabase db = new SeedDatabase(path);
         try {
             db._dbcw.init_();
             if (db._dbcw.tableExists(T_SEED)) return db;
@@ -113,6 +108,7 @@ public class SeedDatabase extends AbstractDatabase
 
     void cleanup_()
     {
+        l.info("cleanup seed file {}", _path);
         try {
             _dbcw.fini_();
         } catch (SQLException e) {
@@ -124,9 +120,9 @@ public class SeedDatabase extends AbstractDatabase
     /**
      * setup schema prior to populating the db
      */
-    static SeedDatabase create_(String suffix) throws SQLException
+    static SeedDatabase create_(String path) throws SQLException
     {
-        SeedDatabase db = new SeedDatabase(suffix);
+        SeedDatabase db = new SeedDatabase(path);
         try {
             db._dbcw.init_();
             Statement s = db.c().createStatement();

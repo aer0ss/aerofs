@@ -88,11 +88,12 @@ public class Linker implements ILinker, LinkerRootMap.IListener
             public void handle_()
             {
                 l.info("begin scan {}", root.sid());
-                root.recursiveScanImmediately_(new ScanCompletionCallback()
-                {
+                root.recursiveScanImmediately_(new ScanCompletionCallback() {
                     @Override
                     public void done_()
                     {
+                        // cleanup seed file at the end of the first scan
+                        root.OIDGenerator().onScanCompletion_();
                         l.info("end scan {}", root.sid());
                     }
                 });

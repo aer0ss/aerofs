@@ -5,6 +5,7 @@
 package com.aerofs.daemon.core.phy.linked.linker;
 
 import com.aerofs.daemon.core.ds.OA;
+import com.aerofs.daemon.core.first.OIDGenerator;
 import com.aerofs.daemon.core.phy.linked.linker.MightCreate.Result;
 import com.aerofs.daemon.core.phy.linked.linker.MightCreateOperations.Operation;
 import com.aerofs.daemon.core.mock.logical.MockDS;
@@ -41,7 +42,10 @@ public class TestMightCreate extends AbstractMightCreateTest
     @Mock SharedFolderTagFileAndIcon sfti;
     @Mock MightCreateOperations mcop;
 
+
     @InjectMocks MightCreate mc;
+
+    OIDGenerator og = new OIDGenerator("dummy");
 
     @SuppressWarnings("unchecked")
     @Before
@@ -50,7 +54,7 @@ public class TestMightCreate extends AbstractMightCreateTest
         when(il.isIgnored_("ignored")).thenReturn(true);
 
         when(mcop.executeOperation_(anySetOf(Operation.class), any(SOID.class), any(SOID.class),
-                any(PathCombo.class), any(FIDAndType.class), eq(delBuffer), eq(t)))
+                any(PathCombo.class), any(FIDAndType.class), eq(delBuffer), eq(og), eq(t)))
                 .thenAnswer(new Answer<Boolean>() {
                     @Override
                     public Boolean answer(InvocationOnMock invocation) throws Throwable
@@ -74,7 +78,7 @@ public class TestMightCreate extends AbstractMightCreateTest
     {
         PathCombo pc = new PathCombo(absRootAnchor, mkpath(path));
         when(dr.getFIDAndType(eq(pc._absPath))).thenReturn(fnt);
-        return mc.mightCreate_(pc, delBuffer, t);
+        return mc.mightCreate_(pc, delBuffer, og, t);
     }
 
     private void verifyOperationExecuted(Operation op, SOID source, SOID target, String path)
@@ -90,7 +94,7 @@ public class TestMightCreate extends AbstractMightCreateTest
         FIDAndType fnt = dr.getFIDAndType(pc._absPath);
 
         verify(mcop).executeOperation_(eq(ops), eq(source), eq(target), eq(pc), eq(fnt),
-                eq(delBuffer), eq(t));
+                eq(delBuffer), eq(og), eq(t));
     }
 
     @Test
@@ -132,7 +136,7 @@ public class TestMightCreate extends AbstractMightCreateTest
         when(dr.getFIDAndType(eq(pc._absPath))).thenThrow(new ExFileNotFound(pc._path));
 
         try {
-            mc.mightCreate_(pc, delBuffer, t);
+            mc.mightCreate_(pc, delBuffer, og, t);
             fail();
         } catch (ExFileNotFound e) {}
     }
