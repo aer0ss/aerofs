@@ -1,6 +1,6 @@
 package com.aerofs.daemon.core;
 
-import com.aerofs.daemon.core.device.DeviceLRU;
+import com.aerofs.daemon.core.net.device.DeviceLRU;
 import com.aerofs.daemon.lib.DaemonParam;
 
 /**

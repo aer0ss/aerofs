@@ -1,7 +1,7 @@
-package com.aerofs.daemon.core.admin;
+package com.aerofs.daemon.core.net;
 
 import com.aerofs.daemon.core.CoreUtil;
-import com.aerofs.daemon.core.device.DevicePresence;
+import com.aerofs.daemon.core.net.device.DevicePresence;
 import com.aerofs.daemon.core.net.Transports;
 import com.aerofs.daemon.core.net.NSL;
 import com.aerofs.daemon.core.tc.Cat;

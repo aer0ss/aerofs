@@ -7,7 +7,7 @@ package com.aerofs.daemon.core.synctime;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.OID;
 import com.aerofs.daemon.core.collector.RemoteUpdates;
-import com.aerofs.daemon.core.device.DevicePresence;
+import com.aerofs.daemon.core.net.device.DevicePresence;
 import com.aerofs.daemon.core.protocol.Download.Factory;
 import com.aerofs.daemon.core.protocol.GetVersReply;
 import com.aerofs.daemon.core.protocol.NewUpdates;

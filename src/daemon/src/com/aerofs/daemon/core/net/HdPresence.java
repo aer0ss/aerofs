@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Map.Entry;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.daemon.core.device.DevicePresence;
+import com.aerofs.daemon.core.net.device.DevicePresence;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.event.IEventHandler;
 import com.aerofs.daemon.event.net.EIPresence;

@@ -9,7 +9,7 @@ import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.base.ex.ExTimeout;
 import com.aerofs.base.id.DID;
-import com.aerofs.daemon.core.device.DevicePresence;
+import com.aerofs.daemon.core.net.device.DevicePresence;
 import com.aerofs.daemon.core.ex.ExAborted;
 import com.aerofs.daemon.core.net.link.ILinkStateListener;
 import com.aerofs.daemon.core.net.link.LinkStateService;

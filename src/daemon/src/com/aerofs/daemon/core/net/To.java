@@ -7,8 +7,8 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import com.aerofs.base.id.DID;
-import com.aerofs.daemon.core.device.Device;
-import com.aerofs.daemon.core.device.DevicePresence;
+import com.aerofs.daemon.core.net.device.Device;
+import com.aerofs.daemon.core.net.device.DevicePresence;
 import com.aerofs.daemon.core.store.MapSIndex2Store;
 import com.aerofs.daemon.core.store.Store;
 import com.aerofs.daemon.lib.DaemonParam;

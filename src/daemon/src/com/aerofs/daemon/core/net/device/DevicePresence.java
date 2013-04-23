@@ -1,4 +1,4 @@
-package com.aerofs.daemon.core.device;
+package com.aerofs.daemon.core.net.device;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExNoResource;

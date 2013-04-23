@@ -1,5 +1,15 @@
-package com.aerofs.daemon.core.device;
+package com.aerofs.daemon.core.net.device;
 
+import com.aerofs.base.id.DID;
+import com.aerofs.daemon.core.net.Transports;
+import com.aerofs.daemon.transport.ITransport;
+import com.aerofs.lib.IDumpStatMisc;
+import com.aerofs.lib.SystemUtil;
+import com.aerofs.lib.id.SIndex;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
+
+import javax.annotation.Nonnull;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -10,17 +20,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
-
-import com.aerofs.daemon.core.net.Transports;
-import com.aerofs.lib.IDumpStatMisc;
-import com.aerofs.daemon.transport.ITransport;
-import com.aerofs.lib.SystemUtil;
-import com.aerofs.base.id.DID;
-import com.aerofs.lib.id.SIndex;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
-
-import javax.annotation.Nonnull;
 
 /**
  * State transition:

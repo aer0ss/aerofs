@@ -1,12 +1,12 @@
-package com.aerofs.daemon.core.device;
+package com.aerofs.daemon.core.net.device;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.IDeviceEvictionListener;
 import com.aerofs.daemon.lib.LRUCache;
 import org.slf4j.Logger;
-import javax.annotation.Nonnull;
 
+import javax.annotation.Nonnull;
 import java.util.HashSet;
 import java.util.Set;
 
