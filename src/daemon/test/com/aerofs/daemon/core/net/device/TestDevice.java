@@ -2,10 +2,9 @@
  * Copyright (c) Air Computing Inc., 2012.
  */
 
-package com.aerofs.daemon.core.device;
+package com.aerofs.daemon.core.net.device;
 
 import com.aerofs.base.id.DID;
-import com.aerofs.daemon.core.net.device.Device;
 import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.testlib.AbstractTest;
