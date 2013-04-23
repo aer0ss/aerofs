@@ -166,7 +166,6 @@ public class SignalledPipeFanout implements IPipeDebug
     {
         for(IPipe p : _pipes) {
             try {
-                l.info(_pream + " dumpstat p:" + p.id());
                 p.dumpStat(template, bd);
             } catch (Exception e) {
                 l.warn(_pream + " cannot dumpstat p:" + p.id() + "err:" + e);
@@ -181,7 +180,6 @@ public class SignalledPipeFanout implements IPipeDebug
 
         for(IPipe p : _pipes) {
             try {
-                l.info(_pream + " dumpstatmisc p:" + p.id());
                 ps.println(indent + "ucast:" + p.id());
                 p.dumpStatMisc(indentmore, indentUnit, ps);
             } catch (Exception e) {
