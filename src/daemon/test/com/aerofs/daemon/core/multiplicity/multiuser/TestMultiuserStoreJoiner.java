@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.multiplicity.multiuser;
 
+import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.IStores;
 import com.aerofs.daemon.core.store.StoreCreator;
 import com.aerofs.daemon.core.store.StoreDeleter;
@@ -28,6 +29,7 @@ public class TestMultiuserStoreJoiner extends AbstractTest
     @Mock IStores stores;
     @Mock StoreDeleter sd;
     @Mock StoreCreator sc;
+    @Mock IMapSIndex2SID sidx2sid;
     @Mock Trans t;
 
     @InjectMocks MultiuserStoreJoiner msj;
@@ -41,6 +43,8 @@ public class TestMultiuserStoreJoiner extends AbstractTest
             throws Exception
     {
         SID rootSID = SID.rootSID(userID);
+        when(sidx2sid.getNullable_(sidx)).thenReturn(rootSID);
+
         msj.joinStore_(sidx, rootSID, "test", false, t);
 
         verify(sc).createRootStore_(eq(rootSID), eq("test"), eq(t));
@@ -50,10 +54,12 @@ public class TestMultiuserStoreJoiner extends AbstractTest
     public void joinStore_shouldJoinNonRootStore()
             throws Exception
     {
-        SID rootSID = SID.generate();
-        msj.joinStore_(sidx, rootSID, "test", false, t);
+        SID sid = SID.generate();
+        when(sidx2sid.getNullable_(sidx)).thenReturn(sid);
 
-        verify(sc).createRootStore_(eq(rootSID), eq("test"), eq(t));
+        msj.joinStore_(sidx, sid, "test", false, t);
+
+        verify(sc).createRootStore_(eq(sid), eq("test"), eq(t));
     }
 
     @Test
@@ -61,7 +67,9 @@ public class TestMultiuserStoreJoiner extends AbstractTest
             throws Exception
     {
         SID rootSID = SID.rootSID(userID);
+        when(sidx2sid.getNullable_(sidx)).thenReturn(rootSID);
         when(cfgRootSID.get()).thenReturn(rootSID);
+
         msj.joinStore_(sidx, rootSID, "test", false, t);
 
         verifyZeroInteractions(sc);
@@ -72,6 +80,7 @@ public class TestMultiuserStoreJoiner extends AbstractTest
             throws Exception
     {
         SID sid = SID.generate();
+        when(sidx2sid.getNullable_(sidx)).thenReturn(sid);
         when(stores.isRoot_(sidx)).thenReturn(true);
         msj.leaveStore_(sidx, sid, t);
 
@@ -83,7 +92,20 @@ public class TestMultiuserStoreJoiner extends AbstractTest
             throws Exception
     {
         SID sid = SID.generate();
+        when(sidx2sid.getNullable_(sidx)).thenReturn(sid);
         when(stores.isRoot_(sidx)).thenReturn(false);
+        msj.leaveStore_(sidx, sid, t);
+
+        verifyZeroInteractions(sd);
+    }
+
+    @Test
+    public void leaveStore_shouldNotLeaveAbsentStore()
+            throws Exception
+    {
+        SID sid = SID.generate();
+        when(sidx2sid.getNullable_(sidx)).thenReturn(null);
+        when(stores.isRoot_(sidx)).thenReturn(true);
         msj.leaveStore_(sidx, sid, t);
 
         verifyZeroInteractions(sd);

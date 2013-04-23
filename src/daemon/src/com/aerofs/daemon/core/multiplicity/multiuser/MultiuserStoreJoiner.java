@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.multiplicity.multiuser;
 
+import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.IStoreJoiner;
 import com.aerofs.daemon.core.store.IStores;
 import com.aerofs.daemon.core.store.StoreCreator;
@@ -20,15 +21,17 @@ public class MultiuserStoreJoiner implements IStoreJoiner
     private final IStores _stores;
     private final StoreCreator _sc;
     private final StoreDeleter _sd;
+    private final IMapSIndex2SID _sidx2sid;
 
     @Inject
     public MultiuserStoreJoiner(CfgRootSID cfgRootSID, IStores stores,
-            StoreCreator sc, StoreDeleter sd)
+            StoreCreator sc, StoreDeleter sd, IMapSIndex2SID sidx2sid)
     {
         _cfgRootSID = cfgRootSID;
         _stores = stores;
         _sc = sc;
         _sd = sd;
+        _sidx2sid = sidx2sid;
     }
 
     @Override
@@ -52,7 +55,7 @@ public class MultiuserStoreJoiner implements IStoreJoiner
         // store hiearchy ("dangling pointer"-style). By virtue of the implicit refcount in the
         // store hierarchy they will automatically be deleted when all anchors pointing to them
         // disappear
-        if (_stores.isRoot_(sidx)) {
+        if (_sidx2sid.getNullable_(sidx) != null && _stores.isRoot_(sidx)) {
             _sd.deleteRootStore_(sidx, t);
         }
     }
