@@ -71,7 +71,7 @@ def valid_password_test(request, password):
     if len(password) < 6:
         return False, _("Passwords must have at least 6 characters.")
     elif not _is_ascii(password):
-        return False, _("The password contains invalid characters.")
+        return False, _("The password contains invalid (non-ASCII) characters.")
     else:
         return True, ""
 
