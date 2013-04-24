@@ -1,5 +1,6 @@
 package com.aerofs.daemon.core.expel;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.DirectoryService.IObjectWalker;
@@ -24,6 +25,7 @@ import com.aerofs.lib.id.SOCID;
 import com.aerofs.lib.id.SOCKID;
 import com.aerofs.lib.id.SOID;
 import com.google.inject.Inject;
+import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
@@ -31,6 +33,8 @@ import java.sql.SQLException;
 
 public class AdmittedToExpelledAdjuster implements IExpulsionAdjuster
 {
+    private static final Logger l = Loggers.getLogger(AdmittedToExpelledAdjuster.class);
+
     private final DirectoryService _ds;
     private final NativeVersionControl _nvc;
     private final IPhysicalStorage _ps;
@@ -56,6 +60,7 @@ public class AdmittedToExpelledAdjuster implements IExpulsionAdjuster
             final int flagsRoot, final Trans t)
             throws IOException, ExNotFound, SQLException, ExNotDir, ExStreamInvalid, ExAlreadyExist
     {
+        l.info("adm->exp {} {} {}", soidRoot, pOld, op);
         _ds.walk_(soidRoot, pOld, new IObjectWalker<Path>() {
             @Override
             public @Nullable Path prefixWalk_(Path pOldParent, OA oa)
