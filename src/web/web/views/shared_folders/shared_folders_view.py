@@ -66,15 +66,8 @@ def user_shared_folders(request):
     full_name = request.params[URL_PARAM_FULL_NAME]
 
     return _shared_folders(False, request,
-        _("${name}'s Shared Folders", {'name': full_name}),
-        _json_get_user_shared_folders_url(request, user))
-
-def _json_get_user_shared_folders_url(request, user):
-    return '{}?{}={}'.format(
-        request.route_url('json.get_user_shared_folders'),
-        URL_PARAM_USER,
-        urllib.quote_plus(user)
-    )
+                           _("${name}'s Shared Folders", {'name': full_name}),
+                           request.route_url('json.get_user_shared_folders', _query={URL_PARAM_USER: user}))
 
 @view_config(
     route_name = 'team_shared_folders',

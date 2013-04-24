@@ -79,7 +79,7 @@ def _force_login(request):
     # TODO (WW) include request parameters to the next URL
     next = request.path.strip()
     if next:
-        loc = request.route_url('login', _query=(('next', next),))
+        loc = request.route_url('login', _query={'next': next})
     else:
         loc = request.route_url('login')
 

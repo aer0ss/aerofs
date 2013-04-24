@@ -103,17 +103,13 @@ def _render_other_user_option_menu_items(index, request, user_and_level):
     full_name = urllib.quote_plus(user.first_name.encode('utf-8') + ' ' +\
                                   user.last_name.encode('utf-8'))
 
-    shared_folders_url = '{}?{}={}&{}={}'.format(
-        request.route_url('user_shared_folders'),
-        URL_PARAM_USER, encoded_email,
-        URL_PARAM_FULL_NAME, full_name
-    )
+    shared_folders_url = request.route_url('user_shared_folders',
+                                           _query={URL_PARAM_USER: encoded_email,
+                                                   URL_PARAM_FULL_NAME: full_name})
 
-    devices_url = '{}?{}={}&{}={}'.format(
-        request.route_url('user_devices'),
-        URL_PARAM_USER, encoded_email,
-        URL_PARAM_FULL_NAME, full_name
-    )
+    devices_url = request.route_url('user_devices',
+                                    _query={URL_PARAM_USER: encoded_email,
+                                            URL_PARAM_FULL_NAME: full_name})
 
     is_admin = user_and_level.level == ADMIN
     coming_soon = ' class="coming_soon_link" rel="tooltip" '\
