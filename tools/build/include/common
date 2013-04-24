@@ -201,14 +201,12 @@ function compute_next_release_version() {
 function compute_product_names() {
     echo ">> computing product name"
 
-    readonly GET_PROPERTY_LOGBACK_CONFIG="${BUILD_SCRIPT_DIR}/dynamic-config/logback.xml"
-    readonly GET_PROPERTY="groovy -Dlogback.configurationFile=$GET_PROPERTY_LOGBACK_CONFIG ${BUILD_SCRIPT_DIR}/dynamic-config/get_property.groovy"
-    readonly GET_PROPERTY_DEPENDENCIES="${BUILD_SCRIPT_DIR}/dynamic-config/dependencies.groovy"
+    ${BUILD_SCRIPT_DIR}/dynamic-config/dependencies.groovy
 
-    $GET_PROPERTY_DEPENDENCIES
-    readonly AEROFS_PRODUCT=$($GET_PROPERTY $PROPERTIES_FILE labeling.product)
-    readonly AEROFS_PRODUCT_SPACEFREE=$($GET_PROPERTY $PROPERTIES_FILE labeling.productSpaceFreeName)
-    readonly AEROFS_PRODUCT_UNIX=$($GET_PROPERTY $PROPERTIES_FILE labeling.productUnixName)
+    readonly GET_PROPERTY_SCRIPT="groovy -Dlogback.configurationFile=${BUILD_SCRIPT_DIR}/dynamic-config/logback.xml ${BUILD_SCRIPT_DIR}/dynamic-config/get_property.groovy"
+    readonly AEROFS_PRODUCT=$($GET_PROPERTY_SCRIPT $PROPERTIES_FILE labeling.product)
+    readonly AEROFS_PRODUCT_SPACEFREE=$($GET_PROPERTY_SCRIPT $PROPERTIES_FILE labeling.productSpaceFreeName)
+    readonly AEROFS_PRODUCT_UNIX=$($GET_PROPERTY_SCRIPT $PROPERTIES_FILE labeling.productUnixName)
 }
 
 ###############################################################################

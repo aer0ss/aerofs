@@ -334,7 +334,7 @@ def json_add_shared_folder_perm(request):
     role_pair.role = common._PBROLE.values_by_name['EDITOR'].number
 
     sp = get_rpc_stub(request)
-    exception2error(sp.share_folder, (folder_name, store_id, [role_pair], note), {
+    exception2error(sp.share_folder, (folder_name, store_id, [role_pair], note, None), {
         PBException.EMPTY_EMAIL_ADDRESS:
             _("The email address can't be empty"),
         PBException.NO_STRIPE_CUSTOMER_ID:
