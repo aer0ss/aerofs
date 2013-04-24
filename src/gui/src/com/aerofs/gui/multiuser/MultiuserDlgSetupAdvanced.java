@@ -57,6 +57,7 @@ public class MultiuserDlgSetupAdvanced extends AbstractDlgSetupAdvanced
     private final List<Control> _s3Controls = Lists.newArrayList();
 
     private Label _lblS3Error;
+    private final List<StorageType> _enabledStorageTypes = Lists.newArrayList();
 
     protected MultiuserDlgSetupAdvanced(Shell parentShell, String deviceName, String absRootAnchor,
             S3Config s3Config, StorageType storageChoice)
@@ -75,7 +76,8 @@ public class MultiuserDlgSetupAdvanced extends AbstractDlgSetupAdvanced
         for (StorageType t : StorageType.values()) {
             // TODO: enable linked TS
             if (t == StorageType.LINKED && !L.isStaging()) continue;
-            storageSelector.add(t.description(), t.ordinal());
+            _enabledStorageTypes.add(t);
+            storageSelector.add(t.description());
         }
         storageSelector.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 2, 1));
 
@@ -92,7 +94,7 @@ public class MultiuserDlgSetupAdvanced extends AbstractDlgSetupAdvanced
             @Override
             public void widgetSelected(SelectionEvent selectionEvent)
             {
-                _storageChoice = StorageType.fromOrdinal(storageSelector.getSelectionIndex());
+                _storageChoice = _enabledStorageTypes.get(storageSelector.getSelectionIndex());
                 updateStorageArea();
                 updateOkButtonState();
             }
@@ -111,7 +113,7 @@ public class MultiuserDlgSetupAdvanced extends AbstractDlgSetupAdvanced
                     _txtS3Passphrase2.setText(_s3Config.s3Passphrase);
                 }
                 _compLocalStorage.setAbsRootAnchor(getAbsoluteRootAnchor());
-                storageSelector.select(_storageChoice.ordinal());
+                storageSelector.select(_enabledStorageTypes.indexOf(_storageChoice));
                 updateStorageArea();
                 updateOkButtonState();
             }
