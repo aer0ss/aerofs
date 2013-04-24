@@ -65,6 +65,7 @@
         sharer = invite['sharer']
         share_id = invite['share_id']
         folder_name = invite['folder_name']
+        from_team_server = invite['from_team_server']
     %>
 
     <tr>
@@ -73,7 +74,11 @@
                 Invitation to folder "${folder_name | h}"
             </span>
             <span style="margin-left: 20px;">
-                by ${sharer | h}
+                %if from_team_server:
+                    by a team administrator
+                %else:
+                    by ${sharer | h}
+                %endif
             </span>
         </td>
         <td style="text-align: right; vertical-align: middle;">

@@ -69,7 +69,8 @@ def get_folder_invitations(request):
         results.append({
             'share_id': invite.share_id.encode('hex'),
             'folder_name': invite.folder_name,
-            'sharer': invite.sharer
+            'sharer': invite.sharer,
+            'from_team_server': is_team_server_user_id(invite.sharer)
         })
 
     return results

@@ -174,3 +174,9 @@ def send_internal_email(subject, body):
         s.quit()
     except Exception, e:
         log.error("send_internal_email failed and ignored", exc_info=e)
+
+def is_team_server_user_id(user_id):
+    """
+    Must be conssitent with UserID.java:TEAM_SERVER_PREFIX
+    """
+    return user_id.startswith(':')

@@ -9,7 +9,11 @@ import com.aerofs.base.ex.ExFormatError;
 
 public class UserID extends StringID
 {
+    /**
+     * Must be conssitent with src/web/web/util.py:is_team_server_user_id()
+     */
     public final static char TEAM_SERVER_PREFIX = ':';
+
     public final static UserID UNKNOWN = UserID.fromInternal("(unknown)");
 
     private static final String AEROFS_EMAIL_DOMAIN = "@aerofs.com";
