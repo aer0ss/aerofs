@@ -34,7 +34,8 @@ public class HdListSharedFolderInvitations extends AbstractHdIMC<EIListSharedFol
         TCB tcb = null;
         try {
             tcb = tk.pseudoPause_("list-invitations");
-            SPBlockingClient sp = SPBlockingClient.Factory.create_(_localUser.get());
+            SPBlockingClient.Factory fact = new SPBlockingClient.Factory();
+            SPBlockingClient sp = fact.create_(_localUser.get());
             sp.signInRemote();
             ev.setResult_(sp.listPendingFolderInvitations().getInvitationList());
         } finally {

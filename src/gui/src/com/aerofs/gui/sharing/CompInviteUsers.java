@@ -157,7 +157,8 @@ public class CompInviteUsers extends Composite implements IInputChangeListener
             @Override
             public void run()
             {
-                SPBlockingClient sp = SPBlockingClient.Factory.create_(Cfg.user());
+                SPBlockingClient.Factory fact = new SPBlockingClient.Factory();
+                SPBlockingClient sp = fact.create_(Cfg.user());
                 try {
                     sp.signInRemote();
                     _fromPerson = sp.getUserPreferences(Cfg.did().toPB()).getFirstName();
@@ -322,7 +323,8 @@ public class CompInviteUsers extends Composite implements IInputChangeListener
 
             boolean isAdmin()
             {
-                SPBlockingClient sp = SPBlockingClient.Factory.create_(Cfg.user());
+                SPBlockingClient.Factory fact = new SPBlockingClient.Factory();
+                SPBlockingClient sp = fact.create_(Cfg.user());
                 try {
                     sp.signInRemote();
                     return sp.getAuthorizationLevel().getLevel() == PBAuthorizationLevel.ADMIN;

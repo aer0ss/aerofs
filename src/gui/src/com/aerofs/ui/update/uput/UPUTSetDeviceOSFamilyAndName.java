@@ -20,7 +20,8 @@ public class UPUTSetDeviceOSFamilyAndName implements IUIPostUpdateTask
             throws Exception
     {
         try {
-            SPBlockingClient sp = SPBlockingClient.Factory.create_(Cfg.user());
+            SPBlockingClient.Factory fact = new SPBlockingClient.Factory();
+            SPBlockingClient sp = fact.create_(Cfg.user());
             sp.signInRemote();
             IOSUtil osu = OSUtil.get();
             sp.setDeviceOSFamilyAndName(Cfg.did().toPB(), osu.getOSFamily().getString(),

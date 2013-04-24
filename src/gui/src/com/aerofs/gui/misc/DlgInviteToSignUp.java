@@ -159,7 +159,8 @@ public class DlgInviteToSignUp extends AeroFSDialog implements IInputChangeListe
     @Override
     public void run() throws Exception
     {
-        SPBlockingClient sp = SPBlockingClient.Factory.create_(Cfg.user());
+        SPBlockingClient.Factory fact = new SPBlockingClient.Factory();
+        SPBlockingClient sp = fact.create_(Cfg.user());
         sp.signInRemote();
 
         List<String> userIdStrings = Lists.newArrayListWithCapacity(_userIDs.size());

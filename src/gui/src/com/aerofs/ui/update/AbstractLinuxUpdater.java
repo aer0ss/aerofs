@@ -70,10 +70,10 @@ abstract class AbstractLinuxUpdater extends Updater
                 UI.get().show(MessageType.INFO,
                         "Could not confirm with the" + " user. Send an email instead.");
 
-                SPBlockingClient sp = SPBlockingClient.Factory.create_(Cfg.user());
+                SPBlockingClient.Factory fact = new SPBlockingClient.Factory();
+                SPBlockingClient sp = fact.create_(Cfg.user());
                 try {
                     sp.signInRemote();
-
                     String deviceName = sp.getUserPreferences(Cfg.did().toPB()).getDeviceName();
 
                     final String subject = "[Action Required] Update " + L.product() +

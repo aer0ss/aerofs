@@ -160,9 +160,8 @@ class Setup
         // When setting up Team Servers, the ID of the user who sets up the server is used with this
         // SP client to sign in. Since the default configurator uses mutual authentication,
         // which doesn't work with regular clients, we force a null connection configurator.
-        res._sp = SPBlockingClient.Factory.create_(Cfg.user(),
-                SPBlockingClient.ONE_WAY_AUTH_CONNECTION_CONFIGURATOR);
-
+        SPBlockingClient.Factory fact = new SPBlockingClient.Factory();
+        res._sp = fact.create_(Cfg.user(), SPBlockingClient.ONE_WAY_AUTH_CONNECTION_CONFIGURATOR);
         res._sp.signIn(userID.getString(), ByteString.copyFrom(res._scrypted));
 
         return res;

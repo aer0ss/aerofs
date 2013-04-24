@@ -33,25 +33,25 @@ public class SPBlockingClient extends SPServiceBlockingStub
      */
     public static class Factory
     {
-        static IURLConnectionConfigurator getDefaultConfigurator()
+        private static IURLConnectionConfigurator getDefaultConfigurator()
         {
             return L.isMultiuser() ?
                     MUTUAL_AUTH_CONNECTION_CONFIGURATOR :
                     ONE_WAY_AUTH_CONNECTION_CONFIGURATOR;
         }
 
-        public static SPBlockingClient create_(UserID user)
+        public SPBlockingClient create_(UserID user)
         {
             return new SPBlockingClient(new SPClientHandler(SP.URL.get(), getDefaultConfigurator()),
                     user);
         }
 
-        public static SPBlockingClient create_(UserID user, IURLConnectionConfigurator configurator)
+        public SPBlockingClient create_(UserID user, IURLConnectionConfigurator configurator)
         {
             return new SPBlockingClient(new SPClientHandler(SP.URL.get(), configurator), user);
         }
 
-        public static SPBlockingClient create_(IURLConnectionConfigurator configurator)
+        public SPBlockingClient create_(IURLConnectionConfigurator configurator)
         {
             // Use an invalid UserID, since the caller will not be using signInRemote().
             return new SPBlockingClient(new SPClientHandler(SP.URL.get(), configurator),
