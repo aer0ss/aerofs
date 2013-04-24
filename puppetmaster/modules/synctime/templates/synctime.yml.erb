@@ -5,8 +5,14 @@ logging:
         enabled: true
         threshold: ALL
 
+    file:
+        enabled: true
+        archive: false
+        currentLogFilename: /var/log/aerofs/synctime.log
+        timeZone: UTC
+
 database:
-  driverClass: com.mysql.jdbc.Driver 
+  driverClass: com.mysql.jdbc.Driver
   user: <%= @mysql_config["user"] %>
   password: <%= @mysql_config["password"] %>
   url: 'jdbc:mysql://<%= @mysql_config["host"] %>:3306/<%= @mysql_config["schema"] %>'

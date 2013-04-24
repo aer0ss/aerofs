@@ -19,6 +19,7 @@ PACKAGES= \
 	sp \
 	sv \
 	syncstat \
+	synctime \
 	syncstat-tools \
 	jeq-tools \
 	verkehr \
