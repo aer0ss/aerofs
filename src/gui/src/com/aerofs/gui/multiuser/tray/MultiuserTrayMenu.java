@@ -14,6 +14,9 @@ import com.aerofs.gui.GUIUtil;
 import com.aerofs.gui.GUIUtil.AbstractListener;
 import com.aerofs.gui.multiuser.preferences.MultiuserDlgPreferences;
 import com.aerofs.gui.tray.AbstractTrayMenu;
+import com.aerofs.gui.tray.ITrayMenu;
+import com.aerofs.gui.tray.ITrayMenuComponentListener;
+import com.aerofs.gui.tray.RebuildDisposition;
 import com.aerofs.gui.tray.TrayIcon;
 import com.aerofs.gui.tray.TrayMenuPopulator;
 import com.aerofs.labeling.L;
@@ -24,57 +27,74 @@ import com.aerofs.ui.UI;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Menu;
 
-
-public class MultiuserTrayMenu extends AbstractTrayMenu
+public class MultiuserTrayMenu extends AbstractTrayMenu implements ITrayMenu, ITrayMenuComponentListener
 {
     private static final ClickEvent MANAGE_TEAM_CLICKED
             = new ClickEvent(Action.MANAGE_TEAM, Source.TASKBAR);
 
-    public MultiuserTrayMenu(TrayIcon icon)
+    public MultiuserTrayMenu(TrayIcon icon, RebuildDisposition buildOrReuse)
     {
-        super(icon);
+        super(icon, buildOrReuse);
+
+        // It's critical that we rebuild the menu here, since otherwise Ubuntu won't
+        // have a menu to display until one of the menu items needs to be updated.
+        rebuildMenu();
     }
 
     @Override
-    public void loadMenu()
+    protected void updateLastMenuInPlace()
     {
+        if (_indexingTrayMenuSection != null) {
+            _indexingTrayMenuSection.updateInPlace();
+        }
+        _transferTrayMenuSection.updateInPlace();
+    }
+
+    @Override
+    protected void populateMenu(Menu menu)
+    {
+        TrayMenuPopulator populator = new TrayMenuPopulator(menu);
+        // Apply updates
         if (UI.updater().getUpdateStatus() == Status.APPLY) {
-            _populator.addApplyUpdateMenuItem();
-            _populator.addMenuSeparator();
+            populator.addApplyUpdateMenuItem();
+            populator.addMenuSeparator();
         }
 
+        // Open AeroFS folder
         if (Cfg.storageType() == StorageType.LINKED) {
-            addOpenFolderMenuItem();
-            _populator.addMenuSeparator();
+            addOpenFolderMenuItem(populator);
+            populator.addMenuSeparator();
         }
 
-        addManageTeamMenuItem();
+        // Manage Team online
+        addManageTeamMenuItem(populator);
+        populator.addMenuSeparator();
 
+        // Either "launching", "indexing", or (maybe) shared folders + transfers + preferences
         if (!_enabled) {
-            _populator.addMenuSeparator();
-
-            _populator.addLaunchingMenuItem();
-            _populator.addMenuSeparator();
-        } else if (_indexingPoller != null && !_indexingPoller.isIndexingDone()) {
-            _populator.addMenuSeparator();
-
-            _indexingTrayMenuSection.populate();
-            _populator.addMenuSeparator();
+            populator.addLaunchingMenuItem();
+            populator.addMenuSeparator();
         } else {
             if (Cfg.storageType() == StorageType.LINKED) {
-                createSharedFoldersMenu();
+                if (_indexingPoller != null && !_indexingPoller.isIndexingDone() &&
+                        _indexingTrayMenuSection != null) {
+                    _indexingTrayMenuSection.populateMenu(menu);
+                    populator.addMenuSeparator();
+                } else {
+                    createSharedFoldersMenu(menu);
+                    populator.addMenuSeparator();
+                }
             }
-            _populator.addMenuSeparator();
-
-            _transferTrayMenuSection.populate();
-
-            _populator.addMenuSeparator();
-
-            addPreferencesMenuItem();
+            _transferTrayMenuSection.populateMenu(menu);
+            populator.addMenuSeparator();
+            addPreferencesMenuItem(populator);
         }
 
-        createHelpMenu();
-        _populator.addExitMenuItem(L.product());
+        // Help
+        createHelpMenu(populator);
+        populator.addMenuSeparator();
+        // Exit
+        populator.addExitMenuItem(L.product());
     }
 
     @Override
@@ -83,16 +103,16 @@ public class MultiuserTrayMenu extends AbstractTrayMenu
         return new MultiuserDlgPreferences(GUI.get().sh());
     }
 
-    public void createHelpMenu()
+    private void createHelpMenu(TrayMenuPopulator trayMenuPopulator)
     {
-        Menu helpMenu = _populator.createHelpMenu();
+        Menu helpMenu = trayMenuPopulator.createHelpMenu();
         TrayMenuPopulator helpTrayMenuPopulator = new TrayMenuPopulator(helpMenu);
         helpTrayMenuPopulator.addHelpMenuItems();
     }
 
-    private void addManageTeamMenuItem()
+    private void addManageTeamMenuItem(TrayMenuPopulator trayMenuPopulator)
     {
-        _populator.addMenuItem("Manage Team", new AbstractListener(MANAGE_TEAM_CLICKED)
+        trayMenuPopulator.addMenuItem("Manage Team", new AbstractListener(MANAGE_TEAM_CLICKED)
         {
             @Override
             protected void handleEventImpl(Event event)

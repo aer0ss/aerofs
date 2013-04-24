@@ -43,9 +43,9 @@ public class UIScheduler implements IScheduler
     public void schedule(final IEvent ev, long relativeTimeInMSec)
     {
         _executor.schedule(new Runnable() {
-            @Override
-            public void run()
-            {
+                @Override
+                public void run()
+                {
                 assert ev instanceof AbstractEBSelfHandling;
                 ((AbstractEBSelfHandling) ev).handle_();
             }

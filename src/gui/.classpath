@@ -12,7 +12,7 @@
 			<attribute name="javadoc_location" value="http://commons.apache.org/cli/api-release/"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="approot/lib/swt-3.7.jar">
+	<classpathentry kind="lib" path="approot/lib/swt-4.jar">
 		<attributes>
 			<attribute name="javadoc_location" value="http://help.eclipse.org/helios/index.jsp?topic=/org.eclipse.platform.doc.isv/reference/api/org/eclipse/swt"/>
 		</attributes>

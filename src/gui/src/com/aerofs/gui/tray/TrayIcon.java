@@ -6,11 +6,17 @@ import com.aerofs.base.analytics.AnalyticsEvents.ClickEvent.Action;
 import com.aerofs.base.analytics.AnalyticsEvents.ClickEvent.Source;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.gui.tray.TrayIcon.TrayPosition.Orientation;
+import com.aerofs.labeling.L;
+import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.sv.client.SVClient;
 import com.aerofs.swig.driver.Driver;
+import com.google.common.base.Objects;
 import com.google.common.collect.Sets;
+import org.eclipse.swt.widgets.Menu;
+import org.eclipse.swt.widgets.UbuntuTrayItem;
+import org.eclipse.swt.widgets.Widget;
 import org.slf4j.Logger;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Point;
@@ -29,15 +35,19 @@ import javax.annotation.Nullable;
 import java.lang.reflect.Method;
 import java.util.Set;
 
-public class TrayIcon
+public class TrayIcon implements ITrayMenuListener
 {
     private static final Logger l = Loggers.getLogger(TrayIcon.class);
-    private static final long ANIMATION_INTERVAL = 80; // milliseconds between frames
+
+    // milliseconds between frames. in testing, libappindicator was unable to
+    // handle anything faster than ~8fps, so give it a longer interval.
+    private final static long ANIMATION_INTERVAL = UbuntuTrayItem.supported() ? 200 : 80;
     private static final ClickEvent TRAY_ICON_DEFAULT_ACTION = new ClickEvent( Action.TRAY_ICON_DEFAULT_ACTION, Source.TASKBAR);
     private static final ClickEvent TRAY_ICON_CLICKED = new ClickEvent(Action.TRAY_ICON, Source.TASKBAR);
 
     private final SystemTray _st;
     private final TrayItem _ti;
+    private final UbuntuTrayItem _uti;
     private Thread _thdSpinning;
     private int _iconIndex;
 
@@ -49,37 +59,48 @@ public class TrayIcon
             SystemUtil.fatal("System tray not found");
         }
 
-        _ti = new TrayItem(tray, SWT.NONE);
+        l.warn("UbuntuTrayItem support: " + UbuntuTrayItem.supported());
+        if (UbuntuTrayItem.supported()) {
+            _uti = new UbuntuTrayItem(tray, SWT.NONE, L.product());
+            // We now ship the hicolor/ icon folder in approot on Linux.
+            _uti.setIconPath(AppRoot.abs());
+            _uti.setIcon("tray0", L.product());
+            _uti.setStatus(UbuntuTrayItem.ACTIVE);
+            _ti = null;
+        } else {
+            _uti = null;
+            _ti = new TrayItem(tray, SWT.NONE);
 
-        _ti.addListener(SWT.Show, new AbstractListener(null) {
-            @Override
-            public void handleEventImpl(Event event)
-            {
-            }
-        });
-        _ti.addListener(SWT.Hide, new AbstractListener(null) {
-            @Override
-            public void handleEventImpl(Event event)
-            {
-            }
-        });
-
-        if (!OSUtil.isOSX()) {
-            _ti.addListener(SWT.DefaultSelection, new AbstractListener(TRAY_ICON_DEFAULT_ACTION) {
+            _ti.addListener(SWT.Show, new AbstractListener(null) {
                 @Override
                 public void handleEventImpl(Event event)
                 {
-                    GUIUtil.launch(Cfg.absDefaultRootAnchor());
+                }
+            });
+            _ti.addListener(SWT.Hide, new AbstractListener(null) {
+                @Override
+                public void handleEventImpl(Event event)
+                {
+                }
+            });
+
+            if (!OSUtil.isOSX()) {
+                _ti.addListener(SWT.DefaultSelection, new AbstractListener(TRAY_ICON_DEFAULT_ACTION) {
+                    @Override
+                    public void handleEventImpl(Event event)
+                    {
+                        GUIUtil.launch(Cfg.absDefaultRootAnchor());
+                    }
+                });
+            }
+            _ti.addListener(SWT.MenuDetect, new AbstractListener(TRAY_ICON_CLICKED) {
+                @Override
+                public void handleEventImpl(Event event)
+                {
+                    _st.setMenuVisible(true);
                 }
             });
         }
-        _ti.addListener(SWT.MenuDetect, new AbstractListener(TRAY_ICON_CLICKED) {
-            @Override
-            public void handleEventImpl(Event event)
-            {
-                _st.setMenuVisible(true);
-            }
-        });
 
         setSpin(false);
     }
@@ -104,6 +125,11 @@ public class TrayIcon
         return _ti;
     }
 
+    private Widget iconImpl()
+    {
+        return Objects.firstNonNull(_uti, _ti);
+    }
+
     private void startAnimation()
     {
         _thdSpinning = new Thread() {
@@ -116,11 +142,11 @@ public class TrayIcon
                 while (!_done) {
                     ThreadUtil.sleepUninterruptable(ANIMATION_INTERVAL);
 
-                    GUI.get().safeExec(_ti, new Runnable() {
+                    GUI.get().safeExec(iconImpl(), new Runnable() {
                         @Override
                         public void run()
                         {
-                            if (_thdSpinning != _self || _ti.isDisposed()) {
+                            if (_thdSpinning != _self || iconImpl().isDisposed()) {
                                 _done = true;
                             } else {
                                 _iconIndex++;
@@ -138,17 +164,30 @@ public class TrayIcon
 
     public void dispose()
     {
-        _ti.dispose();
+        if (_ti != null) _ti.dispose();
+        if (_uti != null) _uti.dispose();
     }
 
     public boolean isDisposed()
     {
-       return _ti.isDisposed();
+        if (_ti != null) return _ti.isDisposed();
+        return _uti.isDisposed();
     }
 
     public void setToolTipText(String str)
     {
-        _ti.setToolTipText(str);
+        if (_ti != null) {
+            _ti.setToolTipText(str);
+        }
+    }
+
+    @Override
+    public void onTrayMenuChange(Menu menu)
+    {
+        l.debug("onTrayMenuChange() - Menu is {}", menu);
+        if (_uti != null) {
+            _uti.setMenu(menu);
+        }
     }
 
     public static enum NotificationReason
@@ -163,7 +202,7 @@ public class TrayIcon
     {
         _notificationReasons.clear();
 
-        GUI.get().safeAsyncExec(_ti, new Runnable() {
+        GUI.get().safeAsyncExec(iconImpl(), new Runnable() {
             @Override
             public void run()
             {
@@ -180,7 +219,8 @@ public class TrayIcon
             _notificationReasons.remove(reason);
         }
 
-       GUI.get().safeAsyncExec(_ti, new Runnable() {
+
+        GUI.get().safeAsyncExec(iconImpl(), new Runnable() {
             @Override
             public void run()
             {
@@ -191,7 +231,13 @@ public class TrayIcon
 
     private void refreshTrayIconImage()
     {
-        _ti.setImage(Images.getTrayIcon(!_notificationReasons.isEmpty(), _iconIndex));
+        String iconName = Images.getTrayIconName(!_notificationReasons.isEmpty(), _iconIndex);
+        if (_uti != null) {
+            _uti.setIcon(iconName, L.product());
+        }
+        if (_ti != null) {
+            _ti.setImage(Images.getTrayIcon(iconName));
+        }
     }
 
     public static class TrayPosition

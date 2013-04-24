@@ -6,5 +6,5 @@ package com.aerofs.gui.tray;
 
 public interface IMenuProvider
 {
-    public ITrayMenu createMenu(TrayIcon icon);
+    public ITrayMenu createMenu(TrayIcon icon, RebuildDisposition disposition);
 }
