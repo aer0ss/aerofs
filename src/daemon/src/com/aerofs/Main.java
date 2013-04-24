@@ -27,7 +27,7 @@ import java.lang.reflect.Field;
 
 public class Main
 {
-    final static Logger l = Loggers.getLogger(Main.class);
+    private final static Logger l = Loggers.getLogger(Main.class);
 
     private static final Object DAEMON_NAME = "daemon";
     private static final Object FSCK_NAME = "fsck";
@@ -44,18 +44,11 @@ public class Main
 
         // parse arguments
         String rtRoot = args[0];
-        String app = args[1];
+        String prog = args[1];
 
         String[] appArgs = new String[args.length - MAIN_ARGS];
-        for (int i = 0; i < appArgs.length; i++) {
-            appArgs[i] = args[i + MAIN_ARGS];
-        }
+        System.arraycopy(args, MAIN_ARGS, appArgs, 0, appArgs.length);
 
-        mainImpl(rtRoot, app, appArgs);
-    }
-
-    private static void mainImpl(String rtRoot, String prog, String ... appArgs)
-    {
         if (rtRoot.equals(Param.DEFAULT_RTROOT)) {
             rtRoot = OSUtil.get().getDefaultRTRoot();
         }
@@ -138,10 +131,7 @@ public class Main
         else if (prog.equals(DAEMON_NAME)) cls = com.aerofs.daemon.DaemonProgram.class;
         else if (prog.equals(FSCK_NAME)) cls = com.aerofs.fsck.FSCKProgram.class;
         else if (prog.equals(UMDC_NAME)) cls = com.aerofs.umdc.UMDCProgram.class;
-        else cls = null;
-
-        // fail over to UI programs
-        if (cls == null) cls = Class.forName("com.aerofs.Program");
+        else cls = Class.forName("com.aerofs.Program"); // fail over to UI programs
 
         // load config
         if (!Cfg.inited()) {
@@ -159,22 +149,7 @@ public class Main
         Util.registerLibExceptions();
 
         // launch the program
-        try {
-            ((IProgram) cls.newInstance()).launch_(rtRoot, prog, progArgs);
-        } catch (ExProgramNotFound e) {
-            String name;
-            if (prog.indexOf('.') == -1) {
-                name = "com.aerofs.program." + prog + ".Program";
-            } else {
-                name = prog;
-            }
-            try {
-                cls = Class.forName(name);
-            } catch (ClassNotFoundException e2) {
-                throw new ExProgramNotFound(prog);
-            }
-            ((IProgram) cls.newInstance()).launch_(rtRoot, prog, progArgs);
-        }
+        ((IProgram) cls.newInstance()).launch_(rtRoot, prog, progArgs);
     }
 
     private static void createRtRootIfNotExists(String rtRoot)
