@@ -182,10 +182,16 @@ public class ShProgram implements IProgram, ICallback
         _pwd = pwd;
     }
 
+    private String rootName(Path path)
+    {
+        // the root SID is not associated with any path on TeamServer
+        String absRoot = Cfg.getRootPath(path.sid());
+        return absRoot != null ? new File(absRoot).getName() : "";
+    }
+
     @Override
     public String getPrompt_()
     {
-        return (_pwd.isEmpty() ? new File(Cfg.getRootPath(_pwd.sid())).getName() : _pwd.last())
-                + "> ";
+        return (_pwd.isEmpty() ? rootName(_pwd) : _pwd.last()) + "> ";
     }
 }
