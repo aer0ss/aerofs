@@ -51,8 +51,6 @@ public class DaemonParam
 
     public static class Jingle
     {
-        public static final String RELAY_HOST           = "97.107.139.17";
-        public static final int RELAY_PORT              = L.isStaging() ? 7583 : 80;
         public static final int QUEUE_LENGTH            = QUEUE_LENGTH_DEFAULT;
         public static final long CALL_TIMEOUT           = 30 * C.SEC;
     }
