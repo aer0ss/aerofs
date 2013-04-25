@@ -1,0 +1,38 @@
+logging:
+    level: INFO
+
+    console:
+        enabled: true
+        threshold: ALL
+
+database:
+  driverClass: com.mysql.jdbc.Driver 
+  user: <%= @mysql_config["user"] %>
+  password: <%= @mysql_config["password"] %>
+  url: 'jdbc:mysql://<%= @mysql_config["host"] %>:3306/<%= @mysql_config["schema"] %>'
+
+  # any properties specific to your JDBC driver:
+  properties:
+    charSet: UTF-8
+
+  # the maximum amount of time to wait on an empty pool before throwing an
+  # exception
+  maxWaitForConnection: 1s
+
+  # the SQL query to run when validating a connection's liveness
+  validationQuery: 'SHOW TABLES LIKE "l1_histogram";'
+
+  # the minimum number of connections to keep open
+  minSize: 8
+
+  # the maximum number of connections to keep open
+  maxSize: 32
+
+  # whether or not idle connections should be validated
+  checkConnectionWhileIdle: false
+
+  # how long a connection must be held before it can be validated
+  checkConnectionHealthWhenIdleFor: 10s
+
+  # the maximum lifetime of an idle connection
+  closeConnectionIfIdleFor: 1 minute

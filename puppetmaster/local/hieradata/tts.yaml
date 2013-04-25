@@ -1,0 +1,9 @@
+---
+
+mysql_config:
+    host: localhost
+    user: synctime
+    password: temp123
+    schema: synctime
+    
+    
