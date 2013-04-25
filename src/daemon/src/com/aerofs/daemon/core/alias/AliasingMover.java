@@ -16,6 +16,7 @@ import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.Path;
+import com.aerofs.lib.Util;
 import com.aerofs.lib.Version;
 import com.aerofs.daemon.core.ex.ExAborted;
 import com.aerofs.base.ex.ExNotFound;
@@ -399,6 +400,7 @@ public class AliasingMover
             if (oaTarget.isDir()) {
                 moveChildrenFromAliasToTargetDir_(alias, target, t);
                 if (oaAlias != null && !oaAlias.isExpelled()) {
+                    l.info("del alias dir {}", alias, Util.crc32(oaAlias.name()));
                     oaAlias.physicalFolder().delete_(PhysicalOp.APPLY, t);
                 }
             } else {
