@@ -58,6 +58,7 @@ public abstract class AbstractTestScanSession extends AbstractTest
         MockPhysicalDir phyRoot = createMockPhysicalFileSystem();
         MockRoot logicRoot = createMockLogicalFileSystem();
 
+
         phyRoot.mock(factFile, null);
         logicRoot.mock(rootSID, ds, null, null);
         when(tm.begin_()).then(RETURNS_MOCKS);
@@ -66,6 +67,17 @@ public abstract class AbstractTestScanSession extends AbstractTest
         when(root.sid()).thenReturn(rootSID);
         when(root.absRootAnchor()).thenReturn(pRoot);
 
+        // physical root needs to appear readable
+        when(factFile.create(pRoot).canRead()).thenReturn(true);
+        when(factFile.create(pRoot).isDirectory()).thenReturn(true);
+
         mockMightCreate();
+    }
+
+    protected void mockPhysicalDir(String path)
+    {
+        InjectableFile f = factFile.create(path);
+        when(f.isDirectory()).thenReturn(true);
+        when(f.canRead()).thenReturn(true);
     }
 }

@@ -99,6 +99,9 @@ public class TestScanSession_Misc extends AbstractTestScanSession
         String p1 = Util.join(pRoot, "d2", "d2.2");
         String p2 = Util.join(pRoot, "d2", "d2.3");
         Set<String> paths = ImmutableSet.of(p1, p2);
+
+        for (String p : paths) mockPhysicalDir(p);
+
         factSS.create_(root, paths, false).scan_();
 
         verify(factFile.create(p1)).list();
@@ -110,8 +113,11 @@ public class TestScanSession_Misc extends AbstractTestScanSession
     public void shouldIgnoreIfRootPathDoesntExistOrIsAFile() throws Exception
     {
         String path = Util.join(pRoot, "d2");
+
         InjectableFile f = factFile.create(path);
-        when(f.isDirectory()).thenReturn(false);
+        when(f.isDirectory()).thenReturn(true);
+        when(f.canRead()).thenReturn(true)
+                .thenReturn(false);
 
         // the method should not throw
         factSS.create_(root, Collections.singleton(path), false).scan_();
@@ -123,8 +129,12 @@ public class TestScanSession_Misc extends AbstractTestScanSession
     {
         String path = Util.join(pRoot, "d2");
         String subpath = Util.join(path, "d2.2");
-        InjectableFile f = factFile.create(subpath);
-        when(f.list()).thenReturn(null);
+
+        mockPhysicalDir(path);
+        mockPhysicalDir(subpath);
+
+        // The test directory can be read, but list() fails; this should throw.
+        when(factFile.create(subpath).list()).thenReturn(null);
 
         factSS.create_(root, Collections.singleton(path), true).scan_();
     }
@@ -186,9 +196,11 @@ public class TestScanSession_Misc extends AbstractTestScanSession
                 }
             });
 
+        InjectableFile f = factFile.create(Util.join(pRoot, "d2"));
+        when(f.isDirectory()).thenReturn(true);
+        when(f.canRead()).thenReturn(true);
         factSS.create_(root, Collections.singleton(pRoot), false).scan_();
 
-        InjectableFile f = factFile.create(Util.join(pRoot, "d2"));
         verify(f).list();
     }
 
@@ -203,8 +215,9 @@ public class TestScanSession_Misc extends AbstractTestScanSession
     {
         // Act as if none of these folders are available in the database.
         doNothing().when(delBuffer).remove_(any(SOID.class));
-
         Set<String> paths = ImmutableSet.of(Util.join(pRoot, "d2"), pRoot);
+
+        for (String s : paths) { mockPhysicalDir(s); }
 
         factSS.create_(root, paths, true).scan_();
         verify(h, times(5)).hold_(any(SOID.class));
@@ -241,6 +254,8 @@ public class TestScanSession_Misc extends AbstractTestScanSession
 
         Set<String> paths = ImmutableSet.of(pRoot, Util.join(pRoot, "d2"));
 
+        for (String s : paths) { mockPhysicalDir(s); }
+
         factSS.create_(root, paths, false).scan_();
         verify(h, times(5)).hold_(any(SOID.class));
     }
@@ -248,6 +263,9 @@ public class TestScanSession_Misc extends AbstractTestScanSession
     @Test
     public void shouldHoldAndReleaseAllSOIDs() throws Exception
     {
+        mockPhysicalDir(pRoot);
+        mockPhysicalDir(Util.join(pRoot, "d2"));
+
         factSS.create_(root, Collections.singleton(pRoot), true).scan_();
 
         // TODO: do not hard-code the expected number of logical objects

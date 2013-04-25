@@ -230,7 +230,7 @@ class ScanSession
         Iterator<PathCombo> iter = _sortedPCRoots.iterator();
         while (iter.hasNext()) {
             PathCombo pcRoot = iter.next();
-            if (_f._factFile.create(pcRoot._absPath).isDirectory()) {
+            if (isScannableDir(pcRoot._absPath)) {
                 // The order of scan is the natural order of the list, as required by the
                 // constructor.
                 _stack.push(pcRoot);
@@ -294,7 +294,8 @@ class ScanSession
             PathCombo pcChild = pcParent.append(nameChild);
             MightCreate.Result res = _f._mc.mightCreate_(pcChild, _f._delBuffer, t);
 
-            if (res == NEW_OR_REPLACED_FOLDER || (_recursive && res == EXISTING_FOLDER)) {
+            if ((res == NEW_OR_REPLACED_FOLDER || (_recursive && res == EXISTING_FOLDER))
+                && isScannableDir(pcChild._absPath)) {
                 // recurse down if it's a newly created folder, or it's an existing folder and the
                 // recursive bit is set
                 _stack.push(pcChild);
@@ -341,5 +342,15 @@ class ScanSession
                 _f._pi.incrementMonotonicProgress();
             }
         }
+    }
+
+    /**
+     * Return true if the path describes a directory that we can read,
+     * and have a chance at actually syncing.
+     */
+    private boolean isScannableDir(String absPath)
+    {
+        InjectableFile ifile = _f._factFile.create(absPath);
+        return ifile.isDirectory() && ifile.canRead();
     }
 }
