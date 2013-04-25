@@ -6,6 +6,7 @@ class synctime {
 
     service {"synctime":
         ensure => running,
+        provider => upstart,
         require => Package["aerofs-synctime"]
     }
 }
