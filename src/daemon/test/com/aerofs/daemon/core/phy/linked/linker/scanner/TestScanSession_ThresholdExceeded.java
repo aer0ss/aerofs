@@ -95,6 +95,7 @@ public class TestScanSession_ThresholdExceeded extends AbstractTestScanSession
         String p2 = Util.join(pRoot, "dir2");
 
         Set<String> paths = ImmutableSet.of(p1, p2);
+        for (String s : paths) mockPhysicalDir(s);
 
         ScanSession ss = factSS.create_(root, paths, false);
         assertFalse(ss.scan_());                    // we are not done scanning

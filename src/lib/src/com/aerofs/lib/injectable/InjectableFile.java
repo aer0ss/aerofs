@@ -17,6 +17,7 @@ import javax.annotation.Nullable;
 
 import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.ProgressIndicators;
+import com.aerofs.lib.os.OSUtil;
 import com.google.inject.Inject;
 
 /**
@@ -310,9 +311,26 @@ public class InjectableFile
         FileUtil.ensureDirExists(_f);
     }
 
+    /**
+     * Returns true if the file is readable.
+     * NOTE there is additional behavior here for canRead() on directories.
+     */
     public boolean canRead()
     {
-        return _f.canRead();
+        /* WARNING fancy boolean logic.
+         * Read the following as:
+         *  - for files, true if f.canRead()
+         *  - for directories on POSIX, true if f.canRead()
+         *  - for directories on WIndows, true if f.canRead() and f.list() works normally.
+         *
+         * FIXME(jP): I don't like using .list() here, but it is the only way to detect
+         * a file symlink that points to a directory on Windows. You think that is evil? It is.
+         * But it exists in the world.
+         * Another way to look at this: if dir.list() returns null, then we don't care WHY,
+         * it always means that this directory is unreadable to us.
+         */
+        return _f.canRead() &&
+                !(_f.isDirectory() && OSUtil.isWindows() && _f.list() == null);
     }
 
     public boolean canWrite()
