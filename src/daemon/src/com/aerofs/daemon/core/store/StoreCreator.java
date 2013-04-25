@@ -97,7 +97,7 @@ public class StoreCreator
         _nvc.restoreStore_(sidx, t);
         _ivc.restoreStore_(sidx, t);
         _ps.createStore_(sidx, sid, name, t);
-        _ss.add_(sidx, t);
+        _ss.add_(sidx, name, t);
 
         return sidx;
     }

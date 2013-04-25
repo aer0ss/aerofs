@@ -20,7 +20,11 @@ public interface IStoreDatabase
      */
     boolean hasAny_() throws SQLException;
 
-    void insert_(SIndex sidx, Trans t) throws SQLException;
+    String getName_(SIndex sidx) throws SQLException;
+
+    void setName_(SIndex sidx, String name) throws SQLException;
+
+    void insert_(SIndex sidx, String name, Trans t) throws SQLException;
 
     void delete_(SIndex sidx, Trans t) throws SQLException;
 

@@ -22,6 +22,7 @@ public class CoreSchema implements ISchema
             T_STORE         = "s",
             C_STORE_SIDX    = "s_i",        // SIndex
             C_STORE_DIDS    = "s_d",        // concatenated DIDs
+            C_STORE_NAME    = "s_n",        // name
 
             // Store Hierarchy. See IStores' class-level comments for details.
             // parents.
@@ -567,7 +568,8 @@ public class CoreSchema implements ISchema
         s.executeUpdate(
                 "create table " + T_STORE + "(" +
                         C_STORE_SIDX + " integer primary key," +
-                        C_STORE_DIDS + " blob" +
+                        C_STORE_DIDS + " blob," +
+                        C_STORE_NAME + dbcw.nameType() +
                         ")" + dbcw.charSet());
 
         s.executeUpdate(

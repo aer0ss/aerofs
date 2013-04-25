@@ -116,7 +116,7 @@ public class TestLocalSyncStatus extends AbstractTest
     @Test
     public void shouldAddDevices() throws SQLException
     {
-        sdb.insert_(sidx, t);
+        sdb.insert_(sidx, "", t);
 
         assertDeviceList();
 
@@ -133,7 +133,7 @@ public class TestLocalSyncStatus extends AbstractTest
     @Test
     public void shouldUpdateSyncStatus() throws SQLException, ExAlreadyExist
     {
-        sdb.insert_(sidx, t);
+        sdb.insert_(sidx, "", t);
         mdb.insertOA_(sidx, OID.ROOT, OID.ROOT, "R", OA.Type.DIR, 0, t);
         mdb.insertOA_(sidx, o1.oid(), OID.ROOT, "foo", OA.Type.FILE, 0, t);
         mdb.insertOA_(sidx, o2.oid(), OID.ROOT, "bar", OA.Type.DIR, 0, t);

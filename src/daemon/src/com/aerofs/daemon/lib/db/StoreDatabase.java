@@ -55,6 +55,54 @@ public class StoreDatabase extends AbstractDatabase implements IStoreDatabase
         }
     }
 
+    private PreparedStatement _psGN;
+    @Override
+    public String getName_(SIndex sidx) throws SQLException
+    {
+        try {
+            if (_psGN == null) {
+                _psGN = c().prepareStatement(selectWhere(T_STORE, C_STORE_SIDX + "=?",
+                        C_STORE_NAME));
+            }
+
+            _psGN.setInt(1, sidx.getInt());
+            ResultSet rs = _psGN.executeQuery();
+            try {
+                Util.verify(rs.next());
+                String name = rs.getString(1);
+                return name != null ? name : "";
+            } finally {
+                rs.close();
+            }
+        } catch (SQLException e) {
+            DBUtil.close(_psGN);
+            _psGN = null;
+            throw e;
+        }
+    }
+
+    private PreparedStatement _psSN;
+    @Override
+    public void setName_(SIndex sidx, String name) throws SQLException
+    {
+        try {
+            if (_psSN == null) {
+                _psSN = c().prepareStatement(updateWhere(T_STORE, C_STORE_SIDX + "=?",
+                        C_STORE_NAME));
+            }
+
+            _psSN.setString(1, name);
+            _psSN.setInt(2, sidx.getInt());
+
+            int rows = _psSN.executeUpdate();
+            Util.verify(rows == 1);
+        } catch (SQLException e) {
+            DBUtil.close(_psSN);
+            _psSN = null;
+            throw e;
+        }
+    }
+
     @Override
     public boolean hasAny_() throws SQLException
     {
@@ -109,14 +157,15 @@ public class StoreDatabase extends AbstractDatabase implements IStoreDatabase
 
     private PreparedStatement _psAdd;
     @Override
-    public void insert_(SIndex sidx, Trans t) throws SQLException
+    public void insert_(SIndex sidx, String name, Trans t) throws SQLException
     {
         try {
             if (_psAdd == null) {
-                _psAdd = c().prepareStatement(insert(T_STORE, C_STORE_SIDX));
+                _psAdd = c().prepareStatement(insert(T_STORE, C_STORE_SIDX, C_STORE_NAME));
             }
 
             _psAdd.setInt(1, sidx.getInt());
+            _psAdd.setString(2, name);
             Util.verify(_psAdd.executeUpdate() == 1);
         } catch (SQLException e) {
             DBUtil.close(_psAdd);

@@ -101,13 +101,19 @@ public class Stores implements IStores, IStoreDeletionOperator
     }
 
     @Override
-    public void add_(final SIndex sidx, Trans t)
+    public String getName_(SIndex sidx) throws SQLException
+    {
+        return _sdb.getName_(sidx);
+    }
+
+    @Override
+    public void add_(final SIndex sidx, String name, Trans t)
             throws SQLException
     {
         assert _sdb.getParents_(sidx).isEmpty();
         assert _sdb.getChildren_(sidx).isEmpty();
 
-        _sdb.insert_(sidx, t);
+        _sdb.insert_(sidx, name, t);
 
         notifyAddition_(sidx);
 

@@ -33,7 +33,7 @@ public interface IStores
     /**
      * @pre the store is not present locally
      */
-    void add_(SIndex sidx, Trans t) throws SQLException;
+    void add_(SIndex sidx, String name, Trans t) throws SQLException;
 
     /**
      * @pre the store is present locally, and the parent doesn't exist
@@ -79,4 +79,6 @@ public interface IStores
      * one parent so the physical root is found by a straightforward walk up the store hierachy
      */
     SIndex getPhysicalRoot_(SIndex sidx) throws SQLException;
+
+    String getName_(SIndex sidx) throws SQLException;
 }

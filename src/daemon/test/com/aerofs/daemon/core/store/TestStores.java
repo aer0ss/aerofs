@@ -53,28 +53,28 @@ public class TestStores extends AbstractTest
     @Test(expected = AssertionError.class)
     public void shouldFailAssertionOnSettingParentsOnNonexisingStore() throws SQLException
     {
-        ss.add_(sidxParent, t);
+        ss.add_(sidxParent, "", t);
         ss.addParent_(sidx, sidxParent, t);
     }
 
     @Test(expected = AssertionError.class)
     public void shouldFailAssertionOnDeletingParentsOnNonexisingStore() throws SQLException
     {
-        ss.add_(sidxParent, t);
+        ss.add_(sidxParent, "", t);
         ss.deleteParent_(sidx, sidxParent, t);
     }
 
     @Test(expected = AssertionError.class)
     public void shouldFailAssertionOnSettingParentsOnNonexisingParent() throws SQLException
     {
-        ss.add_(sidx, t);
+        ss.add_(sidx, "", t);
         ss.addParent_(sidx, sidxParent, t);
     }
 
     @Test(expected = AssertionError.class)
     public void shouldFailAssertionOnDeletingParentsOnNonexisingParent() throws SQLException
     {
-        ss.add_(sidx, t);
+        ss.add_(sidx, "", t);
         ss.deleteParent_(sidx, sidxParent, t);
     }
 
@@ -93,8 +93,8 @@ public class TestStores extends AbstractTest
     @Test(expected = SQLException.class)
     public void shouldFailAddingExisingStore() throws SQLException
     {
-        ss.add_(sidx, t);
-        ss.add_(sidx, t);
+        ss.add_(sidx, "", t);
+        ss.add_(sidx, "", t);
     }
 
     @Test(expected = AssertionError.class)
@@ -106,7 +106,7 @@ public class TestStores extends AbstractTest
     @Test
     public void shouldDeleteStorePersistentDataAfterCleaningDevicePresence() throws SQLException
     {
-        ss.add_(sidx, t);
+        ss.add_(sidx, "", t);
 
         ss.deleteStore_(sidx, t);
 

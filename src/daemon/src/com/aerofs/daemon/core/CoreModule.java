@@ -7,6 +7,7 @@ import com.aerofs.daemon.core.ds.ObjectSurgeon;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.SIDMap;
+import com.aerofs.daemon.core.update.DaemonPostUpdateTasks;
 import com.aerofs.daemon.event.lib.imc.QueueBasedIMCExecutor;
 import com.aerofs.daemon.lib.db.ACLDatabase;
 import com.aerofs.daemon.lib.db.ActivityLogDatabase;
@@ -101,6 +102,11 @@ public class CoreModule extends AbstractModule
         // exactly as much as required depending on Module instantiation and preventing
         // schemas from leaking outside of the packages that actually use them
         Multibinder.newSetBinder(binder(), ISchema.class).addBinding().to(CoreSchema.class);
+
+        // RunAtLeastOnce tasks can be run in any order so we use a set binder to simplify their
+        // instanciation. However we don't want to leak the specific classes outside the package
+        // hence the use of a static method
+        DaemonPostUpdateTasks.bindUpdateTasks(binder());
     }
 
     @Provides
