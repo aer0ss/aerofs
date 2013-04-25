@@ -31,7 +31,7 @@ dependencies {
         exclude group:  'ch.qos.logback'      // exclude logback because we use slf4j/log4j
     }
 
-    compile('com.aerofs:synctime-client:0.1')
+    compile('com.aerofs.synctime:synctime-client:0.4')
 }
 
 /**
