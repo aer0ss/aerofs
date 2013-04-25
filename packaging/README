@@ -43,10 +43,6 @@ To release debs to production, run in PROD mode:
 
 etc...
 
-To be able to upload to the apt-repo you need to add your key to the apt server
-(apt.aerofs.com) in ~aerofs/.ssh/authorized_keys. In the future this will be
-managed by puppet.
-
 -------------------
 Directory Structure
 -------------------

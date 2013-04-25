@@ -86,6 +86,8 @@ echo "Version: $newversion" >> $control
 # if you don't have dpkg-deb on your system.
 # brew install $HOME/repos/aerofs/tools/fakeroot.rb
 # if you lack fakeroot.
+# If that doesn't work, simply
+# brew install fakeroot
 tmpdir=$(mktemp -d "$debname-XXXXXX")
 # We have to do the copy and chown under the fakeroot environment so the
 # package unpacks to files with root's uid/gid.
