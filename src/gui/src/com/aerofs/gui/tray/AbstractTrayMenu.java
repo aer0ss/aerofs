@@ -4,36 +4,55 @@
 
 package com.aerofs.gui.tray;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.base.analytics.AnalyticsEvents.ClickEvent;
 import com.aerofs.base.analytics.AnalyticsEvents.ClickEvent.Action;
 import com.aerofs.base.analytics.AnalyticsEvents.ClickEvent.Source;
 import com.aerofs.gui.AeroFSDialog;
 import com.aerofs.gui.GUI;
+import com.aerofs.gui.GUIExecutor;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.gui.GUIUtil.AbstractListener;
+import com.aerofs.gui.Images;
+import com.aerofs.gui.activitylog.DlgActivityLog;
+import com.aerofs.gui.history.DlgHistory;
 import com.aerofs.gui.sharing.DlgManageSharedFolders;
 import com.aerofs.gui.tray.IndexingPoller.IIndexingCompletionListener;
 import com.aerofs.labeling.L;
+import com.aerofs.lib.Path;
+import com.aerofs.lib.S;
 import com.aerofs.lib.StorageType;
+import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
+import com.aerofs.lib.os.OSUtil;
+import com.aerofs.proto.Ritual.GetActivitiesReply;
+import com.aerofs.proto.Ritual.GetActivitiesReply.PBActivity;
 import com.aerofs.proto.RitualNotifications.PBNotification;
 import com.aerofs.proto.RitualNotifications.PBNotification.Type;
 import com.aerofs.ui.RitualNotificationClient.IListener;
 import com.aerofs.ui.UI;
+import com.aerofs.ui.UIUtil;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.MenuAdapter;
 import org.eclipse.swt.events.MenuEvent;
 import org.eclipse.swt.events.MenuListener;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Menu;
+import org.eclipse.swt.widgets.MenuItem;
 import org.eclipse.swt.widgets.UbuntuTrayItem;
+import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 import java.util.List;
 
 public abstract class AbstractTrayMenu implements ITrayMenu, ITrayMenuComponentListener
 {
+    protected static Logger l = Loggers.getLogger(AbstractTrayMenu.class);
+
     private static final ClickEvent OPEN_AEROFS_FOLDER
             = new ClickEvent(Action.OPEN_AEROFS_FOLDER, Source.TASKBAR);
     private static final ClickEvent PREFERENCES
@@ -211,25 +230,130 @@ public abstract class AbstractTrayMenu implements ITrayMenu, ITrayMenuComponentL
     protected void addOpenFolderMenuItem(TrayMenuPopulator trayMenuPopulator)
     {
         trayMenuPopulator.addMenuItem("Open " + L.brand() + " Folder",
-                new AbstractListener(OPEN_AEROFS_FOLDER)
-                {
-                    @Override
-                    protected void handleEventImpl(Event event)
-                    {
-                        GUIUtil.launch(Cfg.absDefaultRootAnchor());
-                    }
-                });
+                new AbstractListener(OPEN_AEROFS_FOLDER) {
+            @Override
+            protected void handleEventImpl(Event event)
+            {
+                GUIUtil.launch(Cfg.absDefaultRootAnchor());
+            }
+        });
     }
 
-    protected void createSharedFoldersMenu(Menu menu)
+    protected void createSharedFoldersMenu(TrayMenuPopulator trayMenuPopulator)
     {
-        TrayMenuPopulator populator = new TrayMenuPopulator(menu);
-        populator.addMenuItem("Shared Folders...", new AbstractListener(MANAGE_SHARED_FOLDER)
-        {
+        trayMenuPopulator.addMenuItem("Shared Folders...",
+                new AbstractListener(MANAGE_SHARED_FOLDER) {
             @Override
             protected void handleEventImpl(Event event)
             {
                 new DlgManageSharedFolders(GUI.get().sh()).openDialog();
+            }
+        });
+    }
+
+    protected void createRecentActivitesMenu(Menu menu)
+    {
+        MenuItem mi;
+        mi = new MenuItem(menu, SWT.CASCADE);
+        mi.setText("Recent Activities");
+        final Menu menuActivities = new Menu(menu.getShell(), SWT.DROP_DOWN);
+        mi.setMenu(menuActivities);
+        menuActivities.addMenuListener(new MenuAdapter()
+        {
+            @Override
+            public void menuShown(MenuEvent event)
+            {
+                populateActivitiesMenu(menuActivities);
+            }
+        });
+    }
+
+    private void populateActivitiesMenu(final Menu menu)
+    {
+        final TrayMenuPopulator activitiesPopulator = new TrayMenuPopulator(menu);
+        activitiesPopulator.clearAllMenuItems();
+
+        activitiesPopulator.addMenuItem(S.GUI_LOADING, null).setEnabled(false);
+
+        // asynchronously fetch results, as GetActivities call may be slow. (see ritual.proto)
+        Futures.addCallback(UI.ritualNonBlocking().getActivities(true, 5, null),
+                new FutureCallback<GetActivitiesReply>()
+                {
+                    @Override
+                    public void onFailure(Throwable e)
+                    {
+                        activitiesPopulator.clearAllMenuItems();
+                        activitiesPopulator.addErrorMenuItem(S.COULDNT_LIST_ACTIVITIES);
+                        l.warn(Util.e(e));
+                        done();
+                    }
+
+                    @Override
+                    public void onSuccess(GetActivitiesReply reply)
+                    {
+                        activitiesPopulator.clearAllMenuItems();
+
+                        boolean added = false;
+                        for (int i = 0; i < reply.getActivityCount(); i++) {
+                            addBriefActivityEntry(reply.getActivity(i), i, activitiesPopulator);
+                            added = true;
+                        }
+
+                        if (added && reply.getHasUnresolvedDevices()) {
+                            MenuItem mi = activitiesPopulator.addMenuItem(
+                                    S.FAILED_FOR_ACCURACY, null);
+                            mi.setEnabled(false);
+                            mi.setImage(Images.get(Images.ICON_WARNING));
+                        }
+
+                        if (!added) {
+                            MenuItem mi = activitiesPopulator.addMenuItem(
+                                    "No recent activity", null);
+                            mi.setEnabled(false);
+                        }
+
+                        done();
+                    }
+
+                    private void done()
+                    {
+                        activitiesPopulator.addMenuSeparator();
+
+                        activitiesPopulator.addMenuItem("Show More...", new AbstractListener(null) {
+                            @Override
+                            protected void handleEventImpl(Event event)
+                            {
+                                new DlgActivityLog(GUI.get().sh(), null).openDialog();
+                            }
+                        });
+                    }
+                }, new GUIExecutor(menu));
+    }
+
+    protected void addBriefActivityEntry(final PBActivity a, final int idx,
+            TrayMenuPopulator populator)
+    {
+        populator.addMenuItem(a.getMessage(), new AbstractListener(null) {
+            @Override
+            protected void handleEventImpl(Event event)
+            {
+                if (a.hasPath()) {
+                    String path = UIUtil.absPathNullable(Path.fromPB(a.getPath()));
+                    if (path != null) OSUtil.get().showInFolder(path);
+                } else {
+                    new DlgActivityLog(GUI.get().sh(), idx).openDialog();
+                }
+            }
+        });
+    }
+
+    protected void addVersionHistoryMenuItem(TrayMenuPopulator trayMenuPopulator)
+    {
+        trayMenuPopulator.addMenuItem("Sync History...", new AbstractListener(null) {
+            @Override
+            protected void handleEventImpl(Event event)
+            {
+                new DlgHistory(GUI.get().sh()).openDialog();
             }
         });
     }

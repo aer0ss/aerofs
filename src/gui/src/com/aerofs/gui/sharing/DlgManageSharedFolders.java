@@ -23,7 +23,7 @@ import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExChildAlreadyShared;
 import com.aerofs.lib.ex.ExParentAlreadyShared;
 import com.aerofs.proto.Ritual.ListSharedFoldersReply;
-import com.aerofs.proto.Ritual.ListSharedFoldersReply.SharedFolder;
+import com.aerofs.proto.Ritual.PBSharedFolder;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.UI;
 import com.aerofs.ui.UIUtil;
@@ -39,7 +39,6 @@ import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.layout.RowLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
@@ -157,7 +156,7 @@ public class DlgManageSharedFolders extends AeroFSDialog
     public void shareFolder()
     {
         DirectoryDialog dlg = new DirectoryDialog(getShell(), SWT.SHEET);
-        dlg.setFilterPath(Cfg.absDefaultRootAnchor());
+        if (!L.isMultiuser()) dlg.setFilterPath(Cfg.absDefaultRootAnchor());
         dlg.setMessage("Select folder to share");
         final String path = dlg.open();
 
@@ -341,13 +340,18 @@ public class DlgManageSharedFolders extends AeroFSDialog
             } else {
                 _btnOpen = null;
             }
+
+            // add an invisible button if the button bar is empty to preserve control alignment
+            if (bar.getChildren().length == 0) {
+                new Button(bar, SWT.PUSH).setVisible(false);
+            }
         }
 
-        void fill(List<SharedFolder> sharedFolders)
+        void fill(List<PBSharedFolder> sharedFolders)
         {
             _d.setItemCount(sharedFolders.size());
             int i = 0;
-            for (SharedFolder sf : sharedFolders) {
+            for (PBSharedFolder sf : sharedFolders) {
                 Path path = Path.fromPB(sf.getPath());
                 TableItem item = _d.getItem(i++);
                 item.setText(0, UIUtil.sharedFolderName(path, sf.getName()));

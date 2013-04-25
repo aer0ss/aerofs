@@ -32,7 +32,7 @@ public class HdExportFile extends AbstractHdExport<EIExportFile>
         CA ca = oa.caMasterThrows();
         IPhysicalFile pf = ca.physicalFile();
 
-        File dst = File.createTempFile("aerofs-export-", ".tmp");
+        File dst = createTempFileWithSameExtension(ev._src.last());
 
         exportOrDeleteDest_(pf.newInputStream_(), dst);
 

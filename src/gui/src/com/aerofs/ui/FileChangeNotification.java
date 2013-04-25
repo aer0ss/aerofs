@@ -116,14 +116,16 @@ public class FileChangeNotification
         }
         String msg = sb.toString();
 
-        final String path = (Path.fromPB(_recents.get(0))).toAbsoluteString(Cfg.absDefaultRootAnchor());
-        UI.get().notify(MessageType.INFO, title, msg, new Runnable() {
-            @Override
-            public void run()
-            {
-                OSUtil.get().showInFolder(path);
-            }
-        });
+        final String path = UIUtil.absPathNullable(Path.fromPB(_recents.get(0)));
+        if (path != null) {
+            UI.get().notify(MessageType.INFO, title, msg, new Runnable() {
+                @Override
+                public void run()
+                {
+                    OSUtil.get().showInFolder(path);
+                }
+            });
+        }
 
         _recents.clear();
     }

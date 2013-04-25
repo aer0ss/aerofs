@@ -59,6 +59,8 @@ service RitualService {
     // already unshared.
     rpc UnshareFolder(UnshareFolderCall) returns(Void);
 
+    rpc ListUserRoots(Void) returns(ListUserRootsReply);
+
     rpc ListSharedFolders(Void) returns(ListSharedFoldersReply);
 
     rpc ListSharedFolderInvitations(Void) returns(ListSharedFolderInvitationsReply);
@@ -349,13 +351,17 @@ message LeaveSharedFolderCall {
     required PBPath path = 1;
 }
 
-message ListSharedFoldersReply {
-    message SharedFolder {
-        required PBPath path = 1;
-        required string name = 2;
-    }
+message PBSharedFolder {
+    required PBPath path = 1;
+    required string name = 2;
+}
 
-    repeated SharedFolder shared_folder = 1;
+message ListUserRootsReply {
+    repeated PBSharedFolder user_root = 1;
+}
+
+message ListSharedFoldersReply {
+    repeated PBSharedFolder shared_folder = 1;
 }
 
 message ExcludeFolderCall {

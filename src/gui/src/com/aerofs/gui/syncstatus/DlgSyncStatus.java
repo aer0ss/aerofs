@@ -18,6 +18,7 @@ import com.aerofs.proto.Ritual.GetSyncStatusReply;
 import com.aerofs.proto.Ritual.PBSyncStatus;
 import com.aerofs.proto.Ritual.PBSyncStatus.Status;
 import com.aerofs.ui.UI;
+import com.aerofs.ui.UIUtil;
 import com.google.common.collect.Maps;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.ScrolledComposite;
@@ -57,7 +58,7 @@ public class DlgSyncStatus extends AeroFSDialog
 
     Image getPathIcon(Path p)
     {
-        File f = new File(p.toAbsoluteString(Cfg.absDefaultRootAnchor()));
+        File f = new File(UIUtil.absPath(p));
         if (f.isDirectory()) return Images.getFolderIcon();
         return Images.getFileIcon(_path.last(), _iconCache);
     }

@@ -20,7 +20,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.mockito.Mock;
-import org.powermock.api.mockito.PowerMockito;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -76,8 +75,6 @@ public class TestLinkedRevProvider extends AbstractTest
         localRevProvider = new LinkedRevProvider(s, factFile);
         localRevProvider._startCleanerScheduler = false;
         localRevProvider.init_();
-
-        PowerMockito.mockStatic(System.class);
     }
 
     @After

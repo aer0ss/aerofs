@@ -4,13 +4,13 @@ import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.IStores;
 import com.aerofs.daemon.event.admin.EIListSharedFolders;
+import com.aerofs.daemon.event.admin.EIListSharedFolders.Filter;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.lib.event.Prio;
-import com.aerofs.lib.Path;
 import com.aerofs.base.id.OID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
-import com.aerofs.proto.Ritual.ListSharedFoldersReply.SharedFolder;
+import com.aerofs.proto.Ritual.PBSharedFolder;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 
@@ -34,16 +34,24 @@ public class HdListSharedFolders extends AbstractHdIMC<EIListSharedFolders>
     protected void handleThrows_(EIListSharedFolders ev, Prio prio) throws Exception
     {
         Collection<SIndex> all = _ss.getAll_();
-        Collection<SharedFolder> sharedFolders = Lists.newArrayListWithCapacity(all.size());
+        Collection<PBSharedFolder> sharedFolders = Lists.newArrayListWithCapacity(all.size());
         for (SIndex sidx : all) {
-            if (!_sidx2sid.get_(sidx).isUserRoot()) {
-                sharedFolders.add(SharedFolder.newBuilder()
-                        .setName(_ss.getName_(sidx))
-                        .setPath(_ds.resolve_(new SOID(sidx, OID.ROOT)).toPB())
-                        .build());
-            }
+            if (filter(ev._filter, sidx)) continue;
+
+            sharedFolders.add(PBSharedFolder.newBuilder()
+                    .setName(_ss.getName_(sidx))
+                    .setPath(_ds.resolve_(new SOID(sidx, OID.ROOT)).toPB())
+                    .build());
         }
 
         ev.setResult_(sharedFolders);
+    }
+
+    /**
+     * @return true if the given store should be filtered out from the reply
+     */
+    private boolean filter(Filter filter, SIndex sidx)
+    {
+        return (filter == Filter.USER_ROOTS) != _sidx2sid.get_(sidx).isUserRoot();
     }
 }

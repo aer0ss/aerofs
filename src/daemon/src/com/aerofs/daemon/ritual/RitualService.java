@@ -33,6 +33,7 @@ import com.aerofs.daemon.event.admin.EIListRevChildren;
 import com.aerofs.daemon.event.admin.EIListRevHistory;
 import com.aerofs.daemon.event.admin.EIListSharedFolderInvitations;
 import com.aerofs.daemon.event.admin.EIListSharedFolders;
+import com.aerofs.daemon.event.admin.EIListSharedFolders.Filter;
 import com.aerofs.daemon.event.admin.EIPauseOrResumeSyncing;
 import com.aerofs.daemon.event.admin.EIReloadConfig;
 import com.aerofs.daemon.event.admin.EIRelocateRootAnchor;
@@ -93,6 +94,7 @@ import com.aerofs.proto.Ritual.ListRevChildrenReply;
 import com.aerofs.proto.Ritual.ListRevHistoryReply;
 import com.aerofs.proto.Ritual.ListSharedFolderInvitationsReply;
 import com.aerofs.proto.Ritual.ListSharedFoldersReply;
+import com.aerofs.proto.Ritual.ListUserRootsReply;
 import com.aerofs.proto.Ritual.PBBranch;
 import com.aerofs.proto.Ritual.PBObjectAttributes;
 import com.aerofs.proto.Ritual.PBSyncStatus;
@@ -195,7 +197,8 @@ public class RitualService implements IRitualService
         EIListSharedFolderInvitations ev = new EIListSharedFolderInvitations();
         ev.execute(PRIO);
         return createReply(ListSharedFolderInvitationsReply.newBuilder()
-                .addAllInvitation(ev._invitations).build());
+                .addAllInvitation(ev._invitations)
+                .build());
     }
 
     @Override
@@ -314,8 +317,7 @@ public class RitualService implements IRitualService
         EIExportFile ev = new EIExportFile(Core.imce(), src);
         ev.execute(PRIO);
 
-        return createReply(ExportFileReply.newBuilder()
-                .setDest(ev._dst.getAbsolutePath()).build());
+        return createReply(ExportFileReply.newBuilder().setDest(ev._dst.getAbsolutePath()).build());
     }
 
     @Override
@@ -339,7 +341,8 @@ public class RitualService implements IRitualService
     public ListenableFuture<Void> moveObject(PBPath pathFrom, PBPath pathTo) throws Exception
     {
         Path to = Path.fromPB(pathTo);
-        EIMoveObject ev = new EIMoveObject(Cfg.user(), Core.imce(), Path.fromPB(pathFrom), to.removeLast(), to.last());
+        EIMoveObject ev = new EIMoveObject(Cfg.user(), Core.imce(), Path.fromPB(
+                pathFrom), to.removeLast(), to.last());
         ev.execute(PRIO);
         return createVoidReply();
     }
@@ -396,7 +399,9 @@ public class RitualService implements IRitualService
         EITransportFloodQuery ev = new EITransportFloodQuery(new DID(deviceId), seq);
         ev.execute(PRIO);
         return createReply(TransportFloodQueryReply.newBuilder()
-                .setBytes(ev.bytes_()).setTime(ev.time_()).build());
+                .setBytes(ev.bytes_())
+                .setTime(ev.time_())
+                .build());
     }
 
     /**
@@ -413,9 +418,18 @@ public class RitualService implements IRitualService
     }
 
     @Override
+    public ListenableFuture<ListUserRootsReply> listUserRoots() throws Exception
+    {
+        EIListSharedFolders ev = new EIListSharedFolders(Filter.USER_ROOTS);
+        ev.execute(PRIO);
+        return createReply(ListUserRootsReply.newBuilder()
+                .addAllUserRoot(ev._sharedFolders).build());
+    }
+
+    @Override
     public ListenableFuture<ListSharedFoldersReply> listSharedFolders() throws Exception
     {
-        EIListSharedFolders ev = new EIListSharedFolders();
+        EIListSharedFolders ev = new EIListSharedFolders(Filter.SHARED_FOLDERS);
         ev.execute(PRIO);
         return createReply(ListSharedFoldersReply.newBuilder()
                 .addAllSharedFolder(ev._sharedFolders).build());

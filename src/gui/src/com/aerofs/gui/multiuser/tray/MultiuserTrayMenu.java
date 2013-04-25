@@ -82,7 +82,9 @@ public class MultiuserTrayMenu extends AbstractTrayMenu implements ITrayMenu, IT
             _indexingTrayMenuSection.populateMenu(menu);
             populator.addMenuSeparator();
         } else {
-            createSharedFoldersMenu(menu);
+            createSharedFoldersMenu(populator);
+            createRecentActivitesMenu(menu);
+            addVersionHistoryMenuItem(populator);
             populator.addMenuSeparator();
 
             _transferTrayMenuSection.populateMenu(menu);
