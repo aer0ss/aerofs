@@ -589,7 +589,7 @@ public class CoreSchema implements ISchema
 
     public static void createSyncStatusPushQueueTable(Statement s, IDBCW dbcw) throws SQLException
     {
-        s.executeUpdate("create table " + T_SSPQ  + "(" +
+        s.executeUpdate("create table if not exists " + T_SSPQ  + "(" +
                 C_SSPQ_IDX + dbcw.longType() + " primary key " + dbcw.autoIncrement() + "," +
                 C_SSPQ_SIDX + " integer not null," +
                 C_SSPQ_OID + dbcw.uniqueIdType() + " not null" +
@@ -598,7 +598,7 @@ public class CoreSchema implements ISchema
 
     public static void createLeaveQueueTable(Statement s, IDBCW dbcw) throws SQLException
     {
-        s.executeUpdate("create table " + T_SPQ + "(" +
+        s.executeUpdate("create table if not exists " + T_SPQ + "(" +
                 C_SPQ_IDX + dbcw.longType() + " primary key " + dbcw.autoIncrement() + "," +
                 C_SPQ_SID + dbcw.uniqueIdType() + " not null" +
                 ")");
@@ -606,7 +606,7 @@ public class CoreSchema implements ISchema
 
     public static void createPendingRootTable(Statement s, IDBCW dbcw) throws SQLException
     {
-        s.executeUpdate("create table " + T_PENDING_ROOT + "(" +
+        s.executeUpdate("create table if not exists " + T_PENDING_ROOT + "(" +
                 C_PENDING_ROOT_SID + dbcw.uniqueIdType() + " not null primary key," +
                 C_PENDING_ROOT_NAME + " text not null" +
                 ")" + dbcw.charSet());
