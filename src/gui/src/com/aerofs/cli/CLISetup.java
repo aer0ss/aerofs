@@ -92,11 +92,6 @@ public class CLISetup
 
     private void processSetupFile(String rtRoot) throws Exception
     {
-        String s3BucketId;
-        String s3AccessKey = null;
-        String s3SecretKey = null;
-        char[] s3EncryptionPassword = null;
-
         File rtRootFile = new File(rtRoot);
         File setupFile = new File(rtRootFile, UNATTENDED_SETUP_FILE);
 
@@ -117,16 +112,16 @@ public class CLISetup
         _deviceName = props.getProperty(PROP_DEVICE, _deviceName);
         _storageType = StorageType.fromString(props.getProperty(PROP_STORAGE_TYPE));
 
-        s3BucketId = props.getProperty(CfgDatabase.Key.S3_BUCKET_ID.keyString());
+        String s3BucketId = props.getProperty(CfgDatabase.Key.S3_BUCKET_ID.keyString());
         if (s3BucketId != null) {
-            s3AccessKey = props.getProperty(CfgDatabase.Key.S3_ACCESS_KEY.keyString());
-            s3SecretKey = props.getProperty(CfgDatabase.Key.S3_SECRET_KEY.keyString());
-            s3EncryptionPassword = props.getProperty(
+            String s3AccessKey = props.getProperty(CfgDatabase.Key.S3_ACCESS_KEY.keyString());
+            String s3SecretKey = props.getProperty(CfgDatabase.Key.S3_SECRET_KEY.keyString());
+            char[] s3EncryptionPassword = props.getProperty(
                     CfgDatabase.Key.S3_ENCRYPTION_PASSWORD.keyString()).toCharArray();
-        }
 
-        if (s3BucketId != null) {
             String scrypted = Base64.encodeBytes(SecUtil.scrypt(s3EncryptionPassword, _userID));
+
+            if (_storageType == null) _storageType = StorageType.S3;
 
             _s3config = PBS3Config.newBuilder()
                     .setBucketId(s3BucketId)
