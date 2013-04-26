@@ -30,8 +30,8 @@ public class DPUTCreateCAIndex implements IDaemonPostUpdateTask
             @Override
             public void run_(Statement s) throws SQLException
             {
-                s.executeUpdate(
-                        "create index " + T_CA + "0 on " + T_CA + "(" + C_CA_KIDX + ")");
+                s.executeUpdate("create index if not exists "
+                                + T_CA + "0 on " + T_CA + "(" + C_CA_KIDX + ")");
             }
         });
     }
