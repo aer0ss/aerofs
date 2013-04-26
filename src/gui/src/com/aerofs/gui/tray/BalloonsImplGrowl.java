@@ -1,22 +1,26 @@
 package com.aerofs.gui.tray;
+
+import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
-import  com.aerofs.growl.*;
+import com.aerofs.growl.GrowlApplicationBridge;
+import com.aerofs.growl.Notification;
+import com.aerofs.growl.NotificationType;
+import com.aerofs.gui.Images;
+import com.aerofs.labeling.L;
+import com.aerofs.lib.AppRoot;
+import com.aerofs.lib.Param;
+import com.aerofs.lib.Util;
+import com.aerofs.ui.IUI.MessageType;
+import org.slf4j.Logger;
+
+import javax.imageio.ImageIO;
 import java.awt.image.RenderedImage;
 import java.io.File;
 import java.io.IOException;
-import javax.imageio.ImageIO;
 
-import com.aerofs.labeling.L;
-import com.aerofs.lib.Param;
-import org.slf4j.Logger;
-import com.aerofs.gui.Images;
-import com.aerofs.base.C;
-import com.aerofs.lib.AppRoot;
-import com.aerofs.lib.Util;
-import com.aerofs.ui.IUI.MessageType;
-
-public class BalloonsImplGrowl implements IBalloonsImpl {
-    private static final Logger l = Loggers.getLogger(Balloons.class);
+public class BalloonsImplGrowl implements IBalloonsImpl
+{
+    private static final Logger l = Loggers.getLogger(BalloonsImplGrowl.class);
     private final GrowlApplicationBridge _growl = new GrowlApplicationBridge(L.product());
     private final NotificationType _gInfo = new NotificationType(L.product() + " Notifications");
     private final NotificationType _gWarn = new NotificationType(L.product() + " Errors");
@@ -40,8 +44,6 @@ public class BalloonsImplGrowl implements IBalloonsImpl {
     @Override
     public void add(MessageType mt, String title, String msg, Runnable onClick)
     {
-        l.info("adding balloon \"" + title + ": " + msg + "\"");
-
         Notification n = new Notification(mt == MessageType.INFO ? _gInfo : _gWarn)
                 .setTitle(title)
                 .setMessage(msg)

@@ -1,19 +1,18 @@
 package com.aerofs.gui.tray;
 
-import com.aerofs.base.Loggers;
-import org.slf4j.Logger;
+import com.aerofs.gui.GUI;
+import com.aerofs.ui.IUI.MessageType;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.widgets.ToolTip;
 import org.eclipse.swt.widgets.TrayItem;
+import org.eclipse.swt.widgets.Widget;
 
-import com.aerofs.gui.GUI;
-import com.aerofs.ui.IUI.MessageType;
+import javax.annotation.Nullable;
 
-public class BalloonsImplSWT implements IBalloonsImpl {
-    private static final Logger l = Loggers.getLogger(Balloons.class);
-
+public class BalloonsImplSWT implements IBalloonsImpl
+{
     private final TrayItem _ti;
 
     BalloonsImplSWT(TrayIcon icon)
@@ -24,13 +23,11 @@ public class BalloonsImplSWT implements IBalloonsImpl {
     @Override
     public void add(MessageType mt, String title, String msg, final Runnable onClick)
     {
-        l.info("add balloon \"" + title + ": " + msg + "\"");
-
         int icon;
         switch (mt) {
-        case WARN: icon = SWT.ICON_WARNING; break;
+        case WARN:  icon = SWT.ICON_WARNING; break;
         case ERROR: icon = SWT.ICON_ERROR; break;
-        default: icon = SWT.ICON_INFORMATION; break;
+        default:    icon = SWT.ICON_INFORMATION; break;
         }
 
         final ToolTip tip = new ToolTip(GUI.get().sh(), SWT.BALLOON | icon);
@@ -47,19 +44,6 @@ public class BalloonsImplSWT implements IBalloonsImpl {
             });
         }
 
-        // tip.addListener(SWT.Hide, new Listener() {
-        // @Override
-        // public void handleEvent(Event event)
-        // {
-        // // this causes exceptions
-        // // TODO BUGBUG will the tool tip disposes itself?
-        // //_ti.setToolTip(null);
-        // //tip.dispose();
-        // Util.verify(tip == _q.remove());
-        // if (!_q.isEmpty()) open(_q.peek());
-        // }
-        // });
-        //
         closeCurrent();
         open(tip);
     }
@@ -67,14 +51,12 @@ public class BalloonsImplSWT implements IBalloonsImpl {
     @Override
     public boolean hasVisibleBalloon()
     {
-        return _ti != null && !_ti.isDisposed() && _ti.getToolTip() != null
-                && !_ti.getToolTip().isDisposed()
-                && _ti.getToolTip().isVisible();
+        return isNonDisposed(_ti) && isNonDisposed(_ti.getToolTip()) && _ti.getToolTip().isVisible();
     }
 
     private void open(ToolTip tip)
     {
-        if (_ti != null && !_ti.isDisposed()) {
+        if (isNonDisposed(_ti)) {
             _ti.setToolTip(tip);
             tip.setVisible(true);
         }
@@ -82,12 +64,19 @@ public class BalloonsImplSWT implements IBalloonsImpl {
 
     private void closeCurrent()
     {
-        if (_ti != null && !_ti.isDisposed() && _ti.getToolTip() != null
-                && !_ti.getToolTip().isDisposed()) {
+        if (isNonDisposed(_ti) && isNonDisposed(_ti.getToolTip())) {
             ToolTip tt = _ti.getToolTip();
             _ti.setToolTip(null);
             tt.dispose();
         }
+    }
+
+    /**
+     * Check if a widget is non-null and non-disposed
+     */
+    private boolean isNonDisposed(@Nullable Widget widget)
+    {
+        return widget != null && !widget.isDisposed();
     }
 
     @Override
@@ -95,5 +84,4 @@ public class BalloonsImplSWT implements IBalloonsImpl {
     {
         closeCurrent();
     }
-
 }

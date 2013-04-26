@@ -42,8 +42,7 @@ public class Balloons
     public boolean hasVisibleBalloon()
     {
         assert UI.get().isUIThread();
-
-        return _impl == null ? false : _impl.hasVisibleBalloon();
+        return _impl != null && _impl.hasVisibleBalloon();
     }
 
     void dispose()
