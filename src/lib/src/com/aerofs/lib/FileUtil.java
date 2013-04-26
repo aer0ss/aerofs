@@ -470,7 +470,9 @@ public abstract class FileUtil
 
     public static void deleteOrOnExit(File f)
     {
-        if (!f.delete()) deleteOnExit(f);
+        // If we fail to delete the file, and the file still exists (rather than failing because
+        // e.g. the file was already deleted), then flag the file to be deleted at JVM shutdown
+        if (!f.delete() && f.exists()) deleteOnExit(f);
     }
 
     // TODO (MJ) This method barely belongs in this class.
