@@ -24,7 +24,7 @@ public class MultiuserDlgSetup extends AbstractDlgSetup
 {
     private S3Config _s3Config;
     private MultiuserDlgSetupAdvanced _advanced;
-    private StorageType _storageChoice = StorageType.LOCAL;
+    private StorageType _storageChoice = StorageType.LINKED;
 
     public MultiuserDlgSetup(Shell parentShell)
             throws Exception

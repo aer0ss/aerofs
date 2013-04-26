@@ -145,7 +145,8 @@ public class CLISetup
             getUser(cli);
             getPassword(cli);
             getDeviceName(cli);
-            if (cli.ask(MessageType.INFO, S.SETUP_S3)) {
+            getStorageType(cli);
+            if (_storageType == StorageType.S3) {
                 getS3Config(cli);
             } else {
                 getRootAnchor(cli);
@@ -153,10 +154,6 @@ public class CLISetup
         }
 
         cli.progress("Performing magic");
-
-        if (_storageType == null) {
-            _storageType = _s3config != null ? StorageType.S3 : StorageType.LOCAL;
-        }
 
         UI.controller().setupMultiuser(_userID.getString(), new String(_passwd), _anchorRoot,
                 _deviceName, _storageType.name(), _s3config);
@@ -190,6 +187,26 @@ public class CLISetup
         cli.show(MessageType.INFO, "If you forgot your password, go to " +
                 WWW.PASSWORD_RESET_REQUEST_URL.get() + " to reset it.");
         _passwd =  cli.askPasswd(S.SETUP_PASSWD);
+    }
+
+    private void getStorageType(CLI cli) throws Exception
+    {
+        StringBuilder bd = new StringBuilder();
+        bd.append("The following storage options are available:");
+        for (StorageType t : StorageType.values()) {
+            bd.append("\n ").append(t.ordinal()).append(". ").append(t.description());
+        }
+        cli.show(MessageType.INFO, bd.toString());
+        String s = cli.askText("Storage option", String.valueOf(StorageType.LINKED.ordinal()));
+        try {
+            _storageType = StorageType.fromOrdinal(Integer.valueOf(s));
+        } catch (NumberFormatException e) {
+            cli.show(MessageType.WARN, "Invalid option, using default");
+            _storageType = StorageType.LINKED;
+        } catch (IndexOutOfBoundsException e) {
+            cli.show(MessageType.WARN, "Invalid option, using default");
+            _storageType = StorageType.LINKED;
+        }
     }
 
     private void getRootAnchor(CLI cli) throws Exception

@@ -168,8 +168,8 @@ public class HdLinkRoot extends AbstractHdIMC<EILinkRoot>
     {
         Trans t = _tm.begin_();
         try {
-            _lrm.unlink_(sid, t);
             _sd.deleteRootStore_(sidx, t);
+            _lrm.unlink_(sid, t);
             t.commit_();
         } finally {
             t.end_();

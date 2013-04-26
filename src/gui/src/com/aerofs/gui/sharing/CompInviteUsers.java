@@ -246,9 +246,9 @@ public class CompInviteUsers extends Composite implements IInputChangeListener
 
                 String msg;
                 if (e instanceof ExChildAlreadyShared) {
-                    msg = "You can't share a folder that contains a shared folder.";
+                    msg = S.CHILD_ALREADY_SHARED;
                 } else if (e instanceof ExParentAlreadyShared) {
-                    msg = "You can't share a folder under an already shared folder.";
+                    msg = S.PARENT_ALREADY_SHARED;
                 } else if (e instanceof ExNoPerm) {
                     msg = "You don't have permission to invite users to this folder";
                 } else if (e instanceof ExNoStripeCustomerID) {

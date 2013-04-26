@@ -592,14 +592,4 @@ public class Cfg
 
         return contents;
     }
-
-    @Nullable public static String absAutoExportFolder()
-    {
-        // It doesn't make sense to try to get the autoexport folder if there's no config loaded
-        // to read.
-        Preconditions.checkState(inited());
-        String path = db().getNullable(Key.AUTO_EXPORT_FOLDER);
-        if (path == null) return null;
-        return new File(path).getAbsolutePath();
-    }
 }

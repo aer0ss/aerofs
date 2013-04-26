@@ -41,7 +41,7 @@ public class MultiuserStoreJoiner implements IStoreJoiner
         // sigh... we create a root store for TeamServer clients to simplify the server-side
         // code so we have to explicitly ignore it here because:
         // 1. this store will always be empty, might as well not waste DB space
-        // 2. this store would confuse backends that use {@code ExportHelper}
+        // 2. this store may confuse some storage backends
         if (sid.equals(_cfgRootSID.get())) return;
 
         // every store is a root store, until it is referenced by an anchor in another store

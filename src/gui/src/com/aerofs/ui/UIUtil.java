@@ -440,4 +440,9 @@ public class UIUtil
         }
         return null;
     }
+
+    public static String absPath(Path path)
+    {
+        return path.toAbsoluteString(Cfg.getRootPath(path.sid()));
+    }
 }

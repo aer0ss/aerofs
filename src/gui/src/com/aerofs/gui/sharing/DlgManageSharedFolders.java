@@ -17,6 +17,7 @@ import com.aerofs.gui.sharing.manage.CompUserList.ILoadListener;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.S;
+import com.aerofs.lib.StorageType;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExChildAlreadyShared;
@@ -141,6 +142,7 @@ public class DlgManageSharedFolders extends AeroFSDialog
             @Override
             public void onFailure(Throwable t)
             {
+                _folderList.setLoading(false);
                 GUI.get().show(getShell(), MessageType.ERROR,
                         "Failed to retrieve shared folders: " + t);
             }
@@ -167,11 +169,9 @@ public class DlgManageSharedFolders extends AeroFSDialog
                     try {
                         UI.ritual().linkRoot(path);
                     } catch (ExChildAlreadyShared e) {
-                        UI.get().show(MessageType.ERROR,
-                                "There is already a shared folder under that folder");
+                        UI.get().show(MessageType.ERROR, S.CHILD_ALREADY_SHARED);
                     } catch (ExParentAlreadyShared e) {
-                        UI.get().show(MessageType.ERROR,
-                                "This folder is already under a shared folder");
+                        UI.get().show(MessageType.ERROR, S.PARENT_ALREADY_SHARED);
                     } catch (Exception e) {
                         UI.get().show(MessageType.ERROR, "Could not share folder: " + e);
                     }
@@ -230,6 +230,7 @@ public class DlgManageSharedFolders extends AeroFSDialog
         private final Table _d;
         private final Button _btnPlus;
         private final Button _btnMinus;
+        private final Button _btnOpen;
 
         private final AbstractSpinAnimator _animator = new AbstractSpinAnimator(this) {
             @Override
@@ -283,22 +284,28 @@ public class DlgManageSharedFolders extends AeroFSDialog
                 }
             });
 
-            new TableToolTip(_d, ABS_PATH_DATA);
+            // tooltip is the absPath, which only make sense for Linked storage
+            if (Cfg.storageType() == StorageType.LINKED) {
+                new TableToolTip(_d, ABS_PATH_DATA);
+            }
 
             Composite bar = GUIUtil.newPackedButtonContainer(c);
             bar.setLayoutData(new GridData(SWT.FILL, SWT.BOTTOM, true, false));
 
-            _btnPlus = new Button(bar, SWT.PUSH);
-            _btnPlus.setText("Add...");
-            _btnPlus.setToolTipText("Share a folder");
-            _btnPlus.addSelectionListener(new SelectionAdapter()
-            {
-                @Override
-                public void widgetSelected(SelectionEvent selectionEvent)
-                {
-                    shareFolder();
-                }
-            });
+            if (Cfg.storageType() == StorageType.LINKED) {
+                _btnPlus = new Button(bar, SWT.PUSH);
+                _btnPlus.setText("Add...");
+                _btnPlus.setToolTipText("Share a folder");
+                _btnPlus.addSelectionListener(new SelectionAdapter() {
+                    @Override
+                    public void widgetSelected(SelectionEvent selectionEvent)
+                    {
+                        shareFolder();
+                    }
+                });
+            } else {
+                _btnPlus = null;
+            }
 
             if (L.isMultiuser()) {
                 // Team Server cannot leave folders
@@ -317,6 +324,23 @@ public class DlgManageSharedFolders extends AeroFSDialog
                     }
                 });
             }
+
+            // open only makes sense for linked storage
+            if (Cfg.storageType() == StorageType.LINKED) {
+                _btnOpen = new Button(bar, SWT.PUSH);
+                _btnOpen.setText("Open");
+                _btnOpen.setToolTipText("Open folder in file manager");
+                _btnOpen.addSelectionListener(new SelectionAdapter() {
+                    @Override
+                    public void widgetSelected(SelectionEvent selectionEvent)
+                    {
+                        Path path = _folderList.selectedPath();
+                        if (path != null) GUIUtil.launch(UIUtil.absPath(path));
+                    }
+                });
+            } else {
+                _btnOpen = null;
+            }
         }
 
         void fill(List<SharedFolder> sharedFolders)
@@ -325,18 +349,27 @@ public class DlgManageSharedFolders extends AeroFSDialog
             int i = 0;
             for (SharedFolder sf : sharedFolders) {
                 Path path = Path.fromPB(sf.getPath());
-                String root = Cfg.getRootPath(path.sid());
-                if (root == null) {
-                    l.warn("unknown root " + path.sid());
-                    continue;
-                }
                 TableItem item = _d.getItem(i++);
                 item.setText(0, UIUtil.sharedFolderName(path, sf.getName()));
                 item.setData(PATH_DATA, path);
-                item.setData(ABS_PATH_DATA, path.toAbsoluteString(root));
+
+                // absPath only available for Linked storage
+                if (Cfg.storageType() == StorageType.LINKED) {
+                    String root = Cfg.getRootPath(path.sid());
+                    if (root == null) {
+                        l.warn("unknown root " + path.sid());
+                        continue;
+                    }
+                    item.setData(ABS_PATH_DATA, path.toAbsoluteString(root));
+                }
             }
 
-            _d.select(0);
+            boolean notEmpty = !sharedFolders.isEmpty();
+
+            if (notEmpty) _d.select(0);
+            if (_btnMinus != null) _btnMinus.setEnabled(notEmpty);
+            if (_btnOpen != null) _btnOpen.setEnabled(notEmpty);
+
             refreshMemberList(selectedPath(), false);
         }
 
@@ -389,6 +422,7 @@ public class DlgManageSharedFolders extends AeroFSDialog
             setLayout(l);
 
             _lbl = new Label(this, SWT.NONE);
+            _lbl.setText("Members:");
             _lbl.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
 
             Composite c = newTableWrapper(this);
@@ -447,9 +481,6 @@ public class DlgManageSharedFolders extends AeroFSDialog
                         }
                     }
                 });
-                _lbl.setText("Members:");
-            } else {
-                _lbl.setText("Select one the shared folders in the list to view its members");
             }
 
             layout(true, true);
@@ -470,23 +501,6 @@ public class DlgManageSharedFolders extends AeroFSDialog
         lc.verticalSpacing = 0;
         c.setLayout(lc);
         return c;
-    }
-
-    private Composite newButtonBar(Composite parent)
-    {
-        Composite bar = new Composite(parent, SWT.NONE);
-        RowLayout bl = new RowLayout(SWT.HORIZONTAL);
-        bl.fill = true;
-        bl.pack = false;
-        bl.spacing = 0;
-        bl.marginTop = 0;
-        bl.marginLeft = 0;
-        bl.marginRight = 0;
-        bl.marginBottom = 0;
-        bl.marginHeight = 0;
-        bl.marginWidth = 0;
-        bar.setLayout(bl);
-        return bar;
     }
 
     private static class DlgInvite extends AeroFSDialog
