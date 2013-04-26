@@ -41,7 +41,7 @@ public abstract class AbstractHdExport<T extends IEBIMC> extends AbstractHdIMC<T
     protected File createTempFileWithSameExtension(String fileName) throws IOException
     {
         FileName file = FileName.fromBaseName(fileName);
-        return FileUtil.createTempFile(file.base, file.extension, null, false);
+        return FileUtil.createTempFile(file.base, file.extension, null);
     }
 
     protected void exportOrDeleteDest_(InputStream is, File dst) throws Exception

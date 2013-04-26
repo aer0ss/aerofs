@@ -388,7 +388,7 @@ public class SVReactor
                 return _retraceMap.get(obfStack);
             } else {
                 OutArg<String> retracedEx = new OutArg<String>();
-                File f = FileUtil.createTempFile("afs", "retrace", null, false);
+                File f = FileUtil.createTempFile("afs", "retrace", null);
                 BufferedWriter bw = new BufferedWriter(new FileWriter(f));
                 try {
                     bw.write(exString);

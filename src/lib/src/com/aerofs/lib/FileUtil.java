@@ -186,16 +186,14 @@ public abstract class FileUtil
     }
 
     public static File createTempFile(@Nullable String prefix,  @Nullable String suffix,
-            @Nullable File baseDir, boolean deleteOnExit) throws IOException
+            @Nullable File baseDir) throws IOException
     {
         if (suffix == null) suffix = ".tmp";
         if (baseDir == null) baseDir = getJavaTempDir();
         String baseName = prefix + System.currentTimeMillis() + "-";
         for (int counter = 0; counter < TEMP_NAME_ATTEMPTS; counter++) {
             File temp = new File(baseDir, baseName + counter + suffix);
-            if (deleteOnExit) deleteOnExit(temp);
             if (temp.createNewFile()) return temp;
-            if (deleteOnExit) noDeleteOnExit(temp);
         }
         throw new IOException("Failed to create file within " + TEMP_NAME_ATTEMPTS
                 + " attempts (tried " + baseName + "{0..." + (TEMP_NAME_ATTEMPTS - 1) + '}'

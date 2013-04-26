@@ -93,7 +93,7 @@ public class TestHashStream extends AbstractTest
 
     private void runTest(RandomWriter rw) throws Exception {
         HashStream outHashStream = HashStream.newFileHasher();
-        File tempFile = FileUtil.createTempFile("testHashStream.", ".tmp", _tempFolder.getRoot(), false);
+        File tempFile = FileUtil.createTempFile("testHashStream.", ".tmp", _tempFolder.getRoot());
         OutputStream out = outHashStream.wrap(new BufferedOutputStream(new FileOutputStream(tempFile)));
         try {
             rw.writeTestData(out);
