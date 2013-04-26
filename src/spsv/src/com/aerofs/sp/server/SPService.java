@@ -115,6 +115,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.protobuf.ByteString;
+import com.netflix.config.DynamicBooleanProperty;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
@@ -182,6 +183,10 @@ public class SPService implements ISPService
     // Remember to udpate text in shared_foler.mako, shared_folder_modals.mako, team_settings.mako,
     // and pricing.mako when changing this number.
     private int _maxFreeCollaboratorsPerFolder = 1;
+
+    // If true, no payment checks will be enforced
+    private static final DynamicBooleanProperty DISABLE_PAYMENT =
+            new DynamicBooleanProperty("sp.disable_payment", false);
 
     SPService(SPDatabase db, SQLThreadLocalTransaction sqlTrans,
             JedisThreadLocalTransaction jedisTrans, ISessionUser sessionUser,
@@ -1530,6 +1535,8 @@ public class SPService implements ISPService
     private void throwIfPaymentRequiredAndNoCustomerID(PBStripeData sd)
             throws ExNoStripeCustomerID
     {
+        if (DISABLE_PAYMENT.get()) return;
+
         if (sd.getQuantity() > _maxFreeMembersPerTeam && !sd.hasCustomerId()) {
             throw new ExNoStripeCustomerID();
         }
@@ -1544,6 +1551,8 @@ public class SPService implements ISPService
             Collection<User> invitees)
             throws ExNoStripeCustomerID, SQLException, ExNotFound
     {
+        if (DISABLE_PAYMENT.get()) return;
+
         // Okay if the customer is paying
         if (org.getStripeCustomerIDNullable() != null) return;
 
