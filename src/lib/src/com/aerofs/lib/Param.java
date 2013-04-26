@@ -40,6 +40,8 @@ public class Param extends BaseParam
     public static final String OBF_CORE_DATABASE       = "obf-db";
     public static final String CFG_DATABASE            = "conf";
     public static final String ICONS_DIR               = "/icons/";
+    // Freedesktop.org-compliant icon theme folder
+    public static final String FDO_ICONS_DIR           = "icons";
     public static final String UPDATE_DIR              = "update";
     public static final String UPDATE_VER              = "update_ver";
     public static final String SETTING_UP              = "su";
