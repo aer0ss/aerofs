@@ -39,6 +39,7 @@ class SelfReportingTimeToSyncHistogram extends AbstractEBSelfHandling
             throws URISyntaxException
     {
         this(sched, new TimeToSyncClient(Params.SERVER_URL.get().toURI()), rockLog);
+        l.warn("uri: {}", Params.SERVER_URL.get().toURI());
     }
 
     SelfReportingTimeToSyncHistogram(CoreScheduler sched, TimeToSyncClient ttsClient,
@@ -73,20 +74,25 @@ class SelfReportingTimeToSyncHistogram extends AbstractEBSelfHandling
         // Send the current state of the histograms to the server if there is anything to report
         if (!_histograms.isEmpty()) {
             l.info("send and reset");
-            sendHistogramsToServerAndCatchExceptions();
-
-            // Reset the histogram (GC will clean up the old histogram data once the histograms
-            // are sent) TODO (MJ) will there be a sufficiently fast response from ^
-            _histograms = Maps.newHashMap();
+            sendHistogramsToServerAndResetHistograms();
         }
-
         schedule_();
     }
 
-    private void sendHistogramsToServerAndCatchExceptions()
+    private void sendHistogramsToServerAndResetHistograms()
     {
         try {
             sendHistogramsToServer();
+
+            // Reset the histogram, only if successful.
+            // TODO (MJ) Current Problems:
+            //  * the current Histogram does not collect OIDs, but when it does, note that
+            //    clearing the histogram only on success will risk unbounded memory consumption.
+            //  * for each device, histograms are sent one at a time. what if the histogram for
+            //    the first device succeeds in sending to the server, but the histograms for
+            //    subsequent devices fail to send and throw an exception. Then the times for the
+            //    first device will eventually be recorded twice... double counting.
+            _histograms = Maps.newHashMap();
         } catch (Exception ex) {
             l.warn("failed to send histogram for devices {}", _histograms.keySet());
             _rockLog.newDefect("daemon.synctime.sendHistograms")
