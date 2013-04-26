@@ -88,8 +88,9 @@ class _RitualServiceWrapper(object):
 
     def list_shared_folders(self):
         r = []
-        for p in self._service.list_shared_folders().path:
-            r.append(convert.pbpath_to_absolute(p))
+        # NB: this does NOT handle external roots properly...
+        for sf in self._service.list_shared_folders().shared_folder:
+            r.append(convert.pbpath_to_absolute(sf.path))
         return r
 
     def list_shared_folder_invitations(self):

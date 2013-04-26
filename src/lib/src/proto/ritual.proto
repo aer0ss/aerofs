@@ -350,7 +350,12 @@ message LeaveSharedFolderCall {
 }
 
 message ListSharedFoldersReply {
-    repeated PBPath path = 1;
+    message SharedFolder {
+        required PBPath path = 1;
+        required string name = 2;
+    }
+
+    repeated SharedFolder shared_folder = 1;
 }
 
 message ExcludeFolderCall {

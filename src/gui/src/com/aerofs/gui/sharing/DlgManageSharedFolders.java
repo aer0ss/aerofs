@@ -21,10 +21,11 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExChildAlreadyShared;
 import com.aerofs.lib.ex.ExParentAlreadyShared;
-import com.aerofs.proto.Common.PBPath;
 import com.aerofs.proto.Ritual.ListSharedFoldersReply;
+import com.aerofs.proto.Ritual.ListSharedFoldersReply.SharedFolder;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.UI;
+import com.aerofs.ui.UIUtil;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import org.eclipse.swt.SWT;
@@ -71,7 +72,7 @@ public class DlgManageSharedFolders extends AeroFSDialog
     }
     public DlgManageSharedFolders(Shell parent, @Nonnull Path path)
     {
-        super(parent, "Manage " + GUIUtil.sharedFolderName(path), false, true);
+        super(parent, "Manage " + UIUtil.sharedFolderName(path, null), false, true);
         _path = path;
     }
 
@@ -132,7 +133,7 @@ public class DlgManageSharedFolders extends AeroFSDialog
                     public void run()
                     {
                         _folderList.setLoading(false);
-                        _folderList.fill(reply.getPathList());
+                        _folderList.fill(reply.getSharedFolderList());
                     }
                 });
             }
@@ -193,14 +194,15 @@ public class DlgManageSharedFolders extends AeroFSDialog
         }
     }
 
-    private void leave(final Path path)
+    private void leave(final Path path, String defaultName)
     {
+        String name = UIUtil.sharedFolderName(path, defaultName);
         new TaskDialog(getShell(), "Leave Shared Folder",
                 "Leaving a shared folder will delete its content on all your devices "
                     + "but will not affect other members.\nIf you change you mind you "
                     + "can rejoin the shared folder on the web interface.\n\n"
-                    + "Are you sure you want to leave \"" + GUIUtil.sharedFolderName(path) + "\" ?\n ",
-                "Leaving " + GUIUtil.sharedFolderName(path)) {
+                    + "Are you sure you want to leave \"" + name + "\" ?\n ",
+                "Leaving " + name) {
             @Override
             public void run() throws Exception
             {
@@ -289,7 +291,8 @@ public class DlgManageSharedFolders extends AeroFSDialog
             _btnPlus = new Button(bar, SWT.PUSH);
             _btnPlus.setText("Add...");
             _btnPlus.setToolTipText("Share a folder");
-            _btnPlus.addSelectionListener(new SelectionAdapter() {
+            _btnPlus.addSelectionListener(new SelectionAdapter()
+            {
                 @Override
                 public void widgetSelected(SelectionEvent selectionEvent)
                 {
@@ -309,38 +312,44 @@ public class DlgManageSharedFolders extends AeroFSDialog
                     @Override
                     public void widgetSelected(SelectionEvent selectionEvent)
                     {
-                        Path path = _folderList.selection();
-                        if (path != null) leave(path);
+                        Path path = _folderList.selectedPath();
+                        if (path != null) leave(path, _folderList.selectedName());
                     }
                 });
             }
         }
 
-        void fill(List<PBPath> paths)
+        void fill(List<SharedFolder> sharedFolders)
         {
-            _d.setItemCount(paths.size());
+            _d.setItemCount(sharedFolders.size());
             int i = 0;
-            for (PBPath p : paths) {
-                Path path = Path.fromPB(p);
+            for (SharedFolder sf : sharedFolders) {
+                Path path = Path.fromPB(sf.getPath());
                 String root = Cfg.getRootPath(path.sid());
                 if (root == null) {
                     l.warn("unknown root " + path.sid());
                     continue;
                 }
                 TableItem item = _d.getItem(i++);
-                item.setText(0, GUIUtil.sharedFolderName(path));
+                item.setText(0, UIUtil.sharedFolderName(path, sf.getName()));
                 item.setData(PATH_DATA, path);
                 item.setData(ABS_PATH_DATA, path.toAbsoluteString(root));
             }
 
             _d.select(0);
-            refreshMemberList(selection(), false);
+            refreshMemberList(selectedPath(), false);
         }
 
-        @Nullable Path selection()
+        @Nullable Path selectedPath()
         {
             TableItem[] items = _d.getSelection();
             return items.length != 1 ? null : (Path)items[0].getData(PATH_DATA);
+        }
+
+        @Nullable String selectedName()
+        {
+            TableItem[] items = _d.getSelection();
+            return items.length != 1 ? null : items[0].getText();
         }
 
         public void setLoading(boolean loading)
@@ -398,8 +407,12 @@ public class DlgManageSharedFolders extends AeroFSDialog
                 @Override
                 public void widgetSelected(SelectionEvent selectionEvent)
                 {
-                    new DlgInvite(getShell(), _path == null ? _folderList.selection() : _path)
-                            .openDialog();
+                    if (_path == null) {
+                        new DlgInvite(getShell(), _folderList.selectedPath(),
+                                _folderList.selectedName()).openDialog();
+                    } else {
+                        new DlgInvite(getShell(), _path, null).openDialog();
+                    }
                 }
             });
         }
@@ -480,10 +493,10 @@ public class DlgManageSharedFolders extends AeroFSDialog
     {
         private final Path _path;
 
-        public DlgInvite(Shell parent, Path path)
+        public DlgInvite(Shell parent, Path path, String defaultName)
         {
-            super(parent, "Invite Members to " + Util.quote(GUIUtil.sharedFolderName(path)),
-                    true, false);
+            super(parent, "Invite Members to "
+                    + Util.quote(UIUtil.sharedFolderName(path, defaultName)), true, false);
             _path = path;
         }
 

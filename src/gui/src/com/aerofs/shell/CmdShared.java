@@ -3,6 +3,7 @@ package com.aerofs.shell;
 import com.aerofs.lib.Path;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.proto.Common.PBPath;
+import com.aerofs.proto.Ritual.ListSharedFoldersReply.SharedFolder;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
 
@@ -11,13 +12,13 @@ import java.util.List;
 public class CmdShared implements IShellCommand<ShProgram>
 {
     @Override
-    public void execute(ShellCommandRunner<ShProgram> s, CommandLine cl)
-            throws Exception
+    public void execute(ShellCommandRunner<ShProgram> s, CommandLine cl) throws Exception
     {
         if (cl.getArgs().length != 0) throw new ExBadArgs();
 
-        List<PBPath> paths = s.d().getRitualClient_().listSharedFolders().getPathList();
-        for (PBPath path : paths) s.out().println(Path.fromPB(path));
+        List<SharedFolder> sharedFolders =
+                s.d().getRitualClient_().listSharedFolders().getSharedFolderList();
+        for (SharedFolder sf : sharedFolders) s.out().println(Path.fromPB(sf.getPath()));
     }
 
     @Override

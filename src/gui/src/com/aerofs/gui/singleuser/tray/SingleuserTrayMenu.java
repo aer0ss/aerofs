@@ -32,11 +32,11 @@ import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.os.OSUtil;
-import com.aerofs.proto.Common.PBPath;
 import com.aerofs.proto.ControllerNotifications.UpdateNotification.Status;
 import com.aerofs.proto.Ritual.GetActivitiesReply;
 import com.aerofs.proto.Ritual.GetActivitiesReply.PBActivity;
 import com.aerofs.proto.Ritual.ListSharedFoldersReply;
+import com.aerofs.proto.Ritual.ListSharedFoldersReply.SharedFolder;
 import com.aerofs.proto.RitualNotifications.PBNotification;
 import com.aerofs.proto.RitualNotifications.PBNotification.Type;
 import com.aerofs.sv.client.SVClient;
@@ -281,18 +281,18 @@ public class SingleuserTrayMenu extends AbstractTrayMenu implements IListener, I
                     public void onSuccess(ListSharedFoldersReply reply)
                     {
                         loading.dispose();
-                        for (PBPath pbpath : reply.getPathList()) {
-                            addSharedFolderEntry(Path.fromPB(pbpath));
+                        for (SharedFolder sf : reply.getSharedFolderList()) {
+                            addSharedFolderEntry(Path.fromPB(sf.getPath()), sf.getName());
                         }
-                        if (reply.getPathCount() == 0) {
+                        if (reply.getSharedFolderCount() == 0) {
                             sharedTrayMenuPopulator.addMenuItem("No shared folder", null)
                                     .setEnabled(false);
                         }
                     }
 
-                    private void addSharedFolderEntry(final Path path)
+                    private void addSharedFolderEntry(final Path path, String name)
                     {
-                        sharedTrayMenuPopulator.addMenuItem(GUIUtil.sharedFolderName(path),
+                        sharedTrayMenuPopulator.addMenuItem(UIUtil.sharedFolderName(path, name),
                                 new GUIUtil.AbstractListener(MANAGE_SHARED_FOLDER)
                                 {
                                     @Override

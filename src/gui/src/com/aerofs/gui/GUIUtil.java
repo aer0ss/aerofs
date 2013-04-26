@@ -50,7 +50,7 @@ import java.util.Map.Entry;
 
 public class GUIUtil
 {
-    public static final Logger l = Loggers.getLogger(GUIUtil.class);
+    private static final Logger l = Loggers.getLogger(GUIUtil.class);
 
     public static String getNewText(Text txt, VerifyEvent ev)
     {
@@ -269,41 +269,6 @@ public class GUIUtil
     {
         // ON_TOP makes dialogs frame-less on Linux
         return OSUtil.isLinux() ? 0 : SWT.ON_TOP;
-    }
-
-    /**
-     * Derive the name of a shared folder from its Path
-     * This is necessary to handle external roots, whose Path are empty and whose name are dervied
-     * from the physical folder they are linked too.
-     */
-    public static String sharedFolderName(Path path)
-    {
-        return path.isEmpty() ? new File(Cfg.getRootPath(path.sid())).getName() : path.last();
-    }
-
-    /**
-     * @return logical Path corresponding to the given absolute physical path
-     *
-     * This method takes external roots into account.
-     *
-     * If the input is not under any of the physical roots, this method returns null
-     */
-    public static @Nullable Path getPath(String absPath)
-    {
-        try {
-            String canonicalPath = new File(absPath).getCanonicalPath();
-
-            Map<SID, String> roots = Cfg.getRoots();
-            for (Entry<SID, String> e : roots.entrySet()) {
-                String rootAbsPath = e.getValue();
-                if (Path.isUnder(rootAbsPath, canonicalPath)) {
-                    return Path.fromAbsoluteString(e.getKey(), rootAbsPath, canonicalPath);
-                }
-            }
-        } catch (IOException e) {
-            l.warn(Util.e(e));
-        }
-        return null;
     }
 
     /**
