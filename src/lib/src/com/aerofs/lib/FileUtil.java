@@ -65,6 +65,7 @@ public abstract class FileUtil
         // private to enforce uninstantiability
     }
 
+    private static boolean shutdownHookAdded = false;
     private static Set<File> _filesToDelete = Sets.newLinkedHashSet();
     private static FrequentDefectSender _defectSender = new FrequentDefectSender();
 
@@ -105,7 +106,8 @@ public abstract class FileUtil
 
     public static synchronized void deleteOnExit(File file)
     {
-        if (_filesToDelete.isEmpty()) {
+        if (!shutdownHookAdded) {
+            shutdownHookAdded = true;
             Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
                 @Override
                 public void run()
