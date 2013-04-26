@@ -1,6 +1,7 @@
 package com.aerofs.gui.sharing;
 
 import com.aerofs.base.acl.Role;
+import com.aerofs.ui.UIUtil;
 import org.eclipse.swt.widgets.Shell;
 
 import com.aerofs.gui.AeroFSDialog;
@@ -26,7 +27,7 @@ public class DlgManageSharedFolder extends AeroFSDialog
      */
     public DlgManageSharedFolder(Shell parent, Path path)
     {
-        super(parent, "Manage Shared Folder " + Util.quote(GUIUtil.sharedFolderName(path)),
+        super(parent, "Manage Shared Folder " + Util.quote(UIUtil.sharedFolderName(path, null)),
                 false, true);
         _path = path;
     }

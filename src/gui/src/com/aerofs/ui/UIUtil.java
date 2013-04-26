@@ -4,6 +4,7 @@ import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.AbstractExWirable;
 import com.aerofs.base.ex.IExObfuscated;
+import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.controller.ExLaunchAborted;
 import com.aerofs.gui.GUI;
@@ -36,11 +37,15 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.google.protobuf.ByteString;
 import org.slf4j.Logger;
 
+import javax.annotation.Nullable;
 import java.io.EOFException;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
 
 public class UIUtil
@@ -397,5 +402,42 @@ public class UIUtil
                 "Six", "Seven", "Eight", "Nine", "Ten" };
         if (count == 1) return singular;
         return (count < NUMBERS.length ? NUMBERS[count] : count) + " " + plural;
+    }
+
+    /**
+     * Derive the name of a shared folder from its Path
+     * This is necessary to handle external roots, whose Path are empty and whose name are dervied
+     * from the physical folder they are linked too.
+     */
+    public static String sharedFolderName(Path path, String defaultName)
+    {
+        if (!path.isEmpty()) return path.last();
+        String absRootPath = Cfg.getRootPath(path.sid());
+        return absRootPath != null ? new File(absRootPath).getName() : defaultName;
+    }
+
+    /**
+     * @return logical Path corresponding to the given absolute physical path
+     *
+     * This method takes external roots into account.
+     *
+     * If the input is not under any of the physical roots, this method returns null
+     */
+    public static @Nullable Path getPath(String absPath)
+    {
+        try {
+            String canonicalPath = new File(absPath).getCanonicalPath();
+
+            Map<SID, String> roots = Cfg.getRoots();
+            for (Entry<SID, String> e : roots.entrySet()) {
+                String rootAbsPath = e.getValue();
+                if (Path.isUnder(rootAbsPath, canonicalPath)) {
+                    return Path.fromAbsoluteString(e.getKey(), rootAbsPath, canonicalPath);
+                }
+            }
+        } catch (IOException e) {
+            l.warn(Util.e(e));
+        }
+        return null;
     }
 }

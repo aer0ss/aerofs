@@ -1,5 +1,6 @@
 package com.aerofs.gui.sharing;
 
+import com.aerofs.ui.UIUtil;
 import org.eclipse.swt.widgets.Shell;
 
 import com.aerofs.gui.AeroFSDialog;
@@ -19,7 +20,7 @@ public class DlgCreateSharedFolder extends AeroFSDialog
      */
     public DlgCreateSharedFolder(Shell parent, Path path)
     {
-        super(parent, "Share Folder " + Util.quote(GUIUtil.sharedFolderName(path)), false, false);
+        super(parent, "Share Folder " + Util.quote(UIUtil.sharedFolderName(path, null)), false, false);
         _path = path;
     }
 

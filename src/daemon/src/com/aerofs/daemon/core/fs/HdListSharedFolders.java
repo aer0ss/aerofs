@@ -10,6 +10,7 @@ import com.aerofs.lib.Path;
 import com.aerofs.base.id.OID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
+import com.aerofs.proto.Ritual.ListSharedFoldersReply.SharedFolder;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 
@@ -33,13 +34,16 @@ public class HdListSharedFolders extends AbstractHdIMC<EIListSharedFolders>
     protected void handleThrows_(EIListSharedFolders ev, Prio prio) throws Exception
     {
         Collection<SIndex> all = _ss.getAll_();
-        Collection<Path> paths = Lists.newArrayListWithCapacity(all.size());
+        Collection<SharedFolder> sharedFolders = Lists.newArrayListWithCapacity(all.size());
         for (SIndex sidx : all) {
             if (!_sidx2sid.get_(sidx).isUserRoot()) {
-                paths.add(_ds.resolve_(new SOID(sidx, OID.ROOT)));
+                sharedFolders.add(SharedFolder.newBuilder()
+                        .setName(_ss.getName_(sidx))
+                        .setPath(_ds.resolve_(new SOID(sidx, OID.ROOT)).toPB())
+                        .build());
             }
         }
 
-        ev.setResult_(paths);
+        ev.setResult_(sharedFolders);
     }
 }

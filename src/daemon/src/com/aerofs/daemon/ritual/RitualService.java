@@ -417,9 +417,8 @@ public class RitualService implements IRitualService
     {
         EIListSharedFolders ev = new EIListSharedFolders();
         ev.execute(PRIO);
-        ListSharedFoldersReply.Builder bd = ListSharedFoldersReply.newBuilder();
-        for (Path path : ev._paths) bd.addPath(path.toPB());
-        return createReply(bd.build());
+        return createReply(ListSharedFoldersReply.newBuilder()
+                .addAllSharedFolder(ev._sharedFolders).build());
     }
 
     @Override
