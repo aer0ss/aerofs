@@ -263,9 +263,7 @@ public abstract class Updater
             return version;
         } catch (final IOException e) {
             l.error("Error reading server version from {}", serverVersionUrl, e);
-            UI.rockLog().newDefect("updater.readServerVersion")
-                    .setException(e)
-                    .send();
+            UI.rockLog().newDefect("updater.readServerVersion").setException(e).send();
             throw e;
         }
     }
@@ -352,9 +350,7 @@ public abstract class Updater
             _installationFilename = filename;
         } catch (final Exception e) {
             l.error("Error downloading update from {}", installerUrl, e);
-            UI.rockLog().newDefect("updater.downloadUpdate")
-                    .setException(e)
-                    .send();
+            UI.rockLog().newDefect("updater.downloadUpdate").setException(e).send();
             removeTempDownloadDirectory(dir);
             return false;
         }

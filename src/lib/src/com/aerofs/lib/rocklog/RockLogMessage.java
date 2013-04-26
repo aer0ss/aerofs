@@ -70,20 +70,19 @@ abstract class RockLogMessage
         }
     }
 
-    public boolean send()
+    /**
+     * Send the message to RockLog asynchronously.
+     * Note: do not make a sync (blocking) version of this call, to avoid performance costs when
+     * RockLog is not available (ie: in deployed environments)
+     */
+    public void send()
     {
-        return _rockLog.send(this);
-    }
-
-    public void sendAsync()
-    {
-        _rockLog.sendAsync(this);
+        _rockLog.send(this);
     }
 
     RockLogMessage addData(String key, Object value)
     {
         _data.put(key, value);
-
         return this;
     }
 

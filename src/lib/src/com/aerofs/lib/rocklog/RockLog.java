@@ -63,33 +63,29 @@ public class RockLog
         return new Metrics(this, _cfg);
     }
 
-    void sendAsync(final RockLogMessage message)
+    void send(final RockLogMessage message)
     {
         new Thread(new Runnable()
         {
             @Override
             public void run()
             {
-                send(message);
+                rpc(message);
             }
         },"rocklog-send").start();
     }
 
-    boolean send(RockLogMessage message)
+    boolean rpc(RockLogMessage message)
     {
         try {
-            rpc(message.getJSON(), _rocklogUrl + message.getURLPath());
+            String url = _rocklogUrl + message.getURLPath();
+            HttpURLConnection rocklogConnection = getRockLogConnection(url);
+            BaseUtil.httpRequest(rocklogConnection, message.getJSON());
             return true;
         } catch (Throwable e) {
             l.warn("fail send RockLog message: {}", e.toString()); // we don't want the stack trace
             return false;
         }
-    }
-
-    private void rpc(String data, String url) throws Exception
-    {
-        HttpURLConnection rocklogConnection = getRockLogConnection(url);
-        BaseUtil.httpRequest(rocklogConnection, data);
     }
 
     private HttpURLConnection getRockLogConnection(String url)

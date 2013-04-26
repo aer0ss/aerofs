@@ -30,11 +30,9 @@ public class AnalyticsEvents
         REINSTALL_CLIENT("Reinstall Single User Client"),
         ENABLE_S3("Enable S3"),
         SIGN_IN("Sign In"),
-        EXIT("Exit"),
         EXCLUDE_FOLDER("Exclude Folder"),       // exclude a folder from sync
         INCLUDE_FOLDER("Include Folder"),       // readmit an excluded folder
         KICKOUT("Kickout"),                     // kicked-out from a shared folder
-        MOVE_ROOT("Relocate Root Anchor"),
 
         // Mobile app events
         LISTED_ROOT("Listed Root"),

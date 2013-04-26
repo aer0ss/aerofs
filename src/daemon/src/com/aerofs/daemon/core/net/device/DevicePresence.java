@@ -147,7 +147,7 @@ public class DevicePresence implements IDumpStatMisc
 
         l.info("d:{} t:{} start pulse", did, tp);
 
-        _rockLog.newMetrics().addMetric("net.pulse." + tp + ".count", 1).sendAsync();
+        _rockLog.newMetrics().addMetric("net.pulse." + tp + ".count", 1).send();
 
         offlineImpl_(did, dev.pulseStarted_(tp));
 

@@ -97,7 +97,7 @@ class SelfReportingTimeToSyncHistogram extends AbstractEBSelfHandling
             l.warn("failed to send histogram for devices {}", _histograms.keySet());
             _rockLog.newDefect("daemon.synctime.sendHistograms")
                     .setException(ex)
-                    .sendAsync();
+                    .send();
         }
     }
 

@@ -179,8 +179,6 @@ class Launcher
                     Launcher.destroySingletonSocket();
                     // Shutdown the scheduler.
                     UI.scheduler().shutdown();
-                    // send event on exit synchronously
-                    UI.analytics().trackSync(SimpleEvents.EXIT);
                 }
             }));
 

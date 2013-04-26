@@ -54,6 +54,8 @@ public class Analytics
 
     /**
      * Send an analytics event asynchronously
+     * Note: do not make a sync (blocking) version of this call, to avoid performance costs when
+     * Analytics are not available (ie: in deployed environments)
      */
     public void track(IAnalyticsEvent event)
     {
@@ -65,26 +67,9 @@ public class Analytics
             @Override
             public void onFailure(Throwable e)
             {
-                logError(e);
+                l.warn("sending analytics failed: {}", e.toString()); // do not print stack trace
             }
         });
-    }
-
-    /**
-     * Send an analytics event synchronously
-     */
-    public void trackSync(IAnalyticsEvent event)
-    {
-        try {
-            trackImpl(event).get();
-        } catch (Exception e) {
-            logError(e);
-        }
-    }
-
-    private void logError(Throwable e)
-    {
-        l.warn("sending analytics failed: {}", e.getMessage()); // do not print stack trace
     }
 
     private ListenableFuture<Void> trackImpl(IAnalyticsEvent event)

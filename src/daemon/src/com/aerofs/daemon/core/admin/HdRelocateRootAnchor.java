@@ -71,9 +71,6 @@ public class HdRelocateRootAnchor extends AbstractHdIMC<EIRelocateRootAnchor>
             throw new ExBadArgs("absolute path expected");
         }
 
-        // Since the daemon will be restarted, we must track the event synchronously
-        _analytics.trackSync(SimpleEvents.MOVE_ROOT);
-
         @Nullable SID sid = ev._sid;
         // Even though we expect the UI to adjust the new root anchor, users may pass in a raw path
         // through the Ritual call.

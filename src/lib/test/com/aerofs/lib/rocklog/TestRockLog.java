@@ -79,7 +79,8 @@ public class TestRockLog extends AbstractTest
 
         RockLog rockLog = new RockLog(TEST_URL, _cfg);
 
-        boolean success = rockLog.newDefect(DEFECT_NAME).setMessage(DEFECT_MESSAGE).send();
+        Defect defect = rockLog.newDefect(DEFECT_NAME).setMessage(DEFECT_MESSAGE);
+        boolean success = rockLog.rpc(defect);
         assertTrue(success);
     }
 
@@ -97,7 +98,8 @@ public class TestRockLog extends AbstractTest
         });
 
         RockLog rockLog = new RockLog(TEST_URL, _cfg);
-        boolean success = rockLog.newDefect(DEFECT_NAME).setMessage(DEFECT_MESSAGE).send();
+        Defect defect = rockLog.newDefect(DEFECT_NAME).setMessage(DEFECT_MESSAGE);
+        boolean success = rockLog.rpc(defect);
         assertFalse(success);
     }
 }

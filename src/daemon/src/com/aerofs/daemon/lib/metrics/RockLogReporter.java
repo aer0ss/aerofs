@@ -184,7 +184,7 @@ public final class RockLogReporter extends AbstractPollingReporter implements Me
 
         if (Double.isNaN(value)) {
             l.warn("nan m:" + fullMetricName + " v:" + value);
-            _rockLog.newDefect("rocklog.conversion.nan").addData("metric", fullMetricName).sendAsync();
+            _rockLog.newDefect("rocklog.conversion.nan").addData("metric", fullMetricName).send();
             return;
         }
 

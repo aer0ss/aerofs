@@ -74,13 +74,15 @@
                     if (error) {
                         displayError(error);
                     } else {
-                        ## automatically sign in once the AJAX call succeeds
+                        ## Track the signup in mixpanel.
                         mixpanel.alias("${email_address}");
                         mixpanel.name_tag("${email_address}");
-                        ## TODO (WW) we will be stuck if track() fails. But I don't have a good solution
-                        mixpanel.track("Signed Up", {}, function() {
-                            sign_in();
-                        });
+                        mixpanel.track("Signed Up");
+
+                        ## Wait 300 ms for the Mixpanel call to succeed and then proceed to sign in.
+                        ## This is the delay they recommend in their track_forms API.
+                        ## See: https://mixpanel.com/docs/integration-libraries/javascript-full-api#track_forms
+                        setTimeout(sign_in, 300);
                     }
                 })
                 .fail(function (jqXHR, textStatus, errorThrown) {
