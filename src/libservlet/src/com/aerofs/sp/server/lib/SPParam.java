@@ -7,6 +7,7 @@ package com.aerofs.sp.server.lib;
 import com.aerofs.labeling.L;
 import com.aerofs.base.C;
 import com.aerofs.lib.SecUtil;
+import com.netflix.config.DynamicStringProperty;
 
 public class SPParam
 {
@@ -28,8 +29,10 @@ public class SPParam
 
     // Email related constants.
     public static final String SP_EMAIL_NAME = L.brand();
-    public static final String SP_NOTIFICATION_SENDER = "sp@aerofs.com";
-    public static final String SP_NOTIFICATION_RECEIVER = "team@aerofs.com";
+    public static final DynamicStringProperty SP_NOTIFICATION_SENDER_EMAIL_ADDRESS =
+            new DynamicStringProperty("sp.notification_sender_email_address", "support@aerofs.com");
+    public static final DynamicStringProperty SP_NOTIFICATION_RECEIVER_EMAIL_ADDRESS =
+            new DynamicStringProperty("sp.notification_receiver_email_address", "team@aerofs.com");
 
     /**
      * Number of bytes we use for the salt
