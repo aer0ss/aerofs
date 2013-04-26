@@ -1,6 +1,7 @@
 package com.aerofs.gui.history;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.base.id.SID;
 import com.aerofs.gui.AeroFSDialog;
 import com.aerofs.gui.AeroFSMessageBox;
 import com.aerofs.gui.AeroFSMessageBox.IconType;
@@ -15,11 +16,13 @@ import com.aerofs.labeling.L;
 import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.Path;
+import com.aerofs.lib.StorageType;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.UI;
+import com.aerofs.ui.UIUtil;
 import com.google.common.collect.Maps;
 import org.eclipse.jface.layout.TableColumnLayout;
 import org.eclipse.jface.viewers.ColumnWeightData;
@@ -57,6 +60,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 public class DlgHistory extends AeroFSDialog
 {
@@ -133,24 +137,29 @@ public class DlgHistory extends AeroFSDialog
         _actionButtons = GUIUtil.newPackedButtonContainer(group);
         _actionButtons.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
 
-        _restoreBtn = new Button(_actionButtons, SWT.NONE);
-        _restoreBtn.setText("Restore Deleted Files...");
-        _restoreBtn.setToolTipText("Recursively restore deleted files and folders to their most "
-                + "recent version");
-        _restoreBtn.setLayoutData(new RowData());
-        _restoreBtn.addSelectionListener(new SelectionAdapter()
-        {
-            @Override
-            public void widgetSelected(SelectionEvent selectionEvent)
+        if (Cfg.storageType() == StorageType.LINKED) {
+            _restoreBtn = new Button(_actionButtons, SWT.NONE);
+            _restoreBtn.setText("Restore Deleted Files...");
+            _restoreBtn.setToolTipText("Recursively restore deleted files and folders to their "
+                    + "most recent version");
+            _restoreBtn.setLayoutData(new RowData());
+            _restoreBtn.addSelectionListener(new SelectionAdapter()
             {
-                TreeItem[] items = _revTree.getSelection();
-                assert items.length == 1;
+                @Override
+                public void widgetSelected(SelectionEvent selectionEvent)
+                {
+                    TreeItem[] items = _revTree.getSelection();
+                    assert items.length == 1;
 
-                ModelIndex index = index(items[0]);
+                    ModelIndex index = index(items[0]);
 
-                recursivelyRestore(index);
-            }
-        });
+                    recursivelyRestore(index);
+                }
+            });
+        } else {
+            // TODO: enable restore for non-linked storage
+            _restoreBtn = null;
+        }
 
         _openBtn = new Button(_actionButtons, SWT.NONE);
         _openBtn.setText("Open");
@@ -261,6 +270,24 @@ public class DlgHistory extends AeroFSDialog
     private void selectPath(Path path, boolean expanded)
     {
         TreeItem item = null, parent = null;
+
+        // for multiroot, need to select the appropriate root first...
+        for (int i = 0; i < _revTree.getItemCount(); ++i) {
+            TreeItem it = _revTree.getItem(i);
+            // NOTE: getText() must be called first to ensure population of the virtual tree
+            it.getText();
+            ModelIndex idx = (ModelIndex)it.getData();
+            Path p = _model.getPath(idx);
+
+            // if the top level items are not roots we're done
+            if (!p.isEmpty()) break;
+
+            if (p.sid().equals(path.sid())) {
+                parent = item = it;
+                break;
+            }
+        }
+
         for (String e : path.elements()) {
             item = null;
             int n = parent == null ? _revTree.getItemCount() : parent.getItemCount();
@@ -327,7 +354,7 @@ public class DlgHistory extends AeroFSDialog
                 TreeItem item = (TreeItem) event.item;
                 ModelIndex index = _model.index(index(item.getParentItem()), event.index);
                 item.setData(index);
-                item.setText(index.name);
+                item.setText(index.name());
                 if (index.isDeleted) {
                     item.setForeground(Display.getCurrent()
                             .getSystemColor(SWT.COLOR_TITLE_INACTIVE_FOREGROUND));
@@ -336,7 +363,7 @@ public class DlgHistory extends AeroFSDialog
                     item.setImage(Images.getFolderIcon());
                     item.setItemCount(_model.rowCount(index));
                 } else {
-                    item.setImage(Images.getFileIcon(index.name, _iconCache));
+                    item.setImage(Images.getFileIcon(index.name(), _iconCache));
                 }
             }
         });
@@ -421,7 +448,7 @@ public class DlgHistory extends AeroFSDialog
         ((GridData)c.getLayoutData()).exclude = !visible;
     }
 
-    private void refreshVersionTable(TreeItem item)
+    private void refreshVersionTable(final TreeItem item)
     {
         ModelIndex index = index(item);
         if (index != null && !index.isDir) {
@@ -435,15 +462,19 @@ public class DlgHistory extends AeroFSDialog
                 GUI.get().safeAsyncExec(_revTable, new Runnable() {
                     @Override
                     public void run() {
+                        // clear selection to avoid an infinite auto-refresh loop
+                        _revTree.deselectAll();
                         refreshVersionTree();
                     }
                 });
                 return;
             }
             _actionButtons.setVisible(ok);
-            _restoreBtn.setText("Restore...");
             _deleteBtn.setText("Delete");
-            setButtonVisible(_restoreBtn, index.isDeleted);
+            if (_restoreBtn != null) {
+                _restoreBtn.setText("Restore...");
+                setButtonVisible(_restoreBtn, index.isDeleted);
+            }
             setButtonVisible(_openBtn, ok);
             setButtonVisible(_saveBtn, ok);
             setButtonVisible(_deleteBtn, ok);
@@ -452,7 +483,7 @@ public class DlgHistory extends AeroFSDialog
             setCompositeVisible(_revTableWrap, true);
             _statusLabel.getParent().layout();
         } else {
-            _restoreBtn.setText("Restore Deleted Files...");
+            if (_restoreBtn != null) _restoreBtn.setText("Restore Deleted Files...");
             _deleteBtn.setText("Delete Old Versions");
             _deleteBtn.setEnabled(true);
             if (index == null) {
@@ -472,7 +503,7 @@ public class DlgHistory extends AeroFSDialog
                         // have an extra space so Windows will not ignore the trailing line breaks.
                         " will save disk space but cannot be undone, so proceed with caution.\n ");
                 _actionButtons.setVisible(true);
-                setButtonVisible(_restoreBtn, true);
+                if (_restoreBtn != null) setButtonVisible(_restoreBtn, true);
                 setButtonVisible(_openBtn, false);
                 setButtonVisible(_saveBtn, false);
                 setButtonVisible(_deleteBtn, true);
@@ -592,9 +623,16 @@ public class DlgHistory extends AeroFSDialog
         Path path = _model.getPath(index);
         status.setText("Sync history of " + Util.quote(path.last()));
 
-        List<HistoryModel.Version> versions = _model.versions(index);
         revTable.removeAll();
-        if (versions == null || versions.isEmpty()) return false;
+
+        List<HistoryModel.Version> versions;
+        try {
+            versions = _model.versions(index);
+        } catch (Exception e) {
+            GUI.get().show(MessageType.ERROR, "Failed to retrieve version list: " + e);
+            return false;
+        }
+        if (versions.isEmpty()) return false;
         revTable.setItemCount(versions.size());
 
         for (int i = 0; i < versions.size(); ++i) {
@@ -628,8 +666,10 @@ public class DlgHistory extends AeroFSDialog
         FileDialog fDlg = new FileDialog(this.getShell(), SWT.SHEET | SWT.SAVE);
         fDlg.setFilterNames(new String[]{"All files"});
         fDlg.setFilterExtensions(new String[]{"*.*"});
-        fDlg.setFilterPath(
-                Util.join(Cfg.absDefaultRootAnchor(), Util.join(version.path.removeLast().elements())));
+        if (Cfg.storageType() == StorageType.LINKED) {
+            String absParentPath = UIUtil.absPathNullable(version.path.removeLast());
+            if (absParentPath != null) fDlg.setFilterPath(absParentPath);
+        }
         fDlg.setFileName(version.path.last());
         fDlg.setOverwrite(true); // The OS will show a warning if the user chooses an existing name
 
@@ -653,10 +693,21 @@ public class DlgHistory extends AeroFSDialog
         //   * it might be time consuming
         //   * it can be terribly annoying because it discards to expansion state of tree items
         //   outside of the selected path
-        if (Path.isUnder(Cfg.absDefaultRootAnchor(), dst)) {
+        if (isUnderAnyRoot(dst)) {
             // TODO: optimize refresh when restoring a file to a previous version of itself
             refreshVersionTree();
         }
+    }
+
+    boolean isUnderAnyRoot(String absPath)
+    {
+        if (Cfg.storageType() != StorageType.LINKED) return false;
+
+        for (Entry<SID, String> e : Cfg.getRoots().entrySet()) {
+            if (Path.isUnder(e.getValue(), absPath)) return true;
+        }
+
+        return false;
     }
 
     private void deleteVersion(HistoryModel.Version version)
@@ -696,6 +747,7 @@ public class DlgHistory extends AeroFSDialog
 
     private void recursivelyRestore(final ModelIndex index)
     {
+        // FIXME: this only works for LINKED storage...
         DirectoryDialog dDlg = new DirectoryDialog(getShell(), SWT.SHEET);
         dDlg.setMessage("Select destination folder in which deleted files from the source folder " +
                 "will be restored.");
@@ -712,7 +764,7 @@ public class DlgHistory extends AeroFSDialog
                     IconType.ERROR).open();
         } else {
             // the actual restore operation is started in a separate thread by the feedback dialog
-            final boolean inPlace = Util.join(path, index.name).equals(
+            final boolean inPlace = Util.join(path, index.name()).equals(
                     _model.getPath(index).toAbsoluteString(Cfg.absDefaultRootAnchor()));
             String label = "Restoring " + Util.quote(_model.getPath(index).last()) +
                     (inPlace ? "" : "\nto " + Util.quote(path));

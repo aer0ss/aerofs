@@ -4,8 +4,10 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.Map;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.base.id.SID;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Shell;
@@ -74,11 +76,13 @@ public class CompUnsyncableFiles extends Composite {
     private final static String DEF_STATUS = "";//"Click on a file to show why it's unsyncable.";
 
     private static class Entry {
+        final SID _sid;
         final String _path;
         final Type _type;
 
-        private Entry(String path, Type type)
+        private Entry(SID sid, String path, Type type)
         {
+            _sid = sid;
             _path = path;
             _type = type;
         }
@@ -114,11 +118,10 @@ public class CompUnsyncableFiles extends Composite {
 
             Entry en = (Entry) element;
 
-            int start = Cfg.absDefaultRootAnchor().length() + 1;
-            String path = en._path.length() > start ? en._path.substring(start)
-                    : en._path;
-            return GUIUtil.shortenText(_gc, path, _table.getClientArea().width,
-                    true);
+            String absRootPath = Cfg.getRootPath(en._sid);
+            int start = absRootPath == null ? 0 : absRootPath.length() + 1;
+            String path = en._path.length() > start ? en._path.substring(start) : en._path;
+            return GUIUtil.shortenText(_gc, path, _table.getClientArea().width, true);
         }
 
         @Override
@@ -394,30 +397,32 @@ public class CompUnsyncableFiles extends Composite {
     {
         if (!OSUtil.isWindows()) {
             final InOutArg<Integer> count = new InOutArg<Integer>(0);
-            listSpecialFilesRecursive(Cfg.absDefaultRootAnchor(),
-                    new IListSpecialFileCallback() {
-                @Override
-                public boolean add(String path, Type type)
-                {
-                    count.set(count.get() + 1);
-                    if (count.get() > MAX_ITEM_COUNTS) return false;
-                    addFile(path, type);
-                    return true;
-                }
-            });
+            for (Map.Entry<SID, String> e : Cfg.getRoots().entrySet()) {
+                listSpecialFilesRecursive(e.getKey(), e.getValue(),
+                        new IListSpecialFileCallback() {
+                    @Override
+                    public boolean add(SID sid, String path, Type type)
+                    {
+                        count.set(count.get() + 1);
+                        if (count.get() > MAX_ITEM_COUNTS) return false;
+                        addFile(sid, path, type);
+                        return true;
+                    }
+                });
+            }
         }
     }
 
     /**
      * this method may be called in non-UI threads
      */
-    private void addFile(final String path, final Type type)
+    private void addFile(final SID sid, final String path, final Type type)
     {
         GUI.get().safeExec(_shell, new Runnable() {
             @Override
             public void run()
             {
-                Entry en = new Entry(path, type);
+                Entry en = new Entry(sid, path, type);
                 _entries.add(en);
                 _tv.add(en);
             }
@@ -428,27 +433,27 @@ public class CompUnsyncableFiles extends Composite {
         /**
          * @return false to stop listing
          */
-        boolean add(String path, Type type);
+        boolean add(SID sid, String path, Type type);
     }
 
-    private static boolean listSpecialFilesRecursive(String path,
+    private static boolean listSpecialFilesRecursive(SID sid, String path,
             IListSpecialFileCallback cb)
     {
         int ret = Driver.getFid(null, path, null);
         if (ret == DriverConstants.GETFID_SYMLINK) {
-            return cb.add(path, Type.SYMLINK);
+            return cb.add(sid, path, Type.SYMLINK);
         } else if (ret == DriverConstants.GETFID_SPECIAL) {
-            return cb.add(path, Type.SPECIAL);
+            return cb.add(sid, path, Type.SPECIAL);
         } else if (!OSUtil.isWindows() &&
                 !OSUtilWindows.isValidFileName(new File(path).getName())) {
-            return cb.add(path, Type.WINDOWS_INVALID_CHARS);
+            return cb.add(sid, path, Type.WINDOWS_INVALID_CHARS);
         } else if (ret == DriverConstants.GETFID_DIR) {
             // the file might be changed or deleted after the ret == ... test
             // above and the list() call below
             String[] children = new File(path).list();
             if (children != null) {
                 for (String child : children) {
-                    if (!listSpecialFilesRecursive(Util.join(path, child), cb)) {
+                    if (!listSpecialFilesRecursive(sid, Util.join(path, child), cb)) {
                         return false;
                     }
                 }

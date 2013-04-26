@@ -79,7 +79,8 @@ public class Path implements Comparable<Path>
     @Override
     public int compareTo(Path otherPath)
     {
-        return Util.compare(_elems, otherPath._elems);
+        int diff = _sid.compareTo(otherPath._sid);
+        return diff == 0 ? Util.compare(_elems, otherPath._elems) : diff;
     }
 
     public Path append(String elem)

@@ -10,6 +10,7 @@ import com.aerofs.proto.RitualNotifications.PBNotification;
 import com.aerofs.proto.RitualNotifications.PBPathStatusEvent;
 import com.aerofs.ui.RitualNotificationClient.IListener;
 import com.aerofs.ui.UI;
+import com.aerofs.ui.UIUtil;
 
 /**
  * This class listens to path status notifications from the daemon and forwards them to the shell
@@ -46,8 +47,8 @@ public class PathStatusNotificationForwarder
         int n = ev.getPathCount();
         assert n == ev.getStatusCount();
         for (int i = 0; i < n; ++i) {
-            String path = Path.fromPB(ev.getPath(i)).toAbsoluteString(Cfg.absDefaultRootAnchor());
-            _service.notifyPathStatus(path, ev.getStatus(i));
+            String path = UIUtil.absPathNullable(Path.fromPB(ev.getPath(i)));
+            if (path != null) _service.notifyPathStatus(path, ev.getStatus(i));
         }
     }
 }

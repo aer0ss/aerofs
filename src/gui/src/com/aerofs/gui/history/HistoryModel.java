@@ -9,11 +9,14 @@ import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.gui.history.HistoryModel.IDecisionMaker.Answer;
+import com.aerofs.labeling.L;
 import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.FileUtil.FileName;
 import com.aerofs.lib.Path;
+import com.aerofs.lib.StorageType;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
+import com.aerofs.lib.cfg.CfgAbsRoots;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.ritual.IRitualClientProvider;
 import com.aerofs.lib.ritual.RitualBlockingClient;
@@ -27,10 +30,14 @@ import com.aerofs.proto.Ritual.PBObjectAttributes;
 import com.aerofs.proto.Ritual.PBObjectAttributes.Type;
 import com.aerofs.proto.Ritual.PBRevChild;
 import com.aerofs.proto.Ritual.PBRevision;
+import com.aerofs.proto.Ritual.PBSharedFolder;
+import com.aerofs.ui.UIUtil;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.protobuf.ByteString;
 import org.slf4j.Logger;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.File;
 import java.util.Collections;
@@ -49,7 +56,8 @@ public class HistoryModel
 
     private final IRitualClientProvider _ritualProvider;
     private final UserID _userId;
-    private final SID _root;
+    private final StorageType _storageType;
+    private final CfgAbsRoots _cfgAbsRoots;
 
     private List<ModelIndex> topLevel = null;
 
@@ -73,19 +81,43 @@ public class HistoryModel
 
     public static class ModelIndex implements Comparable<ModelIndex>
     {
-        String name;
-        boolean isDir;
-        boolean isDeleted;
+        final Path path;
+        final boolean isDir;
+        final boolean isDeleted;
+        private final String defaultName;
 
-        protected ModelIndex parent;
+        final HistoryModel model;
+        final protected ModelIndex parent;
         protected @Nullable List<ModelIndex> children = null;
 
-        ModelIndex(ModelIndex p, String n, boolean dir, boolean del)
+        ModelIndex(HistoryModel m, Path path, boolean dir, boolean del)
         {
-            name = n;
+            this.path = path;
+            isDir = dir;
+            isDeleted = del;
+            parent = null;
+            model = m;
+            defaultName = null;
+        }
+
+        ModelIndex(ModelIndex p, Path path, boolean dir, boolean del)
+        {
+           this.path = path;
             isDir = dir;
             isDeleted = del;
             parent = p;
+            model = p.model;
+            defaultName = null;
+        }
+
+        ModelIndex(HistoryModel m, Path path, String name)
+        {
+            this.path = path;
+            isDir = true;
+            isDeleted = false;
+            parent = null;
+            model = m;
+            defaultName = name.startsWith("root store: ") ? name.substring(12) : name;
         }
 
         @Override
@@ -95,37 +127,41 @@ public class HistoryModel
                 return false;
             }
             ModelIndex c = (ModelIndex)obj;
-            return c.name.equals(name) && c.isDir == isDir;
+            return c.path.equals(path) && c.isDir == isDir;
         }
 
         @Override
         public int hashCode()
         {
-            return name.hashCode();
+            return path.hashCode();
         }
 
         @Override
         public int compareTo(ModelIndex index)
         {
-            int cmp = name.compareTo(index.name);
+            int cmp = path.compareTo(index.path);
             return cmp != 0 ? cmp : (isDir ? 1 : 0) - (index.isDir ? 1 : 0);
+        }
+
+        public String name()
+        {
+            return path.isEmpty() ? UIUtil.sharedFolderName(path, defaultName, model._cfgAbsRoots)
+                    : path.last();
         }
     }
 
     public HistoryModel(IRitualClientProvider ritualProvider)
     {
-        this(ritualProvider, Cfg.user());
-
-        // [sigh] sucks that I have to do this after object construction
-        checkArgument(SID.rootSID(Cfg.user()).equals(Cfg.rootSID()));
+        this(ritualProvider, Cfg.user(), Cfg.storageType(), new CfgAbsRoots());
     }
 
-    public HistoryModel(IRitualClientProvider ritualProvider, UserID userId)
+    public HistoryModel(IRitualClientProvider ritualProvider, UserID userId,
+            StorageType storageType, CfgAbsRoots absRoots)
     {
-        // TODO: multiroot support
         _ritualProvider = ritualProvider;
         _userId = userId;
-        _root = SID.rootSID(userId);
+        _storageType = storageType;
+        _cfgAbsRoots = absRoots;
     }
 
     public void clear()
@@ -136,14 +172,42 @@ public class HistoryModel
     /**
      * @return the full path (under root anchor) for the given {@code index}
      */
-    public Path getPath(@Nullable ModelIndex index)
+    public Path getPath(@Nonnull ModelIndex index)
     {
-        List<String> elems = newArrayList();
-        while (index != null) {
-            elems.add(0, index.name);
-            index = index.parent;
+        return index.path;
+    }
+
+    private List<ModelIndex> topLevel()
+    {
+        if (_storageType == StorageType.LINKED) {
+            // if multiroot, use phy roots as top level
+            Map<SID, String> r = _cfgAbsRoots.get();
+            List<ModelIndex> l = Lists.newArrayListWithExpectedSize(r.size());
+            for (SID sid : r.keySet()) {
+                l.add(new ModelIndex(this, Path.root(sid), true, false));
+            }
+            return l;
+        } else if (L.isMultiuser()) {
+            try {
+                List<ModelIndex> l = Lists.newArrayList();
+                // use user roots as top level
+                for (PBSharedFolder sf : ritual().listUserRoots().getUserRootList()) {
+                    l.add(new ModelIndex(this, Path.fromPB(sf.getPath()), sf.getName()));
+                }
+                // need to list shared folders too:
+                // 1. otherwise we might miss folders created on a linked TS of the same org
+                // 2. otherwise the UX would be inconsistent with linked TS
+                for (PBSharedFolder sf : ritual().listSharedFolders().getSharedFolderList()) {
+                    l.add(new ModelIndex(this, Path.fromPB(sf.getPath()), sf.getName()));
+                }
+                return l;
+            } catch (Exception e) {
+                l.warn("failed to retrieve roots" + Util.e(e));
+            }
         }
-        return new Path(_root, elems);
+        // default: root sid only
+        return Collections.singletonList(
+                new ModelIndex(this, Path.root(SID.rootSID(_userId)), true, false));
     }
 
     /**
@@ -153,8 +217,13 @@ public class HistoryModel
     public int rowCount(@Nullable ModelIndex parent)
     {
         if (parent == null) {
-            if (topLevel == null)
-                topLevel = children(parent);
+            if (topLevel == null) {
+                topLevel = topLevel();
+            }
+
+            // if there is a single phy root, no need to show it...
+            if (topLevel != null && topLevel.size() == 1) return rowCount(topLevel.get(0));
+
             // avoid crash if Ritual connection fail
             return topLevel == null ? 0 : topLevel.size();
         } else {
@@ -173,6 +242,10 @@ public class HistoryModel
         ModelIndex child;
         if (parent == null) {
             assert topLevel != null;
+
+            // if there is a single phy root, no need to show it...
+            if (topLevel.size() == 1) return index(topLevel.get(0), row);
+
             assert row >= 0 && row < topLevel.size();
             child = topLevel.get(row);
         } else {
@@ -198,7 +271,7 @@ public class HistoryModel
             ModelIndex idx;
             Map<ModelIndex, ModelIndex> cm = Maps.newHashMap();
             for (PBRevChild c : reply.getChildList()) {
-                idx = new ModelIndex(parent, c.getName(), c.getIsDir(), true);
+                idx = new ModelIndex(parent, path.append(c.getName()), c.getIsDir(), true);
                 cm.put(idx, idx);
             }
 
@@ -212,7 +285,7 @@ public class HistoryModel
                     PBObjectAttributes oa = ca.getChildrenAttributes(i);
                     // TODO(huguesb): special handling for conflict branches?
                     if (!oa.getExcluded()) {
-                        idx = new ModelIndex(parent, name, oa.getType() != Type.FILE, false);
+                        idx = new ModelIndex(parent, path.append(name), oa.getType() != Type.FILE, false);
                         cm.put(idx, idx);
                     }
                 }
@@ -226,40 +299,43 @@ public class HistoryModel
         return children;
     }
 
-    /**
-     * @return list of versions for a given ModelIndex, null if Ritual call fails
-     */
-    @Nullable List<Version> versions(ModelIndex index)
+    List<Version> versions(ModelIndex index) throws Exception
     {
         Path path = getPath(index);
         List<Version> revs = newArrayList();
-        try {
-            ListRevHistoryReply reply = ritual().listRevHistory(path.toPB());
-            for (PBRevision r : reply.getRevisionList()) {
-                revs.add(new Version(path, r.getIndex(), r.getLength(), r.getMtime()));
-            }
-            if (!index.isDeleted) {
-                GetObjectAttributesReply oa = ritual().getObjectAttributes(_userId.getString(),
-                        path.toPB());
-                for (PBBranch branch : oa.getObjectAttributes().getBranchList())
+        ListRevHistoryReply reply = ritual().listRevHistory(path.toPB());
+        for (PBRevision r : reply.getRevisionList()) {
+            revs.add(new Version(path, r.getIndex(), r.getLength(), r.getMtime()));
+        }
+        if (!index.isDeleted) {
+            GetObjectAttributesReply oa = ritual().getObjectAttributes(_userId.getString(),
+                    path.toPB());
+            for (PBBranch branch : oa.getObjectAttributes().getBranchList())
+            {
+                if (branch.getKidx() == KIndex.MASTER.getInt())
                 {
-                    if (branch.getKidx() == KIndex.MASTER.getInt())
-                    {
-                        Version current = new Version(path, null,
-                                branch.getLength(), branch.getMtime());
-                        // TODO(jP) : This won't work with block storage - expects the
-                        // file is already a valid export destination for restore.
-                        current.tmpFile = path.toAbsoluteString(Cfg.absDefaultRootAnchor());
-                        revs.add(current);
-                        break;
-                    }
+                    Version current = new Version(path, null,
+                            branch.getLength(), branch.getMtime());
+                    current.tmpFile = UIUtil.absPathNullable(path);
+                    revs.add(current);
+                    break;
                 }
             }
-        } catch (Exception e) {
-            l.warn(Util.e(e));
-            revs = null;
         }
         return revs;
+    }
+
+    /**
+     * @return list of versions for a given ModelIndex, null if Ritual call fails
+     */
+    @Nullable List<Version> versionsNoThrow(ModelIndex index)
+    {
+        try {
+            return versions(index);
+        } catch (Exception e) {
+            l.warn(Util.e(e));
+            return null;
+        }
     }
 
     private RitualBlockingClient ritual()
@@ -274,8 +350,11 @@ public class HistoryModel
     void export(Version version) throws Exception
     {
         if (version.tmpFile != null) return;
-        ExportRevisionReply reply = ritual().exportRevision(version.path.toPB(), version.index);
-        version.tmpFile = reply.getDest();
+        if (version.index == null) {
+            version.tmpFile = ritual().exportFile(version.path.toPB()).getDest();
+        } else {
+            version.tmpFile = ritual().exportRevision(version.path.toPB(), version.index).getDest();
+        }
         // Make sure users won't try to make changes to the temp file: their changes would be lost
         new File(version.tmpFile).setReadOnly();
     }
@@ -341,12 +420,12 @@ public class HistoryModel
     boolean restore(ModelIndex base, String absPath, IDecisionMaker delegate) throws Exception
     {
         File parent = new File(absPath);
-        File dst = new File(Util.join(absPath, base.name));
+        File dst = new File(Util.join(absPath, base.name()));
         if (base.isDir) {
             if (dst.exists()) {
                 if (!dst.isDirectory()) {
                     // TODO: finer conflict resolution through delegate if users request it
-                    dst = getRestoredFile(absPath, base.name);
+                    dst = getRestoredFile(absPath, base.name());
                 }
             }
 
@@ -365,16 +444,16 @@ public class HistoryModel
 
             if (dst.exists()) {
                 // TODO: finer conflict resolution through delegate if users request it
-                dst = getRestoredFile(absPath, base.name);
+                dst = getRestoredFile(absPath, base.name());
             }
 
-            List<Version> v = versions(base);
+            List<Version> v = versionsNoThrow(base);
             while (v == null || v.isEmpty()) {
                 Answer a = delegate.retry(base);
                 if (a == Answer.Abort) return true;
                 if (a == Answer.Ignore) return false;
                 // TODO(huguesb): Do we need to create a new client?
-                v = versions(base);
+                v = versionsNoThrow(base);
             }
 
             Version version = v.get(v.size() - 1);

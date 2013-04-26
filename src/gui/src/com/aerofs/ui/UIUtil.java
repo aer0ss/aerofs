@@ -20,6 +20,7 @@ import com.aerofs.lib.Path;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
+import com.aerofs.lib.cfg.CfgAbsRoots;
 import com.aerofs.lib.ex.ExNoConsole;
 import com.aerofs.lib.ex.ExUIMessage;
 import com.aerofs.lib.id.CID;
@@ -37,6 +38,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.google.protobuf.ByteString;
 import org.slf4j.Logger;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.EOFException;
 import java.io.File;
@@ -405,14 +407,28 @@ public class UIUtil
     }
 
     /**
+     * @pre client must use LINKED storage to resolve empty path
      * Derive the name of a shared folder from its Path
-     * This is necessary to handle external roots, whose Path are empty and whose name are dervied
+     * This is necessary to handle external roots, whose Path are empty and whose name are derived
      * from the physical folder they are linked too.
      */
     public static String sharedFolderName(Path path, String defaultName)
     {
         if (!path.isEmpty()) return path.last();
         String absRootPath = Cfg.getRootPath(path.sid());
+        return absRootPath != null ? new File(absRootPath).getName() : defaultName;
+    }
+
+    /**
+     * @pre client must use LINKED storage to resolve empty path
+     * Derive the name of a shared folder from its Path
+     * This is necessary to handle external roots, whose Path are empty and whose name are derived
+     * from the physical folder they are linked too.
+     */
+    public static String sharedFolderName(Path path, String defaultName, CfgAbsRoots roots)
+    {
+        if (!path.isEmpty()) return path.last();
+        String absRootPath = roots.get(path.sid());
         return absRootPath != null ? new File(absRootPath).getName() : defaultName;
     }
 
@@ -441,8 +457,22 @@ public class UIUtil
         return null;
     }
 
-    public static String absPath(Path path)
+    /**
+     * @pre Client must use LINKED storage
+     * @return absolute path corresponding to a given logical path
+     */
+    public static @Nonnull String absPath(Path path)
     {
         return path.toAbsoluteString(Cfg.getRootPath(path.sid()));
+    }
+
+    /**
+     * @return absolute path corresponding to a given logical path
+     * Will return null if the sid of the path is not associated to any abs path
+     */
+    public static @Nullable String absPathNullable(Path path)
+    {
+        String absRoot = Cfg.getRootPath(path.sid());
+        return absRoot != null ? path.toAbsoluteString(absRoot) : null;
     }
 }

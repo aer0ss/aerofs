@@ -1,7 +1,6 @@
 package com.aerofs.gui.singleuser.tray;
 
 import com.aerofs.base.C;
-import com.aerofs.base.Loggers;
 import com.aerofs.base.analytics.AnalyticsEvents.ClickEvent;
 import com.aerofs.base.analytics.AnalyticsEvents.ClickEvent.Action;
 import com.aerofs.base.analytics.AnalyticsEvents.ClickEvent.Source;
@@ -11,9 +10,7 @@ import com.aerofs.gui.GUIExecutor;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.gui.GUIUtil.AbstractListener;
 import com.aerofs.gui.Images;
-import com.aerofs.gui.activitylog.DlgActivityLog;
 import com.aerofs.gui.diagnosis.DlgDiagnosis;
-import com.aerofs.gui.history.DlgHistory;
 import com.aerofs.gui.misc.DlgInviteToSignUp;
 import com.aerofs.gui.sharing.DlgManageSharedFolder;
 import com.aerofs.gui.sharing.folders.DlgFolders;
@@ -30,13 +27,10 @@ import com.aerofs.labeling.L;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.proto.ControllerNotifications.UpdateNotification.Status;
-import com.aerofs.proto.Ritual.GetActivitiesReply;
-import com.aerofs.proto.Ritual.GetActivitiesReply.PBActivity;
 import com.aerofs.proto.Ritual.ListSharedFoldersReply;
-import com.aerofs.proto.Ritual.ListSharedFoldersReply.SharedFolder;
+import com.aerofs.proto.Ritual.PBSharedFolder;
 import com.aerofs.proto.RitualNotifications.PBNotification;
 import com.aerofs.proto.RitualNotifications.PBNotification.Type;
 import com.aerofs.sv.client.SVClient;
@@ -53,7 +47,6 @@ import org.eclipse.swt.events.MenuEvent;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.MenuItem;
-import org.slf4j.Logger;
 
 public class SingleuserTrayMenu extends AbstractTrayMenu implements IListener, ITrayMenu
 {
@@ -75,7 +68,6 @@ public class SingleuserTrayMenu extends AbstractTrayMenu implements IListener, I
     private volatile int _conflictCount = 0;
 
     private final PauseOrResumeSyncing _prs = new PauseOrResumeSyncing();
-    private static Logger l = Loggers.getLogger(SingleuserTrayMenu.class);
 
     SingleuserTrayMenu(TrayIcon icon, RebuildDisposition rebuildDisposition)
     {
@@ -190,13 +182,13 @@ public class SingleuserTrayMenu extends AbstractTrayMenu implements IListener, I
                 @Override
                 public void run()
                 {
-                    GUIUtil.launch(p.toAbsoluteString(Cfg.absDefaultRootAnchor()));
+                    GUIUtil.launch(UIUtil.absPath(p));
                 }
             });
             break;
         case Type.SHARED_FOLDER_KICKOUT_VALUE:
             UI.get().notify(MessageType.INFO,
-                    "You have left \"" + Path.fromPB(pb.getPath()) + "\"");
+                    "You have left \"" + Path.fromPB(pb.getPath()).toStringRelative() + "\"");
             break;
         default: break;
         }
@@ -226,7 +218,6 @@ public class SingleuserTrayMenu extends AbstractTrayMenu implements IListener, I
     }
 
     // keep old dialog on regular client for now...
-    @Override
     protected void createSharedFoldersMenu(Menu menu)
     {
         MenuItem mi = new MenuItem(menu, SWT.CASCADE);
@@ -234,23 +225,25 @@ public class SingleuserTrayMenu extends AbstractTrayMenu implements IListener, I
         final Menu menuManage = new Menu(menu.getShell(), SWT.DROP_DOWN);
         mi.setMenu(menuManage);
         final TrayMenuPopulator populater = new TrayMenuPopulator(menuManage);
-        menuManage.addMenuListener(new MenuAdapter() {
+        menuManage.addMenuListener(new MenuAdapter()
+        {
             @Override
             public void menuShown(MenuEvent event)
             {
                 populater.clearAllMenuItems();
-                populater.addMenuItem("Share New Folder...",
-                        new AbstractListener(SHARE_FOLDER) {
-                            @Override
-                            protected void handleEventImpl(Event event)
-                            {
-                                new DlgFolders(GUI.get().sh()).openDialog();
-                            }
-                        });
+                populater.addMenuItem("Share New Folder...", new AbstractListener(SHARE_FOLDER)
+                {
+                    @Override
+                    protected void handleEventImpl(Event event)
+                    {
+                        new DlgFolders(GUI.get().sh()).openDialog();
+                    }
+                });
 
                 populater.addMenuSeparator();
 
-                addSharedFoldersSubmenu(menuManage, new ISharedFolderMenuExecutor() {
+                addSharedFoldersSubmenu(menuManage, new ISharedFolderMenuExecutor()
+                {
                     @Override
                     public void run(Path path)
                     {
@@ -268,7 +261,8 @@ public class SingleuserTrayMenu extends AbstractTrayMenu implements IListener, I
         loading.setEnabled(false);
 
         Futures.addCallback(UI.ritualNonBlocking().listSharedFolders(),
-                new FutureCallback<ListSharedFoldersReply>() {
+                new FutureCallback<ListSharedFoldersReply>()
+                {
                     @Override
                     public void onFailure(Throwable e)
                     {
@@ -281,7 +275,7 @@ public class SingleuserTrayMenu extends AbstractTrayMenu implements IListener, I
                     public void onSuccess(ListSharedFoldersReply reply)
                     {
                         loading.dispose();
-                        for (SharedFolder sf : reply.getSharedFolderList()) {
+                        for (PBSharedFolder sf : reply.getSharedFolderList()) {
                             addSharedFolderEntry(Path.fromPB(sf.getPath()), sf.getName());
                         }
                         if (reply.getSharedFolderCount() == 0) {
@@ -307,116 +301,6 @@ public class SingleuserTrayMenu extends AbstractTrayMenu implements IListener, I
                                 });
                     }
                 }, new GUIExecutor(submenu));
-    }
-
-    private void createRecentActivitesMenu(Menu menu)
-    {
-        MenuItem mi;
-        mi = new MenuItem(menu, SWT.CASCADE);
-        mi.setText("Recent Activities");
-        final Menu menuActivities = new Menu(menu.getShell(), SWT.DROP_DOWN);
-        mi.setMenu(menuActivities);
-        menuActivities.addMenuListener(new MenuAdapter()
-        {
-            @Override
-            public void menuShown(MenuEvent event)
-            {
-                populateActivitiesMenu(menuActivities);
-            }
-        });
-    }
-
-    private void populateActivitiesMenu(final Menu menu)
-    {
-        final TrayMenuPopulator activitiesTrayMenuPopulator = new TrayMenuPopulator(menu);
-        activitiesTrayMenuPopulator.clearAllMenuItems();
-
-        activitiesTrayMenuPopulator.addMenuItem(S.GUI_LOADING, null).setEnabled(false);
-
-        // asynchronously fetch results, as GetActivities call may be slow. (see ritual.proto)
-        Futures.addCallback(UI.ritualNonBlocking().getActivities(true, 5, null),
-                new FutureCallback<GetActivitiesReply>()
-                {
-                    @Override
-                    public void onFailure(Throwable e)
-                    {
-                        activitiesTrayMenuPopulator.clearAllMenuItems();
-                        activitiesTrayMenuPopulator.addErrorMenuItem(S.COULDNT_LIST_ACTIVITIES);
-                        l.warn(Util.e(e));
-                        done();
-                    }
-
-                    @Override
-                    public void onSuccess(GetActivitiesReply reply)
-                    {
-                        activitiesTrayMenuPopulator.clearAllMenuItems();
-
-                        boolean added = false;
-                        for (int i = 0; i < reply.getActivityCount(); i++) {
-                            final PBActivity a = reply.getActivity(i);
-                            final int idx = i;
-                            activitiesTrayMenuPopulator.addMenuItem(a.getMessage(),
-                                    new AbstractListener(null)
-                                    {
-                                        @Override
-                                        protected void handleEventImpl(Event event)
-                                        {
-                                            if (a.hasPath()) {
-                                                String path = Path.fromPB(a.getPath())
-                                                        .toAbsoluteString(
-                                                                Cfg.absDefaultRootAnchor());
-                                                OSUtil.get().showInFolder(path);
-                                            } else {
-                                                new DlgActivityLog(GUI.get().sh(),
-                                                        idx).openDialog();
-                                            }
-                                        }
-                                    });
-                            added = true;
-                        }
-
-                        if (added && reply.getHasUnresolvedDevices()) {
-                            MenuItem mi = activitiesTrayMenuPopulator.addMenuItem(
-                                    S.FAILED_FOR_ACCURACY, null);
-                            mi.setEnabled(false);
-                            mi.setImage(Images.get(Images.ICON_WARNING));
-                        }
-
-                        if (!added) {
-                            MenuItem mi = activitiesTrayMenuPopulator.addMenuItem(
-                                    "No recent activity", null);
-                            mi.setEnabled(false);
-                        }
-
-                        done();
-                    }
-
-                    private void done()
-                    {
-                        activitiesTrayMenuPopulator.addMenuSeparator();
-
-                        activitiesTrayMenuPopulator.addMenuItem("Show More...",
-                                new AbstractListener(null)
-                                {
-                                    @Override
-                                    protected void handleEventImpl(Event event)
-                                    {
-                                        new DlgActivityLog(GUI.get().sh(), null).openDialog();
-                                    }
-                                });
-                    }
-                }, new GUIExecutor(menu));
-    }
-
-    private void addVersionHistoryMenuItem(TrayMenuPopulator trayMenuPopulator)
-    {
-        trayMenuPopulator.addMenuItem("Sync History...", new AbstractListener(null) {
-            @Override
-            protected void handleEventImpl(Event event)
-            {
-                new DlgHistory(GUI.get().sh()).openDialog();
-            }
-        });
     }
 
     private void addPauseOrResumeSyncingMenuItem(TrayMenuPopulator trayMenuPopulator)

@@ -8,6 +8,9 @@ import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.gui.history.HistoryModel.ModelIndex;
 import com.aerofs.lib.Path;
+import com.aerofs.lib.StorageType;
+import com.aerofs.lib.cfg.Cfg;
+import com.aerofs.lib.cfg.CfgAbsRoots;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.ritual.IRitualClientProvider;
@@ -20,13 +23,18 @@ import com.aerofs.proto.Ritual.PBObjectAttributes;
 import com.aerofs.proto.Ritual.PBObjectAttributes.Type;
 import com.aerofs.proto.Ritual.PBRevChild;
 import com.aerofs.testlib.AbstractTest;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import junit.framework.Assert;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.ArgumentMatcher;
 import org.mockito.Mock;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.util.Collections;
 import java.util.List;
@@ -38,24 +46,27 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-/**
- *
- */
 public class TestHistoryModel extends AbstractTest
 {
-    @Mock CfgLocalUser user;
+    @Mock CfgLocalUser cfgLocalUser;
     @Mock IRitualClientProvider ritualProvider;
     @Mock RitualBlockingClient ritual;
+    @Mock CfgAbsRoots absRoots;
 
     HistoryModel model;
+
+    private final UserID user = UserID.fromInternal("foo@bar.baz");
+    private final SID rootSID = SID.rootSID(user);
 
     @Before
     public void setup() throws Exception
     {
-        when(user.get()).thenReturn(UserID.fromInternal("foo@bar.baz"));
+        when(cfgLocalUser.get()).thenReturn(user);
         when(ritualProvider.getBlockingClient()).thenReturn(ritual);
+        when(absRoots.get()).thenReturn(ImmutableMap.of(rootSID, "/AeroFS"));
+        when(absRoots.get(rootSID)).thenReturn("/AeroFS");
 
-        model = new HistoryModel(ritualProvider, user.get());
+        model = new HistoryModel(ritualProvider, cfgLocalUser.get(), StorageType.LINKED, absRoots);
     }
 
     @After
@@ -71,7 +82,7 @@ public class TestHistoryModel extends AbstractTest
         for (int i = 0; i < l.size(); ++i) {
             Assert.assertTrue(i < n);
             ModelIndex idx = model.index(parent, i);
-            Assert.assertEquals(l.get(i).name, idx.name);
+            Assert.assertEquals(l.get(i).name(), idx.name());
             Assert.assertEquals(l.get(i).isDir, idx.isDir);
             Assert.assertEquals(l.get(i).isDeleted, idx.isDeleted);
         }
@@ -95,11 +106,10 @@ public class TestHistoryModel extends AbstractTest
 
     static PBPath eqPath(Path p) { return argThat(new PathMatcher(p)); }
 
-
     @Test
-    public void shouldPopulateFirstLevel() throws Exception
+    public void shouldPopulateFirstLevelWithFirstLevelOfRootSID() throws Exception
     {
-        Path root = Path.root(SID.rootSID(user.get()));
+        Path root = Path.root(rootSID);
         when(ritual.listRevChildren(any(PBPath.class))).thenReturn(ListRevChildrenReply.newBuilder()
                 .addChild(PBRevChild.newBuilder().setName("d0").setIsDir(true))
                 .addChild(PBRevChild.newBuilder().setName("d1").setIsDir(true))
@@ -170,17 +180,29 @@ public class TestHistoryModel extends AbstractTest
         verify(ritual, times(1)).getChildrenAttributes(any(String.class), eqPath(root));
 
         assertIndexList(null,
-                new ModelIndex(null, "f", false, false),
-                new ModelIndex(null, "d", true, false),
-                new ModelIndex(null, "a", true, false),
-                new ModelIndex(null, "d0", true, true),
-                new ModelIndex(null, "d0", false, false),
-                new ModelIndex(null, "d1", true, false),
-                new ModelIndex(null, "foo", false, true),
-                new ModelIndex(null, "foo", true, false),
-                new ModelIndex(null, "bar", true, false),
-                new ModelIndex(null, "bar", false, true),
-                new ModelIndex(null, "baz", false, true));
+                new ModelIndex(model, Path.fromString(rootSID, "f"), false, false),
+                new ModelIndex(model, Path.fromString(rootSID, "d"), true, false),
+                new ModelIndex(model, Path.fromString(rootSID, "a"), true, false),
+                new ModelIndex(model, Path.fromString(rootSID, "d0"), true, true),
+                new ModelIndex(model, Path.fromString(rootSID, "d0"), false, false),
+                new ModelIndex(model, Path.fromString(rootSID, "d1"), true, false),
+                new ModelIndex(model, Path.fromString(rootSID, "foo"), false, true),
+                new ModelIndex(model, Path.fromString(rootSID, "foo"), true, false),
+                new ModelIndex(model, Path.fromString(rootSID, "bar"), true, false),
+                new ModelIndex(model, Path.fromString(rootSID, "bar"), false, true),
+                new ModelIndex(model, Path.fromString(rootSID, "baz"), false, true));
+    }
+
+    @Test
+    public void shouldPopulateFirstLevelWithPhysicalRoots() throws Exception
+    {
+        SID ext = SID.generate();
+        when(absRoots.get()).thenReturn(ImmutableMap.of(rootSID, "/AeroFS", ext, "/ext"));
+        when(absRoots.get(ext)).thenReturn("/ext");
+
+        assertIndexList(null,
+                new ModelIndex(model, Path.root(rootSID), true, false),
+                new ModelIndex(model, Path.root(ext), true, false));
     }
 
     @Test

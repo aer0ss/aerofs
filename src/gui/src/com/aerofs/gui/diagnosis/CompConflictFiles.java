@@ -381,8 +381,8 @@ public class CompConflictFiles extends Composite
     private void openLocal() throws Exception
     {
         for (Entry en : getSelectedEntries()) {
-            String path = en._path.toAbsoluteString(Cfg.absDefaultRootAnchor());
-            if (!GUIUtil.launch(path)) {
+            String path = UIUtil.absPathNullable(en._path);
+            if (path != null && !GUIUtil.launch(path)) {
                 throw new Exception(S.FILE_OPEN_FAIL);
             }
         }

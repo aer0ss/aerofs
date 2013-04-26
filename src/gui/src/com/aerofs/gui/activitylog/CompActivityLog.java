@@ -7,6 +7,7 @@ import com.aerofs.gui.GUIParam;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.S;
+import com.aerofs.lib.StorageType;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
@@ -15,6 +16,7 @@ import com.aerofs.proto.Common.PBPath;
 import com.aerofs.proto.Ritual.GetActivitiesReply;
 import com.aerofs.proto.Ritual.GetActivitiesReply.PBActivity;
 import com.aerofs.ui.UI;
+import com.aerofs.ui.UIUtil;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.TableViewer;
@@ -78,21 +80,23 @@ public class CompActivityLog extends Composite
         t.setBackground(getShell().getDisplay().getSystemColor(SWT.COLOR_WHITE));
         t.setHeaderVisible(true);
 
-        t.addSelectionListener(new SelectionListener() {
-            @Override
-            public void widgetSelected(SelectionEvent arg0)
-            {
-                PBActivity a = getSelectedActivty();
-                _btnView.setEnabled(a != null && a.hasPath());
-            }
+        if (Cfg.storageType() == StorageType.LINKED) {
+            t.addSelectionListener(new SelectionListener() {
+                @Override
+                public void widgetSelected(SelectionEvent arg0)
+                {
+                    PBActivity a = getSelectedActivty();
+                    _btnView.setEnabled(a != null && a.hasPath());
+                }
 
-            @Override
-            public void widgetDefaultSelected(SelectionEvent arg0)
-            {
-                PBActivity a = getSelectedActivty();
-                if (a != null && a.hasPath()) revealFile(a.getPath());
-            }
-        });
+                @Override
+                public void widgetDefaultSelected(SelectionEvent arg0)
+                {
+                    PBActivity a = getSelectedActivty();
+                    if (a != null && a.hasPath()) revealFile(a.getPath());
+                }
+            });
+        }
 
         ////////
         // add columns
@@ -141,18 +145,22 @@ public class CompActivityLog extends Composite
             }
         });
 
-        _btnView = new Button(composite, SWT.NONE);
-        _btnView.setText("Reveal File");
-        _btnView.setEnabled(false);
-        _btnView.addSelectionListener(new SelectionAdapter() {
-            @Override
-            public void widgetSelected(SelectionEvent arg0)
-            {
-                PBActivity a = getSelectedActivty();
-                if (a == null || !a.hasPath()) return;
-                revealFile(a.getPath());
-            }
-        });
+        if (Cfg.storageType() == StorageType.LINKED) {
+            _btnView = new Button(composite, SWT.NONE);
+            _btnView.setText("Reveal File");
+            _btnView.setEnabled(false);
+            _btnView.addSelectionListener(new SelectionAdapter() {
+                @Override
+                public void widgetSelected(SelectionEvent arg0)
+                {
+                    PBActivity a = getSelectedActivty();
+                    if (a == null || !a.hasPath()) return;
+                    revealFile(a.getPath());
+                }
+            });
+        } else {
+            _btnView = null;
+        }
 
         Button btnClose = new Button(composite, SWT.NONE);
         btnClose.addSelectionListener(new SelectionAdapter()
@@ -170,8 +178,8 @@ public class CompActivityLog extends Composite
 
     private void revealFile(PBPath path)
     {
-        String str = Path.fromPB(path).toAbsoluteString(Cfg.absDefaultRootAnchor());
-        OSUtil.get().showInFolder(str);
+        String str = UIUtil.absPathNullable(Path.fromPB(path));
+        if (str != null) OSUtil.get().showInFolder(str);
     }
 
     private @Nullable PBActivity getSelectedActivty()
@@ -272,11 +280,5 @@ public class CompActivityLog extends Composite
                 }
             }
         });
-    }
-
-    @Override
-    protected void checkSubclass()
-    {
-        // Disable the check that prevents subclassing of SWT components
     }
 }
