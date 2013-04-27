@@ -5,13 +5,13 @@
 package com.aerofs.sp.server.email;
 
 import com.aerofs.base.BaseParam.WWW;
-import com.aerofs.base.ex.AbstractExWirable;
 import com.aerofs.labeling.L;
+import com.aerofs.servlets.lib.EmailSender;
 import com.aerofs.sp.server.email.IEmail.HEADER_SIZE;
 import com.aerofs.sp.server.lib.SPParam;
-import com.aerofs.sv.client.SVClient;
 import com.aerofs.sv.common.EmailCategory;
 
+import javax.mail.MessagingException;
 import java.io.IOException;
 
 public class RequestToSignUpEmailer
@@ -37,11 +37,11 @@ public class RequestToSignUpEmailer
         email.addDefaultSignature();
 
         try {
-            SVClient.sendEmail(WWW.SUPPORT_EMAIL_ADDRESS.get(), SPParam.SP_EMAIL_NAME, emailAddress, null,
-                    "Complete your " + L.brand() + " sign up", email.getTextEmail(),
-                    email.getHTMLEmail(), true,
+            EmailSender.sendEmail(WWW.SUPPORT_EMAIL_ADDRESS.get(), SPParam.SP_EMAIL_NAME,
+                    emailAddress, null, "Complete your " + L.brand() + " sign up",
+                    email.getTextEmail(), email.getHTMLEmail(), true,
                     EmailCategory.REQUEST_TO_SIGN_UP);
-        } catch (AbstractExWirable e) {
+        } catch (MessagingException e) {
             throw new IOException(e);
         }
     }

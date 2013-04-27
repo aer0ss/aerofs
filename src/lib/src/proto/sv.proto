@@ -11,7 +11,6 @@ message PBSVCall {
     enum Type {
         DEFECT = 0;
         GZIPPED_LOG = 4;
-        EMAIL = 6;
     }
 
     required Type type = 1;
@@ -20,7 +19,6 @@ message PBSVCall {
 
     optional PBSVDefect defect = 3;
     optional PBSVGzippedLog gzipped_log = 5;
-    optional PBSVEmail email = 8;
 }
 
 message PBSVReply {
@@ -56,17 +54,4 @@ message PBSVGzippedLog {
     required string name = 1;
 
     // followed by a gzipped log
-}
-
-message PBSVEmail {
-    required string from = 1;
-    required string from_name = 2;
-    required string to = 3;
-    optional string reply_to = 4;
-    required string subject = 5;
-    required string text_body = 6;
-    optional string html_body = 7;
-
-    required bool using_sendgrid = 8;
-    optional string category = 9;
 }

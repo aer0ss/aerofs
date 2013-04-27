@@ -11,8 +11,8 @@ import com.aerofs.labeling.L;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExEmailSendingFailed;
 import com.aerofs.base.ex.ExNotFound;
+import com.aerofs.servlets.lib.EmailSender;
 import com.aerofs.sp.server.lib.organization.Organization;
-import com.aerofs.sv.client.SVClient;
 import com.aerofs.sv.common.EmailCategory;
 import com.aerofs.sp.server.email.IEmail.HEADER_SIZE;
 import com.aerofs.sp.server.lib.user.User;
@@ -71,10 +71,9 @@ public class InvitationEmailer
                 @Override
                 public Void call() throws Exception
                 {
-                    SVClient.sendEmail(WWW.SUPPORT_EMAIL_ADDRESS.get(), nsInviter.nameOnly(),
-                            invitee.id().getString(), null, subject,
-                            email.getTextEmail(), email.getHTMLEmail(), true,
-                            EmailCategory.FOLDERLESS_INVITE);
+                    EmailSender.sendEmail(WWW.SUPPORT_EMAIL_ADDRESS.get(), nsInviter.nameOnly(),
+                            invitee.id().getString(), null, subject, email.getTextEmail(),
+                            email.getHTMLEmail(), true, EmailCategory.FOLDERLESS_INVITE);
 
                     EmailUtil.emailSPNotification(
                             inviter + " invited " + invitee +
@@ -142,7 +141,7 @@ public class InvitationEmailer
                 @Override
                 public Void call() throws Exception
                 {
-                    SVClient.sendEmail(WWW.SUPPORT_EMAIL_ADDRESS.get(),
+                    EmailSender.sendEmail(WWW.SUPPORT_EMAIL_ADDRESS.get(),
                             nsSharer.nameOnly(),
                             sharee.id().getString(),
                             null,
@@ -186,7 +185,7 @@ public class InvitationEmailer
                 @Override
                 public Void call() throws Exception
                 {
-                    SVClient.sendEmail(
+                    EmailSender.sendEmail(
                             WWW.SUPPORT_EMAIL_ADDRESS.get(),
                             ns.nameOnly(),
                             invitee.id().getString(),

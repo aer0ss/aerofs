@@ -1,8 +1,8 @@
 /*
- * Copyright (c) Air Computing Inc., 2012.
+ * Copyright (c) Air Computing Inc., 2013.
  */
 
-package com.aerofs.sv.server;
+package com.aerofs.servlets.lib;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.labeling.L;
@@ -22,18 +22,31 @@ import java.io.UnsupportedEncodingException;
 import java.util.Properties;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
-class EmailSender
+/**
+ * The EmailSender class allows you to send emails (either through local or remote SMTP)
+ *
+ * The class utilizes a single threaded executor with a queue size of EMAIL_QUEUE_SIZE.
+ * If the queue becomes full, the executor throws a runtime RejectedExecutionException
+ */
+
+
+public class EmailSender
 {
     private static final Logger l = Loggers.getLogger(EmailSender.class);
 
-    private static final ExecutorService executor = Executors.newSingleThreadExecutor();
+    private static final int EMAIL_QUEUE_SIZE = 1000;
+    private static final ExecutorService executor = new ThreadPoolExecutor(1, 1, 0L,
+            TimeUnit.MILLISECONDS, new LinkedBlockingDeque<Runnable>(EMAIL_QUEUE_SIZE));
 
-    protected static final String SENDGRID_HOST = "smtp.sendgrid.net";
-    protected static final String SENDGRID_USERNAME = "mXSiiSbCMMYVG38E";
-    protected static final String SENDGRID_PASSWORD = "6zovnhQuLMwNJlx8";
+    private static final String SENDGRID_HOST = "smtp.sendgrid.net";
+    private static final String SENDGRID_USERNAME = "mXSiiSbCMMYVG38E";
+    private static final String SENDGRID_PASSWORD = "6zovnhQuLMwNJlx8";
     private static final String LOCAL_HOST = "svmail.aerofs.com";
     private static final String LOCAL_USERNAME = "noreply";
     private static final String LOCAL_PASSWORD = "qEphE2uzuBr5";
@@ -42,14 +55,13 @@ class EmailSender
     private static final String CHARSET = "UTF-8";
 
     static {
-        Properties props = System.getProperties();
+        Properties props = new Properties();
         props.put("mail.smtp.auth", "true");
         props.put("mail.smtp.starttls.enable","true");
         props.put("mail.smtp.startls.required", "true");
 
-        session = Session.getInstance(System.getProperties());
+        session = Session.getInstance(props);
     }
-
 
     public static Future<Void> sendEmail(String from, @Nullable String fromName, String to,
             @Nullable String replyTo, String subject, String textBody, @Nullable String htmlBody,
@@ -69,7 +81,11 @@ class EmailSender
 
         if (category != null) msg.addHeaderLine("X-SMTPAPI: {\"category\": \"" + category.name() + "\"}");
 
-        return sendEmail(msg, usingSendGrid);
+        try {
+            return sendEmail(msg, usingSendGrid);
+        } catch (RejectedExecutionException e) {
+            throw new MessagingException(e.getCause().getMessage());
+        }
     }
 
     /*
@@ -80,7 +96,6 @@ class EmailSender
             @Nullable String replyTo, String subject)
             throws MessagingException, UnsupportedEncodingException
     {
-        Session session = Session.getInstance(System.getProperties());
         MimeMessage msg = new MimeMessage(session);
 
         msg.setFrom(new InternetAddress(from, fromName));
@@ -96,7 +111,8 @@ class EmailSender
         return msg;
     }
 
-    private static MimeMultipart createMultipartEmail(String textBody, @Nullable String htmlBody) throws MessagingException
+    private static MimeMultipart createMultipartEmail(String textBody, @Nullable String htmlBody)
+            throws MessagingException
     {
         MimeMultipart multiPart = new MimeMultipart("alternative");
 
@@ -124,10 +140,14 @@ class EmailSender
      * @throws MessagingException
      */
     private static Future<Void> sendEmail(final Message msg, final boolean usingSendGrid)
+        throws RejectedExecutionException
     {
-        Future<Void> f = executor.submit(new Callable<Void>() {
+
+        return executor.submit(new Callable<Void>()
+        {
             @Override
-            public Void call() throws MessagingException
+            public Void call()
+                    throws MessagingException
             {
 
                 try {
@@ -136,12 +156,13 @@ class EmailSender
                     // and our own mail servers for internal emails.
                     try {
                         if (usingSendGrid) {
-                            t.connect(SENDGRID_HOST,SENDGRID_USERNAME, SENDGRID_PASSWORD);
+                            t.connect(SENDGRID_HOST, SENDGRID_USERNAME, SENDGRID_PASSWORD);
                         } else {
-                            t.connect(LOCAL_HOST,LOCAL_USERNAME,LOCAL_PASSWORD);
+                            t.connect(LOCAL_HOST, LOCAL_USERNAME, LOCAL_PASSWORD);
                         }
 
                         t.sendMessage(msg, msg.getAllRecipients());
+                        l.info("{} emailed {}", msg.getFrom(), msg.getAllRecipients());
                     } finally {
                         t.close();
                     }
@@ -149,21 +170,14 @@ class EmailSender
                 } catch (MessagingException e) {
                     try {
                         String to = msg.getRecipients(Message.RecipientType.TO)[0].toString();
-                        sendEmail(SVParam.SV_NOTIFICATION_SENDER, SVParam.SV_NOTIFICATION_SENDER,
-                                SVParam.SV_NOTIFICATION_RECEIVER, null, "Messaging failed",
-                                "Can't email " + to + ": " + e, null, false, null);
-
-                        l.error("cannot send message to " + to + ": ", e);
-
+                        l.error("cannot send message to {} : {} ", to , e);
                     } catch (Exception e1) {
-                        l.error("cannot report email exception: ", e1);
+                        l.error("cannot report email exception: {} ", e1);
                     }
 
                     throw e;
                 }
             }
         });
-
-        return f;
     }
 }

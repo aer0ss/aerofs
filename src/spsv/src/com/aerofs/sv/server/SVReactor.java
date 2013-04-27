@@ -27,7 +27,7 @@ import com.aerofs.base.Loggers;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.Param;
 import com.aerofs.lib.SystemUtil;
-import com.aerofs.proto.Sv.PBSVEmail;
+import com.aerofs.servlets.lib.EmailSender;
 import com.aerofs.servlets.lib.db.IThreadLocalTransaction;
 import com.yammer.metrics.Metrics;
 import com.yammer.metrics.core.Meter;
@@ -104,9 +104,6 @@ public class SVReactor
             case GZIPPED_LOG:
                 gzippedLog(call, is);
                 break;
-            case EMAIL:
-                email(call);
-                break;
             default:
                 throw new Exception("unknown call type: " + call.getType());
             }
@@ -121,29 +118,6 @@ public class SVReactor
 
         return bdReply.build();
     }
-
-    private void email(PBSVCall call)
-            throws ExProtocolError, MessagingException, UnsupportedEncodingException
-    {
-        Util.checkPB(call.hasEmail(), PBSVEmail.class);
-
-        PBSVEmail email = call.getEmail();
-        Future<Void> f = EmailSender.sendEmail(email.getFrom(), email.getFromName(),
-                email.getTo(),
-                email.hasReplyTo() ? email.getReplyTo() : null,
-                email.getSubject(), email.getTextBody(),
-                email.hasHtmlBody() ? email.getHtmlBody() : null,
-                email.getUsingSendgrid(),
-                email.hasCategory() ? EmailCategory.valueOf(email.getCategory()) : null);
-        try {
-            f.get(); //block under email either sends or fails
-        } catch (Exception e) {
-            // the only type of exception that EmailSender.sendEmail() can throw throw the
-            // executor service is a MessagingException
-            throw new MessagingException(e.getCause().getMessage());
-        }
-    }
-
 
     private void gzippedLog(PBSVCall call, InputStream is)
         throws ExProtocolError, IOException

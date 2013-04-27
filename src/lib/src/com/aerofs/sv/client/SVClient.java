@@ -26,7 +26,6 @@ import com.aerofs.proto.Sv.PBSVCall;
 import com.aerofs.proto.Sv.PBSVCall.Type;
 import com.aerofs.proto.Sv.PBSVDefect;
 import com.aerofs.proto.Sv.PBSVDefect.Builder;
-import com.aerofs.proto.Sv.PBSVEmail;
 import com.aerofs.proto.Sv.PBSVGzippedLog;
 import com.aerofs.proto.Sv.PBSVHeader;
 import com.aerofs.sv.common.EmailCategory;
@@ -99,49 +98,6 @@ public final class SVClient
     // SVClient.init(RockLog), but I'm not fan of init methods either.
     private static final RockLog rockLog = new RockLog();
 
-    //-------------------------------------------------------------------------
-    //
-    // SEND EMAIL
-    //
-    //-------------------------------------------------------------------------
-
-    public static void sendEmail(
-            String from,
-            String fromName,
-            String to,
-            @Nullable String replyTo,
-            String subject,
-            String textBody,
-            @Nullable String htmlBody,
-            boolean usingSendGrid,
-            @Nullable EmailCategory category)
-            throws IOException, AbstractExWirable
-    {
-        l.info("send email " + from + " -> " + to);
-
-        assert !usingSendGrid || category != null;
-
-        PBSVEmail.Builder bdEmail = PBSVEmail
-                .newBuilder()
-                .setFrom(from)
-                .setFromName(fromName)
-                .setTo(to)
-                .setSubject(subject)
-                .setTextBody(textBody)
-                .setUsingSendgrid(usingSendGrid);
-
-        if (replyTo != null)  bdEmail.setReplyTo(replyTo);
-        if (htmlBody != null) bdEmail.setHtmlBody(htmlBody);
-        if (category != null) bdEmail.setCategory(category.name());
-
-        PBSVCall call = PBSVCall
-                .newBuilder()
-                .setType(Type.EMAIL)
-                .setEmail(bdEmail)
-                .build();
-
-        getRpcClient().doRPC(call, null);
-    }
 
     //-------------------------------------------------------------------------
     //

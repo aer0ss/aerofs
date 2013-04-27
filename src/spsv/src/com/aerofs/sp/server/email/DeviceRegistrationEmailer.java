@@ -7,13 +7,13 @@ package com.aerofs.sp.server.email;
 import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.base.id.DID;
 import com.aerofs.labeling.L;
-import com.aerofs.base.ex.AbstractExWirable;
 import com.aerofs.lib.Util;
+import com.aerofs.servlets.lib.EmailSender;
 import com.aerofs.sp.server.lib.SPParam;
-import com.aerofs.sv.client.SVClient;
 import com.aerofs.sv.common.EmailCategory;
 import com.aerofs.sp.server.email.IEmail.HEADER_SIZE;
 
+import javax.mail.MessagingException;
 import java.io.IOException;
 
 public class DeviceRegistrationEmailer
@@ -59,10 +59,10 @@ public class DeviceRegistrationEmailer
         email.addDefaultSignature();
 
         try {
-            SVClient.sendEmail(WWW.SUPPORT_EMAIL_ADDRESS.get(), SPParam.SP_EMAIL_NAME,
-                    emailAddress, null, subject, email.getTextEmail(), email.getHTMLEmail(),
-                    true, EmailCategory.DEVICE_CERTIFIED);
-        } catch (AbstractExWirable e) {
+            EmailSender.sendEmail(WWW.SUPPORT_EMAIL_ADDRESS.get(), SPParam.SP_EMAIL_NAME,
+                    emailAddress, null, subject, email.getTextEmail(), email.getHTMLEmail(), true,
+                    EmailCategory.DEVICE_CERTIFIED);
+        } catch (MessagingException e) {
             throw new IOException(e);
         }
 

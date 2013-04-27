@@ -8,13 +8,13 @@ import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
-import com.aerofs.base.ex.AbstractExWirable;
 import com.aerofs.base.id.UserID;
+import com.aerofs.servlets.lib.EmailSender;
 import com.aerofs.sp.server.lib.SPParam;
-import com.aerofs.sv.client.SVClient;
 import com.aerofs.sv.common.EmailCategory;
 import com.aerofs.sp.server.email.IEmail.HEADER_SIZE;
 
+import javax.mail.MessagingException;
 import java.io.IOException;
 
 // TODO (WW) the pattern of this class is inconsistent with InvitationEmailer. Need refactoring
@@ -40,10 +40,10 @@ public class PasswordResetEmailer
         email.addDefaultSignature();
 
         try {
-            SVClient.sendEmail(WWW.SUPPORT_EMAIL_ADDRESS.get(), SPParam.SP_EMAIL_NAME, userId.getString(),
-                    null, subject, email.getTextEmail(), email.getHTMLEmail(), true,
-                    EmailCategory.PASSWORD_RESET);
-        } catch (AbstractExWirable e) {
+            EmailSender.sendEmail(WWW.SUPPORT_EMAIL_ADDRESS.get(), SPParam.SP_EMAIL_NAME,
+                    userId.getString(), null, subject, email.getTextEmail(), email.getHTMLEmail(),
+                    true, EmailCategory.PASSWORD_RESET);
+        } catch (MessagingException e) {
             throw new IOException(e);
         }
 
@@ -69,10 +69,10 @@ public class PasswordResetEmailer
         email.addDefaultSignature();
 
         try {
-            SVClient.sendEmail(WWW.SUPPORT_EMAIL_ADDRESS.get(), SPParam.SP_EMAIL_NAME, userId.getString(),
+            EmailSender.sendEmail(WWW.SUPPORT_EMAIL_ADDRESS.get(), SPParam.SP_EMAIL_NAME, userId.getString(),
                     null, subject, email.getTextEmail(), email.getHTMLEmail(), true,
                     EmailCategory.PASSWORD_RESET);
-        } catch (AbstractExWirable e) {
+        } catch (MessagingException e) {
             throw new IOException(e);
         }
 

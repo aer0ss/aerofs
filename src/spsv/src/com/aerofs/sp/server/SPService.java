@@ -86,6 +86,7 @@ import com.aerofs.servlets.lib.db.sql.SQLThreadLocalTransaction;
 import com.aerofs.servlets.lib.ssl.CertificateAuthenticator;
 import com.aerofs.sp.common.SubscriptionCategory;
 import com.aerofs.sp.server.email.DeviceRegistrationEmailer;
+import com.aerofs.servlets.lib.EmailSender;
 import com.aerofs.sp.server.email.InvitationEmailer;
 import com.aerofs.sp.server.email.RequestToSignUpEmailer;
 import com.aerofs.sp.server.lib.EmailSubscriptionDatabase;
@@ -107,7 +108,6 @@ import com.aerofs.sp.server.lib.user.User.PendingSharedFolder;
 import com.aerofs.sp.server.session.SPActiveUserSessionTracker;
 import com.aerofs.sp.server.session.SPSessionExtender;
 import com.aerofs.sp.server.session.SPSessionInvalidator;
-import com.aerofs.sv.client.SVClient;
 import com.aerofs.verkehr.client.lib.admin.VerkehrAdmin;
 import com.aerofs.verkehr.client.lib.publisher.VerkehrPublisher;
 import com.google.common.base.Strings;
@@ -957,7 +957,7 @@ public class SPService implements ISPService
     {
         _sqlTrans.begin();
 
-        SVClient.sendEmail(WWW.SUPPORT_EMAIL_ADDRESS.get(), SPParam.SP_EMAIL_NAME,
+        EmailSender.sendEmail(WWW.SUPPORT_EMAIL_ADDRESS.get(), SPParam.SP_EMAIL_NAME,
                 _sessionUser.get().id().getString(), null, UserID.fromExternal(userId).getString(),
                 body, null, true, null);
 

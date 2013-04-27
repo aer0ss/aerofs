@@ -9,7 +9,7 @@ import java.util.concurrent.Callable;
 
 import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.labeling.L;
-import com.aerofs.sv.client.SVClient;
+import com.aerofs.servlets.lib.EmailSender;
 import com.aerofs.sv.common.EmailCategory;
 import com.aerofs.sp.server.email.IEmail.HEADER_SIZE;
 
@@ -57,8 +57,7 @@ public class InvitationReminderEmailer
                 public Void call()
                         throws Exception
                 {
-                    SVClient.sendEmail(from, fromName, to, null, subject,
-                            email.getTextEmail(),
+                    EmailSender.sendEmail(from, fromName, to, null, subject, email.getTextEmail(),
                             email.getHTMLEmail(), true, EmailCategory.AEROFS_INVITATION_REMINDER);
 
                     return null;
