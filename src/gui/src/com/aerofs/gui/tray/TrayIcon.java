@@ -61,7 +61,7 @@ public class TrayIcon implements ITrayMenuListener
             SystemUtil.fatal("System tray not found");
         }
 
-        l.warn("UbuntuTrayItem support: " + UbuntuTrayItem.supported());
+        l.debug("UbuntuTrayItem support: {}", UbuntuTrayItem.supported());
         if (UbuntuTrayItem.supported()) {
             _uti = new UbuntuTrayItem(tray, SWT.NONE, L.product());
             // We now ship the hicolor/ icon theme folder in the icons folder on Linux.
