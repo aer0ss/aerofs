@@ -10,6 +10,7 @@ import static com.aerofs.daemon.core.phy.linked.linker.MightCreateOperations.Ope
 import static com.aerofs.daemon.core.phy.linked.linker.MightCreateOperations.*;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.daemon.core.first.OIDGenerator;
 import com.aerofs.daemon.core.phy.linked.SharedFolderTagFileAndIcon;
 import com.aerofs.lib.Param;
 import org.slf4j.Logger;
@@ -101,8 +102,8 @@ public class MightCreate
      * @throws ExNotFound if either the physical object or the parent of the logical object is not
      * found when creating or moving the object.
      */
-    public Result mightCreate_(PathCombo pcPhysical, IDeletionBuffer delBuffer, Trans t)
-            throws Exception
+    public Result mightCreate_(PathCombo pcPhysical, IDeletionBuffer delBuffer, OIDGenerator og,
+            Trans t) throws Exception
     {
         if (deleteIfInvalidTagFile(pcPhysical) || _il.isIgnored_(pcPhysical._path.last())) {
             return Result.IGNORED;
@@ -150,7 +151,7 @@ public class MightCreate
         }
 
         boolean createdOrReplaced = _mcop.executeOperation_(ops, sourceSOID, targetSOID, pcPhysical,
-                fnt, delBuffer, t);
+                fnt, delBuffer, og, t);
 
         if (fnt._dir) {
             return createdOrReplaced ? Result.NEW_OR_REPLACED_FOLDER : Result.EXISTING_FOLDER;

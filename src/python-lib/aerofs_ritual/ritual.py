@@ -280,6 +280,9 @@ class _RitualServiceWrapper(object):
     def get_last_activity_index(self):
         return self._service.get_activities(True, 1, None).page_token
 
+    def create_seed_file(self, sid):
+        self._service.create_seed_file(sid)
+
     def shutdown(self):
         while True:
             try:

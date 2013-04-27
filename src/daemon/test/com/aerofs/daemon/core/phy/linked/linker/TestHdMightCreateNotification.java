@@ -5,6 +5,7 @@
 package com.aerofs.daemon.core.phy.linked.linker;
 
 import com.aerofs.base.id.SID;
+import com.aerofs.daemon.core.first.OIDGenerator;
 import com.aerofs.daemon.core.phy.linked.linker.event.EIMightCreateNotification;
 import com.aerofs.daemon.core.phy.linked.linker.scanner.ScanSessionQueue;
 import com.aerofs.lib.Util;
@@ -58,12 +59,13 @@ public class TestHdMightCreateNotification extends AbstractTest
     public void shouldIgnoreExNotFoundFromMightCreate()
             throws Exception
     {
-        when(mc.mightCreate_(any(PathCombo.class), any(IDeletionBuffer.class), any(Trans.class)))
+        when(mc.mightCreate_(any(PathCombo.class), any(IDeletionBuffer.class),
+                any(OIDGenerator.class), any(Trans.class)))
                 .thenThrow(new ExNotFound());
 
         callHandle();
 
-        verify(mc).mightCreate_(any(PathCombo.class), eq(delBuffer), eq(t));
+        verify(mc).mightCreate_(any(PathCombo.class), eq(delBuffer), any(OIDGenerator.class), eq(t));
         verifyZeroInteractions(ssq);
     }
 
@@ -71,12 +73,13 @@ public class TestHdMightCreateNotification extends AbstractTest
     public void shouldTriggerFullScanOnOtherExceptionsFromMightCreate()
             throws Exception
     {
-        when(mc.mightCreate_(any(PathCombo.class), any(IDeletionBuffer.class), any(Trans.class)))
+        when(mc.mightCreate_(any(PathCombo.class), any(IDeletionBuffer.class),
+                any(OIDGenerator.class), any(Trans.class)))
                 .thenThrow(new ExNoPerm());
 
         callHandle();
 
-        verify(mc).mightCreate_(any(PathCombo.class), eq(delBuffer), eq(t));
+        verify(mc).mightCreate_(any(PathCombo.class), eq(delBuffer), any(OIDGenerator.class), eq(t));
         verify(ssq).scanAfterDelay_(anySetOf(String.class), anyBoolean());
         verifyNoMoreInteractions(ssq);
     }

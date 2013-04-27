@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.phy.linked.linker.scanner;
 
+import com.aerofs.daemon.core.first.OIDGenerator;
 import com.aerofs.daemon.core.phy.linked.linker.IDeletionBuffer;
 import com.aerofs.daemon.core.phy.linked.linker.PathCombo;
 import com.aerofs.daemon.core.mock.TestUtilCore.ExArbitrary;
@@ -73,7 +74,8 @@ public class TestScanSession_Misc extends AbstractTestScanSession
     @Override
     protected void mockMightCreate() throws Exception
     {
-        when(mc.mightCreate_(any(PathCombo.class), any(IDeletionBuffer.class), any(Trans.class)))
+        when(mc.mightCreate_(any(PathCombo.class), any(IDeletionBuffer.class),
+                any(OIDGenerator.class), any(Trans.class)))
                 .then(new Answer<Result>()
                 {
                     @Override
@@ -143,7 +145,8 @@ public class TestScanSession_Misc extends AbstractTestScanSession
     @Test (expected = ExArbitrary.class)
     public void shouldThrowIfUnderlyingProcessingThrows() throws Exception
     {
-        when(mc.mightCreate_(any(PathCombo.class), any(IDeletionBuffer.class), any(Trans.class)))
+        when(mc.mightCreate_(any(PathCombo.class), any(IDeletionBuffer.class),
+                any(OIDGenerator.class), any(Trans.class)))
             .thenThrow(ExArbitrary.class);
 
         factSS.create_(root, Collections.singleton(pRoot), false).scan_();
@@ -153,7 +156,8 @@ public class TestScanSession_Misc extends AbstractTestScanSession
     @Test
     public void shouldRemoveAllSOIDsIfUnderlyingProcessingThrows() throws Exception
     {
-        when(mc.mightCreate_(any(PathCombo.class), any(IDeletionBuffer.class), any(Trans.class)))
+        when(mc.mightCreate_(any(PathCombo.class), any(IDeletionBuffer.class),
+                any(OIDGenerator.class), any(Trans.class)))
             .thenThrow(ExArbitrary.class);
 
         try {
@@ -178,7 +182,8 @@ public class TestScanSession_Misc extends AbstractTestScanSession
     @Test
     public void shouldRecurseIntoNewFolderEvenIfRecursiveFlagIsFalse() throws Exception
     {
-        when(mc.mightCreate_(any(PathCombo.class), any(IDeletionBuffer.class), any(Trans.class)))
+        when(mc.mightCreate_(any(PathCombo.class), any(IDeletionBuffer.class),
+                any(OIDGenerator.class), any(Trans.class)))
             .then(new Answer<Result>()
             {
                 @Override
@@ -234,7 +239,8 @@ public class TestScanSession_Misc extends AbstractTestScanSession
         // Act as if none of these folders are available in the database.
         doNothing().when(delBuffer).remove_(any(SOID.class));
 
-        when(mc.mightCreate_(any(PathCombo.class), any(IDeletionBuffer.class), any(Trans.class)))
+        when(mc.mightCreate_(any(PathCombo.class), any(IDeletionBuffer.class),
+                any(OIDGenerator.class), any(Trans.class)))
             .then(new Answer<Result>()
             {
                 @Override

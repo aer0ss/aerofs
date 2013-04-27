@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.phy.linked.linker.scanner;
 
+import com.aerofs.daemon.core.first.OIDGenerator;
 import com.aerofs.daemon.core.phy.linked.linker.IDeletionBuffer;
 import com.aerofs.daemon.core.phy.linked.linker.MightCreate.Result;
 import com.aerofs.daemon.core.phy.linked.linker.PathCombo;
@@ -68,7 +69,8 @@ public class TestScanSession_ThresholdExceeded extends AbstractTestScanSession
     @Override
     protected void mockMightCreate() throws Exception
     {
-        when(mc.mightCreate_(any(PathCombo.class), any(IDeletionBuffer.class), any(Trans.class)))
+        when(mc.mightCreate_(any(PathCombo.class), any(IDeletionBuffer.class),
+                any(OIDGenerator.class), any(Trans.class)))
                 .then(new Answer<Result>()
                 {
                     @Override

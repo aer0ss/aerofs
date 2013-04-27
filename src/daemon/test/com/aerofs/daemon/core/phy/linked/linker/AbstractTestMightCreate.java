@@ -3,6 +3,7 @@ package com.aerofs.daemon.core.phy.linked.linker;
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
+import com.aerofs.daemon.core.first.OIDGenerator;
 import com.aerofs.daemon.core.phy.linked.linker.ILinkerFilter.AcceptAll;
 import com.aerofs.daemon.core.phy.linked.linker.MightCreate.Result;
 import com.aerofs.daemon.core.mock.logical.MockDir;
@@ -86,6 +87,7 @@ public abstract class AbstractTestMightCreate extends AbstractTest
 
     final SID rootSID = SID.generate();
     final String pRoot = Util.join("root");
+    final OIDGenerator og = new OIDGenerator("dummy");
 
     @SuppressWarnings("unchecked")
     @Before
@@ -96,7 +98,8 @@ public abstract class AbstractTestMightCreate extends AbstractTest
         when(il.isIgnored_("ignored")).thenReturn(true);
 
         when(mcop.executeOperation_(anySetOf(Operation.class), any(SOID.class), any(SOID.class),
-                any(PathCombo.class), any(FIDAndType.class), any(IDeletionBuffer.class), eq(t)))
+                any(PathCombo.class), any(FIDAndType.class), any(IDeletionBuffer.class),
+                any(OIDGenerator.class), eq(t)))
                 .thenAnswer(new Answer<Boolean>() {
                     @Override
                     public Boolean answer(InvocationOnMock invocation) throws Throwable
@@ -133,14 +136,14 @@ public abstract class AbstractTestMightCreate extends AbstractTest
             throws Exception
     {
         return mc.mightCreate_(new PathCombo(rootSID, pRoot, Util.join(pRoot, physicalObj)),
-                delBuffer, t);
+                delBuffer, og, t);
     }
 
 
     protected void verifyOperationExecuted(Set<Operation> ops) throws Exception
     {
         verify(mcop).executeOperation_(eq(ops), any(SOID.class), any(SOID.class),
-                any(PathCombo.class), any(FIDAndType.class), eq(delBuffer), eq(t));
+                any(PathCombo.class), any(FIDAndType.class), eq(delBuffer), eq(og), eq(t));
     }
 
     protected void verifyOperationExecuted(Operation op, String path) throws Exception
@@ -154,7 +157,7 @@ public abstract class AbstractTestMightCreate extends AbstractTest
         FIDAndType fnt = dr.getFIDAndType(pc._absPath);
 
         verify(mcop).executeOperation_(eq(ops), any(SOID.class), any(SOID.class),
-                eq(pc), eq(fnt), eq(delBuffer), eq(t));
+                eq(pc), eq(fnt), eq(delBuffer), eq(og), eq(t));
     }
 
     protected void verifyOperationExecuted(Operation op, SOID source, SOID target, String path)
@@ -170,6 +173,6 @@ public abstract class AbstractTestMightCreate extends AbstractTest
         FIDAndType fnt = dr.getFIDAndType(pc._absPath);
 
         verify(mcop).executeOperation_(eq(ops), eq(source), eq(target), eq(pc), eq(fnt),
-                eq(delBuffer), eq(t));
+                eq(delBuffer), eq(og), eq(t));
     }
 }

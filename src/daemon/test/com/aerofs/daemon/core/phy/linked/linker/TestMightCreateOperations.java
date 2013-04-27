@@ -50,7 +50,6 @@ import static org.mockito.Mockito.when;
 
 public class TestMightCreateOperations extends AbstractMightCreateTest
 {
-    @Mock OIDGenerator og;
     @Mock ObjectMover om;
     @Mock ObjectCreator oc;
     @Mock VersionUpdater vu;
@@ -60,6 +59,8 @@ public class TestMightCreateOperations extends AbstractMightCreateTest
     @Mock IDeletionBuffer delBuffer;
 
     @InjectMocks MightCreateOperations mcop;
+
+    OIDGenerator og = new OIDGenerator("dummy");
 
     @Before
     public void setUp() throws Exception
@@ -74,15 +75,6 @@ public class TestMightCreateOperations extends AbstractMightCreateTest
                 .dir("baz");
 
         LogicalObjectsPrinter.printRecursively(rootSID, ds);
-
-        when(og.generate_(anyBoolean(), any(Path.class))).thenAnswer(new Answer<OID>() {
-            @Override
-            public OID answer(InvocationOnMock invocation)
-                    throws Throwable
-            {
-                return OID.generate();
-            }
-        });
 
         // need to react to object moves
         when(om.move_(any(SOID.class), any(SOID.class), anyString(), eq(MAP), eq(t)))
@@ -129,7 +121,7 @@ public class TestMightCreateOperations extends AbstractMightCreateTest
         SOID src = ds.getSOIDNullable_(fnt._fid);
         SOID dst = ds.resolveNullable_(pc._path);
         l.info("mcop {} {}", src, dst);
-        mcop.executeOperation_(EnumSet.of(op, flags), src, dst, pc, fnt, delBuffer, t);
+        mcop.executeOperation_(EnumSet.of(op, flags), src, dst, pc, fnt, delBuffer, og, t);
     }
 
     private InjectableFile mockPhy(boolean dir, String... pathElems)

@@ -27,6 +27,7 @@ import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.lib.sched.ExponentialRetry;
 import com.aerofs.lib.sched.IScheduler;
 import com.aerofs.proto.Cmd.Command;
+import com.aerofs.proto.Ritual.CreateSeedFileReply;
 import com.aerofs.proto.Sp.AckCommandQueueHeadReply;
 import com.aerofs.proto.Sp.GetCommandQueueHeadReply;
 import com.aerofs.sp.client.SPBlockingClient;
@@ -36,6 +37,7 @@ import com.aerofs.verkehr.client.lib.IConnectionListener;
 import com.aerofs.verkehr.client.lib.subscriber.ClientFactory;
 import com.aerofs.verkehr.client.lib.subscriber.ISubscriptionListener;
 import com.aerofs.verkehr.client.lib.subscriber.VerkehrSubscriber;
+import com.google.common.util.concurrent.ListenableFuture;
 import com.google.protobuf.InvalidProtocolBufferException;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jboss.netty.util.HashedWheelTimer;
@@ -47,6 +49,7 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Map.Entry;
 import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
 
 import static com.aerofs.base.BaseParam.VerkehrTopics.CMD_CHANNEL_TOPIC_PREFIX;
 import static com.aerofs.lib.Param.Verkehr.VERKEHR_RETRY_INTERVAL;
@@ -367,10 +370,38 @@ public final class CommandNotificationSubscriber
         UI.ritual().invalidateDeviceNameCache();
     }
 
+
+    // Time, in miliseconds, given to the daemon to populate a seed file for a physical root
+    // NB: we will wait AT MOST that amount of time but if the seed file is populated before that
+    // timeout we will wait considerably less.
+    // Tests show that seed files are populated at ~60k objects per second.
+    private static final int SEED_FILE_CREATION_TIMEOUT = 5000;
+
+    private void createSeedFiles()
+    {
+        if (Cfg.storageType() == StorageType.LINKED) {
+            for (SID sid : Cfg.getRoots().keySet()) {
+                // try creating a seed file (use async ritual API to leverage SP call latency)
+                ListenableFuture<CreateSeedFileReply> reply = UI.ritualNonBlocking()
+                        .createSeedFile(sid.toPB());
+
+                try {
+                    // give the daemon some room to create the seed file before making the SP call
+                    reply.get(SEED_FILE_CREATION_TIMEOUT, TimeUnit.MILLISECONDS);
+                } catch (Exception e) {
+                    l.info("failed to create seed file for {}: {}", sid, Util.e(e));
+                }
+            }
+        }
+    }
+
+
     private void unlinkSelf()
             throws Exception
     {
         UI.analytics().track(SimpleEvents.UNLINK_DEVICE);
+
+        createSeedFiles();
 
         unlinkImplementation();
 
