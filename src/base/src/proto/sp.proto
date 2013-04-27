@@ -618,6 +618,20 @@ service SPService {
      * Required Auth Level: user
      */
     rpc GetACL(GetACLCall) returns(GetACLReply);
+
+     // WAIT_FOR_SP_PROCOTOL_VERSION_CHANGE move this after AcceptOrganizationInvitation
+     /**
+      * Remove a user from the caller's organization. The user will be moved to a new empty
+      * organization, and will be seen as an external collaborator on any shared folders that he
+      * may have with the previous organization.
+      *
+      * Required Auth Level: admin
+      *
+      * Throws: ExNoPerm if the current user isn't an admin of the target user, or if an admin tries
+      *         to remove itself from the organization
+      */
+    rpc RemoveUserFromOrganization(RemoveUserFromOrganizationCall)
+            returns(RemoveUserFromOrganizationReply);
 }
 
 message SetStripeCustomerIDCall {
@@ -710,6 +724,14 @@ message AcceptOrganizationInvitationCall {
 message AcceptOrganizationInvitationReply {
     // Return Stripe data for the user's _previous_ team, so the Web server can downgrade
     // subscription for that team.
+    required PBStripeData stripe_data = 1;
+}
+
+message RemoveUserFromOrganizationCall {
+    required string user_id = 1;
+}
+
+message RemoveUserFromOrganizationReply {
     required PBStripeData stripe_data = 1;
 }
 

@@ -72,6 +72,7 @@ import com.aerofs.proto.Sp.PBSharedFolder.PBUserAndRole;
 import com.aerofs.proto.Sp.PBStripeData;
 import com.aerofs.proto.Sp.PBUser;
 import com.aerofs.proto.Sp.RegisterDeviceReply;
+import com.aerofs.proto.Sp.RemoveUserFromOrganizationReply;
 import com.aerofs.proto.Sp.ResolveSignUpCodeReply;
 import com.aerofs.proto.SpNotifications.PBACLNotification;
 import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue;
@@ -534,7 +535,7 @@ public class SPService implements ISPService
         // below. This is to prevent attacker from testing user existance.
         if (!user.exists()) throw new ExNoPerm(noPermMsg);
 
-        if (!user.getOrganization().equals(currentUser.getOrganization())) {
+        if (!user.belongsTo(currentUser.getOrganization())) {
             throw new ExNoPerm(noPermMsg);
         }
     }
@@ -581,7 +582,7 @@ public class SPService implements ISPService
 
         // the folder is owned by the session organization if an owner of the folder belongs to
         // the org.
-        if (srp._role.covers(Role.OWNER) && subject.getOrganization().equals(sessionOrg)) {
+        if (srp._role.covers(Role.OWNER) && subject.belongsTo(sessionOrg)) {
             builder.setOwnedByTeam(true);
         }
 
@@ -626,7 +627,7 @@ public class SPService implements ISPService
                 newAuth);
 
         // Verify caller and subject's organization match
-        if (!subject.exists() || !requester.getOrganization().equals(subject.getOrganization())) {
+        if (!subject.exists() || !requester.belongsTo(subject.getOrganization())) {
             throw new ExNoPerm(subject.id().getString() + " is not a member of your team. " +
                     "Please invite the user to your team first.");
         }
@@ -1354,7 +1355,7 @@ public class SPService implements ISPService
             emailer = res._emailer;
         } else {
             // The user exists. Send him a team invitation email.
-            if (invitee.getOrganization().equals(org)) {
+            if (invitee.belongsTo(org)) {
                 throw new ExAlreadyExist(invitee + " is already a member of the team");
             }
             emailer = inviteToTeam(inviter, invitee, org, null);
@@ -1426,7 +1427,7 @@ public class SPService implements ISPService
         // Check to see if the user was actually invited to this organization.
         if (!invite.exists()) throw new ExNotFound();
 
-        if (accepter.getOrganization().equals(org)) {
+        if (accepter.belongsTo(org)) {
             throw new ExBadArgs(accepter + " is already part of the team");
         }
 
@@ -1514,6 +1515,29 @@ public class SPService implements ISPService
                 DeleteOrganizationInvitationForUserReply.newBuilder().setStripeData(sd).build());
     }
 
+    @Override
+    public ListenableFuture<RemoveUserFromOrganizationReply> removeUserFromOrganization(
+            String userId) throws Exception
+    {
+        _sqlTrans.begin();
+
+        User admin = _sessionUser.get();
+        User user = _factUser.createFromExternalID(userId);
+
+        if (admin.equals(user)) throw new ExNoPerm("You can't remove yourself from an organization");
+
+        throwIfSessionUserIsNotOrAdminOf(user);
+
+        Organization newOrg = _factOrg.save();
+        user.setOrganization(newOrg, AuthorizationLevel.ADMIN);
+
+        PBStripeData sd = getStripeData(admin.getOrganization());
+
+        _sqlTrans.commit();
+
+        return createReply(RemoveUserFromOrganizationReply.newBuilder().setStripeData(sd).build());
+    }
+
     /**
      * Return a StripeData object for the specified org based on its team size and # collaborators.
      */
@@ -1582,8 +1606,7 @@ public class SPService implements ISPService
     {
         // !user.exists() is needed for users who are pending user of a shared folder and haven't
         // signed up yet.
-        return !user.id().isTeamServerID() &&
-                (!user.exists() || !user.getOrganization().equals(org));
+        return !user.id().isTeamServerID() && (!user.exists() || !user.belongsTo(org));
     }
 
     @Override

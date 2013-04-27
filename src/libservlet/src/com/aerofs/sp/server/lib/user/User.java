@@ -206,6 +206,12 @@ public class User
         _f._udb.setName(_id, fullName);
     }
 
+    public boolean belongsTo(Organization org)
+            throws SQLException, ExNotFound
+    {
+        return getOrganization().equals(org);
+    }
+
     /**
      * Peer devices are all devices that you sync with, including your own devices.
      */
