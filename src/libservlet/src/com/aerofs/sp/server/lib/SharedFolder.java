@@ -276,7 +276,7 @@ public class SharedFolder
         for (User otherUser : getMembers()) {
             if (otherUser.equals(user)) continue;
             if (otherUser.id().isTeamServerID()) continue;
-            if (otherUser.getOrganization().equals(org)) return false;
+            if (otherUser.belongsTo(org)) return false;
         }
 
         try {
@@ -379,7 +379,7 @@ public class SharedFolder
             for (SubjectRolePair srp: getMemberACL()) {
                 if (srp._role.covers(Role.OWNER)) {
                     User member = _f._factUser.create(srp._subject);
-                    if (member.getOrganization().equals(org)) return;
+                    if (member.belongsTo(org)) return;
                 }
             }
         }

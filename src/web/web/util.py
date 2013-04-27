@@ -26,7 +26,7 @@ def is_valid_email(email):
 # TODO (WW) move email checking to SP
 def error_on_invalid_email(email):
     if not is_valid_email(email):
-        error("This email doesn't seem to be real.")
+        error("This email doesn't seem to be valid.")
 
 def domain_sanity_check(domain):
     """

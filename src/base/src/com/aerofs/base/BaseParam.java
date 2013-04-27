@@ -68,7 +68,7 @@ public class BaseParam
                 new DynamicStringProperty("base.www.upgrade_url", url() + "/upgrade");
 
         public static final DynamicStringProperty TEAM_MEMBERS_URL =
-                new DynamicStringProperty("base.www.team_members_url", url() + "/admin/users");
+                new DynamicStringProperty("base.www.team_members_url", url() + "/admin/team_members");
 
         public static final DynamicStringProperty DEVICES_URL =
                 new DynamicStringProperty("base.www.devices_url", url() + "/devices");
