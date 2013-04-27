@@ -355,7 +355,7 @@ public class CacheBackend implements IBlockStorageBackend
          * to preserve atomicity of renameTo() (and some OSes have issues if you try to rename
          * things from /tmp elsewhere, and SELinux will complain...so just use the auxroot)
          */
-        File tempFile = FileUtil.createTempFile("cache", null, _downloadDir, false);
+        File tempFile = FileUtil.createTempFile("cache", null, _downloadDir);
         OutputStream out = new BufferedOutputStream(new FileOutputStream(tempFile));
         try {
             InputStream in = _bsb.getBlock(key);
