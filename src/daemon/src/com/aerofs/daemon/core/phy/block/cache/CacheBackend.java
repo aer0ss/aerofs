@@ -68,6 +68,7 @@ public class CacheBackend implements IBlockStorageBackend
     private final TransManager _tm;
     private final CoreScheduler _sched;
     private File _cacheDir;
+    private File _downloadDir;
 
     private final CacheDatabase _cdb;
     private final IBlockStorageBackend _bsb;
@@ -126,6 +127,11 @@ public class CacheBackend implements IBlockStorageBackend
         if (!(_cacheDir.isDirectory() || _cacheDir.mkdirs())) {
             throw new IOException("Cannot create cache dir " + _cacheDir.getAbsolutePath());
         }
+        _downloadDir = new File(_absAuxRoot.get(), "blockdownload");
+        if (!(_downloadDir.isDirectory() || _downloadDir.mkdirs())) {
+            throw new IOException("Cannot create cache download dir "
+                    + _downloadDir.getAbsolutePath());
+        }
 
         _bsb.init_();
 
@@ -150,6 +156,10 @@ public class CacheBackend implements IBlockStorageBackend
                         file.delete();
                     }
                 }
+            }
+            // delete all files in the cache download directory.  They were incomplete downloads.
+            for (File child : listFiles(_downloadDir)) {
+                FileUtil.deleteIgnoreErrorRecursively(child);
             }
         } catch (SQLException e) {
             throw new IOException(e);
@@ -341,9 +351,11 @@ public class CacheBackend implements IBlockStorageBackend
 
         /**
          * We use a temporary file for the download to make sure we don't end up with invalid blocks
-         * in the cache folder in case of a crash
+         * in the cache folder in case of a crash.  We still want to keep these in the auxroot
+         * to preserve atomicity of renameTo() (and some OSes have issues if you try to rename
+         * things from /tmp elsewhere, and SELinux will complain...so just use the auxroot)
          */
-        File tempFile = FileUtil.createTempFile("cache", null, null, false);
+        File tempFile = FileUtil.createTempFile("cache", null, _downloadDir, false);
         OutputStream out = new BufferedOutputStream(new FileOutputStream(tempFile));
         try {
             InputStream in = _bsb.getBlock(key);
