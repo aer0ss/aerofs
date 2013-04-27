@@ -623,7 +623,8 @@ class BlockStorage implements IPhysicalStorage
     private void removeFile_(long id, Trans t) throws SQLException
     {
         FileInfo info = _bsdb.getFileInfo_(id);
-        checkNotNull(info, id);
+        // it's possible for a file index to not have an associated file info entry
+        if (info == null) return;
         derefBlocks_(info._chunks, t);
         _bsdb.deleteFileInfo_(id, t);
     }
