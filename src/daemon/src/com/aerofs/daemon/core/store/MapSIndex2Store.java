@@ -12,6 +12,8 @@ import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.lib.id.SIndex;
 import com.google.common.collect.Maps;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 /**
  * This class maintains the mapping from SIndex to Store objects, which represent locally present
  * stores.
@@ -42,8 +44,7 @@ public class MapSIndex2Store
     public @Nonnull Store get_(SIndex sidx)
     {
         Store s = getNullable_(sidx);
-        assert s != null : sidx;
-        return s;
+        return checkNotNull(s, sidx);
     }
 
     /**

@@ -5,13 +5,14 @@
 package com.aerofs.daemon.core.collector;
 
 
+import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.store.IStores;
 import com.aerofs.daemon.core.store.MapSIndex2Store;
 import com.aerofs.daemon.core.store.Store;
-import com.aerofs.daemon.core.store.Stores;
 import com.aerofs.lib.id.SIndex;
 import com.google.inject.Inject;
+import org.slf4j.Logger;
 
 import java.sql.SQLException;
 
@@ -24,11 +25,17 @@ public class RemoteUpdates
     private final IStores _stores;
     private final MapSIndex2Store _sidx2store;
 
+    private static final Logger l = Loggers.getLogger(RemoteUpdates.class);
+
     @Inject
-    public RemoteUpdates(Stores stores, MapSIndex2Store sidx2store)
+    public RemoteUpdates(IStores stores, MapSIndex2Store sidx2store)
     {
         _stores = stores;
         _sidx2store = sidx2store;
+
+        // There has been a history of this class or its dependents being instantiated more than
+        // once.
+        l.info("ctor {}", this);
     }
 
     public boolean deviceHasUpdates_(DID did) throws SQLException
