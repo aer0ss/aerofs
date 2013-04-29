@@ -15,7 +15,9 @@ message PBDumpStat {
 
     optional uint64 up_time = 1;
 
-    repeated PBTransport tp = 3;
+    repeated string enabled_transports = 2;
+
+    repeated PBTransport transport = 3;
 
     optional string misc = 15;
 }

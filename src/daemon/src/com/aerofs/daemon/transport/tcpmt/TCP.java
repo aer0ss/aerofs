@@ -583,13 +583,13 @@ public class TCP implements ITransportImpl, IPipeController, IARPChangeListener
     @Override
     public void dumpStat(PBDumpStat dstemplate, PBDumpStat.Builder dsbuilder)
     {
-        PBTransport tp = dstemplate.getTp(0);
+        PBTransport tp = dstemplate.getTransport(0);
         assert tp != null : ("called dumpstat with null tp");
 
         PBTransport.Builder tpbuilder = PBTransport.newBuilder();
         if (tp.hasName()) tpbuilder.setName(id());
 
-        dsbuilder.addTp(tpbuilder);
+        dsbuilder.addTransport(tpbuilder);
 
         try {
             _ucast.dumpStat(dstemplate, dsbuilder);

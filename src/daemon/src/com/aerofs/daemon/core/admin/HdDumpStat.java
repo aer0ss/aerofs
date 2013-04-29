@@ -56,7 +56,7 @@ public class HdDumpStat extends AbstractHdIMC<EIDumpStat>
             bd.setUpTime(System.currentTimeMillis() - _launchTime);
         }
 
-        if (template.getTpCount() != 0) {
+        if (template.getTransportCount() != 0) {
             _tps.dumpStat(template, bd);
         }
 

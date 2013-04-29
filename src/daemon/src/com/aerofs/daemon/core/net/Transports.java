@@ -297,6 +297,7 @@ public class Transports implements IDumpStat, IDumpStatMisc, IStartable
             TCB tcb = tk.pseudoPause_("dumpStat");
             try {
                 for (ITransport tp : _availableTransports.keySet()) {
+                    bd.addEnabledTransports(tp.id());
                     tp.dumpStat(template, bd); // TODO use core-to-tp events instead
                 }
             } finally {
