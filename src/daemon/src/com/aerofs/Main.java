@@ -5,8 +5,6 @@ import com.aerofs.base.properties.Configuration;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.IProgram;
-import com.aerofs.lib.IProgram.ExProgramNotFound;
-import com.aerofs.lib.LogUtil;
 import com.aerofs.lib.Param;
 import com.aerofs.lib.ProgramInformation;
 import com.aerofs.lib.SystemUtil;
@@ -14,6 +12,8 @@ import com.aerofs.lib.SystemUtil.ExitCode;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.ExNotSetup;
+import com.aerofs.lib.log.LogUtil;
+import com.aerofs.lib.log.LogUtil.Level;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.sv.client.SVClient;
 import com.google.inject.CreationException;
@@ -23,7 +23,8 @@ import org.slf4j.Logger;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
-
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 public class Main
 {
@@ -32,6 +33,62 @@ public class Main
     private static final Object DAEMON_NAME = "daemon";
     private static final Object FSCK_NAME = "fsck";
     private static final Object UMDC_NAME = "umdc";
+
+    private static String getProgramBanner(String rtRoot, String app)
+    {
+        String strDate = new SimpleDateFormat("yyyyMMdd").format(new Date());
+        return app + " ========================================================\n" +
+            Cfg.ver() + (L.isStaging() ? " staging " : " ") +
+            strDate + " " + AppRoot.abs() + " " + new File(rtRoot).getAbsolutePath();
+    }
+
+    private static void initializeLogging(String rtRoot, String prog)
+    {
+        boolean enableDebugLogging = Cfg.lotsOfLog(rtRoot);
+        boolean enableTraceLogging = Cfg.lotsOfLotsOfLog(rtRoot);
+
+        Level logLevel;
+        if (enableTraceLogging) {
+            logLevel = Level.TRACE;
+        } else if (enableDebugLogging) {
+            logLevel = Level.DEBUG;
+        } else {
+            logLevel = Level.INFO;
+        }
+
+        try {
+            //
+            // FIXME (AG): Try to load the properties file up first
+            // I'd love to do this, but calling L results in arrow-config
+            // getting loaded up, which breaks our logging setup
+            //
+
+            LogUtil.initializeDefaultLoggingProperties(rtRoot, prog, logLevel);
+
+            if (L.isStaging()) {
+                LogUtil.initializeLoggingFromPropertiesFile(); // only resets log config if file exists
+                LogUtil.setupAndAddConsoleAppender();
+            }
+        } catch (IOException e) {
+            String msg = "error init log4j: " + Util.e(e);
+            // I don't know how to output to system.logging on mac/linux. so use
+            // the command line as a quick/dirty approach
+            try {
+                SystemUtil.execForeground("logger", msg);
+            } catch (Exception e2) {
+                // ignored
+            }
+
+            System.err.println(msg);
+            ExitCode.FAIL_TO_INITIALIZE_LOGGING.exit();
+        }
+
+        l.info("{}", getProgramBanner(rtRoot, prog));
+
+        if (Cfg.useProfiler()) {
+            l.debug("profiler: " + Cfg.profilerStartingThreshold());
+        }
+    }
 
     // arguments: <rtroot> <app> [appargs ...]
     public static void main(String[] args)
@@ -55,22 +112,7 @@ public class Main
 
         // Create rtroot folder with the right permissions
         createRtRootIfNotExists(rtRoot);
-
-        // init log4j
-        try {
-            LogUtil.initLog4J(rtRoot, prog);
-        } catch (IOException e) {
-            String msg = "error init log4j: " + Util.e(e);
-            // I don't know how to output to system.log on mac/linux. so use
-            // the command line as a quick/dirty approach
-            try {
-                SystemUtil.execForeground("logger", msg);
-            } catch (Exception e2) {
-                // ignored
-            }
-            System.err.println(msg);
-            ExitCode.FAIL_TO_INITIALIZE_LOGGING.exit();
-        }
+        initializeLogging(rtRoot, prog);
 
         // First things first, initialize the configuration subsystem
         final String absoluteRuntimeRoot = new File(rtRoot).getAbsolutePath();

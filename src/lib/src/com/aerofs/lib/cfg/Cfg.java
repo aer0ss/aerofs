@@ -399,6 +399,11 @@ public class Cfg
         return new File(Util.join(rtRoot, Param.LOL)).exists();
     }
 
+    public static boolean lotsOfLotsOfLog(String rtRoot)
+    {
+        return new File(Util.join(rtRoot, Param.LOLOL)).exists();
+    }
+
     public static boolean useProfiler()
     {
         return _profilerStartingThreshold != 0;

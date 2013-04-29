@@ -156,7 +156,7 @@ public abstract class Util
     }
 
     // TODO (WW) make it private and clean up LogUtil.
-    static boolean shouldPrintStackTrace(Throwable e, Class<?> ...suppressStackTrace)
+    public static boolean shouldPrintStackTrace(Throwable e, Class<?> ...suppressStackTrace)
     {
         for (Class<?> suppress : suppressStackTrace) {
             if (suppress.isInstance(e)) return false;

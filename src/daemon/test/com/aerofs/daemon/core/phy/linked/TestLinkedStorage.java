@@ -21,8 +21,6 @@ import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.FileUtil;
-import com.aerofs.lib.LogUtil;
-import com.aerofs.lib.LogUtil.Level;
 import com.aerofs.lib.Param;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.cfg.Cfg;
@@ -93,7 +91,6 @@ public class TestLinkedStorage extends AbstractTest
     public void before() throws Exception
     {
         AppRoot.set("foo");
-        LogUtil.setLevel(TestLinkedStorage.class, Level.INFO);
 
         factFile = new InjectableFile.Factory();
         InjectableFile tmpDir = factFile.create(tempFolder.getRoot().getPath());
@@ -142,8 +139,6 @@ public class TestLinkedStorage extends AbstractTest
     @After
     public void after() throws Exception
     {
-        LogUtil.setLevel(TestLinkedStorage.class, Level.NONE);
-
         useHistory = true;
     }
 
