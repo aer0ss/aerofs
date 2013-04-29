@@ -26,7 +26,6 @@ import java.lang.reflect.Field;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-
 public class Main
 {
     private final static Logger l = Loggers.getLogger(Main.class);
@@ -45,13 +44,13 @@ public class Main
 
     private static void initializeLogging(String rtRoot, String prog)
     {
-        boolean lol = Cfg.lotsOfLog(rtRoot);
-        boolean lolol = false; // Cfg.LotsOfLotsOfLog(rtRoot);
+        boolean enableDebugLogging = Cfg.lotsOfLog(rtRoot);
+        boolean enableTraceLogging = Cfg.lotsOfLotsOfLog(rtRoot);
 
         Level logLevel;
-        if (lolol) {
+        if (enableTraceLogging) {
             logLevel = Level.TRACE;
-        } else if (lol) {
+        } else if (enableDebugLogging) {
             logLevel = Level.DEBUG;
         } else {
             logLevel = Level.INFO;

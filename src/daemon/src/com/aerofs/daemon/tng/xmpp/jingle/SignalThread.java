@@ -187,8 +187,8 @@ final class SignalThread extends java.lang.Thread implements IDumpStatMisc
 
         l.info("before run");
 
-        boolean lolon = Cfg.lotsOfLog(Cfg.absRTRoot());
-        _main.Run(lolon);
+        boolean lololon = Cfg.lotsOfLotsOfLog(Cfg.absRTRoot());
+        _main.Run(lololon);
 
         l.info("after run");
 
