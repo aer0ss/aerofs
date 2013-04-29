@@ -3,18 +3,6 @@
     <welcome-file>index.html</welcome-file>
   </welcome-file-list>
 
-  <!-- metrics -->
-
-  <context-param>
-      <param-name>metrics_host</param-name>
-      <param-value><%= scope.lookupvar("servlet::metrics")['host'] %></param-value>
-  </context-param>
-
-  <context-param>
-      <param-name>metrics_port</param-name>
-      <param-value><%= scope.lookupvar("servlet::metrics")['port'] %></param-value>
-  </context-param>
-
   <!-- begin database definitions -->
 
   <% @databases.each do |database| -%>

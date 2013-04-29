@@ -1,6 +1,7 @@
 package com.aerofs.sv.server;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.base.properties.DynamicInetSocketAddress;
 import com.aerofs.proto.Sv.PBSVCall;
 import com.aerofs.proto.Sv.PBSVReply;
 import com.aerofs.servlets.lib.db.sql.PooledSQLConnectionProvider;
@@ -14,11 +15,10 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.sql.SQLException;
 
 import static com.aerofs.sv.server.SVParam.SV_DATABASE_REFERENCE_PARAMETER;
-import static com.aerofs.sv.server.SVParam.SV_METRICS_HOST_PARAMETER;
-import static com.aerofs.sv.server.SVParam.SV_METRICS_PORT_PARAMETER;
 import static java.util.concurrent.TimeUnit.MINUTES;
 
 public class SVServlet extends AeroServlet
@@ -57,12 +57,13 @@ public class SVServlet extends AeroServlet
         _conProvider.init_(svdbRef);
     }
 
+    public static final DynamicInetSocketAddress METRICS_ADDRESS = new DynamicInetSocketAddress(
+            "sv.metrics.address", InetSocketAddress.createUnresolved("metrics.aerofs.com", 2003));
+
     private void initMetrics_()
     {
-        String metricsHost = getServletContext().getInitParameter(SV_METRICS_HOST_PARAMETER);
-        Short metricsPort = Short.parseShort(
-                getServletContext().getInitParameter(SV_METRICS_PORT_PARAMETER));
-        GraphiteReporter.enable(2, MINUTES, metricsHost, metricsPort);
+        GraphiteReporter.enable(2, MINUTES, METRICS_ADDRESS.get().getHostName(),
+                METRICS_ADDRESS.get().getPort());
     }
 
     @Override
