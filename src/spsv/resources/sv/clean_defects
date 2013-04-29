@@ -2,7 +2,10 @@
 import subprocess
 
 MAX_DAYS_TO_KEEP = 21
-MIN_DAYS_TO_KEEP = 10
+# At 10 days' worth we regularly use up 100% of SV's disk. Shall we try 6?
+# The effect of keeping this value too high is that we lose logs anyway,
+# the zero-length zip files aren't helping anyone.
+MIN_DAYS_TO_KEEP = 6
 
 def get_percent_free():
     try:
