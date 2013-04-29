@@ -155,7 +155,15 @@ public abstract class AbstractChunker
         return new FileEncodingBuffer();
     }
 
-    protected abstract void prePutBlock_(Block block) throws SQLException;
+    public enum StorageState
+    {
+        ALREADY_STORED,
+        NEEDS_STORAGE
+    }
+    // Returns whether or not this call needs additional action in the backend.
+    // i.e. if a block is already stored, return ALREADY_STORED
+    //      if this is the first time we've seen this block, return NEEDS_STORAGE
+    protected abstract StorageState prePutBlock_(Block block) throws SQLException;
     protected abstract void postPutBlock_(Block block) throws SQLException;
 
     private ContentHash storeOneBlock_(long index, int blockSize) throws IOException, SQLException
@@ -175,12 +183,14 @@ public abstract class AbstractChunker
                 out.close();
             }
             // write chunk into persistent storage, keyed by content hash
-            prePutBlock_(block);
-            InputStream encoded = buffer.encoded();
-            try {
-                _bsb.putBlock(block._hash, encoded, block._length, block._encoderData);
-            } finally {
-                encoded.close();
+            StorageState blockState = prePutBlock_(block);
+            if (blockState == StorageState.NEEDS_STORAGE) {
+                InputStream encoded = buffer.encoded();
+                try {
+                    _bsb.putBlock(block._hash, encoded, block._length, block._encoderData);
+                } finally {
+                    encoded.close();
+                }
             }
             postPutBlock_(block);
         } finally {

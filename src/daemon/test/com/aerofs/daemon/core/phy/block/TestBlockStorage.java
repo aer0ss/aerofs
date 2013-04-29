@@ -819,6 +819,45 @@ public class TestBlockStorage extends AbstractBlockTest
         Assert.assertTrue(revHistoryEquals("foo", RevisionMatcher.any()));
     }
 
+    private static class DevCtr extends InputStream
+    {
+        // Returns blocks of 000...00000
+        //                   100...00000
+        //                   200...00000
+        // .... and so forth, ensuring that each block in the stream is unique.
+        // Little-endian is used to avoid caring about block values.
+        // Don't generate more than 2 ^ 63 bytes.
+        long _size;
+        long _idx;
+        long _blockctr; // Which block are we in?
+        long _blockidx; // Which byte is next in this block?
+        long _valueleft; //
+
+        DevCtr(long size)
+        {
+            _size = size;
+            _idx = 0;
+            _blockctr = 0;
+        }
+
+        @Override
+        public int read() throws IOException
+        {
+            if (_idx >= _size) return -1;
+            int retval = (int)(_valueleft % 0x100);
+            _valueleft = _valueleft >> 8;
+            _idx++;
+            _blockidx++;
+            if (_blockidx == Param.FILE_BLOCK_SIZE) {
+                // Block completed, reset for next block
+                _blockidx = 0;
+                _blockctr++;
+                _valueleft = _blockctr;
+            }
+            return retval;
+        }
+    }
+
     private static class DevZero extends InputStream
     {
         long _size;
@@ -840,10 +879,26 @@ public class TestBlockStorage extends AbstractBlockTest
         IPhysicalPrefix prefix = bs.newPrefix_(new SOCKID(sokid, CID.CONTENT));
         OutputStream out = prefix.newOutputStream_(false);
 
-        ByteStreams.copy(new DevZero(4 * Param.FILE_BLOCK_SIZE + 1), out);
+        ByteStreams.copy(new DevCtr(4 * Param.FILE_BLOCK_SIZE + 1), out);
         prefix.prepare_(tk);
 
         verify(bsb, times(5))
+                .putBlock(any(ContentHash.class), any(InputStream.class), anyLong(), isNull());
+    }
+
+    @Test
+    public void shouldAvoidStoringAlreadyStoredBlocks() throws Exception
+    {
+        SOKID sokid = newSOKID();
+        IPhysicalPrefix prefix = bs.newPrefix_(new SOCKID(sokid, CID.CONTENT));
+        OutputStream out = prefix.newOutputStream_(false);
+
+        ByteStreams.copy(new DevZero(4 * Param.FILE_BLOCK_SIZE + 1), out);
+        prefix.prepare_(tk);
+
+        // BlockStorageBackend.putBlock() should only be called once per *unique* chunk.
+        // So we have four of the same full-size zero-block, and one that's one byte long.
+        verify(bsb, times(2))
                 .putBlock(any(ContentHash.class), any(InputStream.class), anyLong(), isNull());
     }
 
