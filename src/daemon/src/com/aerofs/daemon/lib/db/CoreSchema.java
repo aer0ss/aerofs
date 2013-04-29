@@ -398,8 +398,7 @@ public class CoreSchema implements ISchema
                 ")" + _dbcw.charSet());
 
         // for getAllNonMasterBranches_()
-        s.executeUpdate(
-                "create index " + T_CA + "0 on " + T_CA + "(" + C_CA_KIDX + ")");
+        createCAIndex(s);
 
         s.executeUpdate(
                 "create table " + T_PRE + "(" +
@@ -649,6 +648,12 @@ public class CoreSchema implements ISchema
                         C_DN_NAME + " text," +
                         C_DN_TIME + dbcw.longType() + " not null" +
                         ")" + dbcw.charSet());
+    }
+
+    public static void createCAIndex(Statement s) throws SQLException
+    {
+        s.executeUpdate("create index if not exists "
+                + T_CA + "0 on " + T_CA + "(" + C_CA_KIDX + ")");
     }
 
     public static void createIndexForCSTable(Statement s) throws SQLException

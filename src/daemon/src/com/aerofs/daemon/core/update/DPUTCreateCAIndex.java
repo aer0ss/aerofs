@@ -6,6 +6,7 @@ package com.aerofs.daemon.core.update;
 
 import com.aerofs.daemon.core.update.DPUTUtil.IDatabaseOperation;
 import com.aerofs.daemon.lib.db.CoreDBCW;
+import com.aerofs.daemon.lib.db.CoreSchema;
 import com.aerofs.lib.db.dbcw.IDBCW;
 
 import java.sql.SQLException;
@@ -30,8 +31,7 @@ public class DPUTCreateCAIndex implements IDaemonPostUpdateTask
             @Override
             public void run_(Statement s) throws SQLException
             {
-                s.executeUpdate("create index if not exists "
-                                + T_CA + "0 on " + T_CA + "(" + C_CA_KIDX + ")");
+                CoreSchema.createCAIndex(s);
             }
         });
     }
