@@ -176,15 +176,15 @@ public class Unicast implements IConnectionManager, IUnicast, IPipeDebug
     public void dumpStat(Files.PBDumpStat dstemplate, Files.PBDumpStat.Builder dsbuilder)
         throws Exception
     {
-        PBTransport tp = dstemplate.getTp(0);
+        PBTransport tp = dstemplate.getTransport(0);
         assert tp != null : ("dumpstat called with null tp template");
 
         // FIXME: this is broken - is there a better way to do this?
 
-        int lastBuilderIdx = dsbuilder.getTpBuilderList().size();
+        int lastBuilderIdx = dsbuilder.getTransportBuilderList().size();
         assert lastBuilderIdx >= 1 : ("must have been populated by parent dumpstat");
 
-        PBTransport.Builder tpbuilder = dsbuilder.getTpBuilder(lastBuilderIdx - 1);
+        PBTransport.Builder tpbuilder = dsbuilder.getTransportBuilder(lastBuilderIdx - 1);
 
         tpbuilder.setBytesIn(getBytesRx());
         tpbuilder.setBytesOut(getBytesTx());
@@ -197,7 +197,7 @@ public class Unicast implements IConnectionManager, IUnicast, IPipeDebug
             }
         }
 
-        dsbuilder.setTp(lastBuilderIdx, tpbuilder);
+        dsbuilder.setTransport(lastBuilderIdx, tpbuilder);
     }
 
     @Override

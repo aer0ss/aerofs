@@ -13,11 +13,14 @@ import com.aerofs.lib.ritual.RitualBlockingClient;
 import com.aerofs.proto.Files.PBDumpStat;
 import com.aerofs.proto.Files.PBDumpStat.PBTransport;
 import com.aerofs.proto.Ritual.TransportPingReply;
+import com.google.common.base.Preconditions;
 import org.slf4j.Logger;
 
 import com.aerofs.base.C;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExDeviceOffline;
+
+import static com.google.common.base.Preconditions.checkState;
 
 /**
  * This class provide helper methods around Ritual's private API (ping, dump, ...)
@@ -122,7 +125,7 @@ public class InternalDiagnostics
                 sleep = false;
 
             } else {
-                assert rtt == null || rtt == Param.TRANSPORT_DIAGNOSIS_STATE_PENDING;
+                checkState(rtt == null || rtt == Param.TRANSPORT_DIAGNOSIS_STATE_PENDING);
                 // keep waiting
                 newPing = false;
                 newSeq = false;
@@ -142,7 +145,7 @@ public class InternalDiagnostics
     {
         PBDumpStat template = PBDumpStat.newBuilder()
                 .setUpTime(0)
-                .addTp(PBTransport.newBuilder()
+                .addTransport(PBTransport.newBuilder()
                         .setBytesIn(0)
                         .setBytesOut(0)
                         .addConnection("")

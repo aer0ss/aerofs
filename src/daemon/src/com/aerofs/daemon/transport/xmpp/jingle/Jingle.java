@@ -379,7 +379,7 @@ public class Jingle implements ISignalledPipe, IJingle
     public void dumpStat(final Files.PBDumpStat template, final Files.PBDumpStat.Builder bdbuilder)
         throws Exception
     {
-        final PBTransport tp = template.getTp(0);
+        final PBTransport tp = template.getTransport(0);
         assert tp != null : ("called dumpstat on transport will null tp");
 
         // set default fields
@@ -411,7 +411,7 @@ public class Jingle implements ISignalledPipe, IJingle
                     tpbuilder.setDiagnosis(_st.diagnose_());
                 }
 
-                bdbuilder.addTp(tpbuilder);
+                bdbuilder.addTransport(tpbuilder);
             }
 
             @Override

@@ -269,7 +269,7 @@ public final class JingleUnicastConnectionService
     public void dumpStat(PBDumpStat template, final PBDumpStat.Builder bd)
             throws Exception
     {
-        final PBDumpStat.PBTransport tp = template.getTp(0);
+        final PBDumpStat.PBTransport tp = template.getTransport(0);
         assert tp != null : ("called dumpstat on transport with null tp");
 
         // set default fields
@@ -301,7 +301,7 @@ public final class JingleUnicastConnectionService
                     tpbuilder.setDiagnosis(_signalThread.diagnose_());
                 }
 
-                bd.addTp(tpbuilder);
+                bd.addTransport(tpbuilder);
             }
 
             @Override

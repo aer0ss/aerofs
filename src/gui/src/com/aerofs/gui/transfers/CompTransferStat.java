@@ -33,8 +33,6 @@ public class CompTransferStat extends Composite
 
     /**
      * Create the composite.
-     * @param parent
-     * @param style
      */
     public CompTransferStat(Composite parent, int style)
     {
@@ -78,7 +76,7 @@ public class CompTransferStat extends Composite
 
     private final PBDumpStat TEMPLATE = PBDumpStat.newBuilder()
         .setUpTime(0)
-        .addTp(PBTransport.newBuilder().setBytesIn(0).setBytesOut(0))
+        .addTransport(PBTransport.newBuilder().setBytesIn(0).setBytesOut(0))
         .build();
 
     private void thdRefresh()
@@ -91,9 +89,9 @@ public class CompTransferStat extends Composite
             try {
                 PBDumpStat data = UI.ritual().dumpStats(TEMPLATE).getStats();
                 long in = 0, out = 0;
-                for (PBTransport tp : data.getTpList()) {
-                    in += tp.getBytesIn();
-                    out += tp.getBytesOut();
+                for (PBTransport transport : data.getTransportList()) {
+                    in += transport.getBytesIn();
+                    out += transport.getBytesOut();
                 }
 
                 if (_lastT == 0) _lastT = data.getUpTime();

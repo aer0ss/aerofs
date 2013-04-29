@@ -32,7 +32,7 @@ public class CmdDstat implements IShellCommand<ShProgram>
         if (nonMisc) {
             template
                 .setUpTime(0)
-                .addTp(PBTransport.newBuilder()
+                .addTransport(PBTransport.newBuilder()
                         .setBytesIn(0)
                         .setBytesOut(0)
                         .addConnection("")

@@ -916,7 +916,7 @@ public class ZephyrClientPipe extends AbstractEventLoop<IZephyrEvent>
     public void dumpStat(PBDumpStat template, final PBDumpStat.Builder builder)
             throws Exception
     {
-        final PBTransport tpTemplate = template.getTp(0);
+        final PBTransport tpTemplate = template.getTransport(0);
 
         assert tpTemplate != null : ("ZephyrPipeDebug: Invalid dumpstat template");
 
@@ -955,7 +955,7 @@ public class ZephyrClientPipe extends AbstractEventLoop<IZephyrEvent>
                         tpBuilder.setDiagnosis(strbuilder.toString());
                     }
 
-                    builder.addTp(tpBuilder);
+                    builder.addTransport(tpBuilder);
                 }
 
             }, Prio.HI);

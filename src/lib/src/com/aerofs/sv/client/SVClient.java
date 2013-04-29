@@ -235,9 +235,10 @@ public final class SVClient
     }
 
     /**
-     * @param secret the string that should be hidden from the log files
+     * @param defectContents the data the defect contains
+     * <strong>{@code defectContents} should never be printed into the log file!</strong>
      */
-    public static void logSendDefectSync(boolean isAutoBug, String desc, @Nullable Throwable cause, @Nullable String secret, boolean sendFileNames)
+    public static void logSendDefectSync(boolean isAutoBug, String desc, @Nullable Throwable cause, @Nullable String defectContents, boolean sendFileNames)
             throws IOException, AbstractExWirable
     {
         doLogSendDefect(
@@ -246,7 +247,7 @@ public final class SVClient
                 cause,
                 newHeader(),
                 absRTRoot(),
-                secret,
+                defectContents,
                 true,
                 false,
                 true,
@@ -315,11 +316,11 @@ public final class SVClient
      */
     private static void doLogSendDefect(
             boolean isAutoBug,
-            String desc,
+            String description,
             @Nullable Throwable cause,
             PBSVHeader header,
             String rtRoot,
-            @Nullable String secret,
+            @Nullable String defectContents, // DO NOT PRINT THIS IN PRODUCTION!
             final boolean sendLogs,
             final boolean sendDB,
             final boolean sendHeapDumps,
@@ -328,11 +329,13 @@ public final class SVClient
     {
         l.debug("build defect");
 
-        if (cause == null) cause = new Exception(desc); // FIXME (AG): bogus
+        if (cause == null) cause = new Exception(description); // FIXME (AG): bogus
         String stackTrace = Exceptions.getStackTraceAsString(cause);
 
         if (L.isStaging()) {
-            l.warn("##### DEFECT #####\n" + desc + "\n" + Util.e(cause));
+            // NOTE: I explicitly check if STAGING is enabled before printing the defectContents
+            // on PROD we should NEVER print defectContents
+            l.warn("##### DEFECT #####\n{}\n{}\ncontents:{}", description, Util.e(cause), defectContents);
             l.warn("(sv defect sending disabled on staging.)");
             return;
         }
@@ -348,15 +351,15 @@ public final class SVClient
             // info about defect names.
 
             Defect.Priority priority = isAutoBug ? Priority.Auto : Priority.User;
-            rockLog.newDefect("svdefect").setMessage(desc).setPriority(priority).setException(cause).send();
+            rockLog.newDefect("svdefect").setMessage(description).setPriority(priority).setException(cause).send();
         }
 
         // always send non-automatic defects and database requests
         boolean ignoreDefect = isAutoBug && recentExceptions.isRecent(cause) && !sendDB;
-        l.error((ignoreDefect ? "repeating last" : "sending") + " defect: " + desc + ": " + Util.e(cause));
+        l.error((ignoreDefect ? "repeating last" : "sending") + " defect: " + description + ": " + Util.e(cause));
         if (ignoreDefect) return;
 
-        StringBuilder sbDesc = createDefectDescription(desc, secret);
+        StringBuilder sbDesc = createDefectDescription(description, defectContents);
 
         Map<Key, String> cfgDB = Cfg.inited() ? Cfg.dumpDb() : Collections.<Key, String>emptyMap();
         PBSVDefect pbDefect = createPBDefect(isAutoBug, header, cfgDB, rtRoot, stackTrace, sbDesc);
@@ -395,18 +398,18 @@ public final class SVClient
         if (cause instanceof OutOfMemoryError) ExitCode.OUT_OF_MEMORY.exit();
     }
 
-    private static StringBuilder createDefectDescription(String desc, String secret)
+    private static StringBuilder createDefectDescription(String baseDescription, String defectContents)
     {
         StringBuilder sbDesc = new StringBuilder();
 
-        if (desc != null) {
-            sbDesc.append(desc);
+        if (baseDescription != null) {
+            sbDesc.append(baseDescription);
             sbDesc.append(": ");
         }
 
-        if (secret != null) {
+        if (defectContents != null) {
             sbDesc.append("\n");
-            sbDesc.append(secret);
+            sbDesc.append(defectContents);
             sbDesc.append("\n");
         }
         return sbDesc;

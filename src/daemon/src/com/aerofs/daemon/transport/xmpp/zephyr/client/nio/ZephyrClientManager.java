@@ -473,7 +473,7 @@ public class ZephyrClientManager implements ISignalledPipe, IIOEventHandler
 
         l.debug("zm: dumpstat");
 
-        final PBTransport tptemplate = template.getTp(0);
+        final PBTransport tptemplate = template.getTransport(0);
         assert tptemplate != null : ("zm: invalid dumpstat template");
 
         try {
@@ -544,7 +544,7 @@ public class ZephyrClientManager implements ISignalledPipe, IIOEventHandler
             tpbuilder.setDiagnosis(strbuilder.toString());
         }
 
-        dsbuilder.addTp(tpbuilder);
+        dsbuilder.addTransport(tpbuilder);
     }
 
     //
