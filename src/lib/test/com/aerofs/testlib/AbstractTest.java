@@ -1,7 +1,7 @@
 package com.aerofs.testlib;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.lib.LogUtil;
+import com.aerofs.lib.log.LogUtil;
 import com.aerofs.lib.ProgramInformation;
 import org.apache.log4j.BasicConfigurator;
 import org.junit.After;
@@ -35,7 +35,7 @@ public abstract class AbstractTest extends PowerMockTestCase
                 LogUtil.setLevel("org.apache.commons.httpclient", LogUtil.Level.INFO);
                 LogUtil.setLevel("com.amazonaws", LogUtil.Level.INFO);
             } else {
-                LogUtil.disableLog4J();
+                LogUtil.disableLogging();
             }
 
             _inited = true;

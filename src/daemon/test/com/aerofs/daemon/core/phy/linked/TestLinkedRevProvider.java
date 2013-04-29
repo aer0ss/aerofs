@@ -3,7 +3,7 @@ package com.aerofs.daemon.core.phy.linked;
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.phy.linked.LinkedRevProvider.LinkedRevFile;
 import com.aerofs.lib.AppRoot;
-import com.aerofs.lib.LogUtil;
+import com.aerofs.lib.log.LogUtil;
 import com.aerofs.lib.Param;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.cfg.Cfg;
@@ -28,7 +28,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import static com.aerofs.lib.LogUtil.Level;
+import static com.aerofs.lib.log.LogUtil.Level;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
