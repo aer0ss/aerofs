@@ -139,7 +139,7 @@ public class HistoryModel
         @Override
         public int compareTo(ModelIndex index)
         {
-            int cmp = path.compareTo(index.path);
+            int cmp = name().compareTo(index.name());
             return cmp != 0 ? cmp : (isDir ? 1 : 0) - (index.isDir ? 1 : 0);
         }
 
