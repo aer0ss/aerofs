@@ -30,6 +30,13 @@ public class BaseParam
                         InetSocketAddress.createUnresolved("x.aerofs.com", 443));
     }
 
+    public static class Metrics
+    {
+        public static final DynamicInetSocketAddress ADDRESS = new DynamicInetSocketAddress(
+                "base.metrics.address",
+                InetSocketAddress.createUnresolved("metrics.aerofs.com", 2003));
+    }
+
     public static class Zephyr
     {
         public static final String TRANSPORT_ID = "z";
