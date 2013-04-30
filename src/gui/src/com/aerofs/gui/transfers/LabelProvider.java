@@ -1,5 +1,6 @@
 package com.aerofs.gui.transfers;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.gui.Images;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.S;
@@ -9,9 +10,11 @@ import com.aerofs.proto.Common.PBPath;
 import com.aerofs.proto.RitualNotifications.PBDownloadEvent;
 import com.aerofs.proto.RitualNotifications.PBDownloadEvent.State;
 import com.aerofs.proto.RitualNotifications.PBSOCID;
+import com.aerofs.proto.RitualNotifications.PBTransportMethod;
 import com.aerofs.proto.RitualNotifications.PBUploadEvent;
 import com.aerofs.ui.UIUtil;
 import com.google.common.base.Objects;
+import com.google.protobuf.ByteString;
 import org.eclipse.jface.viewers.ITableLabelProvider;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Image;
@@ -31,6 +34,7 @@ extends org.eclipse.jface.viewers.LabelProvider implements ITableLabelProvider
     private final CompTransfersTable _view;
 
     private boolean _showSOCID;
+    private boolean _showDID;
 
     LabelProvider(CompTransfersTable view)
     {
@@ -40,6 +44,11 @@ extends org.eclipse.jface.viewers.LabelProvider implements ITableLabelProvider
     public void showSOCID(boolean enable)
     {
         _showSOCID = enable;
+    }
+
+    public void showDID(boolean enable)
+    {
+        _showDID = enable;
     }
 
     @Override
@@ -57,6 +66,7 @@ extends org.eclipse.jface.viewers.LabelProvider implements ITableLabelProvider
                 }
             }
             case CompTransfersTable.COL_PROG: return getProgressIcon(ev.getDone(), ev.getTotal());
+            case CompTransfersTable.COL_TRANSPORT: return getTransportMethodIcon(ev.getTransport());
             case CompTransfersTable.COL_DEVICE: return Images.get(Images.ICON_ARROW_UP2);
             default: return null;
             }
@@ -79,6 +89,7 @@ extends org.eclipse.jface.viewers.LabelProvider implements ITableLabelProvider
                     return null;
                 }
             }
+            case CompTransfersTable.COL_TRANSPORT: return getTransportMethodIcon(ev.getTransport());
             case CompTransfersTable.COL_DEVICE: return Images.get(Images.ICON_ARROW_DOWN2);
             default: return null;
             }
@@ -102,6 +113,20 @@ extends org.eclipse.jface.viewers.LabelProvider implements ITableLabelProvider
         } finally {
             blue.dispose();
             lightGrey.dispose();
+        }
+    }
+
+    private Image getTransportMethodIcon(PBTransportMethod transport)
+    {
+        switch (transport) {
+        case TCP:
+            return Images.get(Images.ICON_SIGNAL3);
+        case JINGLE:
+            return Images.get(Images.ICON_SIGNAL2);
+        case ZEPHYR:
+            return Images.get(Images.ICON_SIGNAL1);
+        default:
+            return null;
         }
     }
 
@@ -140,6 +165,29 @@ extends org.eclipse.jface.viewers.LabelProvider implements ITableLabelProvider
         return new SOCID(pbsocid).toString();
     }
 
+    private String formatDevice(ByteString pbDID, @Nullable String displayName)
+    {
+        return (_showDID ? new DID(pbDID).toString() + " - " : "")
+                + Objects.firstNonNull(displayName, S.LBL_UNKNOWN_DEVICE);
+    }
+
+    @SuppressWarnings("fallthrough")
+    private String formatTransport(PBTransportMethod transport)
+    {
+        switch (transport) {
+        case TCP:
+            return S.LBL_TRANSPORT_TCP;
+        case JINGLE:
+            return S.LBL_TRANSPORT_JINGLE;
+        case ZEPHYR:
+            return S.LBL_TRANSPORT_ZEPHYR;
+        default:
+        case UNKNOWN:
+        case NOT_AVAILABLE:
+            return "";
+        }
+    }
+
     @Override
     public String getColumnText(Object element, int columnIndex)
     {
@@ -151,7 +199,9 @@ extends org.eclipse.jface.viewers.LabelProvider implements ITableLabelProvider
             case CompTransfersTable.COL_PROG:
                 return Util.formatProgress(ev.getDone(), ev.getTotal());
             case CompTransfersTable.COL_DEVICE:
-                return Objects.firstNonNull(ev.getDisplayName(), S.LBL_UNKNOWN_DEVICE);
+                return formatDevice(ev.getDeviceId(), ev.getDisplayName());
+            case CompTransfersTable.COL_TRANSPORT:
+                return formatTransport(ev.getTransport());
             default: return "";
             }
 
@@ -163,7 +213,9 @@ extends org.eclipse.jface.viewers.LabelProvider implements ITableLabelProvider
             case CompTransfersTable.COL_PROG:
                 return downloadStateToProgressString(ev);
             case CompTransfersTable.COL_DEVICE:
-                return Objects.firstNonNull(ev.getDisplayName(), S.LBL_UNKNOWN_DEVICE);
+                return formatDevice(ev.getDeviceId(), ev.getDisplayName());
+            case CompTransfersTable.COL_TRANSPORT:
+                return formatTransport(ev.getTransport());
             default: return "";
             }
 

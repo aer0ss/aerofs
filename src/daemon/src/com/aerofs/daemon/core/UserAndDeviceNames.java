@@ -16,7 +16,6 @@ import com.aerofs.daemon.lib.db.IUserAndDeviceNameDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.FullName;
-import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.base.ex.ExProtocolError;
@@ -31,11 +30,9 @@ import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
 import org.slf4j.Logger;
 
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.sql.SQLException;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -87,7 +84,8 @@ public class UserAndDeviceNames
     private final IUserAndDeviceNameDatabase _udndb;
     private final SPBlockingClient.Factory _factSP;
 
-    private long _lastSPLoginFailureTime;
+    private long _lastSPUpdateFailureTime;
+    protected long _spSignInDelay = 30 * C.MIN;
 
     @Inject
     public UserAndDeviceNames(CfgLocalUser localUser, TC tc, TransManager tm, DID2User d2u,
@@ -101,36 +99,67 @@ public class UserAndDeviceNames
         _factSP = factSP;
     }
 
+    // this method is exposed to TestUserAndDeviceNames so we can control the
+    //   sign in delay in the test
+    protected void setSPLoginDelay(long delay)
+    {
+        _spSignInDelay = delay;
+    }
+
+    /**
+     * Make an SP RPC call to obtain information about a list of DIDs
+     *
+     * Since this call can potentially hammer SP, we added logic here
+     *   to stop making calls for 30 minutes if a call failed.
+     *
+     * If the call succeeded, then protocol dictates that the client
+     *   should not make this call again with any of the DIDs;
+     *
+     * @param dids the DIDs to obtain device info on
+     * @return true iff the call succeeded and all device infos for each DID is obtained.
+     * @throws ExProtocolError SP results cannot be interpreted unambiguously
+     */
+    public boolean updateLocalDeviceInfo_(List<DID> dids)
+        throws ExProtocolError
+    {
+        long now = System.currentTimeMillis();
+
+        // immediately return "failed to update" if we try to update within 30 minutes
+        //   of the last failed update
+        if (_lastSPUpdateFailureTime > 0) {
+            if (now - _lastSPUpdateFailureTime < _spSignInDelay) return false;
+            else _lastSPUpdateFailureTime = 0;
+        }
+
+        try {
+            updateLocalDeviceInfoImpl_(dids);
+            return true;
+        } catch (Exception e) {
+            // track the timestamp if we ever failed to update from SP
+            _lastSPUpdateFailureTime = now;
+
+            if (e instanceof ExProtocolError) throw (ExProtocolError)e;
+            return false;
+        }
+    }
+
     // TODO (huguesb): refactor HdGetActivities and make this private
     /**
      * Make an SP RPC call to obtain information about a list of DIDs
      *
-     * This call can potentially hammer SP. Hence SP calls are throttled
-     *   to once every 30 minutes if we ever failed.
-     *
-     * @return false if the call to SP failed
      * @throws ExProtocolError SP results cannot be interpreted unambiguously
+     * @throws Exception if anything else goes wrong
      */
-    public boolean updateLocalDeviceInfo_(List<DID> dids) throws SQLException, ExProtocolError
+    protected void updateLocalDeviceInfoImpl_(List<DID> dids)
+            throws Exception
     {
-        // immediately return "failed to update" if we ever retry in 30 minutes
-        if (_lastSPLoginFailureTime > 0
-                && Math.abs(System.currentTimeMillis() - _lastSPLoginFailureTime) < 30 * C.MIN)
-            return false;
-
         GetDeviceInfoReply reply;
         try {
             reply = getDevicesInfoFromSP_(dids);
         } catch (Exception e) {
-            // track the timestamp if we ever failed to update from SP
-            _lastSPLoginFailureTime = System.currentTimeMillis();
             l.warn("ignored: " + Util.e(e, IOException.class));
-            return false;
+            throw e;
         }
-
-        // if we made it here, that means we have succeeded in getting a response from SP
-        // reset the failure time so we don't attempt to throttle later
-        _lastSPLoginFailureTime = 0;
 
         if (reply.getDeviceInfoCount() != dids.size()) {
             throw new ExProtocolError("server reply count mismatch (" +
@@ -158,8 +187,6 @@ public class UserAndDeviceNames
         } finally {
             t.end_();
         }
-
-        return true;
     }
 
     private GetDeviceInfoReply getDevicesInfoFromSP_(List<DID> dids) throws Exception
@@ -249,6 +276,11 @@ public class UserAndDeviceNames
         return owner;
     }
 
+    public boolean isLocalUser(UserID userID)
+    {
+        return _localUser.get().equals(userID);
+    }
+
     /**
      * see {@link IUserAndDeviceNameDatabase#getDeviceNameNullable_}
      */
@@ -275,50 +307,5 @@ public class UserAndDeviceNames
             throws SQLException
     {
         _udndb.clearDeviceNameCache_();
-    }
-
-    /**
-     * Resolve the DID into either username or device name depending on if the owner
-     *   is the local user. It will make SP calls to update local database if necessary,
-     *   and it will return the proper unknown label if it's unable to resolve the DID.
-     *
-     * @param did
-     * @return the username of the owner of the device if it's not the local user
-     *   or the device name of the device if it is the local user
-     *   or the proper error label if we are unable to resolve the DID.
-     */
-    public @Nonnull String getDisplayName_(DID did)
-    {
-        try {
-            UserID owner = getDeviceOwnerNullable_(did);
-
-            if (owner == null) return S.LBL_UNKNOWN_USER;
-            else if (owner.equals(_localUser.get())) {
-                String devicename = getDeviceNameNullable_(did);
-
-                if (devicename == null) {
-                    List<DID> unresolved = Collections.singletonList(did);
-                    if (updateLocalDeviceInfo_(unresolved)) {
-                        devicename = getDeviceNameNullable_(did);
-                    }
-                }
-
-                return devicename == null ? S.LBL_UNKNOWN_DEVICE : devicename;
-            } else {
-                FullName username = getUserNameNullable_(owner);
-
-                if (username == null) {
-                    List<DID> unresolved = Collections.singletonList(did);
-                    if (updateLocalDeviceInfo_(unresolved)) {
-                        username = getUserNameNullable_(owner);
-                    }
-                }
-
-                return username == null ? S.LBL_UNKNOWN_USER : username.toString();
-            }
-        } catch (Exception ex) {
-            l.warn("Failed to lookup display name for {}", did, ex);
-            return S.LBL_UNKNOWN_USER;
-        }
     }
 }

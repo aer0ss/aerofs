@@ -10,23 +10,27 @@ import java.util.Map;
 
 /*
  * A class that's designed to throttle something based on the time of last occurence.
- *   The Throttler tracks the latest time when it was successfully applied to any given key,
+ *   The KeyBasedThrottler tracks the latest time when it was successfully applied to any given key,
  *   and it will only successfully apply to the same key if at least _delay milliseconds have
  *   past.
  *
  * Example:
- *   Throttler throttler = new Throttler(1 * C.SEC);
+ *   KeyBasedThrottler throttler = new KeyBasedThrottler(1 * C.SEC);
  *
  *   if (throttler.shouldThrottle(key)) ; // throttle behaviour
  */
-public class Throttler<TKey>
+public class KeyBasedThrottler<TKey>
 {
     private final Map<TKey, Long> _map;
-    private final long _delay;
+    private long _delay;
 
-    public Throttler(long delay)
+    public KeyBasedThrottler()
     {
         _map = Maps.newHashMap();
+    }
+
+    public void setDelay(long delay)
+    {
         _delay = delay;
     }
 
@@ -36,9 +40,10 @@ public class Throttler<TKey>
 
         if (_map.containsKey(key)) {
             long then = _map.get(key);
-
             if (now - then < _delay) return true;
         }
+
+        _map.put(key, now);
 
         return false;
     }
@@ -46,5 +51,18 @@ public class Throttler<TKey>
     public void untrack(TKey key)
     {
         _map.remove(key);
+    }
+
+    public void clear()
+    {
+        _map.clear();
+    }
+
+    public static class Factory
+    {
+        public <TKey> KeyBasedThrottler<TKey> create()
+        {
+            return new KeyBasedThrottler<TKey>();
+        }
     }
 }

@@ -9,7 +9,11 @@ public interface IUploadStateListener {
         public final SOCID _socid;
         public final Endpoint _ep;
 
-        Key(SOCID socid, Endpoint ep)
+        /**
+         * (AT) made public to help with testing. Also, since this class is used as a struct,
+         *   there's no good reason why the constructor should be anything but public.
+         */
+        public Key(SOCID socid, Endpoint ep)
         {
             _socid = socid;
             _ep = ep;
@@ -26,6 +30,12 @@ public interface IUploadStateListener {
         {
             return this == o || (o != null && _socid.equals(((Key) o)._socid) &&
                     _ep.equals(((Key) o)._ep));
+        }
+
+        @Override
+        public String toString()
+        {
+            return _socid.toString() + '@' + _ep.toString();
         }
     }
 

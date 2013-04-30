@@ -5,7 +5,6 @@ import java.util.Map;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.lib.Param;
-import com.google.common.base.Objects;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.program.Program;
@@ -51,6 +50,10 @@ public class Images {
     public static final String SS_IN_SYNC = "ss_in_sync.png";
     public static final String SS_IN_PROGRESS = "ss_in_progress.png";
     public static final String SS_OFFLINE_NOSYNC = "ss_offline_nosync.png";
+    public static final String ICON_SIGNAL0 = "signal0.png";
+    public static final String ICON_SIGNAL1 = "signal1.png";
+    public static final String ICON_SIGNAL2 = "signal2.png";
+    public static final String ICON_SIGNAL3 = "signal3.png";
 
     public static final String IMG_SETUP = "setup.png";
 

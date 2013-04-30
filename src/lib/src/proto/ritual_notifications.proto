@@ -32,6 +32,15 @@ message PBNotification {
     optional PBIndexingProgress indexing_progress = 7;
 }
 
+enum PBTransportMethod {
+    UNKNOWN = -1; // this indicates there's an error somewhere
+    // n.b. NOT_AVAILABLE MUST be 0
+    NOT_AVAILABLE = 0; // this indicates that the method is not set or not available
+    TCP = 1;
+    JINGLE = 2;
+    ZEPHYR = 3;
+}
+
 // TODO change to PBUpload/DownloadNotification?
 message PBUploadEvent {
     required PBSOCID socid = 1;
@@ -47,6 +56,9 @@ message PBUploadEvent {
     // it is optional and the UI should use default label if the display
     //   is not provided.
     optional string display_name = 6;
+
+    // the transport method used for a particular transfer
+    optional PBTransportMethod transport = 7;
 }
 
 message PBDownloadEvent {
@@ -74,6 +86,10 @@ message PBDownloadEvent {
     // for ongoing state only
     // see PBUploadEvent.display_name for details
     optional string display_name = 8;
+
+    // available for ongoing state only
+    // see PBUploadEvent.transport for details
+    optional PBTransportMethod transport = 9;
 }
 
 message PBPathStatusEvent {
