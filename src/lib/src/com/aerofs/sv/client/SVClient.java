@@ -599,7 +599,7 @@ public final class SVClient
             throw new IOException(path + " path for rtroot does not exist");
         }
 
-        return "[F:" + dir.getFreeSpace() + " U:" + dir.getUsableSpace() + "]/" + dir.getTotalSpace() + "]";
+        return "free:" + dir.getFreeSpace() + " usable:" + dir.getUsableSpace() + " total:" + dir.getTotalSpace();
     }
 
     /**

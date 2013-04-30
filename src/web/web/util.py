@@ -153,10 +153,10 @@ def reload_auth_level(request):
 
 def send_internal_email(subject, body):
     """
-    Send an email to team@aerofs.com. Errors are ignored.
+    Send an email to business@aerofs.com. Ignore errors.
     """
     fromEmail = 'Pyramid Server <support@aerofs.com>'
-    toEmail = 'team@aerofs.com'
+    toEmail = 'business@aerofs.com'
 
     log.info("send_internal_email:\n"
               "subject: {}\nbody: {}\n".format(subject, body))
