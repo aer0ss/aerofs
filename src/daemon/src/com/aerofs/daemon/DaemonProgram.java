@@ -96,8 +96,7 @@ public class DaemonProgram implements IProgram
         Stage stage = Stage.PRODUCTION;
 
         Injector injCore = Guice.createInjector(stage, new CfgModule(), multiplicityModule,
-                new CoreModule(ChannelFactories.getClientChannelFactory()), storageModule(),
-                new TimeToSyncModule());
+                new CoreModule(ChannelFactories.getClientChannelFactory()), storageModule());
 
         Injector injDaemon = Guice.createInjector(stage, new DaemonModule(injCore));
 

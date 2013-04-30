@@ -1,5 +1,7 @@
 package com.aerofs.daemon.core.synctime;
 
+import com.google.common.base.Objects;
+
 class TimeToSync
 {
     static final int TOTAL_BINS = 256;
@@ -29,6 +31,12 @@ class TimeToSync
     public boolean equals(Object o)
     {
         return ((TimeToSync) o)._syncTimeMillis == _syncTimeMillis;
+    }
+
+    @Override
+    public int hashCode()
+    {
+        return Objects.hashCode(_syncTimeMillis);
     }
 
     @Override
