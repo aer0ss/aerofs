@@ -33,7 +33,6 @@ import com.aerofs.daemon.lib.db.AbstractTransListener;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.ContentHash;
-import com.aerofs.lib.FrequentDefectSender;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.db.IDBIterator;
@@ -44,7 +43,6 @@ import com.aerofs.lib.id.SOCKID;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.id.SOKID;
 import com.aerofs.lib.injectable.InjectableFile;
-import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
 import com.google.common.io.Files;
 import com.google.inject.Inject;
@@ -398,12 +396,12 @@ class BlockStorage implements IPhysicalStorage
         }
 
         @Override
-        protected void prePutBlock_(Block block) throws SQLException
+        protected StorageState prePutBlock_(Block block) throws SQLException
         {
             try {
                 try {
                     pseudoResumed_();
-                    prePutBlock(block);
+                    return prePutBlock(block);
                 } finally {
                     pseudoPause_();
                 }
@@ -427,18 +425,21 @@ class BlockStorage implements IPhysicalStorage
             }
         }
 
-        private void prePutBlock(Block block) throws SQLException
+        private StorageState prePutBlock(Block block) throws SQLException
         {
+            StorageState retval = StorageState.ALREADY_STORED;
             Trans t = _tm.begin_();
             try {
                 BlockState bs = _bsdb.getBlockState_(block._hash);
                 if (bs != BlockState.STORED && bs != BlockState.REFERENCED) {
                     _bsdb.prePutBlock_(block._hash, block._length, t);
+                    retval = StorageState.NEEDS_STORAGE;
                 }
                 t.commit_();
             } finally {
                 t.end_();
             }
+            return retval;
         }
 
         private void postPutBlock(Block block) throws SQLException

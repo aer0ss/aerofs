@@ -68,7 +68,10 @@ public class TestChunker extends AbstractBlockTest
         }
 
         @Override
-        protected void prePutBlock_(Block block) throws SQLException {}
+        protected StorageState prePutBlock_(Block block) throws SQLException
+        {
+            return StorageState.NEEDS_STORAGE;
+        }
 
         @Override
         protected void postPutBlock_(Block block) throws SQLException {}
