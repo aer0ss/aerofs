@@ -1,5 +1,6 @@
 package com.aerofs.sv.server;
 
+import com.aerofs.base.BaseParam;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.properties.DynamicInetSocketAddress;
 import com.aerofs.proto.Sv.PBSVCall;
@@ -57,13 +58,10 @@ public class SVServlet extends AeroServlet
         _conProvider.init_(svdbRef);
     }
 
-    public static final DynamicInetSocketAddress METRICS_ADDRESS = new DynamicInetSocketAddress(
-            "sv.metrics.address", InetSocketAddress.createUnresolved("metrics.aerofs.com", 2003));
-
     private void initMetrics_()
     {
-        GraphiteReporter.enable(2, MINUTES, METRICS_ADDRESS.get().getHostName(),
-                METRICS_ADDRESS.get().getPort());
+        GraphiteReporter.enable(2, MINUTES, BaseParam.Metrics.ADDRESS.get().getHostName(),
+                BaseParam.Metrics.ADDRESS.get().getPort());
     }
 
     @Override
