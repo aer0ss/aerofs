@@ -158,7 +158,7 @@ public class Path implements Comparable<Path>
     @Override
     public String toString()
     {
-        return FORMAL_SEP + toStringFormal();
+        return _sid + FORMAL_SEP + toStringRelative();
     }
 
     private final static char FORMAL_STORE_SEP = ':';

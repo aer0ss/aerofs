@@ -35,14 +35,21 @@ public class BaseUtil
 
     public static String hexEncode(byte[] bs, int offset, int length)
     {
-        assert offset + length <= bs.length;
+        char[] hex = new char[length * 2];
+        hexEncode(bs, offset, length, hex, 0);
+        return new String(hex);
+    }
 
-        StringBuilder sb = new StringBuilder(length * 2);
-        for (int i = offset; i < length; i++) {
-            sb.append(String.format("%1$02x", bs[i]));
+    private static final char[] hexDigits =
+            {'0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f'};
+
+    public static void hexEncode(byte[] bs, int s_offset, int length, char[] hex, int d_offset)
+    {
+        for (int i = 0; i < length; ++i) {
+            int v = bs[i + s_offset] & 0xFF;
+            hex[i * 2 + d_offset + 0] = hexDigits[v >>> 4];
+            hex[i * 2 + d_offset + 1] = hexDigits[v & 0x0F];
         }
-
-        return sb.toString();
     }
 
     public static String hexEncode(byte[] bs)

@@ -15,6 +15,11 @@ public class CID extends IntegerID
 
     public boolean isMeta()
     {
-        return this.equals(META);
+        return equals(META);
+    }
+
+    public boolean isContent()
+    {
+        return equals(CONTENT);
     }
 }

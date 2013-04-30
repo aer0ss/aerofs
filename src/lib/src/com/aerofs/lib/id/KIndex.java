@@ -18,4 +18,9 @@ public class KIndex extends IntegerID
     {
         return new KIndex(getInt() + 1);
     }
+
+    public boolean isMaster()
+    {
+        return equals(MASTER);
+    }
 }

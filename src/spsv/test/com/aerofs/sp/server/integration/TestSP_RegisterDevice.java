@@ -75,7 +75,7 @@ public class TestSP_RegisterDevice extends AbstractSPCertificateBasedTest
         mockCertificateGeneratorAndIncrementSerialNumber();
 
         // Certify device2
-        Device device2 = factDevice.create(getNextDID(Sets.newHashSet(device.id())));
+        Device device2 = factDevice.create(getNextDID(Sets.<DID>newHashSet(device.id())));
         String cert2;
         cert2 = service.registerDevice(device2.id().toPB(), newCSR(device2),false, "", "", "")
                 .get().getCert();

@@ -1,18 +1,19 @@
 package com.aerofs.base.id;
 
-import java.util.Arrays;
+import java.nio.ByteBuffer;
 import java.util.UUID;
 
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.bf.IBFKey;
 import com.aerofs.base.ex.ExFormatError;
 import com.google.protobuf.ByteString;
+import com.google.protobuf.LeanByteString;
 
 // globally unique ids.
 //
 // templatizing this class is not that easy because of static member ZERO here
 //
-public class UniqueID implements Comparable<UniqueID>, IBFKey
+public class UniqueID extends LeanByteString implements Comparable<UniqueID>, IBFKey
 {
     public static final int LENGTH = 16;
 
@@ -41,6 +42,11 @@ public class UniqueID implements Comparable<UniqueID>, IBFKey
         bs[VERSION_BYTE] |= value << VERSION_SHIFT;
     }
 
+    protected int getVersionNibble()
+    {
+        return getVersionNibble(getInternalByteArray());
+    }
+
     /**
      * UniqueID subclasses may restrict the range of valid values. When such IDs are constructed
      * from internal values, asserts should be used to enforce the restrictions. However, when such
@@ -54,11 +60,12 @@ public class UniqueID implements Comparable<UniqueID>, IBFKey
 
     public static final UniqueID ZERO = new UniqueID(new byte[LENGTH]);
 
-    private final byte[] _bs;
-
-    private Integer _hash;
-    private ByteString _bstr;
-    private String _str;
+    private static byte[] hexDecodeID(String str, int start, int end) throws ExFormatError
+    {
+        byte[] bs = BaseUtil.hexDecode(str, start, end);
+        if (bs.length != LENGTH) throw new ExFormatError("wrong length");
+        return bs;
+    }
 
     public static UniqueID generate()
     {
@@ -107,77 +114,80 @@ public class UniqueID implements Comparable<UniqueID>, IBFKey
      */
     public UniqueID(String str, int start, int end) throws ExFormatError
     {
-        byte[] bs = BaseUtil.hexDecode(str, start, end);
-        if (bs.length != LENGTH) throw new ExFormatError("wrong length");
-        _bs = bs;
+        this(hexDecodeID(str, start, end));
     }
 
+    /**
+     * Wrap the given byte array (NB: it is NOT copied)
+     */
     public UniqueID(byte[] bs)
     {
+        super(bs);
         assert bs.length == LENGTH : BaseUtil.hexEncode(bs);
-        _bs = bs;
     }
 
+    /**
+     * Create an id from a ByteString (shares the underlying byte array if possible)
+     */
     public UniqueID(ByteString bstr)
     {
-        this(bstr.toByteArray());
-        _bstr = bstr;
-    }
-
-    protected UniqueID(UniqueID id)
-    {
-        this(id.getBytes());
+        super(bstr);
     }
 
     @Override
     public String toString()
     {
-        if (_str == null) {
-            StringBuilder sb = new StringBuilder();
+        return toStringImpl('<', 3, '>');
+    }
 
-            sb.append('<');
-            for (int i = 0; i < 3; i++) {
-                sb.append(String.format("%1$02x", _bs[i]));
-            }
-            sb.append('>');
-
-            _str = sb.toString();
-        }
-
-        return _str;
+    protected String toStringImpl(char pre, int nbytes, char post)
+    {
+        char[] str = new char[2 + nbytes * 2];
+        str[0] = pre;
+        BaseUtil.hexEncode(getInternalByteArray(), 0, nbytes, str, 1);
+        str[str.length - 1] = post;
+        return new String(str);
     }
 
     public String toStringFormal()
     {
-        return BaseUtil.hexEncode(_bs);
+        return BaseUtil.hexEncode(getInternalByteArray(), 0, LENGTH);
     }
 
     @Override
+    public ByteBuffer getReadOnlyByteBuffer()
+    {
+        return toPB().asReadOnlyByteBuffer();
+    }
+
+    /**
+     * IMPORTANT: Do not modify the returned byte array directly but work on a copy instead.
+     */
     public byte[] getBytes()
     {
-        return _bs;
+        return getInternalByteArray();
     }
 
     @Override
     public boolean equals(Object o)
     {
-        return this == o || (o != null && Arrays.equals(_bs, ((UniqueID) o)._bs));
+        return this == o || (o != null && super.equals(o));
     }
 
-    // hashCode and compareTo start backwards from the last byte of the byte array,
-    // as DID names at the beginning.
     @Override
     public int hashCode()
     {
-        if (_hash == null) _hash = Arrays.hashCode(_bs);
-        return _hash;
+        // UUIDs are pseudo-random numbers so selecting any 32 bits gives as good a hash function
+        // as pretty much any non-cryptographycally secure byte array hash
+        // NB: for this to be true we should not select bits from the version nibble
+        return getReadOnlyByteBuffer().getInt(0);
     }
 
     @Override
     public int compareTo(UniqueID id)
     {
-        byte [] bs0 = getBytes();
-        byte [] bs1 = id.getBytes();
+        final byte [] bs0 = getInternalByteArray();
+        final byte [] bs1 = id.getInternalByteArray();
         assert bs0.length == LENGTH && bs1.length == LENGTH;
 
         for (int i = LENGTH - 1; i >= 0; i--) {
@@ -189,7 +199,6 @@ public class UniqueID implements Comparable<UniqueID>, IBFKey
 
     public ByteString toPB()
     {
-        if (_bstr == null) _bstr = ByteString.copyFrom(_bs);
-        return _bstr;
+        return this;
     }
 }

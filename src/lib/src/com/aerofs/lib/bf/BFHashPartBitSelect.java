@@ -43,18 +43,10 @@ public class BFHashPartBitSelect<E extends IBFKey> implements IBFHash<E> {
         // Integer array of return values;
         int [] hashes = new int [_k];
         // ByteBuffer of the key to be hashed _k times
-        ByteBuffer bbKey = ByteBuffer.wrap(element.getBytes());
+        ByteBuffer bbKey = element.getReadOnlyByteBuffer();
         // In the loop to follow, we expect Integers to be created
         // from the byte array assuming little-endian order.
         bbKey.order(ByteOrder.LITTLE_ENDIAN);
-
-        // To use this bit-select hash function, there must be enough
-        // bytes in the provided element to select k disjoint bitfields.
-        assert (bbKey.array().length * Byte.SIZE) >= (_selectWidth * _k);
-        // Because we are using getInt, the bbKey array must have sufficient
-        // padding of bytes so that the last hash function can read 4 bytes
-        assert bbKey.array().length >=
-                    ( Integer.SIZE + _selectWidth * (_k-1) ) / Byte.SIZE;
 
         int startBit = 0;
 

@@ -2,6 +2,7 @@ package com.aerofs.lib;
 
 import com.aerofs.base.BaseUtil;
 import com.google.protobuf.ByteString;
+import com.google.protobuf.LeanByteString;
 
 import java.util.Arrays;
 
@@ -9,45 +10,38 @@ import java.util.Arrays;
  * This class represents content hash of a file. Its value is a concatenation of one or more file
  * block hashes.
  */
-public class ContentHash
+public class ContentHash extends LeanByteString
 {
     /**
      * The byte count of a single block hash value
      */
     public static final int UNIT_LENGTH = SecUtil.newMessageDigest().getDigestLength();
 
-    private final byte[] _hash;
-    private ByteString _pb;
-
     public ContentHash(byte[] hash)
     {
+        super(hash);
         assert hash.length % UNIT_LENGTH == 0;
-
-        _hash = hash;
     }
 
     public ContentHash(ByteString pb)
     {
-        this(pb.toByteArray());
-        _pb = pb;
+        super(pb);
     }
 
     public ByteString toPB()
     {
-        if (_pb == null) _pb = ByteString.copyFrom(_hash);
-
-        return _pb;
+        return this;
     }
 
     public byte[] getBytes()
     {
-        return _hash;
+        return getInternalByteArray();
     }
 
     @Override
     public int hashCode()
     {
-        return Arrays.hashCode(_hash);
+        return Arrays.hashCode(getBytes());
     }
 
     @Override
@@ -57,7 +51,7 @@ public class ContentHash
         if (!(other instanceof ContentHash)) return false;
 
         ContentHash h2 = (ContentHash) other;
-        return Arrays.equals(_hash, h2._hash);
+        return Arrays.equals(getBytes(), h2.getBytes());
     }
 
     @Override

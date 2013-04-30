@@ -18,6 +18,8 @@ import com.aerofs.lib.db.DBUtil;
 import com.aerofs.lib.db.IDatabaseParams;
 import com.aerofs.lib.db.dbcw.IDBCW;
 import com.google.common.collect.Maps;
+import com.google.protobuf.ByteString;
+import com.google.protobuf.LeanByteString;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -68,7 +70,7 @@ public class Cfg
     private static X509Certificate _cert;
     private static X509Certificate _cacert;
     private static PrivateKey _privKey;
-    private static byte[] _scrypted;
+    private static LeanByteString _scrypted;
     private static boolean _inited;
     private static int _portbase;
     private static @Nullable StorageType _storageType;
@@ -517,6 +519,11 @@ public class Cfg
      */
     public static byte[] scrypted()
     {
+        return _scrypted.getInternalByteArray();
+    }
+
+    public static ByteString scryptedPB()
+    {
         return _scrypted;
     }
 
@@ -543,7 +550,7 @@ public class Cfg
         _privKey = SecUtil.decryptPrivateKey(encryptedKey, pbePasswd);
 
         // do it after decryption has succeeded
-        _scrypted = scrypted;
+        _scrypted = new LeanByteString(scrypted);
     }
 
     /*

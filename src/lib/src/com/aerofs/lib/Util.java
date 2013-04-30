@@ -7,8 +7,6 @@ import com.aerofs.lib.cfg.CfgAbsRoots;
 import com.aerofs.lib.ex.*;
 import com.aerofs.lib.FileUtil.FileName;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.ex.ExNotAuthenticated;
-import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.proto.Common.PBException.Type;
 import com.aerofs.swig.driver.Driver;
@@ -33,7 +31,6 @@ import java.net.SocketException;
 import java.net.URLEncoder;
 import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -575,48 +572,6 @@ public abstract class Util
         }
 
         return sb.toString();
-    }
-
-    private static final String BRANCH_STR = "-ConflictBranch-";
-    private static final char BRANCH_STR_UNIQUE_CHAR = '-';
-
-    // Given a file name "abc.def", the returned value will be in the format of
-    // abc-ConflictBranch-N.def, where N == kidx.getInt().
-    // If the above name already exists, one or more '-'s will be appended after N.
-    //
-    public static String makeBranchConvenientName(String name, KIndex kidx,
-            String[] sortedSiblings)
-    {
-        assert !kidx.equals(KIndex.MASTER);
-
-        String first, second;
-        int dotPos = name.lastIndexOf('.');
-        if (dotPos <= 0) {
-            // the dot doesn't exist or the last dot is the first char
-            first = name;
-            second = "";
-        } else {
-            first = name.substring(0, dotPos);
-            second = name.substring(dotPos);
-        }
-
-        StringBuilder sb = new StringBuilder();
-        int count = 0;
-        while (true) {
-            sb.delete(0, Integer.MAX_VALUE);
-            sb.append(first);
-            sb.append(BRANCH_STR);
-            sb.append(kidx.getInt());
-            for (int i = 0; i < count; i++) sb.append(BRANCH_STR_UNIQUE_CHAR);
-            sb.append(second);
-
-            String str = sb.toString();
-            if (Arrays.binarySearch(sortedSiblings, str) < 0) {
-                return str;
-            }
-
-            count++;
-        }
     }
 
     public static int compare(InetSocketAddress a1, InetSocketAddress a2)

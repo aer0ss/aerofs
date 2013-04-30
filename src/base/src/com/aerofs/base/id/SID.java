@@ -29,8 +29,6 @@ public class SID extends UniqueID
     private static final byte[] ROOT_SID_SALT = new byte[]
             { (byte) 0x07, (byte) 0x24, (byte) 0xF1, (byte) 0x37 };
 
-    private String _str;
-
     public SID(ByteString bstr)
     {
         super(bstr);
@@ -183,18 +181,6 @@ public class SID extends UniqueID
     @Override
     public String toString()
     {
-        if (_str == null) {
-            StringBuilder sb = new StringBuilder();
-
-            sb.append('$');
-            for (int i = 0; i < 2; i++) {
-                sb.append(String.format("%1$02x", getBytes()[i]));
-            }
-            sb.append('$');
-
-            _str = sb.toString();
-        }
-
-        return _str;
+        return toStringImpl('$', 2, '$');
     }
 }

@@ -1,5 +1,7 @@
 package com.aerofs.base.bf;
 
+import java.nio.ByteBuffer;
+
 /**
  * Interface for any object to be used as a key to Bloom filters
  * The object must expose a byte array to be hashed: either it contains
@@ -8,5 +10,5 @@ package com.aerofs.base.bf;
  *
  */
 public interface IBFKey {
-    public byte [] getBytes();
+    public ByteBuffer getReadOnlyByteBuffer();
 }

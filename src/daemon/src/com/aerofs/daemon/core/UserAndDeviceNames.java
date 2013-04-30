@@ -269,7 +269,7 @@ public class UserAndDeviceNames
         UserID owner = _d2u.getFromLocalNullable_(did);
 
         // SP call if local DB doesn't have the info
-        if (owner == null && updateLocalDeviceInfo_(Lists.newArrayList(did))) {
+        if (owner == null && updateLocalDeviceInfo_(Lists.<DID>newArrayList(did))) {
             owner = _d2u.getFromLocalNullable_(did);
         }
 

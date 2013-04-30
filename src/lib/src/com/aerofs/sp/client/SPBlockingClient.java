@@ -79,7 +79,7 @@ public class SPBlockingClient extends SPServiceBlockingStub
     {
         ByteString credentials = L.isMultiuser() ?
                 Cfg.did().toPB() :
-                ByteString.copyFrom(Cfg.scrypted());
+                Cfg.scryptedPB();
 
         try {
             super.signIn(_user.getString(), credentials);

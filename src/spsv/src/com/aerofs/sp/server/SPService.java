@@ -504,7 +504,7 @@ public class SPService implements ISPService
         ListUserDevicesReply.Builder builder = ListUserDevicesReply.newBuilder();
         for (Device device : user.getDevices()) {
             builder.addDevice(PBDevice.newBuilder()
-                    .setDeviceId(ByteString.copyFrom(device.id().getBytes()))
+                    .setDeviceId(device.id().toPB())
                     .setDeviceName(device.getName())
                     .setOsFamily(device.getOSFamily())
                     .setOsName(device.getOSName()));

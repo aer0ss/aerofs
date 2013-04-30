@@ -10,6 +10,8 @@ import com.google.protobuf.ByteString;
  */
 public class OID extends UniqueID
 {
+    // dummy value for dummy ctor
+    private static final int NO_ASSERT = 42;
 
     public static final OID ROOT;   // all zeros
     public static final OID TRASH;  // all zeros except one bit
@@ -50,9 +52,14 @@ public class OID extends UniqueID
         assertIsValid();
     }
 
+    private OID(byte[] bs, int dummyNoAssert)
+    {
+        super(bs);
+    }
+
     private void assertIsValid()
     {
-        int v = getVersionNibble(getBytes());
+        int v = getVersionNibble();
         assert v == 0 || v == 4 : toStringFormal();
     }
 
@@ -73,7 +80,7 @@ public class OID extends UniqueID
          * DB changes to anchor OIDs (hence the need to explicitly distinguish anchors from root and
          * trash)
          */
-        return !isRoot() && !isTrash() && getVersionNibble(getBytes()) == 0;
+        return !isRoot() && !isTrash() && getVersionNibble() == 0;
     }
 
     /**
@@ -82,11 +89,7 @@ public class OID extends UniqueID
      */
     public static OID legacyValue(byte[] bs)
     {
-        byte b = bs[VERSION_BYTE];
-        bs[VERSION_BYTE] = 0;
-        OID oid = new OID(bs);
-        oid.getBytes()[VERSION_BYTE] = b;
-        return oid;
+        return new OID(bs, NO_ASSERT);
     }
 
     public static OID generate()
