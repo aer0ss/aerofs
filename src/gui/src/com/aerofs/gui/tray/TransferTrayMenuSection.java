@@ -59,7 +59,10 @@ public class TransferTrayMenuSection implements ITrayMenuComponent
         {
             if (_transferDialog == null) _transferDialog = new DlgTransfers(GUI.get().sh());
 
-            _transferDialog.showSOCID(Util.test(event.stateMask, SWT.SHIFT));
+            boolean enableDeveloperMode = Util.test(event.stateMask, SWT.SHIFT);
+
+            _transferDialog.showSOCID(enableDeveloperMode);
+            _transferDialog.showDID(enableDeveloperMode);
 
             if (_transferDialog.isDisposed()) {
                 _transferDialog.openDialog();

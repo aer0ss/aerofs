@@ -12,10 +12,8 @@ public class DlgTransfers extends AeroFSDialog
 {
     private CompTransfers _comp;
     private boolean _showSOCID;
+    private boolean _showDID;
 
-    /**
-     * @param path the path to the folder to be shared, relative to the root anchor path.
-     */
     public DlgTransfers(Shell parent)
     {
         super(parent, S.TRANSFERS, false, true);
@@ -26,16 +24,23 @@ public class DlgTransfers extends AeroFSDialog
     {
         if (GUIUtil.isWindowBuilderPro()) // $hide$
             shell = new Shell(getParent(), getStyle());
-        shell.setSize(430, 380);
+        shell.setSize(800, 400);
         shell.setLayout(new FillLayout(SWT.HORIZONTAL));
 
         _comp = new CompTransfers(shell);
         _comp.showSOCID(_showSOCID);
+        _comp.showDID(_showDID);
     }
 
     public void showSOCID(boolean enable)
     {
         _showSOCID = enable;
         if (_comp != null) _comp.showSOCID(_showSOCID);
+    }
+
+    public void showDID(boolean enable)
+    {
+        _showDID = enable;
+        if (_comp != null) _comp.showDID(_showDID);
     }
 }

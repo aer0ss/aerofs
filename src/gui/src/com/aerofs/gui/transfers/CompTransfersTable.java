@@ -1,6 +1,6 @@
 package com.aerofs.gui.transfers;
 
-import com.aerofs.base.id.DID;
+import com.aerofs.lib.S;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
@@ -50,7 +50,8 @@ public class CompTransfersTable extends Composite
 
     static final int COL_PATH = 0;
     static final int COL_DEVICE = 1;
-    static final int COL_PROG = 2;
+    static final int COL_TRANSPORT = 2;
+    static final int COL_PROG = 3;
 
     public String shortenPath(String text)
     {
@@ -81,7 +82,7 @@ public class CompTransfersTable extends Composite
 
         _tcPath = new TableColumn(table, SWT.NONE);
         _tcPath.setMoveable(true);
-        _tcPath.setText("File");
+        _tcPath.setText(S.LBL_COL_PATH);
         _tcPath.setWidth(192);
         _tcPath.addListener(SWT.Resize, new Listener() {
             @Override
@@ -94,12 +95,17 @@ public class CompTransfersTable extends Composite
 
         final TableColumn tcDevice = new TableColumn(table, SWT.NONE);
         tcDevice.setMoveable(true);
-        tcDevice.setText("From/To");
+        tcDevice.setText(S.LBL_COL_DEVICE);
         tcDevice.setWidth(80);
+
+        final TableColumn tcTransport = new TableColumn(table, SWT.NONE);
+        tcTransport.setMoveable(true);
+        tcTransport.setText(S.LBL_COL_TRANSPORT);
+        tcTransport.setWidth(80);
 
         final TableColumn tcProgress = new TableColumn(table, SWT.NONE);
         tcProgress.setMoveable(true);
-        tcProgress.setText("Progress");
+        tcProgress.setText(S.LBL_COL_PROGRESS);
         tcProgress.setWidth(80);
 
         addControlListener(new ControlAdapter() {
@@ -108,9 +114,10 @@ public class CompTransfersTable extends Composite
             {
                 // without "-1" the horizontal scroll bar shows up sometimes
                 int width = getBounds().width - 2 * table.getBorderWidth() - 1;
-                _tcPath.setWidth((int) (width * 0.5));
-                tcDevice.setWidth((int) (width * 0.2));
-                tcProgress.setWidth((int) (width * 0.3));
+                _tcPath.setWidth((int) (width * 0.4));
+                tcDevice.setWidth((int) (width * 0.25));
+                tcTransport.setWidth((int) (width * 0.1));
+                tcProgress.setWidth((int) (width * 0.25));
             }
         });
 
@@ -143,14 +150,15 @@ public class CompTransfersTable extends Composite
         // Disable the check that prevents subclassing of SWT components
     }
 
-    public String getDeviceString(DID did)
-    {
-        return did.toString();
-    }
-
     public void showSOCID(boolean enable)
     {
         _label.showSOCID(enable);
+        if (!isDisposed()) _tv.refresh();
+    }
+
+    public void showDID(boolean enable)
+    {
+        _label.showDID(enable);
         if (!isDisposed()) _tv.refresh();
     }
 }

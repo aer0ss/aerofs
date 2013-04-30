@@ -7,7 +7,6 @@ package com.aerofs.daemon.core.notification;
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.CoreQueue;
 import com.aerofs.daemon.core.CoreScheduler;
-import com.aerofs.daemon.core.UserAndDeviceNames;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.net.UploadState;
 import com.aerofs.daemon.core.protocol.DownloadState;
@@ -18,6 +17,9 @@ import com.aerofs.daemon.core.status.PathStatus;
 import com.aerofs.daemon.core.syncstatus.AggregateSyncStatus;
 import com.aerofs.daemon.core.syncstatus.SyncStatusSynchronizer;
 import com.aerofs.daemon.core.syncstatus.SyncStatusSynchronizer.IListener;
+import com.aerofs.daemon.lib.pb.PBTransferStateFormatter;
+import com.aerofs.lib.KeyBasedThrottler.Factory;
+import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.id.SIndex;
@@ -51,13 +53,13 @@ public class RitualNotificationWirings implements RitualNotificationServer.IConn
     private final DirectoryService _ds;
     private final ServerConnectionStatus _scs;
     private final ConflictState _cl;
-    private final UserAndDeviceNames _nr;
+    private final PBTransferStateFormatter _formatter;
 
     @Inject
     public RitualNotificationWirings(RitualNotificationServer rns, CoreQueue cq,
             CoreScheduler sched, DirectoryService ds,  DownloadState dls, UploadState uls,
             PathStatus so, ServerConnectionStatus scs, SyncStatusSynchronizer sss,
-            AggregateSyncStatus agss, ConflictState cl, UserAndDeviceNames nr)
+            AggregateSyncStatus agss, ConflictState cl, PBTransferStateFormatter formatter)
     {
         _rns = rns;
 
@@ -71,16 +73,23 @@ public class RitualNotificationWirings implements RitualNotificationServer.IConn
         _ds = ds;
         _scs = scs;
         _cl = cl;
-        _nr = nr;
         _psn = new PathStatusNotifier(_rns, _ds, _so);
+        _formatter = formatter;
     }
 
     public void init_() throws IOException
     {
         _rns.addListener_(this);
 
-        _dls.addListener_(new DownloadStateListener(_rns, _ds, _nr));
-        _uls.addListener_(new UploadStateListener(_rns, _ds, _nr));
+        Factory factory = new Factory();
+
+        DownloadStateListener dlsl = new DownloadStateListener(_rns, _formatter, factory);
+        dlsl.enableFilter(Cfg.useTransferFilter());
+        _dls.addListener_(dlsl);
+
+        UploadStateListener ulsl = new UploadStateListener(_rns, _formatter, factory);
+        ulsl.enableFilter(Cfg.useTransferFilter());
+        _uls.addListener_(ulsl);
 
         // Merged status notifier listens on all input sources
         final PathStatusNotifier sn = new PathStatusNotifier(_rns, _ds, _so);
@@ -158,6 +167,6 @@ public class RitualNotificationWirings implements RitualNotificationServer.IConn
     public void onIncomingconnection(InetSocketAddress from)
     {
         // must enqueue since this method is called by non-core threads
-        _cq.enqueueBlocking(new EISendSnapshot(_rns, from, _dls, _uls, _psn, _ds, _nr), Prio.HI);
+        _cq.enqueueBlocking(new EISendSnapshot(_rns, from, _dls, _uls, _psn, _formatter), Prio.HI);
     }
 }

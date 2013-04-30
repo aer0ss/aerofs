@@ -30,7 +30,7 @@ public interface IDownloadStateListener {
         {
             return "Enqueued";
         }
-        static final Enqueued SINGLETON = new Enqueued();
+        public static final Enqueued SINGLETON = new Enqueued();
     }
 
     public static class Started extends State {

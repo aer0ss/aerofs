@@ -39,6 +39,7 @@ public class S
 
             BAD_CREDENTIAL_CAP       = "Email or password is incorrect",
 
+            // begin transfers dialog
             LBL_UNKNOWN_USER         = "Unknown user",
             LBL_UNKNOWN_DEVICE       = "Unknown device",
             LBL_UNKNOWN_FILE         = "Incoming file",
@@ -47,6 +48,16 @@ public class S
             LBL_TRANSFERRING         = "transferring files",
             LBL_UPLOADING            = "Uploading",
             LBL_DOWNLOADING          = "Downloading",
+
+            LBL_COL_PATH             = "File",
+            LBL_COL_DEVICE           = "From/To",
+            LBL_COL_TRANSPORT        = "Connection",
+            LBL_COL_PROGRESS         = "Progress",
+
+            LBL_TRANSPORT_TCP        = "Local Network",
+            LBL_TRANSPORT_JINGLE     = "Direct Connect via Internet",
+            LBL_TRANSPORT_ZEPHYR     = "Relay Service",
+            // end transfers dialog
 
             DONT_SHOW_THIS_MESSAGE_AGAIN = "Don't show me again.",
             FILE_OPEN_FAIL = "The file couldn't be opened.",

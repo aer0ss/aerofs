@@ -68,4 +68,9 @@ public class CompTransfers extends Composite
     {
         _view.showSOCID(enable);
     }
+
+    public void showDID(boolean enable)
+    {
+        _view.showDID(enable);
+    }
 }
