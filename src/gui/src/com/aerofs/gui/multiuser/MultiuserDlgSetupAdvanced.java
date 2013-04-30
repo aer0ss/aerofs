@@ -6,11 +6,10 @@ package com.aerofs.gui.multiuser;
 
 import com.aerofs.gui.setup.AbstractDlgSetupAdvanced;
 import com.aerofs.gui.setup.CompLocalStorage;
-import com.aerofs.labeling.L;
 import com.aerofs.lib.S;
 import com.aerofs.lib.StorageType;
-import com.aerofs.ui.PasswordVerifier;
-import com.aerofs.ui.PasswordVerifier.PasswordVerifierResult;
+import com.aerofs.ui.S3DataEncryptionPasswordVerifier;
+import com.aerofs.ui.S3DataEncryptionPasswordVerifier.PasswordVerifierResult;
 import com.google.common.collect.Lists;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.swt.SWT;
@@ -31,6 +30,9 @@ import org.eclipse.swt.widgets.Text;
 import javax.annotation.Nullable;
 import java.util.List;
 
+/**
+ * deprecated, see com.aerofs.gui.multiuser.setup.DlgMultiuserSetup
+ */
 public class MultiuserDlgSetupAdvanced extends AbstractDlgSetupAdvanced
 {
     private Text _txtS3BucketId;
@@ -254,7 +256,7 @@ public class MultiuserDlgSetupAdvanced extends AbstractDlgSetupAdvanced
 
     private PasswordVerifierResult verifyPasswords()
     {
-        PasswordVerifier verifier = new PasswordVerifier();
+        S3DataEncryptionPasswordVerifier verifier = new S3DataEncryptionPasswordVerifier();
         PasswordVerifierResult result = verifier.verifyAndConfirmPasswords(
                 _txtS3Passphrase.getText().toCharArray(),
                 _txtS3Passphrase2.getText().toCharArray());

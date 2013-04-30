@@ -10,6 +10,8 @@ import javax.annotation.Nullable;
 import com.aerofs.lib.S;
 
 /**
+ * deprecated, this class is going away, use AeroFSDialog instead
+ *
  * override the method below to remove the bottom bar:
  *      protected Control createButtonBar(Composite parent)
  */

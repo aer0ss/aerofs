@@ -4,7 +4,7 @@ import com.aerofs.base.Loggers;
 import com.aerofs.controller.ExLaunchAborted;
 import com.aerofs.gui.AeroFSMessageBox.ButtonType;
 import com.aerofs.gui.AeroFSMessageBox.IconType;
-import com.aerofs.gui.multiuser.MultiuserDlgSetup;
+import com.aerofs.gui.multiuser.setup.DlgMultiuserSetup;
 import com.aerofs.gui.multiuser.tray.MultiuserMenuProvider;
 import com.aerofs.gui.setup.AbstractDlgSetup;
 import com.aerofs.gui.setup.DlgPreSetupUpdateCheck;
@@ -266,7 +266,8 @@ public class GUI implements IUI
     public void safeAsyncExec(final Widget w, final Runnable run)
     {
         if (!_disp.isDisposed() && !w.isDisposed()) {
-            _disp.asyncExec(new Runnable() {
+            _disp.asyncExec(new Runnable()
+            {
                 @Override
                 public void run()
                 {
@@ -433,8 +434,7 @@ public class GUI implements IUI
     @Override
     public boolean ask(MessageType mt, String msg)
     {
-        return askImpl(_sh, false, mt, msg, IDialogConstants.YES_LABEL,
-                IDialogConstants.NO_LABEL);
+        return askImpl(_sh, false, mt, msg, IDialogConstants.YES_LABEL, IDialogConstants.NO_LABEL);
     }
 
     @Override
@@ -545,10 +545,16 @@ public class GUI implements IUI
     @Override
     public void setup_(String rtRoot) throws Exception
     {
-        AbstractDlgSetup dlg = L.isMultiuser() ? new MultiuserDlgSetup(_sh) :
-                new SingleuserDlgSetup(_sh);
-        dlg.open();
-        if (dlg.isCancelled()) throw new ExLaunchAborted("user canceled setup");
+        if (L.isMultiuser()) {
+            DlgMultiuserSetup dialog = new DlgMultiuserSetup(_sh);
+            Object result = dialog.openDialog();
+            // N.B. a null result indicates the user has canceled the setup.
+            if (result == null) throw new ExLaunchAborted("user canceled setup");
+        } else {
+            AbstractDlgSetup dlg = new SingleuserDlgSetup(_sh);
+            dlg.open();
+            if (dlg.isCancelled()) throw new ExLaunchAborted("user canceled setup");
+        }
     }
 
     public void enterMainLoop_()

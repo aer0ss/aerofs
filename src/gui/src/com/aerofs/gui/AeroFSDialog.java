@@ -1,5 +1,6 @@
 package com.aerofs.gui;
 
+import com.google.common.base.Strings;
 import org.eclipse.swt.widgets.Dialog;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
@@ -47,6 +48,10 @@ public abstract class AeroFSDialog extends Dialog {
      */
     abstract protected void open(Shell shell);
 
+    /**
+     * Override in the subclass if you do not want the shell to have a certain size
+     *   or simply not pack
+     */
     protected void setShellSize()
     {
         _shell.pack();
@@ -65,7 +70,8 @@ public abstract class AeroFSDialog extends Dialog {
         _shell = new Shell(getParent(), getStyle());
         GUI.get().registerShell(_shell);
 
-        _shell.setText(_title == null ? S.DEFAULT_DIALOG_TITLE : _title + S.DIALOG_TITLE_SUFFIX);
+        _shell.setText(Strings.isNullOrEmpty(_title) ?
+                S.DEFAULT_DIALOG_TITLE : _title + S.DIALOG_TITLE_SUFFIX);
         GUIUtil.setShellIcon(_shell);
 
         open(_shell);

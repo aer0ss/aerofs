@@ -27,7 +27,6 @@ import com.aerofs.lib.os.OSUtil;
 import com.aerofs.lib.os.OSUtil.Icon;
 import com.aerofs.proto.ControllerProto.PBS3Config;
 import com.aerofs.proto.Sp.GetUserPreferencesReply;
-import com.aerofs.sp.client.OneWayAuthURLConnectionConfigurator;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.sv.client.SVClient;
 import com.aerofs.ui.UI;
@@ -100,7 +99,7 @@ class Setup
              */
             boolean isReinstall = (_factFile.create(rootAnchorPath).list() != null);
 
-            PreSetupResult res = preSetup(userId, password, rootAnchorPath, storageType);
+            SignInResult res = preSetup(userId, password, rootAnchorPath, storageType);
 
             setupSingluserImpl(userId, rootAnchorPath, deviceName, storageType, s3cfg,
                     res._scrypted, res._sp);
@@ -117,7 +116,7 @@ class Setup
             throws Exception
     {
         try {
-            PreSetupResult res = preSetup(userId, password, rootAnchorPath, storageType);
+            SignInResult res = preSetup(userId, password, rootAnchorPath, storageType);
 
             setupMultiuserImpl(userId, rootAnchorPath, deviceName, storageType, s3cfg, res._sp);
 
@@ -132,7 +131,7 @@ class Setup
         }
     }
 
-    private static class PreSetupResult
+    private static class SignInResult
     {
         // scrypt'ed password
         byte[] _scrypted;
@@ -142,9 +141,40 @@ class Setup
     }
 
     /**
-     * Perform pre-setup sanity checks and generate information needed by later setup steps
+     * This method can be called to verify the correctness of login information
+     *
+     * It attempts to sign in into SP, and if everything goes well, it will complete
+     *   without error.
+     *
+     * FIXME (AT): refactor the setup logic so that we don't end up signing in to SP twice.
+     *   We can potentially refactor setupMultiuser & preSetup to:
+     *   1. signs into SP and cache intermediate values & SP connection.
+     *   2. call checkRootAnchor later and finish the rest of setup process.
      */
-    private PreSetupResult preSetup(UserID userID, char[] password, String rootAnchorPath,
+    SignInResult signIn(UserID userID, char[] password)
+            throws Exception
+    {
+        SignInResult result = new SignInResult();
+        result._scrypted = SecUtil.scrypt(password, userID);
+
+        // When setting up Team Servers, the ID of the user who sets up the server is used with this
+        // SP client to sign in. Since the default configurator uses mutual authentication,
+        // which doesn't work with regular clients, we force a null connection configurator.
+        // consult MP for details.
+        SPBlockingClient.Factory fact = new SPBlockingClient.Factory();
+        result._sp = fact.create_(Cfg.user(),
+                SPBlockingClient.ONE_WAY_AUTH_CONNECTION_CONFIGURATOR);
+        result._sp.signIn(userID.getString(), ByteString.copyFrom(result._scrypted));
+
+        return result;
+    }
+
+    /**
+     * Perform pre-setup sanity checks and generate information needed by later setup steps.
+     *
+     * Sign in into SP and returns the result.
+     */
+    private SignInResult preSetup(UserID userID, char[] password, String rootAnchorPath,
             StorageType storageType)
             throws Exception
     {
@@ -154,17 +184,7 @@ class Setup
 
         createSettingUpFlagFile();
 
-        PreSetupResult res = new PreSetupResult();
-        res._scrypted = SecUtil.scrypt(password, userID);
-
-        // When setting up Team Servers, the ID of the user who sets up the server is used with this
-        // SP client to sign in. Since the default configurator uses mutual authentication,
-        // which doesn't work with regular clients, we force a null connection configurator.
-        SPBlockingClient.Factory fact = new SPBlockingClient.Factory();
-        res._sp = fact.create_(Cfg.user(), SPBlockingClient.ONE_WAY_AUTH_CONNECTION_CONFIGURATOR);
-        res._sp.signIn(userID.getString(), ByteString.copyFrom(res._scrypted));
-
-        return res;
+        return signIn(userID, password);
     }
 
     /**

@@ -8,7 +8,7 @@ import com.aerofs.lib.Util;
 
 import java.util.Arrays;
 
-public class PasswordVerifier
+public class S3DataEncryptionPasswordVerifier
 {
     private static final int MIN_PASSWD_LENGTH = 6;
 

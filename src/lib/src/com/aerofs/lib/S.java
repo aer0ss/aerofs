@@ -12,20 +12,60 @@ public class S
             BTN_APPLY_UPDATE         = "Apply Update",
             BTN_CHECK_UPDATE         = "Update Now",
 
+            BTN_BACK                 = "Back",
+            BTN_CONTINUE             = "Continue",
+            BTN_QUIT                 = "Quit",
+
             LBL_UPDATE_CHECKING      = "Checking for Update...",
             LBL_UPDATE_ONGOING       = "Downloading new update...",
             LBL_UPDATE_LATEST        = "Your " + L.product() + " is up to date.",
             LBL_UPDATE_APPLY         = "A new update has been downloaded.",
             LBL_UPDATE_ERROR         = "An error was encountered.",
 
+            // used in setup login screen
             SETUP_USER_ID            = "Email",
             SETUP_PASSWD             = "Password",
+            SETUP_LINK_FORGOT_PASSWD = "<a>Forgot password?</a>",
             SETUP_DEV_ALIAS          = "Computer name",
-            ROOT_ANCHOR              = L.isMultiuser() ? "Data Storage folder" :
-                L.product() + " folder",
+            SETUP_TRY_AGAIN          = "Try Again",
+            SETUP_ERR_CONN           = "Sorry, couldn't connect to the server. Please try again later.",
 
-            SETUP_S3                 = "Do you wish to set up this client to use Amazon S3 for " +
-                "storage?",
+            // used in setup storage screen
+            SETUP_STORAGE_MESSAGE    = "Where would you like to store your team's data?",
+            SETUP_STORAGE_LOCAL      = "On this computer",
+            SETUP_STORAGE_S3         = "On Amazon S3",
+
+            // used in setup local storage screen
+            ROOT_ANCHOR              = L.isMultiuser() ? "Data Storage folder" :
+                    L.product() + " folder",
+            SETUP_SELECT_ROOT_ANCHOR = "Select " + ROOT_ANCHOR,
+            SETUP_ROOT_ANCHOR_LABEL  = "Storage Location",
+            SETUP_USE_DEFAULT        = "Use Default",
+            SETUP_TYPE_DESC          = "How would you like to store the data?",
+            SETUP_LINK               = "Default",
+            SETUP_LINK_DESC          = "Data is readable, writable, and accessible on the file " +
+                    "system.",
+            SETUP_BLOCK              = "Compressed and de-duplicated",
+            SETUP_BLOCK_DESC         = "Data is accessible only through the shell. " +
+                    "It may lead to significant space savings.",
+            SETUP_BTN_INSTALL        = "Install",
+
+            // used in setup S3 storage screen
+            SETUP_S3_CONFIG_DESC     = "If you do not have an Amazon S3 bucket, you may create " +
+                    "one at",
+            SETUP_S3_AMAZON_LINK     = "<a>http://aws.amazon.com/s3</a>",
+            SETUP_S3_AMAZON_URL      = "http://aws.amazon.com/s3",
+            SETUP_S3_PASSWD_DESC     = "Please create an encryption passphrase. This will be " +
+                    "used to encrypt your data before sending it to S3:",
+            SETUP_S3_BUCKET_NAME_GUI = "S3 Bucket Name:",
+            SETUP_S3_ACCESS_KEY_GUI  = "S3 Access Key:",
+            SETUP_S3_SECRET_KEY_GUI  = "S3 Secret Key:",
+            SETUP_S3_ENC_PASSWD_GUI  = "Encryption Passphrase:",
+            SETUP_S3_CONF_PASSWD     = "Confirm Passphrase:",
+
+
+
+
             SETUP_S3_BUCKET_NAME     = "S3 bucket name",
             SETUP_S3_ACCESS_KEY      = "S3 access key",
             SETUP_S3_SECRET_KEY      = "S3 secret key",

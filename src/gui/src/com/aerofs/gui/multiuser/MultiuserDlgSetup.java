@@ -20,6 +20,9 @@ import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.UI;
 import org.eclipse.swt.widgets.Shell;
 
+/**
+ * deprecated, use com.aerofs.gui.multiuser.setup.DlgMultiuserSetup instead
+ */
 public class MultiuserDlgSetup extends AbstractDlgSetup
 {
     private S3Config _s3Config;

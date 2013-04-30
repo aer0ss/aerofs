@@ -69,6 +69,20 @@ public class ControllerService implements IControllerService
     }
 
     /**
+     * HACK ALERT (AT): this method was added as a quick-and-dirty way to obtain an instance of
+     *   setup without making a call through ControllerClient
+     *
+     * Since ControllerService is going away, there isn't much value in going through the
+     *   ControllerClient
+     *
+     * @return the setup instance used by the ControllerService
+     */
+    public Setup getSetup()
+    {
+        return _setup;
+    }
+
+    /**
      * Sends a notification to the UI.
      * This method is thread-safe.
      * @param type : notification type (see notifications.proto)

@@ -16,8 +16,8 @@ import com.aerofs.lib.os.OSUtil;
 import com.aerofs.proto.ControllerProto.GetSetupSettingsReply;
 import com.aerofs.proto.ControllerProto.PBS3Config;
 import com.aerofs.ui.IUI.MessageType;
-import com.aerofs.ui.PasswordVerifier;
-import com.aerofs.ui.PasswordVerifier.PasswordVerifierResult;
+import com.aerofs.ui.S3DataEncryptionPasswordVerifier;
+import com.aerofs.ui.S3DataEncryptionPasswordVerifier.PasswordVerifierResult;
 import com.aerofs.ui.UI;
 
 import java.io.BufferedInputStream;
@@ -254,7 +254,7 @@ public class CLISetup
 
     private char[] inputAndConfirmPasswd(CLI cli, String prompt) throws ExNoConsole
     {
-        PasswordVerifier passwordVerifier = new PasswordVerifier();
+        S3DataEncryptionPasswordVerifier passwordVerifier = new S3DataEncryptionPasswordVerifier();
         PasswordVerifierResult result;
         while (true) {
             char[] passwd = cli.askPasswd(prompt);
