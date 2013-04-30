@@ -6,7 +6,6 @@ import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.DirectoryService.IObjectWalker;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ds.OA.Type;
-import com.aerofs.daemon.core.migration.IImmigrantCreator;
 import com.aerofs.daemon.core.object.ObjectCreator;
 import com.aerofs.daemon.core.object.ObjectDeleter;
 import com.aerofs.daemon.core.object.ObjectMover;
@@ -35,7 +34,7 @@ import static com.aerofs.daemon.core.ds.OA.FLAG_EXPELLED_ORG_OR_INH;
  * ImmigrantCreator -> ObjectMover/Deleter/Creator -> ImmigrantDetector
  *
  */
-public class ImmigrantCreator implements IImmigrantCreator
+public class ImmigrantCreator
 {
     private DirectoryService _ds;
     private IPhysicalStorage _ps;
@@ -80,7 +79,16 @@ public class ImmigrantCreator implements IImmigrantCreator
         return oid.isAnchor() ? new OID(UniqueID.generate()) : oid;
     }
 
-    @Override
+    /**
+     * Recursively migrate the object corresponding to {@code soidFromRoot} to
+     * under {@code soidToRootParent}.
+     *
+     * This method assumes that permissions have been checked.
+     *
+     * @param soidFromRoot the SOID of the root object to be migrated
+     * @param soidToRootParent the SOID of the parent to which the root object will be migrated
+     * @return the new SOID of the root object
+     */
     public SOID createImmigrantRecursively_(final SOID soidFromRoot, SOID soidToRootParent,
             final String toRootName, final PhysicalOp op, final Trans t)
             throws ExStreamInvalid, IOException, ExNotFound, ExAlreadyExist, SQLException, ExNotDir
@@ -109,8 +117,8 @@ public class ImmigrantCreator implements IImmigrantCreator
 
                 if (oaToExisting == null) {
                     int flags = oaFrom.flags() & ~FLAG_EXPELLED_ORG_OR_INH;
-                    _oc.createMeta_(typeTo, soidTo, soidToParent.oid(), name,
-                            flags, op, true, true, t);
+                    _oc.createImmigrantMeta_(typeTo, oaFrom.soid(), soidTo, soidToParent.oid(),
+                            name, flags, op, true, t);
                 } else {
                     // Comment (B)
                     //
@@ -145,17 +153,12 @@ public class ImmigrantCreator implements IImmigrantCreator
             {
                 if (oaFrom.soid().oid().isRoot() || oaFrom.soid().oid().isTrash()) return;
 
-                if (oaFrom.isDirOrAnchor()) {
-                    // anchors are converted back to regular directories during migration and
-                    // directories aren't migrated. so delete them manually
-                    if (_sid == null) _sid = _sidx2sid.get_(soidToParent.sidx());
-                    if (oaFrom.isAnchor()) {
-                        // NB: to properly leave the store we must not keep track of the emigration
-                        _od.delete_(oaFrom.soid(), op, t);
-                    } else {
-                        _od.deleteAndEmigrate_(oaFrom.soid(), op, _sid, t);
-                    }
-
+                if (_sid == null) _sid = _sidx2sid.get_(soidToParent.sidx());
+                if (oaFrom.isAnchor()) {
+                    // NB: to properly leave the store we must not keep track of the emigration
+                    _od.delete_(oaFrom.soid(), op, t);
+                } else {
+                    _od.deleteAndEmigrate_(oaFrom.soid(), op, _sid, t);
                 }
             }
         });

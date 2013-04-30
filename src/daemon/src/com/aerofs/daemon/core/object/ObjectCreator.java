@@ -6,9 +6,8 @@ import com.aerofs.base.id.UniqueID;
 import com.aerofs.daemon.core.*;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
-import com.aerofs.daemon.core.ds.OA.Type;
 import com.aerofs.daemon.core.expel.Expulsion;
-import com.aerofs.daemon.core.migration.IImmigrantDetector;
+import com.aerofs.daemon.core.migration.ImmigrantDetector;
 import com.aerofs.daemon.core.phy.IPhysicalFolder;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.store.StoreCreator;
@@ -30,12 +29,12 @@ public class ObjectCreator
 {
     private DirectoryService _ds;
     private VersionUpdater _vu;
-    private IImmigrantDetector _imd;
+    private ImmigrantDetector _imd;
     private Expulsion _ex;
     private StoreCreator _sc;
 
     @Inject
-    public void inject_(DirectoryService ds, VersionUpdater vu, IImmigrantDetector imd, Expulsion ex,
+    public void inject_(DirectoryService ds, VersionUpdater vu, ImmigrantDetector imd, Expulsion ex,
             StoreCreator sc)
     {
         _ds = ds;
@@ -86,6 +85,35 @@ public class ObjectCreator
             PhysicalOp op, boolean detectImmigration, boolean updateVersion, Trans t)
             throws ExNotFound, SQLException, ExAlreadyExist, IOException, ExNotDir, ExStreamInvalid
     {
+        boolean expelled = createOA_(type, soid, oidParent, name, flags, op, updateVersion, t);
+
+        boolean immigrated = !detectImmigration || expelled ? false :
+            _imd.detectAndPerformImmigration_(_ds.getOA_(soid), op, t);
+
+        adjustPhysicalObject_(soid, expelled, immigrated, op, t);
+    }
+
+    /**
+     * Create the metadata for an object being migrated from a different store
+     */
+    public void createImmigrantMeta_(OA.Type type, SOID soidFrom, SOID soidTo, OID oidToParent,
+            String name, int flags,
+            PhysicalOp op, boolean updateVersion, Trans t)
+            throws ExNotFound, SQLException, ExAlreadyExist, IOException, ExNotDir, ExStreamInvalid
+    {
+        boolean expelled = createOA_(type, soidTo, oidToParent, name, flags, op,
+                updateVersion, t);
+
+        boolean immigrated = !expelled && type == Type.FILE;
+        if (immigrated) _imd.immigrateFile_(_ds.getOA_(soidFrom), _ds.getOA_(soidTo), op, t);
+
+        adjustPhysicalObject_(soidTo, expelled, immigrated, op, t);
+    }
+
+    private boolean createOA_(OA.Type type, final SOID soid, OID oidParent, String name, int flags,
+            PhysicalOp op,  boolean updateVersion, Trans t)
+            throws ExNotFound, ExAlreadyExist, SQLException, IOException
+    {
         // the caller mustn't set these flags
         assert !Util.test(flags, FLAG_EXPELLED_ORG_OR_INH);
 
@@ -106,8 +134,13 @@ public class ObjectCreator
 
         if (updateVersion) _vu.update_(new SOCKID(soid, CID.META, KIndex.MASTER), t);
 
-        boolean immigrated = !detectImmigration || expelled ? false :
-            _imd.detectAndPerformImmigration_(_ds.getOA_(soid), op, t);
+        return expelled;
+    }
+
+    private void adjustPhysicalObject_(SOID soid, boolean expelled, boolean immigrated,
+            PhysicalOp op, Trans t)
+            throws ExNotFound, SQLException, ExAlreadyExist, IOException
+    {
 
         OA oa = _ds.getOA_(soid);
         if (!expelled && !immigrated) {

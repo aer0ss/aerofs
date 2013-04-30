@@ -56,7 +56,7 @@ public class TestImmigrantDetector extends AbstractTest
     @Mock OA oaTo;
     @Mock OA oaAnchoredRoot;
 
-    @InjectMocks ImmigrantDetector imd;
+    @InjectMocks SingleuserImmigrantDetector imd;
 
     static final SID rootSID = SID.generate();
 
