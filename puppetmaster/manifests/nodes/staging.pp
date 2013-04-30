@@ -11,7 +11,7 @@ node "staging.aerofs.com" inherits default {
     }
 
     # we include the base servlet lib and assume people will deploy their own apps.
-    include servlet
+    include servlet::nginx
 
     include redis
 

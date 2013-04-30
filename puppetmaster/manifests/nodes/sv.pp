@@ -4,7 +4,14 @@ node "sv.aerofs.com" inherits default {
         [ hiera('dev_users') ]:
     }
 
-    class{"servlet::sv":
+    # install sp servlet
+    class{"servlet":
+        metrics      => hiera("metrics"),
+        tomcat6_user => hiera("tomcat6_manager")
+    }
+    include nginx
+    include servlet::nginx
+    class{"servlet::config::sv":
         mysql_password => hiera("mysql_password"),
         mysql_endpoint => hiera("mysql_endpoint")
     }
@@ -14,7 +21,7 @@ node "sv.aerofs.com" inherits default {
     class{"analytics":}
 
     cron{"remove old defects":
-        command => '/usr/local/bin/clean_defects',
+        command => '/usr/bin/clean_defects',
         minute  => "0",
         hour    => "*",
     }

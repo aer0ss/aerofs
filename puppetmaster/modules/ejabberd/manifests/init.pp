@@ -47,21 +47,6 @@ class ejabberd(
         notify  => Service["ejabberd"],
     }
 
-    $aerofs_ssl_dir = hiera("environment","") ? {
-        "staging"   => "aerofs_ssl/staging",
-        default     => "aerofs_ssl"
-    }
-
-    file { "/etc/ejabberd/ejabberd.pem":
-        ensure  => "present",
-        owner   => "root",
-        group   => "ejabberd",
-        mode    => "640",
-        source  => "puppet:///${aerofs_ssl_dir}/ejabberd.pem",
-        require => Package["ejabberd"],
-        notify  => Service["ejabberd"],
-    }
-
     file { "/etc/ejabberd/auth_all":
         source => "puppet:///modules/ejabberd/auth_all",
         mode   => "755",
@@ -81,6 +66,7 @@ class ejabberd(
         mode   => "755",
         owner  => "root",
         group  => "root",
+        require=> Package["ejabberd"],
         notify => Service["ejabberd"]
     }
 

@@ -9,7 +9,8 @@ node "sp.aerofs.com" inherits default {
     include jeq
 
     # install sp servlet
-    class{"servlet::sp":
+    include servlet
+    class{"servlet::config::sp":
         mysql_password => hiera("mysql_password"),
         mysql_endpoint => hiera("mysql_endpoint")
     }

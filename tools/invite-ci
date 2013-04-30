@@ -10,7 +10,7 @@ ARG="--no-check-certificate"
 INVITER=`echo $1 | sed -e 's/+/%2B/g'`
 INVITEE=`echo $2 | sed -e 's/+/%2B/g'`
 
-url="https://spci.aerofs.com/sp?aerofs=love&inviter=$INVITER&invitee=$INVITEE"
+url="https://ci.sp.aerofs.com/sp?aerofs=love&inviter=$INVITER&invitee=$INVITEE"
 wget -q $ARG -O- "$url"
 if [ $? != 0 ]; then
     echo request failed. try the following URL manually to debug the problem:

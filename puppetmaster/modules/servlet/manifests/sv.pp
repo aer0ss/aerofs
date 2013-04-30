@@ -1,14 +1,4 @@
-class servlet::sv(
-    $mysql_password,
-    $mysql_endpoint
-) {
-    include servlet
-
-    class{"servlet::config::sv":
-        mysql_password => $mysql_password,
-        mysql_endpoint => $mysql_endpoint
-    }
-
+class servlet::sv {
     package{"aerofs-sv":
         ensure => latest,
         require => [

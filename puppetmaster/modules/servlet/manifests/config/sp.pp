@@ -2,6 +2,7 @@ class servlet::config::sp(
     $mysql_password,
     $mysql_endpoint
 ) {
+    include servlet::sp
     $databases = [
         {
             param_name => "sp_database_resource_reference",

@@ -2,6 +2,7 @@ class servlet::config::sv(
     $mysql_password,
     $mysql_endpoint
 ) {
+    include servlet::sv
     $databases = [
         {
             param_name => "sv_database_resource_reference",

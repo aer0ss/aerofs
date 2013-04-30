@@ -1,7 +1,7 @@
 [uwsgi]
 virtualenv = /opt/web/pythonenv
 wsgi-file = /opt/web/production.wsgi
-socket = :8080
+socket = :<%= @uwsgi_port %>
 master = true
 
 # We need this because we have big cookies

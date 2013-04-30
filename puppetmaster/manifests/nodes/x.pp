@@ -9,15 +9,10 @@ node /^x\.aerofs\.com$/ inherits default {
         mysql_password => hiera("mysql_password"),
     }
 
+    include ejabberd::ssl
+
     class { "ejabberd::firewall_rules" :
         port => 443,
         ip_address => "${ipaddress_eth0}/32"
-    }
-
-    include zephyr
-
-    class { "zephyr::firewall_rules" :
-        port => 443,
-        ip_address => "${ipaddress_eth0_0}/32"
     }
 }

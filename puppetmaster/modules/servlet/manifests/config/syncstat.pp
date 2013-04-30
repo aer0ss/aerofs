@@ -4,6 +4,7 @@ class servlet::config::syncstat(
     $verkehr_host,
     $cacert_location
 ) {
+    include servlet::syncstat
     $databases = [
         {
             param_name => "sp_database_resource_reference",

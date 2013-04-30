@@ -1,6 +1,8 @@
 node /^verkehr\.aerofs\.com$/ inherits default {
 
-    class { "verkehr": }
+    include verkehr
+    include verkehr::ssl
+    include verkehr::firewall
 
     users::add_user {
         [ hiera('dev_users') ]:

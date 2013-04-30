@@ -19,6 +19,6 @@ if [ x"$VER" == x ]; then
 fi
 
 MAP_FILE="$BASE/aerofs-$VER-prod.map"
-"$BASE"/getmap $VER $BASE
+"$BASE"/get-map $VER $BASE
 cd "$BASE"/proguard
 bin/retrace.sh "$MAP_FILE"
