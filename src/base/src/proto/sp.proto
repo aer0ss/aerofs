@@ -632,6 +632,24 @@ service SPService {
       */
     rpc RemoveUserFromOrganization(RemoveUserFromOrganizationCall)
             returns(RemoveUserFromOrganizationReply);
+
+    /**
+     * Issue a new certificate to the requesting user/did.
+     *
+     * Required Auth Level: user
+     * Throws: ExNotFound if the specified device id is not known to be owned by that user.
+     */
+    rpc RecertifyDevice(RecertifyDeviceCall) returns (RecertifyDeviceReply);
+
+    /**
+     * Issue a new team server (organization) certificate for the requesting user/did.
+     * Requires
+     *
+     * Required Auth Level: admin
+     * Throws: ExNoPerm if the current user isn't an admin of her organization
+     *         ExNotFound if the specified device does not exist for the given organization.
+     */
+    rpc RecertifyTeamServerDevice(RecertifyDeviceCall) returns (RecertifyDeviceReply);
 }
 
 message SetStripeCustomerIDCall {
@@ -1119,4 +1137,14 @@ message AckCommandQueueHeadReply {
     // reduce the number of round trips when doing a full syncronization.
     optional Command command = 1;
     required int64 queue_size = 2;
+}
+
+message RecertifyDeviceCall {
+    required bytes device_id = 1;
+    required bytes csr = 2;
+}
+
+message RecertifyDeviceReply {
+    // The certificate issued by AeroFS CA
+    required string cert = 1;
 }
