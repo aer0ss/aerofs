@@ -20,7 +20,6 @@ import com.aerofs.lib.cfg.CfgAbsRoots;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.ritual.IRitualClientProvider;
 import com.aerofs.lib.ritual.RitualBlockingClient;
-import com.aerofs.proto.Ritual.ExportRevisionReply;
 import com.aerofs.proto.Ritual.GetChildrenAttributesReply;
 import com.aerofs.proto.Ritual.GetObjectAttributesReply;
 import com.aerofs.proto.Ritual.ListRevChildrenReply;
@@ -44,7 +43,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.Lists.newArrayList;
 
 /**

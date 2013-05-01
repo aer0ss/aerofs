@@ -5,7 +5,6 @@
 package com.aerofs.gui.shellext;
 
 import com.aerofs.lib.Path;
-import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.proto.RitualNotifications.PBNotification;
 import com.aerofs.proto.RitualNotifications.PBPathStatusEvent;
 import com.aerofs.ui.RitualNotificationClient.IListener;

@@ -5,7 +5,6 @@
 package com.aerofs.daemon.core.fs;
 
 import com.aerofs.base.acl.Role;
-import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.daemon.core.acl.ACLChecker;

@@ -12,9 +12,6 @@ import com.aerofs.lib.db.dbcw.IDBCW;
 import java.sql.SQLException;
 import java.sql.Statement;
 
-import static com.aerofs.daemon.lib.db.CoreSchema.T_CA;
-import static com.aerofs.daemon.lib.db.CoreSchema.C_CA_KIDX;
-
 public class DPUTCreateCAIndex implements IDaemonPostUpdateTask
 {
     private final IDBCW _dbcw;

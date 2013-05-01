@@ -1,21 +1,6 @@
 package com.aerofs.daemon.core.notification;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.daemon.core.CoreQueue;
-import com.aerofs.daemon.core.CoreScheduler;
-import com.aerofs.daemon.core.ds.DirectoryService;
-import com.aerofs.daemon.core.protocol.DownloadState;
-import com.aerofs.daemon.core.net.UploadState;
-import com.aerofs.daemon.core.serverstatus.ServerConnectionStatus;
-import com.aerofs.daemon.core.serverstatus.ServerConnectionStatus.IServiceStatusListener;
-import com.aerofs.daemon.core.serverstatus.ServerConnectionStatus.Server;
-import com.aerofs.daemon.core.status.PathStatus;
-import com.aerofs.daemon.core.syncstatus.AggregateSyncStatus;
-import com.aerofs.daemon.core.syncstatus.SyncStatusSynchronizer;
-import com.aerofs.daemon.core.syncstatus.SyncStatusSynchronizer.IListener;
-import com.aerofs.daemon.core.tc.TC;
-import com.aerofs.daemon.core.UserAndDeviceNames;
-import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.daemon.transport.lib.TCPProactorMT;
 import com.aerofs.daemon.transport.lib.TCPProactorMT.IConnection;
@@ -24,7 +9,6 @@ import com.aerofs.daemon.transport.lib.TCPProactorMT.IConnector;
 import com.aerofs.daemon.transport.lib.TCPProactorMT.IReactor;
 import com.aerofs.lib.*;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.id.SIndex;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.proto.RitualNotifications.PBNotification;
 import com.aerofs.proto.RitualNotifications.PBNotification.Type;
@@ -32,14 +16,11 @@ import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.sql.SQLException;
 import java.util.List;
 import java.util.Map.Entry;
-import java.util.Set;
 
 import javax.inject.Inject;
 
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import org.slf4j.Logger;
 

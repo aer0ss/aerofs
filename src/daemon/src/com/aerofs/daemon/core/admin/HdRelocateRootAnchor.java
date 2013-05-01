@@ -6,7 +6,6 @@ package com.aerofs.daemon.core.admin;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.analytics.Analytics;
-import com.aerofs.base.analytics.AnalyticsEvents.SimpleEvents;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.ds.DirectoryService;

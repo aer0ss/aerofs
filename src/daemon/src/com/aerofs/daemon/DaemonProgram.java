@@ -19,7 +19,6 @@ import com.aerofs.daemon.core.phy.block.gzip.GZipBackendModule;
 import com.aerofs.daemon.core.phy.block.local.LocalBackendModule;
 import com.aerofs.daemon.core.phy.block.s3.S3BackendModule;
 import com.aerofs.daemon.core.phy.linked.LinkedStorageModule;
-import com.aerofs.daemon.core.synctime.TimeToSyncModule;
 import com.aerofs.daemon.ritual.RitualServer;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.IProgram;

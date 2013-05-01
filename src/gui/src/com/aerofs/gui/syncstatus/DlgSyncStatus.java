@@ -13,7 +13,6 @@ import com.aerofs.labeling.L;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.proto.Ritual.GetSyncStatusReply;
 import com.aerofs.proto.Ritual.PBSyncStatus;
 import com.aerofs.proto.Ritual.PBSyncStatus.Status;

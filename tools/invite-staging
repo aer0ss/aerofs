@@ -20,7 +20,7 @@ else
     if [ $? != 0 ]; then
         SED_INVITE_CODE_EXPRESSION='s/.*code: //g'
         INVITE_CODE=$( echo "$INVITE_RESPONSE" | sed "$SED_INVITE_CODE_EXPRESSION" )
-        echo "use this url: https://my-staging.aerofs.com/signup?c=$INVITE_CODE"
+        echo "use this url to sign up the user: https://my-staging.aerofs.com/signup?c=$INVITE_CODE"
     else
         echo "$2 already exists"
     fi

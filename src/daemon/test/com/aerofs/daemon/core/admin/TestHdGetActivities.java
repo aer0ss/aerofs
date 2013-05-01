@@ -14,7 +14,6 @@ import static org.mockito.Matchers.anyCollectionOf;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.when;
 
-import java.net.URL;
 import java.sql.SQLException;
 import java.util.Set;
 
