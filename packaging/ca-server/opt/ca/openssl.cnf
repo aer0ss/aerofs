@@ -46,6 +46,18 @@ default_keyfile         = ./private/ca-key.pem
 default_md              = sha256
 prompt                  = no
 distinguished_name      = root_ca_distinguished_name
+x509_extensions         = v3_ca
+
+[ v3_ca ]
+subjectKeyIdentifier    = hash
+authorityKeyIdentifier  = keyid:always,issuer
+basicConstraints        = critical,CA:TRUE
+keyUsage                = cRLSign, keyCertSign
+
+[ client_cert ]
+basicConstraints        = CA:FALSE
+subjectKeyIdentifier    = hash
+authorityKeyIdentifier  = keyid,issuer
 
 [ root_ca_distinguished_name ]
 commonName              = AeroFS
