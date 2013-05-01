@@ -1,10 +1,13 @@
 package com.aerofs.daemon.lib;
 
-import com.aerofs.labeling.L;
 import com.aerofs.base.C;
+import com.aerofs.base.properties.DynamicInetSocketAddress;
+import com.aerofs.labeling.L;
 import com.aerofs.lib.Param.Daemon;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
+
+import java.net.InetSocketAddress;
 
 public class DaemonParam
 {
@@ -40,7 +43,6 @@ public class DaemonParam
     {
         public static final long CONNECT_TIMEOUT        = 30 * C.SEC;
         public static final int QUEUE_LENGTH            = QUEUE_LENGTH_DEFAULT;
-
     }
 
     public static class Zephyr
@@ -53,6 +55,9 @@ public class DaemonParam
     {
         public static final int QUEUE_LENGTH            = QUEUE_LENGTH_DEFAULT;
         public static final long CALL_TIMEOUT           = 30 * C.SEC;
+        public static final DynamicInetSocketAddress STUN_ADDRESS =
+                new DynamicInetSocketAddress("stun.address",
+                        InetSocketAddress.createUnresolved("stun.l.google.com", 19302));
     }
 
     public static class DB

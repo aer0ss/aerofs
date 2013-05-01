@@ -5,7 +5,6 @@ import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.daemon.transport.TransportThreadGroup;
-import com.aerofs.lib.IDumpStatMisc;
 import com.aerofs.daemon.transport.xmpp.XMPPServerConnection;
 import com.aerofs.j.Jid;
 import com.aerofs.j.Message;
@@ -13,6 +12,7 @@ import com.aerofs.j.MessageHandlerBase;
 import com.aerofs.j.XmppClient_StateChangeSlot;
 import com.aerofs.j.XmppEngine;
 import com.aerofs.j.XmppMain;
+import com.aerofs.lib.IDumpStatMisc;
 import com.aerofs.lib.InOutArg;
 import com.aerofs.lib.Param;
 import com.aerofs.lib.SystemUtil;
@@ -170,11 +170,13 @@ public class SignalThread extends java.lang.Thread implements IDumpStatMisc
         // The xmpp server address is an unresolved hostname.
         // We avoid resolving the hostname ourselves and let
         // SMACK do the DNS query on its thread.
-        InetSocketAddress address = Xmpp.ADDRESS.getUnresolved();
+        InetSocketAddress xmppAddress = Xmpp.ADDRESS.getUnresolved();
+        InetSocketAddress stunAddress = DaemonParam.Jingle.STUN_ADDRESS.getUnresolved();
         // TODO (WW) XmppMain() should use int rather than short as the datatype of jingleRelayPort
         // as Java's unsigned short may overflow on big port numbers.
         _main = new XmppMain(
-                address.getHostName(), address.getPort(),
+                xmppAddress.getHostName(), xmppAddress.getPort(),
+                stunAddress.getHostName(), stunAddress.getPort(),
                 true,
                 _jidSelf,
                 XMPPServerConnection.shaedXMPP(),
