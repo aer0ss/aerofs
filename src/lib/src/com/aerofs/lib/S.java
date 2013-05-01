@@ -94,9 +94,11 @@ public class S
             LBL_COL_TRANSPORT        = "Connection",
             LBL_COL_PROGRESS         = "Progress",
 
-            LBL_TRANSPORT_TCP        = "Local Network",
-            LBL_TRANSPORT_JINGLE     = "Direct Connect via Internet",
-            LBL_TRANSPORT_ZEPHYR     = "Relay Service",
+            LBL_TRANSPORT_TCP        = "LAN",
+            LBL_TRANSPORT_JINGLE     = "WAN",
+            LBL_TRANSPORT_ZEPHYR     = "Relay",
+
+            LBL_IDLE                 = "Idle",
             // end transfers dialog
 
             DONT_SHOW_THIS_MESSAGE_AGAIN = "Don't show me again.",

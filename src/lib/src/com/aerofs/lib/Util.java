@@ -315,7 +315,7 @@ public abstract class Util
         if (interval == 0) return "---";
         long l = bytes * C.SEC / interval;
 
-        if (l < 1 * C.KB) return "~0 KB/s";
+        if (l < 1 * C.KB) return S.LBL_IDLE;
 
         return formatSize(l) + "/s";
     }

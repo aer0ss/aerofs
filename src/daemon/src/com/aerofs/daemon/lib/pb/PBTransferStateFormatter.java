@@ -189,7 +189,7 @@ public class PBTransferStateFormatter
                 }
             }
 
-            return "my " + Objects.firstNonNull(devicename, S.LBL_UNKNOWN_DEVICE);
+            return "My " + Objects.firstNonNull(devicename, S.LBL_UNKNOWN_DEVICE);
         } else {
             FullName username = _nr.getUserNameNullable_(owner);
 
