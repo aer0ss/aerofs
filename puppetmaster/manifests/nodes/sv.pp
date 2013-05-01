@@ -4,13 +4,8 @@ node "sv.aerofs.com" inherits default {
         [ hiera('dev_users') ]:
     }
 
-    # install sp servlet
-    class{"servlet":
-        metrics      => hiera("metrics"),
-        tomcat6_user => hiera("tomcat6_manager")
-    }
-    include nginx
-    include servlet::nginx
+    # install sv servlet
+    include servlet
     class{"servlet::config::sv":
         mysql_password => hiera("mysql_password"),
         mysql_endpoint => hiera("mysql_endpoint")
