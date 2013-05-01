@@ -4,7 +4,7 @@ import java.io.File;
 
 import com.aerofs.daemon.core.phy.IPhysicalRevProvider.RevInputStream;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
-import com.aerofs.daemon.core.tc.TC;
+import com.aerofs.daemon.core.tc.CoreLockReleasingExecutor;
 import com.aerofs.daemon.event.admin.EIExportRevision;
 import com.aerofs.lib.event.Prio;
 import com.google.inject.Inject;
@@ -14,9 +14,9 @@ public class HdExportRevision extends AbstractHdExport<EIExportRevision>
     private final IPhysicalStorage _ps;
 
     @Inject
-    public HdExportRevision(TC tc, IPhysicalStorage ps)
+    public HdExportRevision(CoreLockReleasingExecutor clre, IPhysicalStorage ps)
     {
-        super(tc);
+        super(clre);
         _ps = ps;
     }
 

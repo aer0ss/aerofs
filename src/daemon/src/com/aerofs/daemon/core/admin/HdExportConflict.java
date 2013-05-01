@@ -8,7 +8,7 @@ import com.aerofs.daemon.core.ds.CA;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.phy.IPhysicalFile;
-import com.aerofs.daemon.core.tc.TC;
+import com.aerofs.daemon.core.tc.CoreLockReleasingExecutor;
 import com.aerofs.daemon.event.admin.EIExportConflict;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.id.SOID;
@@ -21,9 +21,9 @@ public class HdExportConflict extends AbstractHdExport<EIExportConflict>
     private final DirectoryService _ds;
 
     @Inject
-    public HdExportConflict(TC tc, DirectoryService ds)
+    public HdExportConflict(CoreLockReleasingExecutor clre, DirectoryService ds)
     {
-        super(tc);
+        super(clre);
         _ds = ds;
     }
 

@@ -4,10 +4,7 @@
 
 package com.aerofs.daemon.core.admin;
 
-import com.aerofs.daemon.core.tc.Cat;
-import com.aerofs.daemon.core.tc.TC;
-import com.aerofs.daemon.core.tc.TC.TCB;
-import com.aerofs.daemon.core.tc.Token;
+import com.aerofs.daemon.core.tc.CoreLockReleasingExecutor;
 import com.aerofs.daemon.event.IEBIMC;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.lib.FileUtil;
@@ -27,11 +24,11 @@ import java.util.concurrent.Callable;
  */
 public abstract class AbstractHdExport<T extends IEBIMC> extends AbstractHdIMC<T>
 {
-    protected final TC _tc;
+    private final CoreLockReleasingExecutor _coreLockReleasingExecutor;
 
-    public AbstractHdExport(TC tc)
+    protected AbstractHdExport(CoreLockReleasingExecutor coreLockReleasingExecutor)
     {
-        _tc = tc;
+        _coreLockReleasingExecutor = coreLockReleasingExecutor;
     }
 
     /**
@@ -60,7 +57,7 @@ public abstract class AbstractHdExport<T extends IEBIMC> extends AbstractHdIMC<T
         try {
             final OutputStream os = new FileOutputStream(dst);
             try {
-                callWithCoreLockReleased_(new Callable<Void>() {
+                _coreLockReleasingExecutor.execute_(new Callable<Void>() {
                     @Override
                     public Void call() throws Exception
                     {
@@ -74,22 +71,6 @@ public abstract class AbstractHdExport<T extends IEBIMC> extends AbstractHdIMC<T
             }
         } finally {
             is.close();
-        }
-    }
-
-    // TODO: move to helper class?
-    private <V> V callWithCoreLockReleased_(Callable<V> c, String reason) throws Exception
-    {
-        Token tk = _tc.acquireThrows_(Cat.UNLIMITED, reason);
-        try {
-            TCB tcb = tk.pseudoPause_(reason);
-            try {
-                return c.call();
-            } finally {
-                tcb.pseudoResumed_();
-            }
-        } finally {
-            tk.reclaim_();
         }
     }
 }
