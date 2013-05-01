@@ -7,13 +7,13 @@ package com.aerofs.daemon.core.synctime;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.OID;
 import com.aerofs.daemon.core.CoreScheduler;
-import com.aerofs.synctime.api.ClientSideHistogram;
-import com.aerofs.synctime.client.TimeToSyncClient;
+import com.aerofs.lib.rocklog.RockLog;
 import com.aerofs.testlib.AbstractTest;
 import com.google.common.collect.ImmutableSet;
 import org.junit.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 
 import java.util.Set;
 
@@ -29,7 +29,9 @@ import static org.mockito.Matchers.notNull;
 public class TestSelfReportingTimeToSyncHistogram extends AbstractTest
 {
     @Mock CoreScheduler sched;
-    @Mock TimeToSyncClient client;
+    @Mock HistogramSender sender;
+    RockLog rockLog = mock(RockLog.class, Mockito.RETURNS_DEEP_STUBS);
+
     @InjectMocks SelfReportingTimeToSyncHistogram histogram;
 
     @Test
@@ -57,7 +59,7 @@ public class TestSelfReportingTimeToSyncHistogram extends AbstractTest
     public void whenHandlingScheduledReportWithNoUpdates_ShouldSendToServer()
     {
         histogram.handle_();
-        verifyZeroInteractions(client);
+        verifyZeroInteractions(sender);
     }
 
     @Test
@@ -69,8 +71,7 @@ public class TestSelfReportingTimeToSyncHistogram extends AbstractTest
         histogram.handle_();
 
         for (DID did : dids) {
-            verify(client).sendHistogramForDevice(eq(did.toStringFormal()),
-                    notNull(ClientSideHistogram.class));
+            verify(sender).sendAsync(eq(did), notNull(SingleDIDTimeToSyncHistogram.class));
         }
     }
 

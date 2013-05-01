@@ -25,14 +25,14 @@ import static junit.framework.Assert.assertEquals;
 import static org.testng.Assert.assertNotEquals;
 
 @RunWith(value = Parameterized.class)
-public class TestTimeToSyncHistogramSingleDID extends AbstractTest
+public class TestSingleDIDTimeToSyncHistogram extends AbstractTest
 {
-    TimeToSyncHistogramSingleDID histogram = new TimeToSyncHistogramSingleDID();
+    SingleDIDTimeToSyncHistogram histogram = new SingleDIDTimeToSyncHistogram();
 
     private final OID oid = OID.generate();
     private final TimeToSync tts;
 
-    public TestTimeToSyncHistogramSingleDID(long syncTimeMillis)
+    public TestSingleDIDTimeToSyncHistogram(long syncTimeMillis)
     {
         tts = new TimeToSync(syncTimeMillis);
     }
@@ -84,6 +84,29 @@ public class TestTimeToSyncHistogramSingleDID extends AbstractTest
         }
 
         assertAllBinsEmptyExcluding(tts.toBinIndex(), tts2.toBinIndex());
+    }
+
+    /**
+     * A shortcoming of this test is that it doesn't verify that the OIDs were correctly merged
+     * for TTS values above the resolution threshold.
+     */
+    @Test
+    public void whenMergingTwoIdenticalHistograms_FrequencyAtEachBinShouldDouble()
+    {
+        SingleDIDTimeToSyncHistogram histogram2 = new SingleDIDTimeToSyncHistogram();
+
+        // Insert a number of sync times in each bin for both histograms
+        for (int millis = 1000; millis < 10000 * 1000; millis <<= 1) {
+            histogram.update_(oid, new TimeToSync(millis));
+            histogram2.update_(oid, new TimeToSync(millis));
+        }
+
+        // Merge histogram2 into histogram
+        histogram.mergeWith_(histogram2);
+
+        for (int bin = 0; bin < histogram.size(); bin++) {
+            assertEquals(2 * histogram2.frequencyAtBin(bin), histogram.frequencyAtBin(bin));
+        }
     }
 
     private void assertAllBinsEmptyExcluding(Integer ... bins)

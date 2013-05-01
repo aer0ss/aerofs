@@ -11,53 +11,60 @@ import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.rocklog.RockLog;
 import com.aerofs.lib.sched.Scheduler;
-import com.aerofs.synctime.api.ClientSideHistogram;
-import com.aerofs.synctime.client.TimeToSyncClient;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 
-import java.net.URISyntaxException;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
+
+import static com.google.common.base.Preconditions.checkState;
 
 class SelfReportingTimeToSyncHistogram extends AbstractEBSelfHandling
         implements TimeToSyncHistogram
 {
-    private Map<DID, TimeToSyncHistogramSingleDID> _histograms;
-
-    private final Scheduler _sched;
-    private boolean _isScheduled = false;
-    private final TimeToSyncClient _ttsClient;
-
-    private final RockLog _rockLog;
-
     private static final Logger l = Loggers.getLogger(SelfReportingTimeToSyncHistogram.class);
 
-    @Inject
-    public SelfReportingTimeToSyncHistogram(CoreScheduler sched, RockLog rockLog)
-            throws URISyntaxException
-    {
-        this(sched, new TimeToSyncClient(Params.SERVER_URL.get().toURI()), rockLog);
-        l.warn("uri: {}", Params.SERVER_URL.get().toURI());
-    }
+    private final Map<DID, SingleDIDTimeToSyncHistogram> _histograms;
+    private final Scheduler _sched;
+    private final HistogramSender _histogramSender;
+    private final RockLog _rockLog;
 
-    SelfReportingTimeToSyncHistogram(CoreScheduler sched, TimeToSyncClient ttsClient,
-            RockLog rockLog)
+    private boolean _isScheduled = false;
+
+
+    @Inject
+    SelfReportingTimeToSyncHistogram(CoreScheduler sched, RockLog rockLog)
     {
         _rockLog = rockLog;
-        _histograms = Maps.newHashMap();
         _sched = sched;
-        _ttsClient = ttsClient;
+        _histograms = Maps.newHashMap();
+        _histogramSender = new HistogramSender(_sched, _histograms);
+    }
+
+    /**
+     * For test with mock HistogramSender (otherwise _histogramSender will have a different Map
+     * than _histograms)
+     */
+    @VisibleForTesting
+    SelfReportingTimeToSyncHistogram(CoreScheduler sched, RockLog rockLog,
+            HistogramSender histogramSender)
+    {
+        _rockLog = rockLog;
+        _sched = sched;
+        _histograms = Maps.newHashMap();
+        _histogramSender = histogramSender;
     }
 
     @Override
     public void update_(DID did, OID oid, TimeToSync sync)
     {
         l.debug("update {} {} {}", did, oid, sync);
-        TimeToSyncHistogramSingleDID histogram = _histograms.get(did);
+        SingleDIDTimeToSyncHistogram histogram = _histograms.get(did);
         if (histogram == null) {
-            histogram = new TimeToSyncHistogramSingleDID();
+            histogram = new SingleDIDTimeToSyncHistogram();
             _histograms.put(did, histogram);
         }
 
@@ -73,26 +80,17 @@ class SelfReportingTimeToSyncHistogram extends AbstractEBSelfHandling
 
         // Send the current state of the histograms to the server if there is anything to report
         if (!_histograms.isEmpty()) {
-            l.info("send and reset");
-            sendHistogramsToServerAndResetHistograms();
+            sendHistogramsToServerThenReset();
+            checkState(_histograms.isEmpty(), _histograms + " should be empty");
         }
         schedule_();
     }
 
-    private void sendHistogramsToServerAndResetHistograms()
+    private void sendHistogramsToServerThenReset()
     {
+        l.info("send and reset");
         try {
-            sendHistogramsToServer();
-
-            // Reset the histogram, only if successful.
-            // TODO (MJ) Current Problems:
-            //  * the current Histogram does not collect OIDs, but when it does, note that
-            //    clearing the histogram only on success will risk unbounded memory consumption.
-            //  * for each device, histograms are sent one at a time. what if the histogram for
-            //    the first device succeeds in sending to the server, but the histograms for
-            //    subsequent devices fail to send and throw an exception. Then the times for the
-            //    first device will eventually be recorded twice... double counting.
-            _histograms = Maps.newHashMap();
+            sendHistogramsToServerThenResetThrows();
         } catch (Exception ex) {
             l.warn("failed to send histogram for devices {}", _histograms.keySet());
             _rockLog.newDefect("daemon.synctime.sendHistograms")
@@ -101,13 +99,26 @@ class SelfReportingTimeToSyncHistogram extends AbstractEBSelfHandling
         }
     }
 
-    private void sendHistogramsToServer()
+    private void sendHistogramsToServerThenResetThrows()
     {
-        for (Entry<DID, TimeToSyncHistogramSingleDID> e : _histograms.entrySet()) {
-            DID did = e.getKey();
-            ClientSideHistogram histogram = e.getValue().toJSONableHistogram();
-            // The following can throw all kinds of runtime exceptions.
-            _ttsClient.sendHistogramForDevice(did.toStringFormal(), histogram);
+        Iterator<Entry<DID, SingleDIDTimeToSyncHistogram>> it = _histograms.entrySet().iterator();
+
+        while (it.hasNext()) {
+            Entry<DID, SingleDIDTimeToSyncHistogram> e = it.next();
+
+            // Send the histogram, then remove it for this DID
+            // N.B.
+            // 1) if the download failed, the histogram will be merged back into {@link _histograms}
+            // 2) remove the histogram during the loop because sending to the server could throw
+            //    an exception, and successfully sent histograms should be removed, despite
+            //    what might go wrong for histograms sent later
+            _histogramSender.sendAsync(e.getKey(), e.getValue());
+
+            // TODO (MJ) Current Problems:
+            //  * the current Histogram does not collect OIDs, but when it does, note that
+            //    clearing the histogram only on success will risk unbounded memory consumption.
+            it.remove();
+            l.debug("rm k {} from map", e.getKey());
         }
     }
 

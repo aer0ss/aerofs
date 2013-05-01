@@ -1,8 +1,8 @@
 <component name="libraryTable">
   <library name="synctime-client">
     <CLASSES>
-      <root url="jar://$PROJECT_DIR$/../../resource/client/common/lib/synctime-client-0.4.jar!/" />
-      <root url="jar://$PROJECT_DIR$/../../resource/client/common/lib/synctime-common-0.4.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../resource/client/common/lib/synctime-client-0.5.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../resource/client/common/lib/synctime-common-0.5.jar!/" />
     </CLASSES>
     <JAVADOC />
     <SOURCES />
