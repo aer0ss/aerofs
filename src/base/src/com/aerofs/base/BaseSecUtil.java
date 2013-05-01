@@ -8,6 +8,7 @@ import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.swig.scrypt.Scrypt;
+import com.google.common.collect.Lists;
 import com.google.common.io.ByteStreams;
 
 import javax.annotation.Nonnull;
@@ -39,14 +40,23 @@ import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
+import java.security.cert.CertPath;
+import java.security.cert.CertPathValidator;
+import java.security.cert.CertPathValidatorException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
+import java.security.cert.PKIXCertPathValidatorResult;
+import java.security.cert.PKIXParameters;
+import java.security.cert.TrustAnchor;
 import java.security.cert.X509Certificate;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.KeySpec;
 import java.security.spec.PKCS8EncodedKeySpec;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 public abstract class BaseSecUtil
 {
@@ -731,4 +741,38 @@ public abstract class BaseSecUtil
             in.close();
         }
     }
+
+    /**
+     * Determines if the given endEntityCert is signed by caCert or not.
+     * Ignores certificate validity.
+     * @param endEntityCert
+     * @param caCert
+     * @return true if caCert signed endEntityCert, false otherwise
+     */
+    public static boolean signingPathExists(X509Certificate endEntityCert,
+            X509Certificate caCert)
+            throws CertificateException, InvalidAlgorithmParameterException,
+            NoSuchAlgorithmException
+    {
+        // Make a certpath for the end-entity cert
+        CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
+        List<X509Certificate> certList = Lists.newArrayList(endEntityCert);
+        CertPath path = certificateFactory.generateCertPath(certList);
+        // Make a trust anchor for the CA (and parameters)
+        TrustAnchor anchor = new TrustAnchor(caCert, null);
+        PKIXParameters params = new PKIXParameters(Collections.singleton(anchor));
+        params.setRevocationEnabled(false);
+        // Try to validate
+        CertPathValidator cpv = CertPathValidator.getInstance("PKIX");
+        boolean retval;
+        try {
+            PKIXCertPathValidatorResult res = (PKIXCertPathValidatorResult) cpv.validate(path, params);
+            retval = true;
+        } catch (CertPathValidatorException e) {
+            // No path from EEC to CA was found, return false
+            retval = false;
+        }
+        return retval;
+    }
+
 }
