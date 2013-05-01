@@ -1,6 +1,6 @@
-class private-deployment {
-   include common::logs
-   include common::firewall
+class private-deployment-aerofs {
+    include common::logs
+    include common::firewall
     Exec {
         path => [
             '/usr/local/bin',
@@ -65,13 +65,13 @@ class private-deployment {
     }
 
     class{"webadmin":
-        stripe_pub_key => "gibberish",
+        stripe_publishable_key => "gibberish",
         stripe_secret_key => "gibberish",
         uwsgi_port => 8081,
     }
 
     file {"/etc/nginx/conf.d/vhosts.conf":
-        source => "puppet:///modules/private-deployment/vhosts.conf",
+        source => "puppet:///modules/private-deployment-aerofs/vhosts.conf",
         require => Package["nginx"],
     }
 
