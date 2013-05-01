@@ -7,9 +7,8 @@ import com.aerofs.daemon.event.net.EITransportMetricsUpdated;
 import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.event.net.rx.EIMaxcastMessage;
 import com.aerofs.daemon.lib.DaemonParam;
-import com.aerofs.daemon.transport.TransportThreadGroup;
-import com.aerofs.lib.event.Prio;
 import com.aerofs.daemon.lib.exception.ExBadCRC;
+import com.aerofs.daemon.transport.TransportThreadGroup;
 import com.aerofs.daemon.transport.lib.CRCByteArrayInputStream;
 import com.aerofs.daemon.transport.lib.CRCByteArrayOutputStream;
 import com.aerofs.daemon.transport.lib.IMaxcast;
@@ -18,8 +17,10 @@ import com.aerofs.lib.Param;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
+import com.aerofs.lib.event.Prio;
 import com.aerofs.proto.Transport.PBTPHeader;
 import com.aerofs.proto.Transport.PBTPHeader.Type;
+import org.apache.commons.lang.exception.ExceptionUtils;
 import org.slf4j.Logger;
 
 import java.io.DataInputStream;
@@ -27,6 +28,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
 import java.net.NetworkInterface;
 import java.net.SocketException;
@@ -104,11 +106,9 @@ class Multicast implements IMaxcast
             try {
                 if (!iface.supportsMulticast()) continue;
 
-                // bind to *:TCP_MCAST_PORT
-                final MulticastSocket s = new MulticastSocket(DaemonParam.TCP.MCAST_PORT);
-                s.setNetworkInterface(iface);
+                final MulticastSocket s = new MulticastSocket(DaemonParam.TCP.MCAST_PORT); // bind to *:TCP_MCAST_PORT
                 s.setLoopbackMode(!L.isStaging());
-                s.joinGroup(InetAddress.getByName(DaemonParam.TCP.MCAST_ADDRESS));
+                s.joinGroup(new InetSocketAddress(DaemonParam.TCP.MCAST_ADDRESS, DaemonParam.TCP.MCAST_PORT), iface);
 
                 MulticastSocket old = _iface2sock.put(iface, s);
                 if (old != null) close(old);
@@ -124,7 +124,9 @@ class Multicast implements IMaxcast
                 }, t.id() + "-mcast.recv." + iface.getName()).start();
 
             } catch (IOException e) {
-                l.warn("can't add mcast iface: " + e);
+                l.warn("can't add mcast iface_name:{} inet_addr:{} iface_addr:{} err:{}",
+                        iface, iface.getInetAddresses(), iface.getInterfaceAddresses(),
+                        ExceptionUtils.getStackTrace(e));
             }
         }
 
@@ -222,9 +224,10 @@ class Multicast implements IMaxcast
                 }
 
             } catch (Exception e) {
-                l.error("thdRecv(): " + Util.e(e, SocketException.class));
+                l.error("thdRecv() err:{}", Util.e(e, SocketException.class));
+
                 if (!s.isClosed()) {
-                    l.info("retry in " + DaemonParam.TCP.RETRY_INTERVAL + " ms");
+                    l.info("retry in {} ms", DaemonParam.TCP.RETRY_INTERVAL);
                     ThreadUtil.sleepUninterruptable(DaemonParam.TCP.RETRY_INTERVAL);
                 } else {
                     l.info("socket closed by lsc; exit");
@@ -262,7 +265,6 @@ class Multicast implements IMaxcast
             dos.writeInt(Param.CORE_MAGIC);
             dos.flush();
 
-
             h.writeDelimitedTo(cos);
 
             if (h.getType() == Type.DATAGRAM) {
@@ -279,26 +281,27 @@ class Multicast implements IMaxcast
             //_bytesOut += bs.length;
 
             synchronized (_iface2sock) {
-                for (MulticastSocket s : _iface2sock.values()) {
-                    try {
-                        if (l.isDebugEnabled()) {
-                            l.debug("beg mc send:" + h.getType().name() + " s:" + pkt.getSocketAddress());
+                for (Map.Entry<NetworkInterface, MulticastSocket> entry : _iface2sock.entrySet()) {
+                    NetworkInterface iface = entry.getKey();
+                    Enumeration<InetAddress> inetAddresses = iface.getInetAddresses();
+                    MulticastSocket s = entry.getValue();
+
+                    InetAddress sendingAddress;
+                    while (inetAddresses.hasMoreElements()) {
+                        sendingAddress = inetAddresses.nextElement();
+
+                        try {
+                            l.debug("attempt mc send iface:{} send_addr:{} dest_addr:{} t:{}",
+                                    iface, sendingAddress, pkt.getSocketAddress(), h.getType().name());
+
+                            s.setInterface(sendingAddress);
+                            s.send(pkt);
+                        } catch (IOException e) {
+                            l.error("fail send mc iface:{} send_addr:{} dest_addr:{}",
+                                    iface, sendingAddress, pkt.getSocketAddress());
+
+                            throw e;
                         }
-
-                        s.send(pkt);
-                    } catch (IOException e) {
-                        l.error("cannot send mc via: " + s.getNetworkInterface().getDisplayName() +
-                                "(" + s.getLocalAddress() + ")");
-                        l.error("addresses: ");
-
-                        Enumeration<InetAddress> ias = s.getNetworkInterface().getInetAddresses();
-                        InetAddress ia;
-                        while (ias.hasMoreElements()) {
-                            ia = ias.nextElement();
-                            l.error("    " + ia.toString());
-                        }
-
-                        throw e;
                     }
                 }
             }
