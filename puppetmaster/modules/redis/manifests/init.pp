@@ -9,20 +9,6 @@
 # Copyright 2012-2013 Air Computing Inc, unless otherwise noted.
 #
 class redis {
-    apt::key { "dotdeb":
-        ensure => present,
-        key_source => "http://www.dotdeb.org/dotdeb.gpg"
-    }
-
-    apt::source { "dotdeb":
-        location    => "http://packages.dotdeb.org",
-        release     => "squeeze",
-        repos       => "all",
-        include_src => "false",
-        notify      => Exec["apt-get update"],
-        require     => Apt::Key["dotdeb"]
-    }
-
     # Until redis incorporated our custom changes, we have to use our own build.
     package{"aerofs-redis-server":
         ensure => latest,
