@@ -46,4 +46,12 @@ public class Metrics extends RockLogMessage
     {
         return "/metrics";
     }
+
+    @Override
+    public void send()
+    {
+        // Important: we need this method for testing, otherwise mocked metrics would use the real
+        // send method from the parent class
+        super.send();
+    }
 }
