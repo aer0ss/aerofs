@@ -99,6 +99,14 @@ public class Defect extends RockLogMessage
         return "/defects";
     }
 
+    @Override
+    public void send()
+    {
+        // Important: we need this method for testing, otherwise mocked defects would use the real
+        // send method from the parent class
+        super.send();
+    }
+
     /**
      * Recursively converts a Throwable and its causes into JSON using the following format:
      *
