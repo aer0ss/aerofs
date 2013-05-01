@@ -19,16 +19,15 @@
 # Copyright 2012 Air Computing Inc, unless otherwise noted.
 #
 class webadmin (
-    $stripe_pub_key,
+    $stripe_publishable_key,
     $stripe_secret_key,
     $uwsgi_port = 8080
 ) {
     #
     # TODO puppet should configure nginx (the deb package currently does this).
     #
-    $STRIPE_PUBLISHABLE_KEY = $stripe_pub_key
+    $STRIPE_PUBLISHABLE_KEY = $stripe_publishable_key
     $STRIPE_SECRET_KEY = $stripe_secret_key
-
 
     package{"aerofs-web":
         ensure => latest,
