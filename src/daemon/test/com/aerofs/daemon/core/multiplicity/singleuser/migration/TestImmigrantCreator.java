@@ -172,8 +172,8 @@ public class TestImmigrantCreator extends AbstractTest
     {
         initiateMigration();
         if (createTarget) {
-            verify(oc).createMeta_(oaFromRoot.type(), soidToRoot, soidToRootParent.oid(),
-                    toRootName, oaFromRoot.flags(), op, true, true, t);
+            verify(oc).createImmigrantMeta_(oaFromRoot.type(), oaFromRoot.soid(), soidToRoot,
+                    soidToRootParent.oid(), toRootName, oaFromRoot.flags(), op, true, t);
         } else {
             verify(om).moveInSameStore_(soidToRoot, soidToRootParent.oid(), toRootName,
                     op, false, true, t);

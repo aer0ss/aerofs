@@ -4,7 +4,7 @@ import com.aerofs.daemon.core.*;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.expel.Expulsion;
-import com.aerofs.daemon.core.migration.IImmigrantCreator;
+import com.aerofs.daemon.core.multiplicity.singleuser.migration.ImmigrantCreator;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 
 import com.aerofs.daemon.lib.db.trans.Trans;
@@ -27,11 +27,11 @@ public class ObjectMover
     private DirectoryService _ds;
     private VersionUpdater _vu;
     private Expulsion _expulsion;
-    private IImmigrantCreator _imc;
+    private ImmigrantCreator _imc;
 
     @Inject
     public void inject_(VersionUpdater vu, DirectoryService ds, Expulsion expulsion,
-            IImmigrantCreator imc)
+            ImmigrantCreator imc)
     {
         _vu = vu;
         _ds = ds;

@@ -12,8 +12,8 @@ import com.aerofs.base.id.UserID;
 import com.aerofs.daemon.core.acl.ACLChecker;
 import com.aerofs.daemon.core.acl.ACLSynchronizer;
 import com.aerofs.daemon.core.ds.DirectoryService;
-import com.aerofs.daemon.core.migration.IImmigrantCreator;
 import com.aerofs.daemon.core.mock.logical.MockDS;
+import com.aerofs.daemon.core.multiplicity.singleuser.migration.ImmigrantCreator;
 import com.aerofs.daemon.core.object.ObjectCreator;
 import com.aerofs.daemon.core.object.ObjectDeleter;
 import com.aerofs.daemon.core.object.ObjectMover;
@@ -66,7 +66,7 @@ public class TestHdShareFolder extends AbstractTest
     @Mock TransManager tm;
     @Mock ObjectCreator oc;
     @Mock DirectoryService ds;
-    @Mock IImmigrantCreator imc;
+    @Mock ImmigrantCreator imc;
     @Mock ObjectMover om;
     @Mock ObjectDeleter od;
     @Mock SIDMap sm;
