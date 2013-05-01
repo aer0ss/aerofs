@@ -116,6 +116,7 @@ public class BaseParam
 
     public static class CA
     {
+        // TODO: MP - this shouldn't be part of the client
         public static final DynamicUrlProperty URL =
                 new DynamicUrlProperty("base.ca.url", "http://joan.aerofs.com:1029/prod");
     }
