@@ -80,7 +80,7 @@ public class JingleDataStream implements IProxyObjectContainer
         public void onEvent(StreamInterface s, int event, int error)
         {
             try {
-                onStreamEvent_(s, event, error);
+                onStreamEvent_(event, error);
             } catch (Exception e) {
                 close_(e);
                 _closureListener.closed_(JingleDataStream.this);
@@ -116,8 +116,7 @@ public class JingleDataStream implements IProxyObjectContainer
         return (actualEvent & expectedEvent.swigValue()) != 0;
     }
 
-    @SuppressWarnings("unused")
-    private void onStreamEvent_(StreamInterface streamInterface, int event, int error)
+    private void onStreamEvent_(int event, int error)
         throws Exception
     {
         if (hasStreamFlag(event, SE_WRITE)) {
@@ -129,7 +128,8 @@ public class JingleDataStream implements IProxyObjectContainer
             read_();
         }
 
-        if (hasStreamFlag(event, SE_WRITE) && hasStreamFlag(event, SE_READ) && hasStreamFlag(event, SE_OPEN)) {
+        if (hasStreamFlag(event, SE_WRITE) && hasStreamFlag(event, SE_READ) &&
+                hasStreamFlag(event, SE_OPEN)) {
             _connectionListener.connected_(JingleDataStream.this);
         }
 
@@ -201,7 +201,7 @@ public class JingleDataStream implements IProxyObjectContainer
 
                 _outOff += written[0];
                 ij.addBytesTx(written[0]);
-                logio(written[0], _outOff, cur.length, res, true);
+                logBytes(written[0], _outOff, cur.length, res, true);
 
                 if (res == StreamResult.SR_ERROR || res == StreamResult.SR_EOS) {
                     assert _outOff < cur.length;
@@ -243,7 +243,7 @@ public class JingleDataStream implements IProxyObjectContainer
                 res = j.ReadAll(_streamInterface, _inHeader, _inHeaderOff,
                         _inHeader.length - _inHeaderOff, read, error);
                 _inHeaderOff += read[0];
-                logio(read[0], _inHeaderOff, _inHeader.length, res, false);
+                logBytes(read[0], _inHeaderOff, _inHeader.length, res, false);
                 msgHdrLen = read[0];
                 ij.addBytesRx(read[0]);
 
@@ -275,7 +275,7 @@ public class JingleDataStream implements IProxyObjectContainer
             res = j.ReadAll(_streamInterface, _inPayload, _inPayloadOff,
                     _inPayload.length - _inPayloadOff, read, error);
             _inPayloadOff += read[0];
-            logio(read[0], _inPayloadOff, _inPayload.length, res, false);
+            logBytes(read[0], _inPayloadOff, _inPayload.length, res, false);
             msgPldLen = read[0];
             ij.addBytesRx(read[0]);
             _bytesIn += read[0];
@@ -322,21 +322,18 @@ public class JingleDataStream implements IProxyObjectContainer
      * <strong>recv:</strong>
      * <code>jch: recv: b:{$inthiscall} [{$sofar}/{$expected}] <- $did ret: ${ioretval}</code>
      *
-     * @param inthiscall bytes transferred in this I/O call
-     * @param sofar bytes transferred so far
+     * @param bytesInThisCall bytes transferred in this I/O call
+     * @param bytesSoFar bytes transferred so far
      * @param expected bytes expected to be transferred (for this payload, header, etc.)
      * @param ioretval {@link StreamResult} return value from this I/O operation
-     * @param iswrite <code>true</code> if this is a <code>write_()</code>,
+     * @param isWrite <code>true</code> if this is a <code>write_()</code>,
      * <code>false</code> if not
      */
-    private void logio(long inthiscall, long sofar, long expected, StreamResult ioretval, boolean iswrite)
+    private void logBytes(long bytesInThisCall, long bytesSoFar, long expected,
+            StreamResult ioretval, boolean isWrite)
     {
-        String optyp = (iswrite ? "send" : "recv");
-        String opdir = (iswrite ? " -> " : " <- ");
-
-        if (l.isDebugEnabled()) {
-            l.debug("jds: " + optyp + " b:" + inthiscall + " [" + sofar + "/" + expected + "]" + opdir + did + " ret:" + ioretval);
-        }
+        l.debug("jds:{} b:{} [{}/{}] {} {} ret:{}", (isWrite ? "send" : "recv"), bytesInThisCall,
+                bytesSoFar, expected, (isWrite ? " -> " : " <- "), did, ioretval);
     }
 
     @Override

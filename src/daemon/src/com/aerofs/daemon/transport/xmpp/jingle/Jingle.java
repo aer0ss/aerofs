@@ -92,7 +92,7 @@ public class Jingle implements ISignalledPipe, IJingle
     @Override
     public boolean equals(Object o)
     {
-        if (o instanceof Jingle == false) return false;
+        if (!(o instanceof Jingle)) return false;
 
         Jingle j = (Jingle)o;
         return bid.equals(j.bid);
@@ -168,29 +168,29 @@ public class Jingle implements ISignalledPipe, IJingle
     }
 
     // AAG FIXME: I suspect there's an issue if this happens when connections are in progress
-    private void disconnectAll_()
-    {
-        l.warn("j: queue into st: disconnect all dids");
-
-        _st.call(new ISignalThreadTask()
-        {
-            @Override
-            public void run()
-            {
-                _st.close_(new ExJingle("disconnect all")); // st reconnects after close_ called
-            }
-
-            @Override
-            public void error(Exception e)
-            { /* silently ignore */ }
-
-            @Override
-            public String toString()
-            {
-                return "disconnect all dids";
-            }
-        });
-    }
+//    private void disconnectAll_()
+//    {
+//        l.warn("j: queue into st: disconnect all dids");
+//
+//        _st.call(new ISignalThreadTask()
+//        {
+//            @Override
+//            public void run()
+//            {
+//                _st.close_(new ExJingle("disconnect all")); // st reconnects after close_ called
+//            }
+//
+//            @Override
+//            public void error(Exception e)
+//            { /* silently ignore */ }
+//
+//            @Override
+//            public String toString()
+//            {
+//                return "disconnect all dids";
+//            }
+//        });
+//    }
 
     private void connectionStateChanged(boolean up)
     {
