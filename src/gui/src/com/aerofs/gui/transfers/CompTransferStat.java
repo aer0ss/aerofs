@@ -45,12 +45,24 @@ public class CompTransferStat extends Composite
         CLabel label_1 = new CLabel(this, SWT.NONE);
         label_1.setImage(Images.get(Images.ICON_ARROW_DOWN));
         _lblIn = new Label(this, SWT.NONE);
-        _lblIn.setText("9999.99 Mbps");
+        // N.B. the label is initialized to a really long text so the initial layout
+        //   allocates sufficient space for the values we are going to display.
+        // The advantage of this approach is that we don't need to redo layout every
+        //   time the text changes, which can get expensive since we do this often.
+        // The disadvantage is that if we ever change the range of text we are going
+        //   to display, this will need to change as well.
+        _lblIn.setText("99999.99 bytes/s");
 
         CLabel label = new CLabel(this, SWT.NONE);
         label.setImage(Images.get(Images.ICON_ARROW_UP));
         _lblOut = new Label(this, SWT.NONE);
-        _lblOut.setText("9999.99 Mbps");
+        // N.B. the label is initialized to a really long text so the initial layout
+        //   allocates sufficient space for the values we are going to display.
+        // The advantage of this approach is that we don't need to redo layout every
+        //   time the text changes, which can get expensive since we do this often.
+        // The disadvantage is that if we ever change the range of text we are going
+        //   to display, this will need to change as well.
+        _lblOut.setText("99999.99 bytes/s");
 
         addPaintListener(new PaintListener() {
             @Override
