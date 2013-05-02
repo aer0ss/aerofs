@@ -10,7 +10,7 @@ import static com.aerofs.daemon.core.phy.linked.linker.MightCreateOperations.Ope
 import static com.aerofs.daemon.core.phy.linked.linker.MightCreateOperations.*;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.daemon.core.first.OIDGenerator;
+import com.aerofs.daemon.core.first_launch.OIDGenerator;
 import com.aerofs.daemon.core.phy.linked.SharedFolderTagFileAndIcon;
 import com.aerofs.lib.LibParam;
 import org.slf4j.Logger;

@@ -2,14 +2,13 @@
  * Copyright (c) Air Computing Inc., 2013.
  */
 
-package com.aerofs.daemon.core.first;
+package com.aerofs.daemon.core.first_launch;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.OID;
 import com.aerofs.daemon.lib.db.AbstractDatabase;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.db.DBUtil;
 import com.aerofs.lib.db.dbcw.SQLiteDBCW;
 import org.slf4j.Logger;

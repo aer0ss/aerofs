@@ -5,7 +5,7 @@
 package com.aerofs.daemon.core.phy.linked.linker;
 
 import com.aerofs.base.id.SID;
-import com.aerofs.daemon.core.first.OIDGenerator;
+import com.aerofs.daemon.core.first_launch.OIDGenerator;
 import com.aerofs.daemon.core.phy.linked.linker.event.EIMightCreateNotification;
 import com.aerofs.daemon.core.phy.linked.linker.scanner.ScanSessionQueue;
 import com.aerofs.lib.Util;

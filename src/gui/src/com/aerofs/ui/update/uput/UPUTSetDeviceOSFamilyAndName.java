@@ -31,22 +31,4 @@ public class UPUTSetDeviceOSFamilyAndName implements IUIPostUpdateTask
             UI.rockLog().newDefect("ui.set_device_info").setException(e).send();
         }
     }
-
-    @Override
-    public boolean isRebootSuggested()
-    {
-        return false;
-    }
-
-    @Override
-    public boolean isShutdownRequired()
-    {
-        return false;
-    }
-
-    @Override
-    public String[] getNotes()
-    {
-        return null;
-    }
 }

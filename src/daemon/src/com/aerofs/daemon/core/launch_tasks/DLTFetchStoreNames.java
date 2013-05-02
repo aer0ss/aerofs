@@ -2,7 +2,7 @@
  * Copyright (c) Air Computing Inc., 2013.
  */
 
-package com.aerofs.daemon.core.update;
+package com.aerofs.daemon.core.launch_tasks;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExProtocolError;
@@ -34,9 +34,9 @@ import java.util.List;
  *
  * A name column was added to the store table and this task is used to populate it
  */
-class RALOFetchStoreNames extends RunAtLeastOnce
+class DLTFetchStoreNames extends DaemonLaunchTask
 {
-    private static final Logger l = Loggers.getLogger(RALOFetchStoreNames.class);
+    private static final Logger l = Loggers.getLogger(DLTFetchStoreNames.class);
 
     private final TC _tc;
     private final TransManager _tm;
@@ -44,7 +44,7 @@ class RALOFetchStoreNames extends RunAtLeastOnce
     private final IMapSIndex2SID _sidx2sid;
 
     @Inject
-    public RALOFetchStoreNames(TC tc, TransManager tm, CoreScheduler sched, IStoreDatabase sdb,
+    public DLTFetchStoreNames(TC tc, TransManager tm, CoreScheduler sched, IStoreDatabase sdb,
             IMapSIndex2SID sidx2sid)
     {
         super(sched);

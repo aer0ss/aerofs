@@ -17,7 +17,7 @@ import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ds.OA.Type;
 import com.aerofs.daemon.core.ex.ExExpelled;
-import com.aerofs.daemon.core.first.OIDGenerator;
+import com.aerofs.daemon.core.first_launch.OIDGenerator;
 import com.aerofs.daemon.core.object.ObjectCreator;
 import com.aerofs.daemon.core.object.ObjectMover;
 import com.aerofs.daemon.core.phy.linked.SharedFolderTagFileAndIcon;

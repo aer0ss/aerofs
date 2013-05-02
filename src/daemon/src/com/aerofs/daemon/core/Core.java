@@ -1,7 +1,8 @@
 package com.aerofs.daemon.core;
 
 import com.aerofs.daemon.core.db.CoreDBSetup;
-import com.aerofs.daemon.core.first.FirstLaunch;
+import com.aerofs.daemon.core.first_launch.FirstLaunch;
+import com.aerofs.daemon.core.launch_tasks.DaemonLaunchTasks;
 import com.aerofs.daemon.core.notification.RitualNotificationWirings;
 import com.aerofs.daemon.core.phy.ScanCompletionCallback;
 import com.aerofs.daemon.core.syncstatus.SyncStatusNotificationSubscriber;
@@ -48,6 +49,7 @@ public class Core implements IModule
     private final DaemonPostUpdateTasks _dput;
     private final CoreDBSetup _dbsetup;
     private final CoreProgressWatcher _cpw;
+    private final DaemonLaunchTasks _dlts;
 
     @Inject
     public Core(
@@ -70,7 +72,8 @@ public class Core implements IModule
             DaemonPostUpdateTasks dput,
             CoreDBSetup dbsetup,
             IStores ss,
-            CoreProgressWatcher cpw)
+            CoreProgressWatcher cpw,
+            DaemonLaunchTasks dlts)
     {
         _imce2core = imce.imce();
         _fl = fl;
@@ -92,6 +95,7 @@ public class Core implements IModule
         _dput = dput;
         _dbsetup = dbsetup;
         _cpw = cpw;
+        _dlts = dlts;
     }
 
     @Override
@@ -103,6 +107,8 @@ public class Core implements IModule
         // must run dput immediately after database initialization and before other components, as
         // required by IDaemonPostUpdateTask.run()
         _dput.run();
+        _dlts.run();
+
         _nvc.init_();
         _ivc.init_();
         _ps.init_();

@@ -8,7 +8,7 @@ import com.aerofs.base.analytics.Analytics;
 import com.aerofs.base.id.OID;
 import com.aerofs.daemon.core.VersionUpdater;
 import com.aerofs.daemon.core.ds.CA;
-import com.aerofs.daemon.core.first.OIDGenerator;
+import com.aerofs.daemon.core.first_launch.OIDGenerator;
 import com.aerofs.daemon.core.mock.logical.LogicalObjectsPrinter;
 import com.aerofs.daemon.core.mock.logical.MockDS;
 import com.aerofs.daemon.core.object.ObjectCreator;
@@ -36,7 +36,6 @@ import static com.aerofs.daemon.core.phy.PhysicalOp.*;
 import static com.aerofs.daemon.core.phy.linked.linker.MightCreateOperations.*;
 import static com.aerofs.daemon.core.phy.linked.linker.MightCreateOperations.Operation.*;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 

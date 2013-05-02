@@ -14,7 +14,7 @@ import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.UniqueID.ExInvalidID;
-import com.aerofs.daemon.core.first.FirstLaunch.AccessibleStores;
+import com.aerofs.daemon.core.first_launch.FirstLaunch.AccessibleStores;
 import com.aerofs.daemon.core.phy.linked.linker.PathCombo;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.lib.db.AbstractTransListener;

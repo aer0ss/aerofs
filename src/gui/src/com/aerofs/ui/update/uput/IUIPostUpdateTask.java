@@ -10,21 +10,4 @@ public interface IUIPostUpdateTask
      * harmful effects.
      */
     void run() throws Exception;
-
-    /**
-     * called *after* run() is called
-     */
-    boolean isRebootSuggested();
-
-    /**
-     * called *after* run() is called.
-     */
-    boolean isShutdownRequired();
-
-    /**
-     * called *after* run() is called
-     *
-     * @return null for no notes
-     */
-    String[] getNotes();
 }

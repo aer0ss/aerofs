@@ -2,7 +2,7 @@
  * Copyright (c) Air Computing Inc., 2013.
  */
 
-package com.aerofs.daemon.core.first;
+package com.aerofs.daemon.core.first_launch;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.notification.RitualNotificationServer;

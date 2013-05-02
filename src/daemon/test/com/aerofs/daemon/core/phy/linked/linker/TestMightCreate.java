@@ -5,7 +5,7 @@
 package com.aerofs.daemon.core.phy.linked.linker;
 
 import com.aerofs.daemon.core.ds.OA;
-import com.aerofs.daemon.core.first.OIDGenerator;
+import com.aerofs.daemon.core.first_launch.OIDGenerator;
 import com.aerofs.daemon.core.phy.linked.linker.MightCreate.Result;
 import com.aerofs.daemon.core.phy.linked.linker.MightCreateOperations.Operation;
 import com.aerofs.daemon.core.mock.logical.MockDS;

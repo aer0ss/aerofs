@@ -3,7 +3,7 @@ package com.aerofs.daemon.core.phy.linked.linker.scanner;
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
-import com.aerofs.daemon.core.first.ScanProgressReporter;
+import com.aerofs.daemon.core.first_launch.ScanProgressReporter;
 import com.aerofs.daemon.core.phy.linked.linker.LinkerRoot;
 import com.aerofs.daemon.core.phy.linked.linker.ILinkerFilter;
 import com.aerofs.daemon.core.phy.linked.linker.MightCreate;

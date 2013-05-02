@@ -13,7 +13,7 @@ import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.id.UserID;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.labeling.L;
-import com.aerofs.launch.UILaunchTasks;
+import com.aerofs.ui.launch_tasks.UILaunchTasks;
 import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.Util;
@@ -197,8 +197,12 @@ class Launcher
 
             runPostUpdateTasks();
 
+            new UILaunchTasks().runAll();
+
+            // TODO (WW) use UILaunchTasks to run them?
             cleanNativeLogs();
 
+            // TODO (WW) use UILaunchTasks to run them?
             startWorkerThreads();
 
         } catch (Exception ex) {
@@ -241,16 +245,12 @@ class Launcher
     }
 
     /**
-     * Run any pending post-update tasks and shutdown AeroFS if needed
-     * @throws Exception
+     * Run any pending post-update tasks
      */
     private void runPostUpdateTasks() throws Exception
     {
-        boolean shutdown = new UIPostUpdateTasks(Cfg.db()).run();
+        new UIPostUpdateTasks(Cfg.db()).run();
         if (PostUpdate.updated()) Cfg.db().set(Key.LAST_VER, Cfg.ver());
-        if (shutdown) System.exit(0);
-        UILaunchTasks lt = new UILaunchTasks();
-        lt.runAll();
     }
 
     /**

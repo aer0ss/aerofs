@@ -5,7 +5,6 @@
 package com.aerofs.gui;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.labeling.L;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.base.ex.ExBadCredential;

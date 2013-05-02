@@ -2,7 +2,7 @@
  * Copyright (c) Air Computing Inc., 2013.
  */
 
-package com.aerofs.launch;
+package com.aerofs.ui.launch_tasks;
 
 import com.aerofs.ui.UI;
 
@@ -18,13 +18,16 @@ public class UILaunchTasks
     public UILaunchTasks()
     {
         _tasks = new UILaunchTask[] {
-                new UILTRecertifyDevice(UI.scheduler())
+                new ULTRecertifyDevice(UI.scheduler())
         };
     }
+
+    /**
+     * This method is called from a non-UI thread
+     */
     public void runAll()
     {
-        for (UILaunchTask lt : _tasks)
-        {
+        for (UILaunchTask lt : _tasks) {
             lt.schedule();
         }
     }

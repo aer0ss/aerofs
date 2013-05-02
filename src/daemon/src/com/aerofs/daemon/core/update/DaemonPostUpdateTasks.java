@@ -8,10 +8,6 @@ import com.aerofs.lib.LibParam.PostUpdate;
 import com.aerofs.lib.cfg.CfgDatabase;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.cfg.CfgLocalUser;
-import com.aerofs.lib.guice.GuiceUtil;
-import com.google.inject.Binder;
-
-import java.util.Set;
 
 /**
  * This class is structurally identical to UIPostUpdateTasks.
@@ -21,14 +17,11 @@ public class DaemonPostUpdateTasks
 {
     private final CfgDatabase _cfgDB;
     private final IDaemonPostUpdateTask[] _tasks;
-    private final Set<RunAtLeastOnce> _once;
 
     @Inject
-    public DaemonPostUpdateTasks(CfgDatabase cfgDB, CoreDBCW dbcw,  CfgLocalUser cfgUser,
-            Set<RunAtLeastOnce> once)
+    public DaemonPostUpdateTasks(CfgDatabase cfgDB, CoreDBCW dbcw,  CfgLocalUser cfgUser)
     {
         _cfgDB = cfgDB;
-        _once = once;
 
         _tasks = new IDaemonPostUpdateTask[] {
             new DPUTOptimizeCSTableIndex(dbcw),
@@ -88,17 +81,5 @@ public class DaemonPostUpdateTasks
             // on the next launch
             _cfgDB.set(Key.DAEMON_POST_UPDATES, i + 1);
         }
-
-        for (RunAtLeastOnce once : _once) once.schedule();
-    }
-
-    /**
-     * RunAtLeastOnce tasks can be run in any order so we use a set binder to simplify their
-     * instanciation. However we don't want to leak the specific classes outside the package
-     * hence the use of a static method
-     */
-    public static void bindUpdateTasks(Binder binder)
-    {
-        GuiceUtil.multibind(binder, RunAtLeastOnce.class, RALOFetchStoreNames.class);
     }
 }

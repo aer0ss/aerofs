@@ -2,7 +2,7 @@
  * Copyright (c) Air Computing Inc., 2013.
  */
 
-package com.aerofs.daemon.core.update;
+package com.aerofs.daemon.core.launch_tasks;
 
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
@@ -16,11 +16,11 @@ import java.util.concurrent.Callable;
  *
  * Such tasks should be idempotent and handle failure gracefully through an exponential retry
  */
-abstract class RunAtLeastOnce extends AbstractEBSelfHandling
+abstract class DaemonLaunchTask extends AbstractEBSelfHandling
 {
     protected final CoreScheduler _sched;
 
-    RunAtLeastOnce(CoreScheduler sched)
+    DaemonLaunchTask(CoreScheduler sched)
     {
         _sched = sched;
     }

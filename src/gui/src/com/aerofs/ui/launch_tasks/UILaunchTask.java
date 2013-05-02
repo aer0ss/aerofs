@@ -2,7 +2,7 @@
  * Copyright (c) Air Computing Inc., 2013.
  */
 
-package com.aerofs.launch;
+package com.aerofs.ui.launch_tasks;
 
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.sched.ExponentialRetry;
@@ -10,9 +10,8 @@ import com.aerofs.lib.sched.IScheduler;
 
 import java.util.concurrent.Callable;
 
-// This class is almost exactly like RunAtLeastOnce, except that RALO
-// gets to use injection, whereas this is in the GUI and has to have
-// things instantiated manually
+// This class is almost exactly like DaemonLaunchTasks, except that the latter gets to use injection,
+// whereas this is in the GUI and has to have things instantiated manually.
 abstract class UILaunchTask extends AbstractEBSelfHandling
 {
     protected final IScheduler _sched;

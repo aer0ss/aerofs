@@ -4,7 +4,7 @@
 
 package com.aerofs.daemon.core.admin;
 
-import com.aerofs.daemon.core.first.SeedCreator;
+import com.aerofs.daemon.core.first_launch.SeedCreator;
 import com.aerofs.daemon.event.admin.EICreateSeedFile;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.lib.Util;

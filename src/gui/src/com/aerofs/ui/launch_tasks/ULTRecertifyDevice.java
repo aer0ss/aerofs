@@ -2,7 +2,7 @@
  * Copyright (c) Air Computing Inc., 2013.
  */
 
-package com.aerofs.launch;
+package com.aerofs.ui.launch_tasks;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.UserID;
@@ -24,13 +24,13 @@ import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 
-public class UILTRecertifyDevice extends UILaunchTask
+public class ULTRecertifyDevice extends UILaunchTask
 {
     private final SPBlockingClient.Factory _spfact;
-    private static final Logger l = Loggers.getLogger(UILTRecertifyDevice.class);
+    private static final Logger l = Loggers.getLogger(ULTRecertifyDevice.class);
 
     @Inject
-    UILTRecertifyDevice(IScheduler sched)
+    ULTRecertifyDevice(IScheduler sched)
     {
         super(sched);
         _spfact = new SPBlockingClient.Factory();

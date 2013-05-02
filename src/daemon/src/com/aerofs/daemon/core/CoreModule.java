@@ -4,10 +4,10 @@ import com.aerofs.base.analytics.IAnalyticsPlatformProperties;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.DirectoryServiceImpl;
 import com.aerofs.daemon.core.ds.ObjectSurgeon;
+import com.aerofs.daemon.core.launch_tasks.DaemonLaunchTasks;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.SIDMap;
-import com.aerofs.daemon.core.update.DaemonPostUpdateTasks;
 import com.aerofs.daemon.event.lib.imc.QueueBasedIMCExecutor;
 import com.aerofs.daemon.lib.db.ACLDatabase;
 import com.aerofs.daemon.lib.db.ActivityLogDatabase;
@@ -106,7 +106,7 @@ public class CoreModule extends AbstractModule
         // RunAtLeastOnce tasks can be run in any order so we use a set binder to simplify their
         // instanciation. However we don't want to leak the specific classes outside the package
         // hence the use of a static method
-        DaemonPostUpdateTasks.bindUpdateTasks(binder());
+        DaemonLaunchTasks.bindTasks(binder());
     }
 
     @Provides
