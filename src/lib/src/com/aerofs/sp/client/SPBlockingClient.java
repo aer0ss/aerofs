@@ -51,9 +51,11 @@ public class SPBlockingClient extends SPServiceBlockingStub
             return new SPBlockingClient(new SPClientHandler(SP.URL.get(), configurator), user);
         }
 
+        /**
+         * Use an invalid UserID, since the caller will not be using signInRemote().
+         */
         public SPBlockingClient create_(IURLConnectionConfigurator configurator)
         {
-            // Use an invalid UserID, since the caller will not be using signInRemote().
             return new SPBlockingClient(new SPClientHandler(SP.URL.get(), configurator),
                     UserID.fromInternal(""));
         }

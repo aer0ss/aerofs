@@ -17,7 +17,6 @@ import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.db.DBUtil;
 import com.aerofs.lib.db.IDatabaseParams;
 import com.aerofs.lib.db.dbcw.IDBCW;
-import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
 
 import javax.annotation.Nonnull;
@@ -103,7 +102,8 @@ public class Cfg
      * @throws ExNotSetup if the device.conf is not found
      */
     public static synchronized void init_(String rtRoot, boolean readPasswd)
-            throws ExFormatError, IOException, ExBadCredential, SQLException, ExNotSetup
+            throws ExFormatError, IOException, ExBadCredential, SQLException, ExNotSetup,
+            CertificateException
     {
         // initialize rtroot first so it's available even if the method failed later
         _absRTRoot = new File(rtRoot).getAbsolutePath();
@@ -135,6 +135,8 @@ public class Cfg
             }
         }
 
+        readCert();
+
         _portbase = readPortbase();
         _useDM = disabledByFile(rtRoot, Param.NODM);
         _useTCP = disabledByFile(rtRoot, Param.NOTCP);
@@ -146,6 +148,18 @@ public class Cfg
         _useXFF = disabledByFile(rtRoot, Param.NOXFF);
 
         _inited = true;
+    }
+
+    private static void readCert()
+            throws CertificateException, IOException
+    {
+        InputStream in = new FileInputStream(absRTRoot() + File.separator + Param.DEVICE_CERT);
+        try {
+            CertificateFactory cf = CertificateFactory.getInstance("X.509");
+            _cert = (X509Certificate) cf.generateCertificate(in);
+        } finally {
+            in.close();
+        }
     }
 
     /**
@@ -550,17 +564,8 @@ public class Cfg
     /**
      * Get the device certificate.
      */
-    public static X509Certificate cert() throws IOException, CertificateException
+    public static X509Certificate cert()
     {
-        if (_cert == null) {
-            InputStream in = new FileInputStream(absRTRoot() + File.separator + Param.DEVICE_CERT);
-            try {
-                CertificateFactory cf = CertificateFactory.getInstance("X.509");
-                _cert = (X509Certificate) cf.generateCertificate(in);
-            } finally {
-                in.close();
-            }
-        }
         return _cert;
     }
 

@@ -6,9 +6,7 @@ package com.aerofs.lib.cfg;
 
 import com.aerofs.base.ssl.IPrivateKeyProvider;
 
-import java.io.IOException;
 import java.security.PrivateKey;
-import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 
 /**
@@ -24,7 +22,6 @@ public class CfgKeyManagersProvider implements IPrivateKeyProvider
 
     @Override
     public X509Certificate getCert()
-            throws CertificateException, IOException
     {
         return Cfg.cert();
     }

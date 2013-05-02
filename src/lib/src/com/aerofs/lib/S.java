@@ -155,5 +155,11 @@ public class S
             SHARED_DIR = "shared",
 
             CHILD_ALREADY_SHARED = "You can't share a folder that contains a shared folder.",
-            PARENT_ALREADY_SHARED = "You can't share a folder under an already shared folder.";
+            PARENT_ALREADY_SHARED = "You can't share a folder under an already shared folder.",
+            TYPE_ADMIN_PASSWORD_TO_RECERTIFY_TEAM_SERVER = "We've made a security update that " +
+                    "requires you to enter an admin's credentials on this Team Server. Email " +
+                    WWW.SUPPORT_EMAIL_ADDRESS.get() + " if you have questions.",
+            ADMIN_EMAIL = "Admin email",
+            ADMIN_PASSWD = "Admin password",
+            PASSWORD_HAS_CHANGED = "Your " + L.product() + " password has changed.\nPlease enter the new password";
 }

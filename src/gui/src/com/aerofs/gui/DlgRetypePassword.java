@@ -64,7 +64,7 @@ public class DlgRetypePassword extends AeroFSJFaceDialog
 
         Label label = new Label(container, SWT.NONE);
         label.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, true, false));
-        label.setText("Your " + L.product() + " password has changed.\nPlease enter the new password:");
+        label.setText(S.PASSWORD_HAS_CHANGED + ":");
 
         // row 2
 

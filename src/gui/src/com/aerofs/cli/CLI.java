@@ -446,9 +446,8 @@ public class CLI implements IUI {
     @Override
     public void retypePassword() throws ExNoConsole
     {
-        String msg = S.SETUP_PASSWD;
         while (true) {
-            String passwd = new String(askPasswd(msg));
+            String passwd = new String(askPasswd(S.PASSWORD_HAS_CHANGED));
             try {
                 UI.controller().updateStoredPassword(Cfg.user().getString(), passwd);
                 break;

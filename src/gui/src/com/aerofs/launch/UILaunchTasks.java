@@ -13,17 +13,17 @@ import com.aerofs.ui.UI;
  */
 public class UILaunchTasks
 {
-    private final LaunchTask[] _tasks;
+    private final UILaunchTask[] _tasks;
 
     public UILaunchTasks()
     {
-        _tasks = new LaunchTask[] {
-                new LTRecertifyDevice(UI.scheduler())
+        _tasks = new UILaunchTask[] {
+                new UILTRecertifyDevice(UI.scheduler())
         };
     }
     public void runAll()
     {
-        for (LaunchTask lt : _tasks)
+        for (UILaunchTask lt : _tasks)
         {
             lt.schedule();
         }

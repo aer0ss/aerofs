@@ -13,10 +13,10 @@ import java.util.concurrent.Callable;
 // This class is almost exactly like RunAtLeastOnce, except that RALO
 // gets to use injection, whereas this is in the GUI and has to have
 // things instantiated manually
-abstract class LaunchTask extends AbstractEBSelfHandling
+abstract class UILaunchTask extends AbstractEBSelfHandling
 {
     protected final IScheduler _sched;
-    LaunchTask(IScheduler sched)
+    UILaunchTask(IScheduler sched)
     {
         _sched = sched;
     }
