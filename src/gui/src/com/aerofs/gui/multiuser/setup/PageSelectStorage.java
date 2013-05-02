@@ -5,12 +5,13 @@
 package com.aerofs.gui.multiuser.setup;
 
 import com.aerofs.controller.SetupModel;
+import com.aerofs.gui.GUIUtil;
 import com.aerofs.gui.Images;
 import com.aerofs.lib.S;
+import com.swtdesigner.SWTResourceManager;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
-import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.layout.RowData;
@@ -21,11 +22,13 @@ import org.eclipse.swt.widgets.Label;
 
 public class PageSelectStorage extends AbstractSetupPage
 {
+    private Composite   _compHeader;
     private Composite   _compContent;
     private Composite   _compChoices;
     private Composite   _compButtons;
 
-    private Label       _lblHeader;
+    private Label       _lblTitle;
+    private Label       _lblLogo;
     private Label       _lblMessage;
     private Button      _btnLocalStorage;
     private Button      _btnS3Storage;
@@ -70,19 +73,36 @@ public class PageSelectStorage extends AbstractSetupPage
         layout.verticalSpacing = 0;
         setLayout(layout);
 
-        _lblHeader.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
+        _compHeader.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
         _compContent.setLayoutData(new GridData(SWT.CENTER, SWT.CENTER, true, true));
         _compButtons.setLayoutData(new GridData(SWT.RIGHT, SWT.BOTTOM, true, false));
     }
 
     protected void createHeader(Composite parent)
     {
+        _compHeader = new Composite(parent, SWT.NONE);
+        _compHeader.setBackgroundMode(SWT.INHERIT_FORCE);
+        _compHeader.setBackground(SWTResourceManager.getColor(0xFF, 0xFF, 0xFF));
+
+        _lblTitle = new Label(_compHeader, SWT.NONE);
+        _lblTitle.setText(S.SETUP_TITLE);
+        GUIUtil.changeFont(_lblTitle, 16, SWT.BOLD);
+
         // n.b. when rendering images on a label, setImage clears the alignment bits,
         //   hence we have to call setAlignment AFTER setImage to display image on the right
-        _lblHeader = new Label(parent, SWT.NONE);
-        _lblHeader.setBackground(new Color(getDisplay(), 0xFF, 0xFF, 0xFF));
-        _lblHeader.setImage(Images.get(Images.IMG_SETUP));
-        _lblHeader.setAlignment(SWT.RIGHT);
+        _lblLogo = new Label(_compHeader, SWT.NONE);
+        _lblLogo.setImage(Images.get(Images.IMG_SETUP));
+
+        GridLayout layout = new GridLayout(2, false);
+        layout.marginWidth = 0;
+        layout.marginHeight = 0;
+        _compHeader.setLayout(layout);
+
+        GridData titleLayout = new GridData(SWT.LEFT, SWT.TOP, false, true);
+        titleLayout.verticalIndent = 20;
+        titleLayout.horizontalIndent = 20;
+        _lblTitle.setLayoutData(titleLayout);
+        _lblLogo.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, true, true));
     }
 
     protected void createContent(Composite parent)

@@ -10,16 +10,17 @@ import com.aerofs.controller.SetupModel;
 import com.aerofs.gui.CompSpin;
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUI.ISWTWorker;
+import com.aerofs.gui.GUIUtil;
 import com.aerofs.gui.Images;
 import com.aerofs.lib.RootAnchorUtil;
 import com.aerofs.lib.S;
 import com.aerofs.lib.ex.ExUIMessage;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.UIUtil;
+import com.swtdesigner.SWTResourceManager;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
-import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.layout.RowData;
@@ -41,13 +42,15 @@ public class PageLocalStorage extends AbstractSetupPage
 
     private boolean _inProgress;
 
+    private Composite   _compHeader;
     private Composite   _compContent;
     private Composite   _compRootAnchor;
     private Composite   _compRootAnchorButton;
     private Composite   _compType;
     private Composite   _compButton;
 
-    private Label       _lblHeader;
+    private Label       _lblTitle;
+    private Label       _lblLogo;
     private Label       _lblRootAnchor;
     private Text        _txtRootAnchor;
     private Button      _btnUseDefault;
@@ -131,19 +134,36 @@ public class PageLocalStorage extends AbstractSetupPage
         layout.verticalSpacing = 0;
         setLayout(layout);
 
-        _lblHeader.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
+        _compHeader.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
         _compContent.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
         _compButton.setLayoutData(new GridData(SWT.RIGHT, SWT.BOTTOM, true, false));
     }
 
     protected void createHeader(Composite parent)
     {
+        _compHeader = new Composite(parent, SWT.NONE);
+        _compHeader.setBackgroundMode(SWT.INHERIT_FORCE);
+        _compHeader.setBackground(SWTResourceManager.getColor(0xFF, 0xFF, 0xFF));
+
+        _lblTitle = new Label(_compHeader, SWT.NONE);
+        _lblTitle.setText(S.SETUP_TITLE);
+        GUIUtil.changeFont(_lblTitle, 16, SWT.BOLD);
+
         // n.b. when rendering images on a label, setImage clears the alignment bits,
         //   hence we have to call setAlignment AFTER setImage to display image on the right
-        _lblHeader = new Label(parent, SWT.NONE);
-        _lblHeader.setBackground(new Color(getDisplay(), 0xFF, 0xFF, 0xFF));
-        _lblHeader.setImage(Images.get(Images.IMG_SETUP));
-        _lblHeader.setAlignment(SWT.RIGHT);
+        _lblLogo = new Label(_compHeader, SWT.NONE);
+        _lblLogo.setImage(Images.get(Images.IMG_SETUP));
+
+        GridLayout layout = new GridLayout(2, false);
+        layout.marginWidth = 0;
+        layout.marginHeight = 0;
+        _compHeader.setLayout(layout);
+
+        GridData titleLayout = new GridData(SWT.LEFT, SWT.TOP, false, true);
+        titleLayout.verticalIndent = 20;
+        titleLayout.horizontalIndent = 20;
+        _lblTitle.setLayoutData(titleLayout);
+        _lblLogo.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, true, true));
     }
 
     protected void createContent(Composite parent)
@@ -220,12 +240,14 @@ public class PageLocalStorage extends AbstractSetupPage
 
         _btnLink = new Button(_compType, SWT.RADIO | SWT.WRAP);
         _btnLink.setText(S.SETUP_LINK);
+        _btnLink.setFont(GUIUtil.makeBold(_btnLink.getFont()));
 
         _lblLinkDesc = new Label(_compType, SWT.WRAP);
         _lblLinkDesc.setText(S.SETUP_LINK_DESC);
 
         _btnBlock = new Button(_compType, SWT.RADIO | SWT.WRAP);
         _btnBlock.setText(S.SETUP_BLOCK);
+        _btnBlock.setFont(GUIUtil.makeBold(_btnBlock.getFont()));
 
         _lblBlockDesc = new Label(_compType, SWT.WRAP);
         _lblBlockDesc.setText(S.SETUP_BLOCK_DESC);

@@ -23,6 +23,7 @@ public class S
             LBL_UPDATE_ERROR         = "An error was encountered.",
 
             // used in setup login screen
+            SETUP_TITLE              = "Setup AeroFS Team Server",
             SETUP_USER_ID            = "Email",
             SETUP_PASSWD             = "Password",
             SETUP_LINK_FORGOT_PASSWD = "<a>Forgot password?</a>",
@@ -53,7 +54,7 @@ public class S
             // used in setup S3 storage screen
             SETUP_S3_CONFIG_DESC     = "If you do not have an Amazon S3 bucket, you may create " +
                     "one at",
-            SETUP_S3_AMAZON_LINK     = "<a>http://aws.amazon.com/s3</a>",
+            SETUP_S3_AMAZON_LINK     = "<a>http://aws.amazon.com/s3</a>.",
             SETUP_S3_AMAZON_URL      = "http://aws.amazon.com/s3",
             SETUP_S3_PASSWD_DESC     = "Please create an encryption passphrase. This will be " +
                     "used to encrypt your data before sending it to S3:",

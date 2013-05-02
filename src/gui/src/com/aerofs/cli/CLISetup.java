@@ -174,14 +174,15 @@ public class CLISetup
     private void getUser(CLI cli)
             throws ExNoConsole, ExEmptyEmailAddress
     {
-        _userID = UserID.fromExternal(cli.askText(S.SETUP_USER_ID, null));
+        _userID = UserID.fromExternal(
+                cli.askText(L.isMultiuser() ? S.ADMIN_EMAIL : S.SETUP_USER_ID, null));
     }
 
     private void getPassword(CLI cli) throws Exception
     {
         cli.show(MessageType.INFO, "If you forgot your password, go to " +
                 WWW.PASSWORD_RESET_REQUEST_URL.get() + " to reset it.");
-        _passwd =  cli.askPasswd(S.SETUP_PASSWD);
+        _passwd =  cli.askPasswd(L.isMultiuser() ? S.ADMIN_PASSWD : S.SETUP_PASSWD);
     }
 
     private void getStorageType(CLI cli) throws Exception

@@ -246,6 +246,12 @@ public class GUIUtil
                 (fd.getHeight() * 0.9f), fd.getStyle());
     }
 
+    public static void changeFont(Control control, int height, int style)
+    {
+        FontData fd = control.getFont().getFontData()[0];
+        control.setFont(SWTResourceManager.getFont(fd.getName(), height, style));
+    }
+
     public static boolean isWindowBuilderPro()
     {
         return false;
