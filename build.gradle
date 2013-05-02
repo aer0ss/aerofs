@@ -16,6 +16,7 @@ repositories {
 }
 
 configurations {
+    all*.exclude module: 'findbugs'           // we don't want findbugs dependencies in production
     all*.exclude module: 'slf4j-api'          // for all configurations, exclude slf4j because we ship our own
 }
 
@@ -24,7 +25,6 @@ configurations {
  */
 dependencies {
     compile('com.aerofs.dynamic-config:dynamic-config-client:0.1') {
-        exclude module: 'findbugs'            // exclude transitive dependencies for findbugs
         exclude module: 'slf4j-api'           // exclude older version of slf4j-api
         exclude module: 'guava'               // exclude guava in preference of our own version
         exclude module: 'commons-logging'     // exclude commons logging because we use slf4j
