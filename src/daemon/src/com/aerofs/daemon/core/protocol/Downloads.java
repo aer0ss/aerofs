@@ -61,7 +61,7 @@ public class Downloads
         @Override
         public String toString()
         {
-            return "noDev4Dep:" + _socid;
+            return "noDev4Dep:" + _socid + " " + _did2e;
         }
     }
 

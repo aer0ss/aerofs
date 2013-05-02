@@ -9,6 +9,7 @@ import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.phy.linked.linker.TimeoutDeletionBuffer.Holder;
 import com.aerofs.daemon.core.object.ObjectDeleter;
 import com.aerofs.daemon.core.phy.PhysicalOp;
+import com.aerofs.lib.Path;
 import com.aerofs.lib.event.IEvent;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.base.id.OID;
@@ -16,6 +17,7 @@ import com.aerofs.base.id.SID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.base.id.UniqueID;
+import com.aerofs.lib.rocklog.RockLog;
 import com.aerofs.testlib.AbstractTest;
 
 import com.google.common.collect.ImmutableSet;
@@ -35,10 +37,13 @@ public class TestTimeoutDeletionBuffer extends AbstractTest
     @Mock DirectoryService ds;
     @Mock ObjectDeleter od;
     @Mock OA oa;
+    @Mock LinkerRootMap lrm;
+    @Mock RockLog rocklog;
     @InjectMocks TimeoutDeletionBuffer delBuffer;
     Holder h;
 
     @Mock Trans t;
+    SID rootSID = SID.generate();
     SOID soid = new SOID(new SIndex(1), new OID(UniqueID.generate()));
 
     @Before
@@ -49,6 +54,8 @@ public class TestTimeoutDeletionBuffer extends AbstractTest
         when(ds.getOANullable_(any(SOID.class))).thenReturn(oa);
         when(ds.getAliasedOANullable_(any(SOID.class))).thenReturn(oa);
         when(oa.name()).thenReturn("name");
+        when(ds.resolve_(oa)).thenReturn(Path.fromString(rootSID, "name"));
+        when(lrm.absRootAnchor_(rootSID)).thenReturn("/AeroFS");
     }
 
     @Test
