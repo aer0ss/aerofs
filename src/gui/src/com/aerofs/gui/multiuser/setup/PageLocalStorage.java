@@ -283,7 +283,7 @@ public class PageLocalStorage extends AbstractSetupPage
     protected void writeToModel(SetupModel model)
     {
         model._localOptions._rootAnchorPath = _txtRootAnchor.getText();
-        model._localOptions._useBlockStorage = _btnLink.getSelection();
+        model._localOptions._useBlockStorage = _btnBlock.getSelection();
     }
 
     private void setProgress(boolean inProgress)
