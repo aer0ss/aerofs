@@ -16,21 +16,21 @@ repositories {
 }
 
 configurations {
+    // N.B. these are all excluded from dynamic-config-client, but other jars
+    // (e.g. synctime-client) internally use the dynamic-config-client, so the
+    // exclusions must be made global
     all*.exclude module: 'findbugs'           // we don't want findbugs dependencies in production
     all*.exclude module: 'slf4j-api'          // for all configurations, exclude slf4j because we ship our own
+    all*.exclude module: 'guava'              // exclude guava in preference of our own version
+    all*.exclude module: 'commons-logging'    // exclude commons logging because we use slf4j
+    all*.exclude group:  'ch.qos.logback'     // exclude logback because we use slf4j/log4j
 }
 
 /**
  * Define the dependencies for dynamic-config
  */
 dependencies {
-    compile('com.aerofs.dynamic-config:dynamic-config-client:0.1') {
-        exclude module: 'slf4j-api'           // exclude older version of slf4j-api
-        exclude module: 'guava'               // exclude guava in preference of our own version
-        exclude module: 'commons-logging'     // exclude commons logging because we use slf4j
-        exclude group:  'ch.qos.logback'      // exclude logback because we use slf4j/log4j
-    }
-
+    compile('com.aerofs.dynamic-config:dynamic-config-client:0.1')
     compile('com.aerofs.synctime:synctime-client:0.4')
 }
 
