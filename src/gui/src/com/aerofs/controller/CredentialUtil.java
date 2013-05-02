@@ -15,6 +15,7 @@ import com.aerofs.base.id.UniqueID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.lib.os.IOSUtil;
 import com.aerofs.lib.os.OSUtil;
+import com.aerofs.proto.Sp.RecertifyDeviceReply;
 import com.aerofs.proto.Sp.RegisterDeviceReply;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.ui.UI;
@@ -128,6 +129,39 @@ public class CredentialUtil
         });
     }
 
+    public static void recertifyDevice(UserID certUserId, SPBlockingClient sp) throws Exception
+    {
+        String cert = recertify(certUserId, Cfg.did(), Cfg.cert().getPublicKey(), Cfg.privateKey(),
+                sp, new ISPRecertifyDeviceCaller()
+                {
+                    @Override
+                    public RecertifyDeviceReply call(SPBlockingClient sp, ByteString did,
+                            ByteString csr)
+                            throws Exception
+                    {
+                        return sp.recertifyDevice(did, csr);
+                    }
+                });
+        writeCertificate(cert);
+    }
+
+    public static void recertifyTeamServerDevice(UserID certUserId, SPBlockingClient sp)
+            throws Exception
+    {
+        String cert = recertify(certUserId, Cfg.did(), Cfg.cert().getPublicKey(), Cfg.privateKey(),
+                sp, new ISPRecertifyDeviceCaller()
+                {
+                    @Override
+                    public RecertifyDeviceReply call(SPBlockingClient sp, ByteString did,
+                            ByteString csr)
+                            throws Exception
+                    {
+                        return sp.recertifyTeamServerDevice(did, csr);
+                    }
+                });
+        writeCertificate(cert);
+    }
+
     private static DID certifyAndSaveDeviceKeysImpl(UserID certUserId, byte[] scrypted,
             SPBlockingClient sp, ISPCertifyDeviceCaller caller)
             throws Exception
@@ -135,8 +169,13 @@ public class CredentialUtil
         KeyPair kp = SecUtil.newRSAKeyPair();
         DID did = new DID(UniqueID.generate());
 
-        certifyAndSaveDeviceKeys(certUserId, did, kp.getPublic(), kp.getPrivate(), scrypted, sp,
-                caller);
+        String cert = certify(certUserId, did, kp.getPublic(), kp.getPrivate(), sp, caller);
+
+        // write encrypted private key
+        writePrivateKey(scrypted, kp.getPrivate());
+
+        // write certificate
+        writeCertificate(cert);
         return did;
     }
 
@@ -145,18 +184,31 @@ public class CredentialUtil
         RegisterDeviceReply call(SPBlockingClient sp, ByteString did, ByteString csr)
                 throws Exception;
     }
+    private static interface ISPRecertifyDeviceCaller
+    {
+        RecertifyDeviceReply call(SPBlockingClient sp, ByteString did, ByteString csr)
+                throws Exception;
+    }
 
-    private static void certifyAndSaveDeviceKeys(UserID certUserId, DID did, PublicKey pubKey,
-            PrivateKey privKey, byte[] scrypted, SPBlockingClient sp, ISPCertifyDeviceCaller caller)
+    private static String certify(UserID certUserId, DID did, PublicKey pubKey, PrivateKey privKey,
+            SPBlockingClient sp, ISPCertifyDeviceCaller caller)
             throws Exception
     {
         byte[] csr = SecUtil.newCSR(pubKey, privKey, certUserId, did).getEncoded();
-        String cert = caller.call(sp, did.toPB(), ByteString.copyFrom(csr)).getCert();
+        return caller.call(sp, did.toPB(), ByteString.copyFrom(csr)).getCert();
+    }
 
-        // write encrypted private key
-        writePrivateKey(scrypted, privKey);
+    private static String recertify(UserID certUserId, DID did, PublicKey pubKey,
+            PrivateKey privKey, SPBlockingClient sp, ISPRecertifyDeviceCaller caller)
+            throws Exception
+    {
+        byte[] csr = SecUtil.newCSR(pubKey, privKey, certUserId, did).getEncoded();
+        return caller.call(sp, did.toPB(), ByteString.copyFrom(csr)).getCert();
+    }
 
-        // write certificate
+    private static void writeCertificate(String cert)
+            throws IOException
+    {
         File file = new File(Cfg.absRTRoot(), Param.DEVICE_CERT);
         OutputStreamWriter writer = new OutputStreamWriter(new FileOutputStream(file));
         try {
@@ -173,4 +225,5 @@ public class CredentialUtil
         byte[] bs = SecUtil.encryptPrivateKey(privKey, pbePass);
         Base64.encodeToFile(bs, new File(Cfg.absRTRoot(), Param.DEVICE_KEY).getPath());
     }
+
 }

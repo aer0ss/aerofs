@@ -71,6 +71,7 @@ import com.aerofs.proto.Sp.PBSharedFolder.Builder;
 import com.aerofs.proto.Sp.PBSharedFolder.PBUserAndRole;
 import com.aerofs.proto.Sp.PBStripeData;
 import com.aerofs.proto.Sp.PBUser;
+import com.aerofs.proto.Sp.RecertifyDeviceReply;
 import com.aerofs.proto.Sp.RegisterDeviceReply;
 import com.aerofs.proto.Sp.RemoveUserFromOrganizationReply;
 import com.aerofs.proto.Sp.ResolveSignUpCodeReply;
@@ -1536,6 +1537,71 @@ public class SPService implements ISPService
         _sqlTrans.commit();
 
         return createReply(RemoveUserFromOrganizationReply.newBuilder().setStripeData(sd).build());
+    }
+
+    @Override
+    public ListenableFuture<RecertifyDeviceReply> recertifyDevice(ByteString deviceId,
+            ByteString csr)
+            throws Exception
+    {
+        User user = _sessionUser.get();
+        Device device = _factDevice.create(deviceId);
+
+        // We need two transactions. The first is read only, so no rollback ability needed. In
+        // between the transaction we make an RPC call.
+        _sqlTrans.begin();
+        if (!device.exists()) {
+            throw new ExNotFound("No device " + device + " exists for " + user);
+        }
+        _sqlTrans.commit();
+
+        // Perform RPC to CA to get CSR signed.
+        CertificationResult cert = device.certify(new PKCS10(csr.toByteArray()), user);
+
+        // Add cert to DB.
+        _sqlTrans.begin();
+        device.addCertificate(cert);
+        _sqlTrans.commit();
+
+        return createReply(RecertifyDeviceReply.newBuilder()
+                .setCert(cert.toString())
+                .build());
+    }
+
+    @Override
+    public ListenableFuture<RecertifyDeviceReply> recertifyTeamServerDevice(ByteString deviceId,
+            ByteString csr)
+            throws Exception
+    {
+        User user = _sessionUser.get();
+        Device device = _factDevice.create(deviceId);
+
+        // We need two transactions. The first is read only, so no rollback ability needed. In
+        // between the transaction we make an RPC call.
+        _sqlTrans.begin();
+        user.throwIfNotAdmin();
+        User tsUser = user.getOrganization().getTeamServerUser();
+        if (!device.exists()) {
+            throw new ExNotFound("No device " + device + " exists for " + tsUser);
+        }
+        _sqlTrans.commit();
+
+        // This should not be part of a transaction because it involves an RPC call
+        // FIXME: (DF) This leaves us vulnerable to a situation where the users organization changes
+        // between the first transaction and the second transaction. This would result in a no-sync
+        // on the team server.  But most people probably won't migrate organizations while manually
+        // renewing certs.
+        CertificationResult cert = device.certify(new PKCS10(csr.toByteArray()), tsUser);
+
+        _sqlTrans.begin();
+
+        device.addCertificate(cert);
+
+        _sqlTrans.commit();
+
+        return createReply(RecertifyDeviceReply.newBuilder()
+                    .setCert(cert.toString())
+                    .build());
     }
 
     /**

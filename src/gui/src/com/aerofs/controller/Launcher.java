@@ -13,6 +13,7 @@ import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.id.UserID;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.labeling.L;
+import com.aerofs.launch.UILaunchTasks;
 import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.Param;
 import com.aerofs.lib.Util;
@@ -248,6 +249,8 @@ class Launcher
         boolean shutdown = new UIPostUpdateTasks(Cfg.db()).run();
         if (PostUpdate.updated()) Cfg.db().set(Key.LAST_VER, Cfg.ver());
         if (shutdown) System.exit(0);
+        UILaunchTasks lt = new UILaunchTasks();
+        lt.runAll();
     }
 
     /**
