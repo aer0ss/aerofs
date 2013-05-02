@@ -28,6 +28,7 @@ PACKAGES= \
 	vmhost \
 	web \
 	zephyr \
+	stun \
 
 DEBS=$(addprefix debs/, ${PACKAGES:=.deb})
 

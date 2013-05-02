@@ -1,0 +1,15 @@
+#!/bin/bash -e
+
+cd /opt/stun
+source constants
+
+for package in $RE $STUN
+do
+    wget $URL/$package.tar.gz
+    tar xf $package.tar.gz
+    cd $package
+    make
+    sudo make install
+done
+
+service restund start || true
