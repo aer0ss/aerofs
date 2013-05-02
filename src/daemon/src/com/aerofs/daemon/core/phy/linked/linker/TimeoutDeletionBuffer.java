@@ -1,11 +1,15 @@
 package com.aerofs.daemon.core.phy.linked.linker;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.ds.DirectoryService;
+import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.object.ObjectDeleter;
 import com.aerofs.daemon.core.phy.PhysicalOp;
+import com.aerofs.lib.Path;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
+import com.aerofs.lib.rocklog.RockLog;
 import com.aerofs.lib.sched.Scheduler;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
@@ -19,6 +23,7 @@ import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 
+import java.io.File;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -41,6 +46,9 @@ public class TimeoutDeletionBuffer implements IDeletionBuffer
     private final TransManager _tm;
     private final Scheduler _sched;
     private final DirectoryService _ds;
+    private final LinkerRootMap _lrm;
+    private final RockLog _rocklog;
+
     private boolean _deletionScheduled = false;
 
     // Time in milliseconds to delay before deleting an soid
@@ -153,12 +161,14 @@ public class TimeoutDeletionBuffer implements IDeletionBuffer
 
     @Inject
     TimeoutDeletionBuffer(ObjectDeleter od, CoreScheduler sched, TransManager tm,
-            DirectoryService ds)
+            DirectoryService ds, LinkerRootMap lrm, RockLog rocklog)
     {
         _od = od;
         _sched = sched;
         _tm = tm;
         _ds = ds;
+        _lrm = lrm;
+        _rocklog = rocklog;
     }
 
     @Override
@@ -261,6 +271,9 @@ public class TimeoutDeletionBuffer implements IDeletionBuffer
     {
         boolean remainingUnheldObjects = false;
         List<SOID> deletedSOIDs = Lists.newLinkedList();
+
+        // NB: if this loop ever proves to be a performance issue, use a priority queue that orders
+        // elements by their scheduled deletion time
         for (Map.Entry<SOID, TimeAndHolders> entry : _soid2th.entrySet()) {
             TimeAndHolders th = entry.getValue();
 
@@ -280,8 +293,40 @@ public class TimeoutDeletionBuffer implements IDeletionBuffer
                         l.info("aliased " + soid);
                         assert _ds.hasAliasedOA_(soid);
                     } else {
-                        l.info("delete " + soid + " " + ObfuscatingFormatters.obfuscatePath(
-                                _ds.getOA_(soid).name()));
+                        OA oa =  _ds.getOA_(soid);
+                        l.info("delete {} {}", soid,
+                                ObfuscatingFormatters.obfuscatePath(oa.name()));
+
+                        // Some users complained about disappearing files and after a refreshing log
+                        // dive it appeared that one device was deleting logical objects because it
+                        // thought they had disappeared from the physical filesystem.
+                        // Although it is quite possible that users are trolling us, it is also
+                        // possible that a subtle bug in the linker/scanner causes logical objects
+                        // to remain in the TimeoutDeletionBuffer even though their associated
+                        // physical objects are still around and unchanged. To get some evidence,
+                        // one way or another, the following code was added. Before acting on a
+                        // scheduled deletion we check that the physical object is missing and if
+                        // something is amiss we send a defect and abort the operation
+                        Path path = _ds.resolve_(oa);
+                        String absRoot = _lrm.absRootAnchor_(path.sid());
+                        if (absRoot != null) {
+                            File f = new File(path.toAbsoluteString(absRoot));
+                            if (f.exists()) {
+                                l.warn("here be dragons {} {}", path, oa);
+                                // in the event that the path is occupied by an object of a different
+                                // type, proceed with the deletion
+                                if (f.isFile() != oa.isFile()) {
+                                    // throw an exception an submit a defect like a well-behaved
+                                    // law-abiding citizen of this proud nation instead of asserting
+                                    // like an uneducated street urchin from the depths of hell
+                                    _rocklog.newDefect("daemon.linker.tdb")
+                                            .setMessage(path + " " + oa)
+                                            .send();
+                                    throw new ExBadArgs();
+                                }
+                            }
+                        }
+
                         _od.delete_(soid, PhysicalOp.MAP, t);
                         deletedSOIDs.add(soid);
                     }
