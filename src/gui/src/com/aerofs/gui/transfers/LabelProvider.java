@@ -167,7 +167,7 @@ extends org.eclipse.jface.viewers.LabelProvider implements ITableLabelProvider
 
     private String formatDevice(ByteString pbDID, @Nullable String displayName)
     {
-        return (_showDID ? new DID(pbDID).toString() + " - " : "")
+        return (_showDID ? (pbDID == null ? "<null>" : new DID(pbDID).toString()) + " - " : "")
                 + Objects.firstNonNull(displayName, S.LBL_UNKNOWN_DEVICE);
     }
 
