@@ -1,25 +1,5 @@
 class pd-aerofs {
-    include common::logs
-    include common::firewall
-    Exec {
-        path => [
-            '/usr/local/bin',
-            '/opt/local/bin',
-            '/usr/bin',
-            '/usr/sbin',
-            '/bin',
-            '/sbin',],
-        logoutput => true,
-    }
-    package { [
-        "default-jdk",
-        "htop",
-        "dstat",
-        "ntp",
-        "iftop"
-        ]:
-        ensure => latest,
-    }
+    include private-common
     include servlet::base
     include servlet::sp
     include devman
@@ -48,15 +28,6 @@ class pd-aerofs {
     file{"/etc/nginx/certs":
         ensure => directory,
         require => Package["nginx"]
-    }
-
-    $key = '64E72541'
-    apt::source { "aerofs":
-        location    => "http://apt.aerofs.com/ubuntu/production",
-        repos       => "main",
-        include_src => false,
-        key         => $key,
-        key_server  => "pgp.mit.edu",
     }
 
     package { "aerofs-bootstrap":

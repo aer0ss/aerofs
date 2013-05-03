@@ -34,7 +34,7 @@ class ejabberd(
         ]
     }
 
-    exec { "mysql -D ${mysql_db} -h ${mysql_host} -p${mysql_password} -u ${mysql_user}< /etc/ejabberd/mysql.sql":
+    exec { "/usr/bin/mysql -D ${mysql_db} -h ${mysql_host} -p${mysql_password} -u ${mysql_user}< /etc/ejabberd/mysql.sql":
         subscribe   => File["/etc/ejabberd/mysql.sql"],
         refreshonly => true
     }
