@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.multiplicity.multiuser;
 
+import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.IStoreJoiner;
 import com.aerofs.daemon.core.store.IStores;
@@ -56,7 +57,7 @@ public class MultiuserStoreJoiner implements IStoreJoiner
         // store hierarchy they will automatically be deleted when all anchors pointing to them
         // disappear
         if (_sidx2sid.getNullable_(sidx) != null && _stores.isRoot_(sidx)) {
-            _sd.deleteRootStore_(sidx, t);
+            _sd.deleteRootStore_(sidx, PhysicalOp.APPLY, t);
         }
     }
 }

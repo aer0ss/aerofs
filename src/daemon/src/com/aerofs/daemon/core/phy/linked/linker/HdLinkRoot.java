@@ -8,6 +8,7 @@ import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.acl.ACLSynchronizer;
+import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.store.StoreCreator;
 import com.aerofs.daemon.core.store.StoreDeleter;
 import com.aerofs.daemon.core.tc.Cat;
@@ -168,7 +169,8 @@ public class HdLinkRoot extends AbstractHdIMC<EILinkRoot>
     {
         Trans t = _tm.begin_();
         try {
-            _sd.deleteRootStore_(sidx, t);
+            // NB: use MAP and not APLLY as we don't want to delete user's files
+            _sd.deleteRootStore_(sidx, PhysicalOp.MAP, t);
             _lrm.unlink_(sid, t);
             t.commit_();
         } finally {

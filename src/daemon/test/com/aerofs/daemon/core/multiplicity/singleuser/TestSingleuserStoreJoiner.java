@@ -178,6 +178,6 @@ public class TestSingleuserStoreJoiner extends AbstractTest
         ssj.leaveStore_(sidx, sid, t);
 
         verify(prdb).removePendingRoot(sid, t);
-        verify(sd).deleteRootStore_(sidx, t);
+        verify(sd).deleteRootStore_(sidx, PhysicalOp.APPLY, t);
     }
 }

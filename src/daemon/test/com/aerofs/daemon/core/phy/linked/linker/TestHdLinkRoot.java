@@ -9,6 +9,7 @@ import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.daemon.core.acl.ACLSynchronizer;
 import com.aerofs.daemon.core.mock.TestUtilCore.ExArbitrary;
+import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.store.StoreCreator;
 import com.aerofs.daemon.core.store.StoreDeleter;
 import com.aerofs.daemon.core.tc.Cat;
@@ -193,7 +194,7 @@ public class TestHdLinkRoot extends AbstractTest
                 anyIterableOf(PBSubjectRolePair.class), anyString(), eq(true));
 
         verify(lrm).unlink_(any(SID.class), eq(t));
-        verify(sd).deleteRootStore_(any(SIndex.class), eq(t));
+        verify(sd).deleteRootStore_(any(SIndex.class), eq(PhysicalOp.MAP), eq(t));
 
         verifyZeroInteractions(aclsync);
     }

@@ -75,11 +75,11 @@ public class StoreDeleter
         _ss.deleteParent_(sidx, sidxParent, t);
     }
 
-    public void deleteRootStore_(SIndex sidx, Trans t)
+    public void deleteRootStore_(SIndex sidx, PhysicalOp op, Trans t)
             throws SQLException, ExNotFound, ExNotDir, ExStreamInvalid, IOException, ExAlreadyExist
     {
         assert _ss.isRoot_(sidx);
-        deleteRecursively_(sidx, Path.root(_sidx2sid.get_(sidx)), PhysicalOp.APPLY, t);
+        deleteRecursively_(sidx, Path.root(_sidx2sid.get_(sidx)), op, t);
     }
 
     private void deleteRecursively_(SIndex sidx, Path pathOld, PhysicalOp op, Trans t)

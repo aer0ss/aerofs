@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.multiplicity.multiuser;
 
+import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.IStores;
 import com.aerofs.daemon.core.store.StoreCreator;
@@ -84,7 +85,7 @@ public class TestMultiuserStoreJoiner extends AbstractTest
         when(stores.isRoot_(sidx)).thenReturn(true);
         msj.leaveStore_(sidx, sid, t);
 
-        verify(sd).deleteRootStore_(sidx, t);
+        verify(sd).deleteRootStore_(sidx, PhysicalOp.APPLY, t);
     }
 
     @Test

@@ -211,7 +211,7 @@ public class SingleuserStoreJoiner implements IStoreJoiner
 
         // special treatment for root stores
         if (_sidx2sid.getNullable_(sidx) != null &&_stores.isRoot_(sidx)) {
-            _sd.deleteRootStore_(sidx, t);
+            _sd.deleteRootStore_(sidx, PhysicalOp.APPLY, t);
         }
     }
 
