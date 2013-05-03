@@ -1,10 +1,11 @@
 include mkfs
 
 node default {
-include motd
-include common::firewall
-include puppet
-include common::logs
+    include motd
+    include common::firewall
+    include puppet
+    include common::logs
+
     Exec {
         path => [
             '/usr/local/bin',
