@@ -283,51 +283,7 @@ public class TimeoutDeletionBuffer implements IDeletionBuffer
             if (!th.hasHolders_()) {
                 if (th._time <= currentTime) {
                     SOID soid = entry.getKey();
-                    if (!_ds.hasOA_(soid)) {
-                        // During the aliasing process, we rename the aliased folder,
-                        // move its contents to the target folder, then delete the aliased folder.
-                        // When the filesystem watcher observes this last deletion,
-                        // it will mark a deletion in the TimeoutDeletionBuffer,
-                        // but the OA for this path will already be null (because by this point,
-                        // the OA has been merged to the target's already).
-                        l.info("aliased " + soid);
-                        assert _ds.hasAliasedOA_(soid);
-                    } else {
-                        OA oa =  _ds.getOA_(soid);
-                        l.info("delete {} {}", soid,
-                                ObfuscatingFormatters.obfuscatePath(oa.name()));
-
-                        // Some users complained about disappearing files and after a refreshing log
-                        // dive it appeared that one device was deleting logical objects because it
-                        // thought they had disappeared from the physical filesystem.
-                        // Although it is quite possible that users are trolling us, it is also
-                        // possible that a subtle bug in the linker/scanner causes logical objects
-                        // to remain in the TimeoutDeletionBuffer even though their associated
-                        // physical objects are still around and unchanged. To get some evidence,
-                        // one way or another, the following code was added. Before acting on a
-                        // scheduled deletion we check that the physical object is missing and if
-                        // something is amiss we send a defect and abort the operation
-                        Path path = _ds.resolve_(oa);
-                        String absRoot = _lrm.absRootAnchor_(path.sid());
-                        if (absRoot != null) {
-                            File f = new File(path.toAbsoluteString(absRoot));
-                            if (f.exists()) {
-                                l.warn("here be dragons {} {}", path, oa);
-                                // in the event that the path is occupied by an object of a different
-                                // type, proceed with the deletion
-                                if (f.isFile() != oa.isFile()) {
-                                    // throw an exception an submit a defect like a well-behaved
-                                    // law-abiding citizen of this proud nation instead of asserting
-                                    // like an uneducated street urchin from the depths of hell
-                                    _rocklog.newDefect("daemon.linker.tdb")
-                                            .setMessage(path + " " + oa)
-                                            .send();
-                                    throw new ExBadArgs();
-                                }
-                            }
-                        }
-
-                        _od.delete_(soid, PhysicalOp.MAP, t);
+                    if (deleteLogicalObject_(soid, t)) {
                         deletedSOIDs.add(soid);
                     }
                 } else {
@@ -343,5 +299,66 @@ public class TimeoutDeletionBuffer implements IDeletionBuffer
         for (SOID soid : deletedSOIDs) remove_(soid);
 
         return remainingUnheldObjects;
+    }
+
+    private boolean deleteLogicalObject_(SOID soid, Trans t) throws Exception
+    {
+        if (!_ds.hasOA_(soid)) {
+            // During the aliasing process, we rename the aliased folder,
+            // move its contents to the target folder, then delete the aliased folder.
+            // When the filesystem watcher observes this last deletion,
+            // it will mark a deletion in the TimeoutDeletionBuffer,
+            // but the OA for this path will already be null (because by this point,
+            // the OA has been merged to the target's already).
+            l.info("aliased " + soid);
+            assert _ds.hasAliasedOA_(soid);
+            return false;
+        } else {
+            OA oa =  _ds.getOA_(soid);
+            l.info("delete {} {}", soid,
+                    ObfuscatingFormatters.obfuscatePath(oa.name()));
+
+            makeDamnSureThePhysicalObjectDisappeared(oa);
+
+            _od.delete_(soid, PhysicalOp.MAP, t);
+            return true;
+        }
+    }
+
+    /**
+     * Some users complained about disappearing files and after a refreshing log
+     * dive it appeared that one device was deleting logical objects because it
+     * thought they had disappeared from the physical filesystem.
+     *
+     * Although it is quite possible that users are trolling us, it is also
+     * possible that a subtle bug in the linker/scanner causes logical objects
+     * to remain in the TimeoutDeletionBuffer even though their associated
+     * physical objects are still around and unchanged. To get some evidence,
+     * one way or another, the following code was added. Before acting on a
+     * scheduled deletion we check that the physical object is missing and if
+     * something is amiss we send a defect and abort the operation
+     */
+    private void makeDamnSureThePhysicalObjectDisappeared(OA oa) throws Exception
+    {
+        //
+        Path path = _ds.resolve_(oa);
+        String absRoot = _lrm.absRootAnchor_(path.sid());
+        if (absRoot != null) {
+            File f = new File(path.toAbsoluteString(absRoot));
+            if (f.exists()) {
+                l.warn("here be dragons {} {}", path, oa);
+                // in the event that the path is occupied by an object of a different
+                // type, proceed with the deletion
+                if (f.isFile() != oa.isFile()) {
+                    // throw an exception an submit a defect like a well-behaved
+                    // law-abiding citizen of this proud nation instead of asserting
+                    // like an uneducated street urchin from the depths of hell
+                    _rocklog.newDefect("daemon.linker.tdb")
+                            .setMessage(path + " " + oa)
+                            .send();
+                    throw new ExBadArgs();
+                }
+            }
+        }
     }
 }
