@@ -120,14 +120,18 @@ public class CertificateDatabase extends AbstractSQLDatabase
     /**
      * Get the serial number for a given device.
      *
-     * @return the serial number of the device, or INVALID_SERIAL if a certificate does not exist
-     * for this specific device.
+     * @return the serial number of the most recent certificate associated with the specified
+     * device, or INVALID_SERIAL if a certificate does not exist for this DID.
      */
     public long getSerial(DID did)
             throws SQLException, ExNotFound
     {
+        // We want the most *recent* cert associated with this DID.  It's possible that we
+        // know about multiple certificates, as devices may renew their certificates over
+        // time.  However, CA serial numbers are guaranteed to be increasing for the entire life of
+        // the product.
         PreparedStatement ps = prepareStatement(selectWhere(T_CERT, C_CERT_DEVICE_ID + "=?",
-                C_CERT_SERIAL));
+                C_CERT_SERIAL) + " order by " + C_CERT_SERIAL + " desc");
         ps.setString(1, did.toStringFormal());
 
         ResultSet rs = ps.executeQuery();
