@@ -23,6 +23,7 @@ configurations {
     all*.exclude module: 'slf4j-api'          // for all configurations, exclude slf4j because we ship our own
     all*.exclude module: 'guava'              // exclude guava in preference of our own version
     all*.exclude module: 'commons-logging'    // exclude commons logging because we use slf4j
+    all*.exclude module: 'log4j-over-slf4j'   // don't want multiple logging backends; we ship log4j
     all*.exclude group:  'ch.qos.logback'     // exclude logback because we use slf4j/log4j
 }
 
