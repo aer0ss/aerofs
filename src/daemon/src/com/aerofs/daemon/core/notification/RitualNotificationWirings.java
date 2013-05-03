@@ -166,7 +166,9 @@ public class RitualNotificationWirings implements RitualNotificationServer.IConn
     @Override
     public void onIncomingconnection(InetSocketAddress from)
     {
+        EISendSnapshot event = new EISendSnapshot(_rns, from, _dls, _uls, _psn, _formatter);
+        event.enableFilter(Cfg.useTransferFilter());
         // must enqueue since this method is called by non-core threads
-        _cq.enqueueBlocking(new EISendSnapshot(_rns, from, _dls, _uls, _psn, _formatter), Prio.HI);
+        _cq.enqueue(event, Prio.HI);
     }
 }
