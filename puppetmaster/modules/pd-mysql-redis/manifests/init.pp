@@ -1,4 +1,4 @@
-class private-deployment-mysql-redis {
+class pd-mysql-redis {
 
     $key = '64E72541'
     apt::source { "aerofs":

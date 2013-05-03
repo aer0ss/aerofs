@@ -1,4 +1,4 @@
-class private-deployment-cfg-ca {
+class pd-cfg-ca {
 
     $key = '64E72541'
     apt::source { "aerofs":

@@ -1,4 +1,4 @@
-class private-deployment-aerofs {
+class pd-aerofs {
     include common::logs
     include common::firewall
     Exec {
@@ -71,7 +71,7 @@ class private-deployment-aerofs {
     }
 
     file {"/etc/nginx/conf.d/vhosts.conf":
-        source => "puppet:///modules/private-deployment-aerofs/vhosts.conf",
+        source => "puppet:///modules/pd-aerofs/vhosts.conf",
         require => Package["nginx"],
     }
 
