@@ -1,6 +1,6 @@
 #!/bin/bash -e
 
-VERSION=0.4
+VERSION=0.6
 SERVICE=synctime
 OPT="$SERVICE/opt/$SERVICE"
 

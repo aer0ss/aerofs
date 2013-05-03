@@ -19,6 +19,7 @@ import com.aerofs.daemon.core.phy.block.gzip.GZipBackendModule;
 import com.aerofs.daemon.core.phy.block.local.LocalBackendModule;
 import com.aerofs.daemon.core.phy.block.s3.S3BackendModule;
 import com.aerofs.daemon.core.phy.linked.LinkedStorageModule;
+import com.aerofs.daemon.core.synctime.TimeToSyncModule;
 import com.aerofs.daemon.ritual.RitualServer;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.IProgram;
@@ -95,7 +96,8 @@ public class DaemonProgram implements IProgram
         Stage stage = Stage.PRODUCTION;
 
         Injector injCore = Guice.createInjector(stage, new CfgModule(), multiplicityModule,
-                new CoreModule(ChannelFactories.getClientChannelFactory()), storageModule());
+                new CoreModule(ChannelFactories.getClientChannelFactory()), storageModule(),
+                new TimeToSyncModule());
 
         Injector injDaemon = Guice.createInjector(stage, new DaemonModule(injCore));
 
