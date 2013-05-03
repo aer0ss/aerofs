@@ -52,7 +52,6 @@ import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableItem;
 import org.slf4j.Logger;
 
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.List;
 
@@ -69,11 +68,6 @@ public class DlgManageSharedFolders extends AeroFSDialog
     {
         super(parent, "Manage Shared Folders", false, true);
         _path = null;
-    }
-    public DlgManageSharedFolders(Shell parent, @Nonnull Path path)
-    {
-        super(parent, "Manage " + UIUtil.sharedFolderName(path, null), false, true);
-        _path = path;
     }
 
     @Override
@@ -168,11 +162,11 @@ public class DlgManageSharedFolders extends AeroFSDialog
                     try {
                         UI.ritual().linkRoot(path);
                     } catch (ExChildAlreadyShared e) {
-                        UI.get().show(MessageType.ERROR, S.CHILD_ALREADY_SHARED);
+                        GUI.get().show(getShell(), MessageType.ERROR, S.CHILD_ALREADY_SHARED);
                     } catch (ExParentAlreadyShared e) {
-                        UI.get().show(MessageType.ERROR, S.PARENT_ALREADY_SHARED);
+                        GUI.get().show(getShell(), MessageType.ERROR, S.PARENT_ALREADY_SHARED);
                     } catch (Exception e) {
-                        UI.get().show(MessageType.ERROR, "Could not share folder: " + e);
+                        GUI.get().show(getShell(), MessageType.ERROR, "Could not share folder " + UIUtil.e2msg(e));
                     }
                 }
 

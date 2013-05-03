@@ -25,6 +25,8 @@ public class CLIRootAnchorUpdater
     private final @Nullable SID _sid;
 
     private final String _relocateMsg;
+    // This string must be consistent with the string in CompRootAnchorUpdater
+    // TODO (WW) define the string in S.java?
     private final String _unlinkOrQuitMsg = "If you want to move the missing folder " +
             "back to its original location, choose \"Quit\", move it back to its original" +
             " location, and launch " + L.product() + " again.\n" +

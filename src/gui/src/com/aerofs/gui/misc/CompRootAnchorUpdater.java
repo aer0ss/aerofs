@@ -62,6 +62,9 @@ public class CompRootAnchorUpdater extends Composite
         String folderDescription = sid == null
                 ? "Your " + S.ROOT_ANCHOR
                 : "One of your shared folders";
+
+        // This string must be consistent with the string in CLIRootAnchorUpdater
+        // TODO (WW) define the string in S.java?
         errorLabel.setText(
                 folderDescription + " was not found in the original location:\n" +
                 oldAbsPath + "\n\n" +

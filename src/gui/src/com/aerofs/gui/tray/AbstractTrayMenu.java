@@ -68,7 +68,6 @@ public abstract class AbstractTrayMenu implements ITrayMenu, ITrayMenuComponentL
     protected final TransferTrayMenuSection _transferTrayMenuSection;
     protected final RebuildDisposition _rebuildDisposition;
     private boolean rebuilding = false;
-    private int rebuilds = 0;
     protected boolean _enabled;
     protected final List<ITrayMenuListener> _trayMenuListeners;
     protected Menu _lastMenu;
