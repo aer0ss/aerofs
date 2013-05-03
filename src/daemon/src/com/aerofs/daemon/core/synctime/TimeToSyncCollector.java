@@ -90,6 +90,7 @@ class TimeToSyncCollector implements
     @Override
     public void deviceOnline_(DID did)
     {
+        l.debug("{} online", did);
         Long prev = _deviceCheckPoint.put(did, _time.currentTimeMillis());
 
         // Since this device just came online, there should be no previously recorded checkpoint
@@ -101,6 +102,7 @@ class TimeToSyncCollector implements
     @Override
     public void deviceOffline_(DID did)
     {
+        l.debug("{} offline", did);
         _updateTimes.row(did).clear();
         _updateTimes.rowMap().remove(did);
         checkNotNull(_deviceCheckPoint.remove(did), did);
@@ -115,6 +117,10 @@ class TimeToSyncCollector implements
     @Override
     public void receivedPullUpdateFrom_(DID did) throws SQLException
     {
+        // The checkoutpoint map should already have did
+        // (i.e. deviceOnline should have preceded this call once)
+        checkState(_deviceCheckPoint.containsKey(did), did);
+
         if (!_ru.deviceHasUpdates_(did)) {
             l.debug("move checkpoint for {}", did);
 

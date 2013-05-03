@@ -6,12 +6,16 @@ package com.aerofs.daemon.core.synctime;
 
 import com.aerofs.base.id.OID;
 import com.aerofs.synctime.api.ClientSideHistogram;
+import com.google.common.base.Objects;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
+import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 
 /**
@@ -22,7 +26,7 @@ import static com.google.common.base.Preconditions.checkState;
  * sync-times, we don't care. Thus for all sync times above some threshold, we record the frequency
  * per OID, and below that threshold, we record the frequency of the sync-time bin.
  */
-class TimeToSyncHistogramSingleDID
+class SingleDIDTimeToSyncHistogram
 {
     // TODO (MJ): automatic threshold adjustment (ArrowConfig perhaps??)
     // For now, since the server doesn't record OIDs anyway, set the threshold to the total
@@ -39,7 +43,7 @@ class TimeToSyncHistogramSingleDID
     // OIDs
     private final List<Map<OID, Integer>> _overthreshold;
 
-    TimeToSyncHistogramSingleDID()
+    SingleDIDTimeToSyncHistogram()
     {
         _subthreshold = new int[THRESHOLD];
 
@@ -72,13 +76,43 @@ class TimeToSyncHistogramSingleDID
     ClientSideHistogram toJSONableHistogram()
     {
         int [] counts = new int[size()];
+        // TODO (MJ) this obliterates any chance of SIMD
         for (int i = 0; i < counts.length; i++) counts[i] = frequencyAtBin(i);
-        return new ClientSideHistogram(counts);
+        return ClientSideHistogram.of(counts);
     }
 
-    public int size()
+    void mergeWith_(SingleDIDTimeToSyncHistogram that)
     {
-        return _subthreshold.length + _overthreshold.size();
+        mergeSubThresholdWith_(that._subthreshold);
+        mergeOverThresholdWith_(that._overthreshold);
+    }
+
+    private void mergeSubThresholdWith_(int [] thatSubthreshold)
+    {
+        checkArgument(thatSubthreshold.length == this._subthreshold.length);
+
+        for (int i = 0; i < _subthreshold.length; i++) {
+            _subthreshold[i] = _subthreshold[i] + thatSubthreshold[i];
+        }
+    }
+
+    private void mergeOverThresholdWith_(List<Map<OID, Integer>> thoseOverThresholds)
+    {
+        checkArgument(thoseOverThresholds.size() == this._overthreshold.size());
+
+        // Iterate over each of the bins over threshold for this and that object,
+        // iterating on the same bin.
+        Iterator<Map<OID, Integer>> iThese = _overthreshold.iterator();
+        Iterator<Map<OID, Integer>> iThose = thoseOverThresholds.iterator();
+        while (iThese.hasNext() && iThose.hasNext()) {
+            Map<OID, Integer> thisBin = iThese.next(), thatBin = iThose.next();
+
+            for (OID oid: thatBin.keySet()) {
+                Integer countForOIDAtThisBin = thisBin.get(oid);
+                if (countForOIDAtThisBin == null) countForOIDAtThisBin = 0;
+                thisBin.put(oid, countForOIDAtThisBin + thatBin.get(oid));
+            }
+        }
     }
 
     private int frequencyOverThreshold_(int bin)
@@ -102,5 +136,19 @@ class TimeToSyncHistogramSingleDID
         Integer f = frequencies.get(oid);
         if (f == null) frequencies.put(oid, 1);
         else frequencies.put(oid, f + 1);
+    }
+
+    public int size()
+    {
+        return _subthreshold.length + _overthreshold.size();
+    }
+
+    @Override
+    public String toString()
+    {
+        return Objects.toStringHelper(this)
+                .add("_sub", Arrays.toString(_subthreshold))
+                .add("_over", _overthreshold)
+                .toString();
     }
 }

@@ -5,7 +5,6 @@
 package com.aerofs.daemon.core.synctime;
 
 import com.aerofs.base.C;
-import com.aerofs.base.properties.DynamicUrlProperty;
 
 class Params
 {
@@ -13,7 +12,4 @@ class Params
     static final int UPDATE_TIMES_TABLE_SIZE_UPPER_BOUND = 1000;
 
     static final long SEND_HISTOGRAM_INTERVAL = 1 * C.HOUR;
-
-    static final DynamicUrlProperty SERVER_URL
-            = new DynamicUrlProperty("synctime.server.url", "http://tts.aerofs.com");
 }
