@@ -1,6 +1,17 @@
 include mkfs
 
 node default {
+    Exec {
+        path => [
+            '/usr/local/bin',
+            '/opt/local/bin',
+            '/usr/bin',
+            '/usr/sbin',
+            '/bin',
+            '/sbin',],
+        logoutput => true,
+    }
+
     $repo = hiera("environment","") ? {
         "staging"   => "staging",
         default     => "production"
