@@ -139,8 +139,8 @@ public class TimeoutDeletionBuffer implements IDeletionBuffer
          */
         public void releaseAll_()
         {
-            for (TimeAndHolders th : _soid2th.values()) {
-                if (th.removeHolder_(this)) scheduleDeletion_(th);
+            for (Entry<SOID, TimeAndHolders> e : _soid2th.entrySet()) {
+                if (e.getValue().removeHolder_(this)) scheduleDeletion_(e.getKey(), e.getValue());
             }
         }
 
@@ -180,7 +180,7 @@ public class TimeoutDeletionBuffer implements IDeletionBuffer
             th = new TimeAndHolders();
             _soid2th.put(soid, th);
         }
-        scheduleDeletion_(th);
+        scheduleDeletion_(soid, th);
     }
 
     @Override
@@ -195,7 +195,7 @@ public class TimeoutDeletionBuffer implements IDeletionBuffer
         return new Holder();
     }
 
-    private void scheduleDeletion_(TimeAndHolders th)
+    private void scheduleDeletion_(SOID soid, TimeAndHolders th)
     {
         // If any holders remain on this object, do not bother scheduling a deletion
         if (th.hasHolders_()) return;
@@ -213,6 +213,8 @@ public class TimeoutDeletionBuffer implements IDeletionBuffer
             assert th._time <= deletionTime;
             th._time = deletionTime;
         }
+
+        l.info("sched delete {} {}", soid, th._time);
 
         if (!_deletionScheduled) {
             _sched.schedule(new AbstractEBSelfHandling() {
