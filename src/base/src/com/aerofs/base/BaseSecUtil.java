@@ -749,13 +749,12 @@ public abstract class BaseSecUtil
      * @param caCert
      * @return true if caCert signed endEntityCert, false otherwise
      */
-    public static boolean signingPathExists(X509Certificate endEntityCert,
-            X509Certificate caCert)
+    public static boolean signingPathExists(X509Certificate endEntityCert, X509Certificate caCert)
             throws CertificateException, InvalidAlgorithmParameterException,
             NoSuchAlgorithmException
     {
         // Make a certpath for the end-entity cert
-        CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
+        CertificateFactory certificateFactory = CertificateFactory.getInstance(CERTIFICATE_TYPE);
         List<X509Certificate> certList = Lists.newArrayList(endEntityCert);
         CertPath path = certificateFactory.generateCertPath(certList);
         // Make a trust anchor for the CA (and parameters)
@@ -774,5 +773,4 @@ public abstract class BaseSecUtil
         }
         return retval;
     }
-
 }
