@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  ~ IMPORTANT:
+  ~     This config should not be loaded except in unit testing.
+  ~
+  ~FUNCTION:
+  ~     Output the root logger to the console. The log level is set
+  ~     "off" initially but can be set noisier; see below.
+  ~
+  ~ IF YOU WANT VERBOSE TEST LOGGING:
+  ~
+  ~  Two ways to proceed.
+  ~
+  ~     1.) Call ant with:
+  ~           -Djunit.enable_logging=yes
+  ~       Under the covers this is the same as option 2.
+  ~
+  ~     2.) Do what build.xml does: pass
+  ~        -Dcom.aerofs.test.loglevel=DEBUG
+  ~        as a JVM option. This sets the log level for everything.
+  ~
+  ~     3.) Use an alternate logback configuration you supply:
+  ~        -Dlogback.configurationFile=logback-test-debug.xml
+  ~
+  ~    Signed,
+  ~
+  ~    Your friendly neighborhood logback-man
+  -->
+<configuration>
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+            <pattern>%d [%thread] %level %logger - %m%n</pattern>
+        </encoder>
+    </appender>
+
+    <root level="${com.aerofs.test.logLevel:-OFF}">
+        <appender-ref ref="CONSOLE"/>
+    </root>
+</configuration>

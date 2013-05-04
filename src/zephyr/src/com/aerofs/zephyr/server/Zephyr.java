@@ -2,7 +2,6 @@ package com.aerofs.zephyr.server;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.zephyr.core.Dispatcher;
-import org.apache.log4j.xml.DOMConfigurator;
 import org.slf4j.Logger;
 
 import java.io.IOException;
@@ -25,10 +24,6 @@ public class Zephyr
 
         String host = args[0];
         short port = Short.parseShort(args[1]);
-
-        // setup the logger
-
-        DOMConfigurator.configure("log4j.xml");
 
         // run zephyr
 

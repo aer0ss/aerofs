@@ -21,7 +21,6 @@ import com.google.inject.spi.Message;
 import org.slf4j.Logger;
 
 import java.io.File;
-import java.io.IOException;
 import java.lang.reflect.Field;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -33,6 +32,8 @@ public class Main
     private static final Object DAEMON_NAME = "daemon";
     private static final Object FSCK_NAME = "fsck";
     private static final Object UMDC_NAME = "umdc";
+    private static final String STAGING_LOG = "logback-staging.xml";
+    private static final String PROD_LOG = "logback-prod.xml";
 
     private static String getProgramBanner(String rtRoot, String app)
     {
@@ -56,31 +57,24 @@ public class Main
             logLevel = Level.INFO;
         }
 
-        try {
-            //
-            // FIXME (AG): Try to load the properties file up first
-            // I'd love to do this, but calling L results in arrow-config
-            // getting loaded up, which breaks our logging setup
-            //
-
-            LogUtil.initializeDefaultLoggingProperties(rtRoot, prog, logLevel);
-
-            if (L.isStaging()) {
-                LogUtil.initializeLoggingFromPropertiesFile(); // only resets log config if file exists
-                LogUtil.setupAndAddConsoleAppender();
-            }
-        } catch (IOException e) {
-            String msg = "error init log4j: " + Util.e(e);
-            // I don't know how to output to system.logging on mac/linux. so use
-            // the command line as a quick/dirty approach
+        // NB: No logger is set up if this is the shell.
+        if (! prog.equals(Param.SH_NAME)) {
             try {
-                SystemUtil.execForeground("logger", msg);
-            } catch (Exception e2) {
-                // ignored
-            }
+                LogUtil.initializeFromConfigFile(rtRoot, prog, logLevel,
+                        L.isStaging() ? STAGING_LOG : PROD_LOG );
+            } catch (Exception je) {
+                String msg = "Error starting log subsystem: " + Util.e(je);
+                // I don't know how to output to system.logging on mac/linux. so use
+                // the command line as a quick/dirty approach
+                try {
+                    SystemUtil.execForeground("logger", msg);
+                } catch (Exception e2) {
+                    // ignored
+                }
 
-            System.err.println(msg);
-            ExitCode.FAIL_TO_INITIALIZE_LOGGING.exit();
+                System.err.println(msg);
+                ExitCode.FAIL_TO_INITIALIZE_LOGGING.exit();
+            }
         }
 
         l.info("{}", getProgramBanner(rtRoot, prog));

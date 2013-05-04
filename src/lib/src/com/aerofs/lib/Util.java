@@ -152,7 +152,7 @@ public abstract class Util
         Collections.addAll(s_suppressStackTrace, classes);
     }
 
-    // TODO (WW) make it private and clean up LogUtil.
+    // TODO (jP): Nuke this thing
     public static boolean shouldPrintStackTrace(Throwable e, Class<?> ...suppressStackTrace)
     {
         for (Class<?> suppress : suppressStackTrace) {

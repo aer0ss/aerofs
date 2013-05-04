@@ -1,12 +1,8 @@
 package com.aerofs.testlib;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.lib.log.LogUtil;
-import com.aerofs.lib.ProgramInformation;
-import org.apache.log4j.BasicConfigurator;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.rules.TestName;
 import org.mockito.MockitoAnnotations;
@@ -20,33 +16,6 @@ import java.util.List;
 
 public abstract class AbstractTest extends PowerMockTestCase
 {
-    private static boolean _inited;
-
-    @BeforeClass
-    public static void init()
-    {
-        ProgramInformation.init_("unit-tests");
-
-        if (!_inited) {
-            String enableLoggingProperty = System.getProperty("com.aerofs.test.logging");
-            if (isLoggingEnabled(enableLoggingProperty)) {
-                BasicConfigurator.configure();
-                LogUtil.setLevel("httpclient.wire", LogUtil.Level.INFO);
-                LogUtil.setLevel("org.apache.commons.httpclient", LogUtil.Level.INFO);
-                LogUtil.setLevel("com.amazonaws", LogUtil.Level.INFO);
-            } else {
-                LogUtil.disableLogging();
-            }
-
-            _inited = true;
-        }
-    }
-
-    private static boolean isLoggingEnabled(String logging)
-    {
-        return !("no".equals(logging) || "false".equals(logging) || "off".equals(logging) || "0".equals(logging));
-    }
-
     protected static final Logger l = Loggers.getLogger(AbstractTest.class);
 
     @Rule
