@@ -51,12 +51,6 @@ chmod 0755 "$DEBIAN"/preinst
 # package-data files
 cp -R "$BASEDIR"/out.ant/artifacts/"$SERVLET_NAME"/exploded/* "$INSTALL"/
 
-# ensure logging.properties exists for convenient tomcat debugging.
-cat << EOF >> "$INSTALL"/WEB-INF/classes/logging.properties
-org.apache.catalina.core.ContainerBase.[Catalina].level = DEBUG
-org.apache.catalina.core.ContainerBase.[Catalina].handlers = java.util.logging.ConsoleHandler
-EOF
-
 CONTEXT_FILENAME="ROOT.xml"
 # Since we can't deploy sv to root (due to alpha and staging systems), we deploy
 # it at sv_beta

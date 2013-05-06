@@ -18,6 +18,7 @@ import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.event.Prio;
+import com.aerofs.lib.log.LogUtil;
 import com.aerofs.proto.Transport.PBTPHeader;
 import com.aerofs.proto.Transport.PBTPHeader.Type;
 import org.apache.commons.lang.exception.ExceptionUtils;
@@ -224,7 +225,7 @@ class Multicast implements IMaxcast
                 }
 
             } catch (Exception e) {
-                l.error("thdRecv() err:{}", Util.e(e, SocketException.class));
+                l.error("thdRecv() err", LogUtil.suppress(e, SocketException.class));
 
                 if (!s.isClosed()) {
                     l.info("retry in {} ms", DaemonParam.TCP.RETRY_INTERVAL);

@@ -17,17 +17,15 @@
   ~       Under the covers this is the same as option 2.
   ~
   ~     2.) Do what build.xml does: pass
-  ~        -Dcom.aerofs.test.loglevel=DEBUG
+  ~        -Dcom.aerofs.test.logLevel=DEBUG
   ~        as a JVM option. This sets the log level for everything.
-  ~
-  ~     3.) Use an alternate logback configuration you supply:
-  ~        -Dlogback.configurationFile=logback-test-debug.xml
   ~
   ~    Signed,
   ~
   ~    Your friendly neighborhood logback-man
   -->
 <configuration>
+
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
             <pattern>%d [%thread] %level %logger - %m%n</pattern>

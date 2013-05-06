@@ -18,16 +18,14 @@
   ~            in staging and production?
   -->
 <configuration>
-    <conversionRule conversionWord = "aeroex"
-                    converterClass = "com.aerofs.lib.ExceptionConverter"/>
     <property       name  = "logPattern"
-                    value = "%d{HHmmss.SSS}%-0.1p %thread @%c{1}, %m%n%aeroex"/>
+                    value = "%d{HHmmss.SSS}%-0.1p %thread @%c{1}, %m%n"/>
 
     <appender name="LOGFILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <File>${RTROOT}/${PROGNAME}.log</File>
         <Append>true</Append>
         <encoder>
-            <pattern>%d{HHmmss.SSS}%-0.1p %thread @%c{1}, %m%n%aeroex</pattern>
+            <pattern>${logPattern}</pattern>
         </encoder>
 
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">

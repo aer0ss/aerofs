@@ -15,6 +15,7 @@ import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.base.ex.ExBadCredential;
+import com.aerofs.lib.log.LogUtil;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.proto.Sp.GetUserPreferencesReply;
 import com.aerofs.sp.client.SPBlockingClient;
@@ -260,7 +261,7 @@ public class PreferencesHelper
                     sp.signInRemote();
                     r = sp.getUserPreferences(Cfg.did().toPB());
                 } catch (ExBadCredential ebc) {
-                    l.warn(Util.e(ebc));
+                    l.warn("ExBadCredential", LogUtil.suppress(ebc));
                 } catch (Exception e2) {
                     l.warn(Util.e(e2));
                     e = e2;
