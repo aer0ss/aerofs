@@ -8,4 +8,6 @@ class private-common {
         aptkey => $aptkey,
         repo => "production"
     }
+
+    include bootstrap
 }
