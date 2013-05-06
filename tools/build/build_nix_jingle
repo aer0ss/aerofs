@@ -10,6 +10,9 @@ then
     exit 1
 fi
 
+# Go to the AeroFS root directory.
+cd $(dirname $0)/../../
+
 set_parameters() {
     echo "platform entered:$1"
 
