@@ -9,7 +9,6 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="module" module-name="lib" />
-    <orderEntry type="module" module-name="spsv" />
     <orderEntry type="module" module-name="verkehr" />
     <orderEntry type="library" name="growlbindings" level="project" />
     <orderEntry type="library" name="swt" level="project" />

@@ -17,9 +17,6 @@
     <orderEntry type="library" exported="" name="jnotify-aerofs" level="project" />
     <orderEntry type="library" exported="" name="aws" level="project" />
     <orderEntry type="library" exported="" name="sqlite-jdbc" level="project" />
-    <orderEntry type="library" exported="" scope="TEST" name="powermockito" level="project" />
-    <orderEntry type="library" exported="" scope="TEST" name="junit" level="project" />
-    <orderEntry type="library" exported="" scope="TEST" name="mockito" level="project" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
 </module>
