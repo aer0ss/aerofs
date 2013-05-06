@@ -18,7 +18,7 @@ import static org.apache.commons.lang.StringUtils.isNotBlank;
 /*
  * Format: "<host>:<port>"
  *
- * Constructs an caches an InetSocketAddress from a dynamic configuration source
+ * Constructs and caches an InetSocketAddress from a dynamic configuration source.
  */
 public class DynamicInetSocketAddress implements DynamicProperty<InetSocketAddress>
 {
