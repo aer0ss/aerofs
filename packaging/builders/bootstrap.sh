@@ -3,6 +3,7 @@ rm -rf bootstrap
 
 RESOURCES=../src/bootstrap/resources
 OPT=bootstrap/opt/bootstrap
+BIN=bootstrap/usr/bin
 INIT=bootstrap/etc/init.d
 DEBIAN=bootstrap/DEBIAN
 
@@ -20,5 +21,11 @@ cp $RESOURCES/logback.xml $OPT
 cp $RESOURCES/bootstrap.tasks $OPT
 cp -r $RESOURCES/scripts $OPT
 
+# Init script.
 mkdir -p $INIT
 cp $RESOURCES/bootstrap $INIT
+
+# Put the script in user bin for convenience as well.
+mkdir -p $BIN
+cd $BIN
+ln -s ../../etc/init.d/bootstrap .
