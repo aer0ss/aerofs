@@ -1,5 +1,7 @@
 #!/bin/bash -ex
 
+cd /opt/spdb
+
 if [ "$(whoami)" != "root" ]
 then
     echo "Must run as root."
