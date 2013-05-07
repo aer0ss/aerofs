@@ -17,6 +17,7 @@ PACKAGES= \
 	rocklog \
 	servlet-tools \
 	sp \
+	spdb \
 	sv \
 	syncstat \
 	synctime \

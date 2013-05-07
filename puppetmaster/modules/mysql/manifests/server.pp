@@ -47,5 +47,4 @@ class mysql::server (
     require  => Package['mysql-server'],
     provider => $service_provider,
   }
-
 }

@@ -12,7 +12,7 @@
 #
 class mysql::params {
 
-  $bind_address        = '127.0.0.1'
+  $bind_address        = '0.0.0.0'
   $port                = 3306
   $etc_root_password   = false
   $ssl                 = false
