@@ -9,7 +9,7 @@ import com.aerofs.base.C;
 class Params
 {
     // Maximum number of cells in the update times table
-    static final int UPDATE_TIMES_TABLE_SIZE_UPPER_BOUND = 1000;
+    static final int UPDATE_TIMES_TABLE_SIZE_UPPER_BOUND = 200;
 
     static final long SEND_HISTOGRAM_INTERVAL = 1 * C.HOUR;
 }

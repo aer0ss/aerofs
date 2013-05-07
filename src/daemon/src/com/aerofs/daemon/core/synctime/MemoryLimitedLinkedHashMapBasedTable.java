@@ -20,6 +20,7 @@ import java.util.Random;
 import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.collect.Iterables.getFirst;
 
 /**
  * A Guava Table that limits its total space usage by overriding methods
@@ -30,7 +31,7 @@ import static com.google.common.base.Preconditions.checkArgument;
  */
 class MemoryLimitedLinkedHashMapBasedTable<R,C,V> extends ForwardingTable<R,C,V>
 {
-    private final static Logger l = Loggers.getLogger(MemoryLimitedLinkedHashMapBasedTable.class);
+    private static final Logger l = Loggers.getLogger(MemoryLimitedLinkedHashMapBasedTable.class);
 
     private final Table<R, C, V> _delegate;
     private final int _maxTableSize;
@@ -81,11 +82,17 @@ class MemoryLimitedLinkedHashMapBasedTable<R,C,V> extends ForwardingTable<R,C,V>
         // of the LinkedHashMap for a randomly-chosen row.
         while (size() > _maxTableSize) {
             R rowToPrune = getRowToPrune_();
-            Map<C, V> map = row(rowToPrune);
             // N.B. Recall that the Map<SOCID, Long> are recorded as LinkedHashMap, so the
             // first element of this map is guaranteed to be the oldest for that DID
-            if (!map.isEmpty()) map.remove(map.keySet().iterator().next());
-            else l.debug("map empty for {}", rowToPrune);
+            C columnToRemove = getFirst(row(rowToPrune).keySet(), null);
+            if (columnToRemove != null) {
+                // TODO (MJ) may want to report a Meter to Rocklog when objects are evicted,
+                // so that we know how well tuned the max table size is
+                remove(rowToPrune, columnToRemove);
+            } else {
+                // The map at rowToPrune was empty, so remove the row from the table
+                rowMap().remove(rowToPrune);
+            }
         }
     }
 
