@@ -9,13 +9,21 @@ import com.aerofs.config.DynamicConfiguration;
 import com.aerofs.config.sources.DynamicPropertiesConfiguration;
 import com.aerofs.config.sources.PropertiesConfiguration;
 import com.aerofs.config.sources.SystemConfiguration;
+import com.google.common.base.Optional;
+import com.google.common.collect.ImmutableList;
+import com.netflix.config.ConcurrentMapConfiguration;
+import com.netflix.config.DynamicURLConfiguration;
+import org.apache.commons.configuration.AbstractConfiguration;
+import org.apache.commons.configuration.CompositeConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.util.Collection;
 import java.util.List;
 
 import static com.google.common.collect.Lists.newArrayList;
+import static org.apache.commons.lang.StringUtils.isBlank;
 
 /** author: Eric Schoonover <eric@aerofs.com> */
 public final class Configuration
@@ -36,12 +44,18 @@ public final class Configuration
     public static class Server
     {
         public static void initialize() {
-            DynamicConfiguration.initialize(
-                    DynamicConfiguration.builder()
-                            .addConfiguration(
-                                    PropertiesConfiguration.newInstance(getStaticPropertyPaths()),
-                                    "static-properties")
-                            .build());
+            final AbstractConfiguration systemConfiguration = SystemConfiguration.newInstance();
+            final AbstractConfiguration staticPropertiesConfiguration = PropertiesConfiguration.newInstance(
+                    getStaticPropertyPaths());
+
+            final AbstractConfiguration httpConfiguration = getHttpConfiguration(
+                    ImmutableList.of(systemConfiguration, staticPropertiesConfiguration));
+
+            DynamicConfiguration.initialize(DynamicConfiguration.builder()
+                    .addConfiguration(SystemConfiguration.newInstance(), "system")
+                    .addConfiguration(httpConfiguration, "http")
+                    .addConfiguration(staticPropertiesConfiguration, "static-properties")
+                    .build());
             LOGGER.info("Server configuration initialized: " + DynamicConfiguration.getInstance());
         }
     }
@@ -57,6 +71,46 @@ public final class Configuration
         }
 
         return staticPropertyPaths;
+    }
+
+    private static AbstractConfiguration getHttpConfiguration(
+            final Collection<AbstractConfiguration> configurationSources)
+    {
+        final Optional<String> configurationServiceUrl =
+                getConfigurationServiceUrl(configurationSources);
+
+        if (configurationServiceUrl.isPresent()) {
+            return new ConcurrentMapConfiguration();
+            // return empty configuration source is configurationServiceUrl is blank
+        }
+
+        return PropertiesConfiguration.newInstance(ImmutableList.of(configurationServiceUrl.get()));
+        // (eric) in the future we may want to make this dynamic, here is how
+        // return new DynamicURLConfiguration(0, 3600000, false, configurationServiceUrl);
+        // this will reload the configuration from the HTTP service every hour
+    }
+
+    private static Optional<String> getConfigurationServiceUrl(
+            final Collection<AbstractConfiguration> configurationSources)
+    {
+        // we allow the configuration service URL to be overridden by construction a temporary
+        // configuration source from all other configuration sources. Then we lookup the
+        // "config.service.url" key if any value has been defined it will be used.
+        final CompositeConfiguration tempConfiguration =
+                new CompositeConfiguration(configurationSources);
+
+        // if not value has been defined in other configuration sources than lookup a default
+        // value (may be null)
+        final String configurationServiceUrl =
+                tempConfiguration.getString("config.service.url",
+                        getDefaultConfigurationServiceUrl());
+        return Optional.fromNullable(configurationServiceUrl);
+    }
+
+    private static String getDefaultConfigurationServiceUrl() {
+        // TODO (eric) resolve the default configuration URL somehow
+        // leaving this for matt to complete as what exactly he wants is not well defined
+        return null;
     }
 
     /**
@@ -77,17 +131,22 @@ public final class Configuration
     public static class Client
     {
         public static void initialize(final String absoluteRuntimeRoot) {
-            DynamicConfiguration.initialize(
-                    DynamicConfiguration.builder()
-                            .addConfiguration(SystemConfiguration.newInstance(), "system")
-                            .addConfiguration(
-                                    DynamicPropertiesConfiguration.newInstance(
-                                            getDynamicPropertyPaths(absoluteRuntimeRoot), 60000),
-                                    "dynamic-properties")
-                            .addConfiguration(
-                                    PropertiesConfiguration.newInstance(getStaticPropertyPaths()),
-                                    "static-properties")
-                            .build());
+            final AbstractConfiguration systemConfiguration = SystemConfiguration.newInstance();
+            final AbstractConfiguration dynamicPropertiesConfiguration = DynamicPropertiesConfiguration.newInstance(
+                    getDynamicPropertyPaths(absoluteRuntimeRoot), 60000);
+            final AbstractConfiguration staticPropertiesConfiguration = PropertiesConfiguration.newInstance(
+                    getStaticPropertyPaths());
+
+            final AbstractConfiguration httpConfiguration = getHttpConfiguration(
+                    ImmutableList.of(systemConfiguration, dynamicPropertiesConfiguration,
+                            staticPropertiesConfiguration));
+
+            DynamicConfiguration.initialize(DynamicConfiguration.builder()
+                    .addConfiguration(systemConfiguration, "system")
+                    .addConfiguration(dynamicPropertiesConfiguration, "dynamic-properties")
+                    .addConfiguration(httpConfiguration, "http")
+                    .addConfiguration(staticPropertiesConfiguration, "static-properties")
+                    .build());
             LOGGER.debug("Client configuration initialized");
         }
 
