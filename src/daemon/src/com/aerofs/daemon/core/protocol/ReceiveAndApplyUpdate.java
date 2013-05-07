@@ -254,7 +254,7 @@ public class ReceiveAndApplyUpdate
             int comp = compareLargestDIDsInVersions(vR_L, vL_R);
             assert comp != 0;
             if (comp > 0) {
-                l.debug("true meta conflict. l > r. don't apply");
+                l.warn("true meta conflict on {}. {} > {}. don't apply", soid, vLocal, vRemote);
                 return null;
             } else {
                 l.debug("true meta conflict. l < r. merge");
@@ -274,13 +274,9 @@ public class ReceiveAndApplyUpdate
     private static boolean isContentSame(SOCKID k, @Nonnull ContentHash hLocal,
             @Nonnull ContentHash hRemote)
     {
-        if (l.isDebugEnabled()) {
-            l.debug("Local hash: " + hLocal.toHex() + " Remote hash:" + hRemote.toHex());
-        }
+        l.debug("Local hash: {} Remote hash: {}", hLocal, hRemote);
         boolean result = hRemote.equals(hLocal);
-        if (l.isDebugEnabled()) {
-            l.debug("Comparing hashes: " + result + " " + k);
-        }
+        l.debug("Comparing hashes: {} {}", result, k);
         return result;
     }
 
