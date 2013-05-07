@@ -12,18 +12,19 @@ import com.aerofs.config.sources.SystemConfiguration;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.netflix.config.ConcurrentMapConfiguration;
-import com.netflix.config.DynamicURLConfiguration;
 import org.apache.commons.configuration.AbstractConfiguration;
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 
 import static com.google.common.collect.Lists.newArrayList;
-import static org.apache.commons.lang.StringUtils.isBlank;
 
 /** author: Eric Schoonover <eric@aerofs.com> */
 public final class Configuration
@@ -36,7 +37,7 @@ public final class Configuration
      * <ol>
      *     <li>Runtime Configuration (for testing only)</li>
      *     <li>System Configuration (static, -D JVM parameters)</li>
-     *     <li>TODO (eric) - Configuration Service (dynamic, HTTP)</li>
+     *     <li>Configuration Service (dynamic, HTTP)</li>
      *     <li>Classpath .properties Resources (static)</li>
      * </ol>
      * </p>
@@ -45,8 +46,8 @@ public final class Configuration
     {
         public static void initialize() {
             final AbstractConfiguration systemConfiguration = SystemConfiguration.newInstance();
-            final AbstractConfiguration staticPropertiesConfiguration = PropertiesConfiguration.newInstance(
-                    getStaticPropertyPaths());
+            final AbstractConfiguration staticPropertiesConfiguration =
+                    PropertiesConfiguration.newInstance(getStaticPropertyPaths());
 
             final AbstractConfiguration httpConfiguration = getHttpConfiguration(
                     ImmutableList.of(systemConfiguration, staticPropertiesConfiguration));
@@ -61,12 +62,13 @@ public final class Configuration
     }
 
     private static List<String> getStaticPropertyPaths() {
-        final List<String> staticPropertyPaths = newArrayList(STRINGS_RESOURCE, CONFIGURATION_RESOURCE);
+        final List<String> staticPropertyPaths = newArrayList(STRINGS_RESOURCE,
+                CONFIGURATION_RESOURCE);
 
         if (L.isStaging()) {
             // I KNOW! I'm introducing a new use of the exact thing that I am trying to kill,
             // L.isStaging(). Consistency is important and I don't want to introduce a new mechanism
-            // for identifying the current environment until L.isStaging is killed completely
+            // for identifying the current environment until L.isStaging is killed completely.
             staticPropertyPaths.add(STAGING_CONFIGURATION_RESOURCE);
         }
 
@@ -76,41 +78,63 @@ public final class Configuration
     private static AbstractConfiguration getHttpConfiguration(
             final Collection<AbstractConfiguration> configurationSources)
     {
-        final Optional<String> configurationServiceUrl =
-                getConfigurationServiceUrl(configurationSources);
+        final Optional<String> configurationServiceUrl = getConfigurationServiceUrl(
+                configurationSources);
 
-        if (configurationServiceUrl.isPresent()) {
+        // Return empty configuration source if configurationServiceUrl is not present/null.
+        if (!configurationServiceUrl.isPresent()) {
             return new ConcurrentMapConfiguration();
-            // return empty configuration source is configurationServiceUrl is not present/null
         }
 
         return PropertiesConfiguration.newInstance(ImmutableList.of(configurationServiceUrl.get()));
-        // (eric) in the future we may want to make this dynamic, here is how
-        // return new DynamicURLConfiguration(0, 3600000, false, configurationServiceUrl);
-        // this will reload the configuration from the HTTP service every hour
+        // (eric) In the future we may want to make this dynamic, here is how:
+        // Return new DynamicURLConfiguration(0, 3600000, false, configurationServiceUrl);
+        // This will reload the configuration from the HTTP service every hour.
     }
 
     private static Optional<String> getConfigurationServiceUrl(
             final Collection<AbstractConfiguration> configurationSources)
     {
-        // we allow the configuration service URL to be overridden by construction a temporary
+        // We allow the configuration service URL to be overridden by construction of a temporary
         // configuration source from all other configuration sources. Then we lookup the
         // "config.service.url" key if any value has been defined it will be used.
-        final CompositeConfiguration tempConfiguration =
-                new CompositeConfiguration(configurationSources);
+        final CompositeConfiguration tempConfiguration = new CompositeConfiguration(
+                configurationSources);
 
         // if not value has been defined in other configuration sources than lookup a default
         // value (may be null)
-        final String configurationServiceUrl =
-                tempConfiguration.getString("config.service.url",
-                        getDefaultConfigurationServiceUrl());
+        final String configurationServiceUrl = tempConfiguration.getString("config.service.url",
+                getDefaultConfigurationServiceUrlFromFile());
+
         return Optional.fromNullable(configurationServiceUrl);
     }
 
-    private static String getDefaultConfigurationServiceUrl() {
-        // TODO (eric) resolve the default configuration URL somehow
-        // leaving this for matt to complete as what exactly he wants is not well defined
-        return null;
+    /**
+     * Get the default configuration service URL from a file place on the file system. This is for
+     * servers only. This file will either be generated manually by the AeroFS deployment engineer
+     * of by openstack scripts.
+     */
+    private static String getDefaultConfigurationServiceUrlFromFile()
+    {
+        String urlString = null;
+        BufferedReader br = null;
+
+        try {
+            br = new BufferedReader(new FileReader(CONFIGURATION_SERVICE_URL_FILE));
+            urlString = br.readLine();
+        } catch (Exception e) {
+            LOGGER.warn("Unable to read configuration URL from " + CONFIGURATION_SERVICE_URL_FILE);
+        } finally {
+            if (br != null) {
+                try {
+                    br.close();
+                } catch (IOException e) {
+                    LOGGER.error("Could not close");
+                }
+            }
+        }
+
+        return urlString;
     }
 
     /**
@@ -132,10 +156,11 @@ public final class Configuration
     {
         public static void initialize(final String absoluteRuntimeRoot) {
             final AbstractConfiguration systemConfiguration = SystemConfiguration.newInstance();
-            final AbstractConfiguration dynamicPropertiesConfiguration = DynamicPropertiesConfiguration.newInstance(
-                    getDynamicPropertyPaths(absoluteRuntimeRoot), 60000);
-            final AbstractConfiguration staticPropertiesConfiguration = PropertiesConfiguration.newInstance(
-                    getStaticPropertyPaths());
+            final AbstractConfiguration dynamicPropertiesConfiguration =
+                    DynamicPropertiesConfiguration.newInstance(
+                            getDynamicPropertyPaths(absoluteRuntimeRoot), 60000);
+            final AbstractConfiguration staticPropertiesConfiguration =
+                    PropertiesConfiguration.newInstance(getStaticPropertyPaths());
 
             final AbstractConfiguration httpConfiguration = getHttpConfiguration(
                     ImmutableList.of(systemConfiguration, dynamicPropertiesConfiguration,
@@ -161,4 +186,5 @@ public final class Configuration
     private static final String STRINGS_RESOURCE = "resources/strings.properties";
     private static final String CONFIGURATION_RESOURCE = "resources/configuration.properties";
     private static final String STAGING_CONFIGURATION_RESOURCE = "resources/configuration-stg.properties";
+    private static final String CONFIGURATION_SERVICE_URL_FILE = "/etc/aerofs/configuration.url";
 }
