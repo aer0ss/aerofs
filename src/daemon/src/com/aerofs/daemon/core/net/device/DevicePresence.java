@@ -40,6 +40,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.Callable;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 public class DevicePresence implements IDumpStatMisc
 {
     private static final Logger l = Loggers.getLogger(DevicePresence.class);
@@ -76,7 +78,7 @@ public class DevicePresence implements IDumpStatMisc
 
     public void online_(ITransport tp, DID did, Collection<SIndex> sidcs)
     {
-        l.info("online " + did + tp + " 4 " + sidcs);
+        l.info("online {}{} 4 {}", did, tp, sidcs);
 
         Device dev = _did2dev.get(did);
         if (dev == null) {
@@ -100,22 +102,25 @@ public class DevicePresence implements IDumpStatMisc
     {
         Device dev = _did2dev.get(did);
         if (dev == null) return;
-        l.info("offline " + did + tp + " 4 " + sidcs);
+        l.info("offline {}{} 4 {}", did, tp, sidcs);
 
         boolean wasFormerlyAvailable = dev.isAvailable_();
 
         Collection<SIndex> sidcsOffline = dev.offline_(tp, sidcs);
-        offlineImpl_(did, sidcsOffline);
-        if (!dev.isAvailable_()) {
-            _did2dev.remove(did);
+        removeDIDFromStores_(did, sidcsOffline);
+        if (!dev.isAvailable_()) _did2dev.remove(did);
 
-            if (wasFormerlyAvailable) {
-                for (IDevicePresenceListener listener: _listeners) {
-                    listener.deviceOffline_(did);
-                }
+        notifyListenersOnDeviceOfflineEdge_(did, wasFormerlyAvailable, dev.isAvailable_());
+    }
+
+    private void notifyListenersOnDeviceOfflineEdge_(DID did, boolean wasFormerlyAvailable,
+            boolean isNowAvailable)
+    {
+        if (!isNowAvailable && wasFormerlyAvailable) {
+            for (IDevicePresenceListener listener: _listeners) {
+                listener.deviceOffline_(did);
             }
         }
-
     }
 
     /**
@@ -124,14 +129,17 @@ public class DevicePresence implements IDumpStatMisc
     public void offline_(ITransport tp)
     {
         // make a copy to avoid concurrent modification exception
-        ArrayList<Device> devices = new ArrayList<Device>(_did2dev.values());
+        ArrayList<Device> devices = Lists.newArrayList(_did2dev.values());
 
         for (Device dev : devices) {
+            boolean wasFormerlyAvailable = dev.isAvailable_();
             Collection<SIndex> sidcsOffline = dev.offline_(tp);
-            offlineImpl_(dev.did(), sidcsOffline);
+            DID did = dev.did();
+            removeDIDFromStores_(did, sidcsOffline);
             if (!dev.isAvailable_()) {
-                _did2dev.remove(dev.did());
+                _did2dev.remove(did);
             }
+            notifyListenersOnDeviceOfflineEdge_(did, wasFormerlyAvailable, dev.isAvailable_());
         }
     }
 
@@ -149,7 +157,9 @@ public class DevicePresence implements IDumpStatMisc
 
         _rockLog.newMetrics().addMetric("net.pulse." + tp + ".count", 1).send();
 
-        offlineImpl_(did, dev.pulseStarted_(tp));
+        boolean wasFormerlyAvailable = dev.isAvailable_();
+        removeDIDFromStores_(did, dev.pulseStarted_(tp));
+        notifyListenersOnDeviceOfflineEdge_(dev.did(), wasFormerlyAvailable, dev.isAvailable_());
 
         try {
             // we have to enqueue the event *after* the data structure is set up
@@ -197,15 +207,14 @@ public class DevicePresence implements IDumpStatMisc
         }
     }
 
-    private void offlineImpl_(DID did, Collection<SIndex> sidcs)
+    private void removeDIDFromStores_(DID did, Collection<SIndex> sidcs)
     {
         for (SIndex sidx : sidcs) {
             Store s = _sidx2s.getNullable_(sidx);
 
-            OPMDevices opm = _sidx2opm.get(sidx);
-            assert opm != null;
+            OPMDevices opm = checkNotNull(_sidx2opm.get(sidx));
             opm.remove_(did);
-            l.debug("remaining opms 4 " + sidx + ": " + opm);
+            l.debug("remaining opms 4 {}: {}", sidx, opm);
             if (opm.isEmpty_()) {
                 _sidx2opm.remove(sidx);
                 if (s != null) s.setOPMDevices_(null);
