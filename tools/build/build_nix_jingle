@@ -10,9 +10,6 @@ then
     exit 1
 fi
 
-# Go to the AeroFS root directory.
-cd $(dirname $0)/../../
-
 set_parameters() {
     echo "platform entered:$1"
 
@@ -126,8 +123,12 @@ copy_final_libjingle() {
 # build aerofs libjingle
 #
 
+pushd $(dirname $0)/../../ # go to the aerofs git-repo root
+
 set_parameters $1
 reconfigure
 build_google_libjingle
 build_aerofs_libjingle
 copy_final_libjingle
+
+popd                       # return from the aerofs git-repo root
