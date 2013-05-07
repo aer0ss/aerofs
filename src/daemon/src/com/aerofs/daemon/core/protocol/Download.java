@@ -280,11 +280,24 @@ public class Download
                     }
                 });
 
-                // If there are more KMLs for _socid, the Collector algorithm would ensure a new
+                // Two important thoughts for this conditional check:
+                // 1) If there are more KMLs for _socid, the Collector algorithm would ensure a new
                 // Download object is created to resolve the KMLs. However, the Collector has
                 // assumed that this Download object will query all DIDs in its _src variable,
                 // and could therefore remove the BloomFilters associated with those DIDs.
+                //
+                // 2) Suppose _socid has some ghost KML that will never be resolved. Suppose some
+                // DID (d1) provided the local device with all other available updates for _socid
+                // (i.e. it was a successful download, all things considered, there's just a pesky
+                // ghost KML sitting around). Inevitably this condition will never be true. Thus
+                // with the ghost KML, this Download object will exit by throwing ExNoAvailDevice
+                // (when it eventually empties the To object). Because download from d1 succeeded,
+                // it will have no entry in the _did2e map, thus the Collector (having been notified
+                // there was an error) will not be aware that d1 provided data about _socid
+                // successfully. The Collector will not delete the Bloom filter for d1, thus d1's
+                // Bloom filter will eventually fill leading to a CRISIS.
                 if (_f._nvc.getKMLVersion_(_socid).isZero_()) return replier;
+
 
                 l.debug("kml > 0 for {}. dl again", _socid);
 
