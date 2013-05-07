@@ -34,13 +34,13 @@ node "z.arrowfs.org" inherits default {
   }
 
   ### WARNING ###
-  # New services must be added on pagerduty.com. Log into pagerduty.com and under Services
-  # click Add New Service and use the defaults for everything except name.
+  # New services must be added on pagerduty.com. Log into pagerduty.com and
+  # under services click Add New Service and use the defaults for everything
+  # except name.
 
-  #daily
+  # Daily.
   pagerduty::probe::base{[
     "sv df90 pagerduty@sv.aerofs.com 22 /dev/xvda1",
-    "sv df90 pagerduty@sv.aerofs.com 22 /dev/xvdf",
     "verkehr df90 pagerduty@verkehr.aerofs.com 22 /dev/xvda1",
     "x df90 pagerduty@x.aerofs.com 22 /dev/sda",
     "sss df90 pagerduty@sss.aerofs.com 22 /dev/xvda1"
@@ -50,27 +50,21 @@ node "z.arrowfs.org" inherits default {
     require => Class["pagerduty"]
   }
 
-  #sss only (temp)
-  pagerduty::probe::base{"morning sss probe":
-    command => "sss df90 pagerduty@sss.aerofs.com 22 /dev/xvda1",
-    hour => "9",
-    minute => "0",
-    require => Class["pagerduty"]
-  }
-  pagerduty::probe::base{"evening sss probe":
-    command => "sss df90 pagerduty@sss.aerofs.com 22 /dev/xvda1",
-    hour => "19",
+  # Special hourly probe for SV's prod logs.
+  pagerduty::probe::base{[
+    "sv df90 pagerduty@sv.aerofs.com 22 /dev/xvdf"
+  ]:
+    hour => "*",
     minute => "0",
     require => Class["pagerduty"]
   }
 
-  # every 10 minutes
+  # Every 10 minutes.
   pagerduty::probe::base{[
     # Production
     "rocklog url http://rocklog.aerofs.com/",
     "web url http://www.aerofs.com",
     "sv url https://sv.aerofs.com/sv_beta/sv",
-    "sss url https://sss.aerofs.com/syncstat 10",
     "sp url https://sp.aerofs.com/sp",
     "my.aerofs.com url https://my.aerofs.com",
     "verkehr port verkehr.aerofs.com 443",
