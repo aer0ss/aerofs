@@ -50,8 +50,8 @@ public class LeanByteString extends LiteralByteString
     public LeanByteString(ByteString bs)
     {
         // NOTE: we could theoretically share the underlying array when given a LiteralByteString
-        // however as BoundedByteString extends LiteralByteString the added complexity reauired
-        // to get it right is probably not worth the probability of avoiding a few copies
+        // however as BoundedByteString extends LiteralByteString the added complexity required
+        // to get it right is not worth the expected gain of avoiding a few copies
         this(bs instanceof LeanByteString ? ((LeanByteString)bs).bytes : bs.toByteArray());
     }
 
