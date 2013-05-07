@@ -52,7 +52,7 @@ public final class Configuration
                     ImmutableList.of(systemConfiguration, staticPropertiesConfiguration));
 
             DynamicConfiguration.initialize(DynamicConfiguration.builder()
-                    .addConfiguration(SystemConfiguration.newInstance(), "system")
+                    .addConfiguration(systemConfiguration, "system")
                     .addConfiguration(httpConfiguration, "http")
                     .addConfiguration(staticPropertiesConfiguration, "static-properties")
                     .build());
@@ -81,7 +81,7 @@ public final class Configuration
 
         if (configurationServiceUrl.isPresent()) {
             return new ConcurrentMapConfiguration();
-            // return empty configuration source is configurationServiceUrl is blank
+            // return empty configuration source is configurationServiceUrl is not present/null
         }
 
         return PropertiesConfiguration.newInstance(ImmutableList.of(configurationServiceUrl.get()));
