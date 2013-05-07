@@ -146,7 +146,6 @@ public final class Configuration
      *     <li>Runtime Configuration (for testing only)</li>
      *     <li>System Configuration (static, -D JVM parameters)</li>
      *     <li>{RuntimeRoot}/aerofs.properties (dynamic, refresh interval)</li>
-     *     <li>TODO (eric) - Configuration Database (dynamic, conf DB... JDBC)</li>
      *     <li>TODO (eric) - Configuration Service (dynamic, HTTP)</li>
      *     <li>Classpath .properties Resources (static)</li>
      * </ol>
@@ -162,14 +161,9 @@ public final class Configuration
             final AbstractConfiguration staticPropertiesConfiguration =
                     PropertiesConfiguration.newInstance(getStaticPropertyPaths());
 
-            final AbstractConfiguration httpConfiguration = getHttpConfiguration(
-                    ImmutableList.of(systemConfiguration, dynamicPropertiesConfiguration,
-                            staticPropertiesConfiguration));
-
             DynamicConfiguration.initialize(DynamicConfiguration.builder()
                     .addConfiguration(systemConfiguration, "system")
                     .addConfiguration(dynamicPropertiesConfiguration, "dynamic-properties")
-                    .addConfiguration(httpConfiguration, "http")
                     .addConfiguration(staticPropertiesConfiguration, "static-properties")
                     .build());
             LOGGER.debug("Client configuration initialized");
