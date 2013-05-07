@@ -25,7 +25,7 @@ import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.labeling.L;
-import com.aerofs.lib.Param;
+import com.aerofs.lib.LibParam;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.servlets.lib.EmailSender;
 import com.aerofs.servlets.lib.db.IThreadLocalTransaction;
@@ -45,6 +45,7 @@ import com.aerofs.sv.server.raven.RavenTrace;
 import com.aerofs.sv.server.raven.RavenTraceElement;
 import com.aerofs.sv.server.raven.RavenUtils;
 import com.aerofs.sv.common.EmailCategory;
+import com.aerofs.proto.Common.Void;
 import com.aerofs.proto.Sv.PBSVCall;
 import com.aerofs.proto.Sv.PBSVDefect;
 import com.aerofs.proto.Sv.PBSVGzippedLog;
@@ -57,13 +58,12 @@ import static com.aerofs.sv.server.SVParam.SV_NOTIFICATION_RECEIVER;
 import static com.aerofs.sv.server.SVParam.SV_NOTIFICATION_SENDER;
 import static java.util.concurrent.TimeUnit.MINUTES;
 
-
 public class SVReactor
 {
     private static final Logger l = Loggers.getLogger(SVReactor.class);
 
     private static final String DEFECT_LOG_PREFIX = "log.defect-";
-    private static final int FILE_BUF_SIZE = 1 * C.MB;
+    private static final int FILE_BUF_SIZE = C.MB;
     private final SVDatabase _db;
     private final IThreadLocalTransaction<SQLException> _transaction;
 
@@ -151,8 +151,8 @@ public class SVReactor
     public static void emailSVNotification(final String subject, final String body)
     {
         try {
-            EmailSender.sendEmail(SV_NOTIFICATION_SENDER, SV_NOTIFICATION_SENDER,
-                    SV_NOTIFICATION_RECEIVER, null, subject, body, null, false, null);
+            EmailSender.sendNotificationEmail(SV_NOTIFICATION_SENDER, SV_NOTIFICATION_SENDER,
+                    SV_NOTIFICATION_RECEIVER, null, subject, body, null);
         } catch (Exception e) {
             l.error("cannot email notification: ", e);
         }
@@ -290,11 +290,11 @@ public class SVReactor
     private void emailCustomerSupport(String desc, int id, String contactEmail)
             throws MessagingException, UnsupportedEncodingException
     {
-        int eom = desc.indexOf(Param.END_OF_DEFECT_MESSAGE);
+        int eom = desc.indexOf(LibParam.END_OF_DEFECT_MESSAGE);
         String msg =  eom >= 0 ? desc.substring(0, eom) : desc;
 
-        Future<Void> f = EmailSender.sendEmail(contactEmail, contactEmail,
-                WWW.SUPPORT_EMAIL_ADDRESS.get(), null, L.brand() + " Problem # " + id, msg, null, true,
+        Future<Void> f = EmailSender.sendPublicEmail(contactEmail, contactEmail,
+                WWW.SUPPORT_EMAIL_ADDRESS.get(), null, L.brand() + " Problem # " + id, msg, null,
                 EmailCategory.SUPPORT);
         try {
             f.get(); // block to make sure email reaches support system

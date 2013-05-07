@@ -16,10 +16,9 @@ public class EmailUtil
     public static void emailSPNotification(final String subject, final String body)
     {
         try {
-            EmailSender.sendEmail(SPParam.SP_NOTIFICATION_SENDER_EMAIL_ADDRESS.get(),
-                    SPParam.SP_NOTIFICATION_SENDER_EMAIL_ADDRESS.get(),
-                    SPParam.SP_NOTIFICATION_RECEIVER_EMAIL_ADDRESS.get(), null, subject, body, null,
-                    false, null);
+            EmailSender.sendNotificationEmail(SPParam.Notifications.SENDER_EMAIL_ADDRESS.get(),
+                    SPParam.Notifications.SENDER_EMAIL_ADDRESS.get(),
+                    SPParam.Notifications.RECEIVER_EMAIL_ADDRESS.get(), null, subject, body, null);
         } catch (Exception e) {
             l.error("cannot email notification: ", e);
         }

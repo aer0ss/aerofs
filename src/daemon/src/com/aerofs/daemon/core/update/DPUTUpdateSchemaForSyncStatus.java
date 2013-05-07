@@ -7,7 +7,7 @@ import java.sql.Statement;
 
 import com.aerofs.daemon.core.update.DPUTUtil.IDatabaseOperation;
 import com.aerofs.daemon.lib.db.CoreDBCW;
-import com.aerofs.lib.Param;
+import com.aerofs.lib.LibParam;
 import com.aerofs.lib.db.dbcw.IDBCW;
 
 public class DPUTUpdateSchemaForSyncStatus implements IDaemonPostUpdateTask
@@ -45,7 +45,7 @@ public class DPUTUpdateSchemaForSyncStatus implements IDaemonPostUpdateTask
                     s.executeUpdate("alter table " + T_EPOCH +
                             " add column " + C_EPOCH_SYNC_PUSH + _dbcw.longType());
                     s.executeUpdate("update " + T_EPOCH +
-                            " set " + C_EPOCH_SYNC_PUSH + "=" + Param.INITIAL_SYNC_PUSH_EPOCH);
+                            " set " + C_EPOCH_SYNC_PUSH + "=" + LibParam.INITIAL_SYNC_PUSH_EPOCH);
                 }
             }
         });

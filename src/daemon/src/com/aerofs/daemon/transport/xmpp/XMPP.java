@@ -2,6 +2,7 @@ package com.aerofs.daemon.transport.xmpp;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.transport.TransportThreadGroup;
+import com.aerofs.lib.LibParam;
 import com.aerofs.lib.sched.Scheduler;
 import com.aerofs.base.Base64;
 import com.aerofs.base.ex.ExFormatError;
@@ -33,7 +34,6 @@ import com.aerofs.daemon.transport.lib.TransportDiagnosisState;
 import com.aerofs.daemon.transport.xmpp.XMPPServerConnection.IXMPPServerConnectionWatcher;
 import com.aerofs.daemon.transport.xmpp.routing.SignalledPipeFanout;
 import com.aerofs.lib.OutArg;
-import com.aerofs.lib.Param;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
@@ -882,7 +882,7 @@ public abstract class XMPP implements ITransportImpl, IPipeController, IUnicast,
         try {
             DataOutputStream os = new DataOutputStream(new Base64.OutputStream(bos));
 
-            os.writeInt(Param.CORE_MAGIC);
+            os.writeInt(LibParam.CORE_MAGIC);
 
             // TODO consider adding mcastid to chksum?
             // if so, don't forget to check in decodeBody
@@ -934,9 +934,9 @@ public abstract class XMPP implements ITransportImpl, IPipeController, IUnicast,
             is = new DataInputStream(new Base64.InputStream(bos));
 
             int magic = is.readInt();
-            if (magic != Param.CORE_MAGIC) {
+            if (magic != LibParam.CORE_MAGIC) {
                 l.warn("magic mismatch " +
-                        "d:" + did + " exp:" + Param.CORE_MAGIC + " act:" + magic + " bdy:" + body);
+                        "d:" + did + " exp:" + LibParam.CORE_MAGIC + " act:" + magic + " bdy:" + body);
 
                 return null;
             }

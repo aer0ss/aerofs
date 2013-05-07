@@ -7,7 +7,7 @@ package com.aerofs.daemon.core.first;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.UniqueID;
-import com.aerofs.lib.Param;
+import com.aerofs.lib.LibParam;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
 import org.slf4j.Logger;
@@ -30,7 +30,7 @@ public class OIDGenerator
 
     public OIDGenerator(String absPath)
     {
-        _sdb = SeedDatabase.load_(Util.join(absPath, Param.SEED_FILE_NAME));
+        _sdb = SeedDatabase.load_(Util.join(absPath, LibParam.SEED_FILE_NAME));
         _shouldLookup = _sdb != null;
         if (_shouldLookup) l.info("seed file loaded");
     }

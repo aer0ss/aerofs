@@ -5,7 +5,7 @@
 package com.aerofs.sp.server.integration;
 
 import com.aerofs.base.id.DID;
-import com.aerofs.lib.Param;
+import com.aerofs.lib.LibParam;
 import com.aerofs.lib.SecUtil;
 import com.aerofs.base.async.UncancellableFuture;
 import com.aerofs.base.ex.ExBadCredential;
@@ -116,6 +116,6 @@ public class TestSP_SignIn extends AbstractSPTest
 
     private ByteString getTeamServerLocalPassword(UserID userID)
     {
-        return ByteString.copyFrom(SecUtil.scrypt(Param.MULTIUSER_LOCAL_PASSWORD, userID));
+        return ByteString.copyFrom(SecUtil.scrypt(LibParam.MULTIUSER_LOCAL_PASSWORD, userID));
     }
 }

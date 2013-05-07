@@ -10,7 +10,7 @@ import com.aerofs.daemon.transport.xmpp.zephyr.client.nio.statemachine.CoreEvent
 import com.aerofs.daemon.transport.xmpp.zephyr.client.nio.statemachine.IState;
 import com.aerofs.daemon.transport.xmpp.zephyr.client.nio.statemachine.IStateEventType;
 import com.aerofs.daemon.transport.xmpp.zephyr.client.nio.statemachine.StateMachineEvent;
-import com.aerofs.lib.Param;
+import com.aerofs.lib.LibParam;
 import com.aerofs.proto.Transport.PBZephyrCandidateInfo;
 import com.aerofs.zephyr.core.ExAlreadyBound;
 import com.aerofs.zephyr.core.ZUtil;
@@ -661,8 +661,8 @@ public enum ZephyrClientState implements IState<ZephyrClientContext>
                     // magic
 
                     int m = ctx._rdhdrbuf.getInt();
-                    if (m != Param.CORE_MAGIC) {
-                        String merrstr = "bad magic exp:" + Param.CORE_MAGIC + " act:" + m;
+                    if (m != LibParam.CORE_MAGIC) {
+                        String merrstr = "bad magic exp:" + LibParam.CORE_MAGIC + " act:" + m;
                         assert false : (ctx + ": " + merrstr); // FIXME: remove
                         throw new ExAbortState(merrstr, new ExBadMessage("bad frame:" + merrstr));
                     }

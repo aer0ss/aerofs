@@ -116,7 +116,7 @@ public abstract class Updater
 
         l.info("checking for downloaded update");
 
-        File updateVersionFile = new File(Util.join(Cfg.absRTRoot(), Param.UPDATE_DIR, Param.UPDATE_VER));
+        File updateVersionFile = new File(Util.join(Cfg.absRTRoot(), LibParam.UPDATE_DIR, LibParam.UPDATE_VER));
         if (!updateVersionFile.exists()) {
             l.info("no pending updates found");
             setUpdateStatus(Status.ERROR, -1);
@@ -162,7 +162,7 @@ public abstract class Updater
     private boolean doesUpdateFileExist(String wantedVersion)
     {
         String installationFilename = createFilename(_installerFilenameFormat, wantedVersion);
-        File f = new File(Util.join(Cfg.absRTRoot(), Param.UPDATE_DIR, installationFilename));
+        File f = new File(Util.join(Cfg.absRTRoot(), LibParam.UPDATE_DIR, installationFilename));
         if (f.exists()) {
             _installationFilename = installationFilename;
             return true;
@@ -184,7 +184,7 @@ public abstract class Updater
         } else {
             // Remove the update folder if it exists, since the downloaded update version is either
             // already applied or there is no downloaded update.
-            InjectableFile f = _factFile.create(Util.join(Cfg.absRTRoot(), Param.UPDATE_DIR));
+            InjectableFile f = _factFile.create(Util.join(Cfg.absRTRoot(), LibParam.UPDATE_DIR));
             f.deleteIgnoreErrorRecursively();
         }
     }
@@ -297,7 +297,7 @@ public abstract class Updater
                     int bytesRead;
                     int downloadedFileSize = 0;
                     int oldPercent = 0;
-                    byte[] buf = new byte[Param.FILE_BUF_SIZE];
+                    byte[] buf = new byte[LibParam.FILE_BUF_SIZE];
                     while ((bytesRead = downloadStream.read(buf)) >= 0) {
                         out.write(buf, 0, bytesRead);
                         downloadedFileSize += bytesRead;
@@ -324,7 +324,7 @@ public abstract class Updater
             }
 
             // create the ./ver file
-            File temp = new File(Util.join(dirName, Param.UPDATE_VER));
+            File temp = new File(Util.join(dirName, LibParam.UPDATE_VER));
             BufferedWriter bw = new BufferedWriter(new FileWriter(temp));
             try {
                 bw.write(ver);
@@ -334,7 +334,7 @@ public abstract class Updater
 
             // rename the tmp download directory to be the update directory
 
-            dirName = Util.join(Cfg.absRTRoot(), Param.UPDATE_DIR);
+            dirName = Util.join(Cfg.absRTRoot(), LibParam.UPDATE_DIR);
             InjectableFile updateDirFolder = _factFile.create(dirName);
 
             updateDirFolder.deleteOrThrowIfExistRecursively();
@@ -458,7 +458,7 @@ public abstract class Updater
                 // no update is available locally
 
                 // remove the update directory if it exists
-                _factFile.create(Util.join(Cfg.absRTRoot(), Param.UPDATE_DIR))
+                _factFile.create(Util.join(Cfg.absRTRoot(), LibParam.UPDATE_DIR))
                          .deleteOrThrowIfExistRecursively();
 
                 // IMPORTANT: _installationFilename is set by checkForDownloadedUpdate()

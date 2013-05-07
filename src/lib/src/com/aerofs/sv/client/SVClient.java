@@ -10,8 +10,8 @@ import com.aerofs.base.id.UniqueID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.AppRoot;
+import com.aerofs.lib.LibParam;
 import com.aerofs.lib.OutArg;
-import com.aerofs.lib.Param;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.SystemUtil.ExitCode;
 import com.aerofs.lib.Util;
@@ -28,7 +28,6 @@ import com.aerofs.proto.Sv.PBSVDefect;
 import com.aerofs.proto.Sv.PBSVDefect.Builder;
 import com.aerofs.proto.Sv.PBSVGzippedLog;
 import com.aerofs.proto.Sv.PBSVHeader;
-import com.aerofs.sv.common.EmailCategory;
 import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
@@ -51,7 +50,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 import static com.aerofs.lib.FileUtil.deleteOrOnExit;
-import static com.aerofs.lib.Param.FILE_BUF_SIZE;
+import static com.aerofs.lib.LibParam.FILE_BUF_SIZE;
 import static com.aerofs.lib.ThreadUtil.startDaemonThread;
 import static com.aerofs.lib.Util.crc32;
 import static com.aerofs.lib.Util.deleteOldHeapDumps;
@@ -385,13 +384,13 @@ public final class SVClient
                             {
                                 // Note: the core database consists of three files:
                                 // db, db-wal, and db-shm.
-                                return (sendLogs && arg1.endsWith(Param.LOG_FILE_EXT))
+                                return (sendLogs && arg1.endsWith(LibParam.LOG_FILE_EXT))
                                         ||
-                                        (sendDB && (arg1.startsWith(Param.OBF_CORE_DATABASE) ||
+                                        (sendDB && (arg1.startsWith(LibParam.OBF_CORE_DATABASE) ||
                                                             arg1.endsWith("wal")        ||
                                                             arg1.endsWith("shm")))
                                         ||
-                                        (sendHeapDumps && arg1.endsWith(Param.HPROF_FILE_EXT));
+                                        (sendHeapDumps && arg1.endsWith(LibParam.HPROF_FILE_EXT));
                             }
                         });
 

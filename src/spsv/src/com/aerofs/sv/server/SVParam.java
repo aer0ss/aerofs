@@ -9,7 +9,8 @@ public class SVParam
     // Database.
     public static final String SV_DATABASE_REFERENCE_PARAMETER = "sv_database_resource_reference";
 
-    // Metrics.
+    // Notifications.
+    // TODO (MP) if we ship SV in private deployements we will need these to be dynamic.
     public static final String SV_NOTIFICATION_SENDER = "sv@aerofs.com";
     public static final String SV_NOTIFICATION_RECEIVER = "team@aerofs.com";
 }

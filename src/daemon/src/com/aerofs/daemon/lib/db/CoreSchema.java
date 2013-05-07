@@ -9,7 +9,7 @@ import java.io.PrintStream;
 import java.sql.SQLException;
 import java.sql.Statement;
 
-import com.aerofs.lib.Param;
+import com.aerofs.lib.LibParam;
 import com.aerofs.lib.db.dbcw.IDBCW;
 import com.aerofs.lib.injectable.InjectableDriver;
 import com.google.inject.Inject;
@@ -542,9 +542,9 @@ public class CoreSchema implements ISchema
                             C_EPOCH_SYNC_PUSH +
                         ")" +
                         " values("+
-                            Param.INITIAL_ACL_EPOCH + "," +
-                            Param.INITIAL_SYNC_PULL_EPOCH + "," +
-                            Param.INITIAL_SYNC_PUSH_EPOCH +
+                            LibParam.INITIAL_ACL_EPOCH + "," +
+                            LibParam.INITIAL_SYNC_PULL_EPOCH + "," +
+                            LibParam.INITIAL_SYNC_PUSH_EPOCH +
                         ")");
 
         createStoreTables(s, _dbcw);

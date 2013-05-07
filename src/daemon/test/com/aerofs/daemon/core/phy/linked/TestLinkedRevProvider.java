@@ -3,8 +3,8 @@ package com.aerofs.daemon.core.phy.linked;
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.phy.linked.LinkedRevProvider.LinkedRevFile;
 import com.aerofs.lib.AppRoot;
+import com.aerofs.lib.LibParam;
 import com.aerofs.lib.log.LogUtil;
-import com.aerofs.lib.Param;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgAbsRoots;
@@ -63,7 +63,7 @@ public class TestLinkedRevProvider extends AbstractTest
         dataDir = factFile.create(rootDir, "data");
         dataDir.mkdirs();
         String auxDir = Cfg.absAuxRootForPath(dataDir.getAbsolutePath(), rootSID);
-        revDir = factFile.create(auxDir, Param.AuxFolder.REVISION._name);
+        revDir = factFile.create(auxDir, LibParam.AuxFolder.REVISION._name);
         revDir.mkdirs();
 
         when(cfgAbsRoots.get(rootSID)).thenReturn(rootDir.getAbsolutePath());

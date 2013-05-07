@@ -6,7 +6,7 @@ package com.aerofs.sp.server.lib;
 
 import com.aerofs.base.Base64;
 import com.aerofs.lib.FullName;
-import com.aerofs.lib.Param;
+import com.aerofs.lib.LibParam;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.db.DBUtil;
 import com.aerofs.base.ex.ExAlreadyExist;
@@ -93,7 +93,7 @@ public class UserDatabase extends AbstractSQLDatabase
         ps.setInt(5, orgID.getInt());
         ps.setInt(6, level.ordinal());
         //noinspection PointlessArithmeticExpression
-        ps.setInt(7, Param.INITIAL_ACL_EPOCH + 1);
+        ps.setInt(7, LibParam.INITIAL_ACL_EPOCH + 1);
 
         try {
             ps.executeUpdate();

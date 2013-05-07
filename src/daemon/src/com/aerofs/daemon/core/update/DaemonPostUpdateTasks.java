@@ -4,7 +4,7 @@ import javax.inject.Inject;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.lib.db.CoreDBCW;
-import com.aerofs.lib.Param.PostUpdate;
+import com.aerofs.lib.LibParam.PostUpdate;
 import com.aerofs.lib.cfg.CfgDatabase;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.cfg.CfgLocalUser;

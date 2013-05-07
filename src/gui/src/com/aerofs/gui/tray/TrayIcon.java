@@ -8,7 +8,7 @@ import com.aerofs.gui.GUIUtil;
 import com.aerofs.gui.tray.TrayIcon.TrayPosition.Orientation;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.AppRoot;
-import com.aerofs.lib.Param;
+import com.aerofs.lib.LibParam;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.sv.client.SVClient;
@@ -67,7 +67,7 @@ public class TrayIcon implements ITrayMenuListener
             // We now ship the hicolor/ icon theme folder in the icons folder on Linux.
             // Note that the icon theme must reside in a folder named "icons" to work on KDE.
             // As a result, the name is kept as a separate string here.
-            _uti.setIconPath(new File(AppRoot.abs(), Param.FDO_ICONS_DIR).getAbsolutePath());
+            _uti.setIconPath(new File(AppRoot.abs(), LibParam.FDO_ICONS_DIR).getAbsolutePath());
             _uti.setIcon("tray0", L.product());
             _uti.setStatus(UbuntuTrayItem.ACTIVE);
             _ti = null;

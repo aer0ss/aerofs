@@ -71,9 +71,9 @@ public class InvitationEmailer
                 @Override
                 public Void call() throws Exception
                 {
-                    EmailSender.sendEmail(WWW.SUPPORT_EMAIL_ADDRESS.get(), nsInviter.nameOnly(),
+                    EmailSender.sendPublicEmail(WWW.SUPPORT_EMAIL_ADDRESS.get(), nsInviter.nameOnly(),
                             invitee.id().getString(), null, subject, email.getTextEmail(),
-                            email.getHTMLEmail(), true, EmailCategory.FOLDERLESS_INVITE);
+                            email.getHTMLEmail(), EmailCategory.FOLDERLESS_INVITE);
 
                     EmailUtil.emailSPNotification(
                             inviter + " invited " + invitee +
@@ -141,14 +141,13 @@ public class InvitationEmailer
                 @Override
                 public Void call() throws Exception
                 {
-                    EmailSender.sendEmail(WWW.SUPPORT_EMAIL_ADDRESS.get(),
+                    EmailSender.sendPublicEmail(WWW.SUPPORT_EMAIL_ADDRESS.get(),
                             nsSharer.nameOnly(),
                             sharee.id().getString(),
                             null,
                             subject,
                             email.getTextEmail(),
                             email.getHTMLEmail(),
-                            true,
                             EmailCategory.FOLDER_INVITE
                     );
 
@@ -185,7 +184,7 @@ public class InvitationEmailer
                 @Override
                 public Void call() throws Exception
                 {
-                    EmailSender.sendEmail(
+                    EmailSender.sendPublicEmail(
                             WWW.SUPPORT_EMAIL_ADDRESS.get(),
                             ns.nameOnly(),
                             invitee.id().getString(),
@@ -193,7 +192,6 @@ public class InvitationEmailer
                             subject,
                             email.getTextEmail(),
                             email.getHTMLEmail(),
-                            true,
                             EmailCategory.ORGANIZATION_INVITATION
                     );
 

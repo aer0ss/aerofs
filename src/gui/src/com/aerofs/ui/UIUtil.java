@@ -15,7 +15,7 @@ import com.aerofs.labeling.L;
 import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.JsonFormat.ParseException;
-import com.aerofs.lib.Param;
+import com.aerofs.lib.LibParam;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
@@ -116,7 +116,7 @@ public class UIUtil
     public static boolean isSystemFile(PBPath path)
     {
         for (String elem : path.getElemList()) {
-            if (elem.equals(Param.TRASH)) return true;
+            if (elem.equals(LibParam.TRASH)) return true;
         }
         return false;
     }

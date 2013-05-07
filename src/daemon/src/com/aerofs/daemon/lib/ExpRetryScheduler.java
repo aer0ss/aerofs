@@ -7,7 +7,7 @@ package com.aerofs.daemon.lib;
 import com.aerofs.base.Loggers;
 import com.aerofs.lib.sched.Scheduler;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
-import com.aerofs.lib.Param;
+import com.aerofs.lib.LibParam;
 import com.aerofs.lib.Util;
 import org.slf4j.Logger;
 
@@ -47,7 +47,7 @@ public class ExpRetryScheduler
         if (_ongoing) return;
 
         _sched.schedule(new AbstractEBSelfHandling() {
-            private long _delay = Param.EXP_RETRY_MIN_DEFAULT;
+            private long _delay = LibParam.EXP_RETRY_MIN_DEFAULT;
             @Override
             public void handle_()
             {
@@ -57,12 +57,12 @@ public class ExpRetryScheduler
                 try {
                     _activity.call();
                     // reset exp-retry delay on successful call
-                    _delay = Param.EXP_RETRY_MIN_DEFAULT;
+                    _delay = LibParam.EXP_RETRY_MIN_DEFAULT;
                 } catch (RuntimeException e) {
                     throw e;
                 } catch (Exception e) {
-                    rescheduleDelay = _scheduled ? Param.EXP_RETRY_MIN_DEFAULT : _delay;
-                    _delay = Math.min(_delay * 2, Param.EXP_RETRY_MAX_DEFAULT);
+                    rescheduleDelay = _scheduled ? LibParam.EXP_RETRY_MIN_DEFAULT : _delay;
+                    _delay = Math.min(_delay * 2, LibParam.EXP_RETRY_MAX_DEFAULT);
                     _scheduled = true;
                     l.warn(_name + " failed. exp-retry in " + rescheduleDelay + ": " +
                             Util.e(e, _excludes));

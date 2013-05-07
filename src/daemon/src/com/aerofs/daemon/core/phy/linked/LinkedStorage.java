@@ -14,7 +14,7 @@ import com.aerofs.daemon.core.phy.linked.linker.LinkerRootMap.IListener;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.IStores;
 import com.aerofs.daemon.lib.db.trans.Trans;
-import com.aerofs.lib.Param;
+import com.aerofs.lib.LibParam;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgStoragePolicy;
@@ -34,7 +34,7 @@ import com.aerofs.daemon.core.phy.linked.fid.IFIDMaintainer;
 import com.aerofs.daemon.lib.db.AbstractTransListener;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.Path;
-import com.aerofs.lib.Param.AuxFolder;
+import com.aerofs.lib.LibParam.AuxFolder;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOCKID;
 import com.aerofs.lib.id.SOID;
@@ -113,7 +113,7 @@ public class LinkedStorage implements IPhysicalStorage, IListener
         l.info("aux root {}", absAuxRoot);
 
         // create aux folders. other codes assume these folders already exist.
-        for (AuxFolder af : Param.AuxFolder.values()) {
+        for (AuxFolder af : LibParam.AuxFolder.values()) {
             _factFile.create(Util.join(absAuxRoot, af._name)).ensureDirExists();
         }
 
@@ -176,8 +176,8 @@ public class LinkedStorage implements IPhysicalStorage, IListener
         // since these files are not important.
         String prefix = makeAuxFilePrefix(sidx);
         String absAuxRoot = auxRootForStore_(sidx);
-        deleteFiles_(absAuxRoot, Param.AuxFolder.CONFLICT, prefix);
-        deleteFiles_(absAuxRoot, Param.AuxFolder.PREFIX, prefix);
+        deleteFiles_(absAuxRoot, LibParam.AuxFolder.CONFLICT, prefix);
+        deleteFiles_(absAuxRoot, LibParam.AuxFolder.PREFIX, prefix);
     }
 
     void promoteToAnchor_(SOID soid, Path path, Trans t) throws SQLException, IOException

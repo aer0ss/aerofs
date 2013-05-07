@@ -3,12 +3,13 @@ package com.aerofs.lib;
 import com.aerofs.base.BaseParam;
 import com.aerofs.base.C;
 import com.aerofs.labeling.L;
+import com.netflix.config.DynamicBooleanProperty;
 
 import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
 
-public class Param extends BaseParam
+public class LibParam extends BaseParam
 {
     // the block size used for content hashing and block storage (see BlockStorage)
     public static final int FILE_BLOCK_SIZE                  = 4 * C.MB;
@@ -153,6 +154,12 @@ public class Param extends BaseParam
     public static class Verkehr
     {
         public static final long VERKEHR_RETRY_INTERVAL = 5 * C.SEC;
+    }
+
+    public static class Notifications
+    {
+        public static final DynamicBooleanProperty ENABLED =
+                new DynamicBooleanProperty("lib.notifications.enabled", true);
     }
 
     public static class SyncStat

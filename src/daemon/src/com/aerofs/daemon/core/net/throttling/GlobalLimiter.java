@@ -24,8 +24,8 @@ import java.util.Map;
 
 import static com.aerofs.daemon.core.net.throttling.LimitParam._MAX_UL_BW;
 import static com.aerofs.daemon.core.net.throttling.LimitParam._MIN_UL_BW;
-import static com.aerofs.lib.Param.Throttling.MIN_BANDWIDTH_UI;
-import static com.aerofs.lib.Param.Throttling.UNLIMITED_BANDWIDTH;
+import static com.aerofs.lib.LibParam.Throttling.MIN_BANDWIDTH_UI;
+import static com.aerofs.lib.LibParam.Throttling.UNLIMITED_BANDWIDTH;
 
 // TODO: How to I find out available bandwidth?
 // TODO: Have to have a parameter for amount of headers the transport adds

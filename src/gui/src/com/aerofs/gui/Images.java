@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.lib.Param;
+import com.aerofs.lib.LibParam;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.program.Program;
@@ -71,7 +71,7 @@ public class Images {
     {
         Image img = s_imgs.get(key);
         if (img == null) {
-            String path = AppRoot.abs() + Param.ICONS_DIR + key;
+            String path = AppRoot.abs() + LibParam.ICONS_DIR + key;
             try {
                 img = new Image(Display.getCurrent(), path);
                 s_imgs.put(key, img);
@@ -101,7 +101,7 @@ public class Images {
         if (s_spinner_frames == null) {
             // image downloaded from http://ajaxload.info/
             ImageLoader loader = new ImageLoader();
-            loader.load(AppRoot.abs() + Param.ICONS_DIR + Images.ICON_SPIN);
+            loader.load(AppRoot.abs() + LibParam.ICONS_DIR + Images.ICON_SPIN);
             s_spinner_frames = new Image[loader.data.length];
             Display display = Display.getCurrent();
             for (int i = 0; i < loader.data.length; i++) {

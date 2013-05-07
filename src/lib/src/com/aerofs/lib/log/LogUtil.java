@@ -1,7 +1,7 @@
 package com.aerofs.lib.log;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.lib.Param;
+import com.aerofs.lib.LibParam;
 import org.apache.log4j.ConsoleAppender;
 import org.apache.log4j.DailyRollingFileAppender;
 import org.apache.log4j.Layout;
@@ -102,10 +102,10 @@ public abstract class LogUtil
     public static void initializeDefaultLoggingProperties(String rtRoot, String logfile, Level logLevel)
         throws IOException
     {
-        if (logfile.equals(Param.SH_NAME)) {
+        if (logfile.equals(LibParam.SH_NAME)) {
             getRootLogger().addAppender(new NullAppender());
         } else {
-            setupAndAddFileAppender(rtRoot + File.separator + logfile + Param.LOG_FILE_EXT);
+            setupAndAddFileAppender(rtRoot + File.separator + logfile + LibParam.LOG_FILE_EXT);
         }
 
         getRootLogger().setLevel(logLevel.getLog4jLevel());

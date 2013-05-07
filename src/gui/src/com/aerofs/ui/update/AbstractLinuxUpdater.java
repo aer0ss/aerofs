@@ -46,7 +46,7 @@ abstract class AbstractLinuxUpdater extends Updater
             if (userId == null) userId = "null";
 
             SystemUtil.execBackground("/bin/bash", upFile.getAbsolutePath(),
-                    appRoot + File.separator, Util.join(Cfg.absRTRoot(), Param.UPDATE_DIR, instfile),
+                    appRoot + File.separator, Util.join(Cfg.absRTRoot(), LibParam.UPDATE_DIR, instfile),
                     newVer, userId,
                     //need to pass in username
                     UI.isGUI() ? "1" : "0" // run GUI on startup? or cli?
@@ -68,7 +68,7 @@ abstract class AbstractLinuxUpdater extends Updater
                 UI.get().confirm(MessageType.ERROR, text);
             } catch (ExNoConsole e) {
                 UI.get().show(MessageType.INFO,
-                        "Could not confirm with the" + " user. Send an email instead.");
+                        "Could not confirm with the user. Send an email instead.");
 
                 SPBlockingClient.Factory fact = new SPBlockingClient.Factory();
                 SPBlockingClient sp = fact.create_(Cfg.user());

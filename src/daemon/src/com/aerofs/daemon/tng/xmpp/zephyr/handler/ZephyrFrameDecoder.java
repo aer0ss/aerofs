@@ -8,7 +8,7 @@ import com.aerofs.base.net.ZephyrConstants;
 import com.aerofs.daemon.tng.xmpp.zephyr.exception.ExInvalidZephyrMessage;
 import com.aerofs.daemon.tng.xmpp.zephyr.message.ZephyrDataMessage;
 import com.aerofs.daemon.tng.xmpp.zephyr.message.ZephyrRegistrationMessage;
-import com.aerofs.lib.Param;
+import com.aerofs.lib.LibParam;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelHandlerContext;
@@ -46,7 +46,7 @@ public class ZephyrFrameDecoder extends FrameDecoder
 
             // Check that this message's magic value matches the client magic
             int magic = buffer.readInt();
-            if (Param.CORE_MAGIC != magic) {
+            if (LibParam.CORE_MAGIC != magic) {
                 // The magic value does not match the client magic, so check if it
                 // matches the server magic value
                 buffer.resetReaderIndex();

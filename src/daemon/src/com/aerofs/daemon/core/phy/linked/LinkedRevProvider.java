@@ -16,7 +16,7 @@ import com.aerofs.base.Base64;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.SID;
-import com.aerofs.lib.Param.AuxFolder;
+import com.aerofs.lib.LibParam.AuxFolder;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.os.OSUtil;

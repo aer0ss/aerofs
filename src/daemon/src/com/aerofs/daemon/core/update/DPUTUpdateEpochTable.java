@@ -12,7 +12,7 @@ import java.sql.Statement;
 
 import com.aerofs.daemon.core.update.DPUTUtil.IDatabaseOperation;
 import com.aerofs.daemon.lib.db.CoreDBCW;
-import com.aerofs.lib.Param;
+import com.aerofs.lib.LibParam;
 import com.aerofs.lib.db.dbcw.IDBCW;
 
 public class DPUTUpdateEpochTable implements IDaemonPostUpdateTask {
@@ -32,7 +32,7 @@ public class DPUTUpdateEpochTable implements IDaemonPostUpdateTask {
                     s.executeUpdate("alter table " + T_EPOCH +
                             " add column " + C_EPOCH_SYNC_PULL + _dbcw.longType());
                     s.executeUpdate("update " + T_EPOCH +
-                            " set " + C_EPOCH_SYNC_PULL + "=" + Param.INITIAL_SYNC_PULL_EPOCH);
+                            " set " + C_EPOCH_SYNC_PULL + "=" + LibParam.INITIAL_SYNC_PULL_EPOCH);
                 }
             }
         });

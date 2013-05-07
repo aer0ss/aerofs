@@ -13,7 +13,7 @@ import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.SID;
 import com.aerofs.lib.FileUtil;
-import com.aerofs.lib.Param;
+import com.aerofs.lib.LibParam;
 import com.aerofs.lib.RootAnchorUtil;
 import com.aerofs.lib.StorageType;
 import com.aerofs.lib.ThreadUtil;
@@ -52,7 +52,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
 import static com.aerofs.base.BaseParam.VerkehrTopics.CMD_CHANNEL_TOPIC_PREFIX;
-import static com.aerofs.lib.Param.Verkehr.VERKEHR_RETRY_INTERVAL;
+import static com.aerofs.lib.LibParam.Verkehr.VERKEHR_RETRY_INTERVAL;
 import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor;
 
 /**
@@ -476,13 +476,13 @@ public final class CommandNotificationSubscriber
         }
 
         // Delete device key and certificate.
-        FileUtil.deleteIgnoreErrorRecursively(new File(Cfg.absRTRoot(), Param.DEVICE_KEY));
-        FileUtil.deleteIgnoreErrorRecursively(new File(Cfg.absRTRoot(), Param.DEVICE_CERT));
+        FileUtil.deleteIgnoreErrorRecursively(new File(Cfg.absRTRoot(), LibParam.DEVICE_KEY));
+        FileUtil.deleteIgnoreErrorRecursively(new File(Cfg.absRTRoot(), LibParam.DEVICE_CERT));
 
         // Delete the password.
         Cfg.db().set(Key.CRED, Key.CRED.defaultValue());
         // Create the setup file.
-        _factFile.create(Util.join(Cfg.absRTRoot(), Param.SETTING_UP)).createNewFile();
+        _factFile.create(Util.join(Cfg.absRTRoot(), LibParam.SETTING_UP)).createNewFile();
     }
 
     private static class CommandFailed extends Exception

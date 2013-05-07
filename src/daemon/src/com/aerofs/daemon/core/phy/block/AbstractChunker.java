@@ -10,7 +10,7 @@ import com.aerofs.daemon.lib.HashStream;
 import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.LengthTrackingOutputStream;
-import com.aerofs.lib.Param;
+import com.aerofs.lib.LibParam;
 import com.aerofs.lib.ResettableFileInputStream;
 import com.google.common.base.Preconditions;
 import com.google.common.io.ByteStreams;
@@ -59,16 +59,16 @@ public abstract class AbstractChunker
         // With a block size of 4MB and a hash size of 16bytes that means a file size cutoff of
         // 500TB so we should be safe...
         Preconditions.checkArgument(_length <
-                (long)Integer.MAX_VALUE * Param.FILE_BLOCK_SIZE * ContentHash.UNIT_LENGTH);
+                (long)Integer.MAX_VALUE * LibParam.FILE_BLOCK_SIZE * ContentHash.UNIT_LENGTH);
 
-        int trailing = (int)(_length % Param.FILE_BLOCK_SIZE);
-        int numBlocks = (int)(_length / Param.FILE_BLOCK_SIZE) +
+        int trailing = (int)(_length % LibParam.FILE_BLOCK_SIZE);
+        int numBlocks = (int)(_length / LibParam.FILE_BLOCK_SIZE) +
                 (trailing > 0 || _length == 0 ? 1 : 0);
 
         byte[] hashBytes = new byte[numBlocks * ContentHash.UNIT_LENGTH];
 
         for (int i = 0; i < numBlocks; ++i) {
-            int blockSize = i == numBlocks - 1 ? trailing : Param.FILE_BLOCK_SIZE;
+            int blockSize = i == numBlocks - 1 ? trailing : LibParam.FILE_BLOCK_SIZE;
             ContentHash h = storeOneBlock_(i, blockSize);
             System.arraycopy(h.getBytes(), 0, hashBytes, i * ContentHash.UNIT_LENGTH,
                     ContentHash.UNIT_LENGTH);
@@ -169,7 +169,7 @@ public abstract class AbstractChunker
     private ContentHash storeOneBlock_(long index, int blockSize) throws IOException, SQLException
     {
         InputSupplier<? extends InputStream> input
-                = ByteStreams.slice(_input, index * Param.FILE_BLOCK_SIZE, Param.FILE_BLOCK_SIZE);
+                = ByteStreams.slice(_input, index * LibParam.FILE_BLOCK_SIZE, LibParam.FILE_BLOCK_SIZE);
 
         // read a chunk of input into a buffer, perform any backend-specific encoding and
         // compute any metadata (hash, length, ...) required for the actual write

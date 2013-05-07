@@ -8,7 +8,7 @@ import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.AppRoot;
-import com.aerofs.lib.Param;
+import com.aerofs.lib.LibParam;
 import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.StorageType;
 import com.aerofs.lib.Util;
@@ -85,7 +85,7 @@ public class Cfg
     static {
         long pst;
         try {
-            Scanner s = new Scanner(new File(Util.join(AppRoot.abs(), Param.PROFILER)));
+            Scanner s = new Scanner(new File(Util.join(AppRoot.abs(), LibParam.PROFILER)));
             try {
                 pst = Integer.parseInt(s.nextLine());
             } finally {
@@ -138,14 +138,14 @@ public class Cfg
         readCert();
 
         _portbase = readPortbase();
-        _useDM = disabledByFile(rtRoot, Param.NODM);
-        _useTCP = disabledByFile(rtRoot, Param.NOTCP);
-        _useJingle = disabledByFile(rtRoot, Param.NOSTUN);
-        _useZephyr = disabledByFile(rtRoot, Param.NOZEPHYR);
-        _useAutoUpdate = disabledByFile(rtRoot, Param.NOAUTOUPDATE);
-        _isAggressiveCheckingEnabled = enabledByFile(rtRoot, Param.AGGRESSIVE_CHECKS);
-        _useHistory = disabledByFile(rtRoot,  Param.NOHISTORY);
-        _useXFF = disabledByFile(rtRoot, Param.NOXFF);
+        _useDM = disabledByFile(rtRoot, LibParam.NODM);
+        _useTCP = disabledByFile(rtRoot, LibParam.NOTCP);
+        _useJingle = disabledByFile(rtRoot, LibParam.NOSTUN);
+        _useZephyr = disabledByFile(rtRoot, LibParam.NOZEPHYR);
+        _useAutoUpdate = disabledByFile(rtRoot, LibParam.NOAUTOUPDATE);
+        _isAggressiveCheckingEnabled = enabledByFile(rtRoot, LibParam.AGGRESSIVE_CHECKS);
+        _useHistory = disabledByFile(rtRoot,  LibParam.NOHISTORY);
+        _useXFF = disabledByFile(rtRoot, LibParam.NOXFF);
 
         _inited = true;
     }
@@ -153,7 +153,7 @@ public class Cfg
     private static void readCert()
             throws CertificateException, IOException
     {
-        InputStream in = new FileInputStream(absRTRoot() + File.separator + Param.DEVICE_CERT);
+        InputStream in = new FileInputStream(absRTRoot() + File.separator + LibParam.DEVICE_CERT);
         try {
             CertificateFactory cf = CertificateFactory.getInstance("X.509");
             _cert = (X509Certificate) cf.generateCertificate(in);
@@ -198,7 +198,7 @@ public class Cfg
         @Override
         public String url()
         {
-            return "jdbc:sqlite:" + (Cfg.absRTRoot() + File.separator + Param.CFG_DATABASE);
+            return "jdbc:sqlite:" + (Cfg.absRTRoot() + File.separator + LibParam.CFG_DATABASE);
         }
 
         @Override
@@ -245,7 +245,7 @@ public class Cfg
 
     public static void writePortbase(String rtRoot, int portbase) throws IOException
     {
-        File file = new File(rtRoot, Param.PORTBASE);
+        File file = new File(rtRoot, LibParam.PORTBASE);
         PrintStream ps = new PrintStream(new FileOutputStream(file));
         try {
             ps.println(portbase);
@@ -256,7 +256,7 @@ public class Cfg
 
     private static int readPortbase() throws IOException
     {
-        Scanner s = new Scanner(new File(_absRTRoot, Param.PORTBASE));
+        Scanner s = new Scanner(new File(_absRTRoot, LibParam.PORTBASE));
         try {
             return Integer.parseInt(s.nextLine());
         } finally {
@@ -268,7 +268,7 @@ public class Cfg
     {
         if (_ver == null) {
             try {
-                Scanner s = new Scanner(new File(Util.join(AppRoot.abs(), Param.VERSION)));
+                Scanner s = new Scanner(new File(Util.join(AppRoot.abs(), LibParam.VERSION)));
                 try {
                     _ver = s.nextLine();
                 } finally {
@@ -306,7 +306,7 @@ public class Cfg
     public static String absAuxRootForPath(String path, SID sid)
     {
         return new File(new File(path).getParentFile(),
-                Param.AUXROOT_NAME + "." + sid.toStringFormal().substring(0, 6)).getAbsolutePath();
+                LibParam.AUXROOT_NAME + "." + sid.toStringFormal().substring(0, 6)).getAbsolutePath();
     }
 
     /**
@@ -400,7 +400,7 @@ public class Cfg
 
     public static boolean useFSTypeCheck(String rtRoot)
     {
-        return !new File(rtRoot, Param.NO_FS_TYPE_CHECK).exists();
+        return !new File(rtRoot, LibParam.NO_FS_TYPE_CHECK).exists();
     }
 
     public static int port(PortType type)
@@ -410,12 +410,12 @@ public class Cfg
 
     public static boolean lotsOfLog(String rtRoot)
     {
-        return new File(Util.join(rtRoot, Param.LOL)).exists();
+        return new File(Util.join(rtRoot, LibParam.LOL)).exists();
     }
 
     public static boolean lotsOfLotsOfLog(String rtRoot)
     {
-        return new File(Util.join(rtRoot, Param.LOLOL)).exists();
+        return new File(Util.join(rtRoot, LibParam.LOLOL)).exists();
     }
 
     public static boolean useProfiler()
@@ -539,7 +539,7 @@ public class Cfg
     {
         // decrypt device_private_key using b64(scrypt(p|u))
         char[] pbePasswd = Base64.encodeBytes(scrypted).toCharArray();
-        byte[] encryptedKey = Base64.decodeFromFile(absRTRoot() + File.separator + Param.DEVICE_KEY);
+        byte[] encryptedKey = Base64.decodeFromFile(absRTRoot() + File.separator + LibParam.DEVICE_KEY);
         _privKey = SecUtil.decryptPrivateKey(encryptedKey, pbePasswd);
 
         // do it after decryption has succeeded
@@ -572,7 +572,7 @@ public class Cfg
     public static X509Certificate cacert() throws IOException, CertificateException
     {
         if (_cacert == null) {
-            InputStream in = new FileInputStream(AppRoot.abs() + File.separator + Param.CA_CERT);
+            InputStream in = new FileInputStream(AppRoot.abs() + File.separator + LibParam.CA_CERT);
             try {
                 CertificateFactory cf = CertificateFactory.getInstance("X.509");
                 _cacert = (X509Certificate) cf.generateCertificate(in);

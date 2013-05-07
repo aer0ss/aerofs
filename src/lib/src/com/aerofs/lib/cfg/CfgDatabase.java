@@ -1,6 +1,5 @@
 package com.aerofs.lib.cfg;
 
-import java.io.File;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -16,11 +15,8 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import com.aerofs.base.C;
-import com.aerofs.base.id.SID;
-import com.aerofs.lib.Param;
 import com.aerofs.lib.Versions;
 import com.aerofs.lib.db.DBUtil;
-import com.aerofs.lib.db.IDatabaseParams;
 import com.aerofs.lib.db.dbcw.IDBCW;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;

@@ -15,7 +15,7 @@ import com.aerofs.daemon.transport.lib.TCPProactorMT.IConnector;
 import com.aerofs.daemon.transport.lib.TCPProactorMT.IReactor;
 import com.aerofs.daemon.transport.lib.TPUtil;
 import com.aerofs.daemon.transport.tcpmt.ARP.ARPEntry;
-import com.aerofs.lib.Param;
+import com.aerofs.lib.LibParam;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExDeviceOffline;
 import com.aerofs.base.ex.ExNoResource;
@@ -53,7 +53,7 @@ public class Unicast implements IConnectionManager, IUnicast, IPipeDebug
         _arp = arp;
         _stores = stores;
         _proactor = new TCPProactorMT("tp", this, null, internalPort == null ? port : internalPort,
-                Param.CORE_MAGIC, true, DaemonParam.MAX_TRANSPORT_MESSAGE_SIZE);
+                LibParam.CORE_MAGIC, true, DaemonParam.MAX_TRANSPORT_MESSAGE_SIZE);
         _port = internalPort == null ? _proactor.getListeningPort() : port;
 
         l.info("port " + _port + " internal " + _proactor.getListeningPort());

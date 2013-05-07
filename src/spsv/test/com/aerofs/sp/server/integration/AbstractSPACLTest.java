@@ -1,7 +1,7 @@
 package com.aerofs.sp.server.integration;
 
 import com.aerofs.base.ex.ExEmptyEmailAddress;
-import com.aerofs.lib.Param;
+import com.aerofs.lib.LibParam;
 import com.aerofs.base.acl.Role;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.id.SID;
@@ -26,7 +26,7 @@ public abstract class AbstractSPACLTest extends AbstractSPFolderTest
     private long getInitialServerACL()
     {
         //noinspection PointlessArithmeticExpression
-        return Param.INITIAL_ACL_EPOCH + 1;
+        return LibParam.INITIAL_ACL_EPOCH + 1;
     }
 
     @Before

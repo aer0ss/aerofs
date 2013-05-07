@@ -28,11 +28,16 @@ public class SPParam
     public static final long VERKEHR_ACK_TIMEOUT = 1 * C.SEC; // milliseconds
 
     // Email related constants.
-    public static final String SP_EMAIL_NAME = L.brand();
-    public static final DynamicStringProperty SP_NOTIFICATION_SENDER_EMAIL_ADDRESS =
-            new DynamicStringProperty("sp.notification.sender_email_address", "sp@aerofs.com");
-    public static final DynamicStringProperty SP_NOTIFICATION_RECEIVER_EMAIL_ADDRESS =
-            new DynamicStringProperty("sp.notification.receiver_email_address", "team@aerofs.com");
+    public static final String EMAIL_FROM_NAME = L.brand();
+
+    // Notification-related constants.
+    public static class Notifications
+    {
+        public static final DynamicStringProperty SENDER_EMAIL_ADDRESS =
+                new DynamicStringProperty("sp.notification.sender_email_address", "sp@aerofs.com");
+        public static final DynamicStringProperty RECEIVER_EMAIL_ADDRESS =
+                new DynamicStringProperty("sp.notification.receiver_email_address", "team@aerofs.com");
+    }
 
     /**
      * Number of bytes we use for the salt
@@ -63,7 +68,6 @@ public class SPParam
     }
 
     // SP Constants go here
-
     public static final long PASSWORD_RESET_TOKEN_VALID_DURATION = 1 * C.DAY;
 
     // Also see URLs defined in BaseParam.WWW

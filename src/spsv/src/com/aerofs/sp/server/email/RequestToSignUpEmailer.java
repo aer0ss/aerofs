@@ -37,10 +37,9 @@ public class RequestToSignUpEmailer
         email.addDefaultSignature();
 
         try {
-            EmailSender.sendEmail(WWW.SUPPORT_EMAIL_ADDRESS.get(), SPParam.SP_EMAIL_NAME,
+            EmailSender.sendPublicEmail(WWW.SUPPORT_EMAIL_ADDRESS.get(), SPParam.EMAIL_FROM_NAME,
                     emailAddress, null, "Complete your " + L.brand() + " sign up",
-                    email.getTextEmail(), email.getHTMLEmail(), true,
-                    EmailCategory.REQUEST_TO_SIGN_UP);
+                    email.getTextEmail(), email.getHTMLEmail(), EmailCategory.REQUEST_TO_SIGN_UP);
         } catch (MessagingException e) {
             throw new IOException(e);
         }

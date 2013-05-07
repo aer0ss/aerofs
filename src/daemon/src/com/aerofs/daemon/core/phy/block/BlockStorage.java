@@ -24,7 +24,7 @@ import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
-import com.aerofs.lib.Param;
+import com.aerofs.lib.LibParam;
 import com.aerofs.lib.ProgressIndicators;
 import com.aerofs.lib.cfg.CfgAbsDefaultAuxRoot;
 import com.aerofs.lib.cfg.CfgStoragePolicy;
@@ -107,7 +107,7 @@ class BlockStorage implements IPhysicalStorage
         _initables = initables;
 
         final String prefixDirPath = absDefaultAuxRoot.get();
-        _prefixDir = _fileFactory.create(prefixDirPath, Param.AuxFolder.PREFIX._name);
+        _prefixDir = _fileFactory.create(prefixDirPath, LibParam.AuxFolder.PREFIX._name);
     }
 
     @Override

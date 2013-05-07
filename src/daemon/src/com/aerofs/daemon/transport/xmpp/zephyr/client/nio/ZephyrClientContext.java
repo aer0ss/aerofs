@@ -8,6 +8,7 @@ package com.aerofs.daemon.transport.xmpp.zephyr.client.nio;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.event.lib.imc.IResultWaiter;
+import com.aerofs.lib.LibParam;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.daemon.lib.PrioQueue;
 import com.aerofs.daemon.transport.xmpp.XUtil;
@@ -15,7 +16,6 @@ import com.aerofs.daemon.transport.xmpp.zephyr.client.nio.statemachine.IState;
 import com.aerofs.daemon.transport.xmpp.zephyr.client.nio.statemachine.IStateContext;
 import com.aerofs.daemon.transport.xmpp.zephyr.client.nio.statemachine.IStateEventType;
 import com.aerofs.daemon.transport.xmpp.zephyr.client.nio.statemachine.StateMachineEvent;
-import com.aerofs.lib.Param;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.proto.Transport.PBZephyrCandidateInfo;
@@ -552,7 +552,7 @@ public class ZephyrClientContext implements IStateContext
             ByteArrayOutputStream baos =
                 new ByteArrayOutputStream(ZEPHYR_CLIENT_HDR_LEN);
             DataOutputStream dos = new DataOutputStream(baos);
-            dos.writeInt(Param.CORE_MAGIC);
+            dos.writeInt(LibParam.CORE_MAGIC);
             dos.writeInt(datalen);
 
             // serialize the header byte-array and check that it's ok

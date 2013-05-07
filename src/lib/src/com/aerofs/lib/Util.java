@@ -637,7 +637,7 @@ public abstract class Util
         File[] heapDumps = new File(absRTRoot()).listFiles(new FilenameFilter() {
                 @Override
                 public boolean accept(File arg0, String arg1) {
-                    return arg1.endsWith(Param.HPROF_FILE_EXT);
+                    return arg1.endsWith(LibParam.HPROF_FILE_EXT);
                 }
             });
         if (heapDumps == null) {
@@ -764,7 +764,7 @@ public abstract class Util
      */
     public static void exponentialRetry(String name, Callable<Void> call, Class<?> ... excludes)
     {
-        long interval = Param.EXP_RETRY_MIN_DEFAULT;
+        long interval = LibParam.EXP_RETRY_MIN_DEFAULT;
         while (true) {
             try {
                 call.call();
@@ -777,7 +777,7 @@ public abstract class Util
             } catch (Exception e) {
                 l.warn(name + ". expo wait " + interval + ": " + e(e, excludes));
                 ThreadUtil.sleepUninterruptable(interval);
-                interval = Math.min(interval * 2, Param.EXP_RETRY_MAX_DEFAULT);
+                interval = Math.min(interval * 2, LibParam.EXP_RETRY_MAX_DEFAULT);
             }
         }
     }
@@ -843,7 +843,7 @@ public abstract class Util
      */
     public static long copy(InputStream is, OutputStream os) throws IOException
     {
-        byte[] buf = new byte[Param.FILE_BUF_SIZE];
+        byte[] buf = new byte[LibParam.FILE_BUF_SIZE];
         long total = 0;
         int len;
         while ((len = is.read(buf)) > 0) {

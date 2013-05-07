@@ -10,7 +10,7 @@ import com.aerofs.base.BaseParam.Xmpp;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.JabberID;
 import com.aerofs.lib.IDumpStatMisc;
-import com.aerofs.lib.Param;
+import com.aerofs.lib.LibParam;
 import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
@@ -129,8 +129,8 @@ public class XMPPServerConnection implements IDumpStatMisc
                 public Void call() throws Exception
                 {
                     if (initialDelay) {
-                        l.info("reconnect in " + Param.EXP_RETRY_MIN_DEFAULT);
-                        ThreadUtil.sleepUninterruptable(Param.EXP_RETRY_MIN_DEFAULT);
+                        l.info("reconnect in " + LibParam.EXP_RETRY_MIN_DEFAULT);
+                        ThreadUtil.sleepUninterruptable(LibParam.EXP_RETRY_MIN_DEFAULT);
                     }
                     l.info("connecting");
 

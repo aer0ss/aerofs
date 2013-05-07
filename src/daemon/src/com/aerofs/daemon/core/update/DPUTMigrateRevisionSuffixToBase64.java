@@ -7,7 +7,7 @@ package com.aerofs.daemon.core.update;
 import com.aerofs.daemon.core.phy.linked.LinkedRevProvider.RevisionSuffix;
 import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.FrequentDefectSender;
-import com.aerofs.lib.Param;
+import com.aerofs.lib.LibParam;
 import com.aerofs.lib.Util;
 
 import java.io.File;
@@ -85,6 +85,6 @@ public class DPUTMigrateRevisionSuffixToBase64 implements IDaemonPostUpdateTask
     public void run() throws Exception
     {
         fixFolder(new File(Util.join(DPUTMigrateAuxRoot.getOldAuxRoot(),
-                Param.AuxFolder.REVISION._name)));
+                LibParam.AuxFolder.REVISION._name)));
     }
 }

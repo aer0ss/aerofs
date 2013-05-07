@@ -7,7 +7,7 @@ package com.aerofs.lib.ex;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.Exceptions;
-import com.aerofs.lib.Param;
+import com.aerofs.lib.LibParam;
 import com.aerofs.lib.ProgramInformation;
 import com.aerofs.lib.cfg.Cfg;
 import com.google.common.collect.Maps;
@@ -81,7 +81,7 @@ public class RecentExceptions
     {
         String programName = (ProgramInformation.get() != null)
                 ? ProgramInformation.get().getProgramName() : "unknown-program";
-        return programName +  "-" + Param.RECENT_EXCEPTIONS;
+        return programName +  "-" + LibParam.RECENT_EXCEPTIONS;
     }
 
     /**

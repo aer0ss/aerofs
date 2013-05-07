@@ -12,7 +12,7 @@ import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.event.Prio;
 import com.google.inject.Inject;
 
-import static com.aerofs.lib.Param.SEED_FILE_NAME;
+import static com.aerofs.lib.LibParam.SEED_FILE_NAME;
 
 public class HdCreateSeedFile extends AbstractHdIMC<EICreateSeedFile>
 {

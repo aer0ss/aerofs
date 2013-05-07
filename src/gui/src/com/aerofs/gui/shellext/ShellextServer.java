@@ -2,7 +2,7 @@ package com.aerofs.gui.shellext;
 
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
-import com.aerofs.lib.Param;
+import com.aerofs.lib.LibParam;
 import com.aerofs.lib.Util;
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.buffer.ChannelBuffer;
@@ -69,7 +69,7 @@ class ShellextServer
     {
         ServerBootstrap bootstrap = new ServerBootstrap(_serverChannelFactory);
         bootstrap.setPipelineFactory(_factory);
-        bootstrap.bind(new InetSocketAddress(Param.LOCALHOST_ADDR, _port));
+        bootstrap.bind(new InetSocketAddress(LibParam.LOCALHOST_ADDR, _port));
 
         l.info("ShellextServer started on port " + _port);
     }

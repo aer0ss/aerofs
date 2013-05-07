@@ -1,7 +1,7 @@
 package com.aerofs.lib.ritual;
 
 import com.aerofs.base.net.AddressResolverHandler;
-import com.aerofs.lib.Param;
+import com.aerofs.lib.LibParam;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.Cfg.PortType;
 import org.jboss.netty.bootstrap.ClientBootstrap;
@@ -18,8 +18,8 @@ import org.jboss.netty.handler.codec.frame.LengthFieldPrepender;
 import javax.annotation.Nullable;
 import java.net.InetSocketAddress;
 
-import static com.aerofs.lib.Param.Ritual.LENGTH_FIELD_SIZE;
-import static com.aerofs.lib.Param.Ritual.MAX_FRAME_LENGTH;
+import static com.aerofs.lib.LibParam.Ritual.LENGTH_FIELD_SIZE;
+import static com.aerofs.lib.LibParam.Ritual.MAX_FRAME_LENGTH;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static java.util.concurrent.Executors.newSingleThreadExecutor;
 
@@ -75,7 +75,8 @@ public final class RitualClientProvider implements IRitualClientProvider
     private void setupRitualClients()
     {
         if (_ritualChannel == null) {
-            InetSocketAddress unresolved = InetSocketAddress.createUnresolved(Param.LOCALHOST_ADDR.getHostName(), Cfg.port(PortType.RITUAL));
+            InetSocketAddress unresolved = InetSocketAddress.createUnresolved(
+                    LibParam.LOCALHOST_ADDR.getHostName(), Cfg.port(PortType.RITUAL));
             ChannelFuture future = _bootstrap.connect(unresolved);
 
             _ritualChannel = future.getChannel();

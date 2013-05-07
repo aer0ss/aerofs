@@ -7,7 +7,7 @@ package com.aerofs.daemon.core;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.lib.IStartable;
-import com.aerofs.lib.Param.Daemon;
+import com.aerofs.lib.LibParam.Daemon;
 import com.aerofs.lib.ProgressIndicators;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.ThreadUtil;

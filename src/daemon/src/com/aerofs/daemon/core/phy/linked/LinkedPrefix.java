@@ -10,7 +10,7 @@ import com.aerofs.daemon.core.phy.IPhysicalPrefix;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.ContentHash;
-import com.aerofs.lib.Param;
+import com.aerofs.lib.LibParam;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.id.SOCKID;
 import com.aerofs.lib.injectable.InjectableFile;
@@ -21,7 +21,7 @@ public class LinkedPrefix implements IPhysicalPrefix
 
     public LinkedPrefix(InjectableFile.Factory factFile, SOCKID k, String pathAuxRoot)
     {
-        _f = factFile.create(Util.join(pathAuxRoot, Param.AuxFolder.PREFIX._name,
+        _f = factFile.create(Util.join(pathAuxRoot, LibParam.AuxFolder.PREFIX._name,
                 LinkedStorage.makeAuxFileName(k.sokid())));
     }
 

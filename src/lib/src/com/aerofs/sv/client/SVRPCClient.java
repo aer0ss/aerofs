@@ -25,7 +25,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URL;
 
-import static com.aerofs.lib.Param.FILE_BUF_SIZE;
+import static com.aerofs.lib.LibParam.FILE_BUF_SIZE;
 import static java.net.HttpURLConnection.HTTP_OK;
 
 final class SVRPCClient

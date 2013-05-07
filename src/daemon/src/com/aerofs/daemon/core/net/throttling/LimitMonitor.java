@@ -37,7 +37,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeSet;
 
-import static com.aerofs.lib.Param.Throttling.UNLIMITED_BANDWIDTH;
+import static com.aerofs.lib.LibParam.Throttling.UNLIMITED_BANDWIDTH;
 
 // This is a control system
 // FIXME: Need to automatically determine link speed

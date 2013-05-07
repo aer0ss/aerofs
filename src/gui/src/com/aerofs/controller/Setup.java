@@ -11,8 +11,8 @@ import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.FileUtil;
-import com.aerofs.lib.Param;
-import com.aerofs.lib.Param.PostUpdate;
+import com.aerofs.lib.LibParam;
+import com.aerofs.lib.LibParam.PostUpdate;
 import com.aerofs.lib.RootAnchorUtil;
 import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.StorageType;
@@ -213,7 +213,7 @@ class Setup
 
         // Retrieve the team server user ID
         UserID tsUserId = UserID.fromInternal(sp.getTeamServerUserID().getId());
-        byte[] tsScrypted = SecUtil.scrypt(Param.MULTIUSER_LOCAL_PASSWORD, tsUserId);
+        byte[] tsScrypted = SecUtil.scrypt(LibParam.MULTIUSER_LOCAL_PASSWORD, tsUserId);
 
         DID tsDID = CredentialUtil.registerTeamServerDeviceAndSaveKeys(tsUserId, tsScrypted,
                 deviceName, sp);
@@ -231,7 +231,7 @@ class Setup
         initializeAndLaunchDaemon();
 
         // indicates that the user is fully setup
-        _factFile.create(_rtRoot, Param.SETTING_UP).deleteOrOnExit();
+        _factFile.create(_rtRoot, LibParam.SETTING_UP).deleteOrOnExit();
 
         // Proceed with AeroFS launch
         new Launcher(_rtRoot, _clientChannelFactory).launch(true);
@@ -264,7 +264,7 @@ class Setup
     private void createSettingUpFlagFile()
             throws IOException
     {
-        InjectableFile fSettingUp = _factFile.create(_rtRoot, Param.SETTING_UP);
+        InjectableFile fSettingUp = _factFile.create(_rtRoot, LibParam.SETTING_UP);
         try {
             fSettingUp.createNewFile();
         } catch (IOException e) {
@@ -300,7 +300,7 @@ class Setup
         }
 
         // Remove database file (the daemon will setup the schema if it detects a missing DB)
-        InjectableFile fDB = _factFile.create(_rtRoot, Param.CORE_DATABASE);
+        InjectableFile fDB = _factFile.create(_rtRoot, LibParam.CORE_DATABASE);
         fDB.deleteOrThrowIfExist();
 
         UI.dm().start();
@@ -400,7 +400,7 @@ class Setup
         boolean available = true;
         for (int offset = 0; available && offset < requiredPortCount(); offset++) {
             try {
-                ServerSocket ss = new ServerSocket(portbase + offset, 0, Param.LOCALHOST_ADDR);
+                ServerSocket ss = new ServerSocket(portbase + offset, 0, LibParam.LOCALHOST_ADDR);
                 ss.close();
             } catch (BindException e) {
                 available = false;

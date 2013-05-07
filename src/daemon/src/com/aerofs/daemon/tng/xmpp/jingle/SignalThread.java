@@ -17,7 +17,7 @@ import com.aerofs.j.XmppEngine;
 import com.aerofs.j.XmppMain;
 import com.aerofs.lib.IDumpStatMisc;
 import com.aerofs.lib.InOutArg;
-import com.aerofs.lib.Param;
+import com.aerofs.lib.LibParam;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.SystemUtil.ExitCode;
 import com.aerofs.lib.ThreadUtil;
@@ -206,7 +206,7 @@ final class SignalThread extends java.lang.Thread implements IDumpStatMisc
             _callHandler.wake_();
         }
 
-        ThreadUtil.sleepUninterruptable(Param.EXP_RETRY_MIN_DEFAULT);
+        ThreadUtil.sleepUninterruptable(LibParam.EXP_RETRY_MIN_DEFAULT);
         l.info("attempt connect");
     }
 

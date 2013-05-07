@@ -32,8 +32,8 @@ import org.slf4j.Logger;
 
 import java.net.InetSocketAddress;
 
-import static com.aerofs.lib.Param.Ritual.LENGTH_FIELD_SIZE;
-import static com.aerofs.lib.Param.Ritual.MAX_FRAME_LENGTH;
+import static com.aerofs.lib.LibParam.Ritual.LENGTH_FIELD_SIZE;
+import static com.aerofs.lib.LibParam.Ritual.MAX_FRAME_LENGTH;
 
 public class RitualServer
 {

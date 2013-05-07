@@ -7,7 +7,7 @@ import com.aerofs.daemon.core.phy.ScanCompletionCallback;
 import com.aerofs.daemon.core.phy.linked.linker.LinkerRoot;
 import com.aerofs.lib.FrequentDefectSender;
 import com.aerofs.lib.IDumpStatMisc;
-import com.aerofs.lib.Param;
+import com.aerofs.lib.LibParam;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
@@ -181,7 +181,7 @@ public class ScanSessionQueue implements IDumpStatMisc
 
     public void scanAfterDelay_(Set<String> absPaths, boolean recursive)
     {
-        scanImpl_(new PathKey(absPaths, recursive), Param.EXP_RETRY_MIN_DEFAULT,
+        scanImpl_(new PathKey(absPaths, recursive), LibParam.EXP_RETRY_MIN_DEFAULT,
                 new ScanCompletionCallback());
     }
 
@@ -373,8 +373,8 @@ public class ScanSessionQueue implements IDumpStatMisc
         fds.logSendAsync("scan exception retry", e);
 
         // schedule an exponential retry and return
-        long millisecondDelay = Math.max(tk._delay * 2, Param.EXP_RETRY_MIN_DEFAULT);
-        millisecondDelay = Math.min(millisecondDelay, Param.EXP_RETRY_MAX_DEFAULT);
+        long millisecondDelay = Math.max(tk._delay * 2, LibParam.EXP_RETRY_MIN_DEFAULT);
+        millisecondDelay = Math.min(millisecondDelay, LibParam.EXP_RETRY_MAX_DEFAULT);
         l.warn("retry in " + millisecondDelay + ": " + Util.e(e));
 
         // re-enqueue the request. no need to schedule it since this method assumes that

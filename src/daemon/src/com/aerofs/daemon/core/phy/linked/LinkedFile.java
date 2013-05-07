@@ -8,7 +8,7 @@ import java.sql.SQLException;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.lib.db.trans.Trans;
-import static com.aerofs.lib.Param.AuxFolder.CONFLICT;
+import static com.aerofs.lib.LibParam.AuxFolder.CONFLICT;
 import com.aerofs.lib.ex.ExFileNotFound;
 import org.slf4j.Logger;
 

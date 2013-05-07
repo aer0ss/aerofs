@@ -18,7 +18,7 @@ import org.junit.rules.TemporaryFolder;
 import com.aerofs.daemon.core.Hasher;
 import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.ContentHash;
-import com.aerofs.lib.Param;
+import com.aerofs.lib.LibParam;
 import com.aerofs.testlib.AbstractTest;
 
 public class TestHashStream extends AbstractTest
@@ -72,7 +72,7 @@ public class TestHashStream extends AbstractTest
             @Override
             public void writeTestData(OutputStream out) throws IOException
             {
-                int chunkSize = Param.FILE_BLOCK_SIZE;
+                int chunkSize = LibParam.FILE_BLOCK_SIZE;
                 writeRandomBytes(out, chunkSize);
                 writeRandomBytes(out, chunkSize / 2);
                 writeRandomBytes(out, chunkSize);

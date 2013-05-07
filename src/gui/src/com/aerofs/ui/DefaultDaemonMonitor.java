@@ -11,8 +11,8 @@ import com.aerofs.base.ex.ExTimeout;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.FrequentDefectSender;
-import com.aerofs.lib.Param;
-import com.aerofs.lib.Param.Daemon;
+import com.aerofs.lib.LibParam;
+import com.aerofs.lib.LibParam.Daemon;
 import com.aerofs.lib.S;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.ThreadUtil;
@@ -342,7 +342,7 @@ class DefaultDaemonMonitor implements IDaemonMonitor
      */
     private void watchDaemonProcess(@Nonnull Process proc) throws Exception
     {
-        Socket s = new Socket(Param.LOCALHOST_ADDR, Cfg.port(PortType.RITUAL_NOTIFICATION));
+        Socket s = new Socket(LibParam.LOCALHOST_ADDR, Cfg.port(PortType.RITUAL_NOTIFICATION));
         try {
             s.setSoTimeout((int) Daemon.HEARTBEAT_INTERVAL);
             while (true) {

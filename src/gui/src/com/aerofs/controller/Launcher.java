@@ -15,7 +15,7 @@ import com.aerofs.gui.GUIUtil;
 import com.aerofs.labeling.L;
 import com.aerofs.launch.UILaunchTasks;
 import com.aerofs.lib.AppRoot;
-import com.aerofs.lib.Param;
+import com.aerofs.lib.LibParam;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.Cfg.PortType;
@@ -102,7 +102,7 @@ class Launcher
     {
         if (!Cfg.inited()) return false;
 
-        return !new File(Util.join(absRTRoot(), Param.SETTING_UP)).exists();
+        return !new File(Util.join(absRTRoot(), LibParam.SETTING_UP)).exists();
     }
 
     /**
@@ -143,7 +143,7 @@ class Launcher
     {
         // make sure only one instance of the application is running
         try {
-            _ss = new ServerSocket(Cfg.port(PortType.UI_SINGLETON), 0, Param.LOCALHOST_ADDR);
+            _ss = new ServerSocket(Cfg.port(PortType.UI_SINGLETON), 0, LibParam.LOCALHOST_ADDR);
         } catch (BindException e) {
             throw new ExAlreadyRunning();
         }

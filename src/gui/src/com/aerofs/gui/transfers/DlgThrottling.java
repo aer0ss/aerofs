@@ -28,8 +28,8 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
 
-import static com.aerofs.lib.Param.Throttling.MIN_BANDWIDTH_UI;
-import static com.aerofs.lib.Param.Throttling.UNLIMITED_BANDWIDTH;
+import static com.aerofs.lib.LibParam.Throttling.MIN_BANDWIDTH_UI;
+import static com.aerofs.lib.LibParam.Throttling.UNLIMITED_BANDWIDTH;
 
 public class DlgThrottling extends AeroFSDialog {
 

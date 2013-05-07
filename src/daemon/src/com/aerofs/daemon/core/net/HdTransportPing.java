@@ -2,7 +2,6 @@ package com.aerofs.daemon.core.net;
 
 import com.aerofs.daemon.core.net.device.Device;
 import com.aerofs.daemon.core.net.device.DevicePresence;
-import com.aerofs.daemon.core.net.Transports;
 import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.CoreIMC;
 import com.aerofs.daemon.core.tc.TC;
@@ -11,7 +10,7 @@ import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.daemon.event.net.EOTransportPing;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.daemon.transport.ITransport;
-import com.aerofs.lib.Param;
+import com.aerofs.lib.LibParam;
 import com.aerofs.lib.ex.ExDeviceOffline;
 import com.google.inject.Inject;
 
@@ -51,11 +50,11 @@ public class HdTransportPing extends AbstractHdIMC<EITransportPing>
                     rtt = PENDING;
                 }
                 if (rtt == null) rtt = FORGOTTEN;
-                else if (rtt == Param.TRANSPORT_DIAGNOSIS_STATE_PENDING) rtt = PENDING;
+                else if (rtt == LibParam.TRANSPORT_DIAGNOSIS_STATE_PENDING) rtt = PENDING;
                 min = Math.min(rtt, min);
             }
             if (min == FORGOTTEN) ev.setResult_(null);
-            else if (min == PENDING) ev.setResult_(Param.TRANSPORT_DIAGNOSIS_STATE_PENDING);
+            else if (min == PENDING) ev.setResult_(LibParam.TRANSPORT_DIAGNOSIS_STATE_PENDING);
             else ev.setResult_(min);
         }
     }

@@ -17,8 +17,7 @@ import com.aerofs.sp.server.email.IEmail.HEADER_SIZE;
 import javax.mail.MessagingException;
 import java.io.IOException;
 
-// TODO (WW) the pattern of this class is inconsistent with InvitationEmailer. Need refactoring
-// and/or merging.
+// TODO (WW) the pattern of this class is inconsistent with InvitationEmailer. Need refactoring.
 public class PasswordResetEmailer
 {
     public void sendPasswordResetEmail(UserID userId, String reset_token)
@@ -40,9 +39,9 @@ public class PasswordResetEmailer
         email.addDefaultSignature();
 
         try {
-            EmailSender.sendEmail(WWW.SUPPORT_EMAIL_ADDRESS.get(), SPParam.SP_EMAIL_NAME,
+            EmailSender.sendPublicEmail(WWW.SUPPORT_EMAIL_ADDRESS.get(), SPParam.EMAIL_FROM_NAME,
                     userId.getString(), null, subject, email.getTextEmail(), email.getHTMLEmail(),
-                    true, EmailCategory.PASSWORD_RESET);
+                    EmailCategory.PASSWORD_RESET);
         } catch (MessagingException e) {
             throw new IOException(e);
         }
@@ -69,8 +68,8 @@ public class PasswordResetEmailer
         email.addDefaultSignature();
 
         try {
-            EmailSender.sendEmail(WWW.SUPPORT_EMAIL_ADDRESS.get(), SPParam.SP_EMAIL_NAME, userId.getString(),
-                    null, subject, email.getTextEmail(), email.getHTMLEmail(), true,
+            EmailSender.sendPublicEmail(WWW.SUPPORT_EMAIL_ADDRESS.get(), SPParam.EMAIL_FROM_NAME,
+                    userId.getString(), null, subject, email.getTextEmail(), email.getHTMLEmail(),
                     EmailCategory.PASSWORD_RESET);
         } catch (MessagingException e) {
             throw new IOException(e);

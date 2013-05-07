@@ -5,7 +5,7 @@ import com.aerofs.base.properties.Configuration;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.IProgram;
-import com.aerofs.lib.Param;
+import com.aerofs.lib.LibParam;
 import com.aerofs.lib.ProgramInformation;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.SystemUtil.ExitCode;
@@ -106,7 +106,7 @@ public class Main
         String[] appArgs = new String[args.length - MAIN_ARGS];
         System.arraycopy(args, MAIN_ARGS, appArgs, 0, appArgs.length);
 
-        if (rtRoot.equals(Param.DEFAULT_RTROOT)) {
+        if (rtRoot.equals(LibParam.DEFAULT_RTROOT)) {
             rtRoot = OSUtil.get().getDefaultRTRoot();
         }
 
@@ -165,7 +165,7 @@ public class Main
     private static void launchProgram(String rtRoot, String prog, String ... progArgs)
             throws Exception
     {
-        boolean ui = prog.equals(Param.GUI_NAME) || prog.equals(Param.CLI_NAME);
+        boolean ui = prog.equals(LibParam.GUI_NAME) || prog.equals(LibParam.CLI_NAME);
 
         Class<?> cls;
         // a fast path to UI

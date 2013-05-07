@@ -3,7 +3,7 @@ package com.aerofs.daemon.lib;
 import com.aerofs.base.C;
 import com.aerofs.base.properties.DynamicInetSocketAddress;
 import com.aerofs.labeling.L;
-import com.aerofs.lib.Param.Daemon;
+import com.aerofs.lib.LibParam.Daemon;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
 

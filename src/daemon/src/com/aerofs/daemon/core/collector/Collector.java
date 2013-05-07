@@ -30,7 +30,7 @@ import com.aerofs.daemon.lib.db.ICollectorSequenceDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.base.C;
-import com.aerofs.lib.Param;
+import com.aerofs.lib.LibParam;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.bf.BFOID;
 import com.aerofs.lib.cfg.Cfg;
@@ -199,7 +199,7 @@ public class Collector implements IDumpStatMisc, IDownloadListenerFactory
 
     private void resetBackoffInterval_()
     {
-        _backoffInterval = Param.EXP_RETRY_MIN_DEFAULT;
+        _backoffInterval = LibParam.EXP_RETRY_MIN_DEFAULT;
     }
 
     private void scheduleBackoff_()

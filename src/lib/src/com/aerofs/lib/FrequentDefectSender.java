@@ -25,7 +25,7 @@ public class FrequentDefectSender
     {
         _count++;
         long now = System.currentTimeMillis();
-        if (now > _lastSend + Param.FREQUENT_DEFECT_SENDER_INTERVAL) {
+        if (now > _lastSend + LibParam.FREQUENT_DEFECT_SENDER_INTERVAL) {
             _lastSend = now;
             SVClient.logSendDefectAsync(true, desc + " (" + _count + ")", e);
             // Count should display the diff since the last FDS,

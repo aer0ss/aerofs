@@ -2,7 +2,7 @@ package com.aerofs.lib.cfg;
 
 import java.io.File;
 
-import com.aerofs.lib.Param;
+import com.aerofs.lib.LibParam;
 import com.google.inject.Inject;
 
 import com.aerofs.lib.Util;
@@ -63,7 +63,7 @@ public class CfgCoreDatabaseParams implements IDatabaseParams
 //            sb.append("&profileSQL=true");
             return sb.toString();
         } else {
-            return "jdbc:sqlite:" + Cfg.absRTRoot() + File.separator + Param.CORE_DATABASE;
+            return "jdbc:sqlite:" + Cfg.absRTRoot() + File.separator + LibParam.CORE_DATABASE;
         }
     }
 

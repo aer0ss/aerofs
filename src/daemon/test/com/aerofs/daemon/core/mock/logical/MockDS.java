@@ -19,7 +19,7 @@ import com.aerofs.daemon.core.store.MapSIndex2DeviceBitMap;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.BitVector;
 import com.aerofs.lib.CounterVector;
-import com.aerofs.lib.Param;
+import com.aerofs.lib.LibParam;
 import com.aerofs.lib.Path;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.lib.id.KIndex;
@@ -708,7 +708,7 @@ public class MockDS
 
             // create root dir
             _root = new MockDSDir(OA.ROOT_DIR_NAME, this, new SOID(sidx, OID.ROOT));
-            _trash = new MockDSDir(Param.TRASH, _root, true, new SOID(sidx, OID.TRASH));
+            _trash = new MockDSDir(LibParam.TRASH, _root, true, new SOID(sidx, OID.TRASH));
 
             if (!expelled) {
                 when(_ds.followAnchorNullable_(_oa)).thenReturn(_root.soid());
@@ -811,7 +811,7 @@ public class MockDS
             super(OA.ROOT_DIR_NAME, null, new SOID(sidx, OID.ROOT));
 
             _sid = sid;
-            _trash = new MockDSDir(Param.TRASH, this, true, new SOID(sidx, OID.TRASH));
+            _trash = new MockDSDir(LibParam.TRASH, this, true, new SOID(sidx, OID.TRASH));
 
             mockSIDMap(sid, sidx);
 
@@ -820,7 +820,7 @@ public class MockDS
             // mock path resolution for root and trash
             when(_ds.resolveNullable_(Path.root(sid))).thenReturn(soid());
             when(_ds.resolveNullable_(
-                    argThat(new IsEqualPathIgnoringCase(Path.fromString(sid, Param.TRASH)))))
+                    argThat(new IsEqualPathIgnoringCase(Path.fromString(sid, LibParam.TRASH)))))
                     .thenReturn(_trash.soid());
         }
 

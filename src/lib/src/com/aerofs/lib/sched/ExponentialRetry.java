@@ -1,8 +1,8 @@
 package com.aerofs.lib.sched;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.lib.LibParam;
 import com.aerofs.lib.OutArg;
-import com.aerofs.lib.Param;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import org.slf4j.Logger;
@@ -22,7 +22,7 @@ public class ExponentialRetry
 
     public void retry(String name, Callable<Void> call, Class<?>... excludes)
     {
-        retry(name, Param.EXP_RETRY_MIN_DEFAULT, Param.EXP_RETRY_MAX_DEFAULT, call, excludes);
+        retry(name, LibParam.EXP_RETRY_MIN_DEFAULT, LibParam.EXP_RETRY_MAX_DEFAULT, call, excludes);
     }
 
     public void retry(final String name,

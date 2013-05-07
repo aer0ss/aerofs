@@ -27,7 +27,7 @@ import javax.annotation.Nullable;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import static com.aerofs.lib.Param.Verkehr.VERKEHR_RETRY_INTERVAL;
+import static com.aerofs.lib.LibParam.Verkehr.VERKEHR_RETRY_INTERVAL;
 import static com.google.common.util.concurrent.Futures.addCallback;
 import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor;
 

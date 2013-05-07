@@ -19,7 +19,7 @@ import com.aerofs.daemon.core.phy.linked.linker.PathCombo;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.lib.db.AbstractTransListener;
 import com.aerofs.daemon.lib.db.trans.Trans;
-import com.aerofs.lib.Param;
+import com.aerofs.lib.LibParam;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.base.id.SID;
@@ -107,7 +107,7 @@ public class SharedFolderTagFileAndIcon
             _dr.setFolderIcon(absPath, OSUtil.getIconPath(Icon.SharedFolder));
         }
 
-        String absPathTagFile = Util.join(absPath, Param.SHARED_FOLDER_TAG);
+        String absPathTagFile = Util.join(absPath, LibParam.SHARED_FOLDER_TAG);
 
         // delete the tag file first in case the user created a folder in place of the tag file
         // which would cause writing the file to fail.
@@ -130,7 +130,7 @@ public class SharedFolderTagFileAndIcon
         l.info("del sf tag in {}", absPath);
         _dr.setFolderIcon(absPath, "");
 
-        deleteTagFile(Util.join(absPath, Param.SHARED_FOLDER_TAG));
+        deleteTagFile(Util.join(absPath, LibParam.SHARED_FOLDER_TAG));
     }
 
     private void deleteTagFile(String absPathTagFile) throws IOException
@@ -141,7 +141,7 @@ public class SharedFolderTagFileAndIcon
 
     public @Nullable OID getOIDForAnchor_(PathCombo pc, Trans t) throws SQLException, IOException
     {
-        InjectableFile tag = _factFile.create(pc._absPath, Param.SHARED_FOLDER_TAG);
+        InjectableFile tag = _factFile.create(pc._absPath, LibParam.SHARED_FOLDER_TAG);
         if (!tag.exists()) return null;
 
         SID sid = tag.isFile() ? sidFromTagFile(tag.getAbsolutePath()) : null;
@@ -157,7 +157,7 @@ public class SharedFolderTagFileAndIcon
 
     public boolean isSharedFolderRoot(InjectableFile dir, SID sid) throws IOException
     {
-        InjectableFile tag = _factFile.create(dir, Param.SHARED_FOLDER_TAG);
+        InjectableFile tag = _factFile.create(dir, LibParam.SHARED_FOLDER_TAG);
         return tag.exists() && tag.isFile() && sid.equals(sidFromTagFile(tag.getAbsolutePath()));
     }
 

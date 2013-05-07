@@ -7,7 +7,7 @@ package com.aerofs;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.lib.JsonFormat;
-import com.aerofs.lib.Param;
+import com.aerofs.lib.LibParam;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.ritual.RitualBlockingClient;
 import com.aerofs.proto.Files.PBDumpStat;
@@ -108,7 +108,7 @@ public class InternalDiagnostics
                 forceNext = true;
                 rttMaybeNull = true;
 
-            } else if (rtt != null && rtt != Param.TRANSPORT_DIAGNOSIS_STATE_PENDING) {
+            } else if (rtt != null && rtt != LibParam.TRANSPORT_DIAGNOSIS_STATE_PENDING) {
                 // has received pong
                 assert rtt >= 0;
                 newPing = true;
@@ -124,7 +124,7 @@ public class InternalDiagnostics
                 sleep = false;
 
             } else {
-                checkState(rtt == null || rtt == Param.TRANSPORT_DIAGNOSIS_STATE_PENDING);
+                checkState(rtt == null || rtt == LibParam.TRANSPORT_DIAGNOSIS_STATE_PENDING);
                 // keep waiting
                 newPing = false;
                 newSeq = false;

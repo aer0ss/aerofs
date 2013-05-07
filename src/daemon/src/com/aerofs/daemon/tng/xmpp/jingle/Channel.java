@@ -6,6 +6,7 @@ package com.aerofs.daemon.tng.xmpp.jingle;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.lib.DaemonParam;
+import com.aerofs.lib.LibParam;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.daemon.lib.PrioQueue;
 import com.aerofs.j.StreamEvent;
@@ -14,7 +15,6 @@ import com.aerofs.j.StreamInterface_EventSlot;
 import com.aerofs.j.StreamResult;
 import com.aerofs.j.StreamState;
 import com.aerofs.j.j;
-import com.aerofs.lib.Param;
 import com.aerofs.lib.Util;
 import com.aerofs.base.async.UncancellableFuture;
 import com.aerofs.base.ex.ExFormatError;
@@ -374,9 +374,9 @@ final class Channel implements IProxyObjectContainer
             assert header.length == getHeaderLen();
             DataInputStream is = new DataInputStream(new ByteArrayInputStream(header));
             int magic = is.readInt();
-            if (magic != Param.CORE_MAGIC) {
+            if (magic != LibParam.CORE_MAGIC) {
                 throw new ExFormatError("magic doesn't match. expect " +
-                        Param.CORE_MAGIC + " received " + magic);
+                        LibParam.CORE_MAGIC + " received " + magic);
             }
 
             int len = is.readInt();
@@ -402,7 +402,7 @@ final class Channel implements IProxyObjectContainer
         ByteArrayOutputStream bos = new ByteArrayOutputStream(getHeaderLen());
         DataOutputStream os = new DataOutputStream(bos);
         try {
-            os.writeInt(Param.CORE_MAGIC);
+            os.writeInt(LibParam.CORE_MAGIC);
             os.writeInt(bodylen);
             os.close();
         } catch (Exception e) {

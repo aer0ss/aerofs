@@ -14,6 +14,7 @@ import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
+import com.aerofs.lib.LibParam;
 import com.aerofs.lib.SecUtil;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
@@ -26,7 +27,6 @@ import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.lib.ContentHash;
-import com.aerofs.lib.Param;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.Version;
 import com.aerofs.daemon.core.ex.ExAborted;
@@ -291,7 +291,7 @@ public class Hasher
             @Nullable IAborter aborter) throws IOException, ExAborted, DigestException
     {
         MessageDigest md = SecUtil.newMessageDigest();
-        int chunkSize = Param.FILE_BLOCK_SIZE;
+        int chunkSize = LibParam.FILE_BLOCK_SIZE;
 
         int hashSize = md.getDigestLength();
         // TODO: what happens if you have a file so large that fileLen / chunkSize * hashSize
@@ -299,7 +299,7 @@ public class Hasher
         final int totalHashLength = (fileLen == 0) ? hashSize :
             (int)((fileLen + chunkSize - 1) / chunkSize) * hashSize;
         byte[] hash = new byte[totalHashLength];
-        byte[] dataBytes = new byte[Param.FILE_BUF_SIZE];
+        byte[] dataBytes = new byte[LibParam.FILE_BUF_SIZE];
         int outPos = 0;
         long totalBytesRead = 0;
 
@@ -317,7 +317,7 @@ public class Hasher
                 md.update(dataBytes, 0, numRead);
                 chunkBytes += numRead;
 
-                // Ensure next read doesn't go beyond Param.FILE_BLOCK_SIZE
+                // Ensure next read doesn't go beyond LibParam.FILE_BLOCK_SIZE
                 if (chunkBytes + toRead > chunkSize) {
                     toRead = chunkSize - chunkBytes;
                     assert toRead >= 0;

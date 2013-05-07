@@ -5,7 +5,7 @@
 package com.aerofs.daemon.core.phy.block;
 
 import com.aerofs.lib.ContentHash;
-import com.aerofs.lib.Param;
+import com.aerofs.lib.LibParam;
 import com.google.common.base.Preconditions;
 
 import java.io.IOException;
@@ -71,10 +71,10 @@ public class BlockInputStream extends InputStream
         Preconditions.checkArgument(n >= 0);
         final long oldPos = _pos;
         long newPos = _pos + n;
-        int newChunkIndex = (int)(newPos / Param.FILE_BLOCK_SIZE);
+        int newChunkIndex = (int)(newPos / LibParam.FILE_BLOCK_SIZE);
         if (newChunkIndex != _chunkIndex) {
             _chunkIndex = newChunkIndex;
-            _pos = _chunkIndex * Param.FILE_BLOCK_SIZE;
+            _pos = _chunkIndex * LibParam.FILE_BLOCK_SIZE;
             closeInputStream();
         }
         if (_in == null) resetInputStream();

@@ -21,7 +21,7 @@ import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.FileUtil;
-import com.aerofs.lib.Param;
+import com.aerofs.lib.LibParam;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgAbsRoots;
@@ -97,7 +97,7 @@ public class TestLinkedStorage extends AbstractTest
         rootDir = factFile.create(tmpDir, "data");
         rootDir.mkdirs();
         String auxDir = Cfg.absAuxRootForPath(rootDir.getAbsolutePath(), rootSID);
-        revDir = factFile.create(auxDir, Param.AuxFolder.REVISION._name);
+        revDir = factFile.create(auxDir, LibParam.AuxFolder.REVISION._name);
         revDir.mkdirs();
 
         l.info("{} {}", rootDir.getAbsolutePath(), revDir.getAbsolutePath());

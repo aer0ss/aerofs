@@ -5,7 +5,7 @@
 package com.aerofs.umdc;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.lib.Param;
+import com.aerofs.lib.LibParam;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.db.DBUtil;
@@ -28,7 +28,7 @@ public class UMDC
 
     public UMDC()
     {
-        ObfuscatedDatabaseParams params = new ObfuscatedDatabaseParams(Param.OBF_CORE_DATABASE);
+        ObfuscatedDatabaseParams params = new ObfuscatedDatabaseParams(LibParam.OBF_CORE_DATABASE);
         _db = DBUtil.newDBCW(params);
     }
 
@@ -71,14 +71,14 @@ public class UMDC
 
     private void copyDBFiles() throws IOException
     {
-        String from = Util.join(Cfg.absRTRoot(), Param.CORE_DATABASE);
-        String to = Util.join(Cfg.absRTRoot(), Param.OBF_CORE_DATABASE);
+        String from = Util.join(Cfg.absRTRoot(), LibParam.CORE_DATABASE);
+        String to = Util.join(Cfg.absRTRoot(), LibParam.OBF_CORE_DATABASE);
         Files.copy(new File(from), new File(to));
     }
 
     private void removeObfuscatedDB() throws IOException
     {
-        String path = Util.join(Cfg.absRTRoot(), Param.OBF_CORE_DATABASE);
+        String path = Util.join(Cfg.absRTRoot(), LibParam.OBF_CORE_DATABASE);
         File obfuscatedDB = new File(path);
         obfuscatedDB.delete();
     }

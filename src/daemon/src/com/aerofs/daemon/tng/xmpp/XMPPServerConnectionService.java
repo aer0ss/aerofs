@@ -12,7 +12,7 @@ import com.aerofs.daemon.core.net.link.ILinkStateService;
 import com.aerofs.daemon.lib.IDebug;
 import com.aerofs.daemon.lib.IStartable;
 import com.aerofs.daemon.tng.base.http.ProxyAwareSocketFactory;
-import com.aerofs.lib.Param;
+import com.aerofs.lib.LibParam;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
@@ -282,8 +282,8 @@ final class XMPPServerConnectionService implements ILinkStateListener, IStartabl
                     throws Exception
             {
                 if (initialDelay) {
-                    l.info("reconnect in " + Param.EXP_RETRY_MIN_DEFAULT);
-                    ThreadUtil.sleepUninterruptable(Param.EXP_RETRY_MIN_DEFAULT);
+                    l.info("reconnect in " + LibParam.EXP_RETRY_MIN_DEFAULT);
+                    ThreadUtil.sleepUninterruptable(LibParam.EXP_RETRY_MIN_DEFAULT);
                 }
 
                 try {

@@ -5,9 +5,9 @@ import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.daemon.event.lib.imc.IResultWaiter;
 import com.aerofs.daemon.event.net.EOTransportFlood;
 import com.aerofs.daemon.lib.DaemonParam;
+import com.aerofs.lib.LibParam;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.daemon.transport.lib.TransportDiagnosisState.FloodEntry;
-import com.aerofs.lib.Param;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.proto.Transport.PBTransportDiagnosis;
@@ -32,8 +32,8 @@ public class HdTransportFlood extends AbstractHdIMC<EOTransportFlood>
     @Override
     protected void handleThrows_(EOTransportFlood ev, Prio prio) throws Exception
     {
-        _tds.putFlood(ev._seqStart, new FloodEntry(Param.TRANSPORT_DIAGNOSIS_STATE_PENDING, 0));
-        _tds.putFlood(ev._seqEnd, new FloodEntry(Param.TRANSPORT_DIAGNOSIS_STATE_PENDING, 0));
+        _tds.putFlood(ev._seqStart, new FloodEntry(LibParam.TRANSPORT_DIAGNOSIS_STATE_PENDING, 0));
+        _tds.putFlood(ev._seqEnd, new FloodEntry(LibParam.TRANSPORT_DIAGNOSIS_STATE_PENDING, 0));
 
         if (ev._send) {
             Flooder f = new Flooder(ev._did, ev._duration, ev._seqStart,

@@ -7,6 +7,7 @@ package com.aerofs.daemon.tng.xmpp;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.net.link.ILinkStateService;
+import com.aerofs.lib.LibParam;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.daemon.lib.async.ISingleThreadedPrioritizedExecutor;
 import com.aerofs.daemon.tng.IMaxcastListener;
@@ -16,7 +17,6 @@ import com.aerofs.daemon.tng.xmpp.XMPPServerConnectionService.IXMPPServerConnect
 import com.aerofs.base.Base64;
 import com.aerofs.lib.FrequentDefectSender;
 import com.aerofs.lib.OutArg;
-import com.aerofs.lib.Param;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.base.async.UncancellableFuture;
@@ -537,7 +537,7 @@ final class XMPPMulticast
         DataInputStream is = new DataInputStream(new Base64.InputStream(bos));
         try {
             int magic = is.readInt();
-            if (magic != Param.CORE_MAGIC) {
+            if (magic != LibParam.CORE_MAGIC) {
                 l.info("magic mismatch from " + did + ": " + body);
                 return null;
             }
@@ -611,7 +611,7 @@ final class XMPPMulticast
         try {
             DataOutputStream os = new DataOutputStream(new Base64.OutputStream(bos));
 
-            os.writeInt(Param.CORE_MAGIC);
+            os.writeInt(LibParam.CORE_MAGIC);
 
             // TODO consider adding mcastid to chksum?
             // if so, don't forget to check in decodeBody

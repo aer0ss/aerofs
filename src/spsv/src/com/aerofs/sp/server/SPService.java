@@ -108,6 +108,7 @@ import com.aerofs.sp.server.lib.user.User.PendingSharedFolder;
 import com.aerofs.sp.server.session.SPActiveUserSessionTracker;
 import com.aerofs.sp.server.session.SPSessionExtender;
 import com.aerofs.sp.server.session.SPSessionInvalidator;
+import com.aerofs.sv.common.EmailCategory;
 import com.aerofs.verkehr.client.lib.admin.VerkehrAdmin;
 import com.aerofs.verkehr.client.lib.publisher.VerkehrPublisher;
 import com.google.common.base.Strings;
@@ -951,15 +952,19 @@ public class SPService implements ISPService
         return createReply(GetSharedFolderNamesReply.newBuilder().addAllFolderName(names).build());
     }
 
+    /**
+     * Send an email to the user. This happens to only be used by the linux updater on failure.
+     * TODO (MP) rename this to something more appropriate.
+     */
     @Override
     public ListenableFuture<Void> emailUser(String userId, String body)
             throws Exception
     {
         _sqlTrans.begin();
 
-        EmailSender.sendEmail(WWW.SUPPORT_EMAIL_ADDRESS.get(), SPParam.SP_EMAIL_NAME,
+        EmailSender.sendPublicEmail(WWW.SUPPORT_EMAIL_ADDRESS.get(), SPParam.EMAIL_FROM_NAME,
                 _sessionUser.get().id().getString(), null, UserID.fromExternal(userId).getString(),
-                body, null, true, null);
+                body, null, EmailCategory.SUPPORT);
 
         _sqlTrans.commit();
 

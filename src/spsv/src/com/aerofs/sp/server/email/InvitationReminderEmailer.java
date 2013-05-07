@@ -57,8 +57,9 @@ public class InvitationReminderEmailer
                 public Void call()
                         throws Exception
                 {
-                    EmailSender.sendEmail(from, fromName, to, null, subject, email.getTextEmail(),
-                            email.getHTMLEmail(), true, EmailCategory.AEROFS_INVITATION_REMINDER);
+                    EmailSender.sendPublicEmail(from, fromName, to, null, subject,
+                            email.getTextEmail(), email.getHTMLEmail(),
+                            EmailCategory.AEROFS_INVITATION_REMINDER);
 
                     return null;
                 }

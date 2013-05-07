@@ -12,7 +12,7 @@ import static com.aerofs.daemon.core.phy.linked.linker.MightCreateOperations.*;
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.first.OIDGenerator;
 import com.aerofs.daemon.core.phy.linked.SharedFolderTagFileAndIcon;
-import com.aerofs.lib.Param;
+import com.aerofs.lib.LibParam;
 import org.slf4j.Logger;
 
 import com.aerofs.daemon.core.ds.DirectoryService;
@@ -165,7 +165,7 @@ public class MightCreate
      */
     private boolean deleteIfInvalidTagFile(PathCombo pc) throws IOException, SQLException
     {
-        if (!pc._path.last().equals(Param.SHARED_FOLDER_TAG)) return false;
+        if (!pc._path.last().equals(LibParam.SHARED_FOLDER_TAG)) return false;
 
         // Remove any invalid tag file (i.e tag file under non-anchor)
         SOID parent = _ds.resolveNullable_(pc._path.removeLast());
