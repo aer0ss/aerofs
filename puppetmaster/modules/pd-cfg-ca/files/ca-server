@@ -1,0 +1,8 @@
+server {
+  listen 1029 default;
+  access_log /var/log/nginx/ca.access.log;
+
+  location /prod {
+    proxy_pass http://localhost:9002;
+  }
+}

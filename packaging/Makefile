@@ -31,6 +31,7 @@ PACKAGES= \
 	web \
 	zephyr \
 	stun \
+	config \
 
 DEBS=$(addprefix debs/, ${PACKAGES:=.deb})
 
