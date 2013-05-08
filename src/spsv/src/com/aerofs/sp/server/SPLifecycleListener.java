@@ -5,6 +5,7 @@ import com.aerofs.base.Loggers;
 import com.aerofs.base.properties.Configuration;
 import com.aerofs.base.ssl.FileBasedCertificateProvider;
 import com.aerofs.base.ssl.ICertificateProvider;
+import com.aerofs.lib.Util;
 import com.aerofs.sp.server.lib.user.User;
 import com.aerofs.servlets.lib.NoopConnectionListener;
 import com.aerofs.sp.server.lib.session.HttpSessionUser;
@@ -16,6 +17,7 @@ import com.aerofs.sp.server.session.SPSessionInvalidator;
 import com.aerofs.verkehr.client.lib.IConnectionListener;
 import com.aerofs.verkehr.client.lib.admin.VerkehrAdmin;
 import com.aerofs.verkehr.client.lib.publisher.VerkehrPublisher;
+import org.apache.commons.configuration.ConfigurationException;
 import org.slf4j.Logger;
 import org.jboss.netty.util.HashedWheelTimer;
 
@@ -60,10 +62,14 @@ public class SPLifecycleListener implements ServletContextListener, HttpSessionL
     @Override
     public void contextInitialized(ServletContextEvent servletContextEvent)
     {
-        // this Stackoverflow answer describes why it is most appropriate to do global/application
+        // This Stackoverflow answer describes why it is most appropriate to do global/application
         // wide initialization within contextInitialized http://stackoverflow.com/a/2364451/3957
-        // initialize ArrowConfiguration
-        Configuration.Server.initialize();
+        // initialize ArrowConfiguration.
+        try {
+            Configuration.Server.initialize();
+        } catch (ConfigurationException e) {
+            throw new RuntimeException("Configuration server init error: " + Util.e(e));
+        }
 
         ServletContext ctx = servletContextEvent.getServletContext();
 
@@ -152,13 +158,14 @@ public class SPLifecycleListener implements ServletContextListener, HttpSessionL
 
         VerkehrPublisher publisher =
                 (VerkehrPublisher) ctx.getAttribute(VERKEHR_PUBLISHER_ATTRIBUTE);
-
-        assert publisher != null;
-        publisher.stop();
+        if (publisher != null) {
+            publisher.stop();
+        }
 
         VerkehrAdmin admin =  (VerkehrAdmin) ctx.getAttribute(VERKEHR_ADMIN_ATTRIBUTE);
-        assert admin != null;
-        admin.stop();
+        if (admin != null) {
+            admin.stop();
+        }
     }
 
     @Override
