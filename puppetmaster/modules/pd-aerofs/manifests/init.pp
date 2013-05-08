@@ -30,11 +30,6 @@ class pd-aerofs {
         require => Package["nginx"]
     }
 
-    package { "aerofs-bootstrap":
-        ensure => installed,
-        require => Apt::Source["aerofs"],
-    }
-
     class{"webadmin":
         stripe_publishable_key => "gibberish",
         stripe_secret_key => "gibberish",
