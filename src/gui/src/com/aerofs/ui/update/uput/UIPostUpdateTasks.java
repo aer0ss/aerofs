@@ -1,9 +1,7 @@
 package com.aerofs.ui.update.uput;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.labeling.L;
 import com.aerofs.lib.LibParam.PostUpdate;
-import com.aerofs.lib.Param.PostUpdate;
 import com.aerofs.lib.cfg.CfgDatabase;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
 

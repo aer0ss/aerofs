@@ -6,7 +6,6 @@ package com.aerofs.base.net;
 
 import com.aerofs.base.Base64;
 import com.aerofs.base.Loggers;
-import com.aerofs.base.ex.Exceptions;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import org.slf4j.Logger;

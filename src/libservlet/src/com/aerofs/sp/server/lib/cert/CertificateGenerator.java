@@ -1,7 +1,6 @@
 package com.aerofs.sp.server.lib.cert;
 
 import com.aerofs.base.BaseParam;
-import com.aerofs.base.BaseParam.CA;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.C;
 import com.aerofs.base.id.DID;
