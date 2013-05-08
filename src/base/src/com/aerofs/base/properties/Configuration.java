@@ -6,7 +6,6 @@ package com.aerofs.base.properties;
 
 import com.aerofs.labeling.L;
 import com.aerofs.config.DynamicConfiguration;
-import com.aerofs.config.sources.DynamicPropertiesConfiguration;
 import com.aerofs.config.sources.PropertiesConfiguration;
 import com.aerofs.config.sources.SystemConfiguration;
 import com.google.common.base.Optional;
@@ -17,12 +16,14 @@ import org.apache.commons.configuration.CompositeConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
+import java.net.URL;
 
 import static com.google.common.collect.Lists.newArrayList;
 
@@ -45,7 +46,7 @@ public final class Configuration
      * <ol>
      *     <li>Runtime Configuration (for testing only)</li>
      *     <li>System Configuration (static, -D JVM parameters)</li>
-     *     <li>Configuration Service (dynamic, HTTP)</li>
+     *     <li>Configuration Service (HTTP)</li>
      *     <li>Classpath .properties Resources (static)</li>
      * </ol>
      * </p>
@@ -154,15 +155,15 @@ public final class Configuration
      * <ol>
      *     <li>Runtime Configuration (for testing only)</li>
      *     <li>System Configuration (static, -D JVM parameters)</li>
-     *     <li>TODO - {RuntimeRoot}/aerofs.properties (dynamic, refresh interval)</li>
-     *     <li>TODO - Configuration Service (dynamic, HTTP)</li>
+     *     <li>Configuration Service (HTTP)</li>
      *     <li>Classpath .properties Resources (static)</li>
      * </ol>
      * </p>
      */
     public static class Client
     {
-        public static void initialize(final String absoluteRuntimeRoot)
+        public static void initialize(@Nullable final URL configurationURL)
+                throws Exception
         {
             final AbstractConfiguration systemConfiguration = SystemConfiguration.newInstance();
 
@@ -170,6 +171,8 @@ public final class Configuration
             /*final AbstractConfiguration dynamicPropertiesConfiguration =
                     DynamicPropertiesConfiguration.newInstance(
                             getDynamicPropertyPaths(absoluteRuntimeRoot), 60000);*/
+
+            // TODO (MP) need to initialize the http configuration client here.
 
             final AbstractConfiguration staticPropertiesConfiguration =
                     PropertiesConfiguration.newInstance(getStaticPropertyPaths());
@@ -181,10 +184,10 @@ public final class Configuration
             LOGGER.debug("Client configuration initialized");
         }
 
-        private static List<String> getDynamicPropertyPaths(final String absoluteRuntimeRoot) {
+        /*private static List<String> getDynamicPropertyPaths(final String absoluteRuntimeRoot) {
             final String aerofsPropertiesAbsolutePath =
                     new File(absoluteRuntimeRoot, "aerofs.properties").getAbsolutePath();
             return newArrayList( aerofsPropertiesAbsolutePath );
-        }
+        }*/
     }
 }

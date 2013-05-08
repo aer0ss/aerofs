@@ -33,6 +33,7 @@ public abstract class SystemUtil
         JINGLE_CALL_TOO_LONG("jingle call too long"),
         JINGLE_TASK_FATAL_ERROR("jingle task fatal error"),
         DPUT_MIGRATE_AUX_ROOT_FAILED("migrating the aux root failed"),
+        CONFIGURATION_INIT("initializing configuration failed"),
 
         ////////
         // Exit codes that are expected during normal operations. _All_ of them should be handled
