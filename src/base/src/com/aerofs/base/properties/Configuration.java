@@ -26,9 +26,17 @@ import java.util.List;
 
 import static com.google.common.collect.Lists.newArrayList;
 
-/** author: Eric Schoonover <eric@aerofs.com> */
+/**
+ * Author: Eric Schoonover <eric@aerofs.com>
+ */
 public final class Configuration
 {
+    private static final Logger LOGGER = LoggerFactory.getLogger(Configuration.class);
+    private static final String STRINGS_RESOURCE = "resources/strings.properties";
+    private static final String CONFIGURATION_RESOURCE = "resources/configuration.properties";
+    private static final String STAGING_CONFIGURATION_RESOURCE = "resources/configuration-stg.properties";
+    private static final String CONFIGURATION_SERVICE_URL_FILE = "/etc/aerofs/configuration.url";
+
     /**
      * Provides the initialization logic for the various AeroFS services
      *
@@ -55,7 +63,7 @@ public final class Configuration
             DynamicConfiguration.initialize(DynamicConfiguration.builder()
                     .addConfiguration(systemConfiguration, "system")
                     .addConfiguration(httpConfiguration, "http")
-                    .addConfiguration(staticPropertiesConfiguration, "static-properties")
+                    .addConfiguration(staticPropertiesConfiguration, "static")
                     .build());
             LOGGER.info("Server configuration initialized: " + DynamicConfiguration.getInstance());
         }
@@ -87,7 +95,8 @@ public final class Configuration
         }
 
         return PropertiesConfiguration.newInstance(ImmutableList.of(configurationServiceUrl.get()));
-        // (eric) In the future we may want to make this dynamic, here is how:
+
+        // TODO (MP) In the future we may want to make this dynamic, here is how:
         // Return new DynamicURLConfiguration(0, 3600000, false, configurationServiceUrl);
         // This will reload the configuration from the HTTP service every hour.
     }
@@ -145,26 +154,29 @@ public final class Configuration
      * <ol>
      *     <li>Runtime Configuration (for testing only)</li>
      *     <li>System Configuration (static, -D JVM parameters)</li>
-     *     <li>{RuntimeRoot}/aerofs.properties (dynamic, refresh interval)</li>
-     *     <li>TODO (eric) - Configuration Service (dynamic, HTTP)</li>
+     *     <li>TODO - {RuntimeRoot}/aerofs.properties (dynamic, refresh interval)</li>
+     *     <li>TODO - Configuration Service (dynamic, HTTP)</li>
      *     <li>Classpath .properties Resources (static)</li>
      * </ol>
      * </p>
      */
     public static class Client
     {
-        public static void initialize(final String absoluteRuntimeRoot) {
+        public static void initialize(final String absoluteRuntimeRoot)
+        {
             final AbstractConfiguration systemConfiguration = SystemConfiguration.newInstance();
-            final AbstractConfiguration dynamicPropertiesConfiguration =
+
+            // MP: removing this for now, we may add it back later.
+            /*final AbstractConfiguration dynamicPropertiesConfiguration =
                     DynamicPropertiesConfiguration.newInstance(
-                            getDynamicPropertyPaths(absoluteRuntimeRoot), 60000);
+                            getDynamicPropertyPaths(absoluteRuntimeRoot), 60000);*/
+
             final AbstractConfiguration staticPropertiesConfiguration =
                     PropertiesConfiguration.newInstance(getStaticPropertyPaths());
 
             DynamicConfiguration.initialize(DynamicConfiguration.builder()
                     .addConfiguration(systemConfiguration, "system")
-                    .addConfiguration(dynamicPropertiesConfiguration, "dynamic-properties")
-                    .addConfiguration(staticPropertiesConfiguration, "static-properties")
+                    .addConfiguration(staticPropertiesConfiguration, "static")
                     .build());
             LOGGER.debug("Client configuration initialized");
         }
@@ -175,10 +187,4 @@ public final class Configuration
             return newArrayList( aerofsPropertiesAbsolutePath );
         }
     }
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(Configuration.class);
-    private static final String STRINGS_RESOURCE = "resources/strings.properties";
-    private static final String CONFIGURATION_RESOURCE = "resources/configuration.properties";
-    private static final String STAGING_CONFIGURATION_RESOURCE = "resources/configuration-stg.properties";
-    private static final String CONFIGURATION_SERVICE_URL_FILE = "/etc/aerofs/configuration.url";
 }
