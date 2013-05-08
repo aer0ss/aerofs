@@ -22,12 +22,11 @@ public class HdChunk implements IEventHandler<EOChunk>
     public void handle_(EOChunk ev, Prio prio)
     {
         try {
-            OutgoingStream ostrm = _sm.getOutgoingStreamThrows(ev._streamId, ev._seq);
+            OutgoingStream ostrm = _sm.getOutgoingStreamThrows(ev._streamId);
             byte[][] bss = TPUtil.newPayload(ev._streamId, ev._seq, ev._sid, ev.byteArray());
             _ucast.send_(ostrm._did, ev, prio, bss, ostrm._cookie);
         } catch (Exception e) {
             ev.error(e);
         }
     }
-
 }

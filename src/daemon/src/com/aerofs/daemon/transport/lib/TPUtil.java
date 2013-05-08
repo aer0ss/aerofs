@@ -172,7 +172,7 @@ public class TPUtil
             assert wireStream.hasSeqNum();
             int seq = wireStream.getSeqNum();
 
-            Boolean b = sm.getIncomingStream(ep.did(), streamId, seq);
+            Boolean b = sm.getIncomingStream(ep.did(), streamId);
             if (b == null) {
                 l.info("stream " + ep.did() + ':' + streamId + " not found. send rx abort");
                 return PBTPHeader.newBuilder()

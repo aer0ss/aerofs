@@ -23,7 +23,8 @@ import com.aerofs.daemon.lib.exception.ExStreamInvalid;
 // NB. access to this object must be protected by synchronized, as transports
 // may be multi-threaded.
 //
-public class StreamManager {
+public class StreamManager
+{
     private static final Logger l = Loggers.getLogger(StreamManager.class);
 
     public static class OutgoingStream {
@@ -65,15 +66,11 @@ public class StreamManager {
         Util.verify(sids.add(sid));
     }
 
-    public synchronized OutgoingStream getOutgoingStreamThrows(StreamID id, int seq)
+    public synchronized OutgoingStream getOutgoingStreamThrows(StreamID id)
         throws ExStreamInvalid
     {
         OutgoingStream ostrm = _sid2ostrm.get(id);
         if (ostrm == null) throw new ExStreamInvalid(InvalidationReason.STREAM_NOT_FOUND);
-//        if (seq != ++ostrm._seq) {
-//            Util.fatal(new Exception("ostrm " + id + " 2 " + ostrm._did +
-//                    " expect " + ostrm._seq + " actual " + seq));
-//        }
         return ostrm;
     }
 
@@ -149,7 +146,7 @@ public class StreamManager {
      * @return  null if the stream is not found, true if the stream already begun,
      *          and false otherwise; set the stream begun in the latter case
      */
-    public synchronized Boolean getIncomingStream(DID did, StreamID sid, int seq)
+    public synchronized Boolean getIncomingStream(DID did, StreamID sid)
     {
         Map<StreamID, IncomingStream> strms = _did2istrms.get(did);
         if (strms == null) {
@@ -160,10 +157,6 @@ public class StreamManager {
         if (strm == null) {
             return null;
         } else if (strm._begun) {
-//            if (seq != ++strm._seq) {
-//                Util.fatal(new Exception("istrm " + did + ":" + streamId +
-//                        " expect " + strm._seq + " actual " + seq));
-//            }
             return true;
         } else {
             strm._begun = true;

@@ -71,7 +71,7 @@ public class UnicastOutputBottomLayer implements IUnicastOutputLayer
     public void beginOutgoingStream_(StreamID streamId, byte[] bs, PeerContext pc, Token tk)
         throws Exception
     {
-        _f. _dlru.addDevice_(pc.did());
+        _f._dlru.addDevice_(pc.did());
 
         IIMCExecutor imce = _f._tps.getIMCE_(pc.tp());
         EOBeginStream ev = new EOBeginStream(streamId, pc.did(), _f._sidx2sid.getThrows_(pc.sidx()),

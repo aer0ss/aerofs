@@ -27,7 +27,7 @@ public class PrioQueue<T> implements IDumpStatMisc
     @SuppressWarnings("unchecked")
     private final Queue<T>[] _qs = new Queue[Prio.values().length];
 
-    private int _cap;
+    private final int _cap;
     private int _size;
     private long _out;  // for statistics only
 
@@ -51,14 +51,6 @@ public class PrioQueue<T> implements IDumpStatMisc
     public String toString()
     {
         return (_size + _out) + " = " + _size + " (" + _cap + ") + " + _out;
-    }
-
-    /**
-     * this method doesn't drain the queue even if cap is decreased
-     */
-    public void setCapacity_(int cap)
-    {
-        _cap = cap;
     }
 
     public boolean isFull_()

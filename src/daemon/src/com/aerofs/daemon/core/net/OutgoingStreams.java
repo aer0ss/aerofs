@@ -61,7 +61,7 @@ public class OutgoingStreams
                 } catch (Exception e) {
                     l.warn("fail abort " + this + ". backlogged: " + Util.e(e));
                     _invalidationReason = reason;
-                    _aborted.add(this);
+                    _failedToAbort.add(this);
                 }
             }
         }
@@ -75,7 +75,7 @@ public class OutgoingStreams
                     _stack.output().endOutgoingStream_(_strmid, _pc);
                 } catch (Exception e) {
                     l.warn("fail end " + this + ". backlogged: " + Util.e(e));
-                    _ended.add(this);
+                    _failedToEnd.add(this);
                 }
             }
         }
@@ -90,8 +90,8 @@ public class OutgoingStreams
     private int _id = 0;
 
     // these are streams that have failed to abort or end
-    private final List<OutgoingStream> _aborted = new LinkedList<OutgoingStream>();
-    private final List<OutgoingStream> _ended = new LinkedList<OutgoingStream>();
+    private final List<OutgoingStream> _failedToAbort = new LinkedList<OutgoingStream>();
+    private final List<OutgoingStream> _failedToEnd = new LinkedList<OutgoingStream>();
 
     private final UnicastInputOutputStack _stack;
 
@@ -116,14 +116,14 @@ public class OutgoingStreams
     public OutgoingStream newStream(Endpoint ep, SIndex sidx, Token tk)
         throws ExNoResource, ExAborted
     {
-        Iterator<OutgoingStream> iter = _aborted.iterator();
+        Iterator<OutgoingStream> iter = _failedToAbort.iterator();
         while (iter.hasNext()) {
             OutgoingStream os = iter.next();
             _stack.output().abortOutgoingStream_(os._strmid, os._invalidationReason, os._pc);
             iter.remove();
         }
 
-        iter = _ended.iterator();
+        iter = _failedToEnd.iterator();
         while (iter.hasNext()) {
             OutgoingStream os = iter.next();
             _stack.output().endOutgoingStream_(os._strmid, os._pc);
