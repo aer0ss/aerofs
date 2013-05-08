@@ -114,9 +114,15 @@ public class Main
         createRtRootIfNotExists(rtRoot);
         initializeLogging(rtRoot, prog);
 
-        // First things first, initialize the configuration subsystem
-        final String absoluteRuntimeRoot = new File(rtRoot).getAbsolutePath();
-        Configuration.Client.initialize(absoluteRuntimeRoot);
+        // First things first, initialize the configuration subsystem.
+        try {
+            // TODO (MP) need to pass this the configuration URL (should be stored in the conf db).
+            Configuration.Client.initialize(null);
+        } catch (Exception e) {
+            System.out.println("failed in main(): " + Util.e(e));
+            SVClient.logSendDefectSyncIgnoreErrors(true, "failed in main()", e);
+            ExitCode.CONFIGURATION_INIT.exit();
+        }
 
         // Set the library path to be APPROOT to avoid library not found exceptions
         // {@see http://blog.cedarsoft.com/2010/11/setting-java-library-path-programmatically/}
@@ -156,8 +162,8 @@ public class Main
             } else {
                 System.out.println("failed in main(): " + Util.e(e)); // l.error does not work here.
             }
-            SVClient.logSendDefectSyncIgnoreErrors(true, "failed in main()", e);
 
+            SVClient.logSendDefectSyncIgnoreErrors(true, "failed in main()", e);
             ExitCode.FAIL_TO_LAUNCH.exit();
         }
     }
