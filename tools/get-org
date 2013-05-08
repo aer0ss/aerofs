@@ -1,0 +1,3 @@
+#!/bin/bash
+echo "Getting organization info via c.aerofs.com..."
+ssh c.aerofs.com "getorg $@"
