@@ -51,6 +51,7 @@
         %if 'username' in request.session:
             mixpanel.identify("${request.session['username']}");
         %endif
+        mixpanel.track('Page Viewed', {'Title' : document.title, 'URL' : window.location.pathname});
     </script>
 </head>
 
