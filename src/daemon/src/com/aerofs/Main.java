@@ -116,7 +116,7 @@ public class Main
 
         // First things first, initialize the configuration subsystem
         final String absoluteRuntimeRoot = new File(rtRoot).getAbsolutePath();
-        Configuration.Client.initialize( absoluteRuntimeRoot );
+        Configuration.Client.initialize(absoluteRuntimeRoot);
 
         // Set the library path to be APPROOT to avoid library not found exceptions
         // {@see http://blog.cedarsoft.com/2010/11/setting-java-library-path-programmatically/}
