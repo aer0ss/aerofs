@@ -1,11 +1,11 @@
 <component name="libraryTable">
   <library name="jsr305">
     <CLASSES>
-      <root url="jar://$PROJECT_DIR$/../../resource/client/common/lib/jsr305-2.0.1.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../resource/common/lib/jsr305-2.0.1.jar!/" />
     </CLASSES>
     <JAVADOC />
     <SOURCES>
-      <root url="jar://$PROJECT_DIR$/../../resource/client/common/lib/jsr305-2.0.1.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../resource/common/lib/jsr305-2.0.1.jar!/" />
     </SOURCES>
   </library>
 </component>

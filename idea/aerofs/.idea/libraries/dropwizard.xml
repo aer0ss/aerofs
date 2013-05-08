@@ -1,13 +1,13 @@
 <component name="libraryTable">
   <library name="dropwizard">
     <CLASSES>
-      <root url="file://$PROJECT_DIR$/../../resource/dropwizard" />
+      <root url="file://$PROJECT_DIR$/../../resource/common/lib.dropwizard" />
     </CLASSES>
     <JAVADOC />
     <SOURCES>
-      <root url="file://$PROJECT_DIR$/../../resource/dropwizard" />
+      <root url="file://$PROJECT_DIR$/../../resource/common/lib.dropwizard" />
     </SOURCES>
-    <jarDirectory url="file://$PROJECT_DIR$/../../resource/dropwizard" recursive="false" />
-    <jarDirectory url="file://$PROJECT_DIR$/../../resource/dropwizard" recursive="false" type="SOURCES" />
+    <jarDirectory url="file://$PROJECT_DIR$/../../resource/common/lib.dropwizard" recursive="false" />
+    <jarDirectory url="file://$PROJECT_DIR$/../../resource/common/lib.dropwizard" recursive="false" type="SOURCES" />
   </library>
 </component>

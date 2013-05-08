@@ -1,7 +1,7 @@
 <component name="libraryTable">
   <library name="jline2-git">
     <CLASSES>
-      <root url="jar://$PROJECT_DIR$/../../resource/client/common/lib/jline2-git.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../resource/client/all/lib/jline2-git.jar!/" />
     </CLASSES>
     <JAVADOC />
     <SOURCES />

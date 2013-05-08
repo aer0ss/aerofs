@@ -1,83 +1,107 @@
-#!/bin/bash
+#!/bin/bash -ue
 
+###############################################################################
+#
 # This script creates the approot directory and populates it
 # with the files needed for a staging AeroFS
-
-set -e
-
-if [ x"$1" == x ]; then
-    echo "usage: $0 <approot> <resource> <mode=STAGING> <multiplicity=CLIENT> <os>" >&2
-    echo "    <approot>  The approot folder path which doesn't need to pre-exist." >&2
-    echo "    <resource> The resource/client folder path which must exist." >&2
-    echo "    <mode>     (optional) specifies which cacert.pem file to use." >&2
-    echo "               Can be STAGING or CI. Defaults to STAGING." >&2
-    echo "    <multiplicity> (optional) whether or not to populate as a Team Server." >&2
-    echo "               Can be TEAM_SERVER or CLIENT. Defaults to CLIENT." >&2
-    echo "    <os>       (optional) The OS to populate for. Can be osx, win, linux32 or" >&2
-    echo "               linux64. If not set, we will use the output from the ./os script." >&2
-    exit 1
-fi
-
-PPWD="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-
-APPROOT="$1"
-PROPERTIES_DIR="$APPROOT/resources"
-ASIS="$2"
-MODE="${3:-'STAGING'}"
-PRODUCT="${4:-'CLIENT'}"
-OS="${5:-`"$PPWD"/os`}"
-
-VERSION_FILE=version
-
-# Copy files to approot
-mkdir -p "$APPROOT"
-rm -rf "$APPROOT/lib"
-rm -rf "$APPROOT"/Growl.framework # Symlinks prevent cp from overwriting the files
-rm -rf "$APPROOT"/jre  # jre contains some read-only files that would make cp fail
-
-cp -R "$ASIS"/common/* "$APPROOT"/
-cp -R "$ASIS"/s3/lib/* "$APPROOT"/lib/
-cp -R "$ASIS"/$OS/* "$APPROOT"/
-
 #
-# handle properties
-#
+###############################################################################
 
-# we want none of the properties files in approot, so remove them
-mkdir -p "$PROPERTIES_DIR"
-mv "$APPROOT"/*.properties "$PROPERTIES_DIR"
+readonly ERRBADARGS=1
+readonly ERRBADMODE=2
+readonly ERRBADPRODUCT=3
 
-if [ "$PRODUCT" == "TEAM_SERVER" ]; then
-    mv "$PROPERTIES_DIR"/labeling-teamserver.properties "$PROPERTIES_DIR"/labeling.properties
-fi
+function print_usage() {
+    echo "usage: $0 [mode] [product] [os] [resource_root_dir] [output_dir]" >&2
+    echo "    [mode]              Specifies which mode the properties are for" >&2
+    echo "                        Can be PROD, CI, or STAGING." >&2
+    echo "    [product]           Specifies which product the properties are for" >&2
+    echo "                        Can be TEAM_SERVER or CLIENT." >&2
+    echo "    [os]                OS to populate for. Can be osx, win, linux32 or" >&2
+    echo "                        linux64. If not set, we will use the output from the ./os script." >&2
+    echo "    [resource_root_dir] Directory where all non-server-specific resources are stored" >&2
+    echo "    [output_dir]        Directory to which all the resources should be copied" >&2
+}
 
-# build mode
+function setup_clean_approot() {
+    if [[ -d "$APPROOT" ]]
+    then
+        local approot_contents=$( ls "$APPROOT" )
+        approot_contents=${approot_contents/bin/} # remove bin from the list of approot contents
+        for content in $approot_contents # hopefully our filenames don't have spaces
+        do
+            rm -rf "$APPROOT/$content"
+        done
+    else
+        mkdir -p "$APPROOT"
+    fi
+}
 
-if [ "$MODE" == "CI" ]; then
-    # Set-up a CI environment
-    rm "$APPROOT"/cacert-staging.pem
-    rm "$APPROOT"/cacert-prod.pem
-    mv "$APPROOT"/cacert-ci.pem "$APPROOT"/cacert.pem
-elif [ "$MODE" == "PROD" ]; then
-    # Set-up a prod environment
-    rm "$APPROOT"/cacert-ci.pem
-    rm "$APPROOT"/cacert-staging.pem
-    mv "$APPROOT"/cacert-prod.pem "$APPROOT"/cacert.pem
-else
-    # Set-up a staging environment
-    rm "$APPROOT"/cacert-ci.pem
-    rm "$APPROOT"/cacert-prod.pem
-    mv "$APPROOT"/cacert-staging.pem "$APPROOT"/cacert.pem
-    echo "labeling.isStaging=true" >> "$PROPERTIES_DIR"/labeling.properties
-fi
-   
+function copy_os_specific_resources() {
+    mkdir -p "$APPROOT/lib"
 
-# Common to both staging and CI
+    # copy over all the common client resources (includes platform-independent icons/libs)
+    # FIXME (AG): should I not copy over the test libraries?
 
-# Create the version file. 100.0.0 is our special development environment version
+    cp -R "$COMMON_RESOURCES_DIR/lib"*/*.jar "$APPROOT"/lib/
+    cp -R "$CLIENT_RESOURCES_DIR/all/lib"*/*.jar "$APPROOT"/lib/ # lib directories
+
+    for resource in $( ls "$CLIENT_RESOURCES_DIR/all/" ) # non-lib directories
+    do
+        if [[ $resource != lib* ]]
+        then
+            cp -R "$CLIENT_RESOURCES_DIR/all/$resource" "$APPROOT"/
+        fi
+    done
+
+    # copy over the os-specific resources
+    # IMPORTANT: must come _after_ the common copy above, so that os-specific resources
+    # can overwrite the identically-named platform-independent ones
+    # FIXME (AG): Yeah. I don't like it
+    cp -R "$CLIENT_RESOURCES_DIR/$OS/"* "$APPROOT"/
+}
+
+# Create a version file with the specical development version 100.0.0
+# This keeps aerofs from being updated
 # This version number must be kept in sync with src/launcher/launcher.lib/liblauncher.cpp
-echo "100.0.0" > "$APPROOT"/$VERSION_FILE
+function create_max_version_file() {
+    if [[ "$MODE" == 'STAGING' || "$MODE" == 'CI' ]]
+    then
+        echo "100.0.0" > "$APPROOT"/version
+    fi
+}
 
-# Add the run script.
-cp "$PPWD/os" "$PPWD/run" "$PPWD/rundebug" "$APPROOT"/
+function copy_run_scripts() {
+    # os script is copied because it is used by the run script
+    cp "$PPWD/os" "$PPWD/run" "$PPWD/rundebug" "$APPROOT"/
+}
 
+###############################################################################
+#
+# main script
+#
+###############################################################################
+
+# usage
+if [[ $# -ne 5 || x"$1" == x || x"$2" == x || x"$3" == x || x"$4" == x || x"$5" == x ]]
+then
+    print_usage
+    exit $ERRBADARGS
+fi
+
+# constants
+readonly PPWD="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+readonly MODE="$1"
+readonly LABELING="$2"
+readonly OS="$3"
+readonly BASE_RESOURCES_DIR="$4"
+readonly COMMON_RESOURCES_DIR="$BASE_RESOURCES_DIR/common"
+readonly CLIENT_RESOURCES_DIR="$BASE_RESOURCES_DIR/client"
+readonly APPROOT="$5"
+
+# tasks
+setup_clean_approot
+"$PPWD/copy_mode_and_product_resources" "$MODE" "$LABELING" "$BASE_RESOURCES_DIR" "$APPROOT"
+copy_os_specific_resources
+create_max_version_file
+copy_run_scripts

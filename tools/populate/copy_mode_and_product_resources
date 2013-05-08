@@ -1,0 +1,90 @@
+#!/bin/bash -ue
+
+###############################################################################
+#
+# This script copies the appropriate properties files for a MODE and PRODUCT
+# to a named output location
+#
+###############################################################################
+
+readonly ERRBADARGS=1
+readonly ERRBADMODE=2
+readonly ERRBADPRODUCT=3
+
+function print_usage() {
+    echo "usage: $0 [mode] [product] [resource_root_dir] [output_dir]" >&2
+    echo "    [mode]              Specifies which mode the properties are for" >&2
+    echo "                        Can be PROD, CI, or STAGING." >&2
+    echo "    [product]           Specifies which product the properties are for" >&2
+    echo "                        Can be TEAM_SERVER or CLIENT." >&2
+    echo "    [resource_root_dir] Directory where all non-server-specific resources are stored" >&2
+    echo "    [output_dir]        Directory to which all the resources should be copied" >&2
+}
+
+function add_staging_flag() {
+    # FIXME (AG)! Hack! (this belongs in the configuration-staging.properties, not here)
+    echo "labeling.isStaging=true" >> "$PROPERTIES_OUTPUT_DIR"/labeling.properties
+}
+
+function copy_resources() {
+    mkdir -p "$PROPERTIES_OUTPUT_DIR"
+
+    # handle product-specific resources
+    cp "$LABELING_RESOURCES_DIR"/"labeling-$LOWERCASE_LABELING.properties" "$PROPERTIES_OUTPUT_DIR"/labeling.properties
+    if [ $MODE == 'STAGING' ]
+    then
+        add_staging_flag
+    fi
+
+    # copy all the mode-specific resources over and rename them
+    local mode_specific_resources=$( ls $MODE_RESOURCES_DIR/*-$LOWERCASE_MODE* )
+    for mode_resource in $mode_specific_resources
+    do
+        local mode_file=$( basename "$mode_resource" ) # don't use mode_resource directly to get filename/extension
+        local mode_file_basename=$( echo "$mode_file" | cut -d'-' -f1 )
+        local mode_file_extension=$( echo "$mode_file" | cut -d'.' -f2 )
+        cp "$mode_resource" "$PROPERTIES_OUTPUT_DIR"/"$mode_file_basename"."$mode_file_extension"
+    done
+
+    cp "$OTHER_RESOURCES_DIR"/* "$PROPERTIES_OUTPUT_DIR"
+}
+
+###############################################################################
+#
+# main script
+#
+###############################################################################
+
+# all arguments specified
+if [[ $# -ne 4 || x"$1" == x || x"$2" == x || x"$3" == x || x"$4" == x ]]
+then
+    print_usage
+    exit $ERRBADARGS
+fi
+
+# mode
+readonly MODE="$1"
+readonly LOWERCASE_MODE=$( echo $MODE | tr [A-Z] [a-z] )
+if [[ "$MODE" != 'PROD' && "$MODE" != 'CI' && "$MODE" != 'STAGING' ]]
+then
+    print_usage
+    exit $ERRBADMODE
+fi
+
+# product
+readonly LABELING="$2"
+readonly LOWERCASE_LABELING=$( echo $LABELING | tr [A-Z] [a-z] )
+if [[ "$LABELING" != 'CLIENT' && "$LABELING" != 'TEAM_SERVER' ]]
+then
+    print_usage
+    exit $ERRBADPRODUCT
+fi
+
+# directories
+readonly RESOURCES_DIR="$3"
+readonly MODE_RESOURCES_DIR="$3/common/mode"
+readonly LABELING_RESOURCES_DIR="$3/common/labeling"
+readonly OTHER_RESOURCES_DIR="$3/common/other"
+readonly PROPERTIES_OUTPUT_DIR="$4"
+
+copy_resources

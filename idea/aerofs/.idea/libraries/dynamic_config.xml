@@ -1,13 +1,10 @@
 <component name="libraryTable">
   <library name="dynamic-config">
     <CLASSES>
-      <root url="jar://$PROJECT_DIR$/../../resource/client/common/lib/commons-lang-2.6.jar!/" />
-      <root url="jar://$PROJECT_DIR$/../../resource/client/common/lib/commons-configuration-1.8.jar!/" />
-      <root url="jar://$PROJECT_DIR$/../../resource/client/common/lib/dynamic-config-client-0.1.jar!/" />
-      <root url="jar://$PROJECT_DIR$/../../resource/client/common/lib/archaius-core-0.5.8.jar!/" />
-      <root url="jar://$PROJECT_DIR$/../../resource/client/common/lib/jcl-over-slf4j-1.7.5.jar!/" />
+      <root url="file://$PROJECT_DIR$/../../resource/common/lib.dynamic-config" />
     </CLASSES>
     <JAVADOC />
     <SOURCES />
+    <jarDirectory url="file://$PROJECT_DIR$/../../resource/common/lib.dynamic-config" recursive="false" />
   </library>
 </component>

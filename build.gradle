@@ -1,59 +1,67 @@
-/*
- * Copyright (c) Air Computing Inc., 2013.
- */
+//-----------------------------------------------------------------------------
+// Copyright (c) Air Computing Inc., 2013.
+//-----------------------------------------------------------------------------
 
-apply plugin: 'java'
+//-----------------------------------------------------------------------------
+// common library declarations
+//-----------------------------------------------------------------------------
 
-repositories {
-    mavenLocal()
-    maven { url 'http://repos.arrowfs.org/nexus/content/repositories/central/' }
-    maven { url 'http://repos.arrowfs.org/nexus/content/repositories/apache-snapshots/' }
-    maven { url 'http://repos.arrowfs.org/nexus/content/repositories/codehaus-snapshots/' }
-    maven { url 'http://repos.arrowfs.org/nexus/content/repositories/google-api-client-libraries/' }
-    maven { url 'http://repos.arrowfs.org/nexus/content/repositories/thirdparty/' }
-    maven { url 'http://repos.arrowfs.org/nexus/content/repositories/releases/' }
-    maven { url 'http://repos.arrowfs.org/nexus/content/repositories/snapshots/' }
+ext {
+    libs = [aerofs_dropwizard: ['com.yammer.dropwizard:dropwizard-core:0.6+',
+                                'com.yammer.metrics:metrics-graphite:2.2+']
+    ]
+
+    clientResourcesDir = "${rootDir}/resource/client"
+    commonResourcesDir = "${rootDir}/resource/common"
+    serverResourcesDir = "${rootDir}/resource/server"
 }
 
-configurations {
-    // N.B. these are all excluded from dynamic-config-client, but other jars
-    // (e.g. synctime-client) internally use the dynamic-config-client, so the
-    // exclusions must be made global
-    all*.exclude module: 'findbugs'           // we don't want findbugs dependencies in production
-    all*.exclude module: 'slf4j-api'          // for all configurations, exclude slf4j because we ship our own
-    all*.exclude module: 'guava'              // exclude guava in preference of our own version
-    all*.exclude module: 'commons-logging'    // exclude commons logging because we use slf4j
-    all*.exclude module: 'log4j-over-slf4j'   // don't want multiple logging backends; we ship log4j
-    all*.exclude group:  'ch.qos.logback'     // exclude logback because we use slf4j/log4j
-}
+//-----------------------------------------------------------------------------
+// common subproject configuration
+//-----------------------------------------------------------------------------
 
-/**
- * Define the dependencies for dynamic-config
- */
-dependencies {
-    compile('com.aerofs.dynamic-config:dynamic-config-client:0.1')
-    compile('com.aerofs.synctime:synctime-client:0.9')
-}
+subprojects {
+    apply plugin: 'java'
 
-/**
- * IMPORTANT: I split the downloading and copying into two steps
- * because gradle deletes the sync directory on every run
- * FIXME (AG): understand exactly why this happens
- */
+    configurations.all {
+        // exclude downloading libraries we ship ourselves
+        exclude module: 'findbugs'
+        exclude module: 'guava'
+        exclude module: 'commons-logging'
+        exclude module: 'slf4j-api'
+        exclude module: 'log4j-over-slf4j'
+        exclude group:  'ch.qos.logback'
 
-/**
- * IMPORTANT: private! do not call externally!
- * copy jars from the maven cache into the sync directory
- */
-task syncDependencies(type: Sync) {
-    from configurations.compile
-    into "$projectDir/resource/dynamic-config"
-}
+        // force common versions of certain libraries
+        resolutionStrategy {
+            force 'com.yammer.dropwizard:dropwizard-core:0.6.2',
+                  'com.yammer.metrics:metrics-graphite:2.2.0',
+                  'com.fasterxml.jackson.core:jackson-annotations:2.2.1'
+        }
+    }
 
-/**
- * copy the dependency jars into the final location (client/common/lib)
- */
-task libs(type: Copy, dependsOn: syncDependencies) {
-    from "$projectDir/resource/dynamic-config"
-    into "$projectDir/resource/client/common/lib"
+    // repositories dependencies are sourced from
+    repositories {
+        mavenLocal()
+        maven { url 'http://repos.arrowfs.org/nexus/content/repositories/central/' }
+        maven { url 'http://repos.arrowfs.org/nexus/content/repositories/apache-snapshots/' }
+        maven { url 'http://repos.arrowfs.org/nexus/content/repositories/codehaus-snapshots/' }
+        maven { url 'http://repos.arrowfs.org/nexus/content/repositories/google-api-client-libraries/' }
+        maven { url 'http://repos.arrowfs.org/nexus/content/repositories/thirdparty/' }
+        maven { url 'http://repos.arrowfs.org/nexus/content/repositories/releases/' }
+        maven { url 'http://repos.arrowfs.org/nexus/content/repositories/snapshots/' }
+    }
+
+
+    // disable all the java plugin tasks
+    compileJava.enabled false
+    processResources.enabled false
+    classes.enabled false
+    compileTestJava.enabled false
+    processTestResources.enabled  false
+    testClasses.enabled false
+    jar.enabled false
+    javadoc.enabled false
+    test.enabled false
+    uploadArchives.enabled false
 }

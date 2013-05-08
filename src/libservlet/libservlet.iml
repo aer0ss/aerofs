@@ -17,7 +17,7 @@
     <orderEntry type="library" exported="" name="mysql-connector" level="project" />
     <orderEntry type="library" exported="" name="protobuf-format" level="project" />
     <orderEntry type="library" exported="" name="javamail" level="project" />
-    <orderEntry type="library" exported="" name="apache-lang" level="project" />
+    <orderEntry type="library" exported="" name="commons-lang" level="project" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
 </module>

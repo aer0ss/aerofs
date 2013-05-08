@@ -1,0 +1,12 @@
+//-----------------------------------------------------------------------------
+// Copyright (c) Air Computing Inc., 2013.
+//-----------------------------------------------------------------------------
+
+dependencies {
+    compile('com.aerofs.dynamic-config:dynamic-config-client:0.1')
+}
+
+task syncDependencies(type: Sync) {
+    from configurations.compile
+    into "${commonResourcesDir}/lib.dynamic-config"
+}

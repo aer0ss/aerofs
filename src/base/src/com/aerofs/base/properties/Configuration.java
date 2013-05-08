@@ -4,9 +4,8 @@
 
 package com.aerofs.base.properties;
 
-import com.aerofs.config.sources.PropertiesConfiguration;
-import com.aerofs.labeling.L;
 import com.aerofs.config.DynamicConfiguration;
+import com.aerofs.config.sources.PropertiesConfiguration;
 import com.aerofs.config.sources.SystemConfiguration;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
@@ -31,9 +30,8 @@ import static com.google.common.collect.Lists.newArrayList;
 public final class Configuration
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(Configuration.class);
-    private static final String STRINGS_RESOURCE = "resources/strings.properties";
-    private static final String CONFIGURATION_RESOURCE = "resources/configuration.properties";
-    private static final String STAGING_CONFIGURATION_RESOURCE = "resources/configuration-stg.properties";
+    private static final String STRINGS_RESOURCE = "strings.properties";
+    private static final String CONFIGURATION_RESOURCE = "configuration.properties";
 
     private static interface IDefaultConfigurationURLProvider
     {
@@ -160,13 +158,6 @@ public final class Configuration
         final List<String> staticPropertyPaths = newArrayList(
                 STRINGS_RESOURCE,
                 CONFIGURATION_RESOURCE);
-
-        if (L.isStaging()) {
-            // I KNOW! I'm introducing a new use of the exact thing that I am trying to kill,
-            // L.isStaging(). Consistency is important and I don't want to introduce a new mechanism
-            // for identifying the current environment until L.isStaging is killed completely.
-            staticPropertyPaths.add(STAGING_CONFIGURATION_RESOURCE);
-        }
 
         return staticPropertyPaths;
     }

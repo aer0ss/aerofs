@@ -50,11 +50,16 @@ function render_template_in_place_on() {
 function copy_resources_to_local_release_directories() {
     echo ">> copying resources to release directory"
 
-    # Remove the old release directory
-    rm -rf "$LOCAL_RELEASE_DIR"
+    #------------------------------------------------------
+    # setup the directory structure
+    #------------------------------------------------------
 
-    # Create the required destination directories exists
+    # Remove the old release directory
+    rm -rf "${LOCAL_RELEASE_DIR}"
+
+    # Create the required destination directories
     mkdir -p "${AEROFS_RELEASE_DIR}/"
+    mkdir -p "${AEROFS_RELEASE_DIR}/lib"
     mkdir -p "${AEROFS_RELEASE_WIN_DIR}/"
     mkdir -p "${AEROFS_RELEASE_OSX_DIR}/"
     mkdir -p "${AEROFS_RELEASE_LINUX_DIR}/"
@@ -63,36 +68,101 @@ function copy_resources_to_local_release_directories() {
     mkdir -p "${AEROFS_RELEASE_LINUX64_DIR}/"
     mkdir -p "${AEROFS_RELEASE_INST_DIR}/"
 
-    # FIXME(jP): There should be precisely one logger config for clients.
-    # FIXME(jP): logger configuration should come out of resources/common
-    # Copy logger configuration files:
-    cp "${LOG_CONFIGS_DIR}/"logback*.xml "${AEROFS_RELEASE_DIR}/"
-    # Copy "resource/client" files
-    cp "${CLIENT_RESOURCES_DIR}/common/"*.properties "${AEROFS_RELEASE_DIR}/"
-    cp -R "${CLIENT_RESOURCES_DIR}/common"/* "${AEROFS_RELEASE_DIR}/"
-    cp -R "${CLIENT_RESOURCES_DIR}/osx"/* "${AEROFS_RELEASE_OSX_DIR}/"
-    cp -R "${CLIENT_RESOURCES_DIR}/win"/* "${AEROFS_RELEASE_WIN_DIR}/"
-    cp -R "${CLIENT_RESOURCES_DIR}/linux"/* "${AEROFS_RELEASE_LINUX_DIR}/"
-    cp -R "${CLIENT_RESOURCES_DIR}/linux32"/* "${AEROFS_RELEASE_LINUX32_DIR}/"
-    cp -R "${CLIENT_RESOURCES_DIR}/linux64"/* "${AEROFS_RELEASE_LINUX64_DIR}/"
-    cp "${CLIENT_RESOURCES_DIR}"/linux.inst/INSTALL "${AEROFS_RELEASE_INST_DIR}/"
-    cp "${CLIENT_RESOURCES_DIR}"/linux.inst/aerofs "${AEROFS_RELEASE_LINUX_DIR}/${AEROFS_PRODUCT_UNIX}"
-    cp "${CLIENT_RESOURCES_DIR}"/linux.inst/aerofs "${AEROFS_RELEASE_INST_DIR}/${AEROFS_PRODUCT_UNIX}"
+    local local_BIN="${LOCAL_RELEASE_DIR}/bin"
+    local local_ALL_PLATFORMS_RELEASE_LIB="${AEROFS_RELEASE_DIR}/lib"
+
+    #------------------------------------------------------
+    # copy over the classfiles
+    #------------------------------------------------------
+
+    mkdir -p "${local_BIN}"
+    cp -R "${BUILD_OUTPUT_DIR}/bin"/ "${local_BIN}"
+
+    # remove unnecessary files (bin/com/aerofs/downloader will be moved away later)
+    # TODO (WW) make sure files to be removed are at correct locations. See the
+    # labeling process code for an example.
+    find "${local_BIN}/" -name .DS_Store  | xargs rm -f
+    find "${local_BIN}/" -name .gitignore | xargs rm -f
+
+    if is_prod ; then
+        # TODO: (AG) move these as excludes into build.xml
+        # TODO: (WW) Verify this package is valid before removing
+        rm -rf "${local_BIN}/com/aerofs/tools"
+    fi
+
+    #------------------------------------------------------
+    # copy platform-specific and platform-independent resources/libraries
+    #------------------------------------------------------
+
+    # common, platform-independent jars _only_ (resources are copied below)
+    local local_COMMON_RESOURCES_DIR_JARDIRS=$( ls -d "${COMMON_RESOURCES_DIR}"/lib* | xargs -n1 basename )
+    local_COMMON_RESOURCES_DIR_JARDIRS=${local_COMMON_RESOURCES_DIR_JARDIRS/lib.test/} # exclude the lib.test dir
+    for local_JARDIR in $local_COMMON_RESOURCES_DIR_JARDIRS
+    do
+        cp -R "${COMMON_RESOURCES_DIR}/${local_JARDIR}"/* "${local_ALL_PLATFORMS_RELEASE_LIB}"
+    done
+
+    # client, platform-independent resources (includes jars as well as other resources)
+    local local_CLIENT_RESOURCES_DIR_CONTENTS=$( ls -d "$CLIENT_ALL_PLATFORMS_RESOURCES_DIR"/* | xargs -n1 basename )
+    local_CLIENT_RESOURCES_DIR_CONTENTS=${local_CLIENT_RESOURCES_DIR_CONTENTS/lib.s3/} # exclude the lib.s3 dir
+    for local_CONTENT in $local_CLIENT_RESOURCES_DIR_CONTENTS
+    do
+        if [[ $local_CONTENT == lib* ]]; then
+            cp -R "${CLIENT_ALL_PLATFORMS_RESOURCES_DIR}/${local_CONTENT}"/* "${local_ALL_PLATFORMS_RELEASE_LIB}"
+        else
+            cp -R "${CLIENT_ALL_PLATFORMS_RESOURCES_DIR}/${local_CONTENT}" "${AEROFS_RELEASE_DIR}"
+        fi
+    done
+
+    # copy S3 jars if necessary
+
+    cp -R "${CLIENT_ALL_PLATFORMS_RESOURCES_DIR}/lib.s3"/* "${AEROFS_RELEASE_LINUX_DIR}/lib/" # linux (always)
+    if is_team_server ; then
+        cp -R "${CLIENT_ALL_PLATFORMS_RESOURCES_DIR}/lib.s3"/ "${AEROFS_RELEASE_OSX_DIR}/lib/" # osx (only for ts)
+        cp -R "${CLIENT_ALL_PLATFORMS_RESOURCES_DIR}/lib.s3"/ "${AEROFS_RELEASE_WIN_DIR}/lib/" # win (only for ts)
+    fi
+
+    # platform-specific resources and jars native libs
+    cp -R "${CLIENT_OSX_RESOURCES_DIR}"/* "${AEROFS_RELEASE_OSX_DIR}/"
+    cp -R "${CLIENT_WIN_RESOURCES_DIR}"/* "${AEROFS_RELEASE_WIN_DIR}/"
+    cp -R "${CLIENT_LINUX_COMMON_RESOURCES_DIR}"/* "${AEROFS_RELEASE_LINUX_DIR}/"
+    cp -R "${CLIENT_LINUX32_RESOURCES_DIR}"/* "${AEROFS_RELEASE_LINUX32_DIR}/"
+    cp -R "${CLIENT_LINUX64_RESOURCES_DIR}"/* "${AEROFS_RELEASE_LINUX64_DIR}/"
+    cp "${CLIENT_LINUX_INSTALLER_RESOURCES_DIR}/INSTALL" "${AEROFS_RELEASE_INST_DIR}/"
+    cp "${CLIENT_LINUX_INSTALLER_RESOURCES_DIR}/aerofs" "${AEROFS_RELEASE_LINUX_DIR}/${AEROFS_PRODUCT_UNIX}"
+    cp "${CLIENT_LINUX_INSTALLER_RESOURCES_DIR}/aerofs" "${AEROFS_RELEASE_INST_DIR}/${AEROFS_PRODUCT_UNIX}"
     mv "${AEROFS_RELEASE_LINUX_DIR}/aerofs.desktop" "${AEROFS_RELEASE_LINUX_DIR}/${AEROFS_PRODUCT_UNIX}.desktop"
 
-    rm "${AEROFS_RELEASE_DIR}/labeling-teamserver.properties"
+    #------------------------------------------------------
+    # copy the properties files (*.properties, *.xml, etc.)
+    #------------------------------------------------------
 
-    # Copy S3 libs if necessary
-    cp -R "${CLIENT_RESOURCES_DIR}/s3/lib"/* "${AEROFS_RELEASE_LINUX_DIR}/lib/"
-    if [ "${AEROFS_PRODUCT_UNIX}" == "aerofsts" ]; then
-        cp -R "${CLIENT_RESOURCES_DIR}/s3/lib"/* "${AEROFS_RELEASE_WIN_DIR}/lib/"
-        cp -R "${CLIENT_RESOURCES_DIR}/s3/lib"/* "${AEROFS_RELEASE_OSX_DIR}/lib/"
-        cp "${CLIENT_RESOURCES_DIR}/common/labeling-teamserver.properties" "${AEROFS_RELEASE_DIR}/labeling.properties"
-    elif [ "${AEROFS_PRODUCT_UNIX}" != "aerofs" ]; then
-        echo "ERROR: Aerofs product unix is ${AEROFS_PRODUCT_UNIX}, not one of aerofsts, aerofs"
-        echo "Exiting"
-        exit 1
+    cp "${LABELING_FILE}" "${local_BIN}/labeling.properties"
+    if is_staging ; then # FIXME (AG): hack! this should be in configuration-staging.properties
+        echo "labeling.isStaging=true" >> "${local_BIN}"/labeling.properties
     fi
+
+    local local_MODE_RESOURCES=$( ls ${MODE_RESOURCES_DIR}/*-$LOWERCASE_MODE* )
+    for local_MODE_RESOURCE in $local_MODE_RESOURCES
+    do
+        echo $local_MODE_RESOURCE
+        local local_MODE_FILE_BASENAME=$( echo "$local_MODE_RESOURCE" | cut -d'-' -f1 )
+        local local_MODE_FILE_EXTENSION=$( echo "$local_MODE_RESOURCE" | cut -d'.' -f2 )
+        local_MODE_FILE_BASENAME=$( basename $local_MODE_FILE_BASENAME )
+        cp "$local_MODE_RESOURCE" "${local_BIN}/$local_MODE_FILE_BASENAME.$local_MODE_FILE_EXTENSION"
+    done
+
+    cp -R "${OTHER_RESOURCES_DIR}"/* "${local_BIN}/"
+
+    #------------------------------------------------------
+    # special handling for the pem file
+    #------------------------------------------------------
+
+    mv "${local_BIN}/cacert.pem" "${AEROFS_RELEASE_DIR}/"
+
+    #------------------------------------------------------
+    # update the installer files with sed (FIXME (AG): remove this if possible!)
+    #------------------------------------------------------
 
     # N.B. We put the run scripts from the installer package in the actual aerofs
     # package so we can restart the Linux client automatically, even if aerofs-cli
@@ -118,7 +188,7 @@ function copy_resources_to_local_release_directories() {
         "${AEROFS_RELEASE_LINUX_DIR}"/${AEROFS_PRODUCT_UNIX}.desktop
 
     # Update URL in installers for correct MODE
-    if [ "$MODE" == "PROD" ]; then
+    if is_prod ; then
         DOT_STAGING=''
     else
         DOT_STAGING='.stg'
@@ -127,55 +197,6 @@ function copy_resources_to_local_release_directories() {
     sed -i "" -e "s/\[DOT_STAGING\]/$DOT_STAGING/g" \
         "${AEROFS_RELEASE_INST_DIR}/${AEROFS_PRODUCT_UNIX}" \
         "${AEROFS_RELEASE_LINUX_DIR}/${AEROFS_PRODUCT_UNIX}"
-
-    # Remove all unit test dependencies
-    rm -rf "${AEROFS_RELEASE_DIR}/lib.test"
-
-    # Remove the ci cacerts (they are not needed in a packaged client)
-    rm "${AEROFS_RELEASE_DIR}/cacert-ci.pem"
-
-    # Adjust files for prod or staging
-    if [ "$MODE" == "PROD" ]; then
-        rm "${AEROFS_RELEASE_DIR}/cacert-staging.pem"
-        mv "${AEROFS_RELEASE_DIR}/cacert-prod.pem" "${AEROFS_RELEASE_DIR}/cacert.pem"
-    elif [ "$MODE" == "STAGING" ]; then
-        rm "${AEROFS_RELEASE_DIR}/cacert-prod.pem"
-        mv "${AEROFS_RELEASE_DIR}/cacert-staging.pem" "${AEROFS_RELEASE_DIR}/cacert.pem"
-        echo "labeling.isStaging=true" >> "${AEROFS_RELEASE_DIR}"/labeling.properties
-    else
-        echo "error: invalid mode: $MODE" >&2
-        exit 1
-    fi
-}
-
-######################################################################
-#
-# Copies the java class files to the release bin directory and removes
-# some unneeded files.
-#
-######################################################################
-function copy_resources_included_in_aerofs_jar() {
-    echo ">> copying java class files and properties files to release directory"
-
-    local local_BIN="${LOCAL_RELEASE_DIR}/bin"
-    local local_RESOURCES="${LOCAL_RELEASE_DIR}/bin/resources"
-
-    mkdir -p $local_RESOURCES
-    trap "rm -r \"$local_BIN\" || true" EXIT
-
-    cp -Rf "${BUILD_OUTPUT_DIR}/bin"/* "$local_BIN"
-    mv -f "${AEROFS_RELEASE_DIR}/"*.properties "$local_RESOURCES"
-
-    # remove unnecessary files (bin/com/aerofs/downloader will be moved away later)
-    # TODO (WW) make sure files to be removed are at correct locations. See the
-    # labeling process code for an example.
-    find "${local_BIN}/" -name .DS_Store | xargs rm -f
-
-    if [ "$MODE" == "PROD" ]; then
-        # TODO: (AG) move these as excludes into build.xml
-        # TODO: (WW) Verify this package is valid before removing
-        rm -rf "${local_BIN}/com/aerofs/tools"
-    fi
 }
 
 ######################################################################
@@ -197,10 +218,10 @@ function create_linux_installer() {
     # N.B. we use the downloader in both the main aerofs.jar (for recovery
     # purposes) and the installer .jar (for initial setup).
     cp "${LOCAL_RELEASE_DIR}/bin/${local_AEROFS_DLR_PKG}"/* "${local_DOWNLOADER_TEMP}/${local_AEROFS_DLR_PKG}"
-    cp "${CLIENT_RESOURCES_DIR}/linux32/libswt-"*.so "${local_DOWNLOADER_TEMP}/libswt32"
-    cp "${CLIENT_RESOURCES_DIR}/linux64/libswt-"*.so "${local_DOWNLOADER_TEMP}/libswt64"
-    cp "${CLIENT_RESOURCES_DIR}/linux32/lib/swt-"*.jar "${local_DOWNLOADER_TEMP}/s32.jar"
-    cp "${CLIENT_RESOURCES_DIR}/linux64/lib/swt-"*.jar "${local_DOWNLOADER_TEMP}/s64.jar"
+    cp "${CLIENT_LINUX32_RESOURCES_DIR}/libswt-"*.so "${local_DOWNLOADER_TEMP}/libswt32"
+    cp "${CLIENT_LINUX64_RESOURCES_DIR}/libswt-"*.so "${local_DOWNLOADER_TEMP}/libswt64"
+    cp "${CLIENT_LINUX32_RESOURCES_DIR}/lib/swt-"*.jar "${local_DOWNLOADER_TEMP}/s32.jar"
+    cp "${CLIENT_LINUX64_RESOURCES_DIR}/lib/swt-"*.jar "${local_DOWNLOADER_TEMP}/s64.jar"
     tar zcf - -C "$local_DOWNLOADER_TEMP" . | uuencode bin >> "${AEROFS_RELEASE_INST_DIR}/${AEROFS_PRODUCT_UNIX}"
 }
 
@@ -236,24 +257,17 @@ function create_java_jar() {
         echo " lib/$(basename "$i") " >> "$local_TEMP_MANIFEST"
     done
 
-    # properties files
-    for i in $( ls "${LOCAL_RELEASE_DIR}"/bin/resources/*.properties | xargs basename ); do
-        echo " resources/$i " >> "$local_TEMP_MANIFEST"
-    done
-
-    # FIXME(jP): remove this wildcard, ship only one config.
-    # logger configuration
-    for i in $( ls "${AEROFS_RELEASE_DIR}"/logback*.xml | xargs basename ); do
-        echo " $i " >> "$local_TEMP_MANIFEST"
+    # *.properties, *.xml files
+    local local_JAR_PROPERTY_FLAGS=""
+    for i in ${LOCAL_RELEASE_DIR}/bin/* ; do
+        if [ -f $i ]; then
+            local_JAR_PROPERTY_FLAGS="$local_JAR_PROPERTY_FLAGS -C ${LOCAL_RELEASE_DIR}/bin ${i##*/}"
+            echo " $( basename $i ) " >> "$local_TEMP_MANIFEST"
+        fi
     done
 
     # Package a jar with the contents of com subdirectory of the local release directory (all the class files)
-    jar cfm "${AEROFS_RELEASE_DIR}/aerofs.unobf.jar" "$local_TEMP_MANIFEST" \
-        -C "${LOCAL_RELEASE_DIR}/bin" com \
-        -C "${LOCAL_RELEASE_DIR}/bin" resources \
-        -C "${AEROFS_RELEASE_DIR}/" logback.xml \
-        -C "${AEROFS_RELEASE_DIR}/" logback-staging.xml \
-        -C "${AEROFS_RELEASE_DIR}/" logback-prod.xml
+    jar cfm "${AEROFS_RELEASE_DIR}/aerofs.unobf.jar" "$local_TEMP_MANIFEST" -C "${LOCAL_RELEASE_DIR}/bin" com $local_JAR_PROPERTY_FLAGS
 }
 
 ######################################################################
@@ -327,7 +341,6 @@ echo ">> make release resources"
 
 compute_product_names
 copy_resources_to_local_release_directories
-copy_resources_included_in_aerofs_jar
 create_linux_installer
 create_java_jar
 obfuscate_java

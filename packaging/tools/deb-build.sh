@@ -1,6 +1,12 @@
 #!/bin/bash
 # N.B. do not set -e this script, it checks its own error codes.
 
+# error codes
+readonly ERRBADARGS=1
+readonly ERRNODEB=2
+readonly ERRNOVERSION=3
+readonly ERRFAKEROOTFAILED=4
+
 ###############################################################################
 #
 # AEROFS DEB BUILDER
@@ -23,14 +29,14 @@ function check_for_builder_script() {
     if [ $? -ne 0 ]
     then
         echo "Don't know how to build '$DEBNAME'."
-        exit 2
+        exit $ERRNODEB
     fi
 }
 
 # Get the current version number for a given AeroFS debian package.
 # Params:
 #   $1 = the name of the debian package.
-#   $2 = the destination <staging|prod>.
+#   $2 = the target repository
 # Return:
 #   0 when the version number is successfully obtained from the server.
 #   1 when the version number does not exist on the server (new package).
@@ -77,7 +83,7 @@ function compute_new_version_number() {
     elif [ $error_code -eq 2 ]
     then
         echo "Failed to get current version."
-        exit 3
+        exit $ERRNOVERSION
     fi
 
     local major=$(echo $VERSION | awk -F'.' '{print $1}')
@@ -120,7 +126,7 @@ EOF
     if [ $? -ne 0 ]
     then
         echo "Failure in fakeroot. (Do you have dpkg and fakeroot installed?)."
-        exit 4
+        exit $ERRFAKEROOTFAILED
     fi
 
     rm -rf ${tmpdir}
@@ -137,17 +143,30 @@ EOF
 #
 ###############################################################################
 
-# User input - the name of the debian package to be build must be specified.
+function print_usage() {
+    echo "usage: $0 [deb-name] [repository]"                                  >&2
+    echo ""                                                                   >&2
+    echo "    [deb-name]    debian package to build"                          >&2
+    echo "    [repository] repository to upload package to (PROD|CI|STAGING)" >&2
+    exit $ERRBADARGS
+}
+
+# check number of arguments
 if [ $# -ne 2 ]
 then
-    echo "usage: $0 <deb-name> <repository>"
-    exit 1
+    print_usage
+fi
+
+# check the mode the user is invoking
+if [[ "$2" != 'PROD' && "$2" != 'CI' && "$2" != 'STAGING' ]]
+then
+    print_usage
 fi
 
 cd $(dirname $0)/.. # move up to the packaging script root
-readonly DEBNAME=$1
-readonly TARGET_REPOSITORY=$(echo $2 | tr [A-Z] [a-z]) # convert to lowercase
-readonly CONTROL_FILE=./$DEBNAME/DEBIAN/control
+readonly DEBNAME="$1"
+readonly TARGET_REPOSITORY=$( echo "$2" | tr [A-Z] [a-z] ) # convert to lowercase
+readonly CONTROL_FILE=./"$DEBNAME"/DEBIAN/control
 
 check_for_builder_script
 compute_new_version_number

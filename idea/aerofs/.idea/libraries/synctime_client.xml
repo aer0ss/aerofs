@@ -1,10 +1,13 @@
 <component name="libraryTable">
   <library name="synctime-client">
     <CLASSES>
-      <root url="jar://$PROJECT_DIR$/../../resource/client/common/lib/synctime-client-0.9.jar!/" />
-      <root url="jar://$PROJECT_DIR$/../../resource/client/common/lib/synctime-common-0.9.jar!/" />
+      <root url="file://$PROJECT_DIR$/../../resource/client/all/lib.synctime-client" />
     </CLASSES>
     <JAVADOC />
-    <SOURCES />
+    <SOURCES>
+      <root url="file://$PROJECT_DIR$/../../resource/client/all/lib.synctime-client" />
+    </SOURCES>
+    <jarDirectory url="file://$PROJECT_DIR$/../../resource/client/all/lib.synctime-client" recursive="false" />
+    <jarDirectory url="file://$PROJECT_DIR$/../../resource/client/all/lib.synctime-client" recursive="false" type="SOURCES" />
   </library>
 </component>

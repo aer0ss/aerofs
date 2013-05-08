@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  ~ Copyright (c) Air Computing Inc., 2013.
+  -->
+
+<!--
+  ~ PRODUCTION logging configuration for client programs.
+  ~
+  ~ This requires some properties from the Context (or elsewhere):
+  ~         RTROOT
+  ~         PROGNAME
+  ~         LOGLEVEL (must be a valid log level)
+  ~
+  ~ This enables file and console logging.
+  -->
+<!-- TODO(jP): Consider using an included file to avoid duplicating file config
+  ~            in staging and production?
+  -->
+<configuration>
+    <property       name  = "logPattern"
+                    value = "%d{HHmmss.SSS}%-0.1p %thread @%c{0}, %m%n" />
+
+    <appender name="LOGFILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <File>${RTROOT}/${PROGNAME}.log</File>
+        <Append>true</Append>
+        <encoder>
+            <pattern>${logPattern}</pattern>
+        </encoder>
+
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${RTROOT}/${PROGNAME}.log.%d{yyyy-MM-dd}</fileNamePattern>
+            <maxHistory>5</maxHistory>
+            <cleanHistoryOnStart>true</cleanHistoryOnStart>
+        </rollingPolicy>
+    </appender>
+
+    <root level="${LOGLEVEL}">
+        <appender-ref ref="LOGFILE"/>
+    </root>
+</configuration>

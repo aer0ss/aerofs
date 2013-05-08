@@ -1,9 +1,0 @@
-<component name="libraryTable">
-  <library name="guice-multibindings-aerofs">
-    <CLASSES>
-      <root url="jar://$PROJECT_DIR$/../../resource/client/common/lib/guice-multibindings-aerofs.jar!/" />
-    </CLASSES>
-    <JAVADOC />
-    <SOURCES />
-  </library>
-</component>

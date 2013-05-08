@@ -42,36 +42,27 @@ readonly BUILD_SCRIPT_DIR="${TOOLS_ROOT}/build"
 readonly PROGUARD_HOME="${TOOLS_ROOT}/proguard"
 readonly LOCAL_NSIS_DIR="${TOOLS_ROOT}/win_installer"
 
-# Local build directory (where ant will put stuff)
+# Local resources directories
+readonly BASE_RESOURCES_DIR="${GIT_ROOT}/resource"
+readonly COMMON_RESOURCES_DIR="${BASE_RESOURCES_DIR}/common"
+readonly MODE_RESOURCES_DIR="${COMMON_RESOURCES_DIR}/mode"
+readonly LABELING_RESOURCES_DIR="${COMMON_RESOURCES_DIR}/labeling"
+readonly OTHER_RESOURCES_DIR="${COMMON_RESOURCES_DIR}/other"
+readonly CLIENT_RESOURCES_DIR="${BASE_RESOURCES_DIR}/client"
+readonly CLIENT_ALL_PLATFORMS_RESOURCES_DIR="${CLIENT_RESOURCES_DIR}/all"
+readonly CLIENT_LINUX_COMMON_RESOURCES_DIR="${CLIENT_RESOURCES_DIR}/linux"
+readonly CLIENT_LINUX32_RESOURCES_DIR="${CLIENT_RESOURCES_DIR}/linux32"
+readonly CLIENT_LINUX64_RESOURCES_DIR="${CLIENT_RESOURCES_DIR}/linux64"
+readonly CLIENT_OSX_RESOURCES_DIR="${CLIENT_RESOURCES_DIR}/osx"
+readonly CLIENT_WIN_RESOURCES_DIR="${CLIENT_RESOURCES_DIR}/win"
+readonly CLIENT_LINUX_INSTALLER_RESOURCES_DIR="${CLIENT_RESOURCES_DIR}/linux.inst"
+
+# local build directory (where ant will put stuff)
 readonly BUILD_OUTPUT_DIR="${GIT_ROOT}/out.ant"
 
-# Local resource directory (where prebuilt binaries exist)
-readonly CLIENT_RESOURCES_DIR="${GIT_ROOT}/resource/client"
-# FIXME(jP): Remove this. The build step should be populating this instead,
-# and the client should have precisely one configuration. Plus it's evil
-# that this looks into src/
-readonly LOG_CONFIGS_DIR="${GIT_ROOT}/src/daemon/resources/"
-
-# CLIENT or TEAM_SERVER, identifies which labeling.properties will be used
-# during the build process. Default to client
-readonly PRODUCT="${2:-CLIENT}"
-
-# Properties File
-if [[ "$PRODUCT" != "CLIENT" && "$PRODUCT" != "TEAM_SERVER" ]]; then
-    echo "error: invalid build product $PRODUCT. Expected CLIENT or TEAM_SERVER." >&2
-    exit $ERRBADPRODUCT
-fi
-
-if [[ "$PRODUCT" == "TEAM_SERVER" ]]; then
-    readonly PROPERTIES_FILE="$CLIENT_RESOURCES_DIR"/common/labeling-teamserver.properties
-else
-    readonly PROPERTIES_FILE="$CLIENT_RESOURCES_DIR"/common/labeling.properties
-fi
-
-# Local release directory
+# local root release directory and release dirs for each platform
+# avoid putting scratch stuff in any of these directories because they are packaged into the installer
 readonly LOCAL_RELEASE_DIR="${BUILD_OUTPUT_DIR}/release"
-
-# Local release directories for each platform
 readonly AEROFS_RELEASE_DIR="${LOCAL_RELEASE_DIR}/aerofs"
 readonly AEROFS_RELEASE_WIN_DIR="${LOCAL_RELEASE_DIR}/aerofs.win"
 readonly AEROFS_RELEASE_OSX_DIR="${LOCAL_RELEASE_DIR}/aerofs.osx"
@@ -84,22 +75,76 @@ readonly AEROFS_RELEASE_INST_DIR="${LOCAL_RELEASE_DIR}/aerofs.linux.inst"
 readonly OSX_TEMPLATE_DMG_FILENAME="osx.dmg.template"
 readonly OSX_TEMPLATE_APP_FILENAME="osx.app.template"
 
+# Proguard maps server credentials and paths
+readonly MAP_SERVER="sv.aerofs.com"
+readonly MAP_SERVER_LOGIN=${MAP_SERVER}
+readonly ROCKLOG_SERVER="rocklog.aerofs.com"
+readonly MAP_FILES_DIR="/maps"
+
 ###############################################################################
 #
-# Constants relating to the deploy mode (STAGING/PROD)
+# Constants relating to the product to be built (CLIENT/TEAM_SERVER)
 #
 ###############################################################################
-# First do a sanity check and make sure that we either specified PROD or STAGING
+
+###############################################################################
+#
+# Returns 0 if the product is one that's recognized, or $ERRBADPRODUCT
+# otherwise
+#
+# Args:
+#    1: product to check
+#
+###############################################################################
+function is_valid_product() {
+    if [[ "$1" != "CLIENT" && "$1" != "TEAM_SERVER" ]]; then
+        return $ERRBADPRODUCT
+    fi
+    return 0
+}
+
+# check that a valid product was specified
+readonly PRODUCT="${2:-CLIENT}" # FIXME (AG): This should not be specified in here since deploy doesn't need this
+if ! is_valid_product "$PRODUCT" ; then
+    echo "error: invalid build product $PRODUCT. Expected CLIENT or TEAM_SERVER." >&2
+    exit $ERRBADPRODUCT
+fi
+readonly LOWERCASE_PRODUCT="$(echo $PRODUCT | tr '[A-Z]' '[a-z]')"
+readonly LABELING_FILE="$LABELING_RESOURCES_DIR/labeling-$LOWERCASE_PRODUCT.properties"
+
+###############################################################################
+#
+# Constants relating to the deploy mode (PROD/CI/STAGING)
+#
+###############################################################################
+
+###############################################################################
+#
+# Returns 0 if the deployment mode is one that is recognized, or ERRBADMODE
+# otherwise
+#
+# Args:
+#    1: mode to check
+#
+###############################################################################
+function is_valid_mode() {
+    if [[ "$1" != "PROD" && "$1" != "STAGING" ]]; then
+        return $ERRBADMODE
+    fi
+    return 0
+}
+
+# check that a valid mode was specified
 readonly MODE="${1:-}"
-if [[ "$MODE" != "PROD" && "$MODE" != "STAGING" ]]; then
-    echo "error: invalid build mode $MODE. Expected STAGING or PROD." >&2
+if ! is_valid_mode $MODE ; then
+    echo "error: invalid build mode $MODE. Expected PROD or STAGING." >&2
     exit $ERRBADMODE
 fi
 readonly LOWERCASE_MODE="$(echo $MODE | tr '[A-Z]' '[a-z]')"
 
 ###############################################################################
 #
-# Release server login constants
+# Release server constants
 #
 ###############################################################################
 readonly RELEASE_SERVER="b.arrowfs.org"
@@ -119,16 +164,6 @@ readonly RELEASE_NSIS_DIR="${RELEASE_FILES_DIR}/win_installer"
 
 ###############################################################################
 #
-# Proguard maps server credentials and paths
-#
-###############################################################################
-readonly MAP_SERVER="sv.aerofs.com"
-readonly MAP_SERVER_LOGIN=${MAP_SERVER}
-readonly ROCKLOG_SERVER="rocklog.aerofs.com"
-readonly MAP_FILES_DIR="/maps"
-
-###############################################################################
-#
 # Cloudfront/S3 constants
 #
 ###############################################################################
@@ -143,11 +178,59 @@ readonly STAGING_PASSPHRASE=temp123
 
 ###############################################################################
 #
+# Returns 0 if the product is CLIENT, 1 otherwise
+#
+###############################################################################
+function is_client() {
+    if [ "$PRODUCT" == "CLIENT" ]; then
+        return 0
+    fi
+    return 1
+}
+
+###############################################################################
+#
+# Returns 0 if the deployment mode is CI, 1 otherwise
+#
+###############################################################################
+function is_team_server() {
+    if [ "$PRODUCT" == "TEAM_SERVER" ]; then
+        return 0
+    fi
+    return 1
+}
+
+###############################################################################
+#
 # Returns 0 if the deployment mode is PROD, 1 otherwise
 #
 ###############################################################################
 function is_prod() {
     if [ "$MODE" == "PROD" ]; then
+        return 0
+    fi
+    return 1
+}
+
+###############################################################################
+#
+# Returns 0 if the deployment mode is CI, 1 otherwise
+#
+###############################################################################
+function is_ci() {
+    if [ "$MODE" == "CI" ]; then
+        return 0
+    fi
+    return 1
+}
+
+###############################################################################
+#
+# Returns 0 if the deployment mode is STAGING, 1 otherwise
+#
+###############################################################################
+function is_staging() {
+    if [ "$MODE" == "STAGING" ]; then
         return 0
     fi
     return 1
@@ -208,9 +291,9 @@ function compute_product_names() {
     ${BUILD_SCRIPT_DIR}/dynamic-config/dependencies.groovy
 
     readonly GET_PROPERTY_SCRIPT="groovy -Dlogback.configurationFile=${BUILD_SCRIPT_DIR}/dynamic-config/logback.xml ${BUILD_SCRIPT_DIR}/dynamic-config/get_property.groovy"
-    readonly AEROFS_PRODUCT=$($GET_PROPERTY_SCRIPT $PROPERTIES_FILE labeling.product)
-    readonly AEROFS_PRODUCT_SPACEFREE=$($GET_PROPERTY_SCRIPT $PROPERTIES_FILE labeling.productSpaceFreeName)
-    readonly AEROFS_PRODUCT_UNIX=$($GET_PROPERTY_SCRIPT $PROPERTIES_FILE labeling.productUnixName)
+    readonly AEROFS_PRODUCT=$($GET_PROPERTY_SCRIPT $LABELING_FILE labeling.product)
+    readonly AEROFS_PRODUCT_SPACEFREE=$($GET_PROPERTY_SCRIPT $LABELING_FILE labeling.productSpaceFreeName)
+    readonly AEROFS_PRODUCT_UNIX=$($GET_PROPERTY_SCRIPT $LABELING_FILE labeling.productUnixName)
 }
 
 ###############################################################################

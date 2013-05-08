@@ -1,0 +1,12 @@
+//-----------------------------------------------------------------------------
+// Copyright (c) Air Computing Inc., 2013.
+//-----------------------------------------------------------------------------
+
+dependencies {
+    compile('com.aerofs.synctime:synctime-client:0.9')
+}
+
+task syncDependencies(type: Sync) {
+    from configurations.compile
+    into "${clientResourcesDir}/all/lib.synctime-client"
+}
