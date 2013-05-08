@@ -1,4 +1,4 @@
-#!/bin/bash -e
+#!/bin/bash -ue
 rm -rf devman
 
 RESOURCES=../src/devman/resources

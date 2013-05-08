@@ -1,4 +1,4 @@
-#!/bin/bash -e
+#!/bin/bash -ue
 
 VERSION=0.6
 SERVICE=synctime

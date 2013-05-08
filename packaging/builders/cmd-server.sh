@@ -1,4 +1,4 @@
-#!/bin/bash -e
+#!/bin/bash -ue
 rm -rf cmd-server
 
 RESOURCES=../src/command/resources

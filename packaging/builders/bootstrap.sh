@@ -1,4 +1,4 @@
-#!/bin/bash -e
+#!/bin/bash -ue
 rm -rf bootstrap
 
 RESOURCES=../src/bootstrap/resources

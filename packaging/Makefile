@@ -3,6 +3,7 @@
 
 # default the mode to staging unless the user specifies otherwise. set this in the environment.
 MODE?=STAGING
+TARGET_REPOSITORY=$(MODE) # the target repository is set to the mode for now
 
 PACKAGES= \
 	admin \
@@ -46,11 +47,11 @@ ${PACKAGES}: %: %.deb
 		if [ $$? -eq 0 ]; then ./builders/$(shell basename ${@:.deb=.sh}); fi
 
 %.deb: %.sh
-	@./tools/deb-build.sh ${@:.deb=} $(MODE)
+	@./tools/deb-build.sh ${@:.deb=} $(TARGET_REPOSITORY)
 	@mkdir -p debs
 
 upload:
-	@./tools/deb-upload.sh $(MODE)
+	@./tools/deb-upload.sh $(TARGET_REPOSITORY)
 
 clean:
 	@rm -rf debs versions *.deb *.ver *.txt

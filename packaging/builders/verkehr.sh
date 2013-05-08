@@ -1,4 +1,4 @@
-#!/bin/bash -e
+#!/bin/bash -ue
 rm -rf verkehr
 
 RESOURCES=../src/verkehr/resources

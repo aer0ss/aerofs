@@ -1,4 +1,4 @@
-#!/bin/bash -e
+#!/bin/bash -ue
 
 SCHEMAS=../src/spsv/resources/schemas
 OPT=spdb/opt/spdb

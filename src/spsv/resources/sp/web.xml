@@ -13,7 +13,7 @@
   </context-param>
   <context-param>
     <param-name>verkehr_cacert</param-name>
-    <param-value>cacert.pem</param-value>
+    <param-value>/etc/ssl/certs/AeroFS_CA.pem</param-value>
   </context-param>
 
   <!-- initialization listener -->
