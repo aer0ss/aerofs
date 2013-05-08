@@ -5,6 +5,8 @@ import logging
 import MySQLdb
 import sys
 from config import config
+import binascii
+import struct
 
 logger = logging.getLogger("get_owner")
 
@@ -29,6 +31,9 @@ def make_connection(user, host, password, dbname):
 def setup_logger():
   logging.basicConfig(level=logging.INFO)
 
+def org_id_from_signed_int(org_id_int):
+  return ":{0}".format(binascii.hexlify(struct.pack(">i", org_id_int)))
+
 if __name__ == '__main__':
   if len(sys.argv) != 2:
     print("Usage: %s <username>" %(sys.argv[0]))
@@ -44,8 +49,9 @@ if __name__ == '__main__':
 
     logger.debug('find user information for: %s' % email)
     user_info = get_user_info_from_email(email, spconn)
-    print "First Name : {0}".format(user_info["u_first_name"])
-    print "Last Name  : {0}".format(user_info["u_last_name"])
+    print "First Name   : {0}".format(user_info["u_first_name"])
+    print "Last Name    : {0}".format(user_info["u_last_name"])
+    print "Organization : {0}".format(org_id_from_signed_int(user_info["u_org_id"]))
 
   except Exception as err:
     print err
