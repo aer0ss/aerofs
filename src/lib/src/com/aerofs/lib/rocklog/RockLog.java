@@ -9,6 +9,7 @@ import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
 import com.aerofs.lib.cfg.InjectableCfg;
 import com.google.common.net.HttpHeaders;
+import com.netflix.config.DynamicStringProperty;
 import org.slf4j.Logger;
 
 import javax.inject.Inject;
@@ -21,7 +22,8 @@ public class RockLog
 {
     private static final Logger l = Loggers.getLogger(RockLog.class);
     private static final int SOCKET_TIMEOUT = (int) (10 * C.SEC);
-    private static final String DEFAULT_ROCKLOG_URL = "http://rocklog.aerofs.com";
+    private static final DynamicStringProperty ROCKLOG_URL =
+            new DynamicStringProperty("lib.rocklog.url", "http://rocklog.aerofs.com");
 
     private final String _rocklogUrl;
     private final InjectableCfg _cfg;
@@ -29,7 +31,7 @@ public class RockLog
     @Inject
     public RockLog()
     {
-        this(DEFAULT_ROCKLOG_URL, new InjectableCfg());
+        this(ROCKLOG_URL.get(), new InjectableCfg());
     }
 
     RockLog(String rocklogUrl, InjectableCfg cfg)

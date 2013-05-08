@@ -17,6 +17,7 @@ import com.aerofs.labeling.L;
 import com.aerofs.lib.S;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.ui.UI;
+import com.netflix.config.DynamicBooleanProperty;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.widgets.Event;
@@ -26,6 +27,9 @@ import org.eclipse.swt.widgets.MenuItem;
 // TODO: move utility methods to AbstractTrayMenu and remove this class
 public class TrayMenuPopulator
 {
+    public static final DynamicBooleanProperty ENABLE_DEFECT_DIALOGUE =
+            new DynamicBooleanProperty("gui.tray.enable_defect_dialogue", true);
+
     private static final ClickEvent APPLY_UPDATE_CLICKED
             = new ClickEvent(Action.APPLY_UPDATE, Source.TASKBAR);
     private static final ClickEvent EXIT_CLICKED
@@ -87,14 +91,16 @@ public class TrayMenuPopulator
 
     public void addHelpMenuItems()
     {
-        addMenuItem(S.REPORT_A_PROBLEM, new AbstractListener(null)
-        {
-            @Override
-            protected void handleEventImpl(Event event)
+        if (ENABLE_DEFECT_DIALOGUE.get()) {
+            addMenuItem(S.REPORT_A_PROBLEM, new AbstractListener(null)
             {
-                new DlgDefect(GUI.get().sh()).open();
-            }
-        });
+                @Override
+                protected void handleEventImpl(Event event)
+                {
+                    new DlgDefect(GUI.get().sh()).open();
+                }
+            });
+        }
 
         addMenuItem(S.REQUEST_A_FEATURE, new AbstractListener(null)
         {

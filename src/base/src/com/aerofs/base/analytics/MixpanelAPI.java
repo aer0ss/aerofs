@@ -12,6 +12,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.gson.JsonObject;
+import com.netflix.config.DynamicStringProperty;
 import org.slf4j.Logger;
 
 import javax.annotation.Nonnull;
@@ -37,7 +38,12 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class MixpanelAPI
 {
     private static final Logger l = Loggers.getLogger(MixpanelAPI.class);
-    private static final String MIXPANEL_API_ENDPOINT = "https://api.mixpanel.com/track/?data=";
+
+    // MUST be non-null. Use empty string instead.
+    private static final DynamicStringProperty MIXPANEL_API_ENDPOINT =
+            new DynamicStringProperty("base.mixpanel.url",
+                    "https://api.mixpanel.com/track/?data=");
+
     private static final int SOCKET_TIMEOUT = (int) (10 * C.SEC);
 
     private final String _token;
@@ -49,7 +55,7 @@ public class MixpanelAPI
      */
     public MixpanelAPI(String token)
     {
-        this(token, MIXPANEL_API_ENDPOINT);
+        this(token, MIXPANEL_API_ENDPOINT.get());
     }
 
     /**

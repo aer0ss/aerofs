@@ -28,6 +28,7 @@ import com.aerofs.proto.Sv.PBSVDefect;
 import com.aerofs.proto.Sv.PBSVDefect.Builder;
 import com.aerofs.proto.Sv.PBSVGzippedLog;
 import com.aerofs.proto.Sv.PBSVHeader;
+import com.netflix.config.DynamicStringProperty;
 import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
@@ -82,7 +83,9 @@ public final class SVClient
     //
     // See "Effective Java, 2nd Edition (Joshua Bloch) pg. 283
     //
-    private static final SVRPCClient client = new SVRPCClient("https://sv.aerofs.com:443/sv_beta/sv");
+    private static final DynamicStringProperty SV_URL =
+            new DynamicStringProperty("lib.sv.url", "https://sv.aerofs.com:443/sv_beta/sv");
+    private static final SVRPCClient client = new SVRPCClient(SV_URL.get());
 
     private static SVRPCClient getRpcClient()
     {

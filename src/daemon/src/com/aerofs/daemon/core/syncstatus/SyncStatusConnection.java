@@ -81,7 +81,7 @@ public class SyncStatusConnection extends AbstractConnectionStatusNotifier
 
         long epoch;
         try {
-            SyncStatusBlockingClient client = _ssf.create(SyncStat.URL, _user.get());
+            SyncStatusBlockingClient client = _ssf.create(SyncStat.URL.get(), _user.get());
             epoch = client.signInRemote();
             _firstCall = true;
             _client = client;

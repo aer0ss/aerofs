@@ -1,13 +1,16 @@
+/*
+ * Copyright (c) Air Computing Inc., 2013.
+ */
+
 package com.aerofs.lib;
 
 import com.aerofs.base.BaseParam;
 import com.aerofs.base.C;
 import com.aerofs.labeling.L;
 import com.netflix.config.DynamicBooleanProperty;
+import com.netflix.config.DynamicStringProperty;
 
 import java.net.InetAddress;
-import java.net.MalformedURLException;
-import java.net.URL;
 
 public class LibParam extends BaseParam
 {
@@ -167,19 +170,10 @@ public class LibParam extends BaseParam
         public static final String SS_POST_PARAM_PROTOCOL  = SP.SP_POST_PARAM_PROTOCOL;
         public static final String SS_POST_PARAM_DATA      = SP.SP_POST_PARAM_DATA;
         public static final int SS_PROTOCOL_VERSION         = 6;
-        public static final URL URL;
 
-        static {
-            URL url;
-            try {
-                url = new URL(L.isStaging() ?
+        public static final DynamicStringProperty URL =
+                new DynamicStringProperty("lib.sss.url", L.isStaging() ?
                         "https://staging.aerofs.com/syncstat/syncstat" :
                         "https://sss.aerofs.com/syncstat");
-            } catch (MalformedURLException e) {
-                SystemUtil.fatal(e);
-                url = null;
-            }
-            URL = url;
-        }
     }
 }
