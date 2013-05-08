@@ -1,0 +1,80 @@
+#!/usr/bin/python
+# vim: set expandtab ts=2 sw=2:
+
+import logging
+import MySQLdb
+import sys
+from config import config
+import binascii
+import struct
+
+logger = logging.getLogger("get_org")
+
+def print_org_info(orgid, spconn):
+  spcursor = spconn.cursor(MySQLdb.cursors.DictCursor)
+  try:
+    users = 0
+    spcursor.execute("""SELECT * FROM sp_organization WHERE o_id = %s""", orgid)
+    row = spcursor.fetchone()
+    print "Name:     {0}".format(row["o_name"])
+    print "Contact:  {0}".format(row["o_contact_phone"])
+    print "StripeID: {0}".format(row["o_stripe_customer_id"])
+  except Exception as err:
+    logger.warning('fail get user info err:%s' %err)
+    raise err
+  finally:
+    spcursor.close()
+
+def print_user_list_for_orgid(orgid, spconn):
+  user_info = {}
+  spcursor = spconn.cursor(MySQLdb.cursors.DictCursor)
+  try:
+    users = 0
+    spcursor.execute("""SELECT * FROM sp_user WHERE u_org_id = %s""", orgid)
+    row = spcursor.fetchone()
+    while row is not None:
+      # skip the team server user
+      if not row["u_id"].startswith(":"):
+        users += 1
+        print "    {0}: {1} {2} ({3})".format(users, row["u_first_name"], row["u_last_name"], row["u_id"])
+      row = spcursor.fetchone()
+  except Exception as err:
+    logger.warning('fail get user info err:%s' %err)
+    raise err
+  finally:
+    spcursor.close()
+
+def make_connection(user, host, password, dbname):
+  logger.debug('make db connection %s@%s/%s' %(user, host, dbname))
+  conn = MySQLdb.connect(user=user, host=host, passwd=password, db=dbname)
+  return conn
+
+def setup_logger():
+  logging.basicConfig(level=logging.INFO)
+
+def org_id_from_signed_int(org_id_int):
+  return ":{0}".format(binascii.hexlify(struct.pack(">i", org_id_int)))
+
+def org_id_to_signed_int(org_id_string):
+  if org_id_string[0].startswith(":"):
+    org_id_string = org_id_string[1:]
+  org_id_string_zeropadded = "0" * (8 -len(org_id_string)) + org_id_string
+  retval = struct.unpack(">i", binascii.unhexlify(org_id_string_zeropadded))[0]
+  return retval
+
+if __name__ == '__main__':
+  if len(sys.argv) != 2:
+    print("Usage: %s <orgid>" %(sys.argv[0]))
+    sys.exit(1)
+  setup_logger()
+  try:
+    spconn = make_connection('aerofs_sp_ro', config["sp_database"], config["aerofs_sp_ro_password"], 'aerofs_sp')
+    orgid = sys.argv[1]
+    orgid_int = org_id_to_signed_int(orgid)
+    logger.debug('find org information for: %s' % orgid)
+    print_org_info(orgid_int, spconn)
+    print "Members of {0}".format(orgid)
+    print_user_list_for_orgid(orgid_int, spconn)
+  except Exception as err:
+    print err
+    logger.error('cannot connect to db')
