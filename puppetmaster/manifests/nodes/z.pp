@@ -50,15 +50,6 @@ node "z.arrowfs.org" inherits default {
     require => Class["pagerduty"]
   }
 
-  # Special hourly probe for SV's prod logs.
-  pagerduty::probe::base{[
-    "sv df90 pagerduty@sv.aerofs.com 22 /dev/xvdf"
-  ]:
-    hour => "*",
-    minute => "0",
-    require => Class["pagerduty"]
-  }
-
   # Every 10 minutes.
   pagerduty::probe::base{[
     # Production
