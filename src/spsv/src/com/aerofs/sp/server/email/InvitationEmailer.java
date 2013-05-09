@@ -208,12 +208,16 @@ public class InvitationEmailer
             public NameStrings(User inviter)
                     throws SQLException, ExNotFound
             {
-                FullName inviterFullName = inviter.getFullName();
-                if (inviterFullName.isFirstOrLastNameEmpty()) {
-                    _inviterName = _inviterLongName = inviter.id().getString();
+                if (inviter.id().isTeamServerID()) {
+                    _inviterName = _inviterLongName = "A team admin";
                 } else {
-                    _inviterName = inviterFullName.toString();
-                    _inviterLongName = _inviterName + " (" + inviter.id().getString() + ")";
+                    FullName inviterFullName = inviter.getFullName();
+                    if (inviterFullName.isFirstOrLastNameEmpty()) {
+                        _inviterName = _inviterLongName = inviter.id().getString();
+                    } else {
+                        _inviterName = inviterFullName.toString();
+                        _inviterLongName = _inviterName + " (" + inviter.id().getString() + ")";
+                    }
                 }
             }
 
