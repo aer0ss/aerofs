@@ -1,3 +1,3 @@
-/opt/config/client.properties
-/opt/config/server.properties
-/opt/config/common.properties
+/opt/config/properties/client.properties
+/opt/config/properties/server.properties
+/opt/config/properties/common.properties
