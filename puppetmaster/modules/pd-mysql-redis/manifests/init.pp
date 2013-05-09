@@ -10,9 +10,14 @@ class pd-mysql-redis {
 
     # Should get pulled via apt dependency, but add it here just for good
     # measure.
-    package { "aerofs-spdb":
+    package {"aerofs-spdb":
         ensure  => latest,
         require => Apt::Source["aerofs"],
+    }
+
+    file {"/opt/bootstrap/bootstrap.tasks":
+        source => "puppet:///modules/pd-mysql-redis/bootstrap.tasks",
+        require => Package["aerofs-bootstrap"],
     }
 }
 
