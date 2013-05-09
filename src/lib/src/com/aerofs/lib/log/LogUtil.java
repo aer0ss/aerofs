@@ -4,20 +4,7 @@ import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.joran.JoranConfigurator;
 import ch.qos.logback.core.joran.spi.JoranException;
 import com.aerofs.base.Loggers;
-<<<<<<< HEAD
-import com.aerofs.lib.LibParam;
-import org.apache.log4j.ConsoleAppender;
-import org.apache.log4j.DailyRollingFileAppender;
-import org.apache.log4j.Layout;
-import org.apache.log4j.LogManager;
-import org.apache.log4j.Logger;
-import org.apache.log4j.PropertyConfigurator;
-import org.apache.log4j.spi.LoggerRepository;
-import org.apache.log4j.spi.ThrowableRendererSupport;
-import org.apache.log4j.varia.NullAppender;
-=======
 import org.slf4j.LoggerFactory;
->>>>>>> 209ffae... Convert all logging to logback / slf4j.
 
 import java.net.URL;
 import java.text.DateFormat;
@@ -71,31 +58,8 @@ public abstract class LogUtil
         context.putProperty("RTROOT", rtRoot);
         context.putProperty("LOGLEVEL", logLevel.name());
 
-<<<<<<< HEAD
-    public static boolean initializeLoggingFromPropertiesFile()
-    {
-        ClassLoader cl = Thread.currentThread().getContextClassLoader();
-        URL url = cl.getResource(LOG4J_PROPERTIES_FILE);
-        if (url != null) {
-            PropertyConfigurator.configure(url);
-            return true;
-        }
-
-        return false;
-    }
-
-    public static void initializeDefaultLoggingProperties(String rtRoot, String logfile, Level logLevel)
-        throws IOException
-    {
-        if (logfile.equals(LibParam.SH_NAME)) {
-            getRootLogger().addAppender(new NullAppender());
-        } else {
-            setupAndAddFileAppender(rtRoot + File.separator + logfile + LibParam.LOG_FILE_EXT);
-        }
-=======
         URL configUrl = Thread.currentThread().getContextClassLoader()
                 .getResource(configFile);
->>>>>>> 209ffae... Convert all logging to logback / slf4j.
 
         configurator.doConfigure(configUrl);
 
