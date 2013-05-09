@@ -17,7 +17,6 @@ import com.aerofs.sp.server.session.SPSessionInvalidator;
 import com.aerofs.verkehr.client.lib.IConnectionListener;
 import com.aerofs.verkehr.client.lib.admin.VerkehrAdmin;
 import com.aerofs.verkehr.client.lib.publisher.VerkehrPublisher;
-import org.apache.commons.configuration.ConfigurationException;
 import org.slf4j.Logger;
 import org.jboss.netty.util.HashedWheelTimer;
 
@@ -67,7 +66,7 @@ public class SPLifecycleListener implements ServletContextListener, HttpSessionL
         // initialize ArrowConfiguration.
         try {
             Configuration.Server.initialize();
-        } catch (ConfigurationException e) {
+        } catch (Exception e) {
             throw new RuntimeException("Configuration server init error: " + Util.e(e));
         }
 

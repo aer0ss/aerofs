@@ -21,6 +21,8 @@ import javax.annotation.Nullable;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.Collection;
 import java.util.List;
 
@@ -55,7 +57,7 @@ public final class Configuration
     public static class Server implements IDefaultConfigurationURLProvider
     {
         public static void initialize()
-                throws ConfigurationException
+                throws ConfigurationException, MalformedURLException
         {
             final AbstractConfiguration systemConfiguration =
                     SystemConfiguration.newInstance();
@@ -119,33 +121,28 @@ public final class Configuration
     public static class Client
     {
         public static void initialize(@Nullable final String configurationURL)
-                throws ConfigurationException
+                throws ConfigurationException, MalformedURLException
         {
             final AbstractConfiguration systemConfiguration =
                     SystemConfiguration.newInstance();
             final AbstractConfiguration staticPropertiesConfiguration =
                     PropertiesConfiguration.newInstance(getStaticPropertyPaths());
+            final AbstractConfiguration httpConfiguration = getHttpConfiguration(
+                    ImmutableList.of(systemConfiguration, staticPropertiesConfiguration),
+                    new IDefaultConfigurationURLProvider()
+                    {
+                        @Override
+                        public String getDefaultConfigurationURL()
+                        {
+                            return configurationURL;
+                        }
+                    });
 
             DynamicConfiguration.Builder dynamicConfigurationBuilder =
                     DynamicConfiguration.builder()
                             .addConfiguration(systemConfiguration, "system")
-                            .addConfiguration(staticPropertiesConfiguration, "static");
-
-            // If we have been given a valid URL then add that as a configuration source.
-            if (configurationURL != null) {
-                final AbstractConfiguration httpConfiguration = getHttpConfiguration(
-                        ImmutableList.of(systemConfiguration, staticPropertiesConfiguration),
-                        new IDefaultConfigurationURLProvider()
-                        {
-                            @Override
-                            public String getDefaultConfigurationURL()
-                            {
-                                return configurationURL;
-                            }
-                        });
-
-                dynamicConfigurationBuilder.addConfiguration(httpConfiguration, "http");
-            }
+                            .addConfiguration(staticPropertiesConfiguration, "static")
+                            .addConfiguration(httpConfiguration, "http");
 
             DynamicConfiguration.initialize(dynamicConfigurationBuilder.build());
             LOGGER.debug("Client configuration initialized");
@@ -173,7 +170,7 @@ public final class Configuration
     private static AbstractConfiguration getHttpConfiguration(
             final Collection<AbstractConfiguration> configurationSources,
             IDefaultConfigurationURLProvider provider)
-            throws ConfigurationException
+            throws ConfigurationException, MalformedURLException
     {
         // We allow the configuration service URL to be overridden by construction of a temporary
         // configuration source from all other configuration sources. Then we lookup the
@@ -188,6 +185,6 @@ public final class Configuration
             return new ConcurrentMapConfiguration();
         }
 
-        return new org.apache.commons.configuration.PropertiesConfiguration(configurationServiceUrl.get());
+        return new org.apache.commons.configuration.PropertiesConfiguration(new URL(configurationServiceUrl.get()));
     }
 }

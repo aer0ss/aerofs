@@ -19,7 +19,6 @@ import com.aerofs.sv.client.SVClient;
 import com.google.inject.CreationException;
 import com.google.inject.spi.Message;
 import org.slf4j.Logger;
-import org.apache.commons.configuration.ConfigurationException;
 
 import java.io.File;
 import java.io.IOException;
@@ -119,7 +118,7 @@ public class Main
         try {
             // TODO (MP) need to pass this the configuration URL (should be stored in the conf db).
             Configuration.Client.initialize(null);
-        } catch (ConfigurationException e) {
+        } catch (Exception e) {
             System.out.println("failed in main(): " + Util.e(e));
             SVClient.logSendDefectSyncIgnoreErrors(true, "failed in main()", e);
             ExitCode.CONFIGURATION_INIT.exit();
