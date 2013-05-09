@@ -6,4 +6,5 @@
     proxy_set_header Verify $ssl_client_verify;
     proxy_set_header Serial $ssl_client_serial;
     proxy_set_header DName $ssl_client_s_dn;
+    proxy_set_header X-Real-IP $remote_addr;
   }
