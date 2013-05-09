@@ -81,6 +81,12 @@ set_parameters() {
     readonly AEROFS_FINAL_LIBJINGLE_LIBRARY_NAME
 }
 
+get_third_party_libs() {
+    pushd "$LIBJINGLE_DIR"
+    ./get_third_party_libs.sh
+    popd
+}
+
 reconfigure() {
     for PROJECT in expat gtest srtp
     do
@@ -126,6 +132,7 @@ copy_final_libjingle() {
 pushd $(dirname $0)/../../ # go to the aerofs git-repo root
 
 set_parameters $1
+get_third_party_libs
 reconfigure
 build_google_libjingle
 build_aerofs_libjingle
