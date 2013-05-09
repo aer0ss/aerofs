@@ -15,7 +15,7 @@
                     AeroFS creates a "magic" folder. Anything you place in the folder will automatically sync between your computers.
                 </li>
                 <li>
-                    Share files with your teammates easily wit a right click.
+                    Share files with your teammates easily with a right click.
                 </li>
                 <li>
                     We do not host your files in the cloud. We can't even see your file names.
