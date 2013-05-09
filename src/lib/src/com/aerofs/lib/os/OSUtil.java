@@ -71,7 +71,16 @@ public abstract class OSUtil
             OSArch arch;
             try {
                 OutArg<String> commandOutput = new OutArg<String>();
-                // can't use Log4J as it may not be initialized yet
+
+                /* FIXME(jP): Ok, the following comment and block of code is crazy.
+                 * There is no reason we can't have the logging subsystem initialized - the only
+                 * blocker here is that we do some magic in daemon to direct the log name
+                 * based on the program name. We could push all of that to the launcher, and
+                 * have _it_ tell us what config file to use (daemon/gui/shell and prod/staging)
+                 * and then this comment disappears.
+                 */
+
+                // can't use logging subsystem as it may not be initialized yet
                 // We avoid uname because we care about the userspace bitness, not the kernel
                 // bitness.  /bin/ls may be a symlink to /usr/bin/ls, see
                 // http://www.freedesktop.org/wiki/Software/systemd/TheCaseForTheUsrMerge

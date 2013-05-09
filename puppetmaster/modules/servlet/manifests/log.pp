@@ -9,7 +9,7 @@ define servlet::log(
         owner   => "tomcat6",
         group   => "tomcat6",
         mode    => "644",
-        content => template("servlet/log4j.properties.erb"),
+        content => template("servlet/logback.xml.erb"),
         require => File["/var/log/aerofs"],
         notify  => Service["tomcat6"]
     }

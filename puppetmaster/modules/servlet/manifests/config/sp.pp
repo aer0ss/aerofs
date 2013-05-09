@@ -37,7 +37,7 @@ class servlet::config::sp(
     }
 
     servlet::log{"/var/log/aerofs/sp.log":
-        config_filename => "/usr/share/aerofs-sp/sp/WEB-INF/classes/log4j.properties",
+        config_filename => "/usr/share/aerofs-sp/sp/WEB-INF/classes/logback.xml",
         log_level       => "INFO",
         require         => Package["aerofs-sp"],
     }

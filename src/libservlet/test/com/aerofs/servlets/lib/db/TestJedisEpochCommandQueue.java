@@ -20,6 +20,7 @@ import org.junit.runner.RunWith;
 
 import org.mockito.Mockito;
 import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
@@ -27,6 +28,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
 @RunWith(PowerMockRunner.class)
 // The statics exist in the JedisEpochCommandQueue class.
 @PrepareForTest(JedisEpochCommandQueue.class)
+@PowerMockIgnore({"ch.qos.logback.*", "org.slf4j.*"})
 public class TestJedisEpochCommandQueue extends AbstractJedisTest
 {
     private JedisEpochCommandQueue _queue = new JedisEpochCommandQueue(getTransaction());

@@ -1,6 +1,10 @@
 package com.aerofs.lib.log;
 
+import ch.qos.logback.classic.LoggerContext;
+import ch.qos.logback.classic.joran.JoranConfigurator;
+import ch.qos.logback.core.joran.spi.JoranException;
 import com.aerofs.base.Loggers;
+<<<<<<< HEAD
 import com.aerofs.lib.LibParam;
 import org.apache.log4j.ConsoleAppender;
 import org.apache.log4j.DailyRollingFileAppender;
@@ -11,18 +15,21 @@ import org.apache.log4j.PropertyConfigurator;
 import org.apache.log4j.spi.LoggerRepository;
 import org.apache.log4j.spi.ThrowableRendererSupport;
 import org.apache.log4j.varia.NullAppender;
+=======
+import org.slf4j.LoggerFactory;
+>>>>>>> 209ffae... Convert all logging to logback / slf4j.
 
-import java.io.File;
-import java.io.IOException;
 import java.net.URL;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
 /**
- * Helpers for dealing with log4j
+ * Helpers for dealing with logback
  * IMPORTANT: DO NOT USE "L" in here!!!
  */
+// TODO: Figure out if the above IMPORTANT is still true in a logback world?
+// TODO: Is this better factored straight into Main?
 public abstract class LogUtil
 {
     static
@@ -32,61 +39,39 @@ public abstract class LogUtil
 
     public static enum Level
     {
-        NONE  (org.apache.log4j.Level.OFF  ),
-        TRACE (org.apache.log4j.Level.TRACE),
-        DEBUG (org.apache.log4j.Level.DEBUG),
-        INFO  (org.apache.log4j.Level.INFO ),
-        WARN  (org.apache.log4j.Level.WARN ),
-        ERROR (org.apache.log4j.Level.ERROR);
-
-        private final org.apache.log4j.Level _level;
-
-        private Level(org.apache.log4j.Level level)
-        {
-            this._level = level;
-        }
-
-        private org.apache.log4j.Level getLog4jLevel()
-        {
-            return _level;
-        }
+        NONE,
+        TRACE,
+        DEBUG,
+        INFO,
+        WARN,
+        ERROR
     }
 
-    private static final org.slf4j.Logger l = org.slf4j.LoggerFactory.getLogger(LogUtil.class);
-
-    private static final String LOG4J_PROPERTIES_FILE = "aerofs-log4j.properties";
-
-    private LogUtil()
+    /**
+     * Initialize the logging system by loading a named config file with
+     * some context properties set.
+     * @param rtRoot  Will be passed to config file as RTROOT
+     * @param prog    Will be passed to config file as PROGNAME
+     * @param logLevel Will be passed to config file as LOGLEVEL
+     * @param configFile  Name of XML config file to load
+     * FIXME: cleaner to handle JoranException here?
+     */
+    public static void initializeFromConfigFile(
+            String rtRoot, String prog,
+            Level logLevel, String configFile)
+            throws JoranException
     {
-        // private to enforce uninstantiability
-    }
+        // NB: getILoggerFactory causes the default configuration to be loaded.
+        LoggerContext context = (LoggerContext) LoggerFactory.getILoggerFactory();
+        JoranConfigurator configurator = new JoranConfigurator();
+        configurator.setContext(context);
+        context.reset();
 
-    private static Logger getRootLogger()
-    {
-        return Logger.getRootLogger();
-    }
+        context.putProperty("PROGNAME", prog);
+        context.putProperty("RTROOT", rtRoot);
+        context.putProperty("LOGLEVEL", logLevel.name());
 
-    public static void setLevel(Class<?> clazz, Level level)
-    {
-        Logger.getLogger(clazz).setLevel(level.getLog4jLevel());
-    }
-
-    public static void setLevel(String className, Level level)
-    {
-        Logger.getLogger(className).setLevel(level.getLog4jLevel());
-    }
-
-    private static void resetLogging()
-    {
-        getRootLogger().removeAllAppenders();
-    }
-
-    public static void disableLogging()
-    {
-        resetLogging();
-        getRootLogger().addAppender(new NullAppender());
-    }
-
+<<<<<<< HEAD
     public static boolean initializeLoggingFromPropertiesFile()
     {
         ClassLoader cl = Thread.currentThread().getContextClassLoader();
@@ -107,10 +92,13 @@ public abstract class LogUtil
         } else {
             setupAndAddFileAppender(rtRoot + File.separator + logfile + LibParam.LOG_FILE_EXT);
         }
+=======
+        URL configUrl = Thread.currentThread().getContextClassLoader()
+                .getResource(configFile);
+>>>>>>> 209ffae... Convert all logging to logback / slf4j.
 
-        getRootLogger().setLevel(logLevel.getLog4jLevel());
+        configurator.doConfigure(configUrl);
 
-        // print termination banner
         Runtime.getRuntime().addShutdownHook(new Thread(new Runnable()
         {
             @Override
@@ -118,32 +106,10 @@ public abstract class LogUtil
             {
                 DateFormat format = new SimpleDateFormat("yyyyMMdd");
                 String strDate = format.format(new Date());
-                l.debug("TERMINATED " + strDate);
+                LoggerFactory.getLogger(LogUtil.class).debug("TERMINATED " + strDate);
             }
         }));
     }
 
-    private static Layout getLogLayout()
-    {
-        LoggerRepository repo = LogManager.getLoggerRepository();
-        if (repo instanceof ThrowableRendererSupport) {
-            ThrowableRendererSupport trs = ((ThrowableRendererSupport)repo);
-            trs.setThrowableRenderer(new AeroThrowableRenderer());
-        }
-
-        final String patternLayoutString = "%d{HHmmss.SSS}%-.1p %t %c, %m%n";
-        Layout layout = new ShorteningPatternLayout(patternLayoutString);
-        return layout;
-    }
-
-    private static void setupAndAddFileAppender(String logfile)
-            throws IOException
-    {
-        getRootLogger().addAppender(new DailyRollingFileAppender(getLogLayout(), logfile, "'.'yyyyMMdd"));
-    }
-
-    public static void setupAndAddConsoleAppender()
-    {
-        getRootLogger().addAppender(new ConsoleAppender(getLogLayout()));
-    }
+    private LogUtil() { /* private to enforce uninstantiability */ }
 }

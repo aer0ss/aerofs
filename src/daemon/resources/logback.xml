@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  ~ Copyright (c) Air Computing Inc., 2013.
+  -->
+
+<!--
+  ~ This is a do-nothing config to be loaded as a default. Disable logging until
+  ~ we establish an explicit logging policy in main().
+
+  ~ TODO: Since this file is annoying, consider reworking the launcher
+  ~ to choose the config file using:
+  ~     -Dlogback.configurationFile=<filename>
+  -->
+<configuration>
+    <root>
+        <level value="OFF"/>
+    </root>
+</configuration>

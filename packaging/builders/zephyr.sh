@@ -20,5 +20,5 @@ cp ../out.ant/artifacts/zephyr/*.jar $OPT
 # Upstart-related file copies.
 mkdir -p $INIT
 cp $RESOURCES/zephyr.conf $INIT
-cp $RESOURCES/log4j.xml $OPT
+cp $RESOURCES/logback.xml $OPT
 cp $RESOURCES/zephyr $OPT

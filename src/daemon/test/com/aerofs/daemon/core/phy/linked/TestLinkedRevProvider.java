@@ -28,7 +28,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import static com.aerofs.lib.log.LogUtil.Level;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -54,7 +53,6 @@ public class TestLinkedRevProvider extends AbstractTest
     {
         AppRoot.set("dummy");
 
-        LogUtil.setLevel(TestLinkedRevProvider.class, Level.INFO);
         out = new PrintWriter(System.out);
 
         factFile = new InjectableFile.Factory();
@@ -80,7 +78,6 @@ public class TestLinkedRevProvider extends AbstractTest
     @After
     public void after() throws Exception
     {
-        LogUtil.setLevel(TestLinkedRevProvider.class, Level.NONE);
         out.flush();
     }
 
