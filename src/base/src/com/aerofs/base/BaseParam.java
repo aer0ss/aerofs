@@ -6,6 +6,7 @@ package com.aerofs.base;
 
 import com.aerofs.base.properties.DynamicInetSocketAddress;
 import com.aerofs.base.properties.DynamicUrlProperty;
+import com.aerofs.config.properties.DynamicOptionalStringProperty;
 import com.netflix.config.DynamicStringProperty;
 import java.net.InetSocketAddress;
 
@@ -116,9 +117,15 @@ public class BaseParam
 
     public static class CA
     {
-        // TODO: MP - this shouldn't be part of the client
+        // TODO (MP) move this to a server-only package (perhaps a new ServerParam.java?)
         public static final DynamicUrlProperty URL =
                 new DynamicUrlProperty("base.ca.url", "http://joan.aerofs.com:1029/prod");
+
+        // TODO (MP) Cfg.cacert() should pull from this value, if it exists.
+        // If in private deployment mode, this will be populated with the correct certificate on
+        // startup when we pull config from the central HTTP configuration source.
+        public static final DynamicOptionalStringProperty CERTIFICATE =
+                new DynamicOptionalStringProperty("base.ca.certificate");
     }
 
     public static class MobileService

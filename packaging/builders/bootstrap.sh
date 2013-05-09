@@ -25,6 +25,12 @@ cp -r $RESOURCES/scripts $OPT
 mkdir -p $INIT
 cp $RESOURCES/bootstrap $INIT
 
+# Configuration stuff. Empty defaults.
+mkdir -p $OPT/resources
+touch $OPT/resources/string.properties
+touch $OPT/resources/configuration.properties
+touch $OPT/resources/labeling.properties
+
 # Put the script in user bin for convenience as well.
 mkdir -p $BIN
 cd $BIN
