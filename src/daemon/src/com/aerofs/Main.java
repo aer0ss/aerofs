@@ -58,7 +58,7 @@ public class Main
         }
 
         // NB: No logger is set up if this is the shell.
-        if (! prog.equals(Param.SH_NAME)) {
+        if (! prog.equals(LibParam.SH_NAME)) {
             try {
                 LogUtil.initializeFromConfigFile(rtRoot, prog, logLevel,
                         L.isStaging() ? STAGING_LOG : PROD_LOG );
