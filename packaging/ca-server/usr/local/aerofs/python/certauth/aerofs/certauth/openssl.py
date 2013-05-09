@@ -64,9 +64,6 @@ class OpenSSLWrapper(object):
         fh.write(csr)
         fh.close()
 
-        if os.path.exists(self._cert(certname)):
-            raise ExInternalServerError("Certificate already exists")
-
         cmd = ['/usr/bin/openssl', 'ca', '-batch', '-config',
             self._openssl_cnf(), '-notext', '-startdate', self._time(),
             '-passin', 'env:capass', '-in', self._csr(certname), '-out',
