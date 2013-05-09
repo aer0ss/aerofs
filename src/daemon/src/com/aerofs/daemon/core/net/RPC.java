@@ -116,7 +116,7 @@ public class RPC
                 ep = _nsl.send_(to, sidx, call);
                 return recvReply_(call.getRpcid(), to, tk, reason);
             } catch (ExTimeout e) {
-                handleTimeout_(call, ep, e);
+                handleTimeout_(call, ep);
             }
         }
     }
@@ -129,14 +129,14 @@ public class RPC
             ep = _nsl.sendUnicast_(did, sidx, call);
             return recvReply_(call.getRpcid(), null, tk, reason);
         } catch (ExTimeout e) {
-            handleTimeout_(call, ep, e);
+            handleTimeout_(call, ep);
             throw e;
         }
     }
 
-    private void handleTimeout_(PBCore call, Endpoint ep, ExTimeout e)
+    private void handleTimeout_(PBCore call, Endpoint ep)
     {
-        l.warn(ep + " " + typeString(call) + " timeout");
+        l.warn("{} {} timeout", ep, typeString(call));
         if (ep != null) _dp.startPulse_(ep.tp(), ep.did());
     }
 

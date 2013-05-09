@@ -8,7 +8,7 @@ import com.aerofs.base.ex.AbstractExWirable;
 import com.aerofs.proto.Common.PBException;
 import com.aerofs.proto.Common.PBException.Type;
 
-public class ExTimeout extends AbstractExWirable implements ISuppressStack
+public class ExTimeout extends AbstractExWirable
 {
     private static final long serialVersionUID = 1L;
 

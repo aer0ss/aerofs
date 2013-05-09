@@ -35,6 +35,7 @@ import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.daemon.core.ex.ExOutOfSpace;
 import com.aerofs.daemon.core.ex.ExUpdateInProgress;
 import com.aerofs.daemon.core.collector.ExNoComponentWithSpecifiedVersion;
+import com.aerofs.lib.log.LogUtil;
 import com.aerofs.lib.notifier.ConcurrentlyModifiableListeners;
 import com.aerofs.proto.Transport.PBStream.InvalidationReason;
 import com.google.common.collect.ImmutableList;
@@ -210,10 +211,10 @@ public class Download
             notifyNoAvail_(e);
             returnValue = e;
         } catch (ExNoAvailDevice e) {
-            notifyNoAvail_(e);
+            notifyNoAvail_(LogUtil.suppress(e));
             returnValue = e;
         } catch (final Exception e) {
-            l.warn(_socid + ": " + Util.e(e, ExNoPerm.class));
+            l.warn("{}: ", _socid, LogUtil.suppress(e, ExNoPerm.class));
             notifyListeners_(new IDownloadCompletionListenerVisitor()
             {
                 @Override
@@ -234,7 +235,7 @@ public class Download
 
     private void notifyNoAvail_(Exception e)
     {
-        l.warn(_socid + ": " + Util.e(e, ExNoAvailDevice.class));
+        l.warn("{}: ", _socid, e);
         // This download object tracked all reasons (Exceptions) for why each device was
         // avoided. Thus if the To object indicated no devices were available, then inform
         // the listener about all attempted devices, and why they failed to deliver the socid.

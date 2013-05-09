@@ -63,6 +63,7 @@ public class Main
                 LogUtil.initializeFromConfigFile(rtRoot, prog, logLevel,
                         L.isStaging() ? STAGING_LOG : PROD_LOG );
             } catch (Exception je) {
+                // FIXME(jP): Can we remove this? Does it ever work?
                 String msg = "Error starting log subsystem: " + Util.e(je);
                 // I don't know how to output to system.logging on mac/linux. so use
                 // the command line as a quick/dirty approach
