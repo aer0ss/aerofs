@@ -5,9 +5,9 @@ class pd-aerofs {
     include devman
     include jeq
 
+    # Do not include this file, let bootstrap generate it.
     file{"/etc/tomcat6/Catalina/localhost/ROOT.xml":
-        ensure => absent,
-        require => Package["aerofs-sp"]
+        ensure => absent
     }
 
     include verkehr
