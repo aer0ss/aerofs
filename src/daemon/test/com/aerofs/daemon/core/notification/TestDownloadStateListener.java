@@ -8,10 +8,8 @@ import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.OID;
-import com.aerofs.daemon.core.protocol.IDownloadStateListener.Ended;
-import com.aerofs.daemon.core.protocol.IDownloadStateListener.Enqueued;
-import com.aerofs.daemon.core.protocol.IDownloadStateListener.Ongoing;
-import com.aerofs.daemon.core.protocol.IDownloadStateListener.Started;
+import com.aerofs.daemon.core.net.ITransferStateListener.Key;
+import com.aerofs.daemon.core.net.ITransferStateListener.Value;
 import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.lib.pb.PBTransferStateFormatter;
 import com.aerofs.daemon.transport.tcpmt.TCP;
@@ -50,7 +48,7 @@ public class TestDownloadStateListener
     @Mock Factory _factory;
     @InjectMocks DownloadStateListener _listener;
 
-    @Spy KeyBasedThrottler<SOCID> _throttler = new KeyBasedThrottler<SOCID>();
+    @Spy KeyBasedThrottler<Key> _throttler = new KeyBasedThrottler<Key>();
 
     OID _oid;
     DID _did;
@@ -59,7 +57,7 @@ public class TestDownloadStateListener
     {
         PowerMockito.mockStatic(System.class);
 
-        when(_factory.<SOCID>create()).thenReturn(_throttler);
+        when(_factory.<Key>create()).thenReturn(_throttler);
 
         _throttler.setDelay(1 * C.SEC);
 
@@ -69,83 +67,67 @@ public class TestDownloadStateListener
         _did = DID.generate();
     }
 
-    @After public void tearDown()
+    @After public void teardown()
     {
         _throttler.clear();
     }
 
     @Test public void shouldFilterMeta()
     {
-        _listener.stateChanged_(createSOCID(true), createOngoing(0, 100));
+        invoke(true, 50, 100);
         verify(_notifier, never()).sendEvent_(any(PBNotification.class));
     }
 
     @Test public void shouldNotFilterMeta()
     {
         _listener.enableFilter(false);
-        _listener.stateChanged_(createSOCID(true), createOngoing(0, 100));
+        invoke(true, 50, 100);
         verify(_notifier, times(1)).sendEvent_(any(PBNotification.class));
-    }
-
-    @Test public void shouldFilterType()
-    {
-        when(System.currentTimeMillis()).thenReturn(1 * C.SEC, 2 * C.SEC);
-        _listener.stateChanged_(createSOCID(false), Started.SINGLETON);
-        _listener.stateChanged_(createSOCID(false), Enqueued.SINGLETON);
-        verify(_notifier, never()).sendEvent_(any(PBNotification.class));
-    }
-
-    @Test public void shouldNotFilterType()
-    {
-        when(System.currentTimeMillis()).thenReturn(1 * C.SEC, 2 * C.SEC, 3 * C.SEC);
-        _listener.stateChanged_(createSOCID(false), createOngoing(50, 100));
-        _listener.stateChanged_(createSOCID(false), Ended.SINGLETON_OKAY);
-        _listener.stateChanged_(createSOCID(false), Ended.SINGLETON_FAILED);
-        verify(_notifier, times(3)).sendEvent_(any(PBNotification.class));
     }
 
     @Test public void shouldThrottle()
     {
-        when(System.currentTimeMillis()).thenReturn(1L, 2L, 3L);
-        _listener.stateChanged_(createSOCID(false), createOngoing(10, 100));
-        _listener.stateChanged_(createSOCID(false), createOngoing(20, 100));
-        _listener.stateChanged_(createSOCID(false), createOngoing(30, 100));
+        when(System.currentTimeMillis()).thenReturn(10L, 100L, 200L, 300L);
+        invoke(false, 10, 100);
+        invoke(false, 20, 100);
+        invoke(false, 30, 100);
+        invoke(false, 40, 100);
         verify(_notifier, times(1)).sendEvent_(any(PBNotification.class));
     }
 
     @Test public void shouldNotThrottle()
     {
-        when(System.currentTimeMillis()).thenReturn(1 * C.SEC, 2 * C.SEC, 3 * C.SEC);
-        _listener.stateChanged_(createSOCID(false), createOngoing(10, 100));
-        _listener.stateChanged_(createSOCID(false), createOngoing(20, 100));
-        _listener.stateChanged_(createSOCID(false), createOngoing(30, 100));
-        verify(_notifier, times(3)).sendEvent_(any(PBNotification.class));
+        when(System.currentTimeMillis()).thenReturn(1 * C.SEC, 10 * C.SEC, 20 * C.SEC, 30 * C.SEC);
+        invoke(false, 10, 100);
+        invoke(false, 20, 100);
+        invoke(false, 30, 100);
+        invoke(false, 40, 100);
+        verify(_notifier, times(4)).sendEvent_(any(PBNotification.class));
     }
 
-    @Test public void shouldNotThrottleEnded()
+    @Test public void shouldNotThrottleCompleted()
     {
-        when(System.currentTimeMillis()).thenReturn(1L, 2L);
-        _listener.stateChanged_(createSOCID(false), createOngoing(10, 100));
-        _listener.stateChanged_(createSOCID(false), Ended.SINGLETON_OKAY);
+        when(System.currentTimeMillis()).thenReturn(10L, 100L);
+        invoke(false, 10, 100);
+        invoke(false, 100, 100);
         verify(_notifier, times(2)).sendEvent_(any(PBNotification.class));
     }
 
     @Test public void shouldUntrack()
     {
-        when(System.currentTimeMillis()).thenReturn(1L, 2L);
-        _listener.stateChanged_(createSOCID(false), createOngoing(10, 100));
-        _listener.stateChanged_(createSOCID(false), Ended.SINGLETON_OKAY);
-        verify(_throttler, times(1)).untrack(any(SOCID.class));
+        when(System.currentTimeMillis()).thenReturn(10L, 100L);
+        invoke(false, 10, 100);
+        invoke(false, 100, 100);
+        verify(_throttler, times(1)).untrack(any(Key.class));
     }
 
-    SOCID createSOCID(boolean isMeta)
+    void invoke(boolean isMeta, long done, long total)
     {
-        return new SOCID(new SIndex(0), _oid, isMeta ? CID.META : CID.CONTENT);
-    }
-
-    Ongoing createOngoing(long done, long total)
-    {
+        SOCID socid = new SOCID(new SIndex(0), _oid, isMeta ? CID.META : CID.CONTENT);
         Endpoint ep = new Endpoint(_tcp, _did);
-        return new Ongoing(ep, done, total);
+        Key key = new Key(socid, ep);
+        Value value = new Value(done, total);
+
+        _listener.stateChanged_(key, value);
     }
 }

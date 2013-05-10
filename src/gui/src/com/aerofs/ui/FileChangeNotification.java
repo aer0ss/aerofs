@@ -11,9 +11,9 @@ import com.aerofs.lib.cfg.ICfgDatabaseListener;
 import com.aerofs.lib.id.CID;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.proto.Common.PBPath;
-import com.aerofs.proto.RitualNotifications.PBDownloadEvent;
 import com.aerofs.proto.RitualNotifications.PBNotification;
 import com.aerofs.proto.RitualNotifications.PBNotification.Type;
+import com.aerofs.proto.RitualNotifications.PBTransferEvent;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.RitualNotificationClient.IListener;
 
@@ -31,7 +31,7 @@ public class FileChangeNotification
         @Override
         public void onNotificationReceived(PBNotification pb)
         {
-            if (pb.getType().equals(Type.DOWNLOAD)) received(pb.getDownload());
+            if (pb.getType().equals(Type.TRANSFER)) received(pb.getTransfer());
         }
     };
 
@@ -54,12 +54,14 @@ public class FileChangeNotification
         });
     }
 
-    private void received(final PBDownloadEvent ev)
+    private void received(final PBTransferEvent ev)
     {
-        if (ev.getSocid().getCid() == CID.META.getInt() ||
-                !ev.hasOkay() || !ev.getOkay() || !ev.hasPath() ||
-                UIUtil.isSystemFile(ev.getPath()) ||
-                UIUtil.shallHide(ev.getPath())) return;
+        if (ev.getUpload()
+                || ev.getSocid().getCid() == CID.META.getInt()
+                || !ev.hasPath() || ev.getDone() != ev.getTotal()
+                || (ev.hasFailed() && ev.getFailed())
+                || UIUtil.isSystemFile(ev.getPath())
+                || UIUtil.shallHide(ev.getPath())) return;
 
         if (ev.getPath().getElemCount() == 0) return;
 

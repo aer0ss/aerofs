@@ -13,10 +13,8 @@ import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.os.OSUtil;
-import com.aerofs.proto.RitualNotifications.PBDownloadEvent;
-import com.aerofs.proto.RitualNotifications.PBDownloadEvent.State;
 import com.aerofs.proto.RitualNotifications.PBNotification;
-import com.aerofs.proto.RitualNotifications.PBUploadEvent;
+import com.aerofs.proto.RitualNotifications.PBTransferEvent;
 import com.aerofs.ui.UIParam;
 import com.aerofs.ui.UIScheduler;
 import com.google.common.collect.Lists;
@@ -174,21 +172,19 @@ public class TransferTrayMenuSection implements ITrayMenuComponent
     {
         TransferStats stats = new TransferStats();
         synchronized (_ts) {
-            for (PBDownloadEvent dl : _ts.downloads_().values()) {
-                // only aggregate stats from ongoing downloads
-                if (dl.getState() == State.ONGOING) {
-                    stats.dlCount++;
-                    stats.dlBytesDone += dl.getDone();
-                    stats.dlBytesTotal += dl.getTotal();
-                }
-            }
-
-            for (PBUploadEvent ul : _ts.uploads_().values()) {
-                // only aggregate stats from started and unfinished uploads
-                if (ul.getDone() > 0 && ul.getDone() < ul.getTotal()) {
-                    stats.ulCount++;
-                    stats.ulBytesDone += ul.getDone();
-                    stats.ulBytesTotal += ul.getTotal();
+            for (PBTransferEvent ts : _ts.transfers_().values()) {
+                long done = ts.getDone();
+                long total = ts .getTotal();
+                if (done > 0 && done < total) {
+                    if (ts.getUpload()) {
+                        stats.ulCount++;
+                        stats.ulBytesDone += done;
+                        stats.ulBytesTotal += total;
+                    } else {
+                        stats.dlCount++;
+                        stats.dlBytesDone += done;
+                        stats.dlBytesTotal += total;
+                    }
                 }
             }
         }

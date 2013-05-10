@@ -5,10 +5,7 @@
 package com.aerofs.daemon.core.status;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.daemon.core.protocol.IDownloadStateListener.Ended;
-import com.aerofs.daemon.core.protocol.IDownloadStateListener.Ongoing;
-import com.aerofs.daemon.core.protocol.IDownloadStateListener.State;
-import com.aerofs.daemon.core.net.IUploadStateListener.Value;
+import com.aerofs.daemon.core.net.ITransferStateListener.Value;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.id.SOCID;
 import com.aerofs.proto.PathStatus.PBPathStatus.Flag;
@@ -122,58 +119,15 @@ public class PathFlagAggregator
         _counters.put(Flag.valueOf(Conflict), 0);
     }
 
-    /**
-     * Update flag tree on download listener callback
-     * @return actual state changes requiring notification
-     */
-    public Map<Path, Integer> changeFlagsOnDownloadNotification_(SOCID socid, @Nullable Path path,
-            State state)
-    {
-        // list of affected path
-        Map<Path, Integer> notify = Maps.newHashMap();
-
-        /*
-         * NB: the path will only be null if the SOID does not exist. There cannot be an ongoing
-         * transfer unless it existed at some point in the past which means the only way to get a
-         * null path is for the SOID to be deleted as a result of:
-         *   - aliasing
-         *   - expulsion of an entire store
-         */
-
-        if (l.isDebugEnabled()) l.debug("dl: " + socid + " " + path + " " + state);
-
-        // TODO: refactor to share code with between ul and dl
-        if (!_dlMap.containsKey(socid)) {
-            // new transfer
-            if (path != null && state instanceof Ongoing) {
-                // only set flag when the transfer actually starts
-                _dlMap.put(socid, path);
-                stateChanged_(path, Downloading, true, notify);
-            }
-        } else {
-            // existing transfer
-            Path previousPath = _dlMap.get(socid);
-            if (path == null || state instanceof Ended) {
-                // The transfer finished or the SOID was deleted: clear flag
-                stateChanged_(previousPath, Downloading, false, notify);
-                _dlMap.remove(socid);
-            } else if (!path.equals(previousPath)) {
-                // The path has changed, must clear flag for previous path and set for the new one
-                stateChanged_(previousPath, Downloading, false, notify);
-                _dlMap.put(socid, path);
-                stateChanged_(path, Downloading, true, notify);
-            }
-        }
-
-        return notify;
+    public Map<Path, Integer> changeFlagsOnTransferNotification_(
+            SOCID socid, @Nullable Path path, Value value, int direction) {
+        assert direction == Downloading || direction == Uploading : socid + " " + direction;
+        return changeFlagsOnTransferNotification_(direction == Downloading ? _dlMap : _ulMap,
+                socid, path, value, direction);
     }
 
-    /**
-     * Update flag tree on upload listener callback
-     * @return actual state changes requiring notification
-     */
-    public Map<Path, Integer> changeFlagsOnUploadNotification_(SOCID socid, @Nullable Path path,
-            Value value) {
+    public Map<Path, Integer> changeFlagsOnTransferNotification_(
+            Map<SOCID, Path> tm, SOCID socid, @Nullable Path path, Value value, int flag) {
         // list of affected path
         Map<Path, Integer> notify = Maps.newHashMap();
 
@@ -190,27 +144,26 @@ public class PathFlagAggregator
                     + ((float)value._done / (float)value._total));
         }
 
-        // TODO: refactor to share code with between ul and dl
-        if (!_ulMap.containsKey(socid)) {
+        if (!tm.containsKey(socid)) {
             // new transfer
             if (path != null && value._total > 0 && value._done > 0
                 && value._done != value._total) {
                 // only set flag when the transfer actually starts
-                _ulMap.put(socid, path);
-                stateChanged_(path, Uploading, true, notify);
+                tm.put(socid, path);
+                stateChanged_(path, flag, true, notify);
             }
         } else {
             // existing transfer
-            Path previousPath = _ulMap.get(socid);
+            Path previousPath = tm.get(socid);
             if (path == null || value._done == value._total) {
                 // The transfer finished or the SOID was deleted: clear flag
-                stateChanged_(previousPath, Uploading, false, notify);
-                _ulMap.remove(socid);
+                stateChanged_(previousPath, flag, false, notify);
+                tm.remove(socid);
             } else if (!path.equals(previousPath)) {
                 // The path has changed, must clear flag for previous path and set for the new one
-                stateChanged_(previousPath, Uploading, false, notify);
-                _ulMap.put(socid, path);
-                stateChanged_(path, Uploading, true, notify);
+                stateChanged_(previousPath, flag, false, notify);
+                tm.put(socid, path);
+                stateChanged_(path, flag, true, notify);
             }
         }
 

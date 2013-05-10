@@ -132,8 +132,7 @@ public abstract class AbstractTrayMenu implements ITrayMenu, ITrayMenuComponentL
             public void onNotificationReceived(PBNotification pb)
             {
                 switch (pb.getType().getNumber()) {
-                case Type.DOWNLOAD_VALUE:
-                case Type.UPLOAD_VALUE:
+                case Type.TRANSFER_VALUE:
                     _transferTrayMenuSection.update(pb);
                     break;
                 case Type.ROOTS_CHANGED_VALUE:

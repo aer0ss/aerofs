@@ -9,23 +9,21 @@ option optimize_for = LITE_RUNTIME;
 message PBNotification {
 
     enum Type {
-        DOWNLOAD = 0;
-        UPLOAD = 1;
-        BAD_CREDENTIAL = 2;
-        PATH_STATUS = 3;
-        CLEAR_STATUS = 4;               // clear any cached path status
-        CONFLICT_COUNT = 5;             // number of files with conflicts changed
-        SHARED_FOLDER_JOIN = 6;         // joined a shared folder
-        SHARED_FOLDER_KICKOUT = 7;      // kicked out of a shared folder
-        INDEXING_PROGRESS = 8;
-        SHARED_FOLDER_PENDING = 9;      // list of pending roots changed
-        ROOTS_CHANGED = 10;             // roots changed (added/removed/moved)
+        TRANSFER = 0;
+        BAD_CREDENTIAL = 1;
+        PATH_STATUS = 2;
+        CLEAR_STATUS = 3;               // clear any cached path status
+        CONFLICT_COUNT = 4;             // number of files with conflicts changed
+        SHARED_FOLDER_JOIN = 5;         // joined a shared folder
+        SHARED_FOLDER_KICKOUT = 6;      // kicked out of a shared folder
+        INDEXING_PROGRESS = 7;
+        SHARED_FOLDER_PENDING = 8;      // list of pending roots changed
+        ROOTS_CHANGED = 9;              // roots changed (added/removed/moved)
     }
 
     required Type type = 1;
 
-    optional PBDownloadEvent download = 2;
-    optional PBUploadEvent upload = 3;
+    optional PBTransferEvent transfer = 2;  // for DOWNLOAD or UPLOAD
     optional PBPathStatusEvent path_status = 4;
     optional int32 conflict_count = 5;          // number of files with existing conflicts
     optional PBPath path = 6;                   // path of shared folder joined/left
@@ -41,55 +39,26 @@ enum PBTransportMethod {
     ZEPHYR = 3;
 }
 
-// TODO change to PBUpload/DownloadNotification?
-message PBUploadEvent {
-    required PBSOCID socid = 1;
-    optional PBPath path = 2;   // absent if unknown
-    required bytes device_id = 3;
-    required uint64 done = 4;   // done == total means completion,
+message PBTransferEvent {
+    required bool upload = 1;
+    required PBSOCID socid = 2;
+    optional PBPath path = 3;   // absent if unknown
+    required bytes device_id = 4;
+    required uint64 done = 5;   // done == total means completion,
                                 // either failure or success
-    required uint64 total = 5;
+    required uint64 total = 6;
+    optional bool failed = 7;   // indicate failure for completed transfer
 
     // the name to display for the device we are transfering file from/to
     //   it is the device name if the local user owns the device,
     //   else it is the username of the owner of the device.
     // it is optional and the UI should use default label if the display
     //   is not provided.
-    optional string display_name = 6;
-
-    // the transport method used for a particular transfer
-    optional PBTransportMethod transport = 7;
-}
-
-message PBDownloadEvent {
-
-    enum State {
-        ENQUEUED = 0;
-        STARTED = 1;
-        ONGOING = 2;
-        ENDED = 3;
-    }
-
-    required PBSOCID socid = 1;
-    optional PBPath path = 2;   // absent if unknown
-
-    required State state = 3;
-
-    // for ongoing state only
-    optional uint64 done = 4;
-    optional uint64 total = 5;
-    optional bytes device_id = 6;
-
-    // for ended state only
-    optional bool okay = 7;
-
-    // for ongoing state only
-    // see PBUploadEvent.display_name for details
     optional string display_name = 8;
 
-    // available for ongoing state only
-    // see PBUploadEvent.transport for details
+    // the transport method used for a particular transfer
     optional PBTransportMethod transport = 9;
+
 }
 
 message PBPathStatusEvent {

@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) Air Computing Inc., 2013.
+ */
+
 package com.aerofs.daemon.core.protocol;
 
 import java.sql.SQLException;
@@ -6,6 +10,7 @@ import java.util.Map;
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.CoreQueue;
 import com.aerofs.daemon.core.CoreScheduler;
+import com.aerofs.daemon.core.download.DownloadState;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.net.To;
@@ -274,7 +279,6 @@ public class Downloads
 
             Util.verify(_ongoing.put(socid, dl) == null);
 
-            _dlstate.enqueued_(socid);
             return dl;
         }
     }

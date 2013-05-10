@@ -9,13 +9,8 @@ import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.daemon.core.UserAndDeviceNames;
 import com.aerofs.daemon.core.ds.DirectoryService;
-import com.aerofs.daemon.core.net.IUploadStateListener.Key;
-import com.aerofs.daemon.core.net.IUploadStateListener.Value;
-import com.aerofs.daemon.core.protocol.IDownloadStateListener.Ended;
-import com.aerofs.daemon.core.protocol.IDownloadStateListener.Enqueued;
-import com.aerofs.daemon.core.protocol.IDownloadStateListener.Ongoing;
-import com.aerofs.daemon.core.protocol.IDownloadStateListener.Started;
-import com.aerofs.daemon.core.protocol.IDownloadStateListener.State;
+import com.aerofs.daemon.core.net.ITransferStateListener.Key;
+import com.aerofs.daemon.core.net.ITransferStateListener.Value;
 import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.daemon.transport.tcpmt.TCP;
 import com.aerofs.daemon.transport.xmpp.Jingle;
@@ -25,12 +20,11 @@ import com.aerofs.lib.Path;
 import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.id.SOCID;
-import com.aerofs.proto.RitualNotifications.PBDownloadEvent;
 import com.aerofs.proto.RitualNotifications.PBNotification;
 import com.aerofs.proto.RitualNotifications.PBNotification.Type;
 import com.aerofs.proto.RitualNotifications.PBSOCID;
+import com.aerofs.proto.RitualNotifications.PBTransferEvent;
 import com.aerofs.proto.RitualNotifications.PBTransportMethod;
-import com.aerofs.proto.RitualNotifications.PBUploadEvent;
 import com.google.common.base.Objects;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
@@ -54,7 +48,17 @@ public class PBTransferStateFormatter
         _nr = nr;
     }
 
+    public PBNotification formatDownloadState(Key key, Value value)
+    {
+        return formatTransferState(key, value, false);
+    }
+
     public PBNotification formatUploadState(Key key, Value value)
+    {
+        return formatTransferState(key, value, true);
+    }
+
+    private PBNotification formatTransferState(Key key, Value value, boolean upload)
     {
         SOCID socid = key._socid;
         PBSOCID pbsocid = PBSOCID.newBuilder()
@@ -65,12 +69,14 @@ public class PBTransferStateFormatter
 
         DID did = key._ep.did();
 
-        PBUploadEvent.Builder bd = PBUploadEvent.newBuilder()
+        PBTransferEvent.Builder bd = PBTransferEvent.newBuilder()
+                .setUpload(upload)
                 .setSocid(pbsocid)
                 .setDeviceId(did.toPB())
                 .setDisplayName(formatDisplayName_(did))
                 .setDone(value._done)
                 .setTotal(value._total)
+                .setFailed(value._failed)
                 .setTransport(formatTransportMethod(key._ep.tp()));
 
         Path path;
@@ -84,56 +90,8 @@ public class PBTransferStateFormatter
         if (path != null) bd.setPath(path.toPB());
 
         return PBNotification.newBuilder()
-                .setType(Type.UPLOAD)
-                .setUpload(bd)
-                .build();
-    }
-
-    public PBNotification formatDownloadState(SOCID socid, State state)
-    {
-        PBSOCID pbsocid = PBSOCID.newBuilder()
-                .setSidx(socid.sidx().getInt())
-                .setOid(socid.oid().toPB())
-                .setCid(socid.cid().getInt())
-                .build();
-
-        PBDownloadEvent.Builder bd = PBDownloadEvent.newBuilder().setSocid(pbsocid);
-
-        Path path;
-        try {
-            path = _ds.resolveNullable_(socid.soid());
-        } catch (SQLException e) {
-            l.warn(Util.e(e));
-            path = null;
-        }
-
-        if (path != null) bd.setPath(path.toPB());
-
-        if (state instanceof Started) {
-            bd.setState(PBDownloadEvent.State.STARTED);
-        } else if (state instanceof Ended) {
-            bd.setState(PBDownloadEvent.State.ENDED);
-            bd.setOkay(((Ended) state)._okay);
-        } else if (state instanceof Enqueued) {
-            bd.setState(PBDownloadEvent.State.ENQUEUED);
-        } else {
-            assert state instanceof Ongoing;
-            bd.setState(PBDownloadEvent.State.ONGOING);
-
-            Ongoing ongoing = (Ongoing) state;
-
-            DID did = ongoing._ep.did();
-
-            bd.setDeviceId(did.toPB());
-            bd.setDisplayName(formatDisplayName_(did));
-            bd.setDone(ongoing._done);
-            bd.setTotal(ongoing._total);
-            bd.setTransport(formatTransportMethod(ongoing._ep.tp()));
-        }
-
-        return PBNotification.newBuilder()
-                .setType(Type.DOWNLOAD)
-                .setDownload(bd)
+                .setType(Type.TRANSFER)
+                .setTransfer(bd)
                 .build();
     }
 
