@@ -43,6 +43,19 @@ class pd-aerofs {
         require => Package["aerofs-web"]
     }
 
+    # Custom webadmin things.
+    define replace_line($file, $old_pattern, $new_pattern) {
+        exec { "/bin/sed -i 's/$old_pattern/$new_pattern/' $file":
+            onlyif => "/bin/grep  '$old_pattern' '$file'",
+        }
+    }
+
+    replace_line {"production.ini static assets":
+        file => "/opt/web/production.ini",
+        old_pattern => "static.prefix = .*",
+        new_pattern => "static.prefix = static",
+    }
+
     # Bootstrap things.
     file {"/opt/bootstrap/bootstrap.tasks":
         source => "puppet:///modules/pd-aerofs/bootstrap.tasks",
