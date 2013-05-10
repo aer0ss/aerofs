@@ -14,6 +14,7 @@ import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
+import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
@@ -33,6 +34,7 @@ import static com.aerofs.zephyr.server.ServerConstants.ReadStatus.EOF;
 import static com.aerofs.zephyr.server.ServerConstants.ReadStatus.HAS_BYTES;
 import static com.aerofs.zephyr.server.ServerConstants.ReadStatus.NO_BYTES;
 import static com.aerofs.zephyr.server.ZephyrServerUtil.crc;
+import static com.google.common.base.Preconditions.checkState;
 
 /**
  * - find a way to avoid looking up the id in the map every single time
@@ -481,14 +483,24 @@ public class PeerEndpoint implements IIOEventHandler
     }
 
     private void copytxbytes(ByteBuffer b, int bytetx, int begpos, int finpos)
+            throws IOException
     {
-        b.position(begpos);
+        int txbufpos = _txbuf.position();
+        int txbufrem = _txbuf.remaining();
 
-        byte[] tx = new byte[bytetx];
-        b.get(tx);
-        _txbuf.put(tx);
+        try {
+            b.position(begpos);
 
-        assert b.position() == finpos : ("bad pos exp:" + finpos + " act:" + b.position());
+            byte[] tx = new byte[bytetx];
+            b.get(tx);
+            _txbuf.put(tx);
+
+            checkState(b.position() == finpos, "bad pos exp:" + finpos + " act:" + b.position());
+        } catch (BufferOverflowException e) {
+            String errmsg = "wrbuf:[beg:" + begpos + " tx:" + bytetx + " fin:" + finpos + " siz:" + b.capacity() + "] " +
+                            "txbuf:[beg:" + txbufpos + " rem:" + txbufrem + "siz:" + _txbuf.capacity() + "]";
+            throw new IOException(errmsg, e);
+        }
     }
 
     /**
