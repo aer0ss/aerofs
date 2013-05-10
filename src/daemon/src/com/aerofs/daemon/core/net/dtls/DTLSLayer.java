@@ -125,7 +125,7 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
     @Override
     public void onUnicastDatagramReceived_(RawMessage r, PeerContext pc)
     {
-        if (l.isTraceEnabled()) l.trace("onUnicastDatagramReceived " + pc);
+        l.trace("onUnicastDatagramReceived {}", pc);
 
         DTLSMessage<ByteArrayInputStream> dtlsMessage =
                 _f._factMsgBIS.create_(Type.UNICAST_RECV, r._is);
@@ -136,7 +136,7 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
     @Override
     public void onStreamBegun_(StreamID streamId, RawMessage r, PeerContext pc)
     {
-        if (l.isTraceEnabled()) l.trace("onStreamBegun " + streamId + " " + pc);
+        l.trace("onStreamBegun {} {}", streamId, pc);
 
         DTLSMessage<ByteArrayInputStream> dtlsMessage =
                 _f._factMsgBIS.create_(Type.STREAM_BEGUN, r._is, streamId, 0);
@@ -147,7 +147,7 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
     @Override
     public void onStreamChunkReceived_(StreamID streamId, int seq, RawMessage r, PeerContext pc)
     {
-        if (l.isTraceEnabled()) l.trace("onStreamChunkReceived " + streamId + " " + seq + " " + pc);
+        l.trace("onStreamChunkReceived {} {} {}", streamId, seq, pc);
 
         DTLSMessage<ByteArrayInputStream> dtlsMessage =
                 _f._factMsgBIS.create_(Type.CHUNK_RECV, r._is, streamId, seq);
@@ -158,7 +158,7 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
     @Override
     public void onStreamAborted_(StreamID streamId, Endpoint ep, InvalidationReason reason)
     {
-        if (l.isTraceEnabled()) l.trace("onStreamAborted " + ep + " " + streamId + " " + reason);
+        l.trace("onStreamAborted {} {} {}", ep, streamId, reason);
 
         _upper.onStreamAborted_(streamId, ep, reason);
     }
@@ -166,7 +166,7 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
     @Override
     public void sessionEnded_(Endpoint ep, boolean outbound, boolean inbound)
     {
-        if (l.isTraceEnabled()) l.trace("sessionEnded " + ep + " inbound " + inbound);
+        l.trace("sessionEnded {} inbound {}", ep, inbound);
         _upper.sessionEnded_(ep, outbound, inbound);
 
         // TODO discard all contexts belonging to this session. Note: be very
@@ -178,7 +178,7 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
     public void sendUnicastDatagram_(byte[] bs, PeerContext pc)
             throws Exception
     {
-        if (l.isTraceEnabled()) l.trace("sendUnicastDatagram " + pc);
+        l.trace("sendUnicastDatagram {}", pc);
 
         DTLSMessage<byte[]> msg = _f._factMsgBA.create_(Type.SEND_UNICAST, bs);
 
@@ -189,7 +189,7 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
     public void beginOutgoingStream_(StreamID streamId, byte[] bs, PeerContext pc, Token tk)
             throws Exception
     {
-        if (l.isTraceEnabled()) l.trace("beginOutgoingStream " + streamId + " " + pc);
+        l.trace("beginOutgoingStream {} {}", streamId, pc);
 
         DTLSMessage<byte[]> msg = _f._factMsgBA.create_(Type.BEGIN_STREAM, bs, streamId, 0, tk);
 
@@ -202,7 +202,7 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
     public void sendOutgoingStreamChunk_(StreamID streamId, int seq, byte[] bs, PeerContext pc, Token tk)
             throws Exception
     {
-        if (l.isTraceEnabled()) l.trace("sendOutgoingStreamChunk " + streamId + " " + seq + " " + pc);
+        l.trace("sendOutgoingStreamChunk {} {} {}", streamId, seq, pc);
 
         DTLSMessage<byte[]> msg = _f._factMsgBA.create_(Type.SEND_CHUNK, bs, streamId, seq, tk);
 
@@ -215,7 +215,7 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
     public void endOutgoingStream_(StreamID streamId, PeerContext pc)
             throws ExNoResource, ExAborted
     {
-        if (l.isTraceEnabled()) l.trace("endOutgoingStream " + streamId + " " + pc);
+        l.trace("endOutgoingStream {} {}", streamId, pc);
 
         _lower.endOutgoingStream_(streamId, pc);
     }
@@ -224,7 +224,7 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
     public void abortOutgoingStream_(StreamID streamId, InvalidationReason reason, PeerContext pc)
             throws ExNoResource, ExAborted
     {
-        if (l.isTraceEnabled()) l.trace("abortOutgoingStream " + streamId + " " + pc);
+        l.trace("abortOutgoingStream {} {}", streamId, pc);
 
         _lower.abortOutgoingStream_(streamId, reason, pc);
     }
@@ -245,7 +245,7 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
     public void endIncomingStream_(StreamID streamId, PeerContext pc)
             throws ExNoResource, ExAborted
     {
-        if (l.isTraceEnabled()) l.trace("endIncomingStream " + streamId + " " + pc);
+        l.trace("endIncomingStream {} {}", streamId, pc);
 
         _lower.endIncomingStream_(streamId, pc);
     }
@@ -257,7 +257,7 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
             throws ExDTLS
     {
         if (entry._user != null) {
-            l.trace("deliver msg " + is.available());
+            l.trace("deliver msg {}", is.available());
             pc.setUser(entry._user);
             sendToUpperLayer_(msg._type, msg._sid, msg._seq, is, wirelen, pc);
 
@@ -329,36 +329,36 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
             // make sure the footer didn't get corrupted
             assert footer >= 0 && footer < Footer.values().length :
                     (pc + " " + available + " " + footer + " " + Footer.values().length + " :: " +
-                     msg._type + " " + msg._sid + " " + msg._seq + " " + msg._tk);
+                             msg._type + " " + msg._sid + " " + msg._seq + " " + msg._tk);
 
             Footer f = Footer.values()[footer];
-            l.trace("recv " + f);
+            l.trace("recv {}", f);
 
             switch (f) {
-                case OUT_NEW: {
-                    // overwrite any engine in the backlog. it is necessary to
-                    // remove stalled engines in the backlog due to sender restarts
-                    // during handshaking
-                    //
-                    // TODO vulnerable to DoS attacks. Use engine numbers to prevent
-                    // it (see dtls.docx)
-                    //
-                    _recv.removeEntryInBacklog_(pc.ep());
+            case OUT_NEW: {
+                // overwrite any engine in the backlog. it is necessary to
+                // remove stalled engines in the backlog due to sender restarts
+                // during handshaking
+                //
+                // TODO vulnerable to DoS attacks. Use engine numbers to prevent
+                // it (see dtls.docx)
+                //
+                _recv.removeEntryInBacklog_(pc.ep());
 
-                    DTLSEntry entry = _recv.createEntry_(pc.ep());
+                DTLSEntry entry = _recv.createEntry_(pc.ep());
 
-                    // Should return null bytestream
-                    OutArg<Boolean> hsSent = new OutArg<Boolean>(false);
-                    Util.verify(null == entry.decrypt_(input, pc, Footer.IN_OLD, hsSent));
-                    assert hsSent.get();
+                // Should return null bytestream
+                OutArg<Boolean> hsSent = new OutArg<Boolean>(false);
+                Util.verify(null == entry.decrypt_(input, pc, Footer.IN_OLD, hsSent));
+                assert hsSent.get();
 
-                    break;
-                }
-                case OUT_OLD: {
-                    ArrayList<DTLSEntry> entries = _recv.findEntryList_(pc.ep());
+                break;
+            }
+            case OUT_OLD: {
+                ArrayList<DTLSEntry> entries = _recv.findEntryList_(pc.ep());
 
-                    if (entries.isEmpty()) {
-                        l.debug("svr: send HS_REQ");
+                if (entries.isEmpty()) {
+                    l.debug("svr: send HS_REQ");
 
                         /*
                          * XXX TODO: This is (maybe???) subject to a DoS attack
@@ -369,51 +369,51 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
                          * initiate a much
                          * costlier (size wise) re-negotiation with the server
                          */
-                        byte[] out = new byte[Footer.SIZE];
-                        out[0] = Footer.HS_REQ.toByte();
+                    byte[] out = new byte[Footer.SIZE];
+                    out[0] = Footer.HS_REQ.toByte();
 
-                        _lower.sendUnicastDatagram_(out, pc);
+                    _lower.sendUnicastDatagram_(out, pc);
 
-                    } else {
-                        l.trace("svr: found entries for cli");
+                } else {
+                    l.trace("svr: found entries for cli");
 
-                        for (DTLSEntry entry : entries) {
+                    for (DTLSEntry entry : entries) {
 
-                            OutArg<Boolean> hsSent = new OutArg<Boolean>(false);
+                        OutArg<Boolean> hsSent = new OutArg<Boolean>(false);
 
-                            ByteArrayInputStream isToDeliver = entry.decrypt_(input, pc,
-                                    Footer.IN_OLD, hsSent);
+                        ByteArrayInputStream isToDeliver = entry.decrypt_(input, pc,
+                                Footer.IN_OLD, hsSent);
 
 
-                            //if handshake message was sent through decrypt()
-                            if (hsSent.get()) {
+                        //if handshake message was sent through decrypt()
+                        if (hsSent.get()) {
 
-                                //The receiver channel assumes that the sender channel has the same (or smaller)
-                                //timeout value as us. This means that even if a handshake message was sent
-                                //if the timeout has elapsed, the client with the sender channel has already removed
-                                //us from the backlog. That means we should also remove this entry from the backlog
-                                //to allow the client to re-negotiate as necessary
-                                _recv.timeoutDTLSInHandShake(entry, pc.ep(), true);
+                            //The receiver channel assumes that the sender channel has the same (or smaller)
+                            //timeout value as us. This means that even if a handshake message was sent
+                            //if the timeout has elapsed, the client with the sender channel has already removed
+                            //us from the backlog. That means we should also remove this entry from the backlog
+                            //to allow the client to re-negotiate as necessary
+                            _recv.timeoutDTLSInHandShake(entry, pc.ep(), true);
 
-                                // if the decrypt() command generated a message
-                                // directly to the lower layer, no need to check
-                                // the other engine
-                                break;
-                            }
+                            // if the decrypt() command generated a message
+                            // directly to the lower layer, no need to check
+                            // the other engine
+                            break;
+                        }
 
-                            if (null != isToDeliver) {
-                                deliverOrVerifyUser_(entry, msg, wirelen, pc, isToDeliver, false);
-                                delivered = true;
-                                // if we successfully decrypted, no need
-                                // to iterate over the rest of the entries
-                                break;
-                            }
+                        if (null != isToDeliver) {
+                            deliverOrVerifyUser_(entry, msg, wirelen, pc, isToDeliver, false);
+                            delivered = true;
+                            // if we successfully decrypted, no need
+                            // to iterate over the rest of the entries
+                            break;
                         }
                     }
-                    break;
                 }
+                break;
+            }
 
-                case IN_OLD: {
+            case IN_OLD: {
                     /*
                      * There's technically a case when we receive an IN_OLD
                      * message, and we find a
@@ -423,51 +423,51 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
                      * message)... I'm not sure
                      * how this case can be produced though.
                      */
-                    ArrayList<DTLSEntry> entries = _send.findEntryList_(pc.ep());
-                    if (entries.isEmpty()) {
-                        // Client must have died and restarted
-                        l.debug("cli: can't find entry matching svr's PC, drop");
+                ArrayList<DTLSEntry> entries = _send.findEntryList_(pc.ep());
+                if (entries.isEmpty()) {
+                    // Client must have died and restarted
+                    l.debug("cli: can't find entry matching svr's PC, drop");
 
-                    } else {
-                        for (DTLSEntry entry : entries) {
+                } else {
+                    for (DTLSEntry entry : entries) {
 
-                            OutArg<Boolean> hsSent = new OutArg<Boolean>(false);
+                        OutArg<Boolean> hsSent = new OutArg<Boolean>(false);
 
-                            ByteArrayInputStream isToDeliver = entry.decrypt_(input, pc,
-                                    Footer.OUT_OLD, hsSent);
+                        ByteArrayInputStream isToDeliver = entry.decrypt_(input, pc,
+                                Footer.OUT_OLD, hsSent);
 
-                            //hanshake message sent through decrypt();
-                            if (hsSent.get()) {
+                        //hanshake message sent through decrypt();
+                        if (hsSent.get()) {
 
-                                //it's possible that even though we've sent a response on the send channel,
-                                //the corresponding client with the recv channel has timed us out.
-                                //here we assume that both sender and receiver have similar timeouts
-                                //and so it is safe to remove this entry from the backlog if the timeout has passed
-                                _send.timeoutDTLSInHandShake(entry, pc.ep(), true); //send because of IN_OLD
-                                break;
-                            }
-
-                            if (null != isToDeliver) {
-                                deliverOrVerifyUser_(entry, msg, wirelen, pc, isToDeliver, true);
-                                delivered = true;
-                                // if we successfully decrypted, no need
-                                // to iterate over the rest of the entries
-                                break;
-
-                            } else {
-                                l.debug("no stream dec'ed");
-                            }
-
-                            // process_ queued up messages to be encrypted
-                            _send.drainAndSendEnqueuedMessages_(entry, pc);
+                            //it's possible that even though we've sent a response on the send channel,
+                            //the corresponding client with the recv channel has timed us out.
+                            //here we assume that both sender and receiver have similar timeouts
+                            //and so it is safe to remove this entry from the backlog if the timeout has passed
+                            _send.timeoutDTLSInHandShake(entry, pc.ep(), true); //send because of IN_OLD
+                            break;
                         }
-                    }
-                    break;
-                }
 
-                case HS_REQ:
-                    kickOffHandShaking_(pc);
-                    break;
+                        if (null != isToDeliver) {
+                            deliverOrVerifyUser_(entry, msg, wirelen, pc, isToDeliver, true);
+                            delivered = true;
+                            // if we successfully decrypted, no need
+                            // to iterate over the rest of the entries
+                            break;
+
+                        } else {
+                            l.debug("no stream dec'ed");
+                        }
+
+                        // process_ queued up messages to be encrypted
+                        _send.drainAndSendEnqueuedMessages_(entry, pc);
+                    }
+                }
+                break;
+            }
+
+            case HS_REQ:
+                kickOffHandShaking_(pc);
+                break;
             }
 
         } catch (ExDTLS e) {
@@ -476,17 +476,17 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
             assert footer != null;
 
             switch (Footer.values()[footer]) {
-                case OUT_NEW:
-                case OUT_OLD:
-                    l.debug("rm eng from recvCache");
-                    _recv.removeEntries_(pc.ep());
-                    break;
-                case IN_OLD:
-                    l.debug("rm eng from sendCache");
-                    _send.removeEntries_(pc.ep());
-                    break;
-                case HS_REQ:
-                    break;
+            case OUT_NEW:
+            case OUT_OLD:
+                l.debug("rm eng from recvCache");
+                _recv.removeEntries_(pc.ep());
+                break;
+            case IN_OLD:
+                l.debug("rm eng from sendCache");
+                _send.removeEntries_(pc.ep());
+                break;
+            case HS_REQ:
+                break;
             }
 
         } catch (Exception e) {
@@ -507,8 +507,8 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
         }
     }
 
-    static final byte[] USERID_MAGIC_BYTES = {0x23, 0x45, 0x67};
-    static final byte[] USERID_BYTES =
+    private static final byte[] USERID_MAGIC_BYTES = {0x23, 0x45, 0x67};
+    private static final byte[] USERID_BYTES =
             BaseUtil.concatenate(USERID_MAGIC_BYTES, BaseUtil.string2utf(Cfg.user().getString()));
 
     private final DTLSMessage<byte[]> USERID_MSG;
@@ -525,7 +525,7 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
         entry._sendQ.enqueue_(USERID_MSG, Prio.HI);
 
         try {
-            l.trace("send " + Footer.OUT_NEW);
+            l.trace("send {}", Footer.OUT_NEW);
             byte[] encryptedBS = entry.encrypt(HS_KICKOFF_BYTES, pc,
                     Footer.OUT_NEW, null);
             assert encryptedBS == null; // should not return anything here
@@ -555,7 +555,7 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
             entry._sendQ.enqueue_(msg, _f._tc.prio());
 
         } else {
-            l.trace("send " + Footer.OUT_OLD);
+            l.trace("send {}", Footer.OUT_OLD);
 
             for (DTLSEntry entry : entries) {
                 PrioQueue<DTLSMessage<byte[]>> sendQ = entry._sendQ;
@@ -630,15 +630,15 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
         RawMessage r = new RawMessage(is, wirelen);
 
         switch (type) {
-            case UNICAST_RECV:
-                _upper.onUnicastDatagramReceived_(r, pc);
-                break;
-            case STREAM_BEGUN:
-                _upper.onStreamBegun_(sid, r, pc);
-                break;
-            default:
-                assert type == Type.CHUNK_RECV;
-                _upper.onStreamChunkReceived_(sid, seq, r, pc);
+        case UNICAST_RECV:
+            _upper.onUnicastDatagramReceived_(r, pc);
+            break;
+        case STREAM_BEGUN:
+            _upper.onStreamBegun_(sid, r, pc);
+            break;
+        default:
+            assert type == Type.CHUNK_RECV;
+            _upper.onStreamChunkReceived_(sid, seq, r, pc);
         }
     }
 
@@ -650,25 +650,25 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
 
         try {
             switch (msg._type) {
-                case SEND_UNICAST:
-                    _lower.sendUnicastDatagram_(bs, pc);
+            case SEND_UNICAST:
+                _lower.sendUnicastDatagram_(bs, pc);
+                break;
+            case BEGIN_STREAM:
+                if (!msg.isBeginStreamSent()) {
+                    // set the bit *before* calling the lower layer, so that
+                    // if the lower layer failed, subsequent calls to
+                    // sendToLowerLayer_ on the same message won't begin a new
+                    // stream, but instead throws stream-not-found exception
+                    msg.setBeginStreamSent();
+                    _lower.beginOutgoingStream_(msg._sid, bs, pc, msg._tk);
                     break;
-                case BEGIN_STREAM:
-                    if (!msg.isBeginStreamSent()) {
-                        // set the bit *before* calling the lower layer, so that
-                        // if the lower layer failed, subsequent calls to
-                        // sendToLowerLayer_ on the same message won't begin a new
-                        // stream, but instead throws stream-not-found exception
-                        msg.setBeginStreamSent();
-                        _lower.beginOutgoingStream_(msg._sid, bs, pc, msg._tk);
-                        break;
-                    } else {
-                        // continue to the 'case' below
-                    }
-                default:
-                    assert msg._type == Type.SEND_CHUNK ||
-                            msg._type == Type.BEGIN_STREAM;
-                    _lower.sendOutgoingStreamChunk_(msg._sid, msg._seq, bs, pc, msg._tk);
+                } else {
+                    // continue to the 'case' below
+                }
+            default:
+                assert msg._type == Type.SEND_CHUNK ||
+                        msg._type == Type.BEGIN_STREAM;
+                _lower.sendOutgoingStreamChunk_(msg._sid, msg._seq, bs, pc, msg._tk);
             }
 
             // If there're two engines for the pc, the caller of this method may

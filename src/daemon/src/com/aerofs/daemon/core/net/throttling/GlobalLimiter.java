@@ -82,8 +82,8 @@ public class GlobalLimiter extends AbstractLimiter implements IUnicastOutputLaye
     private GlobalLimiter(Factory f, IUnicastOutputLayer lower)
     {
         super(f._sched, Loggers.getLogger(GlobalLimiter.class),
-            _MIN_UL_BW, getUploadBw_(), getUploadBw_() /* sigh */,
-            _MAX_SHAPING_Q_BACKLOG);
+                _MIN_UL_BW, getUploadBw_(), getUploadBw_() /* sigh */,
+                _MAX_SHAPING_Q_BACKLOG);
 
         _f = f;
         _lower = lower;
@@ -98,7 +98,7 @@ public class GlobalLimiter extends AbstractLimiter implements IUnicastOutputLaye
      * <b>VERY VERY IMPORTANT:</b> Entry point into the entire choking system!
      */
     public void process_(Outgoing o, Prio p)
-        throws Exception
+            throws Exception
     {
         // if a per-device choker exists, start the message flowing through it,
         // otherwise start the message through us
@@ -121,24 +121,24 @@ public class GlobalLimiter extends AbstractLimiter implements IUnicastOutputLaye
 
     @Override
     public void processConfirmedOutgoing_(Outgoing o, Prio p)
-        throws Exception
+            throws Exception
     {
         if (l.isDebugEnabled()) {
             l.trace(name() + ": msg route lower: t:" + Outgoing.toStringType(o.getType()) +
-                " b:" + o.getLength());
+                    " b:" + o.getLength());
             l.trace(printstat_());
         }
 
         switch (o.getType()) {
-            case UNICAST:
-                _lower.sendUnicastDatagram_(o.serialize(), o.getCtx());
-                break;
-            case STREAM_BEGIN:
-            case STREAM_CHUNK:
-                o.finishProcessing(null);
-                break;
-            default:
-                assert false;
+        case UNICAST:
+            _lower.sendUnicastDatagram_(o.serialize(), o.getCtx());
+            break;
+        case STREAM_BEGIN:
+        case STREAM_CHUNK:
+            o.finishProcessing(null);
+            break;
+        default:
+            assert false;
         }
     }
 
@@ -150,14 +150,14 @@ public class GlobalLimiter extends AbstractLimiter implements IUnicastOutputLaye
 
         ILimiter lim = _deviceQ.get(d);
         if (lim != null) {
-            l.trace(name()+ ": pbl route:" + lim.name());
+            l.trace("{}: pbl route:{}", name(), lim.name());
             lim.processControlLimit_(d, pbl);
         } else {
             lim = new PerDeviceLimiter(_f._sched, this, _PER_DEVICE_LIMITER_PREFIX + "/" + d,
-                _MIN_UL_BW,
-                ((pbl.getBandwidth() < _MIN_UL_BW) ? _MIN_UL_BW : pbl.getBandwidth()),
-                pbl.getBandwidth(),
-                _MAX_SHAPING_Q_BACKLOG);
+                    _MIN_UL_BW,
+                    ((pbl.getBandwidth() < _MIN_UL_BW) ? _MIN_UL_BW : pbl.getBandwidth()),
+                    pbl.getBandwidth(),
+                    _MAX_SHAPING_Q_BACKLOG);
             _deviceQ.put(d, lim);
 
             l.debug(name() + ": create:" + lim);
@@ -176,9 +176,9 @@ public class GlobalLimiter extends AbstractLimiter implements IUnicastOutputLaye
 
     @Override
     public void sendUnicastDatagram_(byte[] bs, PeerContext pc)
-        throws Exception
+            throws Exception
     {
-        l.trace("send datagram " + pc);
+        l.trace("send datagram {}", pc);
 
         Outgoing o = new Outgoing(_f._tc, bs, pc);
         process_(o, _f._tc.prio());
@@ -186,9 +186,9 @@ public class GlobalLimiter extends AbstractLimiter implements IUnicastOutputLaye
 
     @Override
     public void beginOutgoingStream_(StreamID streamId, byte[] bs, PeerContext pc, Token tk)
-        throws Exception
+            throws Exception
     {
-        l.trace("begin outgoing stream:" + streamId.toString() + " " + pc);
+        l.trace("begin outgoing stream:{} {}", streamId.toString(), pc);
 
         Outgoing o = new Outgoing(_f._tc, bs, pc, streamId, 0, tk);
         process_(o, _f._tc.prio());
@@ -199,9 +199,9 @@ public class GlobalLimiter extends AbstractLimiter implements IUnicastOutputLaye
 
     @Override
     public void sendOutgoingStreamChunk_(StreamID streamId, int seq, byte[] bs, PeerContext pc, Token tk)
-        throws Exception
+            throws Exception
     {
-        l.trace("send outgoing chunk stream:" + streamId + " " + seq + " " + pc);
+        l.trace("send outgoing chunk stream:{} {} {}", streamId, seq, pc);
 
         Outgoing o = new Outgoing(_f._tc, bs, pc, streamId, seq, tk);
         process_(o, _f._tc.prio());
@@ -213,27 +213,27 @@ public class GlobalLimiter extends AbstractLimiter implements IUnicastOutputLaye
 
     @Override
     public void endOutgoingStream_(StreamID streamId, PeerContext pc)
-        throws ExNoResource, ExAborted
+            throws ExNoResource, ExAborted
     {
-        l.trace("end outgoing stream:" + streamId + " " + pc);
+        l.trace("end outgoing stream:{} {}", streamId, pc);
 
         _lower.endOutgoingStream_(streamId, pc);
     }
 
     @Override
     public void endIncomingStream_(StreamID streamId, PeerContext pc)
-        throws ExNoResource, ExAborted
+            throws ExNoResource, ExAborted
     {
-        l.trace("end incoming stream:" + streamId + " " + pc);
+        l.trace("end incoming stream:{} {}", streamId, pc);
 
         _lower.endIncomingStream_(streamId, pc);
     }
 
     @Override
     public void abortOutgoingStream_(StreamID streamId, InvalidationReason reason, PeerContext pc)
-        throws ExNoResource, ExAborted
+            throws ExNoResource, ExAborted
     {
-        l.trace("abort outgoing stream:" + streamId + " " + pc);
+        l.trace("abort outgoing stream:{} {}", streamId, pc);
 
         _lower.abortOutgoingStream_(streamId, reason, pc);
     }
