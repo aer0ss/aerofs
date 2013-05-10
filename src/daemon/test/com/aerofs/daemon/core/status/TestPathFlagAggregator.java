@@ -5,10 +5,7 @@
 package com.aerofs.daemon.core.status;
 
 import com.aerofs.base.id.SID;
-import com.aerofs.daemon.core.protocol.IDownloadStateListener.Ended;
-import com.aerofs.daemon.core.protocol.IDownloadStateListener.Ongoing;
-import com.aerofs.daemon.core.protocol.IDownloadStateListener.Started;
-import com.aerofs.daemon.core.net.IUploadStateListener.Value;
+import com.aerofs.daemon.core.net.ITransferStateListener.Value;
 import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.LibParam;
@@ -76,47 +73,33 @@ public class TestPathFlagAggregator extends AbstractTest
 
     void simulateTransferStart(int d, SOID soid, String p) throws Exception
     {
+        assert d == Downloading || d == Uploading;
+
         Path path = Path.fromString(rootSID, p);
-        if (d == Downloading) {
-            tsa.changeFlagsOnDownloadNotification_(new SOCID(soid, CID.CONTENT), path,
-                    Started.SINGLETON);
-            tsa.changeFlagsOnDownloadNotification_(new SOCID(soid, CID.CONTENT), path,
-                    new Ongoing(ep, 1, 100));
-        } else if (d == Uploading) {
-            tsa.changeFlagsOnUploadNotification_(new SOCID(soid, CID.CONTENT), path,
-                    new Value(1, 100));
-        } else {
-            throw new IllegalArgumentException();
-        }
+        SOCID socid = new SOCID(soid, CID.CONTENT);
+
+        tsa.changeFlagsOnTransferNotification_(socid, path, new Value(1, 100), d);
     }
 
     void simulateTransferProgress(int d, SOID soid, String p, int percent) throws Exception
     {
-        Path path = Path.fromString(rootSID, p);
+        assert d == Downloading || d == Uploading;
         assert percent > 0 && percent < 100;
-        if (d == Downloading) {
-            tsa.changeFlagsOnDownloadNotification_(new SOCID(soid, CID.CONTENT), path,
-                    new Ongoing(ep, percent, 100));
-        } else if (d == Uploading) {
-            tsa.changeFlagsOnUploadNotification_(new SOCID(soid, CID.CONTENT), path,
-                    new Value(percent, 100));
-        } else {
-            throw new IllegalArgumentException();
-        }
+
+        Path path = Path.fromString(rootSID, p);
+        SOCID socid = new SOCID(soid, CID.CONTENT);
+
+        tsa.changeFlagsOnTransferNotification_(socid, path, new Value(percent, 100), d);
     }
 
     void simulateTransferEnd(int d, SOID soid, @Nullable String p) throws Exception
     {
+        assert d == Downloading || d == Uploading;
+
         Path path = p == null ? null : Path.fromString(rootSID, p);
-        if (d == Downloading) {
-            tsa.changeFlagsOnDownloadNotification_(new SOCID(soid, CID.CONTENT), path,
-                    Ended.SINGLETON_OKAY);
-        } else if (d == Uploading) {
-            tsa.changeFlagsOnUploadNotification_(new SOCID(soid, CID.CONTENT), path,
-                    new Value(100, 100));
-        } else {
-            throw new IllegalArgumentException();
-        }
+        SOCID socid = new SOCID(soid, CID.CONTENT);
+
+        tsa.changeFlagsOnTransferNotification_(socid, path, new Value(100, 100), d);
     }
 
     private void assertStateEquals(int state, String... pathList)

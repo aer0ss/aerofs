@@ -7,15 +7,14 @@ import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.id.SOCID;
 import com.aerofs.proto.Common.PBPath;
-import com.aerofs.proto.RitualNotifications.PBDownloadEvent;
-import com.aerofs.proto.RitualNotifications.PBDownloadEvent.State;
 import com.aerofs.proto.RitualNotifications.PBSOCID;
+import com.aerofs.proto.RitualNotifications.PBTransferEvent;
 import com.aerofs.proto.RitualNotifications.PBTransportMethod;
-import com.aerofs.proto.RitualNotifications.PBUploadEvent;
 import com.aerofs.ui.UIUtil;
 import com.google.common.base.Objects;
 import com.google.protobuf.ByteString;
 import org.eclipse.jface.viewers.ITableLabelProvider;
+import org.eclipse.jface.viewers.LabelProvider;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.program.Program;
@@ -25,8 +24,7 @@ import javax.annotation.Nullable;
 import java.util.HashMap;
 import java.util.Map;
 
-public class LabelProvider
-extends org.eclipse.jface.viewers.LabelProvider implements ITableLabelProvider
+public class TransferLabelProvider extends LabelProvider implements ITableLabelProvider
 {
 
     private final Map<Program, Image> _iconCache = new HashMap<Program, Image>();
@@ -36,7 +34,7 @@ extends org.eclipse.jface.viewers.LabelProvider implements ITableLabelProvider
     private boolean _showSOCID;
     private boolean _showDID;
 
-    LabelProvider(CompTransfersTable view)
+    TransferLabelProvider(CompTransfersTable view)
     {
         _view = view;
     }
@@ -54,8 +52,8 @@ extends org.eclipse.jface.viewers.LabelProvider implements ITableLabelProvider
     @Override
     public Image getColumnImage(Object element, int columnIndex)
     {
-        if (element instanceof PBUploadEvent) {
-            PBUploadEvent ev = (PBUploadEvent) element;
+        if (element instanceof PBTransferEvent) {
+            PBTransferEvent ev = (PBTransferEvent) element;
             switch (columnIndex) {
             case CompTransfersTable.COL_PATH: {
                 if (!ev.hasPath() || UIUtil.isSystemFile(ev.getPath())) {
@@ -67,33 +65,13 @@ extends org.eclipse.jface.viewers.LabelProvider implements ITableLabelProvider
             }
             case CompTransfersTable.COL_PROG: return getProgressIcon(ev.getDone(), ev.getTotal());
             case CompTransfersTable.COL_TRANSPORT: return getTransportMethodIcon(ev.getTransport());
-            case CompTransfersTable.COL_DEVICE: return Images.get(Images.ICON_ARROW_UP2);
+            case CompTransfersTable.COL_DEVICE: {
+                return ev.getUpload()
+                        ? Images.get(Images.ICON_ARROW_UP2)
+                        : Images.get(Images.ICON_ARROW_DOWN2);
+            }
             default: return null;
             }
-
-        } else if (element instanceof PBDownloadEvent) {
-            PBDownloadEvent ev= (PBDownloadEvent) element;
-            switch (columnIndex) {
-            case CompTransfersTable.COL_PATH: {
-                if (!ev.hasPath() || UIUtil.isSystemFile(ev.getPath())) {
-                    return Images.get(Images.ICON_METADATA);
-                } else {
-                    Path path = Path.fromPB(ev.getPath());
-                    return Images.getFileIcon(path.last(), _iconCache);
-                }
-            }
-            case CompTransfersTable.COL_PROG: {
-                if (ev.getState() == State.ONGOING) {
-                    return getProgressIcon(ev.getDone(), ev.getTotal());
-                } else {
-                    return null;
-                }
-            }
-            case CompTransfersTable.COL_TRANSPORT: return getTransportMethodIcon(ev.getTransport());
-            case CompTransfersTable.COL_DEVICE: return Images.get(Images.ICON_ARROW_DOWN2);
-            default: return null;
-            }
-
         } else if (element instanceof String) {
             return null;
 
@@ -191,8 +169,8 @@ extends org.eclipse.jface.viewers.LabelProvider implements ITableLabelProvider
     @Override
     public String getColumnText(Object element, int columnIndex)
     {
-        if (element instanceof PBUploadEvent) {
-            PBUploadEvent ev = (PBUploadEvent) element;
+        if (element instanceof PBTransferEvent) {
+            PBTransferEvent ev = (PBTransferEvent) element;
             switch (columnIndex) {
             case CompTransfersTable.COL_PATH:
                 return formatPathText(ev.getSocid(), ev.hasPath() ? ev.getPath() : null);
@@ -204,33 +182,8 @@ extends org.eclipse.jface.viewers.LabelProvider implements ITableLabelProvider
                 return formatTransport(ev.getTransport());
             default: return "";
             }
-
-        } else if (element instanceof PBDownloadEvent) {
-            PBDownloadEvent ev = (PBDownloadEvent) element;
-            switch (columnIndex) {
-            case CompTransfersTable.COL_PATH:
-                return formatPathText(ev.getSocid(), ev.hasPath() ? ev.getPath() : null);
-            case CompTransfersTable.COL_PROG:
-                return downloadStateToProgressString(ev);
-            case CompTransfersTable.COL_DEVICE:
-                return formatDevice(ev.getDeviceId(), ev.getDisplayName());
-            case CompTransfersTable.COL_TRANSPORT:
-                return formatTransport(ev.getTransport());
-            default: return "";
-            }
-
         } else {
             return columnIndex == CompTransfersTable.COL_PATH ? element.toString() : null;
-        }
-    }
-
-    public static String downloadStateToProgressString(PBDownloadEvent ev)
-    {
-        State s = ev.getState();
-        if (s == State.ONGOING) {
-            return Util.formatProgress(ev.getDone(), ev.getTotal());
-        } else {
-            return s.toString().toLowerCase();
         }
     }
 

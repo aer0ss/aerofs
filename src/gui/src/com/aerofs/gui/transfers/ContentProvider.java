@@ -1,7 +1,5 @@
 package com.aerofs.gui.transfers;
 
-import com.aerofs.proto.RitualNotifications.PBDownloadEvent;
-import com.aerofs.proto.RitualNotifications.PBUploadEvent;
 import org.eclipse.jface.viewers.IStructuredContentProvider;
 import org.eclipse.jface.viewers.Viewer;
 
@@ -30,14 +28,7 @@ public class ContentProvider implements IStructuredContentProvider
         TransferState ts = (TransferState) input;
 
         synchronized (ts) {
-            Object ret[] = new Object[ts.downloads_().size() + ts.uploads_().size()];
-            int idx = 0;
-
-            for (PBDownloadEvent ev : ts.downloads_().values()) ret[idx++] = ev;
-            for (PBUploadEvent ev : ts.uploads_().values()) ret[idx++] = ev;
-
-            assert ret.length == idx;
-            return ret;
+            return ts.transfers_().values().toArray();
         }
     }
 }

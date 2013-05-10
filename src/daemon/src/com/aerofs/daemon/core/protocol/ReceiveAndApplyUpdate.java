@@ -17,6 +17,7 @@ import com.aerofs.base.id.OID;
 import com.aerofs.daemon.core.*;
 import com.aerofs.daemon.core.alias.Aliasing;
 import com.aerofs.daemon.core.alias.MapAlias2Target;
+import com.aerofs.daemon.core.download.DownloadState;
 import com.aerofs.daemon.core.ds.CA;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
@@ -914,7 +915,7 @@ public class ReceiveAndApplyUpdate
                     // it's a stream
                     long remaining = totalFileLength - copied - prefixLength;
                     while (remaining > 0) {
-                        _dlState.ongoing_(k.socid(), msg.ep(), totalFileLength - remaining,
+                        _dlState.progress_(k.socid(), msg.ep(), totalFileLength - remaining,
                                 totalFileLength);
                         is = _iss.recvChunk_(msg.streamKey(), tk);
                         remaining -= copyOneChunk(is, os);

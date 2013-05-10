@@ -4,8 +4,7 @@
 
 package com.aerofs.daemon.core.status;
 
-import com.aerofs.daemon.core.protocol.IDownloadStateListener.State;
-import com.aerofs.daemon.core.net.IUploadStateListener.Value;
+import com.aerofs.daemon.core.net.ITransferStateListener.Value;
 import com.aerofs.daemon.core.serverstatus.ServerConnectionStatus;
 import com.aerofs.daemon.core.serverstatus.ServerConnectionStatus.Server;
 import com.aerofs.daemon.core.syncstatus.LocalSyncStatus;
@@ -66,22 +65,12 @@ public class PathStatus
      * Update aggregated upload state
      * @return paths whose status was affected and their new aggregated status
      */
-    public Map<Path, PBPathStatus> setUploadState_(SOCID socid, @Nullable Path path, Value value)
+    public Map<Path, PBPathStatus> setTransferState_(SOCID socid, @Nullable Path path, Value value,
+            int direction)
     {
         assert !socid.cid().isMeta();
         return notificationsForFlagChanges_(
-                _tsa.changeFlagsOnUploadNotification_(socid, path, value));
-    }
-
-    /**
-     * Update aggregated download state
-     * @return paths whose status was affected and their new aggregated status
-     */
-    public Map<Path, PBPathStatus> setDownloadState_(SOCID socid, @Nullable Path path, State state)
-    {
-        assert !socid.cid().isMeta();
-        return notificationsForFlagChanges_(
-                _tsa.changeFlagsOnDownloadNotification_(socid, path, state));
+                _tsa.changeFlagsOnTransferNotification_(socid, path, value, direction));
     }
 
     /**

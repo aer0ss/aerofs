@@ -9,7 +9,7 @@ import com.aerofs.daemon.core.CoreQueue;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.net.UploadState;
-import com.aerofs.daemon.core.protocol.DownloadState;
+import com.aerofs.daemon.core.download.DownloadState;
 import com.aerofs.daemon.core.serverstatus.ServerConnectionStatus;
 import com.aerofs.daemon.core.serverstatus.ServerConnectionStatus.IServiceStatusListener;
 import com.aerofs.daemon.core.serverstatus.ServerConnectionStatus.Server;
@@ -73,7 +73,7 @@ public class RitualNotificationWirings implements RitualNotificationServer.IConn
         _ds = ds;
         _scs = scs;
         _cl = cl;
-        _psn = new PathStatusNotifier(_rns, _ds, _so);
+        _psn = new PathStatusNotifier(_rns, _ds, _so, _dls, _uls);
         _formatter = formatter;
     }
 
@@ -83,27 +83,24 @@ public class RitualNotificationWirings implements RitualNotificationServer.IConn
 
         Factory factory = new Factory();
 
-        DownloadStateListener dlsl = new DownloadStateListener(_rns, _formatter, factory);
+        DownloadStateListener dlsl = new DownloadStateListener(_rns, factory, _formatter);
         dlsl.enableFilter(Cfg.useTransferFilter());
         _dls.addListener_(dlsl);
 
-        UploadStateListener ulsl = new UploadStateListener(_rns, _formatter, factory);
+        UploadStateListener ulsl = new UploadStateListener(_rns, factory, _formatter);
         ulsl.enableFilter(Cfg.useTransferFilter());
         _uls.addListener_(ulsl);
 
         // Merged status notifier listens on all input sources
-        final PathStatusNotifier sn = new PathStatusNotifier(_rns, _ds, _so);
-        _dls.addListener_(sn);
-        _uls.addListener_(sn);
-        _agss.addListener_(sn);
-        _cl.addListener_(sn);
+        _agss.addListener_(_psn);
+        _cl.addListener_(_psn);
 
         _sched.schedule(new AbstractEBSelfHandling() {
             @Override
             public void handle_()
             {
                 try {
-                    _cl.sendSnapshot_(sn);
+                    _cl.sendSnapshot_(_psn);
                 } catch (SQLException e) {
                     l.warn("Failed to send conflict snapshot", e);
                 }

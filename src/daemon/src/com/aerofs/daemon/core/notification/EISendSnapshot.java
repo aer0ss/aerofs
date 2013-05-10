@@ -5,16 +5,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import com.aerofs.daemon.core.protocol.DownloadState;
-import com.aerofs.daemon.core.protocol.IDownloadStateListener.Enqueued;
-import com.aerofs.daemon.core.protocol.IDownloadStateListener.Started;
-import com.aerofs.daemon.core.protocol.IDownloadStateListener.State;
-import com.aerofs.daemon.core.net.IUploadStateListener.Key;
-import com.aerofs.daemon.core.net.IUploadStateListener.Value;
+import com.aerofs.daemon.core.download.DownloadState;
+import com.aerofs.daemon.core.net.ITransferStateListener.Key;
+import com.aerofs.daemon.core.net.ITransferStateListener.Value;
 import com.aerofs.daemon.core.net.UploadState;
 import com.aerofs.daemon.lib.pb.PBTransferStateFormatter;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
-import com.aerofs.lib.id.SOCID;
 import com.aerofs.proto.RitualNotifications.PBNotification;
 import com.google.common.collect.Lists;
 
@@ -52,21 +48,18 @@ class EISendSnapshot extends AbstractEBSelfHandling
     @Override
     public void handle_()
     {
-        Map<SOCID, State> dls = _dls.getStates_();
+        Map<Key, Value> dls = _dls.getStates_();
         Map<Key, Value> uls = _uls.getStates_();
 
         // allocate sufficient amount of capacity so we'll never have to grow
         List<PBNotification> pbs = Lists.newArrayListWithCapacity(dls.size() + uls.size());
 
-        for (Entry<SOCID, State> en : dls.entrySet()) {
-            SOCID socid = en.getKey();
-            State state = en.getValue();
+        for (Entry<Key, Value> en : dls.entrySet()) {
+            Key key = en.getKey();
 
-            if (_enableFilter && (socid.cid().isMeta()
-                    || state instanceof Enqueued
-                    || state instanceof Started)) continue;
+            if (_enableFilter && key._socid.cid().isMeta()) continue;
 
-            pbs.add(_formatter.formatDownloadState(socid, state));
+            pbs.add(_formatter.formatDownloadState(key, en.getValue()));
         }
 
         for (Entry<Key, Value> en : uls.entrySet()) {

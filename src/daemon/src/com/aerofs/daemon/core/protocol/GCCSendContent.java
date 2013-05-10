@@ -289,8 +289,13 @@ public class GCCSendContent
             reason = null;
         } finally {
             if (is != null) is.close();
-            if (reason == null) outgoing.end_(); else outgoing.abort_(reason);
-            _ulstate.progress_(k.socid(), ep, len, len);
+            if (reason == null) {
+                _ulstate.progress_(k.socid(), ep, len, len);
+                outgoing.end_();
+            } else {
+                _ulstate.ended_(k.socid(), ep, true);
+                outgoing.abort_(reason);
+            }
         }
     }
 }

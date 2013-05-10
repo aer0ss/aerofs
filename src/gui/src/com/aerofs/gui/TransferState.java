@@ -1,15 +1,11 @@
 package com.aerofs.gui;
 
-import java.util.Map;
-
 import com.aerofs.base.id.DID;
 import com.aerofs.lib.id.SOCID;
-import com.aerofs.proto.RitualNotifications.PBDownloadEvent;
-import com.aerofs.proto.RitualNotifications.PBDownloadEvent.State;
 import com.aerofs.proto.RitualNotifications.PBNotification;
-import com.aerofs.proto.RitualNotifications.PBUploadEvent;
+import com.aerofs.proto.RitualNotifications.PBNotification.Type;
+import com.aerofs.proto.RitualNotifications.PBTransferEvent;
 import com.google.common.collect.HashBasedTable;
-import com.google.common.collect.Maps;
 import com.google.common.collect.Table;
 
 /*
@@ -20,9 +16,7 @@ import com.google.common.collect.Table;
  */
 public class TransferState
 {
-    // these two fields are protected by synchronized (this)
-    private final Map<SOCID, PBDownloadEvent> _dls = Maps.newHashMap();
-    private final Table<SOCID, DID, PBUploadEvent> _uls = HashBasedTable.create();
+    private final Table<SOCID, DID, PBTransferEvent> _uls = HashBasedTable.create();
 
     public TransferState()
     {
@@ -33,50 +27,27 @@ public class TransferState
      */
     public synchronized void update(PBNotification pb)
     {
-        switch (pb.getType()) {
-        case DOWNLOAD:
-            updateDownloadState_(pb.getDownload());
-            break;
-        case UPLOAD:
-            updateUploadState_(pb.getUpload());
-            break;
-        default:
-            // no-op
+        if (pb.getType() == Type.TRANSFER) {
+            updateTransferState_(pb.getTransfer());
         }
     }
 
-    private void updateUploadState_(PBUploadEvent pb)
+    private void updateTransferState_(PBTransferEvent pb)
     {
         SOCID socid = new SOCID(pb.getSocid());
         DID did = new DID(pb.getDeviceId());
 
-        if (pb.getDone() == pb.getTotal()) _uls.remove(socid, did);
-        else _uls.put(socid, did, pb);
-    }
-
-    private void updateDownloadState_(PBDownloadEvent pb)
-    {
-        SOCID socid = new SOCID(pb.getSocid());
-
-        if (pb.getState() == State.ENDED) {
-            _dls.remove(socid);
+        if (pb.getDone() == pb.getTotal()) {
+            _uls.remove(socid, did);
         } else {
-            _dls.put(socid, pb);
+            _uls.put(socid, did, pb);
         }
     }
 
     /**
      * N.B. access to the return value must be protected by synchronized (this)
      */
-    public Map<SOCID, PBDownloadEvent> downloads_()
-    {
-        return _dls;
-    }
-
-    /**
-     * N.B. access to the return value must be protected by synchronized (this)
-     */
-    public Table<SOCID, DID, PBUploadEvent> uploads_()
+    public Table<SOCID, DID, PBTransferEvent> transfers_()
     {
         return _uls;
     }

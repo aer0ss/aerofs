@@ -34,7 +34,7 @@ public class CompTransfersTable extends Composite
     // TODO: consolidate the code to use the same TransferState as TransferTrayMenuSection
     private final TransferState _ts;
 
-    private final LabelProvider _label;
+    private final TransferLabelProvider _label;
 
     // the global RNC is not useful as we need to retrieve the full list of current transfers here.
     private final RitualNotificationClient _rnc = new RitualNotificationClient();
@@ -72,7 +72,7 @@ public class CompTransfersTable extends Composite
         _tv = new TableViewer(this, SWT.BORDER | SWT.FULL_SELECTION);
         _tv.setUseHashlookup(true);
         _tv.setContentProvider(new ContentProvider());
-        _tv.setLabelProvider(_label = new LabelProvider(this));
+        _tv.setLabelProvider(_label = new TransferLabelProvider(this));
 
         final Table table = _tv.getTable();
         table.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_WHITE));

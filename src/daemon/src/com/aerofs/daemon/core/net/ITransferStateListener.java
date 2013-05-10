@@ -1,10 +1,14 @@
+/*
+ * Copyright (c) Air Computing Inc., 2013.
+ */
+
 package com.aerofs.daemon.core.net;
 
 import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.lib.id.SOCID;
 
-public interface IUploadStateListener {
-
+public interface ITransferStateListener
+{
     public static class Key {
         public final SOCID _socid;
         public final Endpoint _ep;
@@ -41,12 +45,27 @@ public interface IUploadStateListener {
 
     static public class Value {
         // @param done == total means completion, either failure or success
+        public final boolean _failed;
         public final long _done, _total;
 
         public Value(long done, long total)
         {
             _done = done;
             _total = total;
+            _failed = false;
+        }
+
+        public Value(long done, long total, boolean failed)
+        {
+            _done = done;
+            _total = total;
+            _failed = failed;
+        }
+
+        public Value(boolean failed)
+        {
+            _done = _total = 0;
+            _failed = failed;
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Air Computing Inc., 2012.
+ * Copyright (c) Air Computing Inc., 2013.
  */
 
 package com.aerofs.daemon.core.protocol;
@@ -14,6 +14,7 @@ import java.util.Set;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.NativeVersionControl;
+import com.aerofs.daemon.core.download.DownloadState;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.net.DigestedMessage;
 import com.aerofs.daemon.core.net.To;
@@ -229,7 +230,6 @@ public class Download
             _f._tc.setPrio(prioOrg);
         }
 
-        _f._dlstate.ended_(_socid, (returnValue == null));
         return returnValue;
     }
 
@@ -263,23 +263,27 @@ public class Download
                 throwIfContentIsMissingMetaOrExpelled();
 
                 started = true;
-                _f._dlstate.started_(_socid);
 
                 final DigestedMessage msg = _f._gcc.remoteRequestComponent_(_socid, _src, _tk);
                 replier = msg.did();
 
-                // TODO (MJ) I have a dream: that we can distinguish between locally vs. remotely
-                // generated exceptions
-                _f._gcr.processReply_(_socid, msg, _requested, _tk);
-
-                notifyListeners_(new IDownloadCompletionListenerVisitor()
-                {
-                    @Override
-                    public void notify_(IDownloadCompletionListener l)
+                boolean failed = true;
+                try {
+                    // TODO (MJ) I have a dream: that we can distinguish between locally vs. remotely
+                    // generated exceptions
+                    _f._gcr.processReply_(_socid, msg, _requested, _tk);
+                    failed = false;
+                    notifyListeners_(new IDownloadCompletionListenerVisitor()
                     {
-                        l.onPartialDownloadSuccess_(_socid, msg.did());
-                    }
-                });
+                        @Override
+                        public void notify_(IDownloadCompletionListener l)
+                        {
+                            l.onPartialDownloadSuccess_(_socid, msg.did());
+                        }
+                    });
+                } finally {
+                    _f._dlstate.ended_(_socid, msg.ep(), failed);
+                }
 
                 // Two important thoughts for this conditional check:
                 // 1) If there are more KMLs for _socid, the Collector algorithm would ensure a new
@@ -421,7 +425,6 @@ public class Download
 
     private void reenqueue(boolean started)
     {
-        if (started) _f._dlstate.enqueued_(_socid);
     }
 
     private void onUpdateInProgress() throws ExNoResource, ExAborted

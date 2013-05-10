@@ -4,10 +4,9 @@ import com.aerofs.base.id.DID;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.id.SOCID;
-import com.aerofs.proto.RitualNotifications.PBDownloadEvent;
-import com.aerofs.proto.RitualNotifications.PBDownloadEvent.State;
 import com.aerofs.proto.RitualNotifications.PBNotification;
-import com.aerofs.proto.RitualNotifications.PBUploadEvent;
+import com.aerofs.proto.RitualNotifications.PBNotification.Type;
+import com.aerofs.proto.RitualNotifications.PBTransferEvent;
 import com.aerofs.ui.RitualNotificationClient;
 import com.aerofs.ui.RitualNotificationClient.IListener;
 import com.aerofs.ui.UIUtil;
@@ -73,14 +72,8 @@ public class CmdTransfers implements IShellCommand<ShProgram>
 
     public void print(PBNotification pb, PrintStream ps, boolean debug)
     {
-        switch (pb.getType()) {
-        case DOWNLOAD:
-            printDownload(pb.getDownload(), ps, debug);
-            break;
-        case UPLOAD:
-            printUpload(pb.getUpload(), ps, debug);
-            break;
-        default:
+        if (pb.getType() == Type.TRANSFER) {
+            printTransfer(pb.getTransfer(), ps, debug);
         }
     }
 
@@ -89,10 +82,10 @@ public class CmdTransfers implements IShellCommand<ShProgram>
         ps.print(new SimpleDateFormat().format(new Date()) + " | ");
     }
 
-    private void printUpload(PBUploadEvent ev, PrintStream ps, boolean debug)
+    private void printTransfer(PBTransferEvent ev, PrintStream ps, boolean debug)
     {
         printTime(ps);
-        ps.print("UL | ");
+        ps.print(ev.getUpload() ? "UL | " : "DL | ");
 
         // print percentage
         ps.print(ev.getDone() * 100 / ev.getTotal());
@@ -103,34 +96,6 @@ public class CmdTransfers implements IShellCommand<ShProgram>
             ps.print(new DID(ev.getDeviceId()).toStringFormal() + "\t| ");
             ps.print(new SOCID(ev.getSocid()) + "\t| ");
         }
-
-        // print path
-        String str;
-        if (debug) {
-            str = Path.fromPB(ev.getPath()).toString();
-        } else {
-            Path path = Path.fromPB(ev.getPath());
-            str = UIUtil.getUserFriendlyPath(ev.getSocid(), ev.getPath(), path);
-        }
-        ps.println(str);
-    }
-
-    private void printDownload(PBDownloadEvent ev, PrintStream ps, boolean debug)
-    {
-        printTime(ps);
-        ps.print("DL | ");
-
-        // print percentage
-        if (ev.getState() == State.ONGOING) {
-            ps.print(ev.getDone() * 100 / ev.getTotal());
-            ps.print("%");
-        } else {
-            ps.print(ev.getState().toString().toLowerCase());
-        }
-        ps.print("\t| ");
-
-        // print sockid
-        if (debug) ps.print(new SOCID(ev.getSocid()) + "\t| ");
 
         // print path
         String str;
