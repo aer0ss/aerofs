@@ -178,9 +178,9 @@ final class SVRPCClient
 
                 bytes += read;
 
-                if (l.isTraceEnabled()) l.trace("read total:" + bytes);
+                l.trace("read total: {}", bytes);
                 httpStream.write(buf, 0, read);
-                if (l.isTraceEnabled()) l.trace("send total:" + bytes);
+                l.trace("send total: {}", bytes);
             }
         } finally {
             if (fileStream != null) fileStream.close();

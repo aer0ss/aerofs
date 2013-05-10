@@ -135,7 +135,7 @@ abstract class AbstractLimiter implements ILimiter
             throws Exception
     {
         if (l.isDebugEnabled()) {
-            l.trace(name() + ": beg tihd:" + System.currentTimeMillis());
+            l.trace("{}: beg tihd: {}", name(), System.currentTimeMillis());
             l.trace(printstat_());
         }
 
@@ -144,7 +144,7 @@ abstract class AbstractLimiter implements ILimiter
             boolean continueDrain = true;
             while (continueDrain) {
                 if (hasPending_()) {
-                    l.trace(name() + ": has pnd");
+                    l.trace("{}: has pnd", name());
 
                     Outgoing op = peekPending_(); // nt
                     Prio p = peekPendingPrio_(); // nt
@@ -152,7 +152,7 @@ abstract class AbstractLimiter implements ILimiter
                     printOutgoingParams_(op, p);
 
                     if (hasTokens_(op)) { // nt
-                        l.trace(name() + ": has tok");
+                        l.trace("{}: has tok", name());
 
                         Outgoing o = getPending_(); // nt
                         assert o == op;
@@ -169,11 +169,11 @@ abstract class AbstractLimiter implements ILimiter
                             procEx = new ExOutgoingProcessingError(o, e);
                         }
                     } else {
-                        l.trace(name() + ": no tok");
+                        l.trace("{}: no tok", name());
                         continueDrain = false;
                     }
                 } else {
-                    l.trace(name() + ": no pnd");
+                    l.trace("{}: no pnd", name());
                     continueDrain = false;
                 }
             }
@@ -183,7 +183,7 @@ abstract class AbstractLimiter implements ILimiter
             if (procEx != null) throw procEx;
         }
 
-        l.trace(name() + ": fin tihd");
+        l.trace("{}: fin tihd", name());
     }
 
     /**
@@ -204,48 +204,48 @@ abstract class AbstractLimiter implements ILimiter
             throws Exception
     {
         if (l.isDebugEnabled()) {
-            l.trace(name() + ": beg po");
+            l.trace("{}: beg po", name());
             l.trace(printstat_());
         }
 
         printOutgoingParams_(o, p);
 
         if (!hasPending_()) { // nt
-            l.trace(name() + ": no pnd");
+            l.trace("{}: no pnd", name());
 
             if (hasTokens_(o)) { // nt
-                l.trace(name() + ": has tok");
+                l.trace("{}: has tok", name());
                 confirm_(o); // nt
                 processConfirmedOutgoing_(o, p); // throw
             } else {
-                l.trace(name() + ": no tok");
+                l.trace("{}: no tok", name());
                 addPending_(o, p); // throw
                 scheduleNextTimeout_(); // nt
             }
         } else {
-            l.trace(name() + ": has pnd");
+            l.trace("{}: has pnd", name());
 
             if (peekPendingPrio_() == Prio.higher(p, peekPendingPrio_())) {
-                l.trace(name() + ": lo p");
+                l.trace("{}: lo p", name());
                 addPending_(o, p); // throw
             } else {
-                l.trace(name() + ": hi p");
+                l.trace("{}: hi p", name());
                 if (hasTokens_(o)) { // nt
-                    l.trace(name() + ": has tok");
+                    l.trace("{}: has tok", name());
                     confirm_(o); // nt
                     scheduleNextTimeout_(); // nt
                     indicateTokensNeeded_(o); // nt
                     processConfirmedOutgoing_(o, p); // throw
                 } else {
                     // FIXME: this happens regardless of whether you have less size than the current LO-prio waiter...
-                    l.trace(name() + ": no tok");
+                    l.trace("{}: no tok", name());
                     addPending_(o, p); // throw
                     scheduleNextTimeout_(); // nt
                 }
             }
         }
 
-        l.trace(name() + ": fin po");
+        l.trace("{}: fin po", name());
     }
 
     // FIXME: I'm pretty sure this is a bad idea
@@ -293,7 +293,7 @@ abstract class AbstractLimiter implements ILimiter
 
     protected void printOutgoingParams_(Outgoing o, Prio p)
     {
-        l.trace(name() + ": len:" + o.getLength() + " pr:" + p);
+        l.trace("{}: len: {} pr: {}", name(), o.getLength(), p);
     }
 
     /**
@@ -310,8 +310,7 @@ abstract class AbstractLimiter implements ILimiter
         _fillRate = fillRate;
         _tokens = (_tokens > _bucket ? _bucket : _tokens);
 
-        l.debug(name() + ": upd bk:" + oldBucket + "->" + _bucket +
-                " fr:" + oldFillRate + "->" + _fillRate);
+        l.debug("{}: upd bk: {} -> {} fr: {} -> {}", name(), oldBucket,  _bucket, oldFillRate, _fillRate);
     }
 
     protected long tokensAvailable_(long now)
@@ -336,7 +335,7 @@ abstract class AbstractLimiter implements ILimiter
     {
         if (_q.isFull_()) throw new ExNoResource(name() + ": q full");
 
-        l.trace(name() + ": add pnd");
+        l.trace("{}: add pnd", name());
         _q.enqueue_(o, p);
     }
 
@@ -386,7 +385,7 @@ abstract class AbstractLimiter implements ILimiter
     {
         NextTimeoutInfo nt = null;
         if (!_q.isEmpty_()) {
-            l.trace(name() + ": pnd q ne");
+            l.trace("{}: pnd q ne", name());
 
             OutArg<Prio> peekPrio = new OutArg<Prio>(Prio.LO);
             Outgoing o = _q.peek_(peekPrio);
@@ -394,7 +393,7 @@ abstract class AbstractLimiter implements ILimiter
             long timeDiff =
                     (long) Math.ceil(((o.getLength() - _tokens) / (double) _fillRate) * _MS_PER_SEC);
 
-            l.trace(name() + ": wait:" + timeDiff);
+            l.trace("{}: wait: {}", name(), timeDiff);
 
             nt = new NextTimeoutInfo(
                     System.currentTimeMillis() + timeDiff, peekPrio.get());
@@ -407,18 +406,17 @@ abstract class AbstractLimiter implements ILimiter
                     try {
                         respondToTimeIn_();
                     } catch (ExOutgoingProcessingError e) {
-                        l.warn(name() + ": ex: " +
-                                e.getEx().getClass().getSimpleName());
+                        l.warn("{}: ex: {}", name(), e.getEx());
                         e.getCk().finishProcessing(e.getEx());
                     } catch (Exception e) {
-                        l.error(name() + ": unexpected ex");
+                        l.error("{}: unexpected ex", name());
                         assert false;
                     }
                 }
             };
             _sched.schedule(ce, timeDiff);
         } else {
-            l.trace(name() + ": pnd q e");
+            l.trace("{}: pnd q e", name());
         }
 
         _nextTimeout = nt;

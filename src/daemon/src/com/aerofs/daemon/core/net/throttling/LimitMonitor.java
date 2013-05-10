@@ -176,18 +176,17 @@ public class LimitMonitor implements IUnicastInputLayer, ICfgDatabaseListener, I
 
     private static void logbw(DID d, double abw, double rbw)
     {
-        l.trace("d:" + d + " cbw:" + abw + " rbw:" + rbw);
+        l.trace("d:{} cbw:{} rbw:{}", d, abw, rbw);
     }
 
     private static void lognewalloc(double bw, DID d)
     {
-        l.trace("newbw:" + bw + " -> d:" + d);
+        l.trace("newbw:{} -> d:{}", bw, d);
     }
 
     private void logsysbw()
     {
-        l.trace("ubw:" + _totalBw
-                + " abw[l]:" + _availBwLoLvl + " abw[h]:" + _availBwHiLvl);
+        l.trace("ubw:{} abw[l]:{} abw[h]:{}", _totalBw, _availBwLoLvl, _availBwHiLvl);
     }
 
     private void notifyLayersOfStreamError(StreamID sid, PeerContext pc,
@@ -205,7 +204,7 @@ public class LimitMonitor implements IUnicastInputLayer, ICfgDatabaseListener, I
 
     private void readStream(StreamID sid, RawMessage r, PeerContext pc)
     {
-        l.trace("rx: t:S sid:" + sid + " d:" + pc.did() + " b:" + r._wirelen);
+        l.trace("rx: t:S sid:{} d:{} b:{}", sid, pc.did(), r._wirelen);
 
         try {
             processBytesIn(r._is, r._wirelen, pc);
@@ -220,7 +219,7 @@ public class LimitMonitor implements IUnicastInputLayer, ICfgDatabaseListener, I
             throws Exception
     {
         assert pc != null;
-        l.trace("tx lim:tc -> " + pc.did());
+        l.trace("tx lim:tc -> {}", pc.did());
 
         _lowerUnicastOutput.sendUnicastDatagram_(msg, pc);
     }
@@ -258,7 +257,7 @@ public class LimitMonitor implements IUnicastInputLayer, ICfgDatabaseListener, I
                     (long) Math.floor(
                             (_BW_HISTORIC_SMOOTHING_FACTOR * ti.rollingBw) +
                                     ((1 - _BW_HISTORIC_SMOOTHING_FACTOR) *
-                                            (ti.bytesIn / (_RECOMPUTE_INTERVAL / (double) _MS_PER_SEC)))
+                                             (ti.bytesIn / (_RECOMPUTE_INTERVAL / (double) _MS_PER_SEC)))
                     );
 
             logbw(tme.getKey(), ti.bytesIn, ti.rollingBw);
@@ -286,7 +285,7 @@ public class LimitMonitor implements IUnicastInputLayer, ICfgDatabaseListener, I
         // desired effect.
         for (TransmitInfo ti : pausedDevices) {
             if (l.isTraceEnabled()) {
-                l.trace(ti.lastPeerContext.did() + " is paused");
+                l.trace("{} is paused", ti.lastPeerContext.did());
             }
 
             try {
@@ -315,7 +314,7 @@ public class LimitMonitor implements IUnicastInputLayer, ICfgDatabaseListener, I
                             ((ti.rollingBw / (double) _totalBw) * bwdiff * _PENALTY_FACTOR);
                 }
 
-                l.trace("calc red:" + reduc + " d:" + ti.lastPeerContext.did());
+                l.trace("calc red:{} d:{}", reduc, ti.lastPeerContext.did());
 
                 try {
                     long newbw =
@@ -364,7 +363,7 @@ public class LimitMonitor implements IUnicastInputLayer, ICfgDatabaseListener, I
 
     private void scheduleRecompute(long ms)
     {
-        l.trace("schd bwrc:" + (System.currentTimeMillis() + _RECOMPUTE_INTERVAL));
+        l.trace("schd bwrc:{}", (System.currentTimeMillis() + _RECOMPUTE_INTERVAL));
 
         _f._sched.schedule(new AbstractEBSelfHandling()
         {
@@ -384,7 +383,7 @@ public class LimitMonitor implements IUnicastInputLayer, ICfgDatabaseListener, I
 
         DID d = pc.did();
         if (!_transmitMap.containsKey(d)) {
-            l.trace("newti: d:" + d);
+            l.trace("newti: d:{}", d);
             _transmitMap.put(d, new TransmitInfo());
         }
 
@@ -471,7 +470,7 @@ public class LimitMonitor implements IUnicastInputLayer, ICfgDatabaseListener, I
     @Override
     public void onUnicastDatagramReceived_(RawMessage r, PeerContext pc)
     {
-        l.trace("rx: t:UC d:" + pc.did() + " b:" + r._wirelen);
+        l.trace("rx: t:UC d:{} b:{}", pc.did(), r._wirelen);
 
         try {
             processBytesIn(r._is, r._wirelen, pc);
@@ -533,7 +532,7 @@ public class LimitMonitor implements IUnicastInputLayer, ICfgDatabaseListener, I
     {
         TransmitInfo ti = _transmitMap.remove(d);
         if (ti != null) {
-            l.trace("rem ti d:" + d);
+            l.trace("rem ti d:{}", d);
         }
     }
 }

@@ -88,7 +88,7 @@ public class TestHashStream extends AbstractTest
         byte[] bytes = new byte[size];
         _random.nextBytes(bytes);
         out.write(bytes);
-        l.trace("wrote " + size + " bytes");
+        l.trace("wrote {} bytes", size);
     }
 
     private void runTest(RandomWriter rw) throws Exception {

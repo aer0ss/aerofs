@@ -279,7 +279,7 @@ public class TCPProactorMT
                 p._bytesrx += wirelen;
 
                 if (l.isTraceEnabled()) {
-                    l.trace("recv fin:" + getTransferString_(s, true) + " b:" + wirelen);
+                    l.trace("recv fin: {} b:", getTransferString_(s, true), wirelen);
                 }
 
                 // process_ the message
@@ -366,7 +366,7 @@ public class TCPProactorMT
             _bytestx.addAndGet(bytesSent);
         }
         if (l.isTraceEnabled()) {
-            l.trace("send fin:" + getTransferString_(s, false) + " b:" + bytesSent + " t:" +
+            l.trace("send fin:{} b:{} t:{}", getTransferString_(s, false), bytesSent,
                     (System.currentTimeMillis() - sendBegin));
         }
 
@@ -436,7 +436,7 @@ public class TCPProactorMT
                 l.trace("wait evsend");
                 long evwtbeg = System.currentTimeMillis();
                 EvSend ev = (EvSend) p._sendq.dequeue(outPrio);
-                l.trace("ev wt t:" + (System.currentTimeMillis() - evwtbeg));
+                l.trace("ev wt t:{}", (System.currentTimeMillis() - evwtbeg));
 
                 if (ev == EV_CLOSE) break;
 
