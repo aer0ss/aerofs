@@ -50,7 +50,12 @@ class OpenSSLWrapper(object):
     def _cert(self, certname):
         return os.path.join(self._cadir, certname + '.cert')
     def _time(self):
-        dt = datetime.datetime.utcfromtimestamp(int(time.time()))
+        # We pick the certificate validity start date to be one day ago because
+        # clock skew can result in clients that have just installed failing to
+        # sync (which can break system tests).  So it's easiest to just avoid
+        # that whole can of worms - if your clock is off by more than a day,
+        # you can fix your clock.
+        dt = datetime.datetime.utcfromtimestamp(int(time.time())) - datetime.timedelta(days=1)
         return dt.strftime('%Y%m%d%H%M%SZ')
     def _openssl_cnf(self):
         return os.path.join(self._cadir, 'openssl.cnf')
