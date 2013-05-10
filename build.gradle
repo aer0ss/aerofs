@@ -32,7 +32,7 @@ configurations {
  */
 dependencies {
     compile('com.aerofs.dynamic-config:dynamic-config-client:0.1')
-    compile('com.aerofs.synctime:synctime-client:0.6')
+    compile('com.aerofs.synctime:synctime-client:0.7')
 }
 
 /**

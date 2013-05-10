@@ -2,6 +2,9 @@ package com.aerofs.daemon.core.synctime;
 
 import com.google.common.base.Objects;
 
+/**
+ * Encapsulates a time interval, and converts it to a histogram bin index
+ */
 class TimeToSync
 {
     static final int TOTAL_BINS = 256;
