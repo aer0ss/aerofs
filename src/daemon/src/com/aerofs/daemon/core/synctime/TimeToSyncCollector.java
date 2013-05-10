@@ -119,7 +119,12 @@ class TimeToSyncCollector implements
     {
         // The checkoutpoint map should already have did
         // (i.e. deviceOnline should have preceded this call once)
-        checkState(_deviceCheckPoint.containsKey(did), did);
+        if (!_deviceCheckPoint.containsKey(did)) {
+            // If you get here, then a pull update was received before deviceOnline was invoked,
+            // which is wrong, but oh well.
+            l.warn("chkpt map missing did {}", did);
+        }
+
 
         if (!_ru.deviceHasUpdates_(did)) {
             l.debug("move checkpoint for {}", did);
