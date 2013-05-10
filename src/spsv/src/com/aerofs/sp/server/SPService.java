@@ -187,9 +187,9 @@ public class SPService implements ISPService
     // and pricing.mako when changing this number.
     private int _maxFreeCollaboratorsPerFolder = 1;
 
-    // If true, no payment checks will be enforced
-    private static final DynamicBooleanProperty DISABLE_PAYMENT =
-            new DynamicBooleanProperty("sp.payment.enable", true);
+    // If false, no payment checks will be enforced.
+    private static final DynamicBooleanProperty ENABLE_PAYMENT =
+            new DynamicBooleanProperty("sp.payment.enabled", true);
 
     SPService(SPDatabase db, SQLThreadLocalTransaction sqlTrans,
             JedisThreadLocalTransaction jedisTrans, ISessionUser sessionUser,
@@ -1630,7 +1630,7 @@ public class SPService implements ISPService
     private void throwIfPaymentRequiredAndNoCustomerID(PBStripeData sd)
             throws ExNoStripeCustomerID
     {
-        if (DISABLE_PAYMENT.get()) return;
+        if (!ENABLE_PAYMENT.get()) return;
 
         if (sd.getQuantity() > _maxFreeMembersPerTeam && !sd.hasCustomerId()) {
             throw new ExNoStripeCustomerID();
@@ -1646,7 +1646,7 @@ public class SPService implements ISPService
             Collection<User> invitees)
             throws ExNoStripeCustomerID, SQLException, ExNotFound
     {
-        if (DISABLE_PAYMENT.get()) return;
+        if (!ENABLE_PAYMENT.get()) return;
 
         // Okay if the customer is paying
         if (org.getStripeCustomerIDNullable() != null) return;
