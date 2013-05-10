@@ -28,18 +28,14 @@ class pd-cfg-ca {
         require => Package["nginx"]
     }
 
-    file {"/etc/nginx/sites-available/ca-server":
-        source => "puppet:///modules/pd-cfg-ca/ca-server",
-        require => Package["nginx"],
-    }
-
     file {"/etc/nginx/sites-available/cfg-server":
         source => "puppet:///modules/pd-cfg-ca/cfg-server",
         require => Package["nginx"],
     }
 
-    file { '/etc/nginx/sites-enabled/ca-server':
-        ensure => 'link',
-        target => '/etc/nginx/sites-available/ca-server',
+    # Bootstrap things.
+    file {"/opt/bootstrap/bootstrap.tasks":
+        source => "puppet:///modules/pd-cfg-ca/bootstrap.tasks",
+        require => Package["aerofs-bootstrap"],
     }
 }

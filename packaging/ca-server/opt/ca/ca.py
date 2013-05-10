@@ -13,15 +13,8 @@ At the most basic level, this server is a wrapper for standard openssl commands.
 import sys
 import aerofs.certauth.server
 
-def usage():
-    print "usage: " + sys.argv[0] + " <cadir>"
-    sys.exit(1)
-
 if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        usage()
-
-    cadir = sys.argv[1]
+    cadir = '/opt/ca/prod'
     port = 9002
 
     ca = aerofs.certauth.server.CertificateAuthorityServer(cadir, port)

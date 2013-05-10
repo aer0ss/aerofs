@@ -28,7 +28,7 @@ class ApplicationObject(object):
 
         if len(os.path.split(path_info)) > 0 and os.path.split(path_info)[-1] == "cacert.pem":
             cacert = ""
-            with open(self._cadir + '/ca-cert.pem') as cafile:
+            with open(self._cadir + '/cacert.pem') as cafile:
                 for line in cafile:
                     cacert += line
 
