@@ -4,7 +4,6 @@ class pd-aerofs {
     include servlet::sp
     include devman
     include jeq
-    include updater
 
     # Do not include this file, let bootstrap generate it.
     file{"/etc/tomcat6/Catalina/localhost/ROOT.xml":
