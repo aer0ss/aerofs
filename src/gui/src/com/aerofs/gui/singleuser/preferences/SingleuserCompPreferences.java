@@ -12,9 +12,11 @@ import com.aerofs.gui.transfers.DlgThrottling;
 import com.aerofs.gui.unlink.DlgUnlinkDevice;
 import com.aerofs.lib.S;
 import com.aerofs.lib.cfg.Cfg;
+import com.aerofs.lib.cfg.CfgDatabase;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.ui.IUI.MessageType;
+import com.aerofs.ui.UI;
 import com.aerofs.ui.UIUtil;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.MouseAdapter;
@@ -30,7 +32,6 @@ import org.eclipse.swt.widgets.Label;
 
 public class SingleuserCompPreferences extends Composite
 {
-    private final Button _btnNotify;
     private final Label _lblId2;
     private final Label _lblId;
     private boolean _deviceIDShown;
@@ -92,15 +93,48 @@ public class SingleuserCompPreferences extends Composite
 
         new Label(this, SWT.NONE);
 
-        _btnNotify = new Button(this, SWT.CHECK);
-        _btnNotify.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, false, 2, 1));
-        _btnNotify.setText("Notify me about file changes");
-        _btnNotify.setSelection(Cfg.db().getBoolean(Key.NOTIFY));
-        _btnNotify.addSelectionListener(new SelectionAdapter() {
+        final Button btnNotify = new Button(this, SWT.CHECK);
+        btnNotify.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, false, 2, 1));
+        btnNotify.setText("Notify me about file changes");
+        btnNotify.setSelection(Cfg.db().getBoolean(Key.NOTIFY));
+        btnNotify.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e)
             {
-                setDC(_btnNotify.getSelection());
+                setCfg(Key.NOTIFY, btnNotify.getSelection());
+            }
+        });
+
+        // Enable sync history row
+        new Label(this, SWT.NONE);
+
+        final Button btnHistory = new Button(this, SWT.CHECK);
+        btnHistory.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, false, 2, 1));
+        btnHistory.setText(S.ENABLE_SYNC_HISTORY);
+        btnHistory.setSelection(Cfg.db().getBoolean(Key.SYNC_HISTORY));
+        // This button is a little complicated - we present a warning only if the
+        // selection state goes from on to off. If the user clicks No, the selection state
+        // is forced back to true.
+        btnHistory.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e)
+            {
+                if (!btnHistory.getSelection()) {
+                    if (GUI.get().ask(getShell(), MessageType.WARN, S.SYNC_HISTORY_CONFIRM)) {
+                        setCfg(Key.SYNC_HISTORY, false);
+                    } else {
+                        btnHistory.setSelection(true);
+                    }
+                } else {
+                    setCfg(Key.SYNC_HISTORY, true);
+                }
+
+                try {
+                    UI.ritual().reloadConfig();
+                } catch (Exception e1) {
+                    GUI.get().show(getShell(), MessageType.ERROR,
+                            "Couldn't update Sync History " + UIUtil.e2msg(e1) + ".");
+                }
             }
         });
 
@@ -178,12 +212,10 @@ public class SingleuserCompPreferences extends Composite
         });
     }
 
-    private void setDC(Boolean notify)
+    private void setCfg(CfgDatabase.Key key, Boolean value)
     {
         try {
-            if (notify != null) {
-                Cfg.db().set(Key.NOTIFY, notify);
-            }
+            Cfg.db().set(key, value);
         } catch (Exception e) {
             GUI.get().show(getShell(), MessageType.ERROR, "Couldn't change settings "
                     + UIUtil.e2msg(e));

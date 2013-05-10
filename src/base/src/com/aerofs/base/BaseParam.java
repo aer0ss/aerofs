@@ -90,6 +90,9 @@ public class BaseParam
 
         public static final DynamicStringProperty TOS_URL =
                 new DynamicStringProperty("base.www.tos_url", url() + "/terms#privacy");
+
+        public static final String FAQ_SYNC_HISTORY_URL
+                = "https://aircomputing.zendesk.com/entries/23753136";
     }
 
     public static class SV

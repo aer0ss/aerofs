@@ -107,6 +107,9 @@ public class CfgDatabase
         // first start of the daemon
         FIRST_START("first_start", true),
 
+        // enable sync history
+        SYNC_HISTORY("sync_history", true),
+
         // storage type
         STORAGE_TYPE("storage_type", null)
         ;

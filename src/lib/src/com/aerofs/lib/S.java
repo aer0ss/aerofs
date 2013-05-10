@@ -165,5 +165,9 @@ public class S
                     WWW.SUPPORT_EMAIL_ADDRESS.get() + " if you have questions.",
             ADMIN_EMAIL = "Admin email",
             ADMIN_PASSWD = "Admin password",
-            PASSWORD_HAS_CHANGED = "Your " + L.product() + " password has changed.\nPlease enter the new password";
+            PASSWORD_HAS_CHANGED = "Your " + L.product() + " password has changed.\nPlease enter the new password",
+
+            ENABLE_SYNC_HISTORY = "Keep Sync History on this device",
+            SYNC_HISTORY_CONFIRM = "Are you sure? Without Sync History, " + L.product()
+                    + " cannot restore any files you modify or delete on other devices.";
 }

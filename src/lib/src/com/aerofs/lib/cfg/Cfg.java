@@ -64,7 +64,6 @@ public class Cfg
     private static boolean _useZephyr;
     private static boolean _useAutoUpdate;
     private static boolean _isAggressiveCheckingEnabled;
-    private static boolean _useHistory;
     private static boolean _useXFF;
     private static String _absDefaultRootAnchor;
     private static String _absDefaultAuxRoot;
@@ -148,7 +147,6 @@ public class Cfg
         _useZephyr = disabledByFile(rtRoot, LibParam.NOZEPHYR);
         _useAutoUpdate = disabledByFile(rtRoot, LibParam.NOAUTOUPDATE);
         _isAggressiveCheckingEnabled = enabledByFile(rtRoot, LibParam.AGGRESSIVE_CHECKS);
-        _useHistory = disabledByFile(rtRoot,  LibParam.NOHISTORY);
         _useXFF = disabledByFile(rtRoot, LibParam.NOXFF);
 
         _inited = true;
@@ -385,11 +383,6 @@ public class Cfg
     public static boolean useAutoUpdate()
     {
         return _useAutoUpdate;
-    }
-
-    public static boolean useHistory()
-    {
-        return _useHistory;
     }
 
     public static boolean isAggressiveCheckingEnabled()

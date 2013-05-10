@@ -25,6 +25,7 @@ import com.aerofs.lib.LibParam;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgAbsRoots;
+import com.aerofs.lib.cfg.CfgDatabase;
 import com.aerofs.lib.cfg.CfgStoragePolicy;
 import com.aerofs.lib.ex.ExFileIO;
 import com.aerofs.lib.id.CID;
@@ -64,6 +65,7 @@ public class TestLinkedStorage extends AbstractTest
     @Mock private DirectoryService ds;
     @Mock private InjectableDriver dr;
     @Mock private CfgAbsRoots cfgAbsRoots;
+    @Mock private CfgDatabase cfgDb;
     @Mock private CfgStoragePolicy cfgStoragePolicy;
     @Mock private IgnoreList il;
     @Mock private OA oa;

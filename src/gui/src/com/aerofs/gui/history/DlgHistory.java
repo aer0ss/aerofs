@@ -1,5 +1,6 @@
 package com.aerofs.gui.history;
 
+import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.SID;
 import com.aerofs.gui.AeroFSDialog;
@@ -43,6 +44,7 @@ import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.FileDialog;
 import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
+import org.eclipse.swt.widgets.Link;
 import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.MenuItem;
@@ -69,6 +71,7 @@ public class DlgHistory extends AeroFSDialog
     private final Map<Program, Image> _iconCache = Maps.newHashMap();
 
     private Tree _revTree;
+    private Composite _statusLabelComposite;
     private Label _statusLabel;
     private Table _revTable;
     private Composite _revTableWrap;
@@ -129,10 +132,24 @@ public class DlgHistory extends AeroFSDialog
         group.setLayout(groupLayout);
         group.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1));
 
-        _statusLabel = new Label(group, SWT.WRAP);
+        createVersionTable(group);
+
+        _statusLabelComposite = new Composite(group, SWT.NONE);
+        _statusLabelComposite.setLayout(new GridLayout());
+        _statusLabelComposite.setLayoutData(new GridData(GridData.FILL_BOTH));
+
+        _statusLabel = new Label(_statusLabelComposite, SWT.WRAP);
         _statusLabel.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
 
-        createVersionTable(group);
+        Link historyLink = new Link(_statusLabelComposite, SWT.NONE);
+        historyLink.setText("\n<a>Learn more about Sync History</a>");
+        historyLink.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent selectionEvent)
+            {
+                GUIUtil.launch(WWW.FAQ_SYNC_HISTORY_URL);
+            }
+        });
 
         _actionButtons = GUIUtil.newPackedButtonContainer(group);
         _actionButtons.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
@@ -457,7 +474,8 @@ public class DlgHistory extends AeroFSDialog
                 _actionButtons.setVisible(false);
                 _actionButtons.layout();
                 setCompositeVisible(_revTableWrap, false);
-                _statusLabel.getParent().layout();
+                setCompositeVisible(_statusLabelComposite, true);
+                _statusLabelComposite.getParent().layout();
 
                 GUI.get().safeAsyncExec(_revTable, new Runnable() {
                     @Override
@@ -481,7 +499,6 @@ public class DlgHistory extends AeroFSDialog
             ((GridData)_actionButtons.getLayoutData()).horizontalAlignment = SWT.RIGHT;
             _actionButtons.layout();
             setCompositeVisible(_revTableWrap, true);
-            _statusLabel.getParent().layout();
         } else {
             if (_restoreBtn != null) _restoreBtn.setText("Restore Deleted Files...");
             _deleteBtn.setText("Delete Old Versions");
@@ -512,7 +529,8 @@ public class DlgHistory extends AeroFSDialog
             }
             _revTable.removeAll();
             setCompositeVisible(_revTableWrap, false);
-            _statusLabel.getParent().layout();
+            setCompositeVisible(_statusLabelComposite, true);
+            _statusLabelComposite.getParent().layout();
         }
     }
 
