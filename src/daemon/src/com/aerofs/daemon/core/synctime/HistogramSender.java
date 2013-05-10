@@ -16,6 +16,7 @@ import com.google.common.util.concurrent.JdkFutureAdapters;
 import com.google.common.util.concurrent.ListenableFuture;
 import org.slf4j.Logger;
 
+import java.net.URI;
 import java.util.Map;
 import java.util.concurrent.Future;
 
@@ -47,7 +48,7 @@ class HistogramSender
 
     HistogramSender(Scheduler sched, Map<DID, SingleDIDTimeToSyncHistogram> histograms)
     {
-        _ttsClient = new TimeToSyncClient();
+        _ttsClient = new TimeToSyncClient(URI.create(Params.SERVER_URL.get()));
         _sched = sched;
         _histograms = histograms;
     }
