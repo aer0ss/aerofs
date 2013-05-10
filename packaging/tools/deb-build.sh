@@ -1,4 +1,5 @@
-#!/bin/bash -e
+#!/bin/bash
+# N.B. do not set -e this script, it checks its own error codes.
 
 ###############################################################################
 #
