@@ -48,7 +48,7 @@ public class ULTRecertifyDevice extends UILaunchTask
             return;
         }
 
-        UI.dm().stop();
+        UI.dm().stopIgnoreException();
         try {
             if (L.isMultiuser()) {
                 recertifyTeamServer();
