@@ -8,6 +8,7 @@ import com.aerofs.daemon.transport.lib.StreamManager.OutgoingStream;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExDeviceOffline;
 import com.aerofs.proto.Transport.PBStream;
+import com.aerofs.proto.Transport.PBStream.Type;
 import com.aerofs.proto.Transport.PBTPHeader;
 import org.slf4j.Logger;
 
@@ -39,6 +40,7 @@ public class HdTxAbortStream implements IEventHandler<EOTxAbortStream>
             PBTPHeader h = PBTPHeader.newBuilder()
                     .setType(STREAM)
                     .setStream(PBStream.newBuilder()
+                            .setType(Type.TX_ABORT_STREAM)
                             .setStreamId(ev._streamId.getInt())
                             .setReason(ev._reason))
                     .build();
