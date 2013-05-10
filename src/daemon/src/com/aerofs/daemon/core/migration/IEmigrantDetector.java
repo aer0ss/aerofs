@@ -4,8 +4,7 @@
 
 package com.aerofs.daemon.core.migration;
 
-import com.aerofs.base.id.DID;
-import com.aerofs.daemon.core.tc.Token;
+import com.aerofs.daemon.core.download.IDownloadContext;
 import com.aerofs.base.id.OID;
 import com.aerofs.lib.id.SOID;
 import com.google.protobuf.ByteString;
@@ -26,10 +25,9 @@ public interface IEmigrantDetector
      * @param nameTo the name that the object is going to use
      * @param sidsEmigrantTargetAncestor the value of the emigrant_target_ancestor_sid
      * field from PBMeta
-     * @param did the device that provided the update
      */
     void detectAndPerformEmigration_(SOID soid, OID oidParentTo, String nameTo,
-            List<ByteString> sidsEmigrantTargetAncestor, DID did, Token tk)
+            List<ByteString> sidsEmigrantTargetAncestor, IDownloadContext cxt)
             throws Exception;
 
 }

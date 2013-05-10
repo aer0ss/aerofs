@@ -9,6 +9,9 @@ import java.util.Set;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
+import com.aerofs.daemon.core.download.Downloads;
+import com.aerofs.daemon.core.download.ExUnsatisfiedDependency;
+import com.aerofs.daemon.core.ex.ExWrapped;
 import com.aerofs.daemon.lib.db.ICollectorSequenceDatabase.OCIDAndCS;
 import com.aerofs.lib.id.OCID;
 import com.aerofs.lib.id.SIndex;
@@ -18,10 +21,9 @@ import org.slf4j.Logger;
 
 import com.aerofs.daemon.core.CoreExponentialRetry;
 import com.aerofs.daemon.core.CoreScheduler;
-import com.aerofs.daemon.core.protocol.IDownloadCompletionListener;
+import com.aerofs.daemon.core.download.IDownloadCompletionListener;
 import com.aerofs.daemon.core.store.Store;
 import com.aerofs.daemon.core.tc.ITokenReclamationListener;
-import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.sched.ExponentialRetry;
 import com.aerofs.lib.IDumpStatMisc;
@@ -40,7 +42,7 @@ import com.google.inject.Inject;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-public class Collector implements IDumpStatMisc, IDownloadListenerFactory
+public class Collector implements IDumpStatMisc
 {
     private static final Logger l = Loggers.getLogger(Collector.class);
 
@@ -60,11 +62,11 @@ public class Collector implements IDumpStatMisc, IDownloadListenerFactory
         private final CollectorSkipRule _csr;
         private final TransManager _tm;
         private final ExponentialRetry _er;
-        private final Downloader _dl;
+        private final Downloads _dls;
 
         @Inject
         public Factory(CoreScheduler sched, ICollectorSequenceDatabase csdb,
-                CollectorSkipRule csr, Downloader dl, TransManager tm,
+                CollectorSkipRule csr, Downloads dls, TransManager tm,
                 CoreExponentialRetry cer, ICollectorFilterDatabase cfdb)
         {
             _sched = sched;
@@ -73,7 +75,7 @@ public class Collector implements IDumpStatMisc, IDownloadListenerFactory
             _csr = csr;
             _tm = tm;
             _er = cer;
-            _dl = dl;
+            _dls = dls;
         }
 
         public Collector create_(Store s)
@@ -358,43 +360,44 @@ public class Collector implements IDumpStatMisc, IDownloadListenerFactory
 
         l.debug("clct {} {}", socid, dids);
 
-        boolean ok = _f._dl.downloadAsync_(socid, dids, this, new ITokenReclamationListener() {
-            @Override
-            public void tokenReclaimed_()
-            {
-                l.debug("start continuation");
-                _f._er.retry("continuation", new Callable<Void>()
-                {
-                    @Override
-                    public Void call() throws Exception
-                    {
-                        assert _it.started();
-                        collect_(null);
-                        return null;
-                    }
-                });
-            }
-        });
+        boolean ok = _f._dls.downloadAsync_(socid, dids, new ContinuationTrigger(),
+                new DownloadListener(dids));
 
-        if (ok) ++_downloads;
+        if (ok) {
+            ++_downloads;
+        } else {
+            l.debug("request continuation");
+        }
+
         return ok;
     }
 
-    @Override
-    public IDownloadCompletionListener create_(Set<DID> dids, @Nullable Token tk)
+    private class ContinuationTrigger implements ITokenReclamationListener
     {
-        return new CollectorDownloadListener(dids, tk);
+        @Override
+        public void tokenReclaimed_()
+        {
+            l.debug("start continuation");
+            _f._er.retry("continuation", new Callable<Void>()
+            {
+                @Override
+                public Void call() throws Exception
+                {
+                    assert _it.started();
+                    collect_(null);
+                    return null;
+                }
+            });
+        }
     }
 
-    private class CollectorDownloadListener implements IDownloadCompletionListener
+    private class DownloadListener implements IDownloadCompletionListener
     {
         private final Set<DID> _dids;
-        private final @Nullable Token _tk;
 
-        CollectorDownloadListener(Set<DID> dids, @Nullable Token tk)
+        DownloadListener(Set<DID> dids)
         {
             _dids = dids;
-            _tk = tk;
         }
 
         private void postDownloadCompletionTask()
@@ -407,7 +410,6 @@ public class Collector implements IDumpStatMisc, IDownloadListenerFactory
         @Override
         public void onDownloadSuccess_(SOCID socid, DID from)
         {
-            if (_tk != null) _tk.reclaim_();
             postDownloadCompletionTask();
         }
 
@@ -418,7 +420,6 @@ public class Collector implements IDumpStatMisc, IDownloadListenerFactory
         public void onGeneralError_(SOCID socid, Exception e)
         {
             l.debug("cdl {}: {}", socid, Util.e(e));
-            if (_tk != null) _tk.reclaim_();
 
             // For general errors, we want to re-run this collector.
             // Indicate the BFs are dirty for all devices of interest so
@@ -432,8 +433,6 @@ public class Collector implements IDumpStatMisc, IDownloadListenerFactory
         @Override
         public void onPerDeviceErrors_(SOCID socid, Map<DID, Exception> did2e)
         {
-            if (_tk != null) _tk.reclaim_();
-
             // Gather the set of DIDs from which we received non-permanent errors
             // 1) First determine those *with* permanent errors
             Set<DID> didsWithPermanentErrors = Sets.newHashSetWithExpectedSize(did2e.size());
@@ -486,7 +485,8 @@ public class Collector implements IDumpStatMisc, IDownloadListenerFactory
      */
     private static boolean isPermanentError(Exception e)
     {
-        return e instanceof AbstractExPermanentError;
+        return (e instanceof ExWrapped ? ((ExWrapped)e).recursiveUnwrap() : e)
+                instanceof AbstractExPermanentError;
     }
 
     @Override

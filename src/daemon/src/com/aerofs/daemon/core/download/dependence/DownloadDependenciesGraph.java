@@ -2,7 +2,7 @@
  * Copyright (c) Air Computing Inc., 2012.
  */
 
-package com.aerofs.daemon.core.protocol.dependence;
+package com.aerofs.daemon.core.download.dependence;
 
 import com.aerofs.lib.graph.DirectedAcyclicGraph;
 import com.aerofs.lib.id.SOCID;

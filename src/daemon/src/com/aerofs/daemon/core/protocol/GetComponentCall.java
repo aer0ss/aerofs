@@ -205,9 +205,8 @@ public class GetComponentCall
         if (!vLocal.sub_(vRemote).isZero_()) {
             sendReply_(msg, k);
         } else {
-            ExNoComponentWithSpecifiedVersion e = new ExNoComponentWithSpecifiedVersion();
-            l.debug("r {} >= l {}. Throw {}", vRemote, vLocal, e.getMessage());
-            throw e;
+            l.debug("r {} >= l {}. Throw ncwsv", vRemote, vLocal);
+            throw new ExNoComponentWithSpecifiedVersion();
         }
     }
 

@@ -8,6 +8,7 @@ import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.acl.LocalACL;
 import com.aerofs.daemon.core.alias.MapAlias2Target;
 import com.aerofs.daemon.core.alias.Aliasing;
+import com.aerofs.daemon.core.download.IDownloadContext;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.migration.IEmigrantDetector;
 import com.aerofs.daemon.core.net.DigestedMessage;
@@ -86,15 +87,14 @@ public class GetComponentReply
 
     /**
      * @param msg the message sent in response to GetComponentCall
-     * @param requested see Download._requested for more information
      */
-    public void processReply_(SOCID socid, DigestedMessage msg, Set<OCID> requested, Token tk)
+    public void processReply_(SOCID socid, DigestedMessage msg, IDownloadContext cxt)
             throws Exception
     {
         try {
             if (msg.pb().hasExceptionReply()) throw Exceptions.fromPB(msg.pb().getExceptionReply());
             Util.checkPB(msg.pb().hasGetComReply(), PBGetComReply.class);
-            doProcessReply_(socid, msg, requested, tk);
+            doProcessReply_(socid, msg, cxt);
         } finally {
             // TODO put this statement into a more general method
             if (msg.streamKey() != null) _iss.end_(msg.streamKey());
@@ -108,7 +108,7 @@ public class GetComponentReply
     // downloading again after the dependency is solved.
     //
 
-    private void doProcessReply_(SOCID socid, DigestedMessage msg, Set<OCID> requested, Token tk)
+    private void doProcessReply_(SOCID socid, DigestedMessage msg, IDownloadContext cxt)
             throws Exception
     {
         final PBGetComReply pbReply = msg.pb().getGetComReply();
@@ -179,7 +179,7 @@ public class GetComponentReply
                 // that aliasing/name conflicts and emigration happen at the same
                 // time.
                 _emd.detectAndPerformEmigration_(socid.soid(), oidParent, meta.getName(),
-                        meta.getEmigrantTargetAncestorSidList(), msg.did(), tk);
+                        meta.getEmigrantTargetAncestorSidList(), cxt);
                 // N.B after the call the local meta might have been updated.
                 // but we don't need to update metaDiff.
             }
@@ -188,13 +188,12 @@ public class GetComponentReply
                 // Process the alias message.
                 assert meta.hasTargetVersion();
                 _al.processAliasMsg_(
-                    msg.did(),
                     socid.soid(),                                        // alias
                     Version.fromPB(pbReply.getVersion()),                // vRemoteAlias
                     new SOID(socid.sidx(), new OID(meta.getTargetOid())),// target
                     Version.fromPB(meta.getTargetVersion()),             // vRemoteTarget
                     oidParent,
-                    metaDiff, meta, requested);
+                    metaDiff, meta, cxt);
 
                 // processAliasMsg_() does all the processing necessary for alias msg hence
                 // return from this point.
@@ -228,7 +227,7 @@ public class GetComponentReply
             cr = _ru.computeCausalityForMeta_(socid.soid(), vRemote, metaDiff);
             break;
         case CONTENT:
-            cr = _ru.computeCausalityForContent_(socid.soid(), vRemote, msg, tk);
+            cr = _ru.computeCausalityForContent_(socid.soid(), vRemote, msg, cxt.token());
             break;
         default:
             throw SystemUtil.fatalWithReturn("not implemented");
@@ -257,7 +256,7 @@ public class GetComponentReply
                 t = _tm.begin_();
                 if (metaDiff != 0) {
                     boolean oidsAliasedOnNameConflict =
-                        _ru.applyMeta_(msg.did(), targetBranch.soid(), pbReply.getMeta(),
+                        _ru.applyMeta_(targetBranch.soid(), pbReply.getMeta(),
                             oidParent,
                             wasPresent, metaDiff, t,
                             // for non-alias message create a new version
@@ -265,8 +264,8 @@ public class GetComponentReply
                             null,
                             vRemote,
                             targetBranch.soid(),
-                            requested,
-                            cr);
+                            cr,
+                            cxt);
 
                     // Aliasing objects on name conflicts updates versions and bunch
                     // of stuff (see resolveNameConflictOnNewRemoteObjectByAliasing_()). No further
@@ -281,7 +280,7 @@ public class GetComponentReply
             case CONTENT:
                 // TODO merge/delete branches (variable kidcs), including their prefix files, that
                 // are dominated by the new version
-                t = _ru.applyContent_(msg, targetBranch, vRemote, cr, tk);
+                t = _ru.applyContent_(msg, targetBranch, vRemote, cr, cxt.token());
                 break;
 
             default:

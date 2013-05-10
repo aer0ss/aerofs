@@ -1,4 +1,4 @@
-package com.aerofs.daemon.core.protocol;
+package com.aerofs.daemon.core.download;
 
 import com.aerofs.base.id.DID;
 import com.aerofs.lib.id.SOCID;

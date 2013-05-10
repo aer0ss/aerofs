@@ -2,15 +2,20 @@
  * Copyright (c) Air Computing Inc., 2012.
  */
 
-package com.aerofs.daemon.core.protocol.dependence;
+package com.aerofs.daemon.core.download.dependence;
 
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.SID;
+import com.aerofs.daemon.core.download.IDownloadContext;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.protocol.ReceiveAndApplyUpdate;
 import com.aerofs.daemon.core.protocol.ReceiveAndApplyUpdate.CausalityResult;
 import com.aerofs.daemon.core.protocol.MetaDiff;
+import com.aerofs.daemon.core.download.dependence.DependencyEdge;
+import com.aerofs.daemon.core.download.dependence.DownloadDeadlockResolver;
+import com.aerofs.daemon.core.download.dependence.NameConflictDependencyEdge;
+import com.aerofs.daemon.core.download.dependence.ParentDependencyEdge;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.Path;
@@ -42,6 +47,7 @@ import static org.mockito.Mockito.when;
 
 public class TestDownloadDeadlockResolver extends AbstractTest
 {
+    @Mock IDownloadContext cxt;
     @Mock private DirectoryService _ds;
     @Mock private TransManager _tm;
     @Mock private ReceiveAndApplyUpdate _ru;
@@ -96,7 +102,7 @@ public class TestDownloadDeadlockResolver extends AbstractTest
                 newNameConflictDependency(_socidRemAncestor, _socidLocalChild),
                 new ParentDependencyEdge(_socidLocalChild, _socidRemAncestor));
 
-        _ddr.resolveDeadlock_(cycle);
+        _ddr.resolveDeadlock_(cycle, cxt);
 
         verifyThatNameConflictIsResolvedByRenaming();
     }
@@ -109,7 +115,7 @@ public class TestDownloadDeadlockResolver extends AbstractTest
                 new ParentDependencyEdge(_socidLocalChild, _socidRemAncestor),
                 newNameConflictDependency(_socidRemAncestor, _socidLocalChild));
 
-        _ddr.resolveDeadlock_(cycle);
+        _ddr.resolveDeadlock_(cycle, cxt);
 
         verifyThatNameConflictIsResolvedByRenaming();
     }
@@ -125,7 +131,7 @@ public class TestDownloadDeadlockResolver extends AbstractTest
                 newNameConflictDependency(_socidRemAncestor, _socidLocalChild),
                 new ParentDependencyEdge(_socidLocalChild, socidMiddle));
 
-        _ddr.resolveDeadlock_(cycle);
+        _ddr.resolveDeadlock_(cycle, cxt);
 
         verifyThatNameConflictIsResolvedByRenaming();
     }
@@ -133,15 +139,15 @@ public class TestDownloadDeadlockResolver extends AbstractTest
     private void verifyThatNameConflictIsResolvedByRenaming()
             throws Exception
     {
-        verify(_ru).resolveNameConflictByRenaming_(eq(_did), eq(_socidRemAncestor.soid()),
+        verify(_ru).resolveNameConflictByRenaming_(eq(_socidRemAncestor.soid()),
                 eq(_socidLocalChild.soid()), anyBoolean(), eq(_oidCommonParent), any(Path.class),
                 any(Version.class), any(PBMeta.class), anyInt(), any(SOID.class),
-                anySetOf(OCID.class), any(CausalityResult.class), eq(_t));
+                any(CausalityResult.class), eq(cxt), eq(_t));
     }
 
     private NameConflictDependencyEdge newNameConflictDependency(SOCID src, SOCID dst)
     {
-        return new NameConflictDependencyEdge(src, dst, _did, _oidCommonParent, mock(Version.class),
-                null, mock(SOID.class), null);
+        return new NameConflictDependencyEdge(src, dst, _oidCommonParent, mock(Version.class),
+                null, mock(SOID.class));
     }
 }

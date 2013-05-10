@@ -12,9 +12,11 @@ import com.aerofs.daemon.core.net.device.DevicePresence;
 import com.aerofs.daemon.core.store.MapSIndex2Store;
 import com.aerofs.daemon.core.store.Store;
 import com.aerofs.daemon.lib.DaemonParam;
+import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.daemon.core.ex.ExNoAvailDevice;
 import com.aerofs.lib.id.SIndex;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 
@@ -160,12 +162,12 @@ public class To
 
     private boolean isSet(int b)
     {
-        return isSet(_cast, b);
+        return Util.test(_cast, b);
     }
 
-    private static boolean isSet(int cast, int b)
+    public Set<DID> dids()
     {
-        return (cast & b) != 0;
+        return ImmutableSet.copyOf(_dids);
     }
 
     /**

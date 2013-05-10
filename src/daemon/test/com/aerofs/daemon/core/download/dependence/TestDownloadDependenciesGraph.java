@@ -2,9 +2,11 @@
  * Copyright (c) Air Computing Inc., 2012.
  */
 
-package com.aerofs.daemon.core.protocol.dependence;
+package com.aerofs.daemon.core.download.dependence;
 
-import com.aerofs.daemon.core.protocol.dependence.DownloadDependenciesGraph.ExDownloadDeadlock;
+import com.aerofs.daemon.core.download.dependence.DependencyEdge;
+import com.aerofs.daemon.core.download.dependence.DownloadDependenciesGraph;
+import com.aerofs.daemon.core.download.dependence.DownloadDependenciesGraph.ExDownloadDeadlock;
 import com.aerofs.lib.id.CID;
 import com.aerofs.base.id.OID;
 import com.aerofs.lib.id.SIndex;

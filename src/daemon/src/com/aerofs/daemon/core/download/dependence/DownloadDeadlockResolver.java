@@ -2,13 +2,14 @@
  * Copyright (c) Air Computing Inc., 2012.
  */
 
-package com.aerofs.daemon.core.protocol.dependence;
+package com.aerofs.daemon.core.download.dependence;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.daemon.core.download.IDownloadContext;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.protocol.ReceiveAndApplyUpdate;
 import com.aerofs.daemon.core.protocol.ReceiveAndApplyUpdate.CausalityResult;
-import com.aerofs.daemon.core.protocol.dependence.DependencyEdge.DependencyType;
+import com.aerofs.daemon.core.download.dependence.DependencyEdge.DependencyType;
 import com.aerofs.daemon.core.protocol.MetaDiff;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
@@ -52,7 +53,7 @@ public class DownloadDeadlockResolver
         _mdiff = mdiff;
     }
 
-    public void resolveDeadlock_(final ImmutableList<DependencyEdge> cycle)
+    public void resolveDeadlock_(final ImmutableList<DependencyEdge> cycle, IDownloadContext cxt)
             throws Exception
     {
         // Cycles that are currently unsupported, those with:
@@ -77,7 +78,7 @@ public class DownloadDeadlockResolver
         NameConflictDependencyEdge ncDependency = detectAllNameConflictCycle(cycle);
         if (ncDependency != null) {
             // resolve by renaming the local conflict OID
-            breakDependencyByRenaming_(ncDependency, cycle);
+            breakDependencyByRenaming_(ncDependency, cycle, cxt);
             return;
         }
 
@@ -85,7 +86,7 @@ public class DownloadDeadlockResolver
         ncDependency = detectAncestralNameConflict(cycle);
         if (ncDependency != null) {
             // resolve by renaming the local child OID.
-            breakDependencyByRenaming_(ncDependency, cycle);
+            breakDependencyByRenaming_(ncDependency, cycle, cxt);
             return;
         }
 
@@ -202,7 +203,7 @@ public class DownloadDeadlockResolver
      * @param cycle only required for debugging AssertionErrors
      */
     private void breakDependencyByRenaming_(@Nonnull NameConflictDependencyEdge dependency,
-            ImmutableList<DependencyEdge> cycle)
+            ImmutableList<DependencyEdge> cycle, IDownloadContext cxt)
             throws Exception
     {
         // The dependee SOCID should be local, the dependent should be remote;
@@ -231,9 +232,9 @@ public class DownloadDeadlockResolver
             CausalityResult cr = _ru.computeCausalityForMeta_(socidRemote.soid(), vRemote,
                     metaDiff);
             assert cr != null : socidRemote + " " + vRemote + " " + metaDiff + " " + cycle;
-            _ru.resolveNameConflictByRenaming_(dependency._did, socidRemote.soid(),
+            _ru.resolveNameConflictByRenaming_(socidRemote.soid(),
                     socidLocal.soid(), wasPresent, dependency._parent, pParent, vRemote,
-                    dependency._meta, metaDiff, dependency._soidMsg, dependency._requested, cr, t);
+                    dependency._meta, metaDiff, dependency._soidMsg, cr, cxt, t);
             _ru.applyUpdateMetaAndContent_(sockidRemote, vRemote, cr, t);
             t.commit_();
         } catch (IOException e) {

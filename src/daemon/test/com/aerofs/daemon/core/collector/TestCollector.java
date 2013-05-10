@@ -9,6 +9,8 @@ import com.aerofs.base.id.OID;
 import com.aerofs.daemon.core.CoreExponentialRetry;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.collector.Collector.Factory;
+import com.aerofs.daemon.core.download.IDownloadCompletionListener;
+import com.aerofs.daemon.core.download.Downloads;
 import com.aerofs.daemon.core.store.Store;
 import com.aerofs.daemon.core.tc.ITokenReclamationListener;
 import com.aerofs.daemon.lib.db.CollectorFilterDatabase;
@@ -59,7 +61,7 @@ public class TestCollector extends AbstractTest
     @InjectMocks CoreExponentialRetry er;
 
     @Mock CollectorSkipRule csr;
-    @Mock Downloader dl;
+    @Mock Downloads dls;
 
     InMemorySQLiteDBCW idbcw = new InMemorySQLiteDBCW();
     ICollectorSequenceDatabase csdb = new CollectorSequenceDatabase(idbcw.getCoreDBCW());
@@ -94,8 +96,9 @@ public class TestCollector extends AbstractTest
         };
         csdb.insertCS_(socid, t);
         when(csr.shouldSkip_(socid)).thenReturn(false);
-        when(dl.downloadAsync_(eq(socid), anySetOf(DID.class), any(IDownloadListenerFactory.class),
-                any(ITokenReclamationListener.class))).thenAnswer(madl);
+        when(dls.downloadAsync_(eq(socid), anySetOf(DID.class),
+                any(ITokenReclamationListener.class),
+                any(IDownloadCompletionListener.class))).thenAnswer(madl);
         return madl;
     }
 
@@ -106,8 +109,9 @@ public class TestCollector extends AbstractTest
 
     private void verifyDownloadRequest(SOCID socid, VerificationMode mode, DID... dids)
     {
-        verify(dl, mode).downloadAsync_(eq(socid), eq(ImmutableSet.copyOf(dids)),
-                any(IDownloadListenerFactory.class), any(ITokenReclamationListener.class));
+        verify(dls, mode).downloadAsync_(eq(socid), eq(ImmutableSet.copyOf(dids)),
+                any(ITokenReclamationListener.class),
+                any(IDownloadCompletionListener.class));
     }
 
     @Before
@@ -136,7 +140,7 @@ public class TestCollector extends AbstractTest
 
         ICollectorFilterDatabase cfdb = new CollectorFilterDatabase(idbcw.getCoreDBCW());
 
-        collector = new Factory(sched, csdb, csr, dl, tm, er, cfdb).create_(store);
+        collector = new Factory(sched, csdb, csr, dls, tm, er, cfdb).create_(store);
 
         // test device online by default
         collector.online_(d0);
@@ -211,7 +215,7 @@ public class TestCollector extends AbstractTest
         collector.add_(d0, BFOID.of(meta.oid()), t);
 
         verifyDownloadRequest(meta, d0);
-        verifyNoMoreInteractions(dl);
+        verifyNoMoreInteractions(dls);
     }
 
     @Test
@@ -245,7 +249,7 @@ public class TestCollector extends AbstractTest
 
         collector.add_(d0, BFOID.of(socid.oid()), t);
 
-        verifyZeroInteractions(dl);
+        verifyZeroInteractions(dls);
     }
 
     @Test

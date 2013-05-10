@@ -290,11 +290,11 @@ public class GCCSendContent
         } finally {
             if (is != null) is.close();
             if (reason == null) {
-                _ulstate.progress_(k.socid(), ep, len, len);
                 outgoing.end_();
+                _ulstate.progress_(k.socid(), ep, len, len);
             } else {
-                _ulstate.ended_(k.socid(), ep, true);
                 outgoing.abort_(reason);
+                _ulstate.ended_(k.socid(), ep, true);
             }
         }
     }

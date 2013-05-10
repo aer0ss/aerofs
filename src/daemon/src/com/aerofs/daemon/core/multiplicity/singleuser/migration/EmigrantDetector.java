@@ -1,14 +1,16 @@
 package com.aerofs.daemon.core.multiplicity.singleuser.migration;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.daemon.core.download.IDownloadContext;
+import com.aerofs.daemon.core.download.dependence.DependencyEdge.DependencyType;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.migration.EmigrantUtil;
 import com.aerofs.daemon.core.migration.IEmigrantDetector;
-import com.aerofs.daemon.core.protocol.Downloads;
+import com.aerofs.daemon.core.download.Downloads;
 import com.aerofs.daemon.core.net.To;
 import com.aerofs.daemon.core.net.To.Factory;
-import com.aerofs.daemon.core.protocol.dependence.ParentDependencyEdge;
+import com.aerofs.daemon.core.download.dependence.ParentDependencyEdge;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.lib.Util;
@@ -34,27 +36,20 @@ public class EmigrantDetector implements IEmigrantDetector
     static final Logger l = Loggers.getLogger(EmigrantDetector.class);
 
     private final DirectoryService _ds;
-    // This class uses the Downloads.downloadSync_ method to get dependent immigrant/emmigrant
-    // objects and ancestors. It uses these methods directly, instead of the ExDependsOn pattern
-    // to avoid the delay in reprocessing a ComponentReply, once the required object has been
-    // downloaded locally.
-    private final Downloads _dls;
     private final To.Factory _factTo;
     private final IMapSID2SIndex _sid2sidx;
 
     @Inject
-    public EmigrantDetector(Factory factTo, Downloads dls, DirectoryService ds,
-            IMapSID2SIndex sid2sidx)
+    public EmigrantDetector(Factory factTo,DirectoryService ds, IMapSID2SIndex sid2sidx)
     {
         _sid2sidx = sid2sidx;
         _factTo = factTo;
-        _dls = dls;
         _ds = ds;
     }
 
     @Override
     public void detectAndPerformEmigration_(SOID soid, OID oidParentTo, String nameTo,
-            List<ByteString> sidsEmigrantTargetAncestor, DID did, Token tk)
+            List<ByteString> sidsEmigrantTargetAncestor, IDownloadContext cxt)
             throws Exception
     {
         if (!shouldMigrate_(soid, oidParentTo, nameTo, sidsEmigrantTargetAncestor))  return;
@@ -72,7 +67,7 @@ public class EmigrantDetector implements IEmigrantDetector
             if (!sidTo.equals(sidAncestor)) sids.add(sidAncestor);
         }
 
-        SIndex sidxTo = downloadEmigrantAncestorStores_(sids, did, tk, soid);
+        SIndex sidxTo = downloadEmigrantAncestorStores_(sids, soid, cxt);
         if (sidxTo == null) return;
         assert sidxTo.equals(_sid2sidx.get_(sidTo));
 
@@ -85,7 +80,7 @@ public class EmigrantDetector implements IEmigrantDetector
         if (!oa.isDir()) {
             SOCID socidTo = new SOCID(sidxTo, soid.oid(), CID.META);
             l.debug("dl immigrant " + socidTo.soid());
-            _dls.downloadSync_(socidTo, _factTo.create_(did), tk, socidFrom);
+            cxt.downloadSync_(socidTo, DependencyType.UNSPECIFIED);
         } else {
             // Comment (A), referred to by ObjectDeletion.deleteAndEmigrate_().
             //
@@ -107,7 +102,7 @@ public class EmigrantDetector implements IEmigrantDetector
             for (OID oidChild : _ds.getChildren_(soid)) {
                 SOCID socidChild = new SOCID(soid.sidx(), oidChild, CID.META);
                 try {
-                    _dls.downloadSync_(socidChild, _factTo.create_(did), tk, socidFrom);
+                    cxt.downloadSync_(socidChild, DependencyType.UNSPECIFIED);
                 } catch (Exception e) {
                     // it might be a false alarm, as the child may have been downloaded and migrated
                     // before the downloadSync above started the download thread.
@@ -147,8 +142,8 @@ public class EmigrantDetector implements IEmigrantDetector
      * @return the ancestor store being downloaded. null if the local and remote
      * peers don't share common ancestors
      */
-    private @Nullable SIndex downloadEmigrantAncestorStores_(Queue<SID> sids, DID did, Token tk,
-            SOID soid)
+    private @Nullable SIndex downloadEmigrantAncestorStores_(Queue<SID> sids, SOID soid,
+            IDownloadContext cxt)
             throws Exception
     {
         if (sids.isEmpty()) return null;
@@ -159,15 +154,13 @@ public class EmigrantDetector implements IEmigrantDetector
         SIndex sidx = _sid2sidx.getNullable_(sid);
         if (sidx != null) return sidx;
 
-        SIndex sidxAnchor = downloadEmigrantAncestorStores_(sids, did, tk, soid);
+        SIndex sidxAnchor = downloadEmigrantAncestorStores_(sids, soid, cxt);
         if (sidxAnchor == null) return null;
 
         SOID soidAnchor = new SOID(sidxAnchor, SID.storeSID2anchorOID(sid));
         l.debug("download ancestor anchor " + soidAnchor);
 
-        ParentDependencyEdge dependency = new ParentDependencyEdge(new SOCID(soid, CID.META),
-                new SOCID(soidAnchor, CID.META));
-        _dls.downloadSync_(dependency, _factTo.create_(did), tk);
+        cxt.downloadSync_(new SOCID(soidAnchor, CID.META), DependencyType.PARENT);
 
         // may return null even after downloading of the anchor succeeds.
         // for example, the remote peer may delete the anchor after the meta

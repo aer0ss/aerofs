@@ -18,6 +18,7 @@ import com.aerofs.daemon.core.*;
 import com.aerofs.daemon.core.alias.Aliasing;
 import com.aerofs.daemon.core.alias.MapAlias2Target;
 import com.aerofs.daemon.core.download.DownloadState;
+import com.aerofs.daemon.core.download.IDownloadContext;
 import com.aerofs.daemon.core.ds.CA;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
@@ -27,7 +28,7 @@ import com.aerofs.daemon.core.net.DigestedMessage;
 import com.aerofs.daemon.core.net.IncomingStreams;
 import com.aerofs.daemon.core.net.IncomingStreams.StreamKey;
 import com.aerofs.daemon.core.net.Metrics;
-import com.aerofs.daemon.core.protocol.dependence.DependencyEdge.DependencyType;
+import com.aerofs.daemon.core.download.dependence.DependencyEdge.DependencyType;
 import com.aerofs.daemon.core.object.BranchDeleter;
 import com.aerofs.daemon.core.object.ObjectCreator;
 import com.aerofs.daemon.core.object.ObjectMover;
@@ -255,6 +256,7 @@ public class ReceiveAndApplyUpdate
             int comp = compareLargestDIDsInVersions(vR_L, vL_R);
             assert comp != 0;
             if (comp > 0) {
+                // TODO: throw to prevent meta/meta conflicts from being ignored when aliasing?
                 l.warn("true meta conflict on {}. {} > {}. don't apply", soid, vLocal, vRemote);
                 return null;
             } else {
@@ -467,9 +469,9 @@ public class ReceiveAndApplyUpdate
      * but right now it can be acquired from soid, noNewVersion, and soidMsg. The latter two
      * should be changed to OID types.
      */
-    public boolean applyMeta_(DID did, SOID soid, PBMeta meta, OID oidParent,
+    public boolean applyMeta_(SOID soid, PBMeta meta, OID oidParent,
             final boolean wasPresent, int metaDiff, Trans t, @Nullable SOID noNewVersion,
-            Version vRemote, final SOID soidMsg, Set<OCID> requested, CausalityResult cr)
+            Version vRemote, final SOID soidMsg, CausalityResult cr, IDownloadContext cxt)
             throws Exception
     {
         final SOID soidParent = new SOID(soid.sidx(), oidParent);
@@ -483,7 +485,7 @@ public class ReceiveAndApplyUpdate
 
         // The parent must exist locally, otherwise this SOID depends on the parent
         if (!_ds.hasOA_(soidParent)) {
-            throw new ExDependsOn(new OCID(oidParent, CID.META), did, DependencyType.PARENT);
+            throw new ExDependsOn(new OCID(oidParent, CID.META), DependencyType.PARENT);
         }
 
         try {
@@ -511,9 +513,9 @@ public class ReceiveAndApplyUpdate
                 }
             }
         } catch (ExAlreadyExist e) {
-            l.warn("name conflict {} from {}", soid, did);
-            return resolveNameConflict_(did, soid, oidParent, meta, wasPresent, metaDiff, t,
-                    noNewVersion, vRemote, soidMsg, requested, cr);
+            l.warn("name conflict {} in {}", soid, cxt);
+            return resolveNameConflict_(soid, oidParent, meta, wasPresent, metaDiff, t,
+                    noNewVersion, vRemote, soidMsg, cr, cxt);
         } catch (ExNotDir e) {
             SystemUtil.fatal(e);
         }
@@ -563,7 +565,6 @@ public class ReceiveAndApplyUpdate
     /**
      *  Resolves name conflict either by aliasing if received object wasn't
      *  present or by renaming one of the conflicting objects.
-     * @param did device ID
      * @param soidRemote soid of the remote object being received.
      * @param parent parent of the soid being received.
      * @param soidNoNewVersion On resolving name conflict by aliasing, don't
@@ -572,13 +573,11 @@ public class ReceiveAndApplyUpdate
      * @param soidMsg soid of the object for which GetComponentCall was made.
      *        It may not necessarily be same as soidRemote especially while
      *        processing alias msg. It's used for detecting cyclic dependency.
-     * @param requested a set of OIDs for which this peer has previously requested information
-     *        due to a name-conflict. See Download._requested for more information.
      * @return whether oids were merged on name conflict.
      */
-    private boolean resolveNameConflict_(DID did, SOID soidRemote, OID parent, PBMeta meta,
+    private boolean resolveNameConflict_(SOID soidRemote, OID parent, PBMeta meta,
             boolean wasPresent, int metaDiff, Trans t, SOID soidNoNewVersion, Version vRemote,
-            final SOID soidMsg, Set<OCID> requested, CausalityResult cr)
+            final SOID soidMsg, CausalityResult cr, IDownloadContext cxt)
             throws Exception
     {
         Path pParent = _ds.resolve_(new SOID(soidRemote.sidx(), parent));
@@ -616,8 +615,8 @@ public class ReceiveAndApplyUpdate
             }
 
             _om.moveInSameStore_(soidLocal, parent, newName, PhysicalOp.APPLY, false, false, t);
-            applyMeta_(did, soidRemote, meta, parent, wasPresent, metaDiff, t, soidNoNewVersion,
-                    vRemote, soidMsg, requested, cr);
+            applyMeta_(soidRemote, meta, parent, wasPresent, metaDiff, t, soidNoNewVersion,
+                    vRemote, soidMsg, cr, cxt);
             return false;
         }
 
@@ -629,9 +628,9 @@ public class ReceiveAndApplyUpdate
             // TODO (MJ) this isn't very good design and should be addressed. It is currently
             // possible for a developer to break this assumption very easily in separate classes
             // than this one. Lets find a way to avoid breaking the assumption
-            if (!requested.contains(new OCID(soidLocal.oid(), CID.META))) {
-                throw new ExNameConflictDependsOn(soidLocal.oid(), did, parent, vRemote, meta,
-                        soidMsg, requested);
+            if (!cxt.hasResolved_(new SOCID(soidLocal, CID.META))) {
+                throw new ExNameConflictDependsOn(soidLocal.oid(), parent, vRemote, meta,
+                        soidMsg);
             }
         }
 
@@ -649,15 +648,15 @@ public class ReceiveAndApplyUpdate
                 vRemote, meta, soidNoNewVersion, t);
             return true;
         } else {
-            resolveNameConflictByRenaming_(did, soidRemote, soidLocal, wasPresent, parent, pParent,
-                    vRemote, meta, metaDiff, soidMsg, requested, cr, t);
+            resolveNameConflictByRenaming_(soidRemote, soidLocal, wasPresent, parent, pParent,
+                    vRemote, meta, metaDiff, soidMsg, cr, cxt, t);
             return false;
         }
     }
 
-    public void resolveNameConflictByRenaming_(DID did, SOID soidRemote, SOID soidLocal,
+    public void resolveNameConflictByRenaming_(SOID soidRemote, SOID soidLocal,
             boolean wasPresent, OID parent, Path pParent, Version vRemote, PBMeta meta,
-            int metaDiff, SOID soidMsg, final Set<OCID> requested, CausalityResult cr, Trans t)
+            int metaDiff, SOID soidMsg, CausalityResult cr, IDownloadContext cxt, Trans t)
             throws Exception
     {
         // Resolve name conflict by generating a new name.
@@ -672,8 +671,8 @@ public class ReceiveAndApplyUpdate
             // local wins
             l.debug("change remote name");
             PBMeta newMeta = PBMeta.newBuilder().mergeFrom(meta).setName(newName).build();
-            applyMeta_(did, soidRemote, newMeta, parent, wasPresent, metaDiff, t, null,
-                    vRemote, soidMsg, requested, cr);
+            applyMeta_(soidRemote, newMeta, parent, wasPresent, metaDiff, t, null,
+                    vRemote, soidMsg, cr, cxt);
 
             // The version for soidRemote should be incremented, (with VersionUpdater.update_)
             // Unfortunately that can't be done here, as applyUpdateMetaAndContent will detect
@@ -685,8 +684,8 @@ public class ReceiveAndApplyUpdate
             // remote wins
             l.debug("change local name");
             _om.moveInSameStore_(soidLocal, parent, newName, PhysicalOp.APPLY, false, true, t);
-            applyMeta_(did, soidRemote, meta, parent, wasPresent, metaDiff, t, null,
-                    vRemote, soidMsg, requested, cr);
+            applyMeta_(soidRemote, meta, parent, wasPresent, metaDiff, t, null,
+                    vRemote, soidMsg, cr, cxt);
         }
     }
 

@@ -5,7 +5,7 @@
 package com.aerofs.daemon.core.collector;
 
 import com.aerofs.base.id.DID;
-import com.aerofs.daemon.core.protocol.IDownloadCompletionListener;
+import com.aerofs.daemon.core.download.IDownloadCompletionListener;
 import com.aerofs.daemon.core.tc.ITokenReclamationListener;
 import com.aerofs.lib.id.SOCID;
 import org.mockito.invocation.InvocationOnMock;
@@ -32,13 +32,13 @@ public class MockAsyncDownload implements Answer<Boolean>
         Object[] args = invocation.getArguments();
         SOCID socid = (SOCID)args[0];
         Set<DID> dids = (Set<DID>)args[1];
-        IDownloadListenerFactory fact = (IDownloadListenerFactory)args[2];
-        ITokenReclamationListener listener = (ITokenReclamationListener)args[3];
-        return simulateDownload(socid, dids, fact.create_(dids, null), listener);
+        ITokenReclamationListener tokenListener = (ITokenReclamationListener)args[2];
+        IDownloadCompletionListener dlListener = (IDownloadCompletionListener)args[3];
+        return simulateDownload(socid, dids, tokenListener, dlListener);
     }
 
     private boolean simulateDownload(SOCID socid, Set<DID> dids,
-            IDownloadCompletionListener dcl, ITokenReclamationListener trl)
+            ITokenReclamationListener trl, IDownloadCompletionListener dcl)
     {
         if (_continuation) {
             _trl = trl;

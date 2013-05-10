@@ -4,6 +4,8 @@
 
 package com.aerofs.daemon.core.status;
 
+import com.aerofs.proto.PathStatus.PBPathStatus;
+
 import com.aerofs.daemon.core.net.ITransferStateListener.Value;
 import com.aerofs.daemon.core.serverstatus.ServerConnectionStatus;
 import com.aerofs.daemon.core.serverstatus.ServerConnectionStatus.Server;

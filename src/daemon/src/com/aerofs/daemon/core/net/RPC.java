@@ -79,7 +79,7 @@ public class RPC
      * @param to the id of the replying device will be added (back) to this parameter
      */
     private DigestedMessage recvReply_(int rpcid, @Nullable To to, Token tk, String reason)
-        throws ExTimeout, ExAborted, ExNoResource
+        throws ExTimeout, ExAborted
     {
         assert !_waiters.containsKey(rpcid);
 

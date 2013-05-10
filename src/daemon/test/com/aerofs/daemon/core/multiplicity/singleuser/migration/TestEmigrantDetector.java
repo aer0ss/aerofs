@@ -7,11 +7,13 @@ import com.aerofs.base.id.DID;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UniqueID;
+import com.aerofs.daemon.core.download.IDownloadContext;
+import com.aerofs.daemon.core.download.dependence.DependencyEdge.DependencyType;
 import com.aerofs.daemon.core.migration.EmigrantUtil;
 import com.aerofs.daemon.core.mock.TestUtilCore;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ds.OA.Type;
-import com.aerofs.daemon.core.protocol.dependence.DependencyEdge;
+import com.aerofs.daemon.core.download.dependence.DependencyEdge;
 import com.aerofs.lib.ex.ExNotDir;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.lib.id.*;
@@ -24,7 +26,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 
 import com.aerofs.daemon.core.ds.DirectoryService;
-import com.aerofs.daemon.core.protocol.Downloads;
 import com.aerofs.daemon.core.net.To;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.tc.Token;
@@ -43,10 +44,10 @@ public class TestEmigrantDetector extends AbstractTest
     }
 
     @Mock DirectoryService ds;
-    @Mock Downloads dls;
     @Mock To.Factory factTo;
     @Mock IMapSID2SIndex sid2sidx;
 
+    @Mock IDownloadContext cxt;
     @Mock Token tk;
     @Mock DID did;
     @Mock OA oa;
@@ -124,6 +125,8 @@ public class TestEmigrantDetector extends AbstractTest
     @Before
     public void setup() throws Exception
     {
+        when(cxt.token()).thenReturn(tk);
+
         oidParentTo = OID.TRASH;
         nameTo = EmigrantUtil.getDeletedObjectName_(soidSource, sidTarget);
         mockOA(oa, soidSource, Type.FILE, false, oidSourceParentFrom, nameSourceFrom);
@@ -148,8 +151,7 @@ public class TestEmigrantDetector extends AbstractTest
                         null, sid2sidx, null);
                 return null;
             }
-        }).when(dls).downloadSync_(argThat(new IsDependencyWithDestination(socidAnchorTargetParent)),
-                any(To.class), any(Token.class));
+        }).when(cxt).downloadSync_(eq(socidAnchorTargetParent), any(DependencyType.class));
 
         doAnswer(new Answer<Void>() {
             @Override
@@ -160,8 +162,7 @@ public class TestEmigrantDetector extends AbstractTest
                         null);
                 return null;
             }
-        }).when(dls).downloadSync_(argThat(new IsDependencyWithDestination(socidAnchorTarget)),
-                any(To.class), any(Token.class));
+        }).when(cxt).downloadSync_(eq(socidAnchorTarget), any(DependencyType.class));
     }
 
     @Test
@@ -200,8 +201,8 @@ public class TestEmigrantDetector extends AbstractTest
         // mock exceptions
         for (OID child : ds.getChildren_(soidSource)) {
             SOCID socidChild = new SOCID(sidxSource, child, CID.META);
-            when(dls.downloadSync_(eq(socidChild), any(To.class), eq(tk), eq(socidSource)))
-                    .thenThrow(new ExArbitrary());
+            doThrow(ExArbitrary.class)
+                    .when(cxt).downloadSync_(eq(socidChild), eq(DependencyType.UNSPECIFIED));
         }
         shouldNotEmigrate();
         for (OID child : ds.getChildren_(soidSource)) {
@@ -214,13 +215,10 @@ public class TestEmigrantDetector extends AbstractTest
     {
         shouldEmigrate();
 
-        InOrder inOrder = inOrder(dls);
-        inOrder.verify(dls).downloadSync_(
-                eq(new DependencyEdge(socidSource, socidAnchorTargetParent)), any(To.class),
-                eq(tk));
-        inOrder.verify(dls).downloadSync_(
-                eq(new DependencyEdge(socidSource, socidAnchorTarget)), any(To.class), eq(tk));
-        inOrder.verify(dls).downloadSync_(eq(socidTarget), any(To.class), eq(tk), eq(socidSource));
+        InOrder inOrder = inOrder(cxt);
+        inOrder.verify(cxt).downloadSync_(eq(socidAnchorTargetParent), any(DependencyType.class));
+        inOrder.verify(cxt).downloadSync_(eq(socidAnchorTarget), any(DependencyType.class));
+        inOrder.verify(cxt).downloadSync_(eq(socidTarget), any(DependencyType.class));
     }
 
     @Test
@@ -272,35 +270,31 @@ public class TestEmigrantDetector extends AbstractTest
     @Test(expected = ExArbitrary.class)
     public void shouldThrowIfDownloadingAncestorFailed() throws Exception
     {
-        reset(dls);
-        doThrow(new ExArbitrary()).when(dls).downloadSync_(
-                argThat(new IsDependencyWithDestination(socidAnchorTargetParent)), any(To.class),
-                any(Token.class));
+        reset(cxt);
+        doThrow(new ExArbitrary())
+                .when(cxt).downloadSync_(eq(socidAnchorTargetParent), any(DependencyType.class));
         shouldEmigrate();
     }
 
     private void shouldEmigrate() throws Exception
     {
-        emd.detectAndPerformEmigration_(soidSource, oidParentTo, nameTo, sidsTargetAncestor, did,
-                tk);
+        emd.detectAndPerformEmigration_(soidSource, oidParentTo, nameTo, sidsTargetAncestor, cxt);
         verifyDownload(socidTarget);
     }
 
     private void shouldNotEmigrate() throws Exception
     {
-        emd.detectAndPerformEmigration_(soidSource, oidParentTo, nameTo, sidsTargetAncestor, did,
-                tk);
+        emd.detectAndPerformEmigration_(soidSource, oidParentTo, nameTo, sidsTargetAncestor, cxt);
         verifyNotDownload(socidTarget);
     }
 
     private void verifyDownload(SOCID socid) throws Exception
     {
-        verify(dls).downloadSync_(eq(socid), any(To.class), eq(tk), eq(socidSource));
+        verify(cxt).downloadSync_(eq(socid), any(DependencyType.class));
     }
 
-    private void verifyNotDownload(SOCID k) throws Exception
+    private void verifyNotDownload(SOCID socid) throws Exception
     {
-        verify(dls, never()).downloadSync_(eq(k), any(To.class),
-                any(Token.class), any(SOCID.class));
+        verify(cxt, never()).downloadSync_(eq(socid), any(DependencyType.class));
     }
 }

@@ -1,10 +1,7 @@
 package com.aerofs.daemon.lib.exception;
 
-import com.aerofs.base.id.DID;
-import com.aerofs.daemon.core.protocol.dependence.DependencyEdge.DependencyType;
+import com.aerofs.daemon.core.download.dependence.DependencyEdge.DependencyType;
 import com.aerofs.lib.id.OCID;
-
-import javax.annotation.Nullable;
 
 /**
  * used to abort the current download transaction to download another object on
@@ -21,20 +18,11 @@ public class ExDependsOn extends Exception
     private static final long serialVersionUID = 1L;
 
     public final OCID _ocid;
-    public final DID _did;
     public final DependencyType _type;
-    public final boolean _ignoreError;
 
-    public ExDependsOn(OCID ocid, @Nullable DID did, DependencyType type)
-    {
-        this(ocid, did, type, false);
-    }
-
-    protected ExDependsOn(OCID ocid, @Nullable DID did, DependencyType type, boolean ignoreError)
+    public ExDependsOn(OCID ocid, DependencyType type)
     {
         _ocid = ocid;
-        _did = did;
         _type = type;
-        _ignoreError = ignoreError;
     }
 }

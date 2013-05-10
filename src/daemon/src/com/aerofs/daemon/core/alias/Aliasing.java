@@ -5,6 +5,7 @@ import com.aerofs.base.id.DID;
 import com.aerofs.base.id.OID;
 import com.aerofs.daemon.core.VersionUpdater;
 import com.aerofs.daemon.core.NativeVersionControl;
+import com.aerofs.daemon.core.download.IDownloadContext;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.lib.db.trans.Trans;
@@ -210,11 +211,10 @@ public class Aliasing
      * @param vRemoteTargetMeta Meta-data version of the target from the remote peer
      * @param metaDiff Meta-diff between local object and remote alias object
      * @param meta Meta-data information sent by the remote peer about alias
-     * @param requested see Download._requested for more information
      */
-    public void processAliasMsg_(DID did, SOID alias, Version vRemoteAliasMeta, SOID target,
+    public void processAliasMsg_(SOID alias, Version vRemoteAliasMeta, SOID target,
             Version vRemoteTargetMeta, OID oidParent, int metaDiff, PBMeta meta,
-            Set<OCID> requested)
+            IDownloadContext cxt)
             throws Exception
     {
         // Alias message processing is only for meta-data updates.
@@ -238,14 +238,14 @@ public class Aliasing
                 CausalityResult cr = _ru.computeCausalityForMeta_(target, vRemoteTargetMeta,
                         metaDiff);
 
-                boolean oidsAliasedOnNameConflict = _ru.applyMeta_(did, target, meta, oidParent,
+                boolean oidsAliasedOnNameConflict = _ru.applyMeta_(target, meta, oidParent,
                         false, // Since this is a new object to be received, wasPresent is false.
                         metaDiff, t,
                         alias, // noNewVersion
                         vRemoteTargetMeta,
                         alias,
-                        requested,
-                        cr);
+                        cr,
+                        cxt);
 
                 // Don't applyUpdate() if a name conflict was detected and
                 // performAliasingOnLocallyAvailableObjects_() was invoked.
