@@ -44,7 +44,7 @@ import static com.google.common.base.Preconditions.checkState;
  *
  * For more on the motivation and thought process behind time-to-sync, see time_to_sync.txt
  *
- * TODO (MJ) perhaps the checkpointing could be done earlier, perhaps adding an event when a Bloom
+ * TODO (MJ) perhaps the checkpointing could be done earlier, by adding an event when a Bloom
  * filter is deleted from the Collector.
  */
 class TimeToSyncCollector implements
@@ -96,15 +96,22 @@ class TimeToSyncCollector implements
         // Since this device just came online, there should be no previously recorded checkpoint
         // nor update times
         checkState(prev == null, did);
-        checkState(_updateTimes.row(did).isEmpty(), did);
+
+        if (!_updateTimes.row(did).isEmpty()) {
+            l.warn("table not empty for d {}", did);
+            // We should never get here. If you see this, likely receivedPushUpdate_ was called
+            // before deviceOnline_ which isn't really valid behaviour. That is, one would expect
+            // devicePresence to notify the core that a device came online before you receive a
+            // push update? Maybe I'm wrong
+            removeUpdateTimesForDevice_(did);
+        }
     }
 
     @Override
     public void deviceOffline_(DID did)
     {
         l.debug("{} offline", did);
-        _updateTimes.row(did).clear();
-        _updateTimes.rowMap().remove(did);
+        removeUpdateTimesForDevice_(did);
         checkNotNull(_deviceCheckPoint.remove(did), did);
     }
 
@@ -131,9 +138,14 @@ class TimeToSyncCollector implements
 
             // There are no updates to download from did, so move the checkpoint forward
             _deviceCheckPoint.put(did, _time.currentTimeMillis());
-            _updateTimes.row(did).clear();
-            _updateTimes.rowMap().remove(did);
+            removeUpdateTimesForDevice_(did);
         }
+    }
+
+    private void removeUpdateTimesForDevice_(DID did)
+    {
+        _updateTimes.row(did).clear();
+        _updateTimes.rowMap().remove(did);
     }
 
     /**
