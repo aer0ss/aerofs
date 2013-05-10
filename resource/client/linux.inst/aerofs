@@ -36,6 +36,26 @@ else
 fi
 
 URL=https://cache.client[DOT_STAGING].aerofs.com/$PACKAGE_FILENAME
+RTROOT = ~/.aerofs
+
+if [ -f $RTROOT/configuration.url ]; then
+    CONFIG_URL=$(cat $RTROOT/configuration.url)
+    if [ -z "$CONFIG_URL" ]; then
+        echo The AeroFS domain server is not set.
+        exit 1
+    else
+        CONFIG=$(wget -qO- $CONFIG_URL)
+        if [ $? -ne 0]; then
+            echo Unable to access the AeroFS domain server. Please try again later.
+            exit 1
+        fi
+
+        UPDATER_URL=$(echo $CONFIG | grep "updater.installer.url" | awk -F= '{print $2}')
+        if [ ! -z $UPDATER_URL ]; then
+            URL=$UPDATER_URL
+        fi
+    fi
+fi
 
 DIST="$HOME/.[AEROFS_PRODUCT_UNIX]-bin[DOT_STAGING]"
 

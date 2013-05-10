@@ -9,7 +9,7 @@ import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
-import com.aerofs.lib.LibParam.SyncStat;
+import com.aerofs.labeling.L;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.id.SID;
@@ -17,6 +17,7 @@ import com.aerofs.syncstat.client.SyncStatusBlockingClient;
 import com.aerofs.proto.SyncStatus.GetSyncStatusReply;
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
+import com.netflix.config.DynamicStringProperty;
 
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -60,6 +61,11 @@ public class SyncStatusConnection extends AbstractConnectionStatusNotifier
         }
     }
 
+    private static final DynamicStringProperty URL =
+            new DynamicStringProperty("lib.sss.url", L.isStaging() ?
+                    "https://staging.aerofs.com/syncstat/syncstat" :
+                    "https://sss.aerofs.com/syncstat");
+
     @Inject
     SyncStatusConnection(CfgLocalUser user, TC tc, SyncStatusBlockingClient.Factory ssf)
     {
@@ -81,7 +87,7 @@ public class SyncStatusConnection extends AbstractConnectionStatusNotifier
 
         long epoch;
         try {
-            SyncStatusBlockingClient client = _ssf.create(SyncStat.URL.get(), _user.get());
+            SyncStatusBlockingClient client = _ssf.create(URL.get(), _user.get());
             epoch = client.signInRemote();
             _firstCall = true;
             _client = client;

@@ -6,9 +6,6 @@ package com.aerofs.lib;
 
 import com.aerofs.base.BaseParam;
 import com.aerofs.base.C;
-import com.aerofs.labeling.L;
-import com.netflix.config.DynamicBooleanProperty;
-import com.netflix.config.DynamicStringProperty;
 
 import java.net.InetAddress;
 
@@ -159,21 +156,10 @@ public class LibParam extends BaseParam
         public static final long VERKEHR_RETRY_INTERVAL = 5 * C.SEC;
     }
 
-    public static class Notifications
-    {
-        public static final DynamicBooleanProperty ENABLED =
-                new DynamicBooleanProperty("lib.notifications.enabled", true);
-    }
-
     public static class SyncStat
     {
         public static final String SS_POST_PARAM_PROTOCOL  = SP.SP_POST_PARAM_PROTOCOL;
         public static final String SS_POST_PARAM_DATA      = SP.SP_POST_PARAM_DATA;
         public static final int SS_PROTOCOL_VERSION         = 6;
-
-        public static final DynamicStringProperty URL =
-                new DynamicStringProperty("lib.sss.url", L.isStaging() ?
-                        "https://staging.aerofs.com/syncstat/syncstat" :
-                        "https://sss.aerofs.com/syncstat");
     }
 }

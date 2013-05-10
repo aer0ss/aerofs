@@ -6,6 +6,9 @@ import com.aerofs.labeling.L;
 public class S
 {
     public static final String
+            ERR_CONFIG_SVC_BAD_URL   = "The configuration service URL is not valid!",
+            ERR_CONFIG_SVC_CONFIG    = "The configuration service is unavailable!",
+
             PREFERENCES              = "Preferences",
             TRANSFERS                = "Transfers",
 

@@ -7,8 +7,8 @@ package com.aerofs.servlets.lib;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.async.UncancellableFuture;
 import com.aerofs.labeling.L;
-import com.aerofs.lib.LibParam.Notifications;
 import com.aerofs.sv.common.EmailCategory;
+import com.netflix.config.DynamicBooleanProperty;
 import org.slf4j.Logger;
 
 import com.aerofs.proto.Common.Void;
@@ -56,6 +56,9 @@ public class EmailSender
 
     private static final String CHARSET = "UTF-8";
 
+    public static final DynamicBooleanProperty ENABLED =
+            new DynamicBooleanProperty("lib.notifications.enabled", true);
+
     static {
         Properties props = new Properties();
         props.put("mail.smtp.auth", "true");
@@ -71,7 +74,7 @@ public class EmailSender
             throws MessagingException, UnsupportedEncodingException
     {
         // If notifications are disabled, this is a noop.
-        if (!Notifications.ENABLED.get()) {
+        if (!ENABLED.get()) {
             return UncancellableFuture.createSucceeded(Void.getDefaultInstance());
         }
 

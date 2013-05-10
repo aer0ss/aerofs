@@ -17,8 +17,8 @@ import org.apache.commons.configuration.ConfigurationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nullable;
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -34,7 +34,6 @@ public final class Configuration
     private static final String STRINGS_RESOURCE = "resources/strings.properties";
     private static final String CONFIGURATION_RESOURCE = "resources/configuration.properties";
     private static final String STAGING_CONFIGURATION_RESOURCE = "resources/configuration-stg.properties";
-    private static final String CONFIGURATION_SERVICE_URL_FILE = "/etc/aerofs/configuration.url";
 
     private static interface IDefaultConfigurationURLProvider
     {
@@ -54,8 +53,10 @@ public final class Configuration
      * </ol>
      * </p>
      */
-    public static class Server implements IDefaultConfigurationURLProvider
+    public static class Server
     {
+        private static final String CONFIGURATION_SERVICE_URL_FILE = "/etc/aerofs/configuration.url";
+
         public static void initialize()
                 throws ConfigurationException, MalformedURLException
         {
@@ -65,7 +66,7 @@ public final class Configuration
                     PropertiesConfiguration.newInstance(getStaticPropertyPaths());
             final AbstractConfiguration httpConfiguration = getHttpConfiguration(
                     ImmutableList.of(systemConfiguration, staticPropertiesConfiguration),
-                    new Server());
+                    new FileBasedConfigurationURLProvider(CONFIGURATION_SERVICE_URL_FILE));
 
             DynamicConfiguration.initialize(DynamicConfiguration.builder()
                     .addConfiguration(systemConfiguration, "system")
@@ -73,35 +74,6 @@ public final class Configuration
                     .addConfiguration(httpConfiguration, "http")
                     .build());
             LOGGER.info("Server configuration initialized: " + DynamicConfiguration.getInstance());
-        }
-
-        /**
-         * Get the default configuration service URL from a file place on the file system. This file
-         * will either be generated manually by the AeroFS deployment engineer or by openstack
-         * scripts.
-         */
-        @Override
-        public String getDefaultConfigurationURL()
-        {
-            String urlString = null;
-            BufferedReader br = null;
-
-            try {
-                br = new BufferedReader(new FileReader(CONFIGURATION_SERVICE_URL_FILE));
-                urlString = br.readLine();
-            } catch (Exception e) {
-                LOGGER.warn("Unable to get config from " + CONFIGURATION_SERVICE_URL_FILE);
-            } finally {
-                if (br != null) {
-                    try {
-                        br.close();
-                    } catch (IOException e) {
-                        LOGGER.error("Could not close");
-                    }
-                }
-            }
-
-            return urlString;
         }
     }
 
@@ -120,8 +92,10 @@ public final class Configuration
      */
     public static class Client
     {
-        public static void initialize(@Nullable final String configurationURL)
-                throws ConfigurationException, MalformedURLException
+        private static final String CONFIGURATION_SERVICE_URL_FILE = "/configuration.url";
+
+        public static void initialize(String rtRoot)
+            throws ConfigurationException, MalformedURLException
         {
             final AbstractConfiguration systemConfiguration =
                     SystemConfiguration.newInstance();
@@ -129,14 +103,8 @@ public final class Configuration
                     PropertiesConfiguration.newInstance(getStaticPropertyPaths());
             final AbstractConfiguration httpConfiguration = getHttpConfiguration(
                     ImmutableList.of(systemConfiguration, staticPropertiesConfiguration),
-                    new IDefaultConfigurationURLProvider()
-                    {
-                        @Override
-                        public String getDefaultConfigurationURL()
-                        {
-                            return configurationURL;
-                        }
-                    });
+                    new FileBasedConfigurationURLProvider(
+                            new File(rtRoot, CONFIGURATION_SERVICE_URL_FILE).getAbsolutePath()));
 
             DynamicConfiguration.Builder dynamicConfigurationBuilder =
                     DynamicConfiguration.builder()
@@ -146,6 +114,45 @@ public final class Configuration
 
             DynamicConfiguration.initialize(dynamicConfigurationBuilder.build());
             LOGGER.debug("Client configuration initialized");
+        }
+    }
+
+    private static class FileBasedConfigurationURLProvider implements IDefaultConfigurationURLProvider
+    {
+        private String _urlFile;
+
+        public FileBasedConfigurationURLProvider(String urlFile)
+        {
+            _urlFile = urlFile;
+        }
+
+        /**
+         * Get the default configuration service URL from a file place on the file system. This file
+         * will either be generated manually by the AeroFS deployment engineer or by openstack
+         * scripts.
+         */
+        @Override
+        public String getDefaultConfigurationURL()
+        {
+            String urlString = null;
+            BufferedReader br = null;
+
+            try {
+                br = new BufferedReader(new FileReader(_urlFile));
+                urlString = br.readLine();
+            } catch (Exception e) {
+                LOGGER.warn("Unable to get config from " + _urlFile);
+            } finally {
+                if (br != null) {
+                    try {
+                        br.close();
+                    } catch (IOException e) {
+                        LOGGER.error("Could not close");
+                    }
+                }
+            }
+
+            return urlString;
         }
     }
 

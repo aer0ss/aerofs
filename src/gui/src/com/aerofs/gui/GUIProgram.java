@@ -10,11 +10,13 @@ import com.aerofs.controller.ControllerService;
 import com.aerofs.gui.shellext.ShellextService;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.IProgram;
+import com.aerofs.lib.SystemUtil.ExitCode;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.lib.ritual.RitualClientProvider;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.ui.UI;
+import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.MessageBox;
 import org.eclipse.swt.widgets.Shell;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
@@ -52,6 +54,9 @@ public class GUIProgram implements IProgram
             throw linkError;
         }
 
+        // process application arguments
+        for (String arg : args) processArgument(arg);
+
         //
         // FIXME (AG): The below is practically identical to code in CLIProgram
         //
@@ -64,5 +69,24 @@ public class GUIProgram implements IProgram
         UI.init(new GUI(rtRoot, sextservice), ritualProvider);
 
         GUI.get().enterMainLoop_();
+    }
+
+    /**
+     * Processing a single application argument. Supported arguments are:
+     *   -E[message] show error message and then immediately exit
+     */
+    private void processArgument(String arg)
+    {
+        if (arg.startsWith("-E")) {
+            showError(arg.substring("-E".length()));
+            ExitCode.CONFIGURATION_INIT.exit();
+        }
+    }
+
+    private void showError(String message)
+    {
+        MessageBox box = new MessageBox(new Shell(), SWT.OK | SWT.ICON_ERROR);
+        box.setMessage(message);
+        box.open();
     }
 }

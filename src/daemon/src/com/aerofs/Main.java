@@ -7,6 +7,7 @@ import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.IProgram;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.ProgramInformation;
+import com.aerofs.lib.S;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.SystemUtil.ExitCode;
 import com.aerofs.lib.Util;
@@ -16,14 +17,18 @@ import com.aerofs.lib.log.LogUtil;
 import com.aerofs.lib.log.LogUtil.Level;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.sv.client.SVClient;
+import com.google.common.collect.Lists;
 import com.google.inject.CreationException;
 import com.google.inject.spi.Message;
+import org.apache.commons.configuration.ConfigurationException;
 import org.slf4j.Logger;
 
 import java.io.File;
 import java.lang.reflect.Field;
+import java.net.MalformedURLException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
 
 public class Main
 {
@@ -98,8 +103,10 @@ public class Main
         String rtRoot = args[0];
         String prog = args[1];
 
-        String[] appArgs = new String[args.length - MAIN_ARGS];
-        System.arraycopy(args, MAIN_ARGS, appArgs, 0, appArgs.length);
+        List<String> appArgs = Lists.newArrayList();
+        for (int i = MAIN_ARGS; i < args.length; i++) {
+            appArgs.add(args[i]);
+        }
 
         if (rtRoot.equals(LibParam.DEFAULT_RTROOT)) {
             rtRoot = OSUtil.get().getDefaultRTRoot();
@@ -110,14 +117,7 @@ public class Main
         initializeLogging(rtRoot, prog);
 
         // First things first, initialize the configuration subsystem.
-        try {
-            // TODO (MP) need to pass this the configuration URL (should be stored in the conf db).
-            Configuration.Client.initialize(null);
-        } catch (Exception e) {
-            System.out.println("failed in main(): " + Util.e(e));
-            SVClient.logSendDefectSyncIgnoreErrors(true, "failed in main()", e);
-            ExitCode.CONFIGURATION_INIT.exit();
-        }
+        initializeConfigurationSystem(rtRoot, prog, appArgs);
 
         // Set the library path to be APPROOT to avoid library not found exceptions
         // {@see http://blog.cedarsoft.com/2010/11/setting-java-library-path-programmatically/}
@@ -142,7 +142,7 @@ public class Main
         SystemUtil.setDefaultUncaughtExceptionHandler();
 
         try {
-            launchProgram(rtRoot, prog, appArgs);
+            launchProgram(rtRoot, prog, appArgs.toArray(new String[appArgs.size()]));
         } catch (Throwable e) {
             if (L.isStaging()) {
                 if (e instanceof CreationException) {
@@ -209,6 +209,45 @@ public class Main
             rtRootFile.setReadable(true, true);     // chmod o+r
             rtRootFile.setWritable(true, true);     // chmod o+w
             rtRootFile.setExecutable(true, true);   // chmod o+x
+        }
+    }
+
+    // If there are any problems initializing the HTTP configuration
+    //   source, pass the error message to the program and let them
+    //   handle it... through app args.
+
+    /**
+     * Initializes the dynamic configuration system.
+     *
+     * HACK ALERT: v
+     *
+     * If there is an exception, and the program is either GUI or CLI, the
+     *   error message is propagated to the program to display the error
+     *   messsage to users... through application arguments.
+     *
+     * @param rtRoot, the path to the RTRoot folder
+     * @param prog, the program ID
+     * @param appArgs, the application arguments
+     */
+    private static void initializeConfigurationSystem(String rtRoot, String prog,
+            List<String> appArgs)
+    {
+        try {
+            Configuration.Client.initialize(rtRoot);
+        } catch (Exception e) {
+            if (prog.equals(LibParam.CLI_NAME) || prog.equals(LibParam.GUI_NAME)) {
+                if (e instanceof MalformedURLException) {
+                    appArgs.add("-E" + S.ERR_CONFIG_SVC_BAD_URL);
+                    return;
+                } else if (e instanceof ConfigurationException) {
+                    appArgs.add("-E" + S.ERR_CONFIG_SVC_CONFIG);
+                    return;
+                }
+            }
+
+            System.out.println("failed in main(): " + Util.e(e));
+            SVClient.logSendDefectSyncIgnoreErrors(true, "failed in main()", e);
+            ExitCode.CONFIGURATION_INIT.exit();
         }
     }
 }
