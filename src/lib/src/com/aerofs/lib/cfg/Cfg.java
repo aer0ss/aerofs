@@ -1,6 +1,7 @@
 package com.aerofs.lib.cfg;
 
 import com.aerofs.base.Base64;
+import com.aerofs.base.BaseParam.CA;
 import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.id.DID;
@@ -23,6 +24,7 @@ import com.google.protobuf.LeanByteString;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -579,7 +581,10 @@ public class Cfg
     public static X509Certificate cacert() throws IOException, CertificateException
     {
         if (_cacert == null) {
-            InputStream in = new FileInputStream(AppRoot.abs() + File.separator + LibParam.CA_CERT);
+            InputStream in = CA.CERTIFICATE.get().isPresent()
+                    ? new ByteArrayInputStream(CA.CERTIFICATE.get().get().getBytes())
+                    : new FileInputStream(new File(AppRoot.abs(), LibParam.CA_CERT).getAbsolutePath());
+
             try {
                 CertificateFactory cf = CertificateFactory.getInstance("X.509");
                 _cacert = (X509Certificate) cf.generateCertificate(in);
