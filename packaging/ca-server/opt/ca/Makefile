@@ -22,7 +22,7 @@ clean:
 	@rm -f ${requests}
 
 purge: clean
-	@rm -f ca-cert.pem serial *cert index* *.old *.pem
+	@rm -f cacert.pem serial *cert index* *.old *.pem
 	@rm -rf certs newcerts private
 
 # Creates required supporting files, CA key and certificate.
@@ -34,7 +34,7 @@ init:
 	@chmod go-rwx private
 	@echo '01' > serial
 	@touch index
-	@openssl req -config openssl.cnf -days 3650 -x509 -newkey rsa:2048 -out ca-cert.pem -outform PEM
+	@openssl req -config openssl.cnf -days 3650 -x509 -newkey rsa:2048 -out cacert.pem -outform PEM
 	@echo Success!
 
 help:
