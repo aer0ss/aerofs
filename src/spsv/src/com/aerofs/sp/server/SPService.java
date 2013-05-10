@@ -189,7 +189,7 @@ public class SPService implements ISPService
 
     // If true, no payment checks will be enforced
     private static final DynamicBooleanProperty DISABLE_PAYMENT =
-            new DynamicBooleanProperty("sp.disable_payment", false);
+            new DynamicBooleanProperty("sp.payment.enable", true);
 
     SPService(SPDatabase db, SQLThreadLocalTransaction sqlTrans,
             JedisThreadLocalTransaction jedisTrans, ISessionUser sessionUser,
