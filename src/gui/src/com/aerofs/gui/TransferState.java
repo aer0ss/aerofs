@@ -16,7 +16,7 @@ import com.google.common.collect.Table;
  */
 public class TransferState
 {
-    private final Table<SOCID, DID, PBTransferEvent> _uls = HashBasedTable.create();
+    private final Table<SOCID, DID, PBTransferEvent> _states = HashBasedTable.create();
 
     public TransferState()
     {
@@ -28,7 +28,13 @@ public class TransferState
     public synchronized void update(PBNotification pb)
     {
         if (pb.getType() == Type.TRANSFER) {
-            updateTransferState_(pb.getTransfer());
+            synchronized (_states) {
+                updateTransferState_(pb.getTransfer());
+            }
+        } else if (pb.getType() == Type.CLEAR_TRANSFERS) {
+            synchronized (_states) {
+                _states.clear();
+            }
         }
     }
 
@@ -38,9 +44,9 @@ public class TransferState
         DID did = new DID(pb.getDeviceId());
 
         if (pb.getDone() == pb.getTotal()) {
-            _uls.remove(socid, did);
+            _states.remove(socid, did);
         } else {
-            _uls.put(socid, did, pb);
+            _states.put(socid, did, pb);
         }
     }
 
@@ -49,6 +55,6 @@ public class TransferState
      */
     public Table<SOCID, DID, PBTransferEvent> transfers_()
     {
-        return _uls;
+        return _states;
     }
 }

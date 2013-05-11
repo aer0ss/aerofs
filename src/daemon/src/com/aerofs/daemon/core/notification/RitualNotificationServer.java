@@ -132,6 +132,13 @@ public class RitualNotificationServer implements IConnectionManager
                 .build());
     }
 
+    void clearTransfers_()
+    {
+        sendEvent_(PBNotification.newBuilder()
+                .setType(Type.CLEAR_TRANSFERS)
+                .build());
+    }
+
     public void rootsChanged_()
     {
         sendEvent_(PBNotification.newBuilder()

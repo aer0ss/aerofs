@@ -19,6 +19,7 @@ message PBNotification {
         INDEXING_PROGRESS = 7;
         SHARED_FOLDER_PENDING = 8;      // list of pending roots changed
         ROOTS_CHANGED = 9;              // roots changed (added/removed/moved)
+        CLEAR_TRANSFERS = 10;           // clear any cached transfer state
     }
 
     required Type type = 1;

@@ -70,6 +70,7 @@ class EISendSnapshot extends AbstractEBSelfHandling
             pbs.add(_formatter.formatUploadState(key, en.getValue()));
         }
 
+        _notifier.clearTransfers_();
         _notifier.sendSnapshot_(_to, pbs.toArray(new PBNotification[pbs.size()]));
         _psn.sendConflictCount_();
     }
