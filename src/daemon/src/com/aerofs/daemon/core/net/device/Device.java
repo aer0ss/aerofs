@@ -48,12 +48,12 @@ public class Device implements Comparable<Device>, IDumpStatMisc
 
         boolean isUnused_()
         {
-            return _isBeingPulsed == false && _sidcsAvailable.isEmpty();
+            return !_isBeingPulsed && _sidcsAvailable.isEmpty();
         }
 
         boolean isOnlineForStore_(SIndex sidx)
         {
-            return _isBeingPulsed == false && _sidcsAvailable.contains(sidx);
+            return !_isBeingPulsed && _sidcsAvailable.contains(sidx);
         }
     }
 

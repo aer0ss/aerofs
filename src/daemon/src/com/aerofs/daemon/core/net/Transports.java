@@ -35,7 +35,6 @@ import com.aerofs.proto.Files.PBDumpStat;
 import com.aerofs.proto.Files.PBDumpStat.Builder;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.ImmutableSortedSet;
 import com.google.inject.Inject;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.slf4j.Logger;
@@ -160,7 +159,6 @@ public class Transports implements IDumpStat, IDumpStatMisc, IStartable
     };
 
     private final ImmutableMap<ITransport, IIMCExecutor> _availableTransports;
-    private final ImmutableSortedSet<ITransport> _rankedTransports;
     private final TC _tc;
     private final LinkStateService _lss;
 
@@ -174,8 +172,6 @@ public class Transports implements IDumpStat, IDumpStatMisc, IStartable
         MaxcastFilterReceiver mcfr = new MaxcastFilterReceiver(); // shared by all transports
 
         ImmutableMap.Builder<ITransport, IIMCExecutor> transportBuilder = ImmutableMap.builder();
-        ImmutableSortedSet.Builder<ITransport> rankedBuilder =
-                ImmutableSortedSet.orderedBy(PREFERENCE_COMPARATOR);
 
         for (TransportImplementation i : TransportImplementation.values()) {
             if (i.isEnabled()) {
@@ -194,14 +190,11 @@ public class Transports implements IDumpStat, IDumpStatMisc, IStartable
 
                 IIMCExecutor imce = new QueueBasedIMCExecutor(tp.q());
                 transportBuilder.put(tp, imce);
-                rankedBuilder.add(tp);
-
                 addLinkStateListener_(tp, imce);
             }
         }
 
         this._availableTransports = transportBuilder.build();
-        this._rankedTransports = rankedBuilder.build();
     }
 
     public Collection<ITransport> getAll_()
