@@ -4,6 +4,7 @@ import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.joran.JoranConfigurator;
 import ch.qos.logback.core.joran.spi.JoranException;
 import com.aerofs.base.Loggers;
+import com.aerofs.base.ex.ExNoResource;
 import org.slf4j.LoggerFactory;
 
 import java.net.URL;
@@ -46,7 +47,7 @@ public abstract class LogUtil
     public static void initializeFromConfigFile(
             String rtRoot, String prog,
             Level logLevel, String configFile)
-            throws JoranException
+            throws JoranException, ExNoResource
     {
         // NB: getILoggerFactory causes the default configuration to be loaded.
         LoggerContext context = (LoggerContext) LoggerFactory.getILoggerFactory();
@@ -60,6 +61,12 @@ public abstract class LogUtil
 
         URL configUrl = Thread.currentThread().getContextClassLoader()
                 .getResource(configFile);
+
+        if (configUrl == null) {
+            // we have to check explicitly since Joran dies with NPE otherwise.
+            // it's not impossible to continue since logback provides a fallback configurator.
+            throw new ExNoResource("Can't locate logger configuration " + configFile);
+        }
 
         configurator.doConfigure(configUrl);
 
