@@ -33,7 +33,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 /**
- * The EmailSender class allows you to send emails (either through local or remote SMTP)
+ * The EmailSender class allows you to send emails (either through local or remote SMTP).
  *
  * The class utilizes a single threaded executor with a queue size of EMAIL_QUEUE_SIZE.
  * If the queue becomes full, the executor throws a runtime RejectedExecutionException
