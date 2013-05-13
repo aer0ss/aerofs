@@ -9,6 +9,7 @@ import com.aerofs.base.async.UncancellableFuture;
 import com.aerofs.labeling.L;
 import com.aerofs.sv.common.EmailCategory;
 import com.netflix.config.DynamicBooleanProperty;
+import com.netflix.config.DynamicStringProperty;
 import org.slf4j.Logger;
 
 import com.aerofs.proto.Common.Void;
@@ -46,9 +47,13 @@ public class EmailSender
     private static final ExecutorService executor = new ThreadPoolExecutor(1, 1, 0L,
             TimeUnit.MILLISECONDS, new LinkedBlockingDeque<Runnable>(EMAIL_QUEUE_SIZE));
 
-    private static final String PUBLIC_HOST = "smtp.sendgrid.net";
-    private static final String PUBLIC_USERNAME = "mXSiiSbCMMYVG38E";
-    private static final String PUBLIC_PASSWORD = "6zovnhQuLMwNJlx8";
+    private static DynamicStringProperty PUBLIC_HOST =
+            new DynamicStringProperty("email.sender.public_host", "smtp.sendgrid.net");
+    private static DynamicStringProperty PUBLIC_USERNAME =
+            new DynamicStringProperty("email.sender.public_username", "mXSiiSbCMMYVG38E");
+    private static DynamicStringProperty PUBLIC_PASSWORD =
+            new DynamicStringProperty("email.sender.public_password", "6zovnhQuLMwNJlx8");
+
     private static final String INTERNAL_HOST = "svmail.aerofs.com";
     private static final String INTERNAL_USERNAME = "noreply";
     private static final String INTERNAL_PASSWORD = "qEphE2uzuBr5";
@@ -176,7 +181,10 @@ public class EmailSender
                     // for internal emails.
                     try {
                         if (usingSendGrid) {
-                            t.connect(PUBLIC_HOST, PUBLIC_USERNAME, PUBLIC_PASSWORD);
+                            t.connect(
+                                    PUBLIC_HOST.get(),
+                                    PUBLIC_USERNAME.get(),
+                                    PUBLIC_PASSWORD.get());
                         } else {
                             t.connect(INTERNAL_HOST, INTERNAL_USERNAME, INTERNAL_PASSWORD);
                         }
