@@ -308,10 +308,18 @@ class _RitualServiceWrapper(object):
     def test_log_send_defect(self):
         self._service.test_log_send_defect()
 
+    def test_get_alias_object(self, path):
+        pbpath = self.wait_path(path)
+        r = []
+        for alias in self._service.test_get_alias_object(pbpath).oid:
+            r.append(alias)
+        return r
+
     def wait_path(self, path):
         pbpath = convert.absolute_to_pbpath(path)
         self.wait_pbpath(pbpath)
         return pbpath
+
 
     def wait_pbpath(self, pbpath):
         """

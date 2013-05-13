@@ -2,7 +2,9 @@ package com.aerofs.daemon.lib.db;
 
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.base.id.OID;
+import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.id.SIndex;
+import com.aerofs.lib.id.SOID;
 
 import java.sql.SQLException;
 
@@ -30,5 +32,10 @@ public interface IAliasDatabase
      * a --> c and hence resolve chaining.
      */
     void resolveAliasChaining_(SIndex sidx, OID alias, OID target, Trans t) throws SQLException;
+
+    /**
+     * NB: this method is purely for test purposes: do not use in production code
+     */
+    IDBIterator<OID> getAliases_(SOID soid) throws SQLException;
 }
 

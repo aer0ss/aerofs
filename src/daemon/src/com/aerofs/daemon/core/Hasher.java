@@ -205,6 +205,11 @@ public class Hasher
                 if (!_nvc.getLocalVersion_(sockid).sub_(vBeforeHash).isZero_())
                     throw new ExAborted(FILE_MODIFIED_MSG);
 
+                // the object may have disappeared as a result of aliasing while we were busy
+                // computing the hash, thorw ExNotFound in that case to avoid running into some
+                // AssertionError later
+                _ds.getOAThrows_(sokid.soid());
+
                 Trans t = _tm.begin_();
                 try {
                     _ds.setCAHash_(sokid, h, t);

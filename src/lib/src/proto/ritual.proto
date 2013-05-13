@@ -220,6 +220,8 @@ service RitualService {
 
     // Multiuser systems only: join a root store
     rpc TestMultiuserJoinRootStore(TestMultiuserJoinRootStoreCall) returns(Void);
+
+    rpc TestGetAliasObject(TestGetAliasObjectCall) returns(TestGetAliasObjectReply);
 }
 
 message GetObjectAttributesCall {
@@ -629,4 +631,12 @@ message TestGetObjectIdentifierReply {
 message TestMultiuserJoinRootStoreCall {
     // The user to which the root store belongs
     required string user = 1;
+}
+
+message TestGetAliasObjectCall {
+    required PBPath path = 1;
+}
+
+message TestGetAliasObjectReply {
+    repeated bytes oid = 1;
 }

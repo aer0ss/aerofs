@@ -400,7 +400,7 @@ public class AliasingMover
             if (oaTarget.isDir()) {
                 moveChildrenFromAliasToTargetDir_(alias, target, t);
                 if (oaAlias != null && !oaAlias.isExpelled()) {
-                    l.info("del alias dir {}", alias, Util.crc32(oaAlias.name()));
+                    l.info("del alias dir {} {}", alias, Util.crc32(oaAlias.name()));
                     oaAlias.physicalFolder().delete_(PhysicalOp.APPLY, t);
                 }
             } else {

@@ -55,6 +55,7 @@ import com.aerofs.daemon.event.fs.EIMoveObject;
 import com.aerofs.daemon.event.fs.EIShareFolder;
 import com.aerofs.daemon.event.status.EIGetStatusOverview;
 import com.aerofs.daemon.event.status.EIGetSyncStatus;
+import com.aerofs.daemon.event.test.EITestGetAliasObject;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.SystemUtil.ExitCode;
 import com.aerofs.lib.Path;
@@ -98,6 +99,7 @@ import com.aerofs.proto.Ritual.ListUserRootsReply;
 import com.aerofs.proto.Ritual.PBBranch;
 import com.aerofs.proto.Ritual.PBObjectAttributes;
 import com.aerofs.proto.Ritual.PBSyncStatus;
+import com.aerofs.proto.Ritual.TestGetAliasObjectReply;
 import com.aerofs.proto.Ritual.TestGetObjectIdentifierReply;
 import com.aerofs.sv.client.SVClient;
 import com.aerofs.proto.Ritual.TransportFloodQueryReply;
@@ -422,8 +424,8 @@ public class RitualService implements IRitualService
     {
         EIListSharedFolders ev = new EIListSharedFolders(Filter.USER_ROOTS);
         ev.execute(PRIO);
-        return createReply(ListUserRootsReply.newBuilder()
-                .addAllUserRoot(ev._sharedFolders).build());
+        return createReply(
+                ListUserRootsReply.newBuilder().addAllUserRoot(ev._sharedFolders).build());
     }
 
     @Override
@@ -527,8 +529,7 @@ public class RitualService implements IRitualService
     {
         EIListConflicts ev = new EIListConflicts(Core.imce());
         ev.execute(PRIO);
-        return createReply(ListConflictsReply.newBuilder()
-                .addAllConflict(ev._pathList).build());
+        return createReply(ListConflictsReply.newBuilder().addAllConflict(ev._pathList).build());
     }
 
     @Override
@@ -691,5 +692,14 @@ public class RitualService implements IRitualService
     {
         new EITestMultiuserJoinRootStore(UserID.fromExternal(user), Core.imce()).execute(PRIO);
         return createVoidReply();
+    }
+
+    @Override
+    public ListenableFuture<TestGetAliasObjectReply> testGetAliasObject(PBPath path)
+            throws Exception
+    {
+        EITestGetAliasObject ev = new EITestGetAliasObject(Path.fromPB(path), Core.imce());
+        ev.execute(PRIO);
+        return createReply(TestGetAliasObjectReply.newBuilder().addAllOid(ev._oids).build());
     }
 }

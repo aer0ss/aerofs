@@ -1,9 +1,12 @@
 package com.aerofs.daemon.lib.db;
 
 import com.aerofs.daemon.lib.db.trans.Trans;
+import com.aerofs.lib.db.AbstractDBIterator;
 import com.aerofs.lib.db.DBUtil;
 import com.aerofs.base.id.OID;
+import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.id.SIndex;
+import com.aerofs.lib.id.SOID;
 import com.google.inject.Inject;
 
 import java.sql.PreparedStatement;
@@ -93,6 +96,42 @@ public class AliasDatabase extends AbstractDatabase implements IAliasDatabase
         } catch (SQLException e) {
             DBUtil.close(_psResolveAliasChaining);
             _psResolveAliasChaining = null;
+            throw e;
+        }
+    }
+
+    class AliasIterator extends AbstractDBIterator<OID>
+    {
+        public AliasIterator(ResultSet rs)
+        {
+            super(rs);
+        }
+
+        @Override
+        public OID get_() throws SQLException
+        {
+            return new OID(_rs.getBytes(1));
+        }
+    }
+
+    PreparedStatement _psListAliases;
+    @Override
+    public IDBIterator<OID> getAliases_(SOID soid) throws SQLException
+    {
+        try {
+            if (_psListAliases == null) {
+                _psListAliases = c().prepareStatement(DBUtil.selectWhere(T_ALIAS,
+                        C_ALIAS_SIDX + "=? AND " + C_ALIAS_TARGET_OID + "=?",
+                        C_ALIAS_SOURCE_OID));
+            }
+
+            _psListAliases.setInt(1, soid.sidx().getInt());
+            _psListAliases.setBytes(2, soid.oid().getBytes());
+
+            return new AliasIterator(_psListAliases.executeQuery());
+        } catch (SQLException e) {
+            DBUtil.close(_psListAliases);
+            _psListAliases = null;
             throw e;
         }
     }

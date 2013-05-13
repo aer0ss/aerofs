@@ -222,17 +222,14 @@ public class Aliasing
         SIndex sidx = alias.sidx();
         assert sidx.equals(target.sidx());
 
-        if (l.isDebugEnabled()) {
-            l.debug("Processing alias msg, alias: " + alias + " vRemoteAliasMeta: " +
-                    vRemoteAliasMeta + " target: " + target + " vRemoteTargetMeta: " +
-                    vRemoteTargetMeta);
-        }
+        l.info("alias msg, alias: {} vAlias: {} target: {} vTarget: {} p: {}",
+               alias, vRemoteAliasMeta, target, vRemoteTargetMeta, oidParent);
 
         Trans t = _tm.begin_();
         Throwable rollbackCause = null;
         try {
             if (!_ds.hasAliasedOA_(target)) {
-                l.debug("Target object is not available locally, processing new object...");
+                l.info("target not locally present");
                 SOCKID k = new SOCKID(target, CID.META, KIndex.MASTER);
 
                 // Although CausalityResult is only used in applyUpdateMetaAndContent_()
@@ -269,14 +266,13 @@ public class Aliasing
             if (_ds.hasAliasedOA_(alias)) {
                 OID targetLocalOID = _a2t.getNullable_(alias);
                 if (targetLocalOID == null) {
-                    l.debug("Alias object is present locally but aliasing operation hasn't be " +
-                            "performed on it.");
+                    l.info("alias and target present locally");
                     Version vAliasMeta = _nvc.getLocalVersion_(new SOCKID(alias, CID.META));
                     Version vTargetMeta = _nvc.getLocalVersion_(new SOCKID(target, CID.META));
                     performAliasingOnLocallyAvailableObjects_(alias, vAliasMeta, target,
                         vTargetMeta, t);
                 } else if (!targetLocalOID.equals(target.oid())) {
-                    l.debug("Name conflict between multiple targets.");
+                    l.info("name conflict between multiple targets {} {}", alias, targetLocalOID);
                     AliasAndTarget ar = determineAliasAndTarget_(new SOID(sidx, targetLocalOID),
                         target);
                     Version vAliasMeta = _nvc.getLocalVersion_(new SOCKID(ar._alias, CID.META));
@@ -289,7 +285,7 @@ public class Aliasing
                 }
 
             } else {
-                l.debug("Alias object not present locally, add alias entry.");
+                l.info("add alias entry");
                 // New version during aliasing operation is generated only for meta-data
                 // and not for content of alias object. Hence KML version for content can be
                 // safely moved from alias to target.
