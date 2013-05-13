@@ -65,8 +65,7 @@ public class TestEmailReminder extends AbstractBusinessObjectTest
     public void setupTestSpEmailReminder()
             throws Exception
     {
-        when(_emailFactory.createReminderEmail(anyString(), anyString(), anyString(),
-                anyString(), anyString()))
+        when(_emailFactory.createReminderEmail(anyString(), anyString(), anyString(), anyString()))
                 .thenReturn(new InvitationReminderEmailer());
 
         odb.insert(ORG_ID);
@@ -156,7 +155,7 @@ public class TestEmailReminder extends AbstractBusinessObjectTest
         for (UserID user: users) {
             String tokenId = esdb.getTokenId(user, SubscriptionCategory.AEROFS_INVITATION_REMINDER);
 
-            verify(_emailFactory, mode).createReminderEmail(eq(WWW.SUPPORT_EMAIL_ADDRESS.get()),
+            verify(_emailFactory, mode).createReminderEmail(
                     eq(SPParam.EMAIL_FROM_NAME), eq(user.getString()), anyString(), eq(tokenId));
 
         }

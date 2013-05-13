@@ -1,6 +1,5 @@
 package com.aerofs.sp.server;
 
-import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.acl.Role;
 import com.aerofs.base.acl.SubjectRolePair;
@@ -962,7 +961,7 @@ public class SPService implements ISPService
     {
         _sqlTrans.begin();
 
-        EmailSender.sendPublicEmail(WWW.SUPPORT_EMAIL_ADDRESS.get(), SPParam.EMAIL_FROM_NAME,
+        EmailSender.sendPublicEmailFromSupport(SPParam.EMAIL_FROM_NAME,
                 _sessionUser.get().id().getString(), null, UserID.fromExternal(userId).getString(),
                 body, null, EmailCategory.SUPPORT);
 

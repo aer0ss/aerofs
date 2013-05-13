@@ -59,8 +59,8 @@ public class DeviceRegistrationEmailer
         email.addDefaultSignature();
 
         try {
-            EmailSender.sendPublicEmail(WWW.SUPPORT_EMAIL_ADDRESS.get(), SPParam.EMAIL_FROM_NAME,
-                    emailAddress, null, subject, email.getTextEmail(), email.getHTMLEmail(),
+            EmailSender.sendPublicEmailFromSupport(SPParam.EMAIL_FROM_NAME, emailAddress, null,
+                    subject, email.getTextEmail(), email.getHTMLEmail(),
                     EmailCategory.DEVICE_CERTIFIED);
         } catch (MessagingException e) {
             throw new IOException(e);

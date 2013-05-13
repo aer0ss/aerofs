@@ -71,9 +71,10 @@ public class InvitationEmailer
                 @Override
                 public Void call() throws Exception
                 {
-                    EmailSender.sendPublicEmail(WWW.SUPPORT_EMAIL_ADDRESS.get(), nsInviter.nameOnly(),
-                            invitee.id().getString(), null, subject, email.getTextEmail(),
-                            email.getHTMLEmail(), EmailCategory.FOLDERLESS_INVITE);
+                    EmailSender.sendPublicEmailFromSupport(nsInviter.nameOnly(),
+                            invitee.id().getString(), inviter.id().getString(), subject,
+                            email.getTextEmail(), email.getHTMLEmail(),
+                            EmailCategory.FOLDERLESS_INVITE);
 
                     EmailUtil.emailSPNotification(
                             inviter + " invited " + invitee +
@@ -141,15 +142,9 @@ public class InvitationEmailer
                 @Override
                 public Void call() throws Exception
                 {
-                    EmailSender.sendPublicEmail(WWW.SUPPORT_EMAIL_ADDRESS.get(),
-                            nsSharer.nameOnly(),
-                            sharee.id().getString(),
-                            null,
-                            subject,
-                            email.getTextEmail(),
-                            email.getHTMLEmail(),
-                            EmailCategory.FOLDER_INVITE
-                    );
+                    EmailSender.sendPublicEmailFromSupport(nsSharer.nameOnly(),
+                            sharee.id().getString(), sharer.id().getString(), subject,
+                            email.getTextEmail(), email.getHTMLEmail(), EmailCategory.FOLDER_INVITE);
 
                     EmailUtil.emailSPNotification(sharer + " shared " + folderName + " with " + sharee,
                             "code " + sid.toStringFormal());
@@ -184,16 +179,9 @@ public class InvitationEmailer
                 @Override
                 public Void call() throws Exception
                 {
-                    EmailSender.sendPublicEmail(
-                            WWW.SUPPORT_EMAIL_ADDRESS.get(),
-                            ns.nameOnly(),
-                            invitee.id().getString(),
-                            null,
-                            subject,
-                            email.getTextEmail(),
-                            email.getHTMLEmail(),
-                            EmailCategory.ORGANIZATION_INVITATION
-                    );
+                    EmailSender.sendPublicEmailFromSupport(ns.nameOnly(), invitee.id().getString(),
+                            inviter.id().getString(), subject, email.getTextEmail(),
+                            email.getHTMLEmail(), EmailCategory.ORGANIZATION_INVITATION);
 
                     return null;
                 }

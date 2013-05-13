@@ -39,8 +39,8 @@ public class PasswordResetEmailer
         email.addDefaultSignature();
 
         try {
-            EmailSender.sendPublicEmail(WWW.SUPPORT_EMAIL_ADDRESS.get(), SPParam.EMAIL_FROM_NAME,
-                    userId.getString(), null, subject, email.getTextEmail(), email.getHTMLEmail(),
+            EmailSender.sendPublicEmailFromSupport(SPParam.EMAIL_FROM_NAME, userId.getString(),
+                    null, subject, email.getTextEmail(), email.getHTMLEmail(),
                     EmailCategory.PASSWORD_RESET);
         } catch (MessagingException e) {
             throw new IOException(e);
@@ -68,8 +68,8 @@ public class PasswordResetEmailer
         email.addDefaultSignature();
 
         try {
-            EmailSender.sendPublicEmail(WWW.SUPPORT_EMAIL_ADDRESS.get(), SPParam.EMAIL_FROM_NAME,
-                    userId.getString(), null, subject, email.getTextEmail(), email.getHTMLEmail(),
+            EmailSender.sendPublicEmailFromSupport(SPParam.EMAIL_FROM_NAME, userId.getString(),
+                    null, subject, email.getTextEmail(), email.getHTMLEmail(),
                     EmailCategory.PASSWORD_RESET);
         } catch (MessagingException e) {
             throw new IOException(e);

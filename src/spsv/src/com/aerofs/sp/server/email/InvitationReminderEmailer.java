@@ -17,8 +17,7 @@ public class InvitationReminderEmailer
 {
     public static class Factory {
 
-        public InvitationReminderEmailer createReminderEmail(final String from,
-                final String fromName,
+        public InvitationReminderEmailer createReminderEmail(final String fromName,
                 final String to, String signUpCode, String unsubscribeId)
                         throws IOException
         {
@@ -57,7 +56,7 @@ public class InvitationReminderEmailer
                 public Void call()
                         throws Exception
                 {
-                    EmailSender.sendPublicEmail(from, fromName, to, null, subject,
+                    EmailSender.sendPublicEmailFromSupport(fromName, to, null, subject,
                             email.getTextEmail(), email.getHTMLEmail(),
                             EmailCategory.AEROFS_INVITATION_REMINDER);
 

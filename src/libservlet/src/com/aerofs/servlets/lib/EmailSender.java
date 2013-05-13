@@ -4,6 +4,7 @@
 
 package com.aerofs.servlets.lib;
 
+import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.async.UncancellableFuture;
 import com.aerofs.labeling.L;
@@ -86,9 +87,22 @@ public class EmailSender
         return sendEmail(from, fromName, to, replyTo, subject, textBody, htmlBody, false, null);
     }
 
-    public static Future<Void> sendPublicEmail(String from, @Nullable String fromName, String to,
+    /**
+     * Similar to sendPublicEmail(), except that it always uses WWW.SUPPORT_EMAIL_ADDRESS as the
+     * from address.
+     */
+    public static Future<Void> sendPublicEmailFromSupport(@Nullable String fromName, String to,
             @Nullable String replyTo, String subject, String textBody, @Nullable String htmlBody,
             @Nonnull EmailCategory category)
+            throws MessagingException, UnsupportedEncodingException
+    {
+        return sendEmail(WWW.SUPPORT_EMAIL_ADDRESS.get(), fromName, to, replyTo, subject, textBody,
+                htmlBody, true, category);
+    }
+
+    public static Future<Void> sendPublicEmail(String from,
+            @Nullable String fromName, String to, @Nullable String replyTo, String subject,
+            String textBody, @Nullable String htmlBody, @Nonnull EmailCategory category)
             throws MessagingException, UnsupportedEncodingException
     {
         return sendEmail(from, fromName, to, replyTo, subject, textBody, htmlBody, true, category);
