@@ -62,6 +62,7 @@ public abstract class AbstractHttpRpcClient
                 connection.setDoOutput(true);
                 if (_cookie != null) connection.setRequestProperty("Cookie", _cookie);
 
+                LOGGER.warn("fallback to old implementation");
                 _connectionConfigurator.fallbackToOldImplementation();
                 _connectionConfigurator.configure(connection);
                 connection.connect();

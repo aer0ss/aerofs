@@ -9,7 +9,7 @@
     -->
 
     <appender name="logfile" class="ch.qos.logback.core.FileAppender">
-        <file>/var/log/aerofs/devman.bootup.log</file>
+        <file>/var/log/aerofs/devman.err.log</file>
         <append>true</append>
         <encoder>
             <pattern>%d{HH:mm:ss.SSS} [%-18thread] %-5level %logger{0}, %msg%n</pattern>

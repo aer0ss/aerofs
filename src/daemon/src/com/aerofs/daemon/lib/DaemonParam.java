@@ -56,7 +56,7 @@ public class DaemonParam
         public static final int QUEUE_LENGTH            = QUEUE_LENGTH_DEFAULT;
         public static final long CALL_TIMEOUT           = 30 * C.SEC;
         public static final DynamicInetSocketAddress STUN_ADDRESS =
-                new DynamicInetSocketAddress("stun.address",
+                new DynamicInetSocketAddress("daemon.stun.address",
                         InetSocketAddress.createUnresolved("stun.l.google.com", 19302));
     }
 
