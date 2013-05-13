@@ -2,8 +2,8 @@ class pd-aerofs {
     include private-common
     include servlet::base
     include servlet::sp
-    include devman
     include jeq
+    include stun
 
     # Do not include this file, let bootstrap generate it.
     file{"/etc/tomcat6/Catalina/localhost/ROOT.xml":
