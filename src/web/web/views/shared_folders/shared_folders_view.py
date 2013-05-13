@@ -328,12 +328,18 @@ def json_add_shared_folder_perm(request):
 
     sp = get_rpc_stub(request)
     exception2error(sp.share_folder, (folder_name, store_id, [role_pair], note, None), {
+        # TODO (WW) change to ALREADY_MEMBER?
+        # See also team_members_view.py:json_invite_user()
+        PBException.ALREADY_EXIST:
+            _("The user is already a member of the folder."),
         PBException.EMPTY_EMAIL_ADDRESS:
             _("The email address can't be empty"),
         PBException.NO_STRIPE_CUSTOMER_ID:
             _("Payment is required to invite more collaborators"),
         PBException.NO_PERM:
-            _("You don't have permission to invite people to this folder")
+            _("You don't have permission to invite people to this folder"),
+        PBException.CANNOT_INVITE_SELF:
+            _("Are you trying to invite yourself?"),
     })
 
 @view_config(

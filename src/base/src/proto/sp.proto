@@ -167,6 +167,7 @@ service SPService {
      *
      * Throws:
      *   ExNoPerm if the sharer isn't authorized to modify ACLs for the given SID
+     *   ExAlreadyExists if the user is already a member of the folder
      *   ExCannotInviteSelf if the sharer appears in the list of sharees
      *   ExInviteeListEmpty if the list of invitees is empty AND the external flag is false
      *   ExNoStripeCustomerID if payment is required but the current team doesn't have a Stripe

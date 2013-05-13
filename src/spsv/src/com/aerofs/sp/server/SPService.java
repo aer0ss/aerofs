@@ -999,7 +999,7 @@ public class SPService implements ISPService
         User sharer = _sessionUser.get();
         List<SubjectRolePair> srps = SubjectRolePairs.listFromPB(rolePairs);
 
-        l.info(sharer + " shares " + sf + "[" + external + "] with " + srps);
+        l.info("{} shares {} [{}] with {}", sharer, sf, external, srps);
         // only allow empty invitee list when doing out-of-defaultRoot sharing
         if (srps.isEmpty() && !external) throw new ExInviteeListEmpty();
 

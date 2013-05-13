@@ -119,10 +119,16 @@ def json_invite_user(request):
 
     # invite the user
     reply = exception2error(sp.invite_to_organization, user, {
-            PBException.EMPTY_EMAIL_ADDRESS:   _("The email address can't be empty."),
-            PBException.ALREADY_EXIST:         _("The user is already a member of your team."),
-            PBException.ALREADY_INVITED:       _("The user has already been invited to your team."),
-            PBException.NO_STRIPE_CUSTOMER_ID: _("Payment is required to invite more users.")
+            # TODO (WW) change to ALREADY_MEMBER?
+            # See also shared_folders_view.py:json_add_shared_folder_perm()
+            PBException.ALREADY_EXIST:
+                _("The user is already a member of your team."),
+            PBException.EMPTY_EMAIL_ADDRESS:
+                _("The email address can't be empty."),
+            PBException.ALREADY_INVITED:
+                _("The user has already been invited to your team."),
+            PBException.NO_STRIPE_CUSTOMER_ID:
+                _("Payment is required to invite more users.")
         }
     )
 
