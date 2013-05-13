@@ -72,7 +72,7 @@ public class SVServlet extends AeroServlet
             PBSVCall call = PBSVCall.parseDelimitedFrom(req.getInputStream());
 
             // process call
-            String client = req.getRemoteAddr() + ":" + req.getRemotePort();
+            String client = req.getHeader("X-Real-IP");
             PBSVReply reply = _reactor.react(call, req.getInputStream(), client);
 
             // send reply
