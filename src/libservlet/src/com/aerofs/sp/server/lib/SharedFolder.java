@@ -19,7 +19,6 @@ import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableList.Builder;
 import com.google.common.collect.ImmutableSet;
-import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
 
 import javax.annotation.Nonnull;
@@ -36,7 +35,6 @@ public class SharedFolder
         private SharedFolderDatabase _db;
         private User.Factory _factUser;
 
-        @Inject
         public void inject(SharedFolderDatabase db, User.Factory factUser)
         {
             _db = db;

@@ -16,7 +16,6 @@ import com.aerofs.sp.server.lib.cert.CertificateDatabase;
 import com.aerofs.sp.server.lib.cert.CertificateGenerator;
 import com.aerofs.sp.server.lib.cert.CertificateGenerator.CertificationResult;
 import com.aerofs.sp.server.lib.user.User;
-import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
 import org.slf4j.Logger;
 import sun.security.pkcs.PKCS10;
@@ -40,7 +39,6 @@ public class Device
         private User.Factory _factUser;
         private Certificate.Factory _factCert;
 
-        @Inject
         public void inject(DeviceDatabase db, CertificateDatabase certdb,
                 CertificateGenerator certgen, User.Factory factUser, Certificate.Factory factCert)
         {
