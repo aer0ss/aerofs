@@ -1,0 +1,16 @@
+#!/bin/bash
+# A tool for seeing if zephyr is in a sane state.  The default "hello" message
+# is 12 bytes long (4 bytes magic #, 4 bytes length (bigendian 4), and 4 bytes zid)
+HOST=$1
+shift 1
+PORT=$1
+shift 1
+BYTE_COUNT="$(echo -n "" | nc ${HOST} ${PORT} | wc -c | awk '{print $1}' )"
+if [ "${BYTE_COUNT}" == "12" ]
+then
+	echo "good"
+	exit 0
+else
+	echo "expected 12 bytes, got $BYTE_COUNT"
+	exit 1
+fi
