@@ -10,7 +10,6 @@ import com.aerofs.devman.server.VerkehrWebClient.OnlineDeviceInfo;
 import com.aerofs.devman.server.db.IPAddressDatabase;
 import com.aerofs.devman.server.db.LastSeenDatabase;
 import com.aerofs.servlets.lib.db.jedis.JedisThreadLocalTransaction;
-import com.amazonaws.util.json.JSONException;
 import org.slf4j.Logger;
 
 import java.io.IOException;
@@ -56,7 +55,7 @@ public class VerkehrPuller implements Runnable
     }
 
     private void updateDatabaseUsingVerkehr()
-            throws ExFormatError, IOException, JSONException
+            throws ExFormatError, IOException
     {
         Collection<OnlineDeviceInfo> onlineDevicesInfo = _vkclient.getOnlineDevicesInfo();
 
