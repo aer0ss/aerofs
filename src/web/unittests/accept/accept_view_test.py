@@ -1,0 +1,23 @@
+from pyramid import testing
+from ..test_base import TestBase
+
+
+class AcceptViewTest(TestBase):
+    def setUp(self):
+        self.setup_common()
+
+    def tearDown(self):
+        testing.tearDown()
+
+    def test_should_call_join_shared_folder_with_correct_signature(self):
+
+        from web.views.accept.accept_view import \
+            accept_folder_invitation, URL_PARAM_SHARE_ID
+
+        sid = 'deadbeef'
+        accept_folder_invitation(self.create_dummy_request({
+            URL_PARAM_SHARE_ID: sid
+        }))
+
+        self.sp_rpc_stub.join_shared_folder.assert_called_once_with(
+            sid.decode('hex'), None)

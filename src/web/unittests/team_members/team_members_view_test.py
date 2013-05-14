@@ -5,7 +5,8 @@ from aerofs_sp.gen.sp_pb2 import ListOrganizationInvitedUsersReply
 
 _USER_ID = 'test user id'
 
-class UsersViewTest(TestBase):
+
+class TeamMembersViewTest(TestBase):
     def setUp(self):
         self.setup_common()
         self.reply = ListOrganizationInvitedUsersReply()

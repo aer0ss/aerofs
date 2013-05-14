@@ -4,6 +4,7 @@ from mock import Mock, create_autospec
 from web import util
 from aerofs_sp.gen.sp_pb2 import SPServiceRpcStub
 
+
 class TestBase(unittest.TestCase):
     def setup_common(self):
         """
@@ -21,7 +22,7 @@ class TestBase(unittest.TestCase):
 
         util.get_rpc_stub = Mock(return_value=self.sp_rpc_stub)
 
-    def create_request(self, parameters):
+    def create_dummy_request(self, parameters={}):
         """
         @param parameters a dictionary of HTTP request parameters
         """

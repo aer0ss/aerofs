@@ -6,6 +6,7 @@ from aerofs_common._gen.common_pb2 import EDITOR, OWNER
 from aerofs_sp.gen.sp_pb2 import ADMIN
 from ..test_base import TestBase
 
+
 class GetOrganizationSharedFoldersTest(TestBase):
     def setUp(self):
         self.setup_common()
@@ -53,7 +54,7 @@ class GetOrganizationSharedFoldersTest(TestBase):
         from web.views.shared_folders.shared_folders_view import \
             json_get_team_shared_folders
 
-        request = self.create_request({
+        request = self.create_dummy_request({
             'sEcho': 'hoho',
             'iDisplayLength': 10,
             'iDisplayStart': 0
@@ -68,7 +69,7 @@ class GetOrganizationSharedFoldersTest(TestBase):
         from web.views.shared_folders.shared_folders_view import\
             json_get_user_shared_folders, URL_PARAM_USER
 
-        request = self.create_request({
+        request = self.create_dummy_request({
             'sEcho': 'hoho',
             URL_PARAM_USER: 'some@email'
         })
