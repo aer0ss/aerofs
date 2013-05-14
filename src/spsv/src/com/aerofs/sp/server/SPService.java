@@ -1962,8 +1962,8 @@ public class SPService implements ISPService
             existingTeam = true;
         } else {
             SignUpWithCodeImplResult result = signUpWithCodeImpl(signUpCode, user, fullName, shaedSP);
-            users = result.users;
-            existingTeam = result.existingTeam;
+            users = result.getUsers();
+            existingTeam = result.isExistingTeam();
         }
 
         OrganizationID orgID = user.getOrganization().id();
