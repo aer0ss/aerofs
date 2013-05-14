@@ -215,7 +215,7 @@ public class SyncStatusSynchronizer extends DirectoryServiceAdapter
 
         nvc.addListener_(this);
 
-        _pqd.scheduleScan_();
+        schedulePush_();
     }
 
     public void addListener_(IListener listener)
