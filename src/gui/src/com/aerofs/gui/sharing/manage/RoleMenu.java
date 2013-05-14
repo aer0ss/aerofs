@@ -1,6 +1,5 @@
 package com.aerofs.gui.sharing.manage;
 
-import com.aerofs.base.Loggers;
 import com.aerofs.base.acl.Role;
 import com.aerofs.base.acl.SubjectRolePair;
 import com.aerofs.base.id.UserID;
@@ -13,13 +12,11 @@ import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.MenuItem;
-import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 
 public class RoleMenu
 {
-    private static final Logger l = Loggers.getLogger(RoleMenu.class);
     private final Menu _menu;
     private final UserID _subject;
     private final CompUserList _compUserList;

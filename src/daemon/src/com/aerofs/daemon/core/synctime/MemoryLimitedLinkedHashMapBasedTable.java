@@ -4,14 +4,12 @@
 
 package com.aerofs.daemon.core.synctime;
 
-import com.aerofs.base.Loggers;
 import com.google.common.base.Supplier;
 import com.google.common.collect.ForwardingTable;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Table;
 import com.google.common.collect.Tables;
-import org.slf4j.Logger;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -31,8 +29,6 @@ import static com.google.common.collect.Iterables.getFirst;
  */
 class MemoryLimitedLinkedHashMapBasedTable<R,C,V> extends ForwardingTable<R,C,V>
 {
-    private static final Logger l = Loggers.getLogger(MemoryLimitedLinkedHashMapBasedTable.class);
-
     private final Table<R, C, V> _delegate;
     private final int _maxTableSize;
     private final Random _random;

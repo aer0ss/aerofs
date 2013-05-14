@@ -44,13 +44,12 @@ public class HdRelocateRootAnchor extends AbstractHdIMC<EIRelocateRootAnchor>
     private final TransManager _tm;
     private final SameFSRelocator _sameFSRelocator;
     private final CrossFSRelocator _crossFSRelocator;
-    private final Analytics _analytics;
 
 
     @Inject
     public HdRelocateRootAnchor(InjectableFile.Factory factFile, TransManager tm,
             SameFSRelocator sameFSRelocator, CrossFSRelocator crossFSRelocator,
-            CfgAbsDefaultRoot cfgAbsDefaultRoot, CfgAbsRoots cfgAbsRoots, Analytics analytics)
+            CfgAbsDefaultRoot cfgAbsDefaultRoot, CfgAbsRoots cfgAbsRoots)
     {
         _cfgAbsDefaultRoot = cfgAbsDefaultRoot;
         _cfgAbsRoots = cfgAbsRoots;
@@ -58,7 +57,6 @@ public class HdRelocateRootAnchor extends AbstractHdIMC<EIRelocateRootAnchor>
         _tm = tm;
         _sameFSRelocator = sameFSRelocator;
         _crossFSRelocator = crossFSRelocator;
-        _analytics = analytics;
     }
 
     @Override

@@ -136,7 +136,6 @@ public class Downloads
     private TC _tc;
     private CoreScheduler _sched;
     private CoreQueue _q;
-    private DownloadState _dlstate;
     private Download.Factory _factDownload;
     private To.Factory _factTo;
     private DirectoryService _ds;
@@ -149,13 +148,12 @@ public class Downloads
     private final Map<SOCID, Download> _ongoing = Maps.newTreeMap();
 
     @Inject
-    public void inject_(CoreQueue q, DownloadState dlstate, TC tc,
+    public void inject_(CoreQueue q, TC tc,
             CoreScheduler sched, Download.Factory factDownload,
             To.Factory factTo, DirectoryService ds, DownloadDependenciesGraph dldg,
             DownloadDeadlockResolver ddr)
     {
         _q = q;
-        _dlstate = dlstate;
         _tc = tc;
         _sched = sched;
         _factDownload = factDownload;

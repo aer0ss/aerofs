@@ -6,7 +6,6 @@ package com.aerofs.gui.multiuser.tray;
 
 import com.aerofs.gui.tray.IMenuProvider;
 import com.aerofs.gui.tray.ITrayMenu;
-import com.aerofs.gui.tray.ITrayMenuListener;
 import com.aerofs.gui.tray.RebuildDisposition;
 import com.aerofs.gui.tray.TrayIcon;
 
