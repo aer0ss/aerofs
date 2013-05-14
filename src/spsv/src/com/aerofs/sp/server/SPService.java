@@ -125,7 +125,6 @@ import sun.security.pkcs.PKCS10;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Collections;
@@ -1439,43 +1438,6 @@ public class SPService implements ISPService
         invite.delete();
 
         return accepter.setOrganization(invite.getOrganization(), AuthorizationLevel.USER);
-    }
-
-    public void migrateDefaultOrgUsers()
-            throws Exception
-    {
-        while (true) {
-            l.warn("======================= next batch");
-
-            _sqlTrans.begin();
-
-            Collection<UserID> users = Lists.newArrayList();
-            boolean done = true;
-
-            ResultSet rs = _factUser.getDefaultOrgUsers();
-            try {
-                int count = 0;
-                while (rs.next()) {
-                    User user = _factUser.create(UserID.fromInternal(rs.getString(1)));
-                    l.warn(">>>>>> migrate " + user);
-                    Organization org = _factOrg.save();
-                    users.addAll(user.setOrganization(org, AuthorizationLevel.ADMIN));
-                    if (count++ > 50) {
-                        done = false;
-                        break;
-                    }
-                }
-            } finally {
-                rs.close();
-            }
-
-            publishACLs_(users);
-
-            _sqlTrans.commit();
-
-            if (done) break;
-        }
-
     }
 
     @Override

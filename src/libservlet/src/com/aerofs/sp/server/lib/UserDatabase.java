@@ -103,13 +103,6 @@ public class UserDatabase extends AbstractSQLDatabase
         }
     }
 
-    public ResultSet getDefaultOrgUsers()
-            throws SQLException
-    {
-        return getConnection().createStatement().executeQuery(
-                selectWhere(T_USER, C_USER_ORG_ID + "=0", C_USER_ID));
-    }
-
     public boolean hasUser(UserID userId)
             throws SQLException
     {

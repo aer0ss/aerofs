@@ -34,7 +34,6 @@ import org.slf4j.Logger;
 
 import javax.annotation.Nonnull;
 import javax.inject.Inject;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Collection;
@@ -89,12 +88,6 @@ public class User
             tsUser.saveImpl(new byte[0], new FullName("Team", "Server"), org,
                     AuthorizationLevel.USER);
             return tsUser;
-        }
-
-        public ResultSet getDefaultOrgUsers()
-                throws SQLException
-        {
-            return _udb.getDefaultOrgUsers();
         }
     }
 

@@ -47,7 +47,6 @@ import com.aerofs.sp.server.session.SPSessionExtender;
 import com.aerofs.sp.server.session.SPSessionInvalidator;
 import com.aerofs.verkehr.client.lib.admin.VerkehrAdmin;
 import com.aerofs.verkehr.client.lib.publisher.VerkehrPublisher;
-import com.netflix.config.DynamicStringProperty;
 import org.slf4j.Logger;
 
 import javax.servlet.ServletConfig;
@@ -236,24 +235,17 @@ public class SPServlet extends AeroServlet
             throws IOException
     {
         try {
-            if ("lovemore".equals(req.getParameter("aerofs"))) {
-                _service.migrateDefaultOrgUsers();
-            } else {
-                _sqlTrans.begin();
-                if ("love".equals(req.getParameter("aerofs"))) {
-                    handleSignUpInvite(req, rsp);
-                }
-                _sqlTrans.commit();
+            _sqlTrans.begin();
+            if ("love".equals(req.getParameter("aerofs"))) {
+                handleSignUpInvite(req, rsp);
             }
+            _sqlTrans.commit();
         } catch (SQLException e) {
             _sqlTrans.handleException();
             throw new IOException(e);
         } catch (IOException e) {
             _sqlTrans.handleException();
             throw e;
-        } catch (Exception e) {
-            _sqlTrans.handleException();
-            throw new IOException(e);
         }
     }
 
