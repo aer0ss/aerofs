@@ -25,6 +25,9 @@ class mailserver {
         "smtpd_tls_cert_file":        value => $postfix_tls_cert;
         "smtpd_tls_loglevel":        value  => "3";
         "smtpd_tls_received_header": value  => "yes";
-        "mynetworks":                value  => "${ipaddress}/32"
+        # We allow mail from anywhere in the production network of the VPC,
+        # since SP sends email through SV and such.
+        # We do not send emails on behalf of CI.
+        "mynetworks":                value  => "172.16.0.0/24"
     }
 }
