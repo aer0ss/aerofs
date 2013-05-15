@@ -36,10 +36,10 @@ else
 fi
 
 URL=https://cache.client[DOT_STAGING].aerofs.com/$PACKAGE_FILENAME
-RTROOT = ~/.aerofs
+RUN_TIME_ROOT="$HOME/.aerofs[DOT_STAGING]"
 
-if [ -f $RTROOT/configuration.url ]; then
-    CONFIG_URL=$(cat $RTROOT/configuration.url)
+if [ -f "$RUN_TIME_ROOT/configuration.url" ]; then
+    CONFIG_URL=$(cat "$RUN_TIME_ROOT/configuration.url")
     if [ -z "$CONFIG_URL" ]; then
         echo The AeroFS domain server is not set.
         exit 1
