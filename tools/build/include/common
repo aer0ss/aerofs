@@ -47,6 +47,10 @@ readonly BUILD_OUTPUT_DIR="${GIT_ROOT}/out.ant"
 
 # Local resource directory (where prebuilt binaries exist)
 readonly CLIENT_RESOURCES_DIR="${GIT_ROOT}/resource/client"
+# FIXME(jP): Remove this. The build step should be populating this instead,
+# and the client should have precisely one configuration. Plus it's evil
+# that this looks into src/
+readonly LOG_CONFIGS_DIR="${GIT_ROOT}/src/daemon/resources/"
 
 # CLIENT or TEAM_SERVER, identifies which labeling.properties will be used
 # during the build process. Default to client

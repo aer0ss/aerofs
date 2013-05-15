@@ -63,6 +63,10 @@ function copy_resources_to_local_release_directories() {
     mkdir -p "${AEROFS_RELEASE_LINUX64_DIR}/"
     mkdir -p "${AEROFS_RELEASE_INST_DIR}/"
 
+    # FIXME(jP): There should be precisely one logger config for clients.
+    # FIXME(jP): logger configuration should come out of resources/common
+    # Copy logger configuration files:
+    cp "${LOG_CONFIGS_DIR}/"logback*.xml "${AEROFS_RELEASE_DIR}/"
     # Copy "resource/client" files
     cp "${CLIENT_RESOURCES_DIR}/common/"*.properties "${AEROFS_RELEASE_DIR}/"
     cp -R "${CLIENT_RESOURCES_DIR}/common"/* "${AEROFS_RELEASE_DIR}/"
@@ -237,8 +241,19 @@ function create_java_jar() {
         echo " resources/$i " >> "$local_TEMP_MANIFEST"
     done
 
+    # FIXME(jP): remove this wildcard, ship only one config.
+    # logger configuration
+    for i in $( ls "${AEROFS_RELEASE_DIR}"/logback*.xml | xargs basename ); do
+        echo " $i " >> "$local_TEMP_MANIFEST"
+    done
+
     # Package a jar with the contents of com subdirectory of the local release directory (all the class files)
-    jar cfm "${AEROFS_RELEASE_DIR}/aerofs.unobf.jar" "$local_TEMP_MANIFEST" -C "${LOCAL_RELEASE_DIR}/bin" com -C "${LOCAL_RELEASE_DIR}/bin" resources
+    jar cfm "${AEROFS_RELEASE_DIR}/aerofs.unobf.jar" "$local_TEMP_MANIFEST" \
+        -C "${LOCAL_RELEASE_DIR}/bin" com \
+        -C "${LOCAL_RELEASE_DIR}/bin" resources \
+        -C "${AEROFS_RELEASE_DIR}/" logback.xml \
+        -C "${AEROFS_RELEASE_DIR}/" logback-staging.xml \
+        -C "${AEROFS_RELEASE_DIR}/" logback-prod.xml
 }
 
 ######################################################################
