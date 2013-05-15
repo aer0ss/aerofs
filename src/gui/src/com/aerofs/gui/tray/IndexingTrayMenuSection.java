@@ -77,19 +77,25 @@ public class IndexingTrayMenuSection
     public void updateInPlace()
     {
         // All these null checks are ugly, but necessary - we can't guarantee the GUI thread will
-        // ask us to populate a menu before we get ritual notifications, and due to the need to
-        // support Ubuntu's menu style, we can't throw this in here either.  Pity.
+        // ask us to populate a menu before we get ritual notifications.  We also have no guarantee
+        // that this will not be called after onIndexingDone() is called.  Pity.
         if (_cachedMenu != null) {
-            if (_indexingStats1 != null && _cachedCurrentImage != null) {
+            if (_indexingStats1 != null && _cachedCurrentImage != null &&
+                    !_indexingStats1.isDisposed()) {
                 _indexingStats1.setImage(_cachedCurrentImage);
             }
             if (_cachedProgressString != null) {
                 if (_indexingStats2 == null) {
-                    TrayMenuPopulator p = new TrayMenuPopulator(_cachedMenu);
-                    _indexingStats2 = p.addMenuItemAfterItem(_cachedProgressString, _indexingStats1, null);
-                    _indexingStats2.setEnabled(false);
+                    // addMenuItemAfterItem only works on non-null, non-disposed items
+                    if (_indexingStats1 != null && !_indexingStats1.isDisposed()) {
+                        TrayMenuPopulator p = new TrayMenuPopulator(_cachedMenu);
+                        _indexingStats2 = p.addMenuItemAfterItem(_cachedProgressString, _indexingStats1, null);
+                        _indexingStats2.setEnabled(false);
+                    }
                 } else {
-                    _indexingStats2.setText(_cachedProgressString);
+                    if (!_indexingStats2.isDisposed()) {
+                        _indexingStats2.setText(_cachedProgressString);
+                    }
                 }
             }
         }
@@ -123,7 +129,9 @@ public class IndexingTrayMenuSection
                 @Override
                 public void run()
                 {
-                    if (_indexingStats1 != null) updateProgress(pb.getIndexingProgress());
+                    if (_indexingStats1 != null && !_indexingStats1.isDisposed()) {
+                        updateProgress(pb.getIndexingProgress());
+                    }
                 }
             });
         }
