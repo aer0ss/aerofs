@@ -1,4 +1,4 @@
-class pd-mysql-redis {
+class pd-database {
     include private-common
 
     # MySQL client and MySQL server.
@@ -16,7 +16,7 @@ class pd-mysql-redis {
     }
 
     file {"/opt/bootstrap/bootstrap.tasks":
-        source => "puppet:///modules/pd-mysql-redis/bootstrap.tasks",
+        source => "puppet:///modules/pd-database/bootstrap.tasks",
         require => Package["aerofs-bootstrap"],
     }
 }

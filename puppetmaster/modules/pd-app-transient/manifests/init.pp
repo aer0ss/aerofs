@@ -1,4 +1,4 @@
-class pd-aerofs {
+class pd-app-transient {
     include private-common
 
     # --------------
@@ -62,7 +62,7 @@ class pd-aerofs {
         uwsgi_port => 8081,
     }
     file {"/etc/nginx/conf.d/vhosts.conf":
-        source => "puppet:///modules/pd-aerofs/vhosts.conf",
+        source => "puppet:///modules/pd-app-transient/vhosts.conf",
         require => Package["nginx"],
     }
     file {"/etc/nginx/sites-enabled/aerofsconfig":
@@ -92,7 +92,7 @@ class pd-aerofs {
     # --------------
 
     file {"/opt/bootstrap/bootstrap.tasks":
-        source => "puppet:///modules/pd-aerofs/bootstrap.tasks",
+        source => "puppet:///modules/pd-app-transient/bootstrap.tasks",
         require => Package["aerofs-bootstrap"],
     }
 }

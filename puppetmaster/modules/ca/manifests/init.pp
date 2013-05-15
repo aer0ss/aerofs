@@ -21,6 +21,7 @@
 #
 class ca {
     package{[
+        "aerofs-common",
         "aerofs-ca-server",
         "aerofs-ca-tools",
     ]:
@@ -28,6 +29,12 @@ class ca {
         require => [
             Apt::Source["aerofs"]
         ]
+    }
+
+    package { [
+        "screen"
+        ]:
+        ensure => latest,
     }
 
     # TODO (MP) nginx config for the CA should be part of puppet, not apt.

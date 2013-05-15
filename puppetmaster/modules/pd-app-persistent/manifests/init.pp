@@ -1,4 +1,4 @@
-class pd-cfg-ca {
+class pd-app-persistent {
 
     include private-common
     include ca
@@ -6,6 +6,22 @@ class pd-cfg-ca {
     package { "aerofs-config":
         ensure  => latest,
         require => Apt::Source["aerofs"],
+    }
+
+    # Bootstrap things.
+    file {"/opt/bootstrap/bootstrap.tasks":
+        source => "puppet:///modules/pd-app-persistent/bootstrap.tasks",
+        require => Package["aerofs-bootstrap"],
+    }
+
+    # Links so that bootstrap pulls config without the web service running.
+    exec{"rm configuration.properties":
+        command => "/bin/rm -f /opt/bootstrap/resources/configuration.properties"
+    }
+    file{ "/opt/bootstrap/resources/configuration.properties":
+        ensure  => link,
+        target  => "/opt/config/properties/server.properties",
+        require => Exec["rm configuration.properties"],
     }
 
     package { [
@@ -29,20 +45,12 @@ class pd-cfg-ca {
     package{"nginx":
         ensure => present,
     }
-
     file{"/etc/nginx/certs":
         ensure => directory,
         require => Package["nginx"]
     }
-
-    file {"/etc/nginx/sites-available/cfg-server":
-        source => "puppet:///modules/pd-cfg-ca/cfg-server",
+    file {"/etc/nginx/sites-enabled/cfg-server":
+        source => "puppet:///modules/pd-app-persistent/cfg-server",
         require => Package["nginx"],
-    }
-
-    # Bootstrap things.
-    file {"/opt/bootstrap/bootstrap.tasks":
-        source => "puppet:///modules/pd-cfg-ca/bootstrap.tasks",
-        require => Package["aerofs-bootstrap"],
     }
 }
