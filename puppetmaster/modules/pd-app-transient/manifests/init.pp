@@ -76,10 +76,15 @@ class pd-app-transient {
             onlyif => "/bin/grep  '$old_pattern' '$file'",
         }
     }
-    replace_line {"production.ini static assets":
+    replace_line {"production.ini static prefix":
         file => "/opt/web/production.ini",
         old_pattern => "static.prefix = .*",
         new_pattern => "static.prefix = static",
+    }
+    replace_line {"production.ini installer prefix":
+        file => "/opt/web/production.ini",
+        old_pattern => "installer.prefix = .*",
+        new_pattern => "installer.prefix = static",
     }
     replace_line {"production.ini sp url":
         file => "/opt/web/production.ini",

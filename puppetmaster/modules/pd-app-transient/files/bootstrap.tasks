@@ -3,3 +3,4 @@ wildcard-cert-pull
 verkehr
 ejabberd
 spdb-tomcat-password
+uwsgi-restart
