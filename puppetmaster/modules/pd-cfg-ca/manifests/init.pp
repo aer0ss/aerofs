@@ -16,6 +16,13 @@ class pd-cfg-ca {
         ensure => latest,
     }
 
+    service { "php5-fpm":
+        ensure => running,
+        enable => true,
+        hasstatus => true,
+        hasrestart => true,
+    }
+
     # The configuration service and the CA server both use nginx. Do not enable
     # the configuration service right away, since we have to setup the CA server
     # first.
