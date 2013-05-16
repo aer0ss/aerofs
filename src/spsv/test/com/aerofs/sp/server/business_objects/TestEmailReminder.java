@@ -4,7 +4,6 @@
 
 package com.aerofs.sp.server.business_objects;
 
-import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.base.C;
 import com.aerofs.base.id.UserID;
 import com.aerofs.sp.common.Base62CodeGenerator;

@@ -1,7 +1,6 @@
 package com.aerofs.servlets;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.base.properties.Configuration;
 import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.Util;
 import org.slf4j.Logger;

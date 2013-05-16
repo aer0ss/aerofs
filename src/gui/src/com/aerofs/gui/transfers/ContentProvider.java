@@ -15,6 +15,7 @@ public class ContentProvider implements IStructuredContentProvider
     @Override
     public void inputChanged(Viewer viewer, Object oldInput, Object newInput)
     {
+        viewer.refresh();
     }
 
     /**
@@ -28,7 +29,7 @@ public class ContentProvider implements IStructuredContentProvider
         TransferState ts = (TransferState) input;
 
         synchronized (ts) {
-            return ts.transfers_().values().toArray();
+            return ts.transfers_().toArray();
         }
     }
 }

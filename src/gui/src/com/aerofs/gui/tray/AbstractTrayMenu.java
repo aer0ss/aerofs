@@ -82,7 +82,7 @@ public abstract class AbstractTrayMenu implements ITrayMenu, ITrayMenuComponentL
 
         _lastMenu = new Menu(GUI.get().sh(), SWT.POP_UP);
 
-        _transferTrayMenuSection = new TransferTrayMenuSection(UI.scheduler());
+        _transferTrayMenuSection = new TransferTrayMenuSection(UI.ts());
         _transferTrayMenuSection.addListener(this);
 
         _lastMenu.addMenuListener(new MenuListener() {
@@ -132,9 +132,6 @@ public abstract class AbstractTrayMenu implements ITrayMenu, ITrayMenuComponentL
             public void onNotificationReceived(PBNotification pb)
             {
                 switch (pb.getType().getNumber()) {
-                case Type.TRANSFER_VALUE:
-                    _transferTrayMenuSection.update(pb);
-                    break;
                 case Type.ROOTS_CHANGED_VALUE:
                     GUI.get().shellext().notifyRootAnchor();
                     break;

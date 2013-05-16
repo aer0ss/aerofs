@@ -52,7 +52,9 @@ class EISendSnapshot extends AbstractEBSelfHandling
         Map<Key, Value> uls = _uls.getStates_();
 
         // allocate sufficient amount of capacity so we'll never have to grow
-        List<PBNotification> pbs = Lists.newArrayListWithCapacity(dls.size() + uls.size());
+        List<PBNotification> pbs = Lists.newArrayListWithCapacity(dls.size() + uls.size() + 1);
+
+        pbs.add(_formatter.createClearTransfers());
 
         for (Entry<Key, Value> en : dls.entrySet()) {
             Key key = en.getKey();
@@ -70,7 +72,6 @@ class EISendSnapshot extends AbstractEBSelfHandling
             pbs.add(_formatter.formatUploadState(key, en.getValue()));
         }
 
-        _notifier.clearTransfers_();
         _notifier.sendSnapshot_(_to, pbs.toArray(new PBNotification[pbs.size()]));
         _psn.sendConflictCount_();
     }

@@ -1,6 +1,7 @@
 package com.aerofs.gui.transfers;
 
 import com.aerofs.base.id.DID;
+import com.aerofs.gui.GUIUtil;
 import com.aerofs.gui.Images;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.S;
@@ -16,9 +17,11 @@ import com.google.protobuf.ByteString;
 import org.eclipse.jface.viewers.ITableLabelProvider;
 import org.eclipse.jface.viewers.LabelProvider;
 import org.eclipse.swt.graphics.Color;
+import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.program.Program;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.TableColumn;
 
 import javax.annotation.Nullable;
 import java.util.HashMap;
@@ -29,14 +32,17 @@ public class TransferLabelProvider extends LabelProvider implements ITableLabelP
 
     private final Map<Program, Image> _iconCache = new HashMap<Program, Image>();
     private final Map<Integer, Image> _progressCache = new HashMap<Integer, Image>();
-    private final CompTransfersTable _view;
 
     private boolean _showSOCID;
     private boolean _showDID;
 
-    TransferLabelProvider(CompTransfersTable view)
+    private GC _gc;
+    private TableColumn _tc;
+
+    TransferLabelProvider(GC gc, TableColumn tc)
     {
-        _view = view;
+        _gc = gc;
+        _tc = tc;
     }
 
     public void showSOCID(boolean enable)
@@ -134,7 +140,7 @@ public class TransferLabelProvider extends LabelProvider implements ITableLabelP
             if (text.startsWith("/")) text = text.substring(1);
             if (_showSOCID) text = formatSOCID(pbsocid) + " - " + text;
 
-            return _view.shortenPath(text);
+            return GUIUtil.shortenText(_gc, text, _tc, true);
         }
     }
 

@@ -8,7 +8,6 @@ import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.base.id.UserID;
 import com.aerofs.proto.Sp.SignUpWithCodeReply;
 import com.aerofs.sp.common.SubscriptionCategory;
-import com.aerofs.sp.server.lib.id.OrganizationID;
 import com.aerofs.sp.server.lib.user.User;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.protobuf.ByteString;

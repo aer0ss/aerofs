@@ -3,6 +3,7 @@ package com.aerofs.ui;
 import com.aerofs.base.analytics.Analytics;
 import com.aerofs.controller.ControllerClient;
 import com.aerofs.gui.GUI;
+import com.aerofs.gui.TransferState;
 import com.aerofs.lib.analytics.DesktopAnalyticsProperties;
 import com.aerofs.lib.ritual.IRitualClientProvider;
 import com.aerofs.lib.ritual.RitualBlockingClient;
@@ -44,6 +45,7 @@ public final class UI
     private static final Updater s_updater = Updater.getInstance_();
     private static final UINotifier s_notifier = new UINotifier();
     private static final RitualNotificationClient s_rnc = new RitualNotificationClient();
+    private static final TransferState s_ts = new TransferState(s_rnc);
     private static final RootAnchorPoller s_rap = new RootAnchorPoller();
     private static final InfoCollector s_ic = new InfoCollector();
     private static final UIScheduler s_sched = new UIScheduler();
@@ -57,6 +59,8 @@ public final class UI
 
     // TODO (GS): Move to ControllerService
     public static RitualNotificationClient rnc() { return s_rnc; }
+
+    public static TransferState ts() { return s_ts; }
 
     // TODO (WW): Move to ControllerService
     public static RootAnchorPoller rap() { return s_rap; }

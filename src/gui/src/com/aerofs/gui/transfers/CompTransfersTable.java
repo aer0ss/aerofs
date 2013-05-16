@@ -1,23 +1,19 @@
 package com.aerofs.gui.transfers;
 
+import com.aerofs.gui.TransferState.ITransferStateChangedListener;
 import com.aerofs.lib.S;
+import org.eclipse.swt.events.DisposeEvent;
+import org.eclipse.swt.events.DisposeListener;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Listener;
 
-import com.aerofs.proto.RitualNotifications.PBNotification;
-import com.aerofs.ui.DelayedUIRunner;
-import com.aerofs.ui.RitualNotificationClient;
-import com.aerofs.ui.RitualNotificationClient.IListener;
-import com.aerofs.gui.GUIUtil;
 import com.aerofs.gui.TransferState;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.ControlAdapter;
 import org.eclipse.swt.events.ControlEvent;
-import org.eclipse.swt.events.DisposeEvent;
-import org.eclipse.swt.events.DisposeListener;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.widgets.Table;
@@ -26,37 +22,16 @@ import org.eclipse.swt.widgets.TableColumn;
 
 public class CompTransfersTable extends Composite
 {
-    private final TableViewer _tv;
-    private final DelayedUIRunner _dr;
-    private final TableColumn _tcPath;
-    private final GC _gc;
-
-    // TODO: consolidate the code to use the same TransferState as TransferTrayMenuSection
-    private final TransferState _ts;
-
-    private final TransferLabelProvider _label;
-
-    // the global RNC is not useful as we need to retrieve the full list of current transfers here.
-    private final RitualNotificationClient _rnc = new RitualNotificationClient();
-
-    private final IListener _l = new IListener() {
-        @Override
-        public void onNotificationReceived(PBNotification pb)
-        {
-            _ts.update(pb);
-            _dr.schedule();
-        }
-    };
-
     static final int COL_PATH = 0;
     static final int COL_DEVICE = 1;
     static final int COL_TRANSPORT = 2;
     static final int COL_PROG = 3;
 
-    public String shortenPath(String text)
-    {
-        return GUIUtil.shortenText(_gc, text, _tcPath, true);
-    }
+    private final TableViewer _tv;
+    private final TransferLabelProvider _label;
+
+    private TransferState _ts;
+    private final ITransferStateChangedListener _listener;
 
     /**
      * Create the composite.
@@ -68,23 +43,17 @@ public class CompTransfersTable extends Composite
         super(parent, style);
         setLayout(new FillLayout(SWT.HORIZONTAL));
 
-        _ts = new TransferState();
         _tv = new TableViewer(this, SWT.BORDER | SWT.FULL_SELECTION);
-        _tv.setUseHashlookup(true);
-        _tv.setContentProvider(new ContentProvider());
-        _tv.setLabelProvider(_label = new TransferLabelProvider(this));
 
         final Table table = _tv.getTable();
         table.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_WHITE));
         table.setHeaderVisible(true);
 
-        _gc = new GC(table);
-
-        _tcPath = new TableColumn(table, SWT.NONE);
-        _tcPath.setMoveable(true);
-        _tcPath.setText(S.LBL_COL_PATH);
-        _tcPath.setWidth(192);
-        _tcPath.addListener(SWT.Resize, new Listener() {
+        final TableColumn tcPath = new TableColumn(table, SWT.NONE);
+        tcPath.setMoveable(true);
+        tcPath.setText(S.LBL_COL_PATH);
+        tcPath.setWidth(192);
+        tcPath.addListener(SWT.Resize, new Listener() {
             @Override
             public void handleEvent(Event arg0)
             {
@@ -108,40 +77,42 @@ public class CompTransfersTable extends Composite
         tcProgress.setText(S.LBL_COL_PROGRESS);
         tcProgress.setWidth(80);
 
-        addControlListener(new ControlAdapter() {
+        _tv.setUseHashlookup(true);
+        _tv.setContentProvider(new ContentProvider());
+        _label = new TransferLabelProvider(new GC(table), tcPath);
+        _tv.setLabelProvider(_label);
+
+        _listener = new ITransferStateChangedListener()
+        {
+            @Override
+            public void onTransferStateChanged(TransferState state)
+            {
+                if (!isDisposed()) _tv.refresh();
+            }
+        };
+
+        addControlListener(new ControlAdapter()
+        {
             @Override
             public void controlResized(ControlEvent e)
             {
                 // without "-1" the horizontal scroll bar shows up sometimes
                 int width = getBounds().width - 2 * table.getBorderWidth() - 1;
-                _tcPath.setWidth((int) (width * 0.4));
-                tcDevice.setWidth((int) (width * 0.25));
-                tcTransport.setWidth((int) (width * 0.1));
-                tcProgress.setWidth((int) (width * 0.25));
+                tcPath.setWidth((int)(width * 0.4));
+                tcDevice.setWidth((int)(width * 0.25));
+                tcTransport.setWidth((int)(width * 0.1));
+                tcProgress.setWidth((int)(width * 0.25));
             }
         });
 
-        _dr = new DelayedUIRunner(new Runnable() {
+        addDisposeListener(new DisposeListener()
+        {
             @Override
-            public void run()
+            public void widgetDisposed(DisposeEvent disposeEvent)
             {
-                if (!isDisposed()) _tv.refresh();
+                if (_ts != null) _ts.removeListener(_listener);
             }
         });
-
-        getShell().addDisposeListener(new DisposeListener() {
-            @Override
-            public void widgetDisposed(DisposeEvent arg0)
-            {
-                _rnc.stop();
-            }
-        });
-
-        // add the listener before starting the RNC to avoid missing events
-        _rnc.addListener(_l);
-        _rnc.start();
-
-        _tv.setInput(_ts);
     }
 
     @Override
@@ -160,5 +131,15 @@ public class CompTransfersTable extends Composite
     {
         _label.showDID(enable);
         if (!isDisposed()) _tv.refresh();
+    }
+
+    public void setTransferState(TransferState ts)
+    {
+        if (_ts != null) _ts.removeListener(_listener);
+
+        _ts = ts;
+        if (!isDisposed()) _tv.setInput(_ts);
+
+        if (ts != null) _ts.addListener(_listener);
     }
 }

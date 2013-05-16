@@ -1,5 +1,6 @@
 package com.aerofs.gui.transfers;
 
+import com.aerofs.gui.TransferState;
 import org.eclipse.swt.layout.*;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.SWT;
@@ -72,5 +73,10 @@ public class CompTransfers extends Composite
     public void showDID(boolean enable)
     {
         _view.showDID(enable);
+    }
+
+    public void setTransferState(TransferState ts)
+    {
+        _view.setTransferState(ts);
     }
 }

@@ -48,6 +48,13 @@ public class PBTransferStateFormatter
         _nr = nr;
     }
 
+    public PBNotification createClearTransfers()
+    {
+        return PBNotification.newBuilder()
+                .setType(Type.CLEAR_TRANSFERS)
+                .build();
+    }
+
     public PBNotification formatDownloadState(Key key, Value value)
     {
         return formatTransferState(key, value, false);

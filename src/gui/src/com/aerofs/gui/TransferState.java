@@ -5,36 +5,70 @@ import com.aerofs.lib.id.SOCID;
 import com.aerofs.proto.RitualNotifications.PBNotification;
 import com.aerofs.proto.RitualNotifications.PBNotification.Type;
 import com.aerofs.proto.RitualNotifications.PBTransferEvent;
+import com.aerofs.ui.RitualNotificationClient;
+import com.aerofs.ui.RitualNotificationClient.IListener;
+import com.aerofs.ui.UI;
 import com.google.common.collect.HashBasedTable;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Table;
 
-/*
- * An aggregator of every single transfer events we've received from the daemon
+import java.util.Collection;
+import java.util.List;
+
+/**
+ * This class represents the transfer states as far as the GUI is aware of.
  *
- * This class tracks the latest event from each upload / download and does no filtering.
- * On the other hand, the daemon can be configured to filter certain events.
+ * It listens to ritual notifications, maintains the latest states, and
+ *   notifies its listeners whenever its states changed.
+ *
+ * It process ritual notifications on the GUI thread, and when it notifies
+ *   its listeners, it does so on the GUI thread.
  */
 public class TransferState
 {
-    private final Table<SOCID, DID, PBTransferEvent> _states = HashBasedTable.create();
+    private final RitualNotificationClient _rnc;
+    private final IListener _updater;
 
-    public TransferState()
+    private final Table<SOCID, DID, PBTransferEvent> _states;
+    private final List<ITransferStateChangedListener> _listeners;
+
+    public TransferState(RitualNotificationClient rnc)
     {
+        _states = HashBasedTable.create();
+        _listeners = Lists.newArrayList();
+
+        _updater = new IListener()
+        {
+            @Override
+            public void onNotificationReceived(final PBNotification pb)
+            {
+                UI.get().asyncExec(new Runnable()
+                {
+                    @Override
+                    public void run()
+                    {
+                        update(pb);
+                    }
+                });
+            }
+        };
+
+        _rnc = rnc;
+        _rnc.addListener(_updater);
     }
 
     /**
      * Nop if the notification type is not download or upload
+     * Precondition: we must be on the GUI thread
      */
-    public synchronized void update(PBNotification pb)
+    private synchronized void update(PBNotification pb)
     {
         if (pb.getType() == Type.TRANSFER) {
-            synchronized (_states) {
-                updateTransferState_(pb.getTransfer());
-            }
+            updateTransferState_(pb.getTransfer());
+            notifyListeners();
         } else if (pb.getType() == Type.CLEAR_TRANSFERS) {
-            synchronized (_states) {
-                _states.clear();
-            }
+            _states.clear();
+            notifyListeners();
         }
     }
 
@@ -53,8 +87,36 @@ public class TransferState
     /**
      * N.B. access to the return value must be protected by synchronized (this)
      */
-    public Table<SOCID, DID, PBTransferEvent> transfers_()
+    public Collection<PBTransferEvent> transfers_()
     {
-        return _states;
+        return _states.values();
+    }
+
+    public interface ITransferStateChangedListener
+    {
+        void onTransferStateChanged(TransferState state);
+    }
+
+    public void addListener(ITransferStateChangedListener listener)
+    {
+        synchronized (_listeners) {
+            _listeners.add(listener);
+        }
+    }
+
+    public void removeListener(ITransferStateChangedListener listener)
+    {
+        synchronized (_listeners) {
+            _listeners.remove(listener);
+        }
+    }
+
+    private void notifyListeners()
+    {
+        synchronized (_listeners) {
+            for (ITransferStateChangedListener listener : _listeners) {
+                listener.onTransferStateChanged(TransferState.this);
+            }
+        }
     }
 }

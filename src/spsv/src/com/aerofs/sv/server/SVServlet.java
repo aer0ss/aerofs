@@ -2,7 +2,6 @@ package com.aerofs.sv.server;
 
 import com.aerofs.base.BaseParam;
 import com.aerofs.base.Loggers;
-import com.aerofs.base.properties.DynamicInetSocketAddress;
 import com.aerofs.proto.Sv.PBSVCall;
 import com.aerofs.proto.Sv.PBSVReply;
 import com.aerofs.servlets.lib.db.sql.PooledSQLConnectionProvider;
@@ -16,7 +15,6 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.sql.SQLException;
 
 import static com.aerofs.sv.server.SVParam.SV_DATABASE_REFERENCE_PARAMETER;

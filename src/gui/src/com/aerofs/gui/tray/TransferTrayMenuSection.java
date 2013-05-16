@@ -8,15 +8,13 @@ import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIUtil.AbstractListener;
 import com.aerofs.gui.Images;
 import com.aerofs.gui.TransferState;
+import com.aerofs.gui.TransferState.ITransferStateChangedListener;
 import com.aerofs.gui.transfers.DlgTransfers;
 import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.os.OSUtil;
-import com.aerofs.proto.RitualNotifications.PBNotification;
 import com.aerofs.proto.RitualNotifications.PBTransferEvent;
 import com.aerofs.ui.UIParam;
-import com.aerofs.ui.UIScheduler;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.eclipse.swt.SWT;
@@ -37,7 +35,6 @@ public class TransferTrayMenuSection implements ITrayMenuComponent
     private static final long MULTIPLIER = UbuntuTrayItem.supported() ? 2 : 1;
     private static final long REFRESH_TIME = UIParam.SLOW_REFRESH_DELAY * MULTIPLIER;
 
-    private final UIScheduler _sched;
     private MenuItem _transferStats1;    // menu item used to display information about
                                          // ongoing transfers - line 1
     private MenuItem _transferStats2;    // menu item used to display information about
@@ -45,27 +42,27 @@ public class TransferTrayMenuSection implements ITrayMenuComponent
     private Object _transferProgress;    // non-null if transfer is in progress
     private Menu _lastMenu;
 
-    private long _lastChange = 0; // Timestamp of last change for rate-limiting purposes
-    private long _lastEmittedChange = 0; // Timestamp last time we scheduled a ratelimiting event
-    private boolean _choked; // If we receive another update, should we dispatch the event now?
-
-    private DlgTransfers _transferDialog;
     private AbstractListener _handleClick = new AbstractListener(null)
     {
+        private DlgTransfers dialog;
+
         @Override
         protected void handleEventImpl(Event event)
         {
-            if (_transferDialog == null) _transferDialog = new DlgTransfers(GUI.get().sh());
+            if (dialog == null) {
+                dialog = new DlgTransfers(GUI.get().sh());
+                dialog.setTransferState(_ts);
+            }
 
             boolean enableDeveloperMode = Util.test(event.stateMask, SWT.SHIFT);
 
-            _transferDialog.showSOCID(enableDeveloperMode);
-            _transferDialog.showDID(enableDeveloperMode);
+            dialog.showSOCID(enableDeveloperMode);
+            dialog.showDID(enableDeveloperMode);
 
-            if (_transferDialog.isDisposed()) {
-                _transferDialog.openDialog();
+            if (dialog.isDisposed()) {
+                dialog.openDialog();
             } else {
-                _transferDialog.forceActive();
+                dialog.forceActive();
             }
         }
     };
@@ -74,13 +71,17 @@ public class TransferTrayMenuSection implements ITrayMenuComponent
 
     private final Map<Integer, Image> _pieChartCache = Maps.newHashMap();
 
-    // TODO: consolidate the code to use the same TransferState as CompTransfersTable
-    private final TransferState _ts = new TransferState();
+    private final TransferState _ts;
+    private final RateLimitedNotifier _notifier;
 
-    public TransferTrayMenuSection(UIScheduler sched)
+    public TransferTrayMenuSection(TransferState ts)
     {
+        _ts = ts;
+
         _trayMenuListeners = Lists.newArrayList();
-        _sched = sched;
+
+        _notifier = new RateLimitedNotifier(REFRESH_TIME);
+        _ts.addListener(_notifier);
     }
 
     @Override
@@ -172,7 +173,7 @@ public class TransferTrayMenuSection implements ITrayMenuComponent
     {
         TransferStats stats = new TransferStats();
         synchronized (_ts) {
-            for (PBTransferEvent ts : _ts.transfers_().values()) {
+            for (PBTransferEvent ts : _ts.transfers_()) {
                 long done = ts.getDone();
                 long total = ts .getTotal();
                 if (done > 0 && done < total) {
@@ -189,13 +190,6 @@ public class TransferTrayMenuSection implements ITrayMenuComponent
             }
         }
         return stats;
-    }
-
-    private void notifyListeners()
-    {
-        for (ITrayMenuComponentListener l : _trayMenuListeners) {
-            l.onTrayMenuComponentChange();
-        }
     }
 
     private void showStats(MenuItem menuItem, String action, int count, long done, long total)
@@ -224,55 +218,55 @@ public class TransferTrayMenuSection implements ITrayMenuComponent
             img.dispose();
         }
         _pieChartCache.clear();
+
+        _ts.removeListener(_notifier);
     }
 
-    public void update(PBNotification pb)
+    private class RateLimitedNotifier implements ITransferStateChangedListener
     {
-        _ts.update(pb);
-        // This is some mildly fancy rate-limiting magic.  It
-        // 1) avoids calling notifyListeners() more frequently than once each REFRESH_TIME msec
-        // 2) avoids any delay in calling notifyListeners() if it was last called more than
-        //    REFRESH_TIME msec ago
-        // This way updates propagate immediately from idle, but avoid happening too frequently.
-        _lastChange = System.currentTimeMillis();
-        if (!_choked) {
-            _choked = true;
-            safeNotifyListeners();
-            _lastEmittedChange = _lastChange;
-            _sched.schedule(ratelimitCallback, REFRESH_TIME);
-        }
-    }
+        private long _rate;
+        private long _lastNotify;
+        private boolean _scheduled;
 
-    AbstractEBSelfHandling ratelimitCallback = new AbstractEBSelfHandling()
-    {
-        @Override
-        public void handle_()
+        private Runnable _notifier;
+
+        public RateLimitedNotifier(long rate)
         {
-            GUI.get().exec(new Runnable()
+            _rate = rate;
+
+            _notifier = new Runnable()
             {
                 @Override
                 public void run()
                 {
-                    if (_lastChange != _lastEmittedChange) {
-                        safeNotifyListeners();
-                        _lastEmittedChange = _lastChange;
-                        _sched.schedule(ratelimitCallback, REFRESH_TIME);
-                    } else {
-                        _choked = false;
+                    for (ITrayMenuComponentListener listener : _trayMenuListeners) {
+                        listener.onTrayMenuComponentChange();
                     }
-                }
-            });
-        }
-    };
 
-    private void safeNotifyListeners()
-    {
-        GUI.get().asyncExec(new Runnable() {
-            @Override
-            public void run()
-            {
-                notifyListeners();
+                    _lastNotify = System.currentTimeMillis();
+                    _scheduled = false;
+                }
+            };
+        }
+
+        private synchronized void schedule()
+        {
+            if (!_scheduled) {
+                long now = System.currentTimeMillis();
+
+                if (now >= _lastNotify + _rate) {
+                    _notifier.run();
+                } else {
+                    GUI.get().timerExec(_lastNotify + _rate - now, _notifier);
+                    _scheduled = true;
+                }
             }
-        });
+        }
+
+        @Override
+        public void onTransferStateChanged(TransferState state)
+        {
+            schedule();
+        }
     }
 }
