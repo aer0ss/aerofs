@@ -74,6 +74,7 @@ class pd-app-transient {
     define replace_line($file, $old_pattern, $new_pattern) {
         exec { "/bin/sed -i 's#$old_pattern#$new_pattern#g' $file":
             onlyif => "/bin/grep  '$old_pattern' '$file'",
+            require => Package["aerofs-web"],
         }
     }
     replace_line {"production.ini static prefix":
