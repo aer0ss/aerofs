@@ -14,7 +14,6 @@ class redis::aof inherits redis {
         content => template(
             "redis/aof.conf.erb"
         ),
-        require => Package["aerofs-redis-server"],
-        notify  => Service["redis-server"]
+        require => Package["aerofs-redis-server"]
     }
 }

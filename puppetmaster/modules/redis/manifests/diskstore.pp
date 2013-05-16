@@ -32,7 +32,6 @@ class redis::diskstore inherits redis {
         content => template(
             "redis/diskstore.conf.erb"
         ),
-        require => Package["aerofs-redis-server"],
-        notify  => Service["redis-server"]
+        require => Package["aerofs-redis-server"]
     }
 }

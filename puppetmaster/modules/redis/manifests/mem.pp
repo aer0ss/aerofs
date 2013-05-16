@@ -14,7 +14,6 @@ class redis::mem inherits redis {
         content => template(
             "redis/mem.conf.erb"
         ),
-        require => Package["aerofs-redis-server"],
-        notify  => Service["redis-server"]
+        require => Package["aerofs-redis-server"]
     }
 }
