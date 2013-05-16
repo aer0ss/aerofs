@@ -279,7 +279,8 @@ public class SPService implements ISPService
                 ExNoPerm.class,
                 ExBadCredential.class,
                 ExBadArgs.class,
-                ExAlreadyExist.class));
+                ExAlreadyExist.class,
+                ExNotAuthenticated.class));
 
         // Notify SPTransaction that an exception occurred.
         _sqlTrans.handleException();
