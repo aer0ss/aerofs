@@ -16,7 +16,9 @@ class pd-app-persistent {
 
     # Links so that bootstrap pulls config without the web service running.
     exec{"rm configuration.properties":
-        command => "/bin/rm -f /opt/bootstrap/resources/configuration.properties"
+        command => "/bin/rm -f /opt/bootstrap/resources/configuration.properties",
+        require => Package["aerofs-bootstrap"],
+
     }
     file{ "/opt/bootstrap/resources/configuration.properties":
         ensure  => link,
