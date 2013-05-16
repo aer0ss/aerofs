@@ -163,7 +163,7 @@ public class TestScanSession_Misc extends AbstractTestScanSession
         try {
             factSS.create_(root, Collections.singleton(pRoot), false).scan_();
             fail();
-        } catch(ExArbitrary e) {
+        } catch (ExArbitrary e) {
         } finally {
             verify(h, never()).releaseAll_();
             verify(h).removeAll_();

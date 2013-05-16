@@ -27,6 +27,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
 import java.io.IOException;
+import java.util.List;
 import java.util.ListIterator;
 
 /**
@@ -53,7 +54,7 @@ public class DownloadDeadlockResolver
         _mdiff = mdiff;
     }
 
-    public void resolveDeadlock_(final ImmutableList<DependencyEdge> cycle, IDownloadContext cxt)
+    public void resolveDeadlock_(final List<DependencyEdge> cycle, IDownloadContext cxt)
             throws Exception
     {
         // Cycles that are currently unsupported, those with:
@@ -106,7 +107,7 @@ public class DownloadDeadlockResolver
      * @return the NameConflictDependencyEdge to resolve by renaming one of the participant OIDs
      */
     private static @Nullable NameConflictDependencyEdge detectAllNameConflictCycle(
-            final ImmutableList<DependencyEdge> cycle)
+            final List<DependencyEdge> cycle)
     {
         // Check the applicability of this case:
         // 1) all dependencies must be NAME_CONFLICT
@@ -130,7 +131,7 @@ public class DownloadDeadlockResolver
      * @return the NameConflictDependencyEdge to resolve by renaming the local OID
      */
     private static @Nullable NameConflictDependencyEdge detectAncestralNameConflict(
-            final ImmutableList<DependencyEdge> cycle)
+            final List<DependencyEdge> cycle)
     {
         NameConflictDependencyEdge ncRet = null;
         ListIterator<DependencyEdge> iter = cycle.listIterator();
@@ -203,7 +204,7 @@ public class DownloadDeadlockResolver
      * @param cycle only required for debugging AssertionErrors
      */
     private void breakDependencyByRenaming_(@Nonnull NameConflictDependencyEdge dependency,
-            ImmutableList<DependencyEdge> cycle, IDownloadContext cxt)
+            List<DependencyEdge> cycle, IDownloadContext cxt)
             throws Exception
     {
         // The dependee SOCID should be local, the dependent should be remote;

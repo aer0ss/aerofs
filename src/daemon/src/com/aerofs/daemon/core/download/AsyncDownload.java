@@ -98,7 +98,7 @@ class AsyncDownload extends Download
         }
     }
 
-    private AsyncDownload(Factory f, SOCID socid, To from, IDownloadCompletionListener listener,
+    AsyncDownload(Factory f, SOCID socid, To from, IDownloadCompletionListener listener,
             @Nonnull Token tk)
     {
         super(f, socid, from, tk);
@@ -211,6 +211,7 @@ class AsyncDownload extends Download
                 } else if (e._e instanceof ExOutOfSpace) {
                     throw (ExOutOfSpace)e._e;
                 } else if (e._e instanceof IOException) {
+                    // TODO: make sure we only abort in case of local I/O error
                     throw (IOException)e._e;
                 } else {
                     l.info("gcr fail {} from {}: {}", _socid, e._did, Util.e(e._e));
