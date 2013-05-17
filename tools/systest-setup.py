@@ -11,7 +11,6 @@ import yaml
 import os
 import sys
 import requests
-import urllib
 import json
 
 file_root = os.path.dirname(__file__)
@@ -43,7 +42,7 @@ DEFAULT_OUTFILE = 'config.yaml'
 
 # CI Server Connection Settings
 CI_SP_URL = 'https://ci.sp.aerofs.com/sp'
-CI_C_URL = "http://ci.c.aerofs.com:8000/get_code?{}" # format with url params
+CI_C_URL = "http://ci.c.aerofs.com:8000/get_code"
 CI_STAGING_URL = 'https://staging.aerofs.com/staging-jonathan/sp'
 CI_SP_VERSION = 20
 
@@ -74,8 +73,7 @@ S3_DETAILS = {'s3_bucket_id': 'ci-build-agent-nat2.test.aerofs',
 
 def get_signup_code(userid):
     params = {"userid" : userid}
-    url = "http://ci.c.aerofs.com:8000/get_code?{0}".format(urllib.urlencode(params))
-    r = requests.get(url)
+    r = requests.get(CI_C_URL, params=params)
     try:
         code = json.loads(r.text)["signup_code"]
     except ValueError:
