@@ -1,5 +1,7 @@
 package com.aerofs;
 
+import com.aerofs.base.BaseParam;
+import com.aerofs.base.BaseParam.CA;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.properties.Configuration;
 import com.aerofs.labeling.L;
@@ -24,6 +26,8 @@ import org.apache.commons.configuration.ConfigurationException;
 import org.slf4j.Logger;
 
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.PrintStream;
 import java.lang.reflect.Field;
 import java.net.MalformedURLException;
 import java.text.SimpleDateFormat;
@@ -116,9 +120,6 @@ public class Main
         createRtRootIfNotExists(rtRoot);
         initializeLogging(rtRoot, prog);
 
-        // First things first, initialize the configuration subsystem.
-        initializeConfigurationSystem(rtRoot, prog, appArgs);
-
         // Set the library path to be APPROOT to avoid library not found exceptions
         // {@see http://blog.cedarsoft.com/2010/11/setting-java-library-path-programmatically/}
         try {
@@ -132,6 +133,9 @@ public class Main
             l.warn("The property java.library.path could not be set to "
                     + AppRoot.abs() + " - " + Util.e(e));
         }
+
+        // First things first, initialize the configuration subsystem.
+        initializeConfigurationSystem(rtRoot, AppRoot.abs(), prog, appArgs);
 
         //
         // INITIALIZE MAJOR COMPONENTS HERE!!!!!
@@ -229,11 +233,26 @@ public class Main
      * @param prog, the program ID
      * @param appArgs, the application arguments
      */
-    private static void initializeConfigurationSystem(String rtRoot, String prog,
+    private static void initializeConfigurationSystem(String rtRoot, String appRoot, String prog,
             List<String> appArgs)
     {
         try {
             Configuration.Client.initialize(rtRoot);
+
+            // Write the new cacert.pem to the approot for use by other parts of the system.
+            // TODO (MP) remove this and have everyone use Cfg.cacert() directly.
+            if (CA.CERTIFICATE.get().isPresent()) {
+                String caCertificateString = BaseParam.CA.CERTIFICATE.get().get();
+                PrintStream out = null;
+
+                try {
+                    out = new PrintStream(new FileOutputStream(new File(appRoot, LibParam.CA_CERT)));
+                    out.print(caCertificateString);
+                }
+                finally {
+                    if (out != null) out.close();
+                }
+            }
         } catch (Exception e) {
             if (prog.equals(LibParam.CLI_NAME) || prog.equals(LibParam.GUI_NAME)) {
                 if (e instanceof MalformedURLException) {

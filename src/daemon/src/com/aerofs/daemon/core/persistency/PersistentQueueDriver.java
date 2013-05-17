@@ -122,7 +122,7 @@ public class PersistentQueueDriver<I, O>
             public void handle_()
             {
                 final long _seq = ++_scanSeq;
-                _er.retry("pq-scan", new Callable<Void>()
+                _er.retry("pqscan", new Callable<Void>()
                 {
                     @Override
                     public Void call()
