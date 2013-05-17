@@ -439,7 +439,9 @@ public class SyncStatusSynchronizer extends DirectoryServiceAdapter
             List<ByteString> vhs = Lists.newArrayList();
             for (OID oid : e.getValue()) {
                 byte[] vh = getVersionHash_(new SOID(sidx, oid));
-                l.debug(new SOID(sidx, oid).toString() + " : " + BaseUtil.hexEncode(vh));
+                if (l.isTraceEnabled()) {
+                    l.trace("{}: {}", new SOID(sidx, oid), BaseUtil.hexEncode(vh));
+                }
                 oids.add(oid.toPB());
                 vhs.add(ByteString.copyFrom(vh));
             }
