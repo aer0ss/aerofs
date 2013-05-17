@@ -4,10 +4,11 @@
 
 package com.aerofs.daemon.core.collector;
 
+import com.aerofs.base.ex.AbstractExWirable;
 import com.aerofs.proto.Common.PBException;
 import com.aerofs.proto.Common.PBException.Type;
 
-public class ExNoComponentWithSpecifiedVersion extends AbstractExPermanentError
+public class ExNoComponentWithSpecifiedVersion extends AbstractExWirable implements IExPermanentError
 {
     private static final long serialVersionUID = 1L;
 

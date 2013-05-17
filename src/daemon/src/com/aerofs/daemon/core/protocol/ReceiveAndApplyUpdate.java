@@ -18,6 +18,7 @@ import com.aerofs.daemon.core.*;
 import com.aerofs.daemon.core.alias.Aliasing;
 import com.aerofs.daemon.core.alias.MapAlias2Target;
 import com.aerofs.daemon.core.download.DownloadState;
+import com.aerofs.daemon.core.download.ExUnsolvedMetaMetaConflict;
 import com.aerofs.daemon.core.download.IDownloadContext;
 import com.aerofs.daemon.core.ds.CA;
 import com.aerofs.daemon.core.ds.DirectoryService;
@@ -219,7 +220,7 @@ public class ReceiveAndApplyUpdate
      * @return null if not to apply the update
      */
     public @Nullable CausalityResult computeCausalityForMeta_(SOID soid, Version vRemote,
-        int metaDiff) throws SQLException
+        int metaDiff) throws SQLException, ExUnsolvedMetaMetaConflict
     {
         SOCKID k = new SOCKID(soid, CID.META, KIndex.MASTER);
         final Version vLocal = _nvc.getLocalVersion_(k);
@@ -258,7 +259,7 @@ public class ReceiveAndApplyUpdate
             if (comp > 0) {
                 // TODO: throw to prevent meta/meta conflicts from being ignored when aliasing?
                 l.warn("true meta conflict on {}. {} > {}. don't apply", soid, vLocal, vRemote);
-                return null;
+                throw new ExUnsolvedMetaMetaConflict();
             } else {
                 l.debug("true meta conflict. l < r. merge");
                 return new CausalityResult(KIndex.MASTER, vR_L, Collections.<KIndex>emptyList(),

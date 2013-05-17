@@ -19,7 +19,7 @@ public class ExUnsatisfiedDependency extends ExWrapped
     private static final long serialVersionUID = 0L;
 
     @Nullable final DID _did;
-    final SOCID _socid;
+    public final SOCID _socid;
 
     ExUnsatisfiedDependency(SOCID socid, @Nullable DID did, Exception e)
     {

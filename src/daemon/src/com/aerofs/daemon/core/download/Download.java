@@ -307,10 +307,11 @@ class Download
                 }
             }
         } catch (ExDependsOn e) {
-            // ideally PARENT dependencies should be resolved outside of the download context
-            // however that would require maintaining a global dependency graph to detect and
-            // resolve deadlocks
-            //
+            // ideally PARENT dependencies could be resolved outside of the download context
+            // however that would require maintaining a per-device dependency graph as well as
+            // a per-device map of ongoing downloads and that is beyond the scope of this commit
+            // as it does not impact correctness but is mostly a corner case optimisation
+            // TODO: avoid duplicate concurrent requests w/ per-device tracking of ongoing downloads
             cxt.downloadSync_(new SOCID(_socid.sidx(), e._ocid), e._type);
         } catch (ExUpdateInProgress e) {
             onUpdateInProgress();
@@ -329,6 +330,9 @@ class Download
                 // hmm, this may be more of a remote error, should the wrapping be changed?
                 throw new ExProcessReplyFailed(cxt.did, e);
             }
+        } catch (ExUnsolvedMetaMetaConflict e) {
+            // TODO: metric/defect?
+            throw new ExProcessReplyFailed(cxt.did, e);
         } catch (Exception e) {
             throw new ExProcessReplyFailed(cxt.did, e);
         }

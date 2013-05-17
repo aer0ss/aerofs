@@ -15,6 +15,7 @@ import com.aerofs.daemon.core.ex.ExWrapped;
 import com.aerofs.daemon.lib.db.ICollectorSequenceDatabase.OCIDAndCS;
 import com.aerofs.lib.id.OCID;
 import com.aerofs.lib.id.SIndex;
+import com.aerofs.lib.id.SOID;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Sets;
 import org.slf4j.Logger;
@@ -437,7 +438,9 @@ public class Collector implements IDumpStatMisc
             // 1) First determine those *with* permanent errors
             Set<DID> didsWithPermanentErrors = Sets.newHashSetWithExpectedSize(did2e.size());
             for (Entry<DID, Exception> entry : did2e.entrySet()) {
-                if (isPermanentError(entry.getValue())) didsWithPermanentErrors.add(entry.getKey());
+                if (isPermanentError(socid.soid(), entry.getValue())) {
+                    didsWithPermanentErrors.add(entry.getKey());
+                }
             }
             // 2) Use set theory to complement that set correctly
             // N.B. because the set of DIDs in the device-specific errors map is not necessarily a
@@ -470,6 +473,13 @@ public class Collector implements IDumpStatMisc
                 scheduleBackoff_();
             }
 
+            // TODO: if all dids have perm errors we should remove the object from the collector q
+            // NB: this is only possible if no KML were added during the dl, i.e. iff KML ver before
+            // dl dominates KML ver after dl
+            // this might get rid of the endless gcc loop caused by ghost KMLs without requiring
+            // a KML cleanup (assuming all devices advertising the files can be contacted in the
+            // same collector iteration...)
+
             l.debug("cdl {} didsWPerm {} didsWOPerm {}", socid,
                     didsWithPermanentErrors, didsWithoutPermanentErrors);
 
@@ -479,14 +489,24 @@ public class Collector implements IDumpStatMisc
     }
 
     /**
-     * @param e the exception received from the remote peer when trying to download an object
-     * @return whether the remote exception is a "permanent" error.
-     * See {@code AbstractExPermanentError} for details
+     * An soid is considered to be in a permanent error if any of the following is true:
+     *      - it threw an IExPermanentError
+     *      - it has an unsatisfied dep on another component of the same soid for which a
+     *      permanent error was thrown
+     *
+     * NB: the code is slightly obscured by the need to unwrap semantically wrapped exceptions
+     * to look for a potential permanent error
      */
-    private static boolean isPermanentError(Exception e)
+    // TODO: distinguish between "perm error" and "perm dep errror" to inhibit backoff
+    private static boolean isPermanentError(SOID soid, Exception e)
     {
-        return (e instanceof ExWrapped ? ((ExWrapped)e).recursiveUnwrap() : e)
-                instanceof AbstractExPermanentError;
+        if (e instanceof ExUnsatisfiedDependency) {
+            SOID dep = ((ExUnsatisfiedDependency)e)._socid.soid();
+            return soid.equals(dep) && isPermanentError(dep, ((ExUnsatisfiedDependency)e).unwrap());
+        } else if (e instanceof ExWrapped) {
+            return isPermanentError(soid, ((ExWrapped)e).unwrap());
+        }
+        return e instanceof IExPermanentError;
     }
 
     @Override
