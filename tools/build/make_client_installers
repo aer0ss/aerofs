@@ -236,7 +236,6 @@ function make_windows_installers() {
 
         # Create a temporary directory to work in
         NSIS_TEMP_DIR="\$( mktemp -d -t nsis.XXXXXXXX )"
-        trap "rm -r \"\$NSIS_TEMP_DIR\"" EXIT
 
         # Create a subfolder in that directory with the version number
         # Note: we prepend v_ to the version number to make it easy for the NSIS installer
@@ -276,8 +275,15 @@ function make_windows_installers() {
         # we also upload the install file for whitelisting, as some versions of the antivirus flag the
         # installer as a potential virus
         if [ "$MODE" == "PROD" ]; then
-            lftp -e "mirror -R \${NSIS_TEMP_DIR}/ /aerofs/; bye" -u \`cat ~/.lftp/login.cfg\` whitelist1.kaspersky-labs.com
-            lftp -e 'put ${local_OUT_FILE_VERSIONFREE}; bye' -u \`cat ~/.lftp/login.cfg\` whitelist1.kaspersky-labs.com
+            LFTPSCRIPT="\$( mktemp -t lftp.XXXX )"
+            cat << LFTPCMDS >> \${LFTPSCRIPT}
+trap "rm \"\$LFTPSCRIPT\"" EXIT
+trap "rm -r \"\$NSIS_TEMP_DIR\"" EXIT
+lftp -e "mirror -R \${NSIS_TEMP_DIR}/ /aerofs/; bye" -u \`cat ~/.lftp/login.cfg\` whitelist1.kaspersky-labs.com
+lftp -e 'put ${local_OUT_FILE_VERSIONFREE}; bye' -u \`cat ~/.lftp/login.cfg\` whitelist1.kaspersky-labs.com
+LFTPCMDS
+            chmod +x \${LFTPSCRIPT}
+            screen -d -m \${LFTPSCRIPT}
         fi
 
 ENDCMDS
