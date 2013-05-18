@@ -72,9 +72,7 @@ public class InvitationEmailer
                 public Void call() throws Exception
                 {
                     EmailSender.sendPublicEmailFromSupport(nsInviter.nameOnly(),
-                            invitee.id().getString(),
-                            inviter.id().isTeamServerID() ?
-                                    WWW.SUPPORT_EMAIL_ADDRESS.get() : inviter.id().getString(),
+                            invitee.id().getString(), getReplyTo(inviter),
                             subject, email.getTextEmail(), email.getHTMLEmail(),
                             EmailCategory.FOLDERLESS_INVITE);
 
@@ -145,9 +143,7 @@ public class InvitationEmailer
                 public Void call() throws Exception
                 {
                     EmailSender.sendPublicEmailFromSupport(nsSharer.nameOnly(),
-                            sharee.id().getString(),
-                            sharer.id().isTeamServerID() ?
-                                    WWW.SUPPORT_EMAIL_ADDRESS.get() : sharer.id().getString(),
+                            sharee.id().getString(), getReplyTo(sharer),
                             subject, email.getTextEmail(), email.getHTMLEmail(),
                             EmailCategory.FOLDER_INVITE);
 
@@ -185,8 +181,7 @@ public class InvitationEmailer
                 public Void call() throws Exception
                 {
                     EmailSender.sendPublicEmailFromSupport(ns.nameOnly(), invitee.id().getString(),
-                            inviter.id().isTeamServerID() ?
-                                    WWW.SUPPORT_EMAIL_ADDRESS.get() : inviter.id().getString(),
+                            getReplyTo(inviter),
                             subject, email.getTextEmail(),
                             email.getHTMLEmail(), EmailCategory.ORGANIZATION_INVITATION);
 
@@ -226,6 +221,12 @@ public class InvitationEmailer
                 return _inviterLongName;
             }
         }
+    }
+
+    private static String getReplyTo(User inviter)
+    {
+        return inviter.id().isTeamServerID() ?
+                WWW.SUPPORT_EMAIL_ADDRESS.get() : inviter.id().getString();
     }
 
     private final Callable<Void> _c;
