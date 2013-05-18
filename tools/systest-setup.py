@@ -102,6 +102,7 @@ def generate_yaml(args, username):
     actor_defaults['root'] = args.root
     actor_defaults['aero_app_root'] = args.approot
     actor_defaults['aero_rt_root'] = args.rtroot
+    actor_defaults['aero_sp_url'] = args.sp
     if not args.multiuser:
         assert type(username) != type([])
         actor_defaults['aero_userid'] = username
