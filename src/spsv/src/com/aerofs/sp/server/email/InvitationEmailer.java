@@ -72,8 +72,10 @@ public class InvitationEmailer
                 public Void call() throws Exception
                 {
                     EmailSender.sendPublicEmailFromSupport(nsInviter.nameOnly(),
-                            invitee.id().getString(), inviter.id().getString(), subject,
-                            email.getTextEmail(), email.getHTMLEmail(),
+                            invitee.id().getString(),
+                            inviter.id().isTeamServerID() ?
+                                    WWW.SUPPORT_EMAIL_ADDRESS.get() : inviter.id().getString(),
+                            subject, email.getTextEmail(), email.getHTMLEmail(),
                             EmailCategory.FOLDERLESS_INVITE);
 
                     EmailUtil.emailSPNotification(
@@ -143,8 +145,11 @@ public class InvitationEmailer
                 public Void call() throws Exception
                 {
                     EmailSender.sendPublicEmailFromSupport(nsSharer.nameOnly(),
-                            sharee.id().getString(), sharer.id().getString(), subject,
-                            email.getTextEmail(), email.getHTMLEmail(), EmailCategory.FOLDER_INVITE);
+                            sharee.id().getString(),
+                            sharer.id().isTeamServerID() ?
+                                    WWW.SUPPORT_EMAIL_ADDRESS.get() : sharer.id().getString(),
+                            subject, email.getTextEmail(), email.getHTMLEmail(),
+                            EmailCategory.FOLDER_INVITE);
 
                     EmailUtil.emailSPNotification(sharer + " shared " + folderName + " with " + sharee,
                             "code " + sid.toStringFormal());
@@ -180,7 +185,9 @@ public class InvitationEmailer
                 public Void call() throws Exception
                 {
                     EmailSender.sendPublicEmailFromSupport(ns.nameOnly(), invitee.id().getString(),
-                            inviter.id().getString(), subject, email.getTextEmail(),
+                            inviter.id().isTeamServerID() ?
+                                    WWW.SUPPORT_EMAIL_ADDRESS.get() : inviter.id().getString(),
+                            subject, email.getTextEmail(),
                             email.getHTMLEmail(), EmailCategory.ORGANIZATION_INVITATION);
 
                     return null;
