@@ -54,6 +54,8 @@ ssh $APT_SERVER \
     done; \
     echo Copy debs to /var/www; \
     cp ~/$DEBS_FOLDER/*.ver /var/www/ubuntu/$TARGET_REPOSITORY_DIRECTORY/versions; \
+    sudo chown root:admin /var/www/ubuntu/$TARGET_REPOSITORY_DIRECTORY/versions/*; \
+    sudo chmod 663 /var/www/ubuntu/$TARGET_REPOSITORY_DIRECTORY/versions/*; \
     echo Call reprepro includedeb; \
     sudo reprepro --gnupghome=/root/.gnupg includedeb precise ~/$DEBS_FOLDER/*.deb; \
     echo Remove old debs; \
