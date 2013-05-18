@@ -83,36 +83,31 @@ public abstract class LogUtil
     }
 
     /**
-     * Suppress stack trace for the given throwable.
+     * Suppress the stack trace for the given throwable.
      *
      * This is useful to pass an abbreviated exception on to the logging subsystem.
      *
      * Example: l.warn("Oh noes! Bad {}", thing, LogUtil.suppress(myEx));
-     *
      */
-    public static <T extends Throwable> T suppress(T thro )
+    public static <T extends Throwable> T suppress(T throwable)
     {
-        thro.setStackTrace(new StackTraceElement[0]);
-        return thro;
+        throwable.setStackTrace(new StackTraceElement[0]);
+        return throwable;
     }
 
     /**
-     * Suppress stack trace if the throwable is an instance of one of the given
+     * Suppress the stack trace if the throwable is an instance of one of the given
      * exception types.
-     *
      */
-    // TODO(jP): Varargs and Class<T> don't play nicely; suppressTypes should be an array
-    // of Class<T> to be self-documenting.
-    // However that breaks the ability to call this method without creating an
-    // explicit array of Throwable.
-    public static <T extends Throwable> T suppress(T thro, Class... suppressTypes )
+    public static <T extends Throwable> T suppress(T throwable,
+            Class<? extends Throwable>... suppressTypes)
     {
-        for (Class clazz : suppressTypes) {
-            if (clazz.isInstance(thro)) {
-                return suppress(thro);
+        for (Class<?> clazz : suppressTypes) {
+            if (clazz.isInstance(throwable)) {
+                return suppress(throwable);
             }
         }
-        return thro;
+        return throwable;
     }
 
     private LogUtil() { /* private to enforce uninstantiability */ }
