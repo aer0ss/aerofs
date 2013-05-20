@@ -1,12 +1,17 @@
-In /opt/ca (this directory) run ./deploy <ca_files_directory> where
-the ca_files_directory is usually just "prod".
+In /opt/ca (this directory) run ./deploy.sh (this creates the new CA root
+certificate in a new directory named "prod"). You will be prompted to create a
+CA cert password.
 
-This will create a new directory named "prod" which contains some
-openssl related things. You will be prompted to create a ca cert password.
+To start the CA, execute the following commands:
 
-Then export capass=<whatever_password_you_specified> and run ./ca.py (be sure to
-delete your bash history for security purposes).
+screen
+read -s capass
+<enter your ca certificate password>
+export capass
+/opt/ca/ca.py
+Crtl-a
+d
 
-Then run /opt/ca/ca.py <ca_files_directory>
+The Crtl-a, d detaches the screen session.
 
 That's it, enjoy!
