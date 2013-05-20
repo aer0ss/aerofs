@@ -12,19 +12,23 @@ function upload_debs() {
     scp debs/* $APT_SERVER:~/$DEBS_FOLDER/
     ssh $APT_SERVER \
         "set -e;
-        cd /var/www/ubuntu/$TARGET_REPOSITORY_DIRECTORY/; \
-        for deb in \$(ls ~/$DEBS_FOLDER/*.deb); \
-        do \
-            echo Signing \$deb; \
-            sudo dpkg-sig --sign builder \$deb -g --homedir=/root/.gnupg; \
-        done; \
-        echo Copy debs to /var/www; \
-        cp ~/$DEBS_FOLDER/*.ver /var/www/ubuntu/$TARGET_REPOSITORY_DIRECTORY/versions; \
-        sudo chown root:admin /var/www/ubuntu/$TARGET_REPOSITORY_DIRECTORY/versions/*; \
-        sudo chmod 666 /var/www/ubuntu/$TARGET_REPOSITORY_DIRECTORY/versions/*; \
-        echo Call reprepro includedeb; \
-        sudo reprepro --gnupghome=/root/.gnupg includedeb precise ~/$DEBS_FOLDER/*.deb; \
-        echo Remove old debs; \
+        if [ ! -d /var/www/ubuntu/$TARGET_REPOSITORY_DIRECTORY ];
+        then
+            cp -r /var/www/ubuntu/_default_ /var/www/ubuntu/$TARGET_REPOSITORY_DIRECTORY;
+        fi;
+        cd /var/www/ubuntu/$TARGET_REPOSITORY_DIRECTORY/;
+        for deb in \$(ls ~/$DEBS_FOLDER/*.deb);
+        do
+            echo --- Signing \$deb;
+            sudo dpkg-sig --sign builder \$deb -g --homedir=/root/.gnupg;
+        done;
+        echo --- Copy debs to /var/www;
+        cp ~/$DEBS_FOLDER/*.ver /var/www/ubuntu/$TARGET_REPOSITORY_DIRECTORY/versions;
+        sudo chown root:admin /var/www/ubuntu/$TARGET_REPOSITORY_DIRECTORY/versions/*;
+        sudo chmod 664 /var/www/ubuntu/$TARGET_REPOSITORY_DIRECTORY/versions/*;
+        echo --- Call reprepro includedeb;
+        sudo reprepro --gnupghome=/root/.gnupg includedeb precise ~/$DEBS_FOLDER/*.deb;
+        echo --- Remove old debs;
         rm -f ~/$DEBS_FOLDER/*"
 }
 
@@ -55,8 +59,8 @@ function notify_team() {
 # echos the usage message and exits
 function print_usage()
 {
-    echo "Usage: $0 <repository>"                                             >&2
-    echo " <repository> repository to upload package to (PROD|CI|STAGING)"    >&2
+    echo "Usage: $0 <repository>"
+    echo " <repository> repository to upload package to (PROD|CI|STAGING|$(whoami | tr [a-z] [A-Z]))"
     exit $ERRBADARGS
 }
 
@@ -67,7 +71,7 @@ then
 fi
 
 # check the mode the user is invoking
-if [[ "$1" != 'PROD' && "$1" != 'CI' && "$1" != 'STAGING' ]]
+if [[ "$1" != 'PROD' && "$1" != 'CI' && "$1" != 'STAGING' && "$1" != "$(whoami | tr [a-z] [A-Z])" ]]
 then
     print_usage
 fi
@@ -81,7 +85,7 @@ readonly DEBS_FOLDER="debs-$TARGET_REPOSITORY_DIRECTORY"
 upload_debs
 
 # notify the team if necessary that the upload completed
-if [[ "$TARGET_REPOSITORY" != 'CI' && "$TARGET_REPOSITORY" != 'STAGING' ]]
+if [ "$TARGET_REPOSITORY" = 'PROD' ]
 then
     notify_team
 fi

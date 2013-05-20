@@ -11,10 +11,8 @@ for file in \
     aerofsts-installer.tgz \
     current.ver
 do
-    if [ ! -f $file ]
-    then
-        wget --no-check-certificate https://nocache.client.aerofs.com/$file
-    fi
+    rm -f $file
+    wget --no-check-certificate https://nocache.client.aerofs.com/$file
 done
 
 echo "Client binaries successfully downloaded."

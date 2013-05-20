@@ -1,9 +1,9 @@
 
 .PHONY: all debs upload clean test
 
-# default the mode to staging unless the user specifies otherwise. set this in the environment.
-MODE?=STAGING
-TARGET_REPOSITORY=$(MODE) # the target repository is set to the mode for now
+# Default the bin to staging unless the user specifies otherwise. Set this in the environment.
+BIN?=STAGING
+TARGET_REPOSITORY=$(BIN) # The target repository is set to the bin.
 
 PACKAGES= \
 	admin \

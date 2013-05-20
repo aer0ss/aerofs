@@ -14,7 +14,7 @@ node default {
 
     $repo = hiera("environment","") ? {
         "staging"   => "staging",
-        default     => "production"
+        default     => "prod"
     }
 
     class{"common":
