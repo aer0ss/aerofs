@@ -144,10 +144,9 @@ EOF
 ###############################################################################
 
 function print_usage() {
-    echo "usage: $0 [deb-name] [repository]"                                  >&2
-    echo ""                                                                   >&2
-    echo "    [deb-name]    debian package to build"                          >&2
-    echo "    [repository] repository to upload package to (PROD|CI|STAGING)" >&2
+    echo "Usage: $0 <debian_name> <repository>"                               >&2
+    echo " <deb-name>   debian package to build"                              >&2
+    echo " <repository> repository to upload package to (PROD|CI|STAGING)"    >&2
     exit $ERRBADARGS
 }
 
