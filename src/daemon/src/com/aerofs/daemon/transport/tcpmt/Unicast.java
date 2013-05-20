@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.security.GeneralSecurityException;
 import java.util.Collection;
 
 import static com.aerofs.daemon.transport.lib.AddressUtils.getinetaddr;
@@ -44,7 +45,7 @@ public class Unicast implements IConnectionManager, IUnicast, IPipeDebug
      * port.
      */
     Unicast(IPipeController pc, ARP arp, Stores stores, int port, Integer internalPort)
-            throws IOException
+            throws IOException, GeneralSecurityException
     {
         // external port must be a specific value if internal port is specified
         assert internalPort == null || port != TCP.PORT_ANY;
