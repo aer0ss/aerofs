@@ -41,6 +41,7 @@ public class Main
     private static final Object DAEMON_NAME = "daemon";
     private static final Object FSCK_NAME = "fsck";
     private static final Object UMDC_NAME = "umdc";
+    private static final String LOG_CONFIG = "logback.xml";
 
     private static String getProgramBanner(String rtRoot, String app)
     {
@@ -67,7 +68,11 @@ public class Main
         // NB: No logger is set up if this is the shell.
         if (! prog.equals(LibParam.SH_NAME)) {
             try {
-                LogUtil.initializeFromConfigFile(rtRoot, prog, logLevel, "logback.xml");
+                LogUtil.initializeFromConfigFile(rtRoot, prog, logLevel, LOG_CONFIG);
+
+                if (L.isStaging()) {
+                    LogUtil.startConsoleLogging();
+                }
             } catch (Exception je) {
                 // FIXME(jP): Can we remove this? Does it ever work?
                 String msg = "Error starting log subsystem: " + Util.e(je);

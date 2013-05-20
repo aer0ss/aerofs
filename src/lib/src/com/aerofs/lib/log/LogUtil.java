@@ -1,7 +1,11 @@
 package com.aerofs.lib.log;
 
+import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.LoggerContext;
+import ch.qos.logback.classic.encoder.PatternLayoutEncoder;
 import ch.qos.logback.classic.joran.JoranConfigurator;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.ConsoleAppender;
 import ch.qos.logback.core.joran.spi.JoranException;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExNoResource;
@@ -16,8 +20,6 @@ import java.util.Date;
  * Helpers for dealing with logback
  * IMPORTANT: DO NOT USE "L" in here!!!
  */
-// TODO: Figure out if the above IMPORTANT is still true in a logback world?
-// TODO: Is this better factored straight into Main?
 public abstract class LogUtil
 {
     static
@@ -35,17 +37,18 @@ public abstract class LogUtil
         ERROR
     }
 
+    public static String CONSOLE_LOG_FMT = "%d{HHmmss.SSS}%.-1level %thread @%c{0}, %m%n";
+
     /**
      * Initialize the logging system by loading a named config file with
      * some context properties set.
      * @param rtRoot  Will be passed to config file as RTROOT
-     * @param prog    Will be passed to config file as PROGNAME
+     * @param progName    Will be passed to config file as PROGNAME
      * @param logLevel Will be passed to config file as LOGLEVEL
      * @param configFile  Name of XML config file to load
-     * FIXME: cleaner to handle JoranException here?
      */
     public static void initializeFromConfigFile(
-            String rtRoot, String prog,
+            String rtRoot, String progName,
             Level logLevel, String configFile)
             throws JoranException, ExNoResource
     {
@@ -55,7 +58,7 @@ public abstract class LogUtil
         configurator.setContext(context);
         context.reset();
 
-        context.putProperty("PROGNAME", prog);
+        context.putProperty("PROGNAME", progName);
         context.putProperty("RTROOT", rtRoot);
         context.putProperty("LOGLEVEL", logLevel.name());
 
@@ -80,6 +83,29 @@ public abstract class LogUtil
                 LoggerFactory.getLogger(LogUtil.class).debug("TERMINATED " + strDate);
             }
         }));
+    }
+
+    /**
+     * Create a console appender and attach it to the root logger. This will inherit
+     * the log level of root (which is generally set by configuration, see
+     * initializeFromConfigFile).
+     */
+    public static void startConsoleLogging()
+    {
+        LoggerContext context = (LoggerContext) LoggerFactory.getILoggerFactory();
+        ConsoleAppender<ILoggingEvent> ca = new ConsoleAppender<ILoggingEvent>();
+        ca.setContext(context);
+        ca.setName("console");
+
+        PatternLayoutEncoder pl = new PatternLayoutEncoder();
+        pl.setContext(context);
+        pl.setPattern(CONSOLE_LOG_FMT);
+        pl.start();
+
+        ca.setEncoder(pl);
+        ca.start();
+        context.getLogger(Logger.ROOT_LOGGER_NAME)
+                .addAppender(ca);
     }
 
     /**

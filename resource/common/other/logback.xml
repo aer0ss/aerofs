@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  ~ Copyright (c) Air Computing Inc., 2013.
+  -->
+
+<!--
+  ~ To fully configure, this requires properties from the Context:
+  ~         RTROOT      path to create logs
+  ~         PROGNAME    program name used as log file base name
+  ~         LOGLEVEL    must be a valid log level.
+  ~
+  ~ Without the LOGLEVEL value, this will disable all logging.
+  ~
+  -->
+<configuration>
+    <property       name  = "pattern"
+                    value = "%d{HHmmss.SSS}%.-1level %thread @%c{0}, %m%n" />
+    <property       name  = "filename"
+                    value = "${RTROOT:-.}/${PROGNAME:-startup}.log" />
+
+    <appender name="LOGFILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <File>${filename}</File>
+        <Append>true</Append>
+        <encoder>
+            <pattern>${pattern}</pattern>
+        </encoder>
+
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${filename}.%d{yyyy-MM-dd}</fileNamePattern>
+            <maxHistory>5</maxHistory>
+            <cleanHistoryOnStart>true</cleanHistoryOnStart>
+        </rollingPolicy>
+    </appender>
+
+    <root level="${LOGLEVEL:-OFF}">
+        <appender-ref ref="LOGFILE"/>
+    </root>
+</configuration>
