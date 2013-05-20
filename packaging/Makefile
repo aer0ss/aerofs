@@ -21,7 +21,6 @@ PACKAGES= \
 	spdb \
 	sv \
 	syncstat \
-	synctime \
 	syncstat-tools \
 	jeq-tools \
 	verkehr \

@@ -4,7 +4,6 @@ out.ant
 out.idea
 resource/common/lib.dynamic-config
 resource/common/lib.dropwizard
-resource/client/all/lib.synctime-client
 tools/build/properties.log
 workspace.xml
 dump.rdb

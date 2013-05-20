@@ -139,11 +139,6 @@ public class Collector implements IDumpStatMisc, IDownloadListenerFactory
         _cfs.unloadAllFilters_(did);
     }
 
-    boolean hasUpdatesFrom_(DID did)
-    {
-        return _cfs.hasFiltersFor_(did);
-    }
-
     /**
      * start an iteration immediately. the caller must guarantee that _it.started_()
      * returns false.

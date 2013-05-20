@@ -1,7 +1,0 @@
-Package: aerofs-synctime
-Section: java
-Priority: required
-Maintainer: AeroFS <team@aerofs.com>
-Description: AeroFS synctime server package.
-Architecture: all
-Depends: default-jdk (>= 1.6)

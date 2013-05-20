@@ -17,7 +17,6 @@
     <orderEntry type="library" name="smack" level="project" />
     <orderEntry type="library" name="metrics" level="project" />
     <orderEntry type="library" name="dynamic-config" level="project" />
-    <orderEntry type="library" name="synctime-client" level="project" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
 </module>

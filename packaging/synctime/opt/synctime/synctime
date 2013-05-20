@@ -1,3 +1,0 @@
-#!/bin/bash
-
-/opt/synctime/synctime-server/bin/synctime-server server /opt/synctime/synctime.yml
