@@ -55,9 +55,8 @@ function notify_team() {
 # echos the usage message and exits
 function print_usage()
 {
-    echo "usage: $0 [repository]"                                             >&2
-    echo ""                                                                   >&2
-    echo "    [repository] repository to upload package to (PROD|CI|STAGING)" >&2
+    echo "Usage: $0 <repository>"                                             >&2
+    echo " <repository> repository to upload package to (PROD|CI|STAGING)"    >&2
     exit $ERRBADARGS
 }
 
