@@ -13,7 +13,6 @@ class common (
     }
 
     include motd
-    include puppet
     include common::logs
     include common::firewall
 

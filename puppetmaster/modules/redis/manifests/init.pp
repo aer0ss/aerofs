@@ -17,11 +17,17 @@ class redis {
         ]
     }
 
-    service { "redis-server":
-        ensure  => "running",
-        provider   => 'upstart',
-        enable  => "true",
+    file{"/etc/init.d/redis-server":
+        ensure => link,
+        target => "/lib/init/upstart-job",
         require => Package["aerofs-redis-server"],
+    }
+
+    service { "redis-server":
+        ensure  => running,
+        provider => upstart,
+        enable  => true,
+        require => File["/etc/init.d/redis-server"],
     }
 
     # System-related config.

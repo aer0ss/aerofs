@@ -32,9 +32,15 @@ class verkehr (
         require => Apt::Source["aerofs"],
     }
 
+    file{"/etc/init.d/verkehr":
+        ensure => link,
+        target => "/lib/init/upstart-job",
+        require => Package["aerofs-verkehr"],
+    }
+    
     service { "verkehr":
         ensure => running,
         provider => upstart,
-        require => Package["aerofs-verkehr"],
+        require => File["/etc/init.d/verkehr"],
     }
 }

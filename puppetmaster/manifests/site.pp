@@ -17,10 +17,14 @@ node default {
         default     => "prod"
     }
 
+    # Common package for for motd, apt, etc.
     class{"common":
         aptkey => hiera("aptkey"),
         repo => $repo
     }
+
+    # Must have the puppet service running.
+    include puppet
 
     # remove default user
     user { "ubuntu":

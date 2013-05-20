@@ -6,7 +6,7 @@ class private-common {
 
     class{"common":
         aptkey => $aptkey,
-        repo => "production"
+        repo => hiera("environment","")
     }
 
     include bootstrap

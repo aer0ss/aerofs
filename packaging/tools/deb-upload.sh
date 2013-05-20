@@ -24,10 +24,11 @@ function upload_debs() {
         done;
         echo --- Copy debs to /var/www;
         cp ~/$DEBS_FOLDER/*.ver /var/www/ubuntu/$TARGET_REPOSITORY_DIRECTORY/versions;
-        sudo chown root:admin /var/www/ubuntu/$TARGET_REPOSITORY_DIRECTORY/versions/*;
-        sudo chmod 664 /var/www/ubuntu/$TARGET_REPOSITORY_DIRECTORY/versions/*;
         echo --- Call reprepro includedeb;
         sudo reprepro --gnupghome=/root/.gnupg includedeb precise ~/$DEBS_FOLDER/*.deb;
+        echo --- Fix permissions; \
+        sudo chmod -R 775 /var/www/ubuntu/$TARGET_REPOSITORY_DIRECTORY;
+        sudo chown -R root:admin /var/www/ubuntu/$TARGET_REPOSITORY_DIRECTORY;
         echo --- Remove old debs;
         rm -f ~/$DEBS_FOLDER/*"
 }
