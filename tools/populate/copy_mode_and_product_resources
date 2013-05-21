@@ -26,6 +26,41 @@ function add_staging_flag() {
     echo "labeling.isStaging=true" >> "$PROPERTIES_OUTPUT_DIR"/labeling.properties
 }
 
+# Copy resource to final destination, determined by extension.
+#
+# N.B.:
+#   Resources, roughtly those loaded by the classloader in a getResource call, are identified by
+#   extension: *.properties *.xml
+#   These resources will be copied to PROPERTIES_OUTPUT_DIR, which must correspond with the root of
+#   a classpath element.
+#
+#   Any other files found in resource/common (notably certs) are loaded _explicitly_ from
+#   approot. (This is a good thing, we shouldn't use getResource for a certificate.)
+#   These artifacts will be copied to ROOT_OUTPUT_DIR, which should correspond with the
+#   application root.
+#
+# PARAMS
+#   $1 : source filename
+#   $2 : destination filename if it differs from $1. Basename only, no path info.
+#
+function copy_resource() {
+    local srcfile=$1
+    local destfile=${2:-1##*/}
+
+    case "$srcfile" in
+        *properties)
+            cp "$srcfile" "$PROPERTIES_OUTPUT_DIR"/"$destfile"
+            ;;
+        *xml)
+            cp "$srcfile" "$PROPERTIES_OUTPUT_DIR"/"$destfile"
+            ;;
+        *)
+            cp "$srcfile" "$ROOT_OUTPUT_DIR"/"$destfile"
+            ;;
+    esac
+}
+
+# Copy resources from resource/common/* to the final destinations.
 function copy_resources() {
     mkdir -p "$PROPERTIES_OUTPUT_DIR"
 
@@ -43,10 +78,14 @@ function copy_resources() {
         local mode_file=$( basename "$mode_resource" ) # don't use mode_resource directly to get filename/extension
         local mode_file_basename=$( echo "$mode_file" | cut -d'-' -f1 )
         local mode_file_extension=$( echo "$mode_file" | cut -d'.' -f2 )
-        cp "$mode_resource" "$PROPERTIES_OUTPUT_DIR"/"$mode_file_basename"."$mode_file_extension"
+
+        copy_resource "$mode_resource" "$mode_file_basename"."$mode_file_extension"
     done
 
-    cp "$OTHER_RESOURCES_DIR"/* "$PROPERTIES_OUTPUT_DIR"
+    for srcfile in $( ls "$OTHER_RESOURCES_DIR"/* )
+    do
+        copy_resource "$srcfile" "${srcfile##*/}"
+    done
 }
 
 ###############################################################################
@@ -85,6 +124,7 @@ readonly RESOURCES_DIR="$3"
 readonly MODE_RESOURCES_DIR="$3/common/mode"
 readonly LABELING_RESOURCES_DIR="$3/common/labeling"
 readonly OTHER_RESOURCES_DIR="$3/common/other"
-readonly PROPERTIES_OUTPUT_DIR="$4"
+readonly ROOT_OUTPUT_DIR="$4"
+readonly PROPERTIES_OUTPUT_DIR="$4/bin"
 
 copy_resources
