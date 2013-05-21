@@ -154,7 +154,7 @@ public class LocalSyncStatus implements IStoreDeletionOperator
      * Generic sync status aggregation across store boundaries
      * @pre {@code soid} must not be expelled
      */
-    public void aggregateAcrossStores_(SOID soid, IAggregatedStatus aggregated)
+    private void aggregateAcrossStores_(SOID soid, IAggregatedStatus aggregated)
             throws SQLException, ExExpelled
     {
         OA oa = _ds.getOA_(soid);

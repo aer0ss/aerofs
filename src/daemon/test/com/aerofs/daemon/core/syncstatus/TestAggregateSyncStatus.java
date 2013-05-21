@@ -7,11 +7,13 @@ package com.aerofs.daemon.core.syncstatus;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.ds.DirectoryService;
+import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.mock.logical.IsSOIDAtPath;
 import com.aerofs.daemon.core.mock.logical.LogicalObjectsPrinter;
 import com.aerofs.daemon.core.mock.logical.MockDS;
 import com.aerofs.daemon.core.store.MapSIndex2DeviceBitMap;
 import com.aerofs.daemon.core.store.SIDMap;
+import com.aerofs.daemon.lib.db.ITransListener;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.BitVector;
 import com.aerofs.lib.CounterVector;
@@ -20,6 +22,7 @@ import com.aerofs.lib.cfg.CfgAggressiveChecking;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.base.id.UniqueID;
 import com.aerofs.testlib.AbstractTest;
+import com.beust.jcommander.internal.Lists;
 import junit.framework.Assert;
 import org.junit.After;
 import org.junit.Before;
@@ -29,12 +32,17 @@ import org.mockito.Mock;
 import org.mockito.internal.invocation.InvocationMatcher;
 import org.mockito.internal.verification.api.VerificationData;
 import org.mockito.invocation.Invocation;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 import org.mockito.verification.VerificationMode;
 
 import java.sql.SQLException;
 import java.util.List;
+
+import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.argThat;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -72,76 +80,15 @@ public class TestAggregateSyncStatus extends AbstractTest
     final DID d1 = new DID(UniqueID.generate());
     final DID d2 = new DID(UniqueID.generate());
 
-    /**
-     * Helper to create SOID matcher
-     */
-    SOID soidAt(String path)
+    void assertAggregateSyncStatusEquals(String path, int... counters) throws Exception
     {
-        return argThat(new IsSOIDAtPath(ds, rootSID, path, true));
+        SOID soid = ds.resolveThrows_(Path.fromString(rootSID, path));
+        OA oa = ds.getOANullable_(soid);
+        if (oa.isAnchor()) soid = ds.followAnchorNullable_(oa);
+        l.info("{} {}", soid, path);
+        Assert.assertEquals(new CounterVector(counters), ds.getAggregateSyncStatus_(soid));
     }
 
-    /**
-     * This class works around the limitations of Mockito in-order verification :
-     *   - verification is greedy which makes it a pain to verify subsequent calls to the same
-     *   method with the same parameters
-     *   - verification is not strict which makes it hard to verify that no unexpected calls
-     *   happened
-     *
-     * It is used to verify calls to ds.setAggregateSyncStatus which should follow a well-defined
-     * pattern.
-     */
-    static class StrictlyOrderedNonGreedyVerification implements VerificationMode
-    {
-        private int _count;
-        private int _index;
-
-        StrictlyOrderedNonGreedyVerification()
-        {
-        }
-
-        public int invocationCount()
-        {
-            return _count;
-        }
-
-        @Override
-        public void verify(VerificationData data)
-        {
-            InvocationMatcher matcher = data.getWanted();
-            Object mock = matcher.getInvocation().getMock();
-
-            // find the next matching (mock, method) invocation
-            List<Invocation> invocations = data.getAllInvocations();
-            while (_index < invocations.size()) {
-                Invocation invocation = invocations.get(_index);
-                if (mock.equals(invocation.getMock()) && matcher.hasSameMethod(invocation)) {
-                    break;
-                }
-                ++_index;
-            }
-
-            // check that we haven't reached the ned of the invocation list
-            Assert.assertTrue(_index < invocations.size());
-
-            // check that the current invocation matches the expectations
-            Assert.assertTrue(matcher.matches(invocations.get(_index)));
-
-            ++_count;
-            ++_index;
-        }
-    }
-
-    /**
-     * Helper to verify updates to the aggregate sync status upon state change
-     */
-    int expectedAggregateSyncStat;
-    StrictlyOrderedNonGreedyVerification dsVerificationMode;
-    void verifySetAggregateSyncStatus(String path, int... counters) throws SQLException
-    {
-        ++expectedAggregateSyncStat;
-        verify(ds, dsVerificationMode).setAggregateSyncStatus_(
-                soidAt(path), eq(new CounterVector(counters)), eq(t));
-    }
 
     void assertAggregateSyncStatusVectorEquals(String path, boolean... status) throws Exception
     {
@@ -156,8 +103,27 @@ public class TestAggregateSyncStatus extends AbstractTest
         // Enable aggressive consistency checking.
         when(config.get()).thenReturn(true);
 
-        expectedAggregateSyncStat = 0;
-        dsVerificationMode = new StrictlyOrderedNonGreedyVerification();
+        // need to
+        final List<ITransListener> listeners = Lists.newArrayList();
+
+        doAnswer(new Answer() {
+            @Override
+            public Object answer(InvocationOnMock invocation) throws Throwable
+            {
+                listeners.add((ITransListener)invocation.getArguments()[0]);
+                return null;
+            }
+        }).when(t).addListener_(any(ITransListener.class));
+
+        doAnswer(new Answer() {
+            @Override
+            public Object answer(InvocationOnMock invocation) throws Throwable
+            {
+                l.info("commit");
+                for (ITransListener l : listeners) l.committing_(t);
+                return null;
+            }
+        }).when(t).commit_();
 
         // stub device list of root store
         mds = new MockDS(rootSID, ds, sm, sm, sidx2dbm);
@@ -168,7 +134,7 @@ public class TestAggregateSyncStatus extends AbstractTest
     public void cleanup() throws Exception
     {
         // All test should specify exhaustively the expected aggregateSyncStat updates
-        Assert.assertEquals(expectedAggregateSyncStat, dsVerificationMode.invocationCount());
+        //Assert.assertEquals(expectedAggregateSyncStat, dsVerificationMode.invocationCount());
     }
 
     @Test
@@ -189,10 +155,11 @@ public class TestAggregateSyncStatus extends AbstractTest
 
         // state change
         mds.touch("foo/baz/touch", t, agsync);
+        t.commit_();
 
         // verify expected interactions caused by state change
-        verifySetAggregateSyncStatus("foo", 1, 0, 1);
-        verifySetAggregateSyncStatus("", 0, 0, 0);
+        assertAggregateSyncStatusEquals("foo", 1, 0, 1);
+        assertAggregateSyncStatusEquals("", 0, 0, 0);
 
         // check that aggregate status vector is derived properly from aggregate status counters
         assertAggregateSyncStatusVectorEquals("foo/baz", false, false, false);
@@ -218,10 +185,11 @@ public class TestAggregateSyncStatus extends AbstractTest
 
         // state change
         mds.mkdir("foo/baz/newfolder", t, agsync);
+        t.commit_();
 
         // verify expected interactions caused by state change
-        verifySetAggregateSyncStatus("foo", 1, 0, 1);
-        verifySetAggregateSyncStatus("", 0, 0, 0);
+        assertAggregateSyncStatusEquals("foo", 1, 0, 1);
+        assertAggregateSyncStatusEquals("", 0, 0, 0);
 
         // check that aggregate status vector is derived properly from aggregate status counters
         assertAggregateSyncStatusVectorEquals("foo/baz/newfolder", true, true, true);
@@ -244,6 +212,7 @@ public class TestAggregateSyncStatus extends AbstractTest
 
         // state change
         mds.touch("baz/touch", t, agsync);
+        t.commit_();
 
         // verify expected interactions caused by state change
 
@@ -266,6 +235,7 @@ public class TestAggregateSyncStatus extends AbstractTest
 
         // state change
         mds.delete("baz", t, agsync);
+        t.commit_();
 
         // verify expected interactions caused by state change
 
@@ -292,11 +262,12 @@ public class TestAggregateSyncStatus extends AbstractTest
 
         // state change
         mds.delete("foo/bar/world", t, agsync);
+        t.commit_();
 
         // verify expected interactions caused by state change
-        verifySetAggregateSyncStatus("foo/bar", 1, 1, 0);
-        verifySetAggregateSyncStatus("foo", 2, 2, 1);
-        verifySetAggregateSyncStatus("", 1, 1, 0);
+        assertAggregateSyncStatusEquals("foo/bar", 1, 1, 0);
+        assertAggregateSyncStatusEquals("foo", 2, 2, 1);
+        assertAggregateSyncStatusEquals("", 1, 1, 0);
 
         // check that aggregate status vector is derived properly from aggregate status counters
         assertAggregateSyncStatusVectorEquals("foo/bar", true, true, false);
@@ -322,10 +293,11 @@ public class TestAggregateSyncStatus extends AbstractTest
 
         // state change
         mds.delete("foo/baz", t, agsync);
+        t.commit_();
 
         // verify expected interactions caused by state change
-        verifySetAggregateSyncStatus("foo", 1, 1, 0);
-        verifySetAggregateSyncStatus("", 1, 1, 0);
+        assertAggregateSyncStatusEquals("foo", 1, 1, 0);
+        assertAggregateSyncStatusEquals("", 1, 1, 0);
 
         // check that aggregate status vector is derived properly from aggregate status counters
         assertAggregateSyncStatusVectorEquals("foo", true, true, false);
@@ -350,14 +322,13 @@ public class TestAggregateSyncStatus extends AbstractTest
 
         // state change
         mds.move("foo/bar/world", "foo/baz/world", t, agsync);
+        t.commit_();
 
         // verify expected interactions caused by state change
-        verifySetAggregateSyncStatus("foo/bar", 1, 1, 0);
-        verifySetAggregateSyncStatus("foo", 2, 2, 1);
-        verifySetAggregateSyncStatus("", 1, 1, 0);
-        verifySetAggregateSyncStatus("foo/baz", 1, 0, 1);
-        verifySetAggregateSyncStatus("foo", 2, 1, 1);
-        verifySetAggregateSyncStatus("", 1, 0, 0);
+        assertAggregateSyncStatusEquals("foo/bar", 1, 1, 0);
+        assertAggregateSyncStatusEquals("foo/baz", 1, 0, 1);
+        assertAggregateSyncStatusEquals("foo", 2, 1, 1);
+        assertAggregateSyncStatusEquals("", 1, 0, 0);
 
         // check that aggregate status vector is derived properly from aggregate status counters
         assertAggregateSyncStatusVectorEquals("foo/bar", true, true, false);
@@ -384,13 +355,12 @@ public class TestAggregateSyncStatus extends AbstractTest
 
         // state change
         mds.move("foo/baz", "foo/bar/baz", t, agsync);
+        t.commit_();
 
         // verify expected interactions caused by state change
-        verifySetAggregateSyncStatus("foo", 1, 1, 0);
-        verifySetAggregateSyncStatus("", 1, 1, 0);
-        verifySetAggregateSyncStatus("foo/bar", 3, 2, 3);
-        verifySetAggregateSyncStatus("foo", 1, 0, 0);
-        verifySetAggregateSyncStatus("", 1, 0, 0);
+        assertAggregateSyncStatusEquals("foo/bar", 3, 2, 3);
+        assertAggregateSyncStatusEquals("foo", 1, 0, 0);
+        assertAggregateSyncStatusEquals("", 1, 0, 0);
 
         // check that aggregate status vector is derived properly from aggregate status counters
         assertAggregateSyncStatusVectorEquals("foo/bar/baz", true, true, true);
@@ -417,11 +387,12 @@ public class TestAggregateSyncStatus extends AbstractTest
 
         // state change
         mds.sync("foo/bar/world", new BitVector(false, true, true), t, agsync);
+        t.commit_();
 
         // verify expected interactions caused by state change
-        verifySetAggregateSyncStatus("foo/bar", 1, 1, 2);
-        verifySetAggregateSyncStatus("foo", 1, 1, 2);
-        verifySetAggregateSyncStatus("", 0, 0, 1);
+        assertAggregateSyncStatusEquals("foo/bar", 1, 1, 2);
+        assertAggregateSyncStatusEquals("foo", 1, 1, 2);
+        assertAggregateSyncStatusEquals("", 0, 0, 1);
 
         // check that aggregate status vector is derived properly from aggregate status counters
         assertAggregateSyncStatusVectorEquals("foo/bar", false, false, true);
@@ -447,10 +418,11 @@ public class TestAggregateSyncStatus extends AbstractTest
 
         // state change
         mds.sync("foo/bar", new BitVector(true, false, false), t, agsync);
+        t.commit_();
 
         // verify expected interactions caused by state change
-        verifySetAggregateSyncStatus("foo", 2, 1, 1);
-        verifySetAggregateSyncStatus("", 1, 0, 0);
+        assertAggregateSyncStatusEquals("foo", 2, 1, 1);
+        assertAggregateSyncStatusEquals("", 1, 0, 0);
 
         // check that aggregate status vector is derived properly from aggregate status counters
         assertAggregateSyncStatusVectorEquals("foo/bar", true, true, false);
@@ -479,10 +451,11 @@ public class TestAggregateSyncStatus extends AbstractTest
 
         // state change
         mds.sync("foo/bar/baz/hello", new BitVector(false, true, true), t, agsync);
+        t.commit_();
 
         // verify expected interactions caused by state change
-        verifySetAggregateSyncStatus("foo/bar/baz", 1, 2, 1);
-        verifySetAggregateSyncStatus("foo/bar", 0, 1, 0);
+        assertAggregateSyncStatusEquals("foo/bar/baz", 1, 2, 1);
+        assertAggregateSyncStatusEquals("foo/bar", 0, 1, 0);
 
         // check that aggregate status vector is derived properly from aggregate status counters
         assertAggregateSyncStatusVectorEquals("foo/bar/baz", false, true, false);
@@ -510,9 +483,13 @@ public class TestAggregateSyncStatus extends AbstractTest
 
         // state change
         mds.sync("foo/bar/baz/world", new BitVector(true, false, true), t, agsync);
+        t.commit_();
 
         // verify expected interactions caused by state change
-        verifySetAggregateSyncStatus("foo/bar/baz", 2, 0, 1);
+        assertAggregateSyncStatusEquals("foo/bar/baz", 2, 0, 1);
+        assertAggregateSyncStatusEquals("foo/bar", 1, 0, 0);
+        assertAggregateSyncStatusEquals("foo", 1, 0, 0);
+        assertAggregateSyncStatusEquals("", 1, 0, 0);
 
         // check that aggregate status vector is derived properly from aggregate status counters
         assertAggregateSyncStatusVectorEquals("foo/bar/baz", true, false, false);
@@ -547,9 +524,11 @@ public class TestAggregateSyncStatus extends AbstractTest
 
         // state change
         mds.move("foo/bar/baz", "foo/baz", t, agsync);
+        t.commit_();
 
-        verifySetAggregateSyncStatus("foo/bar", 0, 0, 0);
-        verifySetAggregateSyncStatus("foo", 1, 1, 3);
+        assertAggregateSyncStatusEquals("foo/bar", 0, 0, 0);
+        assertAggregateSyncStatusEquals("foo", 1, 1, 3);
+        assertAggregateSyncStatusEquals("", 0, 0, 0);
 
         // check that aggregate status vector is derived properly from aggregate status counters
         assertAggregateSyncStatusVectorEquals("foo/bar", true, true, true);
@@ -575,11 +554,11 @@ public class TestAggregateSyncStatus extends AbstractTest
 
         // state change
         mds.move("foo/baz", "foo/bar/baz", t, agsync);
+        t.commit_();
 
-        verifySetAggregateSyncStatus("foo", 1, 1, 3);
-        verifySetAggregateSyncStatus("", 0, 0, 1);
-        verifySetAggregateSyncStatus("foo", 1, 1, 2);
-        verifySetAggregateSyncStatus("", 0, 0, 0);
+        assertAggregateSyncStatusEquals("foo/bar", 0, 0, 0);
+        assertAggregateSyncStatusEquals("foo", 1, 1, 2);
+        assertAggregateSyncStatusEquals("", 0, 0, 0);
 
         // check that aggregate status vector is derived properly from aggregate status counters
         assertAggregateSyncStatusVectorEquals("foo/bar", false, false, false);
