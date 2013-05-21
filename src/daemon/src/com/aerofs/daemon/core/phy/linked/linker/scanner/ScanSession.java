@@ -140,6 +140,25 @@ class ScanSession
     }
 
     /**
+     * If a single folder has a large amount of children it is necessary to split the scan in
+     * multiple transactions to prevent OOMs arising from explosive growth of TransLocal data and
+     * significant slowdown caused by uncontrolled growth of the WAL file
+     */
+    private class ExSplitTrans extends Exception
+    {
+        private static final long serialVersionUID = 0L;
+
+        final Trans _t;
+        final int _updates;
+
+        ExSplitTrans(Trans t, int updates)
+        {
+            _t = t;
+            _updates = updates;
+        }
+    }
+
+    /**
      * Start the scan, or continue from the previous state if continuation was requested during the
      * last call of this method.
      *
@@ -174,7 +193,12 @@ class ScanSession
             try {
                 long start = System.currentTimeMillis();
                 while (!_stack.isEmpty()) {
-                    potentialUpdates += scan_(_stack.pop(), t);
+                    try {
+                        potentialUpdates += scan_(_stack.pop(), t);
+                    } catch (ExSplitTrans e) {
+                        potentialUpdates += e._updates;
+                        t = e._t;
+                    }
 
                     if (potentialUpdates > CONTINUATION_UPDATES_THRESHOLD) {
                         l.info("exceed updates thres. " + potentialUpdates);
@@ -290,6 +314,8 @@ class ScanSession
 
         // might create physical children
         int potentialUpdates = 0;
+        int n = 0;
+        Trans split = null;
         for (String nameChild : nameChildren) {
             PathCombo pcChild = pcParent.append(nameChild);
             MightCreate.Result res = _f._mc.mightCreate_(pcChild, _f._delBuffer,
@@ -313,7 +339,18 @@ class ScanSession
                 potentialUpdates++;
             }
             _f._pi.incrementMonotonicProgress();
+
+            // commit current trans and start a new one when reaching update threshold
+            if (++n == CONTINUATION_UPDATES_THRESHOLD) {
+                t.commit_();
+                t.end_();
+                t = split = _f._tm.begin_();
+                n = 0;
+            }
         }
+
+        // if a new trans was started we need to inform the caller
+        if (split != null) throw new ExSplitTrans(split, potentialUpdates);
 
         return potentialUpdates;
     }
