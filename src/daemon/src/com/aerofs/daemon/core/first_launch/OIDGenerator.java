@@ -6,6 +6,7 @@ package com.aerofs.daemon.core.first_launch;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.OID;
+import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UniqueID;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.Path;
@@ -28,9 +29,15 @@ public class OIDGenerator
 
     private SeedDatabase _sdb;
 
-    public OIDGenerator(String absPath)
+    public OIDGenerator(SID sid, String absPath)
     {
-        _sdb = SeedDatabase.load_(Util.join(absPath, LibParam.SEED_FILE_NAME));
+        // In case user reinstall with a different user account we don't want seed files to be used
+        // as it would potentially break sharing (since SID is derived from the OID of the original
+        // dir being shared) and may lead to unexpected migration
+        // However we do want seed file to be reused in case an external folder is re-joined at the
+        // same location, hence we suffix the seed file with the SID
+        String seedFileName = LibParam.SEED_FILE_NAME + "." + sid.toStringFormal();
+        _sdb = SeedDatabase.load_(Util.join(absPath, seedFileName));
         _shouldLookup = _sdb != null;
         if (_shouldLookup) l.info("seed file loaded");
     }

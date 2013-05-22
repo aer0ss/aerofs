@@ -6,6 +6,7 @@ package com.aerofs.daemon.core.phy.linked.linker;
 
 import com.aerofs.base.analytics.Analytics;
 import com.aerofs.base.id.OID;
+import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.VersionUpdater;
 import com.aerofs.daemon.core.ds.CA;
 import com.aerofs.daemon.core.first_launch.OIDGenerator;
@@ -59,7 +60,7 @@ public class TestMightCreateOperations extends AbstractMightCreateTest
 
     @InjectMocks MightCreateOperations mcop;
 
-    OIDGenerator og = new OIDGenerator("dummy");
+    OIDGenerator og = new OIDGenerator(SID.generate(), "dummy");
 
     @Before
     public void setUp() throws Exception

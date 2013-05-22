@@ -87,7 +87,7 @@ public abstract class AbstractTestMightCreate extends AbstractTest
 
     final SID rootSID = SID.generate();
     final String pRoot = Util.join("root");
-    final OIDGenerator og = new OIDGenerator("dummy");
+    final OIDGenerator og = new OIDGenerator(SID.generate(), "dummy");
 
     @SuppressWarnings("unchecked")
     @Before
