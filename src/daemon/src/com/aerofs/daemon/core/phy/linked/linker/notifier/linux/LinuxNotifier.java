@@ -208,7 +208,7 @@ public class LinuxNotifier implements INotifier, INotifyListener
                     l.error("inotify watches have been exhauseted. AeroFS needs more than the " +
                             "maximum number of inotify watches allowed for this user to sync all " +
                             "of your folders.  See" +
-                            "http://support.aerofs.com/knowledgebase/articles/47290-some-of-my-files-did-not-sync- " +
+                            "http://support.aerofs.com/entries/23863617-Some-of-my-files-did-not-sync- " +
                             "for more information.");
                     return -1;
                 }

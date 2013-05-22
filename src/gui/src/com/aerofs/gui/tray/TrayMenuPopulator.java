@@ -107,7 +107,7 @@ public class TrayMenuPopulator
             @Override
             protected void handleEventImpl(Event event)
             {
-                GUIUtil.launch("http://support.aerofs.com/forums/67721-feature-requests");
+                GUIUtil.launch("http://support.aerofs.com/forums/22080313-Feature-Requests");
             }
         });
 

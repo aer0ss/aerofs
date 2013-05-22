@@ -86,7 +86,7 @@ public class DlgAbout extends AeroFSDialog
             public void widgetSelected(SelectionEvent e)
             {
                 GUIUtil.launch(e.text.equals("Web site") ? WWW.MARKETING_HOST_URL.get() :
-                        "http://support.aerofs.com/knowledgebase/articles/93285-release-notes");
+                        "http://support.aerofs.com/entries/23864878-Release-Notes");
             }
         });
 
