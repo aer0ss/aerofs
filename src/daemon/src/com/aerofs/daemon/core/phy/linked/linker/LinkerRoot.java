@@ -80,7 +80,7 @@ public class LinkerRoot
         _sid = sid;
         _absRootAnchor = absRootAnchor;
         _ssq = _f._factSSQ.create_(this);
-        _og = new OIDGenerator(absRootAnchor);
+        _og = new OIDGenerator(sid, absRootAnchor);
     }
 
     public SID sid()

@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.phy.linked.linker;
 
+import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.first_launch.OIDGenerator;
 import com.aerofs.daemon.core.phy.linked.linker.MightCreate.Result;
@@ -45,7 +46,7 @@ public class TestMightCreate extends AbstractMightCreateTest
 
     @InjectMocks MightCreate mc;
 
-    OIDGenerator og = new OIDGenerator("dummy");
+    OIDGenerator og = new OIDGenerator(SID.generate(), "dummy");
 
     @SuppressWarnings("unchecked")
     @Before
