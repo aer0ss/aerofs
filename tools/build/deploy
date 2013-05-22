@@ -21,11 +21,67 @@ if [[ $# -ne 1 ]]; then
     exit $ERRBADARGS
 fi
 
-###############################################################################
-#
-# Emails team@aerofs.com about this deployment.
-#
-###############################################################################
+# single-quoted - we want $HOME expanded serverside
+DEPLOY_LOCKFILE='$HOME/deploy.lock'
+
+function lock_release_server() {
+    echo "establishing deploy lock..."
+    kssh $RELEASE_SERVER_LOGIN $RELEASE_SERVER_SHELL << ENDCMDS
+    if [ -f $DEPLOY_LOCKFILE ] ; then
+        echo "A deploy appears to be in progress already:"
+        cat $DEPLOY_LOCKFILE
+        echo "If you're sure that deploy has indeed been terminated:"
+        echo "    ssh $RELEASE_SERVER_LOGIN rm $DEPLOY_LOCKFILE"
+        exit 1
+    fi
+    lockfile-create --retry 1 --lock-name $DEPLOY_LOCKFILE && echo "Deploy started by $USER at:" >> $DEPLOY_LOCKFILE && date >> $DEPLOY_LOCKFILE && echo "for version $RELEASE_VERSION" >> $DEPLOY_LOCKFILE
+ENDCMDS
+    echo "locked $RELEASE_SERVER for deploy"
+}
+
+function unlock_release_server() {
+    echo "releasing deploy lock..."
+    kssh $RELEASE_SERVER_LOGIN "rm -f $DEPLOY_LOCKFILE"
+    echo "done"
+}
+
+# Uploads proguard map file to the servers that need it.
+function upload_map() {
+    declare MAP_FILE_NAME="aerofs-${RELEASE_VERSION}-${LOWERCASE_MODE}.map"
+    echo "uploading proguard map file to $MAP_SERVER..."
+    scp "${LOCAL_RELEASE_DIR}/aerofs.map" $MAP_SERVER_LOGIN:"${MAP_FILES_DIR}/${MAP_FILE_NAME}"
+    echo "uploading proguard map file to $ROCKLOG_SERVER"
+    scp "${LOCAL_RELEASE_DIR}/aerofs.map" $ROCKLOG_SERVER:"${MAP_FILES_DIR}/${MAP_FILE_NAME}"
+}
+
+# Create final version tag (current.ver) on release server
+function create_version_file_on_release_server() {
+    local local_VERSION_FILE="${INSTALLERS_DOWNLOAD_DIR}/${RELEASE_VERSION}/${RELEASE_SERVER_VERSION_FILE}"
+    kssh $RELEASE_SERVER_LOGIN $RELEASE_SERVER_SHELL << ENDCMDS
+        echo Version=$RELEASE_VERSION > "$local_VERSION_FILE"
+        chmod a+r "$local_VERSION_FILE"
+ENDCMDS
+}
+
+function upload_packages_to_release_server() {
+    echo ">>> rsyncing packages to $RELEASE_SERVER:$INSTALLERS_DOWNLOAD_DIR/$RELEASE_VERSION/"
+    rsync --archive --verbose "$PACKAGE_DIR"/* $RELEASE_SERVER_LOGIN:$INSTALLERS_DOWNLOAD_DIR/$RELEASE_VERSION/
+}
+
+function upload_packages_to_antivirus_firms() {
+    if is_prod ; then
+        # Upload latest version of script
+        kscp $BUILD_SCRIPT_DIR/send_package_to_antivirus_firms.sh $RELEASE_SERVER_LOGIN:
+        # Spawn script in background - script will delete self on completion.
+        kssh $RELEASE_SERVER_LOGIN $RELEASE_SERVER_SHELL << ENDCMDS
+            chmod a+x \$HOME/send_package_to_antivirus_firms.sh
+            screen -d -m \$HOME/send_package_to_antivirus_firms.sh $INSTALLERS_DOWNLOAD_DIR/$RELEASE_VERSION/AeroFSInstall.exe
+ENDCMDS
+    fi
+}
+
+# Emails team@aerofs.com about this deployment and sends message to Dev Team
+# channel on Hipchat.
 function notify_successful_deployment() {
     echo ">> notifying team of successful deployment via email"
     kssh $RELEASE_SERVER_LOGIN $RELEASE_SERVER_SHELL << ENDCMDS
@@ -36,12 +92,8 @@ ENDCMDS
         $(git rev-parse --show-cdup)puppetmaster/modules/hipchat/files/hipchat_room_message -c green -t 6124360a8cd9355ff9b9927b51cea4 -r 93246 -f "Deploy" > /dev/null
 }
 
-###############################################################################
-#
 # Tags this release with an annotated tag so it is easy to checkout a deployed
 # build for debugging.
-#
-###############################################################################
 function tag_release() {
     if is_prod ; then
         echo ">> tagging git release"
@@ -56,13 +108,7 @@ function tag_release() {
     fi
 }
 
-#******************************************************************************
-#******************************************************************************
-#**
-#** Run all of the deployment steps
-#**
-#******************************************************************************
-#******************************************************************************
+# main: Run all of the deployment steps
 if is_prod ; then
     echo
     echo "!!!!!!!!!!!!!!!!!!!!!!!"
@@ -77,7 +123,12 @@ echo '| ' $RELEASE_VERSION $MODE
 echo '+--------------------------'
 
 call exec_prepublish_checks $MODE $RELEASE_VERSION
+upload_map
+lock_release_server
+upload_packages_to_release_server
+upload_packages_to_antivirus_firms
 publish_to_s3 $RELEASE_VERSION $INSTALLER_DOWNLOAD_BUCKET
+unlock_release_server
 tag_release
 notify_successful_deployment
 

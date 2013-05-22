@@ -1,5 +1,5 @@
-#!/bin/bash -e -u
-
+#!/bin/bash
+set -eu
 set -x
 
 ###############################################################################
@@ -29,20 +29,6 @@ if [[ $# -ne 3 ]]; then
 fi
 
 readonly RELEASE_VERSION="$3"
-
-function render_template_in_place_on() {
-    # **********!!!! IMPORTANT !!!!*********
-    # sed on mac requires an empty string for in place operations.
-    # **********!!!!           !!!!*********
-    # Applies template substitution to any number of files.
-    while [[ $# -gt 0 ]]; do
-        # render the next file
-        sed -i "" -e "s/\[AEROFS_PRODUCT_SPACEFREE\]/${AEROFS_PRODUCT_SPACEFREE}/g" $1
-        sed -i "" -e "s/\[AEROFS_PRODUCT_UNIX\]/${AEROFS_PRODUCT_UNIX}/g" $1
-        sed -i "" -e "s/\[AEROFS_PRODUCT\]/${AEROFS_PRODUCT}/g" $1
-        shift 1
-    done
-}
 
 ######################################################################
 #
@@ -229,13 +215,8 @@ function create_java_jar() {
 #
 # Runs ProGuard on the unobfuscated aerofs jar
 #
-# Note that for now we only keep on aerofs.map file for both team
-# server and the regular client. This could potentially lead to a
-# broken mapping in the labeling class, but this isn't a big deal
-# because the fucntion can be identified with the line number.
-#
-# This can be fixed by using a different mapping file for each client
-# mode.
+# We now use the same class files for both regular client and team server,
+# so the proguard maps should be indistinguishable.
 #
 ######################################################################
 function obfuscate_java() {
@@ -299,6 +280,5 @@ copy_resources_to_local_release_directories
 create_java_jar
 obfuscate_java
 write_version_and_checksums
-
 
 exit 0

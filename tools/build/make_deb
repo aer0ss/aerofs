@@ -1,4 +1,5 @@
-#!/bin/bash -e
+#!/bin/bash
+set -e
 
 #################################
 # arguments
@@ -44,8 +45,7 @@ readonly VERSION=$2
 readonly SECTION='utility'
 readonly PRIORITY='optional'
 
-#sharutils is used by uudecode
-readonly DEPENDS='java6-runtime, sharutils, procps, file, coreutils'
+readonly DEPENDS='java6-runtime, procps, coreutils'
 readonly MAINTAINER='AeroFS Team <support@aerofs.com>'
 readonly DESCRIPTION='AeroFS: Private file sync and share.'
 

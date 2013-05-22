@@ -1,4 +1,5 @@
-#!/bin/bash -e -u
+#!/bin/bash
+set -eu
 
 ###############################################################################
 #
@@ -12,24 +13,16 @@ include include/common ${1:-} ${2:-}
 # usage and parameters
 #
 ###############################################################################
-if [[ $# -lt 1 || $# -gt 3 ]]; then
-    echo "usage: $0 [build mode] [passphrase]" >&2
+if [[ $# -lt 1 || $# -gt 2 ]]; then
+    echo "usage: $0 [build mode] [build product]" >&2
     echo " " >&2
     echo "[build mode]: PROD|ENTERPRISE" >&2
     echo "[build product]: CLIENT|TEAM_SERVER" >&2
-    echo "[passphrase]: release passphrase" >&2
     echo " " >&2
-    echo "example: $0 PROD TEAM_SERVER [passphrase]" >&2
+    echo "example: $0 PROD TEAM_SERVER" >&2
+    echo "example: $0 ENTERPRISE CLIENT" >&2
     exit $ERRBADARGS
 fi
-
-# PROD requires a passphrase to deploy
-if [[ x"${3:-}" == x && $MODE == "PROD" ]]; then
-    echo "error: passphrase required for production release" >&2
-    exit $ERRBADPASS
-fi
-
-readonly PASSPHRASE="${3:-$UNSECURED_PASSPHRASE}"
 
 #******************************************************************************
 #******************************************************************************
@@ -38,13 +31,6 @@ readonly PASSPHRASE="${3:-$UNSECURED_PASSPHRASE}"
 #**
 #******************************************************************************
 #******************************************************************************
-if is_prod ; then
-    echo
-    echo "!!!!!!!!!!!!!!!!!!!!!!!"
-    echo "!! DEPLOY PRODUCTION !!"
-    echo "!!!!!!!!!!!!!!!!!!!!!!!"
-    echo
-fi
 
 compute_next_release_version
 echo '+---------------------------------'
@@ -52,6 +38,6 @@ echo '| ' $RELEASE_VERSION $PRODUCT $MODE
 echo '+---------------------------------'
 
 call make_release_resources $MODE $PRODUCT $RELEASE_VERSION
-call make_client_installers $MODE $PRODUCT $RELEASE_VERSION "$PASSPHRASE"
+call make_client_installers $MODE $PRODUCT $RELEASE_VERSION
 echo ">> successfully built $MODE $PRODUCT release version $RELEASE_VERSION"
 exit 0
