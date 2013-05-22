@@ -28,17 +28,18 @@ import java.io.IOException;
 import java.util.Map.Entry;
 
 /**
- * Periodically checks for existence of:
- * 1. default root anchor
- * 2. any external roots
- * 3. disk full (rtroot, root anchor and external roots)
+ * Periodically checks the sanity of the environment:
  *
+ * 1. rtroot should have free space (for logs and db)
+ * 2. default root anchor and external roots should exist
+ * 3. default root anchor and external roots should have free space
  *
- * And warns the user if any of them disappears.
+ * If any of this conditions is not verified, prevent the daemon from repeatedly respawning
+ * (and flooding sv/rocklog with defects) and warn the user.
  */
-public class RootAnchorPoller
+public class SanityPoller
 {
-    private static final Logger l = Loggers.getLogger(RootAnchorPoller.class);
+    private static final Logger l = Loggers.getLogger(SanityPoller.class);
 
     private Thread _t = null;
     private volatile boolean _stopping = false;

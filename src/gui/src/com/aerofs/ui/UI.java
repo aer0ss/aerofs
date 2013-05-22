@@ -46,7 +46,7 @@ public final class UI
     private static final UINotifier s_notifier = new UINotifier();
     private static final RitualNotificationClient s_rnc = new RitualNotificationClient();
     private static final TransferState s_ts = new TransferState(s_rnc);
-    private static final RootAnchorPoller s_rap = new RootAnchorPoller();
+    private static final SanityPoller s_rap = new SanityPoller();
     private static final InfoCollector s_ic = new InfoCollector();
     private static final UIScheduler s_sched = new UIScheduler();
     private static final Analytics s_analytics = new Analytics(new DesktopAnalyticsProperties());
@@ -63,7 +63,7 @@ public final class UI
     public static TransferState ts() { return s_ts; }
 
     // TODO (WW): Move to ControllerService
-    public static RootAnchorPoller rap() { return s_rap; }
+    public static SanityPoller rap() { return s_rap; }
 
     public static UINotifier notifier() { return s_notifier; }
 

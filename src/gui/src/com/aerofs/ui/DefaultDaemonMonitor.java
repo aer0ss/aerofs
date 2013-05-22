@@ -82,7 +82,7 @@ class DefaultDaemonMonitor implements IDaemonMonitor
 
         int retries = UIParam.DM_LAUNCH_PING_RETRIES;
         while (true) {
-            // the RootAnchorPoller can stop the daemon before a successful ping
+            // the SanityPoller can stop the daemon before a successful ping
             if (_stopping) return proc;
 
             throwIfDaemonExits(proc);
