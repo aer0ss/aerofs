@@ -5,6 +5,7 @@
 package com.aerofs.base.net;
 
 import com.aerofs.base.BaseUtil;
+import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
@@ -37,7 +38,7 @@ public class MagicHeader
     {
         _magic = magic;
         _version = version;
-        _size = _magic.length + Integer.SIZE / Byte.SIZE; // add 4 bytes for the version number
+        _size = _magic.length + C.INTEGER_SIZE; // add 4 bytes for the version number
     }
 
     public class WriteMagicHeaderHandler extends SimpleChannelHandler

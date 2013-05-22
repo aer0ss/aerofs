@@ -5,6 +5,7 @@
 
 package com.aerofs.daemon.transport.xmpp;
 
+import com.aerofs.base.C;
 import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.lib.LibParam;
@@ -20,11 +21,6 @@ import java.io.*;
  */
 public class XUtil
 {
-    /**
-     *
-     * @param bodylen
-     * @return
-     */
     public static byte[] writeHeader(int bodylen)
     {
         ByteArrayOutputStream bos = new ByteArrayOutputStream(getHeaderLen());
@@ -67,13 +63,9 @@ public class XUtil
         }
     }
 
-    /**
-     *
-     * @return
-     */
     public static int getHeaderLen()
     {
-        return Integer.SIZE * 2 / Byte.SIZE;
+        return 2 * C.INTEGER_SIZE;
     }
 
     /**

@@ -1,5 +1,6 @@
 package com.aerofs.daemon.transport.tcpmt;
 
+import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.SID;
@@ -84,8 +85,8 @@ class Multicast implements IMaxcast
         // we don't dynamically detect preferred multicast size (TODO?)
         t.sink().enqueueBlocking(new EITransportMetricsUpdated(
                 DaemonParam.TCP.MCAST_MAX_DGRAM_SIZE
-                    - Integer.SIZE / 8          // for magic
-                    - 1                         // for core_message
+                    - C.INTEGER_SIZE    // for magic
+                    - 1                 // for core_message
                     - DID.LENGTH        // for device id
                 ), Prio.LO);
     }

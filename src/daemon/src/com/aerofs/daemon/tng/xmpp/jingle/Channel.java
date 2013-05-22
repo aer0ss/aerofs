@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.tng.xmpp.jingle;
 
+import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.lib.LibParam;
@@ -418,6 +419,6 @@ final class Channel implements IProxyObjectContainer
      */
     public static int getHeaderLen()
     {
-        return Integer.SIZE * 2 / Byte.SIZE;
+        return C.INTEGER_SIZE * 2;
     }
 }

@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.tng.xmpp;
 
+import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.net.link.ILinkStateService;
@@ -77,7 +78,7 @@ final class XMPPMulticast
     private static final Logger l = Loggers.getLogger(XMPPMulticast.class);
 
     private final static int MAXCAST_UNFILTERED = -1;
-    private static final int HEADER_LEN = (Integer.SIZE / Byte.SIZE) * 2 + 1;
+    private static final int HEADER_LEN = 2 * C.INTEGER_SIZE + 1;
     private static final UncancellableFuture<ImmutableSet<DID>> MUOD_FUTURE; // statically initalized
 
     private final ISingleThreadedPrioritizedExecutor _executor;

@@ -64,9 +64,7 @@ public class LinkedRevProvider implements IPhysicalRevProvider
         public static final char SEPARATOR = '.';
 
         // KIndex + 2 timestamps
-        // Stupid Java provide size in bits but not in bytes... On the other hand the spec does
-        // ensure that long and int are 64bit and 32bit wide respectively
-        public static int DECODED_LENGTH = 2 * (Long.SIZE / 8) + (Integer.SIZE / 8);
+        public static int DECODED_LENGTH = 2 * C.LONG_SIZE + C.INTEGER_SIZE;
 
         public final int _kidx;     // branch index
         public final long _mtime;   // mtime of file moved to revision tree

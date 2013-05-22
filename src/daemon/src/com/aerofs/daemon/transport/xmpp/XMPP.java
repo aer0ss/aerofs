@@ -1,5 +1,6 @@
 package com.aerofs.daemon.transport.xmpp;
 
+import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.transport.TransportThreadGroup;
 import com.aerofs.lib.LibParam;
@@ -1082,6 +1083,6 @@ public abstract class XMPP implements ITransportImpl, IPipeController, IUnicast,
     // constants
     //
 
-    private final static int HEADER_LEN = (Integer.SIZE / Byte.SIZE) * 2 + 1;
+    private final static int HEADER_LEN = 2 * C.INTEGER_SIZE + 1;
     private final static int MAXCAST_UNFILTERED = -1;
 }

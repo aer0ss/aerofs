@@ -68,9 +68,8 @@ public class TapProgram implements IProgram
             {
                 ChannelPipeline pipeline = Channels.pipeline();
                 pipeline.addLast("decoder",
-                        new LengthFieldBasedFrameDecoder(C.MB, 0, Integer.SIZE / Byte.SIZE, 0,
-                                Integer.SIZE / Byte.SIZE));
-                pipeline.addLast("encoder", new LengthFieldPrepender(Integer.SIZE / Byte.SIZE));
+                        new LengthFieldBasedFrameDecoder(C.MB, 0, C.INTEGER_SIZE, 0, C.INTEGER_SIZE));
+                pipeline.addLast("encoder", new LengthFieldPrepender(C.INTEGER_SIZE));
                 pipeline.addLast("service", new ServiceHandler());
                 return pipeline;
             }
