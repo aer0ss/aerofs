@@ -17,4 +17,8 @@ public class C
     public static final int KB = 1024;
     public static final int MB = 1024 * KB;
     public static final long GB = 1024 * MB;
+
+    // This is to avoid the common mistake of treating Integer.SIZE as bytes instead of bits
+    public static final int INTEGER_SIZE = Integer.SIZE / Byte.SIZE;
+    public static final int LONG_SIZE = Long.SIZE / Byte.SIZE;
 }

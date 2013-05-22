@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.ds.DirectoryService;
@@ -254,8 +255,8 @@ public class GetVersCall
 
         int osLen = os == null ? maxUcastLen : os.size();
 
-        // Integer.SIZE is for the delimiter
-        if (osLen + Integer.SIZE + len > maxUcastLen) {
+        // INTEGER_SIZE is for the delimiter
+        if (osLen + C.INTEGER_SIZE + len > maxUcastLen) {
             ByteArrayOutputStream os2 = new ByteArrayOutputStream(
                     _m.getMaxUnicastSize_());
             msg.writeDelimitedTo(os2);

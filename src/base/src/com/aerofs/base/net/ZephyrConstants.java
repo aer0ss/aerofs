@@ -4,6 +4,8 @@
 
 package com.aerofs.base.net;
 
+import com.aerofs.base.C;
+
 import java.nio.ByteOrder;
 
 /**
@@ -22,7 +24,7 @@ public final class ZephyrConstants
     /**
      * length of the header for any message directed to/from zephyr
      */
-    public static final int ZEPHYR_SERVER_HDR_LEN = ZEPHYR_MAGIC.length + (Integer.SIZE / 8); // 8
+    public static final int ZEPHYR_SERVER_HDR_LEN = ZEPHYR_MAGIC.length + C.INTEGER_SIZE; // 8
     /**
      * length of the header for any message to/from a client via zephyr
      */
@@ -30,7 +32,7 @@ public final class ZephyrConstants
     /**
      * Length of the Zephyr Server registration payload (it's a zid)
      */
-    public static final int ZEPHYR_REG_PAYLOAD_LEN = Integer.SIZE / 8;
+    public static final int ZEPHYR_REG_PAYLOAD_LEN = C.INTEGER_SIZE;
     /**
      * zephyr registration message length
      */
@@ -39,7 +41,7 @@ public final class ZephyrConstants
     /**
      * Length of the Zephyr bind message payload
      */
-    public static final int ZEPHYR_BIND_PAYLOAD_LEN = Integer.SIZE / 8;
+    public static final int ZEPHYR_BIND_PAYLOAD_LEN = C.INTEGER_SIZE;
     /**
      * zephyr client bind message length
      */

@@ -522,7 +522,7 @@ public abstract class Util
         for (byte[] bs : bss) os.write(bs);
         os.flush();
 
-        return size + Integer.SIZE * 2;
+        return size + 2 * C.INTEGER_SIZE;
     }
 
     public static byte[] readMessage(DataInputStream is, int magic, int maxSize)
@@ -678,8 +678,7 @@ public abstract class Util
 
     public static ByteArrayOutputStream writeDelimited(GeneratedMessageLite pb)
     {
-        ByteArrayOutputStream os = new ByteArrayOutputStream(
-                pb.getSerializedSize() + Integer.SIZE / Byte.SIZE);
+        ByteArrayOutputStream os = new ByteArrayOutputStream(pb.getSerializedSize() + C.INTEGER_SIZE);
         try {
             pb.writeDelimitedTo(os);
         } catch (IOException e) {

@@ -1,5 +1,6 @@
 package com.aerofs.daemon.transport.lib;
 
+import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.transport.TransportThreadGroup;
 import com.aerofs.lib.event.IEvent;
@@ -274,7 +275,7 @@ public class TCPProactorMT
             while (true) {
                 // receive the message
                 byte[] bs = Util.readMessage(in, _magic, _maxRecvMsgSize);
-                int wirelen = bs.length + Integer.SIZE * 2;
+                int wirelen = bs.length + 2 * C.INTEGER_SIZE;
                 _bytesrx.addAndGet(wirelen);
                 p._bytesrx += wirelen;
 

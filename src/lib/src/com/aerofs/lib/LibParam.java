@@ -141,7 +141,7 @@ public class LibParam extends BaseParam
     public static class Ritual
     {
         public static final int MAX_FRAME_LENGTH = C.MB;
-        public static final int LENGTH_FIELD_SIZE = Integer.SIZE / Byte.SIZE;
+        public static final int LENGTH_FIELD_SIZE = C.INTEGER_SIZE;
     }
 
     public static class Throttling

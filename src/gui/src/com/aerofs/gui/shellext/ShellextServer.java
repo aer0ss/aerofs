@@ -56,10 +56,9 @@ class ShellextServer
         @Override
         public ChannelPipeline getPipeline() throws Exception
         {
-            final int INT_SIZE = Integer.SIZE / Byte.SIZE;
             return Channels.pipeline(
-                    new LengthFieldBasedFrameDecoder(C.MB, 0, INT_SIZE, 0, INT_SIZE),
-                    new LengthFieldPrepender(INT_SIZE),
+                    new LengthFieldBasedFrameDecoder(C.MB, 0, C.INTEGER_SIZE, 0, C.INTEGER_SIZE),
+                    new LengthFieldPrepender(C.INTEGER_SIZE),
                     new ShellextServerHandler()
             );
         }
