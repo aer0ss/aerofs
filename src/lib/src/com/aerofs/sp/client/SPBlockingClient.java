@@ -61,7 +61,7 @@ public class SPBlockingClient extends SPServiceBlockingStub
         }
     }
 
-    public static void setListener(IBadCredentialListener bcl)
+    public static void setBadCredentialListener(IBadCredentialListener bcl)
     {
         _bcl = bcl;
     }

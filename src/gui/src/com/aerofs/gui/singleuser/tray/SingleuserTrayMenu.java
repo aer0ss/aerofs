@@ -33,9 +33,9 @@ import com.aerofs.proto.Ritual.ListSharedFoldersReply;
 import com.aerofs.proto.Ritual.PBSharedFolder;
 import com.aerofs.proto.RitualNotifications.PBNotification;
 import com.aerofs.proto.RitualNotifications.PBNotification.Type;
+import com.aerofs.ritual_notification.IRitualNotificationListener;
 import com.aerofs.sv.client.SVClient;
 import com.aerofs.ui.IUI.MessageType;
-import com.aerofs.ui.RitualNotificationClient.IListener;
 import com.aerofs.ui.UI;
 import com.aerofs.ui.UIUtil;
 import com.google.common.base.Preconditions;
@@ -48,7 +48,7 @@ import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.MenuItem;
 
-public class SingleuserTrayMenu extends AbstractTrayMenu implements IListener, ITrayMenu
+public class SingleuserTrayMenu extends AbstractTrayMenu implements IRitualNotificationListener, ITrayMenu
 {
     private static final ClickEvent RESOLVE_CONFLICTS
             = new ClickEvent(Action.RESOLVE_CONFLICTS, Source.TASKBAR);
@@ -192,6 +192,12 @@ public class SingleuserTrayMenu extends AbstractTrayMenu implements IListener, I
             break;
         default: break;
         }
+    }
+
+    @Override
+    public void onNotificationChannelBroken()
+    {
+        // noop
     }
 
     private void addConflictsMenuItem(TrayMenuPopulator trayMenuPopulator, int conflictCount)

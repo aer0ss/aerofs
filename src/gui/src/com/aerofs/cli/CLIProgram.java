@@ -27,7 +27,7 @@ public class CLIProgram implements IProgram
 
         ClientSocketChannelFactory clientChannelFactory = ChannelFactories.getClientChannelFactory();
         ControllerService.init(rtRoot, clientChannelFactory, UI.notifier());
-        SPBlockingClient.setListener(new ControllerBadCredentialListener());
+        SPBlockingClient.setBadCredentialListener(new ControllerBadCredentialListener());
         RitualClientProvider ritualProvider = new RitualClientProvider(clientChannelFactory);
         UI.init(new CLI(rtRoot), ritualProvider);
 

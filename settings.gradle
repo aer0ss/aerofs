@@ -2,4 +2,6 @@
 // Copyright (c) Air Computing Inc., 2013.
 //-----------------------------------------------------------------------------
 
+// include all the directories you want searched here for gradle build
+
 include 'src/base', 'src/verkehr'

@@ -7,7 +7,7 @@ package com.aerofs.gui.shellext;
 import com.aerofs.lib.Path;
 import com.aerofs.proto.RitualNotifications.PBNotification;
 import com.aerofs.proto.RitualNotifications.PBPathStatusEvent;
-import com.aerofs.ui.RitualNotificationClient.IListener;
+import com.aerofs.ritual_notification.IRitualNotificationListener;
 import com.aerofs.ui.UI;
 import com.aerofs.ui.UIUtil;
 
@@ -23,7 +23,7 @@ public class PathStatusNotificationForwarder
     {
         _service = service;
 
-        UI.rnc().addListener(new IListener() {
+        UI.rnc().addListener(new IRitualNotificationListener() {
             @Override
             public void onNotificationReceived(PBNotification pb)
             {
@@ -31,12 +31,18 @@ public class PathStatusNotificationForwarder
                 case PATH_STATUS:
                     onStatusNotification(pb.getPathStatus());
                     break;
-                case CLEAR_STATUS:
+                case PATH_STATUS_OUT_OF_DATE:
                     _service.notifyClearCache();
                     break;
                 default:
                     // no-op
                 }
+            }
+
+            @Override
+            public void onNotificationChannelBroken()
+            {
+                // noop
             }
         });
     }

@@ -7,14 +7,14 @@ package com.aerofs.controller;
 import com.aerofs.proto.ControllerNotifications;
 import com.aerofs.proto.RitualNotifications.PBNotification;
 import com.aerofs.proto.RitualNotifications.PBNotification.Type;
-import com.aerofs.ui.RitualNotificationClient.IListener;
+import com.aerofs.ritual_notification.IRitualNotificationListener;
 import com.aerofs.ui.UI;
 
 public class BadCredentialNotifier
 {
     public BadCredentialNotifier()
     {
-        IListener l = new IListener()
+        IRitualNotificationListener l = new IRitualNotificationListener()
         {
             @Override
             public void onNotificationReceived(PBNotification pb)
@@ -23,6 +23,12 @@ public class BadCredentialNotifier
                     ControllerService.get().notifyUI(
                             ControllerNotifications.Type.SHOW_RETYPE_PASSWORD_NOTIFICATION, null);
                 }
+            }
+
+            @Override
+            public void onNotificationChannelBroken()
+            {
+                // noop
             }
         };
 

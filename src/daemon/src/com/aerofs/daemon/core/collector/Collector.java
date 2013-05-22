@@ -9,8 +9,8 @@ import java.util.Set;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
-import com.aerofs.daemon.core.download.Downloads;
-import com.aerofs.daemon.core.download.ExUnsatisfiedDependency;
+import com.aerofs.daemon.core.transfers.download.Downloads;
+import com.aerofs.daemon.core.transfers.download.ExUnsatisfiedDependency;
 import com.aerofs.daemon.core.ex.ExWrapped;
 import com.aerofs.daemon.lib.db.ICollectorSequenceDatabase.OCIDAndCS;
 import com.aerofs.lib.id.OCID;
@@ -22,7 +22,7 @@ import org.slf4j.Logger;
 
 import com.aerofs.daemon.core.CoreExponentialRetry;
 import com.aerofs.daemon.core.CoreScheduler;
-import com.aerofs.daemon.core.download.IDownloadCompletionListener;
+import com.aerofs.daemon.core.transfers.download.IDownloadCompletionListener;
 import com.aerofs.daemon.core.store.Store;
 import com.aerofs.daemon.core.tc.ITokenReclamationListener;
 import com.aerofs.lib.event.AbstractEBSelfHandling;

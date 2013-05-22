@@ -127,7 +127,6 @@ service RitualService {
     // Get status summary (shellext-ready) for a list of files
     rpc GetPathStatus(GetPathStatusCall) returns(GetPathStatusReply);
 
-
     ///////////////////////////////////////////////////////////////////////////////////////////////
     // Revision History
 
@@ -556,7 +555,6 @@ message CreateSeedFileCall {
 message CreateSeedFileReply {
     required string path = 1;
 }
-
 
 message TransportPingCall {
     // see IEOTransportPing for details

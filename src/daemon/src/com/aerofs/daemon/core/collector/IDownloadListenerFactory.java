@@ -5,7 +5,7 @@
 package com.aerofs.daemon.core.collector;
 
 import com.aerofs.base.id.DID;
-import com.aerofs.daemon.core.download.IDownloadCompletionListener;
+import com.aerofs.daemon.core.transfers.download.IDownloadCompletionListener;
 import com.aerofs.daemon.core.tc.Token;
 
 import javax.annotation.Nullable;

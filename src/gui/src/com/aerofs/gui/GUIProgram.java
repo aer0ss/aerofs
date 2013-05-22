@@ -63,7 +63,7 @@ public class GUIProgram implements IProgram
 
         ClientSocketChannelFactory clientChannelFactory = ChannelFactories.getClientChannelFactory();
         ControllerService.init(rtRoot, clientChannelFactory, UI.notifier());
-        SPBlockingClient.setListener(new ControllerBadCredentialListener());
+        SPBlockingClient.setBadCredentialListener(new ControllerBadCredentialListener());
         RitualClientProvider ritualProvider = new RitualClientProvider(clientChannelFactory);
         ShellextService sextservice = new ShellextService(ChannelFactories.getServerChannelFactory(), ritualProvider);
         UI.init(new GUI(rtRoot, sextservice), ritualProvider);

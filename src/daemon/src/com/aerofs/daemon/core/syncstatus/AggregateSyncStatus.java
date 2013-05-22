@@ -5,6 +5,8 @@
 package com.aerofs.daemon.core.syncstatus;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.base.ex.ExNotFound;
+import com.aerofs.base.id.OID;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.IDirectoryServiceListener;
 import com.aerofs.daemon.core.ds.OA;
@@ -17,9 +19,7 @@ import com.aerofs.lib.CounterVector;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.cfg.CfgAggressiveChecking;
 import com.aerofs.lib.ex.ExNotDir;
-import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.lib.id.KIndex;
-import com.aerofs.base.id.OID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.id.SOKID;
@@ -81,12 +81,12 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
     private final MapSIndex2DeviceBitMap _sidx2dbm;
     private final CfgAggressiveChecking _cfgAggressiveChecking;
 
-    public static interface IListener
+    public static interface ISyncStatusChangeListener
     {
-        void syncStatusChanged_(Set<Path> changes);
+        void onSyncStatusChanged_(Set<Path> changes);
     }
 
-    private final List<IListener> _listeners;
+    private final List<ISyncStatusChangeListener> _listeners;
 
     @Inject
     public AggregateSyncStatus(DirectoryService ds, MapSIndex2DeviceBitMap sidx2dbm,
@@ -101,7 +101,7 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
         ds.addListener_(this);
     }
 
-    public void addListener_(IListener listener)
+    public void addListener_(ISyncStatusChangeListener listener)
     {
         _listeners.add(listener);
     }
@@ -232,8 +232,8 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
 
                 @Override
                 public void committed_() {
-                    for (IListener listener : _listeners) {
-                        listener.syncStatusChanged_(cxt._paths);
+                    for (ISyncStatusChangeListener listener : _listeners) {
+                        listener.onSyncStatusChanged_(cxt._paths);
                     }
                 }
             });

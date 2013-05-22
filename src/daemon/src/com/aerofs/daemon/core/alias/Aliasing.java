@@ -4,7 +4,7 @@ import com.aerofs.base.Loggers;
 import com.aerofs.base.id.OID;
 import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.VersionUpdater;
-import com.aerofs.daemon.core.download.IDownloadContext;
+import com.aerofs.daemon.core.transfers.download.IDownloadContext;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.protocol.ReceiveAndApplyUpdate;

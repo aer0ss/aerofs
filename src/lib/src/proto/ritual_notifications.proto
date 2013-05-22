@@ -9,17 +9,16 @@ option optimize_for = LITE_RUNTIME;
 message PBNotification {
 
     enum Type {
-        TRANSFER = 0;
-        BAD_CREDENTIAL = 1;
-        PATH_STATUS = 2;
-        CLEAR_STATUS = 3;               // clear any cached path status
-        CONFLICT_COUNT = 4;             // number of files with conflicts changed
-        SHARED_FOLDER_JOIN = 5;         // joined a shared folder
-        SHARED_FOLDER_KICKOUT = 6;      // kicked out of a shared folder
+        TRANSFER = 0;                // transfer state changed
+        BAD_CREDENTIAL = 1;          // incorrect username/password
+        PATH_STATUS = 2;             // change in the status of a path
+        PATH_STATUS_OUT_OF_DATE = 3; // for whatever reason the path status is completely out of date
+        CONFLICT_COUNT = 4;          // number of files with conflicts changed
+        SHARED_FOLDER_JOIN = 5;      // joined a shared folder
+        SHARED_FOLDER_KICKOUT = 6;   // kicked out of a shared folder
         INDEXING_PROGRESS = 7;
-        SHARED_FOLDER_PENDING = 8;      // list of pending roots changed
-        ROOTS_CHANGED = 9;              // roots changed (added/removed/moved)
-        CLEAR_TRANSFERS = 10;           // clear any cached transfer state
+        SHARED_FOLDER_PENDING = 8;    // list of pending roots changed
+        ROOTS_CHANGED = 9;            // roots changed (added/removed/moved)
     }
 
     required Type type = 1;

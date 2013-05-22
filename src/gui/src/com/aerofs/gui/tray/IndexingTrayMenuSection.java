@@ -9,15 +9,14 @@ import com.aerofs.gui.GUI;
 import com.aerofs.gui.tray.IndexingPoller.IIndexingCompletionListener;
 import com.aerofs.proto.RitualNotifications.PBNotification;
 import com.aerofs.proto.RitualNotifications.PBNotification.Type;
-import com.aerofs.ui.RitualNotificationClient.IListener;
+import com.aerofs.ritual_notification.IRitualNotificationListener;
 import com.aerofs.ui.UI;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.MenuItem;
 import org.eclipse.swt.widgets.UbuntuTrayItem;
 
-public class IndexingTrayMenuSection extends DynamicTrayMenuComponent
-        implements IListener, IIndexingCompletionListener
+public class IndexingTrayMenuSection extends DynamicTrayMenuComponent implements IRitualNotificationListener, IIndexingCompletionListener
 {
     private MenuItem _indexingStats1;
     private MenuItem _indexingStats2;
@@ -102,6 +101,12 @@ public class IndexingTrayMenuSection extends DynamicTrayMenuComponent
 
             scheduleUpdate();
         }
+    }
+
+    @Override
+    public void onNotificationChannelBroken()
+    {
+        // noop
     }
 
     @Override

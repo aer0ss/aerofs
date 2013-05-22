@@ -5,29 +5,29 @@
 package com.aerofs.daemon.core.notification;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.daemon.core.download.DownloadState;
 import com.aerofs.daemon.core.ds.DirectoryService;
-import com.aerofs.daemon.core.net.ITransferStateListener;
-import com.aerofs.daemon.core.net.ITransferStateListener.Key;
-import com.aerofs.daemon.core.net.ITransferStateListener.Value;
-import com.aerofs.daemon.core.net.UploadState;
-import com.aerofs.daemon.core.notification.ConflictState.IConflictStateListener;
+import com.aerofs.daemon.core.notification.ConflictNotifier.IConflictStateListener;
 import com.aerofs.daemon.core.status.PathFlagAggregator;
 import com.aerofs.daemon.core.status.PathStatus;
-import com.aerofs.daemon.core.syncstatus.AggregateSyncStatus.IListener;
+import com.aerofs.daemon.core.syncstatus.AggregateSyncStatus.ISyncStatusChangeListener;
+import com.aerofs.daemon.core.transfers.ITransferStateListener;
+import com.aerofs.daemon.core.transfers.ITransferStateListener.TransferProgress;
+import com.aerofs.daemon.core.transfers.ITransferStateListener.TransferredItem;
+import com.aerofs.daemon.core.transfers.download.DownloadState;
+import com.aerofs.daemon.core.transfers.upload.UploadState;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.id.SOCID;
 import com.aerofs.proto.PathStatus.PBPathStatus;
-import com.aerofs.proto.RitualNotifications.PBNotification;
-import com.aerofs.proto.RitualNotifications.PBNotification.Type;
-import com.aerofs.proto.RitualNotifications.PBPathStatusEvent;
+import com.aerofs.ritual_notification.RitualNotificationServer;
 import org.slf4j.Logger;
 
 import java.sql.SQLException;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
+
+import static com.aerofs.daemon.core.notification.Notifications.newConflictCountNotification;
+import static com.aerofs.daemon.core.notification.Notifications.newPathStatusNotification;
 
 /**
  * Listens to upload, download and sync status changes and emits the appropriate merged status
@@ -35,39 +35,44 @@ import java.util.Set;
  *
  * See {@link PathStatus}
  */
-public class PathStatusNotifier implements IListener, IConflictStateListener
+class PathStatusNotifier implements ISyncStatusChangeListener, IConflictStateListener
 {
     private static final Logger l = Loggers.getLogger(PathStatusNotifier.class);
 
     private final PathStatus _ps;
     private final DirectoryService _ds;
-    private final RitualNotificationServer _notifier;
+    private final RitualNotificationServer _rns;
 
-    public PathStatusNotifier(RitualNotificationServer notifier, DirectoryService ds, PathStatus ps,
+    public PathStatusNotifier(RitualNotificationServer rns, DirectoryService ds, PathStatus ps,
             DownloadState dls, UploadState uls)
     {
         _ps = ps;
         _ds = ds;
-        _notifier = notifier;
+        _rns = rns;
 
         uls.addListener_(new ITransferStateListener() {
             @Override
-            public void stateChanged_(Key key, Value value)
+            public void onTransferStateChanged_(TransferredItem item, TransferProgress progress)
             {
-                onStateChanged_(key, value, PathFlagAggregator.Uploading);
+                onStateChanged_(item, progress, PathFlagAggregator.Uploading);
             }
         });
 
         dls.addListener_(new ITransferStateListener() {
             @Override
-            public void stateChanged_(Key key, Value value)
+            public void onTransferStateChanged_(TransferredItem item, TransferProgress progress)
             {
-                onStateChanged_(key, value, PathFlagAggregator.Downloading);
+                onStateChanged_(item, progress, PathFlagAggregator.Downloading);
             }
         });
     }
 
-    private void onStateChanged_(Key key, Value value, int direction)
+    void sendPathStatusNotification_(Map<Path, PBPathStatus> pathStatuses)
+    {
+        _rns.getRitualNotifier().sendNotification(newPathStatusNotification(pathStatuses));
+    }
+
+    private void onStateChanged_(TransferredItem key, TransferProgress value, int direction)
     {
         SOCID socid = key._socid;
         // Only care about content transfer
@@ -76,7 +81,7 @@ public class PathStatusNotifier implements IListener, IConflictStateListener
 
         try {
             Path path = _ds.resolveNullable_(socid.soid());
-            notify_(_ps.setTransferState_(socid, path, value, direction));
+            sendPathStatusNotification_(_ps.setTransferState_(socid, path, value, direction));
         } catch (SQLException e) {
             /**
              * We bury exceptions to comply with ITransferStateListener interface
@@ -87,38 +92,20 @@ public class PathStatusNotifier implements IListener, IConflictStateListener
     }
 
     @Override
-    public void syncStatusChanged_(Set<Path> changes)
+    public void onSyncStatusChanged_(Set<Path> changes)
     {
-        notify_(_ps.notificationsForSyncStatusChanges_(changes));
+        sendPathStatusNotification_(_ps.notificationsForSyncStatusChanges_(changes));
     }
 
-    private void notify_(Map<Path, PBPathStatus> notifications)
+    void sendConflictCountNotification_()
     {
-        PBPathStatusEvent.Builder bd = PBPathStatusEvent.newBuilder();
-        for (Entry<Path, PBPathStatus> e : notifications.entrySet()) {
-            bd.addPath(e.getKey().toPB());
-            bd.addStatus(e.getValue());
-        }
-
-        _notifier.sendEvent_(PBNotification.newBuilder()
-                .setType(Type.PATH_STATUS)
-                .setPathStatus(bd)
-                .build());
-    }
-
-    // public for use in EISendSnapshot
-    public void sendConflictCount_()
-    {
-        _notifier.sendEvent_(PBNotification.newBuilder()
-                .setType(Type.CONFLICT_COUNT)
-                .setConflictCount(_ps.conflictCount_())
-                .build());
+        _rns.getRitualNotifier().sendNotification(newConflictCountNotification(_ps.conflictCount_()));
     }
 
     @Override
     public void branchesChanged_(Map<Path, Boolean> conflicts)
     {
-        notify_(_ps.setConflictState_(conflicts));
-        sendConflictCount_();
+        sendPathStatusNotification_(_ps.setConflictState_(conflicts));
+        sendConflictCountNotification_();
     }
 }

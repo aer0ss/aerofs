@@ -4,20 +4,19 @@
 
 package com.aerofs.daemon.core.status;
 
-import com.aerofs.proto.PathStatus.PBPathStatus;
-
-import com.aerofs.daemon.core.net.ITransferStateListener.Value;
+import com.aerofs.base.ex.ExNotFound;
+import com.aerofs.daemon.core.UserAndDeviceNames;
+import com.aerofs.daemon.core.ex.ExExpelled;
 import com.aerofs.daemon.core.serverstatus.ServerConnectionStatus;
 import com.aerofs.daemon.core.serverstatus.ServerConnectionStatus.Server;
 import com.aerofs.daemon.core.syncstatus.LocalSyncStatus;
 import com.aerofs.daemon.core.syncstatus.SyncStatusSummary;
-import com.aerofs.daemon.core.UserAndDeviceNames;
+import com.aerofs.daemon.core.transfers.ITransferStateListener.TransferProgress;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.cfg.CfgLocalUser;
-import com.aerofs.daemon.core.ex.ExExpelled;
-import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.lib.id.SOCID;
+import com.aerofs.proto.PathStatus.PBPathStatus;
 import com.aerofs.proto.PathStatus.PBPathStatus.Sync;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
@@ -66,7 +65,7 @@ public class PathStatus
      * Update aggregated upload state
      * @return paths whose status was affected and their new aggregated status
      */
-    public Map<Path, PBPathStatus> setTransferState_(SOCID socid, @Nullable Path path, Value value,
+    public Map<Path, PBPathStatus> setTransferState_(SOCID socid, @Nullable Path path, TransferProgress value,
             int direction)
     {
         assert !socid.cid().isMeta();

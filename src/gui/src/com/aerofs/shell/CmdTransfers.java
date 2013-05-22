@@ -7,10 +7,9 @@ import com.aerofs.lib.id.SOCID;
 import com.aerofs.proto.RitualNotifications.PBNotification;
 import com.aerofs.proto.RitualNotifications.PBNotification.Type;
 import com.aerofs.proto.RitualNotifications.PBTransferEvent;
-import com.aerofs.ui.RitualNotificationClient;
-import com.aerofs.ui.RitualNotificationClient.IListener;
+import com.aerofs.ritual_notification.IRitualNotificationListener;
+import com.aerofs.ritual_notification.RitualNotificationClient;
 import com.aerofs.ui.UIUtil;
-
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
 
@@ -33,11 +32,17 @@ public class CmdTransfers implements IShellCommand<ShProgram>
 
         final boolean debugFinal = debug;
         RitualNotificationClient rnc = new RitualNotificationClient();
-        rnc.addListener(new IListener() {
+        rnc.addListener(new IRitualNotificationListener() {
             @Override
             public void onNotificationReceived(PBNotification pb)
             {
                 print(pb, s.out(), debugFinal);
+            }
+
+            @Override
+            public void onNotificationChannelBroken()
+            {
+                // noop // FIXME (AG): (WTF? Really)
             }
         });
 

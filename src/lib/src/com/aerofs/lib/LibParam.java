@@ -157,6 +157,11 @@ public class LibParam extends BaseParam
         public static final int LENGTH_FIELD_SIZE = C.INTEGER_SIZE;
     }
 
+    public static class RitualNotification
+    {
+        public static final long NOTIFICATION_SERVER_CONNECTION_RETRY_INTERVAL = 1 * C.SEC;
+    }
+
     public static class Throttling
     {
         // must be consistent with files.proto

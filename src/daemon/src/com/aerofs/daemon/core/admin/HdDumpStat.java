@@ -1,10 +1,10 @@
 package com.aerofs.daemon.core.admin;
 
 import com.aerofs.daemon.core.CoreQueue;
-import com.aerofs.daemon.core.download.DownloadState;
+import com.aerofs.daemon.core.transfers.download.DownloadState;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.net.Transports;
-import com.aerofs.daemon.core.net.UploadState;
+import com.aerofs.daemon.core.transfers.upload.UploadState;
 import com.aerofs.daemon.core.net.device.DevicePresence;
 import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.tc.TokenManager;
