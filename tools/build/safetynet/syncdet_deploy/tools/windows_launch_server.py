@@ -49,7 +49,7 @@ class WindowsAeroFSGUILauncher(BaseHTTPServer.BaseHTTPRequestHandler):
                 # working directory for the program. This way 'start' won't get confused about titles and
                 # we can successfully use paths with spaces!!
                 with open(os.devnull, 'w') as dev_null:
-                    cmd = "cmd.exe /c start /D\"{0}\" {1}".format(aerofs_approot, program_name)
+                    cmd = ["cmd.exe", "/c", "start", "/D", aerofs_approot, program_name]
                     print "Executing command: {0}".format(cmd)
                     subprocess.check_call(cmd, stderr=subprocess.STDOUT, stdout=dev_null)
 
