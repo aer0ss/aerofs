@@ -16,7 +16,6 @@ import com.aerofs.lib.event.IEvent;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.daemon.event.lib.EventDispatcher;
 import com.aerofs.daemon.event.net.EOTpStartPulse;
-import com.aerofs.daemon.event.net.EOTransportReconfigRemoteDevice;
 import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.lib.BlockingPrioQueue;
 import com.aerofs.lib.event.Prio;
@@ -79,24 +78,19 @@ public class TCP implements ITransportImpl, IPipeController, IARPChangeListener
     private final EventDispatcher _disp = new EventDispatcher();
     private final StreamManager _sm = new StreamManager();
     private final TransportDiagnosisState _tds = new TransportDiagnosisState();
-    private final Stores _stores = new Stores(Cfg.did(), this, _arp, Cfg.isSP()); // FIXME (AG): ugh. I hate Cfg
-    private final HostnameMonitor _hm = new HostnameMonitor(this, _arp);
+    private final Stores _stores = new Stores(Cfg.did(), this, _arp);
     private final PulseManager _pm = new PulseManager();
 
     public TCP(String id, int pref, IBlockingPrioritizedEventSink<IEvent> sink, MaxcastFilterReceiver mcfr)
     {
         _id = id;
         _pref = pref;
-
         _sched = new Scheduler(_q, id()); // can't initialize above because id() will return null
         _sink = sink;
         _mcfr = mcfr;
 
         _arp.addARPChangeListener(this);
-
         _pm.addGenericPulseDeletionWatcher(this, _sink);
-
-        _disp.setHandler_(EOTransportReconfigRemoteDevice.class, new HdTransportReconfigRemoteDevice(this)); // FIXME: this should move to init()
     }
 
     @Override
@@ -195,8 +189,6 @@ public class TCP implements ITransportImpl, IPipeController, IARPChangeListener
     {
         l.info("remove: did:" + did + " force:" + notifyOffline);
 
-        _hm.offline(did);
-
         ARPEntry arpentry = notifyOffline ? _arp.remove(did) : _arp.get(did);
 
         if (arpentry != null) {
@@ -210,7 +202,6 @@ public class TCP implements ITransportImpl, IPipeController, IARPChangeListener
     {
         _ucast.start_();
         _mcast.start_();
-        _hm.start();
 
         new Thread(TransportThreadGroup.get(), new Runnable() {
             @Override
@@ -315,11 +306,6 @@ public class TCP implements ITransportImpl, IPipeController, IARPChangeListener
         return _arp;
     }
 
-    HostnameMonitor hm()
-    {
-        return _hm;
-    }
-
     Stores ss()
     {
         return _stores;
@@ -328,12 +314,6 @@ public class TCP implements ITransportImpl, IPipeController, IARPChangeListener
     MaxcastFilterReceiver mcfr()
     {
         return _mcfr;
-    }
-
-    @Override
-    public Set<DID> getMulticastUnreachableOnlineDevices()
-    {
-        return _arp.getMulticastUnreachableOnlineDevices();
     }
 
     @Override
@@ -470,7 +450,7 @@ public class TCP implements ITransportImpl, IPipeController, IARPChangeListener
             ret = processPing(true);
             break;
         case TCP_PONG:
-            processPong(rem, ep.did(), hdr.getTcpPong(), true);
+            processPong(rem, ep.did(), hdr.getTcpPong());
             break;
         case TCP_GO_OFFLINE:
             processGoOffline(ep.did());
@@ -521,14 +501,13 @@ public class TCP implements ITransportImpl, IPipeController, IARPChangeListener
      * @param did {@link DID} of the remote peer from whom the <code>TCP_PONG</code>
      * was received
      * @param pong the <code>TCP_PONG</code> itself
-     * @param multicast whether this message was received on a multicast channel
      */
-    private void processPong(InetAddress rem, DID did, PBTCPPong pong, boolean multicast)
+    private void processPong(InetAddress rem, DID did, PBTCPPong pong)
     {
         InetSocketAddress isa = new InetSocketAddress(rem, pong.getUnicastListeningPort());
 
-        _arp.put(did, isa, multicast);
-        _stores.filterReceived(did, pong.getFilter());
+        _arp.put(did, isa);
+        _stores.storesFilterReceived(did, pong.getFilter());
     }
 
     /**

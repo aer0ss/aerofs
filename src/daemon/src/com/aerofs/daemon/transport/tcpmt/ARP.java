@@ -10,10 +10,7 @@ import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 import java.net.InetSocketAddress;
-import java.util.Collections;
 import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 import static com.aerofs.daemon.transport.lib.AddressUtils.printaddr;
@@ -23,11 +20,6 @@ import static com.aerofs.daemon.transport.tcpmt.ARP.ARPChange.UPD;
 
 class ARP
 {
-    Set<DID> getMulticastUnreachableOnlineDevices()
-    {
-        return _muod;
-    }
-
     void addARPChangeListener(IARPChangeListener listener)
     {
         _listeners.add(listener);
@@ -56,36 +48,20 @@ class ARP
     /**
      * this overwrites old entries.
      *
-     * @param multicast whether the message is received from IP multicast
      * @return true if there was no old entry
      */
-    boolean put(DID did, InetSocketAddress isa, boolean multicast)
+    boolean put(DID did, InetSocketAddress isa)
     {
         boolean isNew;
         synchronized (this) {
             ARPEntry oldEntry = _did2en.put(did, new ARPEntry(isa, System.currentTimeMillis()));
             isNew = (oldEntry == null);
-
-            if (isNew) {
-                assert !_muod.contains(did);
-                if (!multicast) {
-                    Set<DID> muod = copyMUOD();
-                    muod.add(did);
-                    _muod = muod;
-                }
-            } else {
-                if (multicast && _muod.contains(did)) {
-                    Set<DID> muod = copyMUOD();
-                    muod.remove(did);
-                    _muod = muod;
-                }
-            }
         }
 
         notifyListeners(did, isNew ? ADD : UPD);
 
         if (l.isDebugEnabled()) {
-            l.debug("arp: add: d:" + did + " rem:" + printaddr(isa) + " m:" + multicast + " n:" + isNew);
+            l.debug("arp: add: d:{} rem:{} n:{}", did, printaddr(isa), isNew);
         }
 
         return isNew;
@@ -99,30 +75,18 @@ class ARP
      */
     @Nullable ARPEntry remove(DID did)
     {
-        ARPEntry ret;
-        boolean onmulticast;
+        ARPEntry oldEntry;
         synchronized (this) {
-            ret = _did2en.remove(did);
-            onmulticast = true;
-            if (ret != null) {
-                if (_muod.contains(did)) {
-                    onmulticast = false;
-                    Set<DID> muod = copyMUOD();
-                    muod.remove(did);
-                    _muod = muod;
-                }
-            } else {
-                assert !_muod.contains(did);
-            }
+            oldEntry = _did2en.remove(did);
         }
 
         notifyListeners(did, REM);
 
         if (l.isDebugEnabled()) {
-            l.debug("arp: rem: d:" + (ret == null ? "null" : did + "rem:" + printaddr(ret._isa)) + " m:" + onmulticast);
+            l.debug("arp: rem: d:" + (oldEntry == null ? "null" : did + "rem:" + printaddr(oldEntry._isa)));
         }
 
-        return ret;
+        return oldEntry;
     }
 
     boolean exists(DID did)
@@ -149,11 +113,6 @@ class ARP
         }
     }
 
-    private Set<DID> copyMUOD()
-    {
-        return new TreeSet<DID>(_muod);
-    }
-
     @Override
     public synchronized String toString()
     {
@@ -169,8 +128,6 @@ class ARP
               .append("s");
             sb.append('\n');
         }
-        sb.append("muod: ");
-        sb.append(_muod);
         return sb.toString();
     }
 
@@ -230,12 +187,6 @@ class ARP
     //
     // members
     //
-
-    // MUOD = Multicast Unreachable Online Devices
-    //
-    // according to the requirement from ITransport, the content of this set
-    // must be immutable
-    private Set<DID> _muod = Collections.emptySet();
 
     private final Map<DID, ARPEntry> _did2en = Maps.newConcurrentMap();
     private final CopyOnWriteArraySet<IARPChangeListener> _listeners = Sets.newCopyOnWriteArraySet();

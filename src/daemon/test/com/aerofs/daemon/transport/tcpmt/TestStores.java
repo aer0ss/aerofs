@@ -12,11 +12,9 @@ import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.sched.Scheduler;
 import com.aerofs.lib.bf.BFSID;
-import com.aerofs.proto.Transport.PBTCPFilterAndSeq;
-import com.aerofs.proto.Transport.PBTCPStores;
+import com.aerofs.proto.Transport.PBTCPStoresFilter;
 import com.aerofs.testlib.AbstractTest;
 import com.google.common.collect.Maps;
-import com.google.protobuf.ByteString;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -57,7 +55,7 @@ public class TestStores extends AbstractTest
     @SuppressWarnings("unchecked") private final IBlockingPrioritizedEventSink<IEvent> _q = mock(IBlockingPrioritizedEventSink.class);
     private final TCP _tcp = mock(TCP.class);
     private final ARP _arp = new ARP();
-    private final Stores _stores = new Stores(LOCAL_PEER, _tcp, _arp, false);
+    private final Stores _stores = new Stores(LOCAL_PEER, _tcp, _arp);
 
     private class PresenceInfo
     {
@@ -103,7 +101,7 @@ public class TestStores extends AbstractTest
     {
         _stores.updateStores(new SID[]{SID_02}, new SID[]{}); // only interested in SID_02
 
-        _arp.put(REMOTE_PEER_00, REMOTE_PEER_00_ADDRESS, false);
+        _arp.put(REMOTE_PEER_00, REMOTE_PEER_00_ADDRESS);
 
         updateFilterForRemotePeer_(REMOTE_PEER_00, SID_00, SID_01);  // remote peer has SID_00 and _01
 
@@ -114,7 +112,7 @@ public class TestStores extends AbstractTest
     public void shouldNotSendPresenceIfPeerWithUninterestingStoresGoesOffline()
     {
 
-        _arp.put(REMOTE_PEER_00, REMOTE_PEER_00_ADDRESS, false);
+        _arp.put(REMOTE_PEER_00, REMOTE_PEER_00_ADDRESS);
 
         _stores.updateStores(new SID[]{SID_02}, new SID[]{}); // only interested in SID_02
 
@@ -129,7 +127,7 @@ public class TestStores extends AbstractTest
     public void shouldSendPresenceWhenAMatchingFilterIsReceivedFromPeer()
             throws Exception
     {
-        _arp.put(REMOTE_PEER_00, REMOTE_PEER_00_ADDRESS, false);
+        _arp.put(REMOTE_PEER_00, REMOTE_PEER_00_ADDRESS);
         _stores.updateStores(new SID[]{SID_00}, new SID[]{}); // only interested in SID_00
 
         updateFilterForRemotePeer_(REMOTE_PEER_00, SID_00, SID_01);  // remote peer has SID_00 and _01
@@ -146,7 +144,7 @@ public class TestStores extends AbstractTest
     @Test
     public void shouldNotifyCoreWhenARPEntryIsDeletedAndPeerHasInterestingStores()
     {
-        _arp.put(REMOTE_PEER_00, REMOTE_PEER_00_ADDRESS, true);
+        _arp.put(REMOTE_PEER_00, REMOTE_PEER_00_ADDRESS);
 
         _stores.updateStores(new SID[]{SID_00, SID_01}, new SID[]{});
 
@@ -170,10 +168,10 @@ public class TestStores extends AbstractTest
 
         // remote peers only have SID 01 and 02
 
-        _arp.put(REMOTE_PEER_00, REMOTE_PEER_00_ADDRESS, true);
+        _arp.put(REMOTE_PEER_00, REMOTE_PEER_00_ADDRESS);
         updateFilterForRemotePeer_(REMOTE_PEER_00, SID_01, SID_02);
 
-        _arp.put(REMOTE_PEER_01, REMOTE_PEER_01_ADDRESS, false);
+        _arp.put(REMOTE_PEER_01, REMOTE_PEER_01_ADDRESS);
         updateFilterForRemotePeer_(REMOTE_PEER_01, SID_01, SID_02);
 
         // suddenly core is interested in 01 and 02
@@ -219,10 +217,10 @@ public class TestStores extends AbstractTest
         // REMOTE_PEER_00: +(SID_00, SID_01)
         // REMOTE_PEER_01: +(SID_00, SID_02)
 
-        _arp.put(REMOTE_PEER_00, REMOTE_PEER_00_ADDRESS, true);
+        _arp.put(REMOTE_PEER_00, REMOTE_PEER_00_ADDRESS);
         updateFilterForRemotePeer_(REMOTE_PEER_00, SID_00, SID_01);
 
-        _arp.put(REMOTE_PEER_01, REMOTE_PEER_01_ADDRESS, true);
+        _arp.put(REMOTE_PEER_01, REMOTE_PEER_01_ADDRESS);
         updateFilterForRemotePeer_(REMOTE_PEER_01, SID_00, SID_02);
 
         // now we're no longer interested in SID_01
@@ -247,41 +245,6 @@ public class TestStores extends AbstractTest
         presenceOrder.verifyNoMoreInteractions();
     }
 
-    @Test
-    public void shouldSendPresenceWhenAMatchingPrefixesAreReceivedFromPeer()
-    {
-        _arp.put(REMOTE_PEER_00, REMOTE_PEER_00_ADDRESS, false);
-        _stores.updateStores(new SID[]{SID_00}, new SID[]{}); // only interested in SID_00
-
-        updatePrefixesForRemotePeer_(REMOTE_PEER_00, SID_00, SID_01);  // remote peer has SID_00 and _01
-
-        // expecting only one presence (online, SID_00)
-
-        ArgumentCaptor<IEvent> evcaptor = ArgumentCaptor.forClass(IEvent.class);
-        verify(_q).enqueueBlocking(evcaptor.capture(), any(Prio.class));
-
-        EIPresence presenceEvent = (EIPresence) evcaptor.getValue();
-        verifyPresenceEvent(presenceEvent, REMOTE_PEER_00, true, SID_00);
-    }
-
-    @Test
-    public void shouldNotifyCoreWhenARPEntryIsDeletedAndPrefixSendingPeerHasInterestingStores()
-    {
-        _arp.put(REMOTE_PEER_00, REMOTE_PEER_00_ADDRESS, true);
-
-        _stores.updateStores(new SID[]{SID_00, SID_01}, new SID[]{});
-
-        updatePrefixesForRemotePeer_(REMOTE_PEER_00, SID_00, SID_01);
-
-        _arp.remove(REMOTE_PEER_00);
-
-        ArgumentCaptor<IEvent> delEventCaptor = ArgumentCaptor.forClass(IEvent.class); // only captures arg for last call
-        verify(_q, times(2)).enqueueBlocking(delEventCaptor.capture(), any(Prio.class));
-
-        EIPresence presenceEvent = (EIPresence) delEventCaptor.getValue();
-        verifyPresenceEvent(presenceEvent, REMOTE_PEER_00, false, SID_00, SID_01);
-    }
-
     private void updateFilterForRemotePeer_(DID remote, SID... sids)
     {
         updateFilterForRemotePeer_(remote, 1, sids);
@@ -296,25 +259,12 @@ public class TestStores extends AbstractTest
         }
         filter.finalize_();
 
-        PBTCPStores pbstores = PBTCPStores
-                .newBuilder()
-                .setFilter(PBTCPFilterAndSeq
-                        .newBuilder()
-                        .setFilter(filter.toPB())
-                        .setSequence(filterSeqnum))
+        PBTCPStoresFilter pbstores = PBTCPStoresFilter.newBuilder()
+                .setFilter(filter.toPB())
+                .setSequence(filterSeqnum)
                 .build();
 
-        _stores.storesReceived(remote, pbstores);
-    }
-
-    private void updatePrefixesForRemotePeer_(DID remote, SID... sids)
-    {
-        PBTCPStores.Builder bd = PBTCPStores .newBuilder();
-        for (SID sid : sids) {
-            bd.addPrefix(ByteString.copyFrom(sid.getBytes(), 0, 8)); // see Stores.Prefix.PREFIX_LENGTH
-        }
-
-        _stores.storesReceived(remote, bd.build());
+        _stores.storesFilterReceived(remote, pbstores);
     }
 
     private void verifyUnorderedPresenceNotification_(InOrder presenceOrder, Map<DID, PresenceInfo> expectedPresences)

@@ -151,11 +151,6 @@ public class Store implements Comparable<Store>, IDumpStatMisc
         else return _opm.getAll_();
     }
 
-    public boolean isOnlinePotentialMemberDevice_(DID did)
-    {
-        return getOnlinePotentialMemberDevices_().containsKey(did);
-    }
-
     public boolean hasOnlinePotentialMemberDevices_()
     {
         return !getOnlinePotentialMemberDevices_().isEmpty();

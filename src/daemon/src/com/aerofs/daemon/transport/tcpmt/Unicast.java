@@ -288,17 +288,17 @@ public class Unicast implements IConnectionManager, IUnicast, IPipeDebug
                 _proactor.reuseForOutgoingConnection(_remisa, _c);
 
                 ret = PBTPHeader.newBuilder()
-                    .setType(Type.TCP_STORES)
-                    .setTcpStores(_stores.newStoresForNonSP())
+                    .setType(Type.TCP_STORES_FILTER)
+                    .setTcpStoresFilter(_stores.newStoresFilter())
                     .build();
-            } else if (type == Type.TCP_STORES) {
+            } else if (type == Type.TCP_STORES_FILTER) {
                 // FIXME (AG): I need to use the same code path as Multicast (see TCP::processPong)
-                _arp.put(_did, _remisa, false);
-                _stores.storesReceived(_did, h.getTcpStores());
+                _arp.put(_did, _remisa);
+                _stores.storesFilterReceived(_did, h.getTcpStoresFilter());
             } else if (type == Type.TCP_PONG) {
                 // FIXME (AG): I need to use the same code path as Multicast (see TCP::processPong)
-                _arp.put(_did, _remisa, false);
-                _stores.filterReceived(_did, h.getTcpPong().getFilter());
+                _arp.put(_did, _remisa);
+                _stores.storesFilterReceived(_did, h.getTcpPong().getFilter());
             } else {
                 _pc.processUnicastControl(_did, h);
             }

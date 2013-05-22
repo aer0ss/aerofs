@@ -114,15 +114,6 @@ public class MockTapServiceImpl implements ITapService
     }
 
     @Override
-    public ListenableFuture<UUIDCollection> getMaxcastUnreachableOnlineDevices()
-            throws Exception
-    {
-        assertStarted();
-        l.info("getMaxcastUnreachableOnlineDevices:");
-        return UncancellableFuture.createSucceeded(UUIDCollection.getDefaultInstance());
-    }
-
-    @Override
     public ListenableFuture<PBAckReply> sendUnicastDatagram(ByteString did, ByteString sid,
             ByteString payload, Boolean highPriority)
             throws Exception

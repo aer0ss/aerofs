@@ -18,7 +18,7 @@ message PBTPHeader {
         TCP_PONG = 2;
         TCP_UNICAST_PREAMBLE = 3;
         TCP_GO_OFFLINE = 4;
-        TCP_STORES = 9;
+        TCP_STORES_FILTER = 9;
         TCP_NOP = 10;
 
         // XMPP relay information
@@ -46,8 +46,8 @@ message PBTPHeader {
     // only in IP multicast
     optional bytes tcp_multicast_device_id  = 7;
 
-    // only in IP unicast
-    optional PBTCPStores tcp_stores = 8;
+    // only in IP unicast. Bloom filter of all stores of the sending device
+    optional PBTCPStoresFilter tcp_stores_filter = 8;
 
     // only in XMPP relay information
     optional PBZephyrCandidateInfo zephyr_info = 9;
@@ -132,9 +132,8 @@ message PBZephyrCandidateInfo {
 ////////
 // TCP specific messages
 
-// the bloom filter containing all the stores of the sending device.
-// BFSID: bloom filter for store identifiers
-message PBTCPFilterAndSeq {
+// the bloom filter containing all store ids of the sending device.
+message PBTCPStoresFilter {
     // the sequence is to reduce duplicate notifications in multicast
     required uint32 sequence = 1;
     required bytes filter = 2;
@@ -142,19 +141,12 @@ message PBTCPFilterAndSeq {
 
 message PBTCPPong {
     required uint32 unicast_listening_port = 1;
-    required PBTCPFilterAndSeq filter = 2;
+    required PBTCPStoresFilter filter = 2;
 }
 
 message PBTCPUnicastPreamble {
     required bytes device_id = 1;
     required uint32 listening_port = 2;
-}
-
-message PBTCPStores {
-    // only in non-SP to non-SP communications
-    optional PBTCPFilterAndSeq filter = 1;
-    // only in SP to non-SP communications
-    repeated bytes prefix = 2;
 }
 
 message PBCheckPulse {

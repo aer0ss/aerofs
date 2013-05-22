@@ -4,7 +4,6 @@
 
 package com.aerofs.daemon.tng;
 
-import com.aerofs.base.id.DID;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.base.id.SID;
 import com.google.common.collect.ImmutableSet;
@@ -15,6 +14,4 @@ public interface IMaxcast
     ListenableFuture<Void> sendDatagram_(int maxcastId, SID sid, byte[] payload, Prio pri);
 
     ListenableFuture<Void> updateLocalStoreInterest_(ImmutableSet<SID> added, ImmutableSet<SID> removed);
-
-    ListenableFuture<ImmutableSet<DID>> getMaxcastUnreachableOnlineDevices_();
 }

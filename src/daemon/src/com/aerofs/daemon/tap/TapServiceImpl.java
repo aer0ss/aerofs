@@ -169,27 +169,6 @@ public class TapServiceImpl implements ITapService
     }
 
     @Override
-    public ListenableFuture<UUIDCollection> getMaxcastUnreachableOnlineDevices()
-            throws Exception
-    {
-        assertStarted();
-        ListenableFuture<ImmutableSet<DID>> future = _transport.getMaxcastUnreachableOnlineDevices_();
-        return Futures.transform(future, new AsyncFunction<ImmutableSet<DID>, UUIDCollection>()
-        {
-            @Override
-            public ListenableFuture<UUIDCollection> apply(ImmutableSet<DID> input)
-                    throws Exception
-            {
-                UUIDCollection.Builder message = UUIDCollection.newBuilder();
-                for (DID did : input) {
-                    message.addUuids(did.toPB());
-                }
-                return UncancellableFuture.createSucceeded(message.build());
-            }
-        });
-    }
-
-    @Override
     public ListenableFuture<PBAckReply> sendUnicastDatagram(ByteString did, ByteString sid,
             ByteString payload, Boolean highPrio)
             throws Exception
