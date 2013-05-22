@@ -13,9 +13,11 @@ import com.aerofs.gui.misc.DlgRootAnchorUpdater;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.StorageType;
 import com.aerofs.lib.SystemUtil;
+import com.aerofs.lib.SystemUtil.ExitCode;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
+import com.aerofs.lib.ex.ExNoConsole;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.ui.IUI.MessageType;
 import org.slf4j.Logger;
@@ -29,6 +31,8 @@ import java.util.Map.Entry;
  * Periodically checks for existence of:
  * 1. default root anchor
  * 2. any external roots
+ * 3. disk full (rtroot, root anchor and external roots)
+ *
  *
  * And warns the user if any of them disappears.
  */
@@ -76,6 +80,7 @@ public class RootAnchorPoller
 
     private void check()
     {
+        checkDisk(Cfg.absRTRoot());
         checkRoot(Cfg.absDefaultRootAnchor(), null);
         for (Entry<SID, String> e : Cfg.getRoots().entrySet()) checkRoot(e.getValue(), e.getKey());
     }
@@ -95,6 +100,32 @@ public class RootAnchorPoller
                 l.warn("Error occurred while notifying missing root anchor: {}", Util.e(ex));
             }
         }
+        checkDisk(absPath);
+    }
+
+    private void checkDisk(String absPath)
+    {
+        if (isDiskFull(absPath)) {
+            blockingRitualCall();
+
+            boolean exit = true;
+            try {
+                // TODO: use a custom dialog that:
+                // 1. auto-close if some space is freed
+                // 2. suggest cleaning sync history
+                exit = UI.get().ask(MessageType.WARN, "Disk full on " + absPath,
+                        "Quit AeroFS", "I took care of it, get back to work");
+            } catch (ExNoConsole e) {}
+            if (exit) ExitCode.SHUTDOWN_REQUESTED.exit();
+
+            restartDaemon();
+        }
+    }
+
+    private boolean isDiskFull(String absPath)
+    {
+        File f = new File(absPath);
+        return f.getUsableSpace() == 0L || f.getFreeSpace() == 0L;
     }
 
     /**
@@ -138,15 +169,7 @@ public class RootAnchorPoller
         // Check if we successfully changed the location of the root anchor after the user
         // manually moved the root anchor.
         if (onPotentialRootAnchorChange_(oldAbsPath, sid)) {
-            try {
-                UI.dm().start();  // restart the daemon
-                UI.rnc().resume(); // restart ritual notification client
-            } catch (Exception e1) {
-                GUI.get().show(MessageType.ERROR,
-                        "An error occured while starting up " + L.product() +
-                                " " + UIUtil.e2msg(e1));
-                l.warn(Util.e(e1));
-            }
+            restartDaemon();
         }
     }
 
@@ -205,5 +228,21 @@ public class RootAnchorPoller
         }
         UI.dm().stopIgnoreException();
         UI.rnc().pause();
+    }
+
+    /**
+     * Restart daemon and Ritual Notifications client after receiving a response from the user
+     */
+    private void restartDaemon()
+    {
+        try {
+            UI.dm().start();  // restart the daemon
+            UI.rnc().resume(); // restart ritual notification client
+        } catch (Exception e1) {
+            GUI.get().show(MessageType.ERROR,
+                    "An error occured while starting up " + L.product() +
+                            " " + UIUtil.e2msg(e1));
+            l.warn(Util.e(e1));
+        }
     }
 }
