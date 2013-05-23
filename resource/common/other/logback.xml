@@ -27,7 +27,7 @@
         </encoder>
 
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <fileNamePattern>${filename}.%d{yyyy-MM-dd}</fileNamePattern>
+            <fileNamePattern>${filename}.%d{yyyyMMdd}</fileNamePattern>
             <maxHistory>5</maxHistory>
             <cleanHistoryOnStart>true</cleanHistoryOnStart>
         </rollingPolicy>
