@@ -123,6 +123,9 @@ def generate_yaml(args, username):
             if args.include_ts and vm_list == LINUX_VMS and i == 0:
                 details['team_server'] = True
                 details['storage_type'] = 'LOCAL'
+            if args.include_linked_ts and vm_list == LINUX_VMS and i == 0:
+                details['team_server'] = True
+                details['storage_type'] = 'LINKED'
             if args.include_s3_ts and vm_list == LINUX_VMS and i == 0:
                 details.update(S3_DETAILS)
                 details['team_server'] = True
@@ -170,6 +173,8 @@ def main():
         help="If flag is specified, the first linux VM will be configured as a local TS")
     parser.add_argument('--include-s3-ts', action='store_true',
         help="If flag is specified, the first linux VM will be configured as an S3 TS")
+    parser.add_argument('--include-linked-ts', action='store_true',
+        help="If flag is specified, the first linux VM will be configured as a linked storage TS")
     parser.add_argument('--password', action='store', default=DEFAULT_PASSWORD,
         help="Non-default password to use for AeroFS accounts")
     parser.add_argument('--approot', default=DEFAULT_APPROOT,
