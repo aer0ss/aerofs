@@ -12,7 +12,7 @@ import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.event.Prio;
 import com.google.inject.Inject;
 
-import static com.aerofs.lib.LibParam.SEED_FILE_NAME;
+import static com.aerofs.lib.LibParam.seedFileName;
 
 public class HdCreateSeedFile extends AbstractHdIMC<EICreateSeedFile>
 {
@@ -27,7 +27,7 @@ public class HdCreateSeedFile extends AbstractHdIMC<EICreateSeedFile>
     @Override
     protected void handleThrows_(EICreateSeedFile ev, Prio prio) throws Exception
     {
-        String path = Util.join(Cfg.getRootPath(ev._sid), SEED_FILE_NAME);
+        String path = Util.join(Cfg.getRootPath(ev._sid), seedFileName(ev._sid));
         _sc.create_(ev._sid, path);
 
         ev.setResult_(path);

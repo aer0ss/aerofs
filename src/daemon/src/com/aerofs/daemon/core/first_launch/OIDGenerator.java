@@ -15,6 +15,8 @@ import org.slf4j.Logger;
 
 import java.sql.SQLException;
 
+import static com.aerofs.lib.LibParam.seedFileName;
+
 /**
  * Abstract away OID generation for use by MightCreate
  *
@@ -31,13 +33,7 @@ public class OIDGenerator
 
     public OIDGenerator(SID sid, String absPath)
     {
-        // In case user reinstall with a different user account we don't want seed files to be used
-        // as it would potentially break sharing (since SID is derived from the OID of the original
-        // dir being shared) and may lead to unexpected migration
-        // However we do want seed file to be reused in case an external folder is re-joined at the
-        // same location, hence we suffix the seed file with the SID
-        String seedFileName = LibParam.SEED_FILE_NAME + "." + sid.toStringFormal();
-        _sdb = SeedDatabase.load_(Util.join(absPath, seedFileName));
+        _sdb = SeedDatabase.load_(Util.join(absPath, seedFileName(sid)));
         _shouldLookup = _sdb != null;
         if (_shouldLookup) l.info("seed file loaded");
     }

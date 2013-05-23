@@ -6,6 +6,7 @@ package com.aerofs.lib;
 
 import com.aerofs.base.BaseParam;
 import com.aerofs.base.C;
+import com.aerofs.base.id.SID;
 
 import java.net.InetAddress;
 
@@ -64,7 +65,19 @@ public class LibParam extends BaseParam
      * Seed files are small SQLite dbs used to reduce the impact of aliasing. They are created on
      * unlink and used on the first scan after a reinstall.
      */
-    public static final String SEED_FILE_NAME = ".aerofs.seed";
+    private static final String SEED_FILE_NAME = ".aerofs.seed";
+
+    /**
+     * In case user reinstall with a different user account we don't want seed files to be used
+     * as it would potentially break sharing (since SID is derived from the OID of the original
+     * dir being shared) and may lead to unexpected migration
+     * However we do want seed file to be reused in case an external folder is re-joined at the
+     * same location, hence we suffix the seed file with the SID
+     */
+    public static String seedFileName(SID sid)
+    {
+        return SEED_FILE_NAME + "." + sid.toStringFormal();
+    }
 
     public static enum AuxFolder
     {
