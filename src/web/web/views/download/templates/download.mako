@@ -65,7 +65,7 @@
 
 %if signup_tagline:
     <p class="download-message text-success" style="margin-top: 30px;">
-        Way to go! you've signed up for AeroFS. Install it now.
+        Way to go! You've signed up for AeroFS. Install it now.
     </p>
 %endif
 
