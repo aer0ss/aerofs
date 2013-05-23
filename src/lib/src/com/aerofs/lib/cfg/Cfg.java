@@ -138,7 +138,11 @@ public class Cfg
             }
         }
 
-        readCert();
+        try {
+            readCert();
+        } catch (FileNotFoundException e) {
+            throw new ExNotSetup();
+        }
 
         _portbase = readPortbase();
         _useDM = disabledByFile(rtRoot, LibParam.NODM);

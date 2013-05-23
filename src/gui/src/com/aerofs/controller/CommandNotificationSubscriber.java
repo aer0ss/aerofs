@@ -481,6 +481,8 @@ public final class CommandNotificationSubscriber
 
         // Delete the password.
         Cfg.db().set(Key.CRED, Key.CRED.defaultValue());
+        // Delete the device id
+        Cfg.db().set(Key.DEVICE_ID, Key.DEVICE_ID.defaultValue());
         // Create the setup file.
         _factFile.create(Util.join(Cfg.absRTRoot(), LibParam.SETTING_UP)).createNewFile();
     }
