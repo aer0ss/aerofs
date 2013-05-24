@@ -31,6 +31,8 @@ import java.io.PrintStream;
 import java.security.PrivateKey;
 import java.util.*;
 
+import static com.aerofs.daemon.core.net.dtls.DTLSEntry.DelayedDTLSMessage;
+
 class DTLSCache implements IDumpStatMisc
 {
     private static final Logger l = Loggers.getLogger(DTLSCache.class);
@@ -90,7 +92,7 @@ class DTLSCache implements IDumpStatMisc
                         OutArg<Prio> outPrio = new OutArg<Prio>();
                         Exception e = new Exception("dtls engine evicted: " + type);
                         while (!de._sendQ.isEmpty_()) {
-                            DTLSMessage<byte[]> msg = de._sendQ.dequeue_(outPrio);
+                            DTLSMessage<byte[]> msg = de._sendQ.dequeue_(outPrio)._msg;
                             msg.done_(e);
                         }
                     }
@@ -262,12 +264,12 @@ class DTLSCache implements IDumpStatMisc
     {
         assert _isSender;
 
-        final PrioQueue<DTLSMessage<byte[]>> prioQueue = entry._sendQ;
+        final PrioQueue<DelayedDTLSMessage> prioQueue = entry._sendQ;
         final OutArg<Prio> outPrio = new OutArg<Prio>();
 
         while (!prioQueue.isEmpty_()) {
             l.debug("discard q'd msg");
-            prioQueue.dequeue_(outPrio).done_(e);
+            prioQueue.dequeue_(outPrio)._msg.done_(e);
         }
     }
 
@@ -276,18 +278,17 @@ class DTLSCache implements IDumpStatMisc
      * to the lower layer.
      *
      * @param entry The DTLSEntry from which to drain the messages
-     * @param pc The PeerContext this DTLSEntry belongs to
+     * @param ep The Endpoint this DTLSEntry belongs to
      * @throws Exception
      */
-    void drainAndSendEnqueuedMessages_(final DTLSEntry entry,
-            final PeerContext pc) throws Exception
+    void drainAndSendEnqueuedMessages_(final DTLSEntry entry, final Endpoint ep) throws Exception
     {
         // this method should only be called by senders
         assert _isSender;
 
         if (!entry.isHshakeDone()) {
             // Check if this DTLSEntry has timed-out
-            timeoutDTLSInHandShake(entry, pc.ep(), false);
+            timeoutDTLSInHandShake(entry, ep, false);
             return;
         }
 
@@ -303,7 +304,7 @@ class DTLSCache implements IDumpStatMisc
         // we get blocked on the encryption call below
         entry.setDraining_(true);
         try {
-            final PrioQueue<DTLSMessage<byte[]>> sendQ = entry._sendQ;
+            final PrioQueue<DelayedDTLSMessage> sendQ = entry._sendQ;
 
             if (l.isDebugEnabled()) {
                 l.debug("draining q " + (sendQ.isEmpty_() ? "(empty)" : ""));
@@ -311,21 +312,22 @@ class DTLSCache implements IDumpStatMisc
 
             final OutArg<Prio> outPrio = new OutArg<Prio>();
             while (!sendQ.isEmpty_()) {
-                final DTLSMessage<byte[]> msg = sendQ.peek_(outPrio);
-                final byte[] bsToSend = entry.encrypt(msg._msg, pc, Footer.OUT_OLD, null);
+                final DelayedDTLSMessage dmsg = sendQ.peek_(outPrio);
+                final DTLSMessage<byte[]> msg = dmsg._msg;
+                final byte[] bsToSend = entry.encrypt(msg._msg, dmsg._pc, Footer.OUT_OLD, null);
                 if (null != bsToSend) {
 
                     // The encryption succeeded, promote this entry to the frontlog
-                    promote_(pc.ep(), entry);
+                    promote_(ep, entry);
 
                     // have to specify the priority for dequeueing, as messages
                     // with higher priorities may have been enqueued during
                     // the encryption above
-                    Util.verify(sendQ.dequeue_(outPrio.get()) == msg);
+                    Util.verify(sendQ.dequeue_(outPrio.get()) == dmsg);
 
                     // Send the encrypted message down to the lower layer
                     try{
-                        _layer.sendToLowerLayer_(msg, bsToSend, pc);
+                        _layer.sendToLowerLayer_(msg, bsToSend, dmsg._pc);
                     } catch (Exception e) {
                         l.warn("error while draining: " + e);
                     }
