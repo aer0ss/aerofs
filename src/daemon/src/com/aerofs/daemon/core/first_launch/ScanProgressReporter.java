@@ -31,11 +31,23 @@ public class ScanProgressReporter
         _rns = rns;
     }
 
+    void onFirstLaunchCompletion_()
+    {
+        _done = true;
+    }
+
     public void folderScanned_(int files)
     {
         if (_done) return;
 
         ++_folders;
+        filesScanned_(files);
+    }
+
+    public void filesScanned_(int files)
+    {
+        if (_done || files == 0) return;
+
         _files += files;
 
         l.debug("progress: {} -> {} / {}", files, _files, _folders);
@@ -47,10 +59,5 @@ public class ScanProgressReporter
                         .setFiles(_files)
                         .setFolders(_folders))
                 .build());
-    }
-
-    void onFirstLaunchCompletion_()
-    {
-        _done = true;
     }
 }

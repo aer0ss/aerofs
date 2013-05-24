@@ -217,9 +217,6 @@ class ScanSession
             } finally {
                 t.end_();
             }
-
-            // on first launch, report indexing progress
-            _f._spr.folderScanned_(potentialUpdates);
         } catch (Exception e) {
             // According to {@link Holder#hold_()}, we have to remove all SOIDs held by us on *any*
             // exception. Note that the objects been removed may include those held in previous
@@ -314,7 +311,8 @@ class ScanSession
 
         // might create physical children
         int potentialUpdates = 0;
-        int n = 0;
+        int scannedChildren = 0;
+        int lastNotification = 0;
         Trans split = null;
         for (String nameChild : nameChildren) {
             PathCombo pcChild = pcParent.append(nameChild);
@@ -341,13 +339,19 @@ class ScanSession
             _f._pi.incrementMonotonicProgress();
 
             // commit current trans and start a new one when reaching update threshold
-            if (++n == CONTINUATION_UPDATES_THRESHOLD) {
+            if (++scannedChildren == CONTINUATION_UPDATES_THRESHOLD) {
                 t.commit_();
                 t.end_();
+                // on first launch, report indexing progress
+                _f._spr.filesScanned_(potentialUpdates - lastNotification);
+                lastNotification = potentialUpdates;
                 t = split = _f._tm.begin_();
-                n = 0;
+                scannedChildren = 0;
             }
         }
+
+        // on first launch, report indexing progress
+        _f._spr.folderScanned_(potentialUpdates - lastNotification);
 
         // if a new trans was started we need to inform the caller
         if (split != null) throw new ExSplitTrans(split, potentialUpdates);
