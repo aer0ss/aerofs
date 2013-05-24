@@ -8,6 +8,7 @@ import com.aerofs.daemon.core.net.IUnicastInputLayer;
 import com.aerofs.daemon.core.net.IUnicastOutputLayer;
 import com.aerofs.daemon.core.net.PeerContext;
 import com.aerofs.daemon.core.net.RawMessage;
+import com.aerofs.daemon.core.net.dtls.DTLSEntry.DelayedDTLSMessage;
 import com.aerofs.daemon.core.net.dtls.DTLSMessage.Type;
 import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.tc.Token;
@@ -459,7 +460,7 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
                         }
 
                         // process_ queued up messages to be encrypted
-                        _send.drainAndSendEnqueuedMessages_(entry, pc);
+                        _send.drainAndSendEnqueuedMessages_(entry, pc.ep());
                     }
                 }
                 break;
@@ -522,7 +523,7 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
 
         // send the user id message first. it must be the highest priority
         // so that it's always sent before any other message.
-        entry._sendQ.enqueue_(USERID_MSG, Prio.HI);
+        entry._sendQ.enqueue_(new DelayedDTLSMessage(pc, USERID_MSG), Prio.HI);
 
         try {
             l.trace("send {}", Footer.OUT_NEW);
@@ -552,13 +553,13 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
             msg.getProfiler().start();
 
             l.trace("cli: enqueue msg for later");
-            entry._sendQ.enqueue_(msg, _f._tc.prio());
+            entry._sendQ.enqueue_(new DelayedDTLSMessage(pc, msg), _f._tc.prio());
 
         } else {
             l.trace("send {}", Footer.OUT_OLD);
 
             for (DTLSEntry entry : entries) {
-                PrioQueue<DTLSMessage<byte[]>> sendQ = entry._sendQ;
+                PrioQueue<DelayedDTLSMessage> sendQ = entry._sendQ;
 
                 byte[] bs = msg._msg;
                 if (sendQ.isEmpty_()) {
@@ -589,7 +590,7 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
                         } else {
 
                             l.trace("cli: enqueue msg for later");
-                            sendQ.enqueue_(msg, _f._tc.prio());
+                            sendQ.enqueue_(new DelayedDTLSMessage(pc, msg), _f._tc.prio());
 
                             // handshake has been sent through this engine,
                             // so there's no need to try the other engine.
@@ -614,8 +615,8 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
 
                 } else if (!sendQ.isFull_()) {
                     l.debug("cli: eng q not full, enq msg");
-                    sendQ.enqueue_(msg, _f._tc.prio());
-                    _send.drainAndSendEnqueuedMessages_(entry, pc);
+                    sendQ.enqueue_(new DelayedDTLSMessage(pc, msg), _f._tc.prio());
+                    _send.drainAndSendEnqueuedMessages_(entry, pc.ep());
 
                 } else {
                     throw new ExNoResource("CLI: eng q full, drop pkt");

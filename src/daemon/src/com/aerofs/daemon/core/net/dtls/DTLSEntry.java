@@ -27,9 +27,29 @@ class DTLSEntry
 {
     private static final Logger l = Loggers.getLogger(DTLSEntry.class);
 
+    /**
+     * When delaying a message, we must keep track of the PeerContext to which is was supposed to be
+     * sent. This is important because the DTLSEntry can be used with PeerContexts concerning
+     * different stores and the SID is part of the transport header (NB: this really shouldn't be
+     * the case for unicast messages btw...) and derived form the PeerContext which can lead to
+     * "corruption" of the header of delayed messages (with symptoms including but not limited to
+     * spontaneous appearance of ghost KMLs and heisenbugs in the sync algorithm)
+     */
+    static class DelayedDTLSMessage
+    {
+        public final PeerContext _pc;
+        public final DTLSMessage<byte[]> _msg;
+
+        DelayedDTLSMessage(PeerContext pc, DTLSMessage<byte[]> msg)
+        {
+            _pc = pc;
+            _msg = msg;
+        }
+    }
+
     private final DTLSEngine _engine;
     private final DTLSLayer _layer;
-    final PrioQueue<DTLSMessage<byte[]>> _sendQ;
+    final PrioQueue<DelayedDTLSMessage> _sendQ;
     long _lastHshakeMsgTime;
     UserID _user;
     private boolean _hshakeDone;
@@ -39,7 +59,7 @@ class DTLSEntry
         _layer = layer;
         _lastHshakeMsgTime = System.currentTimeMillis();
         _engine = engine;
-        _sendQ = new PrioQueue<DTLSMessage<byte[]>>(DTLS.HS_QUEUE_SIZE);
+        _sendQ = new PrioQueue<DelayedDTLSMessage>(DTLS.HS_QUEUE_SIZE);
     }
 
     boolean isHshakeDone()
