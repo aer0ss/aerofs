@@ -13,6 +13,7 @@ import sys
 import requests
 import json
 import getpass
+from boto.s3.connection import S3Connection
 
 file_root = os.path.dirname(__file__)
 python_aerofs_lib = os.path.join(file_root,"../src/python-lib")
@@ -145,6 +146,13 @@ def generate_yaml(args, username):
     fs.close()
 
 
+def clear_s3_bucket(access_key, secret_key, bucket_id):
+    s3conn = S3Connection(access_key, secret_key)
+    bucket = s3conn.get_bucket(bucket_id)
+    bucket.delete_keys(bucket.list())
+
+
+
 #######################
 ##   MAIN FUNCTION   ##
 #######################
@@ -198,6 +206,12 @@ def main():
         username = [create_user(args.userid, args.password) for i in xrange(total_users)]
     else:
         username = create_user(args.userid, args.password)
+
+    # Clear S3 bucket if necessary
+    if args.include_s3_ts:
+        clear_s3_bucket(S3_DETAILS['s3_access_key'],
+                        S3_DETAILS['s3_secret_key'],
+                        S3_DETAILS['s3_bucket_id'])
 
     # Generate YAML file
     generate_yaml(args, username)
