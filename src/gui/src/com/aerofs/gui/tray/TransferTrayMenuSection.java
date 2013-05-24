@@ -14,8 +14,6 @@ import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.proto.RitualNotifications.PBTransferEvent;
-import com.aerofs.ui.UIParam;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Color;
@@ -24,17 +22,12 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.MenuItem;
-import org.eclipse.swt.widgets.UbuntuTrayItem;
 
-import java.util.List;
 import java.util.Map;
 
-public class TransferTrayMenuSection implements ITrayMenuComponent
+public class TransferTrayMenuSection extends DynamicTrayMenuComponent
+        implements ITransferStateChangedListener
 {
-    // We need to refresh more slowly on Ubuntu, to avoid making the menu unnavigable
-    private static final long MULTIPLIER = UbuntuTrayItem.supported() ? 2 : 1;
-    private static final long REFRESH_TIME = UIParam.SLOW_REFRESH_DELAY * MULTIPLIER;
-
     private MenuItem _transferStats1;    // menu item used to display information about
                                          // ongoing transfers - line 1
     private MenuItem _transferStats2;    // menu item used to display information about
@@ -67,27 +60,14 @@ public class TransferTrayMenuSection implements ITrayMenuComponent
         }
     };
 
-    private final List<ITrayMenuComponentListener> _trayMenuListeners;
-
     private final Map<Integer, Image> _pieChartCache = Maps.newHashMap();
 
     private final TransferState _ts;
-    private final RateLimitedNotifier _notifier;
 
     public TransferTrayMenuSection(TransferState ts)
     {
         _ts = ts;
-
-        _trayMenuListeners = Lists.newArrayList();
-
-        _notifier = new RateLimitedNotifier(REFRESH_TIME);
-        _ts.addListener(_notifier);
-    }
-
-    @Override
-    public void addListener(ITrayMenuComponentListener l)
-    {
-        _trayMenuListeners.add(l);
+        _ts.addListener(this);
     }
 
     @Override
@@ -219,54 +199,12 @@ public class TransferTrayMenuSection implements ITrayMenuComponent
         }
         _pieChartCache.clear();
 
-        _ts.removeListener(_notifier);
+        _ts.removeListener(this);
     }
 
-    private class RateLimitedNotifier implements ITransferStateChangedListener
+    @Override
+    public void onTransferStateChanged(TransferState state)
     {
-        private long _rate;
-        private long _lastNotify;
-        private boolean _scheduled;
-
-        private Runnable _notifier;
-
-        public RateLimitedNotifier(long rate)
-        {
-            _rate = rate;
-
-            _notifier = new Runnable()
-            {
-                @Override
-                public void run()
-                {
-                    for (ITrayMenuComponentListener listener : _trayMenuListeners) {
-                        listener.onTrayMenuComponentChange();
-                    }
-
-                    _lastNotify = System.currentTimeMillis();
-                    _scheduled = false;
-                }
-            };
-        }
-
-        private synchronized void schedule()
-        {
-            if (!_scheduled) {
-                long now = System.currentTimeMillis();
-
-                if (now >= _lastNotify + _rate) {
-                    _notifier.run();
-                } else {
-                    GUI.get().timerExec(_lastNotify + _rate - now, _notifier);
-                    _scheduled = true;
-                }
-            }
-        }
-
-        @Override
-        public void onTransferStateChanged(TransferState state)
-        {
-            schedule();
-        }
+        scheduleUpdate();
     }
 }

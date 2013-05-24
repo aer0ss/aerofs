@@ -62,7 +62,7 @@ public class Images {
     private static final Map<String, Image> s_imgs = new HashMap<String, Image>();
 
     // delay (ms) between each spinner frame
-    private static final int SPINNER_DELAY = 50;
+    private static final int SPINNER_DELAY = 100;
     private static Image[] s_spinner_frames;
 
     private static Cursor s_cursors[];

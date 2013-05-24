@@ -7,28 +7,23 @@ package com.aerofs.gui.tray;
 import com.aerofs.gui.AbstractSpinAnimator;
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.tray.IndexingPoller.IIndexingCompletionListener;
-import com.aerofs.proto.RitualNotifications.PBIndexingProgress;
 import com.aerofs.proto.RitualNotifications.PBNotification;
 import com.aerofs.proto.RitualNotifications.PBNotification.Type;
 import com.aerofs.ui.RitualNotificationClient.IListener;
 import com.aerofs.ui.UI;
-import com.google.common.base.Preconditions;
-import com.google.common.collect.Lists;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.MenuItem;
+import org.eclipse.swt.widgets.UbuntuTrayItem;
 
-import java.util.List;
-
-public class IndexingTrayMenuSection
-        implements IListener, IIndexingCompletionListener, ITrayMenuComponent
+public class IndexingTrayMenuSection extends DynamicTrayMenuComponent
+        implements IListener, IIndexingCompletionListener
 {
     private MenuItem _indexingStats1;
     private MenuItem _indexingStats2;
     private Menu _cachedMenu;
 
     private final IndexingPoller _indexingPoller;
-    private final List<ITrayMenuComponentListener> _listeners;
 
     private Image _cachedCurrentImage;
     private String _cachedProgressString;
@@ -38,24 +33,21 @@ public class IndexingTrayMenuSection
 
     public IndexingTrayMenuSection(IndexingPoller indexingPoller)
     {
-        _listeners = Lists.newArrayList();
         _indexingPoller = indexingPoller;
         _indexingPoller.addListener(this);
 
-        _animator = new AbstractSpinAnimator(null) {
-            @Override
-            protected void setImage(Image img)
-            {
-                _cachedCurrentImage = img;
-            }
-        };
+        // no spinner for libappindicator-based menu: refresh rate insufficient
+        if (!UbuntuTrayItem.supported()) {
+            _animator = new AbstractSpinAnimator(null) {
+                @Override
+                protected void setImage(Image img)
+                {
+                    _cachedCurrentImage = img;
+                    updateInPlace();
+                }
+            };
+        }
         UI.rnc().addListener(this);
-    }
-
-    @Override
-    public void addListener(ITrayMenuComponentListener l)
-    {
-        _listeners.add(l);
     }
 
     @Override
@@ -67,7 +59,7 @@ public class IndexingTrayMenuSection
         _indexingStats1.setEnabled(false);
         updateInPlace();
 
-        if (!_animatorStarted) {
+        if (_animator != null && !_animatorStarted) {
             _animatorStarted = true;
             _animator.start();
         }
@@ -84,8 +76,9 @@ public class IndexingTrayMenuSection
                     !_indexingStats1.isDisposed()) {
                 _indexingStats1.setImage(_cachedCurrentImage);
             }
+
             if (_cachedProgressString != null) {
-                if (_indexingStats2 == null) {
+                if (_indexingStats2 == null || _indexingStats2.isDisposed()) {
                     // addMenuItemAfterItem only works on non-null, non-disposed items
                     if (_indexingStats1 != null && !_indexingStats1.isDisposed()) {
                         TrayMenuPopulator p = new TrayMenuPopulator(_cachedMenu);
@@ -93,30 +86,9 @@ public class IndexingTrayMenuSection
                         _indexingStats2.setEnabled(false);
                     }
                 } else {
-                    if (!_indexingStats2.isDisposed()) {
-                        _indexingStats2.setText(_cachedProgressString);
-                    }
+                    _indexingStats2.setText(_cachedProgressString);
                 }
             }
-        }
-    }
-
-    // Called on GUI thread.
-    private void updateProgress(PBIndexingProgress progress)
-    {
-        Preconditions.checkState(GUI.get().isUIThread());
-        _cachedProgressString = progress.getFiles() + " files in " +
-                progress.getFolders() + " folders";
-        updateInPlace();
-        notifyListeners();
-    }
-
-    // N.B. this function must be called from the GUI thread.
-    private void notifyListeners()
-    {
-        Preconditions.checkState(GUI.get().isUIThread());
-        for (ITrayMenuComponentListener listener : _listeners) {
-            listener.onTrayMenuComponentChange();
         }
     }
 
@@ -124,16 +96,11 @@ public class IndexingTrayMenuSection
     public void onNotificationReceived(final PBNotification pb)
     {
         if (pb.getType() == Type.INDEXING_PROGRESS) {
-            GUI.get().asyncExec(new Runnable()
-            {
-                @Override
-                public void run()
-                {
-                    if (_indexingStats1 != null && !_indexingStats1.isDisposed()) {
-                        updateProgress(pb.getIndexingProgress());
-                    }
-                }
-            });
+            _cachedProgressString =
+                    pb.getIndexingProgress().getFiles() + " files in " +
+                    pb.getIndexingProgress().getFolders() + " folders";
+
+            scheduleUpdate();
         }
     }
 
@@ -159,8 +126,9 @@ public class IndexingTrayMenuSection
                 }
                 _indexingStats1 = null;
                 _indexingStats2 = null;
+
                 // Trigger a menu refresh
-                notifyListeners();
+                refresh();
             }
         });
     }
