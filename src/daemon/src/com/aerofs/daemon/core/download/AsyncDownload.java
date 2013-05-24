@@ -8,6 +8,7 @@ import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.collector.ExNoComponentWithSpecifiedVersion;
+import com.aerofs.daemon.core.download.Downloads.ExNoAvailDeviceForDep;
 import com.aerofs.daemon.core.download.dependence.DownloadDeadlockResolver;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ex.ExAborted;
@@ -31,6 +32,7 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 /**
@@ -206,8 +208,8 @@ class AsyncDownload extends Download
                     avoidDevice_(e._did, e);
                 } else if (e._e instanceof ExNoComponentWithSpecifiedVersion) {
                     l.info("{} from {}: {}", _socid, e._did,
-                            Util.e(e, ExNoComponentWithSpecifiedVersion.class));
-                    avoidDevice_(e._did, e);
+                            Util.e(e._e, ExNoComponentWithSpecifiedVersion.class));
+                    avoidDevice_(e._did, e._e);
                 } else if (e._e instanceof ExOutOfSpace) {
                     throw (ExOutOfSpace)e._e;
                 } else if (e._e instanceof IOException) {
@@ -219,8 +221,29 @@ class AsyncDownload extends Download
                     onGeneralException(e._e, e._did);
                 }
             } catch (ExUnsatisfiedDependency e) {
-                // the dependency chain could not be followed for that device
-                l.info("unsat dep {}->{} from {}: {}", _socid, e._socid, e._did, Util.e(e._e));
+                if (e._did == null) {
+                    // a non-specific dependency (i.e. CONTENT->META) could not be resolved
+                    if (e._e instanceof ExNoAvailDeviceForDep) {
+                        // rewrap per-device exception such that the Collector can correctly check
+                        // for permanent errors on the chain
+                        Map<DID, Exception> did2e = ((ExNoAvailDeviceForDep)e._e)._did2e;
+                        l.info("unsat dep {}->{} from ?: {}", _socid, e._socid, did2e);
+                        for (DID did : did2e.keySet()) {
+                            if (!_did2e.containsKey(did)) {
+                                avoidDevice_(did,
+                                        new ExUnsatisfiedDependency(e._socid, did, did2e.get(did)));
+                            }
+                        }
+                        throw new ExNoAvailDevice();
+                    } else {
+                        l.info("unsat dep {}->{} from ?: {}", _socid, e._socid, Util.e(e._e));
+                        throw e;
+                    }
+                } else {
+                    // the dependency chain could not be followed for a device, try another
+                    l.info("unsat dep {}->{} from {}: {}", _socid, e._socid, e._did, Util.e(e._e));
+                    avoidDevice_(e._did, e);
+                }
             }
         }
     }
@@ -232,8 +255,10 @@ class AsyncDownload extends Download
 
     private void notifyListeners_(IDownloadCompletionListenerVisitor visitor)
     {
-        for (IDownloadCompletionListener l : _listeners) {
-            visitor.notify_(l);
+        l.debug("notify {} listeners", _listeners.size());
+        for (IDownloadCompletionListener lst : _listeners) {
+            l.debug("  notify {}", lst);
+            visitor.notify_(lst);
         }
     }
 

@@ -196,11 +196,12 @@ class Download
     {
         boolean ok = false;
         try {
+            l.debug("dl {} from {}", _socid, _from);
             DID did = downloadImpl_();
             ok = true;
             return did;
         } finally {
-            l.info("end {} {}", _socid, ok);
+            l.debug("end {} {}", _socid, ok);
         }
     }
 
@@ -210,10 +211,10 @@ class Download
         while (true) {
             checkForMeta();
 
-            l.info("dl {} {}", _socid, _cxt);
-
             // must not break out of context when re-trying an object after resolving a dependency
             DID did = _cxt.did != null ? _cxt.did : _from.pick_();
+
+            l.info("fetch {} {}", _socid, _cxt);
 
             if (fetchComponent_(did)) return did;
         }
@@ -250,7 +251,7 @@ class Download
             _cxt.chain.push(_socid);
             _cxt.resolved.add(_socid);
 
-            l.info("gcr {} from {}", _socid, msg.did());
+            l.debug("gcr {} from {}", _socid, msg.did());
 
             ok = processReply_(msg, _cxt);
             return ok;
@@ -285,7 +286,7 @@ class Download
                 _f._gcr.processReply_(_socid, msg, cxt);
                 failed = false;
             } finally {
-                l.info("ended {} from {} {}", _socid, msg.ep(), failed ? "FAILED" : "OK");
+                l.debug("ended {} from {} {}", _socid, msg.ep(), failed ? "FAILED" : "OK");
                 _f._dlstate.ended_(_socid, msg.ep(), failed);
             }
             return true;

@@ -486,6 +486,11 @@ public class Collector implements IDumpStatMisc
             postDownloadCompletionTask();
         }
 
+        @Override
+        public String toString()
+        {
+            return "CLT("+ _dids +")";
+        }
     }
 
     /**

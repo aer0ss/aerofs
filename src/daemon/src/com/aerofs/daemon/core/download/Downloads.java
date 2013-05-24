@@ -46,6 +46,13 @@ public class Downloads
 
     private final Map<SOCID, AsyncDownload> _ongoing = Maps.newTreeMap();
 
+    class ExNoAvailDeviceForDep extends Exception
+    {
+        private static final long serialVersionUID = 0L;
+        public final Map<DID, Exception> _did2e;
+        ExNoAvailDeviceForDep(Map<DID, Exception> did2e) { _did2e = did2e; }
+    }
+
     @Inject
     public void inject_(CoreQueue q, CoreScheduler sched, TokenManager tokenManager,
             AsyncDownload.Factory factDL)
@@ -97,10 +104,11 @@ public class Downloads
      * we want to avoid duplicate downloads so we use {@link Downloads} to enqueue a new download
      * or add devices to an existing one as needed.
      */
-    void downloadSync_(SOCID socid, Set<DID> dids, IDownloadContext cxt)
+    void downloadSync_(SOCID socid, final Set<DID> dids, final IDownloadContext cxt)
             throws ExAborted, ExUnsatisfiedDependency
     {
         assert socid.cid().isMeta() : socid;
+        assert !dids.isEmpty() : socid + " " + cxt;
 
         final TCB tcb = TC.tcb();
         final OutArg<Exception> ex = new OutArg<Exception>();
@@ -131,13 +139,21 @@ public class Downloads
             @Override
             public void onPerDeviceErrors_(SOCID socid, Map<DID, Exception> did2e)
             {
-                resume_(new ExNoAvailDevice());
+                l.debug("dev dep error {} {} {}", socid, dids, did2e);
+                resume_(new ExNoAvailDeviceForDep(did2e));
             }
 
             @Override
             public void onGeneralError_(SOCID socid, Exception e)
             {
+                l.debug("gen dep error {} {} {}", socid, dids, e);
                 resume_(e);
+            }
+
+            @Override
+            public String toString()
+            {
+                return "DLdep(" + cxt + ")";
             }
         };
 
