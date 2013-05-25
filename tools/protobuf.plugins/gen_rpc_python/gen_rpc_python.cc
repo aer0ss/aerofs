@@ -29,7 +29,7 @@ bool GenRpcPython::Generate(const FileDescriptor* file, const std::string& /*par
         io::Printer printer(output.get(), '$');
 
         // add the necessary import
-        printer.Print("import rpc_service_pb2\n");
+        if (file->service_count() > 0) printer.Print("import rpc_service_pb2\n");
     }
 
     // Generate py file.

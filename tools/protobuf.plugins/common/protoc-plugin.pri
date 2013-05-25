@@ -15,4 +15,5 @@ LIBS += -lprotobuf -lprotoc
 gen_tpl.input = TEMPLATES
 gen_tpl.output  = ${QMAKE_FILE_NAME}.h
 gen_tpl.commands = $$ROOT_PATH/tools/gen_template ${QMAKE_FILE_NAME}
+gen_tpl.variable_out = HEADERS
 QMAKE_EXTRA_COMPILERS += gen_tpl
