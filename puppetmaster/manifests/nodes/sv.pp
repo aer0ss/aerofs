@@ -16,17 +16,15 @@ node "sv.aerofs.com" inherits default {
     class{"analytics":}
 
     cron{"remove old defects":
-        command => '/usr/bin/clean_defects',
+        command => '/usr/bin/clean_defects && symlinks -dr /var/svlogs_prod/defect',
         minute  => "0",
         hour    => "*",
     }
-
     cron{"remove empty defects":
         command => 'find /var/svlogs_prod/defect/ -iname log.defect\* -size 0 | xargs rm',
         hour    => "0",
         minute  => "0"
     }
-
     cron{"remove old logs":
         command => 'find /var/svlogs_prod/archived/ -iname \*.gz -mtime +60 | xargs rm',
         hour    => "0",
@@ -43,6 +41,10 @@ node "sv.aerofs.com" inherits default {
     }
 
     package { "gnuplot":
+        ensure => installed
+    }
+    # Used to clean up dangling symlinks left by clean_defects
+    package { "symlinks":
         ensure => installed
     }
 }
