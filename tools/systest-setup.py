@@ -33,6 +33,7 @@ DEFAULT_LINUX = 0
 DEFAULT_LINUX_NAT = 0
 DEFAULT_WINDOWS = 0
 DEFAULT_AWS = 0
+DEFAULT_PERF = 0
 DEFAULT_PASSWORD = 'temp123'
 DEFAULT_APPROOT = '/home/aerofstest/syncdet/deploy/approot/'
 DEFAULT_RTROOT = '/home/aerofstest/syncdet/user_data/rtroot/'
@@ -59,6 +60,36 @@ WINDOWS_VMS = ['ci-windows7.local']
 
 # List of AWS VM's (Ubuntu 12.04)
 AWS_VMS = ['172.16.5.12', '172.16.5.30']
+
+# TODO(AT) we shouldn't be specifying the machines here since config.yaml is responsible for that,
+#   using a config file to generate another config file sounds like we are repeating ourselves.
+#
+# List of VM's used for performance testing
+PERF_VMS = ['scalability-test-ubuntu-1.local',
+            'scalability-test-ubuntu-2.local',
+            'scalability-test-ubuntu-3.local',
+            'scalability-test-win-1.local',
+            'scalability-test-win-2.local',
+            'scalability-test-win-3.local',
+            'scalability-test-win-4.local',
+            'scalability-test-win-5.local',
+            'scalability-test-win-6.local',
+            'scalability-test-win-7.local',
+            'scalability-test-win-8.local',
+            'scalability-test-win-9.local',
+            'scalability-test-win-10.local',
+            'scalability-test-win-11.local',
+            'scalability-test-win-12.local',
+            'scalability-test-win-13.local',
+            'scalability-test-win-14.local',
+            'scalability-test-win-15.local',
+            'scalability-test-win-16.local',
+            'scalability-test-win-17.local',
+            'scalability-test-win-18.local',
+            'scalability-test-win-19.local',
+            'scalability-test-win-20.local',
+            'scalability-test-win-21.local',
+            'scalability-test-win-22.local']
 
 # System-specific details
 AWS_DETAILS = {'os': 'linux32',
@@ -114,7 +145,8 @@ def generate_yaml(args, username):
     for vm_num, vm_list in [(args.linux, LINUX_VMS),
                             (args.linux_nat, LINUX_NAT_VMS),
                             (args.windows, WINDOWS_VMS),
-                            (args.aws, AWS_VMS)]:
+                            (args.aws, AWS_VMS),
+                            (args.perf, PERF_VMS)]:
         for i in xrange(vm_num):
             # actor details
             details = {'ci_client': True}
@@ -167,6 +199,8 @@ def main():
         help="Number of Windows VM's to use")
     parser.add_argument('--aws', type=int, default=DEFAULT_AWS,
         help="Number of AWS VM's to use")
+    parser.add_argument('--perf', type=int, default=DEFAULT_PERF,
+        help="Number of Performance Test VM's to use")
     parser.add_argument('--multiuser', action='store_true',
         help="If flag is specified, each VM will use a separate AeroFS account")
     parser.add_argument('--include-ts', action='store_true',
@@ -199,9 +233,10 @@ def main():
     assert args.linux_nat >=0 and args.linux_nat <= len(LINUX_NAT_VMS)
     assert args.windows >= 0 and args.windows <= len(WINDOWS_VMS)
     assert args.aws >= 0 and args.aws <= len(AWS_VMS)
+    assert args.perf >= 0 and args.perf <= len(PERF_VMS)
 
     # Create user(s) and get the AeroFS username(s)
-    total_users = args.linux + args.linux_nat + args.windows + args.aws
+    total_users = args.linux + args.linux_nat + args.windows + args.aws + args.perf
     if args.multiuser:
         username = [create_user(args.userid, args.password) for i in xrange(total_users)]
     else:
