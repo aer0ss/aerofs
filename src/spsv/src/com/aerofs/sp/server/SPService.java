@@ -123,7 +123,6 @@ import com.google.protobuf.ByteString;
 import com.netflix.config.DynamicBooleanProperty;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 import sun.security.pkcs.PKCS10;
 
 import javax.annotation.Nullable;
@@ -1271,15 +1270,15 @@ public class SPService implements ISPService
     }
 
     @Override
-    public ListenableFuture<Void> sendEmailVerification()
+    public ListenableFuture<Void> sendEmailVerification() throws ExBadArgs
     {
-        throw new NotImplementedException();
+        throw new ExBadArgs();
     }
 
     @Override
-    public ListenableFuture<Void> verifyEmail(String verificationCode)
+    public ListenableFuture<Void> verifyEmail(String verificationCode) throws ExBadArgs
     {
-        throw new NotImplementedException();
+        throw new ExBadArgs();
     }
 
     @Override

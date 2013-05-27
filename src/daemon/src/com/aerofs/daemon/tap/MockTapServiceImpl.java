@@ -19,7 +19,6 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
 import org.slf4j.Logger;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -222,6 +221,6 @@ public class MockTapServiceImpl implements ITapService
             throws Exception
     {
         assertStarted();
-        throw new NotImplementedException();
+        throw new AssertionError();
     }
 }
