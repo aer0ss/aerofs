@@ -4,6 +4,7 @@
 
 package com.aerofs.lib;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.sv.client.SVClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -87,7 +88,8 @@ public abstract class SystemUtil
          */
         public void exit()
         {
-            l.warn("EXIT with code " + getClass().getName() + "." + this.name());
+            Logger logger = Loggers.getLogger(SystemUtil.class);
+            logger.warn("EXIT with code " + getClass().getName() + "." + this.name());
             System.exit(getNumber());
         }
 
