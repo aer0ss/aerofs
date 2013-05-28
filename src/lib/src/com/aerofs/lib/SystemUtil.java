@@ -88,6 +88,12 @@ public abstract class SystemUtil
          */
         public void exit()
         {
+            // For some unknown reason, accessing SystemUtil.l here fails with the following error:
+            //
+            // java.lang.NoSuchMethodError: com.aerofs.lib.SystemUtil.access$000()Lorg/slf4j/Logger;
+            // 152018.798N New I/O worker #2 @o.j.n.c.DefaultChannelPipeline,
+            // An exception was thrown by a user handler while handling an exception event ([id: 0x732775ee, /127.0.0.1:55703 => /127.0.0.1:50197]
+            // EXCEPTION: java.lang.NoSuchMethodError: com.aerofs.lib.SystemUtil.access$000()Lorg/slf4j/Logger;)
             Logger logger = Loggers.getLogger(SystemUtil.class);
             logger.warn("EXIT with code " + getClass().getName() + "." + this.name());
             System.exit(getNumber());
