@@ -5,6 +5,7 @@ import java.util.List;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
+import com.aerofs.daemon.core.store.MapSIndex2Contributors;
 import com.aerofs.daemon.core.store.StoreDeletionOperators;
 import com.aerofs.lib.id.SOID;
 import com.google.common.collect.Lists;
@@ -35,6 +36,7 @@ public class NativeVersionControl extends AbstractVersionControl<NativeTickRow>
     private final INativeVersionDatabase _nvdb;
     private final ICollectorSequenceDatabase _csdb;
     private final MapAlias2Target _alias2target;
+    private final MapSIndex2Contributors _sidx2contrib;
 
     public static interface IVersionControlListener
     {
@@ -46,12 +48,13 @@ public class NativeVersionControl extends AbstractVersionControl<NativeTickRow>
     @Inject
     public NativeVersionControl(INativeVersionDatabase nvdb, ICollectorSequenceDatabase csdb,
             MapAlias2Target alias2target, CfgLocalDID cfgLocalDID, TransLocalVersionAssistant tlva,
-            StoreDeletionOperators sdo)
+            StoreDeletionOperators sdo, MapSIndex2Contributors sidx2contrib)
     {
         super(nvdb, cfgLocalDID, tlva, sdo);
         _nvdb = nvdb;
         _csdb = csdb;
         _alias2target = alias2target;
+        _sidx2contrib = sidx2contrib;
     }
 
     public void addListener_(IVersionControlListener listener)
@@ -156,6 +159,9 @@ public class NativeVersionControl extends AbstractVersionControl<NativeTickRow>
         if (l.isDebugEnabled()) l.debug("add local ver " + k + " " + v);
         _nvdb.addLocalVersion_(k, v, t);
         _tlva.get(t).localVersionAdded_(k.socid());
+        for (DID did : v.getAll_().keySet()) {
+            _sidx2contrib.addContributor_(k.sidx(), did, t);
+        }
 
         for (IVersionControlListener listener : _listeners) listener.localVersionAdded_(k, v, t);
     }
@@ -191,6 +197,7 @@ public class NativeVersionControl extends AbstractVersionControl<NativeTickRow>
         _tlva.get(t).localVersionAdded_(target);
         _tlva.get(t).versionDeletedPermanently_(alias);
 
+        // TODO: can sidx of two objects be different?
         // TODO: listeners (syncstat and activity log)?
     }
 
@@ -270,6 +277,9 @@ public class NativeVersionControl extends AbstractVersionControl<NativeTickRow>
 
         _nvdb.addKMLVersion_(socid, v, t);
         _tlva.get(t).kmlVersionAdded_(socid);
+        for (DID did : v.getAll_().keySet()) {
+            _sidx2contrib.addContributor_(socid.sidx(), did, t);
+        }
         return true;
     }
 

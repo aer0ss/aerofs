@@ -29,11 +29,13 @@ public class TestVersionAssistant extends AbstractTest
     @Mock IImmigrantVersionDatabase ivdb;
     @Mock MapSIndex2Store _sidx2s;
 
-    @InjectMocks VersionAssistant va;
+    @InjectMocks VersionAssistant.Factory factVA;
 
     @Mock Trans t;
     @Mock Version v;
     SOCID socid;
+
+    VersionAssistant va;
 
     @Before
     public void setup() throws SQLException
@@ -45,6 +47,8 @@ public class TestVersionAssistant extends AbstractTest
         Version versionNonZero = Version.of(DID.generate(), new Tick(3));
         // We pretend that some change left nonzero versions lying around even after store deletion
         when(nvdb.getAllVersions_(any(SOCID.class))).thenReturn(versionNonZero);
+
+        va = factVA.create_();
     }
 
     @Test

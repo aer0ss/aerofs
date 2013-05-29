@@ -2,6 +2,7 @@ package com.aerofs.daemon.core;
 
 import java.sql.SQLException;
 
+import com.aerofs.daemon.core.store.MapSIndex2Contributors;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 
@@ -26,6 +27,7 @@ public class TestNativeVersionControl extends AbstractTestVersionControl<NativeT
     @Mock INativeVersionDatabase nvdb;
     @Mock ICollectorSequenceDatabase csdb;
     @Mock IMetaDatabase mdb;
+    @Mock MapSIndex2Contributors sidx2contrib;
     @InjectMocks NativeVersionControl nvc;
 
     @Override

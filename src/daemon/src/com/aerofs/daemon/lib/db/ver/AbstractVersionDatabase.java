@@ -201,40 +201,6 @@ public abstract class AbstractVersionDatabase<E extends AbstractTickRow> extends
         }
     }
 
-    private PreparedStatement _psGAVD;
-    @Override
-    public @Nonnull Set<DID> getAllVersionDIDs_(SIndex sidx) throws SQLException
-    {
-        try {
-            if (_psGAVD == null) {
-                // strange enough, in MySQL the index v_sd is used only if
-                // v_sidx is included in the group by clause.
-                _psGAVD = c().prepareStatement(
-                        "select " + _c_ver_did + " from "
-                        + _t_ver + " where " + _c_ver_sidx + "=?"
-                        + " group by "
-                        + (_dbcw.isMySQL() ? _c_ver_sidx + "," : "")
-                        + _c_ver_did);
-            }
-
-            _psGAVD.setInt(1, sidx.getInt());
-            ResultSet rs = _psGAVD.executeQuery();
-            try {
-                Set<DID> ens = new HashSet<DID>();
-                while (rs.next()) ens.add(new DID(rs.getBytes(1)));
-                return ens;
-            } finally {
-                rs.close();
-            }
-
-        } catch (SQLException e) {
-            DBUtil.close(_psGAVD);
-            _psGAVD = null;
-            throw e;
-        }
-    }
-
-
     private PreparedStatement _psISK;
     @Override
     public boolean isTickKnown_(SOCID socid, DID did, Tick tick)

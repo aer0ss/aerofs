@@ -35,6 +35,11 @@ public class CoreSchema implements ISchema
             C_SID_SIDX      = "i_i",        // SIndex
             C_SID_SID       = "i_d",        // SID
 
+            // SIndex->{DID} map: for each store, maintain a set of DID having contributed ticks
+            T_SC            = "sc",
+            C_SC_SIDX       = "sc_s",
+            C_SC_DID        = "sc_d",
+
             // Versions
             T_VER           = "v",
             C_VER_SIDX      = "v_i",        // SIndex
@@ -278,14 +283,6 @@ public class CoreSchema implements ISchema
                 "create index " + T_VER + "0 on " + T_VER +
                     "(" + C_VER_SIDX + "," + C_VER_OID + "," + C_VER_CID +
                           "," +  C_VER_DID + "," + C_VER_TICK + ")"
-                    );
-
-        /*
-         * used by:
-         * 1. getAllVersionDIDs
-         */
-        s.executeUpdate(
-                "create index " + T_VER + "1 on " + T_VER +"(" + C_VER_SIDX + "," + C_VER_DID + ")"
                     );
 
         /*
@@ -552,6 +549,18 @@ public class CoreSchema implements ISchema
         createSyncStatusPushQueueTable(s, _dbcw);
         createLeaveQueueTable(s, _dbcw);
         createPendingRootTable(s, _dbcw);
+        createStoreContributorsTable(s, _dbcw);
+    }
+
+    public static void createStoreContributorsTable(Statement s, IDBCW dbcw)
+            throws SQLException
+    {
+        s.executeUpdate(
+                "create table " + T_SC + "(" +
+                        C_SC_SIDX + " integer," +
+                        C_SC_DID + " blob," +
+                        "primary key (" + C_SC_SIDX + "," + C_SC_DID + ")" +
+                        ")" + dbcw.charSet());
     }
 
     @Override

@@ -3,6 +3,8 @@ package com.aerofs.daemon.lib.db.ver;
 import java.sql.SQLException;
 import java.util.Set;
 
+import com.aerofs.base.id.DID;
+import com.aerofs.daemon.core.store.MapSIndex2Contributors;
 import com.aerofs.daemon.core.store.MapSIndex2Store;
 import com.aerofs.daemon.core.store.Store;
 import com.aerofs.daemon.lib.db.AbstractTransListener;
@@ -28,9 +30,7 @@ public class VersionAssistant extends AbstractTransListener
     private final Set<SOCID> _deletedPermanently = Sets.newHashSet();
     private final Set<SIndex> _deletedStores = Sets.newHashSet();
 
-    private final INativeVersionDatabase _nvdb;
-    private final IImmigrantVersionDatabase _ivdb;
-    private final MapSIndex2Store _sidx2s;
+    private final Factory _f;
 
     public static class Factory
     {
@@ -50,19 +50,16 @@ public class VersionAssistant extends AbstractTransListener
 
         public VersionAssistant create_()
         {
-            return new VersionAssistant(_sidx2s, _nvdb, _ivdb);
+            return new VersionAssistant(this);
         }
     }
 
     /**
      * this method should be called only by the Trans class
      */
-    private VersionAssistant(MapSIndex2Store sidx2s, INativeVersionDatabase nvdb,
-            IImmigrantVersionDatabase ivdb)
+    private VersionAssistant(Factory f)
     {
-        _sidx2s = sidx2s;
-        _nvdb = nvdb;
-        _ivdb = ivdb;
+        _f = f;
     }
 
     public void kmlVersionAdded_(SOCID socid)
@@ -101,6 +98,7 @@ public class VersionAssistant extends AbstractTransListener
     {
         assert !_committed;
         _deletedStores.add(sidx);
+        // TODO: cleanup contributors? would require restoring
     }
 
     /**
@@ -129,13 +127,13 @@ public class VersionAssistant extends AbstractTransListener
         assert _changed.containsAll(_deletedPermanently);
         for (SOCID socid : _deletedPermanently) {
             assertSocidVersionIsZeroOrNotUnderDeletedStore(socid);
-            _nvdb.deleteMaxTicks_(socid, t);
-            _ivdb.deleteImmigrantTicks_(socid, t);
+            _f._nvdb.deleteMaxTicks_(socid, t);
+            _f._ivdb.deleteImmigrantTicks_(socid, t);
         }
 
         for (SOCID socid : _changed) {
             assertSocidVersionIsZeroOrNotUnderDeletedStore(socid);
-            _nvdb.updateMaxTicks_(socid, t);
+            _f._nvdb.updateMaxTicks_(socid, t);
         }
 
         for (SOID soid : _addedLocal) {
@@ -143,7 +141,7 @@ public class VersionAssistant extends AbstractTransListener
             // containing store.  For such stores, we needn't dispatch objectUpdated events on
             // commit, since we no longer track that store anyway.
             // There's an assertion above to make sure the named events happen in the safe order.
-            Store s = _sidx2s.getNullable_(soid.sidx());
+            Store s = _f._sidx2s.getNullable_(soid.sidx());
             if (s != null) {
                 s.senderFilters().objectUpdated_(soid.oid(), t);
             }
@@ -173,7 +171,7 @@ public class VersionAssistant extends AbstractTransListener
             throws SQLException
     {
         if (_deletedStores.contains(socid.sidx())) {
-            Version v = _nvdb.getAllVersions_(socid);
+            Version v = _f._nvdb.getAllVersions_(socid);
             assert v.isZero_() : socid + " " + v;
         }
     }

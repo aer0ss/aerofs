@@ -15,6 +15,7 @@ import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
+import com.aerofs.daemon.core.store.MapSIndex2Contributors;
 import com.aerofs.daemon.core.store.MapSIndex2Store;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
@@ -88,12 +89,13 @@ public class GetVersCall
     // The following dependency exists only to repair the db in enforceTicksAreMonotonicallyIncreasing()
     // TODO (MJ) remove when repairing the db is disabled
     private final TransManager _tm;
+    private final MapSIndex2Contributors _sidx2contrib;
 
     @Inject
     public GetVersCall(OutgoingStreams oss, Metrics m, GetVersReply pgvr, NSL nsl, RPC rpc,
             NativeVersionControl nvc, ImmigrantVersionControl ivc, MapSIndex2Store sidx2s,
             IPulledDeviceDatabase pddb, TokenManager tokenManager, DirectoryService ds,
-            TransManager tm)
+            TransManager tm, MapSIndex2Contributors sidx2contrib)
     {
         _oss = oss;
         _m = m;
@@ -107,6 +109,7 @@ public class GetVersCall
         _tokenManager = tokenManager;
         _ds = ds;
         _tm = tm;
+        _sidx2contrib = sidx2contrib;
     }
 
     public void rpc_(SIndex sidx, DID didTo, Token tk)
@@ -150,10 +153,8 @@ public class GetVersCall
 
     private static class DeviceEntry {
         DID _did;
-        boolean _hasVersions;
         Tick _tickKwlgRemote;
         Tick _tickKwlgLocalES;  // ZERO if _did == Cfg.did()
-        boolean _hasImmVersions;
         Tick _tickImmKwlgRemote;
         Tick _tickImmKwlgLocalES;  // ZERO if _did == Cfg.did()
     }
@@ -182,10 +183,8 @@ public class GetVersCall
         SIndex sidx = msg.sidx();
         Version vKwlgLocalES = _nvc.getKnowledgeExcludeSelf_(sidx);
         Version vImmKwlgLocalES = _ivc.getKnowledgeExcludeSelf_(sidx);
-        Set<DID> verDids = _nvc.getAllVersionDIDs_(sidx);
-        Set<DID> immVerDids = _ivc.getAllVersionDIDs_(sidx);
-        Set<DID> didsExcludeRequester = new HashSet<DID>(verDids);
-        didsExcludeRequester.addAll(immVerDids);
+        Set<DID> contrib = _sidx2contrib.getContributors_(sidx);
+        Set<DID> didsExcludeRequester = new HashSet<DID>(contrib);
         didsExcludeRequester.remove(msg.did());
 
         List<DeviceEntry> desExcludeRequester =
@@ -193,10 +192,8 @@ public class GetVersCall
         for (DID did : didsExcludeRequester) {
             DeviceEntry de = new DeviceEntry();
             de._did = did;
-            de._hasVersions = verDids.contains(did);
             de._tickKwlgRemote = vKwlgRemote.get_(did);
             de._tickKwlgLocalES = vKwlgLocalES.get_(did);
-            de._hasImmVersions = immVerDids.contains(did);
             de._tickImmKwlgRemote = vImmKwlgRemote.get_(did);
             de._tickImmKwlgLocalES = vImmKwlgLocalES.get_(did);
             // local knowledge ticks corresponding to the local device
@@ -353,84 +350,80 @@ public class GetVersCall
             ////////
             // add versions
 
-            if (de._hasVersions) {
-                Tick tickLast = Tick.ZERO;
-                SOCID socidLast = null;
-                IDBIterator<NativeTickRow> iter = _nvc.getMaxTicks_(sidx, de._did,
-                        de._tickKwlgRemote);
-                try {
-                    while (iter.next_()) {
-                        NativeTickRow tr = iter.get_();
+            Tick tickLast = Tick.ZERO;
+            SOCID socidLast = null;
+            IDBIterator<NativeTickRow> it_ver = _nvc.getMaxTicks_(sidx, de._did,
+                    de._tickKwlgRemote);
+            try {
+                while (it_ver.next_()) {
+                    NativeTickRow tr = it_ver.get_();
 
-                        // ticks must be monotonically increasing
-                        SOCID socid = new SOCID(sidx, tr._oid, tr._cid);
-                        enforceTicksAreMonotonicallyIncreasing(tickLast, socidLast, tr._tick, socid,
-                                de._did);
-                        socidLast = socid;
-                        tickLast = tr._tick;
+                    // ticks must be monotonically increasing
+                    SOCID socid = new SOCID(sidx, tr._oid, tr._cid);
+                    enforceTicksAreMonotonicallyIncreasing(tickLast, socidLast, tr._tick, socid,
+                            de._did);
+                    socidLast = socid;
+                    tickLast = tr._tick;
 
-                        bdBlock.addObjectId(tr._oid.toPB());
-                        bdBlock.addComId(tr._cid.getInt());
-                        bdBlock.addTick(tr._tick.getLong());
+                    bdBlock.addObjectId(tr._oid.toPB());
+                    bdBlock.addComId(tr._cid.getInt());
+                    bdBlock.addTick(tr._tick.getLong());
 
-                        if (++entryCount == ENTRIES_PER_BLOCK) {
-                            sender.writeBlock_(bdBlock.build(), iter);
-                            bdBlock = PBGetVersReplyBlock.newBuilder();
-                            entryCount = 0;
-                            if (iter.closed_()) {
-                                iter = _nvc.getMaxTicks_(sidx, de._did, tickLast);
-                            }
+                    if (++entryCount == ENTRIES_PER_BLOCK) {
+                        sender.writeBlock_(bdBlock.build(), it_ver);
+                        bdBlock = PBGetVersReplyBlock.newBuilder();
+                        entryCount = 0;
+                        if (it_ver.closed_()) {
+                            it_ver = _nvc.getMaxTicks_(sidx, de._did, tickLast);
                         }
                     }
-                } finally {
-                    iter.close_();
                 }
+            } finally {
+                it_ver.close_();
+            }
 
-                Tick tickKwlgLocal = de._did.equals(Cfg.did()) ? tickLast :
-                    de._tickKwlgLocalES;
-                if (tickKwlgLocal.getLong() > de._tickKwlgRemote.getLong()) {
-                    bdBlock.setKnowledgeTick(tickKwlgLocal.getLong());
-                    hasNonEntryFields = true;
-                }
+            Tick tickKwlgLocal = de._did.equals(Cfg.did()) ? tickLast :
+                de._tickKwlgLocalES;
+            if (tickKwlgLocal.getLong() > de._tickKwlgRemote.getLong()) {
+                bdBlock.setKnowledgeTick(tickKwlgLocal.getLong());
+                hasNonEntryFields = true;
             }
 
             ////////
             // add immigrant versions
 
-            if (de._hasImmVersions) {
-                Tick immTickLast = Tick.ZERO;
-                IDBIterator<ImmigrantTickRow> iter = _ivc.getMaxTicks_(sidx, de._did,
-                        de._tickImmKwlgRemote);
-                try {
-                    while (iter.next_()) {
-                        ImmigrantTickRow tr = iter.get_();
-                        bdBlock.addImmigrantObjectId(tr._oid.toPB());
-                        bdBlock.addImmigrantComId(tr._cid.getInt());
-                        bdBlock.addImmigrantImmTick(tr._immTick.getLong());
-                        bdBlock.addImmigrantDeviceId(tr._did.toPB());
-                        bdBlock.addImmigrantTick(tr._tick.getLong());
-                        immTickLast = tr._immTick;
+            Tick immTickLast = Tick.ZERO;
+            IDBIterator<ImmigrantTickRow> it_imm = _ivc.getMaxTicks_(sidx, de._did,
+                    de._tickImmKwlgRemote);
+            try {
+                while (it_imm.next_()) {
+                    ImmigrantTickRow tr = it_imm.get_();
+                    bdBlock.addImmigrantObjectId(tr._oid.toPB());
+                    bdBlock.addImmigrantComId(tr._cid.getInt());
+                    bdBlock.addImmigrantImmTick(tr._immTick.getLong());
+                    bdBlock.addImmigrantDeviceId(tr._did.toPB());
+                    bdBlock.addImmigrantTick(tr._tick.getLong());
+                    immTickLast = tr._immTick;
 
-                        if (++entryCount == ENTRIES_PER_BLOCK) {
-                            sender.writeBlock_(bdBlock.build(), iter);
-                            bdBlock = PBGetVersReplyBlock.newBuilder();
-                            entryCount = 0;
-                            if (iter.closed_()) {
-                                iter = _ivc.getMaxTicks_(sidx, de._did, immTickLast);
-                            }
+                    if (++entryCount == ENTRIES_PER_BLOCK) {
+                        sender.writeBlock_(bdBlock.build(), it_imm);
+                        bdBlock = PBGetVersReplyBlock.newBuilder();
+                        entryCount = 0;
+                        if (it_imm.closed_()) {
+                            it_imm = _ivc.getMaxTicks_(sidx, de._did, immTickLast);
                         }
-
                     }
-                } finally {
-                    iter.close_();
-                }
 
-                Tick tickImmKwlgLocal = de._did.equals(Cfg.did()) ? immTickLast :
-                    de._tickImmKwlgLocalES;
-                if (tickImmKwlgLocal.getLong() > de._tickImmKwlgRemote.getLong()) {
-                    bdBlock.setImmigrantKnowledgeTick(tickImmKwlgLocal.getLong());
-                    hasNonEntryFields = true;
                 }
+            } finally {
+                it_imm.close_();
+            }
+
+            Tick tickImmKwlgLocal = de._did.equals(Cfg.did()) ? immTickLast :
+                de._tickImmKwlgLocalES;
+            if (tickImmKwlgLocal.getLong() > de._tickImmKwlgRemote.getLong()) {
+                bdBlock.setImmigrantKnowledgeTick(tickImmKwlgLocal.getLong());
+                hasNonEntryFields = true;
             }
 
             if (++deviceCount == desExcludeTo.size()) {
