@@ -202,18 +202,19 @@ public class SVReactor
                 javaEnv.toString());
         _transaction.commit();
 
+        String did = header.hasDeviceId() ? BaseUtil.hexEncode(header.getDeviceId().toByteArray()) :
+                "unknown";
+
         if (!defect.getAutomatic()) {
             // old clients may not populate the contact email field
             String contactEmail = defect.hasContactEmail() ? defect.getContactEmail() :
                     header.getUser();
-            emailCustomerSupport(desc, id, contactEmail);
+            emailCustomerSupport(desc, id, contactEmail, did);
         }
 
         // create defect file directory
         File defectRoot = new File(_pathDefect);
         File userDefectFolder = new File(defectRoot, header.getUser());
-        String did = header.hasDeviceId() ? BaseUtil.hexEncode(header.getDeviceId().toByteArray()) :
-                "unknown";
         File didDefectFolder = new File(userDefectFolder, did);
         File thisDefectFile = new File(didDefectFolder, DEFECT_LOG_PREFIX + id + ".zip");
 
@@ -287,14 +288,19 @@ public class SVReactor
         return toReturn;
     }
 
-    private void emailCustomerSupport(String desc, int id, String contactEmail)
+    private void emailCustomerSupport(String desc, int id, String contactEmail, String did)
             throws MessagingException, UnsupportedEncodingException
     {
+        // truncate the description to leave only the message the user provides
         int eom = desc.indexOf(LibParam.END_OF_DEFECT_MESSAGE);
         String msg =  eom >= 0 ? desc.substring(0, eom) : desc;
 
+        String body = msg + "\n\n" +
+                "contact email: " + contactEmail + "\n" +
+                "device: " + did;
+
         Future<Void> f = EmailSender.sendPublicEmail(contactEmail, contactEmail,
-                WWW.SUPPORT_EMAIL_ADDRESS.get(), null, L.brand() + " Problem # " + id, msg, null,
+                WWW.SUPPORT_EMAIL_ADDRESS.get(), null, L.brand() + " Problem # " + id, body, null,
                 EmailCategory.SUPPORT);
         try {
             f.get(); // block to make sure email reaches support system
