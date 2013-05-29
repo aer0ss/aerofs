@@ -101,7 +101,7 @@ readonly APPROOT="$5"
 
 # tasks
 setup_clean_approot
-"$PPWD/copy_mode_and_product_resources" "$MODE" "$LABELING" "$BASE_RESOURCES_DIR" "$APPROOT"
+"$PPWD/copy_mode_and_product_resources" "$MODE" "$LABELING" "$BASE_RESOURCES_DIR" "$APPROOT" "$APPROOT/bin"
 copy_os_specific_resources
 create_max_version_file
 copy_run_scripts

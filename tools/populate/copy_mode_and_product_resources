@@ -18,7 +18,8 @@ function print_usage() {
     echo "    [product]           Specifies which product the properties are for" >&2
     echo "                        Can be TEAM_SERVER or CLIENT." >&2
     echo "    [resource_root_dir] Directory where all non-server-specific resources are stored" >&2
-    echo "    [output_dir]        Directory to which all the resources should be copied" >&2
+    echo "    [output_dir]        Destination directory for root resources (certs)" >&2
+    echo "    [properties_dir]    Destination directory for classpath resources (.properties, .xml)" >&2
 }
 
 function add_staging_flag() {
@@ -95,7 +96,7 @@ function copy_resources() {
 ###############################################################################
 
 # all arguments specified
-if [[ $# -ne 4 || x"$1" == x || x"$2" == x || x"$3" == x || x"$4" == x ]]
+if [[ $# -ne 5 ]]
 then
     print_usage
     exit $ERRBADARGS
@@ -125,6 +126,6 @@ readonly MODE_RESOURCES_DIR="$3/common/mode"
 readonly LABELING_RESOURCES_DIR="$3/common/labeling"
 readonly OTHER_RESOURCES_DIR="$3/common/other"
 readonly ROOT_OUTPUT_DIR="$4"
-readonly PROPERTIES_OUTPUT_DIR="$4/bin"
+readonly PROPERTIES_OUTPUT_DIR="$5"
 
 copy_resources
