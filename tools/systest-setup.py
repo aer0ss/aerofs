@@ -37,7 +37,7 @@ DEFAULT_PERF = 0
 DEFAULT_PASSWORD = 'temp123'
 DEFAULT_APPROOT = '/home/aerofstest/syncdet/deploy/approot/'
 DEFAULT_RTROOT = '/home/aerofstest/syncdet/user_data/rtroot/'
-DEFAULT_SP = 'https://sp.aerofs.com/sp'
+DEFAULT_SP_URL = 'https://sp.aerofs.com/sp'
 DEFAULT_RSH = 'ssh'
 DEFAULT_LOGIN = 'aerofstest'
 DEFAULT_ROOT = '~/syncdet'
@@ -138,7 +138,7 @@ def generate_yaml(args, username):
     actor_defaults['root'] = args.root
     actor_defaults['aero_app_root'] = args.approot
     actor_defaults['aero_rt_root'] = args.rtroot
-    actor_defaults['aero_sp_url'] = args.sp
+    actor_defaults['aero_sp_url'] = args.sp_url
     if not args.multiuser:
         assert type(username) != type([])
         actor_defaults['aero_userid'] = username
@@ -217,7 +217,7 @@ def main():
         help="Location of approot directory")
     parser.add_argument('--rtroot', default=DEFAULT_RTROOT,
         help="Location of rtroot directory")
-    parser.add_argument('--sp', default=DEFAULT_SP,
+    parser.add_argument('--sp-url', default=DEFAULT_SP_URL,
         help="URL of sp server")
     parser.add_argument('--rsh', default=DEFAULT_RSH,
         help="Default is SSH")
