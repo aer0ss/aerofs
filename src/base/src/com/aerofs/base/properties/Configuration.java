@@ -166,7 +166,12 @@ public final class Configuration
                 br = new BufferedReader(new FileReader(_urlFile));
                 urlString = br.readLine();
             } catch (Exception e) {
-                LOGGER.warn("Unable to get config from " + _urlFile);
+                /**
+                 * N.B. This class is used by both server and clients to initialize configurations.
+                 *   Most of the times, the url file is missing on the client. This is expected
+                 *   and the client will fall back to use the default values.
+                 */
+                LOGGER.debug("Unable to get config from " + _urlFile);
             } finally {
                 if (br != null) {
                     try {
