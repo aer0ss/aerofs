@@ -20,6 +20,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Collection;
@@ -55,13 +56,39 @@ public final class Configuration
     {
         private static final String CONFIGURATION_SERVICE_URL_FILE = "/etc/aerofs/configuration.url";
 
+        private static void verifyStaticPropertyFilesExist()
+        {
+            InputStream propertyStream = null;
+            for (String propertyPath : getStaticPropertyPaths()) {
+                try {
+                    propertyStream = Server.class.getClassLoader().getResourceAsStream(propertyPath);
+                } finally {
+                    // regardless of whether we got here via an exception or not,
+                    // if the property file doesn't exist we'll throw saying that the
+                    // property file is missing
+                    if (propertyStream == null) {
+                        throw new IllegalStateException("missing config: " + propertyPath);
+                    } else {
+                        try {
+                            propertyStream.close();
+                        } catch (IOException e) {
+                            throw new IllegalStateException("fail access: " + propertyPath);
+                        }
+                    }
+                }
+            }
+        }
+
         public static void initialize()
                 throws ConfigurationException, MalformedURLException
         {
             final AbstractConfiguration systemConfiguration =
                     SystemConfiguration.newInstance();
+
+            verifyStaticPropertyFilesExist();
             final AbstractConfiguration staticPropertiesConfiguration =
                     PropertiesConfiguration.newInstance(getStaticPropertyPaths());
+
             final AbstractConfiguration httpConfiguration = getHttpConfiguration(
                     ImmutableList.of(systemConfiguration, staticPropertiesConfiguration),
                     new FileBasedConfigurationURLProvider(CONFIGURATION_SERVICE_URL_FILE));
