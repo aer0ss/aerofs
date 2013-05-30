@@ -27,6 +27,7 @@ import com.aerofs.base.Loggers;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.SystemUtil;
+import com.aerofs.lib.log.LogUtil;
 import com.aerofs.servlets.lib.EmailSender;
 import com.aerofs.servlets.lib.db.IThreadLocalTransaction;
 import com.yammer.metrics.Metrics;
@@ -108,7 +109,7 @@ public class SVReactor
                 throw new Exception("unknown call type: " + call.getType());
             }
         } catch (Exception e) {
-            l.error("failed serving request: ", e);
+            l.error("failed serving request: ", LogUtil.suppress(e, java.io.IOException.class));
             bdReply.setException(Exceptions.toPB(e));
         }
 
