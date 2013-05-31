@@ -16,6 +16,7 @@ import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.security.GeneralSecurityException;
 import java.util.List;
 import java.util.Map.Entry;
 
@@ -52,7 +53,7 @@ public class RitualNotificationServer implements IConnectionManager
         _listeners.add(listener);
     }
 
-    public void init_() throws IOException
+    public void init_() throws IOException, GeneralSecurityException
     {
         SPBlockingClient.setListener(new DaemonBadCredentialListener(this));
 

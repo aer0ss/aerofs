@@ -14,6 +14,8 @@ import javax.net.ssl.SSLEngine;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
+import java.io.IOException;
+import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 import java.security.cert.Certificate;
 
@@ -100,7 +102,7 @@ public class SSLEngineFactory
     }
 
     public SSLContext getSSLContext()
-            throws Exception
+            throws IOException, GeneralSecurityException
     {
         synchronized (_contextLock) {
             if (_context == null) init();
@@ -108,12 +110,12 @@ public class SSLEngineFactory
         }
     }
 
-    public SSLEngine getSSLEngine() throws Exception
+    public SSLEngine getSSLEngine() throws IOException, GeneralSecurityException
     {
         return getSSLEngineImpl(null, 0);
     }
 
-    public SSLEngine getSSLEngine(String host, int port) throws Exception
+    public SSLEngine getSSLEngine(String host, int port) throws IOException, GeneralSecurityException
     {
         return getSSLEngineImpl(host, port);
     }
@@ -130,7 +132,7 @@ public class SSLEngineFactory
         }
     }
 
-    private void init() throws Exception
+    private void init() throws IOException, GeneralSecurityException
     {
         synchronized (_contextLock) {
             checkState(_context == null, "cannot initialize client ssl engine twice");
@@ -142,7 +144,7 @@ public class SSLEngineFactory
         }
     }
 
-    private SSLEngine getSSLEngineImpl(String host, int port) throws Exception
+    private SSLEngine getSSLEngineImpl(String host, int port) throws IOException, GeneralSecurityException
     {
         SSLEngine engine;
 
@@ -167,7 +169,7 @@ public class SSLEngineFactory
      * Creates the KeyManager, which hold _this peer_'s credentials
      */
     private KeyManager[] getKeyManagers(@Nullable IPrivateKeyProvider keyProvider)
-            throws Exception
+            throws IOException, GeneralSecurityException
     {
         if (keyProvider == null) return null;
 
@@ -191,7 +193,7 @@ public class SSLEngineFactory
      * Creates the TrustManager, which holds the certs of root CAs you trust.
      */
     private TrustManager[] getTrustManagers(@Nullable ICertificateProvider trustedCA, CRL crl)
-            throws Exception
+            throws IOException, GeneralSecurityException
     {
         if (trustedCA == null) return null;
 
