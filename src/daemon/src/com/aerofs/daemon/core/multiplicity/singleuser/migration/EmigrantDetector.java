@@ -1,19 +1,17 @@
 package com.aerofs.daemon.core.multiplicity.singleuser.migration;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.base.id.OID;
+import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.download.IDownloadContext;
 import com.aerofs.daemon.core.download.dependence.DependencyEdge.DependencyType;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.migration.EmigrantUtil;
 import com.aerofs.daemon.core.migration.IEmigrantDetector;
-import com.aerofs.daemon.core.net.To;
-import com.aerofs.daemon.core.net.To.Factory;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.id.CID;
-import com.aerofs.base.id.OID;
-import com.aerofs.base.id.SID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOCID;
 import com.aerofs.lib.id.SOID;
@@ -32,14 +30,12 @@ public class EmigrantDetector implements IEmigrantDetector
     static final Logger l = Loggers.getLogger(EmigrantDetector.class);
 
     private final DirectoryService _ds;
-    private final To.Factory _factTo;
     private final IMapSID2SIndex _sid2sidx;
 
     @Inject
-    public EmigrantDetector(Factory factTo,DirectoryService ds, IMapSID2SIndex sid2sidx)
+    public EmigrantDetector(DirectoryService ds, IMapSID2SIndex sid2sidx)
     {
         _sid2sidx = sid2sidx;
-        _factTo = factTo;
         _ds = ds;
     }
 
@@ -67,7 +63,6 @@ public class EmigrantDetector implements IEmigrantDetector
         if (sidxTo == null) return;
         assert sidxTo.equals(_sid2sidx.get_(sidTo));
 
-        SOCID socidFrom = new SOCID(soid, CID.META);
         OA oa = _ds.getOA_(soid);
 
         // Now the target store is in place. Emigrate the object.

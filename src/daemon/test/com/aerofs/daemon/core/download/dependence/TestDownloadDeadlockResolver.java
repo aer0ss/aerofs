@@ -5,28 +5,23 @@
 package com.aerofs.daemon.core.download.dependence;
 
 import com.aerofs.base.id.DID;
+import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
+import com.aerofs.base.id.UniqueID;
 import com.aerofs.daemon.core.download.IDownloadContext;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
+import com.aerofs.daemon.core.protocol.MetaDiff;
 import com.aerofs.daemon.core.protocol.ReceiveAndApplyUpdate;
 import com.aerofs.daemon.core.protocol.ReceiveAndApplyUpdate.CausalityResult;
-import com.aerofs.daemon.core.protocol.MetaDiff;
-import com.aerofs.daemon.core.download.dependence.DependencyEdge;
-import com.aerofs.daemon.core.download.dependence.DownloadDeadlockResolver;
-import com.aerofs.daemon.core.download.dependence.NameConflictDependencyEdge;
-import com.aerofs.daemon.core.download.dependence.ParentDependencyEdge;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Version;
 import com.aerofs.lib.id.CID;
-import com.aerofs.lib.id.OCID;
-import com.aerofs.base.id.OID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOCID;
 import com.aerofs.lib.id.SOID;
-import com.aerofs.base.id.UniqueID;
 import com.aerofs.proto.Core.PBMeta;
 import com.aerofs.testlib.AbstractTest;
 import com.google.common.collect.ImmutableList;
@@ -38,7 +33,6 @@ import org.mockito.Mock;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.anySetOf;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -61,7 +55,6 @@ public class TestDownloadDeadlockResolver extends AbstractTest
     private final SOCID _socidLocalChild = new SOCID(_sidx, new OID(UniqueID.generate()), CID.META);
     private final SOCID _socidRemAncestor = new SOCID(_sidx, new OID(UniqueID.generate()), CID.META);
     private final OID _oidCommonParent = new OID(UniqueID.generate());
-    private final DID _did = new DID(UniqueID.generate());
 
     @Mock Trans _t;
 
