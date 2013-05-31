@@ -1,41 +1,52 @@
 package com.aerofs.daemon.core.multiplicity.singleuser.migration;
 
-import java.sql.SQLException;
-import java.util.*;
-
+import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UniqueID;
 import com.aerofs.daemon.core.download.IDownloadContext;
 import com.aerofs.daemon.core.download.dependence.DependencyEdge.DependencyType;
-import com.aerofs.daemon.core.migration.EmigrantUtil;
-import com.aerofs.daemon.core.mock.TestUtilCore;
+import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ds.OA.Type;
-import com.aerofs.daemon.core.download.dependence.DependencyEdge;
-import com.aerofs.lib.ex.ExNotDir;
-import com.aerofs.base.ex.ExNotFound;
-import com.aerofs.lib.id.*;
-import com.aerofs.testlib.AbstractTest;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.ArgumentMatcher;
-import org.mockito.InOrder;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-
-import com.aerofs.daemon.core.ds.DirectoryService;
+import com.aerofs.daemon.core.migration.EmigrantUtil;
+import com.aerofs.daemon.core.mock.TestUtilCore;
 import com.aerofs.daemon.core.net.To;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.tc.Token;
+import com.aerofs.lib.ex.ExNotDir;
+import com.aerofs.lib.id.CID;
+import com.aerofs.lib.id.SIndex;
+import com.aerofs.lib.id.SOCID;
+import com.aerofs.lib.id.SOID;
+import com.aerofs.testlib.AbstractTest;
 import com.google.protobuf.ByteString;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.InOrder;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
-import static com.aerofs.daemon.core.mock.TestUtilCore.*;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+
+import static com.aerofs.daemon.core.mock.TestUtilCore.mockAbsentStore;
+import static com.aerofs.daemon.core.mock.TestUtilCore.mockStore;
 import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class TestEmigrantDetector extends AbstractTest
 {
@@ -99,27 +110,6 @@ public class TestEmigrantDetector extends AbstractTest
         children.add(new OID(UniqueID.generate()));
         children.add(new OID(UniqueID.generate()));
         when(ds.getChildren_(soidSource)).thenReturn(children);
-    }
-
-    /**
-     * Repeated uses of this class require the use of doAnswer().when or doThrow().when
-     * instead of when(...).thenAnswer, etc., to avoid an NPE
-     * http://stackoverflow.com/questions/10342461/mockito-acts-strangely-when-i-assign-multiple-custom-matchers-to-a-single-method
-     */
-    private class IsDependencyWithDestination extends ArgumentMatcher<DependencyEdge>
-    {
-        private final SOCID _expectedDst;
-        IsDependencyWithDestination(SOCID expectedDst)
-        {
-            _expectedDst = expectedDst;
-        }
-
-        @Override
-        public boolean matches(Object o)
-        {
-            DependencyEdge dep = (DependencyEdge) o;
-            return _expectedDst.equals(dep.dst);
-        }
     }
 
     @Before

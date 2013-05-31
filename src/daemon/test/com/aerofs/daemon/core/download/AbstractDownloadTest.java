@@ -6,7 +6,6 @@ package com.aerofs.daemon.core.download;
 
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.NativeVersionControl;
-import com.aerofs.daemon.core.download.Download.Cxt;
 import com.aerofs.daemon.core.download.dependence.DownloadDeadlockResolver;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ex.ExNoAvailDevice;
