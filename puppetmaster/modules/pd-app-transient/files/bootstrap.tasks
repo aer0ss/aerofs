@@ -1,6 +1,7 @@
 cacert-pull
 wildcard-cert-pull
 verkehr
-ejabberd
+ejabberd-database-reset
+ejabberd-certify
 spdb-tomcat-password
 uwsgi-restart
