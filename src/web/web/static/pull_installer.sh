@@ -7,6 +7,7 @@ for file in \
     AeroFSTeamServerInstall.dmg \
     AeroFSTeamServerInstall.exe \
     aerofs-installer.deb \
+    aerofs-installer.tgz \
     aerofsts-installer.deb \
     aerofsts-installer.tgz \
     current.ver
