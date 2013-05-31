@@ -5,7 +5,6 @@
 package com.aerofs.daemon.core.net;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.base.ex.ExTimeout;
 import com.aerofs.base.id.DID;

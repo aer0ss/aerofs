@@ -12,7 +12,6 @@ import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ex.ExNoAvailDevice;
 import com.aerofs.daemon.core.net.DigestedMessage;
 import com.aerofs.daemon.core.net.To;
-import com.aerofs.daemon.core.net.device.Device;
 import com.aerofs.daemon.core.net.device.DevicePresence;
 import com.aerofs.daemon.core.protocol.GetComponentCall;
 import com.aerofs.daemon.core.protocol.GetComponentReply;
@@ -24,19 +23,15 @@ import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOCID;
 import com.aerofs.testlib.AbstractTest;
-import com.beust.jcommander.internal.Sets;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
 import org.junit.Before;
 import org.mockito.Mock;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 import org.mockito.stubbing.OngoingStubbing;
 
 import java.util.Map;
-import java.util.Set;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.argThat;

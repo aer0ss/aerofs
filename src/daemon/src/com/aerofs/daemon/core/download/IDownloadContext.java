@@ -6,7 +6,6 @@ package com.aerofs.daemon.core.download;
 
 import com.aerofs.daemon.core.download.dependence.DependencyEdge.DependencyType;
 import com.aerofs.daemon.core.tc.Token;
-import com.aerofs.lib.id.OCID;
 import com.aerofs.lib.id.SOCID;
 
 /**

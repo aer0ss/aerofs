@@ -18,7 +18,6 @@ import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.daemon.core.ex.ExExpelled;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.lib.id.SOCID;
-import com.aerofs.proto.PathStatus.PBPathStatus;
 import com.aerofs.proto.PathStatus.PBPathStatus.Sync;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;

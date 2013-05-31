@@ -1,7 +1,6 @@
 package com.aerofs.daemon.core.alias;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.base.id.DID;
 import com.aerofs.base.id.OID;
 import com.aerofs.daemon.core.VersionUpdater;
 import com.aerofs.daemon.core.NativeVersionControl;
@@ -23,7 +22,6 @@ import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 import java.sql.SQLException;
-import java.util.Set;
 
 import static com.aerofs.daemon.core.protocol.ReceiveAndApplyUpdate.*;
 

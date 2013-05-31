@@ -8,8 +8,6 @@ import com.aerofs.base.id.DID;
 import com.aerofs.base.id.OID;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ex.ExOutOfSpace;
-import com.aerofs.daemon.core.net.DigestedMessage;
-import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.lib.Tick;
 import com.aerofs.lib.Version;
 import com.aerofs.lib.id.CID;
@@ -24,15 +22,12 @@ import org.mockito.stubbing.Answer;
 
 import java.util.Map;
 
-import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 

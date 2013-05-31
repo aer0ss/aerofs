@@ -9,7 +9,6 @@ import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.CoreQueue;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.ex.ExAborted;
-import com.aerofs.daemon.core.ex.ExNoAvailDevice;
 import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.ITokenReclamationListener;
 import com.aerofs.daemon.core.tc.TC;

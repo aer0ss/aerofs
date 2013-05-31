@@ -4,7 +4,6 @@ import com.aerofs.base.Loggers;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.*;
-import com.aerofs.daemon.core.net.PeerContext;
 import com.aerofs.daemon.core.net.dtls.DTLSLayer.Footer;
 import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.lib.PrioQueue;
