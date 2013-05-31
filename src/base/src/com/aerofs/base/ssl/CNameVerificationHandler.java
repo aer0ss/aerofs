@@ -24,7 +24,6 @@ import org.jboss.netty.handler.ssl.SslHandler;
 import org.slf4j.Logger;
 
 import javax.net.ssl.SSLException;
-import javax.security.cert.X509Certificate;
 import java.net.SocketAddress;
 import java.nio.channels.ClosedChannelException;
 
@@ -83,8 +82,9 @@ public class CNameVerificationHandler extends SimpleChannelHandler
             throws Exception
     {
         // Save the original connect future and pass a new one downstream.
-        // This will allow us to keep the channel unconnected for upstream handlers until we verify
-        // the cnames.
+        // This will allow us to only fire the channelConnected event for upstream handlers after we
+        // verify the cname. Note though that this will *not* prevent channel.isConnected() from
+        // returning true for upstream handlers.
 
         final ChannelFuture originalFuture = e.getFuture();
         ctx.setAttachment(originalFuture);
@@ -152,14 +152,18 @@ public class CNameVerificationHandler extends SimpleChannelHandler
             }
 
             _state = State.Handshaken;
-            if (_listener != null) _listener.onPeerVerified(user, did);
+            l.debug("cname verified {} - {}", user, did);
 
             // Notify upstream that the connection has been established
+
             ctx.getPipeline().remove(this);
-            ((ChannelFuture)ctx.getAttachment()).setSuccess();
+
+            if (_listener != null) _listener.onPeerVerified(user, did);
+
+            ChannelFuture originalFuture = (ChannelFuture)ctx.getAttachment();
+            if (originalFuture != null) originalFuture.setSuccess();
             fireChannelConnected(ctx, ctx.getChannel().getRemoteAddress());
 
-            l.debug("cname verified {} - {}", user, did);
             break;
         }
     }
@@ -208,22 +212,18 @@ public class CNameVerificationHandler extends SimpleChannelHandler
     private String getPeerCName(ChannelHandlerContext ctx)
             throws SSLException
     {
-        // Get the peer certificate
+        // Get the peer principal
         SslHandler sslHandler = ctx.getPipeline().get(SslHandler.class);
-        X509Certificate[] certs = sslHandler.getEngine().getSession().getPeerCertificateChain();
-        if (certs.length != 1) {
-            throw new SSLException("invalid cert chain length. exp: 1, got: " + certs.length);
-        }
+        String principal = sslHandler.getEngine().getSession().getPeerPrincipal().getName();
 
-        // Get the CN field from the subject string
-        // A typical subject string for AeroFS certificates looks like this:
+        // Get the CN field from the principal
+        // A typical principal string for AeroFS certificates looks like this:
         // "CN=occilfnakcejlc[...basically [a-p]], OU=na, O=aerofs.com, ST=CA, C=US"
-        String subject = certs[0].getSubjectDN().toString();
-        final String FIELD_NAME = "CN=";
-        for (String x : subject.split(",")) {
-            if (x.trim().startsWith(FIELD_NAME)) return x.trim().substring(FIELD_NAME.length());
+        final String CN_FIELD = "CN=";
+        for (String x : principal.split(",")) {
+            if (x.trim().startsWith(CN_FIELD)) return x.trim().substring(CN_FIELD.length());
         }
 
-        throw new SSLException("CN field missing: " + subject);
+        throw new SSLException("CN field missing: " + principal);
     }
 }
