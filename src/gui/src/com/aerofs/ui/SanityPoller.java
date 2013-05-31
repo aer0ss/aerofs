@@ -81,9 +81,20 @@ public class SanityPoller
 
     private void check()
     {
-        checkDisk(Cfg.absRTRoot());
+        checkRTRoot(Cfg.absRTRoot());
         checkRoot(Cfg.absDefaultRootAnchor(), null);
         for (Entry<SID, String> e : Cfg.getRoots().entrySet()) checkRoot(e.getValue(), e.getKey());
+    }
+
+    private void checkRTRoot(String absPath)
+    {
+        if (!new File(absPath).exists()) {
+            UI.dm().stopIgnoreException();
+            UI.get().show(MessageType.ERROR, absPath + " is missing.\n\n"
+                    + "Please reinstall " + L.product());
+            ExitCode.FATAL_ERROR.exit();
+        }
+        checkDisk(absPath);
     }
 
     // SID is null for default root
