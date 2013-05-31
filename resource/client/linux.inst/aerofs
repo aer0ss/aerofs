@@ -37,26 +37,6 @@ fi
 
 URL=https://cache.client[DOT_STAGING].aerofs.com/$PACKAGE_FILENAME
 RUN_TIME_ROOT="$HOME/.aerofs[DOT_STAGING]"
-
-if [ -f "$RUN_TIME_ROOT/configuration.url" ]; then
-    CONFIG_URL=$(cat "$RUN_TIME_ROOT/configuration.url")
-    if [ -z "$CONFIG_URL" ]; then
-        echo The AeroFS domain server is not set.
-        exit 1
-    else
-        CONFIG=$(wget -qO- $CONFIG_URL)
-        if [ $? -ne 0]; then
-            echo Unable to access the AeroFS domain server. Please try again later.
-            exit 1
-        fi
-
-        UPDATER_URL=$(echo $CONFIG | grep "updater.installer.url" | awk -F= '{print $2}')
-        if [ ! -z $UPDATER_URL ]; then
-            URL=$UPDATER_URL
-        fi
-    fi
-fi
-
 DIST="$HOME/.[AEROFS_PRODUCT_UNIX]-bin[DOT_STAGING]"
 
 if [ ! -f "$DIST/aerofs.jar" ]; then
@@ -83,6 +63,27 @@ if [ ! -f "$DIST/aerofs.jar" ]; then
     trap "rm -rf \"$TMP_DIR\"" EXIT
 
     uudecode -o /dev/stdout < "$0" | tar xzf - -C $TMP_DIR 2>/dev/null
+
+    # Handle private configuration, if provided
+    if [ -f "$RUN_TIME_ROOT/configuration.url" ]; then
+        CONFIG_URL=$(cat "$RUN_TIME_ROOT/configuration.url")
+        if [ -z "$CONFIG_URL" ]; then
+            echo The AeroFS domain server is not set.
+            exit 1
+        else
+            echo "Using configuration url $CONFIG_URL"
+            CONFIG_OUT="$TMP_DIR/config"
+            java -cp "$TMP_DIR/s$ARCH.jar":"$TMP_DIR" com.aerofs.downloader.Main headless "$CONFIG_URL" "$CONFIG_OUT"
+            if [ $? -ne 0 ]; then
+                echo Unable to access the AeroFS domain server. Please try again later.
+                exit 1
+            fi
+            UPDATER_URL=$(grep "updater.installer.url" "$CONFIG_OUT" | awk -F= '{print $2}')
+            if [ ! -z "$UPDATER_URL" ]; then
+                URL="$UPDATER_URL/$PACKAGE_FILENAME"
+            fi
+        fi
+    fi
 
     if [ $PROG == gui ]; then
         echo "Launching graphical interface... (use [AEROFS_PRODUCT_UNIX]-cli for command-line interface)"
