@@ -8,7 +8,10 @@ class pd-app-persistent {
         require => Apt::Source["aerofs"],
     }
 
-    # Bootstrap things.
+    # --------------
+    # Bootstrap
+    # --------------
+
     file {"/opt/bootstrap/bootstrap.tasks":
         source => "puppet:///modules/pd-app-persistent/bootstrap.tasks",
         require => Package["aerofs-bootstrap"],
@@ -25,6 +28,10 @@ class pd-app-persistent {
         target  => "/opt/config/properties/server.properties",
         require => Exec["rm configuration.properties"],
     }
+
+    # --------------
+    # Cfg/CA Server
+    # --------------
 
     package { [
         "php5-common",
@@ -56,5 +63,14 @@ class pd-app-persistent {
         ensure  => link,
         target  => "/etc/nginx/sites-available/aerofs-cfg",
         require => File["/etc/nginx/sites-available/aerofs-cfg"],
+    }
+
+    # --------------
+    # Sanity
+    # --------------
+
+    file {"/opt/sanity/probes/app-persistent.sh":
+        source => "puppet:///modules/pd-app-persistent/app-persistent.sh",
+        require => Package["aerofs-sanity"],
     }
 }

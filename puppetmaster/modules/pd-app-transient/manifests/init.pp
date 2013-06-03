@@ -106,4 +106,13 @@ class pd-app-transient {
         source => "puppet:///modules/pd-app-transient/bootstrap.tasks",
         require => Package["aerofs-bootstrap"],
     }
+
+    # --------------
+    # Sanity
+    # --------------
+
+    file {"/opt/sanity/probes/app-transient.sh":
+        source => "puppet:///modules/pd-app-transient/app-transient.sh",
+        require => Package["aerofs-sanity"],
+    }
 }

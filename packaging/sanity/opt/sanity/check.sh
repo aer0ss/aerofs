@@ -1,5 +1,5 @@
 #!/bin/bash
-cd $(dirname $0)/probes
+cd /opt/sanity/probes
 
 probes=$(ls *.sh 2>/dev/null)
 
