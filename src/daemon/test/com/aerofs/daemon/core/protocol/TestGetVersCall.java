@@ -1,8 +1,11 @@
 package com.aerofs.daemon.core.protocol;
 
 import com.aerofs.base.id.DID;
+import com.aerofs.base.id.SID;
+import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.StoreDeletionOperators;
 import com.aerofs.daemon.core.store.MapSIndex2Store;
+import com.aerofs.proto.Core.PBGetVersCallBlock;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -31,6 +34,9 @@ import com.aerofs.base.id.UniqueID;
 import com.aerofs.proto.Core.PBCore;
 import com.aerofs.testlib.AbstractTest;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+
 public class TestGetVersCall extends AbstractTest
 {
     private final InMemorySQLiteDBCW dbcw = new InMemorySQLiteDBCW();
@@ -42,22 +48,25 @@ public class TestGetVersCall extends AbstractTest
     @Mock Metrics m;
     @Mock OutgoingStreams oss;
     @Mock MapSIndex2Store sidx2s;
+    @Mock IMapSIndex2SID sidx2sid;
     @Spy  IPulledDeviceDatabase pulledDevices = new PulledDeviceDatabase(dbcw.getCoreDBCW(),
             mock(StoreDeletionOperators.class));
 
     // System Under Test
     @InjectMocks private GetVersCall gvc;
 
-    @Captor private ArgumentCaptor<PBCore> callCaptor;
+    @Captor private ArgumentCaptor<ByteArrayOutputStream> callCaptor;
     @Mock private Token tk;
     @Mock private Trans t;
 
     SIndex sidx = new SIndex(12345);
+    SID sid = SID.generate();
 
     @Before
     public void setup() throws Exception
     {
         dbcw.init_();
+        when(sidx2sid.get_(sidx)).thenReturn(sid);
     }
 
     @After
@@ -114,9 +123,11 @@ public class TestGetVersCall extends AbstractTest
     {
         gvc.rpc_(sidx, didTo, tk);
 
-        verify(rpc).do_(eq(didTo), any(SIndex.class), callCaptor.capture(), any(Token.class),
-                any(String.class));
+        verify(rpc).do_(eq(didTo), any(SIndex.class), any(PBCore.class),
+                callCaptor.capture(), any(Token.class), any(String.class));
 
-        return callCaptor.getValue().getGetVersCall().getFromBase();
+        ByteArrayInputStream is = new ByteArrayInputStream(callCaptor.getValue().toByteArray());
+        PBCore.parseDelimitedFrom(is);
+        return PBGetVersCallBlock.parseDelimitedFrom(is).getFromBase();
     }
 }

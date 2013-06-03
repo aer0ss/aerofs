@@ -8,6 +8,7 @@ import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.base.ex.ExTimeout;
 import com.aerofs.base.id.DID;
+import com.aerofs.daemon.core.CoreUtil;
 import com.aerofs.daemon.core.net.device.DevicePresence;
 import com.aerofs.daemon.core.ex.ExAborted;
 import com.aerofs.daemon.core.net.link.ILinkStateListener;
@@ -24,10 +25,10 @@ import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 
+import java.io.ByteArrayOutputStream;
 import java.net.NetworkInterface;
 import java.util.Map;
 
-import static com.aerofs.daemon.core.CoreUtil.typeString;
 import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor;
 
 /**
@@ -71,8 +72,8 @@ public class RPC
         }, sameThreadExecutor());
     }
 
-    private DigestedMessage recvReply_(int rpcid, Token tk, String reason)
-        throws ExTimeout, ExAborted
+    private DigestedMessage recvReply_(SIndex sidx, int rpcid, Token tk, String reason)
+        throws ExTimeout, ExAborted, ExProtocolError
     {
         assert !_waiters.containsKey(rpcid);
 
@@ -91,6 +92,14 @@ public class RPC
 
         l.debug("got reply " + reply.ep());
 
+        // there once was a bug in DTLS where delayed messages where sent with a wrong SID
+        // which resulted in a bogus response being received itself causing potentially nasty
+        // consequences (including hard to fix DB corruption) all of which could have been
+        // prevented by simply checking for matching SIndex between request and rpely...
+        if (!sidx.equals(reply.sidx())) {
+            throw new ExProtocolError("sidx mismatch: expect=" + sidx + " actual=" + reply.sidx());
+        }
+
         return reply;
     }
 
@@ -100,15 +109,21 @@ public class RPC
         Endpoint ep = null;
         try {
             ep = _nsl.sendUnicast_(did, sidx, call);
-            DigestedMessage msg = recvReply_(call.getRpcid(), tk, reason);
-            // there once was a bug in DTLS where delayed messages where sent with a wrong SID
-            // which resulted in a bogus response being received itself causing potentially nasty
-            // consequences (including hard to fix DB corruption) all of which could have been
-            // prevented by simply checking for matching SIndex between request and rpely...
-            if (!sidx.equals(msg.sidx())) {
-                throw new ExProtocolError("sidx mismatch: expect=" + sidx + " actual=" + msg.sidx());
-            }
-            return msg;
+            return recvReply_(sidx, call.getRpcid(), tk, reason);
+        } catch (ExTimeout e) {
+            handleTimeout_(call, ep);
+            throw e;
+        }
+    }
+
+    public DigestedMessage do_(DID did, SIndex sidx, PBCore call, ByteArrayOutputStream out,
+            Token tk, String reason)
+            throws Exception
+    {
+        Endpoint ep = null;
+        try {
+            ep = _nsl.sendUnicast_(did, sidx, CoreUtil.typeString(call), call.getRpcid(), out);
+            return recvReply_(sidx, call.getRpcid(), tk, reason);
         } catch (ExTimeout e) {
             handleTimeout_(call, ep);
             throw e;
@@ -117,7 +132,7 @@ public class RPC
 
     private void handleTimeout_(PBCore call, Endpoint ep)
     {
-        l.warn("{} {} timeout", ep, typeString(call));
+        l.warn("{} {} timeout", ep, CoreUtil.typeString(call));
         if (ep != null) _dp.startPulse_(ep.tp(), ep.did());
     }
 

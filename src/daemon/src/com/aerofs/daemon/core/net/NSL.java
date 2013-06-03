@@ -148,10 +148,10 @@ public class NSL
                 Util.writeDelimited(pb).toByteArray());
     }
 
-    public void sendUnicast_(DID did, SIndex sidx, String type, int rpcid,
+    public Endpoint sendUnicast_(DID did, SIndex sidx, String type, int rpcid,
             ByteArrayOutputStream os) throws Exception
     {
-        sendUnicast_(did, type, rpcid, sidx, os.toByteArray());
+        return sendUnicast_(did, type, rpcid, sidx, os.toByteArray());
     }
 
     public void sendMaxcast_(SIndex sidx, String type, int rpcid,

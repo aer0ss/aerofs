@@ -1,24 +1,24 @@
 package com.aerofs.daemon.core.protocol;
 
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.sql.SQLException;
 import java.util.ArrayDeque;
-import java.util.List;
 import java.util.Queue;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.base.ex.Exceptions;
 import com.aerofs.base.id.DID;
+import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.migration.ImmigrantVersionControl;
 import com.aerofs.daemon.core.net.IncomingStreams;
+import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.MapSIndex2Store;
 import com.aerofs.daemon.lib.db.IPulledDeviceDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
-import com.aerofs.daemon.core.ex.ExAborted;
-import com.google.common.collect.Lists;
+import com.aerofs.proto.Core.PBStoreHeader;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 
@@ -27,11 +27,8 @@ import com.aerofs.daemon.core.net.IncomingStreams.StreamKey;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.lib.bf.BFOID;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.daemon.lib.exception.ExStreamInvalid;
-import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.ex.ExProtocolError;
-import com.aerofs.base.ex.ExTimeout;
 import com.aerofs.lib.Tick;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.Version;
@@ -41,8 +38,6 @@ import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOCID;
 import com.aerofs.proto.Core.PBGetVersReply;
 import com.aerofs.proto.Core.PBGetVersReplyBlock;
-
-import javax.annotation.Nullable;
 
 public class GetVersReply
 {
@@ -54,14 +49,13 @@ public class GetVersReply
     private final ImmigrantVersionControl _ivc;
     private final TransManager _tm;
     private final MapSIndex2Store _sidx2s;
+    private final IMapSID2SIndex _sid2sidx;
     private final IPulledDeviceDatabase _pulleddb;
-
-    private final List<IPullUpdatesListener> _listeners = Lists.newArrayList();
 
     @Inject
     public GetVersReply(TransManager tm, NativeVersionControl nvc,
             ImmigrantVersionControl ivc, UpdateSenderFilter pusf,
-            IncomingStreams iss, MapSIndex2Store sidx2s,
+            IncomingStreams iss, MapSIndex2Store sidx2s, IMapSID2SIndex sid2sidx,
             IPulledDeviceDatabase pddb)
     {
         _tm = tm;
@@ -70,176 +64,244 @@ public class GetVersReply
         _pusf = pusf;
         _iss = iss;
         _sidx2s = sidx2s;
+        _sid2sidx = sid2sidx;
         _pulleddb = pddb;
-    }
-
-    public void addListener_(IPullUpdatesListener listener)
-    {
-        _listeners.add(listener);
     }
 
     void processReply_(DigestedMessage msg, Token tk) throws Exception
     {
         try {
+            if (msg.pb().hasExceptionReply()) throw Exceptions.fromPB(msg.pb().getExceptionReply());
             Util.checkPB(msg.pb().hasGetVersReply(), PBGetVersReply.class);
 
-            PBGetVersReply pb = msg.pb().getGetVersReply();
-            if (pb.hasSenderFilter() != pb.hasSenderFilterIndex()) {
-                throw new ExProtocolError("sf fields mismatch");
-            }
-
-            BFOID filter = pb.hasSenderFilter() ?
-                    new BFOID(pb.getSenderFilter()) : null;
-
-            SIndex sidx = msg.sidx();
-
-            l.debug("recv from {} for {} {}", msg.ep(), sidx, filter);
-
             if (msg.streamKey() == null) {
-                processAtomicReply_(sidx, msg.did(), msg.is(), filter);
+                processAtomicReply_(msg.did(), msg.is());
             } else {
-                processStreamReply_(sidx, msg.did(), msg.streamKey(), msg.is(), filter, tk);
+                processStreamReply_(msg.did(), msg.streamKey(), msg.is(), tk);
             }
-
-            if (pb.hasSenderFilterIndex()) {
-                assert pb.hasSenderFilter();
-                assert pb.hasSenderFilterUpdateSeq();
-                // Now that everything has been committed, it's safe to ask
-                // the peer to update the sender filter for us.
-                _pusf.send_(sidx, pb.getSenderFilterIndex(), pb.getSenderFilterUpdateSeq(),
-                        msg.did());
-            }
-
-            for (IPullUpdatesListener listener : _listeners) {
-                listener.receivedPullUpdateFrom_(msg.did());
-            }
-
+        } catch (Exception e) {
+            l.info("error processing reply: {}", e);
+            throw e;
         } finally {
             // TODO put this statement into a more general method
             if (msg.streamKey() != null) _iss.end_(msg.streamKey());
         }
     }
 
-    private void processAtomicReply_(SIndex sidx, DID from, InputStream is, @Nullable BFOID filter)
-            throws SQLException, ExProtocolError, IOException, ExNotFound
+    private class ReplyCxt
     {
-        Version vKwlgLocal = _nvc.getKnowledgeExcludeSelf_(sidx);
-        Version vImmKwlgLocal = _ivc.getKnowledgeExcludeSelf_(sidx);
+        final DID from;
 
-        Trans t = _tm.begin_();
+        SIndex sidx = null;
+        BFOID filter = null;
+        long senderFilterIndex = 0;
+        long senderFilterUpdateSeq = 0;
+
+        DID didBlock = null;
+        Version vKwlgLocal = null;
+        Version vImmKwlgLocal = null;
+
+        ReplyCxt(DID did) { from = did; }
+
+        void finalizeStore_(Trans t) throws SQLException, ExNotFound
+        {
+            assert sidx != null;
+
+            l.debug("finalize {} {}", sidx, filter);
+
+            // must call add *after* everything else is written to the db
+            if (filter != null) {
+                _sidx2s.getThrows_(sidx).collector().add_(from, filter, t);
+            }
+
+            // Once all blocks have been processed and are written to the db,
+            // locally remember that store s has been pulled from the DID from.
+            _pulleddb.insert_(sidx, from, t);
+        }
+
+        boolean newStore_(PBStoreHeader h) throws SQLException
+        {
+            SID sid = new SID(h.getStoreId());
+            sidx = _sid2sidx.getNullable_(sid);
+
+            // store was expelled locally between call and reply...
+            if (sidx == null) {
+                l.warn("recv from {} for absent: {} {}", from, sid.toStringFormal(),
+                        _sid2sidx.getLocalOrAbsentNullable_(sid));
+                return false;
+            }
+
+            didBlock = null;
+            refreshKnowledge_();
+            if (h.hasSenderFilter()) {
+                filter = new BFOID(h.getSenderFilter());
+                senderFilterIndex = h.getSenderFilterIndex();
+                senderFilterUpdateSeq = h.getSenderFilterUpdateSeq();
+            } else {
+                filter = null;
+            }
+
+            l.debug("recv from {} for {} {}", from, sidx, filter);
+            return true;
+        }
+
+        void updateSenderFilter_() throws Exception
+        {
+            if (filter != null) {
+                // Now that everything has been committed, it's safe to ask
+                // the peer to update the sender filter for us.
+                _pusf.send_(sidx, senderFilterIndex, senderFilterUpdateSeq, from);
+            }
+        }
+
+        void refreshKnowledge_() throws SQLException
+        {
+            vKwlgLocal = _nvc.getKnowledgeExcludeSelf_(sidx);
+            vImmKwlgLocal = _ivc.getKnowledgeExcludeSelf_(sidx);
+        }
+
+        void process_(PBGetVersReplyBlock block, Trans t)
+                throws SQLException, ExNotFound, ExProtocolError
+        {
+            if (sidx == null) {
+                l.debug("ignored block");
+                return;
+            }
+            didBlock = processBlock_(sidx, block, didBlock, vKwlgLocal, vImmKwlgLocal, from, t);
+        }
+    }
+
+    private void processAtomicReply_(DID from, InputStream is) throws Exception
+    {
+        Trans t = null;
+        ReplyCxt cxt = new ReplyCxt(from);
+
         try {
-            DID didBlock = null;
             while (true) {
-                PBGetVersReplyBlock block = PBGetVersReplyBlock
-                        .parseDelimitedFrom(is);
-                didBlock = processBlock_(sidx, block, didBlock, vKwlgLocal, vImmKwlgLocal, from,
-                        filter, t);
+                PBGetVersReplyBlock block = PBGetVersReplyBlock.parseDelimitedFrom(is);
+                if (block.hasStore()) {
+                    // commit changes for previous store
+                    if (t != null) {
+                        cxt.finalizeStore_(t);
+                        t.commit_();
+                        t.end_();
+                        t = null;
+                        cxt.updateSenderFilter_();
+                    }
+
+                    if (cxt.newStore_(block.getStore())) t = _tm.begin_();
+                }
+
+                cxt.process_(block, t);
+
                 if (block.getIsLastBlock()) break;
             }
-            assert is.available() == 0;
-
-            t.commit_();
+            if (is.available() != 0) throw new ExProtocolError();
+            if (t != null) {
+                cxt.finalizeStore_(t);
+                t.commit_();
+            }
         } finally {
-            t.end_();
+            if (t != null) {
+                t.end_();
+                cxt.updateSenderFilter_();
+            }
         }
     }
 
     private static final int MIN_BLOCKS_PER_TX = 100;
 
-    private void processStreamReply_(SIndex sidx, DID from, StreamKey streamKey,
-            ByteArrayInputStream is, @Nullable BFOID filter, Token tk)
-        throws SQLException, IOException, ExProtocolError, ExTimeout, ExStreamInvalid, ExAborted,
-            ExNoResource, ExNotFound
+    private void processStreamReply_(DID from, StreamKey streamKey, ByteArrayInputStream is,
+            Token tk) throws Exception
     {
-        Queue<PBGetVersReplyBlock> qblocks =
-                new ArrayDeque<PBGetVersReplyBlock>(MIN_BLOCKS_PER_TX);
+        ReplyCxt cxt = new ReplyCxt(from);
+        Queue<PBGetVersReplyBlock> qblocks = new ArrayDeque<PBGetVersReplyBlock>(MIN_BLOCKS_PER_TX);
 
-        boolean eob = false;
-        DID didBlock = null;
-
-        /**
-         * Convert input streams to PB blocks; collect the blocks into a queue.
-         * When MIN_BLOCKS_PER_TX blocks have been acquired (or eos reached),
-         * then process the blocks in a DB transaction.
-         * This structure means we write more data in a given transaction,
-         * wasting less time waiting for disk.
-         */
-        while (true) {
-            while (is.available() > 0) {
-                PBGetVersReplyBlock block = PBGetVersReplyBlock.parseDelimitedFrom(is);
-
-                // Flag the end of the stream
-                if (block.getIsLastBlock()) {
-                    assert is.available() == 0;
-                    eob = true;
-                }
-
-                qblocks.add(block);
-            }
-
-            /**
-             * To reduce the number of writes to the DB, we now batch at least
-             * MIN_BLOCKS_PER_TX blocks into a single transaction
-             */
-            if (qblocks.size() >= MIN_BLOCKS_PER_TX || eob) {
-                didBlock = processStreamBlocks_(sidx, from, didBlock, qblocks, filter);
-            }
-
-            if (eob) break;
-
+        while (!processStreamChunk_(cxt, qblocks, is)) {
             is = _iss.recvChunk_(streamKey, tk);
         }
     }
 
-    /**
-     * @param qblocks is a queue of blocks extracted from a chunk. The queue should not be empty
-     * @return the current device_id
-     */
-    private DID processStreamBlocks_(SIndex sidx, DID from, DID didBlock,
-            Queue<PBGetVersReplyBlock> qblocks, @Nullable BFOID filter)
-            throws SQLException, ExNotFound
+    private boolean processStreamChunk_(ReplyCxt cxt, Queue<PBGetVersReplyBlock> qblocks,
+            InputStream is) throws Exception
     {
-        assert !qblocks.isEmpty();
+        boolean last = false;
+        while (!last && is.available() > 0) {
+            PBGetVersReplyBlock block = PBGetVersReplyBlock.parseDelimitedFrom(is);
+            if (block.hasStore()) {
+                // commit changes for previous store
+                processStreamBlocks_(cxt, qblocks, true);
 
-        // when we block for chunk receiving, database may have changed
-        Version vKwlgLocal = _nvc.getKnowledgeExcludeSelf_(sidx);
-        Version vImmKwlgLocal = _ivc.getKnowledgeExcludeSelf_(sidx);
-
-        Trans t = _tm.begin_();
-        try {
-            PBGetVersReplyBlock block;
-
-            l.debug("blocks/tx=" + qblocks.size());
-            while (null != (block = qblocks.poll())) {
-                assert !block.getIsLastBlock() || qblocks.isEmpty();
-                didBlock = processBlock_(sidx, block, didBlock, vKwlgLocal, vImmKwlgLocal, from,
-                        filter, t);
+                cxt.newStore_(block.getStore());
             }
-            t.commit_();
-        } finally {
-            t.end_();
+            last = block.getIsLastBlock();
+            qblocks.add(block);
         }
 
+        if (is.available() != 0) throw new ExProtocolError();
+
+        /**
+         * To reduce the number of writes to the DB, we now batch at least
+         * MIN_BLOCKS_PER_TX blocks into a single transaction
+         */
+        if (qblocks.size() >= MIN_BLOCKS_PER_TX || last) {
+            processStreamBlocks_(cxt, qblocks, last);
+        }
+
+        return last;
+    }
+
+    /**
+     * @param qblocks is a queue of blocks extracted from a chunk. The queue should not be empty
+     */
+    private void processStreamBlocks_(ReplyCxt cxt, Queue<PBGetVersReplyBlock> qblocks,
+            boolean storeBoundary) throws Exception
+    {
+        assert storeBoundary || !qblocks.isEmpty();
+
+        if (!qblocks.isEmpty()) {
+            // when we block for chunk receiving, database may have changed
+            cxt.refreshKnowledge_();
+
+            Trans t = _tm.begin_();
+            try {
+                PBGetVersReplyBlock block;
+
+                l.debug("blocks/tx={}", qblocks.size());
+                while (null != (block = qblocks.poll())) {
+                    if (block.getIsLastBlock() && !qblocks.isEmpty()) throw new ExProtocolError();
+                    cxt.process_(block, t);
+                }
+
+                if (storeBoundary) cxt.finalizeStore_(t);
+                t.commit_();
+            } finally {
+                t.end_();
+            }
+        }
+
+        if (storeBoundary) cxt.updateSenderFilter_();
+
         assert qblocks.isEmpty();
-        return didBlock;
     }
 
     /**
      * @return the current device_id specified in the block
      */
     private DID processBlock_(SIndex sidx, PBGetVersReplyBlock block, DID didBlock,
-            Version vKwlgLocal, Version vImmKwlgLocal, DID from, @Nullable BFOID filter,
-            Trans t) throws SQLException, ExNotFound
+            Version vKwlgLocal, Version vImmKwlgLocal, DID from,
+            Trans t) throws SQLException, ExProtocolError
     {
-        assert block.getObjectIdCount() == block.getComIdCount() &&
-                block.getTickCount() == block.getComIdCount();
-        assert block.getImmigrantObjectIdCount() == block.getImmigrantComIdCount() &&
-                block.getImmigrantImmTickCount() == block.getImmigrantComIdCount() &&
-                block.getImmigrantDeviceIdCount() == block.getImmigrantComIdCount() &&
-                block.getImmigrantTickCount() == block.getImmigrantComIdCount();
+        Util.checkMatchingSizes(block.getObjectIdCount(), block.getComIdCount(),
+                block.getTickCount());
+
+        Util.checkMatchingSizes(block.getImmigrantObjectIdCount(), block.getImmigrantComIdCount(),
+                block.getImmigrantImmTickCount(), block.getImmigrantDeviceIdCount(),
+                block.getImmigrantTickCount());
 
         if (block.hasDeviceId()) didBlock = new DID(block.getDeviceId());
-        assert didBlock == null || !didBlock.equals(Cfg.did());
+
+        if (didBlock != null && didBlock.equals(Cfg.did())) throw new ExProtocolError();
 
         // for debugging only
         Tick tickPrev = Tick.ZERO;
@@ -287,15 +349,6 @@ public class GetVersReply
                 block.getImmigrantKnowledgeTick() > vImmKwlgLocal.get_(didBlock).getLong()) {
             Tick tick = new Tick(block.getImmigrantKnowledgeTick());
             _ivc.addKnowledge_(sidx, didBlock, tick, t);
-        }
-
-        if (block.getIsLastBlock()) {
-            // must call add *after* everything else is written to the db
-            if (filter != null) _sidx2s.getThrows_(sidx).collector().add_(from, filter, t);
-
-            // Once all blocks have been processed and are written to the db,
-            // locally remember that store s has been pulled from the DID from.
-            _pulleddb.insert_(sidx, from, t);
         }
 
         return didBlock;

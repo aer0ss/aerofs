@@ -2,28 +2,37 @@ package com.aerofs.daemon.core.protocol;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
 
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
+import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.base.id.DID;
+import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
+import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.MapSIndex2Contributors;
+import com.aerofs.daemon.core.net.IncomingStreams;
+import com.aerofs.daemon.core.net.IncomingStreams.StreamKey;
+import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.MapSIndex2Store;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.daemon.core.ex.ExAborted;
 import com.aerofs.lib.id.SOCID;
 import com.aerofs.lib.id.SOCKID;
+import com.aerofs.proto.Core.PBGetVersCallBlock;
+import com.aerofs.proto.Core.PBStoreHeader;
 import com.aerofs.sv.client.SVClient;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import org.slf4j.Logger;
 
 import com.aerofs.daemon.core.CoreUtil;
@@ -78,8 +87,11 @@ public class GetVersCall
     private final NSL _nsl;
     private final GetVersReply _pgvr;
     private final Metrics _m;
+    private final IncomingStreams _iss;
     private final OutgoingStreams _oss;
     private final MapSIndex2Store _sidx2s;
+    private final IMapSID2SIndex _sid2sidx;
+    private final IMapSIndex2SID _sidx2sid;
     private final IPulledDeviceDatabase _pulleddb;
     private final TokenManager _tokenManager;
     // The following dependency exists only to use and log OAs in
@@ -92,11 +104,13 @@ public class GetVersCall
     private final MapSIndex2Contributors _sidx2contrib;
 
     @Inject
-    public GetVersCall(OutgoingStreams oss, Metrics m, GetVersReply pgvr, NSL nsl, RPC rpc,
-            NativeVersionControl nvc, ImmigrantVersionControl ivc, MapSIndex2Store sidx2s,
-            IPulledDeviceDatabase pddb, TokenManager tokenManager, DirectoryService ds,
-            TransManager tm, MapSIndex2Contributors sidx2contrib)
+    public GetVersCall(IncomingStreams iss, OutgoingStreams oss, Metrics m, GetVersReply pgvr,
+            NSL nsl, RPC rpc, NativeVersionControl nvc, ImmigrantVersionControl ivc,
+            MapSIndex2Store sidx2s, IPulledDeviceDatabase pddb, TokenManager tokenManager,
+            DirectoryService ds, TransManager tm, IMapSID2SIndex sid2sidx, IMapSIndex2SID sidx2sid,
+            MapSIndex2Contributors sidx2contrib)
     {
+        _iss = iss;
         _oss = oss;
         _m = m;
         _pgvr = pgvr;
@@ -105,6 +119,8 @@ public class GetVersCall
         _nvc = nvc;
         _ivc = ivc;
         _sidx2s = sidx2s;
+        _sid2sidx = sid2sidx;
+        _sidx2sid = sidx2sid;
         _pulleddb = pddb;
         _tokenManager = tokenManager;
         _ds = ds;
@@ -115,6 +131,26 @@ public class GetVersCall
     public void rpc_(SIndex sidx, DID didTo, Token tk)
         throws Exception
     {
+        // TODO: pass in a Set<SIndex> and stream multiple blocks...
+        PBGetVersCall.Builder bd = PBGetVersCall.newBuilder();
+        PBCore call = CoreUtil.newCall(Type.GET_VERS_CALL).setGetVersCall(bd).build();
+
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        call.writeDelimitedTo(out);
+        // we modified the proto to allow streaming calls but the transport doesn't support that yet
+        // so for now we send a single block and mark it as final
+        // TODO: once transport refactor is done, switch to streaming calls
+        makeBlock_(sidx, didTo).setIsLastBlock(true).build().writeDelimitedTo(out);
+
+        DigestedMessage msg = _rpc.do_(didTo, sidx, call, out, tk, "gv for " + sidx);
+        _pgvr.processReply_(msg, tk);
+    }
+
+    private PBGetVersCallBlock.Builder makeBlock_(SIndex sidx, DID didTo) throws SQLException
+    {
+        PBGetVersCallBlock.Builder bd = PBGetVersCallBlock.newBuilder();
+        bd.setStoreId(_sidx2sid.get_(sidx).toPB());
+
         Version vKwlgLocalES = _nvc.getKnowledgeExcludeSelf_(sidx);
         Version vImmKwlgLocalES = _ivc.getKnowledgeExcludeSelf_(sidx);
 
@@ -133,7 +169,6 @@ public class GetVersCall
             tp._native = en.getValue();
         }
 
-        PBGetVersCall.Builder bd = PBGetVersCall.newBuilder();
         for (Entry<DID, TickPair> en : map.entrySet()) {
             bd.addDeviceId(en.getKey().toPB());
             TickPair tp = en.getValue();
@@ -145,10 +180,9 @@ public class GetVersCall
         // object information from BASE onward.
         if (!_pulleddb.contains_(sidx, didTo)) bd.setFromBase(true);
 
-        PBCore call = CoreUtil.newCall(Type.GET_VERS_CALL).setGetVersCall(bd).build();
+        l.debug("gv for {} to {}: {}", sidx, didTo, _pulleddb.contains_(sidx, didTo));
 
-        DigestedMessage msg = _rpc.do_(didTo, sidx, call, tk, "gv for " + sidx);
-        _pgvr.processReply_(msg, tk);
+        return bd;
     }
 
     private static class DeviceEntry {
@@ -162,11 +196,83 @@ public class GetVersCall
     public void processCall_(DigestedMessage msg) throws Exception
     {
         Util.checkPB(msg.pb().hasGetVersCall(), PBGetVersCall.class);
-        PBGetVersCall pb = msg.pb().getGetVersCall();
-        assert pb.getDeviceIdCount() == pb.getKnowledgeTickCount() &&
-                pb.getDeviceIdCount() == pb.getImmigrantKnowledgeTickCount();
 
         l.debug("process from " + msg.ep() + " 4 " + msg.sidx());
+
+        PBCore core = CoreUtil.newReply(msg.pb())
+                .setGetVersReply(PBGetVersReply.newBuilder().build())
+                .build();
+        ByteArrayOutputStream os = write_(null, core);
+
+        ////////
+        // write blocks
+
+        // TODO: get rid of that stupid SIndex from the transport header...
+        BlockSender sender = new BlockSender(msg.sidx(), msg.ep(), core.getRpcid(),
+                CoreUtil.typeString(core), os);
+
+        try {
+            if (msg.streamKey() != null) {
+                // NB: this code path should not be taken: streaming calls is not currently possible
+                processStreamCall_(msg.did(), msg.is(), msg.streamKey(), sender);
+            } else {
+                processAtomicCall_(msg.did(), msg.is(), sender);
+            }
+
+            // EndOfStream marker
+            sender.writeBlock_(PBGetVersReplyBlock.newBuilder()
+                    .setIsLastBlock(true)
+                    .build(), null);
+
+            sender.done_();
+        } finally {
+            sender.doFinally_();
+        }
+    }
+
+    private void processStreamCall_(DID from, InputStream is, StreamKey key, BlockSender sender)
+            throws Exception
+    {
+        Token tk = _tokenManager.acquireThrows_(Cat.UNLIMITED, "");
+        try {
+            while (processAtomicCall_(from, is, sender)) {
+                is = _iss.recvChunk_(key, tk);
+            }
+        } finally {
+            tk.reclaim_();
+        }
+    }
+
+    private boolean processAtomicCall_(DID from, InputStream is, BlockSender sender)
+            throws Exception
+    {
+        while (is.available() > 0) {
+            PBGetVersCallBlock block = PBGetVersCallBlock.parseDelimitedFrom(is);
+            processBlock_(from, block, sender);
+            if (block.getIsLastBlock()) {
+                if (is.available() > 0) throw new ExProtocolError();
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private void processBlock_(DID from, PBGetVersCallBlock pb, BlockSender sender) throws Exception
+    {
+        SID sid = new SID(pb.getStoreId());
+        SIndex sidx = _sid2sidx.getNullable_(sid);
+
+        // ignore store that is not locally present
+        // NB: can't throw because of batching...
+        if (sidx == null) {
+            l.warn("gv from {} for absent {} {}", from, sid, _sid2sidx.getLocalOrAbsentNullable_(sid));
+            return;
+        }
+
+        l.info("gv from {} for {} {}", from, sidx, pb.getFromBase());
+
+        Util.checkMatchingSizes(pb.getDeviceIdCount(), pb.getKnowledgeTickCount(),
+                pb.getDeviceIdCount(), pb.getImmigrantKnowledgeTickCount());
 
         Version vKwlgRemote = Version.empty();
         Version vImmKwlgRemote = Version.empty();
@@ -180,12 +286,11 @@ public class GetVersCall
             if (tickImm != 0) vImmKwlgRemote.set_(did, tickImm);
         }
 
-        SIndex sidx = msg.sidx();
         Version vKwlgLocalES = _nvc.getKnowledgeExcludeSelf_(sidx);
         Version vImmKwlgLocalES = _ivc.getKnowledgeExcludeSelf_(sidx);
         Set<DID> contrib = _sidx2contrib.getContributors_(sidx);
-        Set<DID> didsExcludeRequester = new HashSet<DID>(contrib);
-        didsExcludeRequester.remove(msg.did());
+        Set<DID> didsExcludeRequester = Sets.newHashSet(contrib);
+        didsExcludeRequester.remove(from);
 
         List<DeviceEntry> desExcludeRequester =
                 newArrayListWithCapacity(didsExcludeRequester.size());
@@ -204,36 +309,29 @@ public class GetVersCall
         }
 
         boolean fromBase = pb.getFromBase();
-        Store s = _sidx2s.getThrows_(msg.sidx());
-        SenderFilterAndIndex sfi = s.senderFilters().get_(msg.did(), fromBase);
+        Store s = _sidx2s.getThrows_(sidx);
+        SenderFilterAndIndex sfi = s.senderFilters().get_(from, fromBase);
 
-        if (l.isDebugEnabled()) l.debug("send 2 " + msg.ep() + " 4 " + msg.sidx() +
-                " l " + vKwlgLocalES + " r " + vKwlgRemote + " fs " +
-                (sfi == null ? null : sfi._filter));
+        l.debug("send 2 {} 4 {} l {} r {} fs {}",
+                from, sidx, vKwlgLocalES, vKwlgRemote, (sfi == null ? null : sfi._filter));
 
         ////////
         // write the header
 
-        PBGetVersReply.Builder bd = PBGetVersReply.newBuilder();
+        PBStoreHeader.Builder bd = PBStoreHeader.newBuilder();
+        bd.setStoreId(pb.getStoreId());
         if (sfi != null) {
             bd.setSenderFilter(sfi._filter.toPB())
                 .setSenderFilterIndex(sfi._sfidx.getLong())
                 .setSenderFilterUpdateSeq(sfi._updateSeq);
         }
-        PBCore core = CoreUtil.newReply(msg.pb())
-                .setGetVersReply(bd.build())
-                .build();
-        ByteArrayOutputStream os = write_(null, core);
+        PBStoreHeader h = bd.build();
 
-        ////////
-        // write blocks
+        boolean headerSent = sendBlocks_(sender, sidx, h, desExcludeRequester);
 
-        BlockSender sender = new BlockSender(msg.sidx(), msg.ep(), core.getRpcid(),
-                CoreUtil.typeString(core), os);
-        try {
-            sendBlocks_(sender, msg.sidx(), desExcludeRequester);
-        } finally {
-            sender.doFinally_();
+        if (!headerSent && sfi != null) {
+            // no block sent, need a dummy one to make sure the filter is sent
+            sender.writeBlock_(PBGetVersReplyBlock.newBuilder().setStore(h).build(), null);
         }
     }
 
@@ -268,6 +366,7 @@ public class GetVersCall
 
     private class BlockSender
     {
+        // TODO: get rid of this field
         private final SIndex _sidx;
         private final Endpoint _ep;
         private final int _rpcid;
@@ -292,8 +391,7 @@ public class GetVersCall
          * @param iter the method may close the iter if necessary. a null iter
          * indicates that there is no active iter
          */
-        void writeBlock_(PBGetVersReplyBlock block, @Nullable IDBIterator<?> iter)
-                throws Exception
+        void writeBlock_(AbstractMessageLite block, @Nullable IDBIterator<?> iter) throws Exception
         {
             ByteArrayOutputStream os2 = write_(_os, block);
 
@@ -336,14 +434,19 @@ public class GetVersCall
         }
     }
 
-    private void sendBlocks_(BlockSender sender, SIndex sidx, Collection<DeviceEntry> desExcludeTo)
+    private boolean sendBlocks_(BlockSender sender, SIndex sidx, PBStoreHeader h,
+            Collection<DeviceEntry> desExcludeTo)
             throws Exception
     {
-        int deviceCount = 0;
+        boolean headerSent = false;
+
         for (DeviceEntry de : desExcludeTo) {
             PBGetVersReplyBlock.Builder bdBlock = PBGetVersReplyBlock
                     .newBuilder()
                     .setDeviceId(de._did.toPB());
+
+            if (!headerSent) bdBlock.setStore(h);
+
             boolean hasNonEntryFields = false;
             int entryCount = 0;
 
@@ -371,6 +474,7 @@ public class GetVersCall
 
                     if (++entryCount == ENTRIES_PER_BLOCK) {
                         sender.writeBlock_(bdBlock.build(), it_ver);
+                        headerSent = true;
                         bdBlock = PBGetVersReplyBlock.newBuilder();
                         entryCount = 0;
                         if (it_ver.closed_()) {
@@ -407,6 +511,7 @@ public class GetVersCall
 
                     if (++entryCount == ENTRIES_PER_BLOCK) {
                         sender.writeBlock_(bdBlock.build(), it_imm);
+                        headerSent = true;
                         bdBlock = PBGetVersReplyBlock.newBuilder();
                         entryCount = 0;
                         if (it_imm.closed_()) {
@@ -426,24 +531,13 @@ public class GetVersCall
                 hasNonEntryFields = true;
             }
 
-            if (++deviceCount == desExcludeTo.size()) {
-                bdBlock.setIsLastBlock(true);
-                hasNonEntryFields = true;
-            }
-
             if (entryCount != 0 || hasNonEntryFields) {
                 sender.writeBlock_(bdBlock.build(), null);
+                headerSent = true;
             }
         }
 
-        if (desExcludeTo.isEmpty()) {
-            // there is no devices. the above big loop is not executed at all
-            sender.writeBlock_(PBGetVersReplyBlock.newBuilder()
-                .setIsLastBlock(true)
-                .build(), null);
-        }
-
-        sender.done_();
+        return headerSent;
     }
 
     /**

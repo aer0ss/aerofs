@@ -11,6 +11,7 @@ import com.aerofs.lib.os.OSUtil;
 import com.aerofs.proto.Common.PBException.Type;
 import com.aerofs.swig.driver.Driver;
 import com.aerofs.swig.driver.LogLevel;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.GeneratedMessageLite;
 import org.slf4j.Logger;
@@ -499,6 +500,13 @@ public abstract class Util
     public static void checkPB(boolean has, Class<?> c) throws ExProtocolError
     {
         if (!has) throw new ExProtocolError(c);
+    }
+
+    public static void checkMatchingSizes(int... sz) throws ExProtocolError
+    {
+        Preconditions.checkState(sz.length > 1);
+        int n = sz[0];
+        for (int i = 1; i < sz.length; ++i) if (n != sz[i]) throw new ExProtocolError();
     }
 
     public static void writeMessage(DataOutputStream os, int magic, byte[] bs)
