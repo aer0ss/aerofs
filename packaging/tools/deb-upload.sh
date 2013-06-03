@@ -93,4 +93,4 @@ then
     notify_team
 fi
 
-echo "Uploaded debs to $TARGET_REPOSITORY"
+echo "Uploaded debs to $TARGET_REPOSITORY bin."
