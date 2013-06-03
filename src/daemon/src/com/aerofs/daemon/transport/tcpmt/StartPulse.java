@@ -35,14 +35,6 @@ public class StartPulse extends StartPulseBase<TCP>
             return false;
         }
 
-        // special case for SP
-
-        if (tp.hm().has(did)) {
-            notifypulsestopped_(did);
-            l.info("d:" + did + " muod - term hd");
-            return false;
-        }
-
         return true;
     }
 }

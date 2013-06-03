@@ -11,8 +11,6 @@ import com.aerofs.daemon.core.UnicastInputOutputStack;
 import com.aerofs.daemon.core.net.device.Device;
 import com.aerofs.daemon.core.net.device.DevicePresence;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
-import com.aerofs.daemon.core.store.MapSIndex2Store;
-import com.aerofs.daemon.core.store.Store;
 import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.event.net.tx.EOMaxcastMessage;
@@ -28,7 +26,6 @@ import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 import java.io.ByteArrayOutputStream;
-import java.util.Collection;
 
 /**
  * NSL: Network Strategic Layer, responsible for routing messages to the most appropriate devices
@@ -45,11 +42,10 @@ public class NSL
     private Transports _tps;
     private TC _tc;
     private IMapSIndex2SID _sidx2sid;
-    private MapSIndex2Store _sidx2s;
 
     @Inject
     public void inject_(TC tc, Transports tps, DevicePresence dp, UnicastInputOutputStack stack,
-            Metrics m, IMapSIndex2SID sidx2sid, MapSIndex2Store sidx2s)
+            Metrics m, IMapSIndex2SID sidx2sid)
     {
         _tc = tc;
         _tps = tps;
@@ -57,7 +53,6 @@ public class NSL
         _stack = stack;
         _m = m;
         _sidx2sid = sidx2sid;
-        _sidx2s = sidx2s;
     }
 
     //
@@ -115,31 +110,6 @@ public class NSL
             if (!tp.supportsMulticast()) continue;
 
             tp.q().enqueueThrows(ev, _tc.prio());
-
-            // TODO: The current MaxcastFilter implementation will only
-            // filter messages sent through the EOMaxcastMessage event.
-            // The following code will not be filtered, and can result
-            // in redundant messages processed by the core.
-            // - markj
-
-            Collection<DID> muod = tp.getMulticastUnreachableOnlineDevices();
-
-            // FIXME: tng branch
-            // Future<ImmutableSet<DID>> f = tp.getMaxcastUnreachableOnlineDevices_();
-            // FutureBasedCoreIMC.blockingWaitForResult_(f, _tc, Cat.UNLIMITED, "muod"); // FIXME: is this correct?
-
-            if (bs.length > _m.getMaxUnicastSize_()) {
-                l.warn("mc-muod too large. drop " + bs.length);
-            } else {
-                Store s = _sidx2s.get_(sidx);
-                for (DID did : muod) {
-                    assert !did.equals(Cfg.did());
-                    if (s.isOnlinePotentialMemberDevice_(did)) {
-                        l.debug("mc-muod " + sidx + " -> " + did);
-                        sendUnicast_(new Endpoint(tp, did), type, rpcid, sidx, bs);
-                    }
-                }
-            }
         }
     }
 

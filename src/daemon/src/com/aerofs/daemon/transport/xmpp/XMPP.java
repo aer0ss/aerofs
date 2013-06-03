@@ -17,7 +17,6 @@ import com.aerofs.daemon.event.lib.EventDispatcher;
 import com.aerofs.daemon.event.lib.imc.IResultWaiter;
 import com.aerofs.daemon.event.net.EIPresence;
 import com.aerofs.daemon.event.net.EOTpStartPulse;
-import com.aerofs.daemon.event.net.EOTransportReconfigRemoteDevice;
 import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.lib.BlockingPrioQueue;
 import com.aerofs.lib.event.Prio;
@@ -65,7 +64,6 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.net.NetworkInterface;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Set;
 
 import static com.aerofs.daemon.lib.DaemonParam.MAX_TRANSPORT_MESSAGE_SIZE;
@@ -142,7 +140,6 @@ public abstract class XMPP implements ITransportImpl, IPipeController, IUnicast,
     public void init_() throws Exception
     {
         TPUtil.registerCommonHandlers(this);
-        _disp.setHandler_(EOTransportReconfigRemoteDevice.class, new HdTransportReconfigRemoteDevice());
         _spf.init_();
     }
 
@@ -199,12 +196,6 @@ public abstract class XMPP implements ITransportImpl, IPipeController, IUnicast,
     public final IBlockingPrioritizedEventSink<IEvent> q()
     {
         return _q;
-    }
-
-    @Override
-    public final Set<DID> getMulticastUnreachableOnlineDevices()
-    {
-        return Collections.emptySet();
     }
 
     //--------------------------------------------------------------------------

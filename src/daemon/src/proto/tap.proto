@@ -20,23 +20,22 @@ service TapService {
     // Maxcast related calls
     rpc sendMaxcastDatagram(MaxcastDatagramCall) returns(PBAckReply);
     rpc updateLocalStoreInterest(LocalStoreInterestCall) returns(PBVoid);
-    rpc getMaxcastUnreachableOnlineDevices(PBVoid) returns(UUIDCollection);
 
-    // Unicast related calls    
+    // Unicast related calls
     rpc sendUnicastDatagram(UnicastDatagramCall) returns(PBAckReply);
     rpc pulse(PulseCall) returns(PBVoid);
-    
+
     // OutgoingStream related calls
     rpc begin(OutgoingBeginCall) returns(PBAckReply);
     rpc send(OutgoingSendCall) returns(PBAckReply);
     rpc abortOutgoing(AbortStreamCall) returns(PBAckReply);
     rpc endOutgoing(Stream) returns(PBAckReply);
-    
+
     // IncomingStream related calls
     rpc receive(Stream) returns(PBChunkCollection);
     rpc abortIncoming(AbortStreamCall) returns(PBAckReply);
     rpc endIncoming(Stream) returns(PBAckReply);
-    
+
     // Method to get all events
     rpc awaitTransportEvent(PBVoid) returns(TransportEvent);
 }

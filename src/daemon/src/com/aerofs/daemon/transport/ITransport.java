@@ -1,13 +1,10 @@
 package com.aerofs.daemon.transport;
 
-import com.aerofs.lib.event.IEvent;
 import com.aerofs.daemon.IModule;
 import com.aerofs.daemon.lib.IDebug;
 import com.aerofs.daemon.transport.lib.IIdentifier;
-import com.aerofs.base.id.DID;
 import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
-
-import java.util.Set;
+import com.aerofs.lib.event.IEvent;
 
 /**
  * Implemented by classes that provide a message transport mechanism
@@ -36,18 +33,6 @@ public interface ITransport extends IModule, IIdentifier, IDebug
      * @return true if multicast is supported, false otherwise
      */
     public boolean supportsMulticast();
-
-    /**
-     * Get a collection of {@link DID} that are not reachable via multicast
-     *
-     * @return <strong>immutable</strong> (i.e. content mustn't change after
-     * the method returns), read-only set of online peers that are unreachable
-     * via multicast. This set <em>will be</em> included in the
-     * multicast-unreachable device list of the <code>EOMaxcastMessage</code> event.
-     * <strong>IMPORTANT:</strong> Implementers should <em>never</em> return
-     * <code>null</code>. If there are no entries, an empty set should be returned.
-     */
-    Set<DID> getMulticastUnreachableOnlineDevices();
 
     /**
      * This method is obsolete in the new transport code.

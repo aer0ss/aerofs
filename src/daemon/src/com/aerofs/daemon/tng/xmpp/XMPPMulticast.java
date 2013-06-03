@@ -79,7 +79,6 @@ final class XMPPMulticast
 
     private final static int MAXCAST_UNFILTERED = -1;
     private static final int HEADER_LEN = 2 * C.INTEGER_SIZE + 1;
-    private static final UncancellableFuture<ImmutableSet<DID>> MUOD_FUTURE; // statically initalized
 
     private final ISingleThreadedPrioritizedExecutor _executor;
     private final XMPPServerConnectionService _xmppConnectionService;
@@ -91,10 +90,6 @@ final class XMPPMulticast
     private final Map<SID, MultiUserChat> _mucRooms = new TreeMap<SID, MultiUserChat>();
     private final Set<SID> _allInterestedStores = new TreeSet<SID>();
     private final Map<ISignallingClient, Predicate<SignallingMessage>> _signallingClients = new HashMap<ISignallingClient, Predicate<SignallingMessage>>();
-
-    static {
-        MUOD_FUTURE = UncancellableFuture.createSucceeded(ImmutableSet.<DID>of());
-    }
 
     static XMPPMulticast getInstance_(ISingleThreadedPrioritizedExecutor executor,
             XMPPServerConnectionService xmppServerConnectionService,
@@ -140,12 +135,6 @@ final class XMPPMulticast
             ImmutableSet<NetworkInterface> previous)
     {
         l.info("lsc: noop");
-    }
-
-    @Override
-    public ListenableFuture<ImmutableSet<DID>> getMaxcastUnreachableOnlineDevices_()
-    {
-        return MUOD_FUTURE;
     }
 
     @Override

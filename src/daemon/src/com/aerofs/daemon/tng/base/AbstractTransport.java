@@ -195,26 +195,6 @@ public abstract class AbstractTransport implements ITransport
     }
 
     @Override
-    public ListenableFuture<ImmutableSet<DID>> getMaxcastUnreachableOnlineDevices_()
-    {
-        assertNonEventThread();
-
-        final UncancellableFuture<ImmutableSet<DID>> returned = UncancellableFuture.create();
-
-        executeInTransportExecutor(new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                l.info("get muod");
-                returned.chain(_maxcastService.getMaxcastUnreachableOnlineDevices_());
-            }
-        }, Prio.LO);
-
-        return returned;
-    }
-
-    @Override
     public ListenableFuture<Void> updateLocalStoreInterest_(final ImmutableSet<SID> added,
             final ImmutableSet<SID> removed)
     {
