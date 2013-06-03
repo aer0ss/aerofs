@@ -1,0 +1,6 @@
+Package: aerofs-sanity
+Section: admin
+Priority: required
+Maintainer: AeroFS <team@aerofs.com>
+Description: AeroFS sanity checker server package.
+Architecture: all

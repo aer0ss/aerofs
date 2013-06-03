@@ -31,6 +31,7 @@ PACKAGES= \
 	zephyr \
 	stun \
 	config \
+	sanity \
 
 DEBS=$(addprefix debs/, ${PACKAGES:=.deb})
 
