@@ -104,7 +104,7 @@ fi
 
 # mode
 readonly MODE="$1"
-readonly LOWERCASE_MODE=$( echo $MODE | tr [A-Z] [a-z] )
+readonly LOWERCASE_MODE=$( echo $MODE | tr '[:upper:]' '[:lower:]' )
 if [[ "$MODE" != 'PROD' && "$MODE" != 'CI' && "$MODE" != 'STAGING' ]]
 then
     print_usage
@@ -113,7 +113,7 @@ fi
 
 # product
 readonly LABELING="$2"
-readonly LOWERCASE_LABELING=$( echo $LABELING | tr [A-Z] [a-z] )
+readonly LOWERCASE_LABELING=$( echo $LABELING | tr '[:upper:]' '[:lower:]' )
 if [[ "$LABELING" != 'CLIENT' && "$LABELING" != 'TEAM_SERVER' ]]
 then
     print_usage
