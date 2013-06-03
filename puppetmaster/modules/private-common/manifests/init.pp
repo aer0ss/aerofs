@@ -10,4 +10,5 @@ class private-common {
     }
 
     include bootstrap
+    include sanity
 }
