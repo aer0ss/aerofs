@@ -7,6 +7,8 @@ readonly APT_SERVER=apt.aerofs.com
 # Copy the debs over and add them to the apt repository. Make sure the deb
 # dropbox is clean before we perform the update (and clean up when we're done).
 function upload_debs() {
+    echo "Uploading debs to $TARGET_REPOSITORY... This might take a while."
+
     ssh $APT_SERVER "mkdir -p ~/$DEBS_FOLDER"
     ssh $APT_SERVER "rm -f ~/$DEBS_FOLDER/*"
     scp debs/* $APT_SERVER:~/$DEBS_FOLDER/
@@ -91,4 +93,4 @@ then
     notify_team
 fi
 
-echo "uploaded debs to $TARGET_REPOSITORY"
+echo "Uploaded debs to $TARGET_REPOSITORY"

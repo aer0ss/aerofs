@@ -41,9 +41,6 @@ class pd-app-persistent {
         hasrestart => true,
     }
 
-    # The configuration service and the CA server both use nginx. Do not enable
-    # the configuration service right away, since we have to setup the CA server
-    # first.
     package{"nginx":
         ensure => present,
     }
@@ -51,8 +48,13 @@ class pd-app-persistent {
         ensure => directory,
         require => Package["nginx"]
     }
-    file {"/etc/nginx/sites-enabled/cfg-server":
-        source => "puppet:///modules/pd-app-persistent/cfg-server",
+    file {"/etc/nginx/sites-available/aerofs-cfg":
+        source => "puppet:///modules/pd-app-persistent/aerofs-cfg",
         require => Package["nginx"],
+    }
+    file{ "/etc/nginx/sites-enabled/aerofs-cfg":
+        ensure  => link,
+        target  => "/etc/nginx/sites-available/aerofs-cfg",
+        require => File["/etc/nginx/sites-available/aerofs-cfg"],
     }
 }

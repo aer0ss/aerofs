@@ -61,11 +61,16 @@ class pd-app-transient {
         stripe_secret_key => "gibberish",
         uwsgi_port => 8081,
     }
-    file {"/etc/nginx/conf.d/vhosts.conf":
-        source => "puppet:///modules/pd-app-transient/vhosts.conf",
+    file {"/etc/nginx/sites-available/aerofs-web-sp":
+        source => "puppet:///modules/pd-app-transient/aerofs-web-sp",
         require => Package["nginx"],
     }
-    file {"/etc/nginx/sites-enabled/aerofsconfig":
+    file{ "/etc/nginx/sites-enabled/aerofs-web-sp":
+        ensure  => link,
+        target  => "/etc/nginx/sites-available/aerofs-web-sp",
+        require => File["/etc/nginx/sites-available/aerofs-web-sp"],
+    }
+    file {"/etc/nginx/sites-enabled/aerofs-web":
         ensure => absent,
         require => Package["aerofs-web"]
     }
