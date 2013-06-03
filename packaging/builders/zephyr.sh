@@ -8,7 +8,7 @@ DEBIAN=zephyr/DEBIAN
 
 # Debian-related file copies.
 mkdir -p $DEBIAN
-for f in control conffiles preinst postinst prerm postrm
+for f in control conffiles preinst prerm postrm
 do
     cp -r $RESOURCES/$f $DEBIAN
 done
