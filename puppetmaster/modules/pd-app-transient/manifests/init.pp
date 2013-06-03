@@ -41,7 +41,7 @@ class pd-app-transient {
     # --------------
 
     class{"ejabberd":
-        mysql_password => "temp123"
+        mysql_password => "password"
     }
 
     # --------------
