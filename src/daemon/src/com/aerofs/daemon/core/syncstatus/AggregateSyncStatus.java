@@ -23,14 +23,19 @@ import com.aerofs.base.id.OID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.id.SOKID;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
+import java.util.SortedSet;
 
 /**
  * Sync status is known on a per-object granularity. However knowing that the name of a folder is
@@ -102,36 +107,6 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
     }
 
     /**
-     * Track set of path whose status is affected by a transaction to be able to send relevant
-     * Ritual notifications when the transaction is commited.
-     */
-    private final TransLocal<Set<Path>> _tlStatusModified = new TransLocal<Set<Path>>() {
-        @Override
-        protected Set<Path> initialValue(Trans t)
-        {
-            final Set<Path> set = Sets.newHashSet();
-            t.addListener_(new AbstractTransListener() {
-                @Override
-                public void committing_(Trans t) throws SQLException {
-                    // Only enable aggressive checking when the config flag is set.
-                    if (_cfgAggressiveChecking.get()) {
-                        l.warn("Enabling aggressive sync status checking");
-                        aggressiveConsistencyCheck(set);
-                    }
-                }
-
-                @Override
-                public void committed_() {
-                    for (IListener listener : _listeners) {
-                        listener.syncStatusChanged_(set);
-                    }
-                }
-            });
-            return set;
-        }
-    };
-
-    /**
      * Aggressive consistency checking.
      *
      * Need to be done at the end of the transaction to avoid false positives due to two-step
@@ -189,46 +164,160 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
                 }
             }
         } catch (ExNotDir e) {
-            assert false : soid;
+            throw new AssertionError(soid);
         } catch (ExNotFound e) {
-            assert false : soid;
+            throw new AssertionError(soid);
         }
-        assert cv.equals(expected) : soid + " " + cv + " != " + expected + " " + syncableChildCount;
+        Preconditions.checkState(cv.equals(expected),
+                "%s %s %s != %s", soid, syncableChildCount, cv, expected);
+    }
+
+    class Update
+    {
+        int _syncableChildCountDiff = 0;
+        CounterVector _statusDiff = new CounterVector();
+
+        void merge(int parentSyncableChildCountDiff, BitVector diffStatus, BitVector newStatus)
+        {
+            int first = diffStatus.findFirstSetBit();
+            _syncableChildCountDiff += parentSyncableChildCountDiff;
+
+            for (int i = first; i != -1; i = diffStatus.findNextSetBit(i + 1)) {
+                Preconditions.checkState(diffStatus.test(i), "%s %s", i, diffStatus);
+                if (newStatus.test(i)) {
+                    _statusDiff.inc(i);
+                } else {
+                    _statusDiff.dec(i);
+                }
+            }
+        }
+    }
+
+    class TransContext
+    {
+        Set<Path> _paths = Sets.newTreeSet();
+        Map<SOID, Update> _updates = Maps.newHashMap();
     }
 
     /**
-     * Recursively update aggregate sync status of parent
-     * @param parent directory whose aggregate sync status is to be updated
-     * @param diffStatus sync status change of children (1 : status changed, 0: status unchanged)
-     * @param newStatus new sync status of children
-     * @param parentSyncableChildCountDiff number of syncable children created by the transaction
-     * @param path path of {@code parent}
-     * (or deleted, if negative)
-     * Note: if the changed child is a file the status vectors passed to this function are regular
-     * sync status vectors, if the child is a folder, aggregate sync status vectors are passed
-     * instead.
+     * The core of the update operation needs to compute the number of syncable children and move
+     * read/write relatively large blobs. These operations are not cheap (especially when large
+     * folders are involved) so we do our best to group them.
+     *
+     * For instance, if a scan discover a hundred new files under a given folder or a hundred files
+     * are moved/deleted from an existing folder in a single transaction we merge these in a single
+     * Update object that can be applied just before the transaction is committed.
+     *
+     * This approach trades a little extra memory (the trans local map below) for a significant
+     * reduction in the number of db read/writes and crucially a much lower number of calls to
+     * getSyncableChildCount (which scales poorly on large folders).
      */
-    private void updateRecursively_(SOID parent, BitVector diffStatus, BitVector newStatus,
-            int parentSyncableChildCountDiff, Path path, Trans t)
-            throws SQLException
+    TransLocal<TransContext> _tl = new TransLocal<TransContext>() {
+        @Override
+        protected TransContext initialValue(Trans t)
+        {
+            final TransContext cxt = new TransContext();
+            t.addListener_(new AbstractTransListener() {
+                @Override
+                public void committing_(Trans t) throws SQLException
+                {
+                    applyUpdates_(cxt._updates, t);
+
+                    // Only enable aggressive checking when the config flag is set.
+                    if (_cfgAggressiveChecking.get()) {
+                        l.warn("Enabling aggressive sync status checking");
+                        aggressiveConsistencyCheck(cxt._paths);
+                    }
+                }
+
+                @Override
+                public void committed_() {
+                    for (IListener listener : _listeners) {
+                        listener.syncStatusChanged_(cxt._paths);
+                    }
+                }
+            });
+            return cxt;
+        }
+    };
+
+    Update getUpdate_(SOID soid, Trans t)
+    {
+        Map<SOID, Update> m = _tl.get(t)._updates;
+        Update u = m.get(soid);
+        if (u == null) {
+            u = new Update();
+            m.put(soid, u);
+        }
+        return u;
+    }
+
+    void addPath_(Path path, Trans t)
+    {
+        _tl.get(t)._paths.add(path);
+    }
+
+    void removePath_(Path path, Trans t)
+    {
+        _tl.get(t)._paths.remove(path);
+    }
+
+    class OrderedUpdate implements Comparable<OrderedUpdate>
+    {
+        public final SOID _soid;
+        public final Path _path;
+        public final Update _update;
+
+        OrderedUpdate(SOID soid, Path path, Update u)
+        {
+            _soid = soid;
+            _path = path;
+            _update = u;
+        }
+
+        @Override
+        public int compareTo(OrderedUpdate o)
+        {
+            // sort updates by descending number of path components
+            // -> start from the leaves and climb up, one level at a time
+            int elemDiff = o._path.elements().length - _path.elements().length;
+            // for elems with same number of path component, distinguish by SOID (order irrelevant)
+            return elemDiff != 0 ? elemDiff : _soid.compareTo(o._soid);
+        }
+    }
+
+    void applyUpdates_(Map<SOID, Update> m, Trans t) throws SQLException
+    {
+        SortedSet<OrderedUpdate> ordered = Sets.newTreeSet();
+
+        for (Entry<SOID, Update> e : m.entrySet()) {
+            // NB: the only way for a path to be null is if the object was obliterated
+            Path p = _ds.resolveNullable_(e.getKey());
+            if (p != null) ordered.add(new OrderedUpdate(e.getKey(), p, e.getValue()));
+        }
+
+        for (OrderedUpdate u : ordered) {
+            l.debug("{} {}", u._soid, u._path);
+            applyUpdate_(u._soid, u._path, u._update, t);
+        }
+    }
+
+    void applyUpdate_(SOID parent, Path path, Update u, Trans t) throws SQLException
     {
         OA oaParent = _ds.getOA_(parent);
         // invariant: aggregation stop at store root, anchors are treated as regular file within
         // the parent store.
-        assert !oaParent.isAnchor();
+        Preconditions.checkState(!oaParent.isAnchor());
         // invariant: expelled objects have no syncable children and empty aggregate status so
         // this method should never reach them. Unfortunately, because expulsion flags are adjusted
         // by a postfix walk *after* logical objects are moved, it is possible for an upward update
         // to reach an expelled parent when some objects are moved under an expelled parent (as a
         // result of a remote move for instance). Therefore we cannot simply assert...
         if (oaParent.isExpelled()) {
-            if (l.isDebugEnabled()) l.debug("casc stop at expelled p " + parent);
-            return;
-        }
-
-        int first = diffStatus.findFirstSetBit();
-        if (parentSyncableChildCountDiff == 0 && first == -1) {
-            if (l.isDebugEnabled()) l.debug("no change " + parent);
+            l.debug("casc stop at expelled p {}", parent);
+            // because updates are applied at the end of the transaction we must make sure that
+            // any expelled dir has its aggregate cleared
+            _ds.setAggregateSyncStatus_(parent, new CounterVector(), t);
             return;
         }
 
@@ -244,39 +333,24 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
         } else {
             parentStatus = _ds.getSyncStatus_(parent);
         }
+
         BitVector parentDiffStatus = parentAggregate.elementsEqual(
-                    total - parentSyncableChildCountDiff, deviceCount);
+                total - u._syncableChildCountDiff, deviceCount);
         parentDiffStatus.andInPlace(parentStatus);
 
-        if (l.isDebugEnabled()) {
-            l.debug("update " + parent + " " + diffStatus + " " + newStatus);
-            l.debug("\t" + parentAggregate + " " + parentStatus + " " + parentDiffStatus);
-            l.debug("\t" + parentSyncableChildCountDiff + " " + total + " " + deviceCount);
+        l.debug("{} {} {} {}", parent, total, parentAggregate, u._statusDiff);
+
+        if (u._statusDiff.size() > 0) {
+            parentAggregate.addInPlace(u._statusDiff);
+            _ds.setAggregateSyncStatus_(parent, parentAggregate, t);
         }
 
-        for (int i = first; i != -1; i = diffStatus.findNextSetBit(i + 1)) {
-            assert diffStatus.test(i) : i + " " + diffStatus;
-            int prev = parentAggregate.get(i);
-            if (newStatus.test(i)) {
-                // out_sync -> in_sync
-                assert prev < total : parent + " " + path + " prev: " + prev + " total: " + total;
-                parentAggregate.inc(i);
-            } else {
-                // in_sync -> out_sync
-                assert prev > 0 : parent + " " + path + " prev: " + prev;
-                parentAggregate.dec(i);
-            }
+        // TODO: restrict check to aggressive checking mode?
+        for (int i = 0; i < parentAggregate.size(); ++i) {
+            int v = parentAggregate.get(i);
+            Preconditions.checkState(v >= 0 && v <= total, "%s %s %s %s",
+                    parent, total, parentAggregate, u._statusDiff);
         }
-
-        if (l.isDebugEnabled()) {
-            l.debug(" -> " + parentAggregate);
-        }
-
-        // when tracking elusive bugs, you may uncomment the line below to enforce aggressive
-        // consistency-checking
-        //checkAggregateConsistency(parent, parentAggregate);
-
-        _ds.setAggregateSyncStatus_(parent, parentAggregate, t);
 
         // derive new aggregte sync status vector for parent
         BitVector parentNewStatus = parentAggregate.elementsEqual(total, deviceCount);
@@ -285,30 +359,58 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
         // compute the actual diff
         parentDiffStatus.xorInPlace(parentNewStatus);
 
+        l.debug("-> {} {} {}", parentAggregate, parentDiffStatus, parentNewStatus);
+
         if (parentDiffStatus.isEmpty()) {
-            if (l.isDebugEnabled()) l.debug("casc stop");
+            l.debug("casc stop");
             return;
         }
 
         // keep track of new status for Ritual notifications
-        _tlStatusModified.get(t).add(path);
+        addPath_(path, t);
 
         // terminate recursive update at store root or if change stops cascading
         if (parent.oid().isRoot()) {
             // notify beyond store root (if it's not root store)...
             while (!path.isEmpty()) {
                 path = path.removeLast();
-                _tlStatusModified.get(t).add(path);
+                addPath_(path, t);
             }
             return;
         }
 
         // recursively update
         SOID grandparent = new SOID(parent.sidx(), oaParent.parent());
-        if (l.isDebugEnabled())
-            l.debug("pupdate " + grandparent + " " + parentDiffStatus +  " " + parentNewStatus);
+        l.debug("pupdate {} {} {}", grandparent, parentDiffStatus, parentNewStatus);
 
-        updateRecursively_(grandparent, parentDiffStatus, parentNewStatus, 0, path.removeLast(), t);
+
+        Update pu = _tl.get(t)._updates.get(grandparent);
+        if (pu != null) {
+            // simply merge: the order in which updates are processed ensures that the parent is
+            // will be processed later
+            pu.merge(0, parentDiffStatus, parentNewStatus);
+        } else {
+            // if the parent is not already in the queue of updates to be processed, propagate
+            // immediately. This is slightly suboptimal but java's fucked up collections do not
+            // offer any way to add a new item while iterating...
+            pu = new Update();
+            pu.merge(0, parentDiffStatus, parentNewStatus);
+            applyUpdate_(grandparent, path.removeLast(), pu, t);
+        }
+    }
+
+    private void updateRecursively_(SOID parent, BitVector diffStatus, BitVector newStatus,
+            int parentSyncableChildCountDiff, Trans t)
+            throws SQLException
+    {
+        int first = diffStatus.findFirstSetBit();
+        if (parentSyncableChildCountDiff == 0 && first == -1) {
+            l.debug("no change {}", parent);
+            return;
+        }
+
+        l.info("merge {} {} {}", parent, diffStatus, newStatus);
+        getUpdate_(parent, t).merge(parentSyncableChildCountDiff, diffStatus, newStatus);
     }
 
     /**
@@ -317,7 +419,7 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
     @Override
     public void objectCreated_(SOID soid, OID parent, Path pathTo, Trans t) throws SQLException
     {
-        if (l.isDebugEnabled()) l.debug("created " + soid + " " + parent);
+        l.debug("created {} {}", soid, parent);
 
         updateParentAggregateOnCreation_(soid, new SOID(soid.sidx(), parent), pathTo, t);
     }
@@ -328,7 +430,7 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
     @Override
     public void objectDeleted_(SOID soid, OID parent, Path pathFrom, Trans t) throws SQLException
     {
-        if (l.isDebugEnabled()) l.debug("deleted " + soid + " " + parent);
+        l.debug("deleted {} {}", soid, parent);
 
         updateParentAggregateOnDeletion_(soid, new SOID(soid.sidx(), parent), pathFrom, true, t);
     }
@@ -342,9 +444,9 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
     public void objectObliterated_(OA oa, BitVector bv, Path pathFrom, Trans t)
             throws SQLException
     {
-        assert !oa.isExpelled();
+        Preconditions.checkState(!oa.isExpelled());
 
-        if (l.isDebugEnabled()) l.debug("obliterated " + oa.soid() + " " + oa.parent());
+        l.debug("obliterated {}", oa.soid(), oa.parent());
 
         updateParentAggregateOnDeletion_(new SOID(oa.soid().sidx(), oa.parent()), bv, pathFrom, t);
     }
@@ -361,13 +463,13 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
             BitVector status = _ds.getSyncStatus_(soid);
             if (!status.isEmpty()) {
                 // keep track of new status for Ritual notifications
-                _tlStatusModified.get(t).add(pathFrom);
-                _tlStatusModified.get(t).add(pathTo);
+                addPath_(pathFrom, t);
+                addPath_(pathTo, t);
             }
             return;
         }
 
-        if (l.isDebugEnabled()) l.debug("moved " + soid + " " + parentFrom + " " + parentTo);
+        l.debug("moved {} {} {}", soid, parentFrom, parentTo);
 
         /**
          * Because we're doing a 2-step update we need to make sure that the first step doesn't
@@ -402,16 +504,16 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
         // first CA creation for an object with non-empty sync status: successful download of
         // recently readmitted object -> need to update parent aggregate
         OA oa = _ds.getOA_(soid);
-        assert oa.isFile() : soid;
+        Preconditions.checkState(oa.isFile(), soid);
 
         // readm=readmitted
-        if (l.isDebugEnabled()) l.debug("synced readm file " + soid + " " + status);
+        l.debug("synced readm file {} {}", soid, status);
 
         // keep track of new status for Ritual notifications
-        _tlStatusModified.get(t).add(path);
+        addPath_(path, t);
 
         SOID parent = new SOID(soid.sidx(), oa.parent());
-        updateRecursively_(parent, status, status, 0, path.removeLast(), t);
+        updateRecursively_(parent, status, status, 0, t);
     }
 
     @Override
@@ -440,15 +542,15 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
         // deletion removes content after renaming to trash...
         if (_ds.isDeleted_(oa)) return;
 
-        assert oa.isFile() && !oa.isExpelled() : soid;
+        Preconditions.checkState(oa.isFile() && !oa.isExpelled(), soid);
 
-        if (l.isDebugEnabled()) l.debug("rm master brch " + soid + " " + status);
+        l.debug("rm master brch {} {}", soid, status);
 
         // keep track of new status for Ritual notifications
-        _tlStatusModified.get(t).add(path);
+        addPath_(path, t);
 
         SOID parent = new SOID(soid.sidx(), oa.parent());
-        updateRecursively_(parent, status, new BitVector(), 0, path.removeLast(), t);
+        updateRecursively_(parent, status, new BitVector(), 0, t);
     }
 
     /**
@@ -458,7 +560,7 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
     public void objectExpelled_(SOID soid, Trans t) throws SQLException
     {
         OA oa = _ds.getOA_(soid);
-        assert oa.isExpelled() : soid;
+        Preconditions.checkState(oa.isExpelled(), soid);
 
         // NOTE: it would theoretically be possible to handle expulsion resulting from deletion
         // and selective sync the same way which one might think would be cleaner but it would
@@ -466,12 +568,12 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
         // end up being quite cumbersome. Therefore we simply reset aggregate sync status upon
         // expulsion resulting from deletion
         if (_ds.isDeleted_(oa)) {
-            if (l.isDebugEnabled()) l.debug("expel deleted " + soid);
+            l.debug("expel deleted {}", soid);
             if (oa.isDir()) _ds.setAggregateSyncStatus_(soid, new CounterVector(), t);
         } else {
             Path path = _ds.resolve_(soid);
             SOID parent = new SOID(soid.sidx(), oa.parent());
-            if (l.isDebugEnabled()) l.debug("expelled " + soid);
+            l.debug("expelled {}", soid);
             updateParentAggregateOnDeletion_(soid, parent, path, false, t);
         }
     }
@@ -483,11 +585,11 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
     public void objectAdmitted_(SOID soid, Trans t) throws SQLException
     {
         OA oa = _ds.getOA_(soid);
-        assert !oa.isExpelled() : soid;
+        Preconditions.checkState(!oa.isExpelled(), soid);
         Path path = _ds.resolve_(soid);
         SOID parent = new SOID(soid.sidx(), oa.parent());
 
-        if (l.isDebugEnabled()) l.debug("admitted " + soid + " " + _ds.getSyncStatus_(soid));
+        l.debug("admitted {} {}", soid, _ds.getSyncStatus_(soid));
         updateParentAggregateOnCreation_(soid, parent, path, t);
     }
 
@@ -509,7 +611,7 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
 
         // for directories, take aggregate sync status into account
         if (oa.isDir()) {
-            BitVector aggregateStatus = getAggregateSyncStatusVector_(soid);
+            BitVector aggregateStatus = getAggregateSyncStatusVector_(soid, t);
             oldStatus.andInPlace(aggregateStatus);
             newStatus.andInPlace(aggregateStatus);
         }
@@ -520,9 +622,9 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
         if (oldStatus.isEmpty()) return;
 
         // keep track of new status for Ritual notifications
-        _tlStatusModified.get(t).add(path);
+        addPath_(path, t);
 
-        updateRecursively_(parent, oldStatus, newStatus, 0, path.removeLast(), t);
+        updateRecursively_(parent, oldStatus, newStatus, 0, t);
     }
 
     /**
@@ -542,14 +644,15 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
         // in the same way but one must be careful not to decrement aggregate counter multiple times
         // lest you end up with a bogus aggregate status (and assertion failures down the road).
         if (ignoreExpelled && oa.isExpelled()) {
-            if (l.isDebugEnabled()) l.debug("ignore del expelled " + soid);
+            l.debug("ignore del expelled {}", soid);
             return;
         }
 
         // for directories, take aggregate sync status into account.
         // anchors are treated as regular files as their children are aggregated on lookup
         if (oa.isDir()) {
-            oldStatus.andInPlace(getAggregateSyncStatusVector_(soid));
+            l.debug("del {} {} {}", parent, oldStatus, getAggregateSyncStatusVector_(soid, t));
+            oldStatus.andInPlace(getAggregateSyncStatusVector_(soid, t));
         }
         updateParentAggregateOnDeletion_(parent, oldStatus, path, t);
     }
@@ -569,16 +672,16 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
          * from how far up the deletion is coming and we still want to send updates for non-deleted
          * objects whose aggregate status is affected by the deletion.
          */
-        _tlStatusModified.get(t).remove(path);
+        removePath_(path, t);
 
         if (_ds.getOA_(parent).isExpelled()) {
-            if (l.isDebugEnabled()) l.debug("ignore del under expelled " + parent);
+            l.debug("ignore del under expelled {}", parent);
             return;
         }
 
-        if (l.isDebugEnabled()) l.debug("up p on del " + parent);
+        l.debug("up p on del {}", parent);
 
-        updateRecursively_(parent, oldStatus, new BitVector(), -1, path.removeLast(), t);
+        updateRecursively_(parent, oldStatus, new BitVector(), -1, t);
     }
 
     /**
@@ -589,14 +692,14 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
             throws SQLException
     {
         // aggregation stops at store boundary
-        assert !soid.oid().isRoot() : soid + " " + parent;
+        Preconditions.checkState(!soid.oid().isRoot(), "%s %s", soid, parent);
 
         OA oa = _ds.getOA_(soid);
         // expelled objects are only created when new META is received for an object whose parent
         // is known locally but expelled. No actual CONTENT is being created so no file/folder
         // is created either and aggregate sync status can therefore safely ignore these events
         if (oa.isExpelled()) {
-            if (l.isDebugEnabled()) l.debug("ignore create expelled " + soid);
+            l.debug("ignore create expelled {}", soid);
             return;
         }
 
@@ -605,7 +708,7 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
         // the expelled parents have empty aggregate sync status and no syncable children which
         // will break assertions if updateRecursively_ is called.
         if (_ds.getOA_(parent).isExpelled()) {
-            if (l.isDebugEnabled()) l.debug("ignore create under expelled " + parent + " " + soid);
+            l.debug("ignore create under expelled {} {}", parent, soid);
             return;
         }
 
@@ -613,43 +716,10 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
         // but DirectoryService automatically filters it out until the file is re-synced.
         BitVector status = _ds.getSyncStatus_(soid);
         if (oa.isDir()) {
-            status.andInPlace(getAggregateSyncStatusVector_(soid));
+            status.andInPlace(getAggregateSyncStatusVector_(soid, t));
         }
 
-        Path ppath = path.removeLast();
-        if (!status.isEmpty()) {
-            // the object being added has some sync status, full update required
-            // this happens when objects are moved from one parent to another
-
-            if (l.isDebugEnabled()) l.debug("up p on create " + parent);
-
-            updateRecursively_(parent, status, status, 1, ppath, t);
-        } else if (!parent.oid().isRoot()) {
-            // if the parent was in sync, it will automatically become out of sync due to the way
-            // the final sync status is derived from the aggregate. However the aggregate for the
-            // grandparent (and its parents) may need to be updated explicitly.
-            SOID grandparent = new SOID(parent.sidx(), _ds.getOA_(parent).parent());
-
-            CounterVector parentAggregate = _ds.getAggregateSyncStatus_(parent);
-            int deviceCount = _sidx2dbm.getDeviceMapping_(parent.sidx()).size();
-
-            if (l.isDebugEnabled())
-                l.debug("up gp on create " + grandparent + " " + parentAggregate);
-
-            BitVector parentStatus = parentAggregate.elementsEqual(
-                    getSyncableChildCount_(parent) - 1, deviceCount);
-            parentStatus.andInPlace(_ds.getSyncStatus_(parent));
-
-            if (parentStatus.isEmpty()) {
-                if (l.isDebugEnabled()) l.debug("casc stop at gp " + grandparent);
-                return;
-            }
-
-            // keep track of new status for Ritual notifications
-            _tlStatusModified.get(t).add(ppath);
-
-            updateRecursively_(grandparent, parentStatus, new BitVector(), 0, ppath.removeLast(), t);
-        }
+        updateRecursively_(parent, status, status, 1, t);
     }
 
     /**
@@ -661,6 +731,27 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
     private int getSyncableChildCount_(SOID soid) throws SQLException
     {
         return _ds.getSyncableChildCount_(soid);
+    }
+
+    /**
+     * @pre {@code soid} is a directory
+     * @return a bitvector representation of the aggregate sync status at the beginning of the
+     * transaction (i.e. ignoring changes in child count)
+     *
+     * This is must be used during a transaction that modifies aggregate sync status as the changes
+     * are only written at the end of the transaction but the child count may be changed multiple
+     * times
+     */
+    private BitVector getAggregateSyncStatusVector_(SOID soid, Trans t) throws SQLException
+    {
+        CounterVector cv = _ds.getAggregateSyncStatus_(soid);
+
+        // make sure the resulting bitvector has the right size, this is especially important when
+        // the number of syncable children is 0 to avoid inconsistent results.
+        int deviceCount = _sidx2dbm.getDeviceMapping_(soid.sidx()).size();
+        // TODO: cache that value in the Update object?
+        int childCount = getSyncableChildCount_(soid) - getUpdate_(soid, t)._syncableChildCountDiff;
+        return cv.elementsEqual(childCount, deviceCount);
     }
 
     /**

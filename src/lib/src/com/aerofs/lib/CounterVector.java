@@ -219,4 +219,14 @@ public class CounterVector
         }
         return bv;
     }
+
+    /**
+     * Add two vectors, in-place
+     */
+    public void addInPlace(CounterVector cv)
+    {
+        for (int i = 0; i < cv.size(); ++i) {
+            set(i, get(i) + cv.get(i));
+        }
+    }
 }
