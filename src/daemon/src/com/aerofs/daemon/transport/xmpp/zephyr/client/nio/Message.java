@@ -29,8 +29,8 @@ public final class Message
 
         // write out the full message
         b.put(ZEPHYR_MAGIC);
-        b.mark();
         b.putInt(0); // length placeholder
+        b.mark();
         b.putInt(remoteid);
 
         // now write out the actual length
