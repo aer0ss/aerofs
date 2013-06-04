@@ -146,7 +146,7 @@ EOF
 function print_usage() {
     echo "Usage: $0 <debian_name> <repository>"
     echo " <deb-name>   debian package to build"
-    echo " <repository> repository to upload package to (PROD|CI|STAGING|$(whoami | tr [a-z] [A-Z]))"
+    echo " <repository> repository to upload package to (PROD|CI|STAGING|$(whoami | tr [a-z] [A-Z])|OPENSTACK)"
     exit $ERRBADARGS
 }
 
@@ -157,7 +157,11 @@ then
 fi
 
 # check the mode the user is invoking
-if [[ "$2" != 'PROD' && "$2" != 'CI' && "$2" != 'STAGING' && "$2" != "$(whoami | tr [a-z] [A-Z])" ]]
+if [[ "$2" != 'PROD' && \
+    "$2" != 'CI' && \
+    "$2" != 'STAGING' && \
+    "$2" != 'OPENSTACK' && \
+    "$2" != "$(whoami | tr [a-z] [A-Z])" ]]
 then
     print_usage
 fi
