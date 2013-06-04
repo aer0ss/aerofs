@@ -59,6 +59,8 @@ class OpenSSLWrapper(object):
         return dt.strftime('%Y%m%d%H%M%SZ')
     def _openssl_cnf(self):
         return os.path.join(self._cadir, 'openssl.cnf')
+    def _passwd(self):
+        return os.path.join(self._cadir, 'passwd')
 
     """
     Create a new signed certificate.
@@ -69,9 +71,13 @@ class OpenSSLWrapper(object):
         fh.write(csr)
         fh.close()
 
+        # If the password file exists, use that as the source of the CA password.
+        passin = 'env:capass'
+        if os.path.exists(self._passwd()):
+            passin = 'file:' + self._passwd()
         cmd = ['/usr/bin/openssl', 'ca', '-batch', '-config',
             self._openssl_cnf(), '-notext', '-startdate', self._time(),
-            '-passin', 'env:capass', '-in', self._csr(certname), '-out',
+            '-passin', passin, '-in', self._csr(certname), '-out',
             self._cert(certname)]
 
         try:

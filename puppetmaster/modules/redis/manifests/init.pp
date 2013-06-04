@@ -1,13 +1,3 @@
-# == Class: redis
-#
-# === Authors
-#
-# Matt Pillar <matt@aerofs.com>
-#
-# === Copyright
-#
-# Copyright 2012-2013 Air Computing Inc, unless otherwise noted.
-#
 class redis {
     # Until redis incorporated our custom changes, we have to use our own build.
     package{"aerofs-redis-server":
