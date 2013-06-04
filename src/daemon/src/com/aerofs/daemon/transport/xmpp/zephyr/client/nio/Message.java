@@ -29,14 +29,16 @@ public final class Message
 
         // write out the full message
         b.put(ZEPHYR_MAGIC);
-        b.putInt(0); // length placeholder
         b.mark();
+        b.putInt(0); // length placeholder
+
+        int payloadpos = b.position();
         b.putInt(remoteid);
 
         // now write out the actual length
         int endpos = b.position();
         b.reset();
-        int len = endpos - b.position();
+        int len = endpos - payloadpos;
         b.putInt(len);
 
         // move back to where we were before
