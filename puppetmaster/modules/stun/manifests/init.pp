@@ -8,12 +8,17 @@ class stun {
         ]
     }
 
+    file {"/etc/restund.conf":
+        source => "puppet:///modules/stun/restund.conf",
+        require => Package["aerofs-stun"],
+    }
+
     file{"/etc/init.d/restund":
         ensure => link,
         target => "/lib/init/upstart-job",
-        require => Package["aerofs-stun"],
+        require => File["/etc/restund.conf"],
     }
-    
+
     service { "restund":
         ensure => running,
         provider => upstart,
