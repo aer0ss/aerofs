@@ -37,8 +37,9 @@ class verkehr (
         target => "/lib/init/upstart-job",
         require => Package["aerofs-verkehr"],
     }
-    
+
     service { "verkehr":
+        enable => true,
         ensure => running,
         provider => upstart,
         require => File["/etc/init.d/verkehr"],

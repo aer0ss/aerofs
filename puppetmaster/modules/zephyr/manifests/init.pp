@@ -11,6 +11,7 @@ class zephyr {
     }
     
     service { "zephyr":
+        enable => true,
         ensure => running,
         provider => upstart,
         require => File["/etc/init.d/zephyr"],

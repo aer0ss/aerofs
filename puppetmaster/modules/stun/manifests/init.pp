@@ -20,6 +20,7 @@ class stun {
     }
 
     service { "restund":
+        enable => true,
         ensure => running,
         provider => upstart,
         require => File["/etc/init.d/restund"],

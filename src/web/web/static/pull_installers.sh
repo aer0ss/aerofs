@@ -17,7 +17,8 @@ for file in \
     aerofs-x86.tgz \
     current.ver
 do
-    wget --no-check-certificate https://nocache.client.aerofs.com/$file
+    echo ">>> Download $file..."
+    wget --quiet --no-check-certificate https://nocache.client.aerofs.com/$file
 done
 
 version=$(cat current.ver | awk -F'=' '{print $2}')
@@ -34,7 +35,8 @@ for file in \
     aerofsts-${version}-x86.tgz \
     aerofsts-osx-${version}.zip
 do
-    wget --no-check-certificate https://nocache.client.aerofs.com/$file
+    echo ">>> Download $file..."
+    wget --quiet --no-check-certificate https://nocache.client.aerofs.com/$file
 done
 
 echo "Client binaries successfully downloaded."
