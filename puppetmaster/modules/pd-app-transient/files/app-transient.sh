@@ -1,11 +1,11 @@
 #!/bin/bash -e
 
-PORTS="443 3478 5222 8888 29438"
+PORT_SCRIPT=/opt/sanity/probes/tools/port.sh
 
-for port in $PORTS
-do
-    echo "Check localhost:$port"
-    nc -z localhost $port
-done
+$PORT_SCRIPT localhost 443 "Webadmin and SP"
+$PORT_SCRIPT localhost 3478 "STUN server"
+$PORT_SCRIPT localhost 5222 "Ejabberd"
+$PORT_SCRIPT localhost 8888 "Zephyr relay"
+$PORT_SCRIPT localhost 29438 "Verkehr subscribe"
 
 echo "SUCCESS!"

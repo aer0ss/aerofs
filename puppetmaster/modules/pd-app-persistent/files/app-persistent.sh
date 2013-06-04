@@ -1,11 +1,9 @@
 #!/bin/bash -e
 
-PORTS="443 1029 8080"
+PORT_SCRIPT=/opt/sanity/probes/tools/port.sh
 
-for port in $PORTS
-do
-    echo "Check localhost:$port"
-    nc -z localhost $port
-done
+$PORT_SCRIPT localhost 443 "Client config service"
+$PORT_SCRIPT localhost 1029 "Certificate authority"
+$PORT_SCRIPT localhost 8080 "Server config service"
 
 echo "SUCCESS!"

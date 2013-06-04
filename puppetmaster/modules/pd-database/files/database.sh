@@ -1,11 +1,8 @@
 #!/bin/bash -e
 
-PORTS="3306 6379"
+PORT_SCRIPT=/opt/sanity/probes/tools/port.sh
 
-for port in $PORTS
-do
-    echo "Check localhost:$port"
-    nc -z localhost $port
-done
+$PORT_SCRIPT localhost 3306 "MySQL"
+$PORT_SCRIPT localhost 6379 "Redis"
 
 echo "SUCCESS!"
