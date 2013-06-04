@@ -63,6 +63,7 @@ AWS_VMS = ['172.16.5.12', '172.16.5.30']
 
 # TODO(AT) we shouldn't be specifying the machines here since config.yaml is responsible for that,
 #   using a config file to generate another config file sounds like we are repeating ourselves.
+# See issue AER-2094
 #
 # List of VM's used for performance testing
 #
@@ -143,7 +144,9 @@ def generate_yaml(args, username):
         assert type(username) != type([])
         actor_defaults['aero_userid'] = username
         actor_defaults['aero_password'] = args.password
+
     # Create correct number of actors of each OS
+    started_ts = False
     for vm_num, vm_list in [(args.linux, LINUX_VMS),
                             (args.linux_nat, LINUX_NAT_VMS),
                             (args.windows, WINDOWS_VMS),
@@ -154,16 +157,10 @@ def generate_yaml(args, username):
             details = {'ci_client': True}
             if vm_list == AWS_VMS:
                 details.update(AWS_DETAILS)
-            if args.include_ts and vm_list == LINUX_VMS and i == 0:
+            if args.ts is not None and not started_ts:
+                started_ts = True
                 details['team_server'] = True
-                details['storage_type'] = 'LOCAL'
-            if args.include_linked_ts and vm_list == LINUX_VMS and i == 0:
-                details['team_server'] = True
-                details['storage_type'] = 'LINKED'
-            if args.include_s3_ts and vm_list == LINUX_VMS and i == 0:
-                details.update(S3_DETAILS)
-                details['team_server'] = True
-                details['storage_type'] = 'S3'
+                details['storage_type'] = args.ts
             # actor params
             d = {}
             d['details'] = details
@@ -205,12 +202,8 @@ def main():
         help="Number of Performance Test VM's to use")
     parser.add_argument('--multiuser', action='store_true',
         help="If flag is specified, each VM will use a separate AeroFS account")
-    parser.add_argument('--include-ts', action='store_true',
-        help="If flag is specified, the first linux VM will be configured as a local TS")
-    parser.add_argument('--include-s3-ts', action='store_true',
-        help="If flag is specified, the first linux VM will be configured as an S3 TS")
-    parser.add_argument('--include-linked-ts', action='store_true',
-        help="If flag is specified, the first linux VM will be configured as a linked storage TS")
+    parser.add_argument('--ts', action='store', default=None, choices=['LINKED', 'S3', 'LOCAL'],
+        help="One VM will be configured as a team server with the given storage type.")
     parser.add_argument('--password', action='store', default=DEFAULT_PASSWORD,
         help="Non-default password to use for AeroFS accounts")
     parser.add_argument('--approot', default=DEFAULT_APPROOT,
@@ -245,7 +238,7 @@ def main():
         username = create_user(args.userid, args.password)
 
     # Clear S3 bucket if necessary
-    if args.include_s3_ts:
+    if args.ts == 'S3':
         clear_s3_bucket(S3_DETAILS['s3_access_key'],
                         S3_DETAILS['s3_secret_key'],
                         S3_DETAILS['s3_bucket_id'])
