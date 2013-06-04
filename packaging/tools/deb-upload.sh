@@ -63,7 +63,7 @@ function notify_team() {
 function print_usage()
 {
     echo "Usage: $0 <repository>"
-    echo " <repository> repository to upload package to (PROD|CI|STAGING|$(whoami | tr [a-z] [A-Z]))"
+    echo " <repository> repository to upload package to (PROD|CI|STAGING|$(whoami | tr [a-z] [A-Z])|OPENSTACK)"
     exit $ERRBADARGS
 }
 
@@ -74,7 +74,11 @@ then
 fi
 
 # check the mode the user is invoking
-if [[ "$1" != 'PROD' && "$1" != 'CI' && "$1" != 'STAGING' && "$1" != "$(whoami | tr [a-z] [A-Z])" ]]
+if [[ "$1" != 'PROD' && \
+    "$1" != 'CI' && \
+    "$1" != 'STAGING' && \
+    "$1" != 'OPENSTACK' && \
+    "$1" != "$(whoami | tr [a-z] [A-Z])" ]]
 then
     print_usage
 fi
