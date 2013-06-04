@@ -63,6 +63,18 @@ public class TestDownload extends AbstractDownloadTest
     }
 
     @Test
+    public void shouldAbortIfStoreExpelled() throws Exception
+    {
+        when(ds.getAliasedOANullable_(soid)).thenReturn(null);
+        when(sidx2sid.getNullable_(sidx)).thenReturn(null);
+
+        try {
+            dl(socid).download_();
+            fail();
+        } catch (ExAborted e) {}
+    }
+
+    @Test
     public void shouldAbortIfExpelled() throws Exception
     {
         OA oa = mock(OA.class);

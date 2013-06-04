@@ -5,6 +5,7 @@
 package com.aerofs.daemon.core.download;
 
 import com.aerofs.base.id.DID;
+import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.download.dependence.DownloadDeadlockResolver;
 import com.aerofs.daemon.core.ds.DirectoryService;
@@ -14,6 +15,7 @@ import com.aerofs.daemon.core.net.To;
 import com.aerofs.daemon.core.net.device.DevicePresence;
 import com.aerofs.daemon.core.protocol.GetComponentCall;
 import com.aerofs.daemon.core.protocol.GetComponentReply;
+import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.MapSIndex2Store;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.event.net.Endpoint;
@@ -52,6 +54,7 @@ public class AbstractDownloadTest extends AbstractTest
     @Mock GetComponentReply gcr;
     @Mock NativeVersionControl nvc;
     @Mock DownloadDeadlockResolver ddr;
+    @Mock IMapSIndex2SID sidx2sid;
 
     @Mock To.Factory factTo;
     /*@InjectMocks*/ AsyncDownload.Factory factDL;
@@ -70,6 +73,8 @@ public class AbstractDownloadTest extends AbstractTest
     }
 
     final SIndex sidx = new SIndex(1);
+    final SID sid = SID.generate();
+
     final DID did1 = DID.generate();
     final DID did2 = DID.generate();
     final DID did3 = DID.generate();
@@ -79,8 +84,10 @@ public class AbstractDownloadTest extends AbstractTest
     {
         AppRoot.set("dummy");
 
+        when(sidx2sid.getNullable_(sidx)).thenReturn(sid);
+
         factTo = new To.Factory(mock(DevicePresence.class), mock(MapSIndex2Store.class));
-        factDL = new AsyncDownload.Factory(ds, dlstate, dls, gcc, gcr, factTo, nvc, ddr);
+        factDL = new AsyncDownload.Factory(ds, dlstate, dls, gcc, gcr, factTo, nvc, ddr, sidx2sid);
     }
 
 

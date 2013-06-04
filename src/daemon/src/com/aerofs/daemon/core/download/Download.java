@@ -24,6 +24,7 @@ import com.aerofs.daemon.core.ex.ExWrapped;
 import com.aerofs.daemon.core.net.DigestedMessage;
 import com.aerofs.daemon.core.net.To;
 import com.aerofs.daemon.core.protocol.*;
+import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.lib.exception.ExDependsOn;
 import com.aerofs.daemon.lib.exception.ExNameConflictDependsOn;
@@ -161,11 +162,12 @@ class Download
         protected final GetComponentCall _gcc;
         protected final GetComponentReply _gcr;
         protected final DownloadDeadlockResolver _ddr;
+        protected final IMapSIndex2SID _sidx2sid;
 
         @Inject
         protected Factory(DirectoryService ds, DownloadState dlstate, Downloads dls,
                 To.Factory factTo, GetComponentCall gcc, GetComponentReply gcr,
-                DownloadDeadlockResolver ddr)
+                DownloadDeadlockResolver ddr, IMapSIndex2SID sidx2sid)
         {
             _ds = ds;
             _dls = dls;
@@ -174,6 +176,7 @@ class Download
             _gcr = gcr;
             _ddr = ddr;
             _factTo = factTo;
+            _sidx2sid = sidx2sid;
         }
     }
 
@@ -228,12 +231,16 @@ class Download
     {
         if (_socid.cid().isMeta()) return;
 
+        if (_f._sidx2sid.getNullable_(_socid.sidx()) == null) {
+            throw new ExAborted("store expelled: " + _socid.sidx());
+        }
+
         final OA oa = _f._ds.getAliasedOANullable_(_socid.soid());
         if (oa == null) {
             SOCID dst = new SOCID(_socid.soid(), CID.META);
             _f._dls.downloadSync_(dst, _from.dids(), _cxt);
         } else if (oa.isExpelled()) {
-            throw new ExAborted(_socid + " is expelled");
+            throw new ExAborted("object expelled: " + _socid);
         }
     }
 
