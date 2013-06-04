@@ -20,10 +20,12 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.util.Arrays;
 
+import static com.aerofs.lib.Util.crc32;
 import static com.aerofs.zephyr.Constants.ZEPHYR_BIND_MSG_LEN;
 import static com.aerofs.zephyr.Constants.ZEPHYR_BIND_PAYLOAD_LEN;
 import static com.aerofs.zephyr.Constants.ZEPHYR_INVALID_CHAN_ID;
 import static com.aerofs.zephyr.Constants.ZEPHYR_MAGIC;
+import static com.aerofs.zephyr.Constants.ZEPHYR_MSG_BYTE_ORDER;
 import static com.aerofs.zephyr.Constants.ZEPHYR_REG_MSG_LEN;
 import static com.aerofs.zephyr.core.ZUtil.addInterest;
 import static com.aerofs.zephyr.core.ZUtil.getSocketChannel;
@@ -33,8 +35,10 @@ import static com.aerofs.zephyr.server.ServerConstants.EndpointState.REGISTERED;
 import static com.aerofs.zephyr.server.ServerConstants.ReadStatus.EOF;
 import static com.aerofs.zephyr.server.ServerConstants.ReadStatus.HAS_BYTES;
 import static com.aerofs.zephyr.server.ServerConstants.ReadStatus.NO_BYTES;
-import static com.aerofs.zephyr.server.ZephyrServerUtil.crc;
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
+import static java.nio.channels.SelectionKey.OP_WRITE;
 
 /**
  * - find a way to avoid looking up the id in the map every single time
@@ -42,42 +46,44 @@ import static com.google.common.base.Preconditions.checkState;
  */
 public class PeerEndpoint implements IIOEventHandler
 {
-    public PeerEndpoint(int id, ZephyrServer boss)
+
+    public PeerEndpoint(int id, String ouraddr, ZephyrServer boss)
     {
-        assert id != ZEPHYR_INVALID_CHAN_ID : ("invalid id:" + id);
+        checkArgument(id != ZEPHYR_INVALID_CHAN_ID, "invalid id:" + id);
 
         // FIXME (AG): don't allocate/deallocate the read/write buffer
         // (i.e. keep only one buffer in play between the peers)
 
         _boss = boss;
         _ourid = id;
+        _ouraddr = ouraddr;
         _remid = ZEPHYR_INVALID_CHAN_ID;
-        _rdsqn = -1;
-        _wrsqn = -1;
+        _remaddr = null;
         _ctrlb = null;
         _wrbuf = null;
         _wrcrc = null;
         _txbuf = boss.getBuffer(); // a single buffer (we don't allocate/deallocate this one)
+        _txcount = 0;
         _state = CONNECTED;
 
-        l.info(compact() + ": created");
+        l.info("{}: created", compact());
     }
 
     public void init(SelectionKey k)
         throws IOException
     {
-        assert _state == CONNECTED : (compact() + ": invalid init state:" + _state);
-        assert _wrbuf == null && _wrcrc == null: (compact() + ": init w/ pending wrbuf:" + _wrbuf);
+        checkState(_state == CONNECTED, compact() + ": invalid init state:" + _state);
+        checkState(_wrbuf == null && _wrcrc == null, compact() + ": init w/ pending wrbuf:" + _wrbuf);
 
         try {
             ByteBuffer reg = _boss.getBuffer();
-            assert reg.capacity() >= ZEPHYR_REG_MSG_LEN;
-            reg = ZephyrServerUtil.createRegistrationMessage(reg, _ourid);
+            checkArgument(reg.capacity() >= ZEPHYR_REG_MSG_LEN, compact() + ": insufficient cap:" + reg.capacity());
+
+            reg = createRegistrationMessage(reg, _ourid);
             reg.flip();
 
-            boolean allwritten = writefully(k, reg);
-            if (allwritten) {
-                transition(REGISTERED, "fin reg");
+            if (writefully(k, reg)) {
+                transition(REGISTERED);
             }
         } catch (IOException e) {
             handleException(e, "fail reg write");
@@ -91,9 +97,9 @@ public class PeerEndpoint implements IIOEventHandler
     {
         if (!k.isValid()) return;
 
-        assert k.isWritable() : (compact() + ": unwritable k:" + k);
-        assert _wrbuf != null && _wrcrc != null :
-            (compact() + " wrbuf:" + _wrbuf + " wrcrc:" + _wrcrc);
+        checkArgument(k.isWritable(), compact() + ": unwritable k:" + k);
+        checkNotNull(_wrbuf, compact() + " wrbuf:" + _wrbuf + " wrcrc:" + _wrcrc);
+        checkNotNull(_wrcrc, compact() + " wrbuf:" + _wrbuf + " wrcrc:" + _wrcrc);
 
         try {
             boolean allwritten = writefully(k);
@@ -102,7 +108,7 @@ public class PeerEndpoint implements IIOEventHandler
             }
 
             if (_remid != ZEPHYR_INVALID_CHAN_ID) {
-                assert _state != CONNECTED : ("bound remid:" + _remid + " state:" + _state);
+                checkState(_state != CONNECTED, "bound remid:" + _remid + " state:" + _state);
                 PeerEndpoint srcpe = _boss.getPeerEndpoint(_remid);
                 srcpe.writeFinished();
             }
@@ -112,7 +118,7 @@ public class PeerEndpoint implements IIOEventHandler
                 // message if we're in the connected state (i.e. we don't have
                 // to worry that another endpoint was writing to us). therefore
                 // it is safe for us to transition to the registered state
-                transition(REGISTERED, "fin reg");
+                transition(REGISTERED);
             }
         } catch (ExInvalidPeerEndpoint e) {
             handleException(e, "invalid dstpe:" + _remid);
@@ -129,7 +135,7 @@ public class PeerEndpoint implements IIOEventHandler
     {
         if (!k.isValid()) return;
 
-        assert k.isReadable() : (compact() + ": k:" + k + ":not readable");
+        checkState(k.isReadable(), compact() + ": k:" + k + ":not readable");
 
         try {
             switch (_state) {
@@ -140,7 +146,7 @@ public class PeerEndpoint implements IIOEventHandler
                     processInBoundState(k);
                     break;
                 default:
-                    assert false : (compact() + ": rd unexpected in state:" + _state);
+                    throw new IllegalStateException(compact() + ": rd unexpected in state:" + _state);
             }
         } catch (Exception e) {
             handleException(e, "fail rd");
@@ -149,7 +155,7 @@ public class PeerEndpoint implements IIOEventHandler
 
     private void processInRegisteredState(SelectionKey k)
     {
-        assert _state == REGISTERED : (compact() + ": state:" + _state + ":invalid for func");
+        checkState(_state == REGISTERED, compact() + ": state:" + _state + ":invalid for func");
 
         SocketChannel ch = getSocketChannel(k);
 
@@ -164,10 +170,9 @@ public class PeerEndpoint implements IIOEventHandler
             // check for incomplete reads
 
             if (b.hasRemaining()) {
-                assert _ctrlb == null || (b == _ctrlb) : (compact() + ": mismatched rd buf");
+                checkState(_ctrlb == null || (b == _ctrlb), compact() + ": mismatched rd buf");
 
-                l.debug(compact() +
-                     ": bind msg incomplete exp:" + ZEPHYR_BIND_MSG_LEN + " act:" + b.position());
+                l.trace("{}: bind msg incomplete exp:{} act:{}", compact(), ZEPHYR_BIND_MSG_LEN, b.position());
 
                 addInterest(k, SelectionKey.OP_READ);
                 _ctrlb = b;
@@ -181,32 +186,31 @@ public class PeerEndpoint implements IIOEventHandler
 
             b.flip();
 
-            if (l.isDebugEnabled()) {
-                l.debug(compact() + ": bind buf:" + crc(b));
-            }
+            l.trace("{}: bind buf:{}", compact(), crc(b));
 
             byte[] magic = new byte[ZEPHYR_MAGIC.length];
             b.get(magic);
             if (!Arrays.equals(magic, ZEPHYR_MAGIC)) {
-                l.warn(compact() + ": bad zephyr msg exp:" + ZEPHYR_MAGIC + " act:" + magic);
-                terminate();
+                terminate("bad zephyr msg exp:" + Arrays.toString(ZEPHYR_MAGIC) + " act:" + Arrays.toString(magic));
                 return;
             }
 
             int len = b.getInt(); // ignore length value; simply use to move the position
-            assert len == ZEPHYR_BIND_PAYLOAD_LEN :
-                    ("bad bind payload len exp:" + ZEPHYR_BIND_PAYLOAD_LEN + " act:" + len);
+            checkArgument(len == ZEPHYR_BIND_PAYLOAD_LEN,
+                    "bad bind payload len exp:" + ZEPHYR_BIND_PAYLOAD_LEN + " act:" + len);
 
             int dstid = b.getInt(); // get the dst id we're trying to bind to
             PeerEndpoint dstpe = null;
             try {
+                // bind (remote)
+
                 dstpe = _boss.getPeerEndpoint(dstid);
-                boolean remfirstbind = dstpe.bind(_ourid);
+                dstpe.bind(_ourid, _ouraddr);
 
-                // bind (from our side)
+                // bind (our side)
 
-                _remid = dstid;
-                transition(BOUND, "[" + _ourid + (remfirstbind ? "==>" : "<=>") + _remid + "]");
+                bind(dstid, dstpe.getSourceAddress());
+                transition(BOUND);
 
                 // signal readiness to read again
 
@@ -215,7 +219,6 @@ public class PeerEndpoint implements IIOEventHandler
                 handleException(e, "invalid pe:" + dstid);
                 return;
             } catch (ExAlreadyBound e) {
-                assert dstpe != null;
                 int prevBound = dstpe._remid;
                 handleException(e, "attempted rebind prev:" + prevBound + " new:" + dstid);
                 return;
@@ -230,7 +233,7 @@ public class PeerEndpoint implements IIOEventHandler
 
     private void processInBoundState(SelectionKey k)
     {
-        assert _state == BOUND : (compact() + ":state:" + _state + ":invalid for func");
+        checkState(_state == BOUND, compact() + ":state:" + _state + ":invalid for func");
 
         SocketChannel ch = getSocketChannel(k);
 
@@ -252,11 +255,10 @@ public class PeerEndpoint implements IIOEventHandler
             return;
         }
 
-        if (dstpe.hasPendingWrite())
-        {
+        if (dstpe.hasPendingWrite()) {
             // do not read! this will get the sender's flow control working...
             // assumes that we are level triggered
-            l.debug(compact() + ": wr pending to dst:" + _remid + " do not read");
+            l.trace("{}: wr pending to dst:{} do not read", compact(), _remid);
             return;
         }
 
@@ -271,7 +273,7 @@ public class PeerEndpoint implements IIOEventHandler
 
             // find a way to avoid doing this...
             SelectionKey dkey = _boss.getSelectionKey(_remid);
-            assert dkey != null : (compact() + ": null key for dst:" + _remid);
+            checkNotNull(dkey, compact() + ": null key for dst:" + _remid);
 
             // we've received a few bytes to be transmitted to the dest peer
 
@@ -298,38 +300,37 @@ public class PeerEndpoint implements IIOEventHandler
         boolean haswrbuf = _wrbuf != null;
         boolean haswrcrc = _wrcrc != null;
 
-        assert haswrbuf == haswrcrc :
-            (compact() + ": mismatch wrbuf:" + _wrbuf + " wrcrc:" + _wrcrc);
+        checkState(haswrbuf == haswrcrc, compact() + ": mismatch wrbuf:" + _wrbuf + " wrcrc:" + _wrcrc);
 
         return haswrbuf;
     }
 
     /**
+     *
      * @param id channel id to which to bind this PeerEndpoint object to
-     * @return true if this was the first time this {@code PeerEndpoint} was bound
+     * @param addr remote address of the endpoint that initiated the bind
      * @throws ExAlreadyBound if the channel is already bound to any other zid
      */
-    public boolean bind(int id)
+    public void bind(int id, String addr)
         throws ExAlreadyBound
     {
-        assert id != ZEPHYR_INVALID_CHAN_ID : (compact() + ": invalid id:" + id + " for bind");
+        checkArgument(id != ZEPHYR_INVALID_CHAN_ID, compact() + ": invalid id:" + id + " for bind");
 
-        // should this be an assert instead?
         if (_remid != ZEPHYR_INVALID_CHAN_ID && _remid != id) {
             throw new ExAlreadyBound(_remid, id);
         }
 
-        boolean firstbind = (_remid == ZEPHYR_INVALID_CHAN_ID);
         _remid = id;
-        return firstbind;
+        _remaddr = addr;
     }
 
     /**
      * Cleans up resources allocated by this PeerEndpoint object and also
      * calls terminate() on the destination PeerEndpoint object. Also removes
      * this PeerEndpoint from the Zephyr server.
+     * @param cause
      */
-    public void terminate()
+    public void terminate(String cause)
     {
         //
         // clean ourself up
@@ -351,9 +352,6 @@ public class PeerEndpoint implements IIOEventHandler
             _txbuf = null;
         }
 
-        _rdsqn = 0;
-        _wrsqn = 0;
-
         _boss.removeEndpoint(_ourid);
 
         //
@@ -362,29 +360,29 @@ public class PeerEndpoint implements IIOEventHandler
 
         try {
             PeerEndpoint dstpe = _boss.getPeerEndpoint(_remid);
-            dstpe.terminate();
+            dstpe.terminate("rem terminated cause:" + cause);
         } catch (ExInvalidPeerEndpoint e) {
             // ignore
         }
+
+        l.warn("{}: terminate cause:{} tx:{}", compact(), cause, _txcount);
     }
 
     //
     // local utility
     //
 
-    private void transition(EndpointState newstate, String transmsg)
+    private void transition(EndpointState newstate)
     {
         EndpointState oldstate = _state;
         _state = newstate;
 
-        l.info(compact() + ":" + transmsg + " [" + oldstate + "->" + newstate + "]");
+        l.info("{}: [{}->{}]", compact(), oldstate, newstate);
     }
 
     private void handleException(Exception e, String errmsg)
     {
-        l.warn(compact() + ": " + errmsg + " err:" + e);
-        e.printStackTrace();
-        terminate();
+        terminate(errmsg + " (" + e + ")");
     }
 
     /**
@@ -394,7 +392,7 @@ public class PeerEndpoint implements IIOEventHandler
     private void writeFinished()
     {
         SelectionKey k = _boss.getSelectionKey(_ourid);
-        assert k != null : (compact() + ": null self key");
+        k = checkNotNull(k, compact() + ": null self key");
 
         if (!k.isValid()) return;
 
@@ -422,8 +420,6 @@ public class PeerEndpoint implements IIOEventHandler
     private boolean relay(SelectionKey k, ByteBuffer b)
         throws IOException
     {
-        _rdsqn++;
-
         try {
             return writefully(k, b);
         } catch (IOException e) {
@@ -435,29 +431,26 @@ public class PeerEndpoint implements IIOEventHandler
     private boolean writefully(SelectionKey k, ByteBuffer b)
         throws IOException
     {
-        assert _wrbuf == null && _wrcrc == null :
-            (compact() + ": pending wr wrbuf:" + _wrbuf + " wrcrc:" + _wrcrc);
+        checkState(_wrbuf == null && _wrcrc == null, compact() + ": pending wr wrbuf:" + _wrbuf + " wrcrc:" + _wrcrc);
 
         setwrparams(b);
-
-        if (l.isTraceEnabled()) {
-            l.trace(compact() + " beg wr wrbuf:" + _wrbuf + " wrcrc:" + _wrcrc);
-        }
 
         return writefully(k);
     }
 
     private void setwrparams(@Nullable ByteBuffer b)
     {
+        _txbuf.clear();
+
         if (b != null) {
             _wrbuf = b;
             _wrcrc = crc(b);
+
+            l.trace("{} wrbuf pos:{} rem:{} crc:{}", compact(), _wrbuf.position(), _wrbuf.remaining(), _wrcrc);
         } else {
             _wrbuf = null;
             _wrcrc = null;
         }
-
-        _txbuf.clear();
     }
 
     private boolean writefully(SelectionKey k)
@@ -467,10 +460,17 @@ public class PeerEndpoint implements IIOEventHandler
         try {
             boolean allwritten = write(k, intransit);
             if (allwritten) { // FIXME (AG): think of a better way to do this
-                _wrsqn++;
 
-                assert _rdsqn == _wrsqn : ("bad wr seqnum exp:" + _wrsqn + " act:" + _rdsqn);
-                assert crc(_txbuf) == _wrcrc : ("bad wr crc exp:" + _wrcrc + " act:" + crc(_txbuf));
+                // setup the crc-check buffer properly
+
+                _txbuf.limit(_txbuf.position());
+                _txbuf.position(0);
+
+                // check whether the buffer is ok
+
+                checkState(crc(_txbuf).equals(_wrcrc), "bad wr crc exp:" + _wrcrc + " act:" + crc(_txbuf));
+
+                // reset buffer
 
                 setwrparams(null);
             }
@@ -482,7 +482,7 @@ public class PeerEndpoint implements IIOEventHandler
         }
     }
 
-    private void copytxbytes(ByteBuffer b, int bytetx, int begpos, int finpos)
+    private void copytxbytes(ByteBuffer b, int begpos, int finpos, int bytetx, int bytrem)
             throws IOException
     {
         int txbufpos = _txbuf.position();
@@ -497,8 +497,9 @@ public class PeerEndpoint implements IIOEventHandler
 
             checkState(b.position() == finpos, "bad pos exp:" + finpos + " act:" + b.position());
         } catch (BufferOverflowException e) {
-            String errmsg = "wrbuf:[beg:" + begpos + " tx:" + bytetx + " fin:" + finpos + " siz:" + b.capacity() + "] " +
-                            "txbuf:[beg:" + txbufpos + " rem:" + txbufrem + "siz:" + _txbuf.capacity() + "]";
+            String errmsg = "wrbuf:[beg:" + begpos + " tx:" + bytetx + " fin:" + finpos + " rem:" + bytrem + "] " +
+                            "txbuf:[beg:" + txbufpos + " rem:" + txbufrem + "]";
+
             throw new IOException(errmsg, e);
         }
     }
@@ -517,19 +518,23 @@ public class PeerEndpoint implements IIOEventHandler
         SocketChannel ch = getSocketChannel(k);
         try {
             int begpos = b.position();
-            int bytetx = ch.write(b);
-            int finpos = b.position();
 
-            copytxbytes(b, bytetx, begpos, finpos);
+            int bytetx = ch.write(b); // actual write call!
+            _txcount += bytetx;
+
+            int finpos = b.position();
+            int bytrem = b.remaining();
+
+            copytxbytes(b, begpos, finpos, bytetx, bytrem);
 
             if (b.hasRemaining()) {
-                addInterest(k, SelectionKey.OP_WRITE);
+                addInterest(k, OP_WRITE);
                 return false;
             }
 
             return true;
         } catch (IOException e) {
-            l.warn(compact() + ": ch:" + ch + " err on wr:" + e);
+            l.warn("{}: ch:{} fail wr err:{}", compact(), ch, e);
             throw e;
         }
     }
@@ -561,14 +566,14 @@ public class PeerEndpoint implements IIOEventHandler
         switch (rd) {
             case -1:
                 status = EOF;
-                terminate();
+                terminate("rd EOF");
                 break;
             case 0:
                 status = NO_BYTES;
                 addInterest(k, SelectionKey.OP_READ);
                 break;
             default:
-                assert rd > 0 : (compact() + ": bad bytes rd:" + rd);
+                checkState(rd > 0, compact() + ": bad bytes rd:" + rd);
                 status = HAS_BYTES;
         }
 
@@ -576,11 +581,22 @@ public class PeerEndpoint implements IIOEventHandler
     }
 
     /**
+     * @return the remote address from which our peer is sending data
+     */
+    String getSourceAddress()
+    {
+        return _ouraddr;
+    }
+
+    /**
      * @return compact representation of this PeerEndpoint
      */
     private String compact()
     {
-        return "pe:" + _ourid;
+        String us = _ourid + " (" + _ouraddr + ")";
+        String other = (_remid == ZEPHYR_INVALID_CHAN_ID ? "0000 (NONE)" : _remid + " (" + _remaddr + ")");
+
+        return us + " ==> " + other;
     }
 
     /**
@@ -588,7 +604,46 @@ public class PeerEndpoint implements IIOEventHandler
      */
     public String toString()
     {
-        return "pe:" + _ourid + " dst:" + _remid + " state:" + _state + " wr:[buf:" + _wrbuf + " crc:" + _wrcrc + "]";
+        return "pe:" + _ourid + " (" + _ouraddr + ") dst:" + _remid + " (" + _remaddr + ") state:" + _state + " wr:[buf:" + _wrbuf + " crc:" + _wrcrc + "]";
+    }
+
+    //
+    // utility
+    //
+
+    /**
+     * Populates a {@link java.nio.ByteBuffer} with a Registration message
+     * <strong>does not clear() or flip() the ByteBuffer prior to, or after use</strong>
+     *
+     * @param b ByteBuffer to populate
+     * @param id connection id
+     * @return the same ByteBuffer passed in
+     */
+    static ByteBuffer createRegistrationMessage(ByteBuffer b, int id)
+    {
+        b.order(ZEPHYR_MSG_BYTE_ORDER);
+
+        b.put(ZEPHYR_MAGIC); // magic number id'ing zephyr messages
+        b.putInt(0); // length placeholder
+        int lenpos = b.position(); // index after the length
+        b.putInt(id); // server-assigned connection id
+
+        int len = b.position(); // find total bytebuffer size
+        b.position(ZEPHYR_MAGIC.length); // go to the spot right after the magic
+        b.putInt(len - lenpos); // write the msg-len
+        b.position(len); // go back to the end
+        return b;
+    }
+
+    static String crc(ByteBuffer buf)
+    {
+        int startpos = buf.position();
+        try {
+            byte[] contents = new byte[buf.remaining()];
+            return crc32(contents);
+        } finally {
+            buf.position(startpos);
+        }
     }
 
     //
@@ -623,6 +678,12 @@ public class PeerEndpoint implements IIOEventHandler
     /** id of the channel we're sending packets to (remid = "rem id") */
     private int _remid;
 
+    /** source address for this peer */
+    private final String _ouraddr;
+
+    /** remote address of the peer to which we're bound */
+    private String _remaddr;
+
     /** single {@code ByteBuffer} that holds the bind-message being read from the client */
     private ByteBuffer _ctrlb;
 
@@ -632,6 +693,9 @@ public class PeerEndpoint implements IIOEventHandler
     /** crc of the data to be relayed to the destination peer */
     private String _wrcrc;
 
+    /** bytes written out over the wire */
+    private long _txcount;
+
     /**
      * buffer that holds the data written by a single
      * {@link PeerEndpoint#writefully(java.nio.channels.SelectionKey)} call
@@ -640,20 +704,9 @@ public class PeerEndpoint implements IIOEventHandler
      */
     private ByteBuffer _txbuf;
 
-    /**
-     * represents the nth <em>buffer</em> (each buffer contains n bytes)
-     * <em>to be</em> relayed
-     */
-    private long _rdsqn;
-
-    /**
-     * represents the nth <em>buffer</em> (each buffer contains n bytes)
-     * <em>successfully</em> relayed
-     */
-    private long _wrsqn;
-
-     /** state the endpoint is in */
+    /** state the endpoint is in */
     private ServerConstants.EndpointState _state;
 
+    /** our logger */
     private static Logger l = Loggers.getLogger(PeerEndpoint.class);
 }

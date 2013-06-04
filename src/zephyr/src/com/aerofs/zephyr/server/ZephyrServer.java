@@ -19,13 +19,17 @@ import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.aerofs.zephyr.Constants.ZEPHYR_INVALID_CHAN_ID;
 import static com.aerofs.zephyr.core.ZUtil.addInterest;
 import static com.aerofs.zephyr.core.ZUtil.closeChannel;
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.collect.Maps.newHashMap;
+import static java.nio.channels.SelectionKey.OP_ACCEPT;
+import static java.nio.channels.SelectionKey.OP_READ;
 
 /**
  * This is the boss IIoEventHandler. It creates PeerEndpoint objects and
@@ -49,7 +53,7 @@ public class ZephyrServer implements IIOEventHandler
         _nextid = 0;
         _idToKey = new ConcurrentHashMap<Integer, SelectionKey>();
         _bufpool = new BufferPool(32768, 1024);
-        _ssc = null;
+        _srvsoc = null;
         _inited = false;
     }
 
@@ -58,15 +62,15 @@ public class ZephyrServer implements IIOEventHandler
         InetSocketAddress isa = new InetSocketAddress(_host, _port);
 
         try {
-            _ssc = ServerSocketChannel.open();
-            _ssc.configureBlocking(false);
-            _ssc.socket().bind(isa);
+            _srvsoc = ServerSocketChannel.open();
+            _srvsoc.configureBlocking(false);
+            _srvsoc.socket().bind(isa);
 
-            _d.register(_ssc, this, SelectionKey.OP_ACCEPT);
+            _d.register(_srvsoc, this, OP_ACCEPT);
 
             _inited = true;
         } catch (IOException e) {
-            l.error("z: srv sock setup fail:" + e);
+            l.error("z: srv sock setup fail err:{}", e);
             terminate();
             throw e;
         }
@@ -80,27 +84,24 @@ public class ZephyrServer implements IIOEventHandler
     public void handleAcceptReady_(SelectionKey k)
         throws FatalIOEventHandlerException
     {
-        assert _inited : "z: not inited";
+        l.debug("z: acc hdl beg:{}", System.currentTimeMillis());
 
-        l.info("z: acc hdl beg:" + System.currentTimeMillis());
-
+        checkState(_inited, "z: not inited");
         if (!k.isValid()) return;
-
-        assert k.isAcceptable() : ("z: k:" + k + ":not acceptable");
-
-        // do I have to assert that I am the channel for this key?
+        checkArgument(k.isAcceptable(), "z: k:" + k + ":not acceptable");
 
         SocketChannel sc;
         try {
-            sc = _ssc.accept();
+            sc = _srvsoc.accept();
         } catch (IOException e) {
             String err = "z: srv:[" + _host + ":" + _port + "]:fail on acc";
-            l.error(err + ":" + e);
+            l.error("{}:{}", err, e);
             terminate();
             throw new FatalIOEventHandlerException(err, e);
         }
 
-        l.info("z: conn from:" + sc.socket().getRemoteSocketAddress().toString());
+        String remaddr = sc.socket().getRemoteSocketAddress().toString();
+        l.debug("z: conn from:{}", remaddr);
 
         int id = ZEPHYR_INVALID_CHAN_ID;
         try {
@@ -109,10 +110,10 @@ public class ZephyrServer implements IIOEventHandler
             sc.socket().setSoLinger(true, 0);
 
             id = _nextid++;
-            assert !_idToKey.containsKey(id) : ("z: id:" + id + " already used");
+            checkState(!_idToKey.containsKey(id), "z: id:" + id + " already used");
 
-            PeerEndpoint ep = new PeerEndpoint(id, this);
-            SelectionKey pek = _d.register(sc, ep, SelectionKey.OP_READ);
+            PeerEndpoint ep = new PeerEndpoint(id, remaddr, this);
+            SelectionKey pek = _d.register(sc, ep, OP_READ);
 
             // regardless of whether the message is sent back to the peer,
             // I want to put this id in the _idToKey map (so that this id is
@@ -120,7 +121,7 @@ public class ZephyrServer implements IIOEventHandler
             // with this id is going to be sent out (if ever), but I don't want
             // to accidentally send two clients the same id
             SelectionKey prev = _idToKey.put(id, pek);
-            assert prev == null : ("z: id:" + id + ":not unique");
+            checkState(prev == null, "z: id:" + id + ":not unique");
 
             ep.init(pek); // I'm really not a fan of doing this, because now they have access to the channel as well...
         } catch(ClosedChannelException e) {
@@ -135,29 +136,27 @@ public class ZephyrServer implements IIOEventHandler
             closeChannel(sc);
         }
 
-        addInterest(k, SelectionKey.OP_ACCEPT);
+        addInterest(k, OP_ACCEPT);
 
-        l.info("z: acc hdl fin:" + System.currentTimeMillis());
+        l.debug("z: acc hdl fin:" + System.currentTimeMillis());
     }
 
     public void terminate()
     {
-        closeChannel(_ssc);
+        closeChannel(_srvsoc);
 
-        Map<Integer, SelectionKey> idToKey =
-            new HashMap<Integer, SelectionKey>(_idToKey);
+        Map<Integer, SelectionKey> idToKey = newHashMap(_idToKey);
 
         SelectionKey k = null;
         for (Map.Entry<Integer, SelectionKey> entry : idToKey.entrySet()) {
             try {
                 k = entry.getValue();
 
-                assert k != null : ("z: id:" + entry.getKey() + ":null key");
-                assert k.attachment() != null :
-                    ("z: id:" + entry.getKey() + ":null att");
+                checkArgument(k != null, "z: id:" + entry.getKey() + ":null key");
+                checkState(k.attachment() != null, "z: id:" + entry.getKey() + ":null att");
 
-                PeerEndpoint pe = (PeerEndpoint)k.attachment();
-                pe.terminate();
+                PeerEndpoint pe = (PeerEndpoint) k.attachment();
+                pe.terminate("system-wide termination");
             } catch (Exception e) {
                 l.warn("z: fail to terminate id:" + entry.getKey());
 
@@ -184,14 +183,14 @@ public class ZephyrServer implements IIOEventHandler
             k.cancel();
         } else {
             // may also happen because we call removeEndpoint multiple times
-            l.warn("z: id:" + id + ":null k");
+            l.warn("z: id:{}:null k", id);
             return;
         }
 
         if (k.channel() != null) {
             closeChannel(k.channel());
         } else {
-            l.warn("z: id:" + id + ":null ch");
+            l.warn("z: id:{}:null ch", id);
         }
     }
 
@@ -217,7 +216,7 @@ public class ZephyrServer implements IIOEventHandler
         if (k == null) throw new ExInvalidPeerEndpoint(id);
 
         PeerEndpoint pe = (PeerEndpoint) k.attachment();
-        assert pe != null : ("k:" + k + ": null att");
+        checkArgument(pe != null, "k:" + k + ": null att");
         return pe;
     }
 
@@ -268,7 +267,7 @@ public class ZephyrServer implements IIOEventHandler
     private int _nextid;
     private final Map<Integer, SelectionKey> _idToKey;
     private final BufferPool _bufpool;
-    private ServerSocketChannel _ssc;
+    private ServerSocketChannel _srvsoc;
     private boolean _inited;
 
     private static final Logger l = Loggers.getLogger(ZephyrServer.class);

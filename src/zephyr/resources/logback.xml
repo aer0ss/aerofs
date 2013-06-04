@@ -17,9 +17,7 @@
         <appender-ref ref="LOGFILE" />
     </appender>
 
-    <logger name="com.aerofs.zephyr.core" level="INFO"/>
-
-    <root level="DEBUG">
+    <root level="WARN">
         <appender-ref ref="ASYNC"/>
     </root>
 </configuration>
