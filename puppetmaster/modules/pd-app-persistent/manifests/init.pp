@@ -1,7 +1,7 @@
 class pd-app-persistent {
 
     include private-common
-    include ca
+    include ca::autostart
 
     package { "aerofs-config":
         ensure  => latest,

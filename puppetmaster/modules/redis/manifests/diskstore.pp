@@ -1,13 +1,3 @@
-# == Class: redis-diskstore
-#
-# === Authors
-#
-# Matt Pillar <matt@aerofs.com>
-#
-# === Copyright
-#
-# Copyright 2012-2013 Air Computing Inc, unless otherwise noted.
-#
 class redis::diskstore inherits redis {
     # Needs to be a subdirectory of the existing database dir.
     $redis_store_dir = "${redis_database_dir}/store"
