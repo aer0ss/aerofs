@@ -114,6 +114,8 @@ public abstract class LogUtil
      * This is useful to pass an abbreviated exception on to the logging subsystem.
      *
      * Example: l.warn("Oh noes! Bad {}", thing, LogUtil.suppress(myEx));
+     *
+     * TODO(jP): This should replace usage of Util.e() throughout. No new uses of Util.e!
      */
     public static <T extends Throwable> T suppress(T throwable)
     {

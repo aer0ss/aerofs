@@ -152,8 +152,8 @@ public abstract class Util
         Collections.addAll(s_suppressStackTrace, classes);
     }
 
-    // TODO (jP): Nuke this thing
-    public static boolean shouldPrintStackTrace(Throwable e, Class<?> ...suppressStackTrace)
+    // TODO (jP): Remove this method along with Util.e.
+    private static boolean shouldPrintStackTrace(Throwable e, Class<?> ...suppressStackTrace)
     {
         for (Class<?> suppress : suppressStackTrace) {
             if (suppress.isInstance(e)) return false;
@@ -166,16 +166,18 @@ public abstract class Util
     }
 
     /**
+     * FIXME(jP): This method should be removed. For logging, please use:
+     *      logger.warn("This bad thing happened", e);
+     * If you want to suppress a stack trace, use:
+     *      logger.info("This ok thing happened", LogUtil.suppress(e));
+     *
      * Return the logging string of the exception. The string includes the stack trace for all the
      * exception classses except those defined in s_suppressStackTrace* (see above) and as the
      * suppressStackTrace parameter.
      *
      * @param suppressStackTrace the exception classes of which the stack trace should be
      * suppressed.
-     *
-     * N.B. Use this method for logging only. Use CLIUtil.e2msg() for UI messages
      */
-    // avoid stack printing for non-error native exceptions
     public static String e(Throwable e, Class<?> ... suppressStackTrace)
     {
         if (shouldPrintStackTrace(e, suppressStackTrace)) {
@@ -303,7 +305,6 @@ public abstract class Util
     }
 
     /**
-     * @param bytes
      * @param interval in msec
      * @return "---" if interval == 0
      */
