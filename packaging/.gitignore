@@ -1,5 +1,6 @@
 debs
 *.ver
+*.deb
 
 zephyr
 verkehr
