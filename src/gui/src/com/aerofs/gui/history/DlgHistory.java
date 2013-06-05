@@ -71,7 +71,6 @@ public class DlgHistory extends AeroFSDialog
     private final Map<Program, Image> _iconCache = Maps.newHashMap();
 
     private Tree _revTree;
-    private Composite _statusLabelComposite;
     private Label _statusLabel;
     private Table _revTable;
     private Composite _revTableWrap;
@@ -127,21 +126,18 @@ public class DlgHistory extends AeroFSDialog
 
         Group group = new Group(sashForm, SWT.NONE);
         GridLayout groupLayout = new GridLayout(1, false);
-        groupLayout.marginHeight = GUIParam.MARGIN;
-        groupLayout.marginWidth = GUIParam.MARGIN;
+        groupLayout.marginHeight = 8;
+        groupLayout.marginWidth = 8;
         group.setLayout(groupLayout);
         group.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1));
 
-        createVersionTable(group);
-
-        _statusLabelComposite = new Composite(group, SWT.NONE);
-        _statusLabelComposite.setLayout(new GridLayout());
-        _statusLabelComposite.setLayoutData(new GridData(GridData.FILL_BOTH));
-
-        _statusLabel = new Label(_statusLabelComposite, SWT.WRAP);
+        _statusLabel = new Label(group, SWT.WRAP);
         _statusLabel.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
 
-        Link historyLink = new Link(_statusLabelComposite, SWT.NONE);
+        createVersionTable(group);
+
+        Link historyLink = new Link(group, SWT.NONE);
+        historyLink.setLayoutData(new GridData(SWT.LEFT, SWT.BOTTOM, true, false));
         historyLink.setText("\n<a>Learn more about Sync History</a>");
         historyLink.addSelectionListener(new SelectionAdapter() {
             @Override
@@ -152,7 +148,7 @@ public class DlgHistory extends AeroFSDialog
         });
 
         _actionButtons = GUIUtil.newPackedButtonContainer(group);
-        _actionButtons.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
+        _actionButtons.setLayoutData(new GridData(SWT.FILL, SWT.BOTTOM, true, false));
 
         if (Cfg.storageType() == StorageType.LINKED) {
             _restoreBtn = new Button(_actionButtons, SWT.NONE);
@@ -474,8 +470,7 @@ public class DlgHistory extends AeroFSDialog
                 _actionButtons.setVisible(false);
                 _actionButtons.layout();
                 setCompositeVisible(_revTableWrap, false);
-                setCompositeVisible(_statusLabelComposite, true);
-                _statusLabelComposite.getParent().layout();
+                _statusLabel.getParent().layout(true, true);
 
                 GUI.get().safeAsyncExec(_revTable, new Runnable() {
                     @Override
@@ -499,6 +494,7 @@ public class DlgHistory extends AeroFSDialog
             ((GridData)_actionButtons.getLayoutData()).horizontalAlignment = SWT.RIGHT;
             _actionButtons.layout();
             setCompositeVisible(_revTableWrap, true);
+            _statusLabel.getParent().layout(true, true);
         } else {
             if (_restoreBtn != null) _restoreBtn.setText("Restore Deleted Files...");
             _deleteBtn.setText("Delete Old Versions");
@@ -529,8 +525,7 @@ public class DlgHistory extends AeroFSDialog
             }
             _revTable.removeAll();
             setCompositeVisible(_revTableWrap, false);
-            setCompositeVisible(_statusLabelComposite, true);
-            _statusLabelComposite.getParent().layout();
+            _statusLabel.getParent().layout(true, true);
         }
     }
 
