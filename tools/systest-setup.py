@@ -161,6 +161,8 @@ def generate_yaml(args, username):
                 started_ts = True
                 details['team_server'] = True
                 details['storage_type'] = args.ts
+                if args.ts == 'S3':
+                    details.update(S3_DETAILS)
             # actor params
             d = {}
             d['details'] = details
