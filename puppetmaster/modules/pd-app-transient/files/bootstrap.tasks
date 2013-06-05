@@ -5,5 +5,6 @@ ejabberd-metadata-reset
 ejabberd-certify
 spdb-tomcat-password
 uwsgi-restart
+restund-fix-config
 delay
 sanity-check
