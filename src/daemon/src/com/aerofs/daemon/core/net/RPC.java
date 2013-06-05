@@ -72,12 +72,7 @@ public class RPC
         }, sameThreadExecutor());
     }
 
-    /**
-     * The device that replies the rpc is added (back) to To in case the To
-     * will be later reused
-     * @param to the id of the replying device will be added (back) to this parameter
-     */
-    private DigestedMessage recvReply_(int rpcid, @Nullable To to, Token tk, String reason)
+    private DigestedMessage recvReply_(int rpcid, Token tk, String reason)
         throws ExTimeout, ExAborted
     {
         assert !_waiters.containsKey(rpcid);
@@ -97,27 +92,7 @@ public class RPC
 
         l.debug("got reply " + reply.ep());
 
-        if (to != null) to.add_(reply.did());
-
         return reply;
-    }
-
-    /**
-     * it tries all destinations specified in To until one of them succeeds or
-     * a non-timeout error occurs
-     */
-    public DigestedMessage do_(To to, SIndex sidx, PBCore call, Token tk, String reason)
-        throws Exception
-    {
-        while (true) {
-            Endpoint ep = null;
-            try {
-                ep = _nsl.send_(to, sidx, call);
-                return recvReply_(call.getRpcid(), to, tk, reason);
-            } catch (ExTimeout e) {
-                handleTimeout_(call, ep);
-            }
-        }
     }
 
     public DigestedMessage do_(DID did, SIndex sidx, PBCore call, Token tk, String reason)
@@ -126,7 +101,15 @@ public class RPC
         Endpoint ep = null;
         try {
             ep = _nsl.sendUnicast_(did, sidx, call);
-            return recvReply_(call.getRpcid(), null, tk, reason);
+            DigestedMessage msg = recvReply_(call.getRpcid(), tk, reason);
+            // there once was a bug in DTLS where delayed messages where sent with a wrong SID
+            // which resulted in a bogus response being received itself causing potentially nasty
+            // consequences (including hard to fix DB corruption) all of which could have been
+            // prevented by simply checking for matching SIndex between request and rpely...
+            if (!sidx.equals(msg.sidx())) {
+                throw new ExProtocolError("sidx mismatch: expect=" + sidx + " actual=" + msg.sidx());
+            }
+            return msg;
         } catch (ExTimeout e) {
             handleTimeout_(call, ep);
             throw e;

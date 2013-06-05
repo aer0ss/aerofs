@@ -272,7 +272,7 @@ class Download
             throws SQLException, ExAborted, ExNoAvailDevice, ExRemoteCallFailed
     {
         try {
-            return _f._gcc.remoteRequestComponent_(_socid, _f._factTo.create_(did), _tk);
+            return _f._gcc.remoteRequestComponent_(_socid, did, _tk);
         } catch (SQLException e) {
             throw e;
         } catch (ExAborted e) {

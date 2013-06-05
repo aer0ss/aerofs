@@ -112,7 +112,7 @@ public class AbstractDownloadTest extends AbstractTest
         for (DID d : dids) replies.put(d, mockReply(d));
 
         OngoingStubbing<DigestedMessage> stubGCC =
-                when(gcc.remoteRequestComponent_(eq(socid), any(To.class), eq(tk)));
+                when(gcc.remoteRequestComponent_(eq(socid), any(DID.class), eq(tk)));
         for (DID d : dids) stubGCC = stubGCC.thenReturn(replies.get(d));
     }
 

@@ -82,7 +82,7 @@ public class GetComponentCall
     /**
      * @return the response Message received from the remote peer
      */
-    public DigestedMessage remoteRequestComponent_(SOCID socid, To src, Token tk)
+    public DigestedMessage remoteRequestComponent_(SOCID socid, DID src, Token tk)
             throws Exception
     {
         abortIfComponentIsAliasedContent(socid);
