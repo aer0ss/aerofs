@@ -130,13 +130,13 @@ public class TestDownload extends AbstractDownloadTest
 
         InOrder ordered = inOrder(gcc, dlstate);
 
-        ordered.verify(gcc).remoteRequestComponent_(eq(child), from(did1), eq(tk));
+        ordered.verify(gcc).remoteRequestComponent_(eq(child), eq(did1), eq(tk));
         ordered.verify(dlstate).ended_(eq(child), endpoint(did1), eq(true));
 
-        ordered.verify(gcc).remoteRequestComponent_(eq(parent), from(did1), eq(tk));
+        ordered.verify(gcc).remoteRequestComponent_(eq(parent), eq(did1), eq(tk));
         ordered.verify(dlstate).ended_(eq(parent), endpoint(did1), eq(false));
 
-        ordered.verify(gcc).remoteRequestComponent_(eq(child), from(did1), eq(tk));
+        ordered.verify(gcc).remoteRequestComponent_(eq(child), eq(did1), eq(tk));
         ordered.verify(dlstate).ended_(eq(child), endpoint(did1), eq(false));
 
         verifyZeroInteractions(dls);
@@ -181,13 +181,13 @@ public class TestDownload extends AbstractDownloadTest
 
         InOrder ordered = inOrder(gcc, dlstate);
 
-        ordered.verify(gcc).remoteRequestComponent_(eq(o2), from(did1), eq(tk));
+        ordered.verify(gcc).remoteRequestComponent_(eq(o2), eq(did1), eq(tk));
         ordered.verify(dlstate).ended_(eq(o2), endpoint(did1), eq(true));
 
-        ordered.verify(gcc).remoteRequestComponent_(eq(o1), from(did1), eq(tk));
+        ordered.verify(gcc).remoteRequestComponent_(eq(o1), eq(did1), eq(tk));
         ordered.verify(dlstate).ended_(eq(o1), endpoint(did1), eq(false));
 
-        ordered.verify(gcc).remoteRequestComponent_(eq(o2), from(did1), eq(tk));
+        ordered.verify(gcc).remoteRequestComponent_(eq(o2), eq(did1), eq(tk));
         ordered.verify(dlstate).ended_(eq(o2), endpoint(did1), eq(false));
 
         verifyZeroInteractions(dls);
@@ -225,13 +225,13 @@ public class TestDownload extends AbstractDownloadTest
 
         InOrder ordered = inOrder(gcc, dlstate);
 
-        ordered.verify(gcc).remoteRequestComponent_(eq(o2), from(did1), eq(tk));
+        ordered.verify(gcc).remoteRequestComponent_(eq(o2), eq(did1), eq(tk));
         ordered.verify(dlstate).ended_(eq(o2), endpoint(did1), eq(true));
 
-        ordered.verify(gcc).remoteRequestComponent_(eq(o1), from(did1), eq(tk));
+        ordered.verify(gcc).remoteRequestComponent_(eq(o1), eq(did1), eq(tk));
         ordered.verify(dlstate).ended_(eq(o1), endpoint(did1), eq(true));
 
-        ordered.verify(gcc).remoteRequestComponent_(eq(o2), from(did1), eq(tk));
+        ordered.verify(gcc).remoteRequestComponent_(eq(o2), eq(did1), eq(tk));
         ordered.verify(dlstate).ended_(eq(o2), endpoint(did1), eq(false));
 
         verifyZeroInteractions(dls);
@@ -255,10 +255,10 @@ public class TestDownload extends AbstractDownloadTest
 
         InOrder ordered = inOrder(gcc, dlstate);
 
-        ordered.verify(gcc).remoteRequestComponent_(eq(socid), from(did1), eq(tk));
+        ordered.verify(gcc).remoteRequestComponent_(eq(socid), eq(did1), eq(tk));
         ordered.verify(dlstate).ended_(eq(socid), endpoint(did1), eq(true));
 
-        ordered.verify(gcc).remoteRequestComponent_(eq(socid), from(did1), eq(tk));
+        ordered.verify(gcc).remoteRequestComponent_(eq(socid), eq(did1), eq(tk));
         ordered.verify(dlstate).ended_(eq(socid), endpoint(did1), eq(false));
 
         verifyZeroInteractions(dls);
@@ -279,7 +279,7 @@ public class TestDownload extends AbstractDownloadTest
 
         InOrder ordered = inOrder(gcc, dlstate);
 
-        ordered.verify(gcc).remoteRequestComponent_(eq(socid), from(did1), eq(tk));
+        ordered.verify(gcc).remoteRequestComponent_(eq(socid), eq(did1), eq(tk));
         ordered.verify(dlstate).ended_(eq(socid), endpoint(did1), eq(true));
 
         verifyZeroInteractions(dls);
@@ -310,10 +310,10 @@ public class TestDownload extends AbstractDownloadTest
 
         InOrder ordered = inOrder(gcc, dlstate);
 
-        ordered.verify(gcc).remoteRequestComponent_(eq(child), from(did1), eq(tk));
+        ordered.verify(gcc).remoteRequestComponent_(eq(child), eq(did1), eq(tk));
         ordered.verify(dlstate).ended_(eq(child), endpoint(did1), eq(true));
 
-        ordered.verify(gcc).remoteRequestComponent_(eq(parent), from(did1), eq(tk));
+        ordered.verify(gcc).remoteRequestComponent_(eq(parent), eq(did1), eq(tk));
         ordered.verify(dlstate).ended_(eq(parent), endpoint(did1), eq(true));
 
         verifyZeroInteractions(dls);
@@ -359,10 +359,10 @@ public class TestDownload extends AbstractDownloadTest
 
         InOrder ordered = inOrder(gcc, dlstate);
 
-        ordered.verify(gcc).remoteRequestComponent_(eq(o2), from(did1), eq(tk));
+        ordered.verify(gcc).remoteRequestComponent_(eq(o2), eq(did1), eq(tk));
         ordered.verify(dlstate).ended_(eq(o2), endpoint(did1), eq(true));
 
-        ordered.verify(gcc).remoteRequestComponent_(eq(o1), from(did1), eq(tk));
+        ordered.verify(gcc).remoteRequestComponent_(eq(o1), eq(did1), eq(tk));
         ordered.verify(dlstate).ended_(eq(o1), endpoint(did1), eq(true));
 
         verifyZeroInteractions(dls);
@@ -397,18 +397,18 @@ public class TestDownload extends AbstractDownloadTest
 
         InOrder ordered = inOrder(gcc, dlstate, ddr);
 
-        ordered.verify(gcc).remoteRequestComponent_(eq(child), from(did1), eq(tk));
+        ordered.verify(gcc).remoteRequestComponent_(eq(child), eq(did1), eq(tk));
         ordered.verify(dlstate).ended_(eq(child), endpoint(did1), eq(true));
 
-        ordered.verify(gcc).remoteRequestComponent_(eq(parent), from(did1), eq(tk));
+        ordered.verify(gcc).remoteRequestComponent_(eq(parent), eq(did1), eq(tk));
         ordered.verify(dlstate).ended_(eq(parent), endpoint(did1), eq(true));
 
         ordered.verify(ddr).resolveDeadlock_(anyListOf(DependencyEdge.class), anyDC());
 
-        ordered.verify(gcc).remoteRequestComponent_(eq(parent), from(did1), eq(tk));
+        ordered.verify(gcc).remoteRequestComponent_(eq(parent), eq(did1), eq(tk));
         ordered.verify(dlstate).ended_(eq(parent), endpoint(did1), eq(false));
 
-        ordered.verify(gcc).remoteRequestComponent_(eq(child), from(did1), eq(tk));
+        ordered.verify(gcc).remoteRequestComponent_(eq(child), eq(did1), eq(tk));
         ordered.verify(dlstate).ended_(eq(child), endpoint(did1), eq(false));
 
         verifyZeroInteractions(dls);

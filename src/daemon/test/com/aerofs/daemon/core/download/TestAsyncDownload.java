@@ -60,7 +60,7 @@ public class TestAsyncDownload extends AbstractDownloadTest
 
         InOrder ordered = inOrder(gcc, dlstate, dcl);
 
-        ordered.verify(gcc).remoteRequestComponent_(eq(socid), from(did1), eq(tk));
+        ordered.verify(gcc).remoteRequestComponent_(eq(socid), eq(did1), eq(tk));
         ordered.verify(dlstate).ended_(eq(socid), endpoint(did1), eq(false));
         ordered.verify(dcl).onPartialDownloadSuccess_(socid, did1);
         ordered.verify(dcl).onDownloadSuccess_(socid, did1);
@@ -80,11 +80,11 @@ public class TestAsyncDownload extends AbstractDownloadTest
 
         InOrder ordered = inOrder(gcc, dlstate, dcl);
 
-        ordered.verify(gcc).remoteRequestComponent_(eq(socid), from(did1), eq(tk));
+        ordered.verify(gcc).remoteRequestComponent_(eq(socid), eq(did1), eq(tk));
         ordered.verify(dlstate).ended_(eq(socid), endpoint(did1), eq(false));
         ordered.verify(dcl).onPartialDownloadSuccess_(socid, did1);
 
-        ordered.verify(gcc).remoteRequestComponent_(eq(socid), from(did2), eq(tk));
+        ordered.verify(gcc).remoteRequestComponent_(eq(socid), eq(did2), eq(tk));
         ordered.verify(dlstate).ended_(eq(socid), endpoint(did2), eq(false));
         ordered.verify(dcl).onPartialDownloadSuccess_(socid, did2);
 
@@ -115,9 +115,9 @@ public class TestAsyncDownload extends AbstractDownloadTest
 
         InOrder ordered = inOrder(gcc, dlstate, dcl);
 
-        ordered.verify(gcc).remoteRequestComponent_(eq(socid), from(did1), eq(tk));
+        ordered.verify(gcc).remoteRequestComponent_(eq(socid), eq(did1), eq(tk));
         ordered.verify(dlstate).ended_(eq(socid), endpoint(did1), eq(true));
-        ordered.verify(gcc).remoteRequestComponent_(eq(socid), from(did2), eq(tk));
+        ordered.verify(gcc).remoteRequestComponent_(eq(socid), eq(did2), eq(tk));
         ordered.verify(dlstate).ended_(eq(socid), endpoint(did2), eq(false));
         ordered.verify(dcl).onPartialDownloadSuccess_(socid, did2);
         ordered.verify(dcl).onDownloadSuccess_(socid, did2);
@@ -136,15 +136,15 @@ public class TestAsyncDownload extends AbstractDownloadTest
 
         InOrder ordered = inOrder(gcc, dlstate, dcl);
 
-        ordered.verify(gcc).remoteRequestComponent_(eq(socid), from(did1), eq(tk));
+        ordered.verify(gcc).remoteRequestComponent_(eq(socid), eq(did1), eq(tk));
         ordered.verify(dlstate).ended_(eq(socid), endpoint(did1), eq(false));
         ordered.verify(dcl).onPartialDownloadSuccess_(socid, did1);
 
-        ordered.verify(gcc).remoteRequestComponent_(eq(socid), from(did2), eq(tk));
+        ordered.verify(gcc).remoteRequestComponent_(eq(socid), eq(did2), eq(tk));
         ordered.verify(dlstate).ended_(eq(socid), endpoint(did2), eq(false));
         ordered.verify(dcl).onPartialDownloadSuccess_(socid, did2);
 
-        ordered.verify(gcc).remoteRequestComponent_(eq(socid), from(did3), eq(tk));
+        ordered.verify(gcc).remoteRequestComponent_(eq(socid), eq(did3), eq(tk));
         ordered.verify(dlstate).ended_(eq(socid), endpoint(did3), eq(false));
         ordered.verify(dcl).onPartialDownloadSuccess_(socid, did3);
 
@@ -176,13 +176,13 @@ public class TestAsyncDownload extends AbstractDownloadTest
 
         InOrder ordered = inOrder(gcc, dlstate, dcl);
 
-        ordered.verify(gcc).remoteRequestComponent_(eq(socid), from(did1), eq(tk));
+        ordered.verify(gcc).remoteRequestComponent_(eq(socid), eq(did1), eq(tk));
         ordered.verify(dlstate).ended_(eq(socid), endpoint(did1), eq(true));
 
-        ordered.verify(gcc).remoteRequestComponent_(eq(socid), from(did2), eq(tk));
+        ordered.verify(gcc).remoteRequestComponent_(eq(socid), eq(did2), eq(tk));
         ordered.verify(dlstate).ended_(eq(socid), endpoint(did2), eq(true));
 
-        ordered.verify(gcc).remoteRequestComponent_(eq(socid), from(did3), eq(tk));
+        ordered.verify(gcc).remoteRequestComponent_(eq(socid), eq(did3), eq(tk));
         ordered.verify(dlstate).ended_(eq(socid), endpoint(did3), eq(true));
 
         ordered.verify(dcl).onPerDeviceErrors_(socid, did2e);
@@ -202,7 +202,7 @@ public class TestAsyncDownload extends AbstractDownloadTest
 
         InOrder ordered = inOrder(gcc, dlstate, dcl);
 
-        ordered.verify(gcc).remoteRequestComponent_(eq(socid), from(did1), eq(tk));
+        ordered.verify(gcc).remoteRequestComponent_(eq(socid), eq(did1), eq(tk));
         ordered.verify(dlstate).ended_(eq(socid), endpoint(did1), eq(true));
         ordered.verify(dcl).onGeneralError_(socid, ex);
         verifyZeroInteractions(dls);
