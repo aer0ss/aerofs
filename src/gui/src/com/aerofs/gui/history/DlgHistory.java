@@ -75,6 +75,7 @@ public class DlgHistory extends AeroFSDialog
     private Table _revTable;
     private Composite _revTableWrap;
 
+    private Group _group;
     private Composite _actionButtons;
     private Button _restoreBtn;
     private Button _openBtn;
@@ -124,19 +125,19 @@ public class DlgHistory extends AeroFSDialog
 
         createVersionTree(sashForm);
 
-        Group group = new Group(sashForm, SWT.NONE);
+        _group = new Group(sashForm, SWT.NONE);
         GridLayout groupLayout = new GridLayout(1, false);
         groupLayout.marginHeight = 8;
         groupLayout.marginWidth = 8;
-        group.setLayout(groupLayout);
-        group.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1));
+        _group.setLayout(groupLayout);
+        _group.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1));
 
-        _statusLabel = new Label(group, SWT.WRAP);
+        _statusLabel = new Label(_group, SWT.WRAP);
         _statusLabel.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
 
-        createVersionTable(group);
+        createVersionTable(_group);
 
-        Link historyLink = new Link(group, SWT.NONE);
+        Link historyLink = new Link(_group, SWT.NONE);
         historyLink.setLayoutData(new GridData(SWT.LEFT, SWT.BOTTOM, true, false));
         historyLink.setText("\n<a>Learn more about Sync History</a>");
         historyLink.addSelectionListener(new SelectionAdapter() {
@@ -147,7 +148,7 @@ public class DlgHistory extends AeroFSDialog
             }
         });
 
-        _actionButtons = GUIUtil.newPackedButtonContainer(group);
+        _actionButtons = GUIUtil.newPackedButtonContainer(_group);
         _actionButtons.setLayoutData(new GridData(SWT.FILL, SWT.BOTTOM, true, false));
 
         if (Cfg.storageType() == StorageType.LINKED) {
@@ -468,18 +469,9 @@ public class DlgHistory extends AeroFSDialog
             boolean ok = fillVersionTable(_revTable, index, _statusLabel);
             if (!ok) {
                 _actionButtons.setVisible(false);
-                _actionButtons.layout();
                 setCompositeVisible(_revTableWrap, false);
-                _statusLabel.getParent().layout(true, true);
-
-                GUI.get().safeAsyncExec(_revTable, new Runnable() {
-                    @Override
-                    public void run() {
-                        // clear selection to avoid an infinite auto-refresh loop
-                        _revTree.deselectAll();
-                        refreshVersionTree();
-                    }
-                });
+                _statusLabel.setText("No old versions available for this file");
+                _group.layout(true, true);
                 return;
             }
             _actionButtons.setVisible(ok);
@@ -492,9 +484,8 @@ public class DlgHistory extends AeroFSDialog
             setButtonVisible(_saveBtn, ok);
             setButtonVisible(_deleteBtn, ok);
             ((GridData)_actionButtons.getLayoutData()).horizontalAlignment = SWT.RIGHT;
-            _actionButtons.layout();
             setCompositeVisible(_revTableWrap, true);
-            _statusLabel.getParent().layout(true, true);
+            _group.layout(true, true);
         } else {
             if (_restoreBtn != null) _restoreBtn.setText("Restore Deleted Files...");
             _deleteBtn.setText("Delete Old Versions");
@@ -521,11 +512,10 @@ public class DlgHistory extends AeroFSDialog
                 setButtonVisible(_saveBtn, false);
                 setButtonVisible(_deleteBtn, true);
                 ((GridData)_actionButtons.getLayoutData()).horizontalAlignment = SWT.LEFT;
-                _actionButtons.layout();
             }
             _revTable.removeAll();
             setCompositeVisible(_revTableWrap, false);
-            _statusLabel.getParent().layout(true, true);
+            _group.layout(true, true);
         }
     }
 
@@ -645,7 +635,12 @@ public class DlgHistory extends AeroFSDialog
             GUI.get().show(MessageType.ERROR, "Failed to retrieve version list: " + e);
             return false;
         }
-        if (versions.isEmpty()) return false;
+        if (versions.isEmpty()) {
+            // NB: theoretically this can only happen if a file has lost version since the tree
+            // was populated so a refresh should be enough to take care of that. In practice
+            // we've seen weird conditions where a refresh does not work...
+            return false;
+        }
         revTable.setItemCount(versions.size());
 
         for (int i = 0; i < versions.size(); ++i) {

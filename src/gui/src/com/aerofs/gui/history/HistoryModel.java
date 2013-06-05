@@ -254,6 +254,12 @@ public class HistoryModel
         return child;
     }
 
+    boolean hasMasterBranch(List<PBBranch> l)
+    {
+        for (PBBranch b : l) if (b.getKidx() == KIndex.MASTER.getInt()) return true;
+        return false;
+    }
+
     /**
      * Build list of children for a ModelIndex (lazy population of the model)
      */
@@ -281,9 +287,9 @@ public class HistoryModel
                 for (int i = 0; i < ca.getChildrenNameCount(); i++) {
                     String name = ca.getChildrenName(i);
                     PBObjectAttributes oa = ca.getChildrenAttributes(i);
-                    // TODO(huguesb): special handling for conflict branches?
-                    if (!oa.getExcluded()) {
-                        idx = new ModelIndex(parent, path.append(name), oa.getType() != Type.FILE, false);
+                    boolean isDir = oa.getType() != Type.FILE;
+                    if (!oa.getExcluded() && (isDir || hasMasterBranch(oa.getBranchList()))) {
+                        idx = new ModelIndex(parent, path.append(name), isDir, false);
                         cm.put(idx, idx);
                     }
                 }
@@ -331,6 +337,7 @@ public class HistoryModel
         try {
             return versions(index);
         } catch (Exception e) {
+            // TODO: invalidate index?
             l.warn(Util.e(e));
             return null;
         }
