@@ -2,18 +2,17 @@ package com.aerofs.daemon.transport.xmpp;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExFormatError;
+import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.JabberID;
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.event.net.rx.EIMaxcastMessage;
-import com.aerofs.lib.event.Prio;
 import com.aerofs.daemon.transport.lib.IMaxcast;
 import com.aerofs.lib.FrequentDefectSender;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.Util;
-import com.aerofs.base.ex.ExNoResource;
-import org.slf4j.Logger;
+import com.aerofs.lib.event.Prio;
 import org.jivesoftware.smack.PacketListener;
 import org.jivesoftware.smack.SmackConfiguration;
 import org.jivesoftware.smack.XMPPConnection;
@@ -24,6 +23,7 @@ import org.jivesoftware.smack.packet.Presence.Mode;
 import org.jivesoftware.smackx.Form;
 import org.jivesoftware.smackx.muc.DiscussionHistory;
 import org.jivesoftware.smackx.muc.MultiUserChat;
+import org.slf4j.Logger;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -31,6 +31,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+
+import static com.google.common.base.Preconditions.checkArgument;
 
 public class Multicast implements IMaxcast
 {
@@ -157,6 +159,7 @@ public class Multicast implements IMaxcast
         try {
             OutArg<Integer> len = new OutArg<Integer>();
             getMUC(sid).sendMessage(XMPP.encodeBody(len, mcastid, bs));
+            l.debug("send mc id:{} s:{}", mcastid, sid);
         } catch (IllegalStateException e) {
             throw new XMPPException(e);
         }
@@ -238,7 +241,9 @@ public class Multicast implements IMaxcast
         DID did = JabberID.jid2did(tokens);
         if (did.equals(localdid)) return;
 
-        assert JabberID.isMUCAddress(tokens);
+        checkArgument(JabberID.isMUCAddress(tokens));
+
+        l.debug("recv mc d:{}", did);
 
         OutArg<Integer> wirelen = new OutArg<Integer>();
         byte [] bs = x.decodeBody(did, wirelen, msg.getBody());
