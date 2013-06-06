@@ -24,14 +24,12 @@ import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
-
-import static com.google.common.collect.Lists.newArrayList;
 
 public final class Configuration
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(Configuration.class);
-    private static final String STRINGS_RESOURCE = "strings.properties";
     private static final String CONFIGURATION_RESOURCE = "configuration.properties";
 
     private static interface IDefaultConfigurationURLProvider
@@ -186,12 +184,9 @@ public final class Configuration
         }
     }
 
-    private static List<String> getStaticPropertyPaths() {
-        final List<String> staticPropertyPaths = newArrayList(
-                STRINGS_RESOURCE,
-                CONFIGURATION_RESOURCE);
-
-        return staticPropertyPaths;
+    private static List<String> getStaticPropertyPaths()
+    {
+        return Collections.singletonList(CONFIGURATION_RESOURCE);
     }
 
     /**
