@@ -27,9 +27,9 @@
     <li class="pull-right"><a href="${request.route_path('logout')}">Sign out</a></li>
     <li class="pull-right disabled"><a href="#">${request.session['username']}</a></li>
     % if is_admin(request):
-        ${render_download_link_for_admin()}
+        ${render_download_links(True)}
     % else:
-        ${render_download_link_for_nonadmin()}
+        ${render_download_links(False)}
     % endif
 </%block>
 
@@ -37,25 +37,25 @@
     ${request.route_path('dashboard_home')}
 </%block>
 
-<%def name="render_download_link_for_nonadmin()">
-    <li class="pull-right"><a href="${request.route_path('download')}">
-        ${render_download_text()}
-    </a></li>
-</%def>
-
-<%def name="render_download_link_for_admin()">
-
+<%def name="render_download_links(admin)">
     <li class="pull-right dropdown">
         <a class="dropdown-toggle" data-toggle="dropdown" href="#">
             ${render_download_text()} <b class="caret"></b>
         </a>
         <ul class="dropdown-menu">
             <li><a href="${request.route_path('download')}">
-                Client Application
+                AeroFS Desktop
             </a></li>
-            <li><a href="${request.route_path('download_team_server')}">
-                Team Server
+            <li><a href="http://play.google.com/store/apps/details?id=com.aerofs.android" target="_blank">
+                Android App
             </a></li>
+
+            %if admin:
+                <li class="divider"></li>
+                <li><a href="${request.route_path('download_team_server')}">
+                    Team Server
+                </a></li>
+            %endif
         </ul>
     </li>
 </%def>
