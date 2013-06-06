@@ -58,7 +58,7 @@ public abstract class JabberID
      */
     public static String did2FormAJid(DID did, String xmppTransportId)
     {
-        return did2user(did) + '@' + Xmpp.SERVER_DOMAIN + '/' + xmppTransportId;
+        return did2user(did) + '@' + Xmpp.SERVER_DOMAIN.get() + '/' + xmppTransportId;
     }
 
     /**
@@ -162,6 +162,6 @@ public abstract class JabberID
 
     public static String sid2muc(SID sid)
     {
-        return sid.toStringFormal() + '@' + Xmpp.MUC_ADDR;
+        return sid.toStringFormal() + '@' + Xmpp.getMucAddress();
     }
 }

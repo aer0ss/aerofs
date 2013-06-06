@@ -54,7 +54,7 @@ public abstract class ID
      */
     public static String did2jid(DID did, boolean ucast)
     {
-        return did2user(did) + '@' + Xmpp.SERVER_DOMAIN +
+        return did2user(did) + '@' + Xmpp.SERVER_DOMAIN.get() +
                 '/' + resource(ucast);
     }
 
@@ -134,7 +134,7 @@ public abstract class ID
 
     public static String sid2muc(SID sid)
     {
-        return sid.toStringFormal() + '@' + Xmpp.MUC_ADDR;
+        return sid.toStringFormal() + '@' + Xmpp.getMucAddress();
     }
 
     //
