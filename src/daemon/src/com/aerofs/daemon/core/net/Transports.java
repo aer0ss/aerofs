@@ -97,7 +97,8 @@ public class Transports implements IDumpStat, IDumpStatMisc, IStartable
             @Override
             public ITransport newTransport_(DID localdid, IBlockingPrioritizedEventSink<IEvent> q, MaxcastFilterReceiver mcfr)
             {
-                return new Zephyr(localdid, id(),  rank(), q, mcfr);
+                boolean enableMulticast = !Cfg.useJingle() && Cfg.useZephyr();
+                return new Zephyr(localdid, id(),  rank(), q, mcfr, enableMulticast);
             }
 
             @Override

@@ -33,6 +33,7 @@ import java.io.IOException;
 import java.util.Map;
 
 import static com.aerofs.base.id.JabberID.did2FormAJid;
+import static com.aerofs.daemon.transport.lib.TPUtil.registerMulticastHandler;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.Maps.newHashMap;
@@ -43,12 +44,19 @@ import static org.jivesoftware.smack.packet.Message.Type.headline;
 
 public class Zephyr extends XMPP implements ISignallingChannel
 {
-    public Zephyr(DID localdid, String id, int rank, IBlockingPrioritizedEventSink<IEvent> sink,
-            MaxcastFilterReceiver mcfr)
+
+    public Zephyr(DID localdid, String id, int rank, IBlockingPrioritizedEventSink<IEvent> sink, MaxcastFilterReceiver mcfr, boolean enableMulticast)
     {
         super(localdid, id, rank, sink, mcfr);
         ZephyrClientManager zcm = new ZephyrClientManager(id, rank, this, new BasicStatsCounter(), this);
         setPipe_(zcm);
+
+        l.debug("{}: mc enable:{}", id, enableMulticast);
+
+        this._enableMulticast = enableMulticast;
+        if (enableMulticast) {
+            registerMulticastHandler(this);
+        }
     }
 
     public void setMobileServerZephyrConnector(MobileServerZephyrConnector mobileServerZephyrConnector)
@@ -59,7 +67,7 @@ public class Zephyr extends XMPP implements ISignallingChannel
     @Override
     public boolean supportsMulticast()
     {
-        return false;
+        return _enableMulticast;
     }
 
     //--------------------------------------------------------------------------
@@ -234,6 +242,7 @@ public class Zephyr extends XMPP implements ISignallingChannel
     // members
     //
 
+    private final boolean _enableMulticast;
     private final Map<Type, ISignallingClient> _processors = newHashMap();
 
     private MobileServerZephyrConnector _msc;

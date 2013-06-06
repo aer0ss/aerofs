@@ -92,7 +92,7 @@ public enum ZephyrClientState implements IState<ZephyrClientContext>
             SocketChannel sc = ZUtil.getSocketChannel(ctx._k);
             try {
                 if (!sc.finishConnect()) {
-                    ZephyrClientContext.l.debug(ctx + ": pending connect");
+                    ZephyrClientContext.l.trace("{}: pending connect", ctx);
                     return park_(ctx, SelectionKey.OP_CONNECT);
                 }
             } catch (IOException e) {
@@ -243,7 +243,7 @@ public enum ZephyrClientState implements IState<ZephyrClientContext>
             assertValidStateFunc(ctx, this);
             assertValidZephyrClientContext(ctx);
 
-            ZephyrClientContext.l.debug(ctx + ": create bind remzid:" + ctx._remzid);
+            ZephyrClientContext.l.trace("{}: create bind remzid:{}", ctx, ctx._remzid);
 
             ctx.cleanCtrlFields_();
             Message.createBindMessage_(ctx._ctrlbuf, ctx._remzid);
@@ -384,7 +384,7 @@ public enum ZephyrClientState implements IState<ZephyrClientContext>
      */
     private static CoreEvent park_(ZephyrClientContext ctx, int... ists)
     {
-        ZephyrClientContext.l.debug(ctx + ": (PARK-INT) " + ctx.curr_());
+        ZephyrClientContext.l.trace("{}: (PARK-INT) {}", ctx, ctx.curr_());
         ZUtil.addInterest(ctx._k, ists);
         return PARK;
     }
@@ -577,7 +577,6 @@ public enum ZephyrClientState implements IState<ZephyrClientContext>
             byte[] m = new byte[ZEPHYR_MAGIC.length];
             b.get(m);
             if (!Arrays.equals(ZEPHYR_MAGIC, m)) {
-                assert false : (ctx + ":expected reg"); // FIXME: remove
                 throw new ExAbortState("expected reg msg", new ExBadMessage("expected reg"));
             }
 
@@ -586,7 +585,6 @@ public enum ZephyrClientState implements IState<ZephyrClientContext>
 
             int len = b.getInt();
             if (len <= 0) {
-                assert false : (ctx + ": invalid len"); // FIXME: remove
                 throw new ExAbortState("bad len for reg msg", new ExBadMessage("invalid len"));
             }
 
@@ -648,9 +646,9 @@ public enum ZephyrClientState implements IState<ZephyrClientContext>
                 if (!ctx._rdhdrrcvd) {
                     int bytesin = read_(ctx, ctx._rdhdrbuf);
 
-                    ZephyrClientContext.l.debug(ctx + ": hdr b:" + bytesin +
-                        " [" + ctx._rdhdrbuf.position() + "/" + ctx._rdhdrbuf.limit() + "]" +
-                        " <- " + ctx._remdid);
+                    ZephyrClientContext.l.trace("{}: hdr b:{} [{}/{}] <- {}",
+                            ctx, bytesin, ctx._rdhdrbuf.position(), ctx._rdhdrbuf.limit(),
+                            ctx._remdid);
 
                     if (ctx._rdhdrbuf.hasRemaining()) {
                         return park_(ctx, SelectionKey.OP_READ);
@@ -663,7 +661,6 @@ public enum ZephyrClientState implements IState<ZephyrClientContext>
                     int m = ctx._rdhdrbuf.getInt();
                     if (m != LibParam.CORE_MAGIC) {
                         String merrstr = "bad magic exp:" + LibParam.CORE_MAGIC + " act:" + m;
-                        assert false : (ctx + ": " + merrstr); // FIXME: remove
                         throw new ExAbortState(merrstr, new ExBadMessage("bad frame:" + merrstr));
                     }
 
@@ -672,7 +669,6 @@ public enum ZephyrClientState implements IState<ZephyrClientContext>
                     int len = ctx._rdhdrbuf.getInt();
                     if (len <= 0) {
                         String lerrstr = "bad len:" + len;
-                        assert false : (ctx + ": " + lerrstr); // FIXME: remove
                         throw new ExAbortState(lerrstr, new ExBadMessage("bad frame:" + lerrstr));
                     }
 
@@ -692,10 +688,9 @@ public enum ZephyrClientState implements IState<ZephyrClientContext>
                 // prints out the bytes received for this frame _including header_
                 // NOTE: bytesin, _rdbodybytes, _rdbodylen only refer to the payload
                 final int hdrlen = ctx._rdhdrbuf.limit();
-                ZephyrClientContext.l.debug(ctx + ": b:" + bytesin +
-                        " [" + (hdrlen + ctx._rdbodybytes) + "/" + (hdrlen + ctx._rdbodylen) +
-                        " (pld:" + ctx._rdbodylen + ")]" +
-                        " <- " + ctx._remdid);
+                ZephyrClientContext.l.trace("{}: b:{} [{}/{} (pld:{})] <- {}",
+                        ctx, bytesin, (hdrlen + ctx._rdbodybytes), (hdrlen + ctx._rdbodylen),
+                        ctx._rdbodylen, ctx._remdid);
 
                 if (bytesin == 0) {
                     return park_(ctx, SelectionKey.OP_READ);
@@ -711,7 +706,7 @@ public enum ZephyrClientState implements IState<ZephyrClientContext>
 
                 // ok. now we've recv'd the full payload
 
-                ZephyrClientContext.l.debug(ctx + ": b:fin <- " + ctx._remdid);
+                ZephyrClientContext.l.trace("{}: b:fin <- {}", ctx, ctx._remdid);
 
                 for (ByteBuffer rdbuf : ctx._rdbufs) rdbuf.flip();
                 ByteArrayInputStream bais = ZephyrClientUtil.createByteArrayInputStream(ctx._rdbufs);
@@ -793,9 +788,9 @@ public enum ZephyrClientState implements IState<ZephyrClientContext>
                     throw new ExAbortState("err while wr", e);
                 }
 
-                ZephyrClientContext.l.debug(ctx + ": b:" + written +
-                        " [" + ctx._wrbodybytes + "/" + ctx._wrcurrout._length + "]" +
-                        " -> " + ctx._remdid);
+                ZephyrClientContext.l.trace("{}: b:{} [{}/{}] -> {}",
+                        ctx, written, ctx._wrbodybytes, ctx._wrcurrout._length,
+                        ctx._remdid);
 
                 if (written == 0 /* nothing written in this iteration */ &&
                     ctx._wrbodybytes != ctx._wrcurrout._length) {
