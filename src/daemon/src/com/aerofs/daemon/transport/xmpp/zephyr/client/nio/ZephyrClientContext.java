@@ -6,18 +6,18 @@
 package com.aerofs.daemon.transport.xmpp.zephyr.client.nio;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.event.lib.imc.IResultWaiter;
-import com.aerofs.lib.LibParam;
-import com.aerofs.lib.event.Prio;
 import com.aerofs.daemon.lib.PrioQueue;
 import com.aerofs.daemon.transport.xmpp.XUtil;
 import com.aerofs.daemon.transport.xmpp.zephyr.client.nio.statemachine.IState;
 import com.aerofs.daemon.transport.xmpp.zephyr.client.nio.statemachine.IStateContext;
 import com.aerofs.daemon.transport.xmpp.zephyr.client.nio.statemachine.IStateEventType;
 import com.aerofs.daemon.transport.xmpp.zephyr.client.nio.statemachine.StateMachineEvent;
+import com.aerofs.lib.LibParam;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.base.ex.ExNoResource;
+import com.aerofs.lib.event.Prio;
 import com.aerofs.proto.Transport.PBZephyrCandidateInfo;
 import com.aerofs.zephyr.core.ExAlreadyBound;
 import org.slf4j.Logger;
@@ -32,11 +32,11 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import static com.aerofs.daemon.lib.DaemonParam.Zephyr.QUEUE_LENGTH;
 import static com.aerofs.base.net.ZephyrConstants.ZEPHYR_BIND_MSG_LEN;
 import static com.aerofs.base.net.ZephyrConstants.ZEPHYR_INVALID_CHAN_ID;
 import static com.aerofs.base.net.ZephyrConstants.ZEPHYR_MSG_BYTE_ORDER;
 import static com.aerofs.base.net.ZephyrConstants.ZEPHYR_REG_MSG_LEN;
+import static com.aerofs.daemon.lib.DaemonParam.Zephyr.QUEUE_LENGTH;
 import static com.aerofs.daemon.transport.xmpp.zephyr.client.nio.ClientConstants.ZEPHYR_CLIENT_HDR_LEN;
 import static com.aerofs.daemon.transport.xmpp.zephyr.client.nio.ZephyrClientContext.HandshakeMessageType.ACK;
 import static com.aerofs.daemon.transport.xmpp.zephyr.client.nio.ZephyrClientContext.HandshakeMessageType.SYN;
@@ -136,7 +136,7 @@ public class ZephyrClientContext implements IStateContext
         {
             Out out = new Out(w, b, o);
             _txq.enqueue_(out, p);
-            l.debug(toString() + ": +out b:" + out._length);
+            l.trace("{}: +out b:{}", toString(), out._length);
         }
 
         // FIXME (AG) : consider putting the out data into the PENDING_OUT_PACKET
@@ -231,9 +231,7 @@ public class ZephyrClientContext implements IStateContext
      */
     private void logqueue_(String action)
     {
-        if (l.isDebugEnabled()) {
-            l.debug(toString() + ": [" + action + "] eq sz:" + _eq.size() + " txq sz:" + _txq.length_() + " eq:" + _eq);
-        }
+        l.trace("{}: [{}] eq sz:{} txq sz:{} eq:{}", toString(), action, _eq.size(), _txq.length_(), _eq);
     }
 
     @Override

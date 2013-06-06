@@ -24,8 +24,6 @@ public class Jingle extends XMPP
         registerMulticastHandler(this);
     }
 
-
-
     @Override
     public boolean supportsMulticast()
     {
