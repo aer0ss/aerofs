@@ -16,8 +16,8 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.daemon.core.ex.ExNoAvailDevice;
 import com.aerofs.lib.id.SIndex;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 
 import javax.annotation.Nonnull;
@@ -165,9 +165,12 @@ public class To
         return Util.test(_cast, b);
     }
 
-    public Set<DID> dids()
+    /**
+     * @return all DIDs passed to the object, including those already picked
+     */
+    public Set<DID> allDIDs()
     {
-        return ImmutableSet.copyOf(_dids);
+        return Sets.union(_dids, _avoid);
     }
 
     /**
@@ -179,15 +182,6 @@ public class To
 
         _avoid.remove(did);
         _dids.add(did);
-        return this;
-    }
-
-    /**
-     * add all the devices from another To
-     */
-    public To addAll_(To to)
-    {
-        for (DID did : to._dids) add_(did);
         return this;
     }
 

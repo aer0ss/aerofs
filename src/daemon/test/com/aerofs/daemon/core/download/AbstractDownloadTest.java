@@ -129,24 +129,6 @@ public class AbstractDownloadTest extends AbstractTest
     static DigestedMessage anyDM() { return any(DigestedMessage.class); }
     static IDownloadContext anyDC() { return any(IDownloadContext.class); }
 
-    static To from(final DID did)
-    {
-        return argThat(new BaseMatcher<To>()
-        {
-            @Override
-            public boolean matches(Object o)
-            {
-                return ImmutableSet.of(did).equals(((To)o).dids());
-            }
-
-            @Override
-            public void describeTo(Description description)
-            {
-                description.appendText("from(" + did + ")");
-            }
-        });
-    }
-
     static Endpoint endpoint(final DID did)
     {
         return argThat(new BaseMatcher<Endpoint>()

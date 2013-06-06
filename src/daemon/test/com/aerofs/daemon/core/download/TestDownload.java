@@ -96,7 +96,7 @@ public class TestDownload extends AbstractDownloadTest
 
         Set<DID> dids = ImmutableSet.of(did1, did2);
 
-        when(to.dids()).thenReturn(dids);
+        when(to.allDIDs()).thenReturn(dids);
         mockReplies(socid, did1);
 
         dl(socid).download_();
