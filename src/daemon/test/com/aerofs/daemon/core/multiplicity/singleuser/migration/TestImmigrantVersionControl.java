@@ -6,6 +6,7 @@ import com.aerofs.base.id.UniqueID;
 import com.aerofs.daemon.core.AbstractTestVersionControl;
 import com.aerofs.daemon.core.AbstractVersionControl;
 import com.aerofs.daemon.core.migration.ImmigrantVersionControl;
+import com.aerofs.daemon.core.store.MapSIndex2Contributors;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.ver.IImmigrantVersionDatabase;
 import com.aerofs.daemon.lib.db.ver.IVersionDatabase;
@@ -30,6 +31,7 @@ import static org.mockito.Mockito.*;
 public class TestImmigrantVersionControl extends AbstractTestVersionControl<ImmigrantTickRow>
 {
     @Mock IImmigrantVersionDatabase ivdb;
+    @Mock MapSIndex2Contributors sidx2contrib;
     @InjectMocks ImmigrantVersionControl ivc;
 
     Tick initialGreatestTick = new Tick(1000);

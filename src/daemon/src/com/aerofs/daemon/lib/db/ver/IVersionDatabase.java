@@ -48,11 +48,6 @@ public interface IVersionDatabase<E extends AbstractTickRow>
     void addKnowledge_(SIndex sidx, DID did, Tick tick, Trans t)
             throws SQLException;
 
-    /**
-     * @return all the devices mentioned in the version table
-     */
-    @Nonnull Set<DID> getAllVersionDIDs_(SIndex sidx) throws SQLException;
-
     void deleteTicksAndKnowledgeForStore_(SIndex sidx, Trans t) throws SQLException;
 
 

@@ -54,7 +54,8 @@ public class DaemonPostUpdateTasks
             new DPUTPerPhyRootAuxRoot(),
             new DPUTCreateCAIndex(dbcw),
             new DPUTCreatePendingRootTable(dbcw),
-            new DPUTAddStoreNameColumn(dbcw)
+            new DPUTAddStoreNameColumn(dbcw),
+            new DPUTAddContributorsTable(dbcw)
             // new tasks go here
         };
 

@@ -2,6 +2,8 @@ package com.aerofs.daemon.core.migration;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.AbstractVersionControl;
+import com.aerofs.daemon.core.store.MapSIndex2Contributors;
+import com.aerofs.daemon.core.store.MapSIndex2Store;
 import com.aerofs.daemon.core.store.StoreDeletionOperators;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.ver.IImmigrantVersionDatabase;
@@ -32,13 +34,16 @@ public class ImmigrantVersionControl extends AbstractVersionControl<ImmigrantTic
     private static Logger l = Loggers.getLogger(ImmigrantVersionControl.class);
 
     private final IImmigrantVersionDatabase _ivdb;
+    private final MapSIndex2Contributors _sidx2contrib;
 
     @Inject
     public ImmigrantVersionControl(IImmigrantVersionDatabase ivdb, CfgLocalDID cfgLocalDID,
-            TransLocalVersionAssistant tlva, StoreDeletionOperators sdn)
+            TransLocalVersionAssistant tlva, StoreDeletionOperators sdn,
+            MapSIndex2Contributors sidx2contrib)
     {
         super(ivdb, cfgLocalDID, tlva, sdn);
         _ivdb = ivdb;
+        _sidx2contrib = sidx2contrib;
     }
 
     public void createLocalImmigrantVersions_(SOCID socid, Version v, Trans t)
@@ -73,6 +78,7 @@ public class ImmigrantVersionControl extends AbstractVersionControl<ImmigrantTic
                 l.debug("add imm ver" + socid + " imm " + immDid + immTick + " " + did + tick);
             }
             _ivdb.addImmigrantVersion_(socid, immDid, immTick, did, tick, t);
+            _sidx2contrib.addContributor_(socid.sidx(), immDid, t);
             return true;
         } else {
             return false;
@@ -83,5 +89,6 @@ public class ImmigrantVersionControl extends AbstractVersionControl<ImmigrantTic
     protected void restoreTickRow_(SOCID socid, ImmigrantTickRow tr, Trans t) throws SQLException
     {
         _ivdb.addImmigrantVersion_(socid, _cfgLocalDID.get(), tr._immTick, tr._did, tr._tick, t);
+        _sidx2contrib.addContributor_(socid.sidx(), _cfgLocalDID.get(), t);
     }
 }

@@ -51,11 +51,6 @@ public abstract class AbstractVersionControl<E extends AbstractTickRow>
         _maxTick = _vdb.getGreatestTick_();
     }
 
-    public @Nonnull Set<DID> getAllVersionDIDs_(SIndex sidx) throws SQLException
-    {
-        return _vdb.getAllVersionDIDs_(sidx);
-    }
-
     public @Nonnull Version getKnowledgeExcludeSelf_(SIndex sidx) throws SQLException
     {
         return _vdb.getKnowledgeExcludeSelf_(sidx);
