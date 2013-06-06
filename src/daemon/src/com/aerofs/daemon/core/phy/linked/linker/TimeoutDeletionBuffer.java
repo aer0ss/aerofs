@@ -320,9 +320,9 @@ public class TimeoutDeletionBuffer implements IDeletionBuffer
             l.info("delete {} {}", soid,
                     ObfuscatingFormatters.obfuscatePath(oa.name()));
 
-            makeDamnSureThePhysicalObjectDisappeared(oa);
-
-            _od.delete_(soid, PhysicalOp.MAP, t);
+            if (physicalObjectDisappeared(oa)) {
+                _od.delete_(soid, PhysicalOp.MAP, t);
+            }
             return true;
         }
     }
@@ -340,9 +340,8 @@ public class TimeoutDeletionBuffer implements IDeletionBuffer
      * scheduled deletion we check that the physical object is missing and if
      * something is amiss we send a defect and abort the operation
      */
-    private void makeDamnSureThePhysicalObjectDisappeared(OA oa) throws Exception
+    private boolean physicalObjectDisappeared(OA oa) throws Exception
     {
-        //
         Path path = _ds.resolve_(oa);
         String absRoot = _lrm.absRootAnchor_(path.sid());
         if (absRoot != null) {
@@ -351,16 +350,19 @@ public class TimeoutDeletionBuffer implements IDeletionBuffer
                 l.warn("here be dragons {} {}", path, oa);
                 // in the event that the path is occupied by an object of a different
                 // type, proceed with the deletion
-                if (f.isFile() != oa.isFile()) {
-                    // throw an exception an submit a defect like a well-behaved
-                    // law-abiding citizen of this proud nation instead of asserting
-                    // like an uneducated street urchin from the depths of hell
+                if (f.isFile() == oa.isFile()) {
+                    // a physical object of the same type exist at the given path:
+                    // 1. submit a defect
+                    // 2. prevent deletion of logical object
+                    // 3. allow removal of object from deletion buffer
+                    // TODO: schedule full scan?
                     _rocklog.newDefect("daemon.linker.tdb")
-                            .setMessage(path + " " + oa)
+                            .setMessage(ObfuscatingFormatters.obfuscatePath(path) + " " + oa)
                             .send();
-                    throw new ExBadArgs();
+                    return false;
                 }
             }
         }
+        return true;
     }
 }
