@@ -238,7 +238,7 @@ class Download
         final OA oa = _f._ds.getAliasedOANullable_(_socid.soid());
         if (oa == null) {
             SOCID dst = new SOCID(_socid.soid(), CID.META);
-            _f._dls.downloadSync_(dst, _from.dids(), _cxt);
+            _f._dls.downloadSync_(dst, _from.allDIDs(), _cxt);
         } else if (oa.isExpelled()) {
             throw new ExAborted("object expelled: " + _socid);
         }
