@@ -15,16 +15,13 @@ import com.aerofs.lib.db.IDatabaseParams;
 public class CfgCoreDatabaseParams implements IDatabaseParams
 {
     private final CfgDatabase _cfgDatabase;
-    @SuppressWarnings("unused")
-    private final CfgBuildType _cfgBuildType;
     private boolean _checkedMySQL;
     private boolean _isMySQL;
 
     @Inject
-    public CfgCoreDatabaseParams(CfgDatabase cfgDatabase, CfgBuildType cfgBuildType)
+    public CfgCoreDatabaseParams(CfgDatabase cfgDatabase)
     {
         _cfgDatabase = cfgDatabase;
-        _cfgBuildType = cfgBuildType;
     }
 
     @Override

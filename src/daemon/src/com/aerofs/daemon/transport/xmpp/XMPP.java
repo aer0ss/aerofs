@@ -412,6 +412,7 @@ public abstract class XMPP implements ITransportImpl, IPipeController, IUnicast,
                 try {
                     switch (type) {
                         case TRANSPORT_CHECK_PULSE_CALL:
+                            //noinspection fallthrough
                         case TRANSPORT_CHECK_PULSE_REPLY:
                             PBCheckPulse cp = hdr.getCheckPulse();
                             assert cp != null : ("invalid pulse msg from d:" + did);

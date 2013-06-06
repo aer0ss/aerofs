@@ -8,7 +8,6 @@ import com.aerofs.base.id.DID;
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
-import com.aerofs.daemon.core.mock.logical.IsSOIDAtPath;
 import com.aerofs.daemon.core.mock.logical.LogicalObjectsPrinter;
 import com.aerofs.daemon.core.mock.logical.MockDS;
 import com.aerofs.daemon.core.store.MapSIndex2DeviceBitMap;
@@ -29,21 +28,13 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.internal.invocation.InvocationMatcher;
-import org.mockito.internal.verification.api.VerificationData;
-import org.mockito.invocation.Invocation;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
-import org.mockito.verification.VerificationMode;
 
-import java.sql.SQLException;
 import java.util.List;
 
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.argThat;
-import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
