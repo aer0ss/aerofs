@@ -20,14 +20,14 @@ public interface ISignallingClient
 
     /**
      * Called when the connection to the out-of-band signalling channel is broken. The signalling
-     * channel is unusable until the client is signalled via <code>signallingChannelConnected_</code>
+     * channel is unusable until the client is signalled via <code>signallingServiceConnected</code>
      * that the connection has been re-established.
      */
     public void signallingChannelDisconnected_();
 
     /**
      * Called when a message of the type the client registered for via
-     * <code>registerSignallingClient_()</code> in {@link ISignallingService} is received on the
+     * <code>registerSignallingClient()</code> in {@link ISignallingService} is received on the
      * signalling channel. If the client does not want to handle the given message, the client
      * should return false from this method so that other ISignallingClient's can have a chance to
      * process the message

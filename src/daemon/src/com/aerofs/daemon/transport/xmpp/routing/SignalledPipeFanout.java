@@ -8,11 +8,11 @@ package com.aerofs.daemon.transport.xmpp.routing;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.event.lib.imc.IResultWaiter;
+import com.aerofs.daemon.transport.xmpp.IConnectionService;
+import com.aerofs.daemon.transport.xmpp.ISignalledConnectionService;
 import com.aerofs.lib.sched.IScheduler;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.daemon.transport.lib.IPipeDebug;
-import com.aerofs.daemon.transport.xmpp.IPipe;
-import com.aerofs.daemon.transport.xmpp.ISignalledPipe;
 import com.aerofs.base.ex.ExNoResource;
 import com.google.common.collect.ImmutableSet;
 import org.slf4j.Logger;
@@ -27,12 +27,12 @@ import java.util.Set;
 import static com.aerofs.proto.Files.PBDumpStat;
 
 /**
- * FIXME: should I parameterize SignalledPipeFanout and have XMPP use ISignalledPipe?
+ * FIXME: should I parameterize SignalledPipeFanout and have XMPP use ISignalledConnectionService?
  *
  */
 public class SignalledPipeFanout implements IPipeDebug
 {
-    public SignalledPipeFanout(IScheduler sched, Set<ISignalledPipe> pipes)
+    public SignalledPipeFanout(IScheduler sched, Set<ISignalledConnectionService> pipes)
     {
         assert sched != null && pipes != null && pipes.size() > 0 : ("invalid args");
 
@@ -43,9 +43,9 @@ public class SignalledPipeFanout implements IPipeDebug
 
     public void init_() throws Exception
     {
-        for (IPipe p : _pipes) {
+        for (IConnectionService p : _pipes) {
             l.info(_pream + " init p:" + p.id());
-            p.init_();
+            p.init();
         }
 
         l.info(_pream + " inited");
@@ -53,9 +53,9 @@ public class SignalledPipeFanout implements IPipeDebug
 
     public void start_()
     {
-        for (IPipe p : _pipes) {
+        for (IConnectionService p : _pipes) {
             l.info(_pream + " start p:" + p.id());
-            p.start_();
+            p.start();
         }
 
         l.info(_pream + " started");
@@ -65,7 +65,7 @@ public class SignalledPipeFanout implements IPipeDebug
     {
         boolean oneready = false;
 
-        for (IPipe p : _pipes) {
+        for (IConnectionService p : _pipes) {
             if (p.ready()) {
                 l.info(_pream + " p:" + p.id() + " ready");
                 oneready = true;
@@ -81,46 +81,46 @@ public class SignalledPipeFanout implements IPipeDebug
     public void linkStateChanged_(Set<NetworkInterface> rem, Set<NetworkInterface> cur)
         throws ExNoResource
     {
-        for (IPipe p : _pipes) {
+        for (IConnectionService p : _pipes) {
             l.info(_pream + " lsc p:" + p.id());
-            p.linkStateChanged_(rem, cur);
+            p.linkStateChanged(rem, cur);
         }
     }
 
     public void xmppServerConnected_()
         throws ExNoResource
     {
-        for (ISignalledPipe p : _pipes) {
+        for (ISignalledConnectionService p : _pipes) {
             l.info(_pream + " xmpp server connected p:" + p.id());
-            p.signallingChannelConnected_();
+            p.signallingServiceConnected();
         }
     }
 
     public void xmppServerDisconnected_()
         throws ExNoResource
     {
-        for (ISignalledPipe p : _pipes) {
+        for (ISignalledConnectionService p : _pipes) {
             l.info(_pream + " xmpp server disconnected p:" + p.id());
-            p.signallingChannelDisconnected_();
+            p.signallingServiceDisconnected();
         }
     }
 
-    public void peerConnected_(DID did, IPipe p)
+    public void deviceConnected_(DID did, IConnectionService p)
     {
         l.info(_pream + " p:" + p.id() + " +d:" + did);
 
         // it is possible for peers to connect without a packet being sent from
         // us first
 
-        DIDPipeRouter<? extends IPipe> dpr = getOrCreate(did);
-        dpr.peerConnected_(p);
+        DIDPipeRouter<? extends IConnectionService> dpr = getOrCreate(did);
+        dpr.deviceConnected_(p);
     }
 
-    public void peerDisconnected_(DID did, IPipe p)
+    public void deviceDisconnected_(DID did, IConnectionService p)
     {
         l.info(_pream + " p:" + p.id() + " -d:" + did);
 
-        DIDPipeRouter<? extends IPipe> dpr = _peers.get(did);
+        DIDPipeRouter<? extends IConnectionService> dpr = _peers.get(did);
 
         // this occurs because underlying layers will always signal
         // disconnection, regardless of whether a valid connection takes
@@ -134,7 +134,7 @@ public class SignalledPipeFanout implements IPipeDebug
             return;
         }
 
-        dpr.peerDisconnected_(p);
+        dpr.deviceDisconnected_(p);
 
         // IMPORTANT - don't remove the dpr! FIXME: find a way to purge dprs
     }
@@ -144,16 +144,16 @@ public class SignalledPipeFanout implements IPipeDebug
     {
         assert did != null && ex != null : (_pream + " null did or ex");
 
-        for (IPipe p : _pipes) {
+        for (IConnectionService p : _pipes) {
             l.info(_pream + " disconnect p:" + p.id() + " d:" + did);
-            p.disconnect_(did, ex);
+            p.disconnect(did, ex);
         }
     }
 
     public Object send_(DID did, @Nullable IResultWaiter wtr, Prio pri, byte[][] bss, @Nullable Object cke)
         throws Exception
     {
-        DIDPipeRouter<? extends IPipe> dpr = getOrCreate(did);
+        DIDPipeRouter<? extends IConnectionService> dpr = getOrCreate(did);
         return dpr.send_(wtr, pri, bss, cke);
     }
 
@@ -164,7 +164,7 @@ public class SignalledPipeFanout implements IPipeDebug
     @Override
     public void dumpStat(PBDumpStat template, PBDumpStat.Builder bd)
     {
-        for(IPipe p : _pipes) {
+        for(IConnectionService p : _pipes) {
             try {
                 p.dumpStat(template, bd);
             } catch (Exception e) {
@@ -178,7 +178,7 @@ public class SignalledPipeFanout implements IPipeDebug
     {
         String indentmore = indent + indentUnit;
 
-        for(IPipe p : _pipes) {
+        for(IConnectionService p : _pipes) {
             try {
                 ps.println(indent + "ucast:" + p.id());
                 p.dumpStatMisc(indentmore, indentUnit, ps);
@@ -189,12 +189,12 @@ public class SignalledPipeFanout implements IPipeDebug
     }
 
     @Override
-    public long getBytesRx(DID did)
+    public long getBytesReceived(DID did)
     {
         int total = 0;
-        for (ISignalledPipe p : _pipes) {
+        for (ISignalledConnectionService p : _pipes) {
             l.info(_pream + " bytesrx p:" + p.id());
-            total += p.getBytesRx(did);
+            total += p.getBytesReceived(did);
         }
 
         return total;
@@ -212,10 +212,10 @@ public class SignalledPipeFanout implements IPipeDebug
      * should be retrieved or created
      * @return a valid <code>DIDPipeRouter</code>
      */
-    DIDPipeRouter<? extends IPipe> getOrCreate(DID did)
+    DIDPipeRouter<? extends IConnectionService> getOrCreate(DID did)
     {
         if (!_peers.containsKey(did)) {
-            _peers.put(did, new DIDPipeRouter<ISignalledPipe>(did, _sched, _pipes));
+            _peers.put(did, new DIDPipeRouter<ISignalledConnectionService>(did, _sched, _pipes));
         }
 
         return _peers.get(did);
@@ -227,8 +227,8 @@ public class SignalledPipeFanout implements IPipeDebug
 
     private final String _pream;
     private final IScheduler _sched;
-    private final ImmutableSet<ISignalledPipe> _pipes;
-    private final Map<DID, DIDPipeRouter<? extends IPipe>> _peers = new HashMap<DID, DIDPipeRouter<? extends IPipe>>();
+    private final ImmutableSet<ISignalledConnectionService> _pipes;
+    private final Map<DID, DIDPipeRouter<? extends IConnectionService>> _peers = new HashMap<DID, DIDPipeRouter<? extends IConnectionService>>();
 
     private static final Logger l = Loggers.getLogger(SignalledPipeFanout.class);
 }

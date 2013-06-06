@@ -4,16 +4,15 @@
 
 package com.aerofs.daemon.core.net;
 
-import java.io.ByteArrayInputStream;
-
 import com.aerofs.base.id.DID;
+import com.aerofs.base.id.UserID;
 import com.aerofs.daemon.core.net.IncomingStreams.StreamKey;
 import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.transport.ITransport;
-import com.aerofs.base.id.UserID;
 import com.aerofs.proto.Core.PBCore;
 
 import javax.annotation.Nullable;
+import java.io.InputStream;
 
 import static com.aerofs.daemon.core.CoreUtil.typeString;
 
@@ -31,7 +30,7 @@ import static com.aerofs.daemon.core.CoreUtil.typeString;
 public class DigestedMessage
 {
     private final PBCore _pb;
-    private final ByteArrayInputStream _is;
+    private final InputStream _is;
     private final Endpoint _ep;
     private final UserID _userId;
     @Nullable private final StreamKey _strm;
@@ -41,7 +40,7 @@ public class DigestedMessage
      */
     public DigestedMessage(
             PBCore pb,
-            ByteArrayInputStream is,
+            InputStream is,
             Endpoint ep,
             UserID userId,
             @Nullable StreamKey strm)
@@ -73,7 +72,7 @@ public class DigestedMessage
         return _pb;
     }
 
-    public ByteArrayInputStream is()
+    public InputStream is()
     {
         return _is;
     }

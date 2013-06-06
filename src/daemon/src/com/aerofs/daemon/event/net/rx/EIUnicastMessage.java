@@ -1,9 +1,9 @@
 package com.aerofs.daemon.event.net.rx;
 
-import com.aerofs.lib.event.IEvent;
 import com.aerofs.daemon.event.net.Endpoint;
+import com.aerofs.lib.event.IEvent;
 
-import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 
 /**
  * Signals the receipt of a unicast atomic message from an {@link Endpoint}.
@@ -22,7 +22,7 @@ public class EIUnicastMessage implements IEvent, IInputBuffer
      * <b>IMPORTANT:</b> the transport framing header has already been read
      * from this <code>InputStream</code>
      */
-    public final ByteArrayInputStream _is;
+    public final InputStream _is;
 
     /**
      * Original length of the packet transferred over the wire (includes both
@@ -38,7 +38,7 @@ public class EIUnicastMessage implements IEvent, IInputBuffer
      * @param wirelen Number of bytes (including the <code>ITransport</code>
      * framing header
      */
-    public EIUnicastMessage(Endpoint ep, ByteArrayInputStream is, int wirelen)
+    public EIUnicastMessage(Endpoint ep, InputStream is, int wirelen)
     {
         _ep = ep;
         _is = is;
@@ -46,7 +46,7 @@ public class EIUnicastMessage implements IEvent, IInputBuffer
     }
 
     @Override
-    public ByteArrayInputStream is()
+    public InputStream is()
     {
         return _is;
     }

@@ -4,7 +4,7 @@ import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.lib.id.StreamID;
 import com.aerofs.lib.event.IEvent;
 
-import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 
 /**
  * Event that signals the receipt of a packet containing the chunk portion of
@@ -33,7 +33,7 @@ public class EIChunk implements IEvent, IInputBuffer
      * <b>IMPORTANT:</b> the {@link com.aerofs.daemon.transport.ITransport}
      * framing header has already been read from this <code>InputStream</code>
      */
-    public final ByteArrayInputStream _is;
+    public final InputStream _is;
 
     /**
      * Original length of the packet transferred over the wire (includes both
@@ -51,7 +51,7 @@ public class EIChunk implements IEvent, IInputBuffer
      * @param wirelen Number of bytes (including the <code>ITransport</code>
      * framing header
      */
-    public EIChunk(Endpoint ep, StreamID streamId, int seq, ByteArrayInputStream is, int wirelen)
+    public EIChunk(Endpoint ep, StreamID streamId, int seq, InputStream is, int wirelen)
     {
         _ep = ep;
         _streamId = streamId;
@@ -61,7 +61,7 @@ public class EIChunk implements IEvent, IInputBuffer
     }
 
     @Override
-    public ByteArrayInputStream is()
+    public InputStream is()
     {
         return _is;
     }

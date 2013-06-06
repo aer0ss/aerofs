@@ -5,11 +5,11 @@
 
 package com.aerofs.daemon.transport.xmpp.routing;
 
-import com.aerofs.daemon.transport.xmpp.IPipe;
+import com.aerofs.daemon.transport.xmpp.IConnectionService;
 
 /**
  * Holds the number of times a connection has been established to the stored
- * {@link IPipe} on behalf of a peer.
+ * {@link com.aerofs.daemon.transport.xmpp.IConnectionService} on behalf of a peer.
  */
 class DIDPipeConnectionCounter
 {
@@ -19,17 +19,17 @@ class DIDPipeConnectionCounter
      * <br/>
      * Initial connection-count for <code>p</code> is set to 0
      *
-     * @param p {@link IPipe} for which the connection count is being maintained
+     * @param p {@link com.aerofs.daemon.transport.xmpp.IConnectionService} for which the connection count is being maintained
      */
-    DIDPipeConnectionCounter(IPipe p)
+    DIDPipeConnectionCounter(IConnectionService p)
     {
         _p = p;
     }
 
     /**
-     * @return {@link IPipe} this object represents
+     * @return {@link com.aerofs.daemon.transport.xmpp.IConnectionService} this object represents
      */
-    IPipe p()
+    IConnectionService p()
     {
         return _p;
     }
@@ -44,14 +44,14 @@ class DIDPipeConnectionCounter
     }
 
     /**
-     * Increments the contained {@link IPipe} object's reconnection count
+     * Increments the contained {@link com.aerofs.daemon.transport.xmpp.IConnectionService} object's reconnection count
      */
     void increment_()
     {
         ++_connSeqNum;
     }
 
-    private final IPipe _p;
+    private final IConnectionService _p;
 
     private int _connSeqNum = 0;
 }

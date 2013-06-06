@@ -38,12 +38,13 @@ import com.aerofs.proto.Transport.PBStream.InvalidationReason;
 import com.aerofs.proto.Transport.PBStream.Type;
 import com.aerofs.proto.Transport.PBTPHeader;
 import com.aerofs.proto.Transport.PBTransportDiagnosis;
+import com.aerofs.proto.Transport.PBTransportDiagnosis.PBPing;
 import org.slf4j.Logger;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.regex.PatternSyntaxException;
 
 import static com.aerofs.proto.Transport.PBStream.InvalidationReason.STREAM_NOT_FOUND;
@@ -51,12 +52,11 @@ import static com.aerofs.proto.Transport.PBTPHeader.Type.DATAGRAM;
 import static com.aerofs.proto.Transport.PBTPHeader.Type.DIAGNOSIS;
 import static com.aerofs.proto.Transport.PBTPHeader.Type.STREAM;
 import static com.aerofs.proto.Transport.PBTransportDiagnosis.PBFloodStatReply;
-import static com.aerofs.proto.Transport.PBTransportDiagnosis.PBPong;
 import static com.aerofs.proto.Transport.PBTransportDiagnosis.Type.FLOOD_STAT_REPLY;
 import static com.aerofs.proto.Transport.PBTransportDiagnosis.Type.PONG;
 
 /**
- * This class provides a number of thread-safe {@link ITransport} and
+ * This class provides a number of thread-safe {@link com.aerofs.daemon.transport.ITransport} and
  * {@link IUnicast} utility functions
  */
 public class TPUtil
@@ -130,7 +130,7 @@ public class TPUtil
         };
     }
 
-    public static PBTPHeader processUnicastHeader(ByteArrayInputStream is)
+    public static PBTPHeader processUnicastHeader(InputStream is)
         throws IOException
     {
         return PBTPHeader.parseDelimitedFrom(is);
@@ -157,8 +157,7 @@ public class TPUtil
      * back to the sender
      * @throws Exception if the payload cannot be processed
      */
-    public static PBTPHeader processUnicastPayload(Endpoint ep, PBTPHeader h, ByteArrayInputStream is,
-            int wirelen, IBlockingPrioritizedEventSink<IEvent> sink, StreamManager sm)
+    public static PBTPHeader processUnicastPayload(Endpoint ep, PBTPHeader h, InputStream is, int wirelen, IBlockingPrioritizedEventSink<IEvent> sink, StreamManager sm)
         throws Exception
     {
         if (!h.hasStream()) {
@@ -217,10 +216,10 @@ public class TPUtil
      *
      * @param ep {@link Endpoint} that sent the control message
      * @param h {@link PBTPHeader} control message itself
-     * @param sink queue the {@link ITransport} or {@link IPipeController} uses
+     * @param sink queue the {@link com.aerofs.daemon.transport.ITransport} or {@link IConnectionServiceListener} uses
      * to communicate with the {@link com.aerofs.daemon.core.Core}
-     * @param sm {@link StreamManager} the {@link ITransport} or {@link IPipeController}
-     * uses to manage streams
+     * @param sm {@link StreamManager} the {@link com.aerofs.daemon.transport.ITransport} or
+     * {@link IConnectionServiceListener} uses to manage streams
      * @return {@link PBTPHeader} response required to the control packet
      * @throws ExProtocolError if the control packet has an unrecognized type and cannot
      * be processed
@@ -276,7 +275,7 @@ public class TPUtil
      * @param dg {@link PBTransportDiagnosis} diagnostic message itself
      * @param pd {@link IPipeDebug} instance of the debugging interface this method
      * can use to get basic diagnostic statistics (for example,
-     * <code>getBytesRx()</code> for <code>FLOOD_STAT_CALL</code>) about the peer
+     * <code>getBytesReceived()</code> for <code>FLOOD_STAT_CALL</code>) about the peer
      * @param tds {@link TransportDiagnosisState} instance used to store
      * {@link FloodEntry} objects for the peer
      * @return a response {@link PBTransportDiagnosis} if necessary. <strong>IMPORTANT:</strong>
@@ -291,15 +290,15 @@ public class TPUtil
         case PING:
             return PBTransportDiagnosis.newBuilder()
                 .setType(PONG)
-                .setPong(PBPong.newBuilder().setSeq(dg.getPing().getSeq()))
+                .setPing(PBPing.newBuilder().setPingId(dg.getPing().getPingId()))
                 .build();
 
         case PONG:
         {
-            Long l = tds.getPing(dg.getPong().getSeq());
+            Long l = tds.getPing(dg.getPing().getPingId());
             if (l != null && l < 0) {
                 long rtt = System.currentTimeMillis() + l;
-                tds.putPing(dg.getPong().getSeq(), rtt);
+                tds.putPing(dg.getPing().getPingId(), rtt);
             }
             break;
         }
@@ -309,7 +308,7 @@ public class TPUtil
 
         case FLOOD_STAT_CALL:
         {
-            long bytesrx = pd.getBytesRx(did);
+            long bytesrx = pd.getBytesReceived(did);
             long now = System.currentTimeMillis();
             int seq = dg.getFloodStatCall().getSeq();
 
@@ -380,7 +379,7 @@ public class TPUtil
     public static void sessionEnded(Endpoint ep, IBlockingPrioritizedEventSink<IEvent> sink,
             StreamManager sm, boolean outbound, boolean inbound)
     {
-        l.info("session " + ep + " ended: out " + outbound + " in " + inbound);
+        l.debug("closing streams " + ep + " out " + outbound + " in " + inbound);
 
         if (outbound) {
             sm.removeAllOutgoingStreams(ep.did());
@@ -407,8 +406,6 @@ public class TPUtil
     {
         PBTPHeader.Type type = transportHeader.getType();
 
-        return (type == STREAM &&
-                        transportHeader.getStream().getType() == Type.PAYLOAD) ||
-                type == DATAGRAM;
+        return (type == STREAM && transportHeader.getStream().getType() == Type.PAYLOAD) || type == DATAGRAM;
     }
 }

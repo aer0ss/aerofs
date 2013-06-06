@@ -4,7 +4,9 @@
 
 package com.aerofs.daemon.core.net.throttling;
 
+import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
+import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.CoreDeviceLRU;
 import com.aerofs.daemon.core.CoreScheduler;
@@ -13,24 +15,21 @@ import com.aerofs.daemon.core.net.IUnicastInputLayer;
 import com.aerofs.daemon.core.net.IUnicastOutputLayer;
 import com.aerofs.daemon.core.net.PeerContext;
 import com.aerofs.daemon.core.net.RawMessage;
-import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.lib.id.StreamID;
-import com.aerofs.base.C;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.cfg.ICfgDatabaseListener;
-import com.aerofs.base.ex.ExNotFound;
+import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.proto.Limit;
 import com.aerofs.proto.Transport.PBStream.InvalidationReason;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
-import javax.annotation.Nonnull;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -60,7 +59,6 @@ public class LimitMonitor implements IUnicastInputLayer, ICfgDatabaseListener, I
         public long bytesIn = 0; // bytes
         public long firstLimitLess = 0;
         public boolean paused = false;
-        @Nonnull
         PeerContext lastPeerContext; // FIXME: this is a hack!!!
     }
 
@@ -70,18 +68,12 @@ public class LimitMonitor implements IUnicastInputLayer, ICfgDatabaseListener, I
 
     // input layer stack
 
-    @Nonnull
     private final IUnicastInputLayer _upperUnicastInput;
-
-    @Nonnull
     private final IUnicastOutputLayer _lowerInput;
 
     // output layer stack
 
-    @Nonnull
     private final IUnicastOutputLayer _lowerUnicastOutput;
-
-    @Nonnull
     private final ILimiter _lim;
 
     // LRU
@@ -376,7 +368,7 @@ public class LimitMonitor implements IUnicastInputLayer, ICfgDatabaseListener, I
         }, ms);
     }
 
-    private void processBytesIn(ByteArrayInputStream baos, int wirelen, PeerContext pc)
+    private void processBytesIn(InputStream is, int wirelen, PeerContext pc)
             throws ExThrottling
     {
         // note that we've received this many packets from the peer
@@ -395,7 +387,7 @@ public class LimitMonitor implements IUnicastInputLayer, ICfgDatabaseListener, I
 
         Limit.PBLimit pbl;
         try {
-            pbl = Limit.PBLimit.parseDelimitedFrom(baos);
+            pbl = Limit.PBLimit.parseDelimitedFrom(is);
         } catch (IOException e) {
             l.warn("bad lhdr e:" + e);
             throw new ExThrottling("PBLimit missing");
@@ -480,8 +472,10 @@ public class LimitMonitor implements IUnicastInputLayer, ICfgDatabaseListener, I
             } else {
                 l.trace("is: no b");
             }
+        } catch (IOException e) {
+            l.error("ignoring ioe for pkt from: " + pc.did() + "e: " + e);
         } catch (ExThrottling e) {
-            l.error("ignoring e for pkt from: " + pc.did() + "e: " + e);
+            l.error("ignoring ext for pkt from: " + pc.did() + "e: " + e);
         }
     }
 

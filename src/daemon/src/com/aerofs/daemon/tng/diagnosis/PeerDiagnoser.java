@@ -4,23 +4,21 @@
 
 package com.aerofs.daemon.tng.diagnosis;
 
+import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.tng.IPeerDiagnoser;
 import com.aerofs.daemon.tng.base.IUnicastConnection;
 import com.aerofs.daemon.tng.diagnosis.TransportDiagnosisState.FloodEntry;
-import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.proto.Transport.PBTPHeader;
 import com.aerofs.proto.Transport.PBTransportDiagnosis;
 import com.aerofs.proto.Transport.PBTransportDiagnosis.PBFloodStatReply;
-import com.aerofs.proto.Transport.PBTransportDiagnosis.PBPong;
+import com.aerofs.proto.Transport.PBTransportDiagnosis.PBPing;
 import com.google.common.util.concurrent.ListenableFuture;
 
 import static com.aerofs.proto.Transport.PBTPHeader.Type.DIAGNOSIS;
 import static com.aerofs.proto.Transport.PBTransportDiagnosis.Type.FLOOD_STAT_REPLY;
 import static com.aerofs.proto.Transport.PBTransportDiagnosis.Type.PONG;
 
-/**
- */
 public class PeerDiagnoser implements IPeerDiagnoser
 {
     @Override
@@ -61,14 +59,14 @@ public class PeerDiagnoser implements IPeerDiagnoser
         case PING:
             return PBTransportDiagnosis.newBuilder()
                     .setType(PONG)
-                    .setPong(PBPong.newBuilder().setSeq(dg.getPing().getSeq()))
+                    .setPing(PBPing.newBuilder().setPingId(dg.getPing().getPingId()))
                     .build();
 
         case PONG: {
-            Long l = tds.getPing(dg.getPong().getSeq());
+            Long l = tds.getPing(dg.getPing().getPingId());
             if (l != null && l < 0) {
                 long rtt = System.currentTimeMillis() + l;
-                tds.putPing(dg.getPong().getSeq(), rtt);
+                tds.putPing(dg.getPing().getPingId(), rtt);
             }
             break;
         }
@@ -77,7 +75,7 @@ public class PeerDiagnoser implements IPeerDiagnoser
             break;
 
         case FLOOD_STAT_CALL: {
-            long bytesrx = 0; // pd.getBytesRx(did); // FIXME: this is wrong!!!
+            long bytesrx = 0; // pd.getBytesReceived(did); // FIXME: this is wrong!!!
             long now = System.currentTimeMillis();
             int seq = dg.getFloodStatCall().getSeq();
 

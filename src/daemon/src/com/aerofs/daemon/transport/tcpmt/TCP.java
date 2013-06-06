@@ -7,20 +7,16 @@
 package com.aerofs.daemon.transport.tcpmt;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.daemon.transport.TransportThreadGroup;
-import com.aerofs.lib.sched.Scheduler;
+import com.aerofs.base.ex.ExNoResource;
+import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.SID;
-import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
-import com.aerofs.lib.event.IEvent;
-import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.daemon.event.lib.EventDispatcher;
 import com.aerofs.daemon.event.net.EOTpStartPulse;
 import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.lib.BlockingPrioQueue;
-import com.aerofs.lib.event.Prio;
+import com.aerofs.daemon.transport.TransportThreadGroup;
 import com.aerofs.daemon.transport.lib.HdPulse;
-import com.aerofs.daemon.transport.lib.IPipeController;
 import com.aerofs.daemon.transport.lib.ITransportImpl;
 import com.aerofs.daemon.transport.lib.MaxcastFilterReceiver;
 import com.aerofs.daemon.transport.lib.PulseManager;
@@ -30,13 +26,15 @@ import com.aerofs.daemon.transport.lib.TransportDiagnosisState;
 import com.aerofs.daemon.transport.tcpmt.ARP.ARPChange;
 import com.aerofs.daemon.transport.tcpmt.ARP.ARPEntry;
 import com.aerofs.daemon.transport.tcpmt.ARP.IARPChangeListener;
-import com.aerofs.daemon.transport.xmpp.IPipe;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
-import com.aerofs.base.ex.ExNoResource;
-import com.aerofs.base.ex.ExProtocolError;
+import com.aerofs.lib.event.AbstractEBSelfHandling;
+import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
+import com.aerofs.lib.event.IEvent;
+import com.aerofs.lib.event.Prio;
+import com.aerofs.lib.sched.Scheduler;
 import com.aerofs.proto.Files.PBDumpStat;
 import com.aerofs.proto.Files.PBDumpStat.PBTransport;
 import com.aerofs.proto.Transport.PBTCPPong;
@@ -58,7 +56,7 @@ import static com.aerofs.daemon.lib.DaemonParam.TCP.ARP_GC_INTERVAL;
 import static com.aerofs.daemon.lib.DaemonParam.TCP.QUEUE_LENGTH;
 import static com.aerofs.daemon.transport.lib.PulseManager.newCheckPulseReply;
 
-public class TCP implements ITransportImpl, IPipeController, IARPChangeListener
+public class TCP implements ITransportImpl, IARPChangeListener
 {
     private static final Logger l = Loggers.getLogger(TCP.class);
 
@@ -356,21 +354,8 @@ public class TCP implements ITransportImpl, IPipeController, IARPChangeListener
         }
     }
 
-    @Override
-    public void peerConnected(DID did, IPipe p)
-    {
-        assert false : "tcp unimplemented method";
-    }
-
-    @Override
-    public void peerDisconnected(DID did, IPipe p)
-    {
-        assert false : "tcp unimplemented method";
-    }
-
     // FIXME: refactor how we process control message - I suspect this is the first step to
     // separating this into different classes
-    @Override
     public void processUnicastControl(DID did, PBTPHeader hdr)
     {
         PBTPHeader ret = null;
@@ -464,7 +449,6 @@ public class TCP implements ITransportImpl, IPipeController, IARPChangeListener
         return ret;
     }
 
-    @Override
     public void processUnicastPayload(DID did, PBTPHeader hdr, ByteArrayInputStream bodyis, int wirelen)
     {
         try {
@@ -475,7 +459,6 @@ public class TCP implements ITransportImpl, IPipeController, IARPChangeListener
         }
     }
 
-    @Override
     public void closePeerStreams(DID did, boolean outbound, boolean inbound)
     {
         remove(did, false);

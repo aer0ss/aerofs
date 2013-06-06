@@ -2,6 +2,9 @@ package com.aerofs.daemon.core.net.dtls;
 
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
+import com.aerofs.base.ex.ExNoResource;
+import com.aerofs.base.id.UserID;
+import com.aerofs.daemon.core.ex.ExAborted;
 import com.aerofs.daemon.core.net.DID2User;
 import com.aerofs.daemon.core.net.IDuplexLayer;
 import com.aerofs.daemon.core.net.IUnicastInputLayer;
@@ -13,18 +16,18 @@ import com.aerofs.daemon.core.net.dtls.DTLSMessage.Type;
 import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.event.net.Endpoint;
-import com.aerofs.lib.IDumpStatMisc;
-import com.aerofs.lib.event.Prio;
 import com.aerofs.daemon.lib.PrioQueue;
 import com.aerofs.daemon.lib.id.StreamID;
-import com.aerofs.lib.*;
+import com.aerofs.lib.AppRoot;
+import com.aerofs.lib.IDumpStatMisc;
+import com.aerofs.lib.LibParam;
+import com.aerofs.lib.OutArg;
+import com.aerofs.lib.SecUtil;
+import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.daemon.core.ex.ExAborted;
+import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.ex.ExDTLS;
-import com.aerofs.base.ex.ExNoResource;
-import com.aerofs.base.id.UserID;
 import com.aerofs.lib.injectable.InjectableFile;
-
 import com.aerofs.proto.Transport.PBStream.InvalidationReason;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
@@ -32,6 +35,7 @@ import org.slf4j.Logger;
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintStream;
 import java.util.ArrayList;
 
@@ -64,7 +68,7 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
 
     public static class Factory
     {
-        private final DTLSMessage.Factory<ByteArrayInputStream> _factMsgBIS;
+        private final DTLSMessage.Factory<InputStream> _factMsgBIS;
         private final DTLSMessage.Factory<byte[]> _factMsgBA;
         private final DID2User _d2u;
         private final TC _tc;
@@ -74,7 +78,7 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
         @Inject
         public Factory(TC tc, DID2User d2u,
                 DTLSMessage.Factory<byte[]> factMsgBA,
-                DTLSMessage.Factory<ByteArrayInputStream> factMsgBIS,
+                DTLSMessage.Factory<InputStream> factMsgBIS,
                 DTLSCache.Factory factCache, InjectableFile.Factory factFile)
         {
             _tc = tc;
@@ -128,7 +132,7 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
     {
         l.trace("onUnicastDatagramReceived {}", pc);
 
-        DTLSMessage<ByteArrayInputStream> dtlsMessage =
+        DTLSMessage<InputStream> dtlsMessage =
                 _f._factMsgBIS.create_(Type.UNICAST_RECV, r._is);
 
         processRecvdMsg_(dtlsMessage, r._wirelen, pc);
@@ -139,7 +143,7 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
     {
         l.trace("onStreamBegun {} {}", streamId, pc);
 
-        DTLSMessage<ByteArrayInputStream> dtlsMessage =
+        DTLSMessage<InputStream> dtlsMessage =
                 _f._factMsgBIS.create_(Type.STREAM_BEGUN, r._is, streamId, 0);
 
         processRecvdMsg_(dtlsMessage, r._wirelen, pc);
@@ -150,7 +154,7 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
     {
         l.trace("onStreamChunkReceived {} {} {}", streamId, seq, pc);
 
-        DTLSMessage<ByteArrayInputStream> dtlsMessage =
+        DTLSMessage<InputStream> dtlsMessage =
                 _f._factMsgBIS.create_(Type.CHUNK_RECV, r._is, streamId, seq);
 
         processRecvdMsg_(dtlsMessage, r._wirelen, pc);
@@ -252,13 +256,12 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
     }
 
     private void deliverOrVerifyUser_(DTLSEntry entry,
-            DTLSMessage<ByteArrayInputStream> msg,
-            int wirelen, PeerContext pc, ByteArrayInputStream is,
+            DTLSMessage<InputStream> msg,
+            int wirelen, PeerContext pc, InputStream is,
             boolean sender)
             throws ExDTLS
     {
         if (entry._user != null) {
-            l.trace("deliver msg {}", is.available());
             pc.setUser(entry._user);
             sendToUpperLayer_(msg._type, msg._sid, msg._seq, is, wirelen, pc);
 
@@ -311,15 +314,15 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
     }
 
     // alternatively, pass origMsgLen in...
-    private void processRecvdMsg_(DTLSMessage<ByteArrayInputStream> msg, int wirelen,
+    private void processRecvdMsg_(DTLSMessage<InputStream> msg, int wirelen,
             PeerContext pc)
     {
         Byte footer = null;
         boolean delivered = false;
 
         try {
-            ByteArrayInputStream is = msg._msg;
-            byte[] input = new byte[is.available() - Footer.SIZE]; // remove footer
+            InputStream is = msg._msg;
+            byte[] input = new byte[is.available() - Footer.SIZE]; // remove footer // FIXME (AG): only works with byte-array backed inputstreams
             int available = is.available();
             Util.verify(is.available() - Footer.SIZE == is.read(input));
 
@@ -626,7 +629,7 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
     }
 
     private void sendToUpperLayer_(Type type, StreamID sid, int seq,
-            ByteArrayInputStream is, int wirelen, PeerContext pc)
+            InputStream is, int wirelen, PeerContext pc)
     {
         RawMessage r = new RawMessage(is, wirelen);
 

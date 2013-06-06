@@ -7,17 +7,22 @@ package com.aerofs.daemon.transport.xmpp.routing;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
-import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.daemon.event.lib.imc.IResultWaiter;
 import com.aerofs.daemon.lib.BlockingPrioQueue;
-import com.aerofs.lib.sched.IScheduler;
-import com.aerofs.lib.event.Prio;
-import com.aerofs.daemon.transport.xmpp.IPipe;
+import com.aerofs.daemon.transport.xmpp.IConnectionService;
 import com.aerofs.lib.OutArg;
+import com.aerofs.lib.event.AbstractEBSelfHandling;
+import com.aerofs.lib.event.Prio;
+import com.aerofs.lib.sched.IScheduler;
 import org.slf4j.Logger;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.Collection;
+import java.util.Set;
+import java.util.SortedMap;
+import java.util.SortedSet;
+import java.util.TreeMap;
+import java.util.TreeSet;
 
 import static com.aerofs.daemon.lib.DaemonParam.QUEUE_LENGTH_DEFAULT;
 import static com.aerofs.daemon.lib.DaemonParam.XMPP.CONNECT_TIMEOUT;
@@ -28,7 +33,7 @@ import static java.util.Collections.unmodifiableSortedMap;
 
 /**
  * Represents the state of a single logical connected pipe - which may
- * contain multiple underlying {@link IPipe} objects - to a peer represented
+ * contain multiple underlying {@link com.aerofs.daemon.transport.xmpp.IConnectionService} objects - to a device represented
  * by a {@link DID}. This implementation makes the following important
  * assumptions:
  * <ol>
@@ -49,18 +54,18 @@ import static java.util.Collections.unmodifiableSortedMap;
  *          one succeeds, or all fail, before starting a second 'set'.</li>
  *      <li>Two flags have to be set when initiating this 'set':
  *          <strong>_connecting</strong> and <strong>curRouteSeqNum</strong> for
- *          the affected {@link com.aerofs.daemon.transport.xmpp.IPipe}.</li>
+ *          the affected {@link com.aerofs.daemon.transport.xmpp.IConnectionService}.</li>
  * </ol>
  */
 // FIXME: I don't like that I had to generify this
-class DIDPipeRouter<T extends IPipe>
+class DIDPipeRouter<T extends IConnectionService>
 {
     /**
      * Constructor
      *
-     * @param did {@link DID} of the peer for which we represet the logical pipe
+     * @param did {@link DID} of the device for which we represet the logical pipe
      * @param sched {@link IScheduler} used to schedule connect 'set' timeouts
-     * @param available {@link IPipe} objects that can be used to connect to peers
+     * @param available {@link com.aerofs.daemon.transport.xmpp.IConnectionService} objects that can be used to connect to devices
      */
     DIDPipeRouter(DID did, IScheduler sched, Set<T> available)
     {
@@ -75,11 +80,7 @@ class DIDPipeRouter<T extends IPipe>
         assert bestAvailablePref_() < worstPossiblePref(): (_pream + " no pipes configured");
     }
 
-    /**
-     *
-     * @param p
-     */
-    void peerConnected_(IPipe p)
+    void deviceConnected_(IConnectionService p)
     {
         l.info(_pream + " connected on p:" + p.id());
 
@@ -135,14 +136,14 @@ class DIDPipeRouter<T extends IPipe>
                     cke.set_(p, curPipeConnSeqNum);
                 }
 
-                p.send_(_did, o.wtr(), op.get(), o.bss(), cke);
+                p.send(_did, o.wtr(), op.get(), o.bss(), cke);
             } catch (Exception e) {
                 o.wtr().error(e);
             }
         }
     }
 
-    void peerDisconnected_(IPipe p)
+    void deviceDisconnected_(IConnectionService p)
     {
         l.info(_pream + " disconnected on p:" + p.id());
 
@@ -150,15 +151,8 @@ class DIDPipeRouter<T extends IPipe>
     }
 
     /**
-     * Send a packet to the peer. This method implements the actual channel
+     * Send a packet to the device. This method implements the actual channel
      * switching algorithm.
-     *
-     * @param wtr
-     * @param pri
-     * @param bss
-     * @param origcke
-     * @return
-     * @throws Exception
      */
     Object send_(IResultWaiter wtr, Prio pri, byte[][] bss, Object origcke)
         throws Exception
@@ -172,7 +166,7 @@ class DIDPipeRouter<T extends IPipe>
             assert cke.p_().rank() != worstPossiblePref() :
                 (_pream + " cke set_ incorrectly to worst pipe");
 
-            IPipe oldpipe = cke.p_();
+            IConnectionService oldpipe = cke.p_();
             int curPipeConnSeqNum = getConnSeqNum(oldpipe);
             int oldPipeConnSeqNum = cke.connSeqNum_();
 
@@ -180,20 +174,19 @@ class DIDPipeRouter<T extends IPipe>
                 (bestConnectedPref_() == worstPossiblePref())) {
                 wtr.error(new IOException("invalid pipe"));
             } else {
-                oldpipe.send_(_did, wtr, pri, bss, cke);
+                oldpipe.send(_did, wtr, pri, bss, cke);
             }
         } else if (bestConnectedPref_() != worstPossiblePref()) {
-            IPipe best = bestConnectedPipe_();
+            IConnectionService best = bestConnectedPipe_();
             int curPipeConnSeqNum = getConnSeqNum(best);
             cke.set_(best, curPipeConnSeqNum);
-            best.send_(_did, wtr, pri, bss, cke);
+            best.send(_did, wtr, pri, bss, cke);
         } else if (bestConnectedPref_() == worstPossiblePref()) {
             _q.enqueueThrows(new Out(wtr, bss, cke), pri);
         } else {
-            assert false : (_pream + " unhandled send_ condition");
+            assert false : (_pream + " unhandled send condition");
         }
 
-        assert cke != null : ("dncs: send_ should never return null cke");
         return cke;
     }
 
@@ -203,22 +196,22 @@ class DIDPipeRouter<T extends IPipe>
     private void connectToBetters_()
     {
         if (_connecting) {
-            l.debug(_pream + " connect attempt ongoing");
+            l.trace(_pream + " connect attempt ongoing");
             return;
         }
 
         Collection<DIDPipeConnectionCounter> better = _available.headMap(bestConnectedPref_()).values();
         if (better.isEmpty()) {
-            l.debug(_pream + " no betters exist" +
-                " bestcon:" + bestConnectedPref_() + " bestavl:" + bestAvailablePref_());
+            l.trace(_pream + " no betters exist" +
+                    " bestcon:" + bestConnectedPref_() + " bestavl:" + bestAvailablePref_());
             return;
         }
 
-        l.debug(_pream + " begin connect betters:" + better.size());
+        l.trace(_pream + " begin connect betters:" + better.size());
 
         for(DIDPipeConnectionCounter tcc : better) {
             l.info(_pream + " connect to p:" + tcc.p().id());
-            tcc.p().connect_(_did);
+            tcc.p().connect(_did);
         }
 
         _connecting = true;
@@ -266,11 +259,7 @@ class DIDPipeRouter<T extends IPipe>
         }, CONNECT_TIMEOUT);
     }
 
-    /**
-     *
-     * @param p
-     */
-    private void pipeConnected_(IPipe p)
+    private void pipeConnected_(IConnectionService p)
     {
         assertValidPipe(p);
 
@@ -283,11 +272,7 @@ class DIDPipeRouter<T extends IPipe>
         pcc.increment_(); // don't have to put it back into the map
     }
 
-    /**
-     *
-     * @param p
-     */
-    private void pipeDisconnected_(IPipe p)
+    private void pipeDisconnected_(IConnectionService p)
     {
         assertValidPipe(p);
 
@@ -301,12 +286,7 @@ class DIDPipeRouter<T extends IPipe>
         if (!removed) l.warn(_pream + " no connection p:" + p.id());
     }
 
-    /**
-     *
-     * @param p
-     * @return
-     */
-    private int getConnSeqNum(IPipe p)
+    private int getConnSeqNum(IConnectionService p)
     {
         DIDPipeConnectionCounter pcc = _available.get(p.rank());
         assert pcc != null : (_pream + " invalid p:" + p.id());
@@ -315,7 +295,7 @@ class DIDPipeRouter<T extends IPipe>
     }
 
     /**
-     * @return the preference of the best connected {@link IPipe}
+     * @return the preference of the best connected {@link com.aerofs.daemon.transport.xmpp.IConnectionService}
      */
     private int bestConnectedPref_()
     {
@@ -323,15 +303,15 @@ class DIDPipeRouter<T extends IPipe>
     }
 
     /**
-     * @return the best connected {@link IPipe}
+     * @return the best connected {@link com.aerofs.daemon.transport.xmpp.IConnectionService}
      */
-    private IPipe bestConnectedPipe_()
+    private IConnectionService bestConnectedPipe_()
     {
         return _connected.first();
     }
 
     /**
-     * @return the preference of the best <em>available (i.e. configured)</em> {@link IPipe}
+     * @return the preference of the best <em>available (i.e. configured)</em> {@link com.aerofs.daemon.transport.xmpp.IConnectionService}
      */
     private int bestAvailablePref_()
     {
@@ -347,28 +327,25 @@ class DIDPipeRouter<T extends IPipe>
     }
 
     /**
-     * Asserts that the {@link IPipe} passed in as a parameter is not an instance
+     * Asserts that the {@link com.aerofs.daemon.transport.xmpp.IConnectionService} passed in as a parameter is not an instance
      * of <code>ERROR_PIPE</code>
      *
-     * @param p {@link IPipe} to check
+     * @param p {@link com.aerofs.daemon.transport.xmpp.IConnectionService} to check
      */
-    private void assertValidPipe(IPipe p)
+    private void assertValidPipe(IConnectionService p)
     {
         assert p.rank() != worstPossiblePref() : (_pream + " invalid p:" + p.id());
     }
 
     /**
      * Construct a sorted map of {@link DIDPipeConnectionCounter} sorted by
-     * {@link IPipe} preferences. In this map, the entry with the lowest number
+     * {@link com.aerofs.daemon.transport.xmpp.IConnectionService} preferences. In this map, the entry with the lowest number
      * (i.e. the highest preference) is the fastest to access.
-     *
-     * @param pipes
-     * @return
      */
     private SortedMap<Integer, DIDPipeConnectionCounter> makedpccs(Set<T> pipes)
     {
         SortedMap<Integer, DIDPipeConnectionCounter> sorted = new TreeMap<Integer, DIDPipeConnectionCounter>();
-        for (IPipe p : pipes) {
+        for (IConnectionService p : pipes) {
             DIDPipeConnectionCounter pcc = new DIDPipeConnectionCounter(p);
             DIDPipeConnectionCounter old = sorted.put(p.rank(), pcc);
 
@@ -403,8 +380,8 @@ class DIDPipeRouter<T extends IPipe>
          * <br/>
          * Expects <em>all</em> parameters to be valid and not-null
          *
-         * @param wtr {@link IResultWaiter} for this <code>send_</code>
-         * @param bss bytes to be sent to the peer in this request
+         * @param wtr {@link IResultWaiter} for this <code>send</code>
+         * @param bss bytes to be sent to the device in this request
          * @param cke a valid {@link DIDPipeCookie} with mutable fields <em>unset</em>
          */
         Out(IResultWaiter wtr, byte[][] bss, DIDPipeCookie cke)
@@ -425,7 +402,7 @@ class DIDPipeRouter<T extends IPipe>
         }
 
         /**
-         * @return request to be sent to the peer
+         * @return request to be sent to the device
          */
         byte[][] bss()
         {
@@ -453,7 +430,7 @@ class DIDPipeRouter<T extends IPipe>
     private final String _pream;
     private final IScheduler _sched;
     private final SortedMap<Integer, DIDPipeConnectionCounter> _available; // rank -> DIDPipeConnectionCounter
-    private final SortedSet<IPipe> _connected = new TreeSet<IPipe>(new DefaultComparator());
+    private final SortedSet<IConnectionService> _connected = new TreeSet<IConnectionService>(new DefaultComparator());
 
     private boolean _connecting = false;
     private int _connAttemptSeqNum = INITIAL_CONNECT_ATTEMPT_SEQ_NUM;

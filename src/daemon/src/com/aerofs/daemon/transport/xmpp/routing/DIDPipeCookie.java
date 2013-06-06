@@ -6,14 +6,14 @@
 package com.aerofs.daemon.transport.xmpp.routing;
 
 import com.aerofs.base.id.DID;
-import com.aerofs.daemon.transport.xmpp.IPipe;
+import com.aerofs.daemon.transport.xmpp.IConnectionService;
 
 import static com.aerofs.daemon.transport.xmpp.routing.ErrorPipe.ERROR_PIPE;
 
 /**
- * A stream cookie that is always returned by <code>send_</code> calls to
+ * A stream cookie that is always returned by <code>send</code> calls to
  * a {@link SignalledPipeFanout}. It remembers the connection-count number of the
- * {@link com.aerofs.daemon.transport.xmpp.IPipe} used to send a packet to a peer. A difference between
+ * {@link com.aerofs.daemon.transport.xmpp.IConnectionService} used to send a packet to a peer. A difference between
  * this stored connection count and one available in the system means that a
  * reconnection occurred.
  */
@@ -37,7 +37,7 @@ class DIDPipeCookie
      * @param p
      * @param routeSeqNum
      */
-    DIDPipeCookie(DID did, IPipe p, int routeSeqNum)
+    DIDPipeCookie(DID did, IConnectionService p, int routeSeqNum)
     {
         assert did != null && p != null : ("invalid args");
 
@@ -52,7 +52,7 @@ class DIDPipeCookie
      * @param p
      * @param connSeqNum
      */
-    void set_(IPipe p, int connSeqNum)
+    void set_(IConnectionService p, int connSeqNum)
     {
         assert !_set : ("set_ already called");
         assert p != null : ("invalid route");
@@ -73,7 +73,7 @@ class DIDPipeCookie
     /**
      * @return
      */
-    public IPipe p_()
+    public IConnectionService p_()
     {
         return _p;
     }
@@ -97,7 +97,7 @@ class DIDPipeCookie
 
     private final DID _did;
 
-    private IPipe _p;
+    private IConnectionService _p;
     private int _connSeqNum;
     private boolean _set = false;
 }

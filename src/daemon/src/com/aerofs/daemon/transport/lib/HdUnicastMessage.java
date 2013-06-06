@@ -28,7 +28,7 @@ public class HdUnicastMessage implements IEventHandler<EOUnicastMessage>
     {
         try {
             byte[][] payload = TPUtil.newPayload(null, 0, ev.byteArray());
-            _ucast.send_(ev._to, new ProfiledWaiter(), prio, payload, null);
+            _ucast.send(ev._to, new ProfiledWaiter(), prio, payload, null);
         } catch (Exception e) {
             l.warn("uc " + ev._to + ": " + Util.e(e, ExDeviceOffline.class, XMPPException.class));
         }

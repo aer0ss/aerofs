@@ -76,7 +76,7 @@ public class HdPulse<T extends IPulseEvent> implements IEventHandler<T>
             ev.tok_(ret.tok());
             l.info("d:" + did + " prevtok:" + printtok(prevtok) + " tok:" + ret.tok() + " send pulse");
 
-            uc.send_(did, null, Prio.HI, newControl(ret.hdr()), null);
+            uc.send(did, null, Prio.HI, newControl(ret.hdr()), null);
         } catch (ExDeviceOffline e) {
             pm.delInProgressPulse(did);
             l.info("d:" + did + " offline - term pulse");

@@ -1,6 +1,7 @@
 package com.aerofs.daemon.event.net.rx;
 
 import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 
 /**
  * An abstraction of an input buffer
@@ -9,16 +10,15 @@ import java.io.ByteArrayInputStream;
  * in this interface are non-blocking. Implementers must further guarantee that
  * any classes returned via these methods only provide non-blocking methods.
  */
-public interface IInputBuffer {
-
+public interface IInputBuffer
+{
     /**
      * Getter
      *
      * @return {@link ByteArrayInputStream} from which the packet's payload can
      * be read
      */
-    // TODO use ByteBuffer instead?
-    ByteArrayInputStream is();
+    InputStream is();
 
     /**
      * Getter

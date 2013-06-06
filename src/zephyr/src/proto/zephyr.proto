@@ -1,0 +1,16 @@
+option java_package = "com.aerofs.zephyr.proto";
+
+message ZephyrControlMessage {
+    enum Type {
+        HANDSHAKE = 0;
+    }
+
+    required Type type = 1;
+
+    optional ZephyrHandshake handshake = 2;
+}
+
+message ZephyrHandshake {
+    required uint32 source_zephyr_id = 1;
+    required uint32 destination_zephyr_id = 2;
+}

@@ -3,7 +3,7 @@ package com.aerofs.daemon.event.net.rx;
 import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.lib.id.StreamID;
 
-import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 
 /* steps to receive chunked messages:
  *
@@ -23,7 +23,7 @@ public class EIStreamBegun extends EIChunk
      *
      * For parameter information, {@see EIChunk.EIChunk}
      */
-    public EIStreamBegun(Endpoint ep, StreamID strid, ByteArrayInputStream is, int wirelen)
+    public EIStreamBegun(Endpoint ep, StreamID strid, InputStream is, int wirelen)
     {
         super(ep, strid, 0, is, wirelen);
     }

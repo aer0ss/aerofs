@@ -9,7 +9,6 @@ import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.event.lib.imc.IResultWaiter;
 import com.aerofs.daemon.lib.PrioQueue;
-import com.aerofs.daemon.transport.lib.TPUtil;
 import com.aerofs.daemon.transport.xmpp.XUtil;
 import com.aerofs.j.StreamEvent;
 import com.aerofs.j.StreamInterface;
@@ -20,7 +19,6 @@ import com.aerofs.j.j;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.ex.ExJingle;
-import com.aerofs.proto.Transport.PBTPHeader;
 import org.slf4j.Logger;
 
 import java.io.ByteArrayInputStream;
@@ -297,13 +295,8 @@ public class JingleDataStream implements IProxyObjectContainer
             ////////
             // deliver the data to the upper layer
 
-            ByteArrayInputStream is = new ByteArrayInputStream(_inPayload);
-            PBTPHeader transhdr = TPUtil.processUnicastHeader(is);
-            if (TPUtil.isPayload(transhdr)) {
-                ij.processUnicastPayload(did, transhdr, is, msgHdrLen + msgPldLen);
-            } else {
-                ij.processUnicastControl(did, transhdr);
-            }
+            ij.onIncomingMessage(did, new ByteArrayInputStream(_inPayload),
+                    _inHeader.length + _inPayload.length);
 
             // reset input buffers
             _inHeaderOff = 0;

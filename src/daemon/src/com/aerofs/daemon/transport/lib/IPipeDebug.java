@@ -24,5 +24,5 @@ public interface IPipeDebug extends IDebug
      * <strong>IMPORTANT:</strong> the returned value may be <= 0 if the peer is
      * disconnected or there was an error servicing this call
      */
-    long getBytesRx(DID did);
+    long getBytesReceived(DID did);
 }

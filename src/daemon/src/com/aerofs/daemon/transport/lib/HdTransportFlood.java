@@ -111,9 +111,7 @@ public class HdTransportFlood extends AbstractHdIMC<EOTransportFlood>
          */
         private void sendNext(Integer seq) throws Exception
         {
-            _u.send_(_did, this, _prio,
-                seq == null ? _bssDiscard : newFloodStat(seq),
-                null);
+            _u.send(_did, this, _prio, seq == null ? _bssDiscard : newFloodStat(seq), null);
         }
 
         @Override

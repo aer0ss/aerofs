@@ -92,11 +92,7 @@ message PBTransportDiagnosis {
     }
 
     message PBPing {
-        required uint32 seq = 1;
-    }
-
-    message PBPong {
-        required uint32 seq = 1;
+        required uint32 ping_id = 1;
     }
 
     message PBFloodStatCall {
@@ -112,7 +108,6 @@ message PBTransportDiagnosis {
     required Type type = 1;
 
     optional PBPing ping = 2;
-    optional PBPong pong = 3;
     optional PBFloodStatCall flood_stat_call = 4;
     optional PBFloodStatReply flood_stat_reply = 5;
     optional PBCheckPulse check_pulse = 6;

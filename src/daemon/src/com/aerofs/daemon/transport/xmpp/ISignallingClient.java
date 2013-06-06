@@ -5,16 +5,16 @@
 
 package com.aerofs.daemon.transport.xmpp;
 
-import com.aerofs.base.id.DID;
 import com.aerofs.base.ex.ExNoResource;
+import com.aerofs.base.id.DID;
 
 import static com.aerofs.proto.Transport.PBTPHeader;
 
 /**
  * Implemented by classes that want to send and receive messages via an
  * out-of-band signalling (or control) channel. This interface is the dual of
- * {@link ISignallingChannel} and represents the <em>client</em> of the
- * <code>ISignallingChannel</code> provider.
+ * {@link ISignallingService} and represents the <em>client</em> of the
+ * <code>ISignallingService</code> provider.
  * <br/>
  * <br/>
  * <strong>IMPORTANT:</strong> The methods in this interface can all throw
@@ -25,12 +25,12 @@ import static com.aerofs.proto.Transport.PBTPHeader;
  * blindly reschedule the notification or task to run later. Consider the
  * following sequence of events:
  * <ol>
- *     <li><code>signallingChannelDisconnected_()</code>
+ *     <li><code>signallingServiceDisconnected()</code>
  *         (throws <code>ExNoResource</code>)</li>
- *     <li>caller reschedules the <code>signallingChannelDisconnected_()</code></li>
+ *     <li>caller reschedules the <code>signallingServiceDisconnected()</code></li>
  *     <li>resource constrained state is cleared up</li>
- *     <li><code>signallingChannelConnected_()</code> is called (no throw occurs)</li>
- *     <li>rescheduled <code>signallingChannelDisconnected_()</code>
+ *     <li><code>signallingServiceConnected()</code> is called (no throw occurs)</li>
+ *     <li>rescheduled <code>signallingServiceDisconnected()</code>
  *         runs (no throw occurs)</li>
  * </ol>
  * This sequence of events ends up with the <code>ISignallingClient</code>
@@ -48,22 +48,22 @@ public interface ISignallingClient
      * @throws ExNoResource if the implementation cannot process this notification
      * at this time. This <em>may</em> be a transient, recoverable error.
      */
-    public void signallingChannelConnected_() throws ExNoResource;
+    public void signallingServiceConnected() throws ExNoResource;
 
     /**
      * Called when the connection to the out-of-band signalling channel is broken.
      * The signalling channel is unusable until the client is signalled via
-     * <code>signallingChannelConnected_</code> that the connection has been
+     * <code>signallingServiceConnected</code> that the connection has been
      * re-established.
      *
      * @throws ExNoResource if the implementation cannot process this notification
      * at this time. This <em>may</em> be a transient, recoverable error.
      */
-    public void signallingChannelDisconnected_() throws ExNoResource;
+    public void signallingServiceDisconnected() throws ExNoResource;
 
     /**
      * Called when a message of the type the client registered for via
-     * <code>registerSignallingClient_()</code> in {@link ISignallingChannel}
+     * <code>registerSignallingClient()</code> in {@link ISignallingService}
      * is received on the signalling channel
      *
      * @param did {@link DID} of the peer that sent this message
@@ -71,19 +71,20 @@ public interface ISignallingClient
      * @throws ExNoResource if the implementation cannot carry out this task at
      * this time. This <em>may</em> be a transient, recoverable error.
      */
-    public void processSignallingMessage_(DID did, PBTPHeader msg) throws ExNoResource;
+    public void processIncomingSignallingMessage(DID did, byte[] msg) throws ExNoResource;
 
     /**
      * Called when a message that the client wanted to send on the signalling
-     * channel via <code>sendMessageOnSignallingChannel()</code> cannot be sent
+     * channel via <code>sendSignallingMessage()</code> cannot be sent
      * because of an error. This is an <em>error callback method</em>.
      *
-     * @param did {@link DID} of the peer to which the message was supposed to be sent
-     * @param failedmsg {@link PBTPHeader} message (in original, client-supplied
+     *
+     * @param did {@link com.aerofs.base.id.DID} of the peer to which the message was supposed to be sent
+     * @param failedmsg {@link com.aerofs.proto.Transport.PBTPHeader} message (in original, client-supplied
      * format) that could not be sent via the signalling channel
      * @param failex Exception that prevented the message from being sent
      * @throws ExNoResource if the implementation cannot carry out this task at
      * this time. This <em>may</em> be a transient, recoverable error.
      */
-    public void sendSignallingMessageFailed_(DID did, PBTPHeader failedmsg, Exception failex) throws ExNoResource;
+    public void sendSignallingMessageFailed(DID did, byte[] failedmsg, Exception failex) throws ExNoResource;
 }

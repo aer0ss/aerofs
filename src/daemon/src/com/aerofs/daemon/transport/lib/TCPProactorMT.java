@@ -2,23 +2,27 @@ package com.aerofs.daemon.transport.lib;
 
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
-import com.aerofs.daemon.transport.TransportThreadGroup;
-import com.aerofs.lib.event.IEvent;
+import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.daemon.event.lib.imc.IResultWaiter;
 import com.aerofs.daemon.lib.BlockingPrioQueue;
 import com.aerofs.daemon.lib.DaemonParam;
-import com.aerofs.lib.event.Prio;
+import com.aerofs.daemon.transport.TransportThreadGroup;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.StrictLock;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.base.ex.ExNoResource;
-
+import com.aerofs.lib.event.IEvent;
+import com.aerofs.lib.event.Prio;
 import org.slf4j.Logger;
 
-import java.io.*;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.EOFException;
+import java.io.IOException;
 import java.net.BindException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -31,7 +35,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static com.aerofs.daemon.transport.lib.AddressUtils.*;
+import static com.aerofs.daemon.transport.lib.AddressUtils.getTransferString_;
+import static com.aerofs.daemon.transport.lib.AddressUtils.printaddr;
+import static com.aerofs.daemon.transport.lib.AddressUtils.printsock;
 
 /**
  * I'm hating myself for writing such ugly code in this file. Gonna rewrite it

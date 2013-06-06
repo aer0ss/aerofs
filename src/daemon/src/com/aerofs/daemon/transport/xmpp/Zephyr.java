@@ -9,10 +9,13 @@ import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.JabberID;
+import com.aerofs.base.id.UserID;
+import com.aerofs.base.ssl.SSLEngineFactory;
+import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.daemon.mobile.MobileServerZephyrConnector;
-import com.aerofs.daemon.transport.lib.INetworkStats.BasicStatsCounter;
+import com.aerofs.daemon.transport.lib.ITransportStats.BasicStatsCounter;
 import com.aerofs.daemon.transport.lib.MaxcastFilterReceiver;
-import com.aerofs.daemon.transport.xmpp.zephyr.client.nio.ZephyrClientManager;
+import com.aerofs.daemon.transport.xmpp.zephyr.netty.ZephyrConnectionService;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
@@ -20,8 +23,7 @@ import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
 import com.aerofs.lib.event.IEvent;
 import com.aerofs.lib.event.Prio;
-import com.aerofs.proto.Transport.PBTPHeader;
-import com.aerofs.proto.Transport.PBTPHeader.Type;
+import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jivesoftware.smack.PacketListener;
 import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.XMPPException;
@@ -30,111 +32,121 @@ import org.jivesoftware.smack.packet.Message;
 import org.jivesoftware.smack.packet.Packet;
 
 import java.io.IOException;
-import java.util.Map;
+import java.net.Proxy;
+import java.net.SocketAddress;
+import java.util.Set;
 
 import static com.aerofs.base.id.JabberID.did2FormAJid;
 import static com.aerofs.daemon.transport.lib.TPUtil.registerMulticastHandler;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
-import static com.google.common.collect.Maps.newHashMap;
+import static com.google.common.collect.Sets.newHashSet;
 import static org.jivesoftware.smack.packet.Message.Type.chat;
 import static org.jivesoftware.smack.packet.Message.Type.error;
 import static org.jivesoftware.smack.packet.Message.Type.groupchat;
 import static org.jivesoftware.smack.packet.Message.Type.headline;
 
-public class Zephyr extends XMPP implements ISignallingChannel
+public class Zephyr extends XMPP implements ISignallingService
 {
+    private final boolean enableMulticast;
+    private final Set<ISignallingClient> signallingClients = newHashSet();
+    private final MobileServerZephyrConnector mobileZephyrConnector;
 
-    public Zephyr(DID localdid, String id, int rank, IBlockingPrioritizedEventSink<IEvent> sink, MaxcastFilterReceiver mcfr, boolean enableMulticast)
+    public Zephyr(
+            UserID localid,
+            DID localdid,
+            String id, int rank,
+            IBlockingPrioritizedEventSink<IEvent> sink,
+            MaxcastFilterReceiver mcfr,
+            SSLEngineFactory clientSSLEngineFactory,
+            ClientSocketChannelFactory clientSocketChannelFactory,
+            MobileServerZephyrConnector mobileZephyr,
+            SocketAddress zephyrAddress, Proxy proxy,
+            boolean enableMulticast)
     {
         super(localdid, id, rank, sink, mcfr);
-        ZephyrClientManager zcm = new ZephyrClientManager(id, rank, this, new BasicStatsCounter(), this);
-        setPipe_(zcm);
+
+        checkState(DaemonParam.XMPP.CONNECT_TIMEOUT > DaemonParam.Zephyr.HANDSHAKE_TIMEOUT); // should be much larger!
+
+        ZephyrConnectionService pipe = new ZephyrConnectionService(
+                new BasicIdentifier(id, rank),
+                localid, localdid,
+                clientSSLEngineFactory,
+                this,
+                this,
+                new BasicStatsCounter(),
+                clientSocketChannelFactory, zephyrAddress, proxy);
+        setPipe_(pipe);
+        mobileZephyrConnector = mobileZephyr;
 
         l.debug("{}: mc enable:{}", id, enableMulticast);
 
-        this._enableMulticast = enableMulticast;
+        this.enableMulticast = enableMulticast;
         if (enableMulticast) {
             registerMulticastHandler(this);
         }
     }
 
-    public void setMobileServerZephyrConnector(MobileServerZephyrConnector mobileServerZephyrConnector)
-    {
-        _msc = mobileServerZephyrConnector;
-    }
-
     @Override
     public boolean supportsMulticast()
     {
-        return _enableMulticast;
+        return enableMulticast;
     }
 
     //--------------------------------------------------------------------------
     //
     //
-    // ISignallingChannel methods (how subsystems can send/receive messages via
+    // ISignallingService methods (how subsystems can send/receive messages via
     // a control channel)
     //
     //
     //--------------------------------------------------------------------------
 
+    // FIXME (AG): completely refactor how signalling messages are sent via XMPP (see IQ)
+
     @Override
-    public void registerSignallingClient_(PBTPHeader.Type type, ISignallingClient ccc)
+    public void registerSignallingClient(ISignallingClient client)
     {
         checkState(!ready(), "z: already started");
-        checkState(!_processors.containsKey(type), "z: existing ccc for type:" + type.name());
-
-        _processors.put(type, ccc);
+        signallingClients.add(client);
     }
 
     @Override
-    public void sendMessageOnSignallingChannel(
-            final DID did, final PBTPHeader msg, final ISignallingClient ccc)
+    public void sendSignallingMessage(final DID did, final byte[] msg, final ISignallingClient client)
     {
-        assertNonDispThread();
+        OutArg<Integer> len = new OutArg<Integer>(0);
+        String enc = XMPP.encodeBody(len, msg);
 
-        enqueueIntoXmpp(new AbstractEBSelfHandling()
-        {
-            @Override
-            public void handle_()
-            {
-                OutArg<Integer> len = new OutArg<Integer>(0);
-                String enc = XMPP.encodeBody(len, msg.toByteArray());
+        final Message xmsg = new Message(did2FormAJid(did, id()), Message.Type.normal);
+        xmsg.setBody(enc);
 
-                final Message xmsg = new Message(did2FormAJid(did, id()), Message.Type.normal);
-                xmsg.setBody(enc);
+        // for now we actually don't have to enqueue the sending task as a new
+        // event since sendPacket() is synchronized, but it's easy to do so if we
+        // have to for whatever reason (i.e. I've tried both approaches and this
+        // signature supports both). This allows us to implement this method
+        // however we wish, with whatever synchronization style we want
 
-                // for now we actually don't have to enqueue the sending task as a new
-                // event since sendPacket() is synchronized, but it's easy to do so if we
-                // have to for whatever reason (i.e. I've tried both approaches and this
-                // signature supports both). This allows us to implement this method
-                // however we wish, with whatever synchronization style we want
+        try {
+            xmppServerConnection().conn().sendPacket(xmsg);
+        } catch (XMPPException e) {
+            notifySignallingClientOfError(client, did, msg, e);
+        } catch (IllegalStateException e) {
+            // NOTE: this can happen because smack considers it illegal to attempt to send
+            // a packet if the channel is not connected. Since we may be notified of a
+            // disconnection after actually enqueuing the packet to be sent, it's entirely
+            // possible for this to occur
+            notifySignallingClientOfError(client, did, msg, e);
+        }
+    }
 
-                try {
-                    xmppServerConnection().conn().sendPacket(xmsg);
-                } catch (XMPPException e) {
-                    notifySignallingClientOfError(e);
-                } catch (IllegalStateException e) {
-                    // NOTE: this can happen because smack considers it illegal to attempt to send
-                    // a packet if the channel is not connected. Since we may be notified of a
-                    // disconnection after actually enqueuing the packet to be sent, it's entirely
-                    // possible for this to occur
-
-                    notifySignallingClientOfError(e);
-                }
-            }
-
-            private void notifySignallingClientOfError(Exception e)
-            {
-                try {
-                    ccc.sendSignallingMessageFailed_(did, msg, e);
-                } catch (ExNoResource e2) {
-                    l.error("x: failed to handle error while sending packet");
-                    SystemUtil.fatal("shutdown due to err:" + e2 + " triggered by err:" + e);
-                }
-            }
-        }, Prio.HI);
+    private void notifySignallingClientOfError(ISignallingClient client, DID did, byte[] msg, Exception e)
+    {
+        try {
+            client.sendSignallingMessageFailed(did, msg, e);
+        } catch (ExNoResource e2) {
+            l.error("x: failed to handle error while sending packet");
+            SystemUtil.fatal("shutdown due to err:" + e2 + " triggered by err:" + e);
+        }
     }
 
     @Override
@@ -175,7 +187,7 @@ public class Zephyr extends XMPP implements ISignallingChannel
                                 logProcessingError_("pl: cannot process valid message", e, packet);
 
                                 // we fatal for a number of reasons here:
-                                // - an exception from disconnect_ within a subsystem
+                                // - an exception from disconnect within a subsystem
                                 //   is unrecoverable. It means that we're trying
                                 //   to recover from an error condition, but our
                                 //   recovery process is failing. in this case we
@@ -193,8 +205,8 @@ public class Zephyr extends XMPP implements ISignallingChannel
             }
         }, new MessageTypeFilter(Message.Type.normal));
 
-        if (_msc != null) {
-            _msc.setConnection(conn);
+        if (mobileZephyrConnector != null) {
+            mobileZephyrConnector.setConnection(conn);
         }
 
         super.xmppServerConnected(conn);
@@ -213,37 +225,23 @@ public class Zephyr extends XMPP implements ISignallingChannel
     {
         assertDispThread();
 
-        DID did = JabberID.jid2did(m.getFrom());
-        PBTPHeader hdr;
         try {
+            DID did = JabberID.jid2did(m.getFrom());
             OutArg<Integer> wirelen = new OutArg<Integer>(0);
             byte[] decoded = decodeBody(did, wirelen, m.getBody());
             if (decoded == null) return;
-            hdr = PBTPHeader.parseFrom(decoded);
+
+            for (ISignallingClient client : signallingClients) {
+                client.processIncomingSignallingMessage(did, decoded);
+            }
         } catch (IOException e) {
             l.warn(Util.e(e));
             return;
         }
-
-        PBTPHeader.Type type = hdr.getType();
-        l.debug("rcv msg type:" + hdr.getType().name());
-
-        ISignallingClient mp = _processors.get(type);
-        if (mp == null) throw new ExProtocolError(((Object) type).getClass()); // stupid cast for IDEA 12
-        mp.processSignallingMessage_(did, hdr);
     }
 
     private void logProcessingError_(String errmsg, Exception e, Packet packet)
     {
         l.warn(errmsg + " from:" + packet.getFrom() + " err: " + Util.e(e));
     }
-
-    //
-    // members
-    //
-
-    private final boolean _enableMulticast;
-    private final Map<Type, ISignallingClient> _processors = newHashMap();
-
-    private MobileServerZephyrConnector _msc;
 }

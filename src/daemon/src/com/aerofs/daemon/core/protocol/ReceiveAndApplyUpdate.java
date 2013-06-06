@@ -19,10 +19,6 @@ import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.VersionUpdater;
 import com.aerofs.daemon.core.alias.Aliasing;
 import com.aerofs.daemon.core.alias.MapAlias2Target;
-import com.aerofs.daemon.core.transfers.download.DownloadState;
-import com.aerofs.daemon.core.transfers.download.ExUnsolvedMetaMetaConflict;
-import com.aerofs.daemon.core.transfers.download.IDownloadContext;
-import com.aerofs.daemon.core.transfers.download.dependence.DependencyEdge.DependencyType;
 import com.aerofs.daemon.core.ds.CA;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
@@ -42,6 +38,10 @@ import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.store.StoreCreator;
 import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
+import com.aerofs.daemon.core.transfers.download.DownloadState;
+import com.aerofs.daemon.core.transfers.download.ExUnsolvedMetaMetaConflict;
+import com.aerofs.daemon.core.transfers.download.IDownloadContext;
+import com.aerofs.daemon.core.transfers.download.dependence.DependencyEdge.DependencyType;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.daemon.lib.exception.ExDependsOn;
@@ -72,7 +72,6 @@ import org.slf4j.Logger;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.FileNotFoundException;
@@ -913,7 +912,7 @@ public class ReceiveAndApplyUpdate
                         k + " " + pfPrefix.getLength_() + " != " + prefixLength;
 
                 // Read from the incoming message/stream
-                ByteArrayInputStream is = msg.is();
+                InputStream is = msg.is();
                 int copied = copyOneChunk(is, os);
 
                 if (isStreaming) {

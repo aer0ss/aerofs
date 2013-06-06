@@ -93,7 +93,7 @@ class Tandem
 
         if (!_notified) {
             _notified = true;
-            ij.peerConnected(did);
+            ij.onDeviceConnected(did);
         }
     }
 

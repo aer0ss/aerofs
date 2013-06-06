@@ -1,11 +1,10 @@
 package com.aerofs.daemon.transport.tcpmt;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.event.lib.imc.IResultWaiter;
 import com.aerofs.daemon.lib.DaemonParam;
-import com.aerofs.lib.event.Prio;
-import com.aerofs.daemon.transport.lib.IPipeController;
 import com.aerofs.daemon.transport.lib.IPipeDebug;
 import com.aerofs.daemon.transport.lib.IUnicast;
 import com.aerofs.daemon.transport.lib.TCPProactorMT;
@@ -17,8 +16,8 @@ import com.aerofs.daemon.transport.lib.TPUtil;
 import com.aerofs.daemon.transport.tcpmt.ARP.ARPEntry;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.cfg.Cfg;
+import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.ex.ExDeviceOffline;
-import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.proto.Files;
 import com.aerofs.proto.Transport.PBTCPUnicastPreamble;
 import com.aerofs.proto.Transport.PBTPHeader;
@@ -44,13 +43,13 @@ public class Unicast implements IConnectionManager, IUnicast, IPipeDebug
      * we listen to the internal port but getListingPort() returns the external
      * port.
      */
-    Unicast(IPipeController pc, ARP arp, Stores stores, int port, Integer internalPort)
+    Unicast(TCP tcp, ARP arp, Stores stores, int port, Integer internalPort)
             throws IOException, GeneralSecurityException
     {
         // external port must be a specific value if internal port is specified
         assert internalPort == null || port != TCP.PORT_ANY;
 
-        _pc = pc;
+        _tcp = tcp;
         _arp = arp;
         _stores = stores;
         _proactor = new TCPProactorMT("tp", this, null, internalPort == null ? port : internalPort,
@@ -69,7 +68,7 @@ public class Unicast implements IConnectionManager, IUnicast, IPipeDebug
      * Forcefully disconnects all connections to/from a remote address
      *
      * @param remaddr remote address for which all connections should be
-     * peerDisconnected
+     * onDeviceDisconnected
      */
     void disconnect(InetSocketAddress remaddr)
     {
@@ -93,7 +92,7 @@ public class Unicast implements IConnectionManager, IUnicast, IPipeDebug
     }
 
     @Override
-    public long getBytesRx(DID did)
+    public long getBytesReceived(DID did)
     {
         ARPEntry arpentry = _arp.get(did);
         return arpentry == null ? 0 : _proactor.getBytesRx(arpentry._isa);
@@ -115,7 +114,7 @@ public class Unicast implements IConnectionManager, IUnicast, IPipeDebug
     }
 
     @Override
-    public Object send_(DID did, IResultWaiter wtr, Prio pri, byte[][] bss, Object cke)
+    public Object send(DID did, IResultWaiter wtr, Prio pri, byte[][] bss, Object cke)
         throws ExDeviceOffline, ExNoResource, IOException
     {
         // use the address specified as the cookie to send the packet if the
@@ -232,7 +231,7 @@ public class Unicast implements IConnectionManager, IUnicast, IPipeDebug
         public void connectorDisconnected_()
         {
             l.info("connector disconnected" + did);
-            _pc.closePeerStreams(did, true, false);
+            _tcp.closePeerStreams(did, true, false);
         }
 
         private final DID did;
@@ -272,7 +271,7 @@ public class Unicast implements IConnectionManager, IUnicast, IPipeDebug
             if (!connectionInitialized() && type != Type.TCP_UNICAST_PREAMBLE) {
                 l.warn("connection used before preamble rem:" + printaddr(_printaddr)+ " - discard");
             } else if (TPUtil.isPayload(h)) {
-                _pc.processUnicastPayload(_did, h, is, wirelen);
+                _tcp.processUnicastPayload(_did, h, is, wirelen);
             } else if (type == Type.TCP_UNICAST_PREAMBLE) {
                 PBTCPUnicastPreamble preamble = h.getTcpPreamble();
                 if (_did != null) {
@@ -300,7 +299,7 @@ public class Unicast implements IConnectionManager, IUnicast, IPipeDebug
                 _arp.put(_did, _remisa);
                 _stores.storesFilterReceived(_did, h.getTcpPong().getFilter());
             } else {
-                _pc.processUnicastControl(_did, h);
+                _tcp.processUnicastControl(_did, h);
             }
 
             return ret == null ? null : TPUtil.newControl(ret);
@@ -312,7 +311,7 @@ public class Unicast implements IConnectionManager, IUnicast, IPipeDebug
             l.info("reactor disconnected: d:" +
                 (_did == null ? "null" : _did) +" rem:" + printaddr(_printaddr));
 
-            if (_did != null) _pc.closePeerStreams(_did, false, true);
+            if (_did != null) _tcp.closePeerStreams(_did, false, true);
         }
 
         private boolean connectionInitialized()
@@ -343,7 +342,7 @@ public class Unicast implements IConnectionManager, IUnicast, IPipeDebug
     // members
     //
 
-    private final IPipeController _pc;
+    private final TCP _tcp;
     private final ARP _arp;
     private final Stores _stores;
     private final TCPProactorMT _proactor;

@@ -24,7 +24,7 @@ public class HdChunk implements IEventHandler<EOChunk>
         try {
             OutgoingStream ostrm = _sm.getOutgoingStreamThrows(ev._streamId);
             byte[][] bss = TPUtil.newPayload(ev._streamId, ev._seq, ev.byteArray());
-            _ucast.send_(ostrm._did, ev, prio, bss, ostrm._cookie);
+            _ucast.send(ostrm._did, ev, prio, bss, ostrm._cookie);
         } catch (Exception e) {
             ev.error(e);
         }

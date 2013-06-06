@@ -1,28 +1,24 @@
 package com.aerofs.daemon.transport.xmpp;
 
+import com.aerofs.base.Base64;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
-import com.aerofs.daemon.transport.TransportThreadGroup;
-import com.aerofs.lib.LibParam;
-import com.aerofs.lib.sched.Scheduler;
-import com.aerofs.base.Base64;
 import com.aerofs.base.ex.ExFormatError;
+import com.aerofs.base.ex.ExNoResource;
+import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.JabberID;
 import com.aerofs.base.id.SID;
-import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
-import com.aerofs.lib.event.IEvent;
-import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.daemon.event.lib.EventDispatcher;
 import com.aerofs.daemon.event.lib.imc.IResultWaiter;
 import com.aerofs.daemon.event.net.EIPresence;
 import com.aerofs.daemon.event.net.EOTpStartPulse;
 import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.lib.BlockingPrioQueue;
-import com.aerofs.lib.event.Prio;
+import com.aerofs.daemon.transport.TransportThreadGroup;
 import com.aerofs.daemon.transport.lib.HdPulse;
+import com.aerofs.daemon.transport.lib.IConnectionServiceListener;
 import com.aerofs.daemon.transport.lib.IMaxcast;
-import com.aerofs.daemon.transport.lib.IPipeController;
 import com.aerofs.daemon.transport.lib.ITransportImpl;
 import com.aerofs.daemon.transport.lib.IUnicast;
 import com.aerofs.daemon.transport.lib.MaxcastFilterReceiver;
@@ -33,19 +29,22 @@ import com.aerofs.daemon.transport.lib.TPUtil;
 import com.aerofs.daemon.transport.lib.TransportDiagnosisState;
 import com.aerofs.daemon.transport.xmpp.XMPPServerConnection.IXMPPServerConnectionWatcher;
 import com.aerofs.daemon.transport.xmpp.routing.SignalledPipeFanout;
+import com.aerofs.lib.LibParam;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
-import com.aerofs.base.ex.ExNoResource;
-import com.aerofs.base.ex.ExProtocolError;
+import com.aerofs.lib.event.AbstractEBSelfHandling;
+import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
+import com.aerofs.lib.event.IEvent;
+import com.aerofs.lib.event.Prio;
+import com.aerofs.lib.sched.Scheduler;
 import com.aerofs.proto.Files.PBDumpStat;
 import com.aerofs.proto.Transport.PBCheckPulse;
 import com.aerofs.proto.Transport.PBStream.Type;
 import com.aerofs.proto.Transport.PBTPHeader;
 import com.aerofs.proto.Transport.PBTransportDiagnosis;
 import com.google.common.collect.ImmutableMap;
-import org.slf4j.Logger;
 import org.jivesoftware.smack.PacketListener;
 import org.jivesoftware.smack.SASLAuthentication;
 import org.jivesoftware.smack.XMPPConnection;
@@ -53,6 +52,7 @@ import org.jivesoftware.smack.XMPPException;
 import org.jivesoftware.smack.filter.PacketTypeFilter;
 import org.jivesoftware.smack.packet.Packet;
 import org.jivesoftware.smack.packet.Presence;
+import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 import java.io.ByteArrayInputStream;
@@ -61,6 +61,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.EOFException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintStream;
 import java.net.NetworkInterface;
 import java.util.Collection;
@@ -81,44 +82,39 @@ import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.Sets.newHashSet;
 
 /**
- * Acts as a controller (or wrapper) over a number of {@link IPipe} implementations
+ * Acts as a controller (or wrapper) over a number of {@link IConnectionService} implementations
  * that use an XMPP server as an out-of-band signalling channel. At a high level
  * this is primarily implemented as a single-threaded event processor. It also
- * switches between controlled <code>IPipe</code> instances at runtime based on
+ * switches between controlled <code>IConnectionService</code> instances at runtime based on
  * availability.
  * <br/>
  * <br/>
  * <strong>IMPORTANT:</strong> XMPP is implemented as a single-threaded event
- * processor that controls multiple <code>IPipe</code> instances. While these
+ * processor that controls multiple <code>IConnectionService</code> instances. While these
  * can be implemented in any way (multi-threaded, single-threaded event processor,
  * etc.) the current implementations are all single-threaded event processors.
  * To prevent deadlock, the following convention <strong>MUST</strong> be
  * followed: <code>XMPP</code> <strong>MUST</strong> <code>enqueueThrows</code>
- * into controlled <code>IPipe</code> instances while <code>IPipe</code> instances
+ * into controlled <code>IConnectionService</code> instances while <code>IConnectionService</code> instances
  * <strong>MUST</strong> <code>enqueueBlocking</code> into <code>XMPP</code>.
  * <br/>
  * <br/>
  * Practially speaking, this means:
  * <ol>
- *     <li>All implemented <code>IPipeController</code> methods <strong>MUST</strong>
+ *     <li>All implemented <code>IConnectionServiceListener</code> methods <strong>MUST</strong>
  *         use <code>enqueueBlocking</code></li>
- *     <li>All implemented <code>IPipe</code> methods for a single-threaded
- *         event processing <code>IPipe</code> <strong>MUST</strong> use
+ *     <li>All implemented <code>IConnectionService</code> methods for a single-threaded
+ *         event processing <code>IConnectionService</code> <strong>MUST</strong> use
  *         <code>enqueueThrows</code></li>
  * </ol>
  */
-public abstract class XMPP implements ITransportImpl, IPipeController, IUnicast, IXMPPServerConnectionWatcher
+public abstract class XMPP implements ITransportImpl, IConnectionServiceListener, IUnicast, IXMPPServerConnectionWatcher
 {
-    protected XMPP(DID localdid, String id, int rank, IBlockingPrioritizedEventSink<IEvent> sink,
-            MaxcastFilterReceiver mcfr)
+    protected XMPP(DID localdid, String id, int rank, IBlockingPrioritizedEventSink<IEvent> sink, MaxcastFilterReceiver mcfr)
     {
         // this is a workaround for NullPointerException during authentication
         // see http://www.igniterealtime.org/community/thread/35976
         SASLAuthentication.supportSASLMechanism("PLAIN", 0);
-
-        // FIXME (AG): leaking 'this' before construction is seriously unsafe
-        // only doing this because refactoring would be seriously expensive and we're doing this
-        // in single-threaded phase
 
         _localdid = localdid;
         _id = id;
@@ -128,10 +124,15 @@ public abstract class XMPP implements ITransportImpl, IPipeController, IUnicast,
         _xsc = new XMPPServerConnection(id(), this);
         _mc = new Multicast(this, localdid, id());
         _mcfr = mcfr;
+
+        // FIXME (AG): leaking 'this' before construction is seriously unsafe
+        // only doing this because refactoring would be seriously expensive and we're doing this
+        // in single-threaded phase
+
         _pm.addPulseDeletionWatcher(new GenericPulseDeletionWatcher(this, _sink));
     }
 
-    protected final void setPipe_(ISignalledPipe pipe)
+    protected final void setPipe_(ISignalledConnectionService pipe)
     {
         _spf = new SignalledPipeFanout(_sched, newHashSet(pipe));
     }
@@ -288,7 +289,8 @@ public abstract class XMPP implements ITransportImpl, IPipeController, IUnicast,
     // unfortunately it would need too much access to XMPP's state
 
     @Override
-    public final Object send_(final DID did, final IResultWaiter wtr, final Prio pri, final byte[][] bss, final Object cke)
+    public final Object send(final DID did, final IResultWaiter wtr, final Prio pri,
+            final byte[][] bss, final Object cke)
         throws Exception
     {
         assert _dispthr != null : ("null dispthr");
@@ -342,7 +344,7 @@ public abstract class XMPP implements ITransportImpl, IPipeController, IUnicast,
     //--------------------------------------------------------------------------
     //
     //
-    // IPipeController event methods - use these methods to enqueue an event into
+    // IConnectionServiceListener event methods - use these methods to enqueue an event into
     // XMPP for processing within the event dispatch thread. should be used by
     // subsystems that XMPP controls
     //
@@ -350,7 +352,7 @@ public abstract class XMPP implements ITransportImpl, IPipeController, IUnicast,
     //--------------------------------------------------------------------------
 
     @Override
-    public final void peerConnected(final DID d, final IPipe p)
+    public final void onDeviceConnected(final DID d, final IConnectionService cs)
     {
         assertNonDispThread();
 
@@ -359,13 +361,15 @@ public abstract class XMPP implements ITransportImpl, IPipeController, IUnicast,
             @Override
             public void handle_()
             {
-                _spf.peerConnected_(d, p);
+                l.info("d:{} connected - closing streams", d);
+                TPUtil.sessionEnded(new Endpoint(XMPP.this, d), _sink, _sm, true, true);
+                _spf.deviceConnected_(d, cs);
             }
         }, Prio.LO);
     }
 
     @Override
-    public final void peerDisconnected(final DID d, final IPipe p)
+    public final void onDeviceDisconnected(final DID d, final IConnectionService cs)
     {
         //
         // when I first implemented this method I assumed that it would always be called in
@@ -380,7 +384,9 @@ public abstract class XMPP implements ITransportImpl, IPipeController, IUnicast,
             @Override
             public void handle_()
             {
-                _spf.peerDisconnected_(d, p);
+                l.info("d:{} disconnected - closing streams", d);
+                TPUtil.sessionEnded(new Endpoint(XMPP.this, d), _sink, _sm, true, true);
+                _spf.deviceDisconnected_(d, cs);
             }
         };
 
@@ -391,51 +397,49 @@ public abstract class XMPP implements ITransportImpl, IPipeController, IUnicast,
         }
     }
 
-    @Override
-    public final void processUnicastControl(final DID did, final PBTPHeader hdr)
+    private void processUnicastControl(DID did, PBTPHeader hdr)
     {
-        assertNonDispThread();
+        assertDispThread();
 
-        final PBTPHeader.Type type = hdr.getType();
-
-        Prio evprio = Prio.LO;
-        if (type == PBTPHeader.Type.TRANSPORT_CHECK_PULSE_CALL ||
-            type == PBTPHeader.Type.TRANSPORT_CHECK_PULSE_REPLY) {
-            evprio = Prio.HI;
-        }
-
-        enqueueIntoXmpp(new AbstractEBSelfHandling()
-        {
-            @Override
-            public void handle_()
-            {
-                try {
-                    switch (type) {
-                        case TRANSPORT_CHECK_PULSE_CALL:
-                            //noinspection fallthrough
-                        case TRANSPORT_CHECK_PULSE_REPLY:
-                            PBCheckPulse cp = hdr.getCheckPulse();
-                            assert cp != null : ("invalid pulse msg from d:" + did);
-                            processPulseControl_(did, cp, (type == TRANSPORT_CHECK_PULSE_CALL));
-                            break;
-                        case DIAGNOSIS:
-                            PBTransportDiagnosis dg = hdr.getDiagnosis();
-                            assert dg != null : ("invalid diagnosis from d:" + did);
-                            processDiagnosis_(did, dg);
-                            break;
-                        default:
-                            processUnicastControl_(did, hdr);
-                            break;
-                    }
-                } catch (ExProtocolError e) {
-                    assert false : ("unhandled control pkt from d:" + did + " type:" + hdr.getType().name());
-                }
+        PBTPHeader.Type type = hdr.getType();
+        try {
+            switch (type) {
+                case TRANSPORT_CHECK_PULSE_CALL:
+                    //noinspection fallthrough
+                case TRANSPORT_CHECK_PULSE_REPLY:
+                    PBCheckPulse cp = hdr.getCheckPulse();
+                    assert cp != null : ("invalid pulse msg from d:" + did);
+                    processPulseControl_(did, cp, (type == TRANSPORT_CHECK_PULSE_CALL));
+                    break;
+                case DIAGNOSIS:
+                    PBTransportDiagnosis dg = hdr.getDiagnosis();
+                    assert dg != null : ("invalid diagnosis from d:" + did);
+                    processDiagnosis_(did, dg);
+                    break;
+                default:
+                    processUnicastControl_(did, hdr);
+                    break;
             }
-        }, evprio);
+        } catch (ExProtocolError e) {
+            assert false : ("unhandled control pkt from d:" + did + " type:" + hdr.getType().name());
+        }
+    }
+
+    private void processUnicastPayload(DID did, PBTPHeader hdr, InputStream bodyis, int wirelen)
+    {
+        assertDispThread();
+
+        try {
+            Endpoint ep = new Endpoint(XMPP.this, did);
+            PBTPHeader ret = TPUtil.processUnicastPayload(ep, hdr, bodyis, wirelen, _sink, _sm);
+            if (ret != null) sendControl_(did, ret, Prio.LO);
+        } catch (Exception e) {
+            l.warn("could not respond to d:" + did + " for pkt:" + hdr.getType().name() + " err:" + e);
+        }
     }
 
     @Override
-    public final void processUnicastPayload(final DID did, final PBTPHeader hdr, final ByteArrayInputStream bodyis, final int wirelen)
+    public final void onIncomingMessage(final DID did, final InputStream packet, final int wirelen)
     {
         assertNonDispThread();
 
@@ -445,31 +449,22 @@ public abstract class XMPP implements ITransportImpl, IPipeController, IUnicast,
             public void handle_()
             {
                 try {
-                    Endpoint ep = new Endpoint(XMPP.this, did);
-                    PBTPHeader ret = TPUtil.processUnicastPayload(ep, hdr, bodyis, wirelen, _sink,
-                            _sm);
-                    if (ret != null) sendControl_(did, ret, Prio.LO);
-                } catch (Exception e) {
-                    l.warn("could not respond to d:" + did + " for pkt:" + hdr.getType().name() +
-                            " err:" + e);
+                    PBTPHeader transhdr = TPUtil.processUnicastHeader(packet);
+
+                    if (TPUtil.isPayload(transhdr)) {
+                        processUnicastPayload(did, transhdr, packet, wirelen);
+                    } else {
+                        processUnicastControl(did, transhdr);
+                    }
+                } catch (IOException e) {
+                    try {
+                        disconnect_(did);
+                    } catch (ExNoResource disconnectException) {
+                        SystemUtil.fatal("fail disconnect cause original:" + e + " next:" + disconnectException);
+                    }
                 }
             }
         }, Prio.LO);
-    }
-
-    @Override
-    public final void closePeerStreams(final DID did, final boolean outbound, final boolean inbound)
-    {
-        assertNonDispThread();
-
-        enqueueIntoXmpp(new AbstractEBSelfHandling()
-        {
-            @Override
-            public void handle_()
-            {
-                TPUtil.sessionEnded(new Endpoint(XMPP.this, did), _sink, _sm, outbound, inbound);
-            }
-        }, Prio.HI);
     }
 
     //--------------------------------------------------------------------------
@@ -677,7 +672,7 @@ public abstract class XMPP implements ITransportImpl, IPipeController, IUnicast,
      * <code>DID</code>
      * @throws ExNoResource if a request to disconnect from a peer
      * cannot be processed by {@link SignalledPipeFanout} due to resource constraints
-     * within an {@link ISignalledPipe}
+     * within an {@link ISignalledConnectionService}
      */
     private void processPresence_(Presence p)
         throws ExFormatError, ExNoResource
@@ -815,7 +810,7 @@ public abstract class XMPP implements ITransportImpl, IPipeController, IUnicast,
      * Provides a uniform way to send control responses to a peer inside the
      * <code>XMPP</code> event-dispatch thread. It allows (and will not send)
      * a <code>null</code> packet and logs an exception thrown during the
-     * <code>send_</code> call
+     * <code>send</code> call
      * <br/>
      * <br/>
      * Messages that should be sent out using this method include (among others):

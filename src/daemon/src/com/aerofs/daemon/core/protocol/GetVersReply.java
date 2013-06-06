@@ -1,43 +1,41 @@
 package com.aerofs.daemon.core.protocol;
 
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
-import java.sql.SQLException;
-import java.util.ArrayDeque;
-import java.util.Queue;
-
 import com.aerofs.base.Loggers;
+import com.aerofs.base.ex.ExNotFound;
+import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.base.ex.Exceptions;
 import com.aerofs.base.id.DID;
+import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.migration.ImmigrantVersionControl;
+import com.aerofs.daemon.core.net.DigestedMessage;
 import com.aerofs.daemon.core.net.IncomingStreams;
+import com.aerofs.daemon.core.net.IncomingStreams.StreamKey;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.MapSIndex2Store;
+import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.lib.db.IPulledDeviceDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
-import com.aerofs.proto.Core.PBStoreHeader;
-import com.google.inject.Inject;
-import org.slf4j.Logger;
-
-import com.aerofs.daemon.core.net.DigestedMessage;
-import com.aerofs.daemon.core.net.IncomingStreams.StreamKey;
-import com.aerofs.daemon.core.tc.Token;
-import com.aerofs.lib.bf.BFOID;
-import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.base.ex.ExNotFound;
-import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.lib.Tick;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.Version;
+import com.aerofs.lib.bf.BFOID;
+import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.id.CID;
-import com.aerofs.base.id.OID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOCID;
 import com.aerofs.proto.Core.PBGetVersReply;
 import com.aerofs.proto.Core.PBGetVersReplyBlock;
+import com.aerofs.proto.Core.PBStoreHeader;
+import com.google.inject.Inject;
+import org.slf4j.Logger;
+
+import java.io.InputStream;
+import java.sql.SQLException;
+import java.util.ArrayDeque;
+import java.util.Queue;
 
 public class GetVersReply
 {
@@ -211,7 +209,7 @@ public class GetVersReply
 
     private static final int MIN_BLOCKS_PER_TX = 100;
 
-    private void processStreamReply_(DID from, StreamKey streamKey, ByteArrayInputStream is,
+    private void processStreamReply_(DID from, StreamKey streamKey, InputStream is,
             Token tk) throws Exception
     {
         ReplyCxt cxt = new ReplyCxt(from);

@@ -7,22 +7,21 @@ package com.aerofs.daemon.transport.xmpp.routing;
 
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.event.lib.imc.IResultWaiter;
+import com.aerofs.daemon.transport.xmpp.IConnectionService;
 import com.aerofs.lib.event.Prio;
-import com.aerofs.daemon.transport.xmpp.IPipe;
 
 import java.io.IOException;
 import java.io.PrintStream;
 import java.net.NetworkInterface;
 import java.util.Set;
 
-import static com.aerofs.daemon.core.net.Transports.TransportImplementation.NOOPTP;
 import static com.aerofs.proto.Files.PBDumpStat;
 
 /**
- * An implementation of {@link IPipe} that simply notifes the sender that there
+ * An implementation of {@link com.aerofs.daemon.transport.xmpp.IConnectionService} that simply notifes the sender that there
  * was an error in sending a packet
  */
-public class ErrorPipe implements IPipe
+public class ErrorPipe implements IConnectionService
 {
     public ErrorPipe(String id, int pref)
     {
@@ -56,13 +55,13 @@ public class ErrorPipe implements IPipe
     }
 
     @Override
-    public void init_() throws Exception
+    public void init() throws Exception
     {
         // empty
     }
 
     @Override
-    public void start_()
+    public void start()
     {
         // empty;
     }
@@ -74,25 +73,25 @@ public class ErrorPipe implements IPipe
     }
 
     @Override
-    public void linkStateChanged_(Set<NetworkInterface> rem, Set<NetworkInterface> cur)
+    public void linkStateChanged(Set<NetworkInterface> rem, Set<NetworkInterface> cur)
     {
         // empty;
     }
 
     @Override
-    public void connect_(DID d)
+    public void connect(DID d)
     {
         // empty;
     }
 
     @Override
-    public void disconnect_(DID did, Exception ex)
+    public void disconnect(DID did, Exception ex)
     {
         // empty;
     }
 
     @Override
-    public Object send_(DID did, IResultWaiter wtr, Prio pri, byte[][] bss, Object cke)
+    public Object send(DID did, IResultWaiter wtr, Prio pri, byte[][] bss, Object cke)
         throws Exception
     {
         if (wtr != null) wtr.error(new IOException("invalid route"));
@@ -100,7 +99,7 @@ public class ErrorPipe implements IPipe
     }
 
     @Override
-    public long getBytesRx(DID did)
+    public long getBytesReceived(DID did)
     {
         return -1;
     }
@@ -133,5 +132,5 @@ public class ErrorPipe implements IPipe
      * ids and rankings are at a different layer of abstraction entirely. This has no effect on
      * functionality, but it is broken from a design perspective.
      */
-    public static final ErrorPipe ERROR_PIPE = new ErrorPipe(NOOPTP.id(), NOOPTP.rank());
+    public static final ErrorPipe ERROR_PIPE = new ErrorPipe("n", Integer.MAX_VALUE);
 }

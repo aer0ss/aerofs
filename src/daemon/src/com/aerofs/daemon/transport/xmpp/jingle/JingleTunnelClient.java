@@ -88,14 +88,9 @@ public class JingleTunnelClient implements IProxyObjectContainer
 
                 _cache.invalidate_(did);
 
-                // since the tandem itself is empty we signal that both incoming and
-                // outgoing streams are closed
-                // also, see comments at top of Engine.java
-                _ij.closePeerStreams(did, true, true);
-
                 // A. case where channel is shut down because of an error
                 // have to signal here, because we don't know when eviction runs
-                _ij.peerDisconnected(did);
+                _ij.onDeviceDisconnected(did);
 
                 l.debug("eng: make ccl peer disconnected callback d:" + did);
             }
@@ -173,8 +168,6 @@ public class JingleTunnelClient implements IProxyObjectContainer
         StreamInterface s = client.AcceptTunnel(sess);
         JingleDataStream jingleDataStream = new JingleDataStream(_ij, s, did, true, _cclosl, _cconl);
         add_(did, jingleDataStream);
-
-        _ij.closePeerStreams(did, true, true); // see comments at top
     }
 
     boolean isClosed_()
@@ -211,7 +204,7 @@ public class JingleTunnelClient implements IProxyObjectContainer
 
         //
         // IMPORTANT: it is possible to end up with a null channel because of a change in
-        // the way the engine is called. Previously send_ was a combination of:
+        // the way the engine is called. Previously send was a combination of:
         //
         // 1) connect if no tandem/channel existed
         // 2) send
@@ -225,7 +218,7 @@ public class JingleTunnelClient implements IProxyObjectContainer
         // filled with outgoing packets). Because send events are still in the xmpp event
         // queue and are being serviced, they _will_ make it. Instead of asserting, we should simply
         // log it, notify waiters, and the upper layer will find out about the disconnection in
-        // time (presumably they were notified via _ij.peerDisconnected(did))
+        // time (presumably they were notified via _ij.onDeviceDisconnected(did))
         //
 
         if (jingleDataStream == null) {
@@ -265,7 +258,6 @@ public class JingleTunnelClient implements IProxyObjectContainer
     {
         _st.assertThread();
 
-        if (t.isConnected_()) _ij.closePeerStreams(did, true, true);
         t.close_(e);
 
         //
@@ -284,7 +276,7 @@ public class JingleTunnelClient implements IProxyObjectContainer
         //
 
         l.debug("eng: make peer disconnected callback d:" + did);
-        _ij.peerDisconnected(did); // B. signal for aerofs-initiated shutdowns
+        _ij.onDeviceDisconnected(did); // B. signal for aerofs-initiated shutdowns
     }
 
     /**
@@ -304,7 +296,7 @@ public class JingleTunnelClient implements IProxyObjectContainer
         if (t == null) return;
 
         //
-        // IMPORTANT: DO NOT CALL _ij.peerDisconnected(did) HERE!!
+        // IMPORTANT: DO NOT CALL _ij.onDeviceDisconnected(did) HERE!!
         // it will be called by close(did, t, e) above!
         //
 

@@ -5,8 +5,12 @@
 package com.aerofs.daemon.core.net;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.base.ex.ExNoResource;
+import com.aerofs.base.ex.ExProtocolError;
+import com.aerofs.base.ex.ExTimeout;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.UnicastInputOutputStack;
+import com.aerofs.daemon.core.ex.ExAborted;
 import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
@@ -15,17 +19,14 @@ import com.aerofs.daemon.lib.id.StreamID;
 import com.aerofs.lib.FrequentDefectSender;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.daemon.core.ex.ExAborted;
-import com.aerofs.base.ex.ExNoResource;
-import com.aerofs.base.ex.ExProtocolError;
-import com.aerofs.base.ex.ExTimeout;
 import com.aerofs.proto.Transport.PBStream.InvalidationReason;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 
-import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -64,7 +65,7 @@ public final class IncomingStreams
     private final static class IncomingStream
     {
         final PeerContext _pc;
-        final Queue<ByteArrayInputStream> _chunks = Lists.newLinkedList();
+        final Queue<InputStream> _chunks = Lists.newLinkedList();
         TCB _tcb;
         InvalidationReason _invalidationReason;
         int _seq; // the last seq received. see IUnicastOutputLayer.sendOutgoingStreamChunk comment
@@ -128,7 +129,7 @@ public final class IncomingStreams
 
     // N.B. the caller must end the stream if timeout happens, otherwise
     // processChunk_() would break the rule imposed by TC.resume_().
-    public ByteArrayInputStream recvChunk_(StreamKey key, Token tk)
+    public InputStream recvChunk_(StreamKey key, Token tk)
             throws ExTimeout, ExStreamInvalid, ExNoResource, ExAborted
     {
         IncomingStream stream = _map.get(key);
@@ -164,7 +165,7 @@ public final class IncomingStreams
         if (stream._tcb != null) stream._tcb.resume_();
     }
 
-    public void processChunk_(StreamKey key, int seq, ByteArrayInputStream chunk)
+    public void processChunk_(StreamKey key, int seq, InputStream chunk)
     {
         IncomingStream stream = _map.get(key);
         if (stream == null) {
@@ -179,12 +180,18 @@ public final class IncomingStreams
                 l.warn("istrm " + stream + " recv chunk after abort seq:" + seq);
             }
         } else {
-            stream._bytesRead += (long)chunk.available();
-            stream._chunks.add(chunk);
-            for (IIncomingStreamChunkListener listener : _listenerList) {
-                listener.onChunkReceived_(key._did, key._strmid);
+            try {
+                stream._bytesRead += (long)chunk.available(); // shouldn't fail!
+                stream._chunks.add(chunk);
+                for (IIncomingStreamChunkListener listener : _listenerList) {
+                    listener.onChunkReceived_(key._did, key._strmid);
+                }
+                resume_(stream);
+            } catch (IOException e) {
+                l.warn("istrm " + stream + " fail chunk.available");
+                aborted_(key, InvalidationReason.INTERNAL_ERROR);
+                end_(key);
             }
-            resume_(stream);
         }
     }
 

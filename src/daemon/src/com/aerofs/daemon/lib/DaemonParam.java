@@ -49,6 +49,7 @@ public class DaemonParam
     {
         public static final int QUEUE_LENGTH = QUEUE_LENGTH_DEFAULT;
         public static final int WORKER_THREAD_POOL_SIZE = 10;
+        public static final long HANDSHAKE_TIMEOUT = 10 * C.SEC;
     }
 
     public static class Jingle

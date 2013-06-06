@@ -7,6 +7,10 @@ package com.aerofs.daemon.core.net;
 import com.aerofs.base.BaseParam;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
+import com.aerofs.base.id.UserID;
+import com.aerofs.base.ssl.SSLEngineFactory;
+import com.aerofs.base.ssl.SSLEngineFactory.Mode;
+import com.aerofs.base.ssl.SSLEngineFactory.Platform;
 import com.aerofs.daemon.core.CoreQueue;
 import com.aerofs.daemon.core.net.link.ILinkStateListener;
 import com.aerofs.daemon.core.net.link.LinkStateService;
@@ -28,7 +32,10 @@ import com.aerofs.daemon.transport.xmpp.Zephyr;
 import com.aerofs.lib.IDumpStat;
 import com.aerofs.lib.IDumpStatMisc;
 import com.aerofs.lib.cfg.Cfg;
+import com.aerofs.lib.cfg.CfgCACertificateProvider;
+import com.aerofs.lib.cfg.CfgKeyManagersProvider;
 import com.aerofs.lib.cfg.CfgLocalDID;
+import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
 import com.aerofs.lib.event.IEvent;
 import com.aerofs.proto.Files.PBDumpStat;
@@ -40,12 +47,16 @@ import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.slf4j.Logger;
 
 import java.io.PrintStream;
+import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
+import java.net.Proxy;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.List;
 
 import static com.aerofs.daemon.core.tc.Cat.UNLIMITED;
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.collect.Lists.newLinkedList;
 import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor;
 
 /**
@@ -53,146 +64,99 @@ import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor
  */
 public class Transports implements IDumpStat, IDumpStatMisc, IStartable
 {
-    private static final Logger l = Loggers.getLogger(Transports.class);
-
-    public static interface ITransportImplementation
-    {
-        ITransport newTransport_(DID localdid, IBlockingPrioritizedEventSink<IEvent> q, MaxcastFilterReceiver mcfr);
-
-        boolean isEnabled();
-    }
-
-    public static enum TransportImplementation implements ITransportImplementation
-    {
-        TCPBMT("t")
-        {
-            @Override
-            public ITransport newTransport_(DID localdid, IBlockingPrioritizedEventSink<IEvent> q, MaxcastFilterReceiver mcfr)
-            {
-                return new TCP(id(), rank(), q, mcfr);
-            }
-
-            @Override
-            public boolean isEnabled()
-            {
-                return Cfg.useTCP();
-            }
-        },
-        JINGLE("j")
-        {
-            @Override
-            public ITransport newTransport_(DID localdid, IBlockingPrioritizedEventSink<IEvent> q, MaxcastFilterReceiver mcfr)
-            {
-                return new Jingle(localdid, id(), rank(), q, mcfr);
-            }
-
-            @Override
-            public boolean isEnabled()
-            {
-                return Cfg.useJingle();
-            }
-        },
-        ZEPHYR(BaseParam.Zephyr.TRANSPORT_ID)
-        {
-            @Override
-            public ITransport newTransport_(DID localdid, IBlockingPrioritizedEventSink<IEvent> q, MaxcastFilterReceiver mcfr)
-            {
-                boolean enableMulticast = !Cfg.useJingle() && Cfg.useZephyr();
-                return new Zephyr(localdid, id(),  rank(), q, mcfr, enableMulticast);
-            }
-
-            @Override
-            public boolean isEnabled()
-            {
-                return Cfg.useZephyr();
-            }
-        },
-        NOOPTP("n") // FIXME (AG): remove this!
-        {
-            @Override
-            public ITransport newTransport_(DID localdid, IBlockingPrioritizedEventSink<IEvent> q, MaxcastFilterReceiver mcfr)
-            {
-                throw new UnsupportedOperationException("cannot make an instance of this transport");
-            }
-
-            @Override
-            public boolean isEnabled()
-            {
-                return false;
-            }
-        }; // this must _always_ be last
-
-        private final String _id;
-
-        private TransportImplementation(String id)
-        {
-            _id = id;
-        }
-
-        public String id()
-        {
-            return _id;
-        }
-
-        public int rank()
-        {
-            return ordinal();
-        }
-
-        @Override
-        public String toString()
-        {
-            return _id;
-        }
-    }
-
-    // the more preferred the transport, the smaller value it has.
     public static final Comparator<ITransport> PREFERENCE_COMPARATOR = new Comparator<ITransport>()
     {
         @Override
         public int compare(ITransport tp0, ITransport tp1)
         {
             int comp = tp0.rank() - tp1.rank();
-            checkArgument(tp0 == tp1 || comp != 0,
-                    "different transports have identical preferences tp0:" + tp0 + " tp1:" + tp1);
+            checkArgument(tp0 == tp1 || comp != 0, "different transports have identical preferences tp0:" + tp0 + " tp1:" + tp1);
             return comp;
         }
     };
+
+    private static final Logger l = Loggers.getLogger(Transports.class);
 
     private final ImmutableMap<ITransport, IIMCExecutor> _availableTransports;
     private final TC _tc;
     private final LinkStateService _lss;
 
+    //
+    // static transport-construction methods
+    //
+
+    private static TCP newTCP(
+            String transportId, int transportRank,
+            IBlockingPrioritizedEventSink<IEvent> coreQueue,
+            MaxcastFilterReceiver mcfr)
+    {
+        return new TCP(transportId, transportRank, coreQueue, mcfr);
+    }
+
+    private static Jingle newJingle(
+            DID localdid,
+            String transportId, int transportRank,
+            IBlockingPrioritizedEventSink<IEvent> coreQueue,
+            MaxcastFilterReceiver mcfr)
+    {
+        return new Jingle(localdid, transportId, transportRank, coreQueue, mcfr);
+    }
+
+    private static Zephyr newZephyr(
+            UserID localid, DID localdid,
+            String transportId, int transportRank,
+            IBlockingPrioritizedEventSink<IEvent> coreQueue,
+            MaxcastFilterReceiver mcfr,
+            SSLEngineFactory clientSslEngineFactory,
+            ClientSocketChannelFactory clientChannelFactory,
+            MobileServerZephyrConnector mobileServerZephyrConnector,
+            InetSocketAddress inetSocketAddress,
+            boolean enableMulticast)
+    {
+        return new Zephyr(
+                localid, localdid,
+                transportId,  transportRank,
+                coreQueue,
+                mcfr,
+                clientSslEngineFactory,
+                clientChannelFactory,
+                mobileServerZephyrConnector,
+                inetSocketAddress, Proxy.NO_PROXY, enableMulticast);
+    }
+
     @Inject
-    public Transports(CfgLocalDID localdid, CoreQueue q, TC tc, LinkStateService lss,
-            MobileServiceFactory mobileServiceFactory, ClientSocketChannelFactory clientChannelFactory)
+    public Transports(
+            CfgLocalUser localuser, CfgLocalDID localdid,
+            CoreQueue coreQueue, TC tc,
+            LinkStateService lss,
+            MobileServiceFactory mobileServiceFactory,
+            ClientSocketChannelFactory clientChannelFactory)
     {
         this._tc = tc;
         this._lss = lss;
 
         MaxcastFilterReceiver mcfr = new MaxcastFilterReceiver(); // shared by all transports
 
+        List<ITransport> transports = newLinkedList();
+
+        if (Cfg.useTCP()) {
+            transports.add(newTCP("t", 0, coreQueue, mcfr));
+        }
+        if (Cfg.useJingle()) {
+            transports.add(newJingle(localdid.get(), "j", 1, coreQueue, mcfr));
+        }
+        if (Cfg.useZephyr()) {
+            boolean enableMulticast = !Cfg.useJingle() && Cfg.useZephyr();
+            MobileServerZephyrConnector mobileZephyr = new MobileServerZephyrConnector(mobileServiceFactory, clientChannelFactory);
+            SSLEngineFactory clientSslEngineFactory = new SSLEngineFactory(Mode.Client, Platform.Desktop, new CfgKeyManagersProvider(), new CfgCACertificateProvider(), null);
+            transports.add(newZephyr(localuser.get(), localdid.get(), "z", 2, coreQueue, mcfr, clientSslEngineFactory, clientChannelFactory, mobileZephyr, BaseParam.Zephyr.ADDRESS.get(), enableMulticast));
+        }
+
         ImmutableMap.Builder<ITransport, IIMCExecutor> transportBuilder = ImmutableMap.builder();
-
-        for (TransportImplementation i : TransportImplementation.values()) {
-            if (i.isEnabled()) {
-                ITransport tp = i.newTransport_(localdid.get(), q, mcfr);
-
-                // [sigh] hack because the enums assume that all transports take the same params
-                // FIXME (AG): revert to the old style of construction without enums
-                // FIXME (AG): I should have MobileServerZephyrConnector connect directly to XmppServerConnection
-                if (i == TransportImplementation.ZEPHYR) {
-                    ((Zephyr) tp).setMobileServerZephyrConnector(
-                            new MobileServerZephyrConnector(
-                                    mobileServiceFactory, clientChannelFactory));
-                }
-
-                l.info("add transport " + tp);
-
-                IIMCExecutor imce = new QueueBasedIMCExecutor(tp.q());
-                transportBuilder.put(tp, imce);
-                addLinkStateListener_(tp, imce);
-            }
+        for (ITransport transport: transports) {
+            IIMCExecutor imce = new QueueBasedIMCExecutor(transport.q());
+            transportBuilder.put(transport, imce);
+            addLinkStateListener_(transport, imce);
         }
 
         this._availableTransports = transportBuilder.build();
@@ -221,9 +185,7 @@ public class Transports implements IDumpStat, IDumpStatMisc, IStartable
                 // would be easier once we converted events to Futures.
                 try {
                     l.info("notify tps of lsc");
-                    CoreIMC.enqueueBlocking_(
-                            new EOLinkStateChanged(imce, previous, current, added, removed), _tc,
-                            UNLIMITED);
+                    CoreIMC.enqueueBlocking_(new EOLinkStateChanged(imce, previous, current, added, removed), _tc, UNLIMITED);
                     l.info("complete notify tps of lsc");
                 } catch (Exception e) {
                     l.error("failed to enqueue:" + tp.toString());

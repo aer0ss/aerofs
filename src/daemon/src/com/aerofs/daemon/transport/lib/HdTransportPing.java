@@ -2,11 +2,12 @@ package com.aerofs.daemon.transport.lib;
 
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.daemon.event.net.EOTransportPing;
-import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.LibParam;
-import com.aerofs.proto.Transport.PBTransportDiagnosis;
+import com.aerofs.lib.event.Prio;
 import com.aerofs.proto.Transport.PBTPHeader;
 import com.aerofs.proto.Transport.PBTPHeader.Type;
+import com.aerofs.proto.Transport.PBTransportDiagnosis;
+import com.aerofs.proto.Transport.PBTransportDiagnosis.PBPing;
 
 public class HdTransportPing extends AbstractHdIMC<EOTransportPing>
 {
@@ -31,11 +32,10 @@ public class HdTransportPing extends AbstractHdIMC<EOTransportPing>
                 .setType(Type.DIAGNOSIS)
                 .setDiagnosis(PBTransportDiagnosis.newBuilder()
                         .setType(PBTransportDiagnosis.Type.PING)
-                        .setPing(PBTransportDiagnosis.PBPing.newBuilder()
-                                .setSeq(ev._seqNext)))
+                        .setPing(PBPing.newBuilder().setPingId(ev._seqNext)))
                 .build();
 
-            _u.send_(ev._did, null, prio, TPUtil.newControl(h), null);
+            _u.send(ev._did, null, prio, TPUtil.newControl(h), null);
 
             if (l != null) _tds.removePing(ev._seqPrev);
 

@@ -61,7 +61,7 @@ public interface IUnicast
      * @return an object representing a "stream cookie". Callers
      * <strong>MUST</strong> use this return value as <code>cke</code> for
      * <em>all</em>subsequent chunks in the same stream
-     * @throws Exception if this <code>send_</code> cannot be carried out.
+     * @throws Exception if this <code>send</code> cannot be carried out.
      * <strong>IMPORTANT:</strong> no exception does <em>not</em> imply that the
      * packet was sent out successfully. For streams, successful sending is
      * signalled via a call to {@link IResultWaiter#okay()}. For atomic packets
@@ -70,6 +70,6 @@ public interface IUnicast
     // FIXME: add a parameter to indicate if packet must be sent via reliable channels (some messages without stream ids - transport flood, sent by <code>sendPayload</code>) need reliability
     // FIXME: split this into at least two calls: one for individual packets, another for streams
     // FIXME: separate stream/datagram reliable/unreliable payload/control dimensions
-    Object send_(DID did, @Nullable IResultWaiter wtr, Prio pri, byte[][] bss, @Nullable Object cke)
+    Object send(DID did, @Nullable IResultWaiter wtr, Prio pri, byte[][] bss, @Nullable Object cke)
         throws Exception;
 }
