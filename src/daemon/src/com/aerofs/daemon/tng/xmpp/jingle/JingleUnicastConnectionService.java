@@ -333,7 +333,7 @@ public final class JingleUnicastConnectionService
      */
     static Jid did2jid(DID did)
     {
-        return new Jid(ID.did2user(did), Xmpp.SERVER_DOMAIN, ID.resource(true));
+        return new Jid(ID.did2user(did), Xmpp.SERVER_DOMAIN.get(), ID.resource(true));
     }
 
     static DID jid2did(Jid jid)

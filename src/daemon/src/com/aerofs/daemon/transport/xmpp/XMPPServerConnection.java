@@ -106,7 +106,7 @@ public class XMPPServerConnection implements IDumpStatMisc
         InetSocketAddress address = Xmpp.ADDRESS.getUnresolved();
         ConnectionConfiguration cc = new ConnectionConfiguration(
                 address.getHostName(), address.getPort());
-        cc.setServiceName(Xmpp.SERVER_DOMAIN);
+        cc.setServiceName(Xmpp.SERVER_DOMAIN.get());
         cc.setSecurityMode(SecurityMode.required);
         cc.setSelfSignedCertificateEnabled(true);
         cc.setVerifyChainEnabled(false);

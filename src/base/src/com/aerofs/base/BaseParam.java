@@ -21,8 +21,13 @@ public class BaseParam
 
     public static class Xmpp
     {
-        public static final String SERVER_DOMAIN = "aerofs.com";
-        public static final String MUC_ADDR = "c." + SERVER_DOMAIN;
+        public static final DynamicStringProperty SERVER_DOMAIN =
+                new DynamicStringProperty("base.xmpp.domain", "aerofs.com");
+
+        public static String getMucAddress()
+        {
+            return "c." + SERVER_DOMAIN.get();
+        }
 
         // staging value: "staging.aerofs.com:9328"
         // this value is dynamic but clients will not pick up the new value on failure

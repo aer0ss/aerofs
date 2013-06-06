@@ -451,7 +451,7 @@ public class Jingle implements ISignalledPipe, IJingle
      */
     static Jid did2jid(DID did)
     {
-        return new Jid(JabberID.did2user(did), Xmpp.SERVER_DOMAIN, JINGLE_RESOURCE_NAME);
+        return new Jid(JabberID.did2user(did), Xmpp.SERVER_DOMAIN.get(), JINGLE_RESOURCE_NAME);
     }
 
     static DID jid2did(Jid jid) throws ExFormatError
