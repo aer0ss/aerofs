@@ -966,14 +966,6 @@ public class ReceiveAndApplyUpdate
     {
         PBGetComReply reply = msg.pb().getGetComReply();
 
-        // check for over quota and abort the stream as early as possible so
-        // we don't waste transfer if the store is over quota
-        long estTotalLen = reply.getFileTotalLength();
-        if (_sidx2s.getThrows_(msg.sidx()).isOverQuota_(estTotalLen)) {
-            l.warn("dl might over quota w/ est. len " + estTotalLen);
-            throw new ExOutOfSpace();
-        }
-
         // Should aliased oid be checked?
         // Since there is no content associated with aliased oid
         // there shouldn't be invocation for applyContent_()?

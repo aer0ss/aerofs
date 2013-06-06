@@ -186,7 +186,7 @@ public class Main
         if (!Cfg.inited()) {
             try {
                 Cfg.init_(rtRoot, ui || prog.equals(DAEMON_NAME));
-                l.debug("id " + Cfg.did().toStringFormal() + (Cfg.isSP() ? " SP mode" : ""));
+                l.debug("id {}", Cfg.did().toStringFormal());
             } catch (ExNotSetup e) {
                 // gui and cli will run setup itself
                 if (!ui) throw e;

@@ -36,7 +36,6 @@ import com.aerofs.base.C;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.bf.BFOID;
-import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.id.SOCID;
 import com.google.inject.Inject;
 
@@ -81,10 +80,7 @@ public class Collector implements IDumpStatMisc
 
         public Collector create_(Store s)
         {
-            // TODO: either inject Iterator impl or get rid of partial replica support
-            return new Collector(this, s.sidx(), Cfg.isFullReplica() ?
-                            new IteratorFullReplica(_csdb, _csr, s.sidx()) :
-                            new IteratorPartialReplica(_csdb, _csr, s));
+            return new Collector(this, s.sidx(), new IteratorFullReplica(_csdb, _csr, s.sidx()));
         }
     }
 

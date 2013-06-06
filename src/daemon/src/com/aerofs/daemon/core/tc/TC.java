@@ -22,7 +22,6 @@ import com.google.inject.Inject;
 import org.slf4j.Logger;
 
 import com.aerofs.daemon.lib.DaemonParam;
-import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.db.DBIteratorMonitor;
 import com.aerofs.daemon.core.ex.ExAborted;
 import com.aerofs.base.ex.ExNoResource;
@@ -244,23 +243,6 @@ public class TC implements IDumpStatMisc
                 }
             }
         }, name);
-
-        if (Cfg.isSP()) {
-            // set core thread priority higher than other threads for
-            // shorter response time on core activities
-            //
-            // ref1 http://www.javamex.com/tutorials/threads/priority_what.shtml
-            // ref2 http://stackoverflow.com/questions/297804/thread-api-priority-translation-to-os-thread-priority
-            // ref3 http://www.akshaal.info/2008/04/javas-thread-priorities-in-linux.html
-            // ref4 http://tech.stolsvik.com/2010/01/linux-java-thread-priorities-workaround.html
-            //
-            // -XX:ThreadPriorityPolicy=666 must be set on Linux. it's a hack.
-            // it also needs "aerofs - nice -5" in /etc/security/limits.conf.
-            // see ref3 & 4
-            //
-            thd.setPriority(Thread.NORM_PRIORITY + (Thread.MAX_PRIORITY -
-                    Thread.NORM_PRIORITY) / 2);
-        }
 
         thd.setDaemon(true);
         thd.start();

@@ -6,6 +6,7 @@ package com.aerofs.daemon.core.syncstatus;
 
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.SID;
+import com.aerofs.base.id.UniqueID;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.mock.logical.LogicalObjectsPrinter;
@@ -19,7 +20,6 @@ import com.aerofs.lib.CounterVector;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.cfg.CfgAggressiveChecking;
 import com.aerofs.lib.id.SOID;
-import com.aerofs.base.id.UniqueID;
 import com.aerofs.testlib.AbstractTest;
 import com.beust.jcommander.internal.Lists;
 import junit.framework.Assert;

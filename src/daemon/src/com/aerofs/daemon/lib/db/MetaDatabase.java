@@ -492,33 +492,6 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase, IMe
         }
     }
 
-    private PreparedStatement _psGetUsedSp;
-    @Override
-    public long getUsedSpace_(SIndex sidx) throws SQLException
-    {
-        try {
-            if (_psGetUsedSp == null) _psGetUsedSp = c()
-                    .prepareStatement("select sum(" + C_CA_LENGTH + ") from "
-                            + T_CA + " where " + C_CA_SIDX + "=?");
-
-            _psGetUsedSp.setInt(1, sidx.getInt());
-
-            ResultSet rs = _psGetUsedSp.executeQuery();
-            try {
-                Util.verify(rs.next());
-                long ret = rs.getLong(1);
-                assert !rs.next();
-                return ret;
-            } finally {
-                rs.close();
-            }
-        } catch (SQLException e) {
-            DBUtil.close(_psGetUsedSp);
-            _psGetUsedSp = null;
-            throw e;
-        }
-    }
-
     private static class DBIterNonMasterBranches extends
             AbstractDBIterator<SOKID>
     {

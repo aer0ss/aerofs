@@ -352,13 +352,6 @@ public class Cfg
         return _storageType != null ? _storageType : defaultStorageType();
     }
 
-    // SP Daemon support is temporarily disabled. Search the code base for "SP_DID" and references
-    // to Cfg.isSP() when restoring the function.
-    public static boolean isSP()
-    {
-        return false;
-    }
-
     public static boolean useDM()
     {
         return _useDM;
@@ -377,11 +370,6 @@ public class Cfg
     public static boolean useZephyr()
     {
         return _useZephyr;
-    }
-
-    public static boolean isFullReplica()
-    {
-        return !isSP();
     }
 
     public static boolean useAutoUpdate()
@@ -439,7 +427,7 @@ public class Cfg
 
     public static boolean useArchive()
     {
-        return !isSP() && !L.isStaging();
+        return !L.isStaging();
     }
 
     /**

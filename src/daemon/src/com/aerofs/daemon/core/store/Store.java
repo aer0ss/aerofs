@@ -19,7 +19,6 @@ import com.aerofs.daemon.core.collector.SenderFilters;
 import com.aerofs.daemon.core.net.device.Device;
 import com.aerofs.daemon.lib.db.IMetaDatabase;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.base.id.DID;
 import com.aerofs.lib.id.SIndex;
 
@@ -47,21 +46,18 @@ public class Store implements Comparable<Store>, IDumpStatMisc
     public static class Factory
     {
         private DevicePresence _dp;
-        private IMetaDatabase _mdb;
         private AntiEntropy _ae;
         private Collector.Factory _factCollector;
         private SenderFilters.Factory _factSF;
 
         @Inject
-        public void inject_(SenderFilters.Factory factSF,
-            Collector.Factory factCollector, AntiEntropy ae,
-            IMetaDatabase mdb, DevicePresence dp)
+        public void inject_(SenderFilters.Factory factSF, Collector.Factory factCollector,
+                AntiEntropy ae, DevicePresence dp)
         {
 
             _factSF = factSF;
             _factCollector = factCollector;
             _ae = ae;
-            _mdb = mdb;
             _dp = dp;
         }
 
@@ -92,7 +88,6 @@ public class Store implements Comparable<Store>, IDumpStatMisc
         _collector = _f._factCollector.create_(this);
         _senderFilters = _f._factSF.create_(sidx);
         _opm = _f._dp.getOPMDevices_(sidx);
-        if (!Cfg.isFullReplica()) computeUsedSpace_();
         _isDeleted = false;
     }
 
@@ -162,25 +157,10 @@ public class Store implements Comparable<Store>, IDumpStatMisc
         _opm = opm;
     }
 
-    private void computeUsedSpace_() throws SQLException
-    {
-        assert !_isDeleted;
-        assert !Cfg.isFullReplica();
-        _used = _f._mdb.getUsedSpace_(_sidx);
-    }
-
-    public boolean isOverQuota_(long extra)
-    {
-        assert !_isDeleted;
-        assert Cfg.isFullReplica() : "change this";
-        return false; //_quota - _used - extra <= 0;
-    }
-
     @Override
     public void dumpStatMisc(String indent, String indentUnit, PrintStream ps)
     {
-        ps.println(indent + _sidx + " used " + Util.format(_used) + "+" +
-                (isOverQuota_(0) ? " (over quota)" : ""));
+        ps.println(indent + _sidx + " used " + Util.format(_used) + "+");
         _collector.dumpStatMisc(indent + indentUnit, indentUnit, ps);
     }
 

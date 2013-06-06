@@ -90,11 +90,6 @@ public interface IMetaDatabase
 
     @Nullable ContentHash getCAHash_(SOID soid, KIndex kidx) throws SQLException;
 
-    /**
-     * @param sidx may be always null or always not null during a lifecycle of the daemon process.
-     */
-    long getUsedSpace_(@Nullable SIndex sidx) throws SQLException;
-
     IDBIterator<SOKID> getAllNonMasterBranches_() throws SQLException;
 
     /**
