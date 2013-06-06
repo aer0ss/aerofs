@@ -9,8 +9,6 @@ import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.phy.ILinker;
 import com.aerofs.daemon.core.phy.ScanCompletionCallback;
-import com.aerofs.labeling.L;
-import com.aerofs.lib.StorageType;
 import com.aerofs.lib.cfg.CfgDatabase;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.SystemUtil;
@@ -92,18 +90,11 @@ public class FirstLaunch
 
         // NB: fetcAccessibleStore needs to be performed from a Core thread in case the SP sign-in
         // fails as it causes a Ritual notification to be sent
-        _sched.schedule(new AbstractEBSelfHandling()
-        {
+        _sched.schedule(new AbstractEBSelfHandling() {
             @Override
             public void handle_()
             {
-                // shared folder restoration on first scan only makes sense on regular clients
-                if (Cfg.storageType() == StorageType.LINKED && !L.isMultiuser()) {
-                    fetchAccessibleStores_();
-                }
-
-                l.info("start indexing");
-                _linker.scan(new ScanCompletionCallback() {
+                ScanCompletionCallback cb = new ScanCompletionCallback() {
                     @Override
                     public void done_()
                     {
@@ -113,13 +104,26 @@ public class FirstLaunch
                         callback.done_();
 
                         try {
-                            // reset FIRST_START flag last, as it is used to reject Ritual calls
+                            // RitualService responds with ExIndexing as long as FIRST_START is set
+                            // so resetting it needs to be the *last* step of the FirstLaunch
                             _cfgDB.set(Key.FIRST_START, false);
                         } catch (SQLException e) {
                             SystemUtil.fatal(e);
                         }
                     }
-                });
+                };
+
+                l.info("start indexing");
+
+                // first scan may not be necessary on some clients (most notably non-linked storage)
+                // in which case we want to avoid the ACL fetch as the round-trip to SP introduces
+                // latency that could degrade user's first impression
+                if (_linker.firstScanNeeded()) {
+                    fetchAccessibleStores_();
+                    _linker.scan(cb);
+                } else {
+                    cb.done_();
+                }
             }
         }, 0);
 

@@ -95,7 +95,7 @@ public abstract class AbstractTestMightCreate extends AbstractTest
     {
         when(tm.begin_()).thenReturn(t);
 
-        when(il.isIgnored_("ignored")).thenReturn(true);
+        when(il.isIgnored("ignored")).thenReturn(true);
 
         when(mcop.executeOperation_(anySetOf(Operation.class), any(SOID.class), any(SOID.class),
                 any(PathCombo.class), any(FIDAndType.class), any(IDeletionBuffer.class),

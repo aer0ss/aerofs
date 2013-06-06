@@ -27,7 +27,7 @@ public class MightDelete
      */
     void mightDelete_(PathCombo pcPhysical, IDeletionBuffer delBuffer) throws SQLException
     {
-        if (_il.isIgnored_(pcPhysical._path.last())) return;
+        if (_il.isIgnored(pcPhysical._path.last())) return;
 
         // TODO acl checking
 

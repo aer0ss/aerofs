@@ -145,7 +145,7 @@ public class LinkedFolder implements IPhysicalFolder
         InjectableFile[] children = _f.listFiles();
         if (children != null) {
             for (InjectableFile child : children) {
-                if (_s._il.isIgnored_(child.getName())) child.deleteOrThrowIfExistRecursively();
+                if (_s._il.isIgnored(child.getName())) child.deleteOrThrowIfExistRecursively();
             }
         }
     }

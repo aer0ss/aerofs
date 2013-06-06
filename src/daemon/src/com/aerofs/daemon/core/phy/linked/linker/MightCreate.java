@@ -105,7 +105,7 @@ public class MightCreate
     public Result mightCreate_(PathCombo pcPhysical, IDeletionBuffer delBuffer, OIDGenerator og,
             Trans t) throws Exception
     {
-        if (deleteIfInvalidTagFile(pcPhysical) || _il.isIgnored_(pcPhysical._path.last())) {
+        if (deleteIfInvalidTagFile(pcPhysical) || _il.isIgnored(pcPhysical._path.last())) {
             return Result.IGNORED;
         }
 

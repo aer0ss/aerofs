@@ -3,6 +3,8 @@ package com.aerofs.daemon.core.phy.linked.linker;
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.phy.ILinker;
 import com.aerofs.lib.SystemUtil;
+import com.aerofs.lib.cfg.Cfg;
+import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.phy.linked.linker.notifier.INotifier;
@@ -27,6 +29,7 @@ public class Linker implements ILinker, LinkerRootMap.IListener
     private final CoreScheduler _sched;
     private final INotifier _notifier;
     private final LinkerRootMap _lrm;
+    private final IgnoreList _il;
 
     /**
      * @return whether the name indicate an internal file/folder and should therefore be ignored
@@ -46,13 +49,14 @@ public class Linker implements ILinker, LinkerRootMap.IListener
 
     @Inject
     public Linker(CoreScheduler sched, INotifier.Factory factNotifier, LinkerRoot.Factory factLR,
-            LinkerRootMap lrm)
+            LinkerRootMap lrm, IgnoreList il)
     {
         _sched  = sched;
         _notifier = factNotifier.create();
         _lrm = lrm;
         _lrm.setFactory(factLR);
         _lrm.addListener_(this);
+        _il = il;
     }
 
     @Override
@@ -76,14 +80,31 @@ public class Linker implements ILinker, LinkerRootMap.IListener
         }
     }
 
+    /**
+     * A first scan (designed to restore shared folders and OIDs from tag files and seed files upon
+     * reinstall) should only be performed if at least one physical root has non-ignored children
+     */
+    @Override
+    public boolean firstScanNeeded()
+    {
+        for (LinkerRoot r : _lrm.getAllRoots_()) {
+            String[] children = new File(r.absRootAnchor()).list();
+            if (children == null) continue;
+            for (String c : children) if (!_il.isIgnored(c)) return true;
+        }
+        return false;
+    }
+
     @Override
     public void addingRoot_(final LinkerRoot root) throws IOException
     {
         l.info("add root watch {}", root);
         root._watchId = _notifier.addRootWatch_(root);
 
-        _sched.schedule(new AbstractEBSelfHandling()
-        {
+        // avoid duplicate scans on first launch
+        if (Cfg.db().getBoolean(Key.FIRST_START)) return;
+
+        _sched.schedule(new AbstractEBSelfHandling() {
             @Override
             public void handle_()
             {

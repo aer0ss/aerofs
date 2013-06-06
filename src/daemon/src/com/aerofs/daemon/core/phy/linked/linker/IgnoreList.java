@@ -24,7 +24,7 @@ public class IgnoreList
     /**
      * @param name the name (not path) of a physical object
      */
-    public boolean isIgnored_(String name)
+    public boolean isIgnored(String name)
     {
         // The Java File API transparently converts filenames as bytestrings into
         // Strings using the platform encoding.  If the filename's bytestring

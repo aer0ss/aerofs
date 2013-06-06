@@ -52,7 +52,7 @@ public class TestMightCreate extends AbstractMightCreateTest
     @Before
     public void setUp() throws Exception
     {
-        when(il.isIgnored_("ignored")).thenReturn(true);
+        when(il.isIgnored("ignored")).thenReturn(true);
 
         when(mcop.executeOperation_(anySetOf(Operation.class), any(SOID.class), any(SOID.class),
                 any(PathCombo.class), any(FIDAndType.class), eq(delBuffer), eq(og), eq(t)))
