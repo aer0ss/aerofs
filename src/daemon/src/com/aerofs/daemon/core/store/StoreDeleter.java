@@ -10,6 +10,7 @@ import com.aerofs.daemon.lib.exception.ExStreamInvalid;
 import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExNotDir;
 import com.aerofs.base.ex.ExNotFound;
+import com.aerofs.lib.obfuscate.ObfuscatingFormatters;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 
@@ -133,7 +134,7 @@ public class StoreDeleter
             @Override
             public Path prefixWalk_(Path pathOldParent, OA oa)
             {
-                l.info("del {} {}", pathOldParent, oa);
+                l.debug("del {} {}", pathOldParent, oa);
                 if (oa.type() != Type.DIR) {
                     return null;
                 } else if (oa.isExpelled()) {
@@ -148,7 +149,7 @@ public class StoreDeleter
                     throws IOException, SQLException
             {
                 Path path = pathOldParent.append(oa.name());
-                l.info("del {}", path);
+                l.info("del {}", ObfuscatingFormatters.obfuscatePath(path));
                 switch (oa.type()) {
                 case DIR:
                 case ANCHOR:

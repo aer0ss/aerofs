@@ -317,10 +317,10 @@ public class TimeoutDeletionBuffer implements IDeletionBuffer
             return false;
         } else {
             OA oa =  _ds.getOA_(soid);
-            l.info("delete {} {}", soid,
-                    ObfuscatingFormatters.obfuscatePath(oa.name()));
 
             if (physicalObjectDisappeared(oa)) {
+                l.info("delete {} {}", soid,
+                        ObfuscatingFormatters.obfuscatePath(oa.name()));
                 _od.delete_(soid, PhysicalOp.MAP, t);
             }
             return true;
@@ -347,7 +347,7 @@ public class TimeoutDeletionBuffer implements IDeletionBuffer
         if (absRoot != null) {
             File f = new File(path.toAbsoluteString(absRoot));
             if (f.exists()) {
-                l.warn("here be dragons {} {}", path, oa);
+                l.warn("here be dragons {} {}", ObfuscatingFormatters.obfuscatePath(path), oa);
                 // in the event that the path is occupied by an object of a different
                 // type, proceed with the deletion
                 if (f.isFile() == oa.isFile()) {
