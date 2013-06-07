@@ -55,4 +55,9 @@ public interface IPhysicalStorage
      * prior to this method being called
      */
     void deleteStore_(SIndex sidx, SID sid, PhysicalOp op, Trans t) throws IOException, SQLException;
+
+    /**
+     * Delete prefix associated with a given SOKID, if any
+     */
+    void deletePrefix_(SOKID sokid) throws IOException, SQLException;
 }

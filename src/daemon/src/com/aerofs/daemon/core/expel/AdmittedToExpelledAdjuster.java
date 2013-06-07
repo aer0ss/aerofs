@@ -7,6 +7,7 @@ import com.aerofs.daemon.core.ds.DirectoryService.IObjectWalker;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.phy.PhysicalOp;
+import com.aerofs.daemon.core.protocol.PrefixVersionControl;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.StoreDeleter;
 import com.aerofs.daemon.lib.db.trans.Trans;
@@ -37,6 +38,7 @@ public class AdmittedToExpelledAdjuster implements IExpulsionAdjuster
 
     private final DirectoryService _ds;
     private final NativeVersionControl _nvc;
+    private final PrefixVersionControl _pvc;
     private final IPhysicalStorage _ps;
     private final Expulsion _expulsion;
     private final StoreDeleter _sd;
@@ -44,13 +46,14 @@ public class AdmittedToExpelledAdjuster implements IExpulsionAdjuster
 
     @Inject
     public AdmittedToExpelledAdjuster(StoreDeleter sd, Expulsion expulsion,
-            IPhysicalStorage ps, NativeVersionControl nvc, DirectoryService ds,
-            IMapSID2SIndex sid2sidx)
+            IPhysicalStorage ps, NativeVersionControl nvc, PrefixVersionControl pvc,
+            DirectoryService ds, IMapSID2SIndex sid2sidx)
     {
         _sd = sd;
         _expulsion = expulsion;
         _ps = ps;
         _nvc = nvc;
+        _pvc = pvc;
         _ds = ds;
         _sid2sidx = sid2sidx;
     }
@@ -88,12 +91,16 @@ public class AdmittedToExpelledAdjuster implements IExpulsionAdjuster
                         Version vBranch = _nvc.getLocalVersion_(k);
                         vKMLAdd = vKMLAdd.add_(vBranch);
                         _nvc.deleteLocalVersion_(k, vBranch, t);
+
                         _ds.deleteCA_(oa.soid(), kidx, t);
+                        _ps.deletePrefix_(k.sokid());
                     }
 
                     // move all the local versions to KML version
                     Version vKMLOld = _nvc.getKMLVersion_(socid);
                     _nvc.addKMLVersionNoAssert_(socid, vKMLAdd.sub_(vKMLOld), t);
+
+                    _pvc.deleteAllPrefixVersions_(socid.soid(), t);
 
                     _expulsion.fileExpelled_(oa.soid());
                     return null;

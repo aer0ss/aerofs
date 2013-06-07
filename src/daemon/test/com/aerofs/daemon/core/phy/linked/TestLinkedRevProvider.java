@@ -70,8 +70,6 @@ public class TestLinkedRevProvider extends AbstractTest
         when(s.auxRootForStore_(rootSID)).thenReturn(auxDir);
 
         localRevProvider = new LinkedRevProvider(s, factFile);
-        localRevProvider._startCleanerScheduler = false;
-        localRevProvider.init_();
     }
 
     @After

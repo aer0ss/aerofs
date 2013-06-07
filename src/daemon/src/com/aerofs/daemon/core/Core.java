@@ -111,8 +111,12 @@ public class Core implements IModule
 
         _nvc.init_();
         _ivc.init_();
-        _ps.init_();
+
+        // IMPORTANT: Linker need to be initialized before PhysicalStorage as LinkedStorage expects
+        // LinkerRootMap to be initialized and that is the responsibility of the Linker
         _linker.init_();
+        _ps.init_();
+
         _ss.init_();
         _tps.init_();
         _stack.init_();
@@ -134,7 +138,6 @@ public class Core implements IModule
     public void start_()
     {
         // core health
-
         _cpw.start_();
 
         // start Ritual notifications as we use them to report progress

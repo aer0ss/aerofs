@@ -89,7 +89,7 @@ public class LinkedStorage implements IPhysicalStorage, IListener
             ensureSaneAuxRoot_(e.getKey(), e.getValue());
         }
 
-        _revProvider.init_();
+        _revProvider.startCleaner_();
     }
 
     @Override
@@ -139,6 +139,13 @@ public class LinkedStorage implements IPhysicalStorage, IListener
         return new LinkedPrefix(_factFile, k, auxRootForStore_(k.sidx()));
     }
 
+    @Override
+    public void deletePrefix_(SOKID sokid) throws SQLException, IOException
+    {
+        _factFile.create(Util.join(auxRootForStore_(sokid.sidx()), LibParam.AuxFolder.PREFIX._name,
+                LinkedStorage.makeAuxFileName(sokid))).deleteIgnoreError();
+    }
+
     private SID rootSID_(SIndex sidx) throws SQLException
     {
         return _sidx2sid.get_(_stores.getPhysicalRoot_(sidx));
@@ -151,7 +158,7 @@ public class LinkedStorage implements IPhysicalStorage, IListener
 
     String auxRootForStore_(SID root)
     {
-        return Cfg.absAuxRootForPath(_cfgAbsRoots.get(root), root);
+        return Cfg.absAuxRootForPath(_lrm.absRootAnchor_(root), root);
     }
 
     @Override

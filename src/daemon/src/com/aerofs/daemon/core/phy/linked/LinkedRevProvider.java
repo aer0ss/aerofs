@@ -162,7 +162,6 @@ public class LinkedRevProvider implements IPhysicalRevProvider
     private final LinkedStorage _s;
     private final InjectableFile.Factory _factFile;
 
-    boolean _startCleanerScheduler = true;
     CleanerScheduler _cleanerScheduler;
     long _spaceDelta;
 
@@ -174,21 +173,16 @@ public class LinkedRevProvider implements IPhysicalRevProvider
 
     TimeSource _ts = new TimeSource();
 
-
-    @Inject
     public LinkedRevProvider(LinkedStorage s, InjectableFile.Factory factFile)
     {
         _s = s;
         _factFile = factFile;
     }
 
-    // called from LocalStorage
-    void init_() throws IOException
+    void startCleaner_()
     {
-        if (_startCleanerScheduler) {
-            _cleanerScheduler = new CleanerScheduler();
-            _cleanerScheduler.start();
-        }
+        _cleanerScheduler = new CleanerScheduler();
+        _cleanerScheduler.start();
     }
 
     String revPath(Path path)

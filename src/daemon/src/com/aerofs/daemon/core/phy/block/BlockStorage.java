@@ -155,6 +155,12 @@ class BlockStorage implements IPhysicalStorage
         return new BlockPrefix(this, k, _fileFactory.create(_prefixDir, makeFileName(k.sokid())));
     }
 
+    @Override
+    public void deletePrefix_(SOKID sokid) throws SQLException, IOException
+    {
+        _fileFactory.create(_prefixDir, makeFileName(sokid)).deleteIgnoreError();
+    }
+
     /**
      * Update database after complete prefix download
      *
