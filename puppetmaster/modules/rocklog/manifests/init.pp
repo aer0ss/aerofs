@@ -16,8 +16,7 @@ class rocklog {
         "pyelasticsearch",
         "requests",
         ]:
-        provider => "pip",
-        require => Package["python-pip"]
+        provider => "pip"
     }
 
     # requirements for Kibana
@@ -49,6 +48,21 @@ class rocklog {
         require => Package["elasticsearch"],
     }
 
+    # Daily elasticsearch cleaner:
+    file{ "/usr/bin/es_cleaner.py":
+        source => "puppet:///modules/rocklog/es_cleaner.py",
+        owner   => "root",
+        group   => "root",
+        mode    => "0500",
+    }
+
+    cron { "daily_es_clean":
+        command => "/usr/bin/es_cleaner.py -u http://localhost:9200 -d 30",
+        user    => "root",
+        hour    => 1,
+        require => File["/usr/bin/es_cleaner.py"]
+    }
+
     exec{"get kibana":
         command => "/usr/bin/wget -qO- https://github.com/rashidkpc/Kibana/archive/v0.2.0.tar.gz | tar xz",
         cwd => "/opt/",
@@ -78,6 +92,22 @@ class rocklog {
         source => "puppet:///modules/rocklog/KibanaConfig.rb",
         require => Exec["get kibana"],
         notify => Service["unicorn"],
+    }
+
+    # patch Kibana for modern (secure) browsers that won't execute
+    # javascript that is text/html. Bug is fixed at Kibana, but
+    # isn't in the download archive for some reason.
+    define replace_line($file, $old_pattern, $new_pattern) {
+        exec { "/bin/sed -i 's#$old_pattern#$new_pattern#g' $file":
+            onlyif => "/bin/grep  '$old_pattern' '$file'"
+        }
+    }
+
+    replace_line {"patch the content-type for timezone.js":
+        file => "/opt/kibana/kibana.rb",
+        old_pattern => "erb :timezone$",
+        new_pattern => "erb :timezone, :content_type => \"application/javascript\"",
+        notify => Service["unicorn"]
     }
 
     file{ "/etc/init/unicorn.conf":
