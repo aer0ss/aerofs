@@ -62,7 +62,7 @@
 <%block name="scripts">
     <%credit_card_modal:javascript/>
 
-    <script src="https://ajax.aspnetcdn.com/ajax/jquery.dataTables/1.8.2/jquery.dataTables.min.js"></script>
+    <script src="${request.static_path('web:static/js/jquery.dataTables.min.js')}"></script>
     <script src="${request.static_path('web:static/js/datatables_extensions.js')}"></script>
     <script type="text/javascript">
         $(document).ready(function() {

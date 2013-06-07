@@ -10,7 +10,7 @@
     <link rel="shortcut icon" href="${request.static_path('web:static/img/favicon.ico')}">
 
     ## stylesheets
-    <link href='https://fonts.googleapis.com/css?family=Open+Sans:300,400,600' rel='stylesheet' type='text/css'>
+    <link href="${request.static_path('web:static/css/google-open-sans.css')}" rel='stylesheet' type='text/css'>
     ## since we've changed the css file, use a random param to force the browser to reload the css.
     ## TODO (WW) remove them eventually
     <link href="${request.static_path('web:static/css/bootstrap.css')}?random=123456" rel="stylesheet">
@@ -21,7 +21,7 @@
 
     ## Le HTML5 shim, for IE6-8 support of HTML5 elements
     <!--[if lt IE 9]>
-    <script src="https://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <script src="${request.static_path('web:static/js/html5.js')}"></script>
     <![endif]-->
 
     ## fav and touch icons
@@ -94,7 +94,7 @@
     ##==================================================
     ##Placed at the end of the document so the pages load faster
 
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+    <script src="${request.static_path('web:static/js/jquery.min.js')}"></script>
     <script src="${request.static_path('web:static/js/jquery.easing.1.3.js')}"></script>
     <script src="${request.static_path('web:static/js/bootstrap.min.js')}"></script>
     <script src="${request.static_path('web:static/js/aerofs.js')}"></script>
