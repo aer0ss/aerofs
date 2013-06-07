@@ -6,12 +6,14 @@ import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.AbstractExWirable;
 import com.aerofs.base.ex.Exceptions;
 import com.aerofs.base.id.DID;
+import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UniqueID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.OutArg;
+import com.aerofs.lib.StorageType;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.SystemUtil.ExitCode;
 import com.aerofs.lib.Util;
@@ -484,28 +486,10 @@ public final class SVClient
         }
 
         if (rtRoot != null) {
-            // XXX (AG): well, I hope and pray that since we have an rtroot Cfg is actually in a good state
-            // filesystem type
-            if (Cfg.inited()) {
-                bdDefect.addJavaEnvName("fs");
-                try {
-                    OutArg<Boolean> remote = new OutArg<Boolean>();
-                    String fs = OSUtil.get().getFileSystemType(Cfg.db().getNullable(ROOT), remote);
-                    bdDefect.addJavaEnvValue(fs + ", remote " + remote.get());
-                } catch (Throwable t) {
-                    bdDefect.addJavaEnvValue(t.toString());
-                }
-            }
-
-            // free space on the rtroot partition
-            bdDefect.addJavaEnvName("free");
-            try {
-                String freeSpace = listFreeSpaceOnPartition(rtRoot);
-                l.debug("free space:" + freeSpace);
-                bdDefect.addJavaEnvValue(freeSpace);
-            } catch (Throwable t) {
-                bdDefect.addJavaEnvValue("n/a");
-            }
+            bdDefect.addJavaEnvName("rtroot");
+            bdDefect.addJavaEnvValue(rtRoot + ", "
+                    + getFSType(rtRoot) + ", "
+                    + getDiskusage(rtRoot));
 
             // files and their sizes in rtroot
             bdDefect.addJavaEnvName("files");
@@ -515,6 +499,16 @@ public final class SVClient
                 bdDefect.addJavaEnvValue(fileSizes);
             } catch (Throwable t) {
                 bdDefect.addJavaEnvValue("n/a");
+            }
+        }
+
+        if (Cfg.inited() && Cfg.storageType() == StorageType.LINKED) {
+            for (Entry<SID, String> root : Cfg.getRoots().entrySet()) {
+                String absPath = root.getValue();
+                bdDefect.addJavaEnvName("root " + root.getKey().toStringFormal());
+                bdDefect.addJavaEnvValue(absPath + ", "
+                        + getFSType(absPath) + ", "
+                        + getDiskusage(absPath));
             }
         }
 
@@ -545,6 +539,27 @@ public final class SVClient
     // PRIVATE UTILITY METHODS
     //
     //-------------------------------------------------------------------------
+
+
+    private static String getFSType(String absPath)
+    {
+        try {
+            OutArg<Boolean> remote = new OutArg<Boolean>();
+            String fs = OSUtil.get().getFileSystemType(absPath, remote);
+            return (remote.get() ? "remote " : "") + fs;
+        } catch (Throwable t) {
+            return t.toString();
+        }
+    }
+
+    private static String getDiskusage(String absPath)
+    {
+        try {
+            return listFreeSpaceOnPartition(absPath);
+        } catch (Throwable t) {
+            return t.toString();
+        }
+    }
 
     /**
      * List free space for the partition in which this path resides
