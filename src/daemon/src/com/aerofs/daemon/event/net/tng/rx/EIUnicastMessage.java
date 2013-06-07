@@ -2,7 +2,6 @@ package com.aerofs.daemon.event.net.tng.rx;
 
 import com.aerofs.daemon.event.net.rx.IInputBuffer;
 import com.aerofs.daemon.event.net.tng.Endpoint;
-import com.aerofs.base.id.SID;
 import com.aerofs.lib.event.IEvent;
 
 import java.io.ByteArrayInputStream;
@@ -33,22 +32,15 @@ public class EIUnicastMessage implements IEvent, IInputBuffer
     public final int _wirelen;
 
     /**
-     * Store address of the store for which the event was generated
-     */
-    public final SID _sid;
-
-    /**
      * Constructor
      *
      * @param ep Endpoint that sent the packet that generated the event
-     * @param sid Store id that the event & packet was generated for
      * @param is <code>InputStream</code> from which the payload can be read
      * @param wirelen Number of bytes (including the <code>ITransport</code> framing header
      */
-    public EIUnicastMessage(Endpoint ep, SID sid, ByteArrayInputStream is, int wirelen)
+    public EIUnicastMessage(Endpoint ep, ByteArrayInputStream is, int wirelen)
     {
         _ep = ep;
-        _sid = sid;
         _is = is;
         _wirelen = wirelen;
     }

@@ -21,7 +21,6 @@ import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.base.id.DID;
-import com.aerofs.lib.id.SIndex;
 import com.aerofs.proto.Core.PBCore.Type;
 
 import javax.annotation.Nonnull;
@@ -91,13 +90,13 @@ public class DID2User
      *
      * @pre the mapping must not exist locally.
      */
-    public UserID getFromPeer_(DID did, SIndex sidx) throws Exception
+    public UserID getFromPeer_(DID did) throws Exception
     {
         assert getFromLocalNullable_(did) == null;
 
         l.debug("resolving user 4 " + did);
 
-        _nsl.sendUnicast_(did, sidx, CoreUtil.newCall(Type.NOP).build());
+        _nsl.sendUnicast_(did, CoreUtil.newCall(Type.NOP).build());
 
         Token tk = _tc.acquireThrows_(Cat.DID2USER, did.toString());
         try {

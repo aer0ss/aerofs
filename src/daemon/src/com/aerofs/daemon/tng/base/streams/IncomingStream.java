@@ -14,7 +14,6 @@ import com.aerofs.daemon.tng.ex.ExStreamAlreadyExists;
 import com.aerofs.daemon.tng.ex.ExStreamInvalid;
 import com.aerofs.base.async.FailedFutureCallback;
 import com.aerofs.base.async.UncancellableFuture;
-import com.aerofs.base.id.SID;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.ListenableFuture;
 
@@ -54,10 +53,10 @@ class IncomingStream extends AbstractStream implements IIncomingStream
     }
 
     public static IncomingStream getInstance_(ISingleThreadedPrioritizedExecutor executor,
-            IConnection connection, StreamID id, DID did, SID sid, Prio pri)
+            IConnection connection, StreamID id, DID did, Prio pri)
             throws ExStreamAlreadyExists
     {
-        final IncomingStream stream = new IncomingStream(executor, id, did, sid, pri);
+        final IncomingStream stream = new IncomingStream(executor, id, did, pri);
 
         addCallback(connection.getCloseFuture_(), new FailedFutureCallback()
         {
@@ -72,10 +71,9 @@ class IncomingStream extends AbstractStream implements IIncomingStream
         return stream;
     }
 
-    private IncomingStream(ISingleThreadedPrioritizedExecutor executor, StreamID id, DID did,
-            SID sid, Prio pri)
+    private IncomingStream(ISingleThreadedPrioritizedExecutor executor, StreamID id, DID did, Prio pri)
     {
-        super(executor, id, did, sid, pri);
+        super(executor, id, did, pri);
     }
 
     @Override

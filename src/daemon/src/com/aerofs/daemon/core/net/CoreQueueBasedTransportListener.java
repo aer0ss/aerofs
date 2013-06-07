@@ -109,13 +109,12 @@ public class CoreQueueBasedTransportListener implements ITransportListener
 
     @Override
     public void onUnicastDatagramReceived(DID did,
-                                          SID sid,
                                           ByteArrayInputStream is,
                                           int wirelen)
     {
         assert _transport != null;
         Endpoint endpoint = new Endpoint(_transport, did);
-        IEvent event = new EIUnicastMessage(endpoint, sid, is, wirelen);
+        IEvent event = new EIUnicastMessage(endpoint, is, wirelen);
         _coreQueue.enqueueBlocking(event, Prio.LO);
     }
 

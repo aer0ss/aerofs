@@ -1,7 +1,6 @@
 package com.aerofs.daemon.event.net.rx;
 
 import com.aerofs.daemon.event.net.Endpoint;
-import com.aerofs.base.id.SID;
 import com.aerofs.lib.event.IEvent;
 
 import java.io.ByteArrayInputStream;
@@ -30,24 +29,15 @@ public class EIMaxcastMessage implements IEvent, IInputBuffer
     private final int _wirelen;
 
     /**
-     * Store address to which this payload is related
-     */
-    public final SID _sid;
-
-    /**
      * Constructor
      *
      * @param ep Endpoint that sent the maxcast message
-     * @param sid Store id to which the maxcast packet is related
      * @param is InputStream from which the payload can be read
      * @param wirelen Original length of the packet on the wire (including
-     * <code>ITransport</code> framing header
      */
-    public EIMaxcastMessage(Endpoint ep, SID sid, ByteArrayInputStream is,
-            int wirelen)
+    public EIMaxcastMessage(Endpoint ep, ByteArrayInputStream is, int wirelen)
     {
         _ep = ep;
-        _sid = sid;
         _is = is;
         _wirelen = wirelen;
     }

@@ -46,7 +46,6 @@ public class TapTransportListener implements ITransportListener
         Tap.TransportEvent.Builder event = Tap.TransportEvent.newBuilder();
         event.setType(Tap.TransportEvent.Type.MAXCAST_PACKET_RECEIVED);
         event.setDid(did.toPB());
-        event.setSid(sid.toPB());
 
         try {
             byte[] bytes = new byte[wirelen];
@@ -92,12 +91,11 @@ public class TapTransportListener implements ITransportListener
     }
 
     @Override
-    public void onUnicastDatagramReceived(DID did, SID sid, ByteArrayInputStream is, int wirelen)
+    public void onUnicastDatagramReceived(DID did, ByteArrayInputStream is, int wirelen)
     {
         Tap.TransportEvent.Builder event = Tap.TransportEvent.newBuilder();
         event.setType(Tap.TransportEvent.Type.DATAGRAM_RECEIVED);
         event.setDid(did.toPB());
-        event.setSid(sid.toPB());
 
         try {
             byte[] bytes = new byte[wirelen];
@@ -122,7 +120,6 @@ public class TapTransportListener implements ITransportListener
         Tap.TransportEvent.Builder event = Tap.TransportEvent.newBuilder();
         event.setType(Tap.TransportEvent.Type.INCOMING_STREAM_BEGUN);
         event.setDid(stream.getDid_().toPB());
-        event.setSid(stream.getSid_().toPB());
         event.setStreamId(stream.getStreamId_().getInt());
         event.setHighPriority(stream.getPriority_() == Prio.HI);
         _eventQueue.offer(event.build());

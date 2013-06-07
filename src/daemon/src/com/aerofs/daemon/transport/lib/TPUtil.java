@@ -32,7 +32,6 @@ import com.aerofs.lib.Util;
 import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.base.ex.ExProtocolError;
-import com.aerofs.base.id.SID;
 import com.aerofs.proto.Transport.PBStream;
 import com.aerofs.proto.Transport.PBStream.Type;
 import com.aerofs.proto.Transport.PBTPHeader;
@@ -90,11 +89,9 @@ public class TPUtil
      * @param streamId null for non-stream messages
      * @param seq 0 for non-stream messages
      */
-    public static byte[][] newPayload(@Nullable StreamID streamId, int seq, SID sid, byte[] bs)
+    public static byte[][] newPayload(@Nullable StreamID streamId, int seq, byte[] bs)
     {
-        PBTPHeader.Builder bdHeader = PBTPHeader.newBuilder()
-            .setType(DATAGRAM)
-            .setSid(sid.toPB());
+        PBTPHeader.Builder bdHeader = PBTPHeader.newBuilder().setType(DATAGRAM);
 
         if (streamId != null) {
             bdHeader.setType(STREAM)
@@ -162,7 +159,7 @@ public class TPUtil
         throws Exception
     {
         if (!h.hasStream()) {
-            sink.enqueueThrows(new EIUnicastMessage(ep, new SID(h.getSid()), is, wirelen), Prio.LO);
+            sink.enqueueThrows(new EIUnicastMessage(ep, is, wirelen), Prio.LO);
 
         } else {
             PBStream wireStream = h.getStream();
@@ -184,7 +181,7 @@ public class TPUtil
                         .build();
             } else if (b) {
                 try {
-                    sink.enqueueThrows(new EIChunk(ep, new SID(h.getSid()), streamId, seq, is,
+                    sink.enqueueThrows(new EIChunk(ep, streamId, seq, is,
                             wirelen), Prio.LO);
                 } catch (Exception e) {
                     l.warn("can't enqueue EIChunk. abort stream: " + Util.e(e));
@@ -193,7 +190,7 @@ public class TPUtil
                 }
             } else {
                 try {
-                    sink.enqueueThrows(new EIStreamBegun(ep, new SID(h.getSid()), streamId, is,
+                    sink.enqueueThrows(new EIStreamBegun(ep, streamId, is,
                             wirelen), Prio.LO);
                 } catch (Exception e) {
                     l.warn("can't enqueue EIStreamBegun. abort stream: " + Util.e(e));

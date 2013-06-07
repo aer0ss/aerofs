@@ -14,7 +14,6 @@ import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.base.ex.ExBadArgs;
-import com.aerofs.lib.id.SIndex;
 import com.aerofs.proto.Core.PBCore;
 import com.aerofs.proto.Core.PBCore.Type;
 import com.aerofs.proto.Core.PBCoreDiagnosis;
@@ -54,7 +53,6 @@ public class HdTransportFlood extends AbstractHdIMC<EITransportFlood>
             }
 
             assert false;
-            SIndex sidx = null; //c.sdm().getStoreByNameThrows_(ev._sname);
 
             PBCore core = CoreUtil.newCall(Type.DIAGNOSIS)
                 .setDiagnosis(PBCoreDiagnosis.newBuilder()
@@ -65,7 +63,7 @@ public class HdTransportFlood extends AbstractHdIMC<EITransportFlood>
                                 .setSeqEnd(ev._seqEnd)))
                 .build();
 
-            _nsl.sendUnicast_(new Endpoint(tp, ev._did), sidx, core);
+            _nsl.sendUnicast_(new Endpoint(tp, ev._did), core);
         }
 
         EOTransportFlood ev2 = new EOTransportFlood(ev._did, ev._send,

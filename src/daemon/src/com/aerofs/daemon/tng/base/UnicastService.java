@@ -110,14 +110,14 @@ public final class UnicastService
     public ListenableFuture<Void> sendDatagram_(DID did, SID sid, byte[] payload, Prio pri)
     {
         Peer peer = makeAndGet_(did);
-        return peer.sendDatagram_(sid, payload, pri);
+        return peer.sendDatagram_(payload, pri);
     }
 
     @Override
     public ListenableFuture<IOutgoingStream> beginStream_(StreamID id, DID did, SID sid, Prio pri)
     {
         Peer peer = makeAndGet_(did);
-        return peer.beginStream_(id, sid, pri);
+        return peer.beginStream_(id, pri);
     }
 
     @Override

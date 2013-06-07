@@ -64,7 +64,7 @@ public class TestUnicastService extends AbstractTest
     @Test
     public void shouldCreateNewPeerAndSendPacketWhenCallToSendPacketIsMade() throws Exception
     {
-        when(peer.sendDatagram_(any(SID.class), any(byte[].class), any(Prio.class)))
+        when(peer.sendDatagram_(any(byte[].class), any(Prio.class)))
                 .thenReturn(UncancellableFuture.<Void>createSucceeded(null));
 
         final byte[] payload = "Hello AeroFS!".getBytes();
@@ -74,13 +74,13 @@ public class TestUnicastService extends AbstractTest
 
         InOrder ordered = inOrder(peerFactory, peer);
         ordered.verify(peerFactory).getInstance_(did);
-        ordered.verify(peer).sendDatagram_(new SID(SID.ZERO), payload, Prio.LO);
+        ordered.verify(peer).sendDatagram_(payload, Prio.LO);
     }
 
     @Test
     public void shouldCreateNewPeerOnceWhenSendPacketIsCalledTwice() throws Exception
     {
-        when(peer.sendDatagram_(any(SID.class), any(byte[].class), any(Prio.class)))
+        when(peer.sendDatagram_(any(byte[].class), any(Prio.class)))
                 .thenReturn(UncancellableFuture.<Void>createSucceeded(null));
 
         final byte[] payload = "Hello AeroFS!".getBytes();
@@ -94,7 +94,7 @@ public class TestUnicastService extends AbstractTest
 
         InOrder ordered = inOrder(peerFactory, peer);
         ordered.verify(peerFactory).getInstance_(did);
-        ordered.verify(peer, times(2)).sendDatagram_(new SID(SID.ZERO), payload, Prio.LO);
+        ordered.verify(peer, times(2)).sendDatagram_(payload, Prio.LO);
     }
 
     @Test
@@ -102,7 +102,7 @@ public class TestUnicastService extends AbstractTest
     {
         IOutgoingStream outgoingStream = mock(IOutgoingStream.class);
 
-        when(peer.beginStream_(any(StreamID.class), any(SID.class), any(Prio.class))).thenReturn(UncancellableFuture.createSucceeded(outgoingStream));
+        when(peer.beginStream_(any(StreamID.class), any(Prio.class))).thenReturn(UncancellableFuture.createSucceeded(outgoingStream));
 
         ListenableFuture<IOutgoingStream> future = unicastService.beginStream_(new StreamID(1), did, new SID(SID.ZERO), Prio.LO);
 
@@ -110,7 +110,7 @@ public class TestUnicastService extends AbstractTest
 
         InOrder ordered = inOrder(peerFactory, peer);
         ordered.verify(peerFactory).getInstance_(did);
-        ordered.verify(peer).beginStream_(new StreamID(1), new SID(SID.ZERO), Prio.LO);
+        ordered.verify(peer).beginStream_(new StreamID(1), Prio.LO);
     }
 
     @Test
@@ -118,7 +118,7 @@ public class TestUnicastService extends AbstractTest
     {
         IOutgoingStream outgoingStream = mock(IOutgoingStream.class);
 
-        when(peer.beginStream_(any(StreamID.class), any(SID.class), any(Prio.class))).thenReturn(UncancellableFuture.createSucceeded(outgoingStream));
+        when(peer.beginStream_(any(StreamID.class), any(Prio.class))).thenReturn(UncancellableFuture.createSucceeded(outgoingStream));
 
         ListenableFuture<IOutgoingStream> future = unicastService.beginStream_(new StreamID(1), did, new SID(SID.ZERO), Prio.LO);
 
@@ -130,8 +130,8 @@ public class TestUnicastService extends AbstractTest
 
         InOrder ordered = inOrder(peerFactory, peer);
         ordered.verify(peerFactory).getInstance_(did);
-        ordered.verify(peer).beginStream_(new StreamID(1), new SID(SID.ZERO), Prio.LO);
-        ordered.verify(peer).beginStream_(new StreamID(2), new SID(SID.ZERO), Prio.LO);
+        ordered.verify(peer).beginStream_(new StreamID(1), Prio.LO);
+        ordered.verify(peer).beginStream_(new StreamID(2), Prio.LO);
     }
 
     @Test
@@ -171,7 +171,7 @@ public class TestUnicastService extends AbstractTest
     @Test
     public void shouldCreatePeerWhenSendPacketIsCalledThenDestroyPeerWhenPeerIsOfflineAndCreateNewPeerWhenPeerIsBackOnline() throws Exception
     {
-        when(peer.sendDatagram_(any(SID.class), any(byte[].class), any(Prio.class)))
+        when(peer.sendDatagram_(any(byte[].class), any(Prio.class)))
                 .thenReturn(UncancellableFuture.<Void>createSucceeded(null));
 
         final byte[] payload = "Hello AeroFS!".getBytes();
@@ -183,7 +183,7 @@ public class TestUnicastService extends AbstractTest
 
         InOrder ordered = inOrder(peerFactory, peer);
         ordered.verify(peerFactory).getInstance_(did);
-        ordered.verify(peer).sendDatagram_(new SID(SID.ZERO), payload, Prio.LO);
+        ordered.verify(peer).sendDatagram_(payload, Prio.LO);
         ordered.verify(peer).destroy_(any(Exception.class));
 
         unicastService.onPeerOnline_(did);
@@ -193,13 +193,13 @@ public class TestUnicastService extends AbstractTest
         assertNoThrow(secondFuture);
 
         ordered.verify(peerFactory).getInstance_(did);
-        ordered.verify(peer).sendDatagram_(new SID(SID.ZERO), payload, Prio.LO);
+        ordered.verify(peer).sendDatagram_(payload, Prio.LO);
     }
 
     @Test
     public void shouldCreatePeerOnceWhenNewIncomingConnectionCallbackHappensFollowedByACallToSendPacket() throws Exception
     {
-        when(peer.sendDatagram_(any(SID.class), any(byte[].class), any(Prio.class)))
+        when(peer.sendDatagram_(any(byte[].class), any(Prio.class)))
                 .thenReturn(UncancellableFuture.<Void>createSucceeded(null));
 
         IUnicastConnection connection = mock(IUnicastConnection.class);
@@ -213,7 +213,7 @@ public class TestUnicastService extends AbstractTest
         InOrder ordered = inOrder(peerFactory, peer);
         ordered.verify(peerFactory).getInstance_(did);
         ordered.verify(peer).onIncomingConnection_(connection);
-        ordered.verify(peer).sendDatagram_(new SID(SID.ZERO), payload, Prio.LO);
+        ordered.verify(peer).sendDatagram_(payload, Prio.LO);
     }
 
     @Test

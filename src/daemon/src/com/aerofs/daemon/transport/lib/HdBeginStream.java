@@ -41,8 +41,7 @@ public class HdBeginStream implements IEventHandler<EOBeginStream> {
             Object strmCookie = _ucast.send_(did, null, prio,
                 TPUtil.newControl(h), null);
             _sm.newOutgoingStream(ev._streamId, new OutgoingStream(did, strmCookie));
-            _ucast.send_(did, ev, prio, TPUtil.newPayload(ev._streamId, 0, ev._sid,
-                ev.byteArray()), strmCookie);
+            _ucast.send_(did, ev, prio, TPUtil.newPayload(ev._streamId, 0, ev.byteArray()), strmCookie);
         } catch (Exception e) {
             ev.error(e);
         }

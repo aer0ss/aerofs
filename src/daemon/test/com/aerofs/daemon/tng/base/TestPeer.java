@@ -4,17 +4,16 @@
 
 package com.aerofs.daemon.tng.base;
 
+import com.aerofs.base.async.UncancellableFuture;
 import com.aerofs.base.id.DID;
-import com.aerofs.lib.event.Prio;
 import com.aerofs.daemon.lib.async.ISingleThreadedPrioritizedExecutor;
 import com.aerofs.daemon.lib.id.StreamID;
 import com.aerofs.daemon.tng.DropDelayedInlineExecutor;
 import com.aerofs.daemon.tng.IOutgoingStream;
 import com.aerofs.daemon.tng.base.streams.NewOutgoingStream;
 import com.aerofs.daemon.tng.ex.ExTransport;
-import com.aerofs.base.async.UncancellableFuture;
 import com.aerofs.lib.OutArg;
-import com.aerofs.base.id.SID;
+import com.aerofs.lib.event.Prio;
 import com.aerofs.testlib.AbstractTest;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -29,9 +28,27 @@ import java.util.List;
 
 import static com.aerofs.lib.event.Prio.HI;
 import static com.aerofs.lib.event.Prio.LO;
-import static com.aerofs.testlib.FutureAssert.*;
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
+import static com.aerofs.testlib.FutureAssert.assertCompletionFutureChainedProperly;
+import static com.aerofs.testlib.FutureAssert.assertThrows;
+import static com.aerofs.testlib.FutureAssert.getFutureThrowable;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyLong;
+import static org.mockito.Mockito.anyObject;
+import static org.mockito.Mockito.argThat;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 // FIXME: If I use send_ internally, I _MUST_ mock PeerConnection.send_ to return a valid future!
 
@@ -40,7 +57,6 @@ public class TestPeer extends AbstractTest
     // parameters for all messages
 
     private final DID _did = new DID(DID.ZERO);
-    private final SID _sid = new SID(SID.ZERO);
     private final StreamID _streamId = new StreamID(0);
 
     // 1st connection
@@ -81,7 +97,7 @@ public class TestPeer extends AbstractTest
     {
         when(_connection0.connect_()).thenReturn(UncancellableFuture.<Void>create());
 
-        _peer.sendDatagram_(_sid, new byte[]{0}, LO);
+        _peer.sendDatagram_(new byte[]{0}, LO);
 
         verify(_connection0).connect_();
     }
@@ -91,7 +107,7 @@ public class TestPeer extends AbstractTest
     {
         when(_connection0.connect_()).thenReturn(UncancellableFuture.<Void>create());
 
-        _peer.beginStream_(_streamId, _sid, LO);
+        _peer.beginStream_(_streamId, LO);
 
         verify(_connection0).connect_();
     }
@@ -104,9 +120,9 @@ public class TestPeer extends AbstractTest
 
         // queue begin stream calls
 
-        _peer.beginStream_(new StreamID(0), _sid, LO);
-        _peer.beginStream_(new StreamID(1), _sid, LO);
-        _peer.beginStream_(new StreamID(2), _sid, HI);
+        _peer.beginStream_(new StreamID(0), LO);
+        _peer.beginStream_(new StreamID(1), LO);
+        _peer.beginStream_(new StreamID(2), HI);
 
         // trigger a successful connect attempt
 
@@ -120,11 +136,11 @@ public class TestPeer extends AbstractTest
 
         InOrder streamCalls = inOrder(_connection0);
 
-        streamCalls.verify(_connection0).send_(isNewOutgoingStream_(2, _sid), eq(HI));
+        streamCalls.verify(_connection0).send_(isNewOutgoingStream_(2), eq(HI));
 
-        streamCalls.verify(_connection0).send_(isNewOutgoingStream_(0, _sid), eq(LO));
+        streamCalls.verify(_connection0).send_(isNewOutgoingStream_(0), eq(LO));
 
-        streamCalls.verify(_connection0).send_(isNewOutgoingStream_(1, _sid), eq(LO));
+        streamCalls.verify(_connection0).send_(isNewOutgoingStream_(1), eq(LO));
     }
 
     @Test
@@ -139,9 +155,9 @@ public class TestPeer extends AbstractTest
         final byte[] DATA_1 = new byte[]{0};
         final byte[] DATA_2 = new byte[]{0};
 
-        _peer.sendDatagram_(_sid, DATA_0, LO);
-        _peer.sendDatagram_(_sid, DATA_1, LO);
-        _peer.sendDatagram_(_sid, DATA_2, HI);
+        _peer.sendDatagram_(DATA_0, LO);
+        _peer.sendDatagram_(DATA_1, LO);
+        _peer.sendDatagram_(DATA_2, HI);
 
         // trigger a successful connect attempt
 
@@ -156,13 +172,13 @@ public class TestPeer extends AbstractTest
         InOrder sendPacketCalls = inOrder(_connection0);
 
         sendPacketCalls.verify(_connection0)
-                       .send_(isOutgoingUnicastPacket_(_sid, DATA_2), eq(HI));
+                       .send_(isOutgoingUnicastPacket_(DATA_2), eq(HI));
 
         sendPacketCalls.verify(_connection0)
-                       .send_(isOutgoingUnicastPacket_(_sid, DATA_0), eq(LO));
+                       .send_(isOutgoingUnicastPacket_(DATA_0), eq(LO));
 
         sendPacketCalls.verify(_connection0)
-                       .send_(isOutgoingUnicastPacket_(_sid, DATA_1), eq(LO));
+                       .send_(isOutgoingUnicastPacket_(DATA_1), eq(LO));
     }
 
     @Test
@@ -175,7 +191,7 @@ public class TestPeer extends AbstractTest
                 .builder();
 
         for (int i = 0; i < NUM_STREAM_CALLS; i++) {
-            streamFuturesBuilder.add(_peer.beginStream_(new StreamID(i), _sid, LO));
+            streamFuturesBuilder.add(_peer.beginStream_(new StreamID(i), LO));
         }
 
         final ImmutableList<ListenableFuture<IOutgoingStream>> streamFutures = streamFuturesBuilder.build();
@@ -209,7 +225,7 @@ public class TestPeer extends AbstractTest
         ImmutableList.Builder<ListenableFuture<Void>> packetFuturesBuilder = ImmutableList.builder();
 
         for (int i = 0; i < NUM_SEND_PACKET_CALLS; i++) {
-            packetFuturesBuilder.add(_peer.sendDatagram_(_sid, new byte[]{0},
+            packetFuturesBuilder.add(_peer.sendDatagram_(new byte[]{0},
                 LO));
         }
 
@@ -240,7 +256,7 @@ public class TestPeer extends AbstractTest
     {
         // make a send packet call
 
-        ListenableFuture<Void> packetFuture = _peer.sendDatagram_(_sid, new byte[]{0}, LO);
+        ListenableFuture<Void> packetFuture = _peer.sendDatagram_(new byte[]{0}, LO);
 
         assertFalse(packetFuture.isDone());
 
@@ -252,8 +268,7 @@ public class TestPeer extends AbstractTest
 
         // make a begin stream call now
 
-        ListenableFuture<IOutgoingStream> streamFuture = _peer.beginStream_(new StreamID(0), _sid,
-            LO);
+        ListenableFuture<IOutgoingStream> streamFuture = _peer.beginStream_(new StreamID(0), LO);
 
         verify(_connectionFactory, times(2)).createConnection_(_peer);
 
@@ -265,8 +280,7 @@ public class TestPeer extends AbstractTest
     {
         // let's make a begin stream call
 
-        ListenableFuture<IOutgoingStream> streamFuture = _peer.beginStream_(new StreamID(0), _sid,
-                LO);
+        ListenableFuture<IOutgoingStream> streamFuture = _peer.beginStream_(new StreamID(0), LO);
 
         assertFalse(streamFuture.isDone());
 
@@ -278,8 +292,7 @@ public class TestPeer extends AbstractTest
 
         // let's make a send packet call now
 
-        ListenableFuture<Void> packetFuture = _peer.sendDatagram_(_sid,
-            new byte[]{0}, LO);
+        ListenableFuture<Void> packetFuture = _peer.sendDatagram_(new byte[]{0}, LO);
 
         verify(_connectionFactory, times(2)).createConnection_(_peer);
 
@@ -292,16 +305,16 @@ public class TestPeer extends AbstractTest
         when(_connection1.send_(anyObject(), any(Prio.class))).thenReturn(
                 UncancellableFuture.<Void>create());
 
-        _peer.beginStream_(new StreamID(0), _sid, LO);
+        _peer.beginStream_(new StreamID(0), LO);
 
         _connection0ConnectFuture.setException(new ExTransport("fail"));
 
-        _peer.beginStream_(new StreamID(1), _sid, LO);
+        _peer.beginStream_(new StreamID(1), LO);
 
         _connection1ConnectFuture.set(null);
 
-        verify(_connection1, never()).send_(isNewOutgoingStream_(0, _sid), eq(LO));
-        verify(_connection1).send_(isNewOutgoingStream_(1, _sid), eq(LO));
+        verify(_connection1, never()).send_(isNewOutgoingStream_(0), eq(LO));
+        verify(_connection1).send_(isNewOutgoingStream_(1), eq(LO));
     }
 
     @Test
@@ -311,18 +324,18 @@ public class TestPeer extends AbstractTest
                 UncancellableFuture.<Void>create());
 
         byte[] DATA_0 = new byte[]{0};
-        _peer.sendDatagram_(_sid, DATA_0, LO);
+        _peer.sendDatagram_(DATA_0, LO);
 
         _connection0ConnectFuture.setException(new ExTransport("fail"));
 
         byte[] DATA_1 = new byte[]{1};
-        _peer.sendDatagram_(_sid, DATA_1, LO);
+        _peer.sendDatagram_(DATA_1, LO);
 
         _connection1ConnectFuture.set(null);
 
-        verify(_connection1, never()).send_(isOutgoingUnicastPacket_(_sid, DATA_0),
+        verify(_connection1, never()).send_(isOutgoingUnicastPacket_(DATA_0),
             eq(LO));
-        verify(_connection1).send_(isOutgoingUnicastPacket_(_sid, DATA_1), eq(LO));
+        verify(_connection1).send_(isOutgoingUnicastPacket_(DATA_1), eq(LO));
     }
 
     @Test
@@ -337,7 +350,7 @@ public class TestPeer extends AbstractTest
         // send a packet to start the connection process
 
         final byte[] DATA = new byte[]{0};
-        ListenableFuture<Void> packetFuture = _peer.sendDatagram_(_sid, DATA,
+        ListenableFuture<Void> packetFuture = _peer.sendDatagram_(DATA,
             LO);
 
         // connect succeeds
@@ -348,11 +361,11 @@ public class TestPeer extends AbstractTest
 
         // now send a begin stream
 
-        _peer.beginStream_(new StreamID(0), _sid, LO);
+        _peer.beginStream_(new StreamID(0), LO);
 
         InOrder sends = inOrder(_connection0);
-        sends.verify(_connection0).send_(isOutgoingUnicastPacket_(_sid, DATA), eq(LO));
-        sends.verify(_connection0).send_(isNewOutgoingStream_(0, _sid), eq(LO));
+        sends.verify(_connection0).send_(isOutgoingUnicastPacket_(DATA), eq(LO));
+        sends.verify(_connection0).send_(isNewOutgoingStream_(0), eq(LO));
 
         assertCompletionFutureChainedProperly(sendFuture0, packetFuture);
         // can't verify stream future because its value is actually set by the stream handler
@@ -369,7 +382,7 @@ public class TestPeer extends AbstractTest
 
         // send a begin stream to start the connection process
 
-        _peer.beginStream_(new StreamID(0), _sid, LO);
+        _peer.beginStream_(new StreamID(0), LO);
 
         // connect succeeds
 
@@ -378,12 +391,12 @@ public class TestPeer extends AbstractTest
         // now send a packet
 
         final byte[] DATA = new byte[]{0};
-        ListenableFuture<Void> packetFuture = _peer.sendDatagram_(_sid, DATA,
+        ListenableFuture<Void> packetFuture = _peer.sendDatagram_(DATA,
             LO);
 
         InOrder sends = inOrder(_connection0);
-        sends.verify(_connection0).send_(isNewOutgoingStream_(0, _sid), eq(LO));
-        sends.verify(_connection0).send_(isOutgoingUnicastPacket_(_sid, DATA), eq(LO));
+        sends.verify(_connection0).send_(isNewOutgoingStream_(0), eq(LO));
+        sends.verify(_connection0).send_(isOutgoingUnicastPacket_(DATA), eq(LO));
 
         // can't verify stream future because its value is actually set by the stream handler
         assertCompletionFutureChainedProperly(sendFuture1, packetFuture);
@@ -420,10 +433,10 @@ public class TestPeer extends AbstractTest
         // queue up a couple of calls
 
         final StreamID streamId = new StreamID(0);
-        ListenableFuture<IOutgoingStream> streamFuture = peer.beginStream_(streamId, _sid, LO);
+        ListenableFuture<IOutgoingStream> streamFuture = peer.beginStream_(streamId, LO);
 
         final byte[] DATA = new byte[]{0};
-        ListenableFuture<Void> packetFuture = peer.sendDatagram_(_sid, DATA, LO);
+        ListenableFuture<Void> packetFuture = peer.sendDatagram_(DATA, LO);
 
         ListenableFuture<Void> pulseFuture = peer.pulse_(Prio.LO);
 
@@ -457,7 +470,7 @@ public class TestPeer extends AbstractTest
         // queue up a call
 
         final StreamID streamId = new StreamID(0);
-        ListenableFuture<IOutgoingStream> streamFuture = peer.beginStream_(streamId, _sid, LO);
+        ListenableFuture<IOutgoingStream> streamFuture = peer.beginStream_(streamId, LO);
 
         // simulate the connection future as having succeeded
 
@@ -471,7 +484,7 @@ public class TestPeer extends AbstractTest
         // invalidated
 
         final byte[] DATA = new byte[]{0};
-        ListenableFuture<Void> packetFuture = peer.sendDatagram_(_sid, DATA,
+        ListenableFuture<Void> packetFuture = peer.sendDatagram_(DATA,
             LO);
 
         assertFalse(streamFuture.isDone());
@@ -484,8 +497,8 @@ public class TestPeer extends AbstractTest
 
         // and that both the packet before and after the timeout were sent out
 
-        verify(_connection0).send_(isNewOutgoingStream_(0, _sid), eq(LO));
-        verify(_connection0).send_(isOutgoingUnicastPacket_(_sid, DATA), eq(LO));
+        verify(_connection0).send_(isNewOutgoingStream_(0), eq(LO));
+        verify(_connection0).send_(isOutgoingUnicastPacket_(DATA), eq(LO));
     }
 
     @Test
@@ -511,8 +524,7 @@ public class TestPeer extends AbstractTest
 
         // send a packet to initiate the connection process
 
-        ListenableFuture<Void> sendFuture0 = peer.sendDatagram_(_sid,
-            new byte[]{0}, LO);
+        ListenableFuture<Void> sendFuture0 = peer.sendDatagram_(new byte[]{0}, LO);
 
         // signal connection process failure
 
@@ -522,8 +534,7 @@ public class TestPeer extends AbstractTest
 
         // send a second packet to start the connection process again
 
-        ListenableFuture<Void> sendFuture1 = peer.sendDatagram_(_sid,
-            new byte[]{0}, LO);
+        ListenableFuture<Void> sendFuture1 = peer.sendDatagram_(new byte[]{0}, LO);
 
         // now run the first timeout runnable
 
@@ -542,7 +553,7 @@ public class TestPeer extends AbstractTest
 
         // send a packet to start the connection process
 
-        _peer.sendDatagram_(_sid, new byte[]{0}, LO);
+        _peer.sendDatagram_(new byte[]{0}, LO);
 
         // connect succeeds
 
@@ -564,7 +575,7 @@ public class TestPeer extends AbstractTest
         // FIXME: below is heavily testing implementation
 
         try {
-            _peer.sendDatagram_(_sid, new byte[]{0}, LO);
+            _peer.sendDatagram_(new byte[]{0}, LO);
             fail("peer should be invalidated");
         } catch (AssertionError e) {
             // pass
@@ -578,7 +589,7 @@ public class TestPeer extends AbstractTest
             UncancellableFuture.<Void>create());
 
         // send a packet to start the connection process
-        _peer.sendDatagram_(_sid, new byte[]{0}, LO);
+        _peer.sendDatagram_(new byte[]{0}, LO);
 
         // We shouldn't have finished connecting. This is a mock object, but just in case,
         // make sure it's not done
@@ -611,10 +622,10 @@ public class TestPeer extends AbstractTest
         // attempt to send a packet
 
         final byte[] DATA = new byte[]{0};
-        _peer.sendDatagram_(_sid, DATA, LO);
+        _peer.sendDatagram_(DATA, LO);
 
         verify(_connection0).startReceiveLoop_();
-        verify(_connection0).send_(isOutgoingUnicastPacket_(_sid, DATA), eq(LO));
+        verify(_connection0).send_(isOutgoingUnicastPacket_(DATA), eq(LO));
     }
 
     @Test
@@ -643,11 +654,9 @@ public class TestPeer extends AbstractTest
     private static class IsNewOutgoinStreamObject extends ArgumentMatcher<Object>
     {
         private final StreamID _streamId;
-        private final SID _sid;
 
-        private IsNewOutgoinStreamObject(StreamID streamId, SID sid)
+        private IsNewOutgoinStreamObject(StreamID streamId)
         {
-            this._sid = sid;
             this._streamId = streamId;
         }
 
@@ -656,28 +665,25 @@ public class TestPeer extends AbstractTest
         {
             if (arg instanceof NewOutgoingStream) {
                 NewOutgoingStream streamArguments = (NewOutgoingStream) arg;
-                return streamArguments.getId_().equals(_streamId) &&
-                       streamArguments.getSid_().equals(_sid);
+                return streamArguments.getId_().equals(_streamId);
             }
 
             return false;
         }
     }
 
-    private static Object isNewOutgoingStream_(int streamId, SID sid)
+    private static Object isNewOutgoingStream_(int streamId)
     {
-        return argThat(new IsNewOutgoinStreamObject(new StreamID(streamId), sid));
+        return argThat(new IsNewOutgoinStreamObject(new StreamID(streamId)));
     }
 
     private static class IsOugoingUnicastPacketObject extends ArgumentMatcher<Object>
     {
-        private final SID _sid;
         private final byte[] _data;
 
-        private IsOugoingUnicastPacketObject(SID sid, byte[] data)
+        private IsOugoingUnicastPacketObject(byte[] data)
         {
             this._data = data;
-            this._sid = sid;
         }
 
         @Override
@@ -685,16 +691,15 @@ public class TestPeer extends AbstractTest
         {
             if (arg instanceof OutgoingUnicastPacket) {
                 OutgoingUnicastPacket unicastArguments = (OutgoingUnicastPacket) arg;
-                return unicastArguments.getSid_().equals(_sid) &&
-                       unicastArguments.getPayload_().equals(_data);
+                return unicastArguments.getPayload_().equals(_data);
             }
 
             return false;
         }
     }
 
-    private static Object isOutgoingUnicastPacket_(SID sid, byte[] data)
+    private static Object isOutgoingUnicastPacket_(byte[] data)
     {
-        return argThat(new IsOugoingUnicastPacketObject(sid, data));
+        return argThat(new IsOugoingUnicastPacketObject(data));
     }
 }

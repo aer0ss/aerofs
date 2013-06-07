@@ -5,7 +5,6 @@ import com.aerofs.daemon.event.net.rx.IInputBuffer;
 import com.aerofs.daemon.event.net.tng.Endpoint;
 import com.aerofs.daemon.lib.id.StreamID;
 import com.aerofs.daemon.tng.IIncomingStream;
-import com.aerofs.base.id.SID;
 
 import java.io.ByteArrayInputStream;
 
@@ -50,11 +49,6 @@ public class EIChunk implements IEvent, IInputBuffer
     public final int _wirelen;
 
     /**
-     * Store address of the store for which the event was generated
-     */
-    public final SID _sid;
-
-    /**
      *
      * Constructor
      *
@@ -69,7 +63,6 @@ public class EIChunk implements IEvent, IInputBuffer
     {
         _ep = ep;
         _stream = stream;
-        _sid = _stream.getSid_();
         _strid = _stream.getStreamId_();
         _seq = seq;
         _is = is;

@@ -18,7 +18,6 @@ import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.id.SIndex;
 import com.aerofs.proto.Core.PBCore;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
@@ -72,7 +71,7 @@ public class RPC
         }, sameThreadExecutor());
     }
 
-    private DigestedMessage recvReply_(SIndex sidx, int rpcid, Token tk, String reason)
+    private DigestedMessage recvReply_(int rpcid, Token tk, String reason)
         throws ExTimeout, ExAborted, ExProtocolError
     {
         assert !_waiters.containsKey(rpcid);
@@ -92,38 +91,29 @@ public class RPC
 
         l.debug("got reply " + reply.ep());
 
-        // there once was a bug in DTLS where delayed messages where sent with a wrong SID
-        // which resulted in a bogus response being received itself causing potentially nasty
-        // consequences (including hard to fix DB corruption) all of which could have been
-        // prevented by simply checking for matching SIndex between request and rpely...
-        if (!sidx.equals(reply.sidx())) {
-            throw new ExProtocolError("sidx mismatch: expect=" + sidx + " actual=" + reply.sidx());
-        }
-
         return reply;
     }
 
-    public DigestedMessage do_(DID did, SIndex sidx, PBCore call, Token tk, String reason)
+    public DigestedMessage do_(DID did, PBCore call, Token tk, String reason)
         throws Exception
     {
         Endpoint ep = null;
         try {
-            ep = _nsl.sendUnicast_(did, sidx, call);
-            return recvReply_(sidx, call.getRpcid(), tk, reason);
+            ep = _nsl.sendUnicast_(did, call);
+            return recvReply_(call.getRpcid(), tk, reason);
         } catch (ExTimeout e) {
             handleTimeout_(call, ep);
             throw e;
         }
     }
 
-    public DigestedMessage do_(DID did, SIndex sidx, PBCore call, ByteArrayOutputStream out,
-            Token tk, String reason)
+    public DigestedMessage do_(DID did, PBCore call, ByteArrayOutputStream out, Token tk, String reason)
             throws Exception
     {
         Endpoint ep = null;
         try {
-            ep = _nsl.sendUnicast_(did, sidx, CoreUtil.typeString(call), call.getRpcid(), out);
-            return recvReply_(sidx, call.getRpcid(), tk, reason);
+            ep = _nsl.sendUnicast_(did, CoreUtil.typeString(call), call.getRpcid(), out);
+            return recvReply_(call.getRpcid(), tk, reason);
         } catch (ExTimeout e) {
             handleTimeout_(call, ep);
             throw e;

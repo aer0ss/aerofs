@@ -212,12 +212,11 @@ class Multicast implements IMaxcast
 
                 if (h.getType() == Type.DATAGRAM)
                 {
-                    assert h.hasMcastId() && h.hasSid();
+                    assert h.hasMcastId();
                     // filter packets from core that were sent on other interface
                     if (!t.mcfr().isRedundant(did, h.getMcastId())) {
                         t.sink().enqueueThrows(
-                                new EIMaxcastMessage(new Endpoint(t, did),
-                                        new SID(h.getSid()), is, pkt.getLength()),
+                                new EIMaxcastMessage(new Endpoint(t, did), is, pkt.getLength()),
                                         Prio.LO);
                     }
                 } else {
@@ -245,7 +244,6 @@ class Multicast implements IMaxcast
     {
         PBTPHeader h = PBTPHeader.newBuilder()
             .setType(Type.DATAGRAM)
-            .setSid(sid.toPB())
             .setMcastId(mcastid)
             .setTcpMulticastDeviceId(Cfg.did().toPB())
             .build();

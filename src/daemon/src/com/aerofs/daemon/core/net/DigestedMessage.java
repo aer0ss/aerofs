@@ -10,7 +10,6 @@ import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.net.IncomingStreams.StreamKey;
 import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.transport.ITransport;
-import com.aerofs.lib.id.SIndex;
 import com.aerofs.base.id.UserID;
 import com.aerofs.proto.Core.PBCore;
 
@@ -34,7 +33,6 @@ public class DigestedMessage
     private final PBCore _pb;
     private final ByteArrayInputStream _is;
     private final Endpoint _ep;
-    private final SIndex _sidx;
     private final UserID _userId;
     @Nullable private final StreamKey _strm;
 
@@ -45,21 +43,14 @@ public class DigestedMessage
             PBCore pb,
             ByteArrayInputStream is,
             Endpoint ep,
-            SIndex sidx,
             UserID userId,
             @Nullable StreamKey strm)
     {
         _pb = pb;
         _is = is;
         _ep = ep;
-        _sidx = sidx;
         _strm = strm;
         _userId = userId;
-    }
-
-    public SIndex sidx()
-    {
-        return _sidx;
     }
 
     public Endpoint ep()
@@ -103,7 +94,7 @@ public class DigestedMessage
     @Override
     public String toString()
     {
-        return "msg:[t:" + typeString(_pb) + " i:" + _is + " sidx:" + _sidx + " ep:" + _ep +
+        return "msg:[t:" + typeString(_pb) + " i:" + _is + " ep:" + _ep +
                 " u:" + _userId +  " strm:" + _strm + "]";
     }
 }

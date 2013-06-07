@@ -62,7 +62,7 @@ public class GetRevision
                     .setIndex(ByteString.copyFrom(index))
             ).build();
 
-        DigestedMessage msg = _rpc.do_(did, sidx, core, tk, "gr " + sidx + path);
+        DigestedMessage msg = _rpc.do_(did, core, tk, "gr " + sidx + path);
         processReply_(msg, os, tk);
     }
 
@@ -84,7 +84,7 @@ public class GetRevision
 
         Token tk = _tokenManager.acquireThrows_(Cat.SERVER, "GRSendReply");
         try {
-            OutgoingStream outgoing = _oss.newStream(msg.ep(), msg.sidx(), tk);
+            OutgoingStream outgoing = _oss.newStream(msg.ep(), tk);
             try {
                 // I'm lazy and don't want to combine the PB message with first
                 // bulk of file content into one chunk.

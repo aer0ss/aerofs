@@ -17,7 +17,6 @@ import com.aerofs.daemon.core.AntiEntropy;
 import com.aerofs.daemon.core.collector.Collector;
 import com.aerofs.daemon.core.collector.SenderFilters;
 import com.aerofs.daemon.core.net.device.Device;
-import com.aerofs.daemon.lib.db.IMetaDatabase;
 import com.aerofs.lib.Util;
 import com.aerofs.base.id.DID;
 import com.aerofs.lib.id.SIndex;

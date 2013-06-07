@@ -2,7 +2,6 @@ package com.aerofs.daemon.event.net.rx;
 
 import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.lib.id.StreamID;
-import com.aerofs.base.id.SID;
 import com.aerofs.lib.event.IEvent;
 
 import java.io.ByteArrayInputStream;
@@ -43,26 +42,19 @@ public class EIChunk implements IEvent, IInputBuffer
     public final int _wirelen;
 
     /**
-     * Store address of the store for which the event was generated
-     */
-    public final SID _sid;
-
-    /**
      * Constructor
      *
      * @param ep Endpoint that sent the packet that generated the event
-     * @param sid Store id that the event & packet was generated for
      * @param streamId Stream id of the stream to which this chunk belongs
      * @param seq Sequence number identifying the chunk's index in the current stream
      * @param is <code>InputStream</code> from which the payload can be read
      * @param wirelen Number of bytes (including the <code>ITransport</code>
      * framing header
      */
-    public EIChunk(Endpoint ep, SID sid, StreamID streamId, int seq, ByteArrayInputStream is,
+    public EIChunk(Endpoint ep, StreamID streamId, int seq, ByteArrayInputStream is,
             int wirelen)
     {
         _ep = ep;
-        _sid = sid;
         _streamId = streamId;
         _seq = seq;
         _is = is;

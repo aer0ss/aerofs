@@ -106,7 +106,7 @@ public abstract class AbstractListRevChildrenHistory<LISTENER>
 
         // can't use maxcast as it exposes private information
         for (DID did : s.getOnlinePotentialMemberDevices_().keySet()) {
-            _nsl.sendUnicast_(did, sidx, core);
+            _nsl.sendUnicast_(did, core);
         }
     }
 

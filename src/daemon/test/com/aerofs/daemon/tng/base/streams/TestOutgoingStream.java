@@ -19,7 +19,6 @@ import com.aerofs.base.async.FutureUtil;
 import com.aerofs.base.async.UncancellableFuture;
 import com.aerofs.lib.OutArg;
 import com.aerofs.base.id.DID;
-import com.aerofs.base.id.SID;
 import com.aerofs.proto.Transport;
 import com.aerofs.proto.Transport.PBStream.InvalidationReason;
 import com.aerofs.proto.Transport.PBTPHeader;
@@ -55,14 +54,13 @@ public class TestOutgoingStream extends AbstractTest
     private final IConnection _conn = mock(IConnection.class);
     private final StreamID _id = new StreamID(0);
     private final DID _did = new DID(ZERO);
-    private final SID _sid = new SID(ZERO);
     private final Prio _pri = LO;
     private final OutgoingStream _stream;
 
     private OutgoingStream createIOutgoingStream_(ISingleThreadedPrioritizedExecutor executor)
             throws ExStreamAlreadyExists
     {
-        return OutgoingStream.getInstance_(executor, _conn, _id, _did, _sid, _pri);
+        return OutgoingStream.getInstance_(executor, _conn, _id, _did, _pri);
     }
 
     public TestOutgoingStream()
@@ -200,9 +198,6 @@ public class TestOutgoingStream extends AbstractTest
         PBTPHeader hdr = payload.getValue().getHeader_();
 
         assertEquals(PBTPHeader.Type.STREAM, hdr.getType());
-
-        assertTrue(hdr.hasSid());
-        assertEquals(_sid, new SID(hdr.getSid()));
 
         assertTrue(hdr.hasStream());
         assertEquals(Transport.PBStream.Type.PAYLOAD, hdr.getStream().getType());
@@ -458,8 +453,6 @@ public class TestOutgoingStream extends AbstractTest
         PBTPHeader hdr = sendCaptor.getValue().getHeader_();
 
         assertEquals(PBTPHeader.Type.STREAM, hdr.getType());
-        assertTrue(hdr.hasSid());
-        assertEquals(_sid, new SID(hdr.getSid()));
 
         assertTrue(hdr.hasStream());
 

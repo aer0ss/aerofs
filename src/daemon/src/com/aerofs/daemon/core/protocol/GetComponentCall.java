@@ -12,6 +12,8 @@ import com.aerofs.daemon.core.migration.IEmigrantTargetSIDLister;
 import com.aerofs.daemon.core.net.RPC;
 import com.aerofs.daemon.core.net.NSL;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
+import com.aerofs.daemon.core.store.IMapSID2SIndex;
+import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.SystemUtil;
@@ -25,7 +27,6 @@ import org.slf4j.Logger;
 
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.net.DigestedMessage;
-import com.aerofs.daemon.core.net.To;
 import com.aerofs.daemon.core.phy.IPhysicalPrefix;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.lib.Util;
@@ -61,11 +62,14 @@ public class GetComponentCall
     private LocalACL _lacl;
     private NSL _nsl;
     private GCCSendContent _sendContent;
+    private IMapSIndex2SID _sidx2sid;
+    private IMapSID2SIndex _sid2sidx;
 
     @Inject
     public void inject_(NSL nsl, LocalACL lacl, IPhysicalStorage ps,
             DirectoryService ds, RPC rpc, PrefixVersionControl pvc, NativeVersionControl nvc,
-            IEmigrantTargetSIDLister emc, GCCSendContent sendContent, MapAlias2Target a2t)
+            IEmigrantTargetSIDLister emc, GCCSendContent sendContent, MapAlias2Target a2t,
+            IMapSIndex2SID sidx2sid, IMapSID2SIndex sid2sidx)
     {
         _nsl = nsl;
         _lacl = lacl;
@@ -77,6 +81,8 @@ public class GetComponentCall
         _emc = emc;
         _sendContent = sendContent;
         _a2t = a2t;
+        _sidx2sid = sidx2sid;
+        _sid2sidx = sid2sidx;
     }
 
     /**
@@ -94,9 +100,10 @@ public class GetComponentCall
 
         Version vLocal = _nvc.getLocalVersion_(sockid);
         PBGetComCall.Builder bd = PBGetComCall.newBuilder()
-            .setObjectId(socid.oid().toPB())
-            .setComId(socid.cid().getInt())
-            .setLocalVersion(vLocal.toPB_());
+                .setStoreId(_sidx2sid.getThrows_(socid.sidx()).toPB())
+                .setObjectId(socid.oid().toPB())
+                .setComId(socid.cid().getInt())
+                .setLocalVersion(vLocal.toPB_());
         // TODO (DF): Look into how the receiver uses the localVersion. Should we send all
         // versions?  Does the receiver care for which branch we're sending versions?
 
@@ -107,7 +114,7 @@ public class GetComponentCall
         PBCore call = CoreUtil.newCall(Type.GET_COM_CALL)
             .setGetComCall(bd).build();
 
-        return _rpc.do_(src, socid.sidx(), call, tk, "gcc " + socid + " " + src);
+        return _rpc.do_(src, call, tk, "gcc " + socid + " " + src);
     }
 
 
@@ -179,7 +186,8 @@ public class GetComponentCall
         Util.checkPB(msg.pb().hasGetComCall(), PBGetComCall.class);
         PBGetComCall pb = msg.pb().getGetComCall();
 
-        SOCKID k = new SOCKID(msg.sidx(), new OID(pb.getObjectId()), new CID(pb.getComId()));
+        SID sid = new SID(pb.getStoreId());
+        SOCKID k = new SOCKID(_sid2sidx.getThrows_(sid), new OID(pb.getObjectId()), new CID(pb.getComId()));
         l.info("gcc for {} from {}", k, msg.ep());
 
         // Give up if the requested SOCKID is not present locally (either meta or content)
@@ -282,7 +290,7 @@ public class GetComponentCall
 
         bdReply.setMeta(bdMeta);
 
-        _nsl.sendUnicast_(did, k.sidx(), bdCore.setGetComReply(bdReply).build());
+        _nsl.sendUnicast_(did, bdCore.setGetComReply(bdReply).build());
     }
 
     private static PBMeta.Type toPB(OA.Type type)

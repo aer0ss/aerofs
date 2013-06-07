@@ -5,6 +5,7 @@
 package com.aerofs.daemon.core.protocol;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.CoreUtil;
 import com.aerofs.daemon.core.Hasher;
 import com.aerofs.daemon.core.NativeVersionControl;
@@ -12,6 +13,8 @@ import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.net.DigestedMessage;
 import com.aerofs.daemon.core.net.NSL;
 import com.aerofs.daemon.core.net.RPC;
+import com.aerofs.daemon.core.store.IMapSID2SIndex;
+import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.core.tc.TokenManager;
@@ -40,10 +43,12 @@ public class ComputeHashCall
     private final DirectoryService _ds;
     private final NativeVersionControl _nvc;
     private final TokenManager _tokenManager;
+    private final IMapSIndex2SID _sidx2sid;
+    private final IMapSID2SIndex _sid2sidx;
 
     @Inject
     public ComputeHashCall(NativeVersionControl nvc, DirectoryService ds, Hasher hasher, RPC rpc,
-            TokenManager tokenManager, NSL nsl)
+            TokenManager tokenManager, NSL nsl, IMapSIndex2SID sidx2sid, IMapSID2SIndex sid2sidx)
     {
         _nvc = nvc;
         _ds = ds;
@@ -51,19 +56,22 @@ public class ComputeHashCall
         _rpc = rpc;
         _nsl = nsl;
         _tokenManager = tokenManager;
+        _sidx2sid = sidx2sid;
+        _sid2sidx = sid2sidx;
     }
 
     public void rpc_(SOID soid, Version vRemote, DID did, Token tk)
             throws Exception
     {
         PBComputeHashCall.Builder bd = PBComputeHashCall.newBuilder()
+                .setStoreId(_sidx2sid.getThrows_(soid.sidx()).toPB())
                 .setObjectId(soid.oid().toPB())
                 .setRemoteVersion(vRemote.toPB_());
 
         PBCore call = CoreUtil.newCall(Type.COMPUTE_HASH_CALL)
                 .setComputeHashCall(bd).build();
 
-        _rpc.do_(did, soid.sidx(), call, tk, "computeHashCall " + soid);
+        _rpc.do_(did, call, tk, "computeHashCall " + soid);
     }
 
     public void sendReply_(DigestedMessage msg, SOCKID k) throws Exception
@@ -77,7 +85,7 @@ public class ComputeHashCall
         }
         // Reply that the hash has been computed with an empty message
         PBCore core = CoreUtil.newReply(msg.pb()).build();
-        _nsl.sendUnicast_(msg.did(), msg.sidx(), core);
+        _nsl.sendUnicast_(msg.did(), core);
     }
 
     public void processCall_(DigestedMessage msg) throws Exception
@@ -85,7 +93,8 @@ public class ComputeHashCall
         Util.checkPB(msg.pb().hasComputeHashCall(), PBComputeHashCall.class);
         PBComputeHashCall pb = msg.pb().getComputeHashCall();
 
-        SOID soid = new SOID(msg.sidx(), new OID(pb.getObjectId()));
+        SID sid = new SID(pb.getStoreId());
+        SOID soid = new SOID(_sid2sidx.getThrows_(sid), new OID(pb.getObjectId()));
 
         Version vRemote = Version.fromPB(pb.getRemoteVersion());
 

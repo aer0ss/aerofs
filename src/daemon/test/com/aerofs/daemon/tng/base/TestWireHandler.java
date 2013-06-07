@@ -9,7 +9,6 @@ import com.aerofs.daemon.tng.base.pipeline.IConnection;
 import com.aerofs.daemon.tng.base.pipeline.IPipelineContext;
 import com.aerofs.daemon.tng.base.pipeline.IPipelineEvent;
 import com.aerofs.base.async.UncancellableFuture;
-import com.aerofs.base.id.SID;
 import com.aerofs.proto.Transport.PBTPHeader;
 import com.aerofs.testlib.AbstractTest;
 import org.junit.Before;
@@ -90,7 +89,6 @@ public class TestWireHandler extends AbstractTest
     {
         final PBTPHeader expectedHeader = PBTPHeader.newBuilder()
                 .setType(PBTPHeader.Type.DATAGRAM)
-                .setSid(new SID(SID.ZERO).toPB())
                 .build();
         OutgoingAeroFSPacket packet = new OutgoingAeroFSPacket(expectedHeader, null);
         MessageEvent event = new MessageEvent(peerConnection, UncancellableFuture.<Void>create(), packet, Prio.LO);
@@ -106,7 +104,6 @@ public class TestWireHandler extends AbstractTest
 
         PBTPHeader output = PBTPHeader.parseDelimitedFrom(new ByteArrayInputStream(data[0]));
         assertEquals(expectedHeader.getType(), output.getType());
-        assertEquals(expectedHeader.getSid(), output.getSid());
 
         // No payload, so the byte array of byte arrays should only have one element, aka, the header
         assertEquals(1, data.length);
@@ -119,7 +116,6 @@ public class TestWireHandler extends AbstractTest
     {
         final PBTPHeader expectedHeader = PBTPHeader.newBuilder()
                 .setType(PBTPHeader.Type.DATAGRAM)
-                .setSid(new SID(SID.ZERO).toPB())
                 .build();
         final byte[] expectedPayload = "Hello AeroFS!".getBytes();
         OutgoingAeroFSPacket packet = new OutgoingAeroFSPacket(expectedHeader, expectedPayload);
@@ -136,7 +132,6 @@ public class TestWireHandler extends AbstractTest
 
         PBTPHeader output = PBTPHeader.parseDelimitedFrom(new ByteArrayInputStream(data[0]));
         assertEquals(expectedHeader.getType(), output.getType());
-        assertEquals(expectedHeader.getSid(), output.getSid());
 
         // Payload exists, so there should be two elements
         assertEquals(2, data.length);
@@ -175,7 +170,6 @@ public class TestWireHandler extends AbstractTest
         // Build a MessageEvent that encapsulates WireData, representing a PBTPHeader
         final PBTPHeader expectedHeader = PBTPHeader.newBuilder()
                 .setType(PBTPHeader.Type.DATAGRAM)
-                .setSid(new SID(SID.ZERO).toPB())
                 .build();
 
         final byte[] expectedPayload = "Hello AeroFS!".getBytes();
@@ -194,7 +188,6 @@ public class TestWireHandler extends AbstractTest
         IncomingAeroFSPacket packet = (IncomingAeroFSPacket) outputEvent.getValue().getMessage_();
 
         assertEquals(expectedHeader.getType(), packet.getHeader_().getType());
-        assertEquals(expectedHeader.getSid(), packet.getHeader_().getSid());
 
         byte[] output = new byte[packet.getPayload_().available()];
         packet.getPayload_().read(output);

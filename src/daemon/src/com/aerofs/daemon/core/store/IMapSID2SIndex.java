@@ -5,6 +5,7 @@ import java.sql.SQLException;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.base.id.SID;
 import com.aerofs.lib.id.SIndex;
@@ -24,6 +25,11 @@ public interface IMapSID2SIndex
      * @pre the store exists locally
      */
     @Nonnull SIndex get_(SID sid);
+
+    /**
+     * @throws ExNotFound if the store doesn't exist locally
+     */
+    @Nonnull SIndex getThrows_(SID sid) throws ExNotFound;
 
     /**
      * Get the corresponding SIndex for a locally present or expelled SID

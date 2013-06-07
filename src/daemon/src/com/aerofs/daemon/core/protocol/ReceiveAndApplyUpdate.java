@@ -37,7 +37,6 @@ import com.aerofs.daemon.core.phy.IPhysicalFile;
 import com.aerofs.daemon.core.phy.IPhysicalPrefix;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.phy.PhysicalOp;
-import com.aerofs.daemon.core.store.MapSIndex2Store;
 import com.aerofs.daemon.core.store.StoreCreator;
 import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
@@ -101,7 +100,6 @@ public class ReceiveAndApplyUpdate
     private MapAlias2Target _a2t;
     private BranchDeleter _bd;
     private TransManager _tm;
-    private MapSIndex2Store _sidx2s;
     private AnalyticsEventCounter _conflictCounter;
 
     @Inject
@@ -109,7 +107,7 @@ public class ReceiveAndApplyUpdate
             Hasher hasher, VersionUpdater vu, ObjectCreator oc, ObjectMover om,
             IPhysicalStorage ps, DownloadState dlState, ComputeHashCall computeHashCall, StoreCreator sc,
             IncomingStreams iss, Metrics m, Aliasing al, BranchDeleter bd, TransManager tm,
-            MapSIndex2Store sidx2s, MapAlias2Target alias2target, Analytics analytics)
+            MapAlias2Target alias2target, Analytics analytics)
     {
         _ds = ds;
         _pvc = pvc;
@@ -127,7 +125,6 @@ public class ReceiveAndApplyUpdate
         _al = al;
         _bd = bd;
         _tm = tm;
-        _sidx2s = sidx2s;
         _a2t = alias2target;
         _conflictCounter = new AnalyticsEventCounter("analytics-file-conflict", analytics)
         {

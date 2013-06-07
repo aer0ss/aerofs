@@ -22,7 +22,6 @@ import com.aerofs.daemon.tng.base.pipeline.IPipelineContext;
 import com.aerofs.daemon.tng.ex.ExStreamAlreadyExists;
 import com.aerofs.daemon.tng.ex.ExStreamInvalid;
 import com.aerofs.daemon.tng.ex.ExTransport;
-import com.aerofs.base.id.SID;
 import com.aerofs.proto.Transport;
 import com.aerofs.proto.Transport.PBStream;
 import com.aerofs.proto.Transport.PBStream.InvalidationReason;
@@ -81,8 +80,7 @@ public final class StreamHandler extends SimplePipelineEventHandler
         try {
             switch (in.getHeader_().getStream().getType()) {
             case BEGIN_STREAM:
-                IIncomingStream newStream = _streamFactory.createIncoming_(ctx.getConnection_(), id,
-                        makeSid(in), Prio.LO);
+                IIncomingStream newStream = _streamFactory.createIncoming_(ctx.getConnection_(), id, Prio.LO);
                 addStream_(newStream, _incoming);
                 _unicastListener.onStreamBegun(newStream);
                 message.getCompletionFuture_().set(null);
@@ -125,11 +123,6 @@ public final class StreamHandler extends SimplePipelineEventHandler
         }
     }
 
-    private static SID makeSid(IncomingAeroFSPacket pkt)
-    {
-        return new SID(pkt.getHeader_().getSid());
-    }
-
     private static InvalidationReason makeReason(IncomingAeroFSPacket pkt)
     {
         return pkt.getHeader_().getStream().getReason();
@@ -146,7 +139,6 @@ public final class StreamHandler extends SimplePipelineEventHandler
     {
         return PBTPHeader.newBuilder()
                 .setType(PBTPHeader.Type.STREAM)
-                .setSid(hdr.getSid())
                 .setStream(Transport.PBStream
                         .newBuilder()
                         .setType(Transport.PBStream.Type.RX_ABORT_STREAM)
@@ -168,8 +160,7 @@ public final class StreamHandler extends SimplePipelineEventHandler
 
         try {
             final IOutgoingStream stream = _streamFactory.createOutgoing_(
-                    messageEvent.getConnection_(), streamParameters.getId_(),
-                    streamParameters.getSid_(), messageEvent.getPriority_());
+                    messageEvent.getConnection_(), streamParameters.getId_(), messageEvent.getPriority_());
 
             addStream_(stream, _outgoing);
 

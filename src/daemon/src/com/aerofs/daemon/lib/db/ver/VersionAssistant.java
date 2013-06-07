@@ -3,8 +3,6 @@ package com.aerofs.daemon.lib.db.ver;
 import java.sql.SQLException;
 import java.util.Set;
 
-import com.aerofs.base.id.DID;
-import com.aerofs.daemon.core.store.MapSIndex2Contributors;
 import com.aerofs.daemon.core.store.MapSIndex2Store;
 import com.aerofs.daemon.core.store.Store;
 import com.aerofs.daemon.lib.db.AbstractTransListener;

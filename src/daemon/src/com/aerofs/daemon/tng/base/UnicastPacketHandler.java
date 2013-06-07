@@ -6,7 +6,6 @@ package com.aerofs.daemon.tng.base;
 
 import com.aerofs.daemon.tng.IUnicastListener;
 import com.aerofs.daemon.tng.base.pipeline.IPipelineContext;
-import com.aerofs.base.id.SID;
 
 import static com.aerofs.daemon.tng.base.Handlers.sendOutgoingMessage_;
 import static com.aerofs.proto.Transport.PBTPHeader;
@@ -35,8 +34,7 @@ final public class UnicastPacketHandler extends SimplePipelineEventHandler
             return;
         }
 
-        _unicastListener.onUnicastDatagramReceived(ctx.getDID_(), new SID(in.getHeader_().getSid()),
-                in.getPayload_(), in.getWirelen_());
+        _unicastListener.onUnicastDatagramReceived(ctx.getDID_(), in.getPayload_(), in.getWirelen_());
 
         messageEvent.getCompletionFuture_().set(null);
     }
@@ -54,7 +52,6 @@ final public class UnicastPacketHandler extends SimplePipelineEventHandler
 
         PBTPHeader hdr = PBTPHeader.newBuilder()
                 .setType(PBTPHeader.Type.DATAGRAM)
-                .setSid(out.getSid_().toPB())
                 .build();
 
         OutgoingAeroFSPacket pkt = new OutgoingAeroFSPacket(hdr, out.getPayload_());

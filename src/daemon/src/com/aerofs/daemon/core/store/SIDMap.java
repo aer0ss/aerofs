@@ -46,6 +46,14 @@ public class SIDMap implements IMapSIndex2SID, IMapSID2SIndex
     }
 
     @Override
+    public @Nonnull SIndex getThrows_(SID sid) throws ExNotFound
+    {
+        SIndex sidx = getNullable_(sid);
+        if (sidx == null) throw new ExNotFound("sidx for " + sid);
+        return sidx;
+    }
+
+    @Override
     public @Nullable SID getNullable_(SIndex sidx)
     {
         return _sidx2sid.get(sidx);

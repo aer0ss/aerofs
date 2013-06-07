@@ -8,18 +8,23 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.TreeSet;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.*;
 import com.aerofs.daemon.core.net.Metrics;
 import com.aerofs.daemon.core.net.NSL;
+import com.aerofs.daemon.core.store.IMapSID2SIndex;
+import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.MapSIndex2Store;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.base.ex.ExNotFound;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 
@@ -46,18 +51,22 @@ public class NewUpdates
     private NSL _nsl;
     private TransManager _tm;
     private MapSIndex2Store _sidx2s;
+    private IMapSIndex2SID _sidx2sid;
+    private IMapSID2SIndex _sid2sidx;
 
     private final List<IPushUpdatesListener> _listeners = Lists.newArrayList();
 
     @Inject
     public void inject_(TransManager tm, NSL nsl, NativeVersionControl nvc, Metrics m,
-            MapSIndex2Store sidx2s)
+            MapSIndex2Store sidx2s, IMapSIndex2SID sidx2sid, IMapSID2SIndex sid2sidx)
     {
         _tm = tm;
         _nsl = nsl;
         _nvc = nvc;
         _m = m;
         _sidx2s = sidx2s;
+        _sidx2sid = sidx2sid;
+        _sid2sidx = sid2sidx;
     }
 
     public void addListener_(IPushUpdatesListener listener)
@@ -82,9 +91,9 @@ public class NewUpdates
         // send one message for each group
         for (Entry<SIndex, List<SOCKID>> en : sidx2ks.entrySet()) {
 
-            SIndex sidx = en.getKey();
+            SID sid = _sidx2sid.getThrows_(en.getKey());
 
-            // write a PBUpdate for each component. split into multiple
+            // write a PBNewUpdate for each component. split into multiple
             // messages if a single message would be too big
             ByteArrayOutputStream os = null;
             for (SOCKID k : en.getValue()) {
@@ -103,14 +112,15 @@ public class NewUpdates
                 if (tick == null) continue;
 
                 PBNewUpdate.newBuilder()
-                    .setObjectId(k.oid().toPB())
-                    .setComId(k.cid().getInt())
-                    .setTick(tick.getLong())
-                    .build()
-                    .writeDelimitedTo(os);
+                        .setStoreId(sid.toPB())
+                        .setObjectId(k.oid().toPB())
+                        .setComId(k.cid().getInt())
+                        .setTick(tick.getLong())
+                        .build()
+                        .writeDelimitedTo(os);
 
                 if (os.size() >= _m.getRecommendedMaxcastSize_()) {
-                    _nsl.sendMaxcast_(sidx, String.valueOf(Type.NEW_UPDATES.getNumber()),
+                    _nsl.sendMaxcast_(sid, String.valueOf(Type.NEW_UPDATES.getNumber()),
                             CoreUtil.NOT_RPC, os);
                     os = null;
                 }
@@ -118,7 +128,7 @@ public class NewUpdates
 
             if (os != null) {
                 l.debug("send out");
-                _nsl.sendMaxcast_(sidx, String.valueOf(Type.NEW_UPDATES.getNumber()),
+                _nsl.sendMaxcast_(sid, String.valueOf(Type.NEW_UPDATES.getNumber()),
                         CoreUtil.NOT_RPC, os);
             }
         }
@@ -133,18 +143,20 @@ public class NewUpdates
         try {
             BFOID filter = new BFOID();
             TreeSet<OID> done = new TreeSet<OID>();
-            boolean news = false;
+
+            Set<SIndex> news = Sets.newHashSet();
 
             while (msg.is().available() > 0) {
                 PBNewUpdate update = PBNewUpdate.parseDelimitedFrom(msg.is());
 
+                SIndex sidx = _sid2sidx.getThrows_(new SID(update.getStoreId()));
                 OID oid = new OID(update.getObjectId().toByteArray());
                 CID cid = new CID(update.getComId());
-                SOCID socid = new SOCID(msg.sidx(), oid, cid);
+                SOCID socid = new SOCID(sidx, oid, cid);
 
                 Tick tick = new Tick(update.getTick());
                 if (_nvc.tickReceived_(socid, msg.did(), tick, t)) {
-                    news = true;
+                    news.add(sidx);
                     if (done.add(oid) && filter.add_(oid)) {
                         l.debug("add oid {} to {}", oid, filter);
                     }
@@ -164,7 +176,9 @@ public class NewUpdates
             // filter
 
             // must call add *after* everything else is writing to the db
-            if (news) _sidx2s.getThrows_(msg.sidx()).collector().add_(msg.did(), filter, t);
+            for (SIndex sidx : news) {
+                _sidx2s.getThrows_(sidx).collector().add_(msg.did(), filter, t);
+            }
 
             t.commit_();
         } finally {

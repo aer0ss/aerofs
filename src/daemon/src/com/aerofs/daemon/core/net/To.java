@@ -52,7 +52,7 @@ public class To
             if (comp != 0) return comp;
             return _did.compareTo(arg0._did);
         }
-    };
+    }
 
     private int _cast;     // type == 0 if unicast only
 

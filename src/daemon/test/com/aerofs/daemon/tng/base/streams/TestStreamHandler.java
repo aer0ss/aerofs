@@ -19,7 +19,6 @@ import com.aerofs.daemon.tng.base.pipeline.IPipelineEvent;
 import com.aerofs.daemon.tng.ex.ExStreamAlreadyExists;
 import com.aerofs.daemon.tng.ex.ExStreamInvalid;
 import com.aerofs.base.async.UncancellableFuture;
-import com.aerofs.base.id.SID;
 import com.aerofs.proto.Transport.PBStream.InvalidationReason;
 import com.aerofs.proto.Transport.PBStream;
 import com.aerofs.proto.Transport.PBTPHeader;
@@ -65,20 +64,19 @@ public class TestStreamHandler extends AbstractTest
     private MessageEvent buildNewOutgoingStreamMessageEvent(IOutgoingStream expectedStream) throws Exception
     {
         return new MessageEvent(peerConnection, UncancellableFuture.<Void>create(),
-                new NewOutgoingStream(expectedStream.getStreamId_(), expectedStream.getSid_()),
+                new NewOutgoingStream(expectedStream.getStreamId_()),
                         expectedStream.getPriority_());
     }
 
-    private PBTPHeader.Builder buildTransportHeader(IStream basis)
+    private PBTPHeader.Builder buildTransportHeader()
     {
         return PBTPHeader.newBuilder()
-                .setType(PBTPHeader.Type.STREAM)
-                .setSid(basis.getSid_().toPB());
+                .setType(PBTPHeader.Type.STREAM);
     }
 
     private MessageEvent buildNewIncomingStreamMessageEvent(IIncomingStream expectedStream) throws Exception
     {
-        PBTPHeader header = buildTransportHeader(expectedStream)
+        PBTPHeader header = buildTransportHeader()
                 .setStream(PBStream.newBuilder()
                         .setStreamId(expectedStream.getStreamId_().getInt())
                         .setType(PBStream.Type.BEGIN_STREAM))
@@ -91,7 +89,7 @@ public class TestStreamHandler extends AbstractTest
 
     private MessageEvent buildAbortIncomingStreamMessageEvent(IIncomingStream expectedStream)
     {
-        PBTPHeader header = buildTransportHeader(expectedStream)
+        PBTPHeader header = buildTransportHeader()
                 .setStream(PBStream.newBuilder()
                         .setStreamId(expectedStream.getStreamId_().getInt())
                         .setType(PBStream.Type.TX_ABORT_STREAM)
@@ -105,7 +103,7 @@ public class TestStreamHandler extends AbstractTest
 
     private MessageEvent buildAbortOutgoingStreamMessageEvent(IOutgoingStream expectedStream)
     {
-        PBTPHeader header = buildTransportHeader(expectedStream)
+        PBTPHeader header = buildTransportHeader()
                 .setStream(PBStream.newBuilder()
                         .setStreamId(expectedStream.getStreamId_().getInt())
                         .setType(PBStream.Type.RX_ABORT_STREAM)
@@ -119,7 +117,7 @@ public class TestStreamHandler extends AbstractTest
 
     private MessageEvent buildPayloadIncomingStreamMessageEvent(IIncomingStream expectedStream, byte[] data)
     {
-        PBTPHeader header = buildTransportHeader(expectedStream)
+        PBTPHeader header = buildTransportHeader()
                 .setStream(PBStream.newBuilder()
                         .setStreamId(expectedStream.getStreamId_().getInt())
                         .setSeqNum(1)
@@ -200,7 +198,8 @@ public class TestStreamHandler extends AbstractTest
     public void shouldSetCompletionFutureOfAbortMessageEventWithExceptionWhenNoIncomingStreamToAbort() throws Exception
     {
         // Expected incoming stream
-        final IncomingStream expectedIncomingStream = IncomingStream.getInstance_(executor, peerConnection, new StreamID(1), new DID(DID.ZERO), new SID(SID.ZERO), Prio.LO);
+        final IncomingStream expectedIncomingStream = IncomingStream.getInstance_(executor, peerConnection, new StreamID(1), new DID(DID.ZERO),
+                Prio.LO);
 
         // Build the abort incoming message event
         MessageEvent abortEvent = buildAbortIncomingStreamMessageEvent(expectedIncomingStream);
@@ -215,7 +214,8 @@ public class TestStreamHandler extends AbstractTest
     public void shouldSetCompletionFutureOfAbortMessageEventWithExceptionWhenNoOutgoingStreamToAbort() throws Exception
     {
         // Expected outgoing stream
-        final OutgoingStream expectedOutgoingStream = OutgoingStream.getInstance_(executor, peerConnection, new StreamID(1), new DID(DID.ZERO), new SID(SID.ZERO), Prio.LO);
+        final OutgoingStream expectedOutgoingStream = OutgoingStream.getInstance_(executor, peerConnection, new StreamID(1), new DID(DID.ZERO),
+                Prio.LO);
 
         // Build the abort incoming message event
         MessageEvent abortEvent = buildAbortOutgoingStreamMessageEvent(expectedOutgoingStream);
@@ -232,7 +232,8 @@ public class TestStreamHandler extends AbstractTest
     public void shouldSetCompletionFutureOfPayloadMessageEventWhenNoIncomingStreamExistsForPayload() throws Exception
     {
         // Expected incoming stream
-        final IncomingStream expectedIncomingStream = IncomingStream.getInstance_(executor, peerConnection, new StreamID(1), new DID(DID.ZERO), new SID(SID.ZERO), Prio.LO);
+        final IncomingStream expectedIncomingStream = IncomingStream.getInstance_(executor, peerConnection, new StreamID(1), new DID(DID.ZERO),
+                Prio.LO);
 
         // Build the payload event
         MessageEvent payloadEvent = buildPayloadIncomingStreamMessageEvent(expectedIncomingStream, "hello world".getBytes());
@@ -257,13 +258,15 @@ public class TestStreamHandler extends AbstractTest
     public void shouldCreateNewOutgoingStreamOnNewOutgoingMessageReceivedAndSucceedBegin() throws Exception
     {
         // Expected stream
-        final OutgoingStream expectedStream = OutgoingStream.getInstance_(executor, peerConnection, new StreamID(1), new DID(DID.ZERO), new SID(SID.ZERO), Prio.LO);
+        final OutgoingStream expectedStream = OutgoingStream.getInstance_(executor, peerConnection, new StreamID(1), new DID(DID.ZERO),
+                Prio.LO);
 
         // Build the proper pipeline event
         MessageEvent event = buildNewOutgoingStreamMessageEvent(expectedStream);
 
         // Set the mocks to do the required operations
-        when(streamFactory.createOutgoing_(peerConnection, expectedStream.getStreamId_(), expectedStream.getSid_(), expectedStream.getPriority_()))
+        when(streamFactory.createOutgoing_(peerConnection, expectedStream.getStreamId_(),
+                expectedStream.getPriority_()))
                 .thenReturn(expectedStream);
         when(peerConnection.send_(anyObject(), eq(expectedStream.getPriority_()))).thenReturn(UncancellableFuture.<Void>createSucceeded(null));
 
@@ -294,13 +297,15 @@ public class TestStreamHandler extends AbstractTest
     public void shouldCreateNewOutgoingStreamOnNewOutgoingMessageReceivedAndFailBegin() throws Exception
     {
         // Expected stream
-        final OutgoingStream expectedStream = OutgoingStream.getInstance_(executor, peerConnection, new StreamID(1), new DID(DID.ZERO), new SID(SID.ZERO), Prio.LO);
+        final OutgoingStream expectedStream = OutgoingStream.getInstance_(executor, peerConnection, new StreamID(1), new DID(DID.ZERO),
+                Prio.LO);
 
         // Build the proper pipeline event
         MessageEvent event = buildNewOutgoingStreamMessageEvent(expectedStream);
 
         // Set the mocks to do the required operations
-        when(streamFactory.createOutgoing_(peerConnection, expectedStream.getStreamId_(), expectedStream.getSid_(), expectedStream.getPriority_()))
+        when(streamFactory.createOutgoing_(peerConnection, expectedStream.getStreamId_(),
+                expectedStream.getPriority_()))
                 .thenReturn(expectedStream);
         when(peerConnection.send_(anyObject(), eq(expectedStream.getPriority_()))).thenReturn(UncancellableFuture.<Void>createFailed(new Exception("test")));
 
@@ -329,13 +334,15 @@ public class TestStreamHandler extends AbstractTest
     public void shouldCreateOutgoingStreamAndFailToCreateAnotherOutgoingStreamWithTheSameIdAsTheFirst() throws Exception
     {
         // Expected stream
-        final OutgoingStream expectedStream = OutgoingStream.getInstance_(executor, peerConnection, new StreamID(1), new DID(DID.ZERO), new SID(SID.ZERO), Prio.LO);
+        final OutgoingStream expectedStream = OutgoingStream.getInstance_(executor, peerConnection, new StreamID(1), new DID(DID.ZERO),
+                Prio.LO);
 
         // Build the proper pipeline event
         MessageEvent event = buildNewOutgoingStreamMessageEvent(expectedStream);
 
         // Set the mocks to do the required operations
-        when(streamFactory.createOutgoing_(peerConnection, expectedStream.getStreamId_(), expectedStream.getSid_(), expectedStream.getPriority_()))
+        when(streamFactory.createOutgoing_(peerConnection, expectedStream.getStreamId_(),
+                expectedStream.getPriority_()))
                 .thenReturn(expectedStream);
         when(peerConnection.send_(anyObject(), eq(expectedStream.getPriority_()))).thenReturn(UncancellableFuture.<Void>createSucceeded(null));
 
@@ -345,12 +352,13 @@ public class TestStreamHandler extends AbstractTest
         // Verify that the new stream is in the map
         assertEquals(expectedStream, outgoingMap.get(expectedStream.getStreamId_()));
 
-        final OutgoingStream secondStream = OutgoingStream.getInstance_(executor, peerConnection, new StreamID(1), new DID(DID.ZERO), new SID(SID.ZERO), Prio.LO);
+        final OutgoingStream secondStream = OutgoingStream.getInstance_(executor, peerConnection, new StreamID(1), new DID(DID.ZERO),
+                Prio.LO);
 
         // Build the proper pipeline event
         MessageEvent secondEvent = buildNewOutgoingStreamMessageEvent(secondStream);
 
-        when(streamFactory.createOutgoing_(peerConnection, secondStream.getStreamId_(), secondStream.getSid_(), secondStream.getPriority_()))
+        when(streamFactory.createOutgoing_(peerConnection, secondStream.getStreamId_(), secondStream.getPriority_()))
                 .thenReturn(secondStream);
 
         // Process the event
@@ -364,13 +372,15 @@ public class TestStreamHandler extends AbstractTest
     public void shouldCreateOutgoingStreamAndAbortStreamOnIncomingAbortMessageEventReceived() throws Exception
     {
         // Expected stream
-        final OutgoingStream expectedStream = OutgoingStream.getInstance_(executor, peerConnection, new StreamID(1), new DID(DID.ZERO), new SID(SID.ZERO), Prio.LO);
+        final OutgoingStream expectedStream = OutgoingStream.getInstance_(executor, peerConnection, new StreamID(1), new DID(DID.ZERO),
+                Prio.LO);
 
         // Build the proper pipeline event
         MessageEvent event = buildNewOutgoingStreamMessageEvent(expectedStream);
 
         // Set the mocks to do the required operations
-        when(streamFactory.createOutgoing_(peerConnection, expectedStream.getStreamId_(), expectedStream.getSid_(), expectedStream.getPriority_()))
+        when(streamFactory.createOutgoing_(peerConnection, expectedStream.getStreamId_(),
+                expectedStream.getPriority_()))
                 .thenReturn(expectedStream);
         when(peerConnection.send_(anyObject(), eq(expectedStream.getPriority_()))).thenReturn(UncancellableFuture.<Void>createSucceeded(null));
 
@@ -400,13 +410,15 @@ public class TestStreamHandler extends AbstractTest
     public void shouldCreateIncomingStreamAndNotifyListenerWhenBeginIncomingStreamEventReceived() throws Exception
     {
         // Expected incoming stream
-        final IncomingStream expectedIncomingStream = IncomingStream.getInstance_(executor, peerConnection, new StreamID(1), new DID(DID.ZERO), new SID(SID.ZERO), Prio.LO);
+        final IncomingStream expectedIncomingStream = IncomingStream.getInstance_(executor, peerConnection, new StreamID(1), new DID(DID.ZERO),
+                Prio.LO);
 
         // Build the incoming message event
         MessageEvent event = buildNewIncomingStreamMessageEvent(expectedIncomingStream);
 
         // Set the mocks to return the expected objects
-        when(streamFactory.createIncoming_(peerConnection, expectedIncomingStream.getStreamId_(), expectedIncomingStream.getSid_(), expectedIncomingStream.getPriority_()))
+        when(streamFactory.createIncoming_(peerConnection, expectedIncomingStream.getStreamId_(),
+                expectedIncomingStream.getPriority_()))
                 .thenReturn(expectedIncomingStream);
 
         // Pump in the event
@@ -431,13 +443,15 @@ public class TestStreamHandler extends AbstractTest
     public void shouldCreateIncomingStreamAndFailWhenCreatingSecondIncomingStreamWithTheSameStreamIdAsTheFirst() throws Exception
     {
         // Expected incoming stream
-        final IncomingStream expectedIncomingStream = IncomingStream.getInstance_(executor, peerConnection, new StreamID(1), new DID(DID.ZERO), new SID(SID.ZERO), Prio.LO);
+        final IncomingStream expectedIncomingStream = IncomingStream.getInstance_(executor, peerConnection, new StreamID(1), new DID(DID.ZERO),
+                Prio.LO);
 
         // Build the incoming message event
         MessageEvent event = buildNewIncomingStreamMessageEvent(expectedIncomingStream);
 
         // Set the mocks to return the expected objects
-        when(streamFactory.createIncoming_(peerConnection, expectedIncomingStream.getStreamId_(), expectedIncomingStream.getSid_(), expectedIncomingStream.getPriority_()))
+        when(streamFactory.createIncoming_(peerConnection, expectedIncomingStream.getStreamId_(),
+                expectedIncomingStream.getPriority_()))
                 .thenReturn(expectedIncomingStream);
 
         // Pump in the event
@@ -447,13 +461,15 @@ public class TestStreamHandler extends AbstractTest
         verify(unicastListener).onStreamBegun(expectedIncomingStream);
 
         // Second incoming stream
-        final IncomingStream secondIncomingStream = IncomingStream.getInstance_(executor, peerConnection, new StreamID(1), new DID(DID.ZERO), new SID(SID.ZERO), Prio.LO);
+        final IncomingStream secondIncomingStream = IncomingStream.getInstance_(executor, peerConnection, new StreamID(1), new DID(DID.ZERO),
+                Prio.LO);
 
         // Build the incoming message event
         MessageEvent secondEvent = buildNewIncomingStreamMessageEvent(secondIncomingStream);
 
         // Set the mocks to return the expected objects
-        when(streamFactory.createIncoming_(peerConnection, secondIncomingStream.getStreamId_(), secondIncomingStream.getSid_(), secondIncomingStream.getPriority_()))
+        when(streamFactory.createIncoming_(peerConnection, secondIncomingStream.getStreamId_(),
+                secondIncomingStream.getPriority_()))
                 .thenReturn(secondIncomingStream);
 
         // Pump in the event
@@ -467,13 +483,15 @@ public class TestStreamHandler extends AbstractTest
     public void shouldCreateIncomingStreamAndRemoveStreamFromMapOnIncomingAbortMessageReceived() throws Exception
     {
         // Expected incoming stream
-        final IncomingStream expectedIncomingStream = IncomingStream.getInstance_(executor, peerConnection, new StreamID(1), new DID(DID.ZERO), new SID(SID.ZERO), Prio.LO);
+        final IncomingStream expectedIncomingStream = IncomingStream.getInstance_(executor, peerConnection, new StreamID(1), new DID(DID.ZERO),
+                Prio.LO);
 
         // Build the incoming message event
         MessageEvent event = buildNewIncomingStreamMessageEvent(expectedIncomingStream);
 
         // Set the mocks to return the expected objects
-        when(streamFactory.createIncoming_(peerConnection, expectedIncomingStream.getStreamId_(), expectedIncomingStream.getSid_(), expectedIncomingStream.getPriority_()))
+        when(streamFactory.createIncoming_(peerConnection, expectedIncomingStream.getStreamId_(),
+                expectedIncomingStream.getPriority_()))
                 .thenReturn(expectedIncomingStream);
 
         // Pump in the event
@@ -507,7 +525,6 @@ public class TestStreamHandler extends AbstractTest
        final IncomingStream expectedIncomingStream = mock(IncomingStream.class);
        when(expectedIncomingStream.getCloseFuture_()).thenReturn(UncancellableFuture.<Void>create());
        when(expectedIncomingStream.getDid_()).thenReturn(new DID(DID.ZERO));
-       when(expectedIncomingStream.getSid_()).thenReturn(new SID(SID.ZERO));
        when(expectedIncomingStream.getStreamId_()).thenReturn(new StreamID(1));
        when(expectedIncomingStream.getPriority_()).thenReturn(Prio.LO);
 
@@ -515,7 +532,8 @@ public class TestStreamHandler extends AbstractTest
        MessageEvent event = buildNewIncomingStreamMessageEvent(expectedIncomingStream);
 
        // Set the mocks to return the expected objects
-       when(streamFactory.createIncoming_(peerConnection, expectedIncomingStream.getStreamId_(), expectedIncomingStream.getSid_(), expectedIncomingStream.getPriority_()))
+       when(streamFactory.createIncoming_(peerConnection, expectedIncomingStream.getStreamId_(),
+               expectedIncomingStream.getPriority_()))
                .thenReturn(expectedIncomingStream);
 
        // Pump in the event

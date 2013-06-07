@@ -4,15 +4,14 @@
 
 package com.aerofs.daemon.tng.base;
 
-import com.aerofs.lib.event.Prio;
+import com.aerofs.base.async.UncancellableFuture;
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.tng.IUnicastListener;
 import com.aerofs.daemon.tng.base.pipeline.IConnection;
 import com.aerofs.daemon.tng.base.pipeline.IPipelineContext;
 import com.aerofs.daemon.tng.base.pipeline.IPipelineEvent;
-import com.aerofs.base.async.UncancellableFuture;
 import com.aerofs.lib.OutArg;
-import com.aerofs.base.id.DID;
-import com.aerofs.base.id.SID;
+import com.aerofs.lib.event.Prio;
 import com.aerofs.proto.Transport;
 import com.aerofs.testlib.AbstractTest;
 import org.junit.Test;
@@ -21,8 +20,15 @@ import org.mockito.stubbing.Answer;
 
 import java.io.ByteArrayInputStream;
 
-import static org.mockito.Mockito.*;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.when;
 
 public class TestUnicastPacketHandler extends AbstractTest
 {
@@ -81,7 +87,6 @@ public class TestUnicastPacketHandler extends AbstractTest
 
         when(_pipelineContext.getDID_()).thenReturn(PIPELINE_CONTEXT_DID);
 
-        final SID INCOMING_SID = new SID(SID.ZERO);
         final byte[] INCOMING_DATA = new byte[]{0};
         final ByteArrayInputStream INCOMING_BAIS = new ByteArrayInputStream(INCOMING_DATA);
         final int INCOMING_WIRELEN = 1;
@@ -89,7 +94,6 @@ public class TestUnicastPacketHandler extends AbstractTest
         final Transport.PBTPHeader INCOMING_HDR = Transport.PBTPHeader
                 .newBuilder()
                 .setType(Transport.PBTPHeader.Type.DATAGRAM)
-                .setSid(INCOMING_SID.toPB())
                 .build();
 
         final IncomingAeroFSPacket INCOMING_AEROFS_PACKET = new IncomingAeroFSPacket(INCOMING_HDR,
@@ -107,8 +111,8 @@ public class TestUnicastPacketHandler extends AbstractTest
         _handler.onIncoming_(_pipelineContext, event);
 
         assertTrue(COMPLETION_FUTURE.isDone());
-        verify(_unicastListener).onUnicastDatagramReceived(PIPELINE_CONTEXT_DID, INCOMING_SID,
-                INCOMING_BAIS, INCOMING_WIRELEN);
+        verify(_unicastListener).onUnicastDatagramReceived(PIPELINE_CONTEXT_DID, INCOMING_BAIS,
+                INCOMING_WIRELEN);
 
         // how do I verify that the bais has the right bytes?
     }
@@ -141,13 +145,12 @@ public class TestUnicastPacketHandler extends AbstractTest
             throws Exception
     {
         final IConnection CONNECTION = mock(IConnection.class);
-        final SID UNICAST_PACKET_SID = new SID(SID.ZERO);
         final byte[] UNICAST_PACKET_PAYLOAD = new byte[]{0};
 
         final UncancellableFuture<Void> COMPLETION_FUTURE = UncancellableFuture.create();
         final Prio PRI = Prio.LO;
 
-        final OutgoingUnicastPacket UNICAST_PACKET = new OutgoingUnicastPacket(UNICAST_PACKET_SID,
+        final OutgoingUnicastPacket UNICAST_PACKET = new OutgoingUnicastPacket(
                 UNICAST_PACKET_PAYLOAD);
 
         final MessageEvent event = new MessageEvent(CONNECTION, COMPLETION_FUTURE, UNICAST_PACKET,
@@ -179,6 +182,5 @@ public class TestUnicastPacketHandler extends AbstractTest
 
         Transport.PBTPHeader hdr = packet.getHeader_();
         assertEquals(Transport.PBTPHeader.Type.DATAGRAM, hdr.getType());
-        assertEquals(UNICAST_PACKET_SID, new SID(hdr.getSid()));
     }
 }

@@ -123,7 +123,7 @@ public class TestGetVersCall extends AbstractTest
     {
         gvc.rpc_(sidx, didTo, tk);
 
-        verify(rpc).do_(eq(didTo), any(SIndex.class), any(PBCore.class),
+        verify(rpc).do_(eq(didTo), any(PBCore.class),
                 callCaptor.capture(), any(Token.class), any(String.class));
 
         ByteArrayInputStream is = new ByteArrayInputStream(callCaptor.getValue().toByteArray());

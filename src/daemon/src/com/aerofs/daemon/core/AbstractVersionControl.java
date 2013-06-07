@@ -1,7 +1,6 @@
 package com.aerofs.daemon.core;
 
 import java.sql.SQLException;
-import java.util.Set;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;

@@ -16,7 +16,6 @@ import com.aerofs.daemon.lib.id.StreamID;
 import com.aerofs.lib.Util;
 import com.aerofs.daemon.core.ex.ExAborted;
 import com.aerofs.base.ex.ExNoResource;
-import com.aerofs.lib.id.SIndex;
 import com.aerofs.proto.Transport.PBStream.InvalidationReason;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
@@ -113,7 +112,7 @@ public class OutgoingStreams
      *
      *  new stream won't be created until all backlog streams are finished.
      */
-    public OutgoingStream newStream(Endpoint ep, SIndex sidx, Token tk)
+    public OutgoingStream newStream(Endpoint ep, Token tk)
         throws ExNoResource, ExAborted
     {
         Iterator<OutgoingStream> iter = _failedToAbort.iterator();
@@ -130,7 +129,7 @@ public class OutgoingStreams
             iter.remove();
         }
 
-        OutgoingStream stream = new OutgoingStream(new PeerContext(ep, sidx), tk);
+        OutgoingStream stream = new OutgoingStream(new PeerContext(ep), tk);
         l.info("create " + stream);
         return stream;
     }

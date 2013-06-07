@@ -27,7 +27,6 @@ import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.lib.ex.ExDeviceOffline;
 import com.aerofs.base.ex.ExProtocolError;
-import com.aerofs.lib.id.SIndex;
 import com.aerofs.base.id.UserID;
 import com.aerofs.proto.Core.PBCore;
 import com.aerofs.proto.Core.PBCore.Type;
@@ -115,7 +114,7 @@ public class UnicastInputTopLayer implements IUnicastInputLayer
             // it's silly that upper layers have to guarantee that the content PBCore is smaller
             // than the transport's max unicast packet size; that's the job of a network layer
             PBCore pb = PBCore.parseDelimitedFrom(r._is);
-            DigestedMessage msg = new DigestedMessage(pb, r._is, pc.ep(), pc.sidx(), pc.user(), null);
+            DigestedMessage msg = new DigestedMessage(pb, r._is, pc.ep(), pc.user(), null);
             process_(msg);
         } catch (Exception e) {
             SystemUtil.fatalOnUncheckedException(e);
@@ -123,7 +122,7 @@ public class UnicastInputTopLayer implements IUnicastInputLayer
         }
     }
 
-    public void maxcastMessageReceived_(SIndex sidx, Endpoint ep, ByteArrayInputStream is)
+    public void maxcastMessageReceived_(Endpoint ep, ByteArrayInputStream is)
     {
         try {
             assert !ep.did().equals(Cfg.did());
@@ -132,10 +131,10 @@ public class UnicastInputTopLayer implements IUnicastInputLayer
             UserID userId = _d2uCache.get(ep.did());
             if (userId == null) {
                 userId = _f._d2u.getFromLocalNullable_(ep.did());
-                if (userId == null) userId = _f._d2u.getFromPeer_(ep.did(), sidx);
+                if (userId == null) userId = _f._d2u.getFromPeer_(ep.did());
                 _d2uCache.put(ep.did(), userId);
             }
-            process_(new DigestedMessage(pb, is, ep, sidx, userId, null));
+            process_(new DigestedMessage(pb, is, ep, userId, null));
         } catch (Exception e) {
             SystemUtil.fatalOnUncheckedException(e);
             l.warn("process mc: " + Util.e(e, ExDeviceOffline.class, ExBadCredential.class));
@@ -220,7 +219,7 @@ public class UnicastInputTopLayer implements IUnicastInputLayer
         }
 
         assert error != null;
-        _f._nsl.sendUnicast_(msg.did(), msg.sidx(), error);
+        _f._nsl.sendUnicast_(msg.did(), error);
     }
 
     private void processNonCall_(DigestedMessage msg)
@@ -260,7 +259,7 @@ public class UnicastInputTopLayer implements IUnicastInputLayer
             _f._iss.begun_(key, pc);
 
             PBCore pb = PBCore.parseDelimitedFrom(r._is);
-            DigestedMessage msg = new DigestedMessage(pb, r._is, pc.ep(), pc.sidx(), pc.user(), key);
+            DigestedMessage msg = new DigestedMessage(pb, r._is, pc.ep(), pc.user(), key);
 
             switch (pb.getType()) {
                 case REPLY:

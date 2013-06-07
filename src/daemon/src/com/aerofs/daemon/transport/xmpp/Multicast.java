@@ -254,15 +254,14 @@ public class Multicast implements IMaxcast
         Endpoint ep = new Endpoint(x, did);
 
         ByteArrayInputStream is = new ByteArrayInputStream(bs);
-        recvMessage(ep, JabberID.muc2sid(tokens[0]), is, wirelen.get());
+        recvMessage(ep, is, wirelen.get());
     }
 
-    private void recvMessage(Endpoint ep, SID sid, ByteArrayInputStream is,
-                            int wirelen)
+    private void recvMessage(Endpoint ep, ByteArrayInputStream is, int wirelen)
             throws IOException, ExNoResource
     {
         // NOTE: Assume that ep.did() != localdid as this is checked in recvMessage(Message msg)
-        x.sink().enqueueThrows(new EIMaxcastMessage(ep, sid, is, wirelen), Prio.LO);
+        x.sink().enqueueThrows(new EIMaxcastMessage(ep, is, wirelen), Prio.LO);
     }
 
     public synchronized void xmppServerDisconnected()

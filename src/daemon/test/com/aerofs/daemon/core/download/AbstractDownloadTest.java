@@ -121,7 +121,6 @@ public class AbstractDownloadTest extends AbstractTest
         DigestedMessage msg = mock(DigestedMessage.class);
         when(msg.did()).thenReturn(replier);
         when(msg.tp()).thenReturn(tp);
-        when(msg.sidx()).thenReturn(sidx);
         when(msg.ep()).thenReturn(new Endpoint(tp, replier));
         return msg;
     }

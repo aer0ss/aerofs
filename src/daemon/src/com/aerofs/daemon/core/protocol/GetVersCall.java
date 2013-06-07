@@ -142,7 +142,7 @@ public class GetVersCall
         // TODO: once transport refactor is done, switch to streaming calls
         makeBlock_(sidx, didTo).setIsLastBlock(true).build().writeDelimitedTo(out);
 
-        DigestedMessage msg = _rpc.do_(didTo, sidx, call, out, tk, "gv for " + sidx);
+        DigestedMessage msg = _rpc.do_(didTo, call, out, tk, "gv for " + sidx);
         _pgvr.processReply_(msg, tk);
     }
 
@@ -197,7 +197,7 @@ public class GetVersCall
     {
         Util.checkPB(msg.pb().hasGetVersCall(), PBGetVersCall.class);
 
-        l.debug("process from " + msg.ep() + " 4 " + msg.sidx());
+        l.debug("process from " + msg.ep());
 
         PBCore core = CoreUtil.newReply(msg.pb())
                 .setGetVersReply(PBGetVersReply.newBuilder().build())
@@ -207,9 +207,7 @@ public class GetVersCall
         ////////
         // write blocks
 
-        // TODO: get rid of that stupid SIndex from the transport header...
-        BlockSender sender = new BlockSender(msg.sidx(), msg.ep(), core.getRpcid(),
-                CoreUtil.typeString(core), os);
+        BlockSender sender = new BlockSender(msg.ep(), core.getRpcid(), CoreUtil.typeString(core), os);
 
         try {
             if (msg.streamKey() != null) {
@@ -366,8 +364,6 @@ public class GetVersCall
 
     private class BlockSender
     {
-        // TODO: get rid of this field
-        private final SIndex _sidx;
         private final Endpoint _ep;
         private final int _rpcid;
         private final String _msgType;
@@ -377,10 +373,8 @@ public class GetVersCall
         private Token _tk;                  // null for atomic messages
         private boolean _streamOkay;        // invalid for atomic messages
 
-        BlockSender(SIndex sidx, Endpoint ep, int rpcid, String msgType,
-                ByteArrayOutputStream os)
+        BlockSender(Endpoint ep, int rpcid, String msgType, ByteArrayOutputStream os)
         {
-            _sidx = sidx;
             _ep = ep;
             _rpcid = rpcid;
             _msgType = msgType;
@@ -398,7 +392,7 @@ public class GetVersCall
             if (os2 != _os) {
                 if (_stream == null) {
                     _tk = _tokenManager.acquireThrows_(Cat.SERVER, "GVSendReply");
-                    _stream = _oss.newStream(_ep, _sidx, _tk);
+                    _stream = _oss.newStream(_ep, _tk);
                 }
 
                 if (iter != null) iter.close_();
@@ -413,7 +407,7 @@ public class GetVersCall
         void done_() throws Exception
         {
             if (_stream == null) {
-                _nsl.sendUnicast_(_ep.did(), _sidx, _msgType, _rpcid, _os);
+                _nsl.sendUnicast_(_ep.did(), _msgType, _rpcid, _os);
             } else {
                 _stream.sendChunk_(_os.toByteArray());
                 _streamOkay = true;

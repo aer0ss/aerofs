@@ -7,15 +7,12 @@ package com.aerofs.daemon.tng;
 import com.aerofs.base.id.DID;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.daemon.lib.id.StreamID;
-import com.aerofs.base.id.SID;
 import com.aerofs.proto.Transport.PBStream.InvalidationReason;
 import com.google.common.util.concurrent.ListenableFuture;
 
 public interface IStream
 {
     StreamID getStreamId_();
-
-    SID getSid_();
 
     DID getDid_();
 

@@ -16,7 +16,6 @@ import com.aerofs.daemon.tng.ex.ExStreamInvalid;
 import com.aerofs.base.async.FailedFutureCallback;
 import com.aerofs.base.async.FutureUtil;
 import com.aerofs.base.async.UncancellableFuture;
-import com.aerofs.base.id.SID;
 import com.aerofs.proto.Transport.PBStream;
 import com.aerofs.proto.Transport.PBStream.InvalidationReason;
 import com.aerofs.proto.Transport.PBTPHeader;
@@ -42,10 +41,10 @@ class OutgoingStream extends AbstractStream implements IOutgoingStream
     private int _seqnum = 0;
 
     static OutgoingStream getInstance_(ISingleThreadedPrioritizedExecutor executor,
-            IConnection connection, StreamID id, DID did, SID sid, Prio pri)
+            IConnection connection, StreamID id, DID did, Prio pri)
             throws ExStreamAlreadyExists
     {
-        final OutgoingStream stream = new OutgoingStream(executor, connection, id, did, sid, pri);
+        final OutgoingStream stream = new OutgoingStream(executor, connection, id, did, pri);
 
         addCallback(connection.getCloseFuture_(), new FailedFutureCallback()
         {
@@ -61,9 +60,9 @@ class OutgoingStream extends AbstractStream implements IOutgoingStream
     }
 
     private OutgoingStream(ISingleThreadedPrioritizedExecutor executor, IConnection connection,
-            StreamID id, DID did, SID sid, Prio pri)
+            StreamID id, DID did, Prio pri)
     {
-        super(executor, id, did, sid, pri);
+        super(executor, id, did, pri);
         this._connection = connection;
     }
 
@@ -202,7 +201,6 @@ class OutgoingStream extends AbstractStream implements IOutgoingStream
     {
         return PBTPHeader.newBuilder()
                 .setType(STREAM)
-                .setSid(getSid_().toPB())
                 .setStream(PBStream.newBuilder()
                         .setType(BEGIN_STREAM)
                         .setStreamId(getStreamId_().getInt()))
@@ -213,7 +211,6 @@ class OutgoingStream extends AbstractStream implements IOutgoingStream
     {
         return PBTPHeader.newBuilder()
                 .setType(STREAM)
-                .setSid(getSid_().toPB())
                 .setStream(PBStream.newBuilder()
                         .setType(PAYLOAD)
                         .setStreamId(getStreamId_().getInt())
@@ -225,7 +222,6 @@ class OutgoingStream extends AbstractStream implements IOutgoingStream
     {
         return PBTPHeader.newBuilder()
                 .setType(STREAM)
-                .setSid(getSid_().toPB())
                 .setStream(PBStream.newBuilder()
                         .setType(TX_ABORT_STREAM)
                         .setStreamId(getStreamId_().getInt())

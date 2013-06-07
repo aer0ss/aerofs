@@ -31,9 +31,6 @@ message PBTPHeader {
 
     required Type type = 1;
 
-    // only in unicast and maxcast payload
-    optional bytes sid = 2;
-
     // only in maxcast payload
     optional uint32 mcast_id = 3;
 

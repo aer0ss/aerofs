@@ -5,9 +5,11 @@
 package com.aerofs.daemon.tng.base;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.base.async.FailedFutureCallback;
+import com.aerofs.base.async.UncancellableFuture;
+import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.lib.BlockingPrioQueue;
-import com.aerofs.lib.event.Prio;
 import com.aerofs.daemon.lib.async.ISingleThreadedPrioritizedExecutor;
 import com.aerofs.daemon.lib.id.StreamID;
 import com.aerofs.daemon.tng.IOutgoingStream;
@@ -17,10 +19,7 @@ import com.aerofs.daemon.tng.base.pulse.StartPulseMessage;
 import com.aerofs.daemon.tng.base.streams.NewOutgoingStream;
 import com.aerofs.daemon.tng.ex.ExTransport;
 import com.aerofs.lib.OutArg;
-import com.aerofs.base.async.FailedFutureCallback;
-import com.aerofs.base.async.UncancellableFuture;
-import com.aerofs.base.ex.ExNoResource;
-import com.aerofs.base.id.SID;
+import com.aerofs.lib.event.Prio;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.ListenableFuture;
 import org.slf4j.Logger;
@@ -29,9 +28,9 @@ import javax.annotation.Nullable;
 import java.util.LinkedList;
 import java.util.List;
 
+import static com.aerofs.base.async.FutureUtil.addCallback;
 import static com.aerofs.daemon.lib.DaemonParam.CONNECT_TIMEOUT;
 import static com.aerofs.daemon.lib.DaemonParam.QUEUE_LENGTH_DEFAULT;
-import static com.aerofs.base.async.FutureUtil.addCallback;
 
 class Peer implements IPeer
 {
@@ -100,11 +99,11 @@ class Peer implements IPeer
         assert _alive;
     }
 
-    ListenableFuture<Void> sendDatagram_(SID sid, byte[] payload, Prio pri)
+    ListenableFuture<Void> sendDatagram_(byte[] payload, Prio pri)
     {
         assertIsAlive();
 
-        OutgoingUnicastPacket out = new OutgoingUnicastPacket(sid, payload);
+        OutgoingUnicastPacket out = new OutgoingUnicastPacket(payload);
 
         if (!_connections.isEmpty()) {
             return _connections.getFirst().send_(out, pri);
@@ -131,11 +130,11 @@ class Peer implements IPeer
         return out.getStreamCreationFuture_();
     }
 
-    ListenableFuture<IOutgoingStream> beginStream_(StreamID id, SID sid, Prio pri)
+    ListenableFuture<IOutgoingStream> beginStream_(StreamID id, Prio pri)
     {
         assertIsAlive();
 
-        NewOutgoingStream out = new NewOutgoingStream(id, sid);
+        NewOutgoingStream out = new NewOutgoingStream(id);
 
         if (!_connections.isEmpty()) {
             return sendStream_(out, pri);

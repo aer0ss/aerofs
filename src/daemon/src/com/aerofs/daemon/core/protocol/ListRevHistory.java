@@ -76,7 +76,7 @@ extends AbstractListRevChildrenHistory<IListRevHistoryListener>
             .setListRevHistoryResponse(bd)
             .build();
 
-        _nsl.sendUnicast_(msg.did(), msg.sidx(), core);
+        _nsl.sendUnicast_(msg.did(), core);
     }
 
     private void received_(RCHListeners ls, DID did, Collection<Revision> ens)

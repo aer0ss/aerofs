@@ -2,7 +2,6 @@ package com.aerofs.daemon.core.net;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.CoreDeviceLRU;
-import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.ex.ExAborted;
 import com.aerofs.proto.Transport.PBStream.InvalidationReason;
@@ -33,15 +32,13 @@ public class UnicastOutputBottomLayer implements IUnicastOutputLayer
         private final CoreDeviceLRU _dlru;
         private final TC _tc;
         private final Transports _tps;
-        private final IMapSIndex2SID _sidx2sid;
 
         @Inject
-        public Factory(Transports tps, TC tc, CoreDeviceLRU dlru, IMapSIndex2SID sidx2sid)
+        public Factory(Transports tps, TC tc, CoreDeviceLRU dlru)
         {
             _tps = tps;
             _tc = tc;
             _dlru = dlru;
-            _sidx2sid = sidx2sid;
         }
 
         public UnicastOutputBottomLayer create_()
@@ -63,8 +60,7 @@ public class UnicastOutputBottomLayer implements IUnicastOutputLayer
     {
         _f._dlru.addDevice_(pc.did());
 
-        pc.tp().q().enqueueThrows(new EOUnicastMessage(pc.did(), _f._sidx2sid.getThrows_(pc.sidx()),
-                bs), _f._tc.prio());
+        pc.tp().q().enqueueThrows(new EOUnicastMessage(pc.did(), bs), _f._tc.prio());
     }
 
     @Override
@@ -74,8 +70,7 @@ public class UnicastOutputBottomLayer implements IUnicastOutputLayer
         _f._dlru.addDevice_(pc.did());
 
         IIMCExecutor imce = _f._tps.getIMCE_(pc.tp());
-        EOBeginStream ev = new EOBeginStream(streamId, pc.did(), _f._sidx2sid.getThrows_(pc.sidx()),
-                bs, imce);
+        EOBeginStream ev = new EOBeginStream(streamId, pc.did(), bs, imce);
         try {
             CoreIMC.execute_(ev, _f._tc, tk);
         } catch (Exception e) {
@@ -91,8 +86,7 @@ public class UnicastOutputBottomLayer implements IUnicastOutputLayer
         _f._dlru.addDevice_(pc.did());
 
         IIMCExecutor imce = _f._tps.getIMCE_(pc.tp());
-        EOChunk ev = new EOChunk(streamId, seq, pc.did(), _f._sidx2sid.getThrows_(pc.sidx()),
-                bs, imce);
+        EOChunk ev = new EOChunk(streamId, seq, pc.did(), bs, imce);
         try {
             CoreIMC.execute_(ev, _f._tc, tk);
         } catch (Exception e) {

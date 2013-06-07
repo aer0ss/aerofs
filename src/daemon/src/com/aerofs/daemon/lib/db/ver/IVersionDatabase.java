@@ -1,17 +1,15 @@
 package com.aerofs.daemon.lib.db.ver;
 
-import java.sql.SQLException;
-import java.util.Set;
-
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.Tick;
 import com.aerofs.lib.Version;
 import com.aerofs.lib.db.IDBIterator;
-import com.aerofs.base.id.DID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOCID;
 
 import javax.annotation.Nonnull;
+import java.sql.SQLException;
 
 /**
  * Native and Immigrant versions share some similarities in getters/setters.

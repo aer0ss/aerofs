@@ -13,7 +13,6 @@ import com.aerofs.daemon.tng.base.IStreamFactory;
 import com.aerofs.daemon.tng.base.pipeline.IConnection;
 import com.aerofs.daemon.tng.ex.ExStreamAlreadyExists;
 import com.aerofs.base.id.DID;
-import com.aerofs.base.id.SID;
 
 public final class StreamFactory implements IStreamFactory
 {
@@ -27,16 +26,16 @@ public final class StreamFactory implements IStreamFactory
     }
 
     @Override
-    public IOutgoingStream createOutgoing_(IConnection connection, StreamID id, SID sid, Prio pri)
+    public IOutgoingStream createOutgoing_(IConnection connection, StreamID id, Prio pri)
             throws ExStreamAlreadyExists
     {
-        return OutgoingStream.getInstance_(_streamExecutor, connection, id, _did, sid, pri);
+        return OutgoingStream.getInstance_(_streamExecutor, connection, id, _did, pri);
     }
 
     @Override
-    public IIncomingStream createIncoming_(IConnection connection, StreamID id, SID sid, Prio pri)
+    public IIncomingStream createIncoming_(IConnection connection, StreamID id, Prio pri)
             throws ExStreamAlreadyExists
     {
-        return IncomingStream.getInstance_(_streamExecutor, connection, id, _did, sid, pri);
+        return IncomingStream.getInstance_(_streamExecutor, connection, id, _did, pri);
     }
 }

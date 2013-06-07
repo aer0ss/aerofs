@@ -10,13 +10,12 @@ import com.aerofs.daemon.tng.IIncomingStream;
 import com.aerofs.daemon.tng.IOutgoingStream;
 import com.aerofs.daemon.tng.base.pipeline.IConnection;
 import com.aerofs.daemon.tng.ex.ExStreamAlreadyExists;
-import com.aerofs.base.id.SID;
 
 public interface IStreamFactory
 {
-    IOutgoingStream createOutgoing_(IConnection connection, StreamID id, SID sid, Prio pri)
+    IOutgoingStream createOutgoing_(IConnection connection, StreamID id, Prio pri)
             throws ExStreamAlreadyExists;
 
-    IIncomingStream createIncoming_(IConnection connection, StreamID id, SID sid, Prio pri)
+    IIncomingStream createIncoming_(IConnection connection, StreamID id, Prio pri)
             throws ExStreamAlreadyExists;
 }

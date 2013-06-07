@@ -114,7 +114,7 @@ public class GCCSendContent
         PBCore core = bdCore.setGetComReply(bdReply).build();
         ByteArrayOutputStream os = Util.writeDelimited(core);
         if (os.size() <= _m.getMaxUnicastSize_() && contentIsSame) {
-            sendContentSame_(ep.did(), k, os, core);
+            sendContentSame_(ep.did(), os, core);
         } else if (os.size() + hashLength + fileLength <= _m.getMaxUnicastSize_()) {
             sendSmall_(ep.did(), k, os, core, vLocal, mtime, fileLength, h, pf);
         } else {
@@ -167,10 +167,10 @@ public class GCCSendContent
         return total;
     }
 
-    private void sendContentSame_(DID did, SOCKID k, ByteArrayOutputStream os, PBCore reply)
+    private void sendContentSame_(DID did, ByteArrayOutputStream os, PBCore reply)
             throws Exception
     {
-        _nsl.sendUnicast_(did, k.sidx(), CoreUtil.typeString(reply), reply.getRpcid(), os);
+        _nsl.sendUnicast_(did, CoreUtil.typeString(reply), reply.getRpcid(), os);
     }
 
     private void sendSmall_(DID did, SOCKID k, ByteArrayOutputStream os, PBCore reply, Version v,
@@ -197,7 +197,7 @@ public class GCCSendContent
                 throw new ExUpdateInProgress();
             }
 
-            _nsl.sendUnicast_(did, k.sidx(), CoreUtil.typeString(reply), reply.getRpcid(), os);
+            _nsl.sendUnicast_(did, CoreUtil.typeString(reply), reply.getRpcid(), os);
         } finally {
             if (is != null) {
                 is.close();
@@ -213,7 +213,7 @@ public class GCCSendContent
         assert prefixLen >= 0;
 
         InvalidationReason reason = InvalidationReason.INTERNAL_ERROR;
-        OutgoingStream outgoing = _oss.newStream(ep, k.sidx(), tk);
+        OutgoingStream outgoing = _oss.newStream(ep, tk);
 
         InputStream is = null;
         try {

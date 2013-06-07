@@ -39,7 +39,6 @@ public class TestIncomingStream extends AbstractTest
     private final UncancellableFuture<Void> _connCloseFuture = UncancellableFuture.create();
     private final IConnection _conn = mock(IConnection.class);
     private final StreamID _id = new StreamID(0);
-    private final SID _sid = new SID(SID.ZERO);
     private final DID _did = new DID(DID.ZERO);
     private final Prio _pri = Prio.LO;
     private final IncomingStream _stream;
@@ -47,7 +46,7 @@ public class TestIncomingStream extends AbstractTest
     private IncomingStream createIIncomingStream_(ISingleThreadedPrioritizedExecutor executor)
             throws ExStreamAlreadyExists
     {
-        return IncomingStream.getInstance_(executor, _conn, _id, _did, _sid, _pri);
+        return IncomingStream.getInstance_(executor, _conn, _id, _did, _pri);
     }
 
     public TestIncomingStream()
