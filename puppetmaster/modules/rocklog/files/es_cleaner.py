@@ -1,15 +1,15 @@
 #!/usr/bin/env python
-
 """
 Deletes all indices older than the indicated duration in days.
 
 User can provide a prefix and a date format, from which we build a
 simple index-name parser.
 
-Requires pyelasticsearch
+Requires pyelasticsearch, syslog
 """
 
 import argparse
+import syslog
 from datetime import datetime, timedelta
 import pyelasticsearch
 
@@ -48,27 +48,30 @@ def get_expired_indices(es, args):
             if idx.startswith(args.prefix) and (datetime.strptime(idx, date_format) < cutoff_date)
             ]
 
-
 def print_index(es, idx):
-    print '[dry-run] Would delete ' + idx
+    syslog.syslog('[dry-run]: Dropping ES index skipped: {0}'.format(idx))
 
 
 def delete_index(es, idx):
+    syslog.syslog('Dropping ES index: {0}'.format(idx))
     es.delete_index(idx)
 
 
 def main():
+    syslog.openlog("es_cleaner", syslog.LOG_PERROR)
     arguments = make_parser().parse_args()
 
     es = pyelasticsearch.ElasticSearch(arguments.url, arguments.timeout)
 
-    print ''
-    print 'Deleting daily indices older than {0} days.'.format(arguments.days_to_keep)
-    print ''
+    syslog.syslog('Deleting daily indices older than {0} days...'.format(arguments.days_to_keep))
 
+    idxCount = 0
     deleter = print_index if arguments.dry_run else delete_index
     for index in get_expired_indices(es, arguments):
         deleter(es, index)
+        idxCount += 1
+
+    syslog.syslog('Done. Handled {0} indices.'.format(idxCount))
 
 
 if __name__ == '__main__':
