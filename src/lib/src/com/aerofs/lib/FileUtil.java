@@ -356,7 +356,18 @@ public abstract class FileUtil
     public static void deleteOrThrowIfExist(File f) throws IOException
     {
         if (!f.delete() && f.exists()) {
-            throw new ExFileIO("couldn't delete file", f);
+            String[] children = f.list();
+            if (children != null) {
+                StringBuilder sb = new StringBuilder();
+                sb.append("couldn't delete folder {} children: ");
+                for (String child : children) {
+                     sb.append(Util.crc32(child));
+                     sb.append(',');
+                }
+                throw new ExFileIO(sb.toString(), f);
+            } else {
+                throw new ExFileIO("couldn't delete file {}", f);
+            }
         }
     }
     public static void deleteOrThrowIfExistRecursively(File f) throws IOException
