@@ -17,7 +17,7 @@ public class ExStreamInvalid extends Exception
         _reason = reason;
     }
 
-    public InvalidationReason getReason_()
+    public InvalidationReason getReason()
     {
         return _reason;
     }

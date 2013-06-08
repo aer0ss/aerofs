@@ -1,16 +1,13 @@
 package com.aerofs.proto;
 
-//removed reflection -- unneeded
-//this makes obfuscation possible
+//removed reflection. this makes obfuscation possible
 option optimize_for = LITE_RUNTIME;
 
 message PBTPHeader {
 
     enum Type {
         DATAGRAM = 0;
-
         STREAM = 13;
-
         DIAGNOSIS = 100;
 
         // TCP control messages

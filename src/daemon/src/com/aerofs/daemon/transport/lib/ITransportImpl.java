@@ -105,8 +105,8 @@ public interface ITransportImpl extends ITransport
     /**
      * Update the list of stores available via this transport
      *
-     * @param saddrsAdded list of store addresses that are newly available via this transport
-     * @param saddrsRemoved list of store addresses that are no longer available via this transport
+     * @param sidAdded list of store addresses that are newly available via this transport
+     * @param sidRemoved list of store addresses that are no longer available via this transport
      */
     void updateStores_(SID[] sidAdded, SID[] sidRemoved);
 

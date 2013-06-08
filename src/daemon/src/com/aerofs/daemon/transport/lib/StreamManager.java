@@ -143,19 +143,21 @@ public class StreamManager
     }
 
     /**
-     * @return  null if the stream is not found, true if the stream already begun,
-     *          and false otherwise; set the stream begun in the latter case
+     * @return  Whether the stream has already begun. If it has not already begun, then it is marked
+     *          as begun from now on.
+     * @throws ExStreamInvalid if the stream is not found
      */
-    public synchronized Boolean getIncomingStream(DID did, StreamID sid)
+    public synchronized boolean hasStreamBegun(DID did, StreamID sid)
+            throws ExStreamInvalid
     {
         Map<StreamID, IncomingStream> strms = _did2istrms.get(did);
         if (strms == null) {
-            return null;
+            throw new ExStreamInvalid(InvalidationReason.STREAM_NOT_FOUND);
         }
 
         IncomingStream strm = strms.get(sid);
         if (strm == null) {
-            return null;
+            throw new ExStreamInvalid(InvalidationReason.STREAM_NOT_FOUND);
         } else if (strm._begun) {
             return true;
         } else {

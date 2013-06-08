@@ -332,7 +332,7 @@ class Download
         } catch (ExRestartWithHashComputed e) {
             // retry
         } catch (ExStreamInvalid e) {
-            if (e.getReason_() == InvalidationReason.UPDATE_IN_PROGRESS) {
+            if (e.getReason() == InvalidationReason.UPDATE_IN_PROGRESS) {
                 onUpdateInProgress();
             } else {
                 // hmm, this may be more of a remote error, should the wrapping be changed?

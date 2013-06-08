@@ -1,9 +1,10 @@
 package com.aerofs.daemon.transport.lib;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.base.ex.ExFormatError;
+import com.aerofs.base.ex.ExNoResource;
+import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.base.id.DID;
-import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
-import com.aerofs.lib.event.IEvent;
 import com.aerofs.daemon.event.net.EOLinkStateChanged;
 import com.aerofs.daemon.event.net.EOStartPulse;
 import com.aerofs.daemon.event.net.EOTpStartPulse;
@@ -25,14 +26,15 @@ import com.aerofs.daemon.event.net.tx.EOMaxcastMessage;
 import com.aerofs.daemon.event.net.tx.EOTxAbortStream;
 import com.aerofs.daemon.event.net.tx.EOTxEndStream;
 import com.aerofs.daemon.event.net.tx.EOUnicastMessage;
-import com.aerofs.lib.event.Prio;
+import com.aerofs.daemon.lib.exception.ExStreamInvalid;
 import com.aerofs.daemon.lib.id.StreamID;
 import com.aerofs.daemon.transport.lib.TransportDiagnosisState.FloodEntry;
 import com.aerofs.lib.Util;
-import com.aerofs.base.ex.ExFormatError;
-import com.aerofs.base.ex.ExNoResource;
-import com.aerofs.base.ex.ExProtocolError;
+import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
+import com.aerofs.lib.event.IEvent;
+import com.aerofs.lib.event.Prio;
 import com.aerofs.proto.Transport.PBStream;
+import com.aerofs.proto.Transport.PBStream.InvalidationReason;
 import com.aerofs.proto.Transport.PBStream.Type;
 import com.aerofs.proto.Transport.PBTPHeader;
 import com.aerofs.proto.Transport.PBTransportDiagnosis;
@@ -91,7 +93,7 @@ public class TPUtil
      */
     public static byte[][] newPayload(@Nullable StreamID streamId, int seq, byte[] bs)
     {
-        PBTPHeader.Builder bdHeader = PBTPHeader.newBuilder().setType(DATAGRAM);
+        PBTPHeader.Builder bdHeader = PBTPHeader.newBuilder();
 
         if (streamId != null) {
             bdHeader.setType(STREAM)
@@ -99,6 +101,8 @@ public class TPUtil
                             .setType(Type.PAYLOAD)
                             .setStreamId(streamId.getInt())
                             .setSeqNum(seq));
+        } else {
+            bdHeader.setType(DATAGRAM);
         }
 
         return new byte[][] {
@@ -153,54 +157,54 @@ public class TPUtil
      * back to the sender
      * @throws Exception if the payload cannot be processed
      */
-    public static PBTPHeader processUnicastPayload(
-        Endpoint ep, PBTPHeader h, ByteArrayInputStream is, int wirelen,
-        IBlockingPrioritizedEventSink<IEvent> sink, StreamManager sm)
+    public static PBTPHeader processUnicastPayload(Endpoint ep, PBTPHeader h, ByteArrayInputStream is,
+            int wirelen, IBlockingPrioritizedEventSink<IEvent> sink, StreamManager sm)
         throws Exception
     {
         if (!h.hasStream()) {
+            // Datagram
             sink.enqueueThrows(new EIUnicastMessage(ep, is, wirelen), Prio.LO);
 
         } else {
+            // Stream
             PBStream wireStream = h.getStream();
-
             StreamID streamId = new StreamID(wireStream.getStreamId());
 
             assert wireStream.hasSeqNum();
             int seq = wireStream.getSeqNum();
 
-            Boolean b = sm.getIncomingStream(ep.did(), streamId);
-            if (b == null) {
-                l.info("stream " + ep.did() + ':' + streamId + " not found. send rx abort");
-                return PBTPHeader.newBuilder()
-                        .setType(STREAM)
-                        .setStream(PBStream.newBuilder()
-                                .setType(Type.RX_ABORT_STREAM)
-                                .setStreamId(streamId.getInt())
-                                .setReason(STREAM_NOT_FOUND))
-                        .build();
-            } else if (b) {
-                try {
-                    sink.enqueueThrows(new EIChunk(ep, streamId, seq, is,
-                            wirelen), Prio.LO);
-                } catch (Exception e) {
-                    l.warn("can't enqueue EIChunk. abort stream: " + Util.e(e));
-                    sm.removeIncomingStream(ep.did(), streamId);
-                    throw e;
-                }
-            } else {
-                try {
-                    sink.enqueueThrows(new EIStreamBegun(ep, streamId, is,
-                            wirelen), Prio.LO);
-                } catch (Exception e) {
-                    l.warn("can't enqueue EIStreamBegun. abort stream: " + Util.e(e));
-                    sm.removeIncomingStream(ep.did(), streamId);
-                    throw e;
-                }
+            boolean alreadyBegun;
+            try {
+                alreadyBegun = sm.hasStreamBegun(ep.did(), streamId);
+            } catch (ExStreamInvalid e) {
+                l.info("stream " + ep.did() + ':' + streamId + " invalid. send rx abort");
+                return newAbortIncomingStreamHeader(streamId, e.getReason());
+            }
+
+            EIChunk event = alreadyBegun ? new EIChunk(ep, streamId, seq, is, wirelen)
+                                         : new EIStreamBegun(ep, streamId, is, wirelen);
+            try {
+                sink.enqueueThrows(event, Prio.LO);
+            } catch (Exception e) {
+                l.warn("can't enqueue chunk. abort stream: " + Util.e(e));
+                sm.removeIncomingStream(ep.did(), streamId);
+                throw e;
             }
         }
 
         return null;
+    }
+
+    private static PBTPHeader newAbortIncomingStreamHeader(StreamID streamId,
+            InvalidationReason reason)
+    {
+        return PBTPHeader.newBuilder()
+                .setType(STREAM)
+                .setStream(PBStream.newBuilder()
+                        .setType(Type.RX_ABORT_STREAM)
+                        .setStreamId(streamId.getInt())
+                        .setReason(reason))
+                .build();
     }
 
     //
@@ -287,8 +291,7 @@ public class TPUtil
         case PING:
             return PBTransportDiagnosis.newBuilder()
                 .setType(PONG)
-                .setPong(PBPong.newBuilder()
-                        .setSeq(dg.getPing().getSeq()))
+                .setPong(PBPong.newBuilder().setSeq(dg.getPing().getSeq()))
                 .build();
 
         case PONG:

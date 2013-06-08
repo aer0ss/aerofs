@@ -24,7 +24,6 @@ import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOCID;
 import com.aerofs.testlib.AbstractTest;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;

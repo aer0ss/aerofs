@@ -1,7 +1,6 @@
 package com.aerofs.daemon.core.phy.linked.linker;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;

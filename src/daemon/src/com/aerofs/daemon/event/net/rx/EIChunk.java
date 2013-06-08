@@ -51,8 +51,7 @@ public class EIChunk implements IEvent, IInputBuffer
      * @param wirelen Number of bytes (including the <code>ITransport</code>
      * framing header
      */
-    public EIChunk(Endpoint ep, StreamID streamId, int seq, ByteArrayInputStream is,
-            int wirelen)
+    public EIChunk(Endpoint ep, StreamID streamId, int seq, ByteArrayInputStream is, int wirelen)
     {
         _ep = ep;
         _streamId = streamId;
