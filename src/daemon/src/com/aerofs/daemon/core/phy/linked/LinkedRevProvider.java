@@ -1,5 +1,25 @@
 package com.aerofs.daemon.core.phy.linked;
 
+import com.aerofs.base.Base64;
+import com.aerofs.base.BaseUtil;
+import com.aerofs.base.C;
+import com.aerofs.base.Loggers;
+import com.aerofs.base.id.SID;
+import com.aerofs.daemon.core.phy.IPhysicalRevProvider;
+import com.aerofs.lib.ExternalSorter;
+import com.aerofs.lib.LibParam.AuxFolder;
+import com.aerofs.lib.Path;
+import com.aerofs.lib.SystemUtil;
+import com.aerofs.lib.ThreadUtil;
+import com.aerofs.lib.Util;
+import com.aerofs.lib.id.KIndex;
+import com.aerofs.lib.injectable.InjectableFile;
+import com.aerofs.lib.os.OSUtil;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
+import org.slf4j.Logger;
+
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.Serializable;
 import java.nio.ByteBuffer;
@@ -11,29 +31,6 @@ import java.util.Random;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.concurrent.TimeUnit;
-
-import com.aerofs.base.Base64;
-import com.aerofs.base.BaseUtil;
-import com.aerofs.base.Loggers;
-import com.aerofs.base.id.SID;
-import com.aerofs.lib.LibParam.AuxFolder;
-import com.aerofs.lib.SystemUtil;
-import com.aerofs.lib.ThreadUtil;
-import com.aerofs.lib.os.OSUtil;
-import com.google.common.collect.Maps;
-import org.slf4j.Logger;
-
-import com.aerofs.daemon.core.phy.IPhysicalRevProvider;
-import com.aerofs.base.C;
-import com.aerofs.lib.ExternalSorter;
-import com.aerofs.lib.Path;
-import com.aerofs.lib.Util;
-import com.aerofs.lib.id.KIndex;
-import com.aerofs.lib.injectable.InjectableFile;
-import com.google.common.collect.Sets;
-import com.google.inject.Inject;
-
-import javax.annotation.Nullable;
 
 /**
  * Provider for backup revisions

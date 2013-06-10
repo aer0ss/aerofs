@@ -5,33 +5,33 @@
 package com.aerofs.daemon.core.protocol;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.base.acl.Role;
+import com.aerofs.base.ex.Exceptions;
+import com.aerofs.base.id.OID;
 import com.aerofs.daemon.core.acl.LocalACL;
-import com.aerofs.daemon.core.alias.MapAlias2Target;
 import com.aerofs.daemon.core.alias.Aliasing;
+import com.aerofs.daemon.core.alias.MapAlias2Target;
 import com.aerofs.daemon.core.download.IDownloadContext;
 import com.aerofs.daemon.core.ds.DirectoryService;
+import com.aerofs.daemon.core.ds.OA;
+import com.aerofs.daemon.core.ex.ExAborted;
 import com.aerofs.daemon.core.migration.IEmigrantDetector;
 import com.aerofs.daemon.core.net.DigestedMessage;
 import com.aerofs.daemon.core.net.IncomingStreams;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.FileUtil;
-import com.aerofs.base.acl.Role;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.Version;
-import com.aerofs.daemon.core.ex.ExAborted;
-import com.aerofs.lib.id.SOCID;
-import com.google.inject.Inject;
-import org.slf4j.Logger;
-import com.aerofs.daemon.core.ds.OA;
-import com.aerofs.base.ex.Exceptions;
 import com.aerofs.lib.id.CID;
-import com.aerofs.base.id.OID;
+import com.aerofs.lib.id.SOCID;
 import com.aerofs.lib.id.SOCKID;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.proto.Core.PBGetComReply;
 import com.aerofs.proto.Core.PBMeta;
+import com.google.inject.Inject;
+import org.slf4j.Logger;
 
 public class GetComponentReply
 {

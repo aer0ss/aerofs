@@ -5,18 +5,18 @@
 package com.aerofs.daemon.core.download.dependence;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.daemon.core.download.IDownloadContext;
+import com.aerofs.daemon.core.download.dependence.DependencyEdge.DependencyType;
 import com.aerofs.daemon.core.ds.DirectoryService;
+import com.aerofs.daemon.core.protocol.MetaDiff;
 import com.aerofs.daemon.core.protocol.ReceiveAndApplyUpdate;
 import com.aerofs.daemon.core.protocol.ReceiveAndApplyUpdate.CausalityResult;
-import com.aerofs.daemon.core.download.dependence.DependencyEdge.DependencyType;
-import com.aerofs.daemon.core.protocol.MetaDiff;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.Version;
-import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.lib.id.SOCID;
 import com.aerofs.lib.id.SOCKID;
 import com.aerofs.lib.id.SOID;

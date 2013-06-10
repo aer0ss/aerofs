@@ -23,7 +23,6 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.ex.ExDeviceOffline;
 import com.aerofs.lib.id.SIndex;
-import com.aerofs.lib.rocklog.RockLog;
 import com.aerofs.lib.sched.ExponentialRetry;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -56,11 +55,10 @@ public class DevicePresence implements IDumpStatMisc
     private final ExponentialRetry _cer;
     private final MapSIndex2Store _sidx2s;
     private final IMapSIndex2SID _sidx2sid;
-    private final RockLog _rockLog;
 
     @Inject
     public DevicePresence(TC tc, CoreScheduler sched, Transports tps, CoreExponentialRetry cer,
-            MapSIndex2Store sidx2s, IMapSIndex2SID sidx2sid, RockLog rockLog)
+            MapSIndex2Store sidx2s, IMapSIndex2SID sidx2sid)
     {
         _tc = tc;
         _sched = sched;
@@ -68,7 +66,6 @@ public class DevicePresence implements IDumpStatMisc
         _cer = cer;
         _sidx2s = sidx2s;
         _sidx2sid = sidx2sid;
-        _rockLog = rockLog;
     }
 
     public void addListener_(IDevicePresenceListener listener)

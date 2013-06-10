@@ -1,8 +1,10 @@
 package com.aerofs.lib;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.base.Preconditions.checkState;
+import com.aerofs.base.C;
+import com.google.common.base.Preconditions;
+import com.google.common.collect.Lists;
 
+import javax.annotation.Nonnull;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.Closeable;
@@ -20,11 +22,8 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.PriorityQueue;
 
-import javax.annotation.Nonnull;
-
-import com.aerofs.base.C;
-import com.google.common.base.Preconditions;
-import com.google.common.collect.Lists;
+import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
 
 /**
  * Sort a data set that may not completely fit in memory at one time.
@@ -42,11 +41,6 @@ public class ExternalSorter<T> implements Closeable
     static class RuntimeIOException extends RuntimeException
     {
         private static final long serialVersionUID = 1L;
-
-        public RuntimeIOException(String message, IOException cause)
-        {
-            super(message, Preconditions.checkNotNull(cause));
-        }
 
         public RuntimeIOException(IOException cause)
         {

@@ -11,7 +11,6 @@ import com.google.common.collect.Maps;
 import com.google.gson.Gson;
 
 import java.text.SimpleDateFormat;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -49,7 +48,6 @@ public class Defect
     private static final String MESSAGE_KEY = "@message";
     private static final String EXCEPTION_KEY = "exception";
     private static final String PRIORITY_KEY = "priority";
-    private static final String TAGS_KEY = "@tags";
 
     public enum Priority {Auto, User}
 

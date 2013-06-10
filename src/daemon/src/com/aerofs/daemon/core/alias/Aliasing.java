@@ -2,28 +2,30 @@ package com.aerofs.daemon.core.alias;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.OID;
-import com.aerofs.daemon.core.VersionUpdater;
 import com.aerofs.daemon.core.NativeVersionControl;
+import com.aerofs.daemon.core.VersionUpdater;
 import com.aerofs.daemon.core.download.IDownloadContext;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
+import com.aerofs.daemon.core.protocol.ReceiveAndApplyUpdate;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
-import com.google.inject.Inject;
-
-
-import com.aerofs.daemon.core.protocol.ReceiveAndApplyUpdate;
-import com.aerofs.proto.Core.PBMeta;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.Version;
-import com.aerofs.lib.id.*;
-
+import com.aerofs.lib.id.CID;
+import com.aerofs.lib.id.KIndex;
+import com.aerofs.lib.id.SIndex;
+import com.aerofs.lib.id.SOCID;
+import com.aerofs.lib.id.SOCKID;
+import com.aerofs.lib.id.SOID;
+import com.aerofs.proto.Core.PBMeta;
+import com.google.inject.Inject;
 import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 import java.sql.SQLException;
 
-import static com.aerofs.daemon.core.protocol.ReceiveAndApplyUpdate.*;
+import static com.aerofs.daemon.core.protocol.ReceiveAndApplyUpdate.CausalityResult;
 
 /**
  * Implements aliasing of objects to resolve name conflict.

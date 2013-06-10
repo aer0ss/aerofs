@@ -60,7 +60,6 @@ import static com.aerofs.lib.Util.deleteOldHeapDumps;
 import static com.aerofs.lib.Util.e;
 import static com.aerofs.lib.Util.join;
 import static com.aerofs.lib.cfg.Cfg.absRTRoot;
-import static com.aerofs.lib.cfg.CfgDatabase.Key.ROOT;
 
 public final class SVClient
 {
