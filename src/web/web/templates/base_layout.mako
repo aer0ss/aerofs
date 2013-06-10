@@ -10,12 +10,13 @@
     <link rel="shortcut icon" href="${request.static_path('web:static/img/favicon.ico')}">
 
     ## stylesheets
+    ##
+    ## N.B. to support private deployment, all static assets must be hosted
+    ## locally as opposed to on 3rd-party servers.
     <link href="${request.static_path('web:static/css/google-open-sans.css')}" rel='stylesheet' type='text/css'>
-    ## since we've changed the css file, use a random param to force the browser to reload the css.
-    ## TODO (WW) remove them eventually
-    <link href="${request.static_path('web:static/css/bootstrap.css')}?random=123456" rel="stylesheet">
-    <link href="${request.static_path('web:static/css/responsive.css')}?random=123456" rel="stylesheet">
-    <link href="${request.static_path('web:static/css/aerofs.css')}?random=123456" rel="stylesheet">
+    <link href="${request.static_path('web:static/css/bootstrap.css')}" rel="stylesheet">
+    <link href="${request.static_path('web:static/css/responsive.css')}" rel="stylesheet">
+    <link href="${request.static_path('web:static/css/aerofs.css')}" rel="stylesheet">
 
     <%block name="css"/>
 
@@ -94,6 +95,8 @@
     ##==================================================
     ##Placed at the end of the document so the pages load faster
 
+    ## N.B. to support private deployment, all static assets must be hosted
+    ## locally as opposed to on 3rd-party servers.
     <script src="${request.static_path('web:static/js/jquery.min.js')}"></script>
     <script src="${request.static_path('web:static/js/jquery.easing.1.3.js')}"></script>
     <script src="${request.static_path('web:static/js/bootstrap.min.js')}"></script>
