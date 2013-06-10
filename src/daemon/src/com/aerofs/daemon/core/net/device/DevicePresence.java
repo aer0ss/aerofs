@@ -155,8 +155,6 @@ public class DevicePresence implements IDumpStatMisc
 
         l.info("d:{} t:{} start pulse", did, tp);
 
-        _rockLog.newMetrics().addMetric("net.pulse." + tp + ".count", 1).send();
-
         boolean wasFormerlyAvailable = dev.isAvailable_();
         removeDIDFromStores_(did, dev.pulseStarted_(tp));
         notifyListenersOnDeviceOfflineEdge_(dev.did(), wasFormerlyAvailable, dev.isAvailable_());

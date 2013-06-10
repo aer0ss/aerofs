@@ -11,7 +11,6 @@ from retrace_client import RetraceClient
 
 ELASTIC_SEARCH_URL = 'http://localhost:9200'
 CARBON_ADDRESS = ('metrics.aerofs.com', 2003)
-HOSTED_GRAPHITE_ADDRESS = ('carbon.hostedgraphite.com', 2003)
 
 EXPECTED_CONTENT_TYPE = 'application/json'
 MESSAGE_KEY = '@message'
@@ -30,10 +29,6 @@ es = ElasticSearch('http://localhost:9200/')
 carbon = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 carbon.connect(CARBON_ADDRESS)
 carbon.settimeout(.005)
-
-hosted_graphite = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-hosted_graphite.connect(HOSTED_GRAPHITE_ADDRESS)
-hosted_graphite.settimeout(.005)
 
 class InvalidContentType(Exception):
     pass
@@ -71,40 +66,11 @@ def defects():
         app.logger.error("fail request err:%s" % (e))
         raise
 
+# TODO: remove this path. Keeping it here for clients that have not yet updated,
+# no sense in turning a metrics report _into_ a defect by refusing it at the web server.
 @app.route('/metrics', methods=['POST'])
 def metrics():
-    try:
-        check_valid_request(request)
-    except InvalidContentType as e:
-        return error_response(415, 'not JSON')
-    try:
-
-        #
-        # take the original data and save it to graphite
-        #
-
-        metric = request.json
-
-        save_to_graphite(metric)
-
-        #
-        # move all the contents of the contained "metrics" json object
-        # into the top-level json object
-        #
-
-        metrics = metric.pop(METRICS_KEY, [])
-        for metric_key, metric_value in metrics.items():
-            metric[metric_key] = metric_value
-
-        #
-        # now save this flattened object to elasticsearch
-        #
-        save_to_elasticsearch('metric', metric)
-
-        return success_response()
-    except Exception as e:
-        app.logger.error("fail request err:%s" % e)
-        raise
+    return success_response()
 
 def check_valid_request(request):
     content_type = request.headers['Content-Type']
@@ -122,30 +88,6 @@ def make_index(index_prefix):
     now = datetime.datetime.utcnow()
     index_name = index_prefix + '-' + now.strftime('%Y-%m-%d')
     return index_name
-
-def save_to_graphite(request_body):
-    try:
-        # common timestamp used for all metrics sent to graphite
-        timestamp = request_body[TIMESTAMP_KEY]
-
-        # an example of a date that comes from the java side: 2013-02-06T15:18:35.556-0800
-        # NOTE: we send all times to RockLog in UTC
-        # date format: %Y-%m-%dT%H:%M:%S (we can't support ms and strftime doesn't understand tz)
-
-        utc_offset = timestamp[-4:]
-        if utc_offset != "0000":
-            raise RuntimeError("timestamp not utc o:" + utc_offset)
-
-        epoch = int(time.mktime(time.strptime(timestamp[:-9], "%Y-%m-%dT%H:%M:%S")))
-
-        # build out the string to send to graphite
-        metrics = request_body[METRICS_KEY]
-        #graphite_data = ''.join(["%s %s %s\n" % (metric, value, epoch) for metric, value in metrics.items()])
-        #carbon.sendall(graphite_data)
-        graphite_data = ''.join(["%s %s %s\n" % ("5c5c66fc-6773-4008-a488-c889bdb60d9a." + metric, value, epoch) for metric, value in metrics.items()])
-        hosted_graphite.sendall(graphite_data)
-    except Exception as e:
-        app.logger.error("fail socket err:%s" % e)
 
 def error_response(code, msg):
     resp = jsonify({'ok': False, 'status': code, 'message': msg})

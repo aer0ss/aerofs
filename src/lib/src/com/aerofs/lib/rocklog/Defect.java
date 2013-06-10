@@ -5,12 +5,20 @@
 package com.aerofs.lib.rocklog;
 
 import com.aerofs.lib.cfg.InjectableCfg;
+import com.aerofs.lib.os.OSUtil;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.gson.Gson;
 
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.TimeZone;
+
+import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.collect.Maps.newHashMap;
 
 /**
  * Represents a defect that will be sent to the RockLog server.
@@ -31,8 +39,12 @@ import java.util.List;
  * }
 
  */
-public class Defect extends RockLogMessage
+public class Defect
 {
+    private final HashMap<String, Object> _data = newHashMap();
+    private final RockLog _rockLog;
+
+    private static final String DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSSZ";
     private static final String NAME_KEY = "name";
     private static final String MESSAGE_KEY = "@message";
     private static final String EXCEPTION_KEY = "exception";
@@ -43,10 +55,13 @@ public class Defect extends RockLogMessage
 
     Defect(RockLog rockLog, InjectableCfg cfg, String name)
     {
-        super(rockLog, cfg);
-
+        _rockLog = checkNotNull(rockLog);
         // TODO (GS): add cfg DB
 
+        addTimestamp();
+        addVersion(cfg);
+        addDeviceInfo(cfg);
+        addOSInfo();
         setPriority(Priority.Auto);
 
         addData(NAME_KEY, name);
@@ -70,41 +85,30 @@ public class Defect extends RockLogMessage
         return this;
     }
 
-    public Defect tag(String... tags)
-    {
-        addData(TAGS_KEY, Arrays.asList(tags));
-        return this;
-    }
-
     /**
-     * Add custom structured data to the defect
-     *
-     * @param key a key identifying this field. It is recommended that the name have some unique
-     * prefix identifying the part of the code that is using it, like "linker.foobar".
-     *
-     * @param value anything that can be parsed as JSON by json-simple. (String, Number, Boolean,
-     * List, Map, or null).
+     * Send the message to RockLog asynchronously.
+     * Note: do not make a sync (blocking) version of this call, to avoid performance costs when
+     * RockLog is not available (ie: in deployed environments)
      */
-    @Override
-    public Defect addData(String key, Object value)
+    public void send()
     {
-        super.addData(key, value);
-
-        return this;
+        _rockLog.send(this);
     }
 
-    @Override
     String getURLPath()
     {
         return "/defects";
     }
 
-    @Override
-    public void send()
+    Defect addData(String key, Object value)
     {
-        // Important: we need this method for testing, otherwise mocked defects would use the real
-        // send method from the parent class
-        super.send();
+        _data.put(key, value);
+        return this;
+    }
+
+    String getJSON()
+    {
+        return new Gson().toJson(_data);
     }
 
     /**
@@ -147,5 +151,42 @@ public class Defect extends RockLogMessage
         result.put("cause", encodeException(e.getCause()));
 
         return result;
+    }
+
+    private void addTimestamp()
+    {
+        //
+        // Set the timestamp field as early as possible
+        // Note: some of our json fields start with a '@' to follow the logstash format
+        // see: https://github.com/logstash/logstash/wiki/logstash%27s-internal-message-format
+        // Kibana expects to find those fields (especially @timestamp)
+        //
+
+        SimpleDateFormat sdf = new SimpleDateFormat(DATE_FORMAT);
+        sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
+
+        _data.put("@timestamp", sdf.format(new Date()));
+    }
+
+    private void addVersion(InjectableCfg cfg)
+    {
+        _data.put("version", cfg.ver());
+    }
+
+    private void addDeviceInfo(InjectableCfg cfg)
+    {
+        if (cfg.inited()) {
+            _data.put("user_id", cfg.user().getString());
+            _data.put("did", cfg.did().toStringFormal());
+        }
+    }
+
+    private void addOSInfo()
+    {
+        if (OSUtil.get() != null) {
+            _data.put("os_name", OSUtil.get().getFullOSName());
+            _data.put("os_family", OSUtil.get().getOSFamily().getString());
+            _data.put("aerofs_arch", OSUtil.getOSArch().toString());
+        }
     }
 }
