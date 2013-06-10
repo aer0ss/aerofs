@@ -56,7 +56,6 @@ node "z.arrowfs.org" inherits default {
     "web url http://www.aerofs.com",
     "sv url https://sv.aerofs.com/sv_beta/sv",
     "sp url https://sp.aerofs.com/sp",
-    "my.aerofs.com url https://my.aerofs.com",
     "verkehr port verkehr.aerofs.com 443",
     "zephyr checkzephyr zephyr.aerofs.com 443",
     "x port x.aerofs.com 443",
