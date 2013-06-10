@@ -60,29 +60,24 @@ public class RockLog
         return new Defect(this, _cfg, name);
     }
 
-    public Metrics newMetrics()
-    {
-        return new Metrics(this, _cfg);
-    }
-
-    void send(final RockLogMessage message)
+    void send(final Defect defect)
     {
         new Thread(new Runnable()
         {
             @Override
             public void run()
             {
-                rpc(message);
+                rpc(defect);
             }
         },"rocklog-send").start();
     }
 
-    boolean rpc(RockLogMessage message)
+    boolean rpc(Defect defect)
     {
         try {
-            String url = _rocklogUrl + message.getURLPath();
+            String url = _rocklogUrl + defect.getURLPath();
             HttpURLConnection rocklogConnection = getRockLogConnection(url);
-            BaseUtil.httpRequest(rocklogConnection, message.getJSON());
+            BaseUtil.httpRequest(rocklogConnection, defect.getJSON());
             return true;
         } catch (Throwable e) {
             l.warn("fail send RockLog message: {}", e.toString()); // we don't want the stack trace
