@@ -60,6 +60,7 @@ class rocklog {
         command => "/usr/bin/es_cleaner.py -u http://localhost:9200 -d 30",
         user    => "root",
         hour    => 1,
+        minute  => 0,
         require => File["/usr/bin/es_cleaner.py"]
     }
 
