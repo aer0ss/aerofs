@@ -25,18 +25,24 @@ static PyObject* HashError;
   */
 static PyObject* scrypt(PyObject* self, PyObject* args)
 {
+    // Note: MSVC 2010 doesn't support C99, so please stick to C89 and declare all your variables
+    // at the top
     char* passwd;
     char* salt;
-    PyArg_ParseTuple(args, ARGFORMAT, &passwd, &salt);
-    size_t passwdlen = strlen(passwd);
-    size_t saltlen = strlen(salt);
-    uint64_t N = SCRYPTN;
-    uint32_t r = SCRYPTR;
-    uint32_t p = SCRYPTP;
-    size_t outbuflen = BUFFERLENGTH;
-    char outbuf[outbuflen];
+    size_t passwdlen, saltlen;
+    uint64_t N;
+    uint32_t r, p;
+    char outbuf[BUFFERLENGTH];
+    int retVal;
 
-    int retVal = crypto_scrypt(passwd, passwdlen, salt, saltlen, N, r, p, outbuf, outbuflen);
+    PyArg_ParseTuple(args, ARGFORMAT, &passwd, &salt);
+    passwdlen = strlen(passwd);
+    saltlen = strlen(salt);
+    N = SCRYPTN;
+    r = SCRYPTR;
+    p = SCRYPTP;
+
+    retVal = crypto_scrypt(passwd, passwdlen, salt, saltlen, N, r, p, outbuf, BUFFERLENGTH);
 
     // raise an exception if retVal is nonzero (indicating the hash function failed)
     if (retVal != 0) {
@@ -44,7 +50,7 @@ static PyObject* scrypt(PyObject* self, PyObject* args)
         return NULL;
     }
 
-    return Py_BuildValue(RETURNVALFORMAT, outbuf, outbuflen);
+    return Py_BuildValue(RETURNVALFORMAT, outbuf, BUFFERLENGTH);
 }
 
 static PyMethodDef libScryptPy_methods[] = {

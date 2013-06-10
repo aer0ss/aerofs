@@ -24,6 +24,12 @@ contains(QMAKE_HOST.arch, i686):{
     ARCH=""
 }
 
+win32 {
+    INCLUDEPATH += "C:/Python27/include"
+    LIBS += -LC:/Python27/libs -L"$$PWD/../3rd_party/lib/win32/"
+    LIBS += -llibeay32
+}
+
 macx {
     # Those flags set what version of the OS X SDK we want to build against
     SDKROOT = /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.6.sdk/
