@@ -283,7 +283,10 @@ public abstract class Updater
         dir.mkdirIgnoreError(); // start by trying to create the temporary download folder
 
         try {
-            URLConnection conn = newAWSConnection(new URL(new URL(installerUrl), filename));
+            // N.B. since we intended for installerUrl to be a path to a directory of installers,
+            //   we need to add a trailing slash.
+            // This affected private deployment where installerURL is "https://*/path_to_installers"
+            URLConnection conn = newAWSConnection(new URL(new URL(installerUrl + '/'), filename));
             conn.setReadTimeout((int) Cfg.timeout());
 
             int updateFileExpectedSize = conn.getContentLength();
