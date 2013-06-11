@@ -157,16 +157,10 @@ public class UIUtil
     public static void scheduleUnlinkAndExit()
             throws Exception
     {
-        if (!L.isMultiuser()) {
-            SPBlockingClient.Factory fact = new SPBlockingClient.Factory();
-            SPBlockingClient sp = fact.create_(Cfg.user());
-            sp.signInRemote();
-            sp.unlinkDevice(Cfg.did().toPB(), false);
-        } else {
-            // Currently only the single user unlink is supported.
-            // TODO support multi user unlink.
-            throw new UnsupportedOperationException();
-        }
+        SPBlockingClient.Factory fact = new SPBlockingClient.Factory();
+        SPBlockingClient sp = fact.create_(Cfg.user());
+        sp.signInRemote();
+        sp.unlinkDevice(Cfg.did().toPB(), false);
     }
 
     private static String getUserFriendlyID(PBSOCID pbsocid)
