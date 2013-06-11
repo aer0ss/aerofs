@@ -9,6 +9,7 @@ import com.aerofs.lib.ritual.IRitualClientProvider;
 import com.aerofs.lib.ritual.RitualBlockingClient;
 import com.aerofs.lib.ritual.RitualClient;
 import com.aerofs.lib.ritual.RitualClientProvider;
+import com.aerofs.ritual_notification.RitualNotificationClient;
 import com.aerofs.lib.rocklog.RockLog;
 import com.aerofs.ui.update.Updater;
 

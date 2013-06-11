@@ -5,7 +5,7 @@
 package com.aerofs.daemon.core.status;
 
 import com.aerofs.base.id.SID;
-import com.aerofs.daemon.core.net.ITransferStateListener.Value;
+import com.aerofs.daemon.core.transfers.ITransferStateListener.TransferProgress;
 import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.LibParam;
@@ -78,7 +78,7 @@ public class TestPathFlagAggregator extends AbstractTest
         Path path = Path.fromString(rootSID, p);
         SOCID socid = new SOCID(soid, CID.CONTENT);
 
-        tsa.changeFlagsOnTransferNotification_(socid, path, new Value(1, 100), d);
+        tsa.changeFlagsOnTransferNotification_(socid, path, new TransferProgress(1, 100), d);
     }
 
     void simulateTransferProgress(int d, SOID soid, String p, int percent) throws Exception
@@ -89,7 +89,7 @@ public class TestPathFlagAggregator extends AbstractTest
         Path path = Path.fromString(rootSID, p);
         SOCID socid = new SOCID(soid, CID.CONTENT);
 
-        tsa.changeFlagsOnTransferNotification_(socid, path, new Value(percent, 100), d);
+        tsa.changeFlagsOnTransferNotification_(socid, path, new TransferProgress(percent, 100), d);
     }
 
     void simulateTransferEnd(int d, SOID soid, @Nullable String p) throws Exception
@@ -99,7 +99,7 @@ public class TestPathFlagAggregator extends AbstractTest
         Path path = p == null ? null : Path.fromString(rootSID, p);
         SOCID socid = new SOCID(soid, CID.CONTENT);
 
-        tsa.changeFlagsOnTransferNotification_(socid, path, new Value(100, 100), d);
+        tsa.changeFlagsOnTransferNotification_(socid, path, new TransferProgress(100, 100), d);
     }
 
     private void assertStateEquals(int state, String... pathList)

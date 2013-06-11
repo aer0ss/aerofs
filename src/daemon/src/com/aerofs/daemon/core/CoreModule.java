@@ -55,13 +55,16 @@ import com.google.inject.Provides;
 import com.google.inject.internal.Scoping;
 import com.google.inject.multibindings.Multibinder;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
+import org.jboss.netty.channel.socket.ServerSocketChannelFactory;
 
 public class CoreModule extends AbstractModule
 {
+    private final ServerSocketChannelFactory _serverChannelFactory;
     private final ClientSocketChannelFactory _clientChannelFactory;
 
-    public CoreModule(ClientSocketChannelFactory clientChannelFactory)
+    public CoreModule(ServerSocketChannelFactory serverChannelFactory, ClientSocketChannelFactory clientChannelFactory)
     {
+        _serverChannelFactory = serverChannelFactory;
         _clientChannelFactory = clientChannelFactory;
     }
 
@@ -116,6 +119,12 @@ public class CoreModule extends AbstractModule
     public CoreIMCExecutor provideCoreIMCExecutor(CoreQueue q)
     {
         return new CoreIMCExecutor(new QueueBasedIMCExecutor(q));
+    }
+
+    @Provides
+    public ServerSocketChannelFactory provideServerSocketChannelFactory()
+    {
+        return _serverChannelFactory;
     }
 
     @Provides

@@ -19,7 +19,7 @@ import com.aerofs.daemon.core.net.Metrics;
 import com.aerofs.daemon.core.net.NSL;
 import com.aerofs.daemon.core.net.OutgoingStreams;
 import com.aerofs.daemon.core.net.OutgoingStreams.OutgoingStream;
-import com.aerofs.daemon.core.net.UploadState;
+import com.aerofs.daemon.core.transfers.upload.UploadState;
 import com.aerofs.daemon.core.phy.IPhysicalFile;
 import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.Token;

@@ -29,7 +29,7 @@ import com.aerofs.proto.Ritual.GetActivitiesReply;
 import com.aerofs.proto.Ritual.GetActivitiesReply.PBActivity;
 import com.aerofs.proto.RitualNotifications.PBNotification;
 import com.aerofs.proto.RitualNotifications.PBNotification.Type;
-import com.aerofs.ui.RitualNotificationClient.IListener;
+import com.aerofs.ritual_notification.IRitualNotificationListener;
 import com.aerofs.ui.UI;
 import com.aerofs.ui.UIUtil;
 import com.google.common.base.Preconditions;
@@ -127,7 +127,7 @@ public abstract class AbstractTrayMenu implements ITrayMenu, ITrayMenuComponentL
             _indexingTrayMenuSection = null;
         }
 
-        UI.rnc().addListener(new IListener() {
+        UI.rnc().addListener(new IRitualNotificationListener() {
             @Override
             public void onNotificationReceived(PBNotification pb)
             {
@@ -138,6 +138,12 @@ public abstract class AbstractTrayMenu implements ITrayMenu, ITrayMenuComponentL
                 default:
                     break;
                 }
+            }
+
+            @Override
+            public void onNotificationChannelBroken()
+            {
+                // noop
             }
         });
     }

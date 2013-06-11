@@ -5,8 +5,8 @@ import com.aerofs.lib.id.SOCID;
 import com.aerofs.proto.RitualNotifications.PBNotification;
 import com.aerofs.proto.RitualNotifications.PBNotification.Type;
 import com.aerofs.proto.RitualNotifications.PBTransferEvent;
-import com.aerofs.ui.RitualNotificationClient;
-import com.aerofs.ui.RitualNotificationClient.IListener;
+import com.aerofs.ritual_notification.IRitualNotificationListener;
+import com.aerofs.ritual_notification.RitualNotificationClient;
 import com.aerofs.ui.UI;
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Lists;
@@ -26,9 +26,6 @@ import java.util.List;
  */
 public class TransferState
 {
-    private final RitualNotificationClient _rnc;
-    private final IListener _updater;
-
     private final Table<SOCID, DID, PBTransferEvent> _states;
     private final List<ITransferStateChangedListener> _listeners;
 
@@ -37,8 +34,7 @@ public class TransferState
         _states = HashBasedTable.create();
         _listeners = Lists.newArrayList();
 
-        _updater = new IListener()
-        {
+        rnc.addListener(new IRitualNotificationListener() {
             @Override
             public void onNotificationReceived(final PBNotification pb)
             {
@@ -47,29 +43,42 @@ public class TransferState
                     @Override
                     public void run()
                     {
-                        update(pb);
+                        updateTransfers(pb);
                     }
                 });
             }
-        };
 
-        _rnc = rnc;
-        _rnc.addListener(_updater);
+            @Override
+            public void onNotificationChannelBroken()
+            {
+                UI.get().asyncExec(new Runnable()
+                {
+                    @Override
+                    public void run()
+                    {
+                        clearTransfers();
+                    }
+                });
+            }
+        });
     }
 
     /**
      * Nop if the notification type is not download or upload
      * Precondition: we must be on the GUI thread
      */
-    private synchronized void update(PBNotification pb)
+    private synchronized void updateTransfers(PBNotification pb)
     {
         if (pb.getType() == Type.TRANSFER) {
             updateTransferState_(pb.getTransfer());
             notifyListeners();
-        } else if (pb.getType() == Type.CLEAR_TRANSFERS) {
-            _states.clear();
-            notifyListeners();
         }
+    }
+
+    private synchronized void clearTransfers()
+    {
+        _states.clear();
+        notifyListeners();
     }
 
     private void updateTransferState_(PBTransferEvent pb)

@@ -5,12 +5,11 @@
 package com.aerofs.daemon.core.first_launch;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.daemon.core.notification.RitualNotificationServer;
-import com.aerofs.proto.RitualNotifications.PBIndexingProgress;
-import com.aerofs.proto.RitualNotifications.PBNotification;
-import com.aerofs.proto.RitualNotifications.PBNotification.Type;
+import com.aerofs.ritual_notification.RitualNotificationServer;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
+
+import static com.aerofs.daemon.core.notification.Notifications.newIndexingProgressNotification;
 
 /**
  * Allows the Scanner to report progress during the first scan (i.e. initial indexing)
@@ -52,12 +51,6 @@ public class ScanProgressReporter
 
         l.debug("progress: {} -> {} / {}", files, _files, _folders);
 
-        // TODO: batch notifications?
-        _rns.sendEvent_(PBNotification.newBuilder()
-                .setType(Type.INDEXING_PROGRESS)
-                .setIndexingProgress(PBIndexingProgress.newBuilder()
-                        .setFiles(_files)
-                        .setFolders(_folders))
-                .build());
+        _rns.getRitualNotifier().sendNotification(newIndexingProgressNotification(_files, _folders)); // TODO: batch notfications?
     }
 }

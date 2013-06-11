@@ -1,7 +1,5 @@
 package com.aerofs.ui;
 
-import java.util.ArrayList;
-
 import com.aerofs.base.C;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.S;
@@ -14,8 +12,10 @@ import com.aerofs.proto.Common.PBPath;
 import com.aerofs.proto.RitualNotifications.PBNotification;
 import com.aerofs.proto.RitualNotifications.PBNotification.Type;
 import com.aerofs.proto.RitualNotifications.PBTransferEvent;
+import com.aerofs.ritual_notification.IRitualNotificationListener;
 import com.aerofs.ui.IUI.MessageType;
-import com.aerofs.ui.RitualNotificationClient.IListener;
+
+import java.util.ArrayList;
 
 /**
  * This is the class responsible for displaying Growl notifications every time a file gets updated
@@ -27,11 +27,17 @@ public class FileChangeNotification
 
     private final ArrayList<PBPath> _recents = new ArrayList<PBPath>();
 
-    private final IListener _l = new IListener() {
+    private final IRitualNotificationListener _l = new IRitualNotificationListener() {
         @Override
         public void onNotificationReceived(PBNotification pb)
         {
             if (pb.getType().equals(Type.TRANSFER)) received(pb.getTransfer());
+        }
+
+        @Override
+        public void onNotificationChannelBroken()
+        {
+            // noop
         }
     };
 

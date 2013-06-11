@@ -1,31 +1,30 @@
 package com.aerofs.daemon.core;
 
+import com.aerofs.daemon.IModule;
+import com.aerofs.daemon.core.acl.ACLNotificationSubscriber;
 import com.aerofs.daemon.core.db.CoreDBSetup;
 import com.aerofs.daemon.core.first_launch.FirstLaunch;
 import com.aerofs.daemon.core.launch_tasks.DaemonLaunchTasks;
-import com.aerofs.daemon.core.notification.RitualNotificationWirings;
-import com.aerofs.daemon.core.phy.ScanCompletionCallback;
-import com.aerofs.daemon.core.syncstatus.SyncStatusNotificationSubscriber;
-import com.aerofs.daemon.core.tc.Cat;
-import com.aerofs.daemon.core.tc.TC.TCB;
-import com.aerofs.daemon.core.tc.Token;
-import com.aerofs.daemon.core.verkehr.VerkehrNotificationSubscriber;
-import com.aerofs.lib.SystemUtil;
-import com.google.inject.Inject;
-
-import com.aerofs.daemon.IModule;
-import com.aerofs.daemon.core.acl.ACLNotificationSubscriber;
-import com.aerofs.daemon.core.phy.ILinker;
 import com.aerofs.daemon.core.migration.ImmigrantVersionControl;
 import com.aerofs.daemon.core.net.Transports;
 import com.aerofs.daemon.core.net.link.LinkStateService;
-import com.aerofs.daemon.core.notification.RitualNotificationServer;
+import com.aerofs.daemon.core.notification.NotificationService;
+import com.aerofs.daemon.core.phy.ILinker;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
+import com.aerofs.daemon.core.phy.ScanCompletionCallback;
 import com.aerofs.daemon.core.store.IStores;
+import com.aerofs.daemon.core.syncstatus.SyncStatusNotificationSubscriber;
+import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.TC;
+import com.aerofs.daemon.core.tc.TC.TCB;
+import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.core.update.DaemonPostUpdateTasks;
+import com.aerofs.daemon.core.verkehr.VerkehrNotificationSubscriber;
 import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
 import com.aerofs.daemon.lib.db.CoreDBCW;
+import com.aerofs.lib.SystemUtil;
+import com.aerofs.ritual_notification.RitualNotificationServer;
+import com.google.inject.Inject;
 
 
 public class Core implements IModule
@@ -44,8 +43,8 @@ public class Core implements IModule
     private final SyncStatusNotificationSubscriber _sssub;
     private final UnicastInputOutputStack _stack;
     private final ILinker _linker;
-    private final RitualNotificationWirings _notifierWirings;
-    private final RitualNotificationServer _notifier;
+    private final NotificationService _ns;
+    private final RitualNotificationServer _rns;
     private final DaemonPostUpdateTasks _dput;
     private final CoreDBSetup _dbsetup;
     private final CoreProgressWatcher _cpw;
@@ -66,8 +65,8 @@ public class Core implements IModule
             ACLNotificationSubscriber aclsub,
             SyncStatusNotificationSubscriber sssub,
             UnicastInputOutputStack stack,
-            RitualNotificationServer notifier,
-            RitualNotificationWirings notifierWirings,
+            RitualNotificationServer rns,
+            NotificationService ns,
             ILinker linker,
             DaemonPostUpdateTasks dput,
             CoreDBSetup dbsetup,
@@ -90,8 +89,8 @@ public class Core implements IModule
         _sssub = sssub;
         _stack = stack;
         _linker = linker;
-        _notifier = notifier;
-        _notifierWirings = notifierWirings;
+        _rns = rns;
+        _ns = ns;
         _dput = dput;
         _dbsetup = dbsetup;
         _cpw = cpw;
@@ -122,8 +121,7 @@ public class Core implements IModule
         _stack.init_();
         _aclsub.init_();
         _sssub.init_();
-        _notifierWirings.init_();
-        _notifier.init_();
+        _ns.init_();
     }
 
     // It's a hack. FIXME using injection
@@ -141,7 +139,7 @@ public class Core implements IModule
         _cpw.start_();
 
         // start Ritual notifications as we use them to report progress
-        _notifier.start_();
+        _rns.start_();
 
         if (_fl.onFirstLaunch_(new CoreScanCompletionCallback())) {
             _tc.start_();

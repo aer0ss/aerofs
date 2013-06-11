@@ -11,7 +11,6 @@ import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ds.OA.Type;
 import com.aerofs.daemon.core.ds.ObjectSurgeon;
-import com.aerofs.daemon.core.notification.RitualNotificationServer;
 import com.aerofs.daemon.core.object.ObjectCreator;
 import com.aerofs.daemon.core.object.ObjectDeleter;
 import com.aerofs.daemon.core.phy.PhysicalOp;
@@ -24,6 +23,8 @@ import com.aerofs.lib.cfg.CfgRootSID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.os.CfgOS;
+import com.aerofs.ritual_notification.RitualNotifier;
+import com.aerofs.ritual_notification.RitualNotificationServer;
 import com.aerofs.testlib.AbstractTest;
 import com.google.common.collect.ImmutableSet;
 import org.junit.Before;
@@ -53,6 +54,7 @@ public class TestSingleuserStoreJoiner extends AbstractTest
     @Mock IMapSIndex2SID sidx2sid;
     @Mock CfgOS cfgOS;
     @Mock PendingRootDatabase prdb;
+    @Mock RitualNotifier _ritualNotifier;
 
     @InjectMocks SingleuserStoreJoiner ssj;
 
@@ -69,6 +71,7 @@ public class TestSingleuserStoreJoiner extends AbstractTest
     {
         when(cfgRootSID.get()).thenReturn(rootSID);
         when(stores.getUserRoot_()).thenReturn(rootSidx);
+        when(rns.getRitualNotifier()).thenReturn(_ritualNotifier);
     }
 
     private void verifyAnchorCreated(SID sid, String name) throws Exception

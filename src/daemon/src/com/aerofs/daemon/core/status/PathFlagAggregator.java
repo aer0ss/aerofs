@@ -5,7 +5,7 @@
 package com.aerofs.daemon.core.status;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.daemon.core.net.ITransferStateListener.Value;
+import com.aerofs.daemon.core.transfers.ITransferStateListener.TransferProgress;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.id.SOCID;
 import com.aerofs.proto.PathStatus.PBPathStatus.Flag;
@@ -120,14 +120,14 @@ public class PathFlagAggregator
     }
 
     public Map<Path, Integer> changeFlagsOnTransferNotification_(
-            SOCID socid, @Nullable Path path, Value value, int direction) {
+            SOCID socid, @Nullable Path path, TransferProgress value, int direction) {
         assert direction == Downloading || direction == Uploading : socid + " " + direction;
         return changeFlagsOnTransferNotification_(direction == Downloading ? _dlMap : _ulMap,
                 socid, path, value, direction);
     }
 
     public Map<Path, Integer> changeFlagsOnTransferNotification_(
-            Map<SOCID, Path> tm, SOCID socid, @Nullable Path path, Value value, int flag) {
+            Map<SOCID, Path> tm, SOCID socid, @Nullable Path path, TransferProgress value, int flag) {
         // list of affected path
         Map<Path, Integer> notify = Maps.newHashMap();
 

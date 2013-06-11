@@ -5,11 +5,13 @@
 package com.aerofs.daemon.core.multiplicity.singleuser;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.base.ex.ExAlreadyExist;
+import com.aerofs.base.id.OID;
+import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ds.OA.Type;
 import com.aerofs.daemon.core.ds.ObjectSurgeon;
-import com.aerofs.daemon.core.notification.RitualNotificationServer;
 import com.aerofs.daemon.core.object.ObjectCreator;
 import com.aerofs.daemon.core.object.ObjectDeleter;
 import com.aerofs.daemon.core.phy.PhysicalOp;
@@ -21,19 +23,20 @@ import com.aerofs.daemon.lib.db.PendingRootDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
-import com.aerofs.base.ex.ExAlreadyExist;
-import com.aerofs.base.id.OID;
-import com.aerofs.base.id.SID;
 import com.aerofs.lib.cfg.CfgRootSID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.os.CfgOS;
 import com.aerofs.lib.os.OSUtilWindows;
-import com.aerofs.proto.RitualNotifications.PBNotification;
+import com.aerofs.ritual_notification.RitualNotificationServer;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 
 import java.util.Collection;
+
+import static com.aerofs.daemon.core.notification.Notifications.newSharedFolderJoinNotification;
+import static com.aerofs.daemon.core.notification.Notifications.newSharedFolderKickoutNotification;
+import static com.aerofs.daemon.core.notification.Notifications.newSharedFolderPendingNotification;
 
 public class SingleuserStoreJoiner implements IStoreJoiner
 {
@@ -86,11 +89,7 @@ public class SingleuserStoreJoiner implements IStoreJoiner
         if (external) {
             l.info("pending {} {}", sid, folderName);
             _prdb.addPendingRoot(sid, folderName, t);
-
-            // notify UI
-            _rns.sendEvent_(PBNotification.newBuilder()
-                    .setType(PBNotification.Type.SHARED_FOLDER_PENDING)
-                    .build());
+            _rns.getRitualNotifier().sendNotification(newSharedFolderPendingNotification());
             return;
         }
 
@@ -175,10 +174,7 @@ public class SingleuserStoreJoiner implements IStoreJoiner
             @Override
             public void committed_()
             {
-                _rns.sendEvent_(PBNotification.newBuilder()
-                        .setType(PBNotification.Type.SHARED_FOLDER_JOIN)
-                        .setPath(path.toPB())
-                        .build());
+                _rns.getRitualNotifier().sendNotification(newSharedFolderJoinNotification(path));
             }
         });
     }
@@ -228,10 +224,7 @@ public class SingleuserStoreJoiner implements IStoreJoiner
             @Override
             public void committed_()
             {
-                _rns.sendEvent_(PBNotification.newBuilder()
-                        .setType(PBNotification.Type.SHARED_FOLDER_KICKOUT)
-                        .setPath(path.toPB())
-                        .build());
+                _rns.getRitualNotifier().sendNotification(newSharedFolderKickoutNotification(path));
             }
         });
     }

@@ -6,7 +6,6 @@ package com.aerofs.daemon.core.phy.linked.linker;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.SID;
-import com.aerofs.daemon.core.notification.RitualNotificationServer;
 import com.aerofs.daemon.lib.db.AbstractTransListener;
 import com.aerofs.daemon.lib.db.PendingRootDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
@@ -17,6 +16,7 @@ import com.aerofs.lib.SystemUtil.ExitCode;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgAbsRoots;
+import com.aerofs.ritual_notification.RitualNotificationServer;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
@@ -30,6 +30,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+
+import static com.aerofs.daemon.core.notification.Notifications.newRootsChangedNotification;
 
 /**
  * Maintain a mapping of SID to {@code LinkerRoot}
@@ -120,6 +122,11 @@ public class LinkerRootMap
         return false;
     }
 
+    private void notifyRootsChanged_()
+    {
+        _rns.getRitualNotifier().sendNotification(newRootsChangedNotification());
+    }
+
     /**
      * Create a link between a physical path and a SID
      *
@@ -146,7 +153,7 @@ public class LinkerRootMap
             @Override
             public void committed_()
             {
-                _rns.rootsChanged_();
+                notifyRootsChanged_();
             }
         });
     }
@@ -179,7 +186,7 @@ public class LinkerRootMap
             @Override
             public void committed_()
             {
-                _rns.rootsChanged_();
+                notifyRootsChanged_();
             }
         });
     }
@@ -211,7 +218,7 @@ public class LinkerRootMap
             @Override
             public void committed_()
             {
-                _rns.rootsChanged_();
+                notifyRootsChanged_();
             }
         });
     }

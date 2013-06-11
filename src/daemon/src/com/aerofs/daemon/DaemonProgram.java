@@ -1,6 +1,5 @@
 package com.aerofs.daemon;
 
-import com.aerofs.ChannelFactories;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.AbstractExWirable;
 import com.aerofs.base.ex.Exceptions;
@@ -37,11 +36,14 @@ import com.google.inject.Module;
 import com.google.inject.Stage;
 import org.slf4j.Logger;
 
+import static com.aerofs.ChannelFactories.getClientChannelFactory;
+import static com.aerofs.ChannelFactories.getServerChannelFactory;
+
 public class DaemonProgram implements IProgram
 {
     private static final Logger l = Loggers.getLogger(DaemonProgram.class);
 
-    private final RitualServer _ritual = new RitualServer(ChannelFactories.getServerChannelFactory());
+    private final RitualServer _ritual = new RitualServer(getServerChannelFactory());
 
     public DaemonProgram()
     {
@@ -95,7 +97,7 @@ public class DaemonProgram implements IProgram
         Stage stage = Stage.PRODUCTION;
 
         Injector injCore = Guice.createInjector(stage, new CfgModule(), multiplicityModule,
-                new CoreModule(ChannelFactories.getClientChannelFactory()), storageModule());
+                new CoreModule(getServerChannelFactory(), getClientChannelFactory()), storageModule());
 
         Injector injDaemon = Guice.createInjector(stage, new DaemonModule(injCore));
 

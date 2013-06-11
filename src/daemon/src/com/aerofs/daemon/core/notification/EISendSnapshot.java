@@ -1,78 +1,63 @@
 package com.aerofs.daemon.core.notification;
 
-import java.net.InetSocketAddress;
-import java.util.List;
+import com.aerofs.daemon.core.transfers.BaseTransferState;
+import com.aerofs.daemon.core.transfers.ITransferStateListener.TransferProgress;
+import com.aerofs.daemon.core.transfers.ITransferStateListener.TransferredItem;
+import com.aerofs.daemon.core.transfers.download.DownloadState;
+import com.aerofs.daemon.core.transfers.upload.UploadState;
+import com.aerofs.lib.event.AbstractEBSelfHandling;
+
 import java.util.Map;
 import java.util.Map.Entry;
-
-import com.aerofs.daemon.core.download.DownloadState;
-import com.aerofs.daemon.core.net.ITransferStateListener.Key;
-import com.aerofs.daemon.core.net.ITransferStateListener.Value;
-import com.aerofs.daemon.core.net.UploadState;
-import com.aerofs.daemon.lib.pb.PBTransferStateFormatter;
-import com.aerofs.lib.event.AbstractEBSelfHandling;
-import com.aerofs.proto.RitualNotifications.PBNotification;
-import com.google.common.collect.Lists;
 
 /**
  * Retrieve the snapshot of all the events from the core
  */
 class EISendSnapshot extends AbstractEBSelfHandling
 {
-    private final RitualNotificationServer _notifier;
-    private final InetSocketAddress _to;
     private final DownloadState _dls;
+    private final DownloadNotifier _dn;
     private final UploadState _uls;
+    private final UploadNotifier _un;
     private final PathStatusNotifier _psn;
-    private final PBTransferStateFormatter _formatter;
+    private final boolean _filterMeta;
 
-    private boolean _enableFilter;
-
-    EISendSnapshot(RitualNotificationServer notifier, InetSocketAddress to,
-            DownloadState dls, UploadState uls, PathStatusNotifier psn,
-            PBTransferStateFormatter formatter)
+    EISendSnapshot(DownloadState dls, DownloadNotifier dn, UploadState uls, UploadNotifier un, PathStatusNotifier psn, boolean filterMeta)
     {
-        _notifier = notifier;
-        _to = to;
         _dls = dls;
+        _dn = dn;
         _uls = uls;
+        _un = un;
         _psn = psn;
-        _formatter = formatter;
+        _filterMeta = filterMeta;
     }
 
-    public void enableFilter(boolean enable)
+    private boolean ignoreTransfer_(TransferredItem item)
     {
-        _enableFilter = enable;
+        return _filterMeta && item._socid.cid().isMeta();
+    }
+
+    private void sendTransferNotifications_(BaseTransferState transferState, AbstractTransferNotifier transferNotifier)
+    {
+        Map<TransferredItem, TransferProgress> transfers = transferState.getStates_();
+
+        for (Entry<TransferredItem, TransferProgress> transfer : transfers.entrySet()) {
+            if (!ignoreTransfer_(transfer.getKey())) {
+                transferNotifier.sendTransferNotification_(transfer.getKey(), transfer.getValue());
+            }
+        }
+    }
+
+    private void sendPathStatusNotifications_()
+    {
+        _psn.sendConflictCountNotification_();
     }
 
     @Override
     public void handle_()
     {
-        Map<Key, Value> dls = _dls.getStates_();
-        Map<Key, Value> uls = _uls.getStates_();
-
-        // allocate sufficient amount of capacity so we'll never have to grow
-        List<PBNotification> pbs = Lists.newArrayListWithCapacity(dls.size() + uls.size() + 1);
-
-        pbs.add(_formatter.createClearTransfers());
-
-        for (Entry<Key, Value> en : dls.entrySet()) {
-            Key key = en.getKey();
-
-            if (_enableFilter && key._socid.cid().isMeta()) continue;
-
-            pbs.add(_formatter.formatDownloadState(key, en.getValue()));
-        }
-
-        for (Entry<Key, Value> en : uls.entrySet()) {
-            Key key = en.getKey();
-
-            if (_enableFilter && key._socid.cid().isMeta()) continue;
-
-            pbs.add(_formatter.formatUploadState(key, en.getValue()));
-        }
-
-        _notifier.sendSnapshot_(_to, pbs.toArray(new PBNotification[pbs.size()]));
-        _psn.sendConflictCount_();
+        sendTransferNotifications_(_dls, _dn);
+        sendTransferNotifications_(_uls, _un);
+        sendPathStatusNotifications_();
     }
 }
