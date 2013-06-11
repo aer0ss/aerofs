@@ -7,5 +7,6 @@ ejabberd-certify
 spdb-tomcat-password
 uwsgi-restart
 restund-fix-config
+zephyr-start
 delay
 sanity-check
