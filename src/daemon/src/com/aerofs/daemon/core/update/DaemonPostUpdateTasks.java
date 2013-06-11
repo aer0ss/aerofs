@@ -55,7 +55,8 @@ public class DaemonPostUpdateTasks
             new DPUTCreateCAIndex(dbcw),
             new DPUTCreatePendingRootTable(dbcw),
             new DPUTAddStoreNameColumn(dbcw),
-            new DPUTAddContributorsTable(dbcw)
+            new DPUTAddContributorsTable(dbcw),
+            new DPUTCleanupGhostKML(dbcw)
             // new tasks go here
         };
 
