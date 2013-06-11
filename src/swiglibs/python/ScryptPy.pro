@@ -25,6 +25,7 @@ contains(QMAKE_HOST.arch, i686):{
 }
 
 win32 {
+    TARGET = lib$$TARGET  # Pyhton wants the "lib" prefix even on Windows
     INCLUDEPATH += "C:/Python27/include"
     LIBS += -LC:/Python27/libs -L"$$PWD/../3rd_party/lib/win32/"
     LIBS += -llibeay32

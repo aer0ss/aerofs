@@ -7,6 +7,12 @@
 #define ARGFORMAT "ss"
 #define RETURNVALFORMAT "s#"
 
+#ifdef _WIN32
+#define DLL_EXPORT __declspec(dllexport)
+#else
+#define DLL_EXPORT
+#endif
+
 // N, r, p, and buffer length values for use with scrypt
 // Taken from com.aerofs.lib.SecUtil (at src/lib/src/com/aerofs/lib/SecUtil.java)
 #define SCRYPTN 8192
@@ -58,7 +64,7 @@ static PyMethodDef libScryptPy_methods[] = {
     {NULL, NULL}
 };
 
-void initlibScryptPy()
+DLL_EXPORT void initlibScryptPy()
 {
     PyObject* m = Py_InitModule("libScryptPy", libScryptPy_methods);
     if (m == NULL) {
