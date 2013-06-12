@@ -1,4 +1,5 @@
 <%inherit file="dashboard_layout.mako"/>
+<%! page_title = "Downloading" %>
 
 <%
     # (WW) Ideally all python logic should go to views.py. But I'm not sure for

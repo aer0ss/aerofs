@@ -1,4 +1,5 @@
 <%inherit file="dashboard_layout.mako"/>
+<%! page_title = "Subscription" %>
 
 <%namespace name="credit_card_modal" file="credit_card_modal.mako"/>
 

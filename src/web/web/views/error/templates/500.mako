@@ -1,4 +1,5 @@
 <%inherit file="marketing_layout.mako"/>
+<%! page_title = "Oops" %>
 
 <div class="row">
     <div class="span6 offset3">

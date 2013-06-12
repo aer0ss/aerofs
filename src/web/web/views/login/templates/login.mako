@@ -1,4 +1,5 @@
 <%inherit file="marketing_layout.mako"/>
+<%! page_title = "Sign In" %>
 
 <div class="row">
     <div class="span12">

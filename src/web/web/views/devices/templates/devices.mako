@@ -1,4 +1,5 @@
 <%inherit file="dashboard_layout.mako"/>
+<%! page_title = "Devices" %>
 
 <h2>${page_title}</h2>
 

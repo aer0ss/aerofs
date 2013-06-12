@@ -7,12 +7,10 @@ package com.aerofs.lib;
 import com.aerofs.base.BaseParam;
 import com.aerofs.base.C;
 import com.aerofs.base.id.SID;
-import com.aerofs.base.params.IProperty;
 import com.aerofs.config.properties.DynamicOptionalStringProperty;
 import com.aerofs.lib.properties.DynamicUrlProperty;
 
 import java.net.InetAddress;
-import java.net.URL;
 
 public class LibParam extends BaseParam
 {
@@ -33,7 +31,6 @@ public class LibParam extends BaseParam
     public static final String NOTCP                   = "notcp";
     public static final String NOZEPHYR                = "nozephyr";
     public static final String NOAUTOUPDATE            = "noautoupdate";
-    public static final String NOHISTORY               = "nohistory";
     public static final String NOXFF                   = "noxff";
     public static final String LOL                     = "lol";
     public static final String LOLOL                   = "lolol";

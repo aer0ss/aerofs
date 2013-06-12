@@ -5,7 +5,19 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>AeroFS</title>
+
+    <title>
+        ## This title is recommended by Beth to maximize keyword matching for SEO
+        Secure File Sharing and File Sync | AeroFS
+        ## The following code requires _every_ page to define a page title.
+        ##
+        ## Place the title definition to the top of the file:
+        ## <%! page_title = "About Us" %>
+        ## And remember to capitalize initials.
+        %if len(self.attr.page_title) != 0:
+            | ${self.attr.page_title}
+        %endif
+    </title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="shortcut icon" href="${request.static_path('web:static/img/favicon.ico')}">
 

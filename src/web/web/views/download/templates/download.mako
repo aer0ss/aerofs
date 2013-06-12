@@ -1,4 +1,5 @@
 <%inherit file="dashboard_layout.mako"/>
+<%! page_title = "Download" %>
 
 <%block name="css">
     <style type="text/css">
