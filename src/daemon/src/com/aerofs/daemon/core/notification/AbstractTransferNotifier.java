@@ -23,7 +23,6 @@ import com.aerofs.proto.RitualNotifications.PBSOCID;
 import com.aerofs.proto.RitualNotifications.PBTransferEvent;
 import com.aerofs.proto.RitualNotifications.PBTransportMethod;
 import com.aerofs.ritual_notification.RitualNotificationServer;
-import com.google.common.base.Objects;
 import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
@@ -108,6 +107,9 @@ abstract class AbstractTransferNotifier implements ITransferStateListener
      *   is the local user. It will make SP calls to update local database if necessary,
      *   and it will return the proper unknown label if it's unable to resolve the DID.
      *
+     * N.B. S.LBL_UNKNOWN_USER and S.LBL_UNKNOWN_DEVICE should have already included
+     *   custom prefix/suffix so we should not format them again.
+     *
      * @return the username of the owner of the device if it's not the local user
      *   or the device name of the device if it is the local user
      *   or the proper error label if we are unable to resolve the DID.
@@ -129,7 +131,9 @@ abstract class AbstractTransferNotifier implements ITransferStateListener
                     }
                 }
 
-                return "My " + Objects.firstNonNull(devicename, S.LBL_UNKNOWN_DEVICE);
+                return devicename == null
+                        ? S.LBL_UNKNOWN_DEVICE
+                        : "My " + devicename;
             } else {
                 FullName username = _nr.getUserNameNullable_(owner);
 
@@ -140,7 +144,9 @@ abstract class AbstractTransferNotifier implements ITransferStateListener
                     }
                 }
 
-                return username == null ? S.LBL_UNKNOWN_USER : username.toString();
+                return username == null
+                        ? S.LBL_UNKNOWN_USER
+                        : username.getString() + "'s computer";
             }
         } catch (Exception ex) {
             l.warn("Failed to lookup display name for {}", did, ex);
