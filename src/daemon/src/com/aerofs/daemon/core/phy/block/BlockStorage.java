@@ -271,6 +271,13 @@ class BlockStorage implements IPhysicalStorage
         scheduleBlockCleaner_(t);
     }
 
+    @Override
+    public void discardRevForTrans_(Trans t)
+    {
+        // TODO: implement
+        l.warn("discardRevForTrans not supported yet");
+    }
+
     /**
      * TODO: cleaning blocks is currently ad-hoc - improve this model.
      *
