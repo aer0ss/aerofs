@@ -92,9 +92,7 @@ public class CmdTransfers implements IShellCommand<ShProgram>
         printTime(ps);
         ps.print(ev.getUpload() ? "UL | " : "DL | ");
 
-        // print percentage
-        ps.print(ev.getDone() * 100 / ev.getTotal());
-        ps.print("%\t| ");
+        printProgress(ps, ev);
 
         // print device id and sockid
         if (debug) {
@@ -111,5 +109,19 @@ public class CmdTransfers implements IShellCommand<ShProgram>
             str = UIUtil.getUserFriendlyPath(ev.getSocid(), ev.getPath(), path);
         }
         ps.println(str);
+    }
+
+    private void printProgress(PrintStream ps, PBTransferEvent ev)
+    {
+        if (ev.getDone() == ev.getTotal()) {
+            // N.B. the width of the string is specifically chosen to center and to
+            //   line up with the other case
+            ps.format("%s | ", ev.getFailed() ? "Failed" : " Done ");
+        } else {
+            // N.B. the number of white space is specifically chosen to line up with the
+            //   output from the other case and to horizontally center the output.
+            long percentage = ev.getTotal() == 0 ? 0 : ev.getDone() * 100 / ev.getTotal();
+            ps.format("  %2d%%  | ", percentage);
+        }
     }
 }

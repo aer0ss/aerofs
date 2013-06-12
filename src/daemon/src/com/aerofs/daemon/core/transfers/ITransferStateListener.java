@@ -59,7 +59,16 @@ public interface ITransferStateListener
 
     public static final class TransferProgress
     {
-        // @param done == total means completion, either failure or success FIXME (AG): ??? what does this mean? How can done=total still imply failure?
+        /**
+         * the value of the fields is to be interpretted as follows:
+         *   if (_done == _total) // then the transfer has terminated either in success or in failure
+         *     if (_failed)
+         *       ; // the transfer has failed
+         *     else
+         *       ; // the transfer has completed in success
+         *   else
+         *     ; // ignore _failed and the current progress is _done / _total
+         */
         public final boolean _failed;
         public final long _done;
         public final long _total;
@@ -69,13 +78,6 @@ public interface ITransferStateListener
             _done = done;
             _total = total;
             _failed = false;
-        }
-
-        public TransferProgress(long done, long total, boolean failed)
-        {
-            _done = done;
-            _total = total;
-            _failed = failed;
         }
 
         public TransferProgress(boolean failed)
