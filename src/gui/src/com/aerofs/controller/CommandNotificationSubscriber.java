@@ -405,7 +405,7 @@ public final class CommandNotificationSubscriber
 
         unlinkImplementation();
 
-        shutdownImplementation();
+        UI.get().shutdown();
     }
 
     private void unlinkAndWipeSelf()
@@ -422,7 +422,7 @@ public final class CommandNotificationSubscriber
         // On Windows, files we hold open may refuse to be deleted.
         FileUtil.deleteIgnoreErrorRecursively(new File(Cfg.absRTRoot()));
 
-        shutdownImplementation();
+        UI.get().shutdown();
     }
 
     private void logThreads() throws Exception
@@ -447,12 +447,6 @@ public final class CommandNotificationSubscriber
     //
     // Implementation helpers.
     //
-
-    private void shutdownImplementation()
-    {
-        UI.get().shutdown();
-        System.exit(0);
-    }
 
     /**
      * Helper function to share code between the unlink and unlink & wipe commands.

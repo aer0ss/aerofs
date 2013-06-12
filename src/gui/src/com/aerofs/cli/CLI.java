@@ -441,6 +441,7 @@ public class CLI implements IUI {
     public void shutdown()
     {
         UI.dm().stopIgnoreException();
+        System.exit(0);
     }
 
     @Override

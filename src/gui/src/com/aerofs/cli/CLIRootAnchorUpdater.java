@@ -12,6 +12,7 @@ import com.aerofs.lib.S;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExNoConsole;
 import com.aerofs.ui.IUI.MessageType;
+import com.aerofs.ui.UI;
 import com.aerofs.ui.UIUtil;
 
 import javax.annotation.Nullable;
@@ -56,7 +57,6 @@ public class CLIRootAnchorUpdater
         } catch (ExNoConsole exNoConsole) {
             _cli.show(MessageType.INFO, "Quit now.");
             _cli.shutdown();
-            System.exit(0);
         }
     }
 
@@ -88,7 +88,7 @@ public class CLIRootAnchorUpdater
             _cli.show(MessageType.WARN, S.NO_CONSOLE);
             throw new ExNoConsole();
         } else if (isReplaced) {
-            _cli.shutdown();
+            UI.dm().stopIgnoreException();
         } else {
             selectRootAnchorLocation();
         }
@@ -149,7 +149,6 @@ public class CLIRootAnchorUpdater
         if (_cli.ask(MessageType.INFO, _unlinkOrQuitMsg, "Quit", "Unlink")) {
             // Quit selected, shut down the application and let the user move the folder back
             _cli.shutdown();
-            System.exit(0);
         } else {
             try {
                 // Unlink this account from the computer and shut down the application

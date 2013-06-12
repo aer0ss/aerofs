@@ -109,7 +109,6 @@ public class CompRootAnchorUpdater extends Composite
             {
                 closeAndDisposeDialog();
                 UI.get().shutdown();
-                System.exit(0);
             }
         });
 

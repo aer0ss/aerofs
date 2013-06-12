@@ -660,26 +660,19 @@ public class GUI implements IUI
         return ret.get();
     }
 
-    /**
-     * @param stopDaemon false if the client will call The.dm().stop() itself.
-     * This is desired sometimes as the call may take time and block the UI thread
-     */
-    public void shutdown(final boolean stopDaemon)
+    @Override
+    public void shutdown()
     {
         exec(new Runnable() {
             @Override
             public void run() {
                 if (st() != null) st().dispose();
 
-                if (stopDaemon && UI.dm() != null) UI.dm().stopIgnoreException();
+                if (UI.dm() != null) UI.dm().stopIgnoreException();
             }
         });
-    }
 
-    @Override
-    public void shutdown()
-    {
-        shutdown(true);
+        System.exit(0);
     }
 
     @Override

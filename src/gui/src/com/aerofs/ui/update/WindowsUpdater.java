@@ -33,7 +33,6 @@ class WindowsUpdater extends Updater
                         Util.join(Cfg.absRTRoot(), LibParam.UPDATE_DIR, installerFilename), "/S");
 
                 UI.get().shutdown();
-                System.exit(0);
 
             } catch (IOException e) {
                 l.warn("update: " + e);

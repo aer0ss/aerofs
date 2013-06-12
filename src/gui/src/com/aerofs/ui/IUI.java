@@ -93,6 +93,9 @@ public interface IUI {
      */
     void setup_(String rtRoot) throws Exception;
 
+    /**
+     * Stop daemon (ignoring errors), dispose all UI components, and quit the current process
+     */
     void shutdown();
 
     /**

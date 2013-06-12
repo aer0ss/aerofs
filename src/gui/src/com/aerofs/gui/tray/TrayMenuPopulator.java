@@ -160,7 +160,6 @@ public class TrayMenuPopulator
             protected void handleEventImpl(Event event)
             {
                 UI.get().shutdown();
-                System.exit(0);
             }
         });
     }

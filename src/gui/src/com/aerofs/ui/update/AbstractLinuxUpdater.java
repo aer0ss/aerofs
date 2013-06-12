@@ -53,7 +53,6 @@ abstract class AbstractLinuxUpdater extends Updater
             );
 
             UI.get().shutdown();
-            System.exit(0);
 
         } else {
             // the updater has no permissions to write approot
