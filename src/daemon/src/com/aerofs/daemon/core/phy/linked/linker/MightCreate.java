@@ -13,6 +13,7 @@ import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.first_launch.OIDGenerator;
 import com.aerofs.daemon.core.phy.linked.SharedFolderTagFileAndIcon;
 import com.aerofs.lib.LibParam;
+import com.aerofs.lib.obfuscate.ObfuscatingFormatters;
 import com.google.common.base.Preconditions;
 import org.slf4j.Logger;
 
@@ -115,12 +116,15 @@ public class MightCreate
         // OS-specific files should be ignored
         if (fnt == null) return Result.IGNORED;
 
-        if (l.isDebugEnabled()) l.debug(pcPhysical + ":" + fnt._fid);
-
         // TODO acl checking
 
         SOID parent = _ds.resolveNullable_(pcPhysical._path.removeLast());
-        if (shouldIgnoreChildren_(pcPhysical,  parent)) return Result.IGNORED;
+        if (shouldIgnoreChildren_(pcPhysical,  parent)) {
+            l.debug("ignored {}:{}", pcPhysical, fnt._fid);
+            return Result.IGNORED;
+        }
+
+        l.debug("{}:{} under {}", pcPhysical, fnt._fid, parent);
 
         // See class-level comment for vocabulary definitions
         SOID sourceSOID = _ds.getSOIDNullable_(fnt._fid);
@@ -141,6 +145,9 @@ public class MightCreate
         //       after a full scan happened, the other devices will see one of the other
         //       hard linked object appear only after another full scan.
         if (sourcePath != null && detectHardLink_(sourcePath, targetPath, fnt._fid)) {
+            l.info("ignore hardlink {}<->{}",
+                    ObfuscatingFormatters.obfuscatePath(sourcePath),
+                    ObfuscatingFormatters.obfuscatePath(targetPath));
             return Result.IGNORED;
         }
 
