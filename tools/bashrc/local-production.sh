@@ -14,22 +14,22 @@ function _lp-bin()
 # Kicks
 # -----------------------------------------------------------
 
-function lp-kick-transient()
+function _lp-kick-transient()
 {
     cd $AEROFS_ROOT/packaging/bakery/developer
-    ./lp-kick.sh app-transient
+    ./_lp-kick.sh app-transient
 }
 
-function lp-kick-persistent()
+function _lp-kick-persistent()
 {
     cd $AEROFS_ROOT/packaging/bakery/developer
-    ./lp-kick.sh app-persistent
+    ./_lp-kick.sh app-persistent
 }
 
-function lp-kick-all()
+function _lp-kick-all()
 {
     cd $AEROFS_ROOT/packaging/bakery/developer
-    ./lp-kick.sh app-all
+    ./_lp-kick.sh app-all
 }
 
 # -----------------------------------------------------------
@@ -95,43 +95,43 @@ function _lp-package-ca()
 function lp-deploy-all()
 {
     _lp-package-all
-    lp-kick-transient
+    _lp-kick-transient
 }
 
 function lp-deploy-bootstrap()
 {
     _lp-package-bootstrap
-    lp-kick-all
+    _lp-kick-all
 }
 
 function lp-deploy-web()
 {
     _lp-package-web
-    lp-kick-transient
+    _lp-kick-transient
 }
 
 function lp-deploy-sp()
 {
     _lp-package-sp
-    lp-kick-transient
+    _lp-kick-transient
 }
 
 function lp-deploy-verkehr()
 {
     _lp-package-verkehr
-    lp-kick-transient
+    _lp-kick-transient
 }
 
 function lp-deploy-zephyr()
 {
     _lp-package-zephyr
-    lp-kick-transient
+    _lp-kick-transient
 }
 
 function lp-deploy-ca()
 {
     _lp-package-ca
-    lp-kick-persistent
+    _lp-kick-persistent
 }
 
 # -----------------------------------------------------------
