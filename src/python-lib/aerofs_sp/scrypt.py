@@ -12,6 +12,8 @@ if platform.system() == 'Linux':
         searchDir = 'lib/linux64'
     else:
         searchDir = 'lib/linux32'
+elif 'cygwin' in platform.system().lower():
+    searchDir = 'lib/win'
 else: # OS X (don't need to worry about other cases because they will fail when attempting import below)
     searchDir = 'lib/osx'
 cwd = os.getcwd()
