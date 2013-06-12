@@ -13,6 +13,7 @@ import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.first_launch.OIDGenerator;
 import com.aerofs.daemon.core.phy.linked.SharedFolderTagFileAndIcon;
 import com.aerofs.lib.LibParam;
+import com.google.common.base.Preconditions;
 import org.slf4j.Logger;
 
 import com.aerofs.daemon.core.ds.DirectoryService;
@@ -240,37 +241,49 @@ public class MightCreate
         }
 
         OA targetOA = _ds.getOA_(targetSOID);
-        Set<Operation> ops = shouldRenameTarget_(targetOA, fnt._dir);
-        if (ops != null) {
-            // The logical object has a different type or is expelled and thus can't link to the
-            // physical object by replacing the FID.
+        boolean sameType = (targetOA.isDirOrAnchor() == fnt._dir);
+
+        if (sameType && targetSOID.equals(sourceSOID)) return EnumSet.of(Update);
+
+        // Locally present files, we can use the Replace operation that adjusts the FID of the
+        // target and update the master CA if necessary
+        //
+        // Folders cannot simply be replaced because that would break too many corner cases Most
+        // importantly, this will have extremely un-intuitive results when shared folders are
+        // involved.
+        //
+        // Consider for instance, 2 anchors:
+        //    o1:foo
+        //      \-> baz
+        //    o2:bar
+        //      \-> qux
+        //
+        // Now the user deletes bar and rename foo to bar. The expected result is:
+        //    o1:bar
+        //      \-> baz
+        //    sp.leave(o2)
+        //
+        // But allowing a replace operation on folders would lead to
+        //    o2:bar
+        //      \-> baz
+        //    sp.leave(o1)
+        // i.e. we would leave the wrong shared folder, mistakenly delete all files previously under
+        // o2:bar and replace them with files previously under o1:foo
+        //
+        // Not only is this unintuitive but from a user's perspective it is a spurious deletion
+        // for remote users and an ACL "breach" for the local user
+
+        if (sameType && !fnt._dir && !targetOA.isExpelled()) {
+            // The assertion below is guaranteed by the above code. N.B. oa.fid() may be null if
+            // no branch is present. See also detectAndApplyModification_()
+            Preconditions.checkState(!fnt._fid.equals(targetOA.fid()));
+            return EnumSet.of(Replace);
+        } else {
+            // The logical object can't simply link to the physical object by replacing the FID.
             // NB: do not remove the target object from the deletion buffer, so it will be deleted
             // if it's not moved to other locations later on.
-            ops.add(sourceSOID == null || targetSOID.equals(sourceSOID) ? Create : Update);
-            return ops;
-        } else if (targetSOID.equals(sourceSOID)) {
-            return EnumSet.of(Update);
-        } else {
-            // The assertion below is guaranteed by the above code. N.B. oa.fid() may be null if
-            // the no branch is present. See also detectAndApplyModification_()
-            assert !fnt._fid.equals(targetOA.fid());
-            return EnumSet.of(Replace);
+            return EnumSet.of(RenameTarget,
+                    sourceSOID == null || targetSOID.equals(sourceSOID) ? Create : Update);
         }
-    }
-
-    /**
-     * @param targetOA logical object currently mapped to the target path
-     * @param dir whether the target physical object is a directory
-     * @return extra operations if the target needs to be renamed, null otherwise
-     */
-    private @Nullable Set<Operation> shouldRenameTarget_(OA targetOA, boolean dir)
-            throws SQLException
-    {
-        if (targetOA.isExpelled()) return EnumSet.of(RenameTarget);
-        // This assertion would fail if a new type other than file/dir/anchor is created in
-        // the future. The assertion is needed for the "fnt._dir == ...isDirOrAnchor()"
-        // check below.
-        assert targetOA.isDirOrAnchor() != targetOA.isFile();
-        return targetOA.isDirOrAnchor() == dir ? null : EnumSet.of(RenameTarget);
     }
 }

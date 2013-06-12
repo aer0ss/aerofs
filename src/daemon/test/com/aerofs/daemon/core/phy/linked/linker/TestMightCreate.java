@@ -219,7 +219,7 @@ public class TestMightCreate extends AbstractMightCreateTest
     }
 
     @Test
-    public void shouldReplaceExistingFolder() throws Exception
+    public void shouldRenameExistingFolderAndCreateNewFolder() throws Exception
     {
         SOID soid = ds.resolveNullable_(mkpath("d0"));
         generateDirFnt(soid);
@@ -227,7 +227,21 @@ public class TestMightCreate extends AbstractMightCreateTest
 
         Assert.assertEquals(Result.NEW_OR_REPLACED_FOLDER, mightCreate("d0", fnt));
 
-        verifyOperationExecuted(Operation.Replace, null, soid, "d0");
+        verifyOperationExecuted(EnumSet.of(Operation.Create, Operation.RenameTarget),
+                null, soid, "d0");
+    }
+
+    @Test
+    public void shouldRenameExistingAnchorAndCreateNewFolder() throws Exception
+    {
+        SOID soid = ds.resolveNullable_(mkpath("a2"));
+        generateDirFnt(soid);
+        FIDAndType fnt = generateDirFnt();
+
+        Assert.assertEquals(Result.NEW_OR_REPLACED_FOLDER, mightCreate("a2", fnt));
+
+        verifyOperationExecuted(EnumSet.of(Operation.Create, Operation.RenameTarget),
+                null, soid, "a2");
     }
 
     @Test
