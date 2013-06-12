@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.List;
 import java.util.Map.Entry;
 
 import com.aerofs.base.Loggers;
@@ -14,12 +15,14 @@ import com.aerofs.daemon.core.phy.linked.linker.LinkerRootMap.IListener;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.IStores;
 import com.aerofs.daemon.lib.db.trans.Trans;
+import com.aerofs.daemon.lib.db.trans.TransLocal;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgStoragePolicy;
 import com.aerofs.lib.cfg.CfgAbsRoots;
 import com.aerofs.lib.os.OSUtil;
+import com.google.common.collect.Lists;
 import org.slf4j.Logger;
 
 import com.aerofs.daemon.core.phy.linked.linker.IgnoreList;
@@ -187,6 +190,20 @@ public class LinkedStorage implements IPhysicalStorage, IListener
         deleteFiles_(absAuxRoot, LibParam.AuxFolder.PREFIX, prefix);
     }
 
+    TransLocal<Boolean> _tlUseHistory = new TransLocal<Boolean>() {
+        @Override
+        protected Boolean initialValue(Trans t)
+        {
+            return _cfgStoragePolicy.useHistory();
+        }
+    };
+
+    @Override
+    public void discardRevForTrans_(Trans t)
+    {
+        _tlUseHistory.set(t, false);
+    }
+
     void promoteToAnchor_(SOID soid, Path path, Trans t) throws SQLException, IOException
     {
         _sfti.addTagFileAndIconIn(SID.anchorOID2storeSID(soid.oid()),
@@ -234,9 +251,8 @@ public class LinkedStorage implements IPhysicalStorage, IListener
         // wait until commit in case we need to put this file back (as in a delete operation
         // that rolls back). This is an unsubtle limit - more nuanced storage policies will
         // be implemented by the history cleaner.
-        if (!_cfgStoragePolicy.useHistory())
-        {
-            deleteOnCommit(rev, f._f, t);
+        if (!_tlUseHistory.get(t)) {
+            _tlDel.get(t).add(rev);
         }
     }
 
@@ -295,30 +311,32 @@ public class LinkedStorage implements IPhysicalStorage, IListener
     }
 
     /**
-     * Install a committing_ handler to remove a LinkedRevFile instance.
+     * Install a committed_ handler to remove a LinkedRevFile instance.
      * Not used outside of LinkedStorage, so no need to generalize this yet.
      *
      * NOTE: we don't throw from here - an error at transaction cleanup shouldn't kill the world
-     *
-     * @param rev Rev file to be cleaned up
-     * @param orig Original file name that rev derived from - only used in exception handling
-     * @param t Active transaction
      */
-    private static void deleteOnCommit(
-            final LinkedRevFile rev, final InjectableFile orig, Trans t)
-    {
-        t.addListener_(new AbstractTransListener() {
-            @Override
-            public void committed_()
-            {
-                try {
-                    rev.delete_();
-                } catch (IOException ioe) {
-                    l.warn(Util.e(ioe));
+    TransLocal<List<LinkedRevFile>> _tlDel = new TransLocal<List<LinkedRevFile>>() {
+        @Override
+        protected List<LinkedRevFile> initialValue(Trans t)
+        {
+            final List<LinkedRevFile> list = Lists.newArrayList();
+            t.addListener_(new AbstractTransListener() {
+                @Override
+                public void committed_()
+                {
+                    for (LinkedRevFile rf : list) {
+                        try {
+                            rf.delete_();
+                        } catch (IOException ioe) {
+                            l.warn(Util.e(ioe));
+                        }
+                    }
                 }
-            }
-        });
-    }
+            });
+            return list;
+        }
+    };
 
     public static void moveWithRollback_(
             final InjectableFile from, final InjectableFile to, Trans t)

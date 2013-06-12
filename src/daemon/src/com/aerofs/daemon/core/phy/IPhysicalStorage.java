@@ -60,4 +60,12 @@ public interface IPhysicalStorage
      * Delete prefix associated with a given SOKID, if any
      */
     void deletePrefix_(SOKID sokid) throws IOException, SQLException;
+
+    /**
+     * Override CfgStoragePolicy for the given transaction
+     *
+     * After calling this method, all files deleted within the given transaction will be effectively
+     * deleted (instead of simply being moved to rev) when the transaction is successfully committed
+     */
+    void discardRevForTrans_(Trans t);
 }
