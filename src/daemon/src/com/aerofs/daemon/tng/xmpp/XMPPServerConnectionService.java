@@ -257,7 +257,7 @@ final class XMPPServerConnectionService implements ILinkStateListener, IStartabl
         // The xmpp server address is an unresolved hostname.
         // We avoid resolving the hostname ourselves and let
         // SMACK do the DNS query on its thread.
-        InetSocketAddress address = Xmpp.ADDRESS.getUnresolved();
+        InetSocketAddress address = Xmpp.ADDRESS.get();
         ConnectionConfiguration cc = new ConnectionConfiguration(
                 address.getHostName(), address.getPort());
         cc.setServiceName(Xmpp.SERVER_DOMAIN.get());

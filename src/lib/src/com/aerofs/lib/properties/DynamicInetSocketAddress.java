@@ -2,8 +2,9 @@
  * Copyright (c) Air Computing Inc., 2013.
  */
 
-package com.aerofs.base.properties;
+package com.aerofs.lib.properties;
 
+import com.aerofs.base.params.IProperty;
 import com.aerofs.config.properties.DynamicProperty;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Iterables;
@@ -20,7 +21,7 @@ import static org.apache.commons.lang.StringUtils.isNotBlank;
  *
  * Constructs and caches an InetSocketAddress from a dynamic configuration source.
  */
-public class DynamicInetSocketAddress implements DynamicProperty<InetSocketAddress>
+public class DynamicInetSocketAddress implements DynamicProperty<InetSocketAddress>, IProperty<InetSocketAddress>
 {
     private InetSocketAddress cachedValue;
 
@@ -35,16 +36,18 @@ public class DynamicInetSocketAddress implements DynamicProperty<InetSocketAddre
         }
     };
 
-    public DynamicInetSocketAddress( final String name, final InetSocketAddress defaultValue ) {
-        this.delegate = new DynamicStringProperty( name, null );
+    public DynamicInetSocketAddress(final String name, final InetSocketAddress defaultValue)
+    {
+        this.delegate = new DynamicStringProperty(name, null);
         this.defaultValue = defaultValue;
         load();
-        this.delegate.addCallback( callback );
+        this.delegate.addCallback(callback);
     }
 
-    private void load() {
+    private void load()
+    {
         final String propertySource = delegate.getValue();
-        if ( propertySource == null ) {
+        if (propertySource == null) {
             cachedValue = defaultValue;
             return;
         }
@@ -52,10 +55,11 @@ public class DynamicInetSocketAddress implements DynamicProperty<InetSocketAddre
         cachedValue = parse(propertySource);
     }
 
-    private InetSocketAddress parse( final String propertySource ) {
-        checkArgument( isNotBlank(propertySource), "propertySource cannot be null or blank" );
+    private InetSocketAddress parse(final String propertySource)
+    {
+        checkArgument(isNotBlank(propertySource), "propertySource cannot be null or blank");
         final Iterable<String> parts = Splitter.on(":").split(propertySource);
-        checkState( Iterables.size(parts) == 2,
+        checkState(Iterables.size(parts) == 2,
                 "propertySource in wrong format, <host>:<port> expected");
 
         final String host = Iterables.get(parts, 0);
@@ -65,7 +69,8 @@ public class DynamicInetSocketAddress implements DynamicProperty<InetSocketAddre
         return InetSocketAddress.createUnresolved(host, port);
     }
 
-    protected void propertyChanged() {
+    protected void propertyChanged()
+    {
     }
 
     @Override
@@ -80,19 +85,13 @@ public class DynamicInetSocketAddress implements DynamicProperty<InetSocketAddre
         return cachedValue;
     }
 
+    /**
+     * This always return an unresolved InetSocketAddress
+     */
+    @Override
     public InetSocketAddress get()
     {
         return getValue();
-    }
-
-    public InetSocketAddress getUnresolved()
-    {
-        return get();
-    }
-
-    public InetSocketAddress getResolved() {
-        final InetSocketAddress current = getUnresolved();
-        return new InetSocketAddress( current.getHostName(), current.getPort() );
     }
 
     @Override
@@ -102,10 +101,10 @@ public class DynamicInetSocketAddress implements DynamicProperty<InetSocketAddre
     }
 
     @Override
-    public void addCallback( final Runnable callback )
+    public void addCallback(final Runnable callback)
     {
-        if ( callback != null ) {
-            delegate.addCallback( callback );
+        if (callback != null) {
+            delegate.addCallback(callback);
         }
     }
 }

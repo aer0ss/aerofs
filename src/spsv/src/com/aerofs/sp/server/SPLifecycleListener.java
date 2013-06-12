@@ -2,7 +2,7 @@ package com.aerofs.sp.server;
 
 import com.aerofs.base.BaseParam.Verkehr;
 import com.aerofs.base.Loggers;
-import com.aerofs.base.properties.Configuration;
+import com.aerofs.lib.properties.Configuration;
 import com.aerofs.base.ssl.FileBasedCertificateProvider;
 import com.aerofs.base.ssl.ICertificateProvider;
 import com.aerofs.lib.Util;

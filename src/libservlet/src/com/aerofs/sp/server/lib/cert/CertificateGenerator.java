@@ -1,10 +1,10 @@
 package com.aerofs.sp.server.lib.cert;
 
-import com.aerofs.base.BaseParam;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.C;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UserID;
+import com.aerofs.lib.LibParam;
 import sun.security.pkcs.PKCS10;
 
 import java.io.ByteArrayInputStream;
@@ -103,7 +103,7 @@ public class CertificateGenerator implements ICertificateGenerator
 
         URLConnection conn;
         try {
-            conn = (new URL(BaseParam.CA.URL.get() + "?" + userId + '-' + did.toStringFormal())).openConnection();
+            conn = (new URL(LibParam.CA.URL.get() + "?" + userId + '-' + did.toStringFormal())).openConnection();
         }
         catch (MalformedURLException e) {
             // Wrap in malformed URL exceptions, re-throw as IO exception so that we can cleanly

@@ -2,8 +2,9 @@
  * Copyright (c) Air Computing Inc., 2013.
  */
 
-package com.aerofs.base.properties;
+package com.aerofs.lib.properties;
 
+import com.aerofs.base.BaseParam;
 import com.aerofs.config.DynamicConfiguration;
 import com.aerofs.config.sources.PropertiesConfiguration;
 import com.aerofs.config.sources.SystemConfiguration;
@@ -96,6 +97,9 @@ public final class Configuration
                     .addConfiguration(staticPropertiesConfiguration, "static")
                     .addConfiguration(httpConfiguration, "http")
                     .build());
+
+            BaseParam.setPropertySource(new DynamicPropertySource());
+
             LOGGER.info("Server configuration initialized: " + DynamicConfiguration.getInstance());
         }
     }
@@ -135,6 +139,7 @@ public final class Configuration
                             .addConfiguration(staticPropertiesConfiguration, "static")
                             .addConfiguration(httpConfiguration, "http");
 
+            BaseParam.setPropertySource(new DynamicPropertySource());
             DynamicConfiguration.initialize(dynamicConfigurationBuilder.build());
             LOGGER.debug("Client configuration initialized");
         }

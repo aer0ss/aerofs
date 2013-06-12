@@ -1,7 +1,7 @@
 package com.aerofs.daemon.lib;
 
 import com.aerofs.base.C;
-import com.aerofs.base.properties.DynamicInetSocketAddress;
+import com.aerofs.lib.properties.DynamicInetSocketAddress;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.LibParam.Daemon;
 import com.aerofs.lib.cfg.Cfg;

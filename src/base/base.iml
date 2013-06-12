@@ -12,7 +12,6 @@
     <orderEntry type="library" exported="" name="javax.inject" level="project" />
     <orderEntry type="library" exported="" name="jsr305" level="project" />
     <orderEntry type="library" exported="" name="guava" level="project" />
-    <orderEntry type="library" exported="" name="dynamic-config" level="project" />
     <orderEntry type="library" exported="" name="netty" level="project" />
     <orderEntry type="library" exported="" name="protobuf" level="project" />
     <orderEntry type="library" exported="" name="slf4j-api" level="project" />

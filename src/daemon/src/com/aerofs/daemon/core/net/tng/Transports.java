@@ -109,7 +109,7 @@ public class Transports implements IDebug
                 // the ITransport needs a ITransportListener. So we fix this by adding a setTransport method to the CoreQueueBasedListener,
                 // cast the ITransportListener we created to its concrete type, and set the transport after it was created
                 CoreQueueBasedTransportListener listener = new CoreQueueBasedTransportListener(transportEventLoop, coreQueue, streamMap);
-                InetSocketAddress zephyrAddress = Zephyr.ADDRESS.getUnresolved();
+                InetSocketAddress zephyrAddress = Zephyr.ADDRESS.get();
                 IPipelineFactory pipelineFactory = new BasePipelineFactory(transportEventLoop, listener, svReporter);
 
                 ITransport transport = xmppTransportsFactory.createZephyr_(ZEPHYR.id(), ZEPHYR.pref(), zephyrAddress, listener, pipelineFactory);

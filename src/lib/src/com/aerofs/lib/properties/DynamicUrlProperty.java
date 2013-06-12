@@ -2,8 +2,9 @@
  * Copyright (c) Air Computing Inc., 2013.
  */
 
-package com.aerofs.base.properties;
+package com.aerofs.lib.properties;
 
+import com.aerofs.base.params.IProperty;
 import com.aerofs.config.properties.DynamicProperty;
 import com.netflix.config.DynamicStringProperty;
 
@@ -13,7 +14,7 @@ import java.net.URL;
 import static com.google.common.base.Preconditions.checkArgument;
 import static org.apache.commons.lang.StringUtils.isNotBlank;
 
-public class DynamicUrlProperty implements DynamicProperty<URL>
+public class DynamicUrlProperty implements DynamicProperty<URL>, IProperty<URL>
 {
     private URL cachedValue;
 
@@ -28,16 +29,18 @@ public class DynamicUrlProperty implements DynamicProperty<URL>
         }
     };
 
-    public DynamicUrlProperty( final String name, final String defaultValue ) {
-        this.delegate = new DynamicStringProperty( name, null );
+    public DynamicUrlProperty(final String name, final String defaultValue)
+    {
+        this.delegate = new DynamicStringProperty(name, null);
         this.defaultValue = defaultValue;
         load();
-        this.delegate.addCallback( callback );
+        this.delegate.addCallback(callback);
     }
 
-    private void load() {
+    private void load()
+    {
         final String propertySource = delegate.getValue();
-        if ( propertySource == null ) {
+        if (propertySource == null) {
             cachedValue = parse(defaultValue);
             return;
         }
@@ -45,16 +48,18 @@ public class DynamicUrlProperty implements DynamicProperty<URL>
         cachedValue = parse(propertySource);
     }
 
-    private URL parse( final String propertySource ) {
-        checkArgument( isNotBlank(propertySource), "propertySource cannot be null or blank" );
+    private URL parse(final String propertySource)
+    {
+        checkArgument(isNotBlank(propertySource), "propertySource cannot be null or blank");
         try {
             return new URL(propertySource);
-        } catch ( final MalformedURLException e ) {
+        } catch (final MalformedURLException e) {
             throw new IllegalStateException("The value of SP.URL could not be read as a URL, " + this, e);
         }
     }
 
-    protected void propertyChanged() {
+    protected void propertyChanged()
+    {
     }
 
     @Override
@@ -69,6 +74,7 @@ public class DynamicUrlProperty implements DynamicProperty<URL>
         return cachedValue;
     }
 
+    @Override
     public URL get()
     {
         return getValue();
@@ -81,10 +87,10 @@ public class DynamicUrlProperty implements DynamicProperty<URL>
     }
 
     @Override
-    public void addCallback( final Runnable callback )
+    public void addCallback(final Runnable callback)
     {
-        if ( callback != null ) {
-            delegate.addCallback( callback );
+        if (callback != null) {
+            delegate.addCallback(callback);
         }
     }
 }

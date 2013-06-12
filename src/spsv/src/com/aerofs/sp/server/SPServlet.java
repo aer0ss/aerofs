@@ -4,7 +4,7 @@ import com.aerofs.base.BaseParam.SP;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.analytics.Analytics;
 import com.aerofs.base.ex.ExNotFound;
-import com.aerofs.base.properties.DynamicInetSocketAddress;
+import com.aerofs.lib.properties.DynamicInetSocketAddress;
 import com.aerofs.lib.Util;
 import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExEmailSendingFailed;

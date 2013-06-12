@@ -4,11 +4,12 @@
 
 package com.aerofs.base;
 
-import com.aerofs.base.properties.DynamicInetSocketAddress;
-import com.aerofs.base.properties.DynamicUrlProperty;
-import com.aerofs.config.properties.DynamicOptionalStringProperty;
-import com.netflix.config.DynamicStringProperty;
+import com.aerofs.base.params.DummyPropertySource;
+import com.aerofs.base.params.IProperty;
+import com.aerofs.base.params.IPropertySource;
+
 import java.net.InetSocketAddress;
+import java.net.URL;
 
 /**
  * Base parameters for the servers, the desktop app and the Android client.
@@ -19,10 +20,24 @@ public class BaseParam
     // recommended size for file I/O buffers
     public static final int FILE_BUF_SIZE = 512 * C.KB;
 
+    // Set the property source to a dummy that always returns the default value.
+    // This means that if somebody forgets to initialize the dynamic property system, they will
+    // get defaults, which is consistent whith the current behavior
+    private static IPropertySource props = new DummyPropertySource();
+
+    /**
+     * Sets what source we are going to use for the properties. This is basically to avoid using
+     * the dynamic property system on Android. See comment in IPropertySource for more info
+     */
+    public static void setPropertySource(IPropertySource source)
+    {
+        props = source;
+    }
+
     public static class Xmpp
     {
-        public static final DynamicStringProperty SERVER_DOMAIN =
-                new DynamicStringProperty("base.xmpp.domain", "aerofs.com");
+        public static final IProperty<String> SERVER_DOMAIN = props.stringProperty("base.xmpp.domain",
+                "aerofs.com");
 
         public static String getMucAddress()
         {
@@ -31,14 +46,14 @@ public class BaseParam
 
         // staging value: "staging.aerofs.com:9328"
         // this value is dynamic but clients will not pick up the new value on failure
-        public static final DynamicInetSocketAddress ADDRESS =
-                new DynamicInetSocketAddress("base.xmpp.address",
-                        InetSocketAddress.createUnresolved("x.aerofs.com", 443));
+        public static final IProperty<InetSocketAddress> ADDRESS = props.addressProperty(
+                "base.xmpp.address",
+                InetSocketAddress.createUnresolved("x.aerofs.com", 443));
     }
 
     public static class Metrics
     {
-        public static final DynamicInetSocketAddress ADDRESS = new DynamicInetSocketAddress(
+        public static final IProperty<InetSocketAddress> ADDRESS = props.addressProperty(
                 "base.metrics.address",
                 InetSocketAddress.createUnresolved("metrics.aerofs.com", 2003));
     }
@@ -49,52 +64,52 @@ public class BaseParam
 
         // staging value: "staging.aerofs.com:8888"
         // this value is dynamic but clients will not pick up the new value on failure
-        public static final DynamicInetSocketAddress ADDRESS =
-                new DynamicInetSocketAddress("base.zephyr.address",
-                        InetSocketAddress.createUnresolved("relay.aerofs.com", 443));
+        public static final IProperty<InetSocketAddress> ADDRESS = props.addressProperty(
+                "base.zephyr.address",
+                InetSocketAddress.createUnresolved("relay.aerofs.com", 443));
     }
 
     public static class WWW
     {
-        public static final DynamicUrlProperty URL =
-                new DynamicUrlProperty("base.www.url", "https://www.aerofs.com");
+        public static final IProperty<URL> URL = props.urlProperty("base.www.url",
+                "https://www.aerofs.com");
 
         public static String url()
         {
             return URL.get().toExternalForm();
         }
 
-        public static final DynamicStringProperty SUPPORT_EMAIL_ADDRESS =
-                new DynamicStringProperty("base.www.support_email_address", "support@aerofs.com");
+        public static final IProperty<String> SUPPORT_EMAIL_ADDRESS =
+                props.stringProperty("base.www.support_email_address", "support@aerofs.com");
 
-        public static final DynamicStringProperty MARKETING_HOST_URL =
-                new DynamicStringProperty("base.www.marketing_host_url", url());
+        public static final IProperty<String> MARKETING_HOST_URL =
+                props.stringProperty("base.www.marketing_host_url", url());
 
-        public static final DynamicStringProperty DASHBOARD_HOST_URL =
-                new DynamicStringProperty("base.www.dashboard_host_url", url());
+        public static final IProperty<String> DASHBOARD_HOST_URL =
+                props.stringProperty("base.www.dashboard_host_url", url());
 
-        public static final DynamicStringProperty PASSWORD_RESET_REQUEST_URL =
-                new DynamicStringProperty("base.www.password_reset_request_url",
+        public static final IProperty<String> PASSWORD_RESET_REQUEST_URL =
+                props.stringProperty("base.www.password_reset_request_url",
                         url() + "/request_password_reset");
 
-        public static final DynamicStringProperty UPGRADE_URL =
-                new DynamicStringProperty("base.www.upgrade_url", url() + "/upgrade");
+        public static final IProperty<String> UPGRADE_URL =
+                props.stringProperty("base.www.upgrade_url", url() + "/upgrade");
 
-        public static final DynamicStringProperty TEAM_MEMBERS_URL =
-                new DynamicStringProperty("base.www.team_members_url", url() + "/admin/team_members");
+        public static final IProperty<String> TEAM_MEMBERS_URL =
+                props.stringProperty("base.www.team_members_url", url() + "/admin/team_members");
 
-        public static final DynamicStringProperty DEVICES_URL =
-                new DynamicStringProperty("base.www.devices_url", url() + "/devices");
+        public static final IProperty<String> DEVICES_URL =
+                props.stringProperty("base.www.devices_url", url() + "/devices");
 
-        public static final DynamicStringProperty TEAM_SERVER_DEVICES_URL =
-                new DynamicStringProperty("base.www.team_server_devices_url",
+        public static final IProperty<String> TEAM_SERVER_DEVICES_URL =
+                props.stringProperty("base.www.team_server_devices_url",
                         url() + "/admin/team_servers");
 
-        public static final DynamicStringProperty DOWNLOAD_URL =
-                new DynamicStringProperty("base.www.download_url", url() + "/download");
+        public static final IProperty<String> DOWNLOAD_URL =
+                props.stringProperty("base.www.download_url", url() + "/download");
 
-        public static final DynamicStringProperty TOS_URL =
-                new DynamicStringProperty("base.www.tos_url", url() + "/terms#privacy");
+        public static final IProperty<String> TOS_URL =
+                props.stringProperty("base.www.tos_url", url() + "/terms#privacy");
 
         public static final String FAQ_SYNC_HISTORY_URL
                 = "https://aircomputing.zendesk.com/entries/23753136";
@@ -119,21 +134,8 @@ public class BaseParam
         // 4) code with a "WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE" comment
         public static final int SP_PROTOCOL_VERSION = 20;
 
-        public static final DynamicUrlProperty URL =
-                new DynamicUrlProperty("base.sp.url", "https://sp.aerofs.com/sp");
-    }
-
-    public static class CA
-    {
-        // TODO (MP) move this to a server-only package (perhaps a new ServerParam.java?)
-        public static final DynamicUrlProperty URL =
-                new DynamicUrlProperty("base.ca.url", "http://joan.aerofs.com:1029/prod");
-
-        // TODO (MP) Cfg.cacert() should pull from this value, if it exists.
-        // If in private deployment mode, this will be populated with the correct certificate on
-        // startup when we pull config from the central HTTP configuration source.
-        public static final DynamicOptionalStringProperty CERTIFICATE =
-                new DynamicOptionalStringProperty("base.ca.certificate");
+        public static final IProperty<URL> URL = props.urlProperty("base.sp.url",
+                "https://sp.aerofs.com/sp");
     }
 
     public static class MobileService
@@ -144,15 +146,15 @@ public class BaseParam
 
     public static class Verkehr
     {
-        public static final DynamicStringProperty HOST =
-                new DynamicStringProperty("base.verkehr.host", "verkehr.aerofs.com");
+        public static final IProperty<String> HOST =
+                props.stringProperty("base.verkehr.host", "verkehr.aerofs.com");
 
-        public static final DynamicStringProperty PUBLISH_PORT =
-                new DynamicStringProperty("base.verkehr.port.publish", "9293");
-        public static final DynamicStringProperty ADMIN_PORT =
-                new DynamicStringProperty("base.verkehr.port.admin", "25234");
-        public static final DynamicStringProperty SUBSCRIBE_PORT =
-                new DynamicStringProperty("base.verkehr.port.subscribe", "443");
+        public static final IProperty<String> PUBLISH_PORT =
+                props.stringProperty("base.verkehr.port.publish", "9293");
+        public static final IProperty<String> ADMIN_PORT =
+                props.stringProperty("base.verkehr.port.admin", "25234");
+        public static final IProperty<String> SUBSCRIBE_PORT =
+                props.stringProperty("base.verkehr.port.subscribe", "443");
     }
 
     public static class VerkehrTopics
@@ -161,5 +163,11 @@ public class BaseParam
         public static final String CMD_CHANNEL_TOPIC_PREFIX = "cmd" + TOPIC_SEPARATOR;
         public static final String ACL_CHANNEL_TOPIC_PREFIX = "acl" + TOPIC_SEPARATOR;
         public static final String SSS_CHANNEL_TOPIC_PREFIX = "sss" + TOPIC_SEPARATOR;
+    }
+
+    public static class Mixpanel
+    {
+        public static final IProperty<String> API_ENDPOINT = props.stringProperty("base.mixpanel.url",
+                "https://api.mixpanel.com/track/?data=");
     }
 }

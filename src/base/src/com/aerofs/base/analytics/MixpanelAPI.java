@@ -5,11 +5,11 @@
 package com.aerofs.base.analytics;
 
 import com.aerofs.base.Base64;
+import com.aerofs.base.BaseParam.Mixpanel;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
 import com.google.gson.JsonObject;
-import com.netflix.config.DynamicStringProperty;
 import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
@@ -30,16 +30,9 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class MixpanelAPI
 {
     private static final Logger l = Loggers.getLogger(MixpanelAPI.class);
-
-    // MUST be non-null. Use empty string instead.
-    private static final DynamicStringProperty MIXPANEL_API_ENDPOINT =
-            new DynamicStringProperty("base.mixpanel.url",
-                    "https://api.mixpanel.com/track/?data=");
-
     private static final int SOCKET_TIMEOUT = (int) (10 * C.SEC);
 
     private final String _token;
-
     private final String _apiEndpoint;
 
     /**
@@ -47,7 +40,7 @@ public class MixpanelAPI
      */
     public MixpanelAPI(String token)
     {
-        this(token, MIXPANEL_API_ENDPOINT.get());
+        this(token, Mixpanel.API_ENDPOINT.get());
     }
 
     /**

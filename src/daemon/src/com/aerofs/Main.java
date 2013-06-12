@@ -1,9 +1,8 @@
 package com.aerofs;
 
-import com.aerofs.base.BaseParam;
-import com.aerofs.base.BaseParam.CA;
 import com.aerofs.base.Loggers;
-import com.aerofs.base.properties.Configuration;
+import com.aerofs.lib.LibParam.CA;
+import com.aerofs.lib.properties.Configuration;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.IProgram;
@@ -244,7 +243,7 @@ public class Main
             // Write the new cacert.pem to the approot for use by other parts of the system.
             // TODO (MP) remove this and have everyone use Cfg.cacert() directly.
             if (CA.CERTIFICATE.get().isPresent()) {
-                String caCertificateString = BaseParam.CA.CERTIFICATE.get().get();
+                String caCertificateString = CA.CERTIFICATE.get().get();
                 PrintStream out = null;
 
                 try {

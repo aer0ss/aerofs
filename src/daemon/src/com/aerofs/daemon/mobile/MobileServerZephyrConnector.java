@@ -78,7 +78,7 @@ public class MobileServerZephyrConnector
 
     private InetSocketAddress getZephyrAddress()
     {
-        return Zephyr.ADDRESS.getUnresolved();
+        return Zephyr.ADDRESS.get();
     }
 
     // called from XMPP

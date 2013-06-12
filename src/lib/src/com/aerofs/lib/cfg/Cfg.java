@@ -1,7 +1,6 @@
 package com.aerofs.lib.cfg;
 
 import com.aerofs.base.Base64;
-import com.aerofs.base.BaseParam.CA;
 import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.id.DID;
@@ -10,6 +9,7 @@ import com.aerofs.base.id.UserID;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.LibParam;
+import com.aerofs.lib.LibParam.CA;
 import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.StorageType;
 import com.aerofs.lib.Util;

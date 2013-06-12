@@ -16,6 +16,7 @@
     <orderEntry type="library" exported="" name="aws" level="project" />
     <orderEntry type="library" exported="" name="sqlite-jdbc" level="project" />
     <orderEntry type="library" exported="" name="logback" level="project" />
+    <orderEntry type="library" exported="" name="dynamic-config" level="project" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
 </module>

@@ -7,8 +7,12 @@ package com.aerofs.lib;
 import com.aerofs.base.BaseParam;
 import com.aerofs.base.C;
 import com.aerofs.base.id.SID;
+import com.aerofs.base.params.IProperty;
+import com.aerofs.config.properties.DynamicOptionalStringProperty;
+import com.aerofs.lib.properties.DynamicUrlProperty;
 
 import java.net.InetAddress;
+import java.net.URL;
 
 public class LibParam extends BaseParam
 {
@@ -179,5 +183,18 @@ public class LibParam extends BaseParam
         public static final String SS_POST_PARAM_PROTOCOL  = SP.SP_POST_PARAM_PROTOCOL;
         public static final String SS_POST_PARAM_DATA      = SP.SP_POST_PARAM_DATA;
         public static final int SS_PROTOCOL_VERSION         = 6;
+    }
+
+    public static class CA
+    {
+        // TODO (MP) move this to a server-only package (perhaps a new ServerParam.java?)
+        public static final DynamicUrlProperty URL =
+                new DynamicUrlProperty("base.ca.url", "http://joan.aerofs.com:1029/prod");
+
+        // TODO (MP) Cfg.cacert() should pull from this value, if it exists.
+        // If in private deployment mode, this will be populated with the correct certificate on
+        // startup when we pull config from the central HTTP configuration source.
+        public static final DynamicOptionalStringProperty CERTIFICATE =
+                new DynamicOptionalStringProperty("base.ca.certificate");
     }
 }
