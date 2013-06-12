@@ -113,7 +113,7 @@ public class ZephyrServer implements IIOEventHandler
             checkState(!_idToKey.containsKey(id), "z: id:" + id + " already used");
 
             PeerEndpoint ep = new PeerEndpoint(id, remaddr, this);
-            SelectionKey pek = _d.register(sc, ep, OP_READ);
+            SelectionKey pek = _d.register(sc, ep, 0); // hackish - but don't register for reads until we've sent the registration msg (hope this is OK!)
 
             // regardless of whether the message is sent back to the peer,
             // I want to put this id in the _idToKey map (so that this id is
@@ -130,7 +130,7 @@ public class ZephyrServer implements IIOEventHandler
             _idToKey.remove(id);
             closeChannel(sc);
         } catch (IOException e) {
-            l.warn("z: sc:" + sc + ":fail to set nb" + e);
+            l.warn("z: sc:" + sc + ":fail to set nb:" + e);
 
             _idToKey.remove(id);
             closeChannel(sc);

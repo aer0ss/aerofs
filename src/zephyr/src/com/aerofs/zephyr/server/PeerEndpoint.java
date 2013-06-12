@@ -38,6 +38,7 @@ import static com.aerofs.zephyr.server.ServerConstants.ReadStatus.NO_BYTES;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
+import static java.nio.channels.SelectionKey.OP_READ;
 import static java.nio.channels.SelectionKey.OP_WRITE;
 
 /**
@@ -77,13 +78,17 @@ public class PeerEndpoint implements IIOEventHandler
 
         try {
             ByteBuffer reg = _boss.getBuffer();
-            checkArgument(reg.capacity() >= ZEPHYR_REG_MSG_LEN, compact() + ": insufficient cap:" + reg.capacity());
+            checkState(reg.capacity() >= ZEPHYR_REG_MSG_LEN, compact() + ": insufficient cap:" + reg.capacity());
+            checkState(reg.position() == 0, compact() + ": invalid pos:" + reg.position());
 
             reg = createRegistrationMessage(reg, _ourid);
             reg.flip();
 
+            checkState(reg.position() == 0, compact() + ": reg pos after create:" + reg.position());
+            checkState(reg.limit() == ZEPHYR_REG_MSG_LEN, compact() + ": reg limit after create:" + reg.limit());
+
             if (writefully(k, reg)) {
-                transition(REGISTERED);
+                transitionIntoRegisteredState(k);
             }
         } catch (IOException e) {
             handleException(e, "fail reg write");
@@ -118,7 +123,7 @@ public class PeerEndpoint implements IIOEventHandler
                 // message if we're in the connected state (i.e. we don't have
                 // to worry that another endpoint was writing to us). therefore
                 // it is safe for us to transition to the registered state
-                transition(REGISTERED);
+                transitionIntoRegisteredState(k);
             }
         } catch (ExInvalidPeerEndpoint e) {
             handleException(e, "invalid dstpe:" + _remid);
@@ -153,6 +158,12 @@ public class PeerEndpoint implements IIOEventHandler
         }
     }
 
+    private void transitionIntoRegisteredState(SelectionKey k)
+    {
+        transition(REGISTERED); // signal that we've done registering
+        addInterest(k, OP_READ); // and get ready to read
+    }
+
     private void processInRegisteredState(SelectionKey k)
     {
         checkState(_state == REGISTERED, compact() + ": state:" + _state + ":invalid for func");
@@ -185,8 +196,6 @@ public class PeerEndpoint implements IIOEventHandler
             // check the message format and parameters
 
             b.flip();
-
-            l.trace("{}: bind buf:{}", compact(), crc(b));
 
             byte[] magic = new byte[ZEPHYR_MAGIC.length];
             b.get(magic);
@@ -240,11 +249,11 @@ public class PeerEndpoint implements IIOEventHandler
         // ----
 
         // needs to be synchronized wrt. dest because in the interval between
-        // hasPendingWrite and write someone else may write
+        // isWritable and write someone else may write
         // is this even possible? I don't think so, since there should only ever
         // be a one-to-one mapping between ourid and _remid
 
-        // this is just asking for trouble...splitting up hasPendingWrite and write
+        // this is just asking for trouble...splitting up isWritable and write
         // and doing this passedOwnership thing
 
         PeerEndpoint dstpe;
@@ -255,7 +264,7 @@ public class PeerEndpoint implements IIOEventHandler
             return;
         }
 
-        if (dstpe.hasPendingWrite()) {
+        if (!dstpe.isWritable()) {
             // do not read! this will get the sender's flow control working...
             // assumes that we are level triggered
             l.trace("{}: wr pending to dst:{} do not read", compact(), _remid);
@@ -295,14 +304,16 @@ public class PeerEndpoint implements IIOEventHandler
     /**
      * @return whether an {@link ByteBuffer} is already buffered for write
      */
-    public boolean hasPendingWrite()
+    public boolean isWritable()
     {
-        boolean haswrbuf = _wrbuf != null;
-        boolean haswrcrc = _wrcrc != null;
+        // don't allow writes if:
+        // 1. The peer has _not_ entered the REGISTERED state
+        // 2. They have a pending write
+        if (_state == CONNECTED || _wrbuf != null) {
+            return false;
+        }
 
-        checkState(haswrbuf == haswrcrc, compact() + ": mismatch wrbuf:" + _wrbuf + " wrcrc:" + _wrcrc);
-
-        return haswrbuf;
+        return true;
     }
 
     /**
@@ -328,7 +339,7 @@ public class PeerEndpoint implements IIOEventHandler
      * Cleans up resources allocated by this PeerEndpoint object and also
      * calls terminate() on the destination PeerEndpoint object. Also removes
      * this PeerEndpoint from the Zephyr server.
-     * @param cause
+     * @param cause termination reason
      */
     public void terminate(String cause)
     {
@@ -444,7 +455,14 @@ public class PeerEndpoint implements IIOEventHandler
 
         if (b != null) {
             _wrbuf = b;
+
+            int precrcpos = _wrbuf.position();
+            int precrclim = _wrbuf.limit();
+
             _wrcrc = crc(b);
+
+            checkState(_wrbuf.position() == precrcpos, compact() + "bad pos after crc exp:" + precrcpos + " act:" + _wrbuf.position());
+            checkState(_wrbuf.limit() == precrclim, compact() + "bad lim after crc exp:" + precrclim + " act:" + _wrbuf.limit());
 
             l.trace("{} wrbuf pos:{} rem:{} crc:{}", compact(), _wrbuf.position(), _wrbuf.remaining(), _wrcrc);
         } else {
@@ -468,7 +486,8 @@ public class PeerEndpoint implements IIOEventHandler
 
                 // check whether the buffer is ok
 
-                checkState(crc(_txbuf).equals(_wrcrc), "bad wr crc exp:" + _wrcrc + " act:" + crc(_txbuf));
+                String txbufcrc = crc(_txbuf);
+                checkState(txbufcrc.equals(_wrcrc), "bad wr crc exp:" + _wrcrc + " act:" + txbufcrc);
 
                 // reset buffer
 
