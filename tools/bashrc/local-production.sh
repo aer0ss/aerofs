@@ -162,3 +162,57 @@ function lp-vmctl-start()
     cd $AEROFS_ROOT
     ant local_prod_start
 }
+
+# -----------------------------------------------------------
+# SSH
+# -----------------------------------------------------------
+
+function _lp-ssh-usage()
+{
+    echo "Usage: lp-ssh <host>"
+    echo
+    echo "Available hosts:"
+    echo "  - ca/config/app-persistent"
+    echo "  - admin/app-transient"
+    echo "  - database"
+}
+
+function lp-ssh()
+{
+    if [ $# -ne 1 ]
+    then
+        _lp-ssh-usage
+        return
+    fi
+
+    local target=
+    case $1 in
+        ca)
+            target=app-persistent
+            ;;
+        config)
+            target=app-persistent
+            ;;
+        app-persistent)
+            target=app-persistent
+            ;;
+        admin)
+            target=app-transient
+            ;;
+        app-transient)
+            target=app-transient
+            ;;
+        database)
+            target=database
+            ;;
+    esac
+
+    if [ -z "$target" ]
+    then
+        _lp-ssh-usage
+        return
+    fi
+
+    cd $AEROFS_ROOT/packaging/bakery/vagrant
+    ./ssh.sh $target
+}
