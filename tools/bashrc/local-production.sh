@@ -17,19 +17,19 @@ function _lp-bin()
 function _lp-kick-transient()
 {
     cd $AEROFS_ROOT/packaging/bakery/developer
-    ./_lp-kick.sh app-transient
+    ./kick.sh app-transient
 }
 
 function _lp-kick-persistent()
 {
     cd $AEROFS_ROOT/packaging/bakery/developer
-    ./_lp-kick.sh app-persistent
+    ./kick.sh app-persistent
 }
 
 function _lp-kick-all()
 {
     cd $AEROFS_ROOT/packaging/bakery/developer
-    ./_lp-kick.sh app-all
+    ./kick.sh app-all
 }
 
 # -----------------------------------------------------------
