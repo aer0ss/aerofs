@@ -161,7 +161,10 @@ public class S
             CHILD_ALREADY_SHARED = "You can't share a folder that contains a shared folder.",
             PARENT_ALREADY_SHARED = "You can't share a folder under an already shared folder.",
             TYPE_ADMIN_PASSWORD_TO_RECERTIFY_TEAM_SERVER = "We've made a security update that " +
-                    "requires you to enter an admin's credentials on this Team Server. Email " +
+                    "requires you to enter an admin's credentials on this Team Server. " +
+                    "Once you enter the password, the Team Server will shutdown, and you will need" +
+                    " to manually restart it. We apologize for the inconvenience. " +
+                    "Email " +
                     WWW.SUPPORT_EMAIL_ADDRESS.get() + " if you have questions.",
             ADMIN_EMAIL = "Admin email",
             ADMIN_PASSWD = "Admin password",

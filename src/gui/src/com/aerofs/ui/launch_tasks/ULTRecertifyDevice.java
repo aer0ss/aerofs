@@ -126,6 +126,14 @@ public class ULTRecertifyDevice extends UILaunchTask
         sp.signIn(ac._userID.getString(), ByteString.copyFrom(scrypted));
         CredentialUtil.recertifyTeamServerDevice(Cfg.user(), sp);
         l.info("successfully recertified Team Server");
+
+        // For some reason the old certificate is cached somewhere in memory. It causes logging in
+        // to SP to fail and in turn repeatitive UI messages complaining about wrong certificate.
+        // Although it's ideal to identify and fix the root cause, it's probably not worth the
+        // efforts since so far most old Team Servers should have been recertified. As a quick
+        // workaround, we simply shutdown the process and let the user to restart it manually.
+        // (User instructions are in S.TYPE_ADMIN_PASSWORD_TO_RECERTIFY_TEAM_SERVER.)
+        UI.get().shutdown();
     }
 
     private void recertifyClient()
