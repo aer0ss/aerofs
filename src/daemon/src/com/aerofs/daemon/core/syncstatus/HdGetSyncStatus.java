@@ -134,7 +134,7 @@ public class HdGetSyncStatus extends AbstractHdIMC<EIGetSyncStatus>
         for (Entry<UserID, Status> e : aggregated.entrySet()) {
             FullName fn = _didinfo.getUserNameNullable_(e.getKey());
             result.add(PBSyncStatus.newBuilder()
-                    .setUserName(fn != null ? fn.toString() : e.getKey().getString())
+                    .setUserName(fn != null ? fn.getString() : e.getKey().getString())
                     .setStatus(e.getValue())
                     .build());
         }

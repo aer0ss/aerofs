@@ -205,7 +205,7 @@ public class InvitationEmailer
                     if (inviterFullName.isFirstOrLastNameEmpty()) {
                         _inviterName = _inviterLongName = inviter.id().getString();
                     } else {
-                        _inviterName = inviterFullName.toString();
+                        _inviterName = inviterFullName.getString();
                         _inviterLongName = _inviterName + " (" + inviter.id().getString() + ")";
                     }
                 }
