@@ -9,7 +9,3 @@ if [ "$info" = "" ]
 then
     useradd -m -s /bin/bash zephyr
 fi
-
-# create required directories with required permissions
-mkdir -p /var/log/zephyr
-chown -R zephyr:zephyr /var/log/zephyr
