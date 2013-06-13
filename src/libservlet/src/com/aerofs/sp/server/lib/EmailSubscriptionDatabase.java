@@ -127,7 +127,10 @@ public class EmailSubscriptionDatabase extends AbstractSQLDatabase
         ps.setString(1, userId.getString());
         ps.setInt(2, sc.getCategoryID());
 
-        Util.verify(ps.executeUpdate() == 1);
+        // Do not verify the returned result is one, since in some cases the user may not have
+        // subscription. For example, when a user signs up with no sign up code, the user may or may
+        // not have subscribed to the sign up reminder email.
+        ps.executeUpdate();
     }
 
     /**

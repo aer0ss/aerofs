@@ -74,6 +74,7 @@ import com.aerofs.proto.Sp.RecertifyDeviceReply;
 import com.aerofs.proto.Sp.RegisterDeviceReply;
 import com.aerofs.proto.Sp.RemoveUserFromOrganizationReply;
 import com.aerofs.proto.Sp.ResolveSignUpCodeReply;
+import com.aerofs.proto.Sp.SignUpReply;
 import com.aerofs.proto.Sp.SignUpWithCodeReply;
 import com.aerofs.proto.SpNotifications.PBACLNotification;
 import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue;
@@ -348,7 +349,7 @@ public class SPService implements ISPService
                 throw new ExBadArgs("First and last name must both be non-null or both null");
             }
 
-            FullName fullName = new FullName(firstName, lastName);
+            FullName fullName = sanitizeName(firstName, lastName);
             l.info("{} set full name: {}, session user {}", user, fullName.getString(), _sessionUser.get());
             user.setName(fullName);
             userNameUpdated = true;
@@ -1924,41 +1925,32 @@ public class SPService implements ISPService
     }
 
     @Override
-    public ListenableFuture<SignUpWithCodeReply> signUpWithCode(String signUpCode, ByteString credentials,
-            String firstName, String lastName)
+    public ListenableFuture<SignUpWithCodeReply> signUpWithCode(String signUpCode,
+            ByteString password, String firstName, String lastName)
             throws Exception
     {
-        // Sanitize names
-        firstName = firstName.trim();
-        lastName = lastName.trim();
-        if (firstName.isEmpty() || lastName.isEmpty()) {
-            throw new ExBadArgs("First and last names must not be empty");
-        }
-        FullName fullName = new FullName(firstName, lastName);
+        byte[] shaedSP = SPParam.getShaedSP(password.toByteArray());
 
-        byte[] shaedSP = SPParam.getShaedSP(credentials.toByteArray());
-
-        boolean existingTeam;
+        // is the user joining a new team or an existing team?
+        boolean joinExistingTeam;
 
         _sqlTrans.begin();
 
         UserID userID = _db.getSignUpCode(signUpCode);
         User user = _factUser.create(userID);
         Collection<UserID> users;
-        if (user.exists()) {
+        if (isExistingUserWithMatchingPassword(user, shaedSP)) {
             // If the user already exists and the password matches the existing password, we do an
-            // no-op. This is needed for the business users to retry signing up using the link in
+            // no-op. This is needed for invited users to retry signing up using the link in
             // their email. That link points to the user signup page with business signup as the
             // followup page.
-            if (!user.isCredentialCorrect(shaedSP)) {
-                throw new ExBadCredential("Password doesn't match the existing account");
-            }
             users = Collections.emptyList();
-            existingTeam = true;
+            joinExistingTeam = true;
         } else {
-            SignUpWithCodeImplResult result = signUpWithCodeImpl(signUpCode, user, fullName, shaedSP);
+            SignUpWithCodeImplResult result = signUpWithCodeImpl(signUpCode, user, firstName,
+                    lastName, shaedSP);
             users = result.getUsers();
-            existingTeam = result.isExistingTeam();
+            joinExistingTeam = result.isExistingTeam();
         }
 
         OrganizationID orgID = user.getOrganization().id();
@@ -1967,11 +1959,9 @@ public class SPService implements ISPService
 
         _sqlTrans.commit();
 
-        _analytics.track(new SignUpEvent(user.id()));
-
         return createReply(SignUpWithCodeReply.newBuilder()
                 .setOrgId(orgID.toHexString())
-                .setExistingTeam(existingTeam)
+                .setExistingTeam(joinExistingTeam)
                 .build());
     }
 
@@ -1999,18 +1989,15 @@ public class SPService implements ISPService
     /**
      * @return a collection of users to be passed to publishACLs_()
      */
-    private SignUpWithCodeImplResult signUpWithCodeImpl(String signUpCode, User user, FullName fullName,
-            byte[] shaedSP)
+    private SignUpWithCodeImplResult signUpWithCodeImpl(String signUpCode, User user,
+            String firstName, String lastName, byte[] shaedSP)
             throws Exception
     {
         l.info("sign up {} with code {}", user, signUpCode);
 
         // Always set the email as verified, since only the users who receive invitation emails can
         // sign up with code.
-        user.save(shaedSP, fullName, true);
-
-        // Unsubscribe user from the aerofs invitation reminder mailing list
-        _esdb.removeEmailSubscription(user.id(), SubscriptionCategory.AEROFS_INVITATION_REMINDER);
+        signUpCommon(user, firstName, lastName, shaedSP, true);
 
         // N.B. do not remove the sign up invitation code so we can support the case in the
         // above "if user.exist()" branch.
@@ -2031,6 +2018,68 @@ public class SPService implements ISPService
             }
             return new SignUpWithCodeImplResult(acceptTeamInvitation(user, oi.getOrganization()), true);
         }
+    }
+
+    @Override
+    public ListenableFuture<SignUpReply> signUp(String email, ByteString password,
+            String firstName, String lastName)
+            throws Exception
+    {
+        byte[] shaedSP = SPParam.getShaedSP(password.toByteArray());
+
+        _sqlTrans.begin();
+
+        User user = _factUser.createFromExternalID(email);
+
+        if (!isExistingUserWithMatchingPassword(user, shaedSP)) {
+            signUpCommon(user, firstName, lastName, shaedSP, false);
+        }
+
+        OrganizationID orgID = user.getOrganization().id();
+
+        _sqlTrans.commit();
+
+        return createReply(SignUpReply.newBuilder()
+                .setOrgId(orgID.toHexString())
+                .build());
+    }
+
+    /**
+     * Throw ExBadCredential if the user exists but the provided password doesn't match the user's
+     * password.
+     */
+    private boolean isExistingUserWithMatchingPassword(User user, byte[] shaedSP)
+            throws SQLException, ExNotFound, ExBadCredential
+    {
+        if (!user.exists()) return false;
+        if (!user.isCredentialCorrect(shaedSP)) {
+            throw new ExBadCredential("Password doesn't match the existing account");
+        }
+        return true;
+    }
+
+    // TODO (WW) similar to UserID, create FullName.fromExternal(), fromInternal()?
+    private FullName sanitizeName(String firstName, String lastName)
+            throws ExBadArgs
+    {
+        firstName = firstName.trim();
+        lastName = lastName.trim();
+        if (firstName.isEmpty() || lastName.isEmpty()) {
+            throw new ExBadArgs("First and last names must not be empty");
+        }
+        return new FullName(firstName, lastName);
+    }
+
+    private void signUpCommon(User user, String firstName, String lastName, byte[] shaedSP,
+            boolean isEmailVerified)
+            throws SQLException, ExBadArgs, ExAlreadyExist
+    {
+        user.save(shaedSP, sanitizeName(firstName, lastName), isEmailVerified);
+
+        // Unsubscribe user from the aerofs invitation reminder mailing list
+        _esdb.removeEmailSubscription(user.id(), SubscriptionCategory.AEROFS_INVITATION_REMINDER);
+
+        _analytics.track(new SignUpEvent(user.id()));
     }
 
     @Override

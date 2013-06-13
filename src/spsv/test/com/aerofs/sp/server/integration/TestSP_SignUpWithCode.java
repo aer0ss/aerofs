@@ -6,6 +6,7 @@ package com.aerofs.sp.server.integration;
 
 import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.base.id.UserID;
+import com.aerofs.lib.FullName;
 import com.aerofs.proto.Sp.SignUpWithCodeReply;
 import com.aerofs.sp.common.SubscriptionCategory;
 import com.aerofs.sp.server.lib.user.User;
@@ -20,6 +21,7 @@ import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertTrue;
 import static junit.framework.Assert.fail;
+import static org.mockito.Mockito.verify;
 
 public class TestSP_SignUpWithCode extends AbstractSPTest
 {
@@ -88,6 +90,26 @@ public class TestSP_SignUpWithCode extends AbstractSPTest
 
         sqlTrans.begin();
         assertTrue(factUser.create(userID).isEmailVerified());
+        sqlTrans.commit();
+    }
+
+    @Test
+    public void shouldRemoveReminderEmailSubscription()
+            throws Exception
+    {
+        signUp();
+        verify(esdb).removeEmailSubscription(userID, SubscriptionCategory.AEROFS_INVITATION_REMINDER);
+    }
+
+    @Test
+    public void shouldTrimUserName()
+            throws Exception
+    {
+        signUp();
+        sqlTrans.begin();
+        FullName fn = factUser.create(userID).getFullName();
+        assertTrue(fn._first.equals("A"));
+        assertTrue(fn._last.equals("B"));
         sqlTrans.commit();
     }
 
