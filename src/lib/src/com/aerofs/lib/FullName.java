@@ -45,7 +45,7 @@ public class FullName
     /**
      * @return a string with first and last name combined
      */
-    public String toString()
+    public String getString()
     {
         // call trim() in case the first or last name is empty.
         String ret = (_first + " " + _last).trim();

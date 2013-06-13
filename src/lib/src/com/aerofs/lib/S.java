@@ -84,8 +84,11 @@ public class S
             BAD_CREDENTIAL_CAP       = "Email or password is incorrect",
 
             // begin transfers dialog
-            LBL_UNKNOWN_USER         = "Unknown user",
-            LBL_UNKNOWN_DEVICE       = "Unknown device",
+
+            // N.B. LBL_UNKNOWN_USER & LBL_UNKNOWN_DEVICE should include
+            //   custom prefix/suffix as a part of the string
+            LBL_UNKNOWN_USER         = "Unknown user's computer",
+            LBL_UNKNOWN_DEVICE       = "My unknown computer",
             LBL_UNKNOWN_FILE         = "Incoming file",
 
             LBL_NO_ACTIVE_TRANSFERS  = "No active transfers",
