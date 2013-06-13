@@ -391,38 +391,6 @@ public class DlgHistory extends AeroFSDialog
                 refreshVersionTable((TreeItem) event.item);
             }
         });
-
-        // Add context menu
-        _revTree.addListener(SWT.MenuDetect, new Listener()
-        {
-            @Override
-            public void handleEvent(Event event)
-            {
-                TreeItem item = _revTree.getItem(_revTree.toControl(event.x, event.y));
-                if (item == null) return;
-
-                final ModelIndex index = index(item);
-
-                Menu menu = new Menu(_revTree.getShell(), SWT.POP_UP);
-                addMenuItem(menu, "Restore Deleted File" + (index.isDir ? "s" : "") + "...",
-                            new Listener() {
-                    @Override
-                    public void handleEvent(Event ev)
-                    {
-                        recursivelyRestore(index);
-                    }
-                }).setEnabled(index.isDir || index.isDeleted);
-
-                menu.setLocation(event.x, event.y);
-                menu.setVisible(true);
-                while (!menu.isDisposed() && menu.isVisible()) {
-                    if (!menu.getDisplay().readAndDispatch()) {
-                        menu.getDisplay().sleep();
-                    }
-                }
-                menu.dispose();
-            }
-        });
     }
 
     private void refreshVersionTree()
@@ -545,57 +513,6 @@ public class DlgHistory extends AeroFSDialog
         revTableLayout.setColumnData(revSizeCol,
                 new ColumnWeightData(3, ColumnWeightData.MINIMUM_WIDTH));
         _revTableWrap.setLayout(revTableLayout);
-
-        // Add context menu
-        _revTable.addListener(SWT.MenuDetect, new Listener()
-        {
-            @Override
-            public void handleEvent(Event event)
-            {
-                final TableItem item = _revTable.getItem(_revTable.toControl(event.x, event.y));
-                if (item == null) return;
-
-                final HistoryModel.Version version = (HistoryModel.Version) item.getData();
-
-                Menu menu = new Menu(_revTable.getShell(), SWT.POP_UP);
-
-                addMenuItem(menu, "Open", new Listener()
-                {
-                    @Override
-                    public void handleEvent(Event ev)
-                    {
-                        openVersion(version);
-                    }
-                });
-
-                addMenuItem(menu, "Save As...", new Listener()
-                {
-                    @Override
-                    public void handleEvent(Event ev)
-                    {
-                        saveVersionAs(version);
-                    }
-                });
-
-                addMenuItem(menu, "Delete", new Listener()
-                {
-                    @Override
-                    public void handleEvent(Event ev)
-                    {
-                        deleteVersion(version);
-                    }
-                });
-
-                menu.setLocation(event.x, event.y);
-                menu.setVisible(true);
-                while (!menu.isDisposed() && menu.isVisible()) {
-                    if (!menu.getDisplay().readAndDispatch()) {
-                        menu.getDisplay().sleep();
-                    }
-                }
-                menu.dispose();
-            }
-        });
 
         // Open the revision on double click
         _revTable.addSelectionListener(new SelectionAdapter() {
@@ -745,7 +662,7 @@ public class DlgHistory extends AeroFSDialog
         Path p = _model.getPath(index);
         new HistoryTaskDialog(getShell(), "Deleting...",
                 "Permanently delete all previous versions under \"" + p.last() + "\" ?\n ",
-                "Deleting old versions under " + p) {
+                "Deleting old versions under " + p.toStringRelative()) {
             @Override
             public void run() throws Exception {
                 _model.delete(index);
@@ -796,7 +713,8 @@ public class DlgHistory extends AeroFSDialog
                                     MessageBox mb = new MessageBox(getShell(),
                                             SWT.ICON_ERROR | SWT.ABORT | SWT.RETRY | SWT.IGNORE);
                                     mb.setText("Failed to restore");
-                                    mb.setMessage("Failed to restore " + _model.getPath(idx));
+                                    mb.setMessage("Failed to restore "
+                                            + _model.getPath(idx).toStringRelative());
                                     int ret = mb.open();
                                     switch (ret) {
                                     case SWT.ABORT:  reply.set(Answer.Abort); break;
