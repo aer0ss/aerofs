@@ -4,20 +4,26 @@ import com.aerofs.ChannelFactories;
 import com.aerofs.base.C;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.ex.ExFormatError;
+import com.aerofs.base.id.SID;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.IProgram;
 import com.aerofs.lib.Path;
+import com.aerofs.lib.StorageType;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ritual.RitualBlockingClient;
 import com.aerofs.lib.ritual.RitualClientProvider;
 import com.aerofs.proto.Common.PBPath;
+import com.aerofs.proto.Ritual.PBSharedFolder;
 import com.aerofs.shell.ShellCommandRunner.ICallback;
 import com.aerofs.shell.restricted.CmdDstat;
 import com.aerofs.shell.restricted.CmdTestMultiuserJoinRootStore;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.ui.UIUtil;
+import com.google.common.collect.Maps;
 
 import java.io.File;
+import java.util.Collections;
+import java.util.Map;
 
 public class ShProgram implements IProgram, ICallback
 {
@@ -157,10 +163,21 @@ public class ShProgram implements IProgram, ICallback
         for (String token : tokens) {
             if (token.isEmpty()) continue;
             if (token.equals("..")) {
-                if (r.isEmpty()) throw new ExBadArgs("invalid path");
-                r = r.removeLast();
+                if (!r.isEmpty()) {
+                    r = r.removeLast();
+                } else if (L.isMultiuser()) {
+                    // make cd up consistent with cd down from user root
+                    r = Path.root(Cfg.rootSID());
+                }
             } else {
-                r = r.append(token);
+                // make cd down consistent with ls from user root
+                if (L.isMultiuser() && isUserRoot(r)) {
+                    try {
+                        r = Path.root(SID.fromStringFormal(token));
+                    } catch (ExFormatError e) { throw new ExBadArgs("invalid path"); }
+                } else {
+                    r = r.append(token);
+                }
             }
         }
 
@@ -182,11 +199,48 @@ public class ShProgram implements IProgram, ICallback
         _pwd = pwd;
     }
 
+    public boolean isPwdAtUserRoot_()
+    {
+        return isUserRoot(_pwd);
+    }
+
+    private static boolean isUserRoot(Path p)
+    {
+        return p.equals(Path.root(Cfg.rootSID()));
+    }
+
+    public Map<SID, String> getRoots() throws Exception
+    {
+        if (Cfg.storageType() == StorageType.LINKED) {
+            // if multiroot, use phy roots as top level
+            return Cfg.getRoots();
+        } else if (L.isMultiuser()) {
+            Map<SID, String> roots = Maps.newHashMap();
+            // use user roots as top level
+            for (PBSharedFolder sf : getRitualClient_().listUserRoots().getUserRootList()) {
+                roots.put(new SID(sf.getPath().getSid()), sf.getName());
+            }
+            // need to list shared folders too:
+            // 1. otherwise we might miss folders created on a linked TS of the same org
+            // 2. otherwise the UX would be inconsistent with linked TS
+            for (PBSharedFolder sf : getRitualClient_().listSharedFolders().getSharedFolderList()) {
+                roots.put(new SID(sf.getPath().getSid()), sf.getName());
+            }
+            return roots;
+        }
+        // default: root sid only
+        return Collections.singletonMap(Cfg.rootSID(), "");
+    }
+
     private String rootName(Path path)
     {
         // the root SID is not associated with any path on TeamServer
-        String absRoot = Cfg.getRootPath(path.sid());
-        return absRoot != null ? new File(absRoot).getName() : "";
+        if (Cfg.storageType() == StorageType.LINKED) {
+            String absRoot = Cfg.getRootPath(path.sid());
+            return absRoot != null ? new File(absRoot).getName() : "";
+        } else {
+            return isUserRoot(path) ? "" : path.sid().toStringFormal();
+        }
     }
 
     @Override
