@@ -21,6 +21,17 @@ public interface IUI {
 
     void showWithNoShowAgainCheckBox(MessageType mt, String msg, OutArg<Boolean> noShow);
 
+    static interface IWaiter
+    {
+        void done();
+    }
+
+    /**
+     * Similar to show except that the message cannot be dismissed by the user
+     * Calling IWaiter.done()
+     */
+    IWaiter showWait(String title, String msg);
+
     /**
      * Similar to show(), but requires explicit confirmation from the user.
      * @throws ExNoConsole if no console is found. the method show()s an error

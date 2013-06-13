@@ -153,6 +153,19 @@ public class CLI implements IUI {
     }
 
     @Override
+    public IWaiter showWait(final String title, String msg)
+    {
+        show(MessageType.INFO, msg);
+        return new IWaiter() {
+            @Override
+            public void done()
+            {
+                show(MessageType.INFO, title + " done");
+            }
+        };
+    }
+
+    @Override
     public boolean ask(MessageType mt, String msg) throws ExNoConsole
     {
         return ask(mt, msg, "Yes", "No");

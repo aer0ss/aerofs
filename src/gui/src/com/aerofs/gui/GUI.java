@@ -24,10 +24,17 @@ import com.aerofs.sv.client.SVClient;
 import com.aerofs.ui.IUI;
 import com.aerofs.ui.UI;
 import com.aerofs.ui.UIUtil;
+import com.google.common.util.concurrent.SettableFuture;
 import org.eclipse.jface.dialogs.IDialogConstants;
+import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.DisposeEvent;
 import org.eclipse.swt.events.DisposeListener;
+import org.eclipse.swt.layout.GridData;
+import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Event;
+import org.eclipse.swt.widgets.Label;
+import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Widget;
 import org.slf4j.Logger;
@@ -261,6 +268,79 @@ public class GUI implements IUI
                 noShow.set(amb.isChecked());
             }
         });
+    }
+
+    private static class Wait extends AeroFSDialog implements IWaiter
+    {
+        private final String _msg;
+
+        public Wait(Shell parent, String title, String msg)
+        {
+            super(parent, title, false, false, false);
+            _msg = msg;
+        }
+
+        @Override
+        protected void open(Shell shell)
+        {
+            if (GUIUtil.isWindowBuilderPro()) // $hide$
+                shell = new Shell(getParent(), getStyle());
+
+            GridLayout glShell = new GridLayout(2, false);
+            glShell.marginHeight = GUIParam.MARGIN;
+            glShell.marginWidth = GUIParam.MARGIN;
+            glShell.verticalSpacing = 0;
+            shell.setLayout(glShell);
+
+            new CompSpin(shell, SWT.NONE).start();
+            Label label = new Label(shell, SWT.WRAP);
+            label.setText(_msg);
+            label.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, true, true, 1, 1));
+
+            // prevent user from closing by pressing ESC
+            shell.addListener(SWT.Traverse, new Listener() {
+                @Override
+                public void handleEvent(Event e) {
+                    if (e.detail == SWT.TRAVERSE_ESCAPE) {
+                        e.doit = false;
+                    }
+                }
+            });
+        }
+
+        @Override
+        public void done()
+        {
+            GUI.get().asyncExec(new Runnable() {
+                @Override
+                public void run()
+                {
+                    closeDialog();
+                }
+            });
+        }
+    }
+
+    @Override
+    public IWaiter showWait(final String title, final String msg)
+    {
+        final SettableFuture<IWaiter> w = SettableFuture.create();
+
+        asyncExec(new Runnable() {
+            @Override
+            public void run()
+            {
+                Wait dlg = new Wait(_sh, title, msg);
+                w.set(dlg);
+                dlg.openDialog();
+            }
+        });
+
+        try {
+            return w.get();
+        } catch (Exception e) {
+            throw new AssertionError(e);
+        }
     }
 
     public void safeAsyncExec(final Widget w, final Runnable run)
