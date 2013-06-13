@@ -53,6 +53,7 @@ import static com.aerofs.sp.server.lib.SPSchema.C_USER_ID;
 import static com.aerofs.sp.server.lib.SPSchema.C_USER_LAST_NAME;
 import static com.aerofs.sp.server.lib.SPSchema.C_USER_ORG_ID;
 import static com.aerofs.sp.server.lib.SPSchema.C_USER_SIGNUP_TS;
+import static com.aerofs.sp.server.lib.SPSchema.C_USER_EMAIL_VERIFIED;
 import static com.aerofs.sp.server.lib.SPSchema.T_AC;
 import static com.aerofs.sp.server.lib.SPSchema.T_DEVICE;
 import static com.aerofs.sp.server.lib.SPSchema.T_TI;
@@ -74,7 +75,7 @@ public class UserDatabase extends AbstractSQLDatabase
      * @throws ExAlreadyExist if the user ID already exists
      */
     public void insertUser(UserID id, FullName fullName, byte[] shaedSP, OrganizationID orgID,
-            AuthorizationLevel level)
+            AuthorizationLevel level, boolean isEmailVerified)
             throws SQLException, ExAlreadyExist
     {
         // we always create a user with initial epoch + 1 to ensure that the first time
@@ -84,7 +85,7 @@ public class UserDatabase extends AbstractSQLDatabase
         PreparedStatement ps = prepareStatement(
                 DBUtil.insert(T_USER, C_USER_ID, C_USER_CREDS, C_USER_FIRST_NAME,
                         C_USER_LAST_NAME, C_USER_ORG_ID, C_USER_AUTHORIZATION_LEVEL,
-                        C_USER_ACL_EPOCH));
+                        C_USER_ACL_EPOCH, C_USER_EMAIL_VERIFIED));
 
         ps.setString(1, id.getString());
         ps.setString(2, Base64.encodeBytes(shaedSP));
@@ -94,6 +95,7 @@ public class UserDatabase extends AbstractSQLDatabase
         ps.setInt(6, level.ordinal());
         //noinspection PointlessArithmeticExpression
         ps.setInt(7, LibParam.INITIAL_ACL_EPOCH + 1);
+        ps.setBoolean(8, isEmailVerified);
 
         try {
             ps.executeUpdate();
@@ -164,6 +166,27 @@ public class UserDatabase extends AbstractSQLDatabase
         }
     }
 
+    public boolean isEmailVerified(UserID userId)
+            throws SQLException, ExNotFound
+    {
+        ResultSet rs = queryUser(userId, C_USER_EMAIL_VERIFIED);
+        try {
+            return rs.getBoolean(1);
+        } finally {
+            rs.close();
+        }
+    }
+
+    public void setEmailVerified(UserID userId)
+            throws SQLException
+    {
+        PreparedStatement ps = prepareStatement(
+                updateWhere(T_USER, C_USER_ID + "=?", C_USER_EMAIL_VERIFIED));
+
+        ps.setBoolean(1, true);
+        ps.setString(2, userId.getString());
+        Util.verify(ps.executeUpdate() == 1);
+    }
 
     public @Nonnull byte[] getShaedSP(UserID userId)
             throws SQLException, ExNotFound

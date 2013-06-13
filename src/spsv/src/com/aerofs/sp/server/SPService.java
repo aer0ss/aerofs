@@ -2010,7 +2010,9 @@ public class SPService implements ISPService
     {
         l.info("sign up {} with code {}", user, signUpCode);
 
-        user.save(shaedSP, fullName);
+        // Always set the email as verified, since only the users who receive invitation emails can
+        // sign up with code.
+        user.save(shaedSP, fullName, true);
 
         // Unsubscribe user from the aerofs invitation reminder mailing list
         _esdb.removeEmailSubscription(user.id(), SubscriptionCategory.AEROFS_INVITATION_REMINDER);

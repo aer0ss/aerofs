@@ -64,7 +64,7 @@ public class TestSP_EpochCommandQueue extends AbstractSPTest
         _device = factDevice.create(new DID(UniqueID.generate()));
 
         User user = factUser.create(UserID.fromExternal("something@email.com"));
-        user.save(new byte[0], new FullName("First", "Last"));
+        user.save(new byte[0], new FullName("First", "Last"), true);
         _device.save(user, "", "", "Test Device");
 
         sqlTrans.commit();

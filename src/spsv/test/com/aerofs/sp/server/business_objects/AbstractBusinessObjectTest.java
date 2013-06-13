@@ -89,7 +89,13 @@ public abstract class AbstractBusinessObjectTest extends AbstractAutoTransaction
     protected void saveUser(User user)
             throws Exception
     {
-        user.save(new byte[0], new FullName("first", "last"));
+        user.save(new byte[0], new FullName("first", "last"), true);
+    }
+
+    protected void saveEmailUnverifiedUser(User user)
+            throws Exception
+    {
+        user.save(new byte[0], new FullName("first", "last"), false);
     }
 
     protected User saveUser()

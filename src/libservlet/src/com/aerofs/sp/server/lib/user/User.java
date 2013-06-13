@@ -78,6 +78,9 @@ public class User
             return create(UserID.fromExternal(str));
         }
 
+        /**
+         * This method should be called by Organization.save() only
+         */
         public User saveTeamServerUser(Organization org)
                 throws SQLException, ExAlreadyExist
         {
@@ -85,8 +88,11 @@ public class User
 
             // Use an invalid password hash to prevent attackers from logging in as Team Server
             // using _any_ password. Also see C.MULTIUSER_LOCAL_PASSWORD.
+            //
+            // Always set the email as verified. This is safe since only verified users can install
+            // Team Servers.
             tsUser.saveImpl(new byte[0], new FullName("Team", "Server"), org,
-                    AuthorizationLevel.USER);
+                    AuthorizationLevel.USER, true);
             return tsUser;
         }
     }
@@ -182,6 +188,19 @@ public class User
             throws SQLException, ExNotFound
     {
         return getLevel().covers(AuthorizationLevel.ADMIN);
+    }
+
+    public boolean isEmailVerified()
+            throws SQLException, ExNotFound
+    {
+        return _f._udb.isEmailVerified(_id);
+    }
+
+    // TODO (WW) throw ExNotFound if the user doesn't exist?
+    public void setEmailVerified()
+            throws SQLException
+    {
+        _f._udb.setEmailVerified(_id);
     }
 
     // TODO (WW) throw ExNotFound if the user doesn't exist?
@@ -300,16 +319,17 @@ public class User
      * @param shaedSP sha256(scrypt(p|u)|passwdSalt)
      * @throws ExAlreadyExist if the user ID already exists.
      */
-    public void save(byte[] shaedSP, FullName fullName)
+    public void save(byte[] shaedSP, FullName fullName, boolean isEmailVerified)
             throws ExAlreadyExist, SQLException
     {
-        saveImpl(shaedSP, fullName, _f._factOrg.save(), AuthorizationLevel.ADMIN);
+        saveImpl(shaedSP, fullName, _f._factOrg.save(), AuthorizationLevel.ADMIN, isEmailVerified);
     }
 
-    public void saveImpl(byte[] shaedSP, FullName fullName, Organization org, AuthorizationLevel level)
+    public void saveImpl(byte[] shaedSP, FullName fullName, Organization org,
+            AuthorizationLevel level, boolean isEmailVerified)
             throws SQLException, ExAlreadyExist
     {
-        _f._udb.insertUser(_id, fullName, shaedSP, org.id(), level);
+        _f._udb.insertUser(_id, fullName, shaedSP, org.id(), level, isEmailVerified);
 
         addRootStoreAndCheckForCollision();
     }

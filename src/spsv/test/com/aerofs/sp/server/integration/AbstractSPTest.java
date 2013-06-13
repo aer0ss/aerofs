@@ -214,7 +214,7 @@ public class AbstractSPTest extends AbstractTestWithDatabase
             throws Exception
     {
         String idString = user.id().getString();
-        user.save(CRED, new FullName(idString, idString));
+        user.save(CRED, new FullName(idString, idString), true);
     }
 
     protected Device saveDevice(User owner)

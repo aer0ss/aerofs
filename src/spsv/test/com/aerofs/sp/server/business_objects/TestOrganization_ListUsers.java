@@ -54,17 +54,17 @@ public class TestOrganization_ListUsers extends AbstractBusinessObjectTest
 
         for (int i = 0; i < NUMBER_OF_USERS; i++) {
             udb.insertUser(UserID.fromInternal("user" + i + "@test.com"), fullName, "".getBytes(),
-                    orgId, AuthorizationLevel.USER);
+                    orgId, AuthorizationLevel.USER, true);
         }
 
         for (int i = 0; i < NUMBER_OF_ADMINS; i++) {
             udb.insertUser(UserID.fromInternal("admin" + i + "@test.com"), fullName, "".getBytes(),
-                    orgId, AuthorizationLevel.ADMIN);
+                    orgId, AuthorizationLevel.ADMIN, true);
         }
 
         for (int i = 0; i < NUMBER_OF_USERS; i++) {
             udb.insertUser(UserID.fromInternal("user" + i + "@dummy.com"), fullName, "".getBytes(),
-                    nonQueriedOrgId, AuthorizationLevel.USER);
+                    nonQueriedOrgId, AuthorizationLevel.USER, true);
         }
     }
 
@@ -73,7 +73,7 @@ public class TestOrganization_ListUsers extends AbstractBusinessObjectTest
             throws SQLException, ExAlreadyExist, ExBadArgs
     {
         udb.insertUser(orgId.toTeamServerUserID(), new FullName("", ""), "".getBytes(),
-                orgId, AuthorizationLevel.USER);
+                orgId, AuthorizationLevel.USER, true);
 
         for (User u : org.listUsers(TOTAL_USERS, 0)) {
             assertFalse(u.id().isTeamServerID());
