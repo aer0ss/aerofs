@@ -350,7 +350,7 @@ public class SPService implements ISPService
             }
 
             FullName fullName = new FullName(firstName, lastName);
-            l.info("{} set full name: {}, session user {}", user, fullName, _sessionUser.get());
+            l.info("{} set full name: {}, session user {}", user, fullName.getString(), _sessionUser.get());
             user.setName(fullName);
             userNameUpdated = true;
         }
