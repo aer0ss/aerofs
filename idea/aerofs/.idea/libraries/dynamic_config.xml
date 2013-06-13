@@ -2,6 +2,7 @@
   <library name="dynamic-config">
     <CLASSES>
       <root url="file://$PROJECT_DIR$/../../resource/common/lib.dynamic-config" />
+      <root url="jar://$PROJECT_DIR$/../../resource/common/lib/jcl-over-slf4j-1.7.5.jar!/" />
     </CLASSES>
     <JAVADOC />
     <SOURCES />
