@@ -29,7 +29,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.Maps.newHashMap;
 import static java.nio.channels.SelectionKey.OP_ACCEPT;
-import static java.nio.channels.SelectionKey.OP_READ;
 
 /**
  * This is the boss IIoEventHandler. It creates PeerEndpoint objects and
@@ -115,6 +114,8 @@ public class ZephyrServer implements IIOEventHandler
             PeerEndpoint ep = new PeerEndpoint(id, remaddr, this);
             SelectionKey pek = _d.register(sc, ep, 0); // hackish - but don't register for reads until we've sent the registration msg (hope this is OK!)
 
+            l.info("z: create pe: map k:{} -> pe:{}", pek, ep.toString());
+
             // regardless of whether the message is sent back to the peer,
             // I want to put this id in the _idToKey map (so that this id is
             // not used again) this is because I don't know when the message
@@ -125,12 +126,12 @@ public class ZephyrServer implements IIOEventHandler
 
             ep.init(pek); // I'm really not a fan of doing this, because now they have access to the channel as well...
         } catch(ClosedChannelException e) {
-            l.warn("z: sc:" + sc + ":reg fail with sel:" + e);
+            l.warn("z: sc:{}:fail reg with cce:{}", sc, e);
 
             _idToKey.remove(id);
             closeChannel(sc);
         } catch (IOException e) {
-            l.warn("z: sc:" + sc + ":fail to set nb:" + e);
+            l.warn("z: sc:{}:fail reg with ioe:{}", sc, e);
 
             _idToKey.remove(id);
             closeChannel(sc);
@@ -158,7 +159,7 @@ public class ZephyrServer implements IIOEventHandler
                 PeerEndpoint pe = (PeerEndpoint) k.attachment();
                 pe.terminate("system-wide termination");
             } catch (Exception e) {
-                l.warn("z: fail to terminate id:" + entry.getKey());
+                l.warn("z: fail to terminate id:{}", entry.getKey());
 
                 if (k != null) closeChannel(k.channel());
             }

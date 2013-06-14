@@ -501,9 +501,13 @@ public class PeerEndpoint implements IIOEventHandler
         }
     }
 
-    private void copytxbytes(ByteBuffer b, int begpos, int finpos, int bytetx, int bytrem)
+    private void copytxbytes(ByteBuffer b, final int begpos, final int finpos, final int bytetx, final int bytrem)
             throws IOException
     {
+        checkArgument(begpos != finpos);
+        checkArgument(bytetx > 0);
+        checkArgument(bytetx == (finpos - begpos), "bytetx:{} f-b:{}", bytetx, (finpos - bytetx));
+
         int txbufpos = _txbuf.position();
         int txbufrem = _txbuf.remaining();
 
@@ -542,9 +546,14 @@ public class PeerEndpoint implements IIOEventHandler
             _txcount += bytetx;
 
             int finpos = b.position();
-            int bytrem = b.remaining();
+            int bytrem = 0;
+            if (b.hasRemaining()) {
+                bytrem = b.remaining();
+            }
 
-            copytxbytes(b, begpos, finpos, bytetx, bytrem);
+            if (bytetx > 0) {
+                copytxbytes(b, begpos, finpos, bytetx, bytrem);
+            }
 
             if (b.hasRemaining()) {
                 addInterest(k, OP_WRITE);
@@ -659,6 +668,7 @@ public class PeerEndpoint implements IIOEventHandler
         int startpos = buf.position();
         try {
             byte[] contents = new byte[buf.remaining()];
+            buf.get(contents);
             return crc32(contents);
         } finally {
             buf.position(startpos);
