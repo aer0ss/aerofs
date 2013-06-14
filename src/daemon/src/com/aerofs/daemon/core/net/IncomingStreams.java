@@ -91,6 +91,9 @@ public final class IncomingStreams
     private final Map<StreamKey, IncomingStream> _ended = Maps.newTreeMap();
     private final UnicastInputOutputStack _stack;
 
+    private long _startTimeNanos;
+    private long _bytesRead = 0;
+
     @Inject
     public IncomingStreams(UnicastInputOutputStack stack)
     {
@@ -120,6 +123,7 @@ public final class IncomingStreams
         IncomingStream stream = new IncomingStream(pc);
         _map.put(key, stream);
 
+        _startTimeNanos = System.nanoTime();
         l.info("create " + stream + ":" + key);
     }
 
@@ -176,6 +180,7 @@ public final class IncomingStreams
                 l.warn("istrm " + stream + " recv chunk after abort seq:" + seq);
             }
         } else {
+            _bytesRead += (long)chunk.available();
             stream._chunks.add(chunk);
             for (IIncomingStreamChunkListener listener : _listenerList) {
                 listener.onChunkReceived_(key._did, key._strmid);
@@ -221,6 +226,8 @@ public final class IncomingStreams
 
         try {
             l.info("end" + stream + " key:" + key);
+            long _diffTime = (System.nanoTime() - _startTimeNanos) / 1000000;
+            l.debug("istrm processed:{} time:{}", _bytesRead, _diffTime);
 
             _stack.output().endIncomingStream_(key._strmid, stream._pc);
         } catch (Exception e) {
