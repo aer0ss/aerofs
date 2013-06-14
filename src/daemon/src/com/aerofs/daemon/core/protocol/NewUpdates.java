@@ -54,8 +54,6 @@ public class NewUpdates
     private IMapSIndex2SID _sidx2sid;
     private IMapSID2SIndex _sid2sidx;
 
-    private final List<IPushUpdatesListener> _listeners = Lists.newArrayList();
-
     @Inject
     public void inject_(TransManager tm, NSL nsl, NativeVersionControl nvc, Metrics m,
             MapSIndex2Store sidx2s, IMapSIndex2SID sidx2sid, IMapSID2SIndex sid2sidx)
@@ -67,11 +65,6 @@ public class NewUpdates
         _sidx2s = sidx2s;
         _sidx2sid = sidx2sid;
         _sid2sidx = sid2sidx;
-    }
-
-    public void addListener_(IPushUpdatesListener listener)
-    {
-        _listeners.add(listener);
     }
 
     public void send_(Collection<SOCKID> ks)
@@ -160,11 +153,6 @@ public class NewUpdates
                     if (done.add(oid) && filter.add_(oid)) {
                         l.debug("add oid {} to {}", oid, filter);
                     }
-                }
-
-                for (IPushUpdatesListener listener : _listeners) {
-                    // This assumes the device will push the given update *once*
-                    listener.receivedPushUpdate_(socid, msg.did());
                 }
             }
 
