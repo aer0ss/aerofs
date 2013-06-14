@@ -97,6 +97,9 @@ message PBException {
         NOT_AUTHENTICATED = 404;
         INVALID_EMAIL_ADDRESS = 405;
         INVITEE_LIST_EMPTY = 406;
+        // A user whose email is not verified attempts to perform an operation that requires email
+        // verification
+        EMAIL_NOT_VERIFIED = 407;
     }
 
     required Type type = 1;

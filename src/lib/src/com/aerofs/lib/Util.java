@@ -85,6 +85,7 @@ public abstract class Util
                         .put(Type.NO_STRIPE_CUSTOMER_ID, ExNoStripeCustomerID.class)
                         .put(Type.NOT_AUTHENTICATED, ExNotAuthenticated.class)
                         .put(Type.INVITEE_LIST_EMPTY, ExInviteeListEmpty.class)
+                        .put(Type.EMAIL_NOT_VERIFIED, ExEmailNotVerified.class)
 
                         // The following exceptions are consumed by Python clients only. No need to
                         // list them here for the time being.

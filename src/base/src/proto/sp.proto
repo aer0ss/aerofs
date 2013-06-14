@@ -119,6 +119,7 @@ service SPService {
      *   ExEmptyEmailAddress if the user id is empty
      *   ExEmailSendingFailed if we were unable to send the invitation email.
      *   ExNoPerm if the user has used up their invitation quota.
+     *   ExEmailNotVerified if the user's email hasn't been verified
      */
     rpc InviteToSignUp(InviteToSignUpCall) returns(Void);
 
@@ -128,15 +129,17 @@ service SPService {
      * invite by calling the below rpc (AcceptOrganizationInvitation). At that point the user will
      * be moved in the new organization.
      *
+     * Required Auth Level: admin
+     *
      * Throws:
      *   ExEmptyEmailAddress if the user id is empty
      *   ExAlreadyExist if the email address is already a member of that organization.
      *   ExAlreadyInvited if the user has already been invited to the organization but has not yet
      *                  accepted the invitation.
-     *   ExNoPerm if the caller is not an organization admin.
      *   ExEmailSendingFailed if we were unable to send the email.
      *   ExNoStripeCustomerID if payment is required but the current team doesn't have a Stripe
      *                  customer ID.
+     *   ExEmailNotVerified if the user's email hasn't been verified
      */
      rpc InviteToOrganization(InviteToOrganizationCall) returns(InviteToOrganizationReply);
 
@@ -151,6 +154,7 @@ service SPService {
      *   ExNotFound if the user does not have a pending invitation for the specified organization.
      *   ExBadArgs if the user is already a member of the target organization.
      *   ExNoAdminForNonEmptyTeam if the team would have no admins but non-admin members.
+     *   ExEmailNotVerified if the user's email hasn't been verified
      */
     rpc AcceptOrganizationInvitation(AcceptOrganizationInvitationCall)
             returns(AcceptOrganizationInvitationReply);
@@ -171,6 +175,7 @@ service SPService {
      *   ExInviteeListEmpty if the list of invitees is empty AND the external flag is false
      *   ExNoStripeCustomerID if payment is required but the current team doesn't have a Stripe
      *                  customer ID.
+     *   ExEmailNotVerified if the user's email hasn't been verified
      */
     rpc ShareFolder(ShareFolderCall) returns(Void);
 
@@ -187,6 +192,7 @@ service SPService {
      * Throws:
      *   ExNotFound if the shared folder code wasn't found
      *   ExNoPerm if the user was not invited to the shared folder
+     *   ExEmailNotVerified if the user's email hasn't been verified
      */
     rpc JoinSharedFolder(JoinSharedFolderCall) returns(Void);
 
@@ -219,10 +225,6 @@ service SPService {
      * Returns a list of pending shared folder invitations for the user
      *
      * Required Auth Level: user
-     *
-     * Throws:
-     *   ExNoPerm if there is at least one pending invitaton and the user email address
-     *            hasn't be verified.
      */
     rpc ListPendingFolderInvitations(Void) returns(ListPendingFolderInvitationsReply);
 
@@ -278,7 +280,6 @@ service SPService {
      *
      * Throws:
      *   Nothing... No feedback makes brute force attacks useless
-     *
      */
     rpc SendPasswordResetEmail(SendPasswordResetEmailCall) returns(Void);
 
@@ -302,7 +303,6 @@ service SPService {
      * Throws:
      *   ExNoPerm   if the authorization requirements are not met
      *              if the old password is not correct
-     *
      */
     rpc ChangePassword(ChangePasswordCall) returns(Void);
 
@@ -453,6 +453,9 @@ service SPService {
      *
      * Throws:
      *   ExDeviceIDAlreadyExist if the device ID already exists
+     *   ExEmailNotVerified if the user's email hasn't been verified. We do it to avoid
+     *   security complications on Team Servers, such as inviting users from the Team Server
+     *   desktop app.
      */
     rpc RegisterTeamServerDevice(RegisterDeviceCall) returns (RegisterDeviceReply);
 
@@ -647,7 +650,10 @@ service SPService {
      *
      * Required Auth Level: admin
      * Throws: ExNoPerm if the current user isn't an admin of her organization
-     *         ExNotFound if the specified device does not exist for the given organization.
+     *         ExNotFound if the specified device does not exist for the given organization. Note
+     *              that this is necessary, otherwise, we would allow email-unverified users to
+     *              certify Team Servers, bypassing RegisterTeamServerDevice(). The latter method
+     *              throws if the requesting user's email is not verified.
      */
     rpc RecertifyTeamServerDevice(RecertifyDeviceCall) returns (RecertifyDeviceReply);
 

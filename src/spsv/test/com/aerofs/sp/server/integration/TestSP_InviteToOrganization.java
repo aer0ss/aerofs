@@ -6,8 +6,10 @@ package com.aerofs.sp.server.integration;
 
 import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExAlreadyInvited;
+import com.aerofs.lib.ex.ExEmailNotVerified;
 import com.aerofs.lib.ex.ExNoStripeCustomerID;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
+import com.aerofs.sp.server.lib.user.User;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -19,6 +21,22 @@ public class TestSP_InviteToOrganization extends AbstractSPTest
     public void setup()
     {
         sessionUser.set(USER_1);
+    }
+
+    @Test
+    public void shouldThrowIfInviterEmailNotVerified()
+            throws Exception
+    {
+        sqlTrans.begin();
+        User user = saveEmailUnverifiedUser();
+        sqlTrans.commit();
+
+        sessionUser.set(user);
+
+        try {
+            service.inviteToOrganization(USER_1.id().getString());
+            fail();
+        } catch (ExEmailNotVerified e) {}
     }
 
     @Test

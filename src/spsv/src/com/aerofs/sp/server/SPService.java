@@ -22,6 +22,7 @@ import com.aerofs.lib.FullName;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExAlreadyInvited;
+import com.aerofs.lib.ex.ExEmailNotVerified;
 import com.aerofs.lib.ex.ExEmailSendingFailed;
 import com.aerofs.base.ex.ExInviteeListEmpty;
 import com.aerofs.lib.ex.ExInvalidEmailAddress;
@@ -909,6 +910,7 @@ public class SPService implements ISPService
         // between the transaction we make an RPC call.
         _sqlTrans.begin();
 
+        user.throwIfEmailNotVerified();
         user.throwIfNotAdmin();
         User tsUser = user.getOrganization().getTeamServerUser();
 
@@ -1024,6 +1026,8 @@ public class SPService implements ISPService
         if (srps.isEmpty() && !external) throw new ExInviteeListEmpty();
 
         _sqlTrans.begin();
+
+        sharer.throwIfEmailNotVerified();
 
         Collection<UserID> users = saveSharedFolderIfNecessary(folderName, sf, sharer, external);
 
@@ -1146,6 +1150,7 @@ public class SPService implements ISPService
         SharedFolder sf = _factSharedFolder.create(new SID(sid));
 
         l.info(user + " joins " + sf);
+        user.throwIfEmailNotVerified();
 
         if (!sf.exists()) throw new ExNotFound("No such shared folder");
 
@@ -1321,16 +1326,16 @@ public class SPService implements ISPService
     @Override
     public ListenableFuture<Void> inviteToSignUp(List<String> userIdStrings)
             throws SQLException, ExBadArgs, ExEmailSendingFailed, ExNotFound, IOException,
-            ExNotAuthenticated, ExEmptyEmailAddress
+            ExNotAuthenticated, ExEmptyEmailAddress, ExEmailNotVerified
     {
-        if (userIdStrings.isEmpty()) {
-            throw new ExBadArgs("Must specify one or more invitees");
-        }
+        if (userIdStrings.isEmpty()) throw new ExBadArgs("Must specify one or more invitees");
 
         _sqlTrans.begin();
 
         User inviter = _sessionUser.get();
-        l.info("invite " + userIdStrings.size() + " users by " + inviter);
+        l.info("invite {} users by {}", userIdStrings.size(), inviter);
+
+        inviter.throwIfEmailNotVerified();
 
         // The sending of invitation emails is deferred to the end of the transaction to ensure
         // that all business logic checks pass and the changes are sucessfully committed to the DB
@@ -1364,6 +1369,7 @@ public class SPService implements ISPService
 
         l.info("{} sends team invite to {}", inviter, invitee);
 
+        inviter.throwIfEmailNotVerified();
         inviter.throwIfNotAdmin();
 
         InvitationEmailer emailer;
@@ -1420,6 +1426,8 @@ public class SPService implements ISPService
         _sqlTrans.begin();
 
         User accepter = _sessionUser.get();
+        accepter.throwIfEmailNotVerified();
+
         Organization orgOld = accepter.getOrganization();
         Organization orgNew = _factOrg.create(orgID);
 

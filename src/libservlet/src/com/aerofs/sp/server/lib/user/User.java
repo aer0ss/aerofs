@@ -8,6 +8,7 @@ import com.aerofs.base.BaseSecUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExEmptyEmailAddress;
 import com.aerofs.base.id.DID;
+import com.aerofs.lib.ex.ExEmailNotVerified;
 import com.aerofs.lib.ex.ExNoAdminOrOwner;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.SystemUtil;
@@ -110,8 +111,14 @@ public class User
             throws ExNoPerm, ExNotFound, SQLException
     {
         if (!getLevel().covers(AuthorizationLevel.ADMIN)) {
-            throw new ExNoPerm("User " + id() + " does not have administrator privileges");
+            throw new ExNoPerm(this + " does not have administrator privileges");
         }
+    }
+
+    public void throwIfEmailNotVerified()
+            throws ExNotFound, SQLException, ExEmailNotVerified
+    {
+        if (!isEmailVerified()) throw new ExEmailNotVerified(this + "'s email is not verified");
     }
 
     @Override
