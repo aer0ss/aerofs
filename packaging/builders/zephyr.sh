@@ -22,3 +22,4 @@ mkdir -p $INIT
 cp $RESOURCES/zephyr.conf $INIT
 cp $RESOURCES/logback.xml $OPT
 cp $RESOURCES/zephyr $OPT
+cp $RESOURCES/banner.txt $OPT

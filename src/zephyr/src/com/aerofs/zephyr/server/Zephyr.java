@@ -4,6 +4,9 @@ import com.aerofs.base.Loggers;
 import com.aerofs.zephyr.core.Dispatcher;
 import org.slf4j.Logger;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
 
 public class Zephyr
@@ -13,6 +16,8 @@ public class Zephyr
     public static void main(String args[])
             throws IOException
     {
+        logBanner("banner.txt");
+
         // get the command-line arguments
 
         if (args.length < 2) {
@@ -38,6 +43,29 @@ public class Zephyr
             d.run(); // blocking run
         } catch (IOException e) {
             l.error("zephyr fail run on {}:{} err:{}", host, port, e);
+        }
+    }
+
+    private static void logBanner(String bannerFilename)
+    {
+        try {
+            File bannerFile = new File(bannerFilename);
+            if (!bannerFile.exists() || !bannerFile.canRead()) {
+                l.warn("zephyr cannot load banner:{}", bannerFilename);
+                return;
+            }
+
+            BufferedReader bannerReader = new BufferedReader(new FileReader(bannerFile));
+            String bannerLine;
+            l.info("=====================================");
+            l.info("I                                   I");
+            while ((bannerLine = bannerReader.readLine()) != null) {
+                l.info("I " + bannerLine + " I");
+            }
+            l.info("I                                   I");
+            l.info("=====================================");
+        } catch (IOException e) {
+            l.warn("zephyr fail banner load err:{}", e);
         }
     }
 }
