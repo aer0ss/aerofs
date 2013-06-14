@@ -183,4 +183,9 @@ public class SID extends UniqueID
     {
         return toStringImpl('$', 2, '$');
     }
+
+    public static SID fromStringFormal(String hex) throws ExFormatError
+    {
+        return new SID(UniqueID.fromStringFormal(hex));
+    }
 }

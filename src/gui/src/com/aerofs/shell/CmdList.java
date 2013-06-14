@@ -1,7 +1,10 @@
 package com.aerofs.shell;
 
 import java.util.List;
+import java.util.Map.Entry;
 
+import com.aerofs.base.id.SID;
+import com.aerofs.labeling.L;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
 import com.google.common.collect.Lists;
@@ -35,8 +38,23 @@ public class CmdList implements IShellCommand<ShProgram>
         for (Path path : paths) {
             if (history) {
                 listHistory(s, path, longFormat);
+            } else if (L.isMultiuser() && s.d().isPwdAtUserRoot_()) {
+                // special case to make ls more intuitive on Team Server
+                listRoots(s, longFormat);
             } else {
                 list(s, path, longFormat);
+            }
+        }
+    }
+
+    private static void listRoots(ShellCommandRunner<ShProgram> s, boolean longFormat)
+            throws Exception
+    {
+        for (Entry<SID, String> e : s.d().getRoots().entrySet()) {
+            if (longFormat) {
+                s.out().println("r-- " + e.getKey().toStringFormal() + " " + e.getValue());
+            } else {
+                s.out().println(e.getKey().toStringFormal());
             }
         }
     }

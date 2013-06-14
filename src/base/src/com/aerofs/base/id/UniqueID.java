@@ -154,6 +154,11 @@ public class UniqueID extends LeanByteString implements Comparable<UniqueID>, IB
         return BaseUtil.hexEncode(getInternalByteArray(), 0, LENGTH);
     }
 
+    public static UniqueID fromStringFormal(String hex) throws ExFormatError
+    {
+        return new UniqueID(hex, 0, hex.length());
+    }
+
     @Override
     public ByteBuffer getReadOnlyByteBuffer()
     {
