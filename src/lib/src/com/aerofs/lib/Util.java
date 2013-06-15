@@ -71,6 +71,7 @@ public abstract class Util
                 new ImmutableMap.Builder<Type, Class<? extends AbstractExWirable>>()
                         .put(Type.DEVICE_ID_ALREADY_EXISTS, ExDeviceIDAlreadyExists.class)
                         .put(Type.ALREADY_INVITED, ExAlreadyInvited.class)
+                        .put(Type.UPDATING, ExUpdating.class)
                         .put(Type.INDEXING, ExIndexing.class)
                         .put(Type.NOT_SHARED, ExNotShared.class)
                         .put(Type.PARENT_ALREADY_SHARED, ExParentAlreadyShared.class)

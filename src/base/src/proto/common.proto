@@ -78,8 +78,8 @@ message PBException {
         DEVICE_OFFLINE = 14;
         CHILD_ALREADY_SHARED = 16;
         PARENT_ALREADY_SHARED = 17;
-        // daemon is busy indexing root anchor on first launch
-        INDEXING = 202;
+        INDEXING = 202;             // daemon is busy indexing root anchor on first launch
+        UPDATING = 203;             // daemon is busy running DPUT
 
         // Controller exceptions
         LAUNCH_ABORTED = 300;

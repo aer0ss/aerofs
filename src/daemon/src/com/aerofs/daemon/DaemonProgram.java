@@ -68,11 +68,12 @@ public class DaemonProgram implements IProgram
 
         Daemon daemon = inject_();
 
+        // need to start Ritual server before Core.init_ to send ExUpdating during DPUT
+        _ritual.start_();
+
         daemon.init_();
 
         daemon.start_();
-
-        _ritual.start_();
 
         l.error("daemon main thread halted");
 

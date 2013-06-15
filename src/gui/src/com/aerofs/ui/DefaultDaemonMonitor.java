@@ -22,10 +22,12 @@ import com.aerofs.lib.cfg.Cfg.PortType;
 import com.aerofs.lib.ex.ExDaemonFailedToStart;
 import com.aerofs.lib.ex.ExIndexing;
 import com.aerofs.lib.ex.ExUIMessage;
+import com.aerofs.lib.ex.ExUpdating;
 import com.aerofs.lib.injectable.InjectableDriver;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.swig.driver.DriverConstants;
+import com.aerofs.ui.IUI.IWaiter;
 import org.slf4j.Logger;
 
 import javax.annotation.Nonnull;
@@ -80,24 +82,46 @@ class DefaultDaemonMonitor implements IDaemonMonitor
             throw new ExDaemonFailedToStart(e);
         }
 
+        IWaiter waiter = null;
         int retries = UIParam.DM_LAUNCH_PING_RETRIES;
-        while (true) {
-            // the SanityPoller can stop the daemon before a successful ping
-            if (_stopping) return proc;
+        try {
+            while (true) {
+                // the SanityPoller can stop the daemon before a successful ping
+                if (_stopping) return proc;
 
-            throwIfDaemonExits(proc);
+                throwIfDaemonExits(proc);
 
-            if (isDaemonReady()) {
-                return proc;
-            } else {
-                if (--retries == 0) {
-                    l.error("daemon launch timed out");
-                    throw new ExTimeout();
+                switch (getDaemonState()) {
+                case INDEXING:
+                    // We don't want the setup dialog to wait for indexing to be done and we can
+                    // safely assume that once indexing starts the daemon will become functional at
+                    // some point in the future so we can safely exit the loop.
+                    //
+                    // The UI will be responsible for handling ExIndexing correctly.
+
+                    // fallthrough
+                case READY:
+                    return proc;
+
+                case UPDATING:
+                    if (waiter == null) {
+                        waiter = UI.get().showWait("Update",
+                                "Please wait while " + L.product() + " is updating...");
+                    }
+                    break;
+
+                case NO_REPLY:
+                    if (--retries == 0) {
+                        l.error("daemon launch timed out");
+                        throw new ExTimeout();
+                    }
                 }
-            }
 
-            l.info("sleep for {} ms", UIParam.DAEMON_CONNECTION_RETRY_INTERVAL);
-            ThreadUtil.sleepUninterruptable(UIParam.DAEMON_CONNECTION_RETRY_INTERVAL);
+                l.info("sleep for {} ms", UIParam.DAEMON_CONNECTION_RETRY_INTERVAL);
+                ThreadUtil.sleepUninterruptable(UIParam.DAEMON_CONNECTION_RETRY_INTERVAL);
+            }
+        } finally {
+            if (waiter != null) waiter.done();
         }
     }
 
@@ -169,17 +193,25 @@ class DefaultDaemonMonitor implements IDaemonMonitor
         }
     }
 
+    enum DaemonState
+    {
+        READY,
+        INDEXING,
+        UPDATING,
+        NO_REPLY
+    }
+
     /**
-     * @return whether the daemon process has successfully launched.
+     * Pings the daemon using a Ritual heartbeat and infers the current state of the daemon
+     * based on the reply (or lack thereof)
      */
-    private boolean isDaemonReady()
+    private DaemonState getDaemonState()
     {
         try {
-            // Ping the daemon to see if it has started up and is listening for RPCs.
             // ritual.heartbeat() will throw immediately if it can't connect to the daemon
             UI.ritual().heartbeat();
             l.info("daemon is ready");
-            return true;
+            return DaemonState.READY;
         } catch (ExIndexing e) {
             // On the first launch, the daemon needs to do a first full scan to make sure all
             // shared folders already present in the root anchor can be properly re-joined
@@ -187,14 +219,13 @@ class DefaultDaemonMonitor implements IDaemonMonitor
             // until it is completed so we ignore these exceptions and do not touch the retry
             // counter
             l.info("daemon indexing...");
-            // We don't want the setup dialog to wait for indexing to be done and we can safely
-            // assume that once indexing starts the daemon will become functional at some point
-            // in the future so we can safely exit the loop. The UI will be responsible for
-            // handling ExIndexing correctly.
-            return true;
+            return DaemonState.INDEXING;
+        } catch (ExUpdating e) {
+            l.info("daemon updating...");
+            return DaemonState.UPDATING;
         } catch (Exception e) {
             l.info("pinging daemon: " + e);
-            return false;
+            return DaemonState.NO_REPLY;
         }
     }
 

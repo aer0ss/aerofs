@@ -26,11 +26,25 @@ public abstract class AeroFSDialog extends Dialog {
      */
     public AeroFSDialog(Shell parent, String title, boolean sheet, boolean resizable)
     {
-        super(parent, sheet ?
-                SWT.SHEET | (resizable ? SWT.RESIZE : 0) :
-                SWT.DIALOG_TRIM | (resizable ? SWT.RESIZE : 0) | GUIUtil.alwaysOnTop()
-            );
+        this(parent, title, sheet, resizable, true);
+    }
+
+    /**
+     * @param title the title of the dialog. will be suffixed with S.TITLE_SUFFIX;
+     * null to use S.DEFAULT_DIALOG_TITLE
+     */
+    public AeroFSDialog(Shell parent, String title,
+            boolean sheet, boolean resizable, boolean closeable)
+    {
+        super(parent, style(sheet, resizable, closeable));
         _title = title;
+    }
+
+    private static int style(boolean sheet, boolean resizable, boolean closable)
+    {
+        int style = resizable ? SWT.RESIZE : 0;
+        style |= sheet ? SWT.SHEET : (SWT.DIALOG_TRIM | GUIUtil.alwaysOnTop());
+        return closable ? style : (style & ~SWT.CLOSE);
     }
 
     /**

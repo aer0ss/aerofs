@@ -2,12 +2,15 @@ package com.aerofs.daemon.ritual;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.async.FutureUtil;
+import com.aerofs.base.ex.AbstractExWirable;
 import com.aerofs.daemon.transport.lib.AddressUtils;
+import com.aerofs.lib.LibParam.PostUpdate;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.ex.ExIndexing;
+import com.aerofs.lib.ex.ExUpdating;
 import com.aerofs.proto.Ritual.IRitualService;
 import com.aerofs.proto.Ritual.RitualServiceReactor;
 import com.aerofs.proto.Ritual.RitualServiceReactor.ServiceRpcTypes;
@@ -104,14 +107,17 @@ public class RitualServer
                 // potentially lengthy first-launch indexing is in progress so that they can convey
                 // the need for patience back to the user. To that end, we all accept incoming calls
                 // and throw a sufficiently specific exception until the indexing succeeds.
-                if (Cfg.db().getBoolean(Key.FIRST_START)) {
-                    RpcService.Payload p = RpcService.Payload.newBuilder()
-                            .setType(ServiceRpcTypes.__ERROR__.ordinal())
-                            .setPayloadData(_service.encodeError(new ExIndexing()).toByteString())
-                            .build();
-                    channel.write(ChannelBuffers.copiedBuffer(p.toByteArray()));
+                AbstractExWirable ex = null;
+                if (Cfg.db().getInt(Key.DAEMON_POST_UPDATES) < PostUpdate.DAEMON_POST_UPDATE_TASKS) {
+                    ex = new ExUpdating();
+                } else if (Cfg.db().getBoolean(Key.FIRST_START)) {
+                    ex = new ExIndexing();
+                }
+                if (ex != null) {
+                    channel.write(ChannelBuffers.copiedBuffer(buildErrorReply(ex)));
                     return;
                 }
+
                 ListenableFuture<byte[]> future = _reactor.react(message);
 
                 FutureUtil.addCallback(future, new FutureCallback<byte[]>()
@@ -143,6 +149,15 @@ public class RitualServer
             // Close the connection when an exception is raised.
             l.warn("ritual server exception: " + Util.e(e.getCause()));
             e.getChannel().close();
+        }
+
+        private byte[] buildErrorReply(AbstractExWirable ex)
+        {
+            return RpcService.Payload.newBuilder()
+                    .setType(ServiceRpcTypes.__ERROR__.ordinal())
+                    .setPayloadData(_service.encodeError(ex).toByteString())
+                    .build()
+                    .toByteArray();
         }
     }
 }
