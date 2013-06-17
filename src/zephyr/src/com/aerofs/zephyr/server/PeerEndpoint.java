@@ -58,7 +58,7 @@ public class PeerEndpoint implements IIOEventHandler
         _ouraddr = ouraddr;
         _remid = ZEPHYR_INVALID_CHAN_ID;
         _remaddr = null;
-        _bindb = ByteBuffer.allocate(ZEPHYR_BIND_MSG_LEN * 2);
+        _bindb = ByteBuffer.allocate(ZEPHYR_BIND_MSG_LEN);
         _wrbuf = null;
         _txcount = 0;
         _state = CONNECTED;
