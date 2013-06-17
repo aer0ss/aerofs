@@ -170,10 +170,22 @@ public class Dispatcher implements Runnable
         } catch (FatalIOEventHandlerException e) {
             l.error("zd: k:{}: fataled during handle", k);
             throw e;
+        } catch (IllegalStateException e) {
+            l.error("zd: k:{}: fail handle with unexpected ise:", k, e);
+            commitMessySuicide(e);
+        } catch (IllegalArgumentException e) {
+            l.error("zd: k:{}: fail handle with unexpected iae:", k, e);
+            commitMessySuicide(e);
         } catch (Exception e) {
             l.error("zd: k:{}: fail handle err:", k, e);
             closeChannel(k.channel()); // implicitly closes keys for this channel
         }
+    }
+
+    private static void commitMessySuicide(Throwable cause)
+    {
+        l.error("zd: dying from self-inflicted wound:", cause);
+        System.exit(183);
     }
 
     /**
