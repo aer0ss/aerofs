@@ -136,19 +136,15 @@ public class PeerEndpoint implements IIOEventHandler
 
         checkState(k.isReadable(), compact() + ": k:" + k + ":not readable");
 
-        try {
-            switch (_state) {
-                case REGISTERED:
-                    processInRegisteredState(k);
-                    break;
-                case BOUND:
-                    processInBoundState(k);
-                    break;
-                default:
-                    throw new IllegalStateException(compact() + ": rd unexpected in state:" + _state);
-            }
-        } catch (Exception e) {
-            handleException(e, "fail rd");
+        switch (_state) {
+        case REGISTERED:
+            processInRegisteredState(k);
+            break;
+        case BOUND:
+            processInBoundState(k);
+            break;
+        default:
+            throw new IllegalStateException(compact() + ": rd unexpected in state:" + _state);
         }
     }
 
