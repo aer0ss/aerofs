@@ -26,6 +26,7 @@ import static com.aerofs.zephyr.Constants.ZEPHYR_INVALID_CHAN_ID;
 import static com.aerofs.zephyr.core.ZUtil.addInterest;
 import static com.aerofs.zephyr.core.ZUtil.closeChannel;
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.Maps.newHashMap;
 import static java.nio.channels.SelectionKey.OP_ACCEPT;
@@ -63,6 +64,8 @@ public class ZephyrServer implements IIOEventHandler
         try {
             _srvsoc = ServerSocketChannel.open();
             _srvsoc.configureBlocking(false);
+            _srvsoc.socket().setReuseAddress(true);
+            _srvsoc.socket().setReceiveBufferSize(RECEIVE_BUFFER_SIZE);
             _srvsoc.socket().bind(isa);
 
             _d.register(_srvsoc, this, OP_ACCEPT);
@@ -107,6 +110,8 @@ public class ZephyrServer implements IIOEventHandler
             sc.configureBlocking(false);
             sc.socket().setTcpNoDelay(true);
             sc.socket().setSoLinger(true, 0);
+            sc.socket().setSendBufferSize(SEND_BUFFER_SIZE);
+            sc.socket().setReceiveBufferSize(RECEIVE_BUFFER_SIZE);
 
             id = _nextid++;
             checkState(!_idToKey.containsKey(id), "z: id:" + id + " already used");
@@ -153,7 +158,7 @@ public class ZephyrServer implements IIOEventHandler
             try {
                 k = entry.getValue();
 
-                checkArgument(k != null, "z: id:" + entry.getKey() + ":null key");
+                checkNotNull(k, "z: id:" + entry.getKey() + ":null key");
                 checkState(k.attachment() != null, "z: id:" + entry.getKey() + ":null att");
 
                 PeerEndpoint pe = (PeerEndpoint) k.attachment();
@@ -272,4 +277,7 @@ public class ZephyrServer implements IIOEventHandler
     private boolean _inited;
 
     private static final Logger l = Loggers.getLogger(ZephyrServer.class);
+
+    private static final int RECEIVE_BUFFER_SIZE = 262144;
+    private static final int SEND_BUFFER_SIZE = RECEIVE_BUFFER_SIZE;
 }
