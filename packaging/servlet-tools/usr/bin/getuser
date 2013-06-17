@@ -52,6 +52,7 @@ if __name__ == '__main__':
     print "First Name   : {0}".format(user_info["u_first_name"])
     print "Last Name    : {0}".format(user_info["u_last_name"])
     print "Organization : {0}".format(org_id_from_signed_int(user_info["u_org_id"]))
+    print "Signup date  : {0}".format(user_info["u_id_created_ts"])
 
   except Exception as err:
     print err
