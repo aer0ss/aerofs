@@ -70,26 +70,6 @@ public class TestSP_ShareFolder extends AbstractSPACLTest
     }
 
     @Test
-    public void shouldThrowWhenTryingToShareWithSelf()
-            throws Exception
-    {
-        try {
-            shareFolder(USER_1, SID_1, USER_1, Role.EDITOR);
-            fail();
-        } catch (ExCannotInviteSelf e) {}
-    }
-
-    @Test
-    public void shouldThrowWhenTryingToShareExternalWithSelf()
-            throws Exception
-    {
-        try {
-            shareFolderExternal(USER_1, SID_1, USER_1, Role.EDITOR);
-            fail();
-        } catch (ExCannotInviteSelf e) {}
-    }
-
-    @Test
     public void shouldSuccessfullyShareFolderWithOneUser()
             throws Exception
     {

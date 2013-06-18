@@ -23,7 +23,6 @@ import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExAlreadyInvited;
 import com.aerofs.lib.ex.ExEmailSendingFailed;
-import com.aerofs.base.ex.ExCannotInviteSelf;
 import com.aerofs.base.ex.ExInviteeListEmpty;
 import com.aerofs.lib.ex.ExInvalidEmailAddress;
 import com.aerofs.lib.ex.ExNoStripeCustomerID;
@@ -1066,7 +1065,7 @@ public class SPService implements ISPService
 
     private List<InvitationEmailer> createFolderInvitationAndEmailer(String folderName, String note,
             SharedFolder sf, User sharer, List<SubjectRolePair> srps)
-            throws SQLException, IOException, ExNotFound, ExAlreadyExist, ExCannotInviteSelf
+            throws SQLException, IOException, ExNotFound, ExAlreadyExist
     {
         // The sending of invitation emails is deferred to the end of the transaction to ensure
         // that all business logic checks pass and the changes are sucessfully committed to the DB
@@ -1075,10 +1074,6 @@ public class SPService implements ISPService
         // create invitations
         for (SubjectRolePair srp : srps) {
             User sharee = _factUser.create(srp._subject);
-            if (sharee.equals(sharer)) {
-                l.warn(sharer + " tried to invite himself");
-                throw new ExCannotInviteSelf();
-            }
 
             emailers.add(createFolderInvitationAndEmailer(sf, sharer, sharee, srp._role, note,
                     folderName));
