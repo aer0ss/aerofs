@@ -32,11 +32,13 @@ import java.net.SocketException;
 import java.net.URLEncoder;
 import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
+import java.util.TimeZone;
 import java.util.concurrent.Callable;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -330,11 +332,15 @@ public abstract class Util
      *
      * The code above results in a more user-friendly time, at the cost of precision (the user will
      * see "2 weeks ago", for example, rather than "Sep 19, 2012, 11:32 AM"
+     *
+     * N.B. For test purpose, override System.currentTimeMillis() to control the time and
+     *   TimeZone.getDefault() to control the timezone
      */
     public static String formatAbsoluteTime(long l)
     {
         long now = System.currentTimeMillis();
-        long beginOfToday = (now / C.DAY) * C.DAY;
+        long offset = TimeZone.getDefault().getOffset(now);
+        long beginOfToday = (((now + offset) / C.DAY) * C.DAY) - offset;
         long beginOfYesterday = beginOfToday - C.DAY;
         long beginOfThisYear = (now / C.YEAR) * C.YEAR;
 

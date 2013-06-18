@@ -6,9 +6,21 @@ package com.aerofs.lib;
 
 import com.aerofs.lib.FileUtil.FileName;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
+
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Locale;
+import java.util.TimeZone;
 
 import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.when;
 
+@RunWith(PowerMockRunner.class)
+@PrepareForTest(Util.class)
 public class TestUtil
 {
     @Test
@@ -52,4 +64,50 @@ public class TestUtil
         assertEquals(result.extension, ".abc");
     }
 
+    @Test
+    public void shouldFormatTimeBasedOnLocalTimezone()
+    {
+        TimeZone timeZone = TimeZone.getTimeZone("GMT-8:00");
+        Calendar cal = Calendar.getInstance(timeZone, Locale.US); // PST
+        cal.set(2013, 6, 13, 23, 59);
+        cal.set(Calendar.SECOND, 0);
+        cal.set(Calendar.MILLISECOND, 0);
+
+        long now = cal.getTimeInMillis();
+
+        PowerMockito.mockStatic(TimeZone.class);
+        when(TimeZone.getDefault()).thenReturn(timeZone);
+
+        PowerMockito.mockStatic(System.class);
+        when(System.currentTimeMillis()).thenReturn(now);
+
+        SimpleDateFormat tomorrowFormatter = new SimpleDateFormat("MMM d, yyyy h:mm a");
+        SimpleDateFormat todayFormatter = new SimpleDateFormat("h:mm a");
+        SimpleDateFormat yesterdayFormatter = new SimpleDateFormat("'Yesterday' h:mm a");
+        SimpleDateFormat dayBeforeYesterdayFormatter = new SimpleDateFormat("MMM d h:mm a");
+
+        for (int i = 0; i < 23; i++) {
+            long tomorrow = getLocalTime(cal, 2013, 6, 14, i, 30);
+            assertEquals(tomorrowFormatter.format(tomorrow),
+                    Util.formatAbsoluteTime(tomorrow));
+
+            long today = getLocalTime(cal, 2013, 6, 13, i, 30);
+            assertEquals(todayFormatter.format(today),
+                    Util.formatAbsoluteTime(today));
+
+            long yesterday = getLocalTime(cal, 2013, 6, 12, i, 30);
+            assertEquals(yesterdayFormatter.format(yesterday),
+                    Util.formatAbsoluteTime(yesterday));
+
+            long dayBeforeYesterday = getLocalTime(cal, 2013, 6, 11, i, 30);
+            assertEquals(dayBeforeYesterdayFormatter.format(dayBeforeYesterday),
+                    Util.formatAbsoluteTime(dayBeforeYesterday));
+        }
+    }
+
+    private long getLocalTime(Calendar cal, int year, int month, int day, int hour, int minute)
+    {
+        cal.set(year, month, day, hour, minute);
+        return cal.getTimeInMillis();
+    }
 }
