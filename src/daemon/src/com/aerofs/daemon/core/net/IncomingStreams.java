@@ -226,6 +226,10 @@ public final class IncomingStreams
 
         try {
             l.info("end" + stream + " key:" + key);
+
+            // (JG) we use nanoTime(), which is monotonic, instead of currentTimeMillis(), which
+            // uses the system clock. The elapsed time is converted to milliseconds before being
+            // printed to the log.
             long _diffTime = (System.nanoTime() - _startTimeNanos) / 1000000;
             l.debug("istrm processed:{} time:{}", _bytesRead, _diffTime);
 
