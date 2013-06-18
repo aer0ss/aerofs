@@ -82,7 +82,6 @@ public abstract class Util
                         .put(Type.UI_MESSAGE, ExUIMessage.class)
                         .put(Type.NO_STRIPE_CUSTOMER_ID, ExNoStripeCustomerID.class)
                         .put(Type.NOT_AUTHENTICATED, ExNotAuthenticated.class)
-                        .put(Type.CANNOT_INVITE_SELF, ExCannotInviteSelf.class)
                         .put(Type.INVITEE_LIST_EMPTY, ExInviteeListEmpty.class)
 
                         // The following exceptions are consumed by Python clients only. No need to

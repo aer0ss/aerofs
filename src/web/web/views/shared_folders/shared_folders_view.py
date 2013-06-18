@@ -338,8 +338,6 @@ def json_add_shared_folder_perm(request):
             _("Payment is required to invite more collaborators"),
         PBException.NO_PERM:
             _("You don't have permission to invite people to this folder"),
-        PBException.CANNOT_INVITE_SELF:
-            _("Are you trying to invite yourself?"),
     })
 
 @view_config(
