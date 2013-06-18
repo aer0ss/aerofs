@@ -18,8 +18,8 @@ import com.aerofs.shell.ShellCommandRunner.ICallback;
 import com.aerofs.shell.hidden.CmdDstat;
 import com.aerofs.shell.hidden.CmdTestMultiuserJoinRootStore;
 import com.aerofs.sp.client.SPBlockingClient;
-import com.aerofs.ui.UIUtil;
 import com.google.common.collect.Maps;
+import com.aerofs.ui.error.ErrorMessages;
 
 import java.io.File;
 import java.util.Collections;
@@ -55,7 +55,7 @@ public class ShProgram implements IProgram, ICallback
 
             _runner.start_();
         } catch (Exception e) {
-            System.out.println(PROG + ": " + UIUtil.e2msgNoBracket(e));
+            System.out.println(PROG + ": " + ErrorMessages.e2msgNoBracketDeprecated(e));
         }
 
         // If we want the program to exit when it returns from main(), then we'd have to call

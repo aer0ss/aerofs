@@ -1,5 +1,6 @@
 package com.aerofs.gui.netutil;
 
+import com.aerofs.ui.error.ErrorMessages;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.StackLayout;
@@ -8,7 +9,6 @@ import org.eclipse.swt.widgets.Label;
 
 import com.aerofs.gui.GUI;
 import com.aerofs.lib.Util;
-import com.aerofs.ui.UIUtil;
 
 public class CompBandwidthStatus extends Composite {
     private ProgressBar _progressBar;
@@ -102,7 +102,7 @@ public class CompBandwidthStatus extends Composite {
             @Override
             public void run() {
                 if (e != null) {
-                    _label.setText("Error " + UIUtil.e2msg(e));
+                    _label.setText("Error " + ErrorMessages.e2msgDeprecated(e));
                 } else {
                     String txt = Util.formatBandwidth(bytes, interval);
                     _label.setText(txt);

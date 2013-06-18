@@ -3,6 +3,7 @@ package com.aerofs.gui.unlink;
 import com.aerofs.gui.CompSpin;
 import com.aerofs.gui.GUI.ISWTWorker;
 import com.aerofs.lib.S;
+import com.aerofs.ui.error.ErrorMessages;
 import com.aerofs.ui.IUI.MessageType;
 import org.eclipse.swt.custom.CLabel;
 import org.eclipse.swt.widgets.Label;
@@ -130,7 +131,8 @@ public class DlgUnlinkDevice extends AeroFSDialog implements ISWTWorker
         _compSpin.stop();
         setStatusText(S.UNLINK_THIS_COMPUTER_CONFIRM, true);
 
-        String msg = S.COULDNT_UNLINK_DEVICE + "\n\nError message: " + UIUtil.e2msg(e) + ".";
+        String msg = S.COULDNT_UNLINK_DEVICE + "\n\nError message: " + ErrorMessages.e2msgDeprecated(
+                e) + ".";
         GUI.get().show(getShell(), MessageType.ERROR, msg);
     }
 

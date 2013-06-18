@@ -6,6 +6,7 @@ import java.util.List;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.analytics.AnalyticsEvents.SignupInviteSentEvent;
 import com.aerofs.base.id.UserID;
+import com.aerofs.ui.error.ErrorMessages;
 import com.aerofs.ui.UI;
 import com.google.common.collect.Lists;
 import org.slf4j.Logger;
@@ -33,7 +34,6 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.ui.IUI.MessageType;
-import com.aerofs.ui.UIUtil;
 
 public class DlgInviteToSignUp extends AeroFSDialog implements IInputChangeListener, ISWTWorker
 {
@@ -184,7 +184,7 @@ public class DlgInviteToSignUp extends AeroFSDialog implements IInputChangeListe
     {
         enableAll(true);
         _compSpin.error();
-        setStatusText(S.COULDNT_SEND_INVITATION + " " + UIUtil.e2msg(e), true);
+        setStatusText(S.COULDNT_SEND_INVITATION + " " + ErrorMessages.e2msgDeprecated(e), true);
         l.warn("send invite: " + Util.e(e));
     }
 }

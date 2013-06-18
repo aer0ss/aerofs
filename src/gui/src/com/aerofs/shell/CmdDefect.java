@@ -16,9 +16,9 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ritual.RitualBlockingClient;
 import com.aerofs.sv.client.SVClient;
+import com.aerofs.ui.error.ErrorMessages;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.UI;
-import com.aerofs.ui.UIUtil;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
 import org.slf4j.Logger;
@@ -51,7 +51,7 @@ public class CmdDefect implements IShellCommand<ShProgram>
         } catch (Exception e) {
             l.warn("submit defect: " + Util.e(e));
             UI.get().notify(MessageType.ERROR, "Failed to submit the " +
-                        "problem " + UIUtil.e2msg(e) + ". Please try again.");
+                        "problem " + ErrorMessages.e2msgDeprecated(e) + ". Please try again.");
         } finally {
             UI.get().removeProgress(prog);
         }

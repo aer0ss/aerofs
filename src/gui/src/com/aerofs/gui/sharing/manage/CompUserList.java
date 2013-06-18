@@ -10,6 +10,7 @@ import com.aerofs.gui.SimpleContentProvider;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
 import com.aerofs.proto.Common.PBSubjectRolePair;
+import com.aerofs.ui.error.ErrorMessages;
 import com.aerofs.ui.IUI.MessageType;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
@@ -242,7 +243,7 @@ public class CompUserList extends Composite
             l.warn(Util.e(e));
             GUI.get().show(getShell(), MessageType.ERROR,
                     "Couldn't edit the user. " + S.TRY_AGAIN_LATER + "\n\n" +
-                            "Error message: " + UIUtil.e2msgSentenceNoBracket(e));
+                            "Error message: " + ErrorMessages.e2msgSentenceNoBracketDeprecated(e));
         }
     }
 }

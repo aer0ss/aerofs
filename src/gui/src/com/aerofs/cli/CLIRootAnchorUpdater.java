@@ -11,6 +11,7 @@ import com.aerofs.lib.RootAnchorUtil;
 import com.aerofs.lib.S;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExNoConsole;
+import com.aerofs.ui.error.ErrorMessages;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.UI;
 import com.aerofs.ui.UIUtil;
@@ -116,7 +117,7 @@ public class CLIRootAnchorUpdater
                 try {
                     RootAnchorUtil.checkNewRootAnchor(_oldAbsPath, newRootPath);
                 } catch (Exception e) {
-                    _cli.show(MessageType.WARN, UIUtil.e2msg(e) +
+                    _cli.show(MessageType.WARN, ErrorMessages.e2msgDeprecated(e) +
                             ". Please select a different folder.\n");
                     ret.set(false);
                     return;
@@ -131,7 +132,7 @@ public class CLIRootAnchorUpdater
                 } catch (Exception e) {
                     _cli.show(MessageType.ERROR, "An error occured while applying " +
                             "the new location for the " + L.product() +
-                            " folder " + UIUtil.e2msg(e));
+                            " folder " + ErrorMessages.e2msgDeprecated(e));
                     ret.set(false);
                 }
             }
@@ -154,7 +155,8 @@ public class CLIRootAnchorUpdater
                 // Unlink this account from the computer and shut down the application
                 UIUtil.scheduleUnlinkAndExit();
             } catch (Exception e) {
-                _cli.show(MessageType.ERROR, "Couldn't unlink the computer " + UIUtil.e2msg(e));
+                _cli.show(MessageType.ERROR, "Couldn't unlink the computer " + ErrorMessages.e2msgDeprecated(
+                        e));
             }
         }
     }

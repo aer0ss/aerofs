@@ -7,6 +7,7 @@ import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.lib.ex.ExNoConsole;
+import com.aerofs.ui.error.ErrorMessages;
 import com.aerofs.ui.IUI;
 import com.aerofs.ui.UI;
 import com.aerofs.ui.UIParam;
@@ -469,7 +470,8 @@ public class CLI implements IUI {
                 ThreadUtil.sleepUninterruptable(UIParam.LOGIN_PASSWD_RETRY_DELAY);
                 show(MessageType.WARN, S.BAD_CREDENTIAL_CAP);
             } catch (Exception e) {
-                show(MessageType.ERROR, S.PASSWORD_CHANGE_INTERNAL_ERROR + " " + UIUtil.e2msg(e));
+                show(MessageType.ERROR, S.PASSWORD_CHANGE_INTERNAL_ERROR + " " + ErrorMessages.e2msgDeprecated(
+                        e));
             }
         }
     }

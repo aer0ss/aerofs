@@ -20,6 +20,7 @@ import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExNoConsole;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.ui.IUI.MessageType;
+import com.aerofs.ui.error.ErrorMessages;
 import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
@@ -253,7 +254,7 @@ public class SanityPoller
         } catch (Exception e1) {
             UI.get().show(MessageType.ERROR,
                     "An error occured while starting up " + L.product() +
-                            " " + UIUtil.e2msg(e1));
+                            " " + ErrorMessages.e2msgDeprecated(e1));
             l.warn(Util.e(e1));
         }
     }

@@ -18,9 +18,9 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExUIMessage;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.proto.ControllerProto.GetSetupSettingsReply;
+import com.aerofs.ui.error.ErrorMessages;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.UI;
-import com.aerofs.ui.UIUtil;
 import org.slf4j.Logger;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import static org.eclipse.jface.dialogs.IDialogConstants.*;
@@ -410,7 +410,7 @@ public abstract class AbstractDlgSetup extends AeroFSTitleAreaDialog
                 // TODO: Catch ExAlreadyExist and ExNoPerm here, and ask the user if he wants us to
                 // move the anchor root. See CLISetup.java.
 
-                if (msg == null) msg = "Sorry, " + UIUtil.e2msgNoBracket(e) + '.';
+                if (msg == null) msg = "Sorry, " + ErrorMessages.e2msgNoBracketDeprecated(e) + '.';
                 setErrorStatus(msg);
 
                 _inProgress = false;

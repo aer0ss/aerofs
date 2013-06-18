@@ -15,9 +15,9 @@ import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.os.OSUtil;
+import com.aerofs.ui.error.ErrorMessages;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.UI;
-import com.aerofs.ui.UIUtil;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.MouseAdapter;
 import org.eclipse.swt.events.MouseEvent;
@@ -133,7 +133,7 @@ public class SingleuserCompPreferences extends Composite
                     UI.ritual().reloadConfig();
                 } catch (Exception e1) {
                     GUI.get().show(getShell(), MessageType.ERROR,
-                            "Couldn't update Sync History " + UIUtil.e2msg(e1) + ".");
+                            "Couldn't update Sync History " + ErrorMessages.e2msgDeprecated(e1) + ".");
                 }
             }
         });
@@ -218,7 +218,7 @@ public class SingleuserCompPreferences extends Composite
             Cfg.db().set(key, value);
         } catch (Exception e) {
             GUI.get().show(getShell(), MessageType.ERROR, "Couldn't change settings "
-                    + UIUtil.e2msg(e));
+                    + ErrorMessages.e2msgDeprecated(e));
         }
     }
 

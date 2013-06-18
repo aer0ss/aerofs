@@ -15,6 +15,7 @@ import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.os.OSUtil;
+import com.aerofs.ui.error.ErrorMessages;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.UI;
 import com.aerofs.ui.UIUtil;
@@ -137,7 +138,7 @@ public class CompRootAnchorUpdater extends Composite
                 throw new ExBadArgs("New location:\n" + newRootPath +
                         " does not exist or not a directory");
         } catch (Exception e) {
-            GUI.get().show(getShell(), MessageType.WARN, UIUtil.e2msg(e) +
+            GUI.get().show(getShell(), MessageType.WARN, ErrorMessages.e2msgDeprecated(e) +
                     ". Please select a different folder.");
             return false;
         }
@@ -150,7 +151,8 @@ public class CompRootAnchorUpdater extends Composite
             return true;
         } catch (Exception e) {
             GUI.get().show(getShell(), MessageType.ERROR,
-                    "An error occured while updating the location: " + UIUtil.e2msg(e));
+                    "An error occured while updating the location: " + ErrorMessages.e2msgDeprecated(
+                            e));
             l.warn(Util.e(e));
             return false;
         }
@@ -165,7 +167,8 @@ public class CompRootAnchorUpdater extends Composite
             try {
                 UIUtil.scheduleUnlinkAndExit();
             } catch (Exception e) {
-                GUI.get().show(MessageType.ERROR, "Couldn't unlink the computer " + UIUtil.e2msg(e));
+                GUI.get().show(MessageType.ERROR, "Couldn't unlink the computer " + ErrorMessages.e2msgDeprecated(
+                        e));
             }
         }
     }

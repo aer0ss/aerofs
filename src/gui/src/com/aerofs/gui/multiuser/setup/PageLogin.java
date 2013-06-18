@@ -16,8 +16,8 @@ import com.aerofs.gui.Images;
 import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExUIMessage;
+import com.aerofs.ui.error.ErrorMessages;
 import com.aerofs.ui.IUI.MessageType;
-import com.aerofs.ui.UIUtil;
 import com.google.common.base.Objects;
 import com.swtdesigner.SWTResourceManager;
 import org.eclipse.swt.SWT;
@@ -296,7 +296,7 @@ public class PageLogin extends AbstractSetupPage
                 if (e instanceof ConnectException) return S.SETUP_ERR_CONN;
                 else if (e instanceof ExUIMessage) return e.getMessage();
                 else if (e instanceof ExBadCredential) return S.BAD_CREDENTIAL_CAP + '.';
-                else return "Sorry, " + UIUtil.e2msgNoBracket(e) + '.';
+                else return "Sorry, " + ErrorMessages.e2msgNoBracketDeprecated(e) + '.';
             }
         });
     }

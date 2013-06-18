@@ -10,9 +10,9 @@ import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.ex.ExIndexing;
 import com.aerofs.proto.Common.PBFolderInvitation;
 import com.aerofs.proto.Ritual.ListSharedFolderInvitationsReply;
+import com.aerofs.ui.error.ErrorMessages;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.UI;
-import com.aerofs.ui.UIUtil;
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.FutureCallback;
 import org.eclipse.jface.layout.TableColumnLayout;
@@ -242,7 +242,7 @@ public class DlgJoinSharedFolders extends AeroFSDialog
                 } catch (Exception e) {
                     l.warn("join folder " + inv.getFolderName() + Util.e(e));
                     UI.get().notify(MessageType.ERROR, "Couldn't join the folder "
-                            + inv.getFolderName(), UIUtil.e2msgSentenceNoBracket(e), null);
+                            + inv.getFolderName(), ErrorMessages.e2msgSentenceNoBracketDeprecated(e), null);
                 }
             }
         } finally {

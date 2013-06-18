@@ -19,8 +19,8 @@ import com.aerofs.lib.log.LogUtil;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.proto.Sp.GetUserPreferencesReply;
 import com.aerofs.sp.client.SPBlockingClient;
+import com.aerofs.ui.error.ErrorMessages;
 import com.aerofs.ui.IUI.MessageType;
-import com.aerofs.ui.UIUtil;
 import org.eclipse.swt.widgets.Link;
 import org.slf4j.Logger;
 import org.eclipse.swt.SWT;
@@ -275,7 +275,7 @@ public class PreferencesHelper
                     {
                         if (eFinal != null) {
                             GUI.get().show(_comp.getShell(), MessageType.ERROR,
-                                    UIUtil.e2msg(eFinal));
+                                    ErrorMessages.e2msgDeprecated(eFinal));
                         } else if (reply != null) {
                             if (_txtFirstName != null) {
                                 _txtFirstName.setText(reply.getFirstName());
@@ -361,7 +361,8 @@ public class PreferencesHelper
                         if (eFinal != null) {
                             GUI.get()
                                     .show(_comp.getShell(), MessageType.ERROR,
-                                            "Couldn't update the name " + UIUtil.e2msg(eFinal));
+                                            "Couldn't update the name " + ErrorMessages.e2msgDeprecated(
+                                                    eFinal));
                         } else {
                             if (_txtFirstName != null) _firstName = _txtFirstName.getText();
                             if (_txtLastName != null) _lastName = _txtLastName.getText();

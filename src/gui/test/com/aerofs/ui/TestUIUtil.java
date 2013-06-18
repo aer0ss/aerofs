@@ -6,6 +6,7 @@ package com.aerofs.ui;
 
 import com.aerofs.base.ex.IExObfuscated;
 import com.aerofs.testlib.AbstractTest;
+import com.aerofs.ui.error.ErrorMessages;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -33,7 +34,7 @@ public class TestUIUtil extends AbstractTest
     public void shouldShowPlainTextMessageOfObfuscatedException() throws Exception
     {
         Throwable ex = new ExMockObfuscated();
-        String message = UIUtil.e2msgNoBracket(ex);
+        String message = ErrorMessages.e2msgNoBracketDeprecated(ex);
         assertEquals("hello", message);
     }
 
@@ -41,7 +42,7 @@ public class TestUIUtil extends AbstractTest
     public void shouldShowRegularMessageOfNormalException() throws Exception
     {
         Throwable ex = new Exception("woah");
-        String message = UIUtil.e2msgNoBracket(ex);
+        String message = ErrorMessages.e2msgNoBracketDeprecated(ex);
         assertEquals("woah", message);
     }
 }

@@ -2,8 +2,6 @@ package com.aerofs.ui;
 
 import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.base.Loggers;
-import com.aerofs.base.ex.AbstractExWirable;
-import com.aerofs.base.ex.IExObfuscated;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.controller.ExLaunchAborted;
@@ -14,14 +12,12 @@ import com.aerofs.gui.setup.DlgTutorial;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.FullName;
-import com.aerofs.lib.JsonFormat.ParseException;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgAbsRoots;
-import com.aerofs.lib.ex.ExNoConsole;
 import com.aerofs.lib.ex.ExUIMessage;
 import com.aerofs.lib.id.CID;
 import com.aerofs.lib.os.OSUtil;
@@ -31,6 +27,7 @@ import com.aerofs.proto.ControllerProto.GetInitialStatusReply;
 import com.aerofs.proto.RitualNotifications.PBSOCID;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.ui.IUI.MessageType;
+import com.aerofs.ui.error.ErrorMessages;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.protobuf.ByteString;
@@ -38,80 +35,14 @@ import org.slf4j.Logger;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.io.EOFException;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.net.SocketException;
-import java.net.UnknownHostException;
 import java.util.Map;
 import java.util.Map.Entry;
 
 public class UIUtil
 {
     static final Logger l = Loggers.getLogger(UIUtil.class);
-
-    /**
-     * convert an exception to user friendly message
-     * @return a string "(<error description>)"
-     */
-    public static String e2msg(Throwable e)
-    {
-        return '(' + e2msgNoBracket(e) + ')';
-    }
-
-    public static String e2msgSentenceNoBracket(Throwable e)
-    {
-        String str = e2msgNoBracket(e);
-
-        if (str.isEmpty()) return "";
-
-        str = Character.toUpperCase(str.charAt(0)) + str.substring(1);
-        if (!str.endsWith(".")) str += ".";
-        return str;
-    }
-
-    private static final String SERVER_ERROR = "Server returned HTTP response code: ";
-
-    public static String e2msgNoBracket(Throwable e)
-    {
-        while (e.getCause() != null) { e = e.getCause(); }
-
-        final String message;
-        if (e instanceof IExObfuscated) {
-            // Extract the plain text message if this is an obfuscated Exception
-            message = ((IExObfuscated) e).getPlainTextMessage();
-        } else {
-            message = e.getMessage();
-        }
-
-        if (e instanceof AbstractExWirable) {
-            String wireType = ((AbstractExWirable) e).getWireTypeString();
-            return wireType.equals(message) ? wireType : wireType + ": " + message;
-        } else if (e instanceof FileNotFoundException) {
-            return message + " is not found";
-        } else if (e instanceof SocketException) {
-            return "connection failed";
-        } else if (e instanceof UnknownHostException) {
-            return "communication with the server failed";
-        } else if (e instanceof ExNoConsole) {
-            return "no console for user input";
-        } else if (e instanceof EOFException) {
-            return "connection failed or end of file";
-        } else if (e instanceof ParseException) {
-            return "parsing failed";
-
-        // the following tests should go last
-        } else if (message == null) {
-            return e.getClass().getSimpleName();
-        } else if (e instanceof IOException && message.startsWith(SERVER_ERROR)) {
-            int start = SERVER_ERROR.length();
-            String code = message.substring(start, start + 3);
-            return "server error, code " + code;
-        } else {
-            return message;
-        }
-    }
 
     public static boolean isSystemFile(PBPath path)
     {
@@ -336,7 +267,7 @@ public class UIUtil
     {
         l.warn(Util.e(e));
         UI.get().show(MessageType.ERROR, e instanceof ExUIMessage ? e.getMessage() :
-                LAUNCH_ERROR_STRING + ": " + UIUtil.e2msgSentenceNoBracket(e));
+                LAUNCH_ERROR_STRING + ": " + ErrorMessages.e2msgSentenceNoBracketDeprecated(e));
     }
 
     private static void finishLaunch(Runnable postLaunch)

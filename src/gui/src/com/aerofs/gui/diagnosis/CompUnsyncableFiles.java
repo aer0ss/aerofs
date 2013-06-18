@@ -8,6 +8,7 @@ import java.util.Map;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.SID;
+import com.aerofs.ui.error.ErrorMessages;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Shell;
@@ -48,7 +49,6 @@ import com.aerofs.lib.os.OSUtil;
 import com.aerofs.lib.os.OSUtilWindows;
 import com.aerofs.swig.driver.Driver;
 import com.aerofs.swig.driver.DriverConstants;
-import com.aerofs.ui.UIUtil;
 import com.aerofs.ui.IUI.MessageType;
 import org.eclipse.swt.events.SelectionAdapter;
 
@@ -280,7 +280,7 @@ public class CompUnsyncableFiles extends Composite {
                     } catch (Exception e) {
                         GUI.get().show(getShell(), MessageType.ERROR,
                                 "The file" + (plural ? "s" : "") + " couldn't" +
-                                        "be deleted " + UIUtil.e2msg(e) + ".");
+                                        "be deleted " + ErrorMessages.e2msgDeprecated(e) + ".");
                     }
                 }
             }
@@ -381,7 +381,7 @@ public class CompUnsyncableFiles extends Composite {
                     public void run()
                     {
                         if (exFinal != null) {
-                            _tv.add(UIUtil.e2msg(exFinal));
+                            _tv.add(ErrorMessages.e2msgDeprecated(exFinal));
                         }
 
                         _compSpin.stop();

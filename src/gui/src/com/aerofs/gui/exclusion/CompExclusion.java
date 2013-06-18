@@ -5,9 +5,9 @@ import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIParam;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
+import com.aerofs.ui.error.ErrorMessages;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.UI;
-import com.aerofs.ui.UIUtil;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
@@ -93,7 +93,7 @@ public class CompExclusion extends Composite
                 } catch (Exception e) {
                     l.warn("exclude folders: " + Util.e(e));
                     GUI.get().show(getShell(), MessageType.ERROR, "Couldn't complete the request " +
-                            UIUtil.e2msg(e));
+                            ErrorMessages.e2msgDeprecated(e));
                 }
             }
         });

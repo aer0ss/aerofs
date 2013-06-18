@@ -17,6 +17,7 @@ import com.aerofs.proto.Ritual.ListConflictsReply;
 import com.aerofs.proto.Ritual.ListConflictsReply.ConflictedPath;
 import com.aerofs.proto.Ritual.PBBranch;
 import com.aerofs.proto.Ritual.PBObjectAttributes;
+import com.aerofs.ui.error.ErrorMessages;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.UI;
 import com.aerofs.ui.UIUtil;
@@ -330,7 +331,7 @@ public class CompConflictFiles extends Composite
                     saveAs();
                 } catch (Exception e) {
                     GUI.get().show(_shell, MessageType.WARN, "The file couldn't" +
-                            " be saved " + UIUtil.e2msg(e) + ".");
+                            " be saved " + ErrorMessages.e2msgDeprecated(e) + ".");
                 }
             }
         });
@@ -357,7 +358,7 @@ public class CompConflictFiles extends Composite
                 } catch (Exception e) {
                     GUI.get().show(_shell, MessageType.ERROR,
                             "The conflict copy couldn't be deleted " +
-                            UIUtil.e2msg(e) + ".");
+                            ErrorMessages.e2msgDeprecated(e) + ".");
                 }
             }
         });
@@ -458,7 +459,7 @@ public class CompConflictFiles extends Composite
                     public void run()
                     {
                         if (exFinal != null) {
-                            _tv.add(UIUtil.e2msg(exFinal));
+                            _tv.add(ErrorMessages.e2msgDeprecated(exFinal));
                         }
 
                         _compSpin.stop();

@@ -25,6 +25,7 @@ import com.aerofs.proto.Common.PBPath;
 import com.aerofs.proto.Common.PBSubjectRolePair;
 import com.aerofs.proto.Sp.PBAuthorizationLevel;
 import com.aerofs.sp.client.SPBlockingClient;
+import com.aerofs.ui.error.ErrorMessages;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.UI;
 import com.aerofs.ui.UIUtil;
@@ -257,7 +258,7 @@ public class CompInviteUsers extends Composite implements IInputChangeListener
                 } else {
                     l.warn(Util.e(e));
                     msg = S.COULDNT_SEND_INVITATION + " " + S.TRY_AGAIN_LATER + "\n\n" +
-                            "Error message: " + UIUtil.e2msgSentenceNoBracket(e);
+                            "Error message: " + ErrorMessages.e2msgSentenceNoBracketDeprecated(e);
                 }
 
                 if (msg != null) GUI.get().show(getShell(), MessageType.ERROR, msg);

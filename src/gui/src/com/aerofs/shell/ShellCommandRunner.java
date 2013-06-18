@@ -2,7 +2,7 @@ package com.aerofs.shell;
 
 import com.aerofs.lib.Util;
 import com.aerofs.base.ex.ExBadArgs;
-import com.aerofs.ui.UIUtil;
+import com.aerofs.ui.error.ErrorMessages;
 import jline.console.ConsoleReader;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.HelpFormatter;
@@ -175,13 +175,13 @@ public class ShellCommandRunner<T>
 
     private void handleCommandException_(IShellCommand<T> cmd, Throwable e)
     {
-        _err.println(cmd.getName() + ": " + UIUtil.e2msgNoBracket(e));
+        _err.println(cmd.getName() + ": " + ErrorMessages.e2msgNoBracketDeprecated(e));
         _err.println("Type " + Util.quote("help " + cmd.getName()) + " for usage");
     }
 
     private void handleGeneralException_(IShellCommand<T> cmd, Throwable e)
     {
-        _err.println(cmd.getName() + ": " + UIUtil.e2msgNoBracket(e));
+        _err.println(cmd.getName() + ": " + ErrorMessages.e2msgNoBracketDeprecated(e));
         if (_showStack) _err.println(Util.e(e));
     }
 

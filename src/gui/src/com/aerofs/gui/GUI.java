@@ -21,6 +21,7 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExNoConsole;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.sv.client.SVClient;
+import com.aerofs.ui.error.ErrorMessages;
 import com.aerofs.ui.IUI;
 import com.aerofs.ui.UI;
 import com.aerofs.ui.UIUtil;
@@ -189,7 +190,7 @@ public class GUI implements IUI
     {
         l.warn("Failed to install shell extension: " + Util.e(e));
         UI.get().show(MessageType.WARN, "Failed to install the " +
-                OSUtil.get().getShellExtensionName() + ". " + UIUtil.e2msg(e));
+                OSUtil.get().getShellExtensionName() + ". " + ErrorMessages.e2msgDeprecated(e));
     }
 
     public Display disp()
@@ -326,7 +327,8 @@ public class GUI implements IUI
     {
         final SettableFuture<IWaiter> w = SettableFuture.create();
 
-        asyncExec(new Runnable() {
+        asyncExec(new Runnable()
+        {
             @Override
             public void run()
             {

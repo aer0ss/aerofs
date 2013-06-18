@@ -8,9 +8,9 @@ import com.aerofs.gui.GUIUtil;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
+import com.aerofs.ui.error.ErrorMessages;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.UI;
-import com.aerofs.ui.UIUtil;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.FocusAdapter;
@@ -442,7 +442,7 @@ public class DlgThrottling extends AeroFSDialog {
             closeDialog();
         } catch (Exception e) {
             GUI.get().show(getShell(), MessageType.ERROR, "Couldn't update" + " settings " +
-                    UIUtil.e2msg(e) + ".");
+                    ErrorMessages.e2msgDeprecated(e) + ".");
         }
     }
 }
