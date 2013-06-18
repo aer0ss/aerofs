@@ -4,7 +4,6 @@
 
 package com.aerofs.sp.server.integration;
 
-import com.aerofs.base.ex.ExCannotInviteSelf;
 import com.aerofs.base.ex.ExInviteeListEmpty;
 import com.aerofs.lib.ex.ExNoStripeCustomerID;
 import com.aerofs.proto.Cmd.Command;
