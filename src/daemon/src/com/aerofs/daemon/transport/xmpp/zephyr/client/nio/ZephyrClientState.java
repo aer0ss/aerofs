@@ -72,7 +72,9 @@ public enum ZephyrClientState implements IState<ZephyrClientContext>
             SocketChannel sc = ZUtil.getSocketChannel(ctx._k);
             try {
                 // our address parameters are unresolved and have to be resolved prior to use
-                final InetSocketAddress resaddr = Zephyr.ADDRESS.get();
+                InetSocketAddress rawaddr = Zephyr.ADDRESS.get();
+                final InetSocketAddress resaddr = rawaddr.isUnresolved() ?
+                        new InetSocketAddress(rawaddr.getHostName(), rawaddr.getPort()) : rawaddr;
                 sc.connect(resaddr);
             } catch (IOException e) {
                 return halt_(ctx, "connect failed", e);
