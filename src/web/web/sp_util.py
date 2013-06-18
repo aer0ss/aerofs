@@ -30,25 +30,6 @@ def exception2error(func, params, type2message_dict):
         else:
             raise e
 
-def ignore_exception(func, params, types):
-    """
-    Call {@code func} with {@code params}. If an ExceptionReply is thrown from
-    the func, silently ignore and return None if the ExceptionReply type is
-    specified in types, or rethrow the exception otherwise. Example:
-
-        reply = ignore_exception(sp.some_rpc_method, (param1, param2), (
-            PBException.ALREADY_EXIST, PBException.ALREADY_INVITED
-        ))
-
-    Note: all unhandled ExceptionReply exceptions are handled by
-    error.py:protobuf_exception_view.
-    """
-    try:
-        return _call(func, params)
-    except ExceptionReply as e:
-        if e.get_type() not in types: raise e
-        else: return None
-
 def _call(func, params):
     if isinstance(params, (list, tuple)):
         # use "splat" operator to expand the list into arguments
