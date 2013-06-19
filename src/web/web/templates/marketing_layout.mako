@@ -16,6 +16,10 @@
     %>
 
     <li><a href="${request.route_path('features')}">Features</a></li>
+    ## The "security" string link must be consistent with terms.mako
+    ## The security_link id is needed by terms.mako
+    <li><a id="security_link" href="${request.route_path('terms')}#security">Security</a></li>
+
     <li><a href="${request.route_path('pricing')}">Pricing</a></li>
     <li><a href="${blog_url}">Blog</a></li>
     %if sign_up_button:
@@ -51,7 +55,7 @@
                         <li>|</li>
                         <li><a href="${request.route_path('terms')}">Privacy & Terms</a></li>
                         ## The "security" string link must be consistent with terms.mako
-                        ## The security_link link is needed by terms.mako
+                        ## The security_link id is needed by terms.mako
                         <li><a id="security_link" href="${request.route_path('terms')}#security">Security</a></li>
 
                         <li class="pull-right">&copy; Air Computing Inc. 2013</li>
