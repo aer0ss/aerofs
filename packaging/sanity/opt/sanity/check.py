@@ -1,4 +1,12 @@
 #!/usr/bin/python
+import cherrypy
 
-# I will run cherrypy here and return JSON encoded server statuses.
-print "TODO"
+class SanityCheck(object):
+
+    def index(self):
+        return "Hello World!"
+
+    index.exposed = True
+
+cherrypy.config.update({'server.socket_host': '0.0.0.0', 'server.socket_port': 8000}) 
+cherrypy.quickstart(SanityCheck())
