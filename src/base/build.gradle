@@ -3,7 +3,7 @@
 //-----------------------------------------------------------------------------
 
 dependencies {
-    compile('com.aerofs.dynamic-config:dynamic-config-client:0.1')
+    compile('com.aerofs.dynamic-config:dynamic-config-client:0.2')
 }
 
 task syncDependencies(type: Sync) {

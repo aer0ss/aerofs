@@ -1,6 +1,6 @@
 #!/usr/bin/env groovy
 
-@Grab( 'com.aerofs.dynamic-config:dynamic-config-client:0.1' )
+@Grab( 'com.aerofs.dynamic-config:dynamic-config-client:0.2' )
 import com.aerofs.config.DynamicConfiguration
 import com.aerofs.config.sources.PropertiesConfiguration
 
