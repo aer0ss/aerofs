@@ -57,7 +57,7 @@ class rocklog {
     }
 
     cron { "daily_es_clean":
-        command => "/usr/bin/es_cleaner.py -u http://localhost:9200 -d 30",
+        command => "/usr/bin/es_cleaner.py -u http://localhost:9200 -d 90",
         user    => "root",
         hour    => 1,
         minute  => 0,
