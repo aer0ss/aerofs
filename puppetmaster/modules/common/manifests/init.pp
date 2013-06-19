@@ -7,6 +7,8 @@ class common (
         "htop",
         "dstat",
         "ntp",
+        "vim",
+        "unzip",
         "iftop"
         ]:
         ensure => latest,
