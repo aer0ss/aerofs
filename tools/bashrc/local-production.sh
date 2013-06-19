@@ -172,9 +172,11 @@ function _lp-ssh-usage()
     echo "Usage: lp-ssh <host>"
     echo
     echo "Available hosts:"
-    echo "  - ca/config/app-persistent"
-    echo "  - admin/app-transient"
-    echo "  - database"
+    echo " - ca|config|app-persistent"
+    echo " - admin|app-transient"
+    echo " - database"
+    echo
+    echo "Simply sudo su to get root access - no password required."
 }
 
 function lp-ssh()
