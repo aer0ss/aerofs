@@ -9,6 +9,7 @@ import java.util.Arrays;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.lib.AppRoot;
 import com.aerofs.labeling.L;
+import com.aerofs.lib.LibParam.GUI;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.SystemUtil;
@@ -34,6 +35,12 @@ public class OSUtilOSX extends AbstractOSUtilLinuxOSX
         String path = System.getenv("HOME") + "/Library/Application Support/" + L.product();
         if (L.isStaging()) path += ".staging";
         return path;
+    }
+
+    @Override
+    public String getDefaultRootAnchorParent()
+    {
+        return getDefaultRootAnchorParentImpl(GUI.OSX_DEFAULT_ROOT_ANCHOR_PARENT);
     }
 
     /**

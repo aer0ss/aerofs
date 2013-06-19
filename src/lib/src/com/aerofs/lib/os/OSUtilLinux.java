@@ -12,6 +12,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.aerofs.labeling.L;
+import com.aerofs.lib.LibParam.GUI;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
@@ -39,6 +40,12 @@ public class OSUtilLinux extends AbstractOSUtilLinuxOSX
         }
 
         return System.getenv("HOME") + File.separator + "." + name;
+    }
+
+    @Override
+    public String getDefaultRootAnchorParent()
+    {
+        return getDefaultRootAnchorParentImpl(GUI.LINUX_DEFAULT_ROOT_ANCHOR_PARENT);
     }
 
     @Override
