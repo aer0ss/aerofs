@@ -23,7 +23,7 @@ cp -r $RESOURCES/scripts $OPT
 
 # Init script.
 mkdir -p $INIT
-cp $RESOURCES/bootstrap $INIT
+cp $RESOURCES/bin/bootstrap $INIT/aerofs-bootstrap
 
 # Configuration stuff. Empty defaults.
 mkdir -p $OPT
@@ -33,5 +33,11 @@ touch $OPT/labeling.properties
 
 # Put the script in user bin for convenience as well.
 mkdir -p $BIN
+for res in set-config-url install-cert-file install-cert-raw
+do
+    # N.B. these scripts are somewhat user facing, hence the aerofs prefix.
+    cp $RESOURCES/bin/$res $BIN/aerofs-$res
+    chmod a+x $BIN/aerofs-$res
+done
 cd $BIN
-ln -s ../../etc/init.d/bootstrap .
+ln -s ../../etc/init.d/aerofs-bootstrap aerofs-bootstrap

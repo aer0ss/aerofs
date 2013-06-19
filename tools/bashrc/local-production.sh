@@ -29,7 +29,7 @@ function _lp-kick-persistent()
 function _lp-kick-all()
 {
     cd $AEROFS_ROOT/packaging/bakery/developer
-    ./kick.sh app-all
+    ./kick.sh
 }
 
 # -----------------------------------------------------------
