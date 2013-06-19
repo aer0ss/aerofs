@@ -69,8 +69,13 @@ class pd-app-persistent {
     # Sanity
     # --------------
 
-    file {"/opt/sanity/probes/app-persistent.sh":
-        source => "puppet:///modules/pd-app-persistent/app-persistent.sh",
+    file {"/opt/sanity/probes/nginx.sh":
+        source => "puppet:///modules/pd-app-persistent/probes/nginx.sh",
+        require => Package["aerofs-sanity"],
+    }
+
+    file {"/opt/sanity/probes/ca.sh":
+        source => "puppet:///modules/pd-app-persistent/probes/ca.sh",
         require => Package["aerofs-sanity"],
     }
 }

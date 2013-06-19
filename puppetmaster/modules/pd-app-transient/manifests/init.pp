@@ -111,8 +111,23 @@ class pd-app-transient {
     # Sanity
     # --------------
 
-    file {"/opt/sanity/probes/app-transient.sh":
-        source => "puppet:///modules/pd-app-transient/app-transient.sh",
+    file {"/opt/sanity/probes/ejabberd.sh":
+        source => "puppet:///modules/pd-app-transient/probes/ejabberd.sh",
+        require => Package["aerofs-sanity"],
+    }
+
+    file {"/opt/sanity/probes/tomcat6.sh":
+        source => "puppet:///modules/pd-app-transient/probes/tomcat6.sh",
+        require => Package["aerofs-sanity"],
+    }
+
+    file {"/opt/sanity/probes/verkehr.sh":
+        source => "puppet:///modules/pd-app-transient/probes/verkehr.sh",
+        require => Package["aerofs-sanity"],
+    }
+
+    file {"/opt/sanity/probes/zephyr.sh":
+        source => "puppet:///modules/pd-app-transient/probes/zephyr.sh",
         require => Package["aerofs-sanity"],
     }
 }
