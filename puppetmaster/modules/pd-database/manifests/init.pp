@@ -36,9 +36,13 @@ class pd-database {
     # Sanity
     # --------------
 
-    file {"/opt/sanity/probes/database.sh":
-        source => "puppet:///modules/pd-database/database.sh",
+    file {"/opt/sanity/probes/mysql.sh":
+        source => "puppet:///modules/pd-database/probes/mysql.sh",
+        require => Package["aerofs-sanity"],
+    }
+
+    file {"/opt/sanity/probes/redis.sh":
+        source => "puppet:///modules/pd-database/probes/redis.sh",
         require => Package["aerofs-sanity"],
     }
 }
-

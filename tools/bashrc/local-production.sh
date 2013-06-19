@@ -20,6 +20,12 @@ function _lp-kick-transient()
     ./kick.sh app-transient
 }
 
+function _lp-kick-database()
+{
+    cd $AEROFS_ROOT/packaging/bakery/developer
+    ./kick.sh database
+}
+
 function _lp-kick-persistent()
 {
     cd $AEROFS_ROOT/packaging/bakery/developer
@@ -88,6 +94,12 @@ function _lp-package-ca()
     BIN=$(_lp-bin) make clean ca-tools ca-server upload
 }
 
+function _lp-package-sanity()
+{
+    cd $AEROFS_ROOT/packaging
+    BIN=$(_lp-bin) make clean sanity upload
+}
+
 # -----------------------------------------------------------
 # Deploys
 # -----------------------------------------------------------
@@ -131,6 +143,12 @@ function lp-deploy-zephyr()
 function lp-deploy-ca()
 {
     _lp-package-ca
+    _lp-kick-persistent
+}
+
+function lp-deploy-sanity()
+{
+    _lp-package-sanity
     _lp-kick-persistent
 }
 

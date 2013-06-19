@@ -1,8 +1,8 @@
 #!/bin/bash
 
-if [ $# -ne 3 ]
+if [ $# -ne 2 ] && [ $# -ne 3 ]
 then
-    echo "Usage: $0 <host> <port> <description>"
+    echo "Usage: $0 <host> <port> [<description>]"
     exit 1
 fi
 
@@ -14,6 +14,15 @@ nc -z $host $port
 
 if [ $? -ne 0 ]
 then
-    echo "Error: $host:$port failed (description: $desc)."
+    text="$host:$port is not listening"
+
+    if [ -z "$desc" ]
+    then
+        text="$text."
+    else
+        text="$text (description: $desc)."
+    fi
+
+    echo $text
     exit 1
 fi
