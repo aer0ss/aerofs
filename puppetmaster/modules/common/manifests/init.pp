@@ -2,13 +2,14 @@ class common (
     $aptkey,
     $repo
 ) {
+    # N.B. dstat and *top's are included as dev tools only.
     package { [
         "default-jdk",
+        "vim",
+        "ntp",
+        "unzip",
         "htop",
         "dstat",
-        "ntp",
-        "vim",
-        "unzip",
         "iftop"
         ]:
         ensure => latest,
