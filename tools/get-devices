@@ -1,4 +1,0 @@
-#!/bin/bash -u -e
-
-echo "Getting devices via c.aerofs.com..."
-ssh c.aerofs.com "getdevices $@"

@@ -1,3 +1,0 @@
-#!/bin/bash
-echo "Getting user info via c.aerofs.com..."
-ssh c.aerofs.com "getuser $@"
