@@ -1,6 +1,7 @@
 package com.aerofs.lib.cfg;
 
 import com.aerofs.base.Base64;
+import com.aerofs.base.BaseSecUtil;
 import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.id.DID;
@@ -159,13 +160,8 @@ public class Cfg
     private static void readCert()
             throws CertificateException, IOException
     {
-        InputStream in = new FileInputStream(absRTRoot() + File.separator + LibParam.DEVICE_CERT);
-        try {
-            CertificateFactory cf = CertificateFactory.getInstance("X.509");
-            _cert = (X509Certificate) cf.generateCertificate(in);
-        } finally {
-            in.close();
-        }
+        String certFileName = absRTRoot() + File.separator + LibParam.DEVICE_CERT;
+        _cert = (X509Certificate)BaseSecUtil.newCertificateFromFile(certFileName);
     }
 
     /**
@@ -570,12 +566,7 @@ public class Cfg
                     ? new ByteArrayInputStream(CA.CERTIFICATE.get().get().getBytes())
                     : new FileInputStream(new File(AppRoot.abs(), LibParam.CA_CERT).getAbsolutePath());
 
-            try {
-                CertificateFactory cf = CertificateFactory.getInstance("X.509");
-                _cacert = (X509Certificate) cf.generateCertificate(in);
-            } finally {
-                in.close();
-            }
+            _cacert = (X509Certificate) BaseSecUtil.newCertificateFromStream(in);
         }
         return _cacert;
     }

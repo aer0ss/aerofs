@@ -22,6 +22,7 @@ import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -724,15 +725,27 @@ public abstract class BaseSecUtil
     }
 
     /**
-     * @param serverCertFilename PEM-encoded file with X509 certificate
+     * @param certFilename PEM-encoded file with X509 certificate
      * @return a new {@link X509Certificate}
      * @throws java.security.cert.CertificateException
      * @throws IOException
      */
-    public static Certificate newCertificateFromFile(String serverCertFilename)
+    public static Certificate newCertificateFromFile(String certFilename)
             throws CertificateException, IOException
     {
-        InputStream in = new FileInputStream(serverCertFilename);
+        InputStream in = new FileInputStream(certFilename);
+        return newCertificateFromStream(in);
+    }
+
+    /**
+     * @param in Input stream which will yield a PEM-encoded file holding an X509 certificate
+     * @return a new {@link X509Certificate}
+     * @throws java.security.cert.CertificateException
+     * @throws IOException
+     */
+    public static Certificate newCertificateFromStream(InputStream in)
+            throws CertificateException, IOException
+    {
         try {
             CertificateFactory cf = CertificateFactory.getInstance(CERTIFICATE_TYPE);
             return cf.generateCertificate(in);
