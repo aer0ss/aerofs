@@ -5,6 +5,8 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="P2P file sharing and file sync lets you create your own private cloud. Secure, unlimited data transfer for large or sensitive files on Windows, Mac, Linux, and Android.">
 
     <title>
         ## This title is recommended by Beth to maximize keyword matching for SEO
@@ -18,7 +20,7 @@
             | ${self.attr.page_title}
         %endif
     </title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <link rel="shortcut icon" href="${request.static_path('web:static/img/favicon.ico')}">
 
     ## stylesheets

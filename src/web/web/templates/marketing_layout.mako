@@ -16,9 +16,7 @@
     %>
 
     <li><a href="${request.route_path('features')}">Features</a></li>
-    ## The "security" string link must be consistent with terms.mako
-    ## The security_link id is needed by terms.mako
-    <li><a id="security_link" href="${request.route_path('terms')}#security">Security</a></li>
+    <li><a href="${request.route_path('security')}">Security</a></li>
 
     <li><a href="${request.route_path('pricing')}">Pricing</a></li>
     <li><a href="${blog_url}">Blog</a></li>
@@ -46,17 +44,13 @@
                 <div class="span10 offset1" id="footer-span">
                     <ul class="inline">
                         <li><a href="${request.route_path('marketing_home')}">Home</a></li>
-                        <li><a href="${request.route_path('download')}">Install</a></li>
+                        <li><a href="${request.route_path('download')}">Download</a></li>
                         <li><a href="http://support.aerofs.com">Support</a></li>
                         <li><a href="${blog_url}">Blog</a></li>
                         <li><a href="http://www.twitter.com/aerofs">Twitter</a></li>
                         <li><a href="${request.route_path('jobs')}">Jobs</a></li>
                         <li><a href="${request.route_path('about')}">About</a></li>
-                        <li>|</li>
                         <li><a href="${request.route_path('terms')}">Privacy & Terms</a></li>
-                        ## The "security" string link must be consistent with terms.mako
-                        ## The security_link id is needed by terms.mako
-                        <li><a id="security_link" href="${request.route_path('terms')}#security">Security</a></li>
 
                         <li class="pull-right">&copy; Air Computing Inc. 2013</li>
                     </ul>
