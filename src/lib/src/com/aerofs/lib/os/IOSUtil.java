@@ -26,8 +26,7 @@ public interface IOSUtil
     void loadLibrary(String library);
 
     /**
-     * N.B. never call this method directly. call Setup.getDefaultAnchorRoot()
-     * instead
+     * N.B. never call this method directly. call Setup.getDefaultAnchorRoot() instead.
      */
     String getDefaultRootAnchorParent();
 
