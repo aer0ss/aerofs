@@ -68,10 +68,13 @@ public final class IncomingStreams
         TCB _tcb;
         InvalidationReason _invalidationReason;
         int _seq; // the last seq received. see IUnicastOutputLayer.sendOutgoingStreamChunk comment
+        final long _startTimeNanos;
+        long _bytesRead = 0;
 
         IncomingStream(PeerContext pc)
         {
             _pc = pc;
+            _startTimeNanos = System.nanoTime();
         }
 
         @Override
@@ -90,9 +93,6 @@ public final class IncomingStreams
     // the size of this list is bounded by Categories.
     private final Map<StreamKey, IncomingStream> _ended = Maps.newTreeMap();
     private final UnicastInputOutputStack _stack;
-
-    private long _startTimeNanos;
-    private long _bytesRead = 0;
 
     @Inject
     public IncomingStreams(UnicastInputOutputStack stack)
@@ -123,7 +123,6 @@ public final class IncomingStreams
         IncomingStream stream = new IncomingStream(pc);
         _map.put(key, stream);
 
-        _startTimeNanos = System.nanoTime();
         l.info("create " + stream + ":" + key);
     }
 
@@ -180,7 +179,7 @@ public final class IncomingStreams
                 l.warn("istrm " + stream + " recv chunk after abort seq:" + seq);
             }
         } else {
-            _bytesRead += (long)chunk.available();
+            stream._bytesRead += (long)chunk.available();
             stream._chunks.add(chunk);
             for (IIncomingStreamChunkListener listener : _listenerList) {
                 listener.onChunkReceived_(key._did, key._strmid);
@@ -230,8 +229,8 @@ public final class IncomingStreams
             // (JG) we use nanoTime(), which is monotonic, instead of currentTimeMillis(), which
             // uses the system clock. The elapsed time is converted to milliseconds before being
             // printed to the log.
-            long _diffTime = (System.nanoTime() - _startTimeNanos) / 1000000;
-            l.debug("istrm processed:{} time:{}", _bytesRead, _diffTime);
+            long _diffTime = (System.nanoTime() - stream._startTimeNanos) / 1000000;
+            l.debug("istrm processed:{} time:{}", stream._bytesRead, _diffTime);
 
             _stack.output().endIncomingStream_(key._strmid, stream._pc);
         } catch (Exception e) {
