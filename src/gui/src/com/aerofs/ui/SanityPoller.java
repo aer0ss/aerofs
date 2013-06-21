@@ -206,7 +206,7 @@ public class SanityPoller
 
         if (!new File(absPath).isDirectory()) return false;
 
-        GUI.get().shellext().notifyRootAnchor();
+        if (UI.isGUI()) GUI.get().shellext().notifyRootAnchor();
 
         // only maintain favorite for default root
         if (sid == null) updateFavorite(oldAbsPath, absPath);
@@ -251,7 +251,7 @@ public class SanityPoller
             UI.dm().start();  // restart the daemon
             UI.rnc().resume(); // restart ritual notification client
         } catch (Exception e1) {
-            GUI.get().show(MessageType.ERROR,
+            UI.get().show(MessageType.ERROR,
                     "An error occured while starting up " + L.product() +
                             " " + UIUtil.e2msg(e1));
             l.warn(Util.e(e1));
