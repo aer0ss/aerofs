@@ -37,6 +37,10 @@ def wait():
         except socket.error:
             time.sleep(param.POLLING_INTERVAL)
 
+def wait_for_heartbeat(max_attempts=50):
+    r = connect()
+    r.wait_for_heartbeat(max_attempts)
+
 class _RitualServiceWrapper(object):
     """
     Class that wraps the Ritual Protobuf-generated RPC stubs.
@@ -55,6 +59,20 @@ class _RitualServiceWrapper(object):
 
     def heartbeat(self):
         self._service.heartbeat()
+
+    def wait_for_heartbeat(self, max_attempts=50):
+        ready = False
+        attempts = 0
+        while not ready:
+            try:
+                self.heartbeat()
+            except:
+                attempts += 1
+                if attempts >= max_attempts:
+                    raise
+                time.sleep(param.POLLING_INTERVAL)
+            else:
+                ready = True
 
     def link_root(self, path):
         return self._service.link_root(path).sid
@@ -283,21 +301,16 @@ class _RitualServiceWrapper(object):
     def create_seed_file(self, sid):
         self._service.create_seed_file(sid)
 
-    def shutdown(self):
-        while True:
-            try:
-                self._service.shutdown()
-            except exception.ExceptionReply as e:
-                if e.get_type() == PBException.INDEXING:
-                    time.sleep(1)
-                    continue
-                raise
-            except socket.error:
-                # the daemon is expected to disconnect the socket when shutting down
-                pass
-            else:
-                raise IOError("the daemon didn't shut down properly")
-            break
+    def shutdown(self, max_attempts=50):
+        try:
+            # Make sure setup is finished before requesting shutdown
+            self.wait_for_heartbeat()
+            self._service.shutdown()
+        except socket.error:
+            # the daemon is expected to disconnect the socket when shutting down
+            return
+        else:
+            raise IOError("the daemon didn't shut down properly")
 
     def test_pause_linker(self):
         self._service.test_pause_linker()
