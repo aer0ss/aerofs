@@ -13,7 +13,7 @@ import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.cfg.CfgStoragePolicy;
 import com.aerofs.ui.error.ErrorMessages;
 import com.aerofs.ui.IUI.MessageType;
-import com.aerofs.ui.UI;
+import com.aerofs.ui.UIGlobals;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
@@ -65,7 +65,7 @@ public class MultiuserCompPreferences extends Composite
                 }
 
                 try {
-                    UI.ritual().reloadConfig();
+                    UIGlobals.ritual().reloadConfig();
                 } catch (Exception e1) {
                     GUI.get().show(getShell(), MessageType.ERROR,
                             "Couldn't update Sync History " + ErrorMessages.e2msgDeprecated(e1) + ".");

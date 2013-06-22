@@ -16,6 +16,7 @@ import com.aerofs.proto.Common.PBPath;
 import com.aerofs.proto.Ritual.GetActivitiesReply;
 import com.aerofs.proto.Ritual.GetActivitiesReply.PBActivity;
 import com.aerofs.ui.UI;
+import com.aerofs.ui.UIGlobals;
 import com.aerofs.ui.UIUtil;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.jface.viewers.IStructuredSelection;
@@ -234,7 +235,7 @@ public class CompActivityLog extends Composite
         Object[] elems;
         boolean hasUnresolved;
         try {
-            GetActivitiesReply reply = UI.ritual().getActivities(false, _maxResult, _pageToken);
+            GetActivitiesReply reply = UIGlobals.ritual().getActivities(false, _maxResult, _pageToken);
             elems = reply.getActivityList().toArray();
             hasUnresolved = reply.getHasUnresolvedDevices();
             _pageToken = reply.hasPageToken() ? reply.getPageToken() : null;

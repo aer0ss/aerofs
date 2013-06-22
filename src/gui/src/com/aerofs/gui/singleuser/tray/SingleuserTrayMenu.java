@@ -37,6 +37,7 @@ import com.aerofs.ritual_notification.IRitualNotificationListener;
 import com.aerofs.sv.client.SVClient;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.UI;
+import com.aerofs.ui.UIGlobals;
 import com.aerofs.ui.UIUtil;
 import com.google.common.base.Preconditions;
 import com.google.common.util.concurrent.FutureCallback;
@@ -94,7 +95,7 @@ public class SingleuserTrayMenu extends AbstractTrayMenu implements IRitualNotif
             }
         });
 
-        UI.rnc().addListener(this);
+        UIGlobals.rnc().addListener(this);
         // It's critical that we rebuild the menu here, since otherwise Ubuntu won't
         // have a menu to display until one of the menu items needs to be updated.
         rebuildMenu();
@@ -114,7 +115,7 @@ public class SingleuserTrayMenu extends AbstractTrayMenu implements IRitualNotif
         TrayMenuPopulator trayMenuPopulator = new TrayMenuPopulator(menu);
         // Updates and/or conflicts
         boolean hasWarnings = false;
-        if (UI.updater().getUpdateStatus() == Status.APPLY) {
+        if (UIGlobals.updater().getUpdateStatus() == Status.APPLY) {
             trayMenuPopulator.addApplyUpdateMenuItem();
             hasWarnings = true;
         }
@@ -266,7 +267,7 @@ public class SingleuserTrayMenu extends AbstractTrayMenu implements IRitualNotif
         final MenuItem loading = sharedTrayMenuPopulator.addMenuItem(S.GUI_LOADING, null);
         loading.setEnabled(false);
 
-        Futures.addCallback(UI.ritualNonBlocking().listSharedFolders(),
+        Futures.addCallback(UIGlobals.ritualNonBlocking().listSharedFolders(),
                 new FutureCallback<ListSharedFoldersReply>()
                 {
                     @Override

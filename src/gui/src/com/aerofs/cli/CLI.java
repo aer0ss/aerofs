@@ -7,18 +7,20 @@ import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.lib.ex.ExNoConsole;
+import com.aerofs.ui.UI;
+import com.aerofs.ui.UIGlobals;
 import com.aerofs.ui.error.ErrorMessages;
 import com.aerofs.ui.IUI;
-import com.aerofs.ui.UI;
 import com.aerofs.ui.UIParam;
-import com.aerofs.ui.UIUtil;
 
+import javax.annotation.Nonnull;
 import java.io.IOError;
 import java.io.PrintStream;
 import java.util.LinkedList;
 import java.util.concurrent.DelayQueue;
 import java.util.concurrent.Delayed;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class CLI implements IUI {
 
@@ -52,7 +54,7 @@ public class CLI implements IUI {
         }
 
         @Override
-        public long getDelay(TimeUnit arg0)
+        public long getDelay(@Nonnull TimeUnit arg0)
         {
             long ms = _abs - System.currentTimeMillis();
             switch (arg0) {
@@ -70,39 +72,14 @@ public class CLI implements IUI {
     private final LinkedList<ExecEntry> _execs = new LinkedList<ExecEntry>();
     private final PrintStream _out = System.out;
     private final DelayQueue<DelayedRunnable> _dq = new DelayQueue<DelayedRunnable>();
-    private final String _rtRoot;
+    private final AtomicBoolean _timedExecThreadStarted = new AtomicBoolean(false);
+
     /**
      * the caller thread will become the UI thread
      */
-    public CLI(String rtRoot)
+    public CLI()
     {
-        _rtRoot = rtRoot;
         _thd = Thread.currentThread();
-
-        ThreadUtil.startDaemonThread("cli-timed-exec", new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                while (true) {
-                    try {
-                        asyncExec(_dq.take()._runnable);
-                    } catch (InterruptedException e) {
-                        SystemUtil.fatal(e);
-                    }
-                }
-            }
-        });
-
-        // Schedule our launch() method to be called as soon as we enter the main loop
-        asyncExec(new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                UIUtil.launch(_rtRoot, null, null);
-            }
-        });
     }
 
 
@@ -448,13 +425,35 @@ public class CLI implements IUI {
     @Override
     public void timerExec(long delay, Runnable runnable)
     {
+        // lazy start the thread so we don't waste time on launching
+        startTimedExecThreadAsNeeded();
         _dq.add(new DelayedRunnable(System.currentTimeMillis() + delay, runnable));
+    }
+
+    private void startTimedExecThreadAsNeeded()
+    {
+        if (_timedExecThreadStarted.compareAndSet(false, true)) return;
+
+        ThreadUtil.startDaemonThread("cli-timed-exec", new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                while (true) {
+                    try {
+                        asyncExec(_dq.take()._runnable);
+                    } catch (InterruptedException e) {
+                        SystemUtil.fatal(e);
+                    }
+                }
+            }
+        });
     }
 
     @Override
     public void shutdown()
     {
-        UI.dm().stopIgnoreException();
+        UIGlobals.dm().stopIgnoreException();
         System.exit(0);
     }
 
@@ -464,7 +463,7 @@ public class CLI implements IUI {
         while (true) {
             String passwd = new String(askPasswd(S.PASSWORD_HAS_CHANGED));
             try {
-                UI.controller().updateStoredPassword(Cfg.user().getString(), passwd);
+                UIGlobals.controller().updateStoredPassword(Cfg.user().getString(), passwd);
                 break;
             } catch (ExBadCredential ebc) {
                 ThreadUtil.sleepUninterruptable(UIParam.LOGIN_PASSWD_RETRY_DELAY);

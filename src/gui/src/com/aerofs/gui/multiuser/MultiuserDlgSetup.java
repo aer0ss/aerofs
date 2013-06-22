@@ -17,7 +17,7 @@ import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.StorageType;
 import com.aerofs.proto.ControllerProto.PBS3Config;
 import com.aerofs.ui.IUI.MessageType;
-import com.aerofs.ui.UI;
+import com.aerofs.ui.UIGlobals;
 import org.eclipse.swt.widgets.Shell;
 
 /**
@@ -40,7 +40,7 @@ public class MultiuserDlgSetup extends AbstractDlgSetup
             throws Exception
     {
         PBS3Config config = getS3Config(UserID.fromExternal(userID));
-        UI.controller().setupMultiuser(userID, new String(passwd), getAbsRootAnchor(),
+        UIGlobals.controller().setupMultiuser(userID, new String(passwd), getAbsRootAnchor(),
                 getDeviceName(), _storageChoice.name(), config);
     }
 

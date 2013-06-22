@@ -31,7 +31,7 @@ public class RetypePasswordDialogDisplayer
                 showDialog();
             }
         };
-        UI.notifier().addListener(ControllerNotifications.Type.SHOW_RETYPE_PASSWORD_NOTIFICATION, l);
+        UIGlobals.notifier().addListener(ControllerNotifications.Type.SHOW_RETYPE_PASSWORD_NOTIFICATION, l);
     }
 
     private void showDialog()

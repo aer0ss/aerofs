@@ -8,7 +8,7 @@ import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.proto.Files.PBDumpStat;
 import com.aerofs.proto.Files.PBDumpStat.PBTransport;
-import com.aerofs.ui.UI;
+import com.aerofs.ui.UIGlobals;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.CLabel;
 import org.eclipse.swt.events.PaintEvent;
@@ -99,7 +99,7 @@ public class CompTransferStat extends Composite
             String strIn, strOut;
 
             try {
-                PBDumpStat data = UI.ritual().dumpStats(TEMPLATE).getStats();
+                PBDumpStat data = UIGlobals.ritual().dumpStats(TEMPLATE).getStats();
                 long in = 0, out = 0;
                 for (PBTransport transport : data.getTransportList()) {
                     in += transport.getBytesIn();

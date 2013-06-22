@@ -16,6 +16,7 @@ import com.aerofs.lib.os.OSUtil;
 import com.aerofs.lib.ritual.RitualClientProvider;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.ui.UI;
+import com.aerofs.ui.UIGlobals;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.MessageBox;
 import org.eclipse.swt.widgets.Shell;
@@ -62,11 +63,12 @@ public class GUIProgram implements IProgram
         //
 
         ClientSocketChannelFactory clientChannelFactory = ChannelFactories.getClientChannelFactory();
-        ControllerService.init(rtRoot, clientChannelFactory, UI.notifier());
+        ControllerService.init(rtRoot, clientChannelFactory, UIGlobals.notifier());
         SPBlockingClient.setBadCredentialListener(new ControllerBadCredentialListener());
         RitualClientProvider ritualProvider = new RitualClientProvider(clientChannelFactory);
         ShellextService sextservice = new ShellextService(ChannelFactories.getServerChannelFactory(), ritualProvider);
-        UI.init(new GUI(rtRoot, sextservice), ritualProvider);
+        UI.set(new GUI(rtRoot, sextservice));
+        UIGlobals.setRitualClientProvider(ritualProvider);
 
         GUI.get().enterMainLoop_();
     }

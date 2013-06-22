@@ -26,6 +26,8 @@ import com.aerofs.proto.ControllerNotifications.Type;
 import com.aerofs.proto.ControllerNotifications.UpdateNotification;
 import com.aerofs.proto.ControllerNotifications.UpdateNotification.Builder;
 import com.aerofs.proto.ControllerNotifications.UpdateNotification.Status;
+import com.aerofs.ui.UI;
+import com.aerofs.ui.UIGlobals;
 import com.netflix.config.DynamicStringProperty;
 import org.slf4j.Logger;
 
@@ -35,7 +37,6 @@ import com.aerofs.lib.ex.ExNoConsole;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.lib.Versions.CompareResult;
 import com.aerofs.lib.os.OSUtil.OSArch;
-import com.aerofs.ui.UI;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.UIParam;
 import javax.annotation.Nonnull;
@@ -263,7 +264,7 @@ public abstract class Updater
             return version;
         } catch (final IOException e) {
             l.error("Error reading server version from {}", serverVersionUrl, e);
-            UI.rockLog().newDefect("updater.readServerVersion").setException(e).send();
+            UIGlobals.rockLog().newDefect("updater.readServerVersion").setException(e).send();
             throw e;
         }
     }
@@ -353,7 +354,7 @@ public abstract class Updater
             _installationFilename = filename;
         } catch (final Exception e) {
             l.error("Error downloading update from {}", installerUrl, e);
-            UI.rockLog().newDefect("updater.downloadUpdate").setException(e).send();
+            UIGlobals.rockLog().newDefect("updater.downloadUpdate").setException(e).send();
             removeTempDownloadDirectory(dir);
             return false;
         }

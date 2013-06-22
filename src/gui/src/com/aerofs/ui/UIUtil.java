@@ -159,7 +159,7 @@ public class UIUtil
     public static void launch(String rtRoot, Runnable preLaunch, Runnable postLaunch)
     {
         try {
-            GetInitialStatusReply reply = UI.controller().getInitialStatus();
+            GetInitialStatusReply reply = UIGlobals.controller().getInitialStatus();
             switch (reply.getStatus()) {
 
             case NOT_LAUNCHABLE:
@@ -193,7 +193,7 @@ public class UIUtil
     private static void launch(Runnable preLaunch, final Runnable postLaunch)
     {
         if (preLaunch != null) { UI.get().asyncExec(preLaunch); }
-        Futures.addCallback(UI.controller().async().launch(), new FutureCallback<Common.Void>()
+        Futures.addCallback(UIGlobals.controller().async().launch(), new FutureCallback<Common.Void>()
         {
             @Override
             public void onSuccess(Common.Void aVoid)

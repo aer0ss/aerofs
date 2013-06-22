@@ -26,7 +26,7 @@ import com.aerofs.proto.Ritual.ListSharedFoldersReply;
 import com.aerofs.proto.Ritual.PBSharedFolder;
 import com.aerofs.ui.error.ErrorMessages;
 import com.aerofs.ui.IUI.MessageType;
-import com.aerofs.ui.UI;
+import com.aerofs.ui.UIGlobals;
 import com.aerofs.ui.UIUtil;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
@@ -118,7 +118,7 @@ public class DlgManageSharedFolders extends AeroFSDialog
         _folderList.setLoading(true);
         _memberList.setPath(null, false);
 
-        Futures.addCallback(UI.ritualNonBlocking().listSharedFolders(),
+        Futures.addCallback(UIGlobals.ritualNonBlocking().listSharedFolders(),
                 new FutureCallback<ListSharedFoldersReply>() {
             @Override
             public void onSuccess(final ListSharedFoldersReply reply)
@@ -161,7 +161,7 @@ public class DlgManageSharedFolders extends AeroFSDialog
                 public void run() throws Exception
                 {
                     try {
-                        UI.ritual().linkRoot(path);
+                        UIGlobals.ritual().linkRoot(path);
                     } catch (ExChildAlreadyShared e) {
                         GUI.get().show(getShell(), MessageType.ERROR, S.CHILD_ALREADY_SHARED);
                     } catch (ExParentAlreadyShared e) {
@@ -201,7 +201,7 @@ public class DlgManageSharedFolders extends AeroFSDialog
             @Override
             public void run() throws Exception
             {
-                UI.ritual().leaveSharedFolder(path.toPB());
+                UIGlobals.ritual().leaveSharedFolder(path.toPB());
             }
 
             @Override

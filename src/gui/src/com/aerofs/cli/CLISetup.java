@@ -18,7 +18,7 @@ import com.aerofs.proto.ControllerProto.PBS3Config;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.S3DataEncryptionPasswordVerifier;
 import com.aerofs.ui.S3DataEncryptionPasswordVerifier.PasswordVerifierResult;
-import com.aerofs.ui.UI;
+import com.aerofs.ui.UIGlobals;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -63,7 +63,7 @@ public class CLISetup
 
     CLISetup(CLI cli, String rtRoot) throws Exception
     {
-        GetSetupSettingsReply defaults = UI.controller().getSetupSettings();
+        GetSetupSettingsReply defaults = UIGlobals.controller().getSetupSettings();
         _deviceName = defaults.getDeviceName();
         _anchorRoot = defaults.getRootAnchor();
 
@@ -150,7 +150,7 @@ public class CLISetup
 
         cli.progress("Performing magic");
 
-        UI.controller().setupMultiuser(_userID.getString(), new String(_passwd), _anchorRoot,
+        UIGlobals.controller().setupMultiuser(_userID.getString(), new String(_passwd), _anchorRoot,
                 _deviceName, _storageType.name(), _s3config);
     }
 
@@ -167,7 +167,7 @@ public class CLISetup
 
         if (_storageType == null) _storageType = StorageType.LINKED;
 
-        UI.controller().setupSingleuser(_userID.getString(), new String(_passwd), _anchorRoot,
+        UIGlobals.controller().setupSingleuser(_userID.getString(), new String(_passwd), _anchorRoot,
                 _deviceName, _storageType.name(), null);
     }
 

@@ -17,9 +17,9 @@ import com.aerofs.proto.Ritual.ListConflictsReply;
 import com.aerofs.proto.Ritual.ListConflictsReply.ConflictedPath;
 import com.aerofs.proto.Ritual.PBBranch;
 import com.aerofs.proto.Ritual.PBObjectAttributes;
+import com.aerofs.ui.UIGlobals;
 import com.aerofs.ui.error.ErrorMessages;
 import com.aerofs.ui.IUI.MessageType;
-import com.aerofs.ui.UI;
 import com.aerofs.ui.UIUtil;
 import org.eclipse.jface.viewers.IStructuredContentProvider;
 import org.eclipse.jface.viewers.IStructuredSelection;
@@ -392,7 +392,7 @@ public class CompConflictFiles extends Composite
     private void openConflict() throws Exception
     {
         for (Entry en : getSelectedEntries()) {
-            if (!GUIUtil.launch(en.getExportedFilePath(UI.ritual()))) {
+            if (!GUIUtil.launch(en.getExportedFilePath(UIGlobals.ritual()))) {
                 throw new Exception(S.FILE_OPEN_FAIL);
             }
         }
@@ -407,7 +407,7 @@ public class CompConflictFiles extends Composite
             String path = dlg.open();
             if (path == null) break;
 
-            InjectableFile fSrc = _factFile.create(en.getExportedFilePath(UI.ritual()));
+            InjectableFile fSrc = _factFile.create(en.getExportedFilePath(UIGlobals.ritual()));
             InjectableFile fDest = _factFile.create(path);
             fSrc.copy(fDest, false, false);
         }
@@ -416,7 +416,7 @@ public class CompConflictFiles extends Composite
     private void deleteConflict() throws Exception
     {
         for (Entry en : getSelectedEntries()) {
-            UI.ritual().deleteConflict(en._path.toPB(), en._kidx);
+            UIGlobals.ritual().deleteConflict(en._path.toPB(), en._kidx);
             removeEntry(en);
         }
         selectionChanged();
@@ -446,7 +446,7 @@ public class CompConflictFiles extends Composite
             {
                 Exception ex = null;
                 try {
-                    populateConflictList(UI.ritual());
+                    populateConflictList(UIGlobals.ritual());
                 } catch (Exception e) {
                     Loggers.getLogger(CompConflictFiles.class)
                             .warn("search 4 conflict: " + Util.e(e));

@@ -23,7 +23,7 @@ import com.aerofs.labeling.L;
 import com.aerofs.lib.StorageType;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.proto.ControllerNotifications.UpdateNotification.Status;
-import com.aerofs.ui.UI;
+import com.aerofs.ui.UIGlobals;
 import com.google.common.base.Preconditions;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Menu;
@@ -56,7 +56,7 @@ public class MultiuserTrayMenu extends AbstractTrayMenu implements ITrayMenu, IT
     {
         TrayMenuPopulator populator = new TrayMenuPopulator(menu);
         // Apply updates
-        if (UI.updater().getUpdateStatus() == Status.APPLY) {
+        if (UIGlobals.updater().getUpdateStatus() == Status.APPLY) {
             populator.addApplyUpdateMenuItem();
             populator.addMenuSeparator();
         }

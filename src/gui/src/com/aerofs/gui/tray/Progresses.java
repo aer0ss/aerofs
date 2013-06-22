@@ -5,11 +5,11 @@ import java.util.TreeMap;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.labeling.L;
+import com.aerofs.ui.UI;
 import org.slf4j.Logger;
 
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.os.OSUtil;
-import com.aerofs.ui.UI;
 import com.aerofs.ui.IUI.MessageType;
 
 public class Progresses {

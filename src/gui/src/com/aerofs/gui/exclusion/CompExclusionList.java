@@ -6,7 +6,7 @@ import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.proto.Common.PBPath;
 import com.aerofs.proto.Ritual.GetChildrenAttributesReply;
 import com.aerofs.proto.Ritual.PBObjectAttributes.Type;
-import com.aerofs.ui.UI;
+import com.aerofs.ui.UIGlobals;
 import org.eclipse.jface.viewers.CheckboxTreeViewer;
 import org.eclipse.jface.viewers.ViewerSorter;
 import org.eclipse.swt.SWT;
@@ -53,14 +53,14 @@ public class CompExclusionList extends Composite
         Model m = new Model();
 
         m._excluded = new HashSet<Path>();
-        for (PBPath path : UI.ritual().listExcludedFolders().getPathList()) {
+        for (PBPath path : UIGlobals.ritual().listExcludedFolders().getPathList()) {
             Util.verify(m._excluded.add(Path.fromPB(path)));
         }
 
         // TODO: multiroot support
         Path root = Path.root(Cfg.rootSID());
         m._all = new HashSet<Path>();
-        GetChildrenAttributesReply reply = UI.ritual().getChildrenAttributes(Cfg.user().getString(), root.toPB());
+        GetChildrenAttributesReply reply = UIGlobals.ritual().getChildrenAttributes(Cfg.user().getString(), root.toPB());
         for (int i = 0; i < reply.getChildrenNameCount(); i++) {
             if (reply.getChildrenAttributes(i).getType() != Type.FILE) {
                 m._all.add(root.append(reply.getChildrenName(i)));

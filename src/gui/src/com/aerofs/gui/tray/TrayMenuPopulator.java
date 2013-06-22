@@ -17,6 +17,7 @@ import com.aerofs.labeling.L;
 import com.aerofs.lib.S;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.ui.UI;
+import com.aerofs.ui.UIGlobals;
 import com.netflix.config.DynamicBooleanProperty;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Image;
@@ -140,7 +141,7 @@ public class TrayMenuPopulator
                     @Override
                     protected void handleEventImpl(Event event)
                     {
-                        UI.updater().execUpdateFromMenu();
+                        UIGlobals.updater().execUpdateFromMenu();
                     }
                 });
     }

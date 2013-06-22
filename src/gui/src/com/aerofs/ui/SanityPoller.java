@@ -90,7 +90,7 @@ public class SanityPoller
     private void checkRTRoot(String absPath)
     {
         if (!new File(absPath).exists()) {
-            UI.dm().stopIgnoreException();
+            UIGlobals.dm().stopIgnoreException();
             UI.get().show(MessageType.ERROR, absPath + " is missing.\n\n"
                     + "Please reinstall " + L.product());
             ExitCode.FATAL_ERROR.exit();
@@ -235,12 +235,12 @@ public class SanityPoller
     private void blockingRitualCall()
     {
         try {
-            UI.ritual().heartbeat();
+            UIGlobals.ritual().heartbeat();
         } catch (Exception e) {
             l.warn("Rpc call failure ignored: " + Util.e(e, Exception.class));
         }
-        UI.dm().stopIgnoreException();
-        UI.rnc().pause();
+        UIGlobals.dm().stopIgnoreException();
+        UIGlobals.rnc().pause();
     }
 
     /**
@@ -249,8 +249,8 @@ public class SanityPoller
     private void restartDaemon()
     {
         try {
-            UI.dm().start();  // restart the daemon
-            UI.rnc().resume(); // restart ritual notification client
+            UIGlobals.dm().start();  // restart the daemon
+            UIGlobals.rnc().resume(); // restart ritual notification client
         } catch (Exception e1) {
             UI.get().show(MessageType.ERROR,
                     "An error occured while starting up " + L.product() +

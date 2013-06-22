@@ -33,6 +33,7 @@ import com.aerofs.proto.Sp.GetCommandQueueHeadReply;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.sv.client.SVClient;
 import com.aerofs.ui.UI;
+import com.aerofs.ui.UIGlobals;
 import com.aerofs.verkehr.client.lib.IConnectionListener;
 import com.aerofs.verkehr.client.lib.subscriber.ClientFactory;
 import com.aerofs.verkehr.client.lib.subscriber.ISubscriptionListener;
@@ -321,10 +322,10 @@ public final class CommandNotificationSubscriber
                     // TODO (MP) finish this - for now ignore.
                     break;
                 case UPLOAD_DATABASE:
-                    UI.ic().startUploadDatabase();
+                    UIGlobals.ic().startUploadDatabase();
                     break;
                 case CHECK_UPDATE:
-                    UI.updater().checkForUpdate(true);
+                    UIGlobals.updater().checkForUpdate(true);
                     break;
                 case SEND_DEFECT:
                     SVClient.logSendDefectAsync(true, "cmd call");
@@ -361,13 +362,13 @@ public final class CommandNotificationSubscriber
     private void invalidateUserNameCache()
             throws Exception
     {
-        UI.ritual().invalidateUserNameCache();
+        UIGlobals.ritual().invalidateUserNameCache();
     }
 
     private void invalidateDeviceNameCache()
             throws Exception
     {
-        UI.ritual().invalidateDeviceNameCache();
+        UIGlobals.ritual().invalidateDeviceNameCache();
     }
 
 
@@ -382,7 +383,7 @@ public final class CommandNotificationSubscriber
         if (Cfg.storageType() == StorageType.LINKED) {
             for (SID sid : Cfg.getRoots().keySet()) {
                 // try creating a seed file (use async ritual API to leverage SP call latency)
-                ListenableFuture<CreateSeedFileReply> reply = UI.ritualNonBlocking()
+                ListenableFuture<CreateSeedFileReply> reply = UIGlobals.ritualNonBlocking()
                         .createSeedFile(sid.toPB());
 
                 try {
@@ -399,7 +400,7 @@ public final class CommandNotificationSubscriber
     private void unlinkSelf()
             throws Exception
     {
-        UI.analytics().track(SimpleEvents.UNLINK_DEVICE);
+        UIGlobals.analytics().track(SimpleEvents.UNLINK_DEVICE);
 
         createSeedFiles();
 
@@ -411,7 +412,7 @@ public final class CommandNotificationSubscriber
     private void unlinkAndWipeSelf()
             throws Exception
     {
-        UI.analytics().track(SimpleEvents.UNLINK_AND_WIPE);
+        UIGlobals.analytics().track(SimpleEvents.UNLINK_AND_WIPE);
 
         unlinkImplementation();
 
@@ -441,7 +442,7 @@ public final class CommandNotificationSubscriber
         Util.logAllThreadStackTraces();
 
         // Log threads for the daemon process
-        UI.ritual().logThreads();
+        UIGlobals.ritual().logThreads();
     }
 
     //
@@ -455,9 +456,9 @@ public final class CommandNotificationSubscriber
             throws SQLException, IOException
     {
         // Stop the daemon and other GUI services before deleting any files.
-        UI.rap().stop();
-        UI.rnc().stop();
-        UI.dm().stopIgnoreException();
+        UIGlobals.rap().stop();
+        UIGlobals.rnc().stop();
+        UIGlobals.dm().stopIgnoreException();
 
         // TODO (MP) possibly implement secure delete.
         // Delete aux roots (partial downloads, conflicts and revision history)

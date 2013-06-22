@@ -6,6 +6,7 @@ import com.aerofs.proto.ControllerNotifications.Type;
 import com.aerofs.proto.ControllerNotifications.UpdateNotification;
 import com.aerofs.proto.ControllerNotifications.UpdateNotification.Status;
 import com.aerofs.ui.IUINotificationListener;
+import com.aerofs.ui.UIGlobals;
 import com.google.protobuf.GeneratedMessageLite;
 import org.eclipse.swt.widgets.Shell;
 
@@ -16,7 +17,6 @@ import com.aerofs.gui.GUIUtil;
 import com.aerofs.gui.Images;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.S;
-import com.aerofs.ui.UI;
 import com.swtdesigner.SWTResourceManager;
 
 import org.eclipse.swt.layout.GridLayout;
@@ -115,12 +115,12 @@ public class DlgAbout extends AeroFSDialog
             @Override
             public void shellClosed(ShellEvent e)
             {
-                UI.notifier().removeListener(Type.UPDATE_NOTIFICATION, _updateListener);
+                UIGlobals.notifier().removeListener(Type.UPDATE_NOTIFICATION, _updateListener);
             }
         });
 
-        UI.notifier().addListener(Type.UPDATE_NOTIFICATION, _updateListener);
-        setUpdateStatus(UI.updater().getUpdateStatus(), 0);
+        UIGlobals.notifier().addListener(Type.UPDATE_NOTIFICATION, _updateListener);
+        setUpdateStatus(UIGlobals.updater().getUpdateStatus(), 0);
     }
 
     private SelectionAdapter _btnUpdateSelectionAdapter =
@@ -167,7 +167,7 @@ public class DlgAbout extends AeroFSDialog
                 @Override
                 public void widgetSelected(SelectionEvent e)
                 {
-                    UI.updater().checkForUpdate(true);
+                    UIGlobals.updater().checkForUpdate(true);
                 }
             }, true, false);
             break;
@@ -192,7 +192,7 @@ public class DlgAbout extends AeroFSDialog
                 @Override
                 public void widgetSelected(SelectionEvent e)
                 {
-                    UI.updater().checkForUpdate(true);
+                    UIGlobals.updater().checkForUpdate(true);
                 }
             }, true, false);
             break;
@@ -204,7 +204,7 @@ public class DlgAbout extends AeroFSDialog
                 @Override
                 public void widgetSelected(SelectionEvent e)
                 {
-                    UI.updater().execUpdateFromMenu();
+                    UIGlobals.updater().execUpdateFromMenu();
                 }
             }, true, true);
             break;
@@ -216,7 +216,7 @@ public class DlgAbout extends AeroFSDialog
                 @Override
                 public void widgetSelected(SelectionEvent e)
                 {
-                    UI.updater().checkForUpdate(true);
+                    UIGlobals.updater().checkForUpdate(true);
                 }
             }, true, false);
             break;

@@ -25,9 +25,10 @@ import com.aerofs.proto.Common.PBPath;
 import com.aerofs.proto.Common.PBSubjectRolePair;
 import com.aerofs.proto.Sp.PBAuthorizationLevel;
 import com.aerofs.sp.client.SPBlockingClient;
+import com.aerofs.ui.UI;
 import com.aerofs.ui.error.ErrorMessages;
 import com.aerofs.ui.IUI.MessageType;
-import com.aerofs.ui.UI;
+import com.aerofs.ui.UIGlobals;
 import com.aerofs.ui.UIUtil;
 import com.google.common.collect.Lists;
 import org.eclipse.jface.dialogs.IDialogConstants;
@@ -279,9 +280,9 @@ public class CompInviteUsers extends Composite implements IInputChangeListener
                 for (UserID subject : subjects) {
                     srps.add(new SubjectRolePair(subject, Role.EDITOR).toPB());
                 }
-                UI.ritual().shareFolder(pbpath, srps, note);
+                UIGlobals.ritual().shareFolder(pbpath, srps, note);
 
-                UI.analytics().track(new FolderInviteSentEvent(subjects.size()));
+                UIGlobals.analytics().track(new FolderInviteSentEvent(subjects.size()));
             }
 
             void showPaymentDialog()

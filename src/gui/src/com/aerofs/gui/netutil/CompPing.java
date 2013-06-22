@@ -10,7 +10,7 @@ import com.aerofs.gui.GUIParam;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.sv.client.SVClient;
-import com.aerofs.ui.UI;
+import com.aerofs.ui.UIGlobals;
 import com.aerofs.ui.UIParam;
 import com.swtdesigner.SWTResourceManager;
 import org.eclipse.swt.SWT;
@@ -167,7 +167,7 @@ public class CompPing extends Composite
             public void run()
             {
                 try {
-                    InternalDiagnostics.ping(UI.ritual(), _did, true, new IPingCallback()
+                    InternalDiagnostics.ping(UIGlobals.ritual(), _did, true, new IPingCallback()
                     {
                         @Override
                         public boolean toStop()

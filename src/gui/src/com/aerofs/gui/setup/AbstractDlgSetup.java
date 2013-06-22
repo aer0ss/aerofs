@@ -18,9 +18,9 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExUIMessage;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.proto.ControllerProto.GetSetupSettingsReply;
+import com.aerofs.ui.UIGlobals;
 import com.aerofs.ui.error.ErrorMessages;
 import com.aerofs.ui.IUI.MessageType;
-import com.aerofs.ui.UI;
 import org.slf4j.Logger;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import static org.eclipse.jface.dialogs.IDialogConstants.*;
@@ -84,7 +84,7 @@ public abstract class AbstractDlgSetup extends AeroFSTitleAreaDialog
     {
         super(null, parentShell, false, shouldAlwaysOnTop(), false);
 
-        GetSetupSettingsReply defaults = UI.controller().getSetupSettings();
+        GetSetupSettingsReply defaults = UIGlobals.controller().getSetupSettings();
         _absRootAnchor = defaults.getRootAnchor();
         _deviceName = defaults.getDeviceName();
     }

@@ -29,7 +29,7 @@ import com.aerofs.proto.ControllerProto.PBS3Config;
 import com.aerofs.proto.Sp.GetUserPreferencesReply;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.sv.client.SVClient;
-import com.aerofs.ui.UI;
+import com.aerofs.ui.UIGlobals;
 import com.google.common.collect.Maps;
 import com.google.protobuf.ByteString;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
@@ -104,7 +104,7 @@ class Setup
             setupSingluserImpl(userId, rootAnchorPath, deviceName, storageType, s3cfg,
                     res._scrypted, res._sp);
 
-            UI.analytics().track(isReinstall ? REINSTALL_CLIENT : INSTALL_CLIENT);
+            UIGlobals.analytics().track(isReinstall ? REINSTALL_CLIENT : INSTALL_CLIENT);
 
         } catch (Exception e) {
             handleSetupException(userId, e);
@@ -122,9 +122,9 @@ class Setup
 
             // Send event for S3 Setup
             if (s3cfg != null) {
-                UI.analytics().track(SimpleEvents.ENABLE_S3);
+                UIGlobals.analytics().track(SimpleEvents.ENABLE_S3);
             }
-            UI.analytics().track(SimpleEvents.INSTALL_TEAM_SERVER);
+            UIGlobals.analytics().track(SimpleEvents.INSTALL_TEAM_SERVER);
 
         } catch (Exception e) {
             handleSetupException(userId, e);
@@ -242,7 +242,7 @@ class Setup
     private void handleSetupException(UserID userId, Exception e)
             throws Exception
     {
-        UI.dm().stopIgnoreException();
+        UIGlobals.dm().stopIgnoreException();
 
         // Don't send SV defect for bad credentials
         if (!(e instanceof ExBadCredential)) {
@@ -278,7 +278,7 @@ class Setup
         // Clean up the running daemon if any. It is needed as the daemon process may lock files in
         // cache and aerofs.db.
         try {
-            UI.dm().stop();
+            UIGlobals.dm().stop();
         } catch (IOException e) {
             l.warn("cleaning up the old daemon failed: " + Util.e(e));
         }
@@ -303,7 +303,7 @@ class Setup
         InjectableFile fDB = _factFile.create(_rtRoot, LibParam.CORE_DATABASE);
         fDB.deleteOrThrowIfExist();
 
-        UI.dm().start();
+        UIGlobals.dm().start();
     }
 
     /**

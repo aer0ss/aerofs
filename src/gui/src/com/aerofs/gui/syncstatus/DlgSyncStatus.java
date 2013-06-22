@@ -16,7 +16,7 @@ import com.aerofs.lib.Util;
 import com.aerofs.proto.Ritual.GetSyncStatusReply;
 import com.aerofs.proto.Ritual.PBSyncStatus;
 import com.aerofs.proto.Ritual.PBSyncStatus.Status;
-import com.aerofs.ui.UI;
+import com.aerofs.ui.UIGlobals;
 import com.aerofs.ui.UIUtil;
 import com.google.common.collect.Maps;
 import org.eclipse.swt.SWT;
@@ -190,7 +190,7 @@ public class DlgSyncStatus extends AeroFSDialog
 
         GetSyncStatusReply reply = null;
         try {
-            reply = UI.ritual().getSyncStatus(_path.toPB());
+            reply = UIGlobals.ritual().getSyncStatus(_path.toPB());
         } catch (Exception e) {
             l.warn(Util.e(e));
         }

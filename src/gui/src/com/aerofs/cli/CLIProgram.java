@@ -9,12 +9,14 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.ritual.RitualClientProvider;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.ui.UI;
+import com.aerofs.ui.UIGlobals;
+import com.aerofs.ui.UIUtil;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 
 public class CLIProgram implements IProgram
 {
     @Override
-    public void launch_(String rtRoot, String prog, String[] args) throws Exception
+    public void launch_(final String rtRoot, String prog, String[] args) throws Exception
     {
         Util.initDriver("cc"); // "cc" is the log file that aerofsd will write to
 
@@ -26,10 +28,24 @@ public class CLIProgram implements IProgram
         //
 
         ClientSocketChannelFactory clientChannelFactory = ChannelFactories.getClientChannelFactory();
-        ControllerService.init(rtRoot, clientChannelFactory, UI.notifier());
+        ControllerService.init(rtRoot, clientChannelFactory, UIGlobals.notifier());
         SPBlockingClient.setBadCredentialListener(new ControllerBadCredentialListener());
         RitualClientProvider ritualProvider = new RitualClientProvider(clientChannelFactory);
-        UI.init(new CLI(rtRoot), ritualProvider);
+
+        CLI cli = new CLI();
+        UI.set(cli);
+
+        UIGlobals.setRitualClientProvider(ritualProvider);
+
+        // Launch the daemon
+        cli.asyncExec(new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                UIUtil.launch(rtRoot, null, null);
+            }
+        });
 
         CLI.get().enterMainLoop_();
     }

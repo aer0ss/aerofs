@@ -13,6 +13,8 @@ import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.id.UserID;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.labeling.L;
+import com.aerofs.ui.UI;
+import com.aerofs.ui.UIGlobals;
 import com.aerofs.ui.launch_tasks.UILaunchTasks;
 import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.LibParam;
@@ -26,7 +28,6 @@ import com.aerofs.proto.ControllerProto.GetInitialStatusReply;
 import com.aerofs.proto.ControllerProto.GetInitialStatusReply.Status;
 import com.aerofs.sv.client.SVClient;
 import com.aerofs.ui.IUI.MessageType;
-import com.aerofs.ui.UI;
 import com.aerofs.ui.logs.LogArchiver;
 import com.aerofs.ui.update.PostUpdate;
 import com.aerofs.ui.update.uput.UIPostUpdateTasks;
@@ -159,7 +160,7 @@ class Launcher
             // SanityPoller should be executed before the daemon starts so that the users know
             // that they moved or deleted the root anchor prior to the daemon failing because
             // that folder is missing
-            UI.rap().start();
+            UIGlobals.rap().start();
 
             if (isFirstTime) {
                 // need to bind to singleton port
@@ -168,8 +169,8 @@ class Launcher
             } else {
                 // should already be bound to singleton port
                 assert _ss != null;
-                UI.dm().start();
-                UI.analytics().track(SimpleEvents.SIGN_IN);
+                UIGlobals.dm().start();
+                UIGlobals.analytics().track(SimpleEvents.SIGN_IN);
             }
 
             Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
@@ -179,7 +180,7 @@ class Launcher
                     // delete the socket so another instance can run while we're sending the event
                     Launcher.destroySingletonSocket();
                     // Shutdown the scheduler.
-                    UI.scheduler().shutdown();
+                    UIGlobals.scheduler().shutdown();
                 }
             }));
 
@@ -193,7 +194,7 @@ class Launcher
             }
 
              // Check and install any existing updates
-            UI.updater().onStartup();
+            UIGlobals.updater().onStartup();
 
             runPostUpdateTasks();
 
@@ -207,8 +208,8 @@ class Launcher
 
         } catch (Exception ex) {
             SVClient.logSendDefectAsync(true, "launch failed", ex);
-            if (UI.updater() != null) {
-                UI.updater().onStartupFailed();
+            if (UIGlobals.updater() != null) {
+                UIGlobals.updater().onStartupFailed();
             }
             throw ex;
         }
@@ -222,7 +223,7 @@ class Launcher
      */
     private void verifyChecksums() throws IOException, ExLaunchAborted, ExFormatError
     {
-        UI.analytics().track(new UpdateEvent(Cfg.db().get(Key.LAST_VER)));
+        UIGlobals.analytics().track(new UpdateEvent(Cfg.db().get(Key.LAST_VER)));
 
         // After an update, verify that all checksums match
         String failedFile = PostUpdate.verifyChecksum();
@@ -276,7 +277,7 @@ class Launcher
 
         new CommandNotificationSubscriber(
                 _clientChannelFactory,
-                UI.scheduler(),
+                UIGlobals.scheduler(),
                 Cfg.did())
             .start();
 
@@ -284,12 +285,12 @@ class Launcher
 
         try {
             if (Cfg.useAutoUpdate()) {
-                UI.updater().start();
+                UIGlobals.updater().start();
             }
         } catch (Exception e) {
             SVClient.logSendDefectAsync(true, "cant start autoupdate worker", e);
         }
 
-        UI.rnc().start();
+        UIGlobals.rnc().start();
     }
 }

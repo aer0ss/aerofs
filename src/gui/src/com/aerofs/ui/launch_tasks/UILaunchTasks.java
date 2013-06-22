@@ -4,7 +4,7 @@
 
 package com.aerofs.ui.launch_tasks;
 
-import com.aerofs.ui.UI;
+import com.aerofs.ui.UIGlobals;
 
 /**
  * Tasks to be run on every launch.
@@ -18,7 +18,7 @@ public class UILaunchTasks
     public UILaunchTasks()
     {
         _tasks = new UILaunchTask[] {
-                new ULTRecertifyDevice(UI.scheduler())
+                new ULTRecertifyDevice(UIGlobals.scheduler())
         };
     }
 

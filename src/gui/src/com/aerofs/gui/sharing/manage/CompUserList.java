@@ -21,7 +21,7 @@ import com.aerofs.lib.S;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.proto.Ritual.GetACLReply;
-import com.aerofs.ui.UI;
+import com.aerofs.ui.UIGlobals;
 import com.aerofs.ui.UIUtil;
 
 import org.eclipse.swt.SWT;
@@ -173,7 +173,7 @@ public class CompUserList extends Composite
         _path = path;
         _rSelf = null;
 
-        Futures.addCallback(UI.ritualNonBlocking().getACL(Cfg.user().getString(), path.toPB()),
+        Futures.addCallback(UIGlobals.ritualNonBlocking().getACL(Cfg.user().getString(), path.toPB()),
                 new FutureCallback<GetACLReply>() {
             @Override
             public void onSuccess(GetACLReply reply)
@@ -232,10 +232,10 @@ public class CompUserList extends Composite
     {
         try {
             if (role == null) {
-                UI.ritual().deleteACL(Cfg.user().getString(), _path.toPB(),
+                UIGlobals.ritual().deleteACL(Cfg.user().getString(), _path.toPB(),
                         subject.getString());
             } else {
-                UI.ritual().updateACL(Cfg.user().getString(), _path.toPB(), subject.getString(),
+                UIGlobals.ritual().updateACL(Cfg.user().getString(), _path.toPB(), subject.getString(),
                         role.toPB());
             }
             load(_path, null);

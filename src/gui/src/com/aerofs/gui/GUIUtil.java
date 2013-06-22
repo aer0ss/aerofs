@@ -17,6 +17,7 @@ import com.aerofs.proto.Ritual.PBObjectAttributes;
 import com.aerofs.sv.client.SVClient;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.UI;
+import com.aerofs.ui.UIGlobals;
 import com.swtdesigner.SWTResourceManager;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.VerifyEvent;
@@ -73,7 +74,7 @@ public class GUIUtil
         @Override
         public void handleEvent(Event event)
         {
-            if (_analyticsEvent != null) UI.analytics().track(_analyticsEvent);
+            if (_analyticsEvent != null) UIGlobals.analytics().track(_analyticsEvent);
             handleEventImpl(event);
         }
 
@@ -284,7 +285,7 @@ public class GUIUtil
         final boolean create;
 
         try {
-            PBObjectAttributes.Type type = UI.ritual().getObjectAttributes(Cfg.user().getString(),
+            PBObjectAttributes.Type type = UIGlobals.ritual().getObjectAttributes(Cfg.user().getString(),
                     path.toPB())
                     .getObjectAttributes()
                     .getType();

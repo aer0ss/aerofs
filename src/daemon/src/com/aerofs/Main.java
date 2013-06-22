@@ -64,28 +64,25 @@ public class Main
             logLevel = Level.INFO;
         }
 
-        // NB: No logger is set up if this is the shell.
-        if (! prog.equals(LibParam.SH_NAME)) {
-            try {
-                LogUtil.initializeFromConfigFile(rtRoot, prog, logLevel, LOG_CONFIG);
+        try {
+            LogUtil.initializeFromConfigFile(rtRoot, prog, logLevel, LOG_CONFIG);
 
-                if (L.isStaging()) {
-                    LogUtil.startConsoleLogging();
-                }
-            } catch (Exception je) {
-                // FIXME(jP): Can we remove this? Does it ever work?
-                String msg = "Error starting log subsystem: " + Util.e(je);
-                // I don't know how to output to system.logging on mac/linux. so use
-                // the command line as a quick/dirty approach
-                try {
-                    SystemUtil.execForeground("logger", msg);
-                } catch (Exception e2) {
-                    // ignored
-                }
-
-                System.err.println(msg);
-                ExitCode.FAIL_TO_INITIALIZE_LOGGING.exit();
+            if (L.isStaging()) {
+                LogUtil.startConsoleLogging();
             }
+        } catch (Exception je) {
+            // FIXME(jP): Can we remove this? Does it ever work?
+            String msg = "Error starting log subsystem: " + Util.e(je);
+            // I don't know how to output to system.logging on mac/linux. so use
+            // the command line as a quick/dirty approach
+            try {
+                SystemUtil.execForeground("logger", msg);
+            } catch (Exception e2) {
+                // ignored
+            }
+
+            System.err.println(msg);
+            ExitCode.FAIL_TO_INITIALIZE_LOGGING.exit();
         }
 
         l.info("{}", getProgramBanner(rtRoot, prog));

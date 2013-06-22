@@ -2,6 +2,7 @@ package com.aerofs.shell;
 
 import com.aerofs.lib.Util;
 import com.aerofs.base.ex.ExBadArgs;
+import com.aerofs.ui.error.ErrorMessage;
 import com.aerofs.ui.error.ErrorMessages;
 import jline.console.ConsoleReader;
 import org.apache.commons.cli.CommandLine;
@@ -28,15 +29,12 @@ public class ShellCommandRunner<T>
     public static final Options EMPTY_OPTS = new Options();
     public static final String ARG_ECHO_LONG = "--echo";
     public static final String ARG_ECHO = "-e";
-    public static final String ARG_SHOW_STACK_LONG = "--show-stack";
-    public static final String ARG_SHOW_STACK = "-s";
 
     private final Map<String, IShellCommand<T>> _cmds = new TreeMap<String, IShellCommand<T>>();
     private final PrintStream _err = System.err;
     private final PrintStream _out = System.out;
     private final ConsoleReader _reader;
     private boolean _echo;
-    private boolean _showStack;
     private final ICallback _cb;
     private final T _data;
     private final String _prog, _desc;
@@ -87,8 +85,6 @@ public class ShellCommandRunner<T>
             String a = args[i];
             if (a.equals(ARG_ECHO) || a.equals(ARG_ECHO_LONG)) {
                 _echo = true;
-            } else if (a.equals(ARG_SHOW_STACK) || a.equals(ARG_SHOW_STACK_LONG)) {
-                _showStack = true;
             } else if (a.startsWith("-")) {
                 throw new ExBadArgs(a);
             } else {
@@ -164,25 +160,13 @@ public class ShellCommandRunner<T>
                 if (e.getCause() instanceof Error) throw e.getCause();
                 else throw e;
             }
-        } catch (ExBadArgs e) {
-            handleCommandException_(cmd, e);
-        } catch (ParseException e) {
-            handleCommandException_(cmd, e);
         } catch (Throwable e) {
-            handleGeneralException_(cmd, e);
+            String prefix = cmd.getName() + ": ";
+            String typeHelp = "Type " + Util.quote("help " + cmd.getName()) + " for usage.";
+            ErrorMessages.show(e, prefix + ErrorMessages.e2msgNoBracketDeprecated(e) + '.',
+                    new ErrorMessage(ExBadArgs.class, prefix + "bad arguments. " + typeHelp),
+                    new ErrorMessage(ParseException.class, prefix + "bad command input. " + typeHelp));
         }
-    }
-
-    private void handleCommandException_(IShellCommand<T> cmd, Throwable e)
-    {
-        _err.println(cmd.getName() + ": " + ErrorMessages.e2msgNoBracketDeprecated(e));
-        _err.println("Type " + Util.quote("help " + cmd.getName()) + " for usage");
-    }
-
-    private void handleGeneralException_(IShellCommand<T> cmd, Throwable e)
-    {
-        _err.println(cmd.getName() + ": " + ErrorMessages.e2msgNoBracketDeprecated(e));
-        if (_showStack) _err.println(Util.e(e));
     }
 
     public void start_() throws IOException

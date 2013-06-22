@@ -10,7 +10,7 @@ import com.aerofs.gui.GUIParam;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.sv.client.SVClient;
-import com.aerofs.ui.UI;
+import com.aerofs.ui.UIGlobals;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
@@ -129,7 +129,7 @@ public class DlgNetworkUtility extends AeroFSJFaceDialog
                         false,
                         "network diagnosis results",
                         new Exception(),
-                        InternalDiagnostics.dumpFullDaemonStatus(UI.ritual()),
+                        InternalDiagnostics.dumpFullDaemonStatus(UIGlobals.ritual()),
                         false);
             }
 

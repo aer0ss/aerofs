@@ -209,7 +209,7 @@ class DefaultDaemonMonitor implements IDaemonMonitor
     {
         try {
             // ritual.heartbeat() will throw immediately if it can't connect to the daemon
-            UI.ritual().heartbeat();
+            UIGlobals.ritual().heartbeat();
             l.info("daemon is ready");
             return DaemonState.READY;
         } catch (ExIndexing e) {
@@ -356,7 +356,7 @@ class DefaultDaemonMonitor implements IDaemonMonitor
         boolean succeeded = false;
 
         try {
-            UI.ritual().heartbeat(Daemon.HEARTBEAT_TIMEOUT, TimeUnit.MILLISECONDS);
+            UIGlobals.ritual().heartbeat(Daemon.HEARTBEAT_TIMEOUT, TimeUnit.MILLISECONDS);
             succeeded = true;
         } catch (Exception e) {
             _fdsHeartbeatGone.logSendAsync("daemon hb gone. " + e);

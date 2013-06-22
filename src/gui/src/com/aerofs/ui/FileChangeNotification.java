@@ -43,7 +43,7 @@ public class FileChangeNotification
 
     public FileChangeNotification()
     {
-        if (Cfg.db().getBoolean(Key.NOTIFY)) UI.rnc().addListener(_l);
+        if (Cfg.db().getBoolean(Key.NOTIFY)) UIGlobals.rnc().addListener(_l);
 
         Cfg.db().addListener(new ICfgDatabaseListener() {
             @Override
@@ -52,9 +52,9 @@ public class FileChangeNotification
                 if (key != Key.NOTIFY) return;
 
                 if (Cfg.db().getBoolean(Key.NOTIFY)) {
-                    UI.rnc().addListener(_l);
+                    UIGlobals.rnc().addListener(_l);
                 } else {
-                    UI.rnc().removeListener(_l);
+                    UIGlobals.rnc().removeListener(_l);
                 }
             }
         });

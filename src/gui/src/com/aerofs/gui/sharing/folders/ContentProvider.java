@@ -5,7 +5,7 @@ import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.proto.Ritual.GetChildrenAttributesReply;
 import com.aerofs.proto.Ritual.PBObjectAttributes;
 import com.aerofs.proto.Ritual.PBObjectAttributes.Type;
-import com.aerofs.ui.UI;
+import com.aerofs.ui.UIGlobals;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.eclipse.jface.viewers.ITreeContentProvider;
@@ -46,7 +46,7 @@ public class ContentProvider implements ITreeContentProvider
         List<Path> ret = _cache.get(parent);
         if (ret == null) {
             ret = Lists.newArrayList();
-            GetChildrenAttributesReply reply = UI.ritual().getChildrenAttributes(
+            GetChildrenAttributesReply reply = UIGlobals.ritual().getChildrenAttributes(
                     Cfg.user().getString(), parent.toPB());
             for (int i = 0; i < reply.getChildrenNameCount(); i++) {
                 PBObjectAttributes oa = reply.getChildrenAttributes(i);

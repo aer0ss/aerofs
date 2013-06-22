@@ -3,7 +3,7 @@ package com.aerofs.gui.tray;
 import com.aerofs.base.Loggers;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
-import com.aerofs.ui.UI;
+import com.aerofs.ui.UIGlobals;
 import org.slf4j.Logger;
 
 import java.util.concurrent.Callable;
@@ -38,7 +38,7 @@ public class PauseOrResumeSyncing
         l.warn("pause syncing");
         assert !_paused;
 
-        UI.ritual().pauseSyncing();
+        UIGlobals.ritual().pauseSyncing();
 
         _paused = true;
         final int seq = ++_pauseSeq;
@@ -72,7 +72,7 @@ public class PauseOrResumeSyncing
         l.warn("resume syncing");
         assert _paused;
 
-        UI.ritual().resumeSyncing();
+        UIGlobals.ritual().resumeSyncing();
 
         // increment the pause sequence to cancel all pending pause timeouts
         _pauseSeq++;

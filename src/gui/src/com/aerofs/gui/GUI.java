@@ -21,9 +21,10 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExNoConsole;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.sv.client.SVClient;
+import com.aerofs.ui.UI;
+import com.aerofs.ui.UIGlobals;
 import com.aerofs.ui.error.ErrorMessages;
 import com.aerofs.ui.IUI;
-import com.aerofs.ui.UI;
 import com.aerofs.ui.UIUtil;
 import com.google.common.util.concurrent.SettableFuture;
 import org.eclipse.jface.dialogs.IDialogConstants;
@@ -750,7 +751,7 @@ public class GUI implements IUI
             public void run() {
                 if (st() != null) st().dispose();
 
-                if (UI.dm() != null) UI.dm().stopIgnoreException();
+                if (UIGlobals.dm() != null) UIGlobals.dm().stopIgnoreException();
             }
         });
 

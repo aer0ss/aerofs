@@ -13,7 +13,7 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ritual.RitualBlockingClient;
 import com.aerofs.proto.Ritual.TransportFloodQueryReply;
-import com.aerofs.ui.UI;
+import com.aerofs.ui.UIGlobals;
 import com.aerofs.ui.UIParam;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
@@ -116,13 +116,13 @@ public class CompBandwidth extends Composite
                 _compPing.suspend();
                 try {
                     try {
-                        thdRun(_compUploadStatus, true, UI.ritual());
+                        thdRun(_compUploadStatus, true, UIGlobals.ritual());
                     } catch (Exception e) {
                         _compUploadStatus.done(e, 0, 0);
                     }
 
                     try {
-                        thdRun(_compDownloadStatus, false, UI.ritual());
+                        thdRun(_compDownloadStatus, false, UIGlobals.ritual());
                     } catch (Exception e) {
                         _compDownloadStatus.done(e, 0, 0);
                     }

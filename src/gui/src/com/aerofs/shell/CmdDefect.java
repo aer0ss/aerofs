@@ -8,17 +8,15 @@ import com.aerofs.InternalDiagnostics;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExBadArgs;
-import com.aerofs.cli.CLI;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ritual.RitualBlockingClient;
 import com.aerofs.sv.client.SVClient;
+import com.aerofs.ui.UI;
 import com.aerofs.ui.error.ErrorMessages;
 import com.aerofs.ui.IUI.MessageType;
-import com.aerofs.ui.UI;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
 import org.slf4j.Logger;
@@ -83,9 +81,6 @@ public class CmdDefect implements IShellCommand<ShProgram>
             sb.append(arg);
             sb.append(" ");
         }
-
-        // set the UI so sendDefect can use it to show messages
-        UI.init(new CLI(Cfg.absRTRoot()), s.d().getRitualProvider_());
 
         sendDefect(s.d().getRitualClient_(), sb.toString(), true);
     }

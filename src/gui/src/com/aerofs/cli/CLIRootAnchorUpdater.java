@@ -11,9 +11,9 @@ import com.aerofs.lib.RootAnchorUtil;
 import com.aerofs.lib.S;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExNoConsole;
+import com.aerofs.ui.UIGlobals;
 import com.aerofs.ui.error.ErrorMessages;
 import com.aerofs.ui.IUI.MessageType;
-import com.aerofs.ui.UI;
 import com.aerofs.ui.UIUtil;
 
 import javax.annotation.Nullable;
@@ -89,7 +89,7 @@ public class CLIRootAnchorUpdater
             _cli.show(MessageType.WARN, S.NO_CONSOLE);
             throw new ExNoConsole();
         } else if (isReplaced) {
-            UI.dm().stopIgnoreException();
+            UIGlobals.dm().stopIgnoreException();
         } else {
             selectRootAnchorLocation();
         }

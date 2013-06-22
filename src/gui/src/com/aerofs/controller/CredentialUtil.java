@@ -18,7 +18,7 @@ import com.aerofs.lib.os.OSUtil;
 import com.aerofs.proto.Sp.RecertifyDeviceReply;
 import com.aerofs.proto.Sp.RegisterDeviceReply;
 import com.aerofs.sp.client.SPBlockingClient;
-import com.aerofs.ui.UI;
+import com.aerofs.ui.UIGlobals;
 import com.google.protobuf.ByteString;
 
 import java.io.File;
@@ -80,8 +80,8 @@ public class CredentialUtil
         Cfg.setPrivKeyAndScryptedUsingScrypted(scrypted);
 
         //restart the daemon to reload the new password.
-        UI.dm().stop();
-        UI.dm().start();
+        UIGlobals.dm().stop();
+        UIGlobals.dm().start();
     }
 
     /**

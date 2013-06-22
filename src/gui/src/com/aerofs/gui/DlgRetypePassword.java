@@ -8,7 +8,7 @@ import com.aerofs.base.Loggers;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.base.ex.ExBadCredential;
-import com.aerofs.ui.UI;
+import com.aerofs.ui.UIGlobals;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.ModifyEvent;
@@ -122,7 +122,7 @@ public class DlgRetypePassword extends AeroFSJFaceDialog
                 public void run() throws Exception
                 {
                     try {
-                        UI.controller().updateStoredPassword(Cfg.user().getString(), passwd);
+                        UIGlobals.controller().updateStoredPassword(Cfg.user().getString(), passwd);
                     } catch (Exception e) {
                         ThreadUtil.sleepUninterruptable(UIParam.LOGIN_PASSWD_RETRY_DELAY);
                         throw e;

@@ -8,9 +8,9 @@ import com.aerofs.gui.GUIUtil;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
+import com.aerofs.ui.UIGlobals;
 import com.aerofs.ui.error.ErrorMessages;
 import com.aerofs.ui.IUI.MessageType;
-import com.aerofs.ui.UI;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.FocusAdapter;
@@ -437,7 +437,7 @@ public class DlgThrottling extends AeroFSDialog {
             db.set(Key.MAX_DOWN_RATE_LIMITED, _maxDownRate);
             db.set(Key.MAX_UP_RATE_LIMITED, _maxUpRate);
 
-            UI.ritual().reloadConfig();
+            UIGlobals.ritual().reloadConfig();
 
             closeDialog();
         } catch (Exception e) {

@@ -6,8 +6,8 @@ import java.util.List;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.analytics.AnalyticsEvents.SignupInviteSentEvent;
 import com.aerofs.base.id.UserID;
+import com.aerofs.ui.UIGlobals;
 import com.aerofs.ui.error.ErrorMessages;
-import com.aerofs.ui.UI;
 import com.google.common.collect.Lists;
 import org.slf4j.Logger;
 import org.eclipse.jface.dialogs.IDialogConstants;
@@ -168,7 +168,7 @@ public class DlgInviteToSignUp extends AeroFSDialog implements IInputChangeListe
 
         sp.inviteToSignUp(userIdStrings);
 
-        UI.analytics().track(new SignupInviteSentEvent(_userIDs.size()));
+        UIGlobals.analytics().track(new SignupInviteSentEvent(_userIDs.size()));
     }
 
     @Override

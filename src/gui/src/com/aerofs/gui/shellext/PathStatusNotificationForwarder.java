@@ -8,7 +8,7 @@ import com.aerofs.lib.Path;
 import com.aerofs.proto.RitualNotifications.PBNotification;
 import com.aerofs.proto.RitualNotifications.PBPathStatusEvent;
 import com.aerofs.ritual_notification.IRitualNotificationListener;
-import com.aerofs.ui.UI;
+import com.aerofs.ui.UIGlobals;
 import com.aerofs.ui.UIUtil;
 
 /**
@@ -23,7 +23,7 @@ public class PathStatusNotificationForwarder
     {
         _service = service;
 
-        UI.rnc().addListener(new IRitualNotificationListener() {
+        UIGlobals.rnc().addListener(new IRitualNotificationListener() {
             @Override
             public void onNotificationReceived(PBNotification pb)
             {

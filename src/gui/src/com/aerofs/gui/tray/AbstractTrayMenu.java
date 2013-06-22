@@ -30,7 +30,7 @@ import com.aerofs.proto.Ritual.GetActivitiesReply.PBActivity;
 import com.aerofs.proto.RitualNotifications.PBNotification;
 import com.aerofs.proto.RitualNotifications.PBNotification.Type;
 import com.aerofs.ritual_notification.IRitualNotificationListener;
-import com.aerofs.ui.UI;
+import com.aerofs.ui.UIGlobals;
 import com.aerofs.ui.UIUtil;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
@@ -82,7 +82,7 @@ public abstract class AbstractTrayMenu implements ITrayMenu, ITrayMenuComponentL
 
         _lastMenu = new Menu(GUI.get().sh(), SWT.POP_UP);
 
-        _transferTrayMenuSection = new TransferTrayMenuSection(UI.ts());
+        _transferTrayMenuSection = new TransferTrayMenuSection(UIGlobals.ts());
         _transferTrayMenuSection.addListener(this);
 
         _lastMenu.addMenuListener(new MenuListener() {
@@ -104,7 +104,7 @@ public abstract class AbstractTrayMenu implements ITrayMenu, ITrayMenuComponentL
         });
 
         if (Cfg.storageType() == StorageType.LINKED) {
-            _indexingPoller = new IndexingPoller(UI.scheduler());
+            _indexingPoller = new IndexingPoller(UIGlobals.scheduler());
             _indexingTrayMenuSection = new IndexingTrayMenuSection(_indexingPoller);
             _indexingPoller.addListener(new IIndexingCompletionListener()
             {
@@ -127,7 +127,7 @@ public abstract class AbstractTrayMenu implements ITrayMenu, ITrayMenuComponentL
             _indexingTrayMenuSection = null;
         }
 
-        UI.rnc().addListener(new IRitualNotificationListener() {
+        UIGlobals.rnc().addListener(new IRitualNotificationListener() {
             @Override
             public void onNotificationReceived(PBNotification pb)
             {
@@ -277,7 +277,7 @@ public abstract class AbstractTrayMenu implements ITrayMenu, ITrayMenuComponentL
         activitiesPopulator.addMenuItem(S.GUI_LOADING, null).setEnabled(false);
 
         // asynchronously fetch results, as GetActivities call may be slow. (see ritual.proto)
-        Futures.addCallback(UI.ritualNonBlocking().getActivities(true, 5, null),
+        Futures.addCallback(UIGlobals.ritualNonBlocking().getActivities(true, 5, null),
                 new FutureCallback<GetActivitiesReply>()
                 {
                     @Override

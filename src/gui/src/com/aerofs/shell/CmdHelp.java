@@ -73,9 +73,6 @@ public class CmdHelp<T> implements IShellCommand<T>
         pw.println(
                 INDENT + ShellCommandRunner.ARG_ECHO + "," + ShellCommandRunner.ARG_ECHO_LONG + INDENT +
                         "echo commands to stdout, useful for script debugging");
-        pw.println(
-                INDENT + ShellCommandRunner.ARG_SHOW_STACK + "," + ShellCommandRunner.ARG_SHOW_STACK_LONG + INDENT +
-                        "print error stacks (for debugging purposes)");
         pw.flush();
 
         out.println();

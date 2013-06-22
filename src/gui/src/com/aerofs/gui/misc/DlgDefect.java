@@ -12,7 +12,7 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.shell.CmdDefect;
-import com.aerofs.ui.UI;
+import com.aerofs.ui.UIGlobals;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
@@ -199,7 +199,7 @@ public class DlgDefect extends AeroFSJFaceDialog
                         l.warn("set contact email, ignored: " + Util.e(e));
                     }
 
-                    CmdDefect.sendDefect(UI.ritual(), msg, dumpDaemonStatus);
+                    CmdDefect.sendDefect(UIGlobals.ritual(), msg, dumpDaemonStatus);
                 }
             });
         }

@@ -10,9 +10,10 @@ import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.ex.ExIndexing;
 import com.aerofs.proto.Common.PBFolderInvitation;
 import com.aerofs.proto.Ritual.ListSharedFolderInvitationsReply;
+import com.aerofs.ui.UI;
+import com.aerofs.ui.UIGlobals;
 import com.aerofs.ui.error.ErrorMessages;
 import com.aerofs.ui.IUI.MessageType;
-import com.aerofs.ui.UI;
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.FutureCallback;
 import org.eclipse.jface.layout.TableColumnLayout;
@@ -68,7 +69,7 @@ public class DlgJoinSharedFolders extends AeroFSDialog
     {
         // FIXME (AG): this would be way less verbose with the blocking client
 
-        addCallback(UI.ritualNonBlocking().listSharedFolderInvitations(), new FutureCallback<ListSharedFolderInvitationsReply>()
+        addCallback(UIGlobals.ritualNonBlocking().listSharedFolderInvitations(), new FutureCallback<ListSharedFolderInvitationsReply>()
         {
             @Override
             public void onSuccess(ListSharedFolderInvitationsReply reply)
@@ -95,7 +96,7 @@ public class DlgJoinSharedFolders extends AeroFSDialog
                     l.warn("list pending folders:" + Util.e(throwable));
                     UI.get().show(MessageType.ERROR, throwable.toString());
                 } else {
-                    UI.scheduler().schedule(new AbstractEBSelfHandling()
+                    UIGlobals.scheduler().schedule(new AbstractEBSelfHandling()
                     {
                         @Override
                         public void handle_()
@@ -238,7 +239,7 @@ public class DlgJoinSharedFolders extends AeroFSDialog
         try {
             for (PBFolderInvitation inv : invitations) {
                 try {
-                    UI.ritual().joinSharedFolder(inv.getShareId());
+                    UIGlobals.ritual().joinSharedFolder(inv.getShareId());
                 } catch (Exception e) {
                     l.warn("join folder " + inv.getFolderName() + Util.e(e));
                     UI.get().notify(MessageType.ERROR, "Couldn't join the folder "

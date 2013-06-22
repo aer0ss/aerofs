@@ -8,7 +8,7 @@ import com.aerofs.proto.ControllerNotifications;
 import com.aerofs.proto.RitualNotifications.PBNotification;
 import com.aerofs.proto.RitualNotifications.PBNotification.Type;
 import com.aerofs.ritual_notification.IRitualNotificationListener;
-import com.aerofs.ui.UI;
+import com.aerofs.ui.UIGlobals;
 
 public class BadCredentialNotifier
 {
@@ -32,6 +32,6 @@ public class BadCredentialNotifier
             }
         };
 
-        UI.rnc().addListener(l);
+        UIGlobals.rnc().addListener(l);
     }
 }

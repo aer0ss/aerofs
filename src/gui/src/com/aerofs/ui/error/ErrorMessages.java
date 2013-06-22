@@ -4,26 +4,97 @@
 
 package com.aerofs.ui.error;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.AbstractExWirable;
 import com.aerofs.base.ex.IExObfuscated;
 import com.aerofs.lib.JsonFormat.ParseException;
 import com.aerofs.lib.ex.ExNoConsole;
+import com.aerofs.ui.IUI.MessageType;
+import com.aerofs.ui.UI;
+import org.eclipse.swt.widgets.Shell;
+import org.slf4j.Logger;
 
+import javax.annotation.Nonnull;
 import java.io.EOFException;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.SocketException;
 import java.net.UnknownHostException;
-import java.util.Map;
 
 /**
- * A utility class that displays error messages in the UI
+ * A utility class that displays error messages in the UI.
+ *
+ * Requirements on Error Messages
+ * --------
+ * An error message passed into the methods of this class should be a complete, well structured
+ * sentence:
+ *
+ * 1. The initial of the string must be capitalized.
+ * 2. The string must end with a period, a question mark, or an exclamation mark.
+ * 3. The message should be suitable for non-technical users and non-english speaker. Please use
+ *    non-technical languages and simple words.
  */
 public class ErrorMessages
 {
-    public static void show(Throwable e, String defaultMessage, Map<Class<?>, String> error2message)
+    private final static Logger l = Loggers.getLogger(ErrorMessage.class);
+
+    /**
+     * Display the user an appropriate error message for a given exception. Also log the exception's
+     * stack trace. If the exception matches one of the types specified in {@code messages}, the
+     * string corresponding to the matched type is shown. Otherwise, the method searches a list of
+     * predefined common error types for matching. If none of the types matches, {@code
+     * defaultMessage} is shown.
+     *
+     * This method works for both GUI and CLI. In GUI, the method pops up a standalone dialog (use
+     * the other show() method to show a SHEET style dialog). In CLI, the method prints text
+     * messages.
+     *
+     * @param messages an array of <exception type, string> pairs. If {@code exception} is
+     *      {@code instanceof} one of the exception types, the corresponding message is shown. If if
+     *      it matches more than one entries in the array, the first match is used.
+     * @param defaultMessage the message for exceptions that is not {@code instanceof} any exception
+     *      types specified in {@code messages}.
+     */
+    public static void show(@Nonnull Throwable exception, @Nonnull String defaultMessage,
+            @Nonnull ErrorMessage ... messages)
     {
-        // TODO (WW)
+        show(null, exception, defaultMessage, messages);
+    }
+
+    /**
+     * Identical to the other show() method, except that it shows a SHEET style dialog attached to
+     * {@code shell}. The {@code shell} parameter is ignored in CLI.
+     */
+    public static void show(@Nonnull Shell shell, @Nonnull Throwable exception,
+            @Nonnull String defaultMessage, @Nonnull ErrorMessage ... messages)
+    {
+        l.warn("error message for exception:", exception);
+
+        String message = getMessage(exception, defaultMessage, messages);
+
+        if (!UI.isGUI()) {
+            UI.get().show(MessageType.ERROR, message + " See log files for debugging information.");
+        }
+    }
+
+    /**
+     * 1. Linear search is all right, kid.
+     *
+     * 2. All strings in this data structure must have capitalization and periods, since
+     *    showUnnormalized() does not normalize them.
+     */
+    static private ErrorMessage[] _commonMessages = new ErrorMessage[] {
+        new ErrorMessage(ExNoConsole.class, "No console is availabble for user input.")
+    };
+
+    private static String getMessage(Throwable exception, String defaultMessage,
+            ErrorMessage ... messages)
+    {
+        for (ErrorMessage em : messages) if (em._type.isInstance(exception)) return em._message;
+
+        for (ErrorMessage em : _commonMessages) if (em._type.isInstance(exception)) return em._message;
+
+        return defaultMessage;
     }
 
     ////////

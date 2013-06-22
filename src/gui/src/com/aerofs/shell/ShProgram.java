@@ -5,6 +5,7 @@ import com.aerofs.base.C;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.id.SID;
+import com.aerofs.cli.CLI;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.IProgram;
 import com.aerofs.lib.Path;
@@ -18,6 +19,7 @@ import com.aerofs.shell.ShellCommandRunner.ICallback;
 import com.aerofs.shell.hidden.CmdDstat;
 import com.aerofs.shell.hidden.CmdTestMultiuserJoinRootStore;
 import com.aerofs.sp.client.SPBlockingClient;
+import com.aerofs.ui.UI;
 import com.google.common.collect.Maps;
 import com.aerofs.ui.error.ErrorMessages;
 
@@ -32,7 +34,8 @@ public class ShProgram implements IProgram, ICallback
     private static final String SEP = "/";
     private static final String PROG = L.productUnixName() + "-sh";
 
-    private final RitualClientProvider _ritualProvider = new RitualClientProvider(ChannelFactories.getClientChannelFactory());
+    private final RitualClientProvider _ritualProvider =
+            new RitualClientProvider(ChannelFactories.getClientChannelFactory());
 
     private Path _pwd;
     private SPBlockingClient _sp;
@@ -43,6 +46,8 @@ public class ShProgram implements IProgram, ICallback
     public void launch_(String rtRoot, String prog, String[] args)
     {
         try {
+            UI.set(new CLI());
+
             _pwd = Path.root(Cfg.rootSID());
 
             // FIXME: replace with the builder pattern to add commands
@@ -63,11 +68,6 @@ public class ShProgram implements IProgram, ICallback
         // But because this call can hang if a channel isn't closed or someone might forget to
         // call it, it's just safer to call SystemUtil.exit()
         System.exit(0);
-    }
-
-    public RitualClientProvider getRitualProvider_()
-    {
-        return _ritualProvider;
     }
 
     public RitualBlockingClient getRitualClient_()

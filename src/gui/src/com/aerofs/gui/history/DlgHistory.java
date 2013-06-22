@@ -22,7 +22,7 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.ui.IUI.MessageType;
-import com.aerofs.ui.UI;
+import com.aerofs.ui.UIGlobals;
 import com.aerofs.ui.UIUtil;
 import com.google.common.collect.Maps;
 import org.eclipse.jface.layout.TableColumnLayout;
@@ -94,7 +94,7 @@ public class DlgHistory extends AeroFSDialog
     {
         super(parent, "Sync History", false, true);
 
-        _model = new HistoryModel(UI.ritualClientProvider());
+        _model = new HistoryModel(UIGlobals.ritualClientProvider());
         _basePath = path;
     }
 
@@ -751,14 +751,6 @@ public class DlgHistory extends AeroFSDialog
                     AeroFSMessageBox.IconType.ERROR)
                     .open();
         }
-    }
-
-    private MenuItem addMenuItem(Menu menu, String text, Listener listener)
-    {
-        MenuItem mi = new MenuItem(menu, SWT.PUSH);
-        mi.setText(text);
-        if (listener != null) mi.addListener(SWT.Selection, listener);
-        return mi;
     }
 
     private abstract class HistoryTaskDialog extends TaskDialog

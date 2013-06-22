@@ -6,6 +6,7 @@ import com.aerofs.proto.ControllerNotifications.Type;
 import com.aerofs.proto.ControllerNotifications.UpdateNotification;
 import com.aerofs.proto.ControllerNotifications.UpdateNotification.Status;
 import com.aerofs.ui.IUINotificationListener;
+import com.aerofs.ui.UIGlobals;
 import com.google.protobuf.GeneratedMessageLite;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.swt.SWT;
@@ -27,7 +28,6 @@ import com.aerofs.gui.GUIParam;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.lib.S;
 import com.aerofs.ui.IUI.MessageType;
-import com.aerofs.ui.UI;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.custom.StackLayout;
 import org.slf4j.Logger;
@@ -90,13 +90,13 @@ public class DlgPreSetupUpdateCheck extends Shell
             }
         });
 
-        UI.notifier().addListener(Type.UPDATE_NOTIFICATION, _updateListener);
+        UIGlobals.notifier().addListener(Type.UPDATE_NOTIFICATION, _updateListener);
 
         addDisposeListener(new DisposeListener() {
             @Override
             public void widgetDisposed(DisposeEvent arg0)
             {
-                UI.notifier().removeListener(Type.UPDATE_NOTIFICATION, _updateListener);
+                UIGlobals.notifier().removeListener(Type.UPDATE_NOTIFICATION, _updateListener);
             }
         });
     }
@@ -114,7 +114,7 @@ public class DlgPreSetupUpdateCheck extends Shell
         GUIUtil.centerShell(this);
         super.open();
 
-        UI.updater().checkForUpdate(true);
+        UIGlobals.updater().checkForUpdate(true);
 
         while (!isDisposed()) {
             if (!getDisplay().readAndDispatch()) getDisplay().sleep();
@@ -159,7 +159,7 @@ public class DlgPreSetupUpdateCheck extends Shell
             System.exit(1);
             break;
         case APPLY:
-            UI.updater().execUpdateFromMenu();
+            UIGlobals.updater().execUpdateFromMenu();
             break;
         default:
             assert us == Status.NONE;

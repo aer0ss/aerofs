@@ -10,7 +10,7 @@ import com.aerofs.gui.tray.IndexingPoller.IIndexingCompletionListener;
 import com.aerofs.proto.RitualNotifications.PBNotification;
 import com.aerofs.proto.RitualNotifications.PBNotification.Type;
 import com.aerofs.ritual_notification.IRitualNotificationListener;
-import com.aerofs.ui.UI;
+import com.aerofs.ui.UIGlobals;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.MenuItem;
@@ -46,7 +46,7 @@ public class IndexingTrayMenuSection extends DynamicTrayMenuComponent implements
                 }
             };
         }
-        UI.rnc().addListener(this);
+        UIGlobals.rnc().addListener(this);
     }
 
     @Override

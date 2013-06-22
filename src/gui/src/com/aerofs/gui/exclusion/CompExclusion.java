@@ -5,9 +5,9 @@ import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIParam;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
+import com.aerofs.ui.UIGlobals;
 import com.aerofs.ui.error.ErrorMessages;
 import com.aerofs.ui.IUI.MessageType;
-import com.aerofs.ui.UI;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
@@ -82,10 +82,10 @@ public class CompExclusion extends Composite
 
                 try {
                     for (Path path : ops._exclude) {
-                        UI.ritual().excludeFolder(path.toPB());
+                        UIGlobals.ritual().excludeFolder(path.toPB());
                     }
                     for (Path path : ops._include) {
-                        UI.ritual().includeFolder(path.toPB());
+                        UIGlobals.ritual().includeFolder(path.toPB());
                     }
 
                     getShell().close();

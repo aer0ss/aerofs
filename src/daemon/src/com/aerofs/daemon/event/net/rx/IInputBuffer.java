@@ -1,6 +1,5 @@
 package com.aerofs.daemon.event.net.rx;
 
-import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 
 /**
@@ -15,7 +14,7 @@ public interface IInputBuffer
     /**
      * Getter
      *
-     * @return {@link ByteArrayInputStream} from which the packet's payload can
+     * @return {@link java.io.ByteArrayInputStream} from which the packet's payload can
      * be read
      */
     InputStream is();

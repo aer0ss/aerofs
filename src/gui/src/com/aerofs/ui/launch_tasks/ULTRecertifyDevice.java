@@ -18,6 +18,7 @@ import com.aerofs.lib.sched.IScheduler;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.UI;
+import com.aerofs.ui.UIGlobals;
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
 import org.slf4j.Logger;
@@ -48,7 +49,7 @@ public class ULTRecertifyDevice extends UILaunchTask
             return;
         }
 
-        UI.dm().stopIgnoreException();
+        UIGlobals.dm().stopIgnoreException();
         try {
             if (L.isMultiuser()) {
                 recertifyTeamServer();
@@ -59,7 +60,7 @@ public class ULTRecertifyDevice extends UILaunchTask
             Cfg.init_(Cfg.absRTRoot(), false);
         } finally {
             // restart the daemon regardless of whether we succeed.
-            UI.dm().start();
+            UIGlobals.dm().start();
         }
     }
 

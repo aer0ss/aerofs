@@ -18,7 +18,7 @@ import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.ui.IUI.MessageType;
-import com.aerofs.ui.UI;
+import com.aerofs.ui.UIGlobals;
 import com.aerofs.ui.UIParam;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridData;
@@ -81,7 +81,7 @@ public class DlgMoveRootAnchor extends AeroFSDialog implements ISWTWorker
     public void run() throws Exception
     {
         try {
-            UI.ritual().relocate(RootAnchorUtil.adjustRootAnchor(_absAnchorRoot, null), null);
+            UIGlobals.ritual().relocate(RootAnchorUtil.adjustRootAnchor(_absAnchorRoot, null), null);
         } catch (ChannelException e) {
             // ChannelException or IOException (depending on the OS) is thrown when the daemon exits
             // which is a result of a successful move.
@@ -102,7 +102,7 @@ public class DlgMoveRootAnchor extends AeroFSDialog implements ISWTWorker
         // wait until the daemon restarts
         while (true) {
             try {
-                UI.ritual().heartbeat();
+                UIGlobals.ritual().heartbeat();
                 break;
             } catch (Exception e) {
                 ThreadUtil.sleepUninterruptable(UIParam.DAEMON_CONNECTION_RETRY_INTERVAL);

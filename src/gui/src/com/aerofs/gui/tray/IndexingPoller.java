@@ -11,7 +11,7 @@ import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.ex.ExIndexing;
 import com.aerofs.lib.sched.IScheduler;
 import com.aerofs.proto.Common;
-import com.aerofs.ui.UI;
+import com.aerofs.ui.UIGlobals;
 import com.aerofs.ui.UIParam;
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.FutureCallback;
@@ -71,7 +71,7 @@ public class IndexingPoller
 
     private void pingDaemon()
     {
-        addCallback(UI.ritualNonBlocking().heartbeat(), new FutureCallback<Common.Void>()
+        addCallback(UIGlobals.ritualNonBlocking().heartbeat(), new FutureCallback<Common.Void>()
         {
             @Override
             public void onSuccess(Common.Void aVoid)
