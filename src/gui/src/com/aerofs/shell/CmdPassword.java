@@ -53,4 +53,10 @@ public class CmdPassword implements IShellCommand<ShProgram>
                 ByteString.copyFrom(oldPassword),
                 ByteString.copyFrom(newPassword));
     }
+
+    @Override
+    public boolean isHidden()
+    {
+        return false;
+    }
 }

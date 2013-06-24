@@ -13,7 +13,7 @@ import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.proto.Ritual.ListRevHistoryReply;
 import com.aerofs.proto.Ritual.PBRevision;
 
-public class CmdVersionHistory implements IShellCommand<ShProgram>
+public class CmdSyncHistory implements IShellCommand<ShProgram>
 {
     @Override
     public String getName() {
@@ -33,6 +33,12 @@ public class CmdVersionHistory implements IShellCommand<ShProgram>
     @Override
     public Options getOpts() {
         return ShellCommandRunner.EMPTY_OPTS;
+    }
+
+    @Override
+    public boolean isHidden()
+    {
+        return false;
     }
 
     @Override

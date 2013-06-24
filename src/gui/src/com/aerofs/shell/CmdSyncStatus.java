@@ -52,4 +52,9 @@ public class CmdSyncStatus implements IShellCommand<ShProgram> {
         }
     }
 
+    @Override
+    public boolean isHidden()
+    {
+        return false;
+    }
 }

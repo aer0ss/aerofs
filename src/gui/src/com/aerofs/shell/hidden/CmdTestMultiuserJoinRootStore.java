@@ -2,7 +2,7 @@
  * Copyright (c) Air Computing Inc., 2012.
  */
 
-package com.aerofs.shell.restricted;
+package com.aerofs.shell.hidden;
 
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.shell.IShellCommand;
@@ -11,7 +11,9 @@ import com.aerofs.shell.ShellCommandRunner;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
 
-
+/**
+ * This class is for testing purposes only.
+ */
 public class CmdTestMultiuserJoinRootStore implements IShellCommand<ShProgram>
 {
     @Override
@@ -47,5 +49,11 @@ public class CmdTestMultiuserJoinRootStore implements IShellCommand<ShProgram>
     public Options getOpts()
     {
         return ShellCommandRunner.EMPTY_OPTS;
+    }
+
+    @Override
+    public boolean isHidden()
+    {
+        return true;
     }
 }

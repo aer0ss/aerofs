@@ -42,4 +42,10 @@ public class CmdExit<S> implements IShellCommand<S>
     {
         return ShellCommandRunner.EMPTY_OPTS;
     }
+
+    @Override
+    public boolean isHidden()
+    {
+        return false;
+    }
 }

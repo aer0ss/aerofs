@@ -41,4 +41,10 @@ public class CmdDelUser implements IShellCommand<ShProgram>
         Path path = s.d().buildPath_(cl.getArgs()[0]);
         s.d().getRitualClient_().deleteACL(Cfg.user().getString(), path.toPB(), cl.getArgs()[1]);
     }
+
+    @Override
+    public boolean isHidden()
+    {
+        return false;
+    }
 }

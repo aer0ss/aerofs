@@ -36,6 +36,12 @@ public class CmdUsers implements IShellCommand<ShProgram>
     }
 
     @Override
+    public boolean isHidden()
+    {
+        return false;
+    }
+
+    @Override
     public void execute(ShellCommandRunner<ShProgram> s, CommandLine cl)
             throws Exception
     {

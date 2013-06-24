@@ -15,8 +15,8 @@ import com.aerofs.lib.ritual.RitualClientProvider;
 import com.aerofs.proto.Common.PBPath;
 import com.aerofs.proto.Ritual.PBSharedFolder;
 import com.aerofs.shell.ShellCommandRunner.ICallback;
-import com.aerofs.shell.restricted.CmdDstat;
-import com.aerofs.shell.restricted.CmdTestMultiuserJoinRootStore;
+import com.aerofs.shell.hidden.CmdDstat;
+import com.aerofs.shell.hidden.CmdTestMultiuserJoinRootStore;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.ui.UIUtil;
 import com.google.common.collect.Maps;
@@ -37,7 +37,7 @@ public class ShProgram implements IProgram, ICallback
     private Path _pwd;
     private SPBlockingClient _sp;
     private long _spRenewal;
-    private ShellCommandRunner<ShProgram> _s;
+    private ShellCommandRunner<ShProgram> _runner;
 
     @Override
     public void launch_(String rtRoot, String prog, String[] args)
@@ -47,13 +47,13 @@ public class ShProgram implements IProgram, ICallback
 
             // FIXME: replace with the builder pattern to add commands
 
-            _s = new ShellCommandRunner<ShProgram>(this, this, PROG,
+            _runner = new ShellCommandRunner<ShProgram>(this, this, PROG,
                     L.product() + " Shell, the command-line console for " + L.product(),
                     args);
 
             initCommands_();
 
-            _s.start_();
+            _runner.start_();
         } catch (Exception e) {
             System.out.println(PROG + ": " + UIUtil.e2msgNoBracket(e));
         }
@@ -95,53 +95,50 @@ public class ShProgram implements IProgram, ICallback
 
     private void initCommands_()
     {
-        _s.addCommand_(new CmdList());
-        _s.addCommand_(new CmdCd());
-        _s.addCommand_(new CmdPwd());
-        _s.addCommand_(new CmdMv());
-        _s.addCommand_(new CmdRm());
-        _s.addCommand_(new CmdMkdir());
-        _s.addCommand_(new CmdInvitations());
-        _s.addCommand_(new CmdAccept());
-        _s.addCommand_(new CmdLeave());
-        _s.addCommand_(new CmdInvite());
-        _s.addCommand_(new CmdUsers());
-        _s.addCommand_(new CmdDelUser());
-        _s.addCommand_(new CmdDefect());
-        _s.addCommand_(new CmdVersion());
-        _s.addCommand_(new CmdTransfers());
-        _s.addCommand_(new CmdShared());
-        _s.addCommand_(new CmdExclude());
-        _s.addCommand_(new CmdInclude());
-        _s.addCommand_(new CmdExcluded());
-        _s.addCommand_(new CmdImport());
-        _s.addCommand_(new CmdExport());
-        _s.addCommand_(new CmdPause());
-        _s.addCommand_(new CmdResume());
-        _s.addCommand_(new CmdRelocate());
-        _s.addCommand_(new CmdVersionHistory());
-        _s.addCommand_(new CmdPassword());
-        _s.addCommand_(new CmdActivities());
-        _s.addCommand_(new CmdShutdown());
-        _s.addCommand_(new CmdConflicts());
-        _s.addCommand_(new CmdResolve());
+        _runner.addCommand_(new CmdList());
+        _runner.addCommand_(new CmdCd());
+        _runner.addCommand_(new CmdPwd());
+        _runner.addCommand_(new CmdMv());
+        _runner.addCommand_(new CmdRm());
+        _runner.addCommand_(new CmdMkdir());
+        _runner.addCommand_(new CmdInvitations());
+        _runner.addCommand_(new CmdAccept());
+        _runner.addCommand_(new CmdLeave());
+        _runner.addCommand_(new CmdInvite());
+        _runner.addCommand_(new CmdUsers());
+        _runner.addCommand_(new CmdDelUser());
+        _runner.addCommand_(new CmdDefect());
+        _runner.addCommand_(new CmdVersion());
+        _runner.addCommand_(new CmdTransfers());
+        _runner.addCommand_(new CmdShared());
+        _runner.addCommand_(new CmdExclude());
+        _runner.addCommand_(new CmdInclude());
+        _runner.addCommand_(new CmdExcluded());
+        _runner.addCommand_(new CmdImport());
+        _runner.addCommand_(new CmdExport());
+        _runner.addCommand_(new CmdPause());
+        _runner.addCommand_(new CmdResume());
+        _runner.addCommand_(new CmdRelocate());
+        _runner.addCommand_(new CmdSyncHistory());
+        _runner.addCommand_(new CmdPassword());
+        _runner.addCommand_(new CmdActivities());
+        _runner.addCommand_(new CmdShutdown());
+        _runner.addCommand_(new CmdConflicts());
+        _runner.addCommand_(new CmdResolve());
+        _runner.addCommand_(new CmdRoots());
 
-        _s.addCommand_(new CmdRoots());
+        // Hidden commands
+        _runner.addCommand_(new CmdDstat());
+        _runner.addCommand_(new CmdTestMultiuserJoinRootStore());
 
         // TODO(huguesb): remove conditional when seed files are exposed to users
         if (Cfg.user().isAeroFSUser()) {
-            _s.addCommand_(new CmdSeed());
+            _runner.addCommand_(new CmdSeed());
         }
 
         // TODO(huguesb): remove conditional when sync stat is enabled in prod
         if (Cfg.user().isAeroFSUser()) {
-            _s.addCommand_(new CmdSyncStatus());
-        }
-
-        // restricted
-        if (L.isStaging()) {
-            _s.addCommand_(new CmdDstat());
-            _s.addCommand_(new CmdTestMultiuserJoinRootStore());
+            _runner.addCommand_(new CmdSyncStatus());
         }
     }
 

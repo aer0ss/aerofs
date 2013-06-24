@@ -22,5 +22,11 @@ public interface IShellCommand<T>
      */
     Options getOpts();
 
+    /**
+     * @return whether the command is hidden from listing of available commands via 'help'.
+     * Useful for internal commands that shouldn't be exposed to the end user.
+     */
+    boolean isHidden();
+
     void execute(ShellCommandRunner<T> s, CommandLine cl) throws Exception;
 }

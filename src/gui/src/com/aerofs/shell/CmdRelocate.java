@@ -47,4 +47,10 @@ public class CmdRelocate implements IShellCommand<ShProgram>
         s.d().getRitualClient_().relocate(RootAnchorUtil.adjustRootAnchor(cl.getArgs()[0], null),
                 null);
     }
+
+    @Override
+    public boolean isHidden()
+    {
+        return false;
+    }
 }

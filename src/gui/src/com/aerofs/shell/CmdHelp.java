@@ -81,22 +81,14 @@ public class CmdHelp<T> implements IShellCommand<T>
         out.println();
         out.println("COMMANDS");
         for (IShellCommand<T> cmd : s.getCommands_().values()) {
-            out.println(INDENT + cmd.getName() + " -- " + cmd.getDescription());
+            if (!cmd.isHidden()) {
+                out.println(INDENT + cmd.getName() + " -- " + cmd.getDescription());
+            }
         }
         out.println();
         hf.printWrapped(pw, LINE_WIDTH, INDENT_WIDTH, INDENT +
                 "(More to come. Submit or vote for new commands at http://vote.aerofs.com)");
         pw.flush();
-
-//        out.println();
-//        out.println("ALIASES");
-//        for (Entry<String, String[]> alias : c.getAliases_().entrySet()) {
-//            out.print("    " + alias.getKey() + "\t");
-//            for (String token : alias.getValue()) {
-//                out.print(token + " ");
-//            }
-//            out.println();
-//        }
 
         out.println();
         out.println("EXAMPLES");
@@ -142,5 +134,11 @@ public class CmdHelp<T> implements IShellCommand<T>
     public Options getOpts()
     {
         return ShellCommandRunner.EMPTY_OPTS;
+    }
+
+    @Override
+    public boolean isHidden()
+    {
+        return false;
     }
 }

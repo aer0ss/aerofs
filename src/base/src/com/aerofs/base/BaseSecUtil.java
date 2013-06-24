@@ -22,7 +22,6 @@ import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -47,7 +46,6 @@ import java.security.cert.CertPathValidatorException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
-import java.security.cert.PKIXCertPathValidatorResult;
 import java.security.cert.PKIXParameters;
 import java.security.cert.TrustAnchor;
 import java.security.cert.X509Certificate;
@@ -757,8 +755,6 @@ public abstract class BaseSecUtil
     /**
      * Determines if the given endEntityCert is signed by caCert or not.
      * Ignores certificate validity.
-     * @param endEntityCert
-     * @param caCert
      * @return true if caCert signed endEntityCert, false otherwise
      */
     public static boolean signingPathExists(X509Certificate endEntityCert, X509Certificate caCert)
@@ -777,7 +773,7 @@ public abstract class BaseSecUtil
         CertPathValidator cpv = CertPathValidator.getInstance("PKIX");
         boolean retval;
         try {
-            PKIXCertPathValidatorResult res = (PKIXCertPathValidatorResult) cpv.validate(path, params);
+            cpv.validate(path, params);
             retval = true;
         } catch (CertPathValidatorException e) {
             // No path from EEC to CA was found, return false

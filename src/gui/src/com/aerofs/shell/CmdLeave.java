@@ -45,4 +45,10 @@ public class CmdLeave implements IShellCommand<ShProgram>
     {
         return ShellCommandRunner.EMPTY_OPTS;
     }
+
+    @Override
+    public boolean isHidden()
+    {
+        return false;
+    }
 }

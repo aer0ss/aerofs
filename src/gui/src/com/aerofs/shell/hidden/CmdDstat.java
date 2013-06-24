@@ -1,4 +1,4 @@
-package com.aerofs.shell.restricted;
+package com.aerofs.shell.hidden;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
@@ -75,4 +75,9 @@ public class CmdDstat implements IShellCommand<ShProgram>
             .addOption("M", "no-misc", false, "do not show misc fields");
     }
 
+    @Override
+    public boolean isHidden()
+    {
+        return true;
+    }
 }

@@ -48,4 +48,10 @@ public class CmdImport implements IShellCommand<ShProgram>
 
         s.d().getRitualClient_().importFile(dest, source.getAbsolutePath());
     }
+
+    @Override
+    public boolean isHidden()
+    {
+        return false;
+    }
 }

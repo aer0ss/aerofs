@@ -66,4 +66,10 @@ public class CmdResolve implements IShellCommand<ShProgram>
             r.deleteConflict(path, b.getKidx());
         }
     }
+
+    @Override
+    public boolean isHidden()
+    {
+        return false;
+    }
 }

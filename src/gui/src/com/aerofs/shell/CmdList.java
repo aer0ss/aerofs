@@ -154,4 +154,10 @@ public class CmdList implements IShellCommand<ShProgram>
                 .addOption("h", "history", false, "list Sync History tree." +
                         " see also 'history' and 'export -h' commands");
     }
+
+    @Override
+    public boolean isHidden()
+    {
+        return false;
+    }
 }

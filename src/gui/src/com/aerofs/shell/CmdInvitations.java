@@ -56,4 +56,10 @@ public class CmdInvitations implements IShellCommand<ShProgram>
                     inv.getFolderName() + " " + inv.getSharer() + " ");
         }
     }
+
+    @Override
+    public boolean isHidden()
+    {
+        return false;
+    }
 }

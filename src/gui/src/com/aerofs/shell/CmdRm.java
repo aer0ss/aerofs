@@ -69,4 +69,10 @@ public class CmdRm implements IShellCommand<ShProgram>
                 .addOption("r", "recursive", false, "recursively delete directories")
                 .addOption("h", "history", false, "delete old version(s)");
     }
+
+    @Override
+    public boolean isHidden()
+    {
+        return false;
+    }
 }

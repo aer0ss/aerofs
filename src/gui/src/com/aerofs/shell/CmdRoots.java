@@ -51,4 +51,10 @@ public class CmdRoots implements IShellCommand<ShProgram>
             s.out().println(e.getKey().toStringFormal() + " | " + e.getValue());
         }
     }
+
+    @Override
+    public boolean isHidden()
+    {
+        return false;
+    }
 }

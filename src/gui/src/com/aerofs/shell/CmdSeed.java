@@ -43,4 +43,10 @@ public class CmdSeed implements IShellCommand<ShProgram>
         CreateSeedFileReply reply = s.d().getRitualClient_().createSeedFile(s.d().getPwd_().sid().toPB());
         s.out().println("seed file: " + reply.getPath());
     }
+
+    @Override
+    public boolean isHidden()
+    {
+        return false;
+    }
 }

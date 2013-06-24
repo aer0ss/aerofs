@@ -75,6 +75,12 @@ public class CmdTransfers implements IShellCommand<ShProgram>
         return ShellCommandRunner.EMPTY_OPTS;
     }
 
+    @Override
+    public boolean isHidden()
+    {
+        return false;
+    }
+
     public void print(PBNotification pb, PrintStream ps, boolean debug)
     {
         if (pb.getType() == Type.TRANSFER) {

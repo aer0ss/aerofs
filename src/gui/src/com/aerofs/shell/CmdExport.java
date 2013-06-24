@@ -137,4 +137,10 @@ public class CmdExport implements IShellCommand<ShProgram>
             downloader.download(source, dest);
         }
     }
+
+    @Override
+    public boolean isHidden()
+    {
+        return false;
+    }
 }
