@@ -46,7 +46,7 @@ def main(global_config, **settings):
         config.add_route('login', '/')
         config.add_route('marketing_home', '/marketing_home')
     else:
-        config.add_route('login', '/login')
+        config.add_route('login', 'login')
         config.add_route('marketing_home', '/')
 
     config.add_route('landing_home', '/')

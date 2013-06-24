@@ -59,7 +59,10 @@ def login(request):
 
     if not next:
         next = request.url
-        if next == request.resource_url(request.context, 'login'):
+        base_url = request.resource_url(request.context, '')
+        login_url = request.resource_url(request.context, 'login')
+
+        if next == base_url or next == login_url or len(next) == 0:
             # Never redirect to the login page itself.
             next = request.route_path('dashboard_home')
 
