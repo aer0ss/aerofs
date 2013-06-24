@@ -22,6 +22,7 @@ import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -733,6 +734,19 @@ public abstract class BaseSecUtil
     {
         InputStream in = new FileInputStream(certFilename);
         return newCertificateFromStream(in);
+    }
+
+    /**
+     *
+     * @param certData PEM-encoded string with the X509 certificate
+     * @return a new {@link X509Certificate}
+     * @throws CertificateException
+     * @throws IOException
+     */
+    public static Certificate newCertificateFromString(String certData)
+            throws CertificateException, IOException
+    {
+        return newCertificateFromStream(new ByteArrayInputStream(certData.getBytes()));
     }
 
     /**
