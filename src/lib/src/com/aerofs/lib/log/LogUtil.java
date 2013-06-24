@@ -1,11 +1,7 @@
 package com.aerofs.lib.log;
 
-import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.LoggerContext;
-import ch.qos.logback.classic.encoder.PatternLayoutEncoder;
 import ch.qos.logback.classic.joran.JoranConfigurator;
-import ch.qos.logback.classic.spi.ILoggingEvent;
-import ch.qos.logback.core.ConsoleAppender;
 import ch.qos.logback.core.joran.spi.JoranException;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExNoResource;
@@ -36,8 +32,6 @@ public abstract class LogUtil
         WARN,
         ERROR
     }
-
-    public static String CONSOLE_LOG_FMT = "%d{HHmmss.SSS}%.-1level %thread @%c{0}, %m%n";
 
     /**
      * Initialize the logging system by loading a named config file with
@@ -83,29 +77,6 @@ public abstract class LogUtil
                 LoggerFactory.getLogger(LogUtil.class).debug("TERMINATED " + strDate);
             }
         }));
-    }
-
-    /**
-     * Create a console appender and attach it to the root logger. This will inherit
-     * the log level of root (which is generally set by configuration, see
-     * initializeFromConfigFile).
-     */
-    public static void startConsoleLogging()
-    {
-        LoggerContext context = (LoggerContext) LoggerFactory.getILoggerFactory();
-        ConsoleAppender<ILoggingEvent> ca = new ConsoleAppender<ILoggingEvent>();
-        ca.setContext(context);
-        ca.setName("console");
-
-        PatternLayoutEncoder pl = new PatternLayoutEncoder();
-        pl.setContext(context);
-        pl.setPattern(CONSOLE_LOG_FMT);
-        pl.start();
-
-        ca.setEncoder(pl);
-        ca.start();
-        context.getLogger(Logger.ROOT_LOGGER_NAME)
-                .addAppender(ca);
     }
 
     /**
