@@ -97,6 +97,11 @@ class pd-app-transient {
         old_pattern => "sp.url = .*",
         new_pattern => "sp.url = https://localhost/sp",
     }
+    replace_line {"production.ini deployment mode":
+        file => "/opt/web/production.ini",
+        old_pattern => "deployment.mode = .*",
+        new_pattern => "deployment.mode = private",
+    }
 
     # --------------
     # Bootstrap
