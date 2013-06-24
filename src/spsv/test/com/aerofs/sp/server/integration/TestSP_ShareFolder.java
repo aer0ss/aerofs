@@ -64,10 +64,8 @@ public class TestSP_ShareFolder extends AbstractSPACLTest
         User user = saveEmailUnverifiedUser();
         sqlTrans.commit();
 
-        setSessionUser(user);
-
         try {
-            shareFolder(USER_1, SID_1, USER_1, Role.EDITOR);
+            shareFolder(user, SID_1, USER_1, Role.EDITOR);
             fail();
         } catch (ExEmailNotVerified e) { }
     }
