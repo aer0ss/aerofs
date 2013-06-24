@@ -205,12 +205,12 @@ public class LibParam extends BaseParam
     {
         // named with lib prefix since the properties are located inside the lib module
         public static final DynamicOptionalStringProperty WINDOWS_DEFAULT_ROOT_ANCHOR_PARENT =
-                new DynamicOptionalStringProperty("lib.windows_setup.default_root_anchor_parent");
+                new DynamicOptionalStringProperty("lib.anchor.default_location_windows");
 
         public static final DynamicOptionalStringProperty OSX_DEFAULT_ROOT_ANCHOR_PARENT =
-                new DynamicOptionalStringProperty("lib.osx_setup.default_root_anchor_parent");
+                new DynamicOptionalStringProperty("lib.anchor.default_location_osx");
 
         public static final DynamicOptionalStringProperty LINUX_DEFAULT_ROOT_ANCHOR_PARENT =
-                new DynamicOptionalStringProperty("lib.linux_setup.default_root_anchor_parent");
+                new DynamicOptionalStringProperty("lib.anchor.default_location_linux");
     }
 }
