@@ -27,8 +27,11 @@ public interface IUI {
     }
 
     /**
-     * Similar to show except that the message cannot be dismissed by the user
-     * Calling IWaiter.done()
+     * Similar to show() except that the message cannot be dismissed by the user.
+     * Specifically, in GUI mode the dialog is not closable and ESC is intercepted.
+     *
+     * The message will disapppear when the task finishes, i.e. when IWaiter.done()
+     * is called on the returned value.
      */
     IWaiter showWait(String title, String msg);
 
