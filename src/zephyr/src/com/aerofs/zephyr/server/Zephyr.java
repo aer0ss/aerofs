@@ -48,6 +48,7 @@ public class Zephyr
 
     private static void logBanner(String bannerFilename)
     {
+        BufferedReader bannerReader = null;
         try {
             File bannerFile = new File(bannerFilename);
             if (!bannerFile.exists() || !bannerFile.canRead()) {
@@ -55,7 +56,7 @@ public class Zephyr
                 return;
             }
 
-            BufferedReader bannerReader = new BufferedReader(new FileReader(bannerFile));
+            bannerReader = new BufferedReader(new FileReader(bannerFile));
             String bannerLine;
             l.info("=====================================");
             l.info("I                                   I");
@@ -66,6 +67,14 @@ public class Zephyr
             l.info("=====================================");
         } catch (IOException e) {
             l.warn("zephyr fail banner load err:{}", e);
+        } finally {
+            try {
+                if (bannerReader != null) {
+                    bannerReader.close();
+                }
+            } catch (IOException e) {
+                // ignore...
+            }
         }
     }
 }
