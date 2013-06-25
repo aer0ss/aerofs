@@ -4,12 +4,12 @@ import com.aerofs.base.analytics.Analytics;
 import com.aerofs.controller.ControllerClient;
 import com.aerofs.gui.TransferState;
 import com.aerofs.lib.analytics.DesktopAnalyticsProperties;
-import com.aerofs.lib.ritual.IRitualClientProvider;
-import com.aerofs.lib.ritual.RitualBlockingClient;
-import com.aerofs.lib.ritual.RitualClient;
-import com.aerofs.lib.ritual.RitualClientProvider;
+import com.aerofs.ritual.IRitualClientProvider;
+import com.aerofs.ritual.RitualBlockingClient;
+import com.aerofs.ritual.RitualClient;
+import com.aerofs.ritual.RitualClientProvider;
 import com.aerofs.ritual_notification.RitualNotificationClient;
-import com.aerofs.lib.rocklog.RockLog;
+import com.aerofs.rocklog.RockLog;
 import com.aerofs.ui.update.Updater;
 
 /**

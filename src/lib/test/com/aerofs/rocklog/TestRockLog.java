@@ -2,7 +2,7 @@
  * Copyright (c) Air Computing Inc., 2013.
  */
 
-package com.aerofs.lib.rocklog;
+package com.aerofs.rocklog;
 
 import com.aerofs.base.TestHttpServer;
 import com.aerofs.base.TestHttpServer.RequestProcessor;

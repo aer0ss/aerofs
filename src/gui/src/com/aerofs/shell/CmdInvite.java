@@ -8,7 +8,7 @@ import com.aerofs.base.acl.SubjectRolePair;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.id.UserID;
-import com.aerofs.lib.ritual.RitualBlockingClient;
+import com.aerofs.ritual.RitualBlockingClient;
 import com.aerofs.proto.Common.PBPath;
 
 import org.apache.commons.cli.CommandLine;

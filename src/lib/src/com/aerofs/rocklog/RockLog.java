@@ -2,7 +2,7 @@
  * Copyright (c) Air Computing Inc., 2012.
  */
 
-package com.aerofs.lib.rocklog;
+package com.aerofs.rocklog;
 
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.C;

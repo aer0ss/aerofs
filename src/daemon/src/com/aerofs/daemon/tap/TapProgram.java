@@ -4,7 +4,7 @@
 
 package com.aerofs.daemon.tap;
 
-import com.aerofs.ChannelFactories;
+import com.aerofs.lib.ChannelFactories;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.async.FutureUtil;

@@ -1,6 +1,6 @@
 package com.aerofs.shell;
 
-import com.aerofs.ChannelFactories;
+import com.aerofs.lib.ChannelFactories;
 import com.aerofs.base.C;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.ex.ExFormatError;
@@ -11,8 +11,8 @@ import com.aerofs.lib.IProgram;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.StorageType;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.ritual.RitualBlockingClient;
-import com.aerofs.lib.ritual.RitualClientProvider;
+import com.aerofs.ritual.RitualBlockingClient;
+import com.aerofs.ritual.RitualClientProvider;
 import com.aerofs.proto.Common.PBPath;
 import com.aerofs.proto.Ritual.PBSharedFolder;
 import com.aerofs.shell.ShellCommandRunner.ICallback;

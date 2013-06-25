@@ -1,4 +1,4 @@
-package com.aerofs.lib.ritual;
+package com.aerofs.ritual;
 
 import com.aerofs.base.net.AddressResolverHandler;
 import com.aerofs.lib.LibParam;
