@@ -17,7 +17,6 @@ import com.aerofs.proto.Common.PBPath;
 import com.aerofs.proto.Ritual.PBSharedFolder;
 import com.aerofs.shell.ShellCommandRunner.ICallback;
 import com.aerofs.shell.hidden.CmdDstat;
-import com.aerofs.shell.hidden.CmdTestMultiuserJoinRootStore;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.ui.UI;
 import com.google.common.collect.Maps;
@@ -129,7 +128,6 @@ public class ShProgram implements IProgram, ICallback
 
         // Hidden commands
         _runner.addCommand_(new CmdDstat());
-        _runner.addCommand_(new CmdTestMultiuserJoinRootStore());
 
         // TODO(huguesb): remove conditional when seed files are exposed to users
         if (Cfg.user().isAeroFSUser()) {
