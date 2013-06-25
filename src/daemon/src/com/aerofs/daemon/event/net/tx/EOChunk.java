@@ -1,12 +1,12 @@
 package com.aerofs.daemon.event.net.tx;
 
 import com.aerofs.base.id.DID;
+import com.aerofs.daemon.core.net.OutgoingStreams.OutgoingStream;
 import com.aerofs.daemon.event.lib.imc.AbstractEBIMC;
 import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
 import com.aerofs.daemon.lib.id.StreamID;
 
-//N.B. streams are always at background priority to allow atomic messages
-//go first
+//N.B. streams are always at background priority to allow atomic messages go first
 //
 public class EOChunk extends AbstractEBIMC implements IOutputBuffer {
 
@@ -14,20 +14,40 @@ public class EOChunk extends AbstractEBIMC implements IOutputBuffer {
     public final int _seq; // TODO remove it. see IUnicastOutputLayer.sendOutgoingStream_'s comment
     public final byte[] _bs;
     public final DID _did;
+    private final OutgoingStream _stream;
 
-    public EOChunk(StreamID streamId, int seq, DID did, byte[] bs, IIMCExecutor imce)
+    public EOChunk(StreamID streamId, OutgoingStream stream, int seq, DID did, byte[] bs, IIMCExecutor imce)
     {
         super(imce);
         _streamId = streamId;
+        _stream = stream;
         _seq = seq;
         _bs = bs;
         _did = did;
+
+        // Technically we should only call this when EOChunk actually is enqueued
+        _stream.incChunkCount();
     }
 
     @Override
     public byte[] byteArray() {
 
         return _bs;
+    }
+
+    @Override
+    public void okay()
+    {
+        super.okay();
+        _stream.decChunkCount();
+    }
+
+    @Override
+    public void error(Exception e)
+    {
+        super.error(e);
+        _stream.decChunkCount();
+        _stream.setFirstFailedChunk(this);
     }
 
     @Override

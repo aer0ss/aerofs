@@ -1,15 +1,14 @@
 package com.aerofs.daemon.core.net;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.base.ex.ExNoResource;
+import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.daemon.core.CoreDeviceLRU;
-import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.ex.ExAborted;
-import com.aerofs.proto.Transport.PBStream.InvalidationReason;
-import com.google.inject.Inject;
-import org.slf4j.Logger;
-
+import com.aerofs.daemon.core.net.OutgoingStreams.OutgoingStream;
 import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.CoreIMC;
+import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
 import com.aerofs.daemon.event.net.rx.EORxEndStream;
@@ -19,8 +18,9 @@ import com.aerofs.daemon.event.net.tx.EOTxAbortStream;
 import com.aerofs.daemon.event.net.tx.EOTxEndStream;
 import com.aerofs.daemon.event.net.tx.EOUnicastMessage;
 import com.aerofs.daemon.lib.id.StreamID;
-import com.aerofs.base.ex.ExNoResource;
-import com.aerofs.base.ex.ExNotFound;
+import com.aerofs.proto.Transport.PBStream.InvalidationReason;
+import com.google.inject.Inject;
+import org.slf4j.Logger;
 
 public class UnicastOutputBottomLayer implements IUnicastOutputLayer
 {
@@ -32,13 +32,15 @@ public class UnicastOutputBottomLayer implements IUnicastOutputLayer
         private final CoreDeviceLRU _dlru;
         private final TC _tc;
         private final Transports _tps;
+        private final OutgoingStreams _outgoingStreams;
 
         @Inject
-        public Factory(Transports tps, TC tc, CoreDeviceLRU dlru)
+        public Factory(Transports tps, TC tc, CoreDeviceLRU dlru, OutgoingStreams oss)
         {
             _tps = tps;
             _tc = tc;
             _dlru = dlru;
+            _outgoingStreams = oss;
         }
 
         public UnicastOutputBottomLayer create_()
@@ -69,12 +71,16 @@ public class UnicastOutputBottomLayer implements IUnicastOutputLayer
     {
         _f._dlru.addDevice_(pc.did());
 
+        OutgoingStream stream = _f._outgoingStreams.getStreamThrows(streamId);
+
+        stream.waitIfTooManyChunks_();
+
         IIMCExecutor imce = _f._tps.getIMCE_(pc.tp());
-        EOBeginStream ev = new EOBeginStream(streamId, pc.did(), bs, imce);
+        EOBeginStream ev = new EOBeginStream(streamId, stream, pc.did(), bs, imce);
         try {
-            CoreIMC.execute_(ev, _f._tc, tk);
+            CoreIMC.enqueueBlocking_(ev, _f._tc, tk);
         } catch (Exception e) {
-            l.debug("begin stream failed strmid " + streamId + " " + pc + ": " + e);
+            l.warn("begin stream failed strmid " + streamId + " " + pc + ": " + e);
             throw e;
         }
     }
@@ -85,14 +91,15 @@ public class UnicastOutputBottomLayer implements IUnicastOutputLayer
     {
         _f._dlru.addDevice_(pc.did());
 
+        OutgoingStream stream = _f._outgoingStreams.getStreamThrows(streamId);
+
+        stream.throwIfFailedChunk();
+        stream.waitIfTooManyChunks_();
+
         IIMCExecutor imce = _f._tps.getIMCE_(pc.tp());
-        EOChunk ev = new EOChunk(streamId, seq, pc.did(), bs, imce);
-        try {
-            CoreIMC.execute_(ev, _f._tc, tk);
-        } catch (Exception e) {
-            l.debug("send chunk failed strmid " + streamId + " " + pc + ": " + e);
-            throw e;
-        }
+        EOChunk ev = new EOChunk(streamId, stream, seq, pc.did(), bs, imce);
+
+        CoreIMC.enqueueBlocking_(ev, _f._tc, Cat.UNLIMITED);
     }
 
     @Override

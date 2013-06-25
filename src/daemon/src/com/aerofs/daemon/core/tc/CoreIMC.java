@@ -6,14 +6,20 @@ import com.aerofs.daemon.event.lib.imc.QueueBasedIMCExecutor;
 import com.aerofs.daemon.core.ex.ExAborted;
 import com.aerofs.base.ex.ExNoResource;
 
-public class CoreIMC {
+public class CoreIMC
+{
+    public static void enqueueBlocking_(AbstractEBIMC ev, TC tc, Token tk)
+            throws ExAborted, ExNoResource
+    {
+        // try the unblocking version first, and then fall back to the blocking version
+        if (ev.imce().enqueue_(ev, tc.prio())) return;
+        enqueueBlockingImpl_(ev, tc, tk);
+    }
 
     public static void enqueueBlocking_(AbstractEBIMC ev, TC tc, Cat cat)
         throws ExNoResource, ExAborted
     {
-        // try the unblocking version first, and then fall back to the blocking
-        // version
-
+        // try the unblocking version first, and then fall back to the blocking version
         if (ev.imce().enqueue_(ev, tc.prio())) return;
 
         Token tk = tc.acquireThrows_(cat, "CoreIMC.enqBlocking");

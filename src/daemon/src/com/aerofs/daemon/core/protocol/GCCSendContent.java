@@ -255,6 +255,7 @@ public class GCCSendContent
                 // TODO avoid calling writeAChunk() for chunks other
                 // than the first, as this method introduces redundant
                 // copying
+                // TODO (GS): We spend ~5% of the time on this
                 bytesCopied = copyAChunk(os, is);
                 readPosition += bytesCopied;
 
@@ -268,11 +269,13 @@ public class GCCSendContent
                 }
 
                 rest -= bytesCopied;
+                // TODO (GS): We spend ~20% of the time on this
                 if (rest < 0 || wasContentModifiedSince_(k, v, mtime, len, pf)) {
                     reason = InvalidationReason.UPDATE_IN_PROGRESS;
                     throw new IOException(k + " updated");
                 }
 
+                // TODO (GS): We spend ~65% of the time on this
                 outgoing.sendChunk_(os.toByteArray());
 
                 os = null;
