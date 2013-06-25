@@ -320,14 +320,21 @@ public class SingleuserTrayMenu extends AbstractTrayMenu implements IRitualNotif
                     @Override
                     protected void handleEventImpl(Event event)
                     {
-                        try {
-                            if (paused) _prs.resume();
-                            else _prs.pause(1 * C.HOUR);
-                        } catch (Exception e) {
-                            UI.get().show(MessageType.ERROR, "Couldn't " +
-                                    (paused ? "resume" : "pause") + " syncing. " +
-                                    S.TRY_AGAIN_LATER);
-                        }
+                        UI.get().asyncExec(new Runnable()
+                        {
+                            @Override
+                            public void run()
+                            {
+                                try {
+                                    if (paused) _prs.resume();
+                                    else _prs.pause(1 * C.HOUR);
+                                } catch (Exception e) {
+                                    UI.get().show(MessageType.ERROR, "Couldn't " +
+                                            (paused ? "resume" : "pause") + " syncing. " +
+                                            S.TRY_AGAIN_LATER);
+                                }
+                            }
+                        });
                     }
                 });
     }
