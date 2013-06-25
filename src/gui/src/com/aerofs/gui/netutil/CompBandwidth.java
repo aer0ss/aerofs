@@ -11,7 +11,7 @@ import com.aerofs.lib.OutArg;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.ritual.RitualBlockingClient;
+import com.aerofs.ritual.RitualBlockingClient;
 import com.aerofs.proto.Ritual.TransportFloodQueryReply;
 import com.aerofs.ui.UIGlobals;
 import com.aerofs.ui.UIParam;

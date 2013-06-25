@@ -2,7 +2,7 @@
  * Copyright (c) Air Computing Inc., 2012.
  */
 
-package com.aerofs.lib.ritual;
+package com.aerofs.ritual;
 
 import com.aerofs.base.C;
 import com.aerofs.base.net.AbstractRpcClientHandler;

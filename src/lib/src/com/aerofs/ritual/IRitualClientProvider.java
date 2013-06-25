@@ -2,7 +2,7 @@
  * Copyright (c) Air Computing Inc., 2013.
  */
 
-package com.aerofs.lib.ritual;
+package com.aerofs.ritual;
 
 public interface IRitualClientProvider
 {

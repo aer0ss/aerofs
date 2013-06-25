@@ -9,7 +9,7 @@ import com.aerofs.base.id.DID;
 import com.aerofs.lib.JsonFormat;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.ThreadUtil;
-import com.aerofs.lib.ritual.RitualBlockingClient;
+import com.aerofs.ritual.RitualBlockingClient;
 import com.aerofs.proto.Files.PBDumpStat;
 import com.aerofs.proto.Files.PBDumpStat.PBTransport;
 import com.aerofs.proto.Ritual.TransportPingReply;

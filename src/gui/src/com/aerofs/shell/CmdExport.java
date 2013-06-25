@@ -13,7 +13,7 @@ import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.base.ex.ExBadArgs;
-import com.aerofs.lib.ritual.RitualBlockingClient;
+import com.aerofs.ritual.RitualBlockingClient;
 import com.aerofs.proto.Ritual.ExportFileReply;
 import com.aerofs.proto.Ritual.ExportRevisionReply;
 import com.aerofs.proto.Ritual.GetChildrenAttributesReply;

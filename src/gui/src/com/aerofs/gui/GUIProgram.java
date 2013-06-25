@@ -13,7 +13,7 @@ import com.aerofs.lib.IProgram;
 import com.aerofs.lib.SystemUtil.ExitCode;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.os.OSUtil;
-import com.aerofs.lib.ritual.RitualClientProvider;
+import com.aerofs.ritual.RitualClientProvider;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.ui.UI;
 import com.aerofs.ui.UIGlobals;

@@ -12,7 +12,7 @@ import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.lib.os.OSUtil;
-import com.aerofs.lib.ritual.RitualBlockingClient;
+import com.aerofs.ritual.RitualBlockingClient;
 import com.aerofs.proto.Ritual.ListConflictsReply;
 import com.aerofs.proto.Ritual.ListConflictsReply.ConflictedPath;
 import com.aerofs.proto.Ritual.PBBranch;

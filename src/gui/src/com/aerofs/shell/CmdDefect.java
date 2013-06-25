@@ -12,7 +12,7 @@ import com.aerofs.labeling.L;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.ritual.RitualBlockingClient;
+import com.aerofs.ritual.RitualBlockingClient;
 import com.aerofs.sv.client.SVClient;
 import com.aerofs.ui.UI;
 import com.aerofs.ui.error.ErrorMessages;

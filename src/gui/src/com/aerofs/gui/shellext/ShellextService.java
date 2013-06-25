@@ -7,7 +7,7 @@ import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.os.OSUtil;
-import com.aerofs.lib.ritual.RitualClientProvider;
+import com.aerofs.ritual.RitualClientProvider;
 import com.aerofs.proto.Common.PBPath;
 import com.aerofs.proto.PathStatus.PBPathStatus;
 import com.aerofs.proto.Ritual.GetPathStatusReply;
