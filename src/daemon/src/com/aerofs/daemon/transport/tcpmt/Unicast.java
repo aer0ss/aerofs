@@ -39,7 +39,7 @@ import java.util.concurrent.ConcurrentMap;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
-public class Unicast implements IUnicast, IPipeDebug, ITCPServerHandlerListener
+class Unicast implements IUnicast, IPipeDebug, ITCPServerHandlerListener
 {
     private static final Logger l = Loggers.getLogger(Unicast.class);
     private static final int PORT_ANY = 0;

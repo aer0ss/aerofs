@@ -13,7 +13,7 @@ import com.aerofs.base.id.DID;
  * TCPMT-specific event handler for {@link com.aerofs.daemon.event.net.EOTpStartPulse} events. This handler
  * only handles pulses scheduled by the core
  */
-public class StartPulse extends StartPulseBase<TCP>
+class StartPulse extends StartPulseBase<TCP>
 {
     private final ARP _arp;
 
