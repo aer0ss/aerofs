@@ -66,7 +66,11 @@ class _RitualServiceWrapper(object):
         while not ready:
             try:
                 self.heartbeat()
-            except:
+            except Exception as e:
+                # Wait indefinitely for indexing to finish
+                if type(e) == exception.ExceptionReply and e.get_type() == PBException.INDEXING:
+                    continue
+                # If something other than indexing is going wrong, start counting towards timeout
                 attempts += 1
                 if attempts >= max_attempts:
                     raise
