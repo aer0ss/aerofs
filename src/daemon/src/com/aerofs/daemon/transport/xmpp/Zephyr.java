@@ -23,6 +23,7 @@ import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
 import com.aerofs.lib.event.IEvent;
 import com.aerofs.lib.event.Prio;
+import com.aerofs.lib.rocklog.RockLog;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jivesoftware.smack.PacketListener;
 import org.jivesoftware.smack.XMPPConnection;
@@ -61,6 +62,7 @@ public class Zephyr extends XMPP implements ISignallingService
             SSLEngineFactory clientSSLEngineFactory,
             ClientSocketChannelFactory clientSocketChannelFactory,
             MobileServerZephyrConnector mobileZephyr,
+            RockLog rocklog,
             SocketAddress zephyrAddress, Proxy proxy,
             boolean enableMulticast)
     {
@@ -75,6 +77,7 @@ public class Zephyr extends XMPP implements ISignallingService
                 this,
                 this,
                 new BasicStatsCounter(),
+                rocklog,
                 clientSocketChannelFactory, zephyrAddress, proxy);
         setPipe_(pipe);
         mobileZephyrConnector = mobileZephyr;

@@ -15,6 +15,7 @@ import com.aerofs.daemon.transport.lib.ITransportStats;
 import com.aerofs.daemon.transport.xmpp.ISignalledConnectionService;
 import com.aerofs.daemon.transport.xmpp.ISignallingService;
 import com.aerofs.lib.event.Prio;
+import com.aerofs.lib.rocklog.RockLog;
 import com.aerofs.proto.Files.PBDumpStat;
 import com.aerofs.proto.Files.PBDumpStat.PBTransport;
 import com.aerofs.zephyr.client.IZephyrRelayedDataSink;
@@ -65,6 +66,8 @@ import static org.jboss.netty.buffer.ChannelBuffers.copiedBuffer;
  */
 public final class ZephyrConnectionService implements ISignalledConnectionService, IZephyrSignallingService, IZephyrRelayedDataSink
 {
+    private static final String DEFECT_NAME_HANDSHAKE_RENEGOTIATION = "net.zephyr.renegotiation";
+
     private static Logger l = Loggers.getLogger(ZephyrConnectionService.class);
 
     private final IIdentifier tpinfo;
@@ -72,6 +75,7 @@ public final class ZephyrConnectionService implements ISignalledConnectionServic
     private final IConnectionServiceListener connectionServiceListener;
     private final ISignallingService signallingService;
     private final ITransportStats transportStats;
+    private final RockLog rocklog;
 
     private final UserID localid;
     private final DID localdid;
@@ -91,6 +95,7 @@ public final class ZephyrConnectionService implements ISignalledConnectionServic
             IConnectionServiceListener connectionServiceListener,
             ISignallingService signallingService,
             ITransportStats transportStats,
+            RockLog rocklog,
             ChannelFactory channelFactory, SocketAddress zephyrAddress, Proxy proxy)
     {
         this.tpinfo = tpinfo;
@@ -109,6 +114,8 @@ public final class ZephyrConnectionService implements ISignalledConnectionServic
         this.signallingService.registerSignallingClient(this);
 
         this.transportStats = transportStats;
+
+        this.rocklog = rocklog;
     }
 
     @Override
@@ -436,6 +443,7 @@ public final class ZephyrConnectionService implements ISignalledConnectionServic
                 try {
                     consumeHandshake(did, handshake);
                 } catch (ExHandshakeRenegotiation e) {
+                    rocklog.newDefect(DEFECT_NAME_HANDSHAKE_RENEGOTIATION).send();
                     closeChannel(did, new ExDeviceDisconnected("attempted to renegotiate zephyr channel to " + did, e), false);
                     consumeHandshake(did, handshake);
                 }
