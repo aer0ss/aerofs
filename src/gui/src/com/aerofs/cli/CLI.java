@@ -123,14 +123,6 @@ public class CLI implements IUI {
     }
 
     @Override
-    public void showWithNoShowAgainCheckBox(MessageType mt, String msg,
-            OutArg<Boolean> noShow)
-    {
-        noShow.set(false);
-        show(mt, msg);
-    }
-
-    @Override
     public IWaiter showWait(final String title, String msg)
     {
         show(MessageType.INFO, msg);

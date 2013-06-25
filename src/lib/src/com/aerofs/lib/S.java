@@ -108,7 +108,6 @@ public class S
             LBL_IDLE                 = "Idle",
             // end transfers dialog
 
-            DONT_SHOW_THIS_MESSAGE_AGAIN = "Don't show me again.",
             FILE_OPEN_FAIL = "The file couldn't be opened.",
             CONFLICT_OPEN_FAIL = FILE_OPEN_FAIL +
                 " Please use the [Save As...] button to save and view it.",

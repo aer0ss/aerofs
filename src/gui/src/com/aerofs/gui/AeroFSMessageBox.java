@@ -6,8 +6,6 @@ import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.custom.CLabel;
-import org.eclipse.swt.events.SelectionAdapter;
-import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.layout.GridData;
@@ -37,8 +35,6 @@ public class AeroFSMessageBox extends AeroFSJFaceDialog {
     private final String _msg;
     private final IconType _it;
     private final ButtonType _bt;
-    private final String _checkBoxText;
-    private boolean _checked;
     private Button _okayBtn, _cancelBtn;
     private final String _okayLabel, _cancelLabel;
 
@@ -50,25 +46,14 @@ public class AeroFSMessageBox extends AeroFSJFaceDialog {
     public AeroFSMessageBox(Shell parentShell, boolean sheet, String msg, IconType it,
             ButtonType bt)
     {
-        this(parentShell, sheet, msg, it, bt, null);
-    }
-
-    public AeroFSMessageBox(Shell parentShell, boolean sheet, String msg, IconType it,
-            ButtonType bt, String checkBoxText)
-    {
         this(parentShell, sheet, msg, it, bt, IDialogConstants.OK_LABEL,
-                IDialogConstants.CANCEL_LABEL, checkBoxText, true);
+                IDialogConstants.CANCEL_LABEL, true);
     }
 
-    /**
-     * @param checkBoxText null to not show the check box
-     */
     public AeroFSMessageBox(Shell parentShell, boolean sheet, String msg, IconType it,
-            ButtonType bt, String okayLabel, String cancelLabel,
-            String checkBoxText, boolean allowClose)
+            ButtonType bt, String okayLabel, String cancelLabel, boolean allowClose)
     {
         super(null, parentShell, sheet, false, true, allowClose);
-        _checkBoxText = checkBoxText;
         _it = it;
         _bt = bt;
         _okayLabel = okayLabel;
@@ -117,19 +102,6 @@ public class AeroFSMessageBox extends AeroFSJFaceDialog {
         _lblMessage.setLayoutData(gd__text);
         _lblMessage.setText(_msg);
 
-        if (_checkBoxText != null) {
-            new Label(container, SWT.NONE);
-            final Button button = new Button(container, SWT.CHECK);
-            button.setText(_checkBoxText);
-            button.addSelectionListener(new SelectionAdapter() {
-                @Override
-                public void widgetSelected(SelectionEvent arg0)
-                {
-                    _checked = button.getSelection();
-                }
-            });
-        }
-
         return container;
     }
 
@@ -150,13 +122,6 @@ public class AeroFSMessageBox extends AeroFSJFaceDialog {
             break;
         }
     }
-
-    public boolean isChecked()
-    {
-        assert _checkBoxText != null;
-        return _checked;
-    }
-
 
     public Label getMessageLabel()
     {

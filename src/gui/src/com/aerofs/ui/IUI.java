@@ -1,6 +1,5 @@
 package com.aerofs.ui;
 
-import com.aerofs.lib.OutArg;
 import com.aerofs.lib.ex.ExNoConsole;
 
 /**
@@ -18,8 +17,6 @@ public interface IUI {
     }
 
     void show(MessageType mt, String msg);
-
-    void showWithNoShowAgainCheckBox(MessageType mt, String msg, OutArg<Boolean> noShow);
 
     static interface IWaiter
     {

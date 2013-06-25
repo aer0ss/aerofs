@@ -14,9 +14,7 @@ import com.aerofs.gui.singleuser.tray.SingleuserMenuProvider;
 import com.aerofs.gui.tray.SystemTray;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.InOutArg;
-import com.aerofs.lib.OutArg;
 import com.aerofs.lib.S;
-import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExNoConsole;
 import com.aerofs.lib.os.OSUtil;
@@ -174,17 +172,18 @@ public class GUI implements IUI
         UI.get().notify(IUI.MessageType.INFO,
                 "Install " + OSUtil.get().getShellExtensionName() + "?",
                 "Please click here if you would like to install the " +
-                        OSUtil.get().getShellExtensionName() + ".",
-                new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
-                            OSUtil.get().installShellExtension(false);
-                        } catch (Exception e) {
-                            reportShellExtInstallFailed(e);
-                        }
-                    }
-                });
+                        OSUtil.get().getShellExtensionName() + ".", new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                try {
+                    OSUtil.get().installShellExtension(false);
+                } catch (Exception e) {
+                    reportShellExtInstallFailed(e);
+                }
+            }
+        });
     }
 
     private void reportShellExtInstallFailed(Exception e)
@@ -249,25 +248,6 @@ public class GUI implements IUI
             public void run()
             {
                 new AeroFSMessageBox(sh, sheet, msg, mt2it(mt)).open();
-            }
-        });
-    }
-
-    @Override
-    public void showWithNoShowAgainCheckBox(final MessageType mt,
-            final String msg, final OutArg<Boolean> noShow)
-    {
-        noShow.set(false);
-
-        exec(new Runnable() {
-            @Override
-            public void run()
-            {
-                AeroFSMessageBox amb = new AeroFSMessageBox(_sh, false,
-                        msg, mt2it(mt), ButtonType.OKAY,
-                        S.DONT_SHOW_THIS_MESSAGE_AGAIN);
-                amb.open();
-                noShow.set(amb.isChecked());
             }
         });
     }
@@ -351,21 +331,6 @@ public class GUI implements IUI
         if (!_disp.isDisposed() && !w.isDisposed()) {
             _disp.asyncExec(new Runnable()
             {
-                @Override
-                public void run()
-                {
-                    if (w.isDisposed()) return;
-                    assert _disp == w.getDisplay();
-                    run.run();
-                }
-            });
-        }
-    }
-
-    public void safeTimerExec(final Widget w, long timer, final Runnable run)
-    {
-        if (!_disp.isDisposed() && !w.isDisposed()) {
-            _disp.timerExec((int) timer, new Runnable() {
                 @Override
                 public void run()
                 {
@@ -480,7 +445,7 @@ public class GUI implements IUI
             public void run()
             {
                 AeroFSMessageBox amb = new AeroFSMessageBox(sh, sheet, msg, mt2it(mt),
-                        ButtonType.OKAY_CANCEL, yesLabel, noLabel, null, true);
+                        ButtonType.OKAY_CANCEL, yesLabel, noLabel, true);
                 yes.set(amb.open() == IDialogConstants.OK_ID);
             }
         });
@@ -557,39 +522,6 @@ public class GUI implements IUI
         void run() throws Exception;
         void okay();
         void error(Exception e);
-    }
-
-    /**
-     * This method calls worker.run() in a separate thread, and call either worker.okay() or error()
-     * depending on whether run() throws. Avoid using this method when possible. Use safeWork()
-     * instead.
-     */
-    public void unsafeWork(final ISWTWorker worker)
-    {
-        ThreadUtil.startDaemonThread("GUI worker", new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                Exception e1 = null;
-                try {
-                    worker.run();
-                } catch (Exception e) {
-                    e1 = e;
-                }
-
-                final Exception e2 = e1;
-                asyncExec(new Runnable()
-                {
-                    @Override
-                    public void run()
-                    {
-                        if (e2 == null) worker.okay();
-                        else worker.error(e2);
-                    }
-                });
-            }
-        });
     }
 
     /**

@@ -34,7 +34,7 @@ public class AeroFSTimedMessageBox extends AeroFSMessageBox
             ButtonType bt, String okayLabel, String cancelLabel, long duration)
     {
         super(parentShell, sheet, String.format(format,duration), it,
-                bt, okayLabel, cancelLabel, null, false);
+                bt, okayLabel, cancelLabel, false);
         _format = format;
         _countdown = duration;
     }
