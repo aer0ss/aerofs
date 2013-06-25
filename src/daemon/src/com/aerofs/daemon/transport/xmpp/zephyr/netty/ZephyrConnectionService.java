@@ -150,7 +150,6 @@ public final class ZephyrConnectionService implements ISignalledConnectionServic
         l.info("start");
     }
 
-    @SuppressWarnings("unused")
     public void stop()
     {
         boolean alreadyRunning = running.getAndSet(false);

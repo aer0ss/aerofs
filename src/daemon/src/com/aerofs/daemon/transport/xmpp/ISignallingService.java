@@ -1,13 +1,10 @@
 /*
- * Created by Allen A. George, Air Computing Inc.
- * Copyright (c) Air Computing Inc., 2012.
+ * Copyright (c) Air Computing Inc., 2013.
  */
 
 package com.aerofs.daemon.transport.xmpp;
 
 import com.aerofs.base.id.DID;
-
-import static com.aerofs.proto.Transport.PBTPHeader;
 
 /**
  * Implemented by classes that provide an out-of-band control, or signalling,
@@ -27,7 +24,7 @@ import static com.aerofs.proto.Transport.PBTPHeader;
 public interface ISignallingService
 {
     /**
-     * Register to receive messages of a specified {@link PBTPHeader.Type} that
+     * Register to receive messages of a specified {@link com.aerofs.proto.Transport.PBTPHeader.Type} that
      * may be sent over the signalling channel
      *
      * @param client {@link com.aerofs.daemon.transport.xmpp.ISignallingClient} to which a matching message should

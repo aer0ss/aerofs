@@ -212,9 +212,9 @@ public class TestDownload extends AbstractDownloadTest
                         .build(), o2.soid()))
                 .when(gcr).processReply_(eq(o2), anyDM(), anyDC());
 
-        doAnswer(new Answer() {
+        doAnswer(new Answer<Void>() {
             @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable
+            public Void answer(InvocationOnMock invocation) throws Throwable
             {
                 doNothing().when(gcr).processReply_(eq(o2), anyDM(), anyDC());
                 throw new ExNoComponentWithSpecifiedVersion();
@@ -339,9 +339,9 @@ public class TestDownload extends AbstractDownloadTest
                 o2.soid()))
                 .when(gcr).processReply_(eq(o2), anyDM(), anyDC());
 
-        doAnswer(new Answer() {
+        doAnswer(new Answer<Void>() {
             @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable
+            public Void answer(InvocationOnMock invocation) throws Throwable
             {
                 doNothing().when(gcr).processReply_(eq(o2), anyDM(), anyDC());
                 throw new IOException();

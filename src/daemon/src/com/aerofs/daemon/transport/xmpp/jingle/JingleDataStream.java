@@ -227,8 +227,6 @@ public class JingleDataStream implements IProxyObjectContainer
     {
         int[] read = { 0 };
         int[] error = { 0 };
-        int msgHdrLen = 0;
-        int msgPldLen;
         StreamResult res;
         while (true) {
 
@@ -242,7 +240,6 @@ public class JingleDataStream implements IProxyObjectContainer
                         _inHeader.length - _inHeaderOff, read, error);
                 _inHeaderOff += read[0];
                 logBytes(read[0], _inHeaderOff, _inHeader.length, res, false);
-                msgHdrLen = read[0];
                 ij.addBytesRx(read[0]);
 
                 if (res == StreamResult.SR_ERROR || res == StreamResult.SR_EOS) {
@@ -274,7 +271,6 @@ public class JingleDataStream implements IProxyObjectContainer
                     _inPayload.length - _inPayloadOff, read, error);
             _inPayloadOff += read[0];
             logBytes(read[0], _inPayloadOff, _inPayload.length, res, false);
-            msgPldLen = read[0];
             ij.addBytesRx(read[0]);
             _bytesIn += read[0];
 

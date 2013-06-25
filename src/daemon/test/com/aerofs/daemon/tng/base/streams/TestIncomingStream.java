@@ -4,8 +4,8 @@
 
 package com.aerofs.daemon.tng.base.streams;
 
+import com.aerofs.base.async.UncancellableFuture;
 import com.aerofs.base.id.DID;
-import com.aerofs.lib.event.Prio;
 import com.aerofs.daemon.lib.async.ISingleThreadedPrioritizedExecutor;
 import com.aerofs.daemon.lib.id.StreamID;
 import com.aerofs.daemon.tng.ImmediateInlineExecutor;
@@ -13,8 +13,7 @@ import com.aerofs.daemon.tng.base.pipeline.IConnection;
 import com.aerofs.daemon.tng.ex.ExStreamAlreadyExists;
 import com.aerofs.daemon.tng.ex.ExStreamInvalid;
 import com.aerofs.daemon.tng.ex.ExTransport;
-import com.aerofs.base.async.UncancellableFuture;
-import com.aerofs.base.id.SID;
+import com.aerofs.lib.event.Prio;
 import com.aerofs.proto.Transport.PBStream.InvalidationReason;
 import com.aerofs.testlib.AbstractTest;
 import com.google.common.collect.ImmutableList;
@@ -28,11 +27,13 @@ import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 import static com.aerofs.testlib.FutureAssert.assertThrows;
+import static com.aerofs.testlib.FutureAssert.getFutureThrowable;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static com.aerofs.testlib.FutureAssert.getFutureThrowable;
-import static org.junit.Assert.*;
 
 public class TestIncomingStream extends AbstractTest
 {

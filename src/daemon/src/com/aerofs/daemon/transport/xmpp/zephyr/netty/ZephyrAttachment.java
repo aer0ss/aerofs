@@ -50,7 +50,6 @@ final class ZephyrAttachment
         return notifyListener.get();
     }
 
-    @SuppressWarnings("unused")
     Exception getDisconnectCause() // FIXME (AG): use this to notify the upper layer
     {
         return disconnectCause.get();
@@ -61,7 +60,7 @@ final class ZephyrAttachment
         if (this.disconnectCause.getAndSet(disconnectCause) == DEFAULT) {
             boolean previous = this.notifyListener.getAndSet(notifyListener);
             checkArgument(disconnectCause != DEFAULT);
-            checkArgument(previous == true, "disconnect parameters already modified");
+            checkArgument(previous, "disconnect parameters already modified");
         }
     }
 }

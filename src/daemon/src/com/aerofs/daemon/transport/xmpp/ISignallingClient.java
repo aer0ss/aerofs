@@ -8,7 +8,6 @@ package com.aerofs.daemon.transport.xmpp;
 import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.base.id.DID;
 
-import static com.aerofs.proto.Transport.PBTPHeader;
 
 /**
  * Implemented by classes that want to send and receive messages via an
@@ -67,7 +66,7 @@ public interface ISignallingClient
      * is received on the signalling channel
      *
      * @param did {@link DID} of the peer that sent this message
-     * @param msg {@link PBTPHeader} body of the message received on the signalling channel
+     * @param msg {@link com.aerofs.proto.Transport.PBTPHeader} body of the message received on the signalling channel
      * @throws ExNoResource if the implementation cannot carry out this task at
      * this time. This <em>may</em> be a transient, recoverable error.
      */

@@ -97,18 +97,18 @@ public class TestAggregateSyncStatus extends AbstractTest
         // need to
         final List<ITransListener> listeners = Lists.newArrayList();
 
-        doAnswer(new Answer() {
+        doAnswer(new Answer<Void>() {
             @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable
+            public Void answer(InvocationOnMock invocation) throws Throwable
             {
                 listeners.add((ITransListener)invocation.getArguments()[0]);
                 return null;
             }
         }).when(t).addListener_(any(ITransListener.class));
 
-        doAnswer(new Answer() {
+        doAnswer(new Answer<Void>() {
             @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable
+            public Void answer(InvocationOnMock invocation) throws Throwable
             {
                 l.info("commit");
                 for (ITransListener l : listeners) l.committing_(t);
