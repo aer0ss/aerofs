@@ -235,7 +235,13 @@ public class GUI implements IUI
         showImpl(sh, sheet, mt, msg);
     }
 
-    public void showImpl(final Shell sh, final boolean sheet,
+    @Override
+    public void show(MessageType mt, String msg)
+    {
+        showImpl(_sh, false, mt, msg);
+    }
+
+    public void showImpl(@Nullable final Shell sh, final boolean sheet,
             final MessageType mt, final String msg)
     {
         exec(new Runnable() {
@@ -245,12 +251,6 @@ public class GUI implements IUI
                 new AeroFSMessageBox(sh, sheet, msg, mt2it(mt)).open();
             }
         });
-    }
-
-    @Override
-    public void show(MessageType mt, String msg)
-    {
-        showImpl(_sh, false, mt, msg);
     }
 
     @Override

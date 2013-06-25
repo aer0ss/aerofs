@@ -102,6 +102,7 @@ public class AeroFSMessageBox extends AeroFSJFaceDialog {
             icon = SWT.ICON_QUESTION;
             break;
         case INFO:
+            //noinspection fallthrough
         default:
             icon = SWT.ICON_INFORMATION;
         }
@@ -134,7 +135,6 @@ public class AeroFSMessageBox extends AeroFSJFaceDialog {
 
     /**
      * Create contents of the button bar.
-     * @param parent
      */
     @Override
     protected void createButtonsForButtonBar(Composite parent)
