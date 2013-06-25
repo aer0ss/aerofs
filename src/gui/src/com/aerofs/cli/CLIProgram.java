@@ -1,6 +1,6 @@
 package com.aerofs.cli;
 
-import com.aerofs.ChannelFactories;
+import com.aerofs.lib.ChannelFactories;
 import com.aerofs.controller.ControllerBadCredentialListener;
 import com.aerofs.controller.ControllerService;
 import com.aerofs.lib.IProgram;

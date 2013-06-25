@@ -36,8 +36,8 @@ import com.google.inject.Module;
 import com.google.inject.Stage;
 import org.slf4j.Logger;
 
-import static com.aerofs.ChannelFactories.getClientChannelFactory;
-import static com.aerofs.ChannelFactories.getServerChannelFactory;
+import static com.aerofs.lib.ChannelFactories.getClientChannelFactory;
+import static com.aerofs.lib.ChannelFactories.getServerChannelFactory;
 
 public class DaemonProgram implements IProgram
 {

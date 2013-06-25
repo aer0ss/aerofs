@@ -1,6 +1,6 @@
 package com.aerofs.shell;
 
-import com.aerofs.ChannelFactories;
+import com.aerofs.lib.ChannelFactories;
 import com.aerofs.base.C;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.ex.ExFormatError;

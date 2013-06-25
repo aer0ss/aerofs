@@ -1,6 +1,7 @@
 package com.aerofs;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.lib.ChannelFactories;
 import com.aerofs.lib.LibParam.CA;
 import com.aerofs.lib.properties.Configuration;
 import com.aerofs.labeling.L;
