@@ -16,7 +16,7 @@ import com.aerofs.daemon.transport.lib.TransportStatsHandler;
 import com.aerofs.daemon.transport.xmpp.ISignalledConnectionService;
 import com.aerofs.daemon.transport.xmpp.ISignallingService;
 import com.aerofs.lib.event.Prio;
-import com.aerofs.lib.rocklog.RockLog;
+import com.aerofs.rocklog.RockLog;
 import com.aerofs.proto.Files.PBDumpStat;
 import com.aerofs.proto.Files.PBDumpStat.PBTransport;
 import com.aerofs.zephyr.client.IZephyrRelayedDataSink;

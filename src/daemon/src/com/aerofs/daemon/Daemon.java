@@ -1,7 +1,7 @@
 package com.aerofs.daemon;
 
 import com.aerofs.daemon.core.Core;
-import com.aerofs.lib.rocklog.RockLog;
+import com.aerofs.rocklog.RockLog;
 import com.google.inject.Inject;
 
 public class Daemon implements IModule

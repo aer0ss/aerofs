@@ -8,7 +8,7 @@ import com.aerofs.daemon.core.object.ObjectDeleter;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
-import com.aerofs.lib.rocklog.RockLog;
+import com.aerofs.rocklog.RockLog;
 import com.aerofs.lib.sched.Scheduler;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;

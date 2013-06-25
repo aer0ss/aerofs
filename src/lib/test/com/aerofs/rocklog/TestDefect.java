@@ -2,14 +2,14 @@
  * Copyright (c) Air Computing Inc., 2013.
  */
 
-package com.aerofs.lib.rocklog;
+package com.aerofs.rocklog;
 
 import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.lib.cfg.InjectableCfg;
 import com.aerofs.lib.os.OSUtil;
-import com.aerofs.lib.rocklog.Defect.Priority;
+import com.aerofs.rocklog.Defect.Priority;
 import com.aerofs.testlib.AbstractTest;
 import com.google.gson.Gson;
 import com.google.gson.annotations.SerializedName;

@@ -17,7 +17,7 @@ import com.aerofs.base.id.SID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.base.id.UniqueID;
-import com.aerofs.lib.rocklog.RockLog;
+import com.aerofs.rocklog.RockLog;
 import com.aerofs.testlib.AbstractTest;
 
 import com.google.common.collect.ImmutableSet;
