@@ -13,7 +13,7 @@ import java.net.InetAddress;
  * This is a temporary interface to expose only the minimum set of methods that Unicast and TCPServerHandler
  * need to know about TCP. This is going to be refactored later into a better architecture.
  */
-public interface ITCP
+interface ITCP
 {
     public void onMessageReceived(InetAddress remote, DID did, InputStream is) throws Exception;
     public void closePeerStreams(DID did, boolean outbound, boolean inbound);

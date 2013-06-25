@@ -33,7 +33,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static com.google.common.base.Preconditions.checkState;
 
 
-public class TCPClientHandler extends SimpleChannelHandler implements CNameListener
+class TCPClientHandler extends SimpleChannelHandler implements CNameListener
 {
     private static final Logger l = Loggers.getLogger(TCPClientHandler.class);
 
