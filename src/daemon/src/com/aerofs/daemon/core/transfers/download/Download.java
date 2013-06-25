@@ -347,10 +347,27 @@ class Download
         return false;
     }
 
+    /**
+     * Because it is technically possible that some file end up in a perpetual update state
+     * (e.g. some frequently written to log files) and also because even some seemingly
+     * innocuous files have been reported to mistakenly generate UPLOAD_IN_PROGRESS we must
+     * bound the number of immediate retries to prevent the apparition of a livelock (if all
+     * inflight dl touch such an unstable file)
+     */
+    private int _updateRetry = 0;
+    private static final int MAX_UPDATE_RETRY = 2;
+    private static final long UPDATE_RETRY_DELAY = 3 * C.SEC;
+
     private void onUpdateInProgress() throws ExAborted
     {
-        l.info(_socid + ": update in prog. retry later");
-        // TODO exponential retry
-        _tk.sleep_(3 * C.SEC, "retry dl (update in prog)");
+        // too many retries: abort dl to free token
+        // the collector will retry at a later time (i.e. on next iteration)
+        if (++_updateRetry > MAX_UPDATE_RETRY) {
+            l.warn("{}: update in prog for too long. abort", _socid);
+            throw new ExAborted("update in progress");
+        }
+
+        l.info("{}: update in prog. retry later", _socid);
+        _tk.sleep_(UPDATE_RETRY_DELAY, "retry dl (update in prog)");
     }
 }
