@@ -15,9 +15,12 @@ import com.aerofs.base.id.DID;
  */
 public class StartPulse extends StartPulseBase<TCP>
 {
-    public StartPulse(TCP t)
+    private final ARP _arp;
+
+    public StartPulse(TCP t, ARP arp)
     {
         super(t);
+        _arp = arp;
     }
 
     @Override
@@ -29,7 +32,7 @@ public class StartPulse extends StartPulseBase<TCP>
 
         // stop pulses if the device is offline from the transport's POV
 
-        if (!tp.arp().exists(did)) {
+        if (!_arp.exists(did)) {
             notifypulsestopped_(did);
             l.info("d:" + did + " offline - term hd");
             return false;

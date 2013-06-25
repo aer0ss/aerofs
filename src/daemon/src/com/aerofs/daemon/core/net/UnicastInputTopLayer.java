@@ -5,7 +5,10 @@
 package com.aerofs.daemon.core.net;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.base.ex.ExBadCredential;
+import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.base.id.DID;
+import com.aerofs.base.id.UserID;
 import com.aerofs.daemon.core.CoreDeviceLRU;
 import com.aerofs.daemon.core.CoreUtil;
 import com.aerofs.daemon.core.IDeviceEvictionListener;
@@ -24,10 +27,7 @@ import com.aerofs.daemon.lib.id.StreamID;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.lib.ex.ExDeviceOffline;
-import com.aerofs.base.ex.ExProtocolError;
-import com.aerofs.base.id.UserID;
 import com.aerofs.proto.Core.PBCore;
 import com.aerofs.proto.Core.PBCore.Type;
 import com.aerofs.proto.Transport.PBStream.InvalidationReason;
@@ -35,7 +35,7 @@ import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 
-import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.util.Map;
 
 public class UnicastInputTopLayer implements IUnicastInputLayer
@@ -122,7 +122,7 @@ public class UnicastInputTopLayer implements IUnicastInputLayer
         }
     }
 
-    public void maxcastMessageReceived_(Endpoint ep, ByteArrayInputStream is)
+    public void maxcastMessageReceived_(Endpoint ep, InputStream is)
     {
         try {
             assert !ep.did().equals(Cfg.did());

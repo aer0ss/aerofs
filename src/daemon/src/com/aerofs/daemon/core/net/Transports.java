@@ -45,6 +45,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
+import org.jboss.netty.channel.socket.ServerSocketChannelFactory;
 import org.slf4j.Logger;
 
 import java.io.PrintStream;
@@ -89,9 +90,10 @@ public class Transports implements IDumpStat, IDumpStatMisc, IStartable
     private static TCP newTCP(
             String transportId, int transportRank,
             IBlockingPrioritizedEventSink<IEvent> coreQueue,
-            MaxcastFilterReceiver mcfr)
+            MaxcastFilterReceiver mcfr, ClientSocketChannelFactory clientChannelFactory,
+            ServerSocketChannelFactory serverChannelFactory)
     {
-        return new TCP(transportId, transportRank, coreQueue, mcfr);
+        return new TCP(transportId, transportRank, coreQueue, mcfr, clientChannelFactory, serverChannelFactory);
     }
 
     private static Jingle newJingle(
@@ -133,18 +135,19 @@ public class Transports implements IDumpStat, IDumpStatMisc, IStartable
             CoreQueue coreQueue, TC tc,
             LinkStateService lss,
             MobileServiceFactory mobileServiceFactory,
+            RockLog rocklog,
             ClientSocketChannelFactory clientChannelFactory,
-            RockLog rocklog)
+            ServerSocketChannelFactory serverSocketChannelFactory)
     {
-        this._tc = tc;
-        this._lss = lss;
+        _tc = tc;
+        _lss = lss;
 
         MaxcastFilterReceiver mcfr = new MaxcastFilterReceiver(); // shared by all transports
 
         List<ITransport> transports = newLinkedList();
 
         if (Cfg.useTCP()) {
-            transports.add(newTCP("t", 0, coreQueue, mcfr));
+            transports.add(newTCP("t", 0, coreQueue, mcfr, clientChannelFactory, serverSocketChannelFactory));
         }
         if (Cfg.useJingle()) {
             transports.add(newJingle(localdid.get(), "j", 1, coreQueue, mcfr));

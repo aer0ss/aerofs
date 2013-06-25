@@ -4,200 +4,291 @@ import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.event.lib.imc.IResultWaiter;
-import com.aerofs.daemon.lib.DaemonParam;
+import com.aerofs.daemon.transport.lib.ChannelStatsHandler;
 import com.aerofs.daemon.transport.lib.IPipeDebug;
+import com.aerofs.daemon.transport.lib.ITransportStats.BasicStatsCounter;
 import com.aerofs.daemon.transport.lib.IUnicast;
-import com.aerofs.daemon.transport.lib.TCPProactorMT;
-import com.aerofs.daemon.transport.lib.TCPProactorMT.IConnection;
-import com.aerofs.daemon.transport.lib.TCPProactorMT.IConnectionManager;
-import com.aerofs.daemon.transport.lib.TCPProactorMT.IConnector;
-import com.aerofs.daemon.transport.lib.TCPProactorMT.IReactor;
 import com.aerofs.daemon.transport.lib.TPUtil;
-import com.aerofs.daemon.transport.tcpmt.ARP.ARPEntry;
-import com.aerofs.lib.LibParam;
-import com.aerofs.lib.cfg.Cfg;
+import com.aerofs.daemon.transport.tcpmt.TCPServerHandler.ITCPServerHandlerListener;
+import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.ex.ExDeviceOffline;
-import com.aerofs.proto.Files;
-import com.aerofs.proto.Transport.PBTCPUnicastPreamble;
+import com.aerofs.proto.Files.PBDumpStat;
+import com.aerofs.proto.Files.PBDumpStat.PBTransport;
 import com.aerofs.proto.Transport.PBTPHeader;
-import com.aerofs.proto.Transport.PBTPHeader.Type;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import org.jboss.netty.bootstrap.ClientBootstrap;
+import org.jboss.netty.bootstrap.ServerBootstrap;
+import org.jboss.netty.channel.Channel;
+import org.jboss.netty.channel.ChannelFuture;
+import org.jboss.netty.channel.ChannelFutureListener;
+import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
+import org.jboss.netty.channel.socket.ServerSocketChannelFactory;
 import org.slf4j.Logger;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.PrintStream;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.security.GeneralSecurityException;
-import java.util.Collection;
+import java.util.Set;
+import java.util.concurrent.ConcurrentMap;
 
-import static com.aerofs.daemon.transport.lib.AddressUtils.getinetaddr;
-import static com.aerofs.daemon.transport.lib.AddressUtils.printaddr;
-import static com.aerofs.proto.Files.PBDumpStat.PBTransport;
+import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
 
-public class Unicast implements IConnectionManager, IUnicast, IPipeDebug
+public class Unicast implements IUnicast, IPipeDebug, ITCPServerHandlerListener
 {
-    /**
-     * @param internalPort null if port forwarding is not used. otherwise,
-     * we listen to the internal port but getListingPort() returns the external
-     * port.
-     */
-    Unicast(TCP tcp, ARP arp, Stores stores, int port, Integer internalPort)
-            throws IOException, GeneralSecurityException
-    {
-        // external port must be a specific value if internal port is specified
-        assert internalPort == null || port != TCP.PORT_ANY;
+    private static final Logger l = Loggers.getLogger(Unicast.class);
+    private static final int PORT_ANY = 0;
 
+    private final ITCP _tcp;
+    private final ARP _arp;
+    private final Stores _stores;
+    private final BasicStatsCounter _statsCounter = new BasicStatsCounter();
+    private final ClientBootstrap _clientBootstrap;
+    private final ServerBootstrap _serverBootstrap;
+    private final ConcurrentMap<DID, TCPClientHandler> _clients = Maps.newConcurrentMap();
+    private final ConcurrentMap<DID, TCPServerHandler> _servers = Maps.newConcurrentMap();
+    private Channel _serverChannel;
+    private volatile boolean _paused;
+
+    Unicast(ITCP tcp, ARP arp, Stores stores, ServerSocketChannelFactory serverChannelFactory,
+            ClientSocketChannelFactory clientChannelFactory)
+    {
         _tcp = tcp;
         _arp = arp;
         _stores = stores;
-        _proactor = new TCPProactorMT("tp", this, null, internalPort == null ? port : internalPort,
-                LibParam.CORE_MAGIC, true, DaemonParam.MAX_TRANSPORT_MESSAGE_SIZE);
-        _port = internalPort == null ? _proactor.getListeningPort() : port;
 
-        l.info("port " + _port + " internal " + _proactor.getListeningPort());
+        BootstrapFactory bsFact = new BootstrapFactory(_statsCounter);
+        _serverBootstrap = bsFact.newServerBootstrap(serverChannelFactory, this, tcp);
+        _clientBootstrap = bsFact.newClientBootstrap(clientChannelFactory);
     }
 
-    void start_()
+    void start()
     {
-        _proactor.start_();
+        synchronized (this) {
+            checkState(_serverChannel == null);
+            _serverChannel = _serverBootstrap.bind(new InetSocketAddress(PORT_ANY));
+            l.info("listening to {}", getListeningPort());
+        }
+    }
+
+    public void pauseAccept()
+    {
+        _paused = true;
+        _serverChannel.setReadable(false);
+        l.info("server paused. (port: {})", getListeningPort());
+    }
+
+    public void resumeAccept()
+    {
+        _paused = false;
+        _serverChannel.setReadable(true);
+        l.info("server resumed");
     }
 
     /**
-     * Forcefully disconnects all connections to/from a remote address
-     *
-     * @param remaddr remote address for which all connections should be
-     * onDeviceDisconnected
+     * Called by TCPServerHandler when the server has accepted a connection form a remote client
      */
-    void disconnect(InetSocketAddress remaddr)
+    @Override
+    public void onIncomingChannel(final DID did, Channel channel)
     {
-        _proactor.disconnect(remaddr);
+        final TCPServerHandler server = channel.getPipeline().get(TCPServerHandler.class);
+
+        // If we have just paused syncing, disconnect.
+        if (_paused) {
+            server.disconnect();
+            return;
+        }
+
+        TCPServerHandler old = _servers.put(did, checkNotNull(server));
+
+        if (old != null) old.disconnect();
+
+        channel.getCloseFuture().addListener(new ChannelFutureListener()
+        {
+            @Override
+            public void operationComplete(ChannelFuture channelFuture)
+                    throws Exception
+            {
+                l.info("Server disconnected. did: {}", did);
+                // Remove only if its still the same server in the map.
+                _servers.remove(did, server);
+                _tcp.closePeerStreams(did, false, true);
+            }
+        });
     }
 
     /**
-     * Whether we are connected to a remote address
-     *
-     * @param remaddr remote address to check for connections
-     * @return true if we are connected, false if not
+     * Disconnects from a remote peer.
      */
-    boolean isConnected(InetSocketAddress remaddr)
+    void disconnect(DID did)
     {
-        return _proactor.isConnected(remaddr);
+        TCPClientHandler client = _clients.get(did);
+        if (client != null) client.disconnect();
+
+        TCPServerHandler server = _servers.get(did);
+        if (server != null) server.disconnect();
     }
 
+    /**
+     * Whether we are connected to a remote peer
+     *
+     * Note: this only checks if we have an outgoing connection to a peer. Therefore, there is
+     * technically a possibility that ARP might incorrectly do garbage collection if we have an
+     * incoming connection but no outgoing connection and we have not received a multicast ping for
+     * an interval greater than arp gc time. This would be pretty unlikely.
+     */
+    boolean isConnected(DID did)
+    {
+        TCPClientHandler client = _clients.get(did);
+        return client != null && client.isConnected();
+    }
+
+    /**
+     * @return the port that the tcp server is listening to
+     */
     int getListeningPort()
     {
-        return _port;
+        return ((InetSocketAddress)_serverChannel.getLocalAddress()).getPort();
     }
 
     @Override
     public long getBytesReceived(DID did)
     {
-        ARPEntry arpentry = _arp.get(did);
-        return arpentry == null ? 0 : _proactor.getBytesRx(arpentry._isa);
-    }
+        TCPServerHandler server = _servers.get(did);
+        if (server == null) return 0;
 
-    private Collection<String> getConnections()
-    {
-        return _proactor.getConnections();
-    }
-
-    private long getBytesRx()
-    {
-        return _proactor.getBytesRx();
-    }
-
-    private long getBytesTx()
-    {
-        return _proactor.getBytesTx();
+        ChannelStatsHandler stats = server.getPipeline().get(ChannelStatsHandler.class);
+        return stats.getBytesReceived();
     }
 
     @Override
-    public Object send(DID did, IResultWaiter wtr, Prio pri, byte[][] bss, Object cke)
+    public Object send(final DID did, final IResultWaiter wtr, Prio pri, byte[][] bss, Object cookie)
         throws ExDeviceOffline, ExNoResource, IOException
     {
-        // use the address specified as the cookie to send the packet if the
-        // cookie is present. this is to bind an outgoing stream to a particular
-        // TCP connection, needed for the following scenario:
+        // Use the TCPClientHandler as the cookie to send the packet if the cookie is present.
+        // This is to bind an outgoing stream to a particular TCP connection, needed for the
+        // following scenario:
         //
         // 1. A and B have two or more ethernet links connected to each other.
-        // 2. A receives B's pong message from one link, and add the IP address
-        //    to its ARP
+        // 2. A receives B's pong message from one link, and add the IP address to its ARP
         // 3. A starts sending a stream to B
         // 4. A receives B's pong from another link, and in turn update the APR
-        // 5. the rest of the chunks in the stream will be sent via the latter
-        //    link, which violates streams' guarantee of in-order delivery.
-        //
-        InetSocketAddress addr = cke == null ? _arp.getThrows(did)._isa : (InetSocketAddress) cke;
-        _proactor.send(addr, bss, did, wtr, pri);
-        return addr;
+        // 5. the rest of the chunks in the stream will be sent via the latter link, which violates
+        // streams' guarantee of in-order delivery.
+
+        TCPClientHandler client = (cookie == null) ? _clients.get(did) : (TCPClientHandler) cookie;
+        if (client == null) client = newConnection(did);
+
+        ListenableFuture<Void> future = client.send(bss);
+
+        Futures.addCallback(future, new FutureCallback<Void>()
+        {
+            @Override
+            public void onSuccess(Void v)
+            {
+                if (wtr != null) wtr.okay();
+            }
+
+            @Override
+            public void onFailure(Throwable throwable)
+            {
+                if (wtr != null) {
+                    if (throwable instanceof Exception) {
+                        wtr.error((Exception)throwable);
+                    } else {
+                        SystemUtil.fatal(throwable);
+                    }
+                }
+            }
+        });
+
+        return client;
     }
 
-    public void sendControl(DID did, InetSocketAddress remaddr, PBTPHeader h, Prio prio)
-        throws IOException, ExNoResource
+    /**
+     * Creates a new client connected to the specified did
+     * @throws ExDeviceOffline if the arp table doesn't contain an entry for the did
+     */
+    private TCPClientHandler newConnection(final DID did)
+            throws ExDeviceOffline
     {
+        InetSocketAddress remoteAddress = _arp.getThrows(did)._isa;
+        Channel channel = _clientBootstrap.connect(remoteAddress).getChannel();
+        final TCPClientHandler client = channel.getPipeline().get(TCPClientHandler.class);
+        _clients.put(did, checkNotNull(client));
+
+        client.setExpectedRemoteDid(did);
+
+        // Remove the client when the channel is closed
+        channel.getCloseFuture().addListener(new ChannelFutureListener()
+        {
+            @Override
+            public void operationComplete(ChannelFuture channelFuture)
+                    throws Exception
+            {
+                // Remove only if its still the same client in the map.
+                _clients.remove(did, client);
+                _tcp.closePeerStreams(did, true, false);
+            }
+        });
+
+        // Send a TCP_PONG so that the peer knows our listening port and our stores
+        PBTPHeader pong = _stores.newPongMessage(true);
+        if (pong != null) sendControl(did, pong);
+
+        return client;
+    }
+
+    public void sendControl(DID did, PBTPHeader h)
+        throws ExDeviceOffline
+    {
+        TCPClientHandler client = _clients.get(did);
+        if (client == null) throw new ExDeviceOffline();
+
         byte[][] bss = TPUtil.newControl(h);
-        _proactor.send(remaddr, bss, did, null, prio);
-    }
-
-    public void sendControl(DID did, PBTPHeader h, Prio prio)
-        throws ExDeviceOffline, IOException, ExNoResource
-    {
-        InetSocketAddress remaddr = _arp.getThrows(did)._isa;
-        sendControl(did, remaddr, h, prio);
+        client.send(bss);
     }
 
     @Override
-    public IConnector newOutgoingConnection(IConnection c, InetSocketAddress to,
-            Object cookie)
-    {
-        return new Connector((DID) cookie);
-    }
-
-    @Override
-    public IReactor newIncomingConnection(IConnection c, InetSocketAddress from)
-    {
-        return new Reactor(c, from);
-    }
-
-    private byte[][] newPreamble()
-    {
-        PBTPHeader h = PBTPHeader.newBuilder()
-            .setType(Type.TCP_UNICAST_PREAMBLE)
-            .setTcpPreamble(PBTCPUnicastPreamble.newBuilder()
-                    .setDeviceId(Cfg.did().toPB())
-                    .setListeningPort(getListeningPort())).build();
-
-        return TPUtil.newControl(h);
-    }
-
-    @Override
-    public void dumpStat(Files.PBDumpStat dstemplate, Files.PBDumpStat.Builder dsbuilder)
+    public void dumpStat(PBDumpStat template, PBDumpStat.Builder builder)
         throws Exception
     {
-        PBTransport tp = dstemplate.getTransport(0);
-        assert tp != null : ("dumpstat called with null tp template");
+        PBTransport tp = checkNotNull(template.getTransport(0));
 
-        // FIXME: this is broken - is there a better way to do this?
+        // get the PBTransport builder
+        int lastBuilderIdx = builder.getTransportBuilderList().size();
+        checkState(lastBuilderIdx >= 1);
+        PBTransport.Builder tpbuilder = builder.getTransportBuilder(lastBuilderIdx - 1);
 
-        int lastBuilderIdx = dsbuilder.getTransportBuilderList().size();
-        assert lastBuilderIdx >= 1 : ("must have been populated by parent dumpstat");
+        // Add global bytes sent / received stats
+        tpbuilder.setBytesIn(_statsCounter.getBytesReceived());
+        tpbuilder.setBytesOut(_statsCounter.getBytesSent());
 
-        PBTransport.Builder tpbuilder = dsbuilder.getTransportBuilder(lastBuilderIdx - 1);
-
-        tpbuilder.setBytesIn(getBytesRx());
-        tpbuilder.setBytesOut(getBytesTx());
-
+        // Add arp
         if (tp.hasDiagnosis()) tpbuilder.setDiagnosis("arp:\n" + _arp);
 
+        // Add stats about individual connections
         if (tp.getConnectionCount() != 0) {
-            for (String c : getConnections()) {
-                tpbuilder.addConnection(c);
+
+            Set<DID> dids = Sets.union(_clients.keySet(), _servers.keySet());
+
+            for (DID did : dids) {
+                TCPClientHandler client = _clients.get(did);
+                TCPServerHandler server = _servers.get(did);
+
+                long sent = (client != null) ? client.getPipeline().get(ChannelStatsHandler.class).getBytesSent() : 0;
+                long rcvd = (server != null) ? server.getPipeline().get(ChannelStatsHandler.class).getBytesReceived() : 0;
+
+                tpbuilder.addConnection(did + " : sent: " + Long.toString(sent) + ", rcvd: " + Long.toString(rcvd));
             }
         }
 
-        dsbuilder.setTransport(lastBuilderIdx, tpbuilder);
+        builder.setTransport(lastBuilderIdx, tpbuilder);
     }
 
     @Override
@@ -205,148 +296,4 @@ public class Unicast implements IConnectionManager, IUnicast, IPipeDebug
     {
         // empty - nothing to add to dumpStatMisc
     }
-
-    //
-    // types
-    //
-
-    //
-    // Connector
-    //
-
-    private class Connector implements IConnector
-    {
-        Connector(DID did)
-        {
-            this.did = did;
-        }
-
-        @Override
-        public byte[][] getConnectorPreamble_()
-        {
-            return newPreamble();
-        }
-
-        @Override
-        public void connectorDisconnected_()
-        {
-            l.info("connector disconnected" + did);
-            _tcp.closePeerStreams(did, true, false);
-        }
-
-        private final DID did;
-    }
-
-    //
-    // Reactor
-    //
-
-    private class Reactor implements IReactor
-    {
-        Reactor(IConnection c, InetSocketAddress remaddr)
-        {
-            _c = c;
-            _printaddr = remaddr;
-            _remaddr = getinetaddr(remaddr);
-
-            l.info("reactor created rem: " + _remaddr);
-        }
-
-        @Override
-        public byte[][] getReactorPreamble_()
-        {
-            return newPreamble();
-        }
-
-        @Override
-        public byte[][] react_(byte[] bs, int wirelen) throws Exception
-        {
-            ByteArrayInputStream is = new ByteArrayInputStream(bs);
-            PBTPHeader h = TPUtil.processUnicastHeader(is);
-            Type type = h.getType();
-            PBTPHeader ret = null;
-
-            l.debug("recv t:" + type.name() + " d:" + _did + " rem:" + _remaddr + " l:" + _remoteListeningPort);
-
-            if (!connectionInitialized() && type != Type.TCP_UNICAST_PREAMBLE) {
-                l.warn("connection used before preamble rem:" + printaddr(_printaddr)+ " - discard");
-            } else if (TPUtil.isPayload(h)) {
-                _tcp.processUnicastPayload(_did, h, is, wirelen);
-            } else if (type == Type.TCP_UNICAST_PREAMBLE) {
-                PBTCPUnicastPreamble preamble = h.getTcpPreamble();
-                if (_did != null) {
-                    throw new ExInvalidProtocolState(
-                            "reseat did old:" + _did + " new:" + new DID(preamble.getDeviceId()));
-                }
-
-                _did = new DID(preamble.getDeviceId());
-                _remoteListeningPort = preamble.getListeningPort();
-                _remisa = new InetSocketAddress(_remaddr, _remoteListeningPort);
-
-                // reuse incoming connection for outgoing requests to the peer's announced listening port
-                _proactor.reuseForOutgoingConnection(_remisa, _c);
-
-                ret = PBTPHeader.newBuilder()
-                    .setType(Type.TCP_STORES_FILTER)
-                    .setTcpStoresFilter(_stores.newStoresFilter())
-                    .build();
-            } else if (type == Type.TCP_STORES_FILTER) {
-                // FIXME (AG): I need to use the same code path as Multicast (see TCP::processPong)
-                _arp.put(_did, _remisa);
-                _stores.storesFilterReceived(_did, h.getTcpStoresFilter());
-            } else if (type == Type.TCP_PONG) {
-                // FIXME (AG): I need to use the same code path as Multicast (see TCP::processPong)
-                _arp.put(_did, _remisa);
-                _stores.storesFilterReceived(_did, h.getTcpPong().getFilter());
-            } else {
-                _tcp.processUnicastControl(_did, h);
-            }
-
-            return ret == null ? null : TPUtil.newControl(ret);
-        }
-
-        @Override
-        public void reactorDisconnected_()
-        {
-            l.info("reactor disconnected: d:" +
-                (_did == null ? "null" : _did) +" rem:" + printaddr(_printaddr));
-
-            if (_did != null) _tcp.closePeerStreams(_did, false, true);
-        }
-
-        private boolean connectionInitialized()
-        {
-            return _did != null;
-        }
-
-        private final InetAddress _remaddr;
-        private final InetSocketAddress _printaddr; // FIXME: remove this
-        private final IConnection _c;
-
-        private DID _did;
-        private int _remoteListeningPort;
-        private InetSocketAddress _remisa;
-    }
-
-    public void pauseAccept()
-    {
-        _proactor.pauseAccept();
-    }
-
-    public void resumeAccept()
-    {
-        _proactor.resumeAccept();
-    }
-
-    //
-    // members
-    //
-
-    private final TCP _tcp;
-    private final ARP _arp;
-    private final Stores _stores;
-    private final TCPProactorMT _proactor;
-    private final int _port;
-
-    private static final Logger l = Loggers.getLogger(Unicast.class);
 }

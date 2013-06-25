@@ -13,9 +13,7 @@ message PBTPHeader {
         // TCP control messages
         TCP_PING = 1;
         TCP_PONG = 2;
-        TCP_UNICAST_PREAMBLE = 3;
         TCP_GO_OFFLINE = 4;
-        TCP_STORES_FILTER = 9;
         TCP_NOP = 10;
 
         // XMPP relay information
@@ -35,13 +33,9 @@ message PBTPHeader {
     optional PBStream stream = 4;
 
     optional PBTCPPong tcp_pong = 5;
-    optional PBTCPUnicastPreamble tcp_preamble = 6;
 
     // only in IP multicast
     optional bytes tcp_multicast_device_id  = 7;
-
-    // only in IP unicast. Bloom filter of all stores of the sending device
-    optional PBTCPStoresFilter tcp_stores_filter = 8;
 
     // only in XMPP relay information
     optional PBZephyrCandidateInfo zephyr_info = 9;
@@ -131,11 +125,6 @@ message PBTCPStoresFilter {
 message PBTCPPong {
     required uint32 unicast_listening_port = 1;
     required PBTCPStoresFilter filter = 2;
-}
-
-message PBTCPUnicastPreamble {
-    required bytes device_id = 1;
-    required uint32 listening_port = 2;
 }
 
 message PBCheckPulse {

@@ -6,6 +6,7 @@ import com.aerofs.gui.GUIParam;
 import com.aerofs.gui.Images;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
+import com.aerofs.lib.log.LogUtil;
 import com.aerofs.proto.Files.PBDumpStat;
 import com.aerofs.proto.Files.PBDumpStat.PBTransport;
 import com.aerofs.ui.UIGlobals;
@@ -17,6 +18,8 @@ import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Label;
 import org.slf4j.Logger;
+
+import java.nio.channels.ClosedChannelException;
 
 public class CompTransferStat extends Composite
 {
@@ -121,7 +124,7 @@ public class CompTransferStat extends Composite
                 strOut = Util.formatBandwidth(deltaOut, deltaT);
 
             } catch (Exception e) {
-                l.warn("can't refresh stat: " + Util.e(e));
+                l.warn("can't refresh stat: ", LogUtil.suppress(e, ClosedChannelException.class));
                 strIn = Util.formatBandwidth(0, 0);
                 strOut = Util.formatBandwidth(0, 0);
             }

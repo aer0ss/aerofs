@@ -140,8 +140,8 @@ public class BaseParam
 
     public static class MobileService
     {
-        public static final byte[] MAGIC_BYTES = "MOBL".getBytes();
-        public static final int VERSION_NUMBER = 3;
+        private static final byte VERSION_NUMBER = 3;
+        public static final byte[] MAGIC_BYTES = {'M', 'B', 'L', VERSION_NUMBER};
     }
 
     public static class Verkehr

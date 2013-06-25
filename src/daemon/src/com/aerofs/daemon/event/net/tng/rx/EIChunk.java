@@ -7,6 +7,7 @@ import com.aerofs.daemon.lib.id.StreamID;
 import com.aerofs.daemon.tng.IIncomingStream;
 
 import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 
 /**
  * Event that signals the receipt of a packet containing the chunk portion of
@@ -70,7 +71,7 @@ public class EIChunk implements IEvent, IInputBuffer
     }
 
     @Override
-    public ByteArrayInputStream is()
+    public InputStream is()
     {
         return _is;
     }

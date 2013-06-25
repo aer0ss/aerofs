@@ -82,11 +82,6 @@ public class CfgDatabase
         MAX_HOUSEKEEPING_STACKS("max_housekeeping_stacks", 10),
         MAX_D2U_STACKS("max_d2u_stacks", 25),   // 25 = client + server stacks
 
-        // Config for the TCP transport
-        TCP_ENDPOINT("tcp_endpiont", null),
-        // Used for port forwarding. valid only if 'tcp_endpoint' is present.
-        TCP_INTERNAL_ENDPOINT("tcp_internal_endpoint", null),
-
         // Config for MySQL
         MYSQL_URL("mysql_url", null),
         MYSQL_LOGIN("mysql_login", null),

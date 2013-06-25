@@ -98,7 +98,7 @@ public class LibParam extends BaseParam
     }
 
     // This number increments every time the protocol is updated
-    public static final int CORE_MAGIC                  = 0x637265C5;
+    public static final int CORE_MAGIC                  = 0x637265C6;
     public static final int RITUAL_NOTIFICATION_MAGIC   = 0x73209DEF;
 
     public static final String LOG_FILE_EXT             = ".log";

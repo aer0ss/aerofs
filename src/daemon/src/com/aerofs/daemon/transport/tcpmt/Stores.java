@@ -72,19 +72,12 @@ class Stores implements IARPChangeListener
         _arp.addARPChangeListener(this); // FIXME (AG): not safe to leak this during construction
     }
 
-    synchronized PBTCPStoresFilter.Builder newStoresFilter()
-    {
-        return PBTCPStoresFilter.newBuilder()
-                .setFilter(_filter.toPB())
-                .setSequence(_filterSeq);
-    }
-
     /**
      * Creates a {@code PBTCPStoresFilter} message with a store filter and filter seq num.
      * @return a valid {@code PBTCPStoresFilter} message if a filter is set up; null if the OPM
      * filter is not set up yet
      */
-    synchronized PBTPHeader newPongMessage(boolean multicast)
+    synchronized @Nullable PBTPHeader newPongMessage(boolean multicast)
     {
         if (_filterSeq == FILTER_SEQ_INVALID) return null;
 
@@ -313,7 +306,8 @@ class Stores implements IARPChangeListener
                 {
                     try {
                         l.debug("arp sender: sched pong");
-                        _tcp.mcast().sendControlMessage(newPongMessage(true));
+                        PBTPHeader pong = newPongMessage(true);
+                        if (pong != null) _tcp.mcast().sendControlMessage(pong);
                     } catch (Exception e) {
                         l.error("mc pong: " + Util.e(e));
                     }

@@ -4,8 +4,6 @@
 
 package com.aerofs.base.net;
 
-import com.aerofs.base.BaseUtil;
-import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
@@ -21,29 +19,23 @@ import org.slf4j.Logger;
 
 import java.io.IOException;
 import java.net.SocketAddress;
+import java.util.Arrays;
+
+import static com.aerofs.base.BaseUtil.hexEncode;
 
 public class MagicHeader
 {
-    public static class ExBadMagicHeader extends IOException
-    {
-        private static final long serialVersionUID = 1;
-    }
-
     private static final Logger l = Loggers.getLogger(MagicHeader.class);
-    private final byte[] _magic;
-    private final int _version;
-    private final int _size;
 
-    public MagicHeader(byte[] magic, int version)
+    public static class WriteMagicHeaderHandler extends SimpleChannelHandler
     {
-        _magic = magic;
-        _version = version;
-        _size = _magic.length + C.INTEGER_SIZE; // add 4 bytes for the version number
-    }
+        private final byte[] _magic;
+        private boolean _done = false;
 
-    public class WriteMagicHeaderHandler extends SimpleChannelHandler
-    {
-        boolean _done = false;
+        public WriteMagicHeaderHandler(byte[] magic)
+        {
+            _magic = magic;
+        }
 
         @Override
         public void connectRequested(final ChannelHandlerContext ctx, final ChannelStateEvent event)
@@ -84,43 +76,53 @@ public class MagicHeader
         {
             if (_done) return;
             _done = true;
-            ChannelBuffer buffer = ChannelBuffers.buffer(_size);
+            ChannelBuffer buffer = ChannelBuffers.buffer(_magic.length);
             buffer.writeBytes(_magic);
-            buffer.writeInt(_version);
             Channels.write(ctx, Channels.future(ctx.getChannel()), buffer);
             ctx.getPipeline().remove(this);
 
-            l.debug("wrote magic header {} v{}", BaseUtil.hexEncode(_magic), _version);
+            l.debug("wrote magic header 0x{}", hexEncode(_magic));
         }
     }
 
-    public class ReadMagicHeaderHandler extends FrameDecoder
+    public static class ReadMagicHeaderHandler extends FrameDecoder
     {
+        private final byte[] _magic;
+
+        public ReadMagicHeaderHandler(byte[] magic)
+        {
+            _magic = magic;
+        }
+
         @Override
         protected Object decode(ChannelHandlerContext ctx, Channel channel, ChannelBuffer buffer)
                 throws Exception
         {
-            if (buffer.readableBytes() < _size) return null;
+            if (buffer.readableBytes() < _magic.length) return null;
             final int readerIndex = buffer.readerIndex();
             ctx.getPipeline().remove(this);
 
-            if (!isMatchingHeader(buffer)) {
+            byte[] magic = new byte[_magic.length];
+            buffer.readBytes(magic);
+
+            if (!Arrays.equals(_magic, magic)) {
                 buffer.readerIndex(readerIndex);
-                throw new ExBadMagicHeader();
+                throw new ExBadMagicHeader(_magic, magic);
             }
 
-            l.debug("read magic header {} v{}", BaseUtil.hexEncode(_magic), _version);
+            l.debug("read magic header 0x{}", hexEncode(_magic));
 
             return (buffer.readable()) ? buffer : null;
         }
+    }
 
-        private boolean isMatchingHeader(ChannelBuffer buffer)
+    public static class ExBadMagicHeader extends IOException
+    {
+        private static final long serialVersionUID = 1;
+
+        ExBadMagicHeader(byte[] expected, byte[] actual)
         {
-            for (byte b : _magic) {
-                if (buffer.readByte() != b) return false;
-            }
-            int version = buffer.readInt();
-            return (version == _version);
+            super("magic mismatch. exp:" + hexEncode(expected) + " act:" + hexEncode(actual));
         }
     }
 }

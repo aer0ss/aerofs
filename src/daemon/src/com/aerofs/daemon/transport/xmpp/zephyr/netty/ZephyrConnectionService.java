@@ -12,6 +12,7 @@ import com.aerofs.daemon.transport.exception.ExSendFailed;
 import com.aerofs.daemon.transport.lib.IConnectionServiceListener;
 import com.aerofs.daemon.transport.lib.IIdentifier;
 import com.aerofs.daemon.transport.lib.ITransportStats;
+import com.aerofs.daemon.transport.lib.TransportStatsHandler;
 import com.aerofs.daemon.transport.xmpp.ISignalledConnectionService;
 import com.aerofs.daemon.transport.xmpp.ISignallingService;
 import com.aerofs.lib.event.Prio;

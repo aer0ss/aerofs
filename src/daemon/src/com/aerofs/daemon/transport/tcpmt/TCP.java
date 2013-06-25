@@ -26,14 +26,16 @@ import com.aerofs.daemon.transport.lib.TransportDiagnosisState;
 import com.aerofs.daemon.transport.tcpmt.ARP.ARPChange;
 import com.aerofs.daemon.transport.tcpmt.ARP.ARPEntry;
 import com.aerofs.daemon.transport.tcpmt.ARP.IARPChangeListener;
+import com.aerofs.daemon.transport.tcpmt.BootstrapFactory.FrameParams;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
 import com.aerofs.lib.event.IEvent;
 import com.aerofs.lib.event.Prio;
+import com.aerofs.lib.ex.ExDeviceOffline;
+import com.aerofs.lib.log.LogUtil;
 import com.aerofs.lib.sched.Scheduler;
 import com.aerofs.proto.Files.PBDumpStat;
 import com.aerofs.proto.Files.PBDumpStat.PBTransport;
@@ -42,9 +44,12 @@ import com.aerofs.proto.Transport.PBTPHeader;
 import com.aerofs.proto.Transport.PBTPHeader.Type;
 import com.aerofs.proto.Transport.PBTransportDiagnosis;
 import com.google.common.collect.Lists;
+import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
+import org.jboss.netty.channel.socket.ServerSocketChannelFactory;
 import org.slf4j.Logger;
 
-import java.io.ByteArrayInputStream;
+import javax.annotation.Nullable;
+import java.io.InputStream;
 import java.io.PrintStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -56,20 +61,17 @@ import static com.aerofs.daemon.lib.DaemonParam.TCP.ARP_GC_INTERVAL;
 import static com.aerofs.daemon.lib.DaemonParam.TCP.QUEUE_LENGTH;
 import static com.aerofs.daemon.transport.lib.PulseManager.newCheckPulseReply;
 
-public class TCP implements ITransportImpl, IARPChangeListener
+public class TCP implements ITCP, ITransportImpl, IARPChangeListener
 {
     private static final Logger l = Loggers.getLogger(TCP.class);
 
-    public static final int PORT_ANY = 0;
-
-    private Unicast _ucast;
     private volatile boolean _ready;
 
     private final String _id;
     private final int _pref;
-    private final MaxcastFilterReceiver _mcfr;
     private final ARP _arp = new ARP();
-    private final Multicast _mcast = new Multicast(this);
+    private final Unicast _ucast;
+    private final Multicast _mcast;
     private final IBlockingPrioritizedEventSink<IEvent> _sink;
     private final BlockingPrioQueue<IEvent> _q = new BlockingPrioQueue<IEvent>(QUEUE_LENGTH);
     private final Scheduler _sched;
@@ -79,35 +81,23 @@ public class TCP implements ITransportImpl, IARPChangeListener
     private final Stores _stores = new Stores(Cfg.did(), this, _arp);
     private final PulseManager _pm = new PulseManager();
 
-    public TCP(String id, int pref, IBlockingPrioritizedEventSink<IEvent> sink, MaxcastFilterReceiver mcfr)
+    public TCP(String id, int pref, IBlockingPrioritizedEventSink<IEvent> sink,
+            MaxcastFilterReceiver mcfr, ClientSocketChannelFactory clientChannelFactory,
+            ServerSocketChannelFactory serverChannelFactory)
     {
         _id = id;
         _pref = pref;
         _sched = new Scheduler(_q, id()); // can't initialize above because id() will return null
         _sink = sink;
-        _mcfr = mcfr;
-
         _arp.addARPChangeListener(this);
         _pm.addGenericPulseDeletionWatcher(this, _sink);
+        _ucast = new Unicast(this, _arp, _stores, serverChannelFactory, clientChannelFactory);
+        _mcast = new Multicast(this, mcfr, _stores);
     }
 
     @Override
     public void init_() throws Exception
     {
-        int port;
-        Integer internalPort;   // null if no internal port is specified
-
-        String ep = Cfg.db().getNullable(Key.TCP_ENDPOINT);
-        if (ep != null) {
-            port = new TPUtil.HostAndPort(ep)._port;
-            String epInternal = Cfg.db().getNullable(Key.TCP_INTERNAL_ENDPOINT);
-            internalPort = epInternal != null ? new TPUtil.HostAndPort(epInternal)._port : null;
-        } else {
-            port = TCP.PORT_ANY;
-            internalPort = null;
-        }
-
-        _ucast = new Unicast(this, _arp, _stores, port, internalPort);
 
         // must be called *after* the Unicast object is initialized.
 
@@ -136,8 +126,7 @@ public class TCP implements ITransportImpl, IARPChangeListener
                     @Override
                     public void visit_(DID did, ARPEntry arp)
                     {
-                        if (now - arp._lastUpdated > ARP_GC_INTERVAL &&
-                                !_ucast.isConnected(arp._isa)) {
+                        if (now - arp._lastUpdated > ARP_GC_INTERVAL && !_ucast.isConnected(did)) {
                             evicted.add(did);
                         }
                     }
@@ -187,18 +176,16 @@ public class TCP implements ITransportImpl, IARPChangeListener
     {
         l.info("remove: did:" + did + " force:" + notifyOffline);
 
-        ARPEntry arpentry = notifyOffline ? _arp.remove(did) : _arp.get(did);
+        if (notifyOffline) _arp.remove(did);
+        else _arp.get(did);
 
-        if (arpentry != null) {
-            l.info("remove: disconnect connections");
-            _ucast.disconnect(arpentry._isa);
-        }
+        _ucast.disconnect(did);
     }
 
     @Override
     public void start_()
     {
-        _ucast.start_();
+        _ucast.start();
         _mcast.start_();
 
         new Thread(TransportThreadGroup.get(), new Runnable() {
@@ -261,7 +248,7 @@ public class TCP implements ITransportImpl, IARPChangeListener
     @Override
     public HdPulse<EOTpStartPulse> sph()
     {
-        return new HdPulse<EOTpStartPulse>(new StartPulse(this));
+        return new HdPulse<EOTpStartPulse>(new StartPulse(this, _arp));
     }
 
     @Override
@@ -299,21 +286,6 @@ public class TCP implements ITransportImpl, IARPChangeListener
         return _sink;
     }
 
-    ARP arp()
-    {
-        return _arp;
-    }
-
-    Stores ss()
-    {
-        return _stores;
-    }
-
-    MaxcastFilterReceiver mcfr()
-    {
-        return _mcfr;
-    }
-
     @Override
     public void updateStores_(SID[] sidsAdded, SID[] sidsRemoved)
     {
@@ -345,70 +317,10 @@ public class TCP implements ITransportImpl, IARPChangeListener
             // manual disconnection.
             ucast().pauseAccept();
             removeAll();
-
-            // TODO should we stop hostname monitor?
         }
 
         if (prev.isEmpty() && !current.isEmpty()) {
             ucast().resumeAccept();
-        }
-    }
-
-    // FIXME: refactor how we process control message - I suspect this is the first step to
-    // separating this into different classes
-    public void processUnicastControl(DID did, PBTPHeader hdr)
-    {
-        PBTPHeader ret = null;
-
-        try {
-            switch (hdr.getType()) {
-            case TCP_PING:
-                ret = processPing(false);
-                break;
-            case TCP_GO_OFFLINE:
-                processGoOffline(did);
-                break;
-            case TCP_NOP:
-                break;
-            case DIAGNOSIS:
-                ret = processDiagnosis(did, hdr.getDiagnosis());
-                break;
-            case TRANSPORT_CHECK_PULSE_CALL:
-                {
-                    int pulseid = hdr.getCheckPulse().getPulseId();
-                    l.info("rcv pulse req msgpulseid:" + pulseid + " d:" + did);
-                    ret = newCheckPulseReply(pulseid);
-                }
-                break;
-            case TRANSPORT_CHECK_PULSE_REPLY:
-                {
-                    int pulseid = hdr.getCheckPulse().getPulseId();
-                    l.info("rcv pulse rep msgpulseid:" + pulseid + " d:" + did);
-                    _pm.processIncomingPulseId(did, pulseid);
-                }
-                break;
-            default:
-                try {
-                    ret = TPUtil.processUnicastControl(new Endpoint(this, did), hdr, _sink, _sm);
-                } catch (ExNoResource e) {
-                    l.warn("process ucast control, ignored d:" + did + " err:" + Util.e(e));
-                    return; // no further processing necessary
-                }
-                break;
-            }
-        } catch (ExProtocolError e) {
-            l.warn("unhandled msg type:" +
-                hdr.getType().name() + " d:" + did + " err:" + Util.e(e));
-            return; // no further processing necessary
-        }
-
-        if (ret != null) {
-            try {
-                _ucast.sendControl(did, ret, Prio.LO);
-            } catch (Exception e) {
-                l.warn("cannot send response d:" + did +
-                    "rsp:" + ret.getType().name() + " err:" + Util.e(e));
-            }
         }
     }
 
@@ -449,16 +361,89 @@ public class TCP implements ITransportImpl, IARPChangeListener
         return ret;
     }
 
-    public void processUnicastPayload(DID did, PBTPHeader hdr, ByteArrayInputStream bodyis, int wirelen)
+    @Override
+    public void onMessageReceived(InetAddress remote, DID did, InputStream is)
+            throws Exception
     {
-        try {
-            PBTPHeader ret = TPUtil.processUnicastPayload(new Endpoint(this, did), hdr, bodyis, wirelen, _sink, _sm);
-            if (ret != null) _ucast.sendControl(did, ret, Prio.LO);
-        } catch (Exception e) {
-            l.warn("silently discard data d:" + did + " err:" + Util.e(e)); // FIXME: is this the right thing to do?
+        PBTPHeader header = TPUtil.processUnicastHeader(is);
+
+        if (TPUtil.isPayload(header)) {
+            processUnicastPayload(did, header, is, is.available() + FrameParams.HEADER_SIZE);
+        } else {
+            processUnicastControl(remote, did, header);
         }
     }
 
+    private void processUnicastPayload(DID did, PBTPHeader hdr, InputStream bodyis, int wirelen)
+    {
+        try {
+            PBTPHeader ret = TPUtil.processUnicastPayload(new Endpoint(this, did), hdr, bodyis, wirelen, _sink, _sm);
+            if (ret != null) _ucast.sendControl(did, ret);
+        } catch (Exception e) {
+            l.warn("silently discard data d:{} err:", did, LogUtil.suppress(e, ExDeviceOffline.class));
+        }
+    }
+
+    private void processUnicastControl(InetAddress remote, DID did, PBTPHeader hdr)
+    {
+        PBTPHeader ret = null;
+
+        try {
+            switch (hdr.getType()) {
+            case TCP_PING:
+                ret = processPing(false);
+                break;
+            case TCP_PONG:
+                processPong(remote, did, hdr.getTcpPong());
+                break;
+            case TCP_GO_OFFLINE:
+                processGoOffline(did);
+                break;
+            case TCP_NOP:
+                break;
+            case DIAGNOSIS:
+                ret = processDiagnosis(did, hdr.getDiagnosis());
+                break;
+            case TRANSPORT_CHECK_PULSE_CALL:
+                {
+                    int pulseid = hdr.getCheckPulse().getPulseId();
+                    l.info("rcv pulse req msgpulseid:" + pulseid + " d:" + did);
+                    ret = newCheckPulseReply(pulseid);
+                }
+                break;
+            case TRANSPORT_CHECK_PULSE_REPLY:
+                {
+                    int pulseid = hdr.getCheckPulse().getPulseId();
+                    l.info("rcv pulse rep msgpulseid:" + pulseid + " d:" + did);
+                    _pm.processIncomingPulseId(did, pulseid);
+                }
+                break;
+            default:
+                try {
+                    ret = TPUtil.processUnicastControl(new Endpoint(this, did), hdr, _sink, _sm);
+                } catch (ExNoResource e) {
+                    l.warn("process ucast control, ignored d:" + did + " err:" + Util.e(e));
+                    return; // no further processing necessary
+                }
+                break;
+            }
+        } catch (ExProtocolError e) {
+            l.warn("unhandled msg type:" +
+                hdr.getType().name() + " d:" + did + " err:" + Util.e(e));
+            return; // no further processing necessary
+        }
+
+        if (ret != null) {
+            try {
+                _ucast.sendControl(did, ret);
+            } catch (Exception e) {
+                l.warn("cannot send response d:" + did +
+                    "rsp:" + ret.getType().name() + " err:" + Util.e(e));
+            }
+        }
+    }
+
+    @Override
     public void closePeerStreams(DID did, boolean outbound, boolean inbound)
     {
         remove(did, false);
@@ -472,7 +457,7 @@ public class TCP implements ITransportImpl, IARPChangeListener
      * @return null in some cases, a {@link PBTPHeader} with a response to a
      * <code>TCP_PING</code>
      */
-    private PBTPHeader processPing(boolean multicast)
+    private @Nullable PBTPHeader processPing(boolean multicast)
     {
         return _stores.newPongMessage(multicast);
     }

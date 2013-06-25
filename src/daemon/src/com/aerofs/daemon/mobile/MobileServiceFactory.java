@@ -4,9 +4,9 @@
 
 package com.aerofs.daemon.mobile;
 
-import com.aerofs.base.BaseParam;
 import com.aerofs.base.C;
-import com.aerofs.base.net.MagicHeader;
+import com.aerofs.base.net.MagicHeader.ReadMagicHeaderHandler;
+import com.aerofs.base.net.MagicHeader.WriteMagicHeaderHandler;
 import com.aerofs.base.ssl.CNameVerificationHandler;
 import com.aerofs.base.ssl.SSLEngineFactory;
 import com.aerofs.base.ssl.SSLEngineFactory.Mode;
@@ -25,10 +25,10 @@ import org.jboss.netty.handler.codec.frame.LengthFieldBasedFrameDecoder;
 import org.jboss.netty.handler.codec.frame.LengthFieldPrepender;
 import org.jboss.netty.handler.ssl.SslHandler;
 
+import static com.aerofs.base.BaseParam.MobileService.MAGIC_BYTES;
+
 public class MobileServiceFactory implements ChannelPipelineFactory
 {
-    private static final MagicHeader MAGIC_HEADER = new MagicHeader(
-            BaseParam.MobileService.MAGIC_BYTES, BaseParam.MobileService.VERSION_NUMBER);
     private static final int MAX_FRAME_LENGTH = 1 * C.MB;
     private static final int LENGTH_FIELD_SIZE = 4;
 
@@ -73,8 +73,8 @@ public class MobileServiceFactory implements ChannelPipelineFactory
         p.addLast("frameDecoder", new LengthFieldBasedFrameDecoder(MAX_FRAME_LENGTH, 0,
                 LENGTH_FIELD_SIZE, 0, LENGTH_FIELD_SIZE));
         p.addLast("frameEncoder", new LengthFieldPrepender(LENGTH_FIELD_SIZE));
-        p.addLast("magicHeaderWriter", MAGIC_HEADER.new WriteMagicHeaderHandler());
-        p.addLast("magicHeaderReader", MAGIC_HEADER.new ReadMagicHeaderHandler());
+        p.addLast("magicHeaderWriter", new WriteMagicHeaderHandler(MAGIC_BYTES));
+        p.addLast("magicHeaderReader", new ReadMagicHeaderHandler(MAGIC_BYTES));
         p.addLast("cname", cnameHandler);
         p.addLast("mobileServiceHandler", new MobileServiceHandler(mobileService));
     }

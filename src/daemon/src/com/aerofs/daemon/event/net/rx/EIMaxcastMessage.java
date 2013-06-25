@@ -4,6 +4,7 @@ import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.lib.event.IEvent;
 
 import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 
 /**
  * {@link IEvent} that is created and generated when a maxcast packet is received
@@ -43,7 +44,7 @@ public class EIMaxcastMessage implements IEvent, IInputBuffer
     }
 
     @Override
-    public ByteArrayInputStream is()
+    public InputStream is()
     {
         return _is;
     }

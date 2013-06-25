@@ -10,6 +10,7 @@ import com.aerofs.base.id.SID;
 import com.aerofs.lib.event.IEvent;
 
 import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 
 /**
  * {@link com.aerofs.daemon.event.IEvent} that is created and generated when a maxcast packet is
@@ -56,7 +57,7 @@ public class EIMaxcastMessage implements IEvent, IInputBuffer
     }
 
     @Override
-    public ByteArrayInputStream is()
+    public InputStream is()
     {
         return _is;
     }

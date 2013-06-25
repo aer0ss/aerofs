@@ -13,6 +13,7 @@ import com.aerofs.daemon.transport.TransportThreadGroup;
 import com.aerofs.daemon.transport.lib.CRCByteArrayInputStream;
 import com.aerofs.daemon.transport.lib.CRCByteArrayOutputStream;
 import com.aerofs.daemon.transport.lib.IMaxcast;
+import com.aerofs.daemon.transport.lib.MaxcastFilterReceiver;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.ThreadUtil;
@@ -40,8 +41,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import static com.aerofs.daemon.transport.lib.AddressUtils.getinetaddr;
-
 // TODO: checksum
 
 /* multicast header:
@@ -55,13 +54,17 @@ class Multicast implements IMaxcast
 {
     private static final Logger l = Loggers.getLogger(Multicast.class);
 
-    private final TCP t;
+    private final TCP _tcp;
+    private final MaxcastFilterReceiver _mcfr;
+    private final Stores _stores;
     private final Map<NetworkInterface, MulticastSocket> _iface2sock =
         Collections.synchronizedMap(new HashMap<NetworkInterface, MulticastSocket>());
 
-    Multicast(TCP tcp)
+    Multicast(TCP tcp, MaxcastFilterReceiver mcfr, Stores stores)
     {
-        this.t = tcp;
+        _tcp = tcp;
+        _mcfr = mcfr;
+        _stores = stores;
     }
 
     void init_() throws IOException
@@ -83,7 +86,7 @@ class Multicast implements IMaxcast
     void start_()
     {
         // we don't dynamically detect preferred multicast size (TODO?)
-        t.sink().enqueueBlocking(new EITransportMetricsUpdated(
+        _tcp.sink().enqueueBlocking(new EITransportMetricsUpdated(
                 DaemonParam.TCP.MCAST_MAX_DGRAM_SIZE
                     - C.INTEGER_SIZE    // for magic
                     - 1                 // for core_message
@@ -123,7 +126,7 @@ class Multicast implements IMaxcast
                     {
                         thdRecv(s);
                     }
-                }, t.id() + "-mcast.recv." + iface.getName()).start();
+                }, _tcp.id() + "-mcast.recv." + iface.getName()).start();
 
             } catch (IOException e) {
                 l.warn("can't add mcast iface_name:{} inet_addr:{} iface_addr:{} err:{}",
@@ -135,7 +138,7 @@ class Multicast implements IMaxcast
         if (!added.isEmpty()) {
             try {
                 sendControlMessage(TCP.newPingMessage());
-                PBTPHeader pong = t.ss().newPongMessage(true);
+                PBTPHeader pong = _stores.newPongMessage(true);
                 if (pong != null) sendControlMessage(pong);
             } catch (IOException e) {
                 l.warn("send ping or pong: " + Util.e(e));
@@ -208,19 +211,20 @@ class Multicast implements IMaxcast
                 // ignore messages from myself
                 DID did = new DID(h.getTcpMulticastDeviceId());
                 if (did.equals(Cfg.did())) continue;
-                Endpoint ep = new Endpoint(t, did);
+                Endpoint ep = new Endpoint(_tcp, did);
 
                 if (h.getType() == Type.DATAGRAM)
                 {
                     assert h.hasMcastId();
                     // filter packets from core that were sent on other interface
-                    if (!t.mcfr().isRedundant(did, h.getMcastId())) {
-                        t.sink().enqueueThrows(
-                                new EIMaxcastMessage(new Endpoint(t, did), is, pkt.getLength()),
+                    if (!_mcfr.isRedundant(did, h.getMcastId())) {
+                        _tcp.sink().enqueueThrows(
+                                new EIMaxcastMessage(new Endpoint(_tcp, did), is, pkt.getLength()),
                                         Prio.LO);
                     }
                 } else {
-                    PBTPHeader ret = t.processMulticastControl(getinetaddr(pkt), ep, h);
+                    InetAddress rem = ((InetSocketAddress) pkt.getSocketAddress()).getAddress();
+                    PBTPHeader ret = _tcp.processMulticastControl(rem, ep, h);
                     if (ret != null) sendControlMessage(ret);
                 }
 

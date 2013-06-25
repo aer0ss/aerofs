@@ -1,7 +1,6 @@
 package com.aerofs.daemon.transport.lib;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.base.id.DID;
@@ -45,7 +44,6 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.regex.PatternSyntaxException;
 
 import static com.aerofs.proto.Transport.PBStream.InvalidationReason.STREAM_NOT_FOUND;
 import static com.aerofs.proto.Transport.PBTPHeader.Type.DATAGRAM;
@@ -61,23 +59,6 @@ import static com.aerofs.proto.Transport.PBTransportDiagnosis.Type.PONG;
  */
 public class TPUtil
 {
-    public static class HostAndPort
-    {
-        public final String _host;
-        public final int _port;
-
-        public HostAndPort(String endpoint) throws ExFormatError
-        {
-            try {
-                String[] parts = endpoint.split(":");
-                _host = parts[0];
-                _port = Integer.valueOf(parts[1]);
-            } catch (PatternSyntaxException e) {
-                throw new ExFormatError(e.getMessage());
-            }
-        }
-    }
-
     private static final Logger l = Loggers.getLogger(TPUtil.class);
 
     /* unicast header
@@ -123,7 +104,7 @@ public class TPUtil
         assert (h.getType() != DATAGRAM);
         if (h.hasStream()) {
             assert h.getStream().getType() != Type.PAYLOAD;
-        };
+        }
 
         return new byte[][] {
             Util.writeDelimited(h).toByteArray(),
@@ -157,7 +138,8 @@ public class TPUtil
      * back to the sender
      * @throws Exception if the payload cannot be processed
      */
-    public static PBTPHeader processUnicastPayload(Endpoint ep, PBTPHeader h, InputStream is, int wirelen, IBlockingPrioritizedEventSink<IEvent> sink, StreamManager sm)
+    public static PBTPHeader processUnicastPayload(Endpoint ep, PBTPHeader h, InputStream is,
+            int wirelen, IBlockingPrioritizedEventSink<IEvent> sink, StreamManager sm)
         throws Exception
     {
         if (!h.hasStream()) {

@@ -190,8 +190,6 @@ public class CNameVerificationHandler extends SimpleChannelHandler
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) throws Exception
     {
-        l.warn("Exception caught while handshaking: ", e.getCause());
-
         failConnectFuture(ctx, e.getCause());
         e.getChannel().close();
 

@@ -5,6 +5,7 @@ import com.aerofs.daemon.event.net.tng.Endpoint;
 import com.aerofs.lib.event.IEvent;
 
 import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 
 /**
  * Signals the receipt of a unicast atomic message from an {@link com.aerofs.daemon.event.net.Endpoint}.
@@ -46,7 +47,7 @@ public class EIUnicastMessage implements IEvent, IInputBuffer
     }
 
     @Override
-    public ByteArrayInputStream is()
+    public InputStream is()
     {
         return _is;
     }
