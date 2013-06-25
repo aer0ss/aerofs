@@ -29,29 +29,45 @@ import java.io.UnsupportedEncodingException;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 // it doesn't implements IProxyObjectContainer becasue we don't properly handle
 // deletion in this class (yet)
 //
 public class SignalThread extends java.lang.Thread implements IDumpStatMisc
 {
-    static
-    {
-        String ljlogpath = Util.join(Cfg.absRTRoot(), "lj.log");
-        byte[] temputf8 = null;
-        try {
-            temputf8 = ljlogpath.getBytes("UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            SystemUtil.fatal("cannot convert path:" + ljlogpath + " to UTF-8");
-        }
+    private static final Logger l = Loggers.getLogger(SignalThread.class);
 
-        ljlogpathutf8 = temputf8; // this ridiculous indirection is done to keep the compiler happy
-    }
+    private volatile XmppMain _main;
+    private boolean _linkUp;    // protected by _cvLinkState
+    private final byte[] _logPathUTF8;
+    private final IJingle _ij;
+    private final JingleTunnelClientReference _jingleTunnelClientReference = new JingleTunnelClientReference();
+    private final ArrayList<Runnable> _postRunners =  new ArrayList<Runnable>(); // st thread only
+    private final Object _mxMain = new Object(); // lock object
+    private final Object _cvLinkState = new Object(); // lock object
+    private final Jid _jidSelf = Jingle.did2jid(Cfg.did());
+    private final BlockingQueue<ISignalThreadTask> _tasks
+            = new LinkedBlockingQueue<ISignalThreadTask>(DaemonParam.QUEUE_LENGTH_DEFAULT);
+
 
     SignalThread(IJingle ij)
     {
         super(TransportThreadGroup.get(), "lj-sig");
-        this.ij = ij;
+        _ij = ij;
+        _logPathUTF8 = getLogPath();
+
+    }
+
+    private byte[] getLogPath()
+    {
+        String ljlogpath = Util.join(Cfg.absRTRoot(), "lj.log");
+        try {
+            return ljlogpath.getBytes("UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            throw SystemUtil.fatalWithReturn("cannot convert path:" + ljlogpath + " to UTF-8");
+        }
     }
 
     /**
@@ -92,26 +108,17 @@ public class SignalThread extends java.lang.Thread implements IDumpStatMisc
      */
     void call(ISignalThreadTask task)
     {
-        if (java.lang.Thread.currentThread() == this) {
-            l.debug("st: run task inline t:" + task);
-            task.run();
+        if (Thread.currentThread() == this) {
+            _tasks.add(task); // throws IllegalStateException if the queue is full
         } else {
-            // we use a global handler for all calls because
-            // 1) creation and deletion of C++ objects are inefficient, and more
-            // importantly, 2) there's no good opportunity to delete the finished
-            // handlers safely. It's not safe to delete from within OnMessage
-            // as the object may be dereferenced after OnMessage returns (e.g.
-            // SWIG references director objects after the callback returns). It's
-            // not safe to delete from a non-signal thread, either, because other
-            // threads don't know when the object is no longer needed by the signal
-            // thread. One solution is to delete the handler using yet another
-            // handler executed by the signal thread, but it's too much.
-            //
-            // call() will synchronize appropriately
-            // internally to ensure that only one task will be run at a time
-            l.debug("st: queue task for callhandler t:" + task);
-            _callHandler.call(task);
+            try {
+                _tasks.put(task);
+            } catch (InterruptedException e) {
+                task.error(e);
+            }
         }
+
+        processTasksQueue();
     }
 
     /**
@@ -180,7 +187,7 @@ public class SignalThread extends java.lang.Thread implements IDumpStatMisc
                 true,
                 _jidSelf,
                 XMPPServerConnection.shaedXMPP(),
-                ljlogpathutf8);
+                _logPathUTF8);
 
         l.debug("st: created xmppmain");
 
@@ -198,12 +205,12 @@ public class SignalThread extends java.lang.Thread implements IDumpStatMisc
         // >>>> WHEE...OHHHH....DONE :( >>>>
 
         synchronized (_mxMain) {
+            drainTasksQueue(new ExJingle("main stopped"));
             _main.delete();
             _main = null;
-            _callHandler.wake(); // also holds _mxMain internally
         }
 
-        l.debug("st: cleanup completed, callhandler woken");
+        l.debug("st: cleanup completed");
     }
 
     // this method must be called within the signal thread, and may be called
@@ -280,148 +287,82 @@ public class SignalThread extends java.lang.Thread implements IDumpStatMisc
     /**
      * N.B. pay special attention on how runImpl_() synchronizes with this class
      */
-    private class CallHandler extends MessageHandlerBase
+    private void processTasksQueue()
     {
-        private void wake()
-        {
-            l.debug("st: wake callhandler");
-
-            synchronized (_mxMain) {
-                _wake = true;
-                _mxMain.notifyAll();
+        // Synchronizing on mxMain is necessary because this may be called from any thread
+        synchronized (_mxMain) {
+            if (_main == null) {
+                drainTasksQueue(new ExJingle("null main"));
+                return;
             }
+
+            _main.signal_thread().Post(_callHandler);
         }
-
-        //
-        // IMPORTANT: synchronizing on CallHandler itself ensures that only _1_ task will run
-        // at a time. It essentially acts as an unordered task list (it's unordered because
-        // mutexes don't guarantee FIFO order on who accesses the protected section)
-        //
-        // IMPORTANT: because of the way we're using call() it's possible to remove this
-        // synchronized block. This is because call() is only called via Jingle, which is driven
-        // only by the single-threaded XMPP event queue. This means that there is only ever one
-        // task waiting at a time
-        //
-        synchronized void call(ISignalThreadTask task)
-        {
-            //
-            // synchronizing on mxMain is necessary because we need to ensure that _mxMain is
-            // valid while the task is running
-            //
-            synchronized (_mxMain) {
-                _task = task;
-
-                // because changing _main from a non-null reference to null is
-                // always done within the lock, it's safe to cache it and check
-                // for nullness in non-atomic operations
-                //
-                XmppMain main = _main;
-                if (main == null) {
-                    _task.error(new ExJingle("null main"));
-                    return;
-                }
-
-                long postMessageId = _messageId++;
-                main.signal_thread().Post(this, postMessageId);
-                l.debug("st: post to jingle m_id:" + postMessageId + " t:" + task);
-
-                _wake = false;
-
-                // we must wait here to avoid requests from queued up inside the
-                // jingle engine. it's problematic otherwise, cause 1) jingle
-                // queue is unbounded, and 2) jingle queue is oblivious to
-                // our priority system
-                //
-                // wake up either the call finishes or main quits
-
-                ThreadUtil.waitUninterruptable(_mxMain, DaemonParam.Jingle.CALL_TIMEOUT);
-
-                if (!_wake) {
-                    // I'm paranoid
-                    l.error("call() too long. failed m_id:" + postMessageId + " t:" + task);
-                    Util.logAllThreadStackTraces();
-                    ExitCode.JINGLE_CALL_TOO_LONG.exit();
-                }
-            }
-        }
-
-        //
-        // we don't have to hold _mxMain for the entire lifetime of OnMessage because the
-        // OnMessage callback is being run while _main is alive. If _main is alive the only person
-        // who can modify it (runImpl_) is still in the _main.run() call and won't be modifying
-        // the value of _main
-        //
-
-        @Override
-        public void OnMessage(Message msg)
-        {
-            //
-            // IMPORTANT: I know that _main is valid and running because it's the one making the
-            // OnMessage callback. That said, I sync to ensure the latest value of task
-            //
-
-            ISignalThreadTask task;
-            synchronized (_mxMain) {
-                task = _task;
-            }
-
-            assert task != null;
-
-            //
-            // IMPORTANT: READ THIS COMMENT CAREFULLY!
-            //
-            // the try...catch block below is _crucial_
-            //
-            // onMessage callbacks are run by libjingle's event-thread. It expects
-            // _that tasks do not throw_. This is obviously untrue for the way in which we write
-            // Java code. Previously a task that threw an exception would end up...well...I
-            // don't know, but I'm pretty sure it did nothing good in the C++ side of the world.
-            // Either way, on an exception two things happened:
-            //
-            // 1) libjingle _probably_ ended up in a weird state (or SWIG ignored the exception)
-            // 2) More importantly, wake() was never called!
-            //
-            // 2) would lead to the infamous code 88 because the task caller would _never_ be
-            // notified that the task had completed (erroneously or not). What made the situation
-            // worse was because it's the SWIG/C library call into which the exception was
-            // being thrown, the actual exception wasn't getting printed out! As a result,
-            // it looked like libjingle was silently locking up, when (more likely) it was some
-            // Java code tripping an exception, NPE or AE
-            //
-            // To work around this I do two things:
-            //
-            // 1) for all exceptions I simply run the ISignalTask object's error() method
-            // 2) for all remaining throwables I assume the worst and simply terminate the process
-            //
-
-            try {
-                l.debug("st: run beg after onmessage m_id:" + msg.getMessage_id() + " t:" + task);
-                task.run();
-                l.debug("st: run fin after onmessage m_id:" + msg.getMessage_id() + " t:" + task);
-            } catch (Exception e) {
-                l.error("st: t:" + task + " run fin with unhandled err: "+ Util.e(e));
-                task.error(e);
-            } catch (Throwable t) {
-                l.error("jingle task crash and burn");
-                l.error(Util.e(t));
-                ExitCode.JINGLE_TASK_FATAL_ERROR.exit();
-            }
-
-            wake();
-        }
-
-        private long _messageId = 0; // protected by _mxMain
-        private ISignalThreadTask _task; // protected by _mxMain
-        private boolean _wake; // protected by _mxMain
     }
 
-    MessageHandlerBase _postHandler = new MessageHandlerBase()
+    private void drainTasksQueue(Exception reason)
+    {
+        ISignalThreadTask task;
+        while ((task = _tasks.poll()) != null) {
+            task.error(reason);
+        }
+    }
+
+    // We re-use the same handler for all calls because 1) creation and deletion of C++ objects is
+    // inefficient, and more importantly, 2) there's no good opportunity to delete the finished
+    // handlers safely. It's not safe to delete from within OnMessage as the object may be
+    // dereferenced after OnMessage returns (e.g. SWIG references director objects after the
+    // callback returns). It's not safe to delete from a non-signal thread, either, because other
+    // threads don't know when the object is no longer needed by the signal thread. One solution is
+    // to delete the handler using yet another handler executed by the signal thread, but it's too much.
+    private final MessageHandlerBase _callHandler = new MessageHandlerBase()
     {
         @Override
         public void OnMessage(Message msg)
         {
-            for (Runnable r : _postRunners) r.run();
-            _postRunners.clear();
+            ISignalThreadTask task = null;
+
+            // onMessage callbacks are run by libjingle's event thread. It expects
+            // _that tasks do not throw_. Throwing an exception here would result in undefined
+            // behavior since this would be handled at the JNI level.
+            //
+            // So if you're adding new code, **make sure it is within this try-catch block.**
+            try {
+                assertThread();
+
+                task = _tasks.poll();
+                if (task == null) return;
+
+                // We don't have to hold _mxMain because the OnMessage callback is being run while
+                // _main is alive. If _main is alive the only person who can modify it (runImpl_)
+                // is still in the _main.run() call and won't be modifying the value of _main.
+                try {
+                    task.run();
+                } catch (Exception e) {
+                    l.error("st: t: {} run fin with unhandled err: {}", task, Util.e(e));
+                    task.error(e);
+                }
+
+            } catch (Throwable t) {
+                // note: task could be null here. Make sure to test for it if you need it.
+                l.error("jingle task crash and burn. t: {} ex: {}", task, Util.e(t));
+                ExitCode.JINGLE_TASK_FATAL_ERROR.exit();
+            }
+        }
+    };
+
+    private final MessageHandlerBase _postHandler = new MessageHandlerBase()
+    {
+        @Override
+        public void OnMessage(Message msg)
+        {
+            // See comment in CallHandler.OnMessage(). Basically, don't throw anything here.
+            try {
+                for (Runnable r : _postRunners) r.run();
+                _postRunners.clear();
+            } catch (Throwable e) {
+                l.error("st: ignoring: ", Util.e(e));
+            }
         }
     };
 
@@ -435,7 +376,7 @@ public class SignalThread extends java.lang.Thread implements IDumpStatMisc
             if (state == XmppEngine.State.STATE_OPEN) {
                 l.debug("st: create engine");
                 _main.StartHandlingSessions();
-                _jingleTunnelClientReference.set_(new JingleTunnelClient(ij, _main, SignalThread.this));
+                _jingleTunnelClientReference.set_(new JingleTunnelClient(_ij, _main, SignalThread.this));
             } else if (state == XmppEngine.State.STATE_CLOSED) {
                 int[] subcode = { 0 };
                 XmppEngine.Error error = _main.xmpp_client().engine().GetError(subcode);
@@ -479,19 +420,4 @@ public class SignalThread extends java.lang.Thread implements IDumpStatMisc
 
         private JingleTunnelClient _jingleTunnelClient;
     }
-
-    private boolean _linkUp;    // protected by _cvLinkState
-
-    private volatile XmppMain _main;
-
-    private final IJingle ij;
-    private final JingleTunnelClientReference _jingleTunnelClientReference = new JingleTunnelClientReference();
-    private final ArrayList<Runnable> _postRunners =  new ArrayList<Runnable>(); // st thread only
-    private final CallHandler _callHandler = new CallHandler();
-    private final Object _mxMain = new Object(); // lock object
-    private final Object _cvLinkState = new Object(); // lock object
-    private final Jid _jidSelf = Jingle.did2jid(Cfg.did());
-
-    private static final byte[] ljlogpathutf8;
-    private static final Logger l = Loggers.getLogger(SignalThread.class);
 }
