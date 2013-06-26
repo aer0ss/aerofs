@@ -291,7 +291,8 @@ public class JingleDataStream implements IProxyObjectContainer
             ////////
             // deliver the data to the upper layer
 
-            ij.onIncomingMessage(did, new ByteArrayInputStream(_inPayload),
+            // TODO (GS): Get the CName-verified user id and pass it here
+            ij.onIncomingMessage(did, null, new ByteArrayInputStream(_inPayload),
                     _inHeader.length + _inPayload.length);
 
             // reset input buffers

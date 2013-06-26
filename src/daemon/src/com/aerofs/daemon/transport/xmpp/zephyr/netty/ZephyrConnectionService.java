@@ -518,14 +518,17 @@ public final class ZephyrConnectionService implements ISignalledConnectionServic
     @Override
     public void onDataReceived(Channel channel, ChannelBuffer data)
     {
+        ZephyrAttachment attachment = getZephyrAttachment(channel);
+
         if (!running.get()) {
-            DID did = getZephyrAttachment(channel).getRemote();
+            DID did = attachment.getRemote();
             l.warn("d:{} connection service stopped - ignore relayed data and disconnect", did);
             closeChannel(did, new ExDeviceDisconnected("connection service stopped"), true);
             return;
         }
 
-        connectionServiceListener.onIncomingMessage(getZephyrAttachment(channel).getRemote(), new ChannelBufferInputStream(data), data.readableBytes());
+        connectionServiceListener.onIncomingMessage(attachment.getRemote(), attachment.getUserID(),
+                new ChannelBufferInputStream(data), data.readableBytes());
     }
 
     //

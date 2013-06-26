@@ -9,6 +9,7 @@ import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.JabberID;
 import com.aerofs.base.id.SID;
+import com.aerofs.base.id.UserID;
 import com.aerofs.daemon.event.lib.EventDispatcher;
 import com.aerofs.daemon.event.lib.imc.IResultWaiter;
 import com.aerofs.daemon.event.net.EIPresence;
@@ -425,13 +426,13 @@ public abstract class XMPP implements ITransportImpl, IConnectionServiceListener
         }
     }
 
-    private void processUnicastPayload(DID did, PBTPHeader hdr, InputStream bodyis, int wirelen)
+    private void processUnicastPayload(DID did, UserID userID, PBTPHeader hdr, InputStream bodyis, int wirelen)
     {
         assertDispThread();
 
         try {
             Endpoint ep = new Endpoint(XMPP.this, did);
-            PBTPHeader ret = TPUtil.processUnicastPayload(ep, hdr, bodyis, wirelen, _sink, _sm);
+            PBTPHeader ret = TPUtil.processUnicastPayload(ep, userID, hdr, bodyis, wirelen, _sink, _sm);
             if (ret != null) sendControl_(did, ret, Prio.LO);
         } catch (Exception e) {
             l.warn("could not respond to d:" + did + " for pkt:" + hdr.getType().name() + " err:" + e);
@@ -439,7 +440,7 @@ public abstract class XMPP implements ITransportImpl, IConnectionServiceListener
     }
 
     @Override
-    public final void onIncomingMessage(final DID did, final InputStream packet, final int wirelen)
+    public final void onIncomingMessage(final DID did, final UserID userID, final InputStream packet, final int wirelen)
     {
         assertNonDispThread();
 
@@ -452,7 +453,7 @@ public abstract class XMPP implements ITransportImpl, IConnectionServiceListener
                     PBTPHeader transhdr = TPUtil.processUnicastHeader(packet);
 
                     if (TPUtil.isPayload(transhdr)) {
-                        processUnicastPayload(did, transhdr, packet, wirelen);
+                        processUnicastPayload(did, userID, transhdr, packet, wirelen);
                     } else {
                         processUnicastControl(did, transhdr);
                     }

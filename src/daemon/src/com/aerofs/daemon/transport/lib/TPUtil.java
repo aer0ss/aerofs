@@ -4,6 +4,7 @@ import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.base.id.DID;
+import com.aerofs.base.id.UserID;
 import com.aerofs.daemon.event.net.EOLinkStateChanged;
 import com.aerofs.daemon.event.net.EOStartPulse;
 import com.aerofs.daemon.event.net.EOTpStartPulse;
@@ -123,6 +124,7 @@ public class TPUtil
      *
      * @param ep {@link com.aerofs.daemon.event.net.Endpoint} identifying which device/transport sent the
      * unicast packet
+     * @param userID the cname-verified user id of the remote peer, or null
      * @param h {@link com.aerofs.proto.Transport.PBTPHeader} containing the
      * {@link com.aerofs.daemon.transport.ITransport} framing header
      * @param is {@link java.io.InputStream} from which the payload should be
@@ -138,13 +140,13 @@ public class TPUtil
      * back to the sender
      * @throws Exception if the payload cannot be processed
      */
-    public static PBTPHeader processUnicastPayload(Endpoint ep, PBTPHeader h, InputStream is,
-            int wirelen, IBlockingPrioritizedEventSink<IEvent> sink, StreamManager sm)
+    public static PBTPHeader processUnicastPayload(Endpoint ep, @Nullable UserID userID, PBTPHeader h,
+            InputStream is, int wirelen, IBlockingPrioritizedEventSink<IEvent> sink, StreamManager sm)
         throws Exception
     {
         if (!h.hasStream()) {
             // Datagram
-            sink.enqueueThrows(new EIUnicastMessage(ep, is, wirelen), Prio.LO);
+            sink.enqueueThrows(new EIUnicastMessage(ep, userID, is, wirelen), Prio.LO);
 
         } else {
             // Stream
@@ -162,8 +164,8 @@ public class TPUtil
                 return newAbortIncomingStreamHeader(streamId, e.getReason());
             }
 
-            EIChunk event = alreadyBegun ? new EIChunk(ep, streamId, seq, is, wirelen)
-                                         : new EIStreamBegun(ep, streamId, is, wirelen);
+            EIChunk event = alreadyBegun ? new EIChunk(ep, userID, streamId, seq, is, wirelen)
+                                         : new EIStreamBegun(ep, userID, streamId, is, wirelen);
             try {
                 sink.enqueueThrows(event, Prio.LO);
             } catch (Exception e) {

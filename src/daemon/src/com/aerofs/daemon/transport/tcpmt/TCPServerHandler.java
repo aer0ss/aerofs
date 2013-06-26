@@ -22,8 +22,13 @@ import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.SimpleChannelHandler;
 import org.slf4j.Logger;
 
+import javax.annotation.Nullable;
+import javax.net.ssl.SSLException;
+import javax.net.ssl.SSLHandshakeException;
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.nio.channels.UnresolvedAddressException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -43,6 +48,7 @@ class TCPServerHandler extends SimpleChannelHandler implements CNameListener
     private final ITCPServerHandlerListener _listener;
     private final ITCP _tcp;
     private volatile DID _did;
+    private volatile UserID _userID;
     private Channel _channel;
     private final AtomicBoolean _disconnected = new AtomicBoolean(false);
 
@@ -57,9 +63,10 @@ class TCPServerHandler extends SimpleChannelHandler implements CNameListener
      * remote user
      */
     @Override
-    public void onPeerVerified(UserID user, DID did)
+    public void onPeerVerified(UserID userID, DID did)
     {
         _did = did;
+        _userID = userID;
     }
 
     public void disconnect()
@@ -117,7 +124,7 @@ class TCPServerHandler extends SimpleChannelHandler implements CNameListener
             checkNotNull(_did);
 
             InetAddress remote = ((InetSocketAddress)e.getRemoteAddress()).getAddress();
-            _tcp.onMessageReceived(remote, _did, is);
+            _tcp.onMessageReceived(remote, _did, _userID, is);
 
         } catch (Exception ex) {
             l.warn("server: ex while processing msg from: {} {}", _did, Util.e(ex));
@@ -132,7 +139,8 @@ class TCPServerHandler extends SimpleChannelHandler implements CNameListener
 
         // Close the connection when an exception is raised.
         l.warn("server: caught ex from: {} {}", _did, _channel, LogUtil.suppress(e.getCause(),
-                ExBadMagicHeader.class));
+                ExBadMagicHeader.class, UnresolvedAddressException.class, IOException.class,
+                SSLException.class, SSLHandshakeException.class));
 
         disconnect();
     }

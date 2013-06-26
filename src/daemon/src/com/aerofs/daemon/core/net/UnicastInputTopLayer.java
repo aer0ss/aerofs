@@ -110,6 +110,15 @@ public class UnicastInputTopLayer implements IUnicastInputLayer
         try {
             assert !pc.did().equals(Cfg.did());
 
+            // Note: in the past, the DTLS layer used to call processMappingFromPeer_() upon
+            // successful handshake so that we could save in the db the mapping between did and
+            // user id. However, with the removal of DTLS, this call would have to come from the
+            // transport, which is cumbersome. So we do it here instead.
+            if (_d2uCache.get(pc.did()) == null) {
+                _d2uCache.put(pc.did(), pc.user());
+                _f._d2u.processMappingFromPeer_(pc.did(), pc.user());
+            }
+
             // TODO: make this able to deal with a fragmented PBCore
             // it's silly that upper layers have to guarantee that the content PBCore is smaller
             // than the transport's max unicast packet size; that's the job of a network layer

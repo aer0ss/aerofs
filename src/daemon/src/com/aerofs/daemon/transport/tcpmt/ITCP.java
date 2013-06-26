@@ -5,6 +5,7 @@
 package com.aerofs.daemon.transport.tcpmt;
 
 import com.aerofs.base.id.DID;
+import com.aerofs.base.id.UserID;
 
 import java.io.InputStream;
 import java.net.InetAddress;
@@ -15,6 +16,6 @@ import java.net.InetAddress;
  */
 interface ITCP
 {
-    public void onMessageReceived(InetAddress remote, DID did, InputStream is) throws Exception;
+    public void onMessageReceived(InetAddress remote, DID did, UserID userID, InputStream is) throws Exception;
     public void closePeerStreams(DID did, boolean outbound, boolean inbound);
 }

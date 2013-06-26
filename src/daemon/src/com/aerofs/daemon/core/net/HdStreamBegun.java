@@ -23,6 +23,7 @@ public class HdStreamBegun implements IEventHandler<EIStreamBegun>
     public void handle_(EIStreamBegun ev, Prio prio)
     {
         PeerContext pc = new PeerContext(ev._ep);
+        pc.setUser(ev._userID);
         RawMessage r = new RawMessage(ev.is(), ev.wireLength());
         _stack.input().onStreamBegun_(ev._streamId, r, pc);
     }

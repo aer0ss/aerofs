@@ -38,6 +38,8 @@ import java.io.InputStream;
 import java.io.PrintStream;
 import java.util.ArrayList;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
 {
     private static final Logger l = Loggers.getLogger(DTLSLayer.class);
@@ -131,6 +133,12 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
     {
         l.trace("onUnicastDatagramReceived {}", pc);
 
+        if (isSecureTransport(pc)) {
+            checkNotNull(pc.user());
+            _upper.onUnicastDatagramReceived_(r, pc);
+            return;
+        }
+
         DTLSMessage<InputStream> dtlsMessage =
                 _f._factMsgIS.create_(Type.UNICAST_RECV, r._is);
 
@@ -142,6 +150,12 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
     {
         l.trace("onStreamBegun {} {}", streamId, pc);
 
+        if (isSecureTransport(pc)) {
+            checkNotNull(pc.user());
+            _upper.onStreamBegun_(streamId, r, pc);
+            return;
+        }
+
         DTLSMessage<InputStream> dtlsMessage =
                 _f._factMsgIS.create_(Type.STREAM_BEGUN, r._is, streamId, 0);
 
@@ -152,6 +166,12 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
     public void onStreamChunkReceived_(StreamID streamId, int seq, RawMessage r, PeerContext pc)
     {
         l.trace("onStreamChunkReceived {} {} {}", streamId, seq, pc);
+
+        if (isSecureTransport(pc)) {
+            checkNotNull(pc.user());
+            _upper.onStreamChunkReceived_(streamId, seq, r, pc);
+            return;
+        }
 
         DTLSMessage<InputStream> dtlsMessage =
                 _f._factMsgIS.create_(Type.CHUNK_RECV, r._is, streamId, seq);
@@ -184,6 +204,11 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
     {
         l.trace("sendUnicastDatagram {}", pc);
 
+        if (isSecureTransport(pc)) {
+            _lower.sendUnicastDatagram_(bs, pc);
+            return;
+        }
+
         DTLSMessage<byte[]> msg = _f._factMsgBA.create_(Type.SEND_UNICAST, bs);
 
         processSendMsg_(msg, pc);
@@ -194,6 +219,11 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
             throws Exception
     {
         l.trace("beginOutgoingStream {} {}", streamId, pc);
+
+        if (isSecureTransport(pc)) {
+            _lower.beginOutgoingStream_(streamId, bs, pc, tk);
+            return;
+        }
 
         DTLSMessage<byte[]> msg = _f._factMsgBA.create_(Type.BEGIN_STREAM, bs, streamId, 0, tk);
 
@@ -207,6 +237,11 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
             throws Exception
     {
         l.trace("sendOutgoingStreamChunk {} {} {}", streamId, seq, pc);
+
+        if (isSecureTransport(pc)) {
+            _lower.sendOutgoingStreamChunk_(streamId, seq, bs, pc, tk);
+            return;
+        }
 
         DTLSMessage<byte[]> msg = _f._factMsgBA.create_(Type.SEND_CHUNK, bs, streamId, seq, tk);
 
@@ -695,5 +730,11 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
         _send.dumpStatMisc(indent + indentUnit, indentUnit, ps);
         ps.println(indent + "recvCache");
         _recv.dumpStatMisc(indent + indentUnit, indentUnit, ps);
+    }
+
+    private boolean isSecureTransport(PeerContext pc)
+    {
+        String id = pc.ep().tp().id();
+        return id.equals("t"); // || id.equals("z");
     }
 }

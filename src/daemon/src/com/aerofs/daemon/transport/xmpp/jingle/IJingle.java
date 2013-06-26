@@ -6,6 +6,7 @@
 package com.aerofs.daemon.transport.xmpp.jingle;
 
 import com.aerofs.base.id.DID;
+import com.aerofs.base.id.UserID;
 
 import java.io.ByteArrayInputStream;
 
@@ -53,5 +54,5 @@ interface IJingle
      * <code>IJingle</code> implementation that will route the arguments to an
      * instance of <code>IConnectionServiceListener</code>
      */
-    public void onIncomingMessage(DID did, ByteArrayInputStream packet, int wirelen);
+    public void onIncomingMessage(DID did, UserID userID, ByteArrayInputStream packet, int wirelen);
 }

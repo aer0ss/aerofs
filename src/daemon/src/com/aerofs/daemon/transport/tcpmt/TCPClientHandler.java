@@ -26,7 +26,11 @@ import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.SimpleChannelHandler;
 import org.slf4j.Logger;
 
+import javax.net.ssl.SSLException;
+import javax.net.ssl.SSLHandshakeException;
+import java.io.IOException;
 import java.nio.channels.ClosedChannelException;
+import java.nio.channels.UnresolvedAddressException;
 import java.util.Queue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -58,7 +62,7 @@ class TCPClientHandler extends SimpleChannelHandler implements CNameListener
 
 
     @Override
-    public void onPeerVerified(UserID user, DID did)
+    public void onPeerVerified(UserID userID, DID did)
     {
         _did = did;
     }
@@ -191,7 +195,8 @@ class TCPClientHandler extends SimpleChannelHandler implements CNameListener
         if (_channel == null) _channel = e.getChannel();
 
         l.warn("client: caught ex from: {} {}", _did, _channel, LogUtil.suppress(e.getCause(),
-                ExBadMagicHeader.class));
+                ExBadMagicHeader.class, UnresolvedAddressException.class, IOException.class,
+                SSLException.class, SSLHandshakeException.class));
 
         failPendingWrites(e.getCause());
         disconnect();

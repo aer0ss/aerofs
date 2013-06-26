@@ -1,5 +1,6 @@
 package com.aerofs.daemon.event.net.rx;
 
+import com.aerofs.base.id.UserID;
 import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.lib.event.IEvent;
 
@@ -17,18 +18,20 @@ public class EIUnicastMessage implements IEvent, IInputBuffer
      */
     public final Endpoint _ep;
 
+    public final UserID _userID;
+
     /**
      * {@link java.io.InputStream} to use to read the application payload.
      * <b>IMPORTANT:</b> the transport framing header has already been read
      * from this <code>InputStream</code>
      */
-    public final InputStream _is;
+    private final InputStream _is;
 
     /**
      * Original length of the packet transferred over the wire (includes both
      * the length of the transport framing header and the payload)
      */
-    public final int _wirelen;
+    private final int _wirelen;
 
     /**
      * Constructor
@@ -38,9 +41,10 @@ public class EIUnicastMessage implements IEvent, IInputBuffer
      * @param wirelen Number of bytes (including the <code>ITransport</code>
      * framing header
      */
-    public EIUnicastMessage(Endpoint ep, InputStream is, int wirelen)
+    public EIUnicastMessage(Endpoint ep, UserID userID, InputStream is, int wirelen)
     {
         _ep = ep;
+        _userID = userID;
         _is = is;
         _wirelen = wirelen;
     }
