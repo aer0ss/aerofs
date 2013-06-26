@@ -587,9 +587,9 @@ public final class ZephyrConnectionService implements ISignalledConnectionServic
     private String getDebugString(Channel channel)
     {
         ZephyrAttachment attachment = getZephyrAttachment(channel);
-        return String.format("[(%s) %s -> %s : tx=%d rs=%d a=%s]",
-                localdid,
+        return String.format("[(%s) %s -> %s : tx=%d rx=%d a=%s]",
                 attachment.getId(),
+                localdid,
                 attachment.getRemote(),
                 attachment.getChannelStats().getBytesSent(),
                 attachment.getChannelStats().getBytesReceived(),
