@@ -13,6 +13,7 @@ import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.FrequentDefectSender;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.LibParam.Daemon;
+import com.aerofs.lib.LibParam.RitualNotification;
 import com.aerofs.lib.S;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.ThreadUtil;
@@ -25,6 +26,7 @@ import com.aerofs.lib.ex.ExUIMessage;
 import com.aerofs.lib.ex.ExUpdating;
 import com.aerofs.lib.injectable.InjectableDriver;
 import com.aerofs.lib.injectable.InjectableFile;
+import com.aerofs.lib.log.LogUtil;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.swig.driver.DriverConstants;
 import com.aerofs.ui.IUI.IWaiter;
@@ -315,7 +317,7 @@ class DefaultDaemonMonitor implements IDaemonMonitor
         while (true) {
             try {
                 watchDaemonProcess(proc);
-            } catch (Exception e) {
+            } catch (IOException e) {
                 l.info(Util.e(e));
             }
 
@@ -349,20 +351,33 @@ class DefaultDaemonMonitor implements IDaemonMonitor
     /**
      * Sends a heart beat request to the daemon process and sends a log
      * if the heart beat fails.
-     *
-     * @return true if the heart beat succeeded, false otherwise
+     * FIXME: Remove this? not clear if this is ever useful
      */
-    private boolean tryHeartBeat() {
-        boolean succeeded = false;
-
+    private void tryHeartBeat() {
         try {
             UIGlobals.ritual().heartbeat(Daemon.HEARTBEAT_TIMEOUT, TimeUnit.MILLISECONDS);
-            succeeded = true;
         } catch (Exception e) {
             _fdsHeartbeatGone.logSendAsync("daemon hb gone. " + e);
         }
+    }
 
-        return succeeded;
+    private Socket connectToRitualNotification(long timeoutMs) throws IOException
+    {
+        final long retryInterval = RitualNotification.NOTIFICATION_SERVER_CONNECTION_RETRY_INTERVAL;
+        IOException lastEx = null;
+
+        for (long attempts = Math.max(1, timeoutMs / retryInterval); attempts > 0; attempts--) {
+            try {
+                return new Socket(LibParam.LOCALHOST_ADDR, Cfg.port(PortType.RITUAL_NOTIFICATION));
+            } catch (IOException io) {
+                l.debug("Error connecting to notification service", LogUtil.suppress(io));
+                ThreadUtil.sleepUninterruptable(retryInterval);
+                lastEx = io;
+            }
+        }
+
+        l.warn("Unable to talk to ritual notification server; did the daemon start?");
+        throw lastEx;
     }
 
     /**
@@ -371,9 +386,11 @@ class DefaultDaemonMonitor implements IDaemonMonitor
      * @param proc The daemon process
      * @throws Exception
      */
-    private void watchDaemonProcess(@Nonnull Process proc) throws Exception
+    private void watchDaemonProcess(@Nonnull Process proc) throws IOException
     {
-        Socket s = new Socket(LibParam.LOCALHOST_ADDR, Cfg.port(PortType.RITUAL_NOTIFICATION));
+        // FIXME: put this magic number in LibParam... Daemon startup timeout
+        Socket s = connectToRitualNotification(5 * C.SEC);
+
         try {
             s.setSoTimeout((int) Daemon.HEARTBEAT_INTERVAL);
             while (true) {
