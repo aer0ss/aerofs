@@ -1,3 +1,3 @@
 #!/bin/bash
-source ~/repos/aerofs/tools/bashrc/common.sh
-source ~/repos/aerofs/tools/bashrc/local-production.sh
+AEROFS_ROOT=$(dirname "${BASH_SOURCE[0]}")/../../
+source "$AEROFS_ROOT"/tools/bashrc/local-production.sh
