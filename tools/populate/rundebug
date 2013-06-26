@@ -63,7 +63,6 @@ Usage()
     echo ""
 }
 
-
 DoArgs()
 {
 
@@ -72,12 +71,7 @@ DoArgs()
         case $OPTION in
         a)
             typeset apprel=$OPTARG
-            if [ $apprel == ${apprel#/} ]
-            then
-                AppRoot=$PWD/$apprel
-            else
-                AppRoot=$apprel
-            fi
+            AppRoot=$(dirname $apprel)/$(basename $apprel)
             ;;
         d)
             StartDaemon=1
@@ -119,12 +113,7 @@ DoArgs()
             ;;
         r)
             typeset rtrel=$OPTARG
-            if [ $rtrel == ${rtrel#/} ]
-            then
-                RtBase=$PWD/$rtrel
-            else
-                RtBase=$rtrel
-            fi
+            RtBase=$(dirname $rtrel)/$(basename $rtrel)
             ;;
         u)
             UserFolder=$OPTARG
