@@ -18,8 +18,8 @@ include include/common ${1:-} ${2:-}
 if [[ x"${1:-}" == x || x"${2:-}" == x || x"${3:-}" == x  || x"${4:-}" == x ]] ; then
     echo "usage: $0 [build_mode] [release_version] [passphrase]" >&2
     echo " " >&2
-    echo "[build_mode]: STAGING or PROD" >&2
-    echo "[build_client]: CLIENT or TEAM_SERVER" >&2
+    echo "[build_mode]: PROD|STAGING|ENTERPRISE" >&2
+    echo "[build_client]: CLIENT|TEAM_SERVER" >&2
     echo "[release_version]: release version (for example: 0.1.0)" >&2
     echo "[passphrase]: release password" >&2
     echo " " >&2

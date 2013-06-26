@@ -106,7 +106,7 @@ function is_valid_product() {
 # check that a valid product was specified
 readonly PRODUCT="${2:-CLIENT}" # FIXME (AG): This should not be specified in here since deploy doesn't need this
 if ! is_valid_product "$PRODUCT" ; then
-    echo "error: invalid build product $PRODUCT. Expected CLIENT or TEAM_SERVER." >&2
+    echo "error: invalid build product $PRODUCT. Expected CLIENT|TEAM_SERVER." >&2
     exit $ERRBADPRODUCT
 fi
 readonly LOWERCASE_PRODUCT="$(echo $PRODUCT | tr '[A-Z]' '[a-z]')"
@@ -114,7 +114,7 @@ readonly LABELING_FILE="$LABELING_RESOURCES_DIR/labeling-$LOWERCASE_PRODUCT.prop
 
 ###############################################################################
 #
-# Constants relating to the deploy mode (PROD/CI/STAGING)
+# Constants relating to the deploy mode (PROD/CI/STAGING/ENTERPRISE)
 #
 ###############################################################################
 
@@ -128,7 +128,7 @@ readonly LABELING_FILE="$LABELING_RESOURCES_DIR/labeling-$LOWERCASE_PRODUCT.prop
 #
 ###############################################################################
 function is_valid_mode() {
-    if [[ "$1" != "PROD" && "$1" != "STAGING" ]]; then
+    if [[ "$1" != "PROD" && "$1" != "STAGING" && "$1" != "ENTERPRISE" ]]; then
         return $ERRBADMODE
     fi
     return 0
@@ -137,7 +137,7 @@ function is_valid_mode() {
 # check that a valid mode was specified
 readonly MODE="${1:-}"
 if ! is_valid_mode $MODE ; then
-    echo "error: invalid build mode $MODE. Expected PROD or STAGING." >&2
+    echo "error: invalid build mode $MODE. Expected PROD|STAGING|ENTERPRISE." >&2
     exit $ERRBADMODE
 fi
 readonly LOWERCASE_MODE="$(echo $MODE | tr '[A-Z]' '[a-z]')"
@@ -147,8 +147,23 @@ readonly LOWERCASE_MODE="$(echo $MODE | tr '[A-Z]' '[a-z]')"
 # Release server constants
 #
 ###############################################################################
+
+# We use the same user account when deploying to prod/enterprise.
+# TODO (MP) use a more reasonable username. Maybe drew's changes to the build will make this better?
+case ${LOWERCASE_MODE} in
+prod)
+    readonly RELEASE_SERVER_USERNAME=release-prod
+    ;;
+enterprise)
+    readonly RELEASE_SERVER_USERNAME=release-prod
+    ;;
+*)
+    readonly RELEASE_SERVER_USERNAME=release-${LOWERCASE_MODE}
+    ;;
+esac
+
 readonly RELEASE_SERVER="b.arrowfs.org"
-readonly RELEASE_SERVER_LOGIN="release-${LOWERCASE_MODE}@${RELEASE_SERVER}"
+readonly RELEASE_SERVER_LOGIN="${RELEASE_SERVER_USERNAME}@${RELEASE_SERVER}"
 readonly RELEASE_SERVER_SHELL="bash -s -e -u"
 
 ###############################################################################
@@ -156,7 +171,7 @@ readonly RELEASE_SERVER_SHELL="bash -s -e -u"
 # Release server paths
 #
 ###############################################################################
-readonly RELEASE_FILES_DIR="/home/release-${LOWERCASE_MODE}"
+readonly RELEASE_FILES_DIR="/home/${RELEASE_SERVER_USERNAME}"
 readonly RELEASE_UNPACK_DIR="${RELEASE_FILES_DIR}/unpack"
 readonly INSTALLERS_DOWNLOAD_DIR="/data/${LOWERCASE_MODE}-downloads"
 readonly RELEASE_SERVER_VERSION_FILE="current.ver"
@@ -171,10 +186,14 @@ if [ "$MODE" == "PROD" ]; then
     readonly RELEASE_DOMAIN="nocache.client.aerofs.com"
 elif [ "$MODE" == "STAGING" ]; then
     readonly RELEASE_DOMAIN="nocache.client.stg.aerofs.com"
+elif [ "$MODE" == "ENTERPRISE" ]; then
+    # N.B. no need to create a cache/nocache variant for this since the
+    # installers are packaged into openstack images anyway.
+    readonly RELEASE_DOMAIN="nocache.client.enterprise.aerofs.com"
 fi
 readonly INSTALLER_DOWNLOAD_BUCKET="s3://${RELEASE_DOMAIN}"
 readonly RELEASE_VERSION_URL="https://${RELEASE_DOMAIN}/${RELEASE_SERVER_VERSION_FILE}"
-readonly STAGING_PASSPHRASE=temp123
+readonly UNSECURED_PASSPHRASE=temp123
 
 ###############################################################################
 #
