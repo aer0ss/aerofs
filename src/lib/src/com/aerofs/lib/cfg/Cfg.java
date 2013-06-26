@@ -116,7 +116,6 @@ public class Cfg
 
         _user = UserID.fromInternal(_db.get(Key.USER_ID));
         _did = new DID(_db.get(Key.DEVICE_ID));
-        if (readPasswd) readCreds();
         _rootSID = SID.rootSID(_user);
 
         _timeout = _db.getInt(Key.TIMEOUT);
@@ -139,6 +138,7 @@ public class Cfg
         }
 
         try {
+            if (readPasswd) readCreds();
             readCert();
         } catch (FileNotFoundException e) {
             throw new ExNotSetup();
