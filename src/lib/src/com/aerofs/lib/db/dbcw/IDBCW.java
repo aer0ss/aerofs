@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 
 import com.aerofs.base.ex.ExAlreadyExist;
+import com.aerofs.lib.ex.ExDBCorrupted;
 
 /**
  * DBCW = Database Connection Wrapper. It provides abstractions independent to implementations of
@@ -36,6 +37,8 @@ public interface IDBCW
      * @throws ExAlreadyExist if e is a constraint violation (e.g. duplicate key) exception
      */
     public void throwOnConstraintViolation(SQLException e) throws ExAlreadyExist;
+
+    public void throwIfDBCorrupted(SQLException e) throws ExDBCorrupted;
 
     public String insertOrIgnore();
 

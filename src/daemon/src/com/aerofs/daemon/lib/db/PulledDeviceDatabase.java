@@ -54,7 +54,7 @@ public class PulledDeviceDatabase extends AbstractDatabase implements IPulledDev
         } catch (SQLException e) {
             DBUtil.close(_psPDContains);
             _psPDContains = null;
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -75,7 +75,7 @@ public class PulledDeviceDatabase extends AbstractDatabase implements IPulledDev
         } catch (SQLException e) {
             DBUtil.close(_psAddToPD);
             _psAddToPD = null;
-            throw e;
+            throw detectCorruption(e);
         }
     }
 

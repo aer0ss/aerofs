@@ -49,9 +49,8 @@ public class SyncStatusDatabase extends AbstractDatabase implements ISyncStatusD
             }
             return localEpoch;
         } catch (SQLException e) {
-            DBUtil.close(psw.get());
-            psw.set(null);
-            throw e;
+            psw.close();
+            throw detectCorruption(e);
         }
     }
 
@@ -65,9 +64,8 @@ public class SyncStatusDatabase extends AbstractDatabase implements ISyncStatusD
             int affectedRows = psw.get().executeUpdate();
             assert affectedRows == 1 : ("sync status epoch not updated");
         } catch (SQLException e) {
-            DBUtil.close(psw.get());
-            psw.set(null);
-            throw e;
+            psw.close();
+            throw detectCorruption(e);
         }
     }
 
@@ -162,7 +160,7 @@ public class SyncStatusDatabase extends AbstractDatabase implements ISyncStatusD
         } catch (SQLException e) {
             DBUtil.close(_psGMO);
             _psGMO = null;
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -182,7 +180,7 @@ public class SyncStatusDatabase extends AbstractDatabase implements ISyncStatusD
         } catch (SQLException e) {
             DBUtil.close(_psAMO);
             _psAMO = null;
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -200,7 +198,7 @@ public class SyncStatusDatabase extends AbstractDatabase implements ISyncStatusD
         } catch (SQLException e) {
             DBUtil.close(_psRMO);
             _psRMO = null;
-            throw e;
+            throw detectCorruption(e);
         }
     }
 }

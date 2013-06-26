@@ -143,7 +143,7 @@ public abstract class AbstractVersionDatabase<E extends AbstractTickRow> extends
         } catch (SQLException e) {
             DBUtil.close(_psSGT);
             _psSGT = null;
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -172,7 +172,7 @@ public abstract class AbstractVersionDatabase<E extends AbstractTickRow> extends
         } catch (SQLException e) {
             DBUtil.close(_psGK);
             _psGK = null;
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -195,7 +195,7 @@ public abstract class AbstractVersionDatabase<E extends AbstractTickRow> extends
         } catch (SQLException e) {
             DBUtil.close(_psAddKwlg);
             _psAddKwlg = null;
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -230,7 +230,7 @@ public abstract class AbstractVersionDatabase<E extends AbstractTickRow> extends
         } catch (SQLException e) {
             DBUtil.close(_psISK);
             _psISK = null;
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -254,7 +254,7 @@ public abstract class AbstractVersionDatabase<E extends AbstractTickRow> extends
         } catch (SQLException e) {
             DBUtil.close(_psAddBkupTicks);
             _psAddBkupTicks = null;
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -275,7 +275,7 @@ public abstract class AbstractVersionDatabase<E extends AbstractTickRow> extends
         } catch (SQLException e) {
             DBUtil.close(_psDelBackupTicks);
             _psDelBackupTicks = null;
-            throw e;
+            throw detectCorruption(e);
         }
     }
 }

@@ -113,7 +113,7 @@ public class BlockStorageDatabase extends AbstractDatabase
         } catch (SQLException e) {
             _psGetFileIndex = null;
             DBUtil.close(ps);
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -139,7 +139,7 @@ public class BlockStorageDatabase extends AbstractDatabase
         } catch (SQLException e) {
             _psGetIndices = null;
             DBUtil.close(ps);
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -227,7 +227,7 @@ public class BlockStorageDatabase extends AbstractDatabase
         } catch (SQLException e) {
             _psGetFileInfo = null;
             DBUtil.close(ps);
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -244,7 +244,7 @@ public class BlockStorageDatabase extends AbstractDatabase
             ps.executeUpdate();
         } catch (SQLException e) {
             _pswDelFileInfo.close();
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -262,7 +262,7 @@ public class BlockStorageDatabase extends AbstractDatabase
             ps.executeUpdate();
         } catch (SQLException e) {
             _pswDelHistFileInfo.close();
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -293,7 +293,7 @@ public class BlockStorageDatabase extends AbstractDatabase
         } catch (SQLException e) {
             _psGetChildHistDir = null;
             DBUtil.close(ps);
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -373,7 +373,7 @@ public class BlockStorageDatabase extends AbstractDatabase
         } catch (SQLException e) {
             _psGetHistFileRevisions = null;
             DBUtil.close(ps);
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -417,7 +417,7 @@ public class BlockStorageDatabase extends AbstractDatabase
         } catch (SQLException e) {
             _psGetHistFileInfo = null;
             DBUtil.close(ps);
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -447,7 +447,7 @@ public class BlockStorageDatabase extends AbstractDatabase
             ps.executeUpdate();
         } catch (SQLException e) {
             psw.close();
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -472,7 +472,7 @@ public class BlockStorageDatabase extends AbstractDatabase
             ps.executeUpdate();
         } catch (SQLException e) {
             psw.close();
-            throw e;
+            throw detectCorruption(e);
         }
     }
     public void incBlockCount_(ContentHash chunk, Trans t) throws SQLException
@@ -509,7 +509,7 @@ public class BlockStorageDatabase extends AbstractDatabase
 
         } catch (SQLException e) {
             psw.close();
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -537,7 +537,7 @@ public class BlockStorageDatabase extends AbstractDatabase
 
         } catch (SQLException e) {
             psw.close();
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -556,7 +556,7 @@ public class BlockStorageDatabase extends AbstractDatabase
             l.warn(Util.e(e));
             DBUtil.close(_psDeleteBlock);
             _psDeleteBlock =null;
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -577,7 +577,7 @@ public class BlockStorageDatabase extends AbstractDatabase
             l.warn(Util.e(e));
             DBUtil.close(_psGetDeadBlocks);
             _psGetDeadBlocks = null;
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -610,7 +610,7 @@ public class BlockStorageDatabase extends AbstractDatabase
         } catch (SQLException e) {
             _psCreateChildHistDir = null;
             DBUtil.close(ps);
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -651,7 +651,7 @@ public class BlockStorageDatabase extends AbstractDatabase
         } catch (SQLException e) {
             _psCreateFileEntry = null;
             DBUtil.close(ps);
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -686,7 +686,7 @@ public class BlockStorageDatabase extends AbstractDatabase
             }
         } catch (SQLException e) {
             psw.close();
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -715,7 +715,7 @@ public class BlockStorageDatabase extends AbstractDatabase
             ps.executeUpdate();
         } catch (SQLException e) {
             psw.close();
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -777,7 +777,7 @@ public class BlockStorageDatabase extends AbstractDatabase
             ps.executeUpdate();
         } catch (SQLException e) {
             psw.close();
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -807,7 +807,7 @@ public class BlockStorageDatabase extends AbstractDatabase
             }
         } catch (SQLException e) {
             psw.close();
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -834,7 +834,7 @@ public class BlockStorageDatabase extends AbstractDatabase
         } catch (SQLException e) {
             _psGetHistDirChildFolders = null;
             DBUtil.close(ps);
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -860,7 +860,7 @@ public class BlockStorageDatabase extends AbstractDatabase
         } catch (SQLException e) {
             _psGetHistDirChildFiles = null;
             DBUtil.close(ps);
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -904,7 +904,7 @@ public class BlockStorageDatabase extends AbstractDatabase
             assert rows == 1;
         } catch (SQLException e) {
             psw.close();
-            throw e;
+            throw detectCorruption(e);
         }
     }
 

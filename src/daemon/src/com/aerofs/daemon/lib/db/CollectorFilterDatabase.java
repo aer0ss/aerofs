@@ -42,7 +42,7 @@ public class CollectorFilterDatabase extends AbstractDatabase implements ICollec
         } catch (SQLException e) {
             DBUtil.close(_psSCF);
             _psSCF = null;
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -70,7 +70,7 @@ public class CollectorFilterDatabase extends AbstractDatabase implements ICollec
         } catch (SQLException e) {
             DBUtil.close(_psGCF);
             _psGCF = null;
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -92,7 +92,7 @@ public class CollectorFilterDatabase extends AbstractDatabase implements ICollec
         } catch (SQLException e) {
             DBUtil.close(_psDCF);
             _psDCF = null;
-            throw e;
+            throw detectCorruption(e);
         }
     }
 

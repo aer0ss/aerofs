@@ -50,7 +50,7 @@ public class UserAndDeviceNameDatabase
         } catch (SQLException e) {
             DBUtil.close(_psSDN);
             _psSDN = null;
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -73,7 +73,7 @@ public class UserAndDeviceNameDatabase
         } catch (SQLException e) {
             DBUtil.close(_psSUN);
             _psSUN = null;
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -102,7 +102,7 @@ public class UserAndDeviceNameDatabase
         } catch (SQLException e) {
             DBUtil.close(_psGDN);
             _psGDN = null;
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -131,7 +131,7 @@ public class UserAndDeviceNameDatabase
         } catch (SQLException e) {
             DBUtil.close(_psGUN);
             _psGUN = null;
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -149,7 +149,7 @@ public class UserAndDeviceNameDatabase
         } catch (SQLException e) {
             DBUtil.close(_psCUNC);
             _psCUNC = null;
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -166,7 +166,7 @@ public class UserAndDeviceNameDatabase
         } catch (SQLException e) {
             DBUtil.close(_psCDNC);
             _psCDNC = null;
-            throw e;
+            throw detectCorruption(e);
         }
     }
 }

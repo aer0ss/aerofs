@@ -5,6 +5,8 @@
 package com.aerofs.lib;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.lib.ex.ExDBCorrupted;
+import com.aerofs.rocklog.RockLog;
 import com.aerofs.sv.client.SVClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,6 +37,7 @@ public abstract class SystemUtil
         JINGLE_TASK_FATAL_ERROR("jingle task fatal error"),
         DPUT_MIGRATE_AUX_ROOT_FAILED("migrating the aux root failed"),
         CONFIGURATION_INIT("initializing configuration failed"),
+        CORRUPTED_DB("corrupted database"),
 
         ////////
         // Exit codes that are expected during normal operations. _All_ of them should be handled
@@ -126,8 +129,16 @@ public abstract class SystemUtil
     public static Error fatalWithReturn(final Throwable e)
     {
         l.error("FATAL:" + Util.e(e));
-        SVClient.logSendDefectSyncNoLogsIgnoreErrors(true, "FATAL:", e);
-        ExitCode.FATAL_ERROR.exit();
+        if (e instanceof ExDBCorrupted) {
+            new RockLog().newDefect("sqlite.corrupt")
+                    .setMessage(((ExDBCorrupted)e)._integrityCheckResult)
+                    .send();
+            l.error(((ExDBCorrupted)e)._integrityCheckResult);
+            ExitCode.CORRUPTED_DB.exit();
+        } else {
+            SVClient.logSendDefectSyncNoLogsIgnoreErrors(true, "FATAL:", e);
+            ExitCode.FATAL_ERROR.exit();
+        }
         throw new Error(e);
     }
 

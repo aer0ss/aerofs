@@ -62,7 +62,7 @@ public class CacheDatabase extends AbstractDatabase
             }
         } catch (SQLException e) {
             psw.close();
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -82,7 +82,7 @@ public class CacheDatabase extends AbstractDatabase
             ps.executeUpdate();
         } catch (SQLException e) {
             psw.close();
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -101,7 +101,7 @@ public class CacheDatabase extends AbstractDatabase
             ps.executeUpdate();
         } catch (SQLException e) {
             psw.close();
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -131,7 +131,7 @@ public class CacheDatabase extends AbstractDatabase
             return new DBIterSortedAccessesRow(ps.executeQuery());
         } catch (SQLException e) {
             psw.close();
-            throw e;
+            throw detectCorruption(e);
         }
     }
 }

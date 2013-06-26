@@ -9,6 +9,7 @@ import java.util.Properties;
 import com.aerofs.base.Loggers;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.base.ex.ExAlreadyExist;
+import com.aerofs.lib.ex.ExDBCorrupted;
 import org.slf4j.Logger;
 
 abstract class AbstractDBCW implements IDBCW
@@ -23,6 +24,9 @@ abstract class AbstractDBCW implements IDBCW
     abstract void initImpl_(Statement stmt) throws SQLException;
 
     protected abstract boolean isConstraintViolation(SQLException e);
+
+    protected abstract boolean isDBCorrupted(SQLException e);
+    protected abstract String integrityCheck();
 
     protected AbstractDBCW(String url, boolean autoCommit)
     {
@@ -44,17 +48,22 @@ abstract class AbstractDBCW implements IDBCW
 
         if (_c != null) return;
 
-        Connection c = DriverManager.getConnection(_url, _properties);
-
-        Statement stmt = c.createStatement();
         try {
-            initImpl_(stmt);
-        } finally {
-            stmt.close();
-        }
+            Connection c = DriverManager.getConnection(_url, _properties);
 
-        c.setAutoCommit(_autoCommit);
-        _c = c;
+            Statement stmt = c.createStatement();
+            try {
+                initImpl_(stmt);
+            } finally {
+                stmt.close();
+            }
+
+            c.setAutoCommit(_autoCommit);
+            _c = c;
+        } catch (SQLException e) {
+            throwIfDBCorrupted(e);
+            throw e;
+        }
     }
 
     @Override
@@ -112,4 +121,12 @@ abstract class AbstractDBCW implements IDBCW
         if (isConstraintViolation(e)) throw new ExAlreadyExist();
     }
 
+    @Override
+    public final void throwIfDBCorrupted(SQLException e) throws ExDBCorrupted
+    {
+        if (isDBCorrupted(e)) {
+            l.error("corrupt db: start integrity check");
+            throw new ExDBCorrupted(integrityCheck());
+        }
+    }
 }

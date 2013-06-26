@@ -30,6 +30,7 @@ import com.aerofs.lib.log.LogUtil;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.swig.driver.DriverConstants;
 import com.aerofs.ui.IUI.IWaiter;
+import com.aerofs.ui.IUI.MessageType;
 import org.slf4j.Logger;
 
 import javax.annotation.Nonnull;
@@ -39,7 +40,9 @@ import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.util.concurrent.TimeUnit;
 
+import static com.aerofs.lib.SystemUtil.ExitCode.CORRUPTED_DB;
 import static com.aerofs.lib.SystemUtil.ExitCode.DPUT_MIGRATE_AUX_ROOT_FAILED;
+import static com.aerofs.lib.SystemUtil.ExitCode.FAIL_TO_LAUNCH;
 import static com.aerofs.lib.SystemUtil.ExitCode.JNOTIFY_WATCH_CREATION_FAILED;
 import static com.aerofs.lib.SystemUtil.ExitCode.RELOCATE_ROOT_ANCHOR;
 import static com.aerofs.lib.SystemUtil.ExitCode.S3_BAD_CREDENTIALS;
@@ -190,6 +193,11 @@ class DefaultDaemonMonitor implements IDaemonMonitor
                     + "watch for file changes under \"" + Cfg.absDefaultRootAnchor() + "\"\n\n"
                     + "Please make sure that " + L.product() + " has the appropriate permissions to"
                     + " access that folder.");
+        } else if (exitCode == CORRUPTED_DB.getNumber()) {
+            // TODO: use custom dialog to streamline reinstall process
+            // w/ unlink, seed file gen if possible, ...
+            throw new ExUIMessage(L.product() + " couldn't launch because of a corrupted " +
+                    "database. Please delete \"" + Cfg.absRTRoot() + "\" and reinstall");
         } else {
             throw new IOException(getMessage(exitCode));
         }
@@ -289,12 +297,17 @@ class DefaultDaemonMonitor implements IDaemonMonitor
         // Daemon will restart in new Cfg state
         if (exitCode == RELOCATE_ROOT_ANCHOR.getNumber()) {
             return;
-        }
-
-        if (exitCode == SHUTDOWN_REQUESTED.getNumber()) {
+        } else if (exitCode == SHUTDOWN_REQUESTED.getNumber()) {
             l.warn("daemon receives shutdown request. shutdown UI now.");
             SHUTDOWN_REQUESTED.exit();
+        } else if (exitCode == CORRUPTED_DB.getNumber()) {
+            l.error("core db corrupted");
+            UI.get().show(MessageType.ERROR, L.product() + " detected a database corruption.\n" +
+                    "Please delete \"" + Cfg.absRTRoot() + "\" and reinstall.");
+            CORRUPTED_DB.exit();
         }
+
+        l.error("daemon died {}: {}", exitCode, getMessage(exitCode));
 
         ThreadUtil.startDaemonThread("onDaemonDeath", new Runnable() {
             @Override
@@ -337,6 +350,9 @@ class DefaultDaemonMonitor implements IDaemonMonitor
                     proc = startDaemon();
                     l.info("daemon restarted");
                     break;
+                } catch (ExUIMessage e) {
+                    UI.get().show(MessageType.ERROR, e.getMessage());
+                    FAIL_TO_LAUNCH.exit();
                 } catch (Exception e) {
                     _fdsRestartFail.logSendAsync("restart daemon", e);
                 }

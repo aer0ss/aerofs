@@ -8,6 +8,7 @@ import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.db.DBUtil;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UserID;
+import com.aerofs.lib.db.PreparedStatementWrapper;
 import com.google.inject.Inject;
 
 import java.sql.PreparedStatement;
@@ -46,7 +47,7 @@ public class DID2UserDatabase extends AbstractDatabase implements IDID2UserDatab
         } catch (SQLException e) {
             DBUtil.close(_psInsert);
             _psInsert = null;
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -74,7 +75,7 @@ public class DID2UserDatabase extends AbstractDatabase implements IDID2UserDatab
         } catch (SQLException e) {
             DBUtil.close(_psGet);
             _psGet = null;
-            throw e;
+            throw detectCorruption(e);
         }
     }
 }

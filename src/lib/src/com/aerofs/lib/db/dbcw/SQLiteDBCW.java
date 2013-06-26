@@ -7,6 +7,7 @@ import java.sql.Statement;
 import java.util.Properties;
 
 import com.aerofs.base.C;
+import com.aerofs.lib.ProgressIndicators;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.os.OSUtil;
 import org.sqlite.SQLiteConfig;
@@ -63,6 +64,34 @@ public class SQLiteDBCW extends AbstractDBCW implements IDBCW
     protected boolean isConstraintViolation(SQLException e)
     {
         return e.getMessage().startsWith("[SQLITE_CONSTRAINT]");
+    }
+
+    @Override
+    protected boolean isDBCorrupted(SQLException e)
+    {
+        return e.getMessage().startsWith("[SQLITE_CORRUPT]");
+    }
+
+    @Override
+    protected String integrityCheck()
+    {
+        try {
+            Statement s = getConnection().createStatement();
+            // make sure the CoreProgressWatcher doesn't kill the daemon even if the
+            // integrity check takes a long time
+            ProgressIndicators.get().startSyscall();
+            try {
+                ResultSet rs = s.executeQuery("pragma integrity_check");
+                StringBuilder bd = new StringBuilder();
+                while (rs.next()) bd.append(rs.getString(1)).append('\n');
+                return bd.toString();
+            } finally {
+                ProgressIndicators.get().endSyscall();
+                s.close();
+            }
+        } catch (Throwable t) {
+            return t.toString();
+        }
     }
 
     @Override

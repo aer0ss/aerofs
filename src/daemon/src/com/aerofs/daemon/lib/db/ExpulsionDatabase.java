@@ -43,7 +43,7 @@ public class ExpulsionDatabase extends AbstractDatabase implements IExpulsionDat
         } catch (SQLException e) {
             DBUtil.close(_psAdd);
             _psAdd = null;
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -63,7 +63,7 @@ public class ExpulsionDatabase extends AbstractDatabase implements IExpulsionDat
         } catch (SQLException e) {
             DBUtil.close(_psDel);
             _psDel = null;
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -82,7 +82,7 @@ public class ExpulsionDatabase extends AbstractDatabase implements IExpulsionDat
         } catch (SQLException e) {
             DBUtil.close(_psDelStore);
             _psDelStore = null;
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -117,7 +117,7 @@ public class ExpulsionDatabase extends AbstractDatabase implements IExpulsionDat
         } catch (SQLException e) {
             DBUtil.close(_psGet);
             _psGet = null;
-            throw e;
+            throw detectCorruption(e);
         }
     }
 

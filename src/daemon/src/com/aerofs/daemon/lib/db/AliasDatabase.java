@@ -46,7 +46,7 @@ public class AliasDatabase extends AbstractDatabase implements IAliasDatabase
         } catch (SQLException e) {
             DBUtil.close(_psSetAliasSOID);
             _psSetAliasSOID = null;
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -72,7 +72,7 @@ public class AliasDatabase extends AbstractDatabase implements IAliasDatabase
         } catch (SQLException e) {
             DBUtil.close(_psTargetOID);
             _psTargetOID = null;
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -96,7 +96,7 @@ public class AliasDatabase extends AbstractDatabase implements IAliasDatabase
         } catch (SQLException e) {
             DBUtil.close(_psResolveAliasChaining);
             _psResolveAliasChaining = null;
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -132,7 +132,7 @@ public class AliasDatabase extends AbstractDatabase implements IAliasDatabase
         } catch (SQLException e) {
             DBUtil.close(_psListAliases);
             _psListAliases = null;
-            throw e;
+            throw detectCorruption(e);
         }
     }
 }

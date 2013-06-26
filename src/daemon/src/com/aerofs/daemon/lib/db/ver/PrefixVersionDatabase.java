@@ -59,7 +59,7 @@ public class PrefixVersionDatabase extends AbstractDatabase implements IPrefixVe
         } catch (SQLException e) {
             DBUtil.close(_psGetPV);
             _psGetPV = null;
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -90,7 +90,7 @@ public class PrefixVersionDatabase extends AbstractDatabase implements IPrefixVe
         } catch (SQLException e) {
             DBUtil.close(_psAddPV);
             _psAddPV = null;
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -113,7 +113,7 @@ public class PrefixVersionDatabase extends AbstractDatabase implements IPrefixVe
         } catch (SQLException e) {
             DBUtil.close(_psDelPV);
             _psDelPV = null;
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -134,7 +134,7 @@ public class PrefixVersionDatabase extends AbstractDatabase implements IPrefixVe
         } catch (SQLException e) {
             DBUtil.close(_psDelAPV);
             _psDelAPV = null;
-            throw e;
+            throw detectCorruption(e);
         }
     }
 }

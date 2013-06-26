@@ -88,7 +88,7 @@ public class ActivityLogDatabase extends AbstractDatabase implements IActivityLo
         } catch (SQLException e) {
             DBUtil.close(_psAA);
             _psAA = null;
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -148,7 +148,7 @@ public class ActivityLogDatabase extends AbstractDatabase implements IActivityLo
         } catch (SQLException e) {
             DBUtil.close(_psGA);
             _psGA = null;
-            throw e;
+            throw detectCorruption(e);
         }
     }
 

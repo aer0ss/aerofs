@@ -78,7 +78,7 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase, IMe
         } catch (SQLException e) {
             DBUtil.close(_psGetChild);
             _psGetChild = null;
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -113,7 +113,7 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase, IMe
             _psInsOA = null;
             // must be called *after* closing the statement
             _dbcw.throwOnConstraintViolation(e);
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -135,7 +135,7 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase, IMe
         } catch (SQLException e) {
             DBUtil.close(_psInsCA);
             _psInsCA = null;
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -157,7 +157,7 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase, IMe
         } catch (SQLException e) {
             DBUtil.close(_psDelCA);
             _psDelCA = null;
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -192,7 +192,7 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase, IMe
             _psSOAPNC = null;
             // must be called *after* closing the statement
             _dbcw.throwOnConstraintViolation(e);
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -207,7 +207,7 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase, IMe
         } catch (SQLException e) {
             _pswSOAP.close();
             _dbcw.throwOnConstraintViolation(e);
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -221,7 +221,7 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase, IMe
         } catch (SQLException e) {
             _pswROAOID.close();
             _dbcw.throwOnConstraintViolation(e);
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -244,7 +244,7 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase, IMe
         } catch (SQLException e) {
             _pswRPIC.close();
             _dbcw.throwOnConstraintViolation(e);
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -266,7 +266,7 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase, IMe
             ps.executeUpdate();
         } catch (SQLException e) {
             _pswRCA.close();
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -278,7 +278,7 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase, IMe
             setOAInt_(soid, C_OA_FLAGS, flags, _pswSOAF, t);
         } catch (SQLException e) {
             _pswSOAF.close();
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -304,7 +304,7 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase, IMe
         } catch (SQLException e) {
             DBUtil.close(_psSCALM);
             _psSCALM = null;
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -331,7 +331,7 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase, IMe
         } catch (SQLException e) {
             DBUtil.close(_psSCAH);
             _psSCAH = null;
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -344,7 +344,7 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase, IMe
             Util.verify(n == 1);
         } catch (SQLException e) {
             _pswSFID.close();
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -377,7 +377,7 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase, IMe
         } catch (SQLException e) {
             DBUtil.close(_psGetCA);
             _psGetCA = null;
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -411,7 +411,7 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase, IMe
         } catch (SQLException e) {
             DBUtil.close(_psGCAH);
             _psGCAH = null;
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -456,7 +456,7 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase, IMe
         } catch (SQLException e) {
             DBUtil.close(_psGetOA);
             _psGetOA = null;
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -488,7 +488,7 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase, IMe
         } catch (SQLException e) {
             DBUtil.close(_psFID2SOID);
             _psFID2SOID = null;
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -527,7 +527,7 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase, IMe
 
         } catch (SQLException e) {
             DBUtil.close(s);
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -561,7 +561,7 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase, IMe
         } catch (SQLException e) {
             DBUtil.close(_psGetChildren);
             _psGetChildren = null;
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -596,7 +596,7 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase, IMe
         } catch (SQLException e) {
             DBUtil.close(_psGetTypedChildren);
             _psGetTypedChildren = null;
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -623,7 +623,7 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase, IMe
         } catch (SQLException e) {
             DBUtil.close(_psGSCC);
             _psGSCC = null;
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -645,7 +645,7 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase, IMe
         } catch (SQLException e) {
             DBUtil.close(_psDeleteOA);
             _psDeleteOA = null;
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -739,7 +739,7 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase, IMe
             return blob;
         } catch (SQLException e) {
             psw.close();
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -770,7 +770,7 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase, IMe
             return affectedRows;
         } catch (SQLException e) {
             psw.close();
-            throw e;
+            throw detectCorruption(e);
         }
     }
 

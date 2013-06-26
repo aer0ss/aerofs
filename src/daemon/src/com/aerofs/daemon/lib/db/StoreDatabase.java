@@ -51,7 +51,7 @@ public class StoreDatabase extends AbstractDatabase implements IStoreDatabase
         } catch (SQLException e) {
             DBUtil.close(_psGA);
             _psGA = null;
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -77,7 +77,7 @@ public class StoreDatabase extends AbstractDatabase implements IStoreDatabase
         } catch (SQLException e) {
             DBUtil.close(_psGN);
             _psGN = null;
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -99,7 +99,7 @@ public class StoreDatabase extends AbstractDatabase implements IStoreDatabase
         } catch (SQLException e) {
             DBUtil.close(_psSN);
             _psSN = null;
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -151,7 +151,7 @@ public class StoreDatabase extends AbstractDatabase implements IStoreDatabase
         } catch (SQLException e) {
             DBUtil.close(_psAE);
             _psAE = null;
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -170,7 +170,7 @@ public class StoreDatabase extends AbstractDatabase implements IStoreDatabase
         } catch (SQLException e) {
             DBUtil.close(_psAdd);
             _psAdd = null;
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -196,7 +196,7 @@ public class StoreDatabase extends AbstractDatabase implements IStoreDatabase
         } catch (SQLException e) {
             DBUtil.close(_psAP);
             _psAP = null;
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -215,7 +215,7 @@ public class StoreDatabase extends AbstractDatabase implements IStoreDatabase
         } catch (SQLException e) {
             DBUtil.close(_psDP);
             _psDP = null;
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -254,7 +254,7 @@ public class StoreDatabase extends AbstractDatabase implements IStoreDatabase
             }
         } catch (SQLException e) {
             psr.close();
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -281,7 +281,7 @@ public class StoreDatabase extends AbstractDatabase implements IStoreDatabase
         } catch (SQLException e) {
             DBUtil.close(_psGetDeviceList);
             _psGetDeviceList = null;
-            throw e;
+            throw detectCorruption(e);
         }
     }
     private PreparedStatement _psSetDeviceList;
@@ -302,7 +302,7 @@ public class StoreDatabase extends AbstractDatabase implements IStoreDatabase
         } catch (SQLException e) {
             DBUtil.close(_psSetDeviceList);
             _psSetDeviceList = null;
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
