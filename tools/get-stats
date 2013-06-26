@@ -1,3 +1,0 @@
-#!/bin/bash -u -e
-echo "Connecting to c.aerofs.com..."
-ssh c.aerofs.com "getstats $@"
