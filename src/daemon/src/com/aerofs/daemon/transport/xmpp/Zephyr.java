@@ -15,7 +15,7 @@ import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.daemon.mobile.MobileServerZephyrConnector;
 import com.aerofs.daemon.transport.lib.ITransportStats.BasicStatsCounter;
 import com.aerofs.daemon.transport.lib.MaxcastFilterReceiver;
-import com.aerofs.daemon.transport.xmpp.zephyr.netty.ZephyrConnectionService;
+import com.aerofs.daemon.transport.xmpp.zephyr.ZephyrConnectionService;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;

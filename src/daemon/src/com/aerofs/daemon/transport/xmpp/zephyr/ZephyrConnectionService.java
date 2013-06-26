@@ -1,4 +1,4 @@
-package com.aerofs.daemon.transport.xmpp.zephyr.netty;
+package com.aerofs.daemon.transport.xmpp.zephyr;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExNoResource;
