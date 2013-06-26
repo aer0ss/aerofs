@@ -59,9 +59,6 @@ node "z.arrowfs.org" inherits default {
     "verkehr port verkehr.aerofs.com 443",
     "zephyr checkzephyr zephyr.aerofs.com 443",
     "x port x.aerofs.com 443",
-    # Staging
-    "staging port staging.aerofs.com 443",
-    "staging port staging.aerofs.com 80",
   ]:
     hour => "*",
     minute => "*/10",
