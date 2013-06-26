@@ -6,9 +6,9 @@
 package com.aerofs.zephyr.server;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.zephyr.core.ExAlreadyBound;
-import com.aerofs.zephyr.core.FatalIOEventHandlerException;
-import com.aerofs.zephyr.core.IIOEventHandler;
+import com.aerofs.zephyr.server.core.ExAlreadyBound;
+import com.aerofs.zephyr.server.core.FatalIOEventHandlerException;
+import com.aerofs.zephyr.server.core.IIOEventHandler;
 import com.aerofs.zephyr.server.ServerConstants.EndpointState;
 import org.slf4j.Logger;
 
@@ -25,8 +25,8 @@ import static com.aerofs.zephyr.Constants.ZEPHYR_INVALID_CHAN_ID;
 import static com.aerofs.zephyr.Constants.ZEPHYR_MAGIC;
 import static com.aerofs.zephyr.Constants.ZEPHYR_MSG_BYTE_ORDER;
 import static com.aerofs.zephyr.Constants.ZEPHYR_REG_MSG_LEN;
-import static com.aerofs.zephyr.core.ZUtil.addInterest;
-import static com.aerofs.zephyr.core.ZUtil.getSocketChannel;
+import static com.aerofs.zephyr.server.core.ZUtil.addInterest;
+import static com.aerofs.zephyr.server.core.ZUtil.getSocketChannel;
 import static com.aerofs.zephyr.server.ServerConstants.EndpointState.BOUND;
 import static com.aerofs.zephyr.server.ServerConstants.EndpointState.CONNECTED;
 import static com.aerofs.zephyr.server.ServerConstants.EndpointState.REGISTERED;

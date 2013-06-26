@@ -2,7 +2,7 @@
  * Copyright (c) Air Computing Inc., 2012.
  */
 
-package com.aerofs.zephyr.core;
+package com.aerofs.zephyr.server.core;
 
 import java.nio.ByteBuffer;
 

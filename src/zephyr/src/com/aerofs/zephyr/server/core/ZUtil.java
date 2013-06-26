@@ -2,7 +2,7 @@
  * Copyright (c) Air Computing Inc., 2012.
  */
 
-package com.aerofs.zephyr.core;
+package com.aerofs.zephyr.server.core;
 
 import com.aerofs.base.Loggers;
 import org.slf4j.Logger;

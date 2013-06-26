@@ -6,10 +6,10 @@
 package com.aerofs.zephyr.server;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.zephyr.core.BufferPool;
-import com.aerofs.zephyr.core.Dispatcher;
-import com.aerofs.zephyr.core.FatalIOEventHandlerException;
-import com.aerofs.zephyr.core.IIOEventHandler;
+import com.aerofs.zephyr.server.core.BufferPool;
+import com.aerofs.zephyr.server.core.Dispatcher;
+import com.aerofs.zephyr.server.core.FatalIOEventHandlerException;
+import com.aerofs.zephyr.server.core.IIOEventHandler;
 import org.slf4j.Logger;
 
 import java.io.IOException;
@@ -23,8 +23,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.aerofs.zephyr.Constants.ZEPHYR_INVALID_CHAN_ID;
-import static com.aerofs.zephyr.core.ZUtil.addInterest;
-import static com.aerofs.zephyr.core.ZUtil.closeChannel;
+import static com.aerofs.zephyr.server.core.ZUtil.addInterest;
+import static com.aerofs.zephyr.server.core.ZUtil.closeChannel;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;

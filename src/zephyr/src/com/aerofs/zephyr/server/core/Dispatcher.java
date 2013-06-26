@@ -2,7 +2,7 @@
  * Copyright (c) Air Computing Inc., 2012.
  */
 
-package com.aerofs.zephyr.core;
+package com.aerofs.zephyr.server.core;
 
 import com.aerofs.base.Loggers;
 import org.slf4j.Logger;
@@ -14,10 +14,10 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.util.Iterator;
 
-import static com.aerofs.zephyr.core.ZUtil.closeChannel;
-import static com.aerofs.zephyr.core.ZUtil.istdesc;
-import static com.aerofs.zephyr.core.ZUtil.rdydesc;
-import static com.aerofs.zephyr.core.ZUtil.subInterest;
+import static com.aerofs.zephyr.server.core.ZUtil.closeChannel;
+import static com.aerofs.zephyr.server.core.ZUtil.istdesc;
+import static com.aerofs.zephyr.server.core.ZUtil.rdydesc;
+import static com.aerofs.zephyr.server.core.ZUtil.subInterest;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static java.nio.channels.SelectionKey.OP_ACCEPT;

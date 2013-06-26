@@ -2,11 +2,11 @@
  * Copyright (c) Air Computing Inc., 2012.
  */
 
-package com.aerofs.zephyr.core;
+package com.aerofs.zephyr.server.core;
 
 /**
  * Throw this exception to signal that we should fatal (terminate) the entire
- * {@link com.aerofs.zephyr.core.Dispatcher} operation
+ * {@link com.aerofs.zephyr.server.core.Dispatcher} operation
  */
 public class FatalIOEventHandlerException extends Exception
 {

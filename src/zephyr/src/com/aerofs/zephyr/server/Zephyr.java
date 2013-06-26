@@ -1,7 +1,7 @@
 package com.aerofs.zephyr.server;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.zephyr.core.Dispatcher;
+import com.aerofs.zephyr.server.core.Dispatcher;
 import org.slf4j.Logger;
 
 import java.io.BufferedReader;
