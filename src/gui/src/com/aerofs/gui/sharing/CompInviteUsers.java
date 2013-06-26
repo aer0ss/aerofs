@@ -14,18 +14,21 @@ import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUI.ISWTWorker;
 import com.aerofs.gui.GUIParam;
 import com.aerofs.gui.GUIUtil;
+import com.aerofs.labeling.L;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExChildAlreadyShared;
 import com.aerofs.lib.ex.ExNoStripeCustomerID;
+import com.aerofs.lib.ex.ExNotDir;
 import com.aerofs.lib.ex.ExParentAlreadyShared;
 import com.aerofs.proto.Common.PBPath;
 import com.aerofs.proto.Common.PBSubjectRolePair;
 import com.aerofs.proto.Sp.PBAuthorizationLevel;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.ui.UI;
+import com.aerofs.ui.error.ErrorMessage;
 import com.aerofs.ui.error.ErrorMessages;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.UIGlobals;
@@ -205,7 +208,7 @@ public class CompInviteUsers extends Composite implements IInputChangeListener
         // the user types addresses
         //getShell().pack();
 
-        _btnOk.setEnabled(_fromPerson != null && userIDs.size() > 0 && invalid == 0);
+        _btnOk.setEnabled(userIDs.size() > 0 && invalid == 0);
     }
 
     private void setStatusText(String msg)
@@ -246,23 +249,15 @@ public class CompInviteUsers extends Composite implements IInputChangeListener
                 _compSpin.stop();
                 setStatusText("");
 
-                String msg;
-                if (e instanceof ExChildAlreadyShared) {
-                    msg = S.CHILD_ALREADY_SHARED;
-                } else if (e instanceof ExParentAlreadyShared) {
-                    msg = S.PARENT_ALREADY_SHARED;
-                } else if (e instanceof ExNoPerm) {
-                    msg = "You don't have permission to invite users to this folder";
-                } else if (e instanceof ExNoStripeCustomerID) {
-                    msg = null;
+                if (e instanceof ExNoStripeCustomerID) {
+                    // TODO (WW) do the same for CLI
                     showPaymentDialog();
                 } else {
-                    l.warn(Util.e(e));
-                    msg = S.COULDNT_SEND_INVITATION + " " + S.TRY_AGAIN_LATER + "\n\n" +
-                            "Error message: " + ErrorMessages.e2msgSentenceNoBracketDeprecated(e);
+                    ErrorMessages.show(getShell(), e, L.brand() + " couldn't invite users.",
+                            new ErrorMessage(ExChildAlreadyShared.class, S.CHILD_ALREADY_SHARED),
+                            new ErrorMessage(ExParentAlreadyShared.class, S.PARENT_ALREADY_SHARED),
+                            new ErrorMessage(ExNoPerm.class, "You don't have permission to invite users to this folder."));
                 }
-
-                if (msg != null) GUI.get().show(getShell(), MessageType.ERROR, msg);
             }
 
             @Override

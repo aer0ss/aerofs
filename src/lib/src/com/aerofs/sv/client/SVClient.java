@@ -432,8 +432,7 @@ public final class SVClient
     private static PBSVDefect createPBDefect(boolean isAutoBug, PBSVHeader header,
             Map<Key, String> cfgDB, String rtRoot, String stackTrace, StringBuilder sbDesc)
     {
-        String contactEmail = L.isMultiuser() ? cfgDB.get(Key.MULTIUSER_CONTACT_EMAIL) :
-                header.getUser();
+        String contactEmail = cfgDB.get(Key.CONTACT_EMAIL);
 
         Builder bdDefect = PBSVDefect
                 .newBuilder()

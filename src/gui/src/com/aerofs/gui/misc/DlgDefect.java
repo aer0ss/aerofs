@@ -3,6 +3,7 @@ package com.aerofs.gui.misc;
 import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.base.Loggers;
 import com.aerofs.gui.AeroFSJFaceDialog;
+import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIParam;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.labeling.L;
@@ -13,14 +14,15 @@ import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.shell.CmdDefect;
 import com.aerofs.ui.UIGlobals;
+import org.apache.commons.lang.exception.ExceptionUtils;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.ModifyEvent;
+import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.ShellAdapter;
 import org.eclipse.swt.events.ShellEvent;
-import org.eclipse.swt.events.VerifyEvent;
-import org.eclipse.swt.events.VerifyListener;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
@@ -35,25 +37,32 @@ import org.slf4j.Logger;
 import javax.annotation.Nullable;
 import java.sql.SQLException;
 
-import static com.aerofs.gui.GUIUtil.getNewText;
-
 public class DlgDefect extends AeroFSJFaceDialog
 {
     private static final Logger l = Loggers.getLogger(DlgDefect.class);
 
-    private static interface IContactEmailGetter
-    {
-        // must be called from the GUI thread
-        String get();
-    }
-
-    private IContactEmailGetter _contactEmailGetter;
-    private Text _txtReport;
+    private Text _txtEmailAddress;
+    private Text _txtComment;
     private Button _sendDiagnosticData;
 
-    public DlgDefect(Shell parentShell)
+    @Nullable private final Throwable _exception;
+
+    public DlgDefect()
     {
-        super(S.REPORT_A_PROBLEM, parentShell, false, true, true, true);
+        this(null, null);
+    }
+
+    /**
+     *
+     * @param sheetStyleParent if non-null, the dialog attaches to this shell with the SHEET style.
+     * @param exception if non-null, the dialog shows the exception's stack as technical
+     * details, and the comment is optional.
+     */
+    public DlgDefect(@Nullable Shell sheetStyleParent, @Nullable Throwable exception)
+    {
+        super(S.REPORT_A_PROBLEM, sheetStyleParent == null ? GUI.get().sh() : sheetStyleParent,
+                sheetStyleParent != null, true, true, true);
+        _exception = exception;
     }
 
     /**
@@ -71,17 +80,72 @@ public class DlgDefect extends AeroFSJFaceDialog
         gl_container.marginWidth = GUIParam.MARGIN;
         container.setLayout(gl_container);
 
-        createEmailComposite(container);
+        createEmailFields(container);
 
+        createCommentFields(container);
+
+        if (_exception != null) createExceptionDetailsFields(container);
+
+        createSendMetadataFields(container);
+
+        getShell().addShellListener(new ShellAdapter()
+        {
+            @Override
+            public void shellActivated(ShellEvent shellEvent)
+            {
+                updateControlStatus();
+            }
+        });
+
+        _txtComment.setFocus();
+
+        return container;
+    }
+
+    private void createCommentFields(Composite container)
+    {
         Label lblWhatsUp = new Label(container, SWT.NONE);
-        lblWhatsUp.setText("What is the problem?");
+        // \n: a nasty way of setting margins. it's ugly but it works.
+        String msg = "\nPlease describe the problem";
+        if (_exception != null) msg += " (optional but recommended)";
+        msg += ':';
+        lblWhatsUp.setText(msg);
 
-        _txtReport = new Text(container, SWT.BORDER | SWT.WRAP | SWT.V_SCROLL | SWT.MULTI);
+        _txtComment = new Text(container, SWT.BORDER | SWT.WRAP | SWT.V_SCROLL | SWT.MULTI);
         GridData gd_text = new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1);
-        gd_text.heightHint = 87;
+        gd_text.heightHint = 80;
         gd_text.widthHint = 346;
-        _txtReport.setLayoutData(gd_text);
+        _txtComment.setLayoutData(gd_text);
 
+        _txtComment.addModifyListener(new ModifyListener()
+        {
+            @Override
+            public void modifyText(ModifyEvent modifyEvent)
+            {
+                updateControlStatus();
+            }
+        });
+    }
+
+    private void createExceptionDetailsFields(Composite container)
+    {
+        Label lblWhatsUp = new Label(container, SWT.NONE);
+        // \n: a nasty way of setting margins. it's ugly but it works.
+        lblWhatsUp.setText("\nTechnical detail:");
+
+        Text txtDetails = new Text(container, SWT.BORDER | SWT.WRAP | SWT.V_SCROLL | SWT.MULTI |
+                SWT.READ_ONLY);
+        GridData gd_text = new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1);
+        gd_text.heightHint = 120;
+        gd_text.widthHint = 346;
+        txtDetails.setLayoutData(gd_text);
+
+        txtDetails.setForeground(GUI.get().disp().getSystemColor(SWT.COLOR_DARK_GRAY));
+        txtDetails.setText(ExceptionUtils.getFullStackTrace(_exception));
+    }
+
+    private void createSendMetadataFields(Composite container)
+    {
         Composite composite = new Composite(container, SWT.NONE);
         composite.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
         GridLayout gl_composite = new GridLayout(2, false);
@@ -108,103 +172,70 @@ public class DlgDefect extends AeroFSJFaceDialog
                 GUIUtil.launch(WWW.TOS_URL.get());
             }
         });
+    }
 
-        getShell().addShellListener(new ShellAdapter()
+    private void createEmailFields(Composite container)
+    {
+        Label lblWhatsUp = new Label(container, SWT.NONE);
+        lblWhatsUp.setText(
+                "Thank you for contacting us! We will get back to you as early as we can.\n" +
+                "This email address will be used for correspondence regarding this issue:");
+
+        _txtEmailAddress = new Text(container, SWT.BORDER);
+        _txtEmailAddress.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 1, 1));
+        _txtEmailAddress.setText(Cfg.db().get(Key.CONTACT_EMAIL));
+        _txtEmailAddress.addModifyListener(new ModifyListener()
         {
             @Override
-            public void shellActivated(ShellEvent shellEvent)
+            public void modifyText(ModifyEvent modifyEvent)
             {
-                verify(null);
+                updateControlStatus();
             }
         });
-
-        return container;
     }
 
-    private void createEmailComposite(Composite container)
+    private void updateControlStatus()
     {
-        GridLayout gridLayout = new GridLayout(2, false);
-        gridLayout.marginWidth = 0;
-        gridLayout.marginHeight = 0;
-        Composite composite = new Composite(container, SWT.NONE);
-        composite.setLayout(gridLayout);
-        composite.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 1, 1));
+        boolean ready = true;
 
-        Label lblYouEmail = new Label(composite, SWT.NONE);
-        lblYouEmail.setText("Your email:");
+        if (!Util.isValidEmailAddress(_txtEmailAddress.getText())) ready = false;
 
-        GridData gridData = new GridData(SWT.FILL, SWT.CENTER, true, false, 1, 1);
+        // The comment is required if no exception is available
+        if (_exception == null && _txtComment.getText().isEmpty()) ready = false;
 
-        if (L.isMultiuser()) {
-            final Text txtEmailAddress = new Text(composite, SWT.BORDER);
-            txtEmailAddress.setLayoutData(gridData);
-            txtEmailAddress.setText(Cfg.db().get(Key.MULTIUSER_CONTACT_EMAIL));
-
-            txtEmailAddress.addVerifyListener(new VerifyListener()
-            {
-                @Override
-                public void verifyText(VerifyEvent verifyEvent)
-                {
-                    verify(getNewText(txtEmailAddress, verifyEvent));
-                }
-            });
-
-            _contactEmailGetter = new IContactEmailGetter()
-            {
-                @Override
-                public String get()
-                {
-                    return txtEmailAddress.getText();
-                }
-            };
-
-        } else {
-            final String emailAddress =  Cfg.user().getString();
-            Label lblEmailAddress = new Label(composite, SWT.NONE);
-            lblEmailAddress.setLayoutData(gridData);
-            lblEmailAddress.setText(emailAddress);
-            _contactEmailGetter = new IContactEmailGetter()
-            {
-                @Override
-                public String get()
-                {
-                    return emailAddress;
-                }
-            };
-        }
-    }
-
-    private void verify(@Nullable String contactEmail)
-    {
-        if (contactEmail == null) contactEmail = _contactEmailGetter.get();
-        getButton(IDialogConstants.OK_ID).setEnabled(Util.isValidEmailAddress(contactEmail));
+        getButton(IDialogConstants.OK_ID).setEnabled(ready);
     }
 
     @Override
     protected void buttonPressed(int buttonId)
     {
-        if (buttonId == IDialogConstants.OK_ID) {
-            final String msg = _txtReport.getText();
-            final boolean dumpDaemonStatus = _sendDiagnosticData.getSelection();
-            final String contactEmail = _contactEmailGetter.get();
-
-            ThreadUtil.startDaemonThread("defect-sender", new Runnable()
-            {
-                @Override
-                public void run()
-                {
-                    try {
-                        Cfg.db().set(Key.MULTIUSER_CONTACT_EMAIL, contactEmail);
-                    } catch (SQLException e) {
-                        l.warn("set contact email, ignored: " + Util.e(e));
-                    }
-
-                    CmdDefect.sendDefect(UIGlobals.ritual(), msg, dumpDaemonStatus);
-                }
-            });
-        }
+        if (buttonId == IDialogConstants.OK_ID) sendDefect();
 
         super.buttonPressed(buttonId);
+    }
+
+    private void sendDefect()
+    {
+        final String msg = _txtComment.getText() + (_exception == null ? "" :
+                 "\n\nTechical detail:\n" + ExceptionUtils.getFullStackTrace(_exception));
+
+        final boolean dumpDaemonStatus = _sendDiagnosticData.getSelection();
+        final String contactEmail = _txtEmailAddress.getText();
+
+        ThreadUtil.startDaemonThread("defect-sender", new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                try {
+                    Cfg.db().set(Key.CONTACT_EMAIL, contactEmail);
+                } catch (SQLException e) {
+                    l.warn("set contact email, ignored: " + Util.e(e));
+                }
+
+                CmdDefect.sendDefect(UIGlobals.ritual(), msg, dumpDaemonStatus);
+            }
+        });
     }
 
     /**

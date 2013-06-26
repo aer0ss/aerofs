@@ -198,7 +198,8 @@ class Setup
 
         DID did = CredentialUtil.registerDeviceAndSaveKeys(userID, scrypted, deviceName, sp);
 
-        initializeConfiguration(userID, did, rootAnchorPath, storageType, s3config, scrypted, sp);
+        initializeConfiguration(userID, userID.getString(), did, rootAnchorPath, storageType,
+                s3config, scrypted, sp);
 
         setupCommon(rootAnchorPath);
 
@@ -218,11 +219,10 @@ class Setup
         DID tsDID = CredentialUtil.registerTeamServerDeviceAndSaveKeys(tsUserId, tsScrypted,
                 deviceName, sp);
 
-        initializeConfiguration(tsUserId, tsDID, rootAnchorPath, storageType, s3config, tsScrypted, sp);
+        initializeConfiguration(tsUserId, userID.getString(), tsDID, rootAnchorPath, storageType,
+                s3config, tsScrypted, sp);
 
         setupCommon(rootAnchorPath);
-
-        Cfg.db().set(Key.MULTIUSER_CONTACT_EMAIL, userID.getString());
     }
 
     private void setupCommon(String rootAnchorPath)
@@ -309,8 +309,9 @@ class Setup
     /**
      * initialize the configuration database and the in-memory Cfg object
      */
-    private void initializeConfiguration(UserID userId, DID did, String rootAnchorPath,
-            StorageType storageType, PBS3Config s3config, byte[] scrypted, SPBlockingClient userSp)
+    private void initializeConfiguration(UserID userId, String contactEmail, DID did,
+            String rootAnchorPath, StorageType storageType, PBS3Config s3config, byte[] scrypted,
+            SPBlockingClient userSp)
             throws Exception
     {
         TreeMap<Key, String> map = Maps.newTreeMap();
@@ -319,6 +320,7 @@ class Setup
         map.put(Key.CRED, SecUtil.scrypted2encryptedBase64(scrypted));
         map.put(Key.ROOT, rootAnchorPath);
         map.put(Key.STORAGE_TYPE, storageType.name());
+        map.put(Key.CONTACT_EMAIL, contactEmail);
         map.put(Key.LAST_VER, Cfg.ver());
         map.put(Key.DAEMON_POST_UPDATES, Integer.toString(PostUpdate.DAEMON_POST_UPDATE_TASKS));
         map.put(Key.UI_POST_UPDATES, Integer.toString(PostUpdate.UI_POST_UPDATE_TASKS));

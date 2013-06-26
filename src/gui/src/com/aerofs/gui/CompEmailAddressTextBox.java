@@ -108,6 +108,5 @@ public class CompEmailAddressTextBox extends Composite
     public void setEnabled(boolean b)
     {
         GUIUtil.setEnabled(_text, b);
-        super.setEnabled(b);
     }
 }

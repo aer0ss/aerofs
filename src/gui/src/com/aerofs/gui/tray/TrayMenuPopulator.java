@@ -98,7 +98,7 @@ public class TrayMenuPopulator
                 @Override
                 protected void handleEventImpl(Event event)
                 {
-                    new DlgDefect(GUI.get().sh()).open();
+                    new DlgDefect().open();
                 }
             });
         }

@@ -87,7 +87,7 @@ public class ULTRecertifyDevice extends UILaunchTask
             @Override
             public void run()
             {
-                String email = Cfg.db().get(Key.MULTIUSER_CONTACT_EMAIL);
+                String email = Cfg.db().get(Key.CONTACT_EMAIL);
                 if (UI.isGUI()) typeCredentialsInGUI(email);
                 else typeCredentialsInCLI(email);
             }

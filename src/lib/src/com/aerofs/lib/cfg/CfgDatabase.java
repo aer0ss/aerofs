@@ -96,8 +96,7 @@ public class CfgDatabase
         // i.e. value = base64(scrypt(password|user))
         S3_ENCRYPTION_PASSWORD("s3_encryption_password", null),
 
-        // Configs only recognizable by multiuser installs
-        MULTIUSER_CONTACT_EMAIL("multiuser_contact_email", ""),
+        CONTACT_EMAIL("contact_email", ""),
 
         // first start of the daemon
         FIRST_START("first_start", true),

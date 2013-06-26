@@ -7,14 +7,19 @@ package com.aerofs.ui.error;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.AbstractExWirable;
 import com.aerofs.base.ex.IExObfuscated;
+import com.aerofs.gui.GUI;
+import com.aerofs.gui.misc.DlgDefect;
+import com.aerofs.labeling.L;
 import com.aerofs.lib.JsonFormat.ParseException;
 import com.aerofs.lib.ex.ExNoConsole;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.UI;
+import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.swt.widgets.Shell;
 import org.slf4j.Logger;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.EOFException;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -53,12 +58,16 @@ public class ErrorMessages
      *      {@code instanceof} one of the exception types, the corresponding message is shown. If if
      *      it matches more than one entries in the array, the first match is used.
      * @param defaultMessage the message for exceptions that is not {@code instanceof} any exception
-     *      types specified in {@code messages}.
+     *      types specified in {@code messages}. In most cases, the content of the message should be:
+     *
+     *      L.brand() + " couldn't {verb}."
+     *
+     *      where {verb} describes the attempted operation, such as "share the folder".
      */
     public static void show(@Nonnull Throwable exception, @Nonnull String defaultMessage,
             @Nonnull ErrorMessage ... messages)
     {
-        show(null, exception, defaultMessage, messages);
+        showImpl(null, exception, defaultMessage, messages);
     }
 
     /**
@@ -68,13 +77,18 @@ public class ErrorMessages
     public static void show(@Nonnull Shell shell, @Nonnull Throwable exception,
             @Nonnull String defaultMessage, @Nonnull ErrorMessage ... messages)
     {
+        showImpl(shell, exception, defaultMessage, messages);
+    }
+
+    private static void showImpl(@Nullable Shell shell, Throwable exception, String defaultMessage,
+            ErrorMessage[] messages)
+    {
         l.warn("error message for exception:", exception);
 
-        String message = getMessage(exception, defaultMessage, messages);
+        String message = getMessageNullable(exception, messages);
 
-        if (!UI.isGUI()) {
-            UI.get().show(MessageType.ERROR, message + " See log files for debugging information.");
-        }
+        if (UI.isGUI()) showInGUI(shell, exception, defaultMessage, message);
+        else showInCLI(defaultMessage, message);
     }
 
     /**
@@ -84,17 +98,57 @@ public class ErrorMessages
      *    showUnnormalized() does not normalize them.
      */
     static private ErrorMessage[] _commonMessages = new ErrorMessage[] {
-        new ErrorMessage(ExNoConsole.class, "No console is availabble for user input.")
+            new ErrorMessage(ExNoConsole.class, "No console is availabble for user input."),
+//            new ErrorMessage(ExEmailNotVerified.class, "Please verify your email address first." +
+//                    " If you haven't received verification email. ")
     };
 
-    private static String getMessage(Throwable exception, String defaultMessage,
-            ErrorMessage ... messages)
+    /**
+     * @return null if no message corresponding to the type is found, and the default message
+     * should be used.
+     */
+    private static String getMessageNullable(Throwable exception, ErrorMessage... messages)
     {
         for (ErrorMessage em : messages) if (em._type.isInstance(exception)) return em._message;
 
         for (ErrorMessage em : _commonMessages) if (em._type.isInstance(exception)) return em._message;
 
-        return defaultMessage;
+        return null;
+    }
+
+    private static void showInGUI(Shell shell, Throwable exception, String defaultMessage,
+            String message)
+    {
+        String reportButtonLabel;
+        if (message == null) {
+            // Suffix "please try again later..." for unspecified error types
+            message = defaultMessage + " Please try again later. If the problem persists, " +
+                    "please report it to the " + L.brand() + " team.";
+            reportButtonLabel = "Report...";
+        } else {
+            reportButtonLabel = "Ask for Help...";
+        }
+
+        if (GUI.get().askWithDefaultOnNoButton(shell, MessageType.ERROR, message,
+                reportButtonLabel, IDialogConstants.OK_LABEL)) {
+            new DlgDefect(shell, exception).open();
+        }
+    }
+
+    private static void showInCLI(String defaultMessage, String message)
+    {
+        /**
+         * Do not customize messages as what we do for GUI for two reasons:
+         *
+         * 1. aerofs-sh does not specify type-specific error messages. If we customize messages,
+         * all the messages would be suffixed with "please try again later", which is
+         * inappropriate for input-induced errors.
+         *
+         * 2. CLI users are usually tech savvies and don't need much handholding, and having
+         * aeofs-sh to specify type-specific error messages would be time consuming :)
+         */
+        if (message == null) message = defaultMessage;
+        UI.get().show(MessageType.ERROR, message + " See log files for debugging information.");
     }
 
     ////////

@@ -149,7 +149,7 @@ public class LibParam extends BaseParam
         // These variables are saved here rather than *PostUpdateTasks classes so that both
         // UI and processes can access them.
         public static final int DAEMON_POST_UPDATE_TASKS = 33;
-        public static final int UI_POST_UPDATE_TASKS = 1;
+        public static final int UI_POST_UPDATE_TASKS = 2;
     }
 
     public static class Ritual

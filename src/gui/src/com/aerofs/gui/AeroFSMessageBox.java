@@ -24,8 +24,17 @@ public class AeroFSMessageBox extends AeroFSJFaceDialog {
     }
 
     public static enum ButtonType {
+        // Only show an OK button
         OKAY,
-        OKAY_CANCEL
+
+        // Show an OK button and a Cancel button
+        OKAY_CANCEL,
+
+        // Show an OK button and a Cancel button, with the default button being the Cancel button.
+        // On OSX, the default button is placed on the left-most position in the dialog. Because the
+        // user pressing ESC triggers the Cancel button, use this ButtonType if the ESC action
+        // should be attached to the button on the left corner on OSX.
+        OKAY_CANCEL_DEFAULT_ON_CANCEL,
     }
 
     public static final int OK_ID = IDialogConstants.OK_ID;
@@ -115,6 +124,10 @@ public class AeroFSMessageBox extends AeroFSJFaceDialog {
         case OKAY_CANCEL:
             _okayBtn = createButton(parent, OK_ID, _okayLabel, true);
             _cancelBtn = createButton(parent, CANCEL_ID, _cancelLabel, false);
+            break;
+        case OKAY_CANCEL_DEFAULT_ON_CANCEL:
+            _okayBtn = createButton(parent, OK_ID, _okayLabel, false);
+            _cancelBtn = createButton(parent, CANCEL_ID, _cancelLabel, true);
             break;
         default:
             _okayBtn = createButton(parent, OK_ID, IDialogConstants.OK_LABEL, true);
