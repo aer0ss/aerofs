@@ -1,5 +1,5 @@
 #!/bin/bash -e
-chroot /mnt/image /opt/installers/tools/pull.sh
+chroot /mnt/image /opt/installers/tools/pull-binaries.sh
 echo "Client binaries successfully downloaded."
 
 # Stop pesky services so we can unmount successfully.
