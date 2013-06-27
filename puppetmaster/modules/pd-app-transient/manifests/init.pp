@@ -102,6 +102,11 @@ class pd-app-transient {
         old_pattern => "deployment.mode = .*",
         new_pattern => "deployment.mode = private",
     }
+    file{ "/opt/web/web/static/installers":
+        ensure  => link,
+        target  => "/opt/installers/binaries/modified",
+        require => Package["aerofs-installers"],
+    }
 
     # --------------
     # Bootstrap

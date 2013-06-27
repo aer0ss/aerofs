@@ -1,0 +1,4 @@
+#!/bin/bash
+
+# Construct dependency for drew's damage scripts.
+sudo pip install construct
