@@ -5,8 +5,8 @@
 package com.aerofs.daemon.transport.xmpp;
 
 import com.aerofs.base.id.DID;
-import com.aerofs.daemon.transport.lib.ITransportStats.BasicStatsCounter;
 import com.aerofs.daemon.transport.lib.MaxcastFilterReceiver;
+import com.aerofs.daemon.transport.lib.TransportStats;
 import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
 import com.aerofs.lib.event.IEvent;
 
@@ -14,13 +14,11 @@ import static com.aerofs.daemon.transport.lib.TPUtil.registerMulticastHandler;
 
 public class Jingle extends XMPP
 {
-    public Jingle(DID localdid, String id, int rank, IBlockingPrioritizedEventSink<IEvent> sink,
-            MaxcastFilterReceiver mcfr)
+    public Jingle(DID localdid, String id, int rank, IBlockingPrioritizedEventSink<IEvent> sink, MaxcastFilterReceiver mcfr)
     {
         super(localdid, id, rank, sink, mcfr);
-        com.aerofs.daemon.transport.xmpp.jingle.Jingle jingle =
-                new com.aerofs.daemon.transport.xmpp.jingle.Jingle(id, rank, this, new BasicStatsCounter());
-        setPipe_(jingle);
+        com.aerofs.daemon.transport.xmpp.jingle.Jingle jingle = new com.aerofs.daemon.transport.xmpp.jingle.Jingle(id, rank, this, new TransportStats());
+        setConnectionService_(jingle);
         registerMulticastHandler(this);
     }
 

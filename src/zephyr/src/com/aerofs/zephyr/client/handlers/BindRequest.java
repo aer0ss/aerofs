@@ -1,9 +1,9 @@
-package com.aerofs.zephyr.client.message;
+package com.aerofs.zephyr.client.handlers;
 
 import javax.annotation.concurrent.Immutable;
 
 @Immutable
-public final class BindRequest
+final class BindRequest
 {
     public final int remoteZid;
 

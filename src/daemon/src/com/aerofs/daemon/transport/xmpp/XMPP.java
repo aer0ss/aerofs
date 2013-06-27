@@ -29,7 +29,7 @@ import com.aerofs.daemon.transport.lib.StreamManager;
 import com.aerofs.daemon.transport.lib.TPUtil;
 import com.aerofs.daemon.transport.lib.TransportDiagnosisState;
 import com.aerofs.daemon.transport.xmpp.XMPPServerConnection.IXMPPServerConnectionWatcher;
-import com.aerofs.daemon.transport.xmpp.routing.SignalledPipeFanout;
+import com.aerofs.daemon.transport.xmpp.routing.ConnectionServiceWrapper;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.SystemUtil;
@@ -80,7 +80,6 @@ import static com.aerofs.proto.Transport.PBTPHeader.Type.STREAM;
 import static com.aerofs.proto.Transport.PBTPHeader.Type.TRANSPORT_CHECK_PULSE_CALL;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
-import static com.google.common.collect.Sets.newHashSet;
 
 /**
  * Acts as a controller (or wrapper) over a number of {@link IConnectionService} implementations
@@ -125,17 +124,12 @@ public abstract class XMPP implements ITransportImpl, IConnectionServiceListener
         _xsc = new XMPPServerConnection(id(), this);
         _mc = new Multicast(this, localdid, id());
         _mcfr = mcfr;
-
-        // FIXME (AG): leaking 'this' before construction is seriously unsafe
-        // only doing this because refactoring would be seriously expensive and we're doing this
-        // in single-threaded phase
-
         _pm.addPulseDeletionWatcher(new GenericPulseDeletionWatcher(this, _sink));
     }
 
-    protected final void setPipe_(ISignalledConnectionService pipe)
+    protected final void setConnectionService_(ISignalledConnectionService connectionService)
     {
-        _spf = new SignalledPipeFanout(_sched, newHashSet(pipe));
+        _spf = new ConnectionServiceWrapper(_sched, connectionService);
     }
 
     @Override
@@ -286,7 +280,7 @@ public abstract class XMPP implements ITransportImpl, IConnectionServiceListener
     //
     //--------------------------------------------------------------------------
 
-    // (AG): ideally I should delegate to <code>SignalledPipeFanout</code>
+    // (AG): ideally I should delegate to <code>ConnectionServiceWrapper</code>
     // unfortunately it would need too much access to XMPP's state
 
     @Override
@@ -672,7 +666,7 @@ public abstract class XMPP implements ITransportImpl, IConnectionServiceListener
      * @throws ExFormatError if the <code>JID</code> cannot be converted to a
      * <code>DID</code>
      * @throws ExNoResource if a request to disconnect from a peer
-     * cannot be processed by {@link SignalledPipeFanout} due to resource constraints
+     * cannot be processed by {@link com.aerofs.daemon.transport.xmpp.routing.ConnectionServiceWrapper} due to resource constraints
      * within an {@link ISignalledConnectionService}
      */
     private void processPresence_(Presence p)
@@ -1063,7 +1057,7 @@ public abstract class XMPP implements ITransportImpl, IConnectionServiceListener
     private final XMPPPresenceManager _xpm = new XMPPPresenceManager();
     private final Multicast _mc;
     private final XMPPServerConnection _xsc;
-    private SignalledPipeFanout _spf;
+    private ConnectionServiceWrapper _spf;
 
     protected static final Logger l = Loggers.getLogger(XMPP.class);
 

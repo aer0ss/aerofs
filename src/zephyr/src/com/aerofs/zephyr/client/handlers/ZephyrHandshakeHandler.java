@@ -1,15 +1,14 @@
-package com.aerofs.zephyr.client.pipeline;
+package com.aerofs.zephyr.client.handlers;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.zephyr.client.IZephyrSignallingClient;
 import com.aerofs.zephyr.client.IZephyrSignallingService;
 import com.aerofs.zephyr.client.ZephyrHandshakeEngine;
 import com.aerofs.zephyr.client.ZephyrHandshakeEngine.HandshakeReturn;
-import com.aerofs.zephyr.client.exception.ExHandshakeFailed;
-import com.aerofs.zephyr.client.message.BindRequest;
-import com.aerofs.zephyr.client.message.Registration;
+import com.aerofs.zephyr.client.exceptions.ExHandshakeFailed;
 import com.aerofs.zephyr.proto.Zephyr.ZephyrControlMessage;
 import com.aerofs.zephyr.proto.Zephyr.ZephyrHandshake;
+import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureListener;
@@ -25,23 +24,27 @@ import org.slf4j.Logger;
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.net.SocketAddress;
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.concurrent.TimeUnit;
 
+import static com.aerofs.base.net.ChannelUtil.pretty;
 import static com.aerofs.base.net.ZephyrConstants.ZEPHYR_INVALID_CHAN_ID;
 import static com.aerofs.zephyr.client.ZephyrHandshakeEngine.HandshakeReturn.NO_ACTION;
 import static com.aerofs.zephyr.client.ZephyrHandshakeEngine.HandshakeState.SUCCEEDED;
 import static com.aerofs.zephyr.proto.Zephyr.ZephyrControlMessage.Type.HANDSHAKE;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.collect.Lists.newArrayListWithCapacity;
 import static org.jboss.netty.channel.Channels.connect;
 import static org.jboss.netty.channel.Channels.fireChannelConnected;
 import static org.jboss.netty.channel.Channels.fireExceptionCaught;
+import static org.jboss.netty.channel.Channels.fireMessageReceived;
 import static org.jboss.netty.channel.Channels.future;
 import static org.jboss.netty.channel.Channels.write;
 
 // FIXME (AG): don't deal with PBs here if I can avoid it
 // FIXME (AG): avoid synchronizing every method
-// it's possible for me to avoid synchronization by using channels.fireMessageReceived with a Handshake object
 final class ZephyrHandshakeHandler extends SimpleChannelHandler implements IZephyrSignallingClient
 {
     private static final Logger l = Loggers.getLogger(ZephyrHandshakeHandler.class);
@@ -51,6 +54,9 @@ final class ZephyrHandshakeHandler extends SimpleChannelHandler implements IZeph
     private final long handshakeTimeout;
     private final TimeUnit handshakeTimeoutTimeUnit;
     private final ZephyrHandshakeEngine handshakeEngine = new ZephyrHandshakeEngine();
+    private final ArrayList<ChannelBuffer> receivedBuffers = newArrayListWithCapacity(100);
+
+    private volatile String channelId;
 
     private @Nullable ChannelStateEvent originalConnectEvent;
     private @Nullable ChannelHandlerContext handlerCtx;
@@ -63,15 +69,37 @@ final class ZephyrHandshakeHandler extends SimpleChannelHandler implements IZeph
         this.handshakeTimeoutTimeUnit = handshakeTimeoutTimeUnit;
     }
 
+    synchronized long getRemoteZid()
+    {
+        return handshakeEngine.getRemoteZid();
+    }
+
+    synchronized long getLocalZid()
+    {
+        return handshakeEngine.getLocalZid();
+    }
+
+    synchronized boolean hasHandshakeCompleted()
+    {
+        return handshakeEngine.getState() == SUCCEEDED;
+    }
+
+    @Override
+    public void channelOpen(ChannelHandlerContext ctx, ChannelStateEvent e)
+            throws Exception
+    {
+        channelId = pretty(e.getChannel());
+
+        super.channelOpen(ctx, e);
+    }
+
     @Override
     public synchronized void connectRequested(ChannelHandlerContext ctx, ChannelStateEvent e)
             throws Exception
     {
-        l.debug("c:{} begin connect", getChannelId(e.getChannel()));
-
         Channel channel = e.getChannel();
 
-        checkState(originalConnectEvent == null, "connect called multiple times  for " + getChannelId(channel));
+        checkState(originalConnectEvent == null, "c:"  + channelId + " connect called multiple times");
         originalConnectEvent = e;
 
         checkState(handlerCtx == null, "ctx already set old:" + handlerCtx);
@@ -115,27 +143,36 @@ final class ZephyrHandshakeHandler extends SimpleChannelHandler implements IZeph
     public void writeRequested(ChannelHandlerContext ctx, MessageEvent e)
             throws Exception
     {
-        throw new IllegalStateException("cannot write before zephyr handshake complete");
+        throw new IllegalStateException("zephyr handshake not completed");
     }
 
     @Override
     public synchronized void messageReceived(ChannelHandlerContext ctx, MessageEvent e)
             throws Exception
     {
-        if (!(e.getMessage() instanceof Registration)) {
-            super.messageReceived(ctx, e);
-            return;
-        }
+        Object incoming = e.getMessage();
 
-        Registration reg = (Registration) e.getMessage();
-        handshakeEngine.setLocalZid(reg.getAssignedZid());
-        handshake(ctx);
+        if (incoming instanceof Registration) {
+            l.debug("c:{} received reg", channelId);
+
+            Registration reg = (Registration) incoming;
+            handshakeEngine.setLocalZid(reg.getAssignedZid());
+            handshake(ctx);
+        } else if (incoming instanceof ChannelBuffer) {
+            l.debug("c:{} buffer incoming buffer size:{}", channelId, receivedBuffers.size());
+
+            ChannelBuffer buf = (ChannelBuffer) incoming;
+            boolean added = receivedBuffers.add(buf);
+            checkState(added);
+        } else {
+            throw new IllegalArgumentException("unexpected type:" + incoming.getClass().getSimpleName());
+        }
     }
 
     private void handshake(ChannelHandlerContext ctx)
             throws ExHandshakeFailed
     {
-        l.debug("c:{} begin zephyr handshake", getChannelId(ctx.getChannel()));
+        l.trace("c:{} begin zephyr handshake", channelId);
 
         setHandshakeTimeout(ctx.getChannel());
         HandshakeReturn action = handshakeEngine.startHandshaking();
@@ -150,8 +187,8 @@ final class ZephyrHandshakeHandler extends SimpleChannelHandler implements IZeph
             public void run(Timeout timeout)
                     throws Exception
             {
-                if (!(handshakeEngine.getState() == SUCCEEDED)) {
-                    fireExceptionCaught(channel, new ExHandshakeFailed("timeout during handshake for " + getChannelId(channel)));
+                if (!channel.getCloseFuture().isDone() && !(handshakeEngine.getState() == SUCCEEDED)) {
+                    fireExceptionCaught(channel, new ExHandshakeFailed("timeout during handshake for " + channelId));
                 }
             }
         }, handshakeTimeout, handshakeTimeoutTimeUnit);
@@ -161,13 +198,12 @@ final class ZephyrHandshakeHandler extends SimpleChannelHandler implements IZeph
     public synchronized void processIncomingZephyrSignallingMessage(ZephyrHandshake incoming) // IMPORTANT: called on non-IO thread!
             throws ExHandshakeFailed
     {
-
-        l.debug("c:{} <-sig ms:{} md:{}", getChannelId(checkNotNull(handlerCtx).getChannel()), incoming.getSourceZephyrId(), incoming.getDestinationZephyrId());
+        l.debug("c:{} <-sig ms:{} md:{}", channelId, incoming.getSourceZephyrId(), incoming.getDestinationZephyrId());
 
         checkNotNull(handlerCtx);
 
         if (handlerCtx.getChannel().getCloseFuture().isDone()) {
-            l.warn("c:{} <-sig after close", getChannelId(handlerCtx.getChannel()));
+            l.warn("c:{} <-sig after close", channelId);
             return;
         }
 
@@ -186,7 +222,7 @@ final class ZephyrHandshakeHandler extends SimpleChannelHandler implements IZeph
             throws ExHandshakeFailed
     {
         if (action == NO_ACTION) {
-            l.debug("c:{} handshake engine returned NO_ACTION", getChannelId(channel));
+            l.trace("c:{} handshake engine returned NO_ACTION", channelId);
             return;
         }
 
@@ -206,7 +242,7 @@ final class ZephyrHandshakeHandler extends SimpleChannelHandler implements IZeph
             throw new ExHandshakeFailed("unexpected handshake action:" + action);
         }
 
-        l.debug("c:{} ->sig ha:{} ms:{} md:{}", getChannelId(channel), action, handshake.getSourceZephyrId(), handshake.getDestinationZephyrId());
+        l.debug("c:{} ->sig ha:{} ms:{} md:{}", channelId, action, handshake.getSourceZephyrId(), handshake.getDestinationZephyrId());
 
         ZephyrControlMessage outgoing = ZephyrControlMessage
                 .newBuilder()
@@ -219,7 +255,7 @@ final class ZephyrHandshakeHandler extends SimpleChannelHandler implements IZeph
 
     private void bind(final ChannelHandlerContext ctx, int remoteZid)
     {
-        l.debug("c:{} bind to remote l:{} r:{}", getChannelId(ctx.getChannel()), handshakeEngine.getLocalZid(), remoteZid);
+        l.debug("c:{} bind to remote l:{} r:{}", channelId, handshakeEngine.getLocalZid(), remoteZid);
 
         ChannelFuture writeFuture = future(ctx.getChannel());
         writeFuture.addListener(new ChannelFutureListener()
@@ -234,11 +270,13 @@ final class ZephyrHandshakeHandler extends SimpleChannelHandler implements IZeph
                 if (channelFuture.isSuccess()) {
                     checkNotNull(originalConnectEvent);
 
-                    l.debug("c:{} succeed bind write", getChannelId(channel));
+                    l.debug("c:{} succeed bind write", channelId);
                     originalConnectEvent.getFuture().setSuccess();
                     fireChannelConnected(ctx, (SocketAddress) originalConnectEvent.getValue());
+
+                    drainReceived(ctx);
                 } else {
-                    l.debug("c:{} fail bind write", getChannelId(channel));
+                    l.warn("c:{} fail bind write", channelId);
                     Throwable originalCause = channelFuture.getCause();
                     fireExceptionCaught(ctx, originalCause == null ? new IOException("bind write failed") : originalCause);
                 }
@@ -248,8 +286,12 @@ final class ZephyrHandshakeHandler extends SimpleChannelHandler implements IZeph
         write(ctx, writeFuture, new BindRequest(remoteZid));
     }
 
-    private Integer getChannelId(Channel channel)
+    private void drainReceived(ChannelHandlerContext ctx)
     {
-        return channel.getId(); // FIXME (AG): cache
+        Iterator<ChannelBuffer> it = receivedBuffers.iterator();
+        while(it.hasNext()) {
+            fireMessageReceived(ctx, it.next());
+            it.remove();
+        }
     }
 }

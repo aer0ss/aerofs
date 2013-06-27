@@ -735,6 +735,6 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
     private boolean isSecureTransport(PeerContext pc)
     {
         String id = pc.ep().tp().id();
-        return id.equals("t"); // || id.equals("z");
+        return id.equals("t") || id.equals("z");
     }
 }

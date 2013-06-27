@@ -3,7 +3,7 @@
  * Copyright (c) Air Computing Inc., 2011
  */
 
-package com.aerofs.zephyr.client.exception;
+package com.aerofs.zephyr.client.exceptions;
 
 /**
  * TODO: Replace ExBadZephyrMessage with this when server code refactore

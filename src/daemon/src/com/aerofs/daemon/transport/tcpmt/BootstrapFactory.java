@@ -14,9 +14,8 @@ import com.aerofs.base.ssl.SSLEngineFactory;
 import com.aerofs.base.ssl.SSLEngineFactory.Mode;
 import com.aerofs.base.ssl.SSLEngineFactory.Platform;
 import com.aerofs.daemon.lib.DaemonParam;
-import com.aerofs.daemon.transport.lib.ChannelStatsHandler;
-import com.aerofs.daemon.transport.lib.ITransportStats;
-import com.aerofs.daemon.transport.lib.TransportStatsHandler;
+import com.aerofs.daemon.transport.lib.TransportStats;
+import com.aerofs.daemon.transport.lib.handlers.IOStatsHandler;
 import com.aerofs.daemon.transport.tcpmt.TCPServerHandler.ITCPServerHandlerListener;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.cfg.Cfg;
@@ -37,7 +36,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
 
-import static com.google.common.base.Preconditions.*;
+import static com.google.common.base.Preconditions.checkState;
 import static java.util.concurrent.Executors.newSingleThreadExecutor;
 
 /**
@@ -58,18 +57,16 @@ class BootstrapFactory
                 LibParam.CORE_MAGIC).array();
     }
 
-    private final AddressResolverHandler _addressResolver
-            = new AddressResolverHandler(newSingleThreadExecutor());
+    private final AddressResolverHandler _addressResolver = new AddressResolverHandler(newSingleThreadExecutor());
+    private final TransportStats _stats;
 
-    private final TransportStatsHandler _transportStatsHandler;
-
-    BootstrapFactory(ITransportStats stats)
+    BootstrapFactory(TransportStats stats)
     {
         // Check that the maximum message size is smaller than the maximum number that can be
         // represented using LENGTH_FIELD_SIZE bytes
         checkState(FrameParams.MAX_MESSAGE_SIZE < Math.pow(256, FrameParams.LENGTH_FIELD_SIZE));
 
-        _transportStatsHandler = new TransportStatsHandler(stats);
+        _stats = stats;
     }
 
     ClientBootstrap newClientBootstrap(ClientSocketChannelFactory channelFactory)
@@ -86,8 +83,7 @@ class BootstrapFactory
 
                 return Channels.pipeline(
                         _addressResolver,
-                        _transportStatsHandler,
-                        newChannelStatsHandler(),
+                        newStatsHandler(),
                         newSslHandler(sslEngineFactory),
                         newFameDecoder(),
                         newLengthFieldPrepender(),
@@ -115,8 +111,7 @@ class BootstrapFactory
 
                 return Channels.pipeline(
                         _addressResolver,
-                        _transportStatsHandler,
-                        newChannelStatsHandler(),
+                        newStatsHandler(),
                         newSslHandler(sslEngineFactory),
                         newFameDecoder(),
                         newLengthFieldPrepender(),
@@ -176,8 +171,8 @@ class BootstrapFactory
         return new WriteMagicHeaderHandler(FrameParams.MAGIC_BYTES);
     }
 
-    private ChannelStatsHandler newChannelStatsHandler()
+    private IOStatsHandler newStatsHandler()
     {
-        return new ChannelStatsHandler();
+        return new IOStatsHandler(_stats);
     }
 }

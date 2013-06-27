@@ -12,7 +12,7 @@ import static com.aerofs.daemon.transport.xmpp.routing.ErrorPipe.ERROR_PIPE;
 
 /**
  * A stream cookie that is always returned by <code>send</code> calls to
- * a {@link SignalledPipeFanout}. It remembers the connection-count number of the
+ * a {@link ConnectionServiceWrapper}. It remembers the connection-count number of the
  * {@link com.aerofs.daemon.transport.xmpp.IConnectionService} used to send a packet to a peer. A difference between
  * this stored connection count and one available in the system means that a
  * reconnection occurred.

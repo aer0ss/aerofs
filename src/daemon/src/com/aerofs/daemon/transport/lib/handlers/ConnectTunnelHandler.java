@@ -1,4 +1,4 @@
-package com.aerofs.zephyr.client.pipeline;
+package com.aerofs.daemon.transport.lib.handlers;
 
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureListener;
@@ -24,7 +24,7 @@ import static org.jboss.netty.channel.Channels.fireChannelConnected;
 import static org.jboss.netty.channel.Channels.fireExceptionCaught;
 import static org.jboss.netty.channel.Channels.write;
 
-final class ConnectTunnelHandler extends SimpleChannelHandler
+public final class ConnectTunnelHandler extends SimpleChannelHandler
 {
     private InetSocketAddress addressToConnectTo = null;
     private ChannelFuture originalConnectFuture = null;

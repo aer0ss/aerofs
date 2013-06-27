@@ -1,4 +1,4 @@
-package com.aerofs.zephyr.client.pipeline;
+package com.aerofs.daemon.transport.lib.handlers;
 
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelStateEvent;
@@ -21,7 +21,7 @@ import static org.jboss.netty.channel.Channels.fireChannelConnected;
  * address. This makes it look like the connection was never intercepted
  *
  */
-final class ProxiedConnectionHandler extends SimpleChannelHandler
+public final class ProxiedConnectionHandler extends SimpleChannelHandler
 {
     private final SocketAddress proxyAddress;
     private InetSocketAddress destinationAddress;

@@ -1,11 +1,10 @@
-package com.aerofs.zephyr.client.message;
+package com.aerofs.zephyr.client.handlers;
 
 import javax.annotation.concurrent.Immutable;
 
 @Immutable
-public final class Registration
+final class Registration
 {
-
     private final int assignedZid;
 
     public Registration(int assignedZid)

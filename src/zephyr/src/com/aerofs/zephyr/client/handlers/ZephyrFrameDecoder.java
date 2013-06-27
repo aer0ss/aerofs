@@ -1,8 +1,6 @@
-package com.aerofs.zephyr.client.pipeline;
+package com.aerofs.zephyr.client.handlers;
 
-import com.aerofs.zephyr.client.exception.ExBadZephyrMessage;
-import com.aerofs.zephyr.client.message.Registration;
-import com.aerofs.zephyr.client.message.RelayedData;
+import com.aerofs.zephyr.client.exceptions.ExBadZephyrMessage;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelHandlerContext;
@@ -77,7 +75,7 @@ final class ZephyrFrameDecoder extends FrameDecoder
 
         ChannelBuffer payload = buffer.readBytes(payloadLength);
         if (relayedData) {
-            return new RelayedData(payload);
+            return payload;
         } else {
             return newRegistration(payload);
         }

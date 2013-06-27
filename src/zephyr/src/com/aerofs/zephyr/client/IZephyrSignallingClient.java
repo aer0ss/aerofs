@@ -4,7 +4,7 @@
 
 package com.aerofs.zephyr.client;
 
-import com.aerofs.zephyr.client.exception.ExHandshakeFailed;
+import com.aerofs.zephyr.client.exceptions.ExHandshakeFailed;
 import com.aerofs.zephyr.proto.Zephyr.ZephyrHandshake;
 
 public interface IZephyrSignallingClient

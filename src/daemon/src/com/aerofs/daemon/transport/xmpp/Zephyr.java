@@ -13,8 +13,8 @@ import com.aerofs.base.id.UserID;
 import com.aerofs.base.ssl.SSLEngineFactory;
 import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.daemon.mobile.MobileServerZephyrConnector;
-import com.aerofs.daemon.transport.lib.ITransportStats.BasicStatsCounter;
 import com.aerofs.daemon.transport.lib.MaxcastFilterReceiver;
+import com.aerofs.daemon.transport.lib.TransportStats;
 import com.aerofs.daemon.transport.xmpp.zephyr.ZephyrConnectionService;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.SystemUtil;
@@ -60,6 +60,7 @@ public class Zephyr extends XMPP implements ISignallingService
             IBlockingPrioritizedEventSink<IEvent> sink,
             MaxcastFilterReceiver mcfr,
             SSLEngineFactory clientSSLEngineFactory,
+            SSLEngineFactory serverSSLEngineFactory,
             ClientSocketChannelFactory clientSocketChannelFactory,
             MobileServerZephyrConnector mobileZephyr,
             RockLog rocklog,
@@ -70,16 +71,17 @@ public class Zephyr extends XMPP implements ISignallingService
 
         checkState(DaemonParam.XMPP.CONNECT_TIMEOUT > DaemonParam.Zephyr.HANDSHAKE_TIMEOUT); // should be much larger!
 
-        ZephyrConnectionService pipe = new ZephyrConnectionService(
+        ZephyrConnectionService zephyrConnectionService = new ZephyrConnectionService(
                 new BasicIdentifier(id, rank),
                 localid, localdid,
                 clientSSLEngineFactory,
+                serverSSLEngineFactory,
                 this,
                 this,
-                new BasicStatsCounter(),
+                new TransportStats(),
                 rocklog,
                 clientSocketChannelFactory, zephyrAddress, proxy);
-        setPipe_(pipe);
+        setConnectionService_(zephyrConnectionService);
         mobileZephyrConnector = mobileZephyr;
 
         l.debug("{}: mc enable:{}", id, enableMulticast);

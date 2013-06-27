@@ -1,7 +1,6 @@
-package com.aerofs.zephyr.client.pipeline;
+package com.aerofs.zephyr.client.handlers;
 
-import com.aerofs.zephyr.client.exception.ExBadZephyrMessage;
-import com.aerofs.zephyr.client.message.BindRequest;
+import com.aerofs.zephyr.client.exceptions.ExBadZephyrMessage;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.ChannelDownstreamHandler;

@@ -4,11 +4,11 @@ import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.event.lib.imc.IResultWaiter;
-import com.aerofs.daemon.transport.lib.ChannelStatsHandler;
 import com.aerofs.daemon.transport.lib.IPipeDebug;
-import com.aerofs.daemon.transport.lib.ITransportStats.BasicStatsCounter;
 import com.aerofs.daemon.transport.lib.IUnicast;
 import com.aerofs.daemon.transport.lib.TPUtil;
+import com.aerofs.daemon.transport.lib.TransportStats;
+import com.aerofs.daemon.transport.lib.handlers.IOStatsHandler;
 import com.aerofs.daemon.transport.tcpmt.TCPServerHandler.ITCPServerHandlerListener;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.event.Prio;
@@ -47,7 +47,7 @@ class Unicast implements IUnicast, IPipeDebug, ITCPServerHandlerListener
     private final ITCP _tcp;
     private final ARP _arp;
     private final Stores _stores;
-    private final BasicStatsCounter _statsCounter = new BasicStatsCounter();
+    private final TransportStats _transportStats = new TransportStats();
     private final ClientBootstrap _clientBootstrap;
     private final ServerBootstrap _serverBootstrap;
     private final ConcurrentMap<DID, TCPClientHandler> _clients = Maps.newConcurrentMap();
@@ -62,7 +62,7 @@ class Unicast implements IUnicast, IPipeDebug, ITCPServerHandlerListener
         _arp = arp;
         _stores = stores;
 
-        BootstrapFactory bsFact = new BootstrapFactory(_statsCounter);
+        BootstrapFactory bsFact = new BootstrapFactory(_transportStats);
         _serverBootstrap = bsFact.newServerBootstrap(serverChannelFactory, this, tcp);
         _clientBootstrap = bsFact.newClientBootstrap(clientChannelFactory);
     }
@@ -162,8 +162,8 @@ class Unicast implements IUnicast, IPipeDebug, ITCPServerHandlerListener
         TCPServerHandler server = _servers.get(did);
         if (server == null) return 0;
 
-        ChannelStatsHandler stats = server.getPipeline().get(ChannelStatsHandler.class);
-        return stats.getBytesReceived();
+        IOStatsHandler stats = server.getPipeline().get(IOStatsHandler.class);
+        return stats.getBytesReceivedOnChannel();
     }
 
     @Override
@@ -266,8 +266,8 @@ class Unicast implements IUnicast, IPipeDebug, ITCPServerHandlerListener
         PBTransport.Builder tpbuilder = builder.getTransportBuilder(lastBuilderIdx - 1);
 
         // Add global bytes sent / received stats
-        tpbuilder.setBytesIn(_statsCounter.getBytesReceived());
-        tpbuilder.setBytesOut(_statsCounter.getBytesSent());
+        tpbuilder.setBytesIn(_transportStats.getBytesReceived());
+        tpbuilder.setBytesOut(_transportStats.getBytesSent());
 
         // Add arp
         if (tp.hasDiagnosis()) tpbuilder.setDiagnosis("arp:\n" + _arp);
@@ -281,8 +281,8 @@ class Unicast implements IUnicast, IPipeDebug, ITCPServerHandlerListener
                 TCPClientHandler client = _clients.get(did);
                 TCPServerHandler server = _servers.get(did);
 
-                long sent = (client != null) ? client.getPipeline().get(ChannelStatsHandler.class).getBytesSent() : 0;
-                long rcvd = (server != null) ? server.getPipeline().get(ChannelStatsHandler.class).getBytesReceived() : 0;
+                long sent = (client != null) ? client.getPipeline().get(IOStatsHandler.class).getBytesSentOnChannel() : 0;
+                long rcvd = (server != null) ? server.getPipeline().get(IOStatsHandler.class).getBytesReceivedOnChannel() : 0;
 
                 tpbuilder.addConnection(did + " : sent: " + Long.toString(sent) + ", rcvd: " + Long.toString(rcvd));
             }

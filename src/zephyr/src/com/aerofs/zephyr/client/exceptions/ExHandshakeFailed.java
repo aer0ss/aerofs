@@ -2,7 +2,7 @@
  * Copyright (c) Air Computing Inc., 2013.
  */
 
-package com.aerofs.zephyr.client.exception;
+package com.aerofs.zephyr.client.exceptions;
 
 public final class ExHandshakeFailed extends Exception
 {

@@ -5,7 +5,7 @@
 package com.aerofs.zephyr.client;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.zephyr.client.exception.ExHandshakeFailed;
+import com.aerofs.zephyr.client.exceptions.ExHandshakeFailed;
 import com.aerofs.zephyr.proto.Zephyr.ZephyrHandshake;
 import org.slf4j.Logger;
 
@@ -28,15 +28,18 @@ import static com.aerofs.zephyr.client.ZephyrHandshakeEngine.HandshakeType.SYNAC
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 
+
+// FIXME (AG): perhaps this class shouldn't deal in terms of PB messages _or_ zephyr PB is moved out to zephyr.proto
+
 /**
  * Controls the zephyr handshaking process. This is a 3-way-handshake process that's very
  * similar to the once used by TCP. The handshaker is very simple and will simply transition
  * from one state to the next depending on the handshake message received. If an invalid
- * message is received, or an invalid transition attempted, an {@link com.aerofs.zephyr.client.exception.ExHandshakeFailed} is thrown.
+ * message is received, or an invalid transition attempted, an {@link com.aerofs.zephyr.client.exceptions.ExHandshakeFailed} is thrown.
  * It is the caller's responsibility to determine how long a handshake should take and
  * maintain a timer if necessary.
+ *
  */
-// FIXME (AG): perhaps this class shouldn't deal in terms of PB messages _or_ zephyr PB is moved out to zephyr.proto
 @NotThreadSafe
 public final class ZephyrHandshakeEngine
 {
@@ -106,7 +109,7 @@ public final class ZephyrHandshakeEngine
         checkState(this.localZid == ZEPHYR_INVALID_CHAN_ID);
 
         checkArgument(localZid != ZEPHYR_INVALID_CHAN_ID);
-        checkArgument(localZid != remoteZid, "localzid:" + localZid + " remotezid:" + remoteZid);
+        checkArgument(localZid != remoteZid, "l:" + localZid + " r:" + remoteZid);
 
         this.localZid = localZid;
     }
@@ -154,7 +157,7 @@ public final class ZephyrHandshakeEngine
         checkLocalZidValid();
         checkState(state == NOT_STARTED, "invalid state to start handshaking state:" + state);
 
-        l.debug("start handshaking s:{} l:{} r:{}", state, localZid, remoteZid);
+        l.trace("start handshaking s:{} l:{} r:{}", state, localZid, remoteZid);
 
         if (remoteZid == ZEPHYR_INVALID_CHAN_ID) {
             setState(WAITING_FOR_SYNACK);
@@ -183,7 +186,8 @@ public final class ZephyrHandshakeEngine
         HandshakeType type = HandshakeType.fromPB(incoming);
         HandshakeReturn action;
 
-        l.debug("consume s:{} l:{} r:{} t:{} ms:{} md:{}", state, localZid, remoteZid, type, incoming.getSourceZephyrId(), incoming.getDestinationZephyrId());
+        l.trace("consume s:{} l:{} r:{} t:{} ms:{} md:{}", state, localZid, remoteZid, type,
+                incoming.getSourceZephyrId(), incoming.getDestinationZephyrId());
 
         try {
             switch (state)

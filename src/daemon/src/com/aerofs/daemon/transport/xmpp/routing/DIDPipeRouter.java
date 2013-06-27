@@ -18,7 +18,6 @@ import org.slf4j.Logger;
 
 import java.io.IOException;
 import java.util.Collection;
-import java.util.Set;
 import java.util.SortedMap;
 import java.util.SortedSet;
 import java.util.TreeMap;
@@ -65,17 +64,15 @@ class DIDPipeRouter<T extends IConnectionService>
      *
      * @param did {@link DID} of the device for which we represet the logical pipe
      * @param sched {@link IScheduler} used to schedule connect 'set' timeouts
-     * @param available {@link com.aerofs.daemon.transport.xmpp.IConnectionService} objects that can be used to connect to devices
+     * @param connectionService {@link com.aerofs.daemon.transport.xmpp.IConnectionService} object that can be used to connect to devices
      */
-    DIDPipeRouter(DID did, IScheduler sched, Set<T> available)
+    DIDPipeRouter(DID did, IScheduler sched, T connectionService)
     {
-        assert did != null && sched != null && available != null && !available.isEmpty() : ("invalid args");
-
         _did = did;
         _pream = "dpr: d:" + _did;
         _sched = sched;
         _connected.add(ERROR_PIPE);
-        _available = unmodifiableSortedMap(makedpccs(available));
+        _available = unmodifiableSortedMap(makedpcc(connectionService));
 
         assert bestAvailablePref_() < worstPossiblePref(): (_pream + " no pipes configured");
     }
@@ -342,15 +339,13 @@ class DIDPipeRouter<T extends IConnectionService>
      * {@link com.aerofs.daemon.transport.xmpp.IConnectionService} preferences. In this map, the entry with the lowest number
      * (i.e. the highest preference) is the fastest to access.
      */
-    private SortedMap<Integer, DIDPipeConnectionCounter> makedpccs(Set<T> pipes)
+    private SortedMap<Integer, DIDPipeConnectionCounter> makedpcc(IConnectionService connectionService)
     {
         SortedMap<Integer, DIDPipeConnectionCounter> sorted = new TreeMap<Integer, DIDPipeConnectionCounter>();
-        for (IConnectionService p : pipes) {
-            DIDPipeConnectionCounter pcc = new DIDPipeConnectionCounter(p);
-            DIDPipeConnectionCounter old = sorted.put(p.rank(), pcc);
 
-            assert old == null: (_pream + " pcc already exists p:" + p.id());
-        }
+        DIDPipeConnectionCounter pcc = new DIDPipeConnectionCounter(connectionService);
+        DIDPipeConnectionCounter old = sorted.put(connectionService.rank(), pcc);
+        assert old == null: (_pream + " pcc already exists p:" + connectionService.id());
 
         return sorted;
     }

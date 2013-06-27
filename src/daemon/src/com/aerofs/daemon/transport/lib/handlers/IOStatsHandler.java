@@ -2,9 +2,9 @@
  * Copyright (c) Air Computing Inc., 2013.
  */
 
-package com.aerofs.zephyr.client.pipeline;
+package com.aerofs.daemon.transport.lib.handlers;
 
-import com.aerofs.zephyr.client.IZephyrChannelStats;
+import com.aerofs.daemon.transport.lib.TransportStats;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.MessageEvent;
@@ -13,10 +13,21 @@ import org.jboss.netty.channel.WriteCompletionEvent;
 
 import java.util.concurrent.atomic.AtomicLong;
 
-final class ChannelStatsHandler extends SimpleChannelHandler implements IZephyrChannelStats
+public final class IOStatsHandler extends SimpleChannelHandler
 {
-    private AtomicLong bytesSent = new AtomicLong(0);
-    private AtomicLong bytesReceived = new AtomicLong(0);
+    // this channel only
+
+    private final AtomicLong bytesSent = new AtomicLong(0);
+    private final AtomicLong bytesReceived = new AtomicLong(0);
+
+    // across multiple channels
+
+    private final TransportStats transportStats;
+
+    public IOStatsHandler(TransportStats transportStats)
+    {
+        this.transportStats = transportStats;
+    }
 
     @Override
     public void messageReceived(ChannelHandlerContext ctx, MessageEvent e)
@@ -25,27 +36,28 @@ final class ChannelStatsHandler extends SimpleChannelHandler implements IZephyrC
         if (e.getMessage() instanceof ChannelBuffer) {
             ChannelBuffer incoming = (ChannelBuffer) e.getMessage();
             bytesReceived.addAndGet(incoming.readableBytes());
+            transportStats.addBytesReceived(incoming.readableBytes());
         }
 
         super.messageReceived(ctx, e);
     }
 
     @Override
-    public synchronized void writeComplete(ChannelHandlerContext ctx, WriteCompletionEvent e)
+    public void writeComplete(ChannelHandlerContext ctx, WriteCompletionEvent e)
             throws Exception
     {
         bytesSent.addAndGet(e.getWrittenAmount());
+        transportStats.addBytesSent(e.getWrittenAmount());
+
         super.writeComplete(ctx, e);
     }
 
-    @Override
-    public long getBytesSent()
+    public long getBytesSentOnChannel()
     {
         return bytesSent.get();
     }
 
-    @Override
-    public long getBytesReceived()
+    public long getBytesReceivedOnChannel()
     {
         return bytesReceived.get();
     }

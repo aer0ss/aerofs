@@ -11,26 +11,21 @@ import com.aerofs.daemon.transport.exception.ExDeviceUnreachable;
 import com.aerofs.daemon.transport.exception.ExSendFailed;
 import com.aerofs.daemon.transport.lib.IConnectionServiceListener;
 import com.aerofs.daemon.transport.lib.IIdentifier;
-import com.aerofs.daemon.transport.lib.ITransportStats;
-import com.aerofs.daemon.transport.lib.TransportStatsHandler;
+import com.aerofs.daemon.transport.lib.TransportStats;
 import com.aerofs.daemon.transport.xmpp.ISignalledConnectionService;
 import com.aerofs.daemon.transport.xmpp.ISignallingService;
 import com.aerofs.lib.event.Prio;
-import com.aerofs.rocklog.RockLog;
 import com.aerofs.proto.Files.PBDumpStat;
 import com.aerofs.proto.Files.PBDumpStat.PBTransport;
-import com.aerofs.zephyr.client.IZephyrRelayedDataSink;
-import com.aerofs.zephyr.client.IZephyrSignallingClient;
+import com.aerofs.rocklog.RockLog;
 import com.aerofs.zephyr.client.IZephyrSignallingService;
-import com.aerofs.zephyr.client.exception.ExHandshakeFailed;
-import com.aerofs.zephyr.client.exception.ExHandshakeRenegotiation;
-import com.aerofs.zephyr.client.pipeline.ZephyrClientPipelineFactory;
+import com.aerofs.zephyr.client.exceptions.ExHandshakeFailed;
+import com.aerofs.zephyr.client.exceptions.ExHandshakeRenegotiation;
 import com.aerofs.zephyr.proto.Zephyr.ZephyrControlMessage;
 import com.aerofs.zephyr.proto.Zephyr.ZephyrHandshake;
+import com.google.common.base.Predicate;
 import com.google.protobuf.InvalidProtocolBufferException;
 import org.jboss.netty.bootstrap.ClientBootstrap;
-import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.buffer.ChannelBufferInputStream;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFactory;
 import org.jboss.netty.channel.ChannelFuture;
@@ -46,14 +41,12 @@ import java.net.Proxy;
 import java.net.SocketAddress;
 import java.util.Enumeration;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.aerofs.daemon.lib.DaemonParam.Zephyr.HANDSHAKE_TIMEOUT;
-import static com.aerofs.zephyr.client.pipeline.ZephyrPipeline.getRelayedHandlerName;
-import static com.aerofs.zephyr.client.pipeline.ZephyrPipeline.getZephyrChannelStats;
-import static com.aerofs.zephyr.client.pipeline.ZephyrPipeline.getZephyrSignallingClient;
-import static com.aerofs.zephyr.client.pipeline.ZephyrPipeline.hasHandshakeCompleted;
+import static com.aerofs.daemon.transport.xmpp.zephyr.ZephyrClientPipelineFactory.getZephyrClientHandler;
 import static com.aerofs.zephyr.proto.Zephyr.ZephyrControlMessage.Type.HANDSHAKE;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -65,70 +58,67 @@ import static org.jboss.netty.buffer.ChannelBuffers.copiedBuffer;
 /**
  * Creates and manages connections to a Zephyr relay server
  */
-public final class ZephyrConnectionService implements ISignalledConnectionService, IZephyrSignallingService, IZephyrRelayedDataSink
+public final class ZephyrConnectionService implements ISignalledConnectionService, IZephyrSignallingService
 {
     private static final String DEFECT_NAME_HANDSHAKE_RENEGOTIATION = "net.zephyr.renegotiation";
+    private static final Predicate<Entry<DID,Channel>> TRUE_FILTER = new Predicate<Entry<DID, Channel>>()
+    {
+        @Override
+        public boolean apply(@Nullable Entry<DID, Channel> entry)
+        {
+            return true;
+        }
+    };
 
     private static Logger l = Loggers.getLogger(ZephyrConnectionService.class);
 
-    private final IIdentifier tpinfo;
-    private final SSLEngineFactory clientSslEngineFactory;
-    private final IConnectionServiceListener connectionServiceListener;
-    private final ISignallingService signallingService;
-    private final ITransportStats transportStats;
+    private final IIdentifier id;
+    private final TransportStats transportStats;
     private final RockLog rocklog;
-
-    private final UserID localid;
-    private final DID localdid;
+    private final ISignallingService signallingService;
 
     private final SocketAddress zephyrAddress;
     private final ClientBootstrap bootstrap;
-    private final TransportStatsHandler transportStatsHandler;
 
     private final AtomicBoolean running = new AtomicBoolean(false);
 
     private final Map<DID, Channel> channels = newHashMap();
 
+
     public ZephyrConnectionService(
-            IIdentifier tpinfo,
+            IIdentifier id,
             UserID localid, DID localdid,
             SSLEngineFactory clientSslEngineFactory,
+            SSLEngineFactory serverSslEngineFactory,
             IConnectionServiceListener connectionServiceListener,
             ISignallingService signallingService,
-            ITransportStats transportStats,
+            TransportStats transportStats,
             RockLog rocklog,
             ChannelFactory channelFactory, SocketAddress zephyrAddress, Proxy proxy)
     {
-        this.tpinfo = tpinfo;
-
-        this.localid = localid;
-        this.localdid = localdid;
+        this.id = id;
 
         this.zephyrAddress = zephyrAddress;
         this.bootstrap = new ClientBootstrap(channelFactory);
-        this.bootstrap.setPipelineFactory(new ZephyrClientPipelineFactory(this, this, proxy, HANDSHAKE_TIMEOUT));
-        this.transportStatsHandler = new TransportStatsHandler(transportStats);
-
-        this.clientSslEngineFactory = clientSslEngineFactory;
-        this.connectionServiceListener = connectionServiceListener;
-        this.signallingService = signallingService;
-        this.signallingService.registerSignallingClient(this);
+        this.bootstrap.setPipelineFactory(new ZephyrClientPipelineFactory(localid, localdid, clientSslEngineFactory, serverSslEngineFactory, transportStats, this, this, connectionServiceListener, proxy, HANDSHAKE_TIMEOUT));
 
         this.transportStats = transportStats;
-
         this.rocklog = rocklog;
+
+        this.signallingService = signallingService;
+        this.signallingService.registerSignallingClient(this);
     }
 
     @Override
     public String id()
     {
-        return tpinfo.id();
+        return id.id();
     }
 
     @Override
     public int rank()
     {
-        return tpinfo.rank();
+        return id.rank();
     }
 
     //
@@ -140,6 +130,12 @@ public final class ZephyrConnectionService implements ISignalledConnectionServic
             throws Exception
     {
         // noop
+    }
+
+    @Override
+    public boolean ready()
+    {
+        return running.get();
     }
 
     @Override
@@ -158,26 +154,42 @@ public final class ZephyrConnectionService implements ISignalledConnectionServic
 
         l.info("stop");
 
-        // synchronize through this entire procedure, to avoid
-        // multiple people having to close channels at the same time
-
         synchronized (this) {
-            Map<DID, Channel> channelsToClose = newHashMap(channels); // copy to prevent ConcurrentModificationException
-            for (Map.Entry<DID, Channel> entry : channelsToClose.entrySet()) {
-                closeChannel(entry.getKey(), new ExDeviceDisconnected("connection service stopped"), true);
-            }
+            disconnectChannels(TRUE_FILTER, new ExDeviceDisconnected("connection service stopped"));
         }
-    }
-
-    @Override
-    public boolean ready()
-    {
-        return running.get();
     }
 
     //
     // IConnectionService methods
     //
+
+    @Override
+    public void linkStateChanged(final Set<NetworkInterface> removed, Set<NetworkInterface> current)
+    {
+        l.info("lsc");
+
+        final Set<InetAddress> removedAddresses = newHashSet();
+        for (NetworkInterface networkInterface : removed) {
+            Enumeration<InetAddress> addresses = networkInterface.getInetAddresses();
+            while (addresses.hasMoreElements()) {
+                removedAddresses.add(addresses.nextElement());
+            }
+        }
+
+        Predicate<Entry<DID, Channel>> allChannelsFilter = new Predicate<Entry<DID, Channel>>()
+        {
+            @Override
+            public boolean apply(@Nullable Entry<DID, Channel> entry)
+            {
+                InetAddress address = ((InetSocketAddress) checkNotNull(entry).getValue().getLocalAddress()).getAddress();
+                return removedAddresses.contains(address);
+            }
+        };
+
+        synchronized (this) {
+            disconnectChannels(allChannelsFilter, new ExDeviceDisconnected("network interface down"));
+        }
+    }
 
     @Override
     public synchronized void connect(DID did)
@@ -189,32 +201,58 @@ public final class ZephyrConnectionService implements ISignalledConnectionServic
 
         try {
             l.info("d:{} connect", did);
-            closeChannel(did, new ExDeviceDisconnected("triggered by local reconnect"), false);
+
+            Channel channel = getChannel(did);
+            if (channel != null) {
+                if (getZephyrClient(channel).hasHandshakeCompleted()) {
+                    // apparently the channel connected, but for some reason the
+                    // upper layer doesn't think otherwise; this means that the channel
+                    // isn't in a good state
+                    disconnectChannel(did, new ExDeviceDisconnected("triggered by local reconnect"));
+                } else {
+                    // we're still in the process of handshaking - let's give it a
+                    // chance. at any rate, if we fail to complete in time we'll get a
+                    // timeout and it'll all be good
+                    l.warn("d:{} ignore connect - handshake in progress");
+                    return;
+                }
+            }
+
             newChannel(did);
         } catch (Exception e) {
-            l.error("fail connect for d:{} err:{}", did, e);
-
+            l.error("d:{} fail connect err:", did, e);
             if (getChannel(did) != null) {
-                closeChannel(did, e, true);
-            } else {
-                connectionServiceListener.onDeviceDisconnected(did, this);
+                disconnectChannel(did, e);
             }
         }
     }
 
     private void newChannel(final DID did)
     {
-        l.debug("d:{} create", did);
+        l.trace("d:{} create channel", did);
 
-        ChannelFuture connectFuture = bootstrap.connect(zephyrAddress);
+        // start by creating the channel (NOTE: this is _binding_ only, not connecting)
+        // this allows us to add state before starting the connection and lifecycle process
 
-        Channel channel = connectFuture.getChannel();
-        channel.setAttachment(new ZephyrAttachment(pretty(channel), did, getZephyrChannelStats(channel)));
-        channel.getPipeline().addFirst("transportStats", transportStatsHandler);
-        channel.getPipeline().addBefore(getRelayedHandlerName(), "bundledssl", new CNameVerifedSSLClientHandler(localid, localdid, clientSslEngineFactory));
-        addChannel(did, channel); // IMPORTANT: do the "add" _before_ setting up the close future // FIXME (AG): what do I do if we crash here?
+        Channel channel = bootstrap.bind(new InetSocketAddress("0.0.0.0", 0)).getChannel();
 
-        l.debug("d:{} create completed c:{}", did, getDebugString(channel));
+        // set up the ZephyrClientHandler and the attachment
+
+        ZephyrClientHandler zephyrClientHandler = getZephyrClientHandler(channel);
+        zephyrClientHandler.init(did, channel);
+        channel.setAttachment(zephyrClientHandler);
+
+        // now add the channel (IMPORTANT: do the add before setting up the close future)
+        // we do this because we don't want to fail in an operation and then add the failed
+        // channel to the map
+
+        addChannel(did, channel);
+
+        // now, connect
+
+        channel.connect(zephyrAddress);
+
+        // and, finally, set up the close future
 
         channel.getCloseFuture().addListener(new ChannelFutureListener()
         {
@@ -222,78 +260,47 @@ public final class ZephyrConnectionService implements ISignalledConnectionServic
             public void operationComplete(ChannelFuture future)
                     throws Exception
             {
-                l.debug("d:{} close future triggered c:{}", did, getDebugString(future.getChannel()));
+                l.debug("d:{} close future triggered", did);
 
                 synchronized (ZephyrConnectionService.this) {
                     Channel activeChannel = getChannel(did);
                     if (activeChannel == future.getChannel()) {
-                        l.info("d:{} closing c:{}", did, getDebugString(future.getChannel()));
-                        Channel removedChannel = removeChannel(did);
-                        ZephyrAttachment zephyrAttachment = getZephyrAttachment(removedChannel);
-                        if (zephyrAttachment.shouldNotifyListener()) {
-                            connectionServiceListener.onDeviceDisconnected(did, ZephyrConnectionService.this);
-                        }
+                        l.info("d:{} remove zc:{}", did, getZephyrClient(future.getChannel()).debugString());
+                        removeChannel(did);
                     }
                 }
             }
         });
 
-        connectFuture.addListener(new ChannelFutureListener() // connect failures will trigger the close future and removal
-        {
-            @Override
-            public void operationComplete(ChannelFuture future)
-                    throws Exception
-            {
-                Channel connectedChannel = future.getChannel();
-
-                l.debug("d:{} connect future triggered ok:{} err:{} c:{}", did, future.isSuccess(), future.getCause(), getDebugString(connectedChannel));
-
-                Channel channel = connectedChannel;
-                if (!future.isSuccess()) {
-                    closeChannel(did, new ExDeviceUnreachable("failed connect to " + did, future.getCause()), false);
-                    return;
-                }
-
-                synchronized (ZephyrConnectionService.this) {
-                    if (getChannel(did) == null) { // can happen because we were disconnected by the upper-layer/timeout
-                        checkState(channel.getCloseFuture().isDone()); // if we've been removed, the channel should have been closed
-                        return;
-                    }
-
-                    connectionServiceListener.onDeviceConnected(did, ZephyrConnectionService.this);
-                    l.info("d:{} connected for duplex tx c:{}", did, getDebugString(connectedChannel));
-                }
-            }
-        });
-
-        l.debug("d:{} connect started", did);
+        l.trace("d:{} connecting on created channel", did);
     }
 
     @Override
     public synchronized void disconnect(DID did, Exception cause)
     {
-        l.info("d:{} disconnect", did);
-
-        closeChannel(did, cause, true);
+        l.info("d:{} disconnect cause:{}", did, cause);
+        disconnectChannel(did, cause);
     }
 
-    private void closeChannel(DID did, Exception cause, boolean notifyListener)
+    private void disconnectChannels(Predicate<Map.Entry<DID, Channel>> filter, Exception cause)
     {
-        l.debug("d:{} close e:{} n:{}", did, cause, notifyListener);
+        Map<DID, Channel> channelsCopy = newHashMap(channels); // copy to prevent ConcurrentModificationException
+        for (Map.Entry<DID, Channel> entry : channelsCopy.entrySet()) {
+            if (filter.apply(entry)) {
+                disconnectChannel(entry.getKey(), cause);
+            }
+        }
+    }
 
+    private void disconnectChannel(DID did, Exception cause)
+    {
         Channel channel = getChannel(did);
         if (channel == null) {
-            l.warn("d:{} close ignored - no channel", did);
+            l.warn("d:{} disconnect ignored - no channel", did);
             return;
         }
 
-        if (channel.getCloseFuture().isDone()) {
-            l.warn("d:{} close ignored - already closed c:{}", did, getDebugString(channel));
-            return;
-        }
-
-        getZephyrAttachment(channel).setDisconnectParameters(cause, notifyListener);
-        channel.close();
+        getZephyrClient(channel).disconnect(cause);
     }
 
     @Override
@@ -314,12 +321,20 @@ public final class ZephyrConnectionService implements ISignalledConnectionServic
             return null;
         }
 
+        if (cke != null && (cke instanceof Channel) && !cke.equals(channel)) { // this is a stream using an older channel
+            l.warn("d:{} fail send - stale channel", did);
+            if (wtr != null) {
+                wtr.error(new ExSendFailed("stale connection"));
+            }
+            return null;
+        }
+
         ChannelFuture writeFuture = channel.write(copiedBuffer(bss));
         writeFuture.addListener(new ChannelFutureListener()
         {
             @Override
             public void operationComplete(ChannelFuture future)
-                throws Exception
+                    throws Exception
             {
                 if (future.isSuccess()) {
                     if (wtr != null) wtr.okay();
@@ -329,45 +344,7 @@ public final class ZephyrConnectionService implements ISignalledConnectionServic
             }
         });
 
-        return null;
-    }
-
-    @Override
-    public void linkStateChanged(final Set<NetworkInterface> removed, Set<NetworkInterface> current)
-    {
-        l.info("handle lsc");
-
-        Set<InetAddress> removedAddresses = newHashSet();
-        for (NetworkInterface networkInterface : removed) {
-            Enumeration<InetAddress> addresses = networkInterface.getInetAddresses();
-            while (addresses.hasMoreElements()) {
-                removedAddresses.add(addresses.nextElement());
-            }
-        }
-
-        Set<Channel> currentChannels;
-        synchronized (this) {
-            currentChannels = newHashSet(channels.values());
-        }
-
-        for(Channel channel : currentChannels) {
-            InetAddress address = ((InetSocketAddress) channel.getLocalAddress()).getAddress();
-            if (removedAddresses.contains(address)) {
-                getZephyrAttachment(channel).setDisconnectParameters(new ExDeviceDisconnected("network interface down"), true);
-                channel.close();
-            }
-        }
-    }
-
-    private void addChannel(DID did, Channel channel)
-    {
-        Channel previous = channels.put(did, channel);
-        checkState(previous == null, "d:" + did + " overwrote existing channel zid:[old:" + (previous == null ? "null" : getDebugString(previous)) + " new:" + getDebugString(channel) + "]");
-    }
-
-    private @Nullable Channel removeChannel(DID did)
-    {
-        return channels.remove(did);
+        return channel; // this is the channel used to send the packets
     }
 
     private @Nullable Channel getChannel(DID did)
@@ -375,9 +352,20 @@ public final class ZephyrConnectionService implements ISignalledConnectionServic
         return channels.get(did);
     }
 
-    private static ZephyrAttachment getZephyrAttachment(Channel channel)
+    private void addChannel(DID did, Channel channel)
     {
-        return (ZephyrAttachment) channel.getAttachment();
+        Channel previous = channels.put(did, channel);
+        checkState(previous == null, "d:" + did + " overwrote existing channel zid:[old:" + (previous == null ? "null" : getZephyrClient(previous)) + " new:" + getZephyrClient(channel) + "]");
+    }
+
+    private @Nullable Channel removeChannel(DID did)
+    {
+        return channels.remove(did);
+    }
+
+    private ZephyrClientHandler getZephyrClient(Channel channel)
+    {
+        return checkNotNull((ZephyrClientHandler) channel.getAttachment());
     }
 
     //
@@ -395,17 +383,22 @@ public final class ZephyrConnectionService implements ISignalledConnectionServic
     public synchronized void signallingServiceDisconnected()
             throws ExNoResource
     {
-        // rationale: first, copy to avoid ConcurrentModificationException
-        // then, close anyone who hasn't completed their signalling. If your signalling
+        // close anyone who hasn't completed their signalling. If your signalling
         // hasn't completed, then you're going to be sitting around waiting for
-        // timeouts. Instead, why not just close you right now? Also, since you haven't
-        // completed your signalling (and hence, connection), we don't have to notify the
-        // upper layer of a disconnection
-        Map<DID, Channel> currentChannels = newHashMap(channels);
-        for (Map.Entry<DID, Channel> entry : currentChannels.entrySet()) {
-            if (!hasHandshakeCompleted(entry.getValue())) {
-                closeChannel(entry.getKey(), new ExDeviceUnreachable("signalling service disconnected"), false);
+        // timeouts. Instead, why not just close you right now?
+
+        Predicate<Map.Entry<DID, Channel>> handshakeIncompletePredicate = new Predicate<Entry<DID, Channel>>()
+        {
+            @Override
+            public boolean apply(@Nullable Entry<DID, Channel> entry)
+            {
+                ZephyrClientHandler zephyrClient = getZephyrClient(checkNotNull(entry).getValue());
+                return (!zephyrClient.hasHandshakeCompleted()); // keep alive if you've completed handshaking
             }
+        };
+
+        synchronized (this) {
+            disconnectChannels(handshakeIncompletePredicate, new ExDeviceUnreachable("signalling service disconnected"));
         }
     }
 
@@ -413,7 +406,10 @@ public final class ZephyrConnectionService implements ISignalledConnectionServic
     public void processIncomingSignallingMessage(DID did, byte[] msg)
             throws ExNoResource
     {
-        l.debug("d:{} <-sig", did);
+        if (!running.get()) {
+            l.warn("d:{} <-sig drop - service not running");
+            return;
+        }
 
         final ZephyrHandshake handshake;
 
@@ -429,26 +425,24 @@ public final class ZephyrConnectionService implements ISignalledConnectionServic
             return;
         }
 
-        synchronized (this) {
-            if (!running.get()) {
-                Channel channel = getChannel(did);
-                if (channel != null) {
-                    boolean handshakeCompleted = hasHandshakeCompleted(channel);
-                    closeChannel(did, new ExDeviceDisconnected("connection service stopped"), handshakeCompleted);
-                }
-                return;
-            }
+        l.debug("d:{} <-sig ms:{} md:{}", did, handshake.getSourceZephyrId(), handshake.getDestinationZephyrId());
 
+        // FIXME (AG): I'm not a fan of this entire block because of 1) notification ordering and 2) trying to be too smart
+        //
+        // 1) Since notifications are sent via the netty I/O thread, it's possible to get the following order: disconnected, connected
+        // 2) I'm not comfortable automatically initiating a connection on your behalf
+
+        synchronized (this) {
             try {
                 try {
                     consumeHandshake(did, handshake);
                 } catch (ExHandshakeRenegotiation e) {
                     rocklog.newDefect(DEFECT_NAME_HANDSHAKE_RENEGOTIATION).send();
-                    closeChannel(did, new ExDeviceDisconnected("attempted to renegotiate zephyr channel to " + did, e), false);
+                    disconnectChannel(did, new ExDeviceDisconnected("attempted renegotiation of zephyr channel to " + did, e));
                     consumeHandshake(did, handshake);
                 }
             } catch (Exception e) {
-                closeChannel(did, new ExDeviceDisconnected("fail to process signalling message from " + did, e), true);
+                disconnectChannel(did, new ExDeviceDisconnected("fail to process signalling message from " + did, e));
             }
         }
     }
@@ -462,29 +456,19 @@ public final class ZephyrConnectionService implements ISignalledConnectionServic
 
             channel = getChannel(did); // check if the connect failed
             if (channel == null) {
-                throw new ExDeviceUnreachable("cannot reach remote device d:" + did);
+                throw new ExDeviceUnreachable("cannot reach " + did);
             }
         }
 
-        IZephyrSignallingClient signallingClient = getZephyrSignallingClient(channel);
-
-        // we're getting a handshake message after the handshake has succeeded
-        // this means that for some reason the remote device is trying to establish a
-        // connection to us again.
-        if (signallingClient == null) {
-            throw new ExHandshakeRenegotiation("attempted to renegotiate zephyr handshake on incoming signalling");
-        }
-
-        signallingClient.processIncomingZephyrSignallingMessage(handshake);
+        getZephyrClient(channel).consumeHandshake(handshake);
     }
 
     @Override
     public synchronized void sendSignallingMessageFailed(DID did, byte[] failedmsg, Exception cause)
             throws ExNoResource
     {
-        l.warn("d:{} ->sig fail err:{}", did, cause);
-
-        closeChannel(did, new ExDeviceUnreachable("failed to send zephyr handshake to " + did, cause), true);
+        l.warn("d:{} ->sig fail err:", did, cause);
+        disconnectChannel(did, new ExDeviceUnreachable("failed to send zephyr handshake to " + did, cause));
     }
 
     //
@@ -494,41 +478,20 @@ public final class ZephyrConnectionService implements ISignalledConnectionServic
     @Override
     public void sendZephyrSignallingMessage(Channel sender, byte[] bytes)
     {
-        DID did = getZephyrAttachment(sender).getRemote();
+        DID did = getZephyrClient(sender).getRemote();
 
-        // NOTE: outgoing signalling messages are only sent when we're still in the
-        // connection phase. Since we haven't notified anyone that we've connected,
-        // we shouldn't notify anyone that we've disconnected
+        // outgoing signalling messages are only sent when we're still in connecting.
+        // as a result, the upper layer won't be told of this disconnection
 
         if (!running.get()) {
             l.warn("d:{} ->sig ignored - connection service stopped", did);
-            closeChannel(did, new ExDeviceUnreachable("connection service stopped"), false);
+            disconnectChannel(did, new ExDeviceUnreachable("connection service stopped"));
             return;
         }
 
         l.debug("d:{} ->sig", did);
 
         signallingService.sendSignallingMessage(did, bytes, this);
-    }
-
-    //
-    // IZephyrRelayedDataSink methods
-    //
-
-    @Override
-    public void onDataReceived(Channel channel, ChannelBuffer data)
-    {
-        ZephyrAttachment attachment = getZephyrAttachment(channel);
-
-        if (!running.get()) {
-            DID did = attachment.getRemote();
-            l.warn("d:{} connection service stopped - ignore relayed data and disconnect", did);
-            closeChannel(did, new ExDeviceDisconnected("connection service stopped"), true);
-            return;
-        }
-
-        connectionServiceListener.onIncomingMessage(attachment.getRemote(), attachment.getUserID(),
-                new ChannelBufferInputStream(data), data.readableBytes());
     }
 
     //
@@ -548,7 +511,7 @@ public final class ZephyrConnectionService implements ISignalledConnectionServic
             }
         }
 
-        return checkNotNull(getZephyrAttachment(channel)).getChannelStats().getBytesReceived();
+        return getZephyrClient(channel).getBytesReceived();
     }
 
     @Override
@@ -573,7 +536,7 @@ public final class ZephyrConnectionService implements ISignalledConnectionServic
 
         if (tpTemplate.getConnectionCount() != 0) {
             for (Channel channel : currentChannels.values()) {
-                tpBuilder.addConnection(getDebugString(channel));
+                tpBuilder.addConnection(getZephyrClient(channel).debugString());
             }
         }
 
@@ -585,23 +548,5 @@ public final class ZephyrConnectionService implements ISignalledConnectionServic
             throws Exception
     {
         ps.println(indent + "running:" + running.get());
-    }
-
-    private String getDebugString(Channel channel)
-    {
-        ZephyrAttachment attachment = getZephyrAttachment(channel);
-        return String.format("[(%s) %s -> %s : tx=%d rx=%d a=%s]",
-                attachment.getId(),
-                localdid,
-                attachment.getRemote(),
-                attachment.getChannelStats().getBytesSent(),
-                attachment.getChannelStats().getBytesReceived(),
-                attachment.getDisconnectCause());
-    }
-
-    private static String pretty(Channel c) // FIXME (AG): copied from verkehr
-    {
-        String hex = Integer.toHexString(c.getId());
-        return String.format("0x%1$8s", hex).replace(' ', '0');
     }
 }

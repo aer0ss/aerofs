@@ -38,9 +38,9 @@ import com.aerofs.lib.cfg.CfgLocalDID;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
 import com.aerofs.lib.event.IEvent;
-import com.aerofs.rocklog.RockLog;
 import com.aerofs.proto.Files.PBDumpStat;
 import com.aerofs.proto.Files.PBDumpStat.Builder;
+import com.aerofs.rocklog.RockLog;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
@@ -105,17 +105,14 @@ public class Transports implements IDumpStat, IDumpStatMisc, IStartable
         return new Jingle(localdid, transportId, transportRank, coreQueue, mcfr);
     }
 
-    private static Zephyr newZephyr(
-            UserID localid, DID localdid,
-            String transportId, int transportRank,
+    private static Zephyr newZephyr(UserID localid, DID localdid, String transportId, int transportRank,
             IBlockingPrioritizedEventSink<IEvent> coreQueue,
             MaxcastFilterReceiver mcfr,
             SSLEngineFactory clientSslEngineFactory,
+            SSLEngineFactory serverSslEngineFactory,
             ClientSocketChannelFactory clientChannelFactory,
-            MobileServerZephyrConnector mobileServerZephyrConnector,
-            RockLog rocklog,
-            InetSocketAddress inetSocketAddress,
-            boolean enableMulticast)
+            MobileServerZephyrConnector mobileServerZephyrConnector, RockLog rocklog,
+            InetSocketAddress inetSocketAddress, boolean enableMulticast)
     {
         return new Zephyr(
                 localid, localdid,
@@ -123,6 +120,7 @@ public class Transports implements IDumpStat, IDumpStatMisc, IStartable
                 coreQueue,
                 mcfr,
                 clientSslEngineFactory,
+                serverSslEngineFactory,
                 clientChannelFactory,
                 mobileServerZephyrConnector,
                 rocklog,
@@ -156,7 +154,8 @@ public class Transports implements IDumpStat, IDumpStatMisc, IStartable
             boolean enableMulticast = !Cfg.useJingle() && Cfg.useZephyr();
             MobileServerZephyrConnector mobileZephyr = new MobileServerZephyrConnector(mobileServiceFactory, clientChannelFactory);
             SSLEngineFactory clientSslEngineFactory = new SSLEngineFactory(Mode.Client, Platform.Desktop, new CfgKeyManagersProvider(), new CfgCACertificateProvider(), null);
-            transports.add(newZephyr(localuser.get(), localdid.get(), "z", 2, coreQueue, mcfr, clientSslEngineFactory, clientChannelFactory, mobileZephyr, rocklog, BaseParam.Zephyr.ADDRESS.get(), enableMulticast));
+            SSLEngineFactory serverSslEngineFactory = new SSLEngineFactory(Mode.Server, Platform.Desktop, new CfgKeyManagersProvider(), new CfgCACertificateProvider(), null);
+            transports.add(newZephyr(localuser.get(), localdid.get(), "z", 2, coreQueue, mcfr, clientSslEngineFactory, serverSslEngineFactory, clientChannelFactory, mobileZephyr, rocklog, BaseParam.Zephyr.ADDRESS.get(), enableMulticast));
         }
 
         ImmutableMap.Builder<ITransport, IIMCExecutor> transportBuilder = ImmutableMap.builder();

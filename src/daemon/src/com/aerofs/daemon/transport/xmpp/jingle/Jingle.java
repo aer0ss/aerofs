@@ -9,7 +9,7 @@ import com.aerofs.base.id.JabberID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.daemon.event.lib.imc.IResultWaiter;
 import com.aerofs.daemon.transport.lib.IConnectionServiceListener;
-import com.aerofs.daemon.transport.lib.ITransportStats;
+import com.aerofs.daemon.transport.lib.TransportStats;
 import com.aerofs.daemon.transport.xmpp.ISignalledConnectionService;
 import com.aerofs.daemon.transport.xmpp.XMPP;
 import com.aerofs.j.Jid;
@@ -28,18 +28,18 @@ import java.util.Set;
 
 public class Jingle implements ISignalledConnectionService, IJingle
 {
-    public Jingle(String id, int rank, IConnectionServiceListener csl, ITransportStats ns)
+    public Jingle(String id, int rank, IConnectionServiceListener connectionServiceListener, TransportStats transportStats)
     {
         OSUtil.get().loadLibrary("aerofsj");
 
-        this.bid = new BasicIdentifier(id, rank);
+        this.identifier = new BasicIdentifier(id, rank);
 
-        this.csl = csl;
-        this.ns = ns;
+        this.connectionServiceListener = connectionServiceListener;
+        this.transportStats = transportStats;
 
-        this.st = new SignalThread(this);
-        this.st.setDaemon(true);
-        this.st.setName(SIGNAL_THREAD_THREAD_ID);
+        this.signalThread = new SignalThread(this);
+        this.signalThread.setDaemon(true);
+        this.signalThread.setName(SIGNAL_THREAD_THREAD_ID);
     }
 
     //
@@ -56,13 +56,13 @@ public class Jingle implements ISignalledConnectionService, IJingle
     @Override
     public void start()
     {
-      st.start();
+      signalThread.start();
     }
 
     @Override
     public boolean ready()
     {
-        return st.ready();
+        return signalThread.ready();
     }
 
     //
@@ -72,13 +72,13 @@ public class Jingle implements ISignalledConnectionService, IJingle
     @Override
     public String id()
     {
-        return bid.id();
+        return identifier.id();
     }
 
     @Override
     public int rank()
     {
-        return bid.rank();
+        return identifier.rank();
     }
 
     @Override
@@ -87,13 +87,13 @@ public class Jingle implements ISignalledConnectionService, IJingle
         if (!(o instanceof Jingle)) return false;
 
         Jingle j = (Jingle)o;
-        return bid.equals(j.bid);
+        return identifier.equals(j.identifier);
     }
 
     @Override
     public int hashCode()
     {
-        return bid.hashCode();
+        return identifier.hashCode();
     }
 
     //
@@ -105,12 +105,12 @@ public class Jingle implements ISignalledConnectionService, IJingle
     {
         l.info("j: queue into st: connect d:" + did);
 
-        st.call(new ISignalThreadTask()
+        signalThread.call(new ISignalThreadTask()
         {
             @Override
             public void run()
             {
-                JingleTunnelClient eng = st.getEngine_();
+                JingleTunnelClient eng = signalThread.getEngine_();
                 if (eng != null && !eng.isClosed_()) {
                     eng.connect_(did);
                 } else {
@@ -122,7 +122,7 @@ public class Jingle implements ISignalledConnectionService, IJingle
             public void error(Exception e)
             {
                 l.warn("j: fail connect for d:" + did + " err:" + e);
-                csl.onDeviceDisconnected(did, Jingle.this);
+                connectionServiceListener.onDeviceDisconnected(did, Jingle.this);
             }
 
             @Override
@@ -139,12 +139,12 @@ public class Jingle implements ISignalledConnectionService, IJingle
     {
         l.warn("j: queue into st: disconnect cause: " + e + " d:" + did);
 
-        st.call(new ISignalThreadTask()
+        signalThread.call(new ISignalThreadTask()
         {
             @Override
             public void run()
             {
-                st.close_(did, e);
+                signalThread.close_(did, e);
             }
 
             @Override
@@ -186,7 +186,7 @@ public class Jingle implements ISignalledConnectionService, IJingle
 
     private void connectionStateChanged(boolean up)
     {
-        st.linkStateChanged(up);
+        signalThread.linkStateChanged(up);
     }
 
     @Override
@@ -231,12 +231,12 @@ public class Jingle implements ISignalledConnectionService, IJingle
     public Object send(final DID did, final IResultWaiter waiter, final Prio pri,
             final byte[][] bss, Object cke)
     {
-        st.call(new ISignalThreadTask()
+        signalThread.call(new ISignalThreadTask()
         {
             @Override
             public void run()
             {
-                JingleTunnelClient eng = st.getEngine_();
+                JingleTunnelClient eng = signalThread.getEngine_();
                 if (eng != null && !eng.isClosed_()) {
                     eng.send_(did, bss, pri, wtr);
                 } else {
@@ -277,41 +277,41 @@ public class Jingle implements ISignalledConnectionService, IJingle
     @Override
     public void addBytesRx(long bytesrx)
     {
-        st.assertThread();
+        signalThread.assertThread();
 
-        ns.addBytesReceived(bytesrx);
+        transportStats.addBytesReceived(bytesrx);
     }
 
     @Override
     public void addBytesTx(long bytestx)
     {
-        st.assertThread();
+        signalThread.assertThread();
 
-        ns.addBytesSent(bytestx);
+        transportStats.addBytesSent(bytestx);
     }
 
     @Override
     public void onDeviceConnected(DID did)
     {
-        st.assertThread();
+        signalThread.assertThread();
 
-        csl.onDeviceConnected(did, this);
+        connectionServiceListener.onDeviceConnected(did, this);
     }
 
     @Override
     public void onDeviceDisconnected(DID did)
     {
-        st.assertThread();
+        signalThread.assertThread();
 
-        csl.onDeviceDisconnected(did, this);
+        connectionServiceListener.onDeviceDisconnected(did, this);
     }
 
     @Override
-    public void onIncomingMessage(DID did, UserID userID, ByteArrayInputStream packet, int wirelen)
+    public void onIncomingMessage(DID did, UserID user, ByteArrayInputStream packet, int wirelen)
     {
-        st.assertThread();
+        signalThread.assertThread();
 
-        csl.onIncomingMessage(did, userID, packet, wirelen);
+        connectionServiceListener.onIncomingMessage(did, user, packet, wirelen);
     }
 
     //
@@ -323,12 +323,12 @@ public class Jingle implements ISignalledConnectionService, IJingle
     {
         final InOutArg<Long> ret = new InOutArg<Long>(0L);
 
-        st.call(new ISignalThreadTask()
+        signalThread.call(new ISignalThreadTask()
         {
             @Override
             public void run()
             {
-                JingleTunnelClient eng = st.getEngine_();
+                JingleTunnelClient eng = signalThread.getEngine_();
                 if (eng != null) {
                     ret.set(eng.getBytesIn_(did));
                 } else {
@@ -362,8 +362,8 @@ public class Jingle implements ISignalledConnectionService, IJingle
         // set default fields
 
         final PBTransport.Builder tpbuilder = PBTransport.newBuilder();
-        tpbuilder.setBytesIn(ns.getBytesReceived());
-        tpbuilder.setBytesOut(ns.getBytesSent());
+        tpbuilder.setBytesIn(transportStats.getBytesReceived());
+        tpbuilder.setBytesOut(transportStats.getBytesSent());
 
         // set a default for the diagnosis
 
@@ -371,7 +371,7 @@ public class Jingle implements ISignalledConnectionService, IJingle
             tpbuilder.setDiagnosis("call not executed");
         }
 
-        st.call(new ISignalThreadTask()
+        signalThread.call(new ISignalThreadTask()
         {
             @Override
             public void run()
@@ -379,13 +379,13 @@ public class Jingle implements ISignalledConnectionService, IJingle
                 if (tp.hasName()) tpbuilder.setName(id());
 
                 if (tp.getConnectionCount() != 0) {
-                    for (DID c : st.getConnections_()) {
+                    for (DID c : signalThread.getConnections_()) {
                         tpbuilder.addConnection(c.toString());
                     }
                 }
 
                 if (tp.hasDiagnosis()) {
-                    tpbuilder.setDiagnosis(st.diagnose_());
+                    tpbuilder.setDiagnosis(signalThread.diagnose_());
                 }
 
                 bdbuilder.addTransport(tpbuilder);
@@ -394,7 +394,8 @@ public class Jingle implements ISignalledConnectionService, IJingle
             @Override
             public void error(Exception e)
             {
-                l.warn("cannot dumpstat err:" + e); // hmm...using Jingle's logger, not SignalThread's
+                l.warn("cannot dumpstat err:" +
+                        e); // hmm...using Jingle's logger, not SignalThread's
             }
 
             @Override
@@ -412,7 +413,7 @@ public class Jingle implements ISignalledConnectionService, IJingle
         // we don't have to because all it's doing is checking if a reference
         // is null
 
-        st.dumpStatMisc(indent, indentUnit, ps);
+        signalThread.dumpStatMisc(indent, indentUnit, ps);
     }
 
     //
@@ -440,10 +441,10 @@ public class Jingle implements ISignalledConnectionService, IJingle
     //
     // members
 
-    private final BasicIdentifier bid;
-    private IConnectionServiceListener csl;
-    private final ITransportStats ns;
-    private final SignalThread st;
+    private final BasicIdentifier identifier;
+    private IConnectionServiceListener connectionServiceListener;
+    private final TransportStats transportStats;
+    private final SignalThread signalThread;
 
     private static final Logger l = Loggers.getLogger(Jingle.class);
 
