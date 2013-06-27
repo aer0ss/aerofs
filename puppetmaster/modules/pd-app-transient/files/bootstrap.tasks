@@ -8,5 +8,6 @@ spdb-tomcat-password
 uwsgi-restart
 restund-fix-config
 zephyr-start
+repackage-installers
 delay
 sanity-check
