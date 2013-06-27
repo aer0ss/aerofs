@@ -6,6 +6,7 @@
 package com.aerofs.daemon.transport.lib;
 
 import com.aerofs.base.id.DID;
+import com.aerofs.base.id.UserID;
 import com.aerofs.daemon.transport.xmpp.IConnectionService;
 
 import java.io.InputStream;
@@ -40,8 +41,9 @@ public interface IConnectionServiceListener
      * message is received from a peer
      *
      * @param did {@link DID} of the peer from which the message was received
+     * @param userID {@link UserID} of the peer from which the message was received
      * @param packet {@link InputStream} that can be used to consume the incoming message
      * @param wirelen number of bytes this message took on the wire
      */
-    public void onIncomingMessage(DID did, InputStream packet, int wirelen);
+    public void onIncomingMessage(DID did, UserID userID, InputStream packet, int wirelen);
 }

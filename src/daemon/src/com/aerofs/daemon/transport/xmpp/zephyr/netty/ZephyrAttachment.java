@@ -4,17 +4,23 @@
 
 package com.aerofs.daemon.transport.xmpp.zephyr.netty;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
+import com.aerofs.base.id.UserID;
+import com.aerofs.base.ssl.CNameVerificationHandler.CNameListener;
 import com.aerofs.daemon.transport.exception.ExDeviceDisconnected;
 import com.aerofs.zephyr.client.IZephyrChannelStats;
+import org.slf4j.Logger;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
 
-final class ZephyrAttachment
+final class ZephyrAttachment implements CNameListener
 {
+    private static final Logger l = Loggers.getLogger(ZephyrAttachment.class);
     private static final ExDeviceDisconnected DEFAULT = new ExDeviceDisconnected("disconnected");
 
     private final String id;
@@ -22,6 +28,7 @@ final class ZephyrAttachment
     private final IZephyrChannelStats channelStats;
     private final AtomicBoolean notifyListener = new AtomicBoolean(true); // notify by default!
     private final AtomicReference<Exception> disconnectCause = new AtomicReference<Exception>(DEFAULT);
+    private final AtomicReference<UserID> userID = new AtomicReference<UserID>(null);
 
     ZephyrAttachment(String id, DID remote, IZephyrChannelStats channelStats)
     {
@@ -38,6 +45,11 @@ final class ZephyrAttachment
     DID getRemote()
     {
         return remote;
+    }
+
+    UserID getUserID()
+    {
+        return userID.get();
     }
 
     IZephyrChannelStats getChannelStats()
@@ -61,6 +73,14 @@ final class ZephyrAttachment
             boolean previous = this.notifyListener.getAndSet(notifyListener);
             checkArgument(disconnectCause != DEFAULT);
             checkArgument(previous, "disconnect parameters already modified");
+        }
+    }
+
+    @Override
+    public void onPeerVerified(UserID user, DID did)
+    {
+        if (!userID.compareAndSet(null, user)) {
+            throw new IllegalStateException("trying to set userid twice. cur:" + userID.get() + " new:" + user);
         }
     }
 }

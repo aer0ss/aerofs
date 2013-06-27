@@ -664,7 +664,7 @@ public class ZephyrClientManager implements ISignalledConnectionService, IIOEven
     {
         assertDispThread();
 
-        _csl.onIncomingMessage(d, bais, wirelen);
+        _csl.onIncomingMessage(d, null, bais, wirelen);
     }
 
     /**

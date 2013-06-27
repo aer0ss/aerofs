@@ -5,10 +5,10 @@
 package com.aerofs.daemon.transport.xmpp;
 
 import com.aerofs.base.id.DID;
-import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
-import com.aerofs.lib.event.IEvent;
 import com.aerofs.daemon.transport.lib.ITransportStats.BasicStatsCounter;
 import com.aerofs.daemon.transport.lib.MaxcastFilterReceiver;
+import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
+import com.aerofs.lib.event.IEvent;
 
 import static com.aerofs.daemon.transport.lib.TPUtil.registerMulticastHandler;
 

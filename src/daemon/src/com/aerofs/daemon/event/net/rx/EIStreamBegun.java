@@ -1,5 +1,6 @@
 package com.aerofs.daemon.event.net.rx;
 
+import com.aerofs.base.id.UserID;
 import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.lib.id.StreamID;
 
@@ -23,9 +24,9 @@ public class EIStreamBegun extends EIChunk
      *
      * For parameter information, {@see EIChunk.EIChunk}
      */
-    public EIStreamBegun(Endpoint ep, StreamID strid, InputStream is, int wirelen)
+    public EIStreamBegun(Endpoint ep, UserID userID, StreamID strid, InputStream is, int wirelen)
     {
-        super(ep, strid, 0, is, wirelen);
+        super(ep, userID, strid, 0, is, wirelen);
     }
 }
 

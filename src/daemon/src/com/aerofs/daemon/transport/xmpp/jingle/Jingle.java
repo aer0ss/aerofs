@@ -6,6 +6,7 @@ import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.JabberID;
+import com.aerofs.base.id.UserID;
 import com.aerofs.daemon.event.lib.imc.IResultWaiter;
 import com.aerofs.daemon.transport.lib.IConnectionServiceListener;
 import com.aerofs.daemon.transport.lib.ITransportStats;
@@ -306,11 +307,11 @@ public class Jingle implements ISignalledConnectionService, IJingle
     }
 
     @Override
-    public void onIncomingMessage(DID did, ByteArrayInputStream packet, int wirelen)
+    public void onIncomingMessage(DID did, UserID userID, ByteArrayInputStream packet, int wirelen)
     {
         st.assertThread();
 
-        csl.onIncomingMessage(did, packet, wirelen);
+        csl.onIncomingMessage(did, userID, packet, wirelen);
     }
 
     //

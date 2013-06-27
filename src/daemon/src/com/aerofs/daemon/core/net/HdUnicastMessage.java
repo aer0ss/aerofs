@@ -23,6 +23,7 @@ public class HdUnicastMessage implements IEventHandler<EIUnicastMessage>
     public void handle_(EIUnicastMessage ev, Prio prio)
     {
         PeerContext pc = new PeerContext(ev._ep);
+        pc.setUser(ev._userID);
         RawMessage r = new RawMessage(ev.is(), ev.wireLength());
         _stack.input().onUnicastDatagramReceived_(r, pc);
     }

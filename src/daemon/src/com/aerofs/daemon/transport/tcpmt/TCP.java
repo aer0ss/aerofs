@@ -11,6 +11,7 @@ import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.SID;
+import com.aerofs.base.id.UserID;
 import com.aerofs.daemon.event.lib.EventDispatcher;
 import com.aerofs.daemon.event.net.EOTpStartPulse;
 import com.aerofs.daemon.event.net.Endpoint;
@@ -362,22 +363,22 @@ public class TCP implements ITCP, ITransportImpl, IARPChangeListener
     }
 
     @Override
-    public void onMessageReceived(InetAddress remote, DID did, InputStream is)
+    public void onMessageReceived(InetAddress remote, DID did, UserID userID, InputStream is)
             throws Exception
     {
         PBTPHeader header = TPUtil.processUnicastHeader(is);
 
         if (TPUtil.isPayload(header)) {
-            processUnicastPayload(did, header, is, is.available() + FrameParams.HEADER_SIZE);
+            processUnicastPayload(did, userID, header, is, is.available() + FrameParams.HEADER_SIZE);
         } else {
             processUnicastControl(remote, did, header);
         }
     }
 
-    private void processUnicastPayload(DID did, PBTPHeader hdr, InputStream bodyis, int wirelen)
+    private void processUnicastPayload(DID did, UserID userID, PBTPHeader hdr, InputStream bodyis, int wirelen)
     {
         try {
-            PBTPHeader ret = TPUtil.processUnicastPayload(new Endpoint(this, did), hdr, bodyis, wirelen, _sink, _sm);
+            PBTPHeader ret = TPUtil.processUnicastPayload(new Endpoint(this, did), userID, hdr, bodyis, wirelen, _sink, _sm);
             if (ret != null) _ucast.sendControl(did, ret);
         } catch (Exception e) {
             l.warn("silently discard data d:{} err:", did, LogUtil.suppress(e, ExDeviceOffline.class));
