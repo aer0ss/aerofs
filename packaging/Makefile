@@ -32,6 +32,7 @@ PACKAGES= \
 	stun \
 	config \
 	sanity \
+	installers \
 
 DEBS=$(addprefix debs/, ${PACKAGES:=.deb})
 

@@ -1,0 +1,6 @@
+Package: aerofs-installers
+Section: java
+Priority: required
+Maintainer: AeroFS <team@aerofs.com>
+Description: AeroFS installers package.
+Architecture: all
