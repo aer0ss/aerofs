@@ -4,27 +4,23 @@
 
 package com.aerofs.daemon.core.update;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
-import com.aerofs.base.id.OID;
 import com.aerofs.daemon.core.update.DPUTUtil.IDatabaseOperation;
 import com.aerofs.daemon.lib.db.CoreDBCW;
+import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.db.DBUtil;
 import com.aerofs.lib.db.dbcw.IDBCW;
-import com.aerofs.lib.id.CID;
-import com.aerofs.lib.id.SIndex;
-import com.aerofs.lib.id.SOCID;
 import com.google.common.base.Preconditions;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
+import com.google.common.collect.Lists;
+import org.slf4j.Logger;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
+import java.util.List;
 
 import static com.aerofs.daemon.lib.db.CoreSchema.*;
 
@@ -51,6 +47,8 @@ import static com.aerofs.daemon.lib.db.CoreSchema.*;
  */
 public class DPUTCleanupGhostKML implements IDaemonPostUpdateTask
 {
+    private static final Logger l = Loggers.getLogger(DPUTCleanupGhostKML.class);
+
     private final IDBCW _dbcw;
 
     public DPUTCleanupGhostKML(CoreDBCW dbcw)
@@ -89,14 +87,11 @@ public class DPUTCleanupGhostKML implements IDaemonPostUpdateTask
      */
     private static void clearImmigrantKMLs(Statement s, Connection c) throws SQLException
     {
-        // find immigrant ticks associated to native KMLs
+        // for each (SIndex,DID) find smallest immigrant tick associated to a native KML
         ResultSet rs = s.executeQuery("select "
                 + C_IV_SIDX + ","
-                + C_IV_OID + ","
-                + C_IV_CID + ","
-                + C_IV_DID + ","
                 + C_IV_IMM_DID + ","
-                + C_IV_IMM_TICK
+                + "min(" + C_IV_IMM_TICK + ")"
                 + " from " + T_IV
                 + " inner join " + T_VER
                 + " on "
@@ -105,65 +100,56 @@ public class DPUTCleanupGhostKML implements IDaemonPostUpdateTask
                 + C_IV_CID + "=" + C_VER_CID + " and "
                 + C_IV_DID + "=" + C_VER_DID + " and "
                 + C_IV_TICK + "=" + C_VER_TICK
-                + " where "
-                + C_VER_KIDX + "=-1");
+                + " where " + C_VER_KIDX + "=-1"
+                + " group by " + C_IV_SIDX + "," + C_IV_IMM_DID);
 
-        Set<TTD> immTicksToDelete = Sets.newHashSet();
-        Map<SD, Long> rollbackBoundary = Maps.newHashMap();
+        List<SDB> rollbackBoundary = Lists.newArrayList();
         try {
             while (rs.next()) {
-                SIndex sidx = new SIndex(rs.getInt(1));
-                OID oid = new OID(rs.getBytes(2));
-                CID cid = new CID(rs.getInt(3));
-                DID did = new DID(rs.getBytes(4));
-                DID immDid = new DID(rs.getBytes(5));
-                long immTick = rs.getLong(6);
-
-                immTicksToDelete.add(new TTD(new SOCID(sidx, oid, cid), did));
-
-                SD sd = new SD(sidx, immDid);
-                Long minImmTick = rollbackBoundary.get(sd);
-                rollbackBoundary.put(sd,
-                        minImmTick == null ? immTick : Math.min(minImmTick, immTick));
+                rollbackBoundary.add(new SDB(rs.getInt(1), rs.getBytes(2), rs.getLong(3)));
             }
         } finally {
             rs.close();
         }
 
-        rollbackImmigrantKnowledge(c, rollbackBoundary);
-        removeImmigrantTicks(c, immTicksToDelete);
-    }
-
-    private static void rollbackImmigrantKnowledge(Connection c, Map<SD, Long> rollbackBoundary)
-            throws SQLException
-    {
         KnowledgeRollback kr = new KnowledgeRollback(c, T_IK,
                 C_IK_SIDX, C_IK_IMM_DID, C_IK_IMM_TICK);
 
-        // rollback immigrant knowledge vector
-        for (Entry<SD, Long> e : rollbackBoundary.entrySet()) {
-            SD sd = e.getKey();
-            kr.rollback(sd._sidx.getInt(), sd._did.getBytes(), e.getValue());
-        }
-    }
-
-    private static void removeImmigrantTicks(Connection c, Set<TTD> immTicksToDelete)
-            throws SQLException
-    {
         PreparedStatement ps = c.prepareStatement(DBUtil.deleteWhere(
                 T_IV,
                 C_IV_SIDX + "=? and "
-                        + C_IV_OID + "=? and "
-                        + C_IV_CID + "=? and "
-                        + C_IV_DID + "=?"));
+                        + C_IV_IMM_DID + "=? and "
+                        + C_IV_IMM_TICK + ">=?"));
 
-        for (TTD ttd : immTicksToDelete) {
-            ps.setInt(1, ttd._socid.sidx().getInt());
-            ps.setBytes(2, ttd._socid.oid().getBytes());
-            ps.setInt(3, ttd._socid.cid().getInt());
-            ps.setBytes(4, ttd._did.getBytes());
+        // cannot remove ticks while the ResultSet is open, hence the second loop
+        for (SDB sdb : rollbackBoundary) {
+            if (Cfg.did().equals(new DID(sdb.did))) {
+                l.warn("cannot rollback local ticks for {}", sdb.sidx);
+                continue;
+            }
+
+            kr.rollback(sdb.sidx, sdb.did, sdb.minImmTick);
+
+            // NB: we may remove immigrant ticks associated with locally present ticks
+            // but this is fine because:
+            //  * we only remove ticks anterior to the new knowledge vector
+            //  * we don't remove the associated native ticks and the core handles
+            //  gracefully the reception of immigrant ticks whose associated native
+            //  tick is already known since that situation can arise naturally
+            ps.setInt(1, sdb.sidx);
+            ps.setBytes(2, sdb.did);
+            ps.setLong(3, sdb.sidx);
             ps.executeUpdate();
         }
+    }
+
+    private static class SDB
+    {
+        final int sidx;
+        final byte[] did;
+        final long minImmTick;
+
+        SDB(int s, byte[] d, long t) { sidx = s; did = d; minImmTick = t; }
     }
 
     private static class KnowledgeRollback
@@ -198,7 +184,7 @@ public class DPUTCleanupGhostKML implements IDaemonPostUpdateTask
             Preconditions.checkState(kwlg >= 0);
 
             PreparedStatement ps;
-            // we MUST NOT insert 0 ticks in the db! (or AessrtionError will ensue...
+            // NB: inserting 0 ticks would cause AssertionError later on
             if (kwlg > 0) {
                 ps = psSet;
                 ps.setLong(3, kwlg);
@@ -243,14 +229,24 @@ public class DPUTCleanupGhostKML implements IDaemonPostUpdateTask
                 int sidx = rs.getInt(1);
                 byte[] did = rs.getBytes(2);
                 long tick = rs.getLong(3);
+
+                // there is no knowledge to rollback for local ticks
+                // NB: KnowledgeRollback would not break but making
+                // this distinction explicit improves clarity.
+                if (Cfg.did().equals(new DID(did))) continue;
+
                 kr.rollback(sidx, did, tick);
             }
         } finally {
             rs.close();
         }
 
-        // delete all KMLs
-        s.executeUpdate("delete from " + T_VER + " where " + C_VER_KIDX + "=-1");
+        // delete all KMLs except those generated on the local device
+        // as they cannot be restored through AntiEntropy
+        PreparedStatement ps = c.prepareStatement("delete from " + T_VER
+                + " where " + C_VER_KIDX + "=-1 and " + C_VER_DID + "!=?");
+        ps.setBytes(1, Cfg.did().getBytes());
+        ps.executeUpdate();
     }
 
     private static void updateMaxTicks(Statement s) throws SQLException
@@ -278,57 +274,16 @@ public class DPUTCleanupGhostKML implements IDaemonPostUpdateTask
     private static void clearCollectorQueue(Statement s) throws SQLException
     {
         s.executeUpdate("delete from " + T_CS);
-    }
 
-
-
-    /**
-     * Helper class for clearing immigrant ticks
-     */
-    static class TTD
-    {
-        public final SOCID _socid;
-        public final DID _did;
-
-        public TTD(SOCID socid, DID did) { _socid = socid; _did = did; }
-
-        @Override
-        public boolean equals(Object o)
-        {
-            return o != null && o instanceof TTD
-                    && ((TTD)o)._socid.equals(_socid)
-                    && ((TTD)o)._did.equals(o);
-        }
-
-        @Override
-        public int hashCode()
-        {
-            return _socid.hashCode() ^ _did.hashCode();
-        }
-    }
-
-    /**
-     * Helper class for immigrant vector rollback
-     */
-    static class SD
-    {
-        public final SIndex _sidx;
-        public final DID _did;
-
-        public SD(SIndex sidx, DID did) { _sidx = sidx; _did = did; }
-
-        @Override
-        public boolean equals(Object o)
-        {
-            return o != null && o instanceof SD
-                    && ((SD)o)._sidx.equals(_sidx)
-                    && ((SD)o)._did.equals(o);
-        }
-
-        @Override
-        public int hashCode()
-        {
-            return _sidx.hashCode() ^ _did.hashCode();
-        }
+        // KMLs generated by this device (local mod in a store, expel store, readmit)
+        // cannot be cleaned as they could not be restored through AntiEntropy
+        // so we have to keep them in the collector queue
+        s.executeUpdate("insert into " + T_CS + "("
+                + C_CS_SIDX + ","
+                + C_CS_OID + ","
+                + C_CS_CID + ")"
+                + " select " + C_VER_SIDX + "," + C_VER_OID + "," + C_VER_CID
+                + " from " + T_VER
+                + " where " + C_VER_KIDX + "=-1");
     }
 }

@@ -56,6 +56,7 @@ public class DaemonPostUpdateTasks
             new DPUTCreatePendingRootTable(dbcw),
             new DPUTAddStoreNameColumn(dbcw),
             new DPUTAddContributorsTable(dbcw),
+            null,  // used to be DPUTCleanupGhostKML
             new DPUTCleanupGhostKML(dbcw)
             // new tasks go here
         };
