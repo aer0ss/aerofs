@@ -221,6 +221,15 @@ Function install_unprivileged
     WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\$(^Name)" "UninstallString" "$INSTDIR\uninstall.exe"
     WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\$(^Name)" "URLInfoAbout" "${URL}"
 
+    Delete /REBOOTOK "$INSTDIR\aerofs.ini"
+
+    # If the file site-config.properties exists in the install directory,
+    # copy it into the version-specific approot (where the client will look for it)
+    FileOpen $4 "$INSTDIR\version" r
+    FileRead $4 $1
+    FileClose $4
+    CopyFiles "$INSTDIR\site-config.properties" "$INSTDIR\v_$1\site-config.properties"
+
 FunctionEnd
 
 /**
