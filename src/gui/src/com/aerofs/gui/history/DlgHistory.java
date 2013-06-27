@@ -538,8 +538,7 @@ public class DlgHistory extends AeroFSDialog
 
     private boolean fillVersionTable(Table revTable, ModelIndex index, Label status)
     {
-        Path path = _model.getPath(index);
-        status.setText("Sync history of " + Util.quote(path.last()));
+        status.setText("Sync history of " + Util.quote(index.name()));
 
         revTable.removeAll();
 
@@ -659,7 +658,7 @@ public class DlgHistory extends AeroFSDialog
     {
         Path p = _model.getPath(index);
         new HistoryTaskDialog(getShell(), "Deleting...",
-                "Permanently delete all previous versions under \"" + p.last() + "\" ?\n ",
+                "Permanently delete all previous versions under \"" + index.name() + "\" ?\n ",
                 "Deleting old versions under " + p.toStringRelative()) {
             @Override
             public void run() throws Exception {
@@ -671,15 +670,16 @@ public class DlgHistory extends AeroFSDialog
     private void recursivelyRestore(final ModelIndex index)
     {
         // FIXME: this only works for LINKED storage...
+        String absPath = UIUtil.absPathNullable(_model.getPath(index));
         DirectoryDialog dDlg = new DirectoryDialog(getShell(), SWT.SHEET);
         dDlg.setMessage("Select destination folder in which deleted files from the source folder " +
                 "will be restored.");
-        dDlg.setFilterPath(Util.join(Cfg.absDefaultRootAnchor(),
-                Util.join(_model.getPath(index).removeLast().elements())));
-        final String path = dDlg.open();
-        if (path == null) return;
+        if (absPath != null) dDlg.setFilterPath(new File(absPath).getParent());
 
-        File root = new File(path);
+        final String dest = dDlg.open();
+        if (dest == null) return;
+
+        File root = new File(dest);
         if (!root.isDirectory()) {
             // NOTE: DirectoryDialog allows you to pick a file from a directory dialog if the filter
             // path points to a file...
@@ -687,15 +687,15 @@ public class DlgHistory extends AeroFSDialog
                     IconType.ERROR).open();
         } else {
             // the actual restore operation is started in a separate thread by the feedback dialog
-            final boolean inPlace = Util.join(path, index.name()).equals(
-                    _model.getPath(index).toAbsoluteString(Cfg.absDefaultRootAnchor()));
-            String label = "Restoring " + Util.quote(_model.getPath(index).last()) +
-                    (inPlace ? "" : "\nto " + Util.quote(path));
+            final boolean inPlace = Util.join(dest, index.name()).equals(absPath);
+
+            String label = "Restoring " + Util.quote(index.name()) +
+                    (inPlace ? "" : "\nto " + Util.quote(dest));
             new HistoryTaskDialog(getShell(), "Restoring...", null, label) {
                 @Override
                 public void run() throws Exception
                 {
-                    _model.restore(index, path, new IDecisionMaker()
+                    _model.restore(index, dest, new IDecisionMaker()
                     {
                         @Override
                         public Answer retry(ModelIndex a)
