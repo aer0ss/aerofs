@@ -15,7 +15,7 @@ include include/common ${1:-}
 if [[ $# -ne 1 ]]; then
     echo "usage: $0 [build mode]" >&2
     echo " " >&2
-    echo "[build mode]: STAGING or PROD" >&2
+    echo "[build mode]: PROD|STAGING|ENTERPRISE" >&2
     echo " " >&2
     echo "example: $0 STAGING" >&2
     exit $ERRBADARGS

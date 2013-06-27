@@ -2,6 +2,8 @@
 cd $(dirname $0)
 rm -f *.dmg *.deb *.tgz *.exe *.ver *.zip
 
+WEB_ROOT=nocache.client.enterprise.aerofs.com
+
 for file in \
     AeroFSInstall.dmg \
     aerofs-installer.deb \
@@ -18,7 +20,7 @@ for file in \
     current.ver
 do
     echo ">>> Download $file..."
-    wget --quiet --no-check-certificate https://nocache.client.aerofs.com/$file
+    wget --quiet --no-check-certificate https://$WEB_ROOT/$file
 done
 
 version=$(cat current.ver | awk -F'=' '{print $2}')
@@ -36,7 +38,7 @@ for file in \
     aerofsts-osx-${version}.zip
 do
     echo ">>> Download $file..."
-    wget --quiet --no-check-certificate https://nocache.client.aerofs.com/$file
+    wget --quiet --no-check-certificate https://$WEB_ROOT/$file
 done
 
 echo "Client binaries successfully downloaded."

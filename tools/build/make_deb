@@ -5,7 +5,7 @@
 
 if [[ x"$1" == x || x"$2" == x || x"$3" == x || x"$4" == x ]]; then
     echo usage "$0 [build mode] [version number] [remote release dir] [output deb filename]"
-    echo "[build mode]: STAGING or PROD"
+    echo "[build mode]: PROD|STAGING|ENTERPRISE"
     echo "[version number]: major.minor.release (e.g. 0.4.65)"
     echo "[remote release dir]: directory in which the release files are on the build server"
     echo "[output deb filename]: name of the deb file this script creates"
@@ -29,8 +29,11 @@ if [ "$1" == "PROD" ]; then
 elif [ "$1" == "STAGING" ]; then
     MODE="STAGING"
     LOWERCASE_MODE="staging"
+elif [ "$1" == "ENTERPRISE" ]; then
+    MODE="ENTERPRISE"
+    LOWERCASE_MODE="enterprise"
 else
-    echo "Invalid build mode $1.  Expected STAGING or PROD."
+    echo "Invalid build mode $1.  Expected PROD|STAGING|ENTERPRISE."
 fi
 
 #################################
