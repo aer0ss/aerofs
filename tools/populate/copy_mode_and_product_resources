@@ -14,7 +14,7 @@ readonly ERRBADPRODUCT=3
 function print_usage() {
     echo "usage: $0 [mode] [product] [resource_root_dir] [output_dir]" >&2
     echo "    [mode]              Specifies which mode the properties are for" >&2
-    echo "                        Can be PROD, CI, or STAGING." >&2
+    echo "                        Can be PROD|CI|STAGING|ENTERPRISE." >&2
     echo "    [product]           Specifies which product the properties are for" >&2
     echo "                        Can be TEAM_SERVER or CLIENT." >&2
     echo "    [resource_root_dir] Directory where all non-server-specific resources are stored" >&2
@@ -105,7 +105,7 @@ fi
 # mode
 readonly MODE="$1"
 readonly LOWERCASE_MODE=$( echo $MODE | tr '[:upper:]' '[:lower:]' )
-if [[ "$MODE" != 'PROD' && "$MODE" != 'CI' && "$MODE" != 'STAGING' ]]
+if [[ "$MODE" != 'PROD' && "$MODE" != 'CI' && "$MODE" != 'STAGING' && "$MODE" != "ENTERPRISE" ]]
 then
     print_usage
     exit $ERRBADMODE

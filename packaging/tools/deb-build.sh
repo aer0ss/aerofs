@@ -146,7 +146,7 @@ EOF
 function print_usage() {
     echo "Usage: $0 <debian_name> <repository>"
     echo " <deb-name>   debian package to build"
-    echo " <repository> repository to upload package to (PROD|CI|STAGING|$(whoami | tr [a-z] [A-Z])|OPENSTACK)"
+    echo " <repository> repository to upload package to (PROD|CI|STAGING|$(whoami | tr [a-z] [A-Z])|ENTERPRISE)"
     exit $ERRBADARGS
 }
 
@@ -160,7 +160,7 @@ fi
 if [[ "$2" != 'PROD' && \
     "$2" != 'CI' && \
     "$2" != 'STAGING' && \
-    "$2" != 'OPENSTACK' && \
+    "$2" != 'ENTERPRISE' && \
     "$2" != "$(whoami | tr [a-z] [A-Z])" ]]
 then
     print_usage
