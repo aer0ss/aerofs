@@ -179,7 +179,7 @@ public class SingleuserTrayMenu extends AbstractTrayMenu implements IRitualNotif
         case Type.SHARED_FOLDER_JOIN_VALUE:
             final Path p = Path.fromPB(pb.getPath());
             UI.get().notify(MessageType.INFO,
-                    "You have joined \"" + p.last() + "\"", new Runnable() {
+                    "You have joined \"" + UIUtil.sharedFolderName(p, null) + "\"", new Runnable() {
                 @Override
                 public void run()
                 {
