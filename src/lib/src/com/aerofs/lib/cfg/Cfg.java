@@ -11,6 +11,7 @@ import com.aerofs.labeling.L;
 import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.LibParam.CA;
+import com.aerofs.lib.LibParam.PostUpdate;
 import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.StorageType;
 import com.aerofs.lib.Util;
@@ -481,6 +482,11 @@ public class Cfg
             // we do not tolerate exception when reading the config db
             throw new AssertionError(e);
         }
+    }
+
+    public static boolean hasPendingDPUT()
+    {
+        return _db.getInt(Key.DAEMON_POST_UPDATES) < PostUpdate.DAEMON_POST_UPDATE_TASKS;
     }
 
     //-------------------------------------------------------------------------

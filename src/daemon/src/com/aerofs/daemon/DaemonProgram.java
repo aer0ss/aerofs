@@ -69,11 +69,17 @@ public class DaemonProgram implements IProgram
         Daemon daemon = inject_();
 
         // need to start Ritual server before Core.init_ to send ExUpdating during DPUT
-        _ritual.start_();
+        boolean ritualEarlyStart = Cfg.hasPendingDPUT();
+        if (ritualEarlyStart) _ritual.start_();
 
         daemon.init_();
 
         daemon.start_();
+
+        // if no DPUT is to be performed, delay Ritual start
+        // this is especially important on the first launch as we don't want to mislead
+        // the UI into thinking indexing is in progress before the daemon is properly started
+        if (!ritualEarlyStart) _ritual.start_();
 
         l.error("daemon main thread halted");
 
