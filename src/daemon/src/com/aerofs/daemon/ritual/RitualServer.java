@@ -107,7 +107,7 @@ public class RitualServer
                 // the need for patience back to the user. To that end, we all accept incoming calls
                 // and throw a sufficiently specific exception until the indexing succeeds.
                 AbstractExWirable ex = null;
-                if (Cfg.db().getInt(Key.DAEMON_POST_UPDATES) < PostUpdate.DAEMON_POST_UPDATE_TASKS) {
+                if (Cfg.hasPendingDPUT()) {
                     ex = new ExUpdating();
                 } else if (Cfg.db().getBoolean(Key.FIRST_START)) {
                     ex = new ExIndexing();
