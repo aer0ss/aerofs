@@ -135,4 +135,10 @@ class pd-app-transient {
         source => "puppet:///modules/pd-app-transient/probes/zephyr.sh",
         require => Package["aerofs-sanity"],
     }
+
+    # --------------
+    # Installers
+    # --------------
+
+    include installers
 }
