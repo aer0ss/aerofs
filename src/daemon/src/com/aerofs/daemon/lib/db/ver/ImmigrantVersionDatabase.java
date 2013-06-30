@@ -106,7 +106,7 @@ public class ImmigrantVersionDatabase
             DBUtil.close(_psGetImmTicks);
             _psGetImmTicks = null;
 
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -142,7 +142,7 @@ public class ImmigrantVersionDatabase
         } catch (SQLException e) {
             DBUtil.close(_psAddIMMVer);
             _psAddIMMVer = null;
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -189,7 +189,7 @@ public class ImmigrantVersionDatabase
         } catch (SQLException e) {
             DBUtil.close(_psGetBackupTicks);
             _psGetBackupTicks = null;
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -215,7 +215,7 @@ public class ImmigrantVersionDatabase
         } catch (SQLException e) {
             DBUtil.close(_psDelImmTick);
             _psDelImmTick = null;
-            throw e;
+            throw detectCorruption(e);
         }
 
     }

@@ -38,4 +38,9 @@ public abstract class AbstractDatabase
         }
     }
 
+    protected SQLException detectCorruption(SQLException e)
+    {
+        _dbcw.throwIfDBCorrupted(e);
+        return e;
+    }
 }

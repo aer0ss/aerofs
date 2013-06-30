@@ -3,6 +3,7 @@ package com.aerofs;
 import com.aerofs.base.Loggers;
 import com.aerofs.lib.ChannelFactories;
 import com.aerofs.lib.LibParam.CA;
+import com.aerofs.lib.ex.ExDBCorrupted;
 import com.aerofs.lib.properties.Configuration;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.AppRoot;
@@ -20,8 +21,6 @@ import com.aerofs.lib.log.LogUtil.Level;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.sv.client.SVClient;
 import com.google.common.collect.Lists;
-import com.google.inject.CreationException;
-import com.google.inject.spi.Message;
 import org.apache.commons.configuration.ConfigurationException;
 import org.slf4j.Logger;
 
@@ -142,21 +141,11 @@ public class Main
 
         try {
             launchProgram(rtRoot, prog, appArgs.toArray(new String[appArgs.size()]));
+        } catch (ExDBCorrupted e) {
+            System.out.println("db corrupted: " + e._integrityCheckResult);
+            ExitCode.CORRUPTED_DB.exit();
         } catch (Throwable e) {
-            if (L.isStaging()) {
-                if (e instanceof CreationException) {
-                    CreationException ce = (CreationException)e;
-                    for (Message m : ce.getErrorMessages()) {
-                        System.out.println(m);
-                        System.out.println(m.getSource());
-                    }
-                }
-                System.out.println("failed in main():");
-                e.printStackTrace();
-            } else {
-                System.out.println("failed in main(): " + Util.e(e)); // l.error does not work here.
-            }
-
+            System.out.println("failed in main(): " + Util.e(e)); // l.error does not work here.
             SVClient.logSendDefectSyncIgnoreErrors(true, "failed in main()", e);
             ExitCode.FAIL_TO_LAUNCH.exit();
         }

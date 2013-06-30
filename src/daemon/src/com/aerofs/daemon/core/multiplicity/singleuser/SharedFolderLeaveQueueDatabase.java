@@ -57,7 +57,7 @@ class SharedFolderLeaveQueueDatabase extends AbstractDatabase
         } catch (SQLException e) {
             DBUtil.close(_psGetLeaveCommands);
             _psGetLeaveCommands = null;
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -74,7 +74,7 @@ class SharedFolderLeaveQueueDatabase extends AbstractDatabase
         } catch (SQLException e) {
             DBUtil.close(_psAddLeaveCommand);
             _psAddLeaveCommand = null;
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -91,7 +91,7 @@ class SharedFolderLeaveQueueDatabase extends AbstractDatabase
         } catch (SQLException e) {
             DBUtil.close(_psRemoveLeaveCommand);
             _psRemoveLeaveCommand = null;
-            throw e;
+            throw detectCorruption(e);
         }
     }
 }

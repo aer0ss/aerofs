@@ -54,7 +54,7 @@ public class SIDDatabase extends AbstractDatabase implements ISIDDatabase
         } catch (SQLException e) {
             DBUtil.close(_psGetSIndex);
             _psGetSIndex = null;
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -82,7 +82,7 @@ public class SIDDatabase extends AbstractDatabase implements ISIDDatabase
         } catch (SQLException e) {
             DBUtil.close(_psGetSID);
             _psGetSID = null;
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -110,7 +110,7 @@ public class SIDDatabase extends AbstractDatabase implements ISIDDatabase
         } catch (SQLException e) {
             DBUtil.close(_psAdd);
             _psAdd = null;
-            throw e;
+            throw detectCorruption(e);
         }
     }
 

@@ -45,7 +45,7 @@ public class StoreContributorsDatabase
             Util.verify(n == 1);
         } catch (SQLException e) {
             _pswAddContrib.close();
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -75,7 +75,7 @@ public class StoreContributorsDatabase
             }
         } catch (SQLException e) {
             _pswGetContrib.close();
-            throw e;
+            throw detectCorruption(e);
         }
     }
 }

@@ -37,6 +37,18 @@ public class MySQLDBCW extends AbstractDBCW implements IDBCW
     }
 
     @Override
+    protected boolean isDBCorrupted(SQLException e)
+    {
+        return false;
+    }
+
+    @Override
+    protected String integrityCheck()
+    {
+        return "integrityCheckNotSupported";
+    }
+
+    @Override
     public String insertOrIgnore()
     {
         return "insert ignore ";

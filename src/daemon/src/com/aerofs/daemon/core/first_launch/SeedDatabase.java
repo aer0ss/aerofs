@@ -101,7 +101,7 @@ public class SeedDatabase extends AbstractDatabase
         } catch (SQLException e) {
             DBUtil.close(_psGetOID);
             _psGetOID = null;
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -160,7 +160,7 @@ public class SeedDatabase extends AbstractDatabase
         } catch (SQLException e) {
             DBUtil.close(_psSetOID);
             _psSetOID = null;
-            throw e;
+            throw detectCorruption(e);
         }
     }
 

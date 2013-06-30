@@ -45,7 +45,7 @@ public class SenderFilterDatabase extends AbstractDatabase implements ISenderFil
         } catch (SQLException e) {
             DBUtil.close(_psSSF);
             _psSSF = null;
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -64,7 +64,7 @@ public class SenderFilterDatabase extends AbstractDatabase implements ISenderFil
         } catch (SQLException e) {
             DBUtil.close(_psDSF);
             _psDSF = null;
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -95,7 +95,7 @@ public class SenderFilterDatabase extends AbstractDatabase implements ISenderFil
         } catch (SQLException e) {
             DBUtil.close(_psGSF);
             _psGSF = null;
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -131,7 +131,7 @@ public class SenderFilterDatabase extends AbstractDatabase implements ISenderFil
         } catch (SQLException e) {
             DBUtil.close(_psGSFS);
             _psGSFS = null;
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -157,7 +157,7 @@ public class SenderFilterDatabase extends AbstractDatabase implements ISenderFil
         } catch (SQLException e) {
             DBUtil.close(_psGSFPI);
             _psGSFPI = null;
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -185,7 +185,7 @@ public class SenderFilterDatabase extends AbstractDatabase implements ISenderFil
         } catch (SQLException e) {
             DBUtil.close(_psGSFGI);
             _psGSFGI = null;
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -215,7 +215,7 @@ public class SenderFilterDatabase extends AbstractDatabase implements ISenderFil
         } catch (SQLException e) {
             DBUtil.close(_psGSDI);
             _psGSDI = null;
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -241,7 +241,7 @@ public class SenderFilterDatabase extends AbstractDatabase implements ISenderFil
         } catch (SQLException e) {
             DBUtil.close(_psGSDIC);
             _psGSDIC = null;
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -263,7 +263,7 @@ public class SenderFilterDatabase extends AbstractDatabase implements ISenderFil
         } catch (SQLException e) {
             DBUtil.close(_psSSDI);
             _psSSDI = null;
-            throw e;
+            throw detectCorruption(e);
         }
     }
 

@@ -89,7 +89,7 @@ public class ACLDatabase extends AbstractDatabase implements IACLDatabase
         } catch (SQLException e) {
             DBUtil.close(_psSet);
             _psSet = null;
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -110,7 +110,7 @@ public class ACLDatabase extends AbstractDatabase implements IACLDatabase
         } catch (SQLException e) {
             DBUtil.close(_psDel);
             _psDel = null;
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -127,7 +127,7 @@ public class ACLDatabase extends AbstractDatabase implements IACLDatabase
         } catch (SQLException e) {
             DBUtil.close(_psClear);
             _psClear = null;
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -156,7 +156,7 @@ public class ACLDatabase extends AbstractDatabase implements IACLDatabase
         } catch (SQLException e) {
             DBUtil.close(_psGetEpoch);
             _psGetEpoch = null;
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -178,7 +178,7 @@ public class ACLDatabase extends AbstractDatabase implements IACLDatabase
         } catch (SQLException e) {
             DBUtil.close(_psUpdateEpoch);
             _psUpdateEpoch = null;
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -211,7 +211,7 @@ public class ACLDatabase extends AbstractDatabase implements IACLDatabase
         } catch (SQLException e) {
             DBUtil.close(_psGetAccessibleStores);
             _psGetAccessibleStores = null;
-            throw e;
+            throw detectCorruption(e);
         }
     }
 }

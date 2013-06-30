@@ -61,7 +61,7 @@ public class CollectorSequenceDatabase extends AbstractDatabase
             return new DBIterComWithKML(ps.executeQuery());
         } catch (SQLException e) {
             psw.close();
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -119,7 +119,7 @@ public class CollectorSequenceDatabase extends AbstractDatabase
         } catch (SQLException e) {
             DBUtil.close(_psDCS);
             _psDCS = null;
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -141,7 +141,7 @@ public class CollectorSequenceDatabase extends AbstractDatabase
         } catch (SQLException e) {
             DBUtil.close(_psACS);
             _psACS = null;
-            throw e;
+            throw detectCorruption(e);
         }
     }
 

@@ -61,7 +61,7 @@ public class PendingRootDatabase extends AbstractDatabase
         } catch (SQLException e) {
             DBUtil.close(_psGetPendingRoots);
             _psGetPendingRoots = null;
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -80,7 +80,7 @@ public class PendingRootDatabase extends AbstractDatabase
         } catch (SQLException e) {
             DBUtil.close(_psAddPendingRoot);
             _psAddPendingRoot = null;
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -98,7 +98,7 @@ public class PendingRootDatabase extends AbstractDatabase
         } catch (SQLException e) {
             DBUtil.close(_psRemovePendingRoot);
             _psRemovePendingRoot = null;
-            throw e;
+            throw detectCorruption(e);
         }
     }
 }

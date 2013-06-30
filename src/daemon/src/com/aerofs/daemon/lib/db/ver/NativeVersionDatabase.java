@@ -91,7 +91,7 @@ public class NativeVersionDatabase
             DBUtil.close(_psGetTicks);
             _psGetTicks = null;
 
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -145,7 +145,7 @@ public class NativeVersionDatabase
         } catch (SQLException e) {
             DBUtil.close(_psAddV);
             _psAddV = null;
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -197,7 +197,7 @@ public class NativeVersionDatabase
         } catch (SQLException e) {
             DBUtil.close(_psDelVer);
             _psDelVer = null;
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -219,7 +219,7 @@ public class NativeVersionDatabase
         } catch (SQLException e) {
             DBUtil.close(_psMoveVer);
             _psMoveVer = null;
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -252,7 +252,7 @@ public class NativeVersionDatabase
         } catch (SQLException e) {
             DBUtil.close(_psGLT);
             _psGLT = null;
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -299,7 +299,7 @@ public class NativeVersionDatabase
         } catch (SQLException e) {
             DBUtil.close(_psGetV);
             _psGetV = null;
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -335,7 +335,7 @@ public class NativeVersionDatabase
         } catch (SQLException e) {
             DBUtil.close(_psGetALV);
             _psGetALV = null;
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -367,7 +367,7 @@ public class NativeVersionDatabase
         } catch (SQLException e) {
             DBUtil.close(_psGetMaxTick);
             _psGetMaxTick = null;
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -428,7 +428,7 @@ public class NativeVersionDatabase
             // terminate the resources for the second ps
             DBUtil.close(_psAddMaxTick);
             _psAddMaxTick = null;
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
@@ -451,7 +451,7 @@ public class NativeVersionDatabase
         } catch (SQLException e) {
             DBUtil.close(_psDelMaxTick);
             _psDelMaxTick = null;
-            throw e;
+            throw detectCorruption(e);
         }
 
     }
@@ -476,7 +476,7 @@ public class NativeVersionDatabase
         } catch (SQLException e) {
             DBUtil.close(_psGetBackupTicks);
             _psGetBackupTicks = null;
-            throw e;
+            throw detectCorruption(e);
         }
     }
 
