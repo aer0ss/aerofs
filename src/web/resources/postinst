@@ -15,11 +15,11 @@ mkdir -p $PYHOME
 pip install virtualenv
 virtualenv $PYHOME
 cd /opt/web
-$PYHOME/bin/pip install protobuf==2.5.0 --upgrade
+$PYHOME/bin/pip install -r /opt/web/requirements.txt --log /var/log/aerofs/pip.install.log
 $PYTHON setup.py install
 
 # Install stripe module
-$PYHOME/bin/pip install --index-url https://code.stripe.com --upgrade stripe
+$PYHOME/bin/pip install --index-url https://code.stripe.com stripe
 
 # Install aerofs.python-lib
 # cd to directory first because setuptools can't find setup.py otherwise
