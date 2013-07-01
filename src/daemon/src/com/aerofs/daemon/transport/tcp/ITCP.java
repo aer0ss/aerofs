@@ -2,7 +2,7 @@
  * Copyright (c) Air Computing Inc., 2013.
  */
 
-package com.aerofs.daemon.transport.tcpmt;
+package com.aerofs.daemon.transport.tcp;
 
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UserID;

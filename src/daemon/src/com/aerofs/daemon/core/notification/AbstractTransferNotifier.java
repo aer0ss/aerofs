@@ -11,7 +11,7 @@ import com.aerofs.daemon.core.UserAndDeviceNames;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.transfers.ITransferStateListener;
 import com.aerofs.daemon.transport.ITransport;
-import com.aerofs.daemon.transport.tcpmt.TCP;
+import com.aerofs.daemon.transport.tcp.TCP;
 import com.aerofs.daemon.transport.xmpp.Zephyr;
 import com.aerofs.daemon.transport.xmpp.Jingle;
 import com.aerofs.lib.FullName;

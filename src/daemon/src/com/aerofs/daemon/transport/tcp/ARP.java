@@ -1,4 +1,4 @@
-package com.aerofs.daemon.transport.tcpmt;
+package com.aerofs.daemon.transport.tcp;
 
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
@@ -14,9 +14,9 @@ import java.util.Map;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 import static com.aerofs.daemon.transport.lib.AddressUtils.printaddr;
-import static com.aerofs.daemon.transport.tcpmt.ARP.ARPChange.ADD;
-import static com.aerofs.daemon.transport.tcpmt.ARP.ARPChange.REM;
-import static com.aerofs.daemon.transport.tcpmt.ARP.ARPChange.UPD;
+import static com.aerofs.daemon.transport.tcp.ARP.ARPChange.ADD;
+import static com.aerofs.daemon.transport.tcp.ARP.ARPChange.REM;
+import static com.aerofs.daemon.transport.tcp.ARP.ARPChange.UPD;
 
 class ARP
 {

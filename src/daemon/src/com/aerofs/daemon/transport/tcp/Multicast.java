@@ -1,4 +1,4 @@
-package com.aerofs.daemon.transport.tcpmt;
+package com.aerofs.daemon.transport.tcp;
 
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;

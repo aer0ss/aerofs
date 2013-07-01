@@ -1,4 +1,4 @@
-package com.aerofs.daemon.transport.tcpmt;
+package com.aerofs.daemon.transport.tcp;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
@@ -7,8 +7,8 @@ import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.daemon.event.net.EIPresence;
 import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.lib.event.Prio;
-import com.aerofs.daemon.transport.tcpmt.ARP.ARPChange;
-import com.aerofs.daemon.transport.tcpmt.ARP.IARPChangeListener;
+import com.aerofs.daemon.transport.tcp.ARP.ARPChange;
+import com.aerofs.daemon.transport.tcp.ARP.IARPChangeListener;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.bf.BFSID;
 import com.aerofs.proto.Transport.PBTCPPong;

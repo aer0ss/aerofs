@@ -3,7 +3,7 @@
  * Copyright (c) Air Computing Inc., 2011.
  */
 
-package com.aerofs.daemon.transport.tcpmt;
+package com.aerofs.daemon.transport.tcp;
 
 import com.aerofs.daemon.event.net.EOTpStartPulse;
 import com.aerofs.daemon.transport.lib.StartPulseBase;

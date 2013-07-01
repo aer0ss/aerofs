@@ -13,7 +13,7 @@ import com.aerofs.daemon.core.notification.UploadNotifier.UploadThrottler;
 import com.aerofs.daemon.core.transfers.ITransferStateListener.TransferProgress;
 import com.aerofs.daemon.core.transfers.ITransferStateListener.TransferredItem;
 import com.aerofs.daemon.event.net.Endpoint;
-import com.aerofs.daemon.transport.tcpmt.TCP;
+import com.aerofs.daemon.transport.tcp.TCP;
 import com.aerofs.lib.Throttler;
 import com.aerofs.lib.id.CID;
 import com.aerofs.lib.id.SIndex;

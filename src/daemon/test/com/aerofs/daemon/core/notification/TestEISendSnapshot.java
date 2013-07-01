@@ -11,7 +11,7 @@ import com.aerofs.daemon.core.transfers.ITransferStateListener.TransferredItem;
 import com.aerofs.daemon.core.transfers.download.DownloadState;
 import com.aerofs.daemon.core.transfers.upload.UploadState;
 import com.aerofs.daemon.event.net.Endpoint;
-import com.aerofs.daemon.transport.tcpmt.TCP;
+import com.aerofs.daemon.transport.tcp.TCP;
 import com.aerofs.lib.id.CID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOCID;

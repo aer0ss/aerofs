@@ -4,7 +4,7 @@
  * Copyright (c) Air Computing Inc., 2011.
  */
 
-package com.aerofs.daemon.transport.tcpmt;
+package com.aerofs.daemon.transport.tcp;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExNoResource;
@@ -24,10 +24,10 @@ import com.aerofs.daemon.transport.lib.PulseManager;
 import com.aerofs.daemon.transport.lib.StreamManager;
 import com.aerofs.daemon.transport.lib.TPUtil;
 import com.aerofs.daemon.transport.lib.TransportDiagnosisState;
-import com.aerofs.daemon.transport.tcpmt.ARP.ARPChange;
-import com.aerofs.daemon.transport.tcpmt.ARP.ARPEntry;
-import com.aerofs.daemon.transport.tcpmt.ARP.IARPChangeListener;
-import com.aerofs.daemon.transport.tcpmt.BootstrapFactory.FrameParams;
+import com.aerofs.daemon.transport.tcp.ARP.ARPChange;
+import com.aerofs.daemon.transport.tcp.ARP.ARPEntry;
+import com.aerofs.daemon.transport.tcp.ARP.IARPChangeListener;
+import com.aerofs.daemon.transport.tcp.BootstrapFactory.FrameParams;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
@@ -328,7 +328,7 @@ public class TCP implements ITCP, ITransportImpl, IARPChangeListener
     /**
      * FIXME: refactor how we process control message - I suspect this is the first step to separating this into different classes
      *
-     * Processes control messages received on a <code>tcpmt</code> unicast channel
+     * Processes control messages received on a <code>tcp</code> unicast channel
      *
      * @param rem {@link InetAddress} of the remote peer from which the message
      * @param ep {@link Endpoint} from which the message was received

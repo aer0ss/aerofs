@@ -21,7 +21,6 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExChildAlreadyShared;
 import com.aerofs.lib.ex.ExNoStripeCustomerID;
-import com.aerofs.lib.ex.ExNotDir;
 import com.aerofs.lib.ex.ExParentAlreadyShared;
 import com.aerofs.proto.Common.PBPath;
 import com.aerofs.proto.Common.PBSubjectRolePair;

@@ -2,7 +2,7 @@
  * Copyright (c) Air Computing Inc., 2013.
  */
 
-package com.aerofs.daemon.transport.tcpmt;
+package com.aerofs.daemon.transport.tcp;
 
 import com.aerofs.base.C;
 import com.aerofs.base.net.AddressResolverHandler;
@@ -16,7 +16,7 @@ import com.aerofs.base.ssl.SSLEngineFactory.Platform;
 import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.daemon.transport.lib.TransportStats;
 import com.aerofs.daemon.transport.lib.handlers.IOStatsHandler;
-import com.aerofs.daemon.transport.tcpmt.TCPServerHandler.ITCPServerHandlerListener;
+import com.aerofs.daemon.transport.tcp.TCPServerHandler.ITCPServerHandlerListener;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgCACertificateProvider;

@@ -1,4 +1,4 @@
-package com.aerofs.daemon.transport.tcpmt;
+package com.aerofs.daemon.transport.tcp;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExNoResource;
@@ -9,7 +9,7 @@ import com.aerofs.daemon.transport.lib.IUnicast;
 import com.aerofs.daemon.transport.lib.TPUtil;
 import com.aerofs.daemon.transport.lib.TransportStats;
 import com.aerofs.daemon.transport.lib.handlers.IOStatsHandler;
-import com.aerofs.daemon.transport.tcpmt.TCPServerHandler.ITCPServerHandlerListener;
+import com.aerofs.daemon.transport.tcp.TCPServerHandler.ITCPServerHandlerListener;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.ex.ExDeviceOffline;
