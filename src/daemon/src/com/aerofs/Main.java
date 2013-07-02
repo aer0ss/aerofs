@@ -1,16 +1,20 @@
 package com.aerofs;
 
+import com.aerofs.base.BaseParam;
 import com.aerofs.base.Loggers;
 import com.aerofs.lib.ChannelFactories;
+import com.aerofs.config.DynamicConfiguration;
 import com.aerofs.lib.LibParam.CA;
 import com.aerofs.lib.ex.ExDBCorrupted;
-import com.aerofs.lib.properties.Configuration;
+import com.aerofs.lib.S;
+import com.aerofs.lib.configuration.ClientConfigurationLoader;
+import com.aerofs.lib.configuration.ClientConfigurationLoader.IncompatibleModeException;
+import com.aerofs.lib.configuration.HttpsDownloader;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.IProgram;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.ProgramInformation;
-import com.aerofs.lib.S;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.SystemUtil.ExitCode;
 import com.aerofs.lib.Util;
@@ -19,19 +23,17 @@ import com.aerofs.lib.cfg.ExNotSetup;
 import com.aerofs.lib.log.LogUtil;
 import com.aerofs.lib.log.LogUtil.Level;
 import com.aerofs.lib.os.OSUtil;
+import com.aerofs.lib.properties.DynamicPropertySource;
 import com.aerofs.sv.client.SVClient;
-import com.google.common.collect.Lists;
+import com.google.common.io.Files;
 import org.apache.commons.configuration.ConfigurationException;
 import org.slf4j.Logger;
 
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.PrintStream;
+import java.io.IOException;
 import java.lang.reflect.Field;
-import java.net.MalformedURLException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.List;
 
 public class Main
 {
@@ -101,11 +103,6 @@ public class Main
         String rtRoot = args[0];
         String prog = args[1];
 
-        List<String> appArgs = Lists.newArrayList();
-        for (int i = MAIN_ARGS; i < args.length; i++) {
-            appArgs.add(args[i]);
-        }
-
         if (rtRoot.equals(LibParam.DEFAULT_RTROOT)) {
             rtRoot = OSUtil.get().getDefaultRTRoot();
         }
@@ -129,18 +126,38 @@ public class Main
         }
 
         // First things first, initialize the configuration subsystem.
-        initializeConfigurationSystem(rtRoot, AppRoot.abs(), prog, appArgs);
+        try {
+            initializeConfigurationSystem(AppRoot.abs());
+            writeCACertToFile(AppRoot.abs());
+        } catch (Exception e) {
+            if (prog.equals(LibParam.GUI_NAME) || prog.equals(LibParam.CLI_NAME)) {
+                String msg = null;
+
+                if (e instanceof ConfigurationException) msg = S.ERR_CONFIG_UNAVAILABLE;
+                else if (e instanceof IncompatibleModeException) msg = S.ERR_INCOMPATIBLE_MODE;
+
+                if (msg != null) {
+                    String[] temp = new String[args.length + 1];
+                    System.arraycopy(args, 0, temp, 0, args.length);
+                    temp[temp.length - 1] = "-E" + msg;
+                    args = temp;
+                }
+            } else {
+                System.out.println("failed in main(): " + Util.e(e));
+                SVClient.logSendDefectSyncIgnoreErrors(true, "failed in main()", e);
+                ExitCode.CONFIGURATION_INIT.exit();
+            }
+        }
 
         //
         // INITIALIZE MAJOR COMPONENTS HERE!!!!!
         //
-
         ProgramInformation.init_(prog);
         ChannelFactories.init_();
         SystemUtil.setDefaultUncaughtExceptionHandler();
 
         try {
-            launchProgram(rtRoot, prog, appArgs.toArray(new String[appArgs.size()]));
+            launchProgram(rtRoot, prog, args);
         } catch (ExDBCorrupted e) {
             System.out.println("db corrupted: " + e._integrityCheckResult);
             ExitCode.CORRUPTED_DB.exit();
@@ -200,57 +217,27 @@ public class Main
         }
     }
 
-    // If there are any problems initializing the HTTP configuration
-    //   source, pass the error message to the program and let them
-    //   handle it... through app args.
-
-    /**
-     * Initializes the dynamic configuration system.
-     *
-     * HACK ALERT: v
-     *
-     * If there is an exception, and the program is either GUI or CLI, the
-     *   error message is propagated to the program to display the error
-     *   messsage to users... through application arguments.
-     *
-     * @param rtRoot, the path to the RTRoot folder
-     * @param prog, the program ID
-     * @param appArgs, the application arguments
-     */
-    private static void initializeConfigurationSystem(String rtRoot, String appRoot, String prog,
-            List<String> appArgs)
+    private static void initializeConfigurationSystem(String appRoot)
+            throws ConfigurationException, IncompatibleModeException
     {
-        try {
-            Configuration.Client.initialize(rtRoot);
+        ClientConfigurationLoader loader = new ClientConfigurationLoader(new HttpsDownloader());
+        DynamicConfiguration.initialize(loader.loadConfiguration(appRoot));
+        BaseParam.setPropertySource(new DynamicPropertySource());
+        l.debug("Client configuration initialized");
+    }
 
-            // Write the new cacert.pem to the approot for use by other parts of the system.
-            // TODO (MP) remove this and have everyone use Cfg.cacert() directly.
-            if (CA.CERTIFICATE.get().isPresent()) {
-                String caCertificateString = CA.CERTIFICATE.get().get();
-                PrintStream out = null;
-
-                try {
-                    out = new PrintStream(new FileOutputStream(new File(appRoot, LibParam.CA_CERT)));
-                    out.print(caCertificateString);
-                }
-                finally {
-                    if (out != null) out.close();
-                }
+    private static void writeCACertToFile(String approot)
+    {
+        // Write the new cacert.pem to the approot for use by other parts of the system.
+        // TODO (MP) remove this and have everyone use Cfg.cacert() directly.
+        if (CA.CERTIFICATE.get().isPresent())
+        {
+            try {
+                Files.write(CA.CERTIFICATE.get().get().getBytes(),
+                        new File(approot, LibParam.CA_CERT));
+            } catch (IOException e) {
+                l.debug("Failed to write CA cert to disk.", e);
             }
-        } catch (Exception e) {
-            if (prog.equals(LibParam.CLI_NAME) || prog.equals(LibParam.GUI_NAME)) {
-                if (e instanceof MalformedURLException) {
-                    appArgs.add("-E" + S.ERR_CONFIG_SVC_BAD_URL);
-                    return;
-                } else if (e instanceof ConfigurationException) {
-                    appArgs.add("-E" + S.ERR_CONFIG_SVC_CONFIG);
-                    return;
-                }
-            }
-
-            System.out.println("failed in main(): " + Util.e(e));
-            SVClient.logSendDefectSyncIgnoreErrors(true, "failed in main()", e);
-            ExitCode.CONFIGURATION_INIT.exit();
         }
     }
 }

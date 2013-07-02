@@ -12,6 +12,12 @@ import com.aerofs.tools.ToolsProgram;
 
 public class Program implements IProgram {
 
+    /**
+     * supported program arguments:
+     *
+     * -E<message> - displays <message> to the user and then immediately abort due to
+     *   failure to initialize configuration. Valid for GUI and CLI.
+     */
     @Override
     public void launch_(String rtRoot, String prog, String[] args) throws Exception
     {

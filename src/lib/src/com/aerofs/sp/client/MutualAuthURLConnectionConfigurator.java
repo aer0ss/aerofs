@@ -5,6 +5,7 @@
 package com.aerofs.sp.client;
 
 import com.aerofs.base.net.IURLConnectionConfigurator;
+import com.aerofs.base.ssl.ICertificateProvider;
 import com.aerofs.base.ssl.SSLEngineFactory;
 import com.aerofs.base.ssl.SSLEngineFactory.Mode;
 import com.aerofs.base.ssl.SSLEngineFactory.Platform;
@@ -21,8 +22,18 @@ public class MutualAuthURLConnectionConfigurator implements IURLConnectionConfig
     private @Nullable SSLSocketFactory _sslSocketFactory;
 
     // TODO (MP) make final when fallbackToOldImplementation() is removed.
-    private SSLEngineFactory _factory = new SSLEngineFactory(Mode.Client, Platform.Desktop,
-            new CfgKeyManagersProvider(), new CfgCACertificateProvider(), null);
+    private SSLEngineFactory _factory;
+
+    public MutualAuthURLConnectionConfigurator()
+    {
+        this(new CfgCACertificateProvider());
+    }
+
+    public MutualAuthURLConnectionConfigurator(ICertificateProvider certificateProvider)
+    {
+        _factory = new SSLEngineFactory(Mode.Client, Platform.Desktop,
+                new CfgKeyManagersProvider(), certificateProvider, null);
+    }
 
     @Override
     public void configure(URLConnection connection)

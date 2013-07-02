@@ -18,7 +18,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -31,7 +30,6 @@ import java.util.List;
 public final class Configuration
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(Configuration.class);
-    private static final String CONFIGURATION_RESOURCE = "configuration.properties";
 
     private static interface IDefaultConfigurationURLProvider
     {
@@ -54,6 +52,12 @@ public final class Configuration
     public static class Server
     {
         private static final String CONFIGURATION_SERVICE_URL_FILE = "/etc/aerofs/configuration.url";
+        private static final String CONFIGURATION_RESOURCE = "configuration.properties";
+
+        private static List<String> getStaticPropertyPaths()
+        {
+            return Collections.singletonList(CONFIGURATION_RESOURCE);
+        }
 
         private static void verifyStaticPropertyFilesExist()
         {
@@ -104,47 +108,6 @@ public final class Configuration
         }
     }
 
-    /**
-     * Provides the initialization logic for the AeroFS/Team Server client configuration.
-     *
-     * <p>
-     * The following configuration sources are used (in order of preference):
-     * <ol>
-     *     <li>Runtime Configuration (for testing only)</li>
-     *     <li>System Configuration (system, -D JVM parameters)</li>
-     *     <li>Classpath .properties Resources (static)</li>
-     *     <li>Configuration Service (HTTP)</li>
-     * </ol>
-     * </p>
-     */
-    public static class Client
-    {
-        private static final String CONFIGURATION_SERVICE_URL_FILE = "/configuration.url";
-
-        public static void initialize(String rtRoot)
-            throws ConfigurationException, MalformedURLException
-        {
-            final AbstractConfiguration systemConfiguration =
-                    SystemConfiguration.newInstance();
-            final AbstractConfiguration staticPropertiesConfiguration =
-                    PropertiesConfiguration.newInstance(getStaticPropertyPaths());
-            final AbstractConfiguration httpConfiguration = getHttpConfiguration(
-                    ImmutableList.of(systemConfiguration, staticPropertiesConfiguration),
-                    new FileBasedConfigurationURLProvider(
-                            new File(rtRoot, CONFIGURATION_SERVICE_URL_FILE).getAbsolutePath()));
-
-            DynamicConfiguration.Builder dynamicConfigurationBuilder =
-                    DynamicConfiguration.builder()
-                            .addConfiguration(systemConfiguration, "system")
-                            .addConfiguration(staticPropertiesConfiguration, "static")
-                            .addConfiguration(httpConfiguration, "http");
-
-            BaseParam.setPropertySource(new DynamicPropertySource());
-            DynamicConfiguration.initialize(dynamicConfigurationBuilder.build());
-            LOGGER.debug("Client configuration initialized");
-        }
-    }
-
     private static class FileBasedConfigurationURLProvider implements IDefaultConfigurationURLProvider
     {
         private String _urlFile;
@@ -187,11 +150,6 @@ public final class Configuration
 
             return urlString;
         }
-    }
-
-    private static List<String> getStaticPropertyPaths()
-    {
-        return Collections.singletonList(CONFIGURATION_RESOURCE);
     }
 
     /**

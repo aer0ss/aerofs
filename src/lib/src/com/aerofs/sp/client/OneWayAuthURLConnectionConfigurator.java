@@ -5,6 +5,7 @@
 package com.aerofs.sp.client;
 
 import com.aerofs.base.net.IURLConnectionConfigurator;
+import com.aerofs.base.ssl.ICertificateProvider;
 import com.aerofs.base.ssl.SSLEngineFactory;
 import com.aerofs.base.ssl.SSLEngineFactory.Mode;
 import com.aerofs.base.ssl.SSLEngineFactory.Platform;
@@ -20,8 +21,18 @@ public class OneWayAuthURLConnectionConfigurator implements IURLConnectionConfig
     private @Nullable SSLSocketFactory _sslSocketFactory;
 
     // TODO (MP) make final when fallbackToOldImplementation() is removed.
-    private SSLEngineFactory _factory = new SSLEngineFactory(Mode.Client, Platform.Desktop, null,
-            new CfgCACertificateProvider(), null);
+    private SSLEngineFactory _factory;
+
+    public OneWayAuthURLConnectionConfigurator()
+    {
+        this(new CfgCACertificateProvider());
+    }
+
+    public OneWayAuthURLConnectionConfigurator(ICertificateProvider certificateProvider)
+    {
+        _factory = new SSLEngineFactory(Mode.Client, Platform.Desktop, null,
+                certificateProvider, null);
+    }
 
     @Override
     public void configure(URLConnection connection)

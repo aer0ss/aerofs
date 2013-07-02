@@ -65,7 +65,7 @@ function copy_os_specific_resources() {
 # This keeps aerofs from being updated
 # This version number must be kept in sync with src/launcher/launcher.lib/liblauncher.cpp
 function create_max_version_file() {
-    if [[ "$MODE" == 'STAGING' || "$MODE" == 'CI' ]]
+    if [[ "$MODE" == 'STAGING' || "$MODE" == 'CI' || "$MODE" == 'ENTERPRISE' ]]
     then
         echo "100.0.0" > "$APPROOT"/version
     fi

@@ -3,13 +3,18 @@ package com.aerofs.sp.client;
 import com.aerofs.base.BaseParam.SP;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.net.IURLConnectionConfigurator;
+import com.aerofs.base.ssl.ICertificateProvider;
 import com.aerofs.labeling.L;
+import com.aerofs.lib.LibParam.EnterpriseConfig;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.base.id.UserID;
+import com.aerofs.lib.cfg.CfgCACertificateProvider;
+import com.aerofs.lib.configuration.EnterpriseCertificateProvider;
 import com.aerofs.proto.Sp.SPServiceBlockingStub;
 import com.aerofs.proto.Sp.SPServiceStub.SPServiceStubCallbacks;
 import com.google.protobuf.ByteString;
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 
 /**
@@ -19,13 +24,26 @@ public class SPBlockingClient extends SPServiceBlockingStub
 {
     private static final Logger l = Loggers.getLogger(SPBlockingClient.class);
 
-    public static final IURLConnectionConfigurator MUTUAL_AUTH_CONNECTION_CONFIGURATOR =
-            new MutualAuthURLConnectionConfigurator();
-    public static final IURLConnectionConfigurator ONE_WAY_AUTH_CONNECTION_CONFIGURATOR =
-            new OneWayAuthURLConnectionConfigurator();
+    public static final IURLConnectionConfigurator MUTUAL_AUTH_CONNECTION_CONFIGURATOR;
+    public static final IURLConnectionConfigurator ONE_WAY_AUTH_CONNECTION_CONFIGURATOR;
 
     private final UserID _user;
     private static IBadCredentialListener _bcl;
+
+    static
+    {
+        // N.B. if the enterprise certificate is not provided when the client is built in
+        //   enterprise mode, fallback to use the production CA cert instead.
+        ICertificateProvider certificateProvider = EnterpriseConfig.IS_ENTERPRISE_DEPLOYMENT.get()
+                && !StringUtils.isBlank(EnterpriseConfig.ENTERPRISE_CUSTOMER_CERT.get())
+                ? new EnterpriseCertificateProvider()
+                : new CfgCACertificateProvider();
+
+        MUTUAL_AUTH_CONNECTION_CONFIGURATOR
+                = new MutualAuthURLConnectionConfigurator(certificateProvider);
+        ONE_WAY_AUTH_CONNECTION_CONFIGURATOR
+                = new OneWayAuthURLConnectionConfigurator(certificateProvider);
+    }
 
     /**
      * Compared to SPClientFactory, which will be removed in the future, this Factory enables DI
