@@ -4,15 +4,17 @@
 
 package com.aerofs.lib;
 
+import com.aerofs.base.ElapsedTimer;
+
 import java.util.Map;
 
 import static com.google.common.collect.Maps.newHashMap;
 
 /**
  * A class that's designed to throttle something based on the time of last occurence.
- *   The Throttler tracks the latest time when it was successfully applied to any given item,
- *   and it will only successfully apply to the same item if at least _delay milliseconds have
- *   past.
+ *   The Throttler tracks how long has passed since the last time when it was successfully applied
+ *   to any given item, and it will only successfully apply to the same item if at least _delay
+ *   milliseconds have passed.
  *
  * Example:
  *   Throttler throttler = new Throttler(1 * C.SEC);
@@ -21,7 +23,7 @@ import static com.google.common.collect.Maps.newHashMap;
  */
 public class Throttler<ThrottledItem>
 {
-    private final Map<ThrottledItem, Long> _map = newHashMap();
+    private final Map<ThrottledItem, ElapsedTimer> _map = newHashMap();
     private long _delay;
 
     public void setDelay(long delay)
@@ -31,14 +33,13 @@ public class Throttler<ThrottledItem>
 
     public boolean shouldThrottle(ThrottledItem item)
     {
-        long now = System.currentTimeMillis();
-
         if (_map.containsKey(item)) {
-            long then = _map.get(item);
-            if (now - then < _delay) return true;
+            if (_map.get(item).elapsed() < _delay) return true;
         }
 
-        _map.put(item, now);
+        ElapsedTimer timer = new ElapsedTimer();
+        timer.start();
+        _map.put(item, timer);
 
         return false;
     }

@@ -4,6 +4,7 @@
 
 package com.aerofs;
 
+import com.aerofs.base.ElapsedTimer;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.lib.JsonFormat;
@@ -56,7 +57,8 @@ public class InternalDiagnostics
         boolean forceNext = true;
         boolean rttMaybeNull = true;
 
-        long lastPing = 0;          // its initial value doesn't matter
+        ElapsedTimer pingTimer = new ElapsedTimer();
+        pingTimer.start();
         int samples = 0;
 
         while (true) {
@@ -67,7 +69,7 @@ public class InternalDiagnostics
 
             if (cb.toStop()) break;
 
-            if (newPing) lastPing = System.currentTimeMillis();
+            if (newPing) pingTimer.restart();
 
             if (newSeq) {
                 seqPrev = seqNext;
@@ -115,7 +117,7 @@ public class InternalDiagnostics
                 newSeq = true;
                 forceNext = false;
 
-            } else if (System.currentTimeMillis() - lastPing > cb.getTimeout()) {
+            } else if (pingTimer.elapsed() > cb.getTimeout()) {
                 // timed out
                 newPing = true;
                 newSeq = false;

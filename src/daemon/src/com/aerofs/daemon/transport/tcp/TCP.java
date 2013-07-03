@@ -119,7 +119,6 @@ public class TCP implements ITCP, ITransportImpl, IARPChangeListener
 
             private void arpGC()
             {
-                final long now = System.currentTimeMillis();
                 final List<DID> evicted = Lists.newArrayList();
 
                 _arp.visitARPEntries(new ARP.IARPVisitor()
@@ -127,7 +126,8 @@ public class TCP implements ITCP, ITransportImpl, IARPChangeListener
                     @Override
                     public void visit_(DID did, ARPEntry arp)
                     {
-                        if (now - arp._lastUpdated > ARP_GC_INTERVAL && !_ucast.isConnected(did)) {
+                        if (arp._lastUpdatedTimer.elapsed() > ARP_GC_INTERVAL
+                                && !_ucast.isConnected(did)) {
                             evicted.add(did);
                         }
                     }

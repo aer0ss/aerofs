@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.net;
 
+import com.aerofs.base.ElapsedTimer;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.base.ex.ExProtocolError;
@@ -69,13 +70,14 @@ public final class IncomingStreams
         TCB _tcb;
         InvalidationReason _invalidationReason;
         int _seq; // the last seq received. see IUnicastOutputLayer.sendOutgoingStreamChunk comment
-        final long _startTimeNanos;
+        final ElapsedTimer _timer;
         long _bytesRead = 0;
 
         IncomingStream(PeerContext pc)
         {
             _pc = pc;
-            _startTimeNanos = System.nanoTime();
+            _timer = new ElapsedTimer();
+            _timer.start();
         }
 
         @Override
@@ -233,10 +235,7 @@ public final class IncomingStreams
         try {
             l.info("end" + stream + " key:" + key);
 
-            // (JG) we use nanoTime(), which is monotonic, instead of currentTimeMillis(), which
-            // uses the system clock. The elapsed time is converted to milliseconds before being
-            // printed to the log.
-            long _diffTime = (System.nanoTime() - stream._startTimeNanos) / 1000000;
+            long _diffTime = stream._timer.elapsed();
             l.debug("istrm processed:{} time:{}", stream._bytesRead, _diffTime);
 
             _stack.output().endIncomingStream_(key._strmid, stream._pc);

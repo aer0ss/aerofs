@@ -4,6 +4,7 @@ import java.io.PrintStream;
 import java.util.LinkedList;
 import java.util.Queue;
 
+import com.aerofs.base.ElapsedTimer;
 import com.aerofs.base.Loggers;
 import org.slf4j.Logger;
 
@@ -132,14 +133,15 @@ public class ProfilerPrioQueue<T> extends PrioQueue<T> {
 
     private final Stat _statGlobal = new Stat();
     private final Stat _statCur = new Stat();
-    private long _lastStat = System.currentTimeMillis();
+    private ElapsedTimer _lastStatTimer;
 
     public ProfilerPrioQueue(int capacity)
     {
         super(capacity);
 
         assert Cfg.useProfiler();
-
+        _lastStatTimer = new ElapsedTimer();
+        _lastStatTimer.start();
     }
 
     public void enqueue_(T e, Prio prio)
@@ -165,10 +167,10 @@ public class ProfilerPrioQueue<T> extends PrioQueue<T> {
                     ret.getClass());
         }
 
-        if (now - _lastStat >= STAT_INTERVAL) {
+        if (_lastStatTimer.elapsed() >= STAT_INTERVAL) {
             l.warn("PROFILER PQ STAT: " + now + " " + _statCur.getStat_());
             _statCur.reset_();
-            _lastStat = now;
+            _lastStatTimer.restart();
         }
 
         return ret;

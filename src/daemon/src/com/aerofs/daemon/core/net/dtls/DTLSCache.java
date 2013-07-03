@@ -343,11 +343,9 @@ class DTLSCache implements IDumpStatMisc
     void timeoutDTLSInHandShake(final DTLSEntry entry, final Endpoint ep,
             final boolean updateLastHandshakeMessage)
     {
-        final long now = System.currentTimeMillis();
-
         // if we're performing a handshake, check if the
         // timeout has exceeded
-        if (Cfg.timeout() < now - entry._lastHshakeMsgTime) {
+        if (entry._handshakeMessageTimer.elapsed() > Cfg.timeout()) {
             l.warn("hs timeout 4 " + ep);
             removeEntry_(ep, entry);
             if (_isSender) {
@@ -356,7 +354,7 @@ class DTLSCache implements IDumpStatMisc
 
         } else if (updateLastHandshakeMessage) {
             l.debug("engine still in hs");
-            entry._lastHshakeMsgTime = now;
+            entry._handshakeMessageTimer.restart();
         }
     }
 

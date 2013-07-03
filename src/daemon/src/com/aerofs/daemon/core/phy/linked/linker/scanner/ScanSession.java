@@ -1,5 +1,6 @@
 package com.aerofs.daemon.core.phy.linked.linker.scanner;
 
+import com.aerofs.base.ElapsedTimer;
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
@@ -191,7 +192,8 @@ class ScanSession
             int potentialUpdates = 0;
             Trans t = _f._tm.begin_();
             try {
-                long start = System.currentTimeMillis();
+                ElapsedTimer timer = new ElapsedTimer();
+                timer.start();
                 while (!_stack.isEmpty()) {
                     try {
                         potentialUpdates += scan_(_stack.pop(), t);
@@ -204,7 +206,7 @@ class ScanSession
                         l.info("exceed updates thres. " + potentialUpdates);
                         break;
                     }
-                    if (System.currentTimeMillis() - start > CONTINUATION_DURATION_THRESHOLD) {
+                    if (timer.elapsed() > CONTINUATION_DURATION_THRESHOLD) {
                         l.info("exceed duration thres. " + potentialUpdates);
                         break;
                     }

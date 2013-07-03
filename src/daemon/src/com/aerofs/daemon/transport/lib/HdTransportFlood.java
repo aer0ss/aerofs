@@ -1,5 +1,6 @@
 package com.aerofs.daemon.transport.lib;
 
+import com.aerofs.base.ElapsedTimer;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.daemon.event.lib.imc.IResultWaiter;
@@ -49,7 +50,7 @@ public class HdTransportFlood extends AbstractHdIMC<EOTransportFlood>
         private final long _duration;
         private byte[][] _bssDiscard;
         private final int _seqStart, _seqEnd;
-        private long _start;
+        private ElapsedTimer _timer;
         private boolean _end;
 
         Flooder(DID did, long duration, int seqStart, int seqEnd, Prio prio)
@@ -102,7 +103,7 @@ public class HdTransportFlood extends AbstractHdIMC<EOTransportFlood>
 
         void start() throws Exception
         {
-            _start = System.currentTimeMillis();
+            _timer.start();
             sendNext(_seqStart);
         }
 
@@ -120,7 +121,7 @@ public class HdTransportFlood extends AbstractHdIMC<EOTransportFlood>
             if (_end) return;
 
             try {
-                if (System.currentTimeMillis() - _start > _duration) {
+                if (_timer.elapsed() > _duration) {
                     _end = true;
                     sendNext(_seqEnd);
                 } else {

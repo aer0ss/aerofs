@@ -1,6 +1,7 @@
 package com.aerofs.gui.netutil;
 
 import com.aerofs.base.C;
+import com.aerofs.base.ElapsedTimer;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExTimeout;
 import com.aerofs.base.id.DID;
@@ -168,45 +169,46 @@ public class CompBandwidth extends Composite
         OutArg<Long> bytesEnd = new OutArg<Long>();
 
         State state = State.INIT;
-        long lastRpc = 0;
-        long timeoutStart = 0;
-        long floodStart = 0;
+        ElapsedTimer rpcTimer = new ElapsedTimer();
+        ElapsedTimer timeoutTimer = new ElapsedTimer();
+        ElapsedTimer floodTimer = new ElapsedTimer();
+        rpcTimer.start();
+        timeoutTimer.start();
+        floodTimer.start();
 
         while (!isDisposed() && !_stop) {
-
-            long now = System.currentTimeMillis();
 
             switch (state) {
             case INIT:
                 comp.init();
                 ritual.transportFlood(_did.toPB(), send, seqStart, seqEnd,
                         UIParam.TRANSPORT_FLOOD_DURATION, _sname);
-                lastRpc = now;
+                rpcTimer.start();
                 state = State.QUERY_START;
-                timeoutStart = now;
+                timeoutTimer.start();
                 break;
 
             case QUERY_START:
-                if (now - lastRpc > RPC_INTERVAL) {
+                if (rpcTimer.elapsed() > RPC_INTERVAL) {
                     rpcFloodQuery(ritual, seqStart, timeStart, bytesStart);
-                    lastRpc = now;
+                    rpcTimer.restart();
                     if (timeStart.get() == LibParam.TRANSPORT_DIAGNOSIS_STATE_PENDING) {
-                        if (now - timeoutStart > Cfg.timeout()) throw new ExTimeout();
+                        if (timeoutTimer.elapsed() > Cfg.timeout()) throw new ExTimeout();
                     } else {
                         state = State.QUERY_END;
                         comp.progress(0);
-                        timeoutStart = now;
-                        floodStart = now;
+                        timeoutTimer.restart();
+                        floodTimer.restart();
                     }
                 }
                 break;
 
             case QUERY_END:
-                if (now - lastRpc > RPC_INTERVAL) {
+                if (rpcTimer.elapsed() > RPC_INTERVAL) {
                     rpcFloodQuery(ritual, seqEnd, timeEnd, bytesEnd);
-                    lastRpc = now;
+                    rpcTimer.restart();
                     if (timeEnd.get() == LibParam.TRANSPORT_DIAGNOSIS_STATE_PENDING) {
-                        if (now - timeoutStart > Cfg.timeout()) throw new ExTimeout();
+                        if (timeoutTimer.elapsed() > Cfg.timeout()) throw new ExTimeout();
                     } else {
                         long bytes = bytesEnd.get() - bytesStart.get();
                         long interval = timeEnd.get() - timeStart.get();
@@ -219,7 +221,7 @@ public class CompBandwidth extends Composite
                     }
                 }
 
-                long percent = (now - floodStart) * 100 / UIParam.TRANSPORT_FLOOD_DURATION;
+                long percent = (floodTimer.elapsed()) * 100 / UIParam.TRANSPORT_FLOOD_DURATION;
                 if (percent >= 100) {
                     comp.collecting();
                 } else {
