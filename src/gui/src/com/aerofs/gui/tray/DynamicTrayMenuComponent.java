@@ -1,5 +1,6 @@
 package com.aerofs.gui.tray;
 
+import com.aerofs.base.ElapsedTimer;
 import com.aerofs.gui.GUI;
 import com.aerofs.ui.UIParam;
 import com.google.common.base.Preconditions;
@@ -21,7 +22,7 @@ public abstract class DynamicTrayMenuComponent implements ITrayMenuComponent
     private static final long REFRESH_TIME = UIParam.SLOW_REFRESH_DELAY * 2;
 
     private final long _rate;
-    private long _lastNotify;
+    private ElapsedTimer _timer;
     private boolean _scheduled;
 
     private final Runnable _notifier;
@@ -31,6 +32,8 @@ public abstract class DynamicTrayMenuComponent implements ITrayMenuComponent
     public DynamicTrayMenuComponent()
     {
         _rate = REFRESH_TIME;
+        _timer = new ElapsedTimer();
+        _timer.start();
         _notifier = new Runnable() {
             @Override
             public void run()
@@ -49,7 +52,7 @@ public abstract class DynamicTrayMenuComponent implements ITrayMenuComponent
     {
         Preconditions.checkState(GUI.get().isUIThread());
 
-        _lastNotify = System.currentTimeMillis();
+        _timer.restart();
         _scheduled = false;
 
         for (ITrayMenuComponentListener listener : _listeners) {
@@ -62,9 +65,8 @@ public abstract class DynamicTrayMenuComponent implements ITrayMenuComponent
         if (UbuntuTrayItem.supported()) {
             // throttled refresh when using libappindicator
             if (!_scheduled) {
-                long now = System.currentTimeMillis();
                 _scheduled = true;
-                GUI.get().timerExec(Math.max(0, _lastNotify + _rate - now), _notifier);
+                GUI.get().timerExec(Math.max(0, _rate - _timer.elapsed()), _notifier);
             }
         } else {
             // non-throttled async update when not using libappindicator

@@ -1,6 +1,7 @@
 package com.aerofs.daemon.transport.tcp;
 
 import com.aerofs.base.C;
+import com.aerofs.base.ElapsedTimer;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.lib.ex.ExDeviceOffline;
@@ -54,7 +55,9 @@ class ARP
     {
         boolean isNew;
         synchronized (this) {
-            ARPEntry oldEntry = _did2en.put(did, new ARPEntry(isa, System.currentTimeMillis()));
+            ElapsedTimer timer = new ElapsedTimer();
+            timer.start();
+            ARPEntry oldEntry = _did2en.put(did, new ARPEntry(isa, timer));
             isNew = (oldEntry == null);
         }
 
@@ -117,14 +120,13 @@ class ARP
     public synchronized String toString()
     {
         StringBuilder sb = new StringBuilder();
-        long now = System.currentTimeMillis();
         for (Map.Entry<DID, ARPEntry> en : _did2en.entrySet()) {
             String a = en.getKey().toString();
             sb.append(a)
               .append(" -> ")
               .append(en.getValue()._isa)
               .append(", ")
-              .append((now - en.getValue()._lastUpdated) / C.SEC)
+              .append((en.getValue()._lastUpdatedTimer.elapsed()) / C.SEC)
               .append("s");
             sb.append('\n');
         }
@@ -175,12 +177,12 @@ class ARP
     static class ARPEntry
     {
         final InetSocketAddress _isa;
-        long _lastUpdated;
+        final ElapsedTimer _lastUpdatedTimer;
 
-        ARPEntry(InetSocketAddress isa, long lastUpdate)
+        ARPEntry(InetSocketAddress isa, ElapsedTimer timer)
         {
             _isa = isa;
-            _lastUpdated = lastUpdate;
+            _lastUpdatedTimer = timer;
         }
     }
 

@@ -5,6 +5,7 @@
 package com.aerofs.daemon.core;
 
 import com.aerofs.base.C;
+import com.aerofs.base.ElapsedTimer;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.net.DID2User;
@@ -84,7 +85,8 @@ public class UserAndDeviceNames
     private final IUserAndDeviceNameDatabase _udndb;
     private final SPBlockingClient.Factory _factSP;
 
-    private long _lastSPUpdateFailureTime;
+    private boolean _lastSPUpdateFailed;
+    private ElapsedTimer _SPUpdateFailureTimer;
     protected long _spSignInDelay = 30 * C.MIN;
 
     @Inject
@@ -97,6 +99,8 @@ public class UserAndDeviceNames
         _d2u = d2u;
         _udndb = udndb;
         _factSP = factSP;
+
+        _SPUpdateFailureTimer = new ElapsedTimer();
     }
 
     // this method is exposed to TestUserAndDeviceNames so we can control the
@@ -122,13 +126,14 @@ public class UserAndDeviceNames
     public boolean updateLocalDeviceInfo_(List<DID> dids)
         throws ExProtocolError
     {
-        long now = System.currentTimeMillis();
-
         // immediately return "failed to update" if we try to update within 30 minutes
         //   of the last failed update
-        if (_lastSPUpdateFailureTime > 0) {
-            if (now - _lastSPUpdateFailureTime < _spSignInDelay) return false;
-            else _lastSPUpdateFailureTime = 0;
+        if (_lastSPUpdateFailed) {
+            if (_SPUpdateFailureTimer.elapsed() < _spSignInDelay) {
+                return false;
+            } else {
+                _lastSPUpdateFailed = false;
+            }
         }
 
         try {
@@ -136,7 +141,8 @@ public class UserAndDeviceNames
             return true;
         } catch (Exception e) {
             // track the timestamp if we ever failed to update from SP
-            _lastSPUpdateFailureTime = now;
+            _lastSPUpdateFailed = true;
+            _SPUpdateFailureTimer.start();
 
             if (e instanceof ExProtocolError) throw (ExProtocolError)e;
             return false;

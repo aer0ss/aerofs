@@ -3,6 +3,7 @@ package com.aerofs.daemon.core.net.dtls;
 import java.io.ByteArrayInputStream;
 import java.util.Arrays;
 
+import com.aerofs.base.ElapsedTimer;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.UserID;
 import org.slf4j.Logger;
@@ -50,14 +51,15 @@ class DTLSEntry
     private final DTLSEngine _engine;
     private final DTLSLayer _layer;
     final PrioQueue<DelayedDTLSMessage> _sendQ;
-    long _lastHshakeMsgTime;
+    final ElapsedTimer _handshakeMessageTimer;
     UserID _user;
     private boolean _hshakeDone;
 
     DTLSEntry(DTLSLayer layer, DTLSEngine engine)
     {
         _layer = layer;
-        _lastHshakeMsgTime = System.currentTimeMillis();
+        _handshakeMessageTimer = new ElapsedTimer();
+        _handshakeMessageTimer.start();
         _engine = engine;
         _sendQ = new PrioQueue<DelayedDTLSMessage>(DTLS.HS_QUEUE_SIZE);
     }

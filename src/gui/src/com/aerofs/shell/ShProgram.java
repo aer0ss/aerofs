@@ -1,5 +1,6 @@
 package com.aerofs.shell;
 
+import com.aerofs.base.ElapsedTimer;
 import com.aerofs.lib.ChannelFactories;
 import com.aerofs.base.C;
 import com.aerofs.base.ex.ExBadArgs;
@@ -38,8 +39,14 @@ public class ShProgram implements IProgram, ICallback
 
     private Path _pwd;
     private SPBlockingClient _sp;
-    private long _spRenewal;
+    private ElapsedTimer _spRenewalTimer;
     private ShellCommandRunner<ShProgram> _runner;
+
+    public ShProgram()
+    {
+        _spRenewalTimer = new ElapsedTimer();
+        _spRenewalTimer.start();
+    }
 
     @Override
     public void launch_(String rtRoot, String prog, String[] args)
@@ -81,13 +88,12 @@ public class ShProgram implements IProgram, ICallback
     public SPBlockingClient getSPClient_() throws Exception
     {
         // renewal is needed as cookies may expire
-        long now = System.currentTimeMillis();
-        if (_sp == null || now - _spRenewal > 5 * C.MIN) {
+        if (_sp == null || _spRenewalTimer.elapsed() > 5 * C.MIN) {
             Cfg.init_(Cfg.absRTRoot(), true);
             SPBlockingClient.Factory fact = new SPBlockingClient.Factory();
             _sp = fact.create_(Cfg.user());
             _sp.signInRemote();
-            _spRenewal = now;
+            _spRenewalTimer.restart();
         }
         return _sp;
     }

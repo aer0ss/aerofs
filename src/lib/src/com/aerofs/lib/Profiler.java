@@ -1,5 +1,6 @@
 package com.aerofs.lib;
 
+import com.aerofs.base.ElapsedTimer;
 import com.aerofs.base.Loggers;
 import com.aerofs.lib.cfg.Cfg;
 import org.slf4j.Logger;
@@ -11,7 +12,7 @@ public class Profiler
     private static final Logger l = Loggers.getLogger(Profiler.class);
 
     private boolean _started;
-    private long _ts;
+    private ElapsedTimer _timer;
     private long _threshold;
     private final boolean _adjustThreshold;
     private final String _label;
@@ -32,6 +33,7 @@ public class Profiler
         _adjustThreshold = false;
         _threshold = threshold;
         _label = label;
+        _timer = new ElapsedTimer();
     }
 
     /**
@@ -67,7 +69,7 @@ public class Profiler
             assert !_started;
             _started = true;
 
-            _ts = System.currentTimeMillis();
+            _timer.start();
         }
     }
 
@@ -91,7 +93,7 @@ public class Profiler
             assert _started;
             _started = false;
 
-            long diff = System.currentTimeMillis() - _ts;
+            long diff = _timer.elapsed();
             if (diff > _threshold) {
                 l.debug(Util.e(new ProfilerTrace(diff).fillInStackTrace()));
 

@@ -3,6 +3,7 @@ package com.aerofs.gui.netutil;
 import com.aerofs.InternalDiagnostics;
 import com.aerofs.InternalDiagnostics.IPingCallback;
 import com.aerofs.base.C;
+import com.aerofs.base.ElapsedTimer;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.gui.GUI;
@@ -47,7 +48,7 @@ public class CompPing extends Composite
 
     private final DID _did;
     private long _timeout = TIMEOUTS[TIMEOUT_DEFAULT];
-    private long _startTime;
+    private ElapsedTimer _timer;
     private boolean _suspend;
 
     /**
@@ -160,7 +161,8 @@ public class CompPing extends Composite
         _lblInterval.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
         _lblInterval.setText(Util.formatRelativeTime(_timeout));
 
-        _startTime = System.currentTimeMillis();
+        _timer = new ElapsedTimer();
+        _timer.start();
 
         Thread thd = new Thread() {
             @Override
@@ -237,7 +239,7 @@ public class CompPing extends Composite
     void logStat()
     {
         l.warn("ping " + _did.toStringFormal() + ":" +
-                " elapsed " + Util.format(System.currentTimeMillis() - _startTime) +
+                " elapsed " + Util.format(_timer.elapsed()) +
                 " samples " + _samples + " loss " + _loss +
                 " max " + Util.format(_max) +
                 " min " + Util.format(_min) +
@@ -252,7 +254,11 @@ public class CompPing extends Composite
 
     private static class RTTEntry {
         long _rtt;
-        long _time;
+        ElapsedTimer _timer;
+        public RTTEntry()
+        {
+            _timer = new ElapsedTimer();
+        }
     }
 
     // maximum list size is PING_SAMPLE_TIME_WINDOW / PING_INTERVAL_MIN
@@ -272,7 +278,7 @@ public class CompPing extends Composite
     /**
      * @param rtt must be non-null and positive. MAX_VALUE if timed out
      */
-    private void updateStat(long now, boolean offline, long rtt)
+    private void updateStat(boolean offline, long rtt)
     {
         if (offline) {
             _loss++;
@@ -291,14 +297,14 @@ public class CompPing extends Composite
 
             RTTEntry en = new RTTEntry();
             en._rtt = rtt;
-            en._time = now;
+            en._timer.start();
             _rtts.addLast(en);
         }
 
         Iterator<RTTEntry> iter = _rtts.iterator();
         while (iter.hasNext()) {
             RTTEntry en = iter.next();
-            if (now - en._time > UIParam.TRANSPORT_PING_SAMPLE_TIME_WINDOW) {
+            if (en._timer.elapsed() > UIParam.TRANSPORT_PING_SAMPLE_TIME_WINDOW) {
                 iter.remove();
                 _rttsTruncated = true;
             } else {
@@ -326,11 +332,9 @@ public class CompPing extends Composite
 
         if (isDisposed()) return;
 
-        final long now = System.currentTimeMillis();
-
         if (e == null) {
-            if (offline) updateStat(now, offline, 0);
-            else if (rtt != null) updateStat(now, offline, rtt);
+            if (offline) updateStat(offline, 0);
+            else if (rtt != null) updateStat(offline, rtt);
         }
 
         // syncExec instead of asyncExec to avoid overloading the GUI
@@ -365,7 +369,7 @@ public class CompPing extends Composite
 
                 _lblLoss.setText((_samples == 0 ? "0" : (_loss * 100 / _samples)) +
                         "% of " + _samples);
-                _lblElapsed.setText(Util.formatRelativeTime(now - _startTime));
+                _lblElapsed.setText(Util.formatRelativeTime(_timer.elapsed()));
             }
         });
     }
