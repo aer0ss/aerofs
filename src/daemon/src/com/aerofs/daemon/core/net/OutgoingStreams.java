@@ -62,6 +62,9 @@ public class OutgoingStreams
             _strmid = nextID_();
         }
 
+        // Only for debugging performance issues
+        //private final Tput _tput = new Tput("send chunk");
+
         public void sendChunk_(byte[] bs) throws Exception
         {
             if (!_started) {
@@ -70,6 +73,8 @@ public class OutgoingStreams
             } else {
                 _stack.output().sendOutgoingStreamChunk_(_strmid, ++_seq, bs, _pc, _tk);
             }
+
+            //_tput.observe(bs.length);
         }
 
         public void abort_(InvalidationReason reason)
