@@ -36,7 +36,13 @@ def main(global_config, **settings):
 
     # Static views
     config.add_static_view(settings['static.prefix'], 'static', cache_max_age=3600)
-    config.add_static_view(settings['installer.prefix'], 'installer')
+
+    # Special handling for installer prefix view.
+    installer_prefix = settings['installer.prefix']
+    if installer_prefix == "static":
+        config.add_static_view("static/installers", 'installer')
+    else:
+        config.add_static_view(installer_prefix, 'installer')
 
     # The home page for the dashboard and marketing contents.
     config.add_route('dashboard_home', '/home')
