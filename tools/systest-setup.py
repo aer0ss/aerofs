@@ -29,13 +29,13 @@ from aerofs_sp.gen import sp_pb2
 #################################
 
 # Default arg values
+DEFAULT_LOGIN = 'aerofstest'
 DEFAULT_PASSWORD = 'temp123'
-DEFAULT_APPROOT = '~/syncdet/deploy/approot/'
-DEFAULT_RTROOT = '~/syncdet/user_data/rtroot/'
+DEFAULT_ROOT = '~/syncdet'
+DEFAULT_APPROOT = os.path.join(DEFAULT_ROOT, 'deploy', 'approot')
+DEFAULT_RTROOT = os.path.join(DEFAULT_ROOT, 'user_data', 'rtroot')
 DEFAULT_SP_URL = 'https://sp.aerofs.com/sp'
 DEFAULT_RSH = 'ssh'
-DEFAULT_LOGIN = 'aerofstest'
-DEFAULT_ROOT = '~/syncdet'
 DEFAULT_USERID = getpass.getuser() + '+syncdet+{}@aerofs.com'
 
 # CI Server Connection Settings
