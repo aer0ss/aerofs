@@ -1,33 +1,46 @@
 package com.aerofs.lib.configuration;
 
+import com.aerofs.base.ssl.ICertificateProvider;
 import com.aerofs.config.DynamicConfiguration;
 import com.google.common.io.Files;
 import org.apache.commons.configuration.ConfigurationException;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
+import javax.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.security.GeneralSecurityException;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static com.aerofs.lib.configuration.ConfigurationTestConstants.*;
 import static com.aerofs.lib.configuration.ClientConfigurationLoader.*;
+import static org.mockito.Mockito.spy;
 
 /**
- * This test suite depends on ConfigurationTestConstants and tests against the local
- *   production environment with a custom self-signed certificate.
+ * This test covers the code path ClientConfigurationLoader executes in the event of various
+ *   failures.
  */
-@Ignore
 public class TestClientConfigurationLoader
 {
+    // this is the mock URL for the configuration service, the actual value does not matter
+    static final String CONFIG_SERVICE_URL = "https://really.fake.url";
+
+    // this is another mock URL, the actual value does not matter as long as it's different
+    //   from CONFIG_SERVICE_URL
+    static final String BAD_URL = "https://really.bad.url";
+
+    // this value is used as the content of the property file. This needs to be valid
+    //   certificate data ( or blank ), but the actual certificate does not matter
+    static final String CERT = "";
+
     @Rule public TemporaryFolder _approotFolder;
     String _approot;
 
+    MockHttpsDownloader _downloader;
     ClientConfigurationLoader _loader;
 
     @Before
@@ -38,7 +51,8 @@ public class TestClientConfigurationLoader
         _approotFolder.create();
         _approot = _approotFolder.getRoot().getAbsolutePath();
 
-        _loader = new ClientConfigurationLoader(new HttpsDownloader());
+        _downloader = spy(new MockHttpsDownloader());
+        _loader = new ClientConfigurationLoader(_downloader);
     }
 
     @Test
@@ -47,15 +61,14 @@ public class TestClientConfigurationLoader
     {
         File staticConfigFile = createStaticConfigFile(true);
         Files.append("conflict=static", staticConfigFile, Charset.defaultCharset());
-        File siteConfigFile = createSiteConfigFile(URL, CERT);
-        Files.append("conflict=site\nupdater.version.url=asdf\n",
+        File siteConfigFile = createSiteConfigFile(CONFIG_SERVICE_URL, CERT);
+        Files.append("conflict=site\nconflict2=site\n",
                 siteConfigFile, Charset.defaultCharset());
 
         DynamicConfiguration config = _loader.loadConfiguration(_approot);
 
         assertEquals("static", config.getString("conflict"));
-        assertEquals("asdf", config.getString("updater.version.url"));
-        assertEquals(TEST_PROP_VALUE, config.getString(TEST_PROP));
+        assertEquals("site", config.getString("conflict2"));
     }
 
     @Test
@@ -91,7 +104,7 @@ public class TestClientConfigurationLoader
             throws Exception
     {
         createStaticConfigFile(true);
-        createSiteConfigFile(URL, CERT);
+        createSiteConfigFile(CONFIG_SERVICE_URL, CERT);
         createHttpConfigCache("is_cache=true");
 
         DynamicConfiguration config = _loader.loadConfiguration(_approot);
@@ -100,7 +113,7 @@ public class TestClientConfigurationLoader
     }
 
     @Test
-    public void shouldLoadFromCacheWhenConfigServiceInNotAvailableAndHasCache()
+    public void shouldLoadFromCacheWhenConfigServiceIsNotAvailableAndHasCache()
             throws Exception
     {
         createStaticConfigFile(true);
@@ -117,25 +130,9 @@ public class TestClientConfigurationLoader
             throws Exception
     {
         createStaticConfigFile(false);
-        createSiteConfigFile(URL, CERT);
+        createSiteConfigFile(CONFIG_SERVICE_URL, CERT);
 
         _loader.loadConfiguration(_approot);
-    }
-
-    /**
-     * This test is only valid when the local production server is using a certificate signed
-     *   by a trusted CA.
-     */
-    @Ignore("Run this test case manually") @Test
-    public void shouldSucceedWhenEnterpriseConfigIsBlank()
-            throws Exception
-    {
-        createStaticConfigFile(true);
-        createSiteConfigFile(URL, "");
-
-        DynamicConfiguration config = _loader.loadConfiguration(_approot);
-
-        assertEquals(TEST_PROP_VALUE, config.getString(TEST_PROP));
     }
 
     protected File getStaticConfigFile()
@@ -184,5 +181,20 @@ public class TestClientConfigurationLoader
         File cache = getHttpConfigCache();
         Files.write(content, cache, Charset.defaultCharset());
         return cache;
+    }
+
+    public class MockHttpsDownloader extends HttpsDownloader
+    {
+        public void download(String url, @Nullable ICertificateProvider certificateProvider, File file)
+                throws GeneralSecurityException, IOException
+        {
+            if (!url.equals(CONFIG_SERVICE_URL)) throw new IOException();
+
+            String content = "config.service.available=true\n" +
+                    "conflict=http\n" +
+                    "conflict2=http";
+
+            Files.write(content, file, Charset.defaultCharset());
+        }
     }
 }
