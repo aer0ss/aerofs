@@ -22,6 +22,7 @@ import static com.aerofs.lib.configuration.ClientConfigurationLoader.*;
  * This test suite depends on ConfigurationTestConstants and tests against the local
  *   production environment with a custom self-signed certificate.
  */
+@Ignore
 public class TestClientConfigurationLoader
 {
     @Rule public TemporaryFolder _approotFolder;

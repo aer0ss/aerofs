@@ -3,6 +3,7 @@ package com.aerofs.lib.configuration;
 import com.aerofs.base.ssl.ICertificateProvider;
 import com.aerofs.base.ssl.StringBasedCertificateProvider;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -18,6 +19,7 @@ import static com.aerofs.lib.configuration.ConfigurationTestConstants.*;
  *   failing when it shouldn't or succeeding when it shouldn't, then verify that LP_CERT
  *   is the SSL certificate used by the server available at URL
  */
+@Ignore
 public class TestHttpsDownloader
 {
     @Rule public TemporaryFolder _approot;
