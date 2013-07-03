@@ -84,7 +84,7 @@ function copy_resources_to_local_release_directories() {
     find "${local_BIN}/" -name .DS_Store  | xargs rm -f
     find "${local_BIN}/" -name .gitignore | xargs rm -f
 
-    if is_prod ; then
+    if is_prod_or_enterprise ; then
         # TODO: (AG) move these as excludes into build.xml
         # TODO: (WW) Verify this package is valid before removing
         rm -rf "${local_BIN}/com/aerofs/tools"
@@ -187,7 +187,7 @@ function copy_resources_to_local_release_directories() {
         "${AEROFS_RELEASE_LINUX_DIR}"/${AEROFS_PRODUCT_UNIX}.desktop
 
     # Update URL in installers for correct MODE
-    if is_prod ; then
+    if is_prod_or_enterprise ; then
         DOT_STAGING=''
     else
         DOT_STAGING='.stg'
