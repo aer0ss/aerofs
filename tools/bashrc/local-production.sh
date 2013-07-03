@@ -175,6 +175,12 @@ function lp-vmctl-setup()
     ant local_prod_setup -Dbin=$(_lp-bin)
 }
 
+function lp-vmctl-reset-ip()
+{
+    lp-vmctl-halt
+    ant local_prod_reset_ip
+}
+
 function lp-vmctl-delete()
 {
     cd $AEROFS_ROOT
