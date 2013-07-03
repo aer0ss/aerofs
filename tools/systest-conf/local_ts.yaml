@@ -1,0 +1,5 @@
+actors:
+  - ip: ci-ubuntu-f.local
+    TS:
+      storage_type: 'LOCAL'
+  - ip: ci-ubuntu-g.local

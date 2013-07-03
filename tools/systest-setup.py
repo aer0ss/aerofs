@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 """
 This script generates a YAML file for syncdet tests. Each generate file uses
 unique AeroFS users which are created on CI.
@@ -29,11 +29,6 @@ from aerofs_sp.gen import sp_pb2
 #################################
 
 # Default arg values
-DEFAULT_LINUX = 0
-DEFAULT_LINUX_NAT = 0
-DEFAULT_WINDOWS = 0
-DEFAULT_AWS = 0
-DEFAULT_PERF = 0
 DEFAULT_PASSWORD = 'temp123'
 DEFAULT_APPROOT = '/home/aerofstest/syncdet/deploy/approot/'
 DEFAULT_RTROOT = '/home/aerofstest/syncdet/user_data/rtroot/'
@@ -41,7 +36,6 @@ DEFAULT_SP_URL = 'https://sp.aerofs.com/sp'
 DEFAULT_RSH = 'ssh'
 DEFAULT_LOGIN = 'aerofstest'
 DEFAULT_ROOT = '~/syncdet'
-DEFAULT_OUTFILE = 'config.yaml'
 DEFAULT_USERID = getpass.getuser() + '+syncdet+{}@aerofs.com'
 
 # CI Server Connection Settings
@@ -50,54 +44,11 @@ CI_C_URL = "http://ci.c.aerofs.com:8000/get_code"
 CI_STAGING_URL = 'https://staging.aerofs.com/staging-jonathan/sp'
 CI_SP_VERSION = 20
 
-# Lists of Linux VM's (one on LAN and one behind NAT)
-LINUX_VMS = ['ci-ubuntu-f.local', 'ci-ubuntu-g.local']
-LINUX_NAT_VMS = ['ci-ubuntu-a.local', 'ci-ubuntu-b.local', 'ci-ubuntu-c.local', 'ci-ubuntu-d.local',
-    'ci-ubuntu-e.local']
-
-# List of Windows VM's
-WINDOWS_VMS = ['ci-windows7.local']
-
-# List of AWS VM's (Ubuntu 12.04)
-AWS_VMS = ['172.16.5.12', '172.16.5.30']
-
-# TODO(AT) we shouldn't be specifying the machines here since config.yaml is responsible for that,
-#   using a config file to generate another config file sounds like we are repeating ourselves.
-# See issue AER-2094
-#
-# List of VM's used for performance testing
-#
-# N.B. We are using static IPs because Bonjour isn't reliable enough in a system test setting
-PERF_VMS = ['192.168.203.1',
-            '192.168.203.2',
-            '192.168.203.3',
-            '192.168.203.4',
-            '192.168.203.5',
-            '192.168.203.6',
-            '192.168.203.7',
-            '192.168.203.8',
-            '192.168.203.9',
-            '192.168.203.10',
-            '192.168.203.11',
-            '192.168.203.12',
-            '192.168.203.13',
-            '192.168.203.14',
-            '192.168.203.15',
-            '192.168.203.16',
-            '192.168.203.17',
-            '192.168.203.18',
-            '192.168.203.19',
-            '192.168.203.20',
-            '192.168.203.21',
-            '192.168.203.22',
-            '192.168.203.23',
-            '192.168.203.24',
-            '192.168.203.25']
-
 # System-specific details
 AWS_DETAILS = {'os': 'linux32',
                'distro': 'Ubuntu 12.04',
                'java': 'OpenJDK 1.6.0_24 IcedTea6 1.11.4'}
+
 S3_DETAILS = {'s3_bucket_id': 'ci-build-agent-nat2.test.aerofs',
               's3_access_key': 'AKIAJMTPOZHMGO7DVEDA',
               's3_secret_key': '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',
@@ -130,7 +81,7 @@ def create_user(userid_fmt, password):
     return userid
 
 
-def generate_yaml(args, username):
+def generate_yaml(args, username, actor_data):
     actors = []
     actor_defaults = {}
     # Actor defaults
@@ -141,42 +92,33 @@ def generate_yaml(args, username):
     actor_defaults['aero_rt_root'] = args.rtroot
     actor_defaults['aero_sp_url'] = args.sp_url
     if not args.multiuser:
-        assert type(username) != type([])
+        assert not isinstance(username, list)
         actor_defaults['aero_userid'] = username
         actor_defaults['aero_password'] = args.password
 
     # Create correct number of actors of each OS
-    started_ts = False
-    for vm_num, vm_list in [(args.linux, LINUX_VMS),
-                            (args.linux_nat, LINUX_NAT_VMS),
-                            (args.windows, WINDOWS_VMS),
-                            (args.aws, AWS_VMS),
-                            (args.perf, PERF_VMS)]:
-        for i in xrange(vm_num):
-            # actor details
-            details = {'ci_client': True}
-            if vm_list == AWS_VMS:
-                details.update(AWS_DETAILS)
-            if args.ts is not None and not started_ts:
-                started_ts = True
-                details['team_server'] = True
-                details['storage_type'] = args.ts
-                if args.ts == 'S3':
-                    details.update(S3_DETAILS)
-            # actor params
-            d = {}
-            d['details'] = details
-            d['address'] = vm_list[i]
-            if args.multiuser:
-                assert type(username) == type([])
-                d['aero_userid'] = username.pop()
-                d['aero_password'] = args.password
-            actors.append(d)
+    for actor in actor_data:
+        # actor details
+        details = {'ci_client': True}
+        if actor.get('is_on_aws'):
+            details.update(AWS_DETAILS)
+        if actor.get('TS'):
+            details['team_server'] = True
+            details['storage_type'] = actor['TS'].get('storage_type')
+            if actor['TS'].get('storage_type') == 'S3':
+                details.update(S3_DETAILS)
+        # actor params
+        d = {}
+        d['details'] = details
+        d['address'] = actor['ip']
+        if args.multiuser:
+            assert isinstance(username, list)
+            d['aero_userid'] = username.pop()
+            d['aero_password'] = args.password
+        actors.append(d)
     # Put it all together and write it to user-specified "outfile"
     yaml_obj = {'actor_defaults': actor_defaults, 'actors': actors}
-    fs = open(args.outfile, 'w')
-    yaml.dump(yaml_obj, fs, default_flow_style=False, indent=4)
-    fs.close()
+    print yaml.dump(yaml_obj, default_flow_style=False, indent=4)
 
 
 def clear_s3_bucket(access_key, secret_key, bucket_id):
@@ -185,6 +127,11 @@ def clear_s3_bucket(access_key, secret_key, bucket_id):
     bucket.delete_keys(bucket.list())
 
 
+def get_actor_data(conf):
+    with open(conf, 'r') as f:
+        data = yaml.load(f.read())
+    return data['actors']
+
 
 #######################
 ##   MAIN FUNCTION   ##
@@ -192,20 +139,10 @@ def clear_s3_bucket(access_key, secret_key, bucket_id):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--linux', type=int, default=DEFAULT_LINUX,
-        help="Number of Linux VM's on LAN to use")
-    parser.add_argument('--linux-nat', type=int, default=DEFAULT_LINUX_NAT,
-        help="Number of Linux VM's behind NAT to use")
-    parser.add_argument('--windows', type=int, default=DEFAULT_WINDOWS,
-        help="Number of Windows VM's to use")
-    parser.add_argument('--aws', type=int, default=DEFAULT_AWS,
-        help="Number of AWS VM's to use")
-    parser.add_argument('--perf', type=int, default=DEFAULT_PERF,
-        help="Number of Performance Test VM's to use")
+    parser.add_argument('conf',
+        help="Destination of file containing a list of actor IP addresses")
     parser.add_argument('--multiuser', action='store_true',
         help="If flag is specified, each VM will use a separate AeroFS account")
-    parser.add_argument('--ts', action='store', default=None, choices=['LINKED', 'S3', 'LOCAL'],
-        help="One VM will be configured as a team server with the given storage type.")
     parser.add_argument('--password', action='store', default=DEFAULT_PASSWORD,
         help="Non-default password to use for AeroFS accounts")
     parser.add_argument('--approot', default=DEFAULT_APPROOT,
@@ -220,33 +157,27 @@ def main():
         help="Default is aerofstest")
     parser.add_argument('--root', default=DEFAULT_ROOT,
         help="Default is ~/syncdet")
-    parser.add_argument('--outfile', default=DEFAULT_OUTFILE,
-        help="Config file generated by this script")
     parser.add_argument('--userid', default=DEFAULT_USERID,
         help="userid pattern")
     args = parser.parse_args()
 
-    assert args.linux >= 0 and args.linux <= len(LINUX_VMS)
-    assert args.linux_nat >=0 and args.linux_nat <= len(LINUX_NAT_VMS)
-    assert args.windows >= 0 and args.windows <= len(WINDOWS_VMS)
-    assert args.aws >= 0 and args.aws <= len(AWS_VMS)
-    assert args.perf >= 0 and args.perf <= len(PERF_VMS)
+    # Parse the conf file to get actor IP's
+    actor_data = get_actor_data(args.conf)
 
     # Create user(s) and get the AeroFS username(s)
-    total_users = args.linux + args.linux_nat + args.windows + args.aws + args.perf
     if args.multiuser:
-        username = [create_user(args.userid, args.password) for i in xrange(total_users)]
+        username = [create_user(args.userid, args.password) for i in xrange(len(actor_data))]
     else:
         username = create_user(args.userid, args.password)
 
     # Clear S3 bucket if necessary
-    if args.ts == 'S3':
+    if any(ts.get('storage_type') == 'S3' for ts in (a for a in actor_data if a.get('TS'))):
         clear_s3_bucket(S3_DETAILS['s3_access_key'],
                         S3_DETAILS['s3_secret_key'],
                         S3_DETAILS['s3_bucket_id'])
 
     # Generate YAML file
-    generate_yaml(args, username)
+    generate_yaml(args, username, actor_data)
 
 
 if __name__ == '__main__':
