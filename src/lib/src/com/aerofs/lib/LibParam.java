@@ -225,5 +225,7 @@ public class LibParam extends BaseParam
                 new DynamicBooleanProperty(PROPERTY_IS_ENTERPRISE_DEPLOYMENT, false);
         public static final DynamicStringProperty ENTERPRISE_CUSTOMER_CERT =
                 new DynamicStringProperty(PROPERTY_ENTERPRISE_CUSTOMER_CERT, "");
+        public static final DynamicStringProperty CONFIG_SERVICE_URL =
+                new DynamicStringProperty(PROPERTY_CONFIG_SERVICE_URL, "");
     }
 }
