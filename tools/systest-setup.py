@@ -29,13 +29,13 @@ from aerofs_sp.gen import sp_pb2
 #################################
 
 # Default arg values
+DEFAULT_LOGIN = 'aerofstest'
 DEFAULT_PASSWORD = 'temp123'
-DEFAULT_APPROOT = '~/syncdet/deploy/approot/'
-DEFAULT_RTROOT = '~/syncdet/user_data/rtroot/'
+DEFAULT_ROOT = '~/syncdet'
+DEFAULT_APPROOT = os.path.join(DEFAULT_ROOT, 'deploy', 'approot')
+DEFAULT_RTROOT = os.path.join(DEFAULT_ROOT, 'user_data', 'rtroot')
 DEFAULT_SP_URL = 'https://sp.aerofs.com/sp'
 DEFAULT_RSH = 'ssh'
-DEFAULT_LOGIN = 'aerofstest'
-DEFAULT_ROOT = '~/syncdet'
 DEFAULT_USERID = getpass.getuser() + '+syncdet+{}@aerofs.com'
 
 # CI Server Connection Settings
@@ -171,7 +171,7 @@ def main():
         username = create_user(args.userid, args.password)
 
     # Clear S3 bucket if necessary
-    if any(ts.get('storage_type') == 'S3' for ts in (a for a in actor_data if a.get('TS'))):
+    if any(ts.get('storage_type') == 'S3' for ts in (a.get('TS') for a in actor_data if a.get('TS'))):
         clear_s3_bucket(S3_DETAILS['s3_access_key'],
                         S3_DETAILS['s3_secret_key'],
                         S3_DETAILS['s3_bucket_id'])
