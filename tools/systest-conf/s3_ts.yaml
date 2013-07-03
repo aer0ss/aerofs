@@ -1,0 +1,5 @@
+actors:
+  - ip: ci-ubuntu-f.local
+    TS:
+      storage_type: 'S3'
+  - ip: ci-ubuntu-g.local

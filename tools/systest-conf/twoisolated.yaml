@@ -1,0 +1,3 @@
+actors:
+  - ip: ci-ubuntu-a.local
+  - ip: ci-ubuntu-b.local
