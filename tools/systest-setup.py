@@ -110,7 +110,7 @@ def generate_yaml(args, username, actor_data):
         # actor params
         d = {}
         d['details'] = details
-        d['address'] = actor['ip']
+        d['address'] = actor['address']
         if args.multiuser:
             assert isinstance(username, list)
             d['aero_userid'] = username.pop()
@@ -139,8 +139,8 @@ def get_actor_data(conf):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('conf',
-        help="Destination of file containing a list of actor IP addresses")
+    parser.add_argument('profile',
+        help="Location of YAML-formatted file containing actor definitions")
     parser.add_argument('--multiuser', action='store_true',
         help="If flag is specified, each VM will use a separate AeroFS account")
     parser.add_argument('--password', action='store', default=DEFAULT_PASSWORD,
@@ -162,7 +162,7 @@ def main():
     args = parser.parse_args()
 
     # Parse the conf file to get actor IP's
-    actor_data = get_actor_data(args.conf)
+    actor_data = get_actor_data(args.profile)
 
     # Create user(s) and get the AeroFS username(s)
     if args.multiuser:

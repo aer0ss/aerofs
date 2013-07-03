@@ -1,5 +1,5 @@
 actors:
-  - ip: 172.16.5.12
+  - address: 172.16.5.12
     is_on_aws: true
-  - ip: 172.16.5.30
+  - address: 172.16.5.30
     is_on_aws: true

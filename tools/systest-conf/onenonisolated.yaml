@@ -1,2 +1,2 @@
 actors:
-  - ip: ci-ubuntu-f.local
+  - address: ci-ubuntu-f.local

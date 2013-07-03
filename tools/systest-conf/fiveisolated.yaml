@@ -1,6 +1,6 @@
 actors:
-  - ip: ci-ubuntu-a.local
-  - ip: ci-ubuntu-b.local
-  - ip: ci-ubuntu-c.local
-  - ip: ci-ubuntu-d.local
-  - ip: ci-ubuntu-e.local
+  - address: ci-ubuntu-a.local
+  - address: ci-ubuntu-b.local
+  - address: ci-ubuntu-c.local
+  - address: ci-ubuntu-d.local
+  - address: ci-ubuntu-e.local
