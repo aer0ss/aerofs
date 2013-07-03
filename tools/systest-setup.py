@@ -30,8 +30,8 @@ from aerofs_sp.gen import sp_pb2
 
 # Default arg values
 DEFAULT_PASSWORD = 'temp123'
-DEFAULT_APPROOT = '/home/aerofstest/syncdet/deploy/approot/'
-DEFAULT_RTROOT = '/home/aerofstest/syncdet/user_data/rtroot/'
+DEFAULT_APPROOT = '~/syncdet/deploy/approot/'
+DEFAULT_RTROOT = '~/syncdet/user_data/rtroot/'
 DEFAULT_SP_URL = 'https://sp.aerofs.com/sp'
 DEFAULT_RSH = 'ssh'
 DEFAULT_LOGIN = 'aerofstest'
