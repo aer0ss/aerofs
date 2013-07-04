@@ -66,7 +66,8 @@
         %if 'team_id' in request.session:
             mixpanel.identify("${request.session['team_id']}");
         %endif
-        mixpanel.track('Page Viewed', {'Title' : document.title, 'URL' : window.location.pathname});
+
+        <%block name="page_view_tracker"/>
     </script>
 </head>
 

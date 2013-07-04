@@ -37,6 +37,11 @@
     ${request.route_path('marketing_home')}
 </%block>
 
+<%block name="page_view_tracker">
+    ## We only track marketing page views
+    mixpanel.track('Page Viewed', {'Title' : document.title, 'URL' : window.location.pathname});
+</%block>
+
 <%block name="footer">
     <footer>
         <div class="container">
