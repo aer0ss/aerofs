@@ -168,17 +168,20 @@ function lp-deploy-sanity()
 # VM Controls
 # -----------------------------------------------------------
 
+function _lp-vmctl-setup()
+{
+    cd $AEROFS_ROOT
+    if [ "$#" -eq "1" ] ; then
+        ant local_prod_setup -Dbin=$(_lp-bin) -Dbridge_iface=$1
+    else
+        ant local_prod_setup -Dbin=$(_lp-bin)
+    fi
+}
+
 function lp-vmctl-setup()
 {
     _lp-package-all
-    cd $AEROFS_ROOT
-    ant local_prod_setup -Dbin=$(_lp-bin)
-}
-
-function lp-vmctl-reset-ip()
-{
-    lp-vmctl-halt
-    ant local_prod_reset_ip
+    _lp-vmctl-setup "$@"
 }
 
 function lp-vmctl-delete()
@@ -196,7 +199,11 @@ function lp-vmctl-halt()
 function lp-vmctl-start()
 {
     cd $AEROFS_ROOT
-    ant local_prod_start
+    if [ "$#" -eq "1" ] ; then
+        ant local_prod_start -Dbridge_iface=$1
+    else
+        ant local_prod_start
+    fi
 }
 
 # -----------------------------------------------------------
