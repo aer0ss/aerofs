@@ -9,25 +9,33 @@ import com.aerofs.daemon.core.net.device.DevicePresence;
 import com.aerofs.daemon.lib.db.AbstractTransListener;
 import com.aerofs.daemon.lib.db.IStoreDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
+import com.aerofs.daemon.lib.db.trans.TransLocal;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.id.SIndex;
+import com.google.common.base.Preconditions;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import org.slf4j.Logger;
 
 import javax.annotation.Nonnull;
 import javax.inject.Inject;
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 
 public class Stores implements IStores, IStoreDeletionOperator
 {
-    // TODO: cache hierarchy information?
     protected IStoreDatabase _sdb;
     private SIDMap _sm;
     private MapSIndex2Store _sidx2s;
     private MapSIndex2DeviceBitMap _sidx2dbm;
     private DevicePresence _dp;
+
+    // cached hierarchy information
+    private Map<SIndex, Set<SIndex>> _parents = Maps.newHashMap();
+    private Map<SIndex, Set<SIndex>> _children = Maps.newHashMap();
 
     private static final Logger l = Loggers.getLogger(Stores.class);
 
@@ -50,12 +58,45 @@ public class Stores implements IStores, IStoreDeletionOperator
         for (SIndex sidx : _sdb.getAll_()) notifyAddition_(sidx);
     }
 
+    private final TransLocal<Set<SIndex>> _tlChanged = new TransLocal<Set<SIndex>>() {
+        @Override
+        protected Set<SIndex> initialValue(Trans t)
+        {
+            final Set<SIndex> set = Sets.newHashSet();
+            t.addListener_(new AbstractTransListener() {
+                @Override
+                public void aborted_()
+                {
+                    // invalidate entries touched by transaction
+                    for (SIndex sidx : set) {
+                        _parents.remove(sidx);
+                        _children.remove(sidx);
+                    }
+                }
+            });
+            return set;
+        }
+    };
+
     @Override
     public void addParent_(SIndex sidx, SIndex sidxParent, Trans t)
             throws SQLException
     {
         _sdb.assertExists_(sidx);
         _sdb.assertExists_(sidxParent);
+
+        Set<SIndex> p = _parents.get(sidx);
+        if (p != null) {
+            _tlChanged.get(t).add(sidx);
+            p.add(sidxParent);
+        }
+
+        Set<SIndex> c = _children.get(sidxParent);
+        if (c != null) {
+            _tlChanged.get(t).add(sidxParent);
+            c.add(sidx);
+        }
+
         _sdb.insertParent_(sidx, sidxParent, t);
     }
 
@@ -64,6 +105,19 @@ public class Stores implements IStores, IStoreDeletionOperator
             throws SQLException
     {
         _sdb.assertExists_(sidxParent);
+
+        Set<SIndex> p = _parents.get(sidx);
+        if (p != null) {
+            _tlChanged.get(t).add(sidx);
+            p.remove(sidxParent);
+        }
+
+        Set<SIndex> c = _children.get(sidxParent);
+        if (c != null) {
+            _tlChanged.get(t).add(sidxParent);
+            c.remove(sidx);
+        }
+
         _sdb.deleteParent_(sidx, sidxParent, t);
     }
 
@@ -76,15 +130,25 @@ public class Stores implements IStores, IStoreDeletionOperator
     @Override
     public @Nonnull Set<SIndex> getParents_(SIndex sidx) throws SQLException
     {
-        _sdb.assertExists_(sidx);
-        return _sdb.getParents_(sidx);
+        Set<SIndex> p = _parents.get(sidx);
+        if (p == null) {
+            _sdb.assertExists_(sidx);
+            p = _sdb.getParents_(sidx);
+            _parents.put(sidx, p);
+        }
+        return Sets.newHashSet(p);
     }
 
     @Override
     public @Nonnull Set<SIndex> getChildren_(SIndex sidx) throws SQLException
     {
-        _sdb.assertExists_(sidx);
-        return _sdb.getChildren_(sidx);
+        Set<SIndex> c = _children.get(sidx);
+        if (c == null) {
+            _sdb.assertExists_(sidx);
+            c = _sdb.getChildren_(sidx);
+            _children.put(sidx, c);
+        }
+        return Sets.newHashSet(c);
     }
 
     @Override
@@ -110,8 +174,10 @@ public class Stores implements IStores, IStoreDeletionOperator
     public void add_(final SIndex sidx, String name, Trans t)
             throws SQLException
     {
-        assert _sdb.getParents_(sidx).isEmpty();
-        assert _sdb.getChildren_(sidx).isEmpty();
+        Preconditions.checkState(!_parents.containsKey(sidx), sidx);
+        Preconditions.checkState(!_children.containsKey(sidx), sidx);
+        Preconditions.checkState(_sdb.getParents_(sidx).isEmpty());
+        Preconditions.checkState(_sdb.getChildren_(sidx).isEmpty());
 
         _sdb.insert_(sidx, name, t);
 
@@ -133,6 +199,9 @@ public class Stores implements IStores, IStoreDeletionOperator
     public void deleteStore_(final SIndex sidx, Trans t) throws SQLException
     {
         assert _sdb.getChildren_(sidx).isEmpty();
+
+        _parents.remove(sidx);
+        _children.remove(sidx);
 
         // Grab a reference to the Store object before notifyDeletion_ removes in-memory references
         // to it

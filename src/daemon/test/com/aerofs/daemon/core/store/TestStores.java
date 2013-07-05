@@ -11,6 +11,7 @@ import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.db.InMemorySQLiteDBCW;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.testlib.AbstractTest;
+import com.google.common.collect.ImmutableSet;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InOrder;
@@ -18,6 +19,7 @@ import org.mockito.Mock;
 
 import java.sql.SQLException;
 
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.when;
 
@@ -36,6 +38,7 @@ public class TestStores extends AbstractTest
 
     SIndex sidx = new SIndex(1);
     SIndex sidxParent = new SIndex(2);
+    SIndex sidxExtra = new SIndex(3);
 
     @Before
     public void setup() throws SQLException
@@ -113,5 +116,83 @@ public class TestStores extends AbstractTest
         InOrder inOrder = inOrder(dp, store);
         inOrder.verify(dp).beforeDeletingStore_(sidx);
         inOrder.verify(store).deletePersistentData_(t);
+    }
+
+    @Test
+    public void shouldReportCorrectParentSet() throws SQLException
+    {
+        ss.add_(sidx, "", t);
+        ss.add_(sidxParent, "", t);
+        ss.addParent_(sidx, sidxParent, t);
+
+        assertEquals(ImmutableSet.of(sidxParent), ss.getParents_(sidx));
+    }
+
+    @Test
+    public void shouldReportCorrectChildrenSet() throws SQLException
+    {
+        ss.add_(sidx, "", t);
+        ss.add_(sidxParent, "", t);
+        ss.addParent_(sidx, sidxParent, t);
+
+        assertEquals(ImmutableSet.of(sidx), ss.getChildren_(sidxParent));
+    }
+
+    @Test
+    public void shouldReportCorrectParentSetAfterInsert() throws SQLException
+    {
+        ss.add_(sidx, "", t);
+        ss.add_(sidxParent, "", t);
+        ss.add_(sidxExtra, "", t);
+        ss.addParent_(sidx, sidxParent, t);
+
+        assertEquals(ImmutableSet.of(sidxParent), ss.getParents_(sidx));
+
+        ss.addParent_(sidx, sidxExtra, t);
+
+        assertEquals(ImmutableSet.of(sidxParent, sidxExtra), ss.getParents_(sidx));
+    }
+
+    @Test
+    public void shouldReportCorrectChildrenSetAfterInsert() throws SQLException
+    {
+        ss.add_(sidx, "", t);
+        ss.add_(sidxParent, "", t);
+        ss.add_(sidxExtra, "", t);
+        ss.addParent_(sidx, sidxParent, t);
+
+        assertEquals(ImmutableSet.of(sidx), ss.getChildren_(sidxParent));
+
+        ss.addParent_(sidxExtra, sidxParent, t);
+
+        assertEquals(ImmutableSet.of(sidx, sidxExtra), ss.getChildren_(sidxParent));
+    }
+
+    @Test
+    public void shouldReportCorrectParentSetAfterRemove() throws SQLException
+    {
+        ss.add_(sidx, "", t);
+        ss.add_(sidxParent, "", t);
+        ss.addParent_(sidx, sidxParent, t);
+
+        assertEquals(ImmutableSet.of(sidxParent), ss.getParents_(sidx));
+
+        ss.deleteParent_(sidx, sidxParent, t);
+
+        assertEquals(ImmutableSet.<SIndex>of(), ss.getParents_(sidx));
+    }
+
+    @Test
+    public void shouldReportCorrectChildrenSetAfterRemove() throws SQLException
+    {
+        ss.add_(sidx, "", t);
+        ss.add_(sidxParent, "", t);
+        ss.addParent_(sidx, sidxParent, t);
+
+        assertEquals(ImmutableSet.of(sidx), ss.getChildren_(sidxParent));
+
+        ss.deleteParent_(sidx, sidxParent, t);
+
+        assertEquals(ImmutableSet.<SIndex>of(), ss.getChildren_(sidxParent));
     }
 }
