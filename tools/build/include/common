@@ -233,6 +233,18 @@ function is_prod() {
 
 ###############################################################################
 #
+# Returns 0 if the deployment mode is PROD or ENTERPRISE, 1 otherwise
+#
+###############################################################################
+function is_prod_or_enterprise() {
+    if [ "$MODE" == "PROD" ] || [ "$MODE" == "ENTERPRISE" ]; then
+        return 0
+    fi
+    return 1
+}
+
+###############################################################################
+#
 # Returns 0 if the deployment mode is CI, 1 otherwise
 #
 ###############################################################################
