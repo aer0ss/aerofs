@@ -12,6 +12,7 @@ import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
+import com.aerofs.base.ssl.SSLEngineFactory;
 import com.aerofs.daemon.event.lib.EventDispatcher;
 import com.aerofs.daemon.event.net.EOTpStartPulse;
 import com.aerofs.daemon.event.net.Endpoint;
@@ -31,7 +32,6 @@ import com.aerofs.daemon.transport.tcp.ARP.IARPChangeListener;
 import com.aerofs.daemon.transport.tcp.BootstrapFactory.FrameParams;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
 import com.aerofs.lib.event.IEvent;
@@ -69,10 +69,12 @@ public class TCP implements ITCP, ITransportImpl, IARPChangeListener
 
     private volatile boolean _ready;
 
+    private final DID _localdid;
     private final String _id;
     private final int _pref;
     private final ARP _arp = new ARP();
     private final TransportStats _ts = new TransportStats();
+    private final Stores _stores;
     private final Unicast _ucast;
     private final Multicast _mcast;
     private final IBlockingPrioritizedEventSink<IEvent> _sink;
@@ -81,21 +83,30 @@ public class TCP implements ITCP, ITransportImpl, IARPChangeListener
     private final EventDispatcher _disp = new EventDispatcher();
     private final StreamManager _sm = new StreamManager();
     private final TransportDiagnosisState _tds = new TransportDiagnosisState();
-    private final Stores _stores = new Stores(Cfg.did(), this, _arp);
     private final PulseManager _pm = new PulseManager();
 
-    public TCP(String id, int pref, IBlockingPrioritizedEventSink<IEvent> sink,
-            MaxcastFilterReceiver mcfr, ClientSocketChannelFactory clientChannelFactory,
+    public TCP(
+            UserID localuser,
+            DID localdid,
+            String id,
+            int pref,
+            IBlockingPrioritizedEventSink<IEvent> sink,
+            MaxcastFilterReceiver mcfr,
+            SSLEngineFactory clientSslEngineFactory,
+            SSLEngineFactory serverSslEngineFactory,
+            ClientSocketChannelFactory clientChannelFactory,
             ServerSocketChannelFactory serverChannelFactory)
     {
+        _localdid = localdid;
         _id = id;
         _pref = pref;
         _sched = new Scheduler(_q, id()); // can't initialize above because id() will return null
         _sink = sink;
         _arp.addARPChangeListener(this);
         _pm.addGenericPulseDeletionWatcher(this, _sink);
-        _ucast = new Unicast(this, _arp, _stores, serverChannelFactory, clientChannelFactory, _ts);
-        _mcast = new Multicast(this, mcfr, _stores);
+        _stores = new Stores(_localdid, this, _arp);
+        _ucast = new Unicast(localuser, localdid, this, _arp, _stores, clientSslEngineFactory, serverSslEngineFactory, serverChannelFactory, clientChannelFactory, _ts);
+        _mcast = new Multicast(localdid, this, mcfr, _stores);
     }
 
     @Override
@@ -565,19 +576,19 @@ public class TCP implements ITCP, ITransportImpl, IARPChangeListener
      *
      * @return {@link PBTPHeader} of type <code>TCP_PING</code>
      */
-    static PBTPHeader newPingMessage()
+    PBTPHeader newPingMessage()
     {
         return PBTPHeader.newBuilder()
                 .setType(Type.TCP_PING)
-                .setTcpMulticastDeviceId(Cfg.did().toPB())
+                .setTcpMulticastDeviceId(_localdid.toPB())
                 .build();
     }
 
-    static PBTPHeader newGoOfflineMessage()
+    PBTPHeader newGoOfflineMessage()
     {
         return PBTPHeader.newBuilder()
                 .setType(Type.TCP_GO_OFFLINE)
-                .setTcpMulticastDeviceId(Cfg.did().toPB())
+                .setTcpMulticastDeviceId(_localdid.toPB())
                 .build();
     }
 

@@ -1,5 +1,5 @@
 /*
- * Created by alleng, Air Computing Inc.
+ * Created by Allen A. George, Air Computing Inc.
  * Copyright (c) Air Computing Inc., 2012.
  */
 
@@ -8,11 +8,11 @@ package com.aerofs.daemon.transport.xmpp;
 import com.aerofs.base.Base64;
 import com.aerofs.base.BaseParam.Xmpp;
 import com.aerofs.base.Loggers;
+import com.aerofs.base.id.DID;
 import com.aerofs.base.id.JabberID;
 import com.aerofs.lib.IDumpStatMisc;
 import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.ThreadUtil;
-import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.rocklog.RockLog;
 import org.jivesoftware.smack.ConnectionConfiguration;
 import org.jivesoftware.smack.ConnectionConfiguration.SecurityMode;
@@ -48,36 +48,84 @@ public class XMPPServerConnection implements IDumpStatMisc
         //XMPPConnection.DEBUG_ENABLED = true;
     }
 
-    public XMPPServerConnection(String resource, IXMPPServerConnectionWatcher watcher, RockLog rocklog)
+    // 64 bytes
+    private static final byte[] XMPP_PASSWORD_SALT = {
+        (byte)0xcc, (byte)0xd9, (byte)0x82, (byte)0x0d,
+        (byte)0xf2, (byte)0xf1, (byte)0x4a, (byte)0x56,
+        (byte)0x0a, (byte)0x70, (byte)0x28, (byte)0xbe,
+        (byte)0x91, (byte)0xd6, (byte)0xb8, (byte)0x51,
+        (byte)0x78, (byte)0x03, (byte)0xc4, (byte)0x8f,
+        (byte)0x30, (byte)0x8b, (byte)0xdd, (byte)0xbf,
+        (byte)0x2d, (byte)0x80, (byte)0x45, (byte)0x75,
+        (byte)0xff, (byte)0x2d, (byte)0x4f, (byte)0x55,
+        (byte)0x0c, (byte)0x2e, (byte)0x1b, (byte)0x2d,
+        (byte)0x80, (byte)0x77, (byte)0x73, (byte)0x95,
+        (byte)0x25, (byte)0x7c, (byte)0xf2, (byte)0x8e,
+        (byte)0xa5, (byte)0x49, (byte)0x5c, (byte)0xf2,
+        (byte)0xa6, (byte)0x4a, (byte)0x64, (byte)0x31,
+        (byte)0x3a, (byte)0xb3, (byte)0x04, (byte)0x48,
+        (byte)0xd7, (byte)0x89, (byte)0xeb, (byte)0xd6,
+        (byte)0x17, (byte)0x7e, (byte)0x56, (byte)0x81
+    };
+
+    private static final Logger l = Loggers.getLogger(XMPPServerConnection.class);
+
+    // FIXME (AG): the right thing is not to leak connection outside at all!
+    private volatile XMPPConnection connection = null; // protect via this (volatile so that connection() can work properly)
+    private volatile boolean linkUp = false;
+
+    private final RockLog rocklog;
+    private final DID localdid;
+    private final String localjid;
+    private final String resource;
+    private final String xmppPassword; // sha256(scrypt(p|u)|XMPP_PASSWORD_SALT)
+    private final IXMPPServerConnectionWatcher watcher;
+    private final AtomicInteger xscThreadId = new AtomicInteger(0);
+    private final AtomicBoolean connectionInProgress = new AtomicBoolean(false);
+
+    public XMPPServerConnection(DID localdid, String resource, byte[] scrypted, IXMPPServerConnectionWatcher watcher, RockLog rocklog)
     {
-        _resource = resource;
-        _watcher = watcher;
+        this.localdid = localdid;
+        this.localjid = JabberID.did2user(this.localdid);
+        this.resource = resource;
+        this.xmppPassword = Base64.encodeBytes(SecUtil.hash(scrypted, XMPP_PASSWORD_SALT));
+        this.watcher = watcher;
         this.rocklog = rocklog;
     }
 
     synchronized boolean ready()
     {
-        return _conn != null && _conn.isConnected() && _conn.isAuthenticated();
+        return connection != null && connection.isConnected() && connection.isAuthenticated();
    }
 
     /**
      * @throws XMPPException if not connected to the server
      * FIXME: remove this method since I don't think it's a good idea, and I'm not sure it's thread-safe
-     * IMPORTANT: even if you get back a conn it may be invalid
+     * IMPORTANT: even if you get back a connection it may be invalid
      */
     public XMPPConnection conn() throws XMPPException
     {
-        XMPPConnection c = _conn;
+        XMPPConnection c = connection;
         if (c == null) throw new XMPPException("disconnected");
         return c;
+    }
+
+    /**
+     * Returns the credentials required to log into the XMPP server
+     *
+     * @return <pre>sha256(scrypt(p|u)|u)</pre>
+     */
+    public String getXmppPassword()
+    {
+        return xmppPassword;
     }
 
     public void linkStateChanged(Set<NetworkInterface> cur)
     {
         boolean up = !XMPP.allLinksDown(cur);
 
-        boolean wasup = _linkUp;
-        _linkUp = up;
+        boolean wasup = linkUp;
+        linkUp = up;
 
         //
         // it's not clear to me if it's actually worth the bother to check if
@@ -88,9 +136,9 @@ public class XMPPServerConnection implements IDumpStatMisc
         XMPPConnection c;
         boolean connected;
         synchronized (this) {
-            c = _conn;
+            c = connection;
             connected = (c != null && c.isConnected());
-            // can't set _conn to null if !up because disconnection handler won't run
+            // can't set connection to null if !up because disconnection handler won't run
         }
 
         if (!up && c != null && connected) {
@@ -104,7 +152,7 @@ public class XMPPServerConnection implements IDumpStatMisc
         }
     }
 
-    private XMPPConnection newConnection()
+    private XMPPConnection newXMPPConnection()
     {
         // The xmpp server address is an unresolved hostname.
         // We avoid resolving the hostname ourselves and let
@@ -147,7 +195,7 @@ public class XMPPServerConnection implements IDumpStatMisc
                 l.info("connecting");
 
                 try {
-                    if (!_linkUp) {
+                    if (!linkUp) {
                         l.info("link down. do not attempt connect.");
                     } else {
                         synchronized (XMPPServerConnection.this) { connect_(); }
@@ -181,14 +229,14 @@ public class XMPPServerConnection implements IDumpStatMisc
     }
 
     // should be accessed by only one thread at a time. we don't want to mess up
-    // with the xmpp library. and access to _conn need synchronization, too.
+    // with the xmpp library. and access to connection need synchronization, too.
     private void connectImpl_() throws XMPPException
     {
         //
         // check if we have a valid connection already
         //
 
-        if (_conn != null && _conn.isAuthenticated()) {
+        if (connection != null && connection.isAuthenticated()) {
             l.warn("beginning process to replace old connection");
         }
 
@@ -196,36 +244,36 @@ public class XMPPServerConnection implements IDumpStatMisc
         // create a new connection and log in
         //
 
-        final XMPPConnection newConnection = newConnection();
+        final XMPPConnection newConnection = newXMPPConnection();
         l.info("connecting to " + newConnection.getHost() + ":" + newConnection.getPort());
         newConnection.connect();
 
-        l.info("logging in as " + JabberID.did2FormAJid(Cfg.did(), _resource)); // done to show relationship
-        newConnection.login(_user, shaedXMPP(), _resource);
+        l.info("logging in as " + JabberID.did2FormAJid(localdid, resource)); // done to show relationship
+        newConnection.login(localjid, getXmppPassword(), resource);
         l.info("logged in");
 
         // for legacy reasons (basically I don't have time to refactor the code) Multicast
-        // accesses conn directly. Since Multicast runs on a different thread the moment we
-        // assign a new value to _conn it _may_ be accessed by Multicast (i.e. even before
+        // accesses connection directly. Since Multicast runs on a different thread the moment we
+        // assign a new value to connection it _may_ be accessed by Multicast (i.e. even before
         // a listener is added
 
-        _conn = newConnection; // this is the point at which changes are visible
+        connection = newConnection; // this is the point at which changes are visible
 
         //
         // notify watcher of connection
         //
 
-        // I would prefer to only set _conn _after_ calling _watcher.connected, but apparently
-        // Multicast.java uses conn() internally...
+        // I would prefer to only set connection _after_ calling watcher.connected, but apparently
+        // Multicast.java uses connection() internally...
         try {
-            if (_watcher != null) {
-                _watcher.xmppServerConnected(newConnection);
+            if (watcher != null) {
+                watcher.xmppServerConnected(newConnection);
             }
         } catch (XMPPException e) {
-            _conn = null;
+            connection = null;
             throw e;
         } catch (RuntimeException e) {
-            _conn = null;
+            connection = null;
             throw e;
         }
 
@@ -235,7 +283,7 @@ public class XMPPServerConnection implements IDumpStatMisc
 
         // FIXME: we need to verify that the connection is actually valid prior to adding a listener
         // we don't rely on Smack API's connect capability as experiments
-        // showed it's not reliable. See also newConnection()
+        // showed it's not reliable. See also newXMPPConnection()
         l.info("adding listener");
         newConnection.addConnectionListener(new ConnectionListener()
         {
@@ -258,16 +306,16 @@ public class XMPPServerConnection implements IDumpStatMisc
                 // XXX: the previous comment here referenced a deadlock - I don't _think_ one is possible...
                 boolean replaced = false;
                 synchronized (XMPPServerConnection.this) {
-                    if (_conn == newConnection) {
+                    if (connection == newConnection) {
                         try {
                             l.info("notifying listeners of disconnection");
-                            if (_watcher != null) {
-                                _watcher.xmppServerDisconnected();
+                            if (watcher != null) {
+                                watcher.xmppServerDisconnected();
                             }
                         } finally {
-                            _conn = null;
+                            connection = null;
                             replaced = true;
-                            l.info("conn replaced");
+                            l.info("connection replaced");
                         }
                     } else {
                         l.warn("connection already replaced");
@@ -279,7 +327,7 @@ public class XMPPServerConnection implements IDumpStatMisc
                 newConnection.disconnect();
 
                 if (replaced) {
-                    if (_linkUp) {
+                    if (linkUp) {
                         l.info("attempt reconnect");
                         startConnect(true);
                     } else {
@@ -313,61 +361,13 @@ public class XMPPServerConnection implements IDumpStatMisc
     @Override
     public synchronized void dumpStatMisc(String indent, String indentUnit, PrintStream ps)
     {
-        if (_conn == null || !_conn.isConnected()) {
+        if (connection == null || !connection.isConnected()) {
             ps.println(indent + "disconnected");
         } else {
-            ps.println(indent + "auth'ed " + _conn.isAuthenticated() +
-                    ", secure " + _conn.isSecureConnection() +
-                    ", tls " + _conn.isUsingTLS() +
-                    ", compression: " + _conn.isUsingCompression());
+            ps.println(indent + "auth'ed " + connection.isAuthenticated() +
+                    ", secure " + connection.isSecureConnection() +
+                    ", tls " + connection.isUsingTLS() +
+                    ", compression: " + connection.isUsingCompression());
         }
     }
-
-    /**
-     * Returns the credentials required to log into the XMPP server
-     *
-     * @return sha256(scrypt(p|u)|u)
-     */
-    public static String shaedXMPP()
-    {
-        if (s_shaedXmpp == null) {
-            s_shaedXmpp = Base64.encodeBytes(SecUtil.hash(Cfg.scrypted(), XMPP_PASSWORD_SALT));
-        }
-        return s_shaedXmpp;
-    }
-
-    // FIXME (AG): the right thing is not to leak _conn outside at all!
-    private volatile XMPPConnection _conn = null; // protect via this (volatile so that conn() can work properly)
-    private volatile boolean _linkUp = false;
-
-    private final String _resource;
-    private final IXMPPServerConnectionWatcher _watcher;
-    private final RockLog rocklog;
-    private final String _user = JabberID.did2user(Cfg.did());
-    private final AtomicInteger xscThreadId = new AtomicInteger(0);
-    private final AtomicBoolean connectionInProgress = new AtomicBoolean(false);
-
-    private static String s_shaedXmpp; // sha256(scrypt(p|u)|XMPP_PASSWORD_SALT)
-
-    private static final Logger l = Loggers.getLogger(XMPPServerConnection.class);
-
-    // 64 bytes
-    private static final byte[] XMPP_PASSWORD_SALT = {
-        (byte)0xcc, (byte)0xd9, (byte)0x82, (byte)0x0d,
-        (byte)0xf2, (byte)0xf1, (byte)0x4a, (byte)0x56,
-        (byte)0x0a, (byte)0x70, (byte)0x28, (byte)0xbe,
-        (byte)0x91, (byte)0xd6, (byte)0xb8, (byte)0x51,
-        (byte)0x78, (byte)0x03, (byte)0xc4, (byte)0x8f,
-        (byte)0x30, (byte)0x8b, (byte)0xdd, (byte)0xbf,
-        (byte)0x2d, (byte)0x80, (byte)0x45, (byte)0x75,
-        (byte)0xff, (byte)0x2d, (byte)0x4f, (byte)0x55,
-        (byte)0x0c, (byte)0x2e, (byte)0x1b, (byte)0x2d,
-        (byte)0x80, (byte)0x77, (byte)0x73, (byte)0x95,
-        (byte)0x25, (byte)0x7c, (byte)0xf2, (byte)0x8e,
-        (byte)0xa5, (byte)0x49, (byte)0x5c, (byte)0xf2,
-        (byte)0xa6, (byte)0x4a, (byte)0x64, (byte)0x31,
-        (byte)0x3a, (byte)0xb3, (byte)0x04, (byte)0x48,
-        (byte)0xd7, (byte)0x89, (byte)0xeb, (byte)0xd6,
-        (byte)0x17, (byte)0x7e, (byte)0x56, (byte)0x81
-    };
 }

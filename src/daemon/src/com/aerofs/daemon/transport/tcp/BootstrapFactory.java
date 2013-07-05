@@ -5,22 +5,19 @@
 package com.aerofs.daemon.transport.tcp;
 
 import com.aerofs.base.C;
+import com.aerofs.base.id.DID;
+import com.aerofs.base.id.UserID;
 import com.aerofs.base.net.AddressResolverHandler;
 import com.aerofs.base.net.MagicHeader.ReadMagicHeaderHandler;
 import com.aerofs.base.net.MagicHeader.WriteMagicHeaderHandler;
 import com.aerofs.base.ssl.CNameVerificationHandler;
 import com.aerofs.base.ssl.CNameVerificationHandler.CNameListener;
 import com.aerofs.base.ssl.SSLEngineFactory;
-import com.aerofs.base.ssl.SSLEngineFactory.Mode;
-import com.aerofs.base.ssl.SSLEngineFactory.Platform;
 import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.daemon.transport.lib.TransportStats;
 import com.aerofs.daemon.transport.lib.handlers.IOStatsHandler;
 import com.aerofs.daemon.transport.tcp.TCPServerHandler.ITCPServerHandlerListener;
 import com.aerofs.lib.LibParam;
-import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.cfg.CfgCACertificateProvider;
-import com.aerofs.lib.cfg.CfgKeyManagersProvider;
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.channel.ChannelPipeline;
@@ -58,21 +55,27 @@ class BootstrapFactory
     }
 
     private final AddressResolverHandler _addressResolver = new AddressResolverHandler(newSingleThreadExecutor());
+    private final UserID _localuser;
+    private final DID _localdid;
+    private final SSLEngineFactory _clientSslEngineFactory;
+    private final SSLEngineFactory _serverSslEngineFactory;
     private final TransportStats _stats;
 
-    BootstrapFactory(TransportStats stats)
+    BootstrapFactory(UserID localuser, DID localdid, SSLEngineFactory clientSslEngineFactory, SSLEngineFactory serverSslEngineFactory, TransportStats stats)
     {
         // Check that the maximum message size is smaller than the maximum number that can be
         // represented using LENGTH_FIELD_SIZE bytes
         checkState(FrameParams.MAX_MESSAGE_SIZE < Math.pow(256, FrameParams.LENGTH_FIELD_SIZE));
 
+        _localuser = localuser;
+        _localdid = localdid;
+        _clientSslEngineFactory = clientSslEngineFactory;
+        _serverSslEngineFactory = serverSslEngineFactory;
         _stats = stats;
     }
 
     ClientBootstrap newClientBootstrap(ClientSocketChannelFactory channelFactory)
     {
-        final SSLEngineFactory sslEngineFactory = newSslEngineFactory(Mode.Client);
-
         ClientBootstrap bootstrap = new ClientBootstrap(channelFactory);
         bootstrap.setPipelineFactory(new ChannelPipelineFactory()
         {
@@ -84,7 +87,7 @@ class BootstrapFactory
                 return Channels.pipeline(
                         _addressResolver,
                         newStatsHandler(),
-                        newSslHandler(sslEngineFactory),
+                        newSslHandler(_clientSslEngineFactory),
                         newFameDecoder(),
                         newLengthFieldPrepender(),
                         newMagicReader(),
@@ -99,8 +102,6 @@ class BootstrapFactory
     ServerBootstrap newServerBootstrap(ServerSocketChannelFactory channelFactory,
             final ITCPServerHandlerListener listener, final ITCP tcp)
     {
-        final SSLEngineFactory sslEngineFactory = newSslEngineFactory(Mode.Server);
-
         ServerBootstrap bootstrap = new ServerBootstrap(channelFactory);
         bootstrap.setPipelineFactory(new ChannelPipelineFactory()
         {
@@ -112,7 +113,7 @@ class BootstrapFactory
                 return Channels.pipeline(
                         _addressResolver,
                         newStatsHandler(),
-                        newSslHandler(sslEngineFactory),
+                        newSslHandler(_serverSslEngineFactory),
                         newFameDecoder(),
                         newLengthFieldPrepender(),
                         newMagicReader(),
@@ -128,15 +129,9 @@ class BootstrapFactory
     // Helper methods to create the handlers
     //
 
-    private SSLEngineFactory newSslEngineFactory(Mode mode)
-    {
-        return new SSLEngineFactory(mode, Platform.Desktop, new CfgKeyManagersProvider(),
-                new CfgCACertificateProvider(), null);
-    }
-
     private CNameVerificationHandler newCNameVerificationHandler(CNameListener listener)
     {
-        CNameVerificationHandler cnameHandler = new CNameVerificationHandler(Cfg.user(), Cfg.did());
+        CNameVerificationHandler cnameHandler = new CNameVerificationHandler(_localuser, _localdid);
         cnameHandler.setListener(listener);
         return cnameHandler;
     }

@@ -18,7 +18,6 @@ import com.aerofs.labeling.L;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.log.LogUtil;
 import com.aerofs.proto.Transport.PBTPHeader;
@@ -35,11 +34,12 @@ import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
 import java.net.NetworkInterface;
 import java.net.SocketException;
-import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+
+import static java.util.Collections.synchronizedMap;
 
 // TODO: checksum
 
@@ -54,14 +54,15 @@ class Multicast implements IMaxcast
 {
     private static final Logger l = Loggers.getLogger(Multicast.class);
 
+    private final DID _localdid;
     private final TCP _tcp;
     private final MaxcastFilterReceiver _mcfr;
     private final Stores _stores;
-    private final Map<NetworkInterface, MulticastSocket> _iface2sock =
-        Collections.synchronizedMap(new HashMap<NetworkInterface, MulticastSocket>());
+    private final Map<NetworkInterface, MulticastSocket> _iface2sock = synchronizedMap(new HashMap<NetworkInterface, MulticastSocket>());
 
-    Multicast(TCP tcp, MaxcastFilterReceiver mcfr, Stores stores)
+    Multicast(DID localdid, TCP tcp, MaxcastFilterReceiver mcfr, Stores stores)
     {
+        _localdid = localdid;
         _tcp = tcp;
         _mcfr = mcfr;
         _stores = stores;
@@ -75,7 +76,7 @@ class Multicast implements IMaxcast
             public void run()
             {
                 try {
-                    sendControlMessage(TCP.newGoOfflineMessage());
+                    sendControlMessage(_tcp.newGoOfflineMessage());
                 } catch (IOException e) {
                     l.warn("error sending offline notification. ignored" + e);
                 }
@@ -137,7 +138,7 @@ class Multicast implements IMaxcast
 
         if (!added.isEmpty()) {
             try {
-                sendControlMessage(TCP.newPingMessage());
+                sendControlMessage(_tcp.newPingMessage());
                 PBTPHeader pong = _stores.newPongMessage(true);
                 if (pong != null) sendControlMessage(pong);
             } catch (IOException e) {
@@ -151,7 +152,7 @@ class Multicast implements IMaxcast
             // disconnection. N.B. this needs to be done *before* closing the sockets.
 
             try {
-                sendControlMessage(TCP.newGoOfflineMessage());
+                sendControlMessage(_tcp.newGoOfflineMessage());
             } catch (IOException e) {
                 l.warn("send offline: " + Util.e(e));
             }
@@ -210,7 +211,7 @@ class Multicast implements IMaxcast
 
                 // ignore messages from myself
                 DID did = new DID(h.getTcpMulticastDeviceId());
-                if (did.equals(Cfg.did())) continue;
+                if (did.equals(_localdid)) continue;
                 Endpoint ep = new Endpoint(_tcp, did);
 
                 if (h.getType() == Type.DATAGRAM)
@@ -249,7 +250,7 @@ class Multicast implements IMaxcast
         PBTPHeader h = PBTPHeader.newBuilder()
             .setType(Type.DATAGRAM)
             .setMcastId(mcastid)
-            .setTcpMulticastDeviceId(Cfg.did().toPB())
+            .setTcpMulticastDeviceId(_localdid.toPB())
             .build();
         send(h, buf);
     }

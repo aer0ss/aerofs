@@ -49,26 +49,27 @@ import static org.jivesoftware.smack.packet.Message.Type.headline;
 
 public class Zephyr extends XMPP implements ISignallingService
 {
-    private final boolean enableMulticast;
-    private final TransportStats _ts = new TransportStats();
     private final Set<ISignallingClient> signallingClients = newHashSet();
     private final MobileServerZephyrConnector mobileZephyrConnector;
+    private final TransportStats transportStats = new TransportStats();
+
+    private boolean enableMulticast = false;
 
     public Zephyr(
             UserID localid,
             DID localdid,
+            byte[] scrypted,
             String id, int rank,
             IBlockingPrioritizedEventSink<IEvent> sink,
-            MaxcastFilterReceiver mcfr,
+            MaxcastFilterReceiver maxcastFilterReceiver,
             SSLEngineFactory clientSSLEngineFactory,
             SSLEngineFactory serverSSLEngineFactory,
             ClientSocketChannelFactory clientSocketChannelFactory,
             MobileServerZephyrConnector mobileZephyr,
             RockLog rocklog,
-            SocketAddress zephyrAddress, Proxy proxy,
-            boolean enableMulticast)
+            SocketAddress zephyrAddress, Proxy proxy)
     {
-        super(localdid, id, rank, sink, mcfr, rocklog);
+        super(localdid, scrypted, id, rank, sink, maxcastFilterReceiver, rocklog);
 
         checkState(DaemonParam.XMPP.CONNECT_TIMEOUT > DaemonParam.Zephyr.HANDSHAKE_TIMEOUT); // should be much larger!
 
@@ -79,18 +80,18 @@ public class Zephyr extends XMPP implements ISignallingService
                 serverSSLEngineFactory,
                 this,
                 this,
-                _ts,
+                transportStats,
                 rocklog,
                 clientSocketChannelFactory, zephyrAddress, proxy);
         setConnectionService_(zephyrConnectionService);
         mobileZephyrConnector = mobileZephyr;
+    }
 
-        l.debug("{}: mc enable:{}", id, enableMulticast);
-
-        this.enableMulticast = enableMulticast;
-        if (enableMulticast) {
-            registerMulticastHandler(this);
-        }
+    public void enableMulticast()
+    {
+        enableMulticast = true;
+        registerMulticastHandler(this);
+        l.debug("{}: multicast enabled", id());
     }
 
     @Override
@@ -254,12 +255,12 @@ public class Zephyr extends XMPP implements ISignallingService
     @Override
     public long bytesIn()
     {
-        return _ts.getBytesReceived();
+        return transportStats.getBytesReceived();
     }
 
     @Override
     public long bytesOut()
     {
-        return _ts.getBytesSent();
+        return transportStats.getBytesSent();
     }
 }

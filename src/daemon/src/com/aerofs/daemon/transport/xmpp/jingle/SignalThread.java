@@ -5,7 +5,6 @@ import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.daemon.transport.TransportThreadGroup;
-import com.aerofs.daemon.transport.xmpp.XMPPServerConnection;
 import com.aerofs.j.Jid;
 import com.aerofs.j.Message;
 import com.aerofs.j.MessageHandlerBase;
@@ -43,26 +42,30 @@ public class SignalThread extends java.lang.Thread implements IDumpStatMisc
     private boolean _linkUp;    // protected by _cvLinkState
     private final byte[] _logPathUTF8;
     private final IJingle _ij;
+    private final Jid _xmppUsername;
+    private final String _xmppPassword;
+    private final String _absRTRoot;
     private final JingleTunnelClientReference _jingleTunnelClientReference = new JingleTunnelClientReference();
     private final ArrayList<Runnable> _postRunners =  new ArrayList<Runnable>(); // st thread only
     private final Object _mxMain = new Object(); // lock object
     private final Object _cvLinkState = new Object(); // lock object
-    private final Jid _jidSelf = Jingle.did2jid(Cfg.did());
-    private final BlockingQueue<ISignalThreadTask> _tasks
-            = new LinkedBlockingQueue<ISignalThreadTask>(DaemonParam.QUEUE_LENGTH_DEFAULT);
+    private final BlockingQueue<ISignalThreadTask> _tasks = new LinkedBlockingQueue<ISignalThreadTask>(DaemonParam.QUEUE_LENGTH_DEFAULT);
 
 
-    SignalThread(IJingle ij)
+    SignalThread(DID localdid, String xmppPassword, String absRTRoot, IJingle ij)
     {
         super(TransportThreadGroup.get(), "lj-sig");
-        _ij = ij;
-        _logPathUTF8 = getLogPath();
 
+        _ij = ij;
+        _absRTRoot = absRTRoot;
+        _logPathUTF8 = getLogPath();
+        _xmppUsername = Jingle.did2jid(localdid);
+        _xmppPassword = xmppPassword;
     }
 
     private byte[] getLogPath()
     {
-        String ljlogpath = Util.join(Cfg.absRTRoot(), "lj.log");
+        String ljlogpath = Util.join(_absRTRoot, "lj.log");
         try {
             return ljlogpath.getBytes("UTF-8");
         } catch (UnsupportedEncodingException e) {
@@ -104,7 +107,6 @@ public class SignalThread extends java.lang.Thread implements IDumpStatMisc
      * runnable.run().
      *
      * N.B. runnable.run() must not block
-     * @param task
      */
     void call(ISignalThreadTask task)
     {
@@ -185,8 +187,8 @@ public class SignalThread extends java.lang.Thread implements IDumpStatMisc
                 xmppAddress.getHostName(), xmppAddress.getPort(),
                 stunAddress.getHostName(), stunAddress.getPort(),
                 true,
-                _jidSelf,
-                XMPPServerConnection.shaedXMPP(),
+                _xmppUsername,
+                _xmppPassword,
                 _logPathUTF8);
 
         l.debug("st: created xmppmain");
@@ -197,7 +199,7 @@ public class SignalThread extends java.lang.Thread implements IDumpStatMisc
 
         // >>>> WHEE...RUNNING >>>>
 
-        boolean lololon = Cfg.lotsOfLotsOfLog(Cfg.absRTRoot());
+        boolean lololon = Cfg.lotsOfLotsOfLog(_absRTRoot);
         _main.Run(lololon);
 
         l.debug("st: main completed");

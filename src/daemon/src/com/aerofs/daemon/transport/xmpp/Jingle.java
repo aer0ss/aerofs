@@ -15,12 +15,12 @@ import static com.aerofs.daemon.transport.lib.TPUtil.registerMulticastHandler;
 
 public class Jingle extends XMPP
 {
-    private final TransportStats _ts = new TransportStats();
+    private final TransportStats transportStats = new TransportStats();
 
-    public Jingle(DID localdid, String id, int rank, IBlockingPrioritizedEventSink<IEvent> sink, MaxcastFilterReceiver mcfr, RockLog rocklog)
+    public Jingle(DID localdid, byte[] scrypted, String absRTRoot, String id, int rank, IBlockingPrioritizedEventSink<IEvent> sink, MaxcastFilterReceiver maxcastFilterReceiver, RockLog rocklog)
     {
-        super(localdid, id, rank, sink, mcfr, rocklog);
-        com.aerofs.daemon.transport.xmpp.jingle.Jingle jingle = new com.aerofs.daemon.transport.xmpp.jingle.Jingle(id, rank, this, _ts);
+        super(localdid, scrypted, id, rank, sink, maxcastFilterReceiver, rocklog);
+        com.aerofs.daemon.transport.xmpp.jingle.Jingle jingle = new com.aerofs.daemon.transport.xmpp.jingle.Jingle(localdid, getXmppPassword(), absRTRoot, id, rank, this, transportStats);
         setConnectionService_(jingle);
         registerMulticastHandler(this);
     }
@@ -34,12 +34,12 @@ public class Jingle extends XMPP
     @Override
     public long bytesIn()
     {
-        return _ts.getBytesReceived();
+        return transportStats.getBytesReceived();
     }
 
     @Override
     public long bytesOut()
     {
-        return _ts.getBytesSent();
+        return transportStats.getBytesSent();
     }
 }

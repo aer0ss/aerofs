@@ -28,7 +28,7 @@ import java.util.Set;
 
 public class Jingle implements ISignalledConnectionService, IJingle
 {
-    public Jingle(String id, int rank, IConnectionServiceListener connectionServiceListener, TransportStats transportStats)
+    public Jingle(DID localdid, String xmppPassword, String absRTRoot, String id, int rank, IConnectionServiceListener connectionServiceListener, TransportStats transportStats)
     {
         OSUtil.get().loadLibrary("aerofsj");
 
@@ -37,7 +37,7 @@ public class Jingle implements ISignalledConnectionService, IJingle
         this.connectionServiceListener = connectionServiceListener;
         this.transportStats = transportStats;
 
-        this.signalThread = new SignalThread(this);
+        this.signalThread = new SignalThread(localdid, xmppPassword, absRTRoot, this);
         this.signalThread.setDaemon(true);
         this.signalThread.setName(SIGNAL_THREAD_THREAD_ID);
     }

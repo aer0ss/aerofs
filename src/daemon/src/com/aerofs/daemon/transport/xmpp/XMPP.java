@@ -111,7 +111,7 @@ import static com.google.common.base.Preconditions.checkState;
  */
 public abstract class XMPP implements ITransportImpl, IConnectionServiceListener, IUnicast, IXMPPServerConnectionWatcher
 {
-    protected XMPP(DID localdid, String id, int rank, IBlockingPrioritizedEventSink<IEvent> sink, MaxcastFilterReceiver mcfr, RockLog rocklog)
+    protected XMPP(DID localdid, byte[] scrypted, String id, int rank, IBlockingPrioritizedEventSink<IEvent> sink, MaxcastFilterReceiver maxcastFilterReceiver, RockLog rocklog)
     {
         // this is a workaround for NullPointerException during authentication
         // see http://www.igniterealtime.org/community/thread/35976
@@ -122,9 +122,9 @@ public abstract class XMPP implements ITransportImpl, IConnectionServiceListener
         _rank = rank;
         _sink = sink;
         _sched = new Scheduler(_q, id());
-        _xsc = new XMPPServerConnection(id(), this, rocklog);
+        _xsc = new XMPPServerConnection(localdid, id(), scrypted, this, rocklog);
         _mc = new Multicast(this, localdid, id());
-        _mcfr = mcfr;
+        _mcfr = maxcastFilterReceiver;
         _pm.addPulseDeletionWatcher(new GenericPulseDeletionWatcher(this, _sink));
     }
 
@@ -271,6 +271,11 @@ public abstract class XMPP implements ITransportImpl, IConnectionServiceListener
         assertDispThread();
 
         _mc.updateStores_(sidsAdded, sidsRemoved);
+    }
+
+    protected String getXmppPassword()
+    {
+        return _xsc.getXmppPassword();
     }
 
     //--------------------------------------------------------------------------

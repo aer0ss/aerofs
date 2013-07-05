@@ -3,6 +3,8 @@ package com.aerofs.daemon.transport.tcp;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.base.id.DID;
+import com.aerofs.base.id.UserID;
+import com.aerofs.base.ssl.SSLEngineFactory;
 import com.aerofs.daemon.event.lib.imc.IResultWaiter;
 import com.aerofs.daemon.transport.lib.IPipeDebug;
 import com.aerofs.daemon.transport.lib.IUnicast;
@@ -55,15 +57,22 @@ class Unicast implements IUnicast, IPipeDebug, ITCPServerHandlerListener
     private Channel _serverChannel;
     private volatile boolean _paused;
 
-    Unicast(ITCP tcp, ARP arp, Stores stores, ServerSocketChannelFactory serverChannelFactory,
-            ClientSocketChannelFactory clientChannelFactory, TransportStats ts)
+    Unicast(UserID localuser, DID localdid,
+            ITCP tcp,
+            ARP arp,
+            Stores stores,
+            SSLEngineFactory clientSslEngineFactory,
+            SSLEngineFactory serverSslEngineFactory,
+            ServerSocketChannelFactory serverChannelFactory,
+            ClientSocketChannelFactory clientChannelFactory,
+            TransportStats transportStats)
     {
         _tcp = tcp;
         _arp = arp;
         _stores = stores;
-        _transportStats = ts;
+        _transportStats = transportStats;
 
-        BootstrapFactory bsFact = new BootstrapFactory(ts);
+        BootstrapFactory bsFact = new BootstrapFactory(localuser, localdid, clientSslEngineFactory, serverSslEngineFactory, _transportStats);
         _serverBootstrap = bsFact.newServerBootstrap(serverChannelFactory, this, tcp);
         _clientBootstrap = bsFact.newClientBootstrap(clientChannelFactory);
     }
