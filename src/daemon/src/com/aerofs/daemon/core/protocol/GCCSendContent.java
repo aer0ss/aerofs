@@ -5,9 +5,17 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.sql.SQLException;
 import java.util.Arrays;
+import java.util.Map;
+import java.util.Set;
 
+import com.aerofs.base.ElapsedTimer;
 import com.aerofs.base.Loggers;
+import com.aerofs.daemon.core.NativeVersionControl.IVersionControlListener;
+import com.aerofs.daemon.lib.db.trans.Trans;
 import com.google.common.base.Joiner;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
+import com.google.common.io.ByteStreams;
 import org.slf4j.Logger;
 
 import com.aerofs.daemon.core.CoreUtil;
@@ -56,6 +64,46 @@ public class GCCSendContent
     private final UploadState _ulstate;
     private final TokenManager _tokenManager;
 
+    /**
+     * Keep track of ongoing upload in a way that allows them to be aborted
+     * upon local change without requiring polling db and file metadata before
+     * sending each chunk.
+     */
+    private static class Ongoing
+    {
+        private final Map<SOCKID, Set<Object>> _state = Maps.newHashMap();
+
+        Object start(SOCKID k)
+        {
+            Set<Object> s = _state.get(k);
+            if (s == null) {
+                s = Sets.newHashSet();
+                _state.put(k, s);
+            }
+            Object o = new Object();
+            s.add(o);
+            return o;
+        }
+
+        void stop(SOCKID k, Object o)
+        {
+            _state.get(k).remove(o);
+        }
+
+        void abort(SOCKID k)
+        {
+            Set<Object> s = _state.get(k);
+            if (s != null) s.clear();
+        }
+
+        boolean isAborted(SOCKID k, Object o)
+        {
+            return !_state.get(k).contains(o);
+        }
+    }
+
+    private final Ongoing _ongoing = new Ongoing();
+
     @Inject
     public GCCSendContent(UploadState ulstate, OutgoingStreams oss, NSL nsl,
             NativeVersionControl nvc, Metrics m, DirectoryService ds, TokenManager tokenManager)
@@ -67,6 +115,15 @@ public class GCCSendContent
         _m = m;
         _ds = ds;
         _tokenManager = tokenManager;
+
+        nvc.addListener_(new IVersionControlListener() {
+            @Override
+            public void localVersionAdded_(SOCKID k, Version v, Trans t)
+                    throws SQLException
+            {
+                _ongoing.abort(k);
+            }
+        });
     }
 
     // raw file bytes are appended after BPCore
@@ -116,7 +173,7 @@ public class GCCSendContent
         if (os.size() <= _m.getMaxUnicastSize_() && contentIsSame) {
             sendContentSame_(ep.did(), os, core);
         } else if (os.size() + hashLength + fileLength <= _m.getMaxUnicastSize_()) {
-            sendSmall_(ep.did(), k, os, core, vLocal, mtime, fileLength, h, pf);
+            sendSmall_(ep.did(), k, os, core, mtime, fileLength, h, pf);
         } else {
             long newPrefixLen = vLocal.equals(vPrefix) ? prefixLen : 0;
 
@@ -138,32 +195,21 @@ public class GCCSendContent
 
             Token tk = _tokenManager.acquireThrows_(Cat.SERVER, "GCRSendBig");
             try {
-                sendBig_(ep, k, os, vLocal, newPrefixLen, tk, mtime, fileLength, h, pf);
+                sendBig_(ep, k, os, newPrefixLen, tk, mtime, fileLength, h, pf);
             } finally {
                 tk.reclaim_();
             }
         }
     }
 
-    private boolean wasContentModifiedSince_(SOCKID k, Version v, long mtime, long len,
-            IPhysicalFile pf) throws SQLException, IOException, ExNotFound
+    private int readChunk(byte[] buf, InputStream is) throws IOException
     {
-        return pf.wasModifiedSince(mtime, len) || !_nvc.getLocalVersion_(k).sub_(v).isZero_();
-    }
-
-    private int copyAChunk(ByteArrayOutputStream to, InputStream is)
-        throws IOException
-    {
-        // set the buffer size same as chunk size so that we can finish in one
-        // read if possible
-        byte[] buf = new byte[_m.getMaxUnicastSize_()];
         int total = 0;
         while (total < buf.length) {
             int read = is.read(buf, total, buf.length - total);
             if (read == -1) break;
             total += read;
         }
-        to.write(buf, 0, total);
         return total;
     }
 
@@ -173,7 +219,7 @@ public class GCCSendContent
         _nsl.sendUnicast_(did, CoreUtil.typeString(reply), reply.getRpcid(), os);
     }
 
-    private void sendSmall_(DID did, SOCKID k, ByteArrayOutputStream os, PBCore reply, Version v,
+    private void sendSmall_(DID did, SOCKID k, ByteArrayOutputStream os, PBCore reply,
             long mtime, long len, ContentHash hash, IPhysicalFile pf)
             throws Exception
     {
@@ -184,15 +230,9 @@ public class GCCSendContent
         InputStream is = len == 0 ? null : pf.newInputStream_();
 
         try {
+            long copied = is != null ? ByteStreams.copy(is, os) : 0;
 
-            long copied;
-            if (is != null) {
-                copied = copyAChunk(os, is);
-            } else {
-                copied = 0;
-            }
-
-            if (copied != len || wasContentModifiedSince_(k, v, mtime, len, pf)) {
+            if (copied != len || pf.wasModifiedSince(mtime, len)) {
                 l.debug(k + " updated while being sent. nak");
                 throw new ExUpdateInProgress();
             }
@@ -205,8 +245,15 @@ public class GCCSendContent
         }
     }
 
-    private void sendBig_(Endpoint ep, SOCKID k, ByteArrayOutputStream os, Version v,
-            long prefixLen, Token tk, long mtime, long len, ContentHash hash, IPhysicalFile pf)
+    // wait at least 250ms between two successive progress notifications
+    // i.e. send at most 4 progress notifications per transfer per second
+    private static final int NOTIFY_THRESHOLD = 250;
+
+    // TODO: ideally that whole method could run wo/ core lock being held
+    // depends on: network refactor, rework upload progress notifications
+    private void sendBig_(Endpoint ep, SOCKID k, ByteArrayOutputStream os,
+            long prefixLen, Token tk, final long mtime, final long len,
+            ContentHash hash, IPhysicalFile pf)
             throws Exception
     {
         l.debug("sendBig_: os.size() = " + os.size());
@@ -216,10 +263,11 @@ public class GCCSendContent
         OutgoingStream outgoing = _oss.newStream(ep, tk);
 
         InputStream is = null;
+
+        Object ongoing = _ongoing.start(k);
         try {
             // First, send the protobuf header
             outgoing.sendChunk_(os.toByteArray());
-            os = null; // Because later, we'll send the contents of os again if we don't
 
             // Second, send the ContentHash (which is separate from the protobuf because it can be
             // too large to fit in a DTLS packet for very large files)
@@ -236,13 +284,16 @@ public class GCCSendContent
             // Third, send the file content, skipping the first prefix-length bytes
             long rest = len - prefixLen;
             long readPosition = prefixLen;
+
+            ElapsedTimer timer = new ElapsedTimer();
+            timer.start();
+
             // Once rest == 0, the receiver has been sent the full content
             while (rest > 0) {
-                _ulstate.progress_(k.socid(), ep, len - rest, len);
-                long bytesCopied;
-
-                if (os == null) {
-                    os = new ByteArrayOutputStream(_m.getMaxUnicastSize_());
+                // sending notifications is expensive so we use basic rate-limiting
+                if (timer.elapsed() > NOTIFY_THRESHOLD) {
+                    _ulstate.progress_(k.socid(), ep, len - rest, len);
+                    timer.restart();
                 }
 
                 if (is == null) {
@@ -252,33 +303,35 @@ public class GCCSendContent
                     }
                 }
 
-                // TODO avoid calling writeAChunk() for chunks other
-                // than the first, as this method introduces redundant
-                // copying
-                // TODO (GS): We spend ~5% of the time on this
-                bytesCopied = copyAChunk(os, is);
+                // NOTE: We spend ~5% of the time on this
+                int expectedChunkSize = (int)Math.min(_m.getMaxUnicastSize_(), rest);
+                byte[] buf = new byte[expectedChunkSize];
+                long bytesCopied = readChunk(buf, is);
                 readPosition += bytesCopied;
 
                 // sendOutgoingStreamChunk_() call is blocking and on Windows if a large
-                // file is transferred it remains locked. So close the
-                // file before calling the blocking
-                // sendOutgoingStreamChunk_() function.
+                // file is transferred it remains locked. So close the inputstream to
+                // avoid denying access to the file while waiting for network I/O
                 if (OSUtil.isWindows()) {
                     is.close();
                     is = null;
                 }
 
                 rest -= bytesCopied;
-                // TODO (GS): We spend ~20% of the time on this
-                if (rest < 0 || wasContentModifiedSince_(k, v, mtime, len, pf)) {
+
+                // Any local change to the file should cause a version bump of which we are
+                // notified asynchronously and cheaply. However, to avoid race conditions we
+                // still need to check file metadata before the last chunk is sent.
+                boolean atEnd = rest == 0 || bytesCopied < _m.getMaxUnicastSize_();
+                if (rest < 0 || _ongoing.isAborted(k, ongoing)
+                        || (atEnd && pf.wasModifiedSince(mtime, len))) {
                     reason = InvalidationReason.UPDATE_IN_PROGRESS;
                     throw new IOException(k + " updated");
                 }
 
-                // TODO (GS): We spend ~65% of the time on this
-                outgoing.sendChunk_(os.toByteArray());
-
-                os = null;
+                // NOTE: We spend ~90% of the time on this (plenty of which in throttling...)
+                // TODO: an async stream API would allow pipelining disk and network I/O
+                outgoing.sendChunk_(buf);
             }
 
             assert rest == 0;
@@ -291,6 +344,7 @@ public class GCCSendContent
             //assert OSUtil.isWindows() || is == null || is.available() == 0;
             reason = null;
         } finally {
+            _ongoing.stop(k, ongoing);
             if (is != null) is.close();
             if (reason == null) {
                 outgoing.end_();
