@@ -1,4 +1,4 @@
-#!/bin/bash -ue
+#!/bin/bash
 
 ###############################################################################
 #
@@ -6,6 +6,7 @@
 # with the files needed for a staging AeroFS
 #
 ###############################################################################
+set -ue
 
 readonly ERRBADARGS=1
 readonly ERRBADMODE=2
