@@ -14,7 +14,6 @@ import com.aerofs.daemon.transport.lib.CRCByteArrayInputStream;
 import com.aerofs.daemon.transport.lib.CRCByteArrayOutputStream;
 import com.aerofs.daemon.transport.lib.IMaxcast;
 import com.aerofs.daemon.transport.lib.MaxcastFilterReceiver;
-import com.aerofs.labeling.L;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
@@ -113,8 +112,9 @@ class Multicast implements IMaxcast
                 if (!iface.supportsMulticast()) continue;
 
                 final MulticastSocket s = new MulticastSocket(DaemonParam.TCP.MCAST_PORT); // bind to *:TCP_MCAST_PORT
-                s.setLoopbackMode(!L.isStaging());
-                s.joinGroup(new InetSocketAddress(DaemonParam.TCP.MCAST_ADDRESS, DaemonParam.TCP.MCAST_PORT), iface);
+                s.setLoopbackMode(true);
+                s.joinGroup(new InetSocketAddress(DaemonParam.TCP.MCAST_ADDRESS,
+                        DaemonParam.TCP.MCAST_PORT), iface);
 
                 MulticastSocket old = _iface2sock.put(iface, s);
                 if (old != null) close(old);

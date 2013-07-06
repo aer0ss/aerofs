@@ -2,24 +2,24 @@ package com.aerofs;
 
 import com.aerofs.base.BaseParam;
 import com.aerofs.base.Loggers;
-import com.aerofs.lib.ChannelFactories;
 import com.aerofs.config.DynamicConfiguration;
-import com.aerofs.lib.LibParam.CA;
-import com.aerofs.lib.ex.ExDBCorrupted;
-import com.aerofs.lib.S;
-import com.aerofs.lib.configuration.ClientConfigurationLoader;
-import com.aerofs.lib.configuration.ClientConfigurationLoader.IncompatibleModeException;
-import com.aerofs.lib.configuration.HttpsDownloader;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.AppRoot;
+import com.aerofs.lib.ChannelFactories;
 import com.aerofs.lib.IProgram;
 import com.aerofs.lib.LibParam;
+import com.aerofs.lib.LibParam.CA;
 import com.aerofs.lib.ProgramInformation;
+import com.aerofs.lib.S;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.SystemUtil.ExitCode;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.ExNotSetup;
+import com.aerofs.lib.configuration.ClientConfigurationLoader;
+import com.aerofs.lib.configuration.ClientConfigurationLoader.IncompatibleModeException;
+import com.aerofs.lib.configuration.HttpsDownloader;
+import com.aerofs.lib.ex.ExDBCorrupted;
 import com.aerofs.lib.log.LogUtil;
 import com.aerofs.lib.log.LogUtil.Level;
 import com.aerofs.lib.os.OSUtil;
@@ -37,12 +37,14 @@ import java.util.Date;
 
 public class Main
 {
-    private final static Logger l = Loggers.getLogger(Main.class);
-
-    private static final Object DAEMON_NAME = "daemon";
-    private static final Object FSCK_NAME = "fsck";
-    private static final Object UMDC_NAME = "umdc";
     private static final String LOG_CONFIG = "logback.xml";
+
+    private static final String DMON_PROGRAM_NAME = "daemon";
+    private static final String FSCK_PROGRAM_NAME = "fsck";
+    private static final String UMDC_PROGRAM_NAME = "umdc";
+    private static final String PUMP_PROGRAM_NAME = "pump";
+
+    private final static Logger l = Loggers.getLogger(Main.class);
 
     private static String getProgramBanner(String rtRoot, String app)
     {
@@ -177,17 +179,17 @@ public class Main
         boolean ui = prog.equals(LibParam.GUI_NAME) || prog.equals(LibParam.CLI_NAME);
 
         Class<?> cls;
-        // a fast path to UI
-        if (ui) cls = Class.forName("com.aerofs.Program");
-        else if (prog.equals(DAEMON_NAME)) cls = com.aerofs.daemon.DaemonProgram.class;
-        else if (prog.equals(FSCK_NAME)) cls = com.aerofs.fsck.FSCKProgram.class;
-        else if (prog.equals(UMDC_NAME)) cls = com.aerofs.umdc.UMDCProgram.class;
+        if (ui) cls = Class.forName("com.aerofs.Program"); // fast path to UI
+        else if (prog.equals(DMON_PROGRAM_NAME)) cls = com.aerofs.daemon.DaemonProgram.class;
+        else if (prog.equals(FSCK_PROGRAM_NAME)) cls = com.aerofs.fsck.FSCKProgram.class;
+        else if (prog.equals(UMDC_PROGRAM_NAME)) cls = com.aerofs.umdc.UMDCProgram.class;
+        else if (prog.equals(PUMP_PROGRAM_NAME)) cls = com.aerofs.daemon.transport.pump.Pump.class;
         else cls = Class.forName("com.aerofs.Program"); // fail over to UI programs
 
         // load config
         if (!Cfg.inited()) {
             try {
-                Cfg.init_(rtRoot, ui || prog.equals(DAEMON_NAME));
+                Cfg.init_(rtRoot, ui || prog.equals(DMON_PROGRAM_NAME) || prog.equals(PUMP_PROGRAM_NAME));
                 l.debug("id {}", Cfg.did().toStringFormal());
             } catch (ExNotSetup e) {
                 // gui and cli will run setup itself

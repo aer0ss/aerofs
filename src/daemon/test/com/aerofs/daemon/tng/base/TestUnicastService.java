@@ -279,8 +279,8 @@ public class TestUnicastService extends AbstractTest
         unicastService.pulse_(didB, Prio.HI);
         unicastService.pulse_(didC, Prio.HI);
 
-        unicastService.onLinkStateChanged_(ImmutableSet.<NetworkInterface>of(), ImmutableSet.<NetworkInterface>of(),
-                ImmutableSet.<NetworkInterface>of(), ImmutableSet.<NetworkInterface>of());
+        unicastService.onLinkStateChanged_(ImmutableSet.<NetworkInterface>of(),
+                ImmutableSet.<NetworkInterface>of(), ImmutableSet.<NetworkInterface>of(), ImmutableSet.<NetworkInterface>of());
 
         verify(peerFactory, times(3)).getInstance_(any(DID.class));
         verify(peerA).pulse_(Prio.LO);

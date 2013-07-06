@@ -94,9 +94,9 @@ final class XMPPServerConnectionService implements ILinkStateListener, IStartabl
     }
 
     @Override
-    public void onLinkStateChanged_(ImmutableSet<NetworkInterface> added,
-            ImmutableSet<NetworkInterface> removed, ImmutableSet<NetworkInterface> current,
-            ImmutableSet<NetworkInterface> previous)
+    public void onLinkStateChanged_(ImmutableSet<NetworkInterface> previous,
+            ImmutableSet<NetworkInterface> current, ImmutableSet<NetworkInterface> added,
+            ImmutableSet<NetworkInterface> removed)
     {
         // FIXME: I'm sure there was a bug ...[sigh] such confusing naming (was XMPP.allLinksDown)
         boolean linkUp = !current.isEmpty();

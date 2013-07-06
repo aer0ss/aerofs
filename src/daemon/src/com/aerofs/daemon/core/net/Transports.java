@@ -77,6 +77,8 @@ public class Transports implements IDumpStat, IDumpStatMisc, IStartable, ITransf
     private final Map<ITransport, IIMCExecutor> availableTransports = newHashMap();
     private final TC tc;
 
+    // FIXME (AG): Inject only the TransportFactory, not all the components to create it
+    // NOTE: I probably have to create a TransportModule (Guice) and bind BlockingPrioQueue<IEvent> to CoreQueue
     @Inject
     public Transports(
             CfgAbsRTRoot absRTRoot,
@@ -150,11 +152,15 @@ public class Transports implements IDumpStat, IDumpStatMisc, IStartable, ITransf
         linkStateService.addListener_(new ILinkStateListener()
         {
             @Override
-            public void onLinkStateChanged_(ImmutableSet<NetworkInterface> added, ImmutableSet<NetworkInterface> removed, ImmutableSet<NetworkInterface> current, ImmutableSet<NetworkInterface> previous)
+            public void onLinkStateChanged_(ImmutableSet<NetworkInterface> previous,
+                    ImmutableSet<NetworkInterface> current, ImmutableSet<NetworkInterface> added,
+                    ImmutableSet<NetworkInterface> removed)
             {
                 try {
                     l.info("notify lsc {}", transportId);
-                    CoreIMC.enqueueBlocking_( new EOLinkStateChanged(transportImce, previous, current, added, removed), tc, UNLIMITED); // TODO (WW) re-run if transport fails to handle event
+                    CoreIMC.enqueueBlocking_(
+                            new EOLinkStateChanged(transportImce, previous, current, added,
+                                    removed), tc, UNLIMITED); // TODO (WW) re-run if transport fails to handle event
                 } catch (Exception e) {
                     l.error("fail notify lsc {}", transportId);
                 }

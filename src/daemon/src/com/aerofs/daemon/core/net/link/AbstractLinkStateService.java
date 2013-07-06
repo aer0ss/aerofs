@@ -191,8 +191,7 @@ public abstract class AbstractLinkStateService implements ILinkStateService
             @Override
             public void visit(ILinkStateListener listener)
             {
-                listener.onLinkStateChanged_(ImmutableSet.copyOf(added),
-                        ImmutableSet.copyOf(removed), current, previous);
+                listener.onLinkStateChanged_(previous, current, ImmutableSet.copyOf(added), ImmutableSet.copyOf(removed));
             }
         });
 
@@ -274,10 +273,5 @@ public abstract class AbstractLinkStateService implements ILinkStateService
         }
 
         notifyLinkStateChange_(current);
-    }
-
-    public boolean linksManuallyDowned()
-    {
-        return _markedDown;
     }
 }
