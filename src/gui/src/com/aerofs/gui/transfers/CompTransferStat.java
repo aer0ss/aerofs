@@ -6,9 +6,7 @@ import com.aerofs.gui.GUIParam;
 import com.aerofs.gui.Images;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.log.LogUtil;
-import com.aerofs.proto.Files.PBDumpStat;
-import com.aerofs.proto.Files.PBDumpStat.PBTransport;
-import com.aerofs.proto.Ritual.DumpStatsReply;
+import com.aerofs.proto.Ritual.GetTransferStatsReply;
 import com.aerofs.ui.UIGlobals;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
@@ -81,25 +79,20 @@ public class CompTransferStat extends Composite
         return lbl;
     }
 
-    private final PBDumpStat TEMPLATE = PBDumpStat.newBuilder()
-        .setUpTime(0)
-        .addTransport(PBTransport.newBuilder().setBytesIn(0).setBytesOut(0))
-        .build();
-
     private final Runnable _scheduleRefresh = new Runnable() {
         @Override
         public void run()
         {
-            Futures.addCallback(UIGlobals.ritualNonBlocking().dumpStats(TEMPLATE),
-                    new FutureCallback<DumpStatsReply>() {
+            Futures.addCallback(UIGlobals.ritualNonBlocking().getTransferStats(),
+                    new FutureCallback<GetTransferStatsReply>() {
                         @Override
-                        public void onSuccess(final DumpStatsReply reply)
+                        public void onSuccess(final GetTransferStatsReply reply)
                         {
                             GUI.get().safeAsyncExec(CompTransferStat.this, new Runnable() {
                                 @Override
                                 public void run()
                                 {
-                                    refresh(reply.getStats());
+                                    refresh(reply);
                                 }
                             });
                         }
@@ -121,22 +114,16 @@ public class CompTransferStat extends Composite
         }
     };
 
-    private void refresh(PBDumpStat data)
+    private void refresh(GetTransferStatsReply data)
     {
-        long in = 0, out = 0;
-        for (PBTransport transport : data.getTransportList()) {
-            in += transport.getBytesIn();
-            out += transport.getBytesOut();
-        }
-
         // if the daemon is restarted while transfers were ongoing, the first batch
         // of values will yield negative deltas, hence the use of Math.max
-        long deltaIn = Math.max(0, in - _lastIn);
-        long deltaOut = Math.max(0, out - _lastOut);
+        long deltaIn = Math.max(0, data.getBytesIn() - _lastIn);
+        long deltaOut = Math.max(0, data.getBytesOut() - _lastOut);
         long deltaT = Math.max(0, data.getUpTime() - _lastUp);
 
-        _lastIn = in;
-        _lastOut = out;
+        _lastIn = data.getBytesIn();
+        _lastOut = data.getBytesOut();
         _lastUp = data.getUpTime();
 
         refresh(deltaIn, deltaOut, deltaT);

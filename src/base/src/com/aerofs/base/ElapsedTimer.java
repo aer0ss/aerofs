@@ -24,9 +24,10 @@ public class ElapsedTimer
     /**
      * Sets the reference time.
      */
-    public void start()
+    public ElapsedTimer start()
     {
         _startTimeNanos = System.nanoTime();
+        return this;
     }
 
     /**
@@ -70,5 +71,4 @@ public class ElapsedTimer
     {
         return (_startTimeNanos - other._startTimeNanos) / C.NSEC_PER_MSEC;
     }
-
 }

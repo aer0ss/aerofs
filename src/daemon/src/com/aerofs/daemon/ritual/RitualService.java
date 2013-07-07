@@ -1,5 +1,6 @@
 package com.aerofs.daemon.ritual;
 
+import com.aerofs.base.ElapsedTimer;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.acl.Role;
 import com.aerofs.base.async.UncancellableFuture;
@@ -24,6 +25,7 @@ import com.aerofs.daemon.event.admin.EIExportFile;
 import com.aerofs.daemon.event.admin.EIExportRevision;
 import com.aerofs.daemon.event.admin.EIGetACL;
 import com.aerofs.daemon.event.admin.EIGetActivities;
+import com.aerofs.daemon.event.admin.EIGetTransferStat;
 import com.aerofs.daemon.event.admin.EIHeartbeat;
 import com.aerofs.daemon.event.admin.EIInvalidateDeviceNameCache;
 import com.aerofs.daemon.event.admin.EIInvalidateUserNameCache;
@@ -58,6 +60,7 @@ import com.aerofs.daemon.event.fs.EIShareFolder;
 import com.aerofs.daemon.event.status.EIGetStatusOverview;
 import com.aerofs.daemon.event.status.EIGetSyncStatus;
 import com.aerofs.daemon.event.test.EITestGetAliasObject;
+import com.aerofs.lib.ITransferStat;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.SystemUtil.ExitCode;
 import com.aerofs.lib.Util;
@@ -81,6 +84,7 @@ import com.aerofs.proto.Ritual.GetChildrenAttributesReply;
 import com.aerofs.proto.Ritual.GetObjectAttributesReply;
 import com.aerofs.proto.Ritual.GetPathStatusReply;
 import com.aerofs.proto.Ritual.GetSyncStatusReply;
+import com.aerofs.proto.Ritual.GetTransferStatsReply;
 import com.aerofs.proto.Ritual.IRitualService;
 import com.aerofs.proto.Ritual.LinkRootReply;
 import com.aerofs.proto.Ritual.ListConflictsReply;
@@ -125,6 +129,8 @@ public class RitualService implements IRitualService
     private static final Logger l = Loggers.getLogger(RitualService.class);
 
     private static final Prio PRIO = Prio.HI;
+
+    private static final ElapsedTimer _fromStartup = new ElapsedTimer().start();
 
     @Override
     public ListenableFuture<DumpStatsReply> dumpStats(PBDumpStat template)
@@ -364,6 +370,34 @@ public class RitualService implements IRitualService
         EICreateSeedFile ev = new EICreateSeedFile(new SID(sid), Core.imce());
         ev.execute(PRIO);
         return createReply(CreateSeedFileReply.newBuilder().setPath(ev._path).build());
+    }
+
+    // sigh... I want to access Transports directly but:
+    // 1. I can't just inject it because RitualService is manually constructed
+    // 2. It's hard to get access to Guice-created objects outside an @Inject method
+    // 3. I don't want to have to go through the core queue for every access to transfer stats
+    //
+    // the current approach which is admittedly not terribly pretty is to go through the
+    // core queue once to get a pointer to the Guice-created Transports instance and then
+    // access it directly to service subsequent requests
+    private ITransferStat _ts;
+
+    @Override
+    public ListenableFuture<GetTransferStatsReply> getTransferStats()
+            throws Exception
+    {
+        if (_ts == null) {
+            EIGetTransferStat ev = new EIGetTransferStat(Core.imce());
+            ev.execute(PRIO);
+            _ts = ev._ts;
+        }
+        // NB: transfer stats can be obtained in a thread-safe way so we break the
+        // implementation convention to avoid wasting time going through the core queue
+        return createReply(GetTransferStatsReply.newBuilder()
+                .setUpTime(_fromStartup.elapsed())
+                .setBytesIn(_ts.bytesIn())
+                .setBytesOut(_ts.bytesOut())
+                .build());
     }
 
     @Override
