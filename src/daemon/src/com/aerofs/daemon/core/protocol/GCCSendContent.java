@@ -11,6 +11,7 @@ import java.util.Set;
 import com.aerofs.base.ElapsedTimer;
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.NativeVersionControl.IVersionControlListener;
+import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Maps;
@@ -245,10 +246,6 @@ public class GCCSendContent
         }
     }
 
-    // wait at least 250ms between two successive progress notifications
-    // i.e. send at most 4 progress notifications per transfer per second
-    private static final int NOTIFY_THRESHOLD = 250;
-
     // TODO: ideally that whole method could run wo/ core lock being held
     // depends on: network refactor, rework upload progress notifications
     private void sendBig_(Endpoint ep, SOCKID k, ByteArrayOutputStream os,
@@ -291,7 +288,7 @@ public class GCCSendContent
             // Once rest == 0, the receiver has been sent the full content
             while (rest > 0) {
                 // sending notifications is expensive so we use basic rate-limiting
-                if (timer.elapsed() > NOTIFY_THRESHOLD) {
+                if (timer.elapsed() > DaemonParam.NOTIFY_THRESHOLD) {
                     _ulstate.progress_(k.socid(), ep, len - rest, len);
                     timer.restart();
                 }

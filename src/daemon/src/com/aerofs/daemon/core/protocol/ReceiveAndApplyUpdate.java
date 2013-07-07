@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.protocol;
 
+import com.aerofs.base.ElapsedTimer;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.analytics.Analytics;
 import com.aerofs.base.analytics.AnalyticsEvents.FileConflictEvent;
@@ -42,6 +43,7 @@ import com.aerofs.daemon.core.transfers.download.DownloadState;
 import com.aerofs.daemon.core.transfers.download.ExUnsolvedMetaMetaConflict;
 import com.aerofs.daemon.core.transfers.download.IDownloadContext;
 import com.aerofs.daemon.core.transfers.download.dependence.DependencyEdge.DependencyType;
+import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.daemon.lib.exception.ExDependsOn;
@@ -67,6 +69,7 @@ import com.aerofs.proto.Core.PBGetComReply;
 import com.aerofs.proto.Core.PBMeta;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
+import com.google.common.io.ByteStreams;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 
@@ -325,7 +328,7 @@ public class ReceiveAndApplyUpdate
         ByteArrayOutputStream os = new ByteArrayOutputStream();
 
         // First copy any data that we have already received from the stream
-        int hashBytesRead = copyOneChunk(is, os);
+        long hashBytesRead = ByteStreams.copy(is, os);
 
         while (hashBytesRead < hashLength) {
             // This code assumes that the hash and following data will arrive in separate
@@ -333,7 +336,7 @@ public class ReceiveAndApplyUpdate
             // are allowed to fragment/reassemble.
             is = _iss.recvChunk_(streamKey, tk);
             try {
-                hashBytesRead += copyOneChunk(is, os);
+                hashBytesRead += ByteStreams.copy(is, os);
             } finally {
                 is.close();
             }
@@ -694,22 +697,6 @@ public class ReceiveAndApplyUpdate
         }
     }
 
-    private int copyOneChunk(InputStream from, OutputStream to)
-        throws IOException
-    {
-        // N.B. we can't use Util.copy because it uses the file buffer size, not the max
-        // unicast packet size.
-        byte[] buf = new byte[_m.getMaxUnicastSize_()];
-        int total = 0;
-        while (true) {
-            int read = from.read(buf);
-            if (read == -1) break;
-            to.write(buf, 0, read);
-            total += read;
-        }
-        return total;
-    }
-
     private void updatePrefixVersion_(SOCKID k, Version vRemote, boolean isStreaming)
             throws SQLException
     {
@@ -911,18 +898,25 @@ public class ReceiveAndApplyUpdate
                 assert pfPrefix.getLength_() == prefixLength :
                         k + " " + pfPrefix.getLength_() + " != " + prefixLength;
 
+                ElapsedTimer timer = new ElapsedTimer();
+                timer.start();
+
                 // Read from the incoming message/stream
                 InputStream is = msg.is();
-                int copied = copyOneChunk(is, os);
+                long copied = ByteStreams.copy(is, os);
 
                 if (isStreaming) {
                     // it's a stream
                     long remaining = totalFileLength - copied - prefixLength;
                     while (remaining > 0) {
-                        _dlState.progress_(k.socid(), msg.ep(), totalFileLength - remaining,
-                                totalFileLength);
+                        // sending notifications is not cheap, hence the rate-limiting
+                        if (timer.elapsed() > DaemonParam.NOTIFY_THRESHOLD) {
+                            _dlState.progress_(k.socid(), msg.ep(), totalFileLength - remaining,
+                                    totalFileLength);
+                            timer.restart();
+                        }
                         is = _iss.recvChunk_(msg.streamKey(), tk);
-                        remaining -= copyOneChunk(is, os);
+                        remaining -= ByteStreams.copy(is, os);
                     }
                     assert !(remaining < 0) : k + " " + msg.ep() + " " + remaining;
                 }

@@ -110,6 +110,10 @@ public class DaemonParam
 
     public static final long HOSTNAME_MONITOR_MIN_DELAY = 15 * C.SEC;
 
+    // wait at least 250ms between two successive progress notifications
+    // i.e. send at most 4 progress notifications per transfer per second
+    public static final int NOTIFY_THRESHOLD = 250;
+
     // TODO use a unified session management system where a session is consistently deleted from
     // caches at all the layers at once
     // TODO move this method to a more appropriate location
