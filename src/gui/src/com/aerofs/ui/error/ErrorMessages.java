@@ -117,21 +117,24 @@ public class ErrorMessages
     }
 
     private static void showInGUI(Shell shell, Throwable exception, String defaultMessage,
-            String message)
+            @Nullable String message)
     {
         String reportButtonLabel;
+        boolean expectedException;
         if (message == null) {
             // Suffix "please try again later..." for unspecified error types
             message = defaultMessage + " Please try again later. If the problem persists, " +
                     "please report it to the " + L.brand() + " team.";
             reportButtonLabel = "Report...";
+            expectedException = false;
         } else {
             reportButtonLabel = "Ask for Help...";
+            expectedException = true;
         }
 
         if (GUI.get().askWithDefaultOnNoButton(shell, MessageType.ERROR, message,
                 reportButtonLabel, IDialogConstants.OK_LABEL)) {
-            new DlgDefect(shell, exception).open();
+            new DlgDefect(shell, exception, expectedException).open();
         }
     }
 

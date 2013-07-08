@@ -5,6 +5,7 @@ import com.aerofs.base.Loggers;
 import com.aerofs.base.acl.Role;
 import com.aerofs.base.acl.SubjectRolePair;
 import com.aerofs.base.analytics.AnalyticsEvents.FolderInviteSentEvent;
+import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.id.UserID;
 import com.aerofs.gui.CompEmailAddressTextBox;
@@ -253,6 +254,7 @@ public class CompInviteUsers extends Composite implements IInputChangeListener
                     showPaymentDialog();
                 } else {
                     ErrorMessages.show(getShell(), e, L.brand() + " couldn't invite users.",
+                            new ErrorMessage(ExAlreadyExist.class, "One or more invited people are already members of this folder."),
                             new ErrorMessage(ExChildAlreadyShared.class, S.CHILD_ALREADY_SHARED),
                             new ErrorMessage(ExParentAlreadyShared.class, S.PARENT_ALREADY_SHARED),
                             new ErrorMessage(ExNoPerm.class, "You don't have permission to invite users to this folder."));

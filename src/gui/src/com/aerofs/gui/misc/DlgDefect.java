@@ -40,16 +40,16 @@ import java.sql.SQLException;
 public class DlgDefect extends AeroFSJFaceDialog
 {
     private static final Logger l = Loggers.getLogger(DlgDefect.class);
-
     private Text _txtEmailAddress;
     private Text _txtComment;
     private Button _sendDiagnosticData;
 
     @Nullable private final Throwable _exception;
+    private final boolean _expectedException;
 
     public DlgDefect()
     {
-        this(null, null);
+        this(null, null, false);
     }
 
     /**
@@ -57,12 +57,18 @@ public class DlgDefect extends AeroFSJFaceDialog
      * @param sheetStyleParent if non-null, the dialog attaches to this shell with the SHEET style.
      * @param exception if non-null, the dialog shows the exception's stack as technical
      * details, and the comment is optional.
+     * @param expectedException if {@code exception} is non-null, true means the exception is one of
+     * the expected exception types specified in ErrorMessage.show(). In this case, the string
+     * "(expected error)" will be attached to the support email. Support personale can ignore
+     * emails with expected exceptions unless the user provides addition information.
      */
-    public DlgDefect(@Nullable Shell sheetStyleParent, @Nullable Throwable exception)
+    public DlgDefect(@Nullable Shell sheetStyleParent, @Nullable Throwable exception,
+            boolean expectedException)
     {
         super(S.REPORT_A_PROBLEM, sheetStyleParent == null ? GUI.get().sh() : sheetStyleParent,
                 sheetStyleParent != null, true, true, true);
         _exception = exception;
+        _expectedException = expectedException;
     }
 
     /**
@@ -217,7 +223,9 @@ public class DlgDefect extends AeroFSJFaceDialog
     private void sendDefect()
     {
         final String msg = _txtComment.getText() + (_exception == null ? "" :
-                 "\n\nTechical detail:\n" + ExceptionUtils.getFullStackTrace(_exception));
+                 "\n\nTechical detail (" +
+                 (_expectedException ? "" : "un") +
+                 "expected error):\n" + ExceptionUtils.getFullStackTrace(_exception));
 
         final boolean dumpDaemonStatus = _sendDiagnosticData.getSelection();
         final String contactEmail = _txtEmailAddress.getText();
