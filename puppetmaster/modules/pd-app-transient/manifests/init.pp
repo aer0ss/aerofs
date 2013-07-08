@@ -41,7 +41,8 @@ class pd-app-transient {
     # --------------
 
     class{"ejabberd":
-        mysql_password => "password"
+        mysql_password => "password",
+        port => 8139,
     }
 
     # --------------

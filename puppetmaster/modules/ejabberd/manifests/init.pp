@@ -1,5 +1,6 @@
-class ejabberd(
+class ejabberd (
     $mysql_password,
+    $port = 5222
 ) {
     package { "ejabberd":
         ensure => "2.1.10-2ubuntu1"
