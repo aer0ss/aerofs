@@ -172,9 +172,6 @@ public class CompBandwidth extends Composite
         ElapsedTimer rpcTimer = new ElapsedTimer();
         ElapsedTimer timeoutTimer = new ElapsedTimer();
         ElapsedTimer floodTimer = new ElapsedTimer();
-        rpcTimer.start();
-        timeoutTimer.start();
-        floodTimer.start();
 
         while (!isDisposed() && !_stop) {
 

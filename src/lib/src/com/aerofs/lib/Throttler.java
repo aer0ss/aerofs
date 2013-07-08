@@ -38,7 +38,6 @@ public class Throttler<ThrottledItem>
         }
 
         ElapsedTimer timer = new ElapsedTimer();
-        timer.start();
         _map.put(item, timer);
 
         return false;

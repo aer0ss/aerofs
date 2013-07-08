@@ -193,7 +193,6 @@ class ScanSession
             Trans t = _f._tm.begin_();
             try {
                 ElapsedTimer timer = new ElapsedTimer();
-                timer.start();
                 while (!_stack.isEmpty()) {
                     try {
                         potentialUpdates += scan_(_stack.pop(), t);

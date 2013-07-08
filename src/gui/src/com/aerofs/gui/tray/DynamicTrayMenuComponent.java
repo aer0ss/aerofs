@@ -33,7 +33,6 @@ public abstract class DynamicTrayMenuComponent implements ITrayMenuComponent
     {
         _rate = REFRESH_TIME;
         _timer = new ElapsedTimer();
-        _timer.start();
         _notifier = new Runnable() {
             @Override
             public void run()

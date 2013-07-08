@@ -59,7 +59,6 @@ class DTLSEntry
     {
         _layer = layer;
         _handshakeMessageTimer = new ElapsedTimer();
-        _handshakeMessageTimer.start();
         _engine = engine;
         _sendQ = new PrioQueue<DelayedDTLSMessage>(DTLS.HS_QUEUE_SIZE);
     }

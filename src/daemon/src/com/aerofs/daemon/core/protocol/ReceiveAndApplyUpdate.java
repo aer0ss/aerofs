@@ -899,7 +899,6 @@ public class ReceiveAndApplyUpdate
                         k + " " + pfPrefix.getLength_() + " != " + prefixLength;
 
                 ElapsedTimer timer = new ElapsedTimer();
-                timer.start();
 
                 // Read from the incoming message/stream
                 InputStream is = msg.is();

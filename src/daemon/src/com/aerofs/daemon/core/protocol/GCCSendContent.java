@@ -283,7 +283,6 @@ public class GCCSendContent
             long readPosition = prefixLen;
 
             ElapsedTimer timer = new ElapsedTimer();
-            timer.start();
 
             // Once rest == 0, the receiver has been sent the full content
             while (rest > 0) {

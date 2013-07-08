@@ -93,9 +93,9 @@ public abstract class AbstractTestNotifier
     @Test public void shouldNotThrottle()
     {
         configureTimes(1 * C.SEC,
-                10 * C.SEC, 10 * C.SEC + 1, // elapsed(), start()
-                20 * C.SEC, 20 * C.SEC + 1, // elapsed(), start()
-                30 * C.SEC, 30 * C.SEC + 1); // elapsed(), start()
+                10 * C.SEC, 10 * C.SEC + 1, // elapsed(), construct
+                20 * C.SEC, 20 * C.SEC + 1, // elapsed(), construct
+                30 * C.SEC, 30 * C.SEC + 1); // elapsed(), construct
         invoke(false, 10, 100);
         invoke(false, 20, 100);
         invoke(false, 30, 100);

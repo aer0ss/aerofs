@@ -141,7 +141,6 @@ public class ProfilerPrioQueue<T> extends PrioQueue<T> {
 
         assert Cfg.useProfiler();
         _lastStatTimer = new ElapsedTimer();
-        _lastStatTimer.start();
     }
 
     public void enqueue_(T e, Prio prio)

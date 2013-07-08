@@ -130,7 +130,7 @@ public class RitualService implements IRitualService
 
     private static final Prio PRIO = Prio.HI;
 
-    private static final ElapsedTimer _fromStartup = new ElapsedTimer().start();
+    private static final ElapsedTimer _fromStartup = new ElapsedTimer();
 
     @Override
     public ListenableFuture<DumpStatsReply> dumpStats(PBDumpStat template)

@@ -77,7 +77,6 @@ public final class IncomingStreams
         {
             _pc = pc;
             _timer = new ElapsedTimer();
-            _timer.start();
         }
 
         @Override
