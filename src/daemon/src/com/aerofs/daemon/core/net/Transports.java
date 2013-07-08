@@ -31,6 +31,8 @@ import com.aerofs.daemon.transport.xmpp.Jingle;
 import com.aerofs.daemon.transport.xmpp.Zephyr;
 import com.aerofs.lib.IDumpStat;
 import com.aerofs.lib.IDumpStatMisc;
+import com.aerofs.lib.LibParam;
+import com.aerofs.lib.LibParam.EnterpriseConfig;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgCACertificateProvider;
 import com.aerofs.lib.cfg.CfgKeyManagersProvider;
@@ -147,7 +149,7 @@ public class Transports implements IDumpStat, IDumpStatMisc, IStartable
         if (Cfg.useTCP()) {
             transports.add(newTCP("t", 0, coreQueue, mcfr, clientChannelFactory, serverSocketChannelFactory));
         }
-        if (Cfg.useJingle()) {
+        if (Cfg.useJingle() && !EnterpriseConfig.IS_ENTERPRISE_DEPLOYMENT.get()) {
             transports.add(newJingle(localdid.get(), "j", 1, coreQueue, mcfr));
         }
         if (Cfg.useZephyr()) {
