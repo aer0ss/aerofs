@@ -25,6 +25,7 @@ import com.aerofs.daemon.core.admin.HdPauseOrResumeSyncing;
 import com.aerofs.daemon.core.admin.HdReloadConfig;
 import com.aerofs.daemon.core.admin.HdRelocateRootAnchor;
 import com.aerofs.daemon.core.admin.HdSetExpelled;
+import com.aerofs.daemon.core.net.HdGetTransferStat;
 import com.aerofs.daemon.core.net.HdTransportFlood;
 import com.aerofs.daemon.core.net.HdTransportFloodQuery;
 import com.aerofs.daemon.core.net.HdTransportPing;
@@ -62,6 +63,7 @@ import com.aerofs.daemon.event.admin.EIExportFile;
 import com.aerofs.daemon.event.admin.EIExportRevision;
 import com.aerofs.daemon.event.admin.EIGetACL;
 import com.aerofs.daemon.event.admin.EIGetActivities;
+import com.aerofs.daemon.event.admin.EIGetTransferStat;
 import com.aerofs.daemon.event.admin.EIHeartbeat;
 import com.aerofs.daemon.event.admin.EIInvalidateDeviceNameCache;
 import com.aerofs.daemon.event.admin.EIInvalidateUserNameCache;
@@ -133,6 +135,7 @@ public class CoreEventHandlerRegistrar implements ICoreEventHandlerRegistrar
     private final HdTransportFloodQuery _hdTransportFloodQuery;
     private final HdTransportFlood _hdTransportFlood;
     private final HdTransportPing _hdTransportPing;
+    private final HdGetTransferStat _hdGetTransferStat;
     private final HdDumpStat _hdDumpStat;
     private final HdReloadConfig _hdReloadConfig;
     private final HdPauseOrResumeSyncing _hdPauseOrResumeSyncing;
@@ -185,7 +188,7 @@ public class CoreEventHandlerRegistrar implements ICoreEventHandlerRegistrar
             HdDownloadPacket hdDownloadPacket, HdLeaveSharedFolder hdLeaveSharedFolder,
             HdInvalidateUserNameCache hdInvalidateUserNameCache,
             HdInvalidateDeviceNameCache hdInvalidateDeviceNameCache,
-            HdCreateSeedFile hdCreateSeedFile,
+            HdCreateSeedFile hdCreateSeedFile, HdGetTransferStat hdGetTransferStat,
             HdTestGetAliasObject hdTestGetAliasObject)
     {
         _hdco = hdco;
@@ -237,6 +240,7 @@ public class CoreEventHandlerRegistrar implements ICoreEventHandlerRegistrar
         _hdInvalidateUserNameCache = hdInvalidateUserNameCache;
         _hdInvalidateDeviceNameCache = hdInvalidateDeviceNameCache;
         _hdCreateSeedFile = hdCreateSeedFile;
+        _hdGetTransferStat = hdGetTransferStat;
         _hdTestGetAliasObject = hdTestGetAliasObject;
     }
 
@@ -286,6 +290,7 @@ public class CoreEventHandlerRegistrar implements ICoreEventHandlerRegistrar
                 .setHandler_(EIInvalidateUserNameCache.class, _hdInvalidateUserNameCache)
                 .setHandler_(EIInvalidateDeviceNameCache.class, _hdInvalidateDeviceNameCache)
                 .setHandler_(EICreateSeedFile.class, _hdCreateSeedFile)
+                .setHandler_(EIGetTransferStat.class, _hdGetTransferStat)
 
                 // status events
                 .setHandler_(EIGetSyncStatus.class, _hdGetSyncStatus)

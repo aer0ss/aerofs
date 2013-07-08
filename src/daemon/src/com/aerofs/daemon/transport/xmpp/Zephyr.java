@@ -50,6 +50,7 @@ import static org.jivesoftware.smack.packet.Message.Type.headline;
 public class Zephyr extends XMPP implements ISignallingService
 {
     private final boolean enableMulticast;
+    private final TransportStats _ts = new TransportStats();
     private final Set<ISignallingClient> signallingClients = newHashSet();
     private final MobileServerZephyrConnector mobileZephyrConnector;
 
@@ -78,7 +79,7 @@ public class Zephyr extends XMPP implements ISignallingService
                 serverSSLEngineFactory,
                 this,
                 this,
-                new TransportStats(),
+                _ts,
                 rocklog,
                 clientSocketChannelFactory, zephyrAddress, proxy);
         setConnectionService_(zephyrConnectionService);
@@ -248,5 +249,17 @@ public class Zephyr extends XMPP implements ISignallingService
     private void logProcessingError_(String errmsg, Exception e, Packet packet)
     {
         l.warn(errmsg + " from:" + packet.getFrom() + " err: " + Util.e(e));
+    }
+
+    @Override
+    public long bytesIn()
+    {
+        return _ts.getBytesReceived();
+    }
+
+    @Override
+    public long bytesOut()
+    {
+        return _ts.getBytesSent();
     }
 }

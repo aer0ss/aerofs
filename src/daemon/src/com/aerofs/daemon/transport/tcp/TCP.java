@@ -24,6 +24,7 @@ import com.aerofs.daemon.transport.lib.PulseManager;
 import com.aerofs.daemon.transport.lib.StreamManager;
 import com.aerofs.daemon.transport.lib.TPUtil;
 import com.aerofs.daemon.transport.lib.TransportDiagnosisState;
+import com.aerofs.daemon.transport.lib.TransportStats;
 import com.aerofs.daemon.transport.tcp.ARP.ARPChange;
 import com.aerofs.daemon.transport.tcp.ARP.ARPEntry;
 import com.aerofs.daemon.transport.tcp.ARP.IARPChangeListener;
@@ -71,6 +72,7 @@ public class TCP implements ITCP, ITransportImpl, IARPChangeListener
     private final String _id;
     private final int _pref;
     private final ARP _arp = new ARP();
+    private final TransportStats _ts = new TransportStats();
     private final Unicast _ucast;
     private final Multicast _mcast;
     private final IBlockingPrioritizedEventSink<IEvent> _sink;
@@ -92,7 +94,7 @@ public class TCP implements ITCP, ITransportImpl, IARPChangeListener
         _sink = sink;
         _arp.addARPChangeListener(this);
         _pm.addGenericPulseDeletionWatcher(this, _sink);
-        _ucast = new Unicast(this, _arp, _stores, serverChannelFactory, clientChannelFactory);
+        _ucast = new Unicast(this, _arp, _stores, serverChannelFactory, clientChannelFactory, _ts);
         _mcast = new Multicast(this, mcfr, _stores);
     }
 
@@ -577,5 +579,17 @@ public class TCP implements ITCP, ITransportImpl, IARPChangeListener
                 .setType(Type.TCP_GO_OFFLINE)
                 .setTcpMulticastDeviceId(Cfg.did().toPB())
                 .build();
+    }
+
+    @Override
+    public long bytesIn()
+    {
+        return _ts.getBytesReceived();
+    }
+
+    @Override
+    public long bytesOut()
+    {
+        return _ts.getBytesSent();
     }
 }

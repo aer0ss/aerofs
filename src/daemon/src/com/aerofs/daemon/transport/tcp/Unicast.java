@@ -47,7 +47,7 @@ class Unicast implements IUnicast, IPipeDebug, ITCPServerHandlerListener
     private final ITCP _tcp;
     private final ARP _arp;
     private final Stores _stores;
-    private final TransportStats _transportStats = new TransportStats();
+    private final TransportStats _transportStats;
     private final ClientBootstrap _clientBootstrap;
     private final ServerBootstrap _serverBootstrap;
     private final ConcurrentMap<DID, TCPClientHandler> _clients = Maps.newConcurrentMap();
@@ -56,13 +56,14 @@ class Unicast implements IUnicast, IPipeDebug, ITCPServerHandlerListener
     private volatile boolean _paused;
 
     Unicast(ITCP tcp, ARP arp, Stores stores, ServerSocketChannelFactory serverChannelFactory,
-            ClientSocketChannelFactory clientChannelFactory)
+            ClientSocketChannelFactory clientChannelFactory, TransportStats ts)
     {
         _tcp = tcp;
         _arp = arp;
         _stores = stores;
+        _transportStats = ts;
 
-        BootstrapFactory bsFact = new BootstrapFactory(_transportStats);
+        BootstrapFactory bsFact = new BootstrapFactory(ts);
         _serverBootstrap = bsFact.newServerBootstrap(serverChannelFactory, this, tcp);
         _clientBootstrap = bsFact.newClientBootstrap(clientChannelFactory);
     }

@@ -31,8 +31,8 @@ import com.aerofs.daemon.transport.xmpp.Jingle;
 import com.aerofs.daemon.transport.xmpp.Zephyr;
 import com.aerofs.lib.IDumpStat;
 import com.aerofs.lib.IDumpStatMisc;
-import com.aerofs.lib.LibParam;
 import com.aerofs.lib.LibParam.EnterpriseConfig;
+import com.aerofs.lib.ITransferStat;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgCACertificateProvider;
 import com.aerofs.lib.cfg.CfgKeyManagersProvider;
@@ -42,6 +42,7 @@ import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
 import com.aerofs.lib.event.IEvent;
 import com.aerofs.proto.Files.PBDumpStat;
 import com.aerofs.proto.Files.PBDumpStat.Builder;
+import com.aerofs.proto.Ritual.GetTransferStatsReply;
 import com.aerofs.rocklog.RockLog;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -66,7 +67,7 @@ import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor
 /**
  * The clients of this class may assume the list of transports never changes during run time.
  */
-public class Transports implements IDumpStat, IDumpStatMisc, IStartable
+public class Transports implements IDumpStat, IDumpStatMisc, IStartable, ITransferStat
 {
     public static final Comparator<ITransport> PREFERENCE_COMPARATOR = new Comparator<ITransport>()
     {
@@ -270,5 +271,21 @@ public class Transports implements IDumpStat, IDumpStatMisc, IStartable
         } finally {
             tk.reclaim_();
         }
+    }
+
+    @Override
+    public long bytesIn()
+    {
+        long in = 0;
+        for (ITransport tp : _availableTransports.keySet()) in += tp.bytesIn();
+        return in;
+    }
+
+    @Override
+    public long bytesOut()
+    {
+        long out = 0;
+        for (ITransport tp : _availableTransports.keySet()) out += tp.bytesOut();
+        return out;
     }
 }

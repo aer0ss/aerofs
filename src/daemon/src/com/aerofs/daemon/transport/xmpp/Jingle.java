@@ -14,10 +14,12 @@ import static com.aerofs.daemon.transport.lib.TPUtil.registerMulticastHandler;
 
 public class Jingle extends XMPP
 {
+    private final TransportStats _ts = new TransportStats();
+
     public Jingle(DID localdid, String id, int rank, IBlockingPrioritizedEventSink<IEvent> sink, MaxcastFilterReceiver mcfr)
     {
         super(localdid, id, rank, sink, mcfr);
-        com.aerofs.daemon.transport.xmpp.jingle.Jingle jingle = new com.aerofs.daemon.transport.xmpp.jingle.Jingle(id, rank, this, new TransportStats());
+        com.aerofs.daemon.transport.xmpp.jingle.Jingle jingle = new com.aerofs.daemon.transport.xmpp.jingle.Jingle(id, rank, this, _ts);
         setConnectionService_(jingle);
         registerMulticastHandler(this);
     }
@@ -26,5 +28,17 @@ public class Jingle extends XMPP
     public boolean supportsMulticast()
     {
         return true;
+    }
+
+    @Override
+    public long bytesIn()
+    {
+        return _ts.getBytesReceived();
+    }
+
+    @Override
+    public long bytesOut()
+    {
+        return _ts.getBytesSent();
     }
 }

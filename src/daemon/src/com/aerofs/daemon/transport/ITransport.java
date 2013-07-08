@@ -3,6 +3,7 @@ package com.aerofs.daemon.transport;
 import com.aerofs.daemon.IModule;
 import com.aerofs.daemon.lib.IDebug;
 import com.aerofs.daemon.transport.lib.IIdentifier;
+import com.aerofs.lib.ITransferStat;
 import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
 import com.aerofs.lib.event.IEvent;
 
@@ -18,7 +19,7 @@ import com.aerofs.lib.event.IEvent;
  *         not too long</li>
  * </ul>
  */
-public interface ITransport extends IModule, IIdentifier, IDebug
+public interface ITransport extends IModule, IIdentifier, IDebug, ITransferStat
 {
     /**
      * Check if this <code>ITransport</code> is ready to process incoming/outgoing

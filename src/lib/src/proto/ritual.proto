@@ -173,6 +173,8 @@ service RitualService {
 
     rpc CreateSeedFile(CreateSeedFileCall) returns(CreateSeedFileReply);
 
+    rpc GetTransferStats(Void) returns (GetTransferStatsReply);
+
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
     // Public/Private separation line
@@ -554,6 +556,12 @@ message CreateSeedFileCall {
 
 message CreateSeedFileReply {
     required string path = 1;
+}
+
+message GetTransferStatsReply {
+    required uint64 up_time = 1;
+    required uint64 bytes_in = 2;
+    required uint64 bytes_out = 3;
 }
 
 message TransportPingCall {
