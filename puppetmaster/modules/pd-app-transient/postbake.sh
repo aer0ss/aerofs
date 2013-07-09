@@ -18,5 +18,5 @@ done
 # The ejabberd service script should do this, but alas, it sucks.
 chroot /mnt/image killall -9 epmd
 
+# Pull down installers.
 chroot /mnt/image /opt/installers/tools/pull-binaries.sh
-echo "Client binaries successfully downloaded."
