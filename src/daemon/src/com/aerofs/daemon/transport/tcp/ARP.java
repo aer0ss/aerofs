@@ -56,7 +56,6 @@ class ARP
         boolean isNew;
         synchronized (this) {
             ElapsedTimer timer = new ElapsedTimer();
-            timer.start();
             ARPEntry oldEntry = _did2en.put(did, new ARPEntry(isa, timer));
             isNew = (oldEntry == null);
         }

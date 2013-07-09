@@ -50,7 +50,7 @@ public class HdTransportFlood extends AbstractHdIMC<EOTransportFlood>
         private final long _duration;
         private byte[][] _bssDiscard;
         private final int _seqStart, _seqEnd;
-        private ElapsedTimer _timer;
+        private final ElapsedTimer _timer;
         private boolean _end;
 
         Flooder(DID did, long duration, int seqStart, int seqEnd, Prio prio)
@@ -60,6 +60,7 @@ public class HdTransportFlood extends AbstractHdIMC<EOTransportFlood>
             _prio = prio;
             _seqStart = seqStart;
             _seqEnd = seqEnd;
+            _timer = new ElapsedTimer();
 
             // initialize payload data
             ByteArrayOutputStream os = new ByteArrayOutputStream();

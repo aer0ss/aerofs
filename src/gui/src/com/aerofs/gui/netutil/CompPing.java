@@ -162,7 +162,6 @@ public class CompPing extends Composite
         _lblInterval.setText(Util.formatRelativeTime(_timeout));
 
         _timer = new ElapsedTimer();
-        _timer.start();
 
         Thread thd = new Thread() {
             @Override

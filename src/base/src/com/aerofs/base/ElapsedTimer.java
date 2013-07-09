@@ -21,6 +21,13 @@ public class ElapsedTimer
     // A reference timestamp that is not associated with any particular absolute time.
     private long _startTimeNanos;
 
+    public ElapsedTimer()
+    {
+        // Too many people were forgetting to call start() after constructing this class,
+        // myself included.  Better to make an extra call to nanoTime() than to break.
+        start();
+    }
+
     /**
      * Sets the reference time.
      */

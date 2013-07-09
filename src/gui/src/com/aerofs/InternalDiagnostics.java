@@ -58,7 +58,6 @@ public class InternalDiagnostics
         boolean rttMaybeNull = true;
 
         ElapsedTimer pingTimer = new ElapsedTimer();
-        pingTimer.start();
         int samples = 0;
 
         while (true) {

@@ -45,7 +45,6 @@ public class ShProgram implements IProgram, ICallback
     public ShProgram()
     {
         _spRenewalTimer = new ElapsedTimer();
-        _spRenewalTimer.start();
     }
 
     @Override
