@@ -93,8 +93,8 @@ public class Main
     // arguments: <rtroot> <app> [appargs ...]
     public static void main(String[] args)
     {
-        final int MAIN_ARGS = 2;
-        if (args.length < MAIN_ARGS) {
+        final int REQUIRED_ARGS = 2;
+        if (args.length < REQUIRED_ARGS) {
             System.err.println("insufficient arguments");
             ExitCode.FAIL_TO_LAUNCH.exit();
         }
@@ -102,6 +102,9 @@ public class Main
         // parse arguments
         String rtRoot = args[0];
         String prog = args[1];
+
+        String[] appArgs = new String[args.length - REQUIRED_ARGS];
+        System.arraycopy(args, REQUIRED_ARGS, appArgs, 0, appArgs.length);
 
         if (rtRoot.equals(LibParam.DEFAULT_RTROOT)) {
             rtRoot = OSUtil.get().getDefaultRTRoot();
@@ -137,10 +140,10 @@ public class Main
                 else if (e instanceof IncompatibleModeException) msg = S.ERR_INCOMPATIBLE_MODE;
 
                 if (msg != null) {
-                    String[] temp = new String[args.length + 1];
-                    System.arraycopy(args, 0, temp, 0, args.length);
+                    String[] temp = new String[appArgs.length + 1];
+                    System.arraycopy(appArgs, 0, temp, 0, appArgs.length);
                     temp[temp.length - 1] = "-E" + msg;
-                    args = temp;
+                    appArgs = temp;
                 }
             } else {
                 System.out.println("failed in main(): " + Util.e(e));
@@ -157,7 +160,7 @@ public class Main
         SystemUtil.setDefaultUncaughtExceptionHandler();
 
         try {
-            launchProgram(rtRoot, prog, args);
+            launchProgram(rtRoot, prog, appArgs);
         } catch (ExDBCorrupted e) {
             System.out.println("db corrupted: " + e._integrityCheckResult);
             ExitCode.CORRUPTED_DB.exit();
