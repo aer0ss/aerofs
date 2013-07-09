@@ -1,7 +1,19 @@
 #!/bin/bash -e
-chroot /mnt/image /opt/installers/tools/pull-binaries.sh
-echo "Client binaries successfully downloaded."
 
 # Stop pesky services so we can unmount successfully.
-chroot /mnt/image service restund stop || true
-chroot /mnt/image service sanity stop || true
+for service in \
+    tomcat6 \
+    restund \
+    sanity \
+    verkehr \
+    zephyr \
+    ejabberd
+do
+    chroot /mnt/image service $service stop || true
+done
+
+# The ejabberd service script should do this, but alas, it sucks.
+chroot /mnt/image killall -9 epmd
+
+chroot /mnt/image /opt/installers/tools/pull-binaries.sh
+echo "Client binaries successfully downloaded."
