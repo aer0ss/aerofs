@@ -23,10 +23,8 @@ class _SPServiceWrapper(object):
     def __init__(self, rpc_service):
         self._service = rpc_service
 
-    def sign_in(self):
-        self.sign_in(local_actor())
-
-    def sign_in(self, actor):
+    def sign_in(self, actor=None):
+        if actor is None: actor = local_actor()
         user_id = actor.aero_userid
         password = actor.aero_password
         scrypted_password = scrypt(password, user_id)
