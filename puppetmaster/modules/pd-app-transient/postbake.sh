@@ -7,7 +7,10 @@ for service in \
     sanity \
     verkehr \
     zephyr \
-    ejabberd
+    ejabberd \
+    mysql \
+    uwsgi \
+    sendmail
 do
     chroot /mnt/image service $service stop || true
 done
