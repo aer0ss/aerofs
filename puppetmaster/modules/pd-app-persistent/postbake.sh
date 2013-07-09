@@ -1,5 +1,7 @@
 #!/bin/bash -e
 
 # Stop pesky services so we can unmount successfully.
-chroot /mnt/image service ca-server stop || true
-chroot /mnt/image service sanity stop || true
+for service in ca-server sanity php5-fpm
+do
+    chroot /mnt/image service $service stop || true
+done
