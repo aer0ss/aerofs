@@ -10,7 +10,8 @@ class common (
         "unzip",
         "htop",
         "dstat",
-        "iftop"
+        "iftop",
+        "iperf"
         ]:
         ensure => latest,
     }
