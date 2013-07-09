@@ -13,13 +13,19 @@ import java.io.InputStream;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.UnknownHostException;
+import java.security.GeneralSecurityException;
 import java.util.Properties;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.base.ssl.SSLEngineFactory;
+import com.aerofs.base.ssl.SSLEngineFactory.Mode;
+import com.aerofs.base.ssl.SSLEngineFactory.Platform;
 import com.aerofs.controller.ControllerService;
 import com.aerofs.gui.tray.TrayIcon.NotificationReason;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.*;
+import com.aerofs.lib.LibParam.EnterpriseConfig;
+import com.aerofs.lib.configuration.EnterpriseCertificateProvider;
 import com.aerofs.lib.ex.ExFileIO;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.proto.ControllerNotifications.Type;
@@ -29,6 +35,7 @@ import com.aerofs.proto.ControllerNotifications.UpdateNotification.Status;
 import com.aerofs.ui.UI;
 import com.aerofs.ui.UIGlobals;
 import com.netflix.config.DynamicStringProperty;
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 
 import com.aerofs.gui.GUI;
@@ -252,7 +259,7 @@ public abstract class Updater
             l.debug("Reading Server Version from " + serverVersionUrl);
 
             final URL url = new URL(serverVersionUrl);
-            final URLConnection conn = newAWSConnection(url);
+            final URLConnection conn = newUpdaterConnection(url);
             final BufferedInputStream in = new BufferedInputStream(conn.getInputStream());
 
             final Properties props = new Properties();
@@ -287,7 +294,8 @@ public abstract class Updater
             // N.B. since we intended for installerUrl to be a path to a directory of installers,
             //   we need to add a trailing slash.
             // This affected private deployment where installerURL is "https://*/path_to_installers"
-            URLConnection conn = newAWSConnection(new URL(new URL(installerUrl + '/'), filename));
+            URLConnection conn = newUpdaterConnection(
+                    new URL(new URL(installerUrl + '/'), filename));
             conn.setReadTimeout((int) Cfg.timeout());
 
             int updateFileExpectedSize = conn.getContentLength();
@@ -372,6 +380,15 @@ public abstract class Updater
         }
     }
 
+    private static URLConnection newUpdaterConnection(URL url) throws IOException
+    {
+        boolean shouldVerifyHostnamesFromAWS = !EnterpriseConfig.IS_ENTERPRISE_DEPLOYMENT.get();
+        boolean shouldUseEnterpriseCert = EnterpriseConfig.IS_ENTERPRISE_DEPLOYMENT.get()
+                && !StringUtils.isBlank(EnterpriseConfig.ENTERPRISE_CUSTOMER_CERT.get());
+
+        return newUpdaterConnectionImpl(url, shouldVerifyHostnamesFromAWS, shouldUseEnterpriseCert);
+    }
+
     /**
      * Because the download URLs redirect (as CNAMEs) to AWS servers, which have their own SSL
      * certificate, we need to work around for cert verification to pass.
@@ -379,33 +396,50 @@ public abstract class Updater
      * HOWEVER, an attacker can still hijack the DNS and redirect the URLs to their own AWS servers.
      * The ultimate solution is to sign installer binaries.
      *
-     * N.B. This method must be identical to the same method in downloader.Main
+     * N.B. This method must be identical to the same method in downloader.Main.newAWSConnection()
+     * N.B. the above note is being violated to support enterprise deployment.
+     *
+     * FIXME (AT): the next time we add a boolean flag to this is the time we refactor this
+     *   and related methods into a separate factory.
      */
-    private static URLConnection newAWSConnection(URL url) throws IOException
+    private static URLConnection newUpdaterConnectionImpl(URL url,
+            boolean shouldVerifyHostnamesFromAWS, boolean shouldUseEnterpriseCert) throws IOException
     {
         HttpsURLConnection conn = (HttpsURLConnection) url.openConnection();
 
-        conn.setHostnameVerifier(new HostnameVerifier() {
-            @Override
-            public boolean verify(String hostname, SSLSession session) {
+        if (shouldVerifyHostnamesFromAWS) {
+            conn.setHostnameVerifier(new HostnameVerifier() {
+                @Override
+                public boolean verify(String hostname, SSLSession session) {
 
-                try {
-                    X509Certificate[] x509 = session.getPeerCertificateChain();
-                    for (int i = 0; i < x509.length; i++) {
-                        String str = x509[i].getSubjectDN().toString();
-                        // this is for URLs pointing to S3
-                        if (str.startsWith("CN=*.s3.amazonaws.com")) return true;
-                        // this is for URLs pointing to CloudFront
-                        if (str.startsWith("CN=*.cloudfront.net")) return true;
+                    try {
+                        X509Certificate[] x509 = session.getPeerCertificateChain();
+                        for (int i = 0; i < x509.length; i++) {
+                            String str = x509[i].getSubjectDN().toString();
+                            // this is for URLs pointing to S3
+                            if (str.startsWith("CN=*.s3.amazonaws.com")) return true;
+                            // this is for URLs pointing to CloudFront
+                            if (str.startsWith("CN=*.cloudfront.net")) return true;
+                        }
+                        l.warn("expected CN not found");
+                        return false;
+                    } catch (SSLPeerUnverifiedException e) {
+                        l.warn(Util.e(e));
+                        return false;
                     }
-                    l.warn("expected CN not found");
-                    return false;
-                } catch (SSLPeerUnverifiedException e) {
-                    l.warn(Util.e(e));
-                    return false;
                 }
+            });
+        }
+
+        if (shouldUseEnterpriseCert) {
+            try {
+                SSLEngineFactory factory = new SSLEngineFactory(Mode.Client, Platform.Desktop, null,
+                        new EnterpriseCertificateProvider(), null);
+                conn.setSSLSocketFactory(factory.getSSLContext().getSocketFactory());
+            } catch (GeneralSecurityException e) {
+                throw new IOException("Unable to use enterprise certificate.", e);
             }
-        });
+        }
 
         return conn;
     }
@@ -611,6 +645,6 @@ public abstract class Updater
 
     private static final String PROD_INSTALLER_URL = "https://cache.client.aerofs.com";
     // staging value: https://cache.client.stg.aerofs.com
-    public static final DynamicStringProperty INSTALLER_URL =
+    private static final DynamicStringProperty INSTALLER_URL =
             new DynamicStringProperty("updater.installer.url", PROD_INSTALLER_URL);
 }
