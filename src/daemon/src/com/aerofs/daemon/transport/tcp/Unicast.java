@@ -221,6 +221,7 @@ class Unicast implements IUnicast, IPipeDebug, ITCPServerHandlerListener
         InetSocketAddress remoteAddress = _arp.getThrows(did)._isa;
         Channel channel = _clientBootstrap.connect(remoteAddress).getChannel();
         final TCPClientHandler client = channel.getPipeline().get(TCPClientHandler.class);
+        l.debug("registering new connection to did:{}", did);
         _clients.put(did, checkNotNull(client));
 
         client.setExpectedRemoteDid(did);
@@ -233,6 +234,7 @@ class Unicast implements IUnicast, IPipeDebug, ITCPServerHandlerListener
                     throws Exception
             {
                 // Remove only if its still the same client in the map.
+                l.debug("removing connection to did:{}", did);
                 _clients.remove(did, client);
                 _tcp.closePeerStreams(did, true, false);
             }
