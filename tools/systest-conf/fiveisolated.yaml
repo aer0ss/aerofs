@@ -3,4 +3,4 @@ actors:
   - address: ci-ubuntu-b.local
   - address: ci-ubuntu-c.local
   - address: ci-ubuntu-d.local
-  - address: ci-windows7.local
+  - address: 192.168.154.97
