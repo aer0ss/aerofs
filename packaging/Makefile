@@ -33,6 +33,7 @@ PACKAGES= \
 	config \
 	sanity \
 	installers \
+	enterprise-updater \
 
 DEBS=$(addprefix debs/, ${PACKAGES:=.deb})
 
