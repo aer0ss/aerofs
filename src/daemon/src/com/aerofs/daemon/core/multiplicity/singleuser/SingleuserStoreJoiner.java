@@ -79,6 +79,8 @@ public class SingleuserStoreJoiner implements IStoreJoiner
     public void joinStore_(SIndex sidx, SID sid, String folderName, boolean external, Trans t)
             throws Exception
     {
+        l.debug("join store sid:{} external:{} foldername:{}", sid, external, folderName);
+
         // ignore changes on the root store
         if (sid.equals(_cfgRootSID.get())) return;
 

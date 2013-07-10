@@ -182,35 +182,17 @@ public class ACLSynchronizer
             return;
         }
 
-        /**
-         * Ugly hack: syncdet test accounts are not currently cleaned and accumulate a huge number
-         * of shared folder over times. The auto-join workflow causes all shared folder to be
-         * recreated on every new install. For end-users this is unlikely to be a problem as we now
-         * automatically leave shared folders when they are deleted. For system tests however where
-         * there is no assurance that the daemon will be in a sane enough state to leave all new
-         * shared folders at the end of the run this becomes a problem very quickly. Leaving folders
-         * *before* running tests would work but it would require serialization of tests to avoid
-         * leaving shared folders used by a syncdet test running in parallel..
-         *
-         * TODO: sanitize SP db around syncdet runs and remove this nasty hack
-         */
-        File noJoinFlagFile = new File(Cfg.absRTRoot(), "nojoin");
-        boolean noAutoJoin = noJoinFlagFile.exists() && !L.isMultiuser();
-
         Trans t = _tm.begin_();
         try {
-            updateACLAndAutoJoinLeaveStores_(serverACLReturn, noAutoJoin, t);
+            updateACLAndAutoJoinLeaveStores_(serverACLReturn, t);
             t.commit_();
         } finally {
             t.end_();
         }
-
-        // delete flag file to allow further share/join operations to work as expected
-        if (noAutoJoin) FileUtil.delete(noJoinFlagFile);
     }
 
     private void updateACLAndAutoJoinLeaveStores_(ServerACLReturn serverACLReturn,
-            boolean noAutoJoin, Trans t) throws Exception
+            Trans t) throws Exception
     {
         Set<SIndex> stores = _lacl.getAccessibleStores_();
 
@@ -222,6 +204,8 @@ public class ACLSynchronizer
             SID sid = entry.getKey();
             StoreACL storeACL = entry.getValue();
             Map<UserID, Role> roles = storeACL._roles;
+
+            l.debug("processing ACL: {} {} {} {}", sid, storeACL._external, storeACL._name, roles);
 
             // the local user should always be present in the ACL for each store in the reply
             if (!roles.containsKey(_cfgLocalUser.get())) {
@@ -236,7 +220,7 @@ public class ACLSynchronizer
             // NB: needs to be done *BEFORE* auto-join
             _lacl.set_(sidx, roles, t);
 
-            if (!stores.contains(sidx) && (_sidx2sid.getNullable_(sidx) == null) && !noAutoJoin) {
+            if (!stores.contains(sidx) && (_sidx2sid.getNullable_(sidx) == null)) {
                 // not known and accessible: auto-join
                 assert storeACL._name != null : sid;
                 _storeJoiner.joinStore_(sidx, sid, storeACL._name, storeACL._external, t);
@@ -298,7 +282,7 @@ public class ACLSynchronizer
             if (!acl.containsKey(sid)) {
                 acl.put(sid, new StoreACL(storeACL.getExternal()));
                 if (isNewStore_(sid)) {
-                    l.debug("new store {}", sid);
+                    l.debug("new store sid:{} external:{}", sid, storeACL.getExternal());
                     newStores.add(sid.toPB());
                 }
             }
