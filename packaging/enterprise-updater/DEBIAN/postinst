@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -e
 
 # Disable pip installs. Make them no-ops. This will allow us to install
 # aerofs-web without an internet connection.
