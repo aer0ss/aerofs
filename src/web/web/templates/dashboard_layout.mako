@@ -1,3 +1,6 @@
+## N.B. When updating this template, keep in mind that it is used in both public
+## and private deployments.
+
 <%inherit file="base_layout.mako"/>
 
 <%!
