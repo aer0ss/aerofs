@@ -8,7 +8,6 @@ TMPDIR=/tmp/aerofs_web_build
 mkdir $TMPDIR
 CURRENT=$PWD
 cd $TMPDIR
-
 mkdir -p $PYHOME
 
 # Install virtualenv package and install AeroFS web package in virtualenv
@@ -30,10 +29,6 @@ cd $TMPDIR
 # For some reason this value gets set to /root/.python-eggs which is
 # not writable by www-data. Explicitly setting it fixes the problem.
 export PYTHON_EGG_CACHE=/var/www/.python-eggs
-# restart uwsgi, disable default Nginx configuration, restart Nginx
-/etc/init.d/uwsgi restart
-rm -f /etc/nginx/sites-enabled/default
-service nginx restart
 
 # Back to original directory, clean up temp directory
 cd $CURRENT

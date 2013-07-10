@@ -23,15 +23,5 @@ cp -r ../src/web/* $OPT
 rm $OPT/development.ini
 cp -r ../src/python-lib $EXTRA
 
-# Nginx configuration
-mkdir -p $NGINX/sites-available $NGINX/sites-enabled
-cp $RESOURCES/aerofs-web $NGINX/sites-available/
-ln -s ../sites-available/aerofs-web $NGINX/sites-enabled/aerofs-web
-
-# uwsgi configuration
-mkdir -p $UWSGI/apps-available $UWSGI/apps-enabled
-cp $OPT/production.ini $UWSGI/apps-available/productionAeroFS.ini
-ln -s ../apps-available/productionAeroFS.ini $UWSGI/apps-enabled/productionAeroFS.ini
-
 # remove unnecessary files
 rm -r $OPT/resources

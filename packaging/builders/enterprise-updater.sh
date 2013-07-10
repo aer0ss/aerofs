@@ -12,12 +12,9 @@ rm -f $DEBIANS/*
 
 # Copy over the debs that we require.
 for required in \
-    zephyr \
     sp \
-    verkehr \
     web \
-    bootstrap \
-    sanity
+    bootstrap
 do
     cp debs/aerofs-${required}.deb $DEBIANS/
 done
@@ -26,5 +23,4 @@ done
 rm -f debs/*
 
 # Pull in latest installers.
-rm -f $INSTALLERS/*
 ../tools/enterprise/installers/pull-binaries.sh $INSTALLERS/
