@@ -56,6 +56,9 @@ ${PACKAGES}: %: %.deb
 upload:
 	@./tools/deb-upload.sh $(TARGET_REPOSITORY)
 
+upload-versions:
+	@./tools/deb-upload.sh $(TARGET_REPOSITORY) true
+
 clean:
 	@rm -rf debs versions *.deb *.ver *.txt
 

@@ -1,4 +1,4 @@
-#!/bin/bash -ue
+#!/bin/bash -e
 
 # constants
 readonly ERRBADARGS=2
@@ -6,12 +6,21 @@ readonly APT_SERVER=apt.aerofs.com
 
 # Copy the debs over and add them to the apt repository. Make sure the deb
 # dropbox is clean before we perform the update (and clean up when we're done).
-function upload_debs() {
-    echo "Uploading debs to $TARGET_REPOSITORY... This might take a while."
+function upload_payload() {
+    local versions_only=$1
+
+    echo "Uploading to $TARGET_REPOSITORY bin... This might take a while. (versions only = $versions_only)"
 
     ssh $APT_SERVER "mkdir -p ~/$DEBS_FOLDER"
     ssh $APT_SERVER "rm -f ~/$DEBS_FOLDER/*"
-    scp debs/* $APT_SERVER:~/$DEBS_FOLDER/
+
+    if [ "$versions_only" = "true" ]
+    then
+        scp debs/*.ver $APT_SERVER:~/$DEBS_FOLDER/
+    else
+        scp debs/* $APT_SERVER:~/$DEBS_FOLDER/
+    fi
+
     ssh $APT_SERVER \
         "set -e;
         if [ ! -d /var/www/ubuntu/$TARGET_REPOSITORY_DIRECTORY ];
@@ -19,18 +28,25 @@ function upload_debs() {
             cp -r /var/www/ubuntu/_default_ /var/www/ubuntu/$TARGET_REPOSITORY_DIRECTORY;
         fi;
         cd /var/www/ubuntu/$TARGET_REPOSITORY_DIRECTORY/;
-        for deb in \$(ls ~/$DEBS_FOLDER/*.deb);
-        do
-            echo --- Signing \$deb;
-            sudo dpkg-sig --sign builder \$deb -g --homedir=/root/.gnupg;
-        done;
-        echo --- Copy debs to /var/www;
+
+        echo --- Copy versions to /var/www;
         cp ~/$DEBS_FOLDER/*.ver /var/www/ubuntu/$TARGET_REPOSITORY_DIRECTORY/versions;
-        echo --- Call reprepro includedeb;
-        sudo reprepro --gnupghome=/root/.gnupg includedeb precise ~/$DEBS_FOLDER/*.deb;
-        echo --- Fix permissions; \
-        sudo chmod -R 775 /var/www/ubuntu/$TARGET_REPOSITORY_DIRECTORY;
-        sudo chown -R root:admin /var/www/ubuntu/$TARGET_REPOSITORY_DIRECTORY;
+
+        if [ $versions_only = false ]
+        then
+            for deb in \$(ls ~/$DEBS_FOLDER/*.deb);
+            do
+                echo --- Signing \$deb;
+                sudo dpkg-sig --sign builder \$deb -g --homedir=/root/.gnupg;
+            done;
+
+            echo --- Call reprepro includedeb;
+            sudo reprepro --gnupghome=/root/.gnupg includedeb precise ~/$DEBS_FOLDER/*.deb;
+            echo --- Fix permissions; \
+            sudo chmod -R 775 /var/www/ubuntu/$TARGET_REPOSITORY_DIRECTORY;
+            sudo chown -R root:admin /var/www/ubuntu/$TARGET_REPOSITORY_DIRECTORY;
+        fi
+
         echo --- Remove old debs;
         rm -f ~/$DEBS_FOLDER/*"
 }
@@ -62,15 +78,22 @@ function notify_team() {
 # echos the usage message and exits
 function print_usage()
 {
-    echo "Usage: $0 <repository>"
+    echo "Usage: $0 <repository> [<versions_only>=false]"
     echo " <repository> repository to upload package to (PROD|CI|STAGING|$(whoami | tr [a-z] [A-Z])|ENTERPRISE)"
     exit $ERRBADARGS
 }
 
 # check number of arguments
-if [ $# -ne 1 ]
+if [ $# -ne 1 ] && [ $# -ne 2 ]
 then
     print_usage
+fi
+
+if [ "x$2" = "xtrue" ]
+then
+    versions_only=true
+else
+    versions_only=false
 fi
 
 # check the mode the user is invoking
@@ -88,8 +111,8 @@ readonly TARGET_REPOSITORY="$1"
 readonly TARGET_REPOSITORY_DIRECTORY=$( echo "$1" | tr [A-Z] [a-z] ) # convert to lowercase
 readonly DEBS_FOLDER="debs-$TARGET_REPOSITORY_DIRECTORY"
 
-# upload the debs
-upload_debs
+# upload the debs / version files
+upload_payload $versions_only
 
 # notify the team if necessary that the upload completed
 if [ "$TARGET_REPOSITORY" = 'PROD' ]
@@ -97,4 +120,4 @@ then
     notify_team
 fi
 
-echo "Uploaded debs to $TARGET_REPOSITORY bin."
+echo "Uploaded to $TARGET_REPOSITORY bin."
