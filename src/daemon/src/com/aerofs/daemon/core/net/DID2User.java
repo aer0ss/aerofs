@@ -79,7 +79,7 @@ public class DID2User
     }
 
     /**
-     * Issues a NOP RPC to trigger DTLS handshake with the devices, so the user ID can be retrieved
+     * Issues a NOP RPC to trigger TLS handshake with the devices, so the user ID can be retrieved
      * as part of the handshake process. The current thread pauses until the the process
      * succeeds or an error occurs such as timeout. On success, the mapping will be added to the
      * database. Use this method instead of getFromSP if the caller should proceed even if SP is

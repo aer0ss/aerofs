@@ -62,9 +62,7 @@ SOURCES += \
     src/pkcs10/PKCS10.c \
     src/scrypt/crypto_aesctr.c \
     src/scrypt/crypto_scrypt-nosse.c \
-    src/scrypt/sha256.c \
-    src/dtls/SSLCtx.cpp \
-    src/dtls/DTLSEngine.cpp
+    src/scrypt/sha256.c
 
 unix {
     # Files that should be compiled on both OS X and Linux
@@ -97,16 +95,12 @@ HEADERS += \
     src/scrypt/crypto_aesctr.h \
     src/scrypt/crypto_scrypt.h \
     src/scrypt/sha256.h \
-    src/scrypt/sysendian.h \
-    src/dtls/SSLCtx.h \
-    src/dtls/DTLSEngine.h \
-    src/dtls/dh4096.h
+    src/scrypt/sysendian.h
 
 SWIG_FILES += \
     src/driver/driver.swg \
     src/pkcs10/pkcs10.swg \
-    src/scrypt/scrypt.swg \
-    src/dtls/dtls.swg
+    src/scrypt/scrypt.swg
 
 OTHER_FILES += $$SWIG_FILES \
     src/scrypt/crypto_scrypt-nosse.patch \

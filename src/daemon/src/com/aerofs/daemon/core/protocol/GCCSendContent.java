@@ -251,7 +251,7 @@ public class GCCSendContent
             outgoing.sendChunk_(os.toByteArray());
 
             // Second, send the ContentHash (which is separate from the protobuf because it can be
-            // too large to fit in a DTLS packet for very large files)
+            // too large to fit in a unicast packet for very large files)
             if (hash != null) {
                 byte[] hashByteArray = hash.toPB().toByteArray();
                 int chunkBegin = 0;

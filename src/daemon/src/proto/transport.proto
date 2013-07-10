@@ -59,7 +59,6 @@ message PBStream {
         ENDED = 1;
         STREAM_NOT_FOUND = 2;
         INTERNAL_ERROR = 3;
-        DTLS_ERROR = 4;
         CHOKE_ERROR = 5;
         OUT_OF_ORDER = 6;       // a chunk is out of order
         STORE_NOT_FOUND = 7;

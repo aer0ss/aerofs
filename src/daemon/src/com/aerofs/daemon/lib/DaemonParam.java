@@ -65,12 +65,6 @@ public class DaemonParam
         public static final int DS_CACHE_SIZE               = 10 * C.KB;
     }
 
-    public static class DTLS
-    {
-        public static final int HS_QUEUE_SIZE               = 256;
-        public final static int BUF_SIZE                    = 64 * C.KB;
-    }
-
     public static final int TRANSPORT_DIAGNOSIS_CACHE_CAPACITY = 8;
 
     // TODO BUGBUG there are unknown deadlocks

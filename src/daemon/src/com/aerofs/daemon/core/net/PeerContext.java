@@ -20,8 +20,7 @@ public class PeerContext
 
     /**
      * this method is a shortcut that avoids calls to DID2User for messages that
-     * come from secure channels. call this method only at the receiver side,
-     * and only at layers above DTLS.
+     * come from secure channels. Call this method only at the receiver side.
      */
     public UserID user()
     {
