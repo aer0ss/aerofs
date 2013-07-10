@@ -161,7 +161,7 @@ function lp-deploy-ca()
 function lp-deploy-sanity()
 {
     _lp-package-sanity
-    _lp-kick-persistent
+    _lp-kick-all
 }
 
 # -----------------------------------------------------------

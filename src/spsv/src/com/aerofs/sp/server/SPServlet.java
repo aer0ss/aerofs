@@ -4,7 +4,7 @@ import com.aerofs.base.BaseParam.SP;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.analytics.Analytics;
 import com.aerofs.base.ex.ExNotFound;
-import com.aerofs.lib.properties.DynamicInetSocketAddress;
+import com.aerofs.lib.LibParam.REDIS;
 import com.aerofs.lib.Util;
 import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExEmailSendingFailed;
@@ -54,7 +54,6 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.sql.SQLException;
 
 import static com.aerofs.sp.server.lib.SPParam.SESSION_EXTENDER;
@@ -130,10 +129,6 @@ public class SPServlet extends AeroServlet
     private final DoPostDelegate _postDelegate = new DoPostDelegate(SP.SP_POST_PARAM_PROTOCOL,
             SP.SP_POST_PARAM_DATA);
 
-    public static final DynamicInetSocketAddress REDIS_ADDRESS =
-            new DynamicInetSocketAddress("sp.redis.address",
-                    InetSocketAddress.createUnresolved("localhost", 6379));
-
     @Override
     public void init(ServletConfig config) throws ServletException
     {
@@ -151,8 +146,8 @@ public class SPServlet extends AeroServlet
 
         _sqlConProvider.init_(dbResourceName);
 
-        String redisHost = REDIS_ADDRESS.get().getHostName();
-        int redisPort = REDIS_ADDRESS.get().getPort();
+        String redisHost = REDIS.ADDRESS.get().getHostName();
+        int redisPort = REDIS.ADDRESS.get().getPort();
         _jedisConProvider.init_(redisHost, (short) redisPort);
 
         PooledSQLConnectionProvider erConProvider = new PooledSQLConnectionProvider();

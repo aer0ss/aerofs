@@ -8,19 +8,19 @@ import subprocess
 
 class SanityCheck(object):
 
-    # Returns [(boolean) healthy, (string) message].
+    # Returns [(boolean) is_healthy, (string) message].
     def performCheck(self, script_name):
         fully_qualified_script_name = '/opt/sanity/probes/' + script_name
 
-        healthy = True
+        is_healthy = True
         message = ''
         try:
             subprocess.check_output(fully_qualified_script_name)
         except subprocess.CalledProcessError as e:
-            healthy = False
+            is_healthy = False
             message = str(e.output).strip()
 
-        return [healthy, message]
+        return [is_healthy, message]
 
     def index(self):
 
@@ -39,11 +39,12 @@ class SanityCheck(object):
             if len(status) == 1 or len(status[1]) == 0:
                 statuses.append({ \
                         'service': service, \
-                        'healthy': status[0]})
+                        'is_healthy': status[0], \
+                        'message': ''})
             else:
                 statuses.append({ \
                         'service': service, \
-                        'healthy': status[0], \
+                        'is_healthy': status[0], \
                         'message': status[1]})
 
         return json.dumps({'statuses': statuses})

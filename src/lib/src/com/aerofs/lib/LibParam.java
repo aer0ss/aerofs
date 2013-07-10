@@ -8,11 +8,13 @@ import com.aerofs.base.BaseParam;
 import com.aerofs.base.C;
 import com.aerofs.base.id.SID;
 import com.aerofs.config.properties.DynamicOptionalStringProperty;
+import com.aerofs.lib.properties.DynamicInetSocketAddress;
 import com.aerofs.lib.properties.DynamicUrlProperty;
 import com.netflix.config.DynamicBooleanProperty;
 import com.netflix.config.DynamicStringProperty;
 
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 
 import static com.aerofs.lib.configuration.ClientConfigurationLoader.*;
 
@@ -217,6 +219,14 @@ public class LibParam extends BaseParam
 
         public static final DynamicOptionalStringProperty LINUX_DEFAULT_ROOT_ANCHOR_PARENT =
                 new DynamicOptionalStringProperty("lib.anchor.default_location_linux");
+    }
+
+    public static class REDIS
+    {
+        // TODO (MP) rename to lib.redis.address (keeping name for bloomberg compatibility).
+        public static final DynamicInetSocketAddress ADDRESS =
+                new DynamicInetSocketAddress("sp.redis.address",
+                        InetSocketAddress.createUnresolved("localhost", 6379));
     }
 
     // this class depends on ClientConfigurationLoader

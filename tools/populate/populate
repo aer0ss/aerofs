@@ -72,6 +72,13 @@ function create_max_version_file() {
     fi
 }
 
+function create_site_properties_file() {
+    if [[ "$MODE" == 'ENTERPRISE' ]]
+    then
+        echo "config.loader.configuration_service_url=https://config.syncfs.com/" > "$APPROOT"/site-config.properties
+    fi
+}
+
 function copy_run_scripts() {
     # os script is copied because it is used by the run script
     cp "$PPWD/os" "$PPWD/run" "$PPWD/rundebug" "$APPROOT"/
@@ -105,4 +112,5 @@ setup_clean_approot
 "$PPWD/copy_mode_and_product_resources" "$MODE" "$LABELING" "$BASE_RESOURCES_DIR" "$APPROOT" "$APPROOT/bin"
 copy_os_specific_resources
 create_max_version_file
+create_site_properties_file
 copy_run_scripts

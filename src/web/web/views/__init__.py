@@ -3,6 +3,7 @@
 __all__ = [
         'marketing',
         'signup',
+        'status',
         'login',
         'download',
         'devices',
