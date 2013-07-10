@@ -46,6 +46,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.aerofs.daemon.lib.DaemonParam.Zephyr.HANDSHAKE_TIMEOUT;
+import static com.aerofs.daemon.transport.exception.TransportDefects.DEFECT_NAME_HANDSHAKE_RENEGOTIATION;
 import static com.aerofs.daemon.transport.xmpp.zephyr.ZephyrClientPipelineFactory.getZephyrClientHandler;
 import static com.aerofs.zephyr.proto.Zephyr.ZephyrControlMessage.Type.HANDSHAKE;
 import static com.google.common.base.Preconditions.checkArgument;
@@ -60,7 +61,6 @@ import static org.jboss.netty.buffer.ChannelBuffers.copiedBuffer;
  */
 public final class ZephyrConnectionService implements ISignalledConnectionService, IZephyrSignallingService
 {
-    private static final String DEFECT_NAME_HANDSHAKE_RENEGOTIATION = "net.zephyr.renegotiation";
     private static final Predicate<Entry<DID,Channel>> TRUE_FILTER = new Predicate<Entry<DID, Channel>>()
     {
         @Override

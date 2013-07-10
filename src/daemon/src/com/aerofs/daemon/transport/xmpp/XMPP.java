@@ -45,6 +45,7 @@ import com.aerofs.proto.Transport.PBCheckPulse;
 import com.aerofs.proto.Transport.PBStream.Type;
 import com.aerofs.proto.Transport.PBTPHeader;
 import com.aerofs.proto.Transport.PBTransportDiagnosis;
+import com.aerofs.rocklog.RockLog;
 import com.google.common.collect.ImmutableMap;
 import org.jivesoftware.smack.PacketListener;
 import org.jivesoftware.smack.SASLAuthentication;
@@ -110,7 +111,7 @@ import static com.google.common.base.Preconditions.checkState;
  */
 public abstract class XMPP implements ITransportImpl, IConnectionServiceListener, IUnicast, IXMPPServerConnectionWatcher
 {
-    protected XMPP(DID localdid, String id, int rank, IBlockingPrioritizedEventSink<IEvent> sink, MaxcastFilterReceiver mcfr)
+    protected XMPP(DID localdid, String id, int rank, IBlockingPrioritizedEventSink<IEvent> sink, MaxcastFilterReceiver mcfr, RockLog rocklog)
     {
         // this is a workaround for NullPointerException during authentication
         // see http://www.igniterealtime.org/community/thread/35976
@@ -121,7 +122,7 @@ public abstract class XMPP implements ITransportImpl, IConnectionServiceListener
         _rank = rank;
         _sink = sink;
         _sched = new Scheduler(_q, id());
-        _xsc = new XMPPServerConnection(id(), this);
+        _xsc = new XMPPServerConnection(id(), this, rocklog);
         _mc = new Multicast(this, localdid, id());
         _mcfr = mcfr;
         _pm.addPulseDeletionWatcher(new GenericPulseDeletionWatcher(this, _sink));

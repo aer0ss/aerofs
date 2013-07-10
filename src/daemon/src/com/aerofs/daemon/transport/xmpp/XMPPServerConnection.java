@@ -10,24 +10,29 @@ import com.aerofs.base.BaseParam.Xmpp;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.JabberID;
 import com.aerofs.lib.IDumpStatMisc;
-import com.aerofs.lib.LibParam;
 import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.ThreadUtil;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
-import org.slf4j.Logger;
+import com.aerofs.rocklog.RockLog;
 import org.jivesoftware.smack.ConnectionConfiguration;
 import org.jivesoftware.smack.ConnectionConfiguration.SecurityMode;
 import org.jivesoftware.smack.ConnectionListener;
 import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.XMPPException;
+import org.slf4j.Logger;
 
+import java.io.IOException;
 import java.io.PrintStream;
-import java.net.ConnectException;
 import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import static com.aerofs.daemon.transport.exception.TransportDefects.DEFECT_NAME_XSC_CONNECTION_ALREADY_REPLACED;
+import static com.aerofs.lib.LibParam.EXP_RETRY_MIN_DEFAULT;
+import static com.aerofs.lib.Util.exponentialRetryNewThread;
 
 public class XMPPServerConnection implements IDumpStatMisc
 {
@@ -43,10 +48,11 @@ public class XMPPServerConnection implements IDumpStatMisc
         //XMPPConnection.DEBUG_ENABLED = true;
     }
 
-    public XMPPServerConnection(String resource, IXMPPServerConnectionWatcher watcher)
+    public XMPPServerConnection(String resource, IXMPPServerConnectionWatcher watcher, RockLog rocklog)
     {
         _resource = resource;
         _watcher = watcher;
+        this.rocklog = rocklog;
     }
 
     synchronized boolean ready()
@@ -104,8 +110,7 @@ public class XMPPServerConnection implements IDumpStatMisc
         // We avoid resolving the hostname ourselves and let
         // SMACK do the DNS query on its thread.
         InetSocketAddress address = Xmpp.ADDRESS.get();
-        ConnectionConfiguration cc = new ConnectionConfiguration(
-                address.getHostName(), address.getPort());
+        ConnectionConfiguration cc = new ConnectionConfiguration(address.getHostName(), address.getPort());
         cc.setServiceName(Xmpp.SERVER_DOMAIN.get());
         cc.setSecurityMode(SecurityMode.required);
         cc.setSelfSignedCertificateEnabled(true);
@@ -121,46 +126,49 @@ public class XMPPServerConnection implements IDumpStatMisc
 
     private void startConnect(final boolean initialDelay)
     {
-        l.info("startConnect: delay=" + initialDelay);
-        // TODO use scheduler instead of threads?
-        Util.exponentialRetryNewThread("xsct", new Callable<Void>()
+        if (!connectionInProgress.compareAndSet(false, true)) { // someone else is already attempting to connect - bail, and let them finish
+            l.warn("connection attempt in progress");
+            return;
+        }
+
+        l.info("startConnect: use initial delay:{}", initialDelay);
+
+        exponentialRetryNewThread("xsc-" + xscThreadId.getAndIncrement(), new Callable<Void>()
+        {
+            @Override
+            public Void call()
+                    throws Exception
             {
-                @Override
-                public Void call() throws Exception
-                {
-                    if (initialDelay) {
-                        l.info("reconnect in " + LibParam.EXP_RETRY_MIN_DEFAULT);
-                        ThreadUtil.sleepUninterruptable(LibParam.EXP_RETRY_MIN_DEFAULT);
-                    }
-                    l.info("connecting");
+                if (initialDelay) {
+                    l.info("reconnect in {}", EXP_RETRY_MIN_DEFAULT);
+                    ThreadUtil.sleepUninterruptable(EXP_RETRY_MIN_DEFAULT);
+                }
 
-                    try {
-                        if (!_linkUp) {
-                            l.info("link down. do not attempt connect.");
-                            return null;
-                        }
+                l.info("connecting");
+
+                try {
+                    if (!_linkUp) {
+                        l.info("link down. do not attempt connect.");
+                    } else {
                         synchronized (XMPPServerConnection.this) { connect_(); }
+                    }
 
-                    } catch (XMPPException e) {
-                        l.warn("error", e);
+                    connectionInProgress.set(false);
+                    return null;
+                } catch (XMPPException e) {
+                    if (e.getXMPPError() != null) {
                         // 502: remote-server-error(502): java.net.ConnectException: Operation timed out
                         // 504: remote-server-error(504): connection refused
-                        if (e.getXMPPError() != null) {
-                            int errorCode = e.getXMPPError().getCode();
-                            if (errorCode == 502 || errorCode == 504) {
-                                throw new Exception(String.valueOf(errorCode));
-                            }
+                        int errorCode = e.getXMPPError().getCode();
+                        if (errorCode == 502 || errorCode == 504) {
+                            throw new IOException(String.valueOf(errorCode));
                         }
-
-                        throw e;
-
-                    } catch (Exception e) {
-                        l.error(Util.e(e, ConnectException.class));
                     }
 
-                    return null;
+                    throw e;
                 }
-            }, Exception.class);
+            }
+        }, Exception.class);
     }
 
     private void connect_() throws XMPPException
@@ -188,12 +196,12 @@ public class XMPPServerConnection implements IDumpStatMisc
         // create a new connection and log in
         //
 
-        XMPPConnection c = newConnection();
-        l.info("connecting to " + c.getHost() + ":" + c.getPort());
-        c.connect();
+        final XMPPConnection newConnection = newConnection();
+        l.info("connecting to " + newConnection.getHost() + ":" + newConnection.getPort());
+        newConnection.connect();
 
         l.info("logging in as " + JabberID.did2FormAJid(Cfg.did(), _resource)); // done to show relationship
-        c.login(_user, shaedXMPP(), _resource);
+        newConnection.login(_user, shaedXMPP(), _resource);
         l.info("logged in");
 
         // for legacy reasons (basically I don't have time to refactor the code) Multicast
@@ -201,7 +209,7 @@ public class XMPPServerConnection implements IDumpStatMisc
         // assign a new value to _conn it _may_ be accessed by Multicast (i.e. even before
         // a listener is added
 
-        _conn = c; // this is the point at which changes are visible
+        _conn = newConnection; // this is the point at which changes are visible
 
         //
         // notify watcher of connection
@@ -211,7 +219,7 @@ public class XMPPServerConnection implements IDumpStatMisc
         // Multicast.java uses conn() internally...
         try {
             if (_watcher != null) {
-                _watcher.xmppServerConnected(c);
+                _watcher.xmppServerConnected(newConnection);
             }
         } catch (XMPPException e) {
             _conn = null;
@@ -229,7 +237,7 @@ public class XMPPServerConnection implements IDumpStatMisc
         // we don't rely on Smack API's connect capability as experiments
         // showed it's not reliable. See also newConnection()
         l.info("adding listener");
-        _conn.addConnectionListener(new ConnectionListener()
+        newConnection.addConnectionListener(new ConnectionListener()
         {
             @Override
             public void connectionClosed()
@@ -241,18 +249,16 @@ public class XMPPServerConnection implements IDumpStatMisc
             @Override
             public void connectionClosedOnError(Exception e)
             {
-                l.warn("connection closed: " + e);
+                l.warn("connection closed with err:{}", e.getMessage());
                 disconnect();
             }
 
             private void disconnect()
             {
-                assert _c != null : "null listener conn";
-
                 // XXX: the previous comment here referenced a deadlock - I don't _think_ one is possible...
                 boolean replaced = false;
                 synchronized (XMPPServerConnection.this) {
-                    if (_conn == _c) {
+                    if (_conn == newConnection) {
                         try {
                             l.info("notifying listeners of disconnection");
                             if (_watcher != null) {
@@ -264,12 +270,13 @@ public class XMPPServerConnection implements IDumpStatMisc
                             l.info("conn replaced");
                         }
                     } else {
-                        l.info("connection already replaced");
+                        l.warn("connection already replaced");
+                        rocklog.newDefect(DEFECT_NAME_XSC_CONNECTION_ALREADY_REPLACED).send();
                     }
                 }
 
-                _c.removeConnectionListener(this); // remove so that this handler isn't called again
-                _c.disconnect();
+                newConnection.removeConnectionListener(this); // remove so that this handler isn't called again
+                newConnection.disconnect();
 
                 if (replaced) {
                     if (_linkUp) {
@@ -287,18 +294,19 @@ public class XMPPServerConnection implements IDumpStatMisc
             //
 
             @Override
-            public void reconnectingIn(int arg0) {
+            public void reconnectingIn(int arg0)
+            {
             }
 
             @Override
-            public void reconnectionFailed(Exception arg0) {
+            public void reconnectionFailed(Exception arg0)
+            {
             }
 
             @Override
-            public void reconnectionSuccessful() {
+            public void reconnectionSuccessful()
+            {
             }
-
-            private final XMPPConnection _c = _conn;
         });
     }
 
@@ -328,12 +336,16 @@ public class XMPPServerConnection implements IDumpStatMisc
         return s_shaedXmpp;
     }
 
+    // FIXME (AG): the right thing is not to leak _conn outside at all!
     private volatile XMPPConnection _conn = null; // protect via this (volatile so that conn() can work properly)
     private volatile boolean _linkUp = false;
 
     private final String _resource;
     private final IXMPPServerConnectionWatcher _watcher;
+    private final RockLog rocklog;
     private final String _user = JabberID.did2user(Cfg.did());
+    private final AtomicInteger xscThreadId = new AtomicInteger(0);
+    private final AtomicBoolean connectionInProgress = new AtomicBoolean(false);
 
     private static String s_shaedXmpp; // sha256(scrypt(p|u)|XMPP_PASSWORD_SALT)
 

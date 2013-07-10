@@ -31,8 +31,8 @@ import com.aerofs.daemon.transport.xmpp.Jingle;
 import com.aerofs.daemon.transport.xmpp.Zephyr;
 import com.aerofs.lib.IDumpStat;
 import com.aerofs.lib.IDumpStatMisc;
-import com.aerofs.lib.LibParam.EnterpriseConfig;
 import com.aerofs.lib.ITransferStat;
+import com.aerofs.lib.LibParam.EnterpriseConfig;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgCACertificateProvider;
 import com.aerofs.lib.cfg.CfgKeyManagersProvider;
@@ -42,7 +42,6 @@ import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
 import com.aerofs.lib.event.IEvent;
 import com.aerofs.proto.Files.PBDumpStat;
 import com.aerofs.proto.Files.PBDumpStat.Builder;
-import com.aerofs.proto.Ritual.GetTransferStatsReply;
 import com.aerofs.rocklog.RockLog;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -103,9 +102,10 @@ public class Transports implements IDumpStat, IDumpStatMisc, IStartable, ITransf
             DID localdid,
             String transportId, int transportRank,
             IBlockingPrioritizedEventSink<IEvent> coreQueue,
-            MaxcastFilterReceiver mcfr)
+            MaxcastFilterReceiver mcfr,
+            RockLog rocklog)
     {
-        return new Jingle(localdid, transportId, transportRank, coreQueue, mcfr);
+        return new Jingle(localdid, transportId, transportRank, coreQueue, mcfr, rocklog);
     }
 
     private static Zephyr newZephyr(UserID localid, DID localdid, String transportId, int transportRank,
@@ -151,7 +151,7 @@ public class Transports implements IDumpStat, IDumpStatMisc, IStartable, ITransf
             transports.add(newTCP("t", 0, coreQueue, mcfr, clientChannelFactory, serverSocketChannelFactory));
         }
         if (Cfg.useJingle() && !EnterpriseConfig.IS_ENTERPRISE_DEPLOYMENT.get()) {
-            transports.add(newJingle(localdid.get(), "j", 1, coreQueue, mcfr));
+            transports.add(newJingle(localdid.get(), "j", 1, coreQueue, mcfr, rocklog));
         }
         if (Cfg.useZephyr()) {
             boolean enableMulticast = !Cfg.useJingle() && Cfg.useZephyr();

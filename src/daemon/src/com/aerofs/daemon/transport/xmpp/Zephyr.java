@@ -68,7 +68,7 @@ public class Zephyr extends XMPP implements ISignallingService
             SocketAddress zephyrAddress, Proxy proxy,
             boolean enableMulticast)
     {
-        super(localdid, id, rank, sink, mcfr);
+        super(localdid, id, rank, sink, mcfr, rocklog);
 
         checkState(DaemonParam.XMPP.CONNECT_TIMEOUT > DaemonParam.Zephyr.HANDSHAKE_TIMEOUT); // should be much larger!
 

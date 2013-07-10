@@ -2,11 +2,29 @@ package com.aerofs.lib;
 
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
-import com.aerofs.base.ex.*;
-import com.aerofs.lib.cfg.CfgAbsRoots;
-import com.aerofs.lib.ex.*;
+import com.aerofs.base.ex.AbstractExWirable;
+import com.aerofs.base.ex.ExBadCredential;
+import com.aerofs.base.ex.ExInviteeListEmpty;
+import com.aerofs.base.ex.ExProtocolError;
+import com.aerofs.base.ex.ExTimeout;
+import com.aerofs.base.ex.Exceptions;
 import com.aerofs.lib.FileUtil.FileName;
 import com.aerofs.lib.cfg.Cfg;
+import com.aerofs.lib.cfg.CfgAbsRoots;
+import com.aerofs.lib.ex.ExAlreadyInvited;
+import com.aerofs.lib.ex.ExChildAlreadyShared;
+import com.aerofs.lib.ex.ExDeviceIDAlreadyExists;
+import com.aerofs.lib.ex.ExDeviceOffline;
+import com.aerofs.lib.ex.ExEmailNotVerified;
+import com.aerofs.lib.ex.ExIndexing;
+import com.aerofs.lib.ex.ExNoStripeCustomerID;
+import com.aerofs.lib.ex.ExNotAuthenticated;
+import com.aerofs.lib.ex.ExNotDir;
+import com.aerofs.lib.ex.ExNotFile;
+import com.aerofs.lib.ex.ExNotShared;
+import com.aerofs.lib.ex.ExParentAlreadyShared;
+import com.aerofs.lib.ex.ExUIMessage;
+import com.aerofs.lib.ex.ExUpdating;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.proto.Common.PBException.Type;
 import com.aerofs.swig.driver.Driver;
@@ -127,6 +145,7 @@ public abstract class Util
         return builder.toString();
     }
 
+    @SuppressWarnings("unused")
     public static String getThreadStackTrace(Thread t)
     {
         return getAllThreadStackTraces(new Thread[] {t});
@@ -715,8 +734,7 @@ public abstract class Util
     /**
      * the method runs ITry in a new thread
      */
-    public static void exponentialRetryNewThread(final String name, final Callable<Void> call,
-            final Class<?> ... excludes)
+    public static void exponentialRetryNewThread(final String name, final Callable<Void> call, final Class<?> ... excludes)
     {
         ThreadUtil.startDaemonThread("expo.retry." + name, new Runnable()
         {
@@ -744,7 +762,7 @@ public abstract class Util
                 throw e;
 
             } catch (Exception e) {
-                l.warn(name + ". expo wait " + interval + ": " + e(e, excludes));
+                l.warn("{} expo wait:{} cause:{}", name, interval, e(e, excludes));
                 ThreadUtil.sleepUninterruptable(interval);
                 interval = Math.min(interval * 2, LibParam.EXP_RETRY_MAX_DEFAULT);
             }
