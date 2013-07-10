@@ -59,8 +59,8 @@ public class DlgDefect extends AeroFSJFaceDialog
      * details, and the comment is optional.
      * @param expectedException if {@code exception} is non-null, true means the exception is one of
      * the expected exception types specified in ErrorMessage.show(). In this case, the string
-     * "(expected error)" will be attached to the support email. Support personale can ignore
-     * emails with expected exceptions unless the user provides addition information.
+     * "(expected error)" will be attached to the support email. Support personnel can ignore
+     * emails with expected exceptions unless the user provides additional information.
      */
     public DlgDefect(@Nullable Shell sheetStyleParent, @Nullable Throwable exception,
             boolean expectedException)
