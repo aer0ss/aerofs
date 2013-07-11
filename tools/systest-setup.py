@@ -16,7 +16,7 @@ import getpass
 from boto.s3.connection import S3Connection
 
 file_root = os.path.dirname(__file__)
-python_aerofs_lib = os.path.join(file_root,"../src/python-lib")
+python_aerofs_lib = os.path.join(file_root, "../src/python-lib")
 sys.path.append(python_aerofs_lib)
 
 from aerofs_sp.scrypt import scrypt
@@ -34,6 +34,7 @@ DEFAULT_PASSWORD = 'temp123'
 DEFAULT_ROOT = '~/syncdet'
 DEFAULT_APPROOT = os.path.join(DEFAULT_ROOT, 'deploy', 'approot')
 DEFAULT_RTROOT = os.path.join(DEFAULT_ROOT, 'user_data', 'rtroot')
+DEFAULT_ANCHOR = os.path.join(DEFAULT_ROOT, 'user_data', 'AeroFS')
 DEFAULT_SP_URL = 'https://sp.aerofs.com/sp'
 DEFAULT_RSH = 'ssh'
 DEFAULT_USERID = getpass.getuser() + '+syncdet+{}@aerofs.com'
@@ -91,6 +92,7 @@ def generate_yaml(args, username, actor_data):
     actor_defaults['aero_app_root'] = args.approot
     actor_defaults['aero_rt_root'] = args.rtroot
     actor_defaults['aero_sp_url'] = args.sp_url
+    actor_defaults['aero_root_anchor'] = args.anchor
     if not args.multiuser:
         assert not isinstance(username, list)
         actor_defaults['aero_userid'] = username
@@ -159,6 +161,8 @@ def main():
         help="Default is ~/syncdet")
     parser.add_argument('--userid', default=DEFAULT_USERID,
         help="userid pattern")
+    parser.add_argument('--anchor', default=DEFAULT_ANCHOR,
+        help="Location of the root anchor")
     args = parser.parse_args()
 
     # Parse the conf file to get actor IP's
@@ -166,7 +170,7 @@ def main():
 
     # Create user(s) and get the AeroFS username(s)
     if args.multiuser:
-        username = [create_user(args.userid, args.password) for i in xrange(len(actor_data))]
+        username = [create_user(args.userid, args.password) for _ in xrange(len(actor_data))]
     else:
         username = create_user(args.userid, args.password)
 
