@@ -38,6 +38,8 @@ class webadmin (
 
     service{"uwsgi":
         ensure => running,
+        hasstatus => false,
+        hasrestart => true,
         require => [
             Package["aerofs-web"],
             File["/var/www"]
