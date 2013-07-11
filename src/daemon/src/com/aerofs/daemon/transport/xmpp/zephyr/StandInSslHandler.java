@@ -47,15 +47,16 @@ final class StandInSslHandler extends SimpleChannelHandler
 
         checkState(zephyrProtocolHandler.hasHandshakeCompleted());
 
-        SslHandler sslHandler;
+        Mode sslMode;
         if (zephyrProtocolHandler.getLocalZid() < zephyrProtocolHandler.getRemoteZid()) {
-            sslHandler = newSslHandler(Mode.Server); // we connected to the server first, we get to be the server
+            sslMode = Mode.Server; // we connected to the server first, we get to be the server
         } else {
-            sslHandler = newSslHandler(Mode.Client);
+            sslMode = Mode.Client;
         }
 
+        SslHandler sslHandler = newSslHandler(sslMode);
+
         ctx.getPipeline().addAfter(ctx.getName(), "ssl", sslHandler);
-        ctx.getPipeline().remove(this);
 
         super.channelConnected(ctx, e);
     }

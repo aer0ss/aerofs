@@ -9,6 +9,7 @@ import com.aerofs.zephyr.client.IZephyrSignallingService;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelStateEvent;
+import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.SimpleChannelHandler;
 import org.jboss.netty.util.Timer;
 
@@ -17,8 +18,7 @@ import java.util.concurrent.TimeUnit;
 public final class ZephyrProtocolHandler extends SimpleChannelHandler
 {
     private static final String HANDSHAKE_HANDLER_NAME = "zephyr_handshake";
-    private static final String DECODER_HANDLER_NAME = "zephyr_decoder";
-    private static final String ENCODER_HANDLER_NAME = "zephyr_encoder";
+    private static final String REGISTRATION_DECODER_HANDLER_NAME = "zephyr_registration_decoder";
 
     private final ZephyrHandshakeHandler zephyrHandshakeHandler;
 
@@ -39,12 +39,25 @@ public final class ZephyrProtocolHandler extends SimpleChannelHandler
 
         String ourHandlerName = ctx.getName();
         pipeline.addAfter(ourHandlerName, HANDSHAKE_HANDLER_NAME, zephyrHandshakeHandler);
-        pipeline.addAfter(ourHandlerName, DECODER_HANDLER_NAME, new ZephyrFrameDecoder());
-        pipeline.addAfter(ourHandlerName, ENCODER_HANDLER_NAME, new ZephyrFrameEncoder());
+        pipeline.addAfter(ourHandlerName, REGISTRATION_DECODER_HANDLER_NAME, new ZephyrRegistrationDecoder());
 
         ctx.getPipeline().remove(this); // finish by removing ourself
 
         super.channelOpen(ctx, e);
+    }
+
+    @Override
+    public void messageReceived(ChannelHandlerContext ctx, MessageEvent e)
+            throws Exception
+    {
+        throw new IllegalStateException("handler should not be in pipeline during active communication");
+    }
+
+    @Override
+    public void writeRequested(ChannelHandlerContext ctx, MessageEvent e)
+            throws Exception
+    {
+        throw new IllegalStateException("handler should not be in pipeline during active communication");
     }
 
     public IZephyrSignallingClient getZephyrSignallingClient()
