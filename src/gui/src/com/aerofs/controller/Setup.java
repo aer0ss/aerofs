@@ -64,7 +64,7 @@ class Setup
      */
     String getDefaultAnchorRoot()
     {
-        String parent = L.isStaging() ? _rtRoot : OSUtil.get().getDefaultRootAnchorParent();
+        String parent = OSUtil.get().getDefaultRootAnchorParent();
         return new File(parent, L.rootAnchorName()).getAbsolutePath();
     }
 

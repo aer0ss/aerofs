@@ -32,9 +32,7 @@ public class OSUtilOSX extends AbstractOSUtilLinuxOSX
     @Override
     public final String getDefaultRTRoot()
     {
-        String path = System.getenv("HOME") + "/Library/Application Support/" + L.product();
-        if (L.isStaging()) path += ".staging";
-        return path;
+        return System.getenv("HOME") + "/Library/Application Support/" + L.product();
     }
 
     @Override

@@ -32,14 +32,7 @@ public class OSUtilLinux extends AbstractOSUtilLinuxOSX
     @Override
     public final String getDefaultRTRoot()
     {
-        String name;
-        if (L.isStaging()) {
-                name = L.productUnixName() + ".staging";
-        } else {
-                name = L.productUnixName();
-        }
-
-        return System.getenv("HOME") + File.separator + "." + name;
+        return System.getenv("HOME") + File.separator + "." + L.productUnixName();
     }
 
     @Override

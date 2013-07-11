@@ -25,8 +25,6 @@ public class OSUtilWindows implements IOSUtil
     {
         // use space-free name to be consistent with the AppRoot name.
         String name = L.productSpaceFreeName();
-        if (L.isStaging()) name += ".staging";
-
         String path = System.getenv("APPDATA");
         return (path == null ? "C:" : path) + "\\" + name;
     }
