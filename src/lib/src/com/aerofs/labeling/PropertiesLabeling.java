@@ -28,12 +28,6 @@ class PropertiesLabeling implements ILabeling
     }
 
     @Override
-    public boolean isStaging()
-    {
-        return config.getBoolean( "labeling.isStaging", false );
-    }
-
-    @Override
     public boolean isMultiuser()
     {
         return config.getBoolean( "labeling.isMultiuser", false );
@@ -79,7 +73,6 @@ class PropertiesLabeling implements ILabeling
     public String toString() {
         return Objects.toStringHelper(this)
                 .add("brand", brand())
-                .add("isStaging", isStaging())
                 .add("isMultiuser", isMultiuser())
                 .add("product", product())
                 .add("productSpaceFreeName", productSpaceFreeName())

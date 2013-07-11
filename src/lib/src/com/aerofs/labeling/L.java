@@ -30,10 +30,6 @@ public class L
         return get().brand();
     }
 
-    public static boolean isStaging() {
-        return get().isStaging();
-    }
-
     public static boolean isMultiuser() {
         return get().isMultiuser();
     }
