@@ -454,6 +454,7 @@ public abstract class XMPP implements ITransportImpl, IConnectionServiceListener
                     }
                 } catch (IOException e) {
                     try {
+                        l.warn("fail process incoming pkt d:{} err:{}", did, e.getMessage());
                         disconnect_(did);
                     } catch (ExNoResource disconnectException) {
                         SystemUtil.fatal("fail disconnect cause original:" + e + " next:" + disconnectException);
