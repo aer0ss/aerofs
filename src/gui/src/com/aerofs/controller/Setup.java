@@ -151,20 +151,16 @@ class Setup
      *   1. signs into SP and cache intermediate values & SP connection.
      *   2. call checkRootAnchor later and finish the rest of setup process.
      */
-    SignInResult signIn(UserID userID, char[] password)
+    SignInResult signInUser(UserID userID, char[] password)
             throws Exception
     {
         SignInResult result = new SignInResult();
         result._scrypted = SecUtil.scrypt(password, userID);
 
-        // When setting up Team Servers, the ID of the user who sets up the server is used with this
-        // SP client to sign in. Since the default configurator uses mutual authentication,
-        // which doesn't work with regular clients, we force a null connection configurator.
-        // consult MP for details.
         SPBlockingClient.Factory fact = new SPBlockingClient.Factory();
         result._sp = fact.create_(Cfg.user(),
                 SPBlockingClient.ONE_WAY_AUTH_CONNECTION_CONFIGURATOR);
-        result._sp.signIn(userID.getString(), ByteString.copyFrom(result._scrypted));
+        result._sp.signInUser(userID.getString(), ByteString.copyFrom(result._scrypted));
 
         return result;
     }
@@ -184,7 +180,7 @@ class Setup
 
         createSettingUpFlagFile();
 
-        return signIn(userID, password);
+        return signInUser(userID, password);
     }
 
     /**

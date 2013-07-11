@@ -4,7 +4,6 @@ import com.aerofs.base.BaseParam.SP;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.net.IURLConnectionConfigurator;
 import com.aerofs.base.ssl.ICertificateProvider;
-import com.aerofs.labeling.L;
 import com.aerofs.lib.LibParam.EnterpriseConfig;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.base.ex.ExBadCredential;
@@ -13,7 +12,6 @@ import com.aerofs.lib.cfg.CfgCACertificateProvider;
 import com.aerofs.lib.configuration.EnterpriseCertificateProvider;
 import com.aerofs.proto.Sp.SPServiceBlockingStub;
 import com.aerofs.proto.Sp.SPServiceStub.SPServiceStubCallbacks;
-import com.google.protobuf.ByteString;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 
@@ -28,6 +26,7 @@ public class SPBlockingClient extends SPServiceBlockingStub
     public static final IURLConnectionConfigurator ONE_WAY_AUTH_CONNECTION_CONFIGURATOR;
 
     private final UserID _user;
+
     private static IBadCredentialListener _bcl;
 
     static
@@ -51,17 +50,10 @@ public class SPBlockingClient extends SPServiceBlockingStub
      */
     public static class Factory
     {
-        private static IURLConnectionConfigurator getDefaultConfigurator()
-        {
-            return L.isMultiuser() ?
-                    MUTUAL_AUTH_CONNECTION_CONFIGURATOR :
-                    ONE_WAY_AUTH_CONNECTION_CONFIGURATOR;
-        }
-
         public SPBlockingClient create_(UserID user)
         {
-            return new SPBlockingClient(new SPClientHandler(SP.URL.get(), getDefaultConfigurator()),
-                    user);
+            return new SPBlockingClient(
+                    new SPClientHandler(SP.URL.get(), MUTUAL_AUTH_CONNECTION_CONFIGURATOR), user);
         }
 
         public SPBlockingClient create_(UserID user, IURLConnectionConfigurator configurator)
@@ -95,12 +87,8 @@ public class SPBlockingClient extends SPServiceBlockingStub
      */
     public void signInRemote() throws Exception
     {
-        ByteString credentials = L.isMultiuser() ?
-                Cfg.did().toPB() :
-                Cfg.scryptedPB();
-
         try {
-            super.signIn(_user.getString(), credentials);
+            super.signInDevice(_user.getString(), Cfg.did().toPB());
         } catch (ExBadCredential e) {
             if (_bcl != null) {
                l.debug("ExBadCredential Caught, informing UI.");

@@ -78,7 +78,7 @@ public class TestSP_SignIn extends AbstractSPTest
 
         // Credentials do not need to be supplied here.
         mockCertificateAuthenticatorSetAuthenticatedState(tsUser, tsDevice);
-        service.signIn(tsUser.id().getString(), tsDevice.id().toPB());
+        service.signInDevice(tsUser.id().getString(), tsDevice.id().toPB());
     }
 
     @Test(expected = ExBadCredential.class)
