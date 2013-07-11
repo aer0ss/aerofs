@@ -40,6 +40,7 @@ final class ZephyrClientPipelineFactory implements ChannelPipelineFactory
     private final ZephyrConnectionService connectionService;
     private final IConnectionServiceListener connectionServiceListener;
     private final AddressResolverHandler resolver;
+    private final CoreFrameEncoder coreFrameEncoder;
     private final Proxy proxy;
     private final long zephyrHandshakeTimeout;
     private final TimeUnit zephyrHandshakeTimeoutTimeunit;
@@ -67,6 +68,7 @@ final class ZephyrClientPipelineFactory implements ChannelPipelineFactory
         this.connectionService = connectionService;
         this.connectionServiceListener = connectionServiceListener;
         this.resolver = new AddressResolverHandler(null);
+        this.coreFrameEncoder = new CoreFrameEncoder();
         this.proxy = proxy;
         this.zephyrHandshakeTimeout = zephyrHandshakeTimeout;
         this.zephyrHandshakeTimeoutTimeunit = MILLISECONDS;
@@ -94,6 +96,8 @@ final class ZephyrClientPipelineFactory implements ChannelPipelineFactory
         CNameVerificationHandler cNameVerificationHandler = newCNameVerificationHandler();
         pipeline.addLast("standinssl", newStandInSslHandler(zephyrProtocolHandler));
         pipeline.addLast("cname", cNameVerificationHandler);
+        pipeline.addLast("coredecoder", new CoreFrameDecoder());
+        pipeline.addLast("coreencoder", coreFrameEncoder);
 
         // zephyr client
         ZephyrClientHandler zephyrClientHandler = newZephyrClientHandler(zephyrProtocolHandler);

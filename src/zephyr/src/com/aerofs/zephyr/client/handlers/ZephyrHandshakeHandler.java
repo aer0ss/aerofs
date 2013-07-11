@@ -29,13 +29,18 @@ import java.util.Iterator;
 import java.util.concurrent.TimeUnit;
 
 import static com.aerofs.base.net.ChannelUtil.pretty;
+import static com.aerofs.base.net.ZephyrConstants.ZEPHYR_BIND_MSG_LEN;
+import static com.aerofs.base.net.ZephyrConstants.ZEPHYR_BIND_PAYLOAD_LEN;
 import static com.aerofs.base.net.ZephyrConstants.ZEPHYR_INVALID_CHAN_ID;
+import static com.aerofs.base.net.ZephyrConstants.ZEPHYR_MAGIC;
+import static com.aerofs.base.net.ZephyrConstants.ZEPHYR_MSG_BYTE_ORDER;
 import static com.aerofs.zephyr.client.ZephyrHandshakeEngine.HandshakeReturn.NO_ACTION;
 import static com.aerofs.zephyr.client.ZephyrHandshakeEngine.HandshakeState.SUCCEEDED;
 import static com.aerofs.zephyr.proto.Zephyr.ZephyrControlMessage.Type.HANDSHAKE;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.Lists.newArrayListWithCapacity;
+import static org.jboss.netty.buffer.ChannelBuffers.buffer;
 import static org.jboss.netty.channel.Channels.connect;
 import static org.jboss.netty.channel.Channels.fireChannelConnected;
 import static org.jboss.netty.channel.Channels.fireExceptionCaught;
@@ -283,15 +288,28 @@ final class ZephyrHandshakeHandler extends SimpleChannelHandler implements IZeph
             }
         });
 
-        write(ctx, writeFuture, new BindRequest(remoteZid));
+        write(ctx, writeFuture, newZephyrBindMessage(remoteZid));
+    }
+
+    private ChannelBuffer newZephyrBindMessage(int remoteZid)
+    {
+        ChannelBuffer protocolBuffer = buffer(ZEPHYR_BIND_MSG_LEN);
+
+        checkState(protocolBuffer.order() == ZEPHYR_MSG_BYTE_ORDER, "bad byteorder exp:" + ZEPHYR_MSG_BYTE_ORDER + " act:" + protocolBuffer.order());
+        protocolBuffer.writeBytes(ZEPHYR_MAGIC);
+        protocolBuffer.writeInt(ZEPHYR_BIND_PAYLOAD_LEN);
+        protocolBuffer.writeInt(remoteZid);
+
+        return protocolBuffer;
     }
 
     private void drainReceived(ChannelHandlerContext ctx)
     {
         Iterator<ChannelBuffer> it = receivedBuffers.iterator();
-        while(it.hasNext()) {
-            fireMessageReceived(ctx, it.next());
+        while (it.hasNext()) {
+            ChannelBuffer buffer = it.next();
             it.remove();
+            fireMessageReceived(ctx, buffer);
         }
     }
 }

@@ -140,6 +140,15 @@ final class ZephyrClientHandler extends SimpleChannelHandler implements CNameLis
     }
 
     @Override
+    public void writeRequested(ChannelHandlerContext ctx, MessageEvent e)
+            throws Exception
+    {
+        checkNotNull(remoteid, "cname verification not completed");
+
+        super.writeRequested(ctx, e);
+    }
+
+    @Override
     public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e)
             throws Exception
     {
