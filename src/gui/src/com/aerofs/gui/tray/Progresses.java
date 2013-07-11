@@ -15,8 +15,7 @@ import com.aerofs.ui.IUI.MessageType;
 public class Progresses {
     private static final Logger l = Loggers.getLogger(Progresses.class);
 
-    private static final String TOOLTIP_PREFIX =
-            (L.isStaging() ? "STAGING " : "") + L.product();
+    private static final String TOOLTIP_PREFIX = L.product();
     private static final String DEFAULT_TOOLTIP =
             TOOLTIP_PREFIX + " " + Cfg.ver() +
             (OSUtil.isOSX() ? "" : "\nDouble click to open " + L.product() + " folder");

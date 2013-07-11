@@ -143,11 +143,7 @@ public class EmailSender
 
         msg.setFrom(new InternetAddress(from, fromName));
         msg.setRecipients(Message.RecipientType.TO, InternetAddress.parse(to, false));
-        if (L.isStaging()) {
-            msg.setSubject("[STAGING] " + subject, CHARSET);
-        } else {
-            msg.setSubject(subject, CHARSET);
-        }
+        msg.setSubject(subject, CHARSET);
 
         if (replyTo != null) msg.setReplyTo(InternetAddress.parse(replyTo, false));
 
