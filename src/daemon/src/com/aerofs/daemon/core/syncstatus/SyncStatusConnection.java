@@ -9,7 +9,6 @@ import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
-import com.aerofs.labeling.L;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.id.SID;
@@ -62,9 +61,7 @@ public class SyncStatusConnection extends AbstractConnectionStatusNotifier
     }
 
     private static final DynamicStringProperty URL =
-            new DynamicStringProperty("lib.sss.url", L.isStaging() ?
-                    "https://staging.aerofs.com/syncstat/syncstat" :
-                    "https://sss.aerofs.com/syncstat");
+            new DynamicStringProperty("lib.sss.url", "https://sss.aerofs.com/syncstat");
 
     @Inject
     SyncStatusConnection(CfgLocalUser user, TC tc, SyncStatusBlockingClient.Factory ssf)

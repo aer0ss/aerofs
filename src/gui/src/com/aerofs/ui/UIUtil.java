@@ -97,13 +97,8 @@ public class UIUtil
     private static String getUserFriendlyID(PBSOCID pbsocid)
     {
         ByteString oid = pbsocid.getOid();
-        if (L.isStaging()) {
-            // for internal use we want the first 3 oid bytes (like git)
-            return String.format("%1$02X%2$X", oid.byteAt(0), oid.byteAt(1) & 0xF);
-        } else {
-            // don't print the 0th and 1st bytes to avoid exposing the actual oid
-            return String.format("%1$X%2$02X", oid.byteAt(1) & 0xF, oid.byteAt(2));
-        }
+        // don't print the 0th and 1st bytes to avoid exposing the actual oid
+        return String.format("%1$X%2$02X", oid.byteAt(1) & 0xF, oid.byteAt(2));
     }
 
     /**

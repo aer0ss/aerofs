@@ -2,7 +2,6 @@ package com.aerofs.daemon.lib;
 
 import com.aerofs.base.C;
 import com.aerofs.lib.properties.DynamicInetSocketAddress;
-import com.aerofs.labeling.L;
 import com.aerofs.lib.LibParam.Daemon;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
@@ -28,9 +27,8 @@ public class DaemonParam
 
     public static class TCP
     {
-        public static final String MCAST_ADDRESS        = L.isStaging() ? "225.7.8.8"
-                                                                              : "225.7.8.9";
-        public static final int MCAST_PORT              = L.isStaging() ? 29870 : 29871;
+        public static final String MCAST_ADDRESS        = "225.7.8.9";
+        public static final int MCAST_PORT              = 29871;
         public static final int MCAST_MAX_DGRAM_SIZE    = 1024;
         public static final long HEARTBEAT_INTERVAL     = 30 * C.SEC;
         public static final long RETRY_INTERVAL         = 5 * C.SEC;
