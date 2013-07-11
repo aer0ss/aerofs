@@ -15,5 +15,6 @@ cp /opt/web/production.ini /tmp/production.ini
 sudo dpkg -i aerofs-web.deb
 cp /tmp/production.ini /opt/web/production.ini
 
+sudo dpkg -i aerofs-installers.deb
 sudo dpkg -i aerofs-sp.deb
 sudo dpkg -i aerofs-bootstrap.deb

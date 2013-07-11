@@ -14,7 +14,8 @@ rm -f $DEBIANS/*
 for required in \
     sp \
     web \
-    bootstrap
+    bootstrap \
+    installers
 do
     cp debs/aerofs-${required}.deb $DEBIANS/
 done
