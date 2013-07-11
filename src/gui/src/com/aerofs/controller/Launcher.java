@@ -275,7 +275,7 @@ class Launcher
     {
         // There is no SV in enterprise, so the archiver's gzipped logs will stick around
         // forever. Don't compress on enterprise, and let logback delete old logs
-        if (Cfg.useArchive() && !LibParam.EnterpriseConfig.IS_ENTERPRISE_DEPLOYMENT.get())
+        if (!LibParam.EnterpriseConfig.IS_ENTERPRISE_DEPLOYMENT.get())
         {
             new LogArchiver(absRTRoot()).start();
         }

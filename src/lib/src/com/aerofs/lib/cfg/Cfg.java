@@ -421,11 +421,6 @@ public class Cfg
         return _timeout;
     }
 
-    public static boolean useArchive()
-    {
-        return !L.isStaging();
-    }
-
     /**
      * @return absolute path to the anchor of the root store
      */

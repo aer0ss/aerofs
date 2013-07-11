@@ -378,7 +378,7 @@ public final class SVClient
             final boolean sendDB, final boolean sendHeapDumps, boolean sendUnobfuscatedFileMapping)
     {
         File defectFilesZip = null;
-        if (Cfg.inited() && Cfg.useArchive() && (sendLogs || sendDB || sendHeapDumps || sendUnobfuscatedFileMapping)) {
+        if (Cfg.inited() && (sendLogs || sendDB || sendHeapDumps || sendUnobfuscatedFileMapping)) {
             try {
                 // add log files
                 File[] files = new File(rtRoot).listFiles(
