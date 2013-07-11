@@ -203,8 +203,8 @@ public class SingleuserTrayMenu extends AbstractTrayMenu implements IRitualNotif
 
     private void addConflictsMenuItem(TrayMenuPopulator trayMenuPopulator, int conflictCount)
     {
-        String label = UIUtil.prettyLabelWithCount(conflictCount, "A Conflict Was Found",
-                "Conflicts Were Found");
+        String label = UIUtil.prettyLabelWithCount(conflictCount, "A conflict was found",
+                "conflicts were found");
 
         trayMenuPopulator.addWarningMenuItem(label,
                 new AbstractListener(RESOLVE_CONFLICTS)
@@ -228,7 +228,7 @@ public class SingleuserTrayMenu extends AbstractTrayMenu implements IRitualNotif
     protected void createSharedFoldersMenu(Menu menu)
     {
         MenuItem mi = new MenuItem(menu, SWT.CASCADE);
-        mi.setText("Shared Folders");
+        mi.setText("Manage Shared Folders");
         final Menu menuManage = new Menu(menu.getShell(), SWT.DROP_DOWN);
         mi.setMenu(menuManage);
         final TrayMenuPopulator populater = new TrayMenuPopulator(menuManage);

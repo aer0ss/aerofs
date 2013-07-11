@@ -242,7 +242,7 @@ public abstract class AbstractTrayMenu implements ITrayMenu, ITrayMenuComponentL
 
     protected void createSharedFoldersMenu(TrayMenuPopulator trayMenuPopulator)
     {
-        trayMenuPopulator.addMenuItem("Shared Folders...",
+        trayMenuPopulator.addMenuItem("Manage Shared Folders...",
                 new AbstractListener(MANAGE_SHARED_FOLDER) {
             @Override
             protected void handleEventImpl(Event event)
