@@ -9,7 +9,6 @@ import com.aerofs.base.id.DID;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UniqueID;
 import com.aerofs.base.id.UserID;
-import com.aerofs.labeling.L;
 import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.OutArg;
@@ -86,6 +85,7 @@ public final class SVClient
     //
     private static final DynamicStringProperty SV_URL =
             new DynamicStringProperty("lib.sv.url", "https://sv.aerofs.com:443/sv_beta/sv");
+
     private static final SVRPCClient client = new SVRPCClient(SV_URL.get());
 
     private static SVRPCClient getRpcClient()
@@ -290,14 +290,6 @@ public final class SVClient
 
         if (cause == null) cause = new Exception(description); // FIXME (AG): bogus
         String stackTrace = Exceptions.getStackTraceAsString(cause);
-
-        if (L.isStaging()) {
-            // NOTE: I explicitly check if STAGING is enabled before printing the defectContents
-            // on PROD we should NEVER print defectContents
-            l.warn("##### DEFECT #####\n{}\n{}\ncontents:{}", description, Util.e(cause), defectContents);
-            l.warn("(sv defect sending disabled on staging.)");
-            return;
-        }
 
         // If we have any LinkageError (NoClassDefFoundError or UnsatisfiedLinkError) or
         // MissingResourceException, this probably indicates that our stripped-down version of
