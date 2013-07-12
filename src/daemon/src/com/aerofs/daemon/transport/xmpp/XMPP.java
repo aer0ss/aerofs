@@ -17,6 +17,7 @@ import com.aerofs.daemon.event.net.EOTpStartPulse;
 import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.lib.BlockingPrioQueue;
 import com.aerofs.daemon.transport.TransportThreadGroup;
+import com.aerofs.daemon.transport.exception.ExSendFailed;
 import com.aerofs.daemon.transport.lib.HdPulse;
 import com.aerofs.daemon.transport.lib.IConnectionServiceListener;
 import com.aerofs.daemon.transport.lib.IMaxcast;
@@ -345,9 +346,8 @@ public abstract class XMPP implements ITransportImpl, IConnectionServiceListener
     //--------------------------------------------------------------------------
     //
     //
-    // IConnectionServiceListener event methods - use these methods to enqueue an event into
-    // XMPP for processing within the event dispatch thread. should be used by
-    // subsystems that XMPP controls
+    // IConnectionServiceListener event methods - subsystems should use these methods
+    // to have this class process incoming events
     //
     //
     //--------------------------------------------------------------------------
@@ -398,10 +398,154 @@ public abstract class XMPP implements ITransportImpl, IConnectionServiceListener
         }
     }
 
+    //
+    // process incoming transport messages
+    //
+
+    /**
+     * Process an incoming unicast control message from a peer inside the
+     * <code>XMPP</code> event-dispatch thread
+     * <br/>
+     * <br/>
+     * <strong>IMPORTANT:</strong> asserts that this method is <em>only</em>
+     * called from within the <code>XMPP</code> event-dispatch thread
+     * <br/>
+     * <br/>
+     * <strong>IMPORTANT:</strong> if the control packet <em>cannot</em> be
+     * processed by the <code>Core</code> because of resource constraints this
+     * method will assert
+     *
+     * @param did {@link DID} that sent the control packet
+     * @param hdr {@link PBTPHeader} where the type is <em>not</em> <code>PAYLOAD</code>
+     * or <code>DIAGNOSIS</code>. <strong>IMPORTANT:</strong> asserts that
+     * <code>hdr</code> does not have an unhandled type.
+     * @throws ExProtocolError if the control packet has an unrecognized (and therefore
+     * unprocessable) type
+     */
+    private void processOtherUnicastControl(DID did, PBTPHeader hdr)
+        throws ExProtocolError
+    {
+        PBTPHeader.Type type = hdr.getType();
+        assert type != DATAGRAM && type != DIAGNOSIS : ("invalid hdr type:" + type.name());
+        if (type == STREAM) {
+            assert hdr.getStream().getType() != Type.PAYLOAD : ("invalid stream hdr type:" + hdr.getStream().getType());
+        }
+
+        Endpoint ep = new Endpoint(this, did);
+        try {
+            PBTPHeader ret = TPUtil.processUnicastControl(ep, hdr, _sink, _sm);
+            sendControl(did, ret, Prio.LO);
+        } catch (ExNoResource e) {
+            l.warn("fail notify core of incoming control d:{} t:{}", did, hdr.getType().name());
+            disconnect(did, e);
+        }
+    }
+
+    /**
+     * Process an incoming pulse control message from a peer inside the
+     * <code>XMPP</code> event-dispatch thread. This message
+     * <em>should</em>be of type <code>TRANSPORT_CHECK_PULSE_CALL</code> or
+     * <code>TRANSPORT_CHECK_PULSE_REPLY</code>.
+     * <br/>
+     * <br/>
+     * <strong>IMPORTANT:</strong> asserts that this method is <em>only</em>
+     * called from within the <code>XMPP</code> event-dispatch thread
+     *
+     * @param did {@link DID} of the peer that sent the pulse control message
+     * @param cp {@link PBCheckPulse} pulse control message received from the peer
+     * @param cpcall <code>true</code>if it is of type
+     * <code>TRANSPORT_CHECK_PULSE_CALL</code>, <code>false</code> if it is of
+     * type <code>TRANSPORT_CHECK_PULSE_REPLY</code>
+     */
+    private void processPulseControl(DID did, PBCheckPulse cp, boolean cpcall)
+    {
+        int pulseid = cp.getPulseId();
+        if (cpcall) {
+            l.info("rcv pulse req msgpulseid:" + pulseid + " d:" + did);
+            sendControl(did, newCheckPulseReply(pulseid), Prio.HI);
+        } else {
+            l.info("rcv pulse rep msgpulseid:" + pulseid + " d:" + did);
+            _pm.processIncomingPulseId(did, pulseid);
+        }
+    }
+
+    /**
+     * Process an incoming {@link PBTransportDiagnosis} diagnostic control message from a
+     * peer inside the <code>XMPP</code> event-dispatch thread
+     * <br/>
+     * <br/>
+     * <strong>IMPORTANT:</strong> asserts that this method is <em>only</em>
+     * called from within the <code>XMPP</code> event-dispatch thread
+     *
+     * @param did {@link DID} of the peer that sent the diagnostic message
+     * @param dg {@link PBTransportDiagnosis} diagnostic message sent by the peer
+     * @throws ExProtocolError if the diagnostic message has a type that is unrecognized
+     * (and therefore unprocessable) by this method
+     */
+    private void processDiagnosis(DID did, PBTransportDiagnosis dg)
+        throws ExProtocolError
+    {
+        PBTransportDiagnosis dgret = processUnicastControlDiagnosis(did, dg, _spf, _tds);
+        if (dgret != null) {
+            PBTPHeader ret = makeDiagnosis(dgret);
+            sendControl(did, ret, Prio.LO);
+        }
+    }
+
+    /**
+     * Provides a uniform way to send control responses to a peer inside the
+     * <code>XMPP</code> event-dispatch thread. It allows (and will not send)
+     * a <code>null</code> packet and logs an exception thrown during the
+     * <code>send</code> call
+     * <br/>
+     * <br/>
+     * Messages that should be sent out using this method include (among others):
+     * <ul>
+     *     <li>Payload responses</li>
+     *     <li>Pulse calls/responses</li>
+     *     <li>Flood, Ping, and other diagnostic packets</li>
+     *     <li>Generic control responses</li>
+     * </ul>
+     * <strong>IMPORTANT:</strong> asserts that this method is <em>only</em>
+     * called from within the <code>XMPP</code> event-dispatch thread
+     *
+     * @param did {@link DID} of the peer to which response will be sent
+     * @param hdr {@link PBTPHeader} to be send to the peer. <code>hdr</code> can
+     * be <code>null</code>, in which case <code>sendControl</code> acts as a
+     * no-op
+     * @param pri {@link Prio} priority with which the message is scheduled for
+     * sending
+     */
+    private void sendControl(final DID did, @Nullable final PBTPHeader hdr, final Prio pri)
+    {
+        if (hdr == null) {
+            l.debug("null return");
+            return;
+        }
+
+        AbstractEBSelfHandling controlEvent = new AbstractEBSelfHandling()
+        {
+            @Override
+            public void handle_()
+            {
+                try {
+                    _spf.send_(did, null, pri, newControl(hdr), null);
+                } catch (Exception e) {
+                    l.warn("could not respond to d:" + did + " pkt:" + hdr.getType().name() + " err:" + e);
+                    disconnect(did, e);
+                }
+            }
+        };
+
+        if (Thread.currentThread() == _dispthr) {
+            controlEvent.handle_();
+        } else {
+            enqueueIntoXmpp(controlEvent, Prio.LO);
+        }
+    }
+
     private void processUnicastControl(DID did, PBTPHeader hdr)
     {
-        assertDispThread();
-
         PBTPHeader.Type type = hdr.getType();
         try {
             switch (type) {
@@ -410,33 +554,46 @@ public abstract class XMPP implements ITransportImpl, IConnectionServiceListener
                 case TRANSPORT_CHECK_PULSE_REPLY:
                     PBCheckPulse cp = hdr.getCheckPulse();
                     assert cp != null : ("invalid pulse msg from d:" + did);
-                    processPulseControl_(did, cp, (type == TRANSPORT_CHECK_PULSE_CALL));
+                    processPulseControl(did, cp, (type == TRANSPORT_CHECK_PULSE_CALL));
                     break;
                 case DIAGNOSIS:
                     PBTransportDiagnosis dg = hdr.getDiagnosis();
                     assert dg != null : ("invalid diagnosis from d:" + did);
-                    processDiagnosis_(did, dg);
+                    processDiagnosis(did, dg);
                     break;
                 default:
-                    processUnicastControl_(did, hdr);
+                    processOtherUnicastControl(did, hdr);
                     break;
             }
         } catch (ExProtocolError e) {
-            assert false : ("unhandled control pkt from d:" + did + " type:" + hdr.getType().name());
+            l.warn("fail process pkt d:{} t:{}", did, hdr.getType().name());
+            disconnect(did, e);
         }
     }
 
-    private void processUnicastPayload(DID did, UserID userID, PBTPHeader hdr, InputStream bodyis, int wirelen)
+    private void processUnicastPayload(final DID did, UserID userID, PBTPHeader hdr, InputStream bodyis, int wirelen)
     {
-        assertDispThread();
-
         try {
             Endpoint ep = new Endpoint(XMPP.this, did);
-            PBTPHeader ret = TPUtil.processUnicastPayload(ep, userID, hdr, bodyis, wirelen, _sink, _sm);
-            if (ret != null) sendControl_(did, ret, Prio.LO);
+            final PBTPHeader ret = TPUtil.processUnicastPayload(ep, userID, hdr, bodyis, wirelen, _sink, _sm);
+            if (ret != null) sendControl(did, ret, Prio.LO);
         } catch (Exception e) {
-            l.warn("could not respond to d:" + did + " for pkt:" + hdr.getType().name() + " err:" + e);
+            String errorMessage = "could not respond to d:" + did + " for pkt:" + hdr.getType().name() + " err:" + e;
+            l.warn(errorMessage);
+            disconnect(did, new ExSendFailed(errorMessage, e));
         }
+    }
+
+    private @Nullable PBTPHeader extractHeader(final DID did, InputStream packet)
+    {
+        PBTPHeader hdr = null;
+        try {
+            hdr = TPUtil.processUnicastHeader(packet);
+        } catch (final IOException e) {
+            l.warn("fail extract hdr d:{} err:{}", did, e.getMessage());
+            disconnect(did, e);
+        }
+        return hdr;
     }
 
     @Override
@@ -444,29 +601,14 @@ public abstract class XMPP implements ITransportImpl, IConnectionServiceListener
     {
         assertNonDispThread();
 
-        enqueueIntoXmpp(new AbstractEBSelfHandling()
-        {
-            @Override
-            public void handle_()
-            {
-                try {
-                    PBTPHeader transhdr = TPUtil.processUnicastHeader(packet);
+        final PBTPHeader transhdr = extractHeader(did, packet);
+        if (transhdr == null) return;
 
-                    if (TPUtil.isPayload(transhdr)) {
-                        processUnicastPayload(did, userID, transhdr, packet, wirelen);
-                    } else {
-                        processUnicastControl(did, transhdr);
-                    }
-                } catch (IOException e) {
-                    try {
-                        l.warn("fail process incoming pkt d:{} err:{}", did, e.getMessage());
-                        disconnect_(did);
-                    } catch (ExNoResource disconnectException) {
-                        SystemUtil.fatal("fail disconnect cause original:" + e + " next:" + disconnectException);
-                    }
-                }
-            }
-        }, Prio.LO);
+        if (!TPUtil.isPayload(transhdr)) {
+            processUnicastControl(did, transhdr);
+        } else {
+            processUnicastPayload(did, userID, transhdr, packet, wirelen);
+        }
     }
 
     //--------------------------------------------------------------------------
@@ -498,8 +640,7 @@ public abstract class XMPP implements ITransportImpl, IConnectionServiceListener
             public void handle_()
             {
                 try {
-                    _sink.enqueueBlocking(new EIPresence(XMPP.this, false,
-                            ImmutableMap.<DID, Collection<SID>>of()), Prio.LO);
+                    _sink.enqueueBlocking(new EIPresence(XMPP.this, false, ImmutableMap.<DID, Collection<SID>>of()), Prio.LO);
                     _mc.xmppServerDisconnected();
                     _spf.xmppServerDisconnected_();
                 } catch (ExNoResource e) {
@@ -516,12 +657,8 @@ public abstract class XMPP implements ITransportImpl, IConnectionServiceListener
 
         Thread thr = Thread.currentThread();
         if (thr == _dispthr) {
-            assertDispThread(); // prevent against future mistakes
-
             serverDisconnectedEvent.handle_(); // happened in the disp thr, so run directly
         } else {
-            assertNonDispThread();
-
             enqueueIntoXmpp(serverDisconnectedEvent, Prio.HI);
         }
     }
@@ -556,10 +693,6 @@ public abstract class XMPP implements ITransportImpl, IConnectionServiceListener
                 }, Prio.LO);
             }
         }, presfilter);
-
-//        if (_mobileConnector != null) {
-//            _mobileConnector.setConnection(conn);
-//        }
 
         enqueueIntoXmpp(new AbstractEBSelfHandling()
         {
@@ -626,6 +759,28 @@ public abstract class XMPP implements ITransportImpl, IConnectionServiceListener
         }
     }
 
+    private void disconnect(final DID did, final Exception cause)
+    {
+        AbstractEBSelfHandling disconnectEvent = new AbstractEBSelfHandling()
+        {
+            @Override
+            public void handle_()
+            {
+                try {
+                    _spf.disconnect_(did, cause);
+                } catch (ExNoResource e) {
+                    SystemUtil.fatal("fail enqueue disconnect event into xmpp q");
+                }
+            }
+        };
+
+        if (Thread.currentThread() == _dispthr) {
+            disconnectEvent.handle_();
+        } else {
+            enqueueIntoXmpp(disconnectEvent, Prio.HI);
+        }
+    }
+
     //--------------------------------------------------------------------------
     //
     //
@@ -640,7 +795,7 @@ public abstract class XMPP implements ITransportImpl, IConnectionServiceListener
     {
         assertDispThread();
 
-        _spf.disconnect_(did, new Exception("forced disconnect"));
+        disconnect(did, new Exception("forced disconnect"));
     }
 
     @Override
@@ -707,146 +862,6 @@ public abstract class XMPP implements ITransportImpl, IConnectionServiceListener
         }
 
         _sink.enqueueBlocking(new EIPresence(this, p.isAvailable(), did, sid), Prio.LO);
-    }
-
-    //
-    // process incoming transport messages
-    //
-
-    /**
-     * Process an incoming unicast control message from a peer inside the
-     * <code>XMPP</code> event-dispatch thread
-     * <br/>
-     * <br/>
-     * <strong>IMPORTANT:</strong> asserts that this method is <em>only</em>
-     * called from within the <code>XMPP</code> event-dispatch thread
-     * <br/>
-     * <br/>
-     * <strong>IMPORTANT:</strong> if the control packet <em>cannot</em> be
-     * processed by the <code>Core</code> because of resource constraints this
-     * method will assert
-     *
-     * @param did {@link DID} that sent the control packet
-     * @param hdr {@link PBTPHeader} where the type is <em>not</em> <code>PAYLOAD</code>
-     * or <code>DIAGNOSIS</code>. <strong>IMPORTANT:</strong> asserts that
-     * <code>hdr</code> does not have an unhandled type.
-     * @throws ExProtocolError if the control packet has an unrecognized (and therefore
-     * unprocessable) type
-     */
-    private void processUnicastControl_(DID did, PBTPHeader hdr)
-        throws ExProtocolError
-    {
-        assertDispThread();
-
-        PBTPHeader.Type type = hdr.getType();
-        assert type != DATAGRAM && type != DIAGNOSIS : ("invalid hdr type:" + type.name());
-        if (type == STREAM) {
-            assert hdr.getStream().getType() != Type.PAYLOAD : ("invalid stream hdr type:" + hdr.getStream().getType());
-        }
-
-        Endpoint ep = new Endpoint(this, did);
-        try {
-            PBTPHeader ret = TPUtil.processUnicastControl(ep, hdr, _sink, _sm);
-            sendControl_(did, ret, Prio.LO);
-        } catch (ExNoResource e) {
-            assert false : ("could not enqueue into core d:" + did); // FIXME: shouldn't we enqueue blocking into core?
-        }
-    }
-
-    /**
-     * Process an incoming pulse control message from a peer inside the
-     * <code>XMPP</code> event-dispatch thread. This message
-     * <em>should</em>be of type <code>TRANSPORT_CHECK_PULSE_CALL</code> or
-     * <code>TRANSPORT_CHECK_PULSE_REPLY</code>.
-     * <br/>
-     * <br/>
-     * <strong>IMPORTANT:</strong> asserts that this method is <em>only</em>
-     * called from within the <code>XMPP</code> event-dispatch thread
-     *
-     * @param did {@link DID} of the peer that sent the pulse control message
-     * @param cp {@link PBCheckPulse} pulse control message received from the peer
-     * @param cpcall <code>true</code>if it is of type
-     * <code>TRANSPORT_CHECK_PULSE_CALL</code>, <code>false</code> if it is of
-     * type <code>TRANSPORT_CHECK_PULSE_REPLY</code>
-     */
-    private void processPulseControl_(DID did, PBCheckPulse cp, boolean cpcall)
-    {
-        assertDispThread();
-
-        int pulseid = cp.getPulseId();
-        if (cpcall) {
-            l.info("rcv pulse req msgpulseid:" + pulseid + " d:" + did);
-            sendControl_(did, newCheckPulseReply(pulseid), Prio.HI);
-        } else {
-            l.info("rcv pulse rep msgpulseid:" + pulseid + " d:" + did);
-            _pm.processIncomingPulseId(did, pulseid);
-        }
-    }
-
-    /**
-     * Process an incoming {@link PBTransportDiagnosis} diagnostic control message from a
-     * peer inside the <code>XMPP</code> event-dispatch thread
-     * <br/>
-     * <br/>
-     * <strong>IMPORTANT:</strong> asserts that this method is <em>only</em>
-     * called from within the <code>XMPP</code> event-dispatch thread
-     *
-     * @param did {@link DID} of the peer that sent the diagnostic message
-     * @param dg {@link PBTransportDiagnosis} diagnostic message sent by the peer
-     * @throws ExProtocolError if the diagnostic message has a type that is unrecognized
-     * (and therefore unprocessable) by this method
-     */
-    private void processDiagnosis_(DID did, PBTransportDiagnosis dg)
-        throws ExProtocolError
-    {
-        assertDispThread();
-
-        PBTransportDiagnosis dgret = processUnicastControlDiagnosis(did, dg, _spf, _tds);
-        if (dgret != null) {
-            PBTPHeader ret = makeDiagnosis(dgret);
-            sendControl_(did, ret, Prio.LO);
-        }
-    }
-
-    /**
-     * Provides a uniform way to send control responses to a peer inside the
-     * <code>XMPP</code> event-dispatch thread. It allows (and will not send)
-     * a <code>null</code> packet and logs an exception thrown during the
-     * <code>send</code> call
-     * <br/>
-     * <br/>
-     * Messages that should be sent out using this method include (among others):
-     * <ul>
-     *     <li>Payload responses</li>
-     *     <li>Pulse calls/responses</li>
-     *     <li>Flood, Ping, and other diagnostic packets</li>
-     *     <li>Generic control responses</li>
-     * </ul>
-     * <strong>IMPORTANT:</strong> asserts that this method is <em>only</em>
-     * called from within the <code>XMPP</code> event-dispatch thread
-     *
-     * @param did {@link DID} of the peer to which response will be sent
-     * @param hdr {@link PBTPHeader} to be send to the peer. <code>hdr</code> can
-     * be <code>null</code>, in which case <code>sendControl_</code> acts as a
-     * no-op
-     * @param pri {@link Prio} priority with which the message is scheduled for
-     * sending
-     */
-    // FIXME: very similar to method in TCP that is used by many classes within IPacketController implementation - consider refactor
-    private void sendControl_(DID did, @Nullable PBTPHeader hdr, Prio pri)
-    {
-        assertDispThread();
-
-        if (hdr == null) {
-            l.debug("null return");
-            return;
-        }
-
-        try {
-            _spf.send_(did, null, pri, newControl(hdr), null);
-        } catch (Exception e) {
-            l.warn("could not respond to d:" + did + " pkt:" + hdr.getType().name() + " err:" + e);
-        }
     }
 
     //
