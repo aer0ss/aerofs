@@ -3,7 +3,6 @@ package com.aerofs.lib.db;
 import java.util.Map;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.labeling.L;
 import com.aerofs.lib.Util;
 import com.google.common.collect.Maps;
 import org.slf4j.Logger;
@@ -16,19 +15,23 @@ public class DBIteratorMonitor
 
     static Map<AbstractDBIterator<?>, Exception> s_iters;
 
+    // this flag can be enabled to have the client track where each active database iterator
+    //   is created. It's an expensive operation used for consistency check and debugging.
+    private static final boolean TRACKING_ENABLED = false;
+
     public static void removeActiveIterator_(AbstractDBIterator<?> iter)
     {
         assert s_count > 0;
         s_count--;
 
-        if (L.isStaging()) Util.verify(s_iters.remove(iter));
+        if (TRACKING_ENABLED) Util.verify(s_iters.remove(iter));
     }
 
     public static void addActiveIterator_(AbstractDBIterator<?> iter)
     {
         s_count++;
 
-        if (L.isStaging()) {
+        if (TRACKING_ENABLED) {
             if (s_iters == null) s_iters = Maps.newHashMap();
             Exception e = new Exception();
             e.fillInStackTrace();
@@ -38,9 +41,11 @@ public class DBIteratorMonitor
 
     public static void assertNoActiveIterators_()
     {
-        if (L.isStaging() && s_iters != null) {
-            for (Exception e : s_iters.values()) {
-                l.warn("unclosed db iterator created at:\n" + Util.e(e));
+        if (TRACKING_ENABLED) {
+            if (s_iters != null) {
+                for (Exception e : s_iters.values()) {
+                    l.warn("unclosed db iterator created at:\n" + Util.e(e));
+                }
             }
         }
 
