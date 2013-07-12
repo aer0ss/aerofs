@@ -57,7 +57,8 @@ public class DaemonPostUpdateTasks
             new DPUTAddStoreNameColumn(dbcw),
             new DPUTAddContributorsTable(dbcw),
             null,  // used to be DPUTCleanupGhostKML
-            new DPUTCleanupGhostKML(dbcw)
+            new DPUTCleanupGhostKML(dbcw),
+            new DPUTRefreshBloomFilters(dbcw)
             // new tasks go here
         };
 

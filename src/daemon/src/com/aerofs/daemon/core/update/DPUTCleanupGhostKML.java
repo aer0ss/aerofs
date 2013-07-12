@@ -44,6 +44,15 @@ import static com.aerofs.daemon.lib.db.CoreSchema.*;
  * sure way of distinguishing a "real" tick from a "ghost" tick
  * 4. after removing ticks the maxticks table needs to be updated
  * 5. immigration adds even more complexity (see below...)
+ *
+ * Ideally we wouldn't need to worry about bloom filters as they relate to "real" versions (i.e.
+ * objects whose with local tick changes). Unfortunately cleaning the collector queue will most
+ * likely lead to all bloom filters being discarded before AntiEntropy has a chance torun and
+ * restore real KMLs, leading to a nosync.
+ *
+ * Therefore we need to clean the table of pulled devices to force AntiEntropy to request a full
+ * bloom filter (i.e. from BASE) on the next GVC to each (SIndex, remote DID) pair.
+ *
  */
 public class DPUTCleanupGhostKML implements IDaemonPostUpdateTask
 {
@@ -68,6 +77,7 @@ public class DPUTCleanupGhostKML implements IDaemonPostUpdateTask
                 clearNativeKMLs(s, _dbcw.getConnection());
                 updateMaxTicks(s);
                 clearCollectorQueue(s);
+                clearPulledDevices(s);
             }
         });
     }
@@ -285,5 +295,10 @@ public class DPUTCleanupGhostKML implements IDaemonPostUpdateTask
                 + " select " + C_VER_SIDX + "," + C_VER_OID + "," + C_VER_CID
                 + " from " + T_VER
                 + " where " + C_VER_KIDX + "=-1");
+    }
+
+    private static void clearPulledDevices(Statement s) throws SQLException
+    {
+        s.executeUpdate("delete from " + T_PD);
     }
 }
