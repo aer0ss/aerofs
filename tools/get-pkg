@@ -2,28 +2,17 @@
 
 # check number of arguments
 
-NUM_ARGS=2 # 1) PROD or STAGING 2) LINUX, WIN, MAC
+NUM_ARGS=1 # 1) LINUX, WIN, MAC
 
 if [ $# -ne $NUM_ARGS ]
 then
-    echo "Usage: `basename $0` PROD|STAGING LINUX|MAC|WIN"
+    echo "Usage: `basename $0` LINUX|MAC|WIN"
     exit 1
 fi
 
 # check for the exact url
 
-PROD_BASE_URL="https://www.aerofs.com/downloads/"
-STAGING_BASE_URL="https://www.aerofs.com/staging/downloads/"
-
-case "$1" in
-PROD)    URL="$PROD_BASE_URL"
-         ;;
-STAGING) URL="$STAGING_BASE_URL"
-         ;;
-*)       echo "Bad deployment name"
-         exit 1
-         ;;
-esac
+URL="https://www.aerofs.com/downloads/"
 
 # check for the platform type
 
@@ -31,7 +20,7 @@ LINUX_PKG_NAME=aerofs-installer.deb
 WIN_PKG_NAME=AeroFSInstall.exe
 MAC_PKG_NAME=AeroFSInstall.dmg
 
-case "$2" in
+case "$1" in
 LINUX) URL="$URL$LINUX_PKG_NAME"
        ;;
 MAC)   URL="$URL$MAC_PKG_NAME"
@@ -48,7 +37,7 @@ esac
 echo
 echo "================================================================================"
 echo
-echo "Downloading $1 installation package for $2 ..."
+echo "Downloading installation package for $1 ..."
 echo
 echo "================================================================================"
 echo

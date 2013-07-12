@@ -42,7 +42,6 @@ DEFAULT_USERID = getpass.getuser() + '+syncdet+{}@aerofs.com'
 # CI Server Connection Settings
 CI_SP_URL = 'https://ci.sp.aerofs.com/sp'
 CI_C_URL = "http://ci.c.aerofs.com:8000/get_code"
-CI_STAGING_URL = 'https://staging.aerofs.com/staging-jonathan/sp'
 CI_SP_VERSION = 20
 
 # System-specific details
