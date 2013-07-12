@@ -104,7 +104,9 @@ public class SanityPoller
         l.debug("Checking root anchor {} {}", sid, absPath);
         // This must be checked each time in case the rootAnchor is moved
         File rootAnchor = new File(absPath);
-        if (!rootAnchor.isDirectory()) {
+        if (rootAnchor.exists() && rootAnchor.isDirectory()) {
+            checkDisk(absPath);
+        } else {
             l.debug("Root anchor missing at {}", absPath);
             try{
                 notifyMissingRootAnchor_(absPath, sid);
@@ -113,7 +115,6 @@ public class SanityPoller
                 l.warn("Error occurred while notifying missing root anchor: {}", Util.e(ex));
             }
         }
-        checkDisk(absPath);
     }
 
     private void checkDisk(String absPath)
