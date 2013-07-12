@@ -185,17 +185,6 @@ function copy_resources_to_local_release_directories() {
         "${AEROFS_RELEASE_INST_DIR}"/{${AEROFS_PRODUCT_UNIX},INSTALL} \
         "${AEROFS_RELEASE_LINUX_DIR}"/${AEROFS_PRODUCT_UNIX}          \
         "${AEROFS_RELEASE_LINUX_DIR}"/${AEROFS_PRODUCT_UNIX}.desktop
-
-    # Update URL in installers for correct MODE
-    if is_prod_or_enterprise ; then
-        DOT_STAGING=''
-    else
-        DOT_STAGING='.stg'
-    fi
-
-    sed -i "" -e "s/\[DOT_STAGING\]/$DOT_STAGING/g" \
-        "${AEROFS_RELEASE_INST_DIR}/${AEROFS_PRODUCT_UNIX}" \
-        "${AEROFS_RELEASE_LINUX_DIR}/${AEROFS_PRODUCT_UNIX}"
 }
 
 ######################################################################

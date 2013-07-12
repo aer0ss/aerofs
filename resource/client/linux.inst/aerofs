@@ -35,9 +35,9 @@ else
     JRE_LIB_ARCH=i386
 fi
 
-URL=https://cache.client[DOT_STAGING].aerofs.com/$PACKAGE_FILENAME
-RUN_TIME_ROOT="$HOME/.aerofs[DOT_STAGING]"
-DIST="$HOME/.[AEROFS_PRODUCT_UNIX]-bin[DOT_STAGING]"
+URL=https://cache.client.aerofs.com/$PACKAGE_FILENAME
+RUN_TIME_ROOT="$HOME/.aerofs"
+DIST="$HOME/.[AEROFS_PRODUCT_UNIX]-bin"
 
 if [ ! -f "$DIST/aerofs.jar" ]; then
     which ps > /dev/null
