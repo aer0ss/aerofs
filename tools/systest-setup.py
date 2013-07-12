@@ -34,7 +34,7 @@ DEFAULT_PASSWORD = 'temp123'
 DEFAULT_ROOT = '~/syncdet'
 DEFAULT_APPROOT = os.path.join(DEFAULT_ROOT, 'deploy', 'approot')
 DEFAULT_RTROOT = os.path.join(DEFAULT_ROOT, 'user_data', 'rtroot')
-DEFAULT_ANCHOR = os.path.join(DEFAULT_ROOT, 'user_data', 'AeroFS')
+DEFAULT_ANCHOR_PARENT = os.path.join(DEFAULT_ROOT, 'user_data')
 DEFAULT_SP_URL = 'https://sp.aerofs.com/sp'
 DEFAULT_RSH = 'ssh'
 DEFAULT_USERID = getpass.getuser() + '+syncdet+{}@aerofs.com'
@@ -92,7 +92,6 @@ def generate_yaml(args, username, actor_data):
     actor_defaults['aero_app_root'] = args.approot
     actor_defaults['aero_rt_root'] = args.rtroot
     actor_defaults['aero_sp_url'] = args.sp_url
-    actor_defaults['aero_root_anchor'] = args.anchor
     if not args.multiuser:
         assert not isinstance(username, list)
         actor_defaults['aero_userid'] = username
@@ -113,6 +112,10 @@ def generate_yaml(args, username, actor_data):
         d = {}
         d['details'] = details
         d['address'] = actor['address']
+        if actor.get('TS'):
+            d['aero_root_anchor'] = os.path.join(args.anchor_parent, 'AeroFS Team Server Storage')
+        else:
+            d['aero_root_anchor'] = os.path.join(args.anchor_parent, 'AeroFS')
         if args.multiuser:
             assert isinstance(username, list)
             d['aero_userid'] = username.pop()
@@ -161,8 +164,8 @@ def main():
         help="Default is ~/syncdet")
     parser.add_argument('--userid', default=DEFAULT_USERID,
         help="userid pattern")
-    parser.add_argument('--anchor', default=DEFAULT_ANCHOR,
-        help="Location of the root anchor")
+    parser.add_argument('--anchor-parent', default=DEFAULT_ANCHOR_PARENT,
+        help="Location of the root anchor's parent")
     args = parser.parse_args()
 
     # Parse the conf file to get actor IP's
