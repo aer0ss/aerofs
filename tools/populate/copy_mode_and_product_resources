@@ -14,17 +14,12 @@ readonly ERRBADPRODUCT=3
 function print_usage() {
     echo "usage: $0 [mode] [product] [resource_root_dir] [output_dir]" >&2
     echo "    [mode]              Specifies which mode the properties are for" >&2
-    echo "                        Can be PROD|CI|STAGING|ENTERPRISE." >&2
+    echo "                        Can be PROD|CI|ENTERPRISE." >&2
     echo "    [product]           Specifies which product the properties are for" >&2
     echo "                        Can be TEAM_SERVER or CLIENT." >&2
     echo "    [resource_root_dir] Directory where all non-server-specific resources are stored" >&2
     echo "    [output_dir]        Destination directory for root resources (certs)" >&2
     echo "    [properties_dir]    Destination directory for classpath resources (.properties, .xml)" >&2
-}
-
-function add_staging_flag() {
-    # FIXME (AG)! Hack! (this belongs in the configuration-staging.properties, not here)
-    echo "labeling.isStaging=true" >> "$PROPERTIES_OUTPUT_DIR"/labeling.properties
 }
 
 # Copy resource to final destination, determined by extension.
@@ -67,10 +62,6 @@ function copy_resources() {
 
     # handle product-specific resources
     cp "$LABELING_RESOURCES_DIR"/"labeling-$LOWERCASE_LABELING.properties" "$PROPERTIES_OUTPUT_DIR"/labeling.properties
-    if [ $MODE == 'STAGING' ]
-    then
-        add_staging_flag
-    fi
 
     # copy all the mode-specific resources over and rename them
     local mode_specific_resources=$( ls $MODE_RESOURCES_DIR/*-$LOWERCASE_MODE* )
@@ -105,7 +96,7 @@ fi
 # mode
 readonly MODE="$1"
 readonly LOWERCASE_MODE=$( echo $MODE | tr '[:upper:]' '[:lower:]' )
-if [[ "$MODE" != 'PROD' && "$MODE" != 'CI' && "$MODE" != 'STAGING' && "$MODE" != "ENTERPRISE" ]]
+if [[ "$MODE" != 'PROD' && "$MODE" != 'CI' && "$MODE" != "ENTERPRISE" ]]
 then
     print_usage
     exit $ERRBADMODE
