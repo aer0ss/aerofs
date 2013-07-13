@@ -5,14 +5,14 @@
 
 if [[ x"$1" == x || x"$2" == x || x"$3" == x || x"$4" == x ]]; then
     echo usage "$0 [build mode] [version number] [remote release dir] [output deb filename]"
-    echo "[build mode]: PROD|STAGING|ENTERPRISE"
+    echo "[build mode]: PROD|ENTERPRISE"
     echo "[version number]: major.minor.release (e.g. 0.4.65)"
     echo "[remote release dir]: directory in which the release files are on the build server"
     echo "[output deb filename]: name of the deb file this script creates"
     echo
     echo "IMPORTANT: this script is meant to be run on a remote server!!!!"
     echo
-    echo "example: $0 STAGING CLIENT 0.4.65 ~/aerofs.release /data/staging-downloads/[AEROFS_PRODUCT_UNIX]-installer.deb"
+    echo "example: $0 PROD CLIENT 0.4.65 ~/aerofs.release /data/staging-downloads/[AEROFS_PRODUCT_UNIX]-installer.deb"
     exit
 fi
 
@@ -26,14 +26,11 @@ LOWERCASE_MODE=""
 if [ "$1" == "PROD" ]; then
     MODE="PROD"
     LOWERCASE_MODE="prod"
-elif [ "$1" == "STAGING" ]; then
-    MODE="STAGING"
-    LOWERCASE_MODE="staging"
 elif [ "$1" == "ENTERPRISE" ]; then
     MODE="ENTERPRISE"
     LOWERCASE_MODE="enterprise"
 else
-    echo "Invalid build mode $1.  Expected PROD|STAGING|ENTERPRISE."
+    echo "Invalid build mode $1.  Expected PROD|ENTERPRISE."
 fi
 
 #################################

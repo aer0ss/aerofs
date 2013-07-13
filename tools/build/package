@@ -15,11 +15,10 @@ include include/common ${1:-} ${2:-}
 if [[ $# -lt 1 || $# -gt 3 ]]; then
     echo "usage: $0 [build mode] [passphrase]" >&2
     echo " " >&2
-    echo "[build mode]: PROD|STAGING|ENTERPRISE" >&2
+    echo "[build mode]: PROD|ENTERPRISE" >&2
     echo "[build product]: CLIENT|TEAM_SERVER" >&2
     echo "[passphrase]: release passphrase" >&2
     echo " " >&2
-    echo "example: $0 STAGING CLIENT" >&2
     echo "example: $0 PROD TEAM_SERVER [passphrase]" >&2
     exit $ERRBADARGS
 fi

@@ -128,7 +128,7 @@ readonly LABELING_FILE="$LABELING_RESOURCES_DIR/labeling-$LOWERCASE_PRODUCT.prop
 #
 ###############################################################################
 function is_valid_mode() {
-    if [[ "$1" != "PROD" && "$1" != "STAGING" && "$1" != "ENTERPRISE" ]]; then
+    if [[ "$1" != "PROD" && "$1" != "ENTERPRISE" ]]; then
         return $ERRBADMODE
     fi
     return 0
@@ -137,7 +137,7 @@ function is_valid_mode() {
 # check that a valid mode was specified
 readonly MODE="${1:-}"
 if ! is_valid_mode $MODE ; then
-    echo "error: invalid build mode $MODE. Expected PROD|STAGING|ENTERPRISE." >&2
+    echo "error: invalid build mode $MODE. Expected PROD|ENTERPRISE." >&2
     exit $ERRBADMODE
 fi
 readonly LOWERCASE_MODE="$(echo $MODE | tr '[A-Z]' '[a-z]')"
@@ -184,8 +184,6 @@ readonly RELEASE_NSIS_DIR="${RELEASE_FILES_DIR}/win_installer"
 ###############################################################################
 if [ "$MODE" == "PROD" ]; then
     readonly RELEASE_DOMAIN="nocache.client.aerofs.com"
-elif [ "$MODE" == "STAGING" ]; then
-    readonly RELEASE_DOMAIN="nocache.client.stg.aerofs.com"
 elif [ "$MODE" == "ENTERPRISE" ]; then
     # N.B. no need to create a cache/nocache variant for this since the
     # installers are packaged into openstack images anyway.
@@ -209,7 +207,7 @@ function is_client() {
 
 ###############################################################################
 #
-# Returns 0 if the deployment mode is CI, 1 otherwise
+# Returns 0 if the product is TEAM_SERVER, 1 otherwise
 #
 ###############################################################################
 function is_team_server() {
@@ -262,18 +260,6 @@ function is_prod_or_enterprise() {
 ###############################################################################
 function is_ci() {
     if [ "$MODE" == "CI" ]; then
-        return 0
-    fi
-    return 1
-}
-
-###############################################################################
-#
-# Returns 0 if the deployment mode is STAGING, 1 otherwise
-#
-###############################################################################
-function is_staging() {
-    if [ "$MODE" == "STAGING" ]; then
         return 0
     fi
     return 1
