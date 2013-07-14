@@ -44,15 +44,13 @@ def main(global_config, **settings):
     else:
         config.add_static_view(installer_prefix, 'installer')
 
-    # The home page for the dashboard and marketing contents.
-    config.add_route('dashboard_home', 'home')
-
+    # Use different home page for private and public deployment
     mode = settings['deployment.mode']
     if mode == "private":
-        config.add_route('login', '/')
+        config.add_route('dashboard_home', '/')
         config.add_route('marketing_home', 'marketing_home')
     else:
-        config.add_route('login', 'login')
+        config.add_route('dashboard_home', 'home')
         config.add_route('marketing_home', '/')
 
     # Import routes from views
