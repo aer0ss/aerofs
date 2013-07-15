@@ -102,6 +102,16 @@ public class ZephyrServer implements IIOEventHandler
             throw new FatalIOEventHandlerException(err, e);
         }
 
+        // Rarely (one in a million or so) nio passes us a socket that isn't connected;
+        // this trips the server as an NPE which we handle poorly. This attempts to let
+        // zephyr continue in that circumstance.
+        // (Note: getRemoteSocketAddress() returns null if socket is not connected)
+        if (!sc.socket().isConnected()) {
+            l.error("Server socket {}: can't accept non-connected socket", sc.socket().toString());
+            terminate();
+            throw new FatalIOEventHandlerException("Accept passed non-connected socket");
+        }
+
         String remaddr = sc.socket().getRemoteSocketAddress().toString();
         l.debug("z: conn from:{}", remaddr);
 
