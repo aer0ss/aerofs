@@ -1852,11 +1852,14 @@ public class SPService implements ISPService
         return m;
     }
 
+    // TODO: Remove this method; maintained for compatibility with old (pre-0.4.202) clients.
+    // Remove after 01/01/2014
     @Override
     public ListenableFuture<Void> signIn(String userIdString, ByteString credentials)
             throws IOException, SQLException, ExBadCredential, ExNotFound, ExBadArgs,
             ExEmptyEmailAddress
     {
+        l.info("SP.proto - legacy signIn");
         _sqlTrans.begin();
 
         User user = _factUser.createFromExternalID(userIdString);
@@ -1875,7 +1878,7 @@ public class SPService implements ISPService
             user.signInWithCertificate(_certauth, device);
         } else {
             // Regular users still use username/password credentials.
-            user.signIn(SPParam.getShaedSP(credentials.toByteArray()));
+            user.signInUser(SPParam.getShaedSP(credentials.toByteArray()));
         }
 
         // Set the session cookie.
@@ -2050,6 +2053,61 @@ public class SPService implements ISPService
         return createReply(SignUpReply.newBuilder()
                 .setOrgId(orgID.toHexString())
                 .build());
+    }
+
+    /**
+     * Sign in a _user_ - which requires a username and sha'ed credential.
+     *
+     * A signed-in user can certify devices.
+     * Does not require a mutually-auth'ed session (obviously)
+     */
+    @Override
+    public ListenableFuture<Void> signInUser(String userId, ByteString credentials)
+            throws Exception
+    {
+        _sqlTrans.begin();
+
+        User user = _factUser.createFromExternalID(userId);
+        user.signInUser(SPParam.getShaedSP(credentials.toByteArray()));
+
+        // Set the session cookie.
+        _sessionUser.set(user);
+        // Update the user tracker so we can invalidate sessions if needed.
+        _userTracker.signIn(user.id(), _sessionUser.getSessionID());
+
+        _sqlTrans.commit();
+
+        return createVoidReply();
+    }
+
+    /**
+     * Sign in a _device_ - which requires a signed device cert.
+     *
+     * Requires a mutually-auth'ed session (obviously)
+     */
+    @Override
+    public ListenableFuture<Void> signInDevice(String userId, ByteString did)
+            throws Exception
+    {
+        User user = _factUser.createFromExternalID(userId);
+
+        Device device;
+        try {
+            device = _factDevice.create(DID.fromExternal(did.toByteArray()));
+        } catch (ExFormatError e) {
+            l.error(user + ": did malformed");
+            throw new ExBadCredential();
+        }
+
+        _sqlTrans.begin();
+
+        user.signInWithCertificate(_certauth, device);
+        _sessionUser.set(user);
+        _userTracker.signIn(user.id(), _sessionUser.getSessionID());
+
+        _sqlTrans.commit();
+
+        return createVoidReply();
     }
 
     /**

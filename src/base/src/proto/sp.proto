@@ -51,6 +51,10 @@ service SPService {
      *   ExBadCredential if username/password combination is incorrect, or in the case of the team
      *                   server, if they have not signed in successfully using mutual
      *                   authentication.
+     *
+     * TODO: Remove this once we feel confident dropping support for team servers from
+     * before the SignInDevice/SignInUser stuff (Roughly 0.4.202).
+     * (Remove after Dec.2013)
      */
     rpc SignIn(SignInCall) returns(Void);
 
@@ -676,6 +680,26 @@ service SPService {
      *   ExBadCredential if the user exists and the password doesn't match the existing user
      */
     rpc SignUp(SignUpCall) returns(SignUpReply);
+
+    /**
+     * Sign in a device using an existing device certificate.
+     *
+     * Required Auth Level: none
+     *
+     * Throws:
+     *   ExBadCredential if the certificate is not recognized or the DID does not match.
+     */
+    rpc SignInDevice(SignInDeviceCall) returns (Void);
+
+    /**
+     * Sign in a device using an existing device certificate.
+     *
+     * Required Auth Level: none
+     *
+     * Throws:
+     *   ExBadCredential if the certificate is not recognized or the DID does not match.
+     */
+    rpc SignInUser(SignInDeviceCall) returns (Void);
 }
 
 message SetStripeCustomerIDCall {
@@ -742,6 +766,11 @@ message SignUpWithCodeReply {
     required bool existing_team = 2; // is the user joining an existing team, or a new team?
 }
 
+/*
+ * TODO: Remove this once we feel confident dropping support for team servers from
+ * before the SignInDevice/SignInUser stuff (Roughly 0.4.202).
+ * (Remove after Dec.2013)
+ */
 message SignInCall {
     required string user_id = 1;
     optional bytes credentials = 2;
@@ -1194,4 +1223,14 @@ message RecertifyDeviceCall {
 message RecertifyDeviceReply {
     // The certificate issued by AeroFS CA
     required string cert = 1;
+}
+
+message SignInDeviceCall {
+    required string user_id = 1;
+    required bytes did = 2;
+}
+
+message SignInUserCall {
+    required string user_id = 1;
+    required bytes credential = 2;
 }

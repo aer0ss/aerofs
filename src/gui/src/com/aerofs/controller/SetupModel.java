@@ -52,13 +52,13 @@ public class SetupModel
 
     // this method is called by the GUI on a separate thread to perform
     //   the sign in operation
-    // TODO (AT): investigate and refactor setup process, see Setup.signIn()
+    // TODO (AT): investigate and refactor setup process, see Setup.signInUser()
     public void signIn()
             throws Exception
     {
         _userID = UserID.fromExternal(_username);
         _passwd = _password.toCharArray();
-        _setup.signIn(_userID, _passwd);
+        _setup.signInUser(_userID, _passwd);
     }
 
     // this method is called by the GUI on a separate thread to perform

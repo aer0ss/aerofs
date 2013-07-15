@@ -124,7 +124,7 @@ public class ULTRecertifyDevice extends UILaunchTask
 
         SPBlockingClient sp = _spfact.create_(ac._userID,
                 SPBlockingClient.ONE_WAY_AUTH_CONNECTION_CONFIGURATOR);
-        sp.signIn(ac._userID.getString(), ByteString.copyFrom(scrypted));
+        sp.signInUser(ac._userID.getString(), ByteString.copyFrom(scrypted));
         CredentialUtil.recertifyTeamServerDevice(Cfg.user(), sp);
         l.info("successfully recertified Team Server");
 
@@ -137,6 +137,9 @@ public class ULTRecertifyDevice extends UILaunchTask
         UI.get().shutdown();
     }
 
+    // FIXME : this function depends on the sha'ed password being stored locally.
+    // This will be an unsafe assumption very soon. Should prompt the user to re-authenticate
+    // their identity - either using an AeroFS password or using an identity system like OpenId.
     private void recertifyClient()
             throws Exception
     {
@@ -144,7 +147,8 @@ public class ULTRecertifyDevice extends UILaunchTask
         // We have a cert that is not trusted by the current CA.  Try to get a new one.
         SPBlockingClient sp = _spfact.create_(Cfg.user(),
                 SPBlockingClient.ONE_WAY_AUTH_CONNECTION_CONFIGURATOR);
-        sp.signInRemote();
+        sp.signInUser(Cfg.user().getString(), Cfg.scryptedPB());
+
         CredentialUtil.recertifyDevice(Cfg.user(), sp);
         l.info("successfully recertified client");
     }

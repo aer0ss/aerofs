@@ -383,9 +383,9 @@ public class User
     /**
      * Attemp to sign in using the credential provided by the user.
      *
-     * @throws ExBadCredential if the user doesn't exist of the credential is incorrect.
+     * @throws ExBadCredential if the user doesn't exist or the credential is incorrect.
      */
-    public void signIn(byte[] shaedSP)
+    public void signInUser(byte[] shaedSP)
             throws SQLException, ExBadCredential
     {
         l.warn("SI: " + toString());
@@ -415,7 +415,6 @@ public class User
     public void signInWithCertificate(CertificateAuthenticator certauth, Device device)
             throws SQLException, ExBadCredential, ExNotFound
     {
-        // Team servers use certificates (in this case the passed credentials don't matter).
         if (!certauth.isAuthenticated())
         {
             l.warn(toString() + ": cert not authenticated");

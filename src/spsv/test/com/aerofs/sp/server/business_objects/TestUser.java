@@ -168,7 +168,7 @@ public class TestUser extends AbstractBusinessObjectTest
     public void signIn_shouldThrowBadCredentialIfUserNotFound()
             throws SQLException, ExBadCredential
     {
-        newUser().signIn(new byte[0]);
+        newUser().signInUser(new byte[0]);
     }
 
     @Test
