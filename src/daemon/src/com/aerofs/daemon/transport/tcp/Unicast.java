@@ -1,7 +1,6 @@
 package com.aerofs.daemon.transport.tcp;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.base.ssl.SSLEngineFactory;
@@ -32,7 +31,6 @@ import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jboss.netty.channel.socket.ServerSocketChannelFactory;
 import org.slf4j.Logger;
 
-import java.io.IOException;
 import java.io.PrintStream;
 import java.net.InetSocketAddress;
 import java.util.Set;
@@ -178,7 +176,7 @@ class Unicast implements IUnicast, IPipeDebug, ITCPServerHandlerListener
 
     @Override
     public Object send(final DID did, final IResultWaiter wtr, Prio pri, byte[][] bss, Object cookie)
-        throws ExDeviceOffline, ExNoResource, IOException
+        throws ExDeviceOffline
     {
         // Use the TCPClientHandler as the cookie to send the packet if the cookie is present.
         // This is to bind an outgoing stream to a particular TCP connection, needed for the
@@ -251,7 +249,7 @@ class Unicast implements IUnicast, IPipeDebug, ITCPServerHandlerListener
 
         // Send a TCP_PONG so that the peer knows our listening port and our stores
         PBTPHeader pong = _stores.newPongMessage(true);
-        if (pong != null) sendControl(did, pong);
+        if (pong != null) client.send(TPUtil.newControl(pong)); // errors handled inside TCPClientHandler
 
         return client;
     }
@@ -259,11 +257,7 @@ class Unicast implements IUnicast, IPipeDebug, ITCPServerHandlerListener
     public void sendControl(DID did, PBTPHeader h)
         throws ExDeviceOffline
     {
-        TCPClientHandler client = _clients.get(did);
-        if (client == null) throw new ExDeviceOffline();
-
-        byte[][] bss = TPUtil.newControl(h);
-        client.send(bss);
+        send(did, null, Prio.LO, TPUtil.newControl(h), null);
     }
 
     @Override
