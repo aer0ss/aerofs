@@ -1,12 +1,10 @@
 package com.aerofs.zephyr.client.handlers;
 
-import com.aerofs.base.Loggers;
 import com.aerofs.zephyr.client.exceptions.ExBadZephyrMessage;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.handler.codec.frame.FrameDecoder;
-import org.slf4j.Logger;
 
 import java.util.Arrays;
 
@@ -16,8 +14,6 @@ import static com.aerofs.base.net.ZephyrConstants.ZEPHYR_REG_PAYLOAD_LEN;
 
 final class ZephyrRegistrationDecoder extends FrameDecoder
 {
-    private static final Logger l = Loggers.getLogger(ZephyrRegistrationDecoder.class);
-
     @Override
     protected Object decode(ChannelHandlerContext ctx, Channel channel, ChannelBuffer buffer)
             throws Exception
