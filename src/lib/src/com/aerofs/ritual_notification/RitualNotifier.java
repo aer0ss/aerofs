@@ -7,6 +7,7 @@ import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureListener;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelStateEvent;
+import org.jboss.netty.channel.ExceptionEvent;
 import org.jboss.netty.channel.SimpleChannelHandler;
 import org.slf4j.Logger;
 
@@ -120,5 +121,17 @@ public class RitualNotifier extends SimpleChannelHandler
             ChannelFuture writeFuture = channel.write(notification);
             addWriteFailureFuture(writeFuture);
         }
+    }
+
+    //
+    // error-handling
+    //
+
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e)
+            throws Exception
+    {
+        l.warn("caught err:{}", e.getCause());
+        ctx.getChannel().close();
     }
 }
