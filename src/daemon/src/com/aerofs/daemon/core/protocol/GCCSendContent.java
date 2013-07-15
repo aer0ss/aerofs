@@ -316,11 +316,14 @@ public class GCCSendContent
                 rest -= bytesCopied;
 
                 // Any local change to the file should cause a version bump of which we are
-                // notified asynchronously and cheaply. However, to avoid race conditions we
-                // still need to check file metadata before the last chunk is sent.
-                boolean atEnd = rest == 0 || bytesCopied < _m.getMaxUnicastSize_();
-                if (rest < 0 || _ongoing.isAborted(k, ongoing)
-                        || (atEnd && pf.wasModifiedSince(mtime, len))) {
+                // notified asynchronously and cheaply. However, to avoid race conditions
+                // and potential corruptions when prefixes from one peer are reused with
+                // another peer we still need to explicitly check for changes to the physical
+                // file before sending each chunk
+                // NB: this would become redundant if
+                //  * we used content hash to avoid corruption
+                //  * deletion caused an update to the CONTENT tick
+                if (rest < 0 || _ongoing.isAborted(k, ongoing) || pf.wasModifiedSince(mtime, len)) {
                     reason = InvalidationReason.UPDATE_IN_PROGRESS;
                     throw new IOException(k + " updated");
                 }
