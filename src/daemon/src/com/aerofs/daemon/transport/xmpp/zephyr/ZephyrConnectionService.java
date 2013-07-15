@@ -213,7 +213,7 @@ public final class ZephyrConnectionService implements ISignalledConnectionServic
                     // we're still in the process of handshaking - let's give it a
                     // chance. at any rate, if we fail to complete in time we'll get a
                     // timeout and it'll all be good
-                    l.warn("d:{} ignore connect - handshake in progress");
+                    l.warn("d:{} ignore connect - handshake in progress", did);
                     return;
                 }
             }
