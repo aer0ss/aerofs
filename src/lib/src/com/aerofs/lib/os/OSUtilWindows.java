@@ -190,13 +190,8 @@ public class OSUtilWindows implements IOSUtil
     {
         // see http://cygwin.com/ml/cygwin/2005-11/msg00850.html
         assert remote != null;
-        if (!remote) {
-            return true;
-        } else if (type.equals("NTFS")) {
-            return true;
-        } else {
-            return false;
-        }
+        // Allow all local filesystems, and no remote ones
+        return !remote;
     }
 
     /**
