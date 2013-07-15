@@ -209,6 +209,7 @@ public class OSUtilLinux extends AbstractOSUtilLinuxOSX
     @Override
     public boolean isFileSystemTypeSupported(String type, Boolean remote)
     {
+        // We allow NFS on Linux, even though it can't watch for filesystem changes.
         String[] fss = new String[] { "EXT", "NFS", "BTRFS", "ECRYPTFS", "VZFS",
                 "REISER", "XFS", "UFS", "CRYPT", "JFS", "SIMFS", "ZFS",
                 "UNKNOWN (0X565A4653)", // VZFS when stat doesn't know about that magic number

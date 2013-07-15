@@ -108,8 +108,12 @@ public class OSUtilOSX extends AbstractOSUtilLinuxOSX
     @Override
     public boolean isFileSystemTypeSupported(String type, Boolean remote)
     {
-        String[] fss = new String[] { "HFS", "NFS", "AFPFS", "ZFS", "Z410_STORAGE" };
+        // Disallow all remote filesystems
+        if (remote != null && remote) return false;
+        // Allow these specific filesystems
+        String[] fss = new String[] { "HFS", "AFPFS", "ZFS", "Z410_STORAGE" };
         for (String fs : fss) if (type.startsWith(fs)) return true;
+        // Disallow all others
         return false;
     }
 
