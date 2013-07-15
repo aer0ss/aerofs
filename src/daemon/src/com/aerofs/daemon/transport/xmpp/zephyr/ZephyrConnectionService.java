@@ -229,6 +229,11 @@ public final class ZephyrConnectionService implements ISignalledConnectionServic
 
     private void newChannel(final DID did)
     {
+        if (channels.containsKey(did)) { // can happen if the close future hasn't run yet
+            l.warn("d:{} remove old channel for connect", did);
+            removeChannel(did);
+        }
+
         l.trace("d:{} create channel", did);
 
         // start by creating the channel (NOTE: this is _binding_ only, not connecting)
@@ -264,7 +269,11 @@ public final class ZephyrConnectionService implements ISignalledConnectionServic
 
                 synchronized (ZephyrConnectionService.this) {
                     Channel activeChannel = getChannel(did);
-                    if (activeChannel == future.getChannel()) {
+                    if (activeChannel == null) {
+                        l.warn("d:{} no channel", did);
+                    } else if (activeChannel != future.getChannel()) {
+                        l.warn("d:{} channel replaced exp:{} act:{}", did, getZephyrClient(future.getChannel()).debugString(), getZephyrClient(activeChannel).debugString());
+                    } else {
                         l.info("d:{} remove zc:{}", did, getZephyrClient(future.getChannel()).debugString());
                         removeChannel(did);
                     }
