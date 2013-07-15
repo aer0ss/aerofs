@@ -8,6 +8,7 @@ class common (
         "vim",
         "ntp",
         "unzip",
+        "zip",
         "htop",
         "dstat",
         "iftop",
