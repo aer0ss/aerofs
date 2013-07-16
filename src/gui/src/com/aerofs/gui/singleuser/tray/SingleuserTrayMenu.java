@@ -24,6 +24,7 @@ import com.aerofs.gui.tray.TrayIcon;
 import com.aerofs.gui.tray.TrayIcon.NotificationReason;
 import com.aerofs.gui.tray.TrayMenuPopulator;
 import com.aerofs.labeling.L;
+import com.aerofs.lib.LibParam.EnterpriseConfig;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
@@ -154,7 +155,11 @@ public class SingleuserTrayMenu extends AbstractTrayMenu implements IRitualNotif
         }
 
         createHelpMenu(trayMenuPopulator);
-        addInviteToSignUpMenuItem(trayMenuPopulator);
+
+        // Don't add the "Invite a friend" menu item for private deployments.
+        if (!EnterpriseConfig.IS_ENTERPRISE_DEPLOYMENT.get()) {
+            addInviteToSignUpMenuItem(trayMenuPopulator);
+        }
 
         trayMenuPopulator.addMenuSeparator();
 
