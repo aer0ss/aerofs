@@ -226,7 +226,7 @@ final class XMPPMulticast
 
         for (Entry<ISignallingClient, Predicate<SignallingMessage>> entry : _signallingClients.entrySet()) {
             if (entry.getValue().apply(signallingMessage)) {
-                // The predicate set for this ISignallingClient passed, so add this ISignallingClient
+                // The predicate set for this ISignallingServiceListener passed, so add this ISignallingServiceListener
                 // as an eligible client
                 eligibleClients.add(entry.getKey());
             }
@@ -237,7 +237,7 @@ final class XMPPMulticast
             throw new ExProtocolError(type.getClass());
         }
 
-        // Right now, we only allow one ISignallingClient to process a message
+        // Right now, we only allow one ISignallingServiceListener to process a message
         assert eligibleClients.size() == 1;
 
         for (ISignallingClient client : eligibleClients) {

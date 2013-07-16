@@ -22,8 +22,9 @@ import com.aerofs.daemon.event.net.rx.EIUnicastMessage;
 import com.aerofs.daemon.event.net.tx.EOUnicastMessage;
 import com.aerofs.daemon.lib.BlockingPrioQueue;
 import com.aerofs.daemon.transport.ITransport;
+import com.aerofs.daemon.transport.debug.Tput;
 import com.aerofs.daemon.transport.lib.MaxcastFilterReceiver;
-import com.aerofs.daemon.transport.xmpp.Zephyr;
+import com.aerofs.daemon.transport.zephyr.Zephyr;
 import com.aerofs.lib.IProgram;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.cfg.Cfg;
@@ -71,6 +72,7 @@ public final class Pump implements IProgram
     private ITransport transport;
     private @Nullable DID remote;
     private volatile boolean keepRunning = true;
+    private Tput tput = new Tput("recv");
 
     @Override
     public void launch_(String rtRoot, String prog, String[] args) // PROG RTROOT [t|z|j] [send|recv] <did>
@@ -174,6 +176,7 @@ public final class Pump implements IProgram
     private void handleUnicastMessage(EIUnicastMessage unicastMessage)
     {
         l.debug("recv incoming d:{}", unicastMessage._ep.did());
+        tput.observe(unicastMessage.wireLength());
     }
 
     private void handlePresence(EIPresence presence)
@@ -190,17 +193,7 @@ public final class Pump implements IProgram
                         l.info("start send thd d:{}", remote);
 
                         while (keepRunning) {
-                            try {
-                                transport.q().enqueueBlocking(new EOUnicastMessage(remote, new byte[CHUNK_SIZE]), LO);
-
-                                // FIXME (AG): this is disastrous
-                                // If I push stuff into the transport too quickly I block the XMPP queue,
-                                // which prevents us from being able to enqueue events from inside XMPP (zephyr/jingle)
-                                // itself. This is a graphic description of how
-                                Thread.sleep(7);
-                            } catch (InterruptedException e) {
-                                e.printStackTrace();
-                            }
+                            transport.q().enqueueBlocking(new EOUnicastMessage(remote, new byte[CHUNK_SIZE]), LO);
                         }
 
                         l.info("stop send thd d:{}", remote);

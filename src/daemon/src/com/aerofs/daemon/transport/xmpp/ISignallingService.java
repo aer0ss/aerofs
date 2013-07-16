@@ -12,7 +12,7 @@ import com.aerofs.base.id.DID;
  * relationship:
  * <ol>
  *     <li>Signalling channel provider (i.e. the implementer of this interface)</li>
- *     <li>Signalling channel client (i.e. {@link ISignallingClient}</li>
+ *     <li>Signalling channel client (i.e. {@link ISignallingServiceListener}</li>
  * </ol>
  * Implementers provide the following services to clients:
  * <ol>
@@ -27,10 +27,10 @@ public interface ISignallingService
      * Register to receive messages of a specified {@link com.aerofs.proto.Transport.PBTPHeader.Type} that
      * may be sent over the signalling channel
      *
-     * @param client {@link com.aerofs.daemon.transport.xmpp.ISignallingClient} to which a matching message should
+     * @param client {@link ISignallingServiceListener} to which a matching message should
      * be delivered
      */
-    public void registerSignallingClient(ISignallingClient client);
+    public void registerSignallingClient(ISignallingServiceListener client);
 
     /**
      * Send a message to a peer via the signalling channel
@@ -39,9 +39,9 @@ public interface ISignallingService
      * @param msg {@link com.aerofs.proto.Transport.PBTPHeader} that forms the message payload. Implementers
      * of <code>ISignallingService</code>are free to transform the message as
      * necessary before it is sent out over the signalling channel.
-     * @param client {@link com.aerofs.daemon.transport.xmpp.ISignallingClient} to be notified if message sending fails.
- * Implementers of <code>ISignallingClient</code> <strong>MUST</strong> call
+     * @param client {@link ISignallingServiceListener} to be notified if message sending fails.
+ * Implementers of <code>ISignallingServiceListener</code> <strong>MUST</strong> call
  * this parameter's <code>sendSignallingMessageFailed</code> method if the
      */
-    public void sendSignallingMessage(DID did, byte[] msg, ISignallingClient client);
+    public void sendSignallingMessage(DID did, byte[] msg, ISignallingServiceListener client);
 }

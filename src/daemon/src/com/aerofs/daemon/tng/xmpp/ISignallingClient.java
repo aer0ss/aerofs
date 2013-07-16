@@ -29,7 +29,7 @@ public interface ISignallingClient
      * Called when a message of the type the client registered for via
      * <code>registerSignallingClient()</code> in {@link ISignallingService} is received on the
      * signalling channel. If the client does not want to handle the given message, the client
-     * should return false from this method so that other ISignallingClient's can have a chance to
+     * should return false from this method so that other ISignallingServiceListener's can have a chance to
      * process the message
      *
      * @param did {@link DID} of the peer that sent this message
