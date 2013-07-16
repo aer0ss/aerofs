@@ -1,21 +1,21 @@
 package com.aerofs.daemon.core.phy.linked.linker.notifier.osx;
 
-import java.text.Normalizer;
-import java.text.Normalizer.Form;
-import java.util.LinkedHashSet;
-import java.util.Map;
-
 import com.aerofs.daemon.core.CoreQueue;
 import com.aerofs.daemon.core.phy.linked.linker.Linker;
 import com.aerofs.daemon.core.phy.linked.linker.LinkerRoot;
 import com.aerofs.daemon.core.phy.linked.linker.notifier.INotifier;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.injectable.InjectableJNotify;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-
 import net.contentobjects.jnotify.JNotifyException;
 import net.contentobjects.jnotify.macosx.FSEventListener;
+
+import java.text.Normalizer;
+import java.text.Normalizer.Form;
+import java.util.LinkedHashSet;
+import java.util.Map;
 
 public class OSXNotifier implements INotifier, FSEventListener
 {
@@ -71,8 +71,8 @@ public class OSXNotifier implements INotifier, FSEventListener
     public void batchStart(int id)
     {
         Batch b = _id2batch.get(id);
-        assert b != null;
-        assert b._batch == null;
+        Preconditions.checkNotNull(b);
+        Preconditions.checkNotNull(b._batch);
 
         // We need to recreate a new linked hash set to avoid race conditions
         // as the thread will try to modify the existing hash set.
@@ -83,8 +83,8 @@ public class OSXNotifier implements INotifier, FSEventListener
     public void notifyChange(int id, String root, String name, boolean recurse)
     {
         Batch b = _id2batch.get(id);
-        assert b != null;
-        assert name.length() > root.length();
+        Preconditions.checkNotNull(b);
+        Preconditions.checkState(name.length() > root.length());
 
         if (Linker.isInternalPath(name)) return;
 
@@ -103,12 +103,12 @@ public class OSXNotifier implements INotifier, FSEventListener
     }
 
     @Override
-    public synchronized void batchEnd(int id)
+    public void batchEnd(int id)
     {
         Batch b = _id2batch.get(id);
-        assert b != null;
-        assert b._batch != null;
-        assert !b._batch.isEmpty();
+        Preconditions.checkNotNull(b);
+        Preconditions.checkNotNull(b._batch);
+        Preconditions.checkState(!b._batch.isEmpty());
 
         // Due to the concurrent execution of the notifier thread
         // we need these variables to be final, in case _batch and _recurse gets changed.

@@ -1,5 +1,26 @@
 package com.aerofs.daemon.core.phy.linked.linker.notifier.linux;
 
+import com.aerofs.base.Loggers;
+import com.aerofs.daemon.core.CoreQueue;
+import com.aerofs.daemon.core.phy.linked.linker.Linker;
+import com.aerofs.daemon.core.phy.linked.linker.LinkerRoot;
+import com.aerofs.daemon.core.phy.linked.linker.event.EIMightCreateNotification;
+import com.aerofs.daemon.core.phy.linked.linker.event.EIMightDeleteNotification;
+import com.aerofs.daemon.core.phy.linked.linker.notifier.INotifier;
+import com.aerofs.lib.SystemUtil;
+import com.aerofs.lib.Util;
+import com.aerofs.lib.event.IEvent;
+import com.aerofs.lib.injectable.InjectableJNotify;
+import com.aerofs.lib.obfuscate.ObfuscatingFormatters;
+import com.aerofs.swig.driver.Driver;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
+import net.contentobjects.jnotify.JNotifyException;
+import net.contentobjects.jnotify.linux.INotifyListener;
+import org.slf4j.Logger;
+
+import javax.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -9,31 +30,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.aerofs.base.Loggers;
-import com.aerofs.daemon.core.phy.linked.linker.LinkerRoot;
-import com.aerofs.lib.SystemUtil;
-import com.aerofs.lib.event.IEvent;
-import com.aerofs.lib.obfuscate.ObfuscatingFormatters;
-import com.aerofs.swig.driver.Driver;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
-import org.slf4j.Logger;
-
-import com.aerofs.daemon.core.phy.linked.linker.Linker;
-import com.aerofs.daemon.core.phy.linked.linker.event.EIMightCreateNotification;
-import com.aerofs.daemon.core.phy.linked.linker.event.EIMightDeleteNotification;
-import com.aerofs.daemon.core.CoreQueue;
-import com.aerofs.daemon.core.phy.linked.linker.notifier.INotifier;
-import com.aerofs.lib.Util;
-import com.aerofs.lib.injectable.InjectableJNotify;
-
-import net.contentobjects.jnotify.JNotifyException;
-import net.contentobjects.jnotify.linux.INotifyListener;
-
-import javax.annotation.Nullable;
-
-import static net.contentobjects.jnotify.linux.JNotify_linux.*;
+import static net.contentobjects.jnotify.linux.JNotify_linux.IN_ATTRIB;
+import static net.contentobjects.jnotify.linux.JNotify_linux.IN_CREATE;
+import static net.contentobjects.jnotify.linux.JNotify_linux.IN_DELETE;
+import static net.contentobjects.jnotify.linux.JNotify_linux.IN_IGNORED;
+import static net.contentobjects.jnotify.linux.JNotify_linux.IN_ISDIR;
+import static net.contentobjects.jnotify.linux.JNotify_linux.IN_MODIFY;
+import static net.contentobjects.jnotify.linux.JNotify_linux.IN_MOVED_FROM;
+import static net.contentobjects.jnotify.linux.JNotify_linux.IN_MOVED_TO;
+import static net.contentobjects.jnotify.linux.JNotify_linux.IN_Q_OVERFLOW;
 
 public class LinuxNotifier implements INotifier, INotifyListener
 {

@@ -1,14 +1,13 @@
 package com.aerofs.lib.injectable;
 
 import com.aerofs.lib.os.OSUtil;
-
-import net.contentobjects.jnotify.JNotify;
 import net.contentobjects.jnotify.JNotifyException;
-import net.contentobjects.jnotify.JNotifyListener;
 import net.contentobjects.jnotify.linux.INotifyListener;
 import net.contentobjects.jnotify.linux.JNotify_linux;
 import net.contentobjects.jnotify.macosx.FSEventListener;
 import net.contentobjects.jnotify.macosx.JNotify_macosx;
+import net.contentobjects.jnotify.win32.IWin32NotifyListener;
+import net.contentobjects.jnotify.win32.JNotify_win32;
 
 /**
  * The injectable wrapper for the JNotify library
@@ -22,6 +21,22 @@ public class InjectableJNotify
         // OSUtil.get().loadLibrary(OSUtil.isWindows() && OSUtil.getOSArch()
         //    == OSArch.X86_64 ? "aerofsjn64" : "aerofsjn");
         OSUtil.get().loadLibrary("aerofsjn");
+    }
+
+    public void win32_setNotifyListener(IWin32NotifyListener l)
+    {
+        JNotify_win32.setNotifyListener(l);
+    }
+
+    public int win32_addWatch(String path, int mask, boolean watchSubtree)
+            throws JNotifyException
+    {
+        return JNotify_win32.addWatch(path, mask, watchSubtree);
+    }
+
+    public void win32_removeWatch(int watchID)
+    {
+        JNotify_win32.removeWatch(watchID);
     }
 
     public void macosx_setNotifyListener(FSEventListener l)
@@ -39,6 +54,11 @@ public class InjectableJNotify
         return JNotify_macosx.removeWatch(watchID);
     }
 
+    public void linux_setNotifyListener(INotifyListener l)
+    {
+        JNotify_linux.setNotifyListener(l);
+    }
+
     public int linux_addWatch(String path, int mask) throws JNotifyException
     {
         return JNotify_linux.addWatch(path, mask);
@@ -47,21 +67,5 @@ public class InjectableJNotify
     public void linux_removeWatch(int watchID) throws JNotifyException
     {
         JNotify_linux.removeWatch(watchID);
-    }
-
-    public void linux_setNotifyListener(INotifyListener l)
-    {
-        JNotify_linux.setNotifyListener(l);
-    }
-
-    public int addWatch(String path, int mask, boolean watchSubtree, JNotifyListener listener)
-            throws JNotifyException
-    {
-        return JNotify.addWatch(path, mask, watchSubtree, listener);
-    }
-
-    public boolean removeWatch(int watchID) throws JNotifyException
-    {
-        return JNotify.removeWatch(watchID);
     }
 }
