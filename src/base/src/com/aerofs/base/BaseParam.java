@@ -34,11 +34,6 @@ public class BaseParam
         props = source;
     }
 
-    public static IPropertySource getPropertySource()
-    {
-        return props;
-    }
-
     public static class Xmpp
     {
         public static final IProperty<String> SERVER_DOMAIN = props.stringProperty("base.xmpp.domain",
