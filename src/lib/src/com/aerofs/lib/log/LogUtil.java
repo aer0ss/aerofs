@@ -1,13 +1,17 @@
 package com.aerofs.lib.log;
 
+import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.LoggerContext;
-import ch.qos.logback.classic.joran.JoranConfigurator;
+import ch.qos.logback.classic.encoder.PatternLayoutEncoder;
+import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.joran.spi.JoranException;
+import ch.qos.logback.core.rolling.DefaultTimeBasedFileNamingAndTriggeringPolicy;
+import ch.qos.logback.core.rolling.RollingFileAppender;
+import ch.qos.logback.core.rolling.TimeBasedRollingPolicy;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExNoResource;
 import org.slf4j.LoggerFactory;
 
-import java.net.URL;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -33,39 +37,21 @@ public abstract class LogUtil
         ERROR
     }
 
+    /** Pattern used in client log files */
+    private final static String PATTERN = "%d{HHmmss.SSS}%.-1level %thread @%c{0}, %m%n";
+    /**  Suffix used when rolling daily log files */
+    private final static String DATE_SUFFIX = ".%d{yyyyMMdd}";
+    /**  maximum number of archived log files to keep */
+    private final static int MAX_HISTORY = 5;
+
     /**
-     * Initialize the logging system by loading a named config file with
-     * some context properties set.
-     * @param rtRoot  Will be passed to config file as RTROOT
-     * @param progName    Will be passed to config file as PROGNAME
-     * @param logLevel Will be passed to config file as LOGLEVEL
-     * @param configFile  Name of XML config file to load
+     * Initialize the logging system by building a configuration context and
+     * replacing whatever was loaded automatically.
      */
-    public static void initializeFromConfigFile(
-            String rtRoot, String progName,
-            Level logLevel, String configFile)
+    public static void initialize(String rtRoot, String progName, Level logLevel)
             throws JoranException, ExNoResource
     {
-        // NB: getILoggerFactory causes the default configuration to be loaded.
-        LoggerContext context = (LoggerContext) LoggerFactory.getILoggerFactory();
-        JoranConfigurator configurator = new JoranConfigurator();
-        configurator.setContext(context);
-        context.reset();
-
-        context.putProperty("PROGNAME", progName);
-        context.putProperty("RTROOT", rtRoot);
-        context.putProperty("LOGLEVEL", logLevel.name());
-
-        URL configUrl = Thread.currentThread().getContextClassLoader()
-                .getResource(configFile);
-
-        if (configUrl == null) {
-            // we have to check explicitly since Joran dies with NPE otherwise.
-            // it's not impossible to continue since logback provides a fallback configurator.
-            throw new ExNoResource("Can't locate logger configuration " + configFile);
-        }
-
-        configurator.doConfigure(configUrl);
+        configure(logLevel, rtRoot + "/" + progName + ".log" );
 
         Runtime.getRuntime().addShutdownHook(new Thread(new Runnable()
         {
@@ -77,6 +63,79 @@ public abstract class LogUtil
                 LoggerFactory.getLogger(LogUtil.class).debug("TERMINATED " + strDate);
             }
         }));
+    }
+
+    /**
+     * Programmatically configure a logging environment. The xml configurator insists
+     * on initializing appenders inline which has undesirable side effects (like leaving
+     * empty files in approot).
+     */
+    private static void configure(Level logLevel, String filename)
+    {
+        LoggerContext context = (LoggerContext) LoggerFactory.getILoggerFactory();
+        context.reset();
+
+        PatternLayoutEncoder encoder = new PatternLayoutEncoder();
+        encoder.setPattern("%d{HHmmss.SSS}%.-1level %thread @%c{0}, %m%n");
+        encoder.setContext(context);
+        encoder.start();
+
+        // -- Weird and subtle warning --
+        // Daily file rollover requires
+        // - triggering policy: when to roll over (i.e., daily)
+        // - rolling pollicy: what to do when the trigger fires
+        // and these two need to be linked up to each other reflexively.
+        DefaultTimeBasedFileNamingAndTriggeringPolicy<ILoggingEvent> trigger
+                = new DefaultTimeBasedFileNamingAndTriggeringPolicy<ILoggingEvent>();
+        trigger.setContext(context);
+
+        TimeBasedRollingPolicy<ILoggingEvent> rollingPolicy
+                = new TimeBasedRollingPolicy<ILoggingEvent>();
+        rollingPolicy.setContext(context);
+        rollingPolicy.setFileNamePattern(filename + DATE_SUFFIX);
+        rollingPolicy.setTimeBasedFileNamingAndTriggeringPolicy(trigger);
+        rollingPolicy.setMaxHistory(MAX_HISTORY);
+        rollingPolicy.setCleanHistoryOnStart(true);
+
+        trigger.setTimeBasedRollingPolicy(rollingPolicy);
+
+        // The appender controls writing log messages to a destination, in this case a file.
+        RollingFileAppender<ILoggingEvent> appender = new RollingFileAppender<ILoggingEvent>();
+        appender.setAppend(true);
+        appender.setEncoder(encoder);
+        appender.setFile(filename);
+        appender.setName("LOGFILE");
+        appender.setPrudent(false);
+        appender.setRollingPolicy(rollingPolicy);
+        appender.setTriggeringPolicy(trigger);
+        appender.setContext(context);
+
+        // finally, link the rolling policy object up to it's parent - the appender. sigh.
+        rollingPolicy.setParent(appender);
+        rollingPolicy.start();
+        appender.start();
+
+        // Finally, we have all the components. Set the root logger to use the new appender:
+        Logger rootLogger = context.getLogger(Logger.ROOT_LOGGER_NAME);
+        rootLogger.setLevel(getLevel(logLevel));
+        rootLogger.addAppender(appender);
+    }
+
+    private static ch.qos.logback.classic.Level getLevel(Level logLevel)
+    {
+        if (logLevel == Level.ERROR) {
+            return ch.qos.logback.classic.Level.ERROR;
+        } else if (logLevel == Level.WARN) {
+            return ch.qos.logback.classic.Level.WARN;
+        } else if (logLevel == Level.INFO) {
+            return ch.qos.logback.classic.Level.INFO;
+        } else if (logLevel == Level.DEBUG) {
+            return ch.qos.logback.classic.Level.DEBUG;
+        }  else if (logLevel == Level.TRACE) {
+            return ch.qos.logback.classic.Level.TRACE;
+        }
+        assert logLevel == Level.NONE : "Illegal log level " + logLevel.toString();
+        return ch.qos.logback.classic.Level.OFF;
     }
 
     /**

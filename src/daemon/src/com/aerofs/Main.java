@@ -37,8 +37,6 @@ import java.util.Date;
 
 public class Main
 {
-    private static final String LOG_CONFIG = "logback.xml";
-
     private static final String DMON_PROGRAM_NAME = "daemon";
     private static final String FSCK_PROGRAM_NAME = "fsck";
     private static final String UMDC_PROGRAM_NAME = "umdc";
@@ -69,7 +67,7 @@ public class Main
         }
 
         try {
-            LogUtil.initializeFromConfigFile(rtRoot, prog, logLevel, LOG_CONFIG);
+            LogUtil.initialize(rtRoot, prog, logLevel);
         } catch (Exception je) {
             // FIXME(jP): Can we remove this? Does it ever work?
             String msg = "Error starting log subsystem: " + Util.e(je);
