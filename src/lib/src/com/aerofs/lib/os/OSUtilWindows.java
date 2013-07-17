@@ -9,11 +9,11 @@ import java.util.regex.Pattern;
 import com.aerofs.base.Loggers;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.*;
-import com.aerofs.lib.LibParam.GUI;
+import com.aerofs.lib.LibParam.RootAnchor;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.lib.os.OSUtil.Icon;
 import com.aerofs.swig.driver.Driver;
-import org.apache.commons.lang.text.StrSubstitutor;
+import com.google.common.base.Optional;
 import org.slf4j.Logger;
 
 public class OSUtilWindows implements IOSUtil
@@ -61,10 +61,8 @@ public class OSUtilWindows implements IOSUtil
     @Override
     public String getDefaultRootAnchorParent()
     {
-        if (GUI.WINDOWS_DEFAULT_ROOT_ANCHOR_PARENT.get().isPresent()) {
-            return StrSubstitutor.replace(GUI.WINDOWS_DEFAULT_ROOT_ANCHOR_PARENT.get().get(),
-                    System.getenv());
-        }
+        Optional<String> value = RootAnchor.DEFAULT_LOCATION_WINDOWS.get();
+        if (value.isPresent()) return OSUtil.replaceEnvironmentVariables(value.get());
 
         try {
             OutArg<String> out = new OutArg<String>();

@@ -7,6 +7,7 @@ import com.aerofs.lib.OutArg;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.sv.client.SVClient;
+import org.apache.commons.lang.text.StrSubstitutor;
 
 public abstract class OSUtil
 {
@@ -186,5 +187,26 @@ public abstract class OSUtil
             SVClient.logSendDefectAsync(true, "icon not found: " + result.getAbsolutePath());
         }
         return result.getAbsolutePath();
+    }
+
+    static final String PROPERTY_HOME = "HOME";
+
+    /**
+     * Given a path, replace the environment variables in the path with actual values.
+     *
+     * Supported Format:
+     *   - expand ~ to the environment variable `HOME`.
+     *   - expand ${variable_name} to its value.
+     *
+     * @param path - the path containing environment variables.
+     * @return the resulting path with environment variables replaced with the values.
+     */
+    public static String replaceEnvironmentVariables(String path)
+    {
+        if (path == null) return null;
+
+        path = path.replace("~", System.getenv(PROPERTY_HOME));
+
+        return StrSubstitutor.replace(path, System.getenv());
     }
 }

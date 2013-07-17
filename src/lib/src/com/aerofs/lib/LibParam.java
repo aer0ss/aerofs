@@ -202,22 +202,15 @@ public class LibParam extends BaseParam
                 new DynamicOptionalStringProperty("base.ca.certificate");
     }
 
-    /**
-     * FIXME maybe? (AT)
-     *   despite these being properties used only by the GUI, we have to put these here
-     *   since OS-specific implementations are in the lib module even though some
-     *   methods are used by GUI only.
-     */
-    public static class GUI
+    public static class RootAnchor
     {
-        // named with lib prefix since the properties are located inside the lib module
-        public static final DynamicOptionalStringProperty WINDOWS_DEFAULT_ROOT_ANCHOR_PARENT =
+        public static final DynamicOptionalStringProperty DEFAULT_LOCATION_WINDOWS =
                 new DynamicOptionalStringProperty("lib.anchor.default_location_windows");
 
-        public static final DynamicOptionalStringProperty OSX_DEFAULT_ROOT_ANCHOR_PARENT =
+        public static final DynamicOptionalStringProperty DEFAULT_LOCATION_OSX =
                 new DynamicOptionalStringProperty("lib.anchor.default_location_osx");
 
-        public static final DynamicOptionalStringProperty LINUX_DEFAULT_ROOT_ANCHOR_PARENT =
+        public static final DynamicOptionalStringProperty DEFAULT_LOCATION_LINUX =
                 new DynamicOptionalStringProperty("lib.anchor.default_location_linux");
     }
 

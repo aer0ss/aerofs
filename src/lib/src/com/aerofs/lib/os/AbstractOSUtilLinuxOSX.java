@@ -10,7 +10,6 @@ import com.aerofs.config.properties.DynamicOptionalStringProperty;
 import com.aerofs.lib.ProgressIndicators;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.swig.driver.Driver;
-import org.apache.commons.lang.text.StrSubstitutor;
 import org.slf4j.Logger;
 
 import com.aerofs.lib.injectable.InjectableFile;
@@ -34,28 +33,11 @@ abstract class AbstractOSUtilLinuxOSX implements IOSUtil
         System.loadLibrary(library);
     }
 
-    /**
-     * N.B. we've added support to load default root anchor parent from dynamic configuration
-     *   properties. The dynamic properties value will be preferred over the default
-     *   platform-specific policy.
-     *
-     * In addition, we support ~ expansion as well as macro expansion of the form:
-     *   ${environment_variable}. The macro expansion _cannot_ be nested, this can be
-     *   changed if necessary.
-     */
-    @Override
-    public abstract String getDefaultRootAnchorParent();
-
     protected String getDefaultRootAnchorParentImpl(DynamicOptionalStringProperty property)
     {
-        if (property.get().isPresent()) {
-            String value = property.get().get();
-            value = value.replace("~", System.getenv("HOME"));
-            value = StrSubstitutor.replace(value, System.getenv());
-            return value;
-        } else {
-            return getUserHomeDir();
-        }
+        return property.get().isPresent()
+                ? OSUtil.replaceEnvironmentVariables(property.get().get())
+                : getUserHomeDir();
     }
 
     @Override
