@@ -49,9 +49,14 @@
             <li><a href="${request.route_path('download')}">
                 AeroFS Desktop
             </a></li>
-            <li><a href="http://play.google.com/store/apps/details?id=com.aerofs.android" target="_blank">
-                Android App
-            </a></li>
+
+            %if request.registry.settings['deployment.mode'] == 'public':
+                <li><a href="http://play.google.com/store/apps/details?id=com.aerofs.android" target="_blank">
+                    Android App
+                </a></li>
+            %else:
+                <li>Android App (coming soon)</li>
+            %endif
 
             %if admin:
                 <li class="divider"></li>
