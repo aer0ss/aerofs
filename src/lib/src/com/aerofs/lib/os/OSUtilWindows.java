@@ -91,7 +91,7 @@ public class OSUtilWindows implements IOSUtil
 
         } catch (IOException e) {
             l.warn(Util.e(e));
-            return System.getProperty("user.home");
+            return System.getenv("USERPROFILE");
         }
     }
 
@@ -100,11 +100,11 @@ public class OSUtilWindows implements IOSUtil
     {
         if (!OSUtil.isWindowsXP()) {
             SystemUtil.execBackground(AppRoot.abs() + File.separator + "shortcut.exe",
-                    "/F:\"" + System.getProperty("user.home") + File.separator +
-                    "Links" + File.separator + "AeroFS.lnk" + "\"",
+                    "/F:" + System.getenv("USERPROFILE") + File.separator + "Links"
+                            + File.separator + "AeroFS.lnk",
                     "/A:C",
-                    "/I:\"" + OSUtil.getIconPath(Icon.WinLibraryFolder) + "\"",
-                    "/T:\"" + path + "\"");
+                    "/I:" + OSUtil.getIconPath(Icon.WinLibraryFolder),
+                    "/T:" + path);
         }
     }
 
@@ -112,7 +112,7 @@ public class OSUtilWindows implements IOSUtil
     public void removeFromFavorite(String path) throws IOException
     {
         if (!OSUtil.isWindowsXP()) {
-            File f = new File(System.getProperty("user.home") + File.separator +
+            File f = new File(System.getenv("USERPROFILE") + File.separator +
                     "Links" + File.separator + "AeroFS.lnk");
             f.delete();
         }
