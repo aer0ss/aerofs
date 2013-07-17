@@ -4,33 +4,33 @@ import com.aerofs.base.Loggers;
 import com.aerofs.base.analytics.AnalyticsEvents.ClickEvent;
 import com.aerofs.base.analytics.AnalyticsEvents.ClickEvent.Action;
 import com.aerofs.base.analytics.AnalyticsEvents.ClickEvent.Source;
+import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIUtil;
+import com.aerofs.gui.GUIUtil.AbstractListener;
+import com.aerofs.gui.Images;
 import com.aerofs.gui.tray.TrayIcon.TrayPosition.Orientation;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.ThreadUtil;
+import com.aerofs.lib.Util;
+import com.aerofs.lib.cfg.Cfg;
+import com.aerofs.lib.os.OSUtil;
 import com.aerofs.sv.client.SVClient;
 import com.aerofs.swig.driver.Driver;
 import com.google.common.base.Objects;
 import com.google.common.collect.Sets;
-import org.eclipse.swt.widgets.Menu;
-import org.eclipse.swt.widgets.UbuntuTrayItem;
-import org.eclipse.swt.widgets.Widget;
-import org.slf4j.Logger;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.Event;
+import org.eclipse.swt.widgets.Listener;
+import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.Tray;
 import org.eclipse.swt.widgets.TrayItem;
-
-import com.aerofs.gui.GUI;
-import com.aerofs.gui.GUIUtil.AbstractListener;
-import com.aerofs.gui.Images;
-import com.aerofs.lib.Util;
-import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.os.OSUtil;
+import org.eclipse.swt.widgets.UbuntuTrayItem;
+import org.eclipse.swt.widgets.Widget;
+import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 import java.io.File;
@@ -75,19 +75,6 @@ public class TrayIcon implements ITrayMenuListener
             _uti = null;
             _ti = new TrayItem(tray, SWT.NONE);
 
-            _ti.addListener(SWT.Show, new AbstractListener(null) {
-                @Override
-                public void handleEventImpl(Event event)
-                {
-                }
-            });
-            _ti.addListener(SWT.Hide, new AbstractListener(null) {
-                @Override
-                public void handleEventImpl(Event event)
-                {
-                }
-            });
-
             if (!OSUtil.isOSX()) {
                 _ti.addListener(SWT.DefaultSelection, new AbstractListener(TRAY_ICON_DEFAULT_ACTION) {
                     @Override
@@ -97,13 +84,20 @@ public class TrayIcon implements ITrayMenuListener
                     }
                 });
             }
-            _ti.addListener(SWT.MenuDetect, new AbstractListener(TRAY_ICON_CLICKED) {
+
+            Listener showMenu = new AbstractListener(TRAY_ICON_CLICKED) {
                 @Override
                 public void handleEventImpl(Event event)
                 {
                     _st.setMenuVisible(true);
                 }
-            });
+            };
+
+            _ti.addListener(SWT.MenuDetect, showMenu);
+
+            // On non-OSX platforms, also show the menu the user left-click on the icon
+            // This happen by default on OSX
+            if (!OSUtil.isOSX()) _ti.addListener(SWT.Selection, showMenu);
         }
 
         setSpin(false);
