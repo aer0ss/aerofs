@@ -112,6 +112,8 @@ class Multicast implements IMaxcast
                 if (!iface.supportsMulticast()) continue;
 
                 final MulticastSocket s = new MulticastSocket(DaemonParam.TCP.MCAST_PORT); // bind to *:TCP_MCAST_PORT
+                // N.B. Setting loopback mode to true _disables_ TCP multicast on local loopback
+                // See http://docs.oracle.com/javase/6/docs/api/java/net/MulticastSocket.html#setLoopbackMode(boolean)
                 s.setLoopbackMode(true);
                 s.joinGroup(new InetSocketAddress(DaemonParam.TCP.MCAST_ADDRESS,
                         DaemonParam.TCP.MCAST_PORT), iface);
