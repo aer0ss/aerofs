@@ -29,7 +29,8 @@ public class InvitationReminderEmailer
                     "Hi there!\n" +
                     "\n" +
                     "You've recently been invited to try out " + L.brand() +
-                    " (" + WWW.MARKETING_HOST_URL.get() + ") \n" +
+                        // Whitespace around URL needed for autolinker
+                    " ( " + WWW.MARKETING_HOST_URL.get() + " ) \n" +
                     "\n " +
                     "We realize you might be quite busy and may have missed our invitation email" +
                     " so we want to remind you that your invitation is still waiting!\n" +

@@ -53,7 +53,9 @@ public class DeviceRegistrationEmailer
                 WWW.SUPPORT_EMAIL_ADDRESS.get() +
                 " immediately and we will take the necessary steps to secure your account.\n" +
                 "\n" +
-                "You can manage " + manageDeviceStringAndURL + ".";
+                    // Note the space after the URL to enable the autolinker to drop the period.
+                    // In the future, real templates could make this more intelligent.
+                "You can manage " + manageDeviceStringAndURL + " .";
 
         email.addSection(subject, HEADER_SIZE.H1, body);
         email.addDefaultSignature();

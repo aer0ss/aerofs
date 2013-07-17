@@ -6,9 +6,12 @@ package com.aerofs.sp.server.email;
 
 import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.labeling.L;
+import org.apache.commons.lang.StringEscapeUtils;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class Email implements IEmail
 {
@@ -32,7 +35,7 @@ public class Email implements IEmail
     @Override
     public void addSection(String header, HEADER_SIZE size, String body) throws IOException
     {
-        _htmlEmail.addSection(header, size, body);
+        _htmlEmail.addSection(header, size, htmlified(body));
         _textEmail.addSection(header, size, body);
     }
 
@@ -55,5 +58,26 @@ public class Email implements IEmail
     public void addDefaultSignature() throws IOException
     {
         addSignature("Happy Syncing,", "The " + L.brand() + " Team", Email.DEFAULT_PS);
+    }
+
+    // A crappy linkifier
+    // Don't pass already-marked-up text to this function, it's dumb and will double-link the text
+    // TODO (DF): replace this whole module with a real template engine
+    private String crappyLinkified(String plain)
+    {
+        Pattern pattern = Pattern.compile(
+                // A link is a known schema + host
+                "http(s)?://([\\w+?\\.\\w+])+" +
+                // plus an optional port and path
+                "([a-zA-Z0-9~!@#\\$%\\^&\\*\\(\\)_\\-=\\+\\\\/\\?\\.:;',]*)?",
+            Pattern.DOTALL | Pattern.UNIX_LINES | Pattern.CASE_INSENSITIVE);
+        Matcher matcher = pattern.matcher(plain);
+        return matcher.replaceAll("<a href=\"$0\">$0</a>");
+    }
+    private String htmlified(String plain)
+    {
+        String escaped = StringEscapeUtils.escapeHtml(plain);
+        String linkified = crappyLinkified(escaped);
+        return linkified;
     }
 }
