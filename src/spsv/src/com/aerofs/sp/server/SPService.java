@@ -121,8 +121,8 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.google.protobuf.ByteString;
 import com.netflix.config.DynamicBooleanProperty;
 import org.apache.commons.lang.StringUtils;
+import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 import org.slf4j.Logger;
-import sun.security.pkcs.PKCS10;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
@@ -812,7 +812,8 @@ public class SPService implements ISPService
         User user = _sessionUser.get();
         Device device = _factDevice.create(deviceId);
 
-        CertificationResult cert = device.certify(new PKCS10(csr.toByteArray()), user);
+        CertificationResult cert = device.certify(new PKCS10CertificationRequest(csr.toByteArray()),
+                user);
 
         _sqlTrans.begin();
 
@@ -918,7 +919,8 @@ public class SPService implements ISPService
         // between the first transaction and the second transaction. This would result in a no-sync
         // on the team server.
         Device device = _factDevice.create(deviceId);
-        CertificationResult cert = device.certify(new PKCS10(csr.toByteArray()), tsUser);
+        CertificationResult cert = device.certify(new PKCS10CertificationRequest(csr.toByteArray()),
+                tsUser);
 
         _sqlTrans.begin();
 
@@ -1537,7 +1539,8 @@ public class SPService implements ISPService
         _sqlTrans.commit();
 
         // Perform RPC to CA to get CSR signed.
-        CertificationResult cert = device.certify(new PKCS10(csr.toByteArray()), user);
+        CertificationResult cert = device.certify(new PKCS10CertificationRequest(csr.toByteArray()),
+                user);
 
         // Add cert to DB.
         _sqlTrans.begin();
@@ -1572,7 +1575,8 @@ public class SPService implements ISPService
         // between the first transaction and the second transaction. This would result in a no-sync
         // on the team server.  But most people probably won't migrate organizations while manually
         // renewing certs.
-        CertificationResult cert = device.certify(new PKCS10(csr.toByteArray()), tsUser);
+        CertificationResult cert = device.certify(new PKCS10CertificationRequest(csr.toByteArray()),
+                tsUser);
 
         _sqlTrans.begin();
 

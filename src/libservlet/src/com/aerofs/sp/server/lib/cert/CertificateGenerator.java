@@ -1,16 +1,17 @@
 package com.aerofs.sp.server.lib.cert;
 
+import com.aerofs.base.Base64;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.C;
+import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.lib.LibParam;
-import sun.security.pkcs.PKCS10;
+import org.bouncycastle.pkcs.PKCS10CertificationRequest;
+import org.slf4j.Logger;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.PrintStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
@@ -88,14 +89,12 @@ public class CertificateGenerator implements ICertificateGenerator
      * caller).
     */
     @Override
-    public CertificationResult generateCertificate(UserID userId, DID did, PKCS10 csr)
+    public CertificationResult generateCertificate(UserID userId, DID did,
+            PKCS10CertificationRequest csr)
         throws IOException, SignatureException, CertificateException
     {
-        // Convert the CSR into string.
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        PrintStream ps = new PrintStream(bos);
-        csr.print(ps);
-        String strCSR = bos.toString();
+        // Convert the CSR into a string in PEM format (ascii-armored, base64).
+        String strCSR = pemEncoded(csr);
 
         // Call the CA. Use the user_id + '-' + device_id as the URL string. This string is used
         // only as the certificate's file names stored on the CA server, so the actual value of the
@@ -143,5 +142,17 @@ public class CertificateGenerator implements ICertificateGenerator
 
         // If bs is invalid a certificate exception will be thrown.
         return new CertificationResult(bs);
+    }
+
+    private static String pemEncoded(PKCS10CertificationRequest csr)
+            throws IOException
+    {
+        byte[] der = csr.getEncoded();
+        StringBuilder sb = new StringBuilder();
+        sb.append("-----BEGIN CERTIFICATE REQUEST-----\n");
+        sb.append(Base64.encodeBytes(der, 0, der.length, Base64.DO_BREAK_LINES));
+        sb.append("\n"); // Base64.encodeBytes does not add a trailing newline
+        sb.append("-----END CERTIFICATE REQUEST-----\n");
+        return sb.toString();
     }
 }

@@ -17,8 +17,11 @@ import com.aerofs.sp.server.lib.cert.CertificateGenerator;
 import com.aerofs.sp.server.lib.cert.CertificateGenerator.CertificationResult;
 import com.aerofs.sp.server.lib.user.User;
 import com.google.protobuf.ByteString;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.x500.RDN;
+import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 import org.slf4j.Logger;
-import sun.security.pkcs.PKCS10;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
@@ -198,12 +201,12 @@ public class Device
     /**
      * Generate a certificate for device. This method does not require a db transaction.
      */
-    public CertificationResult certify(PKCS10 csr, User owner)
+    public CertificationResult certify(PKCS10CertificationRequest csr, User owner)
             throws IOException, SQLException, ExBadArgs, ExNotFound, CertificateException,
             SignatureException
     {
         // Verify the device ID and user ID matches what is specified in CSR.
-        String cname = csr.getSubjectName().getCommonName();
+        String cname = getCN(csr);
 
         if (!cname.equals(SecUtil.getCertificateCName(owner.id(), _id))) {
             throw new ExBadArgs("cname doesn't match: hash(" + owner + " + " +
@@ -211,6 +214,24 @@ public class Device
         }
 
         return _f._certgen.generateCertificate(owner.id(), _id, csr);
+    }
+
+    private String getCN(PKCS10CertificationRequest csr)
+            throws ExBadArgs
+    {
+        X500Name subject = csr.getSubject();
+        // This is the PKIX object identifier for the CN field of a PKCS10 request
+        ASN1ObjectIdentifier cnOID = new ASN1ObjectIdentifier("2.5.4.3");
+        // This is all just dealing with ASN1 being super general, extracting the actual string
+        // of interest
+        RDN[] rdns = subject.getRDNs(cnOID);
+        if (rdns.length != 1) {
+            throw new ExBadArgs("certificate had too many/few subjects: " + rdns.length);
+        }
+        if (rdns[0].isMultiValued()) {
+            throw new ExBadArgs();
+        }
+        return rdns[0].getFirst().getValue().toString();
     }
 
     public void setOSFamilyAndName(String osFamily, String osName)

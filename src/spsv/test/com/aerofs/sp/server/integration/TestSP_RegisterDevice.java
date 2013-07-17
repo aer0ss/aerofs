@@ -11,8 +11,8 @@ import com.aerofs.base.id.UniqueID;
 import com.aerofs.sp.server.lib.device.Device;
 import com.google.common.collect.Sets;
 import com.google.protobuf.ByteString;
+import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 import org.junit.Test;
-import sun.security.pkcs.PKCS10;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
@@ -41,7 +41,8 @@ public class TestSP_RegisterDevice extends AbstractSPCertificateBasedTest
         assertTrue(device.exists());
         sqlTrans.commit();
 
-        verify(certgen).generateCertificate(eq(TEST_1_USER.id()), eq(device.id()), any(PKCS10.class));
+        verify(certgen).generateCertificate(eq(TEST_1_USER.id()), eq(device.id()),
+                any(PKCS10CertificationRequest.class));
 
         // Make sure the cert is valid (what we expect).
         assertTrue(cert.equals(RETURNED_CERT));

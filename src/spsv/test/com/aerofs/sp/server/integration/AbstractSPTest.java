@@ -47,13 +47,13 @@ import com.aerofs.verkehr.client.lib.publisher.VerkehrPublisher;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.protobuf.ByteString;
+import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 import org.junit.Before;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
-import sun.security.pkcs.PKCS10;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
@@ -236,7 +236,7 @@ public class AbstractSPTest extends AbstractTestWithDatabase
 
         // Just stub out the certificate generator. Make sure it doesn't try to contact the CA.
         when(certgen.generateCertificate(any(UserID.class), any(DID.class),
-                any(PKCS10.class))).thenReturn(cert);
+                any(PKCS10CertificationRequest.class))).thenReturn(cert);
 
         when(cert.toString()).thenReturn(AbstractSPCertificateBasedTest.RETURNED_CERT);
         when(cert.getSerial()).thenReturn(++AbstractSPCertificateBasedTest._lastSerialNumber);

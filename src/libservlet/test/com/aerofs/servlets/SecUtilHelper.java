@@ -7,64 +7,55 @@ package com.aerofs.servlets;
 import com.aerofs.base.BaseSecUtil;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UserID;
-import sun.security.pkcs.PKCS10;
-import sun.security.x509.X500Name;
-import sun.security.x509.X500Signer;
+import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.asn1.x500.X500NameBuilder;
+import org.bouncycastle.asn1.x500.style.BCStyle;
+import org.bouncycastle.operator.ContentSigner;
+import org.bouncycastle.operator.OperatorCreationException;
+import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
+import org.bouncycastle.pkcs.PKCS10CertificationRequest;
+import org.bouncycastle.pkcs.PKCS10CertificationRequestBuilder;
+import org.bouncycastle.pkcs.jcajce.JcaPKCS10CertificationRequestBuilder;
 
 import java.io.IOException;
-import java.lang.reflect.Method;
 import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.security.Signature;
 
 public class SecUtilHelper extends BaseSecUtil
 {
-    // This method depends on a JRE implementation detail.  It's unsafe for us to use this method
-    // on systems where we don't control the JRE (ie, client code).  On the upside, it has no
-    // native library dependency, so it can be convenient for use within the servers.
-    // DF: As of now, it is only used by test code, so I'm moving it to a test package.
-    public static PKCS10 serverOnlyNewCSR(PublicKey pubKey, PrivateKey privKey, UserID userId,
-            DID did)
+    /**
+     * This method exists because we don't want to depend on the sun JRE's implementation
+     * detail sun.security.pkcs.PKCS10, because doing so triggers a warning and compiling
+     * with -Werror is good for the soul.
+     *
+     * On the client, we can use a thin wrapper around OpenSSL, for which we already ship the native
+     * library, so we might as well use a 40KB wrapper instead of shipping 2MB of crypto
+     * implementation for a PKCS10 generator.
+     *
+     * On servers, we ship two bouncycastle jars, since we don't want to depend on the aerofsd
+     * native library.
+     */
+    public static PKCS10CertificationRequest serverOnlyNewCSR(PublicKey pubKey, PrivateKey privKey,
+            UserID userId, DID did)
             throws GeneralSecurityException, IOException
     {
-        PKCS10 request = new PKCS10(pubKey);
-
-        Signature signature = Signature.getInstance(SHA1_WITH_RSA);
-        signature.initSign(privKey);
-
-        X500Name subject = new X500Name(getCertificateCName(userId, did),
-                ORGANIZATION_UNIT,
-                ORGANIZATION_NAME,
-                LOCALITY_NAME,
-                STATE_NAME,
-                COUNTRY_NAME);
-
-        // In JDK 1.7 class X500Signer doesn't exist and the encodeAndSign() method
-        // has changed such that it takes a Signature and X500Name as parameters instead of
-        // an X500Signer. So catch the error and use reflection method to invoke
-        // the new encodeAndSign() method.
+        ContentSigner cs;
         try {
-            X500Signer signer = new X500Signer(signature, subject);
-
-            request.encodeAndSign(signer);
-
-        } catch (NoClassDefFoundError noClassErr) {
-            try {
-                Class<?> requestClass = request.getClass();
-
-                Class<?> params[] = new Class[2];
-                params[0] = X500Name.class;
-                params[1] = Signature.class;
-
-                Method encodeAndSignMethod = requestClass.getDeclaredMethod(
-                        "encodeAndSign", params);
-                encodeAndSignMethod.invoke(request, subject, signature);
-            } catch (Exception e) {
-                throw new GeneralSecurityException(e);
-            }
+            cs = new JcaContentSignerBuilder(SHA1_WITH_RSA).build(privKey);
+        } catch (OperatorCreationException e) {
+            throw new GeneralSecurityException(e);
         }
+        X500Name subject = new X500NameBuilder(BCStyle.INSTANCE)
+                .addRDN(BCStyle.CN, getCertificateCName(userId, did))
+                .addRDN(BCStyle.OU, ORGANIZATION_UNIT)
+                .addRDN(BCStyle.O, ORGANIZATION_NAME)
+                .addRDN(BCStyle.L, LOCALITY_NAME)
+                .addRDN(BCStyle.ST, STATE_NAME)
+                .addRDN(BCStyle.C, COUNTRY_NAME)
+                .build();
 
-        return request;
+        PKCS10CertificationRequestBuilder bd = new JcaPKCS10CertificationRequestBuilder(subject, pubKey);
+        return bd.build(cs);
     }
 }
