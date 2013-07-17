@@ -4,6 +4,7 @@ import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.encoder.PatternLayoutEncoder;
 import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.ConsoleAppender;
 import ch.qos.logback.core.joran.spi.JoranException;
 import ch.qos.logback.core.rolling.DefaultTimeBasedFileNamingAndTriggeringPolicy;
 import ch.qos.logback.core.rolling.RollingFileAppender;
@@ -48,10 +49,10 @@ public abstract class LogUtil
      * Initialize the logging system by building a configuration context and
      * replacing whatever was loaded automatically.
      */
-    public static void initialize(String rtRoot, String progName, Level logLevel)
+    public static void initialize(String rtRoot, String progName, Level logLevel, boolean consoleOutput)
             throws JoranException, ExNoResource
     {
-        configure(logLevel, rtRoot + "/" + progName + ".log" );
+        configure(logLevel, rtRoot + "/" + progName + ".log", consoleOutput);
 
         Runtime.getRuntime().addShutdownHook(new Thread(new Runnable()
         {
@@ -70,7 +71,7 @@ public abstract class LogUtil
      * on initializing appenders inline which has undesirable side effects (like leaving
      * empty files in approot).
      */
-    private static void configure(Level logLevel, String filename)
+    private static void configure(Level logLevel, String filename, boolean consoleOutput)
     {
         LoggerContext context = (LoggerContext) LoggerFactory.getILoggerFactory();
         context.reset();
@@ -110,6 +111,7 @@ public abstract class LogUtil
         appender.setTriggeringPolicy(trigger);
         appender.setContext(context);
 
+
         // finally, link the rolling policy object up to it's parent - the appender. sigh.
         rollingPolicy.setParent(appender);
         rollingPolicy.start();
@@ -119,6 +121,14 @@ public abstract class LogUtil
         Logger rootLogger = context.getLogger(Logger.ROOT_LOGGER_NAME);
         rootLogger.setLevel(getLevel(logLevel));
         rootLogger.addAppender(appender);
+
+        if (consoleOutput) {
+            ConsoleAppender<ILoggingEvent> console = new ConsoleAppender<ILoggingEvent>();
+            console.setContext(context);
+            console.setEncoder(encoder);
+            console.start();
+            rootLogger.addAppender(console);
+        }
     }
 
     private static ch.qos.logback.classic.Level getLevel(Level logLevel)
