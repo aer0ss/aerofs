@@ -56,6 +56,7 @@ public class Main
     {
         boolean enableDebugLogging = Cfg.lotsOfLog(rtRoot);
         boolean enableTraceLogging = Cfg.lotsOfLotsOfLog(rtRoot);
+        boolean enableConsoleOutput = false; // TODO: enable simply when in development
 
         Level logLevel;
         if (enableTraceLogging) {
@@ -67,7 +68,7 @@ public class Main
         }
 
         try {
-            LogUtil.initialize(rtRoot, prog, logLevel);
+            LogUtil.initialize(rtRoot, prog, logLevel, enableConsoleOutput);
         } catch (Exception je) {
             // FIXME(jP): Can we remove this? Does it ever work?
             String msg = "Error starting log subsystem: " + Util.e(je);
