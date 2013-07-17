@@ -54,8 +54,14 @@ abstract class AbstractOSUtilLinuxOSX implements IOSUtil
             value = StrSubstitutor.replace(value, System.getenv());
             return value;
         } else {
-            return System.getProperty("user.home");
+            return getUserHomeDir();
         }
+    }
+
+    @Override
+    public String getUserHomeDir()
+    {
+        return System.getProperty("user.home");
     }
 
     @Override

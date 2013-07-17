@@ -197,6 +197,9 @@ public abstract class SystemUtil
     }
 
     /**
+     * Note: do not add double quotes around path arguments, since Java will escape spaces
+     * automatically and the double quotes will interfere with the escaping.
+     *
      * @return the process's exit code
      */
     private static int execForeground(boolean logging, OutArg<String> output, String ... cmds)
@@ -229,6 +232,10 @@ public abstract class SystemUtil
         }
     }
 
+    /**
+     * Note: do not add double quotes around path arguments, since Java will escape spaces
+     * automatically and the double quotes will interfere with the escaping.
+     */
     public static @Nonnull Process execBackground(String ... cmds) throws IOException
     {
         ProcessBuilder pb = new ProcessBuilder(cmds);

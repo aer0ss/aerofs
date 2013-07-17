@@ -35,6 +35,13 @@ public interface IOSUtil
     void removeFromFavorite(String path) throws IOException;
 
     /**
+     * On Windows, System.getProperty("user.home") is not guaranteed to be correct, which is why we
+     * need this method.
+     * See: http://bugs.sun.com/view_bug.do?bug_id=4787931
+     */
+    String getUserHomeDir();
+
+    /**
      * N.B. this method may be expensive. use sparingly
      *
      * @param remote set to null if unknown

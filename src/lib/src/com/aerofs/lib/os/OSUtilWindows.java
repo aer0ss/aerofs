@@ -91,7 +91,7 @@ public class OSUtilWindows implements IOSUtil
 
         } catch (IOException e) {
             l.warn(Util.e(e));
-            return System.getenv("USERPROFILE");
+            return getUserHomeDir();
         }
     }
 
@@ -100,7 +100,7 @@ public class OSUtilWindows implements IOSUtil
     {
         if (!OSUtil.isWindowsXP()) {
             SystemUtil.execBackground(AppRoot.abs() + File.separator + "shortcut.exe",
-                    "/F:" + System.getenv("USERPROFILE") + File.separator + "Links"
+                    "/F:" + getUserHomeDir() + File.separator + "Links"
                             + File.separator + "AeroFS.lnk",
                     "/A:C",
                     "/I:" + OSUtil.getIconPath(Icon.WinLibraryFolder),
@@ -112,10 +112,16 @@ public class OSUtilWindows implements IOSUtil
     public void removeFromFavorite(String path) throws IOException
     {
         if (!OSUtil.isWindowsXP()) {
-            File f = new File(System.getenv("USERPROFILE") + File.separator +
+            File f = new File(getUserHomeDir() + File.separator +
                     "Links" + File.separator + "AeroFS.lnk");
             f.delete();
         }
+    }
+
+    @Override
+    public String getUserHomeDir()
+    {
+        return System.getenv("USERPROFILE");
     }
 
     final static private Pattern RESERVED_FILENAME_PATTERN;
