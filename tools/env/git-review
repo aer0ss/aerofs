@@ -71,7 +71,7 @@ if [ "$CHECK" -ne 0 ]; then
     REPORT_FILE="$REPO_ROOT/out.ant/reports/index.html"
     if [ ! -f "$REPORT_FILE" ] ; then
         echo "You don't appear to have run unit tests.  Please run them:"
-        echo "cd \"$REPO_ROOT\" && ant -Dmode=STAGING test_unit"
+        echo "cd \"$REPO_ROOT\" && ant test_unit"
         echo "(override possible with git review -n)"
         exit 1
     fi
