@@ -14,7 +14,13 @@ nc -z $host $port
 
 if [ $? -ne 0 ]
 then
-    text="$host:$port is not listening"
+    if [ "$host" = "localhost" ]
+    then
+        text="Not listening on port $port"
+    else
+        text="Not listening on $host:$port"
+
+    fi
 
     if [ -z "$desc" ]
     then

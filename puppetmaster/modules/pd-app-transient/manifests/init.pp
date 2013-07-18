@@ -127,8 +127,18 @@ class pd-app-transient {
         require => Package["aerofs-sanity"],
     }
 
+    file {"/opt/sanity/probes/nginx.sh":
+        source => "puppet:///modules/pd-app-transient/probes/nginx.sh",
+        require => Package["aerofs-sanity"],
+    }
+
     file {"/opt/sanity/probes/tomcat6.sh":
         source => "puppet:///modules/pd-app-transient/probes/tomcat6.sh",
+        require => Package["aerofs-sanity"],
+    }
+
+    file {"/opt/sanity/probes/uwsgi.sh":
+        source => "puppet:///modules/pd-app-transient/probes/uwsgi.sh",
         require => Package["aerofs-sanity"],
     }
 
