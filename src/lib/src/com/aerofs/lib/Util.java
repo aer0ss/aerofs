@@ -36,8 +36,6 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
 import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
@@ -47,11 +45,9 @@ import java.io.UnsupportedEncodingException;
 import java.net.InetSocketAddress;
 import java.net.SocketException;
 import java.net.URLEncoder;
-import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.Date;
-import java.util.List;
 import java.util.Random;
 import java.util.Set;
 import java.util.TimeZone;
@@ -134,7 +130,8 @@ public abstract class Util
         for (Thread t : threads) {
             if (t == null) break;
 
-            builder.append(t.getId() + ":" + t.getName() + " [" + t.getState() + "]");
+            builder.append(t.getId()).append(":").append(t.getName())
+                    .append(" [").append(t.getState()).append("]");
             builder.append(System.getProperty("line.separator"));
             builder.append(convertStackTraceToString(t.getStackTrace()));
             builder.append(System.getProperty("line.separator"));
@@ -143,7 +140,6 @@ public abstract class Util
         return builder.toString();
     }
 
-    @SuppressWarnings("unused")
     public static String getThreadStackTrace(Thread t)
     {
         return getAllThreadStackTraces(new Thread[] {t});
@@ -249,23 +245,20 @@ public abstract class Util
         else return -1;
     }
 
+    /**
+     * This is equivalent to assert, except the expression will always be evaluated
+     * (If one was to replace "verify(foo)" with "assert foo" then the foo expression might not be
+     * evaluated if assertions are disabled.
+     */
     public static void verify(boolean exp)
     {
-        boolean ret = exp;
-        assert ret;
+        assert exp;
     }
 
-    public static void verify(Object exp)
-    {
-        Object ret = exp;
-        assert ret != null;
-    }
-
-    public static void unimplemented(String what)
-    {
-        SystemUtil.fatal("to be implemented: " + what);
-    }
-
+    /**
+     * Formats a long with commas to group digits
+     * e.g.: format(120000) -> 120,000
+     */
     public static String format(long l)
     {
         return String.format("%1$,d", l);
@@ -427,26 +420,11 @@ public abstract class Util
             unit = "week";
             plural = true;
         } else {
-            return "\u221E";
+            return "\u221E";  // 'infinity' symbol
         }
 
-        if (!plural || v == 1) return v + " " + unit;
-        else return v + " " + unit + 's';
-    }
-
-    public static <T> void addAll(List<T> dst, T[] src)
-    {
-        for (T t : src) dst.add(t);
-    }
-
-    public static byte[] toByteArray(long l)
-    {
-        return ByteBuffer.allocate(8).putLong(l).array();
-    }
-
-    public static byte[] toByteArray(int i)
-    {
-        return ByteBuffer.allocate(4).putInt(i).array();
+        return (!plural || v == 1) ? v + " " + unit
+                                   : v + " " + unit + 's';
     }
 
     private static final char[] VALID_EMAIL_CHARS =
@@ -530,51 +508,6 @@ public abstract class Util
         Preconditions.checkState(sz.length > 1);
         int n = sz[0];
         for (int i = 1; i < sz.length; ++i) if (n != sz[i]) throw new ExProtocolError();
-    }
-
-    public static void writeMessage(DataOutputStream os, int magic, byte[] bs)
-        throws IOException
-    {
-        os.writeInt(magic);
-        os.writeInt(bs.length);
-        os.write(bs);
-        os.flush();
-    }
-
-    // return the total size sent including headers
-    public static int writeMessage(DataOutputStream os, int magic, byte[][] bss)
-        throws IOException
-    {
-        int size = 0;
-        for (byte[] bs : bss) size += bs.length;
-
-        os.writeInt(magic);
-        os.writeInt(size);
-        // TODO: scatter/gather
-        for (byte[] bs : bss) os.write(bs);
-        os.flush();
-
-        return size + 2 * C.INTEGER_SIZE;
-    }
-
-    public static byte[] readMessage(DataInputStream is, int magic, int maxSize)
-        throws IOException
-    {
-        int m = is.readInt();
-        if (m != magic) {
-            throw new IOException("Magic number doesn't match. Expect 0x" +
-                    String.format("%1$08x", magic) + " recieved 0x" +
-                    String.format("%1$08x", m));
-        }
-        int size = is.readInt();
-
-        if (size > maxSize) {
-            throw new IOException("Message too large (" + size + " > " +
-                    maxSize + ")");
-        }
-        byte[] bs = new byte[size];
-        is.readFully(bs);
-        return bs;
     }
 
     /**

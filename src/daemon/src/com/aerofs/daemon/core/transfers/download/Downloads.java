@@ -30,6 +30,8 @@ import javax.annotation.Nullable;
 import java.util.Map;
 import java.util.Set;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 /**
  * Manages in-progress {@link AsyncDownload} objects.
  */
@@ -198,7 +200,7 @@ public class Downloads
                 try {
                     dl.do_();
                 } finally {
-                    Util.verify(_ongoing.remove(dl._socid));
+                    checkNotNull(_ongoing.remove(dl._socid));
                 }
             }
         };

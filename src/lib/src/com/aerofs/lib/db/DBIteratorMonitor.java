@@ -7,6 +7,8 @@ import com.aerofs.lib.Util;
 import com.google.common.collect.Maps;
 import org.slf4j.Logger;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 public class DBIteratorMonitor
 {
     private static final Logger l = Loggers.getLogger(DBIteratorMonitor.class);
@@ -24,7 +26,7 @@ public class DBIteratorMonitor
         assert s_count > 0;
         s_count--;
 
-        if (TRACKING_ENABLED) Util.verify(s_iters.remove(iter));
+        if (TRACKING_ENABLED) checkNotNull(s_iters.remove(iter));
     }
 
     public static void addActiveIterator_(AbstractDBIterator<?> iter)

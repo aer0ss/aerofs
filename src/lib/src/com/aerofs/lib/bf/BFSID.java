@@ -9,13 +9,15 @@ import com.google.protobuf.ByteString;
 public class BFSID extends BloomFilter<SID>
 {
     /**
-     * Using k=4 and m=256, we can achieve 0.5% false positive rate (P) for
-     * 20 stores (n). The equation is:
+     * Using k=4 and m=256, we can achieve 0.5% false positive rate (P) for 20 stores (n).
+     * Note (GS): for 100 stores, the false positives rate jumps to 40%.
+     * Maybe we should consider m=512?
      *
-     * P = ((1-(1-k/m)^n)^k
+     * The equation is:
+     *
+     * P = (1-(1-k/m)^n)^k
      */
-    public final static BFHashPartBitSelect<SID> HASH =
-            new BFHashPartBitSelect<SID>(256, 4);
+    public final static BFHashPartBitSelect<SID> HASH = new BFHashPartBitSelect<SID>(256, 4);
 
     public BFSID(BFSID bf)
     {

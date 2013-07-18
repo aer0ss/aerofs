@@ -48,10 +48,8 @@ class ARP
 
     /**
      * this overwrites old entries.
-     *
-     * @return true if there was no old entry
      */
-    boolean put(DID did, InetSocketAddress isa)
+    void put(DID did, InetSocketAddress isa)
     {
         boolean isNew;
         synchronized (this) {
@@ -65,8 +63,6 @@ class ARP
         if (l.isDebugEnabled()) {
             l.debug("arp: add: d:{} rem:{} n:{}", did, printaddr(isa), isNew);
         }
-
-        return isNew;
     }
 
     /**

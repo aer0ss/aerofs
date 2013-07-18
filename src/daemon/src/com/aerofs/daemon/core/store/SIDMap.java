@@ -15,6 +15,8 @@ import com.aerofs.base.id.SID;
 import com.aerofs.lib.id.SIndex;
 import com.google.common.collect.Maps;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 /**
  * This class is a wrapper of ISIDDatabase
  */
@@ -115,7 +117,7 @@ public class SIDMap implements IMapSIndex2SID, IMapSID2SIndex
     {
         SID sid = _sidx2sid.remove(sidx);
         assert sid != null : sidx;
-        Util.verify(_sid2sidx.remove(sid));
+        checkNotNull(_sid2sidx.remove(sid));
         return sid;
     }
 }

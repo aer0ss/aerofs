@@ -95,7 +95,7 @@ public class RitualNotificationClient
         try {
             DataInputStream is = new DataInputStream(new BufferedInputStream(s.getInputStream()));
             while (true) {
-                byte[] bs = Util.readMessage(is, LibParam.RITUAL_NOTIFICATION_MAGIC, Integer.MAX_VALUE);
+                byte[] bs = readMessage(is, LibParam.RITUAL_NOTIFICATION_MAGIC, Integer.MAX_VALUE);
 
                 if (_stopping) return;
 
@@ -126,5 +126,24 @@ public class RitualNotificationClient
     public void removeListener(IRitualNotificationListener l)
     {
         synchronized (_ls) { _ls.removeListener_(l); }
+    }
+
+    private static byte[] readMessage(DataInputStream is, int magic, int maxSize)
+            throws IOException
+    {
+        int m = is.readInt();
+        if (m != magic) {
+            throw new IOException("Magic number doesn't match. Expect 0x" +
+                    String.format("%1$08x", magic) + " received 0x" +
+                    String.format("%1$08x", m));
+        }
+        int size = is.readInt();
+
+        if (size > maxSize) {
+            throw new IOException("Message too large (" + size + " > " + maxSize + ")");
+        }
+        byte[] bs = new byte[size];
+        is.readFully(bs);
+        return bs;
     }
 }

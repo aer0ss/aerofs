@@ -280,7 +280,7 @@ public class GetComponentReply
                 break;
 
             default:
-                Util.unimplemented("support CID: " + socid.cid());
+                SystemUtil.fatal("to be implemented: support CID: " + socid.cid());
                 break;
             }
 

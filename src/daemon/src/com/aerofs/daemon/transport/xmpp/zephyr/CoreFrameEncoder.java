@@ -1,7 +1,6 @@
 package com.aerofs.daemon.transport.xmpp.zephyr;
 
 import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.channel.ChannelHandler.Sharable;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.SimpleChannelDownstreamHandler;
@@ -22,7 +21,7 @@ import static org.jboss.netty.channel.Channels.write;
  *   |-----------|-------------|--------------------------------------|
  *</pre>
  */
-@Sharable
+@org.jboss.netty.channel.ChannelHandler.Sharable
 final class CoreFrameEncoder extends SimpleChannelDownstreamHandler
 {
     @Override

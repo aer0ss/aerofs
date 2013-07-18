@@ -1,6 +1,7 @@
 package com.aerofs.daemon.core.syncstatus;
 
 import com.aerofs.base.BaseUtil;
+import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.base.id.DID;
@@ -33,7 +34,6 @@ import com.aerofs.lib.Path;
 import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Tick;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.Version;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.base.ex.ExBadArgs;
@@ -55,6 +55,7 @@ import com.google.protobuf.ByteString;
 import org.slf4j.Logger;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.security.MessageDigest;
 import java.sql.SQLException;
 import java.util.List;
@@ -515,8 +516,8 @@ public class SyncStatusSynchronizer extends DirectoryServiceAdapter
         MessageDigest md = SecUtil.newMessageDigestMD5();
         for (Entry<DID, TickPair> e : aggregated.entrySet()) {
             md.update(e.getKey().getBytes());
-            md.update(Util.toByteArray(e.getValue().metaTick()));
-            md.update(Util.toByteArray(e.getValue().contentTick()));
+            md.update(toByteArray(e.getValue().metaTick()));
+            md.update(toByteArray(e.getValue().contentTick()));
         }
 
         return md.digest();
@@ -638,5 +639,10 @@ public class SyncStatusSynchronizer extends DirectoryServiceAdapter
          * coupling by making SyncStatusSynchronizer more robust.
          */
         if (!(obj.oid().isRoot() || obj.oid().isTrash())) _tlModified.get(t).add(obj);
+    }
+
+    private static byte[] toByteArray(long l)
+    {
+        return ByteBuffer.allocate(C.LONG_SIZE).putLong(l).array();
     }
 }
