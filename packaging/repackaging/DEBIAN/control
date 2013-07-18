@@ -1,4 +1,4 @@
-Package: aerofs-installers
+Package: aerofs-repackaging
 Section: java
 Priority: required
 Maintainer: AeroFS <team@aerofs.com>

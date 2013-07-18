@@ -32,7 +32,7 @@ PACKAGES= \
 	stun \
 	config \
 	sanity \
-	installers \
+	repackaging \
 	enterprise-updater \
 
 DEBS=$(addprefix debs/, ${PACKAGES:=.deb})

@@ -19,4 +19,4 @@ done
 chroot /mnt/image killall -9 epmd
 
 # Pull down installers.
-chroot /mnt/image /opt/installers/tools/pull-binaries.sh
+chroot /mnt/image /opt/repackaging/tools/pull-installers.sh

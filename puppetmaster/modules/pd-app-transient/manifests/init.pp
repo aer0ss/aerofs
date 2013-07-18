@@ -105,8 +105,8 @@ class pd-app-transient {
     }
     file{ "/opt/web/web/static/installers":
         ensure  => link,
-        target  => "/opt/installers/binaries/modified",
-        require => Package["aerofs-installers"],
+        target  => "/opt/repackaging/installers/modified",
+        require => Package["aerofs-repackaging"],
     }
 
     # --------------
@@ -143,8 +143,8 @@ class pd-app-transient {
     }
 
     # --------------
-    # Installers
+    # Repackaging
     # --------------
 
-    include installers
+    include repackaging
 }

@@ -1,6 +1,6 @@
-class installers (
+class repackaging (
 ) {
-    package { "aerofs-installers":
+    package { "aerofs-repackaging":
         ensure  => latest,
         require => Apt::Source["aerofs"],
     }
