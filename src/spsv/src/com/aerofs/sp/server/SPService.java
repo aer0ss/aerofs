@@ -22,7 +22,6 @@ import com.aerofs.lib.FullName;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExAlreadyInvited;
-import com.aerofs.lib.ex.ExEmailNotVerified;
 import com.aerofs.lib.ex.ExEmailSendingFailed;
 import com.aerofs.base.ex.ExInviteeListEmpty;
 import com.aerofs.lib.ex.ExInvalidEmailAddress;
@@ -75,7 +74,6 @@ import com.aerofs.proto.Sp.RecertifyDeviceReply;
 import com.aerofs.proto.Sp.RegisterDeviceReply;
 import com.aerofs.proto.Sp.RemoveUserFromOrganizationReply;
 import com.aerofs.proto.Sp.ResolveSignUpCodeReply;
-import com.aerofs.proto.Sp.SignUpReply;
 import com.aerofs.proto.Sp.SignUpWithCodeReply;
 import com.aerofs.proto.SpNotifications.PBACLNotification;
 import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue;
@@ -910,7 +908,6 @@ public class SPService implements ISPService
         // between the transaction we make an RPC call.
         _sqlTrans.begin();
 
-        user.throwIfEmailNotVerified();
         user.throwIfNotAdmin();
         User tsUser = user.getOrganization().getTeamServerUser();
 
@@ -1026,8 +1023,6 @@ public class SPService implements ISPService
         if (srps.isEmpty() && !external) throw new ExInviteeListEmpty();
 
         _sqlTrans.begin();
-
-        sharer.throwIfEmailNotVerified();
 
         Collection<UserID> users = saveSharedFolderIfNecessary(folderName, sf, sharer, external);
 
@@ -1150,7 +1145,6 @@ public class SPService implements ISPService
         SharedFolder sf = _factSharedFolder.create(new SID(sid));
 
         l.info(user + " joins " + sf);
-        user.throwIfEmailNotVerified();
 
         if (!sf.exists()) throw new ExNotFound("No such shared folder");
 
@@ -1326,7 +1320,7 @@ public class SPService implements ISPService
     @Override
     public ListenableFuture<Void> inviteToSignUp(List<String> userIdStrings)
             throws SQLException, ExBadArgs, ExEmailSendingFailed, ExNotFound, IOException,
-            ExNotAuthenticated, ExEmptyEmailAddress, ExEmailNotVerified
+            ExNotAuthenticated, ExEmptyEmailAddress
     {
         if (userIdStrings.isEmpty()) throw new ExBadArgs("Must specify one or more invitees");
 
@@ -1334,8 +1328,6 @@ public class SPService implements ISPService
 
         User inviter = _sessionUser.get();
         l.info("invite {} users by {}", userIdStrings.size(), inviter);
-
-        inviter.throwIfEmailNotVerified();
 
         // The sending of invitation emails is deferred to the end of the transaction to ensure
         // that all business logic checks pass and the changes are sucessfully committed to the DB
@@ -1369,7 +1361,6 @@ public class SPService implements ISPService
 
         l.info("{} sends team invite to {}", inviter, invitee);
 
-        inviter.throwIfEmailNotVerified();
         inviter.throwIfNotAdmin();
 
         InvitationEmailer emailer;
@@ -1426,7 +1417,6 @@ public class SPService implements ISPService
         _sqlTrans.begin();
 
         User accepter = _sessionUser.get();
-        accepter.throwIfEmailNotVerified();
 
         Organization orgOld = accepter.getOrganization();
         Organization orgNew = _factOrg.create(orgID);
@@ -2006,9 +1996,12 @@ public class SPService implements ISPService
     {
         l.info("sign up {} with code {}", user, signUpCode);
 
-        // Always set the email as verified, since only the users who receive invitation emails can
-        // sign up with code.
-        signUpCommon(user, firstName, lastName, shaedSP, true);
+        user.save(shaedSP, sanitizeName(firstName, lastName));
+
+        // Unsubscribe user from the aerofs invitation reminder mailing list
+        _esdb.removeEmailSubscription(user.id(), SubscriptionCategory.AEROFS_INVITATION_REMINDER);
+
+        _analytics.track(new SignUpEvent(user.id()));
 
         // N.B. do not remove the sign up invitation code so we can support the case in the
         // above "if user.exist()" branch.
@@ -2032,27 +2025,10 @@ public class SPService implements ISPService
     }
 
     @Override
-    public ListenableFuture<SignUpReply> signUp(String email, ByteString password,
-            String firstName, String lastName)
+    public ListenableFuture<Void> noop8()
             throws Exception
     {
-        byte[] shaedSP = SPParam.getShaedSP(password.toByteArray());
-
-        _sqlTrans.begin();
-
-        User user = _factUser.createFromExternalID(email);
-
-        if (!isExistingUserWithMatchingPassword(user, shaedSP)) {
-            signUpCommon(user, firstName, lastName, shaedSP, false);
-        }
-
-        OrganizationID orgID = user.getOrganization().id();
-
-        _sqlTrans.commit();
-
-        return createReply(SignUpReply.newBuilder()
-                .setOrgId(orgID.toHexString())
-                .build());
+        return null;
     }
 
     /**
@@ -2134,18 +2110,6 @@ public class SPService implements ISPService
             throw new ExBadArgs("First and last names must not be empty");
         }
         return new FullName(firstName, lastName);
-    }
-
-    private void signUpCommon(User user, String firstName, String lastName, byte[] shaedSP,
-            boolean isEmailVerified)
-            throws SQLException, ExBadArgs, ExAlreadyExist
-    {
-        user.save(shaedSP, sanitizeName(firstName, lastName), isEmailVerified);
-
-        // Unsubscribe user from the aerofs invitation reminder mailing list
-        _esdb.removeEmailSubscription(user.id(), SubscriptionCategory.AEROFS_INVITATION_REMINDER);
-
-        _analytics.track(new SignUpEvent(user.id()));
     }
 
     @Override

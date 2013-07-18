@@ -7,7 +7,6 @@ package com.aerofs.sp.server.integration;
 import com.aerofs.lib.ex.ExAlreadyInvited;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExNotFound;
-import com.aerofs.lib.ex.ExEmailNotVerified;
 import com.aerofs.proto.Sp.PBAuthorizationLevel;
 import com.aerofs.proto.Sp.GetAuthorizationLevelReply;
 import com.aerofs.proto.Sp.GetOrganizationInvitationsReply;
@@ -93,25 +92,6 @@ public class TestSP_OrganizationMovement extends AbstractSPTest
         // user has already been moved over.
         GetOrganizationInvitationsReply invites = service.getOrganizationInvitations().get();
         assertEquals(0, invites.getOrganizationInvitationsList().size());
-    }
-
-    @Test
-    public void acceptOrgInvitation_shouldThrowIfAccepterEmailNotVerified()
-            throws Exception
-    {
-        sqlTrans.begin();
-        User user = saveEmailUnverifiedUser();
-        sqlTrans.commit();
-
-        setSessionUser(USER_1);
-
-        sendInvitation(user);
-        setSessionUser(user);
-
-        try {
-            acceptFirstInvitation(user);
-            fail();
-        } catch (ExEmailNotVerified e) { }
     }
 
     @Test

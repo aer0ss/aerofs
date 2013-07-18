@@ -668,18 +668,8 @@ service SPService {
      */
     rpc GetOrganizationID(Void) returns(GetOrganizationIDReply);
 
-    // WAIT_FOR_SP_PROCOTOL_VERSION_CHANGE move this to before SignUpWithCode
-    /**
-     * Sign up a user without using a signup code.
-     *
-     * No-op if the user already exists and the password matches the existing user's password.
-     *
-     * Required Auth Level: none
-     *
-     * Throws:
-     *   ExBadCredential if the user exists and the password doesn't match the existing user
-     */
-    rpc SignUp(SignUpCall) returns(SignUpReply);
+    // WAIT_FOR_SP_PROCOTOL_VERSION_CHANGE remove this
+    rpc Noop8(Void) returns(Void);
 
     /**
      * Sign in a device using an existing device certificate.
@@ -739,18 +729,6 @@ message ListOrganizationInvitedUsersReply {
 
 message GetStripeDataReply {
     required PBStripeData stripe_data = 1;
-}
-
-message SignUpCall {
-    required string email = 1;
-    required bytes password = 2; // hashed credentials (some combo of password, etc.)
-    // TOOD (WW) use PBFullName
-    required string first_name = 3;
-    required string last_name = 4;
-}
-
-message SignUpReply {
-    required string org_id = 1;
 }
 
 message SignUpWithCodeCall {

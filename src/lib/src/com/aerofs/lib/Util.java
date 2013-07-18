@@ -15,7 +15,6 @@ import com.aerofs.lib.ex.ExAlreadyInvited;
 import com.aerofs.lib.ex.ExChildAlreadyShared;
 import com.aerofs.lib.ex.ExDeviceIDAlreadyExists;
 import com.aerofs.lib.ex.ExDeviceOffline;
-import com.aerofs.lib.ex.ExEmailNotVerified;
 import com.aerofs.lib.ex.ExIndexing;
 import com.aerofs.lib.ex.ExNoStripeCustomerID;
 import com.aerofs.lib.ex.ExNotAuthenticated;
@@ -102,7 +101,6 @@ public abstract class Util
                         .put(Type.NO_STRIPE_CUSTOMER_ID, ExNoStripeCustomerID.class)
                         .put(Type.NOT_AUTHENTICATED, ExNotAuthenticated.class)
                         .put(Type.INVITEE_LIST_EMPTY, ExInviteeListEmpty.class)
-                        .put(Type.EMAIL_NOT_VERIFIED, ExEmailNotVerified.class)
 
                         // The following exceptions are consumed by Python clients only. No need to
                         // list them here for the time being.

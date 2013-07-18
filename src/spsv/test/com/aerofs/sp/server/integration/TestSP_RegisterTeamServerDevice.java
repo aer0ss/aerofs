@@ -7,7 +7,6 @@ package com.aerofs.sp.server.integration;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UniqueID;
 import com.aerofs.base.id.UserID;
-import com.aerofs.lib.ex.ExEmailNotVerified;
 import com.aerofs.sp.server.lib.device.Device;
 import com.aerofs.sp.server.lib.user.User;
 import org.junit.Before;
@@ -17,7 +16,6 @@ import org.mockito.Captor;
 import sun.security.pkcs.PKCS10;
 
 import static junit.framework.Assert.assertTrue;
-import static junit.framework.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.verify;
@@ -56,22 +54,6 @@ public class TestSP_RegisterTeamServerDevice extends AbstractSPTest
         sqlTrans.begin();
         assertTrue(tsDevice.exists());
         sqlTrans.commit();
-    }
-
-    @Test
-    public void shouldThrowIfEmailNotVerified()
-            throws Exception
-    {
-        sqlTrans.begin();
-        User user = saveEmailUnverifiedUser();
-        sqlTrans.commit();
-
-        setSessionUser(user);
-
-        try {
-            registerTeamServerDevice();
-            fail();
-        } catch (ExEmailNotVerified e) { }
     }
 
     private void registerTeamServerDevice()

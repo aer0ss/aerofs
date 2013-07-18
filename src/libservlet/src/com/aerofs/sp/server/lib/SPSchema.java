@@ -16,7 +16,6 @@ public final class SPSchema
             C_USER_AUTHORIZATION_LEVEL      = "u_auth_level",
             C_USER_CREDS                    = "u_hashed_passwd",
             C_USER_ACL_EPOCH                = "u_acl_epoch",
-            C_USER_EMAIL_VERIFIED           = "u_email_verified",
 
             // (eric) made the columns match the SQL names here, easier to autocomplete in IDE
             // when the prefix used here matches that in the SQL schema

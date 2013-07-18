@@ -17,9 +17,6 @@ import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.lib.db.IACLDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
-import com.aerofs.labeling.L;
-import com.aerofs.lib.FileUtil;
-import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.proto.Common.PBSubjectRolePair;
@@ -34,7 +31,6 @@ import com.google.protobuf.ByteString;
 import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
-import java.io.File;
 import java.sql.SQLException;
 import java.util.Collections;
 import java.util.List;

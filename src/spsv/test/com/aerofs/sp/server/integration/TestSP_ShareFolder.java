@@ -5,7 +5,6 @@
 package com.aerofs.sp.server.integration;
 
 import com.aerofs.base.ex.ExInviteeListEmpty;
-import com.aerofs.lib.ex.ExEmailNotVerified;
 import com.aerofs.lib.ex.ExNoStripeCustomerID;
 import com.aerofs.proto.Cmd.Command;
 import com.aerofs.base.acl.Role;
@@ -54,20 +53,6 @@ public class TestSP_ShareFolder extends AbstractSPACLTest
                     Collections.<PBSubjectRolePair>emptyList(), "", false).get();
             fail();
         } catch (ExInviteeListEmpty e) {}
-    }
-
-    @Test
-    public void shouldThrowIfEmailNotVerified()
-            throws Exception
-    {
-        sqlTrans.begin();
-        User user = saveEmailUnverifiedUser();
-        sqlTrans.commit();
-
-        try {
-            shareFolder(user, SID_1, USER_1, Role.EDITOR);
-            fail();
-        } catch (ExEmailNotVerified e) { }
     }
 
     @Test

@@ -214,20 +214,7 @@ public class AbstractSPTest extends AbstractTestWithDatabase
             throws Exception
     {
         String idString = user.id().getString();
-        user.save(CRED, new FullName(idString, idString), true);
-    }
-
-    /**
-     * Create a user with first name last names identical to the user id, and with email unverified
-     * Must be called within SQL transaction
-     */
-    public User saveEmailUnverifiedUser()
-            throws Exception
-    {
-        User user = newUser();
-        String idString = user.id().getString();
-        user.save(CRED, new FullName(idString, idString), false);
-        return user;
+        user.save(CRED, new FullName(idString, idString));
     }
 
     protected Device saveDevice(User owner)

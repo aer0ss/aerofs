@@ -9,10 +9,8 @@ import com.aerofs.base.acl.Role;
 import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExNotFound;
-import com.aerofs.lib.ex.ExEmailNotVerified;
 import com.aerofs.lib.ex.ExNoAdminOrOwner;
 import com.aerofs.proto.Common.PBFolderInvitation;
-import com.aerofs.sp.server.lib.user.User;
 import org.junit.Test;
 
 import static junit.framework.Assert.assertEquals;
@@ -31,21 +29,6 @@ public class TestSP_JoinSharedFolder extends AbstractSPFolderTest
         joinSharedFolder(USER_2, SID_1);
 
         assertVerkehrPublishOnlyContains(USER_1, USER_2);
-    }
-
-    @Test
-    public void shouldThrowIfJoinerEmailNotVerified() throws Exception
-    {
-        sqlTrans.begin();
-        User user = saveEmailUnverifiedUser();
-        sqlTrans.commit();
-
-        shareFolder(USER_1, SID_1, user, Role.EDITOR);
-
-        try {
-            joinSharedFolder(user, SID_1);
-            fail();
-        } catch (ExEmailNotVerified e) {}
     }
 
     @Test

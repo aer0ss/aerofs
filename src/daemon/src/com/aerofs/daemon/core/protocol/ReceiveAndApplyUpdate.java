@@ -28,7 +28,6 @@ import com.aerofs.daemon.core.ex.ExOutOfSpace;
 import com.aerofs.daemon.core.net.DigestedMessage;
 import com.aerofs.daemon.core.net.IncomingStreams;
 import com.aerofs.daemon.core.net.IncomingStreams.StreamKey;
-import com.aerofs.daemon.core.net.Metrics;
 import com.aerofs.daemon.core.object.BranchDeleter;
 import com.aerofs.daemon.core.object.ObjectCreator;
 import com.aerofs.daemon.core.object.ObjectMover;
@@ -106,7 +105,6 @@ public class ReceiveAndApplyUpdate
     private ComputeHashCall _computeHashCall;
     private StoreCreator _sc;
     private IncomingStreams _iss;
-    private Metrics _m;
     private Aliasing _al;
     private MapAlias2Target _a2t;
     private BranchDeleter _bd;
@@ -117,7 +115,7 @@ public class ReceiveAndApplyUpdate
     public void inject_(DirectoryService ds, PrefixVersionControl pvc, NativeVersionControl nvc,
             Hasher hasher, VersionUpdater vu, ObjectCreator oc, ObjectMover om,
             IPhysicalStorage ps, DownloadState dlState, ComputeHashCall computeHashCall, StoreCreator sc,
-            IncomingStreams iss, Metrics m, Aliasing al, BranchDeleter bd, TransManager tm,
+            IncomingStreams iss, Aliasing al, BranchDeleter bd, TransManager tm,
             MapAlias2Target alias2target, Analytics analytics)
     {
         _ds = ds;
@@ -132,7 +130,6 @@ public class ReceiveAndApplyUpdate
         _computeHashCall = computeHashCall;
         _sc = sc;
         _iss = iss;
-        _m = m;
         _al = al;
         _bd = bd;
         _tm = tm;
@@ -428,6 +425,7 @@ public class ReceiveAndApplyUpdate
                 throw new ExRestartWithHashComputed("restart dl after hash");
             }
 
+            //noinspection StatementWithEmptyBody
             if (isRemoteDominating || isContentSame_(kBranch, hRemote, tk)) {
                 l.debug("content is the same! " + isRemoteDominating + " " + hRemote);
                 if (kidxApply == null) {

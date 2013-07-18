@@ -38,8 +38,6 @@ public abstract class LogUtil
         ERROR
     }
 
-    /** Pattern used in client log files */
-    private final static String PATTERN = "%d{HHmmss.SSS}%.-1level %thread @%c{0}, %m%n";
     /**  Suffix used when rolling daily log files */
     private final static String DATE_SUFFIX = ".%d{yyyyMMdd}";
     /**  maximum number of archived log files to keep */

@@ -43,7 +43,6 @@ CREATE TABLE IF NOT EXISTS `sp_user` (
   `u_auth_level` INT UNSIGNED NOT NULL,
   `u_org_id` INTEGER NOT NULL,
   `u_acl_epoch` BIGINT NOT NULL,
-  `u_email_verified` BOOL NOT NULL,
   PRIMARY KEY (`u_id`),
   -- Note: the foreign key implicitly creates an index on u_org_id, which helps list or count users
   -- for an org. See http://dev.mysql.com/doc/refman/4.1/en/innodb-foreign-key-constraints.html

@@ -8,7 +8,6 @@ import com.aerofs.base.BaseSecUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExEmptyEmailAddress;
 import com.aerofs.base.id.DID;
-import com.aerofs.lib.ex.ExEmailNotVerified;
 import com.aerofs.lib.ex.ExNoAdminOrOwner;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.SystemUtil;
@@ -89,11 +88,8 @@ public class User
 
             // Use an invalid password hash to prevent attackers from logging in as Team Server
             // using _any_ password. Also see C.MULTIUSER_LOCAL_PASSWORD.
-            //
-            // Always set the email as verified. This is safe since only verified users can install
-            // Team Servers.
             tsUser.saveImpl(new byte[0], new FullName("Team", "Server"), org,
-                    AuthorizationLevel.USER, true);
+                    AuthorizationLevel.USER);
             return tsUser;
         }
     }
@@ -113,12 +109,6 @@ public class User
         if (!getLevel().covers(AuthorizationLevel.ADMIN)) {
             throw new ExNoPerm(this + " does not have administrator privileges");
         }
-    }
-
-    public void throwIfEmailNotVerified()
-            throws ExNotFound, SQLException, ExEmailNotVerified
-    {
-        if (!isEmailVerified()) throw new ExEmailNotVerified(this + "'s email is not verified");
     }
 
     @Override
@@ -195,19 +185,6 @@ public class User
             throws SQLException, ExNotFound
     {
         return getLevel().covers(AuthorizationLevel.ADMIN);
-    }
-
-    public boolean isEmailVerified()
-            throws SQLException, ExNotFound
-    {
-        return _f._udb.isEmailVerified(_id);
-    }
-
-    // TODO (WW) throw ExNotFound if the user doesn't exist?
-    public void setEmailVerified()
-            throws SQLException
-    {
-        _f._udb.setEmailVerified(_id);
     }
 
     // TODO (WW) throw ExNotFound if the user doesn't exist?
@@ -326,17 +303,17 @@ public class User
      * @param shaedSP sha256(scrypt(p|u)|passwdSalt)
      * @throws ExAlreadyExist if the user ID already exists.
      */
-    public void save(byte[] shaedSP, FullName fullName, boolean isEmailVerified)
+    public void save(byte[] shaedSP, FullName fullName)
             throws ExAlreadyExist, SQLException
     {
-        saveImpl(shaedSP, fullName, _f._factOrg.save(), AuthorizationLevel.ADMIN, isEmailVerified);
+        saveImpl(shaedSP, fullName, _f._factOrg.save(), AuthorizationLevel.ADMIN);
     }
 
     public void saveImpl(byte[] shaedSP, FullName fullName, Organization org,
-            AuthorizationLevel level, boolean isEmailVerified)
+            AuthorizationLevel level)
             throws SQLException, ExAlreadyExist
     {
-        _f._udb.insertUser(_id, fullName, shaedSP, org.id(), level, isEmailVerified);
+        _f._udb.insertUser(_id, fullName, shaedSP, org.id(), level);
 
         addRootStoreAndCheckForCollision();
     }

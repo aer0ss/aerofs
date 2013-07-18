@@ -83,17 +83,6 @@ public class TestSP_SignUpWithCode extends AbstractSPTest
     }
 
     @Test
-    public void shouldSetEmailVerified()
-            throws Exception
-    {
-        signUp();
-
-        sqlTrans.begin();
-        assertTrue(factUser.create(userID).isEmailVerified());
-        sqlTrans.commit();
-    }
-
-    @Test
     public void shouldRemoveReminderEmailSubscription()
             throws Exception
     {

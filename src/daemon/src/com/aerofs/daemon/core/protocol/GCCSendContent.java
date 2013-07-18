@@ -37,7 +37,6 @@ import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.Version;
-import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.daemon.core.ex.ExUpdateInProgress;
 import com.aerofs.base.id.DID;
 import com.aerofs.lib.id.SOCKID;
@@ -59,7 +58,6 @@ public class GCCSendContent
 
     private final DirectoryService _ds;
     private final Metrics _m;
-    private final NativeVersionControl _nvc;
     private final NSL _nsl;
     private final OutgoingStreams _oss;
     private final UploadState _ulstate;
@@ -112,7 +110,6 @@ public class GCCSendContent
         _ulstate = ulstate;
         _oss = oss;
         _nsl = nsl;
-        _nvc = nvc;
         _m = m;
         _ds = ds;
         _tokenManager = tokenManager;

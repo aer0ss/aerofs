@@ -15,7 +15,6 @@ import com.aerofs.base.acl.Role;
 import com.aerofs.lib.ex.ExNoAdminOrOwner;
 import com.aerofs.sp.server.lib.SharedFolder;
 import com.aerofs.sp.server.lib.device.Device;
-import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.aerofs.sp.server.lib.user.User;
 import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException;
@@ -26,9 +25,7 @@ import java.sql.SQLException;
 import java.util.Collection;
 
 import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertNull;
-import static junit.framework.Assert.assertTrue;
 import static junit.framework.Assert.fail;
 
 public class TestUser extends AbstractBusinessObjectTest
@@ -61,13 +58,6 @@ public class TestUser extends AbstractBusinessObjectTest
         newUser().getLevel();
     }
 
-    @Test(expected = ExNotFound.class)
-    public void isEmailVerified_shouldThrowIfUserNotFound()
-            throws SQLException, ExNotFound
-    {
-        newUser().isEmailVerified();
-    }
-
     @Test(expected = AssertionError.class)
     public void setLevel_shouldAssertIfUserNotFound()
             throws Exception
@@ -94,37 +84,11 @@ public class TestUser extends AbstractBusinessObjectTest
         newUser().setName(new FullName("first", "last"));
     }
 
-    @Test(expected = AssertionError.class)
-    public void setEmailVerified_shouldAssertIfUserNotFound()
-            throws ExNotFound, SQLException
-    {
-        newUser().setEmailVerified();
-    }
-
-    @Test
-    public void setEmailVerified_shouldDoTheJob()
-            throws Exception
-    {
-        User u = newUser();
-        saveEmailUnverifiedUser(u);
-        assertFalse(u.isEmailVerified());
-        u.setEmailVerified();
-        assertTrue(u.isEmailVerified());
-    }
-
     @Test(expected = MySQLIntegrityConstraintViolationException.class)
     public void saveTeamServerUser_shouldThrowIfWithoutOrg()
             throws Exception
     {
         factUser.saveTeamServerUser(newOrganization());
-    }
-
-    @Test
-    public void saveTeamServerUser_shouldSetEmailVerified()
-            throws Exception
-    {
-        Organization org = saveOrganization();
-        assertTrue(org.getTeamServerUser().isEmailVerified());
     }
 
     @Test(expected = ExAlreadyExist.class)
