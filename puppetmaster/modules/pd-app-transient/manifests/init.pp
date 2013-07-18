@@ -132,6 +132,11 @@ class pd-app-transient {
         require => Package["aerofs-sanity"],
     }
 
+    file {"/opt/sanity/probes/restund.sh":
+        source => "puppet:///modules/pd-app-transient/probes/restund.sh",
+        require => Package["aerofs-sanity"],
+    }
+
     file {"/opt/sanity/probes/tomcat6.sh":
         source => "puppet:///modules/pd-app-transient/probes/tomcat6.sh",
         require => Package["aerofs-sanity"],
