@@ -139,6 +139,6 @@ def ignore_folder_invitation(request):
 
     exception2error(sp.ignore_shared_folder_invitation, share_id, {
         PBException.NO_ADMIN_OR_OWNER:
-            "Sorry, you cannot leave the shared folder since you are the only owner. "
-            "(We are working hard to improve this part.)"
+            "Sorry, you cannot leave the shared folder since you are the only owner "
+            "(we are working hard to improve this part)"
     })

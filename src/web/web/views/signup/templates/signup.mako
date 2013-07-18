@@ -33,7 +33,7 @@
             <input class="span2" id="inputFirstName" type="text" name="${url_param_first_name}">
             <label for="inputLastName">Last name:</label>
             <input class="span2" id="inputLastName" type="text" name="${url_param_last_name}">
-            <label for="inputPasswd">Password:</label>
+            <label for="inputPasswd">Create password:</label>
             <input class="span2" id="inputPasswd" type="password" name="${url_param_password}">
 
             <span class="help-block footnote" style="margin-top: 10px;">
