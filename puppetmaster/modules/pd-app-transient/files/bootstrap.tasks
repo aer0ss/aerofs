@@ -4,7 +4,7 @@ verkehr
 ejabberd-metadata-reset
 ejabberd-fix-config
 ejabberd-certify
-spdb-tomcat-password
+create-sp-tomcat-xml
 uwsgi-pull-dynamic-config
 uwsgi-restart
 restund-fix-config
