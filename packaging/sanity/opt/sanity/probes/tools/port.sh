@@ -26,7 +26,7 @@ then
     then
         text="$text."
     else
-        text="$text (description: $desc)."
+        text="$text ($desc)."
     fi
 
     echo $text
