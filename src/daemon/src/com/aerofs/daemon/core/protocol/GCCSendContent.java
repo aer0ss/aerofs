@@ -1,53 +1,52 @@
 package com.aerofs.daemon.core.protocol;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.sql.SQLException;
-import java.util.Arrays;
-import java.util.Map;
-import java.util.Set;
-
 import com.aerofs.base.ElapsedTimer;
 import com.aerofs.base.Loggers;
-import com.aerofs.daemon.core.NativeVersionControl.IVersionControlListener;
-import com.aerofs.daemon.lib.DaemonParam;
-import com.aerofs.daemon.lib.db.trans.Trans;
-import com.google.common.base.Joiner;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
-import com.google.common.io.ByteStreams;
-import org.slf4j.Logger;
-
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.CoreUtil;
 import com.aerofs.daemon.core.NativeVersionControl;
+import com.aerofs.daemon.core.NativeVersionControl.IVersionControlListener;
 import com.aerofs.daemon.core.ds.CA;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
+import com.aerofs.daemon.core.ex.ExUpdateInProgress;
 import com.aerofs.daemon.core.net.Metrics;
 import com.aerofs.daemon.core.net.NSL;
 import com.aerofs.daemon.core.net.OutgoingStreams;
 import com.aerofs.daemon.core.net.OutgoingStreams.OutgoingStream;
-import com.aerofs.daemon.core.transfers.upload.UploadState;
 import com.aerofs.daemon.core.phy.IPhysicalFile;
 import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.core.tc.TokenManager;
+import com.aerofs.daemon.core.transfers.upload.UploadState;
 import com.aerofs.daemon.event.net.Endpoint;
+import com.aerofs.daemon.lib.DaemonParam;
+import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.Version;
-import com.aerofs.daemon.core.ex.ExUpdateInProgress;
-import com.aerofs.base.id.DID;
 import com.aerofs.lib.id.SOCKID;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.proto.Core.PBCore;
 import com.aerofs.proto.Core.PBGetComReply;
 import com.aerofs.proto.Core.PBGetComReply.Builder;
 import com.aerofs.proto.Transport.PBStream.InvalidationReason;
+import com.google.common.base.Joiner;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
+import com.google.common.io.ByteStreams;
 import com.google.inject.Inject;
+import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.Map;
+import java.util.Set;
+
+import static com.google.common.base.Preconditions.checkState;
 
 /**
  * GCC: GetComponentCall
@@ -200,17 +199,6 @@ public class GCCSendContent
         }
     }
 
-    private int readChunk(byte[] buf, InputStream is) throws IOException
-    {
-        int total = 0;
-        while (total < buf.length) {
-            int read = is.read(buf, total, buf.length - total);
-            if (read == -1) break;
-            total += read;
-        }
-        return total;
-    }
-
     private void sendContentSame_(DID did, ByteArrayOutputStream os, PBCore reply)
             throws Exception
     {
@@ -251,12 +239,11 @@ public class GCCSendContent
             throws Exception
     {
         l.debug("sendBig_: os.size() = " + os.size());
-        assert prefixLen >= 0;
+        checkState(prefixLen >= 0);
 
-        InvalidationReason reason = InvalidationReason.INTERNAL_ERROR;
-        OutgoingStream outgoing = _oss.newStream(ep, tk);
-
-        InputStream is = null;
+        final OutgoingStream outgoing = _oss.newStream(ep, tk);
+        final FileChunker chunker = new FileChunker(pf, len, prefixLen, _m.getMaxUnicastSize_(),
+                OSUtil.isWindows());
 
         Object ongoing = _ongoing.start(k);
         try {
@@ -276,41 +263,19 @@ public class GCCSendContent
                 }
             }
             // Third, send the file content, skipping the first prefix-length bytes
-            long rest = len - prefixLen;
-            long readPosition = prefixLen;
+            long done = prefixLen;
 
             ElapsedTimer timer = new ElapsedTimer();
 
-            // Once rest == 0, the receiver has been sent the full content
-            while (rest > 0) {
+            byte[] buf;
+            // When getNextChunk() returns null, there are no more chunks to send
+            while ((buf = chunker.getNextChunk_()) != null) {
+
                 // sending notifications is expensive so we use basic rate-limiting
                 if (timer.elapsed() > DaemonParam.NOTIFY_THRESHOLD) {
-                    _ulstate.progress_(k.socid(), ep, len - rest, len);
+                    _ulstate.progress_(k.socid(), ep, done, len);
                     timer.restart();
                 }
-
-                if (is == null) {
-                    is = pf.newInputStream_();
-                    if (is.skip(readPosition) != readPosition) {
-                        throw new IOException("skip() fell short");
-                    }
-                }
-
-                // NOTE: We spend ~5% of the time on this
-                int expectedChunkSize = (int)Math.min(_m.getMaxUnicastSize_(), rest);
-                byte[] buf = new byte[expectedChunkSize];
-                long bytesCopied = readChunk(buf, is);
-                readPosition += bytesCopied;
-
-                // sendOutgoingStreamChunk_() call is blocking and on Windows if a large
-                // file is transferred it remains locked. So close the inputstream to
-                // avoid denying access to the file while waiting for network I/O
-                if (OSUtil.isWindows()) {
-                    is.close();
-                    is = null;
-                }
-
-                rest -= bytesCopied;
 
                 // Any local change to the file should cause a version bump of which we are
                 // notified asynchronously and cheaply. However, to avoid race conditions
@@ -320,35 +285,27 @@ public class GCCSendContent
                 // NB: this would become redundant if
                 //  * we used content hash to avoid corruption
                 //  * deletion caused an update to the CONTENT tick
-                if (rest < 0 || _ongoing.isAborted(k, ongoing) || pf.wasModifiedSince(mtime, len)) {
-                    reason = InvalidationReason.UPDATE_IN_PROGRESS;
-                    throw new IOException(k + " updated");
+                if (_ongoing.isAborted(k, ongoing) || pf.wasModifiedSince(mtime, len)) {
+                    throw new ExUpdateInProgress(k + " updated");
                 }
 
-                // NOTE: We spend ~90% of the time on this (plenty of which in throttling...)
                 // TODO: an async stream API would allow pipelining disk and network I/O
                 outgoing.sendChunk_(buf);
+                done += buf.length;
             }
 
-            assert rest == 0;
-            // The following assertion is overzealous - it is possible that after we read the last
-            // file chunk from the PhysicalFile and check that the file hasn't changed, but before
-            // we finish uploading the last chunk, the file will change or be appended to.  In this
-            // case, is.available() will be greater than 0, but the file will have been uploaded
-            // correctly in its entirety, and we'll pick up the new version once the notifier
-            // catches up.
-            //assert OSUtil.isWindows() || is == null || is.available() == 0;
-            reason = null;
+            checkState(done == len);
+            outgoing.end_();
+            _ulstate.progress_(k.socid(), ep, len, len);
+
+        } catch (Exception e) {
+            InvalidationReason reason = (e instanceof ExUpdateInProgress) ?
+                    InvalidationReason.UPDATE_IN_PROGRESS : InvalidationReason.INTERNAL_ERROR;
+            outgoing.abort_(reason);
+            _ulstate.ended_(k.socid(), ep, true);
         } finally {
             _ongoing.stop(k, ongoing);
-            if (is != null) is.close();
-            if (reason == null) {
-                outgoing.end_();
-                _ulstate.progress_(k.socid(), ep, len, len);
-            } else {
-                outgoing.abort_(reason);
-                _ulstate.ended_(k.socid(), ep, true);
-            }
+            chunker.close_();
         }
     }
 }
