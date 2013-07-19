@@ -1,0 +1,5 @@
+actors:
+    - address: 192.168.150.240
+      rsh_remote_args:
+          - -R5037:localhost:5037
+    - address: 192.168.157.226
