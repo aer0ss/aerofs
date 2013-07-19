@@ -404,10 +404,11 @@ class DefaultDaemonMonitor implements IDaemonMonitor
      */
     private void watchDaemonProcess(@Nonnull Process proc) throws IOException
     {
-        // FIXME: put this magic number in LibParam... Daemon startup timeout
-        Socket s = connectToRitualNotification(5 * C.SEC);
+        Socket s = null;
 
         try {
+            // FIXME: put this magic number in LibParam... Daemon startup timeout
+            s = connectToRitualNotification(5 * C.SEC);
             s.setSoTimeout((int) Daemon.HEARTBEAT_INTERVAL);
             while (true) {
                 try {
@@ -429,16 +430,16 @@ class DefaultDaemonMonitor implements IDaemonMonitor
                 }
             }
         } finally {
-            s.close();
-        }
+            if (s != null) { s.close(); }
 
-        if (!_stopping) {
-            // Since we didn't cause the daemon to stop, find the error code and report it
-            try {
-                int code = proc.waitFor();
-                onDaemonDeath(code);
-            } catch (InterruptedException e) {
-                SystemUtil.fatal(e);
+            if (!_stopping) {
+                // Since we didn't cause the daemon to stop, find the error code and report it
+                try {
+                    int code = proc.waitFor();
+                    onDaemonDeath(code);
+                } catch (InterruptedException e) {
+                    SystemUtil.fatal(e);
+                }
             }
         }
     }
