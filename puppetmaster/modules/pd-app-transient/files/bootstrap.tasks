@@ -10,5 +10,6 @@ uwsgi-restart
 restund-fix-config
 zephyr-start
 repackage-installers
+sanity-pull-dynamic-config
 delay
 sanity-check

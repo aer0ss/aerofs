@@ -3,11 +3,8 @@ package com.aerofs.sp.server;
 import com.aerofs.base.BaseParam.SP;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.analytics.Analytics;
-import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.lib.LibParam.REDIS;
 import com.aerofs.lib.Util;
-import com.aerofs.base.ex.ExAlreadyExist;
-import com.aerofs.lib.ex.ExEmailSendingFailed;
 import com.aerofs.proto.Sp.SPServiceReactor;
 import com.aerofs.servlets.AeroServlet;
 import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue;
@@ -16,7 +13,6 @@ import com.aerofs.servlets.lib.db.jedis.PooledJedisConnectionProvider;
 import com.aerofs.servlets.lib.db.sql.PooledSQLConnectionProvider;
 import com.aerofs.servlets.lib.db.sql.SQLThreadLocalTransaction;
 import com.aerofs.servlets.lib.ssl.CertificateAuthenticator;
-import com.aerofs.sp.server.SPService.InviteToSignUpResult;
 import com.aerofs.sp.server.email.DeviceRegistrationEmailer;
 import com.aerofs.sp.server.email.RequestToSignUpEmailer;
 import com.aerofs.sp.server.lib.EmailSubscriptionDatabase;
@@ -54,7 +50,6 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.sql.SQLException;
 
 import static com.aerofs.sp.server.lib.SPParam.SESSION_EXTENDER;
 import static com.aerofs.sp.server.lib.SPParam.SESSION_INVALIDATOR;
@@ -224,68 +219,25 @@ public class SPServlet extends AeroServlet
         _postDelegate.sendReply(resp, bytes);
     }
 
-    // parameter format: aerofs=love&inviter=<email>&invitee=<email>
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse rsp)
             throws IOException
     {
+        final int mysqlDatabaseCheckTimeoutSeconds = 1;
+
         try {
+            // Check the mysql connection.
             _sqlTrans.begin();
-            if ("love".equals(req.getParameter("aerofs"))) {
-                handleSignUpInvite(req, rsp);
-            }
+            _sqlTrans.getConnection().isValid(mysqlDatabaseCheckTimeoutSeconds);
             _sqlTrans.commit();
-        } catch (SQLException e) {
-            _sqlTrans.handleException();
-            throw new IOException(e);
-        } catch (IOException e) {
-            _sqlTrans.handleException();
-            throw e;
-        }
-    }
 
-    protected void handleSignUpInvite(HttpServletRequest req, HttpServletResponse rsp)
-            throws IOException
-    {
-        String from = req.getParameter("inviter");
-        String to = req.getParameter("invitee");
-
-        if (from == null || to == null) {
-            rsp.getWriter().println("incomplete request.");
-            return;
-        }
-
-        try {
-            User inviter = _factUser.createFromExternalID(from);
-            User invitee = _factUser.createFromExternalID(to);
-            String signUpCode = inviteFromScript(invitee, inviter);
-            rsp.getWriter().println("done: " + from + " -> " + to + ", code: " + signUpCode);
-        } catch (ExAlreadyExist e) {
-            rsp.getWriter().println("skip: " + e);
+            // Check the Redis connection. Do this by getting any random key.
+            _jedisTrans.begin();
+            _jedisTrans.get().get("");
+            _jedisTrans.commit();
         } catch (Exception e) {
-            l.error("handleSignUpInvite: ", e);
+            l.warn("Database check error: " + Util.e(e));
             throw new IOException(e);
         }
-    }
-
-    /**
-     * Invite "to" to use AeroFS, assuming the caller is the SPServlet's HTTP GET request.
-     * This exists only to support the invitation artifact script.
-     * TODO it should be removed when the tools/invite script is removed
-     * Perhaps it can be dumped into an Invite.java if it is ever created.
-     * @return the signup code
-     */
-    private String inviteFromScript(User invitee, User inviter)
-            throws ExAlreadyExist, SQLException, IOException, ExEmailSendingFailed, ExNotFound
-    {
-        // Check that the invitee isn't already a user
-        if (invitee.exists()) throw new ExAlreadyExist("user already exists");
-
-        // Check that we haven't already invited this user
-        if (invitee.isInvitedToSignUp()) throw new ExAlreadyExist("user already invited");
-
-        InviteToSignUpResult res = _service.inviteToSignUp(inviter, invitee, null, null);
-        res._emailer.send();
-        return res._signUpCode;
     }
 }
