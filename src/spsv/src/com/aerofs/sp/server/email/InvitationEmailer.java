@@ -97,7 +97,8 @@ public class InvitationEmailer
                 "\n" +
                 L.brand() + " is a file syncing, sharing, and collaboration tool that" +
                 " lets you sync files privately without using public cloud. You can learn more" +
-                " about it at " + WWW.MARKETING_HOST_URL.get() + "." + "\n" +
+                    // Whitespace required after URL for autolinker
+                " about it at " + WWW.MARKETING_HOST_URL.get() + " ." + "\n" +
                 "\n" +
                 "Get started with " + L.brand() + " at:\n" +
                 "\n" + url;
