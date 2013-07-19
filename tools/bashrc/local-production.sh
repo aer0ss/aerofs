@@ -64,10 +64,10 @@ function _lp-package-web()
     BIN=$(_lp-bin) make clean common web upload
 }
 
-function _lp-package-installers()
+function _lp-package-repackaging()
 {
     cd $AEROFS_ROOT/packaging
-    BIN=$(_lp-bin) make installers upload
+    BIN=$(_lp-bin) make repackaging upload
 }
 
 function _lp-package-sp()
@@ -128,9 +128,9 @@ function lp-deploy-web()
     _lp-kick-transient
 }
 
-function lp-deploy-installers()
+function lp-deploy-repackaging()
 {
-    _lp-package-installers
+    _lp-package-repackaging
     _lp-kick-transient
 }
 
