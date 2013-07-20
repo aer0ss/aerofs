@@ -1,3 +1,13 @@
+actor_defaults:
+  rsh: ssh
+  login: aerofstest
+  root: ~/syncdet
+  aero_userid: mickey+android_test@aerofs.com
+  aero_password: android123
+  aero_app_root: ~/syncdet/deploy/approot/
+  aero_rt_root: ~/syncdet/user_data/rtroot/
+  aero_sp_url: https://admin.syncfs.com/sp
+  config_url: https://config.syncfs.com
 actors:
     - address: 192.168.150.240
       rsh_remote_args:
