@@ -71,9 +71,9 @@ class transient {
         target  => "/etc/nginx/sites-available/aerofs-web-sp",
         require => File["/etc/nginx/sites-available/aerofs-web-sp"],
     }
-    file {"/etc/nginx/sites-enabled/aerofs-web":
+    file {"/etc/nginx/sites-enabled/default":
         ensure => absent,
-        require => Package["aerofs-web"]
+        require => Package["nginx"]
     }
 
     # Custom webadmin things.
