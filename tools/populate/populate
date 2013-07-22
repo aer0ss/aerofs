@@ -75,7 +75,7 @@ function create_max_version_file() {
 function create_site_properties_file() {
     if [[ "$MODE" == 'ENTERPRISE' ]]
     then
-        echo "config.loader.configuration_service_url=https://config.syncfs.com/" > "$APPROOT"/site-config.properties
+        echo "config.loader.configuration_service_url=https://persistent.syncfs.com/" > "$APPROOT"/site-config.properties
     fi
 }
 
