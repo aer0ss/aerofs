@@ -48,7 +48,7 @@ public class TC implements IDumpStatMisc
     // thread control block
     public class TCB
     {
-        private final Condition _cv = _l.newProfiledCondition();
+        private final Condition _cv = _l.newCondition();
 
         private boolean _running = true;
         private Prio _prio;

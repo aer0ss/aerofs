@@ -39,9 +39,9 @@ public class BlockingPrioQueue<T> implements IBlockingPrioritizedEventSink<T>, I
         assert !l.isFair();
 
         _l = l;
-        _cvDeq = _l.newProfiledCondition();
-        _cvEnq = _l.newProfiledCondition();
-        _cvSpinner = _l.newProfiledCondition();
+        _cvDeq = _l.newCondition();
+        _cvEnq = _l.newCondition();
+        _cvSpinner = _l.newCondition();
 
         _pq = Cfg.useProfiler() ? new ProfilerPrioQueue<T>(capacity) : new PrioQueue<T>(capacity);
     }
