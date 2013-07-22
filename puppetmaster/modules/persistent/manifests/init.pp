@@ -1,4 +1,4 @@
-class pd-app-persistent {
+class persistent {
 
     include private-common
     include ca::autostart
@@ -13,7 +13,7 @@ class pd-app-persistent {
     # --------------
 
     file {"/opt/bootstrap/bootstrap.tasks":
-        source => "puppet:///modules/pd-app-persistent/bootstrap.tasks",
+        source => "puppet:///modules/persistent/bootstrap.tasks",
         require => Package["aerofs-bootstrap"],
     }
 
@@ -56,7 +56,7 @@ class pd-app-persistent {
         require => Package["nginx"]
     }
     file {"/etc/nginx/sites-available/aerofs-cfg":
-        source => "puppet:///modules/pd-app-persistent/aerofs-cfg",
+        source => "puppet:///modules/persistent/aerofs-cfg",
         require => Package["nginx"],
     }
     file{ "/etc/nginx/sites-enabled/aerofs-cfg":
@@ -66,16 +66,48 @@ class pd-app-persistent {
     }
 
     # --------------
+    # MySQL
+    # --------------
+
+    # MySQL client and MySQL server.
+    include mysql
+    include mysql::server
+
+    # Should get pulled via apt dependency, but add it here just for good
+    # measure.
+    package {"aerofs-spdb":
+        ensure  => latest,
+        require => Apt::Source["aerofs"],
+    }
+
+    # --------------
+    # Redis
+    # --------------
+
+    # Redis in AOF (append only file) mode.
+    include redis::aof
+
+    # --------------
     # Sanity
     # --------------
 
     file {"/opt/sanity/probes/nginx.sh":
-        source => "puppet:///modules/pd-app-persistent/probes/nginx.sh",
+        source => "puppet:///modules/persistent/probes/nginx.sh",
         require => Package["aerofs-sanity"],
     }
 
     file {"/opt/sanity/probes/ca.sh":
-        source => "puppet:///modules/pd-app-persistent/probes/ca.sh",
+        source => "puppet:///modules/persistent/probes/ca.sh",
+        require => Package["aerofs-sanity"],
+    }
+
+    file {"/opt/sanity/probes/mysql.sh":
+        source => "puppet:///modules/persistent/probes/mysql.sh",
+        require => Package["aerofs-sanity"],
+    }
+
+    file {"/opt/sanity/probes/redis.sh":
+        source => "puppet:///modules/persistent/probes/redis.sh",
         require => Package["aerofs-sanity"],
     }
 }

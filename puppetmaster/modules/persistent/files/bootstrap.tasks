@@ -1,4 +1,5 @@
 ca-deploy
 cacert-populate
 wildcard-cert-pull
+spdb-schema-init
 sanity-check

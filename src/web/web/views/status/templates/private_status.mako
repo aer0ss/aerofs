@@ -4,26 +4,12 @@
 <h2>Service Statuses</h2>
 <br/>
 
-## TODO (MP) instead of "is healthy" boolean, use an icon (green check or red "x").
-
-<h4>Configuration Box</h4>
+<h4>Persistent Box</h4>
 <div class="page_block" id="server-status-div">
     <table class="table" style="border: 1px">
         <thead><th style="width:4%"></th><th style="width:12%"></th><th style:"width:84%"></th></thead>
         <tbody id="server-status-tbody">
-            % for server_status in config_ca_server_statuses:
-                ${render_server_status_row(server_status)}
-            % endfor
-        </tbody>
-    </table>
-</div>
-
-<h4>Database Box</h4>
-<div class="page_block" id="server-status-div">
-    <table class="table" style="border: 1px">
-        <thead><th style="width:4%"></th><th style="width:12%"></th><th style:"width:84%"></th></thead>
-        <tbody id="server-status-tbody">
-            % for server_status in database_server_statuses:
+            % for server_status in persistent_server_statuses:
                 ${render_server_status_row(server_status)}
             % endfor
         </tbody>

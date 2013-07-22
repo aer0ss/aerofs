@@ -1,4 +1,4 @@
-class pd-app-transient {
+class transient {
     include private-common
 
     # --------------
@@ -63,7 +63,7 @@ class pd-app-transient {
         uwsgi_port => 8081,
     }
     file {"/etc/nginx/sites-available/aerofs-web-sp":
-        source => "puppet:///modules/pd-app-transient/aerofs-web-sp",
+        source => "puppet:///modules/transient/aerofs-web-sp",
         require => Package["nginx"],
     }
     file{ "/etc/nginx/sites-enabled/aerofs-web-sp":
@@ -114,7 +114,7 @@ class pd-app-transient {
     # --------------
 
     file {"/opt/bootstrap/bootstrap.tasks":
-        source => "puppet:///modules/pd-app-transient/bootstrap.tasks",
+        source => "puppet:///modules/transient/bootstrap.tasks",
         require => Package["aerofs-bootstrap"],
     }
 
@@ -123,37 +123,37 @@ class pd-app-transient {
     # --------------
 
     file {"/opt/sanity/probes/ejabberd.sh":
-        source => "puppet:///modules/pd-app-transient/probes/ejabberd.sh",
+        source => "puppet:///modules/transient/probes/ejabberd.sh",
         require => Package["aerofs-sanity"],
     }
 
     file {"/opt/sanity/probes/nginx.sh":
-        source => "puppet:///modules/pd-app-transient/probes/nginx.sh",
+        source => "puppet:///modules/transient/probes/nginx.sh",
         require => Package["aerofs-sanity"],
     }
 
     file {"/opt/sanity/probes/restund.sh":
-        source => "puppet:///modules/pd-app-transient/probes/restund.sh",
+        source => "puppet:///modules/transient/probes/restund.sh",
         require => Package["aerofs-sanity"],
     }
 
     file {"/opt/sanity/probes/tomcat6.sh":
-        source => "puppet:///modules/pd-app-transient/probes/tomcat6.sh",
+        source => "puppet:///modules/transient/probes/tomcat6.sh",
         require => Package["aerofs-sanity"],
     }
 
     file {"/opt/sanity/probes/uwsgi.sh":
-        source => "puppet:///modules/pd-app-transient/probes/uwsgi.sh",
+        source => "puppet:///modules/transient/probes/uwsgi.sh",
         require => Package["aerofs-sanity"],
     }
 
     file {"/opt/sanity/probes/verkehr.sh":
-        source => "puppet:///modules/pd-app-transient/probes/verkehr.sh",
+        source => "puppet:///modules/transient/probes/verkehr.sh",
         require => Package["aerofs-sanity"],
     }
 
     file {"/opt/sanity/probes/zephyr.sh":
-        source => "puppet:///modules/pd-app-transient/probes/zephyr.sh",
+        source => "puppet:///modules/transient/probes/zephyr.sh",
         require => Package["aerofs-sanity"],
     }
 

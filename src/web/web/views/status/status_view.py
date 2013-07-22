@@ -20,13 +20,11 @@ URL_PARAM_JOINED_TEAM_NAME = 'new_team'
 def status_view(request):
     settings = request.registry.settings
 
-    config_host = settings['status_hosts.config']
-    database_host = settings['status_hosts.database']
+    persistent_host = settings['status_hosts.persistent']
     transient_host = settings['status_hosts.transient']
 
     return {
-        'config_ca_server_statuses': get_server_statuses(request, config_host),
-        'database_server_statuses': get_server_statuses(request, database_host),
+        'persistent_server_statuses': get_server_statuses(request, persistent_host),
         'transient_server_statuses': get_server_statuses(request, transient_host)
     }
 
