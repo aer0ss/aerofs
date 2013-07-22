@@ -29,6 +29,7 @@ public class S
 
             // used in setup login screen
             SETUP_TITLE              = "Setup AeroFS Team Server",
+            SETUP_MESSAGE            = "Please enter a team administrator's credential to proceed:",
             SETUP_USER_ID            = "Email",
             SETUP_PASSWD             = "Password",
             SETUP_LINK_FORGOT_PASSWD = "<a>Forgot password?</a>",
@@ -68,9 +69,6 @@ public class S
             SETUP_S3_SECRET_KEY_GUI  = "S3 Secret Key:",
             SETUP_S3_ENC_PASSWD_GUI  = "Encryption Passphrase:",
             SETUP_S3_CONF_PASSWD     = "Confirm Passphrase:",
-
-
-
 
             SETUP_S3_BUCKET_NAME     = "S3 bucket name",
             SETUP_S3_ACCESS_KEY      = "S3 access key",

@@ -52,6 +52,7 @@ public class PageLogin extends AbstractSetupPage
 
     private Label       _lblTitle;
     private Label       _lblLogo;
+    private Label       _lblMessage;
     private Label       _lblUserID;
     private Text        _txtUserID;
     private Label       _lblPasswd;
@@ -132,7 +133,7 @@ public class PageLogin extends AbstractSetupPage
         setLayout(layout);
 
         _compHeader.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
-        _compContent.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, true));
+        _compContent.setLayoutData(new GridData(SWT.CENTER, SWT.CENTER, true, true));
         _compButton.setLayoutData(new GridData(SWT.RIGHT, SWT.BOTTOM, true, false));
     }
 
@@ -167,6 +168,9 @@ public class PageLogin extends AbstractSetupPage
     {
         _compContent = new Composite(parent, SWT.NONE);
 
+        _lblMessage = new Label(_compContent, SWT.NONE);
+        _lblMessage.setText(S.SETUP_MESSAGE);
+
         _lblUserID = new Label(_compContent, SWT.NONE);
         _lblUserID.setText(S.ADMIN_EMAIL + ':');
 
@@ -187,12 +191,15 @@ public class PageLogin extends AbstractSetupPage
         _txtDeviceName = new Text(_compContent, SWT.BORDER);
 
         GridLayout layout = new GridLayout(2, false);
-        layout.marginWidth = 100;
+        layout.marginWidth = 0;
         layout.marginHeight = 0;
         layout.horizontalSpacing = 10;
         layout.verticalSpacing = 10;
         _compContent.setLayout(layout);
 
+        GridData messageLayoutData = new GridData(SWT.CENTER, SWT.CENTER, true, false, 2, 1);
+        messageLayoutData.heightHint = 30;
+        _lblMessage.setLayoutData(messageLayoutData);
         _lblUserID.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false));
         _txtUserID.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
         _lblPasswd.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false));
