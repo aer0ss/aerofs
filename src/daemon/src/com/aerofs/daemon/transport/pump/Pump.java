@@ -9,11 +9,13 @@ import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.ssl.SSLEngineFactory;
+import com.aerofs.daemon.core.net.ChunksCounter;
 import com.aerofs.daemon.core.net.TransportFactory;
 import com.aerofs.daemon.core.net.TransportFactory.ExUnsupportedTransport;
 import com.aerofs.daemon.core.net.link.ILinkStateListener;
 import com.aerofs.daemon.core.net.link.ILinkStateService;
 import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
+import com.aerofs.daemon.event.lib.imc.IResultWaiter;
 import com.aerofs.daemon.event.lib.imc.QueueBasedIMCExecutor;
 import com.aerofs.daemon.event.net.EIPresence;
 import com.aerofs.daemon.event.net.EOLinkStateChanged;
@@ -61,18 +63,18 @@ import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor
 
 public final class Pump implements IProgram
 {
-    private static final int CHUNK_SIZE = 10 * 1024;
+    private static final byte[] CHUNK = new byte[10 * 1024];
 
     private static final Logger l = Loggers.getLogger(Pump.class);
 
     private final BlockingPrioQueue<IEvent> incomingEventSink = new BlockingPrioQueue<IEvent>(1024);
     private final ILinkStateService linkStateService = new SingleThreadedLinkStateService();
+    private final Tput tput = new Tput("recv");
 
     private boolean isSender;
     private ITransport transport;
     private @Nullable DID remote;
     private volatile boolean keepRunning = true;
-    private Tput tput = new Tput("recv");
 
     @Override
     public void launch_(String rtRoot, String prog, String[] args) // PROG RTROOT [t|z|j] [send|recv] <did>
@@ -175,6 +177,7 @@ public final class Pump implements IProgram
 
     private void handleUnicastMessage(EIUnicastMessage unicastMessage)
     {
+        tput.observe(unicastMessage.wireLength());
         l.debug("recv incoming d:{}", unicastMessage._ep.did());
         tput.observe(unicastMessage.wireLength());
     }
@@ -187,17 +190,38 @@ public final class Pump implements IProgram
             if (isSender) {
                 Thread t = new Thread(new Runnable()
                 {
+                    private final ChunksCounter chunksCounter = new ChunksCounter();
+
                     @Override
                     public void run()
                     {
                         l.info("start send thd d:{}", remote);
 
                         while (keepRunning) {
-                            transport.q().enqueueBlocking(new EOUnicastMessage(remote, new byte[CHUNK_SIZE]), LO);
+                            chunksCounter.waitIfTooManyChunks();
+                            chunksCounter.incChunkCount();
+                            EOUnicastMessage ev = new EOUnicastMessage(remote, CHUNK);
+                            ev.setWaiter(waiter);
+                            transport.q().enqueueBlocking(ev, LO);
                         }
 
                         l.info("stop send thd d:{}", remote);
                     }
+
+                    private final IResultWaiter waiter = new IResultWaiter()
+                    {
+                        @Override
+                        public void okay()
+                        {
+                            chunksCounter.decChunkCount();
+                        }
+
+                        @Override
+                        public void error(Exception e)
+                        {
+                            chunksCounter.decChunkCount();
+                        }
+                    };
                 });
 
                 t.start();

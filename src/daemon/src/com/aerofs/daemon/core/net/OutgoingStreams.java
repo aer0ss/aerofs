@@ -8,7 +8,6 @@ import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.daemon.core.UnicastInputOutputStack;
 import com.aerofs.daemon.core.ex.ExAborted;
-import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.event.net.tx.EOChunk;
@@ -27,7 +26,6 @@ import java.util.List;
 import java.util.Map;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.base.Preconditions.checkState;
 
 
 // we don't use OutputStream to avoid confusion with java.physical.OutputStream
@@ -45,21 +43,14 @@ public class OutgoingStreams
         private int _seq;
         private InvalidationReason _invalidationReason;
         private EOChunk _firstFailedChunk;
-
-        // In order to improve the throughput between the core and the transport, we don't want to
-        // wait until stream chunks are be sent by the transport. However, we don't want to enqueue
-        // too many chunks at once since this would be using the transport's event loop for flow
-        // control. So we do flow control manually here, by counting how many chunks we've enqueued
-        // on the transport event queue and blocking if we're above some maximum.
-        private static final int MAX_WAITING_CHUNKS = 10;
-        private volatile int _waitingChunks; // how many EOChunks are sitting on the transport queue
-        private final Object _waitingChunksLock = new Object(); // protects access to _waitingChunks
+        private final ChunksCounter _chunksCounter;
 
         private OutgoingStream(PeerContext pc, Token tk)
         {
             _pc = pc;
             _tk = tk;
             _strmid = nextID_();
+            _chunksCounter = new ChunksCounter();
         }
 
         // Only for debugging performance issues
@@ -116,34 +107,17 @@ public class OutgoingStreams
 
         public void incChunkCount()
         {
-            synchronized (_waitingChunksLock) {
-                _waitingChunks++;
-            }
+            _chunksCounter.incChunkCount();
         }
 
         public void decChunkCount()
         {
-            synchronized (_waitingChunksLock) {
-                _waitingChunks--;
-                checkState(_waitingChunks >= 0);
-                if (_waitingChunks < MAX_WAITING_CHUNKS) _waitingChunksLock.notify();
-            }
+            _chunksCounter.decChunkCount();
         }
 
         public void waitIfTooManyChunks_() throws ExAborted
         {
-            synchronized (_waitingChunksLock) {
-                if (_waitingChunks >= MAX_WAITING_CHUNKS) {
-                    TCB tcb = _tk.pseudoPause_("waiting for tp to send chunks");
-                    try {
-                        _waitingChunksLock.wait();
-                    } catch (InterruptedException e) {
-                        // ignore
-                    } finally {
-                        tcb.pseudoResumed_();
-                    }
-                }
-            }
+            _chunksCounter.waitIfTooManyChunks_(_tk);
         }
 
         public void setFirstFailedChunk(EOChunk chunk)
