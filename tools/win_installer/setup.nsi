@@ -67,10 +67,9 @@ VIAddVersionKey FileDescription ""
 VIAddVersionKey LegalCopyright ""
 InstallDir $APPDATA\"${AEROFS_APPROOT}" # sets INSTDIR. We always installs to %APPDATA%.
 ShowUninstDetails hide
+AutoCloseWindow true # Automatically close the window at the end of installation
 
 Function requestAdminPrivileges
-
-uac_tryagain:
 
     !insertmacro UAC_RunElevated
 
@@ -84,14 +83,21 @@ uac_tryagain:
     ${If} $0 = 0
     ${AndIf} $1 = 3
     ${OrIf} $0 = 1223
-        # User declined to give admin privileges. Offer to retry
-        StrCpy $9 "$(^Name) installer needs administrator rights to install some features. \
-            Would you like to try entering your administrator password again? \
-            If you click no, those features will be disabled."
-        MessageBox MB_YESNO|mb_IconExclamation|mb_TopMost|mb_SetForeground $9 /SD IDNO IDYES uac_tryagain IDNO 0
-        Return # If the user chooses not to retry, continue without admin privileges
+
+        # User declined to give admin privileges.
+        StrCpy $9 "If $(^Name) is installed without admin privileges, it may not function properly.\
+                   See http://ae.ro/155wpHG for more information.$\n\
+                   $\n\
+                   Install anyway?"
+        MessageBox MB_YESNO|MB_ICONQUESTION|mb_TopMost|mb_SetForeground $9 /SD IDYES IDYES proceed IDNO 0
+
+        # The user choose to abort installation:
+        MessageBox MB_OK|MB_ICONEXCLAMATION "The installation was aborted."
+        Quit
+
     ${EndIf}
 
+proceed:
     # All other cases, simply try to proceed with the installation
 FunctionEnd
 
@@ -263,7 +269,6 @@ Function postInstall_privileged
         !insertmacro KillProcess "explorer.exe" $USERNAME
         Exec 'C:\Windows\explorer.exe' # It's important to specify the full name, otherwise the 32-bits explorer is launched on x64 systems, because the installer is a 32-bits process
     ${EndIf}
-
 FunctionEnd
 
 /**
@@ -286,23 +291,29 @@ FunctionEnd
 
 Function un.onInit
 
-    uac_tryagain:
-        !insertmacro UAC_RunElevated
-        ${If} $0 = 0
-        ${AndIf} $1 = 1
-            # We successfuly re-launched the installer with admin privileges, quit this instance
-            Quit
-        ${EndIf}
+    !insertmacro UAC_RunElevated
+    ${If} $0 = 0
+    ${AndIf} $1 = 1
+        # We successfuly re-launched the installer with admin privileges, quit this instance
+        Quit
+    ${EndIf}
 
-        ${If} $0 = 0
-        ${AndIf} $1 = 3
-        ${OrIf} $0 = 1223
-            # User declined to give admin privileges. Offer to retry
-            StrCpy $9 "Some components may not be fully uninstalled without administrator rights. \
-                Would you like to try entering your administrator password again?"
-            MessageBox MB_YESNO|mb_IconExclamation|mb_TopMost|mb_SetForeground $9 /SD IDNO IDYES uac_tryagain IDNO 0
-        ${EndIf}
+    ${If} $0 = 0
+    ${AndIf} $1 = 3
+    ${OrIf} $0 = 1223
 
+        # User declined to give admin privileges.
+        StrCpy $9 "Some components may not be fully uninstalled without administrator privileges.$\n\
+                   $\n\
+                   Uninstall anyway?"
+        MessageBox MB_YESNO|MB_ICONQUESTION|mb_TopMost|mb_SetForeground $9 /SD IDYES IDYES proceed IDNO 0
+
+        # The user choose to abort uninstallation:
+        MessageBox MB_OK|MB_ICONEXCLAMATION "The uninstallation was aborted."
+        Quit
+
+    ${EndIf}
+proceed:
 FunctionEnd
 
 Section -un.Main
