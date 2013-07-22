@@ -55,6 +55,7 @@ public class PageS3Storage extends AbstractSetupPage
     private Composite   _compStatus;
     private Composite   _compButton;
 
+    // TODO: convert fields to locals
     private Label       _lblTitle;
     private Label       _lblLogo;
     private Label       _lblConfigDesc;
@@ -386,7 +387,7 @@ public class PageS3Storage extends AbstractSetupPage
             public void run()
                     throws Exception
             {
-                _model.install();
+                _model.doInstall();
             }
 
             @Override

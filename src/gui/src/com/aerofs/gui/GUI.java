@@ -6,10 +6,9 @@ import com.aerofs.gui.AeroFSMessageBox.ButtonType;
 import com.aerofs.gui.AeroFSMessageBox.IconType;
 import com.aerofs.gui.multiuser.setup.DlgMultiuserSetup;
 import com.aerofs.gui.multiuser.tray.MultiuserMenuProvider;
-import com.aerofs.gui.setup.AbstractDlgSetup;
+import com.aerofs.gui.setup.SingleuserDlgSetup;
 import com.aerofs.gui.setup.DlgPreSetupUpdateCheck;
 import com.aerofs.gui.shellext.ShellextService;
-import com.aerofs.gui.singleuser.SingleuserDlgSetup;
 import com.aerofs.gui.singleuser.tray.SingleuserMenuProvider;
 import com.aerofs.gui.tray.SystemTray;
 import com.aerofs.labeling.L;
@@ -540,7 +539,7 @@ public class GUI implements IUI
             // N.B. a null result indicates the user has canceled the setup.
             if (result == null) throw new ExLaunchAborted("user canceled setup");
         } else {
-            AbstractDlgSetup dlg = new SingleuserDlgSetup(_sh);
+            SingleuserDlgSetup dlg = new SingleuserDlgSetup(_sh);
             dlg.open();
             if (dlg.isCancelled()) throw new ExLaunchAborted("user canceled setup");
         }

@@ -230,17 +230,17 @@ public class PageLogin extends AbstractSetupPage
     protected void readFromModel(SetupModel model)
     {
         // do not populate password from model
-        _txtUserID.setText(Objects.firstNonNull(model._username, ""));
-        _txtDeviceName.setText(Objects.firstNonNull(model._devAlias, ""));
+        _txtUserID.setText(Objects.firstNonNull(model.getUsername(), ""));
+        _txtDeviceName.setText(Objects.firstNonNull(model.getDeviceName(), ""));
         validateInput();
     }
 
     @Override
     protected void writeToModel(SetupModel model)
     {
-        model._username = _txtUserID.getText().trim();
-        model._password = _txtPasswd.getText();
-        model._devAlias = _txtDeviceName.getText().trim();
+        model.setUserID(_txtUserID.getText().trim());
+        model.setPassword(_txtPasswd.getText());
+        model.setDeviceName(_txtDeviceName.getText().trim());
     }
 
     protected void validateInput()
@@ -272,7 +272,7 @@ public class PageLogin extends AbstractSetupPage
             public void run()
                     throws Exception
             {
-                _model.signIn();
+                _model.doSignIn();
             }
 
             @Override

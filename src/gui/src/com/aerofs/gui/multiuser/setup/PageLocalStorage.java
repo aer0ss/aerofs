@@ -351,7 +351,7 @@ public class PageLocalStorage extends AbstractSetupPage
             public void run()
                     throws Exception
             {
-                _model.install();
+                _model.doInstall();
             }
 
             @Override

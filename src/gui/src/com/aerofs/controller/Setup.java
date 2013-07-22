@@ -87,7 +87,9 @@ class Setup
      *
      * See setupNewUser's comments for more.
      */
-    void setupSingleuser(UserID userId, char[] password, String rootAnchorPath, String deviceName,
+    void setupSingleuser(
+            SPBlockingClient client, UserID userId, byte[] scrypted,
+            String rootAnchorPath, String deviceName,
             StorageType storageType, PBS3Config s3cfg)
             throws Exception
     {
@@ -99,10 +101,9 @@ class Setup
              */
             boolean isReinstall = (_factFile.create(rootAnchorPath).list() != null);
 
-            SignInResult res = preSetup(userId, password, rootAnchorPath, storageType);
+            preSetup(rootAnchorPath, storageType);
 
-            setupSingluserImpl(userId, rootAnchorPath, deviceName, storageType, s3cfg,
-                    res._scrypted, res._sp);
+            setupSingluserImpl(userId, rootAnchorPath, deviceName, storageType, s3cfg, scrypted, client);
 
             UIGlobals.analytics().track(isReinstall ? REINSTALL_CLIENT : INSTALL_CLIENT);
 
@@ -111,14 +112,15 @@ class Setup
         }
     }
 
-    void setupMultiuser(UserID userId, char[] password, String rootAnchorPath, String deviceName,
-            StorageType storageType, PBS3Config s3cfg)
-            throws Exception
+    void setupMultiuser(
+            SPBlockingClient client, UserID userId,
+            String rootAnchorPath, String deviceName,
+            StorageType storageType, PBS3Config s3cfg) throws Exception
     {
         try {
-            SignInResult res = preSetup(userId, password, rootAnchorPath, storageType);
+            preSetup(rootAnchorPath, storageType);
 
-            setupMultiuserImpl(userId, rootAnchorPath, deviceName, storageType, s3cfg, res._sp);
+            setupMultiuserImpl(userId, rootAnchorPath, deviceName, storageType, s3cfg, client);
 
             // Send event for S3 Setup
             if (s3cfg != null) {
@@ -131,46 +133,25 @@ class Setup
         }
     }
 
-    private static class SignInResult
-    {
-        // scrypt'ed password
-        byte[] _scrypted;
-
-        // N.B. the returned sp has not signed in
-        SPBlockingClient _sp;
-    }
-
     /**
      * This method can be called to verify the correctness of login information
      *
      * It attempts to sign in into SP, and if everything goes well, it will complete
      *   without error.
-     *
-     * FIXME (AT): refactor the setup logic so that we don't end up signing in to SP twice.
-     *   We can potentially refactor setupMultiuser & preSetup to:
-     *   1. signs into SP and cache intermediate values & SP connection.
-     *   2. call checkRootAnchor later and finish the rest of setup process.
      */
-    SignInResult signInUser(UserID userID, char[] password)
-            throws Exception
+    SPBlockingClient signInUser(UserID userID, byte[] scrypted) throws Exception
     {
-        SignInResult result = new SignInResult();
-        result._scrypted = SecUtil.scrypt(password, userID);
-
-        SPBlockingClient.Factory fact = new SPBlockingClient.Factory();
-        result._sp = fact.create_(Cfg.user(),
-                SPBlockingClient.ONE_WAY_AUTH_CONNECTION_CONFIGURATOR);
-        result._sp.signInUser(userID.getString(), ByteString.copyFrom(result._scrypted));
-
-        return result;
+        SPBlockingClient sp = new SPBlockingClient.Factory()
+                .create_(Cfg.user(), SPBlockingClient.ONE_WAY_AUTH_CONNECTION_CONFIGURATOR);
+        sp.signInUser(userID.getString(), ByteString.copyFrom(scrypted));
+        return sp;
     }
 
     /**
      * Perform pre-setup sanity checks and generate information needed by later setup steps.
-     *
-     * Sign in into SP and returns the result.
      */
-    private SignInResult preSetup(UserID userID, char[] password, String rootAnchorPath,
+    private void preSetup(
+            String rootAnchorPath,
             StorageType storageType)
             throws Exception
     {
@@ -179,8 +160,6 @@ class Setup
         RootAnchorUtil.checkRootAnchor(rootAnchorPath, _rtRoot, storageType, true);
 
         createSettingUpFlagFile();
-
-        return signInUser(userID, password);
     }
 
     /**

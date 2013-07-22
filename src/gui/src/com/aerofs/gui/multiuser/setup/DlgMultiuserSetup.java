@@ -4,7 +4,9 @@
 
 package com.aerofs.gui.multiuser.setup;
 
+import com.aerofs.controller.InstallActor;
 import com.aerofs.controller.SetupModel;
+import com.aerofs.controller.SignInActor;
 import com.aerofs.gui.AeroFSDialog;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.TraverseEvent;
@@ -26,7 +28,9 @@ public class DlgMultiuserSetup extends AeroFSDialog
     {
         super(shell, null, false, true);
 
-        _model = new SetupModel();
+        _model = new SetupModel()
+                .setSignInActor(new SignInActor.Credential())
+                .setInstallActor(new InstallActor.MultiUser());
     }
 
     @Override
