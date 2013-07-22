@@ -17,19 +17,13 @@ function _lp-bin()
 function _lp-kick-transient()
 {
     cd $AEROFS_ROOT/packaging/bakery/developer
-    ./kick.sh app-transient
-}
-
-function _lp-kick-database()
-{
-    cd $AEROFS_ROOT/packaging/bakery/developer
-    ./kick.sh database
+    ./kick.sh transient
 }
 
 function _lp-kick-persistent()
 {
     cd $AEROFS_ROOT/packaging/bakery/developer
-    ./kick.sh app-persistent
+    ./kick.sh persistent
 }
 
 function _lp-kick-all()
@@ -215,11 +209,10 @@ function _lp-ssh-usage()
     echo "Usage: lp-ssh <host>"
     echo
     echo "Available hosts:"
-    echo " - ca|config|app-persistent"
-    echo " - admin|app-transient"
-    echo " - database"
+    echo " - persistent"
+    echo " - transient"
     echo
-    echo "Simply sudo su to get root access - no password required."
+    echo "Simply sudo su to get root access (no password required)."
 }
 
 function lp-ssh()
@@ -232,23 +225,11 @@ function lp-ssh()
 
     local target=
     case $1 in
-        ca)
-            target=app-persistent
+        persistent)
+            target=persistent
             ;;
-        config)
-            target=app-persistent
-            ;;
-        app-persistent)
-            target=app-persistent
-            ;;
-        admin)
-            target=app-transient
-            ;;
-        app-transient)
-            target=app-transient
-            ;;
-        database)
-            target=database
+        transient)
+            target=transient
             ;;
     esac
 
