@@ -1,20 +1,21 @@
 package com.aerofs.cli;
 
-import com.aerofs.base.Base64;
 import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.base.ex.ExEmptyEmailAddress;
 import com.aerofs.base.id.UserID;
+import com.aerofs.controller.InstallActor;
+import com.aerofs.controller.SetupModel;
+import com.aerofs.controller.SetupModel.S3Options;
+import com.aerofs.controller.SignInActor;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.RootAnchorUtil;
 import com.aerofs.lib.S;
-import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.StorageType;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgDatabase;
 import com.aerofs.lib.ex.ExNoConsole;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.proto.ControllerProto.GetSetupSettingsReply;
-import com.aerofs.proto.ControllerProto.PBS3Config;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.S3DataEncryptionPasswordVerifier;
 import com.aerofs.ui.S3DataEncryptionPasswordVerifier.PasswordVerifierResult;
@@ -59,7 +60,7 @@ public class CLISetup
     private String _anchorRoot = null;
     private String _deviceName = null;
     private StorageType _storageType = null;
-    private PBS3Config _s3config = null;
+    private SetupModel _model = null;
 
     CLISetup(CLI cli, String rtRoot) throws Exception
     {
@@ -67,7 +68,10 @@ public class CLISetup
         _deviceName = defaults.getDeviceName();
         _anchorRoot = defaults.getRootAnchor();
 
-        processSetupFile(rtRoot);
+        _model = new SetupModel()
+                .setSignInActor(new SignInActor.Credential());
+
+        processSetupFile(rtRoot, _model._s3Options);
 
         if (!OSUtil.isLinux() && !_isUnattendedSetup) {
             cli.confirm(MessageType.WARN, L.product() + " CLI is not officially supported" +
@@ -78,10 +82,15 @@ public class CLISetup
         cli.show(MessageType.INFO, "Welcome to " + L.product() + ".");
 
         if (L.isMultiuser()) {
+            _model.setInstallActor(new InstallActor.MultiUser());
             setupMultiuser(cli);
         } else {
+            _model.setInstallActor(new InstallActor.SingleUser());
             setupSingleuser(cli);
         }
+
+        _model.doSignIn();
+        _model.doInstall();
 
         cli.notify(MessageType.INFO,
                 "---------------------------------------------------------------\n" +
@@ -90,7 +99,7 @@ public class CLISetup
                 S.CLI_NAME + " is running.");
     }
 
-    private void processSetupFile(String rtRoot) throws Exception
+    private void processSetupFile(String rtRoot, S3Options s3Options) throws Exception
     {
         File rtRootFile = new File(rtRoot);
         File setupFile = new File(rtRootFile, UNATTENDED_SETUP_FILE);
@@ -114,21 +123,12 @@ public class CLISetup
 
         String s3BucketId = props.getProperty(CfgDatabase.Key.S3_BUCKET_ID.keyString());
         if (s3BucketId != null) {
-            String s3AccessKey = props.getProperty(CfgDatabase.Key.S3_ACCESS_KEY.keyString());
-            String s3SecretKey = props.getProperty(CfgDatabase.Key.S3_SECRET_KEY.keyString());
-            char[] s3EncryptionPassword = props.getProperty(
-                    CfgDatabase.Key.S3_ENCRYPTION_PASSWORD.keyString()).toCharArray();
-
-            String scrypted = Base64.encodeBytes(SecUtil.scrypt(s3EncryptionPassword, _userID));
+            s3Options._bucketID = s3BucketId;
+            s3Options._accessKey = props.getProperty(CfgDatabase.Key.S3_ACCESS_KEY.keyString());
+            s3Options._secretKey = props.getProperty(CfgDatabase.Key.S3_SECRET_KEY.keyString());
+            s3Options._passphrase = props.getProperty(CfgDatabase.Key.S3_ENCRYPTION_PASSWORD.keyString());
 
             if (_storageType == null) _storageType = StorageType.S3;
-
-            _s3config = PBS3Config.newBuilder()
-                    .setBucketId(s3BucketId)
-                    .setAccessKey(s3AccessKey)
-                    .setSecretKey(s3SecretKey)
-                    .setEncryptionKey(scrypted)
-                    .build();
         }
 
         _isUnattendedSetup = true;
@@ -142,16 +142,27 @@ public class CLISetup
             getDeviceName(cli);
             getStorageType(cli);
             if (_storageType == StorageType.S3) {
-                getS3Config(cli);
+                getS3Config(cli, _model._s3Options);
             } else {
                 getRootAnchor(cli);
             }
         }
 
+        // FIXME: ugly code because this needs more aggressive refactoring
+
         cli.progress("Performing magic");
 
-        UIGlobals.controller().setupMultiuser(_userID.getString(), new String(_passwd), _anchorRoot,
-                _deviceName, _storageType.name(), _s3config);
+        _model.setUserID(_userID.getString());
+        _model.setPassword(new String(_passwd));
+        _model.setDeviceName(_deviceName);
+
+        if (_storageType == StorageType.S3) {
+            _model._isLocal = false;
+        } else {
+            _model._isLocal = true;
+            _model._localOptions._rootAnchorPath = _anchorRoot;
+            _model._localOptions._useBlockStorage = _storageType == StorageType.LOCAL;
+        }
     }
 
     private void setupSingleuser(CLI cli) throws Exception
@@ -167,8 +178,12 @@ public class CLISetup
 
         if (_storageType == null) _storageType = StorageType.LINKED;
 
-        UIGlobals.controller().setupSingleuser(_userID.getString(), new String(_passwd), _anchorRoot,
-                _deviceName, _storageType.name(), null);
+        _model.setUserID(_userID.getString());
+        _model.setPassword(new String(_passwd));
+        _model.setDeviceName(_deviceName);
+        _model._isLocal = true;
+        _model._localOptions._rootAnchorPath = _anchorRoot;
+        _model._localOptions._useBlockStorage = false;
     }
 
     private void getUser(CLI cli)
@@ -222,35 +237,21 @@ public class CLISetup
         _deviceName = cli.askText(S.SETUP_DEV_ALIAS, _deviceName);
     }
 
-    private void getS3Config(CLI cli) throws ExNoConsole
+    private void getS3Config(CLI cli, S3Options options) throws ExNoConsole
     {
-        String s3BucketId = null;
-        String s3AccessKey = null;
-        String s3SecretKey = null;
-        char[] s3EncryptionPassword = null;
-
-        while (s3BucketId == null || s3BucketId.isEmpty()) {
-            s3BucketId = cli.askText(S.SETUP_S3_BUCKET_NAME, null);
+        while (options._bucketID == null || options._bucketID.isEmpty()) {
+            options._bucketID = cli.askText(S.SETUP_S3_BUCKET_NAME, null);
         }
-        while (s3AccessKey == null || s3AccessKey.isEmpty()) {
-            s3AccessKey = cli.askText(S.SETUP_S3_ACCESS_KEY, null);
+        while (options._accessKey == null || options._accessKey.isEmpty()) {
+            options._accessKey = cli.askText(S.SETUP_S3_ACCESS_KEY, null);
         }
-        while (s3SecretKey == null || s3SecretKey.isEmpty()) {
-            s3SecretKey = cli.askText(S.SETUP_S3_SECRET_KEY, null);
+        while (options._secretKey == null || options._secretKey.isEmpty()) {
+            options._secretKey = cli.askText(S.SETUP_S3_SECRET_KEY, null);
         }
-        while (s3EncryptionPassword == null || s3EncryptionPassword.length == 0) {
-            s3EncryptionPassword = inputAndConfirmPasswd(cli,
-                    S.SETUP_S3_ENCRYPTION_PASSWORD);
+        while (options._passphrase == null || options._passphrase.length() == 0) {
+            options._passphrase = String.valueOf(inputAndConfirmPasswd(cli,
+                    S.SETUP_S3_ENCRYPTION_PASSWORD));
         }
-
-        String scrypted = Base64.encodeBytes(SecUtil.scrypt(s3EncryptionPassword, _userID));
-
-        _s3config = PBS3Config.newBuilder()
-                .setBucketId(s3BucketId)
-                .setAccessKey(s3AccessKey)
-                .setSecretKey(s3SecretKey)
-                .setEncryptionKey(scrypted)
-                .build();
     }
 
     private char[] inputAndConfirmPasswd(CLI cli, String prompt) throws ExNoConsole

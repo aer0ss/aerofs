@@ -7,7 +7,6 @@ package com.aerofs.controller;
 import com.aerofs.base.async.UncancellableFuture;
 import com.aerofs.base.ex.Exceptions;
 import com.aerofs.base.id.UserID;
-import com.aerofs.lib.StorageType;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.proto.Common;
@@ -137,27 +136,6 @@ public class ControllerService implements IControllerService
                 .setDeviceName(_setup.getDefaultDeviceName())
                 .build();
         return UncancellableFuture.createSucceeded(reply);
-    }
-
-    @Override
-    public ListenableFuture<Common.Void> setupSingleuser(String userId, String password,
-            String rootAnchor, String deviceName, String storageType, PBS3Config s3config)
-            throws Exception
-    {
-        _setup.setupSingleuser(UserID.fromExternal(userId), password.toCharArray(), rootAnchor,
-                deviceName, StorageType.fromString(storageType), s3config);
-        return UncancellableFuture.createSucceeded(Common.Void.getDefaultInstance());
-    }
-
-
-    @Override
-    public ListenableFuture<Common.Void> setupMultiuser(String userId, String password,
-            String rootAnchor, String deviceName, String storageType, PBS3Config s3config)
-            throws Exception
-    {
-        _setup.setupMultiuser(UserID.fromExternal(userId), password.toCharArray(), rootAnchor,
-                deviceName, StorageType.fromString(storageType), s3config);
-        return UncancellableFuture.createSucceeded(Common.Void.getDefaultInstance());
     }
 
     @Override

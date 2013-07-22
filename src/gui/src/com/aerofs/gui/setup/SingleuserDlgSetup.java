@@ -7,24 +7,28 @@ package com.aerofs.gui.setup;
 import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExBadCredential;
+import com.aerofs.controller.InstallActor;
+import com.aerofs.controller.SetupModel;
+import com.aerofs.controller.SignInActor;
 import com.aerofs.gui.AeroFSTitleAreaDialog;
 import com.aerofs.gui.CompSpin;
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUI.ISWTWorker;
 import com.aerofs.gui.GUIUtil;
+import com.aerofs.gui.Images;
+import com.aerofs.gui.singleuser.SingleuserDlgSetupAdvanced;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
+import com.aerofs.lib.ex.ExNoConsole;
 import com.aerofs.lib.ex.ExUIMessage;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.proto.ControllerProto.GetSetupSettingsReply;
+import com.aerofs.ui.IUI.MessageType;
+import com.aerofs.ui.UI;
 import com.aerofs.ui.UIGlobals;
 import com.aerofs.ui.error.ErrorMessages;
-import com.aerofs.ui.IUI.MessageType;
-import org.slf4j.Logger;
 import org.eclipse.jface.dialogs.IDialogConstants;
-import static org.eclipse.jface.dialogs.IDialogConstants.*;
-
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.StackLayout;
 import org.eclipse.swt.events.ModifyEvent;
@@ -45,58 +49,32 @@ import org.eclipse.swt.widgets.Link;
 import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
+import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
+import java.io.IOException;
 import java.net.ConnectException;
 
-public abstract class AbstractDlgSetup extends AeroFSTitleAreaDialog
+import static org.eclipse.jface.dialogs.IDialogConstants.CANCEL_ID;
+import static org.eclipse.jface.dialogs.IDialogConstants.CANCEL_LABEL;
+import static org.eclipse.jface.dialogs.IDialogConstants.DETAILS_ID;
+import static org.eclipse.jface.dialogs.IDialogConstants.OK_ID;
+
+public class SingleuserDlgSetup extends AeroFSTitleAreaDialog
 {
-    protected static final Logger l = Loggers.getLogger(AbstractDlgSetup.class);
-
-    /**
-     * This method is called in a non-GUI thread
-     */
-    abstract protected void setup(String userID, char[] passwd) throws Exception;
-
-    /**
-     * This method is called in the GUI thread, after setup succeeds.
-     */
-    abstract protected void postSetup();
-
-    private String _absRootAnchor;
-    private String _deviceName;
-
-    private CompSpin _compSpin;
-    private Composite _compForgotPassword;
-    private Composite _compBlank;
-    private Composite _compStack;
-    private Label _lblStatus;
-    private final StackLayout _layoutStack = new StackLayout();
-
-    private Text _txtUserID;
-    private Text _txtPasswd;
-
-    private boolean _okay;
-    private boolean _inProgress;
-
-    protected AbstractDlgSetup(Shell parentShell)
-            throws Exception
+    public SingleuserDlgSetup(Shell parentShell) throws Exception
     {
         super(null, parentShell, false, shouldAlwaysOnTop(), false);
 
         GetSetupSettingsReply defaults = UIGlobals.controller().getSetupSettings();
-        _absRootAnchor = defaults.getRootAnchor();
-        _deviceName = defaults.getDeviceName();
-    }
 
-    protected String getAbsRootAnchor()
-    {
-        return _absRootAnchor;
-    }
+        setTitleImage(Images.get(Images.IMG_SETUP));
 
-    protected String getDeviceName()
-    {
-        return _deviceName;
+        _model = new SetupModel()
+                .setSignInActor(new SignInActor.Credential())
+                .setInstallActor(new InstallActor.SingleUser());
+        _model._localOptions._rootAnchorPath = defaults.getRootAnchor();
+        _model.setDeviceName(defaults.getDeviceName());
     }
 
     @Override
@@ -237,9 +215,8 @@ public abstract class AbstractDlgSetup extends AeroFSTitleAreaDialog
             {
                 AbstractDlgSetupAdvanced advanced = createAdvancedSetupDialog();
                 if (advanced.open() != IDialogConstants.OK_ID) return;
-                processAdvancedSettings();
-                _deviceName = advanced.getDeviceName();
-                _absRootAnchor = advanced.getAbsoluteRootAnchor();
+                _model.setDeviceName(advanced.getDeviceName());
+                _model._localOptions._rootAnchorPath = advanced.getAbsoluteRootAnchor();
             }
         });
     }
@@ -378,8 +355,8 @@ public abstract class AbstractDlgSetup extends AeroFSTitleAreaDialog
     {
         _inProgress = true;
 
-        final String userID = _txtUserID.getText().trim();
-        final char[] passwd = _txtPasswd.getText().toCharArray();
+        _model.setUserID(_txtUserID.getText().trim());
+        _model.setPassword(_txtPasswd.getText());
 
         setControlState(false);
 
@@ -391,7 +368,7 @@ public abstract class AbstractDlgSetup extends AeroFSTitleAreaDialog
             public void run()
                     throws Exception
             {
-                setup(userID, passwd);
+                setup();
             }
 
             @Override
@@ -424,8 +401,6 @@ public abstract class AbstractDlgSetup extends AeroFSTitleAreaDialog
             {
                 _okay = true;
                 close();
-
-                postSetup();
             }
         });
     }
@@ -449,7 +424,62 @@ public abstract class AbstractDlgSetup extends AeroFSTitleAreaDialog
         return !_okay;
     }
 
-    abstract protected AbstractDlgSetupAdvanced createAdvancedSetupDialog();
-    abstract protected void processAdvancedSettings();
+    /**
+     * This method is called in a non-GUI thread
+     */
+    private void setup() throws Exception
+    {
+        _model.doSignIn();
+        _model.doInstall();
 
+        setupShellExtension();
+    }
+
+    private void setupShellExtension() throws ExNoConsole
+    {
+        while (true) {
+            try {
+                OSUtil.get().installShellExtension(false);
+                break;
+            } catch (SecurityException e) {
+                if (!UI.get()
+                        .ask(MessageType.QUESTION,
+                                L.product() + " needs your authorization to install the " +
+                                        OSUtil.get().getShellExtensionName() + ".\n\n" +
+                                        "Would you like to retry entering your password?\n" +
+                                        "If you click Cancel, the " +
+                                        OSUtil.get().getShellExtensionName() +
+                                        " won't be available.", IDialogConstants.OK_LABEL,
+                                IDialogConstants.CANCEL_LABEL)) {
+                    break;
+                }
+            } catch (IOException e) {
+                l.warn("Installing shell extension failed: " + Util.e(e));
+                break;
+            }
+        }
+    }
+
+    private AbstractDlgSetupAdvanced createAdvancedSetupDialog()
+    {
+        return new SingleuserDlgSetupAdvanced(getShell(),
+                _model.getDeviceName(), _model._localOptions._rootAnchorPath);
+    }
+
+    protected static final Logger l = Loggers.getLogger(SingleuserDlgSetup.class);
+
+    private CompSpin _compSpin;
+    private Composite _compForgotPassword;
+    private Composite _compBlank;
+    private Composite _compStack;
+    private Label _lblStatus;
+    private final StackLayout _layoutStack = new StackLayout();
+
+    private Text _txtUserID;
+    private Text _txtPasswd;
+
+    private boolean _okay;
+    private boolean _inProgress;
+
+    private SetupModel _model;
 }

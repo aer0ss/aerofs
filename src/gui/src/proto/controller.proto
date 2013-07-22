@@ -25,20 +25,6 @@ service ControllerService {
     rpc GetSetupSettings(Void) returns(GetSetupSettingsReply);
 
     /**
-     * Sets up an existing (returning) AeroFS user
-     *
-     * TODO (GS) Document what exceptions this can throw
-     */
-    rpc SetupSingleuser(SetupExistingUserCall) returns(Void);
-
-    /**
-     * Sets up an existing (returning) AeroFS user
-     *
-     * TODO (GS) Document what exceptions this can throw
-     */
-    rpc SetupMultiuser(SetupExistingUserCall) returns(Void);
-
-    /**
      * Resets the password of an AeroFS user
      *
      * Throws:
@@ -133,17 +119,6 @@ message SetupNewUserCall {
 
     // S3
     optional PBS3Config s3_config = 9;
-}
-
-message SetupExistingUserCall {
-    required string user_id = 1;
-    required string password = 2;
-    required string root_anchor = 3;
-    required string device_name = 4;
-    required string storage_type = 5;
-
-    // S3
-    optional PBS3Config s3_config = 6;
 }
 
 message SendPasswordResetEmailCall {
