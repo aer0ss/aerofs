@@ -54,6 +54,7 @@ URL_PARAM_NEXT = 'next' # N.B. the string "next" is also used in aerofs.js.
 )
 def login(request):
     _ = request.translate
+    settings = request.registry.settings
 
     next = request.params.get('next')
 
@@ -91,9 +92,10 @@ def login(request):
                     raise e
         except Exception as e:
             log.error("error during logging in:", exc_info=e)
+            support_email = settings.get('base.www.support_email_address', 'support@aerofs.com')
             flash_error(request, _("An error occurred processing your request." +
-                   " Please try again later. Contact support@aerofs.com if the" +
-                   " problem persists."))
+                   " Please try again later. Contact {support_email} if the" +
+                   " problem persists.", {'support_email': support_email }))
 
     return {
         'url_param_form_submitted': URL_PARAM_FORM_SUBMITTED,
