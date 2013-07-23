@@ -17,7 +17,6 @@ import com.aerofs.proto.ControllerProto.GetInitialStatusReply;
 import com.aerofs.proto.ControllerProto.GetSetupSettingsReply;
 import com.aerofs.proto.ControllerProto.IControllerService;
 import com.aerofs.proto.ControllerProto.PBConfig;
-import com.aerofs.proto.ControllerProto.PBS3Config;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.protobuf.GeneratedMessageLite;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
