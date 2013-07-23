@@ -21,4 +21,10 @@ public class ExStreamInvalid extends Exception
     {
         return _reason;
     }
+
+    @Override
+    public String toString()
+    {
+        return "stream invalid: " + _reason;
+    }
 }

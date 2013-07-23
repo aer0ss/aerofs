@@ -47,7 +47,6 @@ import com.aerofs.daemon.core.net.HdPulseStopped;
 import com.aerofs.daemon.core.net.HdTransportMetricsUpdated;
 import com.aerofs.daemon.core.net.HdChunk;
 import com.aerofs.daemon.core.net.HdMaxcastMessage;
-import com.aerofs.daemon.core.net.HdSessionEnded;
 import com.aerofs.daemon.core.net.HdStreamAborted;
 import com.aerofs.daemon.core.net.HdStreamBegun;
 import com.aerofs.daemon.core.net.HdUnicastMessage;
@@ -97,7 +96,6 @@ import com.aerofs.daemon.event.net.EIPulseStopped;
 import com.aerofs.daemon.event.net.EITransportMetricsUpdated;
 import com.aerofs.daemon.event.net.rx.EIChunk;
 import com.aerofs.daemon.event.net.rx.EIMaxcastMessage;
-import com.aerofs.daemon.event.net.rx.EISessionEnded;
 import com.aerofs.daemon.event.net.rx.EIStreamAborted;
 import com.aerofs.daemon.event.net.rx.EIStreamBegun;
 import com.aerofs.daemon.event.net.rx.EIUnicastMessage;
@@ -127,7 +125,6 @@ public class CoreEventHandlerRegistrar implements ICoreEventHandlerRegistrar
     private final HdStreamBegun _hdStreamBegun;
     private final HdMaxcastMessage _hdMaxcastMessage;
     private final HdUnicastMessage _hdUnicastMessage;
-    private final HdSessionEnded _hdSessionEnded;
     private final HdTransportMetricsUpdated _hdTransportMetricsUpdated;
     private final HdPresence _hdPresence;
     private final HdListConflicts _hdListConflicts;
@@ -171,7 +168,7 @@ public class CoreEventHandlerRegistrar implements ICoreEventHandlerRegistrar
             HdListExpelledObjects hdListExpelledObjects, HdPulseStopped hdPulseStopped,
             HdStreamAborted hdStreamAborted, HdChunk hdChunk, HdStreamBegun hdStreamBegun,
             HdMaxcastMessage hdMaxcastMessage, HdUnicastMessage hdUnicastMessage,
-            HdSessionEnded hdSessionEnded, HdTransportMetricsUpdated hdTransportMetricsUpdated,
+            HdTransportMetricsUpdated hdTransportMetricsUpdated,
             HdPresence hdPresence, HdListConflicts hdListConflicts,
             HdExportConflict hdExportConflict, HdTransportFloodQuery hdTransportFloodQuery,
             HdTransportFlood hdTransportFlood, HdTransportPing hdTransportPing,
@@ -207,7 +204,6 @@ public class CoreEventHandlerRegistrar implements ICoreEventHandlerRegistrar
         _hdStreamBegun = hdStreamBegun;
         _hdMaxcastMessage = hdMaxcastMessage;
         _hdUnicastMessage = hdUnicastMessage;
-        _hdSessionEnded = hdSessionEnded;
         _hdTransportMetricsUpdated = hdTransportMetricsUpdated;
         _hdPresence = hdPresence;
         _hdListConflicts = hdListConflicts;
@@ -299,7 +295,6 @@ public class CoreEventHandlerRegistrar implements ICoreEventHandlerRegistrar
                 // net events
                 .setHandler_(EIPresence.class, _hdPresence)
                 .setHandler_(EITransportMetricsUpdated.class, _hdTransportMetricsUpdated)
-                .setHandler_(EISessionEnded.class, _hdSessionEnded)
                 .setHandler_(EIUnicastMessage.class, _hdUnicastMessage)
                 .setHandler_(EIMaxcastMessage.class, _hdMaxcastMessage)
                 .setHandler_(EIStreamBegun.class, _hdStreamBegun)

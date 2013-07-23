@@ -50,7 +50,4 @@ public interface IUnicastInputLayer
      * @param reason
      */
     void onStreamAborted_(StreamID streamId, Endpoint ep, InvalidationReason reason);
-
-    // FIXME: this should be removed
-    void sessionEnded_(Endpoint ep, boolean outbound, boolean inbound);
 }

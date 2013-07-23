@@ -15,7 +15,6 @@ import com.aerofs.base.id.UserID;
 import com.aerofs.base.ssl.SSLEngineFactory;
 import com.aerofs.daemon.event.lib.EventDispatcher;
 import com.aerofs.daemon.event.lib.imc.IResultWaiter;
-import com.aerofs.daemon.event.net.EIPresence;
 import com.aerofs.daemon.event.net.EOTpStartPulse;
 import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.lib.BlockingPrioQueue;
@@ -41,6 +40,8 @@ import com.aerofs.daemon.transport.xmpp.PresenceStore;
 import com.aerofs.daemon.transport.xmpp.StartPulse;
 import com.aerofs.daemon.transport.xmpp.XMPPConnectionService;
 import com.aerofs.daemon.transport.xmpp.XMPPConnectionService.IXMPPConnectionServiceListener;
+import com.aerofs.daemon.transport.xmpp.XMPPPresenceManager;
+import com.aerofs.daemon.transport.xmpp.XMPPUtilities;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
@@ -54,18 +55,14 @@ import com.aerofs.proto.Transport.PBStream;
 import com.aerofs.proto.Transport.PBTPHeader;
 import com.aerofs.proto.Transport.PBTransportDiagnosis;
 import com.aerofs.rocklog.RockLog;
-import com.google.common.collect.ImmutableMap;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jivesoftware.smack.PacketListener;
 import org.jivesoftware.smack.SASLAuthentication;
 import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.XMPPException;
 import org.jivesoftware.smack.filter.MessageTypeFilter;
-import org.jivesoftware.smack.filter.OrFilter;
-import org.jivesoftware.smack.filter.PacketTypeFilter;
 import org.jivesoftware.smack.packet.Message;
 import org.jivesoftware.smack.packet.Packet;
-import org.jivesoftware.smack.packet.Presence;
 import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
@@ -75,7 +72,6 @@ import java.io.PrintStream;
 import java.net.NetworkInterface;
 import java.net.Proxy;
 import java.net.SocketAddress;
-import java.util.Collection;
 import java.util.Set;
 
 import static com.aerofs.base.id.JabberID.did2FormAJid;
@@ -109,8 +105,6 @@ public final class Zephyr implements ITransportImpl, IUnicast, IConnectionServic
 
     private final String id;
     private final int rank; // FIXME (AG): why does the transport need to know its own preference
-
-    private final DID localdid;
 
     private final IBlockingPrioritizedEventSink<IEvent> outgoingEventSink;
     private final BlockingPrioQueue<IEvent> eventQueue = new BlockingPrioQueue<IEvent>(QUEUE_LENGTH);
@@ -158,15 +152,14 @@ public final class Zephyr implements ITransportImpl, IUnicast, IConnectionServic
         // see http://www.igniterealtime.org/community/thread/35976
         SASLAuthentication.supportSASLMechanism("PLAIN", 0);
 
-        this.localdid = localdid;
         this.id = id;
         this.rank = rank;
 
         this.mobileZephyrConnector = mobileZephyr; // I don't want this here!!!!
         this.outgoingEventSink = outgoingEventSink;
         this.scheduler = new Scheduler(eventQueue, id());
-        this.xmppConnectionService = new XMPPConnectionService(localdid, id(), scrypted, this, rocklog);
-        this.multicast = new Multicast(this, maxcastFilterReceiver, xmppConnectionService, outgoingEventSink, localdid, id());
+        this.xmppConnectionService = new XMPPConnectionService(localdid, id(), scrypted, rocklog);
+        this.multicast = new Multicast(localdid, id(), maxcastFilterReceiver, xmppConnectionService, this, outgoingEventSink);
         this.maxcastFilterReceiver = maxcastFilterReceiver;
         this.pulseManager.addPulseDeletionWatcher(new GenericPulseDeletionWatcher(this, this.outgoingEventSink));
 
@@ -181,6 +174,17 @@ public final class Zephyr implements ITransportImpl, IUnicast, IConnectionServic
                 clientSocketChannelFactory,
                 zephyrAddress,
                 proxy);
+
+        XMPPPresenceManager presenceManager = new XMPPPresenceManager(this, localdid, outgoingEventSink,
+                presenceStore, pulseManager, zephyrConnectionService);
+
+        // Warning: it is very important that XMPPPresenceManager listens to the XMPPServer _before_
+        // Multicast. The reason is that Multicast will join the chat rooms and this will trigger
+        // sending the presence information. So if we add Multicast as a listener first, the presence
+        // information will already be sent by the time the presence manager registers to get them.
+        xmppConnectionService.addListener(presenceManager);
+        xmppConnectionService.addListener(this);
+        xmppConnectionService.addListener(multicast);
     }
 
     public void enableMulticast()
@@ -226,12 +230,6 @@ public final class Zephyr implements ITransportImpl, IUnicast, IConnectionServic
 
         dispatcherThread.start();
         zephyrConnectionService.start();
-    }
-
-    @Override
-    public boolean ready()
-    {
-        return xmppConnectionService.ready() && zephyrConnectionService.ready();
     }
 
     @Override
@@ -344,22 +342,11 @@ public final class Zephyr implements ITransportImpl, IUnicast, IConnectionServic
 
                         SystemUtil.fatal(e);
                     }
-                } else if (packet instanceof Presence) {
-                    try {
-                        processPresence((Presence) packet);
-                    } catch (Exception e) {
-                        logXmppProcessingError("pl: cannot process_ mc presence from " + packet.getFrom(), e, packet);
-                    }
                 }
             }
-        }, new OrFilter(new MessageTypeFilter(Message.Type.normal), new PacketTypeFilter(Presence.class)));
+        }, new MessageTypeFilter(Message.Type.normal));
 
-        try {
-            multicast.xmppServerConnected(null); // FIXME: should not pass in null - change Multicast to use passed-in connection
-            zephyrConnectionService.signallingServiceConnected();
-        } catch (XMPPException e) {
-            l.warn("invalid XMPP message on XMPP connection");
-        }
+        zephyrConnectionService.signallingServiceConnected();
 
         if (mobileZephyrConnector != null) {
             mobileZephyrConnector.setConnection(conn);
@@ -494,7 +481,6 @@ public final class Zephyr implements ITransportImpl, IUnicast, IConnectionServic
 
     @Override
     public Object send(DID did, IResultWaiter waiter, Prio priority, byte[][] bss, Object cookie)
-            throws Exception
     {
         return zephyrConnectionService.send(did, waiter, priority, bss, cookie);
     }
@@ -657,9 +643,6 @@ public final class Zephyr implements ITransportImpl, IUnicast, IConnectionServic
     @Override
     public void xmppServerDisconnected()
     {
-        l.warn("xsc noticed disconnect");
-
-        outgoingEventSink.enqueueBlocking( new EIPresence(Zephyr.this, false, ImmutableMap.<DID, Collection<SID>>of()), Prio.LO);
         multicast.xmppServerDisconnected();
         zephyrConnectionService.signallingServiceDisconnected();
     }
@@ -686,44 +669,9 @@ public final class Zephyr implements ITransportImpl, IUnicast, IConnectionServic
     @Override
     public final void linkStateChanged_(Set<NetworkInterface> removed, Set<NetworkInterface> added, Set<NetworkInterface> prev, Set<NetworkInterface> current)
     {
-        xmppConnectionService.linkStateChanged(current);
+        boolean up = !current.isEmpty();
+        xmppConnectionService.linkStateChanged(up);
         zephyrConnectionService.linkStateChanged(removed);
-    }
-
-    //
-    // presence methods
-    //
-
-    private void processPresence(Presence p)
-            throws ExFormatError
-    {
-        // NOTE: if the device goes offline then _zm will catch this since
-        // the TCP connection via Zephyr will break
-
-        String[] tokens = JabberID.tokenize(p.getFrom());
-        if (!JabberID.isMUCAddress(tokens)) return;
-        if (JabberID.isMobileUser(tokens[1])) return;
-        if (tokens.length == 3 && (tokens[2].compareToIgnoreCase(id()) != 0))
-            return; // ignore presence from other xmpp-based transports
-
-        SID sid = JabberID.muc2sid(tokens[0]);
-        DID did = JabberID.user2did(tokens[1]);
-        if (did.equals(localdid)) return;
-
-        if (p.isAvailable()) {
-            l.info("recv online presence d:" + did);
-            presenceStore.add(did, sid);
-            pulseManager.stopPulse(did, false);
-        } else {
-            zephyrConnectionService.disconnect(did, new Exception("remote offline"));
-            boolean waslast = presenceStore.del(did, sid);
-            if (waslast) {
-                l.info("recv offline presence d:" + did);
-                pulseManager.stopPulse(did, false);
-            }
-        }
-
-        outgoingEventSink.enqueueBlocking(new EIPresence(this, p.isAvailable(), did, sid), Prio.LO);
     }
 
     @Override

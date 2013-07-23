@@ -2,7 +2,7 @@
  * Copyright (c) Air Computing Inc., 2013.
  */
 
-package com.aerofs.daemon.transport.tcp;
+package com.aerofs.daemon.transport.netty;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.async.UncancellableFuture;
@@ -37,9 +37,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static com.google.common.base.Preconditions.checkState;
 
 
-class TCPClientHandler extends SimpleChannelHandler implements CNameListener
+public class ClientHandler extends SimpleChannelHandler implements CNameListener
 {
-    private static final Logger l = Loggers.getLogger(TCPClientHandler.class);
+    private static final Logger l = Loggers.getLogger(ClientHandler.class);
 
     // Hold writes until we are connected to the server
     private final Queue<PendingWrite> _pendingWrites = Queues.newConcurrentLinkedQueue();
@@ -144,7 +144,7 @@ class TCPClientHandler extends SimpleChannelHandler implements CNameListener
                     l.trace("wrote {} bytes to {}" ,length, _did);
                     future.set(null);
                 } else {
-                    l.info("write failed ({} bytes to {} {})", length, _did, _channel);
+                    l.trace("write failed ({} bytes to {} {})", length, _did, _channel, writeFuture.getCause());
                     future.setException(writeFuture.getCause());
                 }
             }
@@ -194,9 +194,9 @@ class TCPClientHandler extends SimpleChannelHandler implements CNameListener
         // This is the only place where _channel can potentially be null
         if (_channel == null) _channel = e.getChannel();
 
-        l.warn("client: caught ex from: {} {}", _did, _channel, LogUtil.suppress(e.getCause(),
-                ExBadMagicHeader.class, UnresolvedAddressException.class, IOException.class,
-                SSLException.class, SSLHandshakeException.class));
+        l.warn("client: caught ex from: {} {}", _did, _channel, e.getCause(), LogUtil.suppress(
+                e.getCause(), ExBadMagicHeader.class, UnresolvedAddressException.class,
+                IOException.class, SSLException.class, SSLHandshakeException.class));
 
         failPendingWrites(e.getCause());
         disconnect();

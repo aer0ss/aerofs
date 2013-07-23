@@ -2,17 +2,15 @@
  * Copyright (c) Air Computing Inc., 2013.
  */
 
-package com.aerofs.daemon.transport.tcp;
+package com.aerofs.daemon.transport.netty;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.base.net.MagicHeader.ExBadMagicHeader;
 import com.aerofs.base.ssl.CNameVerificationHandler.CNameListener;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.log.LogUtil;
 import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.buffer.ChannelBufferInputStream;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelPipeline;
@@ -25,16 +23,16 @@ import org.slf4j.Logger;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLHandshakeException;
 import java.io.IOException;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.nio.channels.UnresolvedAddressException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static org.jboss.netty.channel.Channels.fireExceptionCaught;
+import static org.jboss.netty.channel.Channels.fireMessageReceived;
 
-class TCPServerHandler extends SimpleChannelHandler implements CNameListener
+public class ServerHandler extends SimpleChannelHandler implements CNameListener
 {
-    static interface ITCPServerHandlerListener
+    public static interface IServerHandlerListener
     {
         /**
          * Called when we have a connected channel to receive data from a remote peer
@@ -42,19 +40,17 @@ class TCPServerHandler extends SimpleChannelHandler implements CNameListener
         void onIncomingChannel(DID did, Channel channel);
     }
 
-    private static final Logger l = Loggers.getLogger(TCPServerHandler.class);
+    private static final Logger l = Loggers.getLogger(ServerHandler.class);
 
-    private final ITCPServerHandlerListener _listener;
-    private final ITCP _tcp;
+    private final IServerHandlerListener _listener;
     private volatile DID _did;
     private volatile UserID _userID;
     private Channel _channel;
     private final AtomicBoolean _disconnected = new AtomicBoolean(false);
 
-    TCPServerHandler(ITCPServerHandlerListener listener, ITCP tcp)
+    public ServerHandler(IServerHandlerListener listener)
     {
         _listener = listener;
-        _tcp = tcp;
     }
 
     /**
@@ -116,17 +112,10 @@ class TCPServerHandler extends SimpleChannelHandler implements CNameListener
     public void messageReceived(ChannelHandlerContext ctx, MessageEvent e)
     {
         try {
-            ChannelBufferInputStream is = new ChannelBufferInputStream((ChannelBuffer)e.getMessage());
-
-            l.trace("recvd {} bytes from {}", is.available(), _did);
-
-            checkNotNull(_did);
-
-            InetAddress remote = ((InetSocketAddress)e.getRemoteAddress()).getAddress();
-            _tcp.onMessageReceived(remote, _did, _userID, is);
-
-        } catch (Exception ex) {
-            l.warn("server: ex while processing msg from: {} {}", _did, Util.e(ex));
+            TransportMessage message = new TransportMessage((ChannelBuffer)e.getMessage(), _did, _userID);
+            fireMessageReceived(ctx, message);
+        } catch (IOException ex) {
+            fireExceptionCaught(ctx, ex);
         }
     }
 

@@ -93,10 +93,8 @@ public interface ITransportImpl extends ITransport
      * Disconnect a peer
      *
      * @param did {@link com.aerofs.base.id.DID} to disconnect
-     * @throws ExNoResource if the disconnection cannot be performed due to
-     * resource constraints
      */
-    void disconnect_(DID did) throws ExNoResource; // FIXME: I don't like this throws signature - perhaps it should be Exception
+    void disconnect_(DID did);
 
     //
     // event handler functions

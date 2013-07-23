@@ -4,14 +4,17 @@
 
 package com.aerofs.lib.sched;
 
+import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
+import com.aerofs.lib.event.IEvent;
+import com.aerofs.lib.event.Prio;
+
+import javax.annotation.Nonnull;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
-import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
-import com.aerofs.lib.event.IEvent;
-import com.aerofs.lib.event.Prio;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public class Scheduler implements IScheduler
 {
@@ -24,11 +27,11 @@ public class Scheduler implements IScheduler
     // @param name  the name of the scheduler thread
     public Scheduler(IBlockingPrioritizedEventSink<IEvent> sink, String name)
     {
-        _sink = sink;
-        _name = name;
+        _sink = checkNotNull(sink);
+        _name = checkNotNull(name);
         _executor = Executors.newScheduledThreadPool(1, new ThreadFactory() {
             @Override
-            public Thread newThread(Runnable r)
+            public @Nonnull Thread newThread(@Nonnull Runnable r)
             {
                 return new Thread(r, _name);
             }

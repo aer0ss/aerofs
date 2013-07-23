@@ -9,7 +9,7 @@ import com.aerofs.daemon.transport.exception.ExDeviceDisconnected;
 import com.aerofs.daemon.transport.exception.ExDeviceUnreachable;
 import com.aerofs.daemon.transport.exception.ExSendFailed;
 import com.aerofs.daemon.transport.lib.IPipeDebug;
-import com.aerofs.daemon.transport.lib.IUnicast;
+import com.aerofs.daemon.transport.lib.IUnicastInternal;
 import com.aerofs.daemon.transport.lib.TransportStats;
 import com.aerofs.daemon.transport.xmpp.ISignallingService;
 import com.aerofs.daemon.transport.xmpp.ISignallingServiceListener;
@@ -59,7 +59,7 @@ import static org.jboss.netty.buffer.ChannelBuffers.wrappedBuffer;
 /**
  * Creates and manages connections to a Zephyr relay server
  */
-final class ZephyrConnectionService implements IUnicast, IZephyrSignallingService, ISignallingServiceListener, IPipeDebug
+final class ZephyrConnectionService implements IUnicastInternal, IZephyrSignallingService, ISignallingServiceListener, IPipeDebug
 {
     private static final Predicate<Entry<DID,Channel>> TRUE_FILTER = new Predicate<Entry<DID, Channel>>()
     {
@@ -120,7 +120,6 @@ final class ZephyrConnectionService implements IUnicast, IZephyrSignallingServic
         l.info("start");
     }
 
-    @SuppressWarnings("unused")
     void stop()
     {
         boolean alreadyRunning = running.getAndSet(false);
@@ -131,11 +130,6 @@ final class ZephyrConnectionService implements IUnicast, IZephyrSignallingServic
         synchronized (this) {
             disconnectChannels(TRUE_FILTER, new ExDeviceDisconnected("connection service stopped"));
         }
-    }
-
-    boolean ready()
-    {
-        return running.get();
     }
 
     //
@@ -261,7 +255,8 @@ final class ZephyrConnectionService implements IUnicast, IZephyrSignallingServic
         l.trace("d:{} connecting on created channel", did);
     }
 
-    synchronized void disconnect(DID did, Exception cause)
+    @Override
+    public synchronized void disconnect(DID did, Exception cause)
     {
         l.info("d:{} disconnect cause:{}", did, cause);
         disconnectChannel(did, cause);
@@ -290,7 +285,6 @@ final class ZephyrConnectionService implements IUnicast, IZephyrSignallingServic
 
     @Override
     public Object send(final DID did, final IResultWaiter wtr, Prio pri, byte[][] bss, Object cke)
-            throws Exception
     {
         ChannelBuffer data = wrappedBuffer(bss);
 

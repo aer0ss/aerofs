@@ -296,28 +296,4 @@ public class UnicastInputTopLayer implements IUnicastInputLayer
         StreamKey key = new StreamKey(ep.did(), streamId);
         _f._iss.aborted_(key, reason);
     }
-
-    @Override
-    public void sessionEnded_(Endpoint ep, boolean outbound, boolean inbound)
-    {
-        // because stream management is mostly done by the transport layer,
-        // we don't abort streams here but wait for the transport to signal us
-        // for stream abortion. See TPUtil.sessionEnded()
-
-        // Also, it's dangerous to do clear state associated with the session
-        // in this method. Because incoming events from transports are at low
-        // priority, including EISessionEnded, state associated with a "healthy"
-        // session may be incorrectly destroyed due to what I call
-        // "priority inversion". Consider the following case:
-        //
-        // 1. There was a session for a particular peer, which just ended
-        // 2. A high priority request from FSI results in a new session
-        //    established with the same peer. Both the core and the transport
-        //    now save some state regarding this session (the event from core
-        //    to transport is at high priority).
-        // 3. The low-priority sessionEnd event generated in step 1 eventually
-        //    arrived (after the FSI event above), causing the state of the new
-        //    session destroyed.
-        //
-    }
 }

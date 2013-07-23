@@ -499,12 +499,6 @@ public class LimitMonitor implements IUnicastInputLayer, ICfgDatabaseListener, I
         _upperUnicastInput.onStreamAborted_(streamId, ep, reason);
     }
 
-    @Override
-    public void sessionEnded_(Endpoint ep, boolean outbound, boolean inbound)
-    {
-        _upperUnicastInput.sessionEnded_(ep, outbound, inbound);
-    }
-
     //
     // ICfgReloadListener
     //

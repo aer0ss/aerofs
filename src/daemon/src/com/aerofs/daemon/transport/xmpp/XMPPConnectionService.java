@@ -10,6 +10,7 @@ import com.aerofs.base.BaseParam.Xmpp;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.JabberID;
+import com.aerofs.daemon.lib.Listeners;
 import com.aerofs.lib.IDumpStatMisc;
 import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.ThreadUtil;
@@ -24,8 +25,6 @@ import org.slf4j.Logger;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.net.InetSocketAddress;
-import java.net.NetworkInterface;
-import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -78,23 +77,22 @@ public final class XMPPConnectionService implements IDumpStatMisc
     private final String localjid;
     private final String resource;
     private final String xmppPassword; // sha256(scrypt(p|u)|XMPP_PASSWORD_SALT)
-    private final IXMPPConnectionServiceListener listener;
     private final AtomicInteger xscThreadId = new AtomicInteger(0);
     private final AtomicBoolean connectionInProgress = new AtomicBoolean(false);
+    private final Listeners<IXMPPConnectionServiceListener> _listeners = Listeners.create();
 
-    public XMPPConnectionService(DID localdid, String resource, byte[] scrypted, IXMPPConnectionServiceListener listener, RockLog rocklog)
+    public XMPPConnectionService(DID localdid, String resource, byte[] scrypted, RockLog rocklog)
     {
         this.localdid = localdid;
         this.localjid = JabberID.did2user(this.localdid);
         this.resource = resource;
         this.xmppPassword = Base64.encodeBytes(SecUtil.hash(scrypted, XMPP_PASSWORD_SALT));
-        this.listener = listener;
         this.rocklog = rocklog;
     }
 
-    public synchronized boolean ready()
+    public void addListener(IXMPPConnectionServiceListener listener)
     {
-        return connection != null && connection.isConnected() && connection.isAuthenticated();
+        _listeners.add(listener);
     }
 
     /**
@@ -119,10 +117,8 @@ public final class XMPPConnectionService implements IDumpStatMisc
         return xmppPassword;
     }
 
-    public void linkStateChanged(Set<NetworkInterface> cur)
+    public void linkStateChanged(boolean up)
     {
-        boolean up = !XMPPUtilities.allLinksDown(cur);
-
         boolean wasup = linkUp;
         linkUp = up;
 
@@ -265,7 +261,9 @@ public final class XMPPConnectionService implements IDumpStatMisc
         // I would prefer to only set connection _after_ calling listener.connected, but apparently
         // Multicast.java uses connection() internally...
         try {
-            listener.xmppServerConnected(newConnection);
+            for (IXMPPConnectionServiceListener listener : _listeners) {
+                listener.xmppServerConnected(newConnection);
+            }
         } catch (XMPPException e) {
             connection = null;
             throw e;
@@ -306,7 +304,9 @@ public final class XMPPConnectionService implements IDumpStatMisc
                     if (connection == newConnection) {
                         try {
                             l.info("notifying listeners of disconnection");
-                            listener.xmppServerDisconnected();
+                            for (IXMPPConnectionServiceListener listener : _listeners) {
+                                listener.xmppServerDisconnected();
+                            }
                         } finally {
                             connection = null;
                             replaced = true;

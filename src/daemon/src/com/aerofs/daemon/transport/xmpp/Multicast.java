@@ -15,6 +15,7 @@ import com.aerofs.daemon.event.net.rx.EIMaxcastMessage;
 import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.daemon.transport.lib.IMaxcast;
 import com.aerofs.daemon.transport.lib.MaxcastFilterReceiver;
+import com.aerofs.daemon.transport.xmpp.XMPPConnectionService.IXMPPConnectionServiceListener;
 import com.aerofs.lib.FrequentDefectSender;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.Util;
@@ -40,41 +41,38 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
-import static com.aerofs.daemon.transport.xmpp.XMPPUtilities.decodeBody;
-import static com.aerofs.daemon.transport.xmpp.XMPPUtilities.encodeBody;
-import static com.aerofs.daemon.transport.xmpp.XMPPUtilities.getBodyDigest;
 import static com.google.common.base.Preconditions.checkArgument;
 
-public final class Multicast implements IMaxcast
+public class Multicast implements IMaxcast, IXMPPConnectionServiceListener
 {
     private static final Logger l = Loggers.getLogger(Multicast.class);
 
     private final Map<SID, MultiUserChat> _mucs = new TreeMap<SID, MultiUserChat>();
+    private final FrequentDefectSender _fds = new FrequentDefectSender();
+    private final Set<SID> _all = new TreeSet<SID>();
+    private final DID _localDid;
+    private final String _xmppTransportId;
+    private final MaxcastFilterReceiver _mcfr;
+    private final XMPPConnectionService _xsc;
+    private final ITransport _tp;
+    private final IBlockingPrioritizedEventSink<IEvent> _sink;
 
-    private final Set<SID> all = new TreeSet<SID>();
-    private final ITransport transport;
-    private final XMPPConnectionService _xmppConnectionService;
-    private final IBlockingPrioritizedEventSink<IEvent> sink;
-    private final DID localdid;
-    private final String xmppTransportId;
-    private final MaxcastFilterReceiver maxcastFilterReceiver;
-
-    // FIXME (AG): the endpoint for multicast systems should be itself, not zephyr, not xmpp, not anything
-    public Multicast(ITransport transport, MaxcastFilterReceiver maxcastFilterReceiver, XMPPConnectionService xmppConnectionService, IBlockingPrioritizedEventSink<IEvent> sink, DID localdid, String xmppTransportId)
+    public Multicast(DID localDid, String xmppTransportId, MaxcastFilterReceiver mcfr,
+            XMPPConnectionService xsc, ITransport tp, IBlockingPrioritizedEventSink<IEvent> sink)
     {
-        this.transport = transport;
-        this.maxcastFilterReceiver = maxcastFilterReceiver;
-        this._xmppConnectionService = xmppConnectionService;
-        this.sink = sink;
-        this.localdid = localdid;
-        this.xmppTransportId = xmppTransportId;
+        _localDid = localDid;
+        _xmppTransportId = xmppTransportId;
+        _mcfr = mcfr;
+        _xsc = xsc;
+        _tp = tp;
+        _sink = sink;
     }
 
     private void leaveMUC(SID sid) throws XMPPException
     {
         MultiUserChat muc;
         synchronized (this) {
-            all.remove(sid);
+            _all.remove(sid);
             muc = _mucs.remove(sid);
             if (muc == null) return;
         }
@@ -95,7 +93,7 @@ public final class Multicast implements IMaxcast
             boolean create;
             MultiUserChat muc;
             synchronized (this) {
-                all.add(sid);
+                _all.add(sid);
                 muc = _mucs.get(sid);
                 create = muc == null;
             }
@@ -106,41 +104,7 @@ public final class Multicast implements IMaxcast
                 // smack static initializers have run) before using MultiUserChat, since
                 // otherwise the MultiUserChat static initializer might deadlock with the
                 // SmackConfiguration's static initializers.
-
-                /*
-                "expo.retry.xsct" daemon prio=5 tid=7fe824277000 nid=0x116644000 in Object.wait() [116642000]
-                   java.lang.Thread.State: RUNNABLE
-                    at java.lang.Class.forName0(Native Method)
-                    at java.lang.Class.forName(Class.java:169)
-                    at org.jivesoftware.smack.SmackConfiguration.parseClassToLoad(SmackConfiguration.java:306)
-                    at org.jivesoftware.smack.SmackConfiguration.<clinit>(SmackConfiguration.java:86)
-                    at org.jivesoftware.smack.Connection.<clinit>(Connection.java:118)
-                    at org.jivesoftware.smack.ConnectionConfiguration.<init>(ConnectionConfiguration.java:71)
-                    at com.aerofs.daemon.transport.xmpp.XMPPConnectionService.newConnection(XMPPConnectionService.java:102)
-                    at com.aerofs.daemon.transport.xmpp.XMPPConnectionService.connectImpl_(XMPPConnectionService.java:178)
-                    at com.aerofs.daemon.transport.xmpp.XMPPConnectionService.connect_(XMPPConnectionService.java:164)
-                    at com.aerofs.daemon.transport.xmpp.XMPPConnectionService.access$2(XMPPConnectionService.java:161)
-                    at com.aerofs.daemon.transport.xmpp.XMPPConnectionService$1.call(XMPPConnectionService.java:137)
-                    - locked <7f8443f18> (a com.aerofs.daemon.transport.xmpp.XMPPConnectionService)
-                    at com.aerofs.daemon.transport.xmpp.XMPPConnectionService$1.call(XMPPConnectionService.java:1)
-                    at com.aerofs.lib.Util.exponentialRetry(Util.java:1201)
-                    at com.aerofs.lib.Util$4.run(Util.java:1188)
-                    at java.lang.Thread.run(Thread.java:680)
-
-                "x" daemon prio=5 tid=7fe8242c2800 nid=0x116135000 in Object.wait() [116134000]
-                   java.lang.Thread.State: RUNNABLE
-                    at org.jivesoftware.smackx.muc.MultiUserChat.<clinit>(MultiUserChat.java:109)
-                    at com.aerofs.daemon.transport.xmpp.Multicast.getMUC(Multicast.java:79)
-                    at com.aerofs.daemon.transport.xmpp.Multicast.updateStores_(Multicast.java:241)
-                    at com.aerofs.daemon.transport.jingle.XMPP.updateStores_(XMPP.java:321)
-                    at com.aerofs.daemon.transport.lib.HdUpdateStores.handle_(HdUpdateStores.java:19)
-                    at com.aerofs.daemon.transport.lib.HdUpdateStores.handle_(HdUpdateStores.java:1)
-                    at com.aerofs.daemon.event.lib.EventDispatcher.dispatch_(EventDispatcher.java:39)
-                    at com.aerofs.daemon.transport.jingle.XMPP$1.run(XMPP.java:187)
-                    at java.lang.Thread.run(Thread.java:680)
-                 */
-
-                XMPPConnection conn = _xmppConnectionService.conn();
+                XMPPConnection conn = _xsc.conn();
                 muc = new MultiUserChat(conn, roomName);
 
                 try {
@@ -175,14 +139,12 @@ public final class Multicast implements IMaxcast
     {
         try {
             OutArg<Integer> len = new OutArg<Integer>();
-            getMUC(sid).sendMessage(encodeBody(len, mcastid, bs));
+            getMUC(sid).sendMessage(XMPPUtilities.encodeBody(len, mcastid, bs));
             l.debug("send mc id:{} s:{}", mcastid, sid);
         } catch (IllegalStateException e) {
             throw new XMPPException(e);
         }
     }
-
-    private final FrequentDefectSender _fds = new FrequentDefectSender();
 
     private void joinRoom(MultiUserChat muc) throws XMPPException
     {
@@ -193,7 +155,7 @@ public final class Multicast implements IMaxcast
         history.setMaxChars(0);
 
         try {
-            muc.join(JabberID.getMUCRoomNickname(localdid, xmppTransportId),
+            muc.join(JabberID.getMUCRoomNickname(_localDid, _xmppTransportId),
                     null, history, SmackConfiguration.getPacketReplyTimeout());
             muc.addMessageListener(new PacketListener()
             {
@@ -208,7 +170,8 @@ public final class Multicast implements IMaxcast
                         try {
                             recvMessage(msg);
                         } catch (Exception e) {
-                            _fds.logSendAsync("process_ mc from " + msg.getFrom() + ": " + getBodyDigest(
+                            _fds.logSendAsync("process_ mc from " +
+                                    msg.getFrom() + ": " + XMPPUtilities.getBodyDigest(
                                     msg.getBody()), e);
                         }
                     }
@@ -234,7 +197,7 @@ public final class Multicast implements IMaxcast
         l.info("creating " + muc.getRoom());
 
         try {
-            muc.create(JabberID.getMUCRoomNickname(localdid, xmppTransportId));
+            muc.create(JabberID.getMUCRoomNickname(_localDid, _xmppTransportId));
 
             // create an instant room using the server's default configuration
             // see: http://www.igniterealtime.org/builds/smack/docs/latest/documentation/extensions/muc.html
@@ -255,19 +218,19 @@ public final class Multicast implements IMaxcast
     {
         String[] tokens = JabberID.tokenize(msg.getFrom());
         DID did = JabberID.jid2did(tokens);
-        if (did.equals(localdid)) return;
+        if (did.equals(_localDid)) return;
 
         checkArgument(JabberID.isMUCAddress(tokens));
 
         l.debug("recv mc d:{}", did);
 
         OutArg<Integer> wirelen = new OutArg<Integer>();
-        byte [] bs = decodeBody(did, wirelen, msg.getBody(), maxcastFilterReceiver);
+        byte [] bs = XMPPUtilities.decodeBody(did, wirelen, msg.getBody(), _mcfr);
 
         // A null byte stream is returned if the packet is to be filtered away
         if (bs == null) return;
 
-        Endpoint ep = new Endpoint(transport, did);
+        Endpoint ep = new Endpoint(_tp, did);
 
         ByteArrayInputStream is = new ByteArrayInputStream(bs);
         recvMessage(ep, is, wirelen.get());
@@ -276,25 +239,28 @@ public final class Multicast implements IMaxcast
     private void recvMessage(Endpoint ep, ByteArrayInputStream is, int wirelen)
             throws IOException, ExNoResource
     {
-        sink.enqueueThrows(new EIMaxcastMessage(ep, is, wirelen), Prio.LO);
+        // NOTE: Assume that ep.did() != _localDid as this is checked in recvMessage(Message msg)
+        _sink.enqueueThrows(new EIMaxcastMessage(ep, is, wirelen), Prio.LO);
     }
 
+    @Override
     public synchronized void xmppServerDisconnected()
     {
         _mucs.clear();
     }
 
+    @Override
     public void xmppServerConnected(XMPPConnection conn) throws XMPPException
     {
-        // re-register all existing rooms. a copy of the all array is needed
+        // re-register all existing rooms. a copy of the _all array is needed
         // as it may get modified by getMUC().
-        // a loop is needed in case more entries are added to "all" but failed
+        // a loop is needed in case more entries are added to "_all" but failed
         // to register on the server while we're working
         Set<SID> all = null;
         while (true) {
             synchronized (this) {
-                if (all != null && all.equals(this.all)) break;
-                all = new TreeSet<SID>(this.all);
+                if (all != null && all.equals(_all)) break;
+                all = new TreeSet<SID>(_all);
             }
 
             for (SID sid : all) getMUC(sid);

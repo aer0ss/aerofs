@@ -6,6 +6,7 @@ package com.aerofs.daemon.transport.tcp;
 
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.SID;
+import com.aerofs.daemon.transport.netty.Unicast;
 import com.aerofs.lib.event.IEvent;
 import com.aerofs.daemon.event.net.EIPresence;
 import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
@@ -92,8 +93,7 @@ public class TestStores extends AbstractTest
         when(_tcp.sched()).thenReturn(_scheduler);
         when(_tcp.ucast()).thenReturn(_unicast);
         when(_tcp.mcast()).thenReturn(_multicast);
-
-        when(_unicast.getListeningPort()).thenReturn(8888);
+        when(_tcp.getListeningPort()).thenReturn(8888);
     }
 
     @Test

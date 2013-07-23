@@ -2,7 +2,7 @@
  * Copyright (c) Air Computing Inc., 2013.
  */
 
-package com.aerofs.daemon.transport.lib.handlers;
+package com.aerofs.daemon.transport.netty.handlers;
 
 import com.aerofs.daemon.transport.lib.TransportStats;
 import org.jboss.netty.buffer.ChannelBuffer;
