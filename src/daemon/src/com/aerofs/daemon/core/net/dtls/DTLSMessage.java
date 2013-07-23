@@ -4,7 +4,6 @@ import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.lib.id.StreamID;
-import com.aerofs.lib.Profiler;
 import com.aerofs.lib.cfg.Cfg;
 
 import javax.annotation.Nullable;
@@ -31,8 +30,6 @@ class DTLSMessage<T>
     private boolean _beginStreamSent;
     private boolean _done;
     private Exception _e;
-
-    private final Profiler _profiler;
 
     static public class Factory<T>
     {
@@ -66,7 +63,6 @@ class DTLSMessage<T>
         _sid = sid;
         _seq = seq;
         _tk = tk;
-        _profiler = new Profiler(DTLSMessage.class.getSimpleName());
     }
 
     /**
@@ -101,17 +97,6 @@ class DTLSMessage<T>
         _done = true;
         _e = e;
 
-        // If there is a profiler set, stop or reset it, depending
-        // on whether this message was delivered successfully or if an
-        // exception occurred.
-        if (_profiler.started()) {
-            if (e == null) {
-                _profiler.stop();
-            } else {
-                _profiler.reset();
-            }
-        }
-
         if (_tcb != null) {
             _tcb.resume_();
         }
@@ -125,10 +110,5 @@ class DTLSMessage<T>
     boolean isBeginStreamSent()
     {
         return _beginStreamSent;
-    }
-
-    public Profiler getProfiler()
-    {
-        return _profiler;
     }
 }

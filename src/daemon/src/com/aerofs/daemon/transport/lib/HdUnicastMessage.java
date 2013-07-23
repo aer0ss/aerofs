@@ -1,7 +1,6 @@
 package com.aerofs.daemon.transport.lib;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.daemon.event.lib.imc.IResultWaiter;
 import org.jivesoftware.smack.XMPPException;
 
 import com.aerofs.daemon.event.IEventHandler;
