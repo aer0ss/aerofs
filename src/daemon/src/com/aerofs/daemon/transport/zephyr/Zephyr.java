@@ -89,11 +89,10 @@ import static com.aerofs.daemon.transport.lib.TPUtil.registerMulticastHandler;
 import static com.aerofs.daemon.transport.lib.TPUtil.sessionEnded;
 import static com.aerofs.daemon.transport.xmpp.XMPPUtilities.decodeBody;
 import static com.aerofs.daemon.transport.xmpp.XMPPUtilities.encodeBody;
-import static com.aerofs.proto.Transport.PBTPHeader.Type.DATAGRAM;
-import static com.aerofs.proto.Transport.PBTPHeader.Type.DIAGNOSIS;
 import static com.aerofs.proto.Transport.PBTPHeader.Type.STREAM;
 import static com.aerofs.proto.Transport.PBTPHeader.Type.TRANSPORT_CHECK_PULSE_CALL;
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static org.jivesoftware.smack.packet.Message.Type.chat;
 import static org.jivesoftware.smack.packet.Message.Type.error;
@@ -527,14 +526,12 @@ public final class Zephyr implements ITransportImpl, IUnicast, IConnectionServic
     // process incoming transport messages
     //
 
-    private void processOtherUnicastControl(DID did, PBTPHeader hdr)
+    private void processStreamControl(DID did, PBTPHeader hdr)
             throws ExProtocolError
     {
         PBTPHeader.Type type = hdr.getType();
-        assert type != DATAGRAM && type != DIAGNOSIS : ("invalid hdr type:" + type.name());
-        if (type == STREAM) {
-            checkArgument(hdr.getStream().getType() == PBStream.Type.PAYLOAD, "invalid stream hdr type:" + hdr.getStream().getType());
-        }
+        checkArgument(type == STREAM, "d:" + did + " recv invalid hdr type:" + type.name());
+        checkArgument(hdr.getStream().getType() != PBStream.Type.PAYLOAD, "invalid stream hdr type:" + hdr.getStream().getType());
 
         Endpoint ep = new Endpoint(this, did);
         try {
@@ -592,16 +589,16 @@ public final class Zephyr implements ITransportImpl, IUnicast, IConnectionServic
                 //noinspection fallthrough
             case TRANSPORT_CHECK_PULSE_REPLY:
                 PBCheckPulse cp = hdr.getCheckPulse();
-                assert cp != null : ("invalid pulse msg from d:" + did);
+                checkNotNull(cp, "invalid pulse msg from d:" + did);
                 processPulseControl(did, cp, (type == TRANSPORT_CHECK_PULSE_CALL));
                 break;
             case DIAGNOSIS:
                 PBTransportDiagnosis dg = hdr.getDiagnosis();
-                assert dg != null : ("invalid diagnosis from d:" + did);
+                checkNotNull(dg, "invalid diagnosis from d:" + did);
                 processDiagnosis(did, dg);
                 break;
             default:
-                processOtherUnicastControl(did, hdr);
+                processStreamControl(did, hdr);
                 break;
             }
         } catch (ExProtocolError e) {
