@@ -200,10 +200,9 @@ public class TPUtil
      *
      * @param ep {@link Endpoint} that sent the control message
      * @param h {@link PBTPHeader} control message itself
-     * @param sink queue the {@link com.aerofs.daemon.transport.ITransport} or {@link IConnectionServiceListener} uses
+     * @param sink queue the {@link com.aerofs.daemon.transport.ITransport} uses
      * to communicate with the {@link com.aerofs.daemon.core.Core}
-     * @param sm {@link StreamManager} the {@link com.aerofs.daemon.transport.ITransport} or
-     * {@link IConnectionServiceListener} uses to manage streams
+     * @param sm {@link StreamManager} the {@link com.aerofs.daemon.transport.ITransport} uses to manage streams
      * @return {@link PBTPHeader} response required to the control packet
      * @throws ExProtocolError if the control packet has an unrecognized type and cannot
      * be processed
