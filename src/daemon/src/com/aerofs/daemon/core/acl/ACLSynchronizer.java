@@ -249,16 +249,19 @@ public class ACLSynchronizer
             throws Exception
     {
         GetACLReply aclReply;
-        Token tk = _tc.acquireThrows_(Cat.UNLIMITED, "spacl");
-        TCB tcb = null;
         SPBlockingClient sp;
+
+        Token tk = _tc.acquireThrows_(Cat.UNLIMITED, "spacl");
         try {
-            tcb = tk.pseudoPause_("spacl");
-            sp = _factSP.create_(_cfgLocalUser.get());
-            sp.signInRemote();
-            aclReply = sp.getACL(localEpoch);
+            TCB tcb = tk.pseudoPause_("spacl");
+            try {
+                sp = _factSP.create_(_cfgLocalUser.get());
+                sp.signInRemote();
+                aclReply = sp.getACL(localEpoch);
+            } finally {
+                tcb.pseudoResumed_();
+            }
         } finally {
-            if (tcb != null) tcb.pseudoResumed_();
             tk.reclaim_();
         }
 
@@ -307,16 +310,18 @@ public class ACLSynchronizer
     {
         if (!storeIds.isEmpty()) {
             Token tk = _tc.acquireThrows_(Cat.UNLIMITED, "spfoldername");
-            TCB tcb = null;
             try {
-                tcb = tk.pseudoPause_("spfoldername");
-                GetSharedFolderNamesReply reply = sp.getSharedFolderNames(storeIds);
-                assert storeIds.size() == reply.getFolderNameCount();
-                for (int i = 0; i < storeIds.size(); ++i) {
-                    acl.get(new SID(storeIds.get(i)))._name = reply.getFolderName(i);
+                TCB tcb = tk.pseudoPause_("spfoldername");
+                try {
+                    GetSharedFolderNamesReply reply = sp.getSharedFolderNames(storeIds);
+                    assert storeIds.size() == reply.getFolderNameCount();
+                    for (int i = 0; i < storeIds.size(); ++i) {
+                        acl.get(new SID(storeIds.get(i)))._name = reply.getFolderName(i);
+                    }
+                } finally {
+                    tcb.pseudoResumed_();
                 }
             } finally {
-                if (tcb != null) tcb.pseudoResumed_();
                 tk.reclaim_();
             }
         }

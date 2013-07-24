@@ -250,6 +250,9 @@ public class HdGetActivities extends AbstractHdIMC<EIGetActivities>
         }
 
         if (unknownOwnerDevices != 0) {
+            // even though 'first' is not referred to after this assignment,
+            // leave the assignment here in case references are added after
+            // this line in the future.
             first = and(sb, first);
             countAndNoun(sb, unknownOwnerDevices, "unknown device");
         }
@@ -291,7 +294,11 @@ public class HdGetActivities extends AbstractHdIMC<EIGetActivities>
         }
 
         if (movement) {
-            // print movement activity last so it can be displayed close to the destination path
+            // print movement activity last so it can be displayed close to the destination path.
+            //
+            // even though 'first' is not referred to after this assignment,
+            // leave the assignment here in case references are added after
+            // this line in the future.
             first = and(sb, first);
 
             assert ar._pathTo != null;
