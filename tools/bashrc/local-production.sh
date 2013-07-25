@@ -5,9 +5,64 @@
 # In this file, lp is short for local prodcution. Aliases that are meant to be
 # used publicly are prefixed with "lp-" for easy bash completion.
 
-function _lp-bin()
+function _lp-repo()
 {
     whoami | tr [a-z] [A-Z]
+}
+
+#
+# Execute a command in a specified directory
+# Changes back to the original directory once the command
+# completes and returns the exit code
+#
+# Arguments:
+#    $1   : directory to change to
+#    $2..N: command and arguments to run in $1
+#
+function DoIn
+{
+    typeset _wd=$PWD
+    cd $1
+    shift
+    set +e
+
+    $@;
+
+    typeset retval=$?
+    cd $_wd
+
+    #FIXME: set -e only if $- had an e in it
+    #set -e
+    return $retval
+}
+
+function _lp-vm-cmd()
+{
+    DoIn $AEROFS_ROOT/packaging/bakery/developer $@
+}
+
+# -----------------------------------------------------------
+# Packaging
+# -----------------------------------------------------------
+
+function _lp-package-cmd()
+{
+    DoIn $AEROFS_ROOT ant clean -Drepo=$(_lp-repo) $@
+}
+
+function _lp-package-all()
+{
+    _lp-package-cmd upload_servers -Dproduct=CLIENT -Dmode=PROD
+}
+
+function _lp-package-bootstrap()
+{
+    _lp-package-cmd upload_bootstrap -Dproduct=CLIENT -Dmode=PROD
+}
+
+function _lp-package-sanity()
+{
+    _lp-package-cmd upload_sanity
 }
 
 # -----------------------------------------------------------
@@ -16,88 +71,17 @@ function _lp-bin()
 
 function _lp-kick-transient()
 {
-    cd $AEROFS_ROOT/packaging/bakery/developer
-    ./kick.sh transient
+    _lp-vm-cmd kick.sh transient
 }
 
 function _lp-kick-persistent()
 {
-    cd $AEROFS_ROOT/packaging/bakery/developer
-    ./kick.sh persistent
+    _lp-vm-cmd kick.sh persistent
 }
 
 function _lp-kick-all()
 {
-    cd $AEROFS_ROOT/packaging/bakery/developer
-    ./kick.sh
-}
-
-# -----------------------------------------------------------
-# Packaging
-# -----------------------------------------------------------
-
-function _lp-package-all()
-{
-    cd $AEROFS_ROOT
-    ant package_servers -Dbin=$(_lp-bin) -Dproduct=CLIENT -Dmode=PROD
-    cd packaging
-    BIN=$(_lp-bin) make upload
-}
-
-function _lp-package-bootstrap()
-{
-    cd $AEROFS_ROOT
-    ant package_bootstrap -Dbin=$(_lp-bin) -Dproduct=CLIENT -Dmode=PROD
-    cd packaging
-    BIN=$(_lp-bin) make upload
-}
-
-function _lp-package-web()
-{
-    cd $AEROFS_ROOT/packaging
-    BIN=$(_lp-bin) make clean common web upload
-}
-
-function _lp-package-repackaging()
-{
-    cd $AEROFS_ROOT/packaging
-    BIN=$(_lp-bin) make repackaging upload
-}
-
-function _lp-package-sp()
-{
-    cd $AEROFS_ROOT
-    ant package_sp -Dbin=$(_lp-bin) -Dproduct=CLIENT -Dmode=PROD
-    cd packaging
-    BIN=$(_lp-bin) make upload
-}
-
-function _lp-package-verkehr()
-{
-    cd $AEROFS_ROOT
-    ant package_verkehr -Dbin=$(_lp-bin) -Dproduct=CLIENT -Dmode=PROD
-    cd packaging
-    BIN=$(_lp-bin) make upload
-}
-
-function _lp-package-zephyr()
-{
-    cd $AEROFS_ROOT
-    ant package_zephyr -Dbin=$(_lp-bin) -Dproduct=CLIENT -Dmode=PROD
-    cd packaging
-    BIN=$(_lp-bin) make upload
-}
-
-function _lp-package-ca()
-{
-    cd $AEROFS_ROOT/packaging
-    BIN=$(_lp-bin) make clean ca-tools ca-server upload
-}
-
-function _lp-package-sanity()
-{
-    cd $AEROFS_ROOT/packaging
-    BIN=$(_lp-bin) make clean sanity upload
+    _lp-vm-cmd kick.sh
 }
 
 # -----------------------------------------------------------
@@ -116,42 +100,6 @@ function lp-deploy-bootstrap()
     _lp-kick-all
 }
 
-function lp-deploy-web()
-{
-    _lp-package-web
-    _lp-kick-transient
-}
-
-function lp-deploy-repackaging()
-{
-    _lp-package-repackaging
-    _lp-kick-transient
-}
-
-function lp-deploy-sp()
-{
-    _lp-package-sp
-    _lp-kick-transient
-}
-
-function lp-deploy-verkehr()
-{
-    _lp-package-verkehr
-    _lp-kick-transient
-}
-
-function lp-deploy-zephyr()
-{
-    _lp-package-zephyr
-    _lp-kick-transient
-}
-
-function lp-deploy-ca()
-{
-    _lp-package-ca
-    _lp-kick-persistent
-}
-
 function lp-deploy-sanity()
 {
     _lp-package-sanity
@@ -159,45 +107,42 @@ function lp-deploy-sanity()
 }
 
 # -----------------------------------------------------------
-# VM Controls
+# Virtual Machines
 # -----------------------------------------------------------
 
-function _lp-vmctl-setup()
+function lp-setup()
 {
-    cd $AEROFS_ROOT
-    if [ "$#" -eq "1" ] ; then
-        ant local_prod_setup -Dbin=$(_lp-bin) -Dbridge_iface=$1
+    if [[ $# -eq 1 ]]
+    then
+        interface_arg=$1
     else
-        ant local_prod_setup -Dbin=$(_lp-bin)
+        interface_arg='$(./interfaces.sh)'
     fi
-}
 
-function lp-vmctl-setup()
-{
     _lp-package-all
-    _lp-vmctl-setup "$@"
+    _lp-vm-cmd setup.sh $(_lp-repo) ${interface_arg}
 }
 
-function lp-vmctl-delete()
+function lp-start()
 {
-    cd $AEROFS_ROOT
-    ant local_prod_delete
-}
-
-function lp-vmctl-halt()
-{
-    cd $AEROFS_ROOT
-    ant local_prod_halt
-}
-
-function lp-vmctl-start()
-{
-    cd $AEROFS_ROOT
-    if [ "$#" -eq "1" ] ; then
-        ant local_prod_start -Dbridge_iface=$1
+    if [[ $# -eq 1 ]]
+    then
+        interface_arg=$1
     else
-        ant local_prod_start
+        interface_arg='$(./interfaces.sh)'
     fi
+
+    _lp-vm-cmd start.sh ${interface_arg}
+}
+
+function lp-stop()
+{
+    _lp-vm-cmd halt.sh
+}
+
+function lp-delete()
+{
+    _lp-vm-cmd delete.sh
 }
 
 # -----------------------------------------------------------
@@ -239,6 +184,5 @@ function lp-ssh()
         return
     fi
 
-    cd $AEROFS_ROOT/packaging/bakery/vagrant
-    ./ssh.sh $target
+    DoIn $AEROFS_ROOT/packaging/bakery/vagrant ssh.sh $target
 }
