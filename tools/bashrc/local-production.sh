@@ -36,9 +36,10 @@ function DoIn
     return $retval
 }
 
-function _lp-vm-cmd()
+function _lp-run-script()
 {
-    DoIn $AEROFS_ROOT/packaging/bakery/developer $@
+    typeset _script=$1; shift
+    DoIn $AEROFS_ROOT/packaging/bakery/developer ./$_script $@
 }
 
 # -----------------------------------------------------------
@@ -71,17 +72,17 @@ function _lp-package-sanity()
 
 function _lp-kick-transient()
 {
-    _lp-vm-cmd kick.sh transient
+    _lp-run-script kick.sh transient
 }
 
 function _lp-kick-persistent()
 {
-    _lp-vm-cmd kick.sh persistent
+    _lp-run-script kick.sh persistent
 }
 
 function _lp-kick-all()
 {
-    _lp-vm-cmd kick.sh
+    _lp-run-script kick.sh
 }
 
 # -----------------------------------------------------------
@@ -120,7 +121,7 @@ function lp-setup()
     fi
 
     _lp-package-all
-    _lp-vm-cmd setup.sh $(_lp-repo) ${interface_arg}
+    _lp-run-script setup.sh $(_lp-repo) ${interface_arg}
 }
 
 function lp-start()
@@ -132,17 +133,17 @@ function lp-start()
         interface_arg='$(./interfaces.sh)'
     fi
 
-    _lp-vm-cmd start.sh ${interface_arg}
+    _lp-run-script start.sh ${interface_arg}
 }
 
 function lp-stop()
 {
-    _lp-vm-cmd halt.sh
+    _lp-run-script halt.sh
 }
 
 function lp-delete()
 {
-    _lp-vm-cmd delete.sh
+    _lp-run-script delete.sh
 }
 
 # -----------------------------------------------------------
