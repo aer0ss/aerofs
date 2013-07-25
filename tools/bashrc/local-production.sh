@@ -184,5 +184,5 @@ function lp-ssh()
         return
     fi
 
-    DoIn $AEROFS_ROOT/packaging/bakery/vagrant ssh.sh $target
+    DoIn $AEROFS_ROOT/packaging/bakery/vagrant ./ssh.sh $target
 }
