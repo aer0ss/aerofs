@@ -352,7 +352,10 @@ public final class CommandNotificationSubscriber
             throws Exception
     {
         SPBlockingClient.Factory fact = new SPBlockingClient.Factory();
-        return fact.create_(Cfg.user());
+        // We would like to avoid making SP do the work of verifying our client cert for this call,
+        // since command head is unauthenticated (which is needed to allow the remote wipe command
+        // to propagate after credentials are revoked).
+        return fact.create_(Cfg.user(), SPBlockingClient.ONE_WAY_AUTH_CONNECTION_CONFIGURATOR);
     }
 
     //
