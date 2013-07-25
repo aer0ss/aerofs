@@ -31,7 +31,7 @@ public class SSLEngineFactory implements ISslHandlerFactory
     public enum Platform { Desktop, Android }
 
     private static final char[] KEYSTORE_PASSWORD = "".toCharArray();
-    private static final String SECURITY_TYPE = "TLS";
+    private static final String SECURITY_TYPE = "TLSv1.2";
 
     private final boolean _clientMode;
     private final String _algorithm;
