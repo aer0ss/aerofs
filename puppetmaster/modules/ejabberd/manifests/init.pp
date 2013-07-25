@@ -51,6 +51,7 @@ class ejabberd (
     file { "/etc/ejabberd/auth_all":
         source => "puppet:///modules/ejabberd/auth_all",
         mode   => "755",
+        require => Package["ejabberd"],
         notify => Service["ejabberd"]
     }
 

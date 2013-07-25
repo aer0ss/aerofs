@@ -1,0 +1,203 @@
+#!/bin/bash -ue
+
+readonly AEROFS_ROOT=$(cd "${BASH_SOURCE[0]%/*}"/.. && pwd )
+
+#
+# Local Production Aliases.
+#
+# In this file, lp is short for local prodcution. Aliases that are meant to be
+# used publicly are prefixed with "lp-" for easy bash completion.
+#
+
+#
+# Execute a command in a specified directory
+# Changes back to the original directory once the command
+# completes and returns the exit code
+#
+# Arguments:
+#    $1   : directory to change to
+#    $2..N: command and arguments to run in $1
+#
+function do_in
+{
+    typeset _wd=$PWD
+    cd $1
+    shift
+    set +e
+
+    $@;
+
+    typeset retval=$?
+    cd $_wd
+
+    #FIXME: set -e only if $- had an e in it
+    set -e
+    return $retval
+}
+
+#
+# Gets the default repo (lowercase) for your packages
+#
+function _lowercase_repo()
+{
+    whoami | tr [A-Z] [a-z]
+}
+
+#
+# Gets the default repo (uppercase) for your packages
+#
+function _uppercase_repo()
+{
+    whoami | tr [a-z] [A-Z]
+}
+
+#
+# Runs a command in the local-prod directory
+#
+function _local-prod-cmd()
+{
+    do_in $AEROFS_ROOT/packaging/bakery/local-prod $@
+}
+
+# -----------------------------------------------------------
+# Packaging
+# -----------------------------------------------------------
+
+function _package-cmd()
+{
+    do_in $AEROFS_ROOT ant clean -Drepo=$(_uppercase_repo) $@
+}
+
+function _package-all()
+{
+    _package-cmd upload_servers -Dproduct=CLIENT -Dmode=PROD
+}
+
+# -----------------------------------------------------------
+# Kicks
+# -----------------------------------------------------------
+
+function _lp-kick-transient()
+{
+    _local-prod-cmd ./lpctrl kick transient
+}
+
+function _lp-kick-persistent()
+{
+    _local-prod-cmd ./lpctrl kick persistent
+}
+
+function _lp-kick-all()
+{
+    _local-prod-cmd ./lpctrl kick
+}
+
+# -----------------------------------------------------------
+# Deploys
+# -----------------------------------------------------------
+
+function lp-deploy-all()
+{
+    _package-all
+    _lp-kick-transient
+}
+
+# -----------------------------------------------------------
+# Virtual Machines
+# -----------------------------------------------------------
+
+function _lp-create()
+{
+    _package-all
+    _local-prod-cmd ./makelp $(_lowercase_repo) ${1:-}
+}
+
+function _lp-start()
+{
+    _local-prod-cmd ./lpctrl start ${1:-}
+}
+
+function _lp-halt()
+{
+    _local-prod-cmd ./lpctrl halt
+}
+
+function _lp-reboot()
+{
+    _local-prod-cmd ./lpctrl reboot ${1:-}
+}
+
+function _lp-delete()
+{
+    _local-prod-cmd ./lpctrl kill
+}
+
+# -----------------------------------------------------------
+# SSH
+# -----------------------------------------------------------
+
+function _print-ssh-usage()
+{
+    echo "usage: lptool ssh box_name" >&2
+    echo >&2
+    echo "available boxes: persistent, transient" >&2
+    echo >&2
+    echo "simply sudo su to get root access (no password required)." >&2
+}
+
+function _lp-ssh()
+{
+    if [[ $# -ne 1 ]]; then
+        _print-ssh-usage
+        exit 1
+    fi
+
+    local box=''
+    case $1 in
+    persistent) box=persistent ;;
+    transient ) box=transient  ;;
+    esac
+
+    if [[ -z "$box" ]]; then
+        _print-ssh-usage
+        exit 1
+    fi
+
+    do_in $AEROFS_ROOT/packaging/bakery/local-prod vagrant ssh $box
+}
+
+# -----------------------------------------------------------
+# main
+# -----------------------------------------------------------
+
+function main()
+{
+    if [[ $# -eq 0 ]]; then
+        echo "usage: $0 ( create | start | halt | delete | deploy | ssh ) [command_arguments]" >&2
+        echo >&2
+        echo "special cases:" >&2
+        echo "      create [bridge_interface]" >&2
+        echo "      start  [bridge_interface]" >&2
+        echo "      ssh    [box_name]" >&2
+        echo >&2
+        exit 1
+    fi
+
+    local command=$1
+    shift
+    case $command in
+    "create" ) _lp-create ${1:-} ;;
+    "start"  ) _lp-start  ${1:-} ;;
+    "halt"   ) _lp-halt          ;;
+    "reboot" ) _lp-reboot ${1:-} ;;
+    "delete" ) _lp-delete        ;;
+    "deploy" ) _lp-deploy        ;;
+    "ssh"    ) _lp-ssh    ${1:-} ;;
+    *        )
+        echo "unrecognized command $command" >&2
+        exit 2
+        ;;
+    esac
+}
+
+main "$@"
