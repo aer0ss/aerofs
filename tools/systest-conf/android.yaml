@@ -6,8 +6,8 @@ actor_defaults:
   aero_password: android123
   aero_app_root: ~/syncdet/deploy/approot/
   aero_rt_root: ~/syncdet/user_data/rtroot/
-  aero_sp_url: https://admin.syncfs.com/sp
-  config_url: https://config.syncfs.com
+  aero_sp_url: https://transient.syncfs.com/sp
+  config_url: https://persistent.syncfs.com
 actors:
     - address: 192.168.150.240
       rsh_remote_args:
