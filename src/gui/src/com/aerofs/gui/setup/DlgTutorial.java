@@ -180,7 +180,7 @@ public class DlgTutorial extends AeroFSDialog
         btnLayout.spacing = GUIParam.BUTTON_HORIZONTAL_SPACING;
         compButtons.setLayout(btnLayout);
 
-        _btnSkip = new Button(compButtons, SWT.NONE);
+        _btnSkip = GUIUtil.createButton(compButtons, SWT.NONE);
         _btnSkip.setText("Skip Tour");
         _btnSkip.addSelectionListener(new SelectionAdapter()
         {
@@ -191,7 +191,7 @@ public class DlgTutorial extends AeroFSDialog
             }
         });
 
-        _btnPrev = new Button(compButtons, SWT.NONE);
+        _btnPrev = GUIUtil.createButton(compButtons, SWT.NONE);
         _btnPrev.setText("Go Back");
         _btnPrev.addSelectionListener(new SelectionAdapter()
         {
@@ -202,7 +202,7 @@ public class DlgTutorial extends AeroFSDialog
             }
         });
 
-        _btnNext = new Button(compButtons, SWT.NONE);
+        _btnNext = GUIUtil.createButton(compButtons, SWT.NONE);
         _btnNext.addSelectionListener(new SelectionAdapter()
         {
             @Override

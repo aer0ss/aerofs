@@ -216,10 +216,10 @@ public class PageLogin extends AbstractSetupPage
 
         _compSpin = new CompSpin(_compButton, SWT.NONE);
 
-        _btnQuit = new Button(_compButton, SWT.NONE);
+        _btnQuit = GUIUtil.createButton(_compButton, SWT.NONE);
         _btnQuit.setText(S.BTN_QUIT);
 
-        _btnContinue = new Button(_compButton, SWT.NONE);
+        _btnContinue = GUIUtil.createButton(_compButton, SWT.NONE);
         _btnContinue.setText(S.BTN_CONTINUE);
 
         RowLayout layout = new RowLayout(SWT.HORIZONTAL);

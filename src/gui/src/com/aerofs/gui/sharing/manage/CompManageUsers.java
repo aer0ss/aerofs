@@ -4,6 +4,7 @@
 
 package com.aerofs.gui.sharing.manage;
 
+import com.aerofs.gui.GUIUtil;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.jface.dialogs.IDialogConstants;
@@ -51,12 +52,12 @@ public class CompManageUsers extends Composite
         _composite.setLayout(glComposite);
         _composite.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 1, 1));
 
-        _btnCancel = new Button(_composite, SWT.NONE);
+        _btnCancel = GUIUtil.createButton(_composite, SWT.NONE);
         _btnCancel.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, true, false, 1, 1));
         _btnCancel.setText("Unshare Folder");
         _btnCancel.setVisible(false);
 
-        _btnClose = new Button(_composite, SWT.NONE);
+        _btnClose = GUIUtil.createButton(_composite, SWT.NONE);
         _btnClose.setText(IDialogConstants.CLOSE_LABEL);
         _btnClose.addSelectionListener(new SelectionAdapter() {
             @Override

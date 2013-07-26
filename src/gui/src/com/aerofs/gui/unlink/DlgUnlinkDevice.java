@@ -76,7 +76,7 @@ public class DlgUnlinkDevice extends AeroFSDialog implements ISWTWorker
         composite2.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false, 1, 2));
         composite2.setLayout(new FillLayout(SWT.HORIZONTAL));
 
-        _btnCancel = new Button(composite2, SWT.NONE);
+        _btnCancel = GUIUtil.createButton(composite2, SWT.NONE);
         _btnCancel.setText(" " + IDialogConstants.NO_LABEL + " ");
         _btnCancel.addSelectionListener(new SelectionAdapter()
         {
@@ -87,7 +87,7 @@ public class DlgUnlinkDevice extends AeroFSDialog implements ISWTWorker
             }
         });
 
-        _btnOK = new Button(composite2, SWT.NONE);
+        _btnOK = GUIUtil.createButton(composite2, SWT.NONE);
         _btnOK.setText(" " + IDialogConstants.YES_LABEL + " ");
         _btnOK.addSelectionListener(new SelectionAdapter()
         {

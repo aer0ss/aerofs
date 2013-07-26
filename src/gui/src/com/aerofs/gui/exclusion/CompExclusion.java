@@ -3,6 +3,7 @@ package com.aerofs.gui.exclusion;
 import com.aerofs.base.Loggers;
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIParam;
+import com.aerofs.gui.GUIUtil;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
 import com.aerofs.ui.UIGlobals;
@@ -56,7 +57,7 @@ public class CompExclusion extends Composite
         glComposite.marginHeight = 0;
         _composite.setLayout(glComposite);
         _composite.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 1, 1));
-        _btnAdvancedView = new Button(_composite, SWT.NONE);
+        _btnAdvancedView = GUIUtil.createButton(_composite, SWT.NONE);
         _btnAdvancedView.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, true, false, 1, 1));
         _btnAdvancedView.setText("Advanced View");
         _btnAdvancedView.setVisible(false);
@@ -66,7 +67,7 @@ public class CompExclusion extends Composite
         fl.spacing = GUIParam.BUTTON_HORIZONTAL_SPACING;
         composite.setLayout(fl);
 
-        Button btnOk = new Button(composite, SWT.NONE);
+        Button btnOk = GUIUtil.createButton(_composite, SWT.NONE);
         btnOk.setText(IDialogConstants.OK_LABEL);
         btnOk.addSelectionListener(new SelectionAdapter() {
             @Override
@@ -98,7 +99,7 @@ public class CompExclusion extends Composite
             }
         });
 
-        _btnCancel = new Button(composite, SWT.NONE);
+        _btnCancel = GUIUtil.createButton(_compList, SWT.NONE);
         _btnCancel.setText(IDialogConstants.CANCEL_LABEL);
         _btnCancel.addSelectionListener(new SelectionAdapter() {
             @Override

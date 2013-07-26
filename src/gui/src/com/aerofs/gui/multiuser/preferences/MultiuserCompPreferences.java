@@ -6,6 +6,7 @@ package com.aerofs.gui.multiuser.preferences;
 
 import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.gui.GUI;
+import com.aerofs.gui.GUIUtil;
 import com.aerofs.gui.preferences.PreferencesHelper;
 import com.aerofs.lib.S;
 import com.aerofs.lib.cfg.Cfg;
@@ -46,7 +47,7 @@ public class MultiuserCompPreferences extends Composite
 
         // Enable sync-history button
 
-        final Button btnHistory = new Button(this, SWT.CHECK);
+        final Button btnHistory = GUIUtil.createButton(this, SWT.CHECK);
         btnHistory.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, false, 2, 1));
         btnHistory.setText(S.ENABLE_SYNC_HISTORY);
         btnHistory.setSelection(_cfgStoragePolicy.useHistory());

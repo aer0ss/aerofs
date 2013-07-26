@@ -34,6 +34,7 @@ import org.eclipse.swt.graphics.TextLayout;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.layout.RowLayout;
 import org.eclipse.swt.program.Program;
+import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
@@ -423,6 +424,20 @@ public class GUIUtil
         }
         buttons.setLayout(buttonLayout);
         return buttons;
+    }
+
+    /**
+     * Stubs out constructor for Button so we can do some custom business logic.
+     *
+     * @return an AeroFSButton if the OS is windows or linux and it's a push button,
+     *   a vanilla SWT Button otherwise.
+     */
+    public static Button createButton(Composite parent, int style)
+    {
+        return (OSUtil.isWindows() || OSUtil.isLinux())
+                && (style & (SWT.ARROW | SWT.CHECK | SWT.RADIO | SWT.TOGGLE)) == 0
+                ? new AeroFSButton(parent, style)
+                : new Button(parent, style);
     }
 
     /**

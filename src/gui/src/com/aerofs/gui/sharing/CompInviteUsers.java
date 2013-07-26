@@ -134,7 +134,7 @@ public class CompInviteUsers extends Composite implements IInputChangeListener
         fl.spacing = GUIParam.BUTTON_HORIZONTAL_SPACING;
         composite.setLayout(fl);
 
-        _btnOk = new Button(composite, SWT.NONE);
+        _btnOk = GUIUtil.createButton(composite, SWT.NONE);
         _btnOk.setText(IDialogConstants.OK_LABEL);
         _btnOk.setEnabled(false);
         _btnOk.addSelectionListener(new SelectionAdapter() {
@@ -145,7 +145,7 @@ public class CompInviteUsers extends Composite implements IInputChangeListener
             }
         });
 
-        Button btnCancel = new Button(composite, SWT.NONE);
+        Button btnCancel = GUIUtil.createButton(composite, SWT.NONE);
         btnCancel.setText(IDialogConstants.CANCEL_LABEL);
         btnCancel.addSelectionListener(new SelectionAdapter()
         {

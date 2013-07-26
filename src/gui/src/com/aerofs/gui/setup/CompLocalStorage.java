@@ -4,6 +4,7 @@
 
 package com.aerofs.gui.setup;
 
+import com.aerofs.gui.GUIUtil;
 import com.aerofs.lib.RootAnchorUtil;
 import com.aerofs.lib.S;
 import com.aerofs.ui.UIGlobals;
@@ -49,7 +50,7 @@ public class CompLocalStorage
 
     private void addUserDefaultLocationButton(Composite _txtComposite)
     {
-        Button btnUserDefaultLocation = new Button(_txtComposite, SWT.NONE);
+        Button btnUserDefaultLocation = GUIUtil.createButton(_txtComposite, SWT.NONE);
         btnUserDefaultLocation.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e)
@@ -69,7 +70,7 @@ public class CompLocalStorage
 
     private void addChangeLocationButton(Composite _txtComposite)
     {
-        Button btnChangeLocation = new Button(_txtComposite, SWT.NONE);
+        Button btnChangeLocation = GUIUtil.createButton(_txtComposite, SWT.NONE);
         btnChangeLocation.addSelectionListener(new SelectionAdapter()
         {
             @Override

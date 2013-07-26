@@ -290,7 +290,7 @@ public class CompConflictFiles extends Composite
             }
         });
 
-        _btnOpenLocal = new Button(this, SWT.NONE);
+        _btnOpenLocal = GUIUtil.createButton(this, SWT.NONE);
         _btnOpenLocal.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent ev)
@@ -306,7 +306,7 @@ public class CompConflictFiles extends Composite
         _btnOpenLocal.setEnabled(false);
         _btnOpenLocal.setText("Open Local");
 
-        _btnOpenConflict = new Button(this, SWT.NONE);
+        _btnOpenConflict = GUIUtil.createButton(this, SWT.NONE);
         _btnOpenConflict.setEnabled(false);
         _btnOpenConflict.setText("Open Conflict");
         _btnOpenConflict.addSelectionListener(new SelectionAdapter() {
@@ -322,7 +322,7 @@ public class CompConflictFiles extends Composite
             }
         });
 
-        _btnSaveAs = new Button(this, SWT.NONE);
+        _btnSaveAs = GUIUtil.createButton(this, SWT.NONE);
         _btnSaveAs.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent ev)
@@ -338,7 +338,7 @@ public class CompConflictFiles extends Composite
         _btnSaveAs.setEnabled(false);
         _btnSaveAs.setText("Save As...");
 
-        _btnDelete = new Button(this, SWT.NONE);
+        _btnDelete = GUIUtil.createButton(this, SWT.NONE);
         _btnDelete.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent ev)

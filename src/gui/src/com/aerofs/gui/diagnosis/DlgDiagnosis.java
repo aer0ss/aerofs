@@ -106,7 +106,7 @@ public class DlgDiagnosis extends AeroFSDialog
                 _lblUnsyncableStatusText.getFont());
         _lblUnsyncableStatusText.setLayoutData(gd_lbl);
 
-        Button btnClose = new Button(shell, SWT.NONE);
+        Button btnClose = GUIUtil.createButton(shell, SWT.NONE);
         btnClose.addSelectionListener(new SelectionAdapter()
         {
             @Override

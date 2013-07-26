@@ -255,7 +255,7 @@ public class CompUnsyncableFiles extends Composite {
             }
         });
 
-        _btnBrowse = new Button(this, SWT.NONE);
+        _btnBrowse = GUIUtil.createButton(this, SWT.NONE);
         _btnBrowse.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e)
@@ -266,7 +266,7 @@ public class CompUnsyncableFiles extends Composite {
         _btnBrowse.setEnabled(false);
         _btnBrowse.setText("Browse");
 
-        _btnDelete = new Button(this, SWT.NONE);
+        _btnDelete = GUIUtil.createButton(this, SWT.NONE);
         _btnDelete.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent ev)

@@ -7,6 +7,7 @@ import com.aerofs.base.ex.ExTimeout;
 import com.aerofs.base.id.DID;
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIParam;
+import com.aerofs.gui.GUIUtil;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.ThreadUtil;
@@ -85,7 +86,7 @@ public class CompBandwidth extends Composite
         new Label(this, SWT.NONE);
         new Label(this, SWT.NONE);
 
-        _btnStart = new Button(this, SWT.NONE);
+        _btnStart = GUIUtil.createButton(this, SWT.NONE);
         _btnStart.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e)

@@ -70,7 +70,7 @@ public class CompFolders extends Composite
         fl.spacing = GUIParam.BUTTON_HORIZONTAL_SPACING;
         composite.setLayout(fl);
 
-        _btnOk = new Button(composite, SWT.NONE);
+        _btnOk = GUIUtil.createButton(composite, SWT.NONE);
         _btnOk.setText(IDialogConstants.OK_LABEL);
         _btnOk.addSelectionListener(new SelectionAdapter() {
             @Override
@@ -81,7 +81,7 @@ public class CompFolders extends Composite
         });
         _btnOk.setEnabled(false);
 
-        _btnCancel = new Button(composite, SWT.NONE);
+        _btnCancel = GUIUtil.createButton(composite, SWT.NONE);
         _btnCancel.setText(IDialogConstants.CANCEL_LABEL);
         _btnCancel.addSelectionListener(new SelectionAdapter() {
             @Override

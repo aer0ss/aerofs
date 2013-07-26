@@ -129,11 +129,11 @@ public class PageSelectStorage extends AbstractSetupPage
     {
         _compChoices = new Composite(parent, SWT.NONE);
 
-        _btnLocalStorage = new Button(_compChoices, SWT.RADIO);
+        _btnLocalStorage = GUIUtil.createButton(_compChoices, SWT.RADIO);
         _btnLocalStorage.setText(S.SETUP_STORAGE_LOCAL);
         _btnLocalStorage.setFocus();
 
-        _btnS3Storage = new Button(_compChoices, SWT.RADIO);
+        _btnS3Storage = GUIUtil.createButton(_compChoices, SWT.RADIO);
         _btnS3Storage.setText(S.SETUP_STORAGE_S3);
 
         RowLayout layout = new RowLayout(SWT.VERTICAL);
@@ -149,10 +149,10 @@ public class PageSelectStorage extends AbstractSetupPage
     {
         _compButtons = new Composite(parent, SWT.NONE);
 
-        _btnBack = new Button(_compButtons, SWT.NONE);
+        _btnBack = GUIUtil.createButton(_compButtons, SWT.NONE);
         _btnBack.setText(S.BTN_BACK);
 
-        _btnNext = new Button(_compButtons, SWT.NONE);
+        _btnNext = GUIUtil.createButton(_compButtons, SWT.NONE);
         _btnNext.setText(S.BTN_CONTINUE);
         getShell().setDefaultButton(_btnNext);
 

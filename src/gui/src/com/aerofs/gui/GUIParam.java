@@ -18,4 +18,7 @@ public class GUIParam {
 
     // this is the margin used by Team Server setup dialog pages at the top and bottom of the page.
     public static final int SETUP_PAGE_MARGIN_HEIGHT = 15;
+
+    // minimum button width enforced on AeroFSButtons
+    public static final int AEROFS_MIN_BUTTON_WIDTH = 80;
 }
