@@ -1,3 +1,3 @@
 [submodule "src/libjingle"]
 	path = src/libjingle
-	url = ssh://g.arrowfs.org:44353/libjingle
+	url = git@github.arrowfs.org:aerofs/libjingle.git
