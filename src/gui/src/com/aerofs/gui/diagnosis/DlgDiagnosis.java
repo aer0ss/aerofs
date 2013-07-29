@@ -41,7 +41,7 @@ public class DlgDiagnosis extends AeroFSDialog
 
         GridLayout glShell = new GridLayout(4, false);
         glShell.marginRight = GUIParam.MARGIN;
-        glShell.verticalSpacing = 8;
+        glShell.verticalSpacing = GUIParam.VERTICAL_SPACING;
         glShell.marginHeight = GUIParam.MARGIN;
         glShell.marginTop = GUIParam.MARGIN;
         glShell.marginWidth = GUIParam.MARGIN;

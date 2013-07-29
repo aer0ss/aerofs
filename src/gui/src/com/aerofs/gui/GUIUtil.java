@@ -394,6 +394,9 @@ public class GUIUtil
      * @return a Composite suitable for hosting a row of buttons
      *
      * This method takes care of SWT and platform specific crazyness re margins and spacing...
+     *
+     * The result container will remove the extra margin on OSX and the container will bound the
+     * buttons as tight as possible
      */
     public static Composite newButtonContainer(Composite parent, boolean pack)
     {
@@ -415,7 +418,7 @@ public class GUIUtil
             // workaround broken margins on OSX
             buttonLayout.marginLeft = -4;
             buttonLayout.marginRight = -4;
-            buttonLayout.marginTop = 4;
+            buttonLayout.marginTop = -4;
             buttonLayout.marginBottom = -6;
         }
         buttons.setLayout(buttonLayout);
