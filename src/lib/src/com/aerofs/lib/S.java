@@ -49,9 +49,8 @@ public class S
             SETUP_ROOT_ANCHOR_LABEL  = "Storage Location",
             SETUP_USE_DEFAULT        = "Use Default",
             SETUP_TYPE_DESC          = "How would you like to store the data?",
-            SETUP_LINK               = "Default",
-            SETUP_LINK_DESC          = "Data is readable, writable, and accessible on the file " +
-                    "system.",
+            SETUP_LINK               = "Preserve folder structure",
+            SETUP_LINK_DESC          = "Files are accessible directly from the file system.",
             SETUP_BLOCK              = "Compressed and de-duplicated",
             SETUP_BLOCK_DESC         = "Data is accessible only through the shell. " +
                     "It may lead to significant space savings.",
