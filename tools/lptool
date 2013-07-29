@@ -103,7 +103,7 @@ function _package()
         -Drepo="$repo"
 }
 
-function _package-and-upload-all()
+function _package-and-upload-versions()
 {
     local repo=''
     repo=$(_uppercase_repo)
@@ -143,7 +143,7 @@ function _lp-deploy()
 
 function _lp-deploy-all()
 {
-    _package-and-upload-all
+    _package-and-upload-versions
     _lp-kick-transient
 }
 
@@ -192,7 +192,7 @@ function _lp-create()
     local repo=''
     repo=$(_lowercase_repo)
 
-    _package-and-upload-all
+    _package-and-upload-versions
     _local-prod-cmd ./makelp "$repo"  "${@}"
 }
 

@@ -52,18 +52,18 @@ class persistent {
     package{"nginx":
         ensure => present,
     }
+    file {"/etc/nginx/sites-enabled/default":
+        ensure => absent,
+        require => Package["nginx"]
+    }
     file{"/etc/nginx/certs":
         ensure => directory,
         require => Package["nginx"]
     }
+
     file {"/etc/nginx/sites-available/aerofs-cfg":
         source => "puppet:///modules/persistent/aerofs-cfg",
         require => Package["nginx"],
-    }
-    file{ "/etc/nginx/sites-enabled/aerofs-cfg":
-        ensure  => link,
-        target  => "/etc/nginx/sites-available/aerofs-cfg",
-        require => File["/etc/nginx/sites-available/aerofs-cfg"],
     }
 
     # --------------

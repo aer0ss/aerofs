@@ -1,11 +1,11 @@
-cacert-pull
-wildcard-cert-pull
+browser-cert-pull
+nginx-certificate-generate-transient
+nginx-restart
 verkehr
 ejabberd-metadata-reset
 ejabberd-fix-config
 ejabberd-certify
 create-sp-tomcat-xml
-uwsgi-pull-dynamic-config
 uwsgi-restart
 restund-fix-config
 zephyr-start

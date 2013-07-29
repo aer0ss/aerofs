@@ -33,7 +33,7 @@ touch $OPT/labeling.properties
 
 # Put the script in user bin for convenience as well.
 mkdir -p $BIN
-for res in set-config-url install-cert-file install-cert-raw
+for res in set-config-url install-cert
 do
     # N.B. these scripts are somewhat user facing, hence the aerofs prefix.
     cp $RESOURCES/bin/$res $BIN/aerofs-$res

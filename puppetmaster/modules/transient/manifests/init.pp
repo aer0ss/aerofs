@@ -68,14 +68,14 @@ class transient {
         stripe_secret_key => "gibberish",
         uwsgi_port => 8081,
     }
-    file {"/etc/nginx/sites-available/aerofs-web-sp":
-        source => "puppet:///modules/transient/aerofs-web-sp",
+    file {"/etc/nginx/sites-available/aerofs-transient":
+        source => "puppet:///modules/transient/aerofs-transient",
         require => Package["nginx"],
     }
-    file{ "/etc/nginx/sites-enabled/aerofs-web-sp":
+    file{ "/etc/nginx/sites-enabled/aerofs-transient":
         ensure  => link,
-        target  => "/etc/nginx/sites-available/aerofs-web-sp",
-        require => File["/etc/nginx/sites-available/aerofs-web-sp"],
+        target  => "/etc/nginx/sites-available/aerofs-transient",
+        require => File["/etc/nginx/sites-available/aerofs-transient"],
     }
     file {"/etc/nginx/sites-enabled/default":
         ensure => absent,
@@ -83,36 +83,15 @@ class transient {
     }
 
     # Custom webadmin things.
-    define replace_line($file, $old_pattern, $new_pattern) {
-        exec { "/bin/sed -i 's#$old_pattern#$new_pattern#g' $file":
-            onlyif => "/bin/grep  '$old_pattern' '$file'",
-            require => Package["aerofs-web"],
-        }
-    }
-    replace_line {"production.ini static prefix":
-        file => "/opt/web/production.ini",
-        old_pattern => "static.prefix = .*",
-        new_pattern => "static.prefix = static",
-    }
-    replace_line {"production.ini installer prefix":
-        file => "/opt/web/production.ini",
-        old_pattern => "installer.prefix = .*",
-        new_pattern => "installer.prefix = static",
-    }
-    replace_line {"production.ini sp url":
-        file => "/opt/web/production.ini",
-        old_pattern => "sp.url = .*",
-        new_pattern => "sp.url = https://localhost/sp",
-    }
-    replace_line {"production.ini deployment mode":
-        file => "/opt/web/production.ini",
-        old_pattern => "deployment.mode = .*",
-        new_pattern => "deployment.mode = private",
-    }
     file{ "/opt/web/web/static/installers":
         ensure  => link,
         target  => "/opt/repackaging/installers/modified",
         require => Package["aerofs-repackaging"],
+    }
+    file {"/opt/web/production.ini":
+        source => "puppet:///modules/transient/production.ini",
+        require => Package["aerofs-web"],
+        notify => Service["uwsgi"],
     }
 
     # --------------

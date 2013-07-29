@@ -20,10 +20,7 @@ def main(global_config, **settings):
         # the Configurator below.
         CONFIG_URL_FILE = "/etc/aerofs/configuration.url"
         CACERT_FILE = "/etc/ssl/certs/AeroFS_CA.pem"
-        # TODO (DF): add SSL verification.  Left out to ease CA migration, should be added
-        # back in before shipping to customers.
-        verify = False
-        #verify = CACERT_FILE
+        verify = CACERT_FILE
         config_url = None
         with open(CONFIG_URL_FILE) as f:
             config_url = f.read().strip()

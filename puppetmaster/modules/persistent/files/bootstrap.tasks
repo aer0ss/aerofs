@@ -1,5 +1,8 @@
 ca-deploy
 cacert-populate
-wildcard-cert-pull
+nginx-restart
+nginx-certificate-generate-persistent
+enable-config-service
+nginx-restart
 spdb-schema-init
 sanity-check

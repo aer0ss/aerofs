@@ -170,7 +170,7 @@ public class TestClientConfigurationLoader
 
         File siteConfigFile = getSiteConfigFile();
         Files.write(PROPERTY_CONFIG_SERVICE_URL + '=' + url + '\n' +
-                PROPERTY_ENTERPRISE_CUSTOMER_CERT + '=' + cert + '\n',
+                PROPERTY_BASE_CA_CERT + '=' + cert + '\n',
                 siteConfigFile, Charset.defaultCharset());
         return siteConfigFile;
     }

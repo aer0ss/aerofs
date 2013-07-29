@@ -20,13 +20,13 @@ URL_PARAM_JOINED_TEAM_NAME = 'new_team'
 def status_view(request):
     settings = request.registry.settings
 
-    persistent_host = settings['status_hosts.persistent']
-    transient_host = settings['status_hosts.transient']
+    persistent_url = settings['base.status_url.persistent']
+    transient_url = settings['base.status_url.transient']
 
     return {
-        'persistent_server_statuses': get_server_statuses(request, persistent_host),
-        'transient_server_statuses': get_server_statuses(request, transient_host)
+        'persistent_server_statuses': get_server_statuses(request, persistent_url),
+        'transient_server_statuses': get_server_statuses(request, transient_url)
     }
 
-def get_server_statuses(request, host):
-    return json.load(urllib2.urlopen('http://' + host + ':8000/'))['statuses']
+def get_server_statuses(request, url):
+    return json.load(urllib2.urlopen(url))['statuses']

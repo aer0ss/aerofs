@@ -75,7 +75,13 @@ function create_max_version_file() {
 function create_site_properties_file() {
     if [[ "$MODE" == 'ENTERPRISE' ]]
     then
-        echo "config.loader.configuration_service_url=https://persistent.syncfs.com/" > "$APPROOT"/site-config.properties
+        if [ "$(nc -z persistent.syncfs.com 443)x" = "x" ]
+        then
+            echo "Local prod configuration service not available."
+            exit 1
+        fi
+
+        wget -qO- --no-check-certificate https://persistent.syncfs.com/ | grep config.loader > "$APPROOT"/site-config.properties
     fi
 }
 

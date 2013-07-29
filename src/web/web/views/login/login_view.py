@@ -24,7 +24,7 @@ def _log_in_user(request, login, creds, stay_signed_in):
 
     # ignore any session data that may be saved
     settings = request.registry.settings
-    con = SyncConnectionService(settings['sp.url'], settings['sp.version'])
+    con = SyncConnectionService(settings['base.sp.url'], settings['sp.version'])
     sp = SPServiceRpcStub(con)
 
     sp.sign_in(login, creds)

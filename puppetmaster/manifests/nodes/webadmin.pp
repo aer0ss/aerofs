@@ -1,6 +1,6 @@
 node "webadmin.aerofs.com" inherits default {
 
-    class{"webadmin":
+    class{"webadmin::prod":
         stripe_publishable_key => hiera("stripe_publishable_key"),
         stripe_secret_key => hiera("stripe_secret_key"),
         require => Exec["apt-get update"]

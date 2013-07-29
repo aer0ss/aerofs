@@ -7,6 +7,7 @@ package com.aerofs.lib;
 import com.aerofs.base.BaseParam;
 import com.aerofs.base.C;
 import com.aerofs.base.id.SID;
+import com.aerofs.config.DynamicConfiguration;
 import com.aerofs.config.properties.DynamicOptionalStringProperty;
 import com.aerofs.lib.properties.DynamicInetSocketAddress;
 import com.aerofs.lib.properties.DynamicUrlProperty;
@@ -194,11 +195,6 @@ public class LibParam extends BaseParam
         // TODO (MP) move this to a server-only package (perhaps a new ServerParam.java?)
         public static final DynamicUrlProperty URL =
                 new DynamicUrlProperty("base.ca.url", "http://joan.aerofs.com:1029/prod");
-
-        // If in private deployment mode, this will be populated with the correct certificate on
-        // startup when we pull config from the central HTTP configuration source.
-        public static final DynamicOptionalStringProperty CERTIFICATE =
-                new DynamicOptionalStringProperty("base.ca.certificate");
     }
 
     public static class RootAnchor
@@ -367,9 +363,9 @@ public class LibParam extends BaseParam
     {
         public static final DynamicBooleanProperty IS_ENTERPRISE_DEPLOYMENT =
                 new DynamicBooleanProperty(PROPERTY_IS_ENTERPRISE_DEPLOYMENT, false);
-        public static final DynamicStringProperty ENTERPRISE_CUSTOMER_CERT =
-                new DynamicStringProperty(PROPERTY_ENTERPRISE_CUSTOMER_CERT, "");
-        public static final DynamicStringProperty CONFIG_SERVICE_URL =
-                new DynamicStringProperty(PROPERTY_CONFIG_SERVICE_URL, "");
+        public static final DynamicStringProperty BASE_CA_CERTIFICATE =
+                new DynamicStringProperty(PROPERTY_BASE_CA_CERT, "");
+        public static final DynamicUrlProperty CONFIG_SERVICE_URL =
+                new DynamicUrlProperty(PROPERTY_CONFIG_SERVICE_URL, "");
     }
 }

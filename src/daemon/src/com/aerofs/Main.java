@@ -4,6 +4,7 @@ import com.aerofs.base.BaseParam;
 import com.aerofs.base.Loggers;
 import com.aerofs.config.DynamicConfiguration;
 import com.aerofs.lib.LibParam.CA;
+import com.aerofs.lib.LibParam.EnterpriseConfig;
 import com.aerofs.lib.ex.ExDBCorrupted;
 import com.aerofs.lib.S;
 import com.aerofs.lib.configuration.ClientConfigurationLoader;
@@ -232,10 +233,11 @@ public class Main
     {
         // Write the new cacert.pem to the approot for use by other parts of the system.
         // TODO (MP) remove this and have everyone use Cfg.cacert() directly.
-        if (CA.CERTIFICATE.get().isPresent())
+        if (EnterpriseConfig.IS_ENTERPRISE_DEPLOYMENT.get())
         {
             try {
-                Files.write(CA.CERTIFICATE.get().get().getBytes(),
+                Files.write(
+                        EnterpriseConfig.BASE_CA_CERTIFICATE.get().getBytes(),
                         new File(approot, LibParam.CA_CERT));
             } catch (IOException e) {
                 l.debug("Failed to write CA cert to disk.", e);

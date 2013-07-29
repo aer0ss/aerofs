@@ -14,7 +14,7 @@ then
     exit 1
 fi
 
-code=$(curl -o /dev/null --silent --head --write-out '%{http_code}\n' "$url")
+code=$(curl -k -o /dev/null --silent --head --write-out '%{http_code}\n' "$url")
 
 if [ "$code" != "200" ]
 then

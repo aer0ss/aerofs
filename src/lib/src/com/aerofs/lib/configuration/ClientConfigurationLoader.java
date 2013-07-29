@@ -34,8 +34,8 @@ public class ClientConfigurationLoader
             = "config.loader.is_enterprise_deployment";
     public static final String PROPERTY_CONFIG_SERVICE_URL
             = "config.loader.configuration_service_url";
-    public static final String PROPERTY_ENTERPRISE_CUSTOMER_CERT
-            = "config.loader.enterprise_customer_certificate";
+    public static final String PROPERTY_BASE_CA_CERT
+            = "config.loader.base_ca_certificate";
 
     static final String STATIC_CONFIG_FILE = "configuration.properties";
     static final String SITE_CONFIG_FILE = "site-config.properties";
@@ -96,7 +96,7 @@ public class ClientConfigurationLoader
     {
         try {
             String url = siteConfig.getString(PROPERTY_CONFIG_SERVICE_URL);
-            String certificate = siteConfig.getString(PROPERTY_ENTERPRISE_CUSTOMER_CERT, "");
+            String certificate = siteConfig.getString(PROPERTY_BASE_CA_CERT, "");
             ICertificateProvider certificateProvider = StringUtils.isBlank(certificate) ? null
                     : new StringBasedCertificateProvider(certificate);
             File cache = new File(approot, HTTP_CONFIG_CACHE);

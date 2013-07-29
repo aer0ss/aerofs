@@ -107,9 +107,9 @@ def get_rpc_stub(request):
     """
     settings = request.registry.settings
     if 'sp_cookies' in request.session: # attempt session recovery
-        con = SyncConnectionService(settings['sp.url'], settings['sp.version'], request.session['sp_cookies'])
+        con = SyncConnectionService(settings['base.sp.url'], settings['sp.version'], request.session['sp_cookies'])
     else:
-        con = SyncConnectionService(settings['sp.url'], settings['sp.version'])
+        con = SyncConnectionService(settings['base.sp.url'], settings['sp.version'])
     return SPServiceRpcStub(con)
 
 def flash_error(request, error_msg):

@@ -383,8 +383,7 @@ public abstract class Updater
     private static URLConnection newUpdaterConnection(URL url) throws IOException
     {
         boolean shouldVerifyHostnamesFromAWS = !EnterpriseConfig.IS_ENTERPRISE_DEPLOYMENT.get();
-        boolean shouldUseEnterpriseCert = EnterpriseConfig.IS_ENTERPRISE_DEPLOYMENT.get()
-                && !StringUtils.isBlank(EnterpriseConfig.ENTERPRISE_CUSTOMER_CERT.get());
+        boolean shouldUseEnterpriseCert = EnterpriseConfig.IS_ENTERPRISE_DEPLOYMENT.get();
 
         return newUpdaterConnectionImpl(url, shouldVerifyHostnamesFromAWS, shouldUseEnterpriseCert);
     }

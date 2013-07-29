@@ -34,7 +34,6 @@ public class SPBlockingClient extends SPServiceBlockingStub
         // N.B. if the enterprise certificate is not provided when the client is built in
         //   enterprise mode, fallback to use the production CA cert instead.
         ICertificateProvider certificateProvider = EnterpriseConfig.IS_ENTERPRISE_DEPLOYMENT.get()
-                && !StringUtils.isBlank(EnterpriseConfig.ENTERPRISE_CUSTOMER_CERT.get())
                 ? new EnterpriseCertificateProvider()
                 : new CfgCACertificateProvider();
 

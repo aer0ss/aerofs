@@ -11,6 +11,6 @@ public class EnterpriseCertificateProvider extends StringBasedCertificateProvide
 {
     public EnterpriseCertificateProvider()
     {
-        super(EnterpriseConfig.ENTERPRISE_CUSTOMER_CERT.get());
+        super(EnterpriseConfig.BASE_CA_CERTIFICATE.get());
     }
 }
