@@ -10,6 +10,7 @@ import com.aerofs.controller.SetupModel;
 import com.aerofs.gui.CompSpin;
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUI.ISWTWorker;
+import com.aerofs.gui.GUIParam;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.gui.Images;
 import com.aerofs.lib.RootAnchorUtil;
@@ -193,8 +194,9 @@ public class PageLocalStorage extends AbstractSetupPage
 
         GridLayout layout = new GridLayout();
         layout.marginWidth = 40;
-        layout.marginHeight = 20;
-        layout.verticalSpacing = 15;
+        layout.marginHeight = 0;
+        layout.marginTop = GUIParam.SETUP_PAGE_MARGIN_HEIGHT;
+        layout.verticalSpacing = 10;
         _compContent.setLayout(layout);
 
         _compRootAnchor.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
@@ -218,7 +220,7 @@ public class PageLocalStorage extends AbstractSetupPage
         layout.marginWidth = 0;
         layout.marginHeight = 0;
         layout.horizontalSpacing = 10;
-        layout.verticalSpacing = 0;
+        layout.verticalSpacing = 6;
         _compRootAnchor.setLayout(layout);
 
         _lblRootAnchor.setLayoutData(new GridData(SWT.CENTER, SWT.CENTER, false, false));
@@ -228,7 +230,7 @@ public class PageLocalStorage extends AbstractSetupPage
 
     protected void createRootAnchorButtons(Composite parent)
     {
-        _compRootAnchorButton = new Composite(parent, SWT.NONE);
+        _compRootAnchorButton = GUIUtil.newButtonContainer(parent, false);
 
         _btnUseDefault = new Button(_compRootAnchorButton, SWT.NONE);
         _btnUseDefault.setText(S.SETUP_USE_DEFAULT);
@@ -236,13 +238,6 @@ public class PageLocalStorage extends AbstractSetupPage
         _btnChangeRootAnchor = new Button(_compRootAnchorButton, SWT.NONE);
         _btnChangeRootAnchor.setText(S.BTN_CHANGE);
         _btnChangeRootAnchor.setFocus();
-
-        RowLayout layout = new RowLayout(SWT.HORIZONTAL);
-        layout.marginTop = 0;
-        layout.marginBottom = 0;
-        layout.marginLeft = 0;
-        layout.marginRight = 0;
-        _compRootAnchorButton.setLayout(layout);
 
         _btnUseDefault.setLayoutData(new RowData(100, SWT.DEFAULT));
         _btnChangeRootAnchor.setLayoutData(new RowData(100, SWT.DEFAULT));
@@ -272,18 +267,22 @@ public class PageLocalStorage extends AbstractSetupPage
         GridLayout layout = new GridLayout();
         layout.marginWidth = 5;
         layout.marginHeight = 0;
-        layout.verticalSpacing = 10;
+        layout.verticalSpacing = 6;
+        layout.horizontalSpacing = 0;
         _compType.setLayout(layout);
 
-        GridData descLayout = new GridData(SWT.FILL, SWT.TOP, true, false);
-        descLayout.horizontalIndent = 18;
-        GridData descLayout2 = new GridData(SWT.FILL, SWT.TOP, true, false);
-        descLayout2.horizontalIndent = 18;
         _btnLink.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
-        _lblLinkDesc.setLayoutData(descLayout);
+        _lblLinkDesc.setLayoutData(createDescLayoutData());
         _btnBlock.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
-        _lblBlockDesc.setLayoutData(descLayout2);
+        _lblBlockDesc.setLayoutData(createDescLayoutData());
         _lnkLearnMore.setLayoutData(new GridData(SWT.RIGHT, SWT.BOTTOM, true, false));
+    }
+
+    protected GridData createDescLayoutData()
+    {
+        GridData data = new GridData(SWT.FILL, SWT.TOP, true, false);
+        data.horizontalIndent = 40;
+        return data;
     }
 
     protected void createButtonBar(Composite parent)
@@ -301,7 +300,7 @@ public class PageLocalStorage extends AbstractSetupPage
 
         RowLayout layout = new RowLayout(SWT.HORIZONTAL);
         layout.marginTop = 0;
-        layout.marginBottom = 20;
+        layout.marginBottom = GUIParam.SETUP_PAGE_MARGIN_HEIGHT;
         layout.marginLeft = 0;
         layout.marginRight = 40;
         layout.center = true;
