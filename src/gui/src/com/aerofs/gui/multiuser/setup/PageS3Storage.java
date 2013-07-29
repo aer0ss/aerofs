@@ -10,6 +10,7 @@ import com.aerofs.controller.SetupModel;
 import com.aerofs.gui.CompSpin;
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUI.ISWTWorker;
+import com.aerofs.gui.GUIParam;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.gui.Images;
 import com.aerofs.lib.S;
@@ -208,7 +209,7 @@ public class PageS3Storage extends AbstractSetupPage
 
         GridLayout layout = new GridLayout();
         layout.marginWidth = 40;
-        layout.marginHeight = 20;
+        layout.marginHeight = GUIParam.SETUP_PAGE_MARGIN_HEIGHT;
         layout.verticalSpacing = 0;
         _compContent.setLayout(layout);
 
@@ -240,7 +241,7 @@ public class PageS3Storage extends AbstractSetupPage
         _txtSecretKey = new Text(_compConfig, SWT.BORDER);
 
         GridLayout layout = new GridLayout(2, true);
-        layout.marginWidth = 90;
+        layout.marginWidth = 60;
         layout.marginHeight = 10;
         layout.verticalSpacing = 5;
         _compConfig.setLayout(layout);
@@ -268,7 +269,7 @@ public class PageS3Storage extends AbstractSetupPage
         _txtPass2 = new Text(_compPassphrase, SWT.BORDER | SWT.PASSWORD);
 
         GridLayout layout = new GridLayout(2, true);
-        layout.marginWidth = 90;
+        layout.marginWidth = 60;
         layout.marginHeight = 10;
         layout.verticalSpacing = 5;
         _compPassphrase.setLayout(layout);
@@ -313,7 +314,7 @@ public class PageS3Storage extends AbstractSetupPage
         layout.marginLeft = 0;
         layout.marginRight = 40;
         layout.marginTop = 0;
-        layout.marginBottom = 20;
+        layout.marginBottom = GUIParam.SETUP_PAGE_MARGIN_HEIGHT;
         layout.center = true;
         _compButton.setLayout(layout);
 

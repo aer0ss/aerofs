@@ -11,6 +11,7 @@ import com.aerofs.controller.SetupModel;
 import com.aerofs.gui.CompSpin;
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUI.ISWTWorker;
+import com.aerofs.gui.GUIParam;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.gui.Images;
 import com.aerofs.lib.S;
@@ -223,7 +224,7 @@ public class PageLogin extends AbstractSetupPage
 
         RowLayout layout = new RowLayout(SWT.HORIZONTAL);
         layout.marginTop = 0;
-        layout.marginBottom = 20;
+        layout.marginBottom = GUIParam.SETUP_PAGE_MARGIN_HEIGHT;
         layout.marginLeft = 0;
         layout.marginRight = 40;
         layout.center = true;
