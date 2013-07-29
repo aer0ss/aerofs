@@ -498,7 +498,7 @@ public class DlgManageSharedFolders extends AeroFSDialog
         lc.marginHeight = 0;
         lc.marginWidth = 0;
         lc.horizontalSpacing = 0;
-        lc.verticalSpacing = 0;
+        lc.verticalSpacing = GUIParam.VERTICAL_SPACING;
         c.setLayout(lc);
         return c;
     }

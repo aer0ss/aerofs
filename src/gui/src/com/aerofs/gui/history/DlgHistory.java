@@ -108,7 +108,7 @@ public class DlgHistory extends AeroFSDialog
         grid.marginHeight = GUIParam.MARGIN;
         grid.marginWidth = GUIParam.MARGIN;
         grid.horizontalSpacing = 4;
-        grid.verticalSpacing = 4;
+        grid.verticalSpacing = GUIParam.VERTICAL_SPACING;
         shell.setMinimumSize(600, 400);
         shell.setSize(600, 400);
         shell.setLayout(grid);
@@ -127,6 +127,7 @@ public class DlgHistory extends AeroFSDialog
         GridLayout groupLayout = new GridLayout(1, false);
         groupLayout.marginHeight = 8;
         groupLayout.marginWidth = 8;
+        groupLayout.verticalSpacing = GUIParam.VERTICAL_SPACING;
         _group.setLayout(groupLayout);
         _group.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1));
 

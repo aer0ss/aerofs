@@ -46,7 +46,7 @@ public abstract class TaskDialog extends AeroFSDialog implements ISWTWorker
         GridLayout glShell = new GridLayout(2, false);
         glShell.marginHeight = GUIParam.MARGIN;
         glShell.marginWidth = GUIParam.MARGIN;
-        glShell.verticalSpacing = 0;
+        glShell.verticalSpacing = GUIParam.VERTICAL_SPACING;
         shell.setLayout(glShell);
 
 
