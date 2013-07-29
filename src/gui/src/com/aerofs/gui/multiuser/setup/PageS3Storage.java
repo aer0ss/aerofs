@@ -77,6 +77,8 @@ public class PageS3Storage extends AbstractSetupPage
     private Button      _btnInstall;
     private Button      _btnBack;
 
+    static final String AMAZON_S3_URL = "http://aws.amazon.com/s3";
+
     public PageS3Storage(Composite parent)
     {
         super(parent, SWT.NONE);
@@ -99,7 +101,7 @@ public class PageS3Storage extends AbstractSetupPage
             @Override
             public void widgetSelected(SelectionEvent e)
             {
-                GUIUtil.launch(S.SETUP_S3_AMAZON_URL);
+                GUIUtil.launch(AMAZON_S3_URL);
             }
         });
 

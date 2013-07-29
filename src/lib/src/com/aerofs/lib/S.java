@@ -55,13 +55,13 @@ public class S
             SETUP_BLOCK              = "Compressed and de-duplicated",
             SETUP_BLOCK_DESC         = "Data is accessible only through the shell. " +
                     "It may lead to significant space savings.",
+            SETUP_STORAGE_LINK       = "<a>Learn more about storage options</a>.",
             SETUP_BTN_INSTALL        = "Install",
 
             // used in setup S3 storage screen
             SETUP_S3_CONFIG_DESC     = "If you do not have an Amazon S3 bucket, you may create " +
                     "one at",
             SETUP_S3_AMAZON_LINK     = "<a>http://aws.amazon.com/s3</a>.",
-            SETUP_S3_AMAZON_URL      = "http://aws.amazon.com/s3",
             SETUP_S3_PASSWD_DESC     = "Please create an encryption passphrase. This will be " +
                     "used to encrypt your data before sending it to S3:",
             SETUP_S3_BUCKET_NAME_GUI = "S3 Bucket Name:",
