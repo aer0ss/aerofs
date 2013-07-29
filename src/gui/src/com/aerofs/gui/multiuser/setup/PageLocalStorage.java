@@ -30,6 +30,7 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.DirectoryDialog;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Label;
+import org.eclipse.swt.widgets.Link;
 import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Text;
 import org.slf4j.Logger;
@@ -60,9 +61,13 @@ public class PageLocalStorage extends AbstractSetupPage
     private Label       _lblLinkDesc;
     private Button      _btnBlock;
     private Label       _lblBlockDesc;
+    private Link        _lnkLearnMore;
     private CompSpin    _compSpin;
     private Button      _btnInstall;
     private Button      _btnBack;
+
+    static final String STORAGE_OPTIONS_URL =
+            "https://support.aerofs.com/entries/23690567-Choose-between-local-storage-compressed-storage-and-S3-storage-on-Team-Server";
 
     public PageLocalStorage(Composite parent)
     {
@@ -100,6 +105,15 @@ public class PageLocalStorage extends AbstractSetupPage
                 if (rootAnchor != null) {
                     _txtRootAnchor.setText(RootAnchorUtil.adjustRootAnchor(rootAnchor, null));
                 }
+            }
+        });
+
+        _lnkLearnMore.addSelectionListener(new SelectionAdapter()
+        {
+            @Override
+            public void widgetSelected(SelectionEvent e)
+            {
+                GUIUtil.launch(STORAGE_OPTIONS_URL);
             }
         });
 
@@ -252,6 +266,9 @@ public class PageLocalStorage extends AbstractSetupPage
         _lblBlockDesc = new Label(_compType, SWT.WRAP);
         _lblBlockDesc.setText(S.SETUP_BLOCK_DESC);
 
+        _lnkLearnMore = new Link(_compType, SWT.NONE);
+        _lnkLearnMore.setText(S.SETUP_STORAGE_LINK);
+
         GridLayout layout = new GridLayout();
         layout.marginWidth = 5;
         layout.marginHeight = 0;
@@ -266,6 +283,7 @@ public class PageLocalStorage extends AbstractSetupPage
         _lblLinkDesc.setLayoutData(descLayout);
         _btnBlock.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
         _lblBlockDesc.setLayoutData(descLayout2);
+        _lnkLearnMore.setLayoutData(new GridData(SWT.RIGHT, SWT.BOTTOM, true, false));
     }
 
     protected void createButtonBar(Composite parent)
