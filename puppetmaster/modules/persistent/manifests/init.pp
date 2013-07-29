@@ -46,6 +46,7 @@ class persistent {
         enable => true,
         hasstatus => true,
         hasrestart => true,
+        require => Package["php5-fpm"],
     }
 
     package{"nginx":
