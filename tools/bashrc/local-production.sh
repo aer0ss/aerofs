@@ -56,16 +56,6 @@ function _lp-package-all()
     _lp-package-cmd upload_servers -Dproduct=CLIENT -Dmode=PROD
 }
 
-function _lp-package-bootstrap()
-{
-    _lp-package-cmd upload_bootstrap -Dproduct=CLIENT -Dmode=PROD
-}
-
-function _lp-package-sanity()
-{
-    _lp-package-cmd upload_sanity
-}
-
 # -----------------------------------------------------------
 # Kicks
 # -----------------------------------------------------------
@@ -93,18 +83,6 @@ function lp-deploy-all()
 {
     _lp-package-all
     _lp-kick-transient
-}
-
-function lp-deploy-bootstrap()
-{
-    _lp-package-bootstrap
-    _lp-kick-all
-}
-
-function lp-deploy-sanity()
-{
-    _lp-package-sanity
-    _lp-kick-all
 }
 
 # -----------------------------------------------------------
