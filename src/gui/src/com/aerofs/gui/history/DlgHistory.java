@@ -151,7 +151,7 @@ public class DlgHistory extends AeroFSDialog
         _actionButtons.setLayoutData(new GridData(SWT.FILL, SWT.BOTTOM, true, false));
 
         if (Cfg.storageType() == StorageType.LINKED) {
-            _restoreBtn = new Button(_actionButtons, SWT.NONE);
+            _restoreBtn = GUIUtil.createButton(_actionButtons, SWT.NONE);
             _restoreBtn.setText("Restore Deleted Files...");
             _restoreBtn.setToolTipText("Recursively restore deleted files and folders to their "
                     + "most recent version");
@@ -174,7 +174,7 @@ public class DlgHistory extends AeroFSDialog
             _restoreBtn = null;
         }
 
-        _openBtn = new Button(_actionButtons, SWT.NONE);
+        _openBtn = GUIUtil.createButton(_actionButtons, SWT.NONE);
         _openBtn.setText("Open");
         _openBtn.setToolTipText("Open a read-only copy of the selected version");
         _openBtn.setLayoutData(new RowData());
@@ -191,7 +191,7 @@ public class DlgHistory extends AeroFSDialog
             }
         });
 
-        _saveBtn = new Button(_actionButtons, SWT.NONE);
+        _saveBtn = GUIUtil.createButton(_actionButtons, SWT.NONE);
         _saveBtn.setText("Save as...");
         _saveBtn.setToolTipText("Save a copy of the selected version in a different location");
         _saveBtn.setLayoutData(new RowData());
@@ -208,7 +208,7 @@ public class DlgHistory extends AeroFSDialog
             }
         });
 
-        _deleteBtn = new Button(_actionButtons, SWT.NONE);
+        _deleteBtn = GUIUtil.createButton(_actionButtons, SWT.NONE);
         _deleteBtn.setText("Delete");
         _deleteBtn.setToolTipText("Delete the selected version");
         _deleteBtn.setLayoutData(new RowData());
@@ -242,7 +242,7 @@ public class DlgHistory extends AeroFSDialog
         Composite buttons = GUIUtil.newPackedButtonContainer(shell);
         buttons.setLayoutData(new GridData(SWT.END, SWT.CENTER, true, false, 2, 1));
 
-        Button refreshBtn = new Button(buttons, SWT.NONE);
+        Button refreshBtn = GUIUtil.createButton(buttons, SWT.NONE);
         refreshBtn.setText("Refresh");
         refreshBtn.setToolTipText("Refresh the content of the version tree to reflect the latest " +
                 "state of the file system");
@@ -255,7 +255,7 @@ public class DlgHistory extends AeroFSDialog
             }
         });
 
-        Button doneBtn = new Button(buttons, SWT.NONE);
+        Button doneBtn = GUIUtil.createButton(buttons, SWT.NONE);
         doneBtn.setText("Close");
         doneBtn.addSelectionListener(new SelectionAdapter()
         {

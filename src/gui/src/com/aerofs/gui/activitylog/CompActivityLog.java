@@ -135,7 +135,7 @@ public class CompActivityLog extends Composite
         fl_composite.spacing = GUIParam.BUTTON_HORIZONTAL_SPACING;
         composite.setLayout(fl_composite);
 
-        _btnMore = new Button(composite, SWT.NONE);
+        _btnMore = GUIUtil.createButton(composite, SWT.NONE);
         _btnMore.setText("Show More");
         _btnMore.setVisible(false);
         _btnMore.addSelectionListener(new SelectionAdapter() {
@@ -147,7 +147,7 @@ public class CompActivityLog extends Composite
         });
 
         if (Cfg.storageType() == StorageType.LINKED) {
-            _btnView = new Button(composite, SWT.NONE);
+            _btnView = GUIUtil.createButton(composite, SWT.NONE);
             _btnView.setText("Reveal File");
             _btnView.setEnabled(false);
             _btnView.addSelectionListener(new SelectionAdapter() {
@@ -163,7 +163,7 @@ public class CompActivityLog extends Composite
             _btnView = null;
         }
 
-        Button btnClose = new Button(composite, SWT.NONE);
+        Button btnClose = GUIUtil.createButton(composite, SWT.NONE);
         btnClose.addSelectionListener(new SelectionAdapter()
         {
             @Override

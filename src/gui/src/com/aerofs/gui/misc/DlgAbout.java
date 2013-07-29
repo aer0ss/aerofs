@@ -100,7 +100,7 @@ public class DlgAbout extends AeroFSDialog
         composite.setLayout(glComposite);
         composite.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 2, 1));
 
-        _btnUpdate = new Button(composite, SWT.NONE);
+        _btnUpdate = GUIUtil.createButton(composite, SWT.NONE);
         _compSpinUpdate = new CompSpin(composite, SWT.NONE);
         _lblUpdateStatus = new Label(composite, SWT.NONE);
         _lblUpdateStatus.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 1, 1));

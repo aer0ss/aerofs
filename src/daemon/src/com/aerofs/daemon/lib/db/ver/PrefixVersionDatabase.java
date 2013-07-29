@@ -17,8 +17,6 @@ import java.sql.SQLException;
 import java.util.Map.Entry;
 
 import static com.aerofs.daemon.lib.db.CoreSchema.*;
-import static com.aerofs.daemon.lib.db.CoreSchema.C_PRE_KIDX;
-import static com.aerofs.daemon.lib.db.CoreSchema.C_PRE_OID;
 
 public class PrefixVersionDatabase extends AbstractDatabase implements IPrefixVersionDatabase
 {

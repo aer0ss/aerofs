@@ -288,7 +288,7 @@ public class DlgManageSharedFolders extends AeroFSDialog
             bar.setLayoutData(new GridData(SWT.FILL, SWT.BOTTOM, true, false));
 
             if (Cfg.storageType() == StorageType.LINKED) {
-                _btnPlus = new Button(bar, SWT.PUSH);
+                _btnPlus = GUIUtil.createButton(bar, SWT.PUSH);
                 _btnPlus.setText("Add...");
                 _btnPlus.setToolTipText("Share a folder");
                 _btnPlus.addSelectionListener(new SelectionAdapter() {
@@ -307,7 +307,7 @@ public class DlgManageSharedFolders extends AeroFSDialog
                 // TODO: use expulsion under the hood to filter out some shared folders?
                 _btnMinus = null;
             } else {
-                _btnMinus = new Button(bar, SWT.PUSH);
+                _btnMinus = GUIUtil.createButton(bar, SWT.PUSH);
                 _btnMinus.setText("Leave");
                 _btnMinus.setToolTipText("Leave a shared folder");
                 _btnMinus.addSelectionListener(new SelectionAdapter() {
@@ -322,7 +322,7 @@ public class DlgManageSharedFolders extends AeroFSDialog
 
             // open only makes sense for linked storage
             if (Cfg.storageType() == StorageType.LINKED) {
-                _btnOpen = new Button(bar, SWT.PUSH);
+                _btnOpen = GUIUtil.createButton(bar, SWT.PUSH);
                 _btnOpen.setText("Open");
                 _btnOpen.setToolTipText("Open folder in file manager");
                 _btnOpen.addSelectionListener(new SelectionAdapter() {
@@ -339,7 +339,7 @@ public class DlgManageSharedFolders extends AeroFSDialog
 
             // add an invisible button if the button bar is empty to preserve control alignment
             if (bar.getChildren().length == 0) {
-                new Button(bar, SWT.PUSH).setVisible(false);
+                GUIUtil.createButton(bar, SWT.PUSH).setVisible(false);
             }
         }
 
@@ -434,7 +434,7 @@ public class DlgManageSharedFolders extends AeroFSDialog
             _btnBar = GUIUtil.newPackedButtonContainer(c);
             _btnBar.setLayoutData(new GridData(SWT.RIGHT, SWT.BOTTOM, true, false));
 
-            _btnPlus = new Button(_btnBar, SWT.PUSH);
+            _btnPlus = GUIUtil.createButton(_btnBar, SWT.PUSH);
             _btnPlus.setText("Invite Others...");
             _btnPlus.setToolTipText("Invite another user to join the shared folder");
             _btnPlus.addSelectionListener(new SelectionAdapter() {

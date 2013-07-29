@@ -177,7 +177,7 @@ public class PreferencesHelper
         _txtRootAnchor = new Text(_comp, SWT.BORDER | SWT.READ_ONLY);
         _txtRootAnchor.setLayoutData(getTextFieldGridData());
 
-        Button btnMoveRoot = new Button(_comp, SWT.NONE);
+        Button btnMoveRoot = GUIUtil.createButton(_comp, SWT.NONE);
         btnMoveRoot.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, false, 1, 1));
         btnMoveRoot.setText("Move...");
         btnMoveRoot.addSelectionListener(new SelectionAdapter()

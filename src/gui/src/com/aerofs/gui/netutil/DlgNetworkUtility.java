@@ -7,6 +7,7 @@ import com.aerofs.gui.AeroFSJFaceDialog;
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUI.ISWTWorker;
 import com.aerofs.gui.GUIParam;
+import com.aerofs.gui.GUIUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.sv.client.SVClient;
@@ -92,7 +93,7 @@ public class DlgNetworkUtility extends AeroFSJFaceDialog
         composite.setLayout(new FillLayout(SWT.HORIZONTAL));
         composite.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false, 1, 1));
 
-        _btnSubmit = new Button(composite, SWT.NONE);
+        _btnSubmit = GUIUtil.createButton(composite, SWT.NONE);
         _btnSubmit.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -101,7 +102,7 @@ public class DlgNetworkUtility extends AeroFSJFaceDialog
         });
         _btnSubmit.setText("    Submit Results    ");
 
-        Button button = new Button(composite, SWT.NONE);
+        Button button = GUIUtil.createButton(composite, SWT.NONE);
         button.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e)

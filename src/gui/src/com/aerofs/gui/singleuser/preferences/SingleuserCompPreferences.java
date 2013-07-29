@@ -6,6 +6,7 @@ package com.aerofs.gui.singleuser.preferences;
 
 import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.gui.GUI;
+import com.aerofs.gui.GUIUtil;
 import com.aerofs.gui.exclusion.DlgExclusion;
 import com.aerofs.gui.preferences.PreferencesHelper;
 import com.aerofs.gui.transfers.DlgThrottling;
@@ -93,7 +94,7 @@ public class SingleuserCompPreferences extends Composite
 
         new Label(this, SWT.NONE);
 
-        final Button btnNotify = new Button(this, SWT.CHECK);
+        final Button btnNotify = GUIUtil.createButton(this, SWT.CHECK);
         btnNotify.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, false, 2, 1));
         btnNotify.setText("Notify me about file changes");
         btnNotify.setSelection(Cfg.db().getBoolean(Key.NOTIFY));
@@ -108,7 +109,7 @@ public class SingleuserCompPreferences extends Composite
         // Enable sync history row
         new Label(this, SWT.NONE);
 
-        final Button btnHistory = new Button(this, SWT.CHECK);
+        final Button btnHistory = GUIUtil.createButton(this, SWT.CHECK);
         btnHistory.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, false, 2, 1));
         btnHistory.setText(S.ENABLE_SYNC_HISTORY);
         btnHistory.setSelection(Cfg.db().getBoolean(Key.SYNC_HISTORY));
@@ -173,7 +174,7 @@ public class SingleuserCompPreferences extends Composite
         composite.setLayout(gl_composite_1);
         composite.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, false, 1, 1));
 
-        Button btnSelectiveSync = new Button(composite, SWT.NONE);
+        Button btnSelectiveSync = GUIUtil.createButton(composite, SWT.NONE);
         btnSelectiveSync.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
         btnSelectiveSync.setText("Selective Sync...");
         btnSelectiveSync.addSelectionListener(new SelectionAdapter()
@@ -185,7 +186,7 @@ public class SingleuserCompPreferences extends Composite
             }
         });
 
-        Button btnBandwidth = new Button(composite, SWT.NONE);
+        Button btnBandwidth = GUIUtil.createButton(composite, SWT.NONE);
         btnBandwidth.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
         btnBandwidth.setText("Limit Bandwidth...");
         btnBandwidth.addSelectionListener(new SelectionAdapter()
@@ -199,7 +200,7 @@ public class SingleuserCompPreferences extends Composite
 
         new Label(composite, SWT.NONE);
 
-        Button button = new Button(composite, SWT.NONE);
+        Button button = GUIUtil.createButton(composite, SWT.NONE);
         button.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
         button.setText(S.UNLINK_THIS_COMPUTER);
         button.addSelectionListener(new SelectionAdapter()

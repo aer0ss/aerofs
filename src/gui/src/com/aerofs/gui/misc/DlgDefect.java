@@ -159,7 +159,7 @@ public class DlgDefect extends AeroFSJFaceDialog
         gl_composite.marginWidth = 0;
         composite.setLayout(gl_composite);
 
-        _sendDiagnosticData = new Button(composite, SWT.CHECK);
+        _sendDiagnosticData = GUIUtil.createButton(composite, SWT.CHECK);
         _sendDiagnosticData.setSelection(true);
         _sendDiagnosticData.setText("Send metadata (including file names)");
 

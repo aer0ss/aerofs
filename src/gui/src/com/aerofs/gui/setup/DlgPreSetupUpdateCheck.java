@@ -71,7 +71,7 @@ public class DlgPreSetupUpdateCheck extends Shell
         GridData gdProgressBar = new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1);
         _prog.setLayoutData(gdProgressBar);
 
-        Button button = new Button(this, SWT.NONE);
+        Button button = GUIUtil.createButton(this, SWT.NONE);
         button.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e)

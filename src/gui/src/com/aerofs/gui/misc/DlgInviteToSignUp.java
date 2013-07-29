@@ -90,7 +90,7 @@ public class DlgInviteToSignUp extends AeroFSDialog implements IInputChangeListe
         _lblStatus = new Label(composite, SWT.NONE);
         _lblStatus.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
 
-        Button btnCancel = new Button(composite, SWT.NONE);
+        Button btnCancel = GUIUtil.createButton(composite, SWT.NONE);
         btnCancel.addSelectionListener(new SelectionAdapter()
         {
             @Override
@@ -101,7 +101,7 @@ public class DlgInviteToSignUp extends AeroFSDialog implements IInputChangeListe
         });
         btnCancel.setText(" " + IDialogConstants.CANCEL_LABEL + " ");
 
-        _btnOk = new Button(composite, SWT.NONE);
+        _btnOk = GUIUtil.createButton(composite, SWT.NONE);
         _btnOk.setText("    " + IDialogConstants.OK_LABEL + "    ");
         _btnOk.setEnabled(false);
         _btnOk.addSelectionListener(new SelectionAdapter() {

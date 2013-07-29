@@ -4,6 +4,7 @@ import com.aerofs.base.Loggers;
 import com.aerofs.gui.AeroFSDialog;
 import com.aerofs.gui.CompSpin;
 import com.aerofs.gui.GUIParam;
+import com.aerofs.gui.GUIUtil;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
@@ -196,7 +197,7 @@ public class DlgJoinSharedFolders extends AeroFSDialog
             fl.spacing = GUIParam.BUTTON_HORIZONTAL_SPACING;
             composite.setLayout(fl);
 
-            Button btnJoin = new Button(composite, SWT.NONE);
+            Button btnJoin = GUIUtil.createButton(composite, SWT.NONE);
             btnJoin.setText("Continue");
             btnJoin.addSelectionListener(new SelectionAdapter()
             {

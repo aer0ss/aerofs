@@ -76,7 +76,7 @@ public class DlgNetworkUtilitySelectDevice extends AeroFSDialog
             }
         });
 
-        Button btnCancel = new Button(shell, SWT.NONE);
+        Button btnCancel = GUIUtil.createButton(shell, SWT.NONE);
         btnCancel.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e)
@@ -87,7 +87,7 @@ public class DlgNetworkUtilitySelectDevice extends AeroFSDialog
         btnCancel.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, true, false, 2, 1));
         btnCancel.setText(" " + IDialogConstants.CANCEL_LABEL + " ");
 
-        _btnOK = new Button(shell, SWT.NONE);
+        _btnOK = GUIUtil.createButton(shell, SWT.NONE);
         _btnOK.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false, 1, 1));
         _btnOK.setText(" " + IDialogConstants.OK_LABEL + " ");
         _btnOK.setEnabled(false);

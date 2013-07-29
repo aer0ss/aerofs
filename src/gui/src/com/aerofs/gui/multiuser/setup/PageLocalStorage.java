@@ -232,10 +232,10 @@ public class PageLocalStorage extends AbstractSetupPage
     {
         _compRootAnchorButton = GUIUtil.newButtonContainer(parent, false);
 
-        _btnUseDefault = new Button(_compRootAnchorButton, SWT.NONE);
+        _btnUseDefault = GUIUtil.createButton(_compRootAnchorButton, SWT.NONE);
         _btnUseDefault.setText(S.SETUP_USE_DEFAULT);
 
-        _btnChangeRootAnchor = new Button(_compRootAnchorButton, SWT.NONE);
+        _btnChangeRootAnchor = GUIUtil.createButton(_compRootAnchorButton, SWT.NONE);
         _btnChangeRootAnchor.setText(S.BTN_CHANGE);
         _btnChangeRootAnchor.setFocus();
 
@@ -247,14 +247,14 @@ public class PageLocalStorage extends AbstractSetupPage
     {
         _compType = new Composite(parent, SWT.NONE);
 
-        _btnLink = new Button(_compType, SWT.RADIO | SWT.WRAP);
+        _btnLink = GUIUtil.createButton(_compType, SWT.RADIO | SWT.WRAP);
         _btnLink.setText(S.SETUP_LINK);
         _btnLink.setFont(GUIUtil.makeBold(_btnLink.getFont()));
 
         _lblLinkDesc = new Label(_compType, SWT.WRAP);
         _lblLinkDesc.setText(S.SETUP_LINK_DESC);
 
-        _btnBlock = new Button(_compType, SWT.RADIO | SWT.WRAP);
+        _btnBlock = GUIUtil.createButton(_compType, SWT.RADIO | SWT.WRAP);
         _btnBlock.setText(S.SETUP_BLOCK);
         _btnBlock.setFont(GUIUtil.makeBold(_btnBlock.getFont()));
 
@@ -291,10 +291,10 @@ public class PageLocalStorage extends AbstractSetupPage
 
         _compSpin = new CompSpin(_compButton, SWT.NONE);
 
-        _btnBack = new Button(_compButton, SWT.NONE);
+        _btnBack = GUIUtil.createButton(_compButton, SWT.NONE);
         _btnBack.setText(S.BTN_BACK);
 
-        _btnInstall = new Button(_compButton, SWT.NONE);
+        _btnInstall = GUIUtil.createButton(_compButton, SWT.NONE);
         _btnInstall.setText(S.SETUP_BTN_INSTALL);
         getShell().setDefaultButton(_btnInstall);
 

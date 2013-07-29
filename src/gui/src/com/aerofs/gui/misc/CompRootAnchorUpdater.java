@@ -9,6 +9,7 @@ import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.id.SID;
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIParam;
+import com.aerofs.gui.GUIUtil;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.RootAnchorUtil;
 import com.aerofs.lib.S;
@@ -82,7 +83,7 @@ public class CompRootAnchorUpdater extends Composite
         composite.setLayout(new FillLayout(SWT.HORIZONTAL));
         composite.setLayoutData(new GridData(SWT.CENTER, SWT.CENTER, true, false, 2, 1));
 
-        Button newLocationBtn = new Button(composite, SWT.NONE);
+        Button newLocationBtn = GUIUtil.createButton(composite, SWT.NONE);
         newLocationBtn.setText(NEW_LOCATION_TEXT);
         newLocationBtn.addSelectionListener(new SelectionAdapter() {
             @Override
@@ -92,7 +93,7 @@ public class CompRootAnchorUpdater extends Composite
             }
         });
 
-        Button unlinkBtn = new Button(composite, SWT.NONE);
+        Button unlinkBtn = GUIUtil.createButton(composite, SWT.NONE);
         unlinkBtn.setText(S.UNLINK_THIS_COMPUTER);
         unlinkBtn.addSelectionListener(new SelectionAdapter() {
             @Override
@@ -102,7 +103,7 @@ public class CompRootAnchorUpdater extends Composite
             }
         });
 
-        Button quitBtn = new Button(composite, SWT.NONE);
+        Button quitBtn = GUIUtil.createButton(composite, SWT.NONE);
         quitBtn.setText(QUIT_BUTTON_TEXT);
         quitBtn.addSelectionListener(new SelectionAdapter() {
             @Override

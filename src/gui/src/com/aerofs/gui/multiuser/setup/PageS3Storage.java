@@ -304,10 +304,10 @@ public class PageS3Storage extends AbstractSetupPage
 
         _compSpin = new CompSpin(_compButton, SWT.NONE);
 
-        _btnBack = new Button(_compButton, SWT.NONE);
+        _btnBack = GUIUtil.createButton(_compButton, SWT.NONE);
         _btnBack.setText(S.BTN_BACK);
 
-        _btnInstall = new Button(_compButton, SWT.NONE);
+        _btnInstall = GUIUtil.createButton(_compButton, SWT.NONE);
         _btnInstall.setText(S.SETUP_BTN_INSTALL);
 
         RowLayout layout = new RowLayout(SWT.HORIZONTAL);

@@ -75,10 +75,10 @@ public class DlgThrottling extends AeroFSDialog {
         composite_2.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false, 1, 1));
         composite_2.setLayout(new FillLayout(SWT.HORIZONTAL));
 
-        Button btnOK = new Button(composite_2, SWT.NONE);
+        Button btnOK = GUIUtil.createButton(composite_2, SWT.NONE);
         btnOK.setText("  " + IDialogConstants.OK_LABEL + "  ");
 
-        _btnCancel = new Button(composite_2, SWT.NONE);
+        _btnCancel = GUIUtil.createButton(composite_2, SWT.NONE);
         _btnCancel.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e)
@@ -116,7 +116,7 @@ public class DlgThrottling extends AeroFSDialog {
         lblDownloadRate.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, true, true, 1, 1));
         lblDownloadRate.setText("Download rate:");
 
-        _btnDownUnlimited = new Button(composite, SWT.RADIO);
+        _btnDownUnlimited = GUIUtil.createButton(composite, SWT.RADIO);
         _btnDownUnlimited.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e)
@@ -128,7 +128,7 @@ public class DlgThrottling extends AeroFSDialog {
         _btnDownUnlimited.setText("Unlimited");
         new Label(composite, SWT.NONE);
 
-        _btnDownLimit = new Button(composite, SWT.RADIO);
+        _btnDownLimit = GUIUtil.createButton(composite, SWT.RADIO);
         _btnDownLimit.setText("Limit to");
         _btnDownLimit.addSelectionListener(new SelectionAdapter() {
             @Override
@@ -169,7 +169,7 @@ public class DlgThrottling extends AeroFSDialog {
         gd_txtDown.widthHint = 40;
         _txtDown.setLayoutData(gd_txtDown);
 
-        _btnDownKBS = new Button(composite_1, SWT.RADIO);
+        _btnDownKBS = GUIUtil.createButton(composite_1, SWT.RADIO);
         _btnDownKBS.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e)
@@ -181,7 +181,7 @@ public class DlgThrottling extends AeroFSDialog {
         _btnDownKBS.setSelection(true);
         _btnDownKBS.setText("KB/s");
 
-        _btnDownMBS = new Button(composite_1, SWT.RADIO);
+        _btnDownMBS = GUIUtil.createButton(composite_1, SWT.RADIO);
         _btnDownMBS.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e)
@@ -206,7 +206,7 @@ public class DlgThrottling extends AeroFSDialog {
         lblUploadRate.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, true, false, 1, 1));
         lblUploadRate.setText("Upload rate:");
 
-        _btnUpUnlimited = new Button(composite, SWT.RADIO);
+        _btnUpUnlimited = GUIUtil.createButton(composite, SWT.RADIO);
         _btnUpUnlimited.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e)
@@ -218,7 +218,7 @@ public class DlgThrottling extends AeroFSDialog {
         _btnUpUnlimited.setText("Unlimited");
         new Label(composite, SWT.NONE);
 
-        _btnUpLimit = new Button(composite, SWT.RADIO);
+        _btnUpLimit = GUIUtil.createButton(composite, SWT.RADIO);
         _btnUpLimit.setText("Limit to");
         _btnUpLimit.addSelectionListener(new SelectionAdapter() {
             @Override
@@ -259,7 +259,7 @@ public class DlgThrottling extends AeroFSDialog {
         gd_txtUp.widthHint = 40;
         _txtUp.setLayoutData(gd_txtUp);
 
-        _btnUpKBS = new Button(composite_1, SWT.RADIO);
+        _btnUpKBS = GUIUtil.createButton(composite_1, SWT.RADIO);
         _btnUpKBS.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e)
@@ -271,7 +271,7 @@ public class DlgThrottling extends AeroFSDialog {
         _btnUpKBS.setSelection(true);
         _btnUpKBS.setText("KB/s");
 
-        _btnUpMBS = new Button(composite_1, SWT.RADIO);
+        _btnUpMBS = GUIUtil.createButton(composite_1, SWT.RADIO);
         _btnUpMBS.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e)

@@ -62,7 +62,7 @@ public abstract class TaskDialog extends AeroFSDialog implements ISWTWorker
             final Composite c = GUIUtil.newButtonContainer(shell, false);
             c.setLayoutData(new GridData(SWT.RIGHT, SWT.BOTTOM, true, false, 2, 1));
 
-            Button bYes = new Button(c, SWT.NONE);
+            Button bYes = GUIUtil.createButton(c, SWT.NONE);
             bYes.setText("   Yes   ");
             bYes.addSelectionListener(new SelectionAdapter() {
                 @Override
@@ -80,7 +80,7 @@ public abstract class TaskDialog extends AeroFSDialog implements ISWTWorker
                 }
             });
 
-            Button bNo = new Button(c, SWT.NONE);
+            Button bNo = GUIUtil.createButton(c, SWT.NONE);
             bNo.setText("   No   ");
             bNo.addSelectionListener(new SelectionAdapter()
             {

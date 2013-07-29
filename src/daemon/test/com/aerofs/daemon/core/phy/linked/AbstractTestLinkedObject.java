@@ -29,7 +29,6 @@ import org.mockito.Mock;
 import java.io.IOException;
 import java.sql.SQLException;
 
-import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.*;
 
 public abstract class AbstractTestLinkedObject<T extends IPhysicalObject> extends AbstractTest

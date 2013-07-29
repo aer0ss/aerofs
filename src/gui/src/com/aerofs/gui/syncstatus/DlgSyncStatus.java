@@ -96,7 +96,7 @@ public class DlgSyncStatus extends AeroFSDialog
         buttons.setLayoutData(new GridData(GridData.END, GridData.CENTER, false, false, 3, 1));
         buttons.setLayout(new RowLayout());
 
-        Button doneBtn = new Button(buttons, SWT.NONE);
+        Button doneBtn = GUIUtil.createButton(buttons, SWT.NONE);
         doneBtn.setText("Done");
         doneBtn.addSelectionListener(new SelectionAdapter()
         {
