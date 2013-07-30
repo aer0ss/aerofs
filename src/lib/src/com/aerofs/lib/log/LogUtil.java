@@ -74,11 +74,6 @@ public abstract class LogUtil
         LoggerContext context = (LoggerContext) LoggerFactory.getILoggerFactory();
         context.reset();
 
-        PatternLayoutEncoder encoder = new PatternLayoutEncoder();
-        encoder.setPattern("%d{HHmmss.SSS}%.-1level %thread @%c{0}, %m%n");
-        encoder.setContext(context);
-        encoder.start();
-
         // -- Weird and subtle warning --
         // Daily file rollover requires
         // - triggering policy: when to roll over (i.e., daily)
@@ -88,8 +83,7 @@ public abstract class LogUtil
                 = new DefaultTimeBasedFileNamingAndTriggeringPolicy<ILoggingEvent>();
         trigger.setContext(context);
 
-        TimeBasedRollingPolicy<ILoggingEvent> rollingPolicy
-                = new TimeBasedRollingPolicy<ILoggingEvent>();
+        TimeBasedRollingPolicy<ILoggingEvent> rollingPolicy = new TimeBasedRollingPolicy<ILoggingEvent>();
         rollingPolicy.setContext(context);
         rollingPolicy.setFileNamePattern(filename + DATE_SUFFIX);
         rollingPolicy.setTimeBasedFileNamingAndTriggeringPolicy(trigger);
@@ -101,14 +95,13 @@ public abstract class LogUtil
         // The appender controls writing log messages to a destination, in this case a file.
         RollingFileAppender<ILoggingEvent> appender = new RollingFileAppender<ILoggingEvent>();
         appender.setAppend(true);
-        appender.setEncoder(encoder);
+        appender.setEncoder(newEncoder(context));
         appender.setFile(filename);
         appender.setName("LOGFILE");
         appender.setPrudent(false);
         appender.setRollingPolicy(rollingPolicy);
         appender.setTriggeringPolicy(trigger);
         appender.setContext(context);
-
 
         // finally, link the rolling policy object up to it's parent - the appender. sigh.
         rollingPolicy.setParent(appender);
@@ -123,27 +116,30 @@ public abstract class LogUtil
         if (consoleOutput) {
             ConsoleAppender<ILoggingEvent> console = new ConsoleAppender<ILoggingEvent>();
             console.setContext(context);
-            console.setEncoder(encoder);
+            console.setEncoder(newEncoder(context));
             console.start();
             rootLogger.addAppender(console);
         }
     }
 
+    private static PatternLayoutEncoder newEncoder(LoggerContext context)
+    {
+        PatternLayoutEncoder encoder = new PatternLayoutEncoder();
+        encoder.setPattern("%d{HHmmss.SSS}%.-1level %thread @%c{0}, %m%n");
+        encoder.setContext(context);
+        encoder.start();
+        return encoder;
+    }
+
     private static ch.qos.logback.classic.Level getLevel(Level logLevel)
     {
-        if (logLevel == Level.ERROR) {
-            return ch.qos.logback.classic.Level.ERROR;
-        } else if (logLevel == Level.WARN) {
-            return ch.qos.logback.classic.Level.WARN;
-        } else if (logLevel == Level.INFO) {
-            return ch.qos.logback.classic.Level.INFO;
-        } else if (logLevel == Level.DEBUG) {
-            return ch.qos.logback.classic.Level.DEBUG;
-        }  else if (logLevel == Level.TRACE) {
-            return ch.qos.logback.classic.Level.TRACE;
-        }
-        assert logLevel == Level.NONE : "Illegal log level " + logLevel.toString();
-        return ch.qos.logback.classic.Level.OFF;
+        if (logLevel == Level.ERROR)      return ch.qos.logback.classic.Level.ERROR;
+        else if (logLevel == Level.WARN)  return ch.qos.logback.classic.Level.WARN;
+        else if (logLevel == Level.INFO)  return ch.qos.logback.classic.Level.INFO;
+        else if (logLevel == Level.DEBUG) return ch.qos.logback.classic.Level.DEBUG;
+        else if (logLevel == Level.TRACE) return ch.qos.logback.classic.Level.TRACE;
+        else if (logLevel == Level.NONE)  return ch.qos.logback.classic.Level.OFF;
+        else throw new IllegalArgumentException("Illegal log level " + logLevel.toString());
     }
 
     /**
