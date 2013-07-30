@@ -9,11 +9,11 @@ import com.aerofs.base.id.UniqueID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.sp.server.lib.device.Device;
 import com.aerofs.sp.server.lib.user.User;
+import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
-import sun.security.pkcs.PKCS10;
 
 import static junit.framework.Assert.assertTrue;
 import static org.mockito.Matchers.any;
@@ -47,7 +47,8 @@ public class TestSP_RegisterTeamServerDevice extends AbstractSPTest
     {
         registerTeamServerDevice();
 
-        verify(certgen).generateCertificate(eq(tsUser.id()), eq(tsDevice.id()), any(PKCS10.class));
+        verify(certgen).generateCertificate(eq(tsUser.id()), eq(tsDevice.id()),
+                any(PKCS10CertificationRequest.class));
 
         // Can't conveniently use verify() since ddb.insertDevice() may be called many times during
         // test initialization.

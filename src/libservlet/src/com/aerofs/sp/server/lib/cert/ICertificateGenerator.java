@@ -7,7 +7,7 @@ package com.aerofs.sp.server.lib.cert;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.sp.server.lib.cert.CertificateGenerator.CertificationResult;
-import sun.security.pkcs.PKCS10;
+import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 
 import java.io.IOException;
 import java.security.SignatureException;
@@ -29,6 +29,7 @@ public interface ICertificateGenerator
      * @throws IOException when there is an internal error creating the certificate.
      * @throws SignatureException when there is a problem with the given CSR.
      */
-    public CertificationResult generateCertificate(UserID userId, DID did, PKCS10 csr)
+    public CertificationResult generateCertificate(UserID userId, DID did,
+            PKCS10CertificationRequest csr)
         throws IOException, SignatureException, CertificateException;
 }
