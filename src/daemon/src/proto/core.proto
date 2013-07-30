@@ -37,8 +37,6 @@ message PBCore {
         LIST_REV_HISTORY_REQUEST = 18;
         LIST_REV_HISTORY_RESPONSE = 19;
         GET_REVISION_CALL = 20;
-
-        DIAGNOSIS = 100;
     }
 
     required Type type = 1;
@@ -62,8 +60,6 @@ message PBCore {
     optional PBListRevChildrenResponse list_rev_children_response = 14;
     optional PBListRevHistoryRequest list_rev_history_request = 15;
     optional PBListRevHistoryResponse list_rev_history_response = 16;
-
-    optional PBCoreDiagnosis diagnosis = 100;
 }
 
 message PBUpdateSenderFilter {
@@ -105,23 +101,6 @@ message PBListRevHistoryResponse {
     repeated PBVer version = 3;
     repeated uint64 mtime = 4 [packed=true];
     repeated uint64 length = 5 [packed=true];
-}
-
-message PBCoreDiagnosis {
-
-    enum Type {
-        REQUEST_TRANSPORT_FLOOD = 0;
-    }
-
-    message PBRequestTransportFlood {
-        required uint64 duration = 1;
-        required uint32 seqStart = 2;
-        required uint32 seqEnd = 3;
-    }
-
-    required Type type = 1;
-
-    optional PBRequestTransportFlood request_transport_flood = 2;
 }
 
 message PBNewUpdate {

@@ -8,7 +8,6 @@ message PBTPHeader {
     enum Type {
         DATAGRAM = 0;
         STREAM = 13;
-        DIAGNOSIS = 100;
 
         // TCP control messages
         TCP_PING = 1;
@@ -42,8 +41,6 @@ message PBTPHeader {
 
     // only in TRANSPORT_CHECK_PULSE_* messages
     optional PBCheckPulse check_pulse = 10;
-
-    optional PBTransportDiagnosis diagnosis = 100;
 }
 
 message PBStream {
@@ -69,41 +66,6 @@ message PBStream {
     optional uint32 seq_num = 3;
 
     optional InvalidationReason reason = 4;
-}
-
-message PBTransportDiagnosis {
-
-    enum Type {
-        // may be sent via unreliable channels
-        PING = 0;
-        PONG = 1;
-
-        // must be sent via reliable channels
-        FLOOD_DISCARD = 2;  // message followed by random bytes
-        FLOOD_STAT_CALL = 3;    // message followed by random bytes
-        FLOOD_STAT_REPLY = 4;
-    }
-
-    message PBPing {
-        required uint32 ping_id = 1;
-    }
-
-    message PBFloodStatCall {
-        required uint32 seq = 1;
-    }
-
-    message PBFloodStatReply {
-        required uint32 seq = 1;
-        required uint64 time = 2;
-        required uint64 bytes = 3;
-    }
-
-    required Type type = 1;
-
-    optional PBPing ping = 2;
-    optional PBFloodStatCall flood_stat_call = 4;
-    optional PBFloodStatReply flood_stat_reply = 5;
-    optional PBCheckPulse check_pulse = 6;
 }
 
 message PBZephyrCandidateInfo {

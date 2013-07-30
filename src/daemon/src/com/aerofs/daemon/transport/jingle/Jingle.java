@@ -25,7 +25,6 @@ import com.aerofs.daemon.transport.lib.PulseManager;
 import com.aerofs.daemon.transport.lib.TransportProtocolHandler;
 import com.aerofs.daemon.transport.lib.StreamManager;
 import com.aerofs.daemon.transport.lib.TPUtil;
-import com.aerofs.daemon.transport.lib.TransportDiagnosisState;
 import com.aerofs.daemon.transport.lib.TransportStats;
 import com.aerofs.daemon.transport.netty.ClientHandler;
 import com.aerofs.daemon.transport.netty.IUnicastCallbacks;
@@ -64,7 +63,6 @@ public class Jingle implements ITransportImpl, IUnicastCallbacks
     private static final Logger l = Loggers.getLogger(Jingle.class);
     private static final String SIGNAL_THREAD_THREAD_ID = "st";
 
-    private final TransportDiagnosisState _tds = new TransportDiagnosisState();
     private final BlockingPrioQueue<IEvent> _q;
     private final IBlockingPrioritizedEventSink<IEvent> _sink;
     private final EventDispatcher _disp = new EventDispatcher();
@@ -196,12 +194,6 @@ public class Jingle implements ITransportImpl, IUnicastCallbacks
     public StreamManager sm()
     {
         return _sm;
-    }
-
-    @Override
-    public TransportDiagnosisState tds()
-    {
-        return _tds;
     }
 
     @Override

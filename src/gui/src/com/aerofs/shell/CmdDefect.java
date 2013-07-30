@@ -4,14 +4,16 @@
 
 package com.aerofs.shell;
 
-import com.aerofs.InternalDiagnostics;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.labeling.L;
+import com.aerofs.lib.JsonFormat;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
+import com.aerofs.proto.Files.PBDumpStat;
+import com.aerofs.proto.Files.PBDumpStat.PBTransport;
 import com.aerofs.ritual.RitualBlockingClient;
 import com.aerofs.sv.client.SVClient;
 import com.aerofs.ui.UI;
@@ -37,7 +39,7 @@ public class CmdDefect implements IShellCommand<ShProgram>
 
         String daemonStatus;
         try {
-            daemonStatus = InternalDiagnostics.dumpFullDaemonStatus(ritual);
+            daemonStatus = dumpFullDaemonStatus(ritual);
         } catch (Exception e) {
             daemonStatus = "(cannot dump daemon status: " + Util.e(e) + ")";
         }
@@ -66,6 +68,25 @@ public class CmdDefect implements IShellCommand<ShProgram>
                 l.warn("log daemon threads: " + Util.e(e));
             }
         }
+    }
+
+    private static String dumpFullDaemonStatus(RitualBlockingClient ritual)
+            throws Exception
+    {
+        PBDumpStat template = PBDumpStat.newBuilder()
+                .setUpTime(0)
+                .addTransport(PBTransport.newBuilder()
+                        .setBytesIn(0)
+                        .setBytesOut(0)
+                        .addConnection("")
+                        .setName("")
+                        .setDiagnosis(""))
+                .setMisc("")
+                .build();
+
+        PBDumpStat reply = ritual.dumpStats(template).getStats();
+
+        return Util.realizeControlChars(JsonFormat.prettyPrint(reply));
     }
 
     @Override

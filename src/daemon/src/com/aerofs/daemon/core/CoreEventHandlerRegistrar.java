@@ -26,9 +26,6 @@ import com.aerofs.daemon.core.admin.HdReloadConfig;
 import com.aerofs.daemon.core.admin.HdRelocateRootAnchor;
 import com.aerofs.daemon.core.admin.HdSetExpelled;
 import com.aerofs.daemon.core.net.HdGetTransferStat;
-import com.aerofs.daemon.core.net.HdTransportFlood;
-import com.aerofs.daemon.core.net.HdTransportFloodQuery;
-import com.aerofs.daemon.core.net.HdTransportPing;
 import com.aerofs.daemon.core.admin.HdUpdateACL;
 import com.aerofs.daemon.core.fs.HdCreateObject;
 import com.aerofs.daemon.core.fs.HdDeleteBranch;
@@ -78,9 +75,6 @@ import com.aerofs.daemon.event.admin.EIPauseOrResumeSyncing;
 import com.aerofs.daemon.event.admin.EIReloadConfig;
 import com.aerofs.daemon.event.admin.EIRelocateRootAnchor;
 import com.aerofs.daemon.event.admin.EISetExpelled;
-import com.aerofs.daemon.event.admin.EITransportFlood;
-import com.aerofs.daemon.event.admin.EITransportFloodQuery;
-import com.aerofs.daemon.event.admin.EITransportPing;
 import com.aerofs.daemon.event.admin.EIUpdateACL;
 import com.aerofs.daemon.event.fs.EICreateObject;
 import com.aerofs.daemon.event.fs.EIDeleteBranch;
@@ -129,9 +123,6 @@ public class CoreEventHandlerRegistrar implements ICoreEventHandlerRegistrar
     private final HdPresence _hdPresence;
     private final HdListConflicts _hdListConflicts;
     private final HdExportConflict _hdExportConflict;
-    private final HdTransportFloodQuery _hdTransportFloodQuery;
-    private final HdTransportFlood _hdTransportFlood;
-    private final HdTransportPing _hdTransportPing;
     private final HdGetTransferStat _hdGetTransferStat;
     private final HdDumpStat _hdDumpStat;
     private final HdReloadConfig _hdReloadConfig;
@@ -170,8 +161,7 @@ public class CoreEventHandlerRegistrar implements ICoreEventHandlerRegistrar
             HdMaxcastMessage hdMaxcastMessage, HdUnicastMessage hdUnicastMessage,
             HdTransportMetricsUpdated hdTransportMetricsUpdated,
             HdPresence hdPresence, HdListConflicts hdListConflicts,
-            HdExportConflict hdExportConflict, HdTransportFloodQuery hdTransportFloodQuery,
-            HdTransportFlood hdTransportFlood, HdTransportPing hdTransportPing,
+            HdExportConflict hdExportConflict,
             HdDumpStat hdDumpStat, HdReloadConfig hdReloadConfig,
             HdPauseOrResumeSyncing hdPauseOrResumeSyncing, HdGetACL hdGetACL,
             HdUpdateACL hdUpdateACL, HdDeleteACL hdDeleteACL, HdSetAttr hdSetAttr,
@@ -208,9 +198,6 @@ public class CoreEventHandlerRegistrar implements ICoreEventHandlerRegistrar
         _hdPresence = hdPresence;
         _hdListConflicts = hdListConflicts;
         _hdExportConflict = hdExportConflict;
-        _hdTransportFloodQuery = hdTransportFloodQuery;
-        _hdTransportFlood = hdTransportFlood;
-        _hdTransportPing = hdTransportPing;
         _hdDumpStat = hdDumpStat;
         _hdReloadConfig = hdReloadConfig;
         _hdPauseOrResumeSyncing = hdPauseOrResumeSyncing;
@@ -266,9 +253,6 @@ public class CoreEventHandlerRegistrar implements ICoreEventHandlerRegistrar
                 .setHandler_(EILeaveSharedFolder.class, _hdLeaveSharedFolder)
                 .setHandler_(EIListSharedFolders.class, _hdListSharedFolders)
                 .setHandler_(EIListSharedFolderInvitations.class, _hdListSharedFolderInvitations)
-                .setHandler_(EITransportPing.class, _hdTransportPing)
-                .setHandler_(EITransportFlood.class, _hdTransportFlood)
-                .setHandler_(EITransportFloodQuery.class, _hdTransportFloodQuery)
                 .setHandler_(EIListConflicts.class, _hdListConflicts)
                 .setHandler_(EIExportConflict.class, _hdExportConflict)
                 .setHandler_(EISetExpelled.class, _hdSetExpelled)

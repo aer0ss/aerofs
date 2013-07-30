@@ -24,7 +24,6 @@ import com.aerofs.daemon.transport.lib.PulseManager;
 import com.aerofs.daemon.transport.lib.TransportProtocolHandler;
 import com.aerofs.daemon.transport.lib.StreamManager;
 import com.aerofs.daemon.transport.lib.TPUtil;
-import com.aerofs.daemon.transport.lib.TransportDiagnosisState;
 import com.aerofs.daemon.transport.lib.TransportStats;
 import com.aerofs.daemon.transport.netty.ClientHandler;
 import com.aerofs.daemon.transport.netty.IUnicastCallbacks;
@@ -82,7 +81,6 @@ public class TCP implements IUnicastCallbacks, ITransportImpl, IARPChangeListene
     private final Scheduler _sched;
     private final EventDispatcher _disp = new EventDispatcher();
     private final StreamManager _sm = new StreamManager();
-    private final TransportDiagnosisState _tds = new TransportDiagnosisState();
     private final PulseManager _pm = new PulseManager();
 
     public TCP(
@@ -288,12 +286,6 @@ public class TCP implements IUnicastCallbacks, ITransportImpl, IARPChangeListene
     public StreamManager sm()
     {
         return _sm;
-    }
-
-    @Override
-    public TransportDiagnosisState tds()
-    {
-        return _tds;
     }
 
     IBlockingPrioritizedEventSink<IEvent> sink()

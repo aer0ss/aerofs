@@ -7,7 +7,6 @@ import com.aerofs.base.async.UncancellableFuture;
 import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.ex.Exceptions;
-import com.aerofs.base.id.DID;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.daemon.core.Core;
@@ -43,9 +42,6 @@ import com.aerofs.daemon.event.admin.EIReloadConfig;
 import com.aerofs.daemon.event.admin.EIRelocateRootAnchor;
 import com.aerofs.daemon.event.admin.EISetExpelled;
 import com.aerofs.daemon.event.admin.EITestMultiuserJoinRootStore;
-import com.aerofs.daemon.event.admin.EITransportFlood;
-import com.aerofs.daemon.event.admin.EITransportFloodQuery;
-import com.aerofs.daemon.event.admin.EITransportPing;
 import com.aerofs.daemon.event.admin.EIUpdateACL;
 import com.aerofs.daemon.event.fs.EICreateObject;
 import com.aerofs.daemon.event.fs.EIDeleteBranch;
@@ -101,8 +97,6 @@ import com.aerofs.proto.Ritual.PBObjectAttributes;
 import com.aerofs.proto.Ritual.PBSyncStatus;
 import com.aerofs.proto.Ritual.TestGetAliasObjectReply;
 import com.aerofs.proto.Ritual.TestGetObjectIdentifierReply;
-import com.aerofs.proto.Ritual.TransportFloodQueryReply;
-import com.aerofs.proto.Ritual.TransportPingReply;
 import com.aerofs.sv.client.SVClient;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -397,45 +391,6 @@ public class RitualService implements IRitualService
                 .setUpTime(_fromStartup.elapsed())
                 .setBytesIn(_ts.bytesIn())
                 .setBytesOut(_ts.bytesOut())
-                .build());
-    }
-
-    @Override
-    public ListenableFuture<TransportPingReply> transportPing(ByteString deviceId, Integer seqPrev,
-            Integer seqNext, Boolean forceNext, Boolean ignoreOffline)
-            throws Exception
-    {
-        EITransportPing ev = new EITransportPing(new DID(deviceId),
-                seqPrev, seqNext, forceNext, ignoreOffline);
-        ev.execute(PRIO);
-
-        TransportPingReply.Builder bd = TransportPingReply.newBuilder();
-        Long rtt = ev.rtt();
-        if (rtt != null) bd.setRtt(rtt);
-        return createReply(bd.build());
-    }
-
-    @Override
-    public ListenableFuture<Void> transportFlood(ByteString deviceId, Boolean send,
-            Integer seqStart, Integer seqEnd, Long duration, @Nullable String sname)
-            throws Exception
-    {
-        EITransportFlood ev = new EITransportFlood(new DID(deviceId),
-                send, seqStart, seqEnd, duration, sname);
-        ev.execute(PRIO);
-        return createVoidReply();
-    }
-
-    @Override
-    public ListenableFuture<TransportFloodQueryReply> transportFloodQuery(ByteString deviceId,
-            Integer seq)
-            throws Exception
-    {
-        EITransportFloodQuery ev = new EITransportFloodQuery(new DID(deviceId), seq);
-        ev.execute(PRIO);
-        return createReply(TransportFloodQueryReply.newBuilder()
-                .setBytes(ev.bytes_())
-                .setTime(ev.time_())
                 .build());
     }
 

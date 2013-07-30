@@ -31,7 +31,6 @@ import com.aerofs.daemon.transport.lib.PulseManager;
 import com.aerofs.daemon.transport.lib.PulseManager.GenericPulseDeletionWatcher;
 import com.aerofs.daemon.transport.lib.StreamManager;
 import com.aerofs.daemon.transport.lib.TPUtil;
-import com.aerofs.daemon.transport.lib.TransportDiagnosisState;
 import com.aerofs.daemon.transport.lib.TransportStats;
 import com.aerofs.daemon.transport.xmpp.ISignallingService;
 import com.aerofs.daemon.transport.xmpp.ISignallingServiceListener;
@@ -53,7 +52,6 @@ import com.aerofs.proto.Files.PBDumpStat;
 import com.aerofs.proto.Transport.PBCheckPulse;
 import com.aerofs.proto.Transport.PBStream;
 import com.aerofs.proto.Transport.PBTPHeader;
-import com.aerofs.proto.Transport.PBTransportDiagnosis;
 import com.aerofs.rocklog.RockLog;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jivesoftware.smack.PacketListener;
@@ -77,8 +75,6 @@ import java.util.Set;
 import static com.aerofs.base.id.JabberID.did2FormAJid;
 import static com.aerofs.daemon.lib.DaemonParam.Zephyr.QUEUE_LENGTH;
 import static com.aerofs.daemon.transport.lib.PulseManager.newCheckPulseReply;
-import static com.aerofs.daemon.transport.lib.TPUtil.makeDiagnosis;
-import static com.aerofs.daemon.transport.lib.TPUtil.processUnicastControlDiagnosis;
 import static com.aerofs.daemon.transport.lib.TPUtil.processUnicastHeader;
 import static com.aerofs.daemon.transport.lib.TPUtil.registerCommonHandlers;
 import static com.aerofs.daemon.transport.lib.TPUtil.registerMulticastHandler;
@@ -112,7 +108,6 @@ public final class Zephyr implements ITransportImpl, IUnicast, IConnectionServic
     private final Scheduler scheduler;
     private Thread dispatcherThread;
 
-    private final TransportDiagnosisState transportDiagnosisState = new TransportDiagnosisState();
     private final PulseManager pulseManager = new PulseManager();
     private final StreamManager streamManager = new StreamManager();
     private final MaxcastFilterReceiver maxcastFilterReceiver;
@@ -449,12 +444,6 @@ public final class Zephyr implements ITransportImpl, IUnicast, IConnectionServic
         return streamManager;
     }
 
-    @Override
-    public TransportDiagnosisState tds()
-    {
-        return transportDiagnosisState;
-    }
-
     public IBlockingPrioritizedEventSink<IEvent> sink()
     {
         return outgoingEventSink;
@@ -541,16 +530,6 @@ public final class Zephyr implements ITransportImpl, IUnicast, IConnectionServic
         }
     }
 
-    private void processDiagnosis(DID did, PBTransportDiagnosis dg)
-            throws ExProtocolError
-    {
-        PBTransportDiagnosis dgret = processUnicastControlDiagnosis(did, dg, zephyrConnectionService, transportDiagnosisState);
-        if (dgret != null) {
-            PBTPHeader ret = makeDiagnosis(dgret);
-            sendControl(did, ret, Prio.LO);
-        }
-    }
-
     private void sendControl(DID did, @Nullable PBTPHeader hdr, Prio pri)
     {
         if (hdr == null) {
@@ -577,11 +556,6 @@ public final class Zephyr implements ITransportImpl, IUnicast, IConnectionServic
                 PBCheckPulse cp = hdr.getCheckPulse();
                 checkNotNull(cp, "invalid pulse msg from d:" + did);
                 processPulseControl(did, cp, (type == TRANSPORT_CHECK_PULSE_CALL));
-                break;
-            case DIAGNOSIS:
-                PBTransportDiagnosis dg = hdr.getDiagnosis();
-                checkNotNull(dg, "invalid diagnosis from d:" + did);
-                processDiagnosis(did, dg);
                 break;
             default:
                 processStreamControl(did, hdr);

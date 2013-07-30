@@ -7,8 +7,6 @@ public class UIParam
     public static final long UPDATE_CHECKER_INITIAL_DELAY = 10 * C.SEC;
     public static final long UPDATE_CHECKER_INTERVAL = 1 * C.HOUR;
     public static final long ROOT_ANCHOR_POLL_INTERVAL= 10 * C.SEC;
-    public static final long TRANSPORT_PING_SAMPLE_TIME_WINDOW = 30 * C.MIN;
-    public static final long TRANSPORT_FLOOD_DURATION = 10 * C.SEC;
     public static final long LOGIN_PASSWD_RETRY_DELAY = 3 * C.SEC;
 
     public static final long DM_RESTART_INTERVAL        = 5 * C.SEC;

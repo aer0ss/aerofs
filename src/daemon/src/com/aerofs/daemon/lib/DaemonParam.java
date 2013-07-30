@@ -65,8 +65,6 @@ public class DaemonParam
         public static final int DS_CACHE_SIZE               = 10 * C.KB;
     }
 
-    public static final int TRANSPORT_DIAGNOSIS_CACHE_CAPACITY = 8;
-
     // TODO BUGBUG there are unknown deadlocks
     // test with pathologically small lengths e.g. 1
     public static final int QUEUE_LENGTH_CORE               = QUEUE_LENGTH_DEFAULT;
@@ -87,8 +85,6 @@ public class DaemonParam
     // headers, size increment due to encryption, etc
     public static final int MAX_TRANSPORT_MESSAGE_SIZE  =
         Math.max(MAX_UNICAST_MESSAGE_SIZE, MAX_MAX_MAXCAST_MESSAGE_SIZE) * 3;
-
-    public static final int TRANSPORT_FLOOD_MESSAGE_SIZE = MAX_TRANSPORT_MESSAGE_SIZE / 2;
 
     public static final long ANTI_ENTROPY_INTERVAL = 30 * C.SEC;
 

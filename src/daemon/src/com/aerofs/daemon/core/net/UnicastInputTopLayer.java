@@ -14,7 +14,6 @@ import com.aerofs.daemon.core.CoreUtil;
 import com.aerofs.daemon.core.IDeviceEvictionListener;
 import com.aerofs.daemon.core.net.IncomingStreams.StreamKey;
 import com.aerofs.daemon.core.protocol.ComputeHashCall;
-import com.aerofs.daemon.core.protocol.Diagnosis;
 import com.aerofs.daemon.core.protocol.GetComponentCall;
 import com.aerofs.daemon.core.protocol.GetRevision;
 import com.aerofs.daemon.core.protocol.GetVersCall;
@@ -54,20 +53,18 @@ public class UnicastInputTopLayer implements IUnicastInputLayer
         private final GetRevision _gr;
         private final ListRevChildren _rlc;
         private final ListRevHistory _rlh;
-        private final Diagnosis _diag;
         private final ComputeHashCall _computeHashCall;
         private final IncomingStreams _iss;
         private final CoreDeviceLRU _dlru;
 
         @Inject
-        public Factory(IncomingStreams iss, ComputeHashCall computeHashCall, Diagnosis diag, ListRevHistory rlh,
+        public Factory(IncomingStreams iss, ComputeHashCall computeHashCall, ListRevHistory rlh,
                 ListRevChildren rlc, GetRevision gr, UpdateSenderFilter pusf, GetVersCall pgvc,
                 NewUpdates pnu, GetComponentCall pgcc, RPC rpc, DID2User d2u, NSL nsl,
                 CoreDeviceLRU dlru)
         {
             _iss = iss;
             _computeHashCall = computeHashCall;
-            _diag = diag;
             _rlh = rlh;
             _rlc = rlc;
             _gr = gr;
@@ -179,7 +176,6 @@ public class UnicastInputTopLayer implements IUnicastInputLayer
         case UPDATE_SENDER_FILTER:
         case LIST_REV_CHILDREN_RESPONSE:
         case LIST_REV_HISTORY_RESPONSE:
-        case DIAGNOSIS:
         case NOP:
             processNonCall_(msg);
             break;
@@ -249,9 +245,6 @@ public class UnicastInputTopLayer implements IUnicastInputLayer
             break;
         case LIST_REV_HISTORY_RESPONSE:
             _f._rlh.processResponse_(msg);
-            break;
-        case DIAGNOSIS:
-            _f._diag.process_(msg);
             break;
         case NOP:
             break;

@@ -78,13 +78,6 @@ public interface ITransportImpl extends ITransport
      */
     StreamManager sm();
 
-    /**
-     * Return the transport's diagnostic-state object (for in-progress pings, floods, etc.)
-     *
-     * @return {@link TransportDiagnosisState} for this transport
-     */
-    TransportDiagnosisState tds();
-
     //
     // connection/disconnection functions
     //

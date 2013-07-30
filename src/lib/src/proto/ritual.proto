@@ -189,10 +189,6 @@ service RitualService {
     ///////////////////////////////////////////////////////////////////////////////////////////////
     // Misc internal methods
 
-    rpc TransportPing(TransportPingCall) returns(TransportPingReply);
-    rpc TransportFlood(TransportFloodCall) returns(Void);
-    rpc TransportFloodQuery(TransportFloodQueryCall) returns(TransportFloodQueryReply);
-
     // Dump daemon statistics (for internal use only)
     rpc DumpStats(DumpStatsCall) returns(DumpStatsReply);
 
@@ -562,39 +558,6 @@ message GetTransferStatsReply {
     required uint64 up_time = 1;
     required uint64 bytes_in = 2;
     required uint64 bytes_out = 3;
-}
-
-message TransportPingCall {
-    // see IEOTransportPing for details
-    required bytes device_id = 1;
-    required uint32 seq_prev = 2;
-    required uint32 seq_next = 3;
-    required bool force_next = 4;
-    required bool ignore_offline = 5;
-}
-
-message TransportPingReply {
-    optional uint64 rtt = 1;
-}
-
-message TransportFloodCall {
-    required bytes device_id = 1;
-    required bool send = 2;
-    required uint32 seq_start = 3;
-    required uint32 seq_end = 4;
-    required uint64 duration = 5;
-    optional string sname = 6;      // required if !send
-}
-
-message TransportFloodQueryCall {
-    required bytes device_id = 1;
-    required uint32 seq = 2;
-}
-
-message TransportFloodQueryReply {
-    // time == TRANSPORT_DIAGNOSIS_STATE_PENDING if pending
-    required uint64 time = 1;
-    required uint64 bytes = 2;
 }
 
 // Describes one child of a folder in the history tree

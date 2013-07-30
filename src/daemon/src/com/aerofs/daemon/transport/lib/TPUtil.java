@@ -3,15 +3,11 @@ package com.aerofs.daemon.transport.lib;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.base.ex.ExProtocolError;
-import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.daemon.event.net.EOLinkStateChanged;
 import com.aerofs.daemon.event.net.EOStartPulse;
 import com.aerofs.daemon.event.net.EOTpStartPulse;
 import com.aerofs.daemon.event.net.EOTpSubsequentPulse;
-import com.aerofs.daemon.event.net.EOTransportFlood;
-import com.aerofs.daemon.event.net.EOTransportFloodQuery;
-import com.aerofs.daemon.event.net.EOTransportPing;
 import com.aerofs.daemon.event.net.EOUpdateStores;
 import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.event.net.rx.EIChunk;
@@ -27,7 +23,6 @@ import com.aerofs.daemon.event.net.tx.EOTxEndStream;
 import com.aerofs.daemon.event.net.tx.EOUnicastMessage;
 import com.aerofs.daemon.lib.exception.ExStreamInvalid;
 import com.aerofs.daemon.lib.id.StreamID;
-import com.aerofs.daemon.transport.lib.TransportDiagnosisState.FloodEntry;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
 import com.aerofs.lib.event.IEvent;
@@ -36,22 +31,15 @@ import com.aerofs.proto.Transport.PBStream;
 import com.aerofs.proto.Transport.PBStream.InvalidationReason;
 import com.aerofs.proto.Transport.PBStream.Type;
 import com.aerofs.proto.Transport.PBTPHeader;
-import com.aerofs.proto.Transport.PBTransportDiagnosis;
-import com.aerofs.proto.Transport.PBTransportDiagnosis.PBPing;
 import org.slf4j.Logger;
 
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.InputStream;
 
 import static com.aerofs.proto.Transport.PBStream.InvalidationReason.STREAM_NOT_FOUND;
 import static com.aerofs.proto.Transport.PBTPHeader.Type.DATAGRAM;
-import static com.aerofs.proto.Transport.PBTPHeader.Type.DIAGNOSIS;
 import static com.aerofs.proto.Transport.PBTPHeader.Type.STREAM;
-import static com.aerofs.proto.Transport.PBTransportDiagnosis.PBFloodStatReply;
-import static com.aerofs.proto.Transport.PBTransportDiagnosis.Type.FLOOD_STAT_REPLY;
-import static com.aerofs.proto.Transport.PBTransportDiagnosis.Type.PONG;
 
 /**
  * This class provides a number of thread-safe {@link com.aerofs.daemon.transport.ITransport} and
@@ -195,7 +183,7 @@ public class TPUtil
 
     /**
      * Process a control message that came in on a unicast channel. Control message
-     * <strong>MUST NOT</strong> have type <code>PAYLOAD</code> or <code>DIAGNOSIS</code>
+     * <strong>MUST NOT</strong> have type <code>PAYLOAD</code>
      *
      * @param ep {@link Endpoint} that sent the control message
      * @param h {@link PBTPHeader} control message itself
@@ -222,7 +210,7 @@ public class TPUtil
         }
     }
 
-    public static PBTPHeader processStreamControl(Endpoint ep, PBStream wireStream,
+    private static PBTPHeader processStreamControl(Endpoint ep, PBStream wireStream,
             IBlockingPrioritizedEventSink<IEvent> sink, StreamManager sm)
             throws ExProtocolError, ExNoResource
     {
@@ -250,89 +238,6 @@ public class TPUtil
         return null;
     }
 
-    /**
-     * Process a unicast {@link PBTPHeader} message of type <code>DIAGNOSIS</code>
-     *
-     * @param did {@link com.aerofs.base.id.DID} of the peer that sent the diagnostic message
-     * @param dg {@link PBTransportDiagnosis} diagnostic message itself
-     * @param pd {@link IPipeDebug} instance of the debugging interface this method
-     * can use to get basic diagnostic statistics (for example,
-     * <code>getBytesReceived()</code> for <code>FLOOD_STAT_CALL</code>) about the peer
-     * @param tds {@link TransportDiagnosisState} instance used to store
-     * {@link FloodEntry} objects for the peer
-     * @return a response {@link PBTransportDiagnosis} if necessary. <strong>IMPORTANT:</strong>
-     * return value can be <code>null</code>
-     * @throws ExProtocolError if the diagnosis message has an unrecognized type
-     */
-    public static PBTransportDiagnosis processUnicastControlDiagnosis(DID did,
-            PBTransportDiagnosis dg, IPipeDebug pd, TransportDiagnosisState tds)
-        throws ExProtocolError
-    {
-        switch (dg.getType()) {
-        case PING:
-            return PBTransportDiagnosis.newBuilder()
-                .setType(PONG)
-                .setPing(PBPing.newBuilder().setPingId(dg.getPing().getPingId()))
-                .build();
-
-        case PONG:
-        {
-            Long l = tds.getPing(dg.getPing().getPingId());
-            if (l != null && l < 0) {
-                long rtt = System.currentTimeMillis() + l;
-                tds.putPing(dg.getPing().getPingId(), rtt);
-            }
-            break;
-        }
-
-        case FLOOD_DISCARD:
-            break;
-
-        case FLOOD_STAT_CALL:
-        {
-            long bytesrx = pd.getBytesReceived(did);
-            long now = System.currentTimeMillis();
-            int seq = dg.getFloodStatCall().getSeq();
-
-            tds.putFlood(seq, new FloodEntry(now, bytesrx));
-
-            return PBTransportDiagnosis.newBuilder()
-                .setType(FLOOD_STAT_REPLY)
-                .setFloodStatReply(PBFloodStatReply.newBuilder()
-                        .setSeq(seq)
-                        .setTime(now)
-                        .setBytes(bytesrx))
-                .build();
-        }
-
-        case FLOOD_STAT_REPLY:
-            PBFloodStatReply reply = dg.getFloodStatReply();
-            tds.putFlood(reply.getSeq(), new FloodEntry(reply.getTime(),
-                reply.getBytes()));
-            break;
-
-        default:
-            throw new ExProtocolError(PBTPHeader.Type.class);
-        }
-
-        return null;
-    }
-
-    /**
-     * Construct a {@link PBTPHeader} message of type <code>DIAGNOSIS</code>
-     * containing a valid <code>PBDiagnosis</code>
-     *
-     * @param dg {@link PBTransportDiagnosis} to embed as the payload of the constructed
-     * {@link PBTPHeader} message. <strong>IMPORTANT:</strong> <code>dg</code>
-     * <strong>MUST NOT</strong> be <code>null</code>
-     * @return valid {@link PBTPHeader} of type <code>DIAGNOSIS</code> with
-     * embedded <code>dg</code>
-     */
-    public static PBTPHeader makeDiagnosis(@Nonnull PBTransportDiagnosis dg)
-    {
-        return PBTPHeader.newBuilder().setType(DIAGNOSIS).setDiagnosis(dg).build();
-    }
-
     public static void registerCommonHandlers(ITransportImpl tp)
     {
         tp.disp()
@@ -342,9 +247,6 @@ public class TPUtil
             .setHandler_(EOTxEndStream.class, new HdTxEndStream(tp))
             .setHandler_(EORxEndStream.class, new HdRxEndStream(tp))
             .setHandler_(EOTxAbortStream.class, new HdTxAbortStream(tp))
-            .setHandler_(EOTransportPing.class, new HdTransportPing(tp))
-            .setHandler_(EOTransportFlood.class, new HdTransportFlood(tp))
-            .setHandler_(EOTransportFloodQuery.class, new HdTransportFloodQuery(tp))
             .setHandler_(EOUpdateStores.class, new HdUpdateStores(tp))
             .setHandler_(EOLinkStateChanged.class, new HdLinkStateChanged(tp))
             .setHandler_(EOTpSubsequentPulse.class, new HdPulse<EOTpSubsequentPulse>(new SubsequentPulse(tp)))

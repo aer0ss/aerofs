@@ -113,8 +113,6 @@ public class LibParam extends BaseParam
     public static final String LOG_FILE_EXT             = ".log";
     public static final String HPROF_FILE_EXT           = ".hprof";
 
-    public static final long TRANSPORT_DIAGNOSIS_STATE_PENDING = -1;
-
     public static final String GUI_NAME                 = "gui";
     public static final String CLI_NAME                 = "cli";
     public static final String SH_NAME                  = "sh";
