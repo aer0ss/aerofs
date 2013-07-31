@@ -9,7 +9,7 @@ uwsgi-pull-dynamic-config
 uwsgi-restart
 restund-fix-config
 zephyr-start
-repackage-installers
 sanity-pull-dynamic-config
+repackage-installers
 delay
 sanity-check
