@@ -20,5 +20,4 @@ cp ../out.ant/artifacts/verkehr/*.jar $OPT
 # Upstart-related file copies.
 mkdir -p $INIT
 cp $RESOURCES/verkehr.conf $INIT
-cp $RESOURCES/verkehr $OPT
 cp $RESOURCES/verkehr.yml $OPT

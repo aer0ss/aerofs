@@ -1,3 +1,0 @@
-#!/bin/bash
-
-java -d64 -Xms712m -Xmx1536m -jar zephyr.jar 0.0.0.0 8888
