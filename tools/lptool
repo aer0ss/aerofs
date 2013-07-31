@@ -63,14 +63,12 @@ function _local-prod-cmd()
 # Packaging
 # -----------------------------------------------------------
 
-function _package-cmd()
-{
-    do_in $AEROFS_ROOT ant clean -Drepo=$(_uppercase_repo) $@
-}
-
 function _package-all()
 {
-    _package-cmd upload_servers -Dproduct=CLIENT -Dmode=PROD
+    do_in $AEROFS_ROOT ant clean package_servers upload_versions \
+        -Dproduct=CLIENT \
+        -Dmode=ENTERPRISE \
+        -Drepo=$(_uppercase_repo)
 }
 
 # -----------------------------------------------------------
