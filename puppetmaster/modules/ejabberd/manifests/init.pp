@@ -7,6 +7,7 @@ class ejabberd (
     }
 
     service { "ejabberd":
+        tag => ['autostart-overridable'],
         ensure    => running,
         hasstatus => false,
         pattern   => "beam",
