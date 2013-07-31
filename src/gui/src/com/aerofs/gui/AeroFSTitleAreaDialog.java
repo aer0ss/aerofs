@@ -47,4 +47,10 @@ public class AeroFSTitleAreaDialog extends TitleAreaDialog {
         return getShell().computeSize(SWT.DEFAULT, SWT.DEFAULT);
         // return new Point(450, 378);
     }
+
+    // TODO: make this abstract, or go away
+    public boolean isCancelled()
+    {
+        return true;
+    }
 }

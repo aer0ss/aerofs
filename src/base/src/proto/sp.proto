@@ -690,6 +690,34 @@ service SPService {
      *   ExBadCredential if the certificate is not recognized or the DID does not match.
      */
     rpc SignInUser(SignInDeviceCall) returns (Void);
+
+    /**
+     * Kick off the OpenId authentication flow by generating session keys for the
+     * authenticating session, and returning those to the client.
+     *
+     * Required Auth Level: none
+     *
+     * Throws:
+     *   Something Bad if the server does not have openid enabled.
+     */
+    rpc OpenIdBeginTransaction(Void) returns (OpenIdSessionNonces);
+
+    /**
+     * Complete the authentication flow by returning the session attributes from
+     * the authenticated session.
+     * This will return null if the session referenced by the
+     * query key is not yet authenticated by an OpenId provider.
+     *
+     * An exception indicates non-retryable error (timeout or otherwise).
+     *
+     * NOTE: this will only return session attributes _once_.
+     *
+     * Required Auth Level: none
+     *
+     * Throws:
+     *   Something Bad if the server does not have openid enabled.
+     */
+    rpc OpenIdGetSessionAttributes(OpenIdSessionQuery) returns (OpenIdSessionAttributes);
 }
 
 message SetStripeCustomerIDCall {
@@ -1211,4 +1239,19 @@ message SignInDeviceCall {
 message SignInUserCall {
     required string user_id = 1;
     required bytes credential = 2;
+}
+
+message OpenIdSessionNonces {
+    required string sessionNonce = 1;
+    required string delegateNonce = 2;
+}
+
+message OpenIdSessionQuery {
+    required string sessionNonce = 1;
+}
+
+message OpenIdSessionAttributes {
+    optional string userId = 1;
+    optional string firstName = 2;
+    optional string lastName = 3;
 }

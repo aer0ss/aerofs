@@ -71,7 +71,8 @@ public class SetupModel
 
     public byte[] getScrypted() throws ExEmptyEmailAddress
                                             { return SecUtil.scrypt(getPassword(), getUserID()); }
-    public char[] getPassword()             { return _password.toCharArray(); }
+    public char[] getPassword()             { return (_password == null)
+                                                ? new char[0] : _password.toCharArray(); }
 
     public void setPassword(String pw)      { _password = pw; }
 

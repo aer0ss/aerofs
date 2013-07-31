@@ -60,9 +60,9 @@ import static org.eclipse.jface.dialogs.IDialogConstants.CANCEL_LABEL;
 import static org.eclipse.jface.dialogs.IDialogConstants.DETAILS_ID;
 import static org.eclipse.jface.dialogs.IDialogConstants.OK_ID;
 
-public class SingleuserDlgSetup extends AeroFSTitleAreaDialog
+public class DlgCredentialSignIn extends AeroFSTitleAreaDialog
 {
-    public SingleuserDlgSetup(Shell parentShell) throws Exception
+    public DlgCredentialSignIn(Shell parentShell) throws Exception
     {
         super(null, parentShell, false, shouldAlwaysOnTop(), false);
 
@@ -419,6 +419,7 @@ public class SingleuserDlgSetup extends AeroFSTitleAreaDialog
         _compStack.layout();
     }
 
+    @Override
     public boolean isCancelled()
     {
         return !_okay;
@@ -466,7 +467,7 @@ public class SingleuserDlgSetup extends AeroFSTitleAreaDialog
                 _model.getDeviceName(), _model._localOptions._rootAnchorPath);
     }
 
-    protected static final Logger l = Loggers.getLogger(SingleuserDlgSetup.class);
+    protected static final Logger l = Loggers.getLogger(DlgCredentialSignIn.class);
 
     private CompSpin _compSpin;
     private Composite _compForgotPassword;

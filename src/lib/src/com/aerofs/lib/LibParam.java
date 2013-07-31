@@ -11,6 +11,8 @@ import com.aerofs.config.properties.DynamicOptionalStringProperty;
 import com.aerofs.lib.properties.DynamicInetSocketAddress;
 import com.aerofs.lib.properties.DynamicUrlProperty;
 import com.netflix.config.DynamicBooleanProperty;
+import com.netflix.config.DynamicIntProperty;
+import com.netflix.config.DynamicLongProperty;
 import com.netflix.config.DynamicStringProperty;
 
 import java.net.InetAddress;
@@ -219,6 +221,147 @@ public class LibParam extends BaseParam
         public static final DynamicInetSocketAddress ADDRESS =
                 new DynamicInetSocketAddress("sp.redis.address",
                         InetSocketAddress.createUnresolved("localhost", 6379));
+    }
+
+    /**
+     * OpenId and Identity-related configuration that are used by client and server.
+     *
+     * openid.service : configuration for the IdentityServlet (our intermediary)
+     *
+     * openid.idp : configuration for an OpenId provider.
+     */
+    public static class OpenId
+    {
+        /** OpenId authentication (if enabled, this replaces credential auth) */
+        public static final DynamicBooleanProperty      ENABLED
+                = new DynamicBooleanProperty(           "openid.service.enabled", false);
+
+        /** Timeout for the entire OpenId flow, in seconds. */
+        public static final DynamicIntProperty          DELEGATE_TIMEOUT
+                = new DynamicIntProperty(               "openid.service.timeout", 300);
+
+        /**
+         * Timeout for the session nonce, in seconds. This is the timeout
+         * only after the delegate nonce is authorized but before the session nonce
+         * gets used. This only needs to be as long as the retry interval in the session
+         * client, plus the max latency of the session query.
+         */
+        public static final DynamicIntProperty          SESSION_TIMEOUT
+                = new DynamicIntProperty(               "openid.service.session.timeout", 10);
+
+        /**
+         * Polling frequency of the client waiting for OpenId authorization to complete, in seconds.
+         * TODO: sub-second resolution?
+         */
+        public static final DynamicIntProperty          SESSION_INTERVAL
+                = new DynamicIntProperty(               "openid.service.session.interval", 1);
+
+        /** URL of the Identity service */
+        public static final DynamicStringProperty       IDENTITY_URL
+                = new DynamicStringProperty(            "openid.service.url", "");
+
+        /** The security realm for which we are requesting authorization */
+        public static final DynamicStringProperty      IDENTITY_REALM
+                = new DynamicStringProperty(            "openid.service.realm", "");
+
+        /** The auth request path to append to the identity server URL. */
+        public static final String                      IDENTITY_REQ_PATH = "/oa";
+
+        /** The auth response path to append to the identity server URL. */
+        public static final String                      IDENTITY_RESP_PATH = "/os";
+
+        /** The delegate nonce parameter to pass to the auth request URL. */
+        public static final String                      IDENTITY_REQ_PARAM = "token";
+
+        // -- Attributes used only by server code:
+
+        /**
+         * The name of the delegate nonce to pass to the OpenId provider; used to
+         * correlate the auth request and auth response.
+         */
+        public static final String                      OPENID_DELEGATE_NONCE = "sp.nonce";
+
+        /** OpenId discovery may be disabled if YADIS discovery is not supported. */
+        public static final DynamicBooleanProperty      DISCOVERY_ENABLED
+                = new DynamicBooleanProperty(           "openid.idp.discovery.enabled", false);
+
+        /** Discovery URL for the OpenId provider. Only used if discovery is enabled. */
+        public static final DynamicStringProperty       DISCOVERY_URL
+                = new DynamicStringProperty(            "openid.idp.discovery.url", "");
+
+        /** Endpoint URL used if discovery is not enabled for this OpenId Provider */
+        public static final DynamicStringProperty       ENDPOINT_URL
+                = new DynamicStringProperty(            "openid.idp.endpoint.url", "");
+
+        /** Name of the HTTP parameter we should use as the user identifier in an auth response. */
+        public static final DynamicStringProperty       IDP_USER_ATTR
+                = new DynamicStringProperty(            "openid.idp.user.uid.attribute",
+                                                        "openid.identity");
+
+        /**
+         * An optional regex pattern for parsing the user identifier into capture groups. If this
+         * is set, the capture groups will be available for use in the email/firstname/lastname
+         * fields using the syntax uid[1], uid[2], uid[3], etc.
+         *
+         * NOTE: If this is not set, we don't do any pattern-matching (do less is cheaper)
+         *
+         * NOTE: capture groups are numbered starting at _1_.
+         */
+        public static final DynamicStringProperty       IDP_USER_PATTERN
+                = new DynamicStringProperty(            "openid.idp.user.uid.pattern",   "");
+
+
+        /**
+         * Name of the openid extension set to request, or can be empty. Supported extensions are:
+         *
+         * "ax" for attribute exchange
+         *
+         * "sreg" for simple registration (an OpenId 1.0 extension)
+         */
+        public static final DynamicStringProperty       IDP_USER_EXTENSION
+                = new DynamicStringProperty(            "openid.idp.user.extension", "");
+
+        /**
+         * Name of an openid parameter that contains the user's email address; or a pattern that
+         * uses the uid[n] syntax. It is an error to request a uid capture group if
+         * openid.idp.user.uid.pattern is not set.
+         *
+         * Examples:
+         *
+         * openid.ext1.value.email
+         *
+         * uid[1]@syncfs.com
+         */
+        public static final DynamicStringProperty       IDP_USER_EMAIL
+                = new DynamicStringProperty(            "openid.idp.user.email",
+                                                        "openid.ext1.value.email");
+
+        // TODO: support fullname for "sreg" providers and split by whitespace
+        /**
+         * Name of an openid parameter that contains the user's first name; or a pattern that
+         * uses the uid[n] syntax. It is an error to request a uid capture group if
+         * openid.idp.user.uid.pattern is not set.
+         *
+         * Example: openid.ext1.value.firstname (for ax)
+         *
+         * openid.sreg.fullname (for sreg; fullname only)
+         */
+        public static final DynamicStringProperty       IDP_USER_FIRSTNAME
+                = new DynamicStringProperty(            "openid.idp.user.name.first",
+                                                        "openid.ext1.value.firstname");
+
+        /**
+         * Name of an openid parameter that contains the user's last name; or a pattern that
+         * uses the uid[n] syntax. It is an error to request a uid capture group if
+         * openid.idp.user.uid.pattern is not set.
+         *
+         * Example: openid.ext1.value.lastname (for ax)
+         *
+         * openid.sreg.fullname (for sreg; fullname only)
+         */
+        public static final DynamicStringProperty       IDP_USER_LASTNAME
+                = new DynamicStringProperty(            "openid.idp.user.name.last",
+                                                        "openid.ext1.value.lastname");
     }
 
     // this class depends on ClientConfigurationLoader

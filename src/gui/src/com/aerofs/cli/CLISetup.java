@@ -2,12 +2,12 @@ package com.aerofs.cli;
 
 import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.base.ex.ExEmptyEmailAddress;
-import com.aerofs.base.id.UserID;
 import com.aerofs.controller.InstallActor;
 import com.aerofs.controller.SetupModel;
 import com.aerofs.controller.SetupModel.S3Options;
 import com.aerofs.controller.SignInActor;
 import com.aerofs.labeling.L;
+import com.aerofs.lib.LibParam;
 import com.aerofs.lib.RootAnchorUtil;
 import com.aerofs.lib.S;
 import com.aerofs.lib.StorageType;
@@ -55,21 +55,20 @@ public class CLISetup
 
     private boolean _isUnattendedSetup;
 
-    private UserID _userID = null;
-    private char[] _passwd;
     private String _anchorRoot = null;
-    private String _deviceName = null;
     private StorageType _storageType = null;
     private SetupModel _model = null;
 
     CLISetup(CLI cli, String rtRoot) throws Exception
     {
         GetSetupSettingsReply defaults = UIGlobals.controller().getSetupSettings();
-        _deviceName = defaults.getDeviceName();
-        _anchorRoot = defaults.getRootAnchor();
 
         _model = new SetupModel()
-                .setSignInActor(new SignInActor.Credential());
+                .setSignInActor(LibParam.OpenId.ENABLED.get() ?
+                        new SignInActor.CLIOpenId(cli) : new SignInActor.Credential());
+
+        _anchorRoot = defaults.getRootAnchor();
+        _model.setDeviceName(defaults.getDeviceName());
 
         processSetupFile(rtRoot, _model._s3Options);
 
@@ -114,11 +113,11 @@ public class CLISetup
             in.close();
         }
 
-        if (_userID == null) _userID = UserID.fromExternal(props.getProperty(PROP_USERID));
+        _model.setUserID(props.getProperty(PROP_USERID));
+        _model.setPassword(props.getProperty(PROP_PASSWORD));
+        _model.setDeviceName(props.getProperty(PROP_DEVICE, _model.getDeviceName()));
 
-        _passwd = props.getProperty(PROP_PASSWORD).toCharArray();
         _anchorRoot = props.getProperty(PROP_ROOT, _anchorRoot);
-        _deviceName = props.getProperty(PROP_DEVICE, _deviceName);
         _storageType = StorageType.fromString(props.getProperty(PROP_STORAGE_TYPE));
 
         String s3BucketId = props.getProperty(CfgDatabase.Key.S3_BUCKET_ID.keyString());
@@ -148,13 +147,7 @@ public class CLISetup
             }
         }
 
-        // FIXME: ugly code because this needs more aggressive refactoring
-
         cli.progress("Performing magic");
-
-        _model.setUserID(_userID.getString());
-        _model.setPassword(new String(_passwd));
-        _model.setDeviceName(_deviceName);
 
         if (_storageType == StorageType.S3) {
             _model._isLocal = false;
@@ -178,9 +171,6 @@ public class CLISetup
 
         if (_storageType == null) _storageType = StorageType.LINKED;
 
-        _model.setUserID(_userID.getString());
-        _model.setPassword(new String(_passwd));
-        _model.setDeviceName(_deviceName);
         _model._isLocal = true;
         _model._localOptions._rootAnchorPath = _anchorRoot;
         _model._localOptions._useBlockStorage = false;
@@ -189,15 +179,19 @@ public class CLISetup
     private void getUser(CLI cli)
             throws ExNoConsole, ExEmptyEmailAddress
     {
-        _userID = UserID.fromExternal(
-                cli.askText(L.isMultiuser() ? S.ADMIN_EMAIL : S.SETUP_USER_ID, null));
+        if (LibParam.OpenId.ENABLED.get() == false) {
+            _model.setUserID(cli.askText(L.isMultiuser() ? S.ADMIN_EMAIL : S.SETUP_USER_ID, null));
+        }
     }
 
     private void getPassword(CLI cli) throws Exception
     {
-        cli.show(MessageType.INFO, "If you forgot your password, go to " +
-                WWW.PASSWORD_RESET_REQUEST_URL.get() + " to reset it.");
-        _passwd =  cli.askPasswd(L.isMultiuser() ? S.ADMIN_PASSWD : S.SETUP_PASSWD);
+        if (LibParam.OpenId.ENABLED.get() == false) {
+            cli.show(MessageType.INFO, "If you forgot your password, go to " +
+                    WWW.PASSWORD_RESET_REQUEST_URL.get() + " to reset it.");
+            _model.setPassword(String.valueOf(
+                    cli.askPasswd(L.isMultiuser() ? S.ADMIN_PASSWD : S.SETUP_PASSWD)));
+        }
     }
 
     private void getStorageType(CLI cli) throws Exception
@@ -234,7 +228,7 @@ public class CLISetup
 
     private void getDeviceName(CLI cli) throws Exception
     {
-        _deviceName = cli.askText(S.SETUP_DEV_ALIAS, _deviceName);
+        _model.setDeviceName(cli.askText(S.SETUP_DEV_ALIAS, _model.getDeviceName()));
     }
 
     private void getS3Config(CLI cli, S3Options options) throws ExNoConsole

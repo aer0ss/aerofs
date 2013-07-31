@@ -8,6 +8,7 @@ import com.aerofs.controller.InstallActor;
 import com.aerofs.controller.SetupModel;
 import com.aerofs.controller.SignInActor;
 import com.aerofs.gui.AeroFSDialog;
+import com.aerofs.lib.LibParam;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.TraverseEvent;
 import org.eclipse.swt.events.TraverseListener;
@@ -29,7 +30,8 @@ public class DlgMultiuserSetup extends AeroFSDialog
         super(shell, null, false, true);
 
         _model = new SetupModel()
-                .setSignInActor(new SignInActor.Credential())
+                .setSignInActor(LibParam.OpenId.ENABLED.get() ?
+                        new SignInActor.GUIOpenId() : new SignInActor.Credential())
                 .setInstallActor(new InstallActor.MultiUser());
     }
 
@@ -66,7 +68,8 @@ public class DlgMultiuserSetup extends AeroFSDialog
 
     private AbstractSetupPage createLoginPage()
     {
-        PageLogin page = new PageLogin(getShell());
+        AbstractSetupPage page = (LibParam.OpenId.ENABLED.get() ?
+                                  new PageOpenIdSignIn(getShell()) : new PageCredentialSignIn(getShell()));
         page.addTraverseListener(new TraverseListener()
         {
             @Override
