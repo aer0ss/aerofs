@@ -20,6 +20,4 @@ cp ../out.ant/artifacts/devman/*.jar $OPT
 # Upstart-related file copies.
 mkdir -p $INIT
 cp $RESOURCES/devman.conf $INIT
-cp $RESOURCES/devman $OPT
 cp $RESOURCES/devman.yml $OPT
-cp $RESOURCES/logback.xml $OPT
