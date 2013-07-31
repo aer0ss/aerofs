@@ -94,7 +94,7 @@ function _lp-kick-all()
 # Deploys
 # -----------------------------------------------------------
 
-function lp-deploy-all()
+function _lp-deploy()
 {
     _package-all
     _lp-kick-transient
