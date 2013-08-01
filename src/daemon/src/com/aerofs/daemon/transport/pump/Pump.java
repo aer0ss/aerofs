@@ -5,6 +5,7 @@
 package com.aerofs.daemon.transport.pump;
 
 import com.aerofs.base.BaseParam;
+import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.SID;
@@ -63,18 +64,19 @@ import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor
 
 public final class Pump implements IProgram
 {
-    private static final byte[] CHUNK = new byte[10 * 1024];
-
     private static final Logger l = Loggers.getLogger(Pump.class);
+    private static final byte[] CHUNK = new byte[10 * C.KB];
 
     private final BlockingPrioQueue<IEvent> incomingEventSink = new BlockingPrioQueue<IEvent>(1024);
     private final ILinkStateService linkStateService = new SingleThreadedLinkStateService();
     private final Tput tput = new Tput("recv");
+    private final SendThread sendThread = new SendThread();
 
+    private final Object doSendLock = new Object();
+    private volatile boolean doSend;
     private boolean isSender;
     private ITransport transport;
     private @Nullable DID remote;
-    private volatile boolean keepRunning = true;
 
     @Override
     public void launch_(String rtRoot, String prog, String[] args) // PROG RTROOT [t|z|j] [send|recv] <did>
@@ -86,6 +88,7 @@ public final class Pump implements IProgram
         isSender = args[1].equalsIgnoreCase("send");
         if (isSender) {
             checkArgument(args.length == 3, String.format("usage: SEND:(%s [t|z|j] send [did])", prog));
+            sendThread.start();
         }
 
         remote = (isSender ? new DID(DID.fromStringFormal(args[2])) : null);
@@ -114,6 +117,7 @@ public final class Pump implements IProgram
         // start listening
 
         OutArg<Prio> eventPriority = new OutArg<Prio>(LO);
+        //noinspection InfiniteLoopStatement
         while (true) {
             IEvent incoming = incomingEventSink.dequeue(eventPriority);
             if (incoming instanceof EIUnicastMessage) {
@@ -179,62 +183,77 @@ public final class Pump implements IProgram
     {
         tput.observe(unicastMessage.wireLength());
         l.debug("recv incoming d:{}", unicastMessage._ep.did());
-        tput.observe(unicastMessage.wireLength());
     }
 
     private void handlePresence(EIPresence presence)
     {
         if (presence._online && presence._did2sids.containsKey(remote)) {
-            l.info("connected d:{}", remote);
+            l.info("device reachable d:{}", remote);
 
             if (isSender) {
-                Thread t = new Thread(new Runnable()
-                {
-                    private final ChunksCounter chunksCounter = new ChunksCounter();
-
-                    @Override
-                    public void run()
-                    {
-                        l.info("start send thd d:{}", remote);
-
-                        while (keepRunning) {
-                            chunksCounter.waitIfTooManyChunks();
-                            chunksCounter.incChunkCount();
-                            EOUnicastMessage ev = new EOUnicastMessage(remote, CHUNK);
-                            ev.setWaiter(waiter);
-                            transport.q().enqueueBlocking(ev, LO);
-                        }
-
-                        l.info("stop send thd d:{}", remote);
-                    }
-
-                    private final IResultWaiter waiter = new IResultWaiter()
-                    {
-                        @Override
-                        public void okay()
-                        {
-                            chunksCounter.decChunkCount();
-                        }
-
-                        @Override
-                        public void error(Exception e)
-                        {
-                            chunksCounter.decChunkCount();
-                        }
-                    };
-                });
-
-                t.start();
+                synchronized (doSendLock) {
+                    doSend = true;
+                    doSendLock.notify();
+                }
             }
+
         } else if (!presence._online && presence._did2sids.containsKey(remote)) {
-            l.info("disconnected d:{}", remote);
-            keepRunning = false;
-            throw new RuntimeException("hackish");
+            l.info("device unreachable d:{}", remote);
+
+            if (isSender) {
+                doSend = false;
+            }
         }
     }
 
     private void handleOther(IEvent incoming)
     {
         l.warn("ignore event:{}", incoming.getClass().getSimpleName());
+    }
+
+    private class SendThread extends Thread
+    {
+        private final ChunksCounter chunksCounter = new ChunksCounter();
+
+        @Override
+        public void run()
+        {
+            //noinspection InfiniteLoopStatement
+            while (true) {
+                if (doSend) {
+                    chunksCounter.waitIfTooManyChunks();
+                    chunksCounter.incChunkCount();
+                    EOUnicastMessage ev = new EOUnicastMessage(remote, CHUNK);
+                    ev.setWaiter(waiter);
+                    transport.q().enqueueBlocking(ev, LO);
+                } else {
+                    synchronized (doSendLock) {
+                        if (!doSend) {
+                            try {
+                                doSendLock.wait();
+                                l.info("start send thd d:{}", remote);
+                            } catch (InterruptedException e) {
+                                // ignored
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        private final IResultWaiter waiter = new IResultWaiter()
+        {
+            @Override
+            public void okay()
+            {
+                chunksCounter.decChunkCount();
+            }
+
+            @Override
+            public void error(Exception e)
+            {
+                chunksCounter.decChunkCount();
+            }
+        };
     }
 }
