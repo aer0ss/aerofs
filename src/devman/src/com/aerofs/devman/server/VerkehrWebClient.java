@@ -4,14 +4,19 @@
 
 package com.aerofs.devman.server;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.id.DID;
+import com.aerofs.lib.Util;
 import com.google.common.collect.Lists;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
+import org.slf4j.Logger;
 
+import javax.annotation.Nullable;
 import java.io.BufferedReader;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -33,6 +38,7 @@ import static com.aerofs.base.BaseParam.VerkehrTopics.TOPIC_SEPARATOR;
  */
 public class VerkehrWebClient
 {
+    private static final Logger l = Loggers.getLogger(VerkehrWebClient.class);
     private final String _connectionsURL;
 
     public VerkehrWebClient(String verkehrHost, short verkehrAdminPort)
@@ -81,38 +87,57 @@ public class VerkehrWebClient
         JSONObject topicsJsonObject = (JSONObject) readJsonFromUrl(_connectionsURL);
         JSONArray connections = (JSONArray) topicsJsonObject.get("connections");
 
-        for (int i = 0; i < connections.size(); i++) {
-            String connectionID = (String) connections.get(i);
+        for (Object connectionObject : connections) {
+            String connection = (String) connectionObject;
+            try {
+                OnlineDeviceInfo odi = getOnlineDeviceInfo(connection);
 
-            String connectionURL = _connectionsURL + "/" + connectionID;
-            JSONObject connectionJsonObject = (JSONObject) readJsonFromUrl(connectionURL);
-
-            String ipAddress = (String) connectionJsonObject.get("ip_address");
-            JSONObject customJsonObject = (JSONObject) connectionJsonObject.get("custom");
-            JSONArray topics = (JSONArray) customJsonObject.get("topics");
-
-            if (topics == null) {
-                // No topics set, so this must be an admin connection.
-                continue;
-            }
-
-            for (int j = 0; j < topics.size(); j++) {
-                String topic = (String) topics.get(j);
-
-                if (topic.startsWith(SSS_CHANNEL_TOPIC_PREFIX)) {
-                    String[] split = topic.split(TOPIC_SEPARATOR);
-
-                    if (split.length != 2) {
-                        throw new ExFormatError();
-                    }
-
-                    String did = split[1];
-                    result.add(new OnlineDeviceInfo(new DID(did), InetAddress.getByName(ipAddress)));
+                if (odi == null) {
+                    continue;
                 }
+
+                result.add(odi);
+            } catch (FileNotFoundException e) {
+                l.warn("Connection " + connection + " not found (must have gone offline). Continue anyway");
+            }
+       }
+
+        return result;
+    }
+
+    private @Nullable OnlineDeviceInfo getOnlineDeviceInfo(String connection)
+            throws IOException, ExFormatError
+    {
+        l.debug("Get connection info for " + connection);
+
+        String connectionURL = _connectionsURL + "/" + connection;
+        JSONObject connectionJsonObject = (JSONObject) readJsonFromUrl(connectionURL);
+
+        String ipAddress = (String) connectionJsonObject.get("ip_address");
+        JSONObject customJsonObject = (JSONObject) connectionJsonObject.get("custom");
+        JSONArray topics = (JSONArray) customJsonObject.get("topics");
+
+        if (topics == null) {
+            // No topics set, so this must be an admin connection.
+            return null;
+        }
+
+        for (Object topicObject : topics) {
+            String topic = (String) topicObject;
+
+            if (topic.startsWith(SSS_CHANNEL_TOPIC_PREFIX)) {
+                String[] split = topic.split(TOPIC_SEPARATOR);
+
+                if (split.length != 2) {
+                    throw new ExFormatError();
+                }
+
+                String did = split[1];
+                return new OnlineDeviceInfo(new DID(did), InetAddress.getByName(ipAddress));
             }
         }
 
-        return result;
+        return null;
     }
 
     //
