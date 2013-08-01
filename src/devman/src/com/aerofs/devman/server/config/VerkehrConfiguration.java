@@ -1,22 +1,14 @@
 package com.aerofs.devman.server.config;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import org.hibernate.validator.constraints.NotEmpty;
+import com.aerofs.base.BaseParam.Verkehr;
 
 public class VerkehrConfiguration
 {
-    @NotEmpty
-    @JsonProperty
-    private String host;
-
-    @JsonProperty
-    private short port;
-
     public String getHost() {
-        return host;
+        return Verkehr.HOST.get();
     }
 
     public short getPort() {
-        return port;
+        return 9019;
     }
 }

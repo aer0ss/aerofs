@@ -8,6 +8,12 @@ class transient {
     include stun
 
     # --------------
+    # Devman
+    # --------------
+
+    include devman
+
+    # --------------
     # SP
     # --------------
 

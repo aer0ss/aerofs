@@ -32,14 +32,6 @@ logging:
         "com.aerofs.devman.server.VerkehrPuller": DEBUG
         "com.aerofs.devman.server.VerkehrWebClient": DEBUG
 
-redis:
-    host: localhost
-    port: 6379
-
 polling:
     initialDelayInSeconds: 10
     intervalInSeconds: 300
-
-verkehr:
-    host: verkehr.aerofs.com
-    port: 9019

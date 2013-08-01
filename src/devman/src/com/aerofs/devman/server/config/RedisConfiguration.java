@@ -1,22 +1,14 @@
 package com.aerofs.devman.server.config;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import org.hibernate.validator.constraints.NotEmpty;
+import com.aerofs.lib.LibParam.REDIS;
 
 public class RedisConfiguration
 {
-    @NotEmpty
-    @JsonProperty
-    private String host;
-
-    @JsonProperty
-    private short port;
-
     public String getHost() {
-        return host;
+        return REDIS.ADDRESS.get().getHostName();
     }
 
-    public short getPort() {
-        return port;
+    public int getPort() {
+        return REDIS.ADDRESS.get().getPort();
     }
 }

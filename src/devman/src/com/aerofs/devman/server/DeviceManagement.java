@@ -5,6 +5,7 @@
 package com.aerofs.devman.server;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.lib.properties.Configuration;
 
 public class DeviceManagement
 {
@@ -18,6 +19,9 @@ public class DeviceManagement
 
         // Init the logger.
         Loggers.init();
+
+        // Init the configuration service.
+        Configuration.Server.initialize();
 
         // Run the device management service.
         DeviceManagementService service = new DeviceManagementService();

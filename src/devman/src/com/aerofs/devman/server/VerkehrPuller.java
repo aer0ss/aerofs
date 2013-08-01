@@ -9,6 +9,7 @@ import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.devman.server.VerkehrWebClient.OnlineDeviceInfo;
 import com.aerofs.devman.server.db.IPAddressDatabase;
 import com.aerofs.devman.server.db.LastSeenDatabase;
+import com.aerofs.lib.Util;
 import com.aerofs.servlets.lib.db.jedis.JedisThreadLocalTransaction;
 import org.slf4j.Logger;
 
@@ -49,7 +50,7 @@ public class VerkehrPuller implements Runnable
              updateDatabaseUsingVerkehr();
              l.debug("verkehr pull: done");
          } catch(Exception e) {
-             l.error("puller error: " + e);
+             l.error("puller error: " + Util.e(e));
              _trans.cleanUp();
          }
     }

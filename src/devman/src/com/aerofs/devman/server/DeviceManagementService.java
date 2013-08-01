@@ -45,7 +45,7 @@ public final class DeviceManagementService extends Service<DeviceManagementServi
                 configuration.getRedisConfiguration().getPort());
         provider.init_(
                 configuration.getRedisConfiguration().getHost(),
-                configuration.getRedisConfiguration().getPort());
+                (short) configuration.getRedisConfiguration().getPort());
 
         l.warn("verkehr host=" + configuration.getVerkehrConfiguration().getHost() + " port=" +
                 configuration.getVerkehrConfiguration().getPort());
