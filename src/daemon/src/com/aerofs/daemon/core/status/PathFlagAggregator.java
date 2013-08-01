@@ -122,14 +122,6 @@ public class PathFlagAggregator
     public Map<Path, Integer> changeFlagsOnTransferNotification_(
             SOCID socid, @Nullable Path path, TransferProgress value, int direction) {
         assert direction == Downloading || direction == Uploading : socid + " " + direction;
-        return changeFlagsOnTransferNotification_(direction == Downloading ? _dlMap : _ulMap,
-                socid, path, value, direction);
-    }
-
-    public Map<Path, Integer> changeFlagsOnTransferNotification_(
-            Map<SOCID, Path> tm, SOCID socid, @Nullable Path path, TransferProgress value, int flag) {
-        // list of affected path
-        Map<Path, Integer> notify = Maps.newHashMap();
 
         /*
          * NB: the path will only be null if the SOID does not exist. There cannot be an ongoing
@@ -139,10 +131,17 @@ public class PathFlagAggregator
          *   - expulsion of an entire store
          */
 
-        if (l.isDebugEnabled()) {
-            l.debug("ul: " + socid + " " + (path == null ? "(null)" : path) + " "
-                    + ((float)value._done / (float)value._total));
-        }
+        l.debug("{}l: {} {} {}", (direction == Downloading ? "d" : "u"), socid,
+                (path == null ? "(null)" : path), ((float)value._done / (float)value._total));
+
+        return changeFlagsOnTransferNotification_(direction == Downloading ? _dlMap : _ulMap,
+                socid, path, value, direction);
+    }
+
+    private Map<Path, Integer> changeFlagsOnTransferNotification_(
+            Map<SOCID, Path> tm, SOCID socid, @Nullable Path path, TransferProgress value, int flag) {
+        // list of affected path
+        Map<Path, Integer> notify = Maps.newHashMap();
 
         if (!tm.containsKey(socid)) {
             // new transfer
