@@ -9,8 +9,9 @@ class zephyr {
         target => "/lib/init/upstart-job",
         require => Package["aerofs-zephyr"],
     }
-    
+
     service { "zephyr":
+        tag => ['autostart-overridable'],
         enable => true,
         ensure => running,
         provider => upstart,

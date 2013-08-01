@@ -111,4 +111,12 @@ class persistent {
         source => "puppet:///modules/persistent/probes/redis.sh",
         require => Package["aerofs-sanity"],
     }
+
+    # --------------
+    # Disable auto-start
+    # --------------
+
+    Service <| tag == 'autostart-overridable' |> {
+        ensure => stopped,
+    }
 }

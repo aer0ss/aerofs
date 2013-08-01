@@ -162,4 +162,12 @@ class transient {
     # --------------
 
     include repackaging
+
+    # --------------
+    # Disable auto-start
+    # --------------
+
+    Service <| tag == 'autostart-overridable' |> {
+        ensure => stopped,
+    }
 }

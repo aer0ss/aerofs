@@ -8,7 +8,7 @@ DEBIAN=devman/DEBIAN
 
 # Debian-related file copies.
 mkdir -p $DEBIAN
-for f in control conffiles preinst postinst prerm postrm
+for f in control conffiles preinst prerm postrm
 do
     cp -r $RESOURCES/$f $DEBIAN
 done
@@ -20,6 +20,4 @@ cp ../out.ant/artifacts/devman/*.jar $OPT
 # Upstart-related file copies.
 mkdir -p $INIT
 cp $RESOURCES/devman.conf $INIT
-cp $RESOURCES/devman $OPT
 cp $RESOURCES/devman.yml $OPT
-cp $RESOURCES/logback.xml $OPT

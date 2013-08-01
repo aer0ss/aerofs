@@ -21,6 +21,7 @@ class nginx::service {
     notify      => Service["nginx"],
   }
   service { "nginx":
+    tag => ['autostart-overridable'],
     ensure     => running,
     enable	   => true,
     hasstatus  => true,

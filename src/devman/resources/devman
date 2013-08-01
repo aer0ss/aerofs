@@ -1,7 +1,0 @@
-#!/bin/bash
-java \
-    -XX:+AggressiveOpts \
-    -XX:+UseFastAccessorMethods \
-    -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/var/log/aerofs \
-    -Dlogback.configurationFile=./logback.xml \
-    -jar devman.jar devman.yml
