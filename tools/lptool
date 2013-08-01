@@ -191,6 +191,7 @@ function main()
     "delete" ) _lp-delete          ;;
     "deploy" ) _lp-deploy          ;;
     "ssh"    ) _lp-ssh    "${@:-}" ;;
+    "kick"   ) _lp-kick-all        ;;
     *        )
         echo "unrecognized command $command" >&2
         exit 2
