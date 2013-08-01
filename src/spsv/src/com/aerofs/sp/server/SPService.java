@@ -19,6 +19,7 @@ import com.aerofs.base.id.DID;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.lib.FullName;
+import com.aerofs.lib.LibParam.OpenId;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExAlreadyInvited;
@@ -64,6 +65,8 @@ import com.aerofs.proto.Sp.ListPendingFolderInvitationsReply;
 import com.aerofs.proto.Sp.ListUserDevicesReply;
 import com.aerofs.proto.Sp.ListUserDevicesReply.PBDevice;
 import com.aerofs.proto.Sp.ListUserSharedFoldersReply;
+import com.aerofs.proto.Sp.OpenIdSessionAttributes;
+import com.aerofs.proto.Sp.OpenIdSessionNonces;
 import com.aerofs.proto.Sp.PBAuthorizationLevel;
 import com.aerofs.proto.Sp.PBSharedFolder;
 import com.aerofs.proto.Sp.PBSharedFolder.Builder;
@@ -178,6 +181,8 @@ public class SPService implements ISPService
     private final JedisThreadLocalTransaction _jedisTrans;
     private final Analytics _analytics;
 
+    private final IdentitySessionManager _identitySessionManager;
+
     // Remember to udpate text in team_members.mako, team_settings.mako, and pricing.mako when
     // changing this number.
     private int _maxFreeMembersPerTeam = 3;
@@ -199,7 +204,7 @@ public class SPService implements ISPService
             EmailSubscriptionDatabase esdb, Factory factSharedFolder,
             InvitationEmailer.Factory factEmailer, DeviceRegistrationEmailer deviceRegistrationEmailer,
             RequestToSignUpEmailer requestToSignUpEmailer, JedisEpochCommandQueue commandQueue,
-            Analytics analytics)
+            Analytics analytics, IdentitySessionManager identitySessionManager)
     {
         // FIXME: _db shouldn't be accessible here; in fact you should only have a transaction
         // factory that gives you transactions....
@@ -221,6 +226,8 @@ public class SPService implements ISPService
         _deviceRegistrationEmailer = deviceRegistrationEmailer;
         _requestToSignUpEmailer = requestToSignUpEmailer;
         _factEmailer = factEmailer;
+
+        _identitySessionManager = identitySessionManager;
 
         _commandQueue = commandQueue;
         _analytics = checkNotNull(analytics);
@@ -2088,6 +2095,55 @@ public class SPService implements ISPService
         _sqlTrans.commit();
 
         return createVoidReply();
+    }
+
+    @Override
+    public ListenableFuture<OpenIdSessionNonces> openIdBeginTransaction() throws Exception
+    {
+        String session = _identitySessionManager.createSession(OpenId.DELEGATE_TIMEOUT.get());
+        String delegate = _identitySessionManager.createDelegate(session, OpenId.DELEGATE_TIMEOUT.get());
+
+        l.info("Created delegate nonce {} for session nonce {}", delegate, session);
+
+        return createReply(OpenIdSessionNonces.newBuilder()
+                .setSessionNonce(session)
+                .setDelegateNonce(delegate)
+                .build());
+    }
+
+    /**
+     * Check the status of a pending session authentication. If the session is authenticated,
+     * return the user attributes and then delete the pending auth record to avoid a replay.
+     *
+     * @throws ExBadCredential indicates the session is unknown or already returned once.
+     */
+    @Override
+    public ListenableFuture<OpenIdSessionAttributes> openIdGetSessionAttributes(String session)
+            throws Exception
+    {
+        // 1. getSession() may throw ExBadCredential which means the client should give up
+        IdentitySessionAttributes attrs = _identitySessionManager.getSession(session);
+
+        // 2. if attrs is null, the session nonce is ok but we are still waiting for authentication.
+        // return uninitialized SessionAttributes and let the client try again.
+        if (attrs == null) {
+            return createReply(OpenIdSessionAttributes.getDefaultInstance());
+        }
+
+        User user = _factUser.createFromExternalID(attrs.getEmail());
+        l.info("SI (OpenId): " + user.toString());
+
+        // Set the session cookie.
+        _sessionUser.set(user);
+
+        // Update the user tracker so we can invalidate sessions if needed.
+        _userTracker.signIn(user.id(), _sessionUser.getSessionID());
+
+        return createReply(OpenIdSessionAttributes.newBuilder()
+                .setUserId(attrs.getEmail())
+                .setFirstName(attrs.getFirstName())
+                .setLastName(attrs.getLastName())
+                .build());
     }
 
     /**

@@ -1,6 +1,19 @@
 package com.aerofs.controller;
 
+import com.aerofs.base.C;
+import com.aerofs.base.ElapsedTimer;
+import com.aerofs.base.ex.ExBadCredential;
+import com.aerofs.cli.CLI;
+import com.aerofs.gui.GUIUtil;
+import com.aerofs.labeling.L;
+import com.aerofs.lib.LibParam.OpenId;
+import com.aerofs.lib.cfg.Cfg;
+import com.aerofs.proto.Sp.OpenIdSessionAttributes;
+import com.aerofs.proto.Sp.OpenIdSessionNonces;
 import com.aerofs.sp.client.SPBlockingClient;
+import com.aerofs.ui.IUI.MessageType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Implementation for various sign-in mechanisms.
@@ -30,5 +43,87 @@ public abstract class SignInActor
             SPBlockingClient sp = setup.signInUser(model.getUserID(), model.getScrypted());
             model.setClient(sp);
         }
+    }
+
+    /**
+     * OpenId sign-in flow for a GUI - where we can ask GUIUtil to launch a URL.
+     */
+    public static class GUIOpenId extends SignInActor
+    {
+        @Override
+        public void signInUser(Setup setup, SetupModel model) throws Exception
+        {
+            OpenIdHelper helper = new OpenIdHelper(model);
+
+            GUIUtil.launch(helper.getDelegateUrl());
+
+            helper.getSessionAttributes();
+        }
+    }
+
+    public static class CLIOpenId extends SignInActor
+    {
+        public CLIOpenId(CLI cli) { _out = cli; }
+
+        @Override
+        public void signInUser(Setup setup, SetupModel model) throws Exception
+        {
+            OpenIdHelper helper = new OpenIdHelper(model);
+
+            _out.show(MessageType.INFO,
+                    "To complete " + L.product() + " setup, please sign in with your "
+                            + "OpenId Provider by pasting the following URL in a web browser. "
+                            + "This URL can be used only once, and only for this session.\n"
+                            + "Setup will complete automatically once the OpenId provider "
+                            + "confirms your identity.\n");
+            _out.show(MessageType.INFO, helper.getDelegateUrl());
+
+            helper.getSessionAttributes();
+        }
+
+        private final CLI _out;
+    }
+
+    private static class OpenIdHelper extends ElapsedTimer
+    {
+        OpenIdHelper(SetupModel model) throws Exception
+        {
+            _model = model;
+            _spclient = new SPBlockingClient.Factory()
+                    .create_(Cfg.user(), SPBlockingClient.ONE_WAY_AUTH_CONNECTION_CONFIGURATOR);
+            _sessionKeys = _spclient.openIdBeginTransaction();
+
+            start();
+        }
+
+        void getSessionAttributes() throws Exception
+        {
+            while (elapsed() < (OpenId.DELEGATE_TIMEOUT.get() * C.SEC)) {
+                Thread.sleep(OpenId.SESSION_INTERVAL.get() * C.SEC);
+
+                OpenIdSessionAttributes session
+                        = _spclient.openIdGetSessionAttributes(_sessionKeys.getSessionNonce());
+                if (session.getUserId().isEmpty()) { continue; }
+
+                l.info("OpenId user {}", session.getUserId());
+
+                _model.setUserID(session.getUserId());
+                _model.setClient(_spclient);
+                return;
+            }
+            throw new ExBadCredential("Timed out waiting for authentication.");
+        }
+
+        // Return a URL of the form  https://transient/openid/oa?token=ab33f
+        String getDelegateUrl()
+        {
+            return OpenId.IDENTITY_URL.get() + OpenId.IDENTITY_REQ_PATH
+                    + "?" + OpenId.IDENTITY_REQ_PARAM + "=" + _sessionKeys.getDelegateNonce();
+        }
+
+        private SPBlockingClient    _spclient;
+        private OpenIdSessionNonces _sessionKeys;
+        private final SetupModel    _model;
+        private static Logger       l = LoggerFactory.getLogger(OpenIdHelper.class);
     }
 }

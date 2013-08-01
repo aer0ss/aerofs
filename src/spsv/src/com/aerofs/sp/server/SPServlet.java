@@ -118,7 +118,7 @@ public class SPServlet extends AeroServlet
     private final SPService _service = new SPService(_db, _sqlTrans, _jedisTrans, _sessionUser,
             _passwordManagement, _certauth, _factUser, _factOrg, _factOrgInvite, _factDevice,
             _certdb, _esdb, _factSharedFolder, _factEmailer, _deviceRegistrationEmailer,
-            _requestToSignUpEmailer, _commandQueue, _analytics);
+            _requestToSignUpEmailer, _commandQueue, _analytics, new IdentitySessionManager());
     private final SPServiceReactor _reactor = new SPServiceReactor(_service);
 
     private final DoPostDelegate _postDelegate = new DoPostDelegate(SP.SP_POST_PARAM_PROTOCOL,

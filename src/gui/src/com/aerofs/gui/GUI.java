@@ -6,13 +6,15 @@ import com.aerofs.gui.AeroFSMessageBox.ButtonType;
 import com.aerofs.gui.AeroFSMessageBox.IconType;
 import com.aerofs.gui.multiuser.setup.DlgMultiuserSetup;
 import com.aerofs.gui.multiuser.tray.MultiuserMenuProvider;
-import com.aerofs.gui.setup.SingleuserDlgSetup;
+import com.aerofs.gui.setup.DlgCredentialSignIn;
+import com.aerofs.gui.setup.DlgOpenIdSignIn;
 import com.aerofs.gui.setup.DlgPreSetupUpdateCheck;
 import com.aerofs.gui.shellext.ShellextService;
 import com.aerofs.gui.singleuser.tray.SingleuserMenuProvider;
 import com.aerofs.gui.tray.SystemTray;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.InOutArg;
+import com.aerofs.lib.LibParam.OpenId;
 import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExNoConsole;
@@ -539,8 +541,11 @@ public class GUI implements IUI
             // N.B. a null result indicates the user has canceled the setup.
             if (result == null) throw new ExLaunchAborted("user canceled setup");
         } else {
-            SingleuserDlgSetup dlg = new SingleuserDlgSetup(_sh);
+            AeroFSTitleAreaDialog dlg = (OpenId.ENABLED.get() ?
+                    new DlgOpenIdSignIn(_sh) : new DlgCredentialSignIn(_sh));
+
             dlg.open();
+
             if (dlg.isCancelled()) throw new ExLaunchAborted("user canceled setup");
         }
     }

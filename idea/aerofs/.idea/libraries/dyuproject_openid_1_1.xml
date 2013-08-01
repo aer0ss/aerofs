@@ -1,0 +1,10 @@
+<component name="libraryTable">
+  <library name="dyuproject-openid-1.1">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/../../resource/server/lib/dyuproject-openid-1.1.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../resource/server/lib/dyuproject-util-1.1.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
