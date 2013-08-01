@@ -51,6 +51,28 @@ function _uppercase_repo()
     whoami | tr [a-z] [A-Z]
 }
 
+function _print-available-boxes()
+{
+    echo "available boxes: persistent, transient" >&2
+}
+
+function _check-box()
+{
+    local box=''
+    case $1 in
+    persistent) box=persistent ;;
+    transient ) box=transient  ;;
+    esac
+
+    if [[ -z "$box" ]]; then
+        echo "unrecognized box:$1" >&2
+        _print-available-boxes
+        exit 1
+    fi
+
+    echo $box
+}
+
 #
 # Runs a command in the local-prod directory
 #
@@ -63,12 +85,66 @@ function _local-prod-cmd()
 # Packaging
 # -----------------------------------------------------------
 
-function _package-all()
+function _check-aerofs-apt-reachable
 {
+    do_in $AEROFS_ROOT/packaging/bakery/local-prod ./chkapt
+}
+
+function _package()
+{
+    repo=$(_uppercase_repo)
+    local repo
+
+    _check-aerofs-apt-reachable
+
+    do_in $AEROFS_ROOT ant package_${1} \
+        -Dmode=ENTERPRISE \
+        -Dproduct=CLIENT \
+        -Drepo="$repo"
+}
+
+function _package-and-upload-all()
+{
+    repo=$(_uppercase_repo)
+    local repo
+
+    _check-aerofs-apt-reachable
+
     do_in $AEROFS_ROOT ant clean package_servers upload_versions \
         -Dproduct=CLIENT \
         -Dmode=ENTERPRISE \
-        -Drepo=$(_uppercase_repo)
+        -Drepo="$repo"
+}
+
+# -----------------------------------------------------------
+# Deploys
+# -----------------------------------------------------------
+
+function _lp-deploy()
+{
+    if [[ $# -ne 2 ]]; then
+        echo "usage: lptool deploy box_name package_name" >&2
+        echo >&2
+        _print-available-boxes
+        exit 1
+    fi
+
+    # IMPORTANT: you must do this in two parts because otherwise
+    # the exit status of the subshell will not be preseved; i.e.
+    # local box=$(...) will break, but the two-parter below wont
+    box=$(_check-box $1)
+    local box
+
+    local package=$2
+
+    _package $package
+    _local-prod-cmd ./lpctrl deploy $box $package
+}
+
+function _lp-deploy-all()
+{
+    _package-and-upload-all
+    _lp-kick-transient
 }
 
 # -----------------------------------------------------------
@@ -94,35 +170,17 @@ function _print-kick-usage()
 
 function _lp-kick()
 {
-    if [ $# -ne 1 ]
-    then
-        _print-kick-usage
+    if [[ $# -ne 1 ]]; then
+        echo "usage: lptool kick [box_name]" >&2
+        echo >&2
+        _print-available-boxes
         exit 1
     fi
 
-    local box=''
-    case $1 in
-    persistent) box=persistent ;;
-    transient ) box=transient  ;;
-    esac
-
-    if [[ -z "$box" ]]
-    then
-        _print-kick-usage
-        exit 1
-    fi
+    box=$(_check-box $1)
+    local box
 
     _lp-kick-${box}
-}
-
-# -----------------------------------------------------------
-# Deploys
-# -----------------------------------------------------------
-
-function _lp-deploy()
-{
-    _package-all
-    _lp-kick-transient
 }
 
 # -----------------------------------------------------------
@@ -131,8 +189,11 @@ function _lp-deploy()
 
 function _lp-create()
 {
-    _package-all
-    _local-prod-cmd ./makelp $(_lowercase_repo) "${@}"
+    repo=$(_lowercase_repo)
+    local repo
+
+    _package-and-upload-all
+    _local-prod-cmd ./makelp "$repo"  "${@}"
 }
 
 function _lp-start()
@@ -163,7 +224,7 @@ function _print-ssh-usage()
 {
     echo "usage: lptool ssh box_name" >&2
     echo >&2
-    echo "available boxes: persistent, transient" >&2
+    _print-available-boxes
     echo >&2
     echo "simply sudo su to get root access (no password required)." >&2
 }
@@ -175,52 +236,10 @@ function _lp-ssh()
         exit 1
     fi
 
-    local box=''
-    case $1 in
-    persistent) box=persistent ;;
-    transient ) box=transient  ;;
-    esac
-
-    if [[ -z "$box" ]]; then
-        _print-ssh-usage
-        exit 1
-    fi
+    box=$(_check-box $1)
+    local box
 
     do_in $AEROFS_ROOT/packaging/bakery/local-prod vagrant ssh $box
-}
-
-function _print-install-usage()
-{
-    echo "usage: lptool install box_name package_name" >&2
-    echo >&2
-    echo "available boxes: persistent, transient" >&2
-}
-
-function _lp-install()
-{
-    if [[ $# -ne 2 ]]; then
-        _print-install-usage
-        exit 1
-    fi
-
-    local box=''
-    case ${1:-} in
-    persistent) box=persistent ;;
-    transient ) box=transient  ;;
-    esac
-
-    if [[ -z "$box" ]]; then
-        _print-install-usage
-        exit 1
-    fi
-
-    local package=${2:-}
-    do_in $AEROFS_ROOT ant package_${package} \
-        -Dmode=ENTERPRISE \
-        -Dproduct=CLIENT \
-        -Drepo=$(_uppercase_repo)
-
-    _local-prod-cmd ./lpctrl install $box $package
 }
 
 # -----------------------------------------------------------
@@ -243,16 +262,17 @@ function main()
     local command=$1
     shift
     case $command in
-    "create"  ) _lp-create  "${@:-}" ;;
-    "start"   ) _lp-start   "${@:-}" ;;
-    "halt"    ) _lp-halt             ;;
-    "reboot"  ) _lp-reboot  "${@:-}" ;;
-    "delete"  ) _lp-delete           ;;
-    "deploy"  ) _lp-deploy           ;;
-    "ssh"     ) _lp-ssh     "${@:-}" ;;
-    "kick"    ) _lp-kick    "${@:-}" ;;
-    "install" ) _lp-install "${@:-}" ;;
-    *         )
+    "create"    ) _lp-create     "${@:-}" ;;
+    "start"     ) _lp-start      "${@:-}" ;;
+    "halt"      ) _lp-halt                ;;
+    "reboot"    ) _lp-reboot     "${@:-}" ;;
+    "delete"    ) _lp-delete              ;;
+    "deploy"    ) _lp-deploy     "${@:-}" ;;
+    "deploy-all") _lp-deploy-all          ;;
+    "ssh"       ) _lp-ssh        "${@:-}" ;;
+    "kick"      ) _lp-kick       "${@:-}" ;;
+    "kick-all"  ) _lp-kick-all            ;;
+    *           )
         echo "unrecognized command $command" >&2
         exit 2
         ;;
