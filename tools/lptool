@@ -85,9 +85,34 @@ function _lp-kick-persistent()
     _local-prod-cmd ./lpctrl kick persistent
 }
 
-function _lp-kick-all()
+function _print-kick-usage()
 {
-    _local-prod-cmd ./lpctrl kick
+    echo "usage: lptool kick [box_name]" >&2
+    echo >&2
+    echo "available boxes: persistent, transient" >&2
+}
+
+function _lp-kick()
+{
+    if [ $# -ne 1 ]
+    then
+        _print-kick-usage
+        exit 1
+    fi
+
+    local box=''
+    case $1 in
+    persistent) box=persistent ;;
+    transient ) box=transient  ;;
+    esac
+
+    if [[ -z "$box" ]]
+    then
+        _print-kick-usage
+        exit 1
+    fi
+
+    _lp-kick-${box}
 }
 
 # -----------------------------------------------------------
@@ -225,7 +250,7 @@ function main()
     "delete"  ) _lp-delete           ;;
     "deploy"  ) _lp-deploy           ;;
     "ssh"     ) _lp-ssh     "${@:-}" ;;
-    "kick"    ) _lp-kick-all         ;;
+    "kick"    ) _lp-kick    "${@:-}" ;;
     "install" ) _lp-install "${@:-}" ;;
     *         )
         echo "unrecognized command $command" >&2
