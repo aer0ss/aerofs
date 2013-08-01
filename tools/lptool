@@ -184,13 +184,13 @@ function main()
     local command=$1
     shift
     case $command in
-    "create" ) _lp-create "${@}" ;;
-    "start"  ) _lp-start  "${@}" ;;
-    "halt"   ) _lp-halt          ;;
-    "reboot" ) _lp-reboot "${@}" ;;
-    "delete" ) _lp-delete        ;;
-    "deploy" ) _lp-deploy        ;;
-    "ssh"    ) _lp-ssh    "${@}" ;;
+    "create" ) _lp-create "${@:-}" ;;
+    "start"  ) _lp-start  "${@:-}" ;;
+    "halt"   ) _lp-halt            ;;
+    "reboot" ) _lp-reboot "${@:-}" ;;
+    "delete" ) _lp-delete          ;;
+    "deploy" ) _lp-deploy          ;;
+    "ssh"    ) _lp-ssh    "${@:-}" ;;
     *        )
         echo "unrecognized command $command" >&2
         exit 2
