@@ -4,8 +4,6 @@ import com.aerofs.base.net.AddressResolverHandler;
 import com.aerofs.lib.BlockIncomingMessagesHandler;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.MagicHandler;
-import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.cfg.Cfg.PortType;
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelPipelineFactory;
@@ -23,11 +21,13 @@ public class RitualNotificationServer
 {
     private final RitualNotifier _ritualNotifier;
     private final ServerBootstrap _bootstrap;
+    private final RitualNotificationSystemConfiguration _config;
 
     @Inject
-    public RitualNotificationServer(ServerSocketChannelFactory serverSocketChannelFactory)
+    public RitualNotificationServer(ServerSocketChannelFactory serverSocketChannelFactory,
+            RitualNotifier notifier, RitualNotificationSystemConfiguration config)
     {
-        this._ritualNotifier = new RitualNotifier();
+        this._ritualNotifier = notifier;
 
         ServerBootstrap bootstrap = new ServerBootstrap(serverSocketChannelFactory);
         bootstrap.setPipelineFactory(new ChannelPipelineFactory()
@@ -48,11 +48,13 @@ public class RitualNotificationServer
         bootstrap.setOption("SO_REUSEADDR", true);
 
         this._bootstrap = bootstrap;
+        this._config = config;
     }
 
     public void start_()
     {
-        _bootstrap.bind(new InetSocketAddress(LibParam.LOCALHOST_ADDR.getHostName(), Cfg.port(PortType.RITUAL_NOTIFICATION))); // resolves inline
+        _bootstrap.bind(new InetSocketAddress(_config.getAddress().getHostName(),
+                _config.getPort())); // resolves inline
     }
 
     public RitualNotifier getRitualNotifier()

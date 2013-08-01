@@ -9,6 +9,7 @@ import com.aerofs.ritual.RitualBlockingClient;
 import com.aerofs.ritual.RitualClient;
 import com.aerofs.ritual.RitualClientProvider;
 import com.aerofs.ritual_notification.RitualNotificationClient;
+import com.aerofs.ritual_notification.RitualNotificationSystemConfiguration;
 import com.aerofs.rocklog.RockLog;
 import com.aerofs.ui.update.Updater;
 
@@ -29,7 +30,8 @@ public final class UIGlobals
 
     private static final Updater s_updater = Updater.getInstance_();
     private static final UINotifier s_notifier = new UINotifier();
-    private static final RitualNotificationClient s_rnc = new RitualNotificationClient();
+    private static final RitualNotificationClient s_rnc = new RitualNotificationClient(
+            new RitualNotificationSystemConfiguration());
     private static final TransferState s_ts = new TransferState(s_rnc);
     private static final SanityPoller s_rap = new SanityPoller();
     private static final InfoCollector s_ic = new InfoCollector();

@@ -29,7 +29,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 
-import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Set;
 
@@ -90,6 +89,11 @@ public class NotificationService implements IRitualNotificationClientConnectedLi
     private boolean filterMeta_()
     {
         return Cfg.useTransferFilter();
+    }
+
+    private void setupRitualNotificationListener_()
+    {
+        _rns.getRitualNotifier().addListener(this);
     }
 
     private void setupTransferNotifiers_()
@@ -157,8 +161,9 @@ public class NotificationService implements IRitualNotificationClientConnectedLi
         }, VERKEHR, SYNCSTAT);
     }
 
-    public void init_() throws IOException
+    public void init_()
     {
+        setupRitualNotificationListener_();
         setupBadCredentialNotifier_();
         setupTransferNotifiers_();
         setupPathStatusNotifiers_();

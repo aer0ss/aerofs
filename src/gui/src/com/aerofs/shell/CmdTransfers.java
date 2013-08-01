@@ -9,6 +9,7 @@ import com.aerofs.proto.RitualNotifications.PBNotification.Type;
 import com.aerofs.proto.RitualNotifications.PBTransferEvent;
 import com.aerofs.ritual_notification.IRitualNotificationListener;
 import com.aerofs.ritual_notification.RitualNotificationClient;
+import com.aerofs.ritual_notification.RitualNotificationSystemConfiguration;
 import com.aerofs.ui.UIUtil;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
@@ -31,7 +32,7 @@ public class CmdTransfers implements IShellCommand<ShProgram>
         }
 
         final boolean debugFinal = debug;
-        RitualNotificationClient rnc = new RitualNotificationClient();
+        RitualNotificationClient rnc = new RitualNotificationClient(new RitualNotificationSystemConfiguration());
         rnc.addListener(new IRitualNotificationListener() {
             @Override
             public void onNotificationReceived(PBNotification pb)

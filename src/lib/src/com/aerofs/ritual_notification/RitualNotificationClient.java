@@ -4,8 +4,6 @@ import com.aerofs.base.Loggers;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.cfg.Cfg.PortType;
 import com.aerofs.lib.notifier.ConcurrentlyModifiableListeners;
 import com.aerofs.proto.RitualNotifications.PBNotification;
 import org.slf4j.Logger;
@@ -28,6 +26,13 @@ public class RitualNotificationClient
 
     // access protected by synchronized (_ls)
     private final ConcurrentlyModifiableListeners<IRitualNotificationListener> _ls = ConcurrentlyModifiableListeners.create();
+
+    private final RitualNotificationSystemConfiguration _config;
+
+    public RitualNotificationClient(RitualNotificationSystemConfiguration config)
+    {
+        _config = config;
+    }
 
     /**
      * @pre this method hasn't been called before.
@@ -91,7 +96,7 @@ public class RitualNotificationClient
 
     private void thdRecv_() throws IOException
     {
-        Socket s = new Socket(LibParam.LOCALHOST_ADDR, Cfg.port(PortType.RITUAL_NOTIFICATION));
+        Socket s = new Socket(_config.getAddress(), _config.getPort());
         try {
             DataInputStream is = new DataInputStream(new BufferedInputStream(s.getInputStream()));
             while (true) {
