@@ -164,6 +164,40 @@ function _lp-ssh()
     do_in $AEROFS_ROOT/packaging/bakery/local-prod vagrant ssh $box
 }
 
+function _print-install-usage()
+{
+    echo "usage: lptool install box_name package_name" >&2
+    echo >&2
+    echo "available boxes: persistent, transient" >&2
+}
+
+function _lp-install()
+{
+    if [[ $# -ne 2 ]]; then
+        _print-install-usage
+        exit 1
+    fi
+
+    local box=''
+    case ${1:-} in
+    persistent) box=persistent ;;
+    transient ) box=transient  ;;
+    esac
+
+    if [[ -z "$box" ]]; then
+        _print-install-usage
+        exit 1
+    fi
+
+    local package=${2:-}
+    do_in $AEROFS_ROOT ant package_${package} \
+        -Dmode=ENTERPRISE \
+        -Dproduct=CLIENT \
+        -Drepo=$(_uppercase_repo)
+
+    _local-prod-cmd ./lpctrl install $box $package
+}
+
 # -----------------------------------------------------------
 # main
 # -----------------------------------------------------------
@@ -184,15 +218,16 @@ function main()
     local command=$1
     shift
     case $command in
-    "create" ) _lp-create "${@:-}" ;;
-    "start"  ) _lp-start  "${@:-}" ;;
-    "halt"   ) _lp-halt            ;;
-    "reboot" ) _lp-reboot "${@:-}" ;;
-    "delete" ) _lp-delete          ;;
-    "deploy" ) _lp-deploy          ;;
-    "ssh"    ) _lp-ssh    "${@:-}" ;;
-    "kick"   ) _lp-kick-all        ;;
-    *        )
+    "create"  ) _lp-create  "${@:-}" ;;
+    "start"   ) _lp-start   "${@:-}" ;;
+    "halt"    ) _lp-halt             ;;
+    "reboot"  ) _lp-reboot  "${@:-}" ;;
+    "delete"  ) _lp-delete           ;;
+    "deploy"  ) _lp-deploy           ;;
+    "ssh"     ) _lp-ssh     "${@:-}" ;;
+    "kick"    ) _lp-kick-all         ;;
+    "install" ) _lp-install "${@:-}" ;;
+    *         )
         echo "unrecognized command $command" >&2
         exit 2
         ;;

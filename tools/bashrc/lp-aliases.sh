@@ -12,4 +12,5 @@ alias lp-halt="$LPTOOL halt"
 alias lp-start="$LPTOOL start"
 alias lp-ssh="$LPTOOL ssh"
 alias lp-kick="$LPTOOL kick"
+alias lp-install="$LPTOOL install"
 alias lptool=$LPTOOL
