@@ -127,8 +127,11 @@ public class SanityPoller
                 // TODO: use a custom dialog that:
                 // 1. auto-close if some space is freed
                 // 2. suggest cleaning sync history
-                exit = UI.get().ask(MessageType.WARN, "Disk full on " + absPath,
-                        "Quit AeroFS", "I took care of it, get back to work");
+                String message = "The disk is full on " + absPath + ".\n\n" +
+                        "Please free up more disk space by deleting unused files " +
+                        "so AeroFS can continue to function.";
+
+                exit = UI.get().ask(MessageType.WARN, message, "Quit AeroFS", "Close");
             } catch (ExNoConsole e) {}
             if (exit) ExitCode.SHUTDOWN_REQUESTED.exit();
 
