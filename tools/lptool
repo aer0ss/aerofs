@@ -25,7 +25,7 @@ function do_in
     shift
     set +e
 
-    $@;
+    "$@";
 
     typeset retval=$?
     cd $_wd
@@ -56,7 +56,7 @@ function _uppercase_repo()
 #
 function _local-prod-cmd()
 {
-    do_in $AEROFS_ROOT/packaging/bakery/local-prod $@
+    do_in $AEROFS_ROOT/packaging/bakery/local-prod "$@"
 }
 
 # -----------------------------------------------------------
@@ -107,12 +107,12 @@ function _lp-deploy()
 function _lp-create()
 {
     _package-all
-    _local-prod-cmd ./makelp $(_lowercase_repo) ${1:-}
+    _local-prod-cmd ./makelp $(_lowercase_repo) "${@}"
 }
 
 function _lp-start()
 {
-    _local-prod-cmd ./lpctrl start ${1:-}
+    _local-prod-cmd ./lpctrl start "${@}"
 }
 
 function _lp-halt()
@@ -122,7 +122,7 @@ function _lp-halt()
 
 function _lp-reboot()
 {
-    _local-prod-cmd ./lpctrl reboot ${1:-}
+    _local-prod-cmd ./lpctrl reboot "${@}"
 }
 
 function _lp-delete()
@@ -184,13 +184,13 @@ function main()
     local command=$1
     shift
     case $command in
-    "create" ) _lp-create ${1:-} ;;
-    "start"  ) _lp-start  ${1:-} ;;
+    "create" ) _lp-create "${@}" ;;
+    "start"  ) _lp-start  "${@}" ;;
     "halt"   ) _lp-halt          ;;
-    "reboot" ) _lp-reboot ${1:-} ;;
+    "reboot" ) _lp-reboot "${@}" ;;
     "delete" ) _lp-delete        ;;
     "deploy" ) _lp-deploy        ;;
-    "ssh"    ) _lp-ssh    ${1:-} ;;
+    "ssh"    ) _lp-ssh    "${@}" ;;
     *        )
         echo "unrecognized command $command" >&2
         exit 2
