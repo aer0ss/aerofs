@@ -3,13 +3,14 @@ option java_package = "com.aerofs.proto";
 option optimize_for = LITE_RUNTIME; // remove reflection
 
 import "common.proto";
-import "files.proto";
+import "diagnostics.proto";
 import "path_status.proto";
 
 service RitualService {
 
     // Sets the message type used in case of errors
     rpc __error__(Void) returns(PBException);
+
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
     // Object management (abstracting away storage backend)
@@ -127,6 +128,7 @@ service RitualService {
     // Get status summary (shellext-ready) for a list of files
     rpc GetPathStatus(GetPathStatusCall) returns(GetPathStatusReply);
 
+
     ///////////////////////////////////////////////////////////////////////////////////////////////
     // Revision History
 
@@ -187,10 +189,13 @@ service RitualService {
 
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
-    // Misc internal methods
+    // Diagnostics
 
     // Dump daemon statistics (for internal use only)
     rpc DumpStats(DumpStatsCall) returns(DumpStatsReply);
+
+    // Dump transport diagnostics
+    rpc GetTransportDiagnostics(Void) returns (GetTransportDiagnosticsReply);
 
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -608,4 +613,10 @@ message TestGetAliasObjectCall {
 
 message TestGetAliasObjectReply {
     repeated bytes oid = 1;
+}
+
+message GetTransportDiagnosticsReply {
+    optional TCPDiagnostics tcp_diagnostics = 1;
+    optional JingleDiagnostics jingle_diagnostics = 2;
+    optional ZephyrDiagnostics zephyr_diagnostics = 3;
 }

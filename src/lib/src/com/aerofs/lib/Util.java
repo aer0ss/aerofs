@@ -147,7 +147,7 @@ public abstract class Util
 
     public static void logAllThreadStackTraces()
     {
-        l.warn("==== BEGIN STACKS ====\n{}\n==== END STACKS ====", getAllThreadStackTraces(ThreadUtil.getAllThreads()));
+        l.error("==== BEGIN STACKS ====\n{}\n==== END STACKS ====", getAllThreadStackTraces(ThreadUtil.getAllThreads()));
     }
 
     private static Set<Class<?>> s_suppressStackTrace = newHashSet();

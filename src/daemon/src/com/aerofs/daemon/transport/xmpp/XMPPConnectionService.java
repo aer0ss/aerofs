@@ -6,7 +6,8 @@
 package com.aerofs.daemon.transport.xmpp;
 
 import com.aerofs.base.Base64;
-import com.aerofs.base.BaseParam.Xmpp;
+import com.aerofs.base.BaseParam.XMPP;
+import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.JabberID;
@@ -25,11 +26,13 @@ import org.slf4j.Logger;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.net.InetSocketAddress;
+import java.net.Socket;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.aerofs.daemon.transport.exception.TransportDefects.DEFECT_NAME_XSC_CONNECTION_ALREADY_REPLACED;
+import static com.aerofs.daemon.transport.lib.TransportUtil.newConnectedSocket;
 import static com.aerofs.lib.LibParam.EXP_RETRY_MIN_DEFAULT;
 import static com.aerofs.lib.Util.exponentialRetryNewThread;
 
@@ -107,6 +110,25 @@ public final class XMPPConnectionService implements IDumpStatMisc
         return c;
     }
 
+    public boolean isReachable()
+            throws IOException
+    {
+        Socket s = null;
+        try {
+            s = newConnectedSocket(XMPP.ADDRESS.get(), (int)(2 * C.SEC));
+            return true;
+        } catch (IOException e) {
+            l.warn("fail xmpp reachability check", e);
+            throw e;
+        } finally {
+            if (s != null) try {
+                s.close();
+            } catch (IOException e) {
+                l.warn("fail close reachability socket with err:{}", e.getMessage());
+            }
+        }
+    }
+
     /**
      * Returns the credentials required to log into the XMPP server
      *
@@ -152,9 +174,9 @@ public final class XMPPConnectionService implements IDumpStatMisc
         // The xmpp server address is an unresolved hostname.
         // We avoid resolving the hostname ourselves and let
         // SMACK do the DNS query on its thread.
-        InetSocketAddress address = Xmpp.ADDRESS.get();
+        InetSocketAddress address = XMPP.ADDRESS.get();
         ConnectionConfiguration cc = new ConnectionConfiguration(address.getHostName(), address.getPort());
-        cc.setServiceName(Xmpp.SERVER_DOMAIN.get());
+        cc.setServiceName(XMPP.SERVER_DOMAIN.get());
         cc.setSecurityMode(SecurityMode.required);
         cc.setSelfSignedCertificateEnabled(true);
         cc.setVerifyChainEnabled(false);

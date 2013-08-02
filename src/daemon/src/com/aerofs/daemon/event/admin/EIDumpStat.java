@@ -2,7 +2,7 @@ package com.aerofs.daemon.event.admin;
 
 import com.aerofs.daemon.event.lib.imc.AbstractEBIMC;
 import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
-import com.aerofs.proto.Files.PBDumpStat;
+import com.aerofs.proto.Diagnostics.PBDumpStat;
 
 public class EIDumpStat extends AbstractEBIMC
 {

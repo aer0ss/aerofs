@@ -34,21 +34,16 @@ public class BaseParam
         props = source;
     }
 
-    public static class Xmpp
+    public static class XMPP
     {
-        public static final IProperty<String> SERVER_DOMAIN = props.stringProperty("base.xmpp.domain",
-                "aerofs.com");
+        public static final IProperty<String> SERVER_DOMAIN = props.stringProperty("base.xmpp.domain", "aerofs.com");
 
         public static String getMucAddress()
         {
             return "c." + SERVER_DOMAIN.get();
         }
 
-        // staging value: "staging.aerofs.com:9328"
-        // this value is dynamic but clients will not pick up the new value on failure
-        public static final IProperty<InetSocketAddress> ADDRESS = props.addressProperty(
-                "base.xmpp.address",
-                InetSocketAddress.createUnresolved("x.aerofs.com", 443));
+        public static final IProperty<InetSocketAddress> ADDRESS = props.addressProperty( "base.xmpp.address", InetSocketAddress.createUnresolved("x.aerofs.com", 443));
     }
 
     public static class Metrics

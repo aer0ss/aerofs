@@ -21,9 +21,9 @@ import com.aerofs.daemon.transport.lib.HdPulse;
 import com.aerofs.daemon.transport.lib.ITransportImpl;
 import com.aerofs.daemon.transport.lib.MaxcastFilterReceiver;
 import com.aerofs.daemon.transport.lib.PulseManager;
-import com.aerofs.daemon.transport.lib.TransportProtocolHandler;
 import com.aerofs.daemon.transport.lib.StreamManager;
 import com.aerofs.daemon.transport.lib.TPUtil;
+import com.aerofs.daemon.transport.lib.TransportProtocolHandler;
 import com.aerofs.daemon.transport.lib.TransportStats;
 import com.aerofs.daemon.transport.netty.ClientHandler;
 import com.aerofs.daemon.transport.netty.IUnicastCallbacks;
@@ -31,6 +31,7 @@ import com.aerofs.daemon.transport.netty.Unicast;
 import com.aerofs.daemon.transport.tcp.ARP.ARPChange;
 import com.aerofs.daemon.transport.tcp.ARP.ARPEntry;
 import com.aerofs.daemon.transport.tcp.ARP.IARPChangeListener;
+import com.aerofs.daemon.transport.tcp.ARP.IARPVisitor;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
@@ -38,8 +39,12 @@ import com.aerofs.lib.event.IEvent;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.ex.ExDeviceOffline;
 import com.aerofs.lib.sched.Scheduler;
-import com.aerofs.proto.Files.PBDumpStat;
-import com.aerofs.proto.Files.PBDumpStat.PBTransport;
+import com.aerofs.proto.Diagnostics.PBDumpStat;
+import com.aerofs.proto.Diagnostics.PBDumpStat.PBTransport;
+import com.aerofs.proto.Diagnostics.PBInetSocketAddress;
+import com.aerofs.proto.Diagnostics.TCPDevice;
+import com.aerofs.proto.Diagnostics.TCPDiagnostics;
+import com.aerofs.proto.Ritual.GetTransportDiagnosticsReply;
 import com.aerofs.proto.Transport.PBTCPPong;
 import com.aerofs.proto.Transport.PBTPHeader;
 import com.aerofs.proto.Transport.PBTPHeader.Type;
@@ -61,6 +66,7 @@ import java.util.Set;
 
 import static com.aerofs.daemon.lib.DaemonParam.TCP.ARP_GC_INTERVAL;
 import static com.aerofs.daemon.lib.DaemonParam.TCP.QUEUE_LENGTH;
+import static com.google.common.collect.Lists.newLinkedList;
 
 public class TCP implements IUnicastCallbacks, ITransportImpl, IARPChangeListener
 {
@@ -214,6 +220,7 @@ public class TCP implements IUnicastCallbacks, ITransportImpl, IARPChangeListene
             public void run()
             {
                 OutArg<Prio> outPrio = new OutArg<Prio>();
+                //noinspection InfiniteLoopStatement
                 while (true) {
                     IEvent ev = _q.dequeue(outPrio);
                     _disp.dispatch_(ev, outPrio.get());
@@ -479,6 +486,62 @@ public class TCP implements IUnicastCallbacks, ITransportImpl, IARPChangeListene
         _q.dumpStatMisc(indent2, indentUnit, ps);
     }
 
+    @Override
+    public void dumpDiagnostics(GetTransportDiagnosticsReply.Builder transportDiagnostics)
+    {
+        transportDiagnostics.setTcpDiagnostics(getDiagnostics());
+    }
+
+    private TCPDiagnostics getDiagnostics()
+    {
+        TCPDiagnostics.Builder diagnostics = TCPDiagnostics.newBuilder();
+
+        // listening port
+
+        int listeningPort = ((InetSocketAddress) _ucast.getServerAddress()).getPort();
+        PBInetSocketAddress.Builder ourAddress = PBInetSocketAddress.newBuilder();
+        if (listeningPort > 0) {
+            ourAddress.setHost("*").setPort(listeningPort);
+        }
+        diagnostics.setListeningAddress(ourAddress);
+
+        // reachable_devices
+
+        final List<TCPDevice> reachableDevices = newLinkedList();
+        _arp.visitARPEntries(new IARPVisitor()
+        {
+            @Override
+            public void visit_(DID did, ARPEntry arp)
+            {
+                TCPDevice device = TCPDevice
+                        .newBuilder()
+                        .setDid(did.toPB())
+                        .setDeviceAddress(PBInetSocketAddress
+                                .newBuilder()
+                                .setHost(arp._isa.getAddress().getHostAddress()) // always numeric
+                                .setPort(arp._isa.getPort()))
+                        .build();
+
+                reachableDevices.add(device);
+            }
+        });
+        diagnostics.addAllReachableDevices(reachableDevices);
+
+        return diagnostics.build();
+    }
+
+    @Override
+    public long bytesIn()
+    {
+        return _transportStats.getBytesReceived();
+    }
+
+    @Override
+    public long bytesOut()
+    {
+        return _transportStats.getBytesSent();
+    }
+
     //
     // utility methods
     //
@@ -502,17 +565,5 @@ public class TCP implements IUnicastCallbacks, ITransportImpl, IARPChangeListene
                 .setType(Type.TCP_GO_OFFLINE)
                 .setTcpMulticastDeviceId(_localDID.toPB())
                 .build();
-    }
-
-    @Override
-    public long bytesIn()
-    {
-        return _transportStats.getBytesReceived();
-    }
-
-    @Override
-    public long bytesOut()
-    {
-        return _transportStats.getBytesSent();
     }
 }

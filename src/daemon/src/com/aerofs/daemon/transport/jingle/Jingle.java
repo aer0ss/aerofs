@@ -4,6 +4,8 @@
 
 package com.aerofs.daemon.transport.jingle;
 
+
+import com.aerofs.base.BaseParam.XMPP;
 import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.SID;
@@ -13,7 +15,7 @@ import com.aerofs.daemon.event.lib.EventDispatcher;
 import com.aerofs.daemon.event.net.EOTpStartPulse;
 import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.lib.BlockingPrioQueue;
-import com.aerofs.daemon.lib.DaemonParam.XMPP;
+import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.daemon.transport.TransportThreadGroup;
 import com.aerofs.daemon.transport.lib.HdPulse;
 import com.aerofs.daemon.transport.lib.IMaxcast;
@@ -40,20 +42,27 @@ import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.ex.ExDeviceOffline;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.lib.sched.Scheduler;
-import com.aerofs.proto.Files.PBDumpStat;
-import com.aerofs.proto.Files.PBDumpStat.Builder;
-import com.aerofs.proto.Files.PBDumpStat.PBTransport;
+import com.aerofs.proto.Diagnostics.JingleDevice;
+import com.aerofs.proto.Diagnostics.JingleDiagnostics;
+import com.aerofs.proto.Diagnostics.PBDumpStat;
+import com.aerofs.proto.Diagnostics.PBDumpStat.PBTransport;
+import com.aerofs.proto.Diagnostics.ServerStatus;
+import com.aerofs.proto.Ritual.GetTransportDiagnosticsReply;
 import com.aerofs.rocklog.RockLog;
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.bootstrap.ServerBootstrap;
 
+import java.io.IOException;
 import java.io.PrintStream;
 import java.net.NetworkInterface;
 import java.net.SocketAddress;
+import java.net.UnknownHostException;
 import java.util.Set;
 
 import static com.aerofs.daemon.transport.lib.TPUtil.registerMulticastHandler;
-
+import static com.aerofs.daemon.transport.lib.TransportUtil.fromInetSockAddress;
+import static com.aerofs.daemon.transport.lib.TransportUtil.getReachabilityErrorString;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public class Jingle implements ITransportImpl, IUnicastCallbacks
 {
@@ -75,8 +84,14 @@ public class Jingle implements ITransportImpl, IUnicastCallbacks
     private final XMPPConnectionService _xmppServer;
     private final Unicast _ucast;
 
-    public Jingle(UserID localUser, DID localDID, byte[] scrypted, String absRtRoot, String id, int rank,
-            IBlockingPrioritizedEventSink<IEvent> sink, MaxcastFilterReceiver mcfr, RockLog rockLog,
+    public Jingle(UserID localUser,
+            DID localDID,
+            byte[] scrypted,
+            String absRtRoot,
+            String id, int rank,
+            IBlockingPrioritizedEventSink<IEvent> sink,
+            MaxcastFilterReceiver mcfr,
+            RockLog rockLog,
             SSLEngineFactory clientSslEngineFactory,
             SSLEngineFactory serverSslEngineFactory
             )
@@ -85,7 +100,7 @@ public class Jingle implements ITransportImpl, IUnicastCallbacks
         _id = id;
         _rank = rank;
         _sink = sink;
-        _q = new BlockingPrioQueue<IEvent>(XMPP.QUEUE_LENGTH);
+        _q = new BlockingPrioQueue<IEvent>(DaemonParam.XMPP.QUEUE_LENGTH);
         _sched = new Scheduler(_q, id);
         _transportStats = new TransportStats();
 
@@ -101,8 +116,7 @@ public class Jingle implements ITransportImpl, IUnicastCallbacks
         _ucast = new Unicast(this, _transportStats);
         TransportProtocolHandler protocolHandler = new TransportProtocolHandler(this, sink, _sm, _pulseManager);
         JingleBootstrapFactory bsFact = new JingleBootstrapFactory(localUser, localDID, clientSslEngineFactory, serverSslEngineFactory, _transportStats);
-        ServerBootstrap serverBootstrap = bsFact.newServerBootstrap(_signalThread, _ucast,
-                protocolHandler);
+        ServerBootstrap serverBootstrap = bsFact.newServerBootstrap(_signalThread, _ucast, protocolHandler);
         ClientBootstrap clientBootstrap = bsFact.newClientBootstrap(_signalThread);
         _ucast.setBootstraps(serverBootstrap, clientBootstrap);
 
@@ -138,6 +152,7 @@ public class Jingle implements ITransportImpl, IUnicastCallbacks
             public void run()
             {
                 OutArg<Prio> outPrio = new OutArg<Prio>();
+                //noinspection InfiniteLoopStatement
                 while (true) {
                     IEvent ev = _q.dequeue(outPrio);
                     _disp.dispatch_(ev, outPrio.get());
@@ -240,14 +255,12 @@ public class Jingle implements ITransportImpl, IUnicastCallbacks
     }
 
     @Override
-    public void dumpStat(PBDumpStat dstemplate, final Builder dsbuilder)
+    public void dumpStat(PBDumpStat dstemplate, final PBDumpStat.Builder dsbuilder)
             throws Exception
     {
         // TODO (GS): Copied from TCP
 
-        PBTransport tp = dstemplate.getTransport(0);
-        assert tp != null : ("called dumpstat with null tp");
-
+        PBTransport tp = checkNotNull(dstemplate.getTransport(0));
         PBTransport.Builder tpbuilder = PBTransport.newBuilder();
         if (tp.hasName()) tpbuilder.setName(id());
 
@@ -305,6 +318,60 @@ public class Jingle implements ITransportImpl, IUnicastCallbacks
             throws ExDeviceOffline
     {
         return new DIDAddress(did);
+    }
+
+    @Override
+    public void dumpDiagnostics(GetTransportDiagnosticsReply.Builder transportDiagnostics)
+    {
+        transportDiagnostics.setJingleDiagnostics(getDiagnostics());
+    }
+
+    private JingleDiagnostics getDiagnostics()
+    {
+        JingleDiagnostics.Builder diagnostics = JingleDiagnostics.newBuilder();
+
+        // xmpp
+
+        ServerStatus.Builder xmppServerStatus = ServerStatus
+                .newBuilder()
+                .setServerAddress(fromInetSockAddress(XMPP.ADDRESS.get()));
+
+        try {
+            xmppServerStatus.setReachable(_xmppServer.isReachable());
+        } catch (IOException e) {
+            xmppServerStatus.setReachable(false);
+            xmppServerStatus.setReachabilityError(getReachabilityErrorString(xmppServerStatus, e));
+        }
+
+        diagnostics.setXmppServer(xmppServerStatus);
+
+        // stun
+
+        ServerStatus.Builder stunServerStatus = ServerStatus
+                .newBuilder()
+                .setServerAddress(fromInetSockAddress(DaemonParam.Jingle.STUN_ADDRESS.get()));
+
+        // FIXME (AG): actually check STUN reachability
+        //
+        // we can't determine reachability without including a full-out STUN client
+        // the best I can do is check if the address can be resolved. if it can't
+        // we know for sure the server is unreachable
+
+        if (!stunServerStatus.getServerAddress().hasResolvedHost()) {
+            stunServerStatus.setReachable(false);
+            stunServerStatus.setReachabilityError(getReachabilityErrorString(stunServerStatus, new UnknownHostException()));
+        }
+
+        diagnostics.setStunServer(stunServerStatus);
+
+        // presence
+
+        Set<DID> available = _presenceStore.availablePeers();
+        for (DID did : available) {
+            diagnostics.addReachableDevices(JingleDevice.newBuilder().setDid(did.toPB()));
+        }
+
+        return diagnostics.build();
     }
 
     @Override

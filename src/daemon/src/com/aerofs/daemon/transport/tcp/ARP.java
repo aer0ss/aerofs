@@ -14,7 +14,7 @@ import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArraySet;
 
-import static com.aerofs.daemon.transport.lib.AddressUtils.printaddr;
+import static com.aerofs.daemon.transport.lib.TransportUtil.prettyPrint;
 import static com.aerofs.daemon.transport.tcp.ARP.ARPChange.ADD;
 import static com.aerofs.daemon.transport.tcp.ARP.ARPChange.REM;
 import static com.aerofs.daemon.transport.tcp.ARP.ARPChange.UPD;
@@ -61,7 +61,7 @@ class ARP
         notifyListeners(did, isNew ? ADD : UPD);
 
         if (l.isDebugEnabled()) {
-            l.debug("arp: add: d:{} rem:{} n:{}", did, printaddr(isa), isNew);
+            l.debug("arp: add: d:{} rem:{} n:{}", did, prettyPrint(isa), isNew);
         }
     }
 
@@ -81,7 +81,8 @@ class ARP
         notifyListeners(did, REM);
 
         if (l.isDebugEnabled()) {
-            l.debug("arp: rem: d:" + (oldEntry == null ? "null" : did + "rem:" + printaddr(oldEntry._isa)));
+            l.debug("arp: rem: d:" + (oldEntry == null ? "null" : did + "rem:" + prettyPrint(
+                    oldEntry._isa)));
         }
 
         return oldEntry;

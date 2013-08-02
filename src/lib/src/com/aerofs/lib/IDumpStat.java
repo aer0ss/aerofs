@@ -4,7 +4,7 @@
 
 package com.aerofs.lib;
 
-import com.aerofs.proto.Files.PBDumpStat;
+import com.aerofs.proto.Diagnostics.PBDumpStat;
 
 public interface IDumpStat {
 

@@ -172,7 +172,7 @@ public class LibParam extends BaseParam
 
     public static class Throttling
     {
-        // must be consistent with files.proto
+        // must be consistent with diagnostics.proto
         public static final long UNLIMITED_BANDWIDTH = 0;
         public static final long MIN_BANDWIDTH_UI = 10 * C.KB;
     }

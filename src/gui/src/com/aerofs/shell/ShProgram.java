@@ -1,27 +1,27 @@
 package com.aerofs.shell;
 
-import com.aerofs.base.ElapsedTimer;
-import com.aerofs.lib.ChannelFactories;
 import com.aerofs.base.C;
+import com.aerofs.base.ElapsedTimer;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.id.SID;
 import com.aerofs.cli.CLI;
 import com.aerofs.labeling.L;
+import com.aerofs.lib.ChannelFactories;
 import com.aerofs.lib.IProgram;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.StorageType;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.ritual.RitualBlockingClient;
-import com.aerofs.ritual.RitualClientProvider;
 import com.aerofs.proto.Common.PBPath;
 import com.aerofs.proto.Ritual.PBSharedFolder;
+import com.aerofs.ritual.RitualBlockingClient;
+import com.aerofs.ritual.RitualClientProvider;
 import com.aerofs.shell.ShellCommandRunner.ICallback;
 import com.aerofs.shell.hidden.CmdDstat;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.ui.UI;
-import com.google.common.collect.Maps;
 import com.aerofs.ui.error.ErrorMessages;
+import com.google.common.collect.Maps;
 
 import java.io.File;
 import java.util.Collections;
@@ -112,6 +112,7 @@ public class ShProgram implements IProgram, ICallback
         _runner.addCommand_(new CmdUsers());
         _runner.addCommand_(new CmdDelUser());
         _runner.addCommand_(new CmdDefect());
+        _runner.addCommand_(new CmdTransportDiagnostics());
         _runner.addCommand_(new CmdVersion());
         _runner.addCommand_(new CmdTransfers());
         _runner.addCommand_(new CmdShared());

@@ -1,17 +1,17 @@
 package com.aerofs.daemon.core.admin;
 
 import com.aerofs.daemon.core.CoreQueue;
-import com.aerofs.daemon.core.transfers.download.DownloadState;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.net.Transports;
-import com.aerofs.daemon.core.transfers.upload.UploadState;
 import com.aerofs.daemon.core.net.device.DevicePresence;
 import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.tc.TokenManager;
+import com.aerofs.daemon.core.transfers.download.DownloadState;
+import com.aerofs.daemon.core.transfers.upload.UploadState;
 import com.aerofs.daemon.event.admin.EIDumpStat;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.lib.event.Prio;
-import com.aerofs.proto.Files.PBDumpStat;
+import com.aerofs.proto.Diagnostics.PBDumpStat;
 import com.google.inject.Inject;
 
 import java.io.ByteArrayOutputStream;

@@ -5,6 +5,7 @@ import com.aerofs.daemon.lib.IDebug;
 import com.aerofs.lib.ITransferStat;
 import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
 import com.aerofs.lib.event.IEvent;
+import com.aerofs.proto.Ritual.GetTransportDiagnosticsReply;
 
 /**
  * Implemented by classes that provide a message transport mechanism
@@ -41,7 +42,7 @@ public interface ITransport extends IModule, IDebug, ITransferStat
     /**
      * @return true if multicast is supported, false otherwise
      */
-    public boolean supportsMulticast();
+    boolean supportsMulticast();
 
     /**
      * This method is obsolete in the new transport code.
@@ -49,4 +50,9 @@ public interface ITransport extends IModule, IDebug, ITransferStat
      * @return queue by which you can deliver events to this module.
      */
     IBlockingPrioritizedEventSink<IEvent> q();
+
+    /**
+     * Fill in transport diagnostics
+     */
+    void dumpDiagnostics(GetTransportDiagnosticsReply.Builder transportDiagnostics);
 }
