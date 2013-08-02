@@ -92,8 +92,8 @@ function _check-aerofs-apt-reachable
 
 function _package()
 {
+    local repo=''
     repo=$(_uppercase_repo)
-    local repo
 
     _check-aerofs-apt-reachable
 
@@ -105,8 +105,8 @@ function _package()
 
 function _package-and-upload-all()
 {
+    local repo=''
     repo=$(_uppercase_repo)
-    local repo
 
     _check-aerofs-apt-reachable
 
@@ -132,8 +132,8 @@ function _lp-deploy()
     # IMPORTANT: you must do this in two parts because otherwise
     # the exit status of the subshell will not be preseved; i.e.
     # local box=$(...) will break, but the two-parter below wont
+    local box=''
     box=$(_check-box $1)
-    local box
 
     local package=$2
 
@@ -177,8 +177,8 @@ function _lp-kick()
         exit 1
     fi
 
+    local box=''
     box=$(_check-box $1)
-    local box
 
     _lp-kick-${box}
 }
@@ -189,8 +189,8 @@ function _lp-kick()
 
 function _lp-create()
 {
+    local repo=''
     repo=$(_lowercase_repo)
-    local repo
 
     _package-and-upload-all
     _local-prod-cmd ./makelp "$repo"  "${@}"
@@ -236,8 +236,8 @@ function _lp-ssh()
         exit 1
     fi
 
+    local box=''
     box=$(_check-box $1)
-    local box
 
     do_in $AEROFS_ROOT/packaging/bakery/local-prod vagrant ssh $box
 }
