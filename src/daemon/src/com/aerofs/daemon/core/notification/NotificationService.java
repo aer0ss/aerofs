@@ -93,7 +93,7 @@ public class NotificationService implements IRitualNotificationClientConnectedLi
 
     private void setupRitualNotificationListener_()
     {
-        _rns.getRitualNotifier().addListener(this);
+        _rns.addListener(this);
     }
 
     private void setupTransferNotifiers_()

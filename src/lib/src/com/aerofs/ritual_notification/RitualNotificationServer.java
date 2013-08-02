@@ -19,16 +19,13 @@ import static java.util.concurrent.Executors.newSingleThreadExecutor;
 
 public class RitualNotificationServer
 {
-    private final RitualNotifier _ritualNotifier;
+    private final RitualNotifier _ritualNotifier = new RitualNotifier();
     private final ServerBootstrap _bootstrap;
     private final RitualNotificationSystemConfiguration _config;
 
     @Inject
-    public RitualNotificationServer(ServerSocketChannelFactory serverSocketChannelFactory,
-            RitualNotifier notifier, RitualNotificationSystemConfiguration config)
+    public RitualNotificationServer(ServerSocketChannelFactory serverSocketChannelFactory, RitualNotificationSystemConfiguration config)
     {
-        this._ritualNotifier = notifier;
-
         ServerBootstrap bootstrap = new ServerBootstrap(serverSocketChannelFactory);
         bootstrap.setPipelineFactory(new ChannelPipelineFactory()
         {
@@ -53,10 +50,25 @@ public class RitualNotificationServer
 
     public void start_()
     {
-        _bootstrap.bind(new InetSocketAddress(_config.getAddress().getHostName(),
-                _config.getPort())); // resolves inline
+        _bootstrap.bind(new InetSocketAddress(_config.getAddress().getHostName(), _config.getPort())); // resolves inline
     }
 
+    public void addListener(IRitualNotificationClientConnectedListener listener)
+    {
+        _ritualNotifier.addListener(listener);
+    }
+
+    public void removeListener(IRitualNotificationClientConnectedListener listener)
+    {
+        _ritualNotifier.removeListener(listener);
+    }
+
+    /**
+     * @return an instance of {@code RitualNotifier}. IMPORTANT: DO NOT CACHE THIS VALUE!
+     * It is implementation-dependent as to whether you will get the same instance of {@code RitualNotifier}
+     * on multiple calls of this method, or different instances; either way, its behavior
+     * will be correct.
+     */
     public RitualNotifier getRitualNotifier()
     {
         return _ritualNotifier;

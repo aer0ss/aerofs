@@ -6,9 +6,12 @@ package com.aerofs.ritual_notification;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.Random;
 
 public class MockRNSConfiguration extends RitualNotificationSystemConfiguration
 {
+    private final int port = 1024 + new Random().nextInt(10000);
+
     @Override
     public InetAddress getAddress()
     {
@@ -22,6 +25,6 @@ public class MockRNSConfiguration extends RitualNotificationSystemConfiguration
     @Override
     public int getPort()
     {
-        return 60000;
+        return port;
     }
 }

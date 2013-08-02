@@ -62,12 +62,12 @@ public class RitualNotifier extends SimpleChannelHandler
     // listeners
     //
 
-    public void addListener(IRitualNotificationClientConnectedListener listener)
+    void addListener(IRitualNotificationClientConnectedListener listener)
     {
         _listeners.add(listener);
     }
 
-    public void removeListener(IRitualNotificationClientConnectedListener listener)
+    void removeListener(IRitualNotificationClientConnectedListener listener)
     {
         _listeners.remove(listener);
     }

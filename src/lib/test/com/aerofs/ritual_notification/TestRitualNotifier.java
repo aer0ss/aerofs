@@ -5,25 +5,21 @@
 package com.aerofs.ritual_notification;
 
 import com.aerofs.lib.AppRoot;
-import com.aerofs.lib.ChannelFactories;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.mockito.MockitoAnnotations;
-import org.mockito.Spy;
 
 import java.io.IOException;
 
-import static org.mockito.Mockito.verify;
+import static com.aerofs.lib.ChannelFactories.getServerChannelFactory;
+import static junit.framework.Assert.assertTrue;
 
 public class TestRitualNotifier
 {
-    @Spy Listener _listener;
-
     RitualNotificationServer _rns;
     RitualNotificationClient _rnc;
-    RitualNotifier _notifier;
 
     @Rule public TemporaryFolder _approotFolder;
 
@@ -34,13 +30,12 @@ public class TestRitualNotifier
 
         _approotFolder = new TemporaryFolder();
         _approotFolder.create();
+
         AppRoot.set(_approotFolder.getRoot().getAbsolutePath());
 
-        _notifier = new RitualNotifier();
-
         RitualNotificationSystemConfiguration config = new MockRNSConfiguration();
-        _rns = new RitualNotificationServer(ChannelFactories.getServerChannelFactory(), _notifier,
-                config);
+
+        _rns = new RitualNotificationServer(getServerChannelFactory(), config);
         _rnc = new RitualNotificationClient(config);
     }
 
@@ -48,33 +43,37 @@ public class TestRitualNotifier
     public void shouldNotifyListenersOnNewConnection()
             throws InterruptedException
     {
-        _notifier.addListener(_listener);
+        Listener listener = new Listener();
+        _rns.addListener(listener);
+
         _rns.start_();
         _rnc.start();
 
-        synchronized (_listener) {
-            if (!_listener._triggered) {
-                // give RNC 100ms to connect to RNS
-                _listener.wait(1000);
-            }
-        }
+        // The intention of this test is to verify that RitualNotificationServer notifies its
+        // listeners when a new connection is established
+        //
+        // Listener.waitForNotification will return "true" only when this condition is satisfied
 
-        assert _listener._triggered;
-
-        verify(_listener).onNotificationClientConnected();
+        assertTrue(listener.waitForNotification(1000));
     }
 
     private static class Listener implements IRitualNotificationClientConnectedListener
     {
-        public boolean _triggered = false;
+        private boolean _triggered = false;
 
         @Override
-        public void onNotificationClientConnected()
+        public synchronized void onNotificationClientConnected()
         {
-            synchronized (this) {
-                _triggered = true;
-                notifyAll();
-            }
+            _triggered = true;
+
+            notifyAll();
+        }
+
+        synchronized boolean waitForNotification(long milliseconds)
+                throws InterruptedException
+        {
+            if (!_triggered) wait(milliseconds);
+            return _triggered;
         }
     }
 }
