@@ -4,7 +4,6 @@
 
 package com.aerofs.daemon.transport.jingle;
 
-import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.SID;
@@ -22,9 +21,9 @@ import com.aerofs.daemon.transport.lib.ITransportImpl;
 import com.aerofs.daemon.transport.lib.IUnicast;
 import com.aerofs.daemon.transport.lib.MaxcastFilterReceiver;
 import com.aerofs.daemon.transport.lib.PulseManager;
-import com.aerofs.daemon.transport.lib.TransportProtocolHandler;
 import com.aerofs.daemon.transport.lib.StreamManager;
 import com.aerofs.daemon.transport.lib.TPUtil;
+import com.aerofs.daemon.transport.lib.TransportProtocolHandler;
 import com.aerofs.daemon.transport.lib.TransportStats;
 import com.aerofs.daemon.transport.netty.ClientHandler;
 import com.aerofs.daemon.transport.netty.IUnicastCallbacks;
@@ -34,7 +33,6 @@ import com.aerofs.daemon.transport.xmpp.PresenceStore;
 import com.aerofs.daemon.transport.xmpp.StartPulse;
 import com.aerofs.daemon.transport.xmpp.XMPPConnectionService;
 import com.aerofs.daemon.transport.xmpp.XMPPPresenceManager;
-import com.aerofs.daemon.transport.xmpp.XMPPUtilities;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
 import com.aerofs.lib.event.IEvent;
@@ -48,7 +46,6 @@ import com.aerofs.proto.Files.PBDumpStat.PBTransport;
 import com.aerofs.rocklog.RockLog;
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.bootstrap.ServerBootstrap;
-import org.slf4j.Logger;
 
 import java.io.PrintStream;
 import java.net.NetworkInterface;
@@ -60,7 +57,6 @@ import static com.aerofs.daemon.transport.lib.TPUtil.registerMulticastHandler;
 
 public class Jingle implements ITransportImpl, IUnicastCallbacks
 {
-    private static final Logger l = Loggers.getLogger(Jingle.class);
     private static final String SIGNAL_THREAD_THREAD_ID = "st";
 
     private final BlockingPrioQueue<IEvent> _q;

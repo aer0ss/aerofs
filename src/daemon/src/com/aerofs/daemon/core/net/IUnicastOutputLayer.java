@@ -1,6 +1,7 @@
 package com.aerofs.daemon.core.net;
 
 import com.aerofs.daemon.core.tc.Token;
+import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.lib.id.StreamID;
 import com.aerofs.daemon.core.ex.ExAborted;
 import com.aerofs.base.ex.ExNoResource;
@@ -8,10 +9,10 @@ import com.aerofs.proto.Transport.PBStream.InvalidationReason;
 
 public interface IUnicastOutputLayer
 {
-    void sendUnicastDatagram_(byte[] bs, PeerContext pc)
+    void sendUnicastDatagram_(byte[] bs, Endpoint ep)
         throws Exception;
 
-    void beginOutgoingStream_(StreamID streamId, byte[] bs, PeerContext pc, Token tk)
+    void beginOutgoingStream_(StreamID streamId, byte[] bs, Endpoint ep, Token tk)
         throws Exception;
 
     /**
@@ -26,13 +27,13 @@ public interface IUnicastOutputLayer
      * is catastrophic. so we'd keep it.
      *
      */
-    void sendOutgoingStreamChunk_(StreamID streamId, int seq, byte[] bs, PeerContext pc, Token tk)
+    void sendOutgoingStreamChunk_(StreamID streamId, int seq, byte[] bs, Endpoint ep, Token tk)
         throws Exception;
 
-    void endOutgoingStream_(StreamID streamId, PeerContext pc)
+    void endOutgoingStream_(StreamID streamId, Endpoint ep)
         throws ExNoResource, ExAborted;
 
-    void abortOutgoingStream_(StreamID streamId, InvalidationReason reason, PeerContext pc)
+    void abortOutgoingStream_(StreamID streamId, InvalidationReason reason, Endpoint ep)
         throws ExNoResource, ExAborted;
 
     /**
@@ -48,6 +49,6 @@ public interface IUnicastOutputLayer
      *
      * <b>IMPORTANT:</b> FIXME!!! This should be refactored into a separate interface!
      */
-    void endIncomingStream_(StreamID streamId, PeerContext pc)
+    void endIncomingStream_(StreamID streamId, Endpoint ep)
         throws ExNoResource, ExAborted;
 }

@@ -82,7 +82,7 @@ public final class IncomingStreams
         @Override
         public String toString()
         {
-            return "istrm " + _pc.tp() + ":" + _pc.did() + " seq:" + _seq;
+            return "istrm " + _pc.ep().tp() + ":" + _pc.ep().did() + " seq:" + _seq;
         }
     }
 
@@ -118,7 +118,7 @@ public final class IncomingStreams
         Iterator<Entry<StreamKey, IncomingStream>> iter = _ended.entrySet().iterator();
         while (iter.hasNext()) {
             Entry<StreamKey, IncomingStream> en = iter.next();
-            _stack.output().endIncomingStream_(en.getKey()._strmid, en.getValue()._pc);
+            _stack.output().endIncomingStream_(en.getKey()._strmid, en.getValue()._pc.ep());
             iter.remove();
         }
 
@@ -173,7 +173,7 @@ public final class IncomingStreams
             l.warn("recv chunk after end " + stream + ":" + key);
         } else if (seq != ++stream._seq) {
             if (stream._invalidationReason == null) { // not aborted
-                _fds.logSendAsync("istrm " + stream._pc.tp() +
+                _fds.logSendAsync("istrm " + stream._pc.ep().tp() +
                         ":" + key + " expect seq " + stream._seq + " actual " + seq);
                 aborted_(key, InvalidationReason.OUT_OF_ORDER); // notify receiver
                 end_(key); // notify lower layers
@@ -237,7 +237,7 @@ public final class IncomingStreams
             long _diffTime = stream._timer.elapsed();
             l.debug("istrm processed:{} time:{}", stream._bytesRead, _diffTime);
 
-            _stack.output().endIncomingStream_(key._strmid, stream._pc);
+            _stack.output().endIncomingStream_(key._strmid, stream._pc.ep());
         } catch (Exception e) {
             l.warn("cannot end " + stream + " key:" + key + ", backlog it: " + Util.e(e));
 

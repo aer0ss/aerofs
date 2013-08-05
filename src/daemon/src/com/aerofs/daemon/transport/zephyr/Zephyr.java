@@ -40,7 +40,6 @@ import com.aerofs.daemon.transport.xmpp.StartPulse;
 import com.aerofs.daemon.transport.xmpp.XMPPConnectionService;
 import com.aerofs.daemon.transport.xmpp.XMPPConnectionService.IXMPPConnectionServiceListener;
 import com.aerofs.daemon.transport.xmpp.XMPPPresenceManager;
-import com.aerofs.daemon.transport.xmpp.XMPPUtilities;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;

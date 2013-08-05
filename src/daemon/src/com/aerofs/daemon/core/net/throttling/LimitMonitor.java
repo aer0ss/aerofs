@@ -37,6 +37,7 @@ import java.util.Map;
 import java.util.TreeSet;
 
 import static com.aerofs.lib.LibParam.Throttling.UNLIMITED_BANDWIDTH;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 // This is a control system
 // FIXME: Need to automatically determine link speed
@@ -59,7 +60,7 @@ public class LimitMonitor implements IUnicastInputLayer, ICfgDatabaseListener, I
         public long bytesIn = 0; // bytes
         public long firstLimitLess = 0;
         public boolean paused = false;
-        PeerContext lastPeerContext; // FIXME: this is a hack!!!
+        Endpoint lastEndpoint; // FIXME: this is a hack!!!
     }
 
     // FIXME: HACK HACK HACK
@@ -181,42 +182,40 @@ public class LimitMonitor implements IUnicastInputLayer, ICfgDatabaseListener, I
         l.trace("ubw:{} abw[l]:{} abw[h]:{}", _totalBw, _availBwLoLvl, _availBwHiLvl);
     }
 
-    private void notifyLayersOfStreamError(StreamID sid, PeerContext pc,
-            InvalidationReason r)
+    private void notifyLayersOfStreamError(StreamID sid, Endpoint ep, InvalidationReason r)
     {
-        l.warn("s err:" + r + " sid:" + sid + " d:" + pc.did());
+        l.warn("s err:" + r + " sid:" + sid + " d:" + ep.did());
 
-        onStreamAborted_(sid, pc.ep(), r);
+        onStreamAborted_(sid, ep, r);
         try {
-            _lowerInput.endIncomingStream_(sid, pc);
+            _lowerInput.endIncomingStream_(sid, ep);
         } catch (Exception e) {
             l.error("can't end stream ex:" + e);
         }
     }
 
-    private void readStream(StreamID sid, RawMessage r, PeerContext pc)
+    private void readStream(StreamID sid, RawMessage r, Endpoint ep)
     {
-        l.trace("rx: t:S sid:{} d:{} b:{}", sid, pc.did(), r._wirelen);
+        l.trace("rx: t:S sid:{} d:{} b:{}", sid, ep.did(), r._wirelen);
 
         try {
-            processBytesIn(r._is, r._wirelen, pc);
+            processBytesIn(r._is, r._wirelen, ep);
         } catch (Exception e) {
-            l.error("ignoring e for pkt from: " + pc.did());
-            notifyLayersOfStreamError(sid, pc,
-                    InvalidationReason.CHOKE_ERROR);
+            l.error("ignoring e for pkt from: " + ep.did());
+            notifyLayersOfStreamError(sid, ep, InvalidationReason.CHOKE_ERROR);
         }
     }
 
-    private void sendThrottleControl(byte[] msg, PeerContext pc)
+    private void sendThrottleControl(byte[] msg, Endpoint ep)
             throws Exception
     {
-        assert pc != null;
-        l.trace("tx lim:tc -> {}", pc.did());
+        checkNotNull(ep);
+        l.trace("tx lim:tc -> {}", ep.did());
 
-        _lowerUnicastOutput.sendUnicastDatagram_(msg, pc);
+        _lowerUnicastOutput.sendUnicastDatagram_(msg, ep);
     }
 
-    private void sendalloc(long bw, PeerContext pc)
+    private void sendalloc(long bw, Endpoint ep)
             throws Exception
     {
         Limit.PBLimit bwmsg =
@@ -225,12 +224,11 @@ public class LimitMonitor implements IUnicastInputLayer, ICfgDatabaseListener, I
                         .setBandwidth(bw)
                         .build();
 
-        ByteArrayOutputStream ba =
-                new ByteArrayOutputStream(bwmsg.getSerializedSize());
+        ByteArrayOutputStream ba = new ByteArrayOutputStream(bwmsg.getSerializedSize());
         bwmsg.writeDelimitedTo(ba);
-        sendThrottleControl(ba.toByteArray(), pc);
+        sendThrottleControl(ba.toByteArray(), ep);
 
-        lognewalloc(bw, pc.did());
+        lognewalloc(bw, ep.did());
     }
 
     private void respondToTimeout()
@@ -277,13 +275,13 @@ public class LimitMonitor implements IUnicastInputLayer, ICfgDatabaseListener, I
         // desired effect.
         for (TransmitInfo ti : pausedDevices) {
             if (l.isTraceEnabled()) {
-                l.trace("{} is paused", ti.lastPeerContext.did());
+                l.trace("{} is paused", ti.lastEndpoint.did());
             }
 
             try {
-                sendalloc(_MIN_TRANSFER_LEVEL, ti.lastPeerContext);
+                sendalloc(_MIN_TRANSFER_LEVEL, ti.lastEndpoint);
             } catch (Exception e) {
-                l.error("ignore e:" + e.getClass() + " did:" + ti.lastPeerContext.did()
+                l.error("ignore e:" + e.getClass() + " did:" + ti.lastEndpoint.did()
                         + " while perf lim");
             }
         }
@@ -306,12 +304,12 @@ public class LimitMonitor implements IUnicastInputLayer, ICfgDatabaseListener, I
                             ((ti.rollingBw / (double) _totalBw) * bwdiff * _PENALTY_FACTOR);
                 }
 
-                l.trace("calc red:{} d:{}", reduc, ti.lastPeerContext.did());
+                l.trace("calc red:{} d:{}", reduc, ti.lastEndpoint.did());
 
                 try {
                     long newbw =
                             (reduc > ti.rollingBw ? 0 : (ti.rollingBw - reduc));
-                    sendalloc(newbw, ti.lastPeerContext);
+                    sendalloc(newbw, ti.lastEndpoint);
                     rembwdiff -= reduc;
                 } catch (Exception e) {
                     l.error("ignore e:" + e.getClass() +
@@ -328,7 +326,7 @@ public class LimitMonitor implements IUnicastInputLayer, ICfgDatabaseListener, I
      * to provision for this guy. <b>IMPORTANT:</b> Always over-provision.
      * <b>IMPORTANT:</b> Only respond if you can provision bandwidth
      */
-    private void respondToLimitLess(TransmitInfo ti, PeerContext pc)
+    private void respondToLimitLess(TransmitInfo ti, Endpoint ep)
     {
         logsysbw();
 
@@ -339,14 +337,13 @@ public class LimitMonitor implements IUnicastInputLayer, ICfgDatabaseListener, I
                 final long newbw;
                 if (ti.paused) {
                     newbw = _MIN_TRANSFER_LEVEL;
-                    l.info(pc.did().toString() + " requested bw but is paused");
+                    l.info("{} requested bw but is paused", ep.did());
                 } else {
                     newbw = ti.rollingBw + (_availBwLoLvl - _totalBw);
                 }
-                sendalloc(newbw, pc);
+                sendalloc(newbw, ep);
             } catch (Exception e) {
-                l.error("ignore e:" + e.getClass() +
-                        " d:" + pc.did() + " while lim less");
+                l.error("ignore e:" + e.getClass() + " d:" + ep.did() + " while lim less");
             }
         } else {
             l.trace("ubw >= abw[l]");
@@ -368,12 +365,12 @@ public class LimitMonitor implements IUnicastInputLayer, ICfgDatabaseListener, I
         }, ms);
     }
 
-    private void processBytesIn(InputStream is, int wirelen, PeerContext pc)
+    private void processBytesIn(InputStream is, int wirelen, Endpoint ep)
             throws ExThrottling
     {
         // note that we've received this many packets from the peer
 
-        DID d = pc.did();
+        DID d = ep.did();
         if (!_transmitMap.containsKey(d)) {
             l.trace("newti: d:{}", d);
             _transmitMap.put(d, new TransmitInfo());
@@ -381,7 +378,7 @@ public class LimitMonitor implements IUnicastInputLayer, ICfgDatabaseListener, I
 
         TransmitInfo ti = _transmitMap.get(d);
         ti.bytesIn += wirelen;
-        ti.lastPeerContext = pc;
+        ti.lastEndpoint = ep;
 
         // check if the peer is requesting a realloc
 
@@ -402,7 +399,7 @@ public class LimitMonitor implements IUnicastInputLayer, ICfgDatabaseListener, I
             if (ti.firstLimitLess == 0) ti.firstLimitLess = now;
 
             if ((now - ti.firstLimitLess) >= _LIMIT_LESS_RESPONSE_DELAY) {
-                respondToLimitLess(ti, pc);
+                respondToLimitLess(ti, ep);
                 ti.firstLimitLess = 0;
             } else {
                 l.trace("wait more lhdr");
@@ -462,10 +459,10 @@ public class LimitMonitor implements IUnicastInputLayer, ICfgDatabaseListener, I
     @Override
     public void onUnicastDatagramReceived_(RawMessage r, PeerContext pc)
     {
-        l.trace("rx: t:UC d:{} b:{}", pc.did(), r._wirelen);
+        l.trace("rx: t:UC d:{} b:{}", pc.ep(), r._wirelen);
 
         try {
-            processBytesIn(r._is, r._wirelen, pc);
+            processBytesIn(r._is, r._wirelen, pc.ep());
             // FIXME: somehow I have a feeling this is going to blow up in my face...
             if (r._is.available() != 0) {
                 _upperUnicastInput.onUnicastDatagramReceived_(r, pc);
@@ -473,23 +470,23 @@ public class LimitMonitor implements IUnicastInputLayer, ICfgDatabaseListener, I
                 l.trace("is: no b");
             }
         } catch (IOException e) {
-            l.error("ignoring ioe for pkt from: " + pc.did() + "e: " + e);
+            l.error("ignoring ioe for pkt from: {} e: {}", pc.ep(), e);
         } catch (ExThrottling e) {
-            l.error("ignoring ext for pkt from: " + pc.did() + "e: " + e);
+            l.error("ignoring ext for pkt from: {} e: {}", pc.ep(), e);
         }
     }
 
     @Override
     public void onStreamBegun_(StreamID streamId, RawMessage r, PeerContext pc)
     {
-        readStream(streamId, r, pc);
+        readStream(streamId, r, pc.ep());
         _upperUnicastInput.onStreamBegun_(streamId, r, pc);
     }
 
     @Override
     public void onStreamChunkReceived_(StreamID streamId, int seq, RawMessage r, PeerContext pc)
     {
-        readStream(streamId, r, pc);
+        readStream(streamId, r, pc.ep());
         _upperUnicastInput.onStreamChunkReceived_(streamId, seq, r, pc);
     }
 

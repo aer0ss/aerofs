@@ -67,9 +67,7 @@ public class NSL
             SystemUtil.fatal("uc too large " + bs.length);
         }
 
-        PeerContext pc = new PeerContext(ep);
-
-        _stack.output().sendUnicastDatagram_(bs, pc);
+        _stack.output().sendUnicastDatagram_(bs, ep);
     }
 
     /**
