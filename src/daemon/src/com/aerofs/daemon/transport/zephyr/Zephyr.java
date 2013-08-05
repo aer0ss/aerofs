@@ -687,7 +687,7 @@ public final class Zephyr implements ITransportImpl, IUnicast, IConnectionServic
     public final void linkStateChanged_(Set<NetworkInterface> removed, Set<NetworkInterface> added, Set<NetworkInterface> prev, Set<NetworkInterface> current)
     {
         xmppConnectionService.linkStateChanged(current);
-        zephyrConnectionService.linkStateChanged(current);
+        zephyrConnectionService.linkStateChanged(removed);
     }
 
     //
