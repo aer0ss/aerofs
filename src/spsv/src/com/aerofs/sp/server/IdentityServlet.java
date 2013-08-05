@@ -23,6 +23,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -66,9 +67,15 @@ public class IdentityServlet extends AeroServlet
             } else if (path.equals(OpenId.IDENTITY_RESP_PATH)) {
                 _provider.authResponse(req, resp);
 
-                resp.setContentType("text/html");
-                resp.getWriter().println("<html> <body onLoad=\"window.close()\">" +
-                    "Authentication is complete. You can close this browser window.</body></html>");
+                String oncomplete = req.getParameter(OpenId.OPENID_ONCOMPLETE_URL);
+                if ((oncomplete != null) && (!oncomplete.isEmpty())) {
+                    resp.sendRedirect(oncomplete);
+                } else {
+                    resp.setContentType("text/html");
+                    resp.getWriter().println("<html> <body onLoad=\"window.close()\">" +
+                        "Authentication is complete. You can close this browser window." +
+                        "</body></html>");
+                }
             } else {
                 l.info("Illegal path requested {}", path);
                 resp.sendError(404);
@@ -107,12 +114,19 @@ public class IdentityServlet extends AeroServlet
                     YadisDiscovery.IDENTIFIER_SELECT,
                     OpenId.ENDPOINT_URL.get());
 
+            String returnto = getReturnToUrl(token);
+            String nextUrl = req.getParameter(OpenId.OPENID_ONCOMPLETE_URL);
+            if (!((nextUrl == null) || nextUrl.isEmpty())) {
+                returnto += '&' +
+                        OpenId.OPENID_ONCOMPLETE_URL + '=' + URLEncoder.encode(nextUrl, "UTF-8");
+            }
+
             req.setAttribute(OpenId.OPENID_DELEGATE_NONCE, token);
 
             _reliar.associateAndAuthenticate(
                     user, req, resp,
                     OpenId.IDENTITY_REALM.get(), OpenId.IDENTITY_REALM.get(),
-                    getReturnToUrl(token));
+                    returnto);
         }
 
         /**

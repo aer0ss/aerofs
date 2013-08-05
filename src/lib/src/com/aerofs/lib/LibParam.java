@@ -13,7 +13,6 @@ import com.aerofs.lib.properties.DynamicInetSocketAddress;
 import com.aerofs.lib.properties.DynamicUrlProperty;
 import com.netflix.config.DynamicBooleanProperty;
 import com.netflix.config.DynamicIntProperty;
-import com.netflix.config.DynamicLongProperty;
 import com.netflix.config.DynamicStringProperty;
 
 import java.net.InetAddress;
@@ -274,6 +273,12 @@ public class LibParam extends BaseParam
          * correlate the auth request and auth response.
          */
         public static final String                      OPENID_DELEGATE_NONCE = "sp.nonce";
+
+        /**
+         * The URL to redirect the completed transaction to. Optional; if not set, we will
+         * try to close the browser (and suggest the user do so).
+         */
+        public static final String                      OPENID_ONCOMPLETE_URL = "sp.oncomplete";
 
         /** OpenId discovery may be disabled if YADIS discovery is not supported. */
         public static final DynamicBooleanProperty      DISCOVERY_ENABLED

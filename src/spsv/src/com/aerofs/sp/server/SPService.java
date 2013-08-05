@@ -2132,13 +2132,11 @@ public class SPService implements ISPService
 
         User user = _factUser.createFromExternalID(attrs.getEmail());
 
+        _sqlTrans.begin();
         if (user.exists() == false ) {
-            _sqlTrans.begin();
-
             user.save(new byte[0], new FullName(attrs.getFirstName(), attrs.getLastName()));
-
-            _sqlTrans.commit();
         }
+        _sqlTrans.commit();
         l.info("SI (OpenId): " + user.toString());
 
         // Set the session cookie.
