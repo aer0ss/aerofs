@@ -1,6 +1,5 @@
-/**
- * Created by Allen A. George, Air Computing Inc.
- * Copyright (c) Air Computing Inc, 2011.
+/*
+ * Copyright (c) Air Computing Inc., 2013.
  */
 
 package com.aerofs.daemon.transport.xmpp;
@@ -8,7 +7,6 @@ package com.aerofs.daemon.transport.xmpp;
 import com.aerofs.base.Base64;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
-import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.transport.lib.MaxcastFilterReceiver;
 import com.aerofs.lib.LibParam;
@@ -28,13 +26,6 @@ import java.util.Set;
 
 import static com.aerofs.daemon.lib.DaemonParam.MAX_TRANSPORT_MESSAGE_SIZE;
 
-/**
- * XMPP message body format (for both unicast and multicast)
- *
- * +--------------+-----+------+--------+
- * | MAGIC_NUMBER | len | data | chksum |
- * +--------------+-----+------+--------+
- */
 public abstract class XMPPUtilities
 {
     private static final Logger l = Loggers.getLogger(XMPPUtilities.class);
@@ -51,53 +42,6 @@ public abstract class XMPPUtilities
         // private to prevent instantiation
     }
 
-    public static byte[] writeHeader(int bodylen)
-    {
-        ByteArrayOutputStream bos = new ByteArrayOutputStream(getHeaderLen());
-        DataOutputStream os = new DataOutputStream(bos);
-        try {
-            os.writeInt(LibParam.CORE_MAGIC);
-            os.writeInt(bodylen);
-            os.close();
-        } catch (Exception e) {
-            assert false;
-        }
-
-        return bos.toByteArray();
-    }
-
-    /**
-     * @return body length
-     */
-    public static int readHeader(byte[] header) throws ExFormatError
-    {
-        try {
-            assert header.length == getHeaderLen();
-            DataInputStream is = new DataInputStream(new ByteArrayInputStream(header));
-            int magic = is.readInt();
-            if (magic != LibParam.CORE_MAGIC) {
-                throw new ExFormatError("magic doesn't match. expect " +
-                        LibParam.CORE_MAGIC + " received " + magic);
-            }
-
-            int len = is.readInt();
-            if (len <= 0 || len > MAX_TRANSPORT_MESSAGE_SIZE) {
-                throw new ExFormatError("insane msg len " + len);
-            }
-
-            return len;
-
-        } catch (IOException e) {
-            assert false;
-            return -1;
-        }
-    }
-
-    public static int getHeaderLen()
-    {
-        return 2 * C.INTEGER_SIZE;
-    }
-
     /**
      * Helper method to print a digest of an encoded XMPP message
      *
@@ -109,21 +53,6 @@ public abstract class XMPPUtilities
         if (body.length() <= 68) return body;
         else return body.substring(0, 64) + "...";
     }
-
-
-    /**
-     * NOTE: does the same comparison as EOLinkStateChanged used to. Here to
-     * maintain compatibility for components that don't need the full link set
-     *
-     * @param current set of remaining network interfaces
-     * @return true if there are no active (up) network interfaces; false if at least
-     * one interface is active
-     */
-    public static boolean allLinksDown(Set<NetworkInterface> current)
-    {
-        return current.isEmpty();
-    }
-
 
     //
     // message (de)serialization methods

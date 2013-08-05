@@ -85,7 +85,7 @@ class Stores implements IARPChangeListener
             .setType(Type.TCP_PONG)
             .setTcpPong(PBTCPPong
                     .newBuilder()
-                    .setUnicastListeningPort(_tcp.ucast().getListeningPort())
+                    .setUnicastListeningPort(_tcp.getListeningPort())
                     .setFilter(PBTCPStoresFilter
                             .newBuilder()
                             .setFilter(_filter.toPB())

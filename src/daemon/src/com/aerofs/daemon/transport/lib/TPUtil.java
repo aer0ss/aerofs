@@ -15,7 +15,6 @@ import com.aerofs.daemon.event.net.EOTransportPing;
 import com.aerofs.daemon.event.net.EOUpdateStores;
 import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.event.net.rx.EIChunk;
-import com.aerofs.daemon.event.net.rx.EISessionEnded;
 import com.aerofs.daemon.event.net.rx.EIStreamAborted;
 import com.aerofs.daemon.event.net.rx.EIStreamBegun;
 import com.aerofs.daemon.event.net.rx.EIUnicastMessage;
@@ -378,8 +377,6 @@ public class TPUtil
                     sink.enqueueThrows(new EIStreamAborted(ep, sid, STREAM_NOT_FOUND), Prio.LO);
                 }
             }
-
-            sink.enqueueThrows(new EISessionEnded(ep, outbound, inbound), Prio.LO);
         } catch (ExNoResource e) {
             l.warn("enqueue sessionEnded: " + Util.e(e));
         }

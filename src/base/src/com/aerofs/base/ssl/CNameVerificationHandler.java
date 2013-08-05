@@ -108,7 +108,7 @@ public class CNameVerificationHandler extends SimpleChannelHandler
     public void channelConnected(final ChannelHandlerContext ctx, ChannelStateEvent e)
             throws Exception
     {
-        l.debug("sending handshake");
+        l.info("sending handshake");
 
         CNameVerificationInfo verificationInfo = CNameVerificationInfo.newBuilder()
                 .setUser(_user.getString())
@@ -133,7 +133,7 @@ public class CNameVerificationHandler extends SimpleChannelHandler
         case Failed:      return;
         case Handshaken:  throw new IllegalStateException("msg received after cname verif done");
         case Handshaking:
-            l.debug("received handshake");
+            l.info("received handshake");
 
             // De-serialize the handshake message
             byte[] message = ((ChannelBuffer) e.getMessage()).array();
@@ -191,7 +191,6 @@ public class CNameVerificationHandler extends SimpleChannelHandler
     public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) throws Exception
     {
         failConnectFuture(ctx, e.getCause());
-        e.getChannel().close();
 
         // Propagate the exception upstream
         super.exceptionCaught(ctx, e);

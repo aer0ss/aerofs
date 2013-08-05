@@ -5,7 +5,7 @@ import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.base.ssl.CNameVerificationHandler.CNameListener;
 import com.aerofs.daemon.transport.exception.ExSendFailed;
-import com.aerofs.daemon.transport.lib.handlers.IOStatsHandler;
+import com.aerofs.daemon.transport.netty.handlers.IOStatsHandler;
 import com.aerofs.zephyr.client.IZephyrSignallingClient;
 import com.aerofs.zephyr.client.exceptions.ExBadZephyrMessage;
 import com.aerofs.zephyr.client.exceptions.ExHandshakeFailed;

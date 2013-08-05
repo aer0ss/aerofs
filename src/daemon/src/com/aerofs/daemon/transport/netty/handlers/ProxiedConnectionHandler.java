@@ -1,4 +1,4 @@
-package com.aerofs.daemon.transport.lib.handlers;
+package com.aerofs.daemon.transport.netty.handlers;
 
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelStateEvent;

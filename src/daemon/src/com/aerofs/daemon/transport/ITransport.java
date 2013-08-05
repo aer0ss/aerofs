@@ -2,7 +2,6 @@ package com.aerofs.daemon.transport;
 
 import com.aerofs.daemon.IModule;
 import com.aerofs.daemon.lib.IDebug;
-import com.aerofs.daemon.transport.lib.IIdentifier;
 import com.aerofs.lib.ITransferStat;
 import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
 import com.aerofs.lib.event.IEvent;
@@ -19,16 +18,25 @@ import com.aerofs.lib.event.IEvent;
  *         not too long</li>
  * </ul>
  */
-public interface ITransport extends IModule, IIdentifier, IDebug, ITransferStat
+public interface ITransport extends IModule, IDebug, ITransferStat
 {
     /**
-     * Check if this <code>ITransport</code> is ready to process incoming/outgoing
-     * messages
+     * Identifier
      *
-     * @return <code>true</code> if the <code>ITransport</code> is ready for IO,
-     * <code>false</code> if not
+     * @return <em>constant</em> identifier for the transport. This should
+     * probably be unique, but it is the transport's responsibility to
+     * guarantee this.
      */
-    public boolean ready();
+    public String id();
+
+    /**
+     * Ranking relative to siblings
+     *
+     * @return <em>constant</em> ranking relative to siblings for the transport.
+     * This should also probably be unique, but again, it is the transport's
+     * responsibility to guarantee this.
+     */
+    public int rank();
 
     /**
      * @return true if multicast is supported, false otherwise

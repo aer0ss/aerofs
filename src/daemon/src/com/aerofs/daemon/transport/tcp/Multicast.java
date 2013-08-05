@@ -214,7 +214,6 @@ class Multicast implements IMaxcast
                 // ignore messages from myself
                 DID did = new DID(h.getTcpMulticastDeviceId());
                 if (did.equals(_localdid)) continue;
-                Endpoint ep = new Endpoint(_tcp, did);
 
                 if (h.getType() == Type.DATAGRAM)
                 {
@@ -227,7 +226,7 @@ class Multicast implements IMaxcast
                     }
                 } else {
                     InetAddress rem = ((InetSocketAddress) pkt.getSocketAddress()).getAddress();
-                    PBTPHeader ret = _tcp.processMulticastControl(rem, ep, h);
+                    PBTPHeader ret = _tcp.processMulticastControl(rem, did, h);
                     if (ret != null) sendControlMessage(ret);
                 }
 

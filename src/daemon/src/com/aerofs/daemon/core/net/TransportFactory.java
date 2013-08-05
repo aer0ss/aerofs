@@ -10,8 +10,8 @@ import com.aerofs.base.ssl.SSLEngineFactory;
 import com.aerofs.daemon.lib.BlockingPrioQueue;
 import com.aerofs.daemon.mobile.MobileServerZephyrConnector;
 import com.aerofs.daemon.transport.ITransport;
-import com.aerofs.daemon.transport.lib.MaxcastFilterReceiver;
 import com.aerofs.daemon.transport.jingle.Jingle;
+import com.aerofs.daemon.transport.lib.MaxcastFilterReceiver;
 import com.aerofs.daemon.transport.tcp.TCP;
 import com.aerofs.daemon.transport.zephyr.Zephyr;
 import com.aerofs.lib.cfg.CfgAbsRTRoot;
@@ -168,6 +168,7 @@ public final class TransportFactory
     private ITransport newJingle()
     {
         return new Jingle(
+                localid,
                 localdid,
                 scrypted,
                 absRtRoot,
@@ -175,6 +176,8 @@ public final class TransportFactory
                 JINGLE.getRank(),
                 transportEventSink,
                 maxcastFilterReceiver,
-                rocklog);
+                rocklog,
+                clientSslEngineFactory,
+                serverSslEngineFactory);
     }
 }

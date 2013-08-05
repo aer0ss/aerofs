@@ -5,16 +5,17 @@
 
 package com.aerofs.daemon.transport.lib;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.event.net.EOTpSubsequentPulse;
 import com.aerofs.daemon.event.net.IPulseEvent;
 import com.aerofs.lib.sched.Scheduler;
-import com.aerofs.base.ex.ExNoResource;
-import com.aerofs.base.id.DID;
 import org.slf4j.Logger;
 
 import static com.aerofs.daemon.lib.DaemonParam.INIT_PULSE_TIMEOUT;
 import static com.aerofs.daemon.lib.DaemonParam.MAX_PULSE_TIMEOUT;
-import static com.aerofs.daemon.transport.lib.PulseManager.*;
+import static com.aerofs.daemon.transport.lib.PulseManager.AddPulseResult;
+import static com.aerofs.daemon.transport.lib.PulseManager.PulseToken;
+import static com.aerofs.daemon.transport.lib.PulseManager.newCheckPulse;
 import static com.aerofs.proto.Transport.PBTPHeader;
 
 /**
@@ -124,16 +125,12 @@ public class PulseHandlerUtil
 
         // kill the connection and restart pulsing
 
-        try {
-            if (!ev.killed_() && (ev.tries_() >= maxfails)) {
-                l.info("d:" + did + " fails > maxfails (" + ev.tries_() + " >= " +  maxfails + ") " +
-                       "kill conn and resched ev");
+        if (!ev.killed_() && (ev.tries_() >= maxfails)) {
+            l.info("d:" + did + " fails > maxfails (" + ev.tries_() + " >= " +  maxfails + ") " +
+                   "kill conn and resched ev");
 
-                tp.disconnect_(did);
-                ev.markkilled_();
-            }
-        } catch (ExNoResource e) {
-            l.warn("d:" + did + " failed disconnect - ign + cont pulse");
+            tp.disconnect_(did);
+            ev.markkilled_();
         }
 
         return true;

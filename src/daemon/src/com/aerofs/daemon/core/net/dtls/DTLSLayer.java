@@ -534,7 +534,7 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
             if (!delivered && msg._sid != null) {
                 l.warn("stream not dec'ed. abort");
                 // notify upper layers
-                onStreamAborted_(msg._sid, pc.ep(), InvalidationReason.DTLS_ERROR);
+                onStreamAborted_(msg._sid, pc.ep(), InvalidationReason.INTERNAL_ERROR);
                 // notify lower layers
                 try {
                     endIncomingStream_(msg._sid, pc);
