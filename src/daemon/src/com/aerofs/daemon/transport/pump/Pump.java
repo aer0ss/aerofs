@@ -226,6 +226,7 @@ public final class Pump implements IProgram
                     EOUnicastMessage ev = new EOUnicastMessage(remote, CHUNK);
                     ev.setWaiter(waiter);
                     transport.q().enqueueBlocking(ev, LO);
+                    tput.observe(ev.byteArray().length);
                 } else {
                     synchronized (doSendLock) {
                         if (!doSend) {
