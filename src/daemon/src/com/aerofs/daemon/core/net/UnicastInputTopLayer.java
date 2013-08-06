@@ -30,12 +30,15 @@ import com.aerofs.lib.ex.ExDeviceOffline;
 import com.aerofs.proto.Core.PBCore;
 import com.aerofs.proto.Core.PBCore.Type;
 import com.aerofs.proto.Transport.PBStream.InvalidationReason;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 
 import java.io.InputStream;
 import java.util.Map;
+
+import static com.google.common.base.Preconditions.checkState;
 
 public class UnicastInputTopLayer implements IUnicastInputLayer
 {
@@ -105,15 +108,17 @@ public class UnicastInputTopLayer implements IUnicastInputLayer
     public void onUnicastDatagramReceived_(RawMessage r, PeerContext pc)
     {
         try {
-            assert !pc.did().equals(Cfg.did());
+            final DID did = pc.ep().did();
+
+            checkState(!did.equals(Cfg.did()));
 
             // Note: in the past, the DTLS layer used to call processMappingFromPeer_() upon
             // successful handshake so that we could save in the db the mapping between did and
             // user id. However, with the removal of DTLS, this call would have to come from the
             // transport, which is cumbersome. So we do it here instead.
-            if (_d2uCache.get(pc.did()) == null) {
-                _d2uCache.put(pc.did(), pc.user());
-                _f._d2u.processMappingFromPeer_(pc.did(), pc.user());
+            if (_d2uCache.get(did) == null) {
+                _d2uCache.put(did, pc.user());
+                _f._d2u.processMappingFromPeer_(did, pc.user());
             }
 
             // TODO: make this able to deal with a fragmented PBCore

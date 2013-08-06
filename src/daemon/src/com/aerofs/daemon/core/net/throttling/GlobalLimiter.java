@@ -4,9 +4,9 @@ import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.net.IUnicastOutputLayer;
-import com.aerofs.daemon.core.net.PeerContext;
 import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.tc.Token;
+import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.daemon.lib.id.StreamID;
 import com.aerofs.lib.cfg.Cfg;
@@ -104,7 +104,7 @@ public class GlobalLimiter extends AbstractLimiter implements IUnicastOutputLaye
         // otherwise start the message through us
 
         ILimiter lim = this;
-        DID d = o.getCtx().did();
+        DID d = o.getEndpoint().did();
 
         if (_deviceQ.containsKey(d)) {
             lim = _deviceQ.get(d);
@@ -131,7 +131,7 @@ public class GlobalLimiter extends AbstractLimiter implements IUnicastOutputLaye
 
         switch (o.getType()) {
         case UNICAST:
-            _lower.sendUnicastDatagram_(o.serialize(), o.getCtx());
+            _lower.sendUnicastDatagram_(o.serialize(), o.getEndpoint());
             break;
         case STREAM_BEGIN:
         case STREAM_CHUNK:
@@ -175,67 +175,67 @@ public class GlobalLimiter extends AbstractLimiter implements IUnicastOutputLaye
     //
 
     @Override
-    public void sendUnicastDatagram_(byte[] bs, PeerContext pc)
+    public void sendUnicastDatagram_(byte[] bs, Endpoint ep)
             throws Exception
     {
-        l.trace("send datagram {}", pc);
+        l.trace("send datagram {}", ep);
 
-        Outgoing o = new Outgoing(_f._tc, bs, pc);
+        Outgoing o = new Outgoing(_f._tc, bs, ep);
         process_(o, _f._tc.prio());
     }
 
     @Override
-    public void beginOutgoingStream_(StreamID streamId, byte[] bs, PeerContext pc, Token tk)
+    public void beginOutgoingStream_(StreamID streamId, byte[] bs, Endpoint ep, Token tk)
             throws Exception
     {
-        l.trace("begin outgoing stream:{} {}", streamId.toString(), pc);
+        l.trace("begin outgoing stream:{} {}", streamId.toString(), ep);
 
-        Outgoing o = new Outgoing(_f._tc, bs, pc, streamId, 0, tk);
+        Outgoing o = new Outgoing(_f._tc, bs, ep, streamId, 0, tk);
         process_(o, _f._tc.prio());
         o.pauseProcessing();
 
-        _lower.beginOutgoingStream_(o.getSid(), o.serialize(), o.getCtx(), o.getTok());
+        _lower.beginOutgoingStream_(o.getSid(), o.serialize(), o.getEndpoint(), o.getTok());
     }
 
     @Override
-    public void sendOutgoingStreamChunk_(StreamID streamId, int seq, byte[] bs, PeerContext pc, Token tk)
+    public void sendOutgoingStreamChunk_(StreamID streamId, int seq, byte[] bs, Endpoint ep, Token tk)
             throws Exception
     {
-        l.trace("send outgoing chunk stream:{} {} {}", streamId, seq, pc);
+        l.trace("send outgoing chunk stream:{} {} {}", streamId, seq, ep);
 
-        Outgoing o = new Outgoing(_f._tc, bs, pc, streamId, seq, tk);
+        Outgoing o = new Outgoing(_f._tc, bs, ep, streamId, seq, tk);
         process_(o, _f._tc.prio());
         o.pauseProcessing();
 
-        _lower.sendOutgoingStreamChunk_(o.getSid(), o.getSeq(), o.serialize(), o.getCtx(),
+        _lower.sendOutgoingStreamChunk_(o.getSid(), o.getSeq(), o.serialize(), o.getEndpoint(),
                 o.getTok());
     }
 
     @Override
-    public void endOutgoingStream_(StreamID streamId, PeerContext pc)
+    public void endOutgoingStream_(StreamID streamId, Endpoint ep)
             throws ExNoResource, ExAborted
     {
-        l.trace("end outgoing stream:{} {}", streamId, pc);
+        l.trace("end outgoing stream:{} {}", streamId, ep);
 
-        _lower.endOutgoingStream_(streamId, pc);
+        _lower.endOutgoingStream_(streamId, ep);
     }
 
     @Override
-    public void endIncomingStream_(StreamID streamId, PeerContext pc)
+    public void endIncomingStream_(StreamID streamId, Endpoint ep)
             throws ExNoResource, ExAborted
     {
-        l.trace("end incoming stream:{} {}", streamId, pc);
+        l.trace("end incoming stream:{} {}", streamId, ep);
 
-        _lower.endIncomingStream_(streamId, pc);
+        _lower.endIncomingStream_(streamId, ep);
     }
 
     @Override
-    public void abortOutgoingStream_(StreamID streamId, InvalidationReason reason, PeerContext pc)
+    public void abortOutgoingStream_(StreamID streamId, InvalidationReason reason, Endpoint ep)
             throws ExNoResource, ExAborted
     {
-        l.trace("abort outgoing stream:{} {}", streamId, pc);
+        l.trace("abort outgoing stream:{} {}", streamId, ep);
 
-        _lower.abortOutgoingStream_(streamId, reason, pc);
+        _lower.abortOutgoingStream_(streamId, reason, ep);
     }
 
     //

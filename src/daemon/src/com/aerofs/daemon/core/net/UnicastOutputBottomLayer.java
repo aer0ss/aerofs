@@ -11,6 +11,7 @@ import com.aerofs.daemon.core.tc.CoreIMC;
 import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
+import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.event.net.rx.EORxEndStream;
 import com.aerofs.daemon.event.net.tx.EOBeginStream;
 import com.aerofs.daemon.event.net.tx.EOChunk;
@@ -57,53 +58,53 @@ public class UnicastOutputBottomLayer implements IUnicastOutputLayer
     }
 
     @Override
-    public void sendUnicastDatagram_(byte[] bs, PeerContext pc)
+    public void sendUnicastDatagram_(byte[] bs, Endpoint ep)
         throws ExNoResource, ExNotFound
     {
-        _f._dlru.addDevice_(pc.did());
+        _f._dlru.addDevice_(ep.did());
 
-        pc.tp().q().enqueueThrows(new EOUnicastMessage(pc.did(), bs), _f._tc.prio());
+        ep.tp().q().enqueueThrows(new EOUnicastMessage(ep.did(), bs), _f._tc.prio());
     }
 
     @Override
-    public void beginOutgoingStream_(StreamID streamId, byte[] bs, PeerContext pc, Token tk)
+    public void beginOutgoingStream_(StreamID streamId, byte[] bs, Endpoint ep, Token tk)
         throws Exception
     {
-        _f._dlru.addDevice_(pc.did());
+        _f._dlru.addDevice_(ep.did());
 
         OutgoingStream stream = _f._outgoingStreams.getStreamThrows(streamId);
 
         stream.waitIfTooManyChunks_();
 
-        IIMCExecutor imce = _f._tps.getIMCE_(pc.tp());
-        EOBeginStream ev = new EOBeginStream(streamId, stream, pc.did(), bs, imce);
+        IIMCExecutor imce = _f._tps.getIMCE_(ep.tp());
+        EOBeginStream ev = new EOBeginStream(streamId, stream, ep.did(), bs, imce);
         try {
             CoreIMC.enqueueBlocking_(ev, _f._tc, tk);
         } catch (Exception e) {
-            l.warn("begin stream failed strmid " + streamId + " " + pc + ": " + e);
+            l.warn("begin stream failed strmid " + streamId + " " + ep + ": " + e);
             throw e;
         }
     }
 
     @Override
-    public void sendOutgoingStreamChunk_(StreamID streamId, int seq, byte[] bs, PeerContext pc,
+    public void sendOutgoingStreamChunk_(StreamID streamId, int seq, byte[] bs, Endpoint ep,
             Token tk) throws Exception
     {
-        _f._dlru.addDevice_(pc.did());
+        _f._dlru.addDevice_(ep.did());
 
         OutgoingStream stream = _f._outgoingStreams.getStreamThrows(streamId);
 
         stream.throwIfFailedChunk();
         stream.waitIfTooManyChunks_();
 
-        IIMCExecutor imce = _f._tps.getIMCE_(pc.tp());
-        EOChunk ev = new EOChunk(streamId, stream, seq, pc.did(), bs, imce);
+        IIMCExecutor imce = _f._tps.getIMCE_(ep.tp());
+        EOChunk ev = new EOChunk(streamId, stream, seq, ep.did(), bs, imce);
 
         CoreIMC.enqueueBlocking_(ev, _f._tc, Cat.UNLIMITED);
     }
 
     @Override
-    public void abortOutgoingStream_(StreamID streamId, InvalidationReason reason, PeerContext lc)
+    public void abortOutgoingStream_(StreamID streamId, InvalidationReason reason, Endpoint ep)
         throws ExNoResource, ExAborted
     {
         // the transport layer shall guarantee delivery of the abortion
@@ -112,33 +113,33 @@ public class UnicastOutputBottomLayer implements IUnicastOutputLayer
         //
         // TODO don't use IEBIMC for EOTx/RxAbortStream, EOTx/RxEndStream
 
-        IIMCExecutor imce = _f._tps.getIMCE_(lc.ep().tp());
+        IIMCExecutor imce = _f._tps.getIMCE_(ep.tp());
 
         EOTxAbortStream ev = new EOTxAbortStream(streamId, reason, imce);
         CoreIMC.enqueueBlocking_(ev, _f._tc, Cat.UNLIMITED);
     }
 
     @Override
-    public void endOutgoingStream_(StreamID streamId, PeerContext pc)
+    public void endOutgoingStream_(StreamID streamId, Endpoint ep)
         throws ExNoResource, ExAborted
     {
         // send end-message event even if no actual message was sent due to
         // errors after _id was set, since we're not sure if transport state
         // for this message has been established on errors.
 
-        IIMCExecutor imce = _f._tps.getIMCE_(pc.ep().tp());
+        IIMCExecutor imce = _f._tps.getIMCE_(ep.tp());
 
         EOTxEndStream ev = new EOTxEndStream(streamId, imce);
         CoreIMC.enqueueBlocking_(ev, _f._tc, Cat.UNLIMITED);
     }
 
     @Override
-    public void endIncomingStream_(StreamID streamId, PeerContext pc)
+    public void endIncomingStream_(StreamID streamId, Endpoint ep)
             throws ExNoResource, ExAborted
     {
-        IIMCExecutor imce = _f._tps.getIMCE_(pc.ep().tp());
+        IIMCExecutor imce = _f._tps.getIMCE_(ep.tp());
 
-        EORxEndStream ev = new EORxEndStream(pc.did(), streamId, imce);
+        EORxEndStream ev = new EORxEndStream(ep.did(), streamId, imce);
         CoreIMC.enqueueBlocking_(ev, _f._tc, Cat.UNLIMITED);
     }
 }

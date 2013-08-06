@@ -1,39 +1,28 @@
 package com.aerofs.daemon.core.net;
 
-import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.daemon.event.net.Endpoint;
-import com.aerofs.daemon.transport.ITransport;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
- * N.B. The ep().tp() field is ignored by equals() and hashCode().
+ * This class bundles together an EndPoint and a UserID.
+ * This is used only when receiving messages from secure (ie: authenticated) channels
  */
 public class PeerContext
 {
     private final Endpoint _ep;
-    private UserID _user;
+    private final UserID _user;
 
-    public PeerContext(Endpoint ep)
+    public PeerContext(Endpoint ep, UserID user)
     {
-        _ep = ep;
+        _ep = checkNotNull(ep);
+        _user = checkNotNull(user);
     }
 
-    /**
-     * this method is a shortcut that avoids calls to DID2User for messages that
-     * come from secure channels. Call this method only at the receiver side.
-     */
     public UserID user()
     {
-        assert _user != null;
         return _user;
-    }
-
-    /**
-     * only call this method after the user id is fully authenticated
-     */
-    public void setUser(UserID user)
-    {
-        _user = user;
     }
 
     public Endpoint ep()
@@ -41,27 +30,18 @@ public class PeerContext
         return _ep;
     }
 
-    public DID did()
-    {
-        return ep().did();
-    }
-
-    public ITransport tp()
-    {
-        return ep().tp();
-    }
-
     @Override
     public int hashCode()
     {
-        return _ep.hashCode();
+        return _ep.hashCode() + _user.hashCode();
     }
 
     @Override
     public boolean equals(Object o)
     {
-        return this == o || (o != null &&
-                ((PeerContext) o)._ep.equals(_ep));
+        return this == o || (o != null
+                                     && ((PeerContext)o)._ep.equals(_ep)
+                                     && ((PeerContext)o)._user.equals(_user));
     }
 
     @Override

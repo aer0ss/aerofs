@@ -36,7 +36,7 @@ public class OutgoingStreams
 
     public final class OutgoingStream
     {
-        private final PeerContext _pc;
+        private final Endpoint _ep;
         private final Token _tk;
         private final StreamID _strmid;
         private boolean _started;
@@ -45,9 +45,9 @@ public class OutgoingStreams
         private EOChunk _firstFailedChunk;
         private final ChunksCounter _chunksCounter;
 
-        private OutgoingStream(PeerContext pc, Token tk)
+        private OutgoingStream(Endpoint ep, Token tk)
         {
-            _pc = pc;
+            _ep = ep;
             _tk = tk;
             _strmid = nextID_();
             _chunksCounter = new ChunksCounter();
@@ -60,9 +60,9 @@ public class OutgoingStreams
         {
             if (!_started) {
                 _started = true;
-                _stack.output().beginOutgoingStream_(_strmid, bs, _pc, _tk);
+                _stack.output().beginOutgoingStream_(_strmid, bs, _ep, _tk);
             } else {
-                _stack.output().sendOutgoingStreamChunk_(_strmid, ++_seq, bs, _pc, _tk);
+                _stack.output().sendOutgoingStreamChunk_(_strmid, ++_seq, bs, _ep, _tk);
             }
 
             //_tput.observe(bs.length);
@@ -75,7 +75,7 @@ public class OutgoingStreams
             if (_strmid != null) {
                 _streams.remove(_strmid);
                 try {
-                    _stack.output().abortOutgoingStream_(_strmid, reason, _pc);
+                    _stack.output().abortOutgoingStream_(_strmid, reason, _ep);
                 } catch (Exception e) {
                     l.warn("fail abort " + this + ". backlogged: " + Util.e(e));
                     _invalidationReason = reason;
@@ -91,7 +91,7 @@ public class OutgoingStreams
             if (_strmid != null) {
                 _streams.remove(_strmid);
                 try {
-                    _stack.output().endOutgoingStream_(_strmid, _pc);
+                    _stack.output().endOutgoingStream_(_strmid, _ep);
                 } catch (Exception e) {
                     l.warn("fail end " + this + ". backlogged: " + Util.e(e));
                     _failedToEnd.add(this);
@@ -102,7 +102,7 @@ public class OutgoingStreams
         @Override
         public String toString()
         {
-            return "ostrm " + _pc.tp() + ":" + _pc.did() + ":" + _strmid + " seq:" + _seq;
+            return "ostrm " + _ep.tp() + ":" + _ep.did() + ":" + _strmid + " seq:" + _seq;
         }
 
         public void incChunkCount()
@@ -168,18 +168,18 @@ public class OutgoingStreams
         Iterator<OutgoingStream> iter = _failedToAbort.iterator();
         while (iter.hasNext()) {
             OutgoingStream os = iter.next();
-            _stack.output().abortOutgoingStream_(os._strmid, os._invalidationReason, os._pc);
+            _stack.output().abortOutgoingStream_(os._strmid, os._invalidationReason, os._ep);
             iter.remove();
         }
 
         iter = _failedToEnd.iterator();
         while (iter.hasNext()) {
             OutgoingStream os = iter.next();
-            _stack.output().endOutgoingStream_(os._strmid, os._pc);
+            _stack.output().endOutgoingStream_(os._strmid, os._ep);
             iter.remove();
         }
 
-        OutgoingStream stream = new OutgoingStream(new PeerContext(ep), tk);
+        OutgoingStream stream = new OutgoingStream(ep, tk);
         _streams.put(stream._strmid, stream);
         l.info("create " + stream);
         return stream;

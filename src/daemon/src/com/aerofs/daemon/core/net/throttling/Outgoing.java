@@ -1,9 +1,9 @@
 package com.aerofs.daemon.core.net.throttling;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.daemon.core.net.PeerContext;
 import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.tc.Token;
+import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.lib.id.StreamID;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.proto.Limit;
@@ -44,7 +44,7 @@ class Outgoing
 
     // common
     private final byte[] pay_;
-    private final PeerContext ctx_;
+    private final Endpoint ep_;
 
     private boolean tokensNeeded_;
 
@@ -78,10 +78,10 @@ class Outgoing
      */
     private TC.TCB tcb_;
 
-    private Outgoing(Type type, byte[] payload, PeerContext ctx, StreamID sid,
+    private Outgoing(Type type, byte[] payload, Endpoint ep, StreamID sid,
             int seq, Token tok)
     {
-        assert payload != null && ctx != null;
+        assert payload != null && ep != null;
         if (type == Type.STREAM_BEGIN || type == Type.STREAM_CHUNK) {
             assert sid != null && seq >= 0 && tok != null;
         }
@@ -89,7 +89,7 @@ class Outgoing
         type_ = type;
 
         pay_ = payload;
-        ctx_ = ctx;
+        ep_ = ep;
 
         tokensNeeded_ = false;
 
@@ -101,17 +101,16 @@ class Outgoing
         done_ = false;
     }
 
-    Outgoing(TC tc, byte[] payload, PeerContext pc)
+    Outgoing(TC tc, byte[] payload, Endpoint ep)
     {
-        this(Type.UNICAST, payload, pc, null, 0, null);
+        this(Type.UNICAST, payload, ep, null, 0, null);
     }
 
 
-    Outgoing(TC tc, byte[] payload, PeerContext pc, StreamID sid, int seq,
+    Outgoing(TC tc, byte[] payload, Endpoint ep, StreamID sid, int seq,
             Token tok)
     {
-        this(seq == 0 ? Type.STREAM_BEGIN : Type.STREAM_CHUNK, payload,
-                pc, sid, seq, tok);
+        this(seq == 0 ? Type.STREAM_BEGIN : Type.STREAM_CHUNK, payload, ep, sid, seq, tok);
     }
 
     public Type getType()
@@ -129,9 +128,9 @@ class Outgoing
         return pay_.length;
     }
 
-    public PeerContext getCtx()
+    public Endpoint getEndpoint()
     {
-        return ctx_;
+        return ep_;
     }
 
     public StreamID getSid()
