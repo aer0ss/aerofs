@@ -16,7 +16,7 @@ node "sv.aerofs.com" inherits default {
     class{"analytics":}
 
     cron{"remove old defects":
-        command => '/usr/bin/clean_defects && symlinks -dr /var/svlogs_prod/defect',
+        command => '/usr/bin/clean_defects && symlinks -dr /var/svlogs_prod/defect > /dev/null 2>&1',
         minute  => "0",
         hour    => "*",
     }
