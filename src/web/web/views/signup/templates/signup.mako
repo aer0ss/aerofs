@@ -105,7 +105,7 @@
                 ## create the login form
                 var form = document.createElement("form");
                 form.setAttribute("method", "post");
-                form.setAttribute("action", "${request.route_path('login')}");
+                form.setAttribute("action", "${request.route_path('login_credential')}");
 
                 var params = {
                     ${self.csrf.token_param()}
