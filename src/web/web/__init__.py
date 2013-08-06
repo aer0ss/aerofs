@@ -30,10 +30,10 @@ def main(global_config, **settings):
             props = jprops.load_properties(StringIO(res.text))
             for key in props:
                 # Place all config key/value pairs in the global settings
-                # object, except for server.wildcard.key because we really
+                # object, except for server.browser.key because we really
                 # should try to avoid leaving that lying around in case it
                 # shows up in a debug message or something.
-                if key == "server.wildcard.key":
+                if key == "server.browser.key":
                     continue
                 settings[key] = props[key]
         else:
