@@ -1,5 +1,5 @@
 class sanity {
-package{[
+    package{[
         "aerofs-sanity",
     ]:
         ensure => latest,

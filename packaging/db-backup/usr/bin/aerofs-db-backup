@@ -1,0 +1,21 @@
+#!/bin/bash
+set -eu
+
+tempdir=$(mktemp -d /tmp/aerofs-db-backup.XXXXXXXXX)
+mkdir -p $tempdir/aerofs-db-backup
+pushd $tempdir 1>/dev/null 2>/dev/null
+
+echo ">>> Backing up redis database..."
+cp /data/redis/redis.aof aerofs-db-backup/redis.aof
+echo ">>> Backing up mysql database..."
+mysqldump --events --all-databases > aerofs-db-backup/mysql.dump
+
+echo ">>> Creating backup file..."
+tar cf aerofs-db-backup.tar aerofs-db-backup/*
+gzip aerofs-db-backup.tar
+
+popd 1>/dev/null 2>/dev/null
+cp $tempdir/aerofs-db-backup.tar.gz .
+rm -rf $tempdir
+
+echo ">>> AeroFS databases backed up to $(pwd)/aerofs-db-backup.tar.gz"

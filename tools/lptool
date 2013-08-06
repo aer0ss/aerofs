@@ -59,13 +59,13 @@ function _print-available-boxes()
 function _check-box()
 {
     local box=''
-    case $1 in
+    case ${1:-} in
     persistent) box=persistent ;;
     transient ) box=transient  ;;
     esac
 
     if [[ -z "$box" ]]; then
-        echo "unrecognized box:$1" >&2
+        echo "unrecognized box:${1:-}" >&2
         _print-available-boxes
         exit 1
     fi
@@ -97,7 +97,8 @@ function _package()
 
     _check-aerofs-apt-reachable
 
-    do_in $AEROFS_ROOT ant package_${1} \
+    local package=$(echo $1 | sed 's/-/_/g')
+    do_in $AEROFS_ROOT ant package_${package} \
         -Dmode=ENTERPRISE \
         -Dproduct=CLIENT \
         -Drepo="$repo"
