@@ -370,7 +370,7 @@ public class LibParam extends BaseParam
                 new DynamicBooleanProperty(PROPERTY_IS_ENTERPRISE_DEPLOYMENT, false);
         public static final DynamicStringProperty BASE_CA_CERTIFICATE =
                 new DynamicStringProperty(PROPERTY_BASE_CA_CERT, "");
-        public static final DynamicUrlProperty CONFIG_SERVICE_URL =
-                new DynamicUrlProperty(PROPERTY_CONFIG_SERVICE_URL, "");
+        public static final DynamicStringProperty CONFIG_SERVICE_URL =
+                new DynamicStringProperty(PROPERTY_CONFIG_SERVICE_URL, "");
     }
 }
