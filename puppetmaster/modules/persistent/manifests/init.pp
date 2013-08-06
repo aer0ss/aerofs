@@ -9,6 +9,12 @@ class persistent {
     }
 
     # --------------
+    # DB Backup
+    # --------------
+
+    include db-backup
+
+    # --------------
     # Bootstrap
     # --------------
 

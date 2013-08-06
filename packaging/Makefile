@@ -34,6 +34,7 @@ PACKAGES= \
 	sanity \
 	repackaging \
 	enterprise-updater \
+	db-backup \
 
 DEBS=$(addprefix debs/, ${PACKAGES:=.deb})
 
