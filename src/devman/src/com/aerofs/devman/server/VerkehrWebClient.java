@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.net.HttpURLConnection;
 import java.net.InetAddress;
 import java.net.URL;
 import java.nio.charset.Charset;
@@ -61,17 +62,23 @@ public class VerkehrWebClient
         return sb.toString();
     }
 
-    public static Object readJsonFromUrl(String url)
+    public static Object readJsonFromUrl(String urlString)
             throws IOException
     {
-        InputStream is = new URL(url).openStream();
+        URL url = new URL(urlString);
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        conn.setRequestMethod("GET");
+
+        BufferedReader rd = null;
 
         try {
-            BufferedReader rd = new BufferedReader(new InputStreamReader(is, Charset.forName("UTF-8")));
+            rd = new BufferedReader(new InputStreamReader(conn.getInputStream()));
             String jsonText = readAll(rd);
             return JSONValue.parse(jsonText);
         } finally {
-            is.close();
+            if (rd != null) {
+                rd.close();
+            }
         }
     }
 
