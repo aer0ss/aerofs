@@ -3,22 +3,22 @@ package com.aerofs;
 import com.aerofs.base.BaseParam;
 import com.aerofs.base.Loggers;
 import com.aerofs.config.DynamicConfiguration;
-import com.aerofs.lib.LibParam.EnterpriseConfig;
-import com.aerofs.lib.ex.ExDBCorrupted;
-import com.aerofs.lib.S;
-import com.aerofs.lib.configuration.ClientConfigurationLoader;
-import com.aerofs.lib.configuration.ClientConfigurationLoader.IncompatibleModeException;
-import com.aerofs.lib.configuration.HttpsDownloader;
+import com.aerofs.labeling.L;
 import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.ChannelFactories;
 import com.aerofs.lib.IProgram;
 import com.aerofs.lib.LibParam;
+import com.aerofs.lib.LibParam.EnterpriseConfig;
 import com.aerofs.lib.ProgramInformation;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.SystemUtil.ExitCode;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.ExNotSetup;
+import com.aerofs.lib.configuration.ClientConfigurationLoader;
+import com.aerofs.lib.configuration.ClientConfigurationLoader.IncompatibleModeException;
+import com.aerofs.lib.configuration.HttpsDownloader;
+import com.aerofs.lib.ex.ExDBCorrupted;
 import com.aerofs.lib.log.LogUtil;
 import com.aerofs.lib.log.LogUtil.Level;
 import com.aerofs.lib.os.OSUtil;
@@ -144,8 +144,11 @@ public class Main
             if (prog.equals(LibParam.GUI_NAME) || prog.equals(LibParam.CLI_NAME)) {
                 String msg = null;
 
-                if (e instanceof ConfigurationException) msg = S.ERR_CONFIG_UNAVAILABLE;
-                else if (e instanceof IncompatibleModeException) msg = S.ERR_INCOMPATIBLE_MODE;
+                if (e instanceof ConfigurationException) msg = "Failed to initialize the " +
+                        "configuration subsystem. Please verify the configuration service is " +
+                        "available.";
+                else if (e instanceof IncompatibleModeException) msg = "The application is " +
+                        "configured to the wrong mode. Please reinstall " + L.product() + '.';
 
                 if (msg != null) {
                     String[] temp = new String[appArgs.length + 1];

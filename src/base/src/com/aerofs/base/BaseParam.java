@@ -4,7 +4,6 @@
 
 package com.aerofs.base;
 
-import com.aerofs.base.params.DummyPropertySource;
 import com.aerofs.base.params.IProperty;
 import com.aerofs.base.params.IPropertySource;
 
@@ -24,10 +23,7 @@ public class BaseParam
     // recommended size for file I/O buffers
     public static final int FILE_BUF_SIZE = 512 * C.KB;
 
-    // Set the property source to a dummy that always returns the default value.
-    // This means that if somebody forgets to initialize the dynamic property system, they will
-    // get defaults, which is consistent whith the current behavior
-    private static IPropertySource props = new DummyPropertySource();
+    private static IPropertySource props;
 
     /**
      * Sets what source we are going to use for the properties. This is basically to avoid using
