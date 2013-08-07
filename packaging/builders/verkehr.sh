@@ -6,18 +6,24 @@ OPT=verkehr/opt/verkehr
 INIT=verkehr/etc/init
 DEBIAN=verkehr/DEBIAN
 
-# Debian-related file copies.
+# deb packaging files
 mkdir -p $DEBIAN
 for f in control conffiles preinst prerm postrm
 do
     cp -r $RESOURCES/$f $DEBIAN
 done
 
-# Java-related file copies.
+# all the jars verkehr needs
 mkdir -p $OPT
 cp ../out.ant/artifacts/verkehr/*.jar $OPT
 
-# Upstart-related file copies.
+# upstart config
 mkdir -p $INIT
 cp $RESOURCES/verkehr.conf $INIT
+
+# verkehr config file
 cp $RESOURCES/verkehr.yml $OPT
+
+# verkehr command-line clients (uses same java code as AeroFS client)
+cp $RESOURCES/subscriber $OPT
+cp $RESOURCES/publisher $OPT
