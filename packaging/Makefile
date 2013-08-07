@@ -1,5 +1,5 @@
 
-.PHONY: all debs upload clean test
+.PHONY: all debs upload clean test packagelist
 
 # Default the bin to staging unless the user specifies otherwise. Set this in the environment.
 BIN?=STAGING
@@ -42,6 +42,13 @@ all: ${PACKAGES}
 
 ${PACKAGES}: %: %.deb
 	@for file in $$(ls *.deb *.ver); do mv $$file debs; done
+
+debs:
+	@mkdir -p debs
+
+packagelist: debs
+	@echo "updating package list debs/Packages ..."
+	@cd debs && dpkg-scanpackages . > Packages && cd ../
 
 # Execute package "builder" scripts. These scripts are used to "build" the
 # package, that is, to move any required files over from other places in the
