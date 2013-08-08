@@ -8,6 +8,11 @@ if [ $# -ne 1 ]; then
     exit 1
 fi
 
+cat << END
+Please consider using `./retrace_helper.py get-defects <defect_number>` for
+improved retracing.
+END
+
 echo "Inferring version number via c.aerofs.com..."
 DEFECT="$1"
 VER=$( ssh c.aerofs.com "getver $DEFECT" )
@@ -20,4 +25,4 @@ else
 fi
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-"$SCRIPT_DIR"/retrace_helper.py get-defects $VER $DEFECT
+"$SCRIPT_DIR"/get-defects $VER $DEFECT
