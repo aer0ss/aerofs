@@ -14,11 +14,11 @@ import org.mockito.MockitoAnnotations;
 import org.powermock.modules.testng.PowerMockTestCase;
 import org.slf4j.Logger;
 
-import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Properties;
 
 import static com.aerofs.lib.configuration.ClientConfigurationLoader.PROPERTY_IS_ENTERPRISE_DEPLOYMENT;
 import static org.junit.Assert.assertEquals;
@@ -36,8 +36,7 @@ public abstract class AbstractTest extends PowerMockTestCase
 
         // Initialize BaseParam to avoid NullPointerException (for example when instantiating
         // InvitationEmailers).
-        ByteArrayInputStream bais = new ByteArrayInputStream(new byte[0]);
-        BaseParam.setPropertySource(new SimplePropertySource(bais));
+        BaseParam.setPropertySource(new SimplePropertySource(new Properties()));
     }
 
     @Rule

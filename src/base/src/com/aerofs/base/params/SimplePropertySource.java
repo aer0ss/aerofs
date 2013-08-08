@@ -10,7 +10,6 @@ import com.google.common.net.HostAndPort;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -23,28 +22,22 @@ import java.util.Properties;
  */
 public class SimplePropertySource implements IPropertySource
 {
-    private Properties _defaults;
+    private Properties _properties;
 
     /**
-     * Creates a property source from defaultsStream.
+     * Creates a property source from properties.
      *
-     * @param defaultsStream The inputstream from which properties will be read.
+     * @param properties The properties to use.
      */
-    public SimplePropertySource(InputStream defaultsStream)
+    public SimplePropertySource(Properties properties)
     {
-        _defaults = new Properties();
-
-        try {
-            _defaults.load(defaultsStream);
-        } catch (IOException e) {
-            Throwables.propagate(e);
-        }
+        _properties = properties;
     }
 
     @Override
     public IProperty<InetSocketAddress> addressProperty(String key, InetSocketAddress defaultValue)
     {
-        final InetSocketAddress returnValue = parseAddress(_defaults.getProperty(key), defaultValue);
+        final InetSocketAddress returnValue = parseAddress(_properties.getProperty(key), defaultValue);
         return new IProperty<InetSocketAddress>()
         {
             @Override
@@ -58,7 +51,7 @@ public class SimplePropertySource implements IPropertySource
     @Override
     public IProperty<String> stringProperty(String key, String defaultValue)
     {
-        final String returnValue = _defaults.getProperty(key, defaultValue);
+        final String returnValue = _properties.getProperty(key, defaultValue);
         return new IProperty<String>()
         {
             @Override
@@ -72,7 +65,7 @@ public class SimplePropertySource implements IPropertySource
     @Override
     public IProperty<URL> urlProperty(String key, String defaultValue)
     {
-        final URL returnValue = parseUrl(_defaults.getProperty(key, defaultValue));
+        final URL returnValue = parseUrl(_properties.getProperty(key, defaultValue));
         return new IProperty<URL>()
         {
             @Override
@@ -87,7 +80,7 @@ public class SimplePropertySource implements IPropertySource
     public IProperty<X509Certificate> certificateProperty(String key, X509Certificate defaultValue)
     {
         X509Certificate cacert = null;
-        String cacertString = _defaults.getProperty(key);
+        String cacertString = _properties.getProperty(key);
 
         if (cacertString == null) {
             cacert = defaultValue;
