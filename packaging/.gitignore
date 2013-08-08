@@ -17,3 +17,5 @@ cmd-server
 *.pyc
 *.egg-info
 gen
+
+client-installer-cache
