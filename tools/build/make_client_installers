@@ -332,8 +332,13 @@ function make_osx_installers() {
         echo ">> sign app for Mac App Store"
         # see http://developer.apple.com/library/mac/technotes/tn2206/_index.html#//apple_ref/doc/uid/DTS40007919-CH1-SUBSECTION9
         # for information on signing frameworks
+        # Note: We avoid re-codesigning AeroFSFinderExtension because every
+        # time we do so, it changes the binary, which in turn changes the
+        # checksum, so we kill finder on update.  Instead, we have pre-signed
+        # the checked-in resource, and must update the signature whenever we
+        # modify anything under the .osax folder.
+        #codesign -f -s "Air Computing, Inc." "${local_DMG_TEMP_DIR}/Release/${AEROFS_PRODUCT_SPACEFREE}.app/Contents/Resources/Java/AeroFSFinderExtension.osax"
         codesign -f -s "Air Computing, Inc." "${local_DMG_TEMP_DIR}/Release/${AEROFS_PRODUCT_SPACEFREE}.app/Contents/Resources/Java/Growl.framework/Versions/A"
-        codesign -f -s "Air Computing, Inc." "${local_DMG_TEMP_DIR}/Release/${AEROFS_PRODUCT_SPACEFREE}.app/Contents/Resources/Java/AeroFSFinderExtension.osax"
         codesign -f -s "Air Computing, Inc." "${local_DMG_TEMP_DIR}/Release/${AEROFS_PRODUCT_SPACEFREE}.app"
     fi
 

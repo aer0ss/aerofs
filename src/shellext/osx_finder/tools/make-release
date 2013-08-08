@@ -20,6 +20,9 @@ then
     exit 2
 fi
 
+echo "Signing code..."
+codesign -f -s "Air Computing, Inc." $thisdir/../build/Library/ScriptingAdditions/AeroFSFinderExtension.osax
+
 echo "Moving to resource/client..."
 rm -rf $thisdir/../../../../resource/client/osx/AeroFSFinderExtension.osax
 cp -r $thisdir/../build/Library/ScriptingAdditions/AeroFSFinderExtension.osax $thisdir/../../../../resource/client/osx
