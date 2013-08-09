@@ -99,7 +99,7 @@ public class CompExclusion extends Composite
             }
         });
 
-        _btnCancel = GUIUtil.createButton(_compList, SWT.NONE);
+        _btnCancel = GUIUtil.createButton(_composite, SWT.NONE);
         _btnCancel.setText(IDialogConstants.CANCEL_LABEL);
         _btnCancel.addSelectionListener(new SelectionAdapter() {
             @Override
