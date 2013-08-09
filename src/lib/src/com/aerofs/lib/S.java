@@ -35,7 +35,8 @@ public class S
             SETUP_LINK_FORGOT_PASSWD = "<a>Forgot password?</a>",
             SETUP_DEV_ALIAS          = "Computer name",
             SETUP_TRY_AGAIN          = "Try Again",
-            SETUP_ERR_CONN           = "Sorry, couldn't connect to the server. Please try again later.",
+            SETUP_ERR_CONN           = "Sorry, couldn't connect to the server.",
+            SETUP_INSTALL_MESSAGE    = "Performing magic...",
 
             // used in setup storage screen
             SETUP_STORAGE_MESSAGE    = "Where would you like to store your team's data?",
@@ -81,6 +82,15 @@ public class S
             GUI_LOADING              = "Loading...",
 
             BAD_CREDENTIAL_CAP       = "Email or password is incorrect",
+
+            OPENID_SETUP_MESSAGE     = "To complete " + L.product() + " setup, please sign in " +
+                    "your OpenID Provider",
+            OPENID_AUTH_TIMEOUT      = "AeroFS has timed out while waiting to hear from your " +
+                    "OpenID Provider.",
+            OPENID_AUTH_MESSAGE      = "Waiting for your OpenID Provider...",
+
+            SERVER_INTERNAL_ERROR    = "Sorry, the AeroFS servers have encountered an error while" +
+                    " processing your request. Please contact AeroFS support or try again later.",
 
             // begin transfers dialog
 

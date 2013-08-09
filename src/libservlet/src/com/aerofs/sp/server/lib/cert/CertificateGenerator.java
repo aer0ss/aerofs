@@ -3,12 +3,10 @@ package com.aerofs.sp.server.lib.cert;
 import com.aerofs.base.Base64;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.C;
-import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.lib.LibParam;
 import org.bouncycastle.pkcs.PKCS10CertificationRequest;
-import org.slf4j.Logger;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;

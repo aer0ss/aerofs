@@ -16,7 +16,6 @@ import com.aerofs.gui.Images;
 import com.aerofs.lib.S;
 import com.aerofs.lib.ex.ExUIMessage;
 import com.aerofs.ui.error.ErrorMessages;
-import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.S3DataEncryptionPasswordVerifier;
 import com.aerofs.ui.S3DataEncryptionPasswordVerifier.PasswordVerifierResult;
 import com.google.common.base.Objects;
@@ -404,7 +403,7 @@ public class PageS3Storage extends AbstractSetupPage
             public void error(Exception e)
             {
                 l.error("Setup error", e);
-                GUI.get().show(getShell(), MessageType.ERROR, formatException(e));
+                ErrorMessages.show(getShell(), e, formatException(e));
                 setProgress(false);
             }
 

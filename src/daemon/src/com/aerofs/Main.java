@@ -3,7 +3,6 @@ package com.aerofs;
 import com.aerofs.base.BaseParam;
 import com.aerofs.base.Loggers;
 import com.aerofs.config.DynamicConfiguration;
-import com.aerofs.lib.LibParam.CA;
 import com.aerofs.lib.LibParam.EnterpriseConfig;
 import com.aerofs.lib.ex.ExDBCorrupted;
 import com.aerofs.lib.S;

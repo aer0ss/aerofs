@@ -35,7 +35,6 @@ import com.aerofs.proto.ControllerNotifications.UpdateNotification.Status;
 import com.aerofs.ui.UI;
 import com.aerofs.ui.UIGlobals;
 import com.netflix.config.DynamicStringProperty;
-import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 
 import com.aerofs.gui.GUI;
