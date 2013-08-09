@@ -316,13 +316,23 @@ function compute_next_release_version() {
 
 function compute_product_names() {
     echo ">> computing product name"
+    function get_property() {
+        local local_PROPERTY="$1"
+        # Note the equals.
+        local local_VALUE=$(grep ^"$PROPERTY"= $LABELING_FILE | cut -d = -f 2)
+        if [[ $? -ne 0 ]] || [[ -z "$VALUE" ]] ; then
+            echo "Couldn't retrieve property $PROPERTY from $LABELING_FILE"
+            exit 1
+        fi
+        echo $VALUE
+    }
 
-    ${BUILD_SCRIPT_DIR}/dynamic-config/dependencies.groovy
-
-    readonly GET_PROPERTY_SCRIPT="groovy -Dlogback.configurationFile=${BUILD_SCRIPT_DIR}/dynamic-config/logback.xml ${BUILD_SCRIPT_DIR}/dynamic-config/get_property.groovy"
-    readonly AEROFS_PRODUCT=$($GET_PROPERTY_SCRIPT $LABELING_FILE labeling.product)
-    readonly AEROFS_PRODUCT_SPACEFREE=$($GET_PROPERTY_SCRIPT $LABELING_FILE labeling.productSpaceFreeName)
-    readonly AEROFS_PRODUCT_UNIX=$($GET_PROPERTY_SCRIPT $LABELING_FILE labeling.productUnixName)
+    readonly AEROFS_PRODUCT=$(get_property "labeling.product")
+    readonly AEROFS_PRODUCT_SPACEFREE=$(get_property "labeling.productSpaceFreeName")
+    readonly AEROFS_PRODUCT_UNIX=$(get_property "labeling.productUnixName")
+    echo "PRODUCT = $AEROFS_PRODUCT"
+    echo "PRODUCT_SPACEFREE = $AEROFS_PRODUCT_SPACEFREE"
+    echo "PRODUCT_UNIX = $AEROFS_PRODUCT_UNIX"
 }
 
 ###############################################################################
