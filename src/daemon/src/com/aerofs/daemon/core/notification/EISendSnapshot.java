@@ -1,5 +1,6 @@
 package com.aerofs.daemon.core.notification;
 
+import com.aerofs.daemon.core.serverstatus.ServerStatusNotifier;
 import com.aerofs.daemon.core.transfers.BaseTransferState;
 import com.aerofs.daemon.core.transfers.ITransferStateListener.TransferProgress;
 import com.aerofs.daemon.core.transfers.ITransferStateListener.TransferredItem;
@@ -20,15 +21,18 @@ class EISendSnapshot extends AbstractEBSelfHandling
     private final UploadState _uls;
     private final UploadNotifier _un;
     private final PathStatusNotifier _psn;
+    private final ServerStatusNotifier _ssn;
     private final boolean _filterMeta;
 
-    EISendSnapshot(DownloadState dls, DownloadNotifier dn, UploadState uls, UploadNotifier un, PathStatusNotifier psn, boolean filterMeta)
+    EISendSnapshot(DownloadState dls, DownloadNotifier dn, UploadState uls, UploadNotifier un,
+            PathStatusNotifier psn, ServerStatusNotifier ssn, boolean filterMeta)
     {
         _dls = dls;
         _dn = dn;
         _uls = uls;
         _un = un;
         _psn = psn;
+        _ssn = ssn;
         _filterMeta = filterMeta;
     }
 
@@ -53,11 +57,17 @@ class EISendSnapshot extends AbstractEBSelfHandling
         _psn.sendConflictCountNotification_();
     }
 
+    private void sendServerStatusNotifications()
+    {
+        _ssn.sendServerStatusNotification();
+    }
+
     @Override
     public void handle_()
     {
         sendTransferNotifications_(_dls, _dn);
         sendTransferNotifications_(_uls, _un);
         sendPathStatusNotifications_();
+        sendServerStatusNotifications();
     }
 }
