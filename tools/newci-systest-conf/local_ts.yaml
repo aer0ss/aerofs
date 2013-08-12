@@ -1,0 +1,6 @@
+actors:
+  - os: linux
+    isolated: false
+    teamserver: local
+  - os: linux
+    isolated: false
