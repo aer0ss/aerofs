@@ -255,7 +255,7 @@ def main():
         username = create_user(args.userid, args.password)
 
     # Clear S3 bucket if necessary
-    if any(ts.get('storage_type') == 'S3' for ts in (a.get('TS') for a in actor_data if a.get('TS'))):
+    if any(a.get('teamserver', '').upper() == 'S3' for a in actor_data):
         clear_s3_bucket(S3_DETAILS['s3_access_key'],
                         S3_DETAILS['s3_secret_key'],
                         S3_DETAILS['s3_bucket_id'])
