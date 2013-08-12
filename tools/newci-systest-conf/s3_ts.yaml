@@ -1,0 +1,6 @@
+actors:
+  - os: linux
+    isolated: false
+    teamserver: s3
+  - os: linux
+    isolated: false
