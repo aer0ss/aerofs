@@ -319,12 +319,17 @@ function compute_product_names() {
     function get_property() {
         local local_PROPERTY="$1"
         # Note the equals.
-        local local_VALUE=$(grep ^"$PROPERTY"= $LABELING_FILE | cut -d = -f 2)
-        if [[ $? -ne 0 ]] || [[ -z "$VALUE" ]] ; then
-            echo "Couldn't retrieve property $PROPERTY from $LABELING_FILE"
+        local local_KEY_VALUE_PAIR=$(grep ^"$local_PROPERTY"= $LABELING_FILE)
+        if [[ $? -ne 0 ]] ; then
+            echo "Couldn't retrieve property $local_PROPERTY from $LABELING_FILE"
             exit 1
         fi
-        echo $VALUE
+        local local_VALUE=$(echo "$local_KEY_VALUE_PAIR" | cut -d = -f 2)
+        if [[ -z "$local_VALUE" ]] ; then
+            echo "Couldn't retrieve property $local_PROPERTY from $LABELING_FILE"
+            exit 1
+        fi
+        echo "$local_VALUE"
     }
 
     readonly AEROFS_PRODUCT=$(get_property "labeling.product")
