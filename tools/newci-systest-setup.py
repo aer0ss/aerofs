@@ -94,6 +94,8 @@ def generate_unique_userid(userid_fmt):
 
 
 def create_user(userid, password, sp_url=CI_SP_URL):
+    if userid is None:
+        userid = generate_unique_userid(DEFAULT_USERID_FMT)
     conn = connection.SyncConnectionService(sp_url, CI_SP_VERSION)
     sp = sp_pb2.SPServiceRpcStub(conn)
     sp.request_to_sign_up(userid)
@@ -239,7 +241,7 @@ def main():
         help="Default is aerofstest")
     parser.add_argument('--root', default=DEFAULT_ROOT,
         help="Default is ~/syncdet")
-    parser.add_argument('--userid', default=generate_unique_userid(DEFAULT_USERID_FMT),
+    parser.add_argument('--userid', default=None,
         help="AeroFS userid")
     parser.add_argument('--anchor-parent', default=DEFAULT_ANCHOR_PARENT,
         help="Location of the root anchor's parent")
