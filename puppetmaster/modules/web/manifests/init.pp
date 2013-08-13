@@ -1,4 +1,4 @@
-class webadmin (
+class web (
     $stripe_publishable_key,
     $stripe_secret_key,
     $uwsgi_port = 8080
@@ -29,7 +29,7 @@ class webadmin (
     }
 
     file{"/etc/uwsgi/apps-enabled/productionAeroFS.ini":
-        content => template("webadmin/productionAeroFS.ini.erb"),
+        content => template("web/productionAeroFS.ini.erb"),
         owner => root,
         group => root,
         require => Package["aerofs-web"],

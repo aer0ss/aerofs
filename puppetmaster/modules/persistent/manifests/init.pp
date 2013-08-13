@@ -23,18 +23,6 @@ class persistent {
         require => Package["aerofs-bootstrap"],
     }
 
-    # Links so that bootstrap pulls config without the web service running.
-    exec{"rm configuration.properties":
-        command => "/bin/rm -f /opt/bootstrap/configuration.properties",
-        require => Package["aerofs-bootstrap"],
-
-    }
-    file{ "/opt/bootstrap/configuration.properties":
-        ensure  => link,
-        target  => "/opt/config/properties/server.properties",
-        require => Exec["rm configuration.properties"],
-    }
-
     # --------------
     # Cfg/CA Server
     # --------------

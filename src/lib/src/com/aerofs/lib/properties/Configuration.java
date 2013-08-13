@@ -9,6 +9,7 @@ import com.aerofs.base.config.PropertiesHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
@@ -16,6 +17,7 @@ import java.io.InputStream;
 import java.net.URL;
 import java.util.Properties;
 
+// TODO (MP) rename this class to ServerConfigurationLoader or something.
 public final class Configuration
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(Configuration.class);
@@ -31,9 +33,8 @@ public final class Configuration
      * <p>
      * The following configuration sources are used (in order of preference):
      * <ol>
-     *     <li>Runtime Configuration (for testing only)</li>
      *     <li>System Configuration (system, -D JVM parameters)</li>
-     *     <li>Classpath .properties Resources (static)</li>
+     *     <li>/opt/config property resources (static)</li>
      *     <li>Configuration Service (HTTP)</li>
      * </ol>
      * </p>
@@ -41,31 +42,34 @@ public final class Configuration
     public static class Server
     {
         private static final String CONFIGURATION_SERVICE_URL_FILE = "/etc/aerofs/configuration.url";
-        private static final String CONFIGURATION_RESOURCE = "configuration.properties";
+        private static final String CONFIGURATION_RESOURCE_COMMON = "/opt/config/properties/common.properties";
+        private static final String CONFIGURATION_RESOURCE_SERVER = "/opt/config/properties/server.properties";
 
         public static void initialize()
                 throws Exception
         {
             PropertiesHelper helper = new PropertiesHelper();
+            Properties properties = System.getProperties();
 
-            Properties systemProperties = System.getProperties();
-            Properties staticProperties = helper.readPropertiesFromPwdOrClasspath(
-                    CONFIGURATION_RESOURCE);
+            // Only load /opt/config properties if they exist, i.e. if we are on the persistent box.
+            if (new File(CONFIGURATION_RESOURCE_COMMON).exists()) {
+                properties = helper.unionProperties(
+                        properties,
+                        helper.readPropertiesFromFile(CONFIGURATION_RESOURCE_COMMON));
+            }
+            if (new File(CONFIGURATION_RESOURCE_SERVER).exists()) {
+                properties = helper.unionProperties(
+                        properties,
+                        helper.readPropertiesFromFile(CONFIGURATION_RESOURCE_SERVER));
+            }
 
-            Properties preHttpProperties = new Properties();
-            preHttpProperties.putAll(systemProperties);
-            preHttpProperties.putAll(staticProperties);
-            Properties httpProperties = getHttpProperties(preHttpProperties,
-                    new FileBasedConfigurationURLProvider(CONFIGURATION_SERVICE_URL_FILE));
+            properties = helper.unionProperties(properties, getHttpProperties(
+                    new FileBasedConfigurationURLProvider(CONFIGURATION_SERVICE_URL_FILE)));
 
-            // Join all properties, throwing if a key appears twice.
-            Properties compositeProperties = helper.unionOfThreeProperties(systemProperties,
-                    staticProperties, httpProperties);
+            // Initialize ConfigurationProperties. Perform variable resolution.
+            ConfigurationProperties.setProperties(helper.parseProperties(properties));
 
-            // Initialize ConfigurationProperties.
-            ConfigurationProperties.setProperties(compositeProperties);
-
-            helper.logProperties(LOGGER, "Server configuration initialized", compositeProperties);
+            helper.logProperties(LOGGER, "Server configuration initialized", properties);
         }
     }
 
@@ -117,25 +121,17 @@ public final class Configuration
      * @throws ExHttpConfig If a URL was provided but the HTTP service GET failed.
      */
     private static Properties getHttpProperties(
-            Properties compositeProperties,
             IDefaultConfigurationURLProvider provider)
             throws ExHttpConfig
     {
-        // We allow the configuration service URL to be overridden by construction of a temporary
-        // configuration source from all other configuration sources. Then we lookup the
-        // "config.service.url" key if any value has been defined it will be used. If not value has
-        // been defined in other configuration sources then lookup a default (may be null).
-        String configurationServiceUrl = compositeProperties.getProperty("config.service.url",
-                provider.getDefaultConfigurationURL());
+        String configurationServiceUrl = provider.getDefaultConfigurationURL();
 
-        // Return empty configuration source if configurationServiceUrl is not present.
         if (configurationServiceUrl == null) {
             return new Properties();
         }
 
         Properties httpProperties = new Properties();
         try {
-            // NOTE(mh): This uses trust store. Fine to leave like this until removal of config server.
             InputStream is = new URL(configurationServiceUrl).openConnection().getInputStream();
             httpProperties.load(is);
         } catch (IOException e) {

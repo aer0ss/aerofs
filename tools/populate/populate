@@ -83,7 +83,7 @@ function create_site_properties_file() {
     if [[ "$MODE" == 'ENTERPRISE' ]]
     then
         set +e
-        wget -qO- --no-check-certificate -T 5 https://persistent.syncfs.com/ | grep config.loader > "$APPROOT"/site-config.properties
+        wget -qO- --no-check-certificate -T 5 https://persistent.syncfs.com/ > "$APPROOT"/site-config.properties
 
         if [[ $? -ne 0 ]]
         then

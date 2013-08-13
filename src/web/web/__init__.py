@@ -1,12 +1,10 @@
+from aerofs_common.configuration import Configuration
 from pyramid.config import Configurator
 from pyramid.authentication import SessionAuthenticationPolicy
 from pyramid.authorization import ACLAuthorizationPolicy
 from pyramid_beaker import session_factory_from_settings
 from views.login.login_view import groupfinder
 from root_factory import RootFactory
-from cStringIO import StringIO
-import jprops
-import requests
 import views
 
 def main(global_config, **settings):
@@ -16,28 +14,11 @@ def main(global_config, **settings):
 
     mode = settings['deployment.mode']
     if mode == "private":
-        # Fetch dynamic configuration.  This must happen before we construct
-        # the Configurator below.
         CONFIG_URL_FILE = "/etc/aerofs/configuration.url"
         CACERT_FILE = "/etc/ssl/certs/AeroFS_CA.pem"
-        verify = CACERT_FILE
-        config_url = None
-        with open(CONFIG_URL_FILE) as f:
-            config_url = f.read().strip()
-        print "Loading dynamic configuration from {}".format(config_url)
-        res = requests.get(config_url, verify=verify)
-        if res.ok:
-            props = jprops.load_properties(StringIO(res.text))
-            for key in props:
-                # Place all config key/value pairs in the global settings
-                # object, except for server.browser.key because we really
-                # should try to avoid leaving that lying around in case it
-                # shows up in a debug message or something.
-                if key == "server.browser.key":
-                    continue
-                settings[key] = props[key]
-        else:
-            raise IOError("Couldn't reach configuration server: {}".format(res.status_code))
+
+        configuration = Configuration(CONFIG_URL_FILE, CACERT_FILE)
+        configuration.fetch_and_populate(settings)
 
     authn_policy = SessionAuthenticationPolicy(callback=groupfinder)
     authz_policy = ACLAuthorizationPolicy()

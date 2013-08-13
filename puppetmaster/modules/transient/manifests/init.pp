@@ -63,7 +63,7 @@ class transient {
         ensure => directory,
         require => Package["nginx"]
     }
-    class{"webadmin":
+    class{"web":
         stripe_publishable_key => "gibberish",
         stripe_secret_key => "gibberish",
         uwsgi_port => 8081,
@@ -82,7 +82,7 @@ class transient {
         require => Package["nginx"]
     }
 
-    # Custom webadmin things.
+    # Custom web things.
     file{ "/opt/web/web/static/installers":
         ensure  => link,
         target  => "/opt/repackaging/installers/modified",

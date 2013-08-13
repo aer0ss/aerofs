@@ -26,6 +26,7 @@ class PropertiesLabeling implements ILabeling
         try {
             properties = _propertiesHelper.readPropertiesFromPwdOrClasspath("labeling.properties");
         } catch (Exception e) {
+            // TODO (MP) yuck. hate this. normal code path should not rely on exceptions for flow control.
             properties = new Properties();
         }
 

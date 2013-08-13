@@ -1,5 +1,6 @@
 package com.aerofs.lib.configuration;
 
+import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.ssl.ICertificateProvider;
 import com.google.common.io.Files;
 import org.junit.Before;
@@ -172,7 +173,7 @@ public class TestClientConfigurationLoader
     }
 
     protected Properties setupStaticProperties(boolean httpConfigRequired)
-            throws IOException
+            throws IOException, ExBadArgs
     {
         Properties mockStaticProperties = new Properties();
         mockStaticProperties.setProperty(PROPERTY_IS_ENTERPRISE_DEPLOYMENT,

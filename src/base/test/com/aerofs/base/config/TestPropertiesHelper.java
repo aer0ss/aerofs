@@ -4,6 +4,7 @@
 
 package com.aerofs.base.config;
 
+import com.aerofs.base.ex.ExBadArgs;
 import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
@@ -118,6 +119,7 @@ public class TestPropertiesHelper
 
     @Test
     public void testParseProperties()
+            throws ExBadArgs
     {
         Properties a = new Properties();
 
@@ -141,7 +143,22 @@ public class TestPropertiesHelper
     }
 
     @Test
-    public void testParsePropertiesFromInputStream() throws Exception
+    public void testLocalProdProperties()
+            throws ExBadArgs
+    {
+        Properties raw = new Properties();
+
+        raw.setProperty("base.hosts.transient", "transient.syncfs.com");
+        raw.setProperty("base.sp.url", "https://${base.hosts.transient}:9000/sp");
+
+        Properties parsed = _propertiesHelper.parseProperties(raw);
+
+        assertEquals(parsed.get("base.sp.url"), "https://transient.syncfs.com:9000/sp");
+    }
+
+    @Test
+    public void testParsePropertiesFromInputStream()
+            throws Exception
     {
         ByteArrayInputStream bais = new ByteArrayInputStream("one=${two}\ntwo=Two".getBytes("UTF-8"));
         Properties a = new Properties();

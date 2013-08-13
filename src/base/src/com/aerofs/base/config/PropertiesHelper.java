@@ -5,6 +5,7 @@
 package com.aerofs.base.config;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.base.ex.ExBadArgs;
 import com.google.common.collect.Sets;
 import org.slf4j.Logger;
 
@@ -14,6 +15,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Helper class to hold common functions for dealing with Properties objects.
@@ -83,15 +86,16 @@ public class PropertiesHelper
     }
 
     /**
-     * Loads properties from file_name, first looking in the current folder, and if file_name isn't
+     * Loads properties from filename, first looking in the current folder, and if filename isn't
      * there, looking in the classpath.
      *
      * When parsing the file, it uses parseProperties to parse the properties file. This allows some
      * very simple substitutions (see parseProperties documentation).
      *
-     * @return Properties object parsed from the contents of file_name.
+     * @return Properties object parsed from the contents of filename.
+     * @throws Exception when unable to load filename from both pwd and classpath.
      */
-    public Properties readPropertiesFromPwdOrClasspath(String file_name)
+    public Properties readPropertiesFromPwdOrClasspath(String filename)
             throws Exception
     {
         Properties staticProperties = new Properties();
@@ -100,24 +104,52 @@ public class PropertiesHelper
 
         try {
             try {
-                propertyStream = new File(file_name).toURI().toURL().openStream();
+                propertyStream = new File(filename).toURI().toURL().openStream();
             } catch (Exception e) {
-                propertyStream = classLoader.getResourceAsStream(file_name);
+                propertyStream = classLoader.getResourceAsStream(filename);
             }
 
             staticProperties.load(propertyStream);
         } catch (Exception e) {
-            throw new Exception("Couldn't read file: " + file_name, e);
+            throw new Exception("Couldn't read file: " + filename, e);
         } finally {
             if (propertyStream != null) {
                 try {
                     propertyStream.close();
                 } catch (IOException e) {
-                    throw new Exception("fail access: " + file_name);
+                    throw new Exception("fail access: " + filename);
                 }
             }
         }
+
+        // TODO (MP) yikes. loading properties should be separate from resolution.
+        // This is fine for now since it is only used by labeling, which is going away. When
+        // labeling is burned this should be burned as well.
         return parseProperties(staticProperties);
+    }
+
+    /**
+     * Reads properties from a fully qualified filename
+     * @throws Exception when we are unable to load configuration from that file.
+     */
+    public Properties readPropertiesFromFile(String fullyQualifiedFilename)
+            throws Exception
+    {
+        Properties staticProperties = new Properties();
+        InputStream propertyStream = null;
+
+        try {
+            propertyStream = new File(fullyQualifiedFilename).toURI().toURL().openStream();
+            staticProperties.load(propertyStream);
+        } catch (Exception e) {
+            throw new Exception("Couldn't read file: " + fullyQualifiedFilename, e);
+        } finally {
+            if (propertyStream != null) {
+                propertyStream.close();
+            }
+        }
+
+        return staticProperties;
     }
 
     /**
@@ -146,27 +178,40 @@ public class PropertiesHelper
      * labeling.product=AeroFS
      * labeling.rootAnchorName=AeroFS Product
      *
-     * NB1: This parsing doesn't support chaining at all.
-     * NB2: This function assumes the input is well-formed, and may behave badly on malformed input.
+     * N.B. This parsing doesn't support chaining at all.
+     *
+     * @throws ExBadArgs when the input properties set is invalid.
      */
     public Properties parseProperties(Properties properties)
+            throws ExBadArgs
     {
         String value;
-        for (Object keyObj : properties.keySet()) {
-            String key = (String)keyObj;
+        for (Object keyObject : properties.keySet()) {
+            String key = (String) keyObject;
             value = properties.getProperty(key);
 
-            if (!value.contains("${")) continue;
+            Pattern pattern = Pattern.compile("\\$\\{([a-z,.]*)\\}");
+            Matcher matcher = pattern.matcher(value);
 
-            String parsedValue = "";
-            for (String piece : value.split("\\}")) {
-                String preKey = piece.split("\\$\\{")[0];
-                String keyReferenced = piece.split("\\$\\{")[1];
+            while (matcher.find()) {
+                String match = matcher.group();
 
-                String valueReferenced = properties.getProperty(keyReferenced);
-                parsedValue += preKey + valueReferenced;
+                // N.B. bounds are guaranteed here based on the regex used above. Assert to be safe.
+                assert(match.length() >= 3);
+                String variable = match.substring(2, match.length() - 1);
+
+                // Sub out the variable, if the one it is referencing exists.
+                String referenedValue = properties.getProperty(variable);
+
+                if (referenedValue == null) {
+                    throw new ExBadArgs(
+                            "Bad reference variable=" + variable + " (" + key + "=" + value + ")");
+                }
+
+                value = value.replace(match, referenedValue);
             }
-            properties.setProperty(key, parsedValue);
+
+            properties.setProperty(key, value);
         }
         return properties;
     }

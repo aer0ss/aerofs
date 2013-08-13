@@ -1,4 +1,4 @@
-name    'aerofs-webadmin'
+name    'aerofs-web'
 version '0.0.1'
 source 'UNKNOWN'
 author 'aerofs'

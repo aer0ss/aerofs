@@ -6,8 +6,8 @@ server {
 server {
 	listen 443 default ssl;
 	listen [::]:443 ssl default ipv6only=on;
-	error_log /var/log/aerofs/webadmin.err.log;
-	access_log /var/log/aerofs/webadmin.access.log;
+	error_log /var/log/aerofs/web.err.log;
+	access_log /var/log/aerofs/web.access.log;
 	access_log on;
 	charset utf-8;
 

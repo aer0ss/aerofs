@@ -25,7 +25,7 @@ port()
 port verkehr.aerofs.com 443
 port x.aerofs.com 443
 port zephyr.aerofs.com 443
-url https://webadmin.aerofs.com/login
+url https://aerofs.com/login
 url https://sv.aerofs.com/sv_beta/sv
 url https://sp.aerofs.com/sp
 url https://sss.aerofs.com/syncstat

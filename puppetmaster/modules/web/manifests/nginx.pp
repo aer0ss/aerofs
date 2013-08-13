@@ -1,4 +1,4 @@
-class webadmin::nginx {
+class web::nginx {
     file {"/etc/nginx/certs":
         ensure => directory,
         owner  => "root",

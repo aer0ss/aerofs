@@ -1,6 +1,7 @@
 package com.aerofs.lib.configuration;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.ssl.ICertificateProvider;
 import com.aerofs.base.ssl.StringBasedCertificateProvider;
 import com.aerofs.base.config.PropertiesHelper;
@@ -138,7 +139,8 @@ public class ClientConfigurationLoader
         return inputStream;
     }
 
-    protected Properties getStaticProperties() throws IOException
+    protected Properties getStaticProperties()
+            throws IOException, ExBadArgs
     {
         Properties staticProperties = new Properties();
 
@@ -151,6 +153,7 @@ public class ClientConfigurationLoader
                     "staticProperties.", e.toString());
             staticProperties = new Properties();
         }
+
         return _propertiesHelper.parseProperties(staticProperties);
     }
 
