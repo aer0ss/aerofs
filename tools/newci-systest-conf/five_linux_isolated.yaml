@@ -1,0 +1,11 @@
+actors:
+  - os: linux
+    isolated: true
+  - os: linux
+    isolated: true
+  - os: linux
+    isolated: true
+  - os: linux
+    isolated: true
+  - os: linux
+    isolated: true
