@@ -44,7 +44,7 @@ public class BaseParam
                 "config.loader.base_ca_certificate", null);
     }
 
-    public static class Xmpp
+    public static class XMPP
     {
         public static final IProperty<String> SERVER_DOMAIN = props.stringProperty("base.xmpp.domain", "aerofs.com");
 
