@@ -3,7 +3,6 @@ env
 out.ant
 out.idea
 resource/server/lib.dropwizard
-tools/build/properties.log
 workspace.xml
 dump.rdb
 syncdet_test/.idea/
