@@ -1,4 +1,5 @@
 #!/bin/bash -e -u
+set -x
 
 ###############################################################################
 #
@@ -41,27 +42,25 @@ readonly RELEASE_FILE_NAME="aerofs-${RELEASE_VERSION}-${LOWERCASE_MODE}"
 function upload_release_files_to_release_server() {
     echo ">> uploading release resources to server"
 
-    local local_TEMP_RELEASE_ZIP_FILENAME="$( mktemp -t aerofs_temp_zip_XXXXXX )".zip
-    trap "rm $local_TEMP_RELEASE_ZIP_FILENAME" EXIT
+    local local_TEMP_RELEASE_TAR_BZ2_FILENAME="$( mktemp -t aerofs_release_tarball_XXXXXX )".tar.bz2
+    trap "rm $local_TEMP_RELEASE_TAR_BZ2_FILENAME" EXIT
 
-    # Create the zip
+    # Create the tarball
     pushd "$LOCAL_RELEASE_DIR" > /dev/null
-    zip -9rqy "$local_TEMP_RELEASE_ZIP_FILENAME" {aerofs,aerofs.osx,aerofs.win,aerofs.linux32,aerofs.linux64,aerofs.linux,aerofs.linux.inst}
+    tar cjf "$local_TEMP_RELEASE_TAR_BZ2_FILENAME" {aerofs,aerofs.osx,aerofs.win,aerofs.linux}
     popd > /dev/null
 
     # Copy the zip to the release server
-    kscp "$local_TEMP_RELEASE_ZIP_FILENAME" $RELEASE_SERVER_LOGIN:"${RELEASE_FILES_DIR}/${RELEASE_FILE_NAME}".zip
+    kscp "$local_TEMP_RELEASE_TAR_BZ2_FILENAME" $RELEASE_SERVER_LOGIN:"${RELEASE_FILES_DIR}/${RELEASE_FILE_NAME}".tar.bz2
 
-    # Unzip the files on the server into RELEASE_UNPACK_DIR
-    # NOTE: Instead of using rsync to get these files to the release server,
-    # we zip then unzip because the Windows patch script requires a history of
-    # zip files on the server to process diffs.
-    # NOTE (GS): We no longer do patch updates on Windows, so this isn't required
-    # anymore. We may switch to rsync.
+    # Extract the files on the server into RELEASE_UNPACK_DIR
+    # We used tarballs at one point because Windows patches required a history
+    # of zip files, but we can probably switch to rsync if desired, which might
+    # yield speedups.
     kssh $RELEASE_SERVER_LOGIN $RELEASE_SERVER_SHELL << ENDCMDS
         rm -r "$RELEASE_UNPACK_DIR" 2> /dev/null || true
         mkdir -p "$RELEASE_UNPACK_DIR"
-        unzip -qo -d "$RELEASE_UNPACK_DIR" "${RELEASE_FILES_DIR}/${RELEASE_FILE_NAME}".zip
+        tar xvf "${RELEASE_FILES_DIR}/${RELEASE_FILE_NAME}".tar.bz2 --directory "$RELEASE_UNPACK_DIR"
 ENDCMDS
 }
 
@@ -126,7 +125,14 @@ function make_linux_installer_tgz_on_release_server() {
         trap "rm -r \$INSTALLER_TGZ_TEMP_DIR" EXIT
 
         mkdir -p "\${INSTALLER_TGZ_TEMP_DIR}/aerofs"
-        cp -rf "${RELEASE_UNPACK_DIR}/aerofs.linux.inst"/* "\${INSTALLER_TGZ_TEMP_DIR}/aerofs/"
+        cp -av "${RELEASE_UNPACK_DIR}/aerofs.linux"/* "\${INSTALLER_TGZ_TEMP_DIR}/aerofs/"
+        cp -av "${RELEASE_UNPACK_DIR}/aerofs"/* "\${INSTALLER_TGZ_TEMP_DIR}/aerofs/shared/"
+        pushd "\${INSTALLER_TGZ_TEMP_DIR}/aerofs/"
+            ln -s shared/copier ${AEROFS_PRODUCT_UNIX}
+            for suffix in cli gui sh ; do
+                ln -s ${AEROFS_PRODUCT_UNIX} ${AEROFS_PRODUCT_UNIX}-\$suffix
+            done
+        popd
         tar -C "\$INSTALLER_TGZ_TEMP_DIR" -zcf "\${INSTALLER_TGZ_TEMP_DIR}/${local_LINUX_INSTALLER_TGZ_FILENAME}" aerofs
         cp "\${INSTALLER_TGZ_TEMP_DIR}/${local_LINUX_INSTALLER_TGZ_FILENAME}" "${INSTALLERS_DOWNLOAD_DIR}/${RELEASE_VERSION}/"
 ENDCMDS
@@ -134,37 +140,37 @@ ENDCMDS
 
 ###############################################################################
 #
-# Tars and gzips aerofs resources based on their architecture (32 bit/64 bit)
+# Tars and gzips aerofs resources based on their architecture (i386/amd64)
 # and moves them to the download directory on the release server.
 #
-# @param $1 32|64 (all other values treated as errors)
+# @param $1 i386|amd64 (all other values treated as errors)
 #
 # example:
-#   make_linux_arch_dependent_tgz_on_release_server 32
+#   make_linux_arch_dependent_tgz_on_release_server i386
 #
 ###############################################################################
 function make_linux_arch_dependent_tgz_on_release_server() {
-    if [[ "x$1" != "x32" && "x$1" != "x64" ]]; then
+    if [[ "x$1" != "xi386" && "x$1" != "xamd64" ]]; then
         echo "error: unsupported bits:$1" >&2
-        echo "usage: make_linux_arch_dependent_tgz_on_release_server [32|64]" >&2
+        echo "usage: make_linux_arch_dependent_tgz_on_release_server [i386|amd64]" >&2
         exit $ERRBADARGS
     fi
 
-    local local_BITS="$1"
+    local local_ARCH="$1"
     local local_TGZ_SUFFIX=""
-    case "$local_BITS" in
-    "32")
+    case "$local_ARCH" in
+    "i386")
         local_TGZ_SUFFIX="x86"
         ;;
-    "64")
+    "amd64")
         local_TGZ_SUFFIX="x86_64"
         ;;
     *)
-        echo "error: unsupported bits:$local_BITS" >&2
+        echo "error: unsupported arch:$local_ARCH" >&2
         ;;
     esac
 
-    echo ">> make arch dependent tgz (${local_BITS}-bit) on release server"
+    echo ">> make arch dependent tgz (${local_ARCH}) on release server"
 
     local local_VERSIONED_ARCH_TGZ_FILENAME=${AEROFS_PRODUCT_UNIX}-${RELEASE_VERSION}-${local_TGZ_SUFFIX}.tgz
     local local_UNVERSIONED_ARCH_TGZ_FILENAME=${AEROFS_PRODUCT_UNIX}-${local_TGZ_SUFFIX}.tgz
@@ -177,8 +183,8 @@ function make_linux_arch_dependent_tgz_on_release_server() {
 
         mkdir -p "\${ARCH_TGZ_TEMP_DIR}/aerofs"
         cp -rf "${RELEASE_UNPACK_DIR}/aerofs"/* "\${ARCH_TGZ_TEMP_DIR}/aerofs"
-        cp -rf "${RELEASE_UNPACK_DIR}/aerofs.linux"/* "\${ARCH_TGZ_TEMP_DIR}/aerofs"
-        cp -rf "${RELEASE_UNPACK_DIR}/aerofs.linux${local_BITS}"/* "\${ARCH_TGZ_TEMP_DIR}/aerofs"
+        cp -rf "${RELEASE_UNPACK_DIR}/aerofs.linux/shared"/* "\${ARCH_TGZ_TEMP_DIR}/aerofs"
+        cp -rf "${RELEASE_UNPACK_DIR}/aerofs.linux/${local_ARCH}"/* "\${ARCH_TGZ_TEMP_DIR}/aerofs"
         tar -C "\${ARCH_TGZ_TEMP_DIR}" -zcf "\${ARCH_TGZ_TEMP_DIR}/${local_VERSIONED_ARCH_TGZ_FILENAME}" aerofs
         cp -rf "\${ARCH_TGZ_TEMP_DIR}/${local_VERSIONED_ARCH_TGZ_FILENAME}" "${INSTALLERS_DOWNLOAD_DIR}/${RELEASE_VERSION}/"
         cp -rf "\${ARCH_TGZ_TEMP_DIR}/${local_VERSIONED_ARCH_TGZ_FILENAME}" "${INSTALLERS_DOWNLOAD_DIR}/${RELEASE_VERSION}/${local_UNVERSIONED_ARCH_TGZ_FILENAME}"
@@ -193,8 +199,8 @@ ENDCMDS
 function make_linux_installers() {
     make_linux_installer_deb_on_release_server
     make_linux_installer_tgz_on_release_server
-    make_linux_arch_dependent_tgz_on_release_server 32
-    make_linux_arch_dependent_tgz_on_release_server 64
+    make_linux_arch_dependent_tgz_on_release_server i386
+    make_linux_arch_dependent_tgz_on_release_server amd64
 }
 
 ###############################################################################

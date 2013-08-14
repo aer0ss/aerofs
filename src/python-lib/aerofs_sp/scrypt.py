@@ -9,9 +9,9 @@ searchDir = ''
 if platform.system() == 'Linux':
     # Check if we're running 32 or 64 bit python
     if sys.maxsize > 2**32:
-        searchDir = 'lib/linux64'
+        searchDir = 'lib/linux/amd64'
     else:
-        searchDir = 'lib/linux32'
+        searchDir = 'lib/linux/i386'
 elif 'cygwin' in platform.system().lower():
     searchDir = 'lib/win'
 else: # OS X (don't need to worry about other cases because they will fail when attempting import below)

@@ -1,0 +1,86 @@
+#!/bin/bash
+# This script launches the executable from the app root.
+
+PRODUCT="[AEROFS_PRODUCT_UNIX]"
+declare -i -r PROG_INDEX=${#PRODUCT}+2
+PROG=$(basename $0 | cut -c ${PROG_INDEX}-)
+if [ x"$PROG" == x ]; then
+    PROG=gui
+fi
+
+if [ $PROG == gui ]; then
+    if [ x"$DISPLAY" == x ]; then
+        echo Please use $PRODUCT-cli when running without a graphical environment.
+        exit 1
+    fi
+fi
+
+check_for_binary()
+{
+    # $1 is the executable name
+    # $2 is the expected Debian/Ubuntu package name
+    # This could be extended for other distros in the future
+    which $1 > /dev/null
+    if [ $? -ne 0 ]; then
+        echo "Please install the \"$1\" package first by typing:"
+        echo "sudo apt-get install $2"
+        exit 1
+    fi
+}
+
+check_for_binary ps procps
+check_for_binary java default-jre
+
+# Architecture detection without dependencies beyond coreutils.
+# ELF files start out "\x7fELF", and the following byte is
+#   0x01 for 32-bit and
+#   0x02 for 64-bit.
+CURRENT_EXE_HEAD=$(head -c 5 /proc/self/exe )
+case "$CURRENT_EXE_HEAD" in
+    "$(printf '\x7fELF\x01')")
+        # 32-bit ELF
+        JRE_LIB_ARCH=i386
+        ;;
+    "$(printf '\x7fELF\x02')")
+        # 64-bit ELF
+        JRE_LIB_ARCH=amd64
+        ;;
+    *)
+        echo "I don't recognize your userspace executable format, so I can't launch."
+        echo "Sorry about that."
+        exit 1
+esac
+
+DIST="$HOME/.$PRODUCT-bin"
+
+# Configure auto-start on login
+mkdir -p "$HOME/.config/autostart/"
+rm -f "$HOME/.config/autostart/$PRODUCT.desktop"
+ln -s "$DIST/$PRODUCT.desktop" "$HOME/.config/autostart/"
+
+# Find java libraries and executables
+if [ -z "$JAVA_HOME" ]; then
+    JRE_BASE="$(dirname $(dirname $(readlink -f $(which java))))"
+    # Oracle ships two "java" executables in the JDK package - one in the jre/bin/
+    # folder, and the other just in the bin/ folder.  This finds the jre even if
+    # the JDK java binary is the first one on the user's PATH.
+    if [ -d "$JRE_BASE/jre" ]; then
+        JRE_BASE="$JRE_BASE/jre"
+    fi
+    JAVA_CMD="java"
+else
+    JRE_BASE="$JAVA_HOME"
+    JAVA_CMD="$JRE_BASE/bin/java"
+fi
+JRE_LIB="$JRE_BASE/lib/$JRE_LIB_ARCH"
+# for java to load our own native libraries and aerofsd to load jvm libraries
+export LD_LIBRARY_PATH="$DIST:$JRE_LIB:$JRE_LIB/server:$LD_LIBRARY_PATH"
+
+if [ $PROG == gui ]; then
+    echo "Launching graphical interface in the background... (use $PRODUCT-cli for command-line interface)"
+    nohup "$JAVA_CMD" -Xmx64m -jar "$DIST/aerofs.jar" DEFAULT gui 2>/dev/null >/dev/null &
+else
+    "$JAVA_CMD" -Xmx64m -jar "$DIST/aerofs.jar" DEFAULT $PROG "$@"
+fi
+
+exit 0
