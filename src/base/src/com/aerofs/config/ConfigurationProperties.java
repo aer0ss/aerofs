@@ -2,9 +2,10 @@
  * Copyright (c) Air Computing Inc., 2013.
  */
 
-package com.aerofs.base.params;
+package com.aerofs.config;
 
 import com.aerofs.base.BaseSecUtil;
+import com.aerofs.base.params.IProperty;
 import com.google.common.base.Throwables;
 import com.google.common.net.HostAndPort;
 
@@ -20,22 +21,22 @@ import java.util.Properties;
 /**
  * Wrapper class around Properties. provides URL parsing, Address parsing, and cert reading.
  */
-public class SimplePropertySource implements IPropertySource
+public class ConfigurationProperties
 {
-    private Properties _properties;
+    private static Properties _properties;
 
     /**
      * Creates a property source from properties.
      *
      * @param properties The properties to use.
      */
-    public SimplePropertySource(Properties properties)
+    public static void setProperties(Properties properties)
     {
         _properties = properties;
     }
 
-    @Override
-    public IProperty<InetSocketAddress> addressProperty(String key, InetSocketAddress defaultValue)
+    public static IProperty<InetSocketAddress> getAddressProperty(String key,
+            InetSocketAddress defaultValue)
     {
         final InetSocketAddress returnValue = parseAddress(_properties.getProperty(key), defaultValue);
         return new IProperty<InetSocketAddress>()
@@ -48,8 +49,7 @@ public class SimplePropertySource implements IPropertySource
         };
     }
 
-    @Override
-    public IProperty<String> stringProperty(String key, String defaultValue)
+    public static IProperty<String> getStringProperty(String key, String defaultValue)
     {
         final String returnValue = _properties.getProperty(key, defaultValue);
         return new IProperty<String>()
@@ -62,8 +62,7 @@ public class SimplePropertySource implements IPropertySource
         };
     }
 
-    @Override
-    public IProperty<URL> urlProperty(String key, String defaultValue)
+    public static IProperty<URL> getUrlProperty(String key, String defaultValue)
     {
         final URL returnValue = parseUrl(_properties.getProperty(key, defaultValue));
         return new IProperty<URL>()
@@ -76,8 +75,8 @@ public class SimplePropertySource implements IPropertySource
         };
     }
 
-    @Override
-    public IProperty<X509Certificate> certificateProperty(String key, X509Certificate defaultValue)
+    public static IProperty<X509Certificate> getCertificateProperty(String key,
+            X509Certificate defaultValue)
     {
         X509Certificate cacert = null;
         String cacertString = _properties.getProperty(key);
@@ -106,14 +105,14 @@ public class SimplePropertySource implements IPropertySource
         };
     }
 
-    private InetSocketAddress parseAddress(@Nullable String address, InetSocketAddress defaultValue)
+    private static InetSocketAddress parseAddress(@Nullable String address, InetSocketAddress defaultValue)
     {
         if (address == null) return defaultValue;
         HostAndPort hostAndPort = HostAndPort.fromString(address);
         return InetSocketAddress.createUnresolved(hostAndPort.getHostText(), hostAndPort.getPort());
     }
 
-    private URL parseUrl(String url)
+    private static URL parseUrl(String url)
     {
         try {
             return new URL(url);

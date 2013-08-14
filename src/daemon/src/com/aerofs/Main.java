@@ -1,8 +1,7 @@
 package com.aerofs;
 
-import com.aerofs.base.BaseParam;
 import com.aerofs.base.Loggers;
-import com.aerofs.base.params.SimplePropertySource;
+import com.aerofs.config.ConfigurationProperties;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.ChannelFactories;
@@ -239,7 +238,7 @@ public class Main
             throws ConfigurationException, IncompatibleModeException
     {
         ClientConfigurationLoader loader = new ClientConfigurationLoader(new HttpsDownloader());
-        BaseParam.setPropertySource(new SimplePropertySource(loader.loadConfiguration(appRoot)));
+        ConfigurationProperties.setProperties(loader.loadConfiguration(appRoot));
         l.debug("Client configuration initialized");
     }
 
