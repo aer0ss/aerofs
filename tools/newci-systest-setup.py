@@ -10,6 +10,7 @@ actors:
       vm: [fF]alse, [tT]rue, [yY]es, [nN]o
       isolated: [fF]alse, [tT]rue, [yY]es, [nN]o
       teamserver: [sS]3, [lL]inked, [lL]ocal
+      android: [fF]alse, [tT]rue, [yY]es, [nN]o
     - ...
     - ...
 
@@ -59,6 +60,7 @@ CODE_URL = "http://newci.arrowfs.org:8025/get_code"
 POOL_URL = "http://newci.arrowfs.org:8040"
 CI_SP_URL = "https://newci.arrowfs.org:9000/sp"
 CI_SP_VERSION = 20
+JSON_HEADERS = {'Content-type': 'application/json', 'Accept': 'application/json'}
 
 # System-specific details
 # AWS_DETAILS = {'os': 'linux32',
@@ -70,7 +72,7 @@ S3_DETAILS = {'s3_bucket_id': 'ci-build-agent-nat2.test.aerofs',
               's3_secret_key': 'FtxQJqw0t5l7VwvoNKn6QA5HzIopVXDCET+SAcKJ',
               's3_encryption_password': 'password'}
 
-JSON_HEADERS = {'Content-type': 'application/json', 'Accept': 'application/json'}
+ANDROID_PARAMS = {'rsh_remote_args': ['-R5037:localhost:5037']}
 
 
 ##########################
@@ -190,6 +192,9 @@ def generate_yaml(args, username, actor_data):
         if details != {}:
             d['details'] = details
         d['address'] = str(addresses.pop())
+        android = actor.get('android')
+        if android in [True, 'true', 'True', 'yes', 'Yes']:
+            d.update(ANDROID_PARAMS)
         if teamserver is not None:
             d['aero_root_anchor'] = os.path.join(args.anchor_parent, 'AeroFS Team Server Storage')
         else:
