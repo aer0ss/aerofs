@@ -4,18 +4,18 @@ import com.aerofs.daemon.event.IEventHandler;
 import com.aerofs.daemon.event.net.rx.EORxEndStream;
 import com.aerofs.lib.event.Prio;
 
-public class HdRxEndStream implements IEventHandler<EORxEndStream> {
+public class HdRxEndStream implements IEventHandler<EORxEndStream>
+{
+    private final StreamManager streamManager;
 
-    private final StreamManager _sm;
-
-    public HdRxEndStream(ITransportImpl tp)
+    public HdRxEndStream(StreamManager streamManager)
     {
-        _sm = tp.sm();
+        this.streamManager = streamManager;
     }
 
     @Override
     public void handle_(EORxEndStream ev, Prio prio)
     {
-        _sm.removeIncomingStream(ev._did, ev._sid);
+        streamManager.removeIncomingStream(ev._did, ev._sid);
     }
 }

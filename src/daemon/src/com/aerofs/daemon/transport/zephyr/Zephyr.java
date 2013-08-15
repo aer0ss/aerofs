@@ -11,21 +11,18 @@ import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.JabberID;
-import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.base.ssl.SSLEngineFactory;
 import com.aerofs.daemon.event.lib.EventDispatcher;
 import com.aerofs.daemon.event.lib.imc.IResultWaiter;
-import com.aerofs.daemon.event.net.EOTpStartPulse;
 import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.lib.BlockingPrioQueue;
 import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.daemon.mobile.MobileServerZephyrConnector;
+import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.daemon.transport.TransportThreadGroup;
 import com.aerofs.daemon.transport.exception.ExSendFailed;
-import com.aerofs.daemon.transport.lib.HdPulse;
-import com.aerofs.daemon.transport.lib.IMaxcast;
-import com.aerofs.daemon.transport.lib.ITransportImpl;
+import com.aerofs.daemon.transport.lib.ILinkStateListener;
 import com.aerofs.daemon.transport.lib.IUnicast;
 import com.aerofs.daemon.transport.lib.MaxcastFilterReceiver;
 import com.aerofs.daemon.transport.lib.PulseManager;
@@ -37,7 +34,6 @@ import com.aerofs.daemon.transport.xmpp.ISignallingService;
 import com.aerofs.daemon.transport.xmpp.ISignallingServiceListener;
 import com.aerofs.daemon.transport.xmpp.Multicast;
 import com.aerofs.daemon.transport.xmpp.PresenceStore;
-import com.aerofs.daemon.transport.xmpp.StartPulse;
 import com.aerofs.daemon.transport.xmpp.XMPPConnectionService;
 import com.aerofs.daemon.transport.xmpp.XMPPConnectionService.IXMPPConnectionServiceListener;
 import com.aerofs.daemon.transport.xmpp.XMPPPresenceManager;
@@ -98,7 +94,7 @@ import static org.jivesoftware.smack.packet.Message.Type.error;
 import static org.jivesoftware.smack.packet.Message.Type.groupchat;
 import static org.jivesoftware.smack.packet.Message.Type.headline;
 
-public final class Zephyr implements ITransportImpl, IUnicast, IConnectionServiceListener, IXMPPConnectionServiceListener, ISignallingService
+public final class Zephyr implements ITransport, ILinkStateListener, IUnicast, IConnectionServiceListener, IXMPPConnectionServiceListener, ISignallingService
 {
     //
     // members
@@ -195,7 +191,7 @@ public final class Zephyr implements ITransportImpl, IUnicast, IConnectionServic
         l.debug("{}: enabling multicast", id());
 
         multicastEnabled = true;
-        registerMulticastHandler(this);
+        registerMulticastHandler(eventDispatcher, multicast);
     }
 
     @Override
@@ -208,7 +204,7 @@ public final class Zephyr implements ITransportImpl, IUnicast, IConnectionServic
     public void init_()
             throws Exception
     {
-        registerCommonHandlers(this);
+        registerCommonHandlers(eventDispatcher, scheduler, this, multicast, streamManager, pulseManager, zephyrConnectionService, presenceStore);
         zephyrConnectionService.init();
     }
 
@@ -391,56 +387,6 @@ public final class Zephyr implements ITransportImpl, IUnicast, IConnectionServic
         return eventQueue;
     }
 
-    //--------------------------------------------------------------------------
-    //
-    //
-    // ITransportImpl methods (accessors required by handlers) FIXME: remove accessors
-    //
-    //
-    //--------------------------------------------------------------------------
-
-    @Override
-    public EventDispatcher disp()
-    {
-        return eventDispatcher;
-    }
-
-    @Override
-    public Scheduler sched()
-    {
-        return scheduler;
-    }
-
-    @Override
-    public HdPulse<EOTpStartPulse> sph()
-    {
-        return new HdPulse<EOTpStartPulse>(new StartPulse<Zephyr>(this, presenceStore));
-    }
-
-    @Override
-    public IUnicast ucast()
-    {
-        return this;
-    }
-
-    @Override
-    public IMaxcast mcast()
-    {
-        return multicast;
-    }
-
-    @Override
-    public PulseManager pm()
-    {
-        return pulseManager;
-    }
-
-    @Override
-    public StreamManager sm()
-    {
-        return streamManager;
-    }
-
     public IBlockingPrioritizedEventSink<IEvent> sink()
     {
         return outgoingEventSink;
@@ -449,12 +395,6 @@ public final class Zephyr implements ITransportImpl, IUnicast, IConnectionServic
     public XMPPConnectionService xmppServerConnection()
     {
         return xmppConnectionService;
-    }
-
-    @Override
-    public void updateStores_(SID[] sidsAdded, SID[] sidsRemoved)
-    {
-        multicast.updateStores_(sidsAdded, sidsRemoved);
     }
 
     //--------------------------------------------------------------------------
@@ -602,15 +542,6 @@ public final class Zephyr implements ITransportImpl, IUnicast, IConnectionServic
         }
     }
 
-    //--------------------------------------------------------------------------
-    //
-    //
-    // IXMPPConnectionServiceListener methods (how XMPP gets notified and
-    // processes methods coming in on the control channel)
-    //
-    //
-    //--------------------------------------------------------------------------
-
     @Override
     public void xmppServerDisconnected()
     {
@@ -626,19 +557,17 @@ public final class Zephyr implements ITransportImpl, IUnicast, IConnectionServic
     //
     //--------------------------------------------------------------------------
 
-    @Override
-    public final void disconnect_(DID did)
-    {
-        disconnect(did, new Exception("forced disconnect"));
-    }
-
     private void disconnect(DID did, Exception cause)
     {
         zephyrConnectionService.disconnect(did, cause);
     }
 
     @Override
-    public final void linkStateChanged_(Set<NetworkInterface> removed, Set<NetworkInterface> added, Set<NetworkInterface> prev, Set<NetworkInterface> current)
+    public final void linkStateChanged(
+            Set<NetworkInterface> removed,
+            Set<NetworkInterface> added,
+            Set<NetworkInterface> prev,
+            Set<NetworkInterface> current)
     {
         boolean up = !current.isEmpty();
         xmppConnectionService.linkStateChanged(up);

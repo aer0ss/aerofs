@@ -6,21 +6,16 @@ package com.aerofs.daemon.transport.jingle;
 
 
 import com.aerofs.base.BaseParam.XMPP;
-import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.base.id.DID;
-import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.base.ssl.SSLEngineFactory;
 import com.aerofs.daemon.event.lib.EventDispatcher;
-import com.aerofs.daemon.event.net.EOTpStartPulse;
 import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.lib.BlockingPrioQueue;
 import com.aerofs.daemon.lib.DaemonParam;
+import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.daemon.transport.TransportThreadGroup;
-import com.aerofs.daemon.transport.lib.HdPulse;
-import com.aerofs.daemon.transport.lib.IMaxcast;
-import com.aerofs.daemon.transport.lib.ITransportImpl;
-import com.aerofs.daemon.transport.lib.IUnicast;
+import com.aerofs.daemon.transport.lib.ILinkStateListener;
 import com.aerofs.daemon.transport.lib.MaxcastFilterReceiver;
 import com.aerofs.daemon.transport.lib.PulseManager;
 import com.aerofs.daemon.transport.lib.StreamManager;
@@ -32,7 +27,6 @@ import com.aerofs.daemon.transport.netty.IUnicastCallbacks;
 import com.aerofs.daemon.transport.netty.Unicast;
 import com.aerofs.daemon.transport.xmpp.Multicast;
 import com.aerofs.daemon.transport.xmpp.PresenceStore;
-import com.aerofs.daemon.transport.xmpp.StartPulse;
 import com.aerofs.daemon.transport.xmpp.XMPPConnectionService;
 import com.aerofs.daemon.transport.xmpp.XMPPPresenceManager;
 import com.aerofs.lib.OutArg;
@@ -59,12 +53,13 @@ import java.net.SocketAddress;
 import java.net.UnknownHostException;
 import java.util.Set;
 
+import static com.aerofs.daemon.transport.lib.TPUtil.registerCommonHandlers;
 import static com.aerofs.daemon.transport.lib.TPUtil.registerMulticastHandler;
 import static com.aerofs.daemon.transport.lib.TransportUtil.fromInetSockAddress;
 import static com.aerofs.daemon.transport.lib.TransportUtil.getReachabilityErrorString;
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class Jingle implements ITransportImpl, IUnicastCallbacks
+public class Jingle implements ITransport, ILinkStateListener, IUnicastCallbacks
 {
     private static final String SIGNAL_THREAD_THREAD_ID = "st";
 
@@ -114,19 +109,18 @@ public class Jingle implements ITransportImpl, IUnicastCallbacks
 
         // Unicast
         _ucast = new Unicast(this, _transportStats);
-        TransportProtocolHandler protocolHandler = new TransportProtocolHandler(this, sink, _sm, _pulseManager);
+        TransportProtocolHandler protocolHandler = new TransportProtocolHandler(this, sink, _sm, _pulseManager, _ucast);
         JingleBootstrapFactory bsFact = new JingleBootstrapFactory(localUser, localDID, clientSslEngineFactory, serverSslEngineFactory, _transportStats);
         ServerBootstrap serverBootstrap = bsFact.newServerBootstrap(_signalThread, _ucast, protocolHandler);
         ClientBootstrap clientBootstrap = bsFact.newClientBootstrap(_signalThread);
         _ucast.setBootstraps(serverBootstrap, clientBootstrap);
 
         // Presence Manager
-        XMPPPresenceManager presenceManager = new XMPPPresenceManager(this, localDID, sink,
-                _presenceStore, _pulseManager, _ucast);
+        XMPPPresenceManager presenceManager = new XMPPPresenceManager(this, localDID, sink, _presenceStore, _pulseManager, _ucast);
 
         // Multicast
         _multicast = new Multicast(localDID, id, mcfr, _xmppServer, this, sink);
-        registerMulticastHandler(this);
+        registerMulticastHandler(_disp, _multicast);
 
         // Warning: it is very important that XMPPPresenceManager listens to the XMPPServer _before_
         // Multicast. The reason is that Multicast will join the chat rooms and this will trigger
@@ -140,7 +134,7 @@ public class Jingle implements ITransportImpl, IUnicastCallbacks
     public void init_()
             throws Exception
     {
-        TPUtil.registerCommonHandlers(this);
+        registerCommonHandlers(_disp, _sched, this, _multicast, _sm, _pulseManager, _ucast, _presenceStore);
     }
 
     @Override
@@ -166,63 +160,11 @@ public class Jingle implements ITransportImpl, IUnicastCallbacks
     }
 
     @Override
-    public HdPulse<EOTpStartPulse> sph()
-    {
-        return new HdPulse<EOTpStartPulse>(new StartPulse<Jingle>(this, _presenceStore));
-    }
-
-    @Override
-    public EventDispatcher disp()
-    {
-        return _disp;
-    }
-
-    @Override
-    public Scheduler sched()
-    {
-        return _sched;
-    }
-
-    @Override
-    public IUnicast ucast()
-    {
-        return _ucast;
-    }
-
-    @Override
-    public IMaxcast mcast()
-    {
-        return _multicast;
-    }
-
-    @Override
-    public PulseManager pm()
-    {
-        return _pulseManager;
-    }
-
-    @Override
-    public StreamManager sm()
-    {
-        return _sm;
-    }
-
-    @Override
-    public void disconnect_(DID did)
-    {
-        _ucast.disconnect(did, new Exception("forced disconnect"));
-    }
-
-    @Override
-    public void updateStores_(SID[] sidAdded, SID[] sidRemoved)
-    {
-        _multicast.updateStores_(sidAdded, sidRemoved);
-    }
-
-    @Override
-    public void linkStateChanged_(Set<NetworkInterface> removed, Set<NetworkInterface> added,
-            Set<NetworkInterface> prev, Set<NetworkInterface> current)
-            throws ExNoResource
+    public void linkStateChanged(
+            Set<NetworkInterface> removed,
+            Set<NetworkInterface> added,
+            Set<NetworkInterface> prev,
+            Set<NetworkInterface> current)
     {
         final boolean upBefore = !prev.isEmpty();
         final boolean upNow = !current.isEmpty();

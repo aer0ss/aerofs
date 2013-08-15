@@ -6,16 +6,16 @@ import com.aerofs.lib.event.Prio;
 
 public class HdTxEndStream implements IEventHandler<EOTxEndStream> {
 
-    private final StreamManager _sm;
+    private final StreamManager streamManager;
 
-    public HdTxEndStream(ITransportImpl tp)
+    public HdTxEndStream(StreamManager streamManager)
     {
-        _sm = tp.sm();
+        this.streamManager = streamManager;
     }
 
     @Override
     public void handle_(EOTxEndStream ev, Prio prio)
     {
-        _sm.removeOutgoingStream(ev._streamId);
+        streamManager.removeOutgoingStream(ev._streamId);
     }
 }

@@ -3,14 +3,16 @@ package com.aerofs.daemon.transport.tcp;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.SID;
-import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.daemon.event.net.EIPresence;
 import com.aerofs.daemon.lib.DaemonParam;
-import com.aerofs.lib.event.Prio;
+import com.aerofs.daemon.transport.lib.IStores;
 import com.aerofs.daemon.transport.tcp.ARP.ARPChange;
 import com.aerofs.daemon.transport.tcp.ARP.IARPChangeListener;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.bf.BFSID;
+import com.aerofs.lib.event.AbstractEBSelfHandling;
+import com.aerofs.lib.event.Prio;
+import com.aerofs.lib.sched.Scheduler;
 import com.aerofs.proto.Transport.PBTCPPong;
 import com.aerofs.proto.Transport.PBTCPStoresFilter;
 import com.aerofs.proto.Transport.PBTPHeader;
@@ -31,7 +33,7 @@ import static com.google.common.base.Preconditions.checkState;
 /**
  * FIXME (AG): We equate interest with availability here (i.e. interested in store means we have it)
  */
-class Stores implements IARPChangeListener
+class Stores implements IARPChangeListener, IStores
 {
     private static final int FILTER_SEQ_INVALID = -1;
 
@@ -57,18 +59,22 @@ class Stores implements IARPChangeListener
 
     private final DID _did;
     private final TCP _tcp;
+    private final Scheduler _scheduler;
     private final ARP _arp;
+    private final Multicast _multicast;
     private final Map<SID, int[]> _sid2filterIndex = Maps.newTreeMap();
     private final Map<DID, PerDeviceStoreMembership> _memberships = Maps.newHashMap();
 
     private BFSID _filter = new BFSID(); // _filter contains all the stores the local device cares about (immutable)
     private int _filterSeq = FILTER_SEQ_INVALID;
 
-    Stores(DID did, TCP tcp, ARP arp)
+    Stores(DID did, TCP tcp, Scheduler scheduler, ARP arp, Multicast multicast)
     {
         _did = did;
         _tcp = tcp;
+        _scheduler = scheduler;
         _arp = arp;
+        _multicast = multicast;
         _arp.addARPChangeListener(this); // FIXME (AG): not safe to leak this during construction
     }
 
@@ -195,7 +201,8 @@ class Stores implements IARPChangeListener
      * newly-interested-in, or no-longer interested in
      */
     // FIXME (AG): we don't send presence to the core if we delete a store; this seems brittle
-    synchronized void updateStores(SID[] addedSids, SID[] removedSids)
+    @Override
+    public synchronized void updateStores(SID[] addedSids, SID[] removedSids)
     {
         if (l.isDebugEnabled()) {
             l.debug("upst add:{} rem:{}", Arrays.toString(addedSids), Arrays.toString(removedSids));
@@ -300,24 +307,24 @@ class Stores implements IARPChangeListener
             _filterSeq = (int) (Math.random() * Integer.MAX_VALUE);
             // because EOUpdateStores is issued each time the daemon
             // launches, we kick off periodical pong messages here
-            _tcp.sched().schedule(new AbstractEBSelfHandling() {
+            _scheduler.schedule(new AbstractEBSelfHandling() {
                 @Override
                 public void handle_()
                 {
                     try {
                         l.debug("arp sender: sched pong");
                         PBTPHeader pong = newPongMessage(true);
-                        if (pong != null) _tcp.mcast().sendControlMessage(pong);
+                        if (pong != null) _multicast.sendControlMessage(pong);
                     } catch (Exception e) {
                         l.error("mc pong: " + Util.e(e));
                     }
-                    _tcp.sched().schedule(this, DaemonParam.TCP.HEARTBEAT_INTERVAL);
+                    _scheduler.schedule(this, DaemonParam.TCP.HEARTBEAT_INTERVAL);
                 }
             }, DaemonParam.TCP.HEARTBEAT_INTERVAL);
         }
 
         try {
-            _tcp.mcast().sendControlMessage(newPongMessage(true));
+            _multicast.sendControlMessage(newPongMessage(true));
         } catch (Exception e) {
             l.error("mc pong: " + Util.e(e));
         }

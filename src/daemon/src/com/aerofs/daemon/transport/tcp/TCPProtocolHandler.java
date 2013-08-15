@@ -5,6 +5,7 @@
 package com.aerofs.daemon.transport.tcp;
 
 import com.aerofs.daemon.transport.netty.TransportMessage;
+import com.aerofs.daemon.transport.netty.Unicast;
 import com.aerofs.proto.Transport.PBTPHeader;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.MessageEvent;
@@ -22,10 +23,12 @@ import java.net.InetSocketAddress;
 class TCPProtocolHandler extends SimpleChannelUpstreamHandler
 {
     private final TCP _tcp;
+    private final Unicast _ucast;
 
-    TCPProtocolHandler(TCP tcp)
+    TCPProtocolHandler(TCP tcp, Unicast ucast)
     {
         _tcp = tcp;
+        _ucast = ucast;
     }
 
     @Override
@@ -56,6 +59,6 @@ class TCPProtocolHandler extends SimpleChannelUpstreamHandler
             return;
         }
 
-        if (reply != null) _tcp.ucast().sendControl(message.getDID(), reply);
+        if (reply != null) _ucast.sendControl(message.getDID(), reply);
     }
 }

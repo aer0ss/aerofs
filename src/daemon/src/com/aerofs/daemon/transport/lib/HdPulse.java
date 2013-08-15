@@ -38,14 +38,22 @@ import static com.aerofs.daemon.transport.lib.TPUtil.newControl;
  */
 public class HdPulse<T extends IPulseEvent> implements IEventHandler<T>
 {
+    private static final Logger l = Loggers.getLogger(HdPulse.class);
+
+    private final PulseManager pm;
+    private final IUnicast uc;
+    private final IPulseHandler<T> ph;
+
     /**
      * Constructor
      *
      * @param ph Implementation class that actually implements the missing pieces
      * of the pulse-checking recipe
      */
-    public HdPulse(IPulseHandlerImpl<T> ph)
+    public HdPulse(PulseManager pm, IUnicast uc, IPulseHandler<T> ph)
     {
+        this.pm = pm;
+        this.uc = uc;
         this.ph = ph;
     }
 
@@ -62,8 +70,6 @@ public class HdPulse<T extends IPulseEvent> implements IEventHandler<T>
 
         // send a pulse
 
-        PulseManager pm = ph.tp().pm();
-        IUnicast uc = ph.tp().ucast();
         PulseToken prevtok = ev.tok_();
 
         try {
@@ -87,19 +93,11 @@ public class HdPulse<T extends IPulseEvent> implements IEventHandler<T>
 
         // schedule the next pulse
 
-        if (!ph.schednextpulse_(ev)) return;
+        ph.schednextpulse_(ev);
     }
 
     private static String printtok(PulseToken prevtok)
     {
         return (prevtok == null ? "null" : prevtok.toString());
     }
-
-    //
-    // members
-    //
-
-    private final IPulseHandlerImpl<T> ph;
-
-    private static final Logger l = Loggers.getLogger(HdPulse.class);
 }

@@ -6,13 +6,12 @@ package com.aerofs.daemon.transport.tcp;
 
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.SID;
-import com.aerofs.daemon.transport.netty.Unicast;
-import com.aerofs.lib.event.IEvent;
 import com.aerofs.daemon.event.net.EIPresence;
+import com.aerofs.lib.bf.BFSID;
 import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
+import com.aerofs.lib.event.IEvent;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.sched.Scheduler;
-import com.aerofs.lib.bf.BFSID;
 import com.aerofs.proto.Transport.PBTCPStoresFilter;
 import com.aerofs.testlib.AbstractTest;
 import com.google.common.collect.Maps;
@@ -50,13 +49,12 @@ public class TestStores extends AbstractTest
     private final SID SID_01 = SID.generate();
     private final SID SID_02 = SID.generate();
 
-    private final Unicast _unicast = mock(Unicast.class);
     private final Multicast _multicast = mock(Multicast.class);
     private final Scheduler _scheduler = mock(Scheduler.class);
     @SuppressWarnings("unchecked") private final IBlockingPrioritizedEventSink<IEvent> _q = mock(IBlockingPrioritizedEventSink.class);
     private final TCP _tcp = mock(TCP.class);
     private final ARP _arp = new ARP();
-    private final Stores _stores = new Stores(LOCAL_PEER, _tcp, _arp);
+    private final Stores _stores = new Stores(LOCAL_PEER, _tcp, _scheduler, _arp, _multicast);
 
     private class PresenceInfo
     {
@@ -90,9 +88,6 @@ public class TestStores extends AbstractTest
     public void initMockTCP()
     {
         when(_tcp.sink()).thenReturn(_q);
-        when(_tcp.sched()).thenReturn(_scheduler);
-        when(_tcp.ucast()).thenReturn(_unicast);
-        when(_tcp.mcast()).thenReturn(_multicast);
         when(_tcp.getListeningPort()).thenReturn(8888);
     }
 

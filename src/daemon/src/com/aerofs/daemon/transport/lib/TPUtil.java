@@ -4,6 +4,7 @@ import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.base.id.UserID;
+import com.aerofs.daemon.event.lib.EventDispatcher;
 import com.aerofs.daemon.event.net.EOLinkStateChanged;
 import com.aerofs.daemon.event.net.EOStartPulse;
 import com.aerofs.daemon.event.net.EOTpStartPulse;
@@ -27,6 +28,7 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
 import com.aerofs.lib.event.IEvent;
 import com.aerofs.lib.event.Prio;
+import com.aerofs.lib.sched.IScheduler;
 import com.aerofs.proto.Transport.PBStream;
 import com.aerofs.proto.Transport.PBStream.InvalidationReason;
 import com.aerofs.proto.Transport.PBStream.Type;
@@ -48,13 +50,6 @@ import static com.aerofs.proto.Transport.PBTPHeader.Type.STREAM;
 public class TPUtil
 {
     private static final Logger l = Loggers.getLogger(TPUtil.class);
-
-    /* unicast header
-     *
-     * +------------+----------
-     * | PBTPHeader | payload (optional)
-     * +------------+----------
-     */
 
     /*
      * @param streamId null for non-stream messages
@@ -238,26 +233,34 @@ public class TPUtil
         return null;
     }
 
-    public static void registerCommonHandlers(ITransportImpl tp)
+    public static void registerCommonHandlers(
+            EventDispatcher dispatcher,
+            IScheduler scheduler,
+            ILinkStateListener transport,
+            IStores stores,
+            StreamManager streamManager,
+            PulseManager pulseManager,
+            IUnicastInternal unicast,
+            IPresenceManager presenceManager)
     {
-        tp.disp()
-            .setHandler_(EOUnicastMessage.class, new HdUnicastMessage(tp))
-            .setHandler_(EOBeginStream.class, new HdBeginStream(tp))
-            .setHandler_(EOChunk.class, new HdChunk(tp))
-            .setHandler_(EOTxEndStream.class, new HdTxEndStream(tp))
-            .setHandler_(EORxEndStream.class, new HdRxEndStream(tp))
-            .setHandler_(EOTxAbortStream.class, new HdTxAbortStream(tp))
-            .setHandler_(EOUpdateStores.class, new HdUpdateStores(tp))
-            .setHandler_(EOLinkStateChanged.class, new HdLinkStateChanged(tp))
-            .setHandler_(EOTpSubsequentPulse.class, new HdPulse<EOTpSubsequentPulse>(new SubsequentPulse(tp)))
-            .setHandler_(EOStartPulse.class, new HdStartPulse(tp))
-            .setHandler_(EOTpStartPulse.class, tp.sph())
-            .setHandler_(EOTpSubsequentPulse.class, new HdPulse<EOTpSubsequentPulse>(new SubsequentPulse(tp)));
+        dispatcher
+            .setHandler_(EOUnicastMessage.class, new HdUnicastMessage(unicast))
+            .setHandler_(EOBeginStream.class, new HdBeginStream(streamManager, unicast))
+            .setHandler_(EOChunk.class, new HdChunk(streamManager, unicast))
+            .setHandler_(EOTxEndStream.class, new HdTxEndStream(streamManager))
+            .setHandler_(EORxEndStream.class, new HdRxEndStream(streamManager))
+            .setHandler_(EOTxAbortStream.class, new HdTxAbortStream(streamManager, unicast))
+            .setHandler_(EOUpdateStores.class, new HdUpdateStores(stores))
+            .setHandler_(EOLinkStateChanged.class, new HdLinkStateChanged(transport))
+            .setHandler_(EOStartPulse.class, new HdStartPulse(scheduler))
+            .setHandler_(EOTpSubsequentPulse.class, new HdPulse<EOTpSubsequentPulse>(pulseManager, unicast, new SubsequentPulse(scheduler, pulseManager, unicast)))
+            .setHandler_(EOTpStartPulse.class, new HdPulse<EOTpStartPulse>(pulseManager, unicast, new StartPulse(scheduler, pulseManager, presenceManager)))
+            .setHandler_(EOTpSubsequentPulse.class, new HdPulse<EOTpSubsequentPulse>(pulseManager, unicast, new SubsequentPulse(scheduler, pulseManager, unicast)));
     }
 
-    public static void registerMulticastHandler(ITransportImpl tp)
+    public static void registerMulticastHandler(EventDispatcher dispatcher, IMaxcast maxcast)
     {
-        tp.disp().setHandler_(EOMaxcastMessage.class, new HdMaxcastMessage(tp));
+        dispatcher.setHandler_(EOMaxcastMessage.class, new HdMaxcastMessage(maxcast));
     }
 
     public static void sessionEnded(Endpoint ep, IBlockingPrioritizedEventSink<IEvent> sink,

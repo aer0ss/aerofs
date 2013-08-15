@@ -6,6 +6,7 @@ package com.aerofs.daemon.transport.xmpp;
 
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.SID;
+import com.aerofs.daemon.transport.lib.IPresenceManager;
 
 import java.util.Map;
 import java.util.Set;
@@ -18,7 +19,7 @@ import static com.google.common.collect.Sets.newHashSet;
 /**
  * Manages the last-known presence for a set of XMPP-available peers
  */
-public final class PresenceStore
+public final class PresenceStore implements IPresenceManager
 {
     private Map<DID, Set<SID>> _online = newTreeMap();
 
@@ -73,6 +74,12 @@ public final class PresenceStore
     public synchronized boolean has(DID did)
     {
         return _online.containsKey(did);
+    }
+
+    @Override
+    public boolean isPresent(DID did)
+    {
+        return has(did);
     }
 
     public synchronized Set<DID> availablePeers()

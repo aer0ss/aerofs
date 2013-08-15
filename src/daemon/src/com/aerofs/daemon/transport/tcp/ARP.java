@@ -4,6 +4,7 @@ import com.aerofs.base.C;
 import com.aerofs.base.ElapsedTimer;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
+import com.aerofs.daemon.transport.lib.IPresenceManager;
 import com.aerofs.lib.ex.ExDeviceOffline;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -19,7 +20,7 @@ import static com.aerofs.daemon.transport.tcp.ARP.ARPChange.ADD;
 import static com.aerofs.daemon.transport.tcp.ARP.ARPChange.REM;
 import static com.aerofs.daemon.transport.tcp.ARP.ARPChange.UPD;
 
-class ARP
+class ARP implements IPresenceManager
 {
     void addARPChangeListener(IARPChangeListener listener)
     {
@@ -91,6 +92,12 @@ class ARP
     boolean exists(DID did)
     {
         return get(did) != null;
+    }
+
+    @Override
+    public boolean isPresent(DID did)
+    {
+        return exists(did);
     }
 
     void visitARPEntries(IARPVisitor v)

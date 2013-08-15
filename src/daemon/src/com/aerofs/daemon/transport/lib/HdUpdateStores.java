@@ -6,16 +6,16 @@ import com.aerofs.lib.event.Prio;
 
 class HdUpdateStores implements IEventHandler<EOUpdateStores> {
 
-    private final ITransportImpl _tp;
+    private final IStores stores;
 
-    HdUpdateStores(ITransportImpl tp)
+    HdUpdateStores(IStores stores)
     {
-        _tp = tp;
+        this.stores = stores;
     }
 
     @Override
     public void handle_(EOUpdateStores ev, Prio prio)
     {
-        _tp.updateStores_(ev._sidsAdded, ev._sidsRemoved);
+        stores.updateStores(ev._sidsAdded, ev._sidsRemoved);
     }
 }

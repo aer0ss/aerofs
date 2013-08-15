@@ -14,6 +14,7 @@ import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.event.net.rx.EIMaxcastMessage;
 import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.daemon.transport.lib.IMaxcast;
+import com.aerofs.daemon.transport.lib.IStores;
 import com.aerofs.daemon.transport.lib.MaxcastFilterReceiver;
 import com.aerofs.daemon.transport.xmpp.XMPPConnectionService.IXMPPConnectionServiceListener;
 import com.aerofs.lib.FrequentDefectSender;
@@ -43,7 +44,7 @@ import java.util.TreeSet;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
-public class Multicast implements IMaxcast, IXMPPConnectionServiceListener
+public class Multicast implements IMaxcast, IStores, IXMPPConnectionServiceListener
 {
     private static final Logger l = Loggers.getLogger(Multicast.class);
 
@@ -267,7 +268,8 @@ public class Multicast implements IMaxcast, IXMPPConnectionServiceListener
         }
     }
 
-    public void updateStores_(SID[] sidsAdded, SID[] sidsRemoved)
+    @Override
+    public void updateStores(SID[] sidsAdded, SID[] sidsRemoved)
     {
         for (SID sid : sidsAdded) {
             try {

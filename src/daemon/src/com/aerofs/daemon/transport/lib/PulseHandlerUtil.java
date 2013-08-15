@@ -8,6 +8,8 @@ package com.aerofs.daemon.transport.lib;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.event.net.EOTpSubsequentPulse;
 import com.aerofs.daemon.event.net.IPulseEvent;
+import com.aerofs.daemon.transport.exception.ExTransport;
+import com.aerofs.lib.sched.IScheduler;
 import com.aerofs.lib.sched.Scheduler;
 import org.slf4j.Logger;
 
@@ -64,7 +66,7 @@ public class PulseHandlerUtil
      * @param ev {@link IPulseEvent} to schedule
      * @param timeout time after which the event should be scheduled
      */
-    public static void schedule_(Logger l, Scheduler sched, IPulseEvent ev, long timeout)
+    public static void schedule_(Logger l, IScheduler sched, IPulseEvent ev, long timeout)
     {
         l.info("d:" + ev.did() + " attempt pulse sched");
         sched.schedule(ev, timeout);
@@ -83,7 +85,7 @@ public class PulseHandlerUtil
      * this means that this <code>EOTpSubsequentPulse</code> event is part of a given
      * pulse sequence
      */
-    public static void doEOStartPulseSchedule(Logger l, Scheduler sched, DID did, PulseToken tok)
+    public static void doEOStartPulseSchedule(Logger l, IScheduler sched, DID did, PulseToken tok)
     {
         assert  tok != null : ("cannot create EOTpSubsequentPulse will null PulseToken");
 
@@ -104,7 +106,7 @@ public class PulseHandlerUtil
      * between the two transports.
      *
      * @param l transport-specific logger
-     * @param tp transport for which the pulse was generated
+     * @param unicast {@link IUnicastInternal} for which the pulse was generated
      * @param pm {@link PulseManager} the transport uses to assign pulse ids and generate messages
      * @param ev EOTpSubsequentPulse event that triggered the transport's pulse event handler
      * @param maxfails maximum number of pulse failures after which the
@@ -112,7 +114,7 @@ public class PulseHandlerUtil
      * @return true if the pulse handler should continue and another pulse should
      * be sent; false otherwise
      */
-    public static boolean doEOSubsequentPulsePrePulseChecks(Logger l, ITransportImpl tp, PulseManager pm, EOTpSubsequentPulse ev, int maxfails)
+    public static boolean doEOSubsequentPulsePrePulseChecks(Logger l, IUnicastInternal unicast, PulseManager pm, EOTpSubsequentPulse ev, int maxfails)
     {
         DID did = ev.did();
 
@@ -126,10 +128,8 @@ public class PulseHandlerUtil
         // kill the connection and restart pulsing
 
         if (!ev.killed_() && (ev.tries_() >= maxfails)) {
-            l.info("d:" + did + " fails > maxfails (" + ev.tries_() + " >= " +  maxfails + ") " +
-                   "kill conn and resched ev");
-
-            tp.disconnect_(did);
+            l.info("d:" + did + " fails > maxfails (" + ev.tries_() + " >= " +  maxfails + ") kill conn and resched ev");
+            unicast.disconnect(did, new ExTransport("pulse timed out"));
             ev.markkilled_();
         }
 

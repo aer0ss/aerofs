@@ -7,11 +7,12 @@ package com.aerofs.daemon.transport.lib;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
+import com.aerofs.daemon.event.net.EIPulseStopped;
+import com.aerofs.daemon.transport.ITransport;
+import com.aerofs.lib.Util;
 import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
 import com.aerofs.lib.event.IEvent;
-import com.aerofs.daemon.event.net.EIPulseStopped;
 import com.aerofs.lib.event.Prio;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.id.IntegerID;
 import com.aerofs.proto.Transport;
 import org.slf4j.Logger;
@@ -60,10 +61,10 @@ public class PulseManager
      * Add a {@link GenericPulseDeletionWatcher} to the list of listeners
      * to be notified if a pulse was deleted.
      *
-     * @param tp {@link ITransportImpl} that owns this <code>PulseManager</code>
+     * @param tp {@link ILinkStateListener} that owns this <code>PulseManager</code>
      * @param tpsink <code>IEvent</code> into which the transport enqueues events to the core
      */
-    public synchronized void addGenericPulseDeletionWatcher(ITransportImpl tp, IBlockingPrioritizedEventSink<IEvent> tpsink)
+    public synchronized void addGenericPulseDeletionWatcher(ITransport tp, IBlockingPrioritizedEventSink<IEvent> tpsink)
     {
         _watchers.add(new GenericPulseDeletionWatcher(tp, tpsink));
     }
@@ -315,10 +316,10 @@ public class PulseManager
         /**
          * Constructor
          *
-         * @param tp {@link ITransportImpl} via which pulses are being sent
+         * @param tp {@link ILinkStateListener} via which pulses are being sent
          * @param tpsink <code>IEvent</code> into which the transport enqueues events to the core
          */
-        public GenericPulseDeletionWatcher(ITransportImpl tp, IBlockingPrioritizedEventSink<IEvent> tpsink)
+        public GenericPulseDeletionWatcher(ITransport tp, IBlockingPrioritizedEventSink<IEvent> tpsink)
         {
             this._tp = tp;
             this._tpsink = tpsink;
@@ -332,7 +333,7 @@ public class PulseManager
 
         // FIXME: have to define an equals() method, for this, the transport and the transport's sink
 
-        private final ITransportImpl _tp;
+        private final ITransport _tp;
         private final IBlockingPrioritizedEventSink<IEvent> _tpsink;
     }
 

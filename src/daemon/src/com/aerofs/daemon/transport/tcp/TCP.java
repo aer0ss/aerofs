@@ -9,16 +9,14 @@ package com.aerofs.daemon.transport.tcp;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.base.id.DID;
-import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.base.ssl.SSLEngineFactory;
 import com.aerofs.daemon.event.lib.EventDispatcher;
-import com.aerofs.daemon.event.net.EOTpStartPulse;
 import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.lib.BlockingPrioQueue;
+import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.daemon.transport.TransportThreadGroup;
-import com.aerofs.daemon.transport.lib.HdPulse;
-import com.aerofs.daemon.transport.lib.ITransportImpl;
+import com.aerofs.daemon.transport.lib.ILinkStateListener;
 import com.aerofs.daemon.transport.lib.MaxcastFilterReceiver;
 import com.aerofs.daemon.transport.lib.PulseManager;
 import com.aerofs.daemon.transport.lib.StreamManager;
@@ -68,7 +66,7 @@ import static com.aerofs.daemon.lib.DaemonParam.TCP.ARP_GC_INTERVAL;
 import static com.aerofs.daemon.lib.DaemonParam.TCP.QUEUE_LENGTH;
 import static com.google.common.collect.Lists.newLinkedList;
 
-public class TCP implements IUnicastCallbacks, ITransportImpl, IARPChangeListener
+public class TCP implements ITransport, ILinkStateListener, IUnicastCallbacks, IARPChangeListener
 {
     private static final Logger l = Loggers.getLogger(TCP.class);
 
@@ -110,16 +108,16 @@ public class TCP implements IUnicastCallbacks, ITransportImpl, IARPChangeListene
         _sink = sink;
         _arp.addARPChangeListener(this);
         _pm.addGenericPulseDeletionWatcher(this, _sink);
-        _stores = new Stores(_localDID, this, _arp);
-
-        _mcast = new Multicast(localDID, this, mcfr, _stores);
+        _mcast = new Multicast(localDID, this, mcfr);
+        _stores = new Stores(_localDID, this, _sched, _arp, _mcast);
+        _mcast.setStores(_stores);
 
         // Unicast
 
         _ucast = new Unicast(this, _transportStats);
 
-        TCPProtocolHandler tcpProtocolHandler = new TCPProtocolHandler(this);
-        TransportProtocolHandler protocolHandler = new TransportProtocolHandler(this, sink, _sm, _pm);
+        TCPProtocolHandler tcpProtocolHandler = new TCPProtocolHandler(this, _ucast);
+        TransportProtocolHandler protocolHandler = new TransportProtocolHandler(this, sink, _sm, _pm, _ucast);
         TCPBootstrapFactory bsFact = new TCPBootstrapFactory(localUser, localDID,
                 clientSslEngineFactory, serverSslEngineFactory, _transportStats);
         ServerBootstrap serverBootstrap = bsFact.newServerBootstrap(serverChannelFactory, _ucast,
@@ -134,8 +132,8 @@ public class TCP implements IUnicastCallbacks, ITransportImpl, IARPChangeListene
     {
         // must be called *after* the Unicast object is initialized.
 
-        TPUtil.registerCommonHandlers(this);
-        TPUtil.registerMulticastHandler(this);
+        TPUtil.registerCommonHandlers(_disp, _sched, this, _stores, _sm, _pm, _ucast, _arp);
+        TPUtil.registerMulticastHandler(_disp, _mcast);
 
         _mcast.init_();
 
@@ -253,87 +251,30 @@ public class TCP implements IUnicastCallbacks, ITransportImpl, IARPChangeListene
         return _q;
     }
 
-    @Override
-    public EventDispatcher disp()
-    {
-        return _disp;
-    }
-
-    @Override
-    public Scheduler sched()
-    {
-        return _sched;
-    }
-
-    @Override
-    public HdPulse<EOTpStartPulse> sph()
-    {
-        return new HdPulse<EOTpStartPulse>(new StartPulse(this, _arp));
-    }
-
-    @Override
-    public Unicast ucast()
-    {
-        return _ucast;
-    }
-
-    @Override
-    public Multicast mcast()
-    {
-        return _mcast;
-    }
-
-    @Override
-    public PulseManager pm()
-    {
-        return _pm;
-    }
-
-    @Override
-    public StreamManager sm()
-    {
-        return _sm;
-    }
-
     IBlockingPrioritizedEventSink<IEvent> sink()
     {
         return _sink;
     }
 
     @Override
-    public void updateStores_(SID[] sidsAdded, SID[] sidsRemoved)
-    {
-        _stores.updateStores(sidsAdded, sidsRemoved);
-    }
-
-    @Override
-    public void disconnect_(DID did)
-    {
-        _ucast.disconnect(did, new Exception("forced disconnect"));
-    }
-
-    @Override
-    public void linkStateChanged_(
-        Set<NetworkInterface> removed,
-        Set<NetworkInterface> added,
-        Set<NetworkInterface> prev,
-        Set<NetworkInterface> current)
+    public void linkStateChanged(Set<NetworkInterface> removed, Set<NetworkInterface> added,
+            Set<NetworkInterface> prev, Set<NetworkInterface> current)
     {
         boolean becameLinkDown = !prev.isEmpty() && current.isEmpty();
 
-        mcast().linkStateChanged(added, removed, becameLinkDown);
+        _mcast.linkStateChanged(added, removed, becameLinkDown);
 
         // Disconnect from remote peers.
         if (becameLinkDown) {
             // We don't have to disconnect or pause accept if the the links are physically down.
             // But in case of a logical mark-down (LinkStateService#markLinksDown_()), we need
             // manual disconnection.
-            ucast().pauseAccept();
+            _ucast.pauseAccept();
             removeAll();
         }
 
         if (prev.isEmpty() && !current.isEmpty()) {
-            ucast().resumeAccept();
+            _ucast.resumeAccept();
         }
     }
 

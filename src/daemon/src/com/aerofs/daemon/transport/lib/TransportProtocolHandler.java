@@ -9,6 +9,7 @@ import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.event.net.Endpoint;
+import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.daemon.transport.netty.BootstrapFactoryUtil.FrameParams;
 import com.aerofs.daemon.transport.netty.TransportMessage;
 import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
@@ -30,18 +31,19 @@ public class TransportProtocolHandler extends SimpleChannelUpstreamHandler
 {
     private static final Logger l = Loggers.getLogger(TransportProtocolHandler.class);
 
-    private final ITransportImpl _tp;
+    private final ITransport _tp;
     private final IBlockingPrioritizedEventSink<IEvent> _sink;
     private final StreamManager _sm;
     private final PulseManager _pm;
+    private final IUnicast _ucast;
 
-    public TransportProtocolHandler(ITransportImpl tp, IBlockingPrioritizedEventSink<IEvent> sink,
-            StreamManager sm, PulseManager pm)
+    public TransportProtocolHandler(ITransport tp, IBlockingPrioritizedEventSink<IEvent> sink, StreamManager sm, PulseManager pm, IUnicast ucast)
     {
         _sink = sink;
         _tp = tp;
         _sm = sm;
         _pm = pm;
+        _ucast = ucast;
     }
 
     @Override
@@ -105,6 +107,6 @@ public class TransportProtocolHandler extends SimpleChannelUpstreamHandler
     private void sendControl(DID did, @Nullable PBTPHeader reply)
             throws ExDeviceOffline
     {
-        if (reply != null) _tp.ucast().send(did, null, Prio.LO, TPUtil.newControl(reply), null);
+        if (reply != null) _ucast.send(did, null, Prio.LO, TPUtil.newControl(reply), null);
     }
 }

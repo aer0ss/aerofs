@@ -56,14 +56,19 @@ class Multicast implements IMaxcast
     private final DID _localdid;
     private final TCP _tcp;
     private final MaxcastFilterReceiver _mcfr;
-    private final Stores _stores;
     private final Map<NetworkInterface, MulticastSocket> _iface2sock = synchronizedMap(new HashMap<NetworkInterface, MulticastSocket>());
 
-    Multicast(DID localdid, TCP tcp, MaxcastFilterReceiver mcfr, Stores stores)
+    private Stores _stores; // the only reason this isn't final is because of a circular dependency between the two
+
+    Multicast(DID localdid, TCP tcp, MaxcastFilterReceiver mcfr)
     {
         _localdid = localdid;
         _tcp = tcp;
         _mcfr = mcfr;
+    }
+
+    public void setStores(Stores stores)
+    {
         _stores = stores;
     }
 
@@ -315,4 +320,5 @@ class Multicast implements IMaxcast
             dos.close();
         }
     }
+
 }
