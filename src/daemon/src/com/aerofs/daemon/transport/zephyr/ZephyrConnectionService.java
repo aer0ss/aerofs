@@ -9,11 +9,12 @@ import com.aerofs.daemon.event.lib.imc.IResultWaiter;
 import com.aerofs.daemon.transport.exception.ExDeviceDisconnected;
 import com.aerofs.daemon.transport.exception.ExDeviceUnreachable;
 import com.aerofs.daemon.transport.exception.ExSendFailed;
-import com.aerofs.daemon.transport.lib.IPipeDebug;
 import com.aerofs.daemon.transport.lib.IUnicastInternal;
 import com.aerofs.daemon.transport.lib.TransportStats;
 import com.aerofs.daemon.transport.xmpp.ISignallingService;
 import com.aerofs.daemon.transport.xmpp.ISignallingServiceListener;
+import com.aerofs.lib.IDumpStat;
+import com.aerofs.lib.IDumpStatMisc;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.proto.Diagnostics.PBDumpStat;
 import com.aerofs.proto.Diagnostics.PBDumpStat.PBTransport;
@@ -64,7 +65,7 @@ import static org.jboss.netty.buffer.ChannelBuffers.wrappedBuffer;
 /**
  * Creates and manages connections to a Zephyr relay server
  */
-final class ZephyrConnectionService implements IUnicastInternal, IZephyrSignallingService, ISignallingServiceListener, IPipeDebug
+final class ZephyrConnectionService implements IUnicastInternal, IZephyrSignallingService, ISignallingServiceListener, IDumpStat, IDumpStatMisc
 {
     private static final Predicate<Entry<DID,Channel>> TRUE_FILTER = new Predicate<Entry<DID, Channel>>()
     {
@@ -502,22 +503,6 @@ final class ZephyrConnectionService implements IUnicastInternal, IZephyrSignalli
                 l.warn("fail close reachability socket with err:{}", e.getMessage());
             }
         }
-    }
-
-    @Override
-    public long getBytesReceived(final DID did)
-    {
-        Channel channel;
-
-        synchronized (this) {
-            channel = getChannel(did);
-            if (channel == null) {
-                l.warn("d:{} no channel - ignore getBytesReceived", did);
-                return -1;
-            }
-        }
-
-        return getZephyrClient(channel).getBytesReceived();
     }
 
     @Override

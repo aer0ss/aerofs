@@ -1,7 +1,8 @@
 package com.aerofs.daemon.transport;
 
 import com.aerofs.daemon.IModule;
-import com.aerofs.daemon.lib.IDebug;
+import com.aerofs.lib.IDumpStat;
+import com.aerofs.lib.IDumpStatMisc;
 import com.aerofs.lib.ITransferStat;
 import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
 import com.aerofs.lib.event.IEvent;
@@ -19,7 +20,7 @@ import com.aerofs.proto.Ritual.GetTransportDiagnosticsReply;
  *         not too long</li>
  * </ul>
  */
-public interface ITransport extends IModule, IDebug, ITransferStat
+public interface ITransport extends IModule, ITransferStat, IDumpStat, IDumpStatMisc
 {
     /**
      * Identifier

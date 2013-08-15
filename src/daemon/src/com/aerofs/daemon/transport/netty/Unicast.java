@@ -3,12 +3,13 @@ package com.aerofs.daemon.transport.netty;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.event.lib.imc.IResultWaiter;
-import com.aerofs.daemon.transport.lib.IPipeDebug;
 import com.aerofs.daemon.transport.lib.IUnicastInternal;
 import com.aerofs.daemon.transport.lib.TPUtil;
 import com.aerofs.daemon.transport.lib.TransportStats;
 import com.aerofs.daemon.transport.netty.ServerHandler.IServerHandlerListener;
 import com.aerofs.daemon.transport.netty.handlers.IOStatsHandler;
+import com.aerofs.lib.IDumpStat;
+import com.aerofs.lib.IDumpStatMisc;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.ex.ExDeviceOffline;
@@ -35,7 +36,7 @@ import java.util.concurrent.ConcurrentMap;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
-public class Unicast implements IUnicastInternal, IPipeDebug, IServerHandlerListener
+public class Unicast implements IUnicastInternal, IServerHandlerListener, IDumpStat, IDumpStatMisc
 {
     private static final Logger l = Loggers.getLogger(Unicast.class);
 
@@ -153,16 +154,6 @@ public class Unicast implements IUnicastInternal, IPipeDebug, IServerHandlerList
     public SocketAddress getServerAddress()
     {
         return _serverChannel.getLocalAddress();
-    }
-
-    @Override
-    public long getBytesReceived(DID did)
-    {
-        ServerHandler server = _servers.get(did);
-        if (server == null) return 0;
-
-        IOStatsHandler stats = server.getPipeline().get(IOStatsHandler.class);
-        return stats.getBytesReceivedOnChannel();
     }
 
     @Override
