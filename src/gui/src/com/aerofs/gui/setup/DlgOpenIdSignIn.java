@@ -8,7 +8,6 @@ import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.controller.InstallActor;
 import com.aerofs.controller.SetupModel;
-import com.aerofs.controller.SignInActor;
 import com.aerofs.controller.SignInActor.GUIOpenId;
 import com.aerofs.gui.AeroFSTitleAreaDialog;
 import com.aerofs.gui.CompSpin;
