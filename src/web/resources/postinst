@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 PYHOME=/opt/web/pythonenv
 PYTHON=$PYHOME/bin/python
