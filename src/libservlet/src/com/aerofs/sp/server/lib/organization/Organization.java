@@ -91,6 +91,21 @@ public class Organization
             l.info(org + " created");
             return org;
         }
+
+        /**
+         * Aug 2013:
+         * Disposable code for migrating all users to the main organization at Bloomberg.
+         * Remove when this is done - search keyword ORGMIGBB
+         */
+        public ImmutableList<Organization> listOrganizations()
+                throws SQLException
+        {
+            Builder<Organization> builder = ImmutableList.builder();
+            for (OrganizationID orgID : _odb.listAllOrganizations()) {
+                builder.add(create(orgID));
+            }
+            return builder.build();
+        }
     }
 
     private final OrganizationID _id;
