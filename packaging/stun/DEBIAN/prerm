@@ -1,2 +1,4 @@
-#!/bin/bash -e
+#!/bin/bash
+set -e
+
 service restund stop || true
