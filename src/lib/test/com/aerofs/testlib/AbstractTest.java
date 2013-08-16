@@ -1,6 +1,14 @@
 package com.aerofs.testlib;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.LoggerContext;
+import ch.qos.logback.classic.encoder.PatternLayoutEncoder;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.ConsoleAppender;
 import com.aerofs.base.Loggers;
+import com.aerofs.config.DynamicConfiguration;
+import com.aerofs.lib.LibParam.EnterpriseConfig;
+import com.aerofs.lib.log.LogUtil;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -8,15 +16,27 @@ import org.junit.rules.TestName;
 import org.mockito.MockitoAnnotations;
 import org.powermock.modules.testng.PowerMockTestCase;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 
+import static com.aerofs.lib.configuration.ClientConfigurationLoader.PROPERTY_IS_ENTERPRISE_DEPLOYMENT;
+import static org.junit.Assert.assertEquals;
+
 public abstract class AbstractTest extends PowerMockTestCase
 {
     protected static final Logger l = Loggers.getLogger(AbstractTest.class);
+
+    static {
+        LogUtil.enableConsoleLogging();
+        // Change to DEBUG if you're writing a test, but keep at NONE otherwise.
+        LogUtil.setLevel(LogUtil.Level.NONE);
+
+        DynamicConfiguration.initialize(DynamicConfiguration.builder().build());
+    }
 
     @Rule
     public TestName _testName = new TestName();
@@ -62,5 +82,22 @@ public abstract class AbstractTest extends PowerMockTestCase
         List<Thread> list = new ArrayList<Thread>(count);
         for (int i = 0; i < count; ++i) list.add(threads[i]);
         return list;
+    }
+
+    /**
+     * Helper method to set whether we are in enterprise deployment
+     * IMPORTANT: This is a global setting. However, it will be reset to false before each test
+     * method.
+     */
+    protected void setEnterpriseDeployment(boolean value)
+    {
+        DynamicConfiguration.getInstance().setProperty(PROPERTY_IS_ENTERPRISE_DEPLOYMENT, value);
+        assertEquals(value, EnterpriseConfig.IS_ENTERPRISE_DEPLOYMENT.get());
+    }
+
+    @Before
+    public void resetEnterpriseDeployment()
+    {
+        setEnterpriseDeployment(false);
     }
 }

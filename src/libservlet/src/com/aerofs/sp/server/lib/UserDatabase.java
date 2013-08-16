@@ -110,11 +110,7 @@ public class UserDatabase extends AbstractSQLDatabase
         ps.setString(1, userId.getString());
         ResultSet rs = ps.executeQuery();
         try {
-            Util.verify(rs.next());
-            int count = rs.getInt(1);
-            assert count == 0 || count == 1;
-            assert !rs.next();
-            return count != 0;
+            return DBUtil.binaryCount(rs);
         } finally {
             rs.close();
         }

@@ -31,6 +31,9 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
+import static com.aerofs.lib.db.DBUtil.binaryCount;
+import static com.aerofs.sp.server.lib.SPSchema.C_SF_ID;
+import static com.aerofs.sp.server.lib.SPSchema.T_SF;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.aerofs.lib.db.DBUtil.count;
 import static com.aerofs.lib.db.DBUtil.selectWhere;
@@ -75,6 +78,22 @@ public class OrganizationDatabase extends AbstractSQLDatabase
         } catch (SQLException e) {
             throwOnConstraintViolation(e, "organization ID already exists");
             throw e;
+        }
+    }
+
+    /**
+     * @return whether there is an organization with the given org id in the DB
+     */
+    public boolean exists(OrganizationID orgID)
+            throws SQLException
+    {
+        PreparedStatement ps = prepareStatement(selectWhere(T_ORGANIZATION, C_O_ID + "=?", "count(*)"));
+        ps.setInt(1, orgID.getInt());
+        ResultSet rs = ps.executeQuery();
+        try {
+            return binaryCount(rs);
+        } finally {
+            rs.close();
         }
     }
 

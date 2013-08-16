@@ -8,6 +8,7 @@ import com.aerofs.base.BaseSecUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExEmptyEmailAddress;
 import com.aerofs.base.id.DID;
+import com.aerofs.lib.LibParam.EnterpriseConfig;
 import com.aerofs.lib.ex.ExNoAdminOrOwner;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.SystemUtil;
@@ -306,10 +307,27 @@ public class User
     public void save(byte[] shaedSP, FullName fullName)
             throws ExAlreadyExist, SQLException
     {
-        saveImpl(shaedSP, fullName, _f._factOrg.save(), AuthorizationLevel.ADMIN);
+        if (EnterpriseConfig.IS_ENTERPRISE_DEPLOYMENT.get()) {
+            // Enterprise deployment: all users are created in the same organization (the "main
+            // organization").
+            Organization mainOrg = _f._factOrg.create(OrganizationID.MAIN_ORGANIZATION);
+            AuthorizationLevel authLevel = AuthorizationLevel.USER;
+
+            // But if the main organization doesn't exist yet, create it and make the user an admin
+            if (!mainOrg.exists()) {
+                mainOrg = _f._factOrg.save(OrganizationID.MAIN_ORGANIZATION);
+                authLevel = AuthorizationLevel.ADMIN;
+            }
+
+            saveImpl(shaedSP, fullName, mainOrg, authLevel);
+
+        } else {
+            // Public deployment: create a new organization for this user and make them an admin
+            saveImpl(shaedSP, fullName, _f._factOrg.save(), AuthorizationLevel.ADMIN);
+        }
     }
 
-    public void saveImpl(byte[] shaedSP, FullName fullName, Organization org,
+    private void saveImpl(byte[] shaedSP, FullName fullName, Organization org,
             AuthorizationLevel level)
             throws SQLException, ExAlreadyExist
     {
@@ -440,9 +458,7 @@ public class User
 
         Set<UserID> users = Sets.newHashSet();
 
-        if (orgOld.id().getInt() != 0) {
-            for (SharedFolder sf : sfs) users.addAll(sf.deleteTeamServerACL(this));
-        }
+        for (SharedFolder sf : sfs) users.addAll(sf.deleteTeamServerACL(this));
 
         _f._udb.setOrganizationID(_id, org.id());
 
@@ -452,7 +468,7 @@ public class User
 
         if (orgOld.countUsers() == 0) {
             // TODO (WW) delete orgOld
-        } else if (orgOld.id().getInt() != 0 && levelOld.covers(AuthorizationLevel.ADMIN)) {
+        } else if (levelOld.covers(AuthorizationLevel.ADMIN)) {
             // There must be one admin left for a non-empty team
             orgOld.throwIfNoAdmin();
         }
