@@ -19,6 +19,7 @@ import com.aerofs.base.id.DID;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.lib.FullName;
+import com.aerofs.lib.LibParam.EnterpriseConfig;
 import com.aerofs.lib.LibParam.OpenId;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
@@ -1511,6 +1512,10 @@ public class SPService implements ISPService
             String userId) throws Exception
     {
         _sqlTrans.begin();
+
+        if (EnterpriseConfig.IS_ENTERPRISE_DEPLOYMENT.get()) {
+            throw new ExNoPerm("Removing users isn't supported in enterprise deployment");
+        }
 
         User admin = _sessionUser.get();
         User user = _factUser.createFromExternalID(userId);

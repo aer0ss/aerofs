@@ -180,3 +180,6 @@ def is_team_server_user_id(user_id):
     Must be conssitent with UserID.java:TEAM_SERVER_PREFIX
     """
     return user_id.startswith(':')
+
+def is_enterprise_deployment(request):
+    return request.registry.settings.get('config.loader.is_enterprise_deployment', False)

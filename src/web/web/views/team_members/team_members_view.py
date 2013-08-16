@@ -17,13 +17,6 @@ URL_PARAM_FULL_NAME = 'full_name'
 
 log = logging.getLogger(__name__)
 
-# for compatibility with older clients. Remove after July 2013, here and in __init.py__
-@view_config(
-    route_name = 'team_members_old',
-)
-def team_members_old(request):
-    raise HTTPMovedPermanently(request.route_url('team_members'))
-
 @view_config(
     route_name = 'team_members',
     renderer = 'team_members.mako',
@@ -96,6 +89,7 @@ def _render_user_options_link(request, user_and_level, session_user):
                                         'devices_url': devices_url,
                                         'email': user.user_email,
                                         'is_admin': (user_and_level.level == ADMIN),
+                                        'is_enterprise': is_enterprise_deployment(request),
         },request=request)
 
 

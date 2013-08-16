@@ -98,4 +98,15 @@ public class TestSP_RemoveUserFromOrganization extends AbstractSPTest
             fail();
         } catch (ExNoPerm e) { /* expected */ }
     }
+
+    @Test
+    public void shouldFailInEnterpriseDeployment() throws Exception
+    {
+        setEnterpriseDeployment(true);
+
+        try {
+            shouldRemoveUserFromOrganization();
+            fail();
+        } catch (ExNoPerm e) { /* expected */ }
+    }
 }
