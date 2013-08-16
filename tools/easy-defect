@@ -9,7 +9,7 @@ if [ $# -ne 1 ]; then
 fi
 
 cat << END
-Please consider using `./retrace_helper.py get-defects <defect_number>` for
+Please consider using './retrace_helper.py get-defects <defect_number>' for
 improved retracing.
 END
 
