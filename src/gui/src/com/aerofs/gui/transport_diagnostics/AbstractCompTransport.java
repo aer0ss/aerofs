@@ -151,6 +151,7 @@ public abstract class AbstractCompTransport extends Composite
         public void setStatus(String status)
         {
             _lblStatus.setText(status);
+            _lblStatus.getParent().layout();
         }
 
         public void setDescription(String desc)
