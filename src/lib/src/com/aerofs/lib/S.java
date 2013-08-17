@@ -189,7 +189,7 @@ public class S
             USERS_DIR = "users",
             SHARED_DIR = "shared",
 
-            SERVER_OFFLINE_TOOLTIP = "AeroFS is offline.",
+            SERVER_OFFLINE_TOOLTIP = L.product() + " is offline.",
 
             CHILD_ALREADY_SHARED = "You can't share a folder that contains a shared folder.",
             PARENT_ALREADY_SHARED = "You can't share a folder under an already shared folder.",
