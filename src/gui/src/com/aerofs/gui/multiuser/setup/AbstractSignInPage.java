@@ -6,6 +6,7 @@ package com.aerofs.gui.multiuser.setup;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExBadCredential;
+import com.aerofs.base.ex.ExInternalError;
 import com.aerofs.gui.CompSpin;
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUI.ISWTWorker;
@@ -14,12 +15,9 @@ import com.aerofs.gui.GUIUtil;
 import com.aerofs.gui.Images;
 import com.aerofs.lib.S;
 import com.aerofs.lib.ex.ExUIMessage;
-import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.error.ErrorMessages;
 import com.swtdesigner.SWTResourceManager;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.events.ModifyEvent;
-import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.GridData;
@@ -58,15 +56,6 @@ public abstract class AbstractSignInPage extends AbstractSetupPage
                 if (_inProgress) event.doit = false;
             }
         });
-
-        ModifyListener onTextChanged = new ModifyListener()
-        {
-            @Override
-            public void modifyText(ModifyEvent modifyEvent)
-            {
-                validateInput();
-            }
-        };
 
         _btnQuit.addSelectionListener(new SelectionAdapter()
         {
@@ -204,7 +193,7 @@ public abstract class AbstractSignInPage extends AbstractSetupPage
             public void error(Exception e)
             {
                 l.error("Setup error", e);
-                GUI.get().show(getShell(), MessageType.ERROR, formatException(e));
+                ErrorMessages.show(getShell(), e, formatException(e));
                 setProgress(false);
                 _btnContinue.setText(S.SETUP_TRY_AGAIN);
             }
@@ -213,7 +202,8 @@ public abstract class AbstractSignInPage extends AbstractSetupPage
             {
                 if (e instanceof ConnectException) return S.SETUP_ERR_CONN;
                 else if (e instanceof ExUIMessage) return e.getMessage();
-                else if (e instanceof ExBadCredential) return S.BAD_CREDENTIAL_CAP + '.';
+                else if (e instanceof ExBadCredential) return S.OPENID_AUTH_TIMEOUT;
+                else if (e instanceof ExInternalError) return S.SERVER_INTERNAL_ERROR;
                 else return "Sorry, " + ErrorMessages.e2msgNoBracketDeprecated(e) + '.';
             }
         });

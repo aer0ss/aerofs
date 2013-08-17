@@ -15,6 +15,7 @@ import com.dyuproject.openid.RelyingParty;
 import com.dyuproject.openid.YadisDiscovery;
 import com.dyuproject.openid.ext.AxSchemaExtension;
 import com.dyuproject.openid.ext.SRegExtension;
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 
 import javax.servlet.ServletConfig;
@@ -65,17 +66,7 @@ public class IdentityServlet extends AeroServlet
             } else if (path.equals(OpenId.IDENTITY_REQ_PATH)) {
                 handleAuthRequest(req, resp);
             } else if (path.equals(OpenId.IDENTITY_RESP_PATH)) {
-                _provider.authResponse(req, resp);
-
-                String oncomplete = req.getParameter(OpenId.OPENID_ONCOMPLETE_URL);
-                if ((oncomplete != null) && (!oncomplete.isEmpty())) {
-                    resp.sendRedirect(oncomplete);
-                } else {
-                    resp.setContentType("text/html");
-                    resp.getWriter().println("<html> <body onLoad=\"window.close()\">" +
-                        "Authentication is complete. You can close this browser window." +
-                        "</body></html>");
-                }
+                handleAuthResponse(req, resp);
             } else {
                 l.info("Illegal path requested {}", path);
                 resp.sendError(404);
@@ -97,6 +88,43 @@ public class IdentityServlet extends AeroServlet
         if (updateToken != null) {
             _provider.authRequest(updateToken, req, resp);
         }
+    }
+
+    private void handleAuthResponse(HttpServletRequest req, HttpServletResponse resp)
+            throws Exception
+    {
+        try {
+            _provider.authResponse(req, resp);
+        } catch (Exception e) {
+            resp.setContentType("text/html");
+            resp.getWriter().println("<html><body>" +
+                    "Authentication failed. Please try again later." +
+                    "</body></html>");
+            return;
+        }
+
+        String onComplete = req.getParameter(OpenId.OPENID_ONCOMPLETE_URL);
+        if (!StringUtils.isBlank(onComplete)) {
+            resp.sendRedirect(onComplete);
+        } else {
+            resp.setContentType("text/html");
+            resp.getWriter().println("<html><body onLoad=\"window.close()\">"
+                    + getOpenIDResponse(req.getParameter("openid.mode"))
+                    + "</body></html>");
+        }
+    }
+
+    private String getOpenIDResponse(String mode)
+    {
+        if (StringUtils.isBlank(mode)) return "AeroFS received an empty response from the " +
+                "OpenID Provider and is unable to authenticate. Please contact AeroFS support " +
+                "for assistance.";
+        else if (mode.equals("id_res")) return "The authentication is complete. You may close " +
+                "this browser window now.";
+        else if (mode.equals("cancel")) return "The authentication process has been canceled. " +
+                "You may close this browser window now.";
+        else return "AeroFS does not recognize the response from the OpenID Provider and is " +
+                "unable to authenticate. Please contact AeroFS support for assistance.";
     }
 
     /**

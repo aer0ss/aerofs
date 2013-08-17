@@ -8,6 +8,7 @@ import com.aerofs.controller.SetupModel.S3Options;
 import com.aerofs.controller.SignInActor;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.LibParam;
+import com.aerofs.lib.LibParam.OpenId;
 import com.aerofs.lib.RootAnchorUtil;
 import com.aerofs.lib.S;
 import com.aerofs.lib.StorageType;
@@ -88,8 +89,15 @@ public class CLISetup
             setupSingleuser(cli);
         }
 
-        _model.doSignIn();
-        _model.doInstall();
+        if (OpenId.ENABLED.get()) {
+            _model.doSignIn();
+            cli.progress(S.SETUP_INSTALL_MESSAGE);
+            _model.doInstall();
+        } else {
+            cli.progress(S.SETUP_INSTALL_MESSAGE);
+            _model.doSignIn();
+            _model.doInstall();
+        }
 
         cli.notify(MessageType.INFO,
                 "---------------------------------------------------------------\n" +
@@ -147,8 +155,6 @@ public class CLISetup
             }
         }
 
-        cli.progress("Performing magic");
-
         if (_storageType == StorageType.S3) {
             _model._isLocal = false;
         } else {
@@ -166,8 +172,6 @@ public class CLISetup
             getDeviceName(cli);
             getRootAnchor(cli);
         }
-
-        cli.progress("Performing magic");
 
         if (_storageType == null) _storageType = StorageType.LINKED;
 

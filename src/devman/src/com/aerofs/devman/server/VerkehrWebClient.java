@@ -7,7 +7,6 @@ package com.aerofs.devman.server;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.id.DID;
-import com.aerofs.lib.Util;
 import com.google.common.collect.Lists;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;

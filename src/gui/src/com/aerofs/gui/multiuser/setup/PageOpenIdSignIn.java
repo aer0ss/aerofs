@@ -5,6 +5,7 @@
 package com.aerofs.gui.multiuser.setup;
 
 import com.aerofs.controller.SetupModel;
+import com.aerofs.gui.GUIParam;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.S;
 import com.google.common.base.Objects;
@@ -19,22 +20,11 @@ import org.eclipse.swt.widgets.Text;
 
 public class PageOpenIdSignIn extends AbstractSignInPage
 {
-    private Text        _txtDeviceName;
+    private Text _txtDeviceName;
 
     public PageOpenIdSignIn(Composite parent)
     {
         super(parent);
-
-        ModifyListener onTextChanged = new ModifyListener()
-        {
-            @Override
-            public void modifyText(ModifyEvent modifyEvent)
-            {
-                validateInput();
-            }
-        };
-
-        _txtDeviceName.addModifyListener(onTextChanged);
     }
 
     @Override
@@ -42,36 +32,52 @@ public class PageOpenIdSignIn extends AbstractSignInPage
     {
         Composite content = new Composite(parent, SWT.NONE);
 
-        GridLayout welcomeLayout = new GridLayout(1, false);
-        welcomeLayout.marginHeight = 0;
-        welcomeLayout.marginWidth = 0;
+        Label lblWelcome = new Label(content, SWT.WRAP);
+        lblWelcome.setText("Welcome to " + L.product() + " setup.\n\n"
+                + "Click Continue to sign in with your OpenID Provider and "
+                + "configure this device.");
 
-        Composite welcomeComp = new Composite(content, SWT.NONE);
-        welcomeComp.setLayout(welcomeLayout);
-        welcomeComp.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, true, 2, 1));
+        Composite compDeviceName = createDeviceNameComposite(content);
 
-        Label welcomeLabel = new Label(welcomeComp, SWT.WRAP | SWT.CENTER);
-        welcomeLabel.setText("Welcome to " + L.product() +
-                " setup. Click the Continue button to sign in with your OpenId provider and" +
-                " configure this device.");
-
-        Label deviceNameLabel = new Label(content, SWT.NONE);
-        deviceNameLabel.setText(S.SETUP_DEV_ALIAS + ':');
-
-        _txtDeviceName = new Text(content, SWT.BORDER);
-
-        GridLayout layout = new GridLayout(2, false);
-        layout.marginWidth = 100;
+        GridLayout layout = new GridLayout();
+        layout.marginWidth = 80;
         layout.marginHeight = 0;
-        layout.horizontalSpacing = 10;
-        layout.verticalSpacing = 10;
+        layout.verticalSpacing = GUIParam.MAJOR_SPACING;
         content.setLayout(layout);
 
-        welcomeLabel.setLayoutData(new GridData(SWT.CENTER, SWT.CENTER, true, true));
-        deviceNameLabel.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false));
-        _txtDeviceName.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
+        lblWelcome.setLayoutData(new GridData(SWT.CENTER, SWT.CENTER, true, true));
+        compDeviceName.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
 
         return content;
+    }
+
+    protected Composite createDeviceNameComposite(Composite parent)
+    {
+        Composite composite = new Composite(parent, SWT.NONE);
+
+        Label lblDeviceName = new Label(composite, SWT.NONE);
+        lblDeviceName.setText(S.SETUP_DEV_ALIAS + ':');
+
+        _txtDeviceName = new Text(composite, SWT.BORDER);
+        _txtDeviceName.addModifyListener(new ModifyListener()
+        {
+            @Override
+            public void modifyText(ModifyEvent modifyEvent)
+            {
+                validateInput();
+            }
+        });
+
+        GridLayout layout = new GridLayout(2, false);
+        layout.marginWidth = 60;
+        layout.marginHeight = 0;
+        layout.horizontalSpacing = 10;
+        composite.setLayout(layout);
+
+        lblDeviceName.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, false));
+        _txtDeviceName.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
+
+        return composite;
     }
 
     @Override

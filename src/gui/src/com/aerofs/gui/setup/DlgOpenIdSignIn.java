@@ -6,6 +6,7 @@ package com.aerofs.gui.setup;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExBadCredential;
+import com.aerofs.base.ex.ExInternalError;
 import com.aerofs.controller.InstallActor;
 import com.aerofs.controller.SetupModel;
 import com.aerofs.controller.SignInActor.GUIOpenId;
@@ -13,6 +14,7 @@ import com.aerofs.gui.AeroFSTitleAreaDialog;
 import com.aerofs.gui.CompSpin;
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUI.ISWTWorker;
+import com.aerofs.gui.GUIParam;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.gui.Images;
 import com.aerofs.gui.singleuser.SingleuserDlgSetupAdvanced;
@@ -27,16 +29,15 @@ import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.UI;
 import com.aerofs.ui.UIGlobals;
 import com.aerofs.ui.error.ErrorMessages;
+import org.apache.commons.lang.StringUtils;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.custom.StackLayout;
-import org.eclipse.swt.events.SelectionAdapter;
-import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.TraverseEvent;
 import org.eclipse.swt.events.TraverseListener;
+import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.layout.GridData;
-import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.widgets.Button;
+import org.eclipse.swt.layout.RowData;
+import org.eclipse.swt.layout.RowLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Event;
@@ -69,8 +70,6 @@ public class DlgOpenIdSignIn extends AeroFSTitleAreaDialog
 
         GetSetupSettingsReply defaults = UIGlobals.controller().getSetupSettings();
 
-        setTitleImage(Images.get(Images.IMG_SETUP));
-
         _model = new SetupModel()
                 .setSignInActor(new GUIOpenId())
                 .setInstallActor(new InstallActor.SingleUser());
@@ -91,7 +90,8 @@ public class DlgOpenIdSignIn extends AeroFSTitleAreaDialog
             }
         });
 
-        newShell.addListener(SWT.Show, new Listener() {
+        newShell.addListener(SWT.Show, new Listener()
+        {
             @Override
             public void handleEvent(Event arg0)
             {
@@ -99,84 +99,83 @@ public class DlgOpenIdSignIn extends AeroFSTitleAreaDialog
             }
         });
     }
-    /**
-     * Create contents of the dialog
-     */
+
+    @Override
+    protected Point getInitialSize()
+    {
+        return new Point(400, 320);
+    }
+
+    @Override
+    public boolean isCancelled()
+    {
+        return !_okay;
+    }
+
     @Override
     protected Control createDialogArea(Composite parent)
     {
-        Control area = super.createDialogArea(parent);
-        Composite container = createContainer(area, 2);
+        Composite area = (Composite) super.createDialogArea(parent);
 
-        createBottomComposite(container);
+        Composite container = createContainer(area);
+        container.setFocus();
+
+        GridData containerLayout = new GridData(SWT.CENTER, SWT.CENTER, true, true);
+        containerLayout.verticalIndent = GUIParam.MAJOR_SPACING;
+        container.setLayoutData(containerLayout);
 
         setTitle("Setup " + L.product());
-
-        container.setFocus();
+        setTitleImage(Images.get(Images.IMG_SETUP));
 
         return area;
     }
 
-    private Composite createContainer(Control dialogArea, int columns)
+    private Composite createContainer(Composite parent)
     {
-        final Composite container = new Composite((Composite) dialogArea, SWT.NONE);
+        Composite container = new Composite(parent, SWT.NONE);
 
-        final GridLayout gridLayout = new GridLayout();
-        gridLayout.marginTop = 35;
-        gridLayout.marginBottom = 5;
-        gridLayout.marginRight = 38;
-        gridLayout.marginLeft = 45;
-        gridLayout.horizontalSpacing = 10;
-        gridLayout.numColumns = columns;
+        Label lblWelcome = new Label(container, SWT.WRAP);
+        lblWelcome.setText(S.OPENID_SETUP_MESSAGE + '.');
 
-        container.setLayout(gridLayout);
-        container.setLayoutData(new GridData(GridData.FILL_BOTH));
+        _compStatus = createStatusComposite(container);
+        _compStatus.setVisible(false);
+
+        RowLayout layout = new RowLayout(SWT.VERTICAL);
+        layout.marginTop = 0;
+        layout.marginBottom = 0;
+        layout.marginLeft = 0;
+        layout.marginRight = 0;
+        layout.center = false;
+        layout.pack = true;
+        layout.spacing = GUIParam.MAJOR_SPACING;
+        container.setLayout(layout);
+
+        lblWelcome.setLayoutData(new RowData(300, SWT.DEFAULT));
 
         return container;
     }
 
-    private void createBottomComposite(Composite container)
+    private Composite createStatusComposite(Composite parent)
     {
-        Label welcomeText = new Label(container, SWT.WRAP);
-        welcomeText.setText("To begin using " + L.product()
-                            + ", please sign in with your OpenId Provider:");
+        Composite composite = new Composite(parent, SWT.NONE);
 
-        GridData welcomeLayout = new GridData();
-        welcomeLayout.widthHint = 300;
-        welcomeText.setLayoutData(welcomeLayout);
+        _lblStatus = new Label(composite, SWT.NONE);
+        _lblStatus.setText(S.OPENID_AUTH_MESSAGE);
 
-        Composite signinComposite = new Composite(container, SWT.NONE);
-        GridLayout glComp = new GridLayout(2, false);
-        glComp.horizontalSpacing = 0;
-        glComp.verticalSpacing = 12;
-        glComp.marginHeight = 0;
-        glComp.marginWidth = 0;
-        signinComposite.setLayout(glComp);
-        signinComposite.setLayoutData(new GridData(SWT.CENTER, SWT.CENTER, true, true, 2, 1));
+        _compSpin = new CompSpin(composite, SWT.NONE);
 
-        _compStack = new Composite(signinComposite, SWT.NONE);
-        _compStack.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, true, true, 2, 1));
-        _compStack.setSize(306, 28);
-        _compStack.setLayout(_layoutStack);
+        RowLayout layout = new RowLayout(SWT.HORIZONTAL);
+        layout.marginTop = 0;
+        layout.marginBottom = 0;
+        layout.marginLeft = 0;
+        layout.marginRight = 0;
+        layout.center = true;
+        layout.pack = true;
+        layout.spacing = GUIParam.BUTTON_HORIZONTAL_SPACING;
 
-        _compSignInLink = new Composite(_compStack, SWT.NONE);
-        GridLayout signinLayout= new GridLayout(2, false);
-        signinLayout.marginHeight = 0;
-        signinLayout.marginWidth = 0;
-        _compSignInLink.setLayout(signinLayout);
+        composite.setLayout(layout);
 
-        _signinButton = createButton(_compSignInLink, OK_ID, "Sign in with OpenId", true);
-
-        _compBlank = new Composite(_compStack, SWT.NONE);
-        _compBlank.setLayout(new GridLayout(1, false));
-
-        _layoutStack.topControl = _compSignInLink;
-
-        _lblStatus = new Label(signinComposite, SWT.NONE);
-        _lblStatus.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, true, false, 1, 1));
-
-        _compSpin = new CompSpin(signinComposite, SWT.NONE);
-        _compSpin.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false, 1, 1));
+        return composite;
     }
 
     static private boolean shouldAlwaysOnTop()
@@ -190,98 +189,67 @@ public class DlgOpenIdSignIn extends AeroFSTitleAreaDialog
     {
         createButton(parent, CANCEL_ID, CANCEL_LABEL, false);
         createButton(parent, DETAILS_ID, S.BTN_ADVANCED, false);
-
-        getButton(DETAILS_ID).addSelectionListener(new SelectionAdapter()
-        {
-            @Override
-            public void widgetSelected(SelectionEvent arg0)
-            {
-                AbstractDlgSetupAdvanced advanced = createAdvancedSetupDialog();
-                if (advanced.open() != IDialogConstants.OK_ID) return;
-                _model.setDeviceName(advanced.getDeviceName());
-                _model._localOptions._rootAnchorPath = advanced.getAbsoluteRootAnchor();
-            }
-        });
-    }
-
-    private void setInProgressStatus()
-    {
-        _compSpin.start();
-        setStatusImpl("", "Waiting for your OpenId provider...");
-    }
-
-    private void setErrorStatus(String error)
-    {
-        _compSpin.stop();
-        setStatusImpl(error, "");
-    }
-
-    private void setStatusImpl(String error, String status)
-    {
-        if (!error.isEmpty()) GUI.get().show(getShell(), MessageType.ERROR, error);
-        // the following code is becuase the parent component has
-        // horizontalSpace == 0 so the icon can be perfectly aligned
-        if (!status.isEmpty()) status = status + " ";
-
-        String prevStatus = _lblStatus.getText();
-        _lblStatus.setText(status);
-
-        if (!prevStatus.equals(status)) {
-            _lblStatus.pack();
-            _lblStatus.getParent().layout();
-            _lblStatus.getShell().pack();
-        }
+        createButton(parent, OK_ID, "Sign In", true);
     }
 
     @Override
     protected void buttonPressed(int buttonId)
     {
-        if (buttonId == IDialogConstants.OK_ID) {
+        switch (buttonId) {
+        case OK_ID:
             work();
-        } else {
+            break;
+        case DETAILS_ID:
+            AbstractDlgSetupAdvanced advanced = new SingleuserDlgSetupAdvanced(getShell(),
+                    _model.getDeviceName(), _model._localOptions._rootAnchorPath);
+
+            if (advanced.open() != IDialogConstants.OK_ID) return;
+
+            _model.setDeviceName(advanced.getDeviceName());
+            _model._localOptions._rootAnchorPath = advanced.getAbsoluteRootAnchor();
+            break;
+        default:
             super.buttonPressed(buttonId);
         }
     }
 
     private void work()
     {
-        _inProgress = true;
+        setState(true, S.OPENID_AUTH_MESSAGE);
 
-        setControlState(false);
-
-        setInProgressStatus();
-
-        GUI.get().safeWork(_signinButton, new ISWTWorker()
+        GUI.get().safeWork(getShell(), new ISWTWorker()
         {
             @Override
             public void run()
                     throws Exception
             {
-                setup();
+                _model.doSignIn();
+
+                GUI.get().asyncExec(new Runnable()
+                {
+                    @Override
+                    public void run()
+                    {
+                        setState(true, S.SETUP_INSTALL_MESSAGE);
+                    }
+                });
+
+                _model.doInstall();
+
+                setupShellExtension();
             }
 
             @Override
             public void error(Exception e)
             {
                 l.error("Setup error", e);
-                String msg = null;
-                if (e instanceof ConnectException) {
-                    msg = "Sorry, couldn't connect to the server. Please try again later.";
-                } else if (e instanceof ExUIMessage) {
-                    msg = e.getMessage();
-                } else if (e instanceof ExBadCredential) {
-                    msg = S.BAD_CREDENTIAL_CAP + ".";
-                }
 
                 // TODO: Catch ExAlreadyExist and ExNoPerm here, and ask the user if he wants us to
                 // move the anchor root. See CLISetup.java.
+                ErrorMessages.show(getShell(), e, formatExceptionMessage(e));
 
-                if (msg == null) msg = "Sorry, " + ErrorMessages.e2msgNoBracketDeprecated(e) + '.';
-                setErrorStatus(msg);
-
-                _inProgress = false;
-
-                setControlState(true);
+                setState(false, "");
+                getButton(OK_ID).setText(S.SETUP_TRY_AGAIN);
             }
 
             @Override
@@ -290,33 +258,32 @@ public class DlgOpenIdSignIn extends AeroFSTitleAreaDialog
                 _okay = true;
                 close();
             }
+
+            protected String formatExceptionMessage(Exception e)
+            {
+                if (e instanceof ConnectException) return S.SETUP_ERR_CONN;
+                else if (e instanceof ExUIMessage) return e.getMessage();
+                else if (e instanceof ExBadCredential) return S.OPENID_AUTH_TIMEOUT;
+                else if (e instanceof ExInternalError) return S.SERVER_INTERNAL_ERROR;
+                else return "Sorry, " + ErrorMessages.e2msgNoBracketDeprecated(e) + '.';
+            }
         });
     }
 
-    private void setControlState(boolean enabled)
+    private void setState(boolean inProgress, String message)
     {
-        getButton(DETAILS_ID).setEnabled(enabled);
+        _inProgress = inProgress;
 
-        if (!enabled) _layoutStack.topControl = _compBlank;
-        else _layoutStack.topControl = _compSignInLink;
-        _compStack.layout();
-    }
+        _compStatus.setVisible(!StringUtils.isBlank(message));
+        _lblStatus.setText(message);
 
-    @Override
-    public boolean isCancelled()
-    {
-        return !_okay;
-    }
+        if (inProgress) _compSpin.start();
+        else _compSpin.stop();
 
-    /**
-     * This method is called in a non-GUI thread
-     */
-    private void setup() throws Exception
-    {
-        _model.doSignIn();
-        _model.doInstall();
+        getButton(OK_ID).setEnabled(!inProgress);
+        getButton(DETAILS_ID).setEnabled(!inProgress);
 
-        setupShellExtension();
+        getShell().layout(new Control[] { _lblStatus } );
     }
 
     private void setupShellExtension() throws ExNoConsole
@@ -344,24 +311,14 @@ public class DlgOpenIdSignIn extends AeroFSTitleAreaDialog
         }
     }
 
-    private AbstractDlgSetupAdvanced createAdvancedSetupDialog()
-    {
-        return new SingleuserDlgSetupAdvanced(getShell(),
-                _model.getDeviceName(), _model._localOptions._rootAnchorPath);
-    }
-
     protected static final Logger l = Loggers.getLogger(DlgOpenIdSignIn.class);
 
-    private CompSpin _compSpin;
-    private Composite _compSignInLink;
-    private Composite _compBlank;
-    private Composite _compStack;
-    private Label _lblStatus;
-    private final StackLayout _layoutStack = new StackLayout();
+    private Composite   _compStatus;
+    private Label       _lblStatus;
+    private CompSpin    _compSpin;
 
     private boolean _okay;
     private boolean _inProgress;
 
     private SetupModel _model;
-    private Button _signinButton;
 }

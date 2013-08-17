@@ -5,8 +5,8 @@ import com.aerofs.base.ElapsedTimer;
 import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.cli.CLI;
 import com.aerofs.gui.GUIUtil;
-import com.aerofs.labeling.L;
 import com.aerofs.lib.LibParam.OpenId;
+import com.aerofs.lib.S;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.proto.Sp.OpenIdSessionAttributes;
 import com.aerofs.proto.Sp.OpenIdSessionNonces;
@@ -69,14 +69,13 @@ public abstract class SignInActor
         public void signInUser(Setup setup, SetupModel model) throws Exception
         {
             OpenIdHelper helper = new OpenIdHelper(model);
+            String msg = S.OPENID_SETUP_MESSAGE + " by pasting the following URL in a web " +
+                    "browser. This URL can be used only once, and only for this session.\n" +
+                    "Setup will complete automatically once the OpenID Provider confirms " +
+                    "your identity.\n";
 
-            _out.show(MessageType.INFO,
-                    "To complete " + L.product() + " setup, please sign in with your "
-                            + "OpenId Provider by pasting the following URL in a web browser. "
-                            + "This URL can be used only once, and only for this session.\n"
-                            + "Setup will complete automatically once the OpenId provider "
-                            + "confirms your identity.\n");
-            _out.show(MessageType.INFO, helper.getDelegateUrl());
+            _out.show(MessageType.INFO, msg);
+            _out.show(MessageType.INFO, helper.getDelegateUrl() + '\n');
 
             helper.getSessionAttributes();
         }

@@ -17,7 +17,6 @@ import com.aerofs.lib.RootAnchorUtil;
 import com.aerofs.lib.S;
 import com.aerofs.lib.ex.ExUIMessage;
 import com.aerofs.ui.error.ErrorMessages;
-import com.aerofs.ui.IUI.MessageType;
 import com.swtdesigner.SWTResourceManager;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
@@ -382,7 +381,7 @@ public class PageLocalStorage extends AbstractSetupPage
             public void error(Exception e)
             {
                 l.error("Setup error", e);
-                GUI.get().show(getShell(), MessageType.ERROR, formatException(e));
+                ErrorMessages.show(getShell(), e, formatException(e));
                 setProgress(false);
             }
 

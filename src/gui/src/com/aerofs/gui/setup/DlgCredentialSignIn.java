@@ -296,7 +296,7 @@ public class DlgCredentialSignIn extends AeroFSTitleAreaDialog
     private void setInProgressStatus()
     {
         _compSpin.start();
-        setStatusImpl("", "Performing magic...");
+        setStatusImpl("", S.SETUP_INSTALL_MESSAGE);
 
     }
 
