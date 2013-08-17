@@ -6,7 +6,7 @@ OPT=repackaging/opt/repackaging
 rm -rf $OPT
 mkdir -p $OPT/tools
 
-for os in win osx linux
+for os in android linux osx win
 do
     cp -r $ENTERPRISE/repackaging/$os $OPT/tools
 done
