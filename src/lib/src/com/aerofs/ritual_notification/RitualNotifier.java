@@ -26,6 +26,12 @@ public class RitualNotifier extends SimpleChannelHandler
     private final Set<Channel> _channels = newCopyOnWriteArraySet();
     private final List<IRitualNotificationClientConnectedListener> _listeners = newCopyOnWriteArrayList();
 
+    protected RitualNotifier()
+    {
+        // do not allow any class outside of this package to create a notifier
+        //   or by accident like injection.
+    }
+
     //
     // utility
     //

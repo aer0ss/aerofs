@@ -10,6 +10,7 @@ import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.notification.DownloadNotifier.DownloadThrottler;
 import com.aerofs.daemon.core.notification.UploadNotifier.UploadThrottler;
 import com.aerofs.daemon.core.serverstatus.ServerConnectionStatus;
+import com.aerofs.daemon.core.serverstatus.ServerStatusNotifier;
 import com.aerofs.daemon.core.status.PathStatus;
 import com.aerofs.daemon.core.syncstatus.AggregateSyncStatus;
 import com.aerofs.daemon.core.syncstatus.SyncStatusSynchronizer;
@@ -46,6 +47,7 @@ public class TestNotificationService
     @Mock ConflictNotifier _conflictNotifier;
     @Mock DownloadThrottler _downloadThrottler;
     @Mock UploadThrottler _uploadThrottler;
+    @Mock ServerStatusNotifier _serverStatusNotifier;
 
     @Rule public TemporaryFolder _approotFolder;
 
@@ -81,14 +83,20 @@ public class TestNotificationService
                 _serverConnectionStatus,
                 _conflictNotifier,
                 _downloadThrottler,
-                _uploadThrottler);
+                _uploadThrottler,
+                _serverStatusNotifier);
     }
 
     @Test
-    public void shouldSetupRitualNotifierListenerOnInit()
+    public void shouldSetupNotificationServiceOnInit()
             throws IOException
     {
+        // FIXME the current test case only cover two of many services that should be setup.
+        //   The reason for that is covering other services requires non-trivial refactoring
+        //   of other services to make them testable, and is out-of-scope at the time when
+        //   this test case is written.
         _service.init_();
         verify(_rns).addListener(_service);
+        verify(_serverStatusNotifier).start();
     }
 }

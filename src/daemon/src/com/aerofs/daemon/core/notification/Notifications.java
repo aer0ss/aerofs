@@ -13,15 +13,7 @@ import com.aerofs.proto.RitualNotifications.PBPathStatusEvent;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import static com.aerofs.proto.RitualNotifications.PBNotification.Type.BAD_CREDENTIAL;
-import static com.aerofs.proto.RitualNotifications.PBNotification.Type.CONFLICT_COUNT;
-import static com.aerofs.proto.RitualNotifications.PBNotification.Type.INDEXING_PROGRESS;
-import static com.aerofs.proto.RitualNotifications.PBNotification.Type.PATH_STATUS;
-import static com.aerofs.proto.RitualNotifications.PBNotification.Type.PATH_STATUS_OUT_OF_DATE;
-import static com.aerofs.proto.RitualNotifications.PBNotification.Type.ROOTS_CHANGED;
-import static com.aerofs.proto.RitualNotifications.PBNotification.Type.SHARED_FOLDER_JOIN;
-import static com.aerofs.proto.RitualNotifications.PBNotification.Type.SHARED_FOLDER_KICKOUT;
-import static com.aerofs.proto.RitualNotifications.PBNotification.Type.SHARED_FOLDER_PENDING;
+import static com.aerofs.proto.RitualNotifications.PBNotification.Type.*;
 
 public abstract class Notifications
 {
@@ -114,6 +106,15 @@ public abstract class Notifications
                 .newBuilder()
                 .setType(CONFLICT_COUNT)
                 .setConflictCount(numConflicts)
+                .build();
+    }
+
+    public static PBNotification newServerStatusChangedNotification(boolean isOnline)
+    {
+        return PBNotification
+                .newBuilder()
+                .setType(SERVER_STATUS_CHANGED)
+                .setServerStatus(isOnline)
                 .build();
     }
 }
