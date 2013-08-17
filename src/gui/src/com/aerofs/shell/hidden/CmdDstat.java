@@ -1,17 +1,16 @@
 package com.aerofs.shell.hidden;
 
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.Options;
-
+import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.lib.JsonFormat;
 import com.aerofs.lib.Util;
-import com.aerofs.base.ex.ExBadArgs;
-import com.aerofs.proto.Files.PBDumpStat;
-import com.aerofs.proto.Files.PBDumpStat.PBTransport;
+import com.aerofs.proto.Diagnostics.PBDumpStat;
+import com.aerofs.proto.Diagnostics.PBDumpStat.PBTransport;
 import com.aerofs.proto.Ritual.DumpStatsReply;
 import com.aerofs.shell.IShellCommand;
 import com.aerofs.shell.ShProgram;
 import com.aerofs.shell.ShellCommandRunner;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.Options;
 
 public class CmdDstat implements IShellCommand<ShProgram>
 {

@@ -1,6 +1,6 @@
 package com.aerofs.daemon.transport.jingle;
 
-import com.aerofs.base.BaseParam.Xmpp;
+import com.aerofs.base.BaseParam.XMPP;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.lib.DaemonParam;
@@ -185,7 +185,7 @@ public class SignalThread extends Thread implements IDumpStatMisc
         // The xmpp server address is an unresolved hostname.
         // We avoid resolving the hostname ourselves and let
         // SMACK do the DNS query on its thread.
-        InetSocketAddress xmppAddress = Xmpp.ADDRESS.get();
+        InetSocketAddress xmppAddress = XMPP.ADDRESS.get();
         InetSocketAddress stunAddress = DaemonParam.Jingle.STUN_ADDRESS.get();
         // TODO (WW) XmppMain() should use int rather than short as the datatype of jingleRelayPort
         // as Java's unsigned short may overflow on big port numbers.

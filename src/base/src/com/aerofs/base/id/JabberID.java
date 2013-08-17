@@ -4,7 +4,7 @@
 
 package com.aerofs.base.id;
 
-import com.aerofs.base.BaseParam.Xmpp;
+import com.aerofs.base.BaseParam.XMPP;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.id.UniqueID.ExInvalidID;
@@ -58,7 +58,7 @@ public abstract class JabberID
      */
     public static String did2FormAJid(DID did, String xmppTransportId)
     {
-        return did2user(did) + '@' + Xmpp.SERVER_DOMAIN.get() + '/' + xmppTransportId;
+        return did2user(did) + '@' + XMPP.SERVER_DOMAIN.get() + '/' + xmppTransportId;
     }
 
     /**
@@ -162,6 +162,6 @@ public abstract class JabberID
 
     public static String sid2muc(SID sid)
     {
-        return sid.toStringFormal() + '@' + Xmpp.getMucAddress();
+        return sid.toStringFormal() + '@' + XMPP.getMucAddress();
     }
 }

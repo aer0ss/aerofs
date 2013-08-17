@@ -1,0 +1,78 @@
+option java_package = "com.aerofs.proto";
+
+//
+// diagnostic message/type definitions
+//
+// generally these types require reflection enabled because
+// they're also meant to be printed, formatted, or user-visible
+// IOW: do _not_ use the lite-runtime to generate objects
+//
+
+//
+// general diagnostics
+//
+
+message PBDumpStat {
+
+    message PBTransport {
+        optional string name = 1;
+        optional uint64 bytes_in = 2;
+        optional uint64 bytes_out = 3;
+        repeated string connection = 4;
+        optional string diagnosis = 5;
+    }
+
+    optional uint64 up_time = 1;
+
+    repeated string enabled_transports = 2;
+
+    repeated PBTransport transport = 3;
+
+    optional string misc = 15;
+}
+
+//
+// transport diagnostics messages and types
+//
+
+message TCPDiagnostics {
+    required PBInetSocketAddress listening_address = 1;
+    repeated TCPDevice reachable_devices = 2;
+}
+
+message TCPDevice {
+    required bytes did = 1;
+    required PBInetSocketAddress device_address = 2;
+}
+
+message JingleDiagnostics {
+    required ServerStatus xmpp_server = 1;
+    required ServerStatus stun_server = 2;
+    repeated JingleDevice reachable_devices = 3;
+}
+
+message JingleDevice {
+    required bytes did = 1;
+}
+
+message ZephyrDiagnostics {
+    required ServerStatus xmpp_server = 1;
+    required ServerStatus zephyr_server = 2;
+    repeated ZephyrDevice reachable_devices = 3;
+}
+
+message ZephyrDevice {
+    required bytes did = 1;
+}
+
+message ServerStatus {
+    required PBInetSocketAddress server_address = 1;
+    optional bool reachable = 2;
+    optional string reachability_error = 3;
+}
+
+message PBInetSocketAddress {
+    optional string host = 1;
+    optional string resolved_host = 2;
+    optional uint32 port = 3;
+}

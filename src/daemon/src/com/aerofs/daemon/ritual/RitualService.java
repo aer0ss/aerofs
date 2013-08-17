@@ -42,6 +42,7 @@ import com.aerofs.daemon.event.admin.EIReloadConfig;
 import com.aerofs.daemon.event.admin.EIRelocateRootAnchor;
 import com.aerofs.daemon.event.admin.EISetExpelled;
 import com.aerofs.daemon.event.admin.EITestMultiuserJoinRootStore;
+import com.aerofs.daemon.event.admin.EITransportDiagnostics;
 import com.aerofs.daemon.event.admin.EIUpdateACL;
 import com.aerofs.daemon.event.fs.EICreateObject;
 import com.aerofs.daemon.event.fs.EIDeleteBranch;
@@ -68,7 +69,7 @@ import com.aerofs.proto.Common.PBPath;
 import com.aerofs.proto.Common.PBRole;
 import com.aerofs.proto.Common.PBSubjectRolePair;
 import com.aerofs.proto.Common.Void;
-import com.aerofs.proto.Files.PBDumpStat;
+import com.aerofs.proto.Diagnostics.PBDumpStat;
 import com.aerofs.proto.Ritual.CreateSeedFileReply;
 import com.aerofs.proto.Ritual.DumpStatsReply;
 import com.aerofs.proto.Ritual.ExportConflictReply;
@@ -81,6 +82,7 @@ import com.aerofs.proto.Ritual.GetObjectAttributesReply;
 import com.aerofs.proto.Ritual.GetPathStatusReply;
 import com.aerofs.proto.Ritual.GetSyncStatusReply;
 import com.aerofs.proto.Ritual.GetTransferStatsReply;
+import com.aerofs.proto.Ritual.GetTransportDiagnosticsReply;
 import com.aerofs.proto.Ritual.IRitualService;
 import com.aerofs.proto.Ritual.LinkRootReply;
 import com.aerofs.proto.Ritual.ListConflictsReply;
@@ -135,6 +137,16 @@ public class RitualService implements IRitualService
 
         DumpStatsReply reply = DumpStatsReply.newBuilder().setStats(ev.data_()).build();
         return createReply(reply);
+    }
+
+    @Override
+    public ListenableFuture<GetTransportDiagnosticsReply> getTransportDiagnostics()
+            throws Exception
+    {
+        // FIXME (AG): really, I can call Transports.dumpDiagnostics directly
+        EITransportDiagnostics ev = new EITransportDiagnostics(Core.imce());
+        ev.execute(PRIO);
+        return createReply(ev.getDiagnostics_());
     }
 
     @Override

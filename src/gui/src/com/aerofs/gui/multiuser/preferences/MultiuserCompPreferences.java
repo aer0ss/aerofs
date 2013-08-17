@@ -8,6 +8,7 @@ import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.gui.preferences.PreferencesHelper;
+import com.aerofs.gui.transport_diagnostics.DlgTransportDiagnostics;
 import com.aerofs.lib.S;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
@@ -21,6 +22,7 @@ import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Label;
 
 public class MultiuserCompPreferences extends Composite
 {
@@ -46,6 +48,9 @@ public class MultiuserCompPreferences extends Composite
         helper.createRelocationLabelAndText();
 
         // Enable sync-history button
+
+        // place holder for grid layout, this is necessary to vertically align the widgets
+        new Label(this, SWT.NONE).setLayoutData(new GridData(SWT.FILL, SWT.FILL, false, false, 1, 2));
 
         final Button btnHistory = GUIUtil.createButton(this, SWT.CHECK);
         btnHistory.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, false, 2, 1));
@@ -82,6 +87,18 @@ public class MultiuserCompPreferences extends Composite
                             "Couldn't update configuration value for "
                             + Key.SYNC_HISTORY.toString() + ErrorMessages.e2msgDeprecated(e));
                 }
+            }
+        });
+
+        Button btnTransportDiagnostics = GUIUtil.createButton(this, SWT.PUSH);
+        btnTransportDiagnostics.setText(S.TXT_TRANSPORT_DIAGNOSTICS_TITLE);
+        btnTransportDiagnostics.setLayoutData(new GridData(SWT.CENTER, SWT.CENTER, false, false));
+        btnTransportDiagnostics.addSelectionListener(new SelectionAdapter()
+        {
+            @Override
+            public void widgetSelected(SelectionEvent e)
+            {
+                new DlgTransportDiagnostics(getShell()).openDialog();
             }
         });
 

@@ -12,13 +12,18 @@ import com.aerofs.gui.tray.TrayIcon.TrayPosition.Orientation;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.LibParam;
+import com.aerofs.lib.S;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.os.OSUtil;
+import com.aerofs.proto.RitualNotifications.PBNotification;
+import com.aerofs.proto.RitualNotifications.PBNotification.Type;
+import com.aerofs.ritual_notification.IRitualNotificationListener;
 import com.aerofs.sv.client.SVClient;
 import com.aerofs.swig.driver.Driver;
+import com.aerofs.ui.UIGlobals;
 import com.google.common.base.Objects;
 import com.google.common.collect.Sets;
 import org.eclipse.swt.SWT;
@@ -52,6 +57,8 @@ public class TrayIcon implements ITrayMenuListener
     private final UbuntuTrayItem _uti;
     private Thread _thdSpinning;
     private int _iconIndex;
+
+    private boolean _isServerOnline;
 
     TrayIcon(SystemTray st)
     {
@@ -101,6 +108,8 @@ public class TrayIcon implements ITrayMenuListener
         }
 
         setSpin(false);
+
+        addServerStatusListener();
     }
 
     public void setSpin(boolean spin)
@@ -126,6 +135,34 @@ public class TrayIcon implements ITrayMenuListener
     private Widget iconImpl()
     {
         return Objects.firstNonNull(_uti, _ti);
+    }
+
+    private void addServerStatusListener()
+    {
+        UIGlobals.rnc().addListener(new IRitualNotificationListener()
+        {
+            @Override
+            public void onNotificationReceived(PBNotification notification)
+            {
+                if (notification.getType() == Type.SERVER_STATUS_CHANGED) {
+                    _isServerOnline = notification.getServerStatus();
+                    GUI.get().safeAsyncExec(iconImpl(), new Runnable() {
+                        @Override
+                        public void run()
+                        {
+                            setToolTipText(_tooltip);
+                            refreshTrayIconImage();
+                        }
+                    });
+                }
+            }
+
+            @Override
+            public void onNotificationChannelBroken()
+            {
+                // no-op
+            }
+        });
     }
 
     private void startAnimation()
@@ -172,10 +209,19 @@ public class TrayIcon implements ITrayMenuListener
         return _uti.isDisposed();
     }
 
+    private String _tooltip;
+
+    /**
+     * HACK ALERT (AT): the intended tooltip text logic is to use the server offline tooltip
+     *   if the server status is offline and to use the previously set tooltip otherwise.
+     *   The method to achieve this is whenever tooltip is set, it checks the server status.
+     *   And whenever server status change, it calls setToolTipText(_tooltip).
+     */
     public void setToolTipText(String str)
     {
         if (_ti != null) {
-            _ti.setToolTipText(str);
+            _tooltip = str;
+            _ti.setToolTipText(_isServerOnline ? _tooltip : S.SERVER_OFFLINE_TOOLTIP);
         }
     }
 
@@ -229,7 +275,8 @@ public class TrayIcon implements ITrayMenuListener
 
     private void refreshTrayIconImage()
     {
-        String iconName = Images.getTrayIconName(!_notificationReasons.isEmpty(), _iconIndex);
+        String iconName = Images.getTrayIconName(_isServerOnline, !_notificationReasons.isEmpty(),
+                _iconIndex);
         if (_uti != null) {
             _uti.setIcon(iconName, L.product());
         }

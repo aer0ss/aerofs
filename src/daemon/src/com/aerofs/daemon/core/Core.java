@@ -4,6 +4,7 @@ import com.aerofs.daemon.IModule;
 import com.aerofs.daemon.core.acl.ACLNotificationSubscriber;
 import com.aerofs.daemon.core.db.CoreDBSetup;
 import com.aerofs.daemon.core.first_launch.FirstLaunch;
+import com.aerofs.daemon.core.health_check.HealthCheckService;
 import com.aerofs.daemon.core.launch_tasks.DaemonLaunchTasks;
 import com.aerofs.daemon.core.migration.ImmigrantVersionControl;
 import com.aerofs.daemon.core.net.Transports;
@@ -47,7 +48,7 @@ public class Core implements IModule
     private final RitualNotificationServer _rns;
     private final DaemonPostUpdateTasks _dput;
     private final CoreDBSetup _dbsetup;
-    private final CoreProgressWatcher _cpw;
+    private final HealthCheckService _hcs;
     private final DaemonLaunchTasks _dlts;
 
     @Inject
@@ -71,7 +72,7 @@ public class Core implements IModule
             DaemonPostUpdateTasks dput,
             CoreDBSetup dbsetup,
             IStores ss,
-            CoreProgressWatcher cpw,
+            HealthCheckService hcs,
             DaemonLaunchTasks dlts)
     {
         _imce2core = imce.imce();
@@ -93,7 +94,7 @@ public class Core implements IModule
         _ns = ns;
         _dput = dput;
         _dbsetup = dbsetup;
-        _cpw = cpw;
+        _hcs = hcs;
         _dlts = dlts;
     }
 
@@ -135,8 +136,8 @@ public class Core implements IModule
     @Override
     public void start_()
     {
-        // core health
-        _cpw.start_();
+        // start the health checks
+        _hcs.start_();
 
         // start Ritual notifications as we use them to report progress
         _rns.start_();

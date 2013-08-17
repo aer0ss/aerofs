@@ -25,7 +25,7 @@ import com.aerofs.daemon.core.admin.HdPauseOrResumeSyncing;
 import com.aerofs.daemon.core.admin.HdReloadConfig;
 import com.aerofs.daemon.core.admin.HdRelocateRootAnchor;
 import com.aerofs.daemon.core.admin.HdSetExpelled;
-import com.aerofs.daemon.core.net.HdGetTransferStat;
+import com.aerofs.daemon.core.admin.HdTransportDiagnostics;
 import com.aerofs.daemon.core.admin.HdUpdateACL;
 import com.aerofs.daemon.core.fs.HdCreateObject;
 import com.aerofs.daemon.core.fs.HdDeleteBranch;
@@ -39,13 +39,14 @@ import com.aerofs.daemon.core.fs.HdListSharedFolders;
 import com.aerofs.daemon.core.fs.HdMoveObject;
 import com.aerofs.daemon.core.fs.HdSetAttr;
 import com.aerofs.daemon.core.fs.HdShareFolder;
+import com.aerofs.daemon.core.net.HdChunk;
+import com.aerofs.daemon.core.net.HdGetTransferStat;
+import com.aerofs.daemon.core.net.HdMaxcastMessage;
 import com.aerofs.daemon.core.net.HdPresence;
 import com.aerofs.daemon.core.net.HdPulseStopped;
-import com.aerofs.daemon.core.net.HdTransportMetricsUpdated;
-import com.aerofs.daemon.core.net.HdChunk;
-import com.aerofs.daemon.core.net.HdMaxcastMessage;
 import com.aerofs.daemon.core.net.HdStreamAborted;
 import com.aerofs.daemon.core.net.HdStreamBegun;
+import com.aerofs.daemon.core.net.HdTransportMetricsUpdated;
 import com.aerofs.daemon.core.net.HdUnicastMessage;
 import com.aerofs.daemon.core.status.HdGetStatusOverview;
 import com.aerofs.daemon.core.syncstatus.HdGetSyncStatus;
@@ -75,6 +76,7 @@ import com.aerofs.daemon.event.admin.EIPauseOrResumeSyncing;
 import com.aerofs.daemon.event.admin.EIReloadConfig;
 import com.aerofs.daemon.event.admin.EIRelocateRootAnchor;
 import com.aerofs.daemon.event.admin.EISetExpelled;
+import com.aerofs.daemon.event.admin.EITransportDiagnostics;
 import com.aerofs.daemon.event.admin.EIUpdateACL;
 import com.aerofs.daemon.event.fs.EICreateObject;
 import com.aerofs.daemon.event.fs.EIDeleteBranch;
@@ -98,7 +100,6 @@ import com.aerofs.daemon.event.status.EIGetSyncStatus;
 import com.aerofs.daemon.event.test.EITestGetAliasObject;
 import com.aerofs.daemon.mobile.EIDownloadPacket;
 import com.aerofs.daemon.mobile.HdDownloadPacket;
-
 import com.google.inject.Inject;
 
 public class CoreEventHandlerRegistrar implements ICoreEventHandlerRegistrar
@@ -125,6 +126,7 @@ public class CoreEventHandlerRegistrar implements ICoreEventHandlerRegistrar
     private final HdExportConflict _hdExportConflict;
     private final HdGetTransferStat _hdGetTransferStat;
     private final HdDumpStat _hdDumpStat;
+    private final HdTransportDiagnostics _hdTransportDiagnostics;
     private final HdReloadConfig _hdReloadConfig;
     private final HdPauseOrResumeSyncing _hdPauseOrResumeSyncing;
     private final HdGetACL _hdGetACL;
@@ -161,8 +163,8 @@ public class CoreEventHandlerRegistrar implements ICoreEventHandlerRegistrar
             HdMaxcastMessage hdMaxcastMessage, HdUnicastMessage hdUnicastMessage,
             HdTransportMetricsUpdated hdTransportMetricsUpdated,
             HdPresence hdPresence, HdListConflicts hdListConflicts,
-            HdExportConflict hdExportConflict,
-            HdDumpStat hdDumpStat, HdReloadConfig hdReloadConfig,
+            HdExportConflict hdExportConflict, HdDumpStat hdDumpStat,
+            HdTransportDiagnostics hdTransportDiagnostics, HdReloadConfig hdReloadConfig,
             HdPauseOrResumeSyncing hdPauseOrResumeSyncing, HdGetACL hdGetACL,
             HdUpdateACL hdUpdateACL, HdDeleteACL hdDeleteACL, HdSetAttr hdSetAttr,
             HdGetChildrenAttr hdGetChildrenAttr, HdGetAttr hdGetAttr, HdShareFolder hdShareFolder,
@@ -199,6 +201,7 @@ public class CoreEventHandlerRegistrar implements ICoreEventHandlerRegistrar
         _hdListConflicts = hdListConflicts;
         _hdExportConflict = hdExportConflict;
         _hdDumpStat = hdDumpStat;
+        _hdTransportDiagnostics = hdTransportDiagnostics;
         _hdReloadConfig = hdReloadConfig;
         _hdPauseOrResumeSyncing = hdPauseOrResumeSyncing;
         _hdGetACL = hdGetACL;
@@ -248,6 +251,7 @@ public class CoreEventHandlerRegistrar implements ICoreEventHandlerRegistrar
                 // admin events
                 .setHandler_(EIReloadConfig.class, _hdReloadConfig)
                 .setHandler_(EIDumpStat.class, _hdDumpStat)
+                .setHandler_(EITransportDiagnostics.class, _hdTransportDiagnostics)
                 .setHandler_(EIShareFolder.class, _hdShareFolder)
                 .setHandler_(EIJoinSharedFolder.class, _hdJoinSharedFolder)
                 .setHandler_(EILeaveSharedFolder.class, _hdLeaveSharedFolder)

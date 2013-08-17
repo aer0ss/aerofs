@@ -15,6 +15,8 @@ import com.aerofs.base.acl.Role;
 import com.aerofs.lib.ex.ExNoAdminOrOwner;
 import com.aerofs.sp.server.lib.SharedFolder;
 import com.aerofs.sp.server.lib.device.Device;
+import com.aerofs.sp.server.lib.id.OrganizationID;
+import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.aerofs.sp.server.lib.user.User;
 import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException;
@@ -25,7 +27,9 @@ import java.sql.SQLException;
 import java.util.Collection;
 
 import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertNull;
+import static junit.framework.Assert.assertTrue;
 import static junit.framework.Assert.fail;
 
 public class TestUser extends AbstractBusinessObjectTest
@@ -126,6 +130,46 @@ public class TestUser extends AbstractBusinessObjectTest
         // the collision should have been corrected
         assertNull(sf.getMemberRoleNullable(attacker));
         assertNull(sf.getMemberRoleNullable(attacker2));
+    }
+
+    @Test
+    public void save_shouldCreateNewOrgIfPublicDeployment() throws Exception
+    {
+        User user = saveUser();
+
+        // Check that the user is *not* in the main org and that he's an admin
+        assertFalse(user.getOrganization().id().equals(OrganizationID.MAIN_ORGANIZATION));
+        assertEquals(AuthorizationLevel.ADMIN, user.getLevel());
+    }
+
+    @Test
+    public void save_shouldSaveToMainOrgIfEnterpriseDeployment() throws Exception
+    {
+        setEnterpriseDeployment(true);
+
+        Organization mainOrg = factOrg.create(OrganizationID.MAIN_ORGANIZATION);
+
+        // Check that the main organization doesn't exist yet.
+        // This is important because we want to test that the first user is created with admin
+        // privileges
+        // Note: this test may fail if some earlier test create the main org. In this case, we
+        // either have to get the ordering right, or we need to provide a method for deleting an
+        // organization
+        assertFalse(mainOrg.exists());
+
+        // Create a new user
+        User user = saveUser();
+
+        assertTrue(mainOrg.exists());
+
+        // Check that the user *is* in the main org and that he's an admin
+        assertEquals(OrganizationID.MAIN_ORGANIZATION, user.getOrganization().id());
+        assertEquals(AuthorizationLevel.ADMIN, user.getLevel());
+
+        // Now create an additional user and check that he's also in the main org but as a regular user
+        user = saveUser();
+        assertEquals(OrganizationID.MAIN_ORGANIZATION, user.getOrganization().id());
+        assertEquals(AuthorizationLevel.USER, user.getLevel());
     }
 
     @Test(expected = ExBadCredential.class)

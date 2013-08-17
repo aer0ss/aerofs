@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.transport.zephyr;
 
+import com.aerofs.base.BaseParam.XMPP;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.ex.ExNoResource;
@@ -47,7 +48,11 @@ import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
 import com.aerofs.lib.event.IEvent;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.sched.Scheduler;
-import com.aerofs.proto.Files.PBDumpStat;
+import com.aerofs.proto.Diagnostics.PBDumpStat;
+import com.aerofs.proto.Diagnostics.ServerStatus;
+import com.aerofs.proto.Diagnostics.ZephyrDevice;
+import com.aerofs.proto.Diagnostics.ZephyrDiagnostics;
+import com.aerofs.proto.Ritual.GetTransportDiagnosticsReply;
 import com.aerofs.proto.Transport.PBCheckPulse;
 import com.aerofs.proto.Transport.PBStream;
 import com.aerofs.proto.Transport.PBTPHeader;
@@ -66,6 +71,7 @@ import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
+import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
 import java.net.Proxy;
 import java.net.SocketAddress;
@@ -78,6 +84,8 @@ import static com.aerofs.daemon.transport.lib.TPUtil.processUnicastHeader;
 import static com.aerofs.daemon.transport.lib.TPUtil.registerCommonHandlers;
 import static com.aerofs.daemon.transport.lib.TPUtil.registerMulticastHandler;
 import static com.aerofs.daemon.transport.lib.TPUtil.sessionEnded;
+import static com.aerofs.daemon.transport.lib.TransportUtil.fromInetSockAddress;
+import static com.aerofs.daemon.transport.lib.TransportUtil.getReachabilityErrorString;
 import static com.aerofs.daemon.transport.xmpp.XMPPUtilities.decodeBody;
 import static com.aerofs.daemon.transport.xmpp.XMPPUtilities.encodeBody;
 import static com.aerofs.proto.Transport.PBTPHeader.Type.STREAM;
@@ -115,6 +123,7 @@ public final class Zephyr implements ITransportImpl, IUnicast, IConnectionServic
     private final Multicast multicast;
     private final XMPPConnectionService xmppConnectionService;
 
+    private final InetSocketAddress zephyrAddress;
     private final ZephyrConnectionService zephyrConnectionService;
 
     private final MobileServerZephyrConnector mobileZephyrConnector; // FIXME (AG): this shouldn't be here
@@ -151,11 +160,12 @@ public final class Zephyr implements ITransportImpl, IUnicast, IConnectionServic
 
         this.mobileZephyrConnector = mobileZephyr; // I don't want this here!!!!
         this.outgoingEventSink = outgoingEventSink;
-        this.scheduler = new Scheduler(eventQueue, id());
+        this.scheduler = new Scheduler(eventQueue, id + "-sched");
         this.xmppConnectionService = new XMPPConnectionService(localdid, id(), scrypted, rocklog);
         this.multicast = new Multicast(localdid, id(), maxcastFilterReceiver, xmppConnectionService, this, outgoingEventSink);
         this.maxcastFilterReceiver = maxcastFilterReceiver;
         this.pulseManager.addPulseDeletionWatcher(new GenericPulseDeletionWatcher(this, this.outgoingEventSink));
+        this.zephyrAddress = (InetSocketAddress) zephyrAddress;
 
         this.zephyrConnectionService = new ZephyrConnectionService(
                 localid, localdid,
@@ -166,11 +176,10 @@ public final class Zephyr implements ITransportImpl, IUnicast, IConnectionServic
                 transportStats,
                 rocklog,
                 clientSocketChannelFactory,
-                zephyrAddress,
+                this.zephyrAddress,
                 proxy);
 
-        XMPPPresenceManager presenceManager = new XMPPPresenceManager(this, localdid, outgoingEventSink,
-                presenceStore, pulseManager, zephyrConnectionService);
+        XMPPPresenceManager presenceManager = new XMPPPresenceManager(this, localdid, outgoingEventSink, presenceStore, pulseManager, zephyrConnectionService);
 
         // Warning: it is very important that XMPPPresenceManager listens to the XMPPServer _before_
         // Multicast. The reason is that Multicast will join the chat rooms and this will trigger
@@ -293,7 +302,9 @@ public final class Zephyr implements ITransportImpl, IUnicast, IConnectionServic
 
     private void confirmZephyrConnectionService(ISignallingServiceListener client)
     {
-        checkArgument(client == zephyrConnectionService, "exp:" + zephyrConnectionService.getClass().getSimpleName() + " act:" + client.getClass().getSimpleName());
+        checkArgument(client == zephyrConnectionService,
+                "exp:" + zephyrConnectionService.getClass().getSimpleName() + " act:" +
+                        client.getClass().getSimpleName());
     }
 
     @Override
@@ -358,25 +369,12 @@ public final class Zephyr implements ITransportImpl, IUnicast, IConnectionServic
             zephyrConnectionService.processIncomingSignallingMessage(did, decoded);
         } catch (IOException e) {
             l.warn(Util.e(e));
-            return;
         }
     }
 
     private void logXmppProcessingError(String errmsg, Exception e, Packet packet)
     {
         l.warn(errmsg + " from:" + packet.getFrom() + " err: " + Util.e(e));
-    }
-
-    @Override
-    public long bytesIn()
-    {
-        return transportStats.getBytesReceived();
-    }
-
-    @Override
-    public long bytesOut()
-    {
-        return transportStats.getBytesSent();
     }
 
     //--------------------------------------------------------------------------
@@ -654,6 +652,12 @@ public final class Zephyr implements ITransportImpl, IUnicast, IConnectionServic
     }
 
     @Override
+    public void dumpStat(PBDumpStat template, PBDumpStat.Builder bd)
+    {
+        zephyrConnectionService.dumpStat(template, bd);
+    }
+
+    @Override
     public void dumpStatMisc(String indent, String indentUnit, PrintStream ps)
     {
         String indent2 = indent + indentUnit;
@@ -667,8 +671,64 @@ public final class Zephyr implements ITransportImpl, IUnicast, IConnectionServic
     }
 
     @Override
-    public void dumpStat(PBDumpStat template, PBDumpStat.Builder bd)
+    public void dumpDiagnostics(GetTransportDiagnosticsReply.Builder transportDiagnostics)
     {
-        zephyrConnectionService.dumpStat(template, bd);
+        transportDiagnostics.setZephyrDiagnostics(getDiagnostics());
+    }
+
+    private ZephyrDiagnostics getDiagnostics()
+    {
+        ZephyrDiagnostics.Builder diagnostics = ZephyrDiagnostics.newBuilder();
+
+        // xmpp
+
+        ServerStatus.Builder xmppServerStatus = ServerStatus
+                .newBuilder()
+                .setServerAddress(fromInetSockAddress(XMPP.ADDRESS.get()));
+
+        try {
+            xmppServerStatus.setReachable(xmppConnectionService.isReachable());
+        } catch (IOException e) {
+            xmppServerStatus.setReachable(false);
+            xmppServerStatus.setReachabilityError(getReachabilityErrorString(xmppServerStatus, e));
+        }
+
+        diagnostics.setXmppServer(xmppServerStatus);
+
+        // zephyr
+
+        ServerStatus.Builder zephyrServerStatus = ServerStatus
+                .newBuilder()
+                .setServerAddress(fromInetSockAddress(zephyrAddress));
+
+        try {
+            zephyrServerStatus.setReachable(zephyrConnectionService.isReachable());
+        } catch (IOException e) {
+            zephyrServerStatus.setReachable(false);
+            zephyrServerStatus.setReachabilityError(getReachabilityErrorString(zephyrServerStatus, e));
+        }
+
+        diagnostics.setZephyrServer(zephyrServerStatus);
+
+        // presence
+
+        Set<DID> available = presenceStore.availablePeers();
+        for (DID did : available) {
+            diagnostics.addReachableDevices(ZephyrDevice.newBuilder().setDid(did.toPB()));
+        }
+
+        return diagnostics.build();
+    }
+
+    @Override
+    public long bytesIn()
+    {
+        return transportStats.getBytesReceived();
+    }
+
+    @Override
+    public long bytesOut()
+    {
+        return transportStats.getBytesSent();
     }
 }

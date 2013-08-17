@@ -10,7 +10,6 @@ import com.aerofs.base.id.UserID;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.LibParam;
-import com.aerofs.lib.LibParam.CA;
 import com.aerofs.lib.LibParam.EnterpriseConfig;
 import com.aerofs.lib.LibParam.PostUpdate;
 import com.aerofs.lib.SecUtil;

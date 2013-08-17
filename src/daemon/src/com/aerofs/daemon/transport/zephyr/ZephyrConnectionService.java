@@ -1,5 +1,6 @@
 package com.aerofs.daemon.transport.zephyr;
 
+import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UserID;
@@ -14,8 +15,8 @@ import com.aerofs.daemon.transport.lib.TransportStats;
 import com.aerofs.daemon.transport.xmpp.ISignallingService;
 import com.aerofs.daemon.transport.xmpp.ISignallingServiceListener;
 import com.aerofs.lib.event.Prio;
-import com.aerofs.proto.Files.PBDumpStat;
-import com.aerofs.proto.Files.PBDumpStat.PBTransport;
+import com.aerofs.proto.Diagnostics.PBDumpStat;
+import com.aerofs.proto.Diagnostics.PBDumpStat.PBTransport;
 import com.aerofs.rocklog.RockLog;
 import com.aerofs.zephyr.client.IZephyrSignallingService;
 import com.aerofs.zephyr.client.exceptions.ExHandshakeFailed;
@@ -33,20 +34,24 @@ import org.jboss.netty.channel.ChannelFutureListener;
 import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
 import java.net.Proxy;
-import java.net.SocketAddress;
+import java.net.Socket;
 import java.util.Enumeration;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static com.aerofs.base.net.ZephyrConstants.ZEPHYR_REG_MSG_LEN;
 import static com.aerofs.daemon.lib.DaemonParam.Zephyr.HANDSHAKE_TIMEOUT;
 import static com.aerofs.daemon.transport.exception.TransportDefects.DEFECT_NAME_HANDSHAKE_RENEGOTIATION;
+import static com.aerofs.daemon.transport.lib.TransportUtil.newConnectedSocket;
 import static com.aerofs.daemon.transport.zephyr.ZephyrClientPipelineFactory.getZephyrClientHandler;
 import static com.aerofs.zephyr.proto.Zephyr.ZephyrControlMessage.Type.HANDSHAKE;
 import static com.google.common.base.Preconditions.checkArgument;
@@ -76,7 +81,7 @@ final class ZephyrConnectionService implements IUnicastInternal, IZephyrSignalli
     private final RockLog rocklog;
     private final ISignallingService signallingService;
 
-    private final SocketAddress zephyrAddress;
+    private final InetSocketAddress zephyrAddress;
     private final ClientBootstrap bootstrap;
 
     private final AtomicBoolean running = new AtomicBoolean(false);
@@ -91,7 +96,7 @@ final class ZephyrConnectionService implements IUnicastInternal, IZephyrSignalli
             ISignallingService signallingService,
             TransportStats transportStats,
             RockLog rocklog,
-            ChannelFactory channelFactory, SocketAddress zephyrAddress, Proxy proxy)
+            ChannelFactory channelFactory, InetSocketAddress zephyrAddress, Proxy proxy)
     {
         this.zephyrAddress = zephyrAddress;
         this.bootstrap = new ClientBootstrap(channelFactory);
@@ -477,6 +482,27 @@ final class ZephyrConnectionService implements IUnicastInternal, IZephyrSignalli
     //
     // debugging/printing
     //
+
+    public boolean isReachable()
+            throws IOException
+    {
+        Socket s = null;
+        try {
+            s = newConnectedSocket(zephyrAddress, (int)(2 * C.SEC));
+            InputStream zidInputStream = s.getInputStream();
+            int bytes = zidInputStream.read(new byte[ZEPHYR_REG_MSG_LEN]);
+            return bytes == ZEPHYR_REG_MSG_LEN;
+        } catch (IOException e) {
+            l.warn("fail zephyr reachability check", e);
+            throw e;
+        } finally {
+            if (s != null) try {
+                s.close();
+            } catch (IOException e) {
+                l.warn("fail close reachability socket with err:{}", e.getMessage());
+            }
+        }
+    }
 
     @Override
     public long getBytesReceived(final DID did)

@@ -4,7 +4,7 @@
 
 package com.aerofs.daemon.transport.jingle;
 
-import com.aerofs.base.BaseParam.Xmpp;
+import com.aerofs.base.BaseParam.XMPP;
 import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.JabberID;
@@ -30,7 +30,7 @@ public class JingleUtils
      */
     static Jid did2jid(DID did)
     {
-        return new Jid(JabberID.did2user(did), Xmpp.SERVER_DOMAIN.get(), JINGLE_RESOURCE_NAME);
+        return new Jid(JabberID.did2user(did), XMPP.SERVER_DOMAIN.get(), JINGLE_RESOURCE_NAME);
     }
 
     static DID jid2did(Jid jid) throws ExFormatError

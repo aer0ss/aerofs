@@ -20,7 +20,6 @@ import com.aerofs.lib.Path;
 import com.aerofs.lib.StorageType;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.os.OSUtil;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.UIGlobals;
 import com.aerofs.ui.UIUtil;
@@ -337,19 +336,7 @@ public class DlgHistory extends AeroFSDialog
 
     private void createVersionTree(Composite parent)
     {
-        Composite alignmentWorkaround = new Composite(parent, SWT.FILL);
-        GridLayout layoutAlignmentWorkaround = new GridLayout();
-        layoutAlignmentWorkaround.marginWidth = 0;
-        if (OSUtil.isOSX()) {
-            layoutAlignmentWorkaround.marginHeight = 3;
-        } else if (OSUtil.isWindows()) {
-            layoutAlignmentWorkaround.marginHeight = 0;
-            layoutAlignmentWorkaround.marginTop = 7;
-            layoutAlignmentWorkaround.marginBottom = 2;
-        } else {
-            layoutAlignmentWorkaround.marginHeight = 0;
-        }
-        alignmentWorkaround.setLayout(layoutAlignmentWorkaround);
+        Composite alignmentWorkaround = GUIUtil.createGroupAligningContainer(parent);
 
         _revTree = new Tree(alignmentWorkaround,
                 SWT.SINGLE | SWT.VIRTUAL | SWT.BORDER | SWT.V_SCROLL | SWT.H_SCROLL);

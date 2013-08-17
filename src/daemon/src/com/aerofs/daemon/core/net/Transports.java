@@ -32,8 +32,9 @@ import com.aerofs.lib.cfg.CfgAbsRTRoot;
 import com.aerofs.lib.cfg.CfgLocalDID;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.cfg.CfgScrypted;
-import com.aerofs.proto.Files.PBDumpStat;
-import com.aerofs.proto.Files.PBDumpStat.Builder;
+import com.aerofs.proto.Diagnostics.PBDumpStat;
+import com.aerofs.proto.Diagnostics.PBDumpStat.Builder;
+import com.aerofs.proto.Ritual.GetTransportDiagnosticsReply;
 import com.aerofs.rocklog.RockLog;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
@@ -76,6 +77,8 @@ public class Transports implements IDumpStat, IDumpStatMisc, IStartable, ITransf
 
     private final Map<ITransport, IIMCExecutor> availableTransports = newHashMap();
     private final TC tc;
+
+    private volatile boolean started = false;
 
     // FIXME (AG): Inject only the TransportFactory, not all the components to create it
     // NOTE: I probably have to create a TransportModule (Guice) and bind BlockingPrioQueue<IEvent> to CoreQueue
@@ -184,6 +187,13 @@ public class Transports implements IDumpStat, IDumpStatMisc, IStartable, ITransf
         for (ITransport tp : availableTransports.keySet()) {
             tp.start_();
         }
+
+        started = true;
+    }
+
+    public boolean started()
+    {
+        return started;
     }
 
     @Override
@@ -224,6 +234,15 @@ public class Transports implements IDumpStat, IDumpStatMisc, IStartable, ITransf
         } finally {
             tk.reclaim_();
         }
+    }
+
+    public GetTransportDiagnosticsReply dumpDiagnostics()
+    {
+        GetTransportDiagnosticsReply.Builder diagnostics = GetTransportDiagnosticsReply.newBuilder();
+        for (ITransport transport : availableTransports.keySet()) {
+            transport.dumpDiagnostics(diagnostics);
+        }
+        return diagnostics.build();
     }
 
     @Override

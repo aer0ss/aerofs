@@ -10,10 +10,14 @@ import com.aerofs.base.params.IPropertySource;
 
 import java.net.InetSocketAddress;
 import java.net.URL;
+import java.security.cert.X509Certificate;
 
 /**
  * Base parameters for the servers, the desktop app and the Android client.
  * Do not add code to this class if it's not used by the Android client too.
+ *
+ * NB: Properties that are to be read from props must appear in subclasses of BaseParam, because
+ * BaseParam's static intializers will run before setPropertySource is called.
  */
 public class BaseParam
 {
@@ -34,21 +38,22 @@ public class BaseParam
         props = source;
     }
 
-    public static class Xmpp
+    public static class Cacert
     {
-        public static final IProperty<String> SERVER_DOMAIN = props.stringProperty("base.xmpp.domain",
-                "aerofs.com");
+        public static final IProperty<X509Certificate> CACERT = props.certificateProperty(
+                "config.loader.base_ca_certificate", null);
+    }
+
+    public static class XMPP
+    {
+        public static final IProperty<String> SERVER_DOMAIN = props.stringProperty("base.xmpp.domain", "aerofs.com");
 
         public static String getMucAddress()
         {
             return "c." + SERVER_DOMAIN.get();
         }
 
-        // staging value: "staging.aerofs.com:9328"
-        // this value is dynamic but clients will not pick up the new value on failure
-        public static final IProperty<InetSocketAddress> ADDRESS = props.addressProperty(
-                "base.xmpp.address",
-                InetSocketAddress.createUnresolved("x.aerofs.com", 443));
+        public static final IProperty<InetSocketAddress> ADDRESS = props.addressProperty( "base.xmpp.address", InetSocketAddress.createUnresolved("x.aerofs.com", 443));
     }
 
     public static class Metrics

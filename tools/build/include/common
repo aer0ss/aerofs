@@ -80,6 +80,7 @@ readonly MAP_SERVER="sv.aerofs.com"
 readonly MAP_SERVER_LOGIN=${MAP_SERVER}
 readonly ROCKLOG_SERVER="rocklog.aerofs.com"
 readonly MAP_FILES_DIR="/maps"
+readonly ANDROID_MAP_FILES_DIR="/maps/android"
 
 ###############################################################################
 #
@@ -174,6 +175,7 @@ readonly RELEASE_SERVER_SHELL="bash -s -e -u"
 readonly RELEASE_FILES_DIR="/home/${RELEASE_SERVER_USERNAME}"
 readonly RELEASE_UNPACK_DIR="${RELEASE_FILES_DIR}/unpack"
 readonly INSTALLERS_DOWNLOAD_DIR="/data/${LOWERCASE_MODE}-downloads"
+readonly ANDROID_INSTALLERS_DOWNLOAD_DIR="/data/${LOWERCASE_MODE}-downloads/android"
 readonly RELEASE_SERVER_VERSION_FILE="current.ver"
 readonly RELEASE_NSIS_DIR="${RELEASE_FILES_DIR}/win_installer"
 
@@ -316,13 +318,28 @@ function compute_next_release_version() {
 
 function compute_product_names() {
     echo ">> computing product name"
+    function get_property() {
+        local local_PROPERTY="$1"
+        # Note the equals.
+        local local_KEY_VALUE_PAIR=$(grep ^"$local_PROPERTY"= $LABELING_FILE)
+        if [[ $? -ne 0 ]] ; then
+            echo "Couldn't retrieve property $local_PROPERTY from $LABELING_FILE"
+            exit 1
+        fi
+        local local_VALUE=$(echo "$local_KEY_VALUE_PAIR" | cut -d = -f 2)
+        if [[ -z "$local_VALUE" ]] ; then
+            echo "Couldn't retrieve property $local_PROPERTY from $LABELING_FILE"
+            exit 1
+        fi
+        echo "$local_VALUE"
+    }
 
-    ${BUILD_SCRIPT_DIR}/dynamic-config/dependencies.groovy
-
-    readonly GET_PROPERTY_SCRIPT="groovy -Dlogback.configurationFile=${BUILD_SCRIPT_DIR}/dynamic-config/logback.xml ${BUILD_SCRIPT_DIR}/dynamic-config/get_property.groovy"
-    readonly AEROFS_PRODUCT=$($GET_PROPERTY_SCRIPT $LABELING_FILE labeling.product)
-    readonly AEROFS_PRODUCT_SPACEFREE=$($GET_PROPERTY_SCRIPT $LABELING_FILE labeling.productSpaceFreeName)
-    readonly AEROFS_PRODUCT_UNIX=$($GET_PROPERTY_SCRIPT $LABELING_FILE labeling.productUnixName)
+    readonly AEROFS_PRODUCT=$(get_property "labeling.product")
+    readonly AEROFS_PRODUCT_SPACEFREE=$(get_property "labeling.productSpaceFreeName")
+    readonly AEROFS_PRODUCT_UNIX=$(get_property "labeling.productUnixName")
+    echo "PRODUCT = $AEROFS_PRODUCT"
+    echo "PRODUCT_SPACEFREE = $AEROFS_PRODUCT_SPACEFREE"
+    echo "PRODUCT_UNIX = $AEROFS_PRODUCT_UNIX"
 }
 
 ###############################################################################
@@ -351,8 +368,48 @@ function publish_to_s3() {
             exit $ERRS3
         fi
 
-        s3cmd sync -P --cf-invalidate --delete-removed "${INSTALLERS_DOWNLOAD_DIR}/${1}"/* $2 > /dev/null
+        if [ "$MODE" = "ENTERPRISE" ]
+        then
+            s3cmd sync -P --delete-removed "${INSTALLERS_DOWNLOAD_DIR}/${1}"/* $2 > /dev/null
+        else
+            s3cmd sync -P --cf-invalidate --delete-removed "${INSTALLERS_DOWNLOAD_DIR}/${1}"/* $2 > /dev/null
+        fi
 ENDCMDS
 }
 
+###############################################################################
+#
+# Synchronizes an Android release directory on the release server with an S3
+# bucket.
+#
+# The release directory must contain the AeroFS Android apk and a version file
+# specifying the version of the release.
+#
+# NOTE: to rollback a production release for any reason:
+#       - log into release-prod@b.arrowfs.org
+#       - rm /data/enterprise-downloads/android/[version]/*
+#       - s3cmd sync -P --delete-removed /data/enterprise-downloads/android/[version]/* s3://nocache.client.android.enterprise.aerofs.com
+#
+# @param $1 The Android app version to publish.
+# @param $2 The S3 bucket to which the release version will be pushed.
+#
+###############################################################################
+function publish_android_to_s3() {
+    echo ">> Publishing Android APK version ${1} to s3 bucket ${2}"
+
+    if ! is_enterprise $MODE; then
+        echo "error: Cannot publish the Android app unless in ENTERPRISE mode!"
+        exit 1
+    fi
+
+    ssh $RELEASE_SERVER_LOGIN $RELEASE_SERVER_SHELL << ENDCMDS
+        # Check to see that a version file exists in the specified version directory and is
+        # non-empty.
+        if [ ! -s "${INSTALLERS_DOWNLOAD_DIR}/android/${1}/${RELEASE_SERVER_VERSION_FILE}" ]; then
+            exit $ERRS3
+        fi
+
+        s3cmd sync -P --delete-removed "${INSTALLERS_DOWNLOAD_DIR}/android/${1}"/* $2 > /dev/null
+ENDCMDS
+}
 fi # endif

@@ -42,14 +42,20 @@ fi
 
 if [ ! -f aerofs-db-backup/redis.aof ]
 then
-    malformed_db_backup "expected file aerofs-db-backup/redis.aof not found"
+    malformed_db_backup "expected file \"aerofs-db-backup/redis.aof\" not found"
     exit 4
 fi
 
 if [ ! -f aerofs-db-backup/mysql.dump ]
 then
-    malformed_db_backup "expected file aerofs-db-backup/mysql.dump not found"
+    malformed_db_backup "expected file \"aerofs-db-backup/mysql.dump\" not found"
     exit 5
+fi
+
+if [ ! -d aerofs-db-backup/ca-files ]
+then
+    malformed_db_backup "expected dir \"aerofs-db-backup/ca-files\" not found"
+    exit 6
 fi
 
 echo ">>> Restoring redis database..."
@@ -60,6 +66,13 @@ service redis-server start 1>/dev/null 2>/dev/null
 
 echo ">>> Restoring mysql database..."
 mysql < aerofs-db-backup/mysql.dump
+
+echo ">>> Restoring CA files..."
+service ca-server stop 1>/dev/null 2>/dev/null || true
+rm -rf /opt/ca/prod
+mkdir -p /opt/ca/prod
+cp -a aerofs-db-backup/ca-files/* /opt/ca/prod
+service ca-server start 1>/dev/null 2>/dev/null
 
 popd 1>/dev/null 2>/dev/null
 

@@ -13,6 +13,7 @@ import java.util.TreeSet;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.collect.Maps.newTreeMap;
+import static com.google.common.collect.Sets.newHashSet;
 
 /**
  * Manages the last-known presence for a set of XMPP-available peers
@@ -72,5 +73,10 @@ public final class PresenceStore
     public synchronized boolean has(DID did)
     {
         return _online.containsKey(did);
+    }
+
+    public synchronized Set<DID> availablePeers()
+    {
+        return newHashSet(_online.keySet());
     }
 }

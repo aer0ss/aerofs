@@ -10,6 +10,7 @@ import com.netflix.config.DynamicStringProperty;
 
 import java.net.InetSocketAddress;
 import java.net.URL;
+import java.security.cert.X509Certificate;
 
 /**
  * This class allows the code in the 'base' module to use the dynamic property system.
@@ -33,6 +34,19 @@ public class DynamicPropertySource implements IPropertySource
     public IProperty<URL> urlProperty(String key, String defaultValue)
     {
         return new DynamicUrlProperty(key, defaultValue);
+    }
+
+    @Override
+    public IProperty<X509Certificate> certificateProperty(String key, final X509Certificate defaultValue)
+    {
+        return new IProperty<X509Certificate>()
+        {
+            @Override
+            public X509Certificate get()
+            {
+                return defaultValue;
+            }
+        };
     }
 
     /**

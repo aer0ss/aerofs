@@ -10,6 +10,7 @@ actors:
       vm: [fF]alse, [tT]rue, [yY]es, [nN]o
       isolated: [fF]alse, [tT]rue, [yY]es, [nN]o
       teamserver: [sS]3, [lL]inked, [lL]ocal
+      android: [fF]alse, [tT]rue, [yY]es, [nN]o
     - ...
     - ...
 
@@ -59,6 +60,7 @@ CODE_URL = "http://newci.arrowfs.org:8025/get_code"
 POOL_URL = "http://newci.arrowfs.org:8040"
 CI_SP_URL = "https://newci.arrowfs.org:9000/sp"
 CI_SP_VERSION = 20
+JSON_HEADERS = {'Content-type': 'application/json', 'Accept': 'application/json'}
 
 # System-specific details
 # AWS_DETAILS = {'os': 'linux32',
@@ -70,7 +72,10 @@ S3_DETAILS = {'s3_bucket_id': 'ci-build-agent-nat2.test.aerofs',
               's3_secret_key': 'FtxQJqw0t5l7VwvoNKn6QA5HzIopVXDCET+SAcKJ',
               's3_encryption_password': 'password'}
 
-JSON_HEADERS = {'Content-type': 'application/json', 'Accept': 'application/json'}
+ANDROID_PARAMS = {'rsh_remote_args': ['-R5037:localhost:5037']}
+
+ADMIN_USERID = 'admin@syncfs.com'
+ADMIN_PASS = 'temp123'
 
 
 ##########################
@@ -94,11 +99,21 @@ def generate_unique_userid(userid_fmt):
 
 
 def create_user(userid, password, sp_url=CI_SP_URL):
+    if userid is None:
+        userid = generate_unique_userid(DEFAULT_USERID_FMT)
     conn = connection.SyncConnectionService(sp_url, CI_SP_VERSION)
     sp = sp_pb2.SPServiceRpcStub(conn)
     sp.request_to_sign_up(userid)
     code = get_signup_code(userid)
     sp.sign_up_with_code(code, scrypt(password, userid), "SyncDET", "TestUser")
+    return userid
+
+
+def make_user_admin(userid, admin_userid=ADMIN_USERID, admin_pass=ADMIN_PASS, sp_url=CI_SP_URL):
+    conn = connection.SyncConnectionService(sp_url, CI_SP_VERSION)
+    sp = sp_pb2.SPServiceRpcStub(conn)
+    sp.sign_in_user(admin_userid, scrypt(admin_pass, admin_userid))
+    sp.set_authorization_level(userid, sp_pb2.PBAuthorizationLevel.Value("ADMIN"))
     return userid
 
 
@@ -188,6 +203,9 @@ def generate_yaml(args, username, actor_data):
         if details != {}:
             d['details'] = details
         d['address'] = str(addresses.pop())
+        android = actor.get('android')
+        if android in [True, 'true', 'True', 'yes', 'Yes']:
+            d.update(ANDROID_PARAMS)
         if teamserver is not None:
             d['aero_root_anchor'] = os.path.join(args.anchor_parent, 'AeroFS Team Server Storage')
         else:
@@ -239,7 +257,7 @@ def main():
         help="Default is aerofstest")
     parser.add_argument('--root', default=DEFAULT_ROOT,
         help="Default is ~/syncdet")
-    parser.add_argument('--userid', default=generate_unique_userid(DEFAULT_USERID_FMT),
+    parser.add_argument('--userid', default=None,
         help="AeroFS userid")
     parser.add_argument('--anchor-parent', default=DEFAULT_ANCHOR_PARENT,
         help="Location of the root anchor's parent")
@@ -248,14 +266,21 @@ def main():
     # Parse the conf file to get actor IP's
     actor_data = get_actor_data(args.profile)
 
-    # Create user(s) and get the AeroFS username(s)
+    # Create user(s) and get the AeroFS username(s). Make users admin if necessary.
     if args.multiuser:
-        username = [create_user(args.userid, args.password) for _ in xrange(len(actor_data))]
+        username = []
+        for a in actor_data:
+            username.append(create_user(args.userid, args.password))
+            if a.get('teamserver') is not None:
+                make_user_admin(username[-1])
+        username.reverse()
     else:
         username = create_user(args.userid, args.password)
+        if any(a.get('teamserver') is not None for a in actor_data):
+            make_user_admin(username)
 
     # Clear S3 bucket if necessary
-    if any(ts.get('storage_type') == 'S3' for ts in (a.get('TS') for a in actor_data if a.get('TS'))):
+    if any(a.get('teamserver', '').upper() == 'S3' for a in actor_data):
         clear_s3_bucket(S3_DETAILS['s3_access_key'],
                         S3_DETAILS['s3_secret_key'],
                         S3_DETAILS['s3_bucket_id'])
