@@ -49,7 +49,7 @@ public class MultiuserCompPreferences extends Composite
 
         // Enable sync-history button
 
-        // place holder for grid layout
+        // place holder for grid layout, this is necessary to vertically align the widgets
         new Label(this, SWT.NONE).setLayoutData(new GridData(SWT.FILL, SWT.FILL, false, false, 1, 2));
 
         final Button btnHistory = GUIUtil.createButton(this, SWT.CHECK);
