@@ -10,6 +10,7 @@ import com.aerofs.gui.GUIUtil;
 import com.aerofs.gui.exclusion.DlgExclusion;
 import com.aerofs.gui.preferences.PreferencesHelper;
 import com.aerofs.gui.transfers.DlgThrottling;
+import com.aerofs.gui.transport_diagnostics.DlgTransportDiagnostics;
 import com.aerofs.gui.unlink.DlgUnlinkDevice;
 import com.aerofs.lib.S;
 import com.aerofs.lib.cfg.Cfg;
@@ -195,6 +196,18 @@ public class SingleuserCompPreferences extends Composite
             public void widgetSelected(SelectionEvent arg0)
             {
                 new DlgThrottling(getShell(), true).openDialog();
+            }
+        });
+
+        Button btnTransportDiagnostic = GUIUtil.createButton(composite, SWT.NONE);
+        btnTransportDiagnostic.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false));
+        btnTransportDiagnostic.setText(S.TXT_TRANSPORT_DIAGNOSTICS_TITLE);
+        btnTransportDiagnostic.addSelectionListener(new SelectionAdapter()
+        {
+            @Override
+            public void widgetSelected(SelectionEvent e)
+            {
+                new DlgTransportDiagnostics(getShell()).openDialog();
             }
         });
 

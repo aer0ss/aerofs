@@ -82,7 +82,7 @@ public class S
 
             BAD_CREDENTIAL_CAP       = "Email or password is incorrect",
 
-            // begin transfers dialog
+            // transfers dialog
 
             // N.B. LBL_UNKNOWN_USER & LBL_UNKNOWN_DEVICE should include
             //   custom prefix/suffix as a part of the string
@@ -105,8 +105,38 @@ public class S
             LBL_TRANSPORT_ZEPHYR     = "Relay",
 
             LBL_IDLE                 = "Idle",
-            // end transfers dialog
 
+            // transport diagnostics dialog
+            TXT_TRANSPORT_DIAGNOSTICS_TITLE = "Network Diagnostics...",
+            ERR_TRANSPORT_DISABLED   = "The transport is disabled.",
+            ERR_GET_TRANSPORTS_INFO_FAILED = "Failed to retrieve network information.",
+            LNK_TCP_DESC = "The LAN network consists of computers on the same LAN. " +
+                    "These computers discover each other using IP multicast, and then they " +
+                    "establish peer-to-peer connections to coordinate and sync. " +
+                    "<a>Learn more</a>",
+            TXT_TCP_ADDRESS_PREFIX   = "Listening on IP Address ",
+            LNK_JINGLE_DESC          = "The computers on the WAN network sync files over peer-" +
+                    "to-peer connections. These computers discover each other using a common " +
+                    "presence server, and then they establish peer-to-peer connection to " +
+                    "coordinate and sync. <a>Learn more</a>",
+            LBL_XMPP_DESC            = "The presence server allows computers to find each other.",
+            LNK_STUN_DESC            = "The STUN server allows computers to find each other's " +
+                    "public IP and establish connection. <a>Learn more</a>",
+            LNK_ZEPHYR_DESC          = "The computers on the Relay network sync files via an " +
+                    "intermediate server acting as a relay. These computers discover each " +
+                    "other using a common presence server, and then they communicate over a " +
+                    "relay to coordinate and sync. <a>Learn more</a>",
+            LBL_ZEPHYR_SERVER_DESC   = "The relay fowards messages from one computer to another.",
+            LBL_REACHABLE_DEVICES    = "Reachable Computers:",
+            LBL_COL_DEVICE_ID        = "Device ID",
+            LBL_COL_ADDRESS          = "IP Address",
+            LNK_FIND_DEVICE_ID       = "<a>How to find my Device ID?</a>",
+
+            URL_TRANSPORTS_INFO      = "https://aerofs.zendesk.com/entries/25283676-How-does-AeroFS-sync-",
+            URL_DEVICE_ID_INFO       = "https://support.aerofs.com/entries/25283646-Find-my-device-ID-",
+            URL_STUN_INFO            = "http://en.wikipedia.org/wiki/STUN",
+
+            // preferences dialog
             FILE_OPEN_FAIL = "The file couldn't be opened.",
             CONFLICT_OPEN_FAIL = FILE_OPEN_FAIL +
                 " Please use the [Save As...] button to save and view it.",
@@ -171,7 +201,7 @@ public class S
             ADMIN_PASSWD = "Admin password",
             PASSWORD_HAS_CHANGED = "Your " + L.product() + " password has changed.\nPlease enter the new password",
 
-            ENABLE_SYNC_HISTORY = "Keep Sync History on this device",
+            ENABLE_SYNC_HISTORY = "Keep Sync History on this computer",
             SYNC_HISTORY_CONFIRM = "Are you sure? Without Sync History, " + L.product()
                     + " cannot restore any files you modify or delete on other devices.";
 }

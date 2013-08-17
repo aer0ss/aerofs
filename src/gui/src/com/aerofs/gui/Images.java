@@ -50,6 +50,7 @@ public class Images {
     public static final String SS_IN_SYNC = "ss_in_sync.png";
     public static final String SS_IN_PROGRESS = "ss_in_progress.png";
     public static final String SS_OFFLINE_NOSYNC = "ss_offline_nosync.png";
+    // N.B. visually, signal1, 2, 3, has 2, 3, 4 bars respectively.
     public static final String ICON_SIGNAL0 = "signal0.png";
     public static final String ICON_SIGNAL1 = "signal1.png";
     public static final String ICON_SIGNAL2 = "signal2.png";

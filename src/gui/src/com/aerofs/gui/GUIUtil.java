@@ -427,6 +427,37 @@ public class GUIUtil
     }
 
     /**
+     * This will create a composite that will vertically align its content / children with
+     * a platform specific group.
+     *
+     * Say if you have a Tree and a Group side-by-side. Since Group impl. is based on platform's
+     * native impl, the chances are the top and bottom edge won't line up.
+     *
+     * To work around this, put the Tree (not the Group!) in this container, and this
+     * container will add sufficient margins to line it up with the Group.
+     *
+     * Note that the child, the Tree in this case, needs to set it's layout data to
+     * GridData(SWT.FILL, SWT.FILL, true, true) as well.
+     */
+    public static Composite createGroupAligningContainer(Composite parent)
+    {
+        Composite container = new Composite(parent, SWT.NONE);
+        GridLayout layout = new GridLayout();
+        layout.marginWidth = 0;
+        if (OSUtil.isOSX()) {
+            layout.marginHeight = 4;
+        } else if (OSUtil.isWindows()) {
+            layout.marginHeight = 0;
+            layout.marginTop = 7;
+            layout.marginBottom = 2;
+        } else {
+            layout.marginHeight = 0;
+        }
+        container.setLayout(layout);
+        return container;
+    }
+
+    /**
      * Stubs out constructor for Button so we can do some custom business logic.
      *
      * @return an AeroFSButton if the OS is windows or linux and it's a push button,
