@@ -160,7 +160,7 @@ public final class Zephyr implements ITransportImpl, IUnicast, IConnectionServic
 
         this.mobileZephyrConnector = mobileZephyr; // I don't want this here!!!!
         this.outgoingEventSink = outgoingEventSink;
-        this.scheduler = new Scheduler(eventQueue, id());
+        this.scheduler = new Scheduler(eventQueue, id + "-sched");
         this.xmppConnectionService = new XMPPConnectionService(localdid, id(), scrypted, rocklog);
         this.multicast = new Multicast(localdid, id(), maxcastFilterReceiver, xmppConnectionService, this, outgoingEventSink);
         this.maxcastFilterReceiver = maxcastFilterReceiver;
