@@ -12,6 +12,7 @@ import com.aerofs.ui.UIGlobals;
 import com.aerofs.ui.error.ErrorMessages;
 import com.aerofs.ui.IUI;
 import com.aerofs.ui.UIParam;
+import org.apache.commons.lang.WordUtils;
 
 import javax.annotation.Nonnull;
 import java.io.IOError;
@@ -94,7 +95,7 @@ public class CLI implements IUI {
         exec(new Runnable() {
             @Override
             public void run() {
-                _out.println(wrapText(mt2hdr(mt) + msg, 79));
+                _out.println(WordUtils.wrap(mt2hdr(mt) + msg, 79));
             }
         });
     }
@@ -109,7 +110,8 @@ public class CLI implements IUI {
             @Override
             public void run()
             {
-                _out.println(mt2hdr(mt) + msg + "\n[Press ENTER to continue]");
+                _out.println(WordUtils.wrap(mt2hdr(mt) + msg, 79));
+                _out.println("[Press ENTER to continue]");
                 String line;
                 line = readLine();
                 if (line == null) noConsole.set(true);
@@ -471,34 +473,5 @@ public class CLI implements IUI {
     public void preSetupUpdateCheck_() throws Exception
     {
         new CLIPreSetupUpdateCheck().run();
-    }
-
-    public String wrapText(String input, int cutoff)
-    {
-        String newLine = System.getProperty("line.separator");
-        StringBuilder output = new StringBuilder();
-        String[] lines = input.split(newLine);
-
-        for (String line : lines) {
-            String[] words = line.split(" ");
-
-            int length = 0;
-            for (String word : words) {
-                if (length == 0) {
-                    output.append(word);
-                    length = word.length();
-                } else if (length + 1 + word.length() > cutoff) {
-                    output.append(newLine).append(word);
-                    length = word.length();
-                } else {
-                    output.append(' ').append(word);
-                    length += 1 + word.length();
-                }
-            }
-
-            output.append(newLine);
-        }
-
-        return output.toString();
     }
 }

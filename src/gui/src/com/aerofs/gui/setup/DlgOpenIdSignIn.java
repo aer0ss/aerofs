@@ -49,7 +49,10 @@ import org.slf4j.Logger;
 import java.io.IOException;
 import java.net.ConnectException;
 
-import static org.eclipse.jface.dialogs.IDialogConstants.*;
+import static org.eclipse.jface.dialogs.IDialogConstants.CANCEL_ID;
+import static org.eclipse.jface.dialogs.IDialogConstants.CANCEL_LABEL;
+import static org.eclipse.jface.dialogs.IDialogConstants.DETAILS_ID;
+import static org.eclipse.jface.dialogs.IDialogConstants.OK_ID;
 
 // FIXME: this class is a travesty. Refactoring needed:
 //  - extract the entire stack for the signin button / status spinner

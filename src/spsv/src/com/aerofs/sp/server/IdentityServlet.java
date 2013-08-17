@@ -119,10 +119,10 @@ public class IdentityServlet extends AeroServlet
         if (StringUtils.isBlank(mode)) return "AeroFS received an empty response from the " +
                 "OpenID Provider and is unable to authenticate. Please contact AeroFS support " +
                 "for assistance.";
-        else if (mode.equals("id_res")) return "Authentication is complete. You can close " +
-                "this browser window.";
-        else if (mode.equals("cancel")) return "Authentication process has been canceled. " +
-                "You can close this browser window.";
+        else if (mode.equals("id_res")) return "The authentication is complete. You may close " +
+                "this browser window now.";
+        else if (mode.equals("cancel")) return "The authentication process has been canceled. " +
+                "You may close this browser window now.";
         else return "AeroFS does not recognize the response from the OpenID Provider and is " +
                 "unable to authenticate. Please contact AeroFS support for assistance.";
     }
