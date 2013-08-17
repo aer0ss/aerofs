@@ -2052,6 +2052,11 @@ public class SPService implements ISPService
      *
      * A signed-in user can certify devices.
      * Does not require a mutually-auth'ed session (obviously)
+     *
+     * @throws ExEmptyEmailAddress if the user id is empty
+     * @throws ExBadCredential if username/password combination is incorrect, or in the case of the
+     *                         team server, if they have not signed in successfully using mutual
+     *                         authentication.
      */
     @Override
     public ListenableFuture<Void> signInUser(String userId, ByteString credentials)
