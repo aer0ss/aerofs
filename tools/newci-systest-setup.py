@@ -74,6 +74,9 @@ S3_DETAILS = {'s3_bucket_id': 'ci-build-agent-nat2.test.aerofs',
 
 ANDROID_PARAMS = {'rsh_remote_args': ['-R5037:localhost:5037']}
 
+ADMIN_USERID = 'admin@syncfs.com'
+ADMIN_PASS = 'temp123'
+
 
 ##########################
 ##   HELPER FUNCTIONS   ##
@@ -103,6 +106,14 @@ def create_user(userid, password, sp_url=CI_SP_URL):
     sp.request_to_sign_up(userid)
     code = get_signup_code(userid)
     sp.sign_up_with_code(code, scrypt(password, userid), "SyncDET", "TestUser")
+    return userid
+
+
+def make_user_admin(userid, admin_userid=ADMIN_USERID, admin_pass=ADMIN_PASS, sp_url=CI_SP_URL):
+    conn = connection.SyncConnectionService(sp_url, CI_SP_VERSION)
+    sp = sp_pb2.SPServiceRpcStub(conn)
+    sp.sign_in_user(admin_userid, scrypt(admin_pass, admin_userid))
+    sp.set_authorization_level(userid, sp_pb2.PBAuthorizationLevel.Value("ADMIN"))
     return userid
 
 
@@ -255,11 +266,18 @@ def main():
     # Parse the conf file to get actor IP's
     actor_data = get_actor_data(args.profile)
 
-    # Create user(s) and get the AeroFS username(s)
+    # Create user(s) and get the AeroFS username(s). Make users admin if necessary.
     if args.multiuser:
-        username = [create_user(args.userid, args.password) for _ in xrange(len(actor_data))]
+        username = []
+        for a in actor_data:
+            username.append(create_user(args.userid, args.password))
+            if a.get('teamserver') is not None:
+                make_user_admin(username[-1])
+        username.reverse()
     else:
         username = create_user(args.userid, args.password)
+        if any(a.get('teamserver') is not None for a in actor_data):
+            make_user_admin(username)
 
     # Clear S3 bucket if necessary
     if any(a.get('teamserver', '').upper() == 'S3' for a in actor_data):
