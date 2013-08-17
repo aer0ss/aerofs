@@ -6,6 +6,7 @@ package com.aerofs.base.params;
 
 import java.net.InetSocketAddress;
 import java.net.URL;
+import java.security.cert.X509Certificate;
 
 /**
  * Problem: we can't use the dynamic property system on Android because it's too heavy. (Android has
@@ -30,4 +31,5 @@ public interface IPropertySource
     public IProperty<String> stringProperty(String key, String defaultValue);
     public IProperty<InetSocketAddress> addressProperty(String key, InetSocketAddress defaultValue);
     public IProperty<URL> urlProperty(String key, String defaultValue);
+    public IProperty<X509Certificate> certificateProperty(String key, X509Certificate defaultValue);
 }

@@ -366,7 +366,12 @@ function publish_to_s3() {
             exit $ERRS3
         fi
 
-        s3cmd sync -P --cf-invalidate --delete-removed "${INSTALLERS_DOWNLOAD_DIR}/${1}"/* $2 > /dev/null
+        if [ "$MODE" = "ENTERPRISE" ]
+        then
+            s3cmd sync -P --delete-removed "${INSTALLERS_DOWNLOAD_DIR}/${1}"/* $2 > /dev/null
+        else
+            s3cmd sync -P --cf-invalidate --delete-removed "${INSTALLERS_DOWNLOAD_DIR}/${1}"/* $2 > /dev/null
+        fi
 ENDCMDS
 }
 

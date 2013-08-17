@@ -3,23 +3,22 @@ package com.aerofs;
 import com.aerofs.base.BaseParam;
 import com.aerofs.base.Loggers;
 import com.aerofs.config.DynamicConfiguration;
-import com.aerofs.lib.LibParam.CA;
-import com.aerofs.lib.LibParam.EnterpriseConfig;
-import com.aerofs.lib.ex.ExDBCorrupted;
-import com.aerofs.lib.S;
-import com.aerofs.lib.configuration.ClientConfigurationLoader;
-import com.aerofs.lib.configuration.ClientConfigurationLoader.IncompatibleModeException;
-import com.aerofs.lib.configuration.HttpsDownloader;
 import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.ChannelFactories;
 import com.aerofs.lib.IProgram;
 import com.aerofs.lib.LibParam;
+import com.aerofs.lib.LibParam.EnterpriseConfig;
 import com.aerofs.lib.ProgramInformation;
+import com.aerofs.lib.S;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.SystemUtil.ExitCode;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.ExNotSetup;
+import com.aerofs.lib.configuration.ClientConfigurationLoader;
+import com.aerofs.lib.configuration.ClientConfigurationLoader.IncompatibleModeException;
+import com.aerofs.lib.configuration.HttpsDownloader;
+import com.aerofs.lib.ex.ExDBCorrupted;
 import com.aerofs.lib.log.LogUtil;
 import com.aerofs.lib.log.LogUtil.Level;
 import com.aerofs.lib.os.OSUtil;
@@ -32,6 +31,7 @@ import org.slf4j.Logger;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -53,24 +53,32 @@ public class Main
 
     private static void initializeLogging(String rtRoot, String prog)
     {
-        boolean enableDebugLogging = Cfg.lotsOfLog(rtRoot);
-        boolean enableTraceLogging = Cfg.lotsOfLotsOfLog(rtRoot);
-        boolean enableConsoleOutput = false; // TODO: enable simply when in development
-
-        Level logLevel;
-        if (enableTraceLogging) {
-            logLevel = Level.TRACE;
-        } else if (enableDebugLogging) {
-            logLevel = Level.DEBUG;
-        } else {
-            logLevel = Level.INFO;
-        }
-
         try {
-            LogUtil.initialize(rtRoot, prog, logLevel, enableConsoleOutput);
-        } catch (Exception je) {
+            final Level logLevel =
+                    Cfg.lotsOfLotsOfLog(rtRoot) ? Level.TRACE
+                    : Cfg.lotsOfLog(rtRoot) ? Level.DEBUG
+                    : Level.INFO;
+
+            LogUtil.setLevel(logLevel);
+            LogUtil.enableFileLogging(rtRoot + "/" + prog + ".log");
+
+            // Uncomment this for easier debugging
+//            LogUtil.enableConsoleLogging();
+
+            Runtime.getRuntime().addShutdownHook(new Thread(new Runnable()
+            {
+                @Override
+                public void run()
+                {
+                    DateFormat format = new SimpleDateFormat("yyyyMMdd");
+                    String strDate = format.format(new Date());
+                    l.debug("TERMINATED " + strDate);
+                }
+            }));
+
+        } catch (Exception e) {
             // FIXME(jP): Can we remove this? Does it ever work?
-            String msg = "Error starting log subsystem: " + Util.e(je);
+            String msg = "Error starting log subsystem: " + Util.e(e);
             // I don't know how to output to system.logging on mac/linux. so use
             // the command line as a quick/dirty approach
             try {

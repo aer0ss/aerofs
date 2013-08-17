@@ -1,18 +1,18 @@
 package com.aerofs.sp.server.lib.organization;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.lib.ex.ExNoAdminOrOwner;
-import com.aerofs.sp.server.lib.OrganizationInvitationDatabase;
-import com.aerofs.sp.server.lib.id.OrganizationID;
-import com.aerofs.sp.server.lib.id.StripeCustomerID;
-import com.aerofs.lib.Util;
 import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
+import com.aerofs.lib.Util;
+import com.aerofs.lib.ex.ExNoAdminOrOwner;
 import com.aerofs.sp.server.lib.OrganizationDatabase;
+import com.aerofs.sp.server.lib.OrganizationInvitationDatabase;
 import com.aerofs.sp.server.lib.SharedFolder;
+import com.aerofs.sp.server.lib.id.OrganizationID;
+import com.aerofs.sp.server.lib.id.StripeCustomerID;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.aerofs.sp.server.lib.user.User;
 import com.google.common.collect.ImmutableCollection;
@@ -61,29 +61,50 @@ public class Organization
         }
 
         /**
-         * Add a new organization as well as its team server account to the DB
+         * Add a new organization with a random org id and its team server account to the DB.
          */
         public Organization save()
-                throws SQLException, ExAlreadyExist
+                throws SQLException
         {
             while (true) {
                 // Use a random ID only to prevent competitors from figuring out total number of
                 // orgs. It is NOT a security measure.
                 OrganizationID orgID = new OrganizationID(Util.rand().nextInt());
                 try {
-                    _odb.insert(orgID);
+                    return save(orgID);
                 } catch (ExAlreadyExist e) {
-                    // Ideally we should use return value rather than exceptions on expected
-                    // conditions.
                     l.info("duplicate organization id " + orgID + ". trying a new one.");
-                    continue;
                 }
-
-                Organization org = create(orgID);
-                _factUser.saveTeamServerUser(org);
-                l.info(org + " created");
-                return org;
             }
+        }
+
+        /**
+         * Add a new organization with the given org id and its team server account to the DB.
+         * @throws ExAlreadyExist if there already is an organization with this org id.
+         */
+        public Organization save(OrganizationID orgID)
+                throws SQLException, ExAlreadyExist
+        {
+            _odb.insert(orgID);
+            Organization org = create(orgID);
+            _factUser.saveTeamServerUser(org);
+            l.info(org + " created");
+            return org;
+        }
+
+        /**
+         * Aug 2013:
+         * Disposable code for migrating all users to the main organization at Bloomberg.
+         * Remove when this is done - search keyword ORGMIGBB
+         */
+        public ImmutableList<Organization> listOrganizations()
+                throws SQLException
+        {
+            Builder<Organization> builder = ImmutableList.builder();
+            for (OrganizationID orgID : _odb.listAllOrganizations()) {
+                builder.add(create(orgID));
+            }
+            return builder.build();
         }
     }
 
@@ -99,6 +120,12 @@ public class Organization
     public OrganizationID id()
     {
         return _id;
+    }
+
+    public boolean exists()
+            throws SQLException
+    {
+        return _f._odb.exists(_id);
     }
 
     public String getName()

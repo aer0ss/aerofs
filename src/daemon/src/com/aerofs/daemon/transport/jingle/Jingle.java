@@ -101,7 +101,7 @@ public class Jingle implements ITransportImpl, IUnicastCallbacks
         _rank = rank;
         _sink = sink;
         _q = new BlockingPrioQueue<IEvent>(DaemonParam.XMPP.QUEUE_LENGTH);
-        _sched = new Scheduler(_q, id);
+        _sched = new Scheduler(_q, id + "-sched");
         _transportStats = new TransportStats();
 
         _xmppServer = new XMPPConnectionService(localDID, id, scrypted, rockLog);

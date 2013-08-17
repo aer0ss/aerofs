@@ -9,6 +9,7 @@ import com.google.common.base.Throwables;
 import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.security.cert.X509Certificate;
 
 /**
  * "Dummy" property source that always return the default value
@@ -52,6 +53,19 @@ public class DummyPropertySource implements IPropertySource
             public URL get()
             {
                 return url;
+            }
+        };
+    }
+
+    @Override
+    public IProperty<X509Certificate> certificateProperty(String key, final X509Certificate defaultValue)
+    {
+        return new IProperty<X509Certificate>()
+        {
+            @Override
+            public X509Certificate get()
+            {
+                return defaultValue;
             }
         };
     }

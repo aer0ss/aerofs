@@ -106,7 +106,7 @@ public class TCP implements IUnicastCallbacks, ITransportImpl, IARPChangeListene
         _pref = pref;
         _arp = new ARP();
         _transportStats = new TransportStats();
-        _sched = new Scheduler(_q, id);
+        _sched = new Scheduler(_q, id + "-sched");
         _sink = sink;
         _arp.addARPChangeListener(this);
         _pm.addGenericPulseDeletionWatcher(this, _sink);

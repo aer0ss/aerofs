@@ -15,7 +15,7 @@ for required in \
     sp \
     web \
     bootstrap \
-    installers
+    repackaging
 do
     cp debs/aerofs-${required}.deb $DEBIANS/
 done
@@ -24,4 +24,4 @@ done
 rm -f debs/*
 
 # Pull in latest installers.
-../tools/enterprise/installers/pull-binaries.sh $INSTALLERS/
+../tools/enterprise/repackaging/pull-installers.sh $INSTALLERS/

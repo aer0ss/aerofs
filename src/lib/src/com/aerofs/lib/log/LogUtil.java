@@ -5,17 +5,11 @@ import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.encoder.PatternLayoutEncoder;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.ConsoleAppender;
-import ch.qos.logback.core.joran.spi.JoranException;
 import ch.qos.logback.core.rolling.DefaultTimeBasedFileNamingAndTriggeringPolicy;
 import ch.qos.logback.core.rolling.RollingFileAppender;
 import ch.qos.logback.core.rolling.TimeBasedRollingPolicy;
 import com.aerofs.base.Loggers;
-import com.aerofs.base.ex.ExNoResource;
 import org.slf4j.LoggerFactory;
-
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 
 /**
  * Helpers for dealing with logback
@@ -23,19 +17,9 @@ import java.util.Date;
  */
 public abstract class LogUtil
 {
-    static
-    {
-        Loggers.init();
-    }
-
     public static enum Level
     {
-        NONE,
-        TRACE,
-        DEBUG,
-        INFO,
-        WARN,
-        ERROR
+        NONE, TRACE, DEBUG, INFO, WARN, ERROR
     }
 
     /**  Suffix used when rolling daily log files */
@@ -43,25 +27,13 @@ public abstract class LogUtil
     /**  maximum number of archived log files to keep */
     private final static int MAX_HISTORY = 5;
 
-    /**
-     * Initialize the logging system by building a configuration context and
-     * replacing whatever was loaded automatically.
-     */
-    public static void initialize(String rtRoot, String progName, Level logLevel, boolean consoleOutput)
-            throws JoranException, ExNoResource
-    {
-        configure(logLevel, rtRoot + "/" + progName + ".log", consoleOutput);
+    private final static LoggerContext context;
 
-        Runtime.getRuntime().addShutdownHook(new Thread(new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                DateFormat format = new SimpleDateFormat("yyyyMMdd");
-                String strDate = format.format(new Date());
-                LoggerFactory.getLogger(LogUtil.class).debug("TERMINATED " + strDate);
-            }
-        }));
+    static
+    {
+        Loggers.init();
+        context = (LoggerContext) LoggerFactory.getILoggerFactory();
+        context.reset();
     }
 
     /**
@@ -69,11 +41,8 @@ public abstract class LogUtil
      * on initializing appenders inline which has undesirable side effects (like leaving
      * empty files in approot).
      */
-    private static void configure(Level logLevel, String filename, boolean consoleOutput)
+    public static void enableFileLogging(String filename)
     {
-        LoggerContext context = (LoggerContext) LoggerFactory.getILoggerFactory();
-        context.reset();
-
         // -- Weird and subtle warning --
         // Daily file rollover requires
         // - triggering policy: when to roll over (i.e., daily)
@@ -109,17 +78,23 @@ public abstract class LogUtil
         appender.start();
 
         // Finally, we have all the components. Set the root logger to use the new appender:
-        Logger rootLogger = context.getLogger(Logger.ROOT_LOGGER_NAME);
-        rootLogger.setLevel(getLevel(logLevel));
-        rootLogger.addAppender(appender);
+        context.getLogger(Logger.ROOT_LOGGER_NAME).addAppender(appender);
+    }
 
-        if (consoleOutput) {
-            ConsoleAppender<ILoggingEvent> console = new ConsoleAppender<ILoggingEvent>();
-            console.setContext(context);
-            console.setEncoder(newEncoder(context));
-            console.start();
-            rootLogger.addAppender(console);
-        }
+    public static void enableConsoleLogging()
+    {
+        ConsoleAppender<ILoggingEvent> console = new ConsoleAppender<ILoggingEvent>();
+        console.setContext(context);
+        console.setEncoder(newEncoder(context));
+        console.start();
+
+        context.getLogger(Logger.ROOT_LOGGER_NAME).addAppender(console);
+    }
+
+    public static void setLevel(Level level)
+    {
+        Logger rootLogger = context.getLogger(Logger.ROOT_LOGGER_NAME);
+        rootLogger.setLevel(toLogbackLevel(level));
     }
 
     private static PatternLayoutEncoder newEncoder(LoggerContext context)
@@ -131,15 +106,17 @@ public abstract class LogUtil
         return encoder;
     }
 
-    private static ch.qos.logback.classic.Level getLevel(Level logLevel)
+    private static ch.qos.logback.classic.Level toLogbackLevel(Level logLevel)
     {
-        if (logLevel == Level.ERROR)      return ch.qos.logback.classic.Level.ERROR;
-        else if (logLevel == Level.WARN)  return ch.qos.logback.classic.Level.WARN;
-        else if (logLevel == Level.INFO)  return ch.qos.logback.classic.Level.INFO;
-        else if (logLevel == Level.DEBUG) return ch.qos.logback.classic.Level.DEBUG;
-        else if (logLevel == Level.TRACE) return ch.qos.logback.classic.Level.TRACE;
-        else if (logLevel == Level.NONE)  return ch.qos.logback.classic.Level.OFF;
-        else throw new IllegalArgumentException("Illegal log level " + logLevel.toString());
+        switch (logLevel) {
+        case ERROR: return ch.qos.logback.classic.Level.ERROR;
+        case WARN:  return ch.qos.logback.classic.Level.WARN;
+        case INFO:  return ch.qos.logback.classic.Level.INFO;
+        case DEBUG: return ch.qos.logback.classic.Level.DEBUG;
+        case TRACE: return ch.qos.logback.classic.Level.TRACE;
+        case NONE:  return ch.qos.logback.classic.Level.OFF;
+        default:    throw new IllegalArgumentException("Illegal log level " + logLevel.toString());
+        }
     }
 
     /**

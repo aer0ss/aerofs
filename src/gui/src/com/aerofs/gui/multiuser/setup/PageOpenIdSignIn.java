@@ -4,46 +4,18 @@
 
 package com.aerofs.gui.multiuser.setup;
 
-import com.aerofs.base.BaseParam.WWW;
-import com.aerofs.base.Loggers;
-import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.controller.SetupModel;
-import com.aerofs.gui.CompSpin;
-import com.aerofs.gui.GUI;
-import com.aerofs.gui.GUI.ISWTWorker;
-import com.aerofs.gui.GUIUtil;
-import com.aerofs.gui.Images;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.S;
-import com.aerofs.lib.Util;
-import com.aerofs.lib.ex.ExUIMessage;
-import com.aerofs.ui.IUI.MessageType;
-import com.aerofs.ui.error.ErrorMessages;
 import com.google.common.base.Objects;
-import com.swtdesigner.SWTResourceManager;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.ModifyEvent;
 import org.eclipse.swt.events.ModifyListener;
-import org.eclipse.swt.events.SelectionAdapter;
-import org.eclipse.swt.events.SelectionEvent;
-import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.layout.RowData;
-import org.eclipse.swt.layout.RowLayout;
-import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Label;
-import org.eclipse.swt.widgets.Layout;
-import org.eclipse.swt.widgets.Link;
-import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Text;
-import org.slf4j.Logger;
-
-import java.net.ConnectException;
-
-import static org.eclipse.jface.dialogs.IDialogConstants.OK_ID;
 
 public class PageOpenIdSignIn extends AbstractSignInPage
 {

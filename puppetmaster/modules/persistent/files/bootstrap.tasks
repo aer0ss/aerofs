@@ -1,4 +1,5 @@
 ca-deploy
+ca-restart
 cacert-populate
 nginx-restart
 nginx-certificate-generate-persistent

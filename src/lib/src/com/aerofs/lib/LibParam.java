@@ -7,7 +7,6 @@ package com.aerofs.lib;
 import com.aerofs.base.BaseParam;
 import com.aerofs.base.C;
 import com.aerofs.base.id.SID;
-import com.aerofs.config.DynamicConfiguration;
 import com.aerofs.config.properties.DynamicOptionalStringProperty;
 import com.aerofs.lib.properties.DynamicInetSocketAddress;
 import com.aerofs.lib.properties.DynamicUrlProperty;
@@ -18,7 +17,9 @@ import com.netflix.config.DynamicStringProperty;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 
-import static com.aerofs.lib.configuration.ClientConfigurationLoader.*;
+import static com.aerofs.lib.configuration.ClientConfigurationLoader.PROPERTY_BASE_CA_CERT;
+import static com.aerofs.lib.configuration.ClientConfigurationLoader.PROPERTY_CONFIG_SERVICE_URL;
+import static com.aerofs.lib.configuration.ClientConfigurationLoader.PROPERTY_IS_ENTERPRISE_DEPLOYMENT;
 
 public class LibParam extends BaseParam
 {

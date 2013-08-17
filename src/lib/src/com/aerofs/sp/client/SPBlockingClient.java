@@ -2,17 +2,16 @@ package com.aerofs.sp.client;
 
 import com.aerofs.base.BaseParam.SP;
 import com.aerofs.base.Loggers;
+import com.aerofs.base.ex.ExBadCredential;
+import com.aerofs.base.id.UserID;
 import com.aerofs.base.net.IURLConnectionConfigurator;
 import com.aerofs.base.ssl.ICertificateProvider;
 import com.aerofs.lib.LibParam.EnterpriseConfig;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.base.ex.ExBadCredential;
-import com.aerofs.base.id.UserID;
 import com.aerofs.lib.cfg.CfgCACertificateProvider;
 import com.aerofs.lib.configuration.EnterpriseCertificateProvider;
 import com.aerofs.proto.Sp.SPServiceBlockingStub;
 import com.aerofs.proto.Sp.SPServiceStub.SPServiceStubCallbacks;
-import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 
 /**

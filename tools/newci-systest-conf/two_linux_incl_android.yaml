@@ -1,0 +1,4 @@
+actors:
+  - os: linux
+    android: true
+  - os: linux

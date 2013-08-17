@@ -15,6 +15,14 @@ import com.aerofs.base.id.UserID;
  */
 public class OrganizationID extends IntegerID
 {
+    // In enterprise deployment, new users are all created by default in the same organization,
+    // also known as the main organization.
+    //
+    // Note: we use "2" as the id instead of "1" because 1 is already assigned to our own internal
+    // AeroFS organization. It really shouldn't matter though since those ids should never coexist
+    // together, but having different numbers makes reading log files easier.
+    public static final OrganizationID MAIN_ORGANIZATION = new OrganizationID(2);
+
     static {
         // assert the team server prefix is an invalid email address char. This check can be done
         // in UserID. But I don't really want to slow down client launch time any further.
