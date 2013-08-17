@@ -682,14 +682,17 @@ service SPService {
     rpc SignInDevice(SignInDeviceCall) returns (Void);
 
     /**
-     * Sign in a device using an existing device certificate.
+     * Sign in a user using userid/password credentials.
      *
      * Required Auth Level: none
      *
      * Throws:
-     *   ExBadCredential if the certificate is not recognized or the DID does not match.
+     *   ExEmptyEmailAddress if the user id is empty
+     *   ExBadCredential if username/password combination is incorrect, or in the case of the team
+     *                   server, if they have not signed in successfully using mutual
+     *                   authentication.
      */
-    rpc SignInUser(SignInDeviceCall) returns (Void);
+    rpc SignInUser(SignInUserCall) returns (Void);
 
     /**
      * Kick off the OpenId authentication flow by generating session keys for the
