@@ -6,6 +6,7 @@ package com.aerofs.daemon.core.serverstatus;
 
 import com.aerofs.daemon.core.serverstatus.ServerConnectionStatus.Server;
 import com.aerofs.proto.RitualNotifications.PBNotification;
+import com.aerofs.ritual_notification.RitualNotificationServer;
 import com.aerofs.ritual_notification.RitualNotifier;
 import com.google.common.collect.ImmutableMap;
 import org.junit.Before;
@@ -17,10 +18,12 @@ import org.mockito.MockitoAnnotations;
 import static junit.framework.Assert.*;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class TestServerStatusNotifier
 {
     @Mock ServerConnectionStatus _serverConnectionStatus;
+    @Mock RitualNotificationServer _ritualNotificationServer;
     @Mock RitualNotifier _ritualNotifier;
 
     @InjectMocks ServerStatusNotifier _notifier;
@@ -29,6 +32,8 @@ public class TestServerStatusNotifier
     public void setup()
     {
         MockitoAnnotations.initMocks(this);
+
+        when(_ritualNotificationServer.getRitualNotifier()).thenReturn(_ritualNotifier);
     }
 
     @Test
