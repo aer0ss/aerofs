@@ -6,15 +6,21 @@ package com.aerofs.sp.server;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExBadCredential;
+import com.aerofs.lib.LibParam;
 import com.aerofs.lib.LibParam.OpenId;
 import com.aerofs.servlets.AeroServlet;
+import com.aerofs.sp.server.IdentitySessionManager.DumbAssociation;
 import com.aerofs.sp.server.IdentitySessionManager.UserManager;
+import com.dyuproject.openid.DefaultDiscovery;
+import com.dyuproject.openid.DiffieHellmanAssociation;
 import com.dyuproject.openid.IdentifierSelectUserCache;
+import com.dyuproject.openid.OpenIdContext;
 import com.dyuproject.openid.OpenIdUser;
 import com.dyuproject.openid.RelyingParty;
 import com.dyuproject.openid.YadisDiscovery;
 import com.dyuproject.openid.ext.AxSchemaExtension;
 import com.dyuproject.openid.ext.SRegExtension;
+import com.dyuproject.util.http.SimpleHttpConnector;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 
@@ -289,7 +295,13 @@ public class IdentityServlet extends AeroServlet
     }
 
     private IdentityProvider _provider;
-    private static RelyingParty _reliar = new RelyingParty(new UserManager(), new IdentifierSelectUserCache());
+    private static RelyingParty _reliar = new RelyingParty(
+            new OpenIdContext(
+                    new DefaultDiscovery(),
+                    OpenId.ENDPOINT_STATEFUL.get()
+                            ? new DiffieHellmanAssociation() : new DumbAssociation(),
+                    new SimpleHttpConnector()),
+            new UserManager(), new IdentifierSelectUserCache(), true);
 
     static {
         assert _reliar != null;

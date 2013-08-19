@@ -10,14 +10,25 @@ import com.aerofs.base.id.UniqueID;
 import com.aerofs.lib.LibParam.OpenId;
 import com.aerofs.lib.LibParam.REDIS;
 import com.aerofs.servlets.lib.db.jedis.PooledJedisConnectionProvider;
+import com.dyuproject.openid.Association;
+import com.dyuproject.openid.Constants;
+import com.dyuproject.openid.DiffieHellmanAssociation;
+import com.dyuproject.openid.OpenIdContext;
 import com.dyuproject.openid.OpenIdUser;
 import com.dyuproject.openid.OpenIdUserManager;
+import com.dyuproject.util.DiffieHellman;
+import com.dyuproject.util.http.HttpConnector.Response;
+import com.dyuproject.util.http.UrlEncodedParameterMap;
 import org.slf4j.Logger;
 import redis.clients.jedis.JedisPooledConnection;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -203,6 +214,73 @@ public class IdentitySessionManager
         }
 
         private ConcurrentMap<String, OpenIdUser> _users = new ConcurrentHashMap<String, OpenIdUser>();
+    }
+
+    // This class is used in place of DiffieHelman for OpenId servers that are too...
+    // primitive? Dumb? to use the required association model.
+    // On "associate" we simply say "yes" and hack up the user association; without this,
+    // the dyu library will fail saying that the user is not associated.
+    // On "verify" we create a dumb-mode identification request to the server.
+    static class DumbAssociation implements Association
+    {
+        @Override
+        public boolean associate(OpenIdUser user, OpenIdContext context) throws Exception
+        {
+            // Ugly. We can't do the equivalent of setAssocHandle() any other way than the following
+            Map<String, Object> hashMap = new HashMap<String, Object>();
+            hashMap.put("a", user.getClaimedId());
+            hashMap.put("c", Constants.Assoc.ASSOC_HANDLE);
+            hashMap.put("d", new HashMap());
+            hashMap.put("e", user.getOpenIdServer());
+
+            user.fromJSON(hashMap);
+
+            return true;
+        }
+
+        @Override
+        public boolean verifyAuth(OpenIdUser user, Map<String, String> authRedirect, OpenIdContext context)
+                throws Exception
+        {
+            if(!Constants.Mode.ID_RES.equals(authRedirect.get(Constants.OPENID_MODE))) {
+                return false;
+            }
+
+            l.debug("OpenId using stateless auth-verify mode");
+
+            // Build our new request by starting with everything from the authRedirect map
+            UrlEncodedParameterMap map = new UrlEncodedParameterMap(user.getOpenIdServer());
+
+            map.putAll(authRedirect);
+            map.remove(Constants.OPENID_MODE);
+            map.put(Constants.OPENID_MODE, "check_authentication");
+
+            Response response = context.getHttpConnector().doPOST(
+                    user.getOpenIdServer(), (Map<?,?>)null,
+                    map, Constants.DEFAULT_ENCODING);
+
+            BufferedReader br = null;
+            Map<String, Object> results = new HashMap<String, Object>();
+            try
+            {
+                br = new BufferedReader(new InputStreamReader(
+                        response.getInputStream(), Constants.DEFAULT_ENCODING), 1024);
+                DiffieHellmanAssociation.parseInputByLineSeparator(br, ':', results);
+            }
+            finally
+            {
+                if(br!=null)
+                    br.close();
+            }
+
+            if (results.containsKey("is_valid")) {
+                String isValid = results.get("is_valid").toString();
+                if (isValid.toLowerCase().equals("true")) {
+                    return true;
+                }
+            }
+            return false;
+        }
     }
 
     private static String getSessionKey(final String val) { return PREFIX_SESSION + val; }
