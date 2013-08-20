@@ -293,6 +293,10 @@ public class LibParam extends BaseParam
         public static final DynamicStringProperty       ENDPOINT_URL
                 = new DynamicStringProperty(            "openid.idp.endpoint.url", "");
 
+        /** If enabled, use Diffie-Helman association and a MAC to verify the auth result */
+        public static final DynamicBooleanProperty       ENDPOINT_STATEFUL
+                = new DynamicBooleanProperty(            "openid.idp.endpoint.stateful", true);
+
         /** Name of the HTTP parameter we should use as the user identifier in an auth response. */
         public static final DynamicStringProperty       IDP_USER_ATTR
                 = new DynamicStringProperty(            "openid.idp.user.uid.attribute",
