@@ -59,24 +59,28 @@ public abstract class DynamicTrayMenuComponent implements ITrayMenuComponent
         }
     }
 
+    /**
+     * Schedule an update to be run on the UI thread. Can be called from any thread.
+     */
     public synchronized void scheduleUpdate()
     {
-        if (UbuntuTrayItem.supported()) {
-            // throttled refresh when using libappindicator
-            if (!_scheduled) {
-                _scheduled = true;
-                GUI.get().timerExec(Math.max(0, _rate - _timer.elapsed()), _notifier);
-            }
-        } else {
-            // non-throttled async update when not using libappindicator
-            GUI.get().asyncExec(new Runnable() {
-                @Override
-                public void run()
-                {
+        GUI.get().asyncExec(new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                if (UbuntuTrayItem.supported()) {
+                    // throttled refresh when using libappindicator
+                    if (!_scheduled) {
+                        _scheduled = true;
+                        GUI.get().timerExec(Math.max(0, _rate - _timer.elapsed()), _notifier);
+                    }
+                } else {
+                    // non-throttled async update when not using libappindicator
                     updateInPlace();
                 }
-            });
-        }
+            }
+        });
     }
 
     @Override
