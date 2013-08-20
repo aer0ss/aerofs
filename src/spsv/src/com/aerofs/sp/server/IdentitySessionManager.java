@@ -258,10 +258,8 @@ public class IdentitySessionManager
             map.put(Constants.OPENID_MODE, "check_authentication");
             map.remove("sp.nonce");
 
-            Response response = context.getHttpConnector().doPOST(
-                    user.getOpenIdServer(), (Map<?,?>)null,
-                    map, Constants.DEFAULT_ENCODING);
-
+            Response response = context.getHttpConnector().doGET(
+                    user.getOpenIdServer(), (Map<?, ?>)null, map);
             BufferedReader br = null;
             Map<String, Object> results = new HashMap<String, Object>();
             try
