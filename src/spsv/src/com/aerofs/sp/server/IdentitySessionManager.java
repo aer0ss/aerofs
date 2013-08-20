@@ -216,7 +216,7 @@ public class IdentitySessionManager
         private ConcurrentMap<String, OpenIdUser> _users = new ConcurrentHashMap<String, OpenIdUser>();
     }
 
-    // This class is used in place of DiffieHelman for OpenId servers that are too...
+    // This class is used in place of DiffieHellman for OpenId servers that are too...
     // primitive? Dumb? to use the required association model.
     // On "associate" we simply say "yes" and hack up the user association; without this,
     // the dyu library will fail saying that the user is not associated.
@@ -243,6 +243,7 @@ public class IdentitySessionManager
                 throws Exception
         {
             if(!Constants.Mode.ID_RES.equals(authRedirect.get(Constants.OPENID_MODE))) {
+                l.info("Response from server was not id_res: {}", authRedirect.get(Constants.OPENID_MODE));
                 return false;
             }
 
@@ -251,9 +252,11 @@ public class IdentitySessionManager
             // Build our new request by starting with everything from the authRedirect map
             UrlEncodedParameterMap map = new UrlEncodedParameterMap(user.getOpenIdServer());
 
+            // Theoretically all auth-response params are to be passed to check_authentication;
+            // in practice the OP might choke on non-openid params.
             map.putAll(authRedirect);
-            map.remove(Constants.OPENID_MODE);
             map.put(Constants.OPENID_MODE, "check_authentication");
+            map.remove("sp.nonce");
 
             Response response = context.getHttpConnector().doPOST(
                     user.getOpenIdServer(), (Map<?,?>)null,

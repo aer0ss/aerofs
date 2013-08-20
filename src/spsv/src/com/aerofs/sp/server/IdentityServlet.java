@@ -6,7 +6,6 @@ package com.aerofs.sp.server;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExBadCredential;
-import com.aerofs.lib.LibParam;
 import com.aerofs.lib.LibParam.OpenId;
 import com.aerofs.servlets.AeroServlet;
 import com.aerofs.sp.server.IdentitySessionManager.DumbAssociation;
