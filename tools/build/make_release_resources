@@ -1,5 +1,7 @@
 #!/bin/bash -e -u
 
+set -x
+
 ###############################################################################
 #
 # This script moves platform specific libraries to the proper locations,
@@ -29,6 +31,9 @@ fi
 readonly RELEASE_VERSION="$3"
 
 function render_template_in_place_on() {
+    # **********!!!! IMPORTANT !!!!*********
+    # sed on mac requires an empty string for in place operations.
+    # **********!!!!           !!!!*********
     # Applies template substitution to any number of files.
     while [[ $# -gt 0 ]]; do
         # render the next file
@@ -62,10 +67,7 @@ function copy_resources_to_local_release_directories() {
     mkdir -p "${AEROFS_RELEASE_WIN_DIR}/"
     mkdir -p "${AEROFS_RELEASE_OSX_DIR}/"
     mkdir -p "${AEROFS_RELEASE_LINUX_DIR}/"
-    mkdir -p "${AEROFS_RELEASE_LINUX_DIR}/lib/"
-    mkdir -p "${AEROFS_RELEASE_LINUX32_DIR}/"
-    mkdir -p "${AEROFS_RELEASE_LINUX64_DIR}/"
-    mkdir -p "${AEROFS_RELEASE_INST_DIR}/"
+    mkdir -p "${AEROFS_RELEASE_LINUX_SHARED_DIR}/lib/"
 
     local local_BIN="${LOCAL_RELEASE_DIR}/bin"
     local local_ALL_PLATFORMS_RELEASE_LIB="${AEROFS_RELEASE_DIR}/lib"
@@ -77,7 +79,7 @@ function copy_resources_to_local_release_directories() {
     mkdir -p "${local_BIN}"
     cp -R "${BUILD_OUTPUT_DIR}/bin"/ "${local_BIN}"
 
-    # remove unnecessary files (bin/com/aerofs/downloader will be moved away later)
+    # remove unnecessary files
     # TODO (WW) make sure files to be removed are at correct locations. See the
     # labeling process code for an example.
     find "${local_BIN}/" -name .DS_Store  | xargs rm -f
@@ -115,7 +117,7 @@ function copy_resources_to_local_release_directories() {
 
     # copy S3 jars if necessary
 
-    cp -R "${CLIENT_ALL_PLATFORMS_RESOURCES_DIR}/lib.s3"/* "${AEROFS_RELEASE_LINUX_DIR}/lib/" # linux (always)
+    cp -R "${CLIENT_ALL_PLATFORMS_RESOURCES_DIR}/lib.s3"/* "${AEROFS_RELEASE_LINUX_SHARED_DIR}/lib/" # linux (always)
     if is_team_server ; then
         cp -R "${CLIENT_ALL_PLATFORMS_RESOURCES_DIR}/lib.s3"/ "${AEROFS_RELEASE_OSX_DIR}/lib/" # osx (only for ts)
         cp -R "${CLIENT_ALL_PLATFORMS_RESOURCES_DIR}/lib.s3"/ "${AEROFS_RELEASE_WIN_DIR}/lib/" # win (only for ts)
@@ -124,13 +126,22 @@ function copy_resources_to_local_release_directories() {
     # platform-specific resources and jars native libs
     cp -R "${CLIENT_OSX_RESOURCES_DIR}"/* "${AEROFS_RELEASE_OSX_DIR}/"
     cp -R "${CLIENT_WIN_RESOURCES_DIR}"/* "${AEROFS_RELEASE_WIN_DIR}/"
-    cp -R "${CLIENT_LINUX_COMMON_RESOURCES_DIR}"/* "${AEROFS_RELEASE_LINUX_DIR}/"
-    cp -R "${CLIENT_LINUX32_RESOURCES_DIR}"/* "${AEROFS_RELEASE_LINUX32_DIR}/"
-    cp -R "${CLIENT_LINUX64_RESOURCES_DIR}"/* "${AEROFS_RELEASE_LINUX64_DIR}/"
-    cp "${CLIENT_LINUX_INSTALLER_RESOURCES_DIR}/INSTALL" "${AEROFS_RELEASE_INST_DIR}/"
-    cp "${CLIENT_LINUX_INSTALLER_RESOURCES_DIR}/aerofs" "${AEROFS_RELEASE_LINUX_DIR}/${AEROFS_PRODUCT_UNIX}"
-    cp "${CLIENT_LINUX_INSTALLER_RESOURCES_DIR}/aerofs" "${AEROFS_RELEASE_INST_DIR}/${AEROFS_PRODUCT_UNIX}"
-    mv "${AEROFS_RELEASE_LINUX_DIR}/aerofs.desktop" "${AEROFS_RELEASE_LINUX_DIR}/${AEROFS_PRODUCT_UNIX}.desktop"
+    cp -R "${CLIENT_LINUX_RESOURCES_DIR}"/* "${AEROFS_RELEASE_LINUX_DIR}/"
+
+    # Create the symlinks to launcher that will later be copied into the
+    # approot.  The symlinks the user should use directly will be created later
+    # as part of the debian package and tgz.
+    # pushd is used to ensure symlinks made are relative
+    pushd ${AEROFS_RELEASE_LINUX_SHARED_DIR} > /dev/null
+        ln -s launcher "${AEROFS_PRODUCT_UNIX}"
+        # Create symlinks for each of the products
+        for SUFFIX in cli gui sh ; do
+            ln -s "${AEROFS_PRODUCT_UNIX}" "${AEROFS_PRODUCT_UNIX}-$SUFFIX"
+        done
+    popd > /dev/null
+
+    # rename .desktop file to match product
+    mv "${AEROFS_RELEASE_LINUX_SHARED_DIR}/aerofs.desktop" "${AEROFS_RELEASE_LINUX_SHARED_DIR}/${AEROFS_PRODUCT_UNIX}.desktop"
 
     #------------------------------------------------------
     # copy the properties files (*.properties, *.xml, etc.)
@@ -159,54 +170,17 @@ function copy_resources_to_local_release_directories() {
     # update the installer files with sed (FIXME (AG): remove this if possible!)
     #------------------------------------------------------
 
-    # N.B. We put the run scripts from the installer package in the actual aerofs
-    # package so we can restart the Linux client automatically, even if aerofs-cli
-    # (the launcher shell script) isn't on the user's PATH
-
-    for symlink in ${AEROFS_PRODUCT_UNIX}-{cli,gui,sh}; do
-        ln -s ${AEROFS_PRODUCT_UNIX} "${AEROFS_RELEASE_LINUX_DIR}/$symlink"
-        ln -s ${AEROFS_PRODUCT_UNIX} "${AEROFS_RELEASE_INST_DIR}/$symlink"
-    done
-
-    # **********!!!! IMPORTANT !!!!*********
-    # sed on mac requires an empty string for in place operations.
-    # **********!!!!           !!!!*********
-
-    # Required product sed commands for osx and linux respectively.
+    # Render templated fields for OSX and Linux updater scripts.
     render_template_in_place_on ${AEROFS_RELEASE_OSX_DIR}/updater.sh
-    render_template_in_place_on ${AEROFS_RELEASE_LINUX_DIR}/updater.sh
+    render_template_in_place_on ${AEROFS_RELEASE_LINUX_SHARED_DIR}/updater.sh
 
-    # Required product sed commands for linux.
+    # Render templated fields for Linux launcher, INSTALL instructions,
+    # update-package launcher, and freedesktop.org desktop file.
     render_template_in_place_on \
-        "${AEROFS_RELEASE_INST_DIR}"/{${AEROFS_PRODUCT_UNIX},INSTALL} \
-        "${AEROFS_RELEASE_LINUX_DIR}"/${AEROFS_PRODUCT_UNIX}          \
-        "${AEROFS_RELEASE_LINUX_DIR}"/${AEROFS_PRODUCT_UNIX}.desktop
-}
-
-######################################################################
-#
-# Creates the installer for linux
-#
-######################################################################
-function create_linux_installer() {
-    echo ">> creating linux installer"
-
-    local local_DOWNLOADER_TEMP="$(mktemp -d -t aerofs-dlr_XXXXXX)"
-    trap "rm -rf $local_DOWNLOADER_TEMP || true" EXIT
-
-    local local_BIN="${LOCAL_RELEASE_DIR}/bin"
-    local local_AEROFS_DLR_PKG=com/aerofs/downloader
-    mkdir -p "${local_DOWNLOADER_TEMP}/${local_AEROFS_DLR_PKG}"
-    mkdir -p "${local_DOWNLOADER_TEMP}/libswt32"
-    mkdir -p "${local_DOWNLOADER_TEMP}/libswt64"
-    # N.B. we use the downloader in both the main aerofs.jar (for recovery
-    # purposes) and the installer .jar (for initial setup).
-    cp "${LOCAL_RELEASE_DIR}/bin/${local_AEROFS_DLR_PKG}"/* "${local_DOWNLOADER_TEMP}/${local_AEROFS_DLR_PKG}"
-    cp "${CLIENT_LINUX32_RESOURCES_DIR}/libswt-"*.so "${local_DOWNLOADER_TEMP}/libswt32"
-    cp "${CLIENT_LINUX64_RESOURCES_DIR}/libswt-"*.so "${local_DOWNLOADER_TEMP}/libswt64"
-    cp "${CLIENT_LINUX32_RESOURCES_DIR}/lib/swt-"*.jar "${local_DOWNLOADER_TEMP}/s32.jar"
-    cp "${CLIENT_LINUX64_RESOURCES_DIR}/lib/swt-"*.jar "${local_DOWNLOADER_TEMP}/s64.jar"
-    tar zcf - -C "$local_DOWNLOADER_TEMP" . | uuencode bin >> "${AEROFS_RELEASE_INST_DIR}/${AEROFS_PRODUCT_UNIX}"
+        "${AEROFS_RELEASE_LINUX_DIR}/INSTALL"                         \
+        "${AEROFS_RELEASE_LINUX_SHARED_DIR}/copier"                   \
+        "${AEROFS_RELEASE_LINUX_SHARED_DIR}/launcher"                 \
+        "${AEROFS_RELEASE_LINUX_SHARED_DIR}/${AEROFS_PRODUCT_UNIX}.desktop"
 }
 
 ######################################################################
@@ -322,7 +296,6 @@ echo ">> make release resources"
 
 compute_product_names
 copy_resources_to_local_release_directories
-create_linux_installer
 create_java_jar
 obfuscate_java
 write_version_and_checksums

@@ -39,7 +39,7 @@ Steps to using a new openssl:
 
     2) Configure:
 
-    # # For linux32, make the last argument "linux-elf"
+    # # For 32-bit Linux, make the last argument "linux-elf" instead of "linux-x86_64"
     # perl ./Configure --prefix=/usr/local shared linux-x86_64
 
     3) Build:
@@ -47,7 +47,7 @@ Steps to using a new openssl:
     # make
     # make test
 
-    4) Copy libssl and libcrypto to repos/aerofs/resource/client/linux(32|64)/ .
+    4) Copy libssl and libcrypto to repos/aerofs/resource/client/linux/(i386|amd64)/ .
 
   -------------
   Windows build:

@@ -42,6 +42,7 @@ set_parameters() {
         BASE_DIR=/mnt/hgfs/aerofs
         QMAKE_BUILD_DIR="aerofsj-build-desktop-Qt_4_8_0_for_Desktop_-_gcc__Qt_SDK__$QMAKE_MODE"
         AEROFS_FINAL_LIBJINGLE_LIBRARY_NAME="libaerofsj.so"
+        PLATFORM_RESOURCE_DIR="linux/i386"
         ;;
     "linux64")
         MODE=opt
@@ -49,6 +50,7 @@ set_parameters() {
         BASE_DIR=/mnt/hgfs/aerofs
         QMAKE_BUILD_DIR="aerofsj-build-desktop-Qt_4_8_0_for_Desktop_-_gcc_linux_64__Qt_SDK__$QMAKE_MODE"
         AEROFS_FINAL_LIBJINGLE_LIBRARY_NAME="libaerofsj.so"
+        PLATFORM_RESOURCE_DIR="linux/amd64"
         ;;
     "osx")
         MODE=opt64
@@ -56,6 +58,7 @@ set_parameters() {
         BASE_DIR=~/repos/aerofs
         QMAKE_BUILD_DIR="aerofsj-build-desktop-Qt_4_8_0_for_Desktop_-_gcc_mac__Qt_SDK__$QMAKE_MODE"
         AEROFS_FINAL_LIBJINGLE_LIBRARY_NAME="libaerofsj.dylib"
+        PLATFORM_RESOURCE_DIR="osx"
         ;;
     "*")
         echo "unrecognized nix platform:$1"
@@ -70,7 +73,7 @@ set_parameters() {
 
     QMAKE_BUILD_DIR="src/libjingle_build/$QMAKE_BUILD_DIR"
     QMAKE_OUTPUT_LIBRARY_DIR="$LIBJINGLE_BINDING_DIR/build/$PLATFORM/opt"
-    AEROFS_OUTPUT_LIBRARY_DIR="$AEROFS_RESOURCE_DIR/$PLATFORM"
+    AEROFS_OUTPUT_LIBRARY_DIR="$AEROFS_RESOURCE_DIR/$PLATFORM_RESOURCE_DIR"
 
     readonly MODE
     readonly JOBS

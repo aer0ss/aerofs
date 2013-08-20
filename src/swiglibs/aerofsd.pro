@@ -16,9 +16,9 @@ QMAKE_CXX_FLAGS += -D_FILE_OFFSET_BITS=64 -fmessage-length=0 -fno-rtti
 
 # Find whether we are building on a 32 or 64 bits machine
 contains(QMAKE_HOST.arch, i686):{
-    ARCH="32"
+    ARCH="i386"
 } else:contains(QMAKE_HOST.arch, x86_64):{
-    ARCH="64"
+    ARCH="amd64"
 } else {
     ARCH=""
 }
@@ -40,7 +40,7 @@ macx {
 linux-g++ {
     INCLUDEPATH += "$$(JAVA_HOME)/include"
     INCLUDEPATH += "$$(JAVA_HOME)/include/linux"
-    LIBS += -L"$$PWD/3rd_party/lib/linux$$ARCH/"
+    LIBS += -L"$$PWD/3rd_party/lib/linux/$$ARCH/"
     LIBS += -lssl.1.0.0 -lcrypto.1.0.0
     # Driver needs to be able to handle files larger than 2GB; see aerofs-585
     DEFINES += "_FILE_OFFSET_BITS=64"
