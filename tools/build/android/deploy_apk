@@ -32,8 +32,10 @@ map_name=map-${version}
 map_path="${RELEASE_DIR}/${map_name}.txt"
 
 echo ">> Uploading Android ProGuard map to map servers"
+set +e
 scp "$map_path" $MAP_SERVER_LOGIN:"${ANDROID_MAP_FILES_DIR}/${map_name}.map"
 scp "$map_path" $ROCKLOG_SERVER:"${ANDROID_MAP_FILES_DIR}/${map_name}.map"
+set -e
 echo ">> Uploaded!"
 
 echo ">> Uploading Android app to release server..."
