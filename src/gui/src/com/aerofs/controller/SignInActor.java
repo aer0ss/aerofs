@@ -46,7 +46,7 @@ public abstract class SignInActor
     }
 
     /**
-     * OpenId sign-in flow for a GUI - where we can ask GUIUtil to launch a URL.
+     * OpenID sign-in flow for a GUI - where we can ask GUIUtil to launch a URL.
      */
     public static class GUIOpenId extends SignInActor
     {
@@ -104,7 +104,7 @@ public abstract class SignInActor
                         = _spclient.openIdGetSessionAttributes(_sessionKeys.getSessionNonce());
                 if (session.getUserId().isEmpty()) { continue; }
 
-                l.info("OpenId user {}", session.getUserId());
+                l.info("OpenID user {}", session.getUserId());
 
                 _model.setUserID(session.getUserId());
                 _model.setClient(_spclient);

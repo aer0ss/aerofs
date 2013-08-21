@@ -2147,7 +2147,7 @@ public class SPService implements ISPService
             user.save(new byte[0], new FullName(attrs.getFirstName(), attrs.getLastName()));
         }
         _sqlTrans.commit();
-        l.info("SI (OpenId): " + user.toString());
+        l.info("SI (OpenID): " + user.toString());
 
         // Set the session cookie.
         _sessionUser.set(user);

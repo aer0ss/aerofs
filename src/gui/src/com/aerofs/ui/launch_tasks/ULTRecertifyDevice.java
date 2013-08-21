@@ -139,7 +139,7 @@ public class ULTRecertifyDevice extends UILaunchTask
 
     // FIXME : this function depends on the sha'ed password being stored locally.
     // This will be an unsafe assumption very soon. Should prompt the user to re-authenticate
-    // their identity - either using an AeroFS password or using an identity system like OpenId.
+    // their identity - either using an AeroFS password or using an identity system like OpenID.
     private void recertifyClient()
             throws Exception
     {

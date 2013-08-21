@@ -72,7 +72,7 @@ public class IdentitySessionManager
     }
 
     /**
-     * Use a session nonce to get the user attributes provided by the OpenId delegate flow.
+     * Use a session nonce to get the user attributes provided by the OpenID delegate flow.
      *
      * This can only succeed (return user attributes) once; note the double-checked lock here. No
      * need for a multi-step redis transaction.
@@ -165,7 +165,7 @@ public class IdentitySessionManager
     /**
      * Store and retrieve OpenIdUser objects, keyed by update tokens.
      *
-     * Note that the User object holds the association data for the OpenId provider, so
+     * Note that the User object holds the association data for the OpenID provider, so
      * we do keep the instance around for the auth response flow.
      *
      * NOTE: This code expects the OPENID_DELEGATE_NONCE *attribute* in the HttpServletRequest.

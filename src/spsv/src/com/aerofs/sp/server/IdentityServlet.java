@@ -128,7 +128,7 @@ public class IdentityServlet extends AeroServlet
     }
 
     /**
-     * Actions and configuration that should be scoped to a particular OpenId provider
+     * Actions and configuration that should be scoped to a particular OpenID provider
      *
      * (for now we only support one provider)
      */
@@ -180,26 +180,26 @@ public class IdentityServlet extends AeroServlet
             OpenIdUser user = _reliar.discover(req);
 
             if (user == null) {
-                l.warn("OpenId lookup failure for delegateNonce {}", delegateNonce);
+                l.warn("OpenID lookup failure for delegateNonce {}", delegateNonce);
                 return;
             }
 
             if (user.isAssociated() && (_reliar.verifyAuth(user, req, resp))) {
-                l.info("OpenId authorized {} for user {}", delegateNonce, user.getIdentity());
+                l.info("OpenID authorized {} for user {}", delegateNonce, user.getIdentity());
 
                 _identitySessionManager.authenticateSession(
                         delegateNonce,
                         OpenId.SESSION_TIMEOUT.get(),
                         _authParser.populateAttrs(req));
 
-                // we no longer care about the OpenId cached user
+                // we no longer care about the OpenID cached user
                 _reliar.invalidate(req, resp);
             } else {
-                l.warn("OpenId failed to verify auth for {}", user.getIdentifier());
+                l.warn("OpenID failed to verify auth for {}", user.getIdentifier());
             }
         }
 
-        /** Build the return_to URL to pass to the OpenId provider */
+        /** Build the return_to URL to pass to the OpenID provider */
         private static String getReturnToUrl(String token) throws UnsupportedEncodingException
         {
             StringBuilder sb = new StringBuilder(OpenId.IDENTITY_URL.get());
@@ -242,7 +242,7 @@ public class IdentityServlet extends AeroServlet
 
             /**
              * Convert a configured pattern into an actual value by either finding it directly
-             * in the OpenId response or building it from capture groups in the uid.
+             * in the OpenID response or building it from capture groups in the uid.
              *
              * @param val openid parameter name
              * @param args matcher generated from the configuration pattern

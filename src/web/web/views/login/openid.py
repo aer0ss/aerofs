@@ -14,6 +14,7 @@ from web.util import *
 
 log = logging.getLogger(__name__)
 
+
 def _begin_sp_auth(request):
     """
     Get a session and delegate nonce from SP; returns an identity servlet
@@ -49,7 +50,6 @@ def _get_sp_auth(request, stay_signed_in):
     sp = SPServiceRpcStub(con)
 
     session_nonce = request.session['sp_session_nonce']
-    next_url = request.session['next']
 
     attrs = sp.open_id_get_session_attributes(session_nonce)
 
@@ -80,7 +80,7 @@ def _get_sp_auth(request, stay_signed_in):
 @view_config(
     route_name = 'login_openid_view',
     permission=NO_PERMISSION_REQUIRED,
-    renderer = 'login_openid_view.mako'
+    renderer = 'login_openid.mako'
 )
 def login_openid_view(request):
     """
@@ -92,14 +92,14 @@ def login_openid_view(request):
     """
     _next = get_next_url(request)
     signin_url = "{0}?{1}".format(request.route_url('login_openid'), url.urlencode({'next' : _next}))
-    return { 'signin_url': signin_url }
+    return {'signin_url': signin_url}
 
 
 # TODO: this should not require a renderer!
 @view_config(
     route_name = 'login_openid',
     permission=NO_PERMISSION_REQUIRED,
-    renderer = 'login_openid_view.mako'
+    renderer = 'login_openid.mako'
 )
 def login_openid(request):
     """
@@ -114,7 +114,7 @@ def login_openid(request):
 @view_config(
     route_name = 'login_openid_complete',
     permission=NO_PERMISSION_REQUIRED,
-    renderer = 'login_openid_view.mako'
+    renderer = 'login_openid.mako'
 )
 def login_openid_complete(request):
     """
