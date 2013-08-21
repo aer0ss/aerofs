@@ -5,11 +5,15 @@
 package com.aerofs.base;
 
 import com.aerofs.base.params.IProperty;
-import com.aerofs.base.params.IPropertySource;
 
 import java.net.InetSocketAddress;
 import java.net.URL;
 import java.security.cert.X509Certificate;
+
+import static com.aerofs.config.ConfigurationProperties.getAddressProperty;
+import static com.aerofs.config.ConfigurationProperties.getCertificateProperty;
+import static com.aerofs.config.ConfigurationProperties.getStringProperty;
+import static com.aerofs.config.ConfigurationProperties.getUrlProperty;
 
 /**
  * Base parameters for the servers, the desktop app and the Android client.
@@ -23,38 +27,29 @@ public class BaseParam
     // recommended size for file I/O buffers
     public static final int FILE_BUF_SIZE = 512 * C.KB;
 
-    private static IPropertySource props;
-
-    /**
-     * Sets what source we are going to use for the properties. This is basically to avoid using
-     * the dynamic property system on Android. See comment in IPropertySource for more info
-     */
-    public static void setPropertySource(IPropertySource source)
-    {
-        props = source;
-    }
-
     public static class Cacert
     {
-        public static final IProperty<X509Certificate> CACERT = props.certificateProperty(
+        public static final IProperty<X509Certificate> CACERT = getCertificateProperty(
                 "config.loader.base_ca_certificate", null);
     }
 
     public static class XMPP
     {
-        public static final IProperty<String> SERVER_DOMAIN = props.stringProperty("base.xmpp.domain", "aerofs.com");
+        public static final IProperty<String> SERVER_DOMAIN = getStringProperty("base.xmpp.domain",
+                "aerofs.com");
 
         public static String getMucAddress()
         {
             return "c." + SERVER_DOMAIN.get();
         }
 
-        public static final IProperty<InetSocketAddress> ADDRESS = props.addressProperty( "base.xmpp.address", InetSocketAddress.createUnresolved("x.aerofs.com", 443));
+        public static final IProperty<InetSocketAddress> ADDRESS = getAddressProperty(
+                "base.xmpp.address", InetSocketAddress.createUnresolved("x.aerofs.com", 443));
     }
 
     public static class Metrics
     {
-        public static final IProperty<InetSocketAddress> ADDRESS = props.addressProperty(
+        public static final IProperty<InetSocketAddress> ADDRESS = getAddressProperty(
                 "base.metrics.address",
                 InetSocketAddress.createUnresolved("metrics.aerofs.com", 2003));
     }
@@ -65,14 +60,13 @@ public class BaseParam
 
         // staging value: "staging.aerofs.com:8888"
         // this value is dynamic but clients will not pick up the new value on failure
-        public static final IProperty<InetSocketAddress> ADDRESS = props.addressProperty(
-                "base.zephyr.address",
-                InetSocketAddress.createUnresolved("relay.aerofs.com", 443));
+        public static final IProperty<InetSocketAddress> ADDRESS = getAddressProperty(
+                "base.zephyr.address", InetSocketAddress.createUnresolved("relay.aerofs.com", 443));
     }
 
     public static class WWW
     {
-        public static final IProperty<URL> URL = props.urlProperty("base.www.url",
+        public static final IProperty<URL> URL = getUrlProperty("base.www.url",
                 "https://www.aerofs.com");
 
         public static String url()
@@ -81,36 +75,35 @@ public class BaseParam
         }
 
         public static final IProperty<String> SUPPORT_EMAIL_ADDRESS =
-                props.stringProperty("base.www.support_email_address", "support@aerofs.com");
+                getStringProperty("base.www.support_email_address", "support@aerofs.com");
 
         public static final IProperty<String> MARKETING_HOST_URL =
-                props.stringProperty("base.www.marketing_host_url", url());
+                getStringProperty("base.www.marketing_host_url", url());
 
         public static final IProperty<String> DASHBOARD_HOST_URL =
-                props.stringProperty("base.www.dashboard_host_url", url());
+                getStringProperty("base.www.dashboard_host_url", url());
 
         public static final IProperty<String> PASSWORD_RESET_REQUEST_URL =
-                props.stringProperty("base.www.password_reset_request_url",
+                getStringProperty("base.www.password_reset_request_url",
                         url() + "/request_password_reset");
 
         public static final IProperty<String> UPGRADE_URL =
-                props.stringProperty("base.www.upgrade_url", url() + "/upgrade");
+                getStringProperty("base.www.upgrade_url", url() + "/upgrade");
 
         public static final IProperty<String> TEAM_MEMBERS_URL =
-                props.stringProperty("base.www.team_members_url", url() + "/admin/team_members");
+                getStringProperty("base.www.team_members_url", url() + "/admin/team_members");
 
         public static final IProperty<String> DEVICES_URL =
-                props.stringProperty("base.www.devices_url", url() + "/devices");
+                getStringProperty("base.www.devices_url", url() + "/devices");
 
         public static final IProperty<String> TEAM_SERVER_DEVICES_URL =
-                props.stringProperty("base.www.team_server_devices_url",
-                        url() + "/admin/team_servers");
+                getStringProperty("base.www.team_server_devices_url", url() + "/admin/team_servers");
 
         public static final IProperty<String> DOWNLOAD_URL =
-                props.stringProperty("base.www.download_url", url() + "/download");
+                getStringProperty("base.www.download_url", url() + "/download");
 
         public static final IProperty<String> TOS_URL =
-                props.stringProperty("base.www.tos_url", url() + "/terms#privacy");
+                getStringProperty("base.www.tos_url", url() + "/terms#privacy");
 
         public static final String FAQ_SYNC_HISTORY_URL
                 = "https://aerofs.zendesk.com/entries/23753136";
@@ -135,7 +128,7 @@ public class BaseParam
         // 4) code with a "WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE" comment
         public static final int SP_PROTOCOL_VERSION = 20;
 
-        public static final IProperty<URL> URL = props.urlProperty("base.sp.url",
+        public static final IProperty<URL> URL = getUrlProperty("base.sp.url",
                 "https://sp.aerofs.com/sp");
     }
 
@@ -148,14 +141,14 @@ public class BaseParam
     public static class Verkehr
     {
         public static final IProperty<String> HOST =
-                props.stringProperty("base.verkehr.host", "verkehr.aerofs.com");
+                getStringProperty("base.verkehr.host", "verkehr.aerofs.com");
 
         public static final IProperty<String> PUBLISH_PORT =
-                props.stringProperty("base.verkehr.port.publish", "9293");
+                getStringProperty("base.verkehr.port.publish", "9293");
         public static final IProperty<String> ADMIN_PORT =
-                props.stringProperty("base.verkehr.port.admin", "25234");
+                getStringProperty("base.verkehr.port.admin", "25234");
         public static final IProperty<String> SUBSCRIBE_PORT =
-                props.stringProperty("base.verkehr.port.subscribe", "443");
+                getStringProperty("base.verkehr.port.subscribe", "443");
     }
 
     public static class VerkehrTopics
@@ -168,7 +161,7 @@ public class BaseParam
 
     public static class Mixpanel
     {
-        public static final IProperty<String> API_ENDPOINT = props.stringProperty("base.mixpanel.url",
+        public static final IProperty<String> API_ENDPOINT = getStringProperty("base.mixpanel.url",
                 "https://api.mixpanel.com/track/?data=");
     }
 }

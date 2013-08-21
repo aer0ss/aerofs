@@ -1,8 +1,7 @@
 package com.aerofs.testlib;
 
-import com.aerofs.base.BaseParam;
 import com.aerofs.base.Loggers;
-import com.aerofs.base.params.SimplePropertySource;
+import com.aerofs.config.ConfigurationProperties;
 import com.aerofs.config.DynamicConfiguration;
 import com.aerofs.lib.LibParam.EnterpriseConfig;
 import com.aerofs.lib.log.LogUtil;
@@ -34,9 +33,9 @@ public abstract class AbstractTest extends PowerMockTestCase
 
         DynamicConfiguration.initialize(DynamicConfiguration.builder().build());
 
-        // Initialize BaseParam to avoid NullPointerException (for example when instantiating
-        // InvitationEmailers).
-        BaseParam.setPropertySource(new SimplePropertySource(new Properties()));
+        // Initialize ConfigurationProperties to avoid NullPointerException when using BaseParam
+        // (for example when instantiating InvitationEmailers).
+        ConfigurationProperties.setProperties(new Properties());
     }
 
     @Rule
