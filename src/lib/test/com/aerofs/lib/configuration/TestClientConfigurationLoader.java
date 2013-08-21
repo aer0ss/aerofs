@@ -57,7 +57,7 @@ public class TestClientConfigurationLoader
         _approotFolder.create();
         _approot = _approotFolder.getRoot().getAbsolutePath();
 
-        _downloader = spy(new MockHttpsDownloader());
+        _downloader = new MockHttpsDownloader();
         _loader = spy(new ClientConfigurationLoader(_downloader));
     }
 
