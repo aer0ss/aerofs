@@ -4,11 +4,8 @@
 
 package com.aerofs.lib.properties;
 
-import com.aerofs.base.BaseParam;
 import com.aerofs.config.ConfigurationProperties;
-import com.aerofs.config.DynamicConfiguration;
 import com.aerofs.lib.configuration.ConfigurationHelper;
-import org.apache.commons.configuration.MapConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -106,12 +103,6 @@ public final class Configuration
             } catch (Exception e) {
                 LOGGER.warn("Failed to log server configuration with exception " + e.toString());
             }
-
-            // TODO(mh): Ugh. This is required until dynamicproperties are removed.
-            MapConfiguration compositeConfiguration = new MapConfiguration(compositeProperties);
-            DynamicConfiguration.initialize(DynamicConfiguration.builder()
-                    .addConfiguration(compositeConfiguration, "all")
-                    .build());
         }
     }
 

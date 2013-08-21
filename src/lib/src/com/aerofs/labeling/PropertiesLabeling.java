@@ -4,12 +4,15 @@
 
 package com.aerofs.labeling;
 
-import com.aerofs.config.DynamicConfigurationUtil;
 import com.aerofs.config.sources.PropertiesConfiguration;
 import com.google.common.base.Objects;
+import com.google.common.collect.Maps;
 import org.apache.commons.configuration.AbstractConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Iterator;
+import java.util.Map;
 
 import static com.google.common.collect.Lists.newArrayList;
 
@@ -24,7 +27,16 @@ class PropertiesLabeling implements ILabeling
             PropertiesConfiguration.newInstance(newArrayList("labeling.properties"));
 
     PropertiesLabeling() {
-        LOGGER.debug(DynamicConfigurationUtil.configurationAsMap(config).toString());
+        Map<String, String> printableConfiguration = Maps.newHashMap();
+
+        Iterator keys = config.getKeys();
+        while (keys.hasNext()) {
+            String key = (String)keys.next();
+            String value = config.getString(key);
+            printableConfiguration.put(key, value);
+        }
+
+        LOGGER.debug(printableConfiguration.toString());
     }
 
     @Override

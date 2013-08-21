@@ -1,6 +1,7 @@
 package com.aerofs.ui.update;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.base.params.IProperty;
 import com.aerofs.base.ssl.SSLEngineFactory;
 import com.aerofs.base.ssl.SSLEngineFactory.Mode;
 import com.aerofs.base.ssl.SSLEngineFactory.Platform;
@@ -32,7 +33,6 @@ import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.UI;
 import com.aerofs.ui.UIGlobals;
 import com.aerofs.ui.UIParam;
-import com.netflix.config.DynamicStringProperty;
 import org.slf4j.Logger;
 
 import javax.annotation.Nonnull;
@@ -57,6 +57,8 @@ import java.net.URLConnection;
 import java.net.UnknownHostException;
 import java.security.GeneralSecurityException;
 import java.util.Properties;
+
+import static com.aerofs.config.ConfigurationProperties.getStringProperty;
 
 /**
  * Note: methods in this class might be called before Cfg is initialized (i.e. before setup is
@@ -643,11 +645,11 @@ public abstract class Updater
 
     private static final String PROD_SERVER_VERSION_URL = "https://nocache.client.aerofs.com/current.ver";
     // staging value: https://nocache.client.stg.aerofs.com/current.ver
-    private static final DynamicStringProperty VERSION_URL =
-            new DynamicStringProperty("updater.version.url", PROD_SERVER_VERSION_URL);
+    private static final IProperty<String> VERSION_URL =
+            getStringProperty("updater.version.url", PROD_SERVER_VERSION_URL);
 
     private static final String PROD_INSTALLER_URL = "https://cache.client.aerofs.com";
     // staging value: https://cache.client.stg.aerofs.com
-    private static final DynamicStringProperty INSTALLER_URL =
-            new DynamicStringProperty("updater.installer.url", PROD_INSTALLER_URL);
+    private static final IProperty<String> INSTALLER_URL =
+            getStringProperty("updater.installer.url", PROD_INSTALLER_URL);
 }

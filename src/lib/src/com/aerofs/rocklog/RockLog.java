@@ -7,9 +7,9 @@ package com.aerofs.rocklog;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
+import com.aerofs.base.params.IProperty;
 import com.aerofs.lib.cfg.InjectableCfg;
 import com.google.common.net.HttpHeaders;
-import com.netflix.config.DynamicStringProperty;
 import org.slf4j.Logger;
 
 import javax.inject.Inject;
@@ -17,13 +17,15 @@ import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
+import static com.aerofs.config.ConfigurationProperties.getStringProperty;
+
 
 public class RockLog
 {
     private static final Logger l = Loggers.getLogger(RockLog.class);
     private static final int SOCKET_TIMEOUT = (int) (10 * C.SEC);
-    private static final DynamicStringProperty ROCKLOG_URL =
-            new DynamicStringProperty("lib.rocklog.url", "http://rocklog.aerofs.com");
+    private static final IProperty<String> ROCKLOG_URL =
+            getStringProperty("lib.rocklog.url", "http://rocklog.aerofs.com");
 
     private final String _rocklogUrl;
     private final InjectableCfg _cfg;

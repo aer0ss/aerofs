@@ -3,9 +3,7 @@ package com.aerofs.lib.configuration;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ssl.ICertificateProvider;
 import com.aerofs.base.ssl.StringBasedCertificateProvider;
-import com.aerofs.config.DynamicConfiguration;
 import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.MapConfiguration;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 
@@ -89,11 +87,6 @@ public class ClientConfigurationLoader
         } catch (Exception e) {
             throw new ConfigurationException(e);
         }
-        // TODO(mh): When all uses of DynamicProperties are removed, this may be removed.
-        MapConfiguration configuration = new MapConfiguration(compositeProperties);
-        DynamicConfiguration.initialize(DynamicConfiguration.builder()
-                .addConfiguration(configuration, "all")
-                .build());
 
         return compositeProperties;
     }
@@ -157,7 +150,6 @@ public class ClientConfigurationLoader
         }
         return staticProperties;
     }
-
 
     public static class IncompatibleModeException extends Exception
     {

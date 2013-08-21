@@ -1,11 +1,10 @@
 package com.aerofs.testlib;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.base.params.IProperty;
 import com.aerofs.config.ConfigurationProperties;
-import com.aerofs.config.DynamicConfiguration;
 import com.aerofs.lib.LibParam.EnterpriseConfig;
 import com.aerofs.lib.log.LogUtil;
-import com.netflix.config.DynamicBooleanProperty;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -20,7 +19,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Properties;
 
-import static com.aerofs.lib.configuration.ClientConfigurationLoader.PROPERTY_IS_ENTERPRISE_DEPLOYMENT;
 import static org.junit.Assert.assertEquals;
 
 public abstract class AbstractTest extends PowerMockTestCase
@@ -31,8 +29,6 @@ public abstract class AbstractTest extends PowerMockTestCase
         LogUtil.enableConsoleLogging();
         // Change to DEBUG if you're writing a test, but keep at NONE otherwise.
         LogUtil.setLevel(LogUtil.Level.NONE);
-
-        DynamicConfiguration.initialize(DynamicConfiguration.builder().build());
 
         // Initialize ConfigurationProperties to avoid NullPointerException when using BaseParam
         // (for example when instantiating InvitationEmailers).
@@ -90,10 +86,13 @@ public abstract class AbstractTest extends PowerMockTestCase
      * IMPORTANT: This is a global setting. However, it will be reset to false before each test
      * method.
      */
-    protected void setEnterpriseDeployment(boolean value)
+    protected void setEnterpriseDeployment(final boolean value)
     {
-        EnterpriseConfig.IS_ENTERPRISE_DEPLOYMENT = new DynamicBooleanProperty(
-                PROPERTY_IS_ENTERPRISE_DEPLOYMENT, value);
+        EnterpriseConfig.IS_ENTERPRISE_DEPLOYMENT = new IProperty<Boolean>()
+        {
+            @Override
+            public Boolean get() { return value; }
+        };
         assertEquals(value, EnterpriseConfig.IS_ENTERPRISE_DEPLOYMENT.get());
     }
 

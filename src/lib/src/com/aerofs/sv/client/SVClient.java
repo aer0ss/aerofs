@@ -9,6 +9,7 @@ import com.aerofs.base.id.DID;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UniqueID;
 import com.aerofs.base.id.UserID;
+import com.aerofs.base.params.IProperty;
 import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.OutArg;
@@ -20,16 +21,15 @@ import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.ex.RecentExceptions;
 import com.aerofs.lib.os.OSUtil;
-import com.aerofs.rocklog.Defect;
-import com.aerofs.rocklog.Defect.Priority;
-import com.aerofs.rocklog.RockLog;
 import com.aerofs.proto.Sv.PBSVCall;
 import com.aerofs.proto.Sv.PBSVCall.Type;
 import com.aerofs.proto.Sv.PBSVDefect;
 import com.aerofs.proto.Sv.PBSVDefect.Builder;
 import com.aerofs.proto.Sv.PBSVGzippedLog;
 import com.aerofs.proto.Sv.PBSVHeader;
-import com.netflix.config.DynamicStringProperty;
+import com.aerofs.rocklog.Defect;
+import com.aerofs.rocklog.Defect.Priority;
+import com.aerofs.rocklog.RockLog;
 import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
@@ -51,6 +51,7 @@ import java.util.Stack;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+import static com.aerofs.config.ConfigurationProperties.getStringProperty;
 import static com.aerofs.lib.FileUtil.deleteOrOnExit;
 import static com.aerofs.lib.LibParam.FILE_BUF_SIZE;
 import static com.aerofs.lib.ThreadUtil.startDaemonThread;
@@ -83,8 +84,8 @@ public final class SVClient
     //
     // See "Effective Java, 2nd Edition (Joshua Bloch) pg. 283
     //
-    private static final DynamicStringProperty SV_URL =
-            new DynamicStringProperty("lib.sv.url", "https://sv.aerofs.com:443/sv_beta/sv");
+    private static final IProperty<String> SV_URL =
+            getStringProperty("lib.sv.url", "https://sv.aerofs.com:443/sv_beta/sv");
 
     private static final SVRPCClient client = new SVRPCClient(SV_URL.get());
 
