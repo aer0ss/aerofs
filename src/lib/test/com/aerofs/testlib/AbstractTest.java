@@ -5,6 +5,7 @@ import com.aerofs.config.ConfigurationProperties;
 import com.aerofs.config.DynamicConfiguration;
 import com.aerofs.lib.LibParam.EnterpriseConfig;
 import com.aerofs.lib.log.LogUtil;
+import com.netflix.config.DynamicBooleanProperty;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -91,7 +92,8 @@ public abstract class AbstractTest extends PowerMockTestCase
      */
     protected void setEnterpriseDeployment(boolean value)
     {
-        DynamicConfiguration.getInstance().setProperty(PROPERTY_IS_ENTERPRISE_DEPLOYMENT, value);
+        EnterpriseConfig.IS_ENTERPRISE_DEPLOYMENT = new DynamicBooleanProperty(
+                PROPERTY_IS_ENTERPRISE_DEPLOYMENT, value);
         assertEquals(value, EnterpriseConfig.IS_ENTERPRISE_DEPLOYMENT.get());
     }
 

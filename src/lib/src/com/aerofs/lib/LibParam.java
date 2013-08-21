@@ -371,7 +371,7 @@ public class LibParam extends BaseParam
     // this class depends on ClientConfigurationLoader
     public static class EnterpriseConfig
     {
-        public static final DynamicBooleanProperty IS_ENTERPRISE_DEPLOYMENT =
+        public static DynamicBooleanProperty IS_ENTERPRISE_DEPLOYMENT =
                 new DynamicBooleanProperty(PROPERTY_IS_ENTERPRISE_DEPLOYMENT, false);
         public static final DynamicStringProperty BASE_CA_CERTIFICATE =
                 new DynamicStringProperty(PROPERTY_BASE_CA_CERT, "");
