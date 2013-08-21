@@ -4,10 +4,12 @@
 
 package com.aerofs.sp.server.lib;
 
-import com.aerofs.labeling.L;
 import com.aerofs.base.C;
+import com.aerofs.base.params.IProperty;
+import com.aerofs.labeling.L;
 import com.aerofs.lib.SecUtil;
-import com.netflix.config.DynamicStringProperty;
+
+import static com.aerofs.config.ConfigurationProperties.getStringProperty;
 
 public class SPParam
 {
@@ -33,10 +35,10 @@ public class SPParam
     // Notification-related constants.
     public static class Notifications
     {
-        public static final DynamicStringProperty SENDER_EMAIL_ADDRESS =
-                new DynamicStringProperty("sp.notification.sender_email_address", "sp@aerofs.com");
-        public static final DynamicStringProperty RECEIVER_EMAIL_ADDRESS =
-                new DynamicStringProperty("sp.notification.receiver_email_address", "team@aerofs.com");
+        public static final IProperty<String> SENDER_EMAIL_ADDRESS =
+                getStringProperty("sp.notification.sender_email_address", "sp@aerofs.com");
+        public static final IProperty<String> RECEIVER_EMAIL_ADDRESS =
+                getStringProperty("sp.notification.receiver_email_address", "team@aerofs.com");
     }
 
     /**
@@ -71,8 +73,7 @@ public class SPParam
     public static final long PASSWORD_RESET_TOKEN_VALID_DURATION = 1 * C.DAY;
 
     // Also see URLs defined in BaseParam.WWW
-    public static final DynamicStringProperty STATIC_ASSETS =
-            new DynamicStringProperty(
-                    "sp.param.static_assets", "https://d37fxzwppxbuun.cloudfront.net");
+    public static final IProperty<String> STATIC_ASSETS =
+            getStringProperty("sp.param.static_assets", "https://d37fxzwppxbuun.cloudfront.net");
 
 }

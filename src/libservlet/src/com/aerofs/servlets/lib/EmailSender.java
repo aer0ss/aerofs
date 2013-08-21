@@ -7,13 +7,12 @@ package com.aerofs.servlets.lib;
 import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.async.UncancellableFuture;
+import com.aerofs.base.params.IProperty;
 import com.aerofs.labeling.L;
+import com.aerofs.proto.Common.Void;
 import com.aerofs.sv.common.EmailCategory;
-import com.netflix.config.DynamicBooleanProperty;
-import com.netflix.config.DynamicStringProperty;
 import org.slf4j.Logger;
 
-import com.aerofs.proto.Common.Void;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.mail.Message;
@@ -34,6 +33,9 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import static com.aerofs.config.ConfigurationProperties.getBooleanProperty;
+import static com.aerofs.config.ConfigurationProperties.getStringProperty;
+
 /**
  * The EmailSender class allows you to send emails (either through local or remote SMTP).
  *
@@ -48,12 +50,12 @@ public class EmailSender
     private static final ExecutorService executor = new ThreadPoolExecutor(1, 1, 0L,
             TimeUnit.MILLISECONDS, new LinkedBlockingDeque<Runnable>(EMAIL_QUEUE_SIZE));
 
-    private static DynamicStringProperty PUBLIC_HOST =
-            new DynamicStringProperty("email.sender.public_host", "smtp.sendgrid.net");
-    private static DynamicStringProperty PUBLIC_USERNAME =
-            new DynamicStringProperty("email.sender.public_username", "mXSiiSbCMMYVG38E");
-    private static DynamicStringProperty PUBLIC_PASSWORD =
-            new DynamicStringProperty("email.sender.public_password", "6zovnhQuLMwNJlx8");
+    private static IProperty<String> PUBLIC_HOST =
+            getStringProperty("email.sender.public_host", "smtp.sendgrid.net");
+    private static IProperty<String> PUBLIC_USERNAME =
+            getStringProperty("email.sender.public_username", "mXSiiSbCMMYVG38E");
+    private static IProperty<String> PUBLIC_PASSWORD =
+            getStringProperty("email.sender.public_password", "6zovnhQuLMwNJlx8");
 
     private static final String INTERNAL_HOST = "svmail.aerofs.com";
     private static final String INTERNAL_USERNAME = "noreply";
@@ -62,8 +64,8 @@ public class EmailSender
 
     private static final String CHARSET = "UTF-8";
 
-    public static final DynamicBooleanProperty ENABLED =
-            new DynamicBooleanProperty("lib.notifications.enabled", true);
+    public static final IProperty<Boolean> ENABLED =
+            getBooleanProperty("lib.notifications.enabled", true);
 
     static {
         Properties props = new Properties();

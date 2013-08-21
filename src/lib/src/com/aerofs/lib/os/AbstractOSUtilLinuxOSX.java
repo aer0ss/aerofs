@@ -1,18 +1,18 @@
 
 package com.aerofs.lib.os;
 
+import com.aerofs.base.Loggers;
+import com.aerofs.base.params.IProperty;
+import com.aerofs.lib.ProgressIndicators;
+import com.aerofs.lib.SystemUtil;
+import com.aerofs.lib.injectable.InjectableFile;
+import com.aerofs.swig.driver.Driver;
+import com.google.common.base.Optional;
+import org.slf4j.Logger;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
-
-import com.aerofs.base.Loggers;
-import com.aerofs.config.properties.DynamicOptionalStringProperty;
-import com.aerofs.lib.ProgressIndicators;
-import com.aerofs.lib.SystemUtil;
-import com.aerofs.swig.driver.Driver;
-import org.slf4j.Logger;
-
-import com.aerofs.lib.injectable.InjectableFile;
 
 abstract class AbstractOSUtilLinuxOSX implements IOSUtil
 {
@@ -33,7 +33,7 @@ abstract class AbstractOSUtilLinuxOSX implements IOSUtil
         System.loadLibrary(library);
     }
 
-    protected String getDefaultRootAnchorParentImpl(DynamicOptionalStringProperty property)
+    protected String getDefaultRootAnchorParentImpl(IProperty<Optional<String>> property)
     {
         return property.get().isPresent()
                 ? OSUtil.replaceEnvironmentVariables(property.get().get())

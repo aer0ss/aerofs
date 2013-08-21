@@ -12,12 +12,14 @@ import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.base.ex.ExEmptyEmailAddress;
 import com.aerofs.base.ex.ExFormatError;
+import com.aerofs.base.ex.ExInviteeListEmpty;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.ex.Exceptions;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
+import com.aerofs.base.params.IProperty;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.LibParam.EnterpriseConfig;
 import com.aerofs.lib.LibParam.OpenId;
@@ -25,7 +27,6 @@ import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExAlreadyInvited;
 import com.aerofs.lib.ex.ExEmailSendingFailed;
-import com.aerofs.base.ex.ExInviteeListEmpty;
 import com.aerofs.lib.ex.ExInvalidEmailAddress;
 import com.aerofs.lib.ex.ExNoStripeCustomerID;
 import com.aerofs.lib.ex.ExNotAuthenticated;
@@ -80,6 +81,7 @@ import com.aerofs.proto.Sp.RemoveUserFromOrganizationReply;
 import com.aerofs.proto.Sp.ResolveSignUpCodeReply;
 import com.aerofs.proto.Sp.SignUpWithCodeReply;
 import com.aerofs.proto.SpNotifications.PBACLNotification;
+import com.aerofs.servlets.lib.EmailSender;
 import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue;
 import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue.Epoch;
 import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue.QueueElement;
@@ -90,7 +92,6 @@ import com.aerofs.servlets.lib.db.sql.SQLThreadLocalTransaction;
 import com.aerofs.servlets.lib.ssl.CertificateAuthenticator;
 import com.aerofs.sp.common.SubscriptionCategory;
 import com.aerofs.sp.server.email.DeviceRegistrationEmailer;
-import com.aerofs.servlets.lib.EmailSender;
 import com.aerofs.sp.server.email.InvitationEmailer;
 import com.aerofs.sp.server.email.RequestToSignUpEmailer;
 import com.aerofs.sp.server.lib.EmailSubscriptionDatabase;
@@ -123,7 +124,6 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.protobuf.ByteString;
-import com.netflix.config.DynamicBooleanProperty;
 import org.apache.commons.lang.StringUtils;
 import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 import org.slf4j.Logger;
@@ -139,6 +139,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
 import static com.aerofs.base.BaseParam.VerkehrTopics.ACL_CHANNEL_TOPIC_PREFIX;
+import static com.aerofs.config.ConfigurationProperties.getBooleanProperty;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 public class SPService implements ISPService
@@ -193,8 +194,8 @@ public class SPService implements ISPService
     private int _maxFreeCollaboratorsPerFolder = 1;
 
     // If false, no payment checks will be enforced.
-    private static final DynamicBooleanProperty ENABLE_PAYMENT =
-            new DynamicBooleanProperty("sp.payment.enabled", true);
+    private static final IProperty<Boolean> ENABLE_PAYMENT =
+            getBooleanProperty("sp.payment.enabled", true);
 
     SPService(SPDatabase db, SQLThreadLocalTransaction sqlTrans,
             JedisThreadLocalTransaction jedisTrans, ISessionUser sessionUser,

@@ -4,22 +4,24 @@
 
 package com.aerofs.daemon.core.syncstatus;
 
+import com.aerofs.base.ex.ExNoPerm;
+import com.aerofs.base.id.SID;
+import com.aerofs.base.params.IProperty;
 import com.aerofs.daemon.core.serverstatus.AbstractConnectionStatusNotifier;
 import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.lib.cfg.CfgLocalUser;
-import com.aerofs.base.ex.ExNoPerm;
-import com.aerofs.base.id.SID;
-import com.aerofs.syncstat.client.SyncStatusBlockingClient;
 import com.aerofs.proto.SyncStatus.GetSyncStatusReply;
+import com.aerofs.syncstat.client.SyncStatusBlockingClient;
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
-import com.netflix.config.DynamicStringProperty;
 
 import java.util.List;
 import java.util.concurrent.Callable;
+
+import static com.aerofs.config.ConfigurationProperties.getStringProperty;
 
 /**
  * Single persistent connection to sync status server
@@ -60,8 +62,8 @@ public class SyncStatusConnection extends AbstractConnectionStatusNotifier
         }
     }
 
-    private static final DynamicStringProperty URL =
-            new DynamicStringProperty("lib.sss.url", "https://sss.aerofs.com/syncstat");
+    private static final IProperty<String> URL =
+            getStringProperty("lib.sss.url", "https://sss.aerofs.com/syncstat");
 
     @Inject
     SyncStatusConnection(CfgLocalUser user, TC tc, SyncStatusBlockingClient.Factory ssf)

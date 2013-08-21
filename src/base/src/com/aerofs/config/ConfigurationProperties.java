@@ -6,6 +6,7 @@ package com.aerofs.config;
 
 import com.aerofs.base.BaseSecUtil;
 import com.aerofs.base.params.IProperty;
+import com.google.common.base.Optional;
 import com.google.common.base.Throwables;
 import com.google.common.net.HostAndPort;
 
@@ -49,6 +50,36 @@ public class ConfigurationProperties
         };
     }
 
+    public static IProperty<Boolean> getBooleanProperty(String key, Boolean defaultValue)
+    {
+        String val = _properties.getProperty(key);
+        final Boolean returnValue = (val == null) ? defaultValue : Boolean.valueOf(val);
+
+        return new IProperty<Boolean>()
+        {
+            @Override
+            public Boolean get()
+            {
+                return returnValue;
+            }
+        };
+    }
+
+    public static IProperty<Integer> getIntegerProperty(String key, Integer defaultValue)
+    {
+        String val = _properties.getProperty(key);
+        final Integer returnValue = (val == null) ? defaultValue : Integer.valueOf(val);
+
+        return new IProperty<Integer>()
+        {
+            @Override
+            public Integer get()
+            {
+                return returnValue;
+            }
+        };
+    }
+
     public static IProperty<String> getStringProperty(String key, String defaultValue)
     {
         final String returnValue = _properties.getProperty(key, defaultValue);
@@ -56,6 +87,19 @@ public class ConfigurationProperties
         {
             @Override
             public String get()
+            {
+                return returnValue;
+            }
+        };
+    }
+
+    public static IProperty<Optional<String>> getOptionalStringProperty(String key)
+    {
+        final Optional<String> returnValue = Optional.fromNullable(_properties.getProperty(key));
+        return new IProperty<Optional<String>>()
+        {
+            @Override
+            public Optional<String> get()
             {
                 return returnValue;
             }
