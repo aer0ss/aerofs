@@ -215,7 +215,7 @@ public class CacheBackend implements IBlockStorageBackend
     }
 
     @Override
-    public void deleteBlock(ContentHash key, @Nullable Token tk) throws IOException
+    public void deleteBlock(ContentHash key, TokenWrapper tk) throws IOException
     {
         try {
             deleteFromCache_(key);

@@ -71,7 +71,7 @@ public class TestGZipBackend extends AbstractBlockTest
         }
 
         @Override
-        public void deleteBlock(ContentHash key, @Nullable Token tk) throws IOException
+        public void deleteBlock(ContentHash key, TokenWrapper tk) throws IOException
         {
             _blocks.remove(key);
         }

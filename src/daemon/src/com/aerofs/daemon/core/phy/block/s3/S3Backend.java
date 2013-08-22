@@ -193,12 +193,11 @@ public class S3Backend implements IBlockStorageBackend
     }
 
     @Override
-    public void deleteBlock(final ContentHash key, @Nullable Token tk) throws IOException
+    public void deleteBlock(final ContentHash key, TokenWrapper tk) throws IOException
     {
         try {
-            TCB tcb = null;
+            tk.pseudoPause("s3-del");
             try {
-                tcb = tk != null ? tk.pseudoPause_("s3-del") : null;
                 AWSRetry.retry(new Callable<Void>()
                 {
                     @Override
@@ -213,7 +212,7 @@ public class S3Backend implements IBlockStorageBackend
                     }
                 });
             } finally {
-                if (tcb != null) tcb.pseudoResumed_();
+                tk.pseudoResumed();
             }
         } catch (ExAborted e) {
             throw new IOException(e);

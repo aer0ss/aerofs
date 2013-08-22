@@ -6,9 +6,11 @@ package com.aerofs.daemon.core.phy.block.s3;
 
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
+import com.aerofs.daemon.core.ex.ExAborted;
 import com.aerofs.daemon.core.phy.block.AbstractChunker;
 import com.aerofs.daemon.core.phy.block.BlockInputStream;
 import com.aerofs.daemon.core.phy.block.IBlockStorageBackend;
+import com.aerofs.daemon.core.phy.block.IBlockStorageBackend.TokenWrapper;
 import com.aerofs.daemon.core.phy.block.IBlockStorageInitable;
 import com.aerofs.daemon.lib.HashStream;
 import com.aerofs.lib.ContentHash;
@@ -109,7 +111,13 @@ class S3MagicChunk implements IBlockStorageInitable
             // "New" (i.e uncompressed) magic chunks created during between that change and
             // this fix therefore need to be deleted and re-uploaded
             l.info("magic chunk fix");
-            _bsb.deleteBlock(MAGIC_HASH, null);
+            _bsb.deleteBlock(MAGIC_HASH, new TokenWrapper() {
+                @Override
+                public void pseudoPause(String reason) throws ExAborted {}
+
+                @Override
+                public void pseudoResumed() throws ExAborted {}
+            });
         } catch (IOException e) {
             AmazonServiceException cause = getCauseOfClass(e, AmazonServiceException.class);
             if (cause == null) {
