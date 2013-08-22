@@ -5,7 +5,7 @@ actors:
     isolated: true
   - os: linux
     isolated: true
-  - os: linux
+  - os: windows
     isolated: true
   - os: windows
     isolated: true
