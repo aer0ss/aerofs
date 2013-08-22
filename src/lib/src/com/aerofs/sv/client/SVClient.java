@@ -51,7 +51,7 @@ import java.util.Stack;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-import static com.aerofs.config.ConfigurationProperties.getStringProperty;
+import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
 import static com.aerofs.lib.FileUtil.deleteOrOnExit;
 import static com.aerofs.lib.LibParam.FILE_BUF_SIZE;
 import static com.aerofs.lib.ThreadUtil.startDaemonThread;

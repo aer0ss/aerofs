@@ -4,17 +4,12 @@
 
 package com.aerofs.labeling;
 
-import com.aerofs.config.sources.PropertiesConfiguration;
+import com.aerofs.base.config.PropertiesHelper;
 import com.google.common.base.Objects;
-import com.google.common.collect.Maps;
-import org.apache.commons.configuration.AbstractConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Iterator;
-import java.util.Map;
-
-import static com.google.common.collect.Lists.newArrayList;
+import java.util.Properties;
 
 /*
  * Sources properties from labeling.properties on the classpath.  Make sure that you update
@@ -22,63 +17,63 @@ import static com.google.common.collect.Lists.newArrayList;
  */
 class PropertiesLabeling implements ILabeling
 {
-
-    final AbstractConfiguration config =
-            PropertiesConfiguration.newInstance(newArrayList("labeling.properties"));
+    private PropertiesHelper _propertiesHelper;
+    private Properties properties;
 
     PropertiesLabeling() {
-        Map<String, String> printableConfiguration = Maps.newHashMap();
+        _propertiesHelper = new PropertiesHelper();
 
-        Iterator keys = config.getKeys();
-        while (keys.hasNext()) {
-            String key = (String)keys.next();
-            String value = config.getString(key);
-            printableConfiguration.put(key, value);
+        try {
+            properties = _propertiesHelper.readPropertiesFromPwdOrClasspath("labeling.properties");
+        } catch (Exception e) {
+            properties = new Properties();
         }
 
-        LOGGER.debug(printableConfiguration.toString());
+        _propertiesHelper.logProperties(LOGGER, "Labeling properties", properties);
     }
 
     @Override
     public boolean isMultiuser()
     {
-        return config.getBoolean( "labeling.isMultiuser", false );
+        return _propertiesHelper.getBooleanWithDefaultValueFromProperties(properties,
+                "labeling.isMultiuser", false);
     }
 
     @Override
     public String brand()
     {
-        return config.getString( "labeling.brand", "AeroFS" );
+        return properties.getProperty("labeling.brand", "AeroFS");
     }
 
     @Override
     public String product()
     {
-        return config.getString( "labeling.product", "AeroFS" );
+        return properties.getProperty("labeling.product", "AeroFS");
     }
 
     @Override
     public String productSpaceFreeName()
     {
-        return config.getString( "labeling.productSpaceFreeName", "AeroFS" );
+        return properties.getProperty("labeling.productSpaceFreeName", "AeroFS");
     }
 
     @Override
     public String productUnixName()
     {
-        return config.getString( "labeling.productUnixName", "aerofs" );
+        return properties.getProperty("labeling.productUnixName", "aerofs");
     }
 
     @Override
     public String rootAnchorName()
     {
-        return config.getString( "labeling.rootAnchorName", "AeroFS" );
+        return properties.getProperty("labeling.rootAnchorName", "AeroFS");
     }
 
     @Override
     public int defaultPortbase()
     {
-        return config.getInt( "labeling.defaultPortBase", 50193 );
+        return _propertiesHelper.getIntegerWithDefaultValueFromPropertiesObj(properties,
+                "labeling.defaultPortBase", 50193);
     }
 
     @Override

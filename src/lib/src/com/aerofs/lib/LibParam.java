@@ -14,12 +14,12 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URL;
 
-import static com.aerofs.config.ConfigurationProperties.getAddressProperty;
-import static com.aerofs.config.ConfigurationProperties.getBooleanProperty;
-import static com.aerofs.config.ConfigurationProperties.getIntegerProperty;
-import static com.aerofs.config.ConfigurationProperties.getOptionalStringProperty;
-import static com.aerofs.config.ConfigurationProperties.getStringProperty;
-import static com.aerofs.config.ConfigurationProperties.getUrlProperty;
+import static com.aerofs.base.config.ConfigurationProperties.getAddressProperty;
+import static com.aerofs.base.config.ConfigurationProperties.getBooleanProperty;
+import static com.aerofs.base.config.ConfigurationProperties.getIntegerProperty;
+import static com.aerofs.base.config.ConfigurationProperties.getOptionalStringProperty;
+import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
+import static com.aerofs.base.config.ConfigurationProperties.getUrlProperty;
 import static com.aerofs.lib.configuration.ClientConfigurationLoader.PROPERTY_BASE_CA_CERT;
 import static com.aerofs.lib.configuration.ClientConfigurationLoader.PROPERTY_CONFIG_SERVICE_URL;
 import static com.aerofs.lib.configuration.ClientConfigurationLoader.PROPERTY_IS_ENTERPRISE_DEPLOYMENT;

@@ -139,7 +139,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
 import static com.aerofs.base.BaseParam.VerkehrTopics.ACL_CHANNEL_TOPIC_PREFIX;
-import static com.aerofs.config.ConfigurationProperties.getBooleanProperty;
+import static com.aerofs.base.config.ConfigurationProperties.getBooleanProperty;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 public class SPService implements ISPService

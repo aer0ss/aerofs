@@ -8,7 +8,7 @@ import com.aerofs.lib.cfg.CfgDatabase.Key;
 
 import java.net.InetSocketAddress;
 
-import static com.aerofs.config.ConfigurationProperties.getAddressProperty;
+import static com.aerofs.base.config.ConfigurationProperties.getAddressProperty;
 
 public class DaemonParam
 {

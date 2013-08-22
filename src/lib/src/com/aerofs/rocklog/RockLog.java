@@ -17,7 +17,7 @@ import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
-import static com.aerofs.config.ConfigurationProperties.getStringProperty;
+import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
 
 
 public class RockLog

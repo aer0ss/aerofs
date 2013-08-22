@@ -33,8 +33,8 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import static com.aerofs.config.ConfigurationProperties.getBooleanProperty;
-import static com.aerofs.config.ConfigurationProperties.getStringProperty;
+import static com.aerofs.base.config.ConfigurationProperties.getBooleanProperty;
+import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
 
 /**
  * The EmailSender class allows you to send emails (either through local or remote SMTP).

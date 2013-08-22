@@ -21,7 +21,7 @@ import com.google.protobuf.ByteString;
 import java.util.List;
 import java.util.concurrent.Callable;
 
-import static com.aerofs.config.ConfigurationProperties.getStringProperty;
+import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
 
 /**
  * Single persistent connection to sync status server

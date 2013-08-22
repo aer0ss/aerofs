@@ -1,7 +1,7 @@
 package com.aerofs;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.config.ConfigurationProperties;
+import com.aerofs.base.config.ConfigurationProperties;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.ChannelFactories;
@@ -15,6 +15,7 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.ExNotSetup;
 import com.aerofs.lib.configuration.ClientConfigurationLoader;
+import com.aerofs.lib.configuration.ClientConfigurationLoader.ConfigurationException;
 import com.aerofs.lib.configuration.ClientConfigurationLoader.IncompatibleModeException;
 import com.aerofs.lib.configuration.HttpsDownloader;
 import com.aerofs.lib.ex.ExDBCorrupted;
@@ -23,7 +24,6 @@ import com.aerofs.lib.log.LogUtil.Level;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.sv.client.SVClient;
 import com.google.common.io.Files;
-import org.apache.commons.configuration.ConfigurationException;
 import org.slf4j.Logger;
 
 import java.io.File;

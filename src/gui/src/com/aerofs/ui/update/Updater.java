@@ -58,7 +58,7 @@ import java.net.UnknownHostException;
 import java.security.GeneralSecurityException;
 import java.util.Properties;
 
-import static com.aerofs.config.ConfigurationProperties.getStringProperty;
+import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
 
 /**
  * Note: methods in this class might be called before Cfg is initialized (i.e. before setup is

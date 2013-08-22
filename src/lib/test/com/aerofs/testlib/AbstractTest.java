@@ -2,7 +2,7 @@ package com.aerofs.testlib;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.params.IProperty;
-import com.aerofs.config.ConfigurationProperties;
+import com.aerofs.base.config.ConfigurationProperties;
 import com.aerofs.lib.LibParam.EnterpriseConfig;
 import com.aerofs.lib.log.LogUtil;
 import org.junit.After;

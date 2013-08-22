@@ -9,7 +9,7 @@ import com.aerofs.base.params.IProperty;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.SecUtil;
 
-import static com.aerofs.config.ConfigurationProperties.getStringProperty;
+import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
 
 public class SPParam
 {

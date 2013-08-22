@@ -4,14 +4,12 @@
 
 package com.aerofs.lib.properties;
 
-import com.aerofs.config.ConfigurationProperties;
-import com.aerofs.lib.configuration.ConfigurationHelper;
+import com.aerofs.base.config.ConfigurationProperties;
+import com.aerofs.base.config.PropertiesHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -45,44 +43,14 @@ public final class Configuration
         private static final String CONFIGURATION_SERVICE_URL_FILE = "/etc/aerofs/configuration.url";
         private static final String CONFIGURATION_RESOURCE = "configuration.properties";
 
-        /**
-         * Loads static properties from the CONFIGURATION_RESOURCE file, first looking in the
-         * current folder, and if CONFIGURATION_RESOURCE isn't there, looking in the classpath.
-         *
-         * @return Properties object parsed from the contents of CONFIGURATION_RESOURCE.
-         */
-        private static Properties getStaticProperties()
-        {
-            Properties staticProperties = new Properties();
-            InputStream propertyStream = null;
-            try {
-                try {
-                    propertyStream = new File(CONFIGURATION_RESOURCE).toURI().toURL().openStream();
-                } catch (Exception e) {
-                    propertyStream = Server.class.getClassLoader().getResourceAsStream(CONFIGURATION_RESOURCE);
-                }
-
-                staticProperties.load(propertyStream);
-            } catch (Exception e) {
-                throw new IllegalStateException("Couldn't read config file: " + CONFIGURATION_RESOURCE, e);
-            } finally {
-                if (propertyStream != null) {
-                    try {
-                        propertyStream.close();
-                    } catch (IOException e) {
-                        throw new IllegalStateException("fail access: " + CONFIGURATION_RESOURCE);
-                    }
-                }
-            }
-
-            return staticProperties;
-        }
-
         public static void initialize()
                 throws Exception
         {
+            PropertiesHelper helper = new PropertiesHelper();
+
             Properties systemProperties = System.getProperties();
-            Properties staticProperties = getStaticProperties();
+            Properties staticProperties = helper.readPropertiesFromPwdOrClasspath(
+                    CONFIGURATION_RESOURCE);
 
             Properties preHttpProperties = new Properties();
             preHttpProperties.putAll(systemProperties);
@@ -91,20 +59,13 @@ public final class Configuration
                     new FileBasedConfigurationURLProvider(CONFIGURATION_SERVICE_URL_FILE));
 
             // Join all properties, throwing if a key appears twice.
-            ConfigurationHelper helper = new ConfigurationHelper();
             Properties compositeProperties = helper.disjointUnionOfThreeProperties(systemProperties,
                     staticProperties, httpProperties);
 
             // Initialize ConfigurationProperties.
             ConfigurationProperties.setProperties(compositeProperties);
 
-            try {
-                ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-                compositeProperties.store(byteArrayOutputStream, "Configuration Properties");
-                LOGGER.info("Server configuration initialized: " + byteArrayOutputStream.toString("UTF-8"));
-            } catch (Exception e) {
-                LOGGER.warn("Failed to log server configuration with exception " + e.toString());
-            }
+            helper.logProperties(LOGGER, "Server configuration initialized", compositeProperties);
         }
     }
 

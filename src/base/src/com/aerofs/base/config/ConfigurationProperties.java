@@ -2,7 +2,7 @@
  * Copyright (c) Air Computing Inc., 2013.
  */
 
-package com.aerofs.config;
+package com.aerofs.base.config;
 
 import com.aerofs.base.BaseSecUtil;
 import com.aerofs.base.params.IProperty;
@@ -25,6 +25,7 @@ import java.util.Properties;
 public class ConfigurationProperties
 {
     private static Properties _properties;
+    private static PropertiesHelper _propertiesHelper = new PropertiesHelper();
 
     /**
      * Creates a property source from properties.
@@ -52,8 +53,8 @@ public class ConfigurationProperties
 
     public static IProperty<Boolean> getBooleanProperty(String key, Boolean defaultValue)
     {
-        String val = _properties.getProperty(key);
-        final Boolean returnValue = (val == null) ? defaultValue : Boolean.valueOf(val);
+        final Boolean returnValue = _propertiesHelper.getBooleanWithDefaultValueFromProperties(
+                _properties, key, defaultValue);
 
         return new IProperty<Boolean>()
         {
@@ -67,8 +68,8 @@ public class ConfigurationProperties
 
     public static IProperty<Integer> getIntegerProperty(String key, Integer defaultValue)
     {
-        String val = _properties.getProperty(key);
-        final Integer returnValue = (val == null) ? defaultValue : Integer.valueOf(val);
+        final Integer returnValue = _propertiesHelper.getIntegerWithDefaultValueFromPropertiesObj(
+                _properties, key, defaultValue);
 
         return new IProperty<Integer>()
         {

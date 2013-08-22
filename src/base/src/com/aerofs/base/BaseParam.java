@@ -10,10 +10,10 @@ import java.net.InetSocketAddress;
 import java.net.URL;
 import java.security.cert.X509Certificate;
 
-import static com.aerofs.config.ConfigurationProperties.getAddressProperty;
-import static com.aerofs.config.ConfigurationProperties.getCertificateProperty;
-import static com.aerofs.config.ConfigurationProperties.getStringProperty;
-import static com.aerofs.config.ConfigurationProperties.getUrlProperty;
+import static com.aerofs.base.config.ConfigurationProperties.getAddressProperty;
+import static com.aerofs.base.config.ConfigurationProperties.getCertificateProperty;
+import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
+import static com.aerofs.base.config.ConfigurationProperties.getUrlProperty;
 
 /**
  * Base parameters for the servers, the desktop app and the Android client.

@@ -3,7 +3,7 @@ package com.aerofs.lib.configuration;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ssl.ICertificateProvider;
 import com.aerofs.base.ssl.StringBasedCertificateProvider;
-import org.apache.commons.configuration.ConfigurationException;
+import com.aerofs.base.config.PropertiesHelper;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 
@@ -44,6 +44,7 @@ public class ClientConfigurationLoader
     static final String HTTP_CONFIG_CACHE = "config-service-cache.properties";
 
     private HttpsDownloader _downloader;
+    private PropertiesHelper _propertiesHelper = new PropertiesHelper();
 
     public ClientConfigurationLoader(HttpsDownloader downloader)
     {
@@ -60,7 +61,6 @@ public class ClientConfigurationLoader
             throws ConfigurationException
     {
         Properties compositeProperties;
-        ConfigurationHelper helper = new ConfigurationHelper();
 
         try {
             Properties staticProperties;
@@ -73,16 +73,19 @@ public class ClientConfigurationLoader
                     "true")) {
                 // Load site configuration file, failing if it doesn't exist.
                 siteConfigProperties.load(new FileInputStream(new File(approot, SITE_CONFIG_FILE)));
+                siteConfigProperties = _propertiesHelper.parseProperties(siteConfigProperties);
 
                 // Load HTTP configuration, failing if it cannot be loaded.
                 downloadHttpConfig(approot, staticProperties, siteConfigProperties);
                 httpProperties.load(new FileInputStream(new File(approot, HTTP_CONFIG_CACHE)));
+                httpProperties = _propertiesHelper.parseProperties(httpProperties);
+
             } else if (new File(approot, SITE_CONFIG_FILE).exists()) {
                 throw new IncompatibleModeException();
             }
 
             // Join all properties together, logging a warning if any property is specified twice.
-            compositeProperties = helper.disjointUnionOfThreeProperties(
+            compositeProperties = _propertiesHelper.disjointUnionOfThreeProperties(
                     staticProperties, siteConfigProperties, httpProperties);
         } catch (Exception e) {
             throw new ConfigurationException(e);
@@ -148,7 +151,13 @@ public class ClientConfigurationLoader
                     "staticProperties.", e.toString());
             staticProperties = new Properties();
         }
-        return staticProperties;
+        return _propertiesHelper.parseProperties(staticProperties);
+    }
+
+    public static class ConfigurationException extends Exception
+    {
+        private static final long serialVersionUID = 1L;
+        public ConfigurationException(Exception e) { super(e); }
     }
 
     public static class IncompatibleModeException extends Exception
