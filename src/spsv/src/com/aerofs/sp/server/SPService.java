@@ -1457,10 +1457,6 @@ public class SPService implements ISPService
         // Check to see if the user was actually invited to this organization.
         if (!invite.exists()) throw new ExNotFound();
 
-        if (accepter.belongsTo(org)) {
-            throw new ExBadArgs(accepter + " is already part of the team");
-        }
-
         invite.delete();
 
         return accepter.setOrganization(invite.getOrganization(), AuthorizationLevel.USER);
