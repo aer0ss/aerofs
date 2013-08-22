@@ -11,12 +11,11 @@ import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
-import java.util.Collections;
-import java.util.List;
 import java.util.Properties;
 
 public final class Configuration
@@ -46,33 +45,36 @@ public final class Configuration
         private static final String CONFIGURATION_SERVICE_URL_FILE = "/etc/aerofs/configuration.url";
         private static final String CONFIGURATION_RESOURCE = "configuration.properties";
 
-        private static List<String> getStaticPropertyPaths()
-        {
-            return Collections.singletonList(CONFIGURATION_RESOURCE);
-        }
-
+        /**
+         * Loads static properties from the CONFIGURATION_RESOURCE file, first looking in the
+         * current folder, and if CONFIGURATION_RESOURCE isn't there, looking in the classpath.
+         *
+         * @return Properties object parsed from the contents of CONFIGURATION_RESOURCE.
+         */
         private static Properties getStaticProperties()
         {
             Properties staticProperties = new Properties();
             InputStream propertyStream = null;
-            for (String propertyPath : getStaticPropertyPaths()) {
+            try {
                 try {
-                    propertyStream = Server.class.getClassLoader().getResourceAsStream(propertyPath);
-                    staticProperties.load(propertyStream);
-                } catch (IOException e) {
-                    throw new IllegalStateException("Couldn't read config file: " + propertyPath, e);
-                } finally {
-                    if (propertyStream == null) { // Shouldn't ever get here, but just to be safe.
-                        throw new IllegalStateException("missing config: " + propertyPath);
-                    } else {
-                        try {
-                            propertyStream.close();
-                        } catch (IOException e) {
-                            throw new IllegalStateException("fail access: " + propertyPath);
-                        }
+                    propertyStream = new File(CONFIGURATION_RESOURCE).toURI().toURL().openStream();
+                } catch (Exception e) {
+                    propertyStream = Server.class.getClassLoader().getResourceAsStream(CONFIGURATION_RESOURCE);
+                }
+
+                staticProperties.load(propertyStream);
+            } catch (Exception e) {
+                throw new IllegalStateException("Couldn't read config file: " + CONFIGURATION_RESOURCE, e);
+            } finally {
+                if (propertyStream != null) {
+                    try {
+                        propertyStream.close();
+                    } catch (IOException e) {
+                        throw new IllegalStateException("fail access: " + CONFIGURATION_RESOURCE);
                     }
                 }
             }
+
             return staticProperties;
         }
 
