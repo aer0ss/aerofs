@@ -157,7 +157,7 @@ public class SingleuserTrayMenu extends AbstractTrayMenu implements IRitualNotif
         createHelpMenu(trayMenuPopulator);
 
         // Don't add the "Invite a friend" menu item for private deployments.
-        if (!EnterpriseConfig.IS_ENTERPRISE_DEPLOYMENT.get()) {
+        if (!EnterpriseConfig.IS_ENTERPRISE_DEPLOYMENT) {
             addInviteToSignUpMenuItem(trayMenuPopulator);
         }
 

@@ -1,7 +1,6 @@
 package com.aerofs.daemon.lib;
 
 import com.aerofs.base.C;
-import com.aerofs.base.params.IProperty;
 import com.aerofs.lib.LibParam.Daemon;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
@@ -56,7 +55,7 @@ public class DaemonParam
     {
         public static final int QUEUE_LENGTH            = QUEUE_LENGTH_DEFAULT;
         public static final long CALL_TIMEOUT           = 30 * C.SEC;
-        public static final IProperty<InetSocketAddress> STUN_ADDRESS = getAddressProperty(
+        public static final InetSocketAddress STUN_ADDRESS = getAddressProperty(
                 "daemon.stun.address",
                 InetSocketAddress.createUnresolved("stun.l.google.com", 19302));
     }

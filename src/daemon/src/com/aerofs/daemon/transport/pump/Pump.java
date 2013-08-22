@@ -167,7 +167,7 @@ public final class Pump implements IProgram
                 localid,
                 localdid,
                 scrypted,
-                BaseParam.Zephyr.ADDRESS.get(),
+                BaseParam.Zephyr.ADDRESS,
                 Proxy.NO_PROXY,
                 incomingEventSink,
                 rockLog,

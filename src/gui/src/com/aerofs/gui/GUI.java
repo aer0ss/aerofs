@@ -541,7 +541,7 @@ public class GUI implements IUI
             // N.B. a null result indicates the user has canceled the setup.
             if (result == null) throw new ExLaunchAborted("user canceled setup");
         } else {
-            AeroFSTitleAreaDialog dlg = (OpenId.ENABLED.get() ?
+            AeroFSTitleAreaDialog dlg = (OpenId.ENABLED ?
                     new DlgOpenIdSignIn(_sh) : new DlgCredentialSignIn(_sh));
 
             dlg.open();

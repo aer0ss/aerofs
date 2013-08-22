@@ -119,7 +119,7 @@ public class MultiuserTrayMenu extends AbstractTrayMenu implements ITrayMenu, IT
             @Override
             protected void handleEventImpl(Event event)
             {
-                GUIUtil.launch(WWW.TEAM_MEMBERS_URL.get());
+                GUIUtil.launch(WWW.TEAM_MEMBERS_URL);
             }
         });
     }

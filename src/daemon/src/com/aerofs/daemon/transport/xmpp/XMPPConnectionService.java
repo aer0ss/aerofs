@@ -115,7 +115,7 @@ public final class XMPPConnectionService implements IDumpStatMisc
     {
         Socket s = null;
         try {
-            s = newConnectedSocket(XMPP.ADDRESS.get(), (int)(2 * C.SEC));
+            s = newConnectedSocket(XMPP.ADDRESS, (int)(2 * C.SEC));
             return true;
         } catch (IOException e) {
             l.warn("fail xmpp reachability check", e);
@@ -174,9 +174,9 @@ public final class XMPPConnectionService implements IDumpStatMisc
         // The xmpp server address is an unresolved hostname.
         // We avoid resolving the hostname ourselves and let
         // SMACK do the DNS query on its thread.
-        InetSocketAddress address = XMPP.ADDRESS.get();
+        InetSocketAddress address = XMPP.ADDRESS;
         ConnectionConfiguration cc = new ConnectionConfiguration(address.getHostName(), address.getPort());
-        cc.setServiceName(XMPP.SERVER_DOMAIN.get());
+        cc.setServiceName(XMPP.SERVER_DOMAIN);
         cc.setSecurityMode(SecurityMode.required);
         cc.setSelfSignedCertificateEnabled(true);
         cc.setVerifyChainEnabled(false);

@@ -246,11 +246,11 @@ public class Main
     {
         // Write the new cacert.pem to the approot for use by other parts of the system.
         // TODO (MP) remove this and have everyone use Cfg.cacert() directly.
-        if (EnterpriseConfig.IS_ENTERPRISE_DEPLOYMENT.get())
+        if (EnterpriseConfig.IS_ENTERPRISE_DEPLOYMENT)
         {
             try {
                 Files.write(
-                        EnterpriseConfig.BASE_CA_CERTIFICATE.get().getBytes(),
+                        EnterpriseConfig.BASE_CA_CERTIFICATE.getBytes(),
                         new File(approot, LibParam.CA_CERT));
             } catch (IOException e) {
                 l.debug("Failed to write CA cert to disk.", e);

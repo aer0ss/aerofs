@@ -56,8 +56,8 @@ public class IdentitySessionManager
         _jedisConProvider = new PooledJedisConnectionProvider();
         // TODO: configure this better: could be a transient redis install
         _jedisConProvider.init_(
-                REDIS.ADDRESS.get().getHostName(),
-                (short)REDIS.ADDRESS.get().getPort());
+                REDIS.ADDRESS.getHostName(),
+                (short)REDIS.ADDRESS.getPort());
     }
 
     String createSession(int lifetimeSecs)

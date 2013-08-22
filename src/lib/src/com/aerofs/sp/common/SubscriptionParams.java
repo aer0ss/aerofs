@@ -18,7 +18,7 @@ public class SubscriptionParams
     static {
         URL url;
         try {
-            url = new URL(WWW.DASHBOARD_HOST_URL.get() + "/unsubscribe?" + UNSUB_TOKEN + "=");
+            url = new URL(WWW.DASHBOARD_HOST_URL + "/unsubscribe?" + UNSUB_TOKEN + "=");
         } catch (MalformedURLException e) {
             SystemUtil.fatal(e);
             url = null;

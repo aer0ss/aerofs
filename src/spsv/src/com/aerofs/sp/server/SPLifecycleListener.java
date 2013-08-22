@@ -72,14 +72,14 @@ public class SPLifecycleListener implements ServletContextListener, HttpSessionL
 
         ServletContext ctx = servletContextEvent.getServletContext();
 
-        l.info("verkehr host:" + Verkehr.HOST.get() +
-                " pub port:" + Verkehr.PUBLISH_PORT.get() +
-                " adm port:" + Verkehr.ADMIN_PORT.get() +
+        l.info("verkehr host:" + Verkehr.HOST +
+                " pub port:" + Verkehr.PUBLISH_PORT +
+                " adm port:" + Verkehr.ADMIN_PORT +
                 " cacert:" + ctx.getInitParameter(VERKEHR_CACERT_INIT_PARAMETER)
         );
 
-        short publishPort = parseShort(Verkehr.PUBLISH_PORT.get());
-        short adminPort = parseShort(Verkehr.ADMIN_PORT.get());
+        short publishPort = parseShort(Verkehr.PUBLISH_PORT);
+        short adminPort = parseShort(Verkehr.ADMIN_PORT);
 
         ICertificateProvider cacertProvider = new FileBasedCertificateProvider(getCacertPath(ctx));
 
@@ -90,12 +90,12 @@ public class SPLifecycleListener implements ServletContextListener, HttpSessionL
         // FIXME (AG): HMMMMMMMM...notice how similar the admin is to a publisher?
         // FIXME (AG): really we should simply store the factories
 
-        VerkehrPublisher publisher = getPublisher(Verkehr.HOST.get(), publishPort, cacertProvider,
+        VerkehrPublisher publisher = getPublisher(Verkehr.HOST, publishPort, cacertProvider,
                 boss, workers, timer, new NoopConnectionListener(), sameThreadExecutor());
         publisher.start();
         ctx.setAttribute(VERKEHR_PUBLISHER_ATTRIBUTE, publisher);
 
-        VerkehrAdmin admin = getAdmin(Verkehr.HOST.get(), adminPort, cacertProvider, boss, workers,
+        VerkehrAdmin admin = getAdmin(Verkehr.HOST, adminPort, cacertProvider, boss, workers,
                 timer, new NoopConnectionListener(), sameThreadExecutor());
         admin.start();
         ctx.setAttribute(VERKEHR_ADMIN_ATTRIBUTE, admin);

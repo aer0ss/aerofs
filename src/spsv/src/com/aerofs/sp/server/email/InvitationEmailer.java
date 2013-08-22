@@ -28,7 +28,7 @@ import java.util.concurrent.Callable;
 // and/or merging.
 public class InvitationEmailer
 {
-    private final static String ACCEPT_INVITATION_LINK = WWW.DASHBOARD_HOST_URL.get() + "/accept";
+    private final static String ACCEPT_INVITATION_LINK = WWW.DASHBOARD_HOST_URL + "/accept";
 
     public static class Factory
     {
@@ -98,7 +98,7 @@ public class InvitationEmailer
                 L.brand() + " is a file syncing, sharing, and collaboration tool that" +
                 " lets you sync files privately without using public cloud. You can learn more" +
                     // Whitespace required after URL for autolinker
-                " about it at " + WWW.MARKETING_HOST_URL.get() + " ." + "\n" +
+                " about it at " + WWW.MARKETING_HOST_URL + " ." + "\n" +
                 "\n" +
                 "Get started with " + L.brand() + " at:\n" +
                 "\n" + url;
@@ -227,7 +227,7 @@ public class InvitationEmailer
     private static String getReplyTo(User inviter)
     {
         return inviter.id().isTeamServerID() ?
-                WWW.SUPPORT_EMAIL_ADDRESS.get() : inviter.id().getString();
+                WWW.SUPPORT_EMAIL_ADDRESS : inviter.id().getString();
     }
 
     private final Callable<Void> _c;

@@ -103,10 +103,10 @@ public final class CommandNotificationSubscriber
 
         _listener = new VerkehrListener();
 
-        l.debug("cmd: " + Verkehr.HOST.get() + ":" + Verkehr.SUBSCRIBE_PORT.get());
+        l.debug("cmd: " + Verkehr.HOST + ":" + Verkehr.SUBSCRIBE_PORT);
         ClientFactory factory = new ClientFactory(
-                Verkehr.HOST.get(),
-                Short.parseShort(Verkehr.SUBSCRIBE_PORT.get()),
+                Verkehr.HOST,
+                Short.parseShort(Verkehr.SUBSCRIBE_PORT),
                 clientChannelFactory,
                 new CfgCACertificateProvider(),
                 new CfgKeyManagersProvider(),

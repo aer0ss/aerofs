@@ -5,7 +5,6 @@
 package com.aerofs.base.config;
 
 import com.aerofs.base.BaseSecUtil;
-import com.aerofs.base.params.IProperty;
 import com.google.common.base.Optional;
 import com.google.common.base.Throwables;
 import com.google.common.net.HostAndPort;
@@ -37,90 +36,39 @@ public class ConfigurationProperties
         _properties = properties;
     }
 
-    public static IProperty<InetSocketAddress> getAddressProperty(String key,
-            InetSocketAddress defaultValue)
+    public static InetSocketAddress getAddressProperty(String key, InetSocketAddress defaultValue)
     {
-        final InetSocketAddress returnValue = parseAddress(_properties.getProperty(key), defaultValue);
-        return new IProperty<InetSocketAddress>()
-        {
-            @Override
-            public InetSocketAddress get()
-            {
-                return returnValue;
-            }
-        };
+        return parseAddress(_properties.getProperty(key), defaultValue);
     }
 
-    public static IProperty<Boolean> getBooleanProperty(String key, Boolean defaultValue)
+    public static Boolean getBooleanProperty(String key, Boolean defaultValue)
     {
-        final Boolean returnValue = _propertiesHelper.getBooleanWithDefaultValueFromProperties(
-                _properties, key, defaultValue);
-
-        return new IProperty<Boolean>()
-        {
-            @Override
-            public Boolean get()
-            {
-                return returnValue;
-            }
-        };
+        return _propertiesHelper.getBooleanWithDefaultValueFromProperties(_properties, key,
+                defaultValue);
     }
 
-    public static IProperty<Integer> getIntegerProperty(String key, Integer defaultValue)
+    public static Integer getIntegerProperty(String key, Integer defaultValue)
     {
-        final Integer returnValue = _propertiesHelper.getIntegerWithDefaultValueFromPropertiesObj(
-                _properties, key, defaultValue);
-
-        return new IProperty<Integer>()
-        {
-            @Override
-            public Integer get()
-            {
-                return returnValue;
-            }
-        };
+        return _propertiesHelper.getIntegerWithDefaultValueFromPropertiesObj(_properties, key,
+                defaultValue);
     }
 
-    public static IProperty<String> getStringProperty(String key, String defaultValue)
+    public static String getStringProperty(String key, String defaultValue)
     {
-        final String returnValue = _properties.getProperty(key, defaultValue);
-        return new IProperty<String>()
-        {
-            @Override
-            public String get()
-            {
-                return returnValue;
-            }
-        };
+        return _properties.getProperty(key, defaultValue);
     }
 
-    public static IProperty<Optional<String>> getOptionalStringProperty(String key)
+    public static Optional<String> getOptionalStringProperty(String key)
     {
-        final Optional<String> returnValue = Optional.fromNullable(_properties.getProperty(key));
-        return new IProperty<Optional<String>>()
-        {
-            @Override
-            public Optional<String> get()
-            {
-                return returnValue;
-            }
-        };
+        return Optional.fromNullable(_properties.getProperty(key));
     }
 
-    public static IProperty<URL> getUrlProperty(String key, String defaultValue)
+    public static URL getUrlProperty(String key, String defaultValue)
     {
-        final URL returnValue = parseUrl(_properties.getProperty(key, defaultValue));
-        return new IProperty<URL>()
-        {
-            @Override
-            public URL get()
-            {
-                return returnValue;
-            }
-        };
+        return parseUrl(_properties.getProperty(key, defaultValue));
     }
 
-    public static IProperty<X509Certificate> getCertificateProperty(String key,
+    public static X509Certificate getCertificateProperty(String key,
             X509Certificate defaultValue)
     {
         X509Certificate cacert = null;
@@ -138,16 +86,7 @@ public class ConfigurationProperties
             }
         }
 
-        final X509Certificate returnValue = cacert;
-
-        return new IProperty<X509Certificate>()
-        {
-            @Override
-            public X509Certificate get()
-            {
-                return returnValue;
-            }
-        };
+        return cacert;
     }
 
     private static InetSocketAddress parseAddress(@Nullable String address, InetSocketAddress defaultValue)

@@ -65,7 +65,7 @@ public class CLISetup
         GetSetupSettingsReply defaults = UIGlobals.controller().getSetupSettings();
 
         _model = new SetupModel()
-                .setSignInActor(LibParam.OpenId.ENABLED.get() ?
+                .setSignInActor(LibParam.OpenId.ENABLED ?
                         new SignInActor.CLIOpenId(cli) : new SignInActor.Credential());
 
         _anchorRoot = defaults.getRootAnchor();
@@ -89,7 +89,7 @@ public class CLISetup
             setupSingleuser(cli);
         }
 
-        if (OpenId.ENABLED.get()) {
+        if (OpenId.ENABLED) {
             _model.doSignIn();
             cli.progress(S.SETUP_INSTALL_MESSAGE);
             _model.doInstall();
@@ -183,16 +183,16 @@ public class CLISetup
     private void getUser(CLI cli)
             throws ExNoConsole, ExEmptyEmailAddress
     {
-        if (LibParam.OpenId.ENABLED.get() == false) {
+        if (LibParam.OpenId.ENABLED == false) {
             _model.setUserID(cli.askText(L.isMultiuser() ? S.ADMIN_EMAIL : S.SETUP_USER_ID, null));
         }
     }
 
     private void getPassword(CLI cli) throws Exception
     {
-        if (LibParam.OpenId.ENABLED.get() == false) {
+        if (LibParam.OpenId.ENABLED == false) {
             cli.show(MessageType.INFO, "If you forgot your password, go to " +
-                    WWW.PASSWORD_RESET_REQUEST_URL.get() + " to reset it.");
+                    WWW.PASSWORD_RESET_REQUEST_URL + " to reset it.");
             _model.setPassword(String.valueOf(
                     cli.askPasswd(L.isMultiuser() ? S.ADMIN_PASSWD : S.SETUP_PASSWD)));
         }

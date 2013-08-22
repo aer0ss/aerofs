@@ -100,7 +100,7 @@ public class CertificateGenerator implements ICertificateGenerator
 
         URLConnection conn;
         try {
-            conn = (new URL(LibParam.CA.URL.get() + "?" + userId + '-' + did.toStringFormal())).openConnection();
+            conn = (new URL(LibParam.CA.URL + "?" + userId + '-' + did.toStringFormal())).openConnection();
         }
         catch (MalformedURLException e) {
             // Wrap in malformed URL exceptions, re-throw as IO exception so that we can cleanly

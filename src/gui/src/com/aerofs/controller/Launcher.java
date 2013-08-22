@@ -231,7 +231,7 @@ class Launcher
             String msg = L.product() + " couldn't launch because some program files are corrupted." +
                     " Please " +
                     (UI.isGUI() ? "click " + IDialogConstants.OK_LABEL : "go to " +
-                            WWW.DOWNLOAD_URL.get()) +
+                            WWW.DOWNLOAD_URL) +
                     " to download and install " + L.product() + " again. " +
                     "All your data will be intact during re-installation.";
 
@@ -239,7 +239,7 @@ class Launcher
                     new File(failedFile).length()));
             UI.get().show(MessageType.ERROR, msg);
 
-            if (UI.isGUI()) GUIUtil.launch(WWW.DOWNLOAD_URL.get());
+            if (UI.isGUI()) GUIUtil.launch(WWW.DOWNLOAD_URL);
 
             throw new ExLaunchAborted();
         }
@@ -275,7 +275,7 @@ class Launcher
     {
         // There is no SV in enterprise, so the archiver's gzipped logs will stick around
         // forever. Don't compress on enterprise, and let logback delete old logs
-        if (!LibParam.EnterpriseConfig.IS_ENTERPRISE_DEPLOYMENT.get())
+        if (!LibParam.EnterpriseConfig.IS_ENTERPRISE_DEPLOYMENT)
         {
             new LogArchiver(absRTRoot()).start();
         }

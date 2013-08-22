@@ -16,7 +16,7 @@ import java.util.regex.Pattern;
 public class Email implements IEmail
 {
     static final String DEFAULT_PS = "Have questions or comments? Email us at " +
-            WWW.SUPPORT_EMAIL_ADDRESS.get();
+            WWW.SUPPORT_EMAIL_ADDRESS;
 
     private final HTMLEmail _htmlEmail;
     private final TextEmail _textEmail;

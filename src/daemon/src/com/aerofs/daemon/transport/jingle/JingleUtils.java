@@ -30,7 +30,7 @@ public class JingleUtils
      */
     static Jid did2jid(DID did)
     {
-        return new Jid(JabberID.did2user(did), XMPP.SERVER_DOMAIN.get(), JINGLE_RESOURCE_NAME);
+        return new Jid(JabberID.did2user(did), XMPP.SERVER_DOMAIN, JINGLE_RESOURCE_NAME);
     }
 
     static DID jid2did(Jid jid) throws ExFormatError

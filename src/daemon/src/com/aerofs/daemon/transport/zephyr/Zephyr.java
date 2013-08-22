@@ -684,7 +684,7 @@ public final class Zephyr implements ITransportImpl, IUnicast, IConnectionServic
 
         ServerStatus.Builder xmppServerStatus = ServerStatus
                 .newBuilder()
-                .setServerAddress(fromInetSockAddress(XMPP.ADDRESS.get()));
+                .setServerAddress(fromInetSockAddress(XMPP.ADDRESS));
 
         try {
             xmppServerStatus.setReachable(xmppConnectionService.isReachable());

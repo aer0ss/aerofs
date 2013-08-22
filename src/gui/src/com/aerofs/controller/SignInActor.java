@@ -97,8 +97,8 @@ public abstract class SignInActor
 
         void getSessionAttributes() throws Exception
         {
-            while (elapsed() < (OpenId.DELEGATE_TIMEOUT.get() * C.SEC)) {
-                Thread.sleep(OpenId.SESSION_INTERVAL.get() * C.SEC);
+            while (elapsed() < (OpenId.DELEGATE_TIMEOUT * C.SEC)) {
+                Thread.sleep(OpenId.SESSION_INTERVAL * C.SEC);
 
                 OpenIdSessionAttributes session
                         = _spclient.openIdGetSessionAttributes(_sessionKeys.getSessionNonce());
@@ -116,7 +116,7 @@ public abstract class SignInActor
         // Return a URL of the form  https://transient/openid/oa?token=ab33f
         String getDelegateUrl()
         {
-            return OpenId.IDENTITY_URL.get() + OpenId.IDENTITY_REQ_PATH
+            return OpenId.IDENTITY_URL + OpenId.IDENTITY_REQ_PATH
                     + "?" + OpenId.IDENTITY_REQ_PARAM + "=" + _sessionKeys.getDelegateNonce();
         }
 

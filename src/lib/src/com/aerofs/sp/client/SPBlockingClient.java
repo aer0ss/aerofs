@@ -32,7 +32,7 @@ public class SPBlockingClient extends SPServiceBlockingStub
     {
         // N.B. if the enterprise certificate is not provided when the client is built in
         //   enterprise mode, fallback to use the production CA cert instead.
-        ICertificateProvider certificateProvider = EnterpriseConfig.IS_ENTERPRISE_DEPLOYMENT.get()
+        ICertificateProvider certificateProvider = EnterpriseConfig.IS_ENTERPRISE_DEPLOYMENT
                 ? new EnterpriseCertificateProvider()
                 : new CfgCACertificateProvider();
 
@@ -51,12 +51,12 @@ public class SPBlockingClient extends SPServiceBlockingStub
         public SPBlockingClient create_(UserID user)
         {
             return new SPBlockingClient(
-                    new SPClientHandler(SP.URL.get(), MUTUAL_AUTH_CONNECTION_CONFIGURATOR), user);
+                    new SPClientHandler(SP.URL, MUTUAL_AUTH_CONNECTION_CONFIGURATOR), user);
         }
 
         public SPBlockingClient create_(UserID user, IURLConnectionConfigurator configurator)
         {
-            return new SPBlockingClient(new SPClientHandler(SP.URL.get(), configurator), user);
+            return new SPBlockingClient(new SPClientHandler(SP.URL, configurator), user);
         }
 
         /**
@@ -64,7 +64,7 @@ public class SPBlockingClient extends SPServiceBlockingStub
          */
         public SPBlockingClient create_(IURLConnectionConfigurator configurator)
         {
-            return new SPBlockingClient(new SPClientHandler(SP.URL.get(), configurator),
+            return new SPBlockingClient(new SPClientHandler(SP.URL, configurator),
                     UserID.fromInternal(""));
         }
     }

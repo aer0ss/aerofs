@@ -2,7 +2,6 @@
 package com.aerofs.lib.os;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.base.params.IProperty;
 import com.aerofs.lib.ProgressIndicators;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.injectable.InjectableFile;
@@ -33,10 +32,10 @@ abstract class AbstractOSUtilLinuxOSX implements IOSUtil
         System.loadLibrary(library);
     }
 
-    protected String getDefaultRootAnchorParentImpl(IProperty<Optional<String>> property)
+    protected String getDefaultRootAnchorParentImpl(Optional<String> property)
     {
-        return property.get().isPresent()
-                ? OSUtil.replaceEnvironmentVariables(property.get().get())
+        return property.isPresent()
+                ? OSUtil.replaceEnvironmentVariables(property.get())
                 : getUserHomeDir();
     }
 

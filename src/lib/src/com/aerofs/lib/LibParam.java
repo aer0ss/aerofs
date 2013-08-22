@@ -7,7 +7,6 @@ package com.aerofs.lib;
 import com.aerofs.base.BaseParam;
 import com.aerofs.base.C;
 import com.aerofs.base.id.SID;
-import com.aerofs.base.params.IProperty;
 import com.google.common.base.Optional;
 
 import java.net.InetAddress;
@@ -196,27 +195,27 @@ public class LibParam extends BaseParam
     public static class CA
     {
         // TODO (MP) move this to a server-only package (perhaps a new ServerParam.java?)
-        public static final IProperty<URL> URL =
+        public static final URL URL =
                 getUrlProperty("base.ca.url", "http://joan.aerofs.com:1029/prod");
     }
 
     public static class RootAnchor
     {
-        public static final IProperty<Optional<String>> DEFAULT_LOCATION_WINDOWS =
+        public static final Optional<String> DEFAULT_LOCATION_WINDOWS =
                 getOptionalStringProperty("lib.anchor.default_location_windows");
 
-        public static final IProperty<Optional<String>> DEFAULT_LOCATION_OSX =
+        public static final Optional<String> DEFAULT_LOCATION_OSX =
                 getOptionalStringProperty("lib.anchor.default_location_osx");
 
-        public static final IProperty<Optional<String>> DEFAULT_LOCATION_LINUX =
+        public static final Optional<String> DEFAULT_LOCATION_LINUX =
                 getOptionalStringProperty("lib.anchor.default_location_linux");
     }
 
     public static class REDIS
     {
         // TODO (MP) rename to lib.redis.address (keeping name for bloomberg compatibility).
-        public static final IProperty<InetSocketAddress> ADDRESS = getAddressProperty(
-                "sp.redis.address", InetSocketAddress.createUnresolved("localhost", 6379));
+        public static final InetSocketAddress ADDRESS = getAddressProperty("sp.redis.address",
+                InetSocketAddress.createUnresolved("localhost", 6379));
     }
 
     /**
@@ -229,11 +228,11 @@ public class LibParam extends BaseParam
     public static class OpenId
     {
         /** OpenId authentication (if enabled, this replaces credential auth) */
-        public static final IProperty<Boolean>          ENABLED =
+        public static final Boolean                     ENABLED =
                 getBooleanProperty(                     "openid.service.enabled", false);
 
         /** Timeout for the entire OpenId flow, in seconds. */
-        public static final IProperty<Integer>          DELEGATE_TIMEOUT =
+        public static final Integer                     DELEGATE_TIMEOUT =
                 getIntegerProperty(                     "openid.service.timeout", 300);
 
         /**
@@ -242,22 +241,22 @@ public class LibParam extends BaseParam
          * gets used. This only needs to be as long as the retry interval in the session
          * client, plus the max latency of the session query.
          */
-        public static final IProperty<Integer>          SESSION_TIMEOUT =
+        public static final Integer                     SESSION_TIMEOUT =
                 getIntegerProperty(                     "openid.service.session.timeout", 10);
 
         /**
          * Polling frequency of the client waiting for OpenId authorization to complete, in seconds.
          * TODO: sub-second resolution?
          */
-        public static final IProperty<Integer>          SESSION_INTERVAL =
+        public static final Integer                     SESSION_INTERVAL =
                 getIntegerProperty(                     "openid.service.session.interval", 1);
 
         /** URL of the Identity service */
-        public static final IProperty<String>           IDENTITY_URL =
+        public static final String                      IDENTITY_URL =
                 getStringProperty(                      "openid.service.url", "");
 
         /** The security realm for which we are requesting authorization */
-        public static final IProperty<String>          IDENTITY_REALM =
+        public static final String                      IDENTITY_REALM =
                 getStringProperty(                      "openid.service.realm", "");
 
         /** The auth request path to append to the identity server URL. */
@@ -284,23 +283,23 @@ public class LibParam extends BaseParam
         public static final String                      OPENID_ONCOMPLETE_URL = "sp.oncomplete";
 
         /** OpenId discovery may be disabled if YADIS discovery is not supported. */
-        public static final IProperty<Boolean>          DISCOVERY_ENABLED =
+        public static final Boolean                     DISCOVERY_ENABLED =
                 getBooleanProperty(                     "openid.idp.discovery.enabled", false);
 
         /** Discovery URL for the OpenId provider. Only used if discovery is enabled. */
-        public static final IProperty<String>           DISCOVERY_URL =
+        public static final String                      DISCOVERY_URL =
                 getStringProperty(                      "openid.idp.discovery.url", "");
 
         /** Endpoint URL used if discovery is not enabled for this OpenId Provider */
-        public static final IProperty<String>           ENDPOINT_URL =
+        public static final String                      ENDPOINT_URL =
                 getStringProperty(                      "openid.idp.endpoint.url", "");
 
         /** If enabled, use Diffie-Helman association and a MAC to verify the auth result */
-        public static final IProperty<Boolean>          ENDPOINT_STATEFUL =
+        public static final Boolean                     ENDPOINT_STATEFUL =
                 getBooleanProperty(                     "openid.idp.endpoint.stateful", true);
 
         /** Name of the HTTP parameter we should use as the user identifier in an auth response. */
-        public static final IProperty<String>           IDP_USER_ATTR =
+        public static final String                      IDP_USER_ATTR =
                 getStringProperty(                      "openid.idp.user.uid.attribute",
                                                         "openid.identity");
 
@@ -313,7 +312,7 @@ public class LibParam extends BaseParam
          *
          * NOTE: capture groups are numbered starting at _1_.
          */
-        public static final IProperty<String>           IDP_USER_PATTERN =
+        public static final String                      IDP_USER_PATTERN =
                 getStringProperty(                      "openid.idp.user.uid.pattern",   "");
 
 
@@ -324,7 +323,7 @@ public class LibParam extends BaseParam
          *
          * "sreg" for simple registration (an OpenId 1.0 extension)
          */
-        public static final IProperty<String>           IDP_USER_EXTENSION =
+        public static final String                      IDP_USER_EXTENSION =
                 getStringProperty(                      "openid.idp.user.extension", "");
 
         /**
@@ -338,7 +337,7 @@ public class LibParam extends BaseParam
          *
          * uid[1]@syncfs.com
          */
-        public static final IProperty<String>           IDP_USER_EMAIL =
+        public static final String                      IDP_USER_EMAIL =
                 getStringProperty(                      "openid.idp.user.email",
                                                         "openid.ext1.value.email");
 
@@ -352,7 +351,7 @@ public class LibParam extends BaseParam
          *
          * openid.sreg.fullname (for sreg; fullname only)
          */
-        public static final IProperty<String>           IDP_USER_FIRSTNAME =
+        public static final String                      IDP_USER_FIRSTNAME =
                 getStringProperty(                      "openid.idp.user.name.first",
                                                         "openid.ext1.value.firstname");
 
@@ -365,7 +364,7 @@ public class LibParam extends BaseParam
          *
          * openid.sreg.fullname (for sreg; fullname only)
          */
-        public static final IProperty<String>           IDP_USER_LASTNAME =
+        public static final String                      IDP_USER_LASTNAME =
                 getStringProperty(                      "openid.idp.user.name.last",
                                                         "openid.ext1.value.lastname");
     }
@@ -373,15 +372,15 @@ public class LibParam extends BaseParam
     // this class depends on ClientConfigurationLoader
     public static class EnterpriseConfig
     {
-        public static IProperty<Boolean>                IS_ENTERPRISE_DEPLOYMENT =
+        public static Boolean                           IS_ENTERPRISE_DEPLOYMENT =
                 getBooleanProperty(                     PROPERTY_IS_ENTERPRISE_DEPLOYMENT,
                                                         false);
 
-        public static final IProperty<String>           BASE_CA_CERTIFICATE =
+        public static final String                      BASE_CA_CERTIFICATE =
                 getStringProperty(                      PROPERTY_BASE_CA_CERT,
                                                         "");
 
-        public static final IProperty<String>           CONFIG_SERVICE_URL =
+        public static final String                      CONFIG_SERVICE_URL =
                 getStringProperty(                      PROPERTY_CONFIG_SERVICE_URL,
                                                         "");
 }

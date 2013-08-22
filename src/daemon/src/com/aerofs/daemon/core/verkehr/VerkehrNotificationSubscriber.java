@@ -52,8 +52,8 @@ public class VerkehrNotificationSubscriber extends AbstractConnectionStatusNotif
     {
         VerkehrListener listener = new VerkehrListener();
         ClientFactory factory = new ClientFactory(
-                Verkehr.HOST.get(),
-                Short.parseShort(Verkehr.SUBSCRIBE_PORT.get()),
+                Verkehr.HOST,
+                Short.parseShort(Verkehr.SUBSCRIBE_PORT),
                 clientSocketChannelFactory,
                 new CfgCACertificateProvider(),
                 new CfgKeyManagersProvider(),

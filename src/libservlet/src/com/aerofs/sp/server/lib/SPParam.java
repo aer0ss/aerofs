@@ -5,7 +5,6 @@
 package com.aerofs.sp.server.lib;
 
 import com.aerofs.base.C;
-import com.aerofs.base.params.IProperty;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.SecUtil;
 
@@ -35,9 +34,9 @@ public class SPParam
     // Notification-related constants.
     public static class Notifications
     {
-        public static final IProperty<String> SENDER_EMAIL_ADDRESS =
+        public static final String SENDER_EMAIL_ADDRESS =
                 getStringProperty("sp.notification.sender_email_address", "sp@aerofs.com");
-        public static final IProperty<String> RECEIVER_EMAIL_ADDRESS =
+        public static final String RECEIVER_EMAIL_ADDRESS =
                 getStringProperty("sp.notification.receiver_email_address", "team@aerofs.com");
     }
 
@@ -73,7 +72,7 @@ public class SPParam
     public static final long PASSWORD_RESET_TOKEN_VALID_DURATION = 1 * C.DAY;
 
     // Also see URLs defined in BaseParam.WWW
-    public static final IProperty<String> STATIC_ASSETS =
+    public static final String STATIC_ASSETS =
             getStringProperty("sp.param.static_assets", "https://d37fxzwppxbuun.cloudfront.net");
 
 }

@@ -1,7 +1,6 @@
 package com.aerofs.testlib;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.base.params.IProperty;
 import com.aerofs.base.config.ConfigurationProperties;
 import com.aerofs.lib.LibParam.EnterpriseConfig;
 import com.aerofs.lib.log.LogUtil;
@@ -88,12 +87,8 @@ public abstract class AbstractTest extends PowerMockTestCase
      */
     protected void setEnterpriseDeployment(final boolean value)
     {
-        EnterpriseConfig.IS_ENTERPRISE_DEPLOYMENT = new IProperty<Boolean>()
-        {
-            @Override
-            public Boolean get() { return value; }
-        };
-        assertEquals(value, EnterpriseConfig.IS_ENTERPRISE_DEPLOYMENT.get());
+        EnterpriseConfig.IS_ENTERPRISE_DEPLOYMENT = value;
+        assertEquals(value, EnterpriseConfig.IS_ENTERPRISE_DEPLOYMENT);
     }
 
     @Before

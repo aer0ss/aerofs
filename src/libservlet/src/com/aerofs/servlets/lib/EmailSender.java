@@ -7,7 +7,6 @@ package com.aerofs.servlets.lib;
 import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.async.UncancellableFuture;
-import com.aerofs.base.params.IProperty;
 import com.aerofs.labeling.L;
 import com.aerofs.proto.Common.Void;
 import com.aerofs.sv.common.EmailCategory;
@@ -50,11 +49,11 @@ public class EmailSender
     private static final ExecutorService executor = new ThreadPoolExecutor(1, 1, 0L,
             TimeUnit.MILLISECONDS, new LinkedBlockingDeque<Runnable>(EMAIL_QUEUE_SIZE));
 
-    private static IProperty<String> PUBLIC_HOST =
+    private static String PUBLIC_HOST =
             getStringProperty("email.sender.public_host", "smtp.sendgrid.net");
-    private static IProperty<String> PUBLIC_USERNAME =
+    private static String PUBLIC_USERNAME =
             getStringProperty("email.sender.public_username", "mXSiiSbCMMYVG38E");
-    private static IProperty<String> PUBLIC_PASSWORD =
+    private static String PUBLIC_PASSWORD =
             getStringProperty("email.sender.public_password", "6zovnhQuLMwNJlx8");
 
     private static final String INTERNAL_HOST = "svmail.aerofs.com";
@@ -64,7 +63,7 @@ public class EmailSender
 
     private static final String CHARSET = "UTF-8";
 
-    public static final IProperty<Boolean> ENABLED =
+    public static final Boolean ENABLED =
             getBooleanProperty("lib.notifications.enabled", true);
 
     static {
@@ -82,7 +81,7 @@ public class EmailSender
             throws MessagingException, UnsupportedEncodingException
     {
         // If notifications are disabled, this is a noop.
-        if (!ENABLED.get()) {
+        if (!ENABLED) {
             return UncancellableFuture.createSucceeded(Void.getDefaultInstance());
         }
 
@@ -98,7 +97,7 @@ public class EmailSender
             @Nonnull EmailCategory category)
             throws MessagingException, UnsupportedEncodingException
     {
-        return sendEmail(WWW.SUPPORT_EMAIL_ADDRESS.get(), fromName, to, replyTo, subject, textBody,
+        return sendEmail(WWW.SUPPORT_EMAIL_ADDRESS, fromName, to, replyTo, subject, textBody,
                 htmlBody, true, category);
     }
 
@@ -194,9 +193,9 @@ public class EmailSender
                     try {
                         if (usingSendGrid) {
                             t.connect(
-                                    PUBLIC_HOST.get(),
-                                    PUBLIC_USERNAME.get(),
-                                    PUBLIC_PASSWORD.get());
+                                    PUBLIC_HOST,
+                                    PUBLIC_USERNAME,
+                                    PUBLIC_PASSWORD);
                         } else {
                             t.connect(INTERNAL_HOST, INTERNAL_USERNAME, INTERNAL_PASSWORD);
                         }

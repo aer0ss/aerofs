@@ -107,7 +107,7 @@ public class Transports implements IDumpStat, IDumpStatMisc, IStartable, ITransf
                 localid,
                 localdid,
                 scrypted,
-                BaseParam.Zephyr.ADDRESS.get(),
+                BaseParam.Zephyr.ADDRESS,
                 Proxy.NO_PROXY,
                 coreQueue,
                 rocklog,
@@ -121,7 +121,7 @@ public class Transports implements IDumpStat, IDumpStatMisc, IStartable, ITransf
         if (Cfg.useTCP()) {
             addTransport(transportFactory.newTransport(LANTCP), linkStateService);
         }
-        if (Cfg.useJingle() && !EnterpriseConfig.IS_ENTERPRISE_DEPLOYMENT.get()) {
+        if (Cfg.useJingle() && !EnterpriseConfig.IS_ENTERPRISE_DEPLOYMENT) {
             addTransport(transportFactory.newTransport(JINGLE), linkStateService);
         }
         if (Cfg.useZephyr()) {

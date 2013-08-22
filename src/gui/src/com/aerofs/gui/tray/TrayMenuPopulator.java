@@ -89,7 +89,7 @@ public class TrayMenuPopulator
 
     public void addHelpMenuItems()
     {
-        if (!EnterpriseConfig.IS_ENTERPRISE_DEPLOYMENT.get()) {
+        if (!EnterpriseConfig.IS_ENTERPRISE_DEPLOYMENT) {
             addMenuItem(S.REPORT_A_PROBLEM, new AbstractListener(null)
             {
                 @Override

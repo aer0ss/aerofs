@@ -9,7 +9,6 @@ import com.aerofs.base.id.DID;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UniqueID;
 import com.aerofs.base.id.UserID;
-import com.aerofs.base.params.IProperty;
 import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.OutArg;
@@ -84,10 +83,10 @@ public final class SVClient
     //
     // See "Effective Java, 2nd Edition (Joshua Bloch) pg. 283
     //
-    private static final IProperty<String> SV_URL =
+    private static final String SV_URL =
             getStringProperty("lib.sv.url", "https://sv.aerofs.com:443/sv_beta/sv");
 
-    private static final SVRPCClient client = new SVRPCClient(SV_URL.get());
+    private static final SVRPCClient client = new SVRPCClient(SV_URL);
 
     private static SVRPCClient getRpcClient()
     {

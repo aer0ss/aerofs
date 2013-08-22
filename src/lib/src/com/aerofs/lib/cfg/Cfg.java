@@ -562,8 +562,8 @@ public class Cfg
     public static X509Certificate cacert() throws IOException, CertificateException
     {
         if (_cacert == null) {
-            InputStream in = EnterpriseConfig.IS_ENTERPRISE_DEPLOYMENT.get()
-                    ? new ByteArrayInputStream(EnterpriseConfig.BASE_CA_CERTIFICATE.get().getBytes())
+            InputStream in = EnterpriseConfig.IS_ENTERPRISE_DEPLOYMENT
+                    ? new ByteArrayInputStream(EnterpriseConfig.BASE_CA_CERTIFICATE.getBytes())
                     : new FileInputStream(new File(AppRoot.abs(), LibParam.CA_CERT).getAbsolutePath());
 
             _cacert = (X509Certificate) BaseSecUtil.newCertificateFromStream(in);
