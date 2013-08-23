@@ -235,7 +235,7 @@ public class Main
     }
 
     private static void initializeConfigurationSystem(String appRoot)
-            throws ConfigurationException, IncompatibleModeException
+            throws ConfigurationException
     {
         ClientConfigurationLoader loader = new ClientConfigurationLoader(new HttpsDownloader());
         ConfigurationProperties.setProperties(loader.loadConfiguration(appRoot));
