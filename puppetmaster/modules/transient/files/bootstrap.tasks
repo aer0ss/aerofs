@@ -9,7 +9,7 @@ create-sp-tomcat-xml
 uwsgi-restart
 restund-fix-config
 zephyr-start
-sanity-pull-dynamic-config
+sanity-pull-config
 add-loopback-hosts-entry-transient
 repackage-installers
 delay

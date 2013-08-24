@@ -4,4 +4,4 @@
 
 // include all the directories you want searched here for gradle build
 
-include 'src/base', 'src/verkehr'
+include 'src/verkehr'

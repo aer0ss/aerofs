@@ -2,7 +2,6 @@ approot
 env
 out.ant
 out.idea
-resource/common/lib.dynamic-config
 resource/server/lib.dropwizard
 tools/build/properties.log
 workspace.xml
