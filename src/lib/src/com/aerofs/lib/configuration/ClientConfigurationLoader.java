@@ -85,8 +85,8 @@ public class ClientConfigurationLoader
             }
 
             // Join all properties together, logging a warning if any property is specified twice.
-            compositeProperties = _propertiesHelper.disjointUnionOfThreeProperties(
-                    staticProperties, siteConfigProperties, httpProperties);
+            compositeProperties = _propertiesHelper.unionOfThreeProperties(staticProperties,
+                    siteConfigProperties, httpProperties);
         } catch (Exception e) {
             throw new ConfigurationException(e);
         }

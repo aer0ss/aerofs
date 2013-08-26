@@ -30,7 +30,7 @@ public class PropertiesHelper
      * @param p2
      * @return Union of p1 and p2.
      */
-    public Properties disjointUnionProperties(Properties p1, Properties p2)
+    public Properties unionProperties(Properties p1, Properties p2)
     {
         Set<Object> intersection = Sets.intersection(p1.keySet(), p2.keySet());
         if (!intersection.isEmpty()) {
@@ -55,9 +55,9 @@ public class PropertiesHelper
      * @param p3 Properties object that wins all conflicts.
      * @return Union of p1, p2 and p3.
      */
-    public Properties disjointUnionOfThreeProperties(Properties p1, Properties p2, Properties p3)
+    public Properties unionOfThreeProperties(Properties p1, Properties p2, Properties p3)
     {
-        return disjointUnionProperties(disjointUnionProperties(p1, p2), p3);
+        return unionProperties(unionProperties(p1, p2), p3);
     }
 
     /**
@@ -139,14 +139,15 @@ public class PropertiesHelper
      * corresponding to key in properties. Returns the result of this replacement. Ie
      *
      * labeling.product=AeroFS
-     * labeling.rootAnchorName=${labeling.product}
+     * labeling.rootAnchorName=${labeling.product} Product
      *
      * Becomes
      *
      * labeling.product=AeroFS
-     * labeling.rootAnchorName=AeroFS
+     * labeling.rootAnchorName=AeroFS Product
      *
-     * NB: This parsing doesn't support chaining at all, it literally performs a find/replace.
+     * NB1: This parsing doesn't support chaining at all.
+     * NB2: This function assumes the input is well-formed, and may behave badly on malformed input.
      */
     public Properties parseProperties(Properties properties)
     {
@@ -155,12 +156,17 @@ public class PropertiesHelper
             String key = (String)keyObj;
             value = properties.getProperty(key);
 
-            if (value.startsWith("${") && value.endsWith("}")) {
-                String keyReferenced = value.substring(2, value.length()-1);
-                String valueReferenced = properties.getProperty(keyReferenced);
+            if (!value.contains("${")) continue;
 
-                properties.setProperty(key, valueReferenced);
+            String parsedValue = "";
+            for (String piece : value.split("\\}")) {
+                String preKey = piece.split("\\$\\{")[0];
+                String keyReferenced = piece.split("\\$\\{")[1];
+
+                String valueReferenced = properties.getProperty(keyReferenced);
+                parsedValue += preKey + valueReferenced;
             }
+            properties.setProperty(key, parsedValue);
         }
         return properties;
     }

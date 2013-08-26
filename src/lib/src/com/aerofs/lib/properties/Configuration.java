@@ -59,7 +59,7 @@ public final class Configuration
                     new FileBasedConfigurationURLProvider(CONFIGURATION_SERVICE_URL_FILE));
 
             // Join all properties, throwing if a key appears twice.
-            Properties compositeProperties = helper.disjointUnionOfThreeProperties(systemProperties,
+            Properties compositeProperties = helper.unionOfThreeProperties(systemProperties,
                     staticProperties, httpProperties);
 
             // Initialize ConfigurationProperties.
