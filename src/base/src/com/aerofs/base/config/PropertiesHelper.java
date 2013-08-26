@@ -128,7 +128,7 @@ public class PropertiesHelper
         try {
             ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
             properties.store(byteArrayOutputStream, description);
-            l.info(byteArrayOutputStream.toString("UTF-8"));
+            l.debug(byteArrayOutputStream.toString("UTF-8"));
         } catch (Exception e) {
             l.warn("Failed to log server configuration with exception " + e.toString());
         }
