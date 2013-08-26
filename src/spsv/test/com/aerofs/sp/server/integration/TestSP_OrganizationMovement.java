@@ -4,17 +4,12 @@
 
 package com.aerofs.sp.server.integration;
 
-import com.aerofs.base.id.UserID;
-import com.aerofs.base.params.IProperty;
-import com.aerofs.lib.FullName;
-import com.aerofs.lib.LibParam;
-import com.aerofs.lib.LibParam.EnterpriseConfig;
-import com.aerofs.lib.ex.ExAlreadyInvited;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExNotFound;
-import com.aerofs.proto.Sp.PBAuthorizationLevel;
+import com.aerofs.lib.ex.ExAlreadyInvited;
 import com.aerofs.proto.Sp.GetAuthorizationLevelReply;
 import com.aerofs.proto.Sp.GetOrganizationInvitationsReply;
+import com.aerofs.proto.Sp.PBAuthorizationLevel;
 import com.aerofs.sp.server.lib.id.OrganizationID;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
