@@ -43,12 +43,12 @@ import static org.jboss.netty.handler.codec.http.HttpVersion.HTTP_1_1;
  *
  * Sample code:
  *
- *      TestHttpServer _server;
+ *      HttpServerTest _server;
  *
  *      @Before
  *      public void setUp()
  *      {
- *          _server = new TestHttpServer(8080);
+ *          _server = new HttpServerTest(8080);
  *          _server.startAndWait();
  *      }
  *
@@ -65,14 +65,14 @@ import static org.jboss.netty.handler.codec.http.HttpVersion.HTTP_1_1;
  *      }
  *
  */
-public class TestHttpServer extends AbstractIdleService
+public class HttpServerTest extends AbstractIdleService
 {
     public interface RequestProcessor
     {
         public HttpResponse process(HttpRequest request) throws Exception;
     }
 
-    private static final Logger l = Loggers.getLogger(TestHttpServer.class);
+    private static final Logger l = Loggers.getLogger(HttpServerTest.class);
 
     private final ChannelFactory _factory = new NioServerSocketChannelFactory(
             Executors.newCachedThreadPool(), Executors.newCachedThreadPool());
@@ -83,7 +83,7 @@ public class TestHttpServer extends AbstractIdleService
     /**
      * Constructs a new HTTP server listening to 'port'
      */
-    public TestHttpServer(int port)
+    public HttpServerTest(int port)
     {
         _address = new InetSocketAddress("localhost", port);
     }
