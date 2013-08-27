@@ -1,10 +1,9 @@
 package com.aerofs.daemon.event.lib.imc;
 
+import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
 import com.aerofs.lib.event.IEvent;
 import com.aerofs.lib.event.Prio;
-import com.aerofs.lib.ThreadUtil;
-import com.aerofs.base.ex.ExNoResource;
 
 public class QueueBasedIMCExecutor implements IIMCExecutor {
     final IBlockingPrioritizedEventSink<IEvent> _q;
@@ -24,12 +23,6 @@ public class QueueBasedIMCExecutor implements IIMCExecutor {
     public boolean enqueue_(IEvent ev, Prio prio)
     {
         return _q.enqueue(ev, prio);
-    }
-
-    @Override
-    public void enqueueThrows_(IEvent ev, Prio prio) throws ExNoResource
-    {
-        _q.enqueueThrows(ev, prio);
     }
 
     @Override
