@@ -95,14 +95,27 @@ mkdir -p $HICOLOR_DIR/16x16/apps
 mkdir -p $HICOLOR_DIR/32x32/apps
 mkdir -p $HICOLOR_DIR/64x64/apps
 
-cp -R $SERVER_RELEASE_DIR/aerofs.linux.inst/[AEROFS_PRODUCT_UNIX]* debian/usr/bin/
-chmod a+x debian/usr/bin/[AEROFS_PRODUCT_UNIX]
+# AeroFS code and assets
+mkdir -p debian/usr/share/[AEROFS_PRODUCT_UNIX]/
+cp -av $SERVER_RELEASE_DIR/aerofs.linux/* debian/usr/share/[AEROFS_PRODUCT_UNIX]/
+cp -av $SERVER_RELEASE_DIR/aerofs/* debian/usr/share/[AEROFS_PRODUCT_UNIX]/shared/
 
-cp $SERVER_RELEASE_DIR/aerofs.linux/[AEROFS_PRODUCT_UNIX].desktop debian/usr/share/applications/[AEROFS_PRODUCT_UNIX].desktop
+# Freedesktop.org application file
+cp $SERVER_RELEASE_DIR/aerofs.linux/shared/[AEROFS_PRODUCT_UNIX].desktop debian/usr/share/applications/[AEROFS_PRODUCT_UNIX].desktop
 
+# Icons for platform integration
 cp $SERVER_RELEASE_DIR/aerofs/icons/logo16.png $HICOLOR_DIR/16x16/apps/[AEROFS_PRODUCT_UNIX].png
 cp $SERVER_RELEASE_DIR/aerofs/icons/logo32.png $HICOLOR_DIR/32x32/apps/[AEROFS_PRODUCT_UNIX].png
 cp $SERVER_RELEASE_DIR/aerofs/icons/logo64.png $HICOLOR_DIR/64x64/apps/[AEROFS_PRODUCT_UNIX].png
+
+# Executables (links to copier, which will invoke launcher once set up)
+# pushd/popd is used to ensure we make relative links
+pushd debian/usr/bin > /dev/null
+ln -s ../share/[AEROFS_PRODUCT_UNIX]/shared/copier [AEROFS_PRODUCT_UNIX]
+for suffix in sh cli gui ; do
+    ln -s [AEROFS_PRODUCT_UNIX] [AEROFS_PRODUCT_UNIX]-$suffix
+done
+popd > /dev/null
 
 #################################
 # generate the control file

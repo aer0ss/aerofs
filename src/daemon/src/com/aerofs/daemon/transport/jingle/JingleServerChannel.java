@@ -113,6 +113,7 @@ public class JingleServerChannel extends AbstractServerChannel implements ISigna
             fireChannelBound(acceptedChannel, _localAddress);
 
         } catch (Exception e) {
+            l.warn("j: exception caught while accepting tunnel from {}", did, e);
             if (jingleStream != null) jingleStream.close(e);
         }
     }

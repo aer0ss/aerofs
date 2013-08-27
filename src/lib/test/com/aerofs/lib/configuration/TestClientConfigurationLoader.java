@@ -1,7 +1,6 @@
 package com.aerofs.lib.configuration;
 
 import com.aerofs.base.ssl.ICertificateProvider;
-import com.aerofs.config.DynamicConfiguration;
 import com.google.common.io.Files;
 import org.apache.commons.configuration.ConfigurationException;
 import org.junit.Before;
@@ -11,13 +10,20 @@ import org.junit.rules.TemporaryFolder;
 
 import javax.annotation.Nullable;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.security.GeneralSecurityException;
+import java.util.Properties;
 
+import static com.aerofs.lib.configuration.ClientConfigurationLoader.IncompatibleModeException;
+import static com.aerofs.lib.configuration.ClientConfigurationLoader.PROPERTY_BASE_CA_CERT;
+import static com.aerofs.lib.configuration.ClientConfigurationLoader.PROPERTY_CONFIG_SERVICE_URL;
+import static com.aerofs.lib.configuration.ClientConfigurationLoader.PROPERTY_IS_ENTERPRISE_DEPLOYMENT;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static com.aerofs.lib.configuration.ClientConfigurationLoader.*;
+import static org.junit.Assert.fail;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
 
 /**
@@ -51,63 +57,76 @@ public class TestClientConfigurationLoader
         _approotFolder.create();
         _approot = _approotFolder.getRoot().getAbsolutePath();
 
-        _downloader = spy(new MockHttpsDownloader());
-        _loader = new ClientConfigurationLoader(_downloader);
+        _downloader = new MockHttpsDownloader();
+        _loader = spy(new ClientConfigurationLoader(_downloader));
     }
 
     @Test
-    public void shouldEvaluateConflictingPropertiesCorrectly()
+    public void shouldCorrectlyDealWithConflictingProperties()
             throws Exception
     {
-        File staticConfigFile = createStaticConfigFile(true);
-        Files.append("conflict=static", staticConfigFile, Charset.defaultCharset());
+        Properties staticProperties = setupStaticProperties(true);
+        staticProperties.setProperty("conflict", "static");
+        staticProperties.setProperty("conflict3", "static");
+
         File siteConfigFile = createSiteConfigFile(CONFIG_SERVICE_URL, CERT);
-        Files.append("conflict=site\nconflict2=site\n",
+        Files.append("conflict=site\nconflict2=site\nconflict3=site",
                 siteConfigFile, Charset.defaultCharset());
 
-        DynamicConfiguration config = _loader.loadConfiguration(_approot);
+        Properties properties = _loader.loadConfiguration(_approot);
 
-        assertEquals("static", config.getString("conflict"));
-        assertEquals("site", config.getString("conflict2"));
+        assertEquals("http", properties.getProperty("conflict"));
+        assertEquals("http", properties.getProperty("conflict2"));
+        assertEquals("site", properties.getProperty("conflict3"));
     }
 
     @Test
     public void shouldSucceedWhenIsNotEnterpriseDeployment()
             throws Exception
     {
-        createStaticConfigFile(false);
+        setupStaticProperties(false);
 
         _loader.loadConfiguration(_approot);
     }
 
-    @Test(expected = ConfigurationException.class)
-    public void shouldThrowConfigurationExceptionWhenSiteConfigIsNotAvailable()
+    @Test
+    public void shouldThrowFileNotFoundExceptionWhenSiteConfigIsNotAvailable()
             throws Exception
     {
-        createStaticConfigFile(true);
+        setupStaticProperties(true);
 
-        _loader.loadConfiguration(_approot);
+        try {
+            _loader.loadConfiguration(_approot);
+            fail("Expected exception.");
+        } catch (ConfigurationException e) {
+            assert(e.getCause().getClass() == FileNotFoundException.class);
+        }
     }
 
-    @Test(expected = ConfigurationException.class)
-    public void shouldThrowConfigurationExceptionWhenConfigServiceIsNotAvailableAndHasNoCache()
+    @Test
+    public void shouldThrowFileNotFoundExceptionWhenConfigServiceIsNotAvailableAndHasNoCache()
             throws Exception
     {
-        createStaticConfigFile(true);
+        setupStaticProperties(true);
         createSiteConfigFile(BAD_URL, CERT);
 
-        _loader.loadConfiguration(_approot);
+        try {
+            _loader.loadConfiguration(_approot);
+            fail("Expected exception.");
+        } catch (ConfigurationException e) {
+            assert(e.getCause().getClass() == FileNotFoundException.class);
+        }
     }
 
     @Test
     public void shouldSucceedAndUpdateCacheWhenEverythingIsAvailable()
             throws Exception
     {
-        createStaticConfigFile(true);
+        setupStaticProperties(true);
         createSiteConfigFile(CONFIG_SERVICE_URL, CERT);
         createHttpConfigCache("is_cache=true");
 
-        DynamicConfiguration config = _loader.loadConfiguration(_approot);
+        Properties config = _loader.loadConfiguration(_approot);
 
         assertFalse(config.containsKey("is_cache"));
     }
@@ -116,29 +135,28 @@ public class TestClientConfigurationLoader
     public void shouldLoadFromCacheWhenConfigServiceIsNotAvailableAndHasCache()
             throws Exception
     {
-        createStaticConfigFile(true);
+        setupStaticProperties(true);
         createSiteConfigFile(BAD_URL, CERT);
         createHttpConfigCache("is_cache=true");
 
-        DynamicConfiguration config = _loader.loadConfiguration(_approot);
+        Properties config = _loader.loadConfiguration(_approot);
 
-        assert config.containsKey("is_cache") && config.getBoolean("is_cache");
+        assert config.containsKey("is_cache") && config.getProperty("is_cache").equals("true");
     }
 
-    @Test(expected = IncompatibleModeException.class)
+    @Test
     public void shouldThrowIncompatibleModeExceptionWhenIsNotPrivateDeploymentAndSiteConfigExists()
             throws Exception
     {
-        createStaticConfigFile(false);
+        setupStaticProperties(false);
         createSiteConfigFile(CONFIG_SERVICE_URL, CERT);
 
-        _loader.loadConfiguration(_approot);
-    }
-
-    protected File getStaticConfigFile()
-            throws IOException
-    {
-        return new File(ClientConfigurationLoader.STATIC_CONFIG_FILE);
+        try {
+            _loader.loadConfiguration(_approot);
+            fail("Expected exception.");
+        } catch (ConfigurationException e) {
+            assert(e.getCause().getClass() == IncompatibleModeException.class);
+        }
     }
 
     protected File getSiteConfigFile()
@@ -153,14 +171,15 @@ public class TestClientConfigurationLoader
         return new File(_approot, ClientConfigurationLoader.HTTP_CONFIG_CACHE);
     }
 
-    protected File createStaticConfigFile(boolean httpConfigRequired)
+    protected Properties setupStaticProperties(boolean httpConfigRequired)
             throws IOException
     {
-        File staticConfigFile = getStaticConfigFile();
-        Files.write(PROPERTY_IS_ENTERPRISE_DEPLOYMENT + '=' + httpConfigRequired + '\n',
-                staticConfigFile, Charset.defaultCharset());
-        staticConfigFile.deleteOnExit();
-        return staticConfigFile;
+        Properties mockStaticProperties = new Properties();
+        mockStaticProperties.setProperty(PROPERTY_IS_ENTERPRISE_DEPLOYMENT,
+                String.valueOf(httpConfigRequired));
+        doReturn(mockStaticProperties).when(_loader).getStaticProperties();
+
+        return mockStaticProperties;
     }
 
     protected File createSiteConfigFile(String url, String cert)

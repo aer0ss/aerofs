@@ -20,6 +20,7 @@ import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.phy.block.BlockStorageDatabase.FileInfo;
 import com.aerofs.daemon.core.phy.block.BlockStorageSchema.BlockState;
+import com.aerofs.daemon.core.phy.block.IBlockStorageBackend.TokenWrapper;
 import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.tc.TC.TCB;
@@ -317,7 +318,6 @@ class BlockStorage implements IPhysicalStorage
                     {
                         try {
                             removeDeadBlocks_();
-                            // TODO: DREW ensure removal of export folder for deleted store?
                         } catch (Exception e) {
                             l.warn("Failed to cleanup dead blocks: " + Util.e(e));
                         }
@@ -689,6 +689,49 @@ class BlockStorage implements IPhysicalStorage
     }
 
     /**
+     * Small wrapper that ensures the DBIterator is reset whenever the backend releases the core
+     * lock to avoid running into assertions (and potentially worse problems if assertions are
+     * disabled).
+     */
+    private class DeadBlocksIterator implements TokenWrapper
+    {
+        private final Token _tk;
+        private IDBIterator<ContentHash> _it;
+        private TCB _tcb;
+
+        DeadBlocksIterator()
+        {
+            _tk = _tc.acquire_(Cat.UNLIMITED, "bs-rmd");
+        }
+
+        @Override
+        public void pseudoPause(String reason) throws ExAborted
+        {
+            Preconditions.checkState(_tcb == null);
+            try {
+                _it.close_();
+            } catch (SQLException e) {
+                throw new ExAborted(e);
+            }
+            _it = null;
+            _tcb = _tk.pseudoPause_(reason);
+        }
+
+        @Override
+        public void pseudoResumed() throws ExAborted
+        {
+            Preconditions.checkNotNull(_tcb);
+            _tcb.pseudoResumed_();
+        }
+
+        IDBIterator<ContentHash> iterator() throws SQLException
+        {
+            if (_it == null) _it = _bsdb.getDeadBlocks_();
+            return _it;
+        }
+    }
+
+    /**
      * Remove dead blocks
      *
      * NB: must be called *outside* of any transaction:
@@ -698,11 +741,10 @@ class BlockStorage implements IPhysicalStorage
      */
     private void removeDeadBlocks_() throws SQLException, IOException
     {
-        Token tk = _tc.acquire_(Cat.UNLIMITED, "bs-rmd");
-        IDBIterator<ContentHash> it = _bsdb.getDeadBlocks_();
+        DeadBlocksIterator it = new DeadBlocksIterator();
         try {
-            while (it.next_()) {
-                ContentHash h = it.get_();
+            while (it.iterator().next_()) {
+                ContentHash h = it.iterator().get_();
                 Trans t = _tm.begin_();
                 try {
                     _bsdb.deleteBlock_(h, t);
@@ -710,11 +752,11 @@ class BlockStorage implements IPhysicalStorage
                 } finally {
                     t.end_();
                 }
-                _bsb.deleteBlock(h, tk);
+                _bsb.deleteBlock(h, it);
                 _pi.incrementMonotonicProgress();
             }
         } finally {
-            it.close_();
+            it.iterator().close_();
         }
     }
 }

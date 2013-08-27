@@ -18,8 +18,8 @@ function print_usage() {
     echo "                        Can be PROD|CI|ENTERPRISE." >&2
     echo "    [product]           Specifies which product the properties are for" >&2
     echo "                        Can be TEAM_SERVER|CLIENT." >&2
-    echo "    [os]                OS to populate for. Can be osx, win, linux32 or" >&2
-    echo "                        linux64. If not set, we will use the output from the ./os script." >&2
+    echo "    [os]                OS to populate for. Can be osx, win, linux/i386 or" >&2
+    echo "                        linux/amd64. If not set, we will use the output from the ./os script." >&2
     echo "    [resource_root_dir] Directory where all non-server-specific resources are stored" >&2
     echo "    [output_dir]        Directory to which all the resources should be copied" >&2
 }
@@ -59,7 +59,14 @@ function copy_os_specific_resources() {
     # IMPORTANT: must come _after_ the common copy above, so that os-specific resources
     # can overwrite the identically-named platform-independent ones
     # FIXME (AG): Yeah. I don't like it
-    cp -R "$CLIENT_RESOURCES_DIR/$OS/"* "$APPROOT"/
+    case "$OS" in
+        win)         OS_RESOURCES_DIR="win"           ;;
+        osx)         OS_RESOURCES_DIR="osx"           ;;
+        linux/i386)  OS_RESOURCES_DIR="linux/i386"    ;;
+        linux/amd64) OS_RESOURCES_DIR="linux/amd64"   ;;
+        *)       echo "unsupported OS: $OS" && exit 1 ;;
+    esac
+    cp -R "$CLIENT_RESOURCES_DIR/$OS_RESOURCES_DIR/"* "$APPROOT"/
 }
 
 # Create a version file with the specical development version 100.0.0

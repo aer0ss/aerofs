@@ -2,5 +2,5 @@ actors:
   - os: linux
     isolated: false
     teamserver: local
-  - os: linux
+  - os: windows
     isolated: false

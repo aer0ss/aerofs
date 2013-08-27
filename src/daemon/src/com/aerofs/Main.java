@@ -1,28 +1,26 @@
 package com.aerofs;
 
-import com.aerofs.base.BaseParam;
 import com.aerofs.base.Loggers;
-import com.aerofs.config.DynamicConfiguration;
-import com.aerofs.lib.LibParam.EnterpriseConfig;
-import com.aerofs.lib.ex.ExDBCorrupted;
-import com.aerofs.lib.S;
-import com.aerofs.lib.configuration.ClientConfigurationLoader;
-import com.aerofs.lib.configuration.ClientConfigurationLoader.IncompatibleModeException;
-import com.aerofs.lib.configuration.HttpsDownloader;
+import com.aerofs.config.ConfigurationProperties;
+import com.aerofs.labeling.L;
 import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.ChannelFactories;
 import com.aerofs.lib.IProgram;
 import com.aerofs.lib.LibParam;
+import com.aerofs.lib.LibParam.EnterpriseConfig;
 import com.aerofs.lib.ProgramInformation;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.SystemUtil.ExitCode;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.ExNotSetup;
+import com.aerofs.lib.configuration.ClientConfigurationLoader;
+import com.aerofs.lib.configuration.ClientConfigurationLoader.IncompatibleModeException;
+import com.aerofs.lib.configuration.HttpsDownloader;
+import com.aerofs.lib.ex.ExDBCorrupted;
 import com.aerofs.lib.log.LogUtil;
 import com.aerofs.lib.log.LogUtil.Level;
 import com.aerofs.lib.os.OSUtil;
-import com.aerofs.lib.properties.DynamicPropertySource;
 import com.aerofs.sv.client.SVClient;
 import com.google.common.io.Files;
 import org.apache.commons.configuration.ConfigurationException;
@@ -144,8 +142,16 @@ public class Main
             if (prog.equals(LibParam.GUI_NAME) || prog.equals(LibParam.CLI_NAME)) {
                 String msg = null;
 
-                if (e instanceof ConfigurationException) msg = S.ERR_CONFIG_UNAVAILABLE;
-                else if (e instanceof IncompatibleModeException) msg = S.ERR_INCOMPATIBLE_MODE;
+                if (e instanceof ConfigurationException) {
+                    if (e.getCause() instanceof IncompatibleModeException) {
+                        msg = "The application is configured to the wrong mode. Please reinstall " +
+                                L.product() + '.';
+                    } else {
+                        msg = "Failed to initialize the configuration subsystem. Please verify " +
+                                "that all configuration files are accessible and that the " +
+                                "configuration service is available.";
+                    }
+                }
 
                 if (msg != null) {
                     String[] temp = new String[appArgs.length + 1];
@@ -232,8 +238,7 @@ public class Main
             throws ConfigurationException, IncompatibleModeException
     {
         ClientConfigurationLoader loader = new ClientConfigurationLoader(new HttpsDownloader());
-        DynamicConfiguration.initialize(loader.loadConfiguration(appRoot));
-        BaseParam.setPropertySource(new DynamicPropertySource());
+        ConfigurationProperties.setProperties(loader.loadConfiguration(appRoot));
         l.debug("Client configuration initialized");
     }
 

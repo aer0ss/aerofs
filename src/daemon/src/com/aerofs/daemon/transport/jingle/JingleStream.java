@@ -23,6 +23,7 @@ import org.slf4j.Logger;
 
 import java.util.Queue;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.aerofs.daemon.lib.DaemonParam.Jingle.QUEUE_LENGTH;
 import static com.aerofs.j.StreamEvent.SE_CLOSE;
@@ -64,7 +65,7 @@ public class JingleStream implements IProxyObjectContainer
     private final Semaphore _readSemaphore = new Semaphore(0);
 
     private volatile boolean _writable;
-    private volatile boolean _isClosed;
+    private final AtomicBoolean _isClosed = new AtomicBoolean();
 
     // keep a reference to prevent the slot being GC'ed (as there's no Java reference to this object otherwise)
     private final StreamInterface_EventSlot _slotEvent = new StreamInterface_EventSlot()
@@ -144,9 +145,9 @@ public class JingleStream implements IProxyObjectContainer
      */
     void close(Exception reason)
     {
-        l.info("close jingle stream {} reason: {}", this, reason);
+        if (_isClosed.getAndSet(true)) return;
 
-        _isClosed = true;
+        l.info("close jingle stream {} reason: {}", this, reason);
 
         _readThread.interrupt();
 
@@ -172,12 +173,14 @@ public class JingleStream implements IProxyObjectContainer
     void send_(MessageEvent event)
     {
         try {
+            if (_isClosed.get()) throw new ExJingle(this + ": trying to write after stream closed");
+
             boolean success = _sendQueue.offer(new SendEvent(event));
             if (!success) throw new ExNoResource("jingle q full");
             if (_writable) write_();
 
         } catch (Exception e) {
-            l.warn("drop packet d:{}", _did, e);
+            l.warn("drop packet d:{} {}", _did, e);
             event.getFuture().setFailure(e);
         }
     }
@@ -200,7 +203,7 @@ public class JingleStream implements IProxyObjectContainer
         // either successfully sent it, or we got an error.
 
         SendEvent event;
-        while (!_isClosed && (event = _sendQueue.peek()) != null) {
+        while (!_isClosed.get() && (event = _sendQueue.peek()) != null) {
 
             StreamResult res = j.WriteAll(_streamInterface, event.buffer(), event.readIndex(),
                     event.readableBytes(), written, error);
@@ -246,7 +249,7 @@ public class JingleStream implements IProxyObjectContainer
         int[] error = { 0 };
         StreamResult res;
 
-        while (!_isClosed) {
+        while (!_isClosed.get()) {
             res = j.ReadAll(_streamInterface, _readBuf, 0, _readBuf.length, read, error);
 
             if (read[0] > 0) {

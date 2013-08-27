@@ -4,7 +4,7 @@
 
 package com.aerofs.daemon.core.phy.block;
 
-import com.aerofs.daemon.core.tc.Token;
+import com.aerofs.daemon.core.ex.ExAborted;
 import com.aerofs.lib.ContentHash;
 
 import javax.annotation.Nullable;
@@ -61,8 +61,14 @@ public interface IBlockStorageBackend
     void putBlock(ContentHash key, InputStream input, long decodedLength,
             @Nullable Object encoderData) throws IOException;
 
+    public interface TokenWrapper
+    {
+        void pseudoPause(String reason) throws ExAborted;
+        void pseudoResumed() throws ExAborted;
+    }
+
     /**
      * Remove a block from the storage backend
      */
-    void deleteBlock(ContentHash key, @Nullable Token tk) throws IOException;
+    void deleteBlock(ContentHash key, TokenWrapper tk) throws IOException;
 }

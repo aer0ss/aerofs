@@ -3,14 +3,16 @@ package com.aerofs.lib.configuration;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ssl.ICertificateProvider;
 import com.aerofs.base.ssl.StringBasedCertificateProvider;
-import com.aerofs.config.DynamicConfiguration;
-import org.apache.commons.configuration.AbstractConfiguration;
 import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 
+import javax.annotation.Nullable;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Properties;
 
 /**
  * The responsibility of this class is to execute the loading logic/policy.
@@ -54,49 +56,55 @@ public class ClientConfigurationLoader
      * Throws ConfigurationException if this is a private deployment and we are unable to load
      *   site config or http config.
      */
-    public DynamicConfiguration loadConfiguration(String approot)
-            throws ConfigurationException, IncompatibleModeException
+    public Properties loadConfiguration(String approot)
+            throws ConfigurationException
     {
-        DynamicConfiguration.Builder builder = DynamicConfiguration.builder();
+        Properties compositeProperties;
+        ConfigurationHelper helper = new ConfigurationHelper();
 
-        /**
-         * There is a bug with DynamicConfiguration.Builder in that it adds configuration
-         *   by alphabetical order of configuration names instead of the order configurations
-         *   are added.
-         *
-         * FIXME import the latest dynamic configuration jar with the fix and
-         *   remove numeral prefix in configuration names
-         */
-        AbstractConfiguration staticConfig = new PropertiesConfiguration(STATIC_CONFIG_FILE);
-        builder.addConfiguration(staticConfig, "1static");
+        try {
+            Properties staticProperties;
+            Properties siteConfigProperties = new Properties();
+            Properties httpProperties = new Properties();
 
-        if (staticConfig.getBoolean(PROPERTY_IS_ENTERPRISE_DEPLOYMENT, false)) {
-            PropertiesConfiguration siteConfig = new PropertiesConfiguration();
-            siteConfig.load(new File(approot, SITE_CONFIG_FILE));
+            staticProperties = getStaticProperties();
 
-            downloadHttpConfig(approot, siteConfig);
+            if (staticProperties.getProperty(PROPERTY_IS_ENTERPRISE_DEPLOYMENT, "false").equals(
+                    "true")) {
+                // Load site configuration file, failing if it doesn't exist.
+                siteConfigProperties.load(new FileInputStream(new File(approot, SITE_CONFIG_FILE)));
 
-            PropertiesConfiguration httpConfig = new PropertiesConfiguration();
-            httpConfig.load(new File(approot, HTTP_CONFIG_CACHE));
+                // Load HTTP configuration, failing if it cannot be loaded.
+                downloadHttpConfig(approot, staticProperties, siteConfigProperties);
+                httpProperties.load(new FileInputStream(new File(approot, HTTP_CONFIG_CACHE)));
+            } else if (new File(approot, SITE_CONFIG_FILE).exists()) {
+                throw new IncompatibleModeException();
+            }
 
-            builder.addConfiguration(siteConfig, "2site")
-                    .addConfiguration(httpConfig, "3http");
-        } else if (new File(approot, SITE_CONFIG_FILE).exists()) {
-            throw new IncompatibleModeException();
+            // Join all properties together, logging a warning if any property is specified twice.
+            compositeProperties = helper.disjointUnionOfThreeProperties(
+                    staticProperties, siteConfigProperties, httpProperties);
+        } catch (Exception e) {
+            throw new ConfigurationException(e);
         }
 
-        return builder.build();
+        return compositeProperties;
     }
 
     /**
      * Download http configuration from the configuration server. And surpress any exception
      *   because we'll be falling back to the cache file if this fails.
      */
-    protected void downloadHttpConfig(String approot, AbstractConfiguration siteConfig)
+    protected void downloadHttpConfig(String approot, Properties staticProperties,
+            Properties siteConfigProperties)
     {
+        Properties preHttpProperties = new Properties();
+        preHttpProperties.putAll(staticProperties);
+        preHttpProperties.putAll(siteConfigProperties);
+
         try {
-            String url = siteConfig.getString(PROPERTY_CONFIG_SERVICE_URL);
-            String certificate = siteConfig.getString(PROPERTY_BASE_CA_CERT, "");
+            String url = preHttpProperties.getProperty(PROPERTY_CONFIG_SERVICE_URL);
+            String certificate = preHttpProperties.getProperty(PROPERTY_BASE_CA_CERT, "");
             ICertificateProvider certificateProvider = StringUtils.isBlank(certificate) ? null
                     : new StringBasedCertificateProvider(certificate);
             File cache = new File(approot, HTTP_CONFIG_CACHE);
@@ -105,6 +113,42 @@ public class ClientConfigurationLoader
         } catch (Throwable t) {
             LOGGER.debug("Failed to download http configuration", t);
         }
+    }
+
+    /**
+     * Reads the static configuration file. First look in the classpath then in the current
+     * directory.
+     *
+     * @return An InputStream corresponding to the static configuration file. null if the static
+     * configuration file could not be found.
+     */
+    protected @Nullable
+    InputStream getStaticConfigInputStream()
+    {
+        InputStream inputStream = null;
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+
+        // Try context classloader.
+        if (classLoader != null) {
+            inputStream = classLoader.getResourceAsStream(STATIC_CONFIG_FILE);
+        }
+        return inputStream;
+    }
+
+    protected Properties getStaticProperties() throws IOException
+    {
+        Properties staticProperties = new Properties();
+
+        // Load static configuration file, ignoring it if it doesn't exist.
+        try {
+            InputStream inputStream = getStaticConfigInputStream();
+            staticProperties.load(inputStream);
+        } catch (IOException e) {
+            LOGGER.warn("Failed to open: " + STATIC_CONFIG_FILE + " with error {}. Assuming no " +
+                    "staticProperties.", e.toString());
+            staticProperties = new Properties();
+        }
+        return staticProperties;
     }
 
     public static class IncompatibleModeException extends Exception

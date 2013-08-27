@@ -1,12 +1,14 @@
 package com.aerofs.daemon.lib;
 
 import com.aerofs.base.C;
-import com.aerofs.lib.properties.DynamicInetSocketAddress;
+import com.aerofs.base.params.IProperty;
 import com.aerofs.lib.LibParam.Daemon;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
 
 import java.net.InetSocketAddress;
+
+import static com.aerofs.config.ConfigurationProperties.getAddressProperty;
 
 public class DaemonParam
 {
@@ -54,9 +56,9 @@ public class DaemonParam
     {
         public static final int QUEUE_LENGTH            = QUEUE_LENGTH_DEFAULT;
         public static final long CALL_TIMEOUT           = 30 * C.SEC;
-        public static final DynamicInetSocketAddress STUN_ADDRESS =
-                new DynamicInetSocketAddress("daemon.stun.address",
-                        InetSocketAddress.createUnresolved("stun.l.google.com", 19302));
+        public static final IProperty<InetSocketAddress> STUN_ADDRESS = getAddressProperty(
+                "daemon.stun.address",
+                InetSocketAddress.createUnresolved("stun.l.google.com", 19302));
     }
 
     public static class DB

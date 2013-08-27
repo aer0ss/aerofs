@@ -5,8 +5,7 @@
 package com.aerofs.daemon.core.phy.block.s3;
 
 import com.aerofs.daemon.core.phy.block.AbstractBlockTest;
-import com.aerofs.daemon.core.tc.TC.TCB;
-import com.aerofs.daemon.core.tc.Token;
+import com.aerofs.daemon.core.phy.block.IBlockStorageBackend.TokenWrapper;
 import com.aerofs.lib.ContentHash;
 import com.amazonaws.AmazonServiceException;
 import com.google.common.io.ByteStreams;
@@ -21,7 +20,6 @@ import java.io.IOException;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 public class TestS3Backend extends AbstractBlockTest
 {
@@ -86,17 +84,14 @@ public class TestS3Backend extends AbstractBlockTest
     @Test
     public void shouldDeleteExistingBlock() throws Exception
     {
-        Token tk = mock(Token.class);
-        TCB tcb = mock(TCB.class);
-        when(tk.pseudoPause_(anyString())).thenReturn(tcb);
-
+        TokenWrapper tk = mock(TokenWrapper.class);
         TestBlock b = newBlock();
         put(bsb, b);
 
         bsb.deleteBlock(b._key, tk);
 
-        verify(tk).pseudoPause_(anyString());
-        verify(tcb).pseudoResumed_();
+        verify(tk).pseudoPause(anyString());
+        verify(tk).pseudoResumed();
 
         assertBlockNotFound(b._key);
     }

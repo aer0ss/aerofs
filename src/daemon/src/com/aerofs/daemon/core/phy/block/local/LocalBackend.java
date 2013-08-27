@@ -78,7 +78,7 @@ public class LocalBackend implements IBlockStorageBackend
     }
 
     @Override
-    public void deleteBlock(ContentHash key, @Nullable Token tk) throws IOException
+    public void deleteBlock(ContentHash key, TokenWrapper tk) throws IOException
     {
         InjectableFile block = getBlockFile(key);
         if (block.exists()) block.delete();

@@ -5,8 +5,7 @@
 package com.aerofs.daemon.core.phy.block.local;
 
 import com.aerofs.daemon.core.phy.block.AbstractBlockTest;
-import com.aerofs.daemon.core.tc.TC.TCB;
-import com.aerofs.daemon.core.tc.Token;
+import com.aerofs.daemon.core.phy.block.IBlockStorageBackend.TokenWrapper;
 import com.aerofs.lib.cfg.CfgAbsDefaultRoot;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.google.common.io.ByteStreams;
@@ -17,7 +16,6 @@ import org.mockito.Mock;
 
 import java.io.FileNotFoundException;
 
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -58,10 +56,7 @@ public class TestLocalBackend extends AbstractBlockTest
     @Test
     public void shouldDeleteExistingBlock() throws Exception
     {
-        Token tk = mock(Token.class);
-        TCB tcb = mock(TCB.class);
-        when(tk.pseudoPause_(anyString())).thenReturn(tcb);
-
+        TokenWrapper tk = mock(TokenWrapper.class);
         TestBlock b = newBlock();
         put(bsb, b);
 

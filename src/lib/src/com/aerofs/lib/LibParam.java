@@ -7,16 +7,19 @@ package com.aerofs.lib;
 import com.aerofs.base.BaseParam;
 import com.aerofs.base.C;
 import com.aerofs.base.id.SID;
-import com.aerofs.config.properties.DynamicOptionalStringProperty;
-import com.aerofs.lib.properties.DynamicInetSocketAddress;
-import com.aerofs.lib.properties.DynamicUrlProperty;
-import com.netflix.config.DynamicBooleanProperty;
-import com.netflix.config.DynamicIntProperty;
-import com.netflix.config.DynamicStringProperty;
+import com.aerofs.base.params.IProperty;
+import com.google.common.base.Optional;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.URL;
 
+import static com.aerofs.config.ConfigurationProperties.getAddressProperty;
+import static com.aerofs.config.ConfigurationProperties.getBooleanProperty;
+import static com.aerofs.config.ConfigurationProperties.getIntegerProperty;
+import static com.aerofs.config.ConfigurationProperties.getOptionalStringProperty;
+import static com.aerofs.config.ConfigurationProperties.getStringProperty;
+import static com.aerofs.config.ConfigurationProperties.getUrlProperty;
 import static com.aerofs.lib.configuration.ClientConfigurationLoader.PROPERTY_BASE_CA_CERT;
 import static com.aerofs.lib.configuration.ClientConfigurationLoader.PROPERTY_CONFIG_SERVICE_URL;
 import static com.aerofs.lib.configuration.ClientConfigurationLoader.PROPERTY_IS_ENTERPRISE_DEPLOYMENT;
@@ -193,28 +196,27 @@ public class LibParam extends BaseParam
     public static class CA
     {
         // TODO (MP) move this to a server-only package (perhaps a new ServerParam.java?)
-        public static final DynamicUrlProperty URL =
-                new DynamicUrlProperty("base.ca.url", "http://joan.aerofs.com:1029/prod");
+        public static final IProperty<URL> URL =
+                getUrlProperty("base.ca.url", "http://joan.aerofs.com:1029/prod");
     }
 
     public static class RootAnchor
     {
-        public static final DynamicOptionalStringProperty DEFAULT_LOCATION_WINDOWS =
-                new DynamicOptionalStringProperty("lib.anchor.default_location_windows");
+        public static final IProperty<Optional<String>> DEFAULT_LOCATION_WINDOWS =
+                getOptionalStringProperty("lib.anchor.default_location_windows");
 
-        public static final DynamicOptionalStringProperty DEFAULT_LOCATION_OSX =
-                new DynamicOptionalStringProperty("lib.anchor.default_location_osx");
+        public static final IProperty<Optional<String>> DEFAULT_LOCATION_OSX =
+                getOptionalStringProperty("lib.anchor.default_location_osx");
 
-        public static final DynamicOptionalStringProperty DEFAULT_LOCATION_LINUX =
-                new DynamicOptionalStringProperty("lib.anchor.default_location_linux");
+        public static final IProperty<Optional<String>> DEFAULT_LOCATION_LINUX =
+                getOptionalStringProperty("lib.anchor.default_location_linux");
     }
 
     public static class REDIS
     {
         // TODO (MP) rename to lib.redis.address (keeping name for bloomberg compatibility).
-        public static final DynamicInetSocketAddress ADDRESS =
-                new DynamicInetSocketAddress("sp.redis.address",
-                        InetSocketAddress.createUnresolved("localhost", 6379));
+        public static final IProperty<InetSocketAddress> ADDRESS = getAddressProperty(
+                "sp.redis.address", InetSocketAddress.createUnresolved("localhost", 6379));
     }
 
     /**
@@ -227,12 +229,12 @@ public class LibParam extends BaseParam
     public static class OpenId
     {
         /** OpenID authentication (if enabled, this replaces credential auth) */
-        public static final DynamicBooleanProperty      ENABLED
-                = new DynamicBooleanProperty(           "openid.service.enabled", false);
+        public static final IProperty<Boolean>          ENABLED =
+                getBooleanProperty(                     "openid.service.enabled", false);
 
         /** Timeout for the entire OpenID flow, in seconds. */
-        public static final DynamicIntProperty          DELEGATE_TIMEOUT
-                = new DynamicIntProperty(               "openid.service.timeout", 300);
+        public static final IProperty<Integer>          DELEGATE_TIMEOUT =
+                getIntegerProperty(                     "openid.service.timeout", 300);
 
         /**
          * Timeout for the session nonce, in seconds. This is the timeout
@@ -240,23 +242,23 @@ public class LibParam extends BaseParam
          * gets used. This only needs to be as long as the retry interval in the session
          * client, plus the max latency of the session query.
          */
-        public static final DynamicIntProperty          SESSION_TIMEOUT
-                = new DynamicIntProperty(               "openid.service.session.timeout", 10);
+        public static final IProperty<Integer>          SESSION_TIMEOUT =
+                getIntegerProperty(                     "openid.service.session.timeout", 10);
 
         /**
          * Polling frequency of the client waiting for OpenID authorization to complete, in seconds.
          * TODO: sub-second resolution?
          */
-        public static final DynamicIntProperty          SESSION_INTERVAL
-                = new DynamicIntProperty(               "openid.service.session.interval", 1);
+        public static final IProperty<Integer>          SESSION_INTERVAL =
+                getIntegerProperty(                     "openid.service.session.interval", 1);
 
         /** URL of the Identity service */
-        public static final DynamicStringProperty       IDENTITY_URL
-                = new DynamicStringProperty(            "openid.service.url", "");
+        public static final IProperty<String>           IDENTITY_URL =
+                getStringProperty(                      "openid.service.url", "");
 
         /** The security realm for which we are requesting authorization */
-        public static final DynamicStringProperty      IDENTITY_REALM
-                = new DynamicStringProperty(            "openid.service.realm", "");
+        public static final IProperty<String>          IDENTITY_REALM =
+                getStringProperty(                      "openid.service.realm", "");
 
         /** The auth request path to append to the identity server URL. */
         public static final String                      IDENTITY_REQ_PATH = "/oa";
@@ -282,20 +284,24 @@ public class LibParam extends BaseParam
         public static final String                      OPENID_ONCOMPLETE_URL = "sp.oncomplete";
 
         /** OpenID discovery may be disabled if YADIS discovery is not supported. */
-        public static final DynamicBooleanProperty      DISCOVERY_ENABLED
-                = new DynamicBooleanProperty(           "openid.idp.discovery.enabled", false);
+        public static final IProperty<Boolean>          DISCOVERY_ENABLED =
+                getBooleanProperty(                     "openid.idp.discovery.enabled", false);
 
         /** Discovery URL for the OpenID provider. Only used if discovery is enabled. */
-        public static final DynamicStringProperty       DISCOVERY_URL
-                = new DynamicStringProperty(            "openid.idp.discovery.url", "");
+        public static final IProperty<String>           DISCOVERY_URL =
+                getStringProperty(                      "openid.idp.discovery.url", "");
 
         /** Endpoint URL used if discovery is not enabled for this OpenID Provider */
-        public static final DynamicStringProperty       ENDPOINT_URL
-                = new DynamicStringProperty(            "openid.idp.endpoint.url", "");
+        public static final IProperty<String>           ENDPOINT_URL =
+                getStringProperty(                      "openid.idp.endpoint.url", "");
+
+        /** If enabled, use Diffie-Helman association and a MAC to verify the auth result */
+        public static final IProperty<Boolean>          ENDPOINT_STATEFUL =
+                getBooleanProperty(                     "openid.idp.endpoint.stateful", true);
 
         /** Name of the HTTP parameter we should use as the user identifier in an auth response. */
-        public static final DynamicStringProperty       IDP_USER_ATTR
-                = new DynamicStringProperty(            "openid.idp.user.uid.attribute",
+        public static final IProperty<String>           IDP_USER_ATTR =
+                getStringProperty(                      "openid.idp.user.uid.attribute",
                                                         "openid.identity");
 
         /**
@@ -307,8 +313,8 @@ public class LibParam extends BaseParam
          *
          * NOTE: capture groups are numbered starting at _1_.
          */
-        public static final DynamicStringProperty       IDP_USER_PATTERN
-                = new DynamicStringProperty(            "openid.idp.user.uid.pattern",   "");
+        public static final IProperty<String>           IDP_USER_PATTERN =
+                getStringProperty(                      "openid.idp.user.uid.pattern",   "");
 
 
         /**
@@ -318,8 +324,8 @@ public class LibParam extends BaseParam
          *
          * "sreg" for simple registration (an OpenID 1.0 extension)
          */
-        public static final DynamicStringProperty       IDP_USER_EXTENSION
-                = new DynamicStringProperty(            "openid.idp.user.extension", "");
+        public static final IProperty<String>           IDP_USER_EXTENSION =
+                getStringProperty(                      "openid.idp.user.extension", "");
 
         /**
          * Name of an openid parameter that contains the user's email address; or a pattern that
@@ -332,8 +338,8 @@ public class LibParam extends BaseParam
          *
          * uid[1]@syncfs.com
          */
-        public static final DynamicStringProperty       IDP_USER_EMAIL
-                = new DynamicStringProperty(            "openid.idp.user.email",
+        public static final IProperty<String>           IDP_USER_EMAIL =
+                getStringProperty(                      "openid.idp.user.email",
                                                         "openid.ext1.value.email");
 
         // TODO: support fullname for "sreg" providers and split by whitespace
@@ -346,8 +352,8 @@ public class LibParam extends BaseParam
          *
          * openid.sreg.fullname (for sreg; fullname only)
          */
-        public static final DynamicStringProperty       IDP_USER_FIRSTNAME
-                = new DynamicStringProperty(            "openid.idp.user.name.first",
+        public static final IProperty<String>           IDP_USER_FIRSTNAME =
+                getStringProperty(                      "openid.idp.user.name.first",
                                                         "openid.ext1.value.firstname");
 
         /**
@@ -359,19 +365,24 @@ public class LibParam extends BaseParam
          *
          * openid.sreg.fullname (for sreg; fullname only)
          */
-        public static final DynamicStringProperty       IDP_USER_LASTNAME
-                = new DynamicStringProperty(            "openid.idp.user.name.last",
+        public static final IProperty<String>           IDP_USER_LASTNAME =
+                getStringProperty(                      "openid.idp.user.name.last",
                                                         "openid.ext1.value.lastname");
     }
 
     // this class depends on ClientConfigurationLoader
     public static class EnterpriseConfig
     {
-        public static final DynamicBooleanProperty IS_ENTERPRISE_DEPLOYMENT =
-                new DynamicBooleanProperty(PROPERTY_IS_ENTERPRISE_DEPLOYMENT, false);
-        public static final DynamicStringProperty BASE_CA_CERTIFICATE =
-                new DynamicStringProperty(PROPERTY_BASE_CA_CERT, "");
-        public static final DynamicStringProperty CONFIG_SERVICE_URL =
-                new DynamicStringProperty(PROPERTY_CONFIG_SERVICE_URL, "");
-    }
+        public static IProperty<Boolean>                IS_ENTERPRISE_DEPLOYMENT =
+                getBooleanProperty(                     PROPERTY_IS_ENTERPRISE_DEPLOYMENT,
+                                                        false);
+
+        public static final IProperty<String>           BASE_CA_CERTIFICATE =
+                getStringProperty(                      PROPERTY_BASE_CA_CERT,
+                                                        "");
+
+        public static final IProperty<String>           CONFIG_SERVICE_URL =
+                getStringProperty(                      PROPERTY_CONFIG_SERVICE_URL,
+                                                        "");
+}
 }

@@ -4,28 +4,19 @@
 
 package com.aerofs.lib.properties;
 
-import com.aerofs.base.BaseParam;
-import com.aerofs.config.DynamicConfiguration;
-import com.aerofs.config.sources.PropertiesConfiguration;
-import com.aerofs.config.sources.SystemConfiguration;
-import com.google.common.base.Optional;
-import com.google.common.collect.ImmutableList;
-import com.netflix.config.ConcurrentMapConfiguration;
-import org.apache.commons.configuration.AbstractConfiguration;
-import org.apache.commons.configuration.CompositeConfiguration;
-import org.apache.commons.configuration.ConfigurationException;
+import com.aerofs.config.ConfigurationProperties;
+import com.aerofs.lib.configuration.ConfigurationHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+import java.util.Properties;
 
 public final class Configuration
 {
@@ -54,57 +45,66 @@ public final class Configuration
         private static final String CONFIGURATION_SERVICE_URL_FILE = "/etc/aerofs/configuration.url";
         private static final String CONFIGURATION_RESOURCE = "configuration.properties";
 
-        private static List<String> getStaticPropertyPaths()
+        /**
+         * Loads static properties from the CONFIGURATION_RESOURCE file, first looking in the
+         * current folder, and if CONFIGURATION_RESOURCE isn't there, looking in the classpath.
+         *
+         * @return Properties object parsed from the contents of CONFIGURATION_RESOURCE.
+         */
+        private static Properties getStaticProperties()
         {
-            return Collections.singletonList(CONFIGURATION_RESOURCE);
-        }
-
-        private static void verifyStaticPropertyFilesExist()
-        {
+            Properties staticProperties = new Properties();
             InputStream propertyStream = null;
-            for (String propertyPath : getStaticPropertyPaths()) {
+            try {
                 try {
-                    propertyStream = Server.class.getClassLoader().getResourceAsStream(propertyPath);
-                } finally {
-                    // regardless of whether we got here via an exception or not,
-                    // if the property file doesn't exist we'll throw saying that the
-                    // property file is missing
-                    if (propertyStream == null) {
-                        throw new IllegalStateException("missing config: " + propertyPath);
-                    } else {
-                        try {
-                            propertyStream.close();
-                        } catch (IOException e) {
-                            throw new IllegalStateException("fail access: " + propertyPath);
-                        }
+                    propertyStream = new File(CONFIGURATION_RESOURCE).toURI().toURL().openStream();
+                } catch (Exception e) {
+                    propertyStream = Server.class.getClassLoader().getResourceAsStream(CONFIGURATION_RESOURCE);
+                }
+
+                staticProperties.load(propertyStream);
+            } catch (Exception e) {
+                throw new IllegalStateException("Couldn't read config file: " + CONFIGURATION_RESOURCE, e);
+            } finally {
+                if (propertyStream != null) {
+                    try {
+                        propertyStream.close();
+                    } catch (IOException e) {
+                        throw new IllegalStateException("fail access: " + CONFIGURATION_RESOURCE);
                     }
                 }
             }
+
+            return staticProperties;
         }
 
         public static void initialize()
-                throws ConfigurationException, MalformedURLException
+                throws Exception
         {
-            final AbstractConfiguration systemConfiguration =
-                    SystemConfiguration.newInstance();
+            Properties systemProperties = System.getProperties();
+            Properties staticProperties = getStaticProperties();
 
-            verifyStaticPropertyFilesExist();
-            final AbstractConfiguration staticPropertiesConfiguration =
-                    PropertiesConfiguration.newInstance(getStaticPropertyPaths());
-
-            final AbstractConfiguration httpConfiguration = getHttpConfiguration(
-                    ImmutableList.of(systemConfiguration, staticPropertiesConfiguration),
+            Properties preHttpProperties = new Properties();
+            preHttpProperties.putAll(systemProperties);
+            preHttpProperties.putAll(staticProperties);
+            Properties httpProperties = getHttpProperties(preHttpProperties,
                     new FileBasedConfigurationURLProvider(CONFIGURATION_SERVICE_URL_FILE));
 
-            DynamicConfiguration.initialize(DynamicConfiguration.builder()
-                    .addConfiguration(systemConfiguration, "system")
-                    .addConfiguration(staticPropertiesConfiguration, "static")
-                    .addConfiguration(httpConfiguration, "http")
-                    .build());
+            // Join all properties, throwing if a key appears twice.
+            ConfigurationHelper helper = new ConfigurationHelper();
+            Properties compositeProperties = helper.disjointUnionOfThreeProperties(systemProperties,
+                    staticProperties, httpProperties);
 
-            BaseParam.setPropertySource(new DynamicPropertySource());
+            // Initialize ConfigurationProperties.
+            ConfigurationProperties.setProperties(compositeProperties);
 
-            LOGGER.info("Server configuration initialized: " + DynamicConfiguration.getInstance());
+            try {
+                ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+                compositeProperties.store(byteArrayOutputStream, "Configuration Properties");
+                LOGGER.info("Server configuration initialized: " + byteArrayOutputStream.toString("UTF-8"));
+            } catch (Exception e) {
+                LOGGER.warn("Failed to log server configuration with exception " + e.toString());
+            }
         }
     }
 
@@ -153,26 +153,40 @@ public final class Configuration
     }
 
     /**
-     * @throws ConfigurationException If a URL was provided but the HTTP service GET failed.
+     * @throws ExHttpConfig If a URL was provided but the HTTP service GET failed.
      */
-    private static AbstractConfiguration getHttpConfiguration(
-            final Collection<AbstractConfiguration> configurationSources,
+    private static Properties getHttpProperties(
+            Properties compositeProperties,
             IDefaultConfigurationURLProvider provider)
-            throws ConfigurationException, MalformedURLException
+            throws ExHttpConfig
     {
         // We allow the configuration service URL to be overridden by construction of a temporary
         // configuration source from all other configuration sources. Then we lookup the
         // "config.service.url" key if any value has been defined it will be used. If not value has
         // been defined in other configuration sources then lookup a default (may be null).
-        final Optional<String> configurationServiceUrl =
-                Optional.fromNullable(new CompositeConfiguration(configurationSources).getString("config.service.url",
-                        provider.getDefaultConfigurationURL()));
+        String configurationServiceUrl = compositeProperties.getProperty("config.service.url",
+                provider.getDefaultConfigurationURL());
 
         // Return empty configuration source if configurationServiceUrl is not present.
-        if (!configurationServiceUrl.isPresent()) {
-            return new ConcurrentMapConfiguration();
+        if (configurationServiceUrl == null) {
+            return new Properties();
         }
 
-        return new org.apache.commons.configuration.PropertiesConfiguration(new URL(configurationServiceUrl.get()));
+        Properties httpProperties = new Properties();
+        try {
+            // NOTE(mh): This uses trust store. Fine to leave like this until removal of config server.
+            InputStream is = new URL(configurationServiceUrl).openConnection().getInputStream();
+            httpProperties.load(is);
+        } catch (IOException e) {
+            throw new ExHttpConfig(
+                    "Couldn't load configuration from config server " + configurationServiceUrl);
+        }
+        return httpProperties;
+    }
+
+    public static class ExHttpConfig extends Exception
+    {
+        private static final long serialVersionUID = 1L;
+        public ExHttpConfig(String msg) { super(msg); }
     }
 }

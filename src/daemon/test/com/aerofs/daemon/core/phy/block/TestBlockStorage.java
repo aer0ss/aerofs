@@ -15,6 +15,7 @@ import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.phy.block.BlockStorage.FileAlreadyExistsException;
 import com.aerofs.daemon.core.phy.block.BlockStorageDatabase.FileInfo;
 import com.aerofs.daemon.core.phy.block.IBlockStorageBackend.EncoderWrapping;
+import com.aerofs.daemon.core.phy.block.IBlockStorageBackend.TokenWrapper;
 import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.tc.TC.TCB;
@@ -677,7 +678,7 @@ public class TestBlockStorage extends AbstractBlockTest
 
         for (ITransListener l : listeners) l.committed_();
 
-        verify(bsb).deleteBlock(forKey(content), any(Token.class));
+        verify(bsb).deleteBlock(forKey(content), any(TokenWrapper.class));
         Assert.assertEquals(0, bsdb.getBlockCount_(contentHash(content)));
     }
 
@@ -707,8 +708,8 @@ public class TestBlockStorage extends AbstractBlockTest
         for (ITransListener l : listeners) l.committed_();
 
         Assert.assertEquals(0, bsdb.getBlockCount_(contentHash(content0)));
-        verify(bsb, times(1)).deleteBlock(forKey(content0), any(Token.class));
-        verify(bsb, never()).deleteBlock(forKey(content1), any(Token.class));
+        verify(bsb, times(1)).deleteBlock(forKey(content0), any(TokenWrapper.class));
+        verify(bsb, never()).deleteBlock(forKey(content1), any(TokenWrapper.class));
     }
 
     @Test
@@ -938,6 +939,6 @@ public class TestBlockStorage extends AbstractBlockTest
         for (ITransListener l : listeners) l.committed_();
 
         // check that dead block was removed from backend on commit
-        verify(bsb).deleteBlock(b._key, tk);
+        verify(bsb).deleteBlock(eq(b._key), any(TokenWrapper.class));
     }
 }

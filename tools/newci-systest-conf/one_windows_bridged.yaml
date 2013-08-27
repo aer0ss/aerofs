@@ -1,0 +1,3 @@
+actors:
+  - os: windows
+    isolated: false
