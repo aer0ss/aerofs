@@ -219,19 +219,19 @@ public class LibParam extends BaseParam
     }
 
     /**
-     * OpenId and Identity-related configuration that are used by client and server.
+     * OpenID and Identity-related configuration that are used by client and server.
      *
      * openid.service : configuration for the IdentityServlet (our intermediary)
      *
-     * openid.idp : configuration for an OpenId provider.
+     * openid.idp : configuration for an OpenID provider.
      */
     public static class OpenId
     {
-        /** OpenId authentication (if enabled, this replaces credential auth) */
+        /** OpenID authentication (if enabled, this replaces credential auth) */
         public static final Boolean                     ENABLED =
                 getBooleanProperty(                     "openid.service.enabled", false);
 
-        /** Timeout for the entire OpenId flow, in seconds. */
+        /** Timeout for the entire OpenID flow, in seconds. */
         public static final Integer                     DELEGATE_TIMEOUT =
                 getIntegerProperty(                     "openid.service.timeout", 300);
 
@@ -245,7 +245,7 @@ public class LibParam extends BaseParam
                 getIntegerProperty(                     "openid.service.session.timeout", 10);
 
         /**
-         * Polling frequency of the client waiting for OpenId authorization to complete, in seconds.
+         * Polling frequency of the client waiting for OpenID authorization to complete, in seconds.
          * TODO: sub-second resolution?
          */
         public static final Integer                     SESSION_INTERVAL =
@@ -271,7 +271,7 @@ public class LibParam extends BaseParam
         // -- Attributes used only by server code:
 
         /**
-         * The name of the delegate nonce to pass to the OpenId provider; used to
+         * The name of the delegate nonce to pass to the OpenID provider; used to
          * correlate the auth request and auth response.
          */
         public static final String                      OPENID_DELEGATE_NONCE = "sp.nonce";
@@ -282,15 +282,15 @@ public class LibParam extends BaseParam
          */
         public static final String                      OPENID_ONCOMPLETE_URL = "sp.oncomplete";
 
-        /** OpenId discovery may be disabled if YADIS discovery is not supported. */
+        /** OpenID discovery may be disabled if YADIS discovery is not supported. */
         public static final Boolean                     DISCOVERY_ENABLED =
                 getBooleanProperty(                     "openid.idp.discovery.enabled", false);
 
-        /** Discovery URL for the OpenId provider. Only used if discovery is enabled. */
+        /** Discovery URL for the OpenID provider. Only used if discovery is enabled. */
         public static final String                      DISCOVERY_URL =
                 getStringProperty(                      "openid.idp.discovery.url", "");
 
-        /** Endpoint URL used if discovery is not enabled for this OpenId Provider */
+        /** Endpoint URL used if discovery is not enabled for this OpenID Provider */
         public static final String                      ENDPOINT_URL =
                 getStringProperty(                      "openid.idp.endpoint.url", "");
 
@@ -321,7 +321,7 @@ public class LibParam extends BaseParam
          *
          * "ax" for attribute exchange
          *
-         * "sreg" for simple registration (an OpenId 1.0 extension)
+         * "sreg" for simple registration (an OpenID 1.0 extension)
          */
         public static final String                      IDP_USER_EXTENSION =
                 getStringProperty(                      "openid.idp.user.extension", "");
