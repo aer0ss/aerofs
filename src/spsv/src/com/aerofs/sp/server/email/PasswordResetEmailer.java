@@ -61,7 +61,7 @@ public class PasswordResetEmailer
                 "You have changed the password for your " + L.brand() + " account.\n" +
                 "\n" +
                 "If you didn't change the password," +
-                " please email " + WWW.SUPPORT_EMAIL_ADDRESS.get() + " immediately." +
+                " please email " + WWW.SUPPORT_EMAIL_ADDRESS + " immediately." +
                 " We will take necessary steps to secure your account.";
 
         email.addSection(subject, HEADER_SIZE.H1, body);

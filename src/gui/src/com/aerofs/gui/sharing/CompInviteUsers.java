@@ -293,7 +293,7 @@ public class CompInviteUsers extends Composite implements IInputChangeListener
                             " ($10/team member/month).\n\n" +
                             "Do you want to upgrade now?",
                             "Upgrade Now", "Cancel")) {
-                        GUIUtil.launch(WWW.UPGRADE_URL.get());
+                        GUIUtil.launch(WWW.UPGRADE_URL);
                     }
                 } else {
                     // Note: the following messages should be consistent with the messages in
@@ -310,7 +310,7 @@ public class CompInviteUsers extends Composite implements IInputChangeListener
                                 " folder, which requires a paid AeroFS plan. Could we upgrade" +
                                 " the plan for our team?" +
                                 " We can upgrade through this link:\n\n" +
-                                WWW.UPGRADE_URL.get() +
+                                WWW.UPGRADE_URL +
                                 "\n\nThank you!";
                         String url = "mailto:?subject=" + Util.urlEncode(subject) + "&body=" +
                                 Util.urlEncode(body);

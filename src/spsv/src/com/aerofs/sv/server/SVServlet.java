@@ -58,8 +58,8 @@ public class SVServlet extends AeroServlet
 
     private void initMetrics_()
     {
-        GraphiteReporter.enable(2, MINUTES, BaseParam.Metrics.ADDRESS.get().getHostName(),
-                BaseParam.Metrics.ADDRESS.get().getPort());
+        GraphiteReporter.enable(2, MINUTES, BaseParam.Metrics.ADDRESS.getHostName(),
+                BaseParam.Metrics.ADDRESS.getPort());
     }
 
     @Override

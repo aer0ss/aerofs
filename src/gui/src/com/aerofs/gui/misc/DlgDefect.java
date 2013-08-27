@@ -175,7 +175,7 @@ public class DlgDefect extends AeroFSJFaceDialog
             @Override
             public void widgetSelected(SelectionEvent arg0)
             {
-                GUIUtil.launch(WWW.TOS_URL.get());
+                GUIUtil.launch(WWW.TOS_URL);
             }
         });
     }

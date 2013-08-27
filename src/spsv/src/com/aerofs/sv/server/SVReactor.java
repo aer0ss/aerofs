@@ -301,7 +301,7 @@ public class SVReactor
                 "device: " + did;
 
         Future<Void> f = EmailSender.sendPublicEmail(contactEmail, contactEmail,
-                WWW.SUPPORT_EMAIL_ADDRESS.get(), null, L.brand() + " Problem # " + id, body, null,
+                WWW.SUPPORT_EMAIL_ADDRESS, null, L.brand() + " Problem # " + id, body, null,
                 EmailCategory.SUPPORT);
         try {
             f.get(); // block to make sure email reaches support system

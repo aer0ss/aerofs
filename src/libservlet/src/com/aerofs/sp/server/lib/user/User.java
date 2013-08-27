@@ -307,7 +307,7 @@ public class User
     public void save(byte[] shaedSP, FullName fullName)
             throws ExAlreadyExist, SQLException
     {
-        if (EnterpriseConfig.IS_ENTERPRISE_DEPLOYMENT.get()) {
+        if (EnterpriseConfig.IS_ENTERPRISE_DEPLOYMENT) {
             // Enterprise deployment: all users are created in the same organization (the "main
             // organization").
             Organization mainOrg = _f._factOrg.create(OrganizationID.MAIN_ORGANIZATION);

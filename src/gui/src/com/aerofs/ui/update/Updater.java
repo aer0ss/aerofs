@@ -1,7 +1,6 @@
 package com.aerofs.ui.update;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.base.params.IProperty;
 import com.aerofs.base.ssl.SSLEngineFactory;
 import com.aerofs.base.ssl.SSLEngineFactory.Mode;
 import com.aerofs.base.ssl.SSLEngineFactory.Platform;
@@ -58,7 +57,7 @@ import java.net.UnknownHostException;
 import java.security.GeneralSecurityException;
 import java.util.Properties;
 
-import static com.aerofs.config.ConfigurationProperties.getStringProperty;
+import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
 
 /**
  * Note: methods in this class might be called before Cfg is initialized (i.e. before setup is
@@ -260,7 +259,7 @@ public abstract class Updater
     public static String getServerVersion()
             throws IOException
     {
-        final String serverVersionUrl = VERSION_URL.get();
+        final String serverVersionUrl = VERSION_URL;
         try {
             l.debug("Reading Server Version from " + serverVersionUrl);
 
@@ -388,8 +387,8 @@ public abstract class Updater
 
     private static URLConnection newUpdaterConnection(URL url) throws IOException
     {
-        boolean shouldVerifyHostnamesFromAWS = !EnterpriseConfig.IS_ENTERPRISE_DEPLOYMENT.get();
-        boolean shouldUseEnterpriseCert = EnterpriseConfig.IS_ENTERPRISE_DEPLOYMENT.get();
+        boolean shouldVerifyHostnamesFromAWS = !EnterpriseConfig.IS_ENTERPRISE_DEPLOYMENT;
+        boolean shouldUseEnterpriseCert = EnterpriseConfig.IS_ENTERPRISE_DEPLOYMENT;
 
         return newUpdaterConnectionImpl(url, shouldVerifyHostnamesFromAWS, shouldUseEnterpriseCert);
     }
@@ -506,7 +505,7 @@ public abstract class Updater
 
                 // IMPORTANT: _installationFilename is set by checkForDownloadedUpdate()
                 String installationFilename = createFilename(_installerFilenameFormat, verServer);
-                if (!downloadUpdate(INSTALLER_URL.get(), installationFilename, verServer)) {
+                if (!downloadUpdate(INSTALLER_URL, installationFilename, verServer)) {
                     throw new Exception("cannot download installer");
                 }
             }
@@ -645,11 +644,11 @@ public abstract class Updater
 
     private static final String PROD_SERVER_VERSION_URL = "https://nocache.client.aerofs.com/current.ver";
     // staging value: https://nocache.client.stg.aerofs.com/current.ver
-    private static final IProperty<String> VERSION_URL =
-            getStringProperty("updater.version.url", PROD_SERVER_VERSION_URL);
+    private static final String VERSION_URL = getStringProperty("updater.version.url",
+            PROD_SERVER_VERSION_URL);
 
     private static final String PROD_INSTALLER_URL = "https://cache.client.aerofs.com";
     // staging value: https://cache.client.stg.aerofs.com
-    private static final IProperty<String> INSTALLER_URL =
-            getStringProperty("updater.installer.url", PROD_INSTALLER_URL);
+    private static final String INSTALLER_URL = getStringProperty("updater.installer.url",
+            PROD_INSTALLER_URL);
 }

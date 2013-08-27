@@ -5,7 +5,7 @@ import com.aerofs.base.BaseParam.Verkehr;
 public class VerkehrConfiguration
 {
     public String getHost() {
-        return Verkehr.HOST.get();
+        return Verkehr.HOST;
     }
 
     public short getPort() {

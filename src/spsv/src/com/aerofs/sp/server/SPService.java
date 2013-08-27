@@ -19,7 +19,6 @@ import com.aerofs.base.ex.Exceptions;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
-import com.aerofs.base.params.IProperty;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.LibParam.EnterpriseConfig;
 import com.aerofs.lib.LibParam.OpenId;
@@ -139,7 +138,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
 import static com.aerofs.base.BaseParam.VerkehrTopics.ACL_CHANNEL_TOPIC_PREFIX;
-import static com.aerofs.config.ConfigurationProperties.getBooleanProperty;
+import static com.aerofs.base.config.ConfigurationProperties.getBooleanProperty;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 public class SPService implements ISPService
@@ -194,7 +193,7 @@ public class SPService implements ISPService
     private int _maxFreeCollaboratorsPerFolder = 1;
 
     // If false, no payment checks will be enforced.
-    private static final IProperty<Boolean> ENABLE_PAYMENT =
+    private static final Boolean ENABLE_PAYMENT =
             getBooleanProperty("sp.payment.enabled", true);
 
     SPService(SPDatabase db, SQLThreadLocalTransaction sqlTrans,
@@ -1510,7 +1509,7 @@ public class SPService implements ISPService
     {
         _sqlTrans.begin();
 
-        if (EnterpriseConfig.IS_ENTERPRISE_DEPLOYMENT.get()) {
+        if (EnterpriseConfig.IS_ENTERPRISE_DEPLOYMENT) {
             throw new ExNoPerm("Removing users isn't supported in enterprise deployment");
         }
 
@@ -1619,7 +1618,7 @@ public class SPService implements ISPService
     private void throwIfPaymentRequiredAndNoCustomerID(PBStripeData sd)
             throws ExNoStripeCustomerID
     {
-        if (!ENABLE_PAYMENT.get()) return;
+        if (!ENABLE_PAYMENT) return;
 
         if (sd.getQuantity() > _maxFreeMembersPerTeam && !sd.hasCustomerId()) {
             throw new ExNoStripeCustomerID();
@@ -1635,7 +1634,7 @@ public class SPService implements ISPService
             Collection<User> invitees)
             throws ExNoStripeCustomerID, SQLException, ExNotFound
     {
-        if (!ENABLE_PAYMENT.get()) return;
+        if (!ENABLE_PAYMENT) return;
 
         // Okay if the customer is paying
         if (org.getStripeCustomerIDNullable() != null) return;
@@ -2107,8 +2106,8 @@ public class SPService implements ISPService
     @Override
     public ListenableFuture<OpenIdSessionNonces> openIdBeginTransaction() throws Exception
     {
-        String session = _identitySessionManager.createSession(OpenId.DELEGATE_TIMEOUT.get());
-        String delegate = _identitySessionManager.createDelegate(session, OpenId.DELEGATE_TIMEOUT.get());
+        String session = _identitySessionManager.createSession(OpenId.DELEGATE_TIMEOUT);
+        String delegate = _identitySessionManager.createDelegate(session, OpenId.DELEGATE_TIMEOUT);
 
         l.info("Created delegate nonce {} for session nonce {}", delegate, session);
 

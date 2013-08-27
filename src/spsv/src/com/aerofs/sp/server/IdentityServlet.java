@@ -61,7 +61,7 @@ public class IdentityServlet extends AeroServlet
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws IOException
     {
-        if (OpenId.ENABLED.get() == false) { resp.sendError(405); return; }
+        if (OpenId.ENABLED == false) { resp.sendError(405); return; }
 
         String path = req.getPathInfo();
 
@@ -143,9 +143,9 @@ public class IdentityServlet extends AeroServlet
                 throws Exception
         {
             OpenIdUser user = OpenIdUser.populate(
-                    OpenId.DISCOVERY_URL.get(),
+                    OpenId.DISCOVERY_URL,
                     YadisDiscovery.IDENTIFIER_SELECT,
-                    OpenId.ENDPOINT_URL.get());
+                    OpenId.ENDPOINT_URL);
 
             String returnto = getReturnToUrl(token);
             String nextUrl = req.getParameter(OpenId.OPENID_ONCOMPLETE_URL);
@@ -158,7 +158,7 @@ public class IdentityServlet extends AeroServlet
 
             _reliar.associateAndAuthenticate(
                     user, req, resp,
-                    OpenId.IDENTITY_REALM.get(), OpenId.IDENTITY_REALM.get(),
+                    OpenId.IDENTITY_REALM, OpenId.IDENTITY_REALM,
                     returnto);
         }
 
@@ -194,7 +194,7 @@ public class IdentityServlet extends AeroServlet
 
                 _identitySessionManager.authenticateSession(
                         delegateNonce,
-                        OpenId.SESSION_TIMEOUT.get(),
+                        OpenId.SESSION_TIMEOUT,
                         _authParser.populateAttrs(req));
 
                 // we no longer care about the OpenID cached user
@@ -207,7 +207,7 @@ public class IdentityServlet extends AeroServlet
         /** Build the return_to URL to pass to the OpenID provider */
         private static String getReturnToUrl(String token) throws UnsupportedEncodingException
         {
-            StringBuilder sb = new StringBuilder(OpenId.IDENTITY_URL.get());
+            StringBuilder sb = new StringBuilder(OpenId.IDENTITY_URL);
             sb.append(OpenId.IDENTITY_RESP_PATH);
             sb.append('?');
             sb.append(OpenId.OPENID_DELEGATE_NONCE);
@@ -233,16 +233,16 @@ public class IdentityServlet extends AeroServlet
             IdentitySessionAttributes populateAttrs(HttpServletRequest req)
                     throws ExBadCredential
             {
-                String uid = req.getParameter(OpenId.IDP_USER_ATTR.get());
+                String uid = req.getParameter(OpenId.IDP_USER_ATTR);
                 if (uid == null) {
-                    throw new ExBadCredential("No identifier: " + OpenId.IDP_USER_ATTR.get());
+                    throw new ExBadCredential("No identifier: " + OpenId.IDP_USER_ATTR);
                 }
 
                 Matcher args = (_uidPattern == null) ? null : _uidPattern.matcher(uid);
                 return new IdentitySessionAttributes(
-                        getFromRequest(OpenId.IDP_USER_EMAIL.get(), req, args),
-                        getFromRequest(OpenId.IDP_USER_FIRSTNAME.get(), req, args),
-                        getFromRequest(OpenId.IDP_USER_LASTNAME.get(), req, args));
+                        getFromRequest(OpenId.IDP_USER_EMAIL, req, args),
+                        getFromRequest(OpenId.IDP_USER_FIRSTNAME, req, args),
+                        getFromRequest(OpenId.IDP_USER_LASTNAME, req, args));
             }
 
             /**
@@ -290,21 +290,21 @@ public class IdentityServlet extends AeroServlet
         }
 
         private final IdentitySessionManager _identitySessionManager = new IdentitySessionManager();
-        private final AuthParser _authParser = new AuthParser(OpenId.IDP_USER_PATTERN.get());
+        private final AuthParser _authParser = new AuthParser(OpenId.IDP_USER_PATTERN);
     }
 
     private IdentityProvider _provider;
     private static RelyingParty _reliar = new RelyingParty(
             new OpenIdContext(
                     new DefaultDiscovery(),
-                    OpenId.ENDPOINT_STATEFUL.get()
+                    OpenId.ENDPOINT_STATEFUL
                             ? new DiffieHellmanAssociation() : new DumbAssociation(),
                     new SimpleHttpConnector()),
             new UserManager(), new IdentifierSelectUserCache(), true);
 
     static {
         assert _reliar != null;
-        if (OpenId.IDP_USER_EXTENSION.get().equals("ax")) {
+        if (OpenId.IDP_USER_EXTENSION.equals("ax")) {
             _reliar.addListener(
                     new AxSchemaExtension()
                             .addExchange("email")
@@ -312,7 +312,7 @@ public class IdentityServlet extends AeroServlet
                             .addExchange("lastname"));
         }
 
-        if (OpenId.IDP_USER_EXTENSION.get().equals("sreg")) {
+        if (OpenId.IDP_USER_EXTENSION.equals("sreg")) {
             _reliar.addListener(
                     new SRegExtension()
                             .addExchange("email")

@@ -1,4 +1,5 @@
-#!/bin/bash -e -u
+#!/bin/bash
+set -e -u
 
 ###############################################################################
 #
@@ -70,6 +71,11 @@ readonly AEROFS_RELEASE_LINUX_DIR="${LOCAL_RELEASE_DIR}/aerofs.linux"
 readonly AEROFS_RELEASE_LINUX_SHARED_DIR="${AEROFS_RELEASE_LINUX_DIR}/shared"
 readonly AEROFS_RELEASE_LINUX_I386_DIR="${AEROFS_RELEASE_LINUX_DIR}/i386"
 readonly AEROFS_RELEASE_LINUX_AMD64_DIR="${AEROFS_RELEASE_LINUX_DIR}/amd64"
+
+# Package temp folder
+readonly PACKAGE_BUILD_DIR="$LOCAL_RELEASE_DIR/expandedpackages"
+# Package output folder (final deployable artifacts go here)
+readonly PACKAGE_DIR="$BUILD_OUTPUT_DIR/packages"
 
 # Some OSX specific constants
 readonly OSX_TEMPLATE_DMG_FILENAME="osx.dmg.template"
@@ -310,12 +316,8 @@ function compute_next_release_version() {
     echo "version: current => [major.minor.build:$local_CURRENT_RELEASE_VERSION] next => [major.minor.build:$RELEASE_VERSION]"
 }
 
-######################################################################
-#
-# Gets the product names from the unobfuscated class files.
-#
-######################################################################
 
+# Gets the product names from the labeling file.
 function compute_product_names() {
     echo ">> computing product name"
     function get_property() {
@@ -341,6 +343,32 @@ function compute_product_names() {
     echo "PRODUCT_SPACEFREE = $AEROFS_PRODUCT_SPACEFREE"
     echo "PRODUCT_UNIX = $AEROFS_PRODUCT_UNIX"
 }
+
+# replaces the values AEROFS_PRODUCT_SPACEFREE, AEROFS_PRODUCT_UNIX, and
+# AEROFS_PRODUCT in a file with the appropriate set from the environment, given
+# the current labeling
+function render_template_in_place_on() {
+    if [ -z "$AEROFS_PRODUCT_SPACEFREE" -o -z "$AEROFS_PRODUCT_UNIX" -o -z "$AEROFS_PRODUCT" ] ; then
+        echo "Can't render template: one of the following is empty or unset:"
+        echo "\$AEROFS_PRODUCT           = $AEROFS_PRODUCT"
+        echo "\$AEROFS_PRODUCT_UNIX      = $AEROFS_PRODUCT_UNIX"
+        echo "\$AEROFS_PRODUCT_SPACEFREE = $AEROFS_PRODUCT_SPACEFREE"
+        exit 1
+    fi
+    # **********!!!! IMPORTANT !!!!*********
+    # sed on mac requires an empty string for in place operations.
+    # **********!!!!           !!!!*********
+    # Applies template substitution to any number of files.
+    while [[ $# -gt 0 ]]; do
+        # render the next file
+        sed -i "" -e "s/\[AEROFS_PRODUCT_SPACEFREE\]/${AEROFS_PRODUCT_SPACEFREE}/g" $1
+        sed -i "" -e "s/\[AEROFS_PRODUCT_UNIX\]/${AEROFS_PRODUCT_UNIX}/g" $1
+        sed -i "" -e "s/\[AEROFS_PRODUCT\]/${AEROFS_PRODUCT}/g" $1
+        shift 1
+    done
+}
+
+
 
 ###############################################################################
 #
@@ -368,12 +396,12 @@ function publish_to_s3() {
             exit $ERRS3
         fi
 
-        if [ "$MODE" = "ENTERPRISE" ]
-        then
-            s3cmd sync -P --delete-removed "${INSTALLERS_DOWNLOAD_DIR}/${1}"/* $2 > /dev/null
+        if [ "$MODE" = "PROD" ] ; then
+            OPTS="--follow-symlinks --acl-public --delete-removed --cf-invalidate"
         else
-            s3cmd sync -P --cf-invalidate --delete-removed "${INSTALLERS_DOWNLOAD_DIR}/${1}"/* $2 > /dev/null
+            OPTS="--follow-symlinks --acl-public --delete-removed"
         fi
+        s3cmd \$OPTS sync "${INSTALLERS_DOWNLOAD_DIR}/${1}"/* $2 > /dev/null
 ENDCMDS
 }
 

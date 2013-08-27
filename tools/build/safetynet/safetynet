@@ -18,6 +18,10 @@ fi
 
 readonly RELEASE_VERSION="$1"
 
+function publish_to_mitm() {
+    rsync -av $PACKAGE_DIR/* aerofstest@mitm.local:safetynetpackages/
+}
+
 ######################################################################
 #
 # Checks that the SafetyNet clients all have a lower version number than
@@ -132,7 +136,7 @@ function decrease_clients_version_number() {
 #******************************************************************************
 echo ">> verifying release $RELEASE_VERSION ($MODE) stability with SafetyNet"
 
-publish_to_s3 $RELEASE_VERSION $SAFETYNET_INSTALLER_BUCKET
+publish_to_mitm $RELEASE_VERSION
 check_clients_can_update
 backup_safetynet_clients
 ensure_clients_running

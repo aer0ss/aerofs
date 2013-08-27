@@ -6,7 +6,6 @@ package com.aerofs.daemon.core.syncstatus;
 
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.id.SID;
-import com.aerofs.base.params.IProperty;
 import com.aerofs.daemon.core.serverstatus.AbstractConnectionStatusNotifier;
 import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.TC;
@@ -21,7 +20,7 @@ import com.google.protobuf.ByteString;
 import java.util.List;
 import java.util.concurrent.Callable;
 
-import static com.aerofs.config.ConfigurationProperties.getStringProperty;
+import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
 
 /**
  * Single persistent connection to sync status server
@@ -62,7 +61,7 @@ public class SyncStatusConnection extends AbstractConnectionStatusNotifier
         }
     }
 
-    private static final IProperty<String> URL =
+    private static final String URL =
             getStringProperty("lib.sss.url", "https://sss.aerofs.com/syncstat");
 
     @Inject
@@ -86,7 +85,7 @@ public class SyncStatusConnection extends AbstractConnectionStatusNotifier
 
         long epoch;
         try {
-            SyncStatusBlockingClient client = _ssf.create(URL.get(), _user.get());
+            SyncStatusBlockingClient client = _ssf.create(URL, _user.get());
             epoch = client.signInRemote();
             _firstCall = true;
             _client = client;

@@ -2,7 +2,6 @@ package com.aerofs.lib.configuration;
 
 import com.aerofs.base.ssl.ICertificateProvider;
 import com.google.common.io.Files;
-import org.apache.commons.configuration.ConfigurationException;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -16,6 +15,7 @@ import java.nio.charset.Charset;
 import java.security.GeneralSecurityException;
 import java.util.Properties;
 
+import static com.aerofs.lib.configuration.ClientConfigurationLoader.ConfigurationException;
 import static com.aerofs.lib.configuration.ClientConfigurationLoader.IncompatibleModeException;
 import static com.aerofs.lib.configuration.ClientConfigurationLoader.PROPERTY_BASE_CA_CERT;
 import static com.aerofs.lib.configuration.ClientConfigurationLoader.PROPERTY_CONFIG_SERVICE_URL;

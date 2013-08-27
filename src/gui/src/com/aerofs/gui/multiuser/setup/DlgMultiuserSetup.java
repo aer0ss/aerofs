@@ -30,7 +30,7 @@ public class DlgMultiuserSetup extends AeroFSDialog
         super(shell, null, false, true);
 
         _model = new SetupModel()
-                .setSignInActor(LibParam.OpenId.ENABLED.get() ?
+                .setSignInActor(LibParam.OpenId.ENABLED ?
                         new SignInActor.GUIOpenId() : new SignInActor.Credential())
                 .setInstallActor(new InstallActor.MultiUser());
     }
@@ -68,7 +68,7 @@ public class DlgMultiuserSetup extends AeroFSDialog
 
     private AbstractSetupPage createLoginPage()
     {
-        AbstractSetupPage page = (LibParam.OpenId.ENABLED.get() ?
+        AbstractSetupPage page = (LibParam.OpenId.ENABLED ?
                                   new PageOpenIdSignIn(getShell()) : new PageCredentialSignIn(getShell()));
         page.addTraverseListener(new TraverseListener()
         {

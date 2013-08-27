@@ -167,7 +167,7 @@ public class S
             PRE_SETUP_UPDATE_CHECK_FAILED = L.product() + " couldn't" +
                 " download updates. Please make sure the computer is" +
                 " connected to the Internet and run " + L.product() + " again.",
-            PASSWORD_RESET_URL = WWW.DASHBOARD_HOST_URL.get() + "/password_reset",
+            PASSWORD_RESET_URL = WWW.DASHBOARD_HOST_URL + "/password_reset",
             // use trailing spaces to force right margins
             TYPE_EMAIL_ADDRESSES = "Enter email addresses here, separated by commas:   ",
             INVITATION_WAS_SENT = "Invited successfully.",
@@ -202,7 +202,7 @@ public class S
                     "Once you enter the password, the Team Server will shutdown, and you will need" +
                     " to manually restart it. We apologize for the inconvenience. " +
                     "Email " +
-                    WWW.SUPPORT_EMAIL_ADDRESS.get() + " if you have questions.",
+                    WWW.SUPPORT_EMAIL_ADDRESS + " if you have questions.",
             ADMIN_EMAIL = "Admin email",
             ADMIN_PASSWD = "Admin password",
             PASSWORD_HAS_CHANGED = "Your " + L.product() + " password has changed.\nPlease enter the new password",

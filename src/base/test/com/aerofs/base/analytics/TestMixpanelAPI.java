@@ -5,8 +5,8 @@
 package com.aerofs.base.analytics;
 
 import com.aerofs.base.Base64;
-import com.aerofs.base.TestHttpServer;
-import com.aerofs.base.TestHttpServer.RequestProcessor;
+import com.aerofs.base.HttpServerTest;
+import com.aerofs.base.HttpServerTest.RequestProcessor;
 import com.beust.jcommander.internal.Maps;
 import com.google.common.base.Charsets;
 import com.google.gson.Gson;
@@ -36,12 +36,12 @@ public class TestMixpanelAPI
     private static final String TEST_EVENT = "test event";
     private static final String TEST_USER = "test_user";
 
-    TestHttpServer _server;
+    HttpServerTest _server;
 
     @Before
     public void setUp()
     {
-        _server = new TestHttpServer(TEST_PORT);
+        _server = new HttpServerTest(TEST_PORT);
         _server.startAndWait();
     }
 

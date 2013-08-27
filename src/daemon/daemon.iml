@@ -15,7 +15,6 @@
     <orderEntry type="module" module-name="verkehr" />
     <orderEntry type="module" module-name="syncstat" />
     <orderEntry type="library" name="smack" level="project" />
-    <orderEntry type="library" name="dynamic-config" level="project" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
 </module>

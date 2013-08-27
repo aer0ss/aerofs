@@ -4,8 +4,8 @@
 
 package com.aerofs.rocklog;
 
-import com.aerofs.base.TestHttpServer;
-import com.aerofs.base.TestHttpServer.RequestProcessor;
+import com.aerofs.base.HttpServerTest;
+import com.aerofs.base.HttpServerTest.RequestProcessor;
 import com.aerofs.lib.cfg.InjectableCfg;
 import com.aerofs.testlib.AbstractTest;
 import com.google.gson.Gson;
@@ -36,12 +36,12 @@ public class TestRockLog extends AbstractTest
 
     @Mock InjectableCfg _cfg;
 
-    TestHttpServer _server;
+    HttpServerTest _server;
 
     @Before
     public void setUp()
     {
-        _server = new TestHttpServer(TEST_PORT);
+        _server = new HttpServerTest(TEST_PORT);
         _server.startAndWait();
     }
 

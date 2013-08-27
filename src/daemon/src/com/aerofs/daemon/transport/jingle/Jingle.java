@@ -334,7 +334,7 @@ public class Jingle implements ITransportImpl, IUnicastCallbacks
 
         ServerStatus.Builder xmppServerStatus = ServerStatus
                 .newBuilder()
-                .setServerAddress(fromInetSockAddress(XMPP.ADDRESS.get()));
+                .setServerAddress(fromInetSockAddress(XMPP.ADDRESS));
 
         try {
             xmppServerStatus.setReachable(_xmppServer.isReachable());
@@ -349,7 +349,7 @@ public class Jingle implements ITransportImpl, IUnicastCallbacks
 
         ServerStatus.Builder stunServerStatus = ServerStatus
                 .newBuilder()
-                .setServerAddress(fromInetSockAddress(DaemonParam.Jingle.STUN_ADDRESS.get()));
+                .setServerAddress(fromInetSockAddress(DaemonParam.Jingle.STUN_ADDRESS));
 
         // FIXME (AG): actually check STUN reachability
         //

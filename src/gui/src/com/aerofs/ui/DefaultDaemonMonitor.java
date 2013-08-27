@@ -159,7 +159,7 @@ class DefaultDaemonMonitor implements IDaemonMonitor
                     " crypto key strength, please download the Unlimited Strength" +
                     " Jurisdiction Policy Files at http://bit.ly/UlsKO6. " +
                     L.product() + " requires full strength AES-256 for a better margin" +
-                    " of safety. Contact us at " + WWW.SUPPORT_EMAIL_ADDRESS.get() +
+                    " of safety. Contact us at " + WWW.SUPPORT_EMAIL_ADDRESS +
                     " for more questions.");
         } else if (OSUtil.isWindows() && exitCode == WINDOWS_SHUTTING_DOWN) {
             /*

@@ -182,7 +182,7 @@ public class DlgCredentialSignIn extends AeroFSTitleAreaDialog
             @Override
             public void widgetSelected(SelectionEvent e)
             {
-                GUIUtil.launch(WWW.PASSWORD_RESET_REQUEST_URL.get());
+                GUIUtil.launch(WWW.PASSWORD_RESET_REQUEST_URL);
             }
         });
 

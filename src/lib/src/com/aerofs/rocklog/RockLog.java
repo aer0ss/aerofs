@@ -7,7 +7,6 @@ package com.aerofs.rocklog;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
-import com.aerofs.base.params.IProperty;
 import com.aerofs.lib.cfg.InjectableCfg;
 import com.google.common.net.HttpHeaders;
 import org.slf4j.Logger;
@@ -17,14 +16,14 @@ import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
-import static com.aerofs.config.ConfigurationProperties.getStringProperty;
+import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
 
 
 public class RockLog
 {
     private static final Logger l = Loggers.getLogger(RockLog.class);
     private static final int SOCKET_TIMEOUT = (int) (10 * C.SEC);
-    private static final IProperty<String> ROCKLOG_URL =
+    private static final String ROCKLOG_URL =
             getStringProperty("lib.rocklog.url", "http://rocklog.aerofs.com");
 
     private final String _rocklogUrl;
@@ -33,7 +32,7 @@ public class RockLog
     @Inject
     public RockLog()
     {
-        this(ROCKLOG_URL.get(), new InjectableCfg());
+        this(ROCKLOG_URL, new InjectableCfg());
     }
 
     RockLog(String rocklogUrl, InjectableCfg cfg)

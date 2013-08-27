@@ -51,7 +51,7 @@ public class PageCredentialSignIn extends AbstractSignInPage
             @Override
             public void widgetSelected(SelectionEvent selectionEvent)
             {
-                GUIUtil.launch(WWW.PASSWORD_RESET_REQUEST_URL.get());
+                GUIUtil.launch(WWW.PASSWORD_RESET_REQUEST_URL);
             }
         });
     }

@@ -40,7 +40,7 @@ public class MixpanelAPI
      */
     public MixpanelAPI(String token)
     {
-        this(token, Mixpanel.API_ENDPOINT.get());
+        this(token, Mixpanel.API_ENDPOINT);
     }
 
     /**

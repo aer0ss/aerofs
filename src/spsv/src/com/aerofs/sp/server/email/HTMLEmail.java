@@ -18,7 +18,7 @@ public class HTMLEmail implements IEmail {
         "           <table cellpadding=\"0\" cellspacing=\"0\">" +
         "               <tr>" +
         "                   <td style=\"padding:10px 0\">" +
-        "                       <a href=\"\"><img src=\"" + SPParam.STATIC_ASSETS.get() + "/img/logo.png\"></a>" +
+        "                       <a href=\"\"><img src=\"" + SPParam.STATIC_ASSETS + "/img/logo.png\"></a>" +
         "                   </td>" +
         "               </tr>" +
         "           </table>" +

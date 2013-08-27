@@ -4,12 +4,13 @@
 
 package com.aerofs.sp.server.integration;
 
-import com.aerofs.lib.ex.ExAlreadyInvited;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExNotFound;
-import com.aerofs.proto.Sp.PBAuthorizationLevel;
+import com.aerofs.lib.ex.ExAlreadyInvited;
 import com.aerofs.proto.Sp.GetAuthorizationLevelReply;
 import com.aerofs.proto.Sp.GetOrganizationInvitationsReply;
+import com.aerofs.proto.Sp.PBAuthorizationLevel;
+import com.aerofs.sp.server.lib.id.OrganizationID;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.aerofs.sp.server.lib.user.User;
@@ -86,6 +87,45 @@ public class TestSP_OrganizationMovement extends AbstractSPTest
         // Verify user 2 is indeed in the new organization.
         sqlTrans.begin();
         assertEquals(USER_1.getOrganization(), USER_2.getOrganization());
+        sqlTrans.commit();
+
+        // Verify get organization invitations call does not return any new invitations, since the
+        // user has already been moved over.
+        GetOrganizationInvitationsReply invites = service.getOrganizationInvitations().get();
+        assertEquals(0, invites.getOrganizationInvitationsList().size());
+    }
+
+    @Test
+    public void shouldAllowInviteToDefaultOrg() throws Exception
+    {
+        setEnterpriseDeployment(true);
+
+        sqlTrans.begin();
+        User admin = saveUser();
+        User accepter = saveUser();
+
+        Organization adminOrg = admin.getOrganization();
+        assertEquals(OrganizationID.MAIN_ORGANIZATION, adminOrg.id());
+        sqlTrans.commit();
+
+        setSessionUser(admin);
+
+        sqlTrans.begin();
+        accepter.setOrganization(USER_1.getOrganization(), AuthorizationLevel.ADMIN);
+        sqlTrans.commit();
+
+        sendInvitation(accepter);
+
+        sqlTrans.begin();
+        accepter.setOrganization(adminOrg, AuthorizationLevel.USER);
+        sqlTrans.commit();
+
+        setSessionUser(accepter);
+        acceptOrganizationInvitation(adminOrg, accepter);
+
+        sqlTrans.begin();
+        // Verify accepter is indeed in the new organization.
+        assertEquals(OrganizationID.MAIN_ORGANIZATION, accepter.getOrganization().id());
         sqlTrans.commit();
 
         // Verify get organization invitations call does not return any new invitations, since the

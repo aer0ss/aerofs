@@ -9,7 +9,6 @@ import com.aerofs.base.id.DID;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UniqueID;
 import com.aerofs.base.id.UserID;
-import com.aerofs.base.params.IProperty;
 import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.OutArg;
@@ -51,7 +50,7 @@ import java.util.Stack;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-import static com.aerofs.config.ConfigurationProperties.getStringProperty;
+import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
 import static com.aerofs.lib.FileUtil.deleteOrOnExit;
 import static com.aerofs.lib.LibParam.FILE_BUF_SIZE;
 import static com.aerofs.lib.ThreadUtil.startDaemonThread;
@@ -84,10 +83,10 @@ public final class SVClient
     //
     // See "Effective Java, 2nd Edition (Joshua Bloch) pg. 283
     //
-    private static final IProperty<String> SV_URL =
+    private static final String SV_URL =
             getStringProperty("lib.sv.url", "https://sv.aerofs.com:443/sv_beta/sv");
 
-    private static final SVRPCClient client = new SVRPCClient(SV_URL.get());
+    private static final SVRPCClient client = new SVRPCClient(SV_URL);
 
     private static SVRPCClient getRpcClient()
     {

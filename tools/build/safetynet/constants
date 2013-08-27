@@ -1,4 +1,5 @@
-#!/bin/bash -e -u
+#!/bin/bash
+set -e -u
 
 ###############################################################################
 #
@@ -18,13 +19,6 @@ if [ x"${__SAFETYNET_CONSTANTS_INCLUDE__:-}" == x ] ; then readonly __SAFETYNET_
 include include/common PROD
 
 readonly ERRSAFETYNET=30
-
-###############################################################################
-#
-# S3 constants
-#
-###############################################################################
-readonly SAFETYNET_INSTALLER_BUCKET="s3://nocache.client.safetynet.aerofs.com"
 
 ###############################################################################
 #

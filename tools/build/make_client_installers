@@ -1,10 +1,11 @@
-#!/bin/bash -e -u
+#!/bin/bash
+set -eu
 set -x
 
 ###############################################################################
 #
-# This script packages AeroFS for linux, osx and windows and uploads the
-# packages to the release server for deployment.
+# This script builds AeroFS installation and update packages for Linux, OSX and
+# Windows
 #
 ###############################################################################
 
@@ -16,143 +17,53 @@ include include/common ${1:-} ${2:-}
 #
 ###############################################################################
 
-if [[ x"${1:-}" == x || x"${2:-}" == x || x"${3:-}" == x  || x"${4:-}" == x ]] ; then
-    echo "usage: $0 [build_mode] [release_version] [passphrase]" >&2
+if [[ x"${1:-}" == x || x"${2:-}" == x || x"${3:-}" == x ]] ; then
+    echo "usage: $0 <build_mode> <build_client> <release_version>" >&2
     echo " " >&2
-    echo "[build_mode]: PROD|ENTERPRISE" >&2
-    echo "[build_client]: CLIENT|TEAM_SERVER" >&2
-    echo "[release_version]: release version (for example: 0.1.0)" >&2
-    echo "[passphrase]: release password" >&2
+    echo "<build_mode>: PROD|ENTERPRISE" >&2
+    echo "<build_client>: CLIENT|TEAM_SERVER" >&2
+    echo "<release_version>: release version (for example: 0.1.0)" >&2
     echo " " >&2
-    echo "example: $0 PROD 0.1.0 password" >&2
+    echo "example: $0 ENTERPRISE CLIENT 0.1.0" >&2
+    echo "example: $0 PROD CLIENT 0.1.0" >&2
     exit $ERRBADARGS
 fi
 
 readonly RELEASE_VERSION="$3"
-readonly PASSPHRASE="$4"
 readonly RELEASE_FILE_NAME="aerofs-${RELEASE_VERSION}-${LOWERCASE_MODE}"
 
-# FIXME (AG) : the linux tgz and deb can both be built locally on OSX
-
-###############################################################################
-#
-# Uploads the release files on the local machine to the release server.
-#
-###############################################################################
-function upload_release_files_to_release_server() {
-    echo ">> uploading release resources to server"
-
-    local local_TEMP_RELEASE_TAR_BZ2_FILENAME="$( mktemp -t aerofs_release_tarball_XXXXXX )".tar.bz2
-    trap "rm $local_TEMP_RELEASE_TAR_BZ2_FILENAME" EXIT
-
-    # Create the tarball
-    pushd "$LOCAL_RELEASE_DIR" > /dev/null
-    tar cjf "$local_TEMP_RELEASE_TAR_BZ2_FILENAME" {aerofs,aerofs.osx,aerofs.win,aerofs.linux}
-    popd > /dev/null
-
-    # Copy the zip to the release server
-    kscp "$local_TEMP_RELEASE_TAR_BZ2_FILENAME" $RELEASE_SERVER_LOGIN:"${RELEASE_FILES_DIR}/${RELEASE_FILE_NAME}".tar.bz2
-
-    # Extract the files on the server into RELEASE_UNPACK_DIR
-    # We used tarballs at one point because Windows patches required a history
-    # of zip files, but we can probably switch to rsync if desired, which might
-    # yield speedups.
-    kssh $RELEASE_SERVER_LOGIN $RELEASE_SERVER_SHELL << ENDCMDS
-        rm -r "$RELEASE_UNPACK_DIR" 2> /dev/null || true
-        mkdir -p "$RELEASE_UNPACK_DIR"
-        tar xvf "${RELEASE_FILES_DIR}/${RELEASE_FILE_NAME}".tar.bz2 --directory "$RELEASE_UNPACK_DIR"
-ENDCMDS
+function make_linux_installer_deb() {
+    local SCRIPTDIR="${LOCAL_RELEASE_DIR}/scripts"
+    mkdir -p "${SCRIPTDIR}"
+    local DEBSCRIPT="${SCRIPTDIR}/make_deb"
+    cp ${BUILD_SCRIPT_DIR}/make_deb "${SCRIPTDIR}"
+    render_template_in_place_on $DEBSCRIPT
+    chmod a+x $DEBSCRIPT
+    mkdir -p ${PACKAGE_DIR}
+    $DEBSCRIPT $MODE $RELEASE_VERSION "$LOCAL_RELEASE_DIR" "${PACKAGE_DIR}/${AEROFS_PRODUCT_UNIX}-installer-${RELEASE_VERSION}.deb"
 }
 
-###############################################################################
-#
-# Uploads the local map file to the map server with a versioned name.
-#
-###############################################################################
-function upload_map_file_to_map_server() {
-    echo ">> uploading ProGuard map to map server"
-
-    kscp "${LOCAL_RELEASE_DIR}/aerofs.map" $MAP_SERVER_LOGIN:"${MAP_FILES_DIR}/${RELEASE_FILE_NAME}.map"
-    scp "${LOCAL_RELEASE_DIR}/aerofs.map" $ROCKLOG_SERVER:"${MAP_FILES_DIR}/${RELEASE_FILE_NAME}.map"
+function make_linux_installer_tgz() {
+    local TGZ_EXPANDED_DIR=$PACKAGE_BUILD_DIR/linux-installer-tgz
+    local local_LINUX_INSTALLER_TGZ_FILENAME=${AEROFS_PRODUCT_UNIX}-installer-${RELEASE_VERSION}.tgz
+    rm -rf $TGZ_EXPANDED_DIR
+    mkdir -p $TGZ_EXPANDED_DIR/aerofs
+    cp -av "${LOCAL_RELEASE_DIR}/aerofs.linux"/* "${TGZ_EXPANDED_DIR}/aerofs/"
+    cp -av "${LOCAL_RELEASE_DIR}/aerofs"/* "${TGZ_EXPANDED_DIR}/aerofs/shared/"
+    pushd "${TGZ_EXPANDED_DIR}/aerofs/"
+        ln -s shared/copier ${AEROFS_PRODUCT_UNIX}
+        for suffix in cli gui sh ; do
+            ln -s ${AEROFS_PRODUCT_UNIX} ${AEROFS_PRODUCT_UNIX}-$suffix
+        done
+    popd
+    mkdir -p ${PACKAGE_DIR}
+    tar -C "$TGZ_EXPANDED_DIR" -zcf "${PACKAGE_DIR}/${local_LINUX_INSTALLER_TGZ_FILENAME}" aerofs
 }
 
-###############################################################################
-#
-# Creates a folder for this release version on the release server.
-#
-###############################################################################
-function create_versioned_installer_directory_on_release_server() {
-    echo ">> creating directory for installers"
-
-    kssh $RELEASE_SERVER_LOGIN $RELEASE_SERVER_SHELL << ENDCMDS
-        mkdir -p "${INSTALLERS_DOWNLOAD_DIR}/${RELEASE_VERSION}"
-ENDCMDS
-}
-
-###############################################################################
-#
-# Uploads the make_deb script and builds a debian package on the release server.
-#
-###############################################################################
-function make_linux_installer_deb_on_release_server() {
-    echo ">> make arch independent installer deb on release server"
-
-    # FIXME (AG): I don't want to have to kscp make_deb to the remote machine
-    kscp "${BUILD_SCRIPT_DIR}"/make_deb $RELEASE_SERVER_LOGIN:~/
-    kssh $RELEASE_SERVER_LOGIN $RELEASE_SERVER_SHELL << ENDCMDS
-        sed -i"" -e "s/\[AEROFS_PRODUCT_SPACEFREE\]/${AEROFS_PRODUCT_SPACEFREE}/g" ~/make_deb
-        sed -i"" -e "s/\[AEROFS_PRODUCT\]/${AEROFS_PRODUCT}/g" ~/make_deb
-        sed -i"" -e "s/\[AEROFS_PRODUCT_UNIX\]/${AEROFS_PRODUCT_UNIX}/g" ~/make_deb
-        chmod a+x ~/make_deb
-        ~/make_deb $MODE $RELEASE_VERSION "$RELEASE_UNPACK_DIR" "${INSTALLERS_DOWNLOAD_DIR}/${RELEASE_VERSION}/${AEROFS_PRODUCT_UNIX}-installer.deb"
-ENDCMDS
-}
-
-###############################################################################
-#
-# Tars and gzips the aerofs resources and moves them to the download directory
-# on the release server.
-#
-###############################################################################
-function make_linux_installer_tgz_on_release_server() {
-    echo ">> make arch independent installer tgz on release server"
-
-    # Any variables that are defined within the remote shell are referenced via \$ to make sure
-    # the variables aren't substituted in the local shell
-    local local_LINUX_INSTALLER_TGZ_FILENAME=${AEROFS_PRODUCT_UNIX}-installer.tgz
-    kssh $RELEASE_SERVER_LOGIN $RELEASE_SERVER_SHELL << ENDCMDS
-        readonly INSTALLER_TGZ_TEMP_DIR="\$( mktemp -d -t temp_tgz_XXXXXX )"
-        trap "rm -r \$INSTALLER_TGZ_TEMP_DIR" EXIT
-
-        mkdir -p "\${INSTALLER_TGZ_TEMP_DIR}/aerofs"
-        cp -av "${RELEASE_UNPACK_DIR}/aerofs.linux"/* "\${INSTALLER_TGZ_TEMP_DIR}/aerofs/"
-        cp -av "${RELEASE_UNPACK_DIR}/aerofs"/* "\${INSTALLER_TGZ_TEMP_DIR}/aerofs/shared/"
-        pushd "\${INSTALLER_TGZ_TEMP_DIR}/aerofs/"
-            ln -s shared/copier ${AEROFS_PRODUCT_UNIX}
-            for suffix in cli gui sh ; do
-                ln -s ${AEROFS_PRODUCT_UNIX} ${AEROFS_PRODUCT_UNIX}-\$suffix
-            done
-        popd
-        tar -C "\$INSTALLER_TGZ_TEMP_DIR" -zcf "\${INSTALLER_TGZ_TEMP_DIR}/${local_LINUX_INSTALLER_TGZ_FILENAME}" aerofs
-        cp "\${INSTALLER_TGZ_TEMP_DIR}/${local_LINUX_INSTALLER_TGZ_FILENAME}" "${INSTALLERS_DOWNLOAD_DIR}/${RELEASE_VERSION}/"
-ENDCMDS
-}
-
-###############################################################################
-#
-# Tars and gzips aerofs resources based on their architecture (i386/amd64)
-# and moves them to the download directory on the release server.
-#
-# @param $1 i386|amd64 (all other values treated as errors)
-#
-# example:
-#   make_linux_arch_dependent_tgz_on_release_server i386
-#
-###############################################################################
-function make_linux_arch_dependent_tgz_on_release_server() {
+function make_linux_update_tgz() {
     if [[ "x$1" != "xi386" && "x$1" != "xamd64" ]]; then
         echo "error: unsupported bits:$1" >&2
-        echo "usage: make_linux_arch_dependent_tgz_on_release_server [i386|amd64]" >&2
+        echo "usage: make_linux_update_tgz [i386|amd64]" >&2
         exit $ERRBADARGS
     fi
 
@@ -167,142 +78,119 @@ function make_linux_arch_dependent_tgz_on_release_server() {
         ;;
     *)
         echo "error: unsupported arch:$local_ARCH" >&2
+        exit $ERRBADARGS
         ;;
     esac
 
-    echo ">> make arch dependent tgz (${local_ARCH}) on release server"
-
-    local local_VERSIONED_ARCH_TGZ_FILENAME=${AEROFS_PRODUCT_UNIX}-${RELEASE_VERSION}-${local_TGZ_SUFFIX}.tgz
-    local local_UNVERSIONED_ARCH_TGZ_FILENAME=${AEROFS_PRODUCT_UNIX}-${local_TGZ_SUFFIX}.tgz
-
-    # Any variables that are defined within the remote shell are referenced via \$ to make sure
-    # the variables aren't substituted in the local shell
-    kssh $RELEASE_SERVER_LOGIN $RELEASE_SERVER_SHELL << ENDCMDS
-        readonly ARCH_TGZ_TEMP_DIR="\$( mktemp -d -t temp_arch_tgz_XXXXXX )"
-        trap "rm -r \$ARCH_TGZ_TEMP_DIR" EXIT
-
-        mkdir -p "\${ARCH_TGZ_TEMP_DIR}/aerofs"
-        cp -rf "${RELEASE_UNPACK_DIR}/aerofs"/* "\${ARCH_TGZ_TEMP_DIR}/aerofs"
-        cp -rf "${RELEASE_UNPACK_DIR}/aerofs.linux/shared"/* "\${ARCH_TGZ_TEMP_DIR}/aerofs"
-        cp -rf "${RELEASE_UNPACK_DIR}/aerofs.linux/${local_ARCH}"/* "\${ARCH_TGZ_TEMP_DIR}/aerofs"
-        tar -C "\${ARCH_TGZ_TEMP_DIR}" -zcf "\${ARCH_TGZ_TEMP_DIR}/${local_VERSIONED_ARCH_TGZ_FILENAME}" aerofs
-        cp -rf "\${ARCH_TGZ_TEMP_DIR}/${local_VERSIONED_ARCH_TGZ_FILENAME}" "${INSTALLERS_DOWNLOAD_DIR}/${RELEASE_VERSION}/"
-        cp -rf "\${ARCH_TGZ_TEMP_DIR}/${local_VERSIONED_ARCH_TGZ_FILENAME}" "${INSTALLERS_DOWNLOAD_DIR}/${RELEASE_VERSION}/${local_UNVERSIONED_ARCH_TGZ_FILENAME}"
-ENDCMDS
+    echo ">> make arch dependent tgz (${local_ARCH})"
+    local VERSIONED_ARCH_TGZ_FILENAME=${AEROFS_PRODUCT_UNIX}-${RELEASE_VERSION}-${local_TGZ_SUFFIX}.tgz
+    ARCH_TGZ_TEMP_DIR="$PACKAGE_BUILD_DIR/linux-$local_TGZ_SUFFIX"
+    rm -rf "$ARCH_TGZ_TEMP_DIR"
+    mkdir -p "${ARCH_TGZ_TEMP_DIR}/aerofs"
+    cp -a "${LOCAL_RELEASE_DIR}/aerofs"/* "${ARCH_TGZ_TEMP_DIR}/aerofs"
+    cp -a "${LOCAL_RELEASE_DIR}/aerofs.linux/shared"/* "${ARCH_TGZ_TEMP_DIR}/aerofs"
+    cp -a "${LOCAL_RELEASE_DIR}/aerofs.linux/${local_ARCH}"/* "${ARCH_TGZ_TEMP_DIR}/aerofs"
+    mkdir -p ${PACKAGE_DIR}
+    tar -C "${ARCH_TGZ_TEMP_DIR}" -zcf "${PACKAGE_DIR}/${VERSIONED_ARCH_TGZ_FILENAME}" aerofs
 }
 
-###############################################################################
-#
-# Creates all the linux installer variants
-#
-###############################################################################
 function make_linux_installers() {
-    make_linux_installer_deb_on_release_server
-    make_linux_installer_tgz_on_release_server
-    make_linux_arch_dependent_tgz_on_release_server i386
-    make_linux_arch_dependent_tgz_on_release_server amd64
+    make_linux_installer_deb
+    make_linux_installer_tgz
+    make_linux_update_tgz i386
+    make_linux_update_tgz amd64
 }
 
-###############################################################################
-#
-# Creates the Windows installer on the release server and moves it to the
-# download directory. Uploads installer to Kaspersky when deploying PROD mode.
-#
-###############################################################################
 function make_windows_installers() {
-    echo ">> make windows installer on release server"
+    echo ">> make windows installer"
+    mkdir -p ${PACKAGE_DIR}
+    local OUT_FILE="${PACKAGE_DIR}/${AEROFS_PRODUCT_SPACEFREE}Install-${RELEASE_VERSION}.exe"
+    local OUT_FILE_VERSIONFREE="${PACKAGE_DIR}/${AEROFS_PRODUCT_SPACEFREE}Install.exe"
+    local EXECUTABLE="${AEROFS_PRODUCT_UNIX}.exe"
 
-    local local_VERSIONED_INSTALLER_DIR="${INSTALLERS_DOWNLOAD_DIR}/${RELEASE_VERSION}"
-    readonly local_VERSIONED_INSTALLER_DIR
-    local local_OUT_FILE="${local_VERSIONED_INSTALLER_DIR}/${AEROFS_PRODUCT_SPACEFREE}Install-${RELEASE_VERSION}.exe"
-    readonly local_OUT_FILE
-    local local_OUT_FILE_VERSIONFREE="${local_VERSIONED_INSTALLER_DIR}/${AEROFS_PRODUCT_SPACEFREE}Install.exe"
-    readonly local_OUT_FILE_VERSIONFREE
-    local local_EXECUTABLE="${AEROFS_PRODUCT_UNIX}.exe"
+    # This function is used to sign exe files and dll's
+    function sign_exe() {
+        FILENAME="$1"
 
-    # deploy NSIS scripts
-    rsync --archive --compress --rsh kssh "${LOCAL_NSIS_DIR}/" $RELEASE_SERVER_LOGIN:"$RELEASE_NSIS_DIR"
-
-    # now make the installer
-    kssh $RELEASE_SERVER_LOGIN $RELEASE_SERVER_SHELL << ENDCMDS
-
-        # Temporary function to exist only in this ssh session
-        # This function is used to sign exe files and dll's
-        function sign_exe() {
-            FILENAME="\$1"
-
-            export PASSPHRASE="$PASSPHRASE"
-
-            printenv PASSPHRASE | signcode -spc ~/.certs/cert.spc -v ~/.certs/privateKey.pvk \
-                -a sha1 -$ commercial -t http://timestamp.verisign.com/scripts/timestamp.dll \
-                -tr 10 -n "AeroFS" -i "http://www.aerofs.com" "\${FILENAME}" > /dev/null
-
-            rm -f "\${FILENAME}.bak"
-        }
-
-        # Create a temporary directory to work in
-        NSIS_TEMP_DIR="\$( mktemp -d -t nsis.XXXXXXXX )"
-
-        # Create a subfolder in that directory with the version number
-        # Note: we prepend v_ to the version number to make it easy for the NSIS installer
-        # to enumerate and delete all previous versions directories
-        NSIS_TEMP_DIR_WITH_VERSION="\${NSIS_TEMP_DIR}/v_${RELEASE_VERSION}"
-        mkdir "\${NSIS_TEMP_DIR_WITH_VERSION}"
-
-        # Copy the aerofs release files in that directory
-        cp -r "${RELEASE_UNPACK_DIR}/aerofs"/* "\${NSIS_TEMP_DIR_WITH_VERSION}/"
-        cp -r "${RELEASE_UNPACK_DIR}/aerofs.win"/* "\${NSIS_TEMP_DIR_WITH_VERSION}/"
-
-        # Move the things that need to stay at the top-level folder
-        # Also rename aerofs.exe to the appropriate name
-        mv "\${NSIS_TEMP_DIR_WITH_VERSION}/aerofs.exe" "\${NSIS_TEMP_DIR}/$local_EXECUTABLE"
-        mv "\${NSIS_TEMP_DIR_WITH_VERSION}/aerofsd.exe" "\${NSIS_TEMP_DIR}/"
-        echo -n "${RELEASE_VERSION}" > "\${NSIS_TEMP_DIR}/version"
-        mkdir "\${NSIS_TEMP_DIR}/icons"
-        mv "\${NSIS_TEMP_DIR_WITH_VERSION}/icons"/*.ico "\${NSIS_TEMP_DIR}/icons"
-
-        chmod -R a+rx "\${NSIS_TEMP_DIR}"
-
-        sign_exe "\${NSIS_TEMP_DIR}/$local_EXECUTABLE"
-        sign_exe "\${NSIS_TEMP_DIR}/aerofsd.exe"
-
-        makensis -V1 -DAEROFS_IN_FOLDER="\${NSIS_TEMP_DIR}" \
-                -DAEROFS_OUT_FILE="$local_OUT_FILE" \
-                -DAEROFS_VERSION="$RELEASE_VERSION" \
-                -DAEROFS_PRODUCT="$AEROFS_PRODUCT" \
-                -DAEROFS_APPROOT="${AEROFS_PRODUCT_SPACEFREE}Exec" \
-                -DAEROFS_EXECUTABLE="$local_EXECUTABLE" \
-                "${RELEASE_NSIS_DIR}/setup.nsi"
-
-        sign_exe "$local_OUT_FILE"
-        cp -r "$local_OUT_FILE" "$local_OUT_FILE_VERSIONFREE"
-
-        # Kaspersky requires us to upload the entire unpacked contents of aerofs into their servers
-        # we also upload the install file for whitelisting, as some versions of the antivirus flag the
-        # installer as a potential virus
-        if [ "$MODE" == "PROD" ]; then
-            LFTPSCRIPT="\$( mktemp -t lftp.XXXX )"
-            cat << LFTPCMDS >> \${LFTPSCRIPT}
-trap "rm \"\$LFTPSCRIPT\"" EXIT
-trap "rm -r \"\$NSIS_TEMP_DIR\"" EXIT
-lftp -e "mirror -R \${NSIS_TEMP_DIR}/ /aerofs/; bye" -u \`cat ~/.lftp/login.cfg\` whitelist1.kaspersky-labs.com
-lftp -e 'put ${local_OUT_FILE_VERSIONFREE}; bye' -u \`cat ~/.lftp/login.cfg\` whitelist1.kaspersky-labs.com
-LFTPCMDS
-            chmod +x \${LFTPSCRIPT}
-            screen -d -m \${LFTPSCRIPT}
+        local CERT_FILE=""
+        local KEY_FILE=""
+        case "$MODE" in
+        "ENTERPRISE")
+            CERT_FILE="/Volumes/aerofskeys/windows/cert.spc"
+            KEY_FILE="/Volumes/aerofskeys/windows/privateKey.pvk"
+            CODESIGNING_PASSWORD_FILE="/Volumes/aerofskeys/windows/passphrase.txt"
+            ;;
+        "PROD")
+            CERT_FILE="/Volumes/aerofskeys/windows/cert.spc"
+            KEY_FILE="/Volumes/aerofskeys/windows/privateKey.pvk"
+            CODESIGNING_PASSWORD_FILE="/Volumes/aerofskeys/windows/passphrase.txt"
+            ;;
+        # If we later want to let CI use a test cert and key for signing, use the following:
+        # CERT_FILE="$BUILD_SCRIPT_DIR/signing/cert.spc"
+        # KEY_FILE="$BUILD_SCRIPT_DIR/signing/privateKey.pvk"
+        # CODESIGNING_PASSWORD_FILE="$BUILD_SCRIPT_DIR/signing/passphrase.txt"
+        *)
+            echo "error: unsupported mode: $MODE" >&2
+            return 1
+            ;;
+        esac
+        if [ ! -r $CODESIGNING_PASSWORD_FILE ] ; then
+            echo "Cannot signcode: unable to read Windows codesigning password from $CODESIGNING_PASSWORD_FILE" >&2
+            return 1
         fi
+        CODESIGNING_PASSWORD=$(cat $CODESIGNING_PASSWORD_FILE)
+        export PASSPHRASE="$CODESIGNING_PASSWORD"
+        [[ -r "$CERT_FILE" && -r "$KEY_FILE" ]] || (echo "Can't find cert/key at $CERT_FILE and $KEY_FILE - do you need to mount a volume?" && exit 1)
+        printenv PASSPHRASE | signcode -spc "$CERT_FILE" -v "$KEY_FILE" \
+            -a sha1 -$ commercial -t http://timestamp.verisign.com/scripts/timestamp.dll \
+            -tr 10 -n "AeroFS" -i "http://www.aerofs.com" "${FILENAME}"
 
-ENDCMDS
+        rm -f "${FILENAME}.bak"
+    }
+
+    # Create a temporary directory to work in
+    local NSIS_BUILD_DIR_NAME="windows-nsis"
+    local NSIS_TEMP_DIR="$PACKAGE_BUILD_DIR/$NSIS_BUILD_DIR_NAME"
+    rm -rf $NSIS_TEMP_DIR
+    mkdir -p $NSIS_TEMP_DIR
+
+    # Create a subfolder in that directory with the version number
+    # Note: we prepend v_ to the version number to make it easy for the NSIS installer
+    # to enumerate and delete all previous versions directories
+    NSIS_TEMP_DIR_WITH_VERSION="${NSIS_TEMP_DIR}/v_${RELEASE_VERSION}"
+    mkdir "${NSIS_TEMP_DIR_WITH_VERSION}"
+
+    # Copy the aerofs release files in that directory
+    cp -a "${LOCAL_RELEASE_DIR}/aerofs"/* "${NSIS_TEMP_DIR_WITH_VERSION}/"
+    cp -a "${LOCAL_RELEASE_DIR}/aerofs.win"/* "${NSIS_TEMP_DIR_WITH_VERSION}/"
+
+    # Move the things that need to stay at the top-level folder
+    # Also rename aerofs.exe to the appropriate name
+    mv "${NSIS_TEMP_DIR_WITH_VERSION}/aerofs.exe" "${NSIS_TEMP_DIR}/$EXECUTABLE"
+    mv "${NSIS_TEMP_DIR_WITH_VERSION}/aerofsd.exe" "${NSIS_TEMP_DIR}/"
+    echo -n "${RELEASE_VERSION}" > "${NSIS_TEMP_DIR}/version"
+    mkdir "${NSIS_TEMP_DIR}/icons"
+    mv "${NSIS_TEMP_DIR_WITH_VERSION}/icons"/*.ico "${NSIS_TEMP_DIR}/icons"
+
+    chmod -R a+rx "${NSIS_TEMP_DIR}"
+
+    sign_exe "${NSIS_TEMP_DIR}/$EXECUTABLE"
+    sign_exe "${NSIS_TEMP_DIR}/aerofsd.exe"
+
+    makensis -V1 -DAEROFS_IN_FOLDER="${NSIS_TEMP_DIR}" \
+            -DAEROFS_OUT_FILE="$OUT_FILE" \
+            -DAEROFS_VERSION="$RELEASE_VERSION" \
+            -DAEROFS_PRODUCT="$AEROFS_PRODUCT" \
+            -DAEROFS_APPROOT="${AEROFS_PRODUCT_SPACEFREE}Exec" \
+            -DAEROFS_EXECUTABLE="$EXECUTABLE" \
+            "${LOCAL_NSIS_DIR}/setup.nsi"
+
+    sign_exe "$OUT_FILE"
 }
 
-###############################################################################
-#
-# Creates the Mac OS X DMG and Zip file and uploads it to the release server.
-# Signs the App if deployment mode is PROD
-#
-###############################################################################
-function make_osx_installers() {
+function make_osx_packages() {
     echo ">> make mac osx dmg and zip"
+    mkdir -p ${PACKAGE_DIR}
 
     local local_VERSIONED_MAC_ZIP_FILENAME="${AEROFS_PRODUCT_UNIX}-osx-${RELEASE_VERSION}.zip"
     local local_VERSIONED_MAC_DMG_FILENAME="${AEROFS_PRODUCT_SPACEFREE}Install-${RELEASE_VERSION}.dmg"
@@ -321,18 +209,18 @@ function make_osx_installers() {
     readonly local_OSX_TEMPLATE_DMG_FILENAME
 
     # Create a temporary directory to work in
-    local local_DMG_TEMP_DIR="$( mktemp -d -t dmg )"
-    trap "rm -r \"$local_DMG_TEMP_DIR\"" EXIT
+    local DMG_TEMP_DIR="$PACKAGE_BUILD_DIR/osx-dmg"
 
     # Create a release folder within the temp directory and copy the template dmg and app folder
-    mkdir "${local_DMG_TEMP_DIR}/Release"
-    cp -R "${BUILD_SCRIPT_DIR}/${local_OSX_TEMPLATE_APP_FILENAME}" \
-        "${local_DMG_TEMP_DIR}/Release/${AEROFS_PRODUCT_SPACEFREE}.app"
+    rm -rf "${DMG_TEMP_DIR}"
+    mkdir -p "${DMG_TEMP_DIR}/Release"
+    cp -a "${BUILD_SCRIPT_DIR}/${local_OSX_TEMPLATE_APP_FILENAME}" \
+        "${DMG_TEMP_DIR}/Release/${AEROFS_PRODUCT_SPACEFREE}.app"
     cp "${BUILD_SCRIPT_DIR}/${local_OSX_TEMPLATE_DMG_FILENAME}" \
-        "${local_DMG_TEMP_DIR}/${AEROFS_PRODUCT_SPACEFREE}Install-temp.dmg"
+        "${DMG_TEMP_DIR}/${AEROFS_PRODUCT_SPACEFREE}Install-temp.dmg"
 
     # Copy the aerofs and aerofs.osx files into the Mac App directory within the temp directory created above
-    cp -r "${AEROFS_RELEASE_DIR}"/* "${AEROFS_RELEASE_OSX_DIR}"/* "${local_DMG_TEMP_DIR}/${local_OSX_LOCAL_MAC_APP_DIR}/"
+    cp -a "${AEROFS_RELEASE_DIR}"/* "${AEROFS_RELEASE_OSX_DIR}"/* "${DMG_TEMP_DIR}/${local_OSX_LOCAL_MAC_APP_DIR}/"
 
     if is_prod ; then
         echo ">> sign app for Mac App Store"
@@ -343,65 +231,52 @@ function make_osx_installers() {
         # checksum, so we kill finder on update.  Instead, we have pre-signed
         # the checked-in resource, and must update the signature whenever we
         # modify anything under the .osax folder.
-        #codesign -f -s "Air Computing, Inc." "${local_DMG_TEMP_DIR}/Release/${AEROFS_PRODUCT_SPACEFREE}.app/Contents/Resources/Java/AeroFSFinderExtension.osax"
-        codesign -f -s "Air Computing, Inc." "${local_DMG_TEMP_DIR}/Release/${AEROFS_PRODUCT_SPACEFREE}.app/Contents/Resources/Java/Growl.framework/Versions/A"
-        codesign -f -s "Air Computing, Inc." "${local_DMG_TEMP_DIR}/Release/${AEROFS_PRODUCT_SPACEFREE}.app"
+        #codesign -f -s "Air Computing, Inc." "${DMG_TEMP_DIR}/Release/${AEROFS_PRODUCT_SPACEFREE}.app/Contents/Resources/Java/AeroFSFinderExtension.osax"
+        codesign -f -s "Air Computing, Inc." "${DMG_TEMP_DIR}/Release/${AEROFS_PRODUCT_SPACEFREE}.app/Contents/Resources/Java/Growl.framework/Versions/A"
+        codesign -f -s "Air Computing, Inc." "${DMG_TEMP_DIR}/Release/${AEROFS_PRODUCT_SPACEFREE}.app"
     fi
 
     # zip the osx client (must go to the directory so that the temp path isn't included in the zip)
-    pushd "$local_DMG_TEMP_DIR" > /dev/null
-    zip -9rq "$local_VERSIONED_MAC_ZIP_FILENAME" "Release/"
+    pushd "$DMG_TEMP_DIR" > /dev/null
+    zip -9rq "${PACKAGE_DIR}/$local_VERSIONED_MAC_ZIP_FILENAME" "Release/"
     popd > /dev/null
 
-    hdiutil mount -quiet "${local_DMG_TEMP_DIR}/${AEROFS_PRODUCT_SPACEFREE}Install-temp.dmg"
+    hdiutil mount -quiet "${DMG_TEMP_DIR}/${AEROFS_PRODUCT_SPACEFREE}Install-temp.dmg"
     rm -rf "${local_OSX_INSTALLER_VOLUME_DIR}/${AEROFS_PRODUCT_SPACEFREE}.app"
-    cp -R "${local_DMG_TEMP_DIR}/Release/${AEROFS_PRODUCT_SPACEFREE}.app" "${local_OSX_INSTALLER_VOLUME_DIR}"
+    cp -a "${DMG_TEMP_DIR}/Release/${AEROFS_PRODUCT_SPACEFREE}.app" "${local_OSX_INSTALLER_VOLUME_DIR}"
     hdiutil eject -quiet "${local_OSX_INSTALLER_VOLUME_DIR}"
-    hdiutil convert -quiet -format UDBZ -o "${local_DMG_TEMP_DIR}/${local_VERSIONED_MAC_DMG_FILENAME}" "${local_DMG_TEMP_DIR}/${AEROFS_PRODUCT_SPACEFREE}Install-temp.dmg"
-
-    echo ">> upload mac os x release zip and dmg to release server"
-    kscp "${local_DMG_TEMP_DIR}/${local_VERSIONED_MAC_ZIP_FILENAME}" $RELEASE_SERVER_LOGIN:"${INSTALLERS_DOWNLOAD_DIR}/${RELEASE_VERSION}"
-    kscp "${local_DMG_TEMP_DIR}/${local_VERSIONED_MAC_DMG_FILENAME}" $RELEASE_SERVER_LOGIN:"${INSTALLERS_DOWNLOAD_DIR}/${RELEASE_VERSION}"
-    kssh $RELEASE_SERVER_LOGIN $RELEASE_SERVER_SHELL << ENDCMDS
-        cd "${INSTALLERS_DOWNLOAD_DIR}/${RELEASE_VERSION}"
-        cp "$local_VERSIONED_MAC_DMG_FILENAME" "$local_UNVERSIONED_MAC_DMG_FILENAME"
-ENDCMDS
+    hdiutil convert -quiet -format UDBZ -o "${PACKAGE_DIR}/${local_VERSIONED_MAC_DMG_FILENAME}" "${DMG_TEMP_DIR}/${AEROFS_PRODUCT_SPACEFREE}Install-temp.dmg"
 }
 
-###############################################################################
-#
-# Creates the current.ver file in the release folder to specify the version of
-# the release to clients when this release is published. This file's presence
-# also marks the packaging process as complete.
-# This file should be checked by the publisher to ensure that this release is ready.
-#
-###############################################################################
-function create_release_version_file_on_server() {
-    echo ">> create current.ver for this release"
-
-    local local_VERSION_FILE="${INSTALLERS_DOWNLOAD_DIR}/${RELEASE_VERSION}/${RELEASE_SERVER_VERSION_FILE}"
-    kssh $RELEASE_SERVER_LOGIN $RELEASE_SERVER_SHELL << ENDCMDS
-        echo Version=$RELEASE_VERSION > "$local_VERSION_FILE"
-        chmod a+r "$local_VERSION_FILE"
-ENDCMDS
+function make_unversioned_symlinks() {
+    pushd ${PACKAGE_DIR}
+    # Windows installer
+    ln -s ${AEROFS_PRODUCT_SPACEFREE}Install-${RELEASE_VERSION}.exe ${AEROFS_PRODUCT_SPACEFREE}Install.exe
+    # OSX dmg, update package
+    ln -s ${AEROFS_PRODUCT_SPACEFREE}Install-${RELEASE_VERSION}.dmg ${AEROFS_PRODUCT_SPACEFREE}Install.dmg
+    ln -s ${AEROFS_PRODUCT_UNIX}-osx-${RELEASE_VERSION}.zip         ${AEROFS_PRODUCT_UNIX}-osx.zip
+    # Linux installers
+    ln -s ${AEROFS_PRODUCT_UNIX}-installer-${RELEASE_VERSION}.deb   ${AEROFS_PRODUCT_UNIX}-installer.deb
+    ln -s ${AEROFS_PRODUCT_UNIX}-installer-${RELEASE_VERSION}.tgz   ${AEROFS_PRODUCT_UNIX}-installer.tgz
+    # Linux update packages
+    ln -s ${AEROFS_PRODUCT_UNIX}-${RELEASE_VERSION}-x86.tgz         ${AEROFS_PRODUCT_UNIX}-x86.tgz
+    ln -s ${AEROFS_PRODUCT_UNIX}-${RELEASE_VERSION}-x86_64.tgz      ${AEROFS_PRODUCT_UNIX}-x86_64.tgz
+    popd
 }
 
-#****************************************
-#****************************************
-#**
-#** Run the actual installer build steps
-#**
-#****************************************
-#****************************************
-echo ">> make client installers and packages on release server"
+function create_release_version_file() {
+    declare VERSION_FILE="${PACKAGE_DIR}/${RELEASE_SERVER_VERSION_FILE}"
+    echo Version=$RELEASE_VERSION > "$VERSION_FILE"
+    chmod a+r "$VERSION_FILE"
+}
+
+echo ">> make client installers and packages in $PACKAGE_DIR"
 
 compute_product_names
-upload_release_files_to_release_server
-upload_map_file_to_map_server
-create_versioned_installer_directory_on_release_server
 make_linux_installers
 make_windows_installers
-make_osx_installers
-create_release_version_file_on_server
+make_osx_packages
+make_unversioned_symlinks
+create_release_version_file
 
 exit 0

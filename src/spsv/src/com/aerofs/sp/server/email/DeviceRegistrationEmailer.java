@@ -24,7 +24,7 @@ public class DeviceRegistrationEmailer
     {
         // N.B. the URI string must be identical to that in devices/__init__.py.
         sendDeviceCertifiedEmailImpl(L.brand() + " Team Server", emailAddress, firstName, osFamily,
-                deviceName, "Team Servers at " + WWW.TEAM_SERVER_DEVICES_URL.get(), did);
+                deviceName, "Team Servers at " + WWW.TEAM_SERVER_DEVICES_URL, did);
     }
 
     public void sendDeviceCertifiedEmail(String emailAddress, String firstName,
@@ -33,7 +33,7 @@ public class DeviceRegistrationEmailer
     {
         // N.B. the URI string must be identical to that in devices/__init__.py.
         sendDeviceCertifiedEmailImpl(L.brand(), emailAddress, firstName, osFamily, deviceName,
-                "your devices at " + WWW.DEVICES_URL.get(), did);
+                "your devices at " + WWW.DEVICES_URL, did);
     }
 
     public void sendDeviceCertifiedEmailImpl(String product, String emailAddress, String firstName,
@@ -50,7 +50,7 @@ public class DeviceRegistrationEmailer
                 Util.quote(deviceName) + ".\n" +
                 "\n" +
                 "If this device does not belong to you, please email us at " +
-                WWW.SUPPORT_EMAIL_ADDRESS.get() +
+                WWW.SUPPORT_EMAIL_ADDRESS +
                 " immediately and we will take the necessary steps to secure your account.\n" +
                 "\n" +
                     // Note the space after the URL to enable the autolinker to drop the period.
