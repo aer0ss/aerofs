@@ -4,6 +4,9 @@
 
 package com.aerofs.base;
 
+import com.aerofs.base.ex.ExBadArgs;
+import com.google.common.base.Throwables;
+
 import java.net.InetSocketAddress;
 import java.net.URL;
 import java.security.cert.X509Certificate;
@@ -33,16 +36,25 @@ public class BaseParam
 
     public static class XMPP
     {
-        public static final String SERVER_DOMAIN = getStringProperty("base.xmpp.domain",
-                "aerofs.com");
+        public static final InetSocketAddress ADDRESS = getAddressProperty("base.xmpp.address",
+                InetSocketAddress.createUnresolved("x.aerofs.com", 443));
+
+        public static String getServerDomain()
+        {
+            String hostname = ADDRESS.getHostName();
+            String[] split = hostname.split("\\.");
+
+            if (split.length < 2) {
+                throw Throwables.propagate(new ExBadArgs("bad xmpp address"));
+            }
+
+            return split[split.length-2] + "." + split[split.length-1];
+        }
 
         public static String getMucAddress()
         {
-            return "c." + SERVER_DOMAIN;
+            return "c." + getServerDomain();
         }
-
-        public static final InetSocketAddress ADDRESS = getAddressProperty("base.xmpp.address",
-                InetSocketAddress.createUnresolved("x.aerofs.com", 443));
     }
 
     public static class Metrics

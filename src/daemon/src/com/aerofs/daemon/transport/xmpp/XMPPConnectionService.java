@@ -176,7 +176,7 @@ public final class XMPPConnectionService implements IDumpStatMisc
         // SMACK do the DNS query on its thread.
         InetSocketAddress address = XMPP.ADDRESS;
         ConnectionConfiguration cc = new ConnectionConfiguration(address.getHostName(), address.getPort());
-        cc.setServiceName(XMPP.SERVER_DOMAIN);
+        cc.setServiceName(XMPP.getServerDomain());
         cc.setSecurityMode(SecurityMode.required);
         cc.setSelfSignedCertificateEnabled(true);
         cc.setVerifyChainEnabled(false);
