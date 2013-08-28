@@ -11,7 +11,6 @@ import com.aerofs.daemon.core.net.TransportFactory.ExUnsupportedTransport;
 import com.aerofs.daemon.core.net.link.ILinkStateListener;
 import com.aerofs.daemon.core.net.link.ILinkStateService;
 import com.aerofs.daemon.core.net.link.LinkStateService;
-import com.aerofs.daemon.core.tc.CoreIMC;
 import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
@@ -32,6 +31,7 @@ import com.aerofs.lib.cfg.CfgAbsRTRoot;
 import com.aerofs.lib.cfg.CfgLocalDID;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.cfg.CfgScrypted;
+import com.aerofs.lib.event.Prio;
 import com.aerofs.proto.Diagnostics.PBDumpStat;
 import com.aerofs.proto.Diagnostics.PBDumpStat.Builder;
 import com.aerofs.proto.Ritual.GetTransportDiagnosticsReply;
@@ -148,27 +148,25 @@ public class Transports implements IDumpStat, IDumpStatMisc, IStartable, ITransf
         return availableTransports.get(tp);
     }
 
-    private void addLinkStateListener(ITransport transport, final IIMCExecutor transportImce, ILinkStateService linkStateService)
+    private void addLinkStateListener(final ITransport transport, final IIMCExecutor transportImce, ILinkStateService linkStateService)
     {
-        final String transportId = transport.id();
-
         linkStateService.addListener_(new ILinkStateListener()
         {
             @Override
-            public void onLinkStateChanged_(ImmutableSet<NetworkInterface> previous,
-                    ImmutableSet<NetworkInterface> current, ImmutableSet<NetworkInterface> added,
+            public void onLinkStateChanged_(
+                    ImmutableSet<NetworkInterface> previous,
+                    ImmutableSet<NetworkInterface> current,
+                    ImmutableSet<NetworkInterface> added,
                     ImmutableSet<NetworkInterface> removed)
             {
                 try {
-                    l.info("notify lsc {}", transportId);
-                    CoreIMC.enqueueBlocking_(
-                            new EOLinkStateChanged(transportImce, previous, current, added,
-                                    removed), tc, UNLIMITED); // TODO (WW) re-run if transport fails to handle event
+                    l.info("notify lsc {}", transport.id());
+                    transport.q().enqueueBlocking(new EOLinkStateChanged(transportImce, previous, current, added, removed), Prio.HI);
                 } catch (Exception e) {
-                    l.error("fail notify lsc {}", transportId);
+                    l.error("fail notify lsc {}", transport.id());
                 }
             }
-        }, sameThreadExecutor()); // IMPORTANT: can use sameThreadExecutor because lsc callback happens on core thread. See LinkStateService
+        }, sameThreadExecutor());
     }
 
     public void init_()

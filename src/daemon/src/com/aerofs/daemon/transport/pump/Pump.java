@@ -15,6 +15,7 @@ import com.aerofs.daemon.core.net.TransportFactory;
 import com.aerofs.daemon.core.net.TransportFactory.ExUnsupportedTransport;
 import com.aerofs.daemon.core.net.link.ILinkStateListener;
 import com.aerofs.daemon.core.net.link.ILinkStateService;
+import com.aerofs.daemon.core.net.link.LinkStateService;
 import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
 import com.aerofs.daemon.event.lib.imc.IResultWaiter;
 import com.aerofs.daemon.event.lib.imc.QueueBasedIMCExecutor;
@@ -68,7 +69,7 @@ public final class Pump implements IProgram
     private static final byte[] CHUNK = new byte[10 * C.KB];
 
     private final BlockingPrioQueue<IEvent> incomingEventSink = new BlockingPrioQueue<IEvent>(1024);
-    private final ILinkStateService linkStateService = new SingleThreadedLinkStateService();
+    private final ILinkStateService linkStateService = new LinkStateService();
     private final Tput tput = new Tput("recv");
     private final SendThread sendThread = new SendThread();
 

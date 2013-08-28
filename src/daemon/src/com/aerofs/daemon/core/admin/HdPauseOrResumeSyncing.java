@@ -3,6 +3,7 @@ package com.aerofs.daemon.core.admin;
 import com.aerofs.daemon.core.net.link.LinkStateService;
 import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.TC;
+import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.event.admin.EIPauseOrResumeSyncing;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
@@ -24,15 +25,20 @@ public class HdPauseOrResumeSyncing extends AbstractHdIMC<EIPauseOrResumeSyncing
     @Override
     protected void handleThrows_(EIPauseOrResumeSyncing ev, Prio prio) throws Exception
     {
-        if (ev._pause) {
-            _lss.markLinksDown_();
-        } else {
-            Token tk = _tc.acquire_(Cat.UNLIMITED, "iface-up");
+        Token tk = _tc.acquire_(Cat.UNLIMITED, "pause-sync");
+        try {
+            TCB tcb = tk.pseudoPause_("lss-trigger");
             try {
-                _lss.markLinksUp_(tk);
+                if (ev._pause) {
+                    _lss.markLinksDown_();
+                } else {
+                    _lss.markLinksUp_();
+                }
             } finally {
-                tk.reclaim_();
+                tcb.pseudoResumed_();
             }
+        } finally {
+            tk.reclaim_();
         }
     }
 }
