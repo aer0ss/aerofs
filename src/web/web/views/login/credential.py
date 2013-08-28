@@ -88,8 +88,8 @@ def cred_login(request):
             log.error("error during logging in:", exc_info=e)
             support_email = settings.get('base.www.support_email_address', 'support@aerofs.com')
             flash_error(request, _("An error occurred processing your request." +
-                   " Please try again later. Contact {support_email} if the" +
-                   " problem persists.", {'support_email': support_email }))
+                   " Please try again later. Contact " + support_email + " if the" +
+                   " problem persists."))
 
     return {
         'url_param_form_submitted': URL_PARAM_FORM_SUBMITTED,
