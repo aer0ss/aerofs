@@ -47,4 +47,8 @@ fi
 
 rm -rf "$TMPDIR"
 
-nohup "$APPDIR/Contents/MacOS/[AEROFS_PRODUCT_SPACEFREE]Client" 2>/dev/null >/dev/null &
+# NB: We cannot restart with nohup, because this will prevent OSX from stopping
+# AeroFS on user logout. This would result in an "AeroFS is still running"
+# dialog on the next login with the AeroFS tray icon not appearing despite the
+# fact that AeroFS is running.
+open -a "$APPDIR"
