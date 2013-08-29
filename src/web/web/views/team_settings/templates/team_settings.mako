@@ -23,7 +23,7 @@
 </div>
 
 ## Include subscription management only for public deployment
-%if request.registry.settings['deployment.mode'] == 'public':
+%if request.registry.settings['deployment.mode'] == 'prod':
 
     <div class="page_block">
         %if has_customer_id:

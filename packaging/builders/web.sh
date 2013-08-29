@@ -20,7 +20,7 @@ mkdir -p $OPT
 mkdir -p $EXTRA
 # N.B. (PH) this will not copy dotfiles
 cp -r ../src/web/* $OPT
-rm $OPT/development.ini
+rm -rf $OPT/development
 cp -r ../src/python-lib $EXTRA
 
 # remove unnecessary files

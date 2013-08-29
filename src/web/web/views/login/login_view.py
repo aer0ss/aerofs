@@ -55,7 +55,7 @@ def get_next_url(request):
 def login(request):
     _next = get_next_url(request)
     settings = request.registry.settings
-    if settings['deployment.mode'] == "private" and settings.get('openid.service.enabled', "false").lower() == "true":
+    if settings['deployment.mode'] != "prod" and settings.get('openid.service.enabled', "false").lower() == "true":
         _url = '{0}?{1}'.format(request.route_path('login_openid_view'), url.urlencode({'next' : _next}))
         return HTTPFound(_url, {'next' : _next})
     else:

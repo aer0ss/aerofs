@@ -5,14 +5,13 @@ readonly AEROFS_ROOT=$(cd "${BASH_SOURCE[0]%/*}"/.. && pwd )
 #
 # Local Production Aliases.
 #
-# In this file, lp is short for local prodcution. Aliases that are meant to be
-# used publicly are prefixed with "lp-" for easy bash completion.
+# In this file, vm is short for virtual machine prodcution. Aliases that
+# are meant to be used publicly are prefixed with "vm-".
 #
 
 #
-# Execute a command in a specified directory
-# Changes back to the original directory once the command
-# completes and returns the exit code
+# Execute a command in a specified directory changes back to the original
+# directory once the command completes and returns the exit code.
 #
 # Arguments:
 #    $1   : directory to change to
@@ -53,16 +52,60 @@ function _uppercase_repo()
 
 function _print-available-boxes()
 {
-    echo "available boxes: persistent, transient" >&2
+    _check-mode
+
+    case ${MODE} in
+        unified)
+            echo "available box: unified" >&2
+            ;;
+        modular)
+            echo "available boxes: persistent, transient" >&2
+            ;;
+    esac
+
+}
+
+function _print-available-deployment-modes()
+{
+    echo "available deployment_modes: modular, unified" >&2
+}
+
+function _check-mode()
+{
+    bad_mode=false
+
+    case ${MODE} in
+        unified) ;;
+        modular) ;;
+        *) bad_mode=true ;;
+    esac
+
+    if [ "$bad_mode" = "true" ]
+    then
+        echo "unrecognized mode:$MODE}" >&2
+        _print-available-deployment-modes
+        exit 1
+    fi
 }
 
 function _check-box()
 {
     local box=''
-    case ${1:-} in
-    persistent) box=persistent ;;
-    transient ) box=transient  ;;
-    esac
+
+    if [ "$MODE" = "modular" ]
+    then
+        case ${1:-} in
+            persistent) box=persistent ;;
+            transient ) box=transient ;;
+        esac
+    fi
+
+    if [ "$MODE" = "unified" ]
+    then
+        case ${1:-} in
+            unified ) box=unified ;;
+        esac
+    fi
 
     if [[ -z "$box" ]]; then
         echo "unrecognized box:${1:-}" >&2
@@ -78,7 +121,16 @@ function _check-box()
 #
 function _local-prod-cmd()
 {
-    do_in $AEROFS_ROOT/packaging/bakery/local-prod "$@"
+    if [ $# -eq 0 ]
+    then
+        echo "usage: _local-prod-cmd executable [args]"
+        exit 1
+    fi
+
+    local command=$1
+    shift
+
+    do_in $AEROFS_ROOT/packaging/bakery/development/mode/"$MODE" ../../$command "$@"
 }
 
 # -----------------------------------------------------------
@@ -87,7 +139,7 @@ function _local-prod-cmd()
 
 function _check-aerofs-apt-reachable
 {
-    do_in $AEROFS_ROOT/packaging/bakery/local-prod ./chkapt
+    do_in $AEROFS_ROOT/packaging/bakery/development ./chk-apt
 }
 
 function _package()
@@ -123,11 +175,10 @@ function _package-and-upload-versions()
 # Deploys
 # -----------------------------------------------------------
 
-function _lp-deploy()
+function _vm-deploy()
 {
     if [[ $# -ne 2 ]]; then
-        echo "usage: lptool deploy box_name package_name" >&2
-        echo >&2
+        echo "usage: vm-tool deploy box_name package_name" >&2
         _print-available-boxes
         exit 1
     fi
@@ -141,41 +192,13 @@ function _lp-deploy()
     local package=$2
 
     _package $package
-    _local-prod-cmd ./lpctrl deploy $box $package
+    _local-prod-cmd vm-ctrl "$MODE" deploy $box $package
 }
 
-function _lp-deploy-all()
+function _vm-deploy-all()
 {
-    _package-and-upload-versions
-    _lp-kick-transient
-}
-
-# -----------------------------------------------------------
-# Kicks
-# -----------------------------------------------------------
-
-function _lp-kick-transient()
-{
-    _local-prod-cmd ./lpctrl kick transient
-}
-
-function _lp-kick-persistent()
-{
-    _local-prod-cmd ./lpctrl kick persistent
-}
-
-function _print-kick-usage()
-{
-    echo "usage: lptool kick [box_name]" >&2
-    echo >&2
-    echo "available boxes: persistent, transient" >&2
-}
-
-function _lp-kick()
-{
-    if [[ $# -ne 1 ]]; then
-        echo "usage: lptool kick [box_name]" >&2
-        echo >&2
+    if [[ $# -ne 1 ]] || [[ -z "${1}" ]]; then
+        echo "usage: vm-tool deploy-all box_name" >&2
         _print-available-boxes
         exit 1
     fi
@@ -183,40 +206,73 @@ function _lp-kick()
     local box=''
     box=$(_check-box $1)
 
-    _lp-kick-${box}
+    #_package-and-upload-versions
+    _vm-kick $box
+}
+
+# -----------------------------------------------------------
+# Kicks
+# -----------------------------------------------------------
+
+function _print-kick-usage()
+{
+    echo "usage: vm-tool kick [box_name]" >&2
+    echo "available boxes: persistent, transient" >&2
+}
+
+function _vm-kick()
+{
+    if [[ $# -ne 1 ]] || [[ -z "$1" ]]; then
+        echo "usage: vm-tool kick [box_name]" >&2
+        _print-available-boxes
+        exit 1
+    fi
+
+    local box=''
+    box=$(_check-box $1)
+
+    _package-and-upload-versions
+    _local-prod-cmd vm-ctrl "$MODE" kick ${box}
 }
 
 # -----------------------------------------------------------
 # Virtual Machines
 # -----------------------------------------------------------
 
-function _lp-create()
+function _print-create-usage()
+{
+    echo "usage: vm-tool create deployment_mode [bridge_interface]" >&2
+    _print-available-deployment-modes
+}
+
+function _vm-create()
 {
     local repo=''
     repo=$(_lowercase_repo)
 
     _package-and-upload-versions
-    _local-prod-cmd ./makelp "$repo"  "${@}"
+    _local-prod-cmd vm-make "$repo" "$MODE" "${@}"
 }
 
-function _lp-start()
+function _print-start-usage()
 {
-    _local-prod-cmd ./lpctrl start "${@}"
+    echo "usage: vm-tool start deployment_mode [bridge_interface]" >&2
+    _print-available-deployment-modes
 }
 
-function _lp-halt()
+function _vm-start()
 {
-    _local-prod-cmd ./lpctrl halt
+    _local-prod-cmd vm-ctrl "$MODE" start "${@}"
 }
 
-function _lp-reboot()
+function _vm-halt()
 {
-    _local-prod-cmd ./lpctrl reboot "${@}"
+    _local-prod-cmd vm-ctrl "$MODE" halt "${@:-}"
 }
 
-function _lp-delete()
+function _vm-kill()
 {
-    _local-prod-cmd ./lpctrl kill
+    _local-prod-cmd vm-ctrl "$MODE" kill "${@:-}"
 }
 
 # -----------------------------------------------------------
@@ -225,16 +281,14 @@ function _lp-delete()
 
 function _print-ssh-usage()
 {
-    echo "usage: lptool ssh box_name" >&2
-    echo >&2
+    echo "usage: vm-tool ssh box_name" >&2
     _print-available-boxes
-    echo >&2
     echo "simply sudo su to get root access (no password required)." >&2
 }
 
-function _lp-ssh()
+function _vm-ssh()
 {
-    if [[ $# -ne 1 ]]; then
+    if [[ $# -ne 1 ]] || [[ -z "${1}" ]]; then
         _print-ssh-usage
         exit 1
     fi
@@ -242,7 +296,7 @@ function _lp-ssh()
     local box=''
     box=$(_check-box $1)
 
-    do_in $AEROFS_ROOT/packaging/bakery/local-prod vagrant ssh $box
+    do_in $AEROFS_ROOT/packaging/bakery/development/mode/"$MODE" vagrant ssh $box
 }
 
 # -----------------------------------------------------------
@@ -251,34 +305,36 @@ function _lp-ssh()
 
 function main()
 {
-    if [[ $# -eq 0 ]]; then
-        echo "usage: $0 ( create | start | halt | delete | deploy | ssh ) [command_arguments]" >&2
+    if [[ $# -lt 2 ]]; then
+        echo "usage: $0 deployment_mode ( create | start | halt | kill | deploy | ssh ) [command_arguments]" >&2
         echo >&2
         echo "special cases:" >&2
         echo "      create [bridge_interface]" >&2
         echo "      start  [bridge_interface]" >&2
         echo "      ssh    [box_name]" >&2
         echo >&2
+        _print-available-deployment-modes
         exit 1
     fi
 
+    readonly MODE=$1
+    shift
     local command=$1
     shift
+
     case $command in
-    "create"    ) _lp-create     "${@:-}" ;;
-    "start"     ) _lp-start      "${@:-}" ;;
-    "halt"      ) _lp-halt                ;;
-    "reboot"    ) _lp-reboot     "${@:-}" ;;
-    "delete"    ) _lp-delete              ;;
-    "deploy"    ) _lp-deploy     "${@:-}" ;;
-    "deploy-all") _lp-deploy-all          ;;
-    "ssh"       ) _lp-ssh        "${@:-}" ;;
-    "kick"      ) _lp-kick       "${@:-}" ;;
-    "kick-all"  ) _lp-kick-all            ;;
-    *           )
-        echo "unrecognized command $command" >&2
-        exit 2
-        ;;
+        "create"    ) _vm-create     "${@:-}" ;;
+        "start"     ) _vm-start      "${@:-}" ;;
+        "halt"      ) _vm-halt       "${@:-}" ;;
+        "kill"      ) _vm-kill       "${@:-}" ;;
+        "deploy"    ) _vm-deploy     "${@:-}" ;;
+        "deploy-all") _vm-deploy-all "${@:-}" ;;
+        "ssh"       ) _vm-ssh        "${@:-}" ;;
+        "kick"      ) _vm-kick       "${@:-}" ;;
+        *           )
+            echo "unrecognized command $command" >&2
+            exit 2
+            ;;
     esac
 }
 

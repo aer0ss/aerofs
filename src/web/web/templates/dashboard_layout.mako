@@ -1,5 +1,5 @@
-## N.B. When updating this template, keep in mind that it is used in both public
-## and private deployments.
+## N.B. When updating this template, keep in mind that it is used in all
+## deployment modes.
 
 <%inherit file="base_layout.mako"/>
 
@@ -50,7 +50,7 @@
                 AeroFS Desktop
             </a></li>
 
-            %if request.registry.settings['deployment.mode'] == 'public':
+            %if request.registry.settings['deployment.mode'] == 'prod':
                 <li><a href="http://play.google.com/store/apps/details?id=com.aerofs.android" target="_blank">
                     Android App
                 </a></li>
