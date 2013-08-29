@@ -23,8 +23,6 @@ public class RockLog
 {
     private static final Logger l = Loggers.getLogger(RockLog.class);
     private static final int SOCKET_TIMEOUT = (int) (10 * C.SEC);
-    private static final String ROCKLOG_URL =
-            getStringProperty("lib.rocklog.url", "http://rocklog.aerofs.com");
 
     private final String _rocklogUrl;
     private final InjectableCfg _cfg;
@@ -32,7 +30,7 @@ public class RockLog
     @Inject
     public RockLog()
     {
-        this(ROCKLOG_URL, new InjectableCfg());
+        this(getStringProperty("lib.rocklog.url", "http://rocklog.aerofs.com"), new InjectableCfg());
     }
 
     RockLog(String rocklogUrl, InjectableCfg cfg)
