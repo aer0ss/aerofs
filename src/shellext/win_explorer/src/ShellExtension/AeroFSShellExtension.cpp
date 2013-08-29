@@ -349,7 +349,7 @@ unsigned short AeroFSShellExtension::readPortNumber()
 	// Get the path to C:\Users\[username]\AppData\Roaming
 
 	wchar_t buf[MAX_PATH];
-	SHGetFolderPath(NULL, CSIDL_APPDATA, NULL, SHGFP_TYPE_CURRENT, buf);
+	SHGetFolderPath(NULL, CSIDL_LOCAL_APPDATA, NULL, SHGFP_TYPE_CURRENT, buf);
 	std::wstring path(buf);
 
 	if (path.empty()) {
