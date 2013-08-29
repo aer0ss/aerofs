@@ -10,7 +10,7 @@ EXTRA=web/opt/web/extra
 
 # Debian-related file copies.
 mkdir -p $DEBIAN
-for f in control postinst prerm postrm conffiles
+for f in control postinst prerm conffiles
 do
     cp $RESOURCES/$f $DEBIAN
 done
