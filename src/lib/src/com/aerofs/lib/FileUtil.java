@@ -23,6 +23,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
+/**
+ * Note: there are similar methods in RtrootMigration that manipulates the file system.
+ */
 public abstract class FileUtil
 {
     public static class FileName
@@ -477,6 +480,22 @@ public abstract class FileUtil
         boolean ok = f.delete();
         if (pi != null) pi.incrementMonotonicProgress();
         return ok;
+    }
+
+    /**
+     * This method may cause big memory footprint on large directory trees and please use this
+     * method carefully.
+     */
+    public static void deleteIgnoreErrorOrOnExitRecursively(File f)
+    {
+        File[] children = f.listFiles();
+        if (children != null) {
+            for (File child : children) {
+                deleteIgnoreErrorOrOnExitRecursively(child);
+            }
+        }
+
+        deleteOrOnExit(f);
     }
 
     public static void deleteOrOnExit(File f)

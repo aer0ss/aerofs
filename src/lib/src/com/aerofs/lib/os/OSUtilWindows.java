@@ -13,8 +13,12 @@ import com.aerofs.lib.LibParam.RootAnchor;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.lib.os.OSUtil.Icon;
 import com.aerofs.swig.driver.Driver;
+import com.google.common.base.Objects;
 import com.google.common.base.Optional;
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
+
+import javax.annotation.Nullable;
 
 public class OSUtilWindows implements IOSUtil
 {
@@ -23,10 +27,34 @@ public class OSUtilWindows implements IOSUtil
     @Override
     public String getDefaultRTRoot()
     {
-        // use space-free name to be consistent with the AppRoot name.
-        String name = L.productSpaceFreeName();
-        String path = System.getenv("APPDATA");
-        return (path == null ? "C:" : path) + "\\" + name;
+        // Before you update this method, please take a look at ULRtrootMigration first.
+        return Objects.firstNonNull(getLocalAppDataPath(), "C:") + '\\' + L.productSpaceFreeName();
+    }
+
+    /**
+     * On Windows Vista and later, %LocalAppData% is defined and is the canonical folder for
+     *   local application data. On earlier version %LocalAppData% is not defined.
+     * On Windows XP, the canonical place to put local application data is
+     *   "%UserProfile%\Local Settings\Application Data".
+     * Note that %UserProfile% should be defined on XP and later.
+     *
+     * @return path to the platform's local application data folder,
+     *   null if the platform's local application data folder cannot be determined
+     */
+    private @Nullable String getLocalAppDataPath()
+    {
+        // Before you update this method, please take a look at ULTRtrootMigration first.
+        String path = System.getenv("LOCALAPPDATA");
+        if (!StringUtils.isBlank(path) && new File(path).isDirectory()) return path;
+
+        path = System.getenv("USERPROFILE");
+        if (!StringUtils.isBlank(path)) {
+            path += "\\Local Settings\\Application Data";
+
+            if (new File(path).isDirectory()) return path;
+        }
+
+        return null;
     }
 
     @Override

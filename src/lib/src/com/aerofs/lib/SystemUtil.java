@@ -28,7 +28,6 @@ public abstract class SystemUtil
     {
         ////////
         // Exit codes that indicate AeroFS program errors.
-
         FAIL_TO_LAUNCH("couldn't start process"),
         FATAL_ERROR("a showstopper problem"),
         FAIL_TO_INITIALIZE_LOGGING("couldn't initialize logging"),
@@ -38,23 +37,24 @@ public abstract class SystemUtil
         DPUT_MIGRATE_AUX_ROOT_FAILED("migrating the aux root failed"),
         CONFIGURATION_INIT("initializing configuration failed"),
         CORRUPTED_DB("corrupted database"),
+        // Failed to migrate user data
+        // Currently used to move rtroot from %AppData% to %LocalAppData% on Windows
+        FAILED_TO_MIGRATE_RTROOT("failed to migrate rtroot"),
+        ////////
 
         ////////
         // Exit codes that are expected during normal operations. _All_ of them should be handled
         // manually by DaemonMonitor.
-
         SHUTDOWN_REQUESTED(),
         RELOCATE_ROOT_ANCHOR(),
-
         // Incorrect S3 access key, secret key, or bucket name for accessing bucket.
         S3_BAD_CREDENTIALS(),
-
         // Java may have a limited encryption key length due to export restriction. See the users of
         // this enum for more information.
         S3_JAVA_KEY_LENGTH_MAYBE_TOO_LIMITED(),
-
         // Failed to create a jnotify watch on the root anchor (or an external root)
         JNOTIFY_WATCH_CREATION_FAILED();
+        ////////
 
         // Exit code when we try to relaunch the daemon while Windows is shutting down
         // Windows will abort the process creation with this code

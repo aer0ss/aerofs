@@ -23,6 +23,14 @@ import static com.aerofs.lib.configuration.ClientConfigurationLoader.PROPERTY_BA
 import static com.aerofs.lib.configuration.ClientConfigurationLoader.PROPERTY_CONFIG_SERVICE_URL;
 import static com.aerofs.lib.configuration.ClientConfigurationLoader.PROPERTY_IS_ENTERPRISE_DEPLOYMENT;
 
+/**
+ * Note that Main has dependencies on this class before the configuration is initialized. Hence
+ *   this class must not have static fields that are dependent on the configuration subsystem.
+ * The subclasses, on the other hand, can have static fields that are dependent on the configuration
+ *   subsystem.
+ *
+ * For more information, Google how Java class loader works regarding static  initializers.
+ */
 public class LibParam extends BaseParam
 {
     // the block size used for content hashing and block storage (see BlockStorage)

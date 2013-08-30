@@ -15,6 +15,7 @@ import com.aerofs.lib.FullName;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.SystemUtil;
+import com.aerofs.lib.SystemUtil.ExitCode;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgAbsRoots;
@@ -26,8 +27,13 @@ import com.aerofs.proto.Common.PBPath;
 import com.aerofs.proto.ControllerProto.GetInitialStatusReply;
 import com.aerofs.proto.RitualNotifications.PBSOCID;
 import com.aerofs.sp.client.SPBlockingClient;
+import com.aerofs.sv.client.SVClient;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.error.ErrorMessages;
+import com.aerofs.ui.launch_tasks.ULTRtrootMigration;
+import com.aerofs.ui.launch_tasks.ULTRtrootMigration.ExFailedToMigrate;
+import com.aerofs.ui.launch_tasks.ULTRtrootMigration.ExFailedToReloadCfg;
+import com.google.common.base.Preconditions;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.protobuf.ByteString;
@@ -149,6 +155,10 @@ public class UIUtil
      *  This logic is (will be) duplicated in the native UIs
      *
      * @param preLaunch a runnable that will be executed in the UI thread, before the launch
+     * FIXME(AT): preLaunch doesn't work the way this method signature suggests it works.
+     * In the case of NEED_SETUP and READY_TO_LAUNCH, Launcher.launch() will be invoked _before_
+     * preLaunch.run() is invoked. Need to consolidate this with Greg _really soon tm_.
+     *
      * @param postLaunch a runnable that will be executed in the UI thread, iff the launch succeeds
      */
     public static void launch(String rtRoot, Runnable preLaunch, Runnable postLaunch)
@@ -175,6 +185,53 @@ public class UIUtil
         } catch (Exception e) {
             logAndShowLaunchError(e);
             System.exit(0);
+        }
+    }
+
+    /**
+     * Perform the tasks that needed to be done before launch. Currently, it's only rtroot
+     * migration. Note that launch() doesn't work in this particular case with how it handles
+     * preLaunch, and it's not clear how launch() should work at the moment of writing. Hence this
+     * method is temporarily added as a workaround until that is resolved.
+     *
+     * FIXME (AT): consult with Greg _really soon tm_, consolidate with launch():preLaunch, and
+     * eliminate this method.
+     *
+     * @param rtRoot - the path to rtRoot, needed for rtRoot migration.
+     * @pre UI.get() is set.
+     */
+    public static void preLaunch(String rtRoot)
+    {
+        Preconditions.checkArgument(UI.get() != null);
+
+        migrateRtroot(rtRoot);
+    }
+
+    // FIXME(AT): this method doesn't belong in UiUtil, where would be a better place to put it?
+    // on 2nd thought, none of these methods in this class belong in an Util class.
+    private static void migrateRtroot(String rtRoot)
+    {
+        ULTRtrootMigration task = new ULTRtrootMigration(L.productSpaceFreeName(), rtRoot);
+
+        try {
+            task.run();
+        } catch (ExFailedToMigrate e) {
+            // Since ErrorMessages doesn't support messages that depends on additional
+            // information in the exception instance, default message is used.
+            String message = L.product() + " is unable to upgrade your user data to the " +
+                    "new format.\n" +
+                    "Please move the folder at " + e._oldRtrootPath + "\n" +
+                    "to " + e._newRtrootPath + "\n" +
+                    "and restart " + L.product() + ".";
+            ErrorMessages.show(e, message);
+
+            SVClient.logSendDefectSyncIgnoreErrors(true, "Failed to migrate rtroot.", e);
+            ExitCode.FAILED_TO_MIGRATE_RTROOT.exit();
+        } catch (ExFailedToReloadCfg e) {
+            // there is no point notifying users because there's nothing they can do to recover.
+            SVClient.logSendDefectSyncIgnoreErrors(true,
+                    "Failed to reload Cfg after rtroot migration.", e);
+            ExitCode.FAIL_TO_LAUNCH.exit();
         }
     }
 

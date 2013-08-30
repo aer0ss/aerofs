@@ -12,7 +12,8 @@ import com.aerofs.gui.GUI;
  */
 public class UI
 {
-    private static IUI _ui;
+    // this will be checked to verify if _ui is set.
+    private static IUI _ui = null;
 
     public static void set(IUI ui)
     {
