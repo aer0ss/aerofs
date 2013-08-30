@@ -16,6 +16,9 @@ import com.sun.jersey.api.core.PackagesResourceConfig;
 import com.sun.jersey.api.core.ResourceConfig;
 import com.sun.jersey.core.spi.component.ioc.IoCComponentProviderFactory;
 import com.sun.jersey.guice.spi.container.GuiceComponentProviderFactory;
+import com.sun.jersey.spi.container.WebApplication;
+import com.sun.jersey.spi.container.WebApplicationFactory;
+import com.sun.jersey.spi.service.ServiceFinder;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.channel.Channels;
@@ -76,8 +79,11 @@ public class RestService
 
     private void startServer(final ResourceConfig resourceConfig, final URI baseUri)
     {
+        WebApplication wa = WebApplicationFactory.createWebApplication();
         IoCComponentProviderFactory ioc = new GuiceComponentProviderFactory(resourceConfig, _injector);
-        final JerseyHandler jerseyHandler = ContainerFactory.createContainer(JerseyHandler.class, resourceConfig, ioc);
+
+        final JerseyHandler jerseyHandler = new JerseyHandler(wa);
+        if (!wa.isInitiated()) wa.initiate(resourceConfig, ioc);
 
         InetSocketAddress localSocket = new InetSocketAddress(baseUri.getHost(), baseUri.getPort());
         ChannelPipelineFactory pipelineFactory = new ChannelPipelineFactory() {
