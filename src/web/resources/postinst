@@ -7,30 +7,30 @@ PYTHON=$PYHOME/bin/python
 # Enter temp directory to build python packages
 TMPDIR=/tmp/aerofs_web_build
 mkdir $TMPDIR
-CURRENT=$PWD
-cd $TMPDIR
+pushd $TMPDIR
+
+# Produce clean virtualenv from scratch
+rm -rf $PYHOME
 mkdir -p $PYHOME
-
-# Install virtualenv package and install AeroFS web package in virtualenv
-pip install virtualenv
 virtualenv $PYHOME
-cd /opt/web
-$PYHOME/bin/pip install -r /opt/web/requirements.txt --log /var/log/aerofs/pip.install.log
-$PYTHON setup.py install
 
-# Install stripe module
-$PYHOME/bin/pip install --index-url https://code.stripe.com stripe
+cd /opt/web
+$PYHOME/bin/pip install --find-links file:///opt/web/sdist      \
+                        --no-index                              \
+                        --log /var/log/aerofs/pip.install.log   \
+                        --requirement /opt/web/requirements.txt
+$PYTHON setup.py install
 
 # Install aerofs.python-lib
 # cd to directory first because setuptools can't find setup.py otherwise
-cd /opt/web/extra/python-lib
+pushd /opt/web/extra/python-lib
 $PYTHON setup.py install
-cd $TMPDIR
+popd
 
 # For some reason this value gets set to /root/.python-eggs which is
 # not writable by www-data. Explicitly setting it fixes the problem.
 export PYTHON_EGG_CACHE=/var/www/.python-eggs
 
 # Back to original directory, clean up temp directory
-cd $CURRENT
+popd
 rm -r $TMPDIR

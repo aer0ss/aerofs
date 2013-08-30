@@ -8,6 +8,9 @@ NGINX=web/etc/nginx
 UWSGI=web/etc/uwsgi
 EXTRA=web/opt/web/extra
 
+# PIP_CACHE is a flat directory of .tar.gz source files from PyPI.
+PIP_CACHE=pip-cache/web
+
 # Debian-related file copies.
 mkdir -p $DEBIAN
 for f in control postinst prerm conffiles
@@ -22,6 +25,13 @@ mkdir -p $EXTRA
 cp -a ../src/web/* $OPT
 rm -rf $OPT/development
 cp -a ../src/python-lib $EXTRA
+
+# Fetch pip source packages, if needed
+tools/pip-prefetch.sh "../src/web/requirements.txt" "$PIP_CACHE"
+# Copy source packages to /opt/web/sdist, so they'll be available at package
+# install time.
+mkdir -p $OPT/sdist
+cp $PIP_CACHE/* $OPT/sdist/
 
 # remove unnecessary files
 rm -r $OPT/resources
