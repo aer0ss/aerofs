@@ -346,8 +346,8 @@ In case of error, returns GUIPORT_DEFAULT
 */
 unsigned short AeroFSShellExtension::readPortNumber()
 {
-	// Get the path to C:\Users\[username]\AppData\Roaming
-
+	// Get the path to C:\Users\[username]\AppData\Local on Windows Vista, 7, and up
+	// Get the path to C:\Documents and Settings\[username]\Local Settings\Application Data on Windows XP.
 	wchar_t buf[MAX_PATH];
 	SHGetFolderPath(NULL, CSIDL_LOCAL_APPDATA, NULL, SHGFP_TYPE_CURRENT, buf);
 	std::wstring path(buf);
