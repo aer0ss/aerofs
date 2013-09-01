@@ -6,6 +6,7 @@ for service in \
     sanity \
     php5-fpm \
     mysql \
+    postfix \
     redis-server
 do
     chroot /mnt/image service $service stop || true
