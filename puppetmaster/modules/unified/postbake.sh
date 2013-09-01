@@ -23,4 +23,6 @@ done
 chroot /mnt/image killall -9 epmd
 
 # Pull down installers.
-chroot /mnt/image /opt/repackaging/tools/pull-installers.sh
+rm -rf /mnt/image/opt/repackaging/installers/original
+mkdir -p /mnt/image/opt/repackaging/installers/original
+cp -av /mnt/aerofs/packaging/client-installer-cache/* /mnt/image/opt/repackaging/installers/original/
