@@ -2104,7 +2104,7 @@ public class SPService implements ISPService
     }
 
     @Override
-    public ListenableFuture<OpenIdSessionNonces> openIdBeginTransaction() throws Exception
+    public ListenableFuture<OpenIdSessionNonces> openIdBeginTransaction()
     {
         String session = _identitySessionManager.createSession(OpenId.DELEGATE_TIMEOUT);
         String delegate = _identitySessionManager.createDelegate(session, OpenId.DELEGATE_TIMEOUT);

@@ -18,6 +18,7 @@ import com.aerofs.servlets.SecUtilHelper;
 import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue;
 import com.aerofs.servlets.lib.ssl.CertificateAuthenticator;
 import com.aerofs.sp.server.AbstractTestWithDatabase;
+import com.aerofs.sp.server.IdentitySessionManager;
 import com.aerofs.sp.server.PasswordManagement;
 import com.aerofs.sp.server.SPService;
 import com.aerofs.sp.server.email.DeviceRegistrationEmailer;
@@ -133,6 +134,8 @@ public class AbstractSPTest extends AbstractTestWithDatabase
     @Spy RequestToSignUpEmailer _requestToSignUpEmailer = mock(RequestToSignUpEmailer.class);
 
     @Mock Analytics analytics;
+
+    @Spy protected IdentitySessionManager _identitySessionManager = new IdentitySessionManager();
 
     // Subclasses can declare a @Mock'd or @Spy'd object for
     // - PasswordManagement,

@@ -1,0 +1,85 @@
+/*
+ * Copyright (c) Air Computing Inc., 2013.
+ */
+
+package com.aerofs.sp.server;
+
+import com.aerofs.base.ex.ExBadCredential;
+import com.aerofs.proto.Sp.OpenIdSessionAttributes;
+import com.aerofs.proto.Sp.OpenIdSessionNonces;
+import com.aerofs.sp.server.integration.AbstractSPTest;
+import org.junit.Before;
+import org.junit.Test;
+
+import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertTrue;
+import static junit.framework.Assert.fail;
+
+public class TestSP_OpenID extends AbstractSPTest
+{
+    final int SESSION_NONCE_TIMEOUT_SECS = 5;
+
+    private OpenIdSessionNonces _nonces;
+
+    @Before
+    public void setUp()
+    {
+        _nonces = null;
+    }
+
+    @Test
+    public void shouldThrowIfNoSessionExists() throws Exception
+    {
+       try {
+           service.openIdGetSessionAttributes("Session that doesn't exist");
+           fail("Expected exception.");
+       } catch (ExBadCredential e) {
+           // pass
+       }
+    }
+
+    @Test
+    public void shouldReturnEmptySessionAttributesIfSessionNotYetAuthorized() throws Exception
+    {
+        OpenIdSessionAttributes returnedAttributes;
+
+        _nonces = service.openIdBeginTransaction().get();
+        returnedAttributes = service.openIdGetSessionAttributes(_nonces.getSessionNonce()).get();
+
+        assertTrue(returnedAttributes.getUserId().isEmpty());
+        assertTrue(returnedAttributes.getFirstName().isEmpty());
+        assertTrue(returnedAttributes.getLastName().isEmpty());
+    }
+
+    @Test
+    public void shouldReturnValidSessionAttributesIfSessionAuthorized() throws Exception
+    {
+        OpenIdSessionAttributes returnedAttributes;
+        IdentitySessionAttributes setAttributes = new IdentitySessionAttributes("a@b.com",
+                "Alfonse", "Benvolio");
+
+        _nonces = service.openIdBeginTransaction().get();
+
+        _identitySessionManager.authenticateSession(_nonces.getDelegateNonce(),
+                SESSION_NONCE_TIMEOUT_SECS, setAttributes);
+
+        returnedAttributes = service.openIdGetSessionAttributes(_nonces.getSessionNonce()).get();
+
+        assertEquals(setAttributes.getEmail(), returnedAttributes.getUserId());
+        assertEquals(setAttributes.getFirstName(), returnedAttributes.getFirstName());
+        assertEquals(setAttributes.getLastName(), returnedAttributes.getLastName());
+    }
+
+    @Test
+    public void shouldThrowIfSessionNonceAlreadyUsed() throws Exception
+    {
+        shouldReturnValidSessionAttributesIfSessionAuthorized();
+
+        try {
+            service.openIdGetSessionAttributes(_nonces.getSessionNonce());
+            fail("Expected exception.");
+        } catch (ExBadCredential e) {
+            // pass
+        }
+    }
+}
