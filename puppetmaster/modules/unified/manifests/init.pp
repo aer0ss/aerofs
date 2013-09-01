@@ -6,15 +6,27 @@ class unified {
     # Nginx
     # --------------
 
-    file {"/etc/nginx/sites-available/aerofs-unified":
-        source => "puppet:///modules/unified/aerofs-unified",
+    file {"/etc/nginx/sites-available/aerofs-ca":
+        source => "puppet:///modules/unified/nginx/ca",
+        require => Package["nginx"],
+    }
+    file {"/etc/nginx/sites-available/aerofs-cfg":
+        source => "puppet:///modules/unified/nginx/cfg",
+        require => Package["nginx"],
+    }
+    file {"/etc/nginx/sites-available/aerofs-service":
+        source => "puppet:///modules/unified/nginx/service",
+        require => Package["nginx"],
+    }
+    file {"/etc/nginx/sites-available/aerofs-web":
+        source => "puppet:///modules/unified/nginx/web",
         require => Package["nginx"],
     }
 
-    file{ "/etc/nginx/sites-enabled/aerofs-unified":
+    file{ "/etc/nginx/sites-enabled/aerofs-ca":
         ensure  => link,
-        target  => "/etc/nginx/sites-available/aerofs-unified",
-        require => File["/etc/nginx/sites-available/aerofs-unified"],
+        target  => "/etc/nginx/sites-available/aerofs-ca",
+        require => File["/etc/nginx/sites-available/aerofs-ca"],
     }
 
     # --------------
@@ -41,7 +53,7 @@ class unified {
     # --------------
 
     file {"/opt/sanity/probes/nginx.sh":
-        source => "puppet:///modules/transient/probes/nginx.sh",
+        source => "puppet:///modules/unified/probes/nginx.sh",
         require => Package["aerofs-sanity"],
     }
 }

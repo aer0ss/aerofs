@@ -41,7 +41,7 @@ alias unified-vm-delete="$VMTOOL unified kill"
 # Add the extra unified here because there is only one vm in unified
 # configuration.
 alias unified-vm-ssh="$VMTOOL unified ssh unified"
-alias unified-vm-kick="$VMTOOL unified kick"
+alias unified-vm-kick="$VMTOOL unified kick unified"
 # FIXME (MP) pretty annoying that the user has to specify a box here. Specifying
 # the box in the alias breaks the usage, though :(
 alias unified-vm-deploy="$VMTOOL unified deploy"

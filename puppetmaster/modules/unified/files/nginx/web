@@ -1,0 +1,41 @@
+server {
+    listen 80;
+    rewrite ^ https://$host$request_uri permanent;
+}
+server {
+    # Public-facing website.  Uses browser cert.
+    listen *:443;
+
+    access_log /var/log/nginx/browser.access.log;
+
+    ssl on;
+    ssl_session_timeout 5m;
+
+    ssl_certificate /etc/nginx/certs/browser.cert;
+    ssl_certificate_key /etc/nginx/certs/browser.key;
+
+    ssl_protocols SSLv3 TLSv1 TLSv1.1 TLSv1.2;
+    ssl_ciphers AESGCM:SHA384:SHA256:-AES128:AESGCM:SHA384:SHA256:RC4:HIGH:!aNULL:!MD5;
+    ssl_prefer_server_ciphers on;
+
+    location /static {
+        root /opt/web/web;
+    }
+    location / {
+        uwsgi_pass 127.0.0.1:8081;
+        include uwsgi_params;
+        proxy_set_header Host $host;
+        uwsgi_param UWSGI_SCHEME https;
+        uwsgi_param SCRIPT_NAME "";
+    }
+    location /openid {
+        proxy_pass http://127.0.0.1:8082;
+        client_max_body_size 4096m;
+        proxy_read_timeout 60;
+        proxy_send_timeout 60;
+        proxy_set_header Verify $ssl_client_verify;
+        proxy_set_header Serial $ssl_client_serial;
+        proxy_set_header DName $ssl_client_s_dn;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+}

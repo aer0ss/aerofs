@@ -4,7 +4,7 @@ server {
 }
 
 server {
-  listen *:9000;
+  listen *:4433;
 
   access_log /var/log/nginx/aerofs.access.log;
 

@@ -1,5 +1,5 @@
 server {
-  listen 443;
+  listen 5435;
   access_log /var/log/nginx/config.client.access.log;
 
   ssl on;
@@ -28,7 +28,7 @@ server {
 }
 
 server {
-  listen 8080;
+  listen 5436;
   access_log /var/log/nginx/config.server.access.log;
 
   ssl on;

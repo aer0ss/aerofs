@@ -10,7 +10,7 @@ uwsgi-restart
 restund-fix-config
 zephyr-start
 sanity-pull-dynamic-config
-add-transient-loopback-hosts-entry
+add-loopback-hosts-entry-transient
 repackage-installers
 delay
 sanity-check
