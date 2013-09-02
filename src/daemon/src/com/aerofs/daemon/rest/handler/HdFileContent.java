@@ -1,9 +1,11 @@
 package com.aerofs.daemon.rest.handler;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.acl.Role;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.SID;
+import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.acl.ACLChecker;
 import com.aerofs.daemon.core.ds.CA;
 import com.aerofs.daemon.core.ds.DirectoryService;
@@ -13,19 +15,21 @@ import com.aerofs.daemon.core.phy.IPhysicalFile;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.daemon.rest.event.EIFileContent;
+import com.aerofs.daemon.rest.util.HttpStatus;
+import com.aerofs.daemon.rest.util.Ranges;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.ex.ExNotFile;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
-import com.aerofs.rest.api.Error;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Range;
 import com.google.common.collect.RangeSet;
-import com.google.common.collect.TreeRangeSet;
 import com.google.common.io.ByteStreams;
 import com.google.inject.Inject;
 
+import javax.annotation.Nullable;
 import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.EntityTag;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
@@ -35,27 +39,73 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.sql.SQLException;
 import java.util.Date;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class HdFileContent extends AbstractHdIMC<EIFileContent>
 {
     private final ACLChecker _acl;
     private final DirectoryService _ds;
     private final IMapSID2SIndex _sid2sidx;
+    private final NativeVersionControl _nvc;
 
     @Inject
-    public HdFileContent(DirectoryService ds, ACLChecker acl, IMapSID2SIndex sid2sidx)
+    public HdFileContent(DirectoryService ds, ACLChecker acl, IMapSID2SIndex sid2sidx,
+            NativeVersionControl nvc)
     {
         _ds = ds;
         _acl = acl;
+        _nvc = nvc;
         _sid2sidx = sid2sidx;
     }
 
     @Override
     protected void handleThrows_(EIFileContent ev, Prio prio) throws Exception
+    {
+        final OA oa = check_(ev);
+        final CA ca = oa.caMasterThrows();
+        final EntityTag etag = etag(oa.soid());
+        final long length = ca.length();
+        final long mtime = ca.mtime();
+        final IPhysicalFile pf = ca.physicalFile();
+
+        long skip = 0, span = length;
+        ResponseBuilder bd = Response.ok().tag(etag).lastModified(new Date(mtime));
+
+        RangeSet<Long> ranges = parseRanges(ev._rangeset, ev._ifRange, etag, length);
+        if (ranges != null) {
+            if (ranges.isEmpty()) {
+                ev.setResult_(Response.status(HttpStatus.UNSATISFIABLE_RANGE)
+                        .header("Content-Length", "*/" + length));
+                return;
+            }
+
+            Set<Range<Long>> parts = ranges.asRanges();
+            if (parts.size() == 1) {
+                Range<Long> range = Iterables.getFirst(parts, null);
+                skip = range.lowerEndpoint();
+                long last = range.upperEndpoint();
+                span = last - skip + 1;
+
+                bd.status(HttpStatus.PARTIAL_CONTENT)
+                        .header("Content-Range", "bytes " + skip + "-" + last + "/" + length);
+            } else {
+                ev.setResult_(bd.status(HttpStatus.PARTIAL_CONTENT)
+                        .type("multipart/byteranges; boundary=" + MultiPartUploader.BOUNDARY)
+                        .entity(new MultiPartUploader(pf, length, mtime, parts)));
+                return;
+            }
+        } else {
+            bd.header("Content-Disposition", "attachment; filename=\"" + oa.name() + "\"");
+        }
+
+        ev.setResult_(bd.type(MediaType.APPLICATION_OCTET_STREAM_TYPE)
+                .header("Content-Length", span)
+                .entity(new SimpleUploader(pf, length, mtime, skip, span)));
+    }
+
+    private OA check_(EIFileContent ev) throws Exception
     {
         SID sid = ev._object.sid;
         SIndex sidx = _sid2sidx.getNullable_(sid);
@@ -69,66 +119,37 @@ public class HdFileContent extends AbstractHdIMC<EIFileContent>
         if (!oa.isFile()) throw new ExNotFile();
         if (oa.isExpelled()) throw new ExExpelled();
 
-        CA ca = oa.caMasterThrows();
-        final long length = ca.length();
-        final long mtime = ca.mtime();
-        final IPhysicalFile pf = ca.physicalFile();
+        return oa;
+    }
 
-        ResponseBuilder bd;
-        long skip = 0, span = length;
-
-        // parse Range header, if any
-        RangeSet<Long> ranges = null;
-        if (ev._rangeset != null) {
-            // TODO: check etag, ignore Range header on mismatch
-
+    private static @Nullable RangeSet<Long> parseRanges(@Nullable String rangeset,
+            @Nullable EntityTag ifRange, EntityTag etag, long length)
+    {
+        if (rangeset != null && (ifRange == null || etag.equals(ifRange))) {
             try {
-                ranges = ranges(ev._rangeset, length);
+                return Ranges.parse(rangeset, length);
             } catch (ExBadArgs e) {
                 // RFC 2616: MUST ignore Range header if any range spec is syntactically invalid
             }
         }
-
-        if (ranges != null) {
-            // partial content response
-            if (ranges.isEmpty()) {
-                ev.setResult_(Response.status(416).header("Content-Length", "*/" + length));
-                return;
-            }
-
-            Set<Range<Long>> parts = ranges.asRanges();
-
-            if (parts.size() == 1) {
-                Range<Long> range = Iterables.getFirst(parts, null);
-                skip = range.lowerEndpoint();
-                long last = range.upperEndpoint();
-                span = last - skip + 1;
-
-                bd = Response.status(206)
-                        .header("Content-Range", "bytes " + skip + "-" + last + "/" + length);
-            } else {
-                // multipart/byteranges response
-                ev.setResult_(Response.status(206)
-                        .type("multipart/byteranges; boundary=" + BOUNDARY)
-                        .entity(new MultiPartUploader(pf, length, mtime, parts)));
-                return;
-            }
-        } else {
-            bd = Response.status(Status.OK)
-                    .header("Content-Disposition", "attachment; filename=\"" + oa.name() + "\"");
-        }
-
-        ev.setResult_(bd
-                .type(MediaType.APPLICATION_OCTET_STREAM_TYPE)
-                .header("Content-Length", span)
-                .lastModified(new Date(mtime))
-                .entity(new FileUploader(pf, length, mtime, skip, span)));
+        return null;
     }
 
-    private static final String BOUNDARY = "xxxRANGE-BOUNDARYxxx";
+    /**
+     * @return HTTP Entity tag for a given SOID
+     *
+     * We use version hashes as entity tags for simplicity
+     */
+    private EntityTag etag(SOID soid) throws SQLException
+    {
+        return new EntityTag(BaseUtil.hexEncode(_nvc.getVersionHash_(soid)));
+    }
 
     private static class MultiPartUploader implements StreamingOutput
     {
+        // TODO: use pseudo-random boundary separator?
+        private static final String BOUNDARY = "xxxRANGE-BOUNDARYxxx";
+
         private final IPhysicalFile _pf;
         private final long _length;
         private final long _mtime;
@@ -175,7 +196,7 @@ public class HdFileContent extends AbstractHdIMC<EIFileContent>
         }
     }
 
-    private static class FileUploader implements StreamingOutput
+    private static class SimpleUploader implements StreamingOutput
     {
         private final IPhysicalFile _pf;
         private final long _length;
@@ -183,7 +204,7 @@ public class HdFileContent extends AbstractHdIMC<EIFileContent>
         private final long _start;
         private final long _span;
 
-        FileUploader(IPhysicalFile pf, long length, long mtime, long start, long span)
+        SimpleUploader(IPhysicalFile pf, long length, long mtime, long start, long span)
         {
             _pf = pf;
             _length = length;
@@ -205,53 +226,5 @@ public class HdFileContent extends AbstractHdIMC<EIFileContent>
                 throw new WebApplicationException(Status.CONFLICT);
             }
         }
-    }
-
-    // Range header parsing, as per RFC 2616
-
-    private static final String BYTES_UNIT = "bytes=";
-    private static final String RANGESET_SEP = ",";
-    private static Pattern specPattern = Pattern.compile("([0-9]*)-([0-9]*)");
-
-    private static RangeSet<Long> ranges(String rangeSet, long length) throws ExBadArgs
-    {
-        if (!rangeSet.startsWith(BYTES_UNIT)) throw new ExBadArgs("Unsupported range unit");
-        RangeSet<Long> ranges = TreeRangeSet.create();
-        String[] rangeSpecs = rangeSet.substring(BYTES_UNIT.length()).split(RANGESET_SEP);
-        for (String spec : rangeSpecs) {
-            ranges.add(range(spec, length));
-        }
-        return ranges;
-    }
-
-    private static Range<Long> range(String rangeSpec, long length) throws ExBadArgs
-    {
-        Matcher m = specPattern.matcher(rangeSpec);
-        if (!m.matches()) throw new ExBadArgs("Invalid range spec");
-        String start = m.group(1);
-        String end = m.group(2);
-        long low, high;
-
-        if (start.isEmpty()) {
-            if (end.isEmpty()) throw new ExBadArgs("Invalid range spec");
-            // suffix range
-            low = length - Long.parseLong(end);
-            high = length - 1;
-        } else {
-            low = Long.parseLong(start);
-            // empty range to avoid polluting the range set
-            if (low >= length) return Range.closedOpen(0L, 0L);
-
-            high = end.isEmpty() ? length - 1 : bound(end, length);
-        }
-
-        if (low > high) throw new ExBadArgs("Invalid range spec");
-
-        return Range.closed(low, high);
-    }
-
-    private static long bound(String num, long length)
-    {
-        return Math.max(0, Math.min(length - 1, Long.parseLong(num)));
     }
 }

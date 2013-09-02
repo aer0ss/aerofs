@@ -20,11 +20,13 @@ import com.google.common.collect.Sets;
 import com.google.common.collect.TreeRangeSet;
 import org.slf4j.Logger;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.ws.rs.GET;
 import javax.ws.rs.HeaderParam;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.core.EntityTag;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.util.Set;
@@ -58,12 +60,21 @@ public class FilesResource
     @GET
     @javax.ws.rs.Path("/content")
     public Response content(@PathParam("user") String user, @PathParam("object") String object,
-            @HeaderParam("If-Range") String etag, @HeaderParam("Range") String range)
+            @HeaderParam("If-Range") String ifRange, @HeaderParam("Range") String range)
     {
         UserID userid = _inputChecker.user(user);
         RestObject obj = _inputChecker.object(object, userid);
-        return new EIFileContent(_imce, userid, obj, etag, range).execute();
+        return new EIFileContent(_imce, userid, obj, parseEtag(ifRange), range).execute();
     }
 
+
+    private static @Nullable EntityTag parseEtag(String str)
+    {
+        try {
+            return EntityTag.valueOf(str);
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
+    }
 }
 
