@@ -68,10 +68,13 @@ public class GUIProgram implements IProgram
         RitualClientProvider ritualProvider = new RitualClientProvider(clientChannelFactory);
         ShellextService sextservice = new ShellextService(ChannelFactories.getServerChannelFactory(), ritualProvider);
         UIGlobals.setShellextService(sextservice);
-        UI.set(new GUI(rtRoot));
         UIGlobals.setRitualClientProvider(ritualProvider);
 
-        GUI.get().enterMainLoop_();
+        GUI gui = new GUI();
+        UI.set(gui);
+        // schedule the GUI's launch() method to be called as soon as we enter the main loop
+        gui.scheduleLaunch(rtRoot);
+        gui.enterMainLoop_();
     }
 
     /**
