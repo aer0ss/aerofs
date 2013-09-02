@@ -32,14 +32,6 @@ public abstract class AbstractRestEBIMC extends AbstractEBIMC
         _user = user;
     }
 
-    protected static Path mkpath(String path)
-    {
-        // TODO: make SID part of API for multiroot support?
-        // or add pseudo-level to distinguish between ext roots?
-        // TODO: what about TS
-        return Path.fromString(Cfg.rootSID(), path);
-    }
-
     public void setResult_(Object result)
     {
         _result = result;

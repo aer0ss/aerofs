@@ -44,9 +44,16 @@ public class RestObject
             base = UniqueID.LENGTH * 2;
         }
 
-        if (id.length() != base + UniqueID.LENGTH * 2) throw new ExInvalidID();
+        OID oid;
+        if (id.length() == base + UniqueID.LENGTH * 2) {
+            oid = new OID(new UniqueID(id, base, base + UniqueID.LENGTH * 2));
+        } else if (id.length() == base) {
+            // no OID provided -> default to ROOT
+            oid = OID.ROOT;
+        } else {
+            throw new ExInvalidID();
+        }
 
-        OID oid = new OID(new UniqueID(id, base, base + UniqueID.LENGTH * 2));
         return new RestObject(sid, oid);
     }
 }

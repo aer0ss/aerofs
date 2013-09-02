@@ -23,7 +23,8 @@ public class InputChecker
             return UserID.fromExternal(id);
         } catch (Exception e) {
             throw new WebApplicationException(Response.status(Status.BAD_REQUEST)
-                    .entity(new Error(Type.INVALID_EMAIL_ADDRESS.name(), "no such user")).build());
+                    .entity(new Error(Type.INVALID_EMAIL_ADDRESS.name(), "invalid user id"))
+                    .build());
         }
     }
 
@@ -33,7 +34,8 @@ public class InputChecker
             return RestObject.fromStringFormal(id, userid);
         } catch (Exception e) {
             throw new WebApplicationException(Response.status(Status.BAD_REQUEST)
-                    .entity(new Error(Type.NOT_FOUND.name(), "no such object")).build());
+                    .entity(new Error(Type.NOT_FOUND.name(), "invalid object id"))
+                    .build());
         }
     }
 }
