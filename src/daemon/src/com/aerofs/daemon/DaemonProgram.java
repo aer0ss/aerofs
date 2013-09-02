@@ -112,13 +112,18 @@ public class DaemonProgram implements IProgram
 
         Injector injDaemon = Guice.createInjector(stage, new DaemonModule(injCore));
 
+
+        Daemon d = injDaemon.getInstance(Daemon.class);
+
+        // TODO (HB): clean this up
         // TODO (GS): Temporary hack to start the REST service only for us
+        // NB: he RestService MUST be started AFTER creation of the Daemon instance or Guice
+        // throws a fit
         if (Cfg.user().isAeroFSUser()) {
-            // TODO (HB): clean this up
-            injDaemon.getInstance(RestService.class).start();
+            injCore.getInstance(RestService.class).start();
         }
 
-        return injDaemon.getInstance(Daemon.class);
+        return d;
     }
 
     private Module storageModule()

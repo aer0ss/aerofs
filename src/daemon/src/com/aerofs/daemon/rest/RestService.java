@@ -11,19 +11,18 @@ import com.aerofs.daemon.rest.netty.NettyServer;
 import com.aerofs.daemon.rest.resources.FilesResource;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
-import com.sun.jersey.api.container.ContainerFactory;
 import com.sun.jersey.api.core.PackagesResourceConfig;
 import com.sun.jersey.api.core.ResourceConfig;
 import com.sun.jersey.core.spi.component.ioc.IoCComponentProviderFactory;
 import com.sun.jersey.guice.spi.container.GuiceComponentProviderFactory;
 import com.sun.jersey.spi.container.WebApplication;
 import com.sun.jersey.spi.container.WebApplicationFactory;
-import com.sun.jersey.spi.service.ServiceFinder;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.channel.Channels;
 import org.jboss.netty.handler.codec.http.HttpServerCodec;
 import org.slf4j.Logger;
+import org.slf4j.bridge.SLF4JBridgeHandler;
 
 import java.net.InetSocketAddress;
 import java.net.URI;
@@ -34,6 +33,12 @@ import static com.google.common.base.Preconditions.checkState;
 
 public class RestService
 {
+    static {
+        // Jersey uses JUL, we use slf4j hence the need for bridging...
+        SLF4JBridgeHandler.removeHandlersForRootLogger();
+        SLF4JBridgeHandler.install();
+    }
+
     private static final Logger l = Loggers.getLogger(RestService.class);
 
     // Base URI for the service. Must end with a slash.
@@ -61,8 +66,7 @@ public class RestService
         try {
             startServer(getResourceConfiguration(), BASE_URI);
 
-            Runtime.getRuntime().addShutdownHook(new Thread()
-            {
+            Runtime.getRuntime().addShutdownHook(new Thread() {
                 @Override
                 public void run()
                 {
@@ -104,6 +108,8 @@ public class RestService
     {
         final Map<String, Object> props = new HashMap<String, Object>();
         props.put(PackagesResourceConfig.PROPERTY_PACKAGES, RESOURCES_PACKAGES);
-        return new PackagesResourceConfig(props);
+        ResourceConfig cfg = new PackagesResourceConfig(props);
+        cfg.getFeatures().put(ResourceConfig.FEATURE_DISABLE_WADL, Boolean.TRUE);
+        return cfg;
     }
 }
