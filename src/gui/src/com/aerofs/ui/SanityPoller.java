@@ -211,7 +211,7 @@ public class SanityPoller
 
         if (!new File(absPath).isDirectory()) return false;
 
-        if (UI.isGUI()) GUI.get().shellext().notifyRootAnchor();
+        if (UIGlobals.hasShellextService()) UIGlobals.shellext().notifyRootAnchor();
 
         // only maintain favorite for default root
         if (sid == null) updateFavorite(oldAbsPath, absPath);

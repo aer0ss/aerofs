@@ -9,7 +9,6 @@ import com.aerofs.gui.multiuser.tray.MultiuserMenuProvider;
 import com.aerofs.gui.setup.DlgCredentialSignIn;
 import com.aerofs.gui.setup.DlgOpenIdSignIn;
 import com.aerofs.gui.setup.DlgPreSetupUpdateCheck;
-import com.aerofs.gui.shellext.ShellextService;
 import com.aerofs.gui.singleuser.tray.SingleuserMenuProvider;
 import com.aerofs.gui.tray.SystemTray;
 import com.aerofs.labeling.L;
@@ -50,13 +49,10 @@ public class GUI implements IUI
 
     private final Display _disp;
     private final Shell _sh;
-    private final ShellextService _sextservice;
     private SystemTray _st;
     private final String _rtRoot;
 
     public SystemTray st() { return _st; }
-
-    public ShellextService shellext() { return _sextservice; }
 
     public static GUI get()
     {
@@ -72,10 +68,9 @@ public class GUI implements IUI
     /**
      * the caller thread will become the UI thread
      */
-    GUI(String rtRoot, ShellextService sextservice) throws IOException
+    GUI(String rtRoot) throws IOException
     {
         _rtRoot = rtRoot;
-        _sextservice = sextservice;
 
         try {
             _disp = Display.getDefault();

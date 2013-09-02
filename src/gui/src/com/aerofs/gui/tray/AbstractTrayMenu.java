@@ -133,7 +133,7 @@ public abstract class AbstractTrayMenu implements ITrayMenu, ITrayMenuComponentL
             {
                 switch (pb.getType().getNumber()) {
                 case Type.ROOTS_CHANGED_VALUE:
-                    GUI.get().shellext().notifyRootAnchor();
+                    UIGlobals.shellext().notifyRootAnchor();
                     break;
                 default:
                     break;
