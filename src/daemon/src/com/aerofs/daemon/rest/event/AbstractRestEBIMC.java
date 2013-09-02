@@ -8,6 +8,7 @@ import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.UserID;
 import com.aerofs.daemon.event.lib.imc.AbstractEBIMC;
 import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
+import com.aerofs.proto.Common.PBException.Type;
 import com.aerofs.rest.api.Error;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.cfg.Cfg;
@@ -16,6 +17,7 @@ import org.slf4j.Logger;
 
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.ResponseBuilder;
 import javax.ws.rs.core.Response.Status;
 
 public abstract class AbstractRestEBIMC extends AbstractEBIMC
@@ -41,20 +43,34 @@ public abstract class AbstractRestEBIMC extends AbstractEBIMC
     {
         try {
             execute(Prio.LO);
-            return Response.status(Status.OK).entity(_result).build();
-        } catch (ExNotFound e) {
-            return Response.status(Status.NOT_FOUND)
-                    .entity(new Error(e.getWireType().name(), e.getMessage())).build();
-        } catch (ExNoPerm e) {
-            return Response.status(Status.FORBIDDEN)
-                    .entity(new Error(e.getWireType().name(), e.getMessage())).build();
-        } catch (ExBadArgs e) {
-            return Response.status(Status.BAD_REQUEST)
-                    .entity(new Error(e.getWireType().name(), e.getMessage())).build();
-        } catch (AbstractExWirable e) {
-            return Response.status(Status.BAD_REQUEST)
-                    .entity(new Error(e.getWireType().name(), e.getMessage())).build();
+            return response().build();
         } catch (Exception e) {
+            return handleException(e).build();
+        }
+    }
+
+    protected ResponseBuilder response()
+    {
+        return _result instanceof ResponseBuilder
+                ? (ResponseBuilder)_result
+                : Response.status(Status.OK).entity(_result);
+    }
+
+    protected ResponseBuilder handleException(Exception e)
+    {
+        if (e instanceof ExNotFound){
+            return Response.status(Status.NOT_FOUND)
+                    .entity(new Error(Type.NOT_FOUND.name(), e.getMessage()));
+        } else if (e instanceof ExNoPerm) {
+            return Response.status(Status.FORBIDDEN)
+                 .entity(new Error(Type.NO_PERM.name(), e.getMessage()));
+        } else if (e instanceof ExBadArgs) {
+            return Response.status(Status.BAD_REQUEST)
+                    .entity(new Error(Type.BAD_ARGS.name(), e.getMessage()));
+        } else if (e instanceof AbstractExWirable) {
+            return Response.status(Status.BAD_REQUEST)
+                    .entity(new Error(((AbstractExWirable)e).getWireType().name(), e.getMessage()));
+        } else {
             l.error("", e);
             throw new WebApplicationException(Status.INTERNAL_SERVER_ERROR);
         }
