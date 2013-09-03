@@ -13,6 +13,7 @@ ejabberd-metadata-reset
 ejabberd-fix-config
 ejabberd-certify
 create-sp-tomcat-xml
+create-configuration-url-file
 uwsgi-restart
 restund-fix-config
 zephyr-start

@@ -40,7 +40,7 @@ public class PropertiesHelper
             for (Object sharedKey : intersection) {
                 String key = (String) sharedKey;
                 String val = p2.getProperty(key);
-                l.warn("Key {} set multiple times in configuration files. Setting it to {}", key, val);
+                l.debug("Key {} set multiple times in configuration files. Setting it to {}", key, val);
             }
         }
         Properties disjointUnion = new Properties();
@@ -162,7 +162,7 @@ public class PropertiesHelper
             properties.store(byteArrayOutputStream, description);
             l.debug(byteArrayOutputStream.toString("UTF-8"));
         } catch (Exception e) {
-            l.warn("Failed to log server configuration with exception " + e.toString());
+            l.error("Failed to log server configuration with exception " + e.toString());
         }
     }
 

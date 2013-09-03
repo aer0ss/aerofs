@@ -13,7 +13,7 @@ def main(global_config, **settings):
     """
 
     mode = settings['deployment.mode']
-    if mode == "private":
+    if mode != "prod":
         CONFIG_URL_FILE = "/etc/aerofs/configuration.url"
         CACERT_FILE = "/etc/ssl/certs/AeroFS_CA.pem"
 
@@ -54,7 +54,7 @@ def main(global_config, **settings):
         config.add_static_view(installer_prefix, 'installer')
 
     # Use different home page for private and public deployment
-    if mode == "private":
+    if mode != "prod":
         config.add_route('dashboard_home', '/')
         config.add_route('marketing_home', 'marketing_home')
     else:
