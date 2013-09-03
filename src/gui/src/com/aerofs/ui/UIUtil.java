@@ -152,13 +152,14 @@ public class UIUtil
      *  - UIUtil.launch() call Controller methods
      *  - Controller methods then call Setup or Launcher methods
      *
-     *  This logic is (will be) duplicated in the native UIs
+     * This logic is (will be) duplicated in the native UIs
+     *
+     * N.B. preLaunch and postLaunch are intended to be different set of tasks to be performed on
+     * either GUI or CLI but not both.
+     *
+     * N.B. preLaunch doesn't necessary
      *
      * @param preLaunch a runnable that will be executed in the UI thread, before the launch
-     * FIXME(AT): preLaunch doesn't work the way this method signature suggests it works.
-     * In the case of NEED_SETUP and READY_TO_LAUNCH, Launcher.launch() will be invoked _before_
-     * preLaunch.run() is invoked. Need to consolidate this with Greg _really soon tm_.
-     *
      * @param postLaunch a runnable that will be executed in the UI thread, iff the launch succeeds
      */
     public static void launch(String rtRoot, Runnable preLaunch, Runnable postLaunch)
@@ -265,8 +266,6 @@ public class UIUtil
     private static void setup(String rtRoot, Runnable preLaunch, Runnable postLaunch)
             throws Exception
     {
-        // TODO: add the same logic in the native Cocoa UI. Currently only setup is run
-
         if (OSUtil.isOSX()) {
             // Launch AeroFS on startup
             SystemUtil.execBackground(AppRoot.abs().concat("/osxtools"), "loginitem", "rem",

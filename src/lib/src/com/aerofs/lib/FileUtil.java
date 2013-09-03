@@ -483,15 +483,23 @@ public abstract class FileUtil
     }
 
     /**
-     * This method may cause big memory footprint on large directory trees and please use this
+     * Delete the file recursively. If we failed to delete a file, we retain the File object and
+     * add a hook (if not already added) to try again just before JVM shuts down.
+     *
+     * N.B. This method may cause big memory footprint on large directory trees, so please use this
      * method carefully.
+     *
+     * For example, take a directory with 10k files. Assuming it's a directory, then we are looking
+     * at files with long absolute paths so let's just assume 30 characters per file on average.
+     * Then we are looking at 30b / file * 10k files => 300kb memory hogged up until the user shuts
+     * down the program.
      */
-    public static void deleteIgnoreErrorOrOnExitRecursively(File f)
+    public static void deleteRecursivelyOrOnExit(File f)
     {
         File[] children = f.listFiles();
         if (children != null) {
             for (File child : children) {
-                deleteIgnoreErrorOrOnExitRecursively(child);
+                deleteRecursivelyOrOnExit(child);
             }
         }
 

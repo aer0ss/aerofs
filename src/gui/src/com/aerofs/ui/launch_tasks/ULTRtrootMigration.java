@@ -69,9 +69,7 @@ public class ULTRtrootMigration
 
     public void run() throws ExFailedToMigrate, ExFailedToReloadCfg
     {
-        try {
-            checkNeedToMigrate();
-        } catch (ExNeedToMigrate e) {
+        if (needToMigrate()) {
             renameLogsInOldRtroot();
             migrateRtroot();
             reloadCfg();
@@ -81,22 +79,19 @@ public class ULTRtrootMigration
     /**
      * Determines old rtroot, new rtroot, and whether the migration should be performed.
      *
-     * @throws ExNeedToMigrate - if we need to migrate.
-     *
-     * N.B. We do not need to migrate most of the times. Hence, need to migrate is the
-     *   _unexpected_ case.
+     * @return true iff we need to migrate rtroot.
      */
-    protected void checkNeedToMigrate() throws ExNeedToMigrate
+    protected boolean needToMigrate()
     {
         // It only make sense to migrate rtRoot if we are using the default rtRoot.
         // Otherwise, we are in a testing environment and there's no need to migrate.
         //
         // If you want to specifically test rtRoot migration, back up your actual rtRoot and
         // use the default rtRoot in your tests.
-        if (!_rtRoot.equals(OSUtil.get().getDefaultRTRoot())) return;
+        if (!_rtRoot.equals(OSUtil.get().getDefaultRTRoot())) return false;
 
         // if the platform isn't Windows, we do not need to migrate
-        if (!OSUtil.isWindows()) return;
+        if (!OSUtil.isWindows()) return false;
 
         _oldRtRoot = new File(getOldRtRootPath());
         _newRtRoot = new File(OSUtil.get().getDefaultRTRoot());
@@ -105,7 +100,7 @@ public class ULTRtrootMigration
         //
         // Note that the new rtRoot is guarantee to exist because of the logic in Main.main(), thus
         // it is not meaningful to assume the new rtRoot is correct as long as oldRtRoot exists.
-        if (_oldRtRoot.isDirectory()) throw new ExNeedToMigrate();
+        return _oldRtRoot.isDirectory();
     }
 
     /**
@@ -121,19 +116,29 @@ public class ULTRtrootMigration
             FileUtil.copyRecursively(_oldRtRoot, _newRtRoot, false, true);
         } catch (IOException e) {
             // if recursive copy failed, delete the new rtroot so we'll try again when we restart
-            FileUtil.deleteIgnoreErrorOrOnExitRecursively(_newRtRoot);
+            FileUtil.deleteRecursivelyOrOnExit(_newRtRoot);
             throw new ExFailedToMigrate("Failed to copy files from old rtroot to new rtroot.",
                     e, _oldRtRoot, _newRtRoot);
         }
 
         // if we succeeded in recursive copy, delete the old rtroot
-        FileUtil.deleteIgnoreErrorOrOnExitRecursively(_oldRtRoot);
+        FileUtil.deleteRecursivelyOrOnExit(_oldRtRoot);
     }
 
     /**
-     * N.B. log appenders will have already opened the log files in new rtroot when we try to
-     * migrate files from old rtroot, hence we rename the logs in the old rtroot before the
-     * migrations.
+     * N.B. By the time this method is invoked, the logging subsystem will have already been
+     * initialized. The log file appenders will have already opened the log files in the new
+     * rtroot and will be logging using these file handlers, and this breaks the system in
+     * different ways depending on the platform.
+     *
+     * The observed behaviour on OS X: the rtroot migration will replace the logs in the new
+     * rtroot with the logs in the old rtroot. In the meanwhile, the log file appenders continue
+     * to use the file handler pointing at a defunct file. The end result is that we lose all
+     * log output until the program restarts.
+     *
+     * The hypothesized behaviour on Linux is identical to OS X, and the hypothesized behaviour
+     * on Windows is that Windows will prevent us from moving the file because the log files
+     * in the new rtroot is open and locked.
      */
     protected void renameLogsInOldRtroot() throws ExFailedToMigrate
     {
@@ -150,6 +155,8 @@ public class ULTRtrootMigration
                         // This is not a problem because we'll have a set of .log and .log.backup files;
                         // both of which are clearly log files and this method will not rename
                         // .log.backup again when the program is run again.
+                        // Thus, the end result is either the intended result, or in a recoverable
+                        // state in all cases.
                         FileUtil.rename(file, new File(path + ".backup"));
                     }
                 }
@@ -195,11 +202,6 @@ public class ULTRtrootMigration
         {
             super(cause);
         }
-    }
-
-    public static class ExNeedToMigrate extends Exception
-    {
-        private static final long serialVersionUID = 0L;
     }
 
     public static class ExFailedToMigrate extends Exception
