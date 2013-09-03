@@ -39,5 +39,4 @@ public class FoldersResource
         RestObject obj = _inputChecker.object(object, userid);
         return new EIFolderInfo(_imce, userid, obj).execute();
     }
-
 }

@@ -43,13 +43,13 @@ public class Ranges
             high = length - 1;
         } else {
             low = Long.parseLong(start);
-            // empty range to avoid polluting the range set
-            if (low >= length) return Range.closedOpen(0L, 0L);
-
             high = end.isEmpty() ? length - 1 : bound(end, length);
         }
 
         if (low > high) throw new ExBadArgs("Invalid range spec");
+
+        // empty range to avoid polluting the range set
+        if (low >= length) return Range.closedOpen(0L, 0L);
 
         return Range.closed(low, high);
     }

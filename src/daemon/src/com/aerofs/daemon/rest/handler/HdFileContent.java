@@ -26,11 +26,14 @@ import com.google.common.collect.Range;
 import com.google.common.collect.RangeSet;
 import com.google.common.io.ByteStreams;
 import com.google.inject.Inject;
+import com.sun.jersey.core.header.MatchingEntityTag;
+import com.sun.jersey.core.header.reader.HttpHeaderReader;
 
 import javax.annotation.Nullable;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.EntityTag;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
 import javax.ws.rs.core.Response.Status;
@@ -72,6 +75,11 @@ public class HdFileContent extends AbstractHdIMC<EIFileContent>
 
         long skip = 0, span = length;
         ResponseBuilder bd = Response.ok().tag(etag).lastModified(new Date(mtime));
+
+        if (ev._ifNoneMatch != null && match(ev._ifNoneMatch, etag)) {
+            ev.setResult_(Response.notModified(etag));
+            return;
+        }
 
         RangeSet<Long> ranges = parseRanges(ev._rangeset, ev._ifRange, etag, length);
         if (ranges != null) {
@@ -120,6 +128,11 @@ public class HdFileContent extends AbstractHdIMC<EIFileContent>
         if (oa.isExpelled()) throw new ExExpelled();
 
         return oa;
+    }
+
+    private static boolean match(Set<? extends EntityTag> matching, EntityTag etag)
+    {
+        return matching == MatchingEntityTag.ANY_MATCH || matching.contains(etag);
     }
 
     private static @Nullable RangeSet<Long> parseRanges(@Nullable String rangeset,
