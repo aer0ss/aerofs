@@ -4,8 +4,8 @@ ca-restart
 cacert-populate
 nginx-restart
 nginx-certificate-generate-unified
-enable-all-nginx-services
 browser-cert-pull
+enable-all-nginx-services
 nginx-restart
 spdb-schema-init
 drop-empty-mysql-user
