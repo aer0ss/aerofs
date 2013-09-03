@@ -383,5 +383,5 @@ public class LibParam extends BaseParam
         public static final String                      CONFIG_SERVICE_URL =
                 getStringProperty(                      PROPERTY_CONFIG_SERVICE_URL,
                                                         "");
-}
+    }
 }

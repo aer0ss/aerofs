@@ -9,7 +9,7 @@ DEBIAN=bootstrap/DEBIAN
 
 # Debian-related file copies.
 mkdir -p $DEBIAN
-for f in control conffiles preinst prerm postrm postinst
+for f in control conffiles preinst prerm postinst
 do
     cp -r $RESOURCES/$f $DEBIAN
 done

@@ -32,6 +32,9 @@ public class BaseParam
     {
         public static final X509Certificate CACERT = getCertificateProperty(
                 "config.loader.base_ca_certificate", null);
+
+        // TODO (MP) need create ServerParam.java (or something) and move this there.
+        public static final String FILE = "/etc/ssl/certs/AeroFS_CA.pem";
     }
 
     public static class XMPP
