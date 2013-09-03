@@ -149,20 +149,26 @@ public class UIUtil
      * Helper method to perform launch for the Java UIs (ie: CLI and GUI)
      * The flow here is:
      *  - CLI or GUI call UIUtil.launch() to perform common launch logic
-     *  - UIUtil.launch() call Controller methods
+     *  - UIUtil.launchImpl() call Controller methods
      *  - Controller methods then call Setup or Launcher methods
-     *
-     * This logic is (will be) duplicated in the native UIs
      *
      * N.B. preLaunch and postLaunch are intended to be different set of tasks to be performed on
      * either GUI or CLI but not both.
      *
-     * N.B. preLaunch doesn't necessary
+     * FIXME(AT) despite what the method signature states and suggests, preLaunch isn't executed
+     * before Launcher.launch().
      *
-     * @param preLaunch a runnable that will be executed in the UI thread, before the launch
+     * @param preLaunch a runnable that will be executed in the UI thread
      * @param postLaunch a runnable that will be executed in the UI thread, iff the launch succeeds
      */
     public static void launch(String rtRoot, Runnable preLaunch, Runnable postLaunch)
+    {
+        migrateRtroot(rtRoot);
+
+        launchImpl(rtRoot, preLaunch, postLaunch);
+    }
+
+    public static void launchImpl(String rtRoot, Runnable preLaunch, Runnable postLaunch)
     {
         try {
             GetInitialStatusReply reply = UIGlobals.controller().getInitialStatus();
@@ -190,28 +196,21 @@ public class UIUtil
     }
 
     /**
-     * Perform the tasks that needed to be done before launch. Currently, it's only rtroot
-     * migration. Note that launch() doesn't work in this particular case with how it handles
-     * preLaunch, and it's not clear how launch() should work at the moment of writing. Hence this
-     * method is temporarily added as a workaround until that is resolved.
+     * Note that using launchImpl() with preLaunch parameter doesn't work in the case of rtroot
+     * migration for 2 reasons:
      *
-     * FIXME (AT): consult with Greg _really soon tm_, consolidate with launch():preLaunch, and
-     * eliminate this method.
+     * 1. preLaunch in launchImpl() doesn't work because in that case, preLaunch doesn't necessarily
+     * execute before Launcher.launch().
+     * 2. preLaunch in launchImpl() is intended to do tasks that are _different_ between GUI and
+     * CLI, whereas rtroot migration is a common task between GUI and CLI.
      *
-     * @param rtRoot - the path to rtRoot, needed for rtRoot migration.
+     * @param rtRoot - the path to rtRoot.
      * @pre UI.get() is set.
      */
-    public static void preLaunch(String rtRoot)
+    public static void migrateRtroot(String rtRoot)
     {
         Preconditions.checkArgument(UI.get() != null);
 
-        migrateRtroot(rtRoot);
-    }
-
-    // FIXME(AT): this method doesn't belong in UiUtil, where would be a better place to put it?
-    // on 2nd thought, none of these methods in this class belong in an Util class.
-    private static void migrateRtroot(String rtRoot)
-    {
         ULTRtrootMigration task = new ULTRtrootMigration(L.productSpaceFreeName(), rtRoot);
 
         try {

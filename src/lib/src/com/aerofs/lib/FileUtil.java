@@ -23,9 +23,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
-/**
- * Note: there are similar methods in RtrootMigration that manipulates the file system.
- */
 public abstract class FileUtil
 {
     public static class FileName

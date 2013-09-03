@@ -43,7 +43,6 @@ public class CLIProgram implements IProgram
             @Override
             public void run()
             {
-                UIUtil.preLaunch(rtRoot);
                 UIUtil.launch(rtRoot, null, null);
             }
         });

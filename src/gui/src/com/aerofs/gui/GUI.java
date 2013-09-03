@@ -103,7 +103,6 @@ public class GUI implements IUI
         {
             @Override
             public void run() {
-                UIUtil.preLaunch(rtRoot);
                 UIUtil.launch(rtRoot, new Runnable()
                         {
                             @Override
