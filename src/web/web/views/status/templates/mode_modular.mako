@@ -1,16 +1,10 @@
-<%inherit file="dashboard_layout.mako"/>
-<%! page_title = "Server Status" %>
-
-<h2>Service Statuses</h2>
-<br/>
-
 <h4>Persistent Box</h4>
 <div class="page_block" id="server-status-div">
     <table class="table" style="border: 1px">
         <thead><th style="width:4%"></th><th style="width:12%"></th><th style:"width:84%"></th></thead>
         <tbody id="server-status-tbody">
             % for server_status in persistent_server_statuses:
-                ${render_server_status_row(server_status)}
+                ${render_server_row(server_status)}
             % endfor
         </tbody>
     </table>
@@ -22,13 +16,14 @@
         <thead><th style="width:4%"></th><th style="width:12%"></th><th style:"width:84%"></th></thead>
         <tbody id="server-status-tbody">
             % for server_status in transient_server_statuses:
-                ${render_server_status_row(server_status)}
+                ${render_server_row(server_status)}
             % endfor
         </tbody>
     </table>
 </div>
 
-<%def name="render_server_status_row(server_status)">
+## TODO (MP) move to a common spot.
+<%def name="render_server_row(server_status)">
     <%
         service = server_status['service']
         is_healthy = server_status['is_healthy']
@@ -40,7 +35,6 @@
             status_image = request.static_path("web:static/img/server_unhealthy.png")
     %>
 
-    ## TODO (MP) need logos here and better formatting.
     <tr>
         <td><img src=${status_image} /></td>
         <td>${service}</td>

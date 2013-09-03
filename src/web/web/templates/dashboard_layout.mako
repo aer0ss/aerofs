@@ -110,6 +110,10 @@
     % for link in links:
         ${render_navigation_link(link)}
     % endfor
+
+    %if request.registry.settings['deployment.mode'] != 'prod':
+        ${render_navigation_link(('status', _("Service Statuses")))}
+    %endif
 </%def>
 
 ## param link: tuple (route_name, text_to_display)
