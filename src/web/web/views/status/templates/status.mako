@@ -1,12 +1,19 @@
 <%!
     import pyramid
-    if pyramid.threadlocal.get_current_registry().settings['deployment.mode'] == 'modular':
-        inherit = "private_status.mako"
+    mode = pyramid.threadlocal.get_current_registry().settings['deployment.mode']
+
+    if mode == 'modular':
+        include = "mode_modular.mako"
+    elif mode == 'unified':
+        include = "mode_unified.mako"
     else:
-        inherit = "public_status.mako"
+        include = "mode_unsupported.mako"
 %>
 
-<%inherit file="${inherit}"/>
+<%inherit file="dashboard_layout.mako"/>
 
-## Main body
-${next.body()}
+<%! page_title = "Server Status" %>
+<h2>Service Statuses</h2>
+<br/>
+
+<%include file="${include}"/>

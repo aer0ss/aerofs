@@ -19,14 +19,24 @@ URL_PARAM_JOINED_TEAM_NAME = 'new_team'
 )
 def status_view(request):
     settings = request.registry.settings
+    mode = settings['deployment.mode']
 
-    persistent_url = settings['base.status_url.persistent']
-    transient_url = settings['base.status_url.transient']
+    if mode == 'unified':
+        unified_url = settings['base.status_url.unified']
 
-    return {
-        'persistent_server_statuses': get_server_statuses(request, persistent_url),
-        'transient_server_statuses': get_server_statuses(request, transient_url)
-    }
+        return {
+            'unified_server_statuses': get_server_statuses(request, unified_url)
+        }
+    elif mode == 'modular':
+        persistent_url = settings['base.status_url.persistent']
+        transient_url = settings['base.status_url.transient']
+
+        return {
+            'persistent_server_statuses': get_server_statuses(request, persistent_url),
+            'transient_server_statuses': get_server_statuses(request, transient_url)
+        }
+    else:
+        return []
 
 def get_server_statuses(request, url):
     return json.load(urllib2.urlopen(url))['statuses']
