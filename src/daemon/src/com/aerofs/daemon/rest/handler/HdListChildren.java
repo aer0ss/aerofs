@@ -1,21 +1,16 @@
 package com.aerofs.daemon.rest.handler;
 
-import com.aerofs.base.acl.Role;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
-import com.aerofs.daemon.core.acl.ACLChecker;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
-import com.aerofs.daemon.core.ex.ExExpelled;
-import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.daemon.rest.RestObject;
 import com.aerofs.daemon.rest.event.EIListChildren;
-import com.aerofs.lib.Path;
+import com.aerofs.daemon.rest.util.AccessChecker;
 import com.aerofs.lib.event.Prio;
-import com.aerofs.lib.ex.ExNotDir;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.rest.api.File;
@@ -30,39 +25,28 @@ import java.util.List;
 
 public class HdListChildren extends AbstractHdIMC<EIListChildren>
 {
-    private final ACLChecker _acl;
+    private final AccessChecker _access;
     private final DirectoryService _ds;
-    private final IMapSID2SIndex _sid2sidx;
+    private final IMapSIndex2SID _sidx2sid;
 
     @Inject
-    HdListChildren(DirectoryService ds, ACLChecker acl, IMapSID2SIndex sid2sidx)
+    public HdListChildren(AccessChecker access, DirectoryService ds, IMapSIndex2SID sidx2sid)
     {
+        _access = access;
         _ds = ds;
-        _acl = acl;
-        _sid2sidx = sid2sidx;
+        _sidx2sid = sidx2sid;
     }
 
     @Override
     protected void handleThrows_(EIListChildren ev, Prio prio) throws Exception
     {
-        SID sid = ev._object.sid;
-        SIndex sidx = _sid2sidx.getNullable_(sid);
-        if (sidx == null) throw new ExNotFound();
+        OA oa = _access.checkObjectFollowsAnchor_(ev._object, ev._user);
 
-        SOID soid = new SOID(sidx, ev._object.oid);
-        OA oa = _ds.getOAThrows_(soid);
+        if (!oa.isDir()) throw new ExNotFound();
 
-        if (oa.isExpelled()) throw new ExExpelled();
-        if (oa.isFile()) throw new ExNotDir();
-
-        if (oa.isAnchor()) {
-            soid = _ds.followAnchorThrows_(oa);
-            sidx = soid.sidx();
-            sid = SID.anchorOID2storeSID(ev._object.oid);
-        }
-
-        _acl.checkThrows_(ev._user, sidx, Role.VIEWER);
-        Collection<OID> children = _ds.getChildren_(soid);
+        SIndex sidx = oa.soid().sidx();
+        SID sid = _sidx2sid.get_(sidx);
+        Collection<OID> children = _ds.getChildren_(oa.soid());
 
         List<Folder> folders = Lists.newArrayList();
         List<File> files = Lists.newArrayList();

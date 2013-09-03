@@ -1,25 +1,18 @@
 package com.aerofs.daemon.rest.handler;
 
 import com.aerofs.base.BaseUtil;
-import com.aerofs.base.acl.Role;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.ex.ExNotFound;
-import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.NativeVersionControl;
-import com.aerofs.daemon.core.acl.ACLChecker;
 import com.aerofs.daemon.core.ds.CA;
-import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
-import com.aerofs.daemon.core.ex.ExExpelled;
 import com.aerofs.daemon.core.phy.IPhysicalFile;
-import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.daemon.rest.event.EIFileContent;
+import com.aerofs.daemon.rest.util.AccessChecker;
 import com.aerofs.daemon.rest.util.HttpStatus;
 import com.aerofs.daemon.rest.util.Ranges;
 import com.aerofs.lib.event.Prio;
-import com.aerofs.lib.ex.ExNotFile;
-import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Range;
@@ -27,13 +20,11 @@ import com.google.common.collect.RangeSet;
 import com.google.common.io.ByteStreams;
 import com.google.inject.Inject;
 import com.sun.jersey.core.header.MatchingEntityTag;
-import com.sun.jersey.core.header.reader.HttpHeaderReader;
 
 import javax.annotation.Nullable;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.EntityTag;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
 import javax.ws.rs.core.Response.Status;
@@ -48,25 +39,22 @@ import java.util.Set;
 
 public class HdFileContent extends AbstractHdIMC<EIFileContent>
 {
-    private final ACLChecker _acl;
-    private final DirectoryService _ds;
-    private final IMapSID2SIndex _sid2sidx;
+    private final AccessChecker _access;
     private final NativeVersionControl _nvc;
 
     @Inject
-    public HdFileContent(DirectoryService ds, ACLChecker acl, IMapSID2SIndex sid2sidx,
-            NativeVersionControl nvc)
+    public HdFileContent(AccessChecker access, NativeVersionControl nvc)
     {
-        _ds = ds;
-        _acl = acl;
+        _access = access;
         _nvc = nvc;
-        _sid2sidx = sid2sidx;
     }
 
     @Override
-    protected void handleThrows_(EIFileContent ev, Prio prio) throws Exception
+    protected void handleThrows_(EIFileContent ev, Prio prio) throws ExNotFound, SQLException
     {
-        final OA oa = check_(ev);
+        final OA oa = _access.checkObject_(ev._object, ev._user);
+        if (!oa.isFile()) throw new ExNotFound();
+
         final CA ca = oa.caMasterThrows();
         final EntityTag etag = etag(oa.soid());
         final long length = ca.length();
@@ -111,23 +99,6 @@ public class HdFileContent extends AbstractHdIMC<EIFileContent>
         ev.setResult_(bd.type(MediaType.APPLICATION_OCTET_STREAM_TYPE)
                 .header("Content-Length", span)
                 .entity(new SimpleUploader(pf, length, mtime, skip, span)));
-    }
-
-    private OA check_(EIFileContent ev) throws Exception
-    {
-        SID sid = ev._object.sid;
-        SIndex sidx = _sid2sidx.getNullable_(sid);
-        if (sidx == null) throw new ExNotFound();
-
-        _acl.checkThrows_(ev._user, sidx, Role.VIEWER);
-
-        SOID soid = new SOID(sidx, ev._object.oid);
-        OA oa = _ds.getOAThrows_(soid);
-
-        if (!oa.isFile()) throw new ExNotFile();
-        if (oa.isExpelled()) throw new ExExpelled();
-
-        return oa;
     }
 
     private static boolean match(Set<? extends EntityTag> matching, EntityTag etag)
