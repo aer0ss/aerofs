@@ -11,6 +11,9 @@ class unified {
     file {"/etc/default/grub":
         source => "puppet:///modules/unified/grub-options",
     }
+    file {"/etc/network/interfaces":
+        source => "puppet:///modules/unified/network-interfaces",
+    }
 
     class {'persistent::services':
         mysql_bind_address => '127.0.0.1',
