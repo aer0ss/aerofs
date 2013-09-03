@@ -7,9 +7,9 @@ package com.aerofs.sp.server;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.lib.LibParam.OpenId;
-import com.aerofs.servlets.AeroServlet;
 import com.aerofs.sp.server.IdentitySessionManager.DumbAssociation;
 import com.aerofs.sp.server.IdentitySessionManager.UserManager;
+import com.dyuproject.openid.Association;
 import com.dyuproject.openid.DefaultDiscovery;
 import com.dyuproject.openid.DiffieHellmanAssociation;
 import com.dyuproject.openid.IdentifierSelectUserCache;
@@ -25,6 +25,7 @@ import org.slf4j.Logger;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -33,14 +34,44 @@ import java.net.URLEncoder;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class IdentityServlet extends AeroServlet
+public class IdentityServlet extends HttpServlet
 {
     @Override
     public void init(ServletConfig config) throws ServletException
     {
         super.init(config);
-        init_();
-        _provider = new IdentityProvider();
+
+        _reliar = setupRelyingParty();
+        _provider = new IdentityProvider(_reliar);
+    }
+
+    public RelyingParty setupRelyingParty()
+    {
+        RelyingParty relyingParty = new RelyingParty(
+                new OpenIdContext(
+                        new DefaultDiscovery(),
+                        makeAssociation(),
+                        new SimpleHttpConnector()),
+                new UserManager(), new IdentifierSelectUserCache(), true);
+
+        if (OpenId.IDP_USER_EXTENSION.equals("ax")) {
+            relyingParty.addListener(new AxSchemaExtension().addExchange("email")
+                    .addExchange("firstname")
+                    .addExchange("lastname"));
+        }
+
+        if (OpenId.IDP_USER_EXTENSION.equals("sreg")) {
+            relyingParty.addListener(
+                    new SRegExtension().addExchange("email").addExchange("fullname"));
+        }
+        // other values are ignored as possible communist plots.
+
+        return relyingParty;
+    }
+
+    protected Association makeAssociation()
+    {
+        return OpenId.ENDPOINT_STATEFUL ? new DiffieHellmanAssociation() : new DumbAssociation();
     }
 
     /** This servlet does not support POST. */
@@ -139,6 +170,11 @@ public class IdentityServlet extends AeroServlet
      */
     static class IdentityProvider
     {
+        public IdentityProvider(RelyingParty relyingParty)
+        {
+            _reliar = relyingParty;
+        }
+
         void authRequest(String token, HttpServletRequest req, HttpServletResponse resp)
                 throws Exception
         {
@@ -289,38 +325,13 @@ public class IdentityServlet extends AeroServlet
             private Pattern _uidPattern = null;
         }
 
+        private final RelyingParty _reliar;
         private final IdentitySessionManager _identitySessionManager = new IdentitySessionManager();
         private final AuthParser _authParser = new AuthParser(OpenId.IDP_USER_PATTERN);
     }
 
     private IdentityProvider _provider;
-    private static RelyingParty _reliar = new RelyingParty(
-            new OpenIdContext(
-                    new DefaultDiscovery(),
-                    OpenId.ENDPOINT_STATEFUL
-                            ? new DiffieHellmanAssociation() : new DumbAssociation(),
-                    new SimpleHttpConnector()),
-            new UserManager(), new IdentifierSelectUserCache(), true);
-
-    static {
-        assert _reliar != null;
-        if (OpenId.IDP_USER_EXTENSION.equals("ax")) {
-            _reliar.addListener(
-                    new AxSchemaExtension()
-                            .addExchange("email")
-                            .addExchange("firstname")
-                            .addExchange("lastname"));
-        }
-
-        if (OpenId.IDP_USER_EXTENSION.equals("sreg")) {
-            _reliar.addListener(
-                    new SRegExtension()
-                            .addExchange("email")
-                            .addExchange("fullname"));
-        }
-        // other values are ignored as possible communist plots.
-    }
-
+    private RelyingParty _reliar;
     private static final Logger l = Loggers.getLogger(IdentityServlet.class);
     private static final long serialVersionUID = 1L;
 }

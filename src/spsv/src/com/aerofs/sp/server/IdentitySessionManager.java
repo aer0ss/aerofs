@@ -286,7 +286,7 @@ public class IdentitySessionManager
     private static String getSessionKey(final String val) { return PREFIX_SESSION + val; }
     private static String getDelegateKey(final String val) { return PREFIX_DELEGATE + val; }
 
-    private PooledJedisConnectionProvider _jedisConProvider;
+    protected PooledJedisConnectionProvider _jedisConProvider;
 
     private static final Logger l = Loggers.getLogger(IdentitySessionManager.class);
     private static final String PREFIX_SESSION    = "sp:op:s:/";

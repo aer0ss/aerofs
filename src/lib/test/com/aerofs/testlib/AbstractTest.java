@@ -3,6 +3,7 @@ package com.aerofs.testlib;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.config.ConfigurationProperties;
 import com.aerofs.lib.LibParam.EnterpriseConfig;
+import com.aerofs.lib.LibParam.OpenId;
 import com.aerofs.lib.log.LogUtil;
 import org.junit.After;
 import org.junit.Before;
@@ -95,5 +96,22 @@ public abstract class AbstractTest extends PowerMockTestCase
     public void resetEnterpriseDeployment()
     {
         setEnterpriseDeployment(false);
+    }
+
+    /**
+     * Helper method to set whether we are using OpenID.
+     * IMPORTANT: This is a global setting. However, it will be reset to false before each test
+     * method.
+     */
+    protected void setOpenIdEnabled(final boolean value)
+    {
+        OpenId.ENABLED = value;
+        assertEquals(value, OpenId.ENABLED);
+    }
+
+    @Before
+    public void resetOpenIdEnabled()
+    {
+        setOpenIdEnabled(false);
     }
 }

@@ -239,7 +239,7 @@ public class LibParam extends BaseParam
     public static class OpenId
     {
         /** OpenID authentication (if enabled, this replaces credential auth) */
-        public static final Boolean                     ENABLED =
+        public static Boolean                           ENABLED =
                 getBooleanProperty(                     "openid.service.enabled", false);
 
         /** Timeout for the entire OpenID flow, in seconds. */
