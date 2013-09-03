@@ -34,4 +34,5 @@ class redis {
     $redis_logfile = "/var/log/redis/redis.log"
     $redis_port = 6379
     $redis_loglevel = "notice"
+    $redis_bindaddr = "all"
 }

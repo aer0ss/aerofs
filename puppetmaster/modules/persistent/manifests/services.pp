@@ -3,7 +3,10 @@
 # for nginx and bootstrap configuration (since these services need to be
 # configured differently depending on the deployment mode.
 #
-class persistent::services {
+class persistent::services (
+  $mysql_bind_address = $persistent::params::mysql_bind_address,
+  $redis_bind_address = $persistent::params::redis_bind_address,
+) inherits persistent::params {
 
     include private-common
     include ca::autostart
@@ -51,7 +54,12 @@ class persistent::services {
 
     # MySQL client and MySQL server.
     include mysql
-    include mysql::server
+    #include mysql::server
+    class {'mysql::server':
+        config_hash => {
+            'bind_address' => $mysql_bind_address,
+        },
+    }
 
     # Should get pulled via apt dependency, but add it here just for good
     # measure.
@@ -65,7 +73,9 @@ class persistent::services {
     # --------------
 
     # Redis in AOF (append only file) mode.
-    include redis::aof
+    class {'redis::aof':
+        redis_bindaddr => $redis_bind_address,
+    }
 
     # --------------
     # Sanity

@@ -1,3 +1,4 @@
+<%= ("bind " + @redis_bindaddr) unless @redis_bindaddr == 'all' %>
 port <%= @redis_port %>
 pidfile <%= @redis_pidfile %>
 logfile <%= @redis_logfile %>

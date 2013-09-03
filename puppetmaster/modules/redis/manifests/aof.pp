@@ -1,4 +1,6 @@
-class redis::aof inherits redis {
+class redis::aof (
+    $redis_bindaddr = $redis::redis_bindaddr
+) inherits redis {
 
     file{"/etc/redis/redis.conf":
         content => template(

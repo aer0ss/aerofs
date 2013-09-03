@@ -1,14 +1,32 @@
 class unified {
-    include persistent::services
+    # -------------
+    # Hostname and /etc/hosts
+    # -------------
+    file {"/etc/hostname":
+        source => "puppet:///modules/unified/hostname",
+    }
+    file {"/etc/hosts":
+        source => "puppet:///modules/unified/hosts",
+    }
+    file {"/etc/default/grub":
+        source => "puppet:///modules/unified/grub-options",
+    }
+
+    class {'persistent::services':
+        mysql_bind_address => '127.0.0.1',
+        redis_bind_address => '127.0.0.1',
+    }
     include transient::services
 
     # --------------
     # Nginx
     # --------------
 
+    # aerofs-ca-server.deb ships a more insecure configuration by default, so
+    # we must apply this one afterward.
     file {"/etc/nginx/sites-available/aerofs-ca":
         source => "puppet:///modules/unified/nginx/ca",
-        require => Package["nginx"],
+        require => Package["nginx", "aerofs-ca-server"],
     }
     file {"/etc/nginx/sites-available/aerofs-cfg":
         source => "puppet:///modules/unified/nginx/cfg",
