@@ -46,10 +46,7 @@ public class GUIProgram implements IProgram
                     System.loadLibrary("msvcp100");
                 } catch (UnsatisfiedLinkError e1) {
                     linkError = new UnsatisfiedLinkError(WINDOWS_MISSING_MSVC_DLL_EXCEPTION_MESSAGE);
-
-                    MessageBox msgBox = new MessageBox(new Shell());
-                    msgBox.setMessage(WINDOWS_UNSATISFIED_LINK_ERROR_MESSAGE);
-                    msgBox.open();
+                    showError(WINDOWS_UNSATISFIED_LINK_ERROR_MESSAGE);
                 }
             }
             throw linkError;
@@ -67,10 +64,14 @@ public class GUIProgram implements IProgram
         SPBlockingClient.setBadCredentialListener(new ControllerBadCredentialListener());
         RitualClientProvider ritualProvider = new RitualClientProvider(clientChannelFactory);
         ShellextService sextservice = new ShellextService(ChannelFactories.getServerChannelFactory(), ritualProvider);
-        UI.set(new GUI(rtRoot, sextservice));
+        UIGlobals.setShellextService(sextservice);
         UIGlobals.setRitualClientProvider(ritualProvider);
 
-        GUI.get().enterMainLoop_();
+        GUI gui = new GUI();
+        UI.set(gui);
+        // schedule the GUI's launch() method to be called as soon as we enter the main loop
+        gui.scheduleLaunch(rtRoot);
+        gui.enterMainLoop_();
     }
 
     /**

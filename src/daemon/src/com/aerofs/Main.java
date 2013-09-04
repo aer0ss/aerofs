@@ -174,8 +174,11 @@ public class Main
         SystemUtil.setDefaultUncaughtExceptionHandler();
 
         try {
+            loadCfg(rtRoot, prog);
+            Util.registerLibExceptions();
             launchProgram(rtRoot, prog, appArgs);
         } catch (ExDBCorrupted e) {
+            // this is similar to the message on UiUtil.migrateRtRoot() when Cfg fails to load
             System.out.println("db corrupted: " + e._integrityCheckResult);
             ExitCode.CORRUPTED_DB.exit();
         } catch (Throwable e) {
@@ -185,18 +188,14 @@ public class Main
         }
     }
 
-    private static void launchProgram(String rtRoot, String prog, String ... progArgs)
-            throws Exception
+    private static boolean isUI(String prog)
     {
-        boolean ui = prog.equals(LibParam.GUI_NAME) || prog.equals(LibParam.CLI_NAME);
+        return prog.equals(LibParam.GUI_NAME) || prog.equals(LibParam.CLI_NAME);
+    }
 
-        Class<?> cls;
-        if (ui) cls = Class.forName("com.aerofs.Program"); // fast path to UI
-        else if (prog.equals(DMON_PROGRAM_NAME)) cls = com.aerofs.daemon.DaemonProgram.class;
-        else if (prog.equals(FSCK_PROGRAM_NAME)) cls = com.aerofs.fsck.FSCKProgram.class;
-        else if (prog.equals(UMDC_PROGRAM_NAME)) cls = com.aerofs.umdc.UMDCProgram.class;
-        else if (prog.equals(PUMP_PROGRAM_NAME)) cls = com.aerofs.daemon.transport.pump.Pump.class;
-        else cls = Class.forName("com.aerofs.Program"); // fail over to UI programs
+    private static void loadCfg(String rtRoot, String prog) throws Exception
+    {
+        boolean ui = isUI(prog);
 
         // load config
         if (!Cfg.inited()) {
@@ -210,8 +209,18 @@ public class Main
         }
 
         if (Cfg.inited()) l.warn(Cfg.user() + " " + Cfg.did().toStringFormal());
+    }
 
-        Util.registerLibExceptions();
+    private static void launchProgram(String rtRoot, String prog, String ... progArgs)
+            throws Exception
+    {
+        Class<?> cls;
+        if (isUI(prog)) cls = Class.forName("com.aerofs.Program"); // fast path to UI
+        else if (prog.equals(DMON_PROGRAM_NAME)) cls = com.aerofs.daemon.DaemonProgram.class;
+        else if (prog.equals(FSCK_PROGRAM_NAME)) cls = com.aerofs.fsck.FSCKProgram.class;
+        else if (prog.equals(UMDC_PROGRAM_NAME)) cls = com.aerofs.umdc.UMDCProgram.class;
+        else if (prog.equals(PUMP_PROGRAM_NAME)) cls = com.aerofs.daemon.transport.pump.Pump.class;
+        else cls = Class.forName("com.aerofs.Program"); // fail over to UI programs
 
         // launch the program
         ((IProgram) cls.newInstance()).launch_(rtRoot, prog, progArgs);

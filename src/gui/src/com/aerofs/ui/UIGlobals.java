@@ -3,6 +3,7 @@ package com.aerofs.ui;
 import com.aerofs.base.analytics.Analytics;
 import com.aerofs.controller.ControllerClient;
 import com.aerofs.gui.TransferState;
+import com.aerofs.gui.shellext.ShellextService;
 import com.aerofs.lib.analytics.DesktopAnalyticsProperties;
 import com.aerofs.ritual.IRitualClientProvider;
 import com.aerofs.ritual.RitualBlockingClient;
@@ -26,6 +27,24 @@ public final class UIGlobals
     public static void setRitualClientProvider(RitualClientProvider ritualProvider)
     {
         _ritualProvider = ritualProvider;
+    }
+
+    // explicitly set to null because hasShellextService() expects it to be null if unset.
+    private static ShellextService _shellext = null;
+
+    public static ShellextService shellext()
+    {
+        return _shellext;
+    }
+
+    public static void setShellextService(ShellextService shellext)
+    {
+        _shellext = shellext;
+    }
+
+    public static boolean hasShellextService()
+    {
+        return _shellext == null;
     }
 
     private static final Updater s_updater = Updater.getInstance_();

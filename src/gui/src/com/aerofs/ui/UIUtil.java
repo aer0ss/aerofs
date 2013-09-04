@@ -26,8 +26,13 @@ import com.aerofs.proto.Common.PBPath;
 import com.aerofs.proto.ControllerProto.GetInitialStatusReply;
 import com.aerofs.proto.RitualNotifications.PBSOCID;
 import com.aerofs.sp.client.SPBlockingClient;
+import com.aerofs.sv.client.SVClient;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.error.ErrorMessages;
+import com.aerofs.ui.launch_tasks.ULTRtrootMigration;
+import com.aerofs.ui.launch_tasks.ULTRtrootMigration.ExFailedToMigrate;
+import com.aerofs.ui.launch_tasks.ULTRtrootMigration.ExFailedToReloadCfg;
+import com.google.common.base.Preconditions;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.protobuf.ByteString;
@@ -143,15 +148,28 @@ public class UIUtil
      * Helper method to perform launch for the Java UIs (ie: CLI and GUI)
      * The flow here is:
      *  - CLI or GUI call UIUtil.launch() to perform common launch logic
-     *  - UIUtil.launch() call Controller methods
+     *  - UIUtil.launchImpl() call Controller methods
      *  - Controller methods then call Setup or Launcher methods
      *
-     *  This logic is (will be) duplicated in the native UIs
+     * N.B. preLaunch and postLaunch are intended to be different set of tasks to be performed on
+     * either GUI or CLI but not both.
      *
-     * @param preLaunch a runnable that will be executed in the UI thread, before the launch
+     * FIXME(AT) despite what the method signature states and suggests, preLaunch isn't executed
+     * before Launcher.launch().
+     *
+     * @param preLaunch a runnable that will be executed in the UI thread
      * @param postLaunch a runnable that will be executed in the UI thread, iff the launch succeeds
      */
     public static void launch(String rtRoot, Runnable preLaunch, Runnable postLaunch)
+    {
+        // N.B. migrateRtroot _must_ be done before we run launchImpl because launchImpl needs
+        // the rtroot to be able to determine whether we need to run setup.
+        migrateRtroot(rtRoot);
+
+        launchImpl(rtRoot, preLaunch, postLaunch);
+    }
+
+    public static void launchImpl(String rtRoot, Runnable preLaunch, Runnable postLaunch)
     {
         try {
             GetInitialStatusReply reply = UIGlobals.controller().getInitialStatus();
@@ -174,6 +192,51 @@ public class UIUtil
             System.exit(0);
         } catch (Exception e) {
             logAndShowLaunchError(e);
+            System.exit(0);
+        }
+    }
+
+    /**
+     * Note that using launchImpl() with preLaunch parameter doesn't work in the case of rtroot
+     * migration for 2 reasons:
+     *
+     * 1. preLaunch in launchImpl() doesn't work because in that case, preLaunch doesn't necessarily
+     * execute before Launcher.launch().
+     * 2. preLaunch in launchImpl() is intended to do tasks that are _different_ between GUI and
+     * CLI, whereas rtroot migration is a common task between GUI and CLI.
+     *
+     * @param rtRoot - the path to rtRoot.
+     * @pre UI.get() is set.
+     */
+    public static void migrateRtroot(String rtRoot)
+    {
+        Preconditions.checkArgument(UI.get() != null);
+
+        ULTRtrootMigration task = new ULTRtrootMigration(L.productSpaceFreeName(), rtRoot);
+
+        try {
+            task.run();
+        } catch (ExFailedToMigrate e) {
+            SVClient.logSendDefectSyncIgnoreErrors(true, "Failed to migrate rtroot.", e);
+
+            // Since ErrorMessages doesn't support messages that depends on additional
+            // information in the exception instance, default message is used.
+            String message = L.product() + " is unable to upgrade your user data to the " +
+                    "new format. Please manually move the folder\n\n" +
+                    "\"" + e._oldRtrootPath + "\"\n\n" +
+                    "to\n\n" +
+                    "\"" + e._newRtrootPath + "\"\n\n";
+            ErrorMessages.show(e, message);
+
+            System.exit(0);
+        } catch (ExFailedToReloadCfg e) {
+            // this is similar to the message on Main.main() when Cfg fails to load
+            SVClient.logSendDefectSyncIgnoreErrors(true,
+                    "Failed to reload Cfg after rtroot migration.", e);
+
+            String message = L.product() + " is unable to launch.";
+            ErrorMessages.show(e, message);
+
             System.exit(0);
         }
     }
@@ -208,8 +271,6 @@ public class UIUtil
     private static void setup(String rtRoot, Runnable preLaunch, Runnable postLaunch)
             throws Exception
     {
-        // TODO: add the same logic in the native Cocoa UI. Currently only setup is run
-
         if (OSUtil.isOSX()) {
             // Launch AeroFS on startup
             SystemUtil.execBackground(AppRoot.abs().concat("/osxtools"), "loginitem", "rem",

@@ -23,6 +23,14 @@ import static com.aerofs.lib.configuration.ClientConfigurationLoader.PROPERTY_BA
 import static com.aerofs.lib.configuration.ClientConfigurationLoader.PROPERTY_CONFIG_SERVICE_URL;
 import static com.aerofs.lib.configuration.ClientConfigurationLoader.PROPERTY_IS_ENTERPRISE_DEPLOYMENT;
 
+/**
+ * Note that Main has dependencies on this class before the configuration is initialized. Hence
+ *   this class must not have static fields that are dependent on the configuration subsystem.
+ * The subclasses, on the other hand, can have static fields that are dependent on the configuration
+ *   subsystem.
+ *
+ * For more information, Google how Java class loader works regarding static  initializers.
+ */
 public class LibParam extends BaseParam
 {
     // the block size used for content hashing and block storage (see BlockStorage)
@@ -64,6 +72,9 @@ public class LibParam extends BaseParam
     public static final String NO_FS_TYPE_CHECK        = "nofstypecheck";
     public static final String SHARED_FOLDER_TAG       = ".aerofs";
     public static final String RECENT_EXCEPTIONS       = "rex";
+    // this file is dropped under the new rtroot after rtroot migration to indicate the migration
+    // has finished
+    public static final String RTROOT_MIGRATION_FINISHED = "rtroot_migrate_finished";
 
     /**
      * AuxRoot (auxiliary root) is the location where AeroFS stores temporary, conflict, and history

@@ -87,7 +87,7 @@ public class SingleuserTrayMenu extends AbstractTrayMenu implements IRitualNotif
                     public void run()
                     {
                         try {
-                            GUI.get().shellext().start_();
+                            UIGlobals.shellext().start_();
                         } catch (Exception e) {
                             SVClient.logSendDefectAsync(true, "cant start shellext worker", e);
                         }
