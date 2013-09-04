@@ -178,6 +178,7 @@ public class Main
             Util.registerLibExceptions();
             launchProgram(rtRoot, prog, appArgs);
         } catch (ExDBCorrupted e) {
+            // this is similar to the message on UiUtil.migrateRtRoot() when Cfg fails to load
             System.out.println("db corrupted: " + e._integrityCheckResult);
             ExitCode.CORRUPTED_DB.exit();
         } catch (Throwable e) {

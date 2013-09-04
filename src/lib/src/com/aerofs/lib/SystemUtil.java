@@ -37,9 +37,6 @@ public abstract class SystemUtil
         DPUT_MIGRATE_AUX_ROOT_FAILED("migrating the aux root failed"),
         CONFIGURATION_INIT("initializing configuration failed"),
         CORRUPTED_DB("corrupted database"),
-        // Failed to migrate user data
-        // Currently used to move rtroot from %AppData% to %LocalAppData% on Windows
-        FAILED_TO_MIGRATE_RTROOT("failed to migrate rtroot"),
         ////////
 
         ////////

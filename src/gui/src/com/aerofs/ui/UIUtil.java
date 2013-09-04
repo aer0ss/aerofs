@@ -15,7 +15,6 @@ import com.aerofs.lib.FullName;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.SystemUtil;
-import com.aerofs.lib.SystemUtil.ExitCode;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgAbsRoots;
@@ -216,22 +215,29 @@ public class UIUtil
         try {
             task.run();
         } catch (ExFailedToMigrate e) {
+            SVClient.logSendDefectSyncIgnoreErrors(true, "Failed to migrate rtroot.", e);
+
             // Since ErrorMessages doesn't support messages that depends on additional
             // information in the exception instance, default message is used.
             String message = L.product() + " is unable to upgrade your user data to the " +
-                    "new format.\n" +
-                    "Please move the folder at " + e._oldRtrootPath + "\n" +
-                    "to " + e._newRtrootPath + "\n" +
+                    "new format. Please move the folder at\n" +
+                    "\"" + e._oldRtrootPath + "\"\n" +
+                    "to\n" +
+                    "\"" + e._newRtrootPath + "\"\n" +
                     "and restart " + L.product() + ".";
             ErrorMessages.show(e, message);
 
-            SVClient.logSendDefectSyncIgnoreErrors(true, "Failed to migrate rtroot.", e);
-            ExitCode.FAILED_TO_MIGRATE_RTROOT.exit();
+            System.exit(0);
         } catch (ExFailedToReloadCfg e) {
-            // there is no point notifying users because there's nothing they can do to recover.
+            // this is similar to the message on Main.main() when Cfg fails to load
             SVClient.logSendDefectSyncIgnoreErrors(true,
                     "Failed to reload Cfg after rtroot migration.", e);
-            ExitCode.FAIL_TO_LAUNCH.exit();
+
+            String message = L.product() + " is unable to launch because it couldn't load the " +
+                    "database. Please delete \"" + Cfg.absRTRoot() + "\" and reinstall.";
+            ErrorMessages.show(e, message);
+
+            System.exit(0);
         }
     }
 
