@@ -4,6 +4,7 @@
 
 package com.aerofs.ui.launch_tasks;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.cfg.Cfg;
@@ -11,6 +12,7 @@ import com.aerofs.lib.cfg.ExNotSetup;
 import com.aerofs.lib.os.OSUtil;
 import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
+import org.slf4j.Logger;
 
 import javax.annotation.Nonnull;
 import java.io.File;
@@ -47,6 +49,8 @@ import java.io.IOException;
  */
 public class ULTRtrootMigration
 {
+    private static final Logger l = Loggers.getLogger(ULTRtrootMigration.class);
+
     ////////
     // dependencies
     protected String _productSpaceFreeName;
@@ -100,6 +104,7 @@ public class ULTRtrootMigration
         // we don't need to migrate if old rtroot doesn't exist
         if (!_oldRtRoot.isDirectory()) return false;
 
+        l.debug("checking new rtroot to see if we need to migrate.");
         // if the new rtroot exists, we could have succeeded or failed copying files over in the past.
         if (_newRtRoot.isDirectory()) {
             // check for finished file, which marks that we have succeeded copying files over.
@@ -108,10 +113,16 @@ public class ULTRtrootMigration
             // if the finished file exists, then we have succeeded in the past and failed to cleanup
             // otherwise just proceed to migrate and overwrite everything
             if (finished.isFile()) {
+                l.warn("finished marker exists, attempt to cleanup.");
+
                 // try to cleanup again.
                 FileUtil.deleteRecursivelyOrOnExit(_oldRtRoot);
                 return false;
+            } else {
+                l.debug("finished marker doesn't exist.");
             }
+        } else {
+            l.debug("new rtroot isn't a directory.");
         }
 
         return true;
@@ -125,23 +136,35 @@ public class ULTRtrootMigration
      */
     protected void migrateRtroot() throws ExFailedToMigrate
     {
+        l.debug("migrating rtroot.");
+
         try {
             // since both oldRtRoot/conf and newRtRoot/conf exist, there's no way a rename
             // could have succeeded, so we may as well copy recursively right away.
             FileUtil.copyRecursively(_oldRtRoot, _newRtRoot, false, true);
 
+            l.debug("creating finished marker.");
             // This file marks that we have succeeded in copying all the files over from old rtroot
             // to new rtroot. This _must_ be the last thing we do in migration
             new File(_newRtRoot, LibParam.RTROOT_MIGRATION_FIN).createNewFile();
         } catch (IOException e) {
+            l.warn("failed to copy from old rtroot to new rtroot recursively.");
+
             // if recursive copy failed, delete the new rtroot so we'll try again when we restart
             FileUtil.deleteRecursivelyOrOnExit(_newRtRoot);
             throw new ExFailedToMigrate("Failed to copy files from old rtroot to new rtroot.",
                     e, _oldRtRoot, _newRtRoot);
         }
 
-        // if we succeeded in recursive copy, delete the old rtroot
-        FileUtil.deleteRecursivelyOrOnExit(_oldRtRoot);
+        try {
+            // if we succeeded in recursive copy, delete the old rtroot
+            FileUtil.deleteRecursively(_oldRtRoot, null);
+        } catch (IOException e) {
+            l.warn("failed to delete old rtroot recursively.");
+
+            // try harder
+            FileUtil.deleteRecursivelyOrOnExit(_oldRtRoot);
+        }
     }
 
     /**
@@ -161,6 +184,8 @@ public class ULTRtrootMigration
      */
     protected void renameLogsInOldRtroot() throws ExFailedToMigrate
     {
+        l.debug("renaming logs in old rtroot.");
+
         Preconditions.checkArgument(_oldRtRoot != null && _oldRtRoot.isDirectory());
 
         try {
@@ -181,6 +206,8 @@ public class ULTRtrootMigration
                 }
             }
         } catch (IOException e) {
+            l.warn("failed to rename logs in old rtroot.");
+
             throw new ExFailedToMigrate("Failed to rename log files in the old rtroot",
                     e, _oldRtRoot, _newRtRoot);
         }
@@ -193,12 +220,17 @@ public class ULTRtrootMigration
      */
     protected void reloadCfg() throws ExFailedToReloadCfg
     {
+        l.debug("reloading cfg database.");
+
         try {
             // Because this task is only run in UI programs, we always read password.
             Cfg.init_(_rtRoot, true);
         } catch (ExNotSetup e) {
+            l.debug("device not setup.");
             // ignored because GUI and CLI will run setup itself
         } catch (Exception e) {
+            l.warn("failed to reload cfg database.");
+
             throw new ExFailedToReloadCfg(e);
         }
     }
