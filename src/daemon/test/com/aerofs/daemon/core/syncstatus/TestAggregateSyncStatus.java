@@ -22,7 +22,7 @@ import com.aerofs.lib.cfg.CfgAggressiveChecking;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.testlib.AbstractTest;
 import com.beust.jcommander.internal.Lists;
-import junit.framework.Assert;
+import org.junit.Assert;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;

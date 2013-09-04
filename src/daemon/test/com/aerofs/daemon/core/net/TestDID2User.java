@@ -15,7 +15,7 @@ import org.junit.Test;
 
 import java.sql.SQLException;
 
-import static junit.framework.Assert.assertEquals;
+import static org.junit.Assert.assertEquals;
 
 public class TestDID2User extends AbstractTest
 {

@@ -29,7 +29,7 @@ import org.mockito.Mock;
 
 import static org.mockito.Mockito.*;
 
-import static junit.framework.Assert.*;
+import static org.junit.Assert.*;
 
 public class TestTimeoutDeletionBuffer extends AbstractTest
 {

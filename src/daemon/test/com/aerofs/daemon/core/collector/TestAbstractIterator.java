@@ -14,7 +14,7 @@ import com.aerofs.lib.id.OCID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOCID;
 import com.aerofs.testlib.AbstractTest;
-import junit.framework.Assert;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;

@@ -11,9 +11,9 @@ import com.aerofs.sp.server.integration.AbstractSPTest;
 import org.junit.Before;
 import org.junit.Test;
 
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertTrue;
-import static junit.framework.Assert.fail;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class TestSP_OpenID extends AbstractSPTest
 {

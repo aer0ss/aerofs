@@ -16,7 +16,7 @@ import com.aerofs.daemon.core.multiplicity.singleuser.SingleuserPathResolver;
 import com.aerofs.daemon.core.multiplicity.singleuser.SingleuserStores;
 import com.aerofs.lib.FrequentDefectSender;
 import com.aerofs.base.id.UniqueID;
-import junit.framework.Assert;
+import org.junit.Assert;
 
 import org.junit.After;
 import org.junit.Before;

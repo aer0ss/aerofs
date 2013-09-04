@@ -16,7 +16,7 @@ import com.aerofs.lib.ex.ExFileNotFound;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.injectable.InjectableDriver.FIDAndType;
 import com.google.common.collect.Sets;
-import junit.framework.Assert;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InjectMocks;
@@ -27,7 +27,7 @@ import org.mockito.stubbing.Answer;
 import java.util.EnumSet;
 import java.util.Set;
 
-import static junit.framework.Assert.fail;
+import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anySetOf;
 import static org.mockito.Matchers.eq;

@@ -10,7 +10,7 @@ import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.ex.ExNotFound;
 import org.junit.Test;
 
-import static junit.framework.Assert.fail;
+import static org.junit.Assert.fail;
 
 public class TestSP_LeaveSharedFolder extends AbstractSPFolderTest
 {

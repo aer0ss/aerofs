@@ -6,7 +6,7 @@ package com.aerofs.servlets.lib.db;
 
 import com.aerofs.testlib.AbstractTest;
 import com.aerofs.servlets.lib.db.sql.SQLThreadLocalTransaction;
-import junit.framework.Assert;
+import org.junit.Assert;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;

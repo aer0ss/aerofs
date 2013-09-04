@@ -8,7 +8,7 @@ import static com.aerofs.proto.Ritual.GetActivitiesReply.ActivityType.CREATION_V
 import static com.aerofs.proto.Ritual.GetActivitiesReply.ActivityType.DELETION_VALUE;
 import static com.aerofs.proto.Ritual.GetActivitiesReply.ActivityType.MODIFICATION_VALUE;
 import static com.aerofs.proto.Ritual.GetActivitiesReply.ActivityType.MOVEMENT_VALUE;
-import static junit.framework.Assert.assertTrue;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyCollectionOf;
 import static org.mockito.Matchers.anyString;

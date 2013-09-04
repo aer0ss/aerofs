@@ -31,7 +31,7 @@ import com.aerofs.base.id.UniqueID;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
-import junit.framework.Assert;
+import org.junit.Assert;
 import org.mockito.ArgumentMatcher;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;

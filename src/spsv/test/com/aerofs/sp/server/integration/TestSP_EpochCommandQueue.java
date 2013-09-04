@@ -15,7 +15,7 @@ import com.aerofs.proto.Sp.GetCommandQueueHeadReply;
 import com.aerofs.sp.server.lib.device.Device;
 import com.aerofs.sp.server.lib.user.User;
 
-import junit.framework.Assert;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 

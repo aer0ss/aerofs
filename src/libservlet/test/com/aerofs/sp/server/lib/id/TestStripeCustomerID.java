@@ -6,7 +6,7 @@ package com.aerofs.sp.server.lib.id;
 
 import org.junit.Test;
 
-import static junit.framework.Assert.assertEquals;
+import static org.junit.Assert.assertEquals;
 
 public class TestStripeCustomerID
 {
