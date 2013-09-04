@@ -105,34 +105,48 @@ public class ULTRtrootMigration
         if (!_oldRtRoot.isDirectory()) return false;
 
         l.debug("checking new rtroot to see if we need to migrate.");
-        // if the new rtroot exists, we could have succeeded or failed copying files over in the past.
-        if (_newRtRoot.isDirectory()) {
-            // check for finished file, which marks that we have succeeded copying files over.
-            File finished = new File(_newRtRoot, LibParam.RTROOT_MIGRATION_FIN);
 
-            // if the finished file exists, then we have succeeded in the past and failed to cleanup
-            // otherwise just proceed to migrate and overwrite everything
-            if (finished.isFile()) {
-                l.warn("finished marker exists, attempt to cleanup.");
-
-                // try to cleanup again.
-                FileUtil.deleteRecursivelyOrOnExit(_oldRtRoot);
-                return false;
-            } else {
-                l.debug("finished marker doesn't exist.");
-            }
-        } else {
+        // If the new root doesn't exist or is a file, delete the object (ignore errors) and request
+        // to migrate.
+        if (!_newRtRoot.isDirectory()) {
             l.debug("new rtroot isn't a directory.");
+            // delete it in case it's a file. ignore errors.
+            _newRtRoot.delete();
+            return true;
         }
 
-        return true;
+        // at this point we know the new rtroot exists as a directory. in this case, we could have
+        // succeeded or failed copying files over in the past.
+        // check for finished file, which marks that we have succeeded copying files over.
+        File finished = new File(_newRtRoot, LibParam.RTROOT_MIGRATION_FINISHED);
+
+        // if the finished file exists, then we have succeeded in the past and failed to cleanup
+        // otherwise just proceed to migrate and overwrite everything
+        if (finished.isFile()) {
+            l.warn("finished marker exists, attempt to cleanup.");
+
+            // try to cleanup again.
+            FileUtil.deleteRecursivelyOrOnExit(_oldRtRoot);
+            return false;
+        } else {
+            l.debug("finished marker doesn't exist, let's migrate rtroot.");
+            return true;
+        }
     }
 
     /**
      * make best effort to migrate rtroot and leaves a finished file in the new rtroot to indicate
      * we have succeeded in copying files over.
      *
-     * @throws com.aerofs.ui.launch_tasks.ULTRtrootMigration.ExFailedToMigrate - if we failed to migrate rtroot
+     * dropping a file to indicate we have finished is necessary because of the following scenario:
+     * * we succeeded in copying from old rtroot to new rtroot but failed to delete files in the
+     *   old rtroot.
+     * * since rtroot migration finished and new rtroot is proper, the program continues to run,
+     *   possibly adding new data in the new rtroot.
+     * * when the program restarts again, it notices the old rtroot and tries to migrate again,
+     *   which will override the new data with the stale data from old rtroot.
+     *
+     * @throws ExFailedToMigrate - if we failed to migrate rtroot
      */
     protected void migrateRtroot() throws ExFailedToMigrate
     {
@@ -145,8 +159,10 @@ public class ULTRtrootMigration
 
             l.debug("creating finished marker.");
             // This file marks that we have succeeded in copying all the files over from old rtroot
-            // to new rtroot. This _must_ be the last thing we do in migration
-            new File(_newRtRoot, LibParam.RTROOT_MIGRATION_FIN).createNewFile();
+            // to new rtroot.
+            // Failure to create this file is considered as a failure to copy files over.
+            // This _must_ be the last thing we do in migration
+            FileUtil.createNewFile(new File(_newRtRoot, LibParam.RTROOT_MIGRATION_FINISHED));
         } catch (IOException e) {
             l.warn("failed to copy from old rtroot to new rtroot recursively.");
 
@@ -158,6 +174,7 @@ public class ULTRtrootMigration
 
         try {
             // if we succeeded in recursive copy, delete the old rtroot
+            // the try-catch is intended so that we can log the occurrence
             FileUtil.deleteRecursively(_oldRtRoot, null);
         } catch (IOException e) {
             l.warn("failed to delete old rtroot recursively.");
@@ -173,14 +190,16 @@ public class ULTRtrootMigration
      * rtroot and will be logging using these file handlers, and this breaks the system in
      * different ways depending on the platform.
      *
-     * The observed behaviour on OS X: the rtroot migration will replace the logs in the new
-     * rtroot with the logs in the old rtroot. In the meanwhile, the log file appenders continue
-     * to use the file handler pointing at a defunct file. The end result is that we lose all
-     * log output until the program restarts.
+     * The observed behaviour on OS X is as the following: the rtroot migration will replace the
+     * logs in the new rtroot with the logs in the old rtroot. In the meanwhile, the log file
+     *  appenders continue to use the file handler pointing at a defunct file. The end result is
+     *  that we lose all log output until the program restarts.
      *
      * The hypothesized behaviour on Linux is identical to OS X, and the hypothesized behaviour
-     * on Windows is that Windows will prevent us from moving the file because the log files
-     * in the new rtroot is open and locked.
+     * on Windows is the log appenders will have held file locks and prevented us from moving
+     * the log files over.
+     *
+     * @pre _oldRtroot is not null, the file exists, and the file is a directory.
      */
     protected void renameLogsInOldRtroot() throws ExFailedToMigrate
     {
@@ -194,15 +213,17 @@ public class ULTRtrootMigration
                 for (File file : files) {
                     String path = file.getAbsolutePath();
                     if (path.endsWith(".log")) {
-                        // This is ok even though renameLogsInOldRtroot isn't atomic.
-                        // In the event of failure, we'll have some log files renamed and some not.
-                        // This is not a problem because we'll have a set of origin and renamed
-                        // files; both of which are clearly log files and this method will not
-                        // rename the renamed files when the program is run again.
-                        // Either way, we either end up with the intended result, or a resumable
-                        // and recoverable state.
-                        // N.B. the suffix can be any pattern as long as it starts with a
-                        // period and doesn't conflict with anything else in the system.
+                        // N.B. renameLogsInOldRtroot isn't atomic. However, we'll be able to
+                        // recover and resume in the event of failure.
+                        //
+                        // When failure occurs, we'll have some log files renamed, some not.
+                        // If the program is run again, it'll pick up where it left off.
+                        // If the user notifies us, we can clearly tell these are log files and
+                        // manually recover.
+                        //
+                        // N.B. the suffix can be any pattern as long as it matches the pattern
+                        // used by LogArchiver, which is "*.log.*".
+                        //
                         // A number pattern is arbitrarily chosen, and as we all know, it's
                         // important to be over 9000.
                         FileUtil.rename(file, new File(path + ".00009001"));

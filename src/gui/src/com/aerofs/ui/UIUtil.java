@@ -162,6 +162,8 @@ public class UIUtil
      */
     public static void launch(String rtRoot, Runnable preLaunch, Runnable postLaunch)
     {
+        // N.B. migrateRtroot _must_ be done before we run launchImpl because launchImpl needs
+        // the rtroot to be able to determine whether we need to run setup.
         migrateRtroot(rtRoot);
 
         launchImpl(rtRoot, preLaunch, postLaunch);
@@ -220,11 +222,10 @@ public class UIUtil
             // Since ErrorMessages doesn't support messages that depends on additional
             // information in the exception instance, default message is used.
             String message = L.product() + " is unable to upgrade your user data to the " +
-                    "new format. Please move the folder at\n" +
-                    "\"" + e._oldRtrootPath + "\"\n" +
-                    "to\n" +
-                    "\"" + e._newRtrootPath + "\"\n" +
-                    "and restart " + L.product() + ".";
+                    "new format. Please manually move the folder\n\n" +
+                    "\"" + e._oldRtrootPath + "\"\n\n" +
+                    "to\n\n" +
+                    "\"" + e._newRtrootPath + "\"\n\n";
             ErrorMessages.show(e, message);
 
             System.exit(0);
@@ -233,8 +234,7 @@ public class UIUtil
             SVClient.logSendDefectSyncIgnoreErrors(true,
                     "Failed to reload Cfg after rtroot migration.", e);
 
-            String message = L.product() + " is unable to launch because it couldn't load the " +
-                    "database. Please delete \"" + Cfg.absRTRoot() + "\" and reinstall.";
+            String message = L.product() + " is unable to launch.";
             ErrorMessages.show(e, message);
 
             System.exit(0);

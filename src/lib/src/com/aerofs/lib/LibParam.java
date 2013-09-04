@@ -74,7 +74,7 @@ public class LibParam extends BaseParam
     public static final String RECENT_EXCEPTIONS       = "rex";
     // this file is dropped under the new rtroot after rtroot migration to indicate the migration
     // has finished
-    public static final String RTROOT_MIGRATION_FIN    = "rtroot_migrate_finished";
+    public static final String RTROOT_MIGRATION_FINISHED = "rtroot_migrate_finished";
 
     /**
      * AuxRoot (auxiliary root) is the location where AeroFS stores temporary, conflict, and history
