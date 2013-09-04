@@ -7,6 +7,7 @@ package com.aerofs.servlets.lib;
 import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.async.UncancellableFuture;
+import com.aerofs.base.ex.Exceptions;
 import com.aerofs.labeling.L;
 import com.aerofs.proto.Common.Void;
 import com.aerofs.sv.common.EmailCategory;
@@ -59,20 +60,28 @@ public class EmailSender
     private static final String INTERNAL_HOST = "svmail.aerofs.com";
     private static final String INTERNAL_USERNAME = "noreply";
     private static final String INTERNAL_PASSWORD = "qEphE2uzuBr5";
-    private static Session session = null;
 
     private static final String CHARSET = "UTF-8";
 
     public static final Boolean ENABLED =
             getBooleanProperty("lib.notifications.enabled", true);
 
-    static {
-        Properties props = new Properties();
-        props.put("mail.smtp.auth", "true");
-        props.put("mail.smtp.starttls.enable","true");
-        props.put("mail.smtp.startls.required", "true");
+    public static boolean relayIsLocalhost() {
+        return PUBLIC_HOST.equals("localhost");
+    }
 
-        session = Session.getInstance(props);
+    public static Session getMailSession() {
+        Properties props = new Properties();
+        if (relayIsLocalhost()) {
+            props.put("mail.stmp.host", "127.0.0.1");
+            props.put("mail.stmp.auth", "false");
+        } else {
+            props.put("mail.smtp.auth", "true");
+            props.put("mail.smtp.starttls.enable","true");
+            props.put("mail.smtp.starttls.required", "true");
+        }
+
+        return Session.getInstance(props);
     }
 
     public static Future<Void> sendNotificationEmail(String from, @Nullable String fromName,
@@ -118,11 +127,13 @@ public class EmailSender
 
         MimeMessage msg;
         MimeMultipart multiPart = createMultipartEmail(textBody, htmlBody);
+        Session session = getMailSession();
         msg = composeMessage(from,
                 (fromName == null) ? L.brand() : fromName,
                 to,
                 replyTo,
-                subject);
+                subject,
+                session);
         msg.setContent(multiPart);
 
         if (category != null) {
@@ -130,17 +141,17 @@ public class EmailSender
         }
 
         try {
-            return sendEmail(msg, usingSendGrid);
+            return sendEmail(msg, usingSendGrid, session);
         } catch (RejectedExecutionException e) {
             throw new MessagingException(e.getCause().getMessage());
         }
     }
 
     private static MimeMessage composeMessage(String from, String fromName, String to,
-            @Nullable String replyTo, String subject)
+            @Nullable String replyTo, String subject, Session sess)
             throws MessagingException, UnsupportedEncodingException
     {
-        MimeMessage msg = new MimeMessage(session);
+        MimeMessage msg = new MimeMessage(sess);
 
         msg.setFrom(new InternetAddress(from, fromName));
         msg.setRecipients(Message.RecipientType.TO, InternetAddress.parse(to, false));
@@ -177,7 +188,8 @@ public class EmailSender
      * Emails are sent using the executor service which will always send one email at a time.
      * This method is non blocking.
      */
-    private static Future<Void> sendEmail(final Message msg, final boolean usingSendGrid)
+    private static Future<Void> sendEmail(final Message msg, final boolean publicFacingEmail,
+            final Session session)
         throws RejectedExecutionException
     {
         return executor.submit(new Callable<Void>()
@@ -188,14 +200,18 @@ public class EmailSender
             {
                 try {
                     Transport t = session.getTransport("smtp");
-                    // We use SendGrid for any publically facing emails, and our own mail servers
-                    // for internal emails.
+                    // We use SendGrid for any publically facing emails (like signup codes, device
+                    // certification notifications, etc.), and our own mail servers for internal
+                    // emails (for notifying us that a user has signed up, shared a folder, etc.)
                     try {
-                        if (usingSendGrid) {
-                            t.connect(
-                                    PUBLIC_HOST,
-                                    PUBLIC_USERNAME,
-                                    PUBLIC_PASSWORD);
+                        if (publicFacingEmail) {
+                            if (relayIsLocalhost()) {
+                                // localhost does not require authentication.
+                                // In fact, it generally requires the lack thereof.
+                                t.connect();
+                            } else {
+                                t.connect(PUBLIC_HOST, PUBLIC_USERNAME, PUBLIC_PASSWORD);
+                            }
                         } else {
                             t.connect(INTERNAL_HOST, INTERNAL_USERNAME, INTERNAL_PASSWORD);
                         }
@@ -210,6 +226,7 @@ public class EmailSender
                     try {
                         String to = msg.getRecipients(Message.RecipientType.TO)[0].toString();
                         l.error("cannot send message to {} : {} ", to , e);
+                        l.error(Exceptions.getStackTraceAsString(e));
                     } catch (Exception e1) {
                         l.error("cannot report email exception: {} ", e1);
                     }
