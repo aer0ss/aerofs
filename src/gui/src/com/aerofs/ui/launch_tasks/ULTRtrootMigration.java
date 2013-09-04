@@ -5,6 +5,7 @@
 package com.aerofs.ui.launch_tasks;
 
 import com.aerofs.lib.FileUtil;
+import com.aerofs.lib.LibParam;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.ExNotSetup;
 import com.aerofs.lib.os.OSUtil;
@@ -96,15 +97,29 @@ public class ULTRtrootMigration
         _oldRtRoot = new File(getOldRtRootPath());
         _newRtRoot = new File(OSUtil.get().getDefaultRTRoot());
 
-        // Since we are doing best effort, we are going to migrate if the old rtRoot exists.
-        //
-        // Note that the new rtRoot is guarantee to exist because of the logic in Main.main(), thus
-        // it is not meaningful to assume the new rtRoot is correct as long as oldRtRoot exists.
-        return _oldRtRoot.isDirectory();
+        // we don't need to migrate if old rtroot doesn't exist
+        if (!_oldRtRoot.isDirectory()) return false;
+
+        // if the new rtroot exists, we could have succeeded or failed copying files over in the past.
+        if (_newRtRoot.isDirectory()) {
+            // check for finished file, which marks that we have succeeded copying files over.
+            File finished = new File(_newRtRoot, LibParam.RTROOT_MIGRATION_FIN);
+
+            // if the finished file exists, then we have succeeded in the past and failed to cleanup
+            // otherwise just proceed to migrate and overwrite everything
+            if (finished.isFile()) {
+                // try to cleanup again.
+                FileUtil.deleteRecursivelyOrOnExit(_oldRtRoot);
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**
-     * make best effort to migrate rtroot.
+     * make best effort to migrate rtroot and leaves a finished file in the new rtroot to indicate
+     * we have succeeded in copying files over.
      *
      * @throws com.aerofs.ui.launch_tasks.ULTRtrootMigration.ExFailedToMigrate - if we failed to migrate rtroot
      */
@@ -114,6 +129,10 @@ public class ULTRtrootMigration
             // since both oldRtRoot/conf and newRtRoot/conf exist, there's no way a rename
             // could have succeeded, so we may as well copy recursively right away.
             FileUtil.copyRecursively(_oldRtRoot, _newRtRoot, false, true);
+
+            // This file marks that we have succeeded in copying all the files over from old rtroot
+            // to new rtroot. This _must_ be the last thing we do in migration
+            new File(_newRtRoot, LibParam.RTROOT_MIGRATION_FIN).createNewFile();
         } catch (IOException e) {
             // if recursive copy failed, delete the new rtroot so we'll try again when we restart
             FileUtil.deleteRecursivelyOrOnExit(_newRtRoot);
