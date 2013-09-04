@@ -65,7 +65,7 @@ import java.util.List;
 import java.util.Set;
 
 import static com.aerofs.base.BaseParam.VerkehrTopics.ACL_CHANNEL_TOPIC_PREFIX;
-import static junit.framework.Assert.fail;
+import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;

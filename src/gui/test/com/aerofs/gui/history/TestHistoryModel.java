@@ -24,7 +24,7 @@ import com.aerofs.ritual.RitualBlockingClient;
 import com.aerofs.testlib.AbstractTest;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
-import junit.framework.Assert;
+import org.junit.Assert;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;

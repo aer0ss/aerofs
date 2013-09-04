@@ -18,7 +18,7 @@ import com.aerofs.lib.id.SOCID;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.base.id.UniqueID;
 import com.aerofs.testlib.AbstractTest;
-import junit.framework.Assert;
+import org.junit.Assert;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;

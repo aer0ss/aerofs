@@ -13,8 +13,8 @@ import com.aerofs.lib.ex.ExNoAdminOrOwner;
 import com.aerofs.proto.Common.PBFolderInvitation;
 import org.junit.Test;
 
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.fail;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 public class TestSP_JoinSharedFolder extends AbstractSPFolderTest
 {

@@ -4,7 +4,7 @@
 
 package com.aerofs.lib.os;
 
-import junit.framework.Assert;
+import org.junit.Assert;
 import org.junit.Test;
 
 /**

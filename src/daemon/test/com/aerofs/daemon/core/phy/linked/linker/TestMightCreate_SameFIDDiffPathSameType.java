@@ -10,7 +10,7 @@ import org.junit.Test;
 
 import java.util.EnumSet;
 
-import static junit.framework.Assert.assertNull;
+import static org.junit.Assert.assertNull;
 
 
 /**

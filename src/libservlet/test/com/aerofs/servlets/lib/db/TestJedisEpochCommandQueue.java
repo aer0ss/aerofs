@@ -15,7 +15,7 @@ import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue.QueueSize;
 import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue.QueueElement;
 import org.junit.Before;
 import org.junit.Test;
-import junit.framework.Assert;
+import org.junit.Assert;
 import org.junit.runner.RunWith;
 
 import org.mockito.Mockito;

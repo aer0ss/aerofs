@@ -11,7 +11,7 @@ import org.mockito.Mock;
 
 import java.sql.SQLException;
 
-import static junit.framework.Assert.assertTrue;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;

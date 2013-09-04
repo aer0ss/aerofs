@@ -7,7 +7,7 @@ package com.aerofs.lib.os;
 import com.aerofs.testlib.AbstractTest;
 import org.junit.Test;
 
-import static junit.framework.Assert.assertEquals;
+import static org.junit.Assert.assertEquals;
 
 public class TestOSUtilLinux extends AbstractTest
 {

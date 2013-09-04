@@ -15,9 +15,9 @@ import com.aerofs.sp.server.lib.user.User;
 import static com.aerofs.sp.server.lib.user.AuthorizationLevel.*;
 import org.junit.Test;
 
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertNull;
-import static junit.framework.Assert.fail;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.fail;
 
 public class TestUser_setOrganization extends AbstractBusinessObjectTest
 {

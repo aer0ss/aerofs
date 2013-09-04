@@ -5,7 +5,7 @@
 package com.aerofs.lib;
 
 import com.aerofs.testlib.AbstractTest;
-import junit.framework.Assert;
+import org.junit.Assert;
 import org.junit.Test;
 
 public class TestCounterVector extends AbstractTest

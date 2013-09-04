@@ -2,7 +2,7 @@ package com.aerofs.sp.server;
 
 import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.testlib.AbstractTest;
-import junit.framework.Assert;
+import org.junit.Assert;
 import org.junit.Test;
 
 public class TestIdentitySessionManager extends AbstractTest

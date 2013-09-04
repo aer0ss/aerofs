@@ -14,7 +14,7 @@ import org.mockito.MockitoAnnotations;
 import java.io.IOException;
 
 import static com.aerofs.lib.ChannelFactories.getServerChannelFactory;
-import static junit.framework.Assert.assertTrue;
+import static org.junit.Assert.assertTrue;
 
 public class TestRitualNotifier
 {

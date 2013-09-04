@@ -13,7 +13,7 @@ import com.aerofs.sp.server.lib.user.User;
 import java.util.Collections;
 import java.util.List;
 
-import static junit.framework.Assert.assertFalse;
+import static org.junit.Assert.assertFalse;
 
 public class AbstractSPFolderTest extends AbstractSPTest
 {
