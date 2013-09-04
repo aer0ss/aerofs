@@ -120,7 +120,7 @@ public class DaemonProgram implements IProgram
         // NB: he RestService MUST be started AFTER creation of the Daemon instance or Guice
         // throws a fit
         if (Cfg.user().isAeroFSUser()) {
-            injCore.getInstance(RestService.class).start();
+            injCore.getInstance(RestService.class).start().addShutdownHook();
         }
 
         return d;

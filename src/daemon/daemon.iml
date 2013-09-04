@@ -27,6 +27,7 @@
         <SOURCES />
       </library>
     </orderEntry>
+    <orderEntry type="library" scope="TEST" name="rest-assured-1.8.1" level="project" />
   </component>
 </module>
 

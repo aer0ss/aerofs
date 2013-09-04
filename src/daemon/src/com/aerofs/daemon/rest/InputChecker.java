@@ -34,7 +34,7 @@ public class InputChecker
             return RestObject.fromStringFormal(id, userid);
         } catch (Exception e) {
             throw new WebApplicationException(Response.status(Status.BAD_REQUEST)
-                    .entity(new Error(Type.NOT_FOUND.name(), "invalid object id"))
+                    .entity(new Error(Type.BAD_ARGS.name(), "invalid object id"))
                     .build());
         }
     }

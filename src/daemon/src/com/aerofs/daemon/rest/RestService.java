@@ -59,26 +59,28 @@ public class RestService
         _injector = injector;
     }
 
-    public void start()
+    public RestService start()
     {
         checkState(BASE_URI.toString().endsWith("/"));
+        startServer(getResourceConfiguration(), BASE_URI);
+        return this;
+    }
 
-        try {
-            startServer(getResourceConfiguration(), BASE_URI);
+    public void addShutdownHook()
+    {
+        Runtime.getRuntime().addShutdownHook(new Thread() {
+            @Override
+            public void run()
+            {
+                _server.stopServer();
+            }
+        });
+    }
 
-            Runtime.getRuntime().addShutdownHook(new Thread() {
-                @Override
-                public void run()
-                {
-                    _server.stopServer();
-                }
-            });
+    public void stop()
+    {
+        _server.stopServer();
 
-        } catch (Exception e) {
-            // TODO (HB): notify UI?
-            // TODO (HB): figure out how to recover from server errors, if at all possible
-            l.error("unable to enable rest access", e);
-        }
     }
 
     private void startServer(final ResourceConfig resourceConfig, final URI baseUri)
