@@ -197,10 +197,7 @@ public class TestSyncStatusSynchronizer extends AbstractTest
         o_f232 = resolve("d2/a2.3/f2.3.2");
         o_a233 = resolve("d2/a2.3/a2.3.3");
 
-        // SyncStatusSynchronizer calls this to compute the version hash of an object
-        // these tests do not care about the actual value of the version vector, just that it
-        // isn't null (the default of Mockito, which causes NPE...)
-        when(nvc.getLocalVersion_(any(SOCKID.class))).thenReturn(Version.empty());
+        when(nvc.getVersionHash_(any(SOID.class))).thenReturn(new byte[] {});
 
         when(tm.begin_()).thenReturn(t);
 
