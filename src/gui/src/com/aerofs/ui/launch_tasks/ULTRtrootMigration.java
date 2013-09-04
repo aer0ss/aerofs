@@ -171,12 +171,12 @@ public class ULTRtrootMigration
                     if (path.endsWith(".log")) {
                         // This is ok even though renameLogsInOldRtroot isn't atomic.
                         // In the event of failure, we'll have some log files renamed and some not.
-                        // This is not a problem because we'll have a set of .log and .log.backup files;
-                        // both of which are clearly log files and this method will not rename
-                        // .log.backup again when the program is run again.
-                        // Thus, the end result is either the intended result, or in a recoverable
-                        // state in all cases.
-                        FileUtil.rename(file, new File(path + ".backup"));
+                        // This is not a problem because we'll have a set of origin and renamed
+                        // files; both of which are clearly log files and this method will not
+                        // rename the renamed files when the program is run again.
+                        // Either way, we either end up with the intended result, or a resumable
+                        // and recoverable state.
+                        FileUtil.rename(file, new File(path + ".00009001"));
                     }
                 }
             }
