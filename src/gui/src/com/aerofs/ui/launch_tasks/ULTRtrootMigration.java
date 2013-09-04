@@ -201,6 +201,10 @@ public class ULTRtrootMigration
                         // rename the renamed files when the program is run again.
                         // Either way, we either end up with the intended result, or a resumable
                         // and recoverable state.
+                        // N.B. the suffix can be any pattern as long as it starts with a
+                        // period and doesn't conflict with anything else in the system.
+                        // A number pattern is arbitrarily chosen, and as we all know, it's
+                        // important to be over 9000.
                         FileUtil.rename(file, new File(path + ".00009001"));
                     }
                 }
