@@ -93,8 +93,12 @@ public abstract class LogUtil
 
     public static void setLevel(Level level)
     {
-        Logger rootLogger = context.getLogger(Logger.ROOT_LOGGER_NAME);
-        rootLogger.setLevel(toLogbackLevel(level));
+        context.getLogger(Logger.ROOT_LOGGER_NAME).setLevel(toLogbackLevel(level));
+    }
+
+    public static void setLevel(Class<?> klass, Level level)
+    {
+        context.getLogger(klass).setLevel(toLogbackLevel(level));
     }
 
     private static PatternLayoutEncoder newEncoder(LoggerContext context)
