@@ -8,6 +8,7 @@ import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.gui.GUIUtil.AbstractListener;
 import com.aerofs.gui.Images;
+import com.aerofs.gui.tray.ServerStatusCache.IServerStatusListener;
 import com.aerofs.gui.tray.TrayIcon.TrayPosition.Orientation;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.AppRoot;
@@ -18,9 +19,6 @@ import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.os.OSUtil;
-import com.aerofs.proto.RitualNotifications.PBNotification;
-import com.aerofs.proto.RitualNotifications.PBNotification.Type;
-import com.aerofs.ritual_notification.IRitualNotificationListener;
 import com.aerofs.sv.client.SVClient;
 import com.aerofs.swig.driver.Driver;
 import com.aerofs.ui.UIGlobals;
@@ -139,28 +137,14 @@ public class TrayIcon implements ITrayMenuListener
 
     private void addServerStatusListener()
     {
-        UIGlobals.rnc().addListener(new IRitualNotificationListener()
+        UIGlobals.serverStatus().setListener(iconImpl(), new IServerStatusListener()
         {
             @Override
-            public void onNotificationReceived(PBNotification notification)
+            public void onServerStatusChanged(boolean online)
             {
-                if (notification.getType() == Type.SERVER_STATUS_CHANGED) {
-                    _isServerOnline = notification.getServerStatus();
-                    GUI.get().safeAsyncExec(iconImpl(), new Runnable() {
-                        @Override
-                        public void run()
-                        {
-                            setToolTipText(_tooltip);
-                            refreshTrayIconImage();
-                        }
-                    });
-                }
-            }
-
-            @Override
-            public void onNotificationChannelBroken()
-            {
-                // no-op
+                _isServerOnline = online;
+                setToolTipText(_tooltip);
+                refreshTrayIconImage();
             }
         });
     }

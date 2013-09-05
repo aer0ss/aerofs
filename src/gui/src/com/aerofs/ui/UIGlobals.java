@@ -4,6 +4,7 @@ import com.aerofs.base.analytics.Analytics;
 import com.aerofs.controller.ControllerClient;
 import com.aerofs.gui.TransferState;
 import com.aerofs.gui.shellext.ShellextService;
+import com.aerofs.gui.tray.ServerStatusCache;
 import com.aerofs.lib.analytics.DesktopAnalyticsProperties;
 import com.aerofs.ritual.IRitualClientProvider;
 import com.aerofs.ritual.RitualBlockingClient;
@@ -15,7 +16,9 @@ import com.aerofs.rocklog.RockLog;
 import com.aerofs.ui.update.Updater;
 
 /**
- * Global access points for all the singleton classes used in the Java UI.
+ * Global access points for all the singleton classes used in the Java UI. (both GUI & CLI)
+ *
+ * TODO (AT) right now some of the objects here are only used for GUI and not CLI.
  *
  * TODO (WW) The name of this class is not accurate, since AeroFS shell also has a UI (and uses the
  * IUI object) but it doesn't use this class.
@@ -51,7 +54,11 @@ public final class UIGlobals
     private static final UINotifier s_notifier = new UINotifier();
     private static final RitualNotificationClient s_rnc = new RitualNotificationClient(
             new RitualNotificationSystemConfiguration());
+    // FIXME (AT): TransferState is meant for just GUI, not CLI
     private static final TransferState s_ts = new TransferState(s_rnc);
+    // FIXME (AT): ServerStatusCache is meant for just GUI, not CLI
+    private static final ServerStatusCache s_ss = new ServerStatusCache(s_rnc);
+
     private static final SanityPoller s_rap = new SanityPoller();
     private static final InfoCollector s_ic = new InfoCollector();
     private static final UIScheduler s_sched = new UIScheduler();
@@ -65,6 +72,8 @@ public final class UIGlobals
     public static RitualNotificationClient rnc() { return s_rnc; }
 
     public static TransferState ts() { return s_ts; }
+
+    public static ServerStatusCache serverStatus() { return s_ss; }
 
     public static SanityPoller rap() { return s_rap; }
 

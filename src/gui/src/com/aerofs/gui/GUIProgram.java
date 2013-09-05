@@ -63,6 +63,7 @@ public class GUIProgram implements IProgram
         ControllerService.init(rtRoot, clientChannelFactory, UIGlobals.notifier());
         SPBlockingClient.setBadCredentialListener(new ControllerBadCredentialListener());
         RitualClientProvider ritualProvider = new RitualClientProvider(clientChannelFactory);
+
         ShellextService sextservice = new ShellextService(ChannelFactories.getServerChannelFactory(), ritualProvider);
         UIGlobals.setShellextService(sextservice);
         UIGlobals.setRitualClientProvider(ritualProvider);
