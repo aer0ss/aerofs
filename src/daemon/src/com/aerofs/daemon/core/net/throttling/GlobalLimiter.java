@@ -1,21 +1,24 @@
 package com.aerofs.daemon.core.net.throttling;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.CoreScheduler;
+import com.aerofs.daemon.core.ex.ExAborted;
 import com.aerofs.daemon.core.net.IUnicastOutputLayer;
 import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.event.net.Endpoint;
-import com.aerofs.lib.event.Prio;
 import com.aerofs.daemon.lib.id.StreamID;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.cfg.ICfgDatabaseListener;
-import com.aerofs.daemon.core.ex.ExAborted;
-import com.aerofs.base.ex.ExNoResource;
+import com.aerofs.lib.event.Prio;
+import com.aerofs.lib.log.LogUtil;
+import com.aerofs.lib.log.LogUtil.Level;
 import com.aerofs.proto.Limit;
 import com.aerofs.proto.Transport.PBStream.InvalidationReason;
+import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 
 import javax.annotation.Nonnull;
@@ -41,12 +44,12 @@ public class GlobalLimiter extends AbstractLimiter implements IUnicastOutputLaye
     private final Map<DID, ILimiter> _deviceQ;
 
     static {
-        assert MIN_BANDWIDTH_UI > _MIN_UL_BW;
+        Preconditions.checkState(MIN_BANDWIDTH_UI > _MIN_UL_BW);
     }
 
     private static long getUploadBw_()
     {
-        long ulbw = 0;
+        long ulbw;
         long bwread = Cfg.db().getLong(Key.MAX_UP_RATE);
         if (bwread == UNLIMITED_BANDWIDTH) {
             ulbw = _MAX_UL_BW;
@@ -79,11 +82,15 @@ public class GlobalLimiter extends AbstractLimiter implements IUnicastOutputLaye
 
     private final Factory _f;
 
-    private GlobalLimiter(Factory f, IUnicastOutputLayer lower)
+    private GlobalLimiter(Factory f, @Nonnull IUnicastOutputLayer lower)
     {
         super(f._sched, Loggers.getLogger(GlobalLimiter.class),
                 _MIN_UL_BW, getUploadBw_(), getUploadBw_() /* sigh */,
                 _MAX_SHAPING_Q_BACKLOG);
+
+        LogUtil.setLevel(GlobalLimiter.class, Level.NONE);
+        LogUtil.setLevel(LimitMonitor.class, Level.NONE);
+        LogUtil.setLevel(PerDeviceLimiter.class, Level.NONE);
 
         _f = f;
         _lower = lower;
