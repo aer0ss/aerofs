@@ -19,6 +19,8 @@ import com.aerofs.daemon.core.phy.block.local.LocalBackendModule;
 import com.aerofs.daemon.core.phy.block.s3.S3BackendModule;
 import com.aerofs.daemon.core.phy.linked.LinkedStorageModule;
 import com.aerofs.daemon.lib.exception.ExStreamInvalid;
+import com.aerofs.daemon.rest.RestModule;
+import com.aerofs.daemon.rest.RestService;
 import com.aerofs.daemon.ritual.RitualServer;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.IProgram;
@@ -105,11 +107,23 @@ public class DaemonProgram implements IProgram
         Stage stage = Stage.PRODUCTION;
 
         Injector injCore = Guice.createInjector(stage, new CfgModule(), multiplicityModule,
-                new CoreModule(getServerChannelFactory(), getClientChannelFactory()), storageModule());
+                new CoreModule(getServerChannelFactory(), getClientChannelFactory()),
+                storageModule(), new RestModule());
 
         Injector injDaemon = Guice.createInjector(stage, new DaemonModule(injCore));
 
-        return injDaemon.getInstance(Daemon.class);
+
+        Daemon d = injDaemon.getInstance(Daemon.class);
+
+        // TODO (HB): clean this up
+        // TODO (GS): Temporary hack to start the REST service only for us
+        // NB: he RestService MUST be started AFTER creation of the Daemon instance or Guice
+        // throws a fit
+        if (Cfg.user().isAeroFSUser()) {
+            injCore.getInstance(RestService.class).start().addShutdownHook();
+        }
+
+        return d;
     }
 
     private Module storageModule()

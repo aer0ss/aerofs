@@ -10,12 +10,24 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="module" module-name="lib" />
+    <orderEntry type="module" module-name="rest-api" />
     <orderEntry type="module" module-name="libjingle.binding" />
     <orderEntry type="module" module-name="zephyr" />
     <orderEntry type="module" module-name="verkehr" />
     <orderEntry type="module" module-name="syncstat" />
     <orderEntry type="library" name="smack" level="project" />
     <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="library" name="jersey-1.17.1" level="project" />
+    <orderEntry type="module-library">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/../../resource/client/all/lib/jul-to-slf4j-1.7.4.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="library" scope="TEST" name="rest-assured-1.8.1" level="project" />
   </component>
 </module>
 

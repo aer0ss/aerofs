@@ -573,10 +573,11 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase, IMe
         try {
             if (_psGetTypedChildren == null) _psGetTypedChildren = c()
                     .prepareStatement(DBUtil.selectWhere(T_OA,
-                            C_OA_SIDX + "=? and " + C_OA_PARENT + "=?",
+                            C_OA_SIDX + "=? and " + C_OA_PARENT + "=? and " + C_OA_FLAGS + "=?",
                             C_OA_OID, C_OA_NAME, C_OA_TYPE));
             _psGetTypedChildren.setInt(1, sidx.getInt());
             _psGetTypedChildren.setBytes(2, parent.getBytes());
+            _psGetTypedChildren.setInt(3, 0);
             ResultSet rs = _psGetTypedChildren.executeQuery();
             try {
                 boolean rootParent = parent.isRoot();

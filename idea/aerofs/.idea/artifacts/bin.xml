@@ -13,6 +13,7 @@
       <element id="module-output" name="syncstat" />
       <element id="module-output" name="verkehr" />
       <element id="module-output" name="zephyr" />
+      <element id="module-output" name="rest-api" />
     </root>
   </artifact>
 </component>
