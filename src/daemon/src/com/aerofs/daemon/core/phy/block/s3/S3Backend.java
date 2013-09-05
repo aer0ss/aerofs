@@ -7,8 +7,6 @@ package com.aerofs.daemon.core.phy.block.s3;
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.phy.block.IBlockStorageBackend;
 import com.aerofs.base.Base64;
-import com.aerofs.daemon.core.tc.TC.TCB;
-import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.LengthTrackingOutputStream;
 import com.aerofs.base.BaseSecUtil.CipherFactory;
@@ -25,7 +23,6 @@ import com.amazonaws.services.s3.model.S3Object;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 
-import javax.annotation.Nullable;
 import javax.crypto.SecretKey;
 import java.io.BufferedOutputStream;
 import java.io.IOException;

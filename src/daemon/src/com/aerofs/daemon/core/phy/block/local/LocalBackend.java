@@ -5,7 +5,6 @@
 package com.aerofs.daemon.core.phy.block.local;
 
 import com.aerofs.daemon.core.phy.block.IBlockStorageBackend;
-import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgAbsDefaultRoot;
@@ -13,7 +12,6 @@ import com.aerofs.lib.ex.ExFileNotFound;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.google.common.io.ByteStreams;
 
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import java.io.FileNotFoundException;
 import java.io.IOException;

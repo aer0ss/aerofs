@@ -5,7 +5,6 @@
 package com.aerofs.daemon.core.phy.block.gzip;
 
 import com.aerofs.daemon.core.phy.block.IBlockStorageBackend;
-import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.lib.ContentHash;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;

@@ -32,8 +32,6 @@ import java.util.List;
 import java.util.Set;
 
 import static com.aerofs.lib.db.DBUtil.binaryCount;
-import static com.aerofs.sp.server.lib.SPSchema.C_SF_ID;
-import static com.aerofs.sp.server.lib.SPSchema.T_SF;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.aerofs.lib.db.DBUtil.count;
 import static com.aerofs.lib.db.DBUtil.selectWhere;

@@ -16,7 +16,6 @@ import com.dyuproject.openid.DiffieHellmanAssociation;
 import com.dyuproject.openid.OpenIdContext;
 import com.dyuproject.openid.OpenIdUser;
 import com.dyuproject.openid.OpenIdUserManager;
-import com.dyuproject.util.DiffieHellman;
 import com.dyuproject.util.http.HttpConnector.Response;
 import com.dyuproject.util.http.UrlEncodedParameterMap;
 import org.slf4j.Logger;
