@@ -62,7 +62,7 @@ class unified {
     # --------------
     # Admin Panel
     # --------------
-    
+
     file {"/opt/web/production.ini":
         source => "puppet:///modules/unified/production.ini",
         require => Package["aerofs-web"],
