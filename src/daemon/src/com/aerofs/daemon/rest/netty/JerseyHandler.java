@@ -5,7 +5,6 @@ package com.aerofs.daemon.rest.netty;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.rest.RestService;
-import com.sun.jersey.api.core.ResourceConfig;
 import com.sun.jersey.core.header.InBoundHeaders;
 import com.sun.jersey.spi.container.ContainerRequest;
 import com.sun.jersey.spi.container.WebApplication;

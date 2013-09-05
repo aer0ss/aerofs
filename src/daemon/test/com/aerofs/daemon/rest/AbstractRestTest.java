@@ -1,5 +1,6 @@
 package com.aerofs.daemon.rest;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.daemon.core.CoreEventDispatcher;
@@ -21,12 +22,15 @@ import com.aerofs.testlib.AbstractTest;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+import com.jayway.restassured.RestAssured;
 import org.junit.After;
 import org.junit.Before;
 import org.mockito.Mock;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
+import org.slf4j.Logger;
 
+import java.net.URI;
 import java.util.Collections;
 
 import static org.mockito.Matchers.any;
@@ -39,6 +43,8 @@ import static org.mockito.Mockito.when;
  */
 public class AbstractRestTest extends AbstractTest
 {
+    protected static final Logger l = Loggers.getLogger(AbstractRestTest.class);
+
     protected @Mock DirectoryService ds;
     protected @Mock ACLChecker acl;
     protected @Mock SIDMap sm;
@@ -90,9 +96,12 @@ public class AbstractRestTest extends AbstractTest
             }
         }).when(imce).execute_(any(IEvent.class), any(Prio.class));
 
-        // start REST service (listens on localhost:8080)
+        // start REST service (port 0 means: select any available port...)
+        RestService.BASE_URI = URI.create("http://localhost:0/");
         service = new RestService(inj);
-        service.start();
+        RestAssured.port = service.start();
+
+        l.info("REST service listening on port {}", RestAssured.port);
     }
 
     @After

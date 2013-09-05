@@ -10,7 +10,6 @@ import org.testng.Assert;
 import java.sql.SQLException;
 
 import static com.jayway.restassured.RestAssured.*;
-import static com.jayway.restassured.matcher.RestAssuredMatchers.*;
 import static org.hamcrest.Matchers.*;
 
 public class TestListingResource extends AbstractRestTest
