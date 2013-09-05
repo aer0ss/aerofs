@@ -3,8 +3,6 @@ package com.aerofs.daemon.rest.event;
 import com.aerofs.base.id.UserID;
 import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
 import com.aerofs.daemon.rest.RestObject;
-import com.aerofs.lib.Path;
-
 
 public class EIFileInfo extends AbstractRestEBIMC
 {

@@ -4,7 +4,6 @@
 
 package com.aerofs.daemon.rest;
 
-import com.aerofs.base.Loggers;
 import com.aerofs.daemon.rest.providers.GsonProvider;
 import com.aerofs.daemon.rest.netty.JerseyHandler;
 import com.aerofs.daemon.rest.netty.NettyServer;
@@ -21,7 +20,6 @@ import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.channel.Channels;
 import org.jboss.netty.handler.codec.http.HttpServerCodec;
-import org.slf4j.Logger;
 import org.slf4j.bridge.SLF4JBridgeHandler;
 
 import java.net.InetSocketAddress;
@@ -39,10 +37,9 @@ public class RestService
         SLF4JBridgeHandler.install();
     }
 
-    private static final Logger l = Loggers.getLogger(RestService.class);
-
     // Base URI for the service. Must end with a slash.
-    public static final URI BASE_URI = URI.create("http://localhost:8080/");
+    // NB: not final for tests...
+    public static URI BASE_URI = URI.create("http://localhost:8080/");
 
     // Array of package names that Jersey will scan for annotated classes
     private static final String[] RESOURCES_PACKAGES = {
@@ -59,11 +56,10 @@ public class RestService
         _injector = injector;
     }
 
-    public RestService start()
+    public int start()
     {
         checkState(BASE_URI.toString().endsWith("/"));
-        startServer(getResourceConfiguration(), BASE_URI);
-        return this;
+        return startServer(getResourceConfiguration(), BASE_URI);
     }
 
     public void addShutdownHook()
@@ -83,7 +79,7 @@ public class RestService
 
     }
 
-    private void startServer(final ResourceConfig resourceConfig, final URI baseUri)
+    private int startServer(final ResourceConfig resourceConfig, final URI baseUri)
     {
         WebApplication wa = WebApplicationFactory.createWebApplication();
         IoCComponentProviderFactory ioc = new GuiceComponentProviderFactory(resourceConfig, _injector);
@@ -103,7 +99,7 @@ public class RestService
         };
 
         _server = new NettyServer(pipelineFactory, localSocket);
-        _server.startServer();
+        return _server.startServer();
     }
 
     private ResourceConfig getResourceConfiguration()

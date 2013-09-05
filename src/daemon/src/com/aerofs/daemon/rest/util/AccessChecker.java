@@ -8,7 +8,6 @@ import com.aerofs.base.id.UserID;
 import com.aerofs.daemon.core.acl.ACLChecker;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
-import com.aerofs.daemon.core.ds.OA.Type;
 import com.aerofs.daemon.core.ex.ExExpelled;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.rest.RestObject;

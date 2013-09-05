@@ -12,6 +12,7 @@ import org.jboss.netty.channel.group.DefaultChannelGroup;
 import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
 import org.slf4j.Logger;
 
+import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.concurrent.Executors;
 
@@ -34,11 +35,12 @@ public final class NettyServer
         _bootstrap = bootstrap;
     }
 
-    public void startServer()
+    public int startServer()
     {
         l.info("Starting server....");
         final Channel serverChannel = _bootstrap.bind(_localSocket);
         _allChannels.add(serverChannel);
+        return ((InetSocketAddress)serverChannel.getLocalAddress()).getPort();
     }
 
     public void stopServer()

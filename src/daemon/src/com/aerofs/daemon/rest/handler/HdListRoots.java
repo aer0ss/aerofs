@@ -1,7 +1,6 @@
 package com.aerofs.daemon.rest.handler;
 
 import com.aerofs.base.ex.ExNoPerm;
-import com.aerofs.base.id.OID;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.IStores;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
@@ -9,8 +8,6 @@ import com.aerofs.daemon.rest.event.EIListRoots;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.id.SIndex;
-import com.aerofs.lib.id.SOID;
-import com.aerofs.proto.Ritual.PBSharedFolder;
 import com.aerofs.rest.api.File;
 import com.aerofs.rest.api.Folder;
 import com.aerofs.rest.api.Listing;

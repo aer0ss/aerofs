@@ -10,8 +10,6 @@ import com.aerofs.daemon.event.lib.imc.AbstractEBIMC;
 import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
 import com.aerofs.proto.Common.PBException.Type;
 import com.aerofs.rest.api.Error;
-import com.aerofs.lib.Path;
-import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.event.Prio;
 import org.slf4j.Logger;
 

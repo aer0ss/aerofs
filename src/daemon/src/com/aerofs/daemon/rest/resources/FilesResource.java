@@ -11,7 +11,6 @@ import com.aerofs.daemon.rest.InputChecker;
 import com.aerofs.daemon.rest.RestObject;
 import com.aerofs.daemon.rest.event.EIFileContent;
 import com.aerofs.daemon.rest.event.EIFileInfo;
-import com.google.common.collect.Iterables;
 import com.sun.jersey.core.header.MatchingEntityTag;
 import com.sun.jersey.core.header.reader.HttpHeaderReader;
 
