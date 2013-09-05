@@ -4,10 +4,9 @@
 
 package com.aerofs.base.id;
 
-import com.aerofs.base.Loggers;
+import com.aerofs.base.BaseParam.XMPP;
 import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.id.UniqueID.ExInvalidID;
-import org.slf4j.Logger;
 
 import java.util.regex.Pattern;
 
@@ -23,7 +22,6 @@ import static java.lang.System.arraycopy;
 
 public abstract class JabberID
 {
-    private final static Logger l = Loggers.getLogger(JabberID.class);
     private final static String MOBILE_PREFIX = "mobile_";
 
     private JabberID()
@@ -92,15 +90,6 @@ public abstract class JabberID
         tokens[0] = components[0];
 
         arraycopy(didAndXmppTransportId, 0, tokens, 1, didAndXmppTransportId.length);
-
-        if (l.isDebugEnabled()) {
-            StringBuilder sb = new StringBuilder(128);
-            for (String token : tokens) {
-                sb.append(token).append("|");
-            }
-
-            l.debug("j:{} t:{}", jid, sb.toString());
-        }
 
         return tokens;
     }
