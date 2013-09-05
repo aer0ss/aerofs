@@ -9,36 +9,56 @@ import com.aerofs.proto.RitualNotifications.PBNotification;
 import com.aerofs.proto.RitualNotifications.PBNotification.Type;
 import com.aerofs.ritual_notification.IRitualNotificationListener;
 import com.aerofs.ritual_notification.RitualNotificationClient;
-import com.google.common.base.Preconditions;
 import org.eclipse.swt.widgets.Widget;
 
 import javax.annotation.Nonnull;
 
+import static com.google.common.base.Preconditions.*;
+
 /**
- * This class is created to address a race condition and an emerging architectural problem related
- * to ServerStatus, and to certain extents, RitualNotification.
+ * This class is created to address a race condition in ServerStatus.
  *
- * RitualNotificationServer (RNS) publishes a snapshot when a client connects to it, and it's
- * designed to work with one RitualNotificationClient (RNC).
+ * The ritual notification system is used for the daemon to actively broadcast its various states
+ * and notify the GUI widgets that are interested in these states.
  *
- * Now the end users of these notifications (UI widgets) may not be ready when RNC connects to RNS.
- * So it's become apparent that some intermediate cache is necessary so the end user will be able
- * to re-construct the final state. TransferState is a cache for transfer notifications, and this
- * class is a cache for server status.
+ * Note that the notification system does not track states, it merely broadcast it. Thus we have a
+ * race condition between the widgets and the notification system.
  *
- * TODO (AT): this is the 2nd time a cache for ritual notification is created, we should consolidate
+ * If the widgets are setup before the notification system, they will receive every single
+ * notification and be able to construct the final state they wish to present to the users.
+ *
+ * On the other hand, if the notification system is set up before the widgets, the widgets may
+ * miss some notifications and fail to construct the correct state.
+ *
+ * Note that there are situations where the intended listener, the widget, is not ready when the
+ * RNS starts broadcasting notifications. Hence another object is needed to maintain the state
+ * and the widgets will listen to that object instead.
+ *
+ * Mechanics:
+ * The cache is created before the ritual notification client starts, it maintains the server
+ * status based on the notifications.
+ *
+ * Whenever a widget subscribes to the cache, the cache enqueues an event to notify the widget of
+ * the current state. Whenever the cache receives a notification from RNC, the notification
+ * is processed on RNC's thread and then an event is queued to notify the widget on the UI
+ * thread.
+ *
+ * N.B. this class is a cache for server status much like TransferState is a cache for transfer
+ * notifications.
+ *
+ * TODO (AT): this is the 2nd time a cache for ritual notification is created. we should consolidate
  * the design if we ever need to create a cache for a different type of ritual notification.
  */
 public class ServerStatusCache implements IRitualNotificationListener
 {
-    protected final Notifier _notifier;
-    protected final RitualNotificationClient _rnc;
+    private final Notifier _notifier;
+    private final RitualNotificationClient _rnc;
 
-    protected boolean _online = false;
+    private boolean _online;
 
-    protected Widget _widget;
-    // we only support one listener because that's all we need to
-    protected IServerStatusListener _listener;
+    private Widget _widget;
+    // we only need to support one listener for the time being
+    private volatile IServerStatusListener _listener;
 
     /**
      * @param rnc - the RNC to listen to.
@@ -56,13 +76,15 @@ public class ServerStatusCache implements IRitualNotificationListener
      * Sets the server status listener and enqueues a notification on system event queue.
      * The intention is that the listener will be set once and never change.
      *
-     * @param listener
+     * @param listener - the listener for this cache
+     * @param widget - the associated widget that's listening to this cache
      * @pre ServerStatusListener has never been set before.
      */
-    public synchronized void setListener(@Nonnull Widget widget,
-            @Nonnull IServerStatusListener listener)
+    public void setListener(@Nonnull Widget widget, @Nonnull IServerStatusListener listener)
     {
-        Preconditions.checkArgument(_listener == null);
+        checkState(_listener == null);
+        checkNotNull(widget);
+        checkNotNull(listener);
 
         _widget = widget;
         _listener = listener;
@@ -70,9 +92,7 @@ public class ServerStatusCache implements IRitualNotificationListener
         notifyListener();
     }
 
-    // N.B. notifies the listener to poll the latest state, the synchronized keyword is intended
-    // to guard access to _listener.
-    protected synchronized void notifyListener()
+    private void notifyListener()
     {
         if (_listener != null) GUI.get().safeAsyncExec(_widget, _notifier);
     }
@@ -98,7 +118,7 @@ public class ServerStatusCache implements IRitualNotificationListener
         void onServerStatusChanged(boolean online);
     }
 
-    protected class Notifier implements Runnable
+    private class Notifier implements Runnable
     {
         @Override
         public void run()
