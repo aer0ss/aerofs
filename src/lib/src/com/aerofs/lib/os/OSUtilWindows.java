@@ -77,8 +77,8 @@ public class OSUtilWindows implements IOSUtil
     }
 
     /**
-     * N.B. we've added support to load default root anchor parent from dynamic configuration
-     *   properties. The dynamic properties value will be preferred over the default
+     * N.B. we've added support to load default root anchor parent from configuration
+     *   properties. The properties value will be preferred over the default
      *   platform-specific policy.
      *
      * In addition, we support macro expansion of the form: ${environment_variable}. The macro
