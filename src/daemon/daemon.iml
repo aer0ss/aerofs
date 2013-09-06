@@ -16,7 +16,6 @@
     <orderEntry type="module" module-name="verkehr" />
     <orderEntry type="module" module-name="syncstat" />
     <orderEntry type="library" name="smack" level="project" />
-    <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" name="jersey-1.17.1" level="project" />
     <orderEntry type="module-library">
       <library>
@@ -27,7 +26,8 @@
         <SOURCES />
       </library>
     </orderEntry>
-    <orderEntry type="library" scope="TEST" name="rest-assured-1.8.1" level="project" />
+    <orderEntry type="library" name="rest-assured" level="project" />
+    <orderEntry type="sourceFolder" forTests="false" />
   </component>
 </module>
 
