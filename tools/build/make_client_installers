@@ -9,28 +9,48 @@ set -x
 #
 ###############################################################################
 
-include include/common ${1:-} ${2:-}
-
-###############################################################################
-#
-# usage and variable definitions
-#
-###############################################################################
-
-if [[ x"${1:-}" == x || x"${2:-}" == x || x"${3:-}" == x ]] ; then
-    echo "usage: $0 <build_mode> <build_client> <release_version>" >&2
+function DieUsage {
+    echo "usage: $0 <build_mode> <build_product> <release_version> <sign_mode>" >&2
     echo " " >&2
     echo "<build_mode>: PROD|ENTERPRISE" >&2
-    echo "<build_client>: CLIENT|TEAM_SERVER" >&2
+    echo "<build_product>: CLIENT|TEAM_SERVER" >&2
     echo "<release_version>: release version (for example: 0.1.0)" >&2
+    echo "<sign_mode>: SIGNED|UNSIGNED" >&2
     echo " " >&2
-    echo "example: $0 ENTERPRISE CLIENT 0.1.0" >&2
-    echo "example: $0 PROD CLIENT 0.1.0" >&2
+    echo "example: $0 ENTERPRISE CLIENT 0.1.0 UNSIGNED" >&2
+    echo "example: $0 PROD TEAM_SERVER 0.1.0 UNSIGNED" >&2
     exit $ERRBADARGS
-fi
+}
 
-readonly RELEASE_VERSION="$3"
+[[ $# -eq 4 ]] || DieUsage
+
+case ${1:-} in
+    PROD|ENTERPRISE) BUILD_MODE=$1;;
+    *) DieUsage;;
+esac
+case ${2:-} in
+    CLIENT|TEAM_SERVER) BUILD_PRODUCT=$2;;
+    *) DieUsage;;
+esac
+case ${3:-} in
+    '') DieUsage;;
+    *) readonly RELEASE_VERSION=$3;;
+esac
+case ${4:-} in
+    SIGNED) SIGNED=true;;
+    UNSIGNED) SIGNED=false;;
+    *) DieUsage;;
+esac
+
+include include/common $BUILD_MODE $BUILD_PRODUCT
+
 readonly RELEASE_FILE_NAME="aerofs-${RELEASE_VERSION}-${LOWERCASE_MODE}"
+
+###############################################################################
+#
+# Functions to make packages on all operating systems
+#
+###############################################################################
 
 function make_linux_installer_deb() {
     local SCRIPTDIR="${LOCAL_RELEASE_DIR}/scripts"
@@ -174,8 +194,10 @@ function make_windows_installers() {
 
     chmod -R a+rx "${NSIS_TEMP_DIR}"
 
-    sign_exe "${NSIS_TEMP_DIR}/$EXECUTABLE"
-    sign_exe "${NSIS_TEMP_DIR}/aerofsd.exe"
+    if $SIGNED ; then
+        sign_exe "${NSIS_TEMP_DIR}/$EXECUTABLE"
+        sign_exe "${NSIS_TEMP_DIR}/aerofsd.exe"
+    fi
 
     makensis -V1 -DAEROFS_IN_FOLDER="${NSIS_TEMP_DIR}" \
             -DAEROFS_OUT_FILE="$OUT_FILE" \
@@ -185,7 +207,9 @@ function make_windows_installers() {
             -DAEROFS_EXECUTABLE="$EXECUTABLE" \
             "${LOCAL_NSIS_DIR}/setup.nsi"
 
-    sign_exe "$OUT_FILE"
+    if $SIGNED ; then
+        sign_exe "$OUT_FILE"
+    fi
 }
 
 function make_osx_packages() {
@@ -222,7 +246,7 @@ function make_osx_packages() {
     # Copy the aerofs and aerofs.osx files into the Mac App directory within the temp directory created above
     cp -a "${AEROFS_RELEASE_DIR}"/* "${AEROFS_RELEASE_OSX_DIR}"/* "${DMG_TEMP_DIR}/${local_OSX_LOCAL_MAC_APP_DIR}/"
 
-    if is_prod ; then
+    if is_prod && $SIGNED ; then
         echo ">> sign app for Mac App Store"
         # see http://developer.apple.com/library/mac/technotes/tn2206/_index.html#//apple_ref/doc/uid/DTS40007919-CH1-SUBSECTION9
         # for information on signing frameworks

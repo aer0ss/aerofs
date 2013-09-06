@@ -3,26 +3,36 @@ set -eu
 
 ###############################################################################
 #
-# General includes
-#
-###############################################################################
-include include/common ${1:-} ${2:-}
-
-###############################################################################
-#
 # usage and parameters
 #
 ###############################################################################
-if [[ $# -lt 1 || $# -gt 2 ]]; then
-    echo "usage: $0 [build mode] [build product]" >&2
+
+function DieUsage {
+    echo "usage: $0 <build_mode> <build_product> <sign_mode>" >&2
     echo " " >&2
-    echo "[build mode]: PROD|ENTERPRISE" >&2
-    echo "[build product]: CLIENT|TEAM_SERVER" >&2
+    echo "<build_mode>: PROD|ENTERPRISE" >&2
+    echo "<build_client>: CLIENT|TEAM_SERVER" >&2
+    echo "<sign_mode>: SIGNED|UNSIGNED" >&2
     echo " " >&2
-    echo "example: $0 PROD TEAM_SERVER" >&2
-    echo "example: $0 ENTERPRISE CLIENT" >&2
+    echo "example: $0 ENTERPRISE CLIENT UNSIGNED" >&2
+    echo "example: $0 PROD TEAM_SERVER UNSIGNED" >&2
     exit $ERRBADARGS
-fi
+}
+
+case ${1:-} in
+    PROD|ENTERPRISE) BUILD_MODE=$1;;
+    *) DieUsage;;
+esac
+case ${2:-} in
+    CLIENT|TEAM_SERVER) BUILD_PRODUCT=$2;;
+    *) DieUsage;;
+esac
+case ${3:-} in
+    SIGNED|UNSIGNED) SIGN_MODE=$3;;
+    *) DieUsage;;
+esac
+
+include include/common $BUILD_MODE $BUILD_PRODUCT
 
 #******************************************************************************
 #******************************************************************************
@@ -33,11 +43,11 @@ fi
 #******************************************************************************
 
 compute_next_release_version
-echo '+---------------------------------'
-echo '| ' $RELEASE_VERSION $PRODUCT $MODE
-echo '+---------------------------------'
+echo '+---------------------------------------'
+echo '| ' $RELEASE_VERSION $PRODUCT $MODE $SIGN_MODE
+echo '+---------------------------------------'
 
 call make_release_resources $MODE $PRODUCT $RELEASE_VERSION
-call make_client_installers $MODE $PRODUCT $RELEASE_VERSION
-echo ">> successfully built $MODE $PRODUCT release version $RELEASE_VERSION"
+call make_client_installers $MODE $PRODUCT $RELEASE_VERSION $SIGN_MODE
+echo ">> successfully built $SIGN_MODE $MODE $PRODUCT release version $RELEASE_VERSION"
 exit 0
