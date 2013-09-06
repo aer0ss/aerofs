@@ -262,7 +262,7 @@ function make_osx_packages() {
 
     # zip the osx client (must go to the directory so that the temp path isn't included in the zip)
     pushd "$DMG_TEMP_DIR" > /dev/null
-    zip -9rq "${PACKAGE_DIR}/$local_VERSIONED_MAC_ZIP_FILENAME" "Release/"
+    zip -9 --symlinks --quiet --recurse-paths "${PACKAGE_DIR}/$local_VERSIONED_MAC_ZIP_FILENAME" "Release/"
     popd > /dev/null
 
     hdiutil mount -quiet "${DMG_TEMP_DIR}/${AEROFS_PRODUCT_SPACEFREE}Install-temp.dmg"
