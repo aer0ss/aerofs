@@ -19,6 +19,15 @@
     <orderEntry type="library" name="jul-to-slf4j" level="project" />
     <orderEntry type="library" name="jersey-1.17.1" level="project" />
     <orderEntry type="library" scope="TEST" name="rest-assured" level="project" />
+    <orderEntry type="module-library" scope="TEST">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/../../resource/common/lib.test/mailapi-1.5.0.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
 </module>

@@ -15,9 +15,11 @@ import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.IStores;
 import com.aerofs.daemon.core.store.SIDMap;
 import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
+import com.aerofs.lib.Path;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.event.IEvent;
 import com.aerofs.lib.event.Prio;
+import com.aerofs.lib.id.SOID;
 import com.aerofs.testlib.AbstractTest;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
@@ -29,8 +31,12 @@ import org.mockito.Mock;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.slf4j.Logger;
+import org.testng.Assert;
 
 import java.net.URI;
+import java.sql.SQLException;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.Collections;
 
 import static org.mockito.Matchers.any;
@@ -58,10 +64,13 @@ public class AbstractRestTest extends AbstractTest
 
     private RestService service;
 
+    protected static DateFormat ISO_8601 = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZZZZZ");
+
     @Before
     public void setUp() throws Exception
     {
         mds = new MockDS(rootSID, ds, sm, sm);
+        mds.root();  // setup sid<->sidx mapping for root..
 
         when(localUser.get()).thenReturn(user);
 
@@ -110,4 +119,11 @@ public class AbstractRestTest extends AbstractTest
         service.stop();
     }
 
+    protected RestObject object(String path) throws SQLException
+    {
+        SOID soid = ds.resolveNullable_(Path.fromString(rootSID, path));
+        Assert.assertNotNull(soid, path);
+        SID sid = sm.get_(soid.sidx());
+        return new RestObject(sid, soid.oid());
+    }
 }

@@ -1,5 +1,6 @@
 package com.aerofs.daemon.rest.handler;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.daemon.core.ds.CA;
 import com.aerofs.daemon.core.ds.OA;
@@ -41,8 +42,8 @@ public class HdFileInfo extends AbstractHdIMC<EIFileInfo>
 
         CA ca = oa.caMasterNullable();
         if (ca != null) {
-            size = oa.caMaster().length();
-            last_modified = new Date(oa.caMaster().mtime());
+            size = ca.length();
+            last_modified = new Date(ca.mtime());
         }
 
         return new File(name, id, last_modified, size);

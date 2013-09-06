@@ -76,7 +76,6 @@ public class RestService
     public void stop()
     {
         _server.stopServer();
-
     }
 
     private int startServer(final ResourceConfig resourceConfig, final URI baseUri)

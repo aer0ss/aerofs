@@ -13,7 +13,7 @@ import com.aerofs.rest.api.Error;
 import com.aerofs.lib.event.Prio;
 import org.slf4j.Logger;
 
-import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
 import javax.ws.rs.core.Response.Status;
@@ -43,7 +43,7 @@ public abstract class AbstractRestEBIMC extends AbstractEBIMC
             execute(Prio.LO);
             return response().build();
         } catch (Exception e) {
-            return handleException(e).build();
+            return handleException(e).type(MediaType.APPLICATION_JSON_TYPE).build();
         }
     }
 
@@ -69,8 +69,10 @@ public abstract class AbstractRestEBIMC extends AbstractEBIMC
             return Response.status(Status.BAD_REQUEST)
                     .entity(new Error(((AbstractExWirable)e).getWireType().name(), e.getMessage()));
         } else {
-            l.error("", e);
-            throw new WebApplicationException(Status.INTERNAL_SERVER_ERROR);
+            l.error("internal error", e);
+            return Response.status(Status.INTERNAL_SERVER_ERROR)
+                    .entity(new Error(Type.INTERNAL_ERROR.name(),
+                            "The server encountered an unexpected error while servicing the request"));
         }
     }
 }

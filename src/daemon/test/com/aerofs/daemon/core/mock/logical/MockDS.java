@@ -37,6 +37,10 @@ import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
 import javax.annotation.Nullable;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
@@ -471,6 +475,26 @@ public class MockDS
             CA ca = cas.get(kidx);
             when(ca.length()).thenReturn(length);
             when(ca.mtime()).thenReturn(mtime);
+            return this;
+        }
+
+        public MockDSFile content(byte[] d) throws IOException
+        {
+            return content(KIndex.MASTER, d);
+        }
+
+        public MockDSFile content(KIndex kidx, byte[] d) throws IOException
+        {
+            final byte[] data = Arrays.copyOf(d, d.length);
+            IPhysicalFile pf = cas.get(kidx).physicalFile();
+            when(pf.newInputStream_()).thenAnswer(new Answer<InputStream>() {
+                @Override
+                public InputStream answer(InvocationOnMock invocation) throws Throwable
+                {
+                    return new ByteArrayInputStream(data);
+                }
+            });
+
             return this;
         }
     }

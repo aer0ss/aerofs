@@ -11,6 +11,7 @@ import com.aerofs.daemon.rest.RestObject;
 import com.aerofs.daemon.rest.event.EIListChildren;
 import com.aerofs.daemon.rest.util.AccessChecker;
 import com.aerofs.lib.event.Prio;
+import com.aerofs.lib.ex.ExNotDir;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.rest.api.File;
@@ -19,6 +20,7 @@ import com.aerofs.rest.api.Listing;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 
+import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
@@ -38,15 +40,16 @@ public class HdListChildren extends AbstractHdIMC<EIListChildren>
     }
 
     @Override
-    protected void handleThrows_(EIListChildren ev, Prio prio) throws Exception
+    protected void handleThrows_(EIListChildren ev, Prio prio) throws ExNotFound, SQLException
     {
         OA oa = _access.checkObjectFollowsAnchor_(ev._object, ev._user);
 
-        if (!oa.isDir()) throw new ExNotFound();
-
         SIndex sidx = oa.soid().sidx();
         SID sid = _sidx2sid.get_(sidx);
-        Collection<OID> children = _ds.getChildren_(oa.soid());
+        Collection<OID> children;
+        try {
+            children = _ds.getChildren_(oa.soid());
+        } catch (ExNotDir e) { throw new ExNotFound(e.getMessage()); }
 
         List<Folder> folders = Lists.newArrayList();
         List<File> files = Lists.newArrayList();

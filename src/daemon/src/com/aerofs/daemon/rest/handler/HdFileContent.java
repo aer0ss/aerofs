@@ -18,6 +18,7 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Range;
 import com.google.common.collect.RangeSet;
 import com.google.common.io.ByteStreams;
+import com.google.common.net.HttpHeaders;
 import com.google.inject.Inject;
 import com.sun.jersey.core.header.MatchingEntityTag;
 
@@ -73,7 +74,7 @@ public class HdFileContent extends AbstractHdIMC<EIFileContent>
         if (ranges != null) {
             if (ranges.isEmpty()) {
                 ev.setResult_(Response.status(HttpStatus.UNSATISFIABLE_RANGE)
-                        .header("Content-Length", "*/" + length));
+                        .header(HttpHeaders.CONTENT_RANGE, "bytes */" + length));
                 return;
             }
 
@@ -81,11 +82,11 @@ public class HdFileContent extends AbstractHdIMC<EIFileContent>
             if (parts.size() == 1) {
                 Range<Long> range = Iterables.getFirst(parts, null);
                 skip = range.lowerEndpoint();
-                long last = range.upperEndpoint();
+                long last = range.upperEndpoint() - 1;
                 span = last - skip + 1;
 
                 bd.status(HttpStatus.PARTIAL_CONTENT)
-                        .header("Content-Range", "bytes " + skip + "-" + last + "/" + length);
+                        .header(HttpHeaders.CONTENT_RANGE, "bytes " + skip + "-" + last + "/" + length);
             } else {
                 ev.setResult_(bd.status(HttpStatus.PARTIAL_CONTENT)
                         .type("multipart/byteranges; boundary=" + MultiPartUploader.BOUNDARY)
@@ -93,11 +94,11 @@ public class HdFileContent extends AbstractHdIMC<EIFileContent>
                 return;
             }
         } else {
-            bd.header("Content-Disposition", "attachment; filename=\"" + oa.name() + "\"");
+            bd.header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + oa.name() + "\"");
         }
 
         ev.setResult_(bd.type(MediaType.APPLICATION_OCTET_STREAM_TYPE)
-                .header("Content-Length", span)
+                .header(HttpHeaders.CONTENT_LENGTH, span)
                 .entity(new SimpleUploader(pf, length, mtime, skip, span)));
     }
 
@@ -154,12 +155,12 @@ public class HdFileContent extends AbstractHdIMC<EIFileContent>
 
             for (Range<Long> part : _parts) {
                 long skip = part.lowerEndpoint();
-                long last = part.upperEndpoint();
+                long last = part.upperEndpoint() - 1;
                 long span = last - skip + 1;
 
                 w.write("\r\n--" + BOUNDARY + "\r\n");
-                w.write("Content-Type: application/octet-stream\r\n");
-                w.write("Content-Range: bytes " + skip + "-" + last + "/" + _length + " \r\n\r\n");
+                w.write(HttpHeaders.CONTENT_TYPE + ": " + MediaType.APPLICATION_OCTET_STREAM + "\r\n");
+                w.write(HttpHeaders.CONTENT_RANGE + ": bytes " + skip + "-" + last + "/" + _length + " \r\n\r\n");
                 w.flush();
 
                 InputStream in = _pf.newInputStream_();

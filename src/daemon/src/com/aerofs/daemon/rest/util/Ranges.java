@@ -31,31 +31,31 @@ public class Ranges
     private static Range<Long> range(String rangeSpec, long length) throws ExBadArgs
     {
         Matcher m = specPattern.matcher(rangeSpec);
-        if (!m.matches()) throw new ExBadArgs("Invalid range spec");
+        if (!m.matches()) throw new ExBadArgs("Invalid range spec: " + rangeSpec);
         String start = m.group(1);
         String end = m.group(2);
         long low, high;
 
         if (start.isEmpty()) {
-            if (end.isEmpty()) throw new ExBadArgs("Invalid range spec");
+            if (end.isEmpty()) throw new ExBadArgs("Invalid range spec: " + rangeSpec);
             // suffix range
             low = length - Long.parseLong(end);
-            high = length - 1;
+            high = length;
         } else {
             low = Long.parseLong(start);
-            high = end.isEmpty() ? length - 1 : bound(end, length);
+            if (end.isEmpty()) {
+                high = length;
+            } else {
+                high = Long.parseLong(end) + 1;
+                if (low >= high) throw new ExBadArgs("Invalid range spec: " + rangeSpec);
+            }
         }
 
-        if (low > high) throw new ExBadArgs("Invalid range spec");
-
         // empty range to avoid polluting the range set
-        if (low >= length) return Range.closedOpen(0L, 0L);
+        if (low >= length) {
+            return Range.closedOpen(0L, 0L);
+        }
 
-        return Range.closed(low, high);
-    }
-
-    private static long bound(String num, long length)
-    {
-        return Math.max(0, Math.min(length - 1, Long.parseLong(num)));
+        return Range.closedOpen(low, high);
     }
 }
