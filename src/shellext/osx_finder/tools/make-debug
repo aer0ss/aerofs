@@ -12,7 +12,8 @@ fi
 
 echo "Moving to approot..."
 rm -rf $thisdir/../../../../approot/AeroFSFinderExtension.osax
-cp -r $thisdir/../build/Library/ScriptingAdditions/AeroFSFinderExtension.osax $thisdir/../../../../approot
+# cp -r is BAD, prefer cp -a or cp -R for OSX compatibility; man 1 cp
+cp -a $thisdir/../build/Library/ScriptingAdditions/AeroFSFinderExtension.osax $thisdir/../../../../approot
 
 echo
 echo "SUCCESS."

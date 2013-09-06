@@ -25,7 +25,8 @@ codesign -f -s "Air Computing, Inc." $thisdir/../build/Library/ScriptingAddition
 
 echo "Moving to resource/client..."
 rm -rf $thisdir/../../../../resource/client/osx/AeroFSFinderExtension.osax
-cp -r $thisdir/../build/Library/ScriptingAdditions/AeroFSFinderExtension.osax $thisdir/../../../../resource/client/osx
+# cp -r is BAD, prefer cp -a or cp -R for OSX compatibility; man 1 cp
+cp -a $thisdir/../build/Library/ScriptingAdditions/AeroFSFinderExtension.osax $thisdir/../../../../resource/client/osx
 
 echo
 echo "SUCCESS."

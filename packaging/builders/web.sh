@@ -18,10 +18,10 @@ done
 # Web repo and python-lib copy
 mkdir -p $OPT
 mkdir -p $EXTRA
-# N.B. (PH) this will not copy dotfiles
-cp -r ../src/web/* $OPT
+# cp -r is BAD, prefer cp -a or cp -R for OSX compatibility; man 1 cp
+cp -a ../src/web/* $OPT
 rm -rf $OPT/development
-cp -r ../src/python-lib $EXTRA
+cp -a ../src/python-lib $EXTRA
 
 # remove unnecessary files
 rm -r $OPT/resources

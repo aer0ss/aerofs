@@ -8,7 +8,8 @@ mkdir -p $OPT/tools
 
 for os in android linux osx win
 do
-    cp -r $ENTERPRISE/repackaging/$os $OPT/tools
+    # cp -r is BAD, prefer cp -a or cp -R for OSX compatibility; man 1 cp
+    cp -a $ENTERPRISE/repackaging/$os $OPT/tools
 done
 
 cp $ENTERPRISE/repackaging/pull-installers.sh $OPT/tools

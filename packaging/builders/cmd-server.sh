@@ -10,7 +10,8 @@ DEBIAN=cmd-server/DEBIAN
 mkdir -p $DEBIAN
 for f in control conffiles preinst postinst prerm postrm
 do
-    cp -r $RESOURCES/$f $DEBIAN
+    # cp -r is BAD, prefer cp -a or cp -R for OSX compatibility; man 1 cp
+    cp -a $RESOURCES/$f $DEBIAN
 done
 
 # Java-related file copies.

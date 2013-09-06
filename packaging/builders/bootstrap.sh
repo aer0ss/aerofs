@@ -11,14 +11,15 @@ DEBIAN=bootstrap/DEBIAN
 mkdir -p $DEBIAN
 for f in control conffiles preinst prerm postinst
 do
-    cp -r $RESOURCES/$f $DEBIAN
+    # cp -r is BAD, prefer cp -a or cp -R for OSX compatibility; man 1 cp
+    cp -a $RESOURCES/$f $DEBIAN
 done
 
 # Java-related file copies.
 mkdir -p $OPT
 cp ../out.ant/artifacts/bootstrap/*.jar $OPT
 cp $RESOURCES/logback.xml $OPT
-cp -r $RESOURCES/scripts $OPT
+cp -a $RESOURCES/scripts $OPT
 
 # Init script.
 mkdir -p $INIT

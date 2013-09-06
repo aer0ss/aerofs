@@ -42,7 +42,7 @@ if [ ! -d "$TMPDIR" ]; then
 else
   # Remove all files from the previous installation. Code signing will fail if there are any leftover files
   rm -rf "$APPDIR/Contents"
-  cp -rf "$TMPDIR"/Release/[AEROFS_PRODUCT_SPACEFREE].app/* "$APPDIR"
+  cp -af "$TMPDIR"/Release/[AEROFS_PRODUCT_SPACEFREE].app/* "$APPDIR"
 fi
 
 rm -rf "$TMPDIR"

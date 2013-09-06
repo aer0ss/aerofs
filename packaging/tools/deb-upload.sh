@@ -25,7 +25,7 @@ function upload_payload() {
         "set -e;
         if [ ! -d /var/www/ubuntu/$TARGET_REPOSITORY_DIRECTORY ];
         then
-            cp -r /var/www/ubuntu/_default_ /var/www/ubuntu/$TARGET_REPOSITORY_DIRECTORY;
+            cp -a /var/www/ubuntu/_default_ /var/www/ubuntu/$TARGET_REPOSITORY_DIRECTORY;
         fi;
         cd /var/www/ubuntu/$TARGET_REPOSITORY_DIRECTORY/;
 
