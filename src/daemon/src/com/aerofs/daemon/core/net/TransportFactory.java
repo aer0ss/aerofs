@@ -36,8 +36,8 @@ public final class TransportFactory
     public static enum Transport
     {
         LANTCP("t", 0),
-        ZEPHYR("z", 1),
-        JINGLE("j", 2),;
+        JINGLE("j", 1),
+        ZEPHYR("z", 2);
 
         private final String id;
         private final int rank;
