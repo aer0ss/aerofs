@@ -1,11 +1,5 @@
 #!/bin/bash
 
-###############################################################################
-#
-# This script creates the approot directory and populates it
-# with the files needed for a staging AeroFS
-#
-###############################################################################
 set -ue
 
 readonly ERRBADARGS=1
@@ -36,6 +30,11 @@ function setup_clean_approot() {
     else
         mkdir -p "$APPROOT"
     fi
+}
+
+function copy_labeling_resources() {
+    LABELING_LOWER=$(echo $LABELING | tr '[:upper:]' '[:lower:]')
+    cp $LABELING_RESOURCES_DIR/labeling-$LABELING_LOWER.properties $APPROOT/bin/labeling.properties
 }
 
 function copy_os_specific_resources() {
@@ -121,12 +120,22 @@ readonly OS="$3"
 readonly BASE_RESOURCES_DIR="$4"
 readonly COMMON_RESOURCES_DIR="$BASE_RESOURCES_DIR/common"
 readonly CLIENT_RESOURCES_DIR="$BASE_RESOURCES_DIR/client"
+readonly LABELING_RESOURCES_DIR="$CLIENT_RESOURCES_DIR/all/labeling"
 readonly APPROOT="$5"
+
+# product
+if [[ "$LABELING" != "CLIENT" && "$LABELING" != "TEAM_SERVER" ]]
+then
+    print_usage
+    exit $ERRBADPRODUCT
+fi
 
 # tasks
 setup_clean_approot
-"$PPWD/copy_mode_and_product_resources" "$MODE" "$LABELING" "$BASE_RESOURCES_DIR" "$APPROOT" "$APPROOT/bin"
+"$PPWD/copy_common_resources" "$MODE" "$BASE_RESOURCES_DIR" "$APPROOT" "$APPROOT/bin"
+copy_labeling_resources $LABELING $LABELING_RESOURCES_DIR $APPROOT/bin
 copy_os_specific_resources
 create_max_version_file
 create_site_properties_file
 copy_run_scripts
+

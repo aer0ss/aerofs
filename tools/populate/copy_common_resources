@@ -2,21 +2,18 @@
 
 ###############################################################################
 #
-# This script copies the appropriate properties files for a MODE and PRODUCT
-# to a named output location
+# This script copies the appropriate properties files for a MODE to a named
+# output location
 #
 ###############################################################################
 
 readonly ERRBADARGS=1
 readonly ERRBADMODE=2
-readonly ERRBADPRODUCT=3
 
 function print_usage() {
-    echo "usage: $0 [mode] [product] [resource_root_dir] [output_dir]" >&2
+    echo "usage: $0 [mode] [resource_root_dir] [output_dir]" >&2
     echo "    [mode]              Specifies which mode the properties are for" >&2
     echo "                        Can be PROD|CI|ENTERPRISE." >&2
-    echo "    [product]           Specifies which product the properties are for" >&2
-    echo "                        Can be TEAM_SERVER or CLIENT." >&2
     echo "    [resource_root_dir] Directory where all non-server-specific resources are stored" >&2
     echo "    [output_dir]        Destination directory for root resources (certs)" >&2
     echo "    [properties_dir]    Destination directory for classpath resources (.properties, .xml)" >&2
@@ -44,10 +41,7 @@ function copy_resource() {
     local destfile=${2:-1##*/}
 
     case "$srcfile" in
-        *properties)
-            cp "$srcfile" "$PROPERTIES_OUTPUT_DIR"/"$destfile"
-            ;;
-        *xml)
+        *properties|*xml)
             cp "$srcfile" "$PROPERTIES_OUTPUT_DIR"/"$destfile"
             ;;
         *)
@@ -59,9 +53,6 @@ function copy_resource() {
 # Copy resources from resource/common/* to the final destinations.
 function copy_resources() {
     mkdir -p "$PROPERTIES_OUTPUT_DIR"
-
-    # handle product-specific resources
-    cp "$LABELING_RESOURCES_DIR"/"labeling-$LOWERCASE_LABELING.properties" "$PROPERTIES_OUTPUT_DIR"/labeling.properties
 
     # copy all the mode-specific resources over and rename them
     local mode_specific_resources=$( ls $MODE_RESOURCES_DIR/*-$LOWERCASE_MODE* )
@@ -87,7 +78,7 @@ function copy_resources() {
 ###############################################################################
 
 # all arguments specified
-if [[ $# -ne 5 ]]
+if [[ $# -ne 4 ]]
 then
     print_usage
     exit $ERRBADARGS
@@ -102,21 +93,11 @@ then
     exit $ERRBADMODE
 fi
 
-# product
-readonly LABELING="$2"
-readonly LOWERCASE_LABELING=$( echo $LABELING | tr '[:upper:]' '[:lower:]' )
-if [[ "$LABELING" != 'CLIENT' && "$LABELING" != 'TEAM_SERVER' ]]
-then
-    print_usage
-    exit $ERRBADPRODUCT
-fi
-
 # directories
-readonly RESOURCES_DIR="$3"
-readonly MODE_RESOURCES_DIR="$3/common/mode"
-readonly LABELING_RESOURCES_DIR="$3/common/labeling"
-readonly OTHER_RESOURCES_DIR="$3/common/other"
-readonly ROOT_OUTPUT_DIR="$4"
-readonly PROPERTIES_OUTPUT_DIR="$5"
+readonly RESOURCES_DIR="$2"
+readonly MODE_RESOURCES_DIR="$2/common/mode"
+readonly OTHER_RESOURCES_DIR="$2/common/other"
+readonly ROOT_OUTPUT_DIR="$3"
+readonly PROPERTIES_OUTPUT_DIR="$4"
 
 copy_resources
