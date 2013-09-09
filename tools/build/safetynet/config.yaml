@@ -16,7 +16,7 @@ actors:
     -
         address: sn-windows7.local
         aero_app_root: /cygdrive/c/Users/aerofstest/AppData/Roaming/AeroFSExec
-        aero_rt_root: /cygdrive/c/Users/aerofstest/AppData/Roaming/AeroFS
+        aero_rt_root: /cygdrive/c/Users/aerofstest/AppData/Local/AeroFS
         details:
             os: Windows 7 Professional x64
             java: Java(TM) SE Runtime Environment (build 1.7.0_07-b11)
@@ -32,7 +32,7 @@ actors:
         address: sn-windowsxp.local
         login: Administrator
         aero_app_root: "/cygdrive/c/Documents and Settings/Administrator/Application Data/AeroFSExec"
-        aero_rt_root: "/cygdrive/c/Documents and Settings/Administrator/Application Data/AeroFS"
+        aero_rt_root: "/cygdrive/c/Documents and Settings/Administrator/Local Settings/Application Data/AeroFS"
         details:
             os: Windows XP SP3 Professional
             java: Java(TM) SE Runtime Environment (build 1.7.0_04-b22)
