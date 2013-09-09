@@ -4,7 +4,6 @@
 
 package com.aerofs.base.id;
 
-import com.aerofs.base.BaseParam.XMPP;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.id.UniqueID.ExInvalidID;
@@ -56,9 +55,9 @@ public abstract class JabberID
      * @return form A jid for multicast connections
      * This is the jid that we use when connecting to the XMPP server
      */
-    public static String did2FormAJid(DID did, String xmppTransportId)
+    public static String did2FormAJid(DID did, String xmppServerDomain, String xmppTransportId)
     {
-        return did2user(did) + '@' + XMPP.getServerDomain() + '/' + xmppTransportId;
+        return String.format("%s@%s/%s", did2user(did), xmppServerDomain, xmppTransportId);
     }
 
     /**
@@ -68,15 +67,6 @@ public abstract class JabberID
     public static String getMUCRoomNickname(DID did, String xmppTransportId)
     {
         return JabberID.did2user(did) + "-" + xmppTransportId;
-    }
-
-    /**
-     * @return form B jid for multicast connections (this is the jid that is reported for all members
-     * in a MUC)
-     */
-    public static String did2FormBJid(DID did, SID sid, String xmppTransportId)
-    {
-        return sid2muc(sid) + '/' + getMUCRoomNickname(did, xmppTransportId);
     }
 
     private static final Pattern SLASH_PATTERN = Pattern.compile("/");
@@ -160,8 +150,8 @@ public abstract class JabberID
         }
     }
 
-    public static String sid2muc(SID sid)
+    public static String sid2muc(SID sid, String xmppServerDomain)
     {
-        return sid.toStringFormal() + '@' + XMPP.getMucAddress();
+        return String.format("%s@c.%s", sid.toStringFormal(), xmppServerDomain);
     }
 }

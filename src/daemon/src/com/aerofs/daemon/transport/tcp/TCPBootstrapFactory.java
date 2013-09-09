@@ -22,7 +22,7 @@ import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jboss.netty.channel.socket.ServerSocketChannelFactory;
 
 import static com.aerofs.daemon.transport.netty.BootstrapFactoryUtil.newCNameVerificationHandler;
-import static com.aerofs.daemon.transport.netty.BootstrapFactoryUtil.newFameDecoder;
+import static com.aerofs.daemon.transport.netty.BootstrapFactoryUtil.newFrameDecoder;
 import static com.aerofs.daemon.transport.netty.BootstrapFactoryUtil.newLengthFieldPrepender;
 import static com.aerofs.daemon.transport.netty.BootstrapFactoryUtil.newMagicReader;
 import static com.aerofs.daemon.transport.netty.BootstrapFactoryUtil.newMagicWriter;
@@ -66,7 +66,7 @@ class TCPBootstrapFactory
                         _addressResolver,
                         newStatsHandler(_stats),
                         newSslHandler(_clientSslEngineFactory),
-                        newFameDecoder(),
+                        newFrameDecoder(),
                         newLengthFieldPrepender(),
                         newMagicReader(),
                         newMagicWriter(),
@@ -92,7 +92,7 @@ class TCPBootstrapFactory
                         _addressResolver,
                         newStatsHandler(_stats),
                         newSslHandler(_serverSslEngineFactory),
-                        newFameDecoder(),
+                        newFrameDecoder(),
                         newLengthFieldPrepender(),
                         newMagicReader(),
                         newMagicWriter(),

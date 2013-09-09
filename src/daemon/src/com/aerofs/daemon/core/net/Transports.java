@@ -17,6 +17,7 @@ import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
 import com.aerofs.daemon.event.lib.imc.QueueBasedIMCExecutor;
 import com.aerofs.daemon.event.net.EOLinkStateChanged;
+import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.daemon.lib.IStartable;
 import com.aerofs.daemon.mobile.MobileServerZephyrConnector;
 import com.aerofs.daemon.transport.ITransport;
@@ -49,9 +50,9 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.Map;
 
-import static com.aerofs.daemon.core.net.TransportFactory.Transport.JINGLE;
-import static com.aerofs.daemon.core.net.TransportFactory.Transport.LANTCP;
-import static com.aerofs.daemon.core.net.TransportFactory.Transport.ZEPHYR;
+import static com.aerofs.daemon.core.net.TransportFactory.TransportType.JINGLE;
+import static com.aerofs.daemon.core.net.TransportFactory.TransportType.LANTCP;
+import static com.aerofs.daemon.core.net.TransportFactory.TransportType.ZEPHYR;
 import static com.aerofs.daemon.core.tc.Cat.UNLIMITED;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.Maps.newHashMap;
@@ -103,11 +104,15 @@ public class Transports implements IDumpStat, IDumpStatMisc, IStartable, ITransf
         this.tc = tc;
 
         TransportFactory transportFactory = new TransportFactory(
-                absRTRoot,
-                localid,
-                localdid,
-                scrypted,
-                BaseParam.Zephyr.ADDRESS,
+                absRTRoot.get(),
+                localid.get(),
+                localdid.get(),
+                scrypted.get(),
+                false,
+                DaemonParam.Jingle.STUN_SERVER_ADDRESS,
+                BaseParam.XMPP.SERVER_ADDRESS,
+                BaseParam.XMPP.getServerDomain(),
+                BaseParam.Zephyr.SERVER_ADDRESS,
                 Proxy.NO_PROXY,
                 coreQueue,
                 rocklog,

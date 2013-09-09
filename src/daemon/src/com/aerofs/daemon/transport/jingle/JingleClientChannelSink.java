@@ -42,10 +42,10 @@ public class JingleClientChannelSink extends AbstractChannelSink
 
             switch (JingleUtils.parseDownstreamEvent(event.getState(), value)) {
             case BIND:
-                bind(channel, future, (DIDAddress)value);
+                bind(channel, future, (JingleAddress)value);
                 break;
             case CONNECT:
-                connect(channel, future, (DIDAddress)value);
+                connect(channel, future, (JingleAddress)value);
                 break;
             case CLOSE:
             case UNBIND:
@@ -64,7 +64,7 @@ public class JingleClientChannelSink extends AbstractChannelSink
         }
     }
 
-    private static void bind(JingleClientChannel channel, ChannelFuture future, DIDAddress localAddress)
+    private static void bind(JingleClientChannel channel, ChannelFuture future, JingleAddress localAddress)
     {
         try {
             channel.setBound();
@@ -77,7 +77,7 @@ public class JingleClientChannelSink extends AbstractChannelSink
         }
     }
 
-    private void connect(final JingleClientChannel channel, final ChannelFuture future, final DIDAddress remoteAddress)
+    private void connect(final JingleClientChannel channel, final ChannelFuture future, final JingleAddress remoteAddress)
     {
         _signalThread.call(new ISignalThreadTask()
         {
@@ -85,7 +85,7 @@ public class JingleClientChannelSink extends AbstractChannelSink
             public void run()
             {
                 DID did = remoteAddress.getDid();
-                Jid jid = JingleUtils.did2jid(did);
+                Jid jid = remoteAddress.getJid();
 
                 channel.setRemoteAddress(remoteAddress);
                 channel.setConnectFuture(future);

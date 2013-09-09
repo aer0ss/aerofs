@@ -55,7 +55,7 @@ public class DaemonParam
     {
         public static final int QUEUE_LENGTH            = QUEUE_LENGTH_DEFAULT;
         public static final long CALL_TIMEOUT           = 30 * C.SEC;
-        public static final InetSocketAddress STUN_ADDRESS = getAddressProperty(
+        public static final InetSocketAddress STUN_SERVER_ADDRESS = getAddressProperty(
                 "daemon.stun.address",
                 InetSocketAddress.createUnresolved("stun.l.google.com", 19302));
     }

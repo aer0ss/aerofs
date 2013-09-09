@@ -53,16 +53,24 @@ public class Multicast implements IMaxcast, IStores, IXMPPConnectionServiceListe
     private final Set<SID> _all = new TreeSet<SID>();
     private final DID _localDid;
     private final String _xmppTransportId;
+    private final String _xmppServerDomain;
     private final MaxcastFilterReceiver _mcfr;
     private final XMPPConnectionService _xsc;
     private final ITransport _tp;
     private final IBlockingPrioritizedEventSink<IEvent> _sink;
 
-    public Multicast(DID localDid, String xmppTransportId, MaxcastFilterReceiver mcfr,
-            XMPPConnectionService xsc, ITransport tp, IBlockingPrioritizedEventSink<IEvent> sink)
+    public Multicast(
+            DID localDid,
+            String xmppTransportId,
+            String xmppServerDomain,
+            MaxcastFilterReceiver mcfr,
+            XMPPConnectionService xsc,
+            ITransport tp,
+            IBlockingPrioritizedEventSink<IEvent> sink)
     {
         _localDid = localDid;
         _xmppTransportId = xmppTransportId;
+        _xmppServerDomain = xmppServerDomain;
         _mcfr = mcfr;
         _xsc = xsc;
         _tp = tp;
@@ -100,7 +108,7 @@ public class Multicast implements IMaxcast, IStores, IXMPPConnectionServiceListe
             }
 
             if (create) {
-                String roomName = JabberID.sid2muc(sid);
+                String roomName = JabberID.sid2muc(sid, _xmppServerDomain);
                 // This has to be called to ensure that the connection is initialized (and thus the
                 // smack static initializers have run) before using MultiUserChat, since
                 // otherwise the MultiUserChat static initializer might deadlock with the

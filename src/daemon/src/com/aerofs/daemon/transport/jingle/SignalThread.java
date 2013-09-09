@@ -1,8 +1,6 @@
 package com.aerofs.daemon.transport.jingle;
 
-import com.aerofs.base.BaseParam.XMPP;
 import com.aerofs.base.Loggers;
-import com.aerofs.base.id.DID;
 import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.daemon.transport.TransportThreadGroup;
 import com.aerofs.daemon.transport.xmpp.XMPPConnectionService;
@@ -22,7 +20,6 @@ import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.SystemUtil.ExitCode;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExJingle;
 import org.slf4j.Logger;
 
@@ -61,6 +58,8 @@ public class SignalThread extends Thread implements IDumpStatMisc
     private final Jid _xmppUsername;
     private final String _xmppPassword;
     private final XMPPConnectionService _xmppServer;
+    private final InetSocketAddress _stunServerAddress;
+    private final InetSocketAddress _xmppServerAddress;
     private final String _absRTRoot;
     private final ArrayList<Runnable> _postRunners = new ArrayList<Runnable>(); // st thread only
     private final Object _mxMain = new Object(); // lock object
@@ -68,13 +67,15 @@ public class SignalThread extends Thread implements IDumpStatMisc
     private ISignalThreadListener _listener;
     private volatile boolean _isOpen;
 
-    public SignalThread(DID localdid, XMPPConnectionService xmppServer, String absRtRoot)
+    public SignalThread(Jid localjid, InetSocketAddress stunServerAddress, InetSocketAddress xmppServerAddress, XMPPConnectionService xmppServer, String absRtRoot)
     {
         super(TransportThreadGroup.get(), "lj-sig");
+        _stunServerAddress = stunServerAddress;
+        _xmppServerAddress = xmppServerAddress;
         _absRTRoot = absRtRoot;
         _logPathUTF8 = getLogPath();
         _xmppServer = xmppServer;
-        _xmppUsername = JingleUtils.did2jid(localdid);
+        _xmppUsername = localjid;
         _xmppPassword = xmppServer.getXmppPassword();
     }
 
@@ -185,13 +186,11 @@ public class SignalThread extends Thread implements IDumpStatMisc
         // The xmpp server address is an unresolved hostname.
         // We avoid resolving the hostname ourselves and let
         // SMACK do the DNS query on its thread.
-        InetSocketAddress xmppAddress = XMPP.ADDRESS;
-        InetSocketAddress stunAddress = DaemonParam.Jingle.STUN_ADDRESS;
         // TODO (WW) XmppMain() should use int rather than short as the datatype of jingleRelayPort
         // as Java's unsigned short may overflow on big port numbers.
         _main = new XmppMain(
-                xmppAddress.getHostName(), xmppAddress.getPort(),
-                stunAddress.getHostName(), stunAddress.getPort(),
+                _xmppServerAddress.getHostName(), _xmppServerAddress.getPort(),
+                _stunServerAddress.getHostName(), _stunServerAddress.getPort(),
                 true,
                 _xmppUsername,
                 _xmppPassword,
@@ -204,8 +203,8 @@ public class SignalThread extends Thread implements IDumpStatMisc
 
         // >>>> WHEE...RUNNING >>>>
 
-        boolean lololon = Cfg.lotsOfLotsOfLog(_absRTRoot);
-        _main.Run(lololon);
+        // boolean lololon = Cfg.lotsOfLotsOfLog(_absRTRoot); FIXME (AG): inject this somehow
+        _main.Run(false);
 
         l.debug("st: main completed");
 

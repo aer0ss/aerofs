@@ -39,12 +39,12 @@ public class BaseParam
 
     public static class XMPP
     {
-        public static final InetSocketAddress ADDRESS = getAddressProperty("base.xmpp.address",
+        public static final InetSocketAddress SERVER_ADDRESS = getAddressProperty("base.xmpp.address",
                 InetSocketAddress.createUnresolved("x.aerofs.com", 443));
 
         public static String getServerDomain()
         {
-            String hostname = ADDRESS.getHostName();
+            String hostname = SERVER_ADDRESS.getHostName();
             String[] split = hostname.split("\\.");
 
             if (split.length < 2) {
@@ -52,11 +52,6 @@ public class BaseParam
             }
 
             return split[split.length-2] + "." + split[split.length-1];
-        }
-
-        public static String getMucAddress()
-        {
-            return "c." + getServerDomain();
         }
     }
 
@@ -70,9 +65,8 @@ public class BaseParam
     {
         public static final String TRANSPORT_ID = "z";
 
-        // staging value: "staging.aerofs.com:8888"
         // this value is dynamic but clients will not pick up the new value on failure
-        public static final InetSocketAddress ADDRESS = getAddressProperty("base.zephyr.address",
+        public static final InetSocketAddress SERVER_ADDRESS = getAddressProperty("base.zephyr.address",
                 InetSocketAddress.createUnresolved("relay.aerofs.com", 443));
     }
 

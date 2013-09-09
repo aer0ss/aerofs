@@ -147,7 +147,7 @@ public class CNameVerificationHandler extends SimpleChannelHandler
             // Compare against the actual cname from the certificate
             String actual = getPeerCName(ctx);
             if (!expected.equals(actual)) {
-                l.warn("cname verification failed. got:" + actual + " for:" + user + " - " + did.toStringFormal());
+                l.warn("cname verification failed. exp:" + expected + " act:" + actual + " usr:" + user + " - " + did.toStringFormal());
                 throw new SecurityException("cname verification failed");
             }
 

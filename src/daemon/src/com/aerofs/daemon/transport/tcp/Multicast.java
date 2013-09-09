@@ -55,15 +55,17 @@ class Multicast implements IMaxcast
 
     private final DID _localdid;
     private final TCP _tcp;
+    private final boolean _listenToMulticastOnLoopback;
     private final MaxcastFilterReceiver _mcfr;
     private final Map<NetworkInterface, MulticastSocket> _iface2sock = synchronizedMap(new HashMap<NetworkInterface, MulticastSocket>());
 
     private Stores _stores; // the only reason this isn't final is because of a circular dependency between the two
 
-    Multicast(DID localdid, TCP tcp, MaxcastFilterReceiver mcfr)
+    Multicast(DID localdid, TCP tcp, boolean listenToMulticastOnLoopback, MaxcastFilterReceiver mcfr)
     {
         _localdid = localdid;
         _tcp = tcp;
+        _listenToMulticastOnLoopback = listenToMulticastOnLoopback;
         _mcfr = mcfr;
     }
 
@@ -119,7 +121,7 @@ class Multicast implements IMaxcast
                 final MulticastSocket s = new MulticastSocket(DaemonParam.TCP.MCAST_PORT); // bind to *:TCP_MCAST_PORT
                 // N.B. Setting loopback mode to true _disables_ TCP multicast on local loopback
                 // See http://docs.oracle.com/javase/6/docs/api/java/net/MulticastSocket.html#setLoopbackMode(boolean)
-                s.setLoopbackMode(true);
+                s.setLoopbackMode(!_listenToMulticastOnLoopback);
                 s.joinGroup(new InetSocketAddress(DaemonParam.TCP.MCAST_ADDRESS,
                         DaemonParam.TCP.MCAST_PORT), iface);
 

@@ -29,6 +29,7 @@ import com.aerofs.daemon.transport.xmpp.Multicast;
 import com.aerofs.daemon.transport.xmpp.PresenceStore;
 import com.aerofs.daemon.transport.xmpp.XMPPConnectionService;
 import com.aerofs.daemon.transport.xmpp.XMPPPresenceManager;
+import com.aerofs.j.Jid;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
 import com.aerofs.lib.event.IEvent;
@@ -48,6 +49,7 @@ import org.jboss.netty.bootstrap.ServerBootstrap;
 
 import java.io.IOException;
 import java.io.PrintStream;
+import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
 import java.net.SocketAddress;
 import java.net.UnknownHostException;
@@ -72,15 +74,20 @@ public class Jingle implements ITransport, ILinkStateListener, IUnicastCallbacks
     private final PulseManager _pulseManager = new PulseManager();
     private final StreamManager _sm = new StreamManager();
     private final DID _localDID;
+    private final Jid _localJid;
     private final String _id;
     private final int _rank;
     private final SignalThread _signalThread;
     private final Multicast _multicast;
     private final XMPPConnectionService _xmppServer;
+    private final String _xmppServerDomain;
     private final Unicast _ucast;
 
     public Jingle(UserID localUser,
             DID localDID,
+            InetSocketAddress stunServerAddress,
+            InetSocketAddress xmppServerAddress,
+            String xmppServerDomain,
             byte[] scrypted,
             String absRtRoot,
             String id, int rank,
@@ -91,7 +98,10 @@ public class Jingle implements ITransport, ILinkStateListener, IUnicastCallbacks
             SSLEngineFactory serverSslEngineFactory
             )
     {
+        OSUtil.get().loadLibrary("aerofsj");
+
         _localDID = localDID;
+        _localJid = JingleUtils.did2jid(_localDID, xmppServerDomain);
         _id = id;
         _rank = rank;
         _sink = sink;
@@ -99,11 +109,11 @@ public class Jingle implements ITransport, ILinkStateListener, IUnicastCallbacks
         _sched = new Scheduler(_q, id + "-sched");
         _transportStats = new TransportStats();
 
-        _xmppServer = new XMPPConnectionService(localDID, id, scrypted, rockLog);
+        _xmppServer = new XMPPConnectionService(localDID, xmppServerAddress, xmppServerDomain, id, scrypted, rockLog); // FIXME (AG): inject this
+        _xmppServerDomain = xmppServerDomain;
 
         // Signal thread
-        OSUtil.get().loadLibrary("aerofsj");
-        _signalThread = new SignalThread(localDID, _xmppServer, absRtRoot);
+        _signalThread = new SignalThread(_localJid, stunServerAddress, xmppServerAddress, _xmppServer, absRtRoot);
         _signalThread.setDaemon(true);
         _signalThread.setName(SIGNAL_THREAD_THREAD_ID);
 
@@ -119,7 +129,7 @@ public class Jingle implements ITransport, ILinkStateListener, IUnicastCallbacks
         XMPPPresenceManager presenceManager = new XMPPPresenceManager(this, localDID, sink, _presenceStore, _pulseManager, _ucast);
 
         // Multicast
-        _multicast = new Multicast(localDID, id, mcfr, _xmppServer, this, sink);
+        _multicast = new Multicast(localDID, id, xmppServerDomain, mcfr, _xmppServer, this, sink);
         registerMulticastHandler(_disp, _multicast);
 
         // Warning: it is very important that XMPPPresenceManager listens to the XMPPServer _before_
@@ -156,7 +166,7 @@ public class Jingle implements ITransport, ILinkStateListener, IUnicastCallbacks
 
         _signalThread.start();
 
-        _ucast.start(new DIDAddress(_localDID));
+        _ucast.start(new JingleAddress(_localDID, _localJid));
     }
 
     @Override
@@ -259,7 +269,7 @@ public class Jingle implements ITransport, ILinkStateListener, IUnicastCallbacks
     public SocketAddress resolve(DID did)
             throws ExDeviceOffline
     {
-        return new DIDAddress(did);
+        return new JingleAddress(did, JingleUtils.did2jid(did, _xmppServerDomain));
     }
 
     @Override
@@ -276,7 +286,7 @@ public class Jingle implements ITransport, ILinkStateListener, IUnicastCallbacks
 
         ServerStatus.Builder xmppServerStatus = ServerStatus
                 .newBuilder()
-                .setServerAddress(fromInetSockAddress(XMPP.ADDRESS));
+                .setServerAddress(fromInetSockAddress(XMPP.SERVER_ADDRESS));
 
         try {
             xmppServerStatus.setReachable(_xmppServer.isReachable());
@@ -291,7 +301,7 @@ public class Jingle implements ITransport, ILinkStateListener, IUnicastCallbacks
 
         ServerStatus.Builder stunServerStatus = ServerStatus
                 .newBuilder()
-                .setServerAddress(fromInetSockAddress(DaemonParam.Jingle.STUN_ADDRESS));
+                .setServerAddress(fromInetSockAddress(DaemonParam.Jingle.STUN_SERVER_ADDRESS));
 
         // FIXME (AG): actually check STUN reachability
         //

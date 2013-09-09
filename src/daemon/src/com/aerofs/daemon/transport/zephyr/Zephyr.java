@@ -70,7 +70,6 @@ import java.io.PrintStream;
 import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
 import java.net.Proxy;
-import java.net.SocketAddress;
 import java.util.Set;
 
 import static com.aerofs.base.id.JabberID.did2FormAJid;
@@ -117,6 +116,7 @@ public final class Zephyr implements ITransport, ILinkStateListener, IUnicast, I
 
     private final PresenceStore presenceStore = new PresenceStore();
     private final Multicast multicast;
+    private final String xmppServerDomain;
     private final XMPPConnectionService xmppConnectionService;
 
     private final InetSocketAddress zephyrAddress;
@@ -142,7 +142,9 @@ public final class Zephyr implements ITransport, ILinkStateListener, IUnicast, I
             ClientSocketChannelFactory clientSocketChannelFactory,
             MobileServerZephyrConnector mobileZephyr,
             RockLog rocklog,
-            SocketAddress zephyrAddress,
+            InetSocketAddress xmppServerAddress,
+            String xmppServerDomain,
+            InetSocketAddress zephyrAddress,
             Proxy proxy)
     {
         checkState(DaemonParam.XMPP.CONNECT_TIMEOUT > DaemonParam.Zephyr.HANDSHAKE_TIMEOUT); // should be much larger!
@@ -157,11 +159,12 @@ public final class Zephyr implements ITransport, ILinkStateListener, IUnicast, I
         this.mobileZephyrConnector = mobileZephyr; // I don't want this here!!!!
         this.outgoingEventSink = outgoingEventSink;
         this.scheduler = new Scheduler(eventQueue, id + "-sched");
-        this.xmppConnectionService = new XMPPConnectionService(localdid, id(), scrypted, rocklog);
-        this.multicast = new Multicast(localdid, id(), maxcastFilterReceiver, xmppConnectionService, this, outgoingEventSink);
+        this.xmppServerDomain = xmppServerDomain;
+        this.xmppConnectionService = new XMPPConnectionService(localdid, xmppServerAddress, xmppServerDomain, id(), scrypted, rocklog);
+        this.multicast = new Multicast(localdid, id(), xmppServerDomain, maxcastFilterReceiver, xmppConnectionService, this, outgoingEventSink);
         this.maxcastFilterReceiver = maxcastFilterReceiver;
         this.pulseManager.addPulseDeletionWatcher(new GenericPulseDeletionWatcher(this, this.outgoingEventSink));
-        this.zephyrAddress = (InetSocketAddress) zephyrAddress;
+        this.zephyrAddress = zephyrAddress;
 
         this.zephyrConnectionService = new ZephyrConnectionService(
                 localid, localdid,
@@ -267,7 +270,7 @@ public final class Zephyr implements ITransport, ILinkStateListener, IUnicast, I
         OutArg<Integer> len = new OutArg<Integer>(0);
         String enc = encodeBody(len, msg);
 
-        final Message xmsg = new Message(did2FormAJid(did, id()), Message.Type.normal);
+        final Message xmsg = new Message(did2FormAJid(did, xmppServerDomain, id()), Message.Type.normal);
         xmsg.setBody(enc);
 
         // for now we actually don't have to enqueue the sending task as a new
@@ -613,7 +616,7 @@ public final class Zephyr implements ITransport, ILinkStateListener, IUnicast, I
 
         ServerStatus.Builder xmppServerStatus = ServerStatus
                 .newBuilder()
-                .setServerAddress(fromInetSockAddress(XMPP.ADDRESS));
+                .setServerAddress(fromInetSockAddress(XMPP.SERVER_ADDRESS));
 
         try {
             xmppServerStatus.setReachable(xmppConnectionService.isReachable());

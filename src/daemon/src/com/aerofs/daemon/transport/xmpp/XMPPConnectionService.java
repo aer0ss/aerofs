@@ -6,7 +6,6 @@
 package com.aerofs.daemon.transport.xmpp;
 
 import com.aerofs.base.Base64;
-import com.aerofs.base.BaseParam.XMPP;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
@@ -77,17 +76,21 @@ public final class XMPPConnectionService implements IDumpStatMisc
 
     private final RockLog rocklog;
     private final DID localdid;
+    private final InetSocketAddress xmppServerAddress;
     private final String localjid;
+    private final String xmppServerDomain;
     private final String resource;
     private final String xmppPassword; // sha256(scrypt(p|u)|XMPP_PASSWORD_SALT)
     private final AtomicInteger xscThreadId = new AtomicInteger(0);
     private final AtomicBoolean connectionInProgress = new AtomicBoolean(false);
     private final Listeners<IXMPPConnectionServiceListener> _listeners = Listeners.create();
 
-    public XMPPConnectionService(DID localdid, String resource, byte[] scrypted, RockLog rocklog)
+    public XMPPConnectionService(DID localdid, InetSocketAddress xmppServerAddress, String xmppServerDomain, String resource, byte[] scrypted, RockLog rocklog)
     {
         this.localdid = localdid;
+        this.xmppServerAddress = xmppServerAddress;
         this.localjid = JabberID.did2user(this.localdid);
+        this.xmppServerDomain = xmppServerDomain;
         this.resource = resource;
         this.xmppPassword = Base64.encodeBytes(SecUtil.hash(scrypted, XMPP_PASSWORD_SALT));
         this.rocklog = rocklog;
@@ -115,7 +118,7 @@ public final class XMPPConnectionService implements IDumpStatMisc
     {
         Socket s = null;
         try {
-            s = newConnectedSocket(XMPP.ADDRESS, (int)(2 * C.SEC));
+            s = newConnectedSocket(xmppServerAddress, (int)(2 * C.SEC));
             return true;
         } catch (IOException e) {
             l.warn("fail xmpp reachability check", e);
@@ -174,9 +177,8 @@ public final class XMPPConnectionService implements IDumpStatMisc
         // The xmpp server address is an unresolved hostname.
         // We avoid resolving the hostname ourselves and let
         // SMACK do the DNS query on its thread.
-        InetSocketAddress address = XMPP.ADDRESS;
-        ConnectionConfiguration cc = new ConnectionConfiguration(address.getHostName(), address.getPort());
-        cc.setServiceName(XMPP.getServerDomain());
+        ConnectionConfiguration cc = new ConnectionConfiguration(xmppServerAddress.getHostName(), xmppServerAddress.getPort());
+        cc.setServiceName(xmppServerDomain);
         cc.setSecurityMode(SecurityMode.required);
         cc.setSelfSignedCertificateEnabled(true);
         cc.setVerifyChainEnabled(false);
@@ -265,7 +267,7 @@ public final class XMPPConnectionService implements IDumpStatMisc
         l.info("connecting to " + newConnection.getHost() + ":" + newConnection.getPort());
         newConnection.connect();
 
-        l.info("logging in as " + JabberID.did2FormAJid(localdid, resource)); // done to show relationship
+        l.info("logging in as " + JabberID.did2FormAJid(localdid, xmppServerDomain, resource)); // done to show relationship
         newConnection.login(localjid, getXmppPassword(), resource);
         l.info("logged in");
 

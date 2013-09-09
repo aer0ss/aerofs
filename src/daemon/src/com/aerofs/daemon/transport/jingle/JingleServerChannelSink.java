@@ -53,7 +53,7 @@ public class JingleServerChannelSink extends AbstractChannelSink
 
         switch (JingleUtils.parseDownstreamEvent(event.getState(), value)) {
         case BIND:
-            bind(channel, future, (DIDAddress) value);
+            bind(channel, future, (JingleAddress) value);
             break;
         case CLOSE:
         case UNBIND:
@@ -67,7 +67,7 @@ public class JingleServerChannelSink extends AbstractChannelSink
         }
     }
 
-    private static void bind(JingleServerChannel channel, ChannelFuture future, DIDAddress localAddress)
+    private static void bind(JingleServerChannel channel, ChannelFuture future, JingleAddress localAddress)
     {
         try {
             channel.setLocalAddress(localAddress);

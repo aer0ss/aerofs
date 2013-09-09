@@ -19,7 +19,7 @@ import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.channel.Channels;
 
 import static com.aerofs.daemon.transport.netty.BootstrapFactoryUtil.newCNameVerificationHandler;
-import static com.aerofs.daemon.transport.netty.BootstrapFactoryUtil.newFameDecoder;
+import static com.aerofs.daemon.transport.netty.BootstrapFactoryUtil.newFrameDecoder;
 import static com.aerofs.daemon.transport.netty.BootstrapFactoryUtil.newLengthFieldPrepender;
 import static com.aerofs.daemon.transport.netty.BootstrapFactoryUtil.newMagicReader;
 import static com.aerofs.daemon.transport.netty.BootstrapFactoryUtil.newMagicWriter;
@@ -60,7 +60,7 @@ class JingleBootstrapFactory
                 return Channels.pipeline(
                         newStatsHandler(_stats),
                         newSslHandler(_clientSslEngineFactory),
-                        newFameDecoder(),
+                        newFrameDecoder(),
                         newLengthFieldPrepender(),
                         newMagicReader(),
                         newMagicWriter(),
@@ -85,7 +85,7 @@ class JingleBootstrapFactory
                 return Channels.pipeline(
                         newStatsHandler(_stats),
                         newSslHandler(_serverSslEngineFactory),
-                        newFameDecoder(),
+                        newFrameDecoder(),
                         newLengthFieldPrepender(),
                         newMagicReader(),
                         newMagicWriter(),

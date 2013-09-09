@@ -218,7 +218,7 @@ public class TestLinkStateService
 
         LinkStateNotificationParameters call;
 
-        // only had two calls to the listener
+        // had three calls to the listener
         assertThat(calls.size(), equalTo(3));
 
         // call 1 (setup): when links marked up

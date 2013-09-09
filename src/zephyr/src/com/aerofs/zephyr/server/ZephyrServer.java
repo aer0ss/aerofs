@@ -38,7 +38,7 @@ import static java.nio.channels.SelectionKey.OP_ACCEPT;
  * - default bytebuffer size should be configurable
  * - should have a way of setting the random seed
  * - look closer at NioProviderMetadata
- * - should Zephyr have the buffer pool? Maybe it should init_ with a reference to
+ * - should Zephyr have the buffer pool? Maybe it should init with a reference to
  *   a buffer pool
  * - have to have timeouts so that I prune connections for which no data was sent
  * - find a way to avoid returning the selectionkey to arbitrary pes

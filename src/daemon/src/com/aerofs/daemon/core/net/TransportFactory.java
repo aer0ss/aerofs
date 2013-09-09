@@ -14,10 +14,6 @@ import com.aerofs.daemon.transport.jingle.Jingle;
 import com.aerofs.daemon.transport.lib.MaxcastFilterReceiver;
 import com.aerofs.daemon.transport.tcp.TCP;
 import com.aerofs.daemon.transport.zephyr.Zephyr;
-import com.aerofs.lib.cfg.CfgAbsRTRoot;
-import com.aerofs.lib.cfg.CfgLocalDID;
-import com.aerofs.lib.cfg.CfgLocalUser;
-import com.aerofs.lib.cfg.CfgScrypted;
 import com.aerofs.lib.event.IEvent;
 import com.aerofs.rocklog.RockLog;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
@@ -27,13 +23,9 @@ import javax.annotation.Nullable;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 
-import static com.aerofs.daemon.core.net.TransportFactory.Transport.JINGLE;
-import static com.aerofs.daemon.core.net.TransportFactory.Transport.LANTCP;
-import static com.aerofs.daemon.core.net.TransportFactory.Transport.ZEPHYR;
-
 public final class TransportFactory
 {
-    public static enum Transport
+    public static enum TransportType
     {
         LANTCP("t", 0),
         JINGLE("j", 1),
@@ -42,7 +34,7 @@ public final class TransportFactory
         private final String id;
         private final int rank;
 
-        private Transport(String id, int rank)
+        private TransportType(String id, int rank)
         {
             this.id = id;
             this.rank = rank;
@@ -70,9 +62,13 @@ public final class TransportFactory
     }
 
     private String absRtRoot;
-    private final UserID localid;
-    private final DID localdid;
-    private byte[] scrypted;
+    private final UserID userID;
+    private final DID did;
+    private final byte[] scrypted;
+    private final boolean listenToMulticastOnLoopback;
+    private final InetSocketAddress stunServerAddress;
+    private final InetSocketAddress xmppServerAddress;
+    private final String xmppServerDomain;
     private final InetSocketAddress zephyrServerAddress;
     private final Proxy proxy;
     private final BlockingPrioQueue<IEvent> transportEventSink;
@@ -85,10 +81,14 @@ public final class TransportFactory
     private final SSLEngineFactory clientSslEngineFactory;
 
     public TransportFactory(
-            CfgAbsRTRoot absRtRoot,
-            CfgLocalUser localid,
-            CfgLocalDID localdid,
-            CfgScrypted scrypted,
+            String absRtRoot,
+            UserID userID,
+            DID did,
+            byte[] scrypted,
+            boolean listenToMulticastOnLoopback,
+            InetSocketAddress stunServerAddress,
+            InetSocketAddress xmppServerAddress,
+            String xmppServerDomain,
             InetSocketAddress zephyrServerAddress,
             Proxy proxy,
             BlockingPrioQueue<IEvent> transportEventSink,
@@ -100,10 +100,14 @@ public final class TransportFactory
             SSLEngineFactory clientSslEngineFactory,
             SSLEngineFactory serverSslEngineFactory)
     {
-        this.absRtRoot = absRtRoot.get();
-        this.localid = localid.get();
-        this.localdid = localdid.get();
-        this.scrypted = scrypted.get();
+        this.absRtRoot = absRtRoot;
+        this.userID = userID;
+        this.did = did;
+        this.scrypted = scrypted;
+        this.listenToMulticastOnLoopback = listenToMulticastOnLoopback;
+        this.stunServerAddress = stunServerAddress;
+        this.xmppServerAddress = xmppServerAddress;
+        this.xmppServerDomain = xmppServerDomain;
         this.zephyrServerAddress = zephyrServerAddress;
         this.proxy = proxy;
         this.transportEventSink = transportEventSink;
@@ -116,29 +120,36 @@ public final class TransportFactory
         this.mobileServerZephyrConnector = mobileServerZephyrConnector;
     }
 
-    public ITransport newTransport(Transport transport)
+    public ITransport newTransport(TransportType transportType, String transportId, int transportRank)
             throws ExUnsupportedTransport
     {
-        switch (transport) {
+        switch (transportType) {
         case LANTCP:
-            return newLanTcp();
+            return newLanTcp(transportId, transportRank);
         case ZEPHYR:
-            return newZephyr();
+            return newZephyr(transportId, transportRank);
         case JINGLE:
-            return newJingle();
+            return newJingle(transportId, transportRank);
         default:
-            throw new ExUnsupportedTransport(transport.name());
+            throw new ExUnsupportedTransport(transportType.name());
         }
     }
 
-    private ITransport newLanTcp()
+    public ITransport newTransport(TransportType transportType)
+            throws ExUnsupportedTransport
+    {
+        return newTransport(transportType, transportType.getId(), transportType.getRank());
+    }
+
+    private ITransport newLanTcp(String transportId, int transportRank)
     {
         return new TCP(
-                localid,
-                localdid,
-                LANTCP.getId(),
-                LANTCP.getRank(),
+                userID,
+                did,
+                transportId,
+                transportRank,
                 transportEventSink,
+                listenToMulticastOnLoopback,
                 maxcastFilterReceiver,
                 clientSslEngineFactory,
                 serverSslEngineFactory,
@@ -146,14 +157,14 @@ public final class TransportFactory
                 serverSocketChannelFactory);
     }
 
-    private ITransport newZephyr()
+    private ITransport newZephyr(String transportId, int transportRank)
     {
         return new Zephyr(
-                localid,
-                localdid,
+                userID,
+                did,
                 scrypted,
-                ZEPHYR.getId(),
-                ZEPHYR.getRank(),
+                transportId,
+                transportRank,
                 transportEventSink,
                 maxcastFilterReceiver,
                 clientSslEngineFactory,
@@ -161,19 +172,24 @@ public final class TransportFactory
                 clientSocketChannelFactory,
                 mobileServerZephyrConnector,
                 rocklog,
+                xmppServerAddress,
+                xmppServerDomain,
                 zephyrServerAddress,
                 proxy);
     }
 
-    private ITransport newJingle()
+    private ITransport newJingle(String transportId, int transportRank)
     {
         return new Jingle(
-                localid,
-                localdid,
+                userID,
+                did,
+                stunServerAddress,
+                xmppServerAddress,
+                xmppServerDomain,
                 scrypted,
                 absRtRoot,
-                JINGLE.getId(),
-                JINGLE.getRank(),
+                transportId,
+                transportRank,
                 transportEventSink,
                 maxcastFilterReceiver,
                 rocklog,

@@ -68,7 +68,7 @@ public class BootstrapFactoryUtil
         return new LengthFieldPrepender(FrameParams.LENGTH_FIELD_SIZE);
     }
 
-    public static LengthFieldBasedFrameDecoder newFameDecoder()
+    public static LengthFieldBasedFrameDecoder newFrameDecoder()
     {
         return new LengthFieldBasedFrameDecoder(FrameParams.MAX_MESSAGE_SIZE, 0,
                 FrameParams.LENGTH_FIELD_SIZE, 0, FrameParams.LENGTH_FIELD_SIZE);

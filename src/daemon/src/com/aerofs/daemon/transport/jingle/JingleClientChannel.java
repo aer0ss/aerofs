@@ -43,8 +43,8 @@ public class JingleClientChannel extends AbstractChannel implements IJingleStrea
     final AtomicInteger _state = new AtomicInteger(ST_OPEN);
 
     private final ChannelConfig _config;
-    private volatile DIDAddress _localAddress;
-    private volatile DIDAddress _remoteAddress;
+    private volatile JingleAddress _localAddress;
+    private volatile JingleAddress _remoteAddress;
     private volatile JingleStream _stream;
     private ChannelFuture _connectFuture;
 
@@ -122,7 +122,7 @@ public class JingleClientChannel extends AbstractChannel implements IJingleStrea
         _connectFuture = future;
     }
 
-    void setLocalAddress(DIDAddress address)
+    void setLocalAddress(JingleAddress address)
     {
         _localAddress = address;
     }
@@ -139,7 +139,7 @@ public class JingleClientChannel extends AbstractChannel implements IJingleStrea
         return _remoteAddress;
     }
 
-    void setRemoteAddress(DIDAddress address)
+    void setRemoteAddress(JingleAddress address)
     {
         _remoteAddress = address;
     }

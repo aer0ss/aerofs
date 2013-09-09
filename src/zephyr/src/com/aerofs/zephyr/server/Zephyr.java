@@ -34,7 +34,7 @@ public class Zephyr
 
         try {
             Dispatcher d = new Dispatcher();
-            d.init_();
+            d.init();
 
             l.info("zephyr: {}:{}", host, port);
             ZephyrServer z = new ZephyrServer(host, port, d);

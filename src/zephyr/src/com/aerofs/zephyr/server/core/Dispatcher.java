@@ -38,7 +38,7 @@ import static java.nio.channels.SelectionKey.OP_WRITE;
  */
 public class Dispatcher implements Runnable
 {
-    public void init_()
+    public void init()
             throws IOException
     {
         try {

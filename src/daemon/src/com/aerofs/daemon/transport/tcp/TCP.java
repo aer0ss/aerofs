@@ -93,6 +93,7 @@ public class TCP implements ITransport, ILinkStateListener, IUnicastCallbacks, I
             String id,
             int pref,
             IBlockingPrioritizedEventSink<IEvent> sink,
+            boolean listenToMulticastOnLoopback,
             MaxcastFilterReceiver mcfr,
             SSLEngineFactory clientSslEngineFactory,
             SSLEngineFactory serverSslEngineFactory,
@@ -108,7 +109,7 @@ public class TCP implements ITransport, ILinkStateListener, IUnicastCallbacks, I
         _sink = sink;
         _arp.addARPChangeListener(this);
         _pm.addGenericPulseDeletionWatcher(this, _sink);
-        _mcast = new Multicast(localDID, this, mcfr);
+        _mcast = new Multicast(localDID, this, listenToMulticastOnLoopback, mcfr);
         _stores = new Stores(_localDID, this, _sched, _arp, _mcast);
         _mcast.setStores(_stores);
 

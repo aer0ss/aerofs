@@ -25,6 +25,7 @@ import com.aerofs.daemon.event.net.EOUpdateStores;
 import com.aerofs.daemon.event.net.rx.EIUnicastMessage;
 import com.aerofs.daemon.event.net.tx.EOUnicastMessage;
 import com.aerofs.daemon.lib.BlockingPrioQueue;
+import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.daemon.transport.debug.Tput;
 import com.aerofs.daemon.transport.lib.MaxcastFilterReceiver;
@@ -54,9 +55,9 @@ import java.util.Arrays;
 import static com.aerofs.base.ssl.SSLEngineFactory.Mode.Client;
 import static com.aerofs.base.ssl.SSLEngineFactory.Mode.Server;
 import static com.aerofs.base.ssl.SSLEngineFactory.Platform.Desktop;
-import static com.aerofs.daemon.core.net.TransportFactory.Transport.JINGLE;
-import static com.aerofs.daemon.core.net.TransportFactory.Transport.LANTCP;
-import static com.aerofs.daemon.core.net.TransportFactory.Transport.ZEPHYR;
+import static com.aerofs.daemon.core.net.TransportFactory.TransportType.JINGLE;
+import static com.aerofs.daemon.core.net.TransportFactory.TransportType.LANTCP;
+import static com.aerofs.daemon.core.net.TransportFactory.TransportType.ZEPHYR;
 import static com.aerofs.lib.ChannelFactories.getClientChannelFactory;
 import static com.aerofs.lib.ChannelFactories.getServerChannelFactory;
 import static com.aerofs.lib.event.Prio.LO;
@@ -164,11 +165,15 @@ public final class Pump implements IProgram
         ClientSocketChannelFactory clientChannelFactory = getClientChannelFactory();
         ServerSocketChannelFactory serverChannelFactory = getServerChannelFactory();
         return new TransportFactory(
-                absRTRoot,
-                localid,
-                localdid,
-                scrypted,
-                BaseParam.Zephyr.ADDRESS,
+                absRTRoot.get(),
+                localid.get(),
+                localdid.get(),
+                scrypted.get(),
+                false,
+                DaemonParam.Jingle.STUN_SERVER_ADDRESS,
+                BaseParam.XMPP.SERVER_ADDRESS,
+                BaseParam.XMPP.getServerDomain(),
+                BaseParam.Zephyr.SERVER_ADDRESS,
                 Proxy.NO_PROXY,
                 incomingEventSink,
                 rockLog,

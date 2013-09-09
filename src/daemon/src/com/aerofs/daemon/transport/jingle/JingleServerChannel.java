@@ -29,7 +29,7 @@ import static org.jboss.netty.channel.Channels.fireChannelBound;
 public class JingleServerChannel extends AbstractServerChannel implements ISignalThreadListener
 {
     private static final Logger l = Loggers.getLogger(AbstractServerChannel.class);
-    private volatile DIDAddress _localAddress;
+    private volatile JingleAddress _localAddress;
     private final ChannelConfig _config;
 
     private final Map<DID, JingleClientChannel> _acceptedChannels = Maps.newConcurrentMap();
@@ -63,7 +63,7 @@ public class JingleServerChannel extends AbstractServerChannel implements ISigna
         return _localAddress != null;
     }
 
-    void setLocalAddress(DIDAddress address)
+    void setLocalAddress(JingleAddress address)
     {
         _localAddress = address;
     }
@@ -106,7 +106,7 @@ public class JingleServerChannel extends AbstractServerChannel implements ISigna
 
             // Bind
             acceptedChannel.setLocalAddress(_localAddress);
-            acceptedChannel.setRemoteAddress(new DIDAddress(did));
+            acceptedChannel.setRemoteAddress(new JingleAddress(did, jid));
             jingleStream = new JingleStream(client.AcceptTunnel(session), did, true, acceptedChannel);
             acceptedChannel.setJingleDataStream(jingleStream);
             acceptedChannel.setBound();

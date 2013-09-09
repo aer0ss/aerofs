@@ -1,16 +1,15 @@
 package com.aerofs.daemon.lib;
 
-import java.io.PrintStream;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.locks.Condition;
-
-import com.aerofs.lib.event.Prio;
+import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.lib.IDumpStatMisc;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.StrictLock;
-import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
-import com.aerofs.base.ex.ExNoResource;
+import com.aerofs.lib.event.Prio;
+
+import java.io.PrintStream;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.Condition;
 
 public class BlockingPrioQueue<T> implements IBlockingPrioritizedEventSink<T>, IDumpStatMisc
 {
@@ -43,7 +42,7 @@ public class BlockingPrioQueue<T> implements IBlockingPrioritizedEventSink<T>, I
         _cvEnq = _l.newCondition();
         _cvSpinner = _l.newCondition();
 
-        _pq = Cfg.useProfiler() ? new ProfilerPrioQueue<T>(capacity) : new PrioQueue<T>(capacity);
+        _pq = new PrioQueue<T>(capacity);
     }
 
     public BlockingPrioQueue(int capacity)

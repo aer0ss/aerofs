@@ -61,8 +61,8 @@ class ARP implements IPresenceManager
 
         notifyListeners(did, isNew ? ADD : UPD);
 
-        if (l.isDebugEnabled()) {
-            l.debug("arp: add: d:{} rem:{} n:{}", did, prettyPrint(isa), isNew);
+        if (isNew) {
+            l.info("arp: add: d{} rem:{}", did, prettyPrint(isa));
         }
     }
 
@@ -81,9 +81,8 @@ class ARP implements IPresenceManager
 
         notifyListeners(did, REM);
 
-        if (l.isDebugEnabled()) {
-            l.debug("arp: rem: d:" + (oldEntry == null ? "null" : did + "rem:" + prettyPrint(
-                    oldEntry._isa)));
+        if (oldEntry != null) {
+            l.info("arp: rem: d:{} rem:{}", did, prettyPrint(oldEntry._isa));
         }
 
         return oldEntry;

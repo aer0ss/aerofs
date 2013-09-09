@@ -27,6 +27,7 @@ public class UnicastOutputBottomLayer implements IUnicastOutputLayer
 {
     private static final Logger l = Loggers.getLogger(UnicastOutputBottomLayer.class);
 
+    // FIXME (AG): NONE OF THE TRANSPORT EVENTS ACTUALLY REQUIRES CORE/ABSTRACTEBIMC!! GAH! FUCK ME!
 
     public static class Factory
     {

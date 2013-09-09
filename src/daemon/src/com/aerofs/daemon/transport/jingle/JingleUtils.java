@@ -4,7 +4,6 @@
 
 package com.aerofs.daemon.transport.jingle;
 
-import com.aerofs.base.BaseParam.XMPP;
 import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.JabberID;
@@ -26,11 +25,12 @@ public class JingleUtils
      * Convert a DID> to an XMPP JID valid on the AeroFS XMPP server
      *
      * @param did {@link com.aerofs.base.id.DID} to convert
+     * @param xmppServerDomain domain to which the resulting {@link Jid} belongs
      * @return a valid XMPP user id of the form: {$user}@{$domain}/{$resource}
      */
-    static Jid did2jid(DID did)
+    static Jid did2jid(DID did, String xmppServerDomain)
     {
-        return new Jid(JabberID.did2user(did), XMPP.getServerDomain(), JINGLE_RESOURCE_NAME);
+        return new Jid(JabberID.did2user(did), xmppServerDomain, JINGLE_RESOURCE_NAME);
     }
 
     static DID jid2did(Jid jid) throws ExFormatError
