@@ -246,7 +246,7 @@ function make_osx_packages() {
     # Copy the aerofs and aerofs.osx files into the Mac App directory within the temp directory created above
     cp -a "${AEROFS_RELEASE_DIR}"/* "${AEROFS_RELEASE_OSX_DIR}"/* "${DMG_TEMP_DIR}/${local_OSX_LOCAL_MAC_APP_DIR}/"
 
-    if is_prod && $SIGNED ; then
+    if $SIGNED ; then
         echo ">> sign app for Mac App Store"
         # see http://developer.apple.com/library/mac/technotes/tn2206/_index.html#//apple_ref/doc/uid/DTS40007919-CH1-SUBSECTION9
         # for information on signing frameworks
