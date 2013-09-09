@@ -260,7 +260,7 @@ Function postInstall_privileged
     # will silently fail.
     DetailPrint "Registering the shell extension"
     ExecWait 'regsvr32.exe /s "$USERS_INSTDIR\v_${AEROFS_VERSION}\AeroFSShellExt32.dll"'
-    ExecWait 'regsvr32.exe /s "$USERS_INSTDIR\v_${AEROFS_VERSION}\AeroFSShellExt64.dll"'
+    ExecWait 'regsvr32.exe /s "$USERS_INSTDIR\v_${AEROFS_VERSION}\x64\AeroFSShellExt64.dll"'
 
     # Relaunch explorer on Windows XP - otherwise it won't detect that we added a new shell extension
     # But do not relaunch on updates (silent mode) otherwise Explorer would be restarted too often
