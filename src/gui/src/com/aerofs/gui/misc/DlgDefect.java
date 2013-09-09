@@ -137,7 +137,7 @@ public class DlgDefect extends AeroFSJFaceDialog
     {
         Label lblWhatsUp = new Label(container, SWT.NONE);
         // \n: a nasty way of setting margins. it's ugly but it works.
-        lblWhatsUp.setText("\nTechnical detail:");
+        lblWhatsUp.setText("\nTechnical details:");
 
         Text txtDetails = new Text(container, SWT.BORDER | SWT.WRAP | SWT.V_SCROLL | SWT.MULTI |
                 SWT.READ_ONLY);
