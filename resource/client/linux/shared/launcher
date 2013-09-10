@@ -60,18 +60,18 @@ ln -s "$DIST/$PRODUCT.desktop" "$HOME/.config/autostart/"
 
 # Find java libraries and executables
 if [ -z "$JAVA_HOME" ]; then
-    JRE_BASE="$(dirname $(dirname $(readlink -f $(which java))))"
-    # Oracle ships two "java" executables in the JDK package - one in the jre/bin/
-    # folder, and the other just in the bin/ folder.  This finds the jre even if
-    # the JDK java binary is the first one on the user's PATH.
-    if [ -d "$JRE_BASE/jre" ]; then
-        JRE_BASE="$JRE_BASE/jre"
-    fi
-    JAVA_CMD="java"
+    JAVA_HOME="$(dirname $(dirname $(readlink -f $(which java))))"
+fi
+# Oracle ships two "java" executables in the JDK package - one in the jre/bin/
+# folder, and the other just in the bin/ folder.  This finds the jre even if
+# the JDK java binary is the first one on the user's PATH.
+if [ -d "$JAVA_HOME/jre" ]; then
+    JRE_BASE="$JAVA_HOME/jre"
 else
     JRE_BASE="$JAVA_HOME"
-    JAVA_CMD="$JRE_BASE/bin/java"
 fi
+
+JAVA_CMD="$JRE_BASE/bin/java"
 JRE_LIB="$JRE_BASE/lib/$JRE_LIB_ARCH"
 # for java to load our own native libraries and aerofsd to load jvm libraries
 export LD_LIBRARY_PATH="$DIST:$JRE_LIB:$JRE_LIB/server:$LD_LIBRARY_PATH"
