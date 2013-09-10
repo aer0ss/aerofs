@@ -17,7 +17,7 @@ create-configuration-url-file
 uwsgi-restart
 restund-fix-config
 zephyr-start
-sanity-pull-dynamic-config
+sanity-pull-config
 repackage-installers
 delay
 sanity-check
