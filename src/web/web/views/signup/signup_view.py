@@ -16,6 +16,9 @@ from web.sp_util import exception2error
 from web.util import *
 from web.views.login.login_view import *
 
+from urllib import urlencode
+from urllib2 import urlopen
+
 log = logging.getLogger(__name__)
 
 # N.B. the string 'c' is also used in RequestToSignUpEmailer.java
@@ -23,6 +26,11 @@ log = logging.getLogger(__name__)
 URL_PARAM_SIGNUP_CODE = 'c'
 URL_PARAM_FIRST_NAME = 'first_name'
 URL_PARAM_LAST_NAME = 'last_name'
+URL_PARAM_TITLE = 'title'
+URL_PARAM_COMPANY = 'company'
+URL_PARAM_COMPANY_SIZE = 'company_size'
+URL_PARAM_PHONE = 'phone'
+URL_PARAM_COUNTRY = 'country'
 
 @view_config(
     route_name='signup',
@@ -44,6 +52,11 @@ def signup(request):
             'url_param_email': URL_PARAM_EMAIL,
             'url_param_first_name': URL_PARAM_FIRST_NAME,
             'url_param_last_name': URL_PARAM_LAST_NAME,
+            'url_param_title' : URL_PARAM_TITLE,
+            'url_param_company': URL_PARAM_COMPANY,
+            'url_param_company_size': URL_PARAM_COMPANY_SIZE,
+            'url_param_phone': URL_PARAM_PHONE,
+            'url_param_country': URL_PARAM_COUNTRY,
             'url_param_password': URL_PARAM_PASSWORD,
             'url_param_remember_me': URL_PARAM_REMEMBER_ME,
             'url_param_next': URL_PARAM_NEXT,
@@ -73,6 +86,11 @@ def json_signup(request):
     email_address = request.params[URL_PARAM_EMAIL]
     first_name = request.params[URL_PARAM_FIRST_NAME]
     last_name = request.params[URL_PARAM_LAST_NAME]
+    title = request.params[URL_PARAM_TITLE]
+    company = request.params[URL_PARAM_COMPANY]
+    company_size = request.params[URL_PARAM_COMPANY_SIZE]
+    phone = request.params[URL_PARAM_PHONE]
+    country = request.params[URL_PARAM_COUNTRY]
     password = request.params[URL_PARAM_PASSWORD]
 
     (is_valid_password, invalid_message) = valid_password_test(request, password)
@@ -85,6 +103,21 @@ def json_signup(request):
         sp = get_rpc_stub(request)
         result = sp.sign_up_with_code(code, cred, first_name, last_name)
 
+        # NOTE: We don't verify that the lead was succesfully captured because we don't want to
+        #       prevent the user from signing up even if salesforce fails
+        urlopen(
+            'https://www.salesforce.com/servlet/servlet.WebToLead?encoding=UTF-8',
+            urlencode({
+                'oid': '00Dd0000000gsmN',
+                'email': email_address,
+                'first_name': first_name,
+                'last_name': last_name,
+                'company': company,
+                'title': title,
+                'employees': company_size,
+                'phone': request.params['phone'],
+                'country': request.params['country']
+            }))
         return {
             'team_id': result.org_id,
             'existing_team': result.existing_team

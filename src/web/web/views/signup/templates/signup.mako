@@ -29,14 +29,25 @@
             ## but this would add an extra round trip to SP.
             <input type="hidden" name="${url_param_email}" value="${email_address}"/>
             <input type="hidden" name="${url_param_signup_code}" value="${code}"/>
-            <label for="inputFirstName">First name:</label>
+            <label for="inputFirstName">First name: *</label>
             <input class="span2" id="inputFirstName" type="text" name="${url_param_first_name}">
-            <label for="inputLastName">Last name:</label>
+            <label for="inputLastName">Last name: *</label>
             <input class="span2" id="inputLastName" type="text" name="${url_param_last_name}">
-            <label for="inputPasswd">Create password:</label>
+            <label for="inputTitle">Title:</label>
+            <input class="span2" id="inputTitle" type="text" name="${url_param_title}">
+            <label for="inputCompany">Company:</label>
+            <input class="span2" id="inputCompany" type="text" name="${url_param_company}">
+            <label for="inputCompanySize">Size:</label>
+            <input class="span2" id="inputCompanySize" type="text" name="${url_param_company_size}">
+            <label for="inputCountry">Country:</label>
+            <input class="span2" id="inputCountry" type="text" name="${url_param_country}">
+            <label for="inputPhone">Phone:</label>
+            <input class="span2" id="inputPhone" type="text" name="${url_param_phone}">
+            <label for="inputPasswd">Create password: *</label>
             <input class="span2" id="inputPasswd" type="password" name="${url_param_password}">
 
             <span class="help-block footnote" style="margin-top: 10px;">
+                Fields marked by (*) are mandatory.<br/><br/>
                 By signing up you agree to AeroFS <a href="${request.route_path('terms')}#tos" target="_blank">Terms of Service</a>
             </span>
 
