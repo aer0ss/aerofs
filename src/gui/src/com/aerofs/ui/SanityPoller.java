@@ -26,6 +26,7 @@ import org.slf4j.Logger;
 import javax.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
+import java.sql.SQLException;
 import java.util.Map.Entry;
 
 /**
@@ -84,7 +85,13 @@ public class SanityPoller
     {
         checkRTRoot(Cfg.absRTRoot());
         checkRoot(Cfg.absDefaultRootAnchor(), null);
-        for (Entry<SID, String> e : Cfg.getRoots().entrySet()) checkRoot(e.getValue(), e.getKey());
+        try {
+            for (Entry<SID, String> e : Cfg.getRoots().entrySet()) {
+                checkRoot(e.getValue(), e.getKey());
+            }
+        } catch (SQLException e) {
+            l.error("ignored exception", e);
+        }
     }
 
     private void checkRTRoot(String absPath)

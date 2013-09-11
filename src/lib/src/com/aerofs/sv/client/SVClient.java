@@ -41,6 +41,7 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
@@ -493,12 +494,16 @@ public final class SVClient
         }
 
         if (Cfg.inited() && Cfg.storageType() == StorageType.LINKED) {
-            for (Entry<SID, String> root : Cfg.getRoots().entrySet()) {
-                String absPath = root.getValue();
-                bdDefect.addJavaEnvName("root " + root.getKey().toStringFormal());
-                bdDefect.addJavaEnvValue(absPath + ", "
-                        + getFSType(absPath) + ", "
-                        + getDiskusage(absPath));
+            try {
+                for (Entry<SID, String> root : Cfg.getRoots().entrySet()) {
+                    String absPath = root.getValue();
+                    bdDefect.addJavaEnvName("root " + root.getKey().toStringFormal());
+                    bdDefect.addJavaEnvValue(absPath + ", "
+                            + getFSType(absPath) + ", "
+                            + getDiskusage(absPath));
+                }
+            } catch (SQLException e) {
+                l.error("ignored exception", e);
             }
         }
 

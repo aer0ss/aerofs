@@ -96,8 +96,8 @@ public class TestHdShareFolder extends AbstractTest
         when(tk.pseudoPause_(anyString())).thenReturn(tcb);
         when(factSP.create_(localUser)).thenReturn(sp);
 
-        when(cfgAbsRoots.get(rootSID)).thenReturn("/AeroFS");
-        when(cfgAbsRoots.get(extSID)).thenReturn("/external");
+        when(cfgAbsRoots.getNullable(rootSID)).thenReturn("/AeroFS");
+        when(cfgAbsRoots.getNullable(extSID)).thenReturn("/external");
 
         MockDS mds = new MockDS(rootSID, ds, sm, sm);
         mds.root()

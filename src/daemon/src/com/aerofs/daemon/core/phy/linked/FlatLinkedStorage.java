@@ -58,7 +58,7 @@ public class FlatLinkedStorage extends LinkedStorage
     }
 
     @Override
-    public void init_() throws IOException
+    public void init_() throws IOException, SQLException
     {
         super.init_();
 

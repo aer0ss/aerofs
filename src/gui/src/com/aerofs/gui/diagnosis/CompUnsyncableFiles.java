@@ -2,6 +2,7 @@ package com.aerofs.gui.diagnosis;
 
 import java.io.File;
 import java.io.IOException;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Map;
@@ -51,8 +52,11 @@ import com.aerofs.swig.driver.Driver;
 import com.aerofs.swig.driver.DriverConstants;
 import com.aerofs.ui.IUI.MessageType;
 import org.eclipse.swt.events.SelectionAdapter;
+import org.slf4j.Logger;
 
-public class CompUnsyncableFiles extends Composite {
+public class CompUnsyncableFiles extends Composite
+{
+    private static final Logger l = Loggers.getLogger(CompUnsyncableFiles.class);
 
     static interface IStatus
     {
@@ -118,7 +122,12 @@ public class CompUnsyncableFiles extends Composite {
 
             Entry en = (Entry) element;
 
-            String absRootPath = Cfg.getRootPath(en._sid);
+            String absRootPath = null;
+            try {
+                absRootPath = Cfg.getRootPathNullable(en._sid);
+            } catch (SQLException e) {
+                l.error("ignored exception", e);
+            }
             int start = absRootPath == null ? 0 : absRootPath.length() + 1;
             String path = en._path.length() > start ? en._path.substring(start) : en._path;
             return GUIUtil.shortenText(_gc, path, _table.getClientArea().width, true);

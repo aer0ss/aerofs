@@ -133,7 +133,7 @@ public abstract class RootAnchorUtil
      * @param rootNew can be relative
      */
     public static void checkNewRootAnchor(String rootOld, String rootNew)
-            throws ExBadArgs, IOException
+            throws ExBadArgs, IOException, SQLException
     {
         String canonOldRoot = new File(rootOld).getCanonicalPath();
         String canonNewRoot = new File(rootNew).getCanonicalPath();

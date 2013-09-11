@@ -40,6 +40,7 @@ import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.ToolTip;
 import org.slf4j.Logger;
 
+import javax.annotation.Nullable;
 import java.io.File;
 import java.util.Map;
 
@@ -55,9 +56,11 @@ public class DlgSyncStatus extends AeroFSDialog
         _path = path;
     }
 
-    Image getPathIcon(Path p)
+    @Nullable Image getPathIconNullable(Path p)
     {
-        File f = new File(UIUtil.absPath(p));
+        String absPath = UIUtil.absPathNullable(p);
+        if (absPath == null) return null;
+        File f = new File(absPath);
         if (f.isDirectory()) return Images.getFolderIcon();
         return Images.getFileIcon(_path.last(), _iconCache);
     }
@@ -80,7 +83,7 @@ public class DlgSyncStatus extends AeroFSDialog
         shell.setLayout(grid);
 
         addLabelPreImage(_path.isEmpty() ? L.rootAnchorName() : _path.last(),
-                getPathIcon(_path), shell);
+                getPathIconNullable(_path), shell);
 
         ScrolledComposite sc = new ScrolledComposite(shell, SWT.V_SCROLL | SWT.BORDER);
         sc.setExpandHorizontal(true);
@@ -118,7 +121,7 @@ public class DlgSyncStatus extends AeroFSDialog
         });
     }
 
-    private void addLabelPreImage(String text, Image img, Composite c)
+    private void addLabelPreImage(String text, @Nullable Image img, Composite c)
     {
         Label limg = new Label(c, SWT.LEFT | SWT.HORIZONTAL);
         limg.setImage(img);

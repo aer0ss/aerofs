@@ -45,6 +45,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.InetSocketAddress;
 import java.net.SocketException;
 import java.net.URLEncoder;
+import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.Date;
@@ -802,8 +803,8 @@ public abstract class Util
      *
      * Classes that need to be unit-tested cannot access Cfg directly...
      */
-    public static String sharedFolderName(Path path, CfgAbsRoots absRoots)
+    public static String sharedFolderName(Path path, CfgAbsRoots absRoots) throws SQLException
     {
-        return path.isEmpty() ? new File(absRoots.get(path.sid())).getName() : path.last();
+        return path.isEmpty() ? new File(absRoots.getNullable(path.sid())).getName() : path.last();
     }
 }

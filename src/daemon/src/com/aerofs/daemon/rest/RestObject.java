@@ -5,7 +5,6 @@ import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UniqueID;
 import com.aerofs.base.id.UniqueID.ExInvalidID;
-import com.aerofs.base.id.UserID;
 
 public class RestObject
 {

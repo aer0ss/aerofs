@@ -183,14 +183,17 @@ public class SingleuserTrayMenu extends AbstractTrayMenu implements IRitualNotif
             break;
         case Type.SHARED_FOLDER_JOIN_VALUE:
             final Path p = Path.fromPB(pb.getPath());
-            UI.get().notify(MessageType.INFO,
-                    "You have joined \"" + UIUtil.sharedFolderName(p, null) + "\"", new Runnable() {
-                @Override
-                public void run()
-                {
-                    GUIUtil.launch(UIUtil.absPath(p));
-                }
-            });
+            final String absPath = UIUtil.absPathNullable(p);
+            if (absPath != null) {
+                UI.get().notify(MessageType.INFO,
+                        "You have joined \"" + UIUtil.sharedFolderName(p, null) + "\"", new Runnable() {
+                    @Override
+                    public void run()
+                    {
+                        GUIUtil.launch(absPath);
+                    }
+                });
+            }
             break;
         case Type.SHARED_FOLDER_KICKOUT_VALUE:
             UI.get().notify(MessageType.INFO,

@@ -23,6 +23,7 @@ import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.Serializable;
 import java.nio.ByteBuffer;
+import java.sql.SQLException;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
@@ -353,8 +354,13 @@ public class LinkedRevProvider implements IPhysicalRevProvider
         private void loop()
         {
             while (true) {
-                for (SID sid : _s._cfgAbsRoots.get().keySet()) {
-                    sweep(Util.join(_s.auxRootForStore_(sid), AuxFolder.REVISION._name));
+                try {
+                    for (SID sid : _s._cfgAbsRoots.get().keySet()) {
+                        sweep(Util.join(_s.auxRootForStore_(sid), AuxFolder.REVISION._name));
+                    }
+                } catch (SQLException e) {
+                    l.error("ignored exception, e");
+                    ThreadUtil.sleepUninterruptable(5 * C.SEC);
                 }
             }
         }

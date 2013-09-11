@@ -1,6 +1,5 @@
 package com.aerofs.daemon.rest.handler;
 
-import com.aerofs.base.BaseUtil;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.daemon.core.ds.CA;
 import com.aerofs.daemon.core.ds.OA;

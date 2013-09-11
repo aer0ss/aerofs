@@ -77,7 +77,7 @@ public class HdRelocateRootAnchor extends AbstractHdIMC<EIRelocateRootAnchor>
             sid = Cfg.rootSID();
             oldAbsRoot = _cfgAbsDefaultRoot.get();
         } else {
-            oldAbsRoot = _cfgAbsRoots.get(sid);
+            oldAbsRoot = _cfgAbsRoots.getNullable(sid);
             if (oldAbsRoot == null) {
                 throw new ExBadArgs("No external root for " + sid.toStringFormal());
             }

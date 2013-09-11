@@ -86,7 +86,7 @@ public class LinkedStorage implements IPhysicalStorage, IListener
     }
 
     @Override
-    public void init_() throws IOException
+    public void init_() throws IOException, SQLException
     {
         for (Entry<SID, String> e : _cfgAbsRoots.get().entrySet()) {
             ensureSaneAuxRoot_(e.getKey(), e.getValue());

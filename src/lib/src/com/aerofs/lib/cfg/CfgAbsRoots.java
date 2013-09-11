@@ -12,14 +12,14 @@ import java.util.Map;
 
 public class CfgAbsRoots
 {
-    public Map<SID, String> get()
+    public Map<SID, String> get() throws SQLException
     {
         return Cfg.getRoots();
     }
 
-    public @Nullable String get(SID sid)
+    public @Nullable String getNullable(SID sid) throws SQLException
     {
-        return Cfg.getRootPath(sid);
+        return Cfg.getRootPathNullable(sid);
     }
 
     public void add(SID sid, String absPath) throws SQLException

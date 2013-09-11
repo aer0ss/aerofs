@@ -133,7 +133,7 @@ public class Cfg
             // upgrade schema if needed
             // NB: ideally this would have been done in a DPUT unfortunately Cfg is loaded before
             // DPUT are run so this is not a viable option...
-            if (_rdb.getRoot(_rootSID) == null) {
+            if (_rdb.getRootNullable(_rootSID) == null) {
                 _rdb.addRoot(_rootSID, _absDefaultRootAnchor);
             }
         }
@@ -429,44 +429,24 @@ public class Cfg
         return _absDefaultRootAnchor;
     }
 
-    public static synchronized Map<SID, String> getRoots()
+    public static Map<SID, String> getRoots() throws SQLException
     {
-        try {
-            return _rdb.getRoots();
-        } catch (SQLException e) {
-            // we do not tolerate exception when reading the config db
-            throw new AssertionError(e);
-        }
+        return _rdb.getRoots();
     }
 
-    public static synchronized @Nullable String getRootPath(SID sid)
+    public static @Nullable String getRootPathNullable(SID sid) throws SQLException
     {
-        try {
-            return _rdb.getRoot(sid);
-        } catch (SQLException e) {
-            // we do not tolerate exception when reading the config db
-            throw new AssertionError(e);
-        }
+        return _rdb.getRootNullable(sid);
     }
 
-    static synchronized void addRoot(SID sid, String absPath) throws SQLException
+    static void addRoot(SID sid, String absPath) throws SQLException
     {
-        try {
-            _rdb.addRoot(sid, absPath);
-        } catch (SQLException e) {
-            // we do not tolerate exception when reading the config db
-            throw new AssertionError(e);
-        }
+        _rdb.addRoot(sid, absPath);
     }
 
-    static synchronized void removeRoot(SID sid) throws SQLException
+    static void removeRoot(SID sid) throws SQLException
     {
-        try {
-            _rdb.removeRoot(sid);
-        } catch (SQLException e) {
-            // we do not tolerate exception when reading the config db
-            throw new AssertionError(e);
-        }
+        _rdb.removeRoot(sid);
     }
 
     public static synchronized void moveRoot(SID sid, String newAbsPath) throws SQLException

@@ -4,10 +4,12 @@
 
 package com.aerofs.lib.cfg;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.base.id.SID;
 import com.aerofs.lib.db.DBUtil;
 import com.aerofs.lib.db.dbcw.IDBCW;
 import com.google.common.collect.Maps;
+import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 import java.io.File;
@@ -25,6 +27,8 @@ import java.util.Map;
  */
 public class RootDatabase
 {
+    private static final Logger l = Loggers.getLogger(RootDatabase.class);
+
     private final IDBCW _dbcw;
 
     private static final String T_ROOT = "r";
@@ -65,6 +69,7 @@ public class RootDatabase
         try {
             return new File(path).getCanonicalPath();
         } catch (IOException e) {
+            l.warn("ignored exception", e);
             return path;
         }
     }
@@ -88,7 +93,18 @@ public class RootDatabase
         }
     }
 
-    synchronized @Nullable String getRoot(SID sid) throws SQLException
+    /**
+     * @return the absolute path to which a given SID is linked
+     *
+     * Returns null if the given SID is not a valid root.
+     *
+     * NB: the returned value is canonicalized and may thus differ from the value
+     * actually stored in the DB.
+     *
+     * TODO: ww says canonicalization can be expensive, check whether that's true and if so
+     * move that to the place/time that actually require it (Linker/Notifier)
+     */
+    synchronized @Nullable String getRootNullable(SID sid) throws SQLException
     {
         PreparedStatement ps = _dbcw.getConnection().prepareStatement(DBUtil.selectWhere(T_ROOT,
                 C_ROOT_SID + "=?", C_ROOT_PATH));

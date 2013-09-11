@@ -130,7 +130,7 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
             sid = ev._path.sid();
             oa = null;
             // check that the sid is a valid external root
-            if (_absRoots.get(sid) == null) throw new ExBadArgs();
+            if (_absRoots.getNullable(sid) == null) throw new ExBadArgs();
         }
 
         //

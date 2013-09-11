@@ -48,7 +48,9 @@ import javax.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.Collections;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
@@ -381,10 +383,17 @@ public final class CommandNotificationSubscriber
     // Tests show that seed files are populated at ~60k objects per second.
     private static final int SEED_FILE_CREATION_TIMEOUT = 5000;
 
-    private void createSeedFiles()
+    private void tryCreateSeedFiles()
     {
         if (Cfg.storageType() == StorageType.LINKED) {
-            for (SID sid : Cfg.getRoots().keySet()) {
+            Set<SID> roots;
+            try {
+                roots = Cfg.getRoots().keySet();
+            } catch (SQLException e) {
+                l.error("ignored exception", e);
+                roots = Collections.emptySet();
+            }
+            for (SID sid : roots) {
                 // try creating a seed file (use async ritual API to leverage SP call latency)
                 ListenableFuture<CreateSeedFileReply> reply = UIGlobals.ritualNonBlocking()
                         .createSeedFile(sid.toPB());
@@ -405,7 +414,7 @@ public final class CommandNotificationSubscriber
     {
         UIGlobals.analytics().track(SimpleEvents.UNLINK_DEVICE);
 
-        createSeedFiles();
+        tryCreateSeedFiles();
 
         unlinkImplementation();
 

@@ -37,7 +37,7 @@ public interface IPhysicalStorage
 
     IPhysicalRevProvider getRevProvider();
 
-    void init_() throws IOException;
+    void init_() throws IOException, SQLException;
 
     /**
      * Perform necessary operations on the physical storage for creating a store.

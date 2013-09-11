@@ -39,6 +39,7 @@ import org.slf4j.Logger;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.File;
+import java.sql.SQLException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -179,7 +180,13 @@ public class HistoryModel
     {
         if (_storageType == StorageType.LINKED) {
             // if multiroot, use phy roots as top level
-            Map<SID, String> r = _cfgAbsRoots.get();
+            Map<SID, String> r;
+            try {
+                r = _cfgAbsRoots.get();
+            } catch (SQLException e) {
+                l.error("ignored exception", e);
+                r = Collections.emptyMap();
+            }
             List<ModelIndex> l = Lists.newArrayListWithExpectedSize(r.size());
             for (SID sid : r.keySet()) {
                 l.add(new ModelIndex(this, Path.root(sid), true, false));
@@ -200,7 +207,7 @@ public class HistoryModel
                 }
                 return l;
             } catch (Exception e) {
-                l.warn("failed to retrieve roots" + Util.e(e));
+                l.warn("ignored exception" + Util.e(e));
             }
         }
         // default: root sid only

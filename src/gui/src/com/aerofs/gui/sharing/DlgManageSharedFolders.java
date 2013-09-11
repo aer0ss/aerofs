@@ -54,6 +54,7 @@ import org.eclipse.swt.widgets.TableItem;
 import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
+import java.sql.SQLException;
 import java.util.List;
 
 public class DlgManageSharedFolders extends AeroFSDialog
@@ -330,7 +331,9 @@ public class DlgManageSharedFolders extends AeroFSDialog
                     public void widgetSelected(SelectionEvent selectionEvent)
                     {
                         Path path = _folderList.selectedPath();
-                        if (path != null) GUIUtil.launch(UIUtil.absPath(path));
+                        if (path == null) return;
+                        String absPath = UIUtil.absPathNullable(path);
+                        if (absPath != null) GUIUtil.launch(absPath);
                     }
                 });
             } else {
@@ -355,7 +358,12 @@ public class DlgManageSharedFolders extends AeroFSDialog
 
                 // absPath only available for Linked storage
                 if (Cfg.storageType() == StorageType.LINKED) {
-                    String root = Cfg.getRootPath(path.sid());
+                    String root = null;
+                    try {
+                        root = Cfg.getRootPathNullable(path.sid());
+                    } catch (SQLException e) {
+                        l.error("ignored exception", e);
+                    }
                     if (root == null) {
                         l.warn("unknown root " + path.sid());
                         continue;

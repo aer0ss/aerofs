@@ -89,7 +89,13 @@ public class LinkerRootMap
      */
     void init_()
     {
-        for (Entry<SID, String> e : _cfgAbsRoots.get().entrySet()) {
+        Map<SID, String> roots;
+        try {
+            roots = _cfgAbsRoots.get();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        for (Entry<SID, String> e : roots.entrySet()) {
             IOException ex = add_(e.getKey(), e.getValue());
             if (ex != null) {
                 l.error("failed to add root {} {} {}", e.getKey(), e.getValue(), Util.e(ex));

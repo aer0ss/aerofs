@@ -38,10 +38,11 @@ import com.google.common.util.concurrent.Futures;
 import com.google.protobuf.ByteString;
 import org.slf4j.Logger;
 
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
+import java.sql.SQLException;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -251,21 +252,22 @@ public class UIUtil
     private static void launch(Runnable preLaunch, final Runnable postLaunch)
     {
         if (preLaunch != null) { UI.get().asyncExec(preLaunch); }
-        Futures.addCallback(UIGlobals.controller().async().launch(), new FutureCallback<Common.Void>()
-        {
-            @Override
-            public void onSuccess(Common.Void aVoid)
-            {
-                finishLaunch(postLaunch);
-            }
+        Futures.addCallback(UIGlobals.controller().async().launch(),
+                new FutureCallback<Common.Void>()
+                {
+                    @Override
+                    public void onSuccess(Common.Void aVoid)
+                    {
+                        finishLaunch(postLaunch);
+                    }
 
-            @Override
-            public void onFailure(Throwable e)
-            {
-                logAndShowLaunchError(e);
-                System.exit(0);
-            }
-        });
+                    @Override
+                    public void onFailure(Throwable e)
+                    {
+                        logAndShowLaunchError(e);
+                        System.exit(0);
+                    }
+                });
     }
 
     private static void setup(String rtRoot, Runnable preLaunch, Runnable postLaunch)
@@ -372,7 +374,12 @@ public class UIUtil
     public static String sharedFolderName(Path path, String defaultName)
     {
         if (!path.isEmpty()) return path.last();
-        String absRootPath = Cfg.getRootPath(path.sid());
+        String absRootPath = null;
+        try {
+            absRootPath = Cfg.getRootPathNullable(path.sid());
+        } catch (SQLException e) {
+            l.error("ignored exception", e);
+        }
         return absRootPath != null ? new File(absRootPath).getName() : defaultName;
     }
 
@@ -385,7 +392,12 @@ public class UIUtil
     public static String sharedFolderName(Path path, String defaultName, CfgAbsRoots roots)
     {
         if (!path.isEmpty()) return path.last();
-        String absRootPath = roots.get(path.sid());
+        String absRootPath = null;
+        try {
+            absRootPath = roots.getNullable(path.sid());
+        } catch (SQLException e) {
+            l.error("ignored exception", e);
+        }
         return absRootPath != null ? new File(absRootPath).getName() : defaultName;
     }
 
@@ -396,12 +408,18 @@ public class UIUtil
      *
      * If the input is not under any of the physical roots, this method returns null
      */
-    public static @Nullable Path getPath(String absPath)
+    public static @Nullable Path getPathNullable(String absPath)
     {
         try {
             String canonicalPath = new File(absPath).getCanonicalPath();
 
-            Map<SID, String> roots = Cfg.getRoots();
+            Map<SID, String> roots;
+            try {
+                roots = Cfg.getRoots();
+            } catch (SQLException e) {
+                l.error("ignored exception", e);
+                roots = Collections.emptyMap();
+            }
             for (Entry<SID, String> e : roots.entrySet()) {
                 String rootAbsPath = e.getValue();
                 if (Path.isUnder(rootAbsPath, canonicalPath)) {
@@ -415,21 +433,17 @@ public class UIUtil
     }
 
     /**
-     * @pre Client must use LINKED storage
-     * @return absolute path corresponding to a given logical path
-     */
-    public static @Nonnull String absPath(Path path)
-    {
-        return path.toAbsoluteString(Cfg.getRootPath(path.sid()));
-    }
-
-    /**
      * @return absolute path corresponding to a given logical path
      * Will return null if the sid of the path is not associated to any abs path
      */
     public static @Nullable String absPathNullable(Path path)
     {
-        String absRoot = Cfg.getRootPath(path.sid());
+        String absRoot = null;
+        try {
+            absRoot = Cfg.getRootPathNullable(path.sid());
+        } catch (SQLException e) {
+            l.error("ignored exception", e);
+        }
         return absRoot != null ? path.toAbsoluteString(absRoot) : null;
     }
 }

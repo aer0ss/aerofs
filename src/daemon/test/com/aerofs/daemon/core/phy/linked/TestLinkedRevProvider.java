@@ -63,7 +63,7 @@ public class TestLinkedRevProvider extends AbstractTest
         revDir = factFile.create(auxDir, LibParam.AuxFolder.REVISION._name);
         revDir.mkdirs();
 
-        when(cfgAbsRoots.get(rootSID)).thenReturn(rootDir.getAbsolutePath());
+        when(cfgAbsRoots.getNullable(rootSID)).thenReturn(rootDir.getAbsolutePath());
         when(cfgAbsRoots.get()).thenReturn(ImmutableMap.of(rootSID, rootDir.getAbsolutePath()));
 
         LinkedStorage s = mock(LinkedStorage.class);

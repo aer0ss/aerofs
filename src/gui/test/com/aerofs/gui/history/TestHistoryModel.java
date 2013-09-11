@@ -59,7 +59,7 @@ public class TestHistoryModel extends AbstractTest
         when(cfgLocalUser.get()).thenReturn(user);
         when(ritualProvider.getBlockingClient()).thenReturn(ritual);
         when(absRoots.get()).thenReturn(ImmutableMap.of(rootSID, "/AeroFS"));
-        when(absRoots.get(rootSID)).thenReturn("/AeroFS");
+        when(absRoots.getNullable(rootSID)).thenReturn("/AeroFS");
 
         model = new HistoryModel(ritualProvider, cfgLocalUser.get(), StorageType.LINKED, absRoots);
     }
@@ -193,7 +193,7 @@ public class TestHistoryModel extends AbstractTest
     {
         SID ext = SID.generate();
         when(absRoots.get()).thenReturn(ImmutableMap.of(rootSID, "/AeroFS", ext, "/ext"));
-        when(absRoots.get(ext)).thenReturn("/ext");
+        when(absRoots.getNullable(ext)).thenReturn("/ext");
 
         assertIndexList(null,
                 new ModelIndex(model, Path.root(rootSID), true, false),

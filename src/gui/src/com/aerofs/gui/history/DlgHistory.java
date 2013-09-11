@@ -57,6 +57,7 @@ import org.slf4j.Logger;
 import javax.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -613,8 +614,12 @@ public class DlgHistory extends AeroFSDialog
     {
         if (Cfg.storageType() != StorageType.LINKED) return false;
 
-        for (Entry<SID, String> e : Cfg.getRoots().entrySet()) {
-            if (Path.isUnder(e.getValue(), absPath)) return true;
+        try {
+            for (Entry<SID, String> e : Cfg.getRoots().entrySet()) {
+                if (Path.isUnder(e.getValue(), absPath)) return true;
+            }
+        } catch (SQLException e) {
+            l.error("ignored exception", e);
         }
 
         return false;

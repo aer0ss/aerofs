@@ -2,6 +2,7 @@ package com.aerofs.shell;
 
 import com.aerofs.base.C;
 import com.aerofs.base.ElapsedTimer;
+import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.id.SID;
@@ -22,13 +23,17 @@ import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.ui.UI;
 import com.aerofs.ui.error.ErrorMessages;
 import com.google.common.collect.Maps;
+import org.slf4j.Logger;
 
 import java.io.File;
+import java.sql.SQLException;
 import java.util.Collections;
 import java.util.Map;
 
 public class ShProgram implements IProgram, ICallback
 {
+    private static final Logger l = Loggers.getLogger(ShProgram.class);
+
     static final String DEBUG_FLAG = "DEBUG";
 
     private static final String SEP = "/";
@@ -237,7 +242,12 @@ public class ShProgram implements IProgram, ICallback
     {
         // the root SID is not associated with any path on TeamServer
         if (Cfg.storageType() == StorageType.LINKED) {
-            String absRoot = Cfg.getRootPath(path.sid());
+            String absRoot = null;
+            try {
+                absRoot = Cfg.getRootPathNullable(path.sid());
+            } catch (SQLException e) {
+                l.error("ignored exception", e);
+            }
             return absRoot != null ? new File(absRoot).getName() : "";
         } else {
             return isUserRoot(path) ? "" : path.sid().toStringFormal();
