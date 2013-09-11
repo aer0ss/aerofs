@@ -1,4 +1,10 @@
 #!/bin/bash
 
-# Construct dependency for drew's damage scripts.
-sudo pip install construct
+SDIST=/opt/repackaging/sdist
+PYTHONENV=/opt/repackaging/pythonenv
+rm -rf $PYTHONENV
+virtualenv $PYTHONENV
+$PYTHONENV/bin/pip install --find-links file://$SDIST                    \
+                           --no-index                                    \
+                           --log /var/log/aerofs/repackaging.install.log \
+                           --requirement $SDIST/requirements.txt

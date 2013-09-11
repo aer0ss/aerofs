@@ -1,10 +1,21 @@
-#!/bin/bash -ue
+#!/bin/bash
+set -e -u
 
 ENTERPRISE=../tools/enterprise
 OPT=repackaging/opt/repackaging
 
 rm -rf $OPT
 mkdir -p $OPT/tools
+
+# Fetch and include python dependency packages
+REQUIREMENTS=$ENTERPRISE/repackaging/requirements.txt
+SDIST=$OPT/sdist
+SDIST_CACHE=pip-cache/repackaging
+rm -rf $SDIST
+tools/pip-prefetch.sh $REQUIREMENTS $SDIST_CACHE
+mkdir -p $SDIST
+cp -a $SDIST_CACHE/* $SDIST/
+cp $REQUIREMENTS $SDIST/
 
 for os in linux osx win
 do
