@@ -35,8 +35,6 @@ echo
 echo ">>> N.B. ROOT ACCESS IS REQUIRED. YOU MIGHT BE PROMPTED FOR YOU PASSWORD."
 echo
 
-sudo easy_install pip
-sudo pip install virtualenv
 virtualenv ~/env
 cd "$SRC_ROOT"/python-lib
 ~/env/bin/python setup.py develop
