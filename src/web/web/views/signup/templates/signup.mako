@@ -20,28 +20,43 @@
 </div>
 
 <div class="row">
-    <div class="span7 offset5">
-        ## Always use POST to avoid disclose passwords in the URL when JS is disabled.
-        <form id="signupForm" method="post">
-            ${self.csrf.token_input()}
-            ## signup.py needs the email address only to generate scrypt
-            ## credentials. Alternatively, we can query the SP for the email address
-            ## but this would add an extra round trip to SP.
-            <input type="hidden" name="${url_param_email}" value="${email_address}"/>
-            <input type="hidden" name="${url_param_signup_code}" value="${code}"/>
-            <label for="inputFirstName">First name:</label>
-            <input class="span2" id="inputFirstName" type="text" name="${url_param_first_name}">
-            <label for="inputLastName">Last name:</label>
-            <input class="span2" id="inputLastName" type="text" name="${url_param_last_name}">
-            <label for="inputPasswd">Create password:</label>
-            <input class="span2" id="inputPasswd" type="password" name="${url_param_password}">
+    <div class="span8 offset4">
+        <div class="row-fluid">
+            <div class="span8 offset1">
+                ## Always use POST to avoid disclose passwords in the URL when JS is disabled.
+                <form id="signupForm" method="post">
+                    ${self.csrf.token_input()}
+                    ## signup.py needs the email address only to generate scrypt
+                    ## credentials. Alternatively, we can query the SP for the email address
+                    ## but this would add an extra round trip to SP.
+                    <input type="hidden" name="${url_param_email}" value="${email_address}"/>
+                    <input type="hidden" name="${url_param_signup_code}" value="${code}"/>
+                    <label for="inputFirstName">First name: *</label>
+                    <input class="span6" id="inputFirstName" type="text" name="${url_param_first_name}">
+                    <label for="inputLastName">Last name: *</label>
+                    <input class="span6" id="inputLastName" type="text" name="${url_param_last_name}">
+                    <label for="inputTitle">Title:</label>
+                    <input class="span6" id="inputTitle" type="text" name="${url_param_title}">
+                    <label for="inputCompany">Company:</label>
+                    <input class="span6" id="inputCompany" type="text" name="${url_param_company}">
+                    <label for="inputCompanySize">Size:</label>
+                    <input class="span6" id="inputCompanySize" type="text" name="${url_param_company_size}">
+                    <label for="inputCountry">Country:</label>
+                    <input class="span6" id="inputCountry" type="text" name="${url_param_country}">
+                    <label for="inputPhone">Phone:</label>
+                    <input class="span6" id="inputPhone" type="text" name="${url_param_phone}">
+                    <label for="inputPasswd">Create password: *</label>
+                    <input class="span6" id="inputPasswd" type="password" name="${url_param_password}">
 
-            <span class="help-block footnote" style="margin-top: 10px;">
-                By signing up you agree to AeroFS <a href="${request.route_path('terms')}#tos" target="_blank">Terms of Service</a>
-            </span>
+                    <span class="help-block footnote" style="margin-top: 10px;">
+                        Fields marked by (*) are mandatory.<br/><br/>
+                        By signing up you agree to AeroFS <a href="${request.route_path('terms')}#tos" target="_blank">Terms of Service</a>
+                    </span>
 
-            <button id="submitButton" class="btn btn-primary" type="submit">Sign Up</button>
-        </form>
+                    <button id="submitButton" class="btn btn-primary" type="submit">Sign Up</button>
+                </form>
+            </div>
+        </div>
     </div>
 </div>
 
