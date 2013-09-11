@@ -7,25 +7,10 @@
 Run AeroFS website in a virtual environment
 ================================================
 
-# First, install virtualenv
-sudo easy_install pip
-sudo pip install virtualenv
+Use the script development/run.sh (run without args for usage information).
 
-# Set up virtualenv and install packages.
-# NOTE: requests is pinned because version 1.0.0 is not backwards compatible
-# TODO: (PH) fix code to use requests >=1.0.0
-virtualenv ~/env
-
-# Then, install AeroFS python library:
-cd ~/repos/aerofs/src/python-lib && ~/env/bin/python setup.py develop
-
-# And then, install AeroFS website:
-cd ~/repos/aerofs/src/web && ~/env/bin/python setup.py develop
-
-# Finally, run AeroFS website!
-export STRIPE_PUBLISHABLE_KEY=pk_test_nlFBUMTVShdEAASKB0nZm6xf
-export STRIPE_SECRET_KEY=sk_test_lqV5voHmrJZLom3iybJFSVqK
-~/env/bin/pserve development.ini
+Known issues:
+    - Sign in does not work when running in prod mode (cookie issue).
 
 # To run test cases:
 cd ~/repos/aerofs/src/web && ~/env/bin/python setup.py test -q
