@@ -119,9 +119,9 @@ def json_signup(request):
                     'phone': request.params['phone'],
                     'country': request.params['country']
                 }))
-        except:
-            pass
-
+        except Exception as e:
+            log.warn(e)
+   
         return {
             'team_id': result.org_id,
             'existing_team': result.existing_team
