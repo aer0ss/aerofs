@@ -51,14 +51,14 @@ DEFAULT_ROOT = '~/syncdet'
 DEFAULT_APPROOT = os.path.join(DEFAULT_ROOT, 'deploy', 'approot')
 DEFAULT_RTROOT = os.path.join(DEFAULT_ROOT, 'user_data', 'rtroot')
 DEFAULT_ANCHOR_PARENT = os.path.join(DEFAULT_ROOT, 'user_data')
-DEFAULT_SP_URL = 'https://transient.syncfs.com:9000/sp'
+DEFAULT_SP_URL = 'https://transient.syncfs.com:4433/sp'
 DEFAULT_RSH = 'ssh'
 DEFAULT_USERID_FMT = getpass.getuser() + '+syncdet+{}@aerofs.com'
 
 # CI Server Connection Settings
 CODE_URL = "http://newci.arrowfs.org:8025/get_code"
 POOL_URL = "http://newci.arrowfs.org:8040"
-CI_SP_URL = "https://newci.arrowfs.org:9000/sp"
+CI_SP_URL = "https://newci.arrowfs.org:4433/sp"
 CI_SP_VERSION = 20
 JSON_HEADERS = {'Content-type': 'application/json', 'Accept': 'application/json'}
 
