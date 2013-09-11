@@ -7,7 +7,9 @@
 Run AeroFS website in a virtual environment
 ================================================
 
-Use the script development/run.sh (run without args for usage information).
+Set up your system using development/setup.sh (run without args for usage
+information). After setup has completed, run the web server using
+development/run.sh.
 
 Known issues:
     - Sign in does not work when running in prod mode (cookie issue).
