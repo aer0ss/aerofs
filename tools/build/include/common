@@ -86,7 +86,6 @@ readonly MAP_SERVER="sv.aerofs.com"
 readonly MAP_SERVER_LOGIN=${MAP_SERVER}
 readonly ROCKLOG_SERVER="rocklog.aerofs.com"
 readonly MAP_FILES_DIR="/maps"
-readonly ANDROID_MAP_FILES_DIR="/maps/android"
 
 ###############################################################################
 #
@@ -181,7 +180,6 @@ readonly RELEASE_SERVER_SHELL="bash -s -e -u"
 readonly RELEASE_FILES_DIR="/home/${RELEASE_SERVER_USERNAME}"
 readonly RELEASE_UNPACK_DIR="${RELEASE_FILES_DIR}/unpack"
 readonly INSTALLERS_DOWNLOAD_DIR="/data/${LOWERCASE_MODE}-downloads"
-readonly ANDROID_INSTALLERS_DOWNLOAD_DIR="/data/${LOWERCASE_MODE}-downloads/android"
 readonly RELEASE_SERVER_VERSION_FILE="current.ver"
 readonly RELEASE_NSIS_DIR="${RELEASE_FILES_DIR}/win_installer"
 
@@ -405,39 +403,4 @@ function publish_to_s3() {
 ENDCMDS
 }
 
-###############################################################################
-#
-# Synchronizes an Android release directory on the release server with an S3
-# bucket.
-#
-# The release directory must contain the AeroFS Android apk and a version file
-# specifying the version of the release.
-#
-# NOTE: to rollback a production release for any reason:
-#       - log into release-prod@b.arrowfs.org
-#       - rm /data/enterprise-downloads/android/[version]/*
-#       - s3cmd sync -P --delete-removed /data/enterprise-downloads/android/[version]/* s3://nocache.client.android.enterprise.aerofs.com
-#
-# @param $1 The Android app version to publish.
-# @param $2 The S3 bucket to which the release version will be pushed.
-#
-###############################################################################
-function publish_android_to_s3() {
-    echo ">> Publishing Android APK version ${1} to s3 bucket ${2}"
-
-    if ! is_enterprise $MODE; then
-        echo "error: Cannot publish the Android app unless in ENTERPRISE mode!"
-        exit 1
-    fi
-
-    ssh $RELEASE_SERVER_LOGIN $RELEASE_SERVER_SHELL << ENDCMDS
-        # Check to see that a version file exists in the specified version directory and is
-        # non-empty.
-        if [ ! -s "${INSTALLERS_DOWNLOAD_DIR}/android/${1}/${RELEASE_SERVER_VERSION_FILE}" ]; then
-            exit $ERRS3
-        fi
-
-        s3cmd sync -P --delete-removed "${INSTALLERS_DOWNLOAD_DIR}/android/${1}"/* $2 > /dev/null
-ENDCMDS
-}
 fi # endif
