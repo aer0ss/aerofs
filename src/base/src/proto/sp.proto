@@ -736,6 +736,16 @@ service SPService {
      *   Something Bad if the server does not have openid enabled.
      */
     rpc OpenIdGetSessionAttributes(OpenIdSessionQuery) returns (OpenIdSessionAttributes);
+
+    /**
+     * Validate the given username/credential pair.
+     *
+     *   ExEmptyEmailAddress if the user id is empty
+     *   ExBadCredential if username/password combination is incorrect, or in the case of the team
+     *                   server, if they have not signed in successfully using mutual
+     *                   authentication.
+     */
+    rpc ValidateCredential(SignInUserCall) returns (Void);
 }
 
 message SetStripeCustomerIDCall {

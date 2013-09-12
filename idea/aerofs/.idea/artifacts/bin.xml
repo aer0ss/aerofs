@@ -17,6 +17,7 @@
       <element id="module-output" name="havre" />
       <element id="module-output" name="tunnel" />
       <element id="module-output" name="restless" />
+      <element id="module-output" name="bifrost" />
     </root>
   </artifact>
 </component>

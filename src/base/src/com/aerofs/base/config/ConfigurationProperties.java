@@ -53,6 +53,12 @@ public class ConfigurationProperties
                 defaultValue);
     }
 
+    public static Long getLongProperty(String key, Long defaultValue)
+    {
+        return _propertiesHelper.getLongWithDefaultValueFromPropertiesObj(_properties, key,
+                defaultValue);
+    }
+
     public static String getStringProperty(String key, String defaultValue)
     {
         return _properties.getProperty(key, defaultValue);

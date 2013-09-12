@@ -2110,6 +2110,30 @@ public class SPService implements ISPService
         return createVoidReply();
     }
 
+    /**
+     * FIXME
+     * @param userID
+     * @param credentials
+     * @return
+     * @throws Exception
+     */
+    @Override
+    public ListenableFuture<Void> validateCredential(String userID, ByteString credentials)
+            throws Exception
+    {
+        User user = _factUser.createFromExternalID(userID);
+
+        // FIXME: this should call isExistingUserWithMatchingPassword
+        // but i hate dealing with an exception unwind within a DB transaction.
+        _sqlTrans.begin();
+        boolean userOk = user.exists() && user.isCredentialCorrect(credentials.toByteArray());
+        _sqlTrans.commit();
+
+        if (!userOk) {throw new ExBadCredential();}
+
+        return createVoidReply();
+    }
+
     @Override
     public ListenableFuture<OpenIdSessionNonces> openIdBeginTransaction()
     {

@@ -1,0 +1,17 @@
+//-----------------------------------------------------------------------------
+// Copyright (c) Air Computing Inc., 2013.
+//-----------------------------------------------------------------------------
+
+dependencies {
+    compile 'commons-codec:commons-codec:1.4'
+    compile 'commons-validator:commons-validator:1.4.0'
+    compile 'org.hibernate:hibernate-core:4.1.9.Final'
+    compile 'org.hibernate:hibernate-validator:4.3.0.Final'
+    compile 'org.apache.tomcat:tomcat-dbcp:7.0.37'
+    compile 'com.lambdaworks:scrypt:1.4.0'
+}
+
+task syncDependencies(type: Sync) {
+    from configurations.compile
+    into "${serverResourcesDir}/lib.apisec"
+}
