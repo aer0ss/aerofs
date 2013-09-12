@@ -8,6 +8,7 @@ enable-all-nginx-services
 browser-cert-pull
 nginx-restart
 spdb-schema-init
+drop-empty-mysql-user
 verkehr
 ejabberd-metadata-reset
 ejabberd-fix-config
