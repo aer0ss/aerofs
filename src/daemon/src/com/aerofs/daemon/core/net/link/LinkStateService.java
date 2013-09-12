@@ -231,7 +231,7 @@ public class LinkStateService implements ILinkStateService
         _notifier.removeListener(listener);
     }
 
-    // IMPORTANT: the method is _not final_ because I want it do be mockable
+    // IMPORTANT: the method is _not final_ because I want it to be mockable
     public void markLinksDown_()
     {
         l.warn("mark down");
@@ -239,7 +239,7 @@ public class LinkStateService implements ILinkStateService
         notifyLinkStateChange_(ImmutableSet.<NetworkInterface>of());
     }
 
-    // IMPORTANT: the method is _not final_ because I want it do be mockable
+    // IMPORTANT: the method is _not final_ because I want it to be mockable
     public void markLinksUp_()
     {
         l.warn("mark up");
