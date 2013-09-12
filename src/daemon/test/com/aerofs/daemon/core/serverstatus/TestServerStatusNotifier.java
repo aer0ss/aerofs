@@ -39,7 +39,7 @@ public class TestServerStatusNotifier
     @Test
     public void shouldSubscribeToServerConnectionStatusOnStart()
     {
-        _notifier.start();
+        _notifier.init();
 
         verify(_serverConnectionStatus).addListener(_notifier, Server.VERKEHR);
     }

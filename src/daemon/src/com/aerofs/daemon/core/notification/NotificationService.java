@@ -166,7 +166,7 @@ public class NotificationService implements IRitualNotificationClientConnectedLi
 
     private void setupServerStatusNotificationSource()
     {
-        _ssn.start();
+        _ssn.init();
     }
 
     public void init_()

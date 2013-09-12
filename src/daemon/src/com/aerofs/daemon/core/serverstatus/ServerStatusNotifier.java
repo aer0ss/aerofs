@@ -31,7 +31,7 @@ public class ServerStatusNotifier implements IServiceStatusListener
         _rns = rns;
     }
 
-    public void start()
+    public void init()
     {
         _scs.addListener(this, Server.VERKEHR);
     }
