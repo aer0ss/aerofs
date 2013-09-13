@@ -7,6 +7,7 @@ package com.aerofs.daemon.rest.resources;
 import com.aerofs.base.id.UserID;
 import com.aerofs.daemon.core.CoreIMCExecutor;
 import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
+import com.aerofs.daemon.rest.RestService;
 import com.aerofs.daemon.rest.event.EIFileContent;
 import com.aerofs.daemon.rest.event.EIFileInfo;
 import com.aerofs.daemon.rest.jersey.RestObjectParam;
@@ -28,7 +29,7 @@ import javax.ws.rs.core.Response;
 import java.text.ParseException;
 import java.util.Set;
 
-@Path("/0/files/{object}")
+@Path(RestService.VERSION + "/files/{object}")
 @Produces(MediaType.APPLICATION_JSON)
 public class FilesResource
 {

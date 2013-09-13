@@ -3,19 +3,16 @@ package com.aerofs.daemon.rest;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.mock.logical.MockDS.MockDSAnchor;
-import com.aerofs.lib.id.SIndex;
 import org.junit.Test;
 
-import java.util.Collections;
 import java.util.Date;
 
 import static com.jayway.restassured.RestAssured.*;
 import static org.hamcrest.Matchers.*;
-import static org.mockito.Mockito.when;
 
-public class TestListingResource extends AbstractRestTest
+public class TestChildrenResource extends AbstractRestTest
 {
-    private final String RESOURCE = "/0/list/{folder}";
+    private final String RESOURCE = "/v0.8/children/{folder}";
 
     @Test
     public void shouldReturn400ForInvalidId() throws Exception
@@ -45,22 +42,6 @@ public class TestListingResource extends AbstractRestTest
     }
 
     @Test
-    public void shouldListAllRoots() throws Exception
-    {
-        SIndex sidx = sm.get_(rootSID);
-        when(ss.getAll_()).thenReturn(Collections.singleton(sidx));
-        when(ss.isRoot_(sidx)).thenReturn(true);
-        when(ss.getName_(sidx)).thenReturn("bla");
-
-        expect()
-                .statusCode(200)
-                .body("files", empty())
-                .body("folders", hasSize(1))
-                .body("folders.id", hasItems(new RestObject(rootSID, OID.ROOT).toStringFormal()))
-        .when().get(RESOURCE, "roots/" + user.getString());
-    }
-
-    @Test
     public void shouldListRoot() throws Exception
     {
         mds.root()
@@ -72,7 +53,7 @@ public class TestListingResource extends AbstractRestTest
                 .statusCode(200)
                 .body("files", hasSize(1)).body("files.name", hasItems("f"))
                 .body("folders", hasSize(2)).body("folders.name", hasItems("d", "a"))
-        .when().get(RESOURCE, "root/" + user.getString());
+        .when().get(RESOURCE, "");
     }
 
     @Test
@@ -102,7 +83,7 @@ public class TestListingResource extends AbstractRestTest
                 .body("folders.name", hasItem("a"))
                 .body("folders.id", hasItem(new RestObject(rootSID, a.soid().oid()).toStringFormal()))
                 .body("folders.is_shared", hasItem(true))
-        .when().get(RESOURCE, "root/" + user.getString());
+        .when().get(RESOURCE, "");
     }
 
     @Test

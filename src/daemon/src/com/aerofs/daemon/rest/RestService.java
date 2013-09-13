@@ -4,10 +4,15 @@
 
 package com.aerofs.daemon.rest;
 
+import com.aerofs.base.ssl.SSLEngineFactory;
+import com.aerofs.base.ssl.SSLEngineFactory.Mode;
+import com.aerofs.base.ssl.SSLEngineFactory.Platform;
 import com.aerofs.daemon.rest.providers.GsonProvider;
 import com.aerofs.daemon.rest.netty.JerseyHandler;
 import com.aerofs.daemon.rest.netty.NettyServer;
 import com.aerofs.daemon.rest.resources.FilesResource;
+import com.aerofs.daemon.transport.netty.BootstrapFactoryUtil;
+import com.aerofs.lib.cfg.CfgKeyManagersProvider;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.sun.jersey.api.core.PackagesResourceConfig;
@@ -27,6 +32,7 @@ import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
 import static com.google.common.base.Preconditions.checkState;
 
 public class RestService
@@ -37,9 +43,11 @@ public class RestService
         SLF4JBridgeHandler.install();
     }
 
+    public static final String VERSION = "/v0.8";
+
     // Base URI for the service. Must end with a slash.
     // NB: not final for tests...
-    public static URI BASE_URI = URI.create("http://localhost:8080/");
+    public static String BASE_URI = getStringProperty("rest.listen.uri", "https://0.0.0.0:8080/");
 
     // Array of package names that Jersey will scan for annotated classes
     private static final String[] RESOURCES_PACKAGES = {
@@ -48,18 +56,22 @@ public class RestService
     };
 
     private final Injector _injector;
+    private final SSLEngineFactory _serverSSLEngineFactory;
+
     private NettyServer _server;
 
     @Inject
-    RestService(Injector injector)
+    RestService(Injector injector, CfgKeyManagersProvider kmgr)
     {
         _injector = injector;
+        _serverSSLEngineFactory = new SSLEngineFactory(Mode.Server, Platform.Desktop,
+                kmgr, null, null);
     }
 
     public int start()
     {
-        checkState(BASE_URI.toString().endsWith("/"));
-        return startServer(getResourceConfiguration(), BASE_URI);
+        checkState(BASE_URI.endsWith("/"));
+        return startServer(getResourceConfiguration(), URI.create(BASE_URI));
     }
 
     public void addShutdownHook()
@@ -83,7 +95,7 @@ public class RestService
         WebApplication wa = WebApplicationFactory.createWebApplication();
         IoCComponentProviderFactory ioc = new GuiceComponentProviderFactory(resourceConfig, _injector);
 
-        final JerseyHandler jerseyHandler = new JerseyHandler(wa);
+        final JerseyHandler jerseyHandler = new JerseyHandler(wa, baseUri);
         if (!wa.isInitiated()) wa.initiate(resourceConfig, ioc);
 
         InetSocketAddress localSocket = new InetSocketAddress(baseUri.getHost(), baseUri.getPort());
@@ -92,6 +104,7 @@ public class RestService
             public ChannelPipeline getPipeline() throws Exception
             {
                 return Channels.pipeline(
+                        BootstrapFactoryUtil.newSslHandler(_serverSSLEngineFactory),
                         new HttpServerCodec(),
                         jerseyHandler);
             }

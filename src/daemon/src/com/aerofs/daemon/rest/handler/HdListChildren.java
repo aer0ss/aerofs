@@ -14,9 +14,9 @@ import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.ex.ExNotDir;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
+import com.aerofs.rest.api.ChildrenList;
 import com.aerofs.rest.api.File;
 import com.aerofs.rest.api.Folder;
-import com.aerofs.rest.api.Listing;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 
@@ -70,6 +70,6 @@ public class HdListChildren extends AbstractHdIMC<EIListChildren>
             }
         }
 
-        ev.setResult_(new Listing(folders, files));
+        ev.setResult_(new ChildrenList(ev._object.toStringFormal(), folders, files));
     }
 }

@@ -16,6 +16,7 @@ import com.aerofs.daemon.core.store.IStores;
 import com.aerofs.daemon.core.store.SIDMap;
 import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
 import com.aerofs.lib.Path;
+import com.aerofs.lib.cfg.CfgKeyManagersProvider;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.event.IEvent;
 import com.aerofs.lib.event.Prio;
@@ -26,18 +27,21 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.jayway.restassured.RestAssured;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.mockito.Mock;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.slf4j.Logger;
 import org.testng.Assert;
 
-import java.net.URI;
+import java.io.File;
 import java.sql.SQLException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Collections;
+import java.util.TimeZone;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doAnswer;
@@ -57,6 +61,22 @@ public class AbstractRestTest extends AbstractTest
     protected @Mock IStores ss;
     private @Mock CfgLocalUser localUser;
     protected @Mock NativeVersionControl nvc;
+    private @Mock CfgKeyManagersProvider kmgr;
+
+    private static TempCert tmp;
+
+    @BeforeClass
+    public static void generateCert()
+    {
+        tmp = TempCert.generate();
+        RestAssured.keystore(tmp.keyStore, TempCert.KS_PASSWD);
+    }
+
+    @AfterClass
+    public static void cleanupCert()
+    {
+        new File(tmp.keyStore).delete();
+    }
 
     protected MockDS mds;
     protected UserID user = UserID.fromInternal("foo@bar.baz");
@@ -64,7 +84,13 @@ public class AbstractRestTest extends AbstractTest
 
     private RestService service;
 
-    protected static DateFormat ISO_8601 = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZZZZZ");
+    protected static DateFormat ISO_8601 = utcFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+
+    private static DateFormat utcFormat(String pattern) {
+        DateFormat dateFormat = new SimpleDateFormat(pattern);
+        dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+        return dateFormat;
+    }
 
     @Before
     public void setUp() throws Exception
@@ -73,6 +99,9 @@ public class AbstractRestTest extends AbstractTest
         mds.root();  // setup sid<->sidx mapping for root..
 
         when(localUser.get()).thenReturn(user);
+
+        when(kmgr.getCert()).thenReturn(tmp.cert);
+        when(kmgr.getPrivateKey()).thenReturn(tmp.key);
 
         final IIMCExecutor imce = mock(IIMCExecutor.class);
 
@@ -106,8 +135,9 @@ public class AbstractRestTest extends AbstractTest
         }).when(imce).execute_(any(IEvent.class), any(Prio.class));
 
         // start REST service (port 0 means: select any available port...)
-        RestService.BASE_URI = URI.create("http://localhost:0/");
-        service = new RestService(inj);
+        RestService.BASE_URI = "https://localhost:0/";
+        service = new RestService(inj, kmgr);
+        RestAssured.baseURI = "https://localhost";
         RestAssured.port = service.start();
 
         l.info("REST service listening on port {}", RestAssured.port);

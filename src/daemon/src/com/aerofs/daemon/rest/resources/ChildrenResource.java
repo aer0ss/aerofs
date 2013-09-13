@@ -10,10 +10,9 @@ import com.aerofs.base.id.UserID;
 import com.aerofs.daemon.core.CoreIMCExecutor;
 import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
 import com.aerofs.daemon.rest.RestObject;
+import com.aerofs.daemon.rest.RestService;
 import com.aerofs.daemon.rest.event.EIListChildren;
-import com.aerofs.daemon.rest.event.EIListRoots;
 import com.aerofs.daemon.rest.jersey.RestObjectParam;
-import com.aerofs.daemon.rest.jersey.UserIDParam;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.google.inject.Inject;
 
@@ -24,34 +23,26 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
-@Path("/0/list")
+@Path(RestService.VERSION + "/children")
 @Produces(MediaType.APPLICATION_JSON)
-public class ListingResource
+public class ChildrenResource
 {
     private final IIMCExecutor _imce;
     private final CfgLocalUser _localUser;
 
     @Inject
-    public ListingResource(CoreIMCExecutor imce, CfgLocalUser localUser)
+    public ChildrenResource(CoreIMCExecutor imce, CfgLocalUser localUser)
     {
         _imce = imce.imce();
         _localUser = localUser;
     }
 
     @GET
-    @Path("/roots/{userid}")
-    public Response listRoots(@PathParam("userid") UserIDParam userid)
-    {
-        return new EIListRoots(_imce, userid.get()).execute();
-    }
-
-    @GET
-    @Path("/root/{userid}")
-    public Response listUserRoot(@PathParam("userid") UserIDParam user)
+    public Response listUserRoot()
     {
         UserID userid = _localUser.get(); // TODO: get from auth info
-        RestObject object = new RestObject(SID.rootSID(user.get()), OID.ROOT);
-        return new EIListChildren(_imce, userid, object).execute();
+        return new EIListChildren(_imce, userid, new RestObject(SID.rootSID(userid), OID.ROOT))
+                .execute();
     }
 
     @GET
@@ -59,6 +50,7 @@ public class ListingResource
     public Response list(@PathParam("object") RestObjectParam object)
     {
         UserID userid = _localUser.get(); // TODO: get from auth info
-        return new EIListChildren(_imce, userid, object.get()).execute();
+        return new EIListChildren(_imce, userid, object.get())
+                .execute();
     }
 }

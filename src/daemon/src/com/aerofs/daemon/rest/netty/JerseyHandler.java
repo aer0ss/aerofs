@@ -4,7 +4,6 @@
 package com.aerofs.daemon.rest.netty;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.daemon.rest.RestService;
 import com.sun.jersey.core.header.InBoundHeaders;
 import com.sun.jersey.spi.container.ContainerRequest;
 import com.sun.jersey.spi.container.WebApplication;
@@ -25,10 +24,12 @@ public class JerseyHandler extends SimpleChannelUpstreamHandler
     private static final Logger l = Loggers.getLogger(JerseyHandler.class);
 
     private final WebApplication _application;
+    private final URI _baseURI;
 
-    public JerseyHandler(final WebApplication application)
+    public JerseyHandler(final WebApplication application, URI baseURI)
     {
         _application = application;
+        _baseURI = baseURI;
     }
 
     @Override
@@ -38,10 +39,10 @@ public class JerseyHandler extends SimpleChannelUpstreamHandler
     {
         HttpRequest request = (HttpRequest) messageEvent.getMessage();
 
-        URI requestUri = URI.create(RestService.BASE_URI + request.getUri().substring(1));
+        URI requestUri = URI.create(_baseURI + request.getUri().substring(1));
 
         ContainerRequest cRequest = new ContainerRequest(_application,
-                request.getMethod().getName(), RestService.BASE_URI, requestUri, getHeaders(request),
+                request.getMethod().getName(), _baseURI, requestUri, getHeaders(request),
                 new ChannelBufferInputStream(request.getContent()));
 
         _application.handleRequest(cRequest, new JerseyResponseWriter(messageEvent.getChannel()));

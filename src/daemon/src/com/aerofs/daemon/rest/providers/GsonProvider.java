@@ -3,6 +3,10 @@ package com.aerofs.daemon.rest.providers;
 import com.google.common.base.Charsets;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonPrimitive;
+import com.google.gson.JsonSerializationContext;
+import com.google.gson.JsonSerializer;
 import com.google.gson.stream.JsonWriter;
 
 import javax.ws.rs.Consumes;
@@ -20,14 +24,42 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.TimeZone;
 
 @Provider
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
 public class GsonProvider implements MessageBodyReader<Object>, MessageBodyWriter<Object>
 {
-    // Serialize dates in the ISO 8601 format, which is Javascript's (and hence JSON) standard
-    private final Gson _gson = new GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ssZ").create();
+    private final Gson _gson = new GsonBuilder()
+            .registerTypeAdapter(Date.class, new DateTypeAdapter())
+            .create();
+
+    /**
+     * Enforce ISO 8601 format and UTC timezone for date serialization
+     */
+    public static class DateTypeAdapter implements JsonSerializer<Date>
+    {
+        private final DateFormat dateFormat;
+
+        private DateTypeAdapter() {
+            dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+            dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+        }
+
+        @Override
+        public synchronized JsonElement serialize(Date date, Type type,
+                JsonSerializationContext jsonSerializationContext) {
+            synchronized (dateFormat) {
+                // DateFormat is not thread-safe
+                String dateFormatAsString = dateFormat.format(date);
+                return new JsonPrimitive(dateFormatAsString);
+            }
+        }
+    }
 
     // READER
 

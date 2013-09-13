@@ -25,7 +25,7 @@ import static org.mockito.Mockito.when;
 
 public class TestFileResource extends AbstractRestTest
 {
-    private final String RESOURCE = "/0/files/{file}";
+    private final String RESOURCE = "/v0.8/files/{file}";
 
     private static long FILE_MTIME = 0xdeadbeef;
     private static byte[] FILE_CONTENT = { 'H', 'e', 'l', 'l', 'o'};
@@ -249,12 +249,11 @@ public class TestFileResource extends AbstractRestTest
         given()
                 .header("Accept", "*/*")
                 .header("Range", "bytes=" + (FILE_CONTENT.length) + "-")
-                .log().everything()
         .expect()
                 .statusCode(416)
                 .content(isEmptyString())
                 .header("Content-Range", "bytes */" + String.valueOf(FILE_CONTENT.length))
-        .when().log().everything().get(RESOURCE + "/content", object("f1").toStringFormal());
+        .when().get(RESOURCE + "/content", object("f1").toStringFormal());
     }
 
     @Test
