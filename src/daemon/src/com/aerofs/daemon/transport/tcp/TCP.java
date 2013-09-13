@@ -46,6 +46,7 @@ import com.aerofs.proto.Ritual.GetTransportDiagnosticsReply;
 import com.aerofs.proto.Transport.PBTCPPong;
 import com.aerofs.proto.Transport.PBTPHeader;
 import com.aerofs.proto.Transport.PBTPHeader.Type;
+import com.aerofs.rocklog.RockLog;
 import com.google.common.collect.Lists;
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.bootstrap.ServerBootstrap;
@@ -94,9 +95,10 @@ public class TCP implements ITransport, ILinkStateListener, IUnicastCallbacks, I
             int pref,
             IBlockingPrioritizedEventSink<IEvent> sink,
             boolean listenToMulticastOnLoopback,
-            MaxcastFilterReceiver mcfr,
+            MaxcastFilterReceiver maxcastFilterReceiver,
             SSLEngineFactory clientSslEngineFactory,
             SSLEngineFactory serverSslEngineFactory,
+            RockLog rockLog,
             ClientSocketChannelFactory clientChannelFactory,
             ServerSocketChannelFactory serverChannelFactory)
     {
@@ -109,7 +111,7 @@ public class TCP implements ITransport, ILinkStateListener, IUnicastCallbacks, I
         _sink = sink;
         _arp.addARPChangeListener(this);
         _pm.addGenericPulseDeletionWatcher(this, _sink);
-        _mcast = new Multicast(localDID, this, listenToMulticastOnLoopback, mcfr);
+        _mcast = new Multicast(localDID, this, listenToMulticastOnLoopback, maxcastFilterReceiver);
         _stores = new Stores(_localDID, this, _sched, _arp, _mcast);
         _mcast.setStores(_stores);
 
@@ -119,11 +121,8 @@ public class TCP implements ITransport, ILinkStateListener, IUnicastCallbacks, I
 
         TCPProtocolHandler tcpProtocolHandler = new TCPProtocolHandler(this, _ucast);
         TransportProtocolHandler protocolHandler = new TransportProtocolHandler(this, sink, _sm, _pm, _ucast);
-        TCPBootstrapFactory bsFact = new TCPBootstrapFactory(localUser, localDID,
-                clientSslEngineFactory, serverSslEngineFactory, _transportStats);
-        ServerBootstrap serverBootstrap = bsFact.newServerBootstrap(serverChannelFactory, _ucast,
-                tcpProtocolHandler,
-                protocolHandler);
+        TCPBootstrapFactory bsFact = new TCPBootstrapFactory(_id, localUser, localDID, clientSslEngineFactory, serverSslEngineFactory, rockLog, _transportStats);
+        ServerBootstrap serverBootstrap = bsFact.newServerBootstrap(serverChannelFactory, _ucast, tcpProtocolHandler, protocolHandler);
         ClientBootstrap clientBootstrap = bsFact.newClientBootstrap(clientChannelFactory);
         _ucast.setBootstraps(serverBootstrap, clientBootstrap);
     }

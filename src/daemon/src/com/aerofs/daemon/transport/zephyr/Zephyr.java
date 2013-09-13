@@ -122,7 +122,7 @@ public final class Zephyr implements ITransport, ILinkStateListener, IUnicast, I
     private final InetSocketAddress zephyrAddress;
     private final ZephyrConnectionService zephyrConnectionService;
 
-    private final MobileServerZephyrConnector mobileZephyrConnector; // FIXME (AG): this shouldn't be here
+    private final @Nullable MobileServerZephyrConnector mobileZephyrConnector; // FIXME (AG): this shouldn't be here
     private final TransportStats transportStats = new TransportStats();
 
     private boolean multicastEnabled = false;
@@ -132,16 +132,18 @@ public final class Zephyr implements ITransport, ILinkStateListener, IUnicast, I
     //
 
     public Zephyr(
-            UserID localid, DID localdid,
+            UserID localid,
+            DID localdid,
             byte[] scrypted,
-            String id, int rank,
+            String id,
+            int rank,
             IBlockingPrioritizedEventSink<IEvent> outgoingEventSink,
             MaxcastFilterReceiver maxcastFilterReceiver,
             SSLEngineFactory clientSSLEngineFactory,
             SSLEngineFactory serverSSLEngineFactory,
             ClientSocketChannelFactory clientSocketChannelFactory,
-            MobileServerZephyrConnector mobileZephyr,
-            RockLog rocklog,
+            @Nullable MobileServerZephyrConnector mobileZephyr,
+            RockLog rockLog,
             InetSocketAddress xmppServerAddress,
             String xmppServerDomain,
             InetSocketAddress zephyrAddress,
@@ -160,20 +162,22 @@ public final class Zephyr implements ITransport, ILinkStateListener, IUnicast, I
         this.outgoingEventSink = outgoingEventSink;
         this.scheduler = new Scheduler(eventQueue, id + "-sched");
         this.xmppServerDomain = xmppServerDomain;
-        this.xmppConnectionService = new XMPPConnectionService(localdid, xmppServerAddress, xmppServerDomain, id(), scrypted, rocklog);
+        this.xmppConnectionService = new XMPPConnectionService(localdid, xmppServerAddress, xmppServerDomain, id(), scrypted, rockLog);
         this.multicast = new Multicast(localdid, id(), xmppServerDomain, maxcastFilterReceiver, xmppConnectionService, this, outgoingEventSink);
         this.maxcastFilterReceiver = maxcastFilterReceiver;
         this.pulseManager.addPulseDeletionWatcher(new GenericPulseDeletionWatcher(this, this.outgoingEventSink));
         this.zephyrAddress = zephyrAddress;
 
         this.zephyrConnectionService = new ZephyrConnectionService(
-                localid, localdid,
+                id,
+                localid,
+                localdid,
                 clientSSLEngineFactory,
                 serverSSLEngineFactory,
                 this,
                 this,
                 transportStats,
-                rocklog,
+                rockLog,
                 clientSocketChannelFactory,
                 this.zephyrAddress,
                 proxy);

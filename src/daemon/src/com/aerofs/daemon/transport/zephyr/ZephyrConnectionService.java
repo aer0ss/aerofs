@@ -51,7 +51,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.aerofs.base.net.ZephyrConstants.ZEPHYR_REG_MSG_LEN;
 import static com.aerofs.daemon.lib.DaemonParam.Zephyr.HANDSHAKE_TIMEOUT;
-import static com.aerofs.daemon.transport.exception.TransportDefects.DEFECT_NAME_HANDSHAKE_RENEGOTIATION;
+import static com.aerofs.daemon.transport.lib.TransportDefects.DEFECT_NAME_HANDSHAKE_RENEGOTIATION;
 import static com.aerofs.daemon.transport.lib.TransportUtil.newConnectedSocket;
 import static com.aerofs.daemon.transport.zephyr.ZephyrClientPipelineFactory.getZephyrClientHandler;
 import static com.aerofs.zephyr.proto.Zephyr.ZephyrControlMessage.Type.HANDSHAKE;
@@ -79,7 +79,7 @@ final class ZephyrConnectionService implements IUnicastInternal, IZephyrSignalli
     private static Logger l = Loggers.getLogger(ZephyrConnectionService.class);
 
     private final TransportStats transportStats;
-    private final RockLog rocklog;
+    private final RockLog rockLog;
     private final ISignallingService signallingService;
 
     private final InetSocketAddress zephyrAddress;
@@ -90,21 +90,25 @@ final class ZephyrConnectionService implements IUnicastInternal, IZephyrSignalli
     private final Map<DID, Channel> channels = newHashMap();
 
     ZephyrConnectionService(
-            UserID localid, DID localdid,
+            String id,
+            UserID localid,
+            DID localdid,
             SSLEngineFactory clientSslEngineFactory,
             SSLEngineFactory serverSslEngineFactory,
             IConnectionServiceListener connectionServiceListener,
             ISignallingService signallingService,
             TransportStats transportStats,
-            RockLog rocklog,
-            ChannelFactory channelFactory, InetSocketAddress zephyrAddress, Proxy proxy)
+            RockLog rockLog,
+            ChannelFactory channelFactory,
+            InetSocketAddress zephyrAddress,
+            Proxy proxy)
     {
         this.zephyrAddress = zephyrAddress;
         this.bootstrap = new ClientBootstrap(channelFactory);
-        this.bootstrap.setPipelineFactory(new ZephyrClientPipelineFactory(localid, localdid, clientSslEngineFactory, serverSslEngineFactory, transportStats, this, connectionServiceListener, proxy, HANDSHAKE_TIMEOUT));
+        this.bootstrap.setPipelineFactory(new ZephyrClientPipelineFactory(id, localid, localdid, rockLog, clientSslEngineFactory, serverSslEngineFactory, transportStats, this, connectionServiceListener, proxy, HANDSHAKE_TIMEOUT));
 
         this.transportStats = transportStats;
-        this.rocklog = rocklog;
+        this.rockLog = rockLog;
 
         this.signallingService = signallingService;
     }
@@ -424,7 +428,7 @@ final class ZephyrConnectionService implements IUnicastInternal, IZephyrSignalli
                 try {
                     consumeHandshake(did, handshake);
                 } catch (ExHandshakeRenegotiation e) {
-                    rocklog.newDefect(DEFECT_NAME_HANDSHAKE_RENEGOTIATION).send();
+                    rockLog.newDefect(DEFECT_NAME_HANDSHAKE_RENEGOTIATION).send();
                     disconnectChannel(did, new ExDeviceDisconnected("attempted renegotiation of zephyr channel to " + did, e));
                     consumeHandshake(did, handshake);
                 }

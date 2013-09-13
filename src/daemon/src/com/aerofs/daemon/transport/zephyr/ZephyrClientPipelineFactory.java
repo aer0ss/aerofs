@@ -7,8 +7,10 @@ import com.aerofs.base.ssl.CNameVerificationHandler;
 import com.aerofs.base.ssl.SSLEngineFactory;
 import com.aerofs.daemon.transport.lib.TransportStats;
 import com.aerofs.daemon.transport.netty.handlers.ConnectTunnelHandler;
+import com.aerofs.daemon.transport.netty.handlers.DiagnosticsHandler;
 import com.aerofs.daemon.transport.netty.handlers.IOStatsHandler;
 import com.aerofs.daemon.transport.netty.handlers.ProxiedConnectionHandler;
+import com.aerofs.rocklog.RockLog;
 import com.aerofs.zephyr.client.IZephyrSignallingService;
 import com.aerofs.zephyr.client.handlers.ZephyrProtocolHandler;
 import org.jboss.netty.channel.Channel;
@@ -32,6 +34,7 @@ final class ZephyrClientPipelineFactory implements ChannelPipelineFactory
 
     private final UserID localid;
     private final DID localdid;
+    private final RockLog rockLog;
     private final SSLEngineFactory clientSslEngineFactory;
     private final SSLEngineFactory serverSslEngineFactory;
     private final TransportStats transportStats;
@@ -42,10 +45,14 @@ final class ZephyrClientPipelineFactory implements ChannelPipelineFactory
     private final Proxy proxy;
     private final long zephyrHandshakeTimeout;
     private final TimeUnit zephyrHandshakeTimeoutTimeunit;
-    private final HashedWheelTimer handshakeTimeoutTimer = new HashedWheelTimer(500, MILLISECONDS);
+    private final HashedWheelTimer timer = new HashedWheelTimer(500, MILLISECONDS);
+    private final String transportId;
 
     public ZephyrClientPipelineFactory(
-            UserID localid, DID localdid,
+            String transportId,
+            UserID localid,
+            DID localdid,
+            RockLog rockLog,
             SSLEngineFactory clientSslEngineFactory,
             SSLEngineFactory serverSslEngineFactory,
             TransportStats transportStats,
@@ -56,8 +63,10 @@ final class ZephyrClientPipelineFactory implements ChannelPipelineFactory
     {
         checkArgument(proxy.type() == DIRECT || proxy.type() == HTTP, "cannot support proxy type:" + proxy.type());
 
+        this.transportId = transportId;
         this.localid = localid;
         this.localdid = localdid;
+        this.rockLog = rockLog;
         this.clientSslEngineFactory = clientSslEngineFactory;
         this.serverSslEngineFactory = serverSslEngineFactory;
         this.transportStats = transportStats;
@@ -95,6 +104,9 @@ final class ZephyrClientPipelineFactory implements ChannelPipelineFactory
         pipeline.addLast("coredecoder", new CoreFrameDecoder());
         pipeline.addLast("coreencoder", coreFrameEncoder);
 
+        // diagnostics
+        pipeline.addLast("diagnostics", newDiagnosticsHandler());
+
         // zephyr client
         ZephyrClientHandler zephyrClientHandler = newZephyrClientHandler(zephyrProtocolHandler);
         pipeline.addLast(ZEPHYR_CLIENT_HANDLER_NAME, zephyrClientHandler);
@@ -103,6 +115,11 @@ final class ZephyrClientPipelineFactory implements ChannelPipelineFactory
         cNameVerificationHandler.setListener(zephyrClientHandler);
 
         return pipeline;
+    }
+
+    private DiagnosticsHandler newDiagnosticsHandler()
+    {
+        return new DiagnosticsHandler(transportId, rockLog, timer);
     }
 
     private AddressResolverHandler getResolverHandler()
@@ -124,7 +141,7 @@ final class ZephyrClientPipelineFactory implements ChannelPipelineFactory
 
     private ZephyrProtocolHandler newZephyrProtocolHandler()
     {
-        return new ZephyrProtocolHandler(zephyrSignallingService, handshakeTimeoutTimer, zephyrHandshakeTimeout, zephyrHandshakeTimeoutTimeunit);
+        return new ZephyrProtocolHandler(zephyrSignallingService, timer, zephyrHandshakeTimeout, zephyrHandshakeTimeoutTimeunit);
     }
 
     private CNameVerificationHandler newCNameVerificationHandler()

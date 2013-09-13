@@ -28,6 +28,7 @@ import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureListener;
 import org.slf4j.Logger;
 
+import javax.annotation.Nullable;
 import java.io.PrintStream;
 import java.net.SocketAddress;
 import java.util.Set;
@@ -157,7 +158,7 @@ public class Unicast implements IUnicastInternal, IServerHandlerListener, IDumpS
     }
 
     @Override
-    public Object send(final DID did, final IResultWaiter wtr, Prio pri, byte[][] bss, Object cookie)
+    public Object send(final DID did, final @Nullable IResultWaiter wtr, Prio pri, byte[][] bss, Object cookie)
         throws ExDeviceOffline
     {
         // Use the ClientHandler as the cookie to send the packet if the cookie is present.

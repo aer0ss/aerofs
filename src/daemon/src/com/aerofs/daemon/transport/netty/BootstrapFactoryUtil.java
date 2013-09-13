@@ -14,11 +14,14 @@ import com.aerofs.base.ssl.CNameVerificationHandler.CNameListener;
 import com.aerofs.base.ssl.SSLEngineFactory;
 import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.daemon.transport.lib.TransportStats;
+import com.aerofs.daemon.transport.netty.handlers.DiagnosticsHandler;
 import com.aerofs.daemon.transport.netty.handlers.IOStatsHandler;
 import com.aerofs.lib.LibParam;
+import com.aerofs.rocklog.RockLog;
 import org.jboss.netty.handler.codec.frame.LengthFieldBasedFrameDecoder;
 import org.jboss.netty.handler.codec.frame.LengthFieldPrepender;
 import org.jboss.netty.handler.ssl.SslHandler;
+import org.jboss.netty.util.Timer;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -35,8 +38,7 @@ public class BootstrapFactoryUtil
     {
         public static final int LENGTH_FIELD_SIZE = 2; // bytes
         public static final int MAX_MESSAGE_SIZE = DaemonParam.MAX_TRANSPORT_MESSAGE_SIZE;
-        public static final byte[] MAGIC_BYTES = ByteBuffer.allocate(C.INTEGER_SIZE).putInt(
-                LibParam.CORE_MAGIC).array();
+        public static final byte[] MAGIC_BYTES = ByteBuffer.allocate(C.INTEGER_SIZE).putInt(LibParam.CORE_MAGIC).array();
         public static final int HEADER_SIZE = LENGTH_FIELD_SIZE + MAGIC_BYTES.length;
 
         static {
@@ -87,5 +89,10 @@ public class BootstrapFactoryUtil
     public static IOStatsHandler newStatsHandler(TransportStats stats)
     {
         return new IOStatsHandler(stats);
+    }
+
+    public static DiagnosticsHandler newDiagnosticsHandler(String transportId, RockLog rockLog, Timer timer)
+    {
+        return new DiagnosticsHandler(transportId, rockLog, timer);
     }
 }

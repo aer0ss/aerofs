@@ -120,6 +120,7 @@ final class ZephyrClientHandler extends SimpleChannelHandler implements CNameLis
         return remoteid.get() != null;
     }
 
+    @SuppressWarnings("ThrowableResultOfMethodCallIgnored")
     private Throwable getDisconnectCause()
     {
         return disconnectCause.get() == null ? new ExSendFailed("peer unreachable") : disconnectCause.get();

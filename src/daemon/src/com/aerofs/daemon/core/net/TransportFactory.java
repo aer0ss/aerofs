@@ -73,7 +73,7 @@ public final class TransportFactory
     private final Proxy proxy;
     private final BlockingPrioQueue<IEvent> transportEventSink;
     private final @Nullable MobileServerZephyrConnector mobileServerZephyrConnector;
-    private final RockLog rocklog;
+    private final RockLog rockLog;
     private final ServerSocketChannelFactory serverSocketChannelFactory;
     private final ClientSocketChannelFactory clientSocketChannelFactory;
     private final MaxcastFilterReceiver maxcastFilterReceiver;
@@ -92,7 +92,7 @@ public final class TransportFactory
             InetSocketAddress zephyrServerAddress,
             Proxy proxy,
             BlockingPrioQueue<IEvent> transportEventSink,
-            RockLog rocklog,
+            RockLog rockLog,
             MaxcastFilterReceiver maxcastFilterReceiver,
             @Nullable MobileServerZephyrConnector mobileServerZephyrConnector,
             ClientSocketChannelFactory clientSocketChannelFactory,
@@ -111,7 +111,7 @@ public final class TransportFactory
         this.zephyrServerAddress = zephyrServerAddress;
         this.proxy = proxy;
         this.transportEventSink = transportEventSink;
-        this.rocklog = rocklog;
+        this.rockLog = rockLog;
         this.maxcastFilterReceiver = maxcastFilterReceiver;
         this.clientSocketChannelFactory = clientSocketChannelFactory;
         this.serverSocketChannelFactory = serverSocketChannelFactory;
@@ -153,6 +153,7 @@ public final class TransportFactory
                 maxcastFilterReceiver,
                 clientSslEngineFactory,
                 serverSslEngineFactory,
+                rockLog,
                 clientSocketChannelFactory,
                 serverSocketChannelFactory);
     }
@@ -171,7 +172,7 @@ public final class TransportFactory
                 serverSslEngineFactory,
                 clientSocketChannelFactory,
                 mobileServerZephyrConnector,
-                rocklog,
+                rockLog,
                 xmppServerAddress,
                 xmppServerDomain,
                 zephyrServerAddress,
@@ -192,7 +193,7 @@ public final class TransportFactory
                 transportRank,
                 transportEventSink,
                 maxcastFilterReceiver,
-                rocklog,
+                rockLog,
                 clientSslEngineFactory,
                 serverSslEngineFactory);
     }

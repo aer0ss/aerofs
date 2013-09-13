@@ -18,13 +18,18 @@ public class DaemonParam
     public static final int QUEUE_LENGTH_DEFAULT        = 1024;
 
     //
+    // transport parameters
+    //
+
+    public static final long SLOW_CONNECT           = 10 * C.SEC;
+
+    //
     // pulsing parameters
     //
 
     public static final int MAX_PULSE_FAILURES      = 3;
     public static final long INIT_PULSE_TIMEOUT     = 1 * C.SEC;
     public static final long MAX_PULSE_TIMEOUT      = 60 * C.SEC;
-    public static final long CONNECT_TIMEOUT        = 30 * C.SEC;
 
     public static class TCP
     {

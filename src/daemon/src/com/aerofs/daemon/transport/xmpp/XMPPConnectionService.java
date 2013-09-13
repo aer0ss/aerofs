@@ -30,7 +30,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.aerofs.daemon.transport.exception.TransportDefects.DEFECT_NAME_XSC_CONNECTION_ALREADY_REPLACED;
+import static com.aerofs.daemon.transport.lib.TransportDefects.DEFECT_NAME_XSC_CONNECTION_ALREADY_REPLACED;
 import static com.aerofs.daemon.transport.lib.TransportUtil.newConnectedSocket;
 import static com.aerofs.lib.LibParam.EXP_RETRY_MIN_DEFAULT;
 import static com.aerofs.lib.Util.exponentialRetryNewThread;

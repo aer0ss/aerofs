@@ -95,8 +95,7 @@ public class Jingle implements ITransport, ILinkStateListener, IUnicastCallbacks
             MaxcastFilterReceiver mcfr,
             RockLog rockLog,
             SSLEngineFactory clientSslEngineFactory,
-            SSLEngineFactory serverSslEngineFactory
-            )
+            SSLEngineFactory serverSslEngineFactory)
     {
         OSUtil.get().loadLibrary("aerofsj");
 
@@ -120,7 +119,7 @@ public class Jingle implements ITransport, ILinkStateListener, IUnicastCallbacks
         // Unicast
         _ucast = new Unicast(this, _transportStats);
         TransportProtocolHandler protocolHandler = new TransportProtocolHandler(this, sink, _sm, _pulseManager, _ucast);
-        JingleBootstrapFactory bsFact = new JingleBootstrapFactory(localUser, localDID, clientSslEngineFactory, serverSslEngineFactory, _transportStats);
+        JingleBootstrapFactory bsFact = new JingleBootstrapFactory(_id, localUser, localDID, clientSslEngineFactory, serverSslEngineFactory, rockLog, _transportStats);
         ServerBootstrap serverBootstrap = bsFact.newServerBootstrap(_signalThread, _ucast, protocolHandler);
         ClientBootstrap clientBootstrap = bsFact.newClientBootstrap(_signalThread);
         _ucast.setBootstraps(serverBootstrap, clientBootstrap);
