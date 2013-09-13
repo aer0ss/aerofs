@@ -4,6 +4,7 @@
 
 package com.aerofs.sp.server;
 
+import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.lib.LibParam.OpenId;
@@ -153,14 +154,15 @@ public class IdentityServlet extends HttpServlet
     private String getOpenIDResponse(String mode)
     {
         if (StringUtils.isBlank(mode)) return "AeroFS received an empty response from the " +
-                "OpenID Provider and is unable to authenticate. Please contact AeroFS support " +
-                "for assistance.";
-        else if (mode.equals("id_res")) return "The authentication is complete. You may close " +
-                "this browser window now.";
-        else if (mode.equals("cancel")) return "The authentication process has been canceled. " +
+                "OpenID Provider and is unable to authenticate. Please contact " +
+                WWW.SUPPORT_EMAIL_ADDRESS + " for assistance.";
+        else if (mode.equals("id_res")) return "The AeroFS authentication process is complete. " +
                 "You may close this browser window now.";
+        else if (mode.equals("cancel")) return "The AeroFS authentication process has been " +
+                "canceled. You may close this browser window now.";
         else return "AeroFS does not recognize the response from the OpenID Provider and is " +
-                "unable to authenticate. Please contact AeroFS support for assistance.";
+                    "unable to authenticate. Please contact " + WWW.SUPPORT_EMAIL_ADDRESS +
+                    " for assistance.";
     }
 
     /**
