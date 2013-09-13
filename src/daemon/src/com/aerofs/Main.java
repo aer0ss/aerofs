@@ -140,24 +140,17 @@ public class Main
             writeCACertToFile(AppRoot.abs());
         } catch (Exception e) {
             if (prog.equals(LibParam.GUI_NAME) || prog.equals(LibParam.CLI_NAME)) {
-                String msg = null;
+                String msg = e instanceof ConfigurationException
+                        && e.getCause() instanceof IncompatibleModeException
+                        ? "The application is configured to the wrong mode. Please reinstall " +
+                        L.product() + '.'
+                        : "Failed to initialize the configuration subsystem. Please verify " +
+                        "the configuration service is available.";
 
-                if (e instanceof ConfigurationException) {
-                    if (e.getCause() instanceof IncompatibleModeException) {
-                        msg = "The application is configured to the wrong mode. Please reinstall " +
-                                L.product() + '.';
-                    } else {
-                        msg = "Failed to initialize the configuration subsystem. Please verify " +
-                                "the configuration service is available.";
-                    }
-                }
-
-                if (msg != null) {
-                    String[] temp = new String[appArgs.length + 1];
-                    System.arraycopy(appArgs, 0, temp, 0, appArgs.length);
-                    temp[temp.length - 1] = "-E" + msg;
-                    appArgs = temp;
-                }
+                String[] temp = new String[appArgs.length + 1];
+                System.arraycopy(appArgs, 0, temp, 0, appArgs.length);
+                temp[temp.length - 1] = "-E" + msg;
+                appArgs = temp;
             } else {
                 System.out.println("failed in main(): " + Util.e(e));
                 SVClient.logSendDefectSyncIgnoreErrors(true, "failed in main()", e);
@@ -250,19 +243,14 @@ public class Main
         l.debug("Client configuration initialized");
     }
 
-    private static void writeCACertToFile(String approot)
+    private static void writeCACertToFile(String approot) throws IOException
     {
         // Write the new cacert.pem to the approot for use by other parts of the system.
         // TODO (MP) remove this and have everyone use Cfg.cacert() directly.
         if (EnterpriseConfig.IS_ENTERPRISE_DEPLOYMENT)
         {
-            try {
-                Files.write(
-                        EnterpriseConfig.BASE_CA_CERTIFICATE.getBytes(),
-                        new File(approot, LibParam.CA_CERT));
-            } catch (IOException e) {
-                l.debug("Failed to write CA cert to disk.", e);
-            }
+            Files.write(EnterpriseConfig.BASE_CA_CERTIFICATE.getBytes(),
+                    new File(approot, LibParam.CA_CERT));
         }
     }
 }
