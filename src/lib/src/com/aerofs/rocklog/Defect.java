@@ -98,7 +98,7 @@ public class Defect
         return "/defects";
     }
 
-    Defect addData(String key, Object value)
+    public Defect addData(String key, Object value)
     {
         _data.put(key, value);
         return this;
