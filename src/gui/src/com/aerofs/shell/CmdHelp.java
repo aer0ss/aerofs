@@ -24,10 +24,14 @@ public class CmdHelp<T> implements IShellCommand<T>
             helpGlobal(s);
         } else for (String arg : cl.getArgs()) {
             IShellCommand<T> cmd = s.getCommands_().get(arg);
-            if (cmd == null) {
-                throw new ExBadArgs("command " + Util.quote(arg) + " not found");
+            if (cmd != null) {
+                s.usage(cmd);
+            } else {
+                s.out().println("command " + Util.quote(arg) + " not found. Type \"help\"" +
+                        " for a list of available commands.");
+                // ignore the rest of the arguments
+                break;
             }
-            s.usage(cmd);
         }
     }
 

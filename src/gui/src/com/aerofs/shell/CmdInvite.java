@@ -39,7 +39,7 @@ public class CmdInvite implements IShellCommand<ShProgram>
     {
         StringBuilder sb = new StringBuilder();
         boolean first = true;
-        for (Role role : Role.supportedValues()) {
+        for (Role role : Role.values()) {
             if (!first) sb.append(" or ");
             first = false;
             sb.append(role.getDescription());

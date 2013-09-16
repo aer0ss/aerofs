@@ -99,7 +99,7 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
     }
 
     @Test
-    public void shaveSharedFolder_shouldAddTeamServer()
+    public void saveSharedFolder_shouldAddTeamServer()
             throws Exception
     {
         User owner = saveUser();

@@ -30,14 +30,6 @@ public enum Role
         _pb = pb;
     }
 
-    /**
-     * @return a list of Roles that are currently supported in the UI
-     */
-    public static Role[] supportedValues()
-    {
-        return new Role[] { EDITOR, OWNER };
-    }
-
     public String getDescription()
     {
         return _description;
@@ -51,7 +43,7 @@ public enum Role
     public static Role fromPB(PBRole pb) throws ExBadArgs
     {
         switch (pb) {
-        case VIEWER: throw new ExBadArgs("Viewers not supported");
+        case VIEWER: return VIEWER;
         case EDITOR: return EDITOR;
         case OWNER: return OWNER;
         default: throw new ExBadArgs("Unknown role: " + pb.toString());
@@ -60,13 +52,10 @@ public enum Role
 
     public static Role fromString(String roleDescription) throws ExBadArgs
     {
-        if (roleDescription.equals(EDITOR.getDescription())) {
-            return EDITOR;
-        } else if (roleDescription.equals(OWNER.getDescription())) {
-            return OWNER;
-        } else {
-            throw new ExBadArgs("invalid role description " + roleDescription);
+        for (Role role : values()) {
+            if (roleDescription.equals(role.getDescription())) return role;
         }
+        throw new ExBadArgs("invalid role description " + roleDescription);
     }
 
     /**
