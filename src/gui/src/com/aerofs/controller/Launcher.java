@@ -13,6 +13,7 @@ import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.id.UserID;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.labeling.L;
+import com.aerofs.lib.LibParam.PrivateDeploymentConfig;
 import com.aerofs.ui.UI;
 import com.aerofs.ui.UIGlobals;
 import com.aerofs.ui.launch_tasks.UILaunchTasks;
@@ -275,7 +276,7 @@ class Launcher
     {
         // There is no SV in enterprise, so the archiver's gzipped logs will stick around
         // forever. Don't compress on enterprise, and let logback delete old logs
-        if (!LibParam.EnterpriseConfig.IS_ENTERPRISE_DEPLOYMENT)
+        if (!PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT)
         {
             new LogArchiver(absRTRoot()).start();
         }

@@ -107,7 +107,7 @@ def json_signup(request):
         #       prevent the user from signing up even if salesforce fails
         #       Also, we don't want to run this code if we're in enterprise mode.
 
-        if not is_enterprise_deployment(request):
+        if not is_private_deployment(request.registry.settings):
             try:
                 urlopen(
                     'https://www.salesforce.com/servlet/servlet.WebToLead?encoding=UTF-8',

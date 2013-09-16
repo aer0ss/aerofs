@@ -89,7 +89,7 @@ def _render_user_options_link(request, user_and_level, session_user):
                                         'devices_url': devices_url,
                                         'email': user.user_email,
                                         'is_admin': (user_and_level.level == ADMIN),
-                                        'is_enterprise': is_enterprise_deployment(request),
+                                        'is_private': is_private_deployment(request.registry.settings),
         },request=request)
 
 

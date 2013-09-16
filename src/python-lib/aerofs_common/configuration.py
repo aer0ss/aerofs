@@ -5,35 +5,17 @@ import requests
 import jprops
 from cStringIO import StringIO
 
+SERVER_URL = "http://localhost:5436/"
+SET_URL = "http://localhost:5437/"
+
 """
 Class that fetches and manages configuration.
 """
 class Configuration(object):
 
     """
-    Initialize the configuration object.
-
-    Params:
-        config_url_file:
-            A file that contains the configuration URL we must attach to.
-        cacert_file:
-            The trusted certificate for the https configuration service.
-    """
-    def __init__(self, config_url_file, cacert_file):
-        self.config_url_file = config_url_file
-        self.cacert_file = cacert_file
-
-        # Read URL from file. In the case that the file does not exist,
-        # config_url will remain null and we will fail on calls to other class
-        # functions.
-        self.config_url = None
-
-        with open(config_url_file) as f:
-            self.config_url = f.read().strip()
-
-    """
     Fetch and populate the configuration values specified by the configuration
-    URL and store those values in the pass configuration dictionary.
+    URL and store those values in the passed configuration dictionary.
 
     Params:
         configuration:
@@ -44,7 +26,7 @@ class Configuration(object):
 
         # Pull down configuration values and store them in our temporary dictionary.
         tmp = {}
-        res = requests.get(self.config_url, verify=self.cacert_file)
+        res = requests.get(SERVER_URL)
         if res.ok:
             props = jprops.load_properties(StringIO(res.text))
             for key in props:
@@ -70,14 +52,11 @@ class Configuration(object):
     Sets a key value pair on the persistent configuration server.
 
     Params:
-        context:
-            One of common, client, or server. Provides the key context (i.e. is
-            key only used by the server? By the client? By both?).
         key:
             The key to set.
         value:
             The value to set.
     """
-    def set_persistent_value(self, context, key, value):
-        payload = {'context': context, 'key': key, 'value': value}
-        requests.post(self.config_url, data=payload)
+    def set_persistent_value(self, key, value):
+        payload = {'key': key, 'value': value}
+        requests.post(SET_URL, data=payload)

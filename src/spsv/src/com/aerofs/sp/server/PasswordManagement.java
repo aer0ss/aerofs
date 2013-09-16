@@ -4,10 +4,10 @@ import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.UserID;
-import com.aerofs.lib.LibParam.EnterpriseConfig;
 import com.aerofs.lib.LibParam.Identity;
 import com.aerofs.lib.LibParam.Identity.Authenticator;
 import com.aerofs.base.ex.ExCannotResetPassword;
+import com.aerofs.lib.LibParam.PrivateDeploymentConfig;
 import com.aerofs.sp.common.Base62CodeGenerator;
 import com.aerofs.sp.common.UserFilter;
 import com.aerofs.sp.server.email.PasswordResetEmailer;
@@ -92,7 +92,7 @@ public class PasswordManagement
     // We can't just ask "!isInternalUser" since that will never be true for PROD mode
     private boolean canResetPassword(User user)
     {
-        return     !EnterpriseConfig.IS_ENTERPRISE_DEPLOYMENT
+        return     !PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT
                 || (Identity.AUTHENTICATOR == Authenticator.LOCAL_CREDENTIAL)
                 || (!_userFilter.isInternalUser(user.id()));
     }

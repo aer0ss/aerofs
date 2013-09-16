@@ -11,7 +11,7 @@ import com.aerofs.gui.GUI;
 import com.aerofs.gui.misc.DlgDefect;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.JsonFormat.ParseException;
-import com.aerofs.lib.LibParam.EnterpriseConfig;
+import com.aerofs.lib.LibParam.PrivateDeploymentConfig;
 import com.aerofs.lib.ex.ExNoConsole;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.UI;
@@ -120,7 +120,7 @@ public class ErrorMessages
     private static void showInGUI(Shell shell, Throwable exception, String defaultMessage,
             @Nullable String message)
     {
-        if (EnterpriseConfig.IS_ENTERPRISE_DEPLOYMENT) {
+        if (PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT) {
             // In enterprise deployment, there's no "report a problem" dialog, so we just show the
             // error message
             if (message == null) message = defaultMessage + " Please try again later.";

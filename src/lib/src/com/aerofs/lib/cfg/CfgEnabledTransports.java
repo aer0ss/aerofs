@@ -4,7 +4,7 @@
 
 package com.aerofs.lib.cfg;
 
-import com.aerofs.lib.LibParam.EnterpriseConfig;
+import com.aerofs.lib.LibParam.PrivateDeploymentConfig;
 
 public class CfgEnabledTransports
 {
@@ -15,7 +15,7 @@ public class CfgEnabledTransports
 
     public boolean isJingleEnabled()
     {
-        return Cfg.useJingle() && !EnterpriseConfig.IS_ENTERPRISE_DEPLOYMENT;
+        return Cfg.useJingle() && !PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT;
     }
 
     public boolean isZephyrEnabled()

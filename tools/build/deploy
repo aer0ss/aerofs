@@ -15,9 +15,9 @@ include include/common ${1:-}
 if [[ $# -ne 1 ]]; then
     echo "usage: $0 [build mode]" >&2
     echo " " >&2
-    echo "[build mode]: PROD|ENTERPRISE" >&2
+    echo "[build mode]: PUBLIC|PRIVATE" >&2
     echo " " >&2
-    echo "example: $0 PROD" >&2
+    echo "example: $0 PUBLIC" >&2
     exit $ERRBADARGS
 fi
 
@@ -69,7 +69,7 @@ function upload_packages_to_release_server() {
 }
 
 function upload_packages_to_antivirus_firms() {
-    if is_prod ; then
+    if is_public ; then
         # Upload latest version of script
         kscp $BUILD_SCRIPT_DIR/send_package_to_antivirus_firms.sh $RELEASE_SERVER_LOGIN:
         # Spawn script in background - script will delete self on completion.
@@ -95,21 +95,21 @@ ENDCMDS
 # Tags this release with an annotated tag so it is easy to checkout a deployed
 # build for debugging.
 function tag_release() {
-    if is_prod ; then
+    if is_public ; then
         echo ">> tagging git release"
-        git tag -a "prod-$RELEASE_VERSION" -m "prod-$RELEASE_VERSION"
+        git tag -a "public-$RELEASE_VERSION" -m "public-$RELEASE_VERSION"
         git push --tags
     fi
 
-    if is_enterprise ; then
+    if is_private ; then
         echo ">> tagging git release"
-        git tag -a "enterprise-$RELEASE_VERSION" -m "enterprise-$RELEASE_VERSION"
+        git tag -a "private-$RELEASE_VERSION" -m "private-$RELEASE_VERSION"
         git push --tags
     fi
 }
 
 # main: Run all of the deployment steps
-if is_prod ; then
+if is_public ; then
     echo
     echo "!!!!!!!!!!!!!!!!!!!!!!!"
     echo "!! DEPLOY PRODUCTION !!"

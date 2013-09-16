@@ -148,12 +148,12 @@ public class TestPropertiesHelper
     {
         Properties raw = new Properties();
 
-        raw.setProperty("base.hosts.transient", "transient.syncfs.com");
-        raw.setProperty("base.sp.url", "https://${base.hosts.transient}:9000/sp");
+        raw.setProperty("base.host.unified", "unified.syncfs.com");
+        raw.setProperty("base.sp.url", "https://${base.host.unified}:4433/sp");
 
         Properties parsed = _propertiesHelper.parseProperties(raw);
 
-        assertEquals(parsed.get("base.sp.url"), "https://transient.syncfs.com:9000/sp");
+        assertEquals(parsed.get("base.sp.url"), "https://unified.syncfs.com:4433/sp");
     }
 
     @Test

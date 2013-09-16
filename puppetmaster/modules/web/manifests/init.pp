@@ -28,8 +28,8 @@ class web (
         owner  => "www-data",
     }
 
-    file{"/etc/uwsgi/apps-enabled/productionAeroFS.ini":
-        content => template("web/productionAeroFS.ini.erb"),
+    file{"/etc/uwsgi/apps-enabled/aerofs.ini":
+        content => template("web/aerofs.ini.erb"),
         owner => root,
         group => root,
         require => Package["aerofs-web"],

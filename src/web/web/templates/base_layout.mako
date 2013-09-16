@@ -122,7 +122,7 @@
                     })
     </script> 
     <%
-        from web.util import is_admin, get_last_flash_message_and_empty_queue
+        from web.util import get_last_flash_message_and_empty_queue
         ret = get_last_flash_message_and_empty_queue(request)
     %>
 

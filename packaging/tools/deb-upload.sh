@@ -79,7 +79,7 @@ function notify_team() {
 function print_usage()
 {
     echo "Usage: $0 <repository> [<versions_only>=false]"
-    echo " <repository> repository to upload package to (PROD|CI|STAGING|$(whoami | tr [a-z] [A-Z])|ENTERPRISE)"
+    echo " <repository> repository to upload package to (PUBLIC|PRIVATE|CI|$(whoami | tr [a-z] [A-Z]))"
     exit $ERRBADARGS
 }
 
@@ -97,10 +97,9 @@ else
 fi
 
 # check the mode the user is invoking
-if [[ "$1" != 'PROD' && \
+if [[ "$1" != 'PUBLIC' && \
+    "$1" != 'PRIVATE' && \
     "$1" != 'CI' && \
-    "$1" != 'STAGING' && \
-    "$1" != 'ENTERPRISE' && \
     "$1" != "$(whoami | tr [a-z] [A-Z])" ]]
 then
     print_usage
@@ -115,7 +114,7 @@ readonly DEBS_FOLDER="debs-$TARGET_REPOSITORY_DIRECTORY"
 upload_payload $versions_only
 
 # notify the team if necessary that the upload completed
-if [ "$TARGET_REPOSITORY" = 'PROD' ]
+if [ "$TARGET_REPOSITORY" = 'PUBLIC' ]
 then
     notify_team
 fi

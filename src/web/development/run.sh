@@ -6,10 +6,10 @@ if [ $# -ne 1 ]
 then
     echo "Usage: $0 <mode>"
     echo
-    echo "Available modes: prod, modular, unified."
+    echo "Available modes: public, private."
     echo
     echo "Note:"
-    echo " - If running in unified or modular mode, the corresponding development"
+    echo " - If running in private mode, the corresponding development"
     echo "   system must be running."
 
     exit 1

@@ -17,7 +17,7 @@ virtualenv $PYHOME
 cd /opt/web
 $PYHOME/bin/pip install --find-links file:///opt/web/sdist      \
                         --no-index                              \
-                        --log /var/log/aerofs/pip.install.log   \
+                        --log /var/log/aerofs/web.install.log   \
                         --requirement /opt/web/requirements.txt
 $PYTHON setup.py install
 

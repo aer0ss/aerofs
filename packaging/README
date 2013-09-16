@@ -38,8 +38,8 @@ Rebuild a specific package and release to staging:
     where <package> does not include the aerofs prefix (examples include common,
     ca-tools, etc.)
 
-To release debs to production, run in PROD mode:
-    make upload MODE=PROD
+To release debs to production, run in PUBLIC mode:
+    make upload MODE=PUBLIC
 
 etc...
 

@@ -1,7 +1,7 @@
 Package: aerofs-config
 Section: admin
 Priority: required
-Depends: vim
+Depends: vim, python, python-pip, python-virtualenv
 Maintainer: AeroFS <team@aerofs.com>
 Description: AeroFS config server package.
 Architecture: all

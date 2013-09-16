@@ -50,7 +50,7 @@
                 AeroFS Desktop
             </a></li>
 
-            %if request.registry.settings['deployment.mode'] == 'prod':
+            %if request.registry.settings['deployment.mode'] == 'public':
                 <li><a href="http://play.google.com/store/apps/details?id=com.aerofs.android" target="_blank">
                     Android App
                 </a></li>
@@ -81,7 +81,11 @@
         <li class="nav-header">My AeroFS</li>
         ${render_nonadmin_links()}
         <li class="nav-header">My Team</li>
-        ${render_admin_links()}
+        ${render_admin_team_links()}
+        %if request.registry.settings['deployment.mode'] != 'public':
+            <li class="nav-header">My System</li>
+            ${render_admin_system_links()}
+        %endif
     </ul>
 </%def>
 
@@ -98,22 +102,30 @@
     % endfor
 </%def>
 
-<%def name="render_admin_links()">
+<%def name="render_admin_team_links()">
     <%
         links = [
             ('team_members', _("Team Members")),
             ('team_shared_folders', _("All Shared Folders")),
             ('team_server_devices', _("Team Servers")),
-            ('team_settings', _("Settings")),
+            ('team_settings', _("Team Settings")),
         ]
     %>
     % for link in links:
         ${render_navigation_link(link)}
     % endfor
+</%def>
 
-    %if request.registry.settings['deployment.mode'] != 'prod':
-        ${render_navigation_link(('status', _("Service Status")))}
-    %endif
+<%def name="render_admin_system_links()">
+    <%
+        links = [
+            ('status', _("Service Status")),
+            ('site_config', _("Site Configuration"))
+        ]
+    %>
+    % for link in links:
+        ${render_navigation_link(link)}
+    % endfor
 </%def>
 
 ## param link: tuple (route_name, text_to_display)

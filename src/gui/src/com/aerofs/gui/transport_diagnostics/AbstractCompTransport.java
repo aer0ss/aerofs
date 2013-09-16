@@ -6,7 +6,7 @@ package com.aerofs.gui.transport_diagnostics;
 
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.gui.Images;
-import com.aerofs.lib.LibParam.EnterpriseConfig;
+import com.aerofs.lib.LibParam.PrivateDeploymentConfig;
 import com.aerofs.lib.S;
 import com.aerofs.proto.Diagnostics.PBInetSocketAddress;
 import com.aerofs.proto.Diagnostics.ServerStatus;
@@ -93,7 +93,7 @@ public abstract class AbstractCompTransport extends Composite
         Preconditions.checkArgument(status.hasReachable());
 
         // only show server status details in private deployment
-        if (EnterpriseConfig.IS_ENTERPRISE_DEPLOYMENT) {
+        if (PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT) {
             return new StringBuilder()
                     .append(formatAddress(status.getServerAddress(), true))
                     .append(" (")

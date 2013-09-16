@@ -1,8 +1,3 @@
-#
-# The services class include all services and configuration on the box EXCEPT
-# for nginx and bootstrap configuration (since these services need to be
-# configured differently depending on the deployment mode.
-#
 class persistent::services (
   $mysql_bind_address = $persistent::params::mysql_bind_address,
   $redis_bind_address = $persistent::params::redis_bind_address,

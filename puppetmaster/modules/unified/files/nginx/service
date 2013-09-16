@@ -3,7 +3,7 @@ server {
     # in the AeroFS CA
     listen *:4433;
 
-    access_log /var/log/nginx/aerofs.access.log;
+    access_log /var/log/nginx/service.access.log;
 
     ssl on;
     ssl_client_certificate /etc/ssl/certs/AeroFS_CA.pem;

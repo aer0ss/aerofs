@@ -2,7 +2,7 @@
     <table class="table table-hover" style="border: 1px">
         <thead><th style="width:4%"></th><th style="width:12%"></th><th style:"width:84%"></th></thead>
         <tbody id="server-status-tbody">
-            % for server_status in unified_server_statuses:
+            % for server_status in server_statuses:
                 ${render_server_row(server_status)}
             % endfor
         </tbody>

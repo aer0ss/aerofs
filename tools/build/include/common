@@ -128,7 +128,7 @@ readonly LABELING_FILE="$LABELING_RESOURCES_DIR/labeling-$LOWERCASE_PRODUCT.prop
 
 ###############################################################################
 #
-# Constants relating to the deploy mode (PROD/CI/STAGING/ENTERPRISE)
+# Constants relating to the deploy mode (PUBLIC|PRIVATE|CI)
 #
 ###############################################################################
 
@@ -142,7 +142,7 @@ readonly LABELING_FILE="$LABELING_RESOURCES_DIR/labeling-$LOWERCASE_PRODUCT.prop
 #
 ###############################################################################
 function is_valid_mode() {
-    if [[ "$1" != "PROD" && "$1" != "ENTERPRISE" ]]; then
+    if [[ "$1" != "PUBLIC" && "$1" != "PRIVATE" ]]; then
         return $ERRBADMODE
     fi
     return 0
@@ -151,7 +151,7 @@ function is_valid_mode() {
 # check that a valid mode was specified
 readonly MODE="${1:-}"
 if ! is_valid_mode $MODE ; then
-    echo "error: invalid build mode $MODE. Expected PROD|ENTERPRISE." >&2
+    echo "error: invalid build mode $MODE. Expected PUBLIC|PRIVATE." >&2
     exit $ERRBADMODE
 fi
 readonly LOWERCASE_MODE="$(echo $MODE | tr '[A-Z]' '[a-z]')"
@@ -162,13 +162,13 @@ readonly LOWERCASE_MODE="$(echo $MODE | tr '[A-Z]' '[a-z]')"
 #
 ###############################################################################
 
-# We use the same user account when deploying to prod/enterprise.
-# TODO (MP) use a more reasonable username. Maybe drew's changes to the build will make this better?
+# We use the same user account when deploying to public/private.
+# TODO (MP) use a more reasonable username.
 case ${LOWERCASE_MODE} in
-prod)
+public)
     readonly RELEASE_SERVER_USERNAME=release-prod
     ;;
-enterprise)
+private)
     readonly RELEASE_SERVER_USERNAME=release-prod
     ;;
 *)
@@ -196,11 +196,12 @@ readonly RELEASE_NSIS_DIR="${RELEASE_FILES_DIR}/win_installer"
 # Cloudfront/S3 constants
 #
 ###############################################################################
-if [ "$MODE" == "PROD" ]; then
+if [ "$MODE" == "PUBLIC" ]; then
     readonly RELEASE_DOMAIN="nocache.client.aerofs.com"
-elif [ "$MODE" == "ENTERPRISE" ]; then
+elif [ "$MODE" == "PRIVATE" ]; then
     # N.B. no need to create a cache/nocache variant for this since the
     # installers are packaged into openstack images anyway.
+    # TODO (MP) rename the release domain.
     readonly RELEASE_DOMAIN="nocache.client.enterprise.aerofs.com"
 fi
 readonly INSTALLER_DOWNLOAD_BUCKET="s3://${RELEASE_DOMAIN}"
@@ -233,11 +234,11 @@ function is_team_server() {
 
 ###############################################################################
 #
-# Returns 0 if the deployment mode is ENTERPRISE, 1 otherwise
+# Returns 0 if the deployment mode is PRIVATE, 1 otherwise
 #
 ###############################################################################
-function is_enterprise() {
-    if [ "$MODE" == "ENTERPRISE" ]; then
+function is_private() {
+    if [ "$MODE" == "PRIVATE" ]; then
         return 0
     fi
     return 1
@@ -245,11 +246,11 @@ function is_enterprise() {
 
 ###############################################################################
 #
-# Returns 0 if the deployment mode is PROD, 1 otherwise
+# Returns 0 if the deployment mode is PUBLIC, 1 otherwise
 #
 ###############################################################################
-function is_prod() {
-    if [ "$MODE" == "PROD" ]; then
+function is_public() {
+    if [ "$MODE" == "PUBLIC" ]; then
         return 0
     fi
     return 1
@@ -257,11 +258,11 @@ function is_prod() {
 
 ###############################################################################
 #
-# Returns 0 if the deployment mode is PROD or ENTERPRISE, 1 otherwise
+# Returns 0 if the deployment mode is PUBLIC or PRIVATE, 1 otherwise
 #
 ###############################################################################
-function is_prod_or_enterprise() {
-    if [ "$MODE" == "PROD" ] || [ "$MODE" == "ENTERPRISE" ]; then
+function is_public_or_private() {
+    if [ "$MODE" == "PUBLIC" ] || [ "$MODE" == "PRIVATE" ]; then
         return 0
     fi
     return 1
@@ -401,7 +402,7 @@ function render_template() {
 #
 # NOTE: to rollback a production release for any reason:
 #       - log into release-prod@b.arrowfs.org
-#       - s3cmd sync -P --cf-invalidate --delete-removed /data/prod-downloads/[version]/* s3://nocache.client.aerofs.com
+#       - s3cmd sync -P --cf-invalidate --delete-removed /data/public-downloads/[version]/* s3://nocache.client.aerofs.com
 #
 # @param $1 The version to publish
 # @param $2 The S3 bucket to which the release version will be pushed
@@ -417,7 +418,7 @@ function publish_to_s3() {
             exit $ERRS3
         fi
 
-        if [ "$MODE" = "PROD" ] ; then
+        if [ "$MODE" = "PUBLIC" ] ; then
             OPTS="--follow-symlinks --acl-public --delete-removed --cf-invalidate"
         else
             OPTS="--follow-symlinks --acl-public --delete-removed"

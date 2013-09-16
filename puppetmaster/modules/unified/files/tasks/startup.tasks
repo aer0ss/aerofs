@@ -1,0 +1,13 @@
+ca-deploy
+ca-restart
+nginx-restart
+config-restart
+cacert-populate
+nginx-certificate-generate-placeholder
+browser-cert-pull
+enable-all-nginx-services
+nginx-restart
+bootstrap-restart
+uwsgi-restart
+zephyr-restart
+verkehr-restart

@@ -12,7 +12,7 @@ import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UniqueID;
 import com.aerofs.lib.FullName;
 import com.aerofs.base.acl.Role;
-import com.aerofs.lib.LibParam.EnterpriseConfig;
+import com.aerofs.lib.LibParam.PrivateDeploymentConfig;
 import com.aerofs.lib.ex.ExNoAdminOrOwner;
 import com.aerofs.sp.server.lib.SharedFolder;
 import com.aerofs.sp.server.lib.device.Device;
@@ -146,7 +146,7 @@ public class TestUser extends AbstractBusinessObjectTest
     @Test
     public void save_shouldSaveToMainOrgIfEnterpriseDeployment() throws Exception
     {
-        EnterpriseConfig.IS_ENTERPRISE_DEPLOYMENT = true;
+        PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT = true;
 
         try {
             Organization mainOrg = factOrg.create(OrganizationID.MAIN_ORGANIZATION);
@@ -172,7 +172,7 @@ public class TestUser extends AbstractBusinessObjectTest
             assertEquals(OrganizationID.MAIN_ORGANIZATION, user.getOrganization().id());
             assertEquals(AuthorizationLevel.USER, user.getLevel());
         } finally {
-            EnterpriseConfig.IS_ENTERPRISE_DEPLOYMENT = false;
+            PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT = false;
         }
     }
 

@@ -1,0 +1,25 @@
+base.host.unified={{ base_host }}
+
+config.loader.is_private_deployment=true
+config.loader.configuration_service_url=https://{{ base_host }}:5435/
+config.loader.base_ca_certificate={{ base_ca_cert }}
+
+base.www.url=https://{{ base_host }}
+base.sp.url=https://{{ base_host }}:4433/sp
+base.verkehr.host={{ base_host }}
+base.verkehr.port.publish=9293
+base.verkehr.port.admin=25234
+base.verkehr.port.subscribe=29438
+base.xmpp.address={{ base_host }}:8139
+base.zephyr.address={{ base_host }}:8888
+daemon.stun.address={{ base_host }}:3478
+
+base.www.support_email_address={{ support_address }}
+
+base.mixpanel.url=
+lib.sss.url=
+lib.rocklog.url=
+lib.sv.url=
+lib.notifications.enabled=false
+lib.authenticator=local_credential
+sp.payment.enabled=false

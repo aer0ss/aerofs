@@ -8,7 +8,7 @@ import com.aerofs.base.BaseSecUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExEmptyEmailAddress;
 import com.aerofs.base.id.DID;
-import com.aerofs.lib.LibParam.EnterpriseConfig;
+import com.aerofs.lib.LibParam.PrivateDeploymentConfig;
 import com.aerofs.lib.ex.ExNoAdminOrOwner;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.SystemUtil;
@@ -307,7 +307,7 @@ public class User
     public void save(byte[] shaedSP, FullName fullName)
             throws ExAlreadyExist, SQLException
     {
-        if (EnterpriseConfig.IS_ENTERPRISE_DEPLOYMENT) {
+        if (PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT) {
             // Enterprise deployment: all users are created in the same organization (the "main
             // organization").
             Organization mainOrg = _f._factOrg.create(OrganizationID.MAIN_ORGANIZATION);

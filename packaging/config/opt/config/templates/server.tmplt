@@ -1,0 +1,25 @@
+{% include "common.tmplt" %}
+{% include "extras/server.tmplt" %}
+
+base.configuration.initialized={{ configuration_initialized }}
+bootstrap.tasks.configuration_service_url=https://localhost:5436/
+
+base.ca.url=http://localhost:1029/prod
+
+base.status_url.persistent=http://{{ base_host }}:8000/
+base.status_url.transient=http://{{ base_host }}:8000/
+base.status_url.unified=http://{{ base_host }}:8000/
+
+sp.redis.address=localhost:6379
+
+bootstrap.spdb.username=aerofs_sp
+bootstrap.spdb.password=password
+bootstrap.spdb.host={{ base_host }}
+bootstrap.spdb.schema=aerofs_sp
+
+email.sender.public_host={{ email_host }}
+email.sender.public_username={{ email_user }}
+email.sender.public_password={{ email_password }}
+
+server.browser.certificate={{ browser_cert }}
+server.browser.key={{ browser_key }}

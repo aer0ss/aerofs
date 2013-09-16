@@ -20,7 +20,7 @@ import static com.aerofs.lib.configuration.ClientConfigurationLoader.Configurati
 import static com.aerofs.lib.configuration.ClientConfigurationLoader.IncompatibleModeException;
 import static com.aerofs.lib.configuration.ClientConfigurationLoader.PROPERTY_BASE_CA_CERT;
 import static com.aerofs.lib.configuration.ClientConfigurationLoader.PROPERTY_CONFIG_SERVICE_URL;
-import static com.aerofs.lib.configuration.ClientConfigurationLoader.PROPERTY_IS_ENTERPRISE_DEPLOYMENT;
+import static com.aerofs.lib.configuration.ClientConfigurationLoader.PROPERTY_IS_PRIVATE_DEPLOYMENT;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.fail;
@@ -176,7 +176,7 @@ public class TestClientConfigurationLoader
             throws IOException, ExBadArgs
     {
         Properties mockStaticProperties = new Properties();
-        mockStaticProperties.setProperty(PROPERTY_IS_ENTERPRISE_DEPLOYMENT,
+        mockStaticProperties.setProperty(PROPERTY_IS_PRIVATE_DEPLOYMENT,
                 String.valueOf(httpConfigRequired));
         doReturn(mockStaticProperties).when(_loader).getStaticProperties();
 

@@ -10,7 +10,7 @@ import com.aerofs.gui.tray.TrayIcon.NotificationReason;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.LibParam;
-import com.aerofs.lib.LibParam.EnterpriseConfig;
+import com.aerofs.lib.LibParam.PrivateDeploymentConfig;
 import com.aerofs.lib.S;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.ThreadUtil;
@@ -387,8 +387,8 @@ public abstract class Updater
 
     private static URLConnection newUpdaterConnection(URL url) throws IOException
     {
-        boolean shouldVerifyHostnamesFromAWS = !EnterpriseConfig.IS_ENTERPRISE_DEPLOYMENT;
-        boolean shouldUseEnterpriseCert = EnterpriseConfig.IS_ENTERPRISE_DEPLOYMENT;
+        boolean shouldVerifyHostnamesFromAWS = !PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT;
+        boolean shouldUseEnterpriseCert = PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT;
 
         return newUpdaterConnectionImpl(url, shouldVerifyHostnamesFromAWS, shouldUseEnterpriseCert);
     }

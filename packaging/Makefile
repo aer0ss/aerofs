@@ -2,7 +2,7 @@
 .PHONY: all debs upload clean test packagelist
 
 # Default the bin to staging unless the user specifies otherwise. Set this in the environment.
-BIN?=STAGING
+BIN?=$(shell whoami | tr [a-z] [A-Z])
 TARGET_REPOSITORY=$(BIN) # The target repository is set to the bin.
 
 PACKAGES= \

@@ -6,7 +6,7 @@ package com.aerofs.sp.server.email;
 
 import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.labeling.L;
-import com.aerofs.lib.LibParam.EnterpriseConfig;
+import com.aerofs.lib.LibParam.PrivateDeploymentConfig;
 import com.aerofs.servlets.lib.EmailSender;
 import com.aerofs.sp.server.lib.SPParam;
 import com.aerofs.sv.common.EmailCategory;
@@ -18,7 +18,7 @@ public class RequestToSignUpEmailer
 {
     // See web/__init__.py for the reason we have different URLs for private and public deployment
     static private String DASHBOARD_HOME = WWW.DASHBOARD_HOST_URL +
-            (EnterpriseConfig.IS_ENTERPRISE_DEPLOYMENT ? "/" : "/home");
+            (PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT ? "/" : "/home");
 
     static String getSignUpLink(String signUpCode)
     {

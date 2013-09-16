@@ -2,10 +2,8 @@
     import pyramid
     mode = pyramid.threadlocal.get_current_registry().settings['deployment.mode']
 
-    if mode == 'modular':
-        include = "mode_modular.mako"
-    elif mode == 'unified':
-        include = "mode_unified.mako"
+    if mode == 'private':
+        include = "mode_private.mako"
     else:
         include = "mode_unsupported.mako"
 %>

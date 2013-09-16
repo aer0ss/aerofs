@@ -10,4 +10,3 @@ tools/pip-prefetch.sh "$REQUIREMENTS" "$SDIST_CACHE"
 
 mkdir -p $SDIST
 cp -a "$SDIST_CACHE"/* "$SDIST"/
-

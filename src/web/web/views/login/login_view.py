@@ -50,7 +50,7 @@ def _is_openid_enabled(request):
     """
     True if the local deployment allows OpenID authentication
     """
-    return is_enterprise_deployment(request) \
+    return is_private_deployment(request.registry.settings) \
         and request.registry.settings.get('lib.authenticator', 'local_credential').lower() == 'openid'
 
 def _is_external_cred_enabled(request):
@@ -58,7 +58,7 @@ def _is_external_cred_enabled(request):
     True if the server allows external authentication, usually LDAP.
     This determines whether we should scrypt the user password.
     """
-    return is_enterprise_deployment(request) \
+    return is_private_deployment(request.registry.settings) \
         and request.registry.settings.get('lib.authenticator', 'local_credential').lower() == 'external_credential'
 
 def _format_password(request, password, login):

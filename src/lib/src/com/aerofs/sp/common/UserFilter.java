@@ -5,7 +5,7 @@
 package com.aerofs.sp.common;
 
 import com.aerofs.base.id.UserID;
-import com.aerofs.lib.LibParam.EnterpriseConfig;
+import com.aerofs.lib.LibParam.PrivateDeploymentConfig;
 
 import java.util.regex.Pattern;
 
@@ -30,7 +30,7 @@ public class UserFilter
      */
     public UserFilter()
     {
-        if (EnterpriseConfig.IS_ENTERPRISE_DEPLOYMENT
+        if (PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT
                 && !getStringProperty(INTERNAL_PATTERN_PARAM, "").isEmpty())
         {
             _internalAddressPattern = Pattern.compile(

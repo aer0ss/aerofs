@@ -1,13 +1,7 @@
-#!/bin/bash -ue
+#!/bin/bash
+set -eu
 
 readonly AEROFS_ROOT=$(cd "${BASH_SOURCE[0]%/*}"/.. && pwd )
-
-#
-# Local Production Aliases.
-#
-# In this file, vm is short for virtual machine prodcution. Aliases that
-# are meant to be used publicly are prefixed with "vm-".
-#
 
 #
 # Execute a command in a specified directory changes back to the original
@@ -50,87 +44,15 @@ function _uppercase_repo()
     whoami | tr [a-z] [A-Z]
 }
 
-function _print-available-boxes()
-{
-    _check-mode
-
-    case ${MODE} in
-        unified)
-            echo "available box: unified" >&2
-            ;;
-        modular)
-            echo "available boxes: persistent, transient" >&2
-            ;;
-    esac
-
-}
-
-function _print-available-deployment-modes()
-{
-    echo "available deployment_modes: modular, unified" >&2
-}
-
-function _check-mode()
-{
-    bad_mode=false
-
-    case ${MODE} in
-        unified) ;;
-        modular) ;;
-        *) bad_mode=true ;;
-    esac
-
-    if [ "$bad_mode" = "true" ]
-    then
-        echo "unrecognized mode:$MODE}" >&2
-        _print-available-deployment-modes
-        exit 1
-    fi
-}
-
-function _check-box()
-{
-    local box=''
-
-    if [ "$MODE" = "modular" ]
-    then
-        case ${1:-} in
-            persistent) box=persistent ;;
-            transient ) box=transient ;;
-        esac
-    fi
-
-    if [ "$MODE" = "unified" ]
-    then
-        case ${1:-} in
-            unified ) box=unified ;;
-        esac
-    fi
-
-    if [[ -z "$box" ]]; then
-        echo "unrecognized box:${1:-}" >&2
-        _print-available-boxes
-        exit 1
-    fi
-
-    echo $box
-}
-
 #
-# Runs a command in the local-prod directory
+# Runs a command in the development directory
 #
 function _local-prod-cmd()
 {
-    if [ $# -eq 0 ]
-    then
-        echo "usage: _local-prod-cmd executable [args]"
-        exit 1
-    fi
-
     local command=$1
     shift
 
-    do_in $AEROFS_ROOT/packaging/bakery/development/mode/"$MODE" ../../$command "$@"
+    do_in $AEROFS_ROOT/packaging/bakery/development ./$command "${@:-}"
 }
 
 # -----------------------------------------------------------
@@ -151,7 +73,7 @@ function _package()
 
     local package=$(echo $1 | sed 's/-/_/g')
     do_in $AEROFS_ROOT ant package_${package} \
-        -Dmode=ENTERPRISE \
+        -Dmode=PRIVATE \
         -Dproduct=CLIENT \
         -Drepo="$repo"
     do_in $AEROFS_ROOT/packaging make packagelist
@@ -166,7 +88,7 @@ function _package-and-upload-versions()
 
     do_in $AEROFS_ROOT ant clean package_servers upload_versions \
         -Dproduct=CLIENT \
-        -Dmode=ENTERPRISE \
+        -Dmode=PRIVATE \
         -Drepo="$repo"
     do_in $AEROFS_ROOT/packaging make packagelist
 }
@@ -177,73 +99,25 @@ function _package-and-upload-versions()
 
 function _vm-deploy()
 {
-    if [[ $# -ne 2 ]]; then
-        echo "usage: vm-tool deploy box_name package_name" >&2
-        _print-available-boxes
-        exit 1
-    fi
-
-    # IMPORTANT: you must do this in two parts because otherwise
-    # the exit status of the subshell will not be preseved; i.e.
-    # local box=$(...) will break, but the two-parter below wont
-    local box=''
-    box=$(_check-box $1)
-
-    local package=$2
-
+    local package=$1
     _package $package
-    _local-prod-cmd vm-ctrl "$MODE" deploy $box $package
-}
 
-function _vm-deploy-all()
-{
-    if [[ $# -ne 1 ]] || [[ -z "${1}" ]]; then
-        echo "usage: vm-tool deploy-all box_name" >&2
-        _print-available-boxes
-        exit 1
-    fi
-
-    local box=''
-    box=$(_check-box $1)
-
-    #_package-and-upload-versions
-    _vm-kick $box
+    _local-prod-cmd vm-ctrl deploy $package
 }
 
 # -----------------------------------------------------------
 # Kicks
 # -----------------------------------------------------------
 
-function _print-kick-usage()
-{
-    echo "usage: vm-tool kick [box_name]" >&2
-    echo "available boxes: persistent, transient" >&2
-}
-
 function _vm-kick()
 {
-    if [[ $# -ne 1 ]] || [[ -z "$1" ]]; then
-        echo "usage: vm-tool kick [box_name]" >&2
-        _print-available-boxes
-        exit 1
-    fi
-
-    local box=''
-    box=$(_check-box $1)
-
     _package-and-upload-versions
-    _local-prod-cmd vm-ctrl "$MODE" kick ${box}
+    _local-prod-cmd vm-ctrl kick
 }
 
 # -----------------------------------------------------------
 # Virtual Machines
 # -----------------------------------------------------------
-
-function _print-create-usage()
-{
-    echo "usage: vm-tool create deployment_mode [bridge_interface]" >&2
-    _print-available-deployment-modes
-}
 
 function _vm-create()
 {
@@ -251,89 +125,122 @@ function _vm-create()
     repo=$(_lowercase_repo)
 
     _package-and-upload-versions
-    _local-prod-cmd vm-make "$repo" "$MODE" "${@}"
-}
-
-function _print-start-usage()
-{
-    echo "usage: vm-tool start deployment_mode [bridge_interface]" >&2
-    _print-available-deployment-modes
+    _local-prod-cmd vm-make "$repo" ${@:-}
 }
 
 function _vm-start()
 {
-    _local-prod-cmd vm-ctrl "$MODE" start "${@}"
+    _local-prod-cmd vm-ctrl start "${@:-}"
 }
 
 function _vm-halt()
 {
-    _local-prod-cmd vm-ctrl "$MODE" halt "${@:-}"
+    _local-prod-cmd vm-ctrl halt
 }
 
 function _vm-kill()
 {
-    _local-prod-cmd vm-ctrl "$MODE" kill "${@:-}"
+    _local-prod-cmd vm-ctrl kill
 }
 
 # -----------------------------------------------------------
 # SSH
 # -----------------------------------------------------------
 
-function _print-ssh-usage()
-{
-    echo "usage: vm-tool ssh box_name" >&2
-    _print-available-boxes
-    echo "simply sudo su to get root access (no password required)." >&2
-}
-
 function _vm-ssh()
 {
-    if [[ $# -ne 1 ]] || [[ -z "${1}" ]]; then
-        _print-ssh-usage
-        exit 1
-    fi
-
-    local box=''
-    box=$(_check-box $1)
-
-    do_in $AEROFS_ROOT/packaging/bakery/development/mode/"$MODE" vagrant ssh $box
+    do_in $AEROFS_ROOT/packaging/bakery/development vagrant ssh
 }
 
 # -----------------------------------------------------------
-# main
+# Main
 # -----------------------------------------------------------
+
+function usage()
+{
+    echo "Usage: $0 <command> [<command_argument>]" >&2
+    echo >&2
+    echo "Available commands:" >&2
+    echo >&2
+    echo "    create [<bridge_interface>]" >&2
+    echo "    start  [<bridge_interface>]" >&2
+    echo "    ssh" >&2
+    echo "    halt" >&2
+    echo "    kill" >&2
+    echo "    kick" >&2
+    echo "    deploy <package_name>" >&2
+
+    exit 1
+}
+
+function check_no_args()
+{
+    if [ $# -ne 0 ]
+    then
+        echo "Error: command does not accept an argument." >&2
+        echo >&2
+        usage
+    fi
+}
+
+function check_zero_or_one_args()
+{
+    if [ $# -ne 0 ] && [ $# -ne 1 ]
+    then
+        usage
+    fi
+}
 
 function main()
 {
-    if [[ $# -lt 2 ]]; then
-        echo "usage: $0 deployment_mode ( create | start | halt | kill | deploy | ssh ) [command_arguments]" >&2
+    if [ $# -eq 0 ] || [ $# -gt 2 ]
+    then
+        echo "Error: invalid number of parameters provided." >&2
         echo >&2
-        echo "special cases:" >&2
-        echo "      create [bridge_interface]" >&2
-        echo "      start  [bridge_interface]" >&2
-        echo "      ssh    [box_name]" >&2
-        echo >&2
-        _print-available-deployment-modes
-        exit 1
+        usage
     fi
 
-    readonly MODE=$1
-    shift
     local command=$1
     shift
 
     case $command in
-        "create"    ) _vm-create     "${@:-}" ;;
-        "start"     ) _vm-start      "${@:-}" ;;
-        "halt"      ) _vm-halt       "${@:-}" ;;
-        "kill"      ) _vm-kill       "${@:-}" ;;
-        "deploy"    ) _vm-deploy     "${@:-}" ;;
-        "deploy-all") _vm-deploy-all "${@:-}" ;;
-        "ssh"       ) _vm-ssh        "${@:-}" ;;
-        "kick"      ) _vm-kick       "${@:-}" ;;
-        *           )
-            echo "unrecognized command $command" >&2
-            exit 2
+        "create")
+            check_zero_or_one_args ${@:-}
+            _vm-create ${1:-}
+            ;;
+        "start")
+            check_zero_or_one_args ${@:-}
+            _vm-start ${1:-}
+            ;;
+        "halt")
+            check_no_args ${@:-}
+            _vm-halt
+            ;;
+        "kill")
+            check_no_args ${@:-}
+            _vm-kill
+            ;;
+        "kick")
+            check_no_args ${@:-}
+            _vm-kick
+            ;;
+        "deploy")
+            if [ $# -ne 1 ]
+            then
+                echo "Error: deploy requires a package name argument." >&2
+                echo >&2
+                usage
+            fi
+            _vm-deploy $1
+            ;;
+        "ssh")
+            check_no_args ${@:-}
+            _vm-ssh
+            ;;
+        *)
+            echo "Error: invalid command name \"$command\"." >&2
+            echo >&2
+            usage
             ;;
     esac
 }

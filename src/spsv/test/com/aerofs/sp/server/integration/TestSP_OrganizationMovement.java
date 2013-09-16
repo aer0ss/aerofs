@@ -6,7 +6,7 @@ package com.aerofs.sp.server.integration;
 
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExNotFound;
-import com.aerofs.lib.LibParam.EnterpriseConfig;
+import com.aerofs.lib.LibParam.PrivateDeploymentConfig;
 import com.aerofs.lib.ex.ExAlreadyInvited;
 import com.aerofs.proto.Sp.GetAuthorizationLevelReply;
 import com.aerofs.proto.Sp.GetOrganizationInvitationsReply;
@@ -24,7 +24,7 @@ import static org.junit.Assert.fail;
 public class TestSP_OrganizationMovement extends AbstractSPTest
 {
     @After
-    public void resetParams() { EnterpriseConfig.IS_ENTERPRISE_DEPLOYMENT = false; }
+    public void resetParams() { PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT = false; }
 
     private void sendInvitation(User user)
             throws Exception
@@ -103,7 +103,7 @@ public class TestSP_OrganizationMovement extends AbstractSPTest
     @Test
     public void shouldAllowInviteToDefaultOrg() throws Exception
     {
-        EnterpriseConfig.IS_ENTERPRISE_DEPLOYMENT = true;
+        PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT = true;
 
         sqlTrans.begin();
         User admin = saveUser();

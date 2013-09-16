@@ -6,7 +6,7 @@ server {
     # Public-facing website.  Uses browser cert.
     listen *:443;
 
-    access_log /var/log/nginx/browser.access.log;
+    access_log /var/log/nginx/web.access.log;
 
     ssl on;
     ssl_session_timeout 5m;

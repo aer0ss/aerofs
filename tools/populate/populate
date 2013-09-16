@@ -9,7 +9,7 @@ readonly ERRBADPRODUCT=3
 function print_usage() {
     echo "usage: $0 [mode] [product] [os] [resource_root_dir] [output_dir]" >&2
     echo "    [mode]              Specifies which mode the properties are for" >&2
-    echo "                        Can be PROD|CI|ENTERPRISE." >&2
+    echo "                        Can be PUBLIC|PRIVATE|CI." >&2
     echo "    [product]           Specifies which product the properties are for" >&2
     echo "                        Can be TEAM_SERVER|CLIENT." >&2
     echo "    [os]                OS to populate for. Can be osx, win, linux/i386 or" >&2
@@ -72,21 +72,21 @@ function copy_os_specific_resources() {
 # This keeps aerofs from being updated
 # This version number must be kept in sync with src/launcher/launcher.lib/liblauncher.cpp
 function create_max_version_file() {
-    if [[ "$MODE" == 'CI' || "$MODE" == 'ENTERPRISE' ]]
+    if [[ "$MODE" == 'CI' || "$MODE" == 'PRIVATE' ]]
     then
         echo "100.0.0" > "$APPROOT"/version
     fi
 }
 
 function create_site_properties_file() {
-    if [[ "$MODE" == 'ENTERPRISE' ]]
+    if [[ "$MODE" == 'PRIVATE' ]]
     then
         set +e
-        wget -qO- --no-check-certificate -T 5 https://persistent.syncfs.com:5435/ > "$APPROOT"/site-config.properties
+        wget -qO- --no-check-certificate -T 5 https://unified.syncfs.com:5435/ > "$APPROOT"/site-config.properties
 
         if [[ $? -ne 0 ]]
         then
-            echo "ERROR: Local prod configuration service not available."
+            echo "ERROR: Configuration service not available."
             exit 1
         fi
 

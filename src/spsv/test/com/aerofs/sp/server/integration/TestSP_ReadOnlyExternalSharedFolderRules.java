@@ -8,7 +8,7 @@ import com.aerofs.base.acl.Role;
 import com.aerofs.base.config.ConfigurationProperties;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
-import com.aerofs.lib.LibParam.EnterpriseConfig;
+import com.aerofs.lib.LibParam.PrivateDeploymentConfig;
 import com.aerofs.lib.ex.shared_folder_rules.ExSharedFolderRulesEditorsDisallowedInExternallySharedFolders;
 import com.aerofs.lib.ex.shared_folder_rules.ExSharedFolderRulesWarningAddExternalUser;
 import com.aerofs.lib.ex.shared_folder_rules.ExSharedFolderRulesWarningOwnerCanShareWithExternalUsers;
@@ -84,7 +84,7 @@ public class TestSP_ReadOnlyExternalSharedFolderRules extends AbstractSPFolderTe
         props.put("shared_folder_rules.readonly_external_folders", enableReadOnlyExternalFolderRules ? "true" : "false");
         props.put("internal_email_pattern", internalAddresses);
         ConfigurationProperties.setProperties(props);
-        EnterpriseConfig.IS_ENTERPRISE_DEPLOYMENT = enableReadOnlyExternalFolderRules;
+        PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT = enableReadOnlyExternalFolderRules;
     }
 
     @Test

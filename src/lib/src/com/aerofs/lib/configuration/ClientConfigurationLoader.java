@@ -20,11 +20,11 @@ import java.util.Properties;
  *
  * The class loads configuration in the following order:
  * - static configuration, provided at build time, at $approot/configuration.properties
- * - if the property "config.loader.is_enterprise_deployment" is present and true, it
+ * - if the property "config.loader.is_private_deployment" is present and true, it
  *   loads the following:
  *   - site configuration, provided by installer, at $approot/site-config.properties
  *   - http configuration based on "config.loader.configuration_service_url"
- *     and "config.loader.enterprise_customer_certificate" properties
+ *     and "config.loader.base_ca_certificate" properties
  *
  * Sources are considered in the order they are added, the first source to supply a
  *   property defines the value of that property.
@@ -33,8 +33,8 @@ public class ClientConfigurationLoader
 {
     private static final Logger LOGGER = Loggers.getLogger(ClientConfigurationLoader.class);
 
-    public static final String PROPERTY_IS_ENTERPRISE_DEPLOYMENT
-            = "config.loader.is_enterprise_deployment";
+    public static final String PROPERTY_IS_PRIVATE_DEPLOYMENT
+            = "config.loader.is_private_deployment";
     public static final String PROPERTY_CONFIG_SERVICE_URL
             = "config.loader.configuration_service_url";
     public static final String PROPERTY_BASE_CA_CERT
@@ -70,7 +70,7 @@ public class ClientConfigurationLoader
 
             staticProperties = getStaticProperties();
 
-            if (staticProperties.getProperty(PROPERTY_IS_ENTERPRISE_DEPLOYMENT, "false").equals(
+            if (staticProperties.getProperty(PROPERTY_IS_PRIVATE_DEPLOYMENT, "false").equals(
                     "true")) {
                 // Load site configuration file, failing if it doesn't exist.
                 siteConfigProperties.load(new FileInputStream(new File(approot, SITE_CONFIG_FILE)));

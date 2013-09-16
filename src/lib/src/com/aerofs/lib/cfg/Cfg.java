@@ -10,7 +10,7 @@ import com.aerofs.base.id.UserID;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.LibParam;
-import com.aerofs.lib.LibParam.EnterpriseConfig;
+import com.aerofs.lib.LibParam.PrivateDeploymentConfig;
 import com.aerofs.lib.LibParam.PostUpdate;
 import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.StorageType;
@@ -542,8 +542,9 @@ public class Cfg
     public static X509Certificate cacert() throws IOException, CertificateException
     {
         if (_cacert == null) {
-            InputStream in = EnterpriseConfig.IS_ENTERPRISE_DEPLOYMENT
-                    ? new ByteArrayInputStream(EnterpriseConfig.BASE_CA_CERTIFICATE.getBytes())
+            InputStream in = PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT
+                    ? new ByteArrayInputStream(
+                    PrivateDeploymentConfig.BASE_CA_CERTIFICATE.getBytes())
                     : new FileInputStream(new File(AppRoot.abs(), LibParam.CA_CERT).getAbsolutePath());
 
             _cacert = (X509Certificate) BaseSecUtil.newCertificateFromStream(in);

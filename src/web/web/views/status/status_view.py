@@ -21,19 +21,11 @@ def status_view(request):
     settings = request.registry.settings
     mode = settings['deployment.mode']
 
-    if mode == 'unified':
-        unified_url = settings['base.status_url.unified']
+    if mode == 'private':
+        url = settings['base.status_url.unified']
 
         return {
-            'unified_server_statuses': get_server_statuses(request, unified_url)
-        }
-    elif mode == 'modular':
-        persistent_url = settings['base.status_url.persistent']
-        transient_url = settings['base.status_url.transient']
-
-        return {
-            'persistent_server_statuses': get_server_statuses(request, persistent_url),
-            'transient_server_statuses': get_server_statuses(request, transient_url)
+            'server_statuses': get_server_statuses(request, url)
         }
     else:
         return []

@@ -31,8 +31,12 @@ class unified {
         source => "puppet:///modules/unified/nginx/ca",
         require => Package["nginx", "aerofs-ca-server"],
     }
-    file {"/etc/nginx/sites-available/aerofs-cfg":
-        source => "puppet:///modules/unified/nginx/cfg",
+    file {"/etc/nginx/sites-available/aerofs-cfg-public":
+        source => "puppet:///modules/unified/nginx/cfg-public",
+        require => Package["nginx"],
+    }
+    file {"/etc/nginx/sites-available/aerofs-cfg-private":
+        source => "puppet:///modules/unified/nginx/cfg-private",
         require => Package["nginx"],
     }
     file {"/etc/nginx/sites-available/aerofs-service":
@@ -44,6 +48,11 @@ class unified {
         require => Package["nginx"],
     }
 
+    file{ "/etc/nginx/sites-enabled/aerofs-cfg-private":
+        ensure  => link,
+        target  => "/etc/nginx/sites-available/aerofs-cfg-private",
+        require => File["/etc/nginx/sites-available/aerofs-cfg-private"],
+    }
     file{ "/etc/nginx/sites-enabled/aerofs-ca":
         ensure  => link,
         target  => "/etc/nginx/sites-available/aerofs-ca",
@@ -54,9 +63,18 @@ class unified {
     # Bootstrap
     # --------------
 
-    file {"/opt/bootstrap/bootstrap.tasks":
-        source => "puppet:///modules/unified/bootstrap.tasks",
-        require => Package["aerofs-bootstrap"],
+    file { "/opt/bootstrap/tasks":
+        ensure => "directory",
+        require => Package["aerofs-bootstrap"]
+    }
+
+    file {"/opt/bootstrap/tasks/startup.tasks":
+        source => "puppet:///modules/unified/tasks/startup.tasks",
+        require => File["/opt/bootstrap/tasks"]
+    }
+    file {"/opt/bootstrap/tasks/manual.tasks":
+        source => "puppet:///modules/unified/tasks/manual.tasks",
+        require => File["/opt/bootstrap/tasks"]
     }
 
     # --------------

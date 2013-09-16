@@ -22,7 +22,7 @@ import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
 import static com.aerofs.base.config.ConfigurationProperties.getUrlProperty;
 import static com.aerofs.lib.configuration.ClientConfigurationLoader.PROPERTY_BASE_CA_CERT;
 import static com.aerofs.lib.configuration.ClientConfigurationLoader.PROPERTY_CONFIG_SERVICE_URL;
-import static com.aerofs.lib.configuration.ClientConfigurationLoader.PROPERTY_IS_ENTERPRISE_DEPLOYMENT;
+import static com.aerofs.lib.configuration.ClientConfigurationLoader.PROPERTY_IS_PRIVATE_DEPLOYMENT;
 
 /**
  * Note that Main has dependencies on this class before the configuration is initialized. Hence
@@ -466,10 +466,10 @@ public class LibParam extends BaseParam
     }
 
     // this class depends on ClientConfigurationLoader
-    public static class EnterpriseConfig
+    public static class PrivateDeploymentConfig
     {
-        public static Boolean                           IS_ENTERPRISE_DEPLOYMENT =
-                getBooleanProperty(                     PROPERTY_IS_ENTERPRISE_DEPLOYMENT,
+        public static Boolean                           IS_PRIVATE_DEPLOYMENT =
+                getBooleanProperty(                     PROPERTY_IS_PRIVATE_DEPLOYMENT,
                                                         false);
 
         public static final String                      BASE_CA_CERTIFICATE =

@@ -7,7 +7,7 @@ import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.ChannelFactories;
 import com.aerofs.lib.IProgram;
 import com.aerofs.lib.LibParam;
-import com.aerofs.lib.LibParam.EnterpriseConfig;
+import com.aerofs.lib.LibParam.PrivateDeploymentConfig;
 import com.aerofs.lib.ProgramInformation;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.SystemUtil.ExitCode;
@@ -265,9 +265,9 @@ public class Main
     {
         // Write the new cacert.pem to the approot for use by other parts of the system.
         // TODO (MP) remove this and have everyone use Cfg.cacert() directly.
-        if (EnterpriseConfig.IS_ENTERPRISE_DEPLOYMENT)
+        if (PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT)
         {
-            Files.write(EnterpriseConfig.BASE_CA_CERTIFICATE.getBytes(),
+            Files.write(PrivateDeploymentConfig.BASE_CA_CERTIFICATE.getBytes(),
                     new File(approot, LibParam.CA_CERT));
         }
     }

@@ -6,7 +6,7 @@ import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.base.id.UserID;
 import com.aerofs.base.net.IURLConnectionConfigurator;
 import com.aerofs.base.ssl.ICertificateProvider;
-import com.aerofs.lib.LibParam.EnterpriseConfig;
+import com.aerofs.lib.LibParam.PrivateDeploymentConfig;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgCACertificateProvider;
 import com.aerofs.lib.configuration.EnterpriseCertificateProvider;
@@ -32,7 +32,7 @@ public class SPBlockingClient extends SPServiceBlockingStub
     {
         // N.B. if the enterprise certificate is not provided when the client is built in
         //   enterprise mode, fallback to use the production CA cert instead.
-        ICertificateProvider certificateProvider = EnterpriseConfig.IS_ENTERPRISE_DEPLOYMENT
+        ICertificateProvider certificateProvider = PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT
                 ? new EnterpriseCertificateProvider()
                 : new CfgCACertificateProvider();
 

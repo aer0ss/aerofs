@@ -181,5 +181,12 @@ def is_team_server_user_id(user_id):
     """
     return user_id.startswith(':')
 
-def is_enterprise_deployment(request):
-    return request.registry.settings.get('config.loader.is_enterprise_deployment', False)
+def str2bool(v):
+      return v.lower() in ("yes", "true", "t", "1")
+
+def is_private_deployment(settings):
+    return str2bool(settings.get('config.loader.is_private_deployment', False))
+
+def is_configuration_initialized(settings):
+    return str2bool(settings.get('base.configuration.initialized', False))
+

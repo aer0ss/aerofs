@@ -12,20 +12,20 @@ set -x
 function DieUsage {
     echo "usage: $0 <build_mode> <build_product> <release_version> <sign_mode>" >&2
     echo " " >&2
-    echo "<build_mode>: PROD|ENTERPRISE" >&2
+    echo "<build_mode>: PUBLIC|PRIVATE" >&2
     echo "<build_product>: CLIENT|TEAM_SERVER" >&2
     echo "<release_version>: release version (for example: 0.1.0)" >&2
     echo "<sign_mode>: SIGNED|UNSIGNED" >&2
     echo " " >&2
-    echo "example: $0 ENTERPRISE CLIENT 0.1.0 UNSIGNED" >&2
-    echo "example: $0 PROD TEAM_SERVER 0.1.0 UNSIGNED" >&2
+    echo "example: $0 PRIVATE CLIENT 0.1.0 UNSIGNED" >&2
+    echo "example: $0 PUBLIC TEAM_SERVER 0.1.0 UNSIGNED" >&2
     exit $ERRBADARGS
 }
 
 [[ $# -eq 4 ]] || DieUsage
 
 case ${1:-} in
-    PROD|ENTERPRISE) BUILD_MODE=$1;;
+    PUBLIC|PRIVATE) BUILD_MODE=$1;;
     *) DieUsage;;
 esac
 case ${2:-} in
@@ -134,12 +134,12 @@ function make_windows_installers() {
         local CERT_FILE=""
         local KEY_FILE=""
         case "$MODE" in
-        "ENTERPRISE")
+        "PRIVATE")
             CERT_FILE="/Volumes/aerofskeys/windows/cert.spc"
             KEY_FILE="/Volumes/aerofskeys/windows/privateKey.pvk"
             CODESIGNING_PASSWORD_FILE="/Volumes/aerofskeys/windows/passphrase.txt"
             ;;
-        "PROD")
+        "PUBLIC")
             CERT_FILE="/Volumes/aerofskeys/windows/cert.spc"
             KEY_FILE="/Volumes/aerofskeys/windows/privateKey.pvk"
             CODESIGNING_PASSWORD_FILE="/Volumes/aerofskeys/windows/passphrase.txt"
