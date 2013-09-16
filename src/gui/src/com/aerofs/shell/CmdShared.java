@@ -17,7 +17,13 @@ public class CmdShared implements IShellCommand<ShProgram>
 
         List<PBSharedFolder> sharedFolders =
                 s.d().getRitualClient_().listSharedFolders().getSharedFolderList();
-        for (PBSharedFolder sf : sharedFolders) s.out().println(Path.fromPB(sf.getPath()));
+        for (PBSharedFolder sf : sharedFolders) {
+            Path path = Path.fromPB(sf.getPath());
+            // Avoid printing SID whenever possible
+            s.out().println(path.sid().equals(s.d().getPwd_().sid())
+                    ? path.toStringRelative()
+                    : path.toStringFormal());
+        }
     }
 
     @Override
