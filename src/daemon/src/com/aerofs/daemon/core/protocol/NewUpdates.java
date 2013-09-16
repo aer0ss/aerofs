@@ -12,8 +12,10 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.base.acl.Role;
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.*;
+import com.aerofs.daemon.core.acl.LocalACL;
 import com.aerofs.daemon.core.net.Metrics;
 import com.aerofs.daemon.core.net.NSL;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
@@ -22,6 +24,7 @@ import com.aerofs.daemon.core.store.MapSIndex2Store;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.base.ex.ExNotFound;
+import com.aerofs.lib.cfg.CfgLocalUser;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
@@ -52,10 +55,13 @@ public class NewUpdates
     private MapSIndex2Store _sidx2s;
     private IMapSIndex2SID _sidx2sid;
     private IMapSID2SIndex _sid2sidx;
+    private LocalACL _lacl;
+    private CfgLocalUser _cfgLocalUser;
 
     @Inject
     public void inject_(TransManager tm, NSL nsl, NativeVersionControl nvc, Metrics m,
-            MapSIndex2Store sidx2s, IMapSIndex2SID sidx2sid, IMapSID2SIndex sid2sidx)
+            MapSIndex2Store sidx2s, IMapSIndex2SID sidx2sid, IMapSID2SIndex sid2sidx, LocalACL lacl,
+            CfgLocalUser cfgLocalUser)
     {
         _tm = tm;
         _nsl = nsl;
@@ -64,13 +70,21 @@ public class NewUpdates
         _sidx2s = sidx2s;
         _sidx2sid = sidx2sid;
         _sid2sidx = sid2sidx;
+        _lacl = lacl;
+        _cfgLocalUser = cfgLocalUser;
     }
 
     public void send_(Collection<SOCKID> ks)
         throws Exception
     {
-        // group components into stores
-        final Map<SIndex, List<SOCKID>> sidx2ks = Maps.newTreeMap();
+        for (Entry<SIndex, List<SOCKID>> en : groupComponentsByStore(ks).entrySet()) {
+            sendForStore_(en.getKey(), en.getValue());
+        }
+    }
+
+    private static Map<SIndex, List<SOCKID>> groupComponentsByStore(Collection<SOCKID> ks)
+    {
+        Map<SIndex, List<SOCKID>> sidx2ks = Maps.newTreeMap();
         for (SOCKID k : ks) {
             List<SOCKID> list = sidx2ks.get(k.sidx());
             if (list == null) {
@@ -79,50 +93,57 @@ public class NewUpdates
             }
             list.add(k);
         }
+        return sidx2ks;
+    }
 
-        // send one message for each group
-        for (Entry<SIndex, List<SOCKID>> en : sidx2ks.entrySet()) {
 
-            SID sid = _sidx2sid.getThrows_(en.getKey());
+    private void sendForStore_(SIndex sidx, List<SOCKID> ks)
+            throws Exception
+    {
+        // see Rule 3 in acl.md
+        if (!_lacl.check_(_cfgLocalUser.get(), sidx, Role.EDITOR)) {
+            l.info("we have no editor perm for {}", sidx);
+            return;
+        }
 
-            // write a PBNewUpdate for each component. split into multiple
-            // messages if a single message would be too big
-            ByteArrayOutputStream os = null;
-            for (SOCKID k : en.getValue()) {
+        SID sid = _sidx2sid.getThrows_(sidx);
 
-                if (os == null) {
-                    os = new ByteArrayOutputStream();
-                    // write PBCore
-                    CoreUtil.newCore(Type.NEW_UPDATES)
-                        .build()
-                        .writeDelimitedTo(os);
-                    assert os.size() < _m.getRecommendedMaxcastSize_();
-                }
+        // write a PBNewUpdate for each component. split into multiple
+        // messages if a single message would be too big
+        ByteArrayOutputStream os = null;
+        for (SOCKID k : ks) {
 
-                Tick tick = _nvc.getLocalTick_(k);
-                if (l.isDebugEnabled()) l.debug("send " + k + "? " + tick);
-                if (tick == null) continue;
-
-                PBNewUpdate.newBuilder()
-                        .setStoreId(sid.toPB())
-                        .setObjectId(k.oid().toPB())
-                        .setComId(k.cid().getInt())
-                        .setTick(tick.getLong())
-                        .build()
-                        .writeDelimitedTo(os);
-
-                if (os.size() >= _m.getRecommendedMaxcastSize_()) {
-                    _nsl.sendMaxcast_(sid, String.valueOf(Type.NEW_UPDATES.getNumber()),
-                            CoreUtil.NOT_RPC, os);
-                    os = null;
-                }
+            if (os == null) {
+                os = new ByteArrayOutputStream();
+                // write PBCore
+                CoreUtil.newCore(Type.NEW_UPDATES)
+                    .build()
+                    .writeDelimitedTo(os);
+                assert os.size() < _m.getRecommendedMaxcastSize_();
             }
 
-            if (os != null) {
-                l.debug("send out");
+            Tick tick = _nvc.getLocalTick_(k);
+            if (l.isDebugEnabled()) l.debug("send " + k + "? " + tick);
+            if (tick == null) continue;
+
+            PBNewUpdate.newBuilder()
+                    .setStoreId(sid.toPB())
+                    .setObjectId(k.oid().toPB())
+                    .setComId(k.cid().getInt())
+                    .setTick(tick.getLong())
+                    .build()
+                    .writeDelimitedTo(os);
+
+            if (os.size() >= _m.getRecommendedMaxcastSize_()) {
                 _nsl.sendMaxcast_(sid, String.valueOf(Type.NEW_UPDATES.getNumber()),
                         CoreUtil.NOT_RPC, os);
+                os = null;
             }
+        }
+
+        if (os != null) {
+            _nsl.sendMaxcast_(sid, String.valueOf(Type.NEW_UPDATES.getNumber()),
+                    CoreUtil.NOT_RPC, os);
         }
     }
 
@@ -145,6 +166,14 @@ public class NewUpdates
                 OID oid = new OID(update.getObjectId().toByteArray());
                 CID cid = new CID(update.getComId());
                 SOCID socid = new SOCID(sidx, oid, cid);
+
+                // see Rule 2 in acl.md. Note that the maxcast sender can forge the device id
+                // (unless maxcast messages are signed). therefore this is not a security measure.
+                // see more in acl.md.
+                if (!_lacl.check_(msg.user(), sidx, Role.EDITOR)) {
+                    l.warn("{} on {} has no editor perm for {}", msg.user(), msg.ep(), socid);
+                    continue;
+                }
 
                 Tick tick = new Tick(update.getTick());
                 if (_nvc.tickReceived_(socid, msg.did(), tick, t)) {

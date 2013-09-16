@@ -21,6 +21,7 @@ import com.aerofs.base.acl.Role;
 import com.aerofs.daemon.core.ex.ExAborted;
 import com.aerofs.daemon.core.collector.ExNoComponentWithSpecifiedVersion;
 import com.aerofs.base.ex.ExNoPerm;
+import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.id.SOCID;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
@@ -64,12 +65,13 @@ public class GetComponentCall
     private GCCSendContent _sendContent;
     private IMapSIndex2SID _sidx2sid;
     private IMapSID2SIndex _sid2sidx;
+    private CfgLocalUser _cfgLocalUser;
 
     @Inject
     public void inject_(NSL nsl, LocalACL lacl, IPhysicalStorage ps,
             DirectoryService ds, RPC rpc, PrefixVersionControl pvc, NativeVersionControl nvc,
             IEmigrantTargetSIDLister emc, GCCSendContent sendContent, MapAlias2Target a2t,
-            IMapSIndex2SID sidx2sid, IMapSID2SIndex sid2sidx)
+            IMapSIndex2SID sidx2sid, IMapSID2SIndex sid2sidx, CfgLocalUser cfgLocalUser)
     {
         _nsl = nsl;
         _lacl = lacl;
@@ -83,6 +85,7 @@ public class GetComponentCall
         _a2t = a2t;
         _sidx2sid = sidx2sid;
         _sid2sidx = sid2sidx;
+        _cfgLocalUser = cfgLocalUser;
     }
 
     /**
@@ -201,9 +204,15 @@ public class GetComponentCall
             throw new ExNoComponentWithSpecifiedVersion();
         }
 
-        // check permissions
+        // see Rule 3 in acl.md
+        if (!_lacl.check_(_cfgLocalUser.get(), k.sidx(), Role.EDITOR)) {
+            l.info("we have no editor perm for {}", k.sidx());
+            throw new ExSenderHasNoPerm();
+        }
+
+        // see Rule 1 in acl.md
         if (!_lacl.check_(msg.user(), k.sidx(), Role.VIEWER)) {
-            l.debug("receiver has no permission");
+            l.warn("{} on {} has no viewer perm for {}", msg.user(), msg.ep(), k.sidx());
             throw new ExNoPerm();
         }
 

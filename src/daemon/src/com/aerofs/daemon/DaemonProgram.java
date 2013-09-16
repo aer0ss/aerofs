@@ -18,6 +18,7 @@ import com.aerofs.daemon.core.phy.block.gzip.GZipBackendModule;
 import com.aerofs.daemon.core.phy.block.local.LocalBackendModule;
 import com.aerofs.daemon.core.phy.block.s3.S3BackendModule;
 import com.aerofs.daemon.core.phy.linked.LinkedStorageModule;
+import com.aerofs.daemon.core.protocol.ExSenderHasNoPerm;
 import com.aerofs.daemon.lib.exception.ExStreamInvalid;
 import com.aerofs.daemon.mobile.MobileModule;
 import com.aerofs.daemon.rest.RestModule;
@@ -60,6 +61,7 @@ public class DaemonProgram implements IProgram
                         .put(Type.NO_COMPONENT_WITH_SPECIFIED_VERSION, ExNoComponentWithSpecifiedVersion.class)
                         .put(Type.OUT_OF_SPACE,           ExOutOfSpace.class)
                         .put(Type.UPDATE_IN_PROGRESS,     ExUpdateInProgress.class)
+                        .put(Type.SENDER_HAS_NO_PERM,     ExSenderHasNoPerm.class)
                         .build());
 
         Util.suppressStackTraces(ExAborted.class, ExNoAvailDevice.class, ExStreamInvalid.class);

@@ -1,13 +1,16 @@
 package com.aerofs.daemon.core.protocol;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.base.acl.Role;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.base.ex.Exceptions;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
+import com.aerofs.base.id.UserID;
 import com.aerofs.daemon.core.NativeVersionControl;
+import com.aerofs.daemon.core.acl.LocalACL;
 import com.aerofs.daemon.core.migration.ImmigrantVersionControl;
 import com.aerofs.daemon.core.net.DigestedMessage;
 import com.aerofs.daemon.core.net.IncomingStreams;
@@ -32,6 +35,7 @@ import com.aerofs.proto.Core.PBStoreHeader;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 
+import javax.annotation.Nullable;
 import java.io.InputStream;
 import java.sql.SQLException;
 import java.util.ArrayDeque;
@@ -49,12 +53,13 @@ public class GetVersReply
     private final MapSIndex2Store _sidx2s;
     private final IMapSID2SIndex _sid2sidx;
     private final IPulledDeviceDatabase _pulleddb;
+    private final LocalACL _lacl;
 
     @Inject
     public GetVersReply(TransManager tm, NativeVersionControl nvc,
             ImmigrantVersionControl ivc, UpdateSenderFilter pusf,
             IncomingStreams iss, MapSIndex2Store sidx2s, IMapSID2SIndex sid2sidx,
-            IPulledDeviceDatabase pddb)
+            IPulledDeviceDatabase pddb, LocalACL lacl)
     {
         _tm = tm;
         _nvc = nvc;
@@ -64,6 +69,7 @@ public class GetVersReply
         _sidx2s = sidx2s;
         _sid2sidx = sid2sidx;
         _pulleddb = pddb;
+        _lacl = lacl;
     }
 
     void processReply_(DigestedMessage msg, Token tk) throws Exception
@@ -73,9 +79,9 @@ public class GetVersReply
             Util.checkPB(msg.pb().hasGetVersReply(), PBGetVersReply.class);
 
             if (msg.streamKey() == null) {
-                processAtomicReply_(msg.did(), msg.is());
+                processAtomicReply_(msg.user(), msg.did(), msg.is());
             } else {
-                processStreamReply_(msg.did(), msg.streamKey(), msg.is(), tk);
+                processStreamReply_(msg.user(), msg.did(), msg.streamKey(), msg.is(), tk);
             }
         } catch (Exception e) {
             l.info("error processing reply: {}", e);
@@ -86,93 +92,117 @@ public class GetVersReply
         }
     }
 
-    private class ReplyCxt
+    private class ReplyContext
     {
-        final DID from;
+        final UserID _user;
+        final DID _from;
 
-        SIndex sidx = null;
-        BFOID filter = null;
-        long senderFilterIndex = 0;
-        long senderFilterUpdateSeq = 0;
+        // Set to null if the store should be ignored. Note that newStore_() also returns false if
+        // the store should be ignored.
+        // TODO (WW) having two ways to do the same thing is dangerous. fix the design.
+        @Nullable SIndex _sidx = null;
 
-        DID didBlock = null;
-        Version vKwlgLocal = null;
-        Version vImmKwlgLocal = null;
+        BFOID _filter = null;
+        long _senderFilterIndex = 0;
+        long _senderFilterUpdateSeq = 0;
 
-        ReplyCxt(DID did) { from = did; }
+        DID _didBlock = null;
+        Version _vKwlgLocal = null;
+        Version _vImmKwlgLocal = null;
+
+        ReplyContext(UserID user, DID did)
+        {
+            this._user = user;
+            _from = did;
+        }
 
         void finalizeStore_(Trans t) throws SQLException, ExNotFound
         {
-            assert sidx != null;
+            assert _sidx != null;
 
-            l.debug("finalize {} {}", sidx, filter);
+            l.debug("finalize {} {}", _sidx, _filter);
 
             // must call add *after* everything else is written to the db
-            if (filter != null) {
-                _sidx2s.getThrows_(sidx).collector().add_(from, filter, t);
+            if (_filter != null) {
+                _sidx2s.getThrows_(_sidx).collector().add_(_from, _filter, t);
             }
 
             // Once all blocks have been processed and are written to the db,
             // locally remember that store s has been pulled from the DID from.
-            _pulleddb.insert_(sidx, from, t);
+            _pulleddb.insert_(_sidx, _from, t);
         }
 
+        /**
+         * @return false if this store should be ignored
+         */
         boolean newStore_(PBStoreHeader h) throws SQLException
         {
             SID sid = new SID(h.getStoreId());
-            sidx = _sid2sidx.getNullable_(sid);
+            _sidx = _sid2sidx.getNullable_(sid);
 
             // store was expelled locally between call and reply...
-            if (sidx == null) {
-                l.warn("recv from {} for absent: {} {}", from, sid.toStringFormal(),
+            if (_sidx == null) {
+                l.warn("recv from {} for absent: {} {}", _from, sid,
                         _sid2sidx.getLocalOrAbsentNullable_(sid));
                 return false;
             }
 
-            didBlock = null;
-            refreshKnowledge_();
-            if (h.hasSenderFilter()) {
-                filter = new BFOID(h.getSenderFilter());
-                senderFilterIndex = h.getSenderFilterIndex();
-                senderFilterUpdateSeq = h.getSenderFilterUpdateSeq();
-            } else {
-                filter = null;
+            // see Rule 2 in acl.md
+            if (!_lacl.check_(_user, _sidx, Role.EDITOR)) {
+                l.warn("{} on {} has no editor perm for {}", _user, _from, _sidx);
+                // Although we return false to indicate that the store should be ignored, _sidx
+                // needs to set to null otherwise later code doesn't properly ignore blocks form
+                // the store. See process_()
+                // TODO (WW) having two ways to do the same thing is dangerous. fix the design.
+                _sidx = null;
+                return false;
             }
 
-            l.debug("recv from {} for {} {}", from, sidx, filter);
+            _didBlock = null;
+            refreshKnowledge_();
+            if (h.hasSenderFilter()) {
+                _filter = new BFOID(h.getSenderFilter());
+                _senderFilterIndex = h.getSenderFilterIndex();
+                _senderFilterUpdateSeq = h.getSenderFilterUpdateSeq();
+            } else {
+                _filter = null;
+            }
+
+            l.debug("recv from {} for {} {}", _from, _sidx, _filter);
             return true;
         }
 
         void updateSenderFilter_() throws Exception
         {
-            if (filter != null) {
+            if (_filter != null) {
                 // Now that everything has been committed, it's safe to ask
                 // the peer to update the sender filter for us.
-                _pusf.send_(sidx, senderFilterIndex, senderFilterUpdateSeq, from);
+                _pusf.send_(_sidx, _senderFilterIndex, _senderFilterUpdateSeq, _from);
             }
         }
 
         void refreshKnowledge_() throws SQLException
         {
-            vKwlgLocal = _nvc.getKnowledgeExcludeSelf_(sidx);
-            vImmKwlgLocal = _ivc.getKnowledgeExcludeSelf_(sidx);
+            _vKwlgLocal = _nvc.getKnowledgeExcludeSelf_(_sidx);
+            _vImmKwlgLocal = _ivc.getKnowledgeExcludeSelf_(_sidx);
         }
 
         void process_(PBGetVersReplyBlock block, Trans t)
                 throws SQLException, ExNotFound, ExProtocolError
         {
-            if (sidx == null) {
+            if (_sidx == null) {
                 l.debug("ignored block");
                 return;
             }
-            didBlock = processBlock_(sidx, block, didBlock, vKwlgLocal, vImmKwlgLocal, from, t);
+
+            _didBlock = processBlock_(_sidx, block, _didBlock, _vKwlgLocal, _vImmKwlgLocal, _from, t);
         }
     }
 
-    private void processAtomicReply_(DID from, InputStream is) throws Exception
+    private void processAtomicReply_(UserID user, DID from, InputStream is) throws Exception
     {
         Trans t = null;
-        ReplyCxt cxt = new ReplyCxt(from);
+        ReplyContext cxt = new ReplyContext(user, from);
 
         try {
             while (true) {
@@ -209,10 +239,10 @@ public class GetVersReply
 
     private static final int MIN_BLOCKS_PER_TX = 100;
 
-    private void processStreamReply_(DID from, StreamKey streamKey, InputStream is,
+    private void processStreamReply_(UserID user, DID from, StreamKey streamKey, InputStream is,
             Token tk) throws Exception
     {
-        ReplyCxt cxt = new ReplyCxt(from);
+        ReplyContext cxt = new ReplyContext(user, from);
         Queue<PBGetVersReplyBlock> qblocks = new ArrayDeque<PBGetVersReplyBlock>(MIN_BLOCKS_PER_TX);
 
         while (!processStreamChunk_(cxt, qblocks, is)) {
@@ -220,7 +250,7 @@ public class GetVersReply
         }
     }
 
-    private boolean processStreamChunk_(ReplyCxt cxt, Queue<PBGetVersReplyBlock> qblocks,
+    private boolean processStreamChunk_(ReplyContext cxt, Queue<PBGetVersReplyBlock> qblocks,
             InputStream is) throws Exception
     {
         boolean last = false;
@@ -252,7 +282,7 @@ public class GetVersReply
     /**
      * @param qblocks is a queue of blocks extracted from a chunk. The queue should not be empty
      */
-    private void processStreamBlocks_(ReplyCxt cxt, Queue<PBGetVersReplyBlock> qblocks,
+    private void processStreamBlocks_(ReplyContext cxt, Queue<PBGetVersReplyBlock> qblocks,
             boolean storeBoundary) throws Exception
     {
         assert storeBoundary || !qblocks.isEmpty();

@@ -18,11 +18,9 @@ public class ExUpdateInProgress extends AbstractExWirable
         super(string);
     }
 
-    public ExUpdateInProgress(Exception cause)
-    {
-        super(cause);
-    }
-
+    /**
+     * Do not remove. It's used by Exceptions.fromPB()
+     */
     public ExUpdateInProgress(PBException pb)
     {
         super(pb);

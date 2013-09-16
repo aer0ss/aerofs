@@ -7,6 +7,7 @@ package com.aerofs.daemon.core.protocol;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.acl.Role;
 import com.aerofs.base.ex.Exceptions;
+import com.aerofs.base.id.DID;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.daemon.core.acl.LocalACL;
@@ -19,6 +20,7 @@ import com.aerofs.daemon.core.ex.ExAborted;
 import com.aerofs.daemon.core.migration.IEmigrantDetector;
 import com.aerofs.daemon.core.net.DigestedMessage;
 import com.aerofs.daemon.core.net.IncomingStreams;
+import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.FileUtil;
@@ -139,7 +141,7 @@ public class GetComponentReply
             }
 
             if (_ds.hasOA_(socid.soid())) {
-                throwIfSenderHasNoPerm(socid, msg.user());
+                throwIfSenderHasNoPerm(socid, msg.user(), msg.ep());
             }
 
         } else {
@@ -206,7 +208,7 @@ public class GetComponentReply
                 } else {
                     l.debug("meta diff: " + String.format("0x%1$x", metaDiff));
                     if (metaDiff != 0 && _ds.hasOA_(socid.soid())) {
-                        throwIfSenderHasNoPerm(socid, msg.user());
+                        throwIfSenderHasNoPerm(socid, msg.user(), msg.ep());
                     }
                 }
             }
@@ -300,9 +302,13 @@ public class GetComponentReply
         }
     }
 
-    private void throwIfSenderHasNoPerm(SOCID socid, UserID user)
+    private void throwIfSenderHasNoPerm(SOCID socid, UserID user, Endpoint ep)
             throws SQLException, ExSenderHasNoPerm
     {
-        if (!_lacl.check_(user, socid.sidx(), Role.EDITOR)) throw new ExSenderHasNoPerm();
+        // see Rule 2 in acl.md
+        if (!_lacl.check_(user, socid.sidx(), Role.EDITOR)) {
+            l.warn("{} on {} has no editor perm for {}", user, ep, socid.sidx());
+            throw new ExSenderHasNoPerm();
+        }
     }
 }

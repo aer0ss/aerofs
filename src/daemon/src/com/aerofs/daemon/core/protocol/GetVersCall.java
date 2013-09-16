@@ -12,9 +12,12 @@ import java.util.Set;
 
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
+import com.aerofs.base.acl.Role;
 import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.SID;
+import com.aerofs.base.id.UserID;
+import com.aerofs.daemon.core.acl.LocalACL;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
@@ -26,6 +29,7 @@ import com.aerofs.daemon.core.store.MapSIndex2Store;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.daemon.core.ex.ExAborted;
+import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.id.SOCID;
 import com.aerofs.lib.id.SOCKID;
 import com.aerofs.proto.Core.PBGetVersCallBlock;
@@ -102,13 +106,15 @@ public class GetVersCall
     // TODO (MJ) remove when repairing the db is disabled
     private final TransManager _tm;
     private final MapSIndex2Contributors _sidx2contrib;
+    private final LocalACL _lacl;
+    private final CfgLocalUser _cfgLocalUser;
 
     @Inject
     public GetVersCall(IncomingStreams iss, OutgoingStreams oss, Metrics m, GetVersReply pgvr,
             NSL nsl, RPC rpc, NativeVersionControl nvc, ImmigrantVersionControl ivc,
             MapSIndex2Store sidx2s, IPulledDeviceDatabase pddb, TokenManager tokenManager,
             DirectoryService ds, TransManager tm, IMapSID2SIndex sid2sidx, IMapSIndex2SID sidx2sid,
-            MapSIndex2Contributors sidx2contrib)
+            MapSIndex2Contributors sidx2contrib, LocalACL lacl, CfgLocalUser cfgLocalUser)
     {
         _iss = iss;
         _oss = oss;
@@ -126,6 +132,8 @@ public class GetVersCall
         _ds = ds;
         _tm = tm;
         _sidx2contrib = sidx2contrib;
+        _lacl = lacl;
+        _cfgLocalUser = cfgLocalUser;
     }
 
     public void rpc_(SIndex sidx, DID didTo, Token tk)
@@ -212,9 +220,9 @@ public class GetVersCall
         try {
             if (msg.streamKey() != null) {
                 // NB: this code path should not be taken: streaming calls is not currently possible
-                processStreamCall_(msg.did(), msg.is(), msg.streamKey(), sender);
+                processStreamCall_(msg.did(), msg.user(), msg.is(), msg.streamKey(), sender);
             } else {
-                processAtomicCall_(msg.did(), msg.is(), sender);
+                processAtomicCall_(msg.did(), msg.user(), msg.is(), sender);
             }
 
             // EndOfStream marker
@@ -228,12 +236,13 @@ public class GetVersCall
         }
     }
 
-    private void processStreamCall_(DID from, InputStream is, StreamKey key, BlockSender sender)
+    private void processStreamCall_(DID from, UserID user, InputStream is, StreamKey key,
+            BlockSender sender)
             throws Exception
     {
         Token tk = _tokenManager.acquireThrows_(Cat.UNLIMITED, "");
         try {
-            while (processAtomicCall_(from, is, sender)) {
+            while (processAtomicCall_(from, user, is, sender)) {
                 is = _iss.recvChunk_(key, tk);
             }
         } finally {
@@ -241,12 +250,12 @@ public class GetVersCall
         }
     }
 
-    private boolean processAtomicCall_(DID from, InputStream is, BlockSender sender)
+    private boolean processAtomicCall_(DID from, UserID user, InputStream is, BlockSender sender)
             throws Exception
     {
         while (is.available() > 0) {
             PBGetVersCallBlock block = PBGetVersCallBlock.parseDelimitedFrom(is);
-            processBlock_(from, block, sender);
+            processBlock_(from, user, block, sender);
             if (block.getIsLastBlock()) {
                 if (is.available() > 0) throw new ExProtocolError();
                 return false;
@@ -255,7 +264,8 @@ public class GetVersCall
         return true;
     }
 
-    private void processBlock_(DID from, PBGetVersCallBlock pb, BlockSender sender) throws Exception
+    private void processBlock_(DID from, UserID user, PBGetVersCallBlock pb, BlockSender sender)
+            throws Exception
     {
         SID sid = new SID(pb.getStoreId());
         SIndex sidx = _sid2sidx.getNullable_(sid);
@@ -264,6 +274,18 @@ public class GetVersCall
         // NB: can't throw because of batching...
         if (sidx == null) {
             l.warn("gv from {} for absent {} {}", from, sid, _sid2sidx.getLocalOrAbsentNullable_(sid));
+            return;
+        }
+
+        // see Rule 3 in acl.md
+        if (!_lacl.check_(_cfgLocalUser.get(), sidx, Role.EDITOR)) {
+            l.info("we have no editor perm for {}", sidx);
+            return;
+        }
+
+        // see Rule 1 in acl.md
+        if (!_lacl.check_(user, sidx, Role.VIEWER)) {
+            l.warn("{} on {} has no viewer perm for {}", user, from, sidx);
             return;
         }
 

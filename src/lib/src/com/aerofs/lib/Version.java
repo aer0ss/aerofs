@@ -11,6 +11,8 @@ import com.google.common.collect.Maps;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import static com.google.common.base.Objects.firstNonNull;
+
 public class Version
 {
     private static final Version ZERO = empty();
@@ -67,10 +69,10 @@ public class Version
     /**
      * @return Tick.ZERO if not found did in the entries
      */
-    public Tick get_(DID did)
+    public @Nonnull Tick get_(DID did)
     {
         Tick tk = _map.get(did);
-        return tk == null ? Tick.ZERO : tk;
+        return firstNonNull(tk, Tick.ZERO);
     }
 
     public Version set_(DID did, long l)

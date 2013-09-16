@@ -99,6 +99,9 @@ public class EIAntiEntropy extends AbstractEBSelfHandling
                 } finally {
                     tk.reclaim_();
                 }
+            } catch (RuntimeException e) {
+                // we tolerate no runtime exceptions
+                throw e;
             } catch (Exception e) {
                 l.warn(s + ": " + Util.e(e));
             }

@@ -66,6 +66,7 @@ message PBException {
         OUT_OF_SPACE = 11;
         UPDATE_IN_PROGRESS = 100;
         NO_COMPONENT_WITH_SPECIFIED_VERSION = 101;
+        SENDER_HAS_NO_PERM = 102;
 
         //
         // Lib exception types
