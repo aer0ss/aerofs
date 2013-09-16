@@ -98,8 +98,6 @@ import com.aerofs.daemon.event.net.rx.EIUnicastMessage;
 import com.aerofs.daemon.event.status.EIGetStatusOverview;
 import com.aerofs.daemon.event.status.EIGetSyncStatus;
 import com.aerofs.daemon.event.test.EITestGetAliasObject;
-import com.aerofs.daemon.mobile.EIDownloadPacket;
-import com.aerofs.daemon.mobile.HdDownloadPacket;
 import com.google.inject.Inject;
 
 public class CoreEventHandlerRegistrar implements ICoreEventHandlerRegistrar
@@ -147,7 +145,6 @@ public class CoreEventHandlerRegistrar implements ICoreEventHandlerRegistrar
     private final HdGetStatusOverview _hdGetStatusOverview;
     private final HdHeartbeat _hdHeartbeat;
     private final HdGetActivities _hdGetActivities;
-    private final HdDownloadPacket _hdDownloadPacket;
     private final HdInvalidateUserNameCache _hdInvalidateUserNameCache;
     private final HdInvalidateDeviceNameCache _hdInvalidateDeviceNameCache;
     private final HdCreateSeedFile _hdCreateSeedFile;
@@ -174,7 +171,7 @@ public class CoreEventHandlerRegistrar implements ICoreEventHandlerRegistrar
             HdDeleteRevision hdDeleteRevision,
             HdGetSyncStatus hdGetSyncStatus, HdGetStatusOverview hdGetStatusOverview,
             HdHeartbeat hdHeartbeat, HdGetActivities hdGetActivities,
-            HdDownloadPacket hdDownloadPacket, HdLeaveSharedFolder hdLeaveSharedFolder,
+            HdLeaveSharedFolder hdLeaveSharedFolder,
             HdInvalidateUserNameCache hdInvalidateUserNameCache,
             HdInvalidateDeviceNameCache hdInvalidateDeviceNameCache,
             HdCreateSeedFile hdCreateSeedFile, HdGetTransferStat hdGetTransferStat,
@@ -222,7 +219,6 @@ public class CoreEventHandlerRegistrar implements ICoreEventHandlerRegistrar
         _hdGetStatusOverview = hdGetStatusOverview;
         _hdHeartbeat = hdHeartbeat;
         _hdGetActivities = hdGetActivities;
-        _hdDownloadPacket = hdDownloadPacket;
         _hdInvalidateUserNameCache = hdInvalidateUserNameCache;
         _hdInvalidateDeviceNameCache = hdInvalidateDeviceNameCache;
         _hdCreateSeedFile = hdCreateSeedFile;
@@ -289,9 +285,6 @@ public class CoreEventHandlerRegistrar implements ICoreEventHandlerRegistrar
                 .setHandler_(EIChunk.class, _hdChunk)
                 .setHandler_(EIStreamAborted.class, _hdStreamAborted)
                 .setHandler_(EIPulseStopped.class, _hdPulseStopped)
-
-                // mobile events
-                .setHandler_(EIDownloadPacket.class, _hdDownloadPacket)
 
                 // test events
                 .setHandler_(EITestGetAliasObject.class, _hdTestGetAliasObject)

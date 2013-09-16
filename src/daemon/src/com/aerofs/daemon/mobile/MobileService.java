@@ -5,9 +5,7 @@ import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.base.ssl.CNameVerificationHandler.CNameListener;
-import com.aerofs.daemon.core.Core;
 import com.aerofs.daemon.core.ds.OA;
-import com.aerofs.daemon.event.fs.EIGetChildrenAttr;
 import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Version;
@@ -68,7 +66,7 @@ class MobileService implements IMobileService, CNameListener
         checkNotNull(_remoteUser);
         Path path = Path.fromPB(pbPath);
 
-        EIGetChildrenAttr ev = new EIGetChildrenAttr(_remoteUser, path, Core.imce());
+        EIGetChildrenAttr ev = new EIGetChildrenAttr(_remoteUser, path, _imce);
         ev.execute(PRIO);
 
         ListChildrenReply.Builder bd = ListChildrenReply.newBuilder();

@@ -1,7 +1,6 @@
 package com.aerofs.gui.sharing.folders;
 
 import com.aerofs.lib.Path;
-import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.proto.Ritual.GetChildrenAttributesReply;
 import com.aerofs.proto.Ritual.PBObjectAttributes;
 import com.aerofs.proto.Ritual.PBObjectAttributes.Type;
@@ -46,8 +45,7 @@ public class ContentProvider implements ITreeContentProvider
         List<Path> ret = _cache.get(parent);
         if (ret == null) {
             ret = Lists.newArrayList();
-            GetChildrenAttributesReply reply = UIGlobals.ritual().getChildrenAttributes(
-                    Cfg.user().getString(), parent.toPB());
+            GetChildrenAttributesReply reply = UIGlobals.ritual().getChildrenAttributes(parent.toPB());
             for (int i = 0; i < reply.getChildrenNameCount(); i++) {
                 PBObjectAttributes oa = reply.getChildrenAttributes(i);
                 if (oa.getType() != Type.FILE && !oa.getExcluded()) {

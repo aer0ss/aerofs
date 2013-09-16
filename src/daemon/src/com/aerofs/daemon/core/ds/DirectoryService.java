@@ -59,11 +59,14 @@ public abstract class DirectoryService implements IDumpStatMisc, IStoreDeletionO
     }
 
     /**
-     * @return null if not found
+     * @return the SOID corresponding to the path. Do NOT follow anchor if the path points to an anchor.
+     * Return null if not found.
      */
     @Nullable public abstract SOID resolveNullable_(Path path) throws SQLException;
 
-
+    /**
+     * @return the SOID corresponding to the path. Do NOT follow anchor if the path points to an anchor.
+     */
     @Nonnull public final SOID resolveThrows_(Path path)
             throws SQLException, ExNotFound
     {
@@ -72,6 +75,21 @@ public abstract class DirectoryService implements IDumpStatMisc, IStoreDeletionO
         return soid;
     }
 
+    /**
+     * @return the SOID corresponding to the path. Follow anchor if the path points to an anchor.
+     */
+    @Nonnull public final SOID resolveFollowAnchorThrows_(Path path)
+            throws SQLException, ExNotFound, ExExpelled
+    {
+        SOID soid = resolveThrows_(path);
+        OA oa = getOAThrows_(soid);
+        if (oa.isAnchor()) soid = followAnchorThrows_(oa);
+        return soid;
+    }
+
+    /**
+     * @return the SOID corresponding to the path. Do NOT follow anchor if the path points to an anchor.
+     */
     @Nonnull public final Path resolveThrows_(SOID soid) throws SQLException, ExNotFound
     {
         Path ret = resolveNullable_(soid);
@@ -79,6 +97,9 @@ public abstract class DirectoryService implements IDumpStatMisc, IStoreDeletionO
         return ret;
     }
 
+    /**
+     * @return the SOID corresponding to the path. Do NOT follow anchor if the path points to an anchor.
+     */
     @Nonnull public final Path resolve_(SOID soid) throws SQLException
     {
         Path ret = resolveNullable_(soid);

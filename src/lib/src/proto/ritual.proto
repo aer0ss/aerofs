@@ -220,15 +220,11 @@ service RitualService {
     // Send a defect log to SV
     rpc TestLogSendDefect(Void) returns(Void);
 
-    // Multiuser systems only: join a root store
-    rpc TestMultiuserJoinRootStore(TestMultiuserJoinRootStoreCall) returns(Void);
-
     rpc TestGetAliasObject(TestGetAliasObjectCall) returns(TestGetAliasObjectReply);
 }
 
 message GetObjectAttributesCall {
-    required string user = 1;
-    required PBPath path = 2;
+    required PBPath path = 1;
 }
 
 message GetObjectAttributesReply {
@@ -236,8 +232,7 @@ message GetObjectAttributesReply {
 }
 
 message GetChildrenAttributesCall {
-    required string user = 1;
-    required PBPath path = 2;
+    required PBPath path = 1;
 }
 
 message GetChildrenAttributesReply {
@@ -301,8 +296,7 @@ message DumpStatsReply {
 }
 
 message GetExcludedFoldersCall {
-    required string user = 1;
-    required PBPath path = 2;
+    required PBPath path = 1;
 }
 
 message GetExcludedFoldersReply {
@@ -339,8 +333,7 @@ message ShareFolderCall {
 }
 
 message UnshareFolderCall {
-    required string user = 1;
-    required PBPath path = 2;
+    required PBPath path = 1;
 }
 
 message ListSharedFolderInvitationsReply {
@@ -424,8 +417,7 @@ message DeleteConflictCall {
 }
 
 message GetACLCall {
-    required string user = 1;
-    required PBPath path = 2;
+    required PBPath path = 1;
 }
 
 message GetACLReply {
@@ -433,16 +425,14 @@ message GetACLReply {
 }
 
 message UpdateACLCall {
-    required string user = 1;
-    required PBPath path = 2;
-    required string subject = 3;
-    required PBRole role = 4;
+    required PBPath path = 1;
+    required string subject = 2;
+    required PBRole role = 3;
 }
 
 message DeleteACLCall {
-    required string user = 1;
-    required PBPath path = 2;
-    required string subject = 3;
+    required PBPath path = 1;
+    required string subject = 2;
 }
 
 message RelocateCall {
@@ -600,11 +590,6 @@ message TestGetObjectIdentifierCall {
 message TestGetObjectIdentifierReply {
     required int32 sidx = 1;
     required bytes oid = 2;
-}
-
-message TestMultiuserJoinRootStoreCall {
-    // The user to which the root store belongs
-    required string user = 1;
 }
 
 message TestGetAliasObjectCall {

@@ -27,37 +27,15 @@ import com.aerofs.lib.notifier.ConcurrentlyModifiableListeners;
  */
 public class TokenManager implements IDumpStatMisc
 {
-
     static {
         // otherwise we have to change Category's implementation
-        if (Prio.values().length != 2) throw new AssertionError();
-    }
-
-    public static class CfgCats
-    {
-        public int getQuota(@Nonnull Cat cat)
-        {
-            switch (cat) {
-            case CLIENT:
-                return Cfg.db().getInt(Key.MAX_CLIENT_STACKS);
-            case SERVER:
-                return Cfg.db().getInt(Key.MAX_SERVER_STACKS);
-            case HOUSEKEEPING:
-                return Cfg.db().getInt(Key.MAX_HOUSEKEEPING_STACKS);
-            case DID2USER:
-                return Cfg.db().getInt(Key.MAX_D2U_STACKS);
-            case UNLIMITED:
-                return Integer.MAX_VALUE;
-            default:
-                throw new UnsupportedOperationException("Unknown Cat: " + cat);
-            }
-        }
+        assert Prio.values().length == 2;
     }
 
     private static class CatInfo
     {
         private final Cat _cat;
-        private int _quota;
+        private final int _quota;
         private int _total;
         private final Set<Token> _lo = new LinkedHashSet<Token>();
         // for dumping only
@@ -73,28 +51,41 @@ public class TokenManager implements IDumpStatMisc
         private final ConcurrentlyModifiableListeners<ITokenReclamationListener> _ls = ConcurrentlyModifiableListeners
                 .create();
 
-        private CatInfo(Cat cat)
+        private CatInfo(Cat cat, int quota)
         {
             _cat = cat;
+            _quota = quota;
         }
     }
 
     private static final Logger l = Loggers.getLogger(TokenManager.class);
 
     private TC _tc;
-    private CfgCats _cfgCats;
-    private final EnumMap<Cat, CatInfo> _catInfoMap = new EnumMap<Cat, CatInfo>(Cat.class);
+    private final EnumMap<Cat, CatInfo> _cat2info = new EnumMap<Cat, CatInfo>(Cat.class);
 
     @Inject
-    public void inject_(TC tc, CfgCats cfgCats)
+    public void inject_(TC tc)
     {
         _tc = tc;
-        _cfgCats = cfgCats;
 
-        for (Cat cat : Cat.values()) {
-            CatInfo info = new CatInfo(cat);
-            info._quota = _cfgCats.getQuota(cat);
-            _catInfoMap.put(cat, info);
+        for (Cat cat : Cat.values()) _cat2info.put(cat, new CatInfo(cat, getQuota(cat)));
+    }
+
+    private static int getQuota(@Nonnull Cat cat)
+    {
+        switch (cat) {
+        case CLIENT:
+            return Cfg.db().getInt(Key.MAX_CLIENT_STACKS);
+        case SERVER:
+            return Cfg.db().getInt(Key.MAX_SERVER_STACKS);
+        case HOUSEKEEPING:
+            return Cfg.db().getInt(Key.MAX_HOUSEKEEPING_STACKS);
+        case DID2USER:
+            return Cfg.db().getInt(Key.MAX_D2U_STACKS);
+        case UNLIMITED:
+            return Integer.MAX_VALUE;
+        default:
+            throw new UnsupportedOperationException("Unknown Cat: " + cat);
         }
     }
 
@@ -106,7 +97,7 @@ public class TokenManager implements IDumpStatMisc
     {
         Token tk = acquire_(cat, reason);
         if (tk == null) {
-            CatInfo catInfo = _catInfoMap.get(cat);
+            CatInfo catInfo = _cat2info.get(cat);
             assert catInfo != null;
 
             throw new ExNoResource(cat + " full: toks:" + dumpCatInfo(catInfo, ""));
@@ -120,7 +111,7 @@ public class TokenManager implements IDumpStatMisc
      */
     public @Nullable Token acquire_(Cat cat, String reason)
     {
-        CatInfo info = _catInfoMap.get(cat);
+        CatInfo info = _cat2info.get(cat);
         Prio prio = _tc.prio();
 
         if (info._total != info._quota) {
@@ -148,7 +139,7 @@ public class TokenManager implements IDumpStatMisc
 
     void reclaim_(Token tk, Prio prio, boolean notifyReclaimListener)
     {
-        CatInfo info = _catInfoMap.get(tk.getCat());
+        CatInfo info = _cat2info.get(tk.getCat());
         assert info._total > 0;
         info._total--;
 
@@ -164,28 +155,20 @@ public class TokenManager implements IDumpStatMisc
      */
     public void addTokenReclamationListener_(Cat cat, ITokenReclamationListener l)
     {
-        _catInfoMap.get(cat)._ls.addListener_(l);
-    }
-
-    /**
-     * Remove a token reclamation listener added earlier
-     */
-    public void removeTokenReclamationListener_(Cat cat, ITokenReclamationListener l)
-    {
-        _catInfoMap.get(cat)._ls.removeListener_(l);
+        _cat2info.get(cat)._ls.addListener_(l);
     }
 
     @Override
     public void dumpStatMisc(String indent, String indentUnit, PrintStream ps)
     {
-        for (CatInfo catInfo : _catInfoMap.values()) {
+        for (CatInfo catInfo : _cat2info.values()) {
             ps.print(dumpCatInfo(catInfo, indent));
         }
     }
 
     private String dumpCatInfo(CatInfo catInfo, String indent)
     {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
 
         for (Iterable<Token> tokens : catInfo._tokenSetMap.values()) {
             for (Token token : tokens) {

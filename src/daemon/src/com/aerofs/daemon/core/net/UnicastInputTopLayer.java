@@ -162,10 +162,15 @@ public class UnicastInputTopLayer implements IUnicastInputLayer
 
         switch (msg.pb().getType()) {
         case GET_COM_CALL:
+            //noinspection fallthrough
         case GET_VERS_CALL:
+            //noinspection fallthrough
         case GET_REVISION_CALL:
+            //noinspection fallthrough
         case LIST_REV_CHILDREN_REQUEST:
+            //noinspection fallthrough
         case LIST_REV_HISTORY_REQUEST:
+            //noinspection fallthrough
         case COMPUTE_HASH_CALL:
             try {
                 processCall_(msg);
@@ -176,10 +181,15 @@ public class UnicastInputTopLayer implements IUnicastInputLayer
             }
             break;
         case REPLY:
+            //noinspection fallthrough
         case NEW_UPDATES:
+            //noinspection fallthrough
         case UPDATE_SENDER_FILTER:
+            //noinspection fallthrough
         case LIST_REV_CHILDREN_RESPONSE:
+            //noinspection fallthrough
         case LIST_REV_HISTORY_RESPONSE:
+            //noinspection fallthrough
         case NOP:
             processNonCall_(msg);
             break;
@@ -212,7 +222,8 @@ public class UnicastInputTopLayer implements IUnicastInputLayer
             _f._computeHashCall.processCall_(msg);
             break;
         default:
-            assert false : ("method should not be called for type:" + msg.pb().getType());
+            // the caller guarantees it never happens
+            throw new AssertionError(msg.pb().getType());
         }
     }
 
@@ -253,7 +264,8 @@ public class UnicastInputTopLayer implements IUnicastInputLayer
         case NOP:
             break;
         default:
-            assert false : ("method should not be called for type:" + msg.pb().getType());
+            // the caller guarantees it never happens
+            throw new AssertionError(msg.pb().getType());
         }
     }
 

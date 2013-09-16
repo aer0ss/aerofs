@@ -41,7 +41,6 @@ import com.aerofs.daemon.event.admin.EIPauseOrResumeSyncing;
 import com.aerofs.daemon.event.admin.EIReloadConfig;
 import com.aerofs.daemon.event.admin.EIRelocateRootAnchor;
 import com.aerofs.daemon.event.admin.EISetExpelled;
-import com.aerofs.daemon.event.admin.EITestMultiuserJoinRootStore;
 import com.aerofs.daemon.event.admin.EITransportDiagnostics;
 import com.aerofs.daemon.event.admin.EIUpdateACL;
 import com.aerofs.daemon.event.fs.EICreateObject;
@@ -196,8 +195,7 @@ public class RitualService implements IRitualService
         for (PBSubjectRolePair srp : srps) {
             acl.put(UserID.fromExternal(srp.getSubject()), Role.fromPB(srp.getRole()));
         }
-        EIShareFolder ev = new EIShareFolder(Cfg.user(), Path.fromPB(path), acl,
-                emailNote);
+        EIShareFolder ev = new EIShareFolder(Path.fromPB(path), acl, emailNote);
         ev.execute(PRIO);
 
         return createVoidReply();
@@ -258,10 +256,9 @@ public class RitualService implements IRitualService
     }
 
     @Override
-    public ListenableFuture<GetObjectAttributesReply> getObjectAttributes(
-            String user, PBPath path) throws Exception
+    public ListenableFuture<GetObjectAttributesReply> getObjectAttributes(PBPath path) throws Exception
     {
-        EIGetAttr ev = new EIGetAttr(UserID.fromExternal(user), Core.imce(), Path.fromPB(path));
+        EIGetAttr ev = new EIGetAttr(Core.imce(), Path.fromPB(path));
         ev.execute(PRIO);
         if (ev._oa == null) throw new ExNotFound();
 
@@ -272,11 +269,9 @@ public class RitualService implements IRitualService
     }
 
     @Override
-    public ListenableFuture<GetChildrenAttributesReply> getChildrenAttributes(String user,
-            PBPath path) throws Exception
+    public ListenableFuture<GetChildrenAttributesReply> getChildrenAttributes(PBPath path) throws Exception
     {
-        EIGetChildrenAttr ev = new EIGetChildrenAttr(UserID.fromExternal(user), Path.fromPB(path),
-                Core.imce());
+        EIGetChildrenAttr ev = new EIGetChildrenAttr(Path.fromPB(path), Core.imce());
         ev.execute(PRIO);
 
         GetChildrenAttributesReply.Builder bd = GetChildrenAttributesReply.newBuilder();
@@ -336,7 +331,7 @@ public class RitualService implements IRitualService
     @Override
     public ListenableFuture<Void> createObject(PBPath path, Boolean dir) throws Exception
     {
-        EICreateObject ev = new EICreateObject(Cfg.user(), Core.imce(), Path.fromPB(path), dir);
+        EICreateObject ev = new EICreateObject(Core.imce(), Path.fromPB(path), dir);
         ev.execute(PRIO);
         if (ev._exist) throw new ExAlreadyExist();
         return createVoidReply();
@@ -345,7 +340,7 @@ public class RitualService implements IRitualService
     @Override
     public ListenableFuture<Void> deleteObject(PBPath path) throws Exception
     {
-        EIDeleteObject ev = new EIDeleteObject(Cfg.user(), Core.imce(), Path.fromPB(path));
+        EIDeleteObject ev = new EIDeleteObject(Core.imce(), Path.fromPB(path));
         ev.execute(PRIO);
         return createVoidReply();
     }
@@ -354,8 +349,8 @@ public class RitualService implements IRitualService
     public ListenableFuture<Void> moveObject(PBPath pathFrom, PBPath pathTo) throws Exception
     {
         Path to = Path.fromPB(pathTo);
-        EIMoveObject ev = new EIMoveObject(Cfg.user(), Core.imce(), Path.fromPB(
-                pathFrom), to.removeLast(), to.last());
+        EIMoveObject ev = new EIMoveObject(Core.imce(), Path.fromPB(pathFrom), to.removeLast(),
+                to.last());
         ev.execute(PRIO);
         return createVoidReply();
     }
@@ -438,16 +433,16 @@ public class RitualService implements IRitualService
     }
 
     @Override
-    public ListenableFuture<Void> unshareFolder(String user, PBPath path) throws Exception
+    public ListenableFuture<Void> unshareFolder(PBPath path) throws Exception
     {
         assert false;   // unimplemented
         return null;
     }
 
     @Override
-    public ListenableFuture<GetACLReply> getACL(String user, PBPath path) throws Exception
+    public ListenableFuture<GetACLReply> getACL(PBPath path) throws Exception
     {
-        EIGetACL ev = new EIGetACL(UserID.fromExternal(user), Path.fromPB(path), Core.imce());
+        EIGetACL ev = new EIGetACL(Path.fromPB(path), Core.imce());
         ev.execute(PRIO);
 
         // we only get here if the event suceeded properly
@@ -463,25 +458,25 @@ public class RitualService implements IRitualService
     }
 
     @Override
-    public ListenableFuture<Void> updateACL(String user, PBPath path, String subject, PBRole role)
+    public ListenableFuture<Void> updateACL(PBPath path, String subject, PBRole role)
             throws Exception
     {
         // TODO: accepting {@code user} as input is sort of OK as long as the GUI is the only
         // Ritual client but it will become a major security issue if/when Ritual becomes open API
-        EIUpdateACL ev = new EIUpdateACL(UserID.fromExternal(user), Path.fromPB(path),
-                UserID.fromExternal(subject), Role.fromPB(role), Core.imce());
+        EIUpdateACL ev = new EIUpdateACL(Path.fromPB(path), UserID.fromExternal(subject),
+                Role.fromPB(role), Core.imce());
         ev.execute(PRIO);
         return createVoidReply();
     }
 
     @Override
-    public ListenableFuture<Void> deleteACL(String user, PBPath path, String subject)
+    public ListenableFuture<Void> deleteACL(PBPath path, String subject)
             throws Exception
     {
         // TODO: accepting {@code user} as input is sort of OK as long as the GUI is the only
         // Ritual client but it will become a major security issue if/when Ritual is open-sourced
-        EIDeleteACL ev = new EIDeleteACL(UserID.fromExternal(user), Path.fromPB(path),
-                UserID.fromExternal(subject), Core.imce());
+        EIDeleteACL ev = new EIDeleteACL(Path.fromPB(path), UserID.fromExternal(subject),
+                Core.imce());
         ev.execute(PRIO);
         return createVoidReply();
     }
@@ -545,7 +540,7 @@ public class RitualService implements IRitualService
     @Override
     public ListenableFuture<Void> deleteConflict(PBPath path, Integer kindex) throws Exception
     {
-        EIDeleteBranch ev = new EIDeleteBranch(Cfg.user(), Core.imce(), Path.fromPB(path), new KIndex(kindex));
+        EIDeleteBranch ev = new EIDeleteBranch(Core.imce(), Path.fromPB(path), new KIndex(kindex));
         ev.execute(PRIO);
         return createVoidReply();
     }
@@ -586,7 +581,7 @@ public class RitualService implements IRitualService
     public ListenableFuture<TestGetObjectIdentifierReply> testGetObjectIdentifier(PBPath path)
             throws Exception
     {
-        EIGetAttr ev = new EIGetAttr(Cfg.user(), Core.imce(), Path.fromPB(path));
+        EIGetAttr ev = new EIGetAttr(Core.imce(), Path.fromPB(path));
         ev.execute(PRIO);
         OA oa = ev._oa;
         if (oa == null) throw new ExNotFound();
@@ -683,14 +678,6 @@ public class RitualService implements IRitualService
     public ListenableFuture<Void> testLogSendDefect() throws Exception
     {
         SVClient.logSendDefectSync(false, "testing sv defect reporting", null, null, false);
-        return createVoidReply();
-    }
-
-    @Override
-    public ListenableFuture<Void> testMultiuserJoinRootStore(String user)
-            throws Exception
-    {
-        new EITestMultiuserJoinRootStore(UserID.fromExternal(user), Core.imce()).execute(PRIO);
         return createVoidReply();
     }
 

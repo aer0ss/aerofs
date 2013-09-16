@@ -1,16 +1,22 @@
 package com.aerofs.daemon.core.acl;
 
+import com.aerofs.base.ex.ExNoPerm;
+import com.aerofs.daemon.core.ds.DirectoryService;
+import com.aerofs.daemon.core.ds.OA;
+import com.aerofs.daemon.core.ex.ExExpelled;
 import com.aerofs.daemon.core.store.IStores;
 import com.aerofs.daemon.lib.db.AbstractTransListener;
 import com.aerofs.daemon.lib.db.IACLDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.base.acl.Role;
+import com.aerofs.lib.Path;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.base.id.UserID;
+import com.aerofs.lib.id.SOID;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -32,17 +38,19 @@ public class LocalACL
     private final CfgLocalUser _cfgLocalUser;
     private final IACLDatabase _adb;
     private final IStores _ss;
+    private final DirectoryService _ds;
 
     // mapping: store -> (subject -> role). It's an in-memory cache of the ACL table in the db.
     private final Map<SIndex, ImmutableMap<UserID, Role>> _cache = Maps.newHashMap();
 
     @Inject
-    public LocalACL(CfgLocalUser cfgLocalUser, TransManager tm, IStores ss,
-            IACLDatabase adb)
+    public LocalACL(CfgLocalUser cfgLocalUser, TransManager tm, IStores ss, IACLDatabase adb,
+            DirectoryService ds)
     {
         _adb = adb;
         _cfgLocalUser = cfgLocalUser;
         _ss = ss;
+        _ds = ds;
 
         // clear the cache when a transaction is aborted
         tm.addListener_(new AbstractTransListener() {
@@ -67,6 +75,25 @@ public class LocalACL
         // devices can instantly start syncing with other devices without waiting for ACL to be
         // downloaded.
         return allowed || (subject.equals(_cfgLocalUser.get()) && _ss.isRoot_(sidx));
+    }
+    /**
+     * @return the SOID corresponding to the specified path. Follow anchor if the resolved object is
+     * an anchor.
+     */
+    public @Nonnull SOID checkThrows_(UserID subject, Path path, Role role)
+            throws ExNotFound, SQLException, ExNoPerm, ExExpelled
+    {
+        SOID soid = _ds.resolveThrows_(path);
+        OA oa = _ds.getOAThrows_(soid);
+        if (oa.isAnchor()) soid = _ds.followAnchorThrows_(oa);
+        checkThrows_(subject, soid.sidx(), role);
+        return soid;
+    }
+
+    public void checkThrows_(UserID subject, SIndex sidx, Role role)
+            throws SQLException, ExNoPerm, ExNotFound
+    {
+        if (!check_(subject, sidx, role)) throw new ExNoPerm(subject + ", " + role + ", " + sidx);
     }
 
     /**

@@ -4,10 +4,11 @@ import java.util.Map;
 
 import com.aerofs.daemon.core.Core;
 import com.aerofs.base.acl.Role;
+import com.aerofs.daemon.event.lib.imc.AbstractEBIMC;
 import com.aerofs.lib.Path;
 import com.aerofs.base.id.UserID;
 
-public class EIShareFolder extends AbstractEIFS
+public class EIShareFolder extends AbstractEBIMC
 {
     public final Path _path;
     public final Map<UserID, Role> _subject2role;
@@ -20,9 +21,9 @@ public class EIShareFolder extends AbstractEIFS
      * time.
      * @param path the path of the new store
      */
-    public EIShareFolder(UserID user, Path path, Map<UserID, Role> subject2role, String emailNote)
+    public EIShareFolder(Path path, Map<UserID, Role> subject2role, String emailNote)
     {
-        super(user, Core.imce());
+        super(Core.imce());
         assert path != null;
         _path = path;
         _subject2role = subject2role;

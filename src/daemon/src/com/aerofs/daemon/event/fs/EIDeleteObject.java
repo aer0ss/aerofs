@@ -1,16 +1,17 @@
 package com.aerofs.daemon.event.fs;
 
+import com.aerofs.daemon.event.lib.imc.AbstractEBIMC;
 import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
 import com.aerofs.lib.Path;
 import com.aerofs.base.id.UserID;
 
-public class EIDeleteObject extends AbstractEIFS
+public class EIDeleteObject extends AbstractEBIMC
 {
     public final Path _path;
 
-    public EIDeleteObject(UserID user, IIMCExecutor imce, Path path)
+    public EIDeleteObject(IIMCExecutor imce, Path path)
     {
-        super(user, imce);
+        super(imce);
         _path = path;
     }
 }

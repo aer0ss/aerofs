@@ -11,7 +11,6 @@ import com.aerofs.labeling.L;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.proto.Ritual.PBObjectAttributes;
 import com.aerofs.sv.client.SVClient;
@@ -286,8 +285,7 @@ public class GUIUtil
         final boolean create;
 
         try {
-            PBObjectAttributes.Type type = UIGlobals.ritual().getObjectAttributes(Cfg.user().getString(),
-                    path.toPB())
+            PBObjectAttributes.Type type = UIGlobals.ritual().getObjectAttributes(path.toPB())
                     .getObjectAttributes()
                     .getType();
             create = type != PBObjectAttributes.Type.SHARED_FOLDER;

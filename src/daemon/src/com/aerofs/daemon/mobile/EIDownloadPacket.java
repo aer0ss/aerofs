@@ -3,18 +3,19 @@ package com.aerofs.daemon.mobile;
 import javax.annotation.Nullable;
 
 import com.aerofs.base.id.UserID;
+import com.aerofs.daemon.event.lib.imc.AbstractEBIMC;
 import org.jboss.netty.buffer.ChannelBuffer;
 
-import com.aerofs.daemon.event.fs.AbstractEIFS;
 import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Version;
 
-public class EIDownloadPacket extends AbstractEIFS
+public class EIDownloadPacket extends AbstractEBIMC
 {
     public static final long UNDEFINED_LENGTH = -1;
     public static final long UNDEFINED_MOD_TIME = -1;
 
+    public final UserID _user;
     public @Nullable Path _path;
     public final long _offset;
     public final int _packetSize;
@@ -32,7 +33,8 @@ public class EIDownloadPacket extends AbstractEIFS
 
     public EIDownloadPacket(UserID user, IIMCExecutor imce, Path path, long offset, int packetSize)
     {
-        super(user, imce);
+        super(imce);
+        _user = user;
         _path = path;
         _offset = offset;
         _packetSize = packetSize;

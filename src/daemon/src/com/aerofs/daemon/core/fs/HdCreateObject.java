@@ -1,6 +1,5 @@
 package com.aerofs.daemon.core.fs;
 
-import com.aerofs.daemon.core.acl.ACLChecker;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.object.ObjectCreator;
@@ -11,7 +10,6 @@ import com.aerofs.lib.event.Prio;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.Path;
-import com.aerofs.base.acl.Role;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.lib.id.SOID;
 import com.google.inject.Inject;
@@ -19,15 +17,13 @@ import com.google.inject.Inject;
 public class HdCreateObject extends AbstractHdIMC<EICreateObject>
 {
     private DirectoryService _ds;
-    private ACLChecker _acl;
     private TransManager _tm;
     private ObjectCreator _oc;
 
     @Inject
-    public void inject_(DirectoryService ds, ACLChecker acl, TransManager tm, ObjectCreator oc)
+    public void inject_(DirectoryService ds, TransManager tm, ObjectCreator oc)
     {
         _ds = ds;
-        _acl = acl;
         _tm = tm;
         _oc = oc;
     }
@@ -45,7 +41,7 @@ public class HdCreateObject extends AbstractHdIMC<EICreateObject>
 
         // need read_attr right to read ACL.
         Path pathParent = ev._path.removeLast();
-        SOID soidParent = _acl.checkThrows_(ev.user(), pathParent, Role.EDITOR);
+        SOID soidParent = _ds.resolveFollowAnchorThrows_(pathParent);
 
         OA oaParent = _ds.getOA_(soidParent);
         if (oaParent.isExpelled() || !oaParent.isDir()) throw new ExBadArgs("Invalid parent");

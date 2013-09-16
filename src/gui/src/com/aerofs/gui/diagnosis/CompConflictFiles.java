@@ -8,7 +8,6 @@ import com.aerofs.gui.Images;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.lib.os.OSUtil;
@@ -479,8 +478,7 @@ public class CompConflictFiles extends Composite
             if (!_showSystemFiles && UIUtil.isSystemFile(conflict.getPath())) {
                 continue;
             }
-            PBObjectAttributes attr = ritual.getObjectAttributes(Cfg.user().getString(),
-                    conflict.getPath()).getObjectAttributes();
+            PBObjectAttributes attr = ritual.getObjectAttributes(conflict.getPath()).getObjectAttributes();
 
             for (PBBranch b : attr.getBranchList()) {
                 if (b.getKidx() == KIndex.MASTER.getInt()) continue;

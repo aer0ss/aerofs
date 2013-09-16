@@ -2,7 +2,6 @@ package com.aerofs.shell;
 
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.lib.Path;
-import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExUIMessage;
 import com.aerofs.proto.Ritual.PBObjectAttributes;
 import com.aerofs.proto.Ritual.PBObjectAttributes.Type;
@@ -20,7 +19,7 @@ public class CmdCd implements IShellCommand<ShProgram>
 
         if (!path.isEmpty()) {
             PBObjectAttributes attr = s.d().getRitualClient_()
-                    .getObjectAttributes(Cfg.user().getString(), path.toPB()).getObjectAttributes();
+                    .getObjectAttributes(path.toPB()).getObjectAttributes();
             if (attr.getType() != Type.FOLDER && attr.getType() != Type.SHARED_FOLDER) {
                 throw new ExUIMessage("not a directory");
             }

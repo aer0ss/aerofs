@@ -9,17 +9,15 @@ import com.google.common.collect.ImmutableMap;
 
 public class EIGetACL extends AbstractEBIMC
 {
-    public final UserID _user;
     public final Path _path;
 
     // result value
     public ImmutableMap<UserID, Role> _subject2role;
 
-    public EIGetACL(UserID user, Path path, IIMCExecutor imce)
+    public EIGetACL(Path path, IIMCExecutor imce)
     {
         super(imce);
         _path = path;
-        _user = user;
     }
 
     public void setResult_(ImmutableMap<UserID, Role> subject2role)

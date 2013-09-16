@@ -60,7 +60,7 @@ public class CompExclusionList extends Composite
         // TODO: multiroot support
         Path root = Path.root(Cfg.rootSID());
         m._all = new HashSet<Path>();
-        GetChildrenAttributesReply reply = UIGlobals.ritual().getChildrenAttributes(Cfg.user().getString(), root.toPB());
+        GetChildrenAttributesReply reply = UIGlobals.ritual().getChildrenAttributes(root.toPB());
         for (int i = 0; i < reply.getChildrenNameCount(); i++) {
             if (reply.getChildrenAttributes(i).getType() != Type.FILE) {
                 m._all.add(root.append(reply.getChildrenName(i)));

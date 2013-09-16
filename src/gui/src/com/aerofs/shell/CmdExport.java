@@ -4,14 +4,12 @@ import java.io.File;
 import java.io.PrintStream;
 
 import com.aerofs.lib.id.KIndex;
-import com.aerofs.base.id.UserID;
 import com.aerofs.proto.Ritual.ExportConflictReply;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
 
 import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.Path;
-import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.ritual.RitualBlockingClient;
 import com.aerofs.proto.Ritual.ExportFileReply;
@@ -54,20 +52,18 @@ public class CmdExport implements IShellCommand<ShProgram>
     class Downloader
     {
         private final RitualBlockingClient _ritual;
-        private final UserID _userId;
         private final PrintStream _out;
 
         Downloader(ShellCommandRunner<ShProgram> s)
         {
             _ritual = s.d().getRitualClient_();
-            _userId = Cfg.user();
             _out = s.out();
         }
 
         void download(Path source, File dest) throws Exception
         {
             GetObjectAttributesReply objectAttributesReply =
-                    _ritual.getObjectAttributes(_userId.getString(), source.toPB());
+                    _ritual.getObjectAttributes(source.toPB());
             PBObjectAttributes oa = objectAttributesReply.getObjectAttributes();
             download(source, oa, dest);
         }
@@ -84,10 +80,10 @@ public class CmdExport implements IShellCommand<ShProgram>
                 }
 
                 case FOLDER:
+                //noinspection fallthrough
                 case SHARED_FOLDER: {
                     FileUtil.mkdir(dest);
-                    GetChildrenAttributesReply reply = _ritual.getChildrenAttributes(
-                            _userId.getString(), source.toPB());
+                    GetChildrenAttributesReply reply = _ritual.getChildrenAttributes(source.toPB());
                     int count = reply.getChildrenNameCount();
                     assert count == reply.getChildrenAttributesCount();
                     for (int i = 0; i < count; ++i) {

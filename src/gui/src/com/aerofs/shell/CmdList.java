@@ -11,7 +11,6 @@ import com.google.common.collect.Lists;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
 
-import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.proto.Ritual.GetChildrenAttributesReply;
 import com.aerofs.proto.Ritual.ListRevChildrenReply;
@@ -63,8 +62,7 @@ public class CmdList implements IShellCommand<ShProgram>
                              Path path, boolean longFormat)
             throws Exception
     {
-        GetChildrenAttributesReply reply = s.d().getRitualClient_().getChildrenAttributes(
-                Cfg.user().getString(), path.toPB());
+        GetChildrenAttributesReply reply = s.d().getRitualClient_().getChildrenAttributes(path.toPB());
 
         for (int i = 0; i < reply.getChildrenNameCount(); i++) {
             String name = reply.getChildrenName(i);

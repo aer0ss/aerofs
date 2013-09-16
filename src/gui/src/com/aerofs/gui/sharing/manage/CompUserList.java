@@ -173,7 +173,7 @@ public class CompUserList extends Composite
         _path = path;
         _rSelf = null;
 
-        Futures.addCallback(UIGlobals.ritualNonBlocking().getACL(Cfg.user().getString(), path.toPB()),
+        Futures.addCallback(UIGlobals.ritualNonBlocking().getACL(path.toPB()),
                 new FutureCallback<GetACLReply>() {
             @Override
             public void onSuccess(GetACLReply reply)
@@ -232,11 +232,9 @@ public class CompUserList extends Composite
     {
         try {
             if (role == null) {
-                UIGlobals.ritual().deleteACL(Cfg.user().getString(), _path.toPB(),
-                        subject.getString());
+                UIGlobals.ritual().deleteACL(_path.toPB(), subject.getString());
             } else {
-                UIGlobals.ritual().updateACL(Cfg.user().getString(), _path.toPB(), subject.getString(),
-                        role.toPB());
+                UIGlobals.ritual().updateACL(_path.toPB(), subject.getString(), role.toPB());
             }
             load(_path, null);
         } catch (Exception e) {

@@ -1,7 +1,7 @@
 package com.aerofs.daemon.core.admin;
 
-import com.aerofs.daemon.core.acl.ACLChecker;
 import com.aerofs.daemon.core.acl.LocalACL;
+import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.event.admin.EIGetACL;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.lib.event.Prio;
@@ -17,20 +17,20 @@ import java.util.Map.Entry;
 public class HdGetACL extends AbstractHdIMC<EIGetACL>
 {
     private final LocalACL _lacl;
-    private final ACLChecker _aclChecker;
+    private final DirectoryService _ds;
 
     @Inject
-    public HdGetACL(LocalACL lacl, ACLChecker aclChecker)
+    public HdGetACL(LocalACL lacl, DirectoryService ds)
     {
-        this._lacl = lacl;
-        this._aclChecker = aclChecker;
+        _lacl = lacl;
+        _ds = ds;
     }
 
     @Override
     protected void handleThrows_(EIGetACL ev, Prio prio)
             throws Exception
     {
-        SOID soid = _aclChecker.checkThrows_(ev._user, ev._path, Role.VIEWER);
+        SOID soid = _ds.resolveFollowAnchorThrows_(ev._path);
 
         // skip team server ids
         Builder<UserID, Role> builder = ImmutableMap.builder();

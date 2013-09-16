@@ -6,7 +6,6 @@ import java.util.Set;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExBadArgs;
-import com.aerofs.daemon.core.acl.ACLChecker;
 import com.aerofs.daemon.core.acl.ACLSynchronizer;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
@@ -35,7 +34,6 @@ import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
-import com.aerofs.base.acl.Role;
 import com.aerofs.base.acl.SubjectRolePairs;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExChildAlreadyShared;
@@ -49,7 +47,6 @@ import com.aerofs.lib.Path;
 import com.aerofs.base.id.SID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
-import com.aerofs.base.id.UserID;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.proto.Common.PBSubjectRolePair;
 import com.google.inject.Inject;
@@ -59,7 +56,6 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
 {
     private final static Logger l = Loggers.getLogger(HdShareFolder.class);
 
-    private final ACLChecker _acl;
     private final TC _tc;
     private final TransManager _tm;
     private final ObjectCreator _oc;
@@ -76,13 +72,12 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
     private final CfgAbsRoots _absRoots;
 
     @Inject
-    public HdShareFolder(ACLChecker acl, TC tc, TransManager tm, ObjectCreator oc,
+    public HdShareFolder(TC tc, TransManager tm, ObjectCreator oc,
             DirectoryService ds, ImmigrantCreator imc, ObjectMover om, ObjectDeleter od,
             IMapSID2SIndex sid2sidx, IStores ss, DescendantStores dss, ACLSynchronizer aclsync,
             SPBlockingClient.Factory factSP, CfgLocalUser localUser, CfgAbsRoots cfgAbsRoots)
     {
         _ss = ss;
-        _acl = acl;
         _tc = tc;
         _tm = tm;
         _oc = oc;
@@ -108,10 +103,8 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
         boolean alreadyShared = false;
 
         if (ev._path.sid().isUserRoot()) {
-            // physical root is a user root store: the root itself cannot be shared but one level of
-            // nested sharing is allowed (i.e folders under the root can be shared)
-            oa = checkSanity_(ev._path);
-            checkACL_(ev.user(), ev._path);
+            // physical root is the user's default root store: it cannot be shared but its subfolders can.
+            oa = throwIfUnshareable_(ev._path);
 
             if (oa.isAnchor()) {
                 alreadyShared = true;
@@ -121,9 +114,10 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
             } else {
                 throw new ExNotDir();
             }
+
         } else {
-            // physical root is an external shared folder: the root can be shared an no nested
-            // sharing is allowed as it would break consistency (an external shared folder for
+            // physical root is an external shared folder: the root can be shared and no nested
+            // sharing is allowed as it would break consistency (an externally shared folder for
             // one user may be located under the root anchor for another)
             if (!ev._path.isEmpty()) throw new ExParentAlreadyShared();
             alreadyShared = true;
@@ -171,33 +165,28 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
         l.info("shared: " + ev._path + " -> " + sid.toStringFormal());
     }
 
-    private OA checkSanity_(Path path)
+    private OA throwIfUnshareable_(Path path)
             throws SQLException, ExNotFound, ExNoPerm, ExExpelled, ExParentAlreadyShared,
             ExChildAlreadyShared
     {
         SOID soid = _ds.resolveThrows_(path);
+
+        // can't share root folder or trash
         if (soid.oid().isRoot() || soid.oid().isTrash()) {
             throw new ExNoPerm("can't share system folders");
         }
 
-        // throw if the object is expelled
+        // can't share if the object is expelled
         OA oa = _ds.getOA_(soid);
         if (oa.isExpelled()) throw new ExExpelled();
 
-        // throw if a parent folder is already shared
+        // can't share if a parent folder is already shared
         if (!_ss.isRoot_(soid.sidx())) throw new ExParentAlreadyShared();
 
+        // can't share if a child folder is already shared
         Set<SIndex> descendants = _dss.getDescendantStores_(soid);
         if (!descendants.isEmpty()) throw new ExChildAlreadyShared();
         return oa;
-    }
-
-    private void checkACL_(UserID user, Path path)
-            throws ExNotFound, SQLException, ExNoPerm, ExExpelled
-    {
-        assert !path.isEmpty(); // guaranteed by the above check
-        Path pathParent = path.removeLast();
-        _acl.checkThrows_(user, pathParent, Role.OWNER);
     }
 
     /**

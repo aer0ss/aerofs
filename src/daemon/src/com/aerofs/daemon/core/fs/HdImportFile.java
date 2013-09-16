@@ -5,7 +5,6 @@
 package com.aerofs.daemon.core.fs;
 
 import com.aerofs.daemon.core.VersionUpdater;
-import com.aerofs.daemon.core.acl.ACLChecker;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.object.ObjectCreator;
@@ -24,8 +23,6 @@ import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.Path;
-import com.aerofs.base.acl.Role;
-import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.daemon.core.ex.ExExpelled;
 import com.aerofs.lib.ex.ExNotFile;
@@ -49,19 +46,17 @@ public class HdImportFile  extends AbstractHdIMC<EIImportFile>
     private final TransManager _tm;
     private final DirectoryService _ds;
     private final VersionUpdater _vu;
-    private final ACLChecker _acl;
     private final ObjectCreator _oc;
     private final IPhysicalStorage _ps;
 
     @Inject
-    public HdImportFile(TC tc, TransManager tm, DirectoryService ds, ACLChecker acl,
-            ObjectCreator oc, IPhysicalStorage ps, VersionUpdater vu)
+    public HdImportFile(TC tc, TransManager tm, DirectoryService ds, ObjectCreator oc,
+            IPhysicalStorage ps, VersionUpdater vu)
     {
         _tc = tc;
         _tm = tm;
         _ds = ds;
         _vu = vu;
-        _acl = acl;
         _oc = oc;
         _ps = ps;
     }
@@ -73,8 +68,7 @@ public class HdImportFile  extends AbstractHdIMC<EIImportFile>
         if (!(f.exists() && f.isFile())) throw new ExBadArgs("Invalid source");
 
         SOID soid = _ds.resolveNullable_(ev._dest);
-        Path pathParent = ev._dest.removeLast();
-        SOID soidParent = _acl.checkThrows_(Cfg.user(), pathParent, Role.EDITOR);
+        SOID soidParent = _ds.resolveFollowAnchorThrows_(ev._dest.removeLast());
 
         OA oaParent = _ds.getOA_(soidParent);
         if (oaParent.isExpelled() || !oaParent.isDir()) throw new ExBadArgs("Invalid destination");

@@ -125,7 +125,7 @@ public class TestACLSynchronizer extends AbstractTest
         when(tk.pseudoPause_(anyString())).thenReturn(tcb);
 
 
-        lacl = new LocalACL(cfgLocalUser, tm, stores, adb);
+        lacl = new LocalACL(cfgLocalUser, tm, stores, adb, ds);
 
         aclsync = new ACLSynchronizer(tc, tm, adb, lacl, storeJoiner,
                 sidx2sid, sid2sidx, cfgLocalUser, factSP);

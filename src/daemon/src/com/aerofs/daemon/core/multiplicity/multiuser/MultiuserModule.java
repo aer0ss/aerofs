@@ -5,7 +5,6 @@
 package com.aerofs.daemon.core.multiplicity.multiuser;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.daemon.core.ICoreEventHandlerRegistrar;
 import com.aerofs.daemon.core.ds.AbstractPathResolver;
 import com.aerofs.daemon.core.migration.IEmigrantTargetSIDLister;
 import com.aerofs.daemon.core.migration.IEmigrantDetector;
@@ -19,8 +18,6 @@ import com.aerofs.daemon.core.multiplicity.multiuser.migration.NullEmigrantDetec
 import com.google.inject.AbstractModule;
 import com.google.inject.internal.Scoping;
 import org.slf4j.Logger;
-
-import static com.aerofs.lib.guice.GuiceUtil.multibind;
 
 public class MultiuserModule extends AbstractModule
 {
@@ -37,8 +34,6 @@ public class MultiuserModule extends AbstractModule
 
         bind(IStores.class).to(Stores.class);
         bind(AbstractPathResolver.class).to(MultiuserPathResolver.class);
-        multibind(binder(), ICoreEventHandlerRegistrar.class,
-                MultiuserCoreEventHandlerRegistrar.class);
 
         bind(IEmigrantTargetSIDLister.class).to(NullEmigrantTargetSIDLister.class);
         bind(IEmigrantDetector.class).to(NullEmigrantDetector.class);

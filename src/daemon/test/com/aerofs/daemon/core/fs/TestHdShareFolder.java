@@ -9,8 +9,8 @@ import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
-import com.aerofs.daemon.core.acl.ACLChecker;
 import com.aerofs.daemon.core.acl.ACLSynchronizer;
+import com.aerofs.daemon.core.acl.LocalACL;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.mock.logical.MockDS;
 import com.aerofs.daemon.core.multiplicity.singleuser.migration.ImmigrantCreator;
@@ -61,7 +61,7 @@ public class TestHdShareFolder extends AbstractTest
     @Mock TCB tcb;
     @Mock SPBlockingClient sp;
 
-    @Mock ACLChecker acl;
+    @Mock LocalACL acl;
     @Mock TC tc;
     @Mock TransManager tm;
     @Mock ObjectCreator oc;
@@ -122,7 +122,7 @@ public class TestHdShareFolder extends AbstractTest
     {
         ImmutableMap.Builder<UserID, Role> roles = new ImmutableMap.Builder<UserID, Role>();
         for (UserID u : users) roles.put(u, Role.EDITOR);
-        hd.handleThrows_(new EIShareFolder(localUser, path, roles.build(), ""), Prio.LO);
+        hd.handleThrows_(new EIShareFolder(path, roles.build(), ""), Prio.LO);
     }
 
     @SuppressWarnings("unchecked")

@@ -3,7 +3,7 @@ package com.aerofs.daemon.mobile;
 import java.io.IOException;
 import java.io.InputStream;
 
-import com.aerofs.daemon.core.acl.ACLChecker;
+import com.aerofs.daemon.core.acl.LocalACL;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
 
@@ -18,7 +18,6 @@ import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.daemon.lib.exception.ExStreamInvalid;
 import com.aerofs.base.acl.Role;
-import com.aerofs.lib.Version;
 import com.aerofs.lib.id.CID;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.SOCKID;
@@ -27,12 +26,12 @@ import com.aerofs.proto.Transport.PBStream.InvalidationReason;
 
 public class HdDownloadPacket extends AbstractHdIMC<EIDownloadPacket>
 {
-    private final ACLChecker _acl;
+    private final LocalACL _acl;
     private final DirectoryService _ds;
     private final NativeVersionControl _nvc;
 
     @Inject
-    public HdDownloadPacket(ACLChecker acl,
+    public HdDownloadPacket(LocalACL acl,
             DirectoryService ds,
             NativeVersionControl nvc)
     {
@@ -44,11 +43,10 @@ public class HdDownloadPacket extends AbstractHdIMC<EIDownloadPacket>
     @Override
     protected void handleThrows_(EIDownloadPacket ev, Prio prio) throws Exception
     {
-        SOID soid = _acl.checkThrows_(ev.user(), ev._path, Role.VIEWER);
+        SOID soid = _acl.checkThrows_(ev._user, ev._path, Role.VIEWER);
         SOCKID sockid = new SOCKID(soid, CID.CONTENT, KIndex.MASTER);
 
-        Version vLocal = _nvc.getLocalVersion_(sockid);
-        ev._localVersion = vLocal;
+        ev._localVersion = _nvc.getLocalVersion_(sockid);
 
         OA oa = _ds.getOAThrows_(soid);
         CA ca = oa.caMasterThrows();

@@ -6,7 +6,6 @@ package com.aerofs.daemon.core.fs;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.SID;
-import com.aerofs.daemon.core.acl.ACLChecker;
 import com.aerofs.daemon.core.acl.ACLSynchronizer;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
@@ -18,7 +17,6 @@ import com.aerofs.daemon.event.admin.EILeaveSharedFolder;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.event.Prio;
-import com.aerofs.base.acl.Role;
 import com.aerofs.lib.ex.ExNotShared;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.sp.client.SPBlockingClient;
@@ -31,18 +29,16 @@ public class HdLeaveSharedFolder extends AbstractHdIMC<EILeaveSharedFolder>
 
     private final TC _tc;
     private final DirectoryService _ds;
-    private final ACLChecker _acl;
     private final ACLSynchronizer _aclsync;
     private final SPBlockingClient.Factory _factSP;
     private final CfgLocalUser _localUser;
 
     @Inject
-    public HdLeaveSharedFolder(TC tc, DirectoryService ds, ACLChecker acl, ACLSynchronizer aclsync,
+    public HdLeaveSharedFolder(TC tc, DirectoryService ds, ACLSynchronizer aclsync,
             SPBlockingClient.Factory factSP, CfgLocalUser localUser)
     {
         _tc = tc;
         _ds = ds;
-        _acl = acl;
         _aclsync = aclsync;
         _factSP = factSP;
         _localUser = localUser;
@@ -57,7 +53,7 @@ public class HdLeaveSharedFolder extends AbstractHdIMC<EILeaveSharedFolder>
             sid = ev._path.sid();
         } else {
             // anywhere else: look for an anchor to leave
-            SOID soid = _acl.checkNoFollowAnchorThrows_(_localUser.get(), ev._path, Role.EDITOR);
+            SOID soid = _ds.resolveThrows_(ev._path);
             OA oa = _ds.getOAThrows_(soid);
             if (!oa.isAnchor() || !soid.oid().isAnchor()) throw new ExNotShared();
             sid = SID.anchorOID2storeSID(soid.oid());

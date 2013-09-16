@@ -7,7 +7,6 @@ package com.aerofs.daemon.core.phy.block.gzip;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.daemon.core.phy.block.AbstractBlockTest;
 import com.aerofs.daemon.core.phy.block.IBlockStorageBackend;
-import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.lib.ContentHash;
 import com.google.common.collect.Maps;
 import com.google.common.io.ByteStreams;

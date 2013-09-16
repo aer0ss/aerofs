@@ -7,7 +7,7 @@ import com.aerofs.daemon.core.CoreEventDispatcher;
 import com.aerofs.daemon.core.CoreIMCExecutor;
 import com.aerofs.daemon.core.ICoreEventHandlerRegistrar;
 import com.aerofs.daemon.core.NativeVersionControl;
-import com.aerofs.daemon.core.acl.ACLChecker;
+import com.aerofs.daemon.core.acl.LocalACL;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.mock.logical.MockDS;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
@@ -56,7 +56,7 @@ public class AbstractRestTest extends AbstractTest
     protected static final Logger l = Loggers.getLogger(AbstractRestTest.class);
 
     protected @Mock DirectoryService ds;
-    protected @Mock ACLChecker acl;
+    protected @Mock LocalACL acl;
     protected @Mock SIDMap sm;
     protected @Mock IStores ss;
     private @Mock CfgLocalUser localUser;
@@ -114,7 +114,7 @@ public class AbstractRestTest extends AbstractTest
                 bind(IStores.class).toInstance(ss);
                 bind(NativeVersionControl.class).toInstance(nvc);
                 bind(DirectoryService.class).toInstance(ds);
-                bind(ACLChecker.class).toInstance(acl);
+                bind(LocalACL.class).toInstance(acl);
                 bind(IMapSID2SIndex.class).toInstance(sm);
                 bind(IMapSIndex2SID.class).toInstance(sm);
                 bind(CoreIMCExecutor.class).toInstance(new CoreIMCExecutor(imce));

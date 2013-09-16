@@ -8,16 +8,14 @@ import com.aerofs.base.id.UserID;
 
 public class EIUpdateACL extends AbstractEBIMC
 {
-    public final UserID _user;
     public final Path _path;
     public final UserID _subject;
     public final Role _role;
 
-    public EIUpdateACL(UserID user, Path path, UserID subject, Role role, IIMCExecutor imce)
+    public EIUpdateACL(Path path, UserID subject, Role role, IIMCExecutor imce)
     {
         super(imce);
         _path = path;
-        _user = user;
         _subject = subject;
         _role = role;
     }

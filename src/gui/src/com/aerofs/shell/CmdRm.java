@@ -1,6 +1,5 @@
 package com.aerofs.shell;
 
-import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.lib.ex.ExNotFile;
 import com.aerofs.proto.Common.PBPath;
@@ -34,7 +33,7 @@ public class CmdRm implements IShellCommand<ShProgram>
                 PBPath path = s.d().buildPBPath_(arg);
 
                 PBObjectAttributes attr = s.d().getRitualClient_()
-                        .getObjectAttributes(Cfg.user().getString(), path)
+                        .getObjectAttributes(path)
                         .getObjectAttributes();
 
                 if (!(attr.getType() == Type.FILE || cl.hasOption('r'))) throw new ExNotFile();

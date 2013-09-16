@@ -6,7 +6,6 @@ package com.aerofs.shell;
 
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.ritual.RitualBlockingClient;
 import com.aerofs.proto.Common.PBPath;
@@ -77,8 +76,7 @@ public class CmdConflicts implements IShellCommand<ShProgram>
 
         for (PBPath p : pathList) {
             if (printPath) s.out().println(Path.fromPB(p).toString());
-            PBObjectAttributes attr = r.getObjectAttributes(Cfg.user().getString(), p)
-                    .getObjectAttributes();
+            PBObjectAttributes attr = r.getObjectAttributes(p).getObjectAttributes();
             for (PBBranch b : attr.getBranchList()) {
                 if (b.getKidx() == KIndex.MASTER.getInt()) continue;
 

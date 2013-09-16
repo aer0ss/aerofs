@@ -2,7 +2,6 @@ package com.aerofs.daemon.lib;
 
 import java.io.PrintStream;
 import java.sql.SQLException;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map.Entry;
 
@@ -74,12 +73,7 @@ public class LRUCache<K, V> implements IDumpStatMisc
         this(cacheNull, capacity, null);
     }
 
-    public LRUCache(int capacity, IEvictionListener<K, V> rl)
-    {
-        this(false, capacity, rl);
-    }
-
-    public LRUCache(boolean cacheNull, int capacity, IEvictionListener<K, V> rl)
+    public LRUCache(boolean cacheNull, int capacity, @Nullable IEvictionListener<K, V> rl)
     {
         assert capacity > 0;
         _capacity = capacity;
@@ -133,15 +127,6 @@ public class LRUCache<K, V> implements IDumpStatMisc
         }
 
         _impl.put(k, v);
-    }
-
-    /**
-     * It is imperative that the user manually synchronize this.mx() when
-     * iterating.
-     */
-    public Iterator<Entry<K, V>> iterator_()
-    {
-        return _impl.entrySet().iterator();
     }
 
     /**

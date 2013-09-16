@@ -19,6 +19,7 @@ import com.aerofs.daemon.core.phy.block.local.LocalBackendModule;
 import com.aerofs.daemon.core.phy.block.s3.S3BackendModule;
 import com.aerofs.daemon.core.phy.linked.LinkedStorageModule;
 import com.aerofs.daemon.lib.exception.ExStreamInvalid;
+import com.aerofs.daemon.mobile.MobileModule;
 import com.aerofs.daemon.rest.RestModule;
 import com.aerofs.daemon.rest.RestService;
 import com.aerofs.daemon.ritual.RitualServer;
@@ -100,18 +101,13 @@ public class DaemonProgram implements IProgram
     {
         ///GuiceUtil.enableLogging();
 
-        Module multiplicityModule  = L.isMultiuser()
-                ? new MultiuserModule()
-                : new SingleuserModule();
-
         Stage stage = Stage.PRODUCTION;
 
-        Injector injCore = Guice.createInjector(stage, new CfgModule(), multiplicityModule,
+        Injector injCore = Guice.createInjector(stage, new CfgModule(), getMultiplicityModule(),
                 new CoreModule(getServerChannelFactory(), getClientChannelFactory()),
-                storageModule(), new RestModule());
+                getStorageModule(), new RestModule(), new MobileModule());
 
         Injector injDaemon = Guice.createInjector(stage, new DaemonModule(injCore));
-
 
         Daemon d = injDaemon.getInstance(Daemon.class);
 
@@ -128,7 +124,12 @@ public class DaemonProgram implements IProgram
         return d;
     }
 
-    private Module storageModule()
+    private Module getMultiplicityModule()
+    {
+        return L.isMultiuser() ? new MultiuserModule() : new SingleuserModule();
+    }
+
+    private Module getStorageModule()
     {
         StorageType storageType = Cfg.storageType();
         switch (storageType) {

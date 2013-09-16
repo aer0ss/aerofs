@@ -8,7 +8,6 @@ import com.aerofs.base.id.DID;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
 
-import java.io.InputStream;
 import java.util.Collection;
 
 public class TransportListener

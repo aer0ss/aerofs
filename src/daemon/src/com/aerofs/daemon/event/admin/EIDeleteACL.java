@@ -7,15 +7,13 @@ import com.aerofs.base.id.UserID;
 
 public class EIDeleteACL extends AbstractEBIMC
 {
-    public final UserID _user;
     public final Path _path;
     public final UserID _subject;
 
-    public EIDeleteACL(UserID user, Path path, UserID subject, IIMCExecutor imce)
+    public EIDeleteACL(Path path, UserID subject, IIMCExecutor imce)
     {
         super(imce);
         _path = path;
-        _user = user;
         _subject = subject;
     }
 }

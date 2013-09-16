@@ -7,7 +7,6 @@ package com.aerofs.daemon.core.fs;
 import com.aerofs.base.acl.Role;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
-import com.aerofs.daemon.core.acl.ACLChecker;
 import com.aerofs.daemon.core.acl.ACLSynchronizer;
 import com.aerofs.daemon.core.acl.LocalACL;
 import com.aerofs.daemon.core.ds.DirectoryService;
@@ -28,7 +27,6 @@ import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.testlib.AbstractTest;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 
 import static org.junit.Assert.fail;
@@ -52,7 +50,6 @@ public class TestHdLeaveSharedFolder extends AbstractTest
     @Mock SPBlockingClient.Factory factSP;
     @Mock CfgLocalUser cfgLocalUser;
 
-    @InjectMocks ACLChecker acl;
     HdLeaveSharedFolder hd;
 
     private final UserID localUser = UserID.fromInternal("foo@bar.baz");
@@ -72,7 +69,7 @@ public class TestHdLeaveSharedFolder extends AbstractTest
 
         when(lacl.check_(any(UserID.class), any(SIndex.class), any(Role.class))).thenReturn(true);
 
-        hd = new HdLeaveSharedFolder(tc, ds, acl, aclsync, factSP, cfgLocalUser);
+        hd = new HdLeaveSharedFolder(tc, ds, aclsync, factSP, cfgLocalUser);
 
         MockDS mds = new MockDS(rootSID, ds, sm, sm);
         mds.root()

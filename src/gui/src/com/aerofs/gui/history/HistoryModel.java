@@ -7,7 +7,6 @@ package com.aerofs.gui.history;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.id.SID;
-import com.aerofs.base.id.UserID;
 import com.aerofs.gui.history.HistoryModel.IDecisionMaker.Answer;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.FileUtil;
@@ -17,6 +16,7 @@ import com.aerofs.lib.StorageType;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgAbsRoots;
+import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.ritual.IRitualClientProvider;
 import com.aerofs.ritual.RitualBlockingClient;
@@ -54,9 +54,9 @@ public class HistoryModel
     private static final Logger l = Loggers.getLogger(HistoryModel.class);
 
     private final IRitualClientProvider _ritualProvider;
-    private final UserID _userId;
     private final StorageType _storageType;
     private final CfgAbsRoots _cfgAbsRoots;
+    private final CfgLocalUser _cfgLocalUser;
 
     private List<ModelIndex> topLevel = null;
 
@@ -151,16 +151,17 @@ public class HistoryModel
 
     public HistoryModel(IRitualClientProvider ritualProvider)
     {
-        this(ritualProvider, Cfg.user(), Cfg.storageType(), new CfgAbsRoots());
+        // TODO: use dependency injection
+        this(ritualProvider, Cfg.storageType(), new CfgAbsRoots(), new CfgLocalUser());
     }
 
-    public HistoryModel(IRitualClientProvider ritualProvider, UserID userId,
-            StorageType storageType, CfgAbsRoots absRoots)
+    public HistoryModel(IRitualClientProvider ritualProvider, StorageType storageType,
+            CfgAbsRoots absRoots, CfgLocalUser cfgLocalUser)
     {
         _ritualProvider = ritualProvider;
-        _userId = userId;
         _storageType = storageType;
         _cfgAbsRoots = absRoots;
+        _cfgLocalUser = cfgLocalUser;
     }
 
     public void clear()
@@ -187,32 +188,40 @@ public class HistoryModel
                 l.error("ignored exception", e);
                 r = Collections.emptyMap();
             }
-            List<ModelIndex> l = Lists.newArrayListWithExpectedSize(r.size());
+            List<ModelIndex> list = Lists.newArrayListWithExpectedSize(r.size());
             for (SID sid : r.keySet()) {
-                l.add(new ModelIndex(this, Path.root(sid), true, false));
+                list.add(new ModelIndex(this, Path.root(sid), true, false));
             }
-            return l;
+            return list;
+
         } else if (L.isMultiuser()) {
             try {
-                List<ModelIndex> l = Lists.newArrayList();
+                List<ModelIndex> list = Lists.newArrayList();
                 // use user roots as top level
                 for (PBSharedFolder sf : ritual().listUserRoots().getUserRootList()) {
-                    l.add(new ModelIndex(this, Path.fromPB(sf.getPath()), sf.getName()));
+                    list.add(new ModelIndex(this, Path.fromPB(sf.getPath()), sf.getName()));
                 }
                 // need to list shared folders too:
                 // 1. otherwise we might miss folders created on a linked TS of the same org
                 // 2. otherwise the UX would be inconsistent with linked TS
                 for (PBSharedFolder sf : ritual().listSharedFolders().getSharedFolderList()) {
-                    l.add(new ModelIndex(this, Path.fromPB(sf.getPath()), sf.getName()));
+                    list.add(new ModelIndex(this, Path.fromPB(sf.getPath()), sf.getName()));
                 }
-                return l;
+                return list;
             } catch (Exception e) {
-                l.warn("ignored exception" + Util.e(e));
+                l.warn("ignored exception: " + Util.e(e));
+                return getModelIndexForDefaultRoot();
             }
+        } else {
+            // default: root sid only
+            return getModelIndexForDefaultRoot();
         }
-        // default: root sid only
+    }
+
+    private List<ModelIndex> getModelIndexForDefaultRoot()
+    {
         return Collections.singletonList(
-                new ModelIndex(this, Path.root(SID.rootSID(_userId)), true, false));
+                new ModelIndex(this, Path.root(SID.rootSID(_cfgLocalUser.get())), true, false));
     }
 
     /**
@@ -287,9 +296,7 @@ public class HistoryModel
             }
 
             if (parent == null || !parent.isDeleted) {
-                // TODO(huguesb): do we really need to pass user ids through Ritual?
-                GetChildrenAttributesReply ca = ritual().getChildrenAttributes(_userId.getString(),
-                        path.toPB());
+                GetChildrenAttributesReply ca = ritual().getChildrenAttributes(path.toPB());
                 assert ca != null;
                 for (int i = 0; i < ca.getChildrenNameCount(); i++) {
                     String name = ca.getChildrenName(i);
@@ -319,8 +326,7 @@ public class HistoryModel
             revs.add(new Version(path, r.getIndex(), r.getLength(), r.getMtime()));
         }
         if (!index.isDeleted) {
-            GetObjectAttributesReply oa = ritual().getObjectAttributes(_userId.getString(),
-                    path.toPB());
+            GetObjectAttributesReply oa = ritual().getObjectAttributes(path.toPB());
             for (PBBranch branch : oa.getObjectAttributes().getBranchList())
             {
                 if (branch.getKidx() == KIndex.MASTER.getInt())
@@ -368,6 +374,7 @@ public class HistoryModel
             version.tmpFile = ritual().exportRevision(version.path.toPB(), version.index).getDest();
         }
         // Make sure users won't try to make changes to the temp file: their changes would be lost
+        //noinspection ResultOfMethodCallIgnored
         new File(version.tmpFile).setReadOnly();
     }
 

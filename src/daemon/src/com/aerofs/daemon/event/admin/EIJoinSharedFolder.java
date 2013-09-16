@@ -2,16 +2,15 @@ package com.aerofs.daemon.event.admin;
 
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.Core;
-import com.aerofs.daemon.event.fs.AbstractEIFS;
-import com.aerofs.lib.cfg.Cfg;
+import com.aerofs.daemon.event.lib.imc.AbstractEBIMC;
 
-public class EIJoinSharedFolder extends AbstractEIFS
+public class EIJoinSharedFolder extends AbstractEBIMC
 {
     public final SID _sid;
 
     public EIJoinSharedFolder(SID sid)
     {
-        super(Cfg.user(), Core.imce());
+        super(Core.imce());
         _sid = sid;
     }
 }

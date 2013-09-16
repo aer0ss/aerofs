@@ -4,7 +4,6 @@
 
 package com.aerofs.shell;
 
-import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.ritual.RitualBlockingClient;
@@ -59,8 +58,7 @@ public class CmdResolve implements IShellCommand<ShProgram>
         }
 
         // remove all conflict branches
-        PBObjectAttributes attr = r.getObjectAttributes(Cfg.user().getString(), path)
-                .getObjectAttributes();
+        PBObjectAttributes attr = r.getObjectAttributes(path).getObjectAttributes();
         for (PBBranch b : attr.getBranchList()) {
             if (b.getKidx() == KIndex.MASTER.getInt()) continue;
             r.deleteConflict(path, b.getKidx());

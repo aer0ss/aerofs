@@ -5,7 +5,7 @@ import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
-import com.aerofs.daemon.core.acl.ACLChecker;
+import com.aerofs.daemon.core.acl.LocalACL;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ex.ExExpelled;
@@ -19,12 +19,12 @@ import java.sql.SQLException;
 
 public class AccessChecker
 {
-    private final ACLChecker _acl;
+    private final LocalACL _acl;
     private final DirectoryService _ds;
     private final IMapSID2SIndex _sid2sidx;
 
     @Inject
-    public AccessChecker(ACLChecker acl, DirectoryService ds, IMapSID2SIndex sid2sidx)
+    public AccessChecker(LocalACL acl, DirectoryService ds, IMapSID2SIndex sid2sidx)
     {
         _acl = acl;
         _ds = ds;

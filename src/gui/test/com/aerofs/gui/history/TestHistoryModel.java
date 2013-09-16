@@ -46,7 +46,7 @@ public class TestHistoryModel extends AbstractTest
     @Mock CfgLocalUser cfgLocalUser;
     @Mock IRitualClientProvider ritualProvider;
     @Mock RitualBlockingClient ritual;
-    @Mock CfgAbsRoots absRoots;
+    @Mock CfgAbsRoots cfgAbsRoots;
 
     HistoryModel model;
 
@@ -58,10 +58,10 @@ public class TestHistoryModel extends AbstractTest
     {
         when(cfgLocalUser.get()).thenReturn(user);
         when(ritualProvider.getBlockingClient()).thenReturn(ritual);
-        when(absRoots.get()).thenReturn(ImmutableMap.of(rootSID, "/AeroFS"));
-        when(absRoots.getNullable(rootSID)).thenReturn("/AeroFS");
+        when(cfgAbsRoots.get()).thenReturn(ImmutableMap.of(rootSID, "/AeroFS"));
+        when(cfgAbsRoots.getNullable(rootSID)).thenReturn("/AeroFS");
 
-        model = new HistoryModel(ritualProvider, cfgLocalUser.get(), StorageType.LINKED, absRoots);
+        model = new HistoryModel(ritualProvider, StorageType.LINKED, cfgAbsRoots, cfgLocalUser);
     }
 
     @After
@@ -71,15 +71,15 @@ public class TestHistoryModel extends AbstractTest
 
     private void assertIndexList(ModelIndex parent, ModelIndex... indices)
     {
-        List<ModelIndex> l = Lists.newArrayList(indices);
-        Collections.sort(l);
+        List<ModelIndex> list = Lists.newArrayList(indices);
+        Collections.sort(list);
         int n = model.rowCount(parent);
-        for (int i = 0; i < l.size(); ++i) {
+        for (int i = 0; i < list.size(); ++i) {
             Assert.assertTrue(i < n);
             ModelIndex idx = model.index(parent, i);
-            Assert.assertEquals(l.get(i).name(), idx.name());
-            Assert.assertEquals(l.get(i).isDir, idx.isDir);
-            Assert.assertEquals(l.get(i).isDeleted, idx.isDeleted);
+            Assert.assertEquals(list.get(i).name(), idx.name());
+            Assert.assertEquals(list.get(i).isDir, idx.isDir);
+            Assert.assertEquals(list.get(i).isDeleted, idx.isDeleted);
         }
     }
 
@@ -95,7 +95,7 @@ public class TestHistoryModel extends AbstractTest
         @Override
         public boolean matches(Object o)
         {
-            return (o instanceof PBPath) ? _p.equals(Path.fromPB((PBPath)o)) : false;
+            return o instanceof PBPath && _p.equals(Path.fromPB((PBPath) o));
         }
     }
 
@@ -113,7 +113,7 @@ public class TestHistoryModel extends AbstractTest
                 .addChild(PBRevChild.newBuilder().setName("bar").setIsDir(false))
                 .addChild(PBRevChild.newBuilder().setName("baz").setIsDir(false))
                 .build());
-        when(ritual.getChildrenAttributes(any(String.class), eqPath(root))).thenReturn(
+        when(ritual.getChildrenAttributes(eqPath(root))).thenReturn(
                 GetChildrenAttributesReply.newBuilder()
                         .addChildrenName("f-expelled")
                         .addChildrenAttributes(PBObjectAttributes.newBuilder()
@@ -172,7 +172,7 @@ public class TestHistoryModel extends AbstractTest
         Assert.assertEquals(11, model.rowCount(null));
 
         verify(ritual, times(1)).listRevChildren(eqPath(root));
-        verify(ritual, times(1)).getChildrenAttributes(any(String.class), eqPath(root));
+        verify(ritual, times(1)).getChildrenAttributes(eqPath(root));
 
         assertIndexList(null,
                 new ModelIndex(model, Path.fromString(rootSID, "f"), false, false),
@@ -192,8 +192,8 @@ public class TestHistoryModel extends AbstractTest
     public void shouldPopulateFirstLevelWithPhysicalRoots() throws Exception
     {
         SID ext = SID.generate();
-        when(absRoots.get()).thenReturn(ImmutableMap.of(rootSID, "/AeroFS", ext, "/ext"));
-        when(absRoots.getNullable(ext)).thenReturn("/ext");
+        when(cfgAbsRoots.get()).thenReturn(ImmutableMap.of(rootSID, "/AeroFS", ext, "/ext"));
+        when(cfgAbsRoots.getNullable(ext)).thenReturn("/ext");
 
         assertIndexList(null,
                 new ModelIndex(model, Path.root(rootSID), true, false),
@@ -208,6 +208,31 @@ public class TestHistoryModel extends AbstractTest
         model.rowCount(null);
 
         verify(ritual, times(1)).listRevChildren(any(PBPath.class));
-        verify(ritual, never()).getChildrenAttributes(any(String.class), any(PBPath.class));
+        verify(ritual, never()).getChildrenAttributes(any(PBPath.class));
+    }
+
+    @Test
+    public void shouldPopulateTheDefaultRootForNonLinkedStorage()
+            throws Exception
+    {
+        when(cfgLocalUser.get()).thenReturn(user);
+
+        Path root = Path.root(rootSID);
+        when(ritual.listRevChildren(any(PBPath.class))).thenReturn(ListRevChildrenReply.newBuilder()
+                .addChild(PBRevChild.newBuilder().setName("a").setIsDir(true))
+                .build());
+        when(ritual.getChildrenAttributes(eqPath(root))).thenReturn(
+                GetChildrenAttributesReply.newBuilder()
+                        .addChildrenName("a")
+                        .addChildrenAttributes(PBObjectAttributes.newBuilder()
+                                .setType(Type.SHARED_FOLDER)
+                                .setExcluded(false))
+                        .build());
+
+        // Create a model with non-linked storage type
+        model = new HistoryModel(ritualProvider, StorageType.LOCAL, cfgAbsRoots, cfgLocalUser);
+
+        assertIndexList(null,
+                new ModelIndex(model, Path.fromString(rootSID, "a"), true, false));
     }
 }
