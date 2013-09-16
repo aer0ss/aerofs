@@ -2,18 +2,17 @@ package com.aerofs.proto;
 
 import "common.proto";
 
-//removed reflection -- unneeded
-//this makes obfuscation possible
+// Removed reflection -- not needed
 option optimize_for = LITE_RUNTIME;
 
-// all core messages are sent with delimiters
-
-// N.B. the entire PBCore message must fit in a single packet. split into
-// multiple messages if it can't. see PBGetVersReply.
-
+// All core messages are sent with delimiters
+//
+// N.B. the entire PBCore message must fit in a single packet. split into multiple messages if it
+// can't. see PBGetVersReply.
+//
 // TODO for maxcast messages, pass the destination store to core and filter out
 // non-member-store request in HdMessage instead of individual msg handlers
-
+//
 message PBCore {
 
     enum Type {
@@ -27,16 +26,10 @@ message PBCore {
         GET_VERS_CALL = 2;
         UPDATE_SENDER_FILTER = 3;
         GET_COM_CALL = 4;
-        LIST_CHILDREN_CALL = 5;
         // Tell a peer to compute the hash for the named object+version so it'll be available to
         // future GetComponentCalls
         COMPUTE_HASH_CALL = 6;
         NOP = 7;
-        LIST_REV_CHILDREN_REQUEST = 16;
-        LIST_REV_CHILDREN_RESPONSE = 17;
-        LIST_REV_HISTORY_REQUEST = 18;
-        LIST_REV_HISTORY_RESPONSE = 19;
-        GET_REVISION_CALL = 20;
     }
 
     required Type type = 1;
@@ -45,62 +38,21 @@ message PBCore {
     // rpc calls
     optional PBGetVersCall get_vers_call = 3;
     optional PBGetComCall get_com_call = 4;
-    optional PBGetRevisionCall get_revision_call = 5;
     optional PBComputeHashCall compute_hash_call = 6;
 
     // rpc replies
     optional PBGetVersReply get_vers_reply = 7;
     optional PBGetComReply get_com_reply = 8;
-    optional PBGetRevisionReply get_revision_reply = 9;
     optional PBException exception_reply = 11;
 
     // non-rpc stuff
     optional PBUpdateSenderFilter update_sender_filter = 12;
-    optional PBListRevChildrenRequest list_rev_children_request = 13;
-    optional PBListRevChildrenResponse list_rev_children_response = 14;
-    optional PBListRevHistoryRequest list_rev_history_request = 15;
-    optional PBListRevHistoryResponse list_rev_history_response = 16;
 }
 
 message PBUpdateSenderFilter {
     required bytes store_id = 1;
     required uint64 sender_filter_index = 2;
     required uint64 sender_filter_update_seq = 3;
-}
-
-message PBGetRevisionCall {
-    required PBPath path = 1;
-    required bytes index = 2;
-}
-
-message PBGetRevisionReply {
-    required uint64 length = 1;
-
-    // followed by file content (we always use streams here)
-}
-
-message PBListRevChildrenRequest {
-    required int32 seq = 1;
-    required PBPath path = 2;
-}
-
-message PBListRevChildrenResponse {
-    required int32 seq = 1;
-    repeated string name = 2;
-    repeated bool dir = 3 [packed=true];
-}
-
-message PBListRevHistoryRequest {
-    required int32 seq = 1;
-    required PBPath path = 2;
-}
-
-message PBListRevHistoryResponse {
-    required int32 seq = 1;
-    repeated bytes index = 2;
-    repeated PBVer version = 3;
-    repeated uint64 mtime = 4 [packed=true];
-    repeated uint64 length = 5 [packed=true];
 }
 
 message PBNewUpdate {

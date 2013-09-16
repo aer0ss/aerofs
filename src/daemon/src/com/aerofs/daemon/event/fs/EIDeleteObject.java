@@ -3,7 +3,6 @@ package com.aerofs.daemon.event.fs;
 import com.aerofs.daemon.event.lib.imc.AbstractEBIMC;
 import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
 import com.aerofs.lib.Path;
-import com.aerofs.base.id.UserID;
 
 public class EIDeleteObject extends AbstractEBIMC
 {

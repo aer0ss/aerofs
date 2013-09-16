@@ -8,6 +8,7 @@ import com.aerofs.base.Loggers;
 import com.aerofs.base.acl.Role;
 import com.aerofs.base.ex.Exceptions;
 import com.aerofs.base.id.OID;
+import com.aerofs.base.id.UserID;
 import com.aerofs.daemon.core.acl.LocalACL;
 import com.aerofs.daemon.core.alias.Aliasing;
 import com.aerofs.daemon.core.alias.MapAlias2Target;
@@ -32,6 +33,8 @@ import com.aerofs.proto.Core.PBGetComReply;
 import com.aerofs.proto.Core.PBMeta;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
+
+import java.sql.SQLException;
 
 public class GetComponentReply
 {
@@ -136,9 +139,7 @@ public class GetComponentReply
             }
 
             if (_ds.hasOA_(socid.soid())) {
-                if (!_lacl.check_(msg.user(), socid.sidx(), Role.EDITOR)) {
-                    throw new ExSenderHasNoPerm();
-                }
+                throwIfSenderHasNoPerm(socid, msg.user());
             }
 
         } else {
@@ -199,15 +200,13 @@ public class GetComponentReply
                 OID targetOIDLocal = _a2t.getNullable_(socid.soid());
                 if (targetOIDLocal != null) {
                     _al.processNonAliasMsgOnLocallyAliasedObject_(socid, targetOIDLocal);
-                    // processNonAliasMsgOnLocallyAliasedObject_() does the necessary processing
-                    // for update on a locally aliased object hence return from this point.
+                    // the above method does the necessary processing for update on a locally
+                    // aliased object hence return from this point.
                     return;
                 } else {
                     l.debug("meta diff: " + String.format("0x%1$x", metaDiff));
                     if (metaDiff != 0 && _ds.hasOA_(socid.soid())) {
-                        if (!_lacl.check_(msg.user(), socid.sidx(), Role.EDITOR)) {
-                            throw new ExSenderHasNoPerm();
-                        }
+                        throwIfSenderHasNoPerm(socid, msg.user());
                     }
                 }
             }
@@ -299,5 +298,11 @@ public class GetComponentReply
         } finally {
             if (t != null) t.end_(rollbackCause);
         }
+    }
+
+    private void throwIfSenderHasNoPerm(SOCID socid, UserID user)
+            throws SQLException, ExSenderHasNoPerm
+    {
+        if (!_lacl.check_(user, socid.sidx(), Role.EDITOR)) throw new ExSenderHasNoPerm();
     }
 }

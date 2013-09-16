@@ -60,7 +60,6 @@ import com.aerofs.lib.ITransferStat;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.SystemUtil.ExitCode;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.proto.Common;

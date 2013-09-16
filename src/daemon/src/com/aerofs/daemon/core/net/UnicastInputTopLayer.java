@@ -15,10 +15,7 @@ import com.aerofs.daemon.core.IDeviceEvictionListener;
 import com.aerofs.daemon.core.net.IncomingStreams.StreamKey;
 import com.aerofs.daemon.core.protocol.ComputeHashCall;
 import com.aerofs.daemon.core.protocol.GetComponentCall;
-import com.aerofs.daemon.core.protocol.GetRevision;
 import com.aerofs.daemon.core.protocol.GetVersCall;
-import com.aerofs.daemon.core.protocol.ListRevChildren;
-import com.aerofs.daemon.core.protocol.ListRevHistory;
 import com.aerofs.daemon.core.protocol.NewUpdates;
 import com.aerofs.daemon.core.protocol.UpdateSenderFilter;
 import com.aerofs.daemon.event.net.Endpoint;
@@ -52,24 +49,17 @@ public class UnicastInputTopLayer implements IUnicastInputLayer
         private final NewUpdates _pnu;
         private final GetVersCall _pgvc;
         private final UpdateSenderFilter _pusf;
-        private final GetRevision _gr;
-        private final ListRevChildren _rlc;
-        private final ListRevHistory _rlh;
         private final ComputeHashCall _computeHashCall;
         private final IncomingStreams _iss;
         private final CoreDeviceLRU _dlru;
 
         @Inject
-        public Factory(IncomingStreams iss, ComputeHashCall computeHashCall, ListRevHistory rlh,
-                ListRevChildren rlc, GetRevision gr, UpdateSenderFilter pusf, GetVersCall pgvc,
-                NewUpdates pnu, GetComponentCall pgcc, RPC rpc, DID2User d2u, NSL nsl,
-                CoreDeviceLRU dlru)
+        public Factory(IncomingStreams iss, ComputeHashCall computeHashCall, UpdateSenderFilter pusf,
+                GetVersCall pgvc, NewUpdates pnu, GetComponentCall pgcc, RPC rpc, DID2User d2u,
+                NSL nsl, CoreDeviceLRU dlru)
         {
             _iss = iss;
             _computeHashCall = computeHashCall;
-            _rlh = rlh;
-            _rlc = rlc;
-            _gr = gr;
             _pusf = pusf;
             _pgvc = pgvc;
             _pnu = pnu;
@@ -165,12 +155,6 @@ public class UnicastInputTopLayer implements IUnicastInputLayer
             //noinspection fallthrough
         case GET_VERS_CALL:
             //noinspection fallthrough
-        case GET_REVISION_CALL:
-            //noinspection fallthrough
-        case LIST_REV_CHILDREN_REQUEST:
-            //noinspection fallthrough
-        case LIST_REV_HISTORY_REQUEST:
-            //noinspection fallthrough
         case COMPUTE_HASH_CALL:
             try {
                 processCall_(msg);
@@ -185,10 +169,6 @@ public class UnicastInputTopLayer implements IUnicastInputLayer
         case NEW_UPDATES:
             //noinspection fallthrough
         case UPDATE_SENDER_FILTER:
-            //noinspection fallthrough
-        case LIST_REV_CHILDREN_RESPONSE:
-            //noinspection fallthrough
-        case LIST_REV_HISTORY_RESPONSE:
             //noinspection fallthrough
         case NOP:
             processNonCall_(msg);
@@ -208,15 +188,6 @@ public class UnicastInputTopLayer implements IUnicastInputLayer
             break;
         case GET_VERS_CALL:
             _f._pgvc.processCall_(msg);
-            break;
-        case GET_REVISION_CALL:
-            _f._gr.processCall_(msg);
-            break;
-        case LIST_REV_CHILDREN_REQUEST:
-            _f._rlc.processRequest_(msg);
-            break;
-        case LIST_REV_HISTORY_REQUEST:
-            _f._rlh.processRequest_(msg);
             break;
         case COMPUTE_HASH_CALL:
             _f._computeHashCall.processCall_(msg);
@@ -254,12 +225,6 @@ public class UnicastInputTopLayer implements IUnicastInputLayer
             break;
         case UPDATE_SENDER_FILTER:
             _f._pusf.process_(msg);
-            break;
-        case LIST_REV_CHILDREN_RESPONSE:
-            _f._rlc.processResponse_(msg);
-            break;
-        case LIST_REV_HISTORY_RESPONSE:
-            _f._rlh.processResponse_(msg);
             break;
         case NOP:
             break;
