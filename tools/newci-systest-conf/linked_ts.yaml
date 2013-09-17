@@ -1,6 +1,0 @@
-actors:
-  - os: linux
-    isolated: false
-    teamserver: linked
-  - os: windows
-    isolated: false

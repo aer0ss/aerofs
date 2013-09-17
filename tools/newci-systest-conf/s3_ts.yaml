@@ -1,6 +1,0 @@
-actors:
-  - os: linux
-    isolated: false
-    teamserver: s3
-  - os: windows
-    isolated: false

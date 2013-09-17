@@ -1,5 +1,0 @@
-actors:
-  - os: linux
-    isolated: true
-  - os: windows
-    isolated: true
