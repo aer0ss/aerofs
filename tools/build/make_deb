@@ -4,18 +4,19 @@ set -e
 #################################
 # arguments
 
-if [[ x"$1" == x || x"$2" == x || x"$3" == x || x"$4" == x ]]; then
-    echo usage "$0 [build mode] [version number] [remote release dir] [output deb filename]"
+function DieUsage {
+    echo usage "$0 [build mode] [version number] [aerofs_product_unix] [remote release dir] [output deb filename]"
     echo "[build mode]: PROD|ENTERPRISE"
     echo "[version number]: major.minor.release (e.g. 0.4.65)"
+    echo "[aerofs_product_unix]: the name of the AeroFS product on Unix (\"aerofs\" or \"aerofsts\")"
     echo "[remote release dir]: directory in which the release files are on the build server"
     echo "[output deb filename]: name of the deb file this script creates"
     echo
-    echo "IMPORTANT: this script is meant to be run on a remote server!!!!"
-    echo
-    echo "example: $0 PROD CLIENT 0.4.65 ~/aerofs.release /data/staging-downloads/[AEROFS_PRODUCT_UNIX]-installer.deb"
-    exit
-fi
+    echo "example: $0 PROD CLIENT 0.4.65 aerofs ~/aerofs.release /data/staging-downloads/aerofs-installer.deb"
+    exit 1
+}
+
+[[ $# -eq 5 ]] || DieUsage
 
 set -u
 
@@ -36,8 +37,19 @@ fi
 
 #################################
 # set parameters
-readonly SERVER_RELEASE_DIR=$3
-readonly OUTPUT_DEB_NAME="$4"
+
+case "$3" in
+    aerofs|aerofsts) readonly AEROFS_PRODUCT_UNIX=$3 ;;
+    *) DieUsage ;;
+esac
+
+# check that server relase dir exists
+[[ -d "$4" ]] || DieUsage
+readonly SERVER_RELEASE_DIR="$4"
+
+# check that output deb does not already exist
+[[ ! -d "$5" ]] || DieUsage
+readonly OUTPUT_DEB_NAME="$5"
 
 # debian control-file parameters
 readonly PACKAGE_NAME=$(echo $OUTPUT_DEB_NAME | awk -F'/' '{print $NF}' | awk -F '.' '{print $1}')
@@ -76,7 +88,7 @@ mkdir -p debian/usr/bin/
 
 # Bump max inotify watches to something absurdly huge.
 mkdir -p debian/etc/sysctl.d/
-cat << EOF >> debian/etc/sysctl.d/30-[AEROFS_PRODUCT_UNIX]-increase-inotify-limit.conf
+cat << EOF >> debian/etc/sysctl.d/30-$AEROFS_PRODUCT_UNIX-increase-inotify-limit.conf
 # Increase the maximum number of inotify watches allowed per user from the
 # default value of 8192.
 # AeroFS needs to create a watch for every folder under your AeroFS folder.
@@ -96,24 +108,24 @@ mkdir -p $HICOLOR_DIR/32x32/apps
 mkdir -p $HICOLOR_DIR/64x64/apps
 
 # AeroFS code and assets
-mkdir -p debian/usr/share/[AEROFS_PRODUCT_UNIX]/
-cp -av $SERVER_RELEASE_DIR/aerofs.linux/* debian/usr/share/[AEROFS_PRODUCT_UNIX]/
-cp -av $SERVER_RELEASE_DIR/aerofs/* debian/usr/share/[AEROFS_PRODUCT_UNIX]/shared/
+mkdir -p debian/usr/share/$AEROFS_PRODUCT_UNIX/
+cp -av $SERVER_RELEASE_DIR/aerofs.linux/* debian/usr/share/$AEROFS_PRODUCT_UNIX/
+cp -av $SERVER_RELEASE_DIR/aerofs/* debian/usr/share/$AEROFS_PRODUCT_UNIX/shared/
 
 # Freedesktop.org application file
-cp $SERVER_RELEASE_DIR/aerofs.linux/shared/[AEROFS_PRODUCT_UNIX].desktop debian/usr/share/applications/[AEROFS_PRODUCT_UNIX].desktop
+cp $SERVER_RELEASE_DIR/aerofs.linux/shared/$AEROFS_PRODUCT_UNIX.desktop debian/usr/share/applications/$AEROFS_PRODUCT_UNIX.desktop
 
 # Icons for platform integration
-cp $SERVER_RELEASE_DIR/aerofs/icons/logo16.png $HICOLOR_DIR/16x16/apps/[AEROFS_PRODUCT_UNIX].png
-cp $SERVER_RELEASE_DIR/aerofs/icons/logo32.png $HICOLOR_DIR/32x32/apps/[AEROFS_PRODUCT_UNIX].png
-cp $SERVER_RELEASE_DIR/aerofs/icons/logo64.png $HICOLOR_DIR/64x64/apps/[AEROFS_PRODUCT_UNIX].png
+cp $SERVER_RELEASE_DIR/aerofs/icons/logo16.png $HICOLOR_DIR/16x16/apps/$AEROFS_PRODUCT_UNIX.png
+cp $SERVER_RELEASE_DIR/aerofs/icons/logo32.png $HICOLOR_DIR/32x32/apps/$AEROFS_PRODUCT_UNIX.png
+cp $SERVER_RELEASE_DIR/aerofs/icons/logo64.png $HICOLOR_DIR/64x64/apps/$AEROFS_PRODUCT_UNIX.png
 
 # Executables (links to copier, which will invoke launcher once set up)
 # pushd/popd is used to ensure we make relative links
 pushd debian/usr/bin > /dev/null
-ln -s ../share/[AEROFS_PRODUCT_UNIX]/shared/copier [AEROFS_PRODUCT_UNIX]
+ln -s ../share/$AEROFS_PRODUCT_UNIX/shared/copier $AEROFS_PRODUCT_UNIX
 for suffix in sh cli gui ; do
-    ln -s [AEROFS_PRODUCT_UNIX] [AEROFS_PRODUCT_UNIX]-$suffix
+    ln -s $AEROFS_PRODUCT_UNIX $AEROFS_PRODUCT_UNIX-$suffix
 done
 popd > /dev/null
 
@@ -145,7 +157,7 @@ EOF
 # We pre-remove the files and links from both locations.
 cat << EOF >> $DEBIAN_CONTROL_DIR/preinst
 #!/bin/bash
-rm -rf /usr{,/local}/bin/[AEROFS_PRODUCT_UNIX]{,-sh,-cli,-gui}
+rm -rf /usr{,/local}/bin/$AEROFS_PRODUCT_UNIX{,-sh,-cli,-gui}
 EOF
 
 cat << EOF >> $DEBIAN_CONTROL_DIR/postinst

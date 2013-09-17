@@ -53,14 +53,13 @@ readonly RELEASE_FILE_NAME="aerofs-${RELEASE_VERSION}-${LOWERCASE_MODE}"
 ###############################################################################
 
 function make_linux_installer_deb() {
-    local SCRIPTDIR="${LOCAL_RELEASE_DIR}/scripts"
-    mkdir -p "${SCRIPTDIR}"
-    local DEBSCRIPT="${SCRIPTDIR}/make_deb"
-    cp ${BUILD_SCRIPT_DIR}/make_deb "${SCRIPTDIR}"
-    render_template_in_place_on $DEBSCRIPT
-    chmod a+x $DEBSCRIPT
-    mkdir -p ${PACKAGE_DIR}
-    $DEBSCRIPT $MODE $RELEASE_VERSION "$LOCAL_RELEASE_DIR" "${PACKAGE_DIR}/${AEROFS_PRODUCT_UNIX}-installer-${RELEASE_VERSION}.deb"
+    local DEBSCRIPT="${BUILD_SCRIPT_DIR}/make_deb"
+    mkdir -p "$PACKAGE_DIR"
+    "$DEBSCRIPT" $MODE \
+                 $RELEASE_VERSION \
+                 $AEROFS_PRODUCT_UNIX \
+                 "$LOCAL_RELEASE_DIR" \
+                 "${PACKAGE_DIR}/${AEROFS_PRODUCT_UNIX}-installer-${RELEASE_VERSION}.deb"
 }
 
 function make_linux_installer_tgz() {

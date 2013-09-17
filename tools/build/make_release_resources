@@ -102,7 +102,6 @@ function copy_resources_to_local_release_directories() {
     done
 
     # copy S3 jars if necessary
-
     cp -R "${CLIENT_ALL_PLATFORMS_RESOURCES_DIR}/lib.s3"/* "${AEROFS_RELEASE_LINUX_SHARED_DIR}/lib/" # linux (always)
     if is_team_server ; then
         cp -R "${CLIENT_ALL_PLATFORMS_RESOURCES_DIR}/lib.s3"/ "${AEROFS_RELEASE_OSX_DIR}/lib/" # osx (only for ts)
@@ -125,9 +124,6 @@ function copy_resources_to_local_release_directories() {
             ln -s "${AEROFS_PRODUCT_UNIX}" "${AEROFS_PRODUCT_UNIX}-$SUFFIX"
         done
     popd > /dev/null
-
-    # rename .desktop file to match product
-    mv "${AEROFS_RELEASE_LINUX_SHARED_DIR}/aerofs.desktop" "${AEROFS_RELEASE_LINUX_SHARED_DIR}/${AEROFS_PRODUCT_UNIX}.desktop"
 
     #------------------------------------------------------
     # copy the properties files (*.properties, *.xml, etc.)
@@ -153,21 +149,21 @@ function copy_resources_to_local_release_directories() {
     mv "${local_BIN}/cacert.pem" "${AEROFS_RELEASE_DIR}/"
 
     #------------------------------------------------------
-    # update the installer files with sed (FIXME (AG): remove this if possible!)
+    # update the installer files with render_template
     #------------------------------------------------------
 
     # Render templated fields for OSX and Linux updater scripts.
-    render_template_in_place_on ${AEROFS_RELEASE_OSX_DIR}/updater.sh
-    render_template_in_place_on ${AEROFS_RELEASE_LINUX_SHARED_DIR}/updater.sh
+    render_template "${CLIENT_OSX_TEMPLATES_DIR}/updater.sh" "${AEROFS_RELEASE_OSX_DIR}/updater.sh"
+    render_template "${CLIENT_LINUX_SHARED_TEMPLATES_DIR}/updater.sh" "${AEROFS_RELEASE_LINUX_SHARED_DIR}/updater.sh"
 
     # Render templated fields for Linux launcher, INSTALL instructions,
     # update-package launcher, and freedesktop.org desktop file.
-    render_template_in_place_on \
-        "${AEROFS_RELEASE_LINUX_DIR}/INSTALL"                         \
-        "${AEROFS_RELEASE_LINUX_SHARED_DIR}/copier"                   \
-        "${AEROFS_RELEASE_LINUX_SHARED_DIR}/launcher"                 \
-        "${AEROFS_RELEASE_LINUX_SHARED_DIR}/${AEROFS_PRODUCT_UNIX}.desktop"
+    render_template "${CLIENT_LINUX_TEMPLATES_DIR}/INSTALL" "${AEROFS_RELEASE_LINUX_DIR}/INSTALL"
+    render_template "${CLIENT_LINUX_SHARED_TEMPLATES_DIR}/copier" "${AEROFS_RELEASE_LINUX_SHARED_DIR}/copier"
+    render_template "${CLIENT_LINUX_SHARED_TEMPLATES_DIR}/launcher" "${AEROFS_RELEASE_LINUX_SHARED_DIR}/launcher"
+    render_template "${CLIENT_LINUX_SHARED_TEMPLATES_DIR}/product.desktop" "${AEROFS_RELEASE_LINUX_SHARED_DIR}/${AEROFS_PRODUCT_UNIX}.desktop"
 }
+
 
 ######################################################################
 #

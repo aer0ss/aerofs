@@ -58,6 +58,13 @@ readonly CLIENT_LINUX64_RESOURCES_DIR="${CLIENT_RESOURCES_DIR}/linux/amd64"
 readonly CLIENT_OSX_RESOURCES_DIR="${CLIENT_RESOURCES_DIR}/osx"
 readonly CLIENT_WIN_RESOURCES_DIR="${CLIENT_RESOURCES_DIR}/win"
 
+# Local resource template directories
+readonly BASE_TEMPLATES_DIR="${BASE_RESOURCES_DIR}/templates"
+readonly CLIENT_TEMPLATES_DIR="${BASE_TEMPLATES_DIR}/client"
+readonly CLIENT_LINUX_TEMPLATES_DIR="${CLIENT_TEMPLATES_DIR}/linux"
+readonly CLIENT_OSX_TEMPLATES_DIR="${CLIENT_TEMPLATES_DIR}/osx"
+readonly CLIENT_LINUX_SHARED_TEMPLATES_DIR="${CLIENT_LINUX_TEMPLATES_DIR}/shared"
+
 # local build directory (where ant will put stuff)
 readonly BUILD_OUTPUT_DIR="${GIT_ROOT}/out.ant"
 
@@ -345,7 +352,7 @@ function compute_product_names() {
 # replaces the values AEROFS_PRODUCT_SPACEFREE, AEROFS_PRODUCT_UNIX, and
 # AEROFS_PRODUCT in a file with the appropriate set from the environment, given
 # the current labeling
-function render_template_in_place_on() {
+function render_template() {
     if [ -z "$AEROFS_PRODUCT_SPACEFREE" -o -z "$AEROFS_PRODUCT_UNIX" -o -z "$AEROFS_PRODUCT" ] ; then
         echo "Can't render template: one of the following is empty or unset:"
         echo "\$AEROFS_PRODUCT           = $AEROFS_PRODUCT"
@@ -353,19 +360,29 @@ function render_template_in_place_on() {
         echo "\$AEROFS_PRODUCT_SPACEFREE = $AEROFS_PRODUCT_SPACEFREE"
         exit 1
     fi
-    # **********!!!! IMPORTANT !!!!*********
-    # sed on mac requires an empty string for in place operations.
-    # **********!!!!           !!!!*********
-    # Applies template substitution to any number of files.
-    while [[ $# -gt 0 ]]; do
-        # render the next file
-        sed -i "" -e "s/\[AEROFS_PRODUCT_SPACEFREE\]/${AEROFS_PRODUCT_SPACEFREE}/g" $1
-        sed -i "" -e "s/\[AEROFS_PRODUCT_UNIX\]/${AEROFS_PRODUCT_UNIX}/g" $1
-        sed -i "" -e "s/\[AEROFS_PRODUCT\]/${AEROFS_PRODUCT}/g" $1
-        shift 1
-    done
-}
 
+    if [ $# -ne 2 ]; then
+        echo "You invoked: $0 $@"
+        echo "Usage: $0 <template_file> <output_file>"
+        exit 1
+    fi
+
+    if [ ! -f "$1" ]; then
+        echo "Template file does not exist: $1"
+        exit 1
+    fi
+
+    if [ -f "$2" ]; then
+        echo "Tried to render to existing file: $2"
+        exit 1
+    fi
+
+    # render from template file to output file
+    sed -e "s/\[AEROFS_PRODUCT_SPACEFREE\]/${AEROFS_PRODUCT_SPACEFREE}/g" \
+        -e "s/\[AEROFS_PRODUCT_UNIX\]/${AEROFS_PRODUCT_UNIX}/g" \
+        -e "s/\[AEROFS_PRODUCT\]/${AEROFS_PRODUCT}/g" \
+        "$1" > "$2"
+}
 
 
 ###############################################################################
