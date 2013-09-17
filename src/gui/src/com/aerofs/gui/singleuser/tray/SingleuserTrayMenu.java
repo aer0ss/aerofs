@@ -186,7 +186,7 @@ public class SingleuserTrayMenu extends AbstractTrayMenu implements IRitualNotif
             final String absPath = UIUtil.absPathNullable(p);
             if (absPath != null) {
                 UI.get().notify(MessageType.INFO,
-                        "You have joined \"" + UIUtil.sharedFolderName(p, null) + "\"", new Runnable() {
+                        "You have joined the shared folder \"" + UIUtil.sharedFolderName(p, null) + "\"", new Runnable() {
                     @Override
                     public void run()
                     {
