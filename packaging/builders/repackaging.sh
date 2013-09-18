@@ -10,7 +10,7 @@ mkdir -p $OPT/tools
 # Fetch and include python dependency packages
 REQUIREMENTS=$ENTERPRISE/repackaging/requirements.txt
 SDIST=$OPT/sdist
-SDIST_CACHE=pip-cache/repackaging
+SDIST_CACHE=$HOME/.aerofs-cache/pip/repackaging
 rm -rf $SDIST
 tools/pip-prefetch.sh $REQUIREMENTS $SDIST_CACHE
 mkdir -p $SDIST
