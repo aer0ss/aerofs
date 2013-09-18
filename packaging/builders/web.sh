@@ -9,7 +9,7 @@ UWSGI=web/etc/uwsgi
 EXTRA=web/opt/web/extra
 
 # PIP_CACHE is a flat directory of .tar.gz source files from PyPI.
-PIP_CACHE=pip-cache/web
+PIP_CACHE=$HOME/.aerofs-cache/pip/web
 
 # Debian-related file copies.
 mkdir -p $DEBIAN
