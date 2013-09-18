@@ -8,6 +8,7 @@ import com.aerofs.rocklog.Defect;
 import com.aerofs.rocklog.RockLog;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelHandlerContext;
+import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelStateEvent;
 import org.jboss.netty.util.Timeout;
 import org.jboss.netty.util.Timer;
@@ -38,6 +39,7 @@ public class TestDiagnosticsHandler
     private ChannelHandlerContext _ctx = mock(ChannelHandlerContext.class);
     private ChannelStateEvent _e = mock(ChannelStateEvent.class);
     private Channel _channel = mock(Channel.class);
+    private ChannelPipeline _pipeline = mock(ChannelPipeline.class);
     private Defect _defect = mock(Defect.class);
     private Timeout _timeout = mock(Timeout.class);
 
@@ -48,6 +50,7 @@ public class TestDiagnosticsHandler
     public void setup()
     {
         when(_ctx.getChannel()).thenReturn(_channel);
+        when(_ctx.getPipeline()).thenReturn(_pipeline);
 
         when(_rockLog.newDefect(anyString())).thenReturn(_defect);
         when(_defect.setMessage(anyString())).thenReturn(_defect);
