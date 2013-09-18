@@ -25,9 +25,8 @@ import com.aerofs.daemon.transport.zephyr.Zephyr;
 import com.aerofs.lib.IDumpStat;
 import com.aerofs.lib.IDumpStatMisc;
 import com.aerofs.lib.ITransferStat;
-import com.aerofs.lib.LibParam.EnterpriseConfig;
-import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgAbsRTRoot;
+import com.aerofs.lib.cfg.CfgEnabledTransports;
 import com.aerofs.lib.cfg.CfgLocalDID;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.cfg.CfgLolol;
@@ -90,6 +89,7 @@ public class Transports implements IDumpStat, IDumpStatMisc, IStartable, ITransf
             CfgLocalDID localdid,
             CfgScrypted scrypted,
             CfgLolol lolol,
+            CfgEnabledTransports enabledTransports,
             CoreQueue coreQueue,
             TC tc,
             MaxcastFilterReceiver maxcastFilterReceiver,
@@ -125,15 +125,21 @@ public class Transports implements IDumpStat, IDumpStatMisc, IStartable, ITransf
                 clientSslEngineFactory,
                 serverSslEngineFactory);
 
-        if (Cfg.useTCP()) {
+        if (enabledTransports.isTcpEnabled()) {
             addTransport(transportFactory.newTransport(LANTCP), linkStateService);
         }
-        if (Cfg.useJingle() && !EnterpriseConfig.IS_ENTERPRISE_DEPLOYMENT) {
+        if (enabledTransports.isJingleEnabled()) {
             addTransport(transportFactory.newTransport(JINGLE), linkStateService);
         }
-        if (Cfg.useZephyr()) {
+        if (enabledTransports.isZephyrEnabled()) {
             Zephyr zephyr = (Zephyr) transportFactory.newTransport(ZEPHYR);
-            if (!Cfg.useJingle()) zephyr.enableMulticast();
+            // zephyr and jingle both use xmpp for multicast
+            // if both multicast channels were enabled simultaneously we would get duplicate messages
+            // although this is nbd, it is noisy
+            // as a result, we only enable _1_ of the 2 multicast channels
+            // if both zephyr and jingle are enabled, then we use jingle's channel,
+            // otherwise, we enable multicast for zephyr
+            if (!enabledTransports.isJingleEnabled()) zephyr.enableMulticast();
             addTransport(zephyr, linkStateService);
         }
     }
