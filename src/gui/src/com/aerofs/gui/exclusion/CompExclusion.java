@@ -67,7 +67,7 @@ public class CompExclusion extends Composite
         fl.spacing = GUIParam.BUTTON_HORIZONTAL_SPACING;
         composite.setLayout(fl);
 
-        Button btnOk = GUIUtil.createButton(_composite, SWT.NONE);
+        Button btnOk = GUIUtil.createButton(composite, SWT.NONE);
         btnOk.setText(IDialogConstants.OK_LABEL);
         btnOk.addSelectionListener(new SelectionAdapter() {
             @Override
@@ -99,7 +99,7 @@ public class CompExclusion extends Composite
             }
         });
 
-        _btnCancel = GUIUtil.createButton(_composite, SWT.NONE);
+        _btnCancel = GUIUtil.createButton(composite, SWT.NONE);
         _btnCancel.setText(IDialogConstants.CANCEL_LABEL);
         _btnCancel.addSelectionListener(new SelectionAdapter() {
             @Override
