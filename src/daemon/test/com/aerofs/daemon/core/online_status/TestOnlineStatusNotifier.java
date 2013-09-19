@@ -2,8 +2,9 @@
  * Copyright (c) Air Computing Inc., 2013.
  */
 
-package com.aerofs.daemon.core.serverstatus;
+package com.aerofs.daemon.core.online_status;
 
+import com.aerofs.daemon.core.serverstatus.ServerConnectionStatus;
 import com.aerofs.daemon.core.serverstatus.ServerConnectionStatus.Server;
 import com.aerofs.proto.RitualNotifications.PBNotification;
 import com.aerofs.ritual_notification.RitualNotificationServer;
@@ -15,18 +16,19 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-public class TestServerStatusNotifier
+public class TestOnlineStatusNotifier
 {
     @Mock ServerConnectionStatus _serverConnectionStatus;
     @Mock RitualNotificationServer _ritualNotificationServer;
     @Mock RitualNotifier _ritualNotifier;
 
-    @InjectMocks ServerStatusNotifier _notifier;
+    @InjectMocks OnlineStatusNotifier _notifier;
 
     @Before
     public void setup()

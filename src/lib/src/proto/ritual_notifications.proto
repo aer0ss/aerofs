@@ -19,7 +19,7 @@ message PBNotification {
         INDEXING_PROGRESS = 7;
         SHARED_FOLDER_PENDING = 8;    // list of pending roots changed
         ROOTS_CHANGED = 9;            // roots changed (added/removed/moved)
-        SERVER_STATUS_CHANGED = 10;   // server status (online/offline) has changed
+        ONLINE_STATUS_CHANGED = 10;   // online status (on/off) has changed
     }
 
     required Type type = 1;
@@ -29,8 +29,8 @@ message PBNotification {
     optional int32 conflict_count = 5;          // number of files with existing conflicts
     optional PBPath path = 6;                   // path of shared folder joined/left
     optional PBIndexingProgress indexing_progress = 7;
-    optional bool server_status = 8; // true/false => online/offline,
-                                     // only used w/ SERVER_STATUS_CHANGED
+    optional bool online_status = 8; // true/false => online/offline,
+                                     // only used w/ ONLINE_STATUS_CHANGED
 }
 
 enum PBTransportMethod {

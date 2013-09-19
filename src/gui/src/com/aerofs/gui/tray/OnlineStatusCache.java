@@ -16,7 +16,7 @@ import javax.annotation.Nonnull;
 import static com.google.common.base.Preconditions.*;
 
 /**
- * This class is created to address a race condition in ServerStatus.
+ * This class is created to address a race condition in OnlineStatus.
  *
  * The ritual notification system is used for the daemon to actively broadcast its various states
  * and notify the GUI widgets that are interested in these states.
@@ -49,7 +49,7 @@ import static com.google.common.base.Preconditions.*;
  * TODO (AT): this is the 2nd time a cache for ritual notification is created. we should consolidate
  * the design if we ever need to create a cache for a different type of ritual notification.
  */
-public class ServerStatusCache implements IRitualNotificationListener
+public class OnlineStatusCache implements IRitualNotificationListener
 {
     private final Notifier _notifier;
     private final RitualNotificationClient _rnc;
@@ -58,13 +58,13 @@ public class ServerStatusCache implements IRitualNotificationListener
 
     private Widget _widget;
     // we only need to support one listener for the time being
-    private volatile IServerStatusListener _listener;
+    private volatile IOnlineStatusListener _listener;
 
     /**
      * @param rnc - the RNC to listen to.
      * @pre RNC hasn't started yet
      */
-    public ServerStatusCache(RitualNotificationClient rnc)
+    public OnlineStatusCache(RitualNotificationClient rnc)
     {
         _notifier = new Notifier();
 
@@ -78,9 +78,9 @@ public class ServerStatusCache implements IRitualNotificationListener
      *
      * @param listener - the listener for this cache
      * @param widget - the associated widget that's listening to this cache
-     * @pre ServerStatusListener has never been set before.
+     * @pre OnlineStatusListener has never been set before.
      */
-    public void setListener(@Nonnull Widget widget, @Nonnull IServerStatusListener listener)
+    public void setListener(@Nonnull Widget widget, @Nonnull IOnlineStatusListener listener)
     {
         checkState(_listener == null);
         checkNotNull(widget);
@@ -100,8 +100,8 @@ public class ServerStatusCache implements IRitualNotificationListener
     @Override
     public void onNotificationReceived(PBNotification notification)
     {
-        if (notification.getType() == Type.SERVER_STATUS_CHANGED) {
-            _online = notification.getServerStatus();
+        if (notification.getType() == Type.ONLINE_STATUS_CHANGED) {
+            _online = notification.getOnlineStatus();
             notifyListener();
         }
     }
@@ -113,9 +113,9 @@ public class ServerStatusCache implements IRitualNotificationListener
         // notification channel is re-stablished and the snapshot tells us otherwise
     }
 
-    public static interface IServerStatusListener
+    public static interface IOnlineStatusListener
     {
-        void onServerStatusChanged(boolean online);
+        void onOnlineStatusChanged(boolean online);
     }
 
     private class Notifier implements Runnable
@@ -125,7 +125,7 @@ public class ServerStatusCache implements IRitualNotificationListener
         {
             // N.B. since _online refers to the class field, this impl means that we
             // evaluate _online when the _listener's callback is invoked.
-            _listener.onServerStatusChanged(_online);
+            _listener.onOnlineStatusChanged(_online);
         }
     }
 }

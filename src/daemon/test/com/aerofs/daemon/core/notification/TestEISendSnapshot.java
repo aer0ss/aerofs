@@ -6,7 +6,7 @@ package com.aerofs.daemon.core.notification;
 
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.OID;
-import com.aerofs.daemon.core.serverstatus.ServerStatusNotifier;
+import com.aerofs.daemon.core.online_status.OnlineStatusNotifier;
 import com.aerofs.daemon.core.transfers.ITransferStateListener.TransferProgress;
 import com.aerofs.daemon.core.transfers.ITransferStateListener.TransferredItem;
 import com.aerofs.daemon.core.transfers.download.DownloadState;
@@ -34,12 +34,12 @@ public class TestEISendSnapshot
     @Spy UploadState _uls = new UploadState();
     @Mock UploadNotifier _un;
     @Mock PathStatusNotifier _psn;
-    @Mock ServerStatusNotifier _ssn;
+    @Mock OnlineStatusNotifier _osn;
     @Mock TCP _tcp;
 
     private EISendSnapshot createHandler(boolean filterMeta)
     {
-        return new EISendSnapshot(_dls, _dn, _uls, _un, _psn, _ssn, filterMeta);
+        return new EISendSnapshot(_dls, _dn, _uls, _un, _psn, _osn, filterMeta);
     }
 
     private SOCID createSOCID(boolean isMeta)
@@ -120,11 +120,11 @@ public class TestEISendSnapshot
     }
 
     @Test
-    public void shouldSendServerStatus()
+    public void shouldSendOnlineStatus()
     {
         EISendSnapshot handler = createHandler(true);
         handler.handle_();
 
-        verify(_ssn).sendServerStatusNotification();
+        verify(_osn).sendOnlineStatusNotification();
     }
 }

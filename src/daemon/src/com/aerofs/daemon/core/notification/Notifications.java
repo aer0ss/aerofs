@@ -109,12 +109,12 @@ public abstract class Notifications
                 .build();
     }
 
-    public static PBNotification newServerStatusChangedNotification(boolean isOnline)
+    public static PBNotification newOnlineStatusChangedNotification(boolean isOnline)
     {
         return PBNotification
                 .newBuilder()
-                .setType(SERVER_STATUS_CHANGED)
-                .setServerStatus(isOnline)
+                .setType(ONLINE_STATUS_CHANGED)
+                .setOnlineStatus(isOnline)
                 .build();
     }
 }

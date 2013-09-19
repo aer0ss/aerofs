@@ -8,7 +8,7 @@ import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.gui.GUIUtil.AbstractListener;
 import com.aerofs.gui.Images;
-import com.aerofs.gui.tray.ServerStatusCache.IServerStatusListener;
+import com.aerofs.gui.tray.OnlineStatusCache.IOnlineStatusListener;
 import com.aerofs.gui.tray.TrayIcon.TrayPosition.Orientation;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.AppRoot;
@@ -107,7 +107,7 @@ public class TrayIcon implements ITrayMenuListener
 
         setSpin(false);
 
-        addServerStatusListener();
+        addOnlineStatusListener();
     }
 
     public void setSpin(boolean spin)
@@ -135,12 +135,12 @@ public class TrayIcon implements ITrayMenuListener
         return Objects.firstNonNull(_uti, _ti);
     }
 
-    private void addServerStatusListener()
+    private void addOnlineStatusListener()
     {
-        UIGlobals.serverStatus().setListener(iconImpl(), new IServerStatusListener()
+        UIGlobals.onlineStatus().setListener(iconImpl(), new IOnlineStatusListener()
         {
             @Override
-            public void onServerStatusChanged(boolean online)
+            public void onOnlineStatusChanged(boolean online)
             {
                 _isServerOnline = online;
                 setToolTipText(_tooltip);

@@ -13,7 +13,7 @@ import com.aerofs.daemon.core.notification.UploadNotifier.UploadThrottler;
 import com.aerofs.daemon.core.serverstatus.ServerConnectionStatus;
 import com.aerofs.daemon.core.serverstatus.ServerConnectionStatus.IServiceStatusListener;
 import com.aerofs.daemon.core.serverstatus.ServerConnectionStatus.Server;
-import com.aerofs.daemon.core.serverstatus.ServerStatusNotifier;
+import com.aerofs.daemon.core.online_status.OnlineStatusNotifier;
 import com.aerofs.daemon.core.status.PathStatus;
 import com.aerofs.daemon.core.syncstatus.AggregateSyncStatus;
 import com.aerofs.daemon.core.syncstatus.SyncStatusSynchronizer;
@@ -56,14 +56,14 @@ public class NotificationService implements IRitualNotificationClientConnectedLi
     private final ConflictNotifier _cl;
     private final DownloadNotifier _dn;
     private final UploadNotifier _un;
-    private final ServerStatusNotifier _ssn;
+    private final OnlineStatusNotifier _osn;
 
     @Inject
     public NotificationService(CoreScheduler sched, RitualNotificationServer rns,
             DirectoryService ds, UserAndDeviceNames nr, DownloadState dls, UploadState uls,
             BadCredentialNotifier bcl, PathStatus so, SyncStatusSynchronizer sss,
             AggregateSyncStatus agss, ServerConnectionStatus scs, ConflictNotifier cl,
-            DownloadThrottler dlt, UploadThrottler ult, ServerStatusNotifier ssn)
+            DownloadThrottler dlt, UploadThrottler ult, OnlineStatusNotifier osn)
     {
         _sched = sched;
         _rns = rns;
@@ -77,7 +77,7 @@ public class NotificationService implements IRitualNotificationClientConnectedLi
         _cl = cl;
         _dn = new DownloadNotifier(ds, nr, _rns, dlt);
         _un = new UploadNotifier(ds, nr, _rns, ult);
-        _ssn = ssn;
+        _osn = osn;
     }
 
     //
@@ -164,9 +164,9 @@ public class NotificationService implements IRitualNotificationClientConnectedLi
         }, VERKEHR, SYNCSTAT);
     }
 
-    private void setupServerStatusNotificationSource()
+    private void setupOnlineStatusNotifier()
     {
-        _ssn.init();
+        _osn.init();
     }
 
     public void init_()
@@ -175,7 +175,7 @@ public class NotificationService implements IRitualNotificationClientConnectedLi
         setupBadCredentialNotifier_();
         setupTransferNotifiers_();
         setupPathStatusNotifiers_();
-        setupServerStatusNotificationSource();
+        setupOnlineStatusNotifier();
     }
 
     //
@@ -185,6 +185,6 @@ public class NotificationService implements IRitualNotificationClientConnectedLi
     @Override
     public void onNotificationClientConnected()
     {
-        _sched.schedule(new EISendSnapshot(_dls, _dn, _uls, _un, _psn, _ssn, filterMeta_()), 0);
+        _sched.schedule(new EISendSnapshot(_dls, _dn, _uls, _un, _psn, _osn, filterMeta_()), 0);
     }
 }

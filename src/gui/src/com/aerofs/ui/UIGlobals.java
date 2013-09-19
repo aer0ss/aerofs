@@ -4,7 +4,7 @@ import com.aerofs.base.analytics.Analytics;
 import com.aerofs.controller.ControllerClient;
 import com.aerofs.gui.TransferState;
 import com.aerofs.gui.shellext.ShellextService;
-import com.aerofs.gui.tray.ServerStatusCache;
+import com.aerofs.gui.tray.OnlineStatusCache;
 import com.aerofs.lib.analytics.DesktopAnalyticsProperties;
 import com.aerofs.ritual.IRitualClientProvider;
 import com.aerofs.ritual.RitualBlockingClient;
@@ -56,8 +56,8 @@ public final class UIGlobals
             new RitualNotificationSystemConfiguration());
     // FIXME (AT): TransferState is meant for just GUI, not CLI
     private static final TransferState s_ts = new TransferState(s_rnc);
-    // FIXME (AT): ServerStatusCache is meant for just GUI, not CLI
-    private static final ServerStatusCache s_ss = new ServerStatusCache(s_rnc);
+    // FIXME (AT): OnlineStatusCache is meant for just GUI, not CLI
+    private static final OnlineStatusCache s_os = new OnlineStatusCache(s_rnc);
 
     private static final SanityPoller s_rap = new SanityPoller();
     private static final InfoCollector s_ic = new InfoCollector();
@@ -73,7 +73,7 @@ public final class UIGlobals
 
     public static TransferState ts() { return s_ts; }
 
-    public static ServerStatusCache serverStatus() { return s_ss; }
+    public static OnlineStatusCache onlineStatus() { return s_os; }
 
     public static SanityPoller rap() { return s_rap; }
 
