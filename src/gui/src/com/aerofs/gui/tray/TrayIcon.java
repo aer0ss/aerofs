@@ -8,7 +8,6 @@ import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.gui.GUIUtil.AbstractListener;
 import com.aerofs.gui.Images;
-import com.aerofs.gui.tray.OnlineStatusCache.IOnlineStatusListener;
 import com.aerofs.gui.tray.TrayIcon.TrayPosition.Orientation;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.AppRoot;
@@ -19,9 +18,13 @@ import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.os.OSUtil;
+import com.aerofs.proto.RitualNotifications.PBNotification;
+import com.aerofs.proto.RitualNotifications.PBNotification.Type;
+import com.aerofs.ritual_notification.IRitualNotificationListener;
+import com.aerofs.ritual_notification.RitualNotificationClient;
+import com.aerofs.ritual_notification.RitualNotificationSystemConfiguration;
 import com.aerofs.sv.client.SVClient;
 import com.aerofs.swig.driver.Driver;
-import com.aerofs.ui.UIGlobals;
 import com.google.common.base.Objects;
 import com.google.common.collect.Sets;
 import org.eclipse.swt.SWT;
@@ -40,6 +43,8 @@ import java.io.File;
 import java.lang.reflect.Method;
 import java.util.Set;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 public class TrayIcon implements ITrayMenuListener
 {
     private static final Logger l = Loggers.getLogger(TrayIcon.class);
@@ -56,7 +61,11 @@ public class TrayIcon implements ITrayMenuListener
     private Thread _thdSpinning;
     private int _iconIndex;
 
-    private boolean _isServerOnline;
+    // stores what the tooltip would be if the device is online, this is needed because when the
+    // device is offline, the offline message takes precedence over other messages.
+    private String _tooltip;
+    private boolean _isOnline;
+    private RitualNotificationClient _rnc;
 
     TrayIcon(SystemTray st)
     {
@@ -135,20 +144,6 @@ public class TrayIcon implements ITrayMenuListener
         return Objects.firstNonNull(_uti, _ti);
     }
 
-    private void addOnlineStatusListener()
-    {
-        UIGlobals.onlineStatus().setListener(iconImpl(), new IOnlineStatusListener()
-        {
-            @Override
-            public void onOnlineStatusChanged(boolean online)
-            {
-                _isServerOnline = online;
-                setToolTipText(_tooltip);
-                refreshTrayIconImage();
-            }
-        });
-    }
-
     private void startAnimation()
     {
         _thdSpinning = new Thread() {
@@ -185,6 +180,7 @@ public class TrayIcon implements ITrayMenuListener
     {
         if (_ti != null) _ti.dispose();
         if (_uti != null) _uti.dispose();
+        _rnc.stop();
     }
 
     public boolean isDisposed()
@@ -192,8 +188,6 @@ public class TrayIcon implements ITrayMenuListener
         if (_ti != null) return _ti.isDisposed();
         return _uti.isDisposed();
     }
-
-    private String _tooltip;
 
     /**
      * HACK ALERT (AT): the intended tooltip text logic is to use the server offline tooltip
@@ -205,7 +199,7 @@ public class TrayIcon implements ITrayMenuListener
     {
         if (_ti != null) {
             _tooltip = str;
-            _ti.setToolTipText(_isServerOnline ? _tooltip : S.SERVER_OFFLINE_TOOLTIP);
+            _ti.setToolTipText(_isOnline ? _tooltip : S.SERVER_OFFLINE_TOOLTIP);
         }
     }
 
@@ -259,7 +253,7 @@ public class TrayIcon implements ITrayMenuListener
 
     private void refreshTrayIconImage()
     {
-        String iconName = Images.getTrayIconName(_isServerOnline, !_notificationReasons.isEmpty(),
+        String iconName = Images.getTrayIconName(_isOnline, !_notificationReasons.isEmpty(),
                 _iconIndex);
         if (_uti != null) {
             _uti.setIcon(iconName, L.product());
@@ -336,5 +330,43 @@ public class TrayIcon implements ITrayMenuListener
         else if (o == com.aerofs.swig.driver.TrayPosition.Left) { tp.orientation = Orientation.Left; }
 
         return tp;
+    }
+
+    public void addOnlineStatusListener()
+    {
+        _rnc = new RitualNotificationClient(new RitualNotificationSystemConfiguration());
+        _rnc.addListener(new IRitualNotificationListener()
+        {
+            @Override
+            public void onNotificationReceived(PBNotification notification)
+            {
+                if (notification.getType() == Type.ONLINE_STATUS_CHANGED) {
+                    checkArgument(notification.hasOnlineStatus());
+
+                    updateOnlineStatus(notification.getOnlineStatus());
+                }
+            }
+
+            @Override
+            public void onNotificationChannelBroken()
+            {
+                updateOnlineStatus(false);
+            }
+
+            private void updateOnlineStatus(final boolean isOnline)
+            {
+                GUI.get().safeAsyncExec(iconImpl(), new Runnable()
+                {
+                    @Override
+                    public void run()
+                    {
+                        _isOnline = isOnline;
+                        setToolTipText(_tooltip);
+                        refreshTrayIconImage();
+                    }
+                });
+            }
+        });
+        _rnc.start();
     }
 }
