@@ -4,7 +4,7 @@ Basic unit tests for each view so that we can catch stupid errors such as
 missing import statements.
 """
 
-import logging, base64, json, urllib
+import logging, base64, json
 from cgi import escape
 from pyramid.view import view_config
 import aerofs_sp.gen.common_pb2 as common
@@ -19,8 +19,10 @@ from web.views.payment.stripe_util\
 
 log = logging.getLogger("web")
 
+
 def _encode_store_id(sid):
     return base64.b32encode(sid)
+
 
 def _decode_store_id(encoded_sid):
     return base64.b32decode(encoded_sid)
@@ -37,7 +39,8 @@ _LINK_DATA_USER_AND_ROLE_LIST = 'r'
 # JSON keys
 _USER_AND_ROLE_FIRST_NAME_KEY = 'first_name'
 _USER_AND_ROLE_LAST_NAME_KEY = 'last_name'
-_USER_AND_ROLE_IS_OWNER_KEY = 'owner'
+_USER_AND_ROLE_ROLE_KEY = 'role'
+
 
 @view_config(
     route_name = 'dashboard_home',
@@ -52,8 +55,19 @@ _USER_AND_ROLE_IS_OWNER_KEY = 'owner'
 def my_shared_folders(request):
     _ = request.translate
 
-    return _shared_folders(False, request, _("Shared Folders"),
-            request.route_url('json.get_my_shared_folders'))
+    return _shared_folders(False, request, _("My Shared Folders"),
+            request.route_url('json.get_my_shared_folders'),
+            _("You can manage this folder because you are an owner of this"
+              " folder."),
+            _("You cannot change this folder's settings because you are not"
+              " an owner of this folder."))
+
+_PRIVILEGED_MODEL_TOOLTIP_FOR_TEAM_ADMIN = \
+    "You can manage this folder because you are a team admin and one or more " \
+    "teammates in your team are this folder's owners."
+_UNPRIVILEGED_MODEL_TOOLTIP_FOR_TEAM_ADMIN = \
+    "You cannot change this folder's settings since no teammates in your " \
+    "team are its owners."
 
 @view_config(
     route_name = 'user_shared_folders',
@@ -66,8 +80,11 @@ def user_shared_folders(request):
     full_name = request.params[URL_PARAM_FULL_NAME]
 
     return _shared_folders(False, request,
-                           _("${name}'s Shared Folders", {'name': full_name}),
-                           request.route_url('json.get_user_shared_folders', _query={URL_PARAM_USER: user}))
+            _("${name}'s Shared Folders", {'name': full_name}),
+            request.route_url('json.get_user_shared_folders', _query={URL_PARAM_USER: user}),
+            _(_PRIVILEGED_MODEL_TOOLTIP_FOR_TEAM_ADMIN),
+            _(_UNPRIVILEGED_MODEL_TOOLTIP_FOR_TEAM_ADMIN))
+
 
 @view_config(
     route_name = 'team_shared_folders',
@@ -79,10 +96,17 @@ def team_shared_folders(request):
 
     return _shared_folders(True, request,
             _("Team's Shared Folders"),
-            request.route_url('json.get_team_shared_folders'))
+            request.route_url('json.get_team_shared_folders'),
+            _(_PRIVILEGED_MODEL_TOOLTIP_FOR_TEAM_ADMIN),
+            _(_UNPRIVILEGED_MODEL_TOOLTIP_FOR_TEAM_ADMIN))
 
+
+# @param {un,}privileged_modal_subtitle: the subtitles used in the shared folder
+# modal if the user {has,doesn't have) the privilege to manage the folder.
 def _shared_folders(datatables_paginate, request,
-                    page_title, datatables_request_route_url):
+                    page_heading, datatables_request_route_url,
+                    privileged_modal_tooltip,
+                    unprivileged_modal_tooltip):
     return {
         # constants
         'open_modal_class': _OPEN_MODAL_CLASS,
@@ -92,17 +116,25 @@ def _shared_folders(datatables_paginate, request,
         'link_data_user_and_role_list': _LINK_DATA_USER_AND_ROLE_LIST,
         'user_and_role_first_name_key': _USER_AND_ROLE_FIRST_NAME_KEY,
         'user_and_role_last_name_key': _USER_AND_ROLE_LAST_NAME_KEY,
-        'user_and_role_is_owner_key': _USER_AND_ROLE_IS_OWNER_KEY,
+        'user_and_role_role_key': _USER_AND_ROLE_ROLE_KEY,
+        'stripe_publishable_key': STRIPE_PUBLISHABLE_KEY,
+        'url_param_stripe_card_token': URL_PARAM_STRIPE_CARD_TOKEN,
+        'owner_role': common.OWNER,
+        'editor_role': common.EDITOR,
+        'viewer_role': common.VIEWER,
 
         # variables
         'session_user': get_session_user(request),
         'is_admin': is_admin(request),
         'datatables_paginate': datatables_paginate,
-        'page_title': page_title,
+        # N.B. can't use "page_title" as the variable name. base_layout.mako
+        # defines a global variable using the same name.
+        'page_heading': page_heading,
         'datatables_request_route_url': datatables_request_route_url,
-        'stripe_publishable_key': STRIPE_PUBLISHABLE_KEY,
-        'url_param_stripe_card_token': URL_PARAM_STRIPE_CARD_TOKEN
+        'privileged_modal_tooltip': privileged_modal_tooltip,
+        'unprivileged_modal_tooltip': unprivileged_modal_tooltip
     }
+
 
 @view_config(
     route_name = 'json.get_my_shared_folders',
@@ -118,8 +150,9 @@ def json_get_my_shared_folders(request):
     session_user = get_session_user(request)
     reply = sp.list_user_shared_folders(session_user)
     return _sp_reply2datatables(reply.shared_folder,
-        _session_user_privileger, _session_user_labeler,
+        _session_user_privileger,
         len(reply.shared_folder), echo, session_user)
+
 
 def _session_user_privileger(folder, session_user):
     for user_and_role in folder.user_and_role:
@@ -130,9 +163,6 @@ def _session_user_privileger(folder, session_user):
             return True
     return False
 
-def _session_user_labeler(privileged):
-    # label text and style must match the labels generated in shared_folder.mako.
-    return '<span class="label tooltip_owned_by_me" data-toggle="tooltip">owner</span>' if privileged else ''
 
 @view_config(
     route_name = 'json.get_user_shared_folders',
@@ -148,8 +178,9 @@ def json_get_user_shared_folders(request):
     sp = util.get_rpc_stub(request)
     reply = sp.list_user_shared_folders(specified_user)
     return _sp_reply2datatables(reply.shared_folder,
-        _session_team_privileger, _session_team_labeler,
+        _session_team_privileger,
         len(reply.shared_folder), echo, get_session_user(request))
+
 
 @view_config(
     route_name = 'json.get_team_shared_folders',
@@ -166,31 +197,24 @@ def json_get_team_shared_folders(request):
     sp = util.get_rpc_stub(request)
     reply = sp.list_organization_shared_folders(count, offset)
     return _sp_reply2datatables(reply.shared_folder,
-        _session_team_privileger, _session_team_labeler,
+        _session_team_privileger,
         reply.total_count, echo, get_session_user(request))
+
 
 def _session_team_privileger(folder, session_user):
     return folder.owned_by_team
 
-def _session_team_labeler(privileged):
-    if not privileged: return ''
-    # label text and style must match the labels generated in shared_folder.mako.
-    return '<span class="label tooltip_owned_by_team" data-toggle="tooltip">owned by team</span>' \
-            if privileged else ''
 
-def _sp_reply2datatables(folders, privileger, labeler, total_count, echo, session_user):
+def _sp_reply2datatables(folders, privileger, total_count, echo, session_user):
     """
     @param privileger a callback function to determine if the session user has
         privileges to modify ACL of the folder
-    @param labeler a callback function to render appropriate labels for the
-        folder given the privilage
     """
     data = []
     for folder in folders:
         privileged = privileger(folder, session_user)
         data.append({
             'name': escape(folder.name),
-            'label': labeler(privileged),
             'users': _render_shared_folder_users(folder.user_and_role,
                 session_user),
             'options': _render_shared_folder_options_link(folder, session_user,
@@ -203,6 +227,7 @@ def _sp_reply2datatables(folders, privileger, labeler, total_count, echo, sessio
         'iTotalDisplayRecords': total_count,
         'aaData': data
     }
+
 
 def _render_shared_folder_users(user_and_role_list, session_user):
 
@@ -244,6 +269,7 @@ def _render_shared_folder_users(user_and_role_list, session_user):
 
     return escape(str)
 
+
 def _render_shared_folder_options_link(folder, session_user, privileged):
     """
     @param privileged whether the session user has the privilege to modify ACL
@@ -259,12 +285,14 @@ def _render_shared_folder_options_link(folder, session_user, privileged):
     #
     # N.B. need to sub out quotes for proper rendering of the dialog.
     return u'<a href="#" class="{}" data-{}="{}" data-{}="{}"' \
-           u'data-{}="{}" data-{}="{}">Options</a>'.format(
+           u'data-{}="{}" data-{}="{}">{}</a>'.format(
             _OPEN_MODAL_CLASS,
             _LINK_DATA_SID, escape(id),
             _LINK_DATA_PRIVILEGED, 1 if privileged else 0,
             _LINK_DATA_NAME, escaped_folder_name,
-            _LINK_DATA_USER_AND_ROLE_LIST, escape(urs).replace('"', '&#34;'))
+            _LINK_DATA_USER_AND_ROLE_LIST, escape(urs).replace('"', '&#34;'),
+            "Manage Folder" if privileged else "View Members")
+
 
 def to_json(user_and_role_list, session_user):
 
@@ -272,16 +300,14 @@ def to_json(user_and_role_list, session_user):
     urs = {}
     for ur in user_and_role_list:
         urs[ur.user.user_email] = {
-            _USER_AND_ROLE_FIRST_NAME_KEY:
-                _get_first_name(ur, session_user),
-            _USER_AND_ROLE_LAST_NAME_KEY:
-                _get_last_name(ur, session_user),
-            _USER_AND_ROLE_IS_OWNER_KEY:
-                (1 if ur.role == common.OWNER else 0)
+            _USER_AND_ROLE_FIRST_NAME_KEY:  _get_first_name(ur, session_user),
+            _USER_AND_ROLE_LAST_NAME_KEY:   _get_last_name(ur, session_user),
+            _USER_AND_ROLE_ROLE_KEY:        ur.role
         }
 
     # dump to a compact-format JSON string
     return json.dumps(urs, separators=(',',':'))
+
 
 def _get_first_name(user_and_role, session_user):
     """
@@ -290,6 +316,7 @@ def _get_first_name(user_and_role, session_user):
     user = user_and_role.user
     return "me" if user.user_email == session_user else user.first_name
 
+
 def _get_last_name(user_and_role, session_user):
     """
     otherwise.
@@ -297,6 +324,7 @@ def _get_last_name(user_and_role, session_user):
     """
     user = user_and_role.user
     return "" if user.user_email == session_user else user.last_name
+
 
 @view_config(
     route_name = 'json.add_shared_folder_perm',
@@ -318,13 +346,12 @@ def json_add_shared_folder_perm(request):
     user_id = request.params['user_id']
     store_id = _decode_store_id(request.params['store_id'])
     folder_name = request.params['folder_name']
+    role = int(request.params['role'])
     note = request.params.get('note') or ''
 
     role_pair = common.PBSubjectRolePair()
     role_pair.subject = user_id
-    # editor by default when added
-    # TODO (WW) why not simply use common.EDITOR?
-    role_pair.role = common._PBROLE.values_by_name['EDITOR'].number
+    role_pair.role = role
 
     sp = get_rpc_stub(request)
     exception2error(sp.share_folder, (folder_name, store_id, [role_pair], note, None), {
@@ -340,6 +367,7 @@ def json_add_shared_folder_perm(request):
             _("You don't have permission to invite people to this folder"),
     })
 
+
 @view_config(
     route_name = 'json.set_shared_folder_perm',
     renderer = 'json',
@@ -347,7 +375,6 @@ def json_add_shared_folder_perm(request):
     request_method = 'POST'
 )
 def json_set_shared_folder_perm(request):
-
     """
     This method modifies permissions that a user already has for
     a shared folder through the update_acl call. Though it can also create
@@ -360,8 +387,7 @@ def json_set_shared_folder_perm(request):
 
     storeid = _decode_store_id(request.params['storeid'])
     userid = request.params['userid']
-    # TODO (WW) a smarter way to retrieve the role number
-    role = common._PBROLE.values_by_name[request.params['perm']].number
+    role = int(request.params['role'])
 
     sp = get_rpc_stub(request)
     try:
@@ -370,6 +396,7 @@ def json_set_shared_folder_perm(request):
     except Exception as e:
         error = parse_rpc_error_exception(request, e)
         return {'success': False, 'response_message': error}
+
 
 @view_config(
     route_name = 'json.delete_shared_folder_perm',

@@ -1,10 +1,10 @@
 <%inherit file="dashboard_layout.mako"/>
 <%! page_title = "Devices" %>
 
-<h2>${page_title}</h2>
+<h2>${page_heading}</h2>
 
-<table class="table">
-    <thead><tr><th>Name</th><th>Last seen</th><th></th><th></th></tr></thead>
+<table class="table table-hover">
+    <thead><tr><th>Name</th><th>Last seen</th><th></th></tr></thead>
     <tbody>
 
     %for d in devices:

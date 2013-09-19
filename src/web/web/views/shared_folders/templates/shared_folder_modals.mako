@@ -1,21 +1,27 @@
 ## TODO (WW) move JS code that refers to names in this file to here
 
 <%def name="main_modals()">
-    <div id="modal" class="modal hide" tabindex="-1" role="dialog">
+    <div id="modal" class="modal hide" tabindex="-1" role="dialog" style="width: 700px">
         <div class="modal-header">
             <button type="button" class="close" data-dismiss="modal">×</button>
-            <h4>Options for folder &quot;<span id="modal-folder-name"></span>&quot;</h4>
+            <h4><span id="modal-folder-title"></span>&nbsp;
+                <i id="modal-folder-title-info-icon" class="icon-info-sign"></i></h4>
         </div>
-        <div class="modal-body">
-            <table id="modal-user-role-table" class="table">
-                <thead><tr><th>Member</th><th></th></tr></thead>
+        <div class="modal-body" style="min-height: 300px">
+            <table id="modal-user-role-table" class="table table-hover">
+                ## min-width to avoid table cell shifting due to different lengths of role
+                ## strings, when the user updates members roles.
+                <thead><tr><th>Member</th><th style="min-width: 64px">Role</th><th></th></tr></thead>
                 <tbody></tbody>
             </table>
         </div>
         <div class="modal-footer">
             <form id="modal-invite-form" class="form-inline" method="post">
                 <span id="invite-user-inputs" class="pull-left">
-                    <input type="text" id="modal-invitee-email" placeholder="Add email">
+                    <input type="text" id="modal-invitee-email" placeholder="Invite email">
+                    as
+                    <select id="modal-invite-role-select" style="width: 100px;">
+                    </select>
                     <input class="btn btn-primary" type="submit" value="Send Invite">
                 </span>
                 ## Use a space to keep the spinner in place
@@ -35,7 +41,7 @@
             ## Note: the following text should be consistent with the text in
             ## RoleMenu.java.
             <p>Are you sure you want to remove
-                <span class="remove-modal-full-name"></span>
+                <strong><span class="remove-modal-full-name"></span></strong>
                 (<span class="remove-modal-email"></span>) from the shared folder?</p>
             <p class="footnote">
                 This will delete the folder from the person's computers.

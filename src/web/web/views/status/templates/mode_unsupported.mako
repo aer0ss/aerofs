@@ -1,6 +1,6 @@
 <%inherit file="dashboard_layout.mako"/>
 <%! page_title = "Server Status" %>
 
-<h2>Service Statuses</h2>
+<h2>Service Status</h2>
 
-<p>Service statuses are unavailable at this time.</p>
+<p>Service Status is unavailable at this time.</p>

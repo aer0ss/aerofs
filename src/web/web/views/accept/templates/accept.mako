@@ -16,7 +16,7 @@
 </div>
 
 <div class="hidden page_block" id="team-invitations-div">
-    <h2 style="margin-bottom: 15px;">Team Invitations</h2>
+    <h2 style="margin-bottom: 15px;">Invitations to Teams</h2>
     <table class="table" style="border: 1px dotted #ccc;">
         <tbody id="team-invitations-tbody">
             % for invite in team_invitations:
@@ -27,7 +27,7 @@
 </div>
 
 <div class="hidden page_block" id="folder-invitations-div">
-    <h2 style="margin-bottom: 15px;">Shared Folder Invitations</h2>
+    <h2 style="margin-bottom: 15px;">Invitations to Shared Folders</h2>
     <table class="table" style="border: 1px dotted #ccc;">
         <tbody id="folder-invitations-tbody">
                 % for invite in folder_invitations:

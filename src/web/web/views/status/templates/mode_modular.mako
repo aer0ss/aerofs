@@ -1,6 +1,6 @@
 <h4>Persistent Box</h4>
 <div class="page_block" id="server-status-div">
-    <table class="table" style="border: 1px">
+    <table class="table table-hover" style="border: 1px">
         <thead><th style="width:4%"></th><th style="width:12%"></th><th style:"width:84%"></th></thead>
         <tbody id="server-status-tbody">
             % for server_status in persistent_server_statuses:
@@ -12,7 +12,7 @@
 
 <h4>Transient Box</h4>
 <div class="page_block" id="server-status-div">
-    <table class="table" style="border: 1px">
+    <table class="table table-hover" style="border: 1px">
         <thead><th style="width:4%"></th><th style="width:12%"></th><th style:"width:84%"></th></thead>
         <tbody id="server-status-tbody">
             % for server_status in transient_server_statuses:

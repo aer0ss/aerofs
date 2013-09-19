@@ -26,7 +26,7 @@ def my_devices(request):
     if len(devices) == 0:
         raise HTTPFound(request.route_path('download') + "?msg_type=no_device")
 
-    return _devices(devices, user, _("Devices"))
+    return _devices(devices, user, _("My Devices"))
 
 @view_config(
     route_name = 'user_devices',
@@ -61,12 +61,14 @@ def team_server_devices(request):
 
     return _devices(devices, ts_user, _("Team Servers"))
 
-def _devices(devices, user, page_title):
+def _devices(devices, user, page_heading):
     return {
         'url_param_user': URL_PARAM_USER,
         'url_param_device_id': _URL_PARAM_DEVICE_ID,
         'url_param_device_name': _URL_PARAM_DEVICE_NAME,
-        'page_title': page_title,
+        # N.B. can't use "page_title" as the variable name. base_layout.mako
+        # defines a global variable using the same name.
+        'page_heading': page_heading,
         'user': user,
         'devices': devices
     }

@@ -83,7 +83,7 @@ def _render_user_options_link(request, user_and_level, session_user):
         shared_folders_url = request.route_url('user_shared_folders', _query=params)
         devices_url = request.route_url('user_devices', _query=params)
 
-    return render('options_menu.mako', {
+    return render('actions_menu.mako', {
                                         'user_is_session_user': user_is_session_user,
                                         'shared_folders_url': shared_folders_url,
                                         'devices_url': devices_url,

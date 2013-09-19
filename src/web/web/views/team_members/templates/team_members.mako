@@ -9,7 +9,7 @@
 
 <div class="page_block">
     <h2>Team Members</h2>
-    <table id="users_table" class="table">
+    <table id="users_table" class="table table-hover">
         ## thead is required by datatables
         <thead style="display: none;"><tr><th></th><th></th><th></th><th></th></tr></thead>
         <tbody></tbody>

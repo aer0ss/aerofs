@@ -88,9 +88,9 @@
 <%def name="render_nonadmin_links()">
     <%
         links = [
-            ('my_shared_folders', _("Shared Folders")),
-            ('my_devices', _("Devices")),
-            ('accept', _("Invitations")),
+            ('my_shared_folders', _("My Shared Folders")),
+            ('my_devices', _("My Devices")),
+            ('accept', _("My Invitations")),
         ]
     %>
     % for link in links:
@@ -102,7 +102,7 @@
     <%
         links = [
             ('team_members', _("Team Members")),
-            ('team_shared_folders', _("Shared Folders")),
+            ('team_shared_folders', _("All Shared Folders")),
             ('team_server_devices', _("Team Servers")),
             ('team_settings', _("Settings")),
         ]
@@ -112,7 +112,7 @@
     % endfor
 
     %if request.registry.settings['deployment.mode'] != 'prod':
-        ${render_navigation_link(('status', _("Service Statuses")))}
+        ${render_navigation_link(('status', _("Service Status")))}
     %endif
 </%def>
 
