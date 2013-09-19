@@ -148,8 +148,7 @@ public class Main
                                 L.product() + '.';
                     } else {
                         msg = "Failed to initialize the configuration subsystem. Please verify " +
-                                "that all configuration files are accessible and that the " +
-                                "configuration service is available.";
+                                "the configuration service is available.";
                     }
                 }
 
