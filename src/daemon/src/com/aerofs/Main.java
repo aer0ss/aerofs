@@ -139,6 +139,9 @@ public class Main
             initializeConfigurationSystem(AppRoot.abs());
             writeCACertToFile(AppRoot.abs());
         } catch (Exception e) {
+            // WARNING: the following logic is fragile, the root problem is that
+            // initializeConfigurationSystem() needs to be reworked and updates its signature to
+            // explicitly throw IncompatibleModeException instead.
             if (prog.equals(LibParam.GUI_NAME) || prog.equals(LibParam.CLI_NAME)) {
                 String msg = e instanceof ConfigurationException
                         && e.getCause() instanceof IncompatibleModeException
@@ -147,6 +150,12 @@ public class Main
                         : "Failed to initialize the configuration subsystem. Please verify " +
                         "the configuration service is available.";
 
+                // This is a workaround for the following problem:
+                // We have an error message for the user but we are in Main, which lacks the access
+                // to resources (SWT) to display the error message. Hence we pass the error
+                // message forward as an application argument.
+                // FIXME(AT): refactor Main to only start the programs and have individual program
+                // run initialization (through inheritance maybe).
                 String[] temp = new String[appArgs.length + 1];
                 System.arraycopy(appArgs, 0, temp, 0, appArgs.length);
                 temp[temp.length - 1] = "-E" + msg;
