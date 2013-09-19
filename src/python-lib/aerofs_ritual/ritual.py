@@ -22,12 +22,11 @@ from lib import app
 from gen import common_pb2, ritual_pb2
 from gen.common_pb2 import PBException, PBSubjectRolePair
 
-def connect(rpc_host_addr = 'localhost', rpc_host_port = None, user = None):
+def connect(rpc_host_addr = 'localhost', rpc_host_port = None):
     if rpc_host_port is None: rpc_host_port = app.cfg.ritual_port()
-    if user is None: user = app.user()
     ritual_service = ritual_pb2.RitualServiceRpcStub(
             connection.SyncConnectionService(rpc_host_addr, rpc_host_port))
-    return _RitualServiceWrapper(ritual_service, user)
+    return _RitualServiceWrapper(ritual_service)
 
 def wait():
     while True:
@@ -53,9 +52,8 @@ class _RitualServiceWrapper(object):
     the Daemon may throw object-not-found exceptions.
     """
 
-    def __init__(self, rpc_service, user):
+    def __init__(self, rpc_service):
         self._service = rpc_service
-        self._user = user
 
     def heartbeat(self):
         self._service.heartbeat()
@@ -141,11 +139,11 @@ class _RitualServiceWrapper(object):
 
     def get_object_attributes_no_wait(self, path):
         pbpath = convert.absolute_to_pbpath(path)
-        return self._service.get_object_attributes(self._user, pbpath)
+        return self._service.get_object_attributes(pbpath)
 
     def get_object_attributes(self, path):
         pbpath = self.wait_path(path)
-        return self._service.get_object_attributes(self._user, pbpath)
+        return self._service.get_object_attributes(pbpath)
 
     def get_children_attributes(self, path):
         """
@@ -153,7 +151,7 @@ class _RitualServiceWrapper(object):
         PBObjectAttributes
         """
         pbpath = self.wait_path(path)
-        reply = self._service.get_children_attributes(self._user, pbpath)
+        reply = self._service.get_children_attributes(pbpath)
         ret = {}
         for i in range(0, len(reply.children_name)):
             ret[reply.children_name[i]] = reply.children_attributes[i]
@@ -204,11 +202,11 @@ class _RitualServiceWrapper(object):
 
     def update_acl(self, path, subject, role):
         pbpath = self.wait_path(path)
-        self._service.update_acl(self._user, pbpath, subject, role)
+        self._service.update_acl(pbpath, subject, role)
 
     def delete_acl(self, path, subject):
         pbpath = self.wait_path(path)
-        self._service.delete_acl(self._user, pbpath, subject)
+        self._service.delete_acl(pbpath, subject)
 
     def get_acl(self, path):
         """
@@ -227,7 +225,7 @@ class _RitualServiceWrapper(object):
             folder path
         """
         pbpath = self.wait_path(path)
-        reply = self._service.get_acl(self._user, pbpath)
+        reply = self._service.get_acl(pbpath)
 
         acl = {}
         for pair in reply.subject_role:
@@ -344,7 +342,7 @@ class _RitualServiceWrapper(object):
         """
         while True:
             try:
-                self._service.get_object_attributes(self._user, pbpath)
+                self._service.get_object_attributes(pbpath)
                 return
             except exception.ExceptionReply as e:
                 if e.get_type() == PBException.NOT_FOUND:
@@ -359,7 +357,7 @@ class _RitualServiceWrapper(object):
     def wait_pbpath_to_disappear(self, pbpath):
         try:
             while True:
-                self._service.get_object_attributes(self._user, pbpath)
+                self._service.get_object_attributes(pbpath)
                 time.sleep(param.POLLING_INTERVAL)
         except exception.ExceptionReply as e:
             if e.get_type() == PBException.NOT_FOUND: pass
