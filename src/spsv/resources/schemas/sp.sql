@@ -69,7 +69,7 @@ CREATE TABLE IF NOT EXISTS `sp_cert` (
   `c_expire_ts` TIMESTAMP NOT NULL,
   `c_revoke_ts` TIMESTAMP, -- when the certificate has not been revoked, this is zero.
   PRIMARY KEY (`c_serial`),
-  INDEX `c_did_idx` (`c_device_id`)
+  INDEX `c_did_idx` (`c_device_id`) -- used when verifying that a cert-based signin is valid
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 CREATE TABLE IF NOT EXISTS `sp_signup_code` (
