@@ -379,6 +379,11 @@ function render_template() {
     fi
 
     # render from template file to output file
+    # we cp -a first to make sure the rendered file keeps the same permissions
+    # as its source file, which is important for things like the Linux launcher
+    # and copier scripts, as well as the Linux and OSX updaters.  > will
+    # truncate the file before writing output without changing permissions.
+    cp -a "$1" "$2"
     sed -e "s/\[AEROFS_PRODUCT_SPACEFREE\]/${AEROFS_PRODUCT_SPACEFREE}/g" \
         -e "s/\[AEROFS_PRODUCT_UNIX\]/${AEROFS_PRODUCT_UNIX}/g" \
         -e "s/\[AEROFS_PRODUCT\]/${AEROFS_PRODUCT}/g" \
