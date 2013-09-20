@@ -15,6 +15,7 @@ import com.aerofs.lib.ex.ExAlreadyInvited;
 import com.aerofs.lib.ex.ExChildAlreadyShared;
 import com.aerofs.lib.ex.ExDeviceIDAlreadyExists;
 import com.aerofs.lib.ex.ExDeviceOffline;
+import com.aerofs.lib.ex.shared_folder_rules.ExSharedFolderRulesEditorsDisallowedInExternallySharedFolders;
 import com.aerofs.lib.ex.ExIndexing;
 import com.aerofs.lib.ex.ExNoStripeCustomerID;
 import com.aerofs.lib.ex.ExNotAuthenticated;
@@ -24,6 +25,8 @@ import com.aerofs.lib.ex.ExNotShared;
 import com.aerofs.lib.ex.ExParentAlreadyShared;
 import com.aerofs.lib.ex.ExUIMessage;
 import com.aerofs.lib.ex.ExUpdating;
+import com.aerofs.lib.ex.shared_folder_rules.ExSharedFolderRulesWarningConvertToExternallySharedFolder;
+import com.aerofs.lib.ex.shared_folder_rules.ExSharedFolderRulesWarningOwnerCanShareWithExternalUsers;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.proto.Common.PBException.Type;
 import com.aerofs.swig.driver.Driver;
@@ -83,8 +86,8 @@ public abstract class Util
 
         // Register exception types from lib
         Exceptions.registerExceptionTypes(
-                new ImmutableMap.Builder<Type, Class<? extends AbstractExWirable>>()
-                        .put(Type.DEVICE_ID_ALREADY_EXISTS, ExDeviceIDAlreadyExists.class)
+                new ImmutableMap.Builder<Type, Class<? extends AbstractExWirable>>().put(
+                        Type.DEVICE_ID_ALREADY_EXISTS, ExDeviceIDAlreadyExists.class)
                         .put(Type.ALREADY_INVITED, ExAlreadyInvited.class)
                         .put(Type.UPDATING, ExUpdating.class)
                         .put(Type.INDEXING, ExIndexing.class)
@@ -98,6 +101,14 @@ public abstract class Util
                         .put(Type.NO_STRIPE_CUSTOMER_ID, ExNoStripeCustomerID.class)
                         .put(Type.NOT_AUTHENTICATED, ExNotAuthenticated.class)
                         .put(Type.INVITEE_LIST_EMPTY, ExInviteeListEmpty.class)
+
+                        // exceptions used by shared folder rules
+                        .put(Type.SHARED_FOLDER_RULES_WARNING_CONVERT_TO_EXTERNALLY_SHARED_FOLDER,
+                                ExSharedFolderRulesWarningConvertToExternallySharedFolder.class)
+                        .put(Type.SHARED_FOLDER_RULES_WARNING_OWNER_CAN_SHARE_WITH_EXTERNAL_USERS,
+                                ExSharedFolderRulesWarningOwnerCanShareWithExternalUsers.class)
+                        .put(Type.SHARED_FOLDER_RULES_EDITORS_DISALLOWED_IN_EXTERNALL_SHARED_FOLDER,
+                                ExSharedFolderRulesEditorsDisallowedInExternallySharedFolders.class)
 
                         // The following exceptions are consumed by Python clients only. No need to
                         // list them here for the time being.
@@ -117,7 +128,7 @@ public abstract class Util
         for (StackTraceElement e : stackTrace) {
             if (e == null) break; // technically this should never happen
 
-            builder.append("\t").append("at " + e.toString());
+            builder.append("\tat ").append(e.toString());
             builder.append(System.getProperty("line.separator"));
         }
 

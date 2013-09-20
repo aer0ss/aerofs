@@ -313,7 +313,7 @@ public class SharedFolder
     }
 
     /**
-     * N.B the return value include Team Servers
+     * @return all the users, including members, pending users, and Team Servers
      */
     public ImmutableCollection<User> getAllUsers() throws SQLException
     {
@@ -334,6 +334,21 @@ public class SharedFolder
         return _f._db.getMembers(_sid);
     }
 
+    /**
+     * @return new ACL epochs for each affected user id, to be published via verkehr
+     * @throws ExNotFound if trying to add new users to the store or update a pending user's ACL
+     */
+    public ImmutableCollection<UserID> updateACL(User user, Role role)
+            throws ExNoAdminOrOwner, ExNotFound, SQLException
+    {
+        _f._db.updateACL(_sid, user.id(), role);
+
+        throwIfNoOwnerMemberOrPendingLeft();
+
+        return _f._db.getMembers(_sid);
+    }
+
+
     public @Nullable Role getMemberRoleNullable(User user)
             throws SQLException
     {
@@ -348,6 +363,16 @@ public class SharedFolder
     {
         Role role = getMemberRoleNullable(user);
         if (role == null) throw new ExNoPerm();
+        return role;
+    }
+
+    /**
+     * @return the role of the given user. The user must be an existing member or pending user.
+     */
+    public @Nonnull Role getRole(User user) throws SQLException
+    {
+        Role role = _f._db.getMemberOrPendingRoleNullable(_sid, user.id());
+        assert role != null;
         return role;
     }
 

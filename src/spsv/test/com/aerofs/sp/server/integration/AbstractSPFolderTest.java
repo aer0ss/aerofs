@@ -52,20 +52,28 @@ public class AbstractSPFolderTest extends AbstractSPTest
      */
     protected void shareFolder(User sharer, SID sid, User sharee, Role role) throws Exception
     {
-        shareFolderImpl(sharer, sid, sharee, role, false);
+        shareFolderImpl(sharer, sid, sharee, role, false, false);
+    }
+
+    protected void shareFolderSuppressWarnings(User sharer, SID sid, User sharee, Role role)
+            throws Exception
+    {
+        shareFolderImpl(sharer, sid, sharee, role, false, true);
     }
 
     protected void shareFolderExternal(User sharer, SID sid, User sharee, Role role)
             throws Exception
     {
-        shareFolderImpl(sharer, sid, sharee, role, true);
+        shareFolderImpl(sharer, sid, sharee, role, true, false);
     }
 
-    private void shareFolderImpl(User sharer, SID sid, User sharee, Role role, boolean ext)
+    private void shareFolderImpl(User sharer, SID sid, User sharee, Role role, boolean external,
+            boolean suppressWarnings)
             throws Exception
     {
         setSessionUser(sharer);
-        service.shareFolder(sid.toStringFormal(), sid.toPB(), toPB(sharee, role), "", ext);
+        service.shareFolder(sid.toStringFormal(), sid.toPB(), toPB(sharee, role), "", external,
+                suppressWarnings);
     }
 
     protected void joinSharedFolder(User sharee, SID sid) throws Exception

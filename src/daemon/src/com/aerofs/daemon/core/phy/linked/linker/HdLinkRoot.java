@@ -140,7 +140,7 @@ public class HdLinkRoot extends AbstractHdIMC<EILinkRoot>
             try {
                 SPBlockingClient sp = _factSP.create_(_localUser.get());
                 sp.signInRemote();
-                sp.shareFolder(name, sid.toPB(), Collections.<PBSubjectRolePair>emptyList(), "", true);
+                sp.shareFolder(name, sid.toPB(), Collections.<PBSubjectRolePair>emptyList(), "", true, false);
             } finally {
                 tcb.pseudoResumed_();
             }

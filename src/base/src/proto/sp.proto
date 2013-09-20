@@ -242,7 +242,7 @@ service SPService {
     /**
      * WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE: remove this method
      */
-    rpc Noop(Void) returns (GetHeartInvitesQuotaReply);
+    rpc Noop(Void) returns (Void);
 
     /**
      * Get the user's preferences (name, device name, etc)
@@ -341,8 +341,8 @@ service SPService {
     rpc GetACLExcludeExternal(GetACLCall) returns (GetACLReply);
 
     // WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE remove these and move the new UpdateACL/DeleteACL calls to here
-    rpc UpdateACLDeprecated(UpdateACLDeprecatedCall) returns (Void);
-    rpc DeleteACLDEprecated(DeleteACLDeprecatedCall) returns (Void);
+    rpc noop9(Void) returns (Void);
+    rpc noop10(Void) returns (Void);
 
     /**
      * Get the certificate revocations relevant to a specific user, based on the certificate
@@ -852,12 +852,18 @@ message ShareFolderCall {
 
     // whether the sharer created the share outside his root anchor
     // ignored when adding new members to an existing shared folder
-    optional bool external = 5 [default = false];
+    optional bool external = 5;
+
+    // Whether to suppress warning exceptions (i.e. ExSharedFolderRulesWarning*) geenrated by shared
+    // folder rules. These exceptions are used by the UI to ask the user to confirm execution of
+    // potentially harmful actions. Once confirmed, the UI will call the same method again with this
+    // flag on.
+    optional bool suppressSharedFolderRulesWarnings = 6;
 }
 
 message JoinSharedFolderCall {
     required bytes shared_id = 1;
-    optional bool external = 2 [default = false];
+    optional bool external = 2;
 }
 
 message IgnoreSharedFolderCall {
@@ -875,11 +881,6 @@ message ListPendingFolderInvitationsReply {
 message EmailUserCall {
     required string subject = 1;
     required string body = 2;
-}
-
-// WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE: remove it
-message GetHeartInvitesQuotaReply {
-    required uint32 count = 1;
 }
 
 message GetUserPreferencesCall {
@@ -930,23 +931,14 @@ message UpdateACLCall {
     required bytes store_id = 1;
     required string subject = 2;
     required PBRole role = 3;
+
+    // See the same parameter in ShareFolderCall
+    optional bool suppressSharedFolderRulesWarnings = 4;
 }
 
 message DeleteACLCall {
     required bytes store_id = 1;
     required string subject = 2;
-}
-
-// WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE remove this
-message UpdateACLDeprecatedCall {
-    required bytes store_id = 1;
-    repeated PBSubjectRolePair subject_role = 2;
-}
-
-// WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE remove this
-message DeleteACLDeprecatedCall {
-    required bytes store_id = 1;
-    repeated string subject_list = 2;
 }
 
 message VerifyEmailCall {

@@ -274,7 +274,7 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
     }
 
     /**
-     * All all the users, including members and pending users
+     * @return all the users, including members, pending users, and Team Servers
      */
     public ImmutableCollection<UserID> getAllUsers(SID sid)
             throws SQLException
@@ -356,6 +356,19 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
         ps.setBytes(2, sid.getBytes());
         ps.setString(3, userID.getString());
         ps.setBoolean(4, false);        // ignore pending entries
+
+        if (ps.executeUpdate() != 1) throw new ExNotFound();
+    }
+
+    public void updateACL(SID sid, UserID userID, Role role)
+            throws SQLException, ExNotFound
+    {
+        PreparedStatement ps = prepareStatement(updateWhere(T_AC,
+                C_AC_STORE_ID + "=? and " + C_AC_USER_ID + "=?", C_AC_ROLE));
+
+        ps.setInt(1, role.ordinal());
+        ps.setBytes(2, sid.getBytes());
+        ps.setString(3, userID.getString());
 
         if (ps.executeUpdate() != 1) throw new ExNotFound();
     }

@@ -164,7 +164,7 @@ public class TestHdLinkRoot extends AbstractTest
 
         verify(sp).signInRemote();
         verify(sp).shareFolder(eq(name), any(ByteString.class),
-                anyIterableOf(PBSubjectRolePair.class), anyString(), eq(true));
+                anyIterableOf(PBSubjectRolePair.class), anyString(), eq(true), any(Boolean.class));
         verify(aclsync).syncToLocal_();
 
         verify(lrm, never()).unlink_(any(SID.class), eq(t));
@@ -178,7 +178,7 @@ public class TestHdLinkRoot extends AbstractTest
         when(lrm.isAnyRootUnder_(path)).thenReturn(false);
         when(lrm.rootForAbsPath_(path)).thenReturn(null);
         when(sp.shareFolder(eq(name), any(ByteString.class),
-                anyIterableOf(PBSubjectRolePair.class), anyString(), eq(true)))
+                anyIterableOf(PBSubjectRolePair.class), anyString(), eq(true), any(Boolean.class)))
                 .thenThrow(new ExArbitrary());
 
         try {
@@ -191,7 +191,7 @@ public class TestHdLinkRoot extends AbstractTest
 
         verify(sp).signInRemote();
         verify(sp).shareFolder(eq(name), any(ByteString.class),
-                anyIterableOf(PBSubjectRolePair.class), anyString(), eq(true));
+                anyIterableOf(PBSubjectRolePair.class), anyString(), eq(true), any(Boolean.class));
 
         verify(lrm).unlink_(any(SID.class), eq(t));
         verify(sd).deleteRootStore_(any(SIndex.class), eq(PhysicalOp.MAP), eq(t));

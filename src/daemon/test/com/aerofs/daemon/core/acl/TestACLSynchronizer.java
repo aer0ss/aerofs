@@ -211,7 +211,7 @@ public class TestACLSynchronizer extends AbstractTest
 
         aclsync.update_(sidx, user1, Role.EDITOR);
 
-        verify(spClient).updateACL(eq(sid1.toPB()), any(String.class), any(PBRole.class));
+        verify(spClient).updateACL(eq(sid1.toPB()), any(String.class), any(PBRole.class), any(Boolean.class));
         assertEquals(ImmutableMap.of(user1, Role.EDITOR), lacl.get_(sidx));
     }
 
@@ -222,7 +222,7 @@ public class TestACLSynchronizer extends AbstractTest
         when(sidx2sid.get_(eq(sidx))).thenReturn(sid1);
         when(sidx2sid.getNullable_(eq(sidx))).thenReturn(sid1);
 
-        when(spClient.updateACL(any(ByteString.class), any(String.class), any(PBRole.class)))
+        when(spClient.updateACL(any(ByteString.class), any(String.class), any(PBRole.class), any(Boolean.class)))
                 .thenThrow(new ExNoPerm());
 
         boolean ok = false;
@@ -233,7 +233,7 @@ public class TestACLSynchronizer extends AbstractTest
         }
         assertTrue(ok);
 
-        verify(spClient).updateACL(eq(sid1.toPB()), any(String.class), any(PBRole.class));
+        verify(spClient).updateACL(eq(sid1.toPB()), any(String.class), any(PBRole.class), any(Boolean.class));
         assertTrue(lacl.get_(sidx).isEmpty());
     }
 

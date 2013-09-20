@@ -46,7 +46,6 @@ import com.aerofs.proto.Sp.GetAuthorizationLevelReply;
 import com.aerofs.proto.Sp.GetCRLReply;
 import com.aerofs.proto.Sp.GetCommandQueueHeadReply;
 import com.aerofs.proto.Sp.GetDeviceInfoReply;
-import com.aerofs.proto.Sp.GetHeartInvitesQuotaReply;
 import com.aerofs.proto.Sp.GetOrgPreferencesReply;
 import com.aerofs.proto.Sp.GetOrganizationIDReply;
 import com.aerofs.proto.Sp.GetOrganizationInvitationsReply;
@@ -94,6 +93,7 @@ import com.aerofs.sp.authentication.IAuthenticator;
 import com.aerofs.sp.server.email.DeviceRegistrationEmailer;
 import com.aerofs.sp.server.email.InvitationEmailer;
 import com.aerofs.sp.server.email.RequestToSignUpEmailer;
+import com.aerofs.sp.server.shared_folder_rules.ISharedFolderRules;
 import com.aerofs.sp.server.lib.EmailSubscriptionDatabase;
 import com.aerofs.sp.server.lib.SPDatabase;
 import com.aerofs.sp.server.lib.SPParam;
@@ -122,6 +122,7 @@ import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.protobuf.ByteString;
 import org.apache.commons.lang.StringUtils;
@@ -140,6 +141,7 @@ import java.util.concurrent.ExecutionException;
 
 import static com.aerofs.base.BaseParam.VerkehrTopics.ACL_CHANNEL_TOPIC_PREFIX;
 import static com.aerofs.base.config.ConfigurationProperties.getBooleanProperty;
+import static com.google.common.base.Objects.firstNonNull;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 public class SPService implements ISPService
@@ -152,6 +154,7 @@ public class SPService implements ISPService
     private final EmailSubscriptionDatabase _esdb;
 
     private final SQLThreadLocalTransaction _sqlTrans;
+    private final ISharedFolderRules _sharedFolderRules;
 
     private VerkehrPublisher _verkehrPublisher;
     private VerkehrAdmin _verkehrAdmin;
@@ -198,17 +201,17 @@ public class SPService implements ISPService
     private static final Boolean ENABLE_PAYMENT =
             getBooleanProperty("sp.payment.enabled", true);
 
-    SPService(SPDatabase db, SQLThreadLocalTransaction sqlTrans,
+    public SPService(SPDatabase db, SQLThreadLocalTransaction sqlTrans,
             JedisThreadLocalTransaction jedisTrans, ISessionUser sessionUser,
             PasswordManagement passwordManagement,
             CertificateAuthenticator certificateAuthenticator, User.Factory factUser,
             Organization.Factory factOrg, OrganizationInvitation.Factory factOrgInvite,
-            Device.Factory factDevice, CertificateDatabase certdb,
-            EmailSubscriptionDatabase esdb, Factory factSharedFolder,
-            InvitationEmailer.Factory factEmailer, DeviceRegistrationEmailer deviceRegistrationEmailer,
+            Device.Factory factDevice, CertificateDatabase certdb, EmailSubscriptionDatabase esdb,
+            Factory factSharedFolder, InvitationEmailer.Factory factEmailer,
+            DeviceRegistrationEmailer deviceRegistrationEmailer,
             RequestToSignUpEmailer requestToSignUpEmailer, JedisEpochCommandQueue commandQueue,
             Analytics analytics, IdentitySessionManager identitySessionManager,
-            IAuthenticator authenticator)
+            IAuthenticator authenticator, ISharedFolderRules sharedFolderRules)
     {
         // FIXME: _db shouldn't be accessible here; in fact you should only have a transaction
         // factory that gives you transactions....
@@ -232,6 +235,7 @@ public class SPService implements ISPService
         _factEmailer = factEmailer;
 
         _identitySessionManager = identitySessionManager;
+        _sharedFolderRules = sharedFolderRules;
 
         _authenticator = authenticator;
 
@@ -1005,27 +1009,13 @@ public class SPService implements ISPService
     }
 
     @Override
-    public ListenableFuture<GetHeartInvitesQuotaReply> noop()
-            throws Exception
-    {
-        _sqlTrans.begin();
-
-        GetHeartInvitesQuotaReply reply = GetHeartInvitesQuotaReply.newBuilder()
-                .setCount(10)
-                .build();
-
-        _sqlTrans.commit();
-
-        return createReply(reply);
-    }
-
-    @Override
     public ListenableFuture<Void> shareFolder(String folderName, ByteString shareId,
-            List<PBSubjectRolePair> rolePairs, @Nullable String note, @Nullable Boolean ext)
+            List<PBSubjectRolePair> rolePairs, @Nullable String note, @Nullable Boolean external,
+            @Nullable Boolean suppressSharedFolderRulesWarnings)
             throws Exception
     {
-        // vanquish the null pointer
-        final boolean external = ext != null && ext;
+        external = firstNonNull(external, false);
+        suppressSharedFolderRulesWarnings = firstNonNull(suppressSharedFolderRulesWarnings, false);
 
         SharedFolder sf = _factSharedFolder.create(shareId);
         if (sf.id().isUserRoot()) throw new ExBadArgs("Cannot share root");
@@ -1039,7 +1029,12 @@ public class SPService implements ISPService
 
         _sqlTrans.begin();
 
-        Collection<UserID> users = saveSharedFolderIfNecessary(folderName, sf, sharer, external);
+        Set<UserID> users = Sets.newHashSet();
+
+        users.addAll(saveSharedFolderIfNecessary(folderName, sf, sharer, external));
+
+        users.addAll(_sharedFolderRules.onInvitingUsers(sharer, sf, srps,
+                suppressSharedFolderRulesWarnings));
 
         List<InvitationEmailer> emailers = createFolderInvitationAndEmailer(folderName, note, sf,
                 sharer, srps);
@@ -1148,11 +1143,10 @@ public class SPService implements ISPService
     }
 
     @Override
-    public ListenableFuture<Void> joinSharedFolder(ByteString sid, @Nullable Boolean ext)
+    public ListenableFuture<Void> joinSharedFolder(ByteString sid, @Nullable Boolean external)
             throws Exception
     {
-        // vanquish the null pointer
-        final boolean external = ext != null && ext;
+        external = firstNonNull(external, false);
 
         _sqlTrans.begin();
 
@@ -1691,12 +1685,6 @@ public class SPService implements ISPService
     }
 
     @Override
-    public ListenableFuture<Void> noop3()
-    {
-        return createVoidReply();
-    }
-
-    @Override
     public ListenableFuture<GetACLReply> getACLExcludeExternal(final Long epoch)
             throws SQLException, ExNoPerm, ExNotAuthenticated
     {
@@ -1747,30 +1735,15 @@ public class SPService implements ISPService
     }
 
     @Override
-    public ListenableFuture<Void> updateACLDeprecated(ByteString storeId,
-            List<PBSubjectRolePair> subjectRole)
-            throws Exception
-    {
-        for (PBSubjectRolePair srp : subjectRole) {
-            updateACL(storeId, srp.getSubject(), srp.getRole());
-        }
-        return createVoidReply();
-    }
-
-    @Override
-    public ListenableFuture<Void> deleteACLDEprecated(ByteString storeId, List<String> subjectList)
-            throws Exception
-    {
-        for (String subject: subjectList) deleteACL(storeId, subject);
-        return createVoidReply();
-    }
-
-    @Override
     public ListenableFuture<Void> updateACL(final ByteString storeId, String subjectString,
-            PBRole role)
+            PBRole pbRole, @Nullable Boolean supressWarnings)
             throws Exception
     {
+        supressWarnings = firstNonNull(supressWarnings, false);
+
         User user = _sessionUser.get();
+        User subject = _factUser.createFromExternalID(subjectString);
+        Role role = Role.fromPB(pbRole);
         SharedFolder sf = _factSharedFolder.create(storeId);
 
         // making the modification to the database, and then getting the current acl list should
@@ -1778,10 +1751,12 @@ public class SPService implements ISPService
         // notification that is newer than what it should be (i.e. we skip an update
 
         _sqlTrans.begin();
+
         sf.throwIfNoPrivilegeToChangeACL(user);
-        User subject = _factUser.createFromExternalID(subjectString);
-        // always call this method as the last step of the transaction
-        publishACLs_(sf.updateMemberACL(subject, Role.fromPB(role)));
+        _sharedFolderRules.onUpdatingACL(sf, user, role, supressWarnings);
+
+        // always call publishACLs_() as the last step of the transaction
+        publishACLs_(sf.updateMemberACL(subject, role));
         _sqlTrans.commit();
 
         return createVoidReply();
@@ -2039,13 +2014,6 @@ public class SPService implements ISPService
             }
             return new SignUpWithCodeImplResult(acceptTeamInvitation(user, oi.getOrganization()), true);
         }
-    }
-
-    @Override
-    public ListenableFuture<Void> noop8()
-            throws Exception
-    {
-        return null;
     }
 
     /**
@@ -2489,31 +2457,56 @@ public class SPService implements ISPService
     }
 
     @Override
+    public ListenableFuture<Void> noop()
+    {
+        return null;
+    }
+
+    @Override
+    public ListenableFuture<Void> noop3()
+    {
+        return null;
+    }
+
+    @Override
     public ListenableFuture<Void> noop4()
-            throws Exception
     {
         return null;
     }
 
     @Override
     public ListenableFuture<Void> noop5()
-            throws Exception
     {
         return null;
     }
 
     @Override
     public ListenableFuture<Void> noop6()
-            throws Exception
     {
         return null;
     }
 
     @Override
     public ListenableFuture<Void> noop7()
-            throws Exception
     {
         return null;
     }
 
+    @Override
+    public ListenableFuture<Void> noop8()
+    {
+        return null;
+    }
+
+    @Override
+    public ListenableFuture<Void> noop9()
+    {
+        return null;
+    }
+
+    @Override
+    public ListenableFuture<Void> noop10()
+    {
+        return null;
+    }
 }

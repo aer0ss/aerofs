@@ -46,6 +46,8 @@ import com.aerofs.sp.server.lib.user.User;
 import com.aerofs.sp.server.session.SPActiveTomcatSessionTracker;
 import com.aerofs.sp.server.session.SPActiveUserSessionTracker;
 import com.aerofs.sp.server.session.SPSessionInvalidator;
+import com.aerofs.sp.server.shared_folder_rules.ISharedFolderRules;
+import com.aerofs.sp.server.shared_folder_rules.SharedFolderRulesFactory;
 import com.aerofs.verkehr.client.lib.admin.VerkehrAdmin;
 import com.aerofs.verkehr.client.lib.publisher.VerkehrPublisher;
 import com.google.common.collect.Lists;
@@ -140,6 +142,7 @@ public class AbstractSPTest extends AbstractTestWithDatabase
 
     @Spy protected IdentitySessionManager _identitySessionManager = new IdentitySessionManager();
     @Spy protected IAuthenticator _authenticator = mock(IAuthenticator.class);
+    @Spy protected ISharedFolderRules sharedFolderRules = SharedFolderRulesFactory.create();
 
     // Subclasses can declare a @Mock'd or @Spy'd object for
     // - PasswordManagement,
@@ -165,10 +168,7 @@ public class AbstractSPTest extends AbstractTestWithDatabase
     {
         nextUserID = 1;
 
-        service.setVerkehrClients_(verkehrPublisher, verkehrAdmin);
-        service.setSessionInvalidator(sessionInvalidator);
-        service.setUserTracker(userSessionTracker);
-        service.setMaxFreeUserCounts(Integer.MAX_VALUE, Integer.MAX_VALUE);
+        wireSPService();
 
         verkehrPublished = mockAndCaptureVerkehrPublish();
 
@@ -184,6 +184,15 @@ public class AbstractSPTest extends AbstractTestWithDatabase
         saveUser(USER_3);
 
         sqlTrans.commit();
+    }
+
+    // Do wiring for SP after its construction
+    protected void wireSPService()
+    {
+        service.setVerkehrClients_(verkehrPublisher, verkehrAdmin);
+        service.setSessionInvalidator(sessionInvalidator);
+        service.setUserTracker(userSessionTracker);
+        service.setMaxFreeUserCounts(Integer.MAX_VALUE, Integer.MAX_VALUE);
     }
 
     /**

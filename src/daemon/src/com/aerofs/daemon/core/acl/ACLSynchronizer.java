@@ -344,7 +344,7 @@ public class ACLSynchronizer
             tcb = tk.pseudoPause_("spacl");
             SPBlockingClient sp = _factSP.create_(_cfgLocalUser.get());
             sp.signInRemote();
-            sp.updateACL(sid.toPB(), subject.getString(), role.toPB());
+            sp.updateACL(sid.toPB(), subject.getString(), role.toPB(), false);
         } finally {
             if (tcb != null) tcb.pseudoResumed_();
             tk.reclaim_();

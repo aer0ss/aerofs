@@ -202,7 +202,7 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
             SPBlockingClient sp = _factSP.create_(_localUser.get());
             sp.signInRemote();
             // external shared folders are create by HdLinkRoot only
-            sp.shareFolder(folderName, sid.toPB(), roles, emailNote, false);
+            sp.shareFolder(folderName, sid.toPB(), roles, emailNote, false, false);
         } finally {
             if (tcb != null) tcb.pseudoResumed_();
             tk.reclaim_();

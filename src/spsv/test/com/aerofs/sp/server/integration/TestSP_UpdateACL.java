@@ -26,7 +26,7 @@ public class TestSP_UpdateACL extends AbstractSPACLTest
 
         // update ACL for user 3 as user 1
         setSessionUser(USER_1);
-        service.updateACL(SID_1.toPB(), USER_3.id().getString(), Role.OWNER.toPB());
+        service.updateACL(SID_1.toPB(), USER_3.id().getString(), Role.OWNER.toPB(), false);
 
         // check that notifications were published on update
         assertVerkehrPublishOnlyContains(USER_1, USER_3);
@@ -54,7 +54,7 @@ public class TestSP_UpdateACL extends AbstractSPACLTest
         setSessionUser(USER_1);
         try {
             // should fail with ExNotFound
-            service.updateACL(SID_1.toPB(), USER_3.id().getString(), Role.OWNER.toPB());
+            service.updateACL(SID_1.toPB(), USER_3.id().getString(), Role.OWNER.toPB(), false);
             // must not reach here
             fail();
         } catch (Exception e) {
@@ -82,7 +82,7 @@ public class TestSP_UpdateACL extends AbstractSPACLTest
         // try to edit user 1's ACL entry for store 1 as user 3
         setSessionUser(USER_3);
         try {
-            service.updateACL(SID_1.toPB(), USER_1.id().getString(), Role.EDITOR.toPB());
+            service.updateACL(SID_1.toPB(), USER_1.id().getString(), Role.EDITOR.toPB(), false);
             fail();
         } catch (ExNoPerm e) {
             // make sure we clean up after uncommitted transaction(s)
@@ -113,7 +113,7 @@ public class TestSP_UpdateACL extends AbstractSPACLTest
 
         // try to edit user 1's ACL entry for store 1 as user 3
         setSessionUser(admin);
-        service.updateACL(SID_1.toPB(), USER_1.id().getString(), Role.EDITOR.toPB());
+        service.updateACL(SID_1.toPB(), USER_1.id().getString(), Role.EDITOR.toPB(), false);
 
         // switch to USER_3 so we can verify epoch number increments below.
         setSessionUser(USER_3);

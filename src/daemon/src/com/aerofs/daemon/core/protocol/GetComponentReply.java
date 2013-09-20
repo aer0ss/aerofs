@@ -7,7 +7,6 @@ package com.aerofs.daemon.core.protocol;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.acl.Role;
 import com.aerofs.base.ex.Exceptions;
-import com.aerofs.base.id.DID;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.daemon.core.acl.LocalACL;

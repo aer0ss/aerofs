@@ -60,7 +60,7 @@ public class TestSP_OpenID extends AbstractSPTest
 
         _nonces = service.openIdBeginTransaction().get();
 
-        _identitySessionManager.authenticateSession(_nonces.getDelegateNonce(),
+        identitySessionManager.authenticateSession(_nonces.getDelegateNonce(),
                 SESSION_NONCE_TIMEOUT_SECS, setAttributes);
 
         returnedAttributes = service.openIdGetSessionAttributes(_nonces.getSessionNonce()).get();

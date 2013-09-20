@@ -50,7 +50,7 @@ public class TestSP_ShareFolder extends AbstractSPACLTest
         try {
             setSessionUser(USER_1);
             service.shareFolder(SID_1.toStringFormal(), SID_1.toPB(),
-                    Collections.<PBSubjectRolePair>emptyList(), "", false).get();
+                    Collections.<PBSubjectRolePair>emptyList(), "", false, false).get();
             fail();
         } catch (ExInviteeListEmpty e) {}
     }
@@ -62,7 +62,7 @@ public class TestSP_ShareFolder extends AbstractSPACLTest
         try {
             setSessionUser(USER_1);
             service.shareFolder(SID_1.toStringFormal(), SID_1.toPB(),
-                    Collections.<PBSubjectRolePair>emptyList(), "", true).get();
+                    Collections.<PBSubjectRolePair>emptyList(), "", true, false).get();
         } catch (ExInviteeListEmpty e) {
             fail();
         }
@@ -91,7 +91,7 @@ public class TestSP_ShareFolder extends AbstractSPACLTest
     }
 
     @Test
-    public void shouldInviteNonAeroFSUser()
+    public void shouldInviteNonExistingUser()
             throws Exception
     {
         User user = newUser();

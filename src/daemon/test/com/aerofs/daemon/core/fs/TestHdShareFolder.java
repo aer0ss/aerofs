@@ -203,7 +203,7 @@ public class TestHdShareFolder extends AbstractTest
         handle(Path.fromString(rootSID, "d/d"), user1);
 
         verify(sp).shareFolder(eq("d"), any(ByteString.class),
-                anyIterableOf(PBSubjectRolePair.class), anyString(), eq(false));
+                anyIterableOf(PBSubjectRolePair.class), anyString(), eq(false), any(Boolean.class));
     }
 
     @Test
@@ -212,7 +212,7 @@ public class TestHdShareFolder extends AbstractTest
         handle(Path.fromString(rootSID, "a"), user1);
 
         verify(sp).shareFolder(eq("a"), any(ByteString.class),
-                anyIterableOf(PBSubjectRolePair.class), anyString(), eq(false));
+                anyIterableOf(PBSubjectRolePair.class), anyString(), eq(false), any(Boolean.class));
     }
 
     @Test
@@ -221,6 +221,6 @@ public class TestHdShareFolder extends AbstractTest
         handle(Path.root(extSID), user1);
 
         verify(sp).shareFolder(eq("external"), any(ByteString.class),
-                anyIterableOf(PBSubjectRolePair.class), anyString(), eq(false));
+                anyIterableOf(PBSubjectRolePair.class), anyString(), eq(false), any(Boolean.class));
     }
 }
