@@ -5,6 +5,7 @@
 package com.aerofs.sp.server.integration;
 
 import com.aerofs.base.ex.ExNoPerm;
+import com.aerofs.lib.LibParam.EnterpriseConfig;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.aerofs.sp.server.lib.user.User;
@@ -102,11 +103,11 @@ public class TestSP_RemoveUserFromOrganization extends AbstractSPTest
     @Test
     public void shouldFailInEnterpriseDeployment() throws Exception
     {
-        setEnterpriseDeployment(true);
-
+        EnterpriseConfig.IS_ENTERPRISE_DEPLOYMENT = true;
         try {
             shouldRemoveUserFromOrganization();
             fail();
         } catch (ExNoPerm e) { /* expected */ }
+        EnterpriseConfig.IS_ENTERPRISE_DEPLOYMENT = false;
     }
 }

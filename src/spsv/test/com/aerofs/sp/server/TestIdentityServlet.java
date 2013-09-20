@@ -6,6 +6,9 @@ package com.aerofs.sp.server;
 
 import com.aerofs.base.config.ConfigurationProperties;
 import com.aerofs.base.ex.ExBadCredential;
+import com.aerofs.lib.LibParam.EnterpriseConfig;
+import com.aerofs.lib.LibParam.Identity;
+import com.aerofs.lib.LibParam.Identity.Authenticator;
 import com.aerofs.lib.LibParam.OpenId;
 import com.aerofs.sp.server.IdentitySessionManager.DumbAssociation;
 import com.aerofs.testlib.AbstractTest;
@@ -131,8 +134,8 @@ public class TestIdentityServlet extends AbstractTest
     @Before
     public void setUp() throws Exception
     {
-        setEnterpriseDeployment(true);
-        setOpenIdEnabled(true);
+        EnterpriseConfig.IS_ENTERPRISE_DEPLOYMENT = true;
+        Identity.AUTHENTICATOR = Authenticator.OPENID;
 
         _identitySessionManager = new IdentitySessionManager();
         _server = setUpServer();
@@ -149,6 +152,9 @@ public class TestIdentityServlet extends AbstractTest
     @After
     public void tearDown() throws Exception
     {
+        Identity.AUTHENTICATOR = Authenticator.LOCAL_CREDENTIAL;
+        EnterpriseConfig.IS_ENTERPRISE_DEPLOYMENT = false;
+
         _server.stop();
         _server.destroy();
         _identitySessionManager._jedisConProvider.getConnection().flushDB();
@@ -158,7 +164,7 @@ public class TestIdentityServlet extends AbstractTest
     @Test
     public void shouldErrorWithOpenIdDisabled() throws Exception
     {
-        setOpenIdEnabled(false);
+        Identity.AUTHENTICATOR = Authenticator.LOCAL_CREDENTIAL;
 
         expect().statusCode(405).
         when()  .get("");

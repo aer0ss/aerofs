@@ -9,7 +9,7 @@ import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.base.ex.ExInternalError;
 import com.aerofs.controller.InstallActor;
 import com.aerofs.controller.SetupModel;
-import com.aerofs.controller.SignInActor.GUIOpenId;
+import com.aerofs.controller.SignInActor.OpenIdGUIActor;
 import com.aerofs.gui.AeroFSTitleAreaDialog;
 import com.aerofs.gui.CompSpin;
 import com.aerofs.gui.GUI;
@@ -71,7 +71,7 @@ public class DlgOpenIdSignIn extends AeroFSTitleAreaDialog
         GetSetupSettingsReply defaults = UIGlobals.controller().getSetupSettings();
 
         _model = new SetupModel()
-                .setSignInActor(new GUIOpenId())
+                .setSignInActor(new OpenIdGUIActor())
                 .setInstallActor(new InstallActor.SingleUser());
         _model._localOptions._rootAnchorPath = defaults.getRootAnchor();
         _model.setDeviceName(defaults.getDeviceName());

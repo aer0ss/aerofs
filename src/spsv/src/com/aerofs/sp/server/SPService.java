@@ -90,6 +90,7 @@ import com.aerofs.servlets.lib.db.jedis.JedisThreadLocalTransaction;
 import com.aerofs.servlets.lib.db.sql.SQLThreadLocalTransaction;
 import com.aerofs.servlets.lib.ssl.CertificateAuthenticator;
 import com.aerofs.sp.common.SubscriptionCategory;
+import com.aerofs.sp.authentication.IAuthenticator;
 import com.aerofs.sp.server.email.DeviceRegistrationEmailer;
 import com.aerofs.sp.server.email.InvitationEmailer;
 import com.aerofs.sp.server.email.RequestToSignUpEmailer;
@@ -183,6 +184,7 @@ public class SPService implements ISPService
     private final Analytics _analytics;
 
     private final IdentitySessionManager _identitySessionManager;
+    private IAuthenticator _authenticator;
 
     // Remember to udpate text in team_members.mako, team_settings.mako, and pricing.mako when
     // changing this number.
@@ -205,7 +207,8 @@ public class SPService implements ISPService
             EmailSubscriptionDatabase esdb, Factory factSharedFolder,
             InvitationEmailer.Factory factEmailer, DeviceRegistrationEmailer deviceRegistrationEmailer,
             RequestToSignUpEmailer requestToSignUpEmailer, JedisEpochCommandQueue commandQueue,
-            Analytics analytics, IdentitySessionManager identitySessionManager)
+            Analytics analytics, IdentitySessionManager identitySessionManager,
+            IAuthenticator authenticator)
     {
         // FIXME: _db shouldn't be accessible here; in fact you should only have a transaction
         // factory that gives you transactions....
@@ -229,6 +232,8 @@ public class SPService implements ISPService
         _factEmailer = factEmailer;
 
         _identitySessionManager = identitySessionManager;
+
+        _authenticator = authenticator;
 
         _commandQueue = commandQueue;
         _analytics = checkNotNull(analytics);
@@ -1877,10 +1882,10 @@ public class SPService implements ISPService
                 throw new ExBadCredential();
             }
 
-            user.signInWithCertificate(_certauth, device);
+            user.throwIfBadCertificate(_certauth, device);
         } else {
             // Regular users still use username/password credentials.
-            user.signInUser(SPParam.getShaedSP(credentials.toByteArray()));
+            user.throwIfBadCredential(SPParam.getShaedSP(credentials.toByteArray()));
         }
 
         // Set the session cookie.
@@ -2058,17 +2063,14 @@ public class SPService implements ISPService
     public ListenableFuture<Void> signInUser(String userId, ByteString credentials)
             throws Exception
     {
-        _sqlTrans.begin();
-
         User user = _factUser.createFromExternalID(userId);
-        user.signInUser(SPParam.getShaedSP(credentials.toByteArray()));
+
+        _authenticator.authenticateUser(user, credentials.toByteArray(), _sqlTrans);
 
         // Set the session cookie.
         _sessionUser.set(user);
         // Update the user tracker so we can invalidate sessions if needed.
         _userTracker.signIn(user.id(), _sessionUser.getSessionID());
-
-        _sqlTrans.commit();
 
         return createVoidReply();
     }
@@ -2094,7 +2096,7 @@ public class SPService implements ISPService
 
         _sqlTrans.begin();
 
-        user.signInWithCertificate(_certauth, device);
+        user.throwIfBadCertificate(_certauth, device);
         _sessionUser.set(user);
         _userTracker.signIn(user.id(), _sessionUser.getSessionID());
 

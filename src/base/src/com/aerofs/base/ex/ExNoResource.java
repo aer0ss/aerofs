@@ -8,6 +8,10 @@ import com.aerofs.base.ex.AbstractExWirable;
 import com.aerofs.proto.Common.PBException;
 import com.aerofs.proto.Common.PBException.Type;
 
+/**
+ * This exception can be thrown when a needed _internal_ resource
+ * (queues, workers, etc.) is unavailable or oversubscribed.
+ */
 public class ExNoResource extends AbstractExWirable
 {
     private static final long serialVersionUID = 1L;

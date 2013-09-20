@@ -6,10 +6,10 @@ import com.aerofs.base.ex.ExEmptyEmailAddress;
 import com.aerofs.controller.InstallActor;
 import com.aerofs.controller.SetupModel;
 import com.aerofs.controller.SetupModel.S3Options;
-import com.aerofs.controller.SignInActor;
+import com.aerofs.controller.SignInActor.CredentialActor;
+import com.aerofs.controller.SignInActor.OpenIdCLIActor;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.LibParam;
-import com.aerofs.lib.LibParam.OpenId;
 import com.aerofs.lib.RootAnchorUtil;
 import com.aerofs.lib.S;
 import com.aerofs.lib.StorageType;
@@ -33,8 +33,8 @@ public class CLISetup
         GetSetupSettingsReply defaults = UIGlobals.controller().getSetupSettings();
 
         _model = new SetupModel()
-                .setSignInActor(LibParam.OpenId.ENABLED ?
-                        new SignInActor.CLIOpenId(cli) : new SignInActor.Credential());
+                .setSignInActor(LibParam.OpenId.enabled() ?
+                        new OpenIdCLIActor(cli) : new CredentialActor());
 
         _model._localOptions._rootAnchorPath = defaults.getRootAnchor();
         _model.setDeviceName(defaults.getDeviceName());
@@ -62,7 +62,7 @@ public class CLISetup
             setupSingleuser(cli);
         }
 
-        if (OpenId.ENABLED) {
+        if (LibParam.OpenId.enabled()) {
             _model.doSignIn();
             cli.progress(S.SETUP_INSTALL_MESSAGE);
             _model.doInstall();
@@ -119,14 +119,14 @@ public class CLISetup
     private void getUser(CLI cli)
             throws ExNoConsole, ExEmptyEmailAddress
     {
-        if (LibParam.OpenId.ENABLED == false) {
+        if (!LibParam.OpenId.enabled()) {
             _model.setUserID(cli.askText(L.isMultiuser() ? S.ADMIN_EMAIL : S.SETUP_USER_ID, null));
         }
     }
 
     private void getPassword(CLI cli) throws Exception
     {
-        if (LibParam.OpenId.ENABLED == false) {
+        if (LibParam.OpenId.enabled() == false) {
             cli.show(MessageType.INFO, "If you forgot your password, go to " +
                     WWW.PASSWORD_RESET_REQUEST_URL + " to reset it.");
             _model.setPassword(String.valueOf(

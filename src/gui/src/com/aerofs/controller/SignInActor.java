@@ -5,6 +5,7 @@ import com.aerofs.base.ElapsedTimer;
 import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.cli.CLI;
 import com.aerofs.gui.GUIUtil;
+import com.aerofs.lib.LibParam.LDAP;
 import com.aerofs.lib.LibParam.OpenId;
 import com.aerofs.lib.S;
 import com.aerofs.lib.cfg.Cfg;
@@ -12,6 +13,7 @@ import com.aerofs.proto.Sp.OpenIdSessionAttributes;
 import com.aerofs.proto.Sp.OpenIdSessionNonces;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.ui.IUI.MessageType;
+import com.google.protobuf.ByteString;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,11 +38,22 @@ public abstract class SignInActor
      * An actor that signs in using stored credentials (requires userID and password
      * in the model).
      */
-    public static class Credential extends SignInActor
+    public static class CredentialActor extends SignInActor
     {
         @Override
         public void signInUser(Setup setup, SetupModel model) throws Exception {
-            SPBlockingClient sp = setup.signInUser(model.getUserID(), model.getScrypted());
+            SPBlockingClient sp = new SPBlockingClient.Factory()
+                    .create_(Cfg.user(), SPBlockingClient.ONE_WAY_AUTH_CONNECTION_CONFIGURATOR);
+            // NOTE: In LDAP mode, we pass the un-scrypt'ed password so it can be referred
+            // to an external service for verification. This is the only difference in the
+            // two following calls to SP.
+            // TODO: use inheritance/polymorphism here instead. Consider this from the viewpoint
+            // where we have both LDAP and non-LDAP users in the same SP instance.
+            if (LDAP.enabled()) {
+                sp.signInUser(model.getUsername(), ByteString.copyFrom(model.getPassword()));
+            } else {
+                sp.signInUser(model.getUsername(), ByteString.copyFrom(model.getScrypted()));
+            }
             model.setClient(sp);
         }
     }
@@ -48,7 +61,7 @@ public abstract class SignInActor
     /**
      * OpenID sign-in flow for a GUI - where we can ask GUIUtil to launch a URL.
      */
-    public static class GUIOpenId extends SignInActor
+    public static class OpenIdGUIActor extends SignInActor
     {
         @Override
         public void signInUser(Setup setup, SetupModel model) throws Exception
@@ -61,9 +74,9 @@ public abstract class SignInActor
         }
     }
 
-    public static class CLIOpenId extends SignInActor
+    public static class OpenIdCLIActor extends SignInActor
     {
-        public CLIOpenId(CLI cli) { _out = cli; }
+        public OpenIdCLIActor(CLI cli) { _out = cli; }
 
         @Override
         public void signInUser(Setup setup, SetupModel model) throws Exception

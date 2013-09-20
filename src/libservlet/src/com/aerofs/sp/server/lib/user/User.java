@@ -380,7 +380,7 @@ public class User
      *
      * @throws ExBadCredential if the user doesn't exist or the credential is incorrect.
      */
-    public void signInUser(byte[] shaedSP)
+    public void throwIfBadCredential(byte[] shaedSP)
             throws SQLException, ExBadCredential
     {
         l.warn("SI: " + toString());
@@ -407,7 +407,7 @@ public class User
      * @throws ExBadCredential if the sign in failed due to expired certificate, missing device,
      * or missing user.
      */
-    public void signInWithCertificate(CertificateAuthenticator certauth, Device device)
+    public void throwIfBadCertificate(CertificateAuthenticator certauth, Device device)
             throws SQLException, ExBadCredential, ExNotFound
     {
         if (!certauth.isAuthenticated())

@@ -12,6 +12,7 @@ import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UniqueID;
 import com.aerofs.lib.FullName;
 import com.aerofs.base.acl.Role;
+import com.aerofs.lib.LibParam.EnterpriseConfig;
 import com.aerofs.lib.ex.ExNoAdminOrOwner;
 import com.aerofs.sp.server.lib.SharedFolder;
 import com.aerofs.sp.server.lib.device.Device;
@@ -145,38 +146,41 @@ public class TestUser extends AbstractBusinessObjectTest
     @Test
     public void save_shouldSaveToMainOrgIfEnterpriseDeployment() throws Exception
     {
-        setEnterpriseDeployment(true);
+        EnterpriseConfig.IS_ENTERPRISE_DEPLOYMENT = true;
 
-        Organization mainOrg = factOrg.create(OrganizationID.MAIN_ORGANIZATION);
+        try {
+            Organization mainOrg = factOrg.create(OrganizationID.MAIN_ORGANIZATION);
 
-        // Check that the main organization doesn't exist yet.
-        // This is important because we want to test that the first user is created with admin
-        // privileges
-        // Note: this test may fail if some earlier test create the main org. In this case, we
-        // either have to get the ordering right, or we need to provide a method for deleting an
-        // organization
-        assertFalse(mainOrg.exists());
+            // Check that the main organization doesn't exist yet.
+            // This is important because we want to test that the first user is created with admin
+            // privileges
+            // Note: this test may fail if some earlier test create the main org. In this case, we
+            // either have to get the ordering right, or provide a method for deleting an org.
+            assertFalse(mainOrg.exists());
 
-        // Create a new user
-        User user = saveUser();
+            // Create a new user
+            User user = saveUser();
 
-        assertTrue(mainOrg.exists());
+            assertTrue(mainOrg.exists());
 
-        // Check that the user *is* in the main org and that he's an admin
-        assertEquals(OrganizationID.MAIN_ORGANIZATION, user.getOrganization().id());
-        assertEquals(AuthorizationLevel.ADMIN, user.getLevel());
+            // Check that the user *is* in the main org and that he's an admin
+            assertEquals(OrganizationID.MAIN_ORGANIZATION, user.getOrganization().id());
+            assertEquals(AuthorizationLevel.ADMIN, user.getLevel());
 
-        // Now create an additional user and check that he's also in the main org but as a regular user
-        user = saveUser();
-        assertEquals(OrganizationID.MAIN_ORGANIZATION, user.getOrganization().id());
-        assertEquals(AuthorizationLevel.USER, user.getLevel());
+            // Now create an additional user; check he's also in main org but as a regular user
+            user = saveUser();
+            assertEquals(OrganizationID.MAIN_ORGANIZATION, user.getOrganization().id());
+            assertEquals(AuthorizationLevel.USER, user.getLevel());
+        } finally {
+            EnterpriseConfig.IS_ENTERPRISE_DEPLOYMENT = false;
+        }
     }
 
     @Test(expected = ExBadCredential.class)
     public void signIn_shouldThrowBadCredentialIfUserNotFound()
             throws SQLException, ExBadCredential
     {
-        newUser().signInUser(new byte[0]);
+        newUser().throwIfBadCredential(new byte[0]);
     }
 
     @Test

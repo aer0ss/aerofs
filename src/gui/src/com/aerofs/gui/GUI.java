@@ -551,20 +551,21 @@ public class GUI implements IUI
 
             // TODO: Set up shell extension
 
+            return;
+        }
+
+        if (L.isMultiuser()) {
+            DlgMultiuserSetup dialog = new DlgMultiuserSetup(_sh);
+            Object result = dialog.openDialog();
+            // N.B. a null result indicates the user has canceled the setup.
+            if (result == null) throw new ExLaunchAborted("user canceled setup");
         } else {
-            if (L.isMultiuser()) {
-                DlgMultiuserSetup dialog = new DlgMultiuserSetup(_sh);
-                Object result = dialog.openDialog();
-                // N.B. a null result indicates the user has canceled the setup.
-                if (result == null) throw new ExLaunchAborted("user canceled setup");
-            } else {
-                AeroFSTitleAreaDialog dlg = (OpenId.ENABLED ?
-                        new DlgOpenIdSignIn(_sh) : new DlgCredentialSignIn(_sh));
+            AeroFSTitleAreaDialog dlg = (OpenId.enabled() ?
+                    new DlgOpenIdSignIn(_sh) : new DlgCredentialSignIn(_sh));
 
-                dlg.open();
+            dlg.open();
 
-                if (dlg.isCancelled()) throw new ExLaunchAborted("user canceled setup");
-            }
+            if (dlg.isCancelled()) throw new ExLaunchAborted("user canceled setup");
         }
     }
 

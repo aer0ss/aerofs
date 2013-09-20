@@ -71,9 +71,11 @@ public class SetupModel
     public void setDeviceName(String name)  { _devAlias = name; }
 
     public byte[] getScrypted() throws ExEmptyEmailAddress
-                                            { return SecUtil.scrypt(getPassword(), getUserID()); }
-    public char[] getPassword()             { return (_password == null)
-                                                ? new char[0] : _password.toCharArray(); }
+                                            { return SecUtil.scrypt(
+                                                getPasswordValue().toCharArray(),
+                                                getUserID());
+                                            }
+    public byte[] getPassword()             { return getPasswordValue().getBytes(); }
 
     public void setPassword(String pw)      { _password = pw; }
 
@@ -123,6 +125,8 @@ public class SetupModel
                     .build();
         }
     }
+
+    private String getPasswordValue() { return (_password == null) ? "" : _password; }
 
     private final Setup     _setup;
 

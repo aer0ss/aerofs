@@ -6,7 +6,8 @@ package com.aerofs.gui.multiuser.setup;
 
 import com.aerofs.controller.InstallActor;
 import com.aerofs.controller.SetupModel;
-import com.aerofs.controller.SignInActor;
+import com.aerofs.controller.SignInActor.CredentialActor;
+import com.aerofs.controller.SignInActor.OpenIdGUIActor;
 import com.aerofs.gui.AeroFSDialog;
 import com.aerofs.lib.LibParam;
 import org.eclipse.swt.SWT;
@@ -30,8 +31,8 @@ public class DlgMultiuserSetup extends AeroFSDialog
         super(shell, null, false, true);
 
         _model = new SetupModel()
-                .setSignInActor(LibParam.OpenId.ENABLED ?
-                        new SignInActor.GUIOpenId() : new SignInActor.Credential())
+                .setSignInActor(LibParam.OpenId.enabled() ?
+                        new OpenIdGUIActor() : new CredentialActor())
                 .setInstallActor(new InstallActor.MultiUser());
     }
 
@@ -68,7 +69,7 @@ public class DlgMultiuserSetup extends AeroFSDialog
 
     private AbstractSetupPage createLoginPage()
     {
-        AbstractSetupPage page = (LibParam.OpenId.ENABLED ?
+        AbstractSetupPage page = (LibParam.OpenId.enabled() ?
                                   new PageOpenIdSignIn(getShell()) : new PageCredentialSignIn(getShell()));
         page.addTraverseListener(new TraverseListener()
         {

@@ -16,6 +16,7 @@ import com.aerofs.servlets.lib.db.jedis.PooledJedisConnectionProvider;
 import com.aerofs.servlets.lib.db.sql.PooledSQLConnectionProvider;
 import com.aerofs.servlets.lib.db.sql.SQLThreadLocalTransaction;
 import com.aerofs.servlets.lib.ssl.CertificateAuthenticator;
+import com.aerofs.sp.authentication.AuthenticatorFactory;
 import com.aerofs.sp.server.email.DeviceRegistrationEmailer;
 import com.aerofs.sp.server.email.EmailReminder;
 import com.aerofs.sp.server.email.InvitationEmailer;
@@ -125,7 +126,8 @@ public class SPServlet extends AeroServlet
     private final SPService _service = new SPService(_db, _sqlTrans, _jedisTrans, _sessionUser,
             _passwordManagement, _certauth, _factUser, _factOrg, _factOrgInvite, _factDevice,
             _certdb, _esdb, _factSharedFolder, _factEmailer, _deviceRegistrationEmailer,
-            _requestToSignUpEmailer, _commandQueue, _analytics, new IdentitySessionManager());
+            _requestToSignUpEmailer, _commandQueue, _analytics, new IdentitySessionManager(),
+            AuthenticatorFactory.create());
     private final SPServiceReactor _reactor = new SPServiceReactor(_service);
 
     private final DoPostDelegate _postDelegate = new DoPostDelegate(SP.SP_POST_PARAM_PROTOCOL,

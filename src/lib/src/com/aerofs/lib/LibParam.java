@@ -7,6 +7,7 @@ package com.aerofs.lib;
 import com.aerofs.base.BaseParam;
 import com.aerofs.base.C;
 import com.aerofs.base.id.SID;
+import com.aerofs.lib.LibParam.Identity.Authenticator;
 import com.google.common.base.Optional;
 
 import java.net.InetAddress;
@@ -230,6 +231,73 @@ public class LibParam extends BaseParam
     }
 
     /**
+     * Parameters for identity management - signin and authentication.
+     */
+    public static class Identity
+    {
+        /**
+         * The user-authentication type allowed by the server. Default is LOCAL_CREDENTIAL.
+         */
+        public enum Authenticator
+        {
+            /**
+             * The user will provide a username and credential that will be verified
+             * locally (on the signin server). This implies the credential will be scrypt'ed.
+             */
+            LOCAL_CREDENTIAL,
+            /**
+             * The user will prove their identity using a username and credential that will be
+             * passed through to an identity authority (LDAP). This implies the credential should not be
+             * hashed on the client side.
+             */
+            EXTERNAL_CREDENTIAL,
+            /**
+             * The user will prove their identity out-of-band with a URI-based signin mechanism.
+             *
+             * This means the client will use the SessionNonce/DelegateNonce mechanism and
+             * poll for the asynchronous authentication completion.
+             *
+             * We don't care about what web method is used, but the client can expect some
+             * user-agent redirect to the IdentityServlet.
+             *
+             * Client should poll on the session nonce for the out-of-band authentication
+             * to complete.
+             */
+            OPENID
+        };
+
+        /**
+         * Choose a user authenticator style - this will determine the sign-in options
+         * we show to the end-user.
+         *
+         * Valid values are:
+         * <ul>
+         *  <li>local_credential (check the supplied credential against the SP database)</li>
+         *  <li>external_credential (check the supplied credential against an external
+         *  user service, e.g. LDAP. This does not currently fall back to local_credential.)</li>
+         *  <li>openid (IdentityServlet will support a signin request with web authentication)</li>
+         *  </ul>
+         */
+        public static Authenticator                     AUTHENTICATOR =
+                convertProperty(                        "lib.authenticator", "local_credential");
+
+        // A quick converter to an enum that falls back to a default rather than throw IllegalArg
+        static private Authenticator convertProperty(String paramName, String paramDefault)
+        {
+            // Maintain this code carefully! The valid configuration names are maintained separately
+            // from the actual enum - one is public-visible and the other is developers only.
+            String value = getStringProperty(paramName, paramDefault).toUpperCase();
+            if (value.equals("OPENID")) {
+                return Authenticator.OPENID;
+            } else if (value.equals("EXTERNAL_CREDENTIAL")) {
+                return Authenticator.EXTERNAL_CREDENTIAL;
+            } else {
+                return Authenticator.LOCAL_CREDENTIAL;
+            }
+        }
+    }
+
+    /**
      * OpenID and Identity-related configuration that are used by client and server.
      *
      * openid.service : configuration for the IdentityServlet (our intermediary)
@@ -238,9 +306,10 @@ public class LibParam extends BaseParam
      */
     public static class OpenId
     {
-        /** OpenID authentication (if enabled, this replaces credential auth) */
-        public static Boolean                           ENABLED =
-                getBooleanProperty(                     "openid.service.enabled", false);
+        public static boolean enabled()
+        {
+            return Identity.AUTHENTICATOR == Identity.Authenticator.OPENID;
+        }
 
         /** Timeout for the entire OpenID flow, in seconds. */
         public static final Integer                     DELEGATE_TIMEOUT =
@@ -378,6 +447,132 @@ public class LibParam extends BaseParam
         public static final String                      IDP_USER_LASTNAME =
                 getStringProperty(                      "openid.idp.user.name.last",
                                                         "openid.ext1.value.lastname");
+    }
+
+    /**
+     * LDAP server and schema configuration.
+     */
+    public static class LDAP
+    {
+        public static boolean enabled()
+        {
+            return Identity.AUTHENTICATOR == Authenticator.EXTERNAL_CREDENTIAL;
+        }
+
+        /**
+         * Host name of the LDAP server.
+         */
+        public static String                            SERVER_HOST =
+                getStringProperty(                      "ldap.server.host", "");
+
+        /**
+         * Port on which to connect to the LDAP server. Default is 389 for ldap protocol,
+         * 636 for ldaps.
+         */
+        public static Integer                           SERVER_PORT =
+                getIntegerProperty(                     "ldap.server.port", 389);
+
+        /**
+         * If true, attempt to use "ldaps" - ldap over ssl.
+         */
+        public static Boolean                           SERVER_USESSL =
+                getBooleanProperty(                     "ldap.server.usessl", false);
+
+        /**
+         * Maximum number of LDAP connection instances to keep in the pool.
+         */
+        public static Integer                           SERVER_MAXCONN =
+                getIntegerProperty(                     "ldap.server.maxconn", 10);
+
+        /**
+         * If true, attempt to use StartTLS when communicating with the LDAP server.
+         */
+        public static Boolean                           SERVER_USETLS =
+                getBooleanProperty(                     "ldap.server.starttls", true);
+
+        /**
+         * If true, a user with no record in AeroFS will be created the first time they
+         * successfully authenticate with the configured LDAP server.
+         * If false, the user will be denied login until they are explicitly provisioned.
+         */
+        public static Boolean                           SERVER_AUTOPROVISION =
+                getBooleanProperty(                     "ldap.server.autoprovision", true);
+
+        /**
+         * Timeout, in seconds, after which a server read operation will be cancelled.
+         */
+        public static Integer                           SERVER_TIMEOUT_READ =
+                getIntegerProperty(                     "ldap.server.timeout.read", 180);
+
+        /**
+         * Timeout, in seconds, after which a server connect attempt will be abandoned.
+         */
+        public static Integer                           SERVER_TIMEOUT_CONNECT =
+                getIntegerProperty(                     "ldap.server.timeout.connect", 60);
+
+        /**
+         * Principal on the LDAP server to use for the initial user search.
+         */
+        public static String                            SERVER_PRINCIPAL =
+                getStringProperty(                      "ldap.server.principal", "");
+
+        /**
+         * Credential on the LDAP server for the search principal.
+         */
+        public static String                            SERVER_CREDENTIAL =
+                getStringProperty(                      "ldap.server.credential", "");
+
+        /**
+         * Configurable parameters to describe the schema in use on the LDAP server.
+         */
+        public static class Schema
+        {
+            /**
+             * Distinguished Name (dn) of the root of the tree within the LDAP server in which
+             * user accounts are found. More specific DNs are preferred.
+             */
+            public static String                        USER_BASE =
+                    getStringProperty(                  "ldap.server.schema.user.base", "");
+
+            /**
+             * The scope to search for user records. Valid values are "base", "one", or "subtree".
+             * The default is "subtree".
+             */
+            public static String                        USER_SCOPE =
+                    getStringProperty(                  "ldap.server.schema.user.scope", "subtree");
+
+            /**
+             * The field name in the LDAP record of the user's first name.
+             */
+            public static String                        USER_FIRSTNAME =
+                    getStringProperty(                  "ldap.server.schema.user.field.firstname", "");
+
+            /**
+             * The name of the field in the LDAP record of the user's surname (last name).
+             */
+            public static String                        USER_LASTNAME =
+                    getStringProperty(                  "ldap.server.schema.user.field.lastname", "");
+
+            /**
+             * The name of the field in the LDAP record of the user's email address. This will
+             * used in the user search.
+             */
+            public static String                        USER_EMAIL =
+                    getStringProperty(                  "ldap.server.schema.user.field.email", "");
+
+            /**
+             * The name of the field that contains the user's relative distinguished name - that is,
+             * the field that will be used in the bind attempt.
+             */
+            public static String                        USER_RDN =
+                    getStringProperty(                  "ldap.server.schema.user.field.rdn", "");
+
+            /**
+             * The required object class of the user record. This will be used in the user search.
+             */
+            public static String                        USER_OBJECTCLASS =
+                    getStringProperty(                  "ldap.server.schema.user.class", "");
+        }
     }
 
     // this class depends on ClientConfigurationLoader

@@ -71,7 +71,7 @@ public class DlgCredentialSignIn extends AeroFSTitleAreaDialog
         setTitleImage(Images.get(Images.IMG_SETUP));
 
         _model = new SetupModel()
-                .setSignInActor(new SignInActor.Credential())
+                .setSignInActor(new SignInActor.CredentialActor())
                 .setInstallActor(new InstallActor.SingleUser());
         _model._localOptions._rootAnchorPath = defaults.getRootAnchor();
         _model.setDeviceName(defaults.getDeviceName());

@@ -3,6 +3,8 @@ package com.aerofs.testlib;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.config.ConfigurationProperties;
 import com.aerofs.lib.LibParam.EnterpriseConfig;
+import com.aerofs.lib.LibParam.Identity;
+import com.aerofs.lib.LibParam.Identity.Authenticator;
 import com.aerofs.lib.LibParam.OpenId;
 import com.aerofs.lib.log.LogUtil;
 import org.junit.After;
@@ -17,8 +19,6 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Properties;
-
-import static org.junit.Assert.assertEquals;
 
 public abstract class AbstractTest
 {
@@ -78,39 +78,5 @@ public abstract class AbstractTest
         List<Thread> list = new ArrayList<Thread>(count);
         for (int i = 0; i < count; ++i) list.add(threads[i]);
         return list;
-    }
-
-    /**
-     * Helper method to set whether we are in enterprise deployment
-     * IMPORTANT: This is a global setting. However, it will be reset to false before each test
-     * method.
-     */
-    protected void setEnterpriseDeployment(final boolean value)
-    {
-        EnterpriseConfig.IS_ENTERPRISE_DEPLOYMENT = value;
-        assertEquals(value, EnterpriseConfig.IS_ENTERPRISE_DEPLOYMENT);
-    }
-
-    @Before
-    public void resetEnterpriseDeployment()
-    {
-        setEnterpriseDeployment(false);
-    }
-
-    /**
-     * Helper method to set whether we are using OpenID.
-     * IMPORTANT: This is a global setting. However, it will be reset to false before each test
-     * method.
-     */
-    protected void setOpenIdEnabled(final boolean value)
-    {
-        OpenId.ENABLED = value;
-        assertEquals(value, OpenId.ENABLED);
-    }
-
-    @Before
-    public void resetOpenIdEnabled()
-    {
-        setOpenIdEnabled(false);
     }
 }
