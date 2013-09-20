@@ -5,9 +5,8 @@
 package com.aerofs.lib.ex;
 
 import com.aerofs.base.C;
-import com.aerofs.lib.ex.RecentExceptions;
 import com.aerofs.testlib.AbstractTest;
-import com.beust.jcommander.internal.Lists;
+import com.google.common.collect.Lists;
 import org.junit.Test;
 
 import java.io.IOException;

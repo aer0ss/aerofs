@@ -1,13 +1,8 @@
 package com.aerofs.daemon.core;
 
-import java.sql.SQLException;
-
+import com.aerofs.base.id.OID;
+import com.aerofs.base.id.UniqueID;
 import com.aerofs.daemon.core.store.MapSIndex2Contributors;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-
-import static org.mockito.Mockito.*;
-
 import com.aerofs.daemon.lib.db.ICollectorSequenceDatabase;
 import com.aerofs.daemon.lib.db.IMetaDatabase;
 import com.aerofs.daemon.lib.db.ver.INativeVersionDatabase;
@@ -17,10 +12,14 @@ import com.aerofs.lib.Tick;
 import com.aerofs.lib.Version;
 import com.aerofs.lib.db.MockDBIterator;
 import com.aerofs.lib.id.CID;
-import com.aerofs.base.id.OID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOCID;
-import com.aerofs.base.id.UniqueID;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+
+import java.sql.SQLException;
+
+import static org.mockito.Mockito.verify;
 
 public class TestNativeVersionControl extends AbstractTestVersionControl<NativeTickRow>
 {

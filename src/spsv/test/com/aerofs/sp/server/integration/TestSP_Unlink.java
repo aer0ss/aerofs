@@ -16,11 +16,11 @@ import com.aerofs.sp.server.lib.device.Device;
 import com.google.common.collect.ImmutableList;
 import org.junit.Before;
 import org.junit.Test;
-import org.testng.Assert;
 
 import java.util.Collection;
 import java.util.Collections;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.when;
@@ -115,15 +115,15 @@ public class TestSP_Unlink extends AbstractSPCertificateBasedTest
         // Verify we can get device info before unlinking.
         GetDeviceInfoReply reply =
                 service.getDeviceInfo(Collections.nCopies(1, device.id().toPB())).get();
-        Assert.assertEquals(1, reply.getDeviceInfoCount());
-        Assert.assertEquals(true, reply.getDeviceInfoList().get(0).hasDeviceName());
+        assertEquals(1, reply.getDeviceInfoCount());
+        assertEquals(true, reply.getDeviceInfoList().get(0).hasDeviceName());
 
         service.unlinkDevice(device.id().toPB(), false);
 
         // Verify we can get device info after unlinking.
         reply = service.getDeviceInfo(Collections.nCopies(1, device.id().toPB())).get();
-        Assert.assertEquals(1, reply.getDeviceInfoCount());
-        Assert.assertEquals(true, reply.getDeviceInfoList().get(0).hasDeviceName());
+        assertEquals(1, reply.getDeviceInfoCount());
+        assertEquals(true, reply.getDeviceInfoList().get(0).hasDeviceName());
     }
 
     @Test
@@ -153,14 +153,14 @@ public class TestSP_Unlink extends AbstractSPCertificateBasedTest
         sqlTrans.begin();
         devices = TEST_1_USER.getPeerDevices();
         sqlTrans.commit();
-        Assert.assertEquals(1, devices.size());
+        assertEquals(1, devices.size());
 
         service.unlinkDevice(device.id().toPB(), false);
 
         sqlTrans.begin();
         devices = TEST_1_USER.getPeerDevices();
         sqlTrans.commit();
-        Assert.assertEquals(0, devices.size());
+        assertEquals(0, devices.size());
     }
 
     @Test
@@ -172,13 +172,13 @@ public class TestSP_Unlink extends AbstractSPCertificateBasedTest
         sqlTrans.begin();
         devices = TEST_1_USER.getDevices();
         sqlTrans.commit();
-        Assert.assertEquals(1, devices.size());
+        assertEquals(1, devices.size());
 
         service.unlinkDevice(device.id().toPB(), false);
 
         sqlTrans.begin();
         devices = TEST_1_USER.getDevices();
         sqlTrans.commit();
-        Assert.assertEquals(0, devices.size());
+        assertEquals(0, devices.size());
     }
 }

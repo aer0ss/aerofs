@@ -10,7 +10,6 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.rules.TestName;
 import org.mockito.MockitoAnnotations;
-import org.powermock.modules.testng.PowerMockTestCase;
 import org.slf4j.Logger;
 
 import java.util.ArrayList;
@@ -21,7 +20,7 @@ import java.util.Properties;
 
 import static org.junit.Assert.assertEquals;
 
-public abstract class AbstractTest extends PowerMockTestCase
+public abstract class AbstractTest
 {
     protected static final Logger l = Loggers.getLogger(AbstractTest.class);
 

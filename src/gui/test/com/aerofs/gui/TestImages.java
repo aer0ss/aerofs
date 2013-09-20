@@ -6,7 +6,7 @@ package com.aerofs.gui;
 
 import org.junit.Test;
 
-import static org.testng.Assert.assertEquals;
+import static org.junit.Assert.assertEquals;
 
 public class TestImages
 {

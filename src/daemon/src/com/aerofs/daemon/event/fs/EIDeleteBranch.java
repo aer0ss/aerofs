@@ -2,9 +2,8 @@ package com.aerofs.daemon.event.fs;
 
 import com.aerofs.daemon.event.lib.imc.AbstractEBIMC;
 import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
-import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.Path;
-import com.aerofs.base.id.UserID;
+import com.aerofs.lib.id.KIndex;
 
 public class EIDeleteBranch extends AbstractEBIMC
 {

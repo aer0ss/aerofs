@@ -7,8 +7,8 @@ package com.aerofs.base.analytics;
 import com.aerofs.base.Base64;
 import com.aerofs.base.HttpServerTest;
 import com.aerofs.base.HttpServerTest.RequestProcessor;
-import com.beust.jcommander.internal.Maps;
 import com.google.common.base.Charsets;
+import com.google.common.collect.Maps;
 import com.google.gson.Gson;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.handler.codec.http.DefaultHttpResponse;
@@ -52,7 +52,6 @@ public class TestMixpanelAPI
     }
 
     @Test
-    @SuppressWarnings("unchecked")
     public void shouldMakeWellFormedRequest() throws Exception
     {
         final MixpanelAPI mixpanelAPI = new MixpanelAPI(TEST_TOKEN, TEST_API_ENDPOINT);
@@ -68,8 +67,8 @@ public class TestMixpanelAPI
                 assertTrue(request.getUri().startsWith("?data="));
                 String base64 = request.getUri().substring("?data=".length());
                 String json = new String(Base64.decode(base64), Charsets.UTF_8);
-                Map<String, Object> map = (Map<String, Object>)new Gson().fromJson(json, Map.class);
-                Map<String, Object> properties = (Map<String, Object>)map.get("properties");
+                Map<?, ?> map = new Gson().fromJson(json, Map.class);
+                Map<?, ?> properties = (Map<?, ?>) map.get("properties");
 
                 // Check that everything was sent correctly
                 assertEquals(TEST_EVENT, map.get("event"));
