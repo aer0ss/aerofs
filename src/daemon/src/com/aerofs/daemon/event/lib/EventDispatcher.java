@@ -1,13 +1,13 @@
 package com.aerofs.daemon.event.lib;
 
-import java.util.Map;
-
+import com.aerofs.daemon.event.IEventHandler;
+import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.event.IEvent;
-import com.aerofs.daemon.event.IEventHandler;
 import com.aerofs.lib.event.Prio;
-import com.aerofs.lib.SystemUtil;
 import com.google.common.collect.Maps;
+
+import java.util.Map;
 
 public class EventDispatcher
 {

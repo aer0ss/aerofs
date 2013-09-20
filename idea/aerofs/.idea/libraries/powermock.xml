@@ -1,9 +1,8 @@
 <component name="libraryTable">
-  <library name="powermockito">
+  <library name="powermock">
     <CLASSES>
       <root url="jar://$PROJECT_DIR$/../../resource/common/lib.test/javassist-3.9.0.jar!/" />
       <root url="jar://$PROJECT_DIR$/../../resource/common/lib.test/powermock-mockito-1.5-full.jar!/" />
-      <root url="jar://$PROJECT_DIR$/../../resource/common/lib.test/testng-6.8.jar!/" />
     </CLASSES>
     <JAVADOC />
     <SOURCES>

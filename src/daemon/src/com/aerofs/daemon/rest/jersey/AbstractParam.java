@@ -15,7 +15,6 @@ public abstract class AbstractParam<T>
 {
     private final T value;
 
-    @SuppressWarnings({"AbstractMethodCallInConstructor", "OverriddenMethodCallDuringObjectConstruction"})
     protected AbstractParam(String input)
     {
         try {

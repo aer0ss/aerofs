@@ -34,7 +34,6 @@ import org.mockito.Mock;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.slf4j.Logger;
-import org.testng.Assert;
 
 import java.io.File;
 import java.sql.SQLException;
@@ -43,6 +42,7 @@ import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.TimeZone;
 
+import static org.junit.Assert.assertNotNull;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
@@ -152,7 +152,7 @@ public class AbstractRestTest extends AbstractTest
     protected RestObject object(String path) throws SQLException
     {
         SOID soid = ds.resolveNullable_(Path.fromString(rootSID, path));
-        Assert.assertNotNull(soid, path);
+        assertNotNull(path, soid);
         SID sid = sm.get_(soid.sidx());
         return new RestObject(sid, soid.oid());
     }
