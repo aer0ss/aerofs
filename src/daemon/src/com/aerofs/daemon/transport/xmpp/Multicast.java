@@ -116,13 +116,46 @@ public class Multicast implements IMaxcast, IStores, IXMPPConnectionServiceListe
                 XMPPConnection conn = _xsc.conn();
                 muc = new MultiUserChat(conn, roomName);
 
+                // TODO (AG): consider removing service discovery and simply doing a join,create,join
+
                 try {
                     l.info("gri {}", sid);
                     MultiUserChat.getRoomInfo(conn, roomName);
                 } catch (XMPPException e) {
                     if (e.getXMPPError() != null && e.getXMPPError().getCode() == 404) {
                         l.info("muc " + roomName + " not exists. create now.");
-                        createRoom(muc);
+
+                        try {
+                            createRoom(muc);
+                        } catch (XMPPException createException) {
+                            if (createException.getMessage().equals("Creation failed - Missing acknowledge of room creation.")) {
+
+                                // [sigh] we have a race condition that gets
+                                // triggered when multiple peers 'simultaneously':
+                                //
+                                // 1. use MultiUserChat.getRoomInfo() to check if the room exists
+                                // 2. ejabberd informs both peers that the room doesn't exist
+                                // 3. both users attempt to use createRoom() to create the room
+                                // 3. only one guy is able to create the room (obviously);
+                                //    the other gets the exception above
+                                //
+                                // when this happens we should try and avoid an
+                                // expensive reconnect loop. so, we ignore this
+                                // error and attempt to join the room below. if there's
+                                // a problem there, we'll throw and destroy the
+                                // connection
+                                //
+                                // unfortunately Smack does _not_ throw an
+                                // XMPPException with a specific error code, so I
+                                // have to compare the exception string above to
+                                // recognize this case.
+                                // Amazing.
+
+                                l.warn("room {} may already exist - attempt join anyways", roomName);
+                            } else {
+                                throw createException;
+                            }
+                        }
                     } else {
                         l.error(e.getMessage());
                         throw e;
