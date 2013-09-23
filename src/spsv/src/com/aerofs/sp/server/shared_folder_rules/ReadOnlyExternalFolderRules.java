@@ -9,6 +9,7 @@ import com.aerofs.base.acl.SubjectRolePair;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.UserID;
 import com.aerofs.lib.ex.shared_folder_rules.ExSharedFolderRulesEditorsDisallowedInExternallySharedFolders;
+import com.aerofs.lib.FullName;
 import com.aerofs.lib.ex.ExNoAdminOrOwner;
 import com.aerofs.lib.ex.shared_folder_rules.ExSharedFolderRulesWarningConvertToExternallySharedFolder;
 import com.aerofs.lib.ex.shared_folder_rules.ExSharedFolderRulesWarningOwnerCanShareWithExternalUsers;
@@ -16,6 +17,7 @@ import com.aerofs.sp.server.lib.SharedFolder;
 import com.aerofs.sp.server.lib.user.User;
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 
 import javax.annotation.Nonnull;
@@ -47,10 +49,12 @@ import java.util.regex.Pattern;
 public class ReadOnlyExternalFolderRules implements ISharedFolderRules
 {
     private final Pattern _emailWhitelist;
+    private final User.Factory _factUser;
 
-    public ReadOnlyExternalFolderRules(Pattern emailWhitelist)
+    public ReadOnlyExternalFolderRules(Pattern emailWhitelist, User.Factory factUser)
     {
         _emailWhitelist = emailWhitelist;
+        _factUser = factUser;
     }
 
     @Override
@@ -58,35 +62,41 @@ public class ReadOnlyExternalFolderRules implements ISharedFolderRules
             List<SubjectRolePair> srps, boolean suppressAllWarnings)
             throws Exception
     {
+        ImmutableCollection<UserID> oldExternal = getExternalUsers(sf);
+        ImmutableCollection<UserID> newExternal = getExternalUsers(srps);
+        // N.B. don't call getFullNames() now to avoid unnecessary overhead
+        ImmutableCollection<UserID> allExternal = ImmutableSet.<UserID>builder()
+                .addAll(oldExternal)
+                .addAll(newExternal)
+                .build();
+
         // figure out the situation
-        boolean wasExternal = !getExternalUsers(sf).isEmpty();
-        boolean convertToExternal;
-        if (wasExternal) {
-            convertToExternal = false;
-        } else {
-            convertToExternal = false;
-            for (SubjectRolePair srp : srps) {
-                if (isExternalUser(srp._subject)) {
-                    convertToExternal = true;
-                    break;
-                }
-            }
-        }
+        boolean wasExternal = !oldExternal.isEmpty();
+        boolean convertToExternal = !wasExternal && !newExternal.isEmpty();
 
         // show warning messages only if the sharer is an internal user
         if (!suppressAllWarnings && !isExternalUser(sharer.id())) {
-            showWarningsForExternalFolders(wasExternal, convertToExternal, srps);
+            showWarningsForExternalFolders(wasExternal, convertToExternal, srps, allExternal);
         }
 
         // check enforcement _after_ showing warnings to the user (see the above line), so that
         // error messages, if any, comes after the warning message. See also onUpdatingACL()
-        if (wasExternal || convertToExternal) throwIfInvitingEditors(srps);
+        if (wasExternal || convertToExternal) throwIfInvitingEditors(srps, allExternal);
 
         ImmutableCollection<UserID> users;
         if (convertToExternal) users = convertEditorsToViewers(sf);
         else users = ImmutableList.of();
 
         return users;
+    }
+
+    private ImmutableCollection<UserID> getExternalUsers(List<SubjectRolePair> srps)
+    {
+        ImmutableSet.Builder<UserID> builder = ImmutableSet.builder();
+        for (SubjectRolePair srp : srps) {
+            if (isExternalUser(srp._subject)) builder.add(srp._subject);
+        }
+        return builder.build();
     }
 
     // convert existing editors to viewers, skip Team Servers
@@ -104,13 +114,13 @@ public class ReadOnlyExternalFolderRules implements ISharedFolderRules
     }
 
     private void showWarningsForExternalFolders(boolean wasExternal, boolean convertToExternal,
-            List<SubjectRolePair> srps)
-            throws ExSharedFolderRulesWarningConvertToExternallySharedFolder,
-            ExSharedFolderRulesWarningOwnerCanShareWithExternalUsers
+            List<SubjectRolePair> srps, ImmutableCollection<UserID> externalUsers)
+            throws Exception
     {
         if (convertToExternal) {
             // warn that the folder is about to be shared externally
-            throw new ExSharedFolderRulesWarningConvertToExternallySharedFolder();
+            throw new ExSharedFolderRulesWarningConvertToExternallySharedFolder(
+                    getFullNames(externalUsers));
         }
 
         if (wasExternal) {
@@ -118,18 +128,33 @@ public class ReadOnlyExternalFolderRules implements ISharedFolderRules
             // share files with existing external users
             for (SubjectRolePair srp : srps) {
                 if (srp._role.equals(Role.OWNER)) {
-                    throw new ExSharedFolderRulesWarningOwnerCanShareWithExternalUsers();
+                    throw new ExSharedFolderRulesWarningOwnerCanShareWithExternalUsers(
+                            getFullNames(externalUsers));
                 }
             }
         }
     }
 
-    private void throwIfInvitingEditors(List<SubjectRolePair> srps)
-            throws ExSharedFolderRulesEditorsDisallowedInExternallySharedFolders
+    private ImmutableMap<UserID, FullName> getFullNames(ImmutableCollection<UserID> userIDs)
+            throws SQLException, ExNotFound
+    {
+        ImmutableMap.Builder<UserID, FullName> builder = ImmutableMap.builder();
+        for (UserID userID : userIDs) {
+            User user = _factUser.create(userID);
+            // Use empty names if the user hasn't signed up.
+            builder.put(userID, user.exists() ? user.getFullName() : new FullName("", ""));
+        }
+        return builder.build();
+    }
+
+    private void throwIfInvitingEditors(List<SubjectRolePair> srps,
+            ImmutableCollection<UserID> externalUsers)
+            throws Exception
     {
         for (SubjectRolePair srp : srps) {
             if (srp._role.equals(Role.EDITOR)) {
-                throw new ExSharedFolderRulesEditorsDisallowedInExternallySharedFolders();
+                throw new ExSharedFolderRulesEditorsDisallowedInExternallySharedFolders(
+                        getFullNames(externalUsers));
             }
         }
     }
@@ -138,16 +163,19 @@ public class ReadOnlyExternalFolderRules implements ISharedFolderRules
     public void onUpdatingACL(SharedFolder sf, User user, Role role, boolean suppressAllWarnings)
             throws Exception
     {
-        boolean isExternalFolder = !getExternalUsers(sf).isEmpty();
+        ImmutableCollection<UserID> externalUsers = getExternalUsers(sf);
+        boolean isExternalFolder = !externalUsers.isEmpty();
 
         if (!suppressAllWarnings && isExternalFolder && role.equals(Role.OWNER)) {
             // warn that the new owner will be able to share files with existing external users
-            throw new ExSharedFolderRulesWarningOwnerCanShareWithExternalUsers();
+            throw new ExSharedFolderRulesWarningOwnerCanShareWithExternalUsers(
+                    getFullNames(externalUsers));
         }
 
         // Do not allow editors on externally shared folders
         if (isExternalFolder && role.equals(Role.EDITOR)) {
-            throw new ExSharedFolderRulesEditorsDisallowedInExternallySharedFolders();
+            throw new ExSharedFolderRulesEditorsDisallowedInExternallySharedFolders(
+                    getFullNames(externalUsers));
         }
     }
 
@@ -155,13 +183,13 @@ public class ReadOnlyExternalFolderRules implements ISharedFolderRules
      * @return the collection of the folder's users whose email addresses don't match the white
      * list. Return an empty collection if the folder is not shared externally.
      */
-    private ImmutableCollection<User> getExternalUsers(SharedFolder sf)
+    private ImmutableCollection<UserID> getExternalUsers(SharedFolder sf)
             throws SQLException
     {
-        ImmutableList.Builder<User> builder = ImmutableList.builder();
+        ImmutableList.Builder<UserID> builder = ImmutableList.builder();
         for (User user : sf.getAllUsers()) {
             UserID id = user.id();
-            if (!id.isTeamServerID() && isExternalUser(id)) builder.add(user);
+            if (!id.isTeamServerID() && isExternalUser(id)) builder.add(id);
         }
         return builder.build();
     }

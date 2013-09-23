@@ -11,6 +11,7 @@ import com.aerofs.proto.Common.PBException;
 import com.aerofs.proto.Common.PBException.Type;
 import com.google.common.base.Throwables;
 import com.google.common.collect.Maps;
+import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 import org.slf4j.Logger;
 
@@ -66,21 +67,25 @@ public class Exceptions
         if (e instanceof InvalidProtocolBufferException) e = new ExProtocolError(e.getMessage());
 
         Type type;
+        byte[] data;
         if (e instanceof AbstractExWirable) {
             type = ((AbstractExWirable)e).getWireType();
+            data = ((AbstractExWirable)e).getDataNullable();
         } else {
             type = Type.INTERNAL_ERROR;
+            data = null;
         }
 
         PBException.Builder bd = PBException.newBuilder().setType(type);
 
         if (e instanceof IExObfuscated) {
             // If this Exception is obfuscated, encode the plain text message
-            bd.setPlainTextMessage(((IExObfuscated) e).getPlainTextMessage());
+            bd.setPlainTextMessageDeprecated(((IExObfuscated)e).getPlainTextMessage());
         }
 
         String message = e.getLocalizedMessage();
-        if (message != null) bd.setMessage(message);
+        if (message != null) bd.setMessageDeprecated(message);
+        if (data != null) bd.setData(ByteString.copyFrom(data));
         if (stackTrace) bd.setStackTrace(getStackTraceAsString(Throwables.getRootCause(e)));
         return bd.build();
     }

@@ -347,14 +347,17 @@ def json_add_shared_folder_perm(request):
     store_id = _decode_store_id(request.params['store_id'])
     folder_name = request.params['folder_name']
     role = int(request.params['role'])
-    note = request.params.get('note') or ''
+    suppress_warnings = request.params['suppress_warnings'] == 'true'
 
     role_pair = common.PBSubjectRolePair()
     role_pair.subject = user_id
     role_pair.role = role
 
     sp = get_rpc_stub(request)
-    exception2error(sp.share_folder, (folder_name, store_id, [role_pair], note, None), {
+
+    exception2error(sp.share_folder, (folder_name, store_id, [role_pair], None,
+                                      None, suppress_warnings),
+                                      _add_shared_folder_rules_errors({
         # TODO (WW) change to ALREADY_MEMBER?
         # See also team_members_view.py:json_invite_user()
         PBException.ALREADY_EXIST:
@@ -365,7 +368,21 @@ def json_add_shared_folder_perm(request):
             _("Payment is required to invite more collaborators"),
         PBException.NO_PERM:
             _("You don't have permission to invite people to this folder"),
+    }))
+
+
+def _add_shared_folder_rules_errors(dict):
+    """
+    Add errors thrown by shared folder rules to the dictionary parameter and
+    return the result.
+    """
+    # These exceptions are handled by JavaScript, and the messages are ignored
+    dict.update({
+        PBException.SHARED_FOLDER_RULES_EDITORS_DISALLOWED_IN_EXTERNALL_SHARED_FOLDER: "",
+        PBException.SHARED_FOLDER_RULES_WARNING_CONVERT_TO_EXTERNALLY_SHARED_FOLDER: "",
+        PBException.SHARED_FOLDER_RULES_WARNING_OWNER_CAN_SHARE_WITH_EXTERNAL_USERS: "",
     })
+    return dict
 
 
 @view_config(
@@ -388,15 +405,14 @@ def json_set_shared_folder_perm(request):
     storeid = _decode_store_id(request.params['storeid'])
     userid = request.params['userid']
     role = int(request.params['role'])
+    suppress_warnings = request.params['suppress_warnings'] == 'true'
 
     sp = get_rpc_stub(request)
-    try:
-        sp.update_acl(storeid, userid, role)
-        return {'success': True}
-    except Exception as e:
-        error = parse_rpc_error_exception(request, e)
-        return {'success': False, 'response_message': error}
 
+    exception2error(sp.update_acl, (storeid, userid, role, suppress_warnings),
+        _add_shared_folder_rules_errors({
+            PBException.NO_PERM: _("You don't have permission to change roles"),
+        }))
 
 @view_config(
     route_name = 'json.delete_shared_folder_perm',

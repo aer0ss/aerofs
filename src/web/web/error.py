@@ -7,24 +7,36 @@ from pyramid.httpexceptions import HTTPBadRequest
 
 log = logging.getLogger(__name__)
 
-def error(message, type="unspecified"):
+
+def error(message, type="unspecified", data=None):
     """
     Raise an HTTPBadRequest object with a JSON body with the following format:
     {
         type: value of the type parameter
         message: value of the message parameter
+        data: additional data for the Web frontend to process (optional)
     }
+
+    Note that the defualt "unspecified" type is not consumed by any code but is
+    supposed be read by humans.
     """
     message = _normalize(message)
+
     log.error('error message: "{}"'.format(message))
 
-    response = HTTPBadRequest()
-    response.content_type = 'application/json'
-    response.body = json.dumps({
+    json_map = {
         'type' : type,
         'message': message
-    })
+    }
+    if data: json_map['data'] = data
+
+    # return 400. See aerofs.js:showErrorMessageFromResponse() for the handling
+    # code of this error.
+    response = HTTPBadRequest()
+    response.content_type = 'application/json'
+    response.body = json.dumps(json_map)
     raise response
+
 
 def _normalize(message):
     """
@@ -32,6 +44,14 @@ def _normalize(message):
     Also see aerofs.js:normalize(). The JS method is needed despite of this
     Python method, since not all messages pass through this method.
     """
-    lastChar = message[-1]
-    if lastChar not in ('.', '?', '!'): message += '.'
-    return message.capitalize()
+    if len(message) == 0:
+        return message
+
+    # capitalize the first letter
+    message = message[:1].upper() + message[1:]
+
+    # add an ending period if needed
+    last_char = message[-1]
+    if last_char not in ('.', '?', '!'): message += '.'
+
+    return message

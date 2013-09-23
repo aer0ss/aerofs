@@ -35,13 +35,13 @@ public class SharedFolderRulesFactory
         }
     }
 
-    public static ISharedFolderRules create()
+    public static ISharedFolderRules create(User.Factory factUser)
     {
         String whitelist = getStringProperty(
                 "shared_folder_rules.read_only_external_folders.email_whitelist", "");
 
         return whitelist.isEmpty() ?
                 new NullSharedFolderRules() :
-                new ReadOnlyExternalFolderRules(Pattern.compile(whitelist));
+                new ReadOnlyExternalFolderRules(Pattern.compile(whitelist), factUser);
     }
 }

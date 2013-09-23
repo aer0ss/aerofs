@@ -30,8 +30,8 @@ abstract class AbstractExObfuscatedWirable extends AbstractExWirable implements 
     protected AbstractExObfuscatedWirable(PBException pb)
     {
         super(pb);
-        assert(pb.hasPlainTextMessage());
-        _plainTextMessage = pb.getPlainTextMessage();
+        assert(pb.hasPlainTextMessageDeprecated());
+        _plainTextMessage = pb.getPlainTextMessageDeprecated();
     }
 
     @Override

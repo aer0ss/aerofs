@@ -142,12 +142,12 @@
             ## The Options link that opens the modal. It holds all the data
             ## required by the modal.
             var $link;
-            var $modal = $('#modal');
+            var $mainModal = $('#modal');
 
             $('.${open_modal_class}').live('click', function () {
                 $link = $(this);
                 refreshModal();
-                $modal.modal('show');
+                $mainModal.modal('show');
             });
 
             ## N.B. updates to the return value will be propagated back to the
@@ -320,7 +320,7 @@
                 regiterEmailTooltips();
 
                 $('.model-set-role').click(function() {
-                    setRole($(this).data('email'), $(this).data('role'));
+                    setRole($(this).data('email'), $(this).data('role'), false);
                 });
 
                 $('.modal-remove').click(function() {
@@ -328,40 +328,46 @@
                 });
             }
 
-            $modal.on('shown', function() {
+            $mainModal.on('shown', function() {
                 $("#modal-invitee-email").focus();
             });
 
-            $modal.on('hidden', function() {
+            $mainModal.on('hidden', function() {
                 ## Stop spinner
                 resetModalSpinner();
                 ## Remove previous invited email
                 $("#modal-invitee-email").val('');
             });
 
-            function setRole(email, role) {
+            function setRole(email, role, suppressWarnings) {
                 startModalSpinner();
 
                 var errorHeader = "Couldn't change role: ";
                 $.post(
-                    "${request.route_path('json.set_shared_folder_perm')}",
-                    {
+                    "${request.route_path('json.set_shared_folder_perm')}", {
                         ${self.csrf.token_param()}
                         ## TODO (WW) use variables to abstract parameter key strings
-                        "userid": email,
-                        "storeid": modalSID(),
-                        "role": role
+                        userid: email,
+                        storeid: modalSID(),
+                        role: role,
+                        suppress_warnings: suppressWarnings
                     }
-                )
-                .done(function(response) {
-                    if (handleAjaxReply(response, errorHeader)) {
-                        modalUserAndRoleList()[email]
-                                .${user_and_role_role_key} = role;
-                        refreshModal();
-                    }
+                ).done(function() {
+                    modalUserAndRoleList()[email]
+                            .${user_and_role_role_key} = role;
+                    refreshModal();
                 })
-                .fail(function (jqXHR, textStatus, errorThrown) {
-                    displayModalError(errorHeader, errorThrown);
+                .fail(function(xhr) {
+                    var type = getErrorTypeNullable(xhr);
+                    if (type == "SHARED_FOLDER_RULES_WARNING_OWNER_CAN_SHARE_WITH_EXTERNAL_USERS") {
+                        showOwnerCanShareExternallyWarningModal(xhr, function() {
+                            setRole(email, role, true);
+                        });
+                    } else if (type == "SHARED_FOLDER_RULES_EDITORS_DISALLOWED_IN_EXTERNALL_SHARED_FOLDER") {
+                        showEditorsDisallowedErrorModal(xhr, false);
+                    } else {
+                        showErrorMessageFromResponse(xhr);
+                    }
                 })
                 .always(function() {
                     stopModalSpinner();
@@ -369,11 +375,10 @@
             }
 
             function confirmRemoveUser(email, fullName) {
-
                 $('.remove-modal-full-name').text(fullName);
                 $('.remove-modal-email').text(email);
 
-                $modal.modal('hide');
+                $mainModal.modal('hide');
                 $('#remove-modal').modal('show');
 
                 var $confirm = $('#remove-model-confirm');
@@ -410,43 +415,78 @@
             }
 
             $('#remove-modal').on('hidden', function() {
-                $modal.modal('show');
+                $mainModal.modal('show');
             })
 
             $('#modal-invite-form').submit(function(ev) {
                 ## Since IE doesn't support String.trim(), use $.trim()
                 var email = $.trim($('#modal-invitee-email').val());
                 var role = $('#modal-invite-role-select').find(":selected").attr('value');
-                inviteToFolder(email, role);
+                inviteToFolder(email, role, false);
                 return false;
             });
 
-            ## done and always are callbacks for AJAX success and completion.
-            ## They can be None.
-            ## Pass the email as a parameter rather than the method extracting
+            ## Initialize auxilary modals
+            var $convertToExternalModal = $('#convert-to-external-modal');
+            var $ownerCanShareExternallyModal = $('#owner-can-share-externally-modal');
+            var $editorDisallowedModal = $('#editor-disallowed-modal');
+            setModalTransition($convertToExternalModal);
+            setModalTransition($ownerCanShareExternallyModal);
+            setModalTransition($editorDisallowedModal);
+
+            function setModalTransition($modal) {
+                $modal.on('show', function() { $mainModal.modal("hide"); })
+                      .on('hidden', function() { $mainModal.modal("show"); })
+            }
+
+            ## This method passes the email as a parameter rather than fetching
             ## from the input field on its own, since paymentRequiredToInvite()
             ## hides the main modal before calling this method, which causes the
             ## field to be cleaned up.
-            function inviteToFolder(email, role, done, always) {
+            ##
+            ## @param done and always are callbacks for AJAX success and completion.
+            ## They can be None.
+            ##
+            ## @param suppress_warnings see sp.proto:ShareFolderCall
+            ##
+            function inviteToFolder(email, role, suppress_warnings, done, always) {
                 startModalSpinner();
                 var sid = modalSID();
                 var name = modalFolderName();
 
-                var errorHeader = "Couldn't invite: ";
                 $.post("${request.route_path('json.add_shared_folder_perm')}", {
                         ${self.csrf.token_param()}
-                        "user_id": email,
-                        "role": role,
-                        "store_id": sid,
-                        "folder_name": name
+                        user_id: email,
+                        role: role,
+                        store_id: sid,
+                        folder_name: name,
+                        suppress_warnings: suppress_warnings
                     }
-                ).done(function(response) {
+                ).done(function() {
                     showSuccessMessage('Invitation has been sent.');
                     $('#modal-invitee-email').val('');
                     if (done) done();
                 }).fail(function (xhr) {
-                    if (getErrorTypeNullable(xhr) == "NO_STRIPE_CUSTOMER_ID") {
-                        paymentRequiredToInvite(email);
+                    var type = getErrorTypeNullable(xhr);
+                    if (type == "NO_STRIPE_CUSTOMER_ID") {
+                        paymentRequiredToInvite(email, role);
+
+                    } else if (type == "SHARED_FOLDER_RULES_WARNING_CONVERT_TO_EXTERNALLY_SHARED_FOLDER") {
+                        showWarningModal($convertToExternalModal,
+                                $('#convert-to-external-confirm'), function() {
+                            ## retry inviting with warnings suppressed
+                            inviteToFolder(email, role, true, done, always);
+                        });
+
+                    } else if (type == "SHARED_FOLDER_RULES_WARNING_OWNER_CAN_SHARE_WITH_EXTERNAL_USERS") {
+                        showOwnerCanShareExternallyWarningModal(xhr, function() {
+                            ## retry inviting with warnings suppressed
+                            inviteToFolder(email, role, true, done, always);
+                        });
+
+                    } else if (type == "SHARED_FOLDER_RULES_EDITORS_DISALLOWED_IN_EXTERNALL_SHARED_FOLDER") {
+                        showEditorsDisallowedErrorModal(xhr, true);
+
                     } else {
                         showErrorMessageFromResponse(xhr);
                     }
@@ -456,6 +496,54 @@
                 });
             }
 
+            function showEditorsDisallowedErrorModal(xhr, showSuggestAddAsViewers) {
+                $editorDisallowedModal.modal('show');
+                populateExternalUserList($('#editor-disallowed-user-list'),
+                    getAeroFSErrorData(xhr));
+                if (!showSuggestAddAsViewers) {
+                    $('#suggest-add-as-viewers').hide();
+                }
+            }
+
+            ## @param action the callback function to be called when the user clicks Okay
+            function showOwnerCanShareExternallyWarningModal(xhr, action) {
+                showWarningModal($ownerCanShareExternallyModal,
+                    $('#owner-can-share-externally-confirm'), action);
+                populateExternalUserList($('#owner-can-share-externally-user-list'),
+                        getAeroFSErrorData(xhr));
+            }
+
+            ## @param action the callback function to be called when the user clicks Okay
+            function showWarningModal($warningModal, $confirmBtn, action) {
+                $warningModal.modal('show');
+                ## Call off() to clear previously registered click handlers
+                $confirmBtn.off('click').click(function() {
+                    $warningModal.modal('hide');
+                    action();
+                    return false;
+                })
+            }
+
+            ## @param jsonStr a JSON string passed as the error message from the
+            ## server. The string specifies a list of external users. See
+            ## EX_WARNING_* etc in common.proto for detail.
+            ## @list the <ul> element to place the items in
+            function populateExternalUserList($list, jsonStr) {
+                $list.empty();
+                $.each($.parseJSON(jsonStr), function(email, fullname) {
+                    var str = fullname.first_name;
+                    str += fullname.first_name && fullname.last_name ? ' ' : '';
+                    str += fullname.last_name;
+                    if (str) str += ' ';
+                    str += '<' + email + '>';
+                    $list.append($('<li></li>').text(str));
+                });
+            }
+
+            ##################################
+            ## Payment related functions
+            ##################################
+
             ## Restore the main modal once sub-modals are hidden.
             %if is_admin:
                 getCreditCardModal()
@@ -463,14 +551,14 @@
                 $("#ask-admin-modal")
             %endif
                 .on("hidden", function() {
-                    $modal.modal("show");
+                    $mainModal.modal("show");
                 });
 
-            function paymentRequiredToInvite(email) {
-                $modal.modal("hide");
+            function paymentRequiredToInvite(email, role) {
+                $mainModal.modal("hide");
                 %if is_admin:
                     inputCreditCardInfoAndCreateStripeCustomer(function(done, always) {
-                        inviteToFolder(email, role, done, always);
+                        inviteToFolder(email, role, false, done, always);
                     });
                 %else:
                     $("#ask-admin-modal").modal("show");
@@ -489,6 +577,10 @@
                     return false;
                 }
             }
+
+            ##################################
+            ## Spinner related functions
+            ##################################
 
             function resetModalSpinner() {
                 var spin = $('#modal-spinner');

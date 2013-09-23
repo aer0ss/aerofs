@@ -12,12 +12,9 @@ class TeamMembersViewTest(TestBase):
         self.reply = ListOrganizationInvitedUsersReply()
         self.reply.user_id.append(_USER_ID)
 
-        # TODO (WW) use create_autospec?
+        # TODO (WW) use create_autospec? also see JsonAddSharedFolderPermTest
         self.sp_rpc_stub.list_organization_invited_users = \
             Mock(return_value=self.reply)
-
-    def tearDown(self):
-        testing.tearDown()
 
     def test_should_call_list_organization_invited_users(self):
         from web.views.team_members.team_members_view import team_members

@@ -13,7 +13,9 @@ import com.aerofs.lib.ex.shared_folder_rules.ExSharedFolderRulesWarningOwnerCanS
 import com.aerofs.sp.server.SPService;
 import com.aerofs.sp.server.lib.SharedFolder;
 import com.aerofs.sp.server.lib.user.User;
+import com.aerofs.sp.server.shared_folder_rules.ISharedFolderRules;
 import com.aerofs.sp.server.shared_folder_rules.SharedFolderRulesFactory;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -46,22 +48,36 @@ public class TestSP_ReadOnlyExternalSharedFolderRules extends AbstractSPFolderTe
             throws Exception
     {
         // Ask SharedFolderRulesFactory to create ReadOnlyExternalFolderRules
-        Properties props = new Properties();
-        props.put("shared_folder_rules.read_only_external_folders.email_whitelist", WHITE_LIST);
-        setProperties(props);
-        sharedFolderRules = SharedFolderRulesFactory.create();
+        setWhitelistProperty(WHITE_LIST);
+
+        ISharedFolderRules sharedFolderRules = SharedFolderRulesFactory.create(factUser);
 
         // reconstruct SP using the new shared folder rules
         service = new SPService(db, sqlTrans, jedisTrans, sessionUser, passwordManagement,
                 certificateAuthenticator, factUser, factOrg, factOrgInvite, factDevice, certdb,
                 esdb, factSharedFolder, factEmailer, _deviceRegistrationEmailer,
                 _requestToSignUpEmailer, commandQueue, analytics, identitySessionManager,
-                sharedFolderRules);
+                authenticator, sharedFolderRules);
         wireSPService();
 
         sqlTrans.begin();
         saveUser(internalSharer);
         sqlTrans.commit();
+    }
+
+    @After
+    public void teardown()
+    {
+        // Reset the property so subsequent tests can construct SP with the default shared folder
+        // rules.
+        setWhitelistProperty("");
+    }
+
+    private void setWhitelistProperty(String whitelist)
+    {
+        Properties props = new Properties();
+        props.put("shared_folder_rules.read_only_external_folders.email_whitelist", whitelist);
+        setProperties(props);
     }
 
     @Test

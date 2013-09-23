@@ -6,6 +6,8 @@ import java.io.PrintWriter;
 import com.aerofs.proto.Common.PBException;
 import com.aerofs.proto.Common.PBException.Type;
 
+import javax.annotation.Nullable;
+
 /**
  * This is a base class for all the exceptions that have a corresponding type in PBException, and
  * thus can be sent over the wire. When a sender sends a wirable exception, it converts the
@@ -62,6 +64,7 @@ public abstract class AbstractExWirable extends Exception
     private static final long serialVersionUID = 1L;
     private static final String REMOTE_STACKTRACE = "Remote stacktrace:";
 
+    private final byte[] _data;
     private final PBException _pb;
 
     /**
@@ -74,31 +77,52 @@ public abstract class AbstractExWirable extends Exception
     {
         super();
         _pb = null;
+        _data = null;
+    }
+
+    protected AbstractExWirable(byte[] data)
+    {
+        super();
+        _pb = null;
+        _data = data;
     }
 
     protected AbstractExWirable(String msg)
     {
         super(msg);
         _pb = null;
+        _data = null;
     }
 
     protected AbstractExWirable(Throwable cause)
     {
         super(cause);
         _pb = null;
+        _data = null;
     }
 
     protected AbstractExWirable(String msg, Throwable cause)
     {
         super(msg, cause);
         _pb = null;
+        _data = null;
     }
 
     protected AbstractExWirable(PBException pb)
     {
-        super(pb.getMessage());
+        super(pb.getMessageDeprecated());
+        _data = pb.getData().toByteArray();
         _pb = pb;
         assert getWireType() == pb.getType();
+    }
+
+    /**
+     * @return option data associated with the exception. Individual exceptions dictate their data
+     * format.
+     */
+    public @Nullable byte[] getDataNullable()
+    {
+        return _data;
     }
 
     /**
@@ -110,17 +134,19 @@ public abstract class AbstractExWirable extends Exception
     public String getMessage()
     {
         String superMessage = super.getMessage();
-        if (superMessage == null || superMessage.isEmpty()) return getWireTypeString();
+        if (superMessage == null || superMessage.isEmpty()) return getWireTypeStringDeprecated();
         else return superMessage;
     }
 
     /**
+     * DEPRECATED: the new error handling framework doesn't use this method to display errors.
+     *
      * @return a user-friendly representation of the wire type in English. If the wire type of the
      * exception is FOO_BAR, this method returns "foo bar".
      *
      * N.B. The Java obfuscator must retain the wire type
      */
-    public String getWireTypeString()
+    public String getWireTypeStringDeprecated()
     {
         return getWireType().name().toLowerCase().replace('_', ' ');
     }

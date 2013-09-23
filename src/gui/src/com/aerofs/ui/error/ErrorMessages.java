@@ -202,7 +202,7 @@ public class ErrorMessages
         }
 
         if (e instanceof AbstractExWirable) {
-            String wireType = ((AbstractExWirable) e).getWireTypeString();
+            String wireType = ((AbstractExWirable) e).getWireTypeStringDeprecated();
             return wireType.equals(message) ? wireType : wireType + ": " + message;
         } else if (e instanceof FileNotFoundException) {
             return message + " is not found";

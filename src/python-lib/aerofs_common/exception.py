@@ -14,15 +14,21 @@ class ExceptionReply(Exception):
 
     def get_type(self):
         """
-        return the numeric type value
+        @return the numeric type value
         """
         return self.reply.type
 
     def get_type_name(self):
         """
-        return the type string, e.g. "NOT_FOUND"
+        @return the type string, e.g. "NOT_FOUND"
         """
         return _PBEXCEPTION_TYPE.values_by_number[self.reply.type].name
+
+    def get_data(self):
+        """
+        @return the data field of the exception
+        """
+        return self.reply.data
 
     def __str__(self):
         description = self.get_type_name()

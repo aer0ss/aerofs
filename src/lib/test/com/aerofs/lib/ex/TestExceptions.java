@@ -42,7 +42,7 @@ public class TestExceptions extends AbstractTest
     {
         ExNotDir ex = new ExNotDir("testing {}", new File("/test/file"));
         PBException pb = Exceptions.toPB(ex);
-        assertNotSame(pb.getMessage(), pb.getPlainTextMessage());
+        assertNotSame(pb.getMessageDeprecated(), pb.getPlainTextMessageDeprecated());
     }
 
     @Test
@@ -50,8 +50,8 @@ public class TestExceptions extends AbstractTest
     {
         PBException pb = PBException.newBuilder()
                 .setType(Type.NOT_DIR)
-                .setMessage("OBFUSCATED MESSAGE")
-                .setPlainTextMessage("Secret code")
+                .setMessageDeprecated("OBFUSCATED MESSAGE")
+                .setPlainTextMessageDeprecated("Secret code")
                 .build();
         Exception e = Exceptions.fromPB(pb);
         assertTrue(e instanceof ExNotDir);

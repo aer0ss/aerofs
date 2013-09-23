@@ -52,10 +52,10 @@ function normalize(message) {
 
 function showErrorMessageFromResponse(xhr) {
     if (xhr.status == 400) {
-        // We only use 400 for expected JSON error replies
-        showErrorMessage($.parseJSON(xhr.responseText).message);
+        // We only use 400 for expected JSON error replies. See error.py
+        showErrorMessage(getAeroFSErrorMessage(xhr));
     } else if (xhr.status == 403) {
-        // See error_view.py:_force_login on how 403 is generated
+        // See error_view.py:_force_login on generation of 403
         window.location.href = "/login?next=" + encodeURIComponent(document.URL);
     } else {
         showErrorMessage(getInternalErrorText());
@@ -72,6 +72,16 @@ function getInternalErrorText() {
 
 function getErrorTypeNullable(xhr) {
     return xhr.status == 400 ? $.parseJSON(xhr.responseText).type : null;
+}
+
+// precondition: the xhr must be an AeroFS error response
+function getAeroFSErrorMessage(xhr) {
+    return $.parseJSON(xhr.responseText).message;
+}
+
+// precondition: the xhr must be an AeroFS error response
+function getAeroFSErrorData(xhr) {
+    return $.parseJSON(xhr.responseText).data;
 }
 
 function setVisible($elem, visible) {

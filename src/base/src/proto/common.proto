@@ -35,14 +35,17 @@ message PBException {
 
         // All the following type names strictly map to Java exception types. e.g. BAD_ARGS maps to
         // ExBadArgs.
-
+        //
+        // ####################################################################
+        // # N.B.: When adding new types that may be consumed by JavaScripts, #
+        // #       update exception_reply_test.py to include them.            #
+        // ####################################################################
         //
         // Base exception types.
         // Those exceptions live in com.aerofs.base.ex and are available to everybody including the
         // Android app.
         // Try avoiding re-using them. Defining your own types is prefered.
         //
-
         INTERNAL_ERROR = 0;    // Generic wrapper for non-wireable exceptions
         EMPTY_EMAIL_ADDRESS = 1;
         ALREADY_EXIST = 3;
@@ -100,7 +103,18 @@ message PBException {
         INVITEE_LIST_EMPTY = 406;
         EXTERNAL_SERVICE_UNAVAILABLE = 407;
 
-        // SP exceptions used by shared folder rules
+        // ####################################################################
+        // # N.B.: When adding new types that may be consumed by JavaScripts, #
+        // #       update exception_reply_test.py to include them.            #
+        // ####################################################################
+
+        // SP exceptions used by shared folder rules. Their data field contains a list of external
+        // users as a UTF-8 encoded JSON string. The format is as follows:
+        //
+        //      {
+        //          "<email>": { "first_name": "<first_name>", "last_name": "<last_name>" },
+        //          "<email>": { "first_name": "<first_name>", "last_name": "<last_name>" },
+        //      }
         SHARED_FOLDER_RULES_EDITORS_DISALLOWED_IN_EXTERNALL_SHARED_FOLDER = 408;
         SHARED_FOLDER_RULES_WARNING_CONVERT_TO_EXTERNALLY_SHARED_FOLDER = 409;
         SHARED_FOLDER_RULES_WARNING_OWNER_CAN_SHARE_WITH_EXTERNAL_USERS = 410;
@@ -109,22 +123,34 @@ message PBException {
     required Type type = 1;
 
     /**
+     * DEPRECATED: the new unified error handling framework doesn't use this field. Use the data
+     * field instead to encode exception-specific information.
+     *
      * The message from the Exception's getMessage() call. This is not guaranteed
-     * to be human readable (ex. the exception contains obfuscated paths).
+     * to be human readable (e.g. the exception may contain obfuscated paths). Note that some
+     * exception types use this field to hold JSON strings.
      */
-    optional string message = 4;
+    optional string message_deprecated = 4;
 
     /**
+     * DEPRECATED: the new unified error handling framework doesn't use this field. Use the data
+     * field instead to encode exception-specific information.
+     *
      * User-friendly error message, if available.
      * This message *can* be displayed to the user, and should be localized if possible.
      */
-    optional string plain_text_message = 2;
+    optional string plain_text_message_deprecated = 2;
 
     /**
      * The call stack of the exception, if available. Note that stack trace should not be sent
      * across machine boundaries for security concerns.
      */
     optional string stack_trace = 3;
+
+    /**
+     * Option data associated with the exception. Individual exceptions dictate their data format.
+     */
+    optional bytes data = 5;
 }
 
 enum PBRole {

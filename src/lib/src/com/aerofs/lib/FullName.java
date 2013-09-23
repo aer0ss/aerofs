@@ -5,15 +5,17 @@
 package com.aerofs.lib;
 
 import com.aerofs.proto.Sp.PBFullName;
+import com.google.gson.annotations.SerializedName;
 
 /**
  * This class represents a user's full name
  */
 public class FullName
 {
-    final public String _first;
-    final public String _last;
-    private PBFullName _pb;
+    @SerializedName("first_name") final public String _first;
+    @SerializedName("last_name") final public String _last;
+    // mark as transient to avoid GSON serialization
+    private transient PBFullName _pb;
 
     public FullName(String first, String last)
     {
