@@ -54,12 +54,15 @@ class persistent::services (
 
     # MySQL client and MySQL server.
     include mysql
-    #include mysql::server
     class {'mysql::server':
         config_hash => {
             'bind_address' => $mysql_bind_address,
         },
     }
+    # We require this to get rid of extra users, including ones that can cause
+    # issues with other accounts we add. For instance ''@'localhost' interferes
+    # with 'aerofs_sp'@'localhost'.
+    class {'mysql::server::account_security': }
 
     # Should get pulled via apt dependency, but add it here just for good
     # measure.
