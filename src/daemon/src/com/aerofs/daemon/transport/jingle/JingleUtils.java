@@ -17,9 +17,11 @@ import static com.aerofs.daemon.transport.jingle.JingleUtils.DownstreamChannelEv
 import static com.aerofs.daemon.transport.jingle.JingleUtils.DownstreamChannelEvent.INTEREST_OPS;
 import static com.aerofs.daemon.transport.jingle.JingleUtils.DownstreamChannelEvent.UNBIND;
 
-public class JingleUtils
+abstract class JingleUtils
 {
     private static final String JINGLE_RESOURCE_NAME = "u";
+
+    private JingleUtils() {} // private to prevent instantiation
 
     /**
      * Convert a DID> to an XMPP JID valid on the AeroFS XMPP server
@@ -38,7 +40,7 @@ public class JingleUtils
         return JabberID.user2did(jid.node());
     }
 
-    public static enum DownstreamChannelEvent
+    static enum DownstreamChannelEvent
     {
         CLOSE,        // Close the channel.
         BIND,         // Bind the channel to the specified local address. Value is a SocketAddress.
@@ -53,7 +55,7 @@ public class JingleUtils
      * See the ChannelState doc for more information.
      * (http://netty.io/3.6/api/org/jboss/netty/channel/ChannelState.html)
      */
-    public static DownstreamChannelEvent parseDownstreamEvent(ChannelState state, Object value)
+    static DownstreamChannelEvent parseDownstreamEvent(ChannelState state, Object value)
     {
         switch (state) {
         case OPEN:

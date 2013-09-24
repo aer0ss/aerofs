@@ -4,7 +4,6 @@
 
 package com.aerofs.base.id;
 
-import com.aerofs.base.BaseParam.XMPP;
 import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.id.UniqueID.ExInvalidID;
 

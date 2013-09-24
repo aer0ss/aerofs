@@ -3,6 +3,8 @@ package com.aerofs.daemon.transport.jingle;
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.daemon.transport.TransportThreadGroup;
+import com.aerofs.daemon.transport.exception.ExSendFailed;
+import com.aerofs.daemon.transport.exception.ExTransport;
 import com.aerofs.daemon.transport.xmpp.XMPPConnectionService;
 import com.aerofs.j.Jid;
 import com.aerofs.j.Message;
@@ -14,16 +16,15 @@ import com.aerofs.j.TunnelSessionClient_IncomingTunnelSlot;
 import com.aerofs.j.XmppClient_StateChangeSlot;
 import com.aerofs.j.XmppEngine;
 import com.aerofs.j.XmppMain;
-import com.aerofs.lib.IDumpStatMisc;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.SystemUtil.ExitCode;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.ex.ExJingle;
+import com.google.common.base.Preconditions;
+import com.google.common.collect.Lists;
 import org.slf4j.Logger;
 
-import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
@@ -42,11 +43,13 @@ import static com.google.common.base.Preconditions.checkState;
  * the interface itself must call the containing objects' delete() whenever
  * they are no longer used.
  */
-public class SignalThread extends Thread implements IDumpStatMisc
+class SignalThread extends Thread
 {
     static interface ISignalThreadListener
     {
         void onIncomingTunnel(TunnelSessionClient client, Jid jid, SWIGTYPE_p_cricket__Session session);
+
+        void closeAllAcceptedChannels();
     }
 
     private static final Logger l = Loggers.getLogger(SignalThread.class);
@@ -61,15 +64,15 @@ public class SignalThread extends Thread implements IDumpStatMisc
     private final InetSocketAddress _stunServerAddress;
     private final InetSocketAddress _xmppServerAddress;
     private final String _absRTRoot;
-    private final ArrayList<Runnable> _postRunners = new ArrayList<Runnable>(); // st thread only
+    private final ArrayList<Runnable> _postRunners = Lists.newArrayList(); // st thread only
     private final Object _mxMain = new Object(); // lock object
     private final BlockingQueue<ISignalThreadTask> _tasks = new LinkedBlockingQueue<ISignalThreadTask>(DaemonParam.QUEUE_LENGTH_DEFAULT);
     private ISignalThreadListener _listener;
-    private volatile boolean _isOpen;
+    private volatile boolean _connectedToXMPP;
 
     public SignalThread(Jid localjid, InetSocketAddress stunServerAddress, InetSocketAddress xmppServerAddress, XMPPConnectionService xmppServer, String absRtRoot)
     {
-        super(TransportThreadGroup.get(), "lj-sig");
+        super(TransportThreadGroup.get(), "j-st");
         _stunServerAddress = stunServerAddress;
         _xmppServerAddress = xmppServerAddress;
         _absRTRoot = absRtRoot;
@@ -101,17 +104,19 @@ public class SignalThread extends Thread implements IDumpStatMisc
 
     public boolean isReady()
     {
-        return _isOpen;
+        return _connectedToXMPP;
     }
 
     StreamInterface createTunnel(Jid to, String description)
     {
-        return _tsc.CreateTunnel(to, "a");
+        l.info("create tunnel to j:{} ({})", to, description);
+
+        return _tsc.CreateTunnel(to, description);
     }
 
-    void assertThread()
+    void checkThread()
     {
-        assert this == Thread.currentThread();
+        checkState(Thread.currentThread() == this);
     }
 
     /**
@@ -139,10 +144,10 @@ public class SignalThread extends Thread implements IDumpStatMisc
     /**
      * The _main pointer is guaranteed valid within runnable.run().
      */
-    private void post_(final Runnable runnable)
+    private void post(final Runnable runnable)
     {
-        assertThread();
-        assert _main != null;
+        checkThread();
+        checkState(_main != null);
 
         _postRunners.add(runnable);
 
@@ -153,19 +158,20 @@ public class SignalThread extends Thread implements IDumpStatMisc
     }
 
     /**
-     * call delete_() in a separate message handler. this is needed sometimes
-     * when the object to be deleted may be referred to by the rest of the
-     * message handling.
+     * Delete the object (and its underlying C++ objects) in a separate
+     * message handler. This is needed when the object to be deleted may be
+     * referenced within the original message handling method.
      */
-    void delayedDelete_(final IProxyObjectContainer poc)
+    void delayedDelete(final JingleStream stream)
     {
-        assertThread();
+        checkThread();
 
-        post_(new Runnable() {
+        post(new Runnable()
+        {
             @Override
             public void run()
             {
-                poc.delete_();
+                stream.delete();
             }
         });
     }
@@ -173,16 +179,15 @@ public class SignalThread extends Thread implements IDumpStatMisc
     @Override
     public void run()
     {
+        // noinspection InfiniteLoopStatement
         while (true) {
-            runImpl_();
+            runImpl();
             ThreadUtil.sleepUninterruptable(LibParam.EXP_RETRY_MIN_DEFAULT);
         }
     }
 
-    private void runImpl_()
+    private void runImpl()
     {
-        l.debug("st: check ls");
-
         // The xmpp server address is an unresolved hostname.
         // We avoid resolving the hostname ourselves and let
         // SMACK do the DNS query on its thread.
@@ -196,55 +201,37 @@ public class SignalThread extends Thread implements IDumpStatMisc
                 _xmppPassword,
                 _logPathUTF8);
 
-
         _slotStateChange.connect(_main.xmpp_client());
 
-        l.debug("st: connected slots - starting main");
+        l.debug("start main");
 
         // >>>> WHEE...RUNNING >>>>
 
         // boolean lololon = Cfg.lotsOfLotsOfLog(_absRTRoot); FIXME (AG): inject this somehow
-        _main.Run(false);
+        _main.Run(true);
 
-        l.debug("st: main completed");
+        l.debug("end main - start cleanup");
 
         // >>>> WHEE...OHHHH....DONE :( >>>>
 
         synchronized (_mxMain) {
-            drainTasksQueue(new ExJingle("main stopped"));
+            drainTasksQueue(new ExSendFailed("transport stopped [main ended]"));
             _main.delete();
             _main = null;
         }
 
-        l.debug("st: cleanup completed");
-    }
-
-    // this method must be called within the signal thread, and may be called
-    // several times on each XmppMain object
-    // TODO (GS): Nobody is calling this
-    void close_(Exception e)
-    {
-        assertThread();
-
-        l.warn("st: trigger jingle close err:{}", e);
-
-        _main.Stop();
-    }
-
-    @Override
-    public void dumpStatMisc(final String indent, final String indentUnit, final PrintStream ps)
-    {
+        l.debug("end cleanup");
     }
 
     /**
-     * N.B. pay special attention on how runImpl_() synchronizes with this class
+     * N.B. pay special attention on how runImpl() synchronizes with this class
      */
     private void processTasksQueue()
     {
         // Synchronizing on mxMain is necessary because this may be called from any thread
         synchronized (_mxMain) {
             if (_main == null) {
-                drainTasksQueue(new ExJingle("null main"));
+                drainTasksQueue(new ExTransport("transport stopped [null main]"));
                 return;
             }
 
@@ -280,24 +267,24 @@ public class SignalThread extends Thread implements IDumpStatMisc
             //
             // So if you're adding new code, **make sure it is within this try-catch block.**
             try {
-                assertThread();
+                checkThread();
 
                 task = _tasks.poll();
                 if (task == null) return;
 
                 // We don't have to hold _mxMain because the OnMessage callback is being run while
-                // _main is alive. If _main is alive the only person who can modify it (runImpl_)
+                // _main is alive. If _main is alive the only person who can modify it (runImpl)
                 // is still in the _main.run() call and won't be modifying the value of _main.
                 try {
                     task.run();
                 } catch (Exception e) {
-                    l.error("st: t: {} run fin with unhandled err: {}", task, Util.e(e));
+                    l.error("t: {} run fin with unhandled err: {}", task, Util.e(e));
                     task.error(e);
                 }
 
             } catch (Throwable t) {
                 // note: task could be null here. Make sure to test for it if you need it.
-                l.error("jingle task crash and burn. t: {} ex: {}", task, Util.e(t));
+                l.error("jingle task crash and burn task:{}", task, t);
                 ExitCode.JINGLE_TASK_FATAL_ERROR.exit();
             }
         }
@@ -312,8 +299,9 @@ public class SignalThread extends Thread implements IDumpStatMisc
             try {
                 for (Runnable r : _postRunners) r.run();
                 _postRunners.clear();
-            } catch (Throwable e) {
-                l.error("st: ignoring: ", Util.e(e));
+            } catch (Throwable t) {
+                l.error("caught throwable while handling post task", t);
+                ExitCode.JINGLE_TASK_FATAL_ERROR.exit();
             }
         }
     };
@@ -323,70 +311,96 @@ public class SignalThread extends Thread implements IDumpStatMisc
         @Override
         public void onStateChange(XmppEngine.State state)
         {
-            l.info("st: engine state:" + state);
+            try {
+                l.info("engine state:{}", state);
 
-            if (state == XmppEngine.State.STATE_OPEN) {
-                l.debug("st: create engine");
-
-                checkState(_tsc == null);
-                checkState(_incomingTunnelSlot == null);
-
-                _main.StartHandlingSessions();
-                _tsc = new TunnelSessionClient(_main.xmpp_client().jid(), _main.session_manager());
-
-                _incomingTunnelSlot = new TunnelSessionClient_IncomingTunnelSlot()
-                {
-                    @Override
-                    public void onIncomingTunnel(TunnelSessionClient client, Jid jid, String desc, SWIGTYPE_p_cricket__Session sess)
-                    {
-                        if (_listener != null) _listener.onIncomingTunnel(client, jid, sess);
-                    }
-                };
-
-                _incomingTunnelSlot.connect(_tsc);
-
-                // Now that Jingle is initialized and ready, we start the connection to the xmpp
-                // server. If we started it earlier the core would get presence information and try
-                // to connect to peers before jingle is ready.
-                _xmppServer.linkStateChanged(true);
-
-                _isOpen = true;
-
-            } else if (state == XmppEngine.State.STATE_CLOSED) {
-
-                _isOpen = false;
-
-                int[] subcode = { 0 };
-                XmppEngine.Error error = _main.xmpp_client().engine().GetError(subcode);
-
-                l.warn("engine state changed to closed. err:{} subcode:{}", error, subcode[0]);
-
-                _xmppServer.linkStateChanged(false);
-
-                if (_tsc != null) {
-                    _tsc.delete();
-                    _tsc = null;
+                if (state == XmppEngine.State.STATE_OPEN) {
+                    handleXMPPEngineOpen();
+                } else if (state == XmppEngine.State.STATE_CLOSED) {
+                    handleXMPPEngineClosed();
                 }
-
-                if (_incomingTunnelSlot != null) {
-                    _incomingTunnelSlot.delete();
-                    _incomingTunnelSlot = null;
-                }
-
-                _main.ShutdownSignalThread();
-                // Previously we had code that tried to create a new account
-                // if login failed because of a "not authorized" message. This
-                // call would race against the Multicast thread to create an
-                // account on the XMPP server. The winner would succeed, but
-                // the loser would get a conflict(409). This led to a lot of
-                // thrashing. The better solution is to simply bail out here,
-                // and let the Multicast thread alone attempt to create the
-                // account. This thread will simply reattempt to log in. At
-                // some point at time the Multicast thread will succeed, at
-                // which time we will be able to log in here as well.
+            } catch (Throwable t) {
+                l.error("caught throwable while handling XMPP engine state change", t);
+                ExitCode.JINGLE_TASK_FATAL_ERROR.exit();
             }
         }
+
+        private void handleXMPPEngineClosed()
+        {
+            _connectedToXMPP = false;
+
+            int[] subcode = {0};
+            XmppEngine.Error error = _main.xmpp_client().engine().GetError(subcode);
+
+            l.warn("engine state changed to closed. err:{} subcode:{}", error, subcode[0]);
+
+            _xmppServer.linkStateChanged(false);
+
+            if (_tsc != null) {
+                _tsc.delete();
+                _tsc = null;
+            }
+
+            _listener.closeAllAcceptedChannels();
+
+            if (_incomingTunnelSlot != null) {
+                _incomingTunnelSlot.delete();
+                _incomingTunnelSlot = null;
+            }
+
+            _main.ShutdownSignalThread();
+            // Previously we had code that tried to create a new account
+            // if login failed because of a "not authorized" message. This
+            // call would race against the Multicast thread to create an
+            // account on the XMPP server. The winner would succeed, but
+            // the loser would get a conflict(409). This led to a lot of
+            // thrashing. The better solution is to simply bail out here,
+            // and let the Multicast thread alone attempt to create the
+            // account. This thread will simply reattempt to log in. At
+            // some point at time the Multicast thread will succeed, at
+            // which time we will be able to log in here as well.
+        }
+
+        private void handleXMPPEngineOpen()
+        {
+            l.debug("create engine");
+
+            checkState(_tsc == null);
+            checkState(_incomingTunnelSlot == null);
+
+            _main.StartHandlingSessions();
+
+            Preconditions.checkState(_tsc == null);
+            _tsc = new TunnelSessionClient(_main.xmpp_client().jid(), _main.session_manager());
+
+            _incomingTunnelSlot = new TunnelSessionClient_IncomingTunnelSlot()
+            {
+                @Override
+                public void onIncomingTunnel(TunnelSessionClient client, Jid jid, String desc, SWIGTYPE_p_cricket__Session sess)
+                {
+                    try {
+                        l.info("handle incoming tunnel j:{}", jid);
+
+                        if (_listener != null) {
+                            _listener.onIncomingTunnel(client, jid, sess);
+                        } else {
+                            l.warn("no listener for incoming tunnel j:{}", jid);
+                        }
+                    } catch (Throwable t) {
+                        l.error("caught throwable while handling incoming tunnel j:{}", jid.Str(), t);
+                        ExitCode.JINGLE_TASK_FATAL_ERROR.exit();
+                    }
+                }
+            };
+
+            _incomingTunnelSlot.connect(_tsc);
+
+            // Now that Jingle is initialized and ready, we start the connection to the xmpp
+            // server. If we started it earlier the core would get presence information and try
+            // to connect to peers before jingle is ready.
+            _xmppServer.linkStateChanged(true);
+
+            _connectedToXMPP = true;
+        }
     };
-
-
 }

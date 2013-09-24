@@ -232,7 +232,7 @@ public final class Zephyr implements ITransport, ILinkStateListener, IUnicast, I
                     eventDispatcher.dispatch_(ev, outPrio.get());
                 }
             }
-        }, id());
+        }, id() + "-eq");
 
         dispatcherThread.start();
         zephyrConnectionService.start();

@@ -10,7 +10,7 @@ import org.jboss.netty.channel.ServerChannel;
 import org.jboss.netty.channel.ServerChannelFactory;
 import org.jboss.netty.channel.group.DefaultChannelGroup;
 
-public class JingleServerChannelFactory implements ServerChannelFactory
+class JingleServerChannelFactory implements ServerChannelFactory
 {
     private final DefaultChannelGroup _group = new DefaultChannelGroup();
     private final ChannelSink _sink;
@@ -27,17 +27,19 @@ public class JingleServerChannelFactory implements ServerChannelFactory
     {
         JingleServerChannel channel = new JingleServerChannel(this, pipeline, _sink, _signalThread);
         _group.add(channel);
+
         return channel;
     }
 
     @Override
     public void shutdown()
     {
+        _group.close().awaitUninterruptibly();
     }
 
     @Override
     public void releaseExternalResources()
     {
-        _group.close().awaitUninterruptibly();
+        shutdown();
     }
 }

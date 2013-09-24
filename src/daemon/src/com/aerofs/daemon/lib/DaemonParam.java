@@ -38,7 +38,6 @@ public class DaemonParam
         public static final int MCAST_MAX_DGRAM_SIZE    = 1024;
         public static final long HEARTBEAT_INTERVAL     = 30 * C.SEC;
         public static final long RETRY_INTERVAL         = 5 * C.SEC;
-        public static final int BACKLOG                 = 128;
         public static final int QUEUE_LENGTH            = QUEUE_LENGTH_DEFAULT;
         public static final long ARP_GC_INTERVAL        = HEARTBEAT_INTERVAL * 2;
     }
@@ -52,14 +51,14 @@ public class DaemonParam
     public static class Zephyr
     {
         public static final int QUEUE_LENGTH = QUEUE_LENGTH_DEFAULT;
-        public static final int WORKER_THREAD_POOL_SIZE = 10;
         public static final long HANDSHAKE_TIMEOUT = 10 * C.SEC;
     }
 
     public static class Jingle
     {
-        public static final int QUEUE_LENGTH            = QUEUE_LENGTH_DEFAULT;
-        public static final long CALL_TIMEOUT           = 30 * C.SEC;
+        public static final long RECV_QUEUE_BLOCKING_TIMEOUT      = 250;
+        public static final int QUEUE_LENGTH                      = QUEUE_LENGTH_DEFAULT;
+        public static final long CALL_TIMEOUT                     = 30 * C.SEC;
         public static final InetSocketAddress STUN_SERVER_ADDRESS = getAddressProperty(
                 "daemon.stun.address",
                 InetSocketAddress.createUnresolved("stun.l.google.com", 19302));

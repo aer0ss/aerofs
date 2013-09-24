@@ -19,7 +19,7 @@ import org.slf4j.Logger;
 import static org.jboss.netty.channel.Channels.fireChannelBound;
 import static org.jboss.netty.channel.Channels.fireExceptionCaught;
 
-public class JingleClientChannelSink extends AbstractChannelSink
+class JingleClientChannelSink extends AbstractChannelSink
 {
     private static final Logger l = Loggers.getLogger(JingleClientChannelSink.class);
     private final SignalThread _signalThread;
@@ -64,19 +64,22 @@ public class JingleClientChannelSink extends AbstractChannelSink
         }
     }
 
+    // FIXME (AG): it appears that this is never triggered, and the local address is never set
     private static void bind(JingleClientChannel channel, ChannelFuture future, JingleAddress localAddress)
     {
         try {
-            channel.setBound();
             channel.setLocalAddress(localAddress);
+            channel.setBound();
             future.setSuccess();
             fireChannelBound(channel, localAddress);
         } catch (Throwable t) {
+            l.warn("fail bind d:{} c:{}", localAddress.getDid(), channel, t);
             future.setFailure(t);
             fireExceptionCaught(channel, t);
         }
     }
 
+    // is connect notified on all error conditions?
     private void connect(final JingleClientChannel channel, final ChannelFuture future, final JingleAddress remoteAddress)
     {
         _signalThread.call(new ISignalThreadTask()
@@ -90,16 +93,17 @@ public class JingleClientChannelSink extends AbstractChannelSink
                 channel.setRemoteAddress(remoteAddress);
                 channel.setConnectFuture(future);
 
-                StreamInterface s = _signalThread.createTunnel(jid, "a");
-                JingleStream stream = new JingleStream(s, did, false, channel);
-                channel.setJingleDataStream(stream);
+                StreamInterface s = _signalThread.createTunnel(jid, String.format("%s->%s", channel.getLocalAddress(), channel.getRemoteAddress()));
+                JingleStream stream = new JingleStream(did, s, false, channel);
+                channel.setJingleStream(stream);
 
-                l.info("eng: connect initiated to d:" + did);
+                l.info("connect initiated to {}", did);
             }
 
             @Override
             public void error(Exception e)
             {
+                l.warn("fail connect d:{} c:{}", remoteAddress.getDid(), channel, e);
                 future.setFailure(e);
             }
         });

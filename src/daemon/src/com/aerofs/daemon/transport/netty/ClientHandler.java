@@ -16,6 +16,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.Channel;
+import org.jboss.netty.channel.ChannelException;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureListener;
 import org.jboss.netty.channel.ChannelHandlerContext;
@@ -29,7 +30,6 @@ import org.slf4j.Logger;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLHandshakeException;
 import java.io.IOException;
-import java.nio.channels.ClosedChannelException;
 import java.nio.channels.UnresolvedAddressException;
 import java.util.Queue;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -194,9 +194,13 @@ public class ClientHandler extends SimpleChannelHandler implements CNameListener
         // This is the only place where _channel can potentially be null
         if (_channel == null) _channel = e.getChannel();
 
-        l.warn("client: caught ex from: {} {}", _did, _channel, e.getCause(), LogUtil.suppress(
-                e.getCause(), ExBadMagicHeader.class, UnresolvedAddressException.class,
-                IOException.class, SSLException.class, SSLHandshakeException.class));
+        l.warn("client: caught ex from:{} {}", _did, _channel,
+                LogUtil.suppress(e.getCause(),
+                        ExBadMagicHeader.class,
+                        UnresolvedAddressException.class,
+                        IOException.class,
+                        SSLException.class,
+                        SSLHandshakeException.class));
 
         failPendingWrites(e.getCause());
         disconnect();
@@ -247,13 +251,14 @@ public class ClientHandler extends SimpleChannelHandler implements CNameListener
 
     /**
      * Helper method to return the exception that triggered the channel disconnection, or
-     * a new ClosedChannelException if no such exception is set.
+     * a new {@link ChannelException} if no such exception is set.
      */
+    @SuppressWarnings("ThrowableResultOfMethodCallIgnored")
     private Throwable getCloseReason(Channel channel)
     {
         checkState(channel.getCloseFuture().isDone());
 
         Throwable reason = channel.getCloseFuture().getCause();
-        return (reason != null) ? reason : new ClosedChannelException();
+        return (reason != null) ? reason : new ChannelException("channel closed");
     }
 }

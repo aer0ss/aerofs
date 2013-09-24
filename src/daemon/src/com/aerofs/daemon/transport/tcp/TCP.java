@@ -224,7 +224,7 @@ public class TCP implements ITransport, ILinkStateListener, IUnicastCallbacks, I
                     _disp.dispatch_(ev, outPrio.get());
                 }
             }
-        }, id()).start();
+        }, id() + "-eq").start();
     }
 
     @Override

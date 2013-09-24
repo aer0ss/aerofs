@@ -4,7 +4,6 @@
 
 package com.aerofs.daemon.transport.jingle;
 
-
 import com.aerofs.base.BaseParam.XMPP;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UserID;
@@ -72,7 +71,7 @@ public class Jingle implements ITransport, ILinkStateListener, IUnicastCallbacks
     private final TransportStats _transportStats;
     private final PresenceStore _presenceStore = new PresenceStore();
     private final PulseManager _pulseManager = new PulseManager();
-    private final StreamManager _sm = new StreamManager();
+    private final StreamManager _streamManager = new StreamManager();
     private final DID _localDID;
     private final Jid _localJid;
     private final String _id;
@@ -81,9 +80,10 @@ public class Jingle implements ITransport, ILinkStateListener, IUnicastCallbacks
     private final Multicast _multicast;
     private final XMPPConnectionService _xmppServer;
     private final String _xmppServerDomain;
-    private final Unicast _ucast;
+    private final Unicast _unicast;
 
-    public Jingle(UserID localUser,
+    public Jingle(
+            UserID localUser,
             DID localDID,
             InetSocketAddress stunServerAddress,
             InetSocketAddress xmppServerAddress,
@@ -117,15 +117,15 @@ public class Jingle implements ITransport, ILinkStateListener, IUnicastCallbacks
         _signalThread.setName(SIGNAL_THREAD_THREAD_ID);
 
         // Unicast
-        _ucast = new Unicast(this, _transportStats);
-        TransportProtocolHandler protocolHandler = new TransportProtocolHandler(this, sink, _sm, _pulseManager, _ucast);
+        _unicast = new Unicast(this, _transportStats);
+        TransportProtocolHandler protocolHandler = new TransportProtocolHandler(this, sink, _streamManager, _pulseManager, _unicast);
         JingleBootstrapFactory bsFact = new JingleBootstrapFactory(_id, localUser, localDID, clientSslEngineFactory, serverSslEngineFactory, rockLog, _transportStats);
-        ServerBootstrap serverBootstrap = bsFact.newServerBootstrap(_signalThread, _ucast, protocolHandler);
+        ServerBootstrap serverBootstrap = bsFact.newServerBootstrap(_signalThread, _unicast, protocolHandler);
         ClientBootstrap clientBootstrap = bsFact.newClientBootstrap(_signalThread);
-        _ucast.setBootstraps(serverBootstrap, clientBootstrap);
+        _unicast.setBootstraps(serverBootstrap, clientBootstrap);
 
         // Presence Manager
-        XMPPPresenceManager presenceManager = new XMPPPresenceManager(this, localDID, sink, _presenceStore, _pulseManager, _ucast);
+        XMPPPresenceManager presenceManager = new XMPPPresenceManager(this, localDID, sink, _presenceStore, _pulseManager, _unicast);
 
         // Multicast
         _multicast = new Multicast(localDID, id, xmppServerDomain, mcfr, _xmppServer, this, sink);
@@ -143,7 +143,7 @@ public class Jingle implements ITransport, ILinkStateListener, IUnicastCallbacks
     public void init_()
             throws Exception
     {
-        registerCommonHandlers(_disp, _sched, this, _multicast, _sm, _pulseManager, _ucast, _presenceStore);
+        registerCommonHandlers(_disp, _sched, this, _multicast, _streamManager, _pulseManager, _unicast, _presenceStore);
     }
 
     @Override
@@ -161,11 +161,11 @@ public class Jingle implements ITransport, ILinkStateListener, IUnicastCallbacks
                     _disp.dispatch_(ev, outPrio.get());
                 }
             }
-        }, id()).start();
+        }, id() + "-eq").start();
 
         _signalThread.start();
 
-        _ucast.start(new JingleAddress(_localDID, _localJid));
+        _unicast.start(new JingleAddress(_localDID, _localJid));
     }
 
     @Override
@@ -180,13 +180,13 @@ public class Jingle implements ITransport, ILinkStateListener, IUnicastCallbacks
 
         // Going down
         if (upBefore && !upNow) {
-            _ucast.pauseAccept();
+            _unicast.pauseAccept();
             _xmppServer.linkStateChanged(false);
         }
 
         // Going up
         if (!upBefore && upNow) {
-            _ucast.resumeAccept();
+            _unicast.resumeAccept();
             // If the signal thread is not ready, do not start the xmpp server. The signal thread
             // will start the xmpp server when it's ready.
             if (_signalThread.isReady()) _xmppServer.linkStateChanged(true);
@@ -218,7 +218,7 @@ public class Jingle implements ITransport, ILinkStateListener, IUnicastCallbacks
         dsbuilder.addTransport(tpbuilder);
 
         try {
-            _ucast.dumpStat(dstemplate, dsbuilder);
+            _unicast.dumpStat(dstemplate, dsbuilder);
         } catch (Exception e) {
             // FIXME: put in a message saying there was an error
         }
@@ -237,7 +237,7 @@ public class Jingle implements ITransport, ILinkStateListener, IUnicastCallbacks
         _xmppServer.dumpStatMisc(indent2, indentUnit, ps);
 
         ps.println(indent + "ucast");
-        _signalThread.dumpStatMisc(indent2, indentUnit, ps);
+        _unicast.dumpStatMisc(indent2, indentUnit, ps);
     }
 
     @Override
@@ -328,7 +328,7 @@ public class Jingle implements ITransport, ILinkStateListener, IUnicastCallbacks
     @Override
     public void closePeerStreams(DID did, boolean outbound, boolean inbound)
     {
-        TPUtil.sessionEnded(new Endpoint(this, did), _sink, _sm, outbound, inbound);
+        TPUtil.sessionEnded(new Endpoint(this, did), _sink, _streamManager, outbound, inbound);
     }
 
     @Override

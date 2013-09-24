@@ -18,7 +18,7 @@ import static org.jboss.netty.channel.Channels.fireChannelBound;
 import static org.jboss.netty.channel.Channels.fireExceptionCaught;
 
 
-public class JingleServerChannelSink extends AbstractChannelSink
+class JingleServerChannelSink extends AbstractChannelSink
 {
     private static final Logger l = Loggers.getLogger(JingleServerChannelSink.class);
 

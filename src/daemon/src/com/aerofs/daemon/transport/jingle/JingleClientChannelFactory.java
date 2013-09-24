@@ -5,7 +5,7 @@ import org.jboss.netty.channel.ChannelFactory;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelSink;
 
-public class JingleClientChannelFactory implements ChannelFactory
+class JingleClientChannelFactory implements ChannelFactory
 {
     private final ChannelSink _sink;
 
