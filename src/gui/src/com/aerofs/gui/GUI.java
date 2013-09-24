@@ -1,7 +1,11 @@
 package com.aerofs.gui;
 
+import com.aerofs.controller.UnattendedSetup;
 import com.aerofs.base.Loggers;
 import com.aerofs.controller.ExLaunchAborted;
+import com.aerofs.controller.InstallActor;
+import com.aerofs.controller.SetupModel;
+import com.aerofs.controller.SignInActor;
 import com.aerofs.gui.AeroFSMessageBox.ButtonType;
 import com.aerofs.gui.AeroFSMessageBox.IconType;
 import com.aerofs.gui.multiuser.setup.DlgMultiuserSetup;
@@ -18,6 +22,7 @@ import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExNoConsole;
 import com.aerofs.lib.os.OSUtil;
+import com.aerofs.proto.ControllerProto.GetSetupSettingsReply;
 import com.aerofs.sv.client.SVClient;
 import com.aerofs.ui.UI;
 import com.aerofs.ui.UIGlobals;
@@ -528,18 +533,38 @@ public class GUI implements IUI
     @Override
     public void setup_(String rtRoot) throws Exception
     {
-        if (L.isMultiuser()) {
-            DlgMultiuserSetup dialog = new DlgMultiuserSetup(_sh);
-            Object result = dialog.openDialog();
-            // N.B. a null result indicates the user has canceled the setup.
-            if (result == null) throw new ExLaunchAborted("user canceled setup");
+        UnattendedSetup unattendedSetup = new UnattendedSetup(rtRoot);
+
+        if (unattendedSetup.setupFileExists()) {
+            GetSetupSettingsReply defaults = UIGlobals.controller().getSetupSettings();
+
+            SetupModel model = new SetupModel()
+                    .setSignInActor(new SignInActor.Credential())
+                    .setInstallActor(new InstallActor.SingleUser());
+            model._localOptions._rootAnchorPath = defaults.getRootAnchor();
+            model.setDeviceName(defaults.getDeviceName());
+
+            unattendedSetup.populateModelFromSetupFile(model);
+
+            model.doSignIn();
+            model.doInstall();
+
+            // TODO: Set up shell extension
+
         } else {
-            AeroFSTitleAreaDialog dlg = (OpenId.ENABLED ?
-                    new DlgOpenIdSignIn(_sh) : new DlgCredentialSignIn(_sh));
+            if (L.isMultiuser()) {
+                DlgMultiuserSetup dialog = new DlgMultiuserSetup(_sh);
+                Object result = dialog.openDialog();
+                // N.B. a null result indicates the user has canceled the setup.
+                if (result == null) throw new ExLaunchAborted("user canceled setup");
+            } else {
+                AeroFSTitleAreaDialog dlg = (OpenId.ENABLED ?
+                        new DlgOpenIdSignIn(_sh) : new DlgCredentialSignIn(_sh));
 
-            dlg.open();
+                dlg.open();
 
-            if (dlg.isCancelled()) throw new ExLaunchAborted("user canceled setup");
+                if (dlg.isCancelled()) throw new ExLaunchAborted("user canceled setup");
+            }
         }
     }
 

@@ -1,5 +1,6 @@
 package com.aerofs.cli;
 
+import com.aerofs.controller.UnattendedSetup;
 import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.base.ex.ExEmptyEmailAddress;
 import com.aerofs.controller.InstallActor;
@@ -13,7 +14,6 @@ import com.aerofs.lib.RootAnchorUtil;
 import com.aerofs.lib.S;
 import com.aerofs.lib.StorageType;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.cfg.CfgDatabase;
 import com.aerofs.lib.ex.ExNoConsole;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.proto.ControllerProto.GetSetupSettingsReply;
@@ -22,42 +22,10 @@ import com.aerofs.ui.S3DataEncryptionPasswordVerifier;
 import com.aerofs.ui.S3DataEncryptionPasswordVerifier.PasswordVerifierResult;
 import com.aerofs.ui.UIGlobals;
 
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.util.Properties;
-
 public class CLISetup
 {
-    /**
-     * File containing settings for unattended setup.
-     *
-     * If a file with this name exists in the runtime root, the CLI will
-     * use the values therein for running the setup procedure instead of asking the
-     * user interactively.
-     */
-    private static final String UNATTENDED_SETUP_FILE = "unattended-setup.properties";
-
-    /*
-        # Example file contents
-        userid = test@aerofs.com
-        password = password
-        first_name = John
-        last_name = Smith
-        device = Ye Olde MacBook Pro
-     */
-
-    private static final String
-            PROP_USERID = "userid",
-            PROP_PASSWORD = "password",
-            PROP_DEVICE = "device",
-            PROP_ROOT = "root",
-            PROP_STORAGE_TYPE = "storage_type";
-
     private boolean _isUnattendedSetup;
 
-    private String _anchorRoot = null;
-    private StorageType _storageType = null;
     private SetupModel _model = null;
 
     CLISetup(CLI cli, String rtRoot) throws Exception
@@ -68,10 +36,15 @@ public class CLISetup
                 .setSignInActor(LibParam.OpenId.ENABLED ?
                         new SignInActor.CLIOpenId(cli) : new SignInActor.Credential());
 
-        _anchorRoot = defaults.getRootAnchor();
+        _model._localOptions._rootAnchorPath = defaults.getRootAnchor();
         _model.setDeviceName(defaults.getDeviceName());
 
-        processSetupFile(rtRoot, _model._s3Options);
+        UnattendedSetup unattendedSetup = new UnattendedSetup(rtRoot);
+        _isUnattendedSetup = unattendedSetup.setupFileExists();
+
+        if (_isUnattendedSetup) {
+            unattendedSetup.populateModelFromSetupFile(_model);
+        }
 
         if (!OSUtil.isLinux() && !_isUnattendedSetup) {
             cli.confirm(MessageType.WARN, L.product() + " CLI is not officially supported" +
@@ -106,41 +79,6 @@ public class CLISetup
                 S.CLI_NAME + " is running.");
     }
 
-    private void processSetupFile(String rtRoot, S3Options s3Options) throws Exception
-    {
-        File rtRootFile = new File(rtRoot);
-        File setupFile = new File(rtRootFile, UNATTENDED_SETUP_FILE);
-
-        if (!setupFile.exists()) return;
-
-        Properties props = new Properties();
-        BufferedInputStream in = new BufferedInputStream(new FileInputStream(setupFile));
-        try {
-            props.load(in);
-        } finally {
-            in.close();
-        }
-
-        _model.setUserID(props.getProperty(PROP_USERID));
-        _model.setPassword(props.getProperty(PROP_PASSWORD));
-        _model.setDeviceName(props.getProperty(PROP_DEVICE, _model.getDeviceName()));
-
-        _anchorRoot = props.getProperty(PROP_ROOT, _anchorRoot);
-        _storageType = StorageType.fromString(props.getProperty(PROP_STORAGE_TYPE));
-
-        String s3BucketId = props.getProperty(CfgDatabase.Key.S3_BUCKET_ID.keyString());
-        if (s3BucketId != null) {
-            s3Options._bucketID = s3BucketId;
-            s3Options._accessKey = props.getProperty(CfgDatabase.Key.S3_ACCESS_KEY.keyString());
-            s3Options._secretKey = props.getProperty(CfgDatabase.Key.S3_SECRET_KEY.keyString());
-            s3Options._passphrase = props.getProperty(CfgDatabase.Key.S3_ENCRYPTION_PASSWORD.keyString());
-
-            if (_storageType == null) _storageType = StorageType.S3;
-        }
-
-        _isUnattendedSetup = true;
-    }
-
     private void setupMultiuser(CLI cli) throws Exception
     {
         if (!_isUnattendedSetup) {
@@ -148,19 +86,18 @@ public class CLISetup
             getPassword(cli);
             getDeviceName(cli);
             getStorageType(cli);
-            if (_storageType == StorageType.S3) {
+            if (_model._storageType == StorageType.S3) {
                 getS3Config(cli, _model._s3Options);
             } else {
                 getRootAnchor(cli);
             }
         }
 
-        if (_storageType == StorageType.S3) {
+        if (_model._storageType == StorageType.S3) {
             _model._isLocal = false;
         } else {
             _model._isLocal = true;
-            _model._localOptions._rootAnchorPath = _anchorRoot;
-            _model._localOptions._useBlockStorage = _storageType == StorageType.LOCAL;
+            _model._localOptions._useBlockStorage = _model._storageType == StorageType.LOCAL;
         }
     }
 
@@ -173,10 +110,9 @@ public class CLISetup
             getRootAnchor(cli);
         }
 
-        if (_storageType == null) _storageType = StorageType.LINKED;
+        if (_model._storageType == null) _model._storageType = StorageType.LINKED;
 
         _model._isLocal = true;
-        _model._localOptions._rootAnchorPath = _anchorRoot;
         _model._localOptions._useBlockStorage = false;
     }
 
@@ -208,26 +144,26 @@ public class CLISetup
         cli.show(MessageType.INFO, bd.toString());
         String s = cli.askText("Storage option", String.valueOf(StorageType.LINKED.ordinal()));
         try {
-            _storageType = StorageType.fromOrdinal(Integer.valueOf(s));
+            _model._storageType = StorageType.fromOrdinal(Integer.valueOf(s));
         } catch (NumberFormatException e) {
             cli.show(MessageType.WARN, "Invalid option, using default");
-            _storageType = StorageType.LINKED;
+            _model._storageType = StorageType.LINKED;
         } catch (IndexOutOfBoundsException e) {
             cli.show(MessageType.WARN, "Invalid option, using default");
-            _storageType = StorageType.LINKED;
+            _model._storageType = StorageType.LINKED;
         }
     }
 
     private void getRootAnchor(CLI cli) throws Exception
     {
-        String input = cli.askText(S.ROOT_ANCHOR, _anchorRoot);
+        String input = cli.askText(S.ROOT_ANCHOR, _model._localOptions._rootAnchorPath);
         String root = RootAnchorUtil.adjustRootAnchor(input, null);
         if (!input.equals(root)) {
             cli.confirm(MessageType.INFO,
                     "The path has been adjusted to " + Util.quote(root) + ".");
         }
 
-        _anchorRoot = root;
+        _model._localOptions._rootAnchorPath = root;
     }
 
     private void getDeviceName(CLI cli) throws Exception

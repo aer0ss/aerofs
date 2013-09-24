@@ -8,6 +8,7 @@ import com.aerofs.base.Base64;
 import com.aerofs.base.ex.ExEmptyEmailAddress;
 import com.aerofs.base.id.UserID;
 import com.aerofs.lib.SecUtil;
+import com.aerofs.lib.StorageType;
 import com.aerofs.proto.ControllerProto.PBS3Config;
 import com.aerofs.sp.client.SPBlockingClient;
 
@@ -137,4 +138,6 @@ public class SetupModel
     public S3Options        _s3Options;
 
     private SPBlockingClient _sp;
+
+    public StorageType      _storageType;
 }
