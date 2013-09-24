@@ -23,6 +23,9 @@ import java.util.Map;
  *
  * The main purpose is to centralize the knowledge of which server are up and which are experiencing
  * problems so we can warn the users that some features are temporarily not working
+ *
+ * DEPRECATED: this class doesn't provide much value and isn't necessary; future clients should
+ * listen to the services they are interested in directly instead of going through this class.
  */
 public class ServerConnectionStatus
 {
