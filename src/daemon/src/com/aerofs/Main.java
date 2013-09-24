@@ -120,10 +120,12 @@ public class Main
         createRtRootIfNotExists(rtRoot);
         initializeLogging(rtRoot, prog);
 
+        String appRoot = AppRoot.abs();
+
         // Set the library path to be APPROOT to avoid library not found exceptions
         // {@see http://blog.cedarsoft.com/2010/11/setting-java-library-path-programmatically/}
         try {
-            System.setProperty("java.library.path", AppRoot.abs());
+            System.setProperty("java.library.path", appRoot);
 
             Field fieldSysPath = ClassLoader.class.getDeclaredField("sys_paths");
             fieldSysPath.setAccessible(true);
@@ -131,24 +133,31 @@ public class Main
         } catch (Exception e) {
             // ignored
             l.warn("The property java.library.path could not be set to "
-                    + AppRoot.abs() + " - " + Util.e(e));
+                    + appRoot + " - " + Util.e(e));
         }
 
         // First things first, initialize the configuration subsystem.
         try {
-            initializeConfigurationSystem(AppRoot.abs());
-            writeCACertToFile(AppRoot.abs());
+            initializeConfigurationSystem(appRoot);
+            writeCACertToFile(appRoot);
         } catch (Exception e) {
             // WARNING: the following logic is fragile, the root problem is that
             // initializeConfigurationSystem() needs to be reworked and updates its signature to
             // explicitly throw IncompatibleModeException instead.
             if (prog.equals(LibParam.GUI_NAME) || prog.equals(LibParam.CLI_NAME)) {
-                String msg = e instanceof ConfigurationException
-                        && e.getCause() instanceof IncompatibleModeException
-                        ? "The application is configured to the wrong mode. Please reinstall " +
-                        L.product() + '.'
-                        : "Failed to initialize the configuration subsystem. Please verify " +
-                        "the configuration service is available.";
+                String msg;
+                if (e instanceof ConfigurationException
+                        && e.getCause() instanceof IncompatibleModeException) {
+                    msg = "The application is configured to the wrong mode. Please reinstall " +
+                            L.product() + ".";
+                } else if (e instanceof IOException) {
+                    msg = L.product() + " failed to save the configuration to a file. " +
+                            "Please make sure the disk is not full and " + L.product() + " has " +
+                            "permission to write to " + appRoot;
+                } else {
+                    msg = "Failed to initialize the configuration subsystem. Please verify " +
+                            "the configuration service is available.";
+                }
 
                 // This is a workaround for the following problem:
                 // We have an error message for the user but we are in Main, which lacks the access
