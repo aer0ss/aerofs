@@ -32,6 +32,7 @@ import com.aerofs.daemon.transport.lib.MaxcastFilterReceiver;
 import com.aerofs.daemon.transport.zephyr.Zephyr;
 import com.aerofs.lib.IProgram;
 import com.aerofs.lib.OutArg;
+import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgAbsRTRoot;
 import com.aerofs.lib.cfg.CfgCACertificateProvider;
@@ -84,6 +85,8 @@ public final class Pump implements IProgram
     public void launch_(String rtRoot, String prog, String[] args) // PROG RTROOT [t|z|j] [send|recv] <did>
             throws Exception
     {
+        Util.initDriver("pp");
+
         l.info(Arrays.toString(args));
         checkArgument(args.length == 2 || args.length == 3, String.format("usage: SEND:(%s [t|z|j] send [did]) RECV:(%s [t|z|j] recv)", prog, prog));
 
