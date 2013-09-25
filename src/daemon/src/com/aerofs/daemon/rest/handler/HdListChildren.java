@@ -22,6 +22,7 @@ import com.google.inject.Inject;
 
 import java.sql.SQLException;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
@@ -69,6 +70,19 @@ public class HdListChildren extends AbstractHdIMC<EIListChildren>
                 folders.add(new Folder(coa.name(), restId, coa.isAnchor()));
             }
         }
+
+        // The spec says the items are to be sorted as a pre-requisite for pagination.
+        //
+        // Sort order of user-visible strings should be locale-aware. The naive approach of binary
+        // comparison of unicode characters is good enough for a first private iteration but it is
+        // going to be a problem for customers that do not stick to ASCII names.
+        //
+        // Using Collator for locale-aware comparison is fairly straightforward but in the not so
+        // unlikely event of the client and server having different locales server-side sorting will
+        // give wrong results. A possible solution to this would be to specify a locale (language
+        // code?) in the request headers but it is outside the scope of the first iteration.
+        Collections.sort(files, File.BY_NAME);
+        Collections.sort(folders, Folder.BY_NAME);
 
         ev.setResult_(new ChildrenList(ev._object.toStringFormal(), folders, files));
     }

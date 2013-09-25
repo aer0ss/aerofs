@@ -4,6 +4,8 @@
 
 package com.aerofs.rest.api;
 
+import java.util.Comparator;
+
 /**
  * Contains detailed metadata for a single folder.
  */
@@ -24,4 +26,12 @@ public class Folder
         this.id = id;
         this.is_shared = is_shared;
     }
+
+    public static final Comparator<Folder> BY_NAME = new Comparator<Folder>() {
+        @Override
+        public int compare(Folder o1, Folder o2)
+        {
+            return o1.name.compareToIgnoreCase(o2.name);
+        }
+    };
 }

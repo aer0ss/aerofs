@@ -4,6 +4,7 @@
 
 package com.aerofs.rest.api;
 
+import java.util.Comparator;
 import java.util.Date;
 
 /**
@@ -30,4 +31,12 @@ public class File
         this.size = size;
         this.last_modified = last_modified;
     }
+
+    public static final Comparator<File> BY_NAME = new Comparator<File>() {
+        @Override
+        public int compare(File o1, File o2)
+        {
+            return o1.name.compareToIgnoreCase(o2.name);
+        }
+    };
 }
