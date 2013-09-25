@@ -11,6 +11,7 @@ import com.aerofs.daemon.core.verkehr.VerkehrNotificationSubscriber;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.util.concurrent.MoreExecutors;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 
@@ -118,7 +119,7 @@ public class ServerConnectionStatus
                 l.debug("disconnected " + server);
                 setStatus(server, false);
             }
-        });
+        }, MoreExecutors.sameThreadExecutor());
     }
 
     /**

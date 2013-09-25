@@ -220,13 +220,13 @@ public class LinkStateService implements ILinkStateService
     }
 
     @Override
-    public final void addListener_(ILinkStateListener listener, Executor callbackExecutor)
+    public void addListener_(ILinkStateListener listener, Executor callbackExecutor)
     {
         _notifier.addListener(listener, callbackExecutor);
     }
 
     @Override
-    public final void removeListener_(ILinkStateListener listener)
+    public void removeListener_(ILinkStateListener listener)
     {
         _notifier.removeListener(listener);
     }

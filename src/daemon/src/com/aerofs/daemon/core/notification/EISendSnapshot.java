@@ -57,9 +57,9 @@ class EISendSnapshot extends AbstractEBSelfHandling
         _psn.sendConflictCountNotification_();
     }
 
-    private void sendOnlineStatusNotifications()
+    private void sendOnlineStatusNotifications_()
     {
-        _osn.sendOnlineStatusNotification();
+        _osn.sendOnlineStatusNotification_();
     }
 
     @Override
@@ -68,6 +68,6 @@ class EISendSnapshot extends AbstractEBSelfHandling
         sendTransferNotifications_(_dls, _dn);
         sendTransferNotifications_(_uls, _un);
         sendPathStatusNotifications_();
-        sendOnlineStatusNotifications();
+        sendOnlineStatusNotifications_();
     }
 }

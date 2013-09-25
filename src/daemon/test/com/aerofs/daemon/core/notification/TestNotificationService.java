@@ -97,6 +97,6 @@ public class TestNotificationService
         //   this test case is written.
         _service.init_();
         verify(_rns).addListener(_service);
-        verify(_onlineStatusNotifier).init();
+        verify(_onlineStatusNotifier).init_();
     }
 }

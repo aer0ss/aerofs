@@ -4,31 +4,62 @@
 
 package com.aerofs.daemon.core.online_status;
 
-import com.aerofs.daemon.core.serverstatus.ServerConnectionStatus;
-import com.aerofs.daemon.core.serverstatus.ServerConnectionStatus.Server;
+import com.aerofs.daemon.core.net.link.ILinkStateListener;
+import com.aerofs.daemon.core.net.link.LinkStateService;
+import com.aerofs.daemon.core.serverstatus.IConnectionStatusNotifier.IListener;
+import com.aerofs.daemon.core.verkehr.VerkehrNotificationSubscriber;
+import com.aerofs.daemon.lib.CoreExecutor;
 import com.aerofs.proto.RitualNotifications.PBNotification;
+import com.aerofs.proto.RitualNotifications.PBNotification.Type;
 import com.aerofs.ritual_notification.RitualNotificationServer;
 import com.aerofs.ritual_notification.RitualNotifier;
-import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
+import org.hamcrest.Matcher;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
+import org.mockito.ArgumentMatcher;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
+import java.net.NetworkInterface;
+
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.argThat;
+import static org.mockito.Matchers.eq;
+import static org.powermock.api.mockito.PowerMockito.mock;
+import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
+/**
+ * N.B. the decision to send notification and the correctness of the snapshot both depends on the
+ * current state, so it's necessary to test that the current state is correctly maintained.
+ * Afterwards, we verify that the object behaves correctly based on the current state and external
+ * events.
+ */
 public class TestOnlineStatusNotifier
 {
-    @Mock ServerConnectionStatus _serverConnectionStatus;
+    @Mock VerkehrNotificationSubscriber _vns;
+    @Mock LinkStateService _lss;
     @Mock RitualNotificationServer _ritualNotificationServer;
+    @Mock CoreExecutor _coreExecutor;
+
     @Mock RitualNotifier _ritualNotifier;
 
     @InjectMocks OnlineStatusNotifier _notifier;
+
+    // caching these since they will be used often;
+    ImmutableSet<NetworkInterface> _empty = ImmutableSet.of();
+    ImmutableSet<NetworkInterface> _nonEmpty = ImmutableSet.of(mock(NetworkInterface.class));
+
+    // these references are used to simulate callbacks
+    IListener _verkehrListener;
+    ILinkStateListener _linkStateListener;
 
     @Before
     public void setup()
@@ -36,45 +67,143 @@ public class TestOnlineStatusNotifier
         MockitoAnnotations.initMocks(this);
 
         when(_ritualNotificationServer.getRitualNotifier()).thenReturn(_ritualNotifier);
+
+        _notifier.init_();
+
+        ArgumentCaptor<IListener> verkehrCaptor = ArgumentCaptor.forClass(IListener.class);
+        verify(_vns).addListener_(verkehrCaptor.capture(), eq(_coreExecutor));
+        _verkehrListener = verkehrCaptor.getValue();
+
+        ArgumentCaptor<ILinkStateListener> linkStateCaptor =
+                ArgumentCaptor.forClass(ILinkStateListener.class);
+        verify(_lss).addListener_(linkStateCaptor.capture(), eq(_coreExecutor));
+        _linkStateListener = linkStateCaptor.getValue();
     }
 
     @Test
-    public void shouldSubscribeToServerConnectionStatusOnStart()
+    public void shouldBeOfflineInitially()
     {
-        _notifier.init();
-
-        verify(_serverConnectionStatus).addListener(_notifier, Server.VERKEHR);
+        assertFalse(_notifier._isOnline);
+        assertFalse(_notifier._isVerkehrConnected);
+        assertFalse(_notifier._isLinkStateConnected);
     }
 
     @Test
-    public void shouldSendServerStatusNotification()
+    public void shouldMaintainVerkehrAndLinkState()
     {
-        _notifier.sendNotification(true);
+        boolean[] initialStates = { false, false, true, true };
+        boolean[] externalStates = { false, true, false, true };
+        boolean[] expectedStates = { false, true, false, true };
 
-        // FIXME (AT): refactor Notifications so we can verify the notification we send is correct.
-        verify(_ritualNotifier).sendNotification(any(PBNotification.class));
+        for (int i = 0; i < initialStates.length; i++) {
+            _notifier._isVerkehrConnected = initialStates[i];
+            triggerVerkehrCallback(externalStates[i]);
+            assertEquals(expectedStates[i], _notifier._isVerkehrConnected);
+
+            _notifier._isLinkStateConnected = initialStates[i];
+            triggerLinkStateCallback(externalStates[i]);
+            assertEquals(expectedStates[i], _notifier._isLinkStateConnected);
+        }
     }
 
     @Test
-    public void shouldReturnVerkehrAvailability()
+    public void shouldMaintainOnlineState()
     {
-        assertTrue(_notifier.isAvailable(ImmutableMap.of(Server.VERKEHR, true)));
-        assertFalse(_notifier.isAvailable(ImmutableMap.of(Server.VERKEHR, false)));
+        boolean[] verkehrTriggers = { false, false, true, true };
+        boolean[] linkStateTriggers = { false, true, false, true };
+        boolean[] expectedStates = { false, false, false, true };
+
+        for (int i = 0; i < verkehrTriggers.length; i++) {
+            triggerVerkehrCallback(verkehrTriggers[i]);
+            triggerLinkStateCallback(linkStateTriggers[i]);
+            assertEquals(expectedStates[i], _notifier._isOnline);
+        }
     }
 
     @Test
-    public void shouldNotifyOnServerAvailable()
+    public void shouldSendNotificationOnSend()
     {
-        _notifier.available();
-
-        verify(_ritualNotifier).sendNotification(any(PBNotification.class));
+        for (boolean isOnline : new boolean[] { false, true }) {
+            _notifier._isOnline = isOnline;
+            _notifier.sendOnlineStatusNotification_();
+            verify(_ritualNotifier).sendNotification(argThat(hasOnlineStatus(isOnline)));
+        }
     }
 
+    // this test is designed to cover all state transitions and ensure the notifier correctly send
+    // and not send notifications on each transition.
     @Test
-    public void shouldNotifyOnServerUnavailable()
+    public void shouldNotifyCorrectlyOnStateTransitions()
     {
-        _notifier.unavailable();
+        triggerVerkehrCallback(true);
+        verifyZeroInteractions(_ritualNotifier);
 
-        verify(_ritualNotifier).sendNotification(any(PBNotification.class));
+        triggerLinkStateCallback(true);
+        verify(_ritualNotifier).sendNotification(argThat(hasOnlineStatus(true)));
+        verifyNoMoreInteractions(_ritualNotifier);
+        // the reset is necessary so that we can correctly account for each notification on
+        // each state transition
+        reset(_ritualNotifier);
+
+        triggerVerkehrCallback(false);
+        verify(_ritualNotifier).sendNotification(argThat(hasOnlineStatus(false)));
+        verifyNoMoreInteractions(_ritualNotifier);
+        reset(_ritualNotifier);
+
+        triggerLinkStateCallback(false);
+        verifyZeroInteractions(_ritualNotifier);
+
+        triggerLinkStateCallback(true);
+        verifyZeroInteractions(_ritualNotifier);
+
+        triggerVerkehrCallback(true);
+        verify(_ritualNotifier).sendNotification(argThat(hasOnlineStatus(true)));
+        verifyNoMoreInteractions(_ritualNotifier);
+        reset(_ritualNotifier);
+
+        triggerLinkStateCallback(false);
+        verify(_ritualNotifier).sendNotification(argThat(hasOnlineStatus(false)));
+        verifyNoMoreInteractions(_ritualNotifier);
+        reset(_ritualNotifier);
+
+        triggerVerkehrCallback(false);
+        verifyZeroInteractions(_ritualNotifier);
+    }
+
+    // N.B. when we trigger callback like this, we are bypassing the core executor and are
+    // effectively using the same thread executor.
+    private void triggerVerkehrCallback(boolean isOnline)
+    {
+        if (isOnline) _verkehrListener.onConnected();
+        else _verkehrListener.onDisconnected();
+    }
+
+    // N.B. when we trigger callback like this, we are bypassing the core executor and are
+    // effectively using the same thread executor.
+    private void triggerLinkStateCallback(boolean isOnline)
+    {
+        _linkStateListener.onLinkStateChanged_(
+                _empty, isOnline ? _nonEmpty : _empty, _empty, _empty
+        );
+    }
+
+    // method awkwardly named to go along with Mockito speak
+    private Matcher<PBNotification> hasOnlineStatus(final boolean isOnline)
+    {
+        return new ArgumentMatcher<PBNotification>()
+        {
+            @Override
+            public boolean matches(Object o)
+            {
+                if (o instanceof PBNotification) {
+                    PBNotification notf = (PBNotification) o;
+                    return notf.getType() == Type.ONLINE_STATUS_CHANGED
+                            && notf.hasOnlineStatus()
+                            && notf.getOnlineStatus() == isOnline;
+                } else {
+                    return false;
+                }
+            }
+        };
     }
 }

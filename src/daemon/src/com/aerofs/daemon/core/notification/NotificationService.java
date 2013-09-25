@@ -166,7 +166,7 @@ public class NotificationService implements IRitualNotificationClientConnectedLi
 
     private void setupOnlineStatusNotifier()
     {
-        _osn.init();
+        _osn.init_();
     }
 
     public void init_()
