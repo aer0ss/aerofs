@@ -41,6 +41,11 @@ _USER_AND_ROLE_FIRST_NAME_KEY = 'first_name'
 _USER_AND_ROLE_LAST_NAME_KEY = 'last_name'
 _USER_AND_ROLE_ROLE_KEY = 'role'
 
+class ShowMyRoleColumn:
+    YES, NO = range(2)
+
+class DatatablesPaginate:
+    YES, NO = range(2)
 
 @view_config(
     route_name = 'dashboard_home',
@@ -55,19 +60,20 @@ _USER_AND_ROLE_ROLE_KEY = 'role'
 def my_shared_folders(request):
     _ = request.translate
 
-    return _shared_folders(False, request, _("My Shared Folders"),
+    return _shared_folders(DatatablesPaginate.NO, ShowMyRoleColumn.YES, request,
+            _("My Shared Folders"),
             request.route_url('json.get_my_shared_folders'),
-            _("You can manage this folder because you are an owner of this"
+            _("You can manage this folder because you are an Owner of this"
               " folder."),
             _("You cannot change this folder's settings because you are not"
-              " an owner of this folder."))
+              " an Owner of this folder."))
 
 _PRIVILEGED_MODEL_TOOLTIP_FOR_TEAM_ADMIN = \
     "You can manage this folder because you are a team admin and one or more " \
-    "teammates in your team are this folder's owners."
+    "teammates in your team are this folder's Owners."
 _UNPRIVILEGED_MODEL_TOOLTIP_FOR_TEAM_ADMIN = \
     "You cannot change this folder's settings since no teammates in your " \
-    "team are its owners."
+    "team are its Owners."
 
 @view_config(
     route_name = 'user_shared_folders',
@@ -79,7 +85,7 @@ def user_shared_folders(request):
     user = request.params[URL_PARAM_USER]
     full_name = request.params[URL_PARAM_FULL_NAME]
 
-    return _shared_folders(False, request,
+    return _shared_folders(DatatablesPaginate.NO, ShowMyRoleColumn.NO, request,
             _("${name}'s Shared Folders", {'name': full_name}),
             request.route_url('json.get_user_shared_folders', _query={URL_PARAM_USER: user}),
             _(_PRIVILEGED_MODEL_TOOLTIP_FOR_TEAM_ADMIN),
@@ -94,7 +100,7 @@ def user_shared_folders(request):
 def team_shared_folders(request):
     _ = request.translate
 
-    return _shared_folders(True, request,
+    return _shared_folders(DatatablesPaginate.YES, ShowMyRoleColumn.NO, request,
             _("Team's Shared Folders"),
             request.route_url('json.get_team_shared_folders'),
             _(_PRIVILEGED_MODEL_TOOLTIP_FOR_TEAM_ADMIN),
@@ -103,7 +109,7 @@ def team_shared_folders(request):
 
 # @param {un,}privileged_modal_subtitle: the subtitles used in the shared folder
 # modal if the user {has,doesn't have) the privilege to manage the folder.
-def _shared_folders(datatables_paginate, request,
+def _shared_folders(datatables_paginate, show_my_role_column, request,
                     page_heading, datatables_request_route_url,
                     privileged_modal_tooltip,
                     unprivileged_modal_tooltip):
@@ -126,7 +132,8 @@ def _shared_folders(datatables_paginate, request,
         # variables
         'session_user': get_session_user(request),
         'is_admin': is_admin(request),
-        'datatables_paginate': datatables_paginate,
+        'datatables_paginate': datatables_paginate == DatatablesPaginate.YES,
+        'show_my_role_column': show_my_role_column == ShowMyRoleColumn.YES,
         # N.B. can't use "page_title" as the variable name. base_layout.mako
         # defines a global variable using the same name.
         'page_heading': page_heading,
@@ -151,17 +158,16 @@ def json_get_my_shared_folders(request):
     reply = sp.list_user_shared_folders(session_user)
     return _sp_reply2datatables(reply.shared_folder,
         _session_user_privileger,
-        len(reply.shared_folder), echo, session_user)
+        len(reply.shared_folder), echo, session_user, ShowMyRoleColumn.YES)
 
 
 def _session_user_privileger(folder, session_user):
+    return _get_role(folder, session_user) == common.OWNER
+
+def _get_role(folder, user):
     for user_and_role in folder.user_and_role:
-        if user_and_role.role == common.OWNER and\
-           user_and_role.user.user_email == session_user:
-            # The label text and style must be consistent with the label
-            # generated in shared_folders.mako.
-            return True
-    return False
+        if user_and_role.user.user_email == user:
+            return user_and_role.role
 
 
 @view_config(
@@ -179,7 +185,8 @@ def json_get_user_shared_folders(request):
     reply = sp.list_user_shared_folders(specified_user)
     return _sp_reply2datatables(reply.shared_folder,
         _session_team_privileger,
-        len(reply.shared_folder), echo, get_session_user(request))
+        len(reply.shared_folder), echo, get_session_user(request),
+        ShowMyRoleColumn.NO)
 
 
 @view_config(
@@ -196,30 +203,36 @@ def json_get_team_shared_folders(request):
     # helper_functions.get_rpc_stub here, the unit test would fail.
     sp = util.get_rpc_stub(request)
     reply = sp.list_organization_shared_folders(count, offset)
-    return _sp_reply2datatables(reply.shared_folder,
-        _session_team_privileger,
-        reply.total_count, echo, get_session_user(request))
+    return _sp_reply2datatables(reply.shared_folder, _session_team_privileger,
+        reply.total_count, echo, get_session_user(request),
+        ShowMyRoleColumn.NO)
 
 
 def _session_team_privileger(folder, session_user):
     return folder.owned_by_team
 
 
-def _sp_reply2datatables(folders, privileger, total_count, echo, session_user):
+def _sp_reply2datatables(folders, privileger, total_count, echo, session_user,
+                         show_my_role_column):
     """
     @param privileger a callback function to determine if the session user has
         privileges to modify ACL of the folder
     """
     data = []
     for folder in folders:
-        privileged = privileger(folder, session_user)
-        data.append({
+        folder_data = {
             'name': escape(folder.name),
             'users': _render_shared_folder_users(folder.user_and_role,
                 session_user),
             'options': _render_shared_folder_options_link(folder, session_user,
-                privileged),
-        })
+                privileger(folder, session_user)),
+        }
+        if show_my_role_column == ShowMyRoleColumn.YES:
+            role = _get_role(folder, session_user)
+            name = common._PBROLE.values_by_number[role].name
+            folder_data['my_role'] = name.capitalize()
+
+        data.append(folder_data)
 
     return {
         'sEcho': echo,

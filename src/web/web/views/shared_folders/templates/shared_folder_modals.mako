@@ -1,38 +1,52 @@
-## TODO (WW) move JS code that refers to names in this file to here?
+## Note: Some CSS relevant to these modals are specified in shared_folders.mako
+##
+## TODO (WW) move JS and CSS code that refers to names in this file to here?
 
 <%namespace file="modal.mako" name="modal"/>
 
 <%def name="main_modals()">
-    <div id="modal" class="modal hide" tabindex="-1" role="dialog" style="width: 700px">
-        <div class="modal-header">
-            <button type="button" class="close" data-dismiss="modal">×</button>
-            <h4><span id="modal-folder-title"></span>&nbsp;
-                <i id="modal-folder-title-info-icon" class="icon-info-sign"></i></h4>
-        </div>
-        <div class="modal-body" style="min-height: 300px">
-            <table id="modal-user-role-table" class="table table-hover">
-                ## min-width to avoid table cell shifting due to different lengths of role
-                ## strings, when the user updates members roles.
-                <thead><tr><th>Member</th><th style="min-width: 64px">Role</th><th></th></tr></thead>
-                <tbody></tbody>
-            </table>
-        </div>
-        <div class="modal-footer">
+    <%modal:modal>
+        <%def name="id()">modal</%def>
+        <%def name="title()">
+            <span id="modal-folder-title"></span>&nbsp;
+            <i id="modal-folder-title-info-icon" class="icon-info-sign"></i>
+        </%def>
+        <%def name="footer()">
             <form id="modal-invite-form" class="form-inline" method="post">
                 <span id="invite-user-inputs" class="pull-left">
-                    <input type="text" id="modal-invitee-email" placeholder="Invite email">
+                    <input type="text" id="modal-invitee-email" placeholder="Add email">
                     as
-                    <select id="modal-invite-role-select" style="width: 100px;">
-                    </select>
-                    <input class="btn btn-primary" type="submit" value="Send Invite">
+                    <input type="hidden" id="modal-invite-role">
+                    ## .btn-group is needed for the button drop-down menu
+                    <div class="btn-group">
+                        <a class="btn dropdown-toggle" data-toggle="dropdown" href="#">
+                            ## do not use .caret as it doesn't align correctly
+                            ## in the vertical direction -- I don't know why
+                            <span id="modal-invite-role-label"></span>&nbsp;&#x25BE;
+                        </a>
+                        ## use .text-left otherwise menu items would be right aligned
+                        ## -- I don't know why
+                        <ul id="modal-invite-role-menu" class="dropdown-menu text-left"></ul>
+                    </div>
+                    <input class="btn btn-primary" type="submit" value="Invite to Folder">
                 </span>
                 ## Use a space to keep the spinner in place
-                ## TODO (WW) it doesn't work well with IE
-                <span id="modal-spinner">&nbsp;</span>
+                <span id="modal-spinner" class="pull-left" style="margin-left: 30px;">&nbsp;</span>
                 <a href="#" class="btn" data-dismiss="modal">Close</a>
             </form>
-        </div>
-    </div>
+        </%def>
+        <%def name="modal_style()">width: 700px</%def>
+        <%def name="body_style()">min-height: 300px</%def>
+
+        <table id="modal-user-role-table" class="table table-hover">
+            ## min-width to avoid table cell shifting due to different lengths of role
+            ## strings, when the user updates members roles.
+            <thead><tr><th>Member</th><th style="min-width: 64px">Role
+                <i id="modal-role-info-icon" class="icon-info-sign"></i></th>
+                <th></th></tr></thead>
+            <tbody></tbody>
+        </table>
+    </%modal:modal>
 
     <%modal:modal>
         <%def name="id()">remove-modal</%def>
@@ -59,7 +73,7 @@
         <%def name="title()">Be careful with externally shared folders</%def>
         <%def name="footer()">
             <a href="#" class="btn" data-dismiss="modal">Cancel</a>
-            <a href="#" id="convert-to-external-confirm" class="btn btn-danger">Confirm</a>
+            <a href="#" id="convert-to-external-confirm" class="btn btn-danger">Proceed</a>
         </%def>
 
         <p>You are about to share this folder with external users.</p>
@@ -73,7 +87,7 @@
         <%def name="title()">Be careful with externally shared folders</%def>
         <%def name="footer()">
             <a href="#" class="btn" data-dismiss="modal">Cancel</a>
-            <a href="#" id="owner-can-share-externally-confirm" class="btn btn-danger">Confirm</a>
+            <a href="#" id="owner-can-share-externally-confirm" class="btn btn-danger">Proceed</a>
         </%def>
 
         <p>You are adding a new Owner to this folder, which is shared with the

@@ -22,10 +22,10 @@ def error(message, type="unspecified", data=None):
     """
     message = _normalize(message)
 
-    log.error('error message: "{}"'.format(message))
+    log.error('error type: {}, message: "{}"'.format(type, message))
 
     json_map = {
-        'type' : type,
+        'type': type,
         'message': message
     }
     if data: json_map['data'] = data

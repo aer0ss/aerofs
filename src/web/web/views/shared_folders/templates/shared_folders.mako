@@ -25,10 +25,6 @@
         .spinner {
             display: inline;
         }
-        #modal-spinner {
-            margin-right: 20px;
-            color: Green;
-        }
     </style>
 </%block>
 
@@ -42,7 +38,12 @@
         </div>
 
         <table id="folders_table" class="table table-hover">
-            <thead><tr><th>Folder</th><th>Members</th><th></th></tr></thead>
+            <thead><tr><th>Folder</th><th>Members</th>
+                %if show_my_role_column:
+                    <th>My Role <i id="my-role-info-icon" class="icon-info-sign"></i>
+                    </th>
+                %endif
+                <th></th></tr></thead>
             <tbody></tbody>
         </table>
     </div>
@@ -117,6 +118,9 @@
                 "aoColumns": [
                     { "mDataProp": "name" },
                     { "mDataProp": "users" },
+                    %if show_my_role_column:
+                        { "mDataProp": "my_role" },
+                    %endif
                     { "mDataProp": "options" }
                 ],
 
@@ -150,6 +154,26 @@
                 $mainModal.modal('show');
             });
 
+            ## Use the modal is the container to avoid tooltips being cut off by
+            ## the modal boundary. See https://github.com/twitter/bootstrap/pull/6378
+            initRoleInfoTooltip($('#modal-role-info-icon'), '#modal');
+            initRoleInfoTooltip($('#my-role-info-icon'), 'body');
+
+            function initRoleInfoTooltip($icon, container) {
+                $icon.tooltip({
+                    placement: 'top',
+                    html: 'true',
+                    title: '<div style="text-align: left">' +
+                        '<strong>Owners</strong> can download and download files, and manage other members in the folder.<br>' +
+                        '<strong>Editors</strong> can download & upload files.<br>' +
+                        '<strong>Viewer</strong> can only download files.' +
+                    '</div>',
+                    ## To avoid tooltips being cut off by the modal boundary.
+                    ## See https://github.com/twitter/bootstrap/pull/6378
+                    container: container
+                });
+            }
+
             ## N.B. updates to the return value will be propagated back to the
             ## Options link and persists throughout the link's lifecycle.
             function modalUserAndRoleList() {
@@ -171,11 +195,19 @@
             ########
             ## Functions for the Modal
 
+            function formatRoleMenuText(role, desc) {
+                return '<div style="display: inline-block; width: 65px">' + role +
+                        '</div>' + desc;
+            }
+            ## A map of numeric role id => [ <role name>, <role menu text> ]
+            ## Note that the menu item description contains HTML
             var role2str = {
-                "${owner_role}": "Owner",
-                "${editor_role}": "Editor",
-                "${viewer_role}": "Viewer"
+                "${owner_role}":  [ "Owner",  formatRoleMenuText("Owner", "download, upload, and manage")],
+                "${editor_role}": [ "Editor", formatRoleMenuText("Editor", "download and upload")],
+                "${viewer_role}": [ "Viewer", formatRoleMenuText("Viewer", "download only")]
             };
+
+            var roleDisplayOrder = ["${owner_role}", "${editor_role}", "${viewer_role}"]
 
             ## Refresh the modal based using the current values in $link
             function refreshModal() {
@@ -205,12 +237,8 @@
 
                 ## Enable or disable the invitation form depending on the privilege
                 var $inviteUserInputs = $("#invite-user-inputs");
-                if (privileged) {
-                    $inviteUserInputs.removeClass("hidden");
-                    resetRoleListForInviteForm();
-                } else {
-                    $inviteUserInputs.addClass("hidden");
-                }
+                if (privileged) $inviteUserInputs.removeClass("hidden");
+                else $inviteUserInputs.addClass("hidden");
 
                 ## Populate the table
                 var urs = modalUserAndRoleList();
@@ -222,13 +250,13 @@
 
                     var actions, roleStr;
                     if (email === '${session_user}') {
-                        roleStr = role2str[role];
+                        roleStr = role2str[role][0];
                         actions = '';
                     } else if (privileged) {
                         roleStr = renderActionableRole(email, role);
                         actions = renderPrivilegedUserActions(email, name);
                     } else {
-                        roleStr = role2str[role];
+                        roleStr = role2str[role][0];
                         actions = renderUnprivilegedUserActions(email);
                     }
 
@@ -247,37 +275,43 @@
                 activateModelTableElements();
             }
 
-            function resetRoleListForInviteForm()
-            {
-                var $opt1 = $('<option></option>').text(role2str[${owner_role}]).attr("value", ${owner_role});
-                var $opt2 = $('<option></option>').text(role2str[${editor_role}]).attr("value", ${editor_role})
-                        .attr("selected", "selected");
-                var $opt3 = $('<option></option>').text(role2str[${viewer_role}]).attr("value", ${viewer_role});
-                $('#modal-invite-role-select').empty()
-                        .append($opt1).append($opt2).append($opt3);
+            function initRoleMenuForInviteForm() {
+                var $menu = $('#modal-invite-role-menu');
+                var $id = $('#modal-invite-role');
+                var $label = $('#modal-invite-role-label');
+
+                ## Set the default Editor role
+                setRole("${editor_role}");
+
+                ## Populate the role menu
+                $.each(roleDisplayOrder, function(idx, role) {
+                    var $a = $('<a></a>').html(role2str[role][1]).attr("href", "#")
+                            .on("click", function() { setRole(role); });
+                    $menu.append($('<li></li>').append($a));
+                });
+
+                function setRole(role) {
+                    $id.attr("value", role);
+                    $label.text(role2str[role][0]);
+                }
             }
+            initRoleMenuForInviteForm();
 
-            function renderActionableRole(email, role) {
-                var items = [
-                    ["${owner_role}", role2str[${owner_role}] + " (read, write, manage)"],
-                    ["${editor_role}", role2str[${editor_role}] + " (read, write)"],
-                    ["${viewer_role}", role2str[${viewer_role}] + " (read only)"]
-                ];
-
+            function renderActionableRole(email, currentRole) {
                 var itemsStr = '';
-                $.each(items, function(idx, item) {
+                $.each(roleDisplayOrder, function(idx, role) {
                     itemsStr += '<li><a href="#" class="model-set-role" ' +
-                            'data-email="' + email + '" data-role="' + item[0] + '">' +
+                            'data-email="' + email + '" data-role="' + role + '">' +
                             '<span' +
-                            (role == item[0] ? '' : ' class="invisible"') +
-                            '>&#x2713;&nbsp;</span>' + item[1] + '</a></li>';
+                            (currentRole == role ? '' : ' class="invisible"') +
+                            '>&#x2713;&nbsp;</span>' + role2str[role][1] + '</a></li>';
                 });
 
                 return '<div class="dropdown">' +
                         ## pull-left so that the dropdown menu is vertically aligned with the
                         ## "Actions" dropdown menu.
                         '<a class="dropdown-toggle pull-left" data-toggle="dropdown" href="#">' +
-                            role2str[role] + '&nbsp;&#x25BE;' +
+                            role2str[currentRole][0] + '&nbsp;&#x25BE;' +
                         '</a>' +
                         '<ul class="dropdown-menu" role="menu">' +
                             itemsStr +
@@ -421,7 +455,7 @@
             $('#modal-invite-form').submit(function(ev) {
                 ## Since IE doesn't support String.trim(), use $.trim()
                 var email = $.trim($('#modal-invitee-email').val());
-                var role = $('#modal-invite-role-select').find(":selected").attr('value');
+                var role = $('#modal-invite-role').attr("value");
                 inviteToFolder(email, role, false);
                 return false;
             });
@@ -630,7 +664,7 @@
                 className: 'spinner',
                 zIndex: 2e9,
                 top: 3,
-                left: -155
+                left: 0
             };
         });
     </script>
