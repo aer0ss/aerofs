@@ -539,7 +539,7 @@ public class GUI implements IUI
             GetSetupSettingsReply defaults = UIGlobals.controller().getSetupSettings();
 
             SetupModel model = new SetupModel()
-                    .setSignInActor(new SignInActor.Credential())
+                    .setSignInActor(new SignInActor.CredentialActor())
                     .setInstallActor(new InstallActor.SingleUser());
             model._localOptions._rootAnchorPath = defaults.getRootAnchor();
             model.setDeviceName(defaults.getDeviceName());
