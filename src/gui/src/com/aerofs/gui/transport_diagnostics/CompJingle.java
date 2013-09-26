@@ -6,6 +6,7 @@ package com.aerofs.gui.transport_diagnostics;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
+import com.aerofs.gui.GUIUtil;
 import com.aerofs.lib.S;
 import com.aerofs.proto.Diagnostics.JingleDiagnostics;
 import com.google.common.base.Preconditions;
@@ -38,7 +39,7 @@ public class CompJingle extends AbstractCompTransport
         _decStatus = new StatusDecorator(content);
         _decStatus.setText("Status:");
         _decStatus.setDescription(S.LNK_JINGLE_DESC);
-        _decStatus.addSelectionListener(createUrlLauncher(S.URL_TRANSPORTS_INFO));
+        _decStatus.addSelectionListener(GUIUtil.createUrlLaunchListenerr(S.URL_TRANSPORTS_INFO));
 
         _decXmpp = new StatusDecorator(content);
         _decXmpp.setText("Presence Server:");
@@ -47,7 +48,7 @@ public class CompJingle extends AbstractCompTransport
         _decStun = new StatusDecorator(content);
         _decStun.setText("STUN Server:");
         _decStun.setDescription(S.LNK_STUN_DESC);
-        _decStun.addSelectionListener(createUrlLauncher(S.URL_STUN_INFO));
+        _decStun.addSelectionListener(GUIUtil.createUrlLaunchListenerr(S.URL_STUN_INFO));
 
         _decDevices = new DevicesDecorator(content);
 

@@ -19,6 +19,9 @@ import com.aerofs.ui.UI;
 import com.aerofs.ui.UIGlobals;
 import com.swtdesigner.SWTResourceManager;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.SelectionAdapter;
+import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.events.VerifyEvent;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Device;
@@ -51,6 +54,10 @@ import java.io.IOException;
 public class GUIUtil
 {
     private static final Logger l = Loggers.getLogger(GUIUtil.class);
+
+    // this is the Unicode character that looks like a downward solid triangle, we use it
+    // on some widgets to indicate that there's a drop-down menu.
+    public static final char TRIANGLE_DOWNWARD = '\u25BE';
 
     public static String getNewText(Text txt, VerifyEvent ev)
     {
@@ -379,6 +386,22 @@ public class GUIUtil
         } else {
             return Program.launch(pathOrUri);
         }
+    }
+
+    /**
+     * @param url - the URL to launch
+     * @return a SelectionListener who, when invoked, will open the URL on the native platform.
+     */
+    public static SelectionListener createUrlLaunchListenerr(final String url)
+    {
+        return new SelectionAdapter()
+        {
+            @Override
+            public void widgetSelected(SelectionEvent e)
+            {
+                launch(url);
+            }
+        };
     }
 
     /**

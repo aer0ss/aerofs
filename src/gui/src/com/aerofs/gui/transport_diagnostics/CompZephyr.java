@@ -6,6 +6,7 @@ package com.aerofs.gui.transport_diagnostics;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
+import com.aerofs.gui.GUIUtil;
 import com.aerofs.lib.S;
 import com.aerofs.proto.Diagnostics.ZephyrDiagnostics;
 import com.google.common.base.Preconditions;
@@ -38,7 +39,7 @@ public class CompZephyr extends AbstractCompTransport
         _decStatus = new StatusDecorator(content);
         _decStatus.setText("Status:");
         _decStatus.setDescription(S.LNK_ZEPHYR_DESC);
-        _decStatus.addSelectionListener(createUrlLauncher(S.URL_TRANSPORTS_INFO));
+        _decStatus.addSelectionListener(GUIUtil.createUrlLaunchListenerr(S.URL_TRANSPORTS_INFO));
 
         _decXmpp = new StatusDecorator(content);
         _decXmpp.setText("Presence Server:");

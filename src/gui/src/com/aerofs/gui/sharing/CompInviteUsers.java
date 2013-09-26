@@ -8,6 +8,7 @@ import com.aerofs.base.analytics.AnalyticsEvents.FolderInviteSentEvent;
 import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.id.UserID;
+import com.aerofs.gui.AeroFSButton;
 import com.aerofs.gui.CompEmailAddressTextBox;
 import com.aerofs.gui.CompEmailAddressTextBox.IInputChangeListener;
 import com.aerofs.gui.CompSpin;
@@ -27,23 +28,28 @@ import com.aerofs.proto.Common.PBPath;
 import com.aerofs.proto.Common.PBSubjectRolePair;
 import com.aerofs.proto.Sp.PBAuthorizationLevel;
 import com.aerofs.sp.client.SPBlockingClient;
-import com.aerofs.ui.UI;
-import com.aerofs.ui.error.ErrorMessage;
-import com.aerofs.ui.error.ErrorMessages;
 import com.aerofs.ui.IUI.MessageType;
+import com.aerofs.ui.UI;
 import com.aerofs.ui.UIGlobals;
 import com.aerofs.ui.UIUtil;
+import com.aerofs.ui.error.ErrorMessage;
+import com.aerofs.ui.error.ErrorMessages;
 import com.google.common.collect.Lists;
+import org.apache.commons.lang.WordUtils;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
+import org.eclipse.swt.layout.RowLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Label;
+import org.eclipse.swt.widgets.Menu;
+import org.eclipse.swt.widgets.MenuItem;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
 import org.slf4j.Logger;
@@ -55,6 +61,7 @@ public class CompInviteUsers extends Composite implements IInputChangeListener
 {
     private static final Logger l = Loggers.getLogger(CompInviteUsers.class);
     private final Button _btnOk;
+    private ComboRoles _cmbRole;
     private final Text _txtNote;
 
     private final Path _path;
@@ -97,10 +104,11 @@ public class CompInviteUsers extends Composite implements IInputChangeListener
         _compAddresses.setLayoutData(gd__compAddresses);
         _compAddresses.addInputChangeListener(this);
 
+        createRoleComposite(this);
+
         Composite composite_1 = new Composite(this, SWT.NONE);
         composite_1.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 1, 1));
         GridLayout gl_composite_1 = new GridLayout(1, false);
-        gl_composite_1.marginTop = GUIParam.MAJOR_SPACING - glShell.verticalSpacing;
         gl_composite_1.marginWidth = 0;
         gl_composite_1.marginHeight = 0;
         composite_1.setLayout(gl_composite_1);
@@ -183,6 +191,29 @@ public class CompInviteUsers extends Composite implements IInputChangeListener
         }).start();
     }
 
+    private Composite createRoleComposite(Composite parent)
+    {
+        Composite composite = new Composite(parent, SWT.NONE);
+
+        Label lblRole = new Label(composite, SWT.NONE);
+        lblRole.setText("Invite as");
+
+        _cmbRole = new ComboRoles(GUIUtil.newButtonContainer(composite, true));
+        _cmbRole.selectRole(Role.EDITOR);
+
+        RowLayout layout = new RowLayout(SWT.HORIZONTAL);
+        layout.center = true;
+        layout.pack = true;
+        layout.marginTop = 0;
+        layout.marginBottom = 0;
+        layout.marginLeft = 0;
+        layout.marginRight = 0;
+        composite.setLayout(layout);
+        composite.setLayoutData(new GridData(SWT.RIGHT, SWT.TOP, true, false));
+
+        return composite;
+    }
+
     public static String getDefaultInvitationNote(String folderName, String fromPerson)
     {
         return "I'd like to share \"" + folderName + "\" with you.\r\n\r\n-- " + fromPerson;
@@ -237,6 +268,7 @@ public class CompInviteUsers extends Composite implements IInputChangeListener
 
         final List<UserID> subjects = _compAddresses.getValidUserIDs();
         final String note = _txtNote.getText().trim();
+        final Role role = _cmbRole.getSelectedRole();
 
         enableAll(false);
 
@@ -274,7 +306,7 @@ public class CompInviteUsers extends Composite implements IInputChangeListener
                 PBPath pbpath = _path.toPB();
                 List<PBSubjectRolePair> srps = Lists.newArrayList();
                 for (UserID subject : subjects) {
-                    srps.add(new SubjectRolePair(subject, Role.EDITOR).toPB());
+                    srps.add(new SubjectRolePair(subject, role).toPB());
                 }
                 UIGlobals.ritual().shareFolder(pbpath, srps, note);
 
@@ -338,5 +370,64 @@ public class CompInviteUsers extends Composite implements IInputChangeListener
     public void inputChanged()
     {
         updateStatus();
+    }
+
+    private static class ComboRoles extends AeroFSButton
+    {
+        private Role _role;
+
+        public ComboRoles(Composite parent)
+        {
+            super(parent, SWT.PUSH);
+
+            addSelectionListener(new SelectionAdapter()
+            {
+                @Override
+                public void widgetSelected(SelectionEvent e)
+                {
+                    Menu menu = new Menu(ComboRoles.this);
+
+                    MenuItem miOwner = new MenuItem(menu, SWT.PUSH);
+                    miOwner.setText("Owner - download, upload, and manage");
+                    miOwner.addSelectionListener(createSelector(Role.OWNER));
+
+                    MenuItem miEditor = new MenuItem(menu, SWT.PUSH);
+                    // N.B. the extra space after Editor is intentional. It's a simple & foolish
+                    // attempt to make the menu look slightly more aligned on default fonts.
+                    miEditor.setText("Editor  - download and upload");
+                    miEditor.addSelectionListener(createSelector(Role.EDITOR));
+
+                    MenuItem miViewer = new MenuItem(menu, SWT.PUSH);
+                    miViewer.setText("Viewer - download only");
+                    miViewer.addSelectionListener(createSelector(Role.VIEWER));
+
+                    menu.setVisible(true);
+                }
+            });
+        }
+
+        public void selectRole(Role role)
+        {
+            _role = role;
+            setText(WordUtils.capitalizeFully(_role.getDescription()) + ' '
+                    + GUIUtil.TRIANGLE_DOWNWARD);
+        }
+
+        private SelectionListener createSelector(final Role role)
+        {
+            return new SelectionAdapter()
+            {
+                @Override
+                public void widgetSelected(SelectionEvent e)
+                {
+                    selectRole(role);
+                }
+            };
+        }
+
+        public Role getSelectedRole()
+        {
+            return _role;
+        }
     }
 }

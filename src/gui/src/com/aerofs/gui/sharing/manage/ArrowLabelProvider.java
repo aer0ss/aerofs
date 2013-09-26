@@ -1,8 +1,12 @@
+/*
+ * Copyright (c) Air Computing Inc., 2013.
+ */
+
 package com.aerofs.gui.sharing.manage;
 
-import org.eclipse.jface.viewers.ColumnLabelProvider;
-
 import com.aerofs.base.acl.SubjectRolePair;
+import com.aerofs.gui.GUIUtil;
+import org.eclipse.jface.viewers.ColumnLabelProvider;
 
 class ArrowLabelProvider extends ColumnLabelProvider
 {
@@ -17,8 +21,8 @@ class ArrowLabelProvider extends ColumnLabelProvider
     public String getText(Object elem)
     {
         if (elem instanceof SubjectRolePair) {
-            // display a downward arrow if the user can change the role
-            return _ul.canChangeACL((SubjectRolePair) elem) ? "\u25BE" : "";
+            // display a downward arrow if we have a context menu for this member
+            return _ul.hasContextMenu((SubjectRolePair)elem) ? "" + GUIUtil.TRIANGLE_DOWNWARD : "";
         } else {
             return "";
         }

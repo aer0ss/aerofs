@@ -7,37 +7,36 @@ import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.id.UserID;
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.SimpleContentProvider;
+import com.aerofs.labeling.L;
 import com.aerofs.lib.Path;
-import com.aerofs.lib.Util;
-import com.aerofs.proto.Common.PBSubjectRolePair;
-import com.aerofs.ui.error.ErrorMessages;
-import com.aerofs.ui.IUI.MessageType;
-import com.google.common.util.concurrent.FutureCallback;
-import com.google.common.util.concurrent.Futures;
-import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.ScrollBar;
-
 import com.aerofs.lib.S;
+import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.os.OSUtil;
+import com.aerofs.proto.Common.PBSubjectRolePair;
 import com.aerofs.proto.Ritual.GetACLReply;
+import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.UIGlobals;
 import com.aerofs.ui.UIUtil;
-
-import org.eclipse.swt.SWT;
-import org.eclipse.swt.layout.FillLayout;
-import org.eclipse.swt.widgets.Table;
+import com.aerofs.ui.error.ErrorMessages;
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
 import org.eclipse.jface.viewers.StructuredSelection;
 import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.TableViewerColumn;
 import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.jface.viewers.ViewerCell;
 import org.eclipse.jface.viewers.ViewerComparator;
+import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.ControlAdapter;
 import org.eclipse.swt.events.ControlEvent;
 import org.eclipse.swt.events.MouseAdapter;
 import org.eclipse.swt.events.MouseEvent;
 import org.eclipse.swt.graphics.Point;
+import org.eclipse.swt.layout.FillLayout;
+import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.ScrollBar;
+import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
 import org.slf4j.Logger;
 
@@ -55,7 +54,6 @@ public class CompUserList extends Composite
 
     private final TableViewer _tv;
 
-    private final TableColumn _tcIcon;
     private final TableColumn _tcSubject;
     private final TableColumn _tcRole;
     private final TableColumn _tcArrow;
@@ -76,10 +74,6 @@ public class CompUserList extends Composite
         ////////
         // add columns
 
-        TableViewerColumn tvcIcon = new TableViewerColumn(_tv, SWT.CENTER);
-        tvcIcon.setLabelProvider(new IconLabelProvider());
-        _tcIcon = tvcIcon.getColumn();
-
         TableViewerColumn tvcSubject = new TableViewerColumn(_tv, SWT.NONE);
         tvcSubject.setLabelProvider(new SubjectLabelProvider());
         _tcSubject = tvcSubject.getColumn();
@@ -87,6 +81,7 @@ public class CompUserList extends Composite
         TableViewerColumn tvcRole = new TableViewerColumn(_tv, SWT.NONE);
         tvcRole.setLabelProvider(new RoleLabelProvider());
         _tcRole = tvcRole.getColumn();
+        _tcRole.setAlignment(SWT.RIGHT);
 
         TableViewerColumn tvcArrow = new TableViewerColumn(_tv, SWT.NONE);
         tvcArrow.setLabelProvider(new ArrowLabelProvider(this));
@@ -108,9 +103,9 @@ public class CompUserList extends Composite
                 _tv.setSelection(new StructuredSelection(elem), true);
 
                 SubjectRolePair srp = (SubjectRolePair) elem;
-                if (!canChangeACL(srp)) return;
+                if (!hasContextMenu(srp)) return;
 
-                new RoleMenu(CompUserList.this, srp, _tv.getTable()).open();
+                new RoleMenu(CompUserList.this, srp, _tv.getTable(), shouldShowUpdateACLMenuItems()).open();
             }
         });
 
@@ -132,9 +127,24 @@ public class CompUserList extends Composite
         });
     }
 
-    public boolean canChangeACL(SubjectRolePair srp)
+    /**
+     * FIXME There is an edge case, while running team server, that we show the update ACL menu
+     * items even though the team server doesn't have the necessary permission to update the ACL.
+     *
+     * It occurs when the team server sees a particular shared folder because someone in the
+     * organization is a member but none of the owners of the said shared folder is in the
+     * organization.
+     */
+    private boolean shouldShowUpdateACLMenuItems()
     {
-        return !srp._subject.equals(Cfg.user()) && _rSelf == Role.OWNER;
+        return _rSelf == Role.OWNER // regular client
+                || L.isMultiuser(); // team server
+    }
+
+    public boolean hasContextMenu(SubjectRolePair srp)
+    {
+        // we have a context menu iff we are not the current user, because we can always send e-mail
+        return !srp._subject.equals(Cfg.user());
     }
 
     private boolean _recalcing;
@@ -146,14 +156,13 @@ public class CompUserList extends Composite
 
         _recalcing = true;
         try {
-            _tcIcon.pack();
             _tcArrow.pack();
 
             Table t = _tv.getTable();
             ScrollBar sb = t.getVerticalBar();
             int scroll = OSUtil.isOSX() ? 1 : 0;
             scroll += sb != null && sb.isVisible() ? sb.getSize().x : 0;
-            int width = t.getBounds().width - 2 * t.getBorderWidth() - _tcIcon.getWidth() -
+            int width = t.getBounds().width - 2 * t.getBorderWidth() -
                     _tcArrow.getWidth() - scroll;
             _tcSubject.setWidth(width * 618 / 1000);
             _tcRole.setWidth(width * 382 / 1000);

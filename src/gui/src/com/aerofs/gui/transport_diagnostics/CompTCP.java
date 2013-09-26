@@ -63,7 +63,7 @@ public class CompTCP extends AbstractCompTransport
         Link lnkDesc = new Link(composite, SWT.NONE);
         lnkDesc.setText(S.LNK_TCP_DESC);
         lnkDesc.setFont(GUIUtil.makeSubtitle(lnkDesc.getFont()));
-        lnkDesc.addSelectionListener(createUrlLauncher(S.URL_TRANSPORTS_INFO));
+        lnkDesc.addSelectionListener(GUIUtil.createUrlLaunchListenerr(S.URL_TRANSPORTS_INFO));
 
         GridLayout layout = new GridLayout();
         layout.marginWidth = 0;
@@ -88,7 +88,7 @@ public class CompTCP extends AbstractCompTransport
 
         Link lnkDID = new Link(composite, SWT.NONE);
         lnkDID.setText(S.LNK_FIND_DEVICE_ID);
-        lnkDID.addSelectionListener(createUrlLauncher(S.URL_DEVICE_ID_INFO));
+        lnkDID.addSelectionListener(GUIUtil.createUrlLaunchListenerr(S.URL_DEVICE_ID_INFO));
 
         GridLayout layout = new GridLayout();
         layout.marginWidth = 0;

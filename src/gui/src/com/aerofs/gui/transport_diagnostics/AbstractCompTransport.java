@@ -13,8 +13,6 @@ import com.google.common.base.Preconditions;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.CLabel;
 import org.eclipse.swt.custom.StackLayout;
-import org.eclipse.swt.events.SelectionAdapter;
-import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
@@ -100,18 +98,6 @@ public abstract class AbstractCompTransport extends Composite
                 .append(status.getReachable() ? "connected" : "disconnected")
                 .append(")")
                 .toString();
-    }
-
-    protected SelectionListener createUrlLauncher(final String url)
-    {
-        return new SelectionAdapter()
-        {
-            @Override
-            public void widgetSelected(SelectionEvent e)
-            {
-                GUIUtil.launch(url);
-            }
-        };
     }
 
     /**

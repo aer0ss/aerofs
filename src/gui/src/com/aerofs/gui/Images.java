@@ -1,16 +1,24 @@
 package com.aerofs.gui;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import com.aerofs.base.Loggers;
+import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.LibParam;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.graphics.*;
+import org.eclipse.swt.graphics.Color;
+import org.eclipse.swt.graphics.Cursor;
+import org.eclipse.swt.graphics.Device;
+import org.eclipse.swt.graphics.GC;
+import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.graphics.ImageData;
+import org.eclipse.swt.graphics.ImageLoader;
+import org.eclipse.swt.graphics.PaletteData;
+import org.eclipse.swt.graphics.Rectangle;
+import org.eclipse.swt.graphics.Transform;
 import org.eclipse.swt.program.Program;
 import org.eclipse.swt.widgets.Display;
 
-import com.aerofs.lib.AppRoot;
+import java.util.HashMap;
+import java.util.Map;
 
 import static java.lang.Math.PI;
 import static java.lang.Math.abs;
@@ -31,8 +39,6 @@ public class Images {
     public static final String ICON_FOLDER = "folder.png";
     public static final String ICON_TICK = "tick.png";
     public static final String ICON_USER = "user.png";
-    public static final String ICON_USER_KEY = "userKey.png";
-    public static final String ICON_PEN = "pen.png";
     public static final String ICON_WARNING = "warning.png";
     public static final String ICON_ERROR = "exclamation.png";
     public static final String ICON_DOUBLE_QUESTION = "doubleQuestion.png";
