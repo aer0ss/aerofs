@@ -59,6 +59,7 @@ public class IndexingPoller
 
     private void schedulePingDaemon()
     {
+        l.debug("sched ping");
         _sched.schedule(new AbstractEBSelfHandling()
         {
             @Override
@@ -71,8 +72,8 @@ public class IndexingPoller
 
     private void pingDaemon()
     {
-        addCallback(UIGlobals.ritualNonBlocking().heartbeat(), new FutureCallback<Common.Void>()
-        {
+        l.debug("ping");
+        addCallback(UIGlobals.ritualNonBlocking().heartbeat(), new FutureCallback<Common.Void>() {
             @Override
             public void onSuccess(Common.Void aVoid)
             {

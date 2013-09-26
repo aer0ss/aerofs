@@ -112,6 +112,7 @@ public class RitualServer
                     ex = new ExIndexing();
                 }
                 if (ex != null) {
+                    l.debug("ritual ex reply: {}", ex.getWireType());
                     channel.write(ChannelBuffers.copiedBuffer(buildErrorReply(ex)));
                     return;
                 }
