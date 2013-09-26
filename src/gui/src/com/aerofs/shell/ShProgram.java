@@ -139,11 +139,7 @@ public class ShProgram implements IProgram, ICallback
 
         // Hidden commands
         _runner.addCommand_(new CmdDstat());
-
-        // TODO(huguesb): remove conditional when seed files are exposed to users
-        if (Cfg.user().isAeroFSUser()) {
-            _runner.addCommand_(new CmdSeed());
-        }
+        _runner.addCommand_(new CmdSeed());
 
         // TODO(huguesb): remove conditional when sync stat is enabled in prod
         if (Cfg.user().isAeroFSUser()) {

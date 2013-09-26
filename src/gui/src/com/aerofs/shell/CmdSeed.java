@@ -47,6 +47,7 @@ public class CmdSeed implements IShellCommand<ShProgram>
     @Override
     public boolean isHidden()
     {
-        return false;
+        // TODO(huguesb): unhide the command when seed files are exposed to users
+        return true;
     }
 }
