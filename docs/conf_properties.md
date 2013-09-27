@@ -8,7 +8,7 @@ default values are available, `<mandatory>` is used.
 
 The file common.properties contains properties used by both AeroFS clients and servers.
 
-    internal_email_addresses=
+    internal_email_pattern=
 
 This property specifies a regular expression string. User IDs that match this pattern 
 are treated as "internal" addresses. The concepts of internal and
@@ -47,11 +47,11 @@ The file server.properties contains properties used only by AeroFS servers. Ther
 be sensitive information stored in this file such as service credentials,
 AeroFS clients should not be able to access this file.
 
-    shared_folder_rules.read_only_external_folders=false
+    shared_folder_rules.readonly_external_folders=false
 
-Whether to enable read-only external folder rules. The system uses `internal_email_addresses` 
+Whether to enable read-only external folder rules. The system uses `internal_email_pattern` 
 to determine internal vs external users. Therefore, the rules are enabled only if
-`internal_email_addresses` is non-empty _and_ this property is true.
+`internal_email_pattern` is non-empty _and_ this property is true.
 
 These rules are specific to certain enterprise deployments and are not normally enabled.
 See class-level comments in ReadOnlyExternalFolderRules for more explanation on the rules.

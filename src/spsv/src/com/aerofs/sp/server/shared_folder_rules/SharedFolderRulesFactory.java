@@ -16,6 +16,7 @@ import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import static com.aerofs.base.config.ConfigurationProperties.getBooleanProperty;
 import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
 
 public class SharedFolderRulesFactory
@@ -37,11 +38,12 @@ public class SharedFolderRulesFactory
 
     public static ISharedFolderRules create(User.Factory factUser)
     {
-        String whitelist = getStringProperty(
-                "shared_folder_rules.read_only_external_folders.email_whitelist", "");
+        boolean readOnlyExternalFolders =
+                getBooleanProperty("shared_folder_rules.readonly_external_folders", false);
+        String internalAddresses = getStringProperty("internal_email_pattern", "");
 
-        return whitelist.isEmpty() ?
-                new NullSharedFolderRules() :
-                new ReadOnlyExternalFolderRules(Pattern.compile(whitelist), factUser);
+        return readOnlyExternalFolders && !internalAddresses.isEmpty() ?
+                new ReadOnlyExternalFolderRules(Pattern.compile(internalAddresses), factUser) :
+                new NullSharedFolderRules();
     }
 }

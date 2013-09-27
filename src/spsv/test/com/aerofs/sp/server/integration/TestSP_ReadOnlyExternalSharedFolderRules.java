@@ -5,6 +5,7 @@
 package com.aerofs.sp.server.integration;
 
 import com.aerofs.base.acl.Role;
+import com.aerofs.base.config.ConfigurationProperties;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.lib.ex.shared_folder_rules.ExSharedFolderRulesEditorsDisallowedInExternallySharedFolders;
@@ -21,13 +22,12 @@ import org.junit.Test;
 
 import java.util.Properties;
 
-import static com.aerofs.base.config.ConfigurationProperties.setProperties;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 public class TestSP_ReadOnlyExternalSharedFolderRules extends AbstractSPFolderTest
 {
-    static final String WHITE_LIST = "abc.*|.*xyz";
+    static final String INTERNAL_ADDRESSES = "abc.*|.*xyz";
 
     // the user ids that match the white list
     User internalUser1 = factUser.create(UserID.fromInternal("abc@adf"));
@@ -48,7 +48,7 @@ public class TestSP_ReadOnlyExternalSharedFolderRules extends AbstractSPFolderTe
             throws Exception
     {
         // Ask SharedFolderRulesFactory to create ReadOnlyExternalFolderRules
-        setWhitelistProperty(WHITE_LIST);
+        setProperties(true, INTERNAL_ADDRESSES);
 
         ISharedFolderRules sharedFolderRules = SharedFolderRulesFactory.create(factUser);
 
@@ -70,14 +70,15 @@ public class TestSP_ReadOnlyExternalSharedFolderRules extends AbstractSPFolderTe
     {
         // Reset the property so subsequent tests can construct SP with the default shared folder
         // rules.
-        setWhitelistProperty("");
+        setProperties(false, "");
     }
 
-    private void setWhitelistProperty(String whitelist)
+    private void setProperties(boolean enableReadOnlyExternalFolderRules, String internalAddresses)
     {
         Properties props = new Properties();
-        props.put("shared_folder_rules.read_only_external_folders.email_whitelist", whitelist);
-        setProperties(props);
+        props.put("shared_folder_rules.readonly_external_folders", enableReadOnlyExternalFolderRules ? "true" : "false");
+        props.put("internal_email_pattern", internalAddresses);
+        ConfigurationProperties.setProperties(props);
     }
 
     @Test
@@ -278,7 +279,7 @@ public class TestSP_ReadOnlyExternalSharedFolderRules extends AbstractSPFolderTe
     }
 
     @Test
-    public void ShouldDisallowSettingEditorInExternalFolder()
+    public void shouldDisallowSettingEditorInExternalFolder()
             throws Exception
     {
         // make an external folder

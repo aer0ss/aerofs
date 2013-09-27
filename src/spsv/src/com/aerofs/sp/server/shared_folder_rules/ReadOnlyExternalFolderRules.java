@@ -48,12 +48,12 @@ import java.util.regex.Pattern;
  */
 public class ReadOnlyExternalFolderRules implements ISharedFolderRules
 {
-    private final Pattern _emailWhitelist;
+    private final Pattern _internalAddresses;
     private final User.Factory _factUser;
 
-    public ReadOnlyExternalFolderRules(Pattern emailWhitelist, User.Factory factUser)
+    public ReadOnlyExternalFolderRules(Pattern internalAddresses, User.Factory factUser)
     {
-        _emailWhitelist = emailWhitelist;
+        _internalAddresses = internalAddresses;
         _factUser = factUser;
     }
 
@@ -180,8 +180,7 @@ public class ReadOnlyExternalFolderRules implements ISharedFolderRules
     }
 
     /**
-     * @return the collection of the folder's users whose email addresses don't match the white
-     * list. Return an empty collection if the folder is not shared externally.
+     * @return an empty collection if the folder is not shared externally.
      */
     private ImmutableCollection<UserID> getExternalUsers(SharedFolder sf)
             throws SQLException
@@ -196,6 +195,6 @@ public class ReadOnlyExternalFolderRules implements ISharedFolderRules
 
     private boolean isExternalUser(UserID id)
     {
-        return !_emailWhitelist.matcher(id.getString()).matches();
+        return !_internalAddresses.matcher(id.getString()).matches();
     }
 }
