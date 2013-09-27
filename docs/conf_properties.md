@@ -8,6 +8,18 @@ default values are available, `<mandatory>` is used.
 
 The file common.properties contains properties used by both AeroFS clients and servers.
 
+    internal_email_addresses=
+
+This property specifies a regular expression string. User IDs that match this pattern 
+are treated as "internal" addresses. The concepts of internal and
+external email addresses are used by read-only external shared folder rules, identity
+management, and potentially other subsystems. The expression syntax follows
+[Java standards](http://docs.oracle.com/javase/6/docs/api/java/util/regex/Pattern.html).
+Note that if you want literal `.`, use `\\.`
+
+Example: `.*@google\\.com|.*@google-corp\\.net`
+
+
 ## OpenID properties
 
 (Please See Appendix for complete examples.)
@@ -34,6 +46,15 @@ Example: `https://transient.syncfs.com/openid`
 The file server.properties contains properties used only by AeroFS servers. There may 
 be sensitive information stored in this file such as service credentials,
 AeroFS clients should not be able to access this file.
+
+    shared_folder_rules.read_only_external_folders=false
+
+Whether to enable read-only external folder rules. The system uses `internal_email_addresses` 
+to determine internal vs external users. Therefore, the rules are enabled only if
+`internal_email_addresses` is non-empty _and_ this property is true.
+
+These rules are specific to certain enterprise deployments and are not normally enabled.
+See class-level comments in ReadOnlyExternalFolderRules for more explanation on the rules.
 
 
 ## OpenID properties
@@ -107,7 +128,7 @@ Name of the openid extension set to request, or can be empty. Supported extensio
 
 Example: `ax` for Google and others...
 
-    openid.idp.user.email=
+    openid.idp.user.email=openid.ext1.value.email
 
 Name of an OpenID parameter that contains the user's email address; or a pattern that
 uses the uid[n] syntax. It is an error to request a uid capture group if
@@ -117,7 +138,7 @@ Example: `openid.ext1.value.email` if `openid.idp.user.extension=ax`
 
 Example: `uid[1]@syncfs.com` if `openid.idp.user.uid.pattern` puts the account name in `$1`
 
-    openid.idp.user.name.first=
+    openid.idp.user.name.first=openid.ext1.value.firstname
 
 Name of an openid parameter that contains the user's first name; or a pattern that
 uses the uid[n] syntax. It is an error to request a uid capture group if
@@ -127,7 +148,7 @@ Example: `openid.ext1.value.firstname` for ax
 
 Example: `openid.sreg.fullname` for sreg; fullname only
 
-    openid.idp.user.name.last=
+    openid.idp.user.name.last=openid.ext1.value.lastname
 
 Name of an openid parameter that contains the user's last name; or a pattern that
 uses the uid[n] syntax. It is an error to request a uid capture group if
