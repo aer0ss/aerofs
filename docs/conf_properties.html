@@ -1,0 +1,211 @@
+<!doctype html>
+<html>
+<head>
+<link href="markdown.css" rel="stylesheet"></link>
+<title>Configuration Properties</title>
+</head>
+<body>
+<h1>Configuration Properties</h1>
+
+<p><strong>Note</strong>: Property values shown in the following text are default values. When no
+default values are available, <code>&lt;mandatory&gt;</code> is used.</p>
+
+<h1>common.properties</h1>
+
+<p>The file common.properties contains properties used by both AeroFS clients and servers.</p>
+
+<h2>OpenID properties</h2>
+
+<p>(Please See Appendix for complete examples.)</p>
+
+<pre><code>openid.service.enabled=false
+</code></pre>
+
+<p>Whether to enable OpenId authentication (if enabled, this replaces credential auth).</p>
+
+<pre><code>openid.service.session.interval=1
+</code></pre>
+
+<p>Polling frequency of the client waiting for OpenId authorization to complete, in seconds.</p>
+
+<pre><code>openid.service.url=&lt;mandatory&gt;
+</code></pre>
+
+<p>URL of the Identity service. Note: This is the URL of the actual IdentityServlet.</p>
+
+<p>Example: <code>https://transient.syncfs.com/openid</code></p>
+
+<h1>server.properties</h1>
+
+<p>The file server.properties contains properties used only by AeroFS servers. There may 
+be sensitive information stored in this file such as service credentials,
+AeroFS clients should not be able to access this file.</p>
+
+<h2>OpenID properties</h2>
+
+<p>(Please See Appendix for complete examples.)</p>
+
+<pre><code>openid.service.timeout=300
+</code></pre>
+
+<p>Timeout for the entire OpenId flow, in seconds.
+This timeout is used to expire the delegate nonce; once that happens, a client trying
+to talk to the same nonce will get ExBadCredential. So this is effectively the maximum
+time the client will wait for the web signin.</p>
+
+<pre><code>openid.service.session.timeout=10
+</code></pre>
+
+<p>Timeout for the session nonce, in seconds. This is the timeout
+only after the delegate nonce is authorized but before the session nonce
+gets used. This only needs to be as long as the retry interval in the session
+client, plus the max latency of the session query.</p>
+
+<pre><code>openid.service.realm=&lt;mandatory&gt;
+</code></pre>
+
+<p>The security realm for which we are requesting authorization.
+This is an OpenId concept, * is supported.</p>
+
+<p>Example: <code>https://*.syncfs.com</code></p>
+
+<pre><code>openid.idp.discovery.enabled=false
+</code></pre>
+
+<p>Whether to enable OpenID discovery. It may be disabled if YADIS discovery is not supported.</p>
+
+<pre><code>openid.idp.discovery.url=
+</code></pre>
+
+<p>Discovery URL for the OpenId provider. Only used if discovery is enabled.</p>
+
+<p>Example: <code>https://www.google.com/accounts/o8/id</code></p>
+
+<pre><code>openid.idp.endpoint.url=
+</code></pre>
+
+<p>Endpoint URL used if discovery is not enabled for this OpenId Provider</p>
+
+<p>Example: <code>https://www.google.com/accounts/o8/ud</code></p>
+
+<pre><code>openid.idp.endpoint.stateful=true
+</code></pre>
+
+<p>Enable or disable creation of an association with Diffie-Helman key exchange.
+If set false, the dumb-mode verification is used instead.</p>
+
+<pre><code>openid.idp.user.uid.attribute=openid.identity
+</code></pre>
+
+<p>Name of the HTTP parameter we should use as the user identifier in an auth response.</p>
+
+<pre><code>openid.idp.user.uid.pattern=
+</code></pre>
+
+<p>An optional regex pattern for parsing the user identifier into capture groups. If this
+is set, the capture groups will be available for use in the email/firstname/lastname
+fields using the syntax uid[1], uid[2], uid[3], etc.</p>
+
+<p>NOTE: If this is not set, we don't do any pattern-matching (do less is cheaper)</p>
+
+<p>NOTE: capture groups are numbered starting at <em>1</em>.</p>
+
+<p>Example: <code>^https://www.google.com/accounts/o8/id\?id=([\w\d]*)$</code>. This pattern puts everything after id= into uid[1].</p>
+
+<pre><code>openid.idp.user.extension=
+</code></pre>
+
+<p>Name of the openid extension set to request, or can be empty. Supported extensions are:</p>
+
+<ul>
+<li><code>ax</code> for attribute exchange;</li>
+<li><code>sreg</code> for simple registration (an OpenId 1.0 extension)</li>
+</ul>
+
+<p>Example: <code>ax</code> for Google and others...</p>
+
+<pre><code>openid.idp.user.email=
+</code></pre>
+
+<p>Name of an OpenID parameter that contains the user's email address; or a pattern that
+uses the uid[n] syntax. It is an error to request a uid capture group if
+<code>openid.idp.user.uid.pattern</code> is not set.</p>
+
+<p>Example: <code>openid.ext1.value.email</code> if <code>openid.idp.user.extension=ax</code></p>
+
+<p>Example: <code>uid[1]@syncfs.com</code> if <code>openid.idp.user.uid.pattern</code> puts the account name in <code>$1</code></p>
+
+<pre><code>openid.idp.user.name.first=
+</code></pre>
+
+<p>Name of an openid parameter that contains the user's first name; or a pattern that
+uses the uid[n] syntax. It is an error to request a uid capture group if
+<code>openid.idp.user.uid.pattern</code> is not set.</p>
+
+<p>Example: <code>openid.ext1.value.firstname</code> for ax</p>
+
+<p>Example: <code>openid.sreg.fullname</code> for sreg; fullname only</p>
+
+<pre><code>openid.idp.user.name.last=
+</code></pre>
+
+<p>Name of an openid parameter that contains the user's last name; or a pattern that
+uses the uid[n] syntax. It is an error to request a uid capture group if
+<code>openid.idp.user.uid.pattern</code> is not set.</p>
+
+<p>Example: <code>openid.ext1.value.lastname</code> for ax</p>
+
+<p>Example: <code>openid.sreg.fullname</code> for sreg; fullname only</p>
+
+<h1>Appendix: OpenID properties examples</h1>
+
+<h2>Google</h2>
+
+<pre><code>openid.service.enabled=true
+openid.service.timeout=300
+openid.service.session.timeout=10
+openid.service.session.interval=1
+openid.service.url=https://transient.syncfs.com/openid
+openid.service.realm=https://*.syncfs.com
+openid.idp.discovery.enabled=false
+openid.idp.discovery.url=
+openid.idp.endpoint.url=https://www.google.com/accounts/o8/ud
+openid.idp.user.uid.attribute=openid.identity
+openid.idp.user.uid.pattern=
+openid.idp.user.extension=ax
+openid.idp.user.email=openid.ext1.value.email
+openid.idp.user.name.first=openid.ext1.value.firstname
+openid.idp.user.name.last=openid.ext1.value.lastname
+</code></pre>
+
+<h2>Private deployment</h2>
+
+<p>This example parses an OpenId identifier of the form:
+     https://exauth.example.com/user/jpile9/
+Into:
+     email: jpile9@example.com
+     first: J
+     last: Pile</p>
+
+<p>(In this case, the example auth service doesn't support sreg <em>or</em> ax.)</p>
+
+<pre><code>openid.service.enabled=true
+openid.service.timeout=300
+openid.service.session.timeout=10
+openid.service.session.interval=1
+openid.service.url=https://sync.example.com/openid
+openid.service.realm=https://*.example.com
+openid.idp.discovery.enabled=false
+openid.idp.discovery.url=
+openid.idp.endpoint.url=https://exauth.example.com/auth
+openid.idp.endpoint.stateful=false
+openid.idp.user.uid.attribute=openid.identity
+openid.idp.user.uid.pattern=^https://exauth.example.com/user/((\\w)([a-zA-Z-_\\.\\+]*)\\d*)/$
+openid.idp.user.extension=
+openid.idp.user.email=uid[1]@example.com
+openid.idp.user.name.first=uid[2]
+openid.idp.user.name.last=uid[3]
+</code></pre>
+</body>
+</html>
+
