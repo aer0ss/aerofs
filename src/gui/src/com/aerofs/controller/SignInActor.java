@@ -5,7 +5,8 @@ import com.aerofs.base.ElapsedTimer;
 import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.cli.CLI;
 import com.aerofs.gui.GUIUtil;
-import com.aerofs.lib.LibParam.LDAP;
+import com.aerofs.lib.LibParam.Identity;
+import com.aerofs.lib.LibParam.Identity.Authenticator;
 import com.aerofs.lib.LibParam.OpenId;
 import com.aerofs.lib.S;
 import com.aerofs.lib.cfg.Cfg;
@@ -49,7 +50,7 @@ public abstract class SignInActor
             // two following calls to SP.
             // TODO: use inheritance/polymorphism here instead. Consider this from the viewpoint
             // where we have both LDAP and non-LDAP users in the same SP instance.
-            if (LDAP.enabled()) {
+            if (Identity.AUTHENTICATOR == Authenticator.EXTERNAL_CREDENTIAL) {
                 sp.signInUser(model.getUsername(), ByteString.copyFrom(model.getPassword()));
             } else {
                 sp.signInUser(model.getUsername(), ByteString.copyFrom(model.getScrypted()));

@@ -8,9 +8,11 @@ import com.aerofs.base.C;
 import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.base.ex.ExExternalServiceUnavailable;
 import com.aerofs.base.id.UserID;
+import com.aerofs.base.ssl.SSLEngineFactory;
+import com.aerofs.base.ssl.SSLEngineFactory.Mode;
+import com.aerofs.base.ssl.SSLEngineFactory.Platform;
+import com.aerofs.base.ssl.StringBasedCertificateProvider;
 import com.aerofs.lib.FullName;
-import com.aerofs.lib.LibParam.LDAP;
-import com.aerofs.lib.LibParam.LDAP.Schema;
 import com.aerofs.servlets.lib.db.IThreadLocalTransaction;
 import com.aerofs.sp.server.lib.user.User;
 import com.unboundid.ldap.sdk.Filter;
@@ -22,9 +24,13 @@ import com.unboundid.ldap.sdk.SearchResult;
 import com.unboundid.ldap.sdk.SearchResultEntry;
 import com.unboundid.ldap.sdk.SearchScope;
 import com.unboundid.ldap.sdk.SimpleBindRequest;
+import com.unboundid.ldap.sdk.StartTLSPostConnectProcessor;
+import com.unboundid.ldap.sdk.extensions.StartTLSExtendedRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.security.GeneralSecurityException;
 import java.sql.SQLException;
 
 /**
@@ -48,9 +54,10 @@ public class LdapAuthenticator implements IAuthenticator
     /**
      * Initialize this authenticator with a provisioning strategy.
      */
-    public LdapAuthenticator(IProvisioningStrategy provisioner)
+    public LdapAuthenticator(LdapConfiguration cfg, IProvisioningStrategy provisioner)
     {
         _provisioner = provisioner;
+        _cfg = cfg;
     }
 
     /**
@@ -93,8 +100,8 @@ public class LdapAuthenticator implements IAuthenticator
                     conn.bind(new SimpleBindRequest(entry.getDN(), credential));
                     // ... bind throws if the credential is not accepted ...
                     return new FullName(
-                            entry.getAttributeValue(Schema.USER_FIRSTNAME),
-                            entry.getAttributeValue(Schema.USER_LASTNAME));
+                            entry.getAttributeValue(_cfg.USER_FIRSTNAME),
+                            entry.getAttributeValue(_cfg.USER_LASTNAME));
                 } catch (LDAPException lde) {
                     // this just means that this record was not the login record.
                     _l.debug("LDAP bind error", lde);
@@ -125,9 +132,9 @@ public class LdapAuthenticator implements IAuthenticator
             //   and returning for each object the following fields:
             //     USER_FIRSTNAME, USER_LASTNAME
             return conn.search(
-                    Schema.USER_BASE, _scope,
+                    _cfg.USER_BASE, _scope,
                     buildFilter(userId),
-                    Schema.USER_FIRSTNAME, Schema.USER_LASTNAME);
+                    _cfg.USER_FIRSTNAME, _cfg.USER_LASTNAME);
         } catch (LDAPException lde) {
             _l.error("Error searching on LDAP server", lde);
             pool.releaseDefunctConnection(conn);
@@ -154,8 +161,8 @@ public class LdapAuthenticator implements IAuthenticator
     private Filter buildFilter(UserID userId)
     {
         Filter filter = Filter.createANDFilter(
-                Filter.createEqualityFilter(Schema.USER_EMAIL, userId.getString()),
-                Filter.createEqualityFilter("objectClass", Schema.USER_OBJECTCLASS));
+                Filter.createEqualityFilter(_cfg.USER_EMAIL, userId.getString()),
+                Filter.createEqualityFilter("objectClass", _cfg.USER_OBJECTCLASS));
         return filter;
     }
 
@@ -202,16 +209,34 @@ public class LdapAuthenticator implements IAuthenticator
             try {
                 LDAPConnectionOptions options = new LDAPConnectionOptions();
 
-                options.setConnectTimeoutMillis((int)(LDAP.SERVER_TIMEOUT_CONNECT * C.SEC));
-                options.setResponseTimeoutMillis(LDAP.SERVER_TIMEOUT_READ * C.SEC);
+                options.setConnectTimeoutMillis((int)(_cfg.SERVER_TIMEOUT_CONNECT * C.SEC));
+                options.setResponseTimeoutMillis(_cfg.SERVER_TIMEOUT_READ * C.SEC);
 
-                LDAPConnection conn = new LDAPConnection(LDAP.SERVER_HOST, LDAP.SERVER_PORT,
-                        LDAP.SERVER_PRINCIPAL, LDAP.SERVER_CREDENTIAL);
-                _pool = new LDAPConnectionPool(conn, 1, LDAP.SERVER_MAXCONN);
+                switch (_cfg.SERVER_SECURITY) {
+                case NONE:
+                    _l.warn("Using insecure external LDAP configuration, no SSL or TLS");
+                    _pool = connectPool();
+                    break;
+                case SSL:
+                    _l.info("Configured LDAP connection for SSL");
+                    _pool = connectSSLPool(getSSLEngineFactory());
+                    break;
+                case STARTTLS:
+                    _l.info("Configured LDAP connection for StartTLS");
+                    _pool = connectTLSPool(getSSLEngineFactory());
+                    break;
+                default: assert false : "SecurityType maintenance error";
+                }
+
             } catch (LDAPException lde) {
-                _l.info("LDAP connection error", lde);
-                throw new ExExternalServiceUnavailable("Cannot connect to LDAP server at " + LDAP.SERVER_HOST
-                        + "; please contact your site administrator.");
+                _l.warn("LDAP connection error", lde);
+                throw new ExExternalServiceUnavailable("LDAP connection error");
+            } catch (GeneralSecurityException e) {
+                _l.warn("LDAP security error", e);
+                throw new ExExternalServiceUnavailable("LDAP security error");
+            } catch (IOException e) {
+                _l.warn("LDAP cert reading error", e);
+                throw new ExLdapConfigurationError();
             }
 
             cacheUserScope();
@@ -220,14 +245,60 @@ public class LdapAuthenticator implements IAuthenticator
     }
 
     /**
+     * Return an SSL engine factory used to create secure contexts. The factory will be configured
+     * with an explicit certificate if one is set in LDAP.SERVER_CA_CERT, otherwise the default
+     * trust store is used.
+     */
+    private SSLEngineFactory getSSLEngineFactory()
+    {
+        return new SSLEngineFactory(
+                Mode.Client, Platform.Desktop, null,
+                (_cfg.SERVER_CA_CERT.length() > 0) ?
+                        new StringBasedCertificateProvider(_cfg.SERVER_CA_CERT) : null,
+                null);
+    }
+
+    private LDAPConnectionPool connectPool() throws LDAPException
+    {
+        LDAPConnection conn = new LDAPConnection(
+                _cfg.SERVER_HOST, _cfg.SERVER_PORT,
+                _cfg.SERVER_PRINCIPAL, _cfg.SERVER_CREDENTIAL);
+        return new LDAPConnectionPool(conn, 1, _cfg.SERVER_MAXCONN);
+    }
+
+    private LDAPConnectionPool connectTLSPool(SSLEngineFactory factory)
+            throws GeneralSecurityException, LDAPException, IOException
+    {
+        LDAPConnection conn = new LDAPConnection(_cfg.SERVER_HOST, _cfg.SERVER_PORT);
+
+        conn.processExtendedOperation(new StartTLSExtendedRequest(factory.getSSLContext()));
+
+        conn.bind(_cfg.SERVER_PRINCIPAL, _cfg.SERVER_CREDENTIAL);
+
+        return new LDAPConnectionPool(conn, 1, _cfg.SERVER_MAXCONN,
+                new StartTLSPostConnectProcessor(factory.getSSLContext()));
+    }
+
+    private LDAPConnectionPool connectSSLPool(SSLEngineFactory factory)
+            throws IOException, GeneralSecurityException, LDAPException
+    {
+        LDAPConnection conn = new LDAPConnection(
+                factory.getSSLContext().getSocketFactory(),
+                _cfg.SERVER_HOST, _cfg.SERVER_PORT,
+                _cfg.SERVER_PRINCIPAL, _cfg.SERVER_CREDENTIAL);
+
+        return new LDAPConnectionPool(conn, 1, _cfg.SERVER_MAXCONN);
+    }
+
+    /**
      * Cache any calculated values that come from the LibParam configuration, and which will
      * not change for the life of this pool.
      */
     private void cacheUserScope()
     {
-        if (Schema.USER_SCOPE.equals("base")) {
+        if (_cfg.USER_SCOPE.equals("base")) {
             _scope = SearchScope.BASE;
-        } else if (Schema.USER_SCOPE.equals("one")) {
+        } else if (_cfg.USER_SCOPE.equals("one")) {
             _scope = SearchScope.ONE;
         } else { // default...
             _scope = SearchScope.SUB;
@@ -237,6 +308,7 @@ public class LdapAuthenticator implements IAuthenticator
     volatile private LDAPConnectionPool _pool = null;
 
     private SearchScope                 _scope = SearchScope.SUB;
+    private LdapConfiguration _cfg;
     private final IProvisioningStrategy _provisioner;
     private static Logger               _l = LoggerFactory.getLogger(LdapAuthenticator.class);
 }
