@@ -7,7 +7,7 @@ from aerofs_sp.gen.sp_pb2 import ADMIN
 from ..test_base import TestBase
 
 
-class GetOrganizationSharedFoldersTest(TestBase):
+class GetSharedFoldersTest(TestBase):
     def setUp(self):
         self.setup_common()
         self._mock_list_organization_shared_folders()

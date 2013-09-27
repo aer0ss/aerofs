@@ -373,7 +373,8 @@
                 $("#modal-invitee-email").val('');
             });
 
-            function setRole(email, role, suppressWarnings) {
+            ## @param suppressSharedFolderRulesWarnings see sp.proto:updateACL()
+            function setRole(email, role, suppressSharedFolderRulesWarnings) {
                 startModalSpinner();
 
                 var errorHeader = "Couldn't change role: ";
@@ -381,10 +382,10 @@
                     "${request.route_path('json.set_shared_folder_perm')}", {
                         ${self.csrf.token_param()}
                         ## TODO (WW) use variables to abstract parameter key strings
-                        userid: email,
-                        storeid: modalSID(),
+                        user_id: email,
+                        store_id: modalSID(),
                         role: role,
-                        suppress_warnings: suppressWarnings
+                        suppress_shared_folders_rules_warnings: suppressSharedFolderRulesWarnings
                     }
                 ).done(function() {
                     modalUserAndRoleList()[email]
@@ -428,8 +429,8 @@
                         {
                             ${self.csrf.token_param()}
                             ## TODO (WW) use variables to abstract parameter key strings
-                            userid: email,
-                            storeid: modalSID()
+                            user_id: email,
+                            store_id: modalSID()
                         }
                     )
                     .done(function(response) {
@@ -481,9 +482,9 @@
             ## @param done and always are callbacks for AJAX success and completion.
             ## They can be None.
             ##
-            ## @param suppress_warnings see sp.proto:ShareFolderCall
+            ## @param suppressSharedFolderRulesWarnings see sp.proto:ShareFolderCall
             ##
-            function inviteToFolder(email, role, suppress_warnings, done, always) {
+            function inviteToFolder(email, role, suppressSharedFolderRulesWarnings, done, always) {
                 startModalSpinner();
                 var sid = modalSID();
                 var name = modalFolderName();
@@ -494,7 +495,7 @@
                         role: role,
                         store_id: sid,
                         folder_name: name,
-                        suppress_warnings: suppress_warnings
+                        suppress_shared_folders_rules_warnings: suppressSharedFolderRulesWarnings
                     }
                 ).done(function() {
                     showSuccessMessage('Invitation has been sent.');

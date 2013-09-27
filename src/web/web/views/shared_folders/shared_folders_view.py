@@ -360,7 +360,7 @@ def json_add_shared_folder_perm(request):
     store_id = _decode_store_id(request.params['store_id'])
     folder_name = request.params['folder_name']
     role = int(request.params['role'])
-    suppress_warnings = request.params['suppress_warnings'] == 'true'
+    suppress_warnings = request.params['suppress_shared_folders_rules_warnings'] == 'true'
 
     role_pair = common.PBSubjectRolePair()
     role_pair.subject = user_id
@@ -415,10 +415,10 @@ def json_set_shared_folder_perm(request):
     """
     _ = request.translate
 
-    storeid = _decode_store_id(request.params['storeid'])
-    userid = request.params['userid']
+    storeid = _decode_store_id(request.params['store_id'])
+    userid = request.params['user_id']
     role = int(request.params['role'])
-    suppress_warnings = request.params['suppress_warnings'] == 'true'
+    suppress_warnings = request.params['suppress_shared_folders_rules_warnings'] == 'true'
 
     sp = get_rpc_stub(request)
 
@@ -436,8 +436,8 @@ def json_set_shared_folder_perm(request):
 def json_delete_shared_folder_perm(request):
     _ = request.translate
 
-    storeid = _decode_store_id(request.params['storeid'])
-    userid = request.params['userid']
+    storeid = _decode_store_id(request.params['store_id'])
+    userid = request.params['user_id']
 
     sp = get_rpc_stub(request)
     try:
