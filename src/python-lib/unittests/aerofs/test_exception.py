@@ -7,7 +7,7 @@ class RegularMessagePBExceptionTest(unittest.TestCase):
     def runTest(self):
         pbException = common_pb2.PBException()
         pbException.type = common_pb2.PBException.INTERNAL_ERROR
-        pbException.message = "This is an error"
+        pbException.message_deprecated = "This is an error"
 
         reply = exception.ExceptionReply(pbException)
         self.assertEqual(common_pb2.PBException.INTERNAL_ERROR, reply.get_type())
@@ -17,8 +17,8 @@ class PlainTextMessagePBExceptionTest(unittest.TestCase):
     def runTest(self):
         pbException = common_pb2.PBException()
         pbException.type = common_pb2.PBException.INTERNAL_ERROR
-        pbException.message = "This is an error"
-        pbException.plain_text_message = "This is a pretty string"
+        pbException.message_deprecated = "This is an error"
+        pbException.plain_text_message_deprecated = "This is a pretty string"
 
         reply = exception.ExceptionReply(pbException)
         self.assertEqual(common_pb2.PBException.INTERNAL_ERROR, reply.get_type())

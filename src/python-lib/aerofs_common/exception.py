@@ -32,8 +32,8 @@ class ExceptionReply(Exception):
 
     def __str__(self):
         description = self.get_type_name()
-        if self.reply.HasField('plain_text_message'):
-            description += u": {0}".format(self.reply.plain_text_message)
-        elif self.reply.HasField('message'):
-            description += u": {0}".format(self.reply.message)
+        if self.reply.HasField('plain_text_message_deprecated'):
+            description += u": {0}".format(self.reply.plain_text_message_deprecated)
+        elif self.reply.HasField('message_deprecated'):
+            description += u": {0}".format(self.reply.message_deprecated)
         return description
