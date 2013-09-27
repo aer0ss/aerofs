@@ -13,9 +13,6 @@ import com.aerofs.base.ssl.SSLEngineFactory;
 import com.aerofs.daemon.core.net.ChunksCounter;
 import com.aerofs.daemon.core.net.TransportFactory;
 import com.aerofs.daemon.core.net.TransportFactory.ExUnsupportedTransport;
-import com.aerofs.daemon.core.net.link.ILinkStateListener;
-import com.aerofs.daemon.core.net.link.ILinkStateService;
-import com.aerofs.daemon.core.net.link.LinkStateService;
 import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
 import com.aerofs.daemon.event.lib.imc.IResultWaiter;
 import com.aerofs.daemon.event.lib.imc.QueueBasedIMCExecutor;
@@ -26,6 +23,8 @@ import com.aerofs.daemon.event.net.rx.EIUnicastMessage;
 import com.aerofs.daemon.event.net.tx.EOUnicastMessage;
 import com.aerofs.daemon.lib.BlockingPrioQueue;
 import com.aerofs.daemon.lib.DaemonParam;
+import com.aerofs.daemon.link.ILinkStateListener;
+import com.aerofs.daemon.link.LinkStateService;
 import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.daemon.transport.debug.Tput;
 import com.aerofs.daemon.transport.lib.MaxcastFilterReceiver;
@@ -72,7 +71,7 @@ public final class Pump implements IProgram
     private static final byte[] CHUNK = new byte[10 * C.KB];
 
     private final BlockingPrioQueue<IEvent> incomingEventSink = new BlockingPrioQueue<IEvent>(1024);
-    private final ILinkStateService linkStateService = new LinkStateService();
+    private final LinkStateService linkStateService = new LinkStateService();
     private final Tput tput = new Tput("recv");
     private final SendThread sendThread = new SendThread();
 
@@ -110,7 +109,7 @@ public final class Pump implements IProgram
             {
                 transport.q().enqueueBlocking(new EOLinkStateChanged(transportImce, previous, current, added, removed), LO);
             }
-        }, sameThreadExecutor());
+        }, sameThreadExecutor()); // enqueueing onto the transport can happen on any thread
 
         transport.init_();
         transport.start_();

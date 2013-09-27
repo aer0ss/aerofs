@@ -11,12 +11,13 @@ import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.CoreUtil;
 import com.aerofs.daemon.core.ex.ExAborted;
 import com.aerofs.daemon.core.net.device.DevicePresence;
-import com.aerofs.daemon.core.net.link.ILinkStateListener;
-import com.aerofs.daemon.core.net.link.LinkStateService;
 import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.event.net.Endpoint;
+import com.aerofs.daemon.lib.CoreExecutor;
+import com.aerofs.daemon.link.ILinkStateListener;
+import com.aerofs.daemon.link.LinkStateService;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.proto.Core.PBCore;
 import com.google.common.collect.ImmutableSet;
@@ -27,8 +28,6 @@ import org.slf4j.Logger;
 import java.io.ByteArrayOutputStream;
 import java.net.NetworkInterface;
 import java.util.Map;
-
-import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor;
 
 /**
  * RPC: Remote Procedure Calls
@@ -54,7 +53,7 @@ public class RPC
     private final Map<Integer, MapEntry> _waiters = Maps.newTreeMap();
 
     @Inject
-    public RPC(DevicePresence dp, NSL nsl, LinkStateService lss)
+    public RPC(DevicePresence dp, NSL nsl, CoreExecutor coreExecutor, LinkStateService lss)
     {
         _dp = dp;
         _nsl = nsl;
@@ -67,7 +66,7 @@ public class RPC
             {
                 if (current.isEmpty()) linkDown_();
             }
-        }, sameThreadExecutor());
+        }, coreExecutor); // want to be notified on the core thread
     }
 
     private DigestedMessage recvReply_(int rpcid, Token tk, String reason)

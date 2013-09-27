@@ -2,7 +2,7 @@
  * Copyright (c) Air Computing Inc., 2012.
  */
 
-package com.aerofs.daemon.core.net.link;
+package com.aerofs.daemon.link;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.lib.DaemonParam;
@@ -30,7 +30,7 @@ import static com.google.common.collect.ImmutableSet.copyOf;
 /**
  * This class monitors the state of local NICs
  */
-public class LinkStateService implements ILinkStateService
+public class LinkStateService
 {
     protected static final Logger l = Loggers.getLogger(LinkStateService.class);
 
@@ -182,7 +182,6 @@ public class LinkStateService implements ILinkStateService
         _ifaces = current;
     }
 
-    @Override
     public final void start_()
     {
         l.info("start lss thd");
@@ -219,16 +218,9 @@ public class LinkStateService implements ILinkStateService
         });
     }
 
-    @Override
     public void addListener_(ILinkStateListener listener, Executor callbackExecutor)
     {
         _notifier.addListener(listener, callbackExecutor);
-    }
-
-    @Override
-    public void removeListener_(ILinkStateListener listener)
-    {
-        _notifier.removeListener(listener);
     }
 
     // IMPORTANT: the method is _not final_ because I want it to be mockable

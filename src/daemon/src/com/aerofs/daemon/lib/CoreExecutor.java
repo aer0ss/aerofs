@@ -4,13 +4,18 @@
 
 package com.aerofs.daemon.lib;
 
-import com.aerofs.daemon.core.CoreIMCExecutor;
-import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
+import com.aerofs.base.Loggers;
+import com.aerofs.daemon.core.CoreQueue;
+import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.event.Prio;
+import org.slf4j.Logger;
 
+import javax.annotation.Nonnull;
 import javax.inject.Inject;
 import java.util.concurrent.Executor;
+
+import static com.google.common.base.Preconditions.checkState;
 
 /**
  * Instances of this class executes runnables as IMC events on the core thread. When execute() is
@@ -22,19 +27,24 @@ import java.util.concurrent.Executor;
  */
 public class CoreExecutor implements Executor
 {
-    private final IIMCExecutor _executor;
+    private static final Logger l = Loggers.getLogger(CoreExecutor.class);
+
+    private final TC _tc;
+    private final CoreQueue _coreQueue;
 
     @Inject
-    public CoreExecutor(CoreIMCExecutor executor)
+    public CoreExecutor(TC tc, CoreQueue coreQueue)
     {
-        _executor = executor.imce();
+        _tc = tc;
+        _coreQueue = coreQueue;
     }
 
     @Override
-    public void execute(final Runnable runnable)
+    public void execute(final @Nonnull Runnable runnable)
     {
-        // block current thread until we succeed in enqueuing an event onto the core queue.
-        _executor.enqueueBlocking_(new AbstractEBSelfHandling()
+        checkState(!_tc.isCoreThread(), "enqueuing from core thread:%s", Thread.currentThread());
+
+        _coreQueue.enqueueBlocking(new AbstractEBSelfHandling()
         {
             @Override
             public void handle_()

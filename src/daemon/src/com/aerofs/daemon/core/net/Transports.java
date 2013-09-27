@@ -8,9 +8,6 @@ import com.aerofs.base.BaseParam;
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.CoreQueue;
 import com.aerofs.daemon.core.net.TransportFactory.ExUnsupportedTransport;
-import com.aerofs.daemon.core.net.link.ILinkStateListener;
-import com.aerofs.daemon.core.net.link.ILinkStateService;
-import com.aerofs.daemon.core.net.link.LinkStateService;
 import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
@@ -19,6 +16,8 @@ import com.aerofs.daemon.event.lib.imc.QueueBasedIMCExecutor;
 import com.aerofs.daemon.event.net.EOLinkStateChanged;
 import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.daemon.lib.IStartable;
+import com.aerofs.daemon.link.ILinkStateListener;
+import com.aerofs.daemon.link.LinkStateService;
 import com.aerofs.daemon.mobile.MobileServerZephyrConnector;
 import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.daemon.transport.lib.MaxcastFilterReceiver;
@@ -139,7 +138,7 @@ public class Transports implements IDumpStat, IDumpStatMisc, IStartable, ITransf
         }
     }
 
-    private void addTransport(ITransport transport, ILinkStateService linkStateService)
+    private void addTransport(ITransport transport, LinkStateService linkStateService)
     {
         IIMCExecutor imce = new QueueBasedIMCExecutor(transport.q());
         addLinkStateListener(transport, imce, linkStateService);
@@ -156,7 +155,7 @@ public class Transports implements IDumpStat, IDumpStatMisc, IStartable, ITransf
         return availableTransports.get(tp);
     }
 
-    private void addLinkStateListener(final ITransport transport, final IIMCExecutor transportImce, ILinkStateService linkStateService)
+    private void addLinkStateListener(final ITransport transport, final IIMCExecutor transportImce, LinkStateService linkStateService)
     {
         linkStateService.addListener_(new ILinkStateListener()
         {
@@ -174,7 +173,7 @@ public class Transports implements IDumpStat, IDumpStatMisc, IStartable, ITransf
                     l.error("fail notify lsc {}", transport.id());
                 }
             }
-        }, sameThreadExecutor());
+        }, sameThreadExecutor()); // enqueueing into the transport queue can be done on any thread
     }
 
     public void init_()

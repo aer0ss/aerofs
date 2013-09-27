@@ -4,11 +4,11 @@
 
 package com.aerofs.daemon.core.online_status;
 
-import com.aerofs.daemon.core.net.link.ILinkStateListener;
-import com.aerofs.daemon.core.net.link.LinkStateService;
 import com.aerofs.daemon.core.serverstatus.IConnectionStatusNotifier.IListener;
 import com.aerofs.daemon.core.verkehr.VerkehrNotificationSubscriber;
 import com.aerofs.daemon.lib.CoreExecutor;
+import com.aerofs.daemon.link.ILinkStateListener;
+import com.aerofs.daemon.link.LinkStateService;
 import com.aerofs.proto.RitualNotifications.PBNotification;
 import com.aerofs.proto.RitualNotifications.PBNotification.Type;
 import com.aerofs.ritual_notification.RitualNotificationServer;

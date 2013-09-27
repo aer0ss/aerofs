@@ -2,7 +2,7 @@
  * Copyright (c) Air Computing Inc., 2012.
  */
 
-package com.aerofs.daemon.core.net.link;
+package com.aerofs.daemon.link;
 
 import com.google.common.collect.ImmutableSet;
 

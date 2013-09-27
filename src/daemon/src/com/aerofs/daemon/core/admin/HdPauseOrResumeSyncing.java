@@ -1,12 +1,12 @@
 package com.aerofs.daemon.core.admin;
 
-import com.aerofs.daemon.core.net.link.LinkStateService;
 import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.event.admin.EIPauseOrResumeSyncing;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
+import com.aerofs.daemon.link.LinkStateService;
 import com.aerofs.lib.event.Prio;
 import com.google.inject.Inject;
 

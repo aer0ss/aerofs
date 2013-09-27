@@ -4,7 +4,7 @@
 
 package com.aerofs.daemon.transport;
 
-import com.aerofs.daemon.core.net.link.LinkStateService;
+import com.aerofs.daemon.link.LinkStateService;
 import org.junit.rules.ExternalResource;
 
 public final class LinkStateResource extends ExternalResource

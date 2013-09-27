@@ -16,14 +16,14 @@ import com.aerofs.base.ssl.SSLEngineFactory.Mode;
 import com.aerofs.base.ssl.SSLEngineFactory.Platform;
 import com.aerofs.daemon.core.net.TransportFactory;
 import com.aerofs.daemon.core.net.TransportFactory.TransportType;
-import com.aerofs.daemon.core.net.link.ILinkStateListener;
-import com.aerofs.daemon.core.net.link.LinkStateService;
 import com.aerofs.daemon.event.net.EIPresence;
 import com.aerofs.daemon.event.net.EOLinkStateChanged;
 import com.aerofs.daemon.event.net.EOUpdateStores;
 import com.aerofs.daemon.event.net.rx.EIUnicastMessage;
 import com.aerofs.daemon.event.net.tx.EOUnicastMessage;
 import com.aerofs.daemon.lib.BlockingPrioQueue;
+import com.aerofs.daemon.link.ILinkStateListener;
+import com.aerofs.daemon.link.LinkStateService;
 import com.aerofs.daemon.transport.lib.MaxcastFilterReceiver;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.event.IEvent;
@@ -156,7 +156,7 @@ public final class TransportResource extends ExternalResource
             {
                 _transport.q().enqueueBlocking(new EOLinkStateChanged(new FakeIMCExecutor(), previous, current, added, removed), PRIO);
             }
-        }, sameThreadExecutor());
+        }, sameThreadExecutor()); // enqueueing into the transport queue can happen on any thread
 
         _transport.init_();
 

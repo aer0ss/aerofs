@@ -2,7 +2,7 @@
  * Copyright (c) Air Computing Inc., 2013.
  */
 
-package com.aerofs.daemon.core.net.link;
+package com.aerofs.daemon.link;
 
 import com.aerofs.base.C;
 import com.google.common.base.Preconditions;
@@ -96,7 +96,7 @@ public class TestLinkStateService
         Preconditions.checkState(_executorThread != null);
 
         _linkStateService = spy(new LinkStateService());
-        _linkStateService.addListener_(_listener, _notificationExecutor);
+        _linkStateService.addListener_(_listener, _notificationExecutor); // want to be notified on single-thread-executor
     }
 
     @Test
