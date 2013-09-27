@@ -21,6 +21,7 @@ import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.core.transfers.download.dependence.DownloadDeadlockResolver;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
+import com.aerofs.lib.ex.ExFileNotFound;
 import com.aerofs.lib.id.SOCID;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -242,7 +243,16 @@ class AsyncDownload extends Download
                     }
                 } else {
                     // the dependency chain could not be followed for a device, try another
-                    l.info("unsat dep {}->{} from {}: {}", _socid, e._socid, e._did, Util.e(e._e));
+                    l.info("unsat dep {}->{} from {}: {}", _socid, e._socid, e._did, Util.e(e._e,
+                            // suppress its stack trace since it has caused huge logs in Bloomberg
+                            // filled with traces from this error:
+                            //
+                            // com.aerofs.ExProcessReplyFailed: com.aerofs.ExFileNotFound:
+                            //    file /f2e88c90/8a08fc0c/3d9d184b/f75b2303 not found (attrs:edrwxav,edrwxav)
+                            //
+                            // TODO (WW) Remove it as soon as the root cause of the bug is fixed.
+                            // See the email thread "Re: huge log output"
+                            ExProcessReplyFailed.class));
                     avoidDevice_(e._did, e);
                 }
             }
