@@ -2,8 +2,6 @@ package com.aerofs.daemon.lib;
 
 import com.aerofs.base.C;
 import com.aerofs.lib.LibParam.Daemon;
-import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.cfg.CfgDatabase.Key;
 
 import java.net.InetSocketAddress;
 
@@ -107,16 +105,4 @@ public class DaemonParam
     // wait at least 250ms between two successive progress notifications
     // i.e. send at most 4 progress notifications per transfer per second
     public static final int NOTIFY_THRESHOLD = 250;
-
-    // TODO use a unified session management system where a session is consistently deleted from
-    // caches at all the layers at once
-    // TODO move this method to a more appropriate location
-    public static int deviceLRUSize()
-    {
-        // assert the cfg has been initialized
-        assert Cfg.inited();
-
-        return Math.max((Cfg.db().getInt(Key.MAX_SERVER_STACKS) * 20 +
-                Cfg.db().getInt(Key.MAX_CLIENT_STACKS) * 2) * 20, 64);
-    }
 }

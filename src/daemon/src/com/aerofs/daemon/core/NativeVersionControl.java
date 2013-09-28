@@ -110,7 +110,7 @@ public class NativeVersionControl extends AbstractVersionControl<NativeTickRow>
      * @return null iff the local DID does not have an entry in the version vector, i.e. we have
      *         made no local modifications
      */
-    public @Nullable Tick getLocalTick_(SOCKID k) throws SQLException
+    public @Nullable Tick getLocalTickNullable_(SOCKID k) throws SQLException
     {
         return _nvdb.getLocalTick_(k);
     }

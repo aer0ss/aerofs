@@ -38,7 +38,7 @@ import java.util.Queue;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
-public final class IncomingStreams
+public class IncomingStreams
 {
     private static final Logger l = Loggers.getLogger(IncomingStreams.class);
 

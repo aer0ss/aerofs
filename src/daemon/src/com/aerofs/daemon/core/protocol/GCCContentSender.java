@@ -58,9 +58,9 @@ import static com.google.common.base.Preconditions.checkState;
 /**
  * GCC: GetComponentCall
  */
-public class GCCSendContent
+public class GCCContentSender
 {
-    private static final Logger l = Loggers.getLogger(GCCSendContent.class);
+    private static final Logger l = Loggers.getLogger(GCCContentSender.class);
 
     private final DirectoryService _ds;
     private final IPhysicalStorage _ps;
@@ -111,7 +111,7 @@ public class GCCSendContent
     private final Ongoing _ongoing = new Ongoing();
 
     @Inject
-    public GCCSendContent(UploadState ulstate, OutgoingStreams oss, TransportRoutingLayer trl, IPhysicalStorage ps,
+    public  GCCContentSender(UploadState ulstate, OutgoingStreams oss, TransportRoutingLayer trl, IPhysicalStorage ps,
             NativeVersionControl nvc, Metrics m, DirectoryService ds, TokenManager tokenManager)
     {
         _ulstate = ulstate;
@@ -134,7 +134,7 @@ public class GCCSendContent
 
     // raw file bytes are appended after BPCore
     ContentHash send_(Endpoint ep, SOCKID k, PBCore.Builder bdCore, Builder bdReply, Version vLocal,
-            long prefixLen, Version vPrefix, @Nullable ContentHash remoteHash, Version vRemote)
+            long prefixLen, Version vPrefix, @Nullable ContentHash remoteHash)
             throws Exception
     {
         // guaranteed by the caller
@@ -151,7 +151,7 @@ public class GCCSendContent
         bdReply.setMtime(mtime);
 
         try {
-            return send_(ep, k, bdCore, bdReply, vLocal, prefixLen, vPrefix, remoteHash, vRemote, pf,
+            return send_(ep, k, bdCore, bdReply, vLocal, prefixLen, vPrefix, remoteHash, pf,
                     fileLength, mtime);
         } catch (ExUpdateInProgress e) {
             pf.onUnexpectedModification_(mtime);
@@ -161,21 +161,21 @@ public class GCCSendContent
 
     private ContentHash send_(Endpoint ep, SOCKID k, PBCore.Builder bdCore, Builder bdReply,
             Version vLocal, long prefixLen, Version vPrefix, @Nullable ContentHash remoteHash,
-            Version vRemote, IPhysicalFile pf, long fileLength, long mtime)
+            IPhysicalFile pf, long fileLength, long mtime)
             throws Exception
     {
         // Send hash if available.
         int hashLength = 0;
         final ContentHash h = _ds.getCAHash_(k.sokid());
         boolean contentIsSame = false;
-        if (h == null) {
-            if (!vRemote.sub_(vLocal).isZero_()) {
-                // TODO: automatically compute missing hash if requested version does not dominate
-                // advertised remote version?
-                // This would avoid having to interrupt the transfer on receiver side to request the
-                // hash, saving disk bandwidth, network bandwidth, two round trips and cpu cycles...
-            }
-        }
+
+//        if (h == null && !vRemote.sub_(vLocal).isZero_()) {
+//            // TODO: automatically compute missing hash if requested version does not dominate
+//            // advertised remote version?
+//            // This would avoid having to interrupt the transfer on receiver side to request the
+//            // hash, saving disk bandwidth, network bandwidth, two round trips and cpu cycles...
+//        }
+
         if (h != null) {
             if (remoteHash != null && h.equals(remoteHash)) {
                 contentIsSame = true;

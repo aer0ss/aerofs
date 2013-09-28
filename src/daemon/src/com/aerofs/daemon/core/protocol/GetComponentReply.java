@@ -26,6 +26,7 @@ import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.Version;
 import com.aerofs.lib.id.CID;
+import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOCID;
 import com.aerofs.lib.id.SOCKID;
 import com.aerofs.lib.id.SOID;
@@ -133,13 +134,11 @@ public class GetComponentReply
         if (type != CIDType.META) {
             metaDiff = 0;
 
+            throwIfSenderHasNoPerm(socid.sidx(), msg.user(), msg.ep());
+
             // We should abort when receiving content for an aliased object
             if (_a2t.isAliased_(socid.soid())) {
                 throw new ExAborted(socid + " aliased");
-            }
-
-            if (_ds.hasOA_(socid.soid())) {
-                throwIfSenderHasNoPerm(socid, msg.user(), msg.ep());
             }
 
         } else {
@@ -202,8 +201,8 @@ public class GetComponentReply
                     return;
                 } else {
                     l.debug("meta diff: " + String.format("0x%1$x", metaDiff));
-                    if (metaDiff != 0 && _ds.hasOA_(socid.soid())) {
-                        throwIfSenderHasNoPerm(socid, msg.user(), msg.ep());
+                    if (metaDiff != 0) {
+                        throwIfSenderHasNoPerm(socid.sidx(), msg.user(), msg.ep());
                     }
                 }
             }
@@ -297,12 +296,12 @@ public class GetComponentReply
         }
     }
 
-    private void throwIfSenderHasNoPerm(SOCID socid, UserID user, Endpoint ep)
+    private void throwIfSenderHasNoPerm(SIndex sidx, UserID user, Endpoint ep)
             throws SQLException, ExSenderHasNoPerm
     {
         // see Rule 2 in acl.md
-        if (!_lacl.check_(user, socid.sidx(), Permissions.EDITOR)) {
-            l.warn("{} on {} has no editor perm for {}", user, ep, socid.sidx());
+        if (!_lacl.check_(user, sidx, Permissions.EDITOR)) {
+            l.warn("{} on {} has no editor perm for {}", user, ep, sidx);
             throw new ExSenderHasNoPerm();
         }
     }

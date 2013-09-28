@@ -71,7 +71,7 @@ public class GetComponentCall
     private IPhysicalStorage _ps;
     private LocalACL _lacl;
     private TransportRoutingLayer _trl;
-    private GCCSendContent _sendContent;
+    private GCCContentSender _contentSender;
     private IMapSIndex2SID _sidx2sid;
     private IMapSID2SIndex _sid2sidx;
     private CfgLocalUser _cfgLocalUser;
@@ -82,7 +82,7 @@ public class GetComponentCall
     @Inject
     public void inject_(TransportRoutingLayer trl, LocalACL lacl, IPhysicalStorage ps, OutboundEventLogger oel,
             DirectoryService ds, RPC rpc, PrefixVersionControl pvc, NativeVersionControl nvc,
-            IEmigrantTargetSIDLister emc, GCCSendContent sendContent, MapAlias2Target a2t,
+            IEmigrantTargetSIDLister emc, GCCContentSender contentSender, MapAlias2Target a2t,
             IMapSIndex2SID sidx2sid, IMapSID2SIndex sid2sidx, CfgLocalUser cfgLocalUser,
             TransManager tm, RockLog rl)
     {
@@ -95,7 +95,7 @@ public class GetComponentCall
         _nvc = nvc;
         _emc = emc;
         _oel = oel;
-        _sendContent = sendContent;
+        _contentSender = contentSender;
         _a2t = a2t;
         _sidx2sid = sidx2sid;
         _sid2sidx = sid2sidx;
@@ -233,21 +233,20 @@ public class GetComponentCall
         Version vLocal = _nvc.getLocalVersion_(k);
 
         if (!vLocal.sub_(vRemote).isZero_()) {
-            sendReply_(msg, k);
+            sendReply_(msg, k, vLocal);
         } else {
             l.debug("r {} >= l {}. Throw ncwsv", vRemote, vLocal);
             throw new ExNoComponentWithSpecifiedVersion();
         }
     }
 
-    private void sendReply_(DigestedMessage msg, SOCKID k)
+    // Mark it as public only to facilitate testing
+    public void sendReply_(DigestedMessage msg, SOCKID k, Version vLocal)
         throws Exception
     {
         l.debug("send to {} for {}", msg.ep(), k);
 
         _oel.log_(k.cid().isMeta() ? META_REQUEST : CONTENT_REQUEST, k.soid(), msg.did());
-
-        Version vLocal = _nvc.getLocalVersion_(k);
 
         PBCore.Builder bdCore = CoreUtil.newReply(msg.pb());
 
@@ -261,9 +260,8 @@ public class GetComponentCall
         if (k.cid().isMeta()) {
             sendMeta_(msg.ep(), k, bdCore, bdReply);
         } else if (k.cid().equals(CID.CONTENT)) {
-            ContentHash th = _sendContent.send_(msg.ep(), k, bdCore, bdReply, vLocal,
-                    pbgcc.getPrefixLength(), Version.fromPB(pbgcc.getPrefixVersion()),
-                    h, Version.fromPB(pbgcc.getLocalVersion()));
+            ContentHash th = _contentSender.send_(msg.ep(), k, bdCore, bdReply, vLocal,
+                    pbgcc.getPrefixLength(), Version.fromPB(pbgcc.getPrefixVersion()), h);
             if (th != null) updateHash_(k.sokid(), th);
         } else {
             SystemUtil.fatal("unsupported CID: " + k.cid());
