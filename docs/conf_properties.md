@@ -19,14 +19,50 @@ Note that if you want literal `.`, use `\\.`
 
 Example: `.*@google\\.com|.*@google-corp\\.net`
 
+    lib.anchor.default_location_windows=
+    lib.anchor.default_location_osx=
+    lib.anchor.default_location_linux=
+
+The default location for the parent of the root anchor folder. This allows a site
+operator to override the default location for all installations (or only for
+certain operating systems).
+
+Note that this describes the _parent_ of the AeroFS folder that will be synced.
+Also note the character formatting needed for backslashes.
+
+No default value; if missing, clients will use the compiled-in values for public deployment.
+
+Example: `lib.anchor.default_location_windows=C:\\Storage\\` - the default location will be C:\Storage\AeroFS.
+
+Example: `lib.anchor.default_location_osx=/storage_dir/` - the default location on OSX will be /storage_dir/AeroFS
+
+## Identity properties
+
+    lib.authenticator=local_credential
+
+The authentication mechanism used by AeroFS to validate end-users. Possible options are:
+
+- `local_credential` : The user will provide a username and credential that will be verified
+locally (on the signin server). This requires the user to be created in advance through
+the normal signup process.
+
+- `external_credential` : The user will prove their identity using a username and credential 
+that will be passed through to an identity authority (LDAP). This implies the credential 
+should not be hashed on the client side.
+
+- `openid` : The user will prove their identity out-of-band with a URI-based signin mechanism.
+This means the client will use the SessionNonce/DelegateNonce mechanism and poll for the 
+asynchronous authentication completion. The client can expect some user-agent redirect 
+to the IdentityServlet. Client should poll on the session nonce for the out-of-band 
+authentication to complete.
+
 
 ## OpenID properties
 
+OpenID configuration is used if the `lib.authenticator` is set to `openid`.
+Otherwise these properties will be ignored.
+
 (Please See Appendix for complete examples.)
-
-    openid.service.enabled=false
-
-Whether to enable OpenId authentication (if enabled, this replaces credential auth).
 
     openid.service.session.interval=1
 
@@ -158,11 +194,151 @@ Example: `openid.ext1.value.lastname` for ax
 
 Example: `openid.sreg.fullname` for sreg; fullname only
 
+## LDAP authentication properties
+
+LDAP configuration is used if the `lib.authenticator` is set to `external_credential`.
+Otherwise these properties will be ignored.
+
+(Please See Appendix for complete examples.)
+
+    ldap.server.ca_certificate=
+
+If the LDAP server does not have a publicly-signed certificate, the cert can
+be supplied here. It will be added to the trust store only for LDAP server connections.
+
+No default. Note the formatting newlines in the following example.
+
+Example:    `ldap.server.ca_certificate=-----BEGIN CERTIFICATE-----\nMIIFKjCCBBKgAwIBAgID...`
+
+    ldap.server.host=
+
+Host name of the LDAP server. Required.
+
+Example:    `ldap.server.host=ad.arrowfs.org`
+
+    ldap.server.port=389
+
+Port on which to connect to the LDAP server. Default is 389 for ldap protocol with StartTLS,
+Set port to 636 for ldaps.
+
+Example:    `ldap.server.port=389`
+
+    ldap.server.security=TLS
+
+Configure the socket-level security type used by the LDAP server. The options are:
+
+- None : use unencrypted socket (Not recommended, as this could expose user credentials
+to network snoopers)
+
+- SSL : use LDAP over SSL (the ldaps protocol).
+
+- TLS : use the LDAP StartTLS extension.
+
+Example:    `ldap.server.security=ssl`
+
+    ldap.server.maxconn=10
+
+Maximum number of LDAP connection instances to keep in the pool.
+
+    ldap.server.autoprovision=true
+
+If true, a user with no record in AeroFS will be created the first time they
+successfully authenticate with the configured LDAP server.
+
+If false, the user will be denied login until they are explicitly provisioned.
+
+    ldap.server.timeout.read=180
+
+Timeout, in seconds, after which a server read operation will be cancelled.
+
+    ldap.server.timeout.connect=60
+
+Timeout, in seconds, after which a server connect attempt will be abandoned.
+
+    ldap.server.principal=
+
+Principal on the LDAP server to use for the initial user search.
+
+Example:    `ldap.server.principal=CN=admin`
+
+    ldap.server.credential=
+
+Credential on the LDAP server for the search principal.
+
+Example:    `ldap.server.credential=secret`
+
+    ldap.server.schema.user.base=
+
+Distinguished Name (dn) of the root of the tree within the LDAP server in which
+user accounts are found. More specific DNs are preferred.
+
+Example:    `ldap.server.schema.user.base=dc=users,dc=example,dc=org`
+
+    ldap.server.schema.user.scope=subtree
+
+The scope to search for user records. Valid values are "base", "one", or "subtree".
+The default is "subtree".
+
+- base : only the object specified by ldap.server.schema.user.base will be searched
+
+- one : the immediate children of the ldap.server.schema.user.base object will be
+searched, but not the base object itself.
+
+- subtree : search the base object and the entire subtree of that object.
+
+Example:    `ldap.server.schema.user.scope=subtree`
+
+    ldap.server.schema.user.field.firstname=
+
+The name of the field in the LDAP object that holds the first name.
+
+Example:    `ldap.server.schema.user.field.firstname=givenName`
+
+    ldap.server.schema.user.field.lastname=
+
+The name of the field in the LDAP object that holds the last name.
+
+Example:    `ldap.server.schema.user.field.lastname=sn`
+
+    ldap.server.schema.user.field.email=
+
+The name of the field in the LDAP object that holds the email address.
+This will used in the user search.
+
+Example:    `ldap.server.schema.user.field.email=mail`
+
+    ldap.server.schema.user.field.rdn=
+
+The name of the field that contains the relative distinguished name - that is,
+the field that will be used in the bind attempt.
+
+Example:    `ldap.server.schema.user.field.rdn=dn`
+
+    ldap.server.schema.user.class=
+
+The required object class of the user record. This will be used as part of
+the user search.
+
+Example:    `ldap.server.schema.user.class=inetOrgPerson`
+
+The following example, the configuration fields for email and class are
+combined into an LDAP search for matching user records:
+
+Example:
+
+    ldap.server.schema.user.field.email=mail
+    ldap.server.schema.user.class=inetOrgPerson
+
+    # given the email address "jon@example.com", the search will be
+    # as follows. Note that LDAP uses postfix notation.
+    #   (&(mail="jon@example.com")(objectClass=inetOrgPerson))
+
+
 # Appendix: OpenID properties examples
 
 ## Google
 
-    openid.service.enabled=true
+    lib.authenticator=openid
     openid.service.timeout=300
     openid.service.session.timeout=10
     openid.service.session.interval=1
@@ -189,7 +365,7 @@ Into:
 
 (In this case, the example auth service doesn't support sreg _or_ ax.)
 
-    openid.service.enabled=true
+    lib.authenticator=openid
     openid.service.timeout=300
     openid.service.session.timeout=10
     openid.service.session.interval=1
@@ -206,3 +382,43 @@ Into:
     openid.idp.user.name.first=uid[2]
     openid.idp.user.name.last=uid[3]
 
+# Appendix: LDAP properties examples
+
+## UNIX-style LDAP server
+
+    lib.authenticator=external_credential
+    ldap.server.ca_certificate=-----BEGIN CERTIFICATE-----\nMIIFKjCCBBKgAwIBAgID...075\n-----END CERTIFICATE-----
+    ldap.server.host=ldap.arrowfs.org
+    ldap.server.port=389
+    ldap.server.security=ssl
+    ldap.server.principal=CN=admin
+    ldap.server.credential=secret
+    ldap.server.schema.user.base=dc=users,dc=example,dc=org
+    ldap.server.schema.user.scope=subtree
+    ldap.server.schema.user.field.firstname=givenName
+    ldap.server.schema.user.field.lastname=sn
+    ldap.server.schema.user.field.email=mail
+    ldap.server.schema.user.field.rdn=dn
+    ldap.server.schema.user.class=inetOrgPerson
+
+## ActiveDirectory server
+
+    The following example searches a Windows domain called "borg.jonco.lan"
+
+    lib.authenticator=external_credential
+    ldap.server.ca_certificate=-----BEGIN CERTIFICATE-----\nMIIFKjCCBBKgAwIBAgID...075\n-----END CERTIFICATE-----
+    ldap.server.host=AD.arrowfs.org
+    ldap.server.port=686
+    ldap.server.security=ssl
+    ldap.server.principal=Administrator@borg.jonco.lan
+    # Also valid: 
+    #    ldap.server.principal=DOMAIN\\Administrator
+    #
+    ldap.server.credential=secret
+    ldap.server.schema.user.base=CN=Users,dc=borg,dc=jonco,dc=lan
+    ldap.server.schema.user.scope=subtree
+    ldap.server.schema.user.field.firstname=givenName
+    ldap.server.schema.user.field.lastname=sn
+    ldap.server.schema.user.field.email=mail
+    ldap.server.schema.user.field.rdn=userPrincipalName
+    ldap.server.schema.user.class=organizationalPerson
