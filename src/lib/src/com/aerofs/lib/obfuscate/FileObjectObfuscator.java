@@ -4,6 +4,7 @@
 
 package com.aerofs.lib.obfuscate;
 
+import com.aerofs.lib.LibParam.EnterpriseConfig;
 import com.aerofs.lib.Util;
 import com.google.common.collect.Lists;
 
@@ -19,6 +20,9 @@ class FileObjectObfuscator implements IObfuscator<File>
     @Override
     public String obfuscate(File f)
     {
+        // disable obfuscation in Enterprise deployment
+        if (EnterpriseConfig.IS_ENTERPRISE_DEPLOYMENT) return f.getPath();
+
         LinkedList<String> names = Lists.newLinkedList();
 
         // Root directory has an empty filename
