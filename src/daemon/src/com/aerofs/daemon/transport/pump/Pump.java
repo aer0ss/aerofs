@@ -39,6 +39,7 @@ import com.aerofs.lib.cfg.CfgCACertificateProvider;
 import com.aerofs.lib.cfg.CfgKeyManagersProvider;
 import com.aerofs.lib.cfg.CfgLocalDID;
 import com.aerofs.lib.cfg.CfgLocalUser;
+import com.aerofs.lib.cfg.CfgLolol;
 import com.aerofs.lib.cfg.CfgScrypted;
 import com.aerofs.lib.event.IEvent;
 import com.aerofs.lib.event.Prio;
@@ -159,6 +160,7 @@ public final class Pump implements IProgram
         CfgLocalUser localid = new CfgLocalUser();
         CfgLocalDID localdid = new CfgLocalDID();
         CfgScrypted scrypted = new CfgScrypted();
+        CfgLolol lolol = new CfgLolol();
         RockLog rockLog = new RockLog();
         MaxcastFilterReceiver maxcastFilterReceiver = new MaxcastFilterReceiver();
         CfgKeyManagersProvider keyProvider = new CfgKeyManagersProvider();
@@ -173,6 +175,7 @@ public final class Pump implements IProgram
                 localdid.get(),
                 scrypted.get(),
                 false,
+                lolol.get(),
                 DaemonParam.Jingle.STUN_SERVER_ADDRESS,
                 BaseParam.XMPP.SERVER_ADDRESS,
                 BaseParam.XMPP.getServerDomain(),

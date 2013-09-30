@@ -130,6 +130,7 @@ public final class TransportResource extends ExternalResource
                 _did,
                 _scrypted,
                 true,
+                true,
                 InetSocketAddress.createUnresolved("localhost", 3478),
                 InetSocketAddress.createUnresolved("localhost", 5222),
                 "arrowfs.org",

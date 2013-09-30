@@ -64,13 +64,14 @@ class SignalThread extends Thread
     private final InetSocketAddress _stunServerAddress;
     private final InetSocketAddress _xmppServerAddress;
     private final String _absRTRoot;
+    private final boolean _enableJingleLibraryLogging;
     private final ArrayList<Runnable> _postRunners = Lists.newArrayList(); // st thread only
     private final Object _mxMain = new Object(); // lock object
     private final BlockingQueue<ISignalThreadTask> _tasks = new LinkedBlockingQueue<ISignalThreadTask>(DaemonParam.QUEUE_LENGTH_DEFAULT);
     private ISignalThreadListener _listener;
     private volatile boolean _connectedToXMPP;
 
-    public SignalThread(Jid localjid, InetSocketAddress stunServerAddress, InetSocketAddress xmppServerAddress, XMPPConnectionService xmppServer, String absRtRoot)
+    public SignalThread(Jid localjid, InetSocketAddress stunServerAddress, InetSocketAddress xmppServerAddress, XMPPConnectionService xmppServer, String absRtRoot, boolean enableJingleLibraryLogging)
     {
         super(TransportThreadGroup.get(), "j-st");
         _stunServerAddress = stunServerAddress;
@@ -80,6 +81,7 @@ class SignalThread extends Thread
         _xmppServer = xmppServer;
         _xmppUsername = localjid;
         _xmppPassword = xmppServer.getXmppPassword();
+        _enableJingleLibraryLogging = enableJingleLibraryLogging;
     }
 
     void setListener(ISignalThreadListener listener)
@@ -207,8 +209,7 @@ class SignalThread extends Thread
 
         // >>>> WHEE...RUNNING >>>>
 
-        // boolean lololon = Cfg.lotsOfLotsOfLog(_absRTRoot); FIXME (AG): inject this somehow
-        _main.Run(true);
+        _main.Run(_enableJingleLibraryLogging);
 
         l.debug("end main - start cleanup");
 

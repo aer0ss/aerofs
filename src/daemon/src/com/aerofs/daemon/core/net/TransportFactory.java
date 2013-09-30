@@ -66,6 +66,7 @@ public final class TransportFactory
     private final DID did;
     private final byte[] scrypted;
     private final boolean listenToMulticastOnLoopback;
+    private final boolean enableJingleLibraryLogging;
     private final InetSocketAddress stunServerAddress;
     private final InetSocketAddress xmppServerAddress;
     private final String xmppServerDomain;
@@ -86,6 +87,7 @@ public final class TransportFactory
             DID did,
             byte[] scrypted,
             boolean listenToMulticastOnLoopback,
+            boolean enableJingleLibraryLogging,
             InetSocketAddress stunServerAddress,
             InetSocketAddress xmppServerAddress,
             String xmppServerDomain,
@@ -105,6 +107,7 @@ public final class TransportFactory
         this.did = did;
         this.scrypted = scrypted;
         this.listenToMulticastOnLoopback = listenToMulticastOnLoopback;
+        this.enableJingleLibraryLogging = enableJingleLibraryLogging;
         this.stunServerAddress = stunServerAddress;
         this.xmppServerAddress = xmppServerAddress;
         this.xmppServerDomain = xmppServerDomain;
@@ -189,6 +192,7 @@ public final class TransportFactory
                 xmppServerDomain,
                 scrypted,
                 absRtRoot,
+                enableJingleLibraryLogging,
                 transportId,
                 transportRank,
                 transportEventSink,

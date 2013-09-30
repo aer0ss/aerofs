@@ -31,6 +31,7 @@ import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgAbsRTRoot;
 import com.aerofs.lib.cfg.CfgLocalDID;
 import com.aerofs.lib.cfg.CfgLocalUser;
+import com.aerofs.lib.cfg.CfgLolol;
 import com.aerofs.lib.cfg.CfgScrypted;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.proto.Diagnostics.PBDumpStat;
@@ -89,6 +90,7 @@ public class Transports implements IDumpStat, IDumpStatMisc, IStartable, ITransf
             CfgLocalUser localid,
             CfgLocalDID localdid,
             CfgScrypted scrypted,
+            CfgLolol lolol,
             CoreQueue coreQueue,
             TC tc,
             MaxcastFilterReceiver maxcastFilterReceiver,
@@ -109,6 +111,7 @@ public class Transports implements IDumpStat, IDumpStatMisc, IStartable, ITransf
                 localdid.get(),
                 scrypted.get(),
                 false,
+                lolol.get(),
                 DaemonParam.Jingle.STUN_SERVER_ADDRESS,
                 BaseParam.XMPP.SERVER_ADDRESS,
                 BaseParam.XMPP.getServerDomain(),

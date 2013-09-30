@@ -90,6 +90,7 @@ public class Jingle implements ITransport, ILinkStateListener, IUnicastCallbacks
             String xmppServerDomain,
             byte[] scrypted,
             String absRtRoot,
+            boolean enableJingleLibraryLogging,
             String id, int rank,
             IBlockingPrioritizedEventSink<IEvent> sink,
             MaxcastFilterReceiver mcfr,
@@ -112,7 +113,7 @@ public class Jingle implements ITransport, ILinkStateListener, IUnicastCallbacks
         _xmppServerDomain = xmppServerDomain;
 
         // Signal thread
-        _signalThread = new SignalThread(_localJid, stunServerAddress, xmppServerAddress, _xmppServer, absRtRoot);
+        _signalThread = new SignalThread(_localJid, stunServerAddress, xmppServerAddress, _xmppServer, absRtRoot, enableJingleLibraryLogging);
         _signalThread.setDaemon(true);
         _signalThread.setName(SIGNAL_THREAD_THREAD_ID);
 
