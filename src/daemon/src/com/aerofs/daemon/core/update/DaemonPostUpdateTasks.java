@@ -1,13 +1,15 @@
 package com.aerofs.daemon.core.update;
 
-import javax.inject.Inject;
-
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.lib.LibParam.PostUpdate;
 import com.aerofs.lib.cfg.CfgDatabase;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.cfg.CfgLocalUser;
+
+import javax.inject.Inject;
+
+import static com.google.common.base.Preconditions.checkState;
 
 /**
  * This class is structurally identical to UIPostUpdateTasks.
@@ -58,12 +60,13 @@ public class DaemonPostUpdateTasks
             new DPUTAddContributorsTable(dbcw),
             null,  // used to be DPUTCleanupGhostKML
             new DPUTCleanupGhostKML(dbcw),
-            new DPUTRefreshBloomFilters(dbcw)
-            // new tasks go here
+            new DPUTRefreshBloomFilters(dbcw),
+            new DPUTDeleteLargeLibjingleLog()
+            // new tasks go here - also, update DAEMON_POST_UPDATE_TASKS counter value below!
         };
 
         // please update this macro whenever new tasks are added
-        assert _tasks.length == PostUpdate.DAEMON_POST_UPDATE_TASKS;
+        checkState(_tasks.length == PostUpdate.DAEMON_POST_UPDATE_TASKS);
     }
 
     public void run() throws Exception
