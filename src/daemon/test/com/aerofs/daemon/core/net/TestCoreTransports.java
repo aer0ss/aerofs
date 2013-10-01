@@ -112,6 +112,8 @@ public class TestCoreTransports
         assertThat(constructedTransports.iterator().next().supportsMulticast(), equalTo(true));
     }
 
+    // We need the suppresswarnings for the containsInAnyOrder assertion.
+    @SuppressWarnings({"unchecked"})
     @Test
     public void shouldDisableMulticastForZephyrWhenJingleIsEnabled()
             throws ExUnsupportedTransport
