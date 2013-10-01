@@ -5,10 +5,10 @@
 package com.aerofs.sp.authentication;
 
 import com.aerofs.base.ex.ExBadCredential;
+import com.aerofs.sp.authentication.LdapConfiguration.SecurityType;
 import com.aerofs.sp.authentication.AuthenticatorFactory.AutoProvisioning;
 import com.aerofs.sp.authentication.InMemoryServer.LdapSchema;
 import com.aerofs.sp.server.integration.AbstractSPTest;
-import com.aerofs.sp.server.lib.user.User;
 import com.google.protobuf.ByteString;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -16,21 +16,24 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.Spy;
 
-import static org.junit.Assert.assertEquals;
+import java.io.IOException;
+import java.security.cert.CertificateException;
 
-public class TestSP_AutoProvisionLDAP extends AbstractSPTest
+public class TestSP_TLSConnectionLDAP extends AbstractSPTest
 {
-    LdapConfiguration _cfg = new LdapConfiguration();
-    @Spy IAuthenticator _authenticator = new LdapAuthenticator(_cfg, new AutoProvisioning());
-
     @BeforeClass
-    public static void beforeClass() throws Exception { _server = new LdapSchema(false, false); }
+    public static void beforeClass() throws Exception { _server = new LdapSchema(true, false); }
 
     @AfterClass
     public static void tearDown() throws Exception { _server.stop(); }
 
     @Before
-    public void updateConfigs() { _server.resetConfig(_cfg); }
+    public void updateConfigs() throws CertificateException, IOException
+    {
+        _server.resetConfig(_cfg);
+        _cfg.SERVER_SECURITY = SecurityType.STARTTLS;
+        _cfg.SERVER_CA_CERT = _server.getCertString();
+    }
 
     @Test
     public void shouldSimpleSignIn() throws Exception
@@ -54,34 +57,15 @@ public class TestSP_AutoProvisionLDAP extends AbstractSPTest
         service.signInUser("test2@users.example.org", ByteString.copyFrom("cred2".getBytes()));
     }
 
-    @Test
-    public void checkUserRecord() throws Exception
-    {
-        _server.add("dn: uid=test9,dc=users,dc=example,dc=org", "objectClass: inetOrgPerson",
-                "cn: Joe Tester", "sn: Tester", "givenName: Joe", "mail: test9@users.example.org",
-                "userPassword: cred9", "uid: test9",
-                "memberOf: cn=testgroup,dc=roles,dc=example,dc=org");
-        service.signInUser("test9@users.example.org", ByteString.copyFrom("cred9".getBytes()));
-
-        sqlTrans.begin();
-        User u = factUser.createFromExternalID("test9@users.example.org");
-        assert u.exists();
-        assertEquals(u.getFullName()._first, "Joe");
-        assertEquals(u.getFullName()._last, "Tester");
-        sqlTrans.commit();
-    }
-
     @Test(expected = ExBadCredential.class)
-    public void shouldDisallowBadCred() throws Exception
+    public void shouldFail() throws Exception
     {
-        service.signInUser("random@users.example.org", ByteString.copyFrom("badpw".getBytes()));
+        service.signInUser("test2@users.example.org", ByteString.copyFrom("wango".getBytes()));
     }
 
-    @Test(expected = ExBadCredential.class)
-    public void shouldDisallowEmptyPw() throws Exception
-    {
-        service.signInUser("random@users.example.org", ByteString.copyFrom(new byte[0]));
-    }
-
+    LdapConfiguration _cfg = new LdapConfiguration();
+    // this supplies an instance of type IAuthenticator; when the InjectMocks-annotated
+    // SPService instance asks for an IAuthenticator field, it will get this object.
+    @Spy IAuthenticator _authenticator = new LdapAuthenticator(_cfg, new AutoProvisioning());
     private static InMemoryServer _server;
 }
