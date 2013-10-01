@@ -48,24 +48,16 @@ from aerofs_sp.gen import sp_pb2
 DEFAULT_LOGIN = 'aerofstest'
 DEFAULT_PASSWORD = 'temp123'
 DEFAULT_ROOT = '~/syncdet'
-DEFAULT_APPROOT = os.path.join(DEFAULT_ROOT, 'deploy', 'approot')
-DEFAULT_RTROOT = os.path.join(DEFAULT_ROOT, 'user_data', 'rtroot')
-DEFAULT_ANCHOR_PARENT = os.path.join(DEFAULT_ROOT, 'user_data')
-DEFAULT_SP_URL = 'https://transient.syncfs.com:4433/sp'
+DEFAULT_HOST = 'unified.syncfs.com'
 DEFAULT_RSH = 'ssh'
 DEFAULT_USERID_FMT = getpass.getuser() + '+syncdet+{}@aerofs.com'
 
 # CI Server Connection Settings
-CODE_URL = "http://newci.arrowfs.org:8025/get_code"
+CODE_URL = "http://newci.arrowfs.org:21337/get_code"  # this is forwarded to the unified box on newci
 POOL_URL = "http://newci.arrowfs.org:8040"
-CI_SP_URL = "https://newci.arrowfs.org:4433/sp"
+CI_SP_URL = "https://newci.arrowfs.org:4433/sp"  # this is forwarded to the unified box on newci
 CI_SP_VERSION = 20
 JSON_HEADERS = {'Content-type': 'application/json', 'Accept': 'application/json'}
-
-# System-specific details
-# AWS_DETAILS = {'os': 'linux32',
-#                'distro': 'Ubuntu 12.04',
-#                'java': 'OpenJDK 1.6.0_24 IcedTea6 1.11.4'}
 
 S3_DETAILS = {'s3_bucket_id': 'ci-build-agent-nat2.test.aerofs',
               's3_access_key': 'AKIAJMTPOZHMGO7DVEDA',
@@ -117,10 +109,6 @@ def make_user_admin(userid, admin_userid=ADMIN_USERID, admin_pass=ADMIN_PASS, sp
     return userid
 
 
-class BadConfFileException(Exception):
-    pass
-
-
 class ActorPoolServiceException(Exception):
     pass
 
@@ -134,7 +122,7 @@ def get_addresses_from_pool_service(actor_data):
             if os[0] in 'lLwW':
                 d['os'] = os[0].lower()
             else:
-                raise BadConfFileException('"os" must be windows or linux')
+                raise ValueError('"os" must be windows or linux')
         vm = actor.get('vm')
         if vm is not None:
             if vm in [True, 'true', 'True', 'yes', 'Yes']:
@@ -142,7 +130,7 @@ def get_addresses_from_pool_service(actor_data):
             elif vm in [False, 'false', 'False', 'no', 'No']:
                 d['vm'] = False
             else:
-                raise BadConfFileException('"vm" must be true or false')
+                raise ValueError('"vm" must be true or false')
         isolated = actor.get('isolated')
         if isolated is not None:
             if isolated in [True, 'true', 'True', 'yes', 'Yes']:
@@ -150,7 +138,7 @@ def get_addresses_from_pool_service(actor_data):
             elif isolated in [False, 'false', 'False', 'no', 'No']:
                 d['isolated'] = False
             else:
-                raise BadConfFileException('"isolated" must be true or false')
+                raise ValueError('"isolated" must be true or false')
         raw_params.append(d)
     r = requests.get(POOL_URL, data=json.dumps(raw_params), headers=JSON_HEADERS)
     response = r.json()
@@ -166,9 +154,7 @@ def generate_yaml(args, username, actor_data):
     actor_defaults['rsh'] = args.rsh
     actor_defaults['login'] = args.login
     actor_defaults['root'] = args.root
-    actor_defaults['aero_app_root'] = args.approot
-    actor_defaults['aero_rt_root'] = args.rtroot
-    actor_defaults['aero_sp_url'] = args.sp_url
+    actor_defaults['aero_host'] = args.host
     if not args.multiuser:
         assert not isinstance(username, list)
         actor_defaults['aero_userid'] = username
@@ -177,7 +163,7 @@ def generate_yaml(args, username, actor_data):
     # Query actor pool service for addresses
     addresses = get_addresses_from_pool_service(actor_data)
     while addresses is None:
-        sys.stderr.write('Actors weren\'t available. Trying again in 10s...\n')
+        sys.stderr.write("Actors weren't available. Trying again in 10s...\n")
         sleep(10)
         addresses = get_addresses_from_pool_service(actor_data)
 
@@ -196,7 +182,7 @@ def generate_yaml(args, username, actor_data):
                 if teamserver.upper() == 'S3':
                     details.update(S3_DETAILS)
             else:
-                raise BadConfFileException('"teamserver" must be LINKED, LOCAL, or S3')
+                raise ValueError('"teamserver" must be LINKED, LOCAL, or S3')
 
         # actor params
         d = {}
@@ -206,10 +192,6 @@ def generate_yaml(args, username, actor_data):
         android = actor.get('android')
         if android in [True, 'true', 'True', 'yes', 'Yes']:
             d.update(ANDROID_PARAMS)
-        if teamserver is not None:
-            d['aero_root_anchor'] = os.path.join(args.anchor_parent, 'AeroFS Team Server Storage')
-        else:
-            d['aero_root_anchor'] = os.path.join(args.anchor_parent, 'AeroFS')
         if args.multiuser:
             assert isinstance(username, list)
             d['aero_userid'] = username.pop()
@@ -245,12 +227,8 @@ def main():
         help="If flag is specified, each VM will use a separate AeroFS account")
     parser.add_argument('--password', action='store', default=DEFAULT_PASSWORD,
         help="Non-default password to use for AeroFS accounts")
-    parser.add_argument('--approot', default=DEFAULT_APPROOT,
-        help="Location of approot directory")
-    parser.add_argument('--rtroot', default=DEFAULT_RTROOT,
-        help="Location of rtroot directory")
-    parser.add_argument('--sp-url', default=DEFAULT_SP_URL,
-        help="URL of sp server")
+    parser.add_argument('--host', default=DEFAULT_HOST,
+        help="Hostname of Private Deployment image")
     parser.add_argument('--rsh', default=DEFAULT_RSH,
         help="Default is SSH")
     parser.add_argument('--login', default=DEFAULT_LOGIN,
@@ -259,8 +237,6 @@ def main():
         help="Default is ~/syncdet")
     parser.add_argument('--userid', default=None,
         help="AeroFS userid")
-    parser.add_argument('--anchor-parent', default=DEFAULT_ANCHOR_PARENT,
-        help="Location of the root anchor's parent")
     args = parser.parse_args()
 
     # Parse the conf file to get actor IP's
