@@ -5,13 +5,8 @@
 package com.aerofs.daemon.transport.netty;
 
 import com.aerofs.base.C;
-import com.aerofs.base.id.DID;
-import com.aerofs.base.id.UserID;
 import com.aerofs.base.net.MagicHeader.ReadMagicHeaderHandler;
 import com.aerofs.base.net.MagicHeader.WriteMagicHeaderHandler;
-import com.aerofs.base.ssl.CNameVerificationHandler;
-import com.aerofs.base.ssl.CNameVerificationHandler.CNameListener;
-import com.aerofs.base.ssl.SSLEngineFactory;
 import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.daemon.transport.lib.TransportStats;
 import com.aerofs.daemon.transport.netty.handlers.DiagnosticsHandler;
@@ -20,12 +15,9 @@ import com.aerofs.lib.LibParam;
 import com.aerofs.rocklog.RockLog;
 import org.jboss.netty.handler.codec.frame.LengthFieldBasedFrameDecoder;
 import org.jboss.netty.handler.codec.frame.LengthFieldPrepender;
-import org.jboss.netty.handler.ssl.SslHandler;
 import org.jboss.netty.util.Timer;
 
-import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.security.GeneralSecurityException;
 
 import static com.google.common.base.Preconditions.checkState;
 
@@ -46,23 +38,6 @@ public class BootstrapFactoryUtil
             // represented using LENGTH_FIELD_SIZE bytes
             checkState(FrameParams.MAX_MESSAGE_SIZE < Math.pow(256, FrameParams.LENGTH_FIELD_SIZE));
         }
-    }
-
-    public static CNameVerificationHandler newCNameVerificationHandler(CNameListener listener,
-            UserID localuser, DID localdid)
-    {
-        CNameVerificationHandler cnameHandler = new CNameVerificationHandler(localuser, localdid);
-        cnameHandler.setListener(listener);
-        return cnameHandler;
-    }
-
-    public static SslHandler newSslHandler(SSLEngineFactory sslEngineFactory)
-            throws IOException, GeneralSecurityException
-    {
-        SslHandler sslHandler = new SslHandler(sslEngineFactory.getSSLEngine());
-        sslHandler.setCloseOnSSLException(true);
-        sslHandler.setEnableRenegotiation(false);
-        return sslHandler;
     }
 
     public static LengthFieldPrepender newLengthFieldPrepender()
