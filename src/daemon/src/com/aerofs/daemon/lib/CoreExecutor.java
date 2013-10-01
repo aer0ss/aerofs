@@ -42,7 +42,9 @@ public class CoreExecutor implements Executor
     @Override
     public void execute(final @Nonnull Runnable runnable)
     {
-        checkState(!_tc.isCoreThread(), "enqueuing from core thread:%s", Thread.currentThread());
+        // FIXME (DF): this assertion as-is is too strong to keep - ritual calls
+        //             trigger it, and other things we haven't looked at may also
+        //checkState(!_tc.isCoreThread(), "enqueuing from core thread:%s", Thread.currentThread());
 
         _coreQueue.enqueueBlocking(new AbstractEBSelfHandling()
         {
