@@ -23,7 +23,6 @@ public class CompJingle extends AbstractCompTransport
 
     protected StatusDecorator   _decStatus;
     protected StatusDecorator   _decXmpp;
-    protected StatusDecorator   _decStun;
     protected DevicesDecorator  _decDevices;
 
     public CompJingle(Composite parent)
@@ -38,17 +37,14 @@ public class CompJingle extends AbstractCompTransport
 
         _decStatus = new StatusDecorator(content);
         _decStatus.setText("Status:");
+        _decStatus.setStatus(S.TXT_COLLECTING_NETWORK_INFO);
         _decStatus.setDescription(S.LNK_JINGLE_DESC);
         _decStatus.addSelectionListener(GUIUtil.createUrlLaunchListenerr(S.URL_TRANSPORTS_INFO));
 
         _decXmpp = new StatusDecorator(content);
-        _decXmpp.setText("Presence Server:");
+        _decXmpp.setText("Presence Service:");
+        _decXmpp.setStatus(S.TXT_COLLECTING_NETWORK_INFO);
         _decXmpp.setDescription(S.LBL_XMPP_DESC);
-
-        _decStun = new StatusDecorator(content);
-        _decStun.setText("STUN Server:");
-        _decStun.setDescription(S.LNK_STUN_DESC);
-        _decStun.addSelectionListener(GUIUtil.createUrlLaunchListenerr(S.URL_STUN_INFO));
 
         _decDevices = new DevicesDecorator(content);
 
@@ -71,7 +67,6 @@ public class CompJingle extends AbstractCompTransport
 
             _decStatus.setStatus("Enabled");
             _decXmpp.setStatus(formatServerStatus(d.getXmppServer()));
-            _decStun.setStatus(formatAddress(d.getStunServer().getServerAddress(), true));
 
             String[] deviceIDs = new String[d.getReachableDevicesCount()];
             for (int i = 0; i < deviceIDs.length; i++) {

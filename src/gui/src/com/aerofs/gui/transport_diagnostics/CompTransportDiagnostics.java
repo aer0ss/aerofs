@@ -24,7 +24,7 @@ public class CompTransportDiagnostics extends SashForm
         _compTransports = createCompTransports(this);
         _compDetail = new CompDetail(this);
 
-        setWeights(new int[]{1, 3});
+        setWeights(new int[]{3, 7});
         setSashWidth(8);
 
         _compTransports.addSelectionChangedListener(_compDetail);
@@ -44,8 +44,8 @@ public class CompTransportDiagnostics extends SashForm
 
     /**
      * N.B. this is a workaround for platform-specific group margin non-sense
-
-     * unfortunately, the best we can do is to add margins to compTransports in an attempt to line
+     *
+     * The best we can do is to add margins to compTransports in an attempt to line
      * it up with a group.
      */
     protected CompTransports createCompTransports(Composite parent)

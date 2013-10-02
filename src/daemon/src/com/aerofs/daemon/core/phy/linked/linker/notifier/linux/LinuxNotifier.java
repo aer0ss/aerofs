@@ -207,8 +207,7 @@ public class LinuxNotifier implements INotifier, INotifyListener
                 if (e.getErrorCode() == JNotifyException.ERROR_WATCH_LIMIT_REACHED) {
                     l.error("inotify watches have been exhauseted. AeroFS needs more than the " +
                             "maximum number of inotify watches allowed for this user to sync all " +
-                            "of your folders.  See" +
-                            "http://support.aerofs.com/entries/23863617-Some-of-my-files-did-not-sync- " +
+                            "of your folders. See http://support.aerofs.com/entries/23863617 " +
                             "for more information.");
                     return -1;
                 }

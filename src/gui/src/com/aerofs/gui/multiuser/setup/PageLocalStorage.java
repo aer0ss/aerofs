@@ -66,8 +66,7 @@ public class PageLocalStorage extends AbstractSetupPage
     private Button      _btnInstall;
     private Button      _btnBack;
 
-    static final String STORAGE_OPTIONS_URL =
-            "https://support.aerofs.com/entries/23690567-Choose-between-local-storage-compressed-storage-and-S3-storage-on-Team-Server";
+    static final String STORAGE_OPTIONS_URL = "https://support.aerofs.com/entries/23690567";
 
     public PageLocalStorage(Composite parent)
     {

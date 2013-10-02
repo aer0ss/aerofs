@@ -7,6 +7,7 @@ package com.aerofs.gui.transport_diagnostics;
 import com.aerofs.base.id.DID;
 import com.aerofs.gui.GUIParam;
 import com.aerofs.gui.GUIUtil;
+import com.aerofs.labeling.L;
 import com.aerofs.lib.S;
 import com.aerofs.proto.Diagnostics.TCPDevice;
 import com.aerofs.proto.Diagnostics.TCPDiagnostics;
@@ -59,6 +60,7 @@ public class CompTCP extends AbstractCompTransport
 
         _lblStatus = new Label(composite, SWT.WRAP);
         _lblStatus.setFont(GUIUtil.makeBold(_lblStatus.getFont()));
+        _lblStatus.setText(S.TXT_COLLECTING_NETWORK_INFO);
 
         Link lnkDesc = new Link(composite, SWT.NONE);
         lnkDesc.setText(S.LNK_TCP_DESC);
@@ -112,7 +114,7 @@ public class CompTCP extends AbstractCompTransport
         if (data != null) {
             TCPDiagnostics d = (TCPDiagnostics) data;
 
-            _lblStatus.setText(S.TXT_TCP_ADDRESS_PREFIX
+            _lblStatus.setText(L.product() + " is listening on IP Address "
                     + formatAddress(d.getListeningAddress(), false));
             _tblDevices.setData(d.getReachableDevicesList());
         }

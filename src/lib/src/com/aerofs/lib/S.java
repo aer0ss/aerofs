@@ -127,27 +127,25 @@ public class S
                     "These computers discover each other using IP multicast, and then they " +
                     "establish peer-to-peer connections to coordinate and sync. " +
                     "<a>Learn more</a>",
-            TXT_TCP_ADDRESS_PREFIX   = "Listening on IP Address ",
             LNK_JINGLE_DESC          = "The computers on the WAN network sync files over peer-" +
                     "to-peer connections. These computers discover each other using a common " +
                     "presence server, and then they establish peer-to-peer connection to " +
                     "coordinate and sync. <a>Learn more</a>",
             LBL_XMPP_DESC            = "The presence server allows computers to find each other.",
-            LNK_STUN_DESC            = "The STUN server allows computers to find each other's " +
-                    "public IP and establish connection. <a>Learn more</a>",
             LNK_ZEPHYR_DESC          = "The computers on the Relay network sync files via an " +
                     "intermediate server acting as a relay. These computers discover each " +
                     "other using a common presence server, and then they communicate over a " +
-                    "relay to coordinate and sync. <a>Learn more</a>",
+                    "relay to coordinate and sync. <a>Learn more</a>\n\n" +
+                    "The data is encrypted end-to-end, and the relay can't decipher the data. ",
             LBL_ZEPHYR_SERVER_DESC   = "The relay fowards messages from one computer to another.",
             LBL_REACHABLE_DEVICES    = "Reachable Computers:",
-            LBL_COL_DEVICE_ID        = "Device ID",
+            LBL_COL_DEVICE_ID        = "Computer ID",
             LBL_COL_ADDRESS          = "IP Address",
-            LNK_FIND_DEVICE_ID       = "<a>How to find my Device ID?</a>",
+            TXT_COLLECTING_NETWORK_INFO = "Collecting network information.",
+            LNK_FIND_DEVICE_ID       = "<a>How to find my Computer ID?</a>",
 
-            URL_TRANSPORTS_INFO      = "https://aerofs.zendesk.com/entries/25283676-How-does-AeroFS-sync-",
-            URL_DEVICE_ID_INFO       = "https://support.aerofs.com/entries/25283646-Find-my-device-ID-",
-            URL_STUN_INFO            = "http://en.wikipedia.org/wiki/STUN",
+            URL_TRANSPORTS_INFO      = "https://support.aerofs.com/entries/25433817",
+            URL_DEVICE_ID_INFO       = "https://support.aerofs.com/entries/25449638",
 
             // preferences dialog
             FILE_OPEN_FAIL = "The file couldn't be opened.",

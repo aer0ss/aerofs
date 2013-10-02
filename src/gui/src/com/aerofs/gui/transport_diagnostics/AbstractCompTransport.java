@@ -6,6 +6,7 @@ package com.aerofs.gui.transport_diagnostics;
 
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.gui.Images;
+import com.aerofs.lib.LibParam.EnterpriseConfig;
 import com.aerofs.lib.S;
 import com.aerofs.proto.Diagnostics.PBInetSocketAddress;
 import com.aerofs.proto.Diagnostics.ServerStatus;
@@ -77,10 +78,9 @@ public abstract class AbstractCompTransport extends Composite
                 .append(address.getHost());
 
         if (includeResolvedHost) {
-            output.append('(')
+            output.append('/')
                     .append(address.hasResolvedHost() ? address.getResolvedHost()
-                            : "cannot be resolved")
-                    .append(')');
+                            : "cannot be resolved");
         }
 
         output.append(':').append(address.getPort());
@@ -92,12 +92,17 @@ public abstract class AbstractCompTransport extends Composite
     {
         Preconditions.checkArgument(status.hasReachable());
 
-        return new StringBuilder()
-                .append(formatAddress(status.getServerAddress(), true))
-                .append(" (")
-                .append(status.getReachable() ? "connected" : "disconnected")
-                .append(")")
-                .toString();
+        // only show server status details in private deployment
+        if (EnterpriseConfig.IS_ENTERPRISE_DEPLOYMENT) {
+            return new StringBuilder()
+                    .append(formatAddress(status.getServerAddress(), true))
+                    .append(" (")
+                    .append(status.getReachable() ? "connected" : "disconnected")
+                    .append(")")
+                    .toString();
+        } else {
+            return status.getReachable() ? "Connected" : "Disconnected";
+        }
     }
 
     /**
@@ -169,6 +174,7 @@ public abstract class AbstractCompTransport extends Composite
 
             _lnkDevices = new Link(parent, SWT.NONE);
             _lnkDevices.setText(S.LNK_FIND_DEVICE_ID);
+            _lnkDevices.addSelectionListener(GUIUtil.createUrlLaunchListenerr(S.URL_DEVICE_ID_INFO));
 
             _lblDevices.setLayoutData(new GridData(SWT.RIGHT, SWT.TOP, false, false, 1, 2));
             _lstDevices.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));

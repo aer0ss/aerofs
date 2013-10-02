@@ -27,20 +27,13 @@ public class CompTransports extends Composite
 {
     protected TableViewer _tableViewer;
 
-    /**
-     * N.B. this map maintains _two_ pieces of information: whether a particular transport is
-     *   enabled _and_ how many reachable devices there are on a particular transport.
-     *
-     * A transport is enabled _iff_ the map contains that transport as a key, and if a transport
-     *   is disabled, the map _must not_ contain the corresponding key.
-     */
-    protected Map<Transport, Integer> _deviceCount;
+    private TransportInfoProvider _provider;
 
     public CompTransports(Composite parent)
     {
         super(parent, SWT.NONE);
 
-        _deviceCount = Maps.newEnumMap(Transport.class);
+        _provider = new TransportInfoProvider();
 
         _tableViewer = new TableViewer(this, SWT.BORDER);
         _tableViewer.setContentProvider(new ArrayContentProvider());
@@ -50,7 +43,7 @@ public class CompTransports extends Composite
         table.setLinesVisible(false);
 
         TableViewerColumn colInfo = new TableViewerColumn(_tableViewer, SWT.NONE);
-        colInfo.setLabelProvider(new TransportInfoProvider(_deviceCount));
+        colInfo.setLabelProvider(_provider);
 
         _tableViewer.setInput(Transport.values());
         _tableViewer.setSelection(new StructuredSelection(Transport.TCP));
@@ -72,33 +65,7 @@ public class CompTransports extends Composite
 
         super.setData(data);
 
-        if (data == null) {
-            _deviceCount.clear();
-        } else {
-            GetTransportDiagnosticsReply reply = (GetTransportDiagnosticsReply) data;
-
-            if (reply.hasTcpDiagnostics()) {
-                _deviceCount.put(Transport.TCP,
-                        reply.getTcpDiagnostics().getReachableDevicesCount());
-            } else {
-                _deviceCount.remove(Transport.TCP);
-            }
-
-            if (reply.hasJingleDiagnostics()) {
-                _deviceCount.put(Transport.JINGLE,
-                        reply.getJingleDiagnostics().getReachableDevicesCount());
-            } else {
-                _deviceCount.remove(Transport.JINGLE);
-            }
-
-            if (reply.hasZephyrDiagnostics()) {
-                _deviceCount.put(Transport.ZEPHYR,
-                        reply.getZephyrDiagnostics().getReachableDevicesCount());
-            } else {
-                _deviceCount.remove(Transport.ZEPHYR);
-            }
-        }
-
+        _provider.setData((GetTransportDiagnosticsReply) data);
         _tableViewer.refresh();
     }
 
@@ -120,10 +87,52 @@ public class CompTransports extends Composite
 
     protected static class TransportInfoProvider extends ColumnLabelProvider
     {
+        /**
+         * This map is used for _three_ pieces of information:
+         * 1. If the map is null, then it means that we have not received any transport
+         *   diagnostics yet.
+         * 2. For each transport, if the entry corresponding to the transport is present, then the
+         *   value is the number of reachable devices on that particular transport.
+         * 3. For each transport, if the entry corresponding to the transport is absent, then it
+         *   means that the transport is disabled.
+         */
         protected Map<Transport, Integer> _deviceCounts;
 
-        public TransportInfoProvider(Map<Transport, Integer> deviceCounts) {
-            _deviceCounts = deviceCounts;
+        public TransportInfoProvider()
+        {
+
+        }
+
+        public void setData(GetTransportDiagnosticsReply reply)
+        {
+            if (_deviceCounts == null) {
+                _deviceCounts = Maps.newEnumMap(Transport.class);
+            }
+
+            if (reply == null) {
+                _deviceCounts.clear();
+            } else {
+                if (reply.hasTcpDiagnostics()) {
+                    _deviceCounts.put(Transport.TCP,
+                            reply.getTcpDiagnostics().getReachableDevicesCount());
+                } else {
+                    _deviceCounts.remove(Transport.TCP);
+                }
+
+                if (reply.hasJingleDiagnostics()) {
+                    _deviceCounts.put(Transport.JINGLE,
+                            reply.getJingleDiagnostics().getReachableDevicesCount());
+                } else {
+                    _deviceCounts.remove(Transport.JINGLE);
+                }
+
+                if (reply.hasZephyrDiagnostics()) {
+                    _deviceCounts.put(Transport.ZEPHYR,
+                            reply.getZephyrDiagnostics().getReachableDevicesCount());
+                } else {
+                    _deviceCounts.remove(Transport.ZEPHYR);
+                }
+            }
         }
 
         @Override
@@ -144,7 +153,9 @@ public class CompTransports extends Composite
             StringBuilder builder = new StringBuilder()
                     .append(transport._label).append(" (");
 
-            if (_deviceCounts.containsKey(transport)) {
+            if (_deviceCounts == null) {
+                builder.append("collecting information...");
+            } else if (_deviceCounts.containsKey(transport)) {
                 int count = _deviceCounts.get(transport);
                 builder.append(count).append(" other computer");
                 if (count != 1) builder.append('s');

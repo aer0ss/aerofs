@@ -55,23 +55,12 @@ public class DlgTransportDiagnostics extends AeroFSDialog
 
     protected void refreshData()
     {
-        new RefreshTask(GUI.get(), _contents, UIGlobals.ritualClientProvider()).start();
+        new RefreshTask(GUI.get(), _contents, UIGlobals.ritualClientProvider()).run();
     }
 
     protected Composite createButtonsBar(Composite parent)
     {
         Composite buttonsBar = GUIUtil.newButtonContainer(parent, false);
-
-        Button btnClose = GUIUtil.createButton(buttonsBar, SWT.PUSH);
-        btnClose.setText(IDialogConstants.CLOSE_LABEL);
-        btnClose.addSelectionListener(new SelectionAdapter()
-        {
-            @Override
-            public void widgetSelected(SelectionEvent e)
-            {
-                closeDialog();
-            }
-        });
 
         Button btnRefresh = GUIUtil.createButton(buttonsBar, SWT.PUSH);
         btnRefresh.setText("Refresh");
@@ -81,6 +70,17 @@ public class DlgTransportDiagnostics extends AeroFSDialog
             public void widgetSelected(SelectionEvent e)
             {
                 refreshData();
+            }
+        });
+
+        Button btnClose = GUIUtil.createButton(buttonsBar, SWT.PUSH);
+        btnClose.setText(IDialogConstants.CLOSE_LABEL);
+        btnClose.addSelectionListener(new SelectionAdapter()
+        {
+            @Override
+            public void widgetSelected(SelectionEvent e)
+            {
+                closeDialog();
             }
         });
 
@@ -108,7 +108,7 @@ public class DlgTransportDiagnostics extends AeroFSDialog
             _provider = provider;
         }
 
-        public void start()
+        public void run()
         {
             Futures.addCallback(_provider.getNonBlockingClient().getTransportDiagnostics(), this);
         }
