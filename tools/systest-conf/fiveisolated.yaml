@@ -1,6 +1,0 @@
-actors:
-  - address: ci-ubuntu-a.local
-  - address: ci-ubuntu-b.local
-  - address: ci-ubuntu-c.local
-  - address: ci-ubuntu-d.local
-  - address: 192.168.154.97

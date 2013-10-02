@@ -14,31 +14,47 @@ RPC methods can be called.  For example
 
 import socket
 import time
+import errno
 import connection
-from lib import convert
-from lib import param
+from lib import convert, param
+from lib.app.cfg import get_cfg
 from aerofs_common import exception
-from lib import app
 from gen import common_pb2, ritual_pb2
 from gen.common_pb2 import PBException, PBSubjectRolePair
 
-def connect(rpc_host_addr = 'localhost', rpc_host_port = None):
-    if rpc_host_port is None: rpc_host_port = app.cfg.ritual_port()
-    ritual_service = ritual_pb2.RitualServiceRpcStub(
-            connection.SyncConnectionService(rpc_host_addr, rpc_host_port))
+
+# This will try to connect once, and throw an exception if it fails
+def _connect(rpc_host_addr=None, rpc_host_port=None):
+    rpc_host_addr = rpc_host_addr or 'localhost'
+    rpc_host_port = rpc_host_port or get_cfg().ritual_port()
+    conn = connection.SyncConnectionService(rpc_host_addr, rpc_host_port)
+    ritual_service = ritual_pb2.RitualServiceRpcStub(conn)
     return _RitualServiceWrapper(ritual_service)
 
-def wait():
+
+# This will try to connect over and over until it succeeds
+def connect(rpc_host_addr=None, rpc_host_port=None):
     while True:
         try:
-            connect()
-            break
+            return _connect(rpc_host_addr, rpc_host_port)
         except socket.error:
             time.sleep(param.POLLING_INTERVAL)
 
+
 def wait_for_heartbeat(max_attempts=50):
     r = connect()
-    r.wait_for_heartbeat(max_attempts)
+    try:
+        r.wait_for_heartbeat(max_attempts)
+    except IOError as e:
+        if e.errno == errno.EPIPE:
+            # Catch broken pipe and try a new connection at most once
+            print 'wait_for_heartbeat() caught a broken pipe. Trying once more...'
+            time.sleep(1)
+            r = connect()
+            r.wait_for_heartbeat()
+        else:
+            raise e
+
 
 class _RitualServiceWrapper(object):
     """

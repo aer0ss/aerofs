@@ -52,6 +52,8 @@ DEFAULT_HOST = 'unified.syncfs.com'
 DEFAULT_RSH = 'ssh'
 DEFAULT_USERID_FMT = getpass.getuser() + '+syncdet+{}@aerofs.com'
 
+ARCHIVE_DIR = '~/archive'
+
 # CI Server Connection Settings
 CODE_URL = "http://newci.arrowfs.org:21337/get_code"  # this is forwarded to the unified box on newci
 POOL_URL = "http://newci.arrowfs.org:8040"
@@ -155,6 +157,7 @@ def generate_yaml(args, username, actor_data):
     actor_defaults['login'] = args.login
     actor_defaults['root'] = args.root
     actor_defaults['aero_host'] = args.host
+    actor_defaults['archive_dir'] = ARCHIVE_DIR
     if not args.multiuser:
         assert not isinstance(username, list)
         actor_defaults['aero_userid'] = username

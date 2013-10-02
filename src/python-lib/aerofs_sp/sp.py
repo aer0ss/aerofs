@@ -13,7 +13,8 @@ from lib.app import cfg
 from syncdet.case import local_actor
 
 def connect():
-    sp_url = local_actor().aero_sp_url
+    aero_host = local_actor().aero_host
+    sp_url = 'https://{}:4433/sp'.format(aero_host)
     sp_proto_version = param.SP_PROTO_VERSION
     conn = SyncConnectionService(sp_url, sp_proto_version)
     sp_service = sp_pb2.SPServiceRpcStub(conn)
@@ -24,7 +25,8 @@ class _SPServiceWrapper(object):
         self._service = rpc_service
 
     def sign_in(self, actor=None):
-        if actor is None: actor = local_actor()
+        if actor is None:
+            actor = local_actor()
         user_id = actor.aero_userid
         password = actor.aero_password
         scrypted_password = scrypt(password, user_id)

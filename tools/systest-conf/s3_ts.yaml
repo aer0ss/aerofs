@@ -1,5 +1,0 @@
-actors:
-  - address: ci-ubuntu-f.local
-    TS:
-      storage_type: 'S3'
-  - address: ci-ubuntu-g.local
