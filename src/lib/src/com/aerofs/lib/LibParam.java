@@ -232,6 +232,7 @@ public class LibParam extends BaseParam
 
     /**
      * Parameters for identity management - signin and authentication.
+     * TODO: convert members to non-static
      */
     public static class Identity
     {
@@ -334,6 +335,30 @@ public class LibParam extends BaseParam
         /** URL of the Identity service */
         public static final String                      IDENTITY_URL =
                 getStringProperty(                      "openid.service.url", "");
+
+        /**
+         * A short, user-visible name for the OpenID service. This will be displayed
+         * to end-users in the form "Sign in with " + SERVICE_IDENTIFIER.
+         */
+        public static final String                      SERVICE_IDENTIFIER =
+                getStringProperty(                      "openid.service.identifier", "OpenID");
+
+        /**
+         * A short phrase that will guide internal users to sign in with the configured
+         * OpenID service.
+         */
+        public static final String                      SERVICE_INTERNAL_HINT =
+                getStringProperty(                      "openid.service.internal.hint",
+                                                        "Have an " + SERVICE_IDENTIFIER
+                                                                + " account?");
+
+        /**
+         * A short phrase that will guide external users to sign in with a local credential.
+         */
+        public static final String                      SERVICE_EXTERNAL_HINT =
+                getStringProperty(                      "openid.service.external.hint",
+                                                        "No " + SERVICE_IDENTIFIER
+                                                                + " account?");
 
         /** The security realm for which we are requesting authorization */
         public static final String                      IDENTITY_REALM =

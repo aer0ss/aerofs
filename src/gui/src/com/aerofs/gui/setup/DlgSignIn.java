@@ -7,9 +7,12 @@ package com.aerofs.gui.setup;
 import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExBadCredential;
+import com.aerofs.base.ex.ExInternalError;
+import com.aerofs.base.ex.ExTimeout;
 import com.aerofs.controller.InstallActor;
 import com.aerofs.controller.SetupModel;
-import com.aerofs.controller.SignInActor;
+import com.aerofs.controller.SignInActor.CredentialActor;
+import com.aerofs.controller.SignInActor.OpenIdGUIActor;
 import com.aerofs.gui.AeroFSTitleAreaDialog;
 import com.aerofs.gui.CompSpin;
 import com.aerofs.gui.GUI;
@@ -18,6 +21,9 @@ import com.aerofs.gui.GUIUtil;
 import com.aerofs.gui.Images;
 import com.aerofs.gui.singleuser.SingleuserDlgSetupAdvanced;
 import com.aerofs.labeling.L;
+import com.aerofs.lib.LibParam.Identity;
+import com.aerofs.lib.LibParam.Identity.Authenticator;
+import com.aerofs.lib.LibParam.OpenId;
 import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExNoConsole;
@@ -41,6 +47,7 @@ import org.eclipse.swt.events.VerifyEvent;
 import org.eclipse.swt.events.VerifyListener;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
+import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Event;
@@ -54,15 +61,17 @@ import org.slf4j.Logger;
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.net.ConnectException;
+import java.util.LinkedList;
+import java.util.List;
 
 import static org.eclipse.jface.dialogs.IDialogConstants.CANCEL_ID;
 import static org.eclipse.jface.dialogs.IDialogConstants.CANCEL_LABEL;
 import static org.eclipse.jface.dialogs.IDialogConstants.DETAILS_ID;
 import static org.eclipse.jface.dialogs.IDialogConstants.OK_ID;
 
-public class DlgCredentialSignIn extends AeroFSTitleAreaDialog
+public class DlgSignIn extends AeroFSTitleAreaDialog
 {
-    public DlgCredentialSignIn(Shell parentShell) throws Exception
+    public DlgSignIn(Shell parentShell) throws Exception
     {
         super(null, parentShell, false, shouldAlwaysOnTop(), false);
 
@@ -70,11 +79,11 @@ public class DlgCredentialSignIn extends AeroFSTitleAreaDialog
 
         setTitleImage(Images.get(Images.IMG_SETUP));
 
-        _model = new SetupModel()
-                .setSignInActor(new SignInActor.CredentialActor())
-                .setInstallActor(new InstallActor.SingleUser());
+        _model = new SetupModel();
         _model._localOptions._rootAnchorPath = defaults.getRootAnchor();
+        _model.setInstallActor(new InstallActor.SingleUser());
         _model.setDeviceName(defaults.getDeviceName());
+        _showOpenIdDialog = (Identity.AUTHENTICATOR == Authenticator.OPENID);
     }
 
     @Override
@@ -98,52 +107,108 @@ public class DlgCredentialSignIn extends AeroFSTitleAreaDialog
             }
         });
     }
+
     /**
-     * Create contents of the dialog
+     * Create the outermost dialog area (containing composites for the credential
+     * login piece and optionally the OpenId signin button).
      */
     @Override
     protected Control createDialogArea(Composite parent)
     {
-        Control area = super.createDialogArea(parent);
-        Composite container = createContainer(area, 2);
-
-        // row 1
-
-        createUserIDInputLabelAndText(container);
-
-        // row 2
-
-        createPasswordLabelAndText(container);
-
-        // row 3
-
-        new Label(container, SWT.NONE);
-        new Label(container, SWT.NONE);
-
-        // row 4
-
-        createBottomComposite(container);
-
-        // done with rows
+        Control     area = super.createDialogArea(parent);
+        Composite   areaComposite = (Composite)area;
+        areaComposite.setLayout(new GridLayout());
 
         setTitle("Setup " + L.product());
 
-        _txtUserID.setFocus();
+        if (_showOpenIdDialog) {
+            createOpenIdComposite(areaComposite);
 
-        container.setTabList(new Control[]{_txtUserID, _txtPasswd});
+            new Label(areaComposite, SWT.HORIZONTAL | SWT.SEPARATOR)
+                    .setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        }
+
+        createCredentialComposite(areaComposite);
+
+        if (_defaultControl == null) { _defaultControl = _txtUserID; }
+        _defaultControl.setFocus();
 
         return area;
     }
 
-    private Composite createContainer(Control dialogArea, int columns)
+    /**
+     * Create a composite with a label and a sign-in button.
+     * Add the composite and a horizontal separator to the container.
+     */
+    private void createOpenIdComposite(Composite dialogContainer)
+    {
+        Composite composite = createContainer(dialogContainer, 1);
+        composite.setLayoutData(new GridData(GridData.FILL_BOTH));
+
+        new Label(composite, SWT.WRAP)
+                .setText(OpenId.SERVICE_INTERNAL_HINT);
+
+        Button signInButton = GUIUtil.createButton(composite, SWT.PUSH);
+        signInButton.setText("Sign in with " + OpenId.SERVICE_IDENTIFIER);
+        signInButton.setLayoutData(new GridData(GridData.FILL_BOTH));
+
+        signInButton.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e)
+            {
+                super.widgetSelected(e);
+
+                _inProgress = true;
+                _model.setSignInActor(new OpenIdGUIActor());
+                setControlState(false);
+                setInProgressStatus();
+
+                GUI.get().safeWork(getShell(), new SignInWorker());
+            }
+        });
+
+        _controls.add(signInButton);
+        _defaultControl = signInButton;
+    }
+
+    private Composite createCredentialComposite(Composite dialogContainer)
+    {
+        Composite credentialBlock = createContainer(dialogContainer, 2);
+
+        // row 1 (only exists if this is a hybrid OpenId/Credential screen)
+
+        if (_showOpenIdDialog) {
+            Label credIntro = new Label(credentialBlock, SWT.NONE);
+            credIntro.setText(OpenId.SERVICE_EXTERNAL_HINT);
+            credIntro.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, true, false, 2, 1));
+        }
+
+        createUserIDInputLabelAndText(credentialBlock);
+
+        // row 2
+
+        createPasswordLabelAndText(credentialBlock);
+
+        // row 3
+
+        createBottomComposite(credentialBlock);
+
+        credentialBlock.setTabList(new Control[]{_txtUserID, _txtPasswd});
+
+        return credentialBlock;
+    }
+
+    // purely procedural, create a standard composite with a grid layout
+    private static Composite createContainer(Control dialogArea, int columns)
     {
         final Composite container = new Composite((Composite) dialogArea, SWT.NONE);
         final GridLayout gridLayout = new GridLayout();
-        gridLayout.marginTop = 35;
+        gridLayout.marginTop = 5;
         gridLayout.marginBottom = 5;
         gridLayout.marginRight = 38;
         gridLayout.marginLeft = 45;
         gridLayout.horizontalSpacing = 10;
+
         gridLayout.numColumns = columns;
         container.setLayout(gridLayout);
         container.setLayoutData(new GridData(GridData.FILL_BOTH));
@@ -203,9 +268,9 @@ public class DlgCredentialSignIn extends AeroFSTitleAreaDialog
     @Override
     protected void createButtonsForButtonBar(Composite parent)
     {
-        createButton(parent, OK_ID, "Finish", true);
         createButton(parent, CANCEL_ID, CANCEL_LABEL, false);
-        createButton(parent, DETAILS_ID, S.BTN_ADVANCED, false);
+        _controls.add(createButton(parent, DETAILS_ID, S.BTN_ADVANCED, false));
+        _controls.add(createButton(parent, OK_ID, "Finish", true));
 
         getButton(OK_ID).setEnabled(false);
         getButton(DETAILS_ID).addSelectionListener(new SelectionAdapter()
@@ -240,11 +305,11 @@ public class DlgCredentialSignIn extends AeroFSTitleAreaDialog
                 verify(GUIUtil.getNewText(_txtUserID.getText(), ev));
             }
         });
+        _controls.add(_txtUserID);
     }
 
     private void createPasswordLabelAndText(Composite container)
     {
-
         final Label lblPass = new Label(container, SWT.NONE);
         lblPass.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false, 1, 1));
         lblPass.setText(S.SETUP_PASSWD + ":");
@@ -252,8 +317,7 @@ public class DlgCredentialSignIn extends AeroFSTitleAreaDialog
         // N.B. because MacOSX can't handle password fields' verify events
         // correctly, we have to use ModifyListeners
         _txtPasswd = new Text(container, SWT.BORDER | SWT.PASSWORD);
-        _txtPasswd.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true,
-                false, 1, 1));
+        _txtPasswd.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 1, 1));
         _txtPasswd.addModifyListener(new ModifyListener()
         {
             @Override
@@ -262,59 +326,51 @@ public class DlgCredentialSignIn extends AeroFSTitleAreaDialog
                 verify(null);
             }
         });
+        _controls.add(_txtPasswd);
     }
 
     // TODO (WW) use ModifyListener instead of VerifyListener throughout the codebase.
+    // FIXME: not clear why the email string is sometimes passed in (instead of using _txtUserId)
+
+    /**
+     * Turn on the "Ok" button and set the okay status if isReady() is true.
+     * If the email param is not provided, _txtUserID is checked.
+     */
     private void verify(@Nullable String email)
     {
-        boolean ready = isReady(email);
-
-        getButton(OK_ID).setEnabled(ready);
-
-        setOkayStatus();
+        getButton(OK_ID).setEnabled(isReady(email));
+        clearInProgressStatus();
     }
 
+    /**
+     * Returns true if the email address looks like it might be email,
+     * AND the password is non-empty.
+     * If the email param is not provided, _txtUserID is checked.
+     */
     private boolean isReady(@Nullable String email)
     {
-        if (email == null) email = _txtUserID.getText();
-        String passwd = _txtPasswd.getText();
-        email = email.trim();
+        String trimmed = ((email == null) ? _txtUserID.getText() : email)
+                .trim();
 
-        boolean ready = true;
-
-        if (email.isEmpty()) {
-            ready = false;
-        } else if (!Util.isValidEmailAddress(email)) {
-            ready = false;
-        } else if (passwd.isEmpty()) {
-            ready = false;
-        }
-
-        return ready;
+        if (trimmed.isEmpty() || _txtPasswd.getText().isEmpty()) {
+            return false;
+        } else return Util.isValidEmailAddress(trimmed);
     }
 
     private void setInProgressStatus()
     {
         _compSpin.start();
-        setStatusImpl("", S.SETUP_INSTALL_MESSAGE);
-
+        setStatusImpl(S.SETUP_INSTALL_MESSAGE);
     }
 
-    private void setOkayStatus()
+    private void clearInProgressStatus()
     {
         _compSpin.stop();
-        setStatusImpl("", "");
+        setStatusImpl("");
     }
 
-    private void setErrorStatus(String error)
+    private void setStatusImpl(String status)
     {
-        _compSpin.stop();
-        setStatusImpl(error, "");
-    }
-
-    private void setStatusImpl(String error, String status)
-    {
-        if (!error.isEmpty()) GUI.get().show(getShell(), MessageType.ERROR, error);
         // the following code is becuase the parent component has
         // horizontalSpace == 0 so the icon can be perfectly aligned
         if (!status.isEmpty()) status = status + " ";
@@ -345,77 +401,72 @@ public class DlgCredentialSignIn extends AeroFSTitleAreaDialog
     protected void buttonPressed(int buttonId)
     {
         if (buttonId == IDialogConstants.OK_ID) {
-            work();
+            _inProgress = true;
+
+            _model.setUserID(_txtUserID.getText().trim());
+            _model.setPassword(_txtPasswd.getText());
+            _model.setSignInActor(new CredentialActor());
+
+            setControlState(false);
+            setInProgressStatus();
+
+            GUI.get().safeWork(getShell(), new SignInWorker());
+
         } else {
             super.buttonPressed(buttonId);
         }
     }
 
-    private void work()
+    class SignInWorker implements ISWTWorker
     {
-        _inProgress = true;
-
-        _model.setUserID(_txtUserID.getText().trim());
-        _model.setPassword(_txtPasswd.getText());
-
-        setControlState(false);
-
-        setInProgressStatus();
-
-        GUI.get().safeWork(_txtUserID, new ISWTWorker()
+        @Override
+        public void run() throws Exception
         {
-            @Override
-            public void run()
-                    throws Exception
-            {
-                setup();
-            }
+            _model.doSignIn();
+            _model.doInstall();
 
-            @Override
-            public void error(Exception e)
-            {
-                l.error("Setup error", e);
-                String msg = null;
-                if (e instanceof ConnectException) {
-                    msg = "Sorry, couldn't connect to the server. Please try again later.";
-                } else if (e instanceof ExUIMessage) {
-                    msg = e.getMessage();
-                } else if (e instanceof ExBadCredential) {
-                    msg = S.BAD_CREDENTIAL_CAP + ".";
-                }
+            setupShellExtension();
+        }
+        @Override
+        public void error(Exception e)
+        {
+            l.error("Setup error", e);
+            ErrorMessages.show(getShell(), e, formatExceptionMessage(e));
+            clearInProgressStatus();
 
-                // TODO: Catch ExAlreadyExist and ExNoPerm here, and ask the user if he wants us to
-                // move the anchor root. See CLISetup.java.
+            _inProgress = false;
 
-                if (msg == null) msg = "Sorry, " + ErrorMessages.e2msgNoBracketDeprecated(e) + '.';
-                setErrorStatus(msg);
+            getButton(OK_ID).setText("Try Again");
+            setControlState(true);
+        }
 
-                _inProgress = false;
+        @Override
+        public void okay()
+        {
+            _okay = true;
+            close();
+        }
 
-                getButton(OK_ID).setText("Try Again");
-                setControlState(true);
-            }
-
-            @Override
-            public void okay()
-            {
-                _okay = true;
-                close();
-            }
-        });
-    }
+        // FIXME: if IdentityServlet threw an error return S.OPENID_AUTH_TIMEOUT;
+        // (need to not throw ExBadCredential)
+        protected String formatExceptionMessage(Exception e)
+        {
+            if (e instanceof ConnectException) return S.SETUP_ERR_CONN;
+            else if (e instanceof ExBadCredential) return S.BAD_CREDENTIAL_CAP + ".";
+            else if (e instanceof ExUIMessage) return e.getMessage();
+            else if (e instanceof ExTimeout) return S.OPENID_AUTH_TIMEOUT;
+            else if (e instanceof ExInternalError) return S.SERVER_INTERNAL_ERROR;
+            else return S.SETUP_DEFAULT_SIGNIN_ERROR;
+        }
+    };
 
     private void setControlState(boolean enabled)
     {
-        getButton(OK_ID).setEnabled(enabled);
-        getButton(CANCEL_ID).setEnabled(enabled);
-        getButton(DETAILS_ID).setEnabled(enabled);
+        for (Control c : _controls) { c.setEnabled(enabled); }
 
-        _txtUserID.setEnabled(enabled);
-        _txtPasswd.setEnabled(enabled);
+        getButton(OK_ID).setEnabled(enabled && isReady(_txtUserID.getText()));
 
-        if (!enabled) _layoutStack.topControl = _compBlank;
-        else _layoutStack.topControl = _compForgotPassword;
+        _layoutStack.topControl = enabled ? _compForgotPassword : _compBlank;
         _compStack.layout();
     }
 
@@ -423,17 +474,6 @@ public class DlgCredentialSignIn extends AeroFSTitleAreaDialog
     public boolean isCancelled()
     {
         return !_okay;
-    }
-
-    /**
-     * This method is called in a non-GUI thread
-     */
-    private void setup() throws Exception
-    {
-        _model.doSignIn();
-        _model.doInstall();
-
-        setupShellExtension();
     }
 
     private void setupShellExtension() throws ExNoConsole
@@ -467,7 +507,12 @@ public class DlgCredentialSignIn extends AeroFSTitleAreaDialog
                 _model.getDeviceName(), _model._localOptions._rootAnchorPath);
     }
 
-    protected static final Logger l = Loggers.getLogger(DlgCredentialSignIn.class);
+    protected static final Logger l = Loggers.getLogger(DlgSignIn.class);
+
+    // controls that should be enabled/disabled with setControlState:
+    List<Control>   _controls = new LinkedList<Control>();
+    private boolean _showOpenIdDialog = true;//FIX THIS
+    Control         _defaultControl;
 
     private CompSpin _compSpin;
     private Composite _compForgotPassword;
