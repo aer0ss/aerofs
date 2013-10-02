@@ -242,8 +242,8 @@ public class GCCSendContent
         checkState(prefixLen >= 0);
 
         final OutgoingStream outgoing = _oss.newStream(ep, tk);
-        final FileChunker chunker = new FileChunker(pf, len, prefixLen, _m.getMaxUnicastSize_(),
-                OSUtil.isWindows());
+        final FileChunker chunker = new FileChunker(pf, mtime, len, prefixLen,
+                _m.getMaxUnicastSize_(), OSUtil.isWindows());
 
         Object ongoing = _ongoing.start(k);
         try {
@@ -277,15 +277,7 @@ public class GCCSendContent
                     timer.restart();
                 }
 
-                // Any local change to the file should cause a version bump of which we are
-                // notified asynchronously and cheaply. However, to avoid race conditions
-                // and potential corruptions when prefixes from one peer are reused with
-                // another peer we still need to explicitly check for changes to the physical
-                // file before sending each chunk
-                // NB: this would become redundant if
-                //  * we used content hash to avoid corruption
-                //  * deletion caused an update to the CONTENT tick
-                if (_ongoing.isAborted(k, ongoing) || pf.wasModifiedSince(mtime, len)) {
+                if (_ongoing.isAborted(k, ongoing)) {
                     throw new ExUpdateInProgress(k + " updated");
                 }
 

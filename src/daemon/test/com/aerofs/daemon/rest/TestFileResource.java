@@ -107,7 +107,6 @@ public class TestFileResource extends AbstractRestTest
         .expect()
                 .statusCode(200)
                 .contentType("application/octet-stream")
-                .header("Content-Length", String.valueOf(FILE_CONTENT.length))
                 .header("Etag", String.format("\"%s\"", BaseUtil.hexEncode(VERSION_HASH)))
         .when().get(RESOURCE + "/content", object("f1").toStringFormal())
                 .body().asByteArray();
@@ -138,7 +137,6 @@ public class TestFileResource extends AbstractRestTest
         .expect()
                 .statusCode(200)
                 .contentType("application/octet-stream")
-                .header("Content-Length", String.valueOf(FILE_CONTENT.length))
                 .header("Etag", String.format("\"%s\"", BaseUtil.hexEncode(VERSION_HASH)))
         .when().get(RESOURCE + "/content", object("f1").toStringFormal())
                 .body().asByteArray();
@@ -156,7 +154,6 @@ public class TestFileResource extends AbstractRestTest
         .expect()
                 .statusCode(200)
                 .contentType("application/octet-stream")
-                .header("Content-Length", String.valueOf(FILE_CONTENT.length))
                 .header("Etag", String.format("\"%s\"", BaseUtil.hexEncode(VERSION_HASH)))
         .when().get(RESOURCE + "/content", object("f1").toStringFormal())
                 .body().asByteArray();
@@ -175,7 +172,6 @@ public class TestFileResource extends AbstractRestTest
         .expect()
                 .statusCode(206)
                 .contentType("application/octet-stream")
-                .header("Content-Length", "2")
                 .header("Content-Range", "bytes 0-1/" + FILE_CONTENT.length)
                 .header("Etag", String.format("\"%s\"", BaseUtil.hexEncode(VERSION_HASH)))
         .when().get(RESOURCE + "/content", object("f1").toStringFormal())
@@ -195,7 +191,6 @@ public class TestFileResource extends AbstractRestTest
         .expect()
                 .statusCode(200)
                 .contentType("application/octet-stream")
-                .header("Content-Length", String.valueOf(FILE_CONTENT.length))
                 .header("Etag", String.format("\"%s\"", BaseUtil.hexEncode(VERSION_HASH)))
         .when().get(RESOURCE + "/content", object("f1").toStringFormal())
                 .body().asByteArray();
@@ -216,7 +211,6 @@ public class TestFileResource extends AbstractRestTest
         .expect()
                 .statusCode(200)
                 .contentType("application/octet-stream")
-                .header("Content-Length", String.valueOf(FILE_CONTENT.length))
                 .header("Etag", String.format("\"%s\"", BaseUtil.hexEncode(VERSION_HASH)))
         .when().get(RESOURCE + "/content", object("f1").toStringFormal())
                 .body().asByteArray();
@@ -235,7 +229,6 @@ public class TestFileResource extends AbstractRestTest
         .expect()
                 .statusCode(200)
                 .contentType("application/octet-stream")
-                .header("Content-Length", String.valueOf(FILE_CONTENT.length))
                 .header("Etag", String.format("\"%s\"", BaseUtil.hexEncode(VERSION_HASH)))
         .when().get(RESOURCE + "/content", object("f1").toStringFormal())
                 .body().asByteArray();
@@ -269,7 +262,6 @@ public class TestFileResource extends AbstractRestTest
                 .contentType("application/octet-stream")
                 .header("Content-Range", "bytes 0-" + String.valueOf(FILE_CONTENT.length - 1)
                         + "/" + String.valueOf(FILE_CONTENT.length))
-                .header("Content-Length", String.valueOf(FILE_CONTENT.length))
                 .header("Etag", String.format("\"%s\"", BaseUtil.hexEncode(VERSION_HASH)))
         .when().get(RESOURCE + "/content", object("f1").toStringFormal())
                 .body().asByteArray();

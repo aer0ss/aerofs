@@ -8,13 +8,16 @@ import com.sun.jersey.core.header.InBoundHeaders;
 import com.sun.jersey.spi.container.ContainerRequest;
 import com.sun.jersey.spi.container.WebApplication;
 import org.jboss.netty.buffer.ChannelBufferInputStream;
+import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ExceptionEvent;
 import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
+import org.jboss.netty.handler.codec.http.HttpHeaders;
 import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.slf4j.Logger;
 
+import javax.ws.rs.WebApplicationException;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -46,7 +49,29 @@ public class JerseyHandler extends SimpleChannelUpstreamHandler
                 request.getMethod().getName(), _baseURI, requestUri, getHeaders(request),
                 new ChannelBufferInputStream(request.getContent()));
 
-        _application.handleRequest(cRequest, new JerseyResponseWriter(me.getChannel()));
+        Channel inbound = me.getChannel();
+        boolean keepAlive = HttpHeaders.isKeepAlive(request);
+        try {
+            // suspend processing of incoming messages to ensure responses are sent back in order
+            // (HTTP pipelining). JerseyResponseWriter is responsible for re-enabling reads
+            inbound.setReadable(false);
+
+            _application.handleRequest(cRequest, new JerseyResponseWriter(inbound, keepAlive));
+        } catch (WebApplicationException e) {
+            // When a WebApplicationException (or really any exception whatsoever) is thrown
+            // after the response is committed (i.e. the first byte has been written on a Netty
+            // channel), it is no longer possible to send an error response because HTTP does not
+            // have any mecanism to say 'wait, I cannot actually service this request'
+            //
+            // This case is most likely to occur when a large download is interrupted because,
+            // the underlying file changed.
+            //
+            // In any case, the only correct way to treat such an exception is to forcefully close
+            // the connection which the client which the client will interpret as an unspecified
+            // error.
+            l.warn("exception after response committed", e.getMessage());
+            inbound.close();
+        }
     }
 
     @Override

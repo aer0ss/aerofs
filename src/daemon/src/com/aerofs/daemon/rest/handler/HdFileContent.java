@@ -6,9 +6,10 @@ import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.ds.CA;
 import com.aerofs.daemon.core.ds.OA;
-import com.aerofs.daemon.core.phy.IPhysicalFile;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.daemon.rest.event.EIFileContent;
+import com.aerofs.daemon.rest.stream.MultipartStream;
+import com.aerofs.daemon.rest.stream.SimpleStream;
 import com.aerofs.daemon.rest.util.AccessChecker;
 import com.aerofs.daemon.rest.util.HttpStatus;
 import com.aerofs.daemon.rest.util.Ranges;
@@ -17,23 +18,15 @@ import com.aerofs.lib.id.SOID;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Range;
 import com.google.common.collect.RangeSet;
-import com.google.common.io.ByteStreams;
 import com.google.common.net.HttpHeaders;
 import com.google.inject.Inject;
 import com.sun.jersey.core.header.MatchingEntityTag;
 
 import javax.annotation.Nullable;
-import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.EntityTag;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
-import javax.ws.rs.core.Response.Status;
-import javax.ws.rs.core.StreamingOutput;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
 import java.sql.SQLException;
 import java.util.Date;
 import java.util.Set;
@@ -50,6 +43,12 @@ public class HdFileContent extends AbstractHdIMC<EIFileContent>
         _nvc = nvc;
     }
 
+    /**
+     * Build Http response for file content requests
+     *
+     * see RFC2616 for more details on conditional
+      and partial content requests
+     */
     @Override
     protected void handleThrows_(EIFileContent ev, Prio prio) throws ExNotFound, SQLException
     {
@@ -58,48 +57,59 @@ public class HdFileContent extends AbstractHdIMC<EIFileContent>
 
         final CA ca = oa.caMasterThrows();
         final EntityTag etag = etag(oa.soid());
-        final long length = ca.length();
-        final long mtime = ca.mtime();
-        final IPhysicalFile pf = ca.physicalFile();
 
-        long skip = 0, span = length;
-        ResponseBuilder bd = Response.ok().tag(etag).lastModified(new Date(mtime));
-
+        // conditional request: 304 Not Modified on ETAG match
         if (ev._ifNoneMatch != null && match(ev._ifNoneMatch, etag)) {
             ev.setResult_(Response.notModified(etag));
             return;
         }
 
-        RangeSet<Long> ranges = parseRanges(ev._rangeset, ev._ifRange, etag, length);
-        if (ranges != null) {
-            if (ranges.isEmpty()) {
-                ev.setResult_(Response.status(HttpStatus.UNSATISFIABLE_RANGE)
-                        .header(HttpHeaders.CONTENT_RANGE, "bytes */" + length));
-                return;
-            }
+        // build range list for partial request, honoring If-Range header
+        RangeSet<Long> ranges = parseRanges(ev._rangeset, ev._ifRange, etag, ca.length());
 
-            Set<Range<Long>> parts = ranges.asRanges();
-            if (parts.size() == 1) {
-                Range<Long> range = Iterables.getFirst(parts, null);
-                skip = range.lowerEndpoint();
-                long last = range.upperEndpoint() - 1;
-                span = last - skip + 1;
+        // base response template
+        ResponseBuilder bd = Response.ok().tag(etag).lastModified(new Date(ca.mtime()));
 
-                bd.status(HttpStatus.PARTIAL_CONTENT)
-                        .header(HttpHeaders.CONTENT_RANGE, "bytes " + skip + "-" + last + "/" + length);
-            } else {
-                ev.setResult_(bd.status(HttpStatus.PARTIAL_CONTENT)
-                        .type("multipart/byteranges; boundary=" + MultiPartUploader.BOUNDARY)
-                        .entity(new MultiPartUploader(pf, length, mtime, parts)));
-                return;
-            }
-        } else {
-            bd.header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + oa.name() + "\"");
+        ev.setResult_(ranges != null
+                ? partialContent(bd, ca, ranges)
+                : fullContent(bd, oa.name(), ca));
+    }
+
+    private ResponseBuilder fullContent(ResponseBuilder ok, String name, CA ca)
+    {
+        return ok
+                .type(MediaType.APPLICATION_OCTET_STREAM_TYPE)
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + name + "\"")
+                .entity(new SimpleStream(ca, 0, ca.length()));
+    }
+
+    private ResponseBuilder partialContent(ResponseBuilder ok, CA ca, RangeSet<Long> ranges)
+    {
+        // if rangeset is empty, the request is not satisfiable
+        if (ranges.isEmpty()) {
+            return Response.status(HttpStatus.UNSATISFIABLE_RANGE)
+                    .header(HttpHeaders.CONTENT_RANGE, "bytes */" + ca.length());
         }
 
-        ev.setResult_(bd.type(MediaType.APPLICATION_OCTET_STREAM_TYPE)
-                .header(HttpHeaders.CONTENT_LENGTH, span)
-                .entity(new SimpleUploader(pf, length, mtime, skip, span)));
+        Set<Range<Long>> parts = ranges.asRanges();
+        if (parts.size() == 1) {
+            // single range in the response -> 206 Partial Content w/ raw data body
+            Range<Long> range = Iterables.getFirst(parts, null);
+            long skip = range.lowerEndpoint();
+            long last = range.upperEndpoint() - 1;
+            long span = last - skip + 1;
+
+            return ok.status(HttpStatus.PARTIAL_CONTENT)
+                    .header(HttpHeaders.CONTENT_RANGE,
+                            "bytes " + skip + "-" + last + "/" + ca.length())
+                    .entity(new SimpleStream(ca, skip, span));
+        } else {
+            // multiple ranges -> multipart response
+            MultipartStream stream = new MultipartStream(ca, parts);
+            return ok.status(HttpStatus.PARTIAL_CONTENT)
+                    .type("multipart/byteranges; boundary=" + stream._boundary)
+                    .entity(stream);
+        }
     }
 
     private static boolean match(Set<? extends EntityTag> matching, EntityTag etag)
@@ -128,88 +138,5 @@ public class HdFileContent extends AbstractHdIMC<EIFileContent>
     private EntityTag etag(SOID soid) throws SQLException
     {
         return new EntityTag(BaseUtil.hexEncode(_nvc.getVersionHash_(soid)));
-    }
-
-    private static class MultiPartUploader implements StreamingOutput
-    {
-        // TODO: use pseudo-random boundary separator?
-        private static final String BOUNDARY = "xxxRANGE-BOUNDARYxxx";
-
-        private final IPhysicalFile _pf;
-        private final long _length;
-        private final long _mtime;
-        private final Set<Range<Long>> _parts;
-
-        MultiPartUploader(IPhysicalFile pf, long length, long mtime, Set<Range<Long>> parts)
-        {
-            _pf = pf;
-            _length = length;
-            _mtime = mtime;
-            _parts = parts;
-        }
-
-        @Override
-        public void write(OutputStream out) throws IOException, WebApplicationException
-        {
-            OutputStreamWriter w = new OutputStreamWriter(out);
-
-            for (Range<Long> part : _parts) {
-                long skip = part.lowerEndpoint();
-                long last = part.upperEndpoint() - 1;
-                long span = last - skip + 1;
-
-                w.write("\r\n--" + BOUNDARY + "\r\n");
-                w.write(HttpHeaders.CONTENT_TYPE + ": " + MediaType.APPLICATION_OCTET_STREAM + "\r\n");
-                w.write(HttpHeaders.CONTENT_RANGE + ": bytes " + skip + "-" + last + "/" + _length + " \r\n\r\n");
-                w.flush();
-
-                InputStream in = _pf.newInputStream_();
-                in.skip(skip);
-
-                // TODO: manual copy to check for changes before actually writing data on the wire
-                // TODO: base64 encoding to ensure the boundary delim cannot occur in the body?
-                ByteStreams.copy(ByteStreams.limit(in, span), out);
-
-                if (_pf.wasModifiedSince(_mtime, _length)) {
-                    // TODO: figure out the impact on the client...
-                    throw new WebApplicationException(Status.CONFLICT);
-                }
-            }
-
-            w.write("\r\n--" + BOUNDARY + "--\r\n");
-            w.flush();
-        }
-    }
-
-    private static class SimpleUploader implements StreamingOutput
-    {
-        private final IPhysicalFile _pf;
-        private final long _length;
-        private final long _mtime;
-        private final long _start;
-        private final long _span;
-
-        SimpleUploader(IPhysicalFile pf, long length, long mtime, long start, long span)
-        {
-            _pf = pf;
-            _length = length;
-            _mtime = mtime;
-            _start = start;
-            _span = span;
-        }
-
-        @Override
-        public void write(OutputStream outputStream) throws IOException, WebApplicationException
-        {
-            // TODO: manual copy to check for changes before actually writing data on the wire
-            // ideally code should be shared w/ GCCSendContent
-            InputStream in = _pf.newInputStream_();
-            in.skip(_start);
-            ByteStreams.copy(ByteStreams.limit(in, _span), outputStream);
-            if (_pf.wasModifiedSince(_mtime, _length)) {
-                // TODO: figure out the impact on the client...
-                throw new WebApplicationException(Status.CONFLICT);
-            }
-        }
     }
 }

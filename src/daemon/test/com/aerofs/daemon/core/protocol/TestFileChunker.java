@@ -9,6 +9,7 @@ import com.aerofs.daemon.core.ex.ExUpdateInProgress;
 import com.aerofs.daemon.core.phy.IPhysicalFile;
 import com.aerofs.testlib.AbstractTest;
 import org.junit.Test;
+import org.junit.internal.ArrayComparisonFailure;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
@@ -21,6 +22,8 @@ import static com.google.common.base.Preconditions.checkState;
 import static java.lang.Math.ceil;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
+import static org.mockito.Matchers.anyLong;
 import static org.mockito.Mockito.when;
 
 public class TestFileChunker extends AbstractTest
@@ -67,7 +70,7 @@ public class TestFileChunker extends AbstractTest
         }
     }
 
-    @Test(expected = Throwable.class)
+    @Test(expected = ExUpdateInProgress.class)
     public void shouldFailIfPrefixLargerThanFile() throws IOException, ExUpdateInProgress
     {
         doTest(100, 101, 10);
@@ -77,7 +80,7 @@ public class TestFileChunker extends AbstractTest
     public void shouldFailIfFileShorterThanExpected() throws IOException, ExUpdateInProgress
     {
         ChunkChecker checker = new ChunkChecker(200, 0); // 200 bytes file
-        FileChunker chunker = new FileChunker(checker.getFile(), 201, 0, 1, true); // try to read 201 bytes
+        FileChunker chunker = new FileChunker(checker.getFile(), 0xdead, 201, 0, 1, true); // try to read 201 bytes
 
         byte[] chunk;
         while ((chunk = chunker.getNextChunk_()) != null) {
@@ -85,19 +88,35 @@ public class TestFileChunker extends AbstractTest
         }
     }
 
-    @Test (expected = Throwable.class)
+    @Test
+    public void shouldFailIfMtimechanged() throws IOException, ExUpdateInProgress
+    {
+        ChunkChecker checker = new ChunkChecker(200, 0); // 200 bytes file
+        FileChunker chunker = new FileChunker(checker.getFile(), 0xdead, 200, 0, 1, false); // try to read 200 bytes
+
+        byte[] chunk = chunker.getNextChunk_();
+        checker.checkChunk(chunk);
+        when(checker.file.wasModifiedSince(anyLong(), anyLong())).thenReturn(true);
+        try {
+            chunker.getNextChunk_();
+            fail();
+        } catch (ExUpdateInProgress e) {}
+    }
+
+    @Test
     public void shouldFailIfChunksDontMatch() throws IOException, ExUpdateInProgress
     {
         ChunkChecker checker = new ChunkChecker(200, 0); // 0-byte prefix
-        FileChunker chunker = new FileChunker(checker.getFile(), 200, 1, 10, true); // 1 byte prefix
+        FileChunker chunker = new FileChunker(checker.getFile(), 0xdead, 200, 1, 10, true); // 1 byte prefix
 
         // Therefore, since the chunker is reading at a different offset than the checker, the test
         // should fail.
 
-        byte[] chunk;
-        while ((chunk = chunker.getNextChunk_()) != null) {
+        byte[] chunk = chunker.getNextChunk_();
+        try {
             checker.checkChunk(chunk);
-        }
+            fail();
+        } catch (ArrayComparisonFailure e) {}
     }
 
     //
@@ -108,7 +127,9 @@ public class TestFileChunker extends AbstractTest
             throws IOException, ExUpdateInProgress
     {
         ChunkChecker checker = new ChunkChecker(fileLength, prefixLength);
-        FileChunker chunker = new FileChunker(checker.getFile(), fileLength, prefixLength, chunkSize, true);
+        FileChunker chunker = new FileChunker(checker.getFile(), 0xdead,
+                Math.max(fileLength, prefixLength), // expected file size MUST be >= prefix
+                prefixLength, chunkSize, true);
 
         byte[] chunk;
         while ((chunk = chunker.getNextChunk_()) != null) {

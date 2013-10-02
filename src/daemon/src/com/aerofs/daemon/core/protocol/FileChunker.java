@@ -18,13 +18,16 @@ import static com.google.common.base.Preconditions.checkState;
  * Simple helper class that reads a IPhysicalFile into chunks, while taking into account some
  * platform specificities.
  */
-class FileChunker
+public class FileChunker
 {
     static final int QUEUE_SIZE_WINDOWS = 128; // See comment below
 
     private final IPhysicalFile _file;
-    private final int _chunkSize;
+    private final long _mtime;
     private final long _fileLength;
+
+    private final int _chunkSize;
+    private final long _endPos;
     private long _readPosition;
     private InputStream _is;
     private boolean _isWindows;
@@ -51,13 +54,23 @@ class FileChunker
      * @param isWindows  Whether we are on the Windows platform. We do not use OSUtil to make this
      *                   class testable.
      */
-    FileChunker(IPhysicalFile file, long fileLength, long startPos, int chunkSize, boolean isWindows)
+    public FileChunker(IPhysicalFile file, long mtime, long fileLength,
+            long startPos, int chunkSize, boolean isWindows)
     {
-        checkState(startPos <= fileLength);
+        this(file, mtime, fileLength, startPos, fileLength, chunkSize, isWindows);
+    }
+
+    public FileChunker(IPhysicalFile file, long mtime, long fileLength,
+            long startPos, long endPos, int chunkSize, boolean isWindows)
+    {
+        checkState(startPos <= endPos);
+        checkState(endPos <= fileLength);
 
         _file = file;
+        _mtime = mtime;
         _fileLength = fileLength;
         _readPosition = startPos;
+        _endPos = endPos;
         _chunkSize = chunkSize;
         _queueSize = isWindows ? QUEUE_SIZE_WINDOWS : 1;
         _isWindows = isWindows;
@@ -92,16 +105,22 @@ class FileChunker
 
         // Fill the queue with chunks
         for (int i = 0; i < _queueSize; i++) {
-            if (_readPosition == _fileLength) break;
-            checkState(_readPosition < _fileLength);
+            if (_readPosition == _endPos) break;
+            checkState(_readPosition < _endPos);
 
-            byte[] buf = new byte[(int)Math.min(_chunkSize, _fileLength - _readPosition)];
+            byte[] buf = new byte[(int)Math.min(_chunkSize, _endPos - _readPosition)];
             int bytesCopied = readChunk(buf, _is);
             if (bytesCopied != buf.length) {
                 throw new ExUpdateInProgress("unexpected end of stream");
             }
             _chunksQueue.add(buf);
             _readPosition += buf.length;
+        }
+
+        // To avoid race conditions and potential corruptions we need to explicitly check
+        // for changes to the physical file before loaded chunks can be used
+        if (_file.wasModifiedSince(_mtime, _fileLength)) {
+            throw new ExUpdateInProgress("mtime and/or length changed");
         }
 
         // On Windows, a FileInputStream holds a shared read lock and a delete lock on the file,

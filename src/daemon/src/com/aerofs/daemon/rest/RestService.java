@@ -22,6 +22,7 @@ import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.channel.Channels;
 import org.jboss.netty.handler.codec.http.HttpServerCodec;
+import org.jboss.netty.handler.stream.ChunkedWriteHandler;
 import org.slf4j.bridge.SLF4JBridgeHandler;
 
 import java.util.Map;
@@ -98,6 +99,7 @@ public class RestService extends AbstractNettyServer
                 return Channels.pipeline(
                         BootstrapFactoryUtil.newSslHandler(_serverSslEngineFactory),
                         new HttpServerCodec(),
+                        new ChunkedWriteHandler(),
                         new JerseyHandler(_application));
             }
         };
