@@ -1,6 +1,7 @@
 package com.aerofs.daemon.rest;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.base.config.ConfigurationProperties;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.daemon.core.CoreEventDispatcher;
@@ -40,6 +41,7 @@ import java.sql.SQLException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Collections;
+import java.util.Properties;
 import java.util.TimeZone;
 
 import static org.junit.Assert.assertNotNull;
@@ -134,13 +136,14 @@ public class AbstractRestTest extends AbstractTest
             }
         }).when(imce).execute_(any(IEvent.class), any(Prio.class));
 
-        // start REST service (port 0 means: select any available port...)
-        RestService.BASE_URI = "https://localhost:0/";
+        Properties prop = new Properties();
+        prop.setProperty("rest.port", "0");
+        ConfigurationProperties.setProperties(prop);
+
+        // start REST service
         service = new RestService(inj, kmgr);
         RestAssured.baseURI = "https://localhost";
         RestAssured.port = service.start();
-
-        l.info("REST service listening on port {}", RestAssured.port);
     }
 
     @After

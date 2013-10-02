@@ -24,28 +24,29 @@ public class JerseyHandler extends SimpleChannelUpstreamHandler
     private static final Logger l = Loggers.getLogger(JerseyHandler.class);
 
     private final WebApplication _application;
-    private final URI _baseURI;
 
-    public JerseyHandler(final WebApplication application, URI baseURI)
+    // NB: for some reason Jersey's ContainerRequest requires a base URI to be provided
+    // in all cases although we absolutely don't need it for any reason whatsoever...
+    private final URI _baseURI = URI.create("https://dummy/");
+
+    public JerseyHandler(final WebApplication application)
     {
         _application = application;
-        _baseURI = baseURI;
     }
 
     @Override
-    public void messageReceived(final ChannelHandlerContext context,
-            final MessageEvent messageEvent)
+    public void messageReceived(final ChannelHandlerContext context, final MessageEvent me)
             throws URISyntaxException, IOException
     {
-        HttpRequest request = (HttpRequest) messageEvent.getMessage();
-
+        // TODO: support chunked requests (for PUT/POST)
+        HttpRequest request = (HttpRequest) me.getMessage();
         URI requestUri = URI.create(_baseURI + request.getUri().substring(1));
 
         ContainerRequest cRequest = new ContainerRequest(_application,
                 request.getMethod().getName(), _baseURI, requestUri, getHeaders(request),
                 new ChannelBufferInputStream(request.getContent()));
 
-        _application.handleRequest(cRequest, new JerseyResponseWriter(messageEvent.getChannel()));
+        _application.handleRequest(cRequest, new JerseyResponseWriter(me.getChannel()));
     }
 
     @Override
