@@ -4,18 +4,13 @@
 
 package com.aerofs.daemon.lib;
 
-import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.CoreQueue;
-import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.event.Prio;
-import org.slf4j.Logger;
 
 import javax.annotation.Nonnull;
 import javax.inject.Inject;
 import java.util.concurrent.Executor;
-
-import static com.google.common.base.Preconditions.checkState;
 
 /**
  * Instances of this class executes runnables as IMC events on the core thread. When execute() is
@@ -27,15 +22,11 @@ import static com.google.common.base.Preconditions.checkState;
  */
 public class CoreExecutor implements Executor
 {
-    private static final Logger l = Loggers.getLogger(CoreExecutor.class);
-
-    private final TC _tc;
     private final CoreQueue _coreQueue;
 
     @Inject
-    public CoreExecutor(TC tc, CoreQueue coreQueue)
+    public CoreExecutor(CoreQueue coreQueue)
     {
-        _tc = tc;
         _coreQueue = coreQueue;
     }
 
