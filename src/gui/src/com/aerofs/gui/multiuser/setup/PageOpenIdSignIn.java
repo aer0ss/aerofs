@@ -4,6 +4,8 @@
 
 package com.aerofs.gui.multiuser.setup;
 
+import com.aerofs.base.ex.ExBadCredential;
+import com.aerofs.base.ex.ExTimeout;
 import com.aerofs.controller.SetupModel;
 import com.aerofs.gui.GUIParam;
 import com.aerofs.labeling.L;
@@ -106,5 +108,13 @@ public class PageOpenIdSignIn extends AbstractSignInPage
         super.setControlState(enabled);
         _btnQuit.setEnabled(true);
         _txtDeviceName.setEnabled(enabled);
+    }
+
+    @Override
+    protected String formatSignInException(Exception e)
+    {
+        if (e instanceof ExBadCredential) return S.OPENID_AUTH_BAD_CRED;
+        else if (e instanceof ExTimeout) return  S.OPENID_AUTH_TIMEOUT;
+        else return super.formatSignInException(e);
     }
 }

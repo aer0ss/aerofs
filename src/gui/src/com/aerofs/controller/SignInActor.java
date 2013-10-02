@@ -2,7 +2,7 @@ package com.aerofs.controller;
 
 import com.aerofs.base.C;
 import com.aerofs.base.ElapsedTimer;
-import com.aerofs.base.ex.ExBadCredential;
+import com.aerofs.base.ex.ExTimeout;
 import com.aerofs.cli.CLI;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.lib.LibParam.Identity;
@@ -124,7 +124,7 @@ public abstract class SignInActor
                 _model.setClient(_spclient);
                 return;
             }
-            throw new ExBadCredential("Timed out waiting for authentication.");
+            throw new ExTimeout("Timed out waiting for authentication.");
         }
 
         // Return a URL of the form  https://transient/openid/oa?token=ab33f

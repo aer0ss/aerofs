@@ -5,7 +5,7 @@
 package com.aerofs.gui.multiuser.setup;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.base.ex.ExBadCredential;
+import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.controller.SetupModel;
 import com.aerofs.gui.CompSpin;
 import com.aerofs.gui.GUI;
@@ -15,9 +15,9 @@ import com.aerofs.gui.GUIUtil;
 import com.aerofs.gui.Images;
 import com.aerofs.lib.S;
 import com.aerofs.lib.ex.ExUIMessage;
-import com.aerofs.ui.error.ErrorMessages;
 import com.aerofs.ui.S3DataEncryptionPasswordVerifier;
 import com.aerofs.ui.S3DataEncryptionPasswordVerifier.PasswordVerifierResult;
+import com.aerofs.ui.error.ErrorMessages;
 import com.google.common.base.Objects;
 import com.swtdesigner.SWTResourceManager;
 import org.eclipse.swt.SWT;
@@ -410,9 +410,9 @@ public class PageS3Storage extends AbstractSetupPage
             private String formatException(Exception e)
             {
                 if (e instanceof ConnectException) return S.SETUP_ERR_CONN;
+                else if (e instanceof ExNoPerm) return S.SETUP_NOT_ADMIN;
                 else if (e instanceof ExUIMessage) return e.getMessage();
-                else if (e instanceof ExBadCredential) return S.BAD_CREDENTIAL_CAP + '.';
-                else return "Sorry, " + ErrorMessages.e2msgNoBracketDeprecated(e) + '.';
+                else return S.SETUP_DEFAULT_INSTALL_ERROR;
             }
         });
     }

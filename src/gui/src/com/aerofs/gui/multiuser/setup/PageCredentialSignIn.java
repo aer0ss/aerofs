@@ -5,6 +5,7 @@
 package com.aerofs.gui.multiuser.setup;
 
 import com.aerofs.base.BaseParam.WWW;
+import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.controller.SetupModel;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.lib.S;
@@ -140,5 +141,12 @@ public class PageCredentialSignIn extends AbstractSignInPage
 
         return !userID.isEmpty() && Util.isValidEmailAddress(userID)
                 && !passwd.isEmpty() && !deviceName.isEmpty();
+    }
+
+    @Override
+    protected String formatSignInException(Exception e)
+    {
+        if (e instanceof ExBadCredential) return S.BAD_CREDENTIAL_CAP;
+        else return super.formatSignInException(e);
     }
 }

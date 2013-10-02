@@ -71,6 +71,9 @@ public class S
             S3_ENCRYPTION_PASSWORD   = "S3 data encryption passphrase",
             SETUP_S3_ENCRYPTION_PASSWORD = "Create an " + S3_ENCRYPTION_PASSWORD +
                 " (used to encrypt your data before sending to S3)",
+            SETUP_NOT_ADMIN          = "This account is not an administrator account for the " +
+                    "organization. Only administrator accounts can be used to install a team " +
+                    "server.",
 
             RAW_LOCATION_CHANGE      = "Folder Location Was Changed",
 
@@ -80,12 +83,18 @@ public class S
 
             OPENID_SETUP_MESSAGE     = "To complete " + L.product() + " setup, please sign in " +
                     "your OpenID Provider",
-            OPENID_AUTH_TIMEOUT      = "AeroFS has timed out while waiting to hear from your " +
-                    "OpenID Provider.",
+            OPENID_AUTH_BAD_CRED     = L.product() + " didn't receive a valid authorization from " +
+                    "your OpenID Provider.",
+            OPENID_AUTH_TIMEOUT      = L.product() + " has timed out while waiting to hear from " +
+                    "your OpenID Provider.",
             OPENID_AUTH_MESSAGE      = "Waiting for your OpenID Provider...",
 
-            SERVER_INTERNAL_ERROR    = "Sorry, the AeroFS servers have encountered an error while" +
-                    " processing your request. Please contact AeroFS support or try again later.",
+            SERVER_INTERNAL_ERROR    = "Sorry, the " + L.brand() + " servers have encountered " +
+                    "an error while processing your request.",
+
+            SETUP_DEFAULT_SIGNIN_ERROR = "Sorry, " + L.product() + " has failed to sign in.",
+            SETUP_DEFAULT_INSTALL_ERROR = "Sorry, " + L.product() + " has failed to install.",
+
             // transfers dialog
 
             // N.B. LBL_UNKNOWN_USER & LBL_UNKNOWN_DEVICE should include
