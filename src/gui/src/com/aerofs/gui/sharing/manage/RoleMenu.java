@@ -32,7 +32,7 @@ public class RoleMenu
         if (showUpdateACLMenuItems) {
             if (srp._role != Role.OWNER) {
                 MenuItem miOwner = new MenuItem(_menu, SWT.PUSH);
-                miOwner.setText("Owner");
+                miOwner.setText("Set as Owner");
                 miOwner.addSelectionListener(new SelectionAdapter() {
                     @Override
                     public void widgetSelected(SelectionEvent e)
@@ -44,7 +44,7 @@ public class RoleMenu
 
             if (srp._role != Role.EDITOR) {
                 MenuItem miEditor = new MenuItem(_menu, SWT.PUSH);
-                miEditor.setText("Editor");
+                miEditor.setText("Set as Editor");
                 miEditor.addSelectionListener(new SelectionAdapter() {
                     @Override
                     public void widgetSelected(SelectionEvent e)
@@ -56,7 +56,7 @@ public class RoleMenu
 
             if (srp._role != Role.VIEWER) {
                 MenuItem miViewer = new MenuItem(_menu, SWT.PUSH);
-                miViewer.setText("Viewer");
+                miViewer.setText("Set as Viewer");
                 miViewer.addSelectionListener(new SelectionAdapter()
                 {
                     @Override
