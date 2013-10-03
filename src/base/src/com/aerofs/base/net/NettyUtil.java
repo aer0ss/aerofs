@@ -16,6 +16,8 @@ import static com.aerofs.base.net.NettyUtil.DownstreamChannelEvent.*;
 
 public class NettyUtil
 {
+    private NettyUtil() {}
+
     public static CNameVerificationHandler newCNameVerificationHandler(CNameListener listener,
             UserID localuser, DID localdid)
     {

@@ -20,7 +20,7 @@ import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.inject.Inject;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
-import org.jboss.netty.util.HashedWheelTimer;
+import org.jboss.netty.util.Timer;
 import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
@@ -48,7 +48,8 @@ public class VerkehrNotificationSubscriber extends AbstractConnectionStatusNotif
     }
 
     @Inject
-    public VerkehrNotificationSubscriber(ClientSocketChannelFactory clientSocketChannelFactory)
+    public VerkehrNotificationSubscriber(ClientSocketChannelFactory clientSocketChannelFactory,
+            Timer timer)
     {
         VerkehrListener listener = new VerkehrListener();
         ClientFactory factory = new ClientFactory(
@@ -59,7 +60,7 @@ public class VerkehrNotificationSubscriber extends AbstractConnectionStatusNotif
                 new CfgKeyManagersProvider(),
                 VERKEHR_RETRY_INTERVAL,
                 Cfg.db().getLong(Key.TIMEOUT),
-                new HashedWheelTimer(),
+                timer,
                 listener, listener, sameThreadExecutor());
 
         _subscriber = factory.create();

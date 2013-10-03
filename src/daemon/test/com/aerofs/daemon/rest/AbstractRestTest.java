@@ -66,6 +66,7 @@ import java.util.Properties;
 import java.util.TimeZone;
 import java.util.concurrent.Executors;
 
+import static com.aerofs.base.TimerUtil.getGlobalTimer;
 import static com.jayway.restassured.RestAssured.given;
 import static org.junit.Assert.assertNotNull;
 import static org.mockito.Matchers.any;
@@ -219,7 +220,7 @@ public class AbstractRestTest extends AbstractTest
             l.info("REST gateway at {}", RestAssured.port);
 
             // open tunnel between gateway and rest service
-            tunnel = new RestTunnelClient(localUser, localDID, inj.getInstance(Timer.class),
+            tunnel = new RestTunnelClient(localUser, localDID, getGlobalTimer(),
                     clientSslEngineFactory, service);
             tunnel.start().awaitUninterruptibly();
         }
@@ -243,6 +244,7 @@ public class AbstractRestTest extends AbstractTest
                 bind(IMapSID2SIndex.class).toInstance(sm);
                 bind(IMapSIndex2SID.class).toInstance(sm);
                 bind(IPhysicalStorage.class).toInstance(ps);
+                bind(Timer.class).toInstance(getGlobalTimer());
                 bind(CoreIMCExecutor.class).toInstance(new CoreIMCExecutor(imce));
             }
         });

@@ -4,7 +4,6 @@ import com.aerofs.base.Loggers;
 import com.aerofs.base.config.ConfigurationProperties;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.AppRoot;
-import com.aerofs.lib.ChannelFactories;
 import com.aerofs.lib.IProgram;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.LibParam.PrivateDeploymentConfig;
@@ -180,7 +179,6 @@ public class Main
         // INITIALIZE MAJOR COMPONENTS HERE!!!!!
         //
         ProgramInformation.init_(prog);
-        ChannelFactories.init_();
         SystemUtil.setDefaultUncaughtExceptionHandler();
 
         try {

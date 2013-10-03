@@ -1,5 +1,6 @@
 package com.aerofs.daemon.core;
 
+import com.aerofs.base.TimerUtil;
 import com.aerofs.base.analytics.IAnalyticsPlatformProperties;
 import com.aerofs.daemon.core.db.TamperingDetectionSchema;
 import com.aerofs.daemon.core.ds.DirectoryService;
@@ -49,6 +50,7 @@ import com.aerofs.daemon.lib.db.ver.IPrefixVersionDatabase;
 import com.aerofs.daemon.lib.db.ver.ImmigrantVersionDatabase;
 import com.aerofs.daemon.lib.db.ver.NativeVersionDatabase;
 import com.aerofs.daemon.lib.db.ver.PrefixVersionDatabase;
+import com.aerofs.lib.ChannelFactories;
 import com.aerofs.lib.analytics.DesktopAnalyticsProperties;
 import com.aerofs.lib.guice.GuiceUtil;
 import com.aerofs.lib.os.IOSUtil;
@@ -58,18 +60,10 @@ import com.google.inject.Provides;
 import com.google.inject.internal.Scoping;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jboss.netty.channel.socket.ServerSocketChannelFactory;
+import org.jboss.netty.util.Timer;
 
 public class CoreModule extends AbstractModule
 {
-    private final ServerSocketChannelFactory _serverChannelFactory;
-    private final ClientSocketChannelFactory _clientChannelFactory;
-
-    public CoreModule(ServerSocketChannelFactory serverChannelFactory, ClientSocketChannelFactory clientChannelFactory)
-    {
-        _serverChannelFactory = serverChannelFactory;
-        _clientChannelFactory = clientChannelFactory;
-    }
-
     @Override
     protected void configure()
     {
@@ -127,13 +121,19 @@ public class CoreModule extends AbstractModule
     @Provides
     public ServerSocketChannelFactory provideServerSocketChannelFactory()
     {
-        return _serverChannelFactory;
+        return ChannelFactories.getServerChannelFactory();
     }
 
     @Provides
     public ClientSocketChannelFactory provideClientSocketChannelFactory()
     {
-        return _clientChannelFactory;
+        return ChannelFactories.getClientChannelFactory();
+    }
+
+    @Provides
+    public Timer provideTimer()
+    {
+        return TimerUtil.getGlobalTimer();
     }
 
     @Provides

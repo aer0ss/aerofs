@@ -9,7 +9,6 @@ import com.aerofs.restless.Configuration;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.internal.Scoping;
-import org.jboss.netty.util.HashedWheelTimer;
 import org.jboss.netty.util.Timer;
 
 import java.net.URI;
@@ -29,7 +28,6 @@ public class RestModule extends AbstractModule
                 RestCoreEventHandlerRegistar.class);
 
         bind(Configuration.class).to(RestConfiguration.class);
-        bind(Timer.class).to(HashedWheelTimer.class);
     }
 
     @Provides

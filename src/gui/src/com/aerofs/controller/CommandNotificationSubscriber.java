@@ -39,7 +39,6 @@ import com.aerofs.verkehr.client.lib.subscriber.VerkehrSubscriber;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.protobuf.InvalidProtocolBufferException;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
-import org.jboss.netty.util.HashedWheelTimer;
 import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
@@ -52,6 +51,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
 import static com.aerofs.base.BaseParam.VerkehrTopics.CMD_CHANNEL_TOPIC_PREFIX;
+import static com.aerofs.base.TimerUtil.getGlobalTimer;
 import static com.aerofs.lib.LibParam.Verkehr.VERKEHR_RETRY_INTERVAL;
 import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor;
 
@@ -110,7 +110,7 @@ public final class CommandNotificationSubscriber
                 new CfgKeyManagersProvider(),
                 VERKEHR_RETRY_INTERVAL,
                 Cfg.db().getLong(Key.TIMEOUT),
-                new HashedWheelTimer(),
+                getGlobalTimer(),
                 _listener, _listener, sameThreadExecutor());
 
         this._topic = CMD_CHANNEL_TOPIC_PREFIX + localDevice.toStringFormal();

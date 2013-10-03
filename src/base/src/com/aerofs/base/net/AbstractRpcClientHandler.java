@@ -14,7 +14,6 @@ import org.jboss.netty.channel.ChannelStateEvent;
 import org.jboss.netty.channel.ExceptionEvent;
 import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.SimpleChannelHandler;
-import org.jboss.netty.util.HashedWheelTimer;
 import org.jboss.netty.util.Timeout;
 import org.jboss.netty.util.Timer;
 import org.jboss.netty.util.TimerTask;
@@ -25,6 +24,7 @@ import java.nio.channels.ClosedChannelException;
 import java.util.Iterator;
 import java.util.Queue;
 
+import static com.aerofs.base.TimerUtil.getGlobalTimer;
 import static com.google.common.collect.Queues.newArrayDeque;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
@@ -49,7 +49,7 @@ public class AbstractRpcClientHandler extends SimpleChannelHandler
 
     // Hold writes until we are connected to the server
     private final Queue<byte[]> _pendingWrites = newArrayDeque();
-    private final Timer _timer = new HashedWheelTimer();
+    private final Timer _timer = getGlobalTimer();
     private final long _timeoutDuration;
 
     // Holds the exception that triggered a disconnection

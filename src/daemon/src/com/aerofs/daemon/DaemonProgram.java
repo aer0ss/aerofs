@@ -42,7 +42,6 @@ import com.google.inject.Module;
 import com.google.inject.Stage;
 import org.slf4j.Logger;
 
-import static com.aerofs.lib.ChannelFactories.getClientChannelFactory;
 import static com.aerofs.lib.ChannelFactories.getServerChannelFactory;
 
 public class DaemonProgram implements IProgram
@@ -112,8 +111,7 @@ public class DaemonProgram implements IProgram
         Stage stage = Stage.PRODUCTION;
 
         Injector injCore = Guice.createInjector(stage, new CfgModule(), getMultiplicityModule(),
-                new CoreModule(getServerChannelFactory(), getClientChannelFactory()),
-                getStorageModule(), new RestModule(), new MobileModule());
+                new CoreModule(), getStorageModule(), new RestModule(), new MobileModule());
 
         Injector injDaemon = Guice.createInjector(stage, new DaemonModule(injCore));
 
