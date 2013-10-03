@@ -4,6 +4,7 @@
 
 package com.aerofs.gui.sharing.manage;
 
+import com.aerofs.gui.CompSpin;
 import com.aerofs.gui.GUIUtil;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
@@ -26,6 +27,7 @@ public class CompManageUsers extends Composite
     private final Button _btnCancel;
     private final Composite _composite;
     private final CompUserList _compUserList;
+    private final CompSpin _compSpin;
 
     public CompManageUsers(Composite parent, Path path, ILoadListener ll)
     {
@@ -45,7 +47,7 @@ public class CompManageUsers extends Composite
         _compUserList.setLayoutData(gd__compAddresses);
 
         _composite = new Composite(this, SWT.NONE);
-        GridLayout glComposite = new GridLayout(2, false);
+        GridLayout glComposite = new GridLayout(3, false);
         glComposite.marginWidth = 0;
         glComposite.marginHeight = 0;
         glComposite.marginTop = GUIParam.MAJOR_SPACING - glShell.verticalSpacing;
@@ -56,6 +58,10 @@ public class CompManageUsers extends Composite
         _btnCancel.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, true, false, 1, 1));
         _btnCancel.setText("Unshare Folder");
         _btnCancel.setVisible(false);
+
+        _compSpin = new CompSpin(_composite, SWT.NONE);
+        _compSpin.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false));
+        _compUserList.setSpinner(_compSpin);
 
         _btnClose = GUIUtil.createButton(_composite, SWT.NONE);
         _btnClose.setText(IDialogConstants.CLOSE_LABEL);

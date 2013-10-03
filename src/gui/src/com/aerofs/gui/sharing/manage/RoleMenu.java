@@ -20,14 +20,14 @@ public class RoleMenu
 {
     private final Menu _menu;
     private final UserID _subject;
-    private final CompUserList _compUserList;
 
-    public RoleMenu(CompUserList compUserList, SubjectRolePair srp, Control ctrl,
+    private RoleChangeListener _listener;
+
+    public RoleMenu(final Control parent, SubjectRolePair srp,
             boolean showUpdateACLMenuItems)
     {
-        _menu = new Menu(ctrl);
+        _menu = new Menu(parent);
         _subject = srp._subject;
-        _compUserList = compUserList;
 
         if (showUpdateACLMenuItems) {
             if (srp._role != Role.OWNER) {
@@ -83,7 +83,7 @@ public class RoleMenu
                 @Override
                 public void widgetSelected(SelectionEvent e)
                 {
-                    if (GUI.get().ask(_compUserList.getShell(), MessageType.QUESTION,
+                    if (GUI.get().ask(parent.getShell(), MessageType.QUESTION,
                             // The text should be consistent with the text in shared_folders.mako
                             "Are you sure you want to remove " + _subject +
                                     " from the shared folder?\n" +
@@ -118,6 +118,17 @@ public class RoleMenu
     private void select(@Nullable Role role)
     {
         _menu.dispose();
-        _compUserList.setRole(_subject, role);
+
+        if (_listener != null) _listener.onRoleChangeSelected(_subject, role);
+    }
+
+    public void setRoleChangeListener(RoleChangeListener listener)
+    {
+        _listener = listener;
+    }
+
+    public interface RoleChangeListener
+    {
+        void onRoleChangeSelected(UserID subject, Role role);
     }
 }

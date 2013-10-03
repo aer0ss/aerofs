@@ -8,6 +8,7 @@ import com.aerofs.base.Loggers;
 import com.aerofs.base.acl.Role;
 import com.aerofs.gui.AbstractSpinAnimator;
 import com.aerofs.gui.AeroFSDialog;
+import com.aerofs.gui.CompSpin;
 import com.aerofs.gui.TaskDialog;
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIParam;
@@ -415,6 +416,7 @@ public class DlgManageSharedFolders extends AeroFSDialog
         private final CompUserList _userList;
         private final Composite _btnBar;
         private final Button _btnPlus;
+        private final CompSpin _compSpin;
 
         public MemberList(Composite composite, int i)
         {
@@ -441,6 +443,9 @@ public class DlgManageSharedFolders extends AeroFSDialog
 
             _btnBar = GUIUtil.newPackedButtonContainer(c);
             _btnBar.setLayoutData(new GridData(SWT.RIGHT, SWT.BOTTOM, true, false));
+
+            _compSpin = new CompSpin(_btnBar, SWT.NONE);
+            _userList.setSpinner(_compSpin);
 
             _btnPlus = GUIUtil.createButton(_btnBar, SWT.PUSH);
             _btnPlus.setText("Invite Others...");
