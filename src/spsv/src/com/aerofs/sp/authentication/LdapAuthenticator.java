@@ -70,6 +70,7 @@ public class LdapAuthenticator implements IAuthenticator
     {
         FullName fullName = throwIfBadCredential(user, credential);
 
+        _l.info("Authenticated LDAP user {}", user.id());
         trans.begin();
         if (!user.exists())
             _provisioner.saveUser(user, fullName, credential);

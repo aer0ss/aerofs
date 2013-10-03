@@ -12,17 +12,25 @@ import com.aerofs.sp.server.lib.user.User;
  * Create an IAuthenticator implementation that is appropriate for the current config
  * parameters from LibParam.
  *
- * Today this will create a local authenticator (compare scrypt'ed password against sp database)
- * or an LDAP authenticator (pass raw credential to an external LDAP server).
- * The LDAP authenticator may support auto-provisioning.
+ * Today this will create one of the following:
+ *
+ *  - a local authenticator (compare scrypt'ed password against sp database)
+ *
+ *  - an LDAP authenticator (pass raw credential to an external LDAP server).
+ *    NOTE the LDAP authenticator may support auto-provisioning.
+ *
+ *  - a switching authenticator that uses the LDAP auth for internal users and the local
+ *    authenticator for externals.
  */
 public class AuthenticatorFactory
 {
-    public static IAuthenticator create(LdapConfiguration ldap)
+    public static IAuthenticator create(LdapConfiguration ldapConf)
     {
         if (LdapConfiguration.enabled()) {
-            return new LdapAuthenticator(ldap, ldap.SERVER_AUTOPROVISION ?
-                        new AutoProvisioning() : new NoProvisioning());
+            LdapAuthenticator ldapAuth = new LdapAuthenticator(ldapConf,
+                    ldapConf.SERVER_AUTOPROVISION ? new AutoProvisioning() : new NoProvisioning());
+
+            return new SwitchingAuthenticator(ldapAuth, new LocalAuthenticator());
         } else {
             return new LocalAuthenticator();
         }

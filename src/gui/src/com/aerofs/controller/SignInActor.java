@@ -13,6 +13,7 @@ import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.proto.Sp.OpenIdSessionAttributes;
 import com.aerofs.proto.Sp.OpenIdSessionNonces;
 import com.aerofs.sp.client.SPBlockingClient;
+import com.aerofs.sp.common.UserFilter;
 import com.aerofs.ui.IUI.MessageType;
 import com.google.protobuf.ByteString;
 import org.slf4j.Logger;
@@ -28,7 +29,7 @@ public abstract class SignInActor
      *
      * If user information is returned as part of sign-in, update the SetupModel accordingly.
      *
-     * If the user signs in, the model must be updated with the SP client instance
+     * If the user signs in, the model must be updated with the SP client instance.
      *
      * If the user cannot be signed in, implementation must signal this case with an
      * appropriate exception.
@@ -41,22 +42,26 @@ public abstract class SignInActor
      */
     public static class CredentialActor extends SignInActor
     {
+        public CredentialActor() { _filter = new UserFilter(); }
+
         @Override
         public void signInUser(Setup setup, SetupModel model) throws Exception {
             SPBlockingClient sp = new SPBlockingClient.Factory()
                     .create_(Cfg.user(), SPBlockingClient.ONE_WAY_AUTH_CONNECTION_CONFIGURATOR);
-            // NOTE: In LDAP mode, we pass the un-scrypt'ed password so it can be referred
-            // to an external service for verification. This is the only difference in the
-            // two following calls to SP.
-            // TODO: use inheritance/polymorphism here instead. Consider this from the viewpoint
-            // where we have both LDAP and non-LDAP users in the same SP instance.
-            if (Identity.AUTHENTICATOR == Authenticator.EXTERNAL_CREDENTIAL) {
+
+            // NOTE: In LDAP mode, for internal users, we pass the un-scrypt'ed password
+            // so it can be referred to an external service for verification.
+            // This is the only difference in the two following calls to SP.
+            if ((Identity.AUTHENTICATOR == Authenticator.EXTERNAL_CREDENTIAL)
+                    && _filter.isInternalUser(model.getUserID())) {
                 sp.signInUser(model.getUsername(), ByteString.copyFrom(model.getPassword()));
             } else {
                 sp.signInUser(model.getUsername(), ByteString.copyFrom(model.getScrypted()));
             }
             model.setClient(sp);
         }
+
+        private UserFilter _filter;
     }
 
     /**

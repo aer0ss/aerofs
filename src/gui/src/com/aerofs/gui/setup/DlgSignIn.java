@@ -189,7 +189,11 @@ public class DlgSignIn extends AeroFSTitleAreaDialog
 
         createPasswordLabelAndText(credentialBlock);
 
-        // row 3
+        // row 3 (empty row)
+        new Label(credentialBlock, SWT.NONE);
+        new Label(credentialBlock, SWT.NONE);
+
+        // row 4 (state dependent)
 
         createBottomComposite(credentialBlock);
 

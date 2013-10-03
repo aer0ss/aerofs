@@ -13,6 +13,7 @@ import com.aerofs.lib.FullName;
 import com.aerofs.lib.ex.ExNoAdminOrOwner;
 import com.aerofs.lib.ex.shared_folder_rules.ExSharedFolderRulesWarningAddExternalUser;
 import com.aerofs.lib.ex.shared_folder_rules.ExSharedFolderRulesWarningOwnerCanShareWithExternalUsers;
+import com.aerofs.sp.common.UserFilter;
 import com.aerofs.sp.server.lib.SharedFolder;
 import com.aerofs.sp.server.lib.user.User;
 import com.google.common.collect.ImmutableCollection;
@@ -23,7 +24,6 @@ import com.google.common.collect.ImmutableSet;
 import javax.annotation.Nonnull;
 import java.sql.SQLException;
 import java.util.List;
-import java.util.regex.Pattern;
 
 /**
  * This rule is to fulfill Bloomberg's requirements which is listed below. See
@@ -48,12 +48,12 @@ import java.util.regex.Pattern;
  */
 public class ReadOnlyExternalFolderRules implements ISharedFolderRules
 {
-    private final Pattern _internalAddresses;
     private final User.Factory _factUser;
+    private UserFilter _filter;
 
-    public ReadOnlyExternalFolderRules(Pattern internalAddresses, User.Factory factUser)
+    public ReadOnlyExternalFolderRules(UserFilter filter, User.Factory factUser)
     {
-        _internalAddresses = internalAddresses;
+        _filter = filter;
         _factUser = factUser;
     }
 
@@ -79,7 +79,7 @@ public class ReadOnlyExternalFolderRules implements ISharedFolderRules
         if (wasExternal || convertToExternal) throwIfInvitingEditors(srps, allExternal);
 
         // show warning messages only if the sharer is an internal user
-        if (!suppressAllWarnings && !isExternalUser(sharer.id())) {
+        if ((!suppressAllWarnings) && _filter.isInternalUser(sharer.id())) {
             showWarningsForExternalFolders(wasExternal, srps, newExternal, allExternal);
         }
 
@@ -94,7 +94,7 @@ public class ReadOnlyExternalFolderRules implements ISharedFolderRules
     {
         ImmutableSet.Builder<UserID> builder = ImmutableSet.builder();
         for (SubjectRolePair srp : srps) {
-            if (isExternalUser(srp._subject)) builder.add(srp._subject);
+            if (!_filter.isInternalUser(srp._subject)) builder.add(srp._subject);
         }
         return builder.build();
     }
@@ -187,13 +187,9 @@ public class ReadOnlyExternalFolderRules implements ISharedFolderRules
         ImmutableList.Builder<UserID> builder = ImmutableList.builder();
         for (User user : sf.getAllUsers()) {
             UserID id = user.id();
-            if (!id.isTeamServerID() && isExternalUser(id)) builder.add(id);
+            if (!_filter.isInternalUser(id)) builder.add(id);
         }
         return builder.build();
     }
 
-    private boolean isExternalUser(UserID id)
-    {
-        return !_internalAddresses.matcher(id.getString()).matches();
-    }
 }

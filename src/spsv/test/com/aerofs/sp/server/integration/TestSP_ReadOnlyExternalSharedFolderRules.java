@@ -8,11 +8,13 @@ import com.aerofs.base.acl.Role;
 import com.aerofs.base.config.ConfigurationProperties;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
+import com.aerofs.lib.LibParam.EnterpriseConfig;
 import com.aerofs.lib.ex.shared_folder_rules.ExSharedFolderRulesEditorsDisallowedInExternallySharedFolders;
 import com.aerofs.lib.ex.shared_folder_rules.ExSharedFolderRulesWarningAddExternalUser;
 import com.aerofs.lib.ex.shared_folder_rules.ExSharedFolderRulesWarningOwnerCanShareWithExternalUsers;
 import com.aerofs.sp.server.SPService;
 import com.aerofs.sp.server.lib.SharedFolder;
+import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.user.User;
 import com.aerofs.sp.server.shared_folder_rules.ISharedFolderRules;
 import com.aerofs.sp.server.shared_folder_rules.SharedFolderRulesFactory;
@@ -79,6 +81,7 @@ public class TestSP_ReadOnlyExternalSharedFolderRules extends AbstractSPFolderTe
         props.put("shared_folder_rules.readonly_external_folders", enableReadOnlyExternalFolderRules ? "true" : "false");
         props.put("internal_email_pattern", internalAddresses);
         ConfigurationProperties.setProperties(props);
+        EnterpriseConfig.IS_ENTERPRISE_DEPLOYMENT = enableReadOnlyExternalFolderRules;
     }
 
     @Test
@@ -103,6 +106,17 @@ public class TestSP_ReadOnlyExternalSharedFolderRules extends AbstractSPFolderTe
 
         shareFolder(internalUser1, sid, internalUser2, Role.OWNER);
         shareFolder(internalUser1, sid, internalUser3, Role.EDITOR);
+    }
+
+    @Test
+    public void shouldIgnoreTeamServerUsers()
+        throws Exception
+    {
+        sqlTrans.begin();
+        Organization org = factOrg.save();
+        sqlTrans.commit();
+
+        shareFolder(internalSharer, sid, org.getTeamServerUser(), Role.VIEWER);
     }
 
     // There should be no warnings or errors when external users invite either external or internal
