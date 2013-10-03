@@ -187,14 +187,15 @@ public class RitualService implements IRitualService
 
     @Override
     public ListenableFuture<Void> shareFolder(PBPath path, List<PBSubjectRolePair> srps,
-            String emailNote)
+            String emailNote, Boolean suppressSharedFolderRulesWarnings)
             throws Exception
     {
         Map<UserID, Role> acl = Maps.newTreeMap();
         for (PBSubjectRolePair srp : srps) {
             acl.put(UserID.fromExternal(srp.getSubject()), Role.fromPB(srp.getRole()));
         }
-        EIShareFolder ev = new EIShareFolder(Path.fromPB(path), acl, emailNote);
+        EIShareFolder ev = new EIShareFolder(Path.fromPB(path), acl, emailNote,
+                suppressSharedFolderRulesWarnings);
         ev.execute(PRIO);
 
         return createVoidReply();
@@ -457,13 +458,14 @@ public class RitualService implements IRitualService
     }
 
     @Override
-    public ListenableFuture<Void> updateACL(PBPath path, String subject, PBRole role)
+    public ListenableFuture<Void> updateACL(PBPath path, String subject, PBRole role,
+            Boolean suppressSharedFolderRulesWarnings)
             throws Exception
     {
         // TODO: accepting {@code user} as input is sort of OK as long as the GUI is the only
         // Ritual client but it will become a major security issue if/when Ritual becomes open API
         EIUpdateACL ev = new EIUpdateACL(Path.fromPB(path), UserID.fromExternal(subject),
-                Role.fromPB(role), Core.imce());
+                Role.fromPB(role), Core.imce(), suppressSharedFolderRulesWarnings);
         ev.execute(PRIO);
         return createVoidReply();
     }

@@ -563,9 +563,12 @@
             ## server. The string specifies a list of external users. See
             ## EX_WARNING_* etc in common.proto for detail.
             ## @list the <ul> element to place the items in
+            ##
+            ## this function is referred to in a Java class named TestAbstractExSharedFolderRules
             function populateExternalUserList($list, jsonStr) {
                 $list.empty();
                 $.each($.parseJSON(jsonStr), function(email, fullname) {
+                    ## N.B. the format expected here _must_ be covered in TestAbstractExSharedFolderRules
                     var str = fullname.first_name;
                     str += fullname.first_name && fullname.last_name ? ' ' : '';
                     str += fullname.last_name;

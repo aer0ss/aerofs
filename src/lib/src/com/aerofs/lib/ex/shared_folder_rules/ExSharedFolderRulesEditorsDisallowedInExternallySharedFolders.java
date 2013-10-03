@@ -4,28 +4,26 @@
 
 package com.aerofs.lib.ex.shared_folder_rules;
 
-import com.aerofs.base.ex.AbstractExWirable;
 import com.aerofs.base.id.UserID;
 import com.aerofs.lib.FullName;
+import com.aerofs.proto.Common.PBException;
 import com.aerofs.proto.Common.PBException.Type;
 import com.google.common.collect.ImmutableMap;
-import com.google.gson.Gson;
 
-import java.nio.charset.Charset;
-
-public class ExSharedFolderRulesEditorsDisallowedInExternallySharedFolders extends AbstractExWirable
+public class ExSharedFolderRulesEditorsDisallowedInExternallySharedFolders
+        extends AbstractExSharedFolderRules
 {
     private static final long serialVersionUID = 0;
 
     public ExSharedFolderRulesEditorsDisallowedInExternallySharedFolders(
             ImmutableMap<UserID, FullName> externalUsers)
     {
-        super(getData(externalUsers));
+        super(externalUsers);
     }
 
-    static byte[] getData(ImmutableMap<UserID, FullName> externalUsers)
+    public ExSharedFolderRulesEditorsDisallowedInExternallySharedFolders(PBException pb)
     {
-        return new Gson().toJson(externalUsers).getBytes(Charset.forName("UTF-8"));
+        super(pb);
     }
 
     @Override

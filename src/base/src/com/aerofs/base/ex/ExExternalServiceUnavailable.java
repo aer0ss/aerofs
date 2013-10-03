@@ -4,6 +4,7 @@
 
 package com.aerofs.base.ex;
 
+import com.aerofs.proto.Common.PBException;
 import com.aerofs.proto.Common.PBException.Type;
 
 /**
@@ -15,6 +16,8 @@ public class ExExternalServiceUnavailable extends AbstractExWirable
     private static final long serialVersionUID = 1L;
 
     public ExExternalServiceUnavailable(String message) { super(message); }
+
+    public ExExternalServiceUnavailable(PBException pb) { super(pb); }
 
     @Override
     public Type getWireType()

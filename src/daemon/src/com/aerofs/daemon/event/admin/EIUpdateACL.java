@@ -11,12 +11,15 @@ public class EIUpdateACL extends AbstractEBIMC
     public final Path _path;
     public final UserID _subject;
     public final Role _role;
+    public final boolean _suppressSharedFolderRulesWarnings;
 
-    public EIUpdateACL(Path path, UserID subject, Role role, IIMCExecutor imce)
+    public EIUpdateACL(Path path, UserID subject, Role role, IIMCExecutor imce,
+            boolean suppressSharedFolderRulesWarnings)
     {
         super(imce);
         _path = path;
         _subject = subject;
         _role = role;
+        _suppressSharedFolderRulesWarnings = suppressSharedFolderRulesWarnings;
     }
 }

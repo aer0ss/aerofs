@@ -330,7 +330,8 @@ public class ACLSynchronizer
     /**
      * Update ACLs via the SP.updateACL call
      */
-    public void update_(SIndex sidx, UserID subject, Role role)
+    public void update_(SIndex sidx, UserID subject, Role role,
+            boolean suppressSharedFolderRulesWarnings)
             throws Exception
     {
         // first, resolve the sid and prepare data for protobuf
@@ -344,7 +345,8 @@ public class ACLSynchronizer
             tcb = tk.pseudoPause_("spacl");
             SPBlockingClient sp = _factSP.create_(_cfgLocalUser.get());
             sp.signInRemote();
-            sp.updateACL(sid.toPB(), subject.getString(), role.toPB(), false);
+            sp.updateACL(sid.toPB(), subject.getString(), role.toPB(),
+                    suppressSharedFolderRulesWarnings);
         } finally {
             if (tcb != null) tcb.pseudoResumed_();
             tk.reclaim_();

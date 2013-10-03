@@ -54,6 +54,8 @@ service RitualService {
     // the shared folder. If the folder is already shared, the method only adds the users specified
     // in the list. Roles of these users will be overwritten if they already exist.
     //
+    // See sp.proto ShareFolderCall for details
+    //
     rpc ShareFolder(ShareFolderCall) returns(Void);
 
     // Unshare a shared folder and remove all the users from the folder. Nop if the folder is
@@ -330,6 +332,7 @@ message ShareFolderCall {
     required PBPath path = 1;
     repeated PBSubjectRolePair subject_role = 2;
     required string note = 3;
+    required bool suppress_shared_folder_rules_warnings = 4;
 }
 
 message UnshareFolderCall {
@@ -428,6 +431,7 @@ message UpdateACLCall {
     required PBPath path = 1;
     required string subject = 2;
     required PBRole role = 3;
+    required bool suppress_shared_folder_rules_warnings = 4;
 }
 
 message DeleteACLCall {

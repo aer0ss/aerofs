@@ -4,20 +4,26 @@
 
 package com.aerofs.lib.ex.shared_folder_rules;
 
-import com.aerofs.base.ex.AbstractExWirable;
 import com.aerofs.base.id.UserID;
 import com.aerofs.lib.FullName;
+import com.aerofs.proto.Common.PBException;
 import com.aerofs.proto.Common.PBException.Type;
 import com.google.common.collect.ImmutableMap;
 
-public class ExSharedFolderRulesWarningOwnerCanShareWithExternalUsers extends AbstractExWirable
+public class ExSharedFolderRulesWarningOwnerCanShareWithExternalUsers
+        extends AbstractExSharedFolderRules
 {
     private static final long serialVersionUID = 0;
 
     public ExSharedFolderRulesWarningOwnerCanShareWithExternalUsers(
             ImmutableMap<UserID, FullName> externalUsers)
     {
-        super(ExSharedFolderRulesEditorsDisallowedInExternallySharedFolders.getData(externalUsers));
+        super(externalUsers);
+    }
+
+    public ExSharedFolderRulesWarningOwnerCanShareWithExternalUsers(PBException pb)
+    {
+        super(pb);
     }
 
     @Override
