@@ -38,30 +38,108 @@ def get_next_url(request):
         login_urls = [
             request.resource_url(request.context, ''),
             request.resource_url(request.context, 'login'),
-            request.resource_url(request.context, 'login_credential'),
-            request.resource_url(request.context, 'login_openid')
+            request.resource_url(request.context, 'login_openid_begin'),
+            request.resource_url(request.context, 'login_openid_complete'),
         ]
 
         if len(_next) == 0 or _next in login_urls:
             _next = request.route_path('dashboard_home')
     return _next
 
+def _is_openid_enabled(request):
+    """
+    True if the local deployment allows OpenID authentication
+    """
+    return is_enterprise_deployment(request) \
+        and request.registry.settings.get('lib.authenticator', 'local_credential').lower() == 'openid'
 
 @view_config(
-    route_name = 'login',
+    route_name='login',
     permission=NO_PERMISSION_REQUIRED,
     renderer='login.mako'
 )
-def login(request):
-    _next = get_next_url(request)
+def login_view(request):
+    # FIXME: a handful of non-idiomatic python follows. Please clean up when the skies are clear.
+    _ = request.translate
     settings = request.registry.settings
-    if settings['deployment.mode'] != "prod" and settings.get('openid.service.enabled', "false").lower() == "true":
-        _url = '{0}?{1}'.format(request.route_path('login_openid_view'), url.urlencode({'next' : _next}))
-        return HTTPFound(_url, {'next' : _next})
-    else:
-        _url = '{0}?{1}'.format(request.route_path('login_credential'), url.urlencode({'next' : _next}))
-        return HTTPFound(_url, {'next' : _next})
+    next = get_next_url(request)
 
+    login = ''
+    # N.B. the all following parameter keys are used by signup.mako as well.
+    # Keep them consistent!
+    if URL_PARAM_FORM_SUBMITTED in request.params:
+        # Remember to normalize the email address.
+        login = request.params[URL_PARAM_EMAIL]
+        password = request.params[URL_PARAM_PASSWORD]
+        hashed_password = scrypt(password, login)
+        stay_signed_in = URL_PARAM_REMEMBER_ME in request.params
+
+        try:
+            try:
+                headers = _log_in_user(request, login, hashed_password, stay_signed_in)
+                log.debug(login + " logged in")
+                return HTTPFound(location=next, headers=headers)
+            except ExceptionReply as e:
+                if e.get_type() == PBException.BAD_CREDENTIAL:
+                    log.warn(login + " attempts to login w/ bad password")
+                    flash_error(request, _("Email or password is incorrect."))
+                elif e.get_type() == PBException.EMPTY_EMAIL_ADDRESS:
+                    flash_error(request, _("The email address cannot be empty."))
+                else:
+                    raise e
+        except Exception as e:
+            log.error("error during logging in:", exc_info=e)
+            support_email = settings.get('base.www.support_email_address', 'support@aerofs.com')
+            flash_error(request, _("An error occurred processing your request." +
+                   " Please try again later. Contact " + support_email + " if the" +
+                   " problem persists."))
+
+    openid_enabled = _is_openid_enabled(request)
+    # if openid_enabled is false we don't need to do any of the following. :(
+    openid_url = "{0}?{1}".format(request.route_url('login_openid_begin'), url.urlencode({'next' : next}))
+    openid_identifier = settings.get('openid.service.identifier', 'OpenID')
+    internal_hint = settings.get('openid.service.internal.hint', 'Have an OpenID account?')
+    external_hint = settings.get('openid.service.external.hint', 'AeroFS user without an OpenID account?')
+
+    return {
+        'url_param_form_submitted': URL_PARAM_FORM_SUBMITTED,
+        'url_param_email': URL_PARAM_EMAIL,
+        'url_param_password': URL_PARAM_PASSWORD,
+        'url_param_remember_me': URL_PARAM_REMEMBER_ME,
+        'url_param_next': URL_PARAM_NEXT,
+        'openid_enabled': openid_enabled,
+        'openid_url': openid_url,
+        'openid_service_identifier': openid_identifier,
+        'openid_service_internal_hint': internal_hint,
+        'openid_service_external_hint': external_hint,
+        'login': login,
+        'next': next,
+    }
+
+def _log_in_user(request, login, creds, stay_signed_in):
+    """
+    Logs in the given user with the given hashed password (creds) and returns a
+    set of headers to create a session for the user. Could potentially throw any
+    protobuf exception that SP throws.
+    """
+
+    # ignore any session data that may be saved
+    settings = request.registry.settings
+    con = SyncConnectionService(settings['base.sp.url'], settings['sp.version'])
+    sp = SPServiceRpcStub(con)
+
+    sp.sign_in(login, creds)
+
+    if stay_signed_in:
+        log.debug("Extending session")
+        sp.extend_session()
+
+    request.session['sp_cookies'] = con._session.cookies
+    request.session['username'] = login
+    request.session['team_id'] = sp.get_organization_id().org_id
+    reload_auth_level(request)
+
+    return remember(request, login)
 
 @view_config(
     route_name = 'logout',
