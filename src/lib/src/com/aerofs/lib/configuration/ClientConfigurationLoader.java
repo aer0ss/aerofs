@@ -117,7 +117,7 @@ public class ClientConfigurationLoader
         } catch (Throwable t) {
             // N.B. the best we can do is log the occurrence because if at this stage, none of the
             // services are available and there's no way to report the defect back home.
-            LOGGER.debug("Failed to download http configuration", t);
+            LOGGER.warn("Failed to download http configuration", t);
         }
     }
 
