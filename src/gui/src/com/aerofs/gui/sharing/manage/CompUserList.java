@@ -45,6 +45,8 @@ import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 
+import static com.aerofs.gui.sharing.SharedFolderRulesExceptionHandlers.canHandle;
+import static com.aerofs.gui.sharing.SharedFolderRulesExceptionHandlers.promptUserToSuppressWarning;
 import static com.google.common.base.Preconditions.checkState;
 
 public class CompUserList extends Composite
@@ -118,7 +120,7 @@ public class CompUserList extends Composite
                     @Override
                     public void onRoleChangeSelected(UserID subject, Role role)
                     {
-                        setRole(_path, subject, role);
+                        setRole(_path, subject, role, false);
                     }
                 });
                 menu.open();
@@ -263,7 +265,8 @@ public class CompUserList extends Composite
     /**
      * {@paramref path} needs to be passed in because _path can change while ISWTWorker does work
      */
-    private void setRole(final Path path, final UserID subject, final Role role)
+    private void setRole(final Path path, final UserID subject, final Role role,
+            final boolean suppressSharedFolderRulesWarnings)
     {
         final Table table = _tv.getTable();
         table.setEnabled(false);
@@ -279,7 +282,8 @@ public class CompUserList extends Composite
                 if (role == null) {
                     UIGlobals.ritual().deleteACL(path.toPB(), subject.getString());
                 } else {
-                    UIGlobals.ritual().updateACL(path.toPB(), subject.getString(), role.toPB(), false);
+                    UIGlobals.ritual().updateACL(path.toPB(), subject.getString(), role.toPB(),
+                            suppressSharedFolderRulesWarnings);
                 }
             }
 
@@ -303,11 +307,17 @@ public class CompUserList extends Composite
 
                 l.warn(Util.e(e));
 
-                String message = "Couldn't edit the user. " + S.TRY_AGAIN_LATER + "\n\n" +
-                        "Error message: " + ErrorMessages.e2msgSentenceNoBracketDeprecated(e);
+                if (canHandle(e)) {
+                    if (promptUserToSuppressWarning(getShell(), e)) {
+                        setRole(path, subject, role, true);
+                    }
+                } else {
+                    String message = "Couldn't edit the user. " + S.TRY_AGAIN_LATER + "\n\n" +
+                            "Error message: " + ErrorMessages.e2msgSentenceNoBracketDeprecated(e);
 
-                ErrorMessages.show(getShell(), e, "Unused default.",
-                        new ErrorMessage(e.getClass(), message));
+                    ErrorMessages.show(getShell(), e, "Unused default.",
+                            new ErrorMessage(e.getClass(), message));
+                }
             }
         });
     }

@@ -180,6 +180,14 @@ service SPService {
      *   ExNoStripeCustomerID if payment is required but the current team doesn't have a Stripe
      *                  customer ID.
      *   ExEmailNotVerified if the user's email hasn't been verified
+     *
+     * Exceptions from shared folder rules: (only when the corresponding flag is set on config)
+     *   ExSharedFolderRulesEditorsDisallowedInExternallySharedFolders if an user is an external
+     *                  user and has Editor role.
+     *   ExSharedFolderRulesWarningConvertToExternallySharedFolder if an user is an external user
+     *                  hence we are converting the folder to an externally shared folder.
+     *   ExSharedFolderRulesWarningOwnerCanShareWithExternalUsers if an user is an external user
+     *                  and has Owner role.
      */
     rpc ShareFolder(ShareFolderCall) returns(Void);
 
@@ -599,6 +607,12 @@ service SPService {
       * Required Auth Level: user
       *
       * Throws: ExNotFound if the user is not a member of the specified folder
+      *
+      * Exceptions from shared folder rules: (only when the corresponding flag is set on config)
+      *   ExSharedFolderRulesEditorsDisallowedInExternallySharedFolders if this folder is shared
+      *                         with an external user and we are updating the user's role to editor.
+      *   ExSharedFolderRulesWarningOwnerCanShareWithExternalUsers if this folder is shared with an
+      *                         external user and we are updating the user's role to owner.
       */
      rpc UpdateACL(UpdateACLCall) returns (Void);
 
