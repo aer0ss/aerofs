@@ -94,7 +94,7 @@ class _RitualServiceWrapper(object):
         if not acl:
             acl = {"foo@bar.baz": common_pb2.EDITOR}
         srps = self._convert_acl(acl)
-        return self._service.share_folder(pbpath, srps, note)
+        return self._service.share_folder(pbpath, srps, note, False)
 
     @staticmethod
     def _convert_acl(acl):
@@ -202,7 +202,7 @@ class _RitualServiceWrapper(object):
 
     def update_acl(self, path, subject, role):
         pbpath = self.wait_path(path)
-        self._service.update_acl(pbpath, subject, role)
+        self._service.update_acl(pbpath, subject, role, False)
 
     def delete_acl(self, path, subject):
         pbpath = self.wait_path(path)
