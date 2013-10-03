@@ -60,7 +60,7 @@ class transient::services {
 
     class{"ejabberd":
         mysql_password => "password",
-        port => 8139,
+        port => 5222,
     }
 
     # --------------
