@@ -25,7 +25,7 @@ import com.aerofs.lib.ex.ExNotShared;
 import com.aerofs.lib.ex.ExParentAlreadyShared;
 import com.aerofs.lib.ex.ExUIMessage;
 import com.aerofs.lib.ex.ExUpdating;
-import com.aerofs.lib.ex.shared_folder_rules.ExSharedFolderRulesWarningConvertToExternallySharedFolder;
+import com.aerofs.lib.ex.shared_folder_rules.ExSharedFolderRulesWarningAddExternalUser;
 import com.aerofs.lib.ex.shared_folder_rules.ExSharedFolderRulesWarningOwnerCanShareWithExternalUsers;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.proto.Common.PBException.Type;
@@ -103,8 +103,8 @@ public abstract class Util
                         .put(Type.INVITEE_LIST_EMPTY, ExInviteeListEmpty.class)
 
                         // exceptions used by shared folder rules
-                        .put(Type.SHARED_FOLDER_RULES_WARNING_CONVERT_TO_EXTERNALLY_SHARED_FOLDER,
-                                ExSharedFolderRulesWarningConvertToExternallySharedFolder.class)
+                        .put(Type.SHARED_FOLDER_RULES_WARNING_ADD_EXTERNAL_USER,
+                                ExSharedFolderRulesWarningAddExternalUser.class)
                         .put(Type.SHARED_FOLDER_RULES_WARNING_OWNER_CAN_SHARE_WITH_EXTERNAL_USERS,
                                 ExSharedFolderRulesWarningOwnerCanShareWithExternalUsers.class)
                         .put(Type.SHARED_FOLDER_RULES_EDITORS_DISALLOWED_IN_EXTERNALL_SHARED_FOLDER,

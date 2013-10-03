@@ -116,7 +116,7 @@ message PBException {
         //          "<email>": { "first_name": "<first_name>", "last_name": "<last_name>" },
         //      }
         SHARED_FOLDER_RULES_EDITORS_DISALLOWED_IN_EXTERNALL_SHARED_FOLDER = 408;
-        SHARED_FOLDER_RULES_WARNING_CONVERT_TO_EXTERNALLY_SHARED_FOLDER = 409;
+        SHARED_FOLDER_RULES_WARNING_ADD_EXTERNAL_USER = 409;
         SHARED_FOLDER_RULES_WARNING_OWNER_CAN_SHARE_WITH_EXTERNAL_USERS = 410;
     }
 

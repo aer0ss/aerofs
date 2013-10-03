@@ -8,7 +8,7 @@ import com.aerofs.base.id.UserID;
 import com.aerofs.gui.GUI;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.ex.shared_folder_rules.ExSharedFolderRulesEditorsDisallowedInExternallySharedFolders;
-import com.aerofs.lib.ex.shared_folder_rules.ExSharedFolderRulesWarningConvertToExternallySharedFolder;
+import com.aerofs.lib.ex.shared_folder_rules.ExSharedFolderRulesWarningAddExternalUser;
 import com.aerofs.lib.ex.shared_folder_rules.ExSharedFolderRulesWarningOwnerCanShareWithExternalUsers;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.error.ErrorMessage;
@@ -35,7 +35,7 @@ public class SharedFolderRulesExceptionHandlers
      */
     public static boolean canHandle(Exception e)
     {
-        return e instanceof ExSharedFolderRulesWarningConvertToExternallySharedFolder
+        return e instanceof ExSharedFolderRulesWarningAddExternalUser
                 || e instanceof ExSharedFolderRulesEditorsDisallowedInExternallySharedFolders
                 || e instanceof ExSharedFolderRulesWarningOwnerCanShareWithExternalUsers;
     }
@@ -48,8 +48,8 @@ public class SharedFolderRulesExceptionHandlers
     {
         checkArgument(canHandle(e));
 
-        if (e instanceof ExSharedFolderRulesWarningConvertToExternallySharedFolder) {
-            return handleConvertToExternallySharedFolder(shell);
+        if (e instanceof ExSharedFolderRulesWarningAddExternalUser) {
+            return handleAddExternalUser(shell);
         } else if (e instanceof ExSharedFolderRulesEditorsDisallowedInExternallySharedFolders) {
             return handleEditorsDisallowedInExternallySharedFolders(shell, e);
         } else if (e instanceof ExSharedFolderRulesWarningOwnerCanShareWithExternalUsers) {
@@ -71,14 +71,17 @@ public class SharedFolderRulesExceptionHandlers
 
         for (Entry<UserID, FullName> user : users.entrySet()) {
             // \u25CF is the unicode character for black circle. It is used as a bullet.
-            builder.append("\u25CF " + user.getValue().getString()
-                    + " <" + user.getKey().getString() + ">\n");
+            builder.append("\u25CF ")
+                    .append(user.getValue().getString())
+                    .append(" <")
+                    .append(user.getKey().getString())
+                    .append(">\n");
         }
 
         return builder.toString();
     }
 
-    private static boolean handleConvertToExternallySharedFolder(Shell shell)
+    private static boolean handleAddExternalUser(Shell shell)
     {
         // N.B. this message _must_ match the message on web GUI at
         // src/web/web/views/shared_folders/templates/shared_folder_modals.mako

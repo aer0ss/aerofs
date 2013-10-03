@@ -392,7 +392,7 @@ def _add_shared_folder_rules_errors(dict):
     # These exceptions are handled by JavaScript, and the messages are ignored
     dict.update({
         PBException.SHARED_FOLDER_RULES_EDITORS_DISALLOWED_IN_EXTERNALL_SHARED_FOLDER: "",
-        PBException.SHARED_FOLDER_RULES_WARNING_CONVERT_TO_EXTERNALLY_SHARED_FOLDER: "",
+        PBException.SHARED_FOLDER_RULES_WARNING_ADD_EXTERNAL_USER: "",
         PBException.SHARED_FOLDER_RULES_WARNING_OWNER_CAN_SHARE_WITH_EXTERNAL_USERS: "",
     })
     return dict

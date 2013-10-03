@@ -462,10 +462,10 @@
             });
 
             ## Initialize auxilary modals
-            var $convertToExternalModal = $('#convert-to-external-modal');
+            var $addExternalUserModal = $('#add-external-user-modal');
             var $ownerCanShareExternallyModal = $('#owner-can-share-externally-modal');
             var $editorDisallowedModal = $('#editor-disallowed-modal');
-            setModalTransition($convertToExternalModal);
+            setModalTransition($addExternalUserModal);
             setModalTransition($ownerCanShareExternallyModal);
             setModalTransition($editorDisallowedModal);
 
@@ -506,9 +506,9 @@
                     if (type == "NO_STRIPE_CUSTOMER_ID") {
                         paymentRequiredToInvite(email, role);
 
-                    } else if (type == "SHARED_FOLDER_RULES_WARNING_CONVERT_TO_EXTERNALLY_SHARED_FOLDER") {
-                        showWarningModal($convertToExternalModal,
-                                $('#convert-to-external-confirm'), function() {
+                    } else if (type == "SHARED_FOLDER_RULES_WARNING_ADD_EXTERNAL_USER") {
+                        showWarningModal($addExternalUserModal,
+                                $('#add-external-user-confirm'), function() {
                             ## retry inviting with warnings suppressed
                             inviteToFolder(email, role, true, done, always);
                         });

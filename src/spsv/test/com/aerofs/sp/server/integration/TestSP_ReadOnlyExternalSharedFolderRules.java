@@ -9,7 +9,7 @@ import com.aerofs.base.config.ConfigurationProperties;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.lib.ex.shared_folder_rules.ExSharedFolderRulesEditorsDisallowedInExternallySharedFolders;
-import com.aerofs.lib.ex.shared_folder_rules.ExSharedFolderRulesWarningConvertToExternallySharedFolder;
+import com.aerofs.lib.ex.shared_folder_rules.ExSharedFolderRulesWarningAddExternalUser;
 import com.aerofs.lib.ex.shared_folder_rules.ExSharedFolderRulesWarningOwnerCanShareWithExternalUsers;
 import com.aerofs.sp.server.SPService;
 import com.aerofs.sp.server.lib.SharedFolder;
@@ -186,7 +186,7 @@ public class TestSP_ReadOnlyExternalSharedFolderRules extends AbstractSPFolderTe
             throws Exception
     {
         try {
-            shareFolderSuppressWarnings(internalSharer, sid, externalUser1, Role.EDITOR);
+            shareFolder(internalSharer, sid, externalUser1, Role.EDITOR);
             fail();
         } catch (ExSharedFolderRulesEditorsDisallowedInExternallySharedFolders e) {}
     }
@@ -200,11 +200,11 @@ public class TestSP_ReadOnlyExternalSharedFolderRules extends AbstractSPFolderTe
         saveUser(internalUser1);
         sqlTrans.commit();
 
-        shareFolderSuppressWarnings(internalSharer, sid, internalUser1, Role.OWNER);
+        shareFolder(internalSharer, sid, internalUser1, Role.OWNER);
         joinSharedFolder(internalUser1, sid);
 
         try {
-            shareFolderSuppressWarnings(internalUser1, sid, externalUser2, Role.EDITOR);
+            shareFolder(internalUser1, sid, externalUser2, Role.EDITOR);
             fail();
         } catch (ExSharedFolderRulesEditorsDisallowedInExternallySharedFolders e) {
             sqlTrans.rollback();
@@ -212,23 +212,28 @@ public class TestSP_ReadOnlyExternalSharedFolderRules extends AbstractSPFolderTe
     }
 
     @Test
-    public void shouldWarnWhenConvertingInternalFolderToExternal()
+    public void shouldWarnWhenAddingExternalUsers()
             throws Exception
     {
         // create an internal folder
         shareFolder(internalSharer, sid, internalUser1, Role.EDITOR);
 
+        // attempt to add the first external user
         try {
-            shareFolder(internalSharer, sid, externalUser1, Role.EDITOR);
+            shareFolder(internalSharer, sid, externalUser1, Role.VIEWER);
             fail();
-        } catch (ExSharedFolderRulesWarningConvertToExternallySharedFolder e) {
+        } catch (ExSharedFolderRulesWarningAddExternalUser e) {
             sqlTrans.rollback();
         }
 
+        // add the first external user
+        shareFolderSuppressWarnings(internalSharer, sid, externalUser1, Role.VIEWER);
+
+        // attempt to add the second external user
         try {
-            shareFolder(internalSharer, sid, externalUser2, Role.EDITOR);
+            shareFolder(internalSharer, sid, externalUser2, Role.VIEWER);
             fail();
-        } catch (ExSharedFolderRulesWarningConvertToExternallySharedFolder e) {
+        } catch (ExSharedFolderRulesWarningAddExternalUser e) {
             sqlTrans.rollback();
         }
     }
@@ -316,7 +321,7 @@ public class TestSP_ReadOnlyExternalSharedFolderRules extends AbstractSPFolderTe
         try {
             shareFolder(internalSharer, sid, externalUser1, Role.OWNER);
             fail();
-        } catch (ExSharedFolderRulesWarningConvertToExternallySharedFolder e) {}
+        } catch (ExSharedFolderRulesWarningAddExternalUser e) {}
     }
 
 
@@ -355,7 +360,7 @@ public class TestSP_ReadOnlyExternalSharedFolderRules extends AbstractSPFolderTe
         // make an external folder
         shareFolderSuppressWarnings(internalSharer, sid, externalUser1, Role.VIEWER);
         joinSharedFolder(externalUser1, sid);
-        shareFolder(internalSharer, sid, externalUser2, Role.VIEWER);
+        shareFolderSuppressWarnings(internalSharer, sid, externalUser2, Role.VIEWER);
         joinSharedFolder(externalUser2, sid);
         shareFolder(internalSharer, sid, internalUser1, Role.VIEWER);
         joinSharedFolder(internalUser1, sid);
@@ -391,6 +396,7 @@ public class TestSP_ReadOnlyExternalSharedFolderRules extends AbstractSPFolderTe
 
         shareFolderSuppressWarnings(internalSharer, sid, internalUser1, Role.OWNER);
         shareFolderSuppressWarnings(internalSharer, sid, internalUser2, Role.OWNER);
+        shareFolderSuppressWarnings(internalSharer, sid, externalUser2, Role.OWNER);
     }
 
     @Test
@@ -406,7 +412,7 @@ public class TestSP_ReadOnlyExternalSharedFolderRules extends AbstractSPFolderTe
         // make an external folder
         shareFolderSuppressWarnings(internalSharer, sid, externalUser1, Role.VIEWER);
         joinSharedFolder(externalUser1, sid);
-        shareFolder(internalSharer, sid, externalUser2, Role.VIEWER);
+        shareFolderSuppressWarnings(internalSharer, sid, externalUser2, Role.VIEWER);
         joinSharedFolder(externalUser2, sid);
         shareFolder(internalSharer, sid, internalUser1, Role.VIEWER);
         joinSharedFolder(internalUser1, sid);

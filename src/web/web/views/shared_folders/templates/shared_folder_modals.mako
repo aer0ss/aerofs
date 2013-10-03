@@ -64,16 +64,16 @@
         <p class="footnote">
             This will delete the folder from the person's computers.
             However, old content may be still accessible from the
-            person's sync <history class=""></history>
+            person's sync history.
         </p>
     </%modal:modal>
 
     <%modal:modal>
-        <%def name="id()">convert-to-external-modal</%def>
+        <%def name="id()">add-external-user-modal</%def>
         <%def name="title()">Be careful with externally shared folders</%def>
         <%def name="footer()">
             <a href="#" class="btn" data-dismiss="modal">Cancel</a>
-            <a href="#" id="convert-to-external-confirm" class="btn btn-danger">Proceed</a>
+            <a href="#" id="add-external-user-confirm" class="btn btn-danger">Proceed</a>
         </%def>
 
         <p>You are about to share this folder with external users.</p>

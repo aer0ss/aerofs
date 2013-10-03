@@ -11,7 +11,7 @@ import com.aerofs.base.id.UserID;
 import com.aerofs.lib.ex.shared_folder_rules.ExSharedFolderRulesEditorsDisallowedInExternallySharedFolders;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.ex.ExNoAdminOrOwner;
-import com.aerofs.lib.ex.shared_folder_rules.ExSharedFolderRulesWarningConvertToExternallySharedFolder;
+import com.aerofs.lib.ex.shared_folder_rules.ExSharedFolderRulesWarningAddExternalUser;
 import com.aerofs.lib.ex.shared_folder_rules.ExSharedFolderRulesWarningOwnerCanShareWithExternalUsers;
 import com.aerofs.sp.server.lib.SharedFolder;
 import com.aerofs.sp.server.lib.user.User;
@@ -74,14 +74,14 @@ public class ReadOnlyExternalFolderRules implements ISharedFolderRules
         boolean wasExternal = !oldExternal.isEmpty();
         boolean convertToExternal = !wasExternal && !newExternal.isEmpty();
 
+        // check enforcement _before_ showing warnings to the user (see the above line), so the user
+        // doesn't see a warning message and then an error message. See also onUpdatingACL().
+        if (wasExternal || convertToExternal) throwIfInvitingEditors(srps, allExternal);
+
         // show warning messages only if the sharer is an internal user
         if (!suppressAllWarnings && !isExternalUser(sharer.id())) {
-            showWarningsForExternalFolders(wasExternal, convertToExternal, srps, allExternal);
+            showWarningsForExternalFolders(wasExternal, srps, newExternal);
         }
-
-        // check enforcement _after_ showing warnings to the user (see the above line), so that
-        // error messages, if any, comes after the warning message. See also onUpdatingACL()
-        if (wasExternal || convertToExternal) throwIfInvitingEditors(srps, allExternal);
 
         ImmutableCollection<UserID> users;
         if (convertToExternal) users = convertEditorsToViewers(sf);
@@ -113,23 +113,22 @@ public class ReadOnlyExternalFolderRules implements ISharedFolderRules
         return builder.build();
     }
 
-    private void showWarningsForExternalFolders(boolean wasExternal, boolean convertToExternal,
-            List<SubjectRolePair> srps, ImmutableCollection<UserID> externalUsers)
+    private void showWarningsForExternalFolders(boolean wasExternal, List<SubjectRolePair> newUsers,
+            ImmutableCollection<UserID> newExternalUsers)
             throws Exception
     {
-        if (convertToExternal) {
-            // warn that the folder is about to be shared externally
-            throw new ExSharedFolderRulesWarningConvertToExternallySharedFolder(
-                    getFullNames(externalUsers));
+        if (!newExternalUsers.isEmpty()) {
+            // warn that external users will be added
+            throw new ExSharedFolderRulesWarningAddExternalUser(getFullNames(newExternalUsers));
         }
 
         if (wasExternal) {
             // if there is an owner in the invitation list, warn that the owners will be able to
             // share files with existing external users
-            for (SubjectRolePair srp : srps) {
+            for (SubjectRolePair srp : newUsers) {
                 if (srp._role.equals(Role.OWNER)) {
                     throw new ExSharedFolderRulesWarningOwnerCanShareWithExternalUsers(
-                            getFullNames(externalUsers));
+                            getFullNames(newExternalUsers));
                 }
             }
         }
@@ -147,14 +146,14 @@ public class ReadOnlyExternalFolderRules implements ISharedFolderRules
         return builder.build();
     }
 
-    private void throwIfInvitingEditors(List<SubjectRolePair> srps,
-            ImmutableCollection<UserID> externalUsers)
+    private void throwIfInvitingEditors(List<SubjectRolePair> newUsers,
+            ImmutableCollection<UserID> allExternalUsers)
             throws Exception
     {
-        for (SubjectRolePair srp : srps) {
+        for (SubjectRolePair srp : newUsers) {
             if (srp._role.equals(Role.EDITOR)) {
                 throw new ExSharedFolderRulesEditorsDisallowedInExternallySharedFolders(
-                        getFullNames(externalUsers));
+                        getFullNames(allExternalUsers));
             }
         }
     }
@@ -166,14 +165,14 @@ public class ReadOnlyExternalFolderRules implements ISharedFolderRules
         ImmutableCollection<UserID> externalUsers = getExternalUsers(sf);
         boolean isExternalFolder = !externalUsers.isEmpty();
 
-        if (!suppressAllWarnings && isExternalFolder && role.equals(Role.OWNER)) {
+        if (role.equals(Role.OWNER) && isExternalFolder && !suppressAllWarnings) {
             // warn that the new owner will be able to share files with existing external users
             throw new ExSharedFolderRulesWarningOwnerCanShareWithExternalUsers(
                     getFullNames(externalUsers));
         }
 
         // Do not allow editors on externally shared folders
-        if (isExternalFolder && role.equals(Role.EDITOR)) {
+        if (role.equals(Role.EDITOR) && isExternalFolder) {
             throw new ExSharedFolderRulesEditorsDisallowedInExternallySharedFolders(
                     getFullNames(externalUsers));
         }

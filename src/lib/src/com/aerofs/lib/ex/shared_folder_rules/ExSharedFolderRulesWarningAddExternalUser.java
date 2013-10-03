@@ -10,18 +10,17 @@ import com.aerofs.proto.Common.PBException;
 import com.aerofs.proto.Common.PBException.Type;
 import com.google.common.collect.ImmutableMap;
 
-public class ExSharedFolderRulesWarningConvertToExternallySharedFolder
+public class ExSharedFolderRulesWarningAddExternalUser
         extends AbstractExSharedFolderRules
 {
     private static final long serialVersionUID = 0;
 
-    public ExSharedFolderRulesWarningConvertToExternallySharedFolder(
-            ImmutableMap<UserID, FullName> externalUsers)
+    public ExSharedFolderRulesWarningAddExternalUser(ImmutableMap<UserID, FullName> externalUsers)
     {
         super(externalUsers);
     }
 
-    public ExSharedFolderRulesWarningConvertToExternallySharedFolder(PBException pb)
+    public ExSharedFolderRulesWarningAddExternalUser(PBException pb)
     {
         super(pb);
     }
@@ -29,6 +28,6 @@ public class ExSharedFolderRulesWarningConvertToExternallySharedFolder
     @Override
     public Type getWireType()
     {
-        return Type.SHARED_FOLDER_RULES_WARNING_CONVERT_TO_EXTERNALLY_SHARED_FOLDER;
+        return Type.SHARED_FOLDER_RULES_WARNING_ADD_EXTERNAL_USER;
     }
 }

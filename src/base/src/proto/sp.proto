@@ -182,11 +182,10 @@ service SPService {
      *   ExEmailNotVerified if the user's email hasn't been verified
      *
      * Exceptions from shared folder rules: (only when the corresponding flag is set on config)
-     *   ExSharedFolderRulesEditorsDisallowedInExternallySharedFolders if an user is an external
+     *   ExSharedFolderRulesEditorsDisallowedInExternallySharedFolders if a user is an external
      *                  user and has Editor role.
-     *   ExSharedFolderRulesWarningConvertToExternallySharedFolder if an user is an external user
-     *                  hence we are converting the folder to an externally shared folder.
-     *   ExSharedFolderRulesWarningOwnerCanShareWithExternalUsers if an user is an external user
+     *   ExSharedFolderRulesWarningAddExternalUser if an external user is being added.
+     *   ExSharedFolderRulesWarningOwnerCanShareWithExternalUsers if a user is an external user
      *                  and has Owner role.
      */
     rpc ShareFolder(ShareFolderCall) returns(Void);
