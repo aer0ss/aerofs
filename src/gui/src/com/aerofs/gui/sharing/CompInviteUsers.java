@@ -258,6 +258,13 @@ public class CompInviteUsers extends Composite implements IInputChangeListener
 
     private void work()
     {
+        workImpl(_compAddresses.getValidUserIDs(), _txtNote.getText().trim(),
+                _cmbRole.getSelectedRole(), false);
+    }
+
+    private void workImpl(final List<UserID> subjects, final String note, final Role role,
+            final boolean suppressSharedFolderRulesWarnings)
+    {
         _compSpin.start();
 
         if (_newSharedFolder) {
@@ -266,14 +273,9 @@ public class CompInviteUsers extends Composite implements IInputChangeListener
             setStatusText(S.INVITING);
         }
 
-        final List<UserID> subjects = _compAddresses.getValidUserIDs();
-        final String note = _txtNote.getText().trim();
-        final Role role = _cmbRole.getSelectedRole();
-
         enableAll(false);
 
         GUI.get().safeWork(getShell(), new ISWTWorker() {
-
             @Override
             public void error(Exception e)
             {
@@ -281,7 +283,12 @@ public class CompInviteUsers extends Composite implements IInputChangeListener
                 _compSpin.stop();
                 setStatusText("");
 
-                if (e instanceof ExNoStripeCustomerID) {
+                if (SharedFolderRulesExceptionHandlers.canHandle(e)) {
+                    if (SharedFolderRulesExceptionHandlers.promptUserToSuppressWarning(getShell(),
+                            e)) {
+                        workImpl(subjects, note, role, true);
+                    }
+                } else if (e instanceof ExNoStripeCustomerID) {
                     // TODO (WW) do the same for CLI
                     showPaymentDialog();
                 } else {
@@ -308,7 +315,8 @@ public class CompInviteUsers extends Composite implements IInputChangeListener
                 for (UserID subject : subjects) {
                     srps.add(new SubjectRolePair(subject, role).toPB());
                 }
-                UIGlobals.ritual().shareFolder(pbpath, srps, note, false);
+                UIGlobals.ritual().shareFolder(pbpath, srps, note,
+                        suppressSharedFolderRulesWarnings);
 
                 UIGlobals.analytics().track(new FolderInviteSentEvent(subjects.size()));
             }
