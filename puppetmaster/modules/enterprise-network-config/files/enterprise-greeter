@@ -1,0 +1,247 @@
+#!/usr/bin/env python
+# Script to provide command-line prompt for configuring the network.
+# Expects to be run as root.
+
+import cmd
+import os
+import re
+import sys
+import subprocess
+
+CHOSEN_CONF_FILE = "/etc/network/selected-network-type"
+STATIC_CONF = "/etc/network/interfaces.d/static"
+RESOLV_CONF = "/etc/resolv.conf"
+
+VALID_IPV4_REGEX = r'((2[0-5]|1[0-9]|[0-9])?[0-9]\.){3}((2[0-5]|1[0-9]|[0-9])?[0-9])'
+
+STATIC_CONFIG_TEMPLATE = """iface static inet static
+  address {address}
+  netmask {netmask}
+  broadcast {broadcast}
+  gateway {gateway}
+"""
+
+CYAN = "\033[01;36m"
+NORMAL = "\033[0m"
+
+BANNER = CYAN + r"""
+
+
+                    ___    __________  ____  ___________
+                   /   |  / ____/ __ \/ __ \/ ____/ ___/
+                  / /| | / __/ / /_/ / / / / /_   \__ \
+                 / ___ |/ /___/ _, _/ /_/ / __/  ___/ /
+                /_/  |_/_____/_/ |_|\____/_/    /____/
+         _______   __________________  ____  ____  _________ ______
+        / ____/ | / /_  __/ ____/ __ \/ __ \/ __ \/  _/ ___// ____/
+       / __/ /  |/ / / / / __/ / /_/ / /_/ / /_/ // / \__ \/ __/
+      / /___/ /|  / / / / /___/ _, _/ ____/ _, _// / ___/ / /___
+     /_____/_/ |_/ /_/ /_____/_/ |_/_/   /_/ |_/___//____/_____/
+
+------------------------------------------------------------------------
+
+""" + NORMAL
+
+def current_netconfig():
+    if os.path.exists(CHOSEN_CONF_FILE):
+        with open(CHOSEN_CONF_FILE) as f:
+            return f.read().strip()
+    return False
+
+def set_static_netconfig(value):
+    with open(STATIC_CONF, "w") as f:
+        f.write(value)
+
+def set_current_netconfig(value):
+    with open(CHOSEN_CONF_FILE, "w") as f:
+        f.write(value)
+
+class MenuOption(object):
+    def __init__(self, prompt, callback, default=None, validator=None, invalid_message=None, okay_message=None):
+        self.prompt = prompt
+        self.callback = callback
+        self.default = default
+        self.validator = re.compile(validator) if validator is not None else None
+        self.invalid_message = invalid_message
+        self.okay_message = okay_message
+
+class Menu(object):
+    def __init__(self, header):
+        self.header = header
+        self.choices = []
+
+    def add_choice(self, choice):
+        if not isinstance(choice, MenuOption):
+            raise ValueError("Expected a MenuOption, got a {}".format(type(choice)))
+        self.choices.append(choice)
+
+    def interact(self):
+        print self.header
+        for i, choice in enumerate(self.choices):
+            print "{}. {}".format(i+1, choice.prompt)
+        sys.stdout.write("? ")
+        sys.stdout.flush()
+        choice = sys.stdin.readline().rstrip()
+        try:
+            choice_index = int(choice, 10)
+        except ValueError:
+            print "Invalid input '{}' - please choose a number between 1 and {}".format(choice, len(self.choices))
+            return
+        if choice_index < 1 or choice_index > len(self.choices) :
+            print "Invalid input '{}' - please choose a number between 1 and {}".format(choice, len(self.choices))
+            return
+        # Okay, trigger the callback for the menu item chosen
+        self.choices[choice_index - 1].callback()
+
+# Helper functions
+def request(label, default=None, validator=None, ok_message=None, invalid_message=None):
+    done = False
+    example = "|{}|".format(default) if default else ""
+    prompt = "{} {}".format(label, example)
+    while not done:
+        sys.stdout.write(prompt)
+        sys.stdout.flush()
+        choice = sys.stdin.readline().rstrip() or default
+        if validator is not None:
+            match = re.match(validator, choice)
+            if not (match and match.start() == 0 and match.end() == len(choice)):
+                if invalid_message:
+                    print invalid_message
+                else:
+                    print "Sorry, I didn't understand that.  Please enter something matching"
+                    print validator
+                continue
+        done = True
+        if ok_message is not None:
+            print ok_message
+        return choice
+
+def ifdown():
+    subprocess.call("ifdown eth0", shell=True)
+
+def ifup():
+    subprocess.call("ifup eth0", shell=True)
+
+def dhcp_menu_text():
+    return "DHCP [selected]" if current_netconfig() == "dhcp" else "DHCP"
+
+def static_menu_text():
+    return "Static [selected]" if current_netconfig() == "static" else "Static"
+
+def current_static_value(search_key):
+    with open(STATIC_CONF) as f:
+        for line in f:
+            try:
+                key, value = line.strip().split(" ", 1)
+                if key == search_key:
+                    return value
+            except:
+                # Ignore lines that don't split
+                pass
+    return None
+
+def read_resolvconf():
+    nameservers = []
+    additional_lines = []
+    # Note: this regex only works because we try to match() on individual lines.
+    # don't try to use it on a full file
+    regex = re.compile(r"nameserver (.*)")
+    if os.path.exists(RESOLV_CONF):
+        # Read lines of /etc/resolv.conf.
+        # If it starts "nameserver ", add the nameserver to the list.
+        # otherwise, add that line to the "additional_lines" list
+        with open(RESOLV_CONF) as f:
+            for line in f:
+                try:
+                    match = regex.match(line)
+                    if match:
+                        print match.group(1)
+                        nameservers.append(match.group(1).strip())
+                    else:
+                        additional_lines.append(line.rstrip())
+                except:
+                    pass
+    return (nameservers, additional_lines)
+
+
+# Main menu callbacks
+def select_dhcp():
+    print "Configuring network for DHCP"
+    ifdown()
+    set_current_netconfig("dhcp")
+    ifup()
+
+def show_static_menu():
+    # read static values from user
+    ip_address = request("IP Address: ",
+                         default=current_static_value("address"),
+                         validator=VALID_IPV4_REGEX)
+    netmask    = request("Netmask: ",
+                         default=current_static_value("netmask"),
+                         validator=VALID_IPV4_REGEX)
+    broadcast  = request("Broadcast address: ",
+                         default=current_static_value("broadcast"),
+                         validator=VALID_IPV4_REGEX)
+    gateway    = request("Gateway: ",
+                         default=current_static_value("gateway"),
+                         validator=VALID_IPV4_REGEX)
+    # render static template with config values
+    static_config_file_contents = STATIC_CONFIG_TEMPLATE.format(address=ip_address,
+                 netmask=netmask,
+                 broadcast=broadcast,
+                 gateway=gateway,)
+    # bring old network down
+    ifdown()
+    # save new config file and tell eth0 to use static conf
+    set_static_netconfig(static_config_file_contents)
+    set_current_netconfig("static")
+    # bring new network configuration up
+    ifup()
+
+def show_dns_menu():
+    old_nameservers, additional_lines = read_resolvconf()
+    new_nameservers = []
+
+    # Get primary nameserver from user.
+    previous_default_nameserver = old_nameservers[0] if len(old_nameservers) > 0 else None
+    first_nameserver = request("Primary nameserver: ", default=previous_default_nameserver, validator=VALID_IPV4_REGEX)
+    new_nameservers.append(first_nameserver)
+    # Collect additional nameservers, if desired
+    while True:
+        want_more = request("Add another nameserver? [y/n] ", validator=r"y|n")
+        if want_more == "n":
+            break
+        next_nameserver_default = old_nameservers[len(new_nameservers)] if len(old_nameservers) > len(new_nameservers) else None
+        next_nameserver = request("Next nameserver: ", default=next_nameserver_default, validator=VALID_IPV4_REGEX)
+        new_nameservers.append(next_nameserver)
+    # Commit.
+    with open(RESOLV_CONF, "w") as f:
+        for server in new_nameservers:
+            print >>f, "nameserver {}".format(server)
+        for line in additional_lines:
+            print >>f, line
+
+def restart():
+    subprocess.call("init 6", shell=True)
+    sys.exit(0)
+
+def shutdown():
+    subprocess.call("init 0", shell=True)
+    sys.exit(0)
+
+def main():
+    menu = Menu("Network Configuration:")
+    menu.add_choice(MenuOption(dhcp_menu_text(), select_dhcp))
+    menu.add_choice(MenuOption(static_menu_text(), show_static_menu))
+    menu.add_choice(MenuOption("DNS", show_dns_menu))
+    menu.add_choice(MenuOption("Restart", restart))
+    menu.add_choice(MenuOption("Shutdown", shutdown))
+    menu.interact()
+
+if __name__ == "__main__":
+    print BANNER
+    while True:
+        try:
+            main()
+        except KeyboardInterrupt:
+            exit(0)
