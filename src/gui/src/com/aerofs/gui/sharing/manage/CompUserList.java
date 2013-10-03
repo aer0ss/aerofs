@@ -5,8 +5,11 @@ import com.aerofs.base.acl.Role;
 import com.aerofs.base.acl.SubjectRolePair;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.id.UserID;
+import com.aerofs.gui.CompSpin;
 import com.aerofs.gui.GUI;
+import com.aerofs.gui.GUI.ISWTWorker;
 import com.aerofs.gui.SimpleContentProvider;
+import com.aerofs.gui.sharing.manage.RoleMenu.RoleChangeListener;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.S;
@@ -15,9 +18,9 @@ import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.proto.Common.PBSubjectRolePair;
 import com.aerofs.proto.Ritual.GetACLReply;
-import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.UIGlobals;
 import com.aerofs.ui.UIUtil;
+import com.aerofs.ui.error.ErrorMessage;
 import com.aerofs.ui.error.ErrorMessages;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
@@ -42,6 +45,8 @@ import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 
+import static com.google.common.base.Preconditions.checkState;
+
 public class CompUserList extends Composite
 {
     private static final Logger l = Loggers.getLogger(CompUserList.class);
@@ -57,6 +62,8 @@ public class CompUserList extends Composite
     private final TableColumn _tcSubject;
     private final TableColumn _tcRole;
     private final TableColumn _tcArrow;
+
+    private CompSpin _compSpin;
 
     private Path _path;
     private Role _rSelf;
@@ -105,7 +112,16 @@ public class CompUserList extends Composite
                 SubjectRolePair srp = (SubjectRolePair) elem;
                 if (!hasContextMenu(srp)) return;
 
-                new RoleMenu(CompUserList.this, srp, _tv.getTable(), shouldShowUpdateACLMenuItems()).open();
+                RoleMenu menu = new RoleMenu(_tv.getTable(),  srp, shouldShowUpdateACLMenuItems());
+                menu.setRoleChangeListener(new RoleChangeListener()
+                {
+                    @Override
+                    public void onRoleChangeSelected(UserID subject, Role role)
+                    {
+                        setRole(_path, subject, role);
+                    }
+                });
+                menu.open();
             }
         });
 
@@ -125,6 +141,14 @@ public class CompUserList extends Composite
                 recalcUserColumnWidth();
             }
         });
+    }
+
+    // the spinner control is a separate public method because this way we can construct the
+    // composite in whatever order we want. In practice, it should either be unset or set once and
+    // never change.
+    public void setSpinner(CompSpin compSpin)
+    {
+        _compSpin = compSpin;
     }
 
     /**
@@ -172,85 +196,119 @@ public class CompUserList extends Composite
     }
 
     /**
-     * This method can be called in either UI or non-UI threads
+     * @pre must be invoked from UI threads.
      */
     public void load(Path path, final @Nullable ILoadListener listener)
     {
-        // TODO: spinner?
+        checkState(GUI.get().isUIThread());
+
         _tv.setInput(new Object[] { S.GUI_LOADING });
 
         _path = path;
         _rSelf = null;
 
         Futures.addCallback(UIGlobals.ritualNonBlocking().getACL(path.toPB()),
-                new FutureCallback<GetACLReply>() {
-            @Override
-            public void onSuccess(GetACLReply reply)
-            {
-                try {
-                    final Object[] elems = new Object[reply.getSubjectRoleCount()];
+                new FutureCallback<GetACLReply>()
+                {
+                    @Override
+                    public void onSuccess(GetACLReply reply)
+                    {
+                        try {
+                            final Object[] elems = new Object[reply.getSubjectRoleCount()];
 
-                    for (int i = 0; i < elems.length; i++) {
-                        PBSubjectRolePair srp = reply.getSubjectRole(i);
-                        UserID subject = UserID.fromExternal(srp.getSubject());
-                        Role role = Role.fromPB(srp.getRole());
+                            for (int i = 0; i < elems.length; i++) {
+                                PBSubjectRolePair srp = reply.getSubjectRole(i);
+                                UserID subject = UserID.fromExternal(srp.getSubject());
+                                Role role = Role.fromPB(srp.getRole());
 
-                        elems[i] = new SubjectRolePair(subject, role);
+                                elems[i] = new SubjectRolePair(subject, role);
 
-                        if (subject.equals(Cfg.user())) _rSelf = role;
+                                if (subject.equals(Cfg.user())) _rSelf = role;
+                            }
+
+                            GUI.get().safeAsyncExec(CompUserList.this, new Runnable()
+                            {
+                                @Override
+                                public void run()
+                                {
+                                    _tv.setInput(elems);
+                                    recalcUserColumnWidth();
+                                    if (listener != null) listener.loaded(elems.length, _rSelf);
+                                }
+                            });
+                        } catch (Exception e) {
+                            ErrorMessages.show(getShell(), e, "Failed to retrieve user list: " + e);
+                        }
                     }
 
-                    GUI.get().safeAsyncExec(CompUserList.this, new Runnable() {
-                        @Override
-                        public void run()
-                        {
-                            _tv.setInput(elems);
-                            recalcUserColumnWidth();
-                            if (listener != null) listener.loaded(elems.length, _rSelf);
-                        }
-                    });
-                } catch (Exception e) {
-                    GUI.get().show(getShell(), MessageType.ERROR,
-                            "Failed to retrieve user list: " + e);
-                }
-            }
-
-            @Override
-            public void onFailure(Throwable t)
-            {
-                GUI.get().safeAsyncExec(CompUserList.this, new Runnable() {
                     @Override
-                    public void run()
+                    public void onFailure(Throwable t)
                     {
-                        _tv.setInput(new Object[] {});
+                        GUI.get().safeAsyncExec(CompUserList.this, new Runnable()
+                        {
+                            @Override
+                            public void run()
+                            {
+                                _tv.setInput(new Object[0]);
+                            }
+                        });
+
+                        ErrorMessages.show(getShell(), t, "Failed to retrieve user list: " + t,
+                                new ErrorMessage(ExNoPerm.class,
+                                        "You are no longer a member of this shared folder"));
                     }
                 });
-
-                if (t instanceof ExNoPerm) {
-                    GUI.get().show(getShell(), MessageType.ERROR,
-                            "You are no longer a member of this shared folder");
-                } else {
-                    GUI.get().show(getShell(), MessageType.ERROR,
-                            "Failed to retrieve user list: " + t);
-                }
-            }
-        });
     }
 
-    public void setRole(UserID subject, Role role)
+    /**
+     * {@paramref path} needs to be passed in because _path can change while ISWTWorker does work
+     */
+    private void setRole(final Path path, final UserID subject, final Role role)
     {
-        try {
-            if (role == null) {
-                UIGlobals.ritual().deleteACL(_path.toPB(), subject.getString());
-            } else {
-                UIGlobals.ritual().updateACL(_path.toPB(), subject.getString(), role.toPB(), false);
+        final Table table = _tv.getTable();
+        table.setEnabled(false);
+
+        if (_compSpin != null) _compSpin.start();
+
+        GUI.get().safeWork(getShell(), new ISWTWorker()
+        {
+            @Override
+            public void run()
+                    throws Exception
+            {
+                if (role == null) {
+                    UIGlobals.ritual().deleteACL(path.toPB(), subject.getString());
+                } else {
+                    UIGlobals.ritual().updateACL(path.toPB(), subject.getString(), role.toPB(), false);
+                }
             }
-            load(_path, null);
-        } catch (Exception e) {
-            l.warn(Util.e(e));
-            GUI.get().show(getShell(), MessageType.ERROR,
-                    "Couldn't edit the user. " + S.TRY_AGAIN_LATER + "\n\n" +
-                            "Error message: " + ErrorMessages.e2msgSentenceNoBracketDeprecated(e));
-        }
+
+            @Override
+            public void okay()
+            {
+                if (_compSpin != null && !_compSpin.isDisposed()) _compSpin.stop();
+
+                if (!table.isDisposed()) {
+                    table.setEnabled(true);
+                    load(path, null);
+                }
+            }
+
+            @Override
+            public void error(Exception e)
+            {
+                if (_compSpin != null && !_compSpin.isDisposed()) _compSpin.stop();
+
+                if (!table.isDisposed()) table.setEnabled(true);
+
+                l.warn(Util.e(e));
+
+                String message = "Couldn't edit the user. " + S.TRY_AGAIN_LATER + "\n\n" +
+                        "Error message: " + ErrorMessages.e2msgSentenceNoBracketDeprecated(e);
+
+                ErrorMessages.show(getShell(), e, "Unused default.",
+                        new ErrorMessage(e.getClass(), message));
+            }
+        });
     }
 }
