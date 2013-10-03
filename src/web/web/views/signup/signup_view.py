@@ -105,23 +105,25 @@ def json_signup(request):
 
         # NOTE: We don't verify that the lead was succesfully captured because we don't want to
         #       prevent the user from signing up even if salesforce fails
-        try:
-            urlopen(
-                'https://www.salesforce.com/servlet/servlet.WebToLead?encoding=UTF-8',
-                urlencode({
-                    'oid': '00Dd0000000gsmN',
-                    'email': email_address,
-                    'first_name': first_name,
-                    'last_name': last_name,
-                    'company': company,
-                    'title': title,
-                    'employees': company_size,
-                    'phone': request.params['phone'],
-                    'country': request.params['country']
-                }))
-        except Exception as e:
-            log.warn(e)
-   
+        #       Also, we don't want to run this code if we're in enterprise mode.
+
+        if not is_enterprise_deployment(request):
+            try:
+                urlopen(
+                    'https://www.salesforce.com/servlet/servlet.WebToLead?encoding=UTF-8',
+                    urlencode({
+                        'oid': '00Dd0000000gsmN',
+                        'email': email_address,
+                        'first_name': first_name,
+                        'last_name': last_name,
+                        'company': company,
+                        'title': title,
+                        'employees': company_size,
+                        'phone': request.params['phone'],
+                        'country': request.params['country']
+                    }))
+            except Exception as e:
+                log.warn(e)
         return {
             'team_id': result.org_id,
             'existing_team': result.existing_team
