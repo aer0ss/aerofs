@@ -13,6 +13,7 @@ public class EIShareFolder extends AbstractEBIMC
     public final Path _path;
     public final Map<UserID, Role> _subject2role;
     public final String _emailNote;
+    public final boolean _suppressSharedFolderRulesWarnings;
 
     /**
      * Convert an existing folder to an anchor. The anchor's OID is deterministically derived from
@@ -21,12 +22,14 @@ public class EIShareFolder extends AbstractEBIMC
      * time.
      * @param path the path of the new store
      */
-    public EIShareFolder(Path path, Map<UserID, Role> subject2role, String emailNote)
+    public EIShareFolder(Path path, Map<UserID, Role> subject2role, String emailNote,
+            boolean suppressSharedFolderRulesWarnings)
     {
         super(Core.imce());
         assert path != null;
         _path = path;
         _subject2role = subject2role;
         _emailNote = emailNote;
+        _suppressSharedFolderRulesWarnings = suppressSharedFolderRulesWarnings;
     }
 }

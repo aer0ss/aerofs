@@ -155,7 +155,8 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
         //
 
         String name = Util.sharedFolderName(ev._path, _absRoots);
-        callSP_(sid, name, SubjectRolePairs.mapToPB(ev._subject2role), ev._emailNote);
+        callSP_(sid, name, SubjectRolePairs.mapToPB(ev._subject2role), ev._emailNote,
+                ev._suppressSharedFolderRulesWarnings);
 
         if (!alreadyShared) convertToSharedFolder_(ev._path, oa, sid);
 
@@ -193,7 +194,7 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
      * Pseudo-pause and make a call to SP to share the folder
      */
     private void callSP_(SID sid, String folderName, List<PBSubjectRolePair> roles,
-            String emailNote) throws Exception
+            String emailNote, boolean suppressSharedFolderRulesWarnings) throws Exception
     {
         Token tk = _tc.acquireThrows_(Cat.UNLIMITED, "sp-share");
         TCB tcb = null;
@@ -202,7 +203,7 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
             SPBlockingClient sp = _factSP.create_(_localUser.get());
             sp.signInRemote();
             // external shared folders are create by HdLinkRoot only
-            sp.shareFolder(folderName, sid.toPB(), roles, emailNote, false, false);
+            sp.shareFolder(folderName, sid.toPB(), roles, emailNote, false, suppressSharedFolderRulesWarnings);
         } finally {
             if (tcb != null) tcb.pseudoResumed_();
             tk.reclaim_();

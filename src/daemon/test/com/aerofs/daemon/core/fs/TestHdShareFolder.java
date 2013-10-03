@@ -122,7 +122,7 @@ public class TestHdShareFolder extends AbstractTest
     {
         ImmutableMap.Builder<UserID, Role> roles = new ImmutableMap.Builder<UserID, Role>();
         for (UserID u : users) roles.put(u, Role.EDITOR);
-        hd.handleThrows_(new EIShareFolder(path, roles.build(), ""), Prio.LO);
+        hd.handleThrows_(new EIShareFolder(path, roles.build(), "", false), Prio.LO);
     }
 
     @SuppressWarnings("unchecked")

@@ -243,7 +243,7 @@ public class CompUserList extends Composite
             if (role == null) {
                 UIGlobals.ritual().deleteACL(_path.toPB(), subject.getString());
             } else {
-                UIGlobals.ritual().updateACL(_path.toPB(), subject.getString(), role.toPB());
+                UIGlobals.ritual().updateACL(_path.toPB(), subject.getString(), role.toPB(), false);
             }
             load(_path, null);
         } catch (Exception e) {

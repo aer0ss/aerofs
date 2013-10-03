@@ -58,6 +58,20 @@ import javax.annotation.Nullable;
  * more information is added to B to include A's stack trace, whereas "serialization" reproduces
  * exactly the same objects. In addition, in exception wiring, all non-wirable exceptions are wired
  * into ExInternalError.
+ *
+ * ----
+ *
+ * N.B.: All descendants of AbstractExWirable, except itself, _must_ provide a constructor that
+ * takes in a single argument of type PBException and the implementation of said constructor should
+ * be to call AbstractExWirable(PBException).
+ *
+ * The sender of a wirable exception converts the exception to a PBException message and transmit
+ * that over the wire. The recipient of the message uses a map to look up the type for the
+ * exception, and then reconstructs the exception object using the message _via reflection_. Hence
+ * all descendants of this class must provide a constructor that takes in a single argument of type
+ * PBException.
+ *
+ * For details, see Exceptions.fromPB(PBException).
  */
 public abstract class AbstractExWirable extends Exception
 {

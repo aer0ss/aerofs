@@ -308,7 +308,7 @@ public class CompInviteUsers extends Composite implements IInputChangeListener
                 for (UserID subject : subjects) {
                     srps.add(new SubjectRolePair(subject, role).toPB());
                 }
-                UIGlobals.ritual().shareFolder(pbpath, srps, note);
+                UIGlobals.ritual().shareFolder(pbpath, srps, note, false);
 
                 UIGlobals.analytics().track(new FolderInviteSentEvent(subjects.size()));
             }
