@@ -115,6 +115,8 @@ public class ClientConfigurationLoader
 
             _downloader.download(url, certificateProvider, cache);
         } catch (Throwable t) {
+            // N.B. the best we can do is log the occurrence because if at this stage, none of the
+            // services are available and there's no way to report the defect back home.
             LOGGER.debug("Failed to download http configuration", t);
         }
     }
