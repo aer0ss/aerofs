@@ -4,6 +4,7 @@
 
 package com.aerofs.sp.authentication;
 
+import com.aerofs.base.Base64;
 import com.aerofs.base.ssl.ICertificateProvider;
 import com.aerofs.base.ssl.IPrivateKeyProvider;
 import com.aerofs.base.ssl.SSLEngineFactory;
@@ -22,7 +23,6 @@ import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
-import sun.misc.BASE64Encoder;
 
 import javax.annotation.Nonnull;
 import java.io.ByteArrayInputStream;
@@ -151,7 +151,6 @@ public abstract class InMemoryServer
             //
             // Generate a self-signed certificate for this server...
             //
-            BASE64Encoder encoder = new BASE64Encoder();
             KeyPair caKeyPair = generateKeyPair(new SecureRandom());
             ICertificateProvider caCertificateProvider = new CertProvider(caKeyPair);
             SSLEngineFactory sslEngineFactory = new SSLEngineFactory(
@@ -159,7 +158,7 @@ public abstract class InMemoryServer
                     new KeyProvider(caKeyPair, caCertificateProvider.getCert()), null, null);
 
             _cert = "-----BEGIN CERTIFICATE-----\n"
-                    + encoder.encodeBuffer(caCertificateProvider.getCert().getEncoded())
+                    + Base64.encodeBytes(caCertificateProvider.getCert().getEncoded())
                     + "\n-----END CERTIFICATE-----";
 
             if (_useSsl) {
