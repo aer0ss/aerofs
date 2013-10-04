@@ -53,6 +53,29 @@ def _is_openid_enabled(request):
     return is_enterprise_deployment(request) \
         and request.registry.settings.get('lib.authenticator', 'local_credential').lower() == 'openid'
 
+def _is_external_cred_enabled(request):
+    """
+    True if the server allows external authentication, usually LDAP.
+    This determines whether we should scrypt the user password.
+    """
+    return is_enterprise_deployment(request) \
+        and request.registry.settings.get('lib.authenticator', 'local_credential').lower() == 'external_credential'
+
+def _format_password(request, password, login):
+    """
+    If the server configuration expects an scrypt'ed credential for this user, do so here;
+    otherwise return the cleartext password as provided.
+    NOTE the logic embedded here is also found in IUserFilter/UserFilterFactory; any
+    changes need to be reflected in both places.
+    """
+    if _is_external_cred_enabled(request):
+        internal_pattern = request.registry.settings.get('internal_email_pattern')
+        if internal_pattern is not None:
+            reg = re.compile(internal_pattern)
+            if reg.search(login) is not None:
+                return str(password)
+    return scrypt(password, login)
+
 @view_config(
     route_name='login',
     permission=NO_PERMISSION_REQUIRED,
@@ -71,7 +94,7 @@ def login_view(request):
         # Remember to normalize the email address.
         login = request.params[URL_PARAM_EMAIL]
         password = request.params[URL_PARAM_PASSWORD]
-        hashed_password = scrypt(password, login)
+        hashed_password = _format_password(request, password, login)
         stay_signed_in = URL_PARAM_REMEMBER_ME in request.params
 
         try:
