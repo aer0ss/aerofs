@@ -2,24 +2,21 @@
 <%! page_title = "Sign In" %>
 
 <div class="row">
-    <div class="span12">
+    <div class="span12" style="margin-bottom: 40px">
         <h1 style="text-align: center">Sign In to AeroFS</h1>
     </div>
     %if openid_enabled:
-        <div style="margin-top: 50px" class="span7 offset4">
-            ${openid_service_internal_hint}
+        <div class="span12 text-center">
+            <a class="btn btn-primary btn-large" href="${openid_url}">Sign In with OpenID</a>
         </div>
-        <div class="span12 text-center" style="margin-top: 10px">
-            <div>
-                <a class="btn btn-primary btn-large" href="${openid_url}">Sign In with Your OpenID Provider</a>
-            </div>
-        </div>
-        <div style="margin-top: 50px" class="span7 offset4">
-            ${openid_service_external_hint}
+        <div class="span10 offset1" style="border-top: 1px solid #d3d3d3;
+        margin-top: 60px; margin-bottom: 40px"></div>
+        <div class="span12 text-center">
+            <h3>${openid_service_external_hint}</h3>
         </div>
     %endif
-        <div class="span7 offset5">
-        <br>
+
+    <div class="span7 offset5">
         ## N.B. signup.mock manually creates this form. Make sure the fields there
         ## are consistent with the fields here.
 

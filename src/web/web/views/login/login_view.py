@@ -98,7 +98,6 @@ def login_view(request):
     # if openid_enabled is false we don't need to do any of the following. :(
     openid_url = "{0}?{1}".format(request.route_url('login_openid_begin'), url.urlencode({'next' : next}))
     openid_identifier = settings.get('openid.service.identifier', 'OpenID')
-    internal_hint = settings.get('openid.service.internal.hint', 'Have an OpenID account?')
     external_hint = settings.get('openid.service.external.hint', 'AeroFS user without an OpenID account?')
 
     return {
@@ -110,7 +109,6 @@ def login_view(request):
         'openid_enabled': openid_enabled,
         'openid_url': openid_url,
         'openid_service_identifier': openid_identifier,
-        'openid_service_internal_hint': internal_hint,
         'openid_service_external_hint': external_hint,
         'login': login,
         'next': next,
