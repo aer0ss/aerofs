@@ -18,7 +18,7 @@ public class RequestToSignUpEmailer
 {
     // See web/__init__.py for the reason we have different URLs for private and public deployment
     static private String DASHBOARD_HOME = WWW.DASHBOARD_HOST_URL +
-            (EnterpriseConfig.IS_ENTERPRISE_DEPLOYMENT ? "/home" : "/");
+            (EnterpriseConfig.IS_ENTERPRISE_DEPLOYMENT ? "/" : "/home");
 
     static String getSignUpLink(String signUpCode)
     {
