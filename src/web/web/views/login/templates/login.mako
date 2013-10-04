@@ -5,13 +5,25 @@
     <div class="span12">
         <h1 style="text-align: center">Sign In to AeroFS</h1>
     </div>
-    <div class="span7 offset5">
+    %if openid_enabled:
+        <div style="margin-top: 50px" class="span7 offset4">
+            ${openid_service_internal_hint}
+        </div>
+        <div class="span12 text-center" style="margin-top: 10px">
+            <div>
+                <a class="btn btn-primary btn-large" href="${openid_url}">Sign In with Your OpenID Provider</a>
+            </div>
+        </div>
+        <div style="margin-top: 50px" class="span7 offset4">
+            ${openid_service_external_hint}
+        </div>
+    %endif
+        <div class="span7 offset5">
         <br>
-
         ## N.B. signup.mock manually creates this form. Make sure the fields there
         ## are consistent with the fields here.
 
-        <form id="signin_form" action="${request.route_path('login_credential')}" method="post">
+        <form id="signin_form" action="${request.route_path('login')}" method="post">
             ${self.csrf.token_input()}
             <input type="hidden" name="${url_param_next}" value="${next}">
             <input type="hidden" name="${url_param_form_submitted}" value="1">

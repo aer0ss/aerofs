@@ -7,6 +7,7 @@ package com.aerofs.lib;
 import com.aerofs.base.BaseParam;
 import com.aerofs.base.C;
 import com.aerofs.base.id.SID;
+import com.aerofs.labeling.L;
 import com.aerofs.lib.LibParam.Identity.Authenticator;
 import com.google.common.base.Optional;
 
@@ -357,8 +358,8 @@ public class LibParam extends BaseParam
          */
         public static final String                      SERVICE_EXTERNAL_HINT =
                 getStringProperty(                      "openid.service.external.hint",
-                                                        "No " + SERVICE_IDENTIFIER
-                                                                + " account?");
+                                                        L.product() + " user without an "
+                                                                + SERVICE_IDENTIFIER + " account?");
 
         /** The security realm for which we are requesting authorization */
         public static final String                      IDENTITY_REALM =

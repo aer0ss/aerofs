@@ -7,13 +7,11 @@ from pyramid.view import view_config
 
 from aerofs_sp.gen.sp_pb2 import SPServiceRpcStub
 from aerofs_sp.connection import SyncConnectionService
-from aerofs_sp.scrypt import scrypt
 
 from login_view import get_next_url
 from web.util import *
 
 log = logging.getLogger(__name__)
-
 
 def _begin_sp_auth(request):
     """
@@ -76,30 +74,9 @@ def _get_sp_auth(request, stay_signed_in):
 
     return remember(request, login)
 
-
 @view_config(
-    route_name = 'login_openid_view',
+    route_name = 'login_openid_begin',
     permission=NO_PERMISSION_REQUIRED,
-    renderer = 'login_openid.mako'
-)
-def login_openid_view(request):
-    """
-    The initial login view. We just process 'next' and build it into an
-    openid_login url. This could be a more complex view some day.
-
-    TODO: A cleverer person than me, or someone with more time, could combine
-    this function and renderer with login.mako. And should do so. Please. Soon.
-    """
-    _next = get_next_url(request)
-    signin_url = "{0}?{1}".format(request.route_url('login_openid'), url.urlencode({'next' : _next}))
-    return {'signin_url': signin_url}
-
-
-# TODO: this should not require a renderer!
-@view_config(
-    route_name = 'login_openid',
-    permission=NO_PERMISSION_REQUIRED,
-    renderer = 'login_openid.mako'
 )
 def login_openid(request):
     """
@@ -109,12 +86,9 @@ def login_openid(request):
     identity_url = _begin_sp_auth(request)
     return HTTPFound(location=identity_url)
 
-
-# TODO: this should not require a renderer!
 @view_config(
     route_name = 'login_openid_complete',
     permission=NO_PERMISSION_REQUIRED,
-    renderer = 'login_openid.mako'
 )
 def login_openid_complete(request):
     """
