@@ -4,20 +4,19 @@
 
 package com.aerofs.lib.ex.shared_folder_rules;
 
-import com.aerofs.base.id.UserID;
-import com.aerofs.lib.FullName;
+import com.aerofs.base.ex.AbstractExWirable;
 import com.aerofs.proto.Common.PBException;
 import com.aerofs.proto.Common.PBException.Type;
-import com.google.common.collect.ImmutableMap;
 
+// Unlike other ExSharedFolderRules* classes, this class doesn't need to carry the list of external
+// users and therefore doesn't inherit from AbstarctExSharedFolderRules
 public class ExSharedFolderRulesWarningAddExternalUser
-        extends AbstractExSharedFolderRules
+        extends AbstractExWirable
 {
     private static final long serialVersionUID = 0;
 
-    public ExSharedFolderRulesWarningAddExternalUser(ImmutableMap<UserID, FullName> externalUsers)
+    public ExSharedFolderRulesWarningAddExternalUser()
     {
-        super(externalUsers);
     }
 
     public ExSharedFolderRulesWarningAddExternalUser(PBException pb)

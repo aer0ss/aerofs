@@ -151,7 +151,9 @@ public class TestSP_ReadOnlyExternalSharedFolderRules extends AbstractSPFolderTe
         try {
             shareFolder(externalUser1, sid, internalUser1, Role.EDITOR);
             fail();
-        } catch (ExSharedFolderRulesEditorsDisallowedInExternallySharedFolders e) {}
+        } catch (ExSharedFolderRulesEditorsDisallowedInExternallySharedFolders e) {
+            assertEquals(e.getExternalUsers().size(), 1);
+        }
     }
 
     @Test
@@ -170,6 +172,7 @@ public class TestSP_ReadOnlyExternalSharedFolderRules extends AbstractSPFolderTe
             shareFolder(externalUser1, sid, externalUser2, Role.EDITOR);
             fail();
         } catch (ExSharedFolderRulesEditorsDisallowedInExternallySharedFolders e) {
+            assertEquals(e.getExternalUsers().size(), 2);
             sqlTrans.rollback();
         }
 
@@ -177,6 +180,7 @@ public class TestSP_ReadOnlyExternalSharedFolderRules extends AbstractSPFolderTe
             shareFolder(externalUser1, sid, internalUser1, Role.EDITOR);
             fail();
         } catch (ExSharedFolderRulesEditorsDisallowedInExternallySharedFolders e) {
+            assertEquals(e.getExternalUsers().size(), 1);
             sqlTrans.rollback();
         }
     }
@@ -188,7 +192,9 @@ public class TestSP_ReadOnlyExternalSharedFolderRules extends AbstractSPFolderTe
         try {
             shareFolder(internalSharer, sid, externalUser1, Role.EDITOR);
             fail();
-        } catch (ExSharedFolderRulesEditorsDisallowedInExternallySharedFolders e) {}
+        } catch (ExSharedFolderRulesEditorsDisallowedInExternallySharedFolders e) {
+            assertEquals(e.getExternalUsers().size(), 1);
+        }
     }
 
     @Test
@@ -207,6 +213,7 @@ public class TestSP_ReadOnlyExternalSharedFolderRules extends AbstractSPFolderTe
             shareFolder(internalUser1, sid, externalUser2, Role.EDITOR);
             fail();
         } catch (ExSharedFolderRulesEditorsDisallowedInExternallySharedFolders e) {
+            assertEquals(e.getExternalUsers().size(), 1);
             sqlTrans.rollback();
         }
     }
@@ -274,13 +281,16 @@ public class TestSP_ReadOnlyExternalSharedFolderRules extends AbstractSPFolderTe
             shareFolder(internalSharer, sid, internalUser3, Role.EDITOR);
             fail();
         } catch (ExSharedFolderRulesEditorsDisallowedInExternallySharedFolders e) {
+            assertEquals(e.getExternalUsers().size(), 1);
             sqlTrans.rollback();
         }
 
         try {
             shareFolder(internalSharer, sid, externalUser2, Role.EDITOR);
             fail();
-        } catch (ExSharedFolderRulesEditorsDisallowedInExternallySharedFolders e) {}
+        } catch (ExSharedFolderRulesEditorsDisallowedInExternallySharedFolders e) {
+            assertEquals(e.getExternalUsers().size(), 2);
+        }
     }
 
     @Test
@@ -296,6 +306,7 @@ public class TestSP_ReadOnlyExternalSharedFolderRules extends AbstractSPFolderTe
             updateACL(externalUser1, Role.EDITOR);
             fail();
         } catch (ExSharedFolderRulesEditorsDisallowedInExternallySharedFolders e) {
+            assertEquals(e.getExternalUsers().size(), 2);
             sqlTrans.rollback();
         }
 
@@ -303,6 +314,7 @@ public class TestSP_ReadOnlyExternalSharedFolderRules extends AbstractSPFolderTe
             updateACL(externalUser2, Role.EDITOR);
             fail();
         } catch (ExSharedFolderRulesEditorsDisallowedInExternallySharedFolders e) {
+            assertEquals(e.getExternalUsers().size(), 2);
             sqlTrans.rollback();
         }
 
@@ -310,6 +322,7 @@ public class TestSP_ReadOnlyExternalSharedFolderRules extends AbstractSPFolderTe
             updateACL(internalUser1, Role.EDITOR);
             fail();
         } catch (ExSharedFolderRulesEditorsDisallowedInExternallySharedFolders e) {
+            assertEquals(e.getExternalUsers().size(), 2);
             sqlTrans.rollback();
         }
     }
@@ -336,6 +349,7 @@ public class TestSP_ReadOnlyExternalSharedFolderRules extends AbstractSPFolderTe
             shareFolder(internalSharer, sid, internalUser1, Role.OWNER);
             fail();
         } catch (ExSharedFolderRulesWarningOwnerCanShareWithExternalUsers e) {
+            assertEquals(e.getExternalUsers().size(), 1);
             sqlTrans.rollback();
         }
 
@@ -343,6 +357,16 @@ public class TestSP_ReadOnlyExternalSharedFolderRules extends AbstractSPFolderTe
             shareFolder(internalSharer, sid, internalUser2, Role.OWNER);
             fail();
         } catch (ExSharedFolderRulesWarningOwnerCanShareWithExternalUsers e) {
+            assertEquals(e.getExternalUsers().size(), 1);
+            sqlTrans.rollback();
+        }
+
+        try {
+            shareFolder(internalSharer, sid, externalUser2, Role.OWNER);
+            fail();
+            // When adding an external user as an owner, the system should throw the "adding
+            // external user" warning rather than the "owner can share externally" warning
+        } catch (ExSharedFolderRulesWarningAddExternalUser e) {
             sqlTrans.rollback();
         }
     }
@@ -369,6 +393,7 @@ public class TestSP_ReadOnlyExternalSharedFolderRules extends AbstractSPFolderTe
             updateACL(externalUser1, Role.OWNER);
             fail();
         } catch (ExSharedFolderRulesWarningOwnerCanShareWithExternalUsers e) {
+            assertEquals(e.getExternalUsers().size(), 2);
             sqlTrans.rollback();
         }
 
@@ -376,6 +401,7 @@ public class TestSP_ReadOnlyExternalSharedFolderRules extends AbstractSPFolderTe
             updateACL(externalUser2, Role.OWNER);
             fail();
         } catch (ExSharedFolderRulesWarningOwnerCanShareWithExternalUsers e) {
+            assertEquals(e.getExternalUsers().size(), 2);
             sqlTrans.rollback();
         }
 
@@ -383,6 +409,7 @@ public class TestSP_ReadOnlyExternalSharedFolderRules extends AbstractSPFolderTe
             updateACL(internalUser1, Role.OWNER);
             fail();
         } catch (ExSharedFolderRulesWarningOwnerCanShareWithExternalUsers e) {
+            assertEquals(e.getExternalUsers().size(), 2);
             sqlTrans.rollback();
         }
     }

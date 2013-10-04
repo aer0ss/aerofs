@@ -80,7 +80,7 @@ public class ReadOnlyExternalFolderRules implements ISharedFolderRules
 
         // show warning messages only if the sharer is an internal user
         if (!suppressAllWarnings && !isExternalUser(sharer.id())) {
-            showWarningsForExternalFolders(wasExternal, srps, newExternal);
+            showWarningsForExternalFolders(wasExternal, srps, newExternal, allExternal);
         }
 
         ImmutableCollection<UserID> users;
@@ -114,12 +114,12 @@ public class ReadOnlyExternalFolderRules implements ISharedFolderRules
     }
 
     private void showWarningsForExternalFolders(boolean wasExternal, List<SubjectRolePair> newUsers,
-            ImmutableCollection<UserID> newExternalUsers)
+            ImmutableCollection<UserID> newExternalUsers, ImmutableCollection<UserID> allExternalUsers)
             throws Exception
     {
         if (!newExternalUsers.isEmpty()) {
             // warn that external users will be added
-            throw new ExSharedFolderRulesWarningAddExternalUser(getFullNames(newExternalUsers));
+            throw new ExSharedFolderRulesWarningAddExternalUser();
         }
 
         if (wasExternal) {
@@ -128,7 +128,7 @@ public class ReadOnlyExternalFolderRules implements ISharedFolderRules
             for (SubjectRolePair srp : newUsers) {
                 if (srp._role.equals(Role.OWNER)) {
                     throw new ExSharedFolderRulesWarningOwnerCanShareWithExternalUsers(
-                            getFullNames(newExternalUsers));
+                            getFullNames(allExternalUsers));
                 }
             }
         }
