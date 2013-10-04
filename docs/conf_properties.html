@@ -83,6 +83,22 @@ Otherwise these properties will be ignored.</p>
 
 <p>Example: <code>https://transient.syncfs.com/openid</code></p>
 
+<pre><code>openid.service.identifier=OpenID
+</code></pre>
+
+<p>A short, user-visible name for the OpenID service. This will be displayed
+to end-users in the form "Sign in with " + SERVICE_IDENTIFIER.</p>
+
+<p>Example: <code>SAuth</code>
+Example: <code>OpenID</code></p>
+
+<pre><code>openid.service.external.hint=AeroFS user without an OpenID account?
+</code></pre>
+
+<p>A short phrase that will guide external users to sign in with a local credential.</p>
+
+<p>Example: <code>AeroFS user without an OpenID credential?</code></p>
+
 <h1>server.properties</h1>
 
 <p>The file server.properties contains properties used only by AeroFS servers. There may 

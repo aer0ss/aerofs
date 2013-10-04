@@ -74,6 +74,19 @@ URL of the Identity service. Note: This is the URL of the actual IdentityServlet
 
 Example: `https://transient.syncfs.com/openid`
 
+    openid.service.identifier=OpenID
+
+A short, user-visible name for the OpenID service. This will be displayed
+to end-users in the form "Sign in with " + SERVICE_IDENTIFIER.
+
+Example: `SAuth`
+Example: `OpenID`
+
+    openid.service.external.hint=AeroFS user without an OpenID account?
+
+A short phrase that will guide external users to sign in with a local credential.
+
+Example: `AeroFS user without an OpenID credential?`
 
 
 
