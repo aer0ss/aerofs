@@ -23,7 +23,6 @@ import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import sun.misc.BASE64Encoder;
-import sun.security.provider.X509Factory;
 
 import javax.annotation.Nonnull;
 import java.io.ByteArrayInputStream;
@@ -159,9 +158,9 @@ public abstract class InMemoryServer
                     Mode.Server, Platform.Desktop,
                     new KeyProvider(caKeyPair, caCertificateProvider.getCert()), null, null);
 
-            _cert = X509Factory.BEGIN_CERT + "\n"
+            _cert = "-----BEGIN CERTIFICATE-----\n"
                     + encoder.encodeBuffer(caCertificateProvider.getCert().getEncoded())
-                    + "\n" + X509Factory.END_CERT;
+                    + "\n-----END CERTIFICATE-----";
 
             if (_useSsl) {
                 listenerConfig = InMemoryListenerConfig.createLDAPSConfig(
