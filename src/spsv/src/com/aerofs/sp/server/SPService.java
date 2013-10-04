@@ -1839,12 +1839,9 @@ public class SPService implements ISPService
     // TODO: Remove this method; maintained for compatibility with old (pre-0.4.202) clients.
     // Remove after 01/01/2014
     @Override
-    public ListenableFuture<Void> signIn(String userIdString, ByteString credentials)
-            throws IOException, SQLException, ExBadCredential, ExNotFound, ExBadArgs,
-            ExEmptyEmailAddress
+    public ListenableFuture<Void> signIn(String userIdString, ByteString credentials) throws Exception
     {
         l.info("SP.proto - legacy signIn");
-        _sqlTrans.begin();
 
         User user = _factUser.createFromExternalID(userIdString);
 
@@ -1852,6 +1849,7 @@ public class SPService implements ISPService
             // Team servers use certificates (in this case the passed credentials represent the
             // device ID).
             Device device;
+            _sqlTrans.begin();
             try {
                 device = _factDevice.create(DID.fromExternal(credentials.toByteArray()));
             } catch (ExFormatError e) {
@@ -1860,9 +1858,10 @@ public class SPService implements ISPService
             }
 
             user.throwIfBadCertificate(_certauth, device);
+            _sqlTrans.commit();
         } else {
             // Regular users still use username/password credentials.
-            user.throwIfBadCredential(SPParam.getShaedSP(credentials.toByteArray()));
+            _authenticator.authenticateUser(user, credentials.toByteArray(), _sqlTrans);
         }
 
         // Set the session cookie.
@@ -1870,7 +1869,6 @@ public class SPService implements ISPService
         // Update the user tracker so we can invalidate sessions if needed.
         _userTracker.signIn(user.id(), _sessionUser.getSessionID());
 
-        _sqlTrans.commit();
 
         return createVoidReply();
     }
