@@ -14,10 +14,7 @@ public interface IEmail {
             throws IOException;
 
     /**
-     *
      * @param valediction "Yours Sincerely", "Yours", "Best Regards", etc...
-     * @param name
-     * @param ps
      */
     public abstract void addSignature(final String valediction,
                     final String name, final String ps)

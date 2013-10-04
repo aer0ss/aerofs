@@ -55,9 +55,11 @@ def main(global_config, **settings):
 
     # Use different home page for private and public deployment
     if mode != "prod":
+        # The "/" URL string must be consistent with RequestToSignUpEmailer.java
         config.add_route('dashboard_home', '/')
         config.add_route('marketing_home', 'marketing_home')
     else:
+        # The "home" URL string must be consistent with RequestToSignUpEmailer.java
         config.add_route('dashboard_home', 'home')
         config.add_route('marketing_home', '/')
 

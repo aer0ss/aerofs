@@ -93,6 +93,10 @@ public class BaseParam
                 "base.www.password_reset_request_url",
                         url() + "/request_password_reset");
 
+        public static final String PASSWORD_RESET_URL = getStringProperty(
+                "base.www.password_reset_request_url",
+                url() + "/password_reset");
+
         public static final String UPGRADE_URL = getStringProperty("base.www.upgrade_url",
                 url() + "/upgrade");
 

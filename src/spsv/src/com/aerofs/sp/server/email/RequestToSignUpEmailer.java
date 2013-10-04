@@ -6,6 +6,7 @@ package com.aerofs.sp.server.email;
 
 import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.labeling.L;
+import com.aerofs.lib.LibParam.EnterpriseConfig;
 import com.aerofs.servlets.lib.EmailSender;
 import com.aerofs.sp.server.email.IEmail.HEADER_SIZE;
 import com.aerofs.sp.server.lib.SPParam;
@@ -16,16 +17,20 @@ import java.io.IOException;
 
 public class RequestToSignUpEmailer
 {
+    // See web/__init__.py for the reason we have different URLs for private and public deployment
+    static private String DASHBOARD_HOME = WWW.DASHBOARD_HOST_URL +
+            (EnterpriseConfig.IS_ENTERPRISE_DEPLOYMENT ? "/home" : "/");
+
     static String getSignUpLink(String signUpCode)
     {
         // N.B. the parameter key string must be identical to that in signup/views.py.
         return WWW.DASHBOARD_HOST_URL + "/signup?c=" + signUpCode;
     }
 
-    public void sendRequestToSignUp(String emailAddress, String signUpCode)
+    public void sendRequestToSignUpEmail(String emailAddress, String signUpCode)
             throws IOException, MessagingException
     {
-        Email email = new Email("Complete your " + L.brand() + " sign up");
+        String subject = "Complete your " + L.brand() + " sign up";
         String body = "\n" +
                 "Please click this link to proceed signing up for " + L.brand() + ":\n" +
                 "\n" +
@@ -33,11 +38,35 @@ public class RequestToSignUpEmailer
                 "\n" +
                 "Simply ignore this email if you didn't request an " + L.brand() + " account.";
 
+        Email email = new Email(subject);
         email.addSection("You're almost ready to go!", HEADER_SIZE.H1, body);
         email.addDefaultSignature();
 
         EmailSender.sendPublicEmailFromSupport(SPParam.EMAIL_FROM_NAME, emailAddress, null,
-                "Complete your " + L.brand() + " sign up", email.getTextEmail(),
-                email.getHTMLEmail(), EmailCategory.REQUEST_TO_SIGN_UP);
+                subject, email.getTextEmail(), email.getHTMLEmail(),
+                EmailCategory.REQUEST_TO_SIGN_UP);
+    }
+
+    public void sendAlreadySignedUpEmail(String emailAddress)
+            throws IOException, MessagingException
+    {
+        String subject = "Your " + L.brand() + " account";
+        String body = "\n" +
+                "It looks like you were trying to sign up for " + L.product() + " again; but as" +
+                " it turns out, you've already signed up!\n" +
+                "\n" +
+                "To log in, head over to " + DASHBOARD_HOME + " and type in your email address" +
+                " and password.\n" +
+                "\n" +
+                "Forgot your password? No problem! You can reset it right here: " +
+                WWW.PASSWORD_RESET_REQUEST_URL;
+
+        Email email = new Email(subject);
+        email.addSection("You already have an " + L.product() + " account", HEADER_SIZE.H1, body);
+        email.addDefaultSignature();
+
+        EmailSender.sendPublicEmailFromSupport(SPParam.EMAIL_FROM_NAME, emailAddress, null,
+                subject, email.getTextEmail(), email.getHTMLEmail(),
+                EmailCategory.REQUEST_TO_SIGN_UP);
     }
 }

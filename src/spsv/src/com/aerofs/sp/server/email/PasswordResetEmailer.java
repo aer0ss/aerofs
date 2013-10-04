@@ -27,7 +27,7 @@ public class PasswordResetEmailer
 
         Email email = new Email(subject, false ,null);
 
-        String url = S.PASSWORD_RESET_URL + "?" +
+        String url = WWW.PASSWORD_RESET_URL + "?" +
                 "user_id=" + Util.urlEncode(userId.getString()) +
                 "&token=" + resetToken;
         String body = "\nForgot your password? It happens to the best of us.\n\nFollow this link " +
