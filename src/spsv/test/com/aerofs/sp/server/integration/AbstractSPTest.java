@@ -9,6 +9,7 @@ import com.aerofs.base.analytics.Analytics;
 import com.aerofs.base.async.UncancellableFuture;
 import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.base.id.DID;
+import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.SecUtil;
@@ -23,6 +24,7 @@ import com.aerofs.sp.server.IdentitySessionManager;
 import com.aerofs.sp.server.PasswordManagement;
 import com.aerofs.sp.server.SPService;
 import com.aerofs.sp.server.email.DeviceRegistrationEmailer;
+import com.aerofs.sp.server.email.InvitationEmailer;
 import com.aerofs.sp.server.email.PasswordResetEmailer;
 import com.aerofs.sp.server.email.RequestToSignUpEmailer;
 import com.aerofs.sp.server.lib.EmailSubscriptionDatabase;
@@ -70,6 +72,7 @@ import java.util.Set;
 import static com.aerofs.base.BaseParam.VerkehrTopics.ACL_CHANNEL_TOPIC_PREFIX;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.RETURNS_MOCKS;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
@@ -125,8 +128,7 @@ public class AbstractSPTest extends AbstractTestWithDatabase
     @Spy protected CertificateAuthenticator certificateAuthenticator =
             mock(CertificateAuthenticator.class);
 
-    // Mock invitation emailer for use with sp.shareFolder calls and organization movement tests.
-    @Spy protected MockInvitationEmailerFactory factEmailer;
+    @Mock protected InvitationEmailer.Factory factEmailer;
 
     // To simulate service.signIn(USER, PASSWORD), subclasses can call setSessionUser(UserID)
     @Spy protected MockSessionUser sessionUser;
@@ -166,6 +168,7 @@ public class AbstractSPTest extends AbstractTestWithDatabase
     {
         nextUserID = 1;
 
+        mockInvitationEmailerFactory();
         wireSPService();
 
         verkehrPublished = mockAndCaptureVerkehrPublish();
@@ -182,6 +185,17 @@ public class AbstractSPTest extends AbstractTestWithDatabase
         saveUser(USER_3);
 
         sqlTrans.commit();
+    }
+
+    private void mockInvitationEmailerFactory()
+            throws Exception
+    {
+        when(factEmailer.createFolderInvitationEmailer(any(User.class), any(User.class), any(String.class),
+                any(String.class), any(SID.class))).then(RETURNS_MOCKS);
+        when(factEmailer.createOrganizationInvitationEmailer(any(User.class), any(User.class)))
+                .then(RETURNS_MOCKS);
+        when(factEmailer.createSignUpInvitationEmailer(any(User.class), any(User.class),
+                any(String.class), any(String.class), any(String.class))).then(RETURNS_MOCKS);
     }
 
     // Do wiring for SP after its construction

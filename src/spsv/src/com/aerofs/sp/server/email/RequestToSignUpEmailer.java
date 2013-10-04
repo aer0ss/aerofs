@@ -23,7 +23,7 @@ public class RequestToSignUpEmailer
     }
 
     public void sendRequestToSignUp(String emailAddress, String signUpCode)
-            throws IOException
+            throws IOException, MessagingException
     {
         Email email = new Email("Complete your " + L.brand() + " sign up");
         String body = "\n" +
@@ -36,13 +36,8 @@ public class RequestToSignUpEmailer
         email.addSection("You're almost ready to go!", HEADER_SIZE.H1, body);
         email.addDefaultSignature();
 
-        try {
-            EmailSender.sendPublicEmailFromSupport(SPParam.EMAIL_FROM_NAME, emailAddress, null,
-                    "Complete your " + L.brand() + " sign up", email.getTextEmail(),
-                    email.getHTMLEmail(), EmailCategory.REQUEST_TO_SIGN_UP);
-        } catch (MessagingException e) {
-            throw new IOException(e);
-        }
+        EmailSender.sendPublicEmailFromSupport(SPParam.EMAIL_FROM_NAME, emailAddress, null,
+                "Complete your " + L.brand() + " sign up", email.getTextEmail(),
+                email.getHTMLEmail(), EmailCategory.REQUEST_TO_SIGN_UP);
     }
-
 }

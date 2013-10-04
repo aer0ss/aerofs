@@ -20,7 +20,7 @@ public class DeviceRegistrationEmailer
 {
     public void sendTeamServerDeviceCertifiedEmail(String emailAddress, String firstName,
             String osFamily, String deviceName, DID did)
-            throws IOException
+            throws IOException, MessagingException
     {
         // N.B. the URI string must be identical to that in devices/__init__.py.
         sendDeviceCertifiedEmailImpl(L.brand() + " Team Server", emailAddress, firstName, osFamily,
@@ -29,7 +29,7 @@ public class DeviceRegistrationEmailer
 
     public void sendDeviceCertifiedEmail(String emailAddress, String firstName,
             String osFamily, String deviceName, DID did)
-            throws IOException
+            throws IOException, MessagingException
     {
         // N.B. the URI string must be identical to that in devices/__init__.py.
         sendDeviceCertifiedEmailImpl(L.brand(), emailAddress, firstName, osFamily, deviceName,
@@ -38,7 +38,7 @@ public class DeviceRegistrationEmailer
 
     public void sendDeviceCertifiedEmailImpl(String product, String emailAddress, String firstName,
             String osFamily, String deviceName, String manageDeviceStringAndURL, DID did)
-            throws IOException
+            throws IOException, MessagingException
     {
         String subject = product + " Installed on Your Device " + Util.quote(deviceName);
         Email email = new Email(subject);
@@ -60,13 +60,9 @@ public class DeviceRegistrationEmailer
         email.addSection(subject, HEADER_SIZE.H1, body);
         email.addDefaultSignature();
 
-        try {
-            EmailSender.sendPublicEmailFromSupport(SPParam.EMAIL_FROM_NAME, emailAddress, null,
-                    subject, email.getTextEmail(), email.getHTMLEmail(),
-                    EmailCategory.DEVICE_CERTIFIED);
-        } catch (MessagingException e) {
-            throw new IOException(e);
-        }
+        EmailSender.sendPublicEmailFromSupport(SPParam.EMAIL_FROM_NAME, emailAddress, null,
+                subject, email.getTextEmail(), email.getHTMLEmail(),
+                EmailCategory.DEVICE_CERTIFIED);
 
         EmailUtil.emailSPNotification(emailAddress + " device certified email.",
                 "device id: " + did.toStringFormal());

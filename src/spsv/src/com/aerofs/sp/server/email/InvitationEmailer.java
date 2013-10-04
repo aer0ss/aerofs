@@ -9,10 +9,8 @@ import com.aerofs.base.id.SID;
 import com.aerofs.lib.FullName;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.ex.ExEmailSendingFailed;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.servlets.lib.EmailSender;
-import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sv.common.EmailCategory;
 import com.aerofs.sp.server.email.IEmail.HEADER_SIZE;
 import com.aerofs.sp.server.lib.user.User;
@@ -24,26 +22,18 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.concurrent.Callable;
 
-// TODO (WW) the pattern of this class is inconsistent with PasswordResetEmailer. Need refactoring
-// and/or merging.
+/**
+ * Unlike other emailer classses, this class requires the factory pattern since invitation emails
+ * may be generated in a transaction, and actual sending of the emails happens after the
+ * transaction. Created emailer objects carry email information across transaction and method
+ * boundaries.
+ */
 public class InvitationEmailer
 {
     private final static String ACCEPT_INVITATION_LINK = WWW.DASHBOARD_HOST_URL + "/accept";
 
     public static class Factory
     {
-        public InvitationEmailer createNullEmailer()
-        {
-            return new InvitationEmailer(new Callable<Void>()
-            {
-                @Override
-                public Void call()
-                {
-                    return null;
-                }
-            });
-        }
-
         /**
          * @param inviter null if the invite is sent from the AeroFS team.
          *
@@ -157,7 +147,7 @@ public class InvitationEmailer
         }
 
         public InvitationEmailer createOrganizationInvitationEmailer(@Nonnull final User inviter,
-                @Nonnull final User invitee, @Nonnull Organization organization)
+                @Nonnull final User invitee)
                 throws IOException, SQLException, ExNotFound
         {
             final String subject = "Join my team on AeroFS!";
@@ -191,7 +181,7 @@ public class InvitationEmailer
             });
         }
 
-        private class NameStrings
+        private static class NameStrings
         {
             private String _inviterName;
             private String _inviterLongName;
@@ -230,21 +220,15 @@ public class InvitationEmailer
                 WWW.SUPPORT_EMAIL_ADDRESS : inviter.id().getString();
     }
 
-    private final Callable<Void> _c;
+    private final @Nonnull Callable<Void> _call;
 
-    private InvitationEmailer(@Nullable Callable<Void> c)
+    private InvitationEmailer(@Nonnull Callable<Void> call)
     {
-        _c = c;
+        _call = call;
     }
 
-    public void send() throws ExEmailSendingFailed
+    public void send() throws Exception
     {
-        if (_c != null) {
-            try {
-                _c.call();
-            } catch (Exception e) {
-                throw new ExEmailSendingFailed(e);
-            }
-        }
+        _call.call();
     }
 }

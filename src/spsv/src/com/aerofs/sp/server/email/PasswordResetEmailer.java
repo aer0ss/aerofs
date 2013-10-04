@@ -17,11 +17,10 @@ import com.aerofs.sp.server.email.IEmail.HEADER_SIZE;
 import javax.mail.MessagingException;
 import java.io.IOException;
 
-// TODO (WW) the pattern of this class is inconsistent with InvitationEmailer. Need refactoring.
 public class PasswordResetEmailer
 {
-    public void sendPasswordResetEmail(UserID userId, String reset_token)
-            throws IOException
+    public void sendPasswordResetEmail(UserID userId, String resetToken)
+            throws IOException, MessagingException
 
     {
         String subject = L.brand() + " Password Request";
@@ -30,7 +29,7 @@ public class PasswordResetEmailer
 
         String url = S.PASSWORD_RESET_URL + "?" +
                 "user_id=" + Util.urlEncode(userId.getString()) +
-                "&token=" + reset_token;
+                "&token=" + resetToken;
         String body = "\nForgot your password? It happens to the best of us.\n\nFollow this link " +
                "to reset your password:\n\n" + url + "\n\n" +
                 "If you didn't request this email please ignore this message.";
@@ -38,19 +37,15 @@ public class PasswordResetEmailer
         email.addSection(L.brand() + " Password Request", HEADER_SIZE.H1, body);
         email.addDefaultSignature();
 
-        try {
-            EmailSender.sendPublicEmailFromSupport(SPParam.EMAIL_FROM_NAME, userId.getString(),
-                    null, subject, email.getTextEmail(), email.getHTMLEmail(),
-                    EmailCategory.PASSWORD_RESET);
-        } catch (MessagingException e) {
-            throw new IOException(e);
-        }
+        EmailSender.sendPublicEmailFromSupport(SPParam.EMAIL_FROM_NAME, userId.getString(),
+                null, subject, email.getTextEmail(), email.getHTMLEmail(),
+                EmailCategory.PASSWORD_RESET);
 
         EmailUtil.emailSPNotification(userId + " initiated a password reset ", "");
     }
 
     public void sendPasswordResetConfirmation(UserID userId)
-            throws IOException
+            throws IOException, MessagingException
 
     {
         String subject = L.brand() + " Password Has Changed";
@@ -67,13 +62,9 @@ public class PasswordResetEmailer
         email.addSection(subject, HEADER_SIZE.H1, body);
         email.addDefaultSignature();
 
-        try {
-            EmailSender.sendPublicEmailFromSupport(SPParam.EMAIL_FROM_NAME, userId.getString(),
-                    null, subject, email.getTextEmail(), email.getHTMLEmail(),
-                    EmailCategory.PASSWORD_RESET);
-        } catch (MessagingException e) {
-            throw new IOException(e);
-        }
+        EmailSender.sendPublicEmailFromSupport(SPParam.EMAIL_FROM_NAME, userId.getString(),
+                null, subject, email.getTextEmail(), email.getHTMLEmail(),
+                EmailCategory.PASSWORD_RESET);
 
         EmailUtil.emailSPNotification(userId + " completed a password reset ", "");
     }

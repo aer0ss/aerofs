@@ -25,7 +25,6 @@ import com.aerofs.lib.LibParam.OpenId;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExAlreadyInvited;
-import com.aerofs.lib.ex.ExEmailSendingFailed;
 import com.aerofs.lib.ex.ExInvalidEmailAddress;
 import com.aerofs.lib.ex.ExNoStripeCustomerID;
 import com.aerofs.lib.ex.ExNotAuthenticated;
@@ -180,7 +179,7 @@ public class SPService implements ISPService
 
     private final DeviceRegistrationEmailer _deviceRegistrationEmailer;
     private final RequestToSignUpEmailer _requestToSignUpEmailer;
-    private final InvitationEmailer.Factory _factEmailer;
+    private final InvitationEmailer.Factory _factInvitationEmailer;
 
     private final JedisEpochCommandQueue _commandQueue;
     private final JedisThreadLocalTransaction _jedisTrans;
@@ -207,7 +206,7 @@ public class SPService implements ISPService
             CertificateAuthenticator certificateAuthenticator, User.Factory factUser,
             Organization.Factory factOrg, OrganizationInvitation.Factory factOrgInvite,
             Device.Factory factDevice, CertificateDatabase certdb, EmailSubscriptionDatabase esdb,
-            Factory factSharedFolder, InvitationEmailer.Factory factEmailer,
+            Factory factSharedFolder, InvitationEmailer.Factory factInvitationEmailer,
             DeviceRegistrationEmailer deviceRegistrationEmailer,
             RequestToSignUpEmailer requestToSignUpEmailer, JedisEpochCommandQueue commandQueue,
             Analytics analytics, IdentitySessionManager identitySessionManager,
@@ -232,7 +231,7 @@ public class SPService implements ISPService
 
         _deviceRegistrationEmailer = deviceRegistrationEmailer;
         _requestToSignUpEmailer = requestToSignUpEmailer;
-        _factEmailer = factEmailer;
+        _factInvitationEmailer = factInvitationEmailer;
 
         _identitySessionManager = identitySessionManager;
         _sharedFolderRules = sharedFolderRules;
@@ -1104,7 +1103,8 @@ public class SPService implements ISPService
         InvitationEmailer emailer;
         if (sharee.exists()) {
             // send folder invitation email
-            emailer = _factEmailer.createFolderInvitationEmailer(sharer, sharee, folderName, note, sf.id());
+            emailer = _factInvitationEmailer.createFolderInvitationEmailer(sharer, sharee,
+                    folderName, note, sf.id());
         } else {
             emailer = inviteToSignUp(sharer, sharee, folderName, note)._emailer;
         }
@@ -1136,8 +1136,8 @@ public class SPService implements ISPService
 
         _esdb.insertEmailSubscription(invitee.id(), SubscriptionCategory.AEROFS_INVITATION_REMINDER);
 
-        InvitationEmailer emailer = _factEmailer.createSignUpInvitationEmailer(inviter, invitee,
-                folderName, note, code);
+        InvitationEmailer emailer = _factInvitationEmailer.createSignUpInvitationEmailer(inviter,
+                invitee, folderName, note, code);
 
         return new InviteToSignUpResult(emailer, code);
     }
@@ -1328,8 +1328,7 @@ public class SPService implements ISPService
 
     @Override
     public ListenableFuture<Void> inviteToSignUp(List<String> userIdStrings)
-            throws SQLException, ExBadArgs, ExEmailSendingFailed, ExNotFound, IOException,
-            ExNotAuthenticated, ExEmptyEmailAddress
+            throws Exception
     {
         if (userIdStrings.isEmpty()) throw new ExBadArgs("Must specify one or more invitees");
 
@@ -1416,7 +1415,7 @@ public class SPService implements ISPService
 
         _factOrgInvite.save(inviter, invitee, org, signUpCode);
 
-        return _factEmailer.createOrganizationInvitationEmailer(inviter, invitee, org);
+        return _factInvitationEmailer.createOrganizationInvitationEmailer(inviter, invitee);
     }
 
     @Override
@@ -2109,7 +2108,7 @@ public class SPService implements ISPService
         User user = _factUser.createFromExternalID(attrs.getEmail());
 
         _sqlTrans.begin();
-        if (user.exists() == false ) {
+        if (!user.exists()) {
             user.save(new byte[0], new FullName(attrs.getFirstName(), attrs.getLastName()));
         }
         _sqlTrans.commit();

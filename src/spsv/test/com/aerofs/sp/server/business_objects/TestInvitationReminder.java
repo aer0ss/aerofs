@@ -8,9 +8,8 @@ import com.aerofs.base.C;
 import com.aerofs.base.id.UserID;
 import com.aerofs.sp.common.Base62CodeGenerator;
 import com.aerofs.sp.common.SubscriptionCategory;
-import com.aerofs.sp.server.email.EmailReminder;
+import com.aerofs.sp.server.InvitationReminder;
 import com.aerofs.sp.server.email.InvitationReminderEmailer;
-import com.aerofs.sp.server.email.InvitationReminderEmailer.Factory;
 import com.aerofs.sp.server.lib.SPParam;
 import com.aerofs.sp.server.lib.id.OrganizationID;
 import com.google.common.collect.Sets;
@@ -20,8 +19,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.verification.VerificationMode;
 
-import java.io.IOException;
-import java.sql.SQLException;
 import java.util.Set;
 
 import static org.junit.Assert.assertNotNull;
@@ -32,15 +29,14 @@ import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 // TODO (WW) As a test for business objects, it should not operate on database objects directly
 // other than setting up the test.
-public class TestEmailReminder extends AbstractBusinessObjectTest
+public class TestInvitationReminder extends AbstractBusinessObjectTest
 {
-    @Mock private final Factory _emailFactory = new Factory();
+    @Mock private InvitationReminderEmailer _emailer;
 
-    @InjectMocks private EmailReminder er;
+    @InjectMocks private InvitationReminder er;
 
     private static final OrganizationID ORG_ID = new OrganizationID(543);
 
@@ -64,9 +60,6 @@ public class TestEmailReminder extends AbstractBusinessObjectTest
     public void setupTestSpEmailReminder()
             throws Exception
     {
-        when(_emailFactory.createReminderEmail(anyString(), anyString(), anyString(), anyString()))
-                .thenReturn(new InvitationReminderEmailer());
-
         odb.insert(ORG_ID);
 
         _twoDayUsers = setupUsers(NUM_TWO_DAY_USERS, TWO_DAYS_IN_MILLISEC, TWO_DAY_USERS_PREFIX);
@@ -149,13 +142,13 @@ public class TestEmailReminder extends AbstractBusinessObjectTest
     }
 
     private void verifyEmailRemindersForUsers(Set<UserID> users, VerificationMode mode)
-            throws SQLException, IOException
+            throws Exception
     {
         for (UserID user: users) {
             String tokenId = esdb.getTokenId(user, SubscriptionCategory.AEROFS_INVITATION_REMINDER);
 
-            verify(_emailFactory, mode).createReminderEmail(
-                    eq(SPParam.EMAIL_FROM_NAME), eq(user.getString()), anyString(), eq(tokenId));
+            verify(_emailer, mode).send(eq(SPParam.EMAIL_FROM_NAME), eq(user.getString()),
+                    anyString(), eq(tokenId));
 
         }
 

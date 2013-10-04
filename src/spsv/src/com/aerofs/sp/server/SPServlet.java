@@ -19,10 +19,8 @@ import com.aerofs.servlets.lib.ssl.CertificateAuthenticator;
 import com.aerofs.sp.authentication.AuthenticatorFactory;
 import com.aerofs.sp.authentication.LdapConfiguration;
 import com.aerofs.sp.server.email.DeviceRegistrationEmailer;
-import com.aerofs.sp.server.email.EmailReminder;
 import com.aerofs.sp.server.email.InvitationEmailer;
 import com.aerofs.sp.server.email.InvitationReminderEmailer;
-import com.aerofs.sp.server.email.InvitationReminderEmailer.Factory;
 import com.aerofs.sp.server.email.PasswordResetEmailer;
 import com.aerofs.sp.server.email.RequestToSignUpEmailer;
 import com.aerofs.sp.server.lib.EmailSubscriptionDatabase;
@@ -125,6 +123,8 @@ public class SPServlet extends AeroServlet
 
     private final Analytics _analytics = new Analytics(new SPAnalyticsProperties(_sessionUser));
 
+    private final InvitationReminderEmailer _invitationReminderEmailer = new InvitationReminderEmailer();
+
     private final SPService _service = new SPService(_db, _sqlTrans, _jedisTrans, _sessionUser,
             _passwordManagement, _certauth, _factUser, _factOrg, _factOrgInvite, _factDevice,
             _certdb, _esdb, _factSharedFolder, _factEmailer, _deviceRegistrationEmailer,
@@ -160,10 +160,7 @@ public class SPServlet extends AeroServlet
         PooledSQLConnectionProvider erConProvider = new PooledSQLConnectionProvider();
         erConProvider.init_(dbResourceName);
 
-        // Initialize Email Reminder code
-        InvitationReminderEmailer.Factory emailReminderFactory = new Factory();
-
-        EmailReminder er = new EmailReminder(_esdb, _sqlTrans, emailReminderFactory);
+        InvitationReminder er = new InvitationReminder(_esdb, _sqlTrans, _invitationReminderEmailer);
         er.start();
     }
 

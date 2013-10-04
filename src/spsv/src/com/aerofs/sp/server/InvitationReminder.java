@@ -2,7 +2,7 @@
  * Copyright (c) Air Computing Inc., 2012.
  */
 
-package com.aerofs.sp.server.email;
+package com.aerofs.sp.server;
 
 import java.util.Set;
 import java.util.concurrent.Executors;
@@ -13,17 +13,18 @@ import com.aerofs.base.Loggers;
 import com.aerofs.base.id.UserID;
 import com.aerofs.servlets.lib.db.sql.SQLThreadLocalTransaction;
 import com.aerofs.sp.common.SubscriptionCategory;
+import com.aerofs.sp.server.email.InvitationReminderEmailer;
 import com.aerofs.sp.server.lib.EmailSubscriptionDatabase;
 import com.aerofs.sp.server.lib.SPParam;
 import org.slf4j.Logger;
 
 import javax.inject.Inject;
 
-public class EmailReminder
+public class InvitationReminder
 {
-    private static final Logger l = Loggers.getLogger(EmailReminder.class);
+    private static final Logger l = Loggers.getLogger(InvitationReminder.class);
     private final ScheduledExecutorService _executor = Executors.newScheduledThreadPool(1);
-    private final InvitationReminderEmailer.Factory _emailFactory;
+    private final InvitationReminderEmailer _emailer;
 
     private final SQLThreadLocalTransaction _trans;
     private final EmailSubscriptionDatabase _db;
@@ -48,12 +49,12 @@ public class EmailReminder
     private static final int MAX_USERS = 100;
 
     @Inject
-    public EmailReminder(final EmailSubscriptionDatabase db, final SQLThreadLocalTransaction trans,
-            final InvitationReminderEmailer.Factory emailFactory)
+    public InvitationReminder(EmailSubscriptionDatabase db, SQLThreadLocalTransaction trans,
+            InvitationReminderEmailer emailer)
     {
         _db = db;
         _trans = trans;
-        _emailFactory = emailFactory;
+        _emailer = emailer;
         l.info("Initialized Email Reminder");
     }
 
@@ -123,7 +124,7 @@ public class EmailReminder
                 } while (!users.isEmpty());
             }
         } catch (Exception e) {
-            l.warn("EmailReminder: ", e);
+            l.warn("ignored: ", e);
             _trans.handleException();
         }
     }
@@ -146,8 +147,8 @@ public class EmailReminder
 
                 String unsubscribeTokenId =
                         _db.getTokenId(user, SubscriptionCategory.AEROFS_INVITATION_REMINDER);
-                _emailFactory.createReminderEmail(SPParam.EMAIL_FROM_NAME, user.getString(),
-                        signupCode, unsubscribeTokenId).send();
+                _emailer.send(SPParam.EMAIL_FROM_NAME, user.getString(), signupCode,
+                        unsubscribeTokenId);
             }
 
             _trans.commit();
