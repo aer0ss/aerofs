@@ -29,12 +29,10 @@ import java.util.List;
  * This rule is to fulfill Bloomberg's requirements which is listed below. See
  * TestSP_ReadOnlyExternalFolderRules for a formal spec.
  *
- * O When adding external users to a shared folder that contains no
- * external users, either through Desktop or Web UI, the system:
- * - show the warning: "1) be careful when sharing files with
- * external parties. 2) ensure that all existing files in the folder have
- * nothing confidential. 3) all existing editors of the folder will be
- * automatically converted to viewers."
+ * o When adding external users to a shared folder, either through Desktop or Web UI, the system:
+ * - show the warning: "1) be careful when sharing files with external parties. 2) ensure that all
+ * existing files in the folder have nothing confidential. 3) all existing editors of the folder
+ * will be automatically converted to viewers."
  * - convert all editors to viewers.
  *
  * o When adding or setting _editors_ to a shared folder that contains
