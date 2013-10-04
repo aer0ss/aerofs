@@ -2,6 +2,7 @@ package com.aerofs.lib.os;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.regex.Pattern;
@@ -13,22 +14,30 @@ import com.aerofs.lib.LibParam.RootAnchor;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.lib.os.OSUtil.Icon;
 import com.aerofs.swig.driver.Driver;
-import com.google.common.base.Objects;
 import com.google.common.base.Optional;
-import org.apache.commons.lang.StringUtils;
+import com.google.common.collect.ImmutableMap;
 import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
+
+import static com.aerofs.lib.os.OSUtil.replaceEnvironmentVariables;
+import static org.apache.commons.lang.StringUtils.isBlank;
 
 public class OSUtilWindows implements IOSUtil
 {
     private static final Logger l = Loggers.getLogger(OSUtilWindows.class);
 
+    private static final String LOCAL_APP_DATA = "LOCALAPPDATA";
+
     @Override
     public String getDefaultRTRoot()
     {
         // Before you update this method, please take a look at ULRtrootMigration first.
-        return Objects.firstNonNull(getLocalAppDataPath(), "C:") + '\\' + L.productSpaceFreeName();
+        try {
+            return getLocalAppDataPath() + '\\' + L.productSpaceFreeName();
+        } catch (FileNotFoundException ex) {
+            return "C:\\" + L.productSpaceFreeName();
+        }
     }
 
     /**
@@ -39,22 +48,26 @@ public class OSUtilWindows implements IOSUtil
      * Note that %UserProfile% should be defined on XP and later.
      *
      * @return path to the platform's local application data folder,
-     *   null if the platform's local application data folder cannot be determined
+     * @throws FileNotFoundException - if we are unable to determine the platform's local application
+     *   data folder.
      */
-    private @Nullable String getLocalAppDataPath()
+    private @Nullable String getLocalAppDataPath() throws FileNotFoundException
     {
         // Before you update this method, please take a look at ULTRtrootMigration first.
-        String path = System.getenv("LOCALAPPDATA");
-        if (!StringUtils.isBlank(path) && new File(path).isDirectory()) return path;
+        String path = System.getenv(LOCAL_APP_DATA);
+        if (!isBlank(path) && new File(path).isDirectory()) return path;
 
-        path = System.getenv("USERPROFILE");
-        if (!StringUtils.isBlank(path)) {
-            path += "\\Local Settings\\Application Data";
+        if (OSUtil.isWindowsXP()) {
+            path = System.getenv("USERPROFILE");
+            if (!isBlank(path)) {
+                path += "\\Local Settings\\Application Data";
 
-            if (new File(path).isDirectory()) return path;
+                if (new File(path).isDirectory()) return path;
+            }
         }
 
-        return null;
+        throw new FileNotFoundException("The system's local application data folder cannot be " +
+                "determined. Please set the environment variable %LOCALAPPDATA%.");
     }
 
     @Override
@@ -82,7 +95,7 @@ public class OSUtilWindows implements IOSUtil
      *   platform-specific policy.
      *
      * In addition, we support macro expansion of the form: ${environment_variable}. The macro
-     *   expansion _cannot_ be nested, this can be changed if necessary.
+     *   expansion _is case sensitive_ and _cannot_ be nested, this can be changed if necessary.
      *
      * @return usually the path to My Documents
      */
@@ -90,7 +103,17 @@ public class OSUtilWindows implements IOSUtil
     public String getDefaultRootAnchorParent()
     {
         Optional<String> value = RootAnchor.DEFAULT_LOCATION_WINDOWS;
-        if (value.isPresent()) return OSUtil.replaceEnvironmentVariables(value.get());
+        if (value.isPresent()) {
+            ImmutableMap<String, String> env;
+
+            try {
+                env = ImmutableMap.of(LOCAL_APP_DATA, getLocalAppDataPath());
+            } catch (FileNotFoundException e) {
+                env = null;
+            }
+
+            return replaceEnvironmentVariables(value.get(), env);
+        }
 
         try {
             OutArg<String> out = new OutArg<String>();

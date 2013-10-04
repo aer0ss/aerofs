@@ -44,7 +44,9 @@ import java.util.TreeMap;
 
 import static com.aerofs.base.analytics.AnalyticsEvents.SimpleEvents.INSTALL_CLIENT;
 import static com.aerofs.base.analytics.AnalyticsEvents.SimpleEvents.REINSTALL_CLIENT;
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
+import static org.apache.commons.lang.StringUtils.isEmpty;
 
 class Setup
 {
@@ -155,7 +157,9 @@ class Setup
             StorageType storageType)
             throws Exception
     {
-        assert !rootAnchorPath.isEmpty();
+        checkArgument(!isEmpty(rootAnchorPath));
+
+        FileUtil.ensureDirExists(new File(rootAnchorPath));
 
         RootAnchorUtil.checkRootAnchor(rootAnchorPath, _rtRoot, storageType, true);
 

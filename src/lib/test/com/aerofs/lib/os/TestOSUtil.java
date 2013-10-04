@@ -5,8 +5,10 @@
 package com.aerofs.lib.os;
 
 import com.aerofs.lib.os.OSUtil.OSFamily;
+import com.google.common.collect.ImmutableMap;
 import org.junit.Test;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static org.junit.Assert.assertEquals;
 
 public class TestOSUtil
@@ -27,8 +29,7 @@ public class TestOSUtil
     {
         String home = System.getenv(OSUtil.PROPERTY_HOME);
 
-        // N.B. paths[i] _must_ correspond to expected[i] for all 0 <= i < paths.length.
-        String[] paths = {
+        String[] input = {
                 "~",
                 "~/ux/environment",
                 "${HOME}/ux/environment",
@@ -59,9 +60,66 @@ public class TestOSUtil
                 "C:\\no\\environment\\variables"
         };
 
-        for (int i = 0; i < paths.length; i++)
-        {
-            assertEquals(expected[i], OSUtil.replaceEnvironmentVariables(paths[i]));
+        verify(expected, input, null);
+    }
+
+    @Test
+    public void shouldReplaceUsingAdditionalEnvironmentVariables()
+    {
+        ImmutableMap<String, String> additionalVars =
+                ImmutableMap.of("EXTRA", "extra", "ADDITIONAL", "additional");
+
+        String[] input = {
+                "ux/${EXTRA}",
+                "ux/${EXTRA}/${ADDITIONAL}",
+                "windows\\${ADDITIONAL}\\environment",
+                "windows\\${EXTRA}",
+                "windows\\${ADDITIONAL}\\${EXTRA}"
+        };
+
+        String[] expected = {
+                "ux/extra",
+                "ux/extra/additional",
+                "windows\\additional\\environment",
+                "windows\\extra",
+                "windows\\additional\\extra"
+        };
+
+        verify(expected, input, additionalVars);
+    }
+
+    @Test
+    public void shouldPreferAdditionalEnvironmentVariablesOverSystemEnvironmentVariables()
+    {
+        ImmutableMap<String, String> additionalVars = ImmutableMap.of(OSUtil.PROPERTY_HOME, "home");
+
+        String[] input = {
+                "~",
+                "~/ux/environment",
+                "ux/${" + OSUtil.PROPERTY_HOME + "}/environment",
+                "windows\\${" + OSUtil.PROPERTY_HOME + "}\\environment"
+        };
+
+        String[] expected = {
+                "home",
+                "home/ux/environment",
+                "ux/home/environment",
+                "windows\\home\\environment"
+        };
+
+        verify(expected, input, additionalVars);
+    }
+
+    /**
+     * @pre expected.length == input.length
+     */
+    private void verify(String[] expected, String[] input,
+            ImmutableMap<String, String> additionalVars)
+    {
+        checkArgument(expected.length == input.length);
+
+        for (int i = 0; i < input.length; i++) {
+            assertEquals(expected[i], OSUtil.replaceEnvironmentVariables(input[i], additionalVars));
         }
     }
 }

@@ -1,13 +1,17 @@
 package com.aerofs.lib.os;
 
-import java.io.IOException;
-
 import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.sv.client.SVClient;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
 import org.apache.commons.lang.text.StrSubstitutor;
+
+import javax.annotation.Nullable;
+import java.io.IOException;
+import java.util.Map;
 
 public abstract class OSUtil
 {
@@ -198,15 +202,29 @@ public abstract class OSUtil
      *   - expand ~ to the environment variable `HOME`.
      *   - expand ${variable_name} to its value.
      *
+     * Note: substitution _is case sensitive_.
+     *
      * @param path - the path containing environment variables.
+     * @param additionalVars - additional environment variables to supplement those provided by
+     *   the system. This argument is nullable, and variables defined here takes precedence over
+     *   the ones provided by the system.
      * @return the resulting path with environment variables replaced with the values.
      */
-    public static String replaceEnvironmentVariables(String path)
+    public static String replaceEnvironmentVariables(String path,
+            @Nullable ImmutableMap<String, String> additionalVars)
     {
         if (path == null) return null;
 
-        path = path.replace("~", System.getenv(PROPERTY_HOME));
+        Map<String, String> env = System.getenv();
 
-        return StrSubstitutor.replace(path, System.getenv());
+        if (additionalVars != null && additionalVars.size() > 0) {
+            // N.B. System.getenv() returns an immutable map.
+            env = Maps.newHashMap(env);
+            env.putAll(additionalVars);
+        }
+
+        path = path.replace("~", env.get(PROPERTY_HOME));
+
+        return StrSubstitutor.replace(path, env);
     }
 }
