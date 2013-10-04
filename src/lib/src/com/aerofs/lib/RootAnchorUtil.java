@@ -43,12 +43,17 @@ public abstract class RootAnchorUtil
      * @throws com.aerofs.base.ex.ExAlreadyExist if the root anchor is nonempty
      * @throws com.aerofs.base.ex.ExNoPerm if AeroFS cannot read or write to root anchor
      * @throws com.aerofs.lib.ex.ExUIMessage if root anchor filesystem is not supported
+     * @throws com.aerofs.base.ex.ExBadArgs if the root anchor is the rtroot
      */
     public static void checkRootAnchor(String rootAnchor, String rtRoot,
             StorageType storageType, boolean allowNonEmptyFolder)
-            throws IOException, ExNoPerm, ExNotDir, ExAlreadyExist, ExUIMessage
+            throws IOException, ExNoPerm, ExNotDir, ExAlreadyExist, ExUIMessage, ExBadArgs
     {
         File fRootAnchor = new File(rootAnchor);
+
+        if (fRootAnchor.getAbsolutePath().equals(new File(rtRoot).getAbsolutePath())) {
+            throw new ExBadArgs("The root anchor must not be the same as the rtroot.");
+        }
 
         // Check if it's a file or a non-empty folder
         if (fRootAnchor.isFile()) {
@@ -80,7 +85,7 @@ public abstract class RootAnchorUtil
 
         // Check if it's a supported filesystem. We only support filesystems that have persistent
         // i-node numbers. This is to allow the linker to work propoerly.
-        // This is not needed for Mutliuser.
+        // This is not needed for Multiuser.
         if (storageType == StorageType.LINKED && Cfg.useFSTypeCheck(rtRoot)) {
             checkFilesystemType(rtRoot, fToCheck);
         }
