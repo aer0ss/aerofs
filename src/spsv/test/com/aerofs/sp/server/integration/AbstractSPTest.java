@@ -19,6 +19,7 @@ import com.aerofs.servlets.SecUtilHelper;
 import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue;
 import com.aerofs.servlets.lib.ssl.CertificateAuthenticator;
 import com.aerofs.sp.authentication.IAuthenticator;
+import com.aerofs.sp.common.UserFilter;
 import com.aerofs.sp.server.AbstractTestWithDatabase;
 import com.aerofs.sp.server.IdentitySessionManager;
 import com.aerofs.sp.server.PasswordManagement;
@@ -127,6 +128,7 @@ public class AbstractSPTest extends AbstractTestWithDatabase
 
     @Spy protected CertificateAuthenticator certificateAuthenticator =
             mock(CertificateAuthenticator.class);
+    @Spy protected UserFilter userFilter = mock(UserFilter.class);
 
     @Mock protected InvitationEmailer.Factory factEmailer;
 
@@ -134,7 +136,7 @@ public class AbstractSPTest extends AbstractTestWithDatabase
     @Spy protected MockSessionUser sessionUser;
 
     @Spy PasswordManagement passwordManagement = new PasswordManagement(db, factUser,
-            mock(PasswordResetEmailer.class));
+            mock(PasswordResetEmailer.class), userFilter);
     @Spy DeviceRegistrationEmailer _deviceRegistrationEmailer = mock(DeviceRegistrationEmailer.class);
     @Spy RequestToSignUpEmailer _requestToSignUpEmailer = mock(RequestToSignUpEmailer.class);
 

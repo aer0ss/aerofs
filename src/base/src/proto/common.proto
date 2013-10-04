@@ -118,6 +118,9 @@ message PBException {
         SHARED_FOLDER_RULES_EDITORS_DISALLOWED_IN_EXTERNALL_SHARED_FOLDER = 408;
         SHARED_FOLDER_RULES_WARNING_ADD_EXTERNAL_USER = 409;
         SHARED_FOLDER_RULES_WARNING_OWNER_CAN_SHARE_WITH_EXTERNAL_USERS = 410;
+
+        // The user cannot reset their password (because we don't manage it)
+        CANNOT_RESET_PASSWORD = 411;
     }
 
     required Type type = 1;

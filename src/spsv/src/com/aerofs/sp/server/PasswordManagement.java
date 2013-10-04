@@ -4,7 +4,12 @@ import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.UserID;
+import com.aerofs.lib.LibParam.EnterpriseConfig;
+import com.aerofs.lib.LibParam.Identity;
+import com.aerofs.lib.LibParam.Identity.Authenticator;
+import com.aerofs.base.ex.ExCannotResetPassword;
 import com.aerofs.sp.common.Base62CodeGenerator;
+import com.aerofs.sp.common.UserFilter;
 import com.aerofs.sp.server.email.PasswordResetEmailer;
 import com.aerofs.sp.server.lib.SPDatabase;
 import com.aerofs.sp.server.lib.SPParam;
@@ -23,25 +28,33 @@ public class PasswordManagement
 {
     private final SPDatabase _db;
     private final PasswordResetEmailer _passwordResetEmailer;
+    private final UserFilter _userFilter;
     private final User.Factory _factUser;
 
     private static final Logger l = Loggers.getLogger(PasswordManagement.class);
 
     public PasswordManagement(SPDatabase db, User.Factory factUser,
-            PasswordResetEmailer passwordResetEmailer)
+            PasswordResetEmailer passwordResetEmailer,
+            UserFilter userFilter)
     {
         _db = db;
         _factUser = factUser;
         _passwordResetEmailer = passwordResetEmailer;
+        _userFilter = userFilter;
     }
 
     public void sendPasswordResetEmail(User user)
-            throws SQLException, IOException, MessagingException
+            throws SQLException, IOException, MessagingException, ExCannotResetPassword
     {
         if (!user.exists()) {
             // If we don't have a user, just do nothing
             l.info("Password reset requested for " + user + " but user doesn't exist");
             return;
+        }
+
+        if (!canResetPassword(user)) {
+            l.info("Password reset requested for " + user + " but user has no local credential");
+            throw new ExCannotResetPassword();
         }
 
         String token = Base62CodeGenerator.generate();
@@ -73,5 +86,14 @@ public class PasswordManagement
                 SPParam.getShaedSP(old_credentials.toByteArray()),
                 SPParam.getShaedSP(new_credentials.toByteArray()));
         l.info(userId + "'s Password was successfully changed");
+    }
+
+    // This function points to a lack of encapsulation elsewhere. I do not like it; I hate it.
+    // We can't just ask "!isInternalUser" since that will never be true for PROD mode
+    private boolean canResetPassword(User user)
+    {
+        return     !EnterpriseConfig.IS_ENTERPRISE_DEPLOYMENT
+                || (Identity.AUTHENTICATOR == Authenticator.LOCAL_CREDENTIAL)
+                || (!_userFilter.isInternalUser(user.id()));
     }
 }

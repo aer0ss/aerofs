@@ -87,6 +87,7 @@ import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue.SuccessError;
 import com.aerofs.servlets.lib.db.jedis.JedisThreadLocalTransaction;
 import com.aerofs.servlets.lib.db.sql.SQLThreadLocalTransaction;
 import com.aerofs.servlets.lib.ssl.CertificateAuthenticator;
+import com.aerofs.base.ex.ExCannotResetPassword;
 import com.aerofs.sp.common.SubscriptionCategory;
 import com.aerofs.sp.authentication.IAuthenticator;
 import com.aerofs.sp.server.email.DeviceRegistrationEmailer;
@@ -294,6 +295,7 @@ public class SPService implements ISPService
                 ExBadCredential.class,
                 ExBadArgs.class,
                 ExAlreadyExist.class,
+                ExCannotResetPassword.class,
                 ExNotAuthenticated.class));
 
         // Notify SPTransaction that an exception occurred.

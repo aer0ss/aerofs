@@ -18,6 +18,7 @@ import com.aerofs.servlets.lib.db.sql.SQLThreadLocalTransaction;
 import com.aerofs.servlets.lib.ssl.CertificateAuthenticator;
 import com.aerofs.sp.authentication.AuthenticatorFactory;
 import com.aerofs.sp.authentication.LdapConfiguration;
+import com.aerofs.sp.common.UserFilter;
 import com.aerofs.sp.server.email.DeviceRegistrationEmailer;
 import com.aerofs.sp.server.email.InvitationEmailer;
 import com.aerofs.sp.server.email.InvitationReminderEmailer;
@@ -111,7 +112,7 @@ public class SPServlet extends AeroServlet
     private final InvitationEmailer.Factory _factEmailer = new InvitationEmailer.Factory();
 
     private final PasswordManagement _passwordManagement =
-            new PasswordManagement(_db, _factUser, new PasswordResetEmailer());
+            new PasswordManagement(_db, _factUser, new PasswordResetEmailer(), new UserFilter());
     private final DeviceRegistrationEmailer _deviceRegistrationEmailer = new DeviceRegistrationEmailer();
     private final RequestToSignUpEmailer _requestToSignUpEmailer = new RequestToSignUpEmailer();
 
