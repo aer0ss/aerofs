@@ -33,10 +33,10 @@ public class Email implements IEmail
     }
 
     @Override
-    public void addSection(String header, HEADER_SIZE size, String body) throws IOException
+    public void addSection(String header, String body) throws IOException
     {
-        _htmlEmail.addSection(header, size, htmlified(body));
-        _textEmail.addSection(header, size, body);
+        _htmlEmail.addSection(header, htmlified(body));
+        _textEmail.addSection(header, body);
     }
 
     @Override
@@ -77,7 +77,6 @@ public class Email implements IEmail
     private String htmlified(String plain)
     {
         String escaped = StringEscapeUtils.escapeHtml(plain);
-        String linkified = crappyLinkified(escaped);
-        return linkified;
+        return crappyLinkified(escaped);
     }
 }

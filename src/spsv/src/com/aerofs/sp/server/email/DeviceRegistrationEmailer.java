@@ -11,7 +11,6 @@ import com.aerofs.lib.Util;
 import com.aerofs.servlets.lib.EmailSender;
 import com.aerofs.sp.server.lib.SPParam;
 import com.aerofs.sv.common.EmailCategory;
-import com.aerofs.sp.server.email.IEmail.HEADER_SIZE;
 
 import javax.mail.MessagingException;
 import java.io.IOException;
@@ -57,7 +56,7 @@ public class DeviceRegistrationEmailer
                     // In the future, real templates could make this more intelligent.
                 "You can manage " + manageDeviceStringAndURL + " .";
 
-        email.addSection(subject, HEADER_SIZE.H1, body);
+        email.addSection(subject, body);
         email.addDefaultSignature();
 
         EmailSender.sendPublicEmailFromSupport(SPParam.EMAIL_FROM_NAME, emailAddress, null,

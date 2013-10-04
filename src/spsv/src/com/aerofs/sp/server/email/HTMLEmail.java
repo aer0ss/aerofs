@@ -9,7 +9,7 @@ import java.io.IOException;
 
 public class HTMLEmail implements IEmail {
 
-    private final String _header =
+    private final static String HEADER =
 
         "<body>" +
         "<table cellpadding=\"0\" cellspacing=\"0\" width=\"650\" align=\"center\" style=\"font-family:arial,sans-serif;font-size:13px;\">" +
@@ -32,11 +32,9 @@ public class HTMLEmail implements IEmail {
     private final String _footer;
 
     public static final String H1STYLE = "margin:0;font-size:25px;font-family:arial, sans-serif;color:#17466B;";
-    public static final String H2STYLE = "margin:0;font-size:14px;color:#17466B;";
     public static final String PSTYLE  = "margin:0;";
 
     private final  StringBuilder _sb = new StringBuilder();
-    private final String _title;
     private int _sectionCount = 0;
     private boolean _finalized = false;
 
@@ -46,17 +44,16 @@ public class HTMLEmail implements IEmail {
                                         SubscriptionParams.UNSUBSCRIPTION_URL +
                                         unsubscribeId + "\">Unsubscribe</a>" :
                                     "<p style\"color:#999999;\">This is a one time email</p>";
-        _title = subject;
         String head =
             "<!doctype html>" +
             "<html>" +
             "<head>" +
-            "<title>" + _title + "</title>" +
+            "<title>" + subject + "</title>" +
             "</head>";
 
 
         _sb.append(head);
-        _sb.append(_header);
+        _sb.append(HEADER);
 
         _footer =
                 " </table>" +
@@ -94,7 +91,7 @@ public class HTMLEmail implements IEmail {
     }
 
     @Override
-    public void addSection(final String header, final HEADER_SIZE size, final String body)
+    public void addSection(final String header, final String body)
             throws IOException
     {
         if (_finalized) throw new IOException("cannot add section to a finalized email");
@@ -107,11 +104,7 @@ public class HTMLEmail implements IEmail {
 
         _sb.append("<tr><td>");
 
-        if (size == HEADER_SIZE.H1) {
-            _sb.append("<h1 style=\"" + H1STYLE + "\">" + header + "</h1>");
-        } else {
-            _sb.append("<h2 style=\"" + H2STYLE + "\">" + header + "</h2>");
-        }
+        _sb.append("<h1 style=\"" + H1STYLE + "\">" + header + "</h1>");
 
         _sb.append("</td></tr>");
 

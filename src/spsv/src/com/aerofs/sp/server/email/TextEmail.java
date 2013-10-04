@@ -18,7 +18,7 @@ public class TextEmail implements IEmail {
                 "please go to " + SubscriptionParams.UNSUBSCRIPTION_URL + unsubscribeId : "";
     }
     @Override
-    public void addSection(final String header, final HEADER_SIZE size, final String body)
+    public void addSection(final String header, final String body)
     throws IOException
     {
         if (_finalized) throw new IOException("cannot add section to a finalized email");
@@ -26,17 +26,10 @@ public class TextEmail implements IEmail {
 
         _sb.append("\n");
 
-        String underline;
-        if (size == HEADER_SIZE.H1) {
-                underline = "=";
-        } else {
-                underline = "-";
-        }
-
         _sb.append(header);
 
         _sb.append("\n");
-        for (int i =0; i < len; i++) _sb.append(underline);
+        for (int i =0; i < len; i++) _sb.append("=");
         _sb.append("\n");
 
         _sb.append("\n");

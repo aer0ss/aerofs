@@ -12,7 +12,6 @@ import com.aerofs.lib.Util;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.servlets.lib.EmailSender;
 import com.aerofs.sv.common.EmailCategory;
-import com.aerofs.sp.server.email.IEmail.HEADER_SIZE;
 import com.aerofs.sp.server.lib.user.User;
 import com.google.common.base.Strings;
 
@@ -95,7 +94,7 @@ public class InvitationEmailer
 
             // If fromPerson is empty (user didn't set his name), use his email address instead
             email.addSection(nsInviter.nameOnly() + " invited you to " + L.brand() + "!",
-                    HEADER_SIZE.H1, body);
+                    body);
             email.addDefaultSignature();
         }
 
@@ -125,7 +124,7 @@ public class InvitationEmailer
 
             email.addSection(
                     nsSharer.nameOnly() + " wants to share " + Util.quote(folderName) + " with you.",
-                    HEADER_SIZE.H1, body);
+                    body);
             email.addDefaultSignature();
 
             return new InvitationEmailer(new Callable<Void>()
@@ -163,7 +162,7 @@ public class InvitationEmailer
                     "\n" +
                     "If you do not wish to join the team, simply ignore this email.";
 
-            email.addSection(subject, HEADER_SIZE.H1, body);
+            email.addSection(subject, body);
             email.addDefaultSignature();
 
             return new InvitationEmailer(new Callable<Void>()

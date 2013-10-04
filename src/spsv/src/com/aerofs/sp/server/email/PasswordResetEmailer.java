@@ -6,13 +6,11 @@ package com.aerofs.sp.server.email;
 
 import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.labeling.L;
-import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
 import com.aerofs.base.id.UserID;
 import com.aerofs.servlets.lib.EmailSender;
 import com.aerofs.sp.server.lib.SPParam;
 import com.aerofs.sv.common.EmailCategory;
-import com.aerofs.sp.server.email.IEmail.HEADER_SIZE;
 
 import javax.mail.MessagingException;
 import java.io.IOException;
@@ -34,7 +32,7 @@ public class PasswordResetEmailer
                "to reset your password:\n\n" + url + "\n\n" +
                 "If you didn't request this email please ignore this message.";
 
-        email.addSection(L.brand() + " Password Request", HEADER_SIZE.H1, body);
+        email.addSection(L.brand() + " Password Request", body);
         email.addDefaultSignature();
 
         EmailSender.sendPublicEmailFromSupport(SPParam.EMAIL_FROM_NAME, userId.getString(),
@@ -59,7 +57,7 @@ public class PasswordResetEmailer
                 " please email " + WWW.SUPPORT_EMAIL_ADDRESS + " immediately." +
                 " We will take necessary steps to secure your account.";
 
-        email.addSection(subject, HEADER_SIZE.H1, body);
+        email.addSection(subject, body);
         email.addDefaultSignature();
 
         EmailSender.sendPublicEmailFromSupport(SPParam.EMAIL_FROM_NAME, userId.getString(),

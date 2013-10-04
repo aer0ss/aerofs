@@ -8,7 +8,6 @@ import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.LibParam.EnterpriseConfig;
 import com.aerofs.servlets.lib.EmailSender;
-import com.aerofs.sp.server.email.IEmail.HEADER_SIZE;
 import com.aerofs.sp.server.lib.SPParam;
 import com.aerofs.sv.common.EmailCategory;
 
@@ -39,7 +38,7 @@ public class RequestToSignUpEmailer
                 "Simply ignore this email if you didn't request an " + L.brand() + " account.";
 
         Email email = new Email(subject);
-        email.addSection("You're almost ready to go!", HEADER_SIZE.H1, body);
+        email.addSection("You're almost ready to go!", body);
         email.addDefaultSignature();
 
         EmailSender.sendPublicEmailFromSupport(SPParam.EMAIL_FROM_NAME, emailAddress, null,
@@ -62,7 +61,7 @@ public class RequestToSignUpEmailer
                 WWW.PASSWORD_RESET_REQUEST_URL;
 
         Email email = new Email(subject);
-        email.addSection("You already have an " + L.product() + " account", HEADER_SIZE.H1, body);
+        email.addSection("You already have an " + L.product() + " account", body);
         email.addDefaultSignature();
 
         EmailSender.sendPublicEmailFromSupport(SPParam.EMAIL_FROM_NAME, emailAddress, null,

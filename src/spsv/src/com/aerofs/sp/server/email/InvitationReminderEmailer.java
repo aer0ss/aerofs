@@ -8,7 +8,6 @@ import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.labeling.L;
 import com.aerofs.servlets.lib.EmailSender;
 import com.aerofs.sv.common.EmailCategory;
-import com.aerofs.sp.server.email.IEmail.HEADER_SIZE;
 
 public class InvitationReminderEmailer
 {
@@ -41,7 +40,7 @@ public class InvitationReminderEmailer
 
         Email email = new Email(subject, true, unsubscribeId);
 
-        email.addSection("Reminder: You're invited to " + L.brand() +"!", HEADER_SIZE.H1, body);
+        email.addSection("Reminder: You're invited to " + L.brand() +"!", body);
         email.addDefaultSignature();
 
         EmailSender.sendPublicEmailFromSupport(fromName, to, null, subject,
