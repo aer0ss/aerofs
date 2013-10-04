@@ -145,12 +145,11 @@ public class DlgSignIn extends AeroFSTitleAreaDialog
         Composite composite = createContainer(dialogContainer, 1);
         composite.setLayoutData(new GridData(GridData.FILL_BOTH));
 
-        new Label(composite, SWT.WRAP)
-                .setText(OpenId.SERVICE_INTERNAL_HINT);
-
         Button signInButton = GUIUtil.createButton(composite, SWT.PUSH);
         signInButton.setText("Sign in with " + OpenId.SERVICE_IDENTIFIER);
-        signInButton.setLayoutData(new GridData(GridData.FILL_BOTH));
+        GridData layoutData = new GridData(GridData.FILL_BOTH);
+        layoutData.heightHint = 50;
+        signInButton.setLayoutData(layoutData);
 
         signInButton.addSelectionListener(new SelectionAdapter() {
             @Override

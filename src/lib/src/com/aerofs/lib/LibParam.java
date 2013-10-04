@@ -8,7 +8,6 @@ import com.aerofs.base.BaseParam;
 import com.aerofs.base.C;
 import com.aerofs.base.id.SID;
 import com.aerofs.labeling.L;
-import com.aerofs.lib.LibParam.Identity.Authenticator;
 import com.google.common.base.Optional;
 
 import java.net.InetAddress;
@@ -343,15 +342,6 @@ public class LibParam extends BaseParam
          */
         public static final String                      SERVICE_IDENTIFIER =
                 getStringProperty(                      "openid.service.identifier", "OpenID");
-
-        /**
-         * A short phrase that will guide internal users to sign in with the configured
-         * OpenID service.
-         */
-        public static final String                      SERVICE_INTERNAL_HINT =
-                getStringProperty(                      "openid.service.internal.hint",
-                                                        "Have an " + SERVICE_IDENTIFIER
-                                                                + " account?");
 
         /**
          * A short phrase that will guide external users to sign in with a local credential.
