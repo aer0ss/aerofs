@@ -23,6 +23,7 @@ import com.aerofs.lib.RootAnchorUtil;
 import com.aerofs.lib.StorageType;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
+import com.aerofs.lib.cfg.CfgAbsRTRoot;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.ex.ExChildAlreadyShared;
@@ -47,11 +48,12 @@ public class HdLinkRoot extends AbstractHdIMC<EILinkRoot>
     private final ACLSynchronizer _aclsync;
     private final InjectableFile.Factory _factFile;
     private final SPBlockingClient.Factory _factSP;
+    private final CfgAbsRTRoot _cfgAbsRTRoot;
 
     @Inject
     public HdLinkRoot(TC tc, TransManager tm, StoreCreator sc, StoreDeleter sd, LinkerRootMap lrm,
             CfgLocalUser localUser, ACLSynchronizer aclsync, InjectableFile.Factory factFile,
-            SPBlockingClient.Factory factSP)
+            SPBlockingClient.Factory factSP, CfgAbsRTRoot cfgAbsRTRoot)
     {
         _tc = tc;
         _tm = tm;
@@ -62,6 +64,7 @@ public class HdLinkRoot extends AbstractHdIMC<EILinkRoot>
         _aclsync = aclsync;
         _factFile = factFile;
         _factSP = factSP;
+        _cfgAbsRTRoot = cfgAbsRTRoot;
     }
 
     @Override
@@ -127,7 +130,7 @@ public class HdLinkRoot extends AbstractHdIMC<EILinkRoot>
             throw new ExParentAlreadyShared();
         }
 
-        RootAnchorUtil.checkRootAnchor(f.getAbsolutePath(), Cfg.absRTRoot(), StorageType.LINKED,
+        RootAnchorUtil.checkRootAnchor(f.getAbsolutePath(), _cfgAbsRTRoot.get(), StorageType.LINKED,
                 true);
     }
 

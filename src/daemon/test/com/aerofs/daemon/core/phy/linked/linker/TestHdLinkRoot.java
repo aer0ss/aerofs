@@ -21,6 +21,7 @@ import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.Util;
+import com.aerofs.lib.cfg.CfgAbsRTRoot;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.ex.ExChildAlreadyShared;
@@ -69,6 +70,7 @@ public class TestHdLinkRoot extends AbstractTest
     @Mock ACLSynchronizer aclsync;
     @Spy InjectableFile.Factory factFile;
     @Mock SPBlockingClient.Factory factSP;
+    @Mock CfgAbsRTRoot cfgAbsRTRoot;
 
     @InjectMocks HdLinkRoot hd;
 
@@ -92,6 +94,7 @@ public class TestHdLinkRoot extends AbstractTest
         when(tc.acquireThrows_(any(Cat.class), anyString())).thenReturn(tk);
         when(tk.pseudoPause_(anyString())).thenReturn(tcb);
         when(factSP.create_(localUser)).thenReturn(sp);
+        when(cfgAbsRTRoot.get()).thenReturn("");
     }
 
     private void handle(String path, @Nullable SID sid) throws Exception
