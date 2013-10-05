@@ -73,10 +73,8 @@ public class CLISetup
         }
 
         cli.notify(MessageType.INFO,
-                "---------------------------------------------------------------\n" +
-                "You can now access " + L.product() + " functions through the\n" +
-                Util.quote(S.SH_NAME) + " command while " +
-                S.CLI_NAME + " is running.");
+                "You can now access " + L.product() + " functions through the " +
+                Util.quote(S.SH_NAME) + " command while " + S.CLI_NAME + " is running.");
     }
 
     private void setupMultiuser(CLI cli) throws Exception

@@ -31,7 +31,7 @@ public class S
             SETUP_DEV_ALIAS          = "Computer name",
             SETUP_TRY_AGAIN          = "Try Again",
             SETUP_ERR_CONN           = "Sorry, couldn't connect to the server.",
-            SETUP_INSTALL_MESSAGE    = "Performing magic...",
+            SETUP_INSTALL_MESSAGE    = "Performing magic",
 
             // used in setup storage screen
             SETUP_STORAGE_MESSAGE    = "Where would you like to store your team's data?",

@@ -389,7 +389,7 @@ public class PageLocalStorage extends AbstractSetupPage
                 if (e instanceof ConnectException) return S.SETUP_ERR_CONN;
                 else if (e instanceof ExUIMessage) return e.getMessage();
                 else if (e instanceof ExNoPerm) return S.SETUP_NOT_ADMIN;
-                else return S.SETUP_INSTALL_MESSAGE;
+                else return S.SETUP_INSTALL_MESSAGE + "...";
             }
         });
     }

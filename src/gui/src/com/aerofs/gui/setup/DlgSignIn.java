@@ -354,7 +354,7 @@ public class DlgSignIn extends AeroFSTitleAreaDialog
     private void setInProgressStatus()
     {
         _compSpin.start();
-        setStatusImpl(S.SETUP_INSTALL_MESSAGE);
+        setStatusImpl(S.SETUP_INSTALL_MESSAGE + "...");
     }
 
     private void clearInProgressStatus()
