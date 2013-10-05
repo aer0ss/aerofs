@@ -174,7 +174,7 @@ public abstract class AbstractCompTransport extends Composite
 
             _lnkDevices = new Link(parent, SWT.NONE);
             _lnkDevices.setText(S.LNK_FIND_DEVICE_ID);
-            _lnkDevices.addSelectionListener(GUIUtil.createUrlLaunchListenerr(S.URL_DEVICE_ID_INFO));
+            _lnkDevices.addSelectionListener(GUIUtil.createUrlLaunchListener(S.URL_DEVICE_ID_INFO));
 
             _lblDevices.setLayoutData(new GridData(SWT.RIGHT, SWT.TOP, false, false, 1, 2));
             _lstDevices.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));

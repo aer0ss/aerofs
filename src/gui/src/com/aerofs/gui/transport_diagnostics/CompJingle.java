@@ -39,7 +39,7 @@ public class CompJingle extends AbstractCompTransport
         _decStatus.setText("Status:");
         _decStatus.setStatus(S.TXT_COLLECTING_NETWORK_INFO);
         _decStatus.setDescription(S.LNK_JINGLE_DESC);
-        _decStatus.addSelectionListener(GUIUtil.createUrlLaunchListenerr(S.URL_TRANSPORTS_INFO));
+        _decStatus.addSelectionListener(GUIUtil.createUrlLaunchListener(S.URL_TRANSPORTS_INFO));
 
         _decXmpp = new StatusDecorator(content);
         _decXmpp.setText("Presence Service:");

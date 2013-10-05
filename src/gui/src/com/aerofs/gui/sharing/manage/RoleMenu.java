@@ -72,7 +72,7 @@ public class RoleMenu
 
         MenuItem miEmail = new MenuItem(_menu, SWT.PUSH);
         miEmail.setText("Email User");
-        miEmail.addSelectionListener(GUIUtil.createUrlLaunchListenerr(
+        miEmail.addSelectionListener(GUIUtil.createUrlLaunchListener(
                 "mailto:" + _subject.getString()));
 
         if (showUpdateACLMenuItems) {

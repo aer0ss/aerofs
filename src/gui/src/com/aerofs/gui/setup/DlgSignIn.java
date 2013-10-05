@@ -221,7 +221,7 @@ public class DlgSignIn extends AeroFSTitleAreaDialog
         _linkForgotPassword.setText("Forgot your password? <a>Click here to reset it.</a>");
         _linkForgotPassword.setToolTipText("");
         _linkForgotPassword.addSelectionListener(
-                GUIUtil.createUrlLaunchListenerr(WWW.PASSWORD_RESET_REQUEST_URL));
+                GUIUtil.createUrlLaunchListener(WWW.PASSWORD_RESET_REQUEST_URL));
         _linkForgotPassword.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, true, false));
 
         createStatusComposite(composite).setLayoutData(

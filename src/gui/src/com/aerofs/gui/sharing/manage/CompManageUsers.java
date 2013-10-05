@@ -6,6 +6,7 @@ package com.aerofs.gui.sharing.manage;
 
 import com.aerofs.gui.CompSpin;
 import com.aerofs.gui.GUIUtil;
+import com.aerofs.lib.S;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.jface.dialogs.IDialogConstants;
@@ -18,13 +19,15 @@ import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.widgets.Link;
+
+import static com.aerofs.gui.GUIUtil.createUrlLaunchListener;
 
 public class CompManageUsers extends Composite
 {
     private final Button _btnClose;
 
     private final Path _path;
-    private final Button _btnCancel;
     private final Composite _composite;
     private final CompUserList _compUserList;
     private final CompSpin _compSpin;
@@ -54,17 +57,18 @@ public class CompManageUsers extends Composite
         _composite.setLayout(glComposite);
         _composite.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 1, 1));
 
-        _btnCancel = GUIUtil.createButton(_composite, SWT.NONE);
-        _btnCancel.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, true, false, 1, 1));
-        _btnCancel.setText("Unshare Folder");
-        _btnCancel.setVisible(false);
+        Link link = new Link(_composite, SWT.NONE);
+        link.setText("<a>What are Owner, Editor, and Viewer?</a>");
+        link.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, false));
+        link.addSelectionListener(createUrlLaunchListener(S.LINK_ROLES_URL));
 
         _compSpin = new CompSpin(_composite, SWT.NONE);
-        _compSpin.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false));
+        _compSpin.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, true, false));
         _compUserList.setSpinner(_compSpin);
 
         _btnClose = GUIUtil.createButton(_composite, SWT.NONE);
         _btnClose.setText(IDialogConstants.CLOSE_LABEL);
+        _btnClose.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false));
         _btnClose.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e)

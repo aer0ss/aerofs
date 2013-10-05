@@ -198,6 +198,7 @@ public class S
             S3_DESCRIPTION = "Store files on Amazon S3",
             USERS_DIR = "users",
             SHARED_DIR = "shared",
+            LINK_ROLES_URL = "https://support.aerofs.com/entries/22831810",
 
             SERVER_OFFLINE_TOOLTIP = L.product() + " is offline.",
 

@@ -57,6 +57,8 @@ import org.slf4j.Logger;
 import java.util.Collection;
 import java.util.List;
 
+import static com.aerofs.gui.GUIUtil.createUrlLaunchListener;
+
 public class CompInviteUsers extends Composite implements IInputChangeListener
 {
     private static final Logger l = Loggers.getLogger(CompInviteUsers.class);
@@ -408,6 +410,12 @@ public class CompInviteUsers extends Composite implements IInputChangeListener
                     MenuItem miViewer = new MenuItem(menu, SWT.PUSH);
                     miViewer.setText("Viewer - download only");
                     miViewer.addSelectionListener(createSelector(Role.VIEWER));
+
+                    new MenuItem(menu, SWT.SEPARATOR);
+
+                    MenuItem miExplain = new MenuItem(menu, SWT.PUSH);
+                    miExplain.setText("Learn more about roles");
+                    miExplain.addSelectionListener(createUrlLaunchListener(S.LINK_ROLES_URL));
 
                     menu.setVisible(true);
                 }

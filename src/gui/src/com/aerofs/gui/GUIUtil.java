@@ -392,7 +392,7 @@ public class GUIUtil
      * @param url - the URL to launch
      * @return a SelectionListener who, when invoked, will open the URL on the native platform.
      */
-    public static SelectionListener createUrlLaunchListenerr(final String url)
+    public static SelectionListener createUrlLaunchListener(final String url)
     {
         return new SelectionAdapter()
         {
