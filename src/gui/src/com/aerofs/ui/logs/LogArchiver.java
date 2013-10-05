@@ -5,6 +5,7 @@
 package com.aerofs.ui.logs;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.base.ex.ExInternalError;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.Util;
 import com.aerofs.sv.client.SVClient;
@@ -127,13 +128,15 @@ public final class LogArchiver
     {
         File[] gzippedLogs = new File(logpath).listFiles(GZIPPED_LOG_FILTER);
         for (File gzippedLog : gzippedLogs) {
-            l.debug("upload " + gzippedLog);
+            l.debug("upload {}", gzippedLog);
 
             try {
                 SVClient.sendGZippedLog(gzippedLog);
                 deleteOrOnExit(gzippedLog);
             } catch (Exception e) {
-                l.warn("upload " + gzippedLog + ": " + Util.e(e));
+                // suppress stack for ExInternalError. It has caused too much logging due to SV
+                // problems.
+                l.warn("upload {}: {}", gzippedLog, Util.e(e, ExInternalError.class));
             }
         }
     }
