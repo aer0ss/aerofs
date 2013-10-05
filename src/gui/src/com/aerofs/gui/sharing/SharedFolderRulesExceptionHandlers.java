@@ -91,7 +91,7 @@ public class SharedFolderRulesExceptionHandlers
                 "proceeding.";
 
         return GUI.get().askWithDefaultOnNoButton(shell, MessageType.WARN, message,
-                "Confirm", "Cancel");
+                "Proceed", "Cancel");
     }
 
     private static boolean handleEditorsDisallowedInExternallySharedFolders(Shell shell, Exception e)
@@ -125,6 +125,6 @@ public class SharedFolderRulesExceptionHandlers
                 "material into this folder.";
 
         return GUI.get().askWithDefaultOnNoButton(shell, MessageType.WARN, message,
-                "Confirm", "Cancel");
+                "Proceed", "Cancel");
     }
 }

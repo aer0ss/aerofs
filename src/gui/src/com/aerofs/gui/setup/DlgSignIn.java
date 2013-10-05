@@ -17,6 +17,7 @@ import com.aerofs.gui.AeroFSTitleAreaDialog;
 import com.aerofs.gui.CompSpin;
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUI.ISWTWorker;
+import com.aerofs.gui.GUIParam;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.gui.Images;
 import com.aerofs.gui.singleuser.SingleuserDlgSetupAdvanced;
@@ -36,7 +37,6 @@ import com.aerofs.ui.UIGlobals;
 import com.aerofs.ui.error.ErrorMessages;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.custom.StackLayout;
 import org.eclipse.swt.events.ModifyEvent;
 import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.events.SelectionAdapter;
@@ -47,6 +47,8 @@ import org.eclipse.swt.events.VerifyEvent;
 import org.eclipse.swt.events.VerifyListener;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
+import org.eclipse.swt.layout.RowData;
+import org.eclipse.swt.layout.RowLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
@@ -64,6 +66,7 @@ import java.net.ConnectException;
 import java.util.LinkedList;
 import java.util.List;
 
+import static com.aerofs.gui.GUIUtil.getNewText;
 import static org.eclipse.jface.dialogs.IDialogConstants.CANCEL_ID;
 import static org.eclipse.jface.dialogs.IDialogConstants.CANCEL_LABEL;
 import static org.eclipse.jface.dialogs.IDialogConstants.DETAILS_ID;
@@ -91,7 +94,8 @@ public class DlgSignIn extends AeroFSTitleAreaDialog
     {
         super.configureShell(newShell);
 
-        newShell.addTraverseListener(new TraverseListener() {
+        newShell.addTraverseListener(new TraverseListener()
+        {
             @Override
             public void keyTraversed(TraverseEvent e)
             {
@@ -99,7 +103,8 @@ public class DlgSignIn extends AeroFSTitleAreaDialog
             }
         });
 
-        newShell.addListener(SWT.Show, new Listener() {
+        newShell.addListener(SWT.Show, new Listener()
+        {
             @Override
             public void handleEvent(Event arg0)
             {
@@ -115,20 +120,27 @@ public class DlgSignIn extends AeroFSTitleAreaDialog
     @Override
     protected Control createDialogArea(Composite parent)
     {
-        Control     area = super.createDialogArea(parent);
-        Composite   areaComposite = (Composite)area;
-        areaComposite.setLayout(new GridLayout());
+        Composite area = new Composite(parent, SWT.NONE);
 
         setTitle("Setup " + L.product());
 
         if (_showOpenIdDialog) {
-            createOpenIdComposite(areaComposite);
+            createOpenIdComposite(area)
+                    .setLayoutData(new GridData(SWT.CENTER, SWT.CENTER, true, false));
 
-            new Label(areaComposite, SWT.HORIZONTAL | SWT.SEPARATOR)
+            createDivider(area, "OR")
                     .setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
         }
 
-        createCredentialComposite(areaComposite);
+        createCredentialComposite(area)
+                .setLayoutData(new GridData(SWT.CENTER, SWT.CENTER, true, false));
+
+        GridLayout layout = new GridLayout();
+        layout.marginWidth = 0;
+        layout.marginHeight = 0;
+        layout.verticalSpacing = 0;
+        area.setLayout(layout);
+        area.setLayoutData(new GridData(GridData.FILL_BOTH));
 
         if (_defaultControl == null) { _defaultControl = _txtUserID; }
         _defaultControl.setFocus();
@@ -140,23 +152,17 @@ public class DlgSignIn extends AeroFSTitleAreaDialog
      * Create a composite with a label and a sign-in button.
      * Add the composite and a horizontal separator to the container.
      */
-    private void createOpenIdComposite(Composite dialogContainer)
+    private Composite createOpenIdComposite(Composite parent)
     {
-        Composite composite = createContainer(dialogContainer, 1);
-        composite.setLayoutData(new GridData(GridData.FILL_BOTH));
+        Composite composite = new Composite(parent, SWT.NONE);
 
         Button signInButton = GUIUtil.createButton(composite, SWT.PUSH);
         signInButton.setText("Sign in with " + OpenId.SERVICE_IDENTIFIER);
-        GridData layoutData = new GridData(GridData.FILL_BOTH);
-        layoutData.heightHint = 50;
-        signInButton.setLayoutData(layoutData);
-
-        signInButton.addSelectionListener(new SelectionAdapter() {
+        signInButton.addSelectionListener(new SelectionAdapter()
+        {
             @Override
             public void widgetSelected(SelectionEvent e)
             {
-                super.widgetSelected(e);
-
                 _inProgress = true;
                 _model.setSignInActor(new OpenIdGUIActor());
                 setControlState(false);
@@ -168,98 +174,126 @@ public class DlgSignIn extends AeroFSTitleAreaDialog
 
         _controls.add(signInButton);
         _defaultControl = signInButton;
+
+        RowLayout layout = new RowLayout(SWT.VERTICAL);
+        layout.marginHeight = GUIParam.MARGIN;
+        layout.marginTop = GUIParam.MARGIN;
+        layout.marginBottom = 0;
+        layout.center = true;
+        layout.fill = true;
+        composite.setLayout(layout);
+        signInButton.setLayoutData(new RowData(240, 50));
+
+        return composite;
     }
 
-    private Composite createCredentialComposite(Composite dialogContainer)
+    private Composite createDivider(Composite parent, String label)
     {
-        Composite credentialBlock = createContainer(dialogContainer, 2);
+        Composite composite = new Composite(parent, SWT.NONE);
 
-        // row 1 (only exists if this is a hybrid OpenId/Credential screen)
+        new Label(composite, SWT.HORIZONTAL | SWT.SEPARATOR)
+                .setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
+        new Label(composite, SWT.NONE).setText(label);
+        new Label(composite, SWT.HORIZONTAL | SWT.SEPARATOR)
+                .setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
+        GridLayout layout = new GridLayout(3, false);
+        layout.marginWidth = 0;
+        composite.setLayout(layout);
+
+        return composite;
+    }
+
+    private Composite createCredentialComposite(Composite parent)
+    {
+        Composite composite = new Composite(parent, SWT.NONE);
 
         if (_showOpenIdDialog) {
-            Label credIntro = new Label(credentialBlock, SWT.NONE);
-            credIntro.setText(OpenId.SERVICE_EXTERNAL_HINT);
-            credIntro.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, true, false, 2, 1));
+            Label label = new Label(composite, SWT.NONE);
+            label.setText(OpenId.SERVICE_EXTERNAL_HINT);
+            label.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, true, false));
         }
 
-        createUserIDInputLabelAndText(credentialBlock);
+        createCredentialInputs(composite)
+                .setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
 
-        // row 2
+        _linkForgotPassword = new Link(composite, SWT.NONE);
+        _linkForgotPassword.setText("Forgot your password? <a>Click here to reset it.</a>");
+        _linkForgotPassword.setToolTipText("");
+        _linkForgotPassword.addSelectionListener(
+                GUIUtil.createUrlLaunchListenerr(WWW.PASSWORD_RESET_REQUEST_URL));
+        _linkForgotPassword.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, true, false));
 
-        createPasswordLabelAndText(credentialBlock);
+        createStatusComposite(composite).setLayoutData(
+                new GridData(SWT.RIGHT, SWT.BOTTOM, true, false));
 
-        // row 3 (empty row)
-        new Label(credentialBlock, SWT.NONE);
-        new Label(credentialBlock, SWT.NONE);
+        GridLayout layout = new GridLayout();
+        layout.marginHeight = 0;
+        layout.marginTop = _showOpenIdDialog ? GUIParam.MARGIN : 2 * GUIParam.MARGIN;
+        layout.marginWidth = 0;
+        layout.verticalSpacing = GUIParam.MAJOR_SPACING;
+        composite.setLayout(layout);
 
-        // row 4 (state dependent)
-
-        createBottomComposite(credentialBlock);
-
-        credentialBlock.setTabList(new Control[]{_txtUserID, _txtPasswd});
-
-        return credentialBlock;
+        return composite;
     }
 
-    // purely procedural, create a standard composite with a grid layout
-    private static Composite createContainer(Control dialogArea, int columns)
+    private Composite createCredentialInputs(Composite parent)
     {
-        final Composite container = new Composite((Composite) dialogArea, SWT.NONE);
-        final GridLayout gridLayout = new GridLayout();
-        gridLayout.marginTop = 5;
-        gridLayout.marginBottom = 5;
-        gridLayout.marginRight = 38;
-        gridLayout.marginLeft = 45;
-        gridLayout.horizontalSpacing = 10;
+        Composite composite = new Composite(parent, SWT.NONE);
 
-        gridLayout.numColumns = columns;
-        container.setLayout(gridLayout);
-        container.setLayoutData(new GridData(GridData.FILL_BOTH));
+        Label lblEmail = new Label(composite, SWT.NONE);
+        lblEmail.setText(S.SETUP_USER_ID + ":");
 
-        return container;
-    }
-
-    private void createBottomComposite(Composite container)
-    {
-        Composite comp = new Composite(container, SWT.NONE);
-        GridLayout glComp = new GridLayout(3, false);
-        glComp.horizontalSpacing = 0;
-        glComp.verticalSpacing = 12;
-        glComp.marginHeight = 0;
-        glComp.marginWidth = 0;
-        comp.setLayout(glComp);
-        comp.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false, 2, 1));
-
-        _compStack = new Composite(comp, SWT.NONE);
-        _compStack.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, true, false, 3, 1));
-        _compStack.setSize(306, 28);
-        _compStack.setLayout(_layoutStack);
-
-        _compForgotPassword = new Composite(_compStack, SWT.NONE);
-        GridLayout gl_compForgotPassword= new GridLayout(1, false);
-        gl_compForgotPassword.marginHeight = 0;
-        gl_compForgotPassword.marginWidth = 0;
-        _compForgotPassword.setLayout(gl_compForgotPassword);
-
-        Link linkForgotPassword = new Link(_compForgotPassword, SWT.NONE);
-        linkForgotPassword.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, true, true, 1, 1));
-        linkForgotPassword.setToolTipText("");
-        linkForgotPassword.setText("Forgot your password? <a>Click here to reset it.</a>");
-        linkForgotPassword.addSelectionListener(new SelectionAdapter()
+        _txtUserID = new Text(composite, SWT.BORDER);
+        _txtUserID.addVerifyListener(new VerifyListener()
         {
             @Override
-            public void widgetSelected(SelectionEvent e)
+            public void verifyText(VerifyEvent ev)
             {
-                GUIUtil.launch(WWW.PASSWORD_RESET_REQUEST_URL);
+                verify(getNewText(_txtUserID.getText(), ev));
             }
         });
+        _controls.add(_txtUserID);
 
-        _compBlank = new Composite(_compStack, SWT.NONE);
-        _compBlank.setLayout(new GridLayout(1, false));
+        Label lblPassword = new Label(composite, SWT.NONE);
+        lblPassword.setText(S.SETUP_PASSWD + ":");
 
-        _layoutStack.topControl = _compForgotPassword;
+        // N.B. because MacOSX can't handle password fields' verify events
+        // correctly, we have to use ModifyListeners
+        _txtPasswd = new Text(composite, SWT.BORDER | SWT.PASSWORD);
+        _txtPasswd.addModifyListener(new ModifyListener()
+        {
+            @Override
+            public void modifyText(ModifyEvent ev)
+            {
+                verify(null);
+            }
+        });
+        _controls.add(_txtPasswd);
 
-        createStatusComponents(comp);
+        GridLayout layout = new GridLayout(2, false);
+        layout.marginWidth = 0;
+        layout.marginHeight = 0;
+        composite.setLayout(layout);
+        lblEmail.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false));
+        _txtUserID.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
+        lblPassword.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false));
+        _txtPasswd.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
+
+        return composite;
+    }
+
+    private Composite createStatusComposite(Composite parent)
+    {
+        Composite composite = new Composite(parent, SWT.NONE);
+
+        _lblStatus = new Label(composite, SWT.NONE);
+        _compSpin = new CompSpin(composite, SWT.NONE);
+
+        RowLayout layout = new RowLayout(SWT.HORIZONTAL);
+        layout.center = true;
+        composite.setLayout(layout);
+
+        return composite;
     }
 
     static private boolean shouldAlwaysOnTop()
@@ -287,49 +321,6 @@ public class DlgSignIn extends AeroFSTitleAreaDialog
                 _model._localOptions._rootAnchorPath = advanced.getAbsoluteRootAnchor();
             }
         });
-    }
-
-    private void createUserIDInputLabelAndText(Composite container)
-    {
-        final Label emailAddressLabel = new Label(container, SWT.NONE);
-        emailAddressLabel.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false, 1, 1));
-        emailAddressLabel.setText(S.SETUP_USER_ID + ":");
-
-        _txtUserID = new Text(container, SWT.BORDER);
-        GridData gdEmail = new GridData(SWT.FILL, SWT.CENTER, true, false, 1, 1);
-        gdEmail.widthHint = 30;
-        _txtUserID.setLayoutData(gdEmail);
-
-        _txtUserID.addVerifyListener(new VerifyListener()
-        {
-            @Override
-            public void verifyText(final VerifyEvent ev)
-            {
-                verify(GUIUtil.getNewText(_txtUserID.getText(), ev));
-            }
-        });
-        _controls.add(_txtUserID);
-    }
-
-    private void createPasswordLabelAndText(Composite container)
-    {
-        final Label lblPass = new Label(container, SWT.NONE);
-        lblPass.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false, 1, 1));
-        lblPass.setText(S.SETUP_PASSWD + ":");
-
-        // N.B. because MacOSX can't handle password fields' verify events
-        // correctly, we have to use ModifyListeners
-        _txtPasswd = new Text(container, SWT.BORDER | SWT.PASSWORD);
-        _txtPasswd.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 1, 1));
-        _txtPasswd.addModifyListener(new ModifyListener()
-        {
-            @Override
-            public void modifyText(ModifyEvent ev)
-            {
-                verify(null);
-            }
-        });
-        _controls.add(_txtPasswd);
     }
 
     // TODO (WW) use ModifyListener instead of VerifyListener throughout the codebase.
@@ -382,22 +373,8 @@ public class DlgSignIn extends AeroFSTitleAreaDialog
         _lblStatus.setText(status);
 
         if (!prevStatus.equals(status)) {
-            _lblStatus.pack();
-            _lblStatus.getParent().layout();
-            _lblStatus.getShell().pack();
+            getShell().layout(new Control[] { _lblStatus });
         }
-    }
-
-    private void createStatusComponents(Composite composite)
-    {
-        _lblStatus = new Label(composite, SWT.NONE);
-        _lblStatus.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, true, false, 1, 1));
-
-        _compSpin = new CompSpin(composite, SWT.NONE);
-        _compSpin.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false, 1, 1));
-
-        Label placeHolder = new Label(composite, SWT.NONE);
-        placeHolder.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false, 1, 1));
     }
 
     @Override
@@ -461,7 +438,7 @@ public class DlgSignIn extends AeroFSTitleAreaDialog
             else if (e instanceof ExInternalError) return S.SERVER_INTERNAL_ERROR;
             else return S.SETUP_DEFAULT_SIGNIN_ERROR;
         }
-    };
+    }
 
     private void setControlState(boolean enabled)
     {
@@ -469,8 +446,7 @@ public class DlgSignIn extends AeroFSTitleAreaDialog
 
         getButton(OK_ID).setEnabled(enabled && isReady(_txtUserID.getText()));
 
-        _layoutStack.topControl = enabled ? _compForgotPassword : _compBlank;
-        _compStack.layout();
+        _linkForgotPassword.setVisible(enabled);
     }
 
     @Override
@@ -514,18 +490,16 @@ public class DlgSignIn extends AeroFSTitleAreaDialog
 
     // controls that should be enabled/disabled with setControlState:
     List<Control>   _controls = new LinkedList<Control>();
-    private boolean _showOpenIdDialog = true;//FIX THIS
     Control         _defaultControl;
 
+    private boolean _showOpenIdDialog;
+
     private CompSpin _compSpin;
-    private Composite _compForgotPassword;
-    private Composite _compBlank;
-    private Composite _compStack;
     private Label _lblStatus;
-    private final StackLayout _layoutStack = new StackLayout();
 
     private Text _txtUserID;
     private Text _txtPasswd;
+    private Link _linkForgotPassword;
 
     private boolean _okay;
     private boolean _inProgress;
