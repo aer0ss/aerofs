@@ -9,8 +9,21 @@
         <div class="span12 text-center">
             <a class="btn btn-primary btn-large" href="${openid_url}">Sign In with OpenID</a>
         </div>
-        <div class="span10 offset1" style="border-top: 1px solid #d3d3d3;
-        margin-top: 60px; margin-bottom: 40px"></div>
+        <div class="span10 offset1 text-center" style="border-top: 1px solid #d3d3d3;
+        margin-top: 60px; margin-bottom: 40px">
+            <div style="margin-top: -12px">
+                ## Nasty hack 1: #e7eef3 is @base2 defined in aerofs-variables.less.
+                ## Because the current aerofs.less will be replaced soon when the new
+                ## Web site is up, I don't want to update aerofs.less for the time being.
+                ## After the new Web site is deployed, however, please move this code
+                ## into aerofs.less
+                <span style="color: #a0a0a0; background-color: #e7eef3;">
+                    ## Nasty hack 2: I don't know how to extend the background-color
+                    ## beyond the text other than using spaces.
+                    &nbsp;&nbsp;&nbsp;OR&nbsp;&nbsp;&nbsp;
+                </span>
+            </div>
+        </div>
         <div class="span12 text-center">
             <h3>${openid_service_external_hint}</h3>
         </div>
