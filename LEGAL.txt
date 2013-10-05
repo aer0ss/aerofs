@@ -11,3 +11,5 @@ dirent.h - Windows port
   Location: launcher/liblauncher/dirent_win.h
   Author:   Toni Ronkko (http://www.softagalleria.net/dirent.php)
   License:  MIT License
+
+Some diagrams on the Web use images from http://www.wpzoom.com/wpzoom/new-freebie-wpzoom-developer-icon-set-154-free-icons/
