@@ -19,6 +19,7 @@ import com.aerofs.servlets.SecUtilHelper;
 import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue;
 import com.aerofs.servlets.lib.ssl.CertificateAuthenticator;
 import com.aerofs.sp.authentication.IAuthenticator;
+import com.aerofs.sp.authentication.LocalAuthenticator;
 import com.aerofs.sp.common.UserFilter;
 import com.aerofs.sp.server.AbstractTestWithDatabase;
 import com.aerofs.sp.server.IdentitySessionManager;
@@ -143,7 +144,7 @@ public class AbstractSPTest extends AbstractTestWithDatabase
     @Mock Analytics analytics;
 
     @Spy protected IdentitySessionManager identitySessionManager = new IdentitySessionManager();
-    @Spy protected IAuthenticator authenticator = mock(IAuthenticator.class);
+    @Spy protected IAuthenticator authenticator = new LocalAuthenticator();
     @Spy protected ISharedFolderRules sharedFolderRules = SharedFolderRulesFactory.create(factUser);
 
     // Subclasses can declare a @Mock'd or @Spy'd object for
@@ -287,7 +288,7 @@ public class AbstractSPTest extends AbstractTestWithDatabase
     }
 
     protected void mockCertificateAuthenticatorSetUnauthorizedState()
-            throws ExBadCredential
+            throws Exception
     {
         when(certificateAuthenticator.isAuthenticated()).thenReturn(false);
         when(certificateAuthenticator.getSerial()).thenThrow(new ExBadCredential());
