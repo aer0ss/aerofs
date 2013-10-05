@@ -17,8 +17,8 @@ import com.aerofs.lib.ex.ExUIMessage;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.sv.client.SVClient;
 import com.google.common.collect.ImmutableMap;
-import com.sun.istack.internal.NotNull;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
@@ -46,7 +46,7 @@ public abstract class RootAnchorUtil
      * @throws com.aerofs.lib.ex.ExUIMessage if root anchor filesystem is not supported
      * @throws com.aerofs.base.ex.ExBadArgs if the root anchor is the rtroot
      */
-    public static void checkRootAnchor(String rootAnchor, @NotNull String rtRoot,
+    public static void checkRootAnchor(String rootAnchor, @Nonnull String rtRoot,
             StorageType storageType, boolean allowNonEmptyFolder)
             throws IOException, ExNoPerm, ExNotDir, ExAlreadyExist, ExUIMessage, ExBadArgs
     {
