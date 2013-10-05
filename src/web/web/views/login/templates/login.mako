@@ -7,7 +7,7 @@
     </div>
     %if openid_enabled:
         <div class="span12 text-center">
-            <a class="btn btn-primary btn-large" href="${openid_url}">Sign In with OpenID</a>
+            <a class="btn btn-primary btn-large" href="${openid_url}">Sign In with ${openid_service_identifier}</a>
         </div>
         <div class="span10 offset1" style="border-top: 1px solid #d3d3d3;
         margin-top: 60px; margin-bottom: 40px"></div>
