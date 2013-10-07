@@ -7,6 +7,7 @@ package com.aerofs.gui.setup;
 import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExBadCredential;
+import com.aerofs.base.ex.ExExternalAuthFailure;
 import com.aerofs.base.ex.ExInternalError;
 import com.aerofs.base.ex.ExTimeout;
 import com.aerofs.controller.InstallActor;
