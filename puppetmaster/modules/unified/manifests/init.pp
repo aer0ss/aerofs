@@ -21,6 +21,8 @@ class unified {
     }
     include transient::services
 
+    include unified::network
+
     # --------------
     # Nginx
     # --------------
