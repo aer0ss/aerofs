@@ -50,7 +50,7 @@ public class InvitationEmailer
                     ? "Join my " + L.brand() + " folder"
                     : "Invitation to " + L.brand();
 
-            final Email email = new Email(subject, false, null);
+            final Email email = new Email();
             final NameStrings nsInviter = new NameStrings(inviter);
 
             composeSignUpInvitationEmail(nsInviter, folderName, note, url, email);
@@ -110,7 +110,7 @@ public class InvitationEmailer
         {
             final String subject = "Join my " + L.brand() + " folder";
 
-            final Email email = new Email(subject, false, null);
+            final Email email = new Email();
 
             final NameStrings nsSharer = new NameStrings(sharer);
 
@@ -150,11 +150,7 @@ public class InvitationEmailer
                 throws IOException, SQLException, ExNotFound
         {
             final String subject = "Join my team on AeroFS!";
-
-            final Email email = new Email(subject);
-
             final NameStrings ns = new NameStrings(inviter);
-
             String body = "\n" +
                     ns.nameAndEmail() + " has invited you to join the team on AeroFS.\n" +
                     "\n" +
@@ -162,6 +158,7 @@ public class InvitationEmailer
                     "\n" +
                     "If you do not wish to join the team, simply ignore this email.";
 
+            final Email email = new Email();
             email.addSection(subject, body);
             email.addDefaultSignature();
 

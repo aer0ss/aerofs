@@ -38,7 +38,7 @@ public class InvitationReminderEmailer
                 "\n" +
                 url;
 
-        Email email = new Email(subject, true, unsubscribeId);
+        Email email = new Email(true, unsubscribeId);
 
         email.addSection("Reminder: You're invited to " + L.brand() +"!", body);
         email.addDefaultSignature();

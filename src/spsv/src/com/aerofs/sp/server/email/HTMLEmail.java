@@ -11,6 +11,7 @@ public class HTMLEmail implements IEmail {
 
     private final static String HEADER =
 
+        "<!doctype html><html>" +
         "<body>" +
         "<table cellpadding=\"0\" cellspacing=\"0\" width=\"650\" align=\"center\" style=\"font-family:arial,sans-serif;font-size:13px;\">" +
         "   <tr>" +
@@ -34,27 +35,16 @@ public class HTMLEmail implements IEmail {
     public static final String H1STYLE = "margin:0;font-size:25px;font-family:arial, sans-serif;color:#17466B;";
     public static final String PSTYLE  = "margin:0;";
 
-    private final  StringBuilder _sb = new StringBuilder();
+    private final  StringBuilder _sb = new StringBuilder(HEADER);
     private int _sectionCount = 0;
     private boolean _finalized = false;
 
-    public HTMLEmail(final String subject, final boolean unsubscribe, @Nullable final String unsubscribeId)
+    public HTMLEmail(final boolean unsubscribe, @Nullable final String unsubscribeId)
     {
         final String unsubscribeText = unsubscribe ? "<a style=\"color:#999999;\" href=\"" +
                                         SubscriptionParams.UNSUBSCRIPTION_URL +
                                         unsubscribeId + "\">Unsubscribe</a>" :
                                     "<p style\"color:#999999;\">This is a one time email</p>";
-        String head =
-            "<!doctype html>" +
-            "<html>" +
-            "<head>" +
-            "<title>" + subject + "</title>" +
-            "</head>";
-
-
-        _sb.append(head);
-        _sb.append(HEADER);
-
         _footer =
                 " </table>" +
         "       </td>" +
