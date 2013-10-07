@@ -1,4 +1,4 @@
-class verkehr::firewall(
+class verkehr::firewall_rules(
     $subscribe_port = 443
 ) {
     firewall { "500 forward traffic for verkehr subscribers on port 443":
@@ -6,7 +6,7 @@ class verkehr::firewall(
         chain   => "PREROUTING",
         iniface => "eth0",
         dport   => $subscribe_port,
-        jump    => "REDIRECT",
+        action  => "redirect",
         toports => "29438"
     }
 }

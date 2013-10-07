@@ -19,7 +19,6 @@ class common (
 
     include motd
     include common::logs
-    include common::firewall
 
     apt::source { "aerofs":
         location    => "http://apt.aerofs.com/ubuntu/${repo}",

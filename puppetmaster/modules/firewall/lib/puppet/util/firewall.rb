@@ -65,21 +65,26 @@ module Puppet::Util::Firewall
     end
   end
 
-  # This method takes a string and attempts to convert it to a port number
-  # if valid.
+  # This method takes a string and a protocol and attempts to convert
+  # it to a port number if valid.
   #
   # If the string already contains a port number or perhaps a range of ports
   # in the format 22:1000 for example, it simply returns the string and does
   # nothing.
-  def string_to_port(value)
+  def string_to_port(value, proto)
+    proto = proto.to_s
+    unless proto =~ /^(tcp|udp)$/
+      proto = 'tcp'
+    end
+
     if value.kind_of?(String)
       if value.match(/^\d+(-\d+)?$/)
         return value
       else
-        return Socket.getservbyname(value).to_s
+        return Socket.getservbyname(value, proto).to_s
       end
     else
-      Socket.getservbyname(value)
+      Socket.getservbyname(value.to_s, proto).to_s
     end
   end
 
@@ -123,5 +128,79 @@ module Puppet::Util::Firewall
         # pass
       end
     return nil
+  end
+
+  def persist_iptables(proto)
+    debug("[persist_iptables]")
+
+    # Basic normalisation for older Facter
+    os_key = Facter.value(:osfamily)
+    os_key ||= case Facter.value(:operatingsystem)
+    when 'RedHat', 'CentOS', 'Fedora', 'Scientific', 'SL', 'SLC', 'Ascendos', 'CloudLinux', 'PSBM', 'OracleLinux', 'OVS', 'OEL', 'Amazon', 'XenServer'
+      'RedHat'
+    when 'Debian', 'Ubuntu'
+      'Debian'
+    else
+      Facter.value(:operatingsystem)
+    end
+
+    # Older iptables-persistent doesn't provide save action.
+    if os_key == 'Debian'
+      persist_ver = Facter.value(:iptables_persistent_version)
+      if (persist_ver and Puppet::Util::Package.versioncmp(persist_ver, '0.5.0') < 0)
+        os_key = 'Debian_manual'
+      end
+    end
+
+    # Fedora 15 and newer use systemd for to persist iptable rules
+    if os_key == 'RedHat' && Facter.value(:operatingsystem) == 'Fedora' && Facter.value(:operatingsystemrelease).to_i >= 15
+      os_key = 'Fedora'
+    end
+
+    cmd = case os_key.to_sym
+    when :RedHat
+      case proto.to_sym
+      when :IPv4
+        %w{/sbin/service iptables save}
+      when :IPv6
+        %w{/sbin/service ip6tables save}
+      end
+    when :Fedora
+      case proto.to_sym
+      when :IPv4
+        %w{/usr/libexec/iptables.init save}
+      when :IPv6
+        %w{/usr/libexec/ip6tables.init save}
+      end
+    when :Debian
+      case proto.to_sym
+      when :IPv4, :IPv6
+        %w{/usr/sbin/service iptables-persistent save}
+      end
+    when :Debian_manual
+      case proto.to_sym
+      when :IPv4
+        ["/bin/sh", "-c", "/sbin/iptables-save > /etc/iptables/rules"]
+      end
+    when :Archlinux
+      case proto.to_sym
+      when :IPv4
+        ["/bin/sh", "-c", "/usr/sbin/iptables-save > /etc/iptables/iptables.rules"]
+      when :IPv6
+        ["/bin/sh", "-c", "/usr/sbin/ip6tables-save > /etc/iptables/ip6tables.rules"]
+      end
+    end
+
+    # Catch unsupported OSs from the case statement above.
+    if cmd.nil?
+      debug('firewall: Rule persistence is not supported for this type/OS')
+      return
+    end
+
+    begin
+      execute(cmd)
+    rescue Puppet::ExecutionFailure => detail
+      warning("Unable to persist firewall rules: #{detail}")
+    end
   end
 end

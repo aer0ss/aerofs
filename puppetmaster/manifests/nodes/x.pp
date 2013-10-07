@@ -11,6 +11,9 @@ node /^x\.aerofs\.com$/ inherits default {
 
     include ejabberd::ssl
 
+    # firewall ensures a firewall exists
+    # ejabberd::firewall_rules just provides the mapping rule
+    include firewall
     class { "ejabberd::firewall_rules" :
         port => 443,
         ip_address => "${ipaddress_eth0}/32"

@@ -2,7 +2,10 @@ node /^verkehr\.aerofs\.com$/ inherits default {
 
     include verkehr
     include verkehr::ssl
-    include verkehr::firewall
+    # firewall provides the firewall
+    # verkehr::firewall_rules provides the firewall rule
+    include firewall
+    include verkehr::firewall_rules
 
     users::add_user {
         [ hiera('dev_users') ]:

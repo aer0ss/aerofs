@@ -6,7 +6,7 @@ class ejabberd::firewall_rules(
         table   => "nat",
         chain   => "PREROUTING",
         dport   => $port,
-        jump    => "REDIRECT",
+        action  => "redirect",
         toports => "5222",
         destination => $ip_address
     }

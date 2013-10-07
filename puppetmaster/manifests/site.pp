@@ -49,12 +49,6 @@ node default {
         source  => "puppet:///aerofs_cacert/${ca_cert_filename}",
         ensure  => present
     }
-
-    # These defaults ensure that the persistence command (in common::firewall)
-    # is executed after every change to the firewall
-    Firewall {
-        notify  => Exec['persist-firewall'],
-    }
 }
 
 import "nodes/*.pp"
