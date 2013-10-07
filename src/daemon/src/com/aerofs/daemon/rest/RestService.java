@@ -8,7 +8,6 @@ import com.aerofs.base.net.AbstractNettyServer;
 import com.aerofs.daemon.rest.providers.GsonProvider;
 import com.aerofs.daemon.rest.netty.JerseyHandler;
 import com.aerofs.daemon.rest.resources.FilesResource;
-import com.aerofs.daemon.transport.netty.BootstrapFactoryUtil;
 import com.aerofs.lib.cfg.CfgKeyManagersProvider;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
@@ -29,6 +28,7 @@ import java.util.Map;
 
 import static com.aerofs.base.config.ConfigurationProperties.getIntegerProperty;
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.aerofs.base.net.NettyUtil.newSslHandler;
 
 public class RestService extends AbstractNettyServer
 {
@@ -97,7 +97,7 @@ public class RestService extends AbstractNettyServer
             public ChannelPipeline getPipeline() throws Exception
             {
                 return Channels.pipeline(
-                        BootstrapFactoryUtil.newSslHandler(_serverSslEngineFactory),
+                        newSslHandler(_serverSslEngineFactory),
                         new HttpServerCodec(),
                         new ChunkedWriteHandler(),
                         new JerseyHandler(_application));
