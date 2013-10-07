@@ -36,6 +36,6 @@ public interface ISharedFolderRules
      *
      * @param suppressAllWarnings see the above method.
      */
-    void onUpdatingACL(SharedFolder sf, User user, Role role, boolean suppressAllWarnings)
+    void onUpdatingACL(SharedFolder sf, Role role, boolean suppressAllWarnings)
             throws Exception;
 }

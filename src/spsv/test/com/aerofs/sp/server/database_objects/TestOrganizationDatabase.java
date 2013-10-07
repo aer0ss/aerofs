@@ -60,8 +60,8 @@ public class TestOrganizationDatabase extends AbstractAutoTransactionedTestWithS
             throws SQLException, ExAlreadyExist
     {
         sfdb.insert(rootsid, "test");
-        sfdb.insertMemberACL(rootsid, UserID.fromInternal("hahaha"),
-                Collections.singleton(new SubjectRolePair(orgID.toTeamServerUserID(), Role.EDITOR)));
+        sfdb.insertMemberACL(rootsid, Collections.singleton(
+                new SubjectRolePair(orgID.toTeamServerUserID(), Role.EDITOR)));
     }
 
 }

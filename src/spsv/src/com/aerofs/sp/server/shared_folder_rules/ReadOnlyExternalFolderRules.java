@@ -14,6 +14,7 @@ import com.aerofs.lib.ex.ExNoAdminOrOwner;
 import com.aerofs.lib.ex.shared_folder_rules.ExSharedFolderRulesWarningAddExternalUser;
 import com.aerofs.lib.ex.shared_folder_rules.ExSharedFolderRulesWarningOwnerCanShareWithExternalUsers;
 import com.aerofs.sp.common.UserFilter;
+import com.aerofs.sp.server.email.SharedFolderNotificationEmailer;
 import com.aerofs.sp.server.lib.SharedFolder;
 import com.aerofs.sp.server.lib.user.User;
 import com.google.common.collect.ImmutableCollection;
@@ -22,6 +23,8 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 
 import javax.annotation.Nonnull;
+import javax.mail.MessagingException;
+import java.io.IOException;
 import java.sql.SQLException;
 import java.util.List;
 
@@ -47,12 +50,15 @@ import java.util.List;
 public class ReadOnlyExternalFolderRules implements ISharedFolderRules
 {
     private final User.Factory _factUser;
-    private UserFilter _filter;
+    private final UserFilter _filter;
+    private final SharedFolderNotificationEmailer _sfnEmailer;
 
-    public ReadOnlyExternalFolderRules(UserFilter filter, User.Factory factUser)
+    public ReadOnlyExternalFolderRules(UserFilter filter, User.Factory factUser,
+            SharedFolderNotificationEmailer sfnEmailer)
     {
         _filter = filter;
         _factUser = factUser;
+        _sfnEmailer = sfnEmailer;
     }
 
     @Override
@@ -82,7 +88,7 @@ public class ReadOnlyExternalFolderRules implements ISharedFolderRules
         }
 
         ImmutableCollection<UserID> users;
-        if (convertToExternal) users = convertEditorsToViewers(sf);
+        if (convertToExternal) users = convertEditorsToViewers(sf, sharer);
         else users = ImmutableList.of();
 
         return users;
@@ -98,14 +104,17 @@ public class ReadOnlyExternalFolderRules implements ISharedFolderRules
     }
 
     // convert existing editors to viewers, skip Team Servers
-    private ImmutableCollection<UserID> convertEditorsToViewers(SharedFolder sf)
-            throws SQLException, ExNoAdminOrOwner, ExNotFound
+    private ImmutableCollection<UserID> convertEditorsToViewers(SharedFolder sf, User sharer)
+            throws SQLException, ExNoAdminOrOwner, ExNotFound, IOException, MessagingException
     {
         ImmutableSet.Builder<UserID> builder = ImmutableSet.builder();
         for (User user : sf.getAllUsers()) {
             if (user.id().isTeamServerID()) continue;
             if (sf.getRole(user).equals(Role.EDITOR)) {
                 builder.addAll(sf.updateACL(user, Role.VIEWER));
+                // Notify the user about the role change
+                _sfnEmailer.sendRoleChangedNotificationEmail(sf, sharer, user, Role.EDITOR,
+                        Role.VIEWER);
             }
         }
         return builder.build();
@@ -157,7 +166,7 @@ public class ReadOnlyExternalFolderRules implements ISharedFolderRules
     }
 
     @Override
-    public void onUpdatingACL(SharedFolder sf, User user, Role role, boolean suppressAllWarnings)
+    public void onUpdatingACL(SharedFolder sf, Role role, boolean suppressAllWarnings)
             throws Exception
     {
         ImmutableCollection<UserID> externalUsers = getExternalUsers(sf);

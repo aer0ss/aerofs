@@ -354,7 +354,7 @@ public class TestSP_ShareFolder extends AbstractSPACLTest
     {
         verify(factEmailer, shouldBeSent ? times(1) : never())
                 .createFolderInvitationEmailer(eq(sharer), eq(sharee), eq(sid.toStringFormal()),
-                        eq(""), any(SID.class));
+                        eq(""), any(SID.class), any(Role.class));
     }
 
     private void verifyNewUserAccountInvitation(User sharer, User sharee, SID sid,
@@ -363,6 +363,6 @@ public class TestSP_ShareFolder extends AbstractSPACLTest
     {
         verify(factEmailer, shouldBeInvited ? times(1) : never())
                 .createSignUpInvitationEmailer(eq(sharer), eq(sharee), eq(sid.toStringFormal()),
-                        eq(""), anyString());
+                        any(Role.class), eq(""), anyString());
     }
 }

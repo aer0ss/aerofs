@@ -91,7 +91,7 @@ public class SharedFolder
     }
 
     public String getName()
-            throws ExNoPerm, ExNotFound, SQLException
+            throws ExNotFound, SQLException
     {
         return _f._db.getName(_sid);
     }
@@ -129,15 +129,14 @@ public class SharedFolder
     {
         if (isMemberOrPending(user)) throw new ExAlreadyExist(user + " is already invited");
 
-        _f._db.insertMemberACL(_sid, user.id(),
-                Collections.singletonList(new SubjectRolePair(user.id(), role)));
+        _f._db.insertMemberACL(_sid, Collections.singletonList(new SubjectRolePair(user.id(), role)));
 
         addTeamServerACLImpl(user);
 
         return _f._db.getMembers(_sid);
     }
 
-    public void addPendingACL(User sharer, User sharee, Role role)
+    public void addPendingACL(@Nonnull User sharer, User sharee, Role role)
             throws SQLException, ExAlreadyExist
     {
         if (isMemberOrPending(sharee)) throw new ExAlreadyExist(sharee + " is already invited");
@@ -216,7 +215,7 @@ public class SharedFolder
         User tsUser = user.getOrganization().getTeamServerUser();
         if (getMemberRoleNullable(tsUser) == null) {
             SubjectRolePair srp = new SubjectRolePair(tsUser.id(), Role.EDITOR);
-            _f._db.insertMemberACL(_sid, user.id(), Collections.singletonList(srp));
+            _f._db.insertMemberACL(_sid, Collections.singletonList(srp));
             return true;
         } else {
             return false;
@@ -371,9 +370,18 @@ public class SharedFolder
      */
     public @Nonnull Role getRole(User user) throws SQLException
     {
-        Role role = _f._db.getMemberOrPendingRoleNullable(_sid, user.id());
+        Role role = getRoleNullable(user);
         assert role != null;
         return role;
+    }
+
+    /**
+     * @return the role of the given user. Return null if the user doesn't exist
+     */
+    public @Nullable Role getRoleNullable(User user)
+            throws SQLException
+    {
+        return _f._db.getMemberOrPendingRoleNullable(_sid, user.id());
     }
 
     private void throwIfNoOwnerMemberOrPendingLeft()
@@ -429,6 +437,17 @@ public class SharedFolder
 
     public boolean isMemberOrPending(User user) throws SQLException
     {
-        return _f._db.getMemberOrPendingRoleNullable(_sid, user.id()) != null;
+        return getRoleNullable(user) != null;
+    }
+
+    /**
+     * @return the sharer (i.e. inviter) of the given user. Return null if the user is not invited
+     * by anyone (e.g. the initial owner, team server users).
+     */
+    public @Nullable User getSharerNullable(User user)
+            throws SQLException
+    {
+        UserID sharer = _f._db.getSharerNullable(_sid, user.id());
+        return sharer == null ? null : _f._factUser.create(sharer);
     }
 }

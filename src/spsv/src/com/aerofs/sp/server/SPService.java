@@ -93,6 +93,7 @@ import com.aerofs.sp.authentication.IAuthenticator;
 import com.aerofs.sp.server.email.DeviceRegistrationEmailer;
 import com.aerofs.sp.server.email.InvitationEmailer;
 import com.aerofs.sp.server.email.RequestToSignUpEmailer;
+import com.aerofs.sp.server.email.SharedFolderNotificationEmailer;
 import com.aerofs.sp.server.shared_folder_rules.ISharedFolderRules;
 import com.aerofs.sp.server.lib.EmailSubscriptionDatabase;
 import com.aerofs.sp.server.lib.SPDatabase;
@@ -180,6 +181,7 @@ public class SPService implements ISPService
 
     private final DeviceRegistrationEmailer _deviceRegistrationEmailer;
     private final RequestToSignUpEmailer _requestToSignUpEmailer;
+    private final SharedFolderNotificationEmailer _sfnEmailer;
     private final InvitationEmailer.Factory _factInvitationEmailer;
 
     private final JedisEpochCommandQueue _commandQueue;
@@ -211,7 +213,8 @@ public class SPService implements ISPService
             DeviceRegistrationEmailer deviceRegistrationEmailer,
             RequestToSignUpEmailer requestToSignUpEmailer, JedisEpochCommandQueue commandQueue,
             Analytics analytics, IdentitySessionManager identitySessionManager,
-            IAuthenticator authenticator, ISharedFolderRules sharedFolderRules)
+            IAuthenticator authenticator, ISharedFolderRules sharedFolderRules,
+            SharedFolderNotificationEmailer sfnEmailer)
     {
         // FIXME: _db shouldn't be accessible here; in fact you should only have a transaction
         // factory that gives you transactions....
@@ -232,6 +235,7 @@ public class SPService implements ISPService
 
         _deviceRegistrationEmailer = deviceRegistrationEmailer;
         _requestToSignUpEmailer = requestToSignUpEmailer;
+        _sfnEmailer = sfnEmailer;
         _factInvitationEmailer = factInvitationEmailer;
 
         _identitySessionManager = identitySessionManager;
@@ -583,7 +587,7 @@ public class SPService implements ISPService
      */
     private List<PBSharedFolder> sharedFolders2pb(Collection<SharedFolder> sfs,
             Organization sessionOrg)
-            throws ExNoPerm, ExNotFound, SQLException
+            throws ExNotFound, SQLException
     {
         // A cache to avoid excessive database queries. This should be obsolete with memcached.
         Map<User, FullName> user2nameCache = Maps.newHashMap();
@@ -1106,9 +1110,9 @@ public class SPService implements ISPService
         if (sharee.exists()) {
             // send folder invitation email
             emailer = _factInvitationEmailer.createFolderInvitationEmailer(sharer, sharee,
-                    folderName, note, sf.id());
+                    folderName, note, sf.id(), role);
         } else {
-            emailer = inviteToSignUp(sharer, sharee, folderName, note)._emailer;
+            emailer = inviteToSignUp(sharer, sharee, folderName, role, note)._emailer;
         }
         return emailer;
     }
@@ -1129,7 +1133,7 @@ public class SPService implements ISPService
      * Call this method to use an inviter name different from inviter.getFullName()._first
      */
     InviteToSignUpResult inviteToSignUp(User inviter, User invitee, @Nullable String folderName,
-            @Nullable String note)
+            @Nullable Role role, @Nullable String note)
             throws SQLException, IOException, ExNotFound
     {
         assert !invitee.exists();
@@ -1139,7 +1143,7 @@ public class SPService implements ISPService
         _esdb.insertEmailSubscription(invitee.id(), SubscriptionCategory.AEROFS_INVITATION_REMINDER);
 
         InvitationEmailer emailer = _factInvitationEmailer.createSignUpInvitationEmailer(inviter,
-                invitee, folderName, note, code);
+                invitee, folderName, role, note, code);
 
         return new InviteToSignUpResult(emailer, code);
     }
@@ -1168,7 +1172,7 @@ public class SPService implements ISPService
         }
 
         // reset pending bit to make user a member of the shared folder
-        Collection<UserID> users = sf.setMember(user);
+        Collection <UserID> users = sf.setMember(user);
 
         // set the external bit for consistent auto-join behavior across devices
         sf.setExternal(user, external);
@@ -1179,6 +1183,12 @@ public class SPService implements ISPService
         for (Device peer : peerDevices) {
             l.info(peer.id().toStringFormal() + ": crl refresh");
             addToCommandQueueAndSendVerkehrMessage(peer.id(), CommandType.REFRESH_CRL);
+        }
+
+        // send notification email
+        User sharer = sf.getSharerNullable(user);
+        if (sharer != null && !sharer.id().isTeamServerID()) {
+            _sfnEmailer.sendInvitationAcceptedNotificationEmail(sf, sharer, user);
         }
 
         // always call this method as the last step of the transaction
@@ -1351,7 +1361,7 @@ public class SPService implements ISPService
             if (invitee.exists()) {
                 l.info(inviter + " invites " + invitee + ": already exists. skip.");
             } else {
-                emailers.add(inviteToSignUp(inviter, invitee, null, null)._emailer);
+                emailers.add(inviteToSignUp(inviter, invitee, null, null, null)._emailer);
             }
         }
 
@@ -1381,7 +1391,7 @@ public class SPService implements ISPService
             // The user doesn't exist. Send him a sign-up invitation email only, and associate the
             // signup code with the team invitation. See signUpWithCode() on how this association is
             // consumed.
-            InviteToSignUpResult res = inviteToSignUp(inviter, invitee, null, null);
+            InviteToSignUpResult res = inviteToSignUp(inviter, invitee, null, null, null);
             inviteToTeam(inviter, invitee, org, res._signUpCode);
             emailer = res._emailer;
         } else {
@@ -1434,7 +1444,7 @@ public class SPService implements ISPService
         Organization orgOld = accepter.getOrganization();
         Organization orgNew = _factOrg.create(orgID);
 
-        Collection<UserID> users = acceptTeamInvitation(accepter, orgNew);
+        Collection<UserID> users = acceptOrganizationInvitation(accepter, orgNew);
 
         // retrieve the stripe data for the old team _after_ the user moves out.
         PBStripeData sd = getStripeData(orgOld);
@@ -1449,7 +1459,7 @@ public class SPService implements ISPService
     /**
      * @return a collection of users to be passed into publishACLs_()
      */
-    private Collection<UserID> acceptTeamInvitation(User accepter, Organization org)
+    private Collection<UserID> acceptOrganizationInvitation(User accepter, Organization org)
             throws Exception
     {
         l.info("{} accept org invite to {}", accepter, org);
@@ -1756,11 +1766,20 @@ public class SPService implements ISPService
 
         _sqlTrans.begin();
 
-        sf.throwIfNoPrivilegeToChangeACL(user);
-        _sharedFolderRules.onUpdatingACL(sf, user, role, supressWarnings);
+        Role oldRole = sf.getRoleNullable(subject);
+        if (oldRole != role) {
+            sf.throwIfNoPrivilegeToChangeACL(user);
 
-        // always call publishACLs_() as the last step of the transaction
-        publishACLs_(sf.updateMemberACL(subject, role));
+            _sharedFolderRules.onUpdatingACL(sf, role, supressWarnings);
+
+            ImmutableCollection<UserID> users = sf.updateMemberACL(subject, role);
+
+            _sfnEmailer.sendRoleChangedNotificationEmail(sf, user, subject, oldRole, role);
+
+            // always call publishACLs_() as the last step of the transaction
+            publishACLs_(users);
+        }
+
         _sqlTrans.commit();
 
         return createVoidReply();
@@ -2014,7 +2033,8 @@ public class SPService implements ISPService
                         oi.getInvitee(), oi.getOrganization(), signUpCode, user);
                 throw new ExNotFound();
             }
-            return new SignUpWithCodeImplResult(acceptTeamInvitation(user, oi.getOrganization()), true);
+            return new SignUpWithCodeImplResult(
+                    acceptOrganizationInvitation(user, oi.getOrganization()), true);
         }
     }
 

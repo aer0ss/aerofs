@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS `sp_acl` (
   `a_id` VARCHAR(320) NOT NULL,
   `a_role` TINYINT NOT NULL,
   `a_pending` BOOLEAN NOT NULL DEFAULT FALSE,
-  `a_sharer` VARCHAR(320),
+  `a_sharer` VARCHAR(320),   -- NULL if the member is not invited by anyone. i.e. the initial owner and team server users
   `a_external` BOOLEAN NOT NULL DEFAULT FALSE,
   PRIMARY KEY (`a_sid`,`a_id`),
   INDEX `a_id` (`a_id`),

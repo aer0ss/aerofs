@@ -26,6 +26,8 @@ import java.util.Properties;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 public class TestSP_ReadOnlyExternalSharedFolderRules extends AbstractSPFolderTest
 {
@@ -52,14 +54,15 @@ public class TestSP_ReadOnlyExternalSharedFolderRules extends AbstractSPFolderTe
         // Ask SharedFolderRulesFactory to create ReadOnlyExternalFolderRules
         setProperties(true, INTERNAL_ADDRESSES);
 
-        ISharedFolderRules sharedFolderRules = SharedFolderRulesFactory.create(factUser);
+        ISharedFolderRules sharedFolderRules = SharedFolderRulesFactory.create(factUser,
+                sharedFolderNotificationEmailer);
 
         // reconstruct SP using the new shared folder rules
         service = new SPService(db, sqlTrans, jedisTrans, sessionUser, passwordManagement,
                 certificateAuthenticator, factUser, factOrg, factOrgInvite, factDevice, certdb,
                 esdb, factSharedFolder, factEmailer, _deviceRegistrationEmailer,
-                _requestToSignUpEmailer, commandQueue, analytics, identitySessionManager,
-                authenticator, sharedFolderRules);
+                requestToSignUpEmailer, commandQueue, analytics, identitySessionManager,
+                authenticator, sharedFolderRules, sharedFolderNotificationEmailer);
         wireSPService();
 
         sqlTrans.begin();
@@ -282,6 +285,13 @@ public class TestSP_ReadOnlyExternalSharedFolderRules extends AbstractSPFolderTe
         assertEquals(sf.getRole(internalUser1), Role.VIEWER);
         assertEquals(sf.getRole(internalUser2), Role.VIEWER);
         sqlTrans.commit();
+
+        // make sure role change notification emails are sent
+        verify(sharedFolderNotificationEmailer).sendRoleChangedNotificationEmail(sf, internalSharer,
+                internalUser1, Role.EDITOR, Role.VIEWER);
+        verify(sharedFolderNotificationEmailer).sendRoleChangedNotificationEmail(sf, internalSharer,
+                internalUser2, Role.EDITOR, Role.VIEWER);
+        verifyNoMoreInteractions(sharedFolderNotificationEmailer);
     }
 
     @Test

@@ -334,8 +334,17 @@ public class UserDatabase extends AbstractSQLDatabase
         try {
             List<PendingSharedFolder> sids = Lists.newArrayList();
             while (rs.next()) {
+                String sharer = rs.getString(2);
+                // TODO (WW) this is a temporary hack: It's true by definition that a pending user
+                // always has a sharer. However, because of the way the system is currently
+                // implemented, a member without a sharer (e.g. the initial owner of the folder) can
+                // be converted to pending when he/she deletes the folder. Once the three-state
+                // system is implemented, the following statement should be changed to throwing
+                // an internal system error instead.
+                if (rs.wasNull()) sharer = userId.getString();
+
                 sids.add(new PendingSharedFolder(new SID(rs.getBytes(1)),
-                        UserID.fromInternal(rs.getString(2))));
+                        UserID.fromInternal(sharer)));
             }
             return sids;
         } finally {

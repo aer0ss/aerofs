@@ -25,6 +25,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.util.List;
 
 import static com.aerofs.lib.db.DBUtil.binaryCount;
@@ -42,6 +43,7 @@ import static com.aerofs.sp.server.lib.SPSchema.C_SF_ID;
 import static com.aerofs.sp.server.lib.SPSchema.C_SF_NAME;
 import static com.aerofs.sp.server.lib.SPSchema.T_AC;
 import static com.aerofs.sp.server.lib.SPSchema.T_SF;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * N.B. only User.java may refer to this class
@@ -86,19 +88,21 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
         }
     }
 
-    public void insertMemberACL(SID sid, UserID sharer, Iterable<SubjectRolePair> pairs)
+    public void insertMemberACL(SID sid, Iterable<SubjectRolePair> pairs)
             throws SQLException, ExAlreadyExist
     {
-        insertACL(sid, pairs, sharer, false);
+        insertACL(sid, pairs, null, false);
     }
 
-    public void insertPendingACL(SID sid, UserID sharer, Iterable<SubjectRolePair> pairs)
+    public void insertPendingACL(SID sid, @Nonnull UserID sharer, Iterable<SubjectRolePair> pairs)
             throws SQLException, ExAlreadyExist
     {
+        checkNotNull(sharer);
         insertACL(sid, pairs, sharer, true);
     }
 
-    private void insertACL(SID sid, Iterable<SubjectRolePair> pairs, UserID sharer, boolean pending)
+    private void insertACL(SID sid, Iterable<SubjectRolePair> pairs, @Nullable UserID sharer,
+            boolean pending)
             throws SQLException, ExAlreadyExist
     {
         PreparedStatement ps = prepareStatement(DBUtil.insert(T_AC, C_AC_STORE_ID, C_AC_USER_ID,
@@ -110,7 +114,11 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
             ps.setString(2, pair._subject.getString());
             ps.setInt(3, pair._role.ordinal());
             ps.setBoolean(4, pending);
-            ps.setString(5, sharer.getString());
+            if (sharer != null) {
+                ps.setString(5, sharer.getString());
+            } else {
+                ps.setNull(5, Types.VARCHAR);
+            }
             ps.addBatch();
             ++pairCount;
         }
@@ -243,6 +251,30 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
                 Role userRole = Role.fromOrdinal(rs.getInt(1));
                 assert !rs.next();
                 return userRole;
+            }
+        } finally {
+            rs.close();
+        }
+    }
+
+    @Nullable
+    public UserID getSharerNullable(SID sid, UserID userId)
+            throws SQLException
+    {
+        PreparedStatement ps = prepareStatement(selectWhere(T_AC,
+                C_AC_STORE_ID + "=? and " + C_AC_USER_ID + "=?", C_AC_SHARER));
+
+        ps.setBytes(1, sid.getBytes());
+        ps.setString(2, userId.getString());
+
+        ResultSet rs = ps.executeQuery();
+        try {
+            if (!rs.next()) {
+                return null;
+            } else {
+                String sharer = rs.getString(1);
+                assert !rs.next();
+                return sharer == null ? null : UserID.fromInternal(sharer);
             }
         } finally {
             rs.close();

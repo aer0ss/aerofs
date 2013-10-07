@@ -15,6 +15,7 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
+import static org.mockito.Mockito.verify;
 
 public class TestSP_JoinSharedFolder extends AbstractSPFolderTest
 {
@@ -29,6 +30,17 @@ public class TestSP_JoinSharedFolder extends AbstractSPFolderTest
         joinSharedFolder(USER_2, SID_1);
 
         assertVerkehrPublishOnlyContains(USER_1, USER_2);
+    }
+
+    @Test
+    public void shouldSendNotificationEmail() throws Exception
+    {
+        shareFolder(USER_1, SID_1, USER_2, Role.EDITOR);
+
+        joinSharedFolder(USER_2, SID_1);
+
+        verify(sharedFolderNotificationEmailer).sendInvitationAcceptedNotificationEmail(
+                factSharedFolder.create(SID_1), USER_1, USER_2);
     }
 
     @Test

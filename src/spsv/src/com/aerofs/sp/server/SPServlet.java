@@ -24,6 +24,7 @@ import com.aerofs.sp.server.email.InvitationEmailer;
 import com.aerofs.sp.server.email.InvitationReminderEmailer;
 import com.aerofs.sp.server.email.PasswordResetEmailer;
 import com.aerofs.sp.server.email.RequestToSignUpEmailer;
+import com.aerofs.sp.server.email.SharedFolderNotificationEmailer;
 import com.aerofs.sp.server.lib.EmailSubscriptionDatabase;
 import com.aerofs.sp.server.lib.OrganizationDatabase;
 import com.aerofs.sp.server.lib.OrganizationInvitationDatabase;
@@ -125,13 +126,14 @@ public class SPServlet extends AeroServlet
     private final Analytics _analytics = new Analytics(new SPAnalyticsProperties(_sessionUser));
 
     private final InvitationReminderEmailer _invitationReminderEmailer = new InvitationReminderEmailer();
+    private final SharedFolderNotificationEmailer _sfnEmailer = new SharedFolderNotificationEmailer();
 
     private final SPService _service = new SPService(_db, _sqlTrans, _jedisTrans, _sessionUser,
             _passwordManagement, _certauth, _factUser, _factOrg, _factOrgInvite, _factDevice,
             _certdb, _esdb, _factSharedFolder, _factEmailer, _deviceRegistrationEmailer,
             _requestToSignUpEmailer, _commandQueue, _analytics, new IdentitySessionManager(),
             AuthenticatorFactory.create(new LdapConfiguration()),
-            SharedFolderRulesFactory.create(_factUser));
+            SharedFolderRulesFactory.create(_factUser, _sfnEmailer), _sfnEmailer);
     private final SPServiceReactor _reactor = new SPServiceReactor(_service);
 
     private final DoPostDelegate _postDelegate = new DoPostDelegate(SP.SP_POST_PARAM_PROTOCOL,

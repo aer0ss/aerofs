@@ -5,6 +5,7 @@
 package com.aerofs.sp.server.integration;
 
 import com.aerofs.base.BaseSecUtil;
+import com.aerofs.base.acl.Role;
 import com.aerofs.base.analytics.Analytics;
 import com.aerofs.base.async.UncancellableFuture;
 import com.aerofs.base.ex.ExBadCredential;
@@ -29,6 +30,7 @@ import com.aerofs.sp.server.email.DeviceRegistrationEmailer;
 import com.aerofs.sp.server.email.InvitationEmailer;
 import com.aerofs.sp.server.email.PasswordResetEmailer;
 import com.aerofs.sp.server.email.RequestToSignUpEmailer;
+import com.aerofs.sp.server.email.SharedFolderNotificationEmailer;
 import com.aerofs.sp.server.lib.EmailSubscriptionDatabase;
 import com.aerofs.sp.server.lib.OrganizationDatabase;
 import com.aerofs.sp.server.lib.OrganizationInvitationDatabase;
@@ -139,13 +141,15 @@ public class AbstractSPTest extends AbstractTestWithDatabase
     @Spy PasswordManagement passwordManagement = new PasswordManagement(db, factUser,
             mock(PasswordResetEmailer.class), userFilter);
     @Spy DeviceRegistrationEmailer _deviceRegistrationEmailer = mock(DeviceRegistrationEmailer.class);
-    @Spy RequestToSignUpEmailer _requestToSignUpEmailer = mock(RequestToSignUpEmailer.class);
+    @Spy RequestToSignUpEmailer requestToSignUpEmailer = mock(RequestToSignUpEmailer.class);
+    @Mock SharedFolderNotificationEmailer sharedFolderNotificationEmailer;
 
     @Mock Analytics analytics;
 
     @Spy protected IdentitySessionManager identitySessionManager = new IdentitySessionManager();
     @Spy protected IAuthenticator authenticator = new LocalAuthenticator();
-    @Spy protected ISharedFolderRules sharedFolderRules = SharedFolderRulesFactory.create(factUser);
+    @Spy protected ISharedFolderRules sharedFolderRules = SharedFolderRulesFactory.create(factUser,
+            sharedFolderNotificationEmailer);
 
     // Subclasses can declare a @Mock'd or @Spy'd object for
     // - PasswordManagement,
@@ -194,11 +198,11 @@ public class AbstractSPTest extends AbstractTestWithDatabase
             throws Exception
     {
         when(factEmailer.createFolderInvitationEmailer(any(User.class), any(User.class), any(String.class),
-                any(String.class), any(SID.class))).then(RETURNS_MOCKS);
+                any(String.class), any(SID.class), any(Role.class))).then(RETURNS_MOCKS);
         when(factEmailer.createOrganizationInvitationEmailer(any(User.class), any(User.class)))
                 .then(RETURNS_MOCKS);
         when(factEmailer.createSignUpInvitationEmailer(any(User.class), any(User.class),
-                any(String.class), any(String.class), any(String.class))).then(RETURNS_MOCKS);
+                any(String.class), any(Role.class), any(String.class), any(String.class))).then(RETURNS_MOCKS);
     }
 
     // Do wiring for SP after its construction

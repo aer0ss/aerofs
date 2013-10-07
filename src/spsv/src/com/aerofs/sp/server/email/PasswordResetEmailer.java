@@ -21,7 +21,7 @@ public class PasswordResetEmailer
             throws IOException, MessagingException
 
     {
-        String subject = L.brand() + " Password Request";
+        String subject = L.brand() + " password request";
         String url = WWW.PASSWORD_RESET_URL + "?" +
                 "user_id=" + Util.urlEncode(userId.getString()) +
                 "&token=" + resetToken;
@@ -44,7 +44,7 @@ public class PasswordResetEmailer
             throws IOException, MessagingException
 
     {
-        String subject = L.brand() + " Password Has Changed";
+        String subject = L.brand() + " password has changed";
         String body = "\n" +
                 "You have changed the password for your " + L.brand() + " account.\n" +
                 "\n" +

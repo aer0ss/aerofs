@@ -52,7 +52,7 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
 
     @Test(expected = ExNotFound.class)
     public void getName_shouldThrowIfFolderNotFound()
-            throws ExNoPerm, ExNotFound, SQLException
+            throws ExNotFound, SQLException
     {
         newSharedFolder().getName();
     }
@@ -84,6 +84,8 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
 
         sf.addMemberACL(user, Role.EDITOR);
 
+        // commit the transaction so the sqlTrans.handleException() below won't rollback the changes
+        // we made so far.
         sqlTrans.commit();
         sqlTrans.begin();
 
@@ -99,13 +101,38 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
     }
 
     @Test
+    public void addMemberACL_shouldNotSetSharer()
+            throws Exception
+    {
+        SharedFolder sf = saveUserAndSharedFolder();
+
+        User user = saveUser();
+
+        sf.addMemberACL(user, Role.EDITOR);
+
+        assertNull(sf.getSharerNullable(user));
+    }
+
+    @Test
     public void saveSharedFolder_shouldAddTeamServer()
             throws Exception
     {
         User owner = saveUser();
         SharedFolder sf = saveSharedFolder(owner);
 
-        assertEquals(sf.getMemberRoleNullable(getTeamServerUser(owner)), Role.EDITOR);
+        User tsUser = getTeamServerUser(owner);
+        assertEquals(sf.getMemberRoleNullable(tsUser), Role.EDITOR);
+    }
+
+    @Test
+    public void saveSharedFolder_shouldNotSetSharerForOwnerOrTeamServerUser()
+            throws Exception
+    {
+        User owner = saveUser();
+        SharedFolder sf = saveSharedFolder(owner);
+
+        assertNull(sf.getSharerNullable(owner));
+        assertNull(sf.getSharerNullable(getTeamServerUser(owner)));
     }
 
     @Test
@@ -176,6 +203,18 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
 
         // why 2? owner, owner's team server
         assertEquals(sf.getMembers().size(), 2);
+    }
+
+    @Test
+    public void addPendingACL_shouldSetSharer()
+            throws Exception
+    {
+        User owner = saveUser();
+        SharedFolder sf = saveSharedFolder(owner);
+        User user = saveUser();
+
+        sf.addPendingACL(owner, user, Role.EDITOR);
+        assertEquals(sf.getSharerNullable(user), owner);
     }
 
     @Test

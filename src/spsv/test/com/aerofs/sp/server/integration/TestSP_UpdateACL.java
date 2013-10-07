@@ -12,6 +12,8 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 public class TestSP_UpdateACL extends AbstractSPACLTest
 {
@@ -123,5 +125,22 @@ public class TestSP_UpdateACL extends AbstractSPACLTest
         assertACLOnlyContains(getSingleACL(SID_1, reply),
                 new UserAndRole(USER_1, Role.EDITOR),
                 new UserAndRole(USER_3, Role.OWNER));
+    }
+
+    @Test
+    public void updateACL_shouldSendNotificationEmail()
+            throws Exception
+    {
+        // add USER_3 as owner of the store
+        shareAndJoinFolder(USER_1, SID_1, USER_3, Role.OWNER);
+
+        setSessionUser(USER_3);
+        service.updateACL(SID_1.toPB(), USER_1.id().getString(), Role.EDITOR.toPB(), false);
+
+        // the second call to updateACL with the same role should send no notification email
+        service.updateACL(SID_1.toPB(), USER_1.id().getString(), Role.EDITOR.toPB(), false);
+
+        verify(sharedFolderNotificationEmailer, times(1)).sendRoleChangedNotificationEmail(
+                factSharedFolder.create(SID_1), USER_3, USER_1, Role.OWNER, Role.EDITOR);
     }
 }

@@ -5,10 +5,11 @@
 package com.aerofs.sv.common;
 
 /**
- * The email Category for the given email (e.g. a password reset email, an invite email,
- * a spuport email, etc...)
+ * The email category for the given email (e.g. a password reset email, an invite email, a suport
+ * email, etc...). It is used by Sendgrid for analytics purposes.
  *
- * Every new email type we create should usually have its own distinct category
+ * Every new email type we create should have its own distinct category. To create a new category,
+ * simply add a new enum value here and you're all set.
  */
 public enum EmailCategory
 {
@@ -20,4 +21,6 @@ public enum EmailCategory
     ORGANIZATION_INVITATION,
     DEVICE_CERTIFIED,
     REQUEST_TO_SIGN_UP,
+    SHARED_FOLDER_INVITATION_ACCEPTED_NOTIFICATION,
+    SHARED_FOLDER_ROLE_CHANGE_NOTIFICATION,
 }

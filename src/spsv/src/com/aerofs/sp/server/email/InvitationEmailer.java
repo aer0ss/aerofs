@@ -5,8 +5,8 @@
 package com.aerofs.sp.server.email;
 
 import com.aerofs.base.BaseParam.WWW;
+import com.aerofs.base.acl.Role;
 import com.aerofs.base.id.SID;
-import com.aerofs.lib.FullName;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.Util;
 import com.aerofs.base.ex.ExNotFound;
@@ -14,6 +14,7 @@ import com.aerofs.servlets.lib.EmailSender;
 import com.aerofs.sv.common.EmailCategory;
 import com.aerofs.sp.server.lib.user.User;
 import com.google.common.base.Strings;
+import org.apache.commons.lang.WordUtils;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -39,8 +40,8 @@ public class InvitationEmailer
          * TODO (WW) use a separate method rather than a null inviter for AeroFS initiated invites.
          */
         public InvitationEmailer createSignUpInvitationEmailer(final User inviter,
-                final User invitee, @Nullable final String folderName, @Nullable String note,
-                final String signUpCode)
+                final User invitee, @Nullable final String folderName, @Nullable Role role,
+                @Nullable String note, final String signUpCode)
                 throws IOException, SQLException, ExNotFound
         {
             String url = RequestToSignUpEmailer.getSignUpLink(signUpCode);
@@ -51,9 +52,9 @@ public class InvitationEmailer
                     : "Invitation to " + L.brand();
 
             final Email email = new Email();
-            final NameStrings nsInviter = new NameStrings(inviter);
+            final NameFormatter nsInviter = new NameFormatter(inviter);
 
-            composeSignUpInvitationEmail(nsInviter, folderName, note, url, email);
+            composeSignUpInvitationEmail(nsInviter, folderName, role, note, url, email);
 
             return new InvitationEmailer(new Callable<Void>()
             {
@@ -74,13 +75,14 @@ public class InvitationEmailer
             });
         }
 
-        private void composeSignUpInvitationEmail(NameStrings nsInviter, String folderName,
-                String note, String url, Email email)
+        private void composeSignUpInvitationEmail(NameFormatter nsInviter, String folderName,
+                Role role, String note, String url, Email email)
                 throws IOException
         {
             String body = "\n" +
                 nsInviter.nameAndEmail() + " has invited you to " +
-                (folderName != null ? "a shared " + L.brand() + " folder " + Util.quote(folderName)
+                (folderName != null ? "a shared " + L.brand() + " folder " + Util.quote(folderName) +
+                        " as " + WordUtils.capitalizeFully(role.getDescription())
                          : L.brand()) +
                 (isNoteEmpty(note) ? "." : ":\n\n" + note) + "\n" +
                 "\n" +
@@ -105,18 +107,18 @@ public class InvitationEmailer
 
         public InvitationEmailer createFolderInvitationEmailer(@Nonnull final User sharer,
                 final User sharee, @Nullable final String folderName,
-                @Nullable final String note, final SID sid)
+                @Nullable final String note, final SID sid, Role role)
                 throws IOException, SQLException, ExNotFound
         {
             final String subject = "Join my " + L.brand() + " folder";
 
             final Email email = new Email();
 
-            final NameStrings nsSharer = new NameStrings(sharer);
+            final NameFormatter nsSharer = new NameFormatter(sharer);
 
             String body = "\n" +
                     nsSharer.nameAndEmail() + " has invited you to a shared " + L.brand() +
-                    " folder" +
+                    " folder as " + WordUtils.capitalizeFully(role.getDescription()) +
                     (isNoteEmpty(note) ? "." : (":\n\n" + note)) + "\n" +
                     "\n" +
                     "Click on this link to view and accept the invitation: " +
@@ -150,7 +152,7 @@ public class InvitationEmailer
                 throws IOException, SQLException, ExNotFound
         {
             final String subject = "Join my team on AeroFS!";
-            final NameStrings ns = new NameStrings(inviter);
+            final NameFormatter ns = new NameFormatter(inviter);
             String body = "\n" +
                     ns.nameAndEmail() + " has invited you to join the team on AeroFS.\n" +
                     "\n" +
@@ -177,37 +179,6 @@ public class InvitationEmailer
             });
         }
 
-        private static class NameStrings
-        {
-            private String _inviterName;
-            private String _inviterLongName;
-
-            public NameStrings(User inviter)
-                    throws SQLException, ExNotFound
-            {
-                if (inviter.id().isTeamServerID()) {
-                    _inviterName = _inviterLongName = "A team admin";
-                } else {
-                    FullName inviterFullName = inviter.getFullName();
-                    if (inviterFullName.isFirstOrLastNameEmpty()) {
-                        _inviterName = _inviterLongName = inviter.id().getString();
-                    } else {
-                        _inviterName = inviterFullName.getString();
-                        _inviterLongName = _inviterName + " (" + inviter.id().getString() + ")";
-                    }
-                }
-            }
-
-            public String nameOnly()
-            {
-                return _inviterName;
-            }
-
-            public String nameAndEmail()
-            {
-                return _inviterLongName;
-            }
-        }
     }
 
     private static String getReplyTo(User inviter)
@@ -227,4 +198,5 @@ public class InvitationEmailer
     {
         _call.call();
     }
+
 }

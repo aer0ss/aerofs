@@ -8,6 +8,7 @@ import com.aerofs.base.acl.Role;
 import com.aerofs.base.acl.SubjectRolePair;
 import com.aerofs.base.id.UserID;
 import com.aerofs.sp.common.UserFilter;
+import com.aerofs.sp.server.email.SharedFolderNotificationEmailer;
 import com.aerofs.sp.server.lib.SharedFolder;
 import com.aerofs.sp.server.lib.user.User;
 import com.google.common.collect.ImmutableCollection;
@@ -30,18 +31,19 @@ public class SharedFolderRulesFactory
         }
 
         @Override
-        public void onUpdatingACL(SharedFolder sf, User user, Role role, boolean suppressAllWarnings)
+        public void onUpdatingACL(SharedFolder sf, Role role, boolean suppressAllWarnings)
         {
         }
     }
 
-    public static ISharedFolderRules create(User.Factory factUser)
+    public static ISharedFolderRules create(User.Factory factUser,
+            SharedFolderNotificationEmailer sfnEmailer)
     {
         boolean readOnlyExternalFolders =
                 getBooleanProperty("shared_folder_rules.readonly_external_folders", false);
 
         return readOnlyExternalFolders ?
-                new ReadOnlyExternalFolderRules(new UserFilter(), factUser) :
+                new ReadOnlyExternalFolderRules(new UserFilter(), factUser, sfnEmailer) :
                 new NullSharedFolderRules();
     }
 }
