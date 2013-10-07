@@ -40,7 +40,7 @@ node "z.arrowfs.org" inherits default {
 
   # Daily.
   pagerduty::probe::base{[
-    "sv df90 pagerduty@sv.aerofs.com 22 /dev/xvda1",
+    "sv df90 pagerduty@sv.aerofs.com 22 /data",
     "verkehr df90 pagerduty@verkehr.aerofs.com 22 /dev/xvda1",
     "x df90 pagerduty@x.aerofs.com 22 /dev/sda"
   ]:
