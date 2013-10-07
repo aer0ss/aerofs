@@ -6,6 +6,7 @@ package com.aerofs.sp.server;
 
 import com.aerofs.base.config.ConfigurationProperties;
 import com.aerofs.base.ex.ExBadCredential;
+import com.aerofs.base.ex.ExExternalAuthFailure;
 import com.aerofs.lib.LibParam.EnterpriseConfig;
 import com.aerofs.lib.LibParam.Identity;
 import com.aerofs.lib.LibParam.Identity.Authenticator;
@@ -205,7 +206,7 @@ public class TestIdentityServlet extends AbstractTest
         try {
             _identitySessionManager.getSession(_session);
             fail("Expected exception");
-        } catch (ExBadCredential e) { /* pass */ }
+        } catch (ExExternalAuthFailure e) { /* pass */ }
 
         // Delegate nonce replay.
         Response authRequestResponse = given().param(OpenId.IDENTITY_REQ_PARAM, _delegate)
@@ -214,7 +215,7 @@ public class TestIdentityServlet extends AbstractTest
         try {
             _identitySessionManager.getSession(_session);
             fail("Expected exception");
-        } catch (ExBadCredential e) { /* pass */ }
+        } catch (ExExternalAuthFailure e) { /* pass */ }
     }
 
     @Test
@@ -242,7 +243,7 @@ public class TestIdentityServlet extends AbstractTest
         try {
             _identitySessionManager.getSession(_session);
             fail("Expected exception");
-        } catch (ExBadCredential e) { /* pass */ }
+        } catch (ExExternalAuthFailure e) { /* pass */ }
 
         Response authRequestResponse = given().param(OpenId.IDENTITY_REQ_PARAM, _delegate)
                                               .get(OpenId.IDENTITY_REQ_PATH);
@@ -252,7 +253,7 @@ public class TestIdentityServlet extends AbstractTest
         try {
             _identitySessionManager.getSession(_session);
             fail("Expected exception");
-        } catch (ExBadCredential e) { /* pass */ }
+        } catch (ExExternalAuthFailure e) { /* pass */ }
     }
 
     @Test

@@ -427,12 +427,11 @@ public class DlgSignIn extends AeroFSTitleAreaDialog
             close();
         }
 
-        // FIXME: if IdentityServlet threw an error return S.OPENID_AUTH_TIMEOUT;
-        // (need to not throw ExBadCredential)
         protected String formatExceptionMessage(Exception e)
         {
             if (e instanceof ConnectException) return S.SETUP_ERR_CONN;
             else if (e instanceof ExBadCredential) return S.BAD_CREDENTIAL_CAP + ".";
+            else if (e instanceof ExExternalAuthFailure) return S.OPENID_AUTH_BAD_CRED;
             else if (e instanceof ExUIMessage) return e.getMessage();
             else if (e instanceof ExTimeout) return S.OPENID_AUTH_TIMEOUT;
             else if (e instanceof ExInternalError) return S.SERVER_INTERNAL_ERROR;

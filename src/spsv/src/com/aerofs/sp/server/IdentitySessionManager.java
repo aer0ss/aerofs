@@ -5,7 +5,7 @@
 package com.aerofs.sp.server;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.base.ex.ExBadCredential;
+import com.aerofs.base.ex.ExExternalAuthFailure;
 import com.aerofs.base.id.UniqueID;
 import com.aerofs.lib.LibParam.OpenId;
 import com.aerofs.lib.LibParam.REDIS;
@@ -93,10 +93,10 @@ public class IdentitySessionManager
      *
      *  - null : session nonce exists but is not yet authenticated
      *
-     *  - throws ExBadCredential: bad sessionNonce.
+     *  - throws ExExternalAuthFailure: bad sessionNonce.
      *
      */
-    IdentitySessionAttributes getSession(String sessionNonce) throws ExBadCredential
+    IdentitySessionAttributes getSession(String sessionNonce) throws ExExternalAuthFailure
     {
         JedisPooledConnection connection = _jedisConProvider.getConnection();
 
@@ -107,7 +107,7 @@ public class IdentitySessionManager
 
                 if ((session == null) || session.equals(REDIS_DELETING)) {
                     l.warn("Invalid session nonce {}", sessionNonce);
-                    throw new ExBadCredential("No such session nonce");
+                    throw new ExExternalAuthFailure();
                 }
 
                 if (session.isEmpty()) { // Valid but unauthenticated
@@ -118,7 +118,7 @@ public class IdentitySessionManager
             // DOUBLE-CHECKED LOCK: aha! So the session is authenticated. Can we own it?
             String session = connection.getSet(getSessionKey(sessionNonce), REDIS_DELETING);
             if (session == null || session.equals(REDIS_DELETING)) {
-                throw new ExBadCredential("No such session nonce");
+                throw new ExExternalAuthFailure();
             }
             assert session.isEmpty() == false : "Impossible state";
 
@@ -131,10 +131,10 @@ public class IdentitySessionManager
 
     /**
      * Mark a particular session as authenticated. This can only succeed once for a given delegate
-     * @throws ExBadCredential the delegate nonce is invalid. Give up and don't try again.
+     * @throws ExExternalAuthFailure the delegate nonce is invalid. Give up and don't try again.
      */
     void authenticateSession(String delegateNonce, int timeoutSecs, IdentitySessionAttributes attrs)
-            throws ExBadCredential
+            throws ExExternalAuthFailure
     {
         JedisPooledConnection connection = _jedisConProvider.getConnection();
 
@@ -144,7 +144,7 @@ public class IdentitySessionManager
             if (session == null || session.isEmpty()) {
                 // Could be a bogus nonce, or expired, or a replay attack...
                 l.warn("Failed to authenticate delegate nonce {}", delegateNonce);
-                throw new ExBadCredential("Failed to authenticate delegate");
+                throw new ExExternalAuthFailure();
             }
 
             // from here on, we are the only actor with the session key...

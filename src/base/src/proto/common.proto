@@ -121,6 +121,10 @@ message PBException {
 
         // The user cannot reset their password (because we don't manage it)
         CANNOT_RESET_PASSWORD = 411;
+
+        // A secure session nonce was invalid, which indicates that external authentication
+        // (OpenId or other...) failed.
+        EXTERNAL_AUTH_FAILURE = 412;
     }
 
     required Type type = 1;

@@ -1,6 +1,7 @@
 package com.aerofs.sp.server;
 
 import com.aerofs.base.ex.ExBadCredential;
+import com.aerofs.base.ex.ExExternalAuthFailure;
 import com.aerofs.testlib.AbstractTest;
 import org.junit.Assert;
 import org.junit.Test;
@@ -15,13 +16,13 @@ public class TestIdentitySessionManager extends AbstractTest
             new IdentitySessionManager().getSession("this key won't exist...");
         } catch (Exception e) { caught = e; }
         Assert.assertNotNull(caught);
-        Assert.assertTrue( caught instanceof ExBadCredential);
+        Assert.assertTrue( caught instanceof ExExternalAuthFailure);
 
         try {
             new IdentitySessionManager().authenticateSession("this key won't exist...", 0, null);
         } catch (Exception e) { caught = e; }
         Assert.assertNotNull(caught);
-        Assert.assertTrue( caught instanceof ExBadCredential);
+        Assert.assertTrue( caught instanceof ExExternalAuthFailure);
     }
 
     @Test
@@ -48,12 +49,12 @@ public class TestIdentitySessionManager extends AbstractTest
             m.getSession(sessionNonce);
         } catch (Exception e) { caught = e; }
         Assert.assertNotNull(caught);
-        Assert.assertTrue(caught instanceof ExBadCredential);
+        Assert.assertTrue(caught instanceof ExExternalAuthFailure);
 
         try {
             m.authenticateSession(delegate, 100, new IdentitySessionAttributes("a","b","c"));
         } catch (Exception e) { caught = e; }
         Assert.assertNotNull(caught);
-        Assert.assertTrue(caught instanceof ExBadCredential);
+        Assert.assertTrue(caught instanceof ExExternalAuthFailure);
     }
 }

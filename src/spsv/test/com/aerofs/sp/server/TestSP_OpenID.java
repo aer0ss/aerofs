@@ -5,6 +5,7 @@
 package com.aerofs.sp.server;
 
 import com.aerofs.base.ex.ExBadCredential;
+import com.aerofs.base.ex.ExExternalAuthFailure;
 import com.aerofs.proto.Sp.OpenIdSessionAttributes;
 import com.aerofs.proto.Sp.OpenIdSessionNonces;
 import com.aerofs.sp.server.integration.AbstractSPTest;
@@ -33,7 +34,7 @@ public class TestSP_OpenID extends AbstractSPTest
        try {
            service.openIdGetSessionAttributes("Session that doesn't exist");
            fail("Expected exception.");
-       } catch (ExBadCredential e) {
+       } catch (ExExternalAuthFailure e) {
            // pass
        }
     }
@@ -78,7 +79,7 @@ public class TestSP_OpenID extends AbstractSPTest
         try {
             service.openIdGetSessionAttributes(_nonces.getSessionNonce());
             fail("Expected exception.");
-        } catch (ExBadCredential e) {
+        } catch (ExExternalAuthFailure e) {
             // pass
         }
     }

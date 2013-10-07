@@ -41,6 +41,7 @@ public class Exceptions
         _types.put(Type.BAD_CREDENTIAL,      ExBadCredential.class);
         _types.put(Type.INTERNAL_ERROR,      ExInternalError.class);
         _types.put(Type.CANNOT_RESET_PASSWORD, ExCannotResetPassword.class);
+        _types.put(Type.EXTERNAL_AUTH_FAILURE, ExExternalAuthFailure.class);
     }
 
     /**
