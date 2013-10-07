@@ -2,6 +2,7 @@ package com.aerofs.daemon.rest;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.config.ConfigurationProperties;
+import com.aerofs.base.id.DID;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.daemon.core.CoreEventDispatcher;
@@ -65,23 +66,28 @@ public class AbstractRestTest extends AbstractTest
     protected @Mock NativeVersionControl nvc;
     private @Mock CfgKeyManagersProvider kmgr;
 
-    private static TempCert tmp;
+    private static TempCert ca;
+    private static TempCert client;
+
+    protected static final UserID user = UserID.fromInternal("foo@bar.baz");
+    protected static final DID did = DID.generate();
 
     @BeforeClass
     public static void generateCert()
     {
-        tmp = TempCert.generate();
-        RestAssured.keystore(tmp.keyStore, TempCert.KS_PASSWD);
+        ca = TempCert.generateCA();
+        client = TempCert.generateDaemon(user, did, ca);
+        RestAssured.keystore(ca.keyStore, TempCert.KS_PASSWD);
     }
 
     @AfterClass
     public static void cleanupCert()
     {
-        new File(tmp.keyStore).delete();
+        ca.cleanup();
+        client.cleanup();
     }
 
     protected MockDS mds;
-    protected UserID user = UserID.fromInternal("foo@bar.baz");
     protected SID rootSID = SID.rootSID(user);
 
     private RestService service;
@@ -102,8 +108,8 @@ public class AbstractRestTest extends AbstractTest
 
         when(localUser.get()).thenReturn(user);
 
-        when(kmgr.getCert()).thenReturn(tmp.cert);
-        when(kmgr.getPrivateKey()).thenReturn(tmp.key);
+        when(kmgr.getCert()).thenReturn(client.cert);
+        when(kmgr.getPrivateKey()).thenReturn(client.key);
 
         final IIMCExecutor imce = mock(IIMCExecutor.class);
 
