@@ -4,7 +4,6 @@
 
 package com.aerofs.sp.server;
 
-import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.base.ex.ExExternalAuthFailure;
 import com.aerofs.proto.Sp.OpenIdSessionAttributes;
 import com.aerofs.proto.Sp.OpenIdSessionNonces;

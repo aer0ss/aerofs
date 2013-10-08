@@ -5,7 +5,6 @@
 package com.aerofs.sp.server;
 
 import com.aerofs.base.config.ConfigurationProperties;
-import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.base.ex.ExExternalAuthFailure;
 import com.aerofs.lib.LibParam.EnterpriseConfig;
 import com.aerofs.lib.LibParam.Identity;

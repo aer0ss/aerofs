@@ -153,7 +153,6 @@ public class S
                 " Please use the [Save As...] button to save and view it.",
             WHY_ARENT_MY_FILES_SYNCED = "Why Aren't My Files Synced?",
             REPORT_A_PROBLEM = "Report a Problem",
-            REQUEST_A_FEATURE = "Request a Feature",
             DEFAULT_DIALOG_TITLE = L.product(),
             DIALOG_TITLE_SUFFIX = " - " + L.product(),
 

@@ -100,15 +100,6 @@ public class TrayMenuPopulator
             });
         }
 
-        addMenuItem(S.REQUEST_A_FEATURE, new AbstractListener(null)
-        {
-            @Override
-            protected void handleEventImpl(Event event)
-            {
-                GUIUtil.launch("http://support.aerofs.com/forums/22080313");
-            }
-        });
-
         addMenuItem("Support Center", new AbstractListener(null)
         {
             @Override
@@ -117,8 +108,6 @@ public class TrayMenuPopulator
                 GUIUtil.launch("http://support.aerofs.com");
             }
         });
-
-        addMenuSeparator();
 
         addMenuItem("About " + L.product(), new AbstractListener(null)
         {
