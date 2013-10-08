@@ -2,4 +2,4 @@ actors:
   - address: ci-ubuntu-f.local
     TS:
       storage_type: 'LOCAL'
-  - address: 192.168.128.254
+  - address: ci-ubuntu-g.local
