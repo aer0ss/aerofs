@@ -205,7 +205,18 @@ public class OSUtilLinux extends AbstractOSUtilLinuxOSX
         // We allow NFS on Linux, even though it can't watch for filesystem changes.
         String[] fss = new String[] { "EXT", "NFS", "BTRFS", "ECRYPTFS", "VZFS",
                 "REISER", "XFS", "UFS", "CRYPT", "JFS", "SIMFS", "ZFS",
-                "UNKNOWN (0X565A4653)", // VZFS when stat doesn't know about that magic number
+                // VZFS when stat doesn't know about that magic number.
+                "UNKNOWN (0X565A4653)",
+                // ZFS when stat doesn't know about that magic number. This is added to support
+                // Lumos Labs's ancient Ubuntu systems. Below is Drew's comment:
+                // https://github.com/zfsonlinux/zfs/blob/master/include/sys/zfs_vfsops.h#L95
+                // suggests that the best-known ZFS-on-Linux patchset uses this number.
+                //
+                // http://osdir.com/ml/bug-coreutils-gnu/2012-08/msg00111.html also
+                // suggests that this is sufficiently canonical that it's fixed in newer
+                // versions of coreutils, but Ubuntu (whatever the heck Lumos is running)
+                // is unlikely to receive them.
+                "UNKNOWN (0X2FC12FC1)",
         };
         for (String fs : fss) if (type.toUpperCase().startsWith(fs.toUpperCase())) return true;
         return false;
