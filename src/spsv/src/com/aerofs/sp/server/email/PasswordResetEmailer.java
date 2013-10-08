@@ -22,9 +22,6 @@ public class PasswordResetEmailer
 
     {
         String subject = L.brand() + " Password Request";
-
-        Email email = new Email(subject, false ,null);
-
         String url = WWW.PASSWORD_RESET_URL + "?" +
                 "user_id=" + Util.urlEncode(userId.getString()) +
                 "&token=" + resetToken;
@@ -32,6 +29,7 @@ public class PasswordResetEmailer
                "to reset your password:\n\n" + url + "\n\n" +
                 "If you didn't request this email please ignore this message.";
 
+        Email email = new Email();
         email.addSection(L.brand() + " Password Request", body);
         email.addDefaultSignature();
 
@@ -47,9 +45,6 @@ public class PasswordResetEmailer
 
     {
         String subject = L.brand() + " Password Has Changed";
-
-        Email email = new Email(subject, false, null);
-
         String body = "\n" +
                 "You have changed the password for your " + L.brand() + " account.\n" +
                 "\n" +
@@ -57,6 +52,7 @@ public class PasswordResetEmailer
                 " please email " + WWW.SUPPORT_EMAIL_ADDRESS + " immediately." +
                 " We will take necessary steps to secure your account.";
 
+        Email email = new Email();
         email.addSection(subject, body);
         email.addDefaultSignature();
 

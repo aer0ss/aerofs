@@ -40,8 +40,6 @@ public class DeviceRegistrationEmailer
             throws IOException, MessagingException
     {
         String subject = product + " Installed on Your Device " + Util.quote(deviceName);
-        Email email = new Email(subject);
-
         String body = "\n" +
                 "Hi " + firstName + ",\n" +
                 "\n" +
@@ -56,6 +54,7 @@ public class DeviceRegistrationEmailer
                     // In the future, real templates could make this more intelligent.
                 "You can manage " + manageDeviceStringAndURL + " .";
 
+        Email email = new Email();
         email.addSection(subject, body);
         email.addDefaultSignature();
 

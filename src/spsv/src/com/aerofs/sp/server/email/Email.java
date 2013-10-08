@@ -21,14 +21,14 @@ public class Email implements IEmail
     private final HTMLEmail _htmlEmail;
     private final TextEmail _textEmail;
 
-    public Email(String subject)
+    public Email()
     {
-        this(subject, false, null);
+        this(false, null);
     }
 
-    public Email(final String subject, boolean unsubscribe, @Nullable String blobId)
+    public Email(boolean unsubscribe, @Nullable String blobId)
     {
-        _htmlEmail = new HTMLEmail(subject, unsubscribe, blobId);
+        _htmlEmail = new HTMLEmail(unsubscribe, blobId);
         _textEmail = new TextEmail(unsubscribe, blobId);
     }
 

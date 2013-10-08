@@ -22,7 +22,6 @@ import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.RootAnchorUtil;
 import com.aerofs.lib.StorageType;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgAbsRTRoot;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.event.Prio;

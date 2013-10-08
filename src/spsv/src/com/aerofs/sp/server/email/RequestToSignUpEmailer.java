@@ -37,7 +37,7 @@ public class RequestToSignUpEmailer
                 "\n" +
                 "Simply ignore this email if you didn't request an " + L.brand() + " account.";
 
-        Email email = new Email(subject);
+        Email email = new Email();
         email.addSection("You're almost ready to go!", body);
         email.addDefaultSignature();
 
@@ -60,7 +60,7 @@ public class RequestToSignUpEmailer
                 "Forgot your password? No problem! You can reset it right here: " +
                 WWW.PASSWORD_RESET_REQUEST_URL;
 
-        Email email = new Email(subject);
+        Email email = new Email();
         email.addSection("You already have an " + L.product() + " account", body);
         email.addDefaultSignature();
 
