@@ -10,7 +10,6 @@ import com.aerofs.daemon.transport.jingle.SignalThread.ISignalThreadListener;
 import com.aerofs.j.Jid;
 import com.aerofs.j.SWIGTYPE_p_cricket__Session;
 import com.aerofs.j.TunnelSessionClient;
-import com.aerofs.lib.SystemUtil.ExitCode;
 import com.google.common.collect.Maps;
 import org.jboss.netty.channel.AbstractServerChannel;
 import org.jboss.netty.channel.ChannelConfig;
