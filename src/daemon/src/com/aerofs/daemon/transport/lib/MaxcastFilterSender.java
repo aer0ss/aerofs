@@ -1,9 +1,8 @@
 package com.aerofs.daemon.transport.lib;
 
 import com.aerofs.base.Loggers;
-import org.slf4j.Logger;
-
 import com.aerofs.lib.Util;
+import org.slf4j.Logger;
 
 public class MaxcastFilterSender {
     private static final Logger l = Loggers.getLogger(MaxcastFilterSender.class);

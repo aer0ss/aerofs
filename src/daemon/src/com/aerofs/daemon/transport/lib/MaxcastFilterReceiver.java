@@ -20,12 +20,12 @@
 
 package com.aerofs.daemon.transport.lib;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import org.slf4j.Logger;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class MaxcastFilterReceiver {
     private static final Logger l = Loggers.getLogger(MaxcastFilterReceiver.class);

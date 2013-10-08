@@ -20,8 +20,8 @@ import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.channel.Channels;
 import org.jboss.netty.util.HashedWheelTimer;
 
-import static com.aerofs.base.net.NettyUtil.newSslHandler;
 import static com.aerofs.base.net.NettyUtil.newCNameVerificationHandler;
+import static com.aerofs.base.net.NettyUtil.newSslHandler;
 import static com.aerofs.daemon.transport.netty.BootstrapFactoryUtil.newDiagnosticsHandler;
 import static com.aerofs.daemon.transport.netty.BootstrapFactoryUtil.newFrameDecoder;
 import static com.aerofs.daemon.transport.netty.BootstrapFactoryUtil.newLengthFieldPrepender;

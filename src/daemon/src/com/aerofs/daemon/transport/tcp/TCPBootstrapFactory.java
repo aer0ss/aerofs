@@ -24,8 +24,8 @@ import org.jboss.netty.channel.socket.ServerSocketChannelFactory;
 import org.jboss.netty.util.HashedWheelTimer;
 import org.jboss.netty.util.Timer;
 
-import static com.aerofs.base.net.NettyUtil.newSslHandler;
 import static com.aerofs.base.net.NettyUtil.newCNameVerificationHandler;
+import static com.aerofs.base.net.NettyUtil.newSslHandler;
 import static com.aerofs.daemon.transport.netty.BootstrapFactoryUtil.newDiagnosticsHandler;
 import static com.aerofs.daemon.transport.netty.BootstrapFactoryUtil.newFrameDecoder;
 import static com.aerofs.daemon.transport.netty.BootstrapFactoryUtil.newLengthFieldPrepender;

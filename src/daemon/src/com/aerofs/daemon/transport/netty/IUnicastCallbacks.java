@@ -5,7 +5,6 @@
 package com.aerofs.daemon.transport.netty;
 
 import com.aerofs.base.id.DID;
-import com.aerofs.daemon.transport.netty.ClientHandler;
 import com.aerofs.lib.ex.ExDeviceOffline;
 
 import java.net.SocketAddress;
