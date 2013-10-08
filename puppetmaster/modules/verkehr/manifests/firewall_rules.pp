@@ -6,7 +6,7 @@ class verkehr::firewall_rules(
         chain   => "PREROUTING",
         iniface => "eth0",
         dport   => $subscribe_port,
-        action  => "redirect",
+        jump    => "REDIRECT",
         toports => "29438"
     }
 }

@@ -6,7 +6,7 @@ class zephyr::firewall_rules(
         table   => "nat",
         chain   => "PREROUTING",
         dport   => $port,
-        action  => "redirect",
+        jump    => "REDIRECT",
         toports => "8888",
         destination => $ip_address
     }
