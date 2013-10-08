@@ -5,7 +5,7 @@ Deployment Steps
 The steps are as follows:
 
     cd ~/repos/aerofs
-    ant package_web -Dmode=PROD -Dproduct=CLIENT
+    ant clean package_web -Dmode=PROD -Dproduct=CLIENT
     cd packaging
     BIN=PROD make upload
     cd ~/repos/aerofs
