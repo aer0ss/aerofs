@@ -129,15 +129,16 @@ def static_menu_text():
     return "Static [selected]" if current_netconfig() == "static" else "Static"
 
 def current_static_value(search_key):
-    with open(STATIC_CONF) as f:
-        for line in f:
-            try:
-                key, value = line.strip().split(" ", 1)
-                if key == search_key:
-                    return value
-            except:
-                # Ignore lines that don't split
-                pass
+    if os.path.exists(STATIC_CONF):
+        with open(STATIC_CONF) as f:
+            for line in f:
+                try:
+                    key, value = line.strip().split(" ", 1)
+                    if key == search_key:
+                        return value
+                except ValueError:
+                    # Ignore lines that don't split
+                    pass
     return None
 
 def read_resolvconf():
@@ -152,15 +153,12 @@ def read_resolvconf():
         # otherwise, add that line to the "additional_lines" list
         with open(RESOLV_CONF) as f:
             for line in f:
-                try:
-                    match = regex.match(line)
-                    if match:
-                        print match.group(1)
-                        nameservers.append(match.group(1).strip())
-                    else:
-                        additional_lines.append(line.rstrip())
-                except:
-                    pass
+                match = regex.match(line)
+                if match:
+                    print match.group(1)
+                    nameservers.append(match.group(1).strip())
+                else:
+                    additional_lines.append(line.rstrip())
     return (nameservers, additional_lines)
 
 
