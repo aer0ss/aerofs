@@ -1718,6 +1718,8 @@ public class SPService implements ISPService
         User user = _sessionUser.get();
         GetACLReply.Builder bd = GetACLReply.newBuilder();
 
+        l.info("get acl u: {}", user.id());
+
         _sqlTrans.begin();
 
         long userEpoch = user.getACLEpoch();
@@ -1728,15 +1730,15 @@ public class SPService implements ISPService
                 boolean isExternal = sf.isExternal(user);
                 // omit external shared folders if the caller is not capable of handling them
                 if (isExternal && !includeExternal) {
-                    l.info("ign ext: {}", sf.id());
+                    l.debug("ign ext: {}", sf.id());
                     continue;
                 }
-                l.info("add s: {}", sf.id());
+                l.debug("add s: {}", sf.id());
                 PBStoreACL.Builder aclBuilder = PBStoreACL.newBuilder();
                 aclBuilder.setStoreId(sf.id().toPB());
                 aclBuilder.setExternal(sf.isExternal(user));
                 for (SubjectRolePair srp : sf.getMemberACL()) {
-                    l.info("add j:{} r:{}", srp._subject, srp._role.getDescription());
+                    l.trace("add j:{} r:{}", srp._subject, srp._role.getDescription());
                     aclBuilder.addSubjectRole(srp.toPB());
                 }
                 bd.addStoreAcl(aclBuilder);
