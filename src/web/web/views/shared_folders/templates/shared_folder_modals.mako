@@ -42,7 +42,7 @@
             ## min-width to avoid table cell shifting due to different lengths of role
             ## strings, when the user updates members roles.
             <thead><tr><th>Member</th><th style="min-width: 64px">Role
-                <i id="modal-role-info-icon" class="icon-info-sign"></i></th>
+                <a href="https://support.aerofs.com/entries/22831810" target="_blank"><i class="icon-question-sign"></i></a></th>
                 <th></th></tr></thead>
             <tbody></tbody>
         </table>

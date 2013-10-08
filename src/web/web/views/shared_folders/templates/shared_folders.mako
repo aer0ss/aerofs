@@ -38,12 +38,7 @@
         </div>
 
         <table id="folders_table" class="table table-hover">
-            <thead><tr><th>Folder</th><th>Members</th>
-                %if show_my_role_column:
-                    <th>My Role <i id="my-role-info-icon" class="icon-info-sign"></i>
-                    </th>
-                %endif
-                <th></th></tr></thead>
+            <thead><tr><th>Folder</th><th>Members</th><th></th></tr></thead>
             <tbody></tbody>
         </table>
     </div>
@@ -118,9 +113,6 @@
                 "aoColumns": [
                     { "mDataProp": "name" },
                     { "mDataProp": "users" },
-                    %if show_my_role_column:
-                        { "mDataProp": "my_role" },
-                    %endif
                     { "mDataProp": "options" }
                 ],
 
@@ -153,26 +145,6 @@
                 refreshModal();
                 $mainModal.modal('show');
             });
-
-            ## Use the modal is the container to avoid tooltips being cut off by
-            ## the modal boundary. See https://github.com/twitter/bootstrap/pull/6378
-            initRoleInfoTooltip($('#modal-role-info-icon'), '#modal');
-            initRoleInfoTooltip($('#my-role-info-icon'), 'body');
-
-            function initRoleInfoTooltip($icon, container) {
-                $icon.tooltip({
-                    placement: 'top',
-                    html: 'true',
-                    title: '<div style="text-align: left">' +
-                        '<strong>Owners</strong> can download and download files, and manage other members in the folder.<br>' +
-                        '<strong>Editors</strong> can download & upload files.<br>' +
-                        '<strong>Viewer</strong> can only download files.' +
-                    '</div>',
-                    ## To avoid tooltips being cut off by the modal boundary.
-                    ## See https://github.com/twitter/bootstrap/pull/6378
-                    container: container
-                });
-            }
 
             ## N.B. updates to the return value will be propagated back to the
             ## Options link and persists throughout the link's lifecycle.
