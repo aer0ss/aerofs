@@ -14,6 +14,11 @@ base.xmpp.address={{ base_host }}:5222
 base.zephyr.address={{ base_host }}:8888
 daemon.stun.address={{ base_host }}:3478
 
+api.url=https://{{ base_host }}/api/
+api.tunnel.host={{ base_host }}
+api.tunnel.port=8084
+api.daemon.port=0
+
 base.www.support_email_address={{ support_address }}
 
 base.mixpanel.url=

@@ -64,8 +64,7 @@ public class SPBlockingClient extends SPServiceBlockingStub
          */
         public SPBlockingClient create_(IURLConnectionConfigurator configurator)
         {
-            return new SPBlockingClient(new SPClientHandler(SP.URL, configurator),
-                    UserID.fromInternal(""));
+            return new SPBlockingClient(new SPClientHandler(SP.URL, configurator), UserID.DUMMY);
         }
     }
 

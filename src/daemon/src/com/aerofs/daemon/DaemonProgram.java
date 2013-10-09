@@ -23,6 +23,7 @@ import com.aerofs.daemon.lib.exception.ExStreamInvalid;
 import com.aerofs.daemon.mobile.MobileModule;
 import com.aerofs.daemon.rest.RestModule;
 import com.aerofs.daemon.rest.RestService;
+import com.aerofs.daemon.rest.RestTunnel;
 import com.aerofs.daemon.ritual.RitualServer;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.IProgram;
@@ -123,8 +124,8 @@ public class DaemonProgram implements IProgram
         // NB: he RestService MUST be started AFTER creation of the Daemon instance or Guice
         // throws a fit
         if (Cfg.user().isAeroFSUser()) {
-            RestService rest = injCore.getInstance(RestService.class);
-            rest.start();
+            injCore.getInstance(RestService.class).start();
+            injCore.getInstance(RestTunnel.class).start();
         }
 
         return d;

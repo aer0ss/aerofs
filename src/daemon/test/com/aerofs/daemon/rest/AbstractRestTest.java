@@ -147,8 +147,9 @@ public class AbstractRestTest extends AbstractTest
 
         // start REST service
         service = new RestService(inj, kmgr);
+        service.start();
         RestAssured.baseURI = "https://localhost";
-        RestAssured.port = service.start();
+        RestAssured.port = service.getListeningPort();
     }
 
     @After

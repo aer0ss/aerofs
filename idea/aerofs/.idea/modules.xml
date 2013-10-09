@@ -10,6 +10,7 @@
       <module fileurl="file://$PROJECT_DIR$/../../src/daemon/daemon.iml" filepath="$PROJECT_DIR$/../../src/daemon/daemon.iml" />
       <module fileurl="file://$PROJECT_DIR$/../../src/devman/devman.iml" filepath="$PROJECT_DIR$/../../src/devman/devman.iml" />
       <module fileurl="file://$PROJECT_DIR$/../../src/gui/gui.iml" filepath="$PROJECT_DIR$/../../src/gui/gui.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../../src/havre/havre.iml" filepath="$PROJECT_DIR$/../../src/havre/havre.iml" />
       <module fileurl="file://$PROJECT_DIR$/../../src/lib/lib.iml" filepath="$PROJECT_DIR$/../../src/lib/lib.iml" />
       <module fileurl="file://$PROJECT_DIR$/../../src/libjingle.binding/libjingle.binding.iml" filepath="$PROJECT_DIR$/../../src/libjingle.binding/libjingle.binding.iml" />
       <module fileurl="file://$PROJECT_DIR$/../../src/libservlet/libservlet.iml" filepath="$PROJECT_DIR$/../../src/libservlet/libservlet.iml" />
@@ -17,6 +18,7 @@
       <module fileurl="file://$PROJECT_DIR$/../../src/spsv/spsv.iml" filepath="$PROJECT_DIR$/../../src/spsv/spsv.iml" />
       <module fileurl="file://$PROJECT_DIR$/../../src/swiglibs/swiglibs.iml" filepath="$PROJECT_DIR$/../../src/swiglibs/swiglibs.iml" />
       <module fileurl="file://$PROJECT_DIR$/../../src/syncstat/syncstat.iml" filepath="$PROJECT_DIR$/../../src/syncstat/syncstat.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../../src/tunnel/tunnel.iml" filepath="$PROJECT_DIR$/../../src/tunnel/tunnel.iml" />
       <module fileurl="file://$PROJECT_DIR$/../../src/verkehr/verkehr.iml" filepath="$PROJECT_DIR$/../../src/verkehr/verkehr.iml" />
       <module fileurl="file://$PROJECT_DIR$/../../src/zephyr/zephyr.iml" filepath="$PROJECT_DIR$/../../src/zephyr/zephyr.iml" />
     </modules>

@@ -6,6 +6,7 @@ package com.aerofs.daemon.transport.jingle;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
+import com.aerofs.base.net.NettyUtil;
 import com.aerofs.j.Jid;
 import com.aerofs.j.StreamInterface;
 import org.jboss.netty.channel.AbstractChannelSink;
@@ -40,7 +41,7 @@ class JingleClientChannelSink extends AbstractChannelSink
             ChannelFuture future = event.getFuture();
             Object value = event.getValue();
 
-            switch (JingleUtils.parseDownstreamEvent(event.getState(), value)) {
+            switch (NettyUtil.parseDownstreamEvent(event.getState(), value)) {
             case BIND:
                 bind(channel, future, (JingleAddress)value);
                 break;
