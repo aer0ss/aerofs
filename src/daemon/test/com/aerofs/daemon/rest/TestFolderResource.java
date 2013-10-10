@@ -11,6 +11,11 @@ public class TestFolderResource extends AbstractRestTest
 {
     private final String RESOURCE = "/v0.9/folders/{folder}";
 
+    public TestFolderResource(boolean useProxy)
+    {
+        super(useProxy);
+    }
+
     @Test
     public void shouldReturn400ForInvalidId() throws Exception
     {

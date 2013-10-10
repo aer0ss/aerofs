@@ -31,6 +31,11 @@ public class TestFileResource extends AbstractRestTest
     private static byte[] FILE_CONTENT = { 'H', 'e', 'l', 'l', 'o'};
     private static byte[] VERSION_HASH = BaseSecUtil.newMessageDigestMD5().digest(FILE_CONTENT);
 
+    public TestFileResource(boolean useProxy)
+    {
+        super(useProxy);
+    }
+
     @Before
     public void mockFile() throws Exception
     {

@@ -15,6 +15,7 @@
     <orderEntry type="module" module-name="zephyr" />
     <orderEntry type="module" module-name="verkehr" />
     <orderEntry type="module" module-name="syncstat" />
+    <orderEntry type="module" module-name="tunnel" />
     <orderEntry type="library" name="smack" level="project" />
     <orderEntry type="library" name="jul-to-slf4j" level="project" />
     <orderEntry type="library" name="jersey-1.17.1" level="project" />
@@ -24,6 +25,7 @@
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" name="tika-core-1.4" level="project" />
     <orderEntry type="module" module-name="tunnel" />
+    <orderEntry type="module" module-name="havre" scope="TEST" />
   </component>
 </module>
 

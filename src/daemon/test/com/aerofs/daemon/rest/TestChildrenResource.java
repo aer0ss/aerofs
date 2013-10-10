@@ -14,6 +14,11 @@ public class TestChildrenResource extends AbstractRestTest
 {
     private final String RESOURCE = "/v0.9/children/{folder}";
 
+    public TestChildrenResource(boolean useProxy)
+    {
+        super(useProxy);
+    }
+
     @Test
     public void shouldReturn400ForInvalidId() throws Exception
     {

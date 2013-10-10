@@ -12,13 +12,17 @@ import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.acl.LocalACL;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.mock.logical.MockDS;
+import com.aerofs.daemon.core.net.ClientSSLEngineFactory;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.IStores;
 import com.aerofs.daemon.core.store.SIDMap;
 import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
+import com.aerofs.havre.Havre;
 import com.aerofs.lib.Path;
+import com.aerofs.lib.cfg.CfgCACertificateProvider;
 import com.aerofs.lib.cfg.CfgKeyManagersProvider;
+import com.aerofs.lib.cfg.CfgLocalDID;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.event.IEvent;
 import com.aerofs.lib.event.Prio;
@@ -28,21 +32,31 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.jayway.restassured.RestAssured;
+import org.jboss.netty.channel.socket.ServerSocketChannelFactory;
+import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.slf4j.Logger;
 
+import java.nio.channels.ServerSocketChannel;
 import java.sql.SQLException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Properties;
 import java.util.TimeZone;
+import java.util.concurrent.Executors;
 
 import static org.junit.Assert.assertNotNull;
 import static org.mockito.Matchers.any;
@@ -53,23 +67,43 @@ import static org.mockito.Mockito.when;
 /**
  * Base class for tests exercising the public REST API
  */
+@RunWith(Parameterized.class)
 public class AbstractRestTest extends AbstractTest
 {
+    @Parameters
+    public static Collection<Object[]> data()
+    {
+        return Arrays.asList(new Object[][] {{false}, {true}});
+    }
+
     protected static final Logger l = Loggers.getLogger(AbstractRestTest.class);
 
     protected @Mock DirectoryService ds;
     protected @Mock LocalACL acl;
     protected @Mock SIDMap sm;
     protected @Mock IStores ss;
-    private @Mock CfgLocalUser localUser;
+
+    protected @Mock CfgLocalUser localUser;
+    protected @Mock CfgLocalDID localDID;
+    protected @Mock CfgKeyManagersProvider kmgr;
+    protected @Mock CfgCACertificateProvider cacert;
+
     protected @Mock NativeVersionControl nvc;
-    private @Mock CfgKeyManagersProvider kmgr;
+
+    protected @InjectMocks ClientSSLEngineFactory clientSslEngineFactory;
 
     private static TempCert ca;
     private static TempCert client;
 
     protected static final UserID user = UserID.fromInternal("foo@bar.baz");
     protected static final DID did = DID.generate();
+
+    private final boolean useProxy;
+
+    public AbstractRestTest(boolean useProxy)
+    {
+        this.useProxy = useProxy;
+    }
 
     @BeforeClass
     public static void generateCert()
@@ -91,6 +125,9 @@ public class AbstractRestTest extends AbstractTest
 
     private RestService service;
 
+    private RestTunnel tunnel;
+    private Havre havre;
+
     protected static DateFormat ISO_8601 = utcFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
 
     private static DateFormat utcFormat(String pattern) {
@@ -106,9 +143,12 @@ public class AbstractRestTest extends AbstractTest
         mds.root();  // setup sid<->sidx mapping for root..
 
         when(localUser.get()).thenReturn(user);
+        when(localDID.get()).thenReturn(did);
 
         when(kmgr.getCert()).thenReturn(client.cert);
         when(kmgr.getPrivateKey()).thenReturn(client.key);
+
+        when(cacert.getCert()).thenReturn(ca.cert);
 
         final IIMCExecutor imce = mock(IIMCExecutor.class);
 
@@ -142,20 +182,52 @@ public class AbstractRestTest extends AbstractTest
         }).when(imce).execute_(any(IEvent.class), any(Prio.class));
 
         Properties prop = new Properties();
-        prop.setProperty("rest.port", "0");
+        prop.setProperty("api.daemon.port", "0");
+        prop.setProperty("api.tunnel.host", "localhost");
+        prop.setProperty("api.tunnel.port", "48808");
+        prop.setProperty("havre.tunnel.host", "localhost");
+        prop.setProperty("havre.tunnel.port", "48808");
+        prop.setProperty("havre.proxy.host", "localhost");
+        prop.setProperty("havre.proxy.port", "0");
         ConfigurationProperties.setProperties(prop);
 
         // start REST service
-        service = new RestService(inj, kmgr);
+        service = new RestService(inj, kmgr) {
+            @Override
+            protected ServerSocketChannelFactory getServerSocketFactory()
+            {
+                return new NioServerSocketChannelFactory(
+                        Executors.newCachedThreadPool(),
+                        Executors.newCachedThreadPool());
+            }
+        };
         service.start();
         RestAssured.baseURI = "https://localhost";
         RestAssured.port = service.getListeningPort();
+        l.info("REST service at {}", RestAssured.port);
+
+        if (useProxy) {
+            // start local gateway
+            havre = new Havre(user, did, kmgr, kmgr, cacert);
+            havre.start();
+            RestAssured.port = havre.getProxyPort();
+
+            l.info("REST gateway at {}", RestAssured.port);
+
+            // open tunnel between gateway and rest service
+            tunnel = new RestTunnel(localUser, localDID, clientSslEngineFactory, service);
+            tunnel.start().awaitUninterruptibly();
+        }
     }
 
     @After
     public void tearDown() throws Exception
     {
         service.stop();
+        if (useProxy) {
+            havre.stop();
+            tunnel.stop();
+        }
     }
 
     protected RestObject object(String path) throws SQLException
