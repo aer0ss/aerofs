@@ -68,6 +68,7 @@ public final class SPSchema
             C_AC_ROLE                       = "a_role",
             C_AC_PENDING                    = "a_pending",
             C_AC_SHARER                     = "a_sharer",
+            // see docs/design/sharing_and_migration.txt for information about this flag
             C_AC_EXTERNAL                   = "a_external",
 
             T_SF                            = "sp_shared_folder",

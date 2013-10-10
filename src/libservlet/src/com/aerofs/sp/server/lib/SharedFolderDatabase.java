@@ -183,6 +183,7 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
         if (rows != 1) throw new ExNotFound();
     }
 
+    // see docs/design/sharing_and_migration.txt for information about the external flag
     public void setExternal(SID sid, UserID userId, boolean external)
             throws SQLException, ExNotFound
     {
@@ -198,6 +199,7 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
         if (rows != 1) throw new ExNotFound();
     }
 
+    // see docs/design/sharing_and_migration.txt for information about the external flag
     public boolean isExternal(SID sid, UserID id) throws SQLException
     {
         PreparedStatement ps = prepareStatement(selectWhere(T_AC,

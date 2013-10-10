@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS `sp_acl` (
   `a_role` TINYINT NOT NULL,
   `a_pending` BOOLEAN NOT NULL DEFAULT FALSE,
   `a_sharer` VARCHAR(320),   -- NULL if the member is not invited by anyone. i.e. the initial owner and team server users
-  `a_external` BOOLEAN NOT NULL DEFAULT FALSE,
+  `a_external` BOOLEAN NOT NULL DEFAULT FALSE,  -- see docs/design/sharing_and_migration.txt for information about this flag
   PRIMARY KEY (`a_sid`,`a_id`),
   INDEX `a_id` (`a_id`),
   -- Note: the foreign key implicitly create an index on a_sid
