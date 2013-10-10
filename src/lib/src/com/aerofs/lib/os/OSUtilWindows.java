@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.StringReader;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 import com.aerofs.base.Loggers;
@@ -15,12 +16,13 @@ import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.lib.os.OSUtil.Icon;
 import com.aerofs.swig.driver.Driver;
 import com.google.common.base.Optional;
-import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
+import org.apache.commons.lang.text.StrSubstitutor;
 import org.slf4j.Logger;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-import static com.aerofs.lib.os.OSUtil.replaceEnvironmentVariables;
 import static org.apache.commons.lang.StringUtils.isBlank;
 
 public class OSUtilWindows implements IOSUtil
@@ -104,15 +106,7 @@ public class OSUtilWindows implements IOSUtil
     {
         Optional<String> value = RootAnchor.DEFAULT_LOCATION_WINDOWS;
         if (value.isPresent()) {
-            ImmutableMap<String, String> env;
-
-            try {
-                env = ImmutableMap.of(LOCAL_APP_DATA, getLocalAppDataPath());
-            } catch (FileNotFoundException e) {
-                env = null;
-            }
-
-            return replaceEnvironmentVariables(value.get(), env);
+            return replaceEnvironmentVariables(value.get());
         }
 
         try {
@@ -363,5 +357,30 @@ public class OSUtilWindows implements IOSUtil
         } catch (IOException e) {
             l.warn("showInFolder failed: " + Util.e(e));
         }
+    }
+
+    /**
+     * Given a path, replace the environment variables in the path with actual values.
+     *
+     * Supported substitutions:
+     *   - replaces ${variable_name} with its value if the variable is resolved, left as is
+     *     otherwise.
+     *   - supports ${LOCALAPPDATA} on all Windows platforms.
+     *
+     * @param path - the input, possibly containing environment variables.
+     * @return the resulting path with environment variables replaced with their values.
+     */
+    protected @Nonnull String replaceEnvironmentVariables(@Nonnull String path)
+    {
+        Map<String, String> env = Maps.newHashMap(System.getenv());
+
+        try {
+            env.put(LOCAL_APP_DATA, getLocalAppDataPath());
+        } catch (FileNotFoundException e) {
+            // suppressed
+            l.warn(e.getMessage(), e);
+        }
+
+        return StrSubstitutor.replace(path, env);
     }
 }

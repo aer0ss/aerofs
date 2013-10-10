@@ -7,8 +7,10 @@ import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.swig.driver.Driver;
 import com.google.common.base.Optional;
+import org.apache.commons.lang.text.StrSubstitutor;
 import org.slf4j.Logger;
 
+import javax.annotation.Nonnull;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
@@ -35,7 +37,7 @@ abstract class AbstractOSUtilLinuxOSX implements IOSUtil
     protected String getDefaultRootAnchorParentImpl(Optional<String> property)
     {
         return property.isPresent()
-                ? OSUtil.replaceEnvironmentVariables(property.get(), null)
+                ? replaceEnvironmentVariables(property.get())
                 : getUserHomeDir();
     }
 
@@ -102,5 +104,27 @@ abstract class AbstractOSUtilLinuxOSX implements IOSUtil
         } finally {
             _pi.endSyscall();
         }
+    }
+
+    /**
+     * Given a path, replace the environment variables in the path with their corresponding values.
+     *
+     * Supported substitutions:
+     *   - replaces ~ to user's homedir with getUserHomeDir().
+     *   - replaces ${variable_name} with its value if the variable is resolved, left as is
+     *     otherwise.
+     *
+     * N.B. substitution _is case sensitive_.
+     *
+     * @param path - the input, possibly containing environment variables.
+     * @return the resulting path with environment variables replaced with their values.
+     */
+    protected @Nonnull String replaceEnvironmentVariables(@Nonnull String path)
+    {
+        if (path.startsWith("~")) {
+            path = path.replaceFirst("~", getUserHomeDir());
+        }
+
+        return StrSubstitutor.replace(path, System.getenv());
     }
 }

@@ -21,7 +21,6 @@ import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.core.transfers.download.dependence.DownloadDeadlockResolver;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.ex.ExFileNotFound;
 import com.aerofs.lib.id.SOCID;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
