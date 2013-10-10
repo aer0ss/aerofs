@@ -21,26 +21,31 @@ STATIC_CONFIG_TEMPLATE = """iface static inet static
   gateway {gateway}
 """
 
+# pretty display things
 CYAN = "\033[01;36m"
 NORMAL = "\033[0m"
+DEFAULT_WIDTH = 72
 
-BANNER = CYAN + r"""
+def centered(s, width=DEFAULT_WIDTH):
+    padding = " " * ((width - len(s)) / 2 )
+    return padding + s
 
-
-                    ___    __________  ____  ___________
-                   /   |  / ____/ __ \/ __ \/ ____/ ___/
-                  / /| | / __/ / /_/ / / / / /_   \__ \
-                 / ___ |/ /___/ _, _/ /_/ / __/  ___/ /
-                /_/  |_/_____/_/ |_|\____/_/    /____/
-         _______   __________________  ____  ____  _________ ______
-        / ____/ | / /_  __/ ____/ __ \/ __ \/ __ \/  _/ ___// ____/
-       / __/ /  |/ / / / / __/ / /_/ / /_/ / /_/ // / \__ \/ __/
-      / /___/ /|  / / / / /___/ _, _/ ____/ _, _// / ___/ / /___
-     /_____/_/ |_/ /_/ /_____/_/ |_/_/   /_/ |_/___//____/_____/
-
-------------------------------------------------------------------------
-
-""" + NORMAL
+BANNER = CYAN + "\n".join([
+        "",
+        "",
+        centered(r"    ___    __________  ____  ___________"),
+        centered(r"   /   |  / ____/ __ \/ __ \/ ____/ ___/"),
+        centered(r"  / /| | / __/ / /_/ / / / / /_   \__ \ "),
+        centered(r" / ___ |/ /___/ _, _/ /_/ / __/  ___/ / "),
+        centered(r"/_/  |_/_____/_/ |_|\____/_/    /____/  "),
+        "",
+        centered(r"   ___  ___  _____   _____ __________  _______   ____  __  _____ "),
+        centered(r"  / _ \/ _ \/  _/ | / / _ /_  __/ __/ / ___/ /  / __ \/ / / / _ " + "\\"),
+        centered(r" / ___/ , _// / | |/ / __ |/ / / _/  / /__/ /__/ /_/ / /_/ / // /"),
+        centered(r"/_/  /_/|_/___/ |___/_/ |_/_/ /___/  \___/____/\____/\____/____/ "),
+        "",
+        "-" * DEFAULT_WIDTH,
+    ]) + NORMAL
 
 def current_netconfig():
     if os.path.exists(CHOSEN_CONF_FILE):
@@ -82,6 +87,10 @@ class Menu(object):
         sys.stdout.write("? ")
         sys.stdout.flush()
         choice = sys.stdin.readline().rstrip()
+        if choice == "root-shell":
+            # Drop to a root bash shell.
+            # If you have access to tty1, you are clearly an admin.
+            os.execl("/bin/bash", "/bin/bash")
         try:
             choice_index = int(choice, 10)
         except ValueError:
@@ -96,7 +105,7 @@ class Menu(object):
 # Helper functions
 def request(label, default=None, validator=None, ok_message=None, invalid_message=None):
     done = False
-    example = "|{}|".format(default) if default else ""
+    example = "|{}| ".format(default) if default else ""
     prompt = "{} {}".format(label, example)
     while not done:
         sys.stdout.write(prompt)
@@ -141,6 +150,72 @@ def current_static_value(search_key):
                     pass
     return None
 
+def get_current_network_state():
+    # helper function to convert CIDR to netmask:
+    # >>> mask_bits_to_mask(17) -> "255.255.128.0"
+    def mask_bits_to_mask(mask_bits):
+        values = [128, 64, 32, 16, 8, 4, 2, 1]
+        blocks = []
+        for i in xrange(4):
+            bits_consumed = min(8, mask_bits)
+            mask_bits = mask_bits - bits_consumed
+            chunk = sum(values[0:bits_consumed])
+            blocks.append(str(chunk))
+        return ".".join(blocks)
+    # Values to be filled out below.
+    # For the first four, we screen scrape "ip addr"; for the gateway, we
+    # screenscrape "ip route"
+    address = None
+    netmask = None
+    broadcast = None
+    mac_addr = None
+    gateway = None
+
+    # Scrape address, netmask, broadcast, mac_addr
+    addr_text = subprocess.check_output("ip addr show dev eth0 scope global".split())
+    addr_lines = addr_text.split("\n")
+
+    network_matcher = re.compile("    inet ([^ ]+) brd ([^ ]+) scope global eth0")
+    macaddr_matcher = re.compile("    link/ether (([0-9a-f]{2}:){5}[0-9a-f]{2})")
+    for line in addr_lines:
+        net_matches = network_matcher.match(line)
+        if net_matches:
+            cidr = net_matches.group(1)
+            address, mask_bits = cidr.split("/", 1)
+            netmask = mask_bits_to_mask(int(mask_bits))
+            broadcast = net_matches.group(2)
+        mac_matches = macaddr_matcher.match(line)
+        if mac_matches:
+            mac_address = mac_matches.group(1)
+
+    # Scrape gateway
+    route_text = subprocess.check_output("ip route show to 0/0".split())
+    route_lines = route_text.split("\n")
+    route_matcher = re.compile("default via ({})".format(VALID_IPV4_REGEX))
+    for line in route_lines:
+        route_match = route_matcher.match(line)
+        if route_match:
+            gateway = route_match.group(1)
+            break
+    return (address, netmask, broadcast, mac_address, gateway)
+
+def print_network_state_and_next_instructions():
+    address, netmask, broadcast, mac_address, gateway = get_current_network_state()
+    print "                  MAC Address: {}".format(mac_address)
+    print "                   IP Address: {}".format(address)
+    print "                      Netmask: {}".format(netmask)
+    print "                    Broadcast: {}".format(broadcast)
+    print "                      Gateway: {}".format(gateway)
+    print ""
+    if address:
+        url = centered("https://{}/site_config".format(address))
+        colored_url = "{}{}{}".format(CYAN, url, NORMAL)
+        print centered("To continue configuring this node, point your browser at:")
+        print colored_url
+    else:
+        print centered("Please provide this machine with network configuration below:")
+    print
+
 def read_resolvconf():
     nameservers = []
     additional_lines = []
@@ -155,7 +230,6 @@ def read_resolvconf():
             for line in f:
                 match = regex.match(line)
                 if match:
-                    print match.group(1)
                     nameservers.append(match.group(1).strip())
                 else:
                     additional_lines.append(line.rstrip())
@@ -171,16 +245,16 @@ def select_dhcp():
 
 def show_static_menu():
     # read static values from user
-    ip_address = request("IP Address: ",
+    ip_address = request("IP Address:",
                          default=current_static_value("address"),
                          validator=VALID_IPV4_REGEX)
-    netmask    = request("Netmask: ",
+    netmask    = request("Netmask:",
                          default=current_static_value("netmask"),
                          validator=VALID_IPV4_REGEX)
-    broadcast  = request("Broadcast address: ",
+    broadcast  = request("Broadcast address:",
                          default=current_static_value("broadcast"),
                          validator=VALID_IPV4_REGEX)
-    gateway    = request("Gateway: ",
+    gateway    = request("Gateway:",
                          default=current_static_value("gateway"),
                          validator=VALID_IPV4_REGEX)
     # render static template with config values
@@ -232,12 +306,13 @@ def main():
     menu.add_choice(MenuOption(dhcp_menu_text(), select_dhcp))
     menu.add_choice(MenuOption(static_menu_text(), show_static_menu))
     menu.add_choice(MenuOption("DNS", show_dns_menu))
-    menu.add_choice(MenuOption("Restart", restart))
-    menu.add_choice(MenuOption("Shutdown", shutdown))
+    menu.add_choice(MenuOption("Reboot system", restart))
+    menu.add_choice(MenuOption("Shutdown system", shutdown))
     menu.interact()
 
 if __name__ == "__main__":
     print BANNER
+    print_network_state_and_next_instructions()
     while True:
         try:
             main()
