@@ -115,6 +115,48 @@ to determine internal vs external users. Therefore, the rules are enabled only i
 <p>These rules are specific to certain enterprise deployments and are not normally enabled.
 See class-level comments in ReadOnlyExternalFolderRules for more explanation on the rules.</p>
 
+<pre><code>email.sender.public_host=
+</code></pre>
+
+<p>Hostname of the outbound email server. Special handling occurs if this is "localhost".</p>
+
+<p>Example: <code>email.sender.public_host=smtp.sendgrid.net</code></p>
+
+<pre><code>email.sender.public_port=25
+</code></pre>
+
+<p>Port number to use on the email server. Defaults to 25, like a gentleman.</p>
+
+<pre><code>email.sender.public_username=
+</code></pre>
+
+<p>If provided, the username to authenticate with the smtp server.</p>
+
+<p>Default is blank, which indicates no authentication.</p>
+
+<pre><code>email.sender.public_password
+</code></pre>
+
+<p>If provided, the password to use to authenticate with the smtp server.</p>
+
+<pre><code>email.sender.timeout=10000
+</code></pre>
+
+<p>Timeout value, in milliseconds, for a response from SMTP commands.</p>
+
+<p>Default: 10 seconds (10000 ms)</p>
+
+<p>Example: <code>email.sender.timeout=10000</code></p>
+
+<pre><code>email.sender.connectiontimeout=60000
+</code></pre>
+
+<p>Timeout value, in milliseconds, for a connection to the outbound SMTP server.</p>
+
+<p>Default: 60 seconds (60000 ms)</p>
+
+<p>Example: <code>email.sender.connectiontimeout=60000</code></p>
+
 <h2>OpenID properties</h2>
 
 <p>(Please See Appendix for complete examples.)</p>

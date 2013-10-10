@@ -5,6 +5,7 @@
 package com.aerofs.servlets.lib;
 
 import com.aerofs.base.BaseParam.WWW;
+import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.async.UncancellableFuture;
 import com.aerofs.base.ex.Exceptions;
@@ -52,10 +53,18 @@ public class EmailSender
 
     private static String PUBLIC_HOST =
             getStringProperty("email.sender.public_host", "smtp.sendgrid.net");
+    private static String PUBLIC_PORT =
+            getStringProperty("email.sender.public_port", "25");
     private static String PUBLIC_USERNAME =
             getStringProperty("email.sender.public_username", "mXSiiSbCMMYVG38E");
     private static String PUBLIC_PASSWORD =
             getStringProperty("email.sender.public_password", "6zovnhQuLMwNJlx8");
+    // SMTP command timeout, expressed in milliseconds.
+    private static String TIMEOUT =
+            getStringProperty("email.sender.timeout", String.valueOf(10 * C.SEC));
+    // SMTP connection timeout, expressed in milliseconds.
+    private static String CONNECTION_TIMEOUT =
+            getStringProperty("email.sender.connectiontimeout", String.valueOf(60 * C.SEC));
 
     private static final String INTERNAL_HOST = "svmail.aerofs.com";
     private static final String INTERNAL_USERNAME = "noreply";
@@ -72,6 +81,9 @@ public class EmailSender
 
     public static Session getMailSession() {
         Properties props = new Properties();
+        props.put("mail.smtp.timeout", TIMEOUT);
+        props.put("mail.smtp.connectiontimeout", CONNECTION_TIMEOUT);
+        props.put("mail.smtp.port", PUBLIC_PORT);
         if (relayIsLocalhost()) {
             props.put("mail.stmp.host", "127.0.0.1");
             props.put("mail.stmp.auth", "false");

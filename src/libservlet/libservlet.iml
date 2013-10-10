@@ -20,6 +20,7 @@
     <orderEntry type="library" exported="" name="commons-lang" level="project" />
     <orderEntry type="library" exported="" name="bouncycastle" level="project" />
     <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="library" scope="TEST" name="subethasmtp-3.1.7" level="project" />
   </component>
 </module>
 
