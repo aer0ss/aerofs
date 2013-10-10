@@ -80,6 +80,7 @@ public class HdFileContent extends AbstractHdIMC<EIFileContent>
         return ok
                 .type(MediaType.APPLICATION_OCTET_STREAM_TYPE)
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + name + "\"")
+                .header(HttpHeaders.CONTENT_LENGTH, ca.length())
                 .entity(new SimpleStream(ca, 0, ca.length()));
     }
 

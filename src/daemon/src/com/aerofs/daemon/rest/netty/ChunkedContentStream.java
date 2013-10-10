@@ -40,7 +40,7 @@ class ChunkedContentStream implements ChunkedInput
     @Override
     public boolean isEndOfInput() throws Exception
     {
-        return !_stream.hasMoreChunk();
+        return !hasNextChunk();
     }
 
     @Override

@@ -15,8 +15,8 @@ import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureListener;
 import org.jboss.netty.handler.codec.http.DefaultHttpChunk;
-import org.jboss.netty.handler.codec.http.DefaultHttpChunkTrailer;
 import org.jboss.netty.handler.codec.http.DefaultHttpResponse;
+import org.jboss.netty.handler.codec.http.HttpChunk;
 import org.jboss.netty.handler.codec.http.HttpHeaders.Names;
 import org.jboss.netty.handler.codec.http.HttpHeaders.Values;
 import org.jboss.netty.handler.codec.http.HttpResponse;
@@ -36,6 +36,8 @@ class JerseyResponseWriter implements ContainerResponseWriter
     private ChannelBuffer _buffer;
     private final ChannelFutureListener _trailer;
 
+    private static final HttpChunk EMPTY = new DefaultHttpChunk(ChannelBuffers.EMPTY_BUFFER);
+
     public JerseyResponseWriter(final Channel channel, boolean keepAlive)
     {
         _channel = channel;
@@ -45,7 +47,7 @@ class JerseyResponseWriter implements ContainerResponseWriter
             public void operationComplete(ChannelFuture cf)
             {
                 if (cf.isSuccess()) {
-                    cf = cf.getChannel().write(new DefaultHttpChunkTrailer());
+                    cf = cf.getChannel().write(EMPTY);
                     if (!_keepAlive) {
                         cf.addListener(CLOSE);
                     } else {
@@ -75,11 +77,12 @@ class JerseyResponseWriter implements ContainerResponseWriter
             values.clear();
         }
 
-        // always use chunked transfer-encoding
-        // -> can stream content of unknown length on a persistent connection
-        r.setChunked(true);
-        r.removeHeader(Names.CONTENT_LENGTH);
-        r.setHeader(Names.TRANSFER_ENCODING, Values.CHUNKED);
+        if ((r.getHeader(Names.CONTENT_LENGTH) == null)) {
+            // if no explicit Content-Length is set, use chunked transfer-encoding
+            // -> can stream content of unknown length on a persistent connection
+            r.setChunked(true);
+            r.setHeader(Names.TRANSFER_ENCODING, Values.CHUNKED);
+        }
 
         // write response status and headers
         _channel.write(r);
