@@ -203,9 +203,14 @@ function submitEmailForm()
 var certificateData = null;
 var keyData = null;
 
+function formatPostData(data)
+{
+    return data.replace(/\+/g, '%2B');
+}
+
 function setCertificateData(data)
 {
-    certificateData = data;
+    certificateData = formatPostData(data);
 
     if (keyData != null)
     {
@@ -215,7 +220,7 @@ function setCertificateData(data)
 
 function setKeyData(data)
 {
-    keyData = data;
+    keyData = formatPostData(data);
 
     if (certificateData != null)
     {

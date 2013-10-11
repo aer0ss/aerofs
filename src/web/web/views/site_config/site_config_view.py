@@ -90,8 +90,8 @@ def json_config_email(request):
 # Certificate
 # ------------------------------------------------------------------------
 
-def stripAndSubSpaces(string):
-    return string.strip().replace('\n', '\\n').replace(' ', '+');
+def format_pem(string):
+    return string.strip().replace('\n', '\\n');
 
 @view_config(
     route_name = 'json_config_certificate',
@@ -99,14 +99,8 @@ def stripAndSubSpaces(string):
     renderer = 'json'
 )
 def json_config_certificate(request):
-    # FIXME Because we are uploading the file with Ajax, we can't use
-    # enctype='multipart/form-data', so we end up with a mangled string.
-    certificate = stripAndSubSpaces(request.params['server.browser.certificate'])
-    certificate = re.sub("BEGIN.CERTIFICATE", "BEGIN CERTIFICATE", certificate)
-    certificate = re.sub("END.CERTIFICATE", "END CERTIFICATE", certificate)
-    key = stripAndSubSpaces(request.params['server.browser.key'])
-    key = re.sub("BEGIN.RSA.PRIVATE.KEY", "BEGIN RSA PRIVATE KEY", key)
-    key = re.sub("END.RSA.PRIVATE.KEY", "END RSA PRIVATE KEY", key)
+    certificate = format_pem(request.params['server.browser.certificate'])
+    key = format_pem(request.params['server.browser.key'])
 
     # TODO (MP) need better sanity checking on the values of the cert & key (need to make sure nginx can parse these).
 
