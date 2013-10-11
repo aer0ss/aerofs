@@ -2,6 +2,7 @@ base.host.unified={{ base_host }}
 
 config.loader.is_private_deployment=true
 config.loader.configuration_service_url=https://{{ base_host }}:5435/
+config.loader.base_ca_certificate={{ base_ca_cert }}
 
 base.www.url=https://{{ base_host }}
 base.sp.url=https://{{ base_host }}:4433/sp
