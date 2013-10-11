@@ -39,9 +39,28 @@ Also note the character formatting needed for backslashes.</p>
 
 <p>No default value; if missing, clients will use the compiled-in values for public deployment.</p>
 
+<p>For these 3 properties, the client supports substitution from the user's environment.</p>
+
+<ul>
+<li><p>Given <code>${ENV_VAR}</code>, the client will attempt to substitute it with the value of <code>$ENV_VAR</code> on
+Linux and Mac OS X and <code>%ENV_VAR%</code> on Windows.</p></li>
+<li><p>If the environment variable is not found, the text, <code>${ENV_VAR}</code>, will be left as is.</p></li>
+<li><p>Note that the substitution is <em>case-sensitive</em>, e.g. <code>${HOME}</code> is not equivalent to <code>${home}</code>.</p></li>
+<li><p>Even though <code>%LOCALAPPDATA%</code> isn't defined on Windows XP, the client supports it on Windows XP and
+it will be set to <code>%USERPROFILE%\Local Settings\Application Data</code>.</p></li>
+<li><p>On Linux and Mac OS X, <code>~</code> will be expanded to the user's home directory. The way this is done
+is by taking System property, <code>user.home</code>, provided by the JVM which should coincide with <code>$HOME</code>.</p></li>
+</ul>
+
 <p>Example: <code>lib.anchor.default_location_windows=C:\\Storage\\</code> - the default location will be C:\Storage\AeroFS.</p>
 
-<p>Example: <code>lib.anchor.default_location_osx=/storage_dir/</code> - the default location on OSX will be /storage_dir/AeroFS</p>
+<p>Example: <code>lib.anchor.default_location_osx=/storage_dir/</code> - the default location on OSX will be /storage_dir/AeroFS.</p>
+
+<p>Example: <code>lib.anchor.default_location_windows=${LOCALAPPDATA}\\arrow</code> - the default location will
+be %LOCALAPPDATA%\arrow\AeroFS on Windows Vista and up and it will be
+%USERPROFILE%\Local Settings\Application Data\arrow\AeroFS on Windows XP.</p>
+
+<p>Example: <code>lib.anchor.default_location_osx=~</code> - the default location will be $HOME/AeroFS.</p>
 
 <h2>Identity properties</h2>
 

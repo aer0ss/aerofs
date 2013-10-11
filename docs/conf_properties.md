@@ -32,9 +32,30 @@ Also note the character formatting needed for backslashes.
 
 No default value; if missing, clients will use the compiled-in values for public deployment.
 
+For these 3 properties, the client supports substitution from the user's environment.
+
+- Given `${ENV_VAR}`, the client will attempt to substitute it with the value of `$ENV_VAR` on
+Linux and Mac OS X and `%ENV_VAR%` on Windows.
+
+- If the environment variable is not found, the text, `${ENV_VAR}`, will be left as is.
+
+- Note that the substitution is _case-sensitive_, e.g. `${HOME}` is not equivalent to `${home}`.
+
+- Even though `%LOCALAPPDATA%` isn't defined on Windows XP, the client supports it on Windows XP and
+it will be set to `%USERPROFILE%\Local Settings\Application Data`.
+
+- On Linux and Mac OS X, `~` will be expanded to the user's home directory. The way this is done
+is by taking System property, `user.home`, provided by the JVM which should coincide with `$HOME`.
+
 Example: `lib.anchor.default_location_windows=C:\\Storage\\` - the default location will be C:\Storage\AeroFS.
 
-Example: `lib.anchor.default_location_osx=/storage_dir/` - the default location on OSX will be /storage_dir/AeroFS
+Example: `lib.anchor.default_location_osx=/storage_dir/` - the default location on OSX will be /storage_dir/AeroFS.
+
+Example: `lib.anchor.default_location_windows=${LOCALAPPDATA}\\arrow` - the default location will
+be %LOCALAPPDATA%\arrow\AeroFS on Windows Vista and up and it will be
+%USERPROFILE%\Local Settings\Application Data\arrow\AeroFS on Windows XP.
+
+Example: `lib.anchor.default_location_osx=~` - the default location will be $HOME/AeroFS.
 
 ## Identity properties
 
