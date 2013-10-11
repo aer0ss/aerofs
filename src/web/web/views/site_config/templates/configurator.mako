@@ -342,7 +342,7 @@ function redirectToHome()
     {
         alert("Configured successfully. You will be redirected to the login page.");
         // TODO (MP) can improve this too, but for now leaving as-is, since this code will change in the next iteration anyway.
-        window.location.href = "${request.route_path('login')}";
+        window.location.href = "${request.route_path('marketing_home')}";
     }, 3000);
 }
 
