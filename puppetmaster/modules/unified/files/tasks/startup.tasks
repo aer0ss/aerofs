@@ -11,4 +11,5 @@ bootstrap-restart
 uwsgi-restart
 zephyr-restart
 verkehr-restart
+havre-restart
 create-sp-tomcat-xml

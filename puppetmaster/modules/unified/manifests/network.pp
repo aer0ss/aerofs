@@ -32,6 +32,7 @@ class unified::network {
     # allow 5435  (config)
     # allow 8888  (zephyr)
     # allow 29438 (verkehr)
+    # allow 8084  (havre tunnel)
     firewall {"000 allow RELATED, ESTABLISHED":
         state  => ['RELATED', 'ESTABLISHED'],
         proto  => 'all',
@@ -92,6 +93,12 @@ class unified::network {
         table => "filter",
         chain => "INPUT",
         dport => 29438 ,
+        action => "accept",
+    }->
+    firewall {"207 allow havre tunnel":
+        table => "filter",
+        chain => "INPUT",
+        dport => 8084 ,
         action => "accept",
     }->
     # deny all others

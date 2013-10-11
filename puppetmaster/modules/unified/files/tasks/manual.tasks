@@ -4,6 +4,7 @@ browser-cert-pull
 nginx-restart
 spdb-schema-init
 verkehr-certify
+havre-certify
 ejabberd-metadata-reset
 ejabberd-fix-config
 ejabberd-certify
