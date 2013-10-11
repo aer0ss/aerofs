@@ -5,12 +5,11 @@ RESOURCES=../src/bootstrap/resources
 OPT=bootstrap/opt/bootstrap
 BIN=bootstrap/usr/bin
 DEBIAN=bootstrap/DEBIAN
-INIT_D=bootstrap/etc/init.d
 INIT=bootstrap/etc/init
 
 # Debian-related file copies.
 mkdir -p $DEBIAN
-for f in control conffiles preinst postinst
+for f in control conffiles preinst
 do
     # cp -r is BAD, prefer cp -a or cp -R for OSX compatibility; man 1 cp
     cp -a $RESOURCES/$f $DEBIAN
@@ -39,11 +38,6 @@ do
     cp $RESOURCES/bin/$res $BIN/aerofs-$res
     chmod a+x $BIN/aerofs-$res
 done
-
-# Create the startup file.
-mkdir -p $INIT_D
-echo "/usr/bin/aerofs-bootstrap-taskfile /opt/bootstrap/tasks/startup.tasks" > $INIT_D/bootstrap
-chmod a+x $INIT_D/bootstrap
 
 # Create the bootstrap service conf file.
 mkdir -p $INIT

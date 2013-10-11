@@ -77,6 +77,13 @@ class unified {
         require => File["/opt/bootstrap/tasks"]
     }
 
+    cron { "bootstrap_startup":
+        command => "/usr/bin/aerofs-bootstrap-taskfile /opt/bootstrap/tasks/startup.tasks",
+        user    => "root",
+        special => "reboot",
+        require => Package["aerofs-bootstrap"]
+    }
+
     # --------------
     # Admin Panel
     # --------------
