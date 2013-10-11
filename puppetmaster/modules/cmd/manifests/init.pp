@@ -43,4 +43,5 @@ class cmd {
         proxy                => 'http://127.0.0.1:9080',
         ensure               => present,
     }
+    logrotate::log{"cmd-server": }
 }

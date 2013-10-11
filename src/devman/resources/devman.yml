@@ -13,7 +13,7 @@ http:
         file:
             enabled: false
             archive: false
-            currentLogFilename: /var/log/aerofs/devman.requests.log
+            currentLogFilename: /var/log/devman/devman.requests.log
             timeZone: UTC
 
 logging:
@@ -25,7 +25,7 @@ logging:
     file:
         enabled: true
         archive: false
-        currentLogFilename: /var/log/aerofs/devman.log
+        currentLogFilename: /var/log/devman/devman.log
         timeZone: UTC
 
     loggers:

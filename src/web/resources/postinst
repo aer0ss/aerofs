@@ -1,6 +1,8 @@
 #!/bin/bash
 set -e
 
+chown www-data:www-data /var/log/web -R
+
 PYHOME=/opt/web/pythonenv
 PYTHON=$PYHOME/bin/python
 
@@ -17,7 +19,7 @@ virtualenv $PYHOME
 cd /opt/web
 $PYHOME/bin/pip install --find-links file:///opt/web/sdist      \
                         --no-index                              \
-                        --log /var/log/aerofs/web.install.log   \
+                        --log /var/log/web/web.install.log   \
                         --requirement /opt/web/requirements.txt
 $PYTHON setup.py install
 

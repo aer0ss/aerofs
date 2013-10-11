@@ -9,11 +9,13 @@ INIT=bootstrap/etc/init
 
 # Debian-related file copies.
 mkdir -p $DEBIAN
-for f in control conffiles preinst
+for f in control conffiles
 do
     # cp -r is BAD, prefer cp -a or cp -R for OSX compatibility; man 1 cp
     cp -a $RESOURCES/$f $DEBIAN
 done
+
+mkdir -p bootstrap/var/log/bootstrap
 
 # Java-related file copies.
 mkdir -p $OPT

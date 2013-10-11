@@ -18,6 +18,8 @@ do
     cp $RESOURCES/$f $DEBIAN
 done
 
+mkdir -p web/var/log/web
+
 # Web repo and python-lib copy
 mkdir -p $OPT
 mkdir -p $EXTRA
