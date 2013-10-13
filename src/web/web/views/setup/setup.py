@@ -6,8 +6,6 @@ import os
 import socket
 from aerofs_common.configuration import Configuration
 from pyramid.view import view_config
-from subprocess import check_call
-from subprocess import CalledProcessError
 from pyramid.httpexceptions import HTTPFound
 from web.util import *
 
@@ -71,18 +69,24 @@ def json_setup_hostname(request):
 )
 def json_setup_email(request):
     base_www_support_email_address = request.params['base.www.support_email_address']
-    email_sender_public_host       = request.params['email.sender.public_host']
-    email_sender_public_username   = request.params['email.sender.public_username']
-    email_sender_public_password   = request.params['email.sender.public_password']
+
+    if request.params['email.server'] == 'remote':
+        email_sender_public_host       = request.params['email.sender.public_host']
+        email_sender_public_username   = request.params['email.sender.public_username']
+        email_sender_public_password   = request.params['email.sender.public_password']
+    else:
+        email_sender_public_host = ''
+        email_sender_public_username = ''
+        email_sender_public_password = ''
 
     configuration = Configuration()
 
     # TODO (MP) need better sanity checking here. Need to make sure SMTP creds will work.
 
-    configuration.set_persistent_value('support_address', base_www_support_email_address)
-    configuration.set_persistent_value('email_host',       email_sender_public_host)
-    configuration.set_persistent_value('email_user',   email_sender_public_username)
-    configuration.set_persistent_value('email_password',   email_sender_public_password)
+    configuration.set_persistent_value('support_address',   base_www_support_email_address)
+    configuration.set_persistent_value('email_host',        email_sender_public_host)
+    configuration.set_persistent_value('email_user',        email_sender_public_username)
+    configuration.set_persistent_value('email_password',    email_sender_public_password)
 
     return {}
 

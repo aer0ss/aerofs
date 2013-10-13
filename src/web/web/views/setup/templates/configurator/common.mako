@@ -13,17 +13,19 @@
         onclick='return ${javascriptCallback};'
         id='nextButton'
         class='btn btn-primary pull-right'
-        type='submit'>Next</button>
+        type='submit'>Next ></button>
 </%def>
 
 <%def name="scripts(page)">
     <script type="text/javascript">
         function verifyAbsence(elementID) {
+            ## TODO (WW) why doens't $('#' + elementID) work here?
             var v = document.getElementById(elementID).value;
             return v == null || v == "";
         }
 
         function verifyPresence(elementID, message) {
+            ## TODO (WW) why doens't $('#' + elementID) work here?
             var v = document.getElementById(elementID).value;
             if (v == null || v == "") {
                 displayError(message);

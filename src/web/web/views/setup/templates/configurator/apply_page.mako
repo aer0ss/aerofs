@@ -2,7 +2,7 @@
 <%namespace name="spinner" file="../spinner.mako"/>
 <%namespace name="common" file="common.mako"/>
 
-<h4>Sit Back and Enjoy the Ride</h4>
+<h4>Sit back and enjoy the ride</h4>
 
 ## N.B. When adding or removing content, adjust the modals' "top" style
 ## to match the content's position.
@@ -33,7 +33,7 @@
 <div id="success-modal" class="modal hide" tabindex="-1" role="dialog"
         style="top: 150px; width: 440px; margin-left: -220px;">
     <div class="modal-header">
-        <h4 class="text-success">System is ready!</h4>
+        <h4 class="text-success">The system is ready!</h4>
     </div>
     <div class="modal-body">
         <p>Hooray! System configuration is complete.

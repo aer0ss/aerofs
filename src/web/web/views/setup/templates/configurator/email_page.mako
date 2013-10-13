@@ -1,54 +1,101 @@
 <%namespace name="csrf" file="../csrf.mako"/>
 <%namespace name="common" file="common.mako"/>
 
-<h4>Email</h4>
+<% public_host = current_config['email.sender.public_host'] %>
 
-<p>AeroFS sends emails to users for many different purposes. On this page you can configure your support email address and SMTP credentials. If you do not specify SMTP information, AeroFS will use its own mail setup.</p>
+<h4>Email server:</h4>
 
-<hr/>
 <form id="emailForm" method="POST">
-    ${csrf.token_input()}
-    <table width="100%">
-        <tr>
-        <td width="30%"><label for="base.www.support_email_address">Support Email:</label></td>
+    <div class="page_block">
+        ${csrf.token_input()}
+        <label class="radio">
+            <input type='radio' id='local-mail-server' name='email.server' value='local'
+                   onchange="localMailServerSelected()"
+               %if not public_host:
+                   checked
+               %endif
+            >
+            Use AeroFS Service Appliance's local mail relay
+        </label>
 
-        <td width="70%"><input class="span6" id="base.www.support_email_address" name="base.www.support_email_address" type="text" value=${current_config['base.www.support_email_address']}></td>
-        </tr>
+        <label class="radio">
+            <input type='radio' name='email.server' value='remote'
+                   onchange="externalMailServerSelected()"
+                %if public_host:
+                   checked
+                %endif
+            >
+            Use external mail relay
+        </label>
 
-        <tr>
-        <td width="30%"><label for="email.sender.public_host">SMTP Host:</label></td>
-        <td width="70%"><input class="span6" id="email.sender.public_host" name="email.sender.public_host" type="text" value=${current_config['email.sender.public_host']}></td>
-        </tr>
+        <label for="email.sender.public_host">SMTP host:</label>
+        <input class="input-block-level public-host-option" id="email.sender.public_host" name="email.sender.public_host" type="text" value="${public_host}"
+            %if not public_host:
+                disabled
+            %endif
+        >
 
-        <tr>
-        <td width="30%"><label for="email.sender.public_username">SMTP Username:</label></td>
-        <td width="70%"><input class="span6" id="email.sender.public_username" name="email.sender.public_username" type="text" value=${current_config['email.sender.public_username']}></td>
-        </tr>
+        <div class="row-fluid">
+            <div class="span6">
+                <label for="email.sender.public_username">SMTP username:</label>
+                <input class="input-block-level public-host-option" id="email.sender.public_username" name="email.sender.public_username" type="text" value="${current_config['email.sender.public_username']}"
+                    %if not public_host:
+                        disabled
+                    %endif
+                >
+            </div>
+            <div class="span6">
+                <label for="email.sender.public_password">SMTP password:</label>
+                <input class="input-block-level public-host-option" id="email.sender.public_password" name="email.sender.public_password" type="password" value="${current_config['email.sender.public_password']}"
+                    %if not public_host:
+                        disabled
+                    %endif
+                >
+            </div>
+        </div>
 
-        <tr>
-        <td width="30%"><label for="email.sender.public_password">SMTP Password:</label></td>
-        <td width="70%"><input class="span6" id="email.sender.public_password" name="email.sender.public_password" type="password" value=${current_config['email.sender.public_password']}></td>
-        </tr>
-    </table>
+        <p>AeroFS sends emails to users for many purposes such as sign-up verification and folder invitations. A functional email server is required.</p>
+    </div>
+
+    <div class="page_block">
+        <h4>Support email address:</h4>
+        <input class="input-block-level" id="base.www.support_email_address" name="base.www.support_email_address" type="text" value=${current_config['base.www.support_email_address']}>
+        <p>This email address is used for all "support" links. Set it to an email address you want users to send support requests to. The default value is <code>support@aerofs.com</code>.</p>
+    </div>
+
     <hr/>
-
     ${common.render_previous_button(page)}
     ${common.render_next_button("submitEmailForm()")}
 </form>
 
 <script type="text/javascript">
+    function localMailServerSelected() {
+        $('.public-host-option').attr("disabled", "disabled");
+    }
+
+    function externalMailServerSelected() {
+        $('.public-host-option').removeAttr("disabled");
+    }
+
     function submitEmailForm() {
         disableButtons();
 
-        if (verifyPresence("base.www.support_email_address", "Must specify a support email address."))
-        {
-            var $form = $('#emailForm');
-            var serializedData = $form.serialize();
+        if (!verifyPresence("base.www.support_email_address",
+                    "Please specify a support email address.")) return false;
 
-            doPost("${request.route_path('json_setup_email')}",
-                serializedData, gotoNextPage);
+        var remote = $("input[name=email.server]:checked", '#emailForm').val() == 'remote';
+        if (remote && (
+                !verifyPresence("email.sender.public_host", "Please specify SMTP host.") ||
+                !verifyPresence("email.sender.public_username", "Please specify SMTP username.") ||
+                !verifyPresence("email.sender.public_password", "Please specify SMTP password."))) {
+            return false;
         }
 
-        event.preventDefault();
+        var $form = $('#emailForm');
+        var serializedData = $form.serialize();
+
+        doPost("${request.route_path('json_setup_email')}",
+            serializedData, gotoNextPage);
+        return false;
     }
 </script>

@@ -6,5 +6,5 @@
 
 <form method="get" method="POST">
     <input type="hidden" name="page" value="1"/>
-    <button id="submitButton" class="btn btn-primary" type="submit">Let's get started!</button>
+    <button id="submitButton" class="btn btn-primary" type="submit">Let's Get Started!</button>
 </form>

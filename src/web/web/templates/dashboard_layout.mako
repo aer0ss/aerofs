@@ -83,8 +83,8 @@
         <li class="nav-header">My Team</li>
         ${render_admin_team_links()}
         %if request.registry.settings['deployment.mode'] != 'public':
-            <li class="nav-header">My System</li>
-            ${render_admin_system_links()}
+            <li class="nav-header">My Appliance</li>
+            ${render_admin_appliance_links()}
         %endif
     </ul>
 </%def>
@@ -116,7 +116,7 @@
     % endfor
 </%def>
 
-<%def name="render_admin_system_links()">
+<%def name="render_admin_appliance_links()">
     <%
         links = [
             ('status', _("Service Status")),
