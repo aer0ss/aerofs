@@ -1,4 +1,3 @@
-<%namespace name="csrf" file="../csrf.mako"/>
 <%namespace name="common" file="common.mako"/>
 
 <p>Welcome to the AeroFS Site Configuration Interface. This page will guide you through setting up your private AeroFS installation.</p>

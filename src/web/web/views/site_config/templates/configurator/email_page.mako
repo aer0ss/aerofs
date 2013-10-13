@@ -1,7 +1,7 @@
 <%namespace name="csrf" file="../csrf.mako"/>
 <%namespace name="common" file="common.mako"/>
 
-<h5>Email</h5>
+<h4>Email</h4>
 
 <p>AeroFS sends emails to users for many different purposes. On this page you can configure your support email address and SMTP credentials. If you do not specify SMTP information, AeroFS will use its own mail setup.</p>
 
@@ -32,12 +32,8 @@
     </table>
     <hr/>
 
-    <table width="100%" align="left|right">
-    <tr>
-    <td>${common.render_previous_button(page)}</td>
-    <td align="right">${common.render_next_button("submitEmailForm()")}</td>
-    </tr>
-    </table>
+    ${common.render_previous_button(page)}
+    ${common.render_next_button("submitEmailForm()")}
 </form>
 
 <script type="text/javascript">

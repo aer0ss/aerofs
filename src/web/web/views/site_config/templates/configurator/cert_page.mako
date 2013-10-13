@@ -1,7 +1,7 @@
 <%namespace name="csrf" file="../csrf.mako"/>
 <%namespace name="common" file="common.mako"/>
 
-<h5>Browser Certificate</h5>
+<h4>Browser Certificate</h4>
 
 <p>You can optionally provide a certificate and key to be used by the AeroFS web server. This will eliminate any certification related error messages when using the AeroFS web interface.</p>
 
@@ -30,12 +30,8 @@
     </table>
     <hr/>
 
-    <table width="100%" align="left|right">
-       <tr>
-            <td>${common.render_previous_button(page)}</td>
-            <td align="right">${common.render_next_button("submitCertificateForm()")}</td>
-        </tr>
-    </table>
+    ${common.render_previous_button(page)}
+    ${common.render_next_button("submitCertificateForm()")}
 </form>
 
 <script type="text/javascript">

@@ -3,6 +3,8 @@
         onclick="gotoPrevPage(); return false"
         id='previousButton'
         class='btn'
+        ## make it the last element in tab order (max allowed value is 32767)
+        tabindex='10000'
         type='button'>Previous</button>
 </%def>
 
@@ -10,7 +12,7 @@
     <button
         onclick='return ${javascriptCallback};'
         id='nextButton'
-        class='btn btn-primary'
+        class='btn btn-primary pull-right'
         type='submit'>Next</button>
 </%def>
 
@@ -31,22 +33,23 @@
             return true;
         }
 
-        function doPost(postRoute, postData, callback) {
+        ## @param onSuccess the function called when the request is successful
+        ## @param onFailure the function called when the request failed. Note
+        ##      that the function should NOT display errors. doPost() does so by
+        ##      calling displayError().
+        function doPost(postRoute, postData, onSuccess, onFailure) {
+            ## TODO (WW) use the unified error displaying framework
             $.post(postRoute, postData)
-            .done(function (response)
-            {
+            .done(function (response) {
                 var error = response['error'];
-                if (error)
-                {
+                if (error) {
+                    onFailure();
                     displayError(error);
+                } else {
+                    onSuccess(response);
                 }
-                else
-                {
-                    callback(response);
-                }
-            })
-            .fail(function (jqXHR, textStatus, errorThrown)
-            {
+            }).fail(function (jqXHR, textStatus, errorThrown) {
+                onFailure();
                 displayError("Error: " + textStatus + " " + errorThrown);
             });
         }

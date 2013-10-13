@@ -1,7 +1,7 @@
 <%namespace name="csrf" file="../csrf.mako"/>
 <%namespace name="common" file="common.mako"/>
 
-<h5>DNS and Hostnames</h5>
+<h4>DNS and Hostnames</h4>
 
 <p>You need to configure DNS in your office to point to the static IP held by this system. If you're using openstack, configure a floating IP for this instance. If you're using VirtualBox, get your static IP from your system console.</p>
 <p>We recommend the following hostname convention:</p>
@@ -20,12 +20,8 @@
     </table>
     <hr/>
 
-    <table width="100%" align="left|right">
-    <tr>
-    <td>${common.render_previous_button(page)}</td>
-    <td align="right">${common.render_next_button("submitHostnameForm()")}</td>
-    </tr>
-    </table>
+    ${common.render_previous_button(page)}
+    ${common.render_next_button("submitHostnameForm()")}
 </form>
 
 <script type="text/javascript">

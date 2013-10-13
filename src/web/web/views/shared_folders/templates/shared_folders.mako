@@ -2,8 +2,8 @@
 <%! page_title = "Shared Folders" %>
 
 <%namespace name="shared_folder_modals" file="shared_folder_modals.mako" />
-
 <%namespace name="credit_card_modal" file="credit_card_modal.mako"/>
+<%namespace name="spinner" file="spinner.mako"/>
 
 <%block name="css">
     <link href="${request.static_path('web:static/css/datatables-bootstrap.css')}"
@@ -81,10 +81,10 @@
     %if is_admin:
         <%credit_card_modal:javascript/>
     %endif
-
+    <%spinner:scripts/>
     <script src="${request.static_path('web:static/js/jquery.dataTables.min.js')}"></script>
     <script src="${request.static_path('web:static/js/datatables_extensions.js')}"></script>
-    <script src="${request.static_path('web:static/js/spin.min.js')}"></script>
+
     <script type="text/javascript">
         $(document).ready(function() {
             $('#folders_table').dataTable({
@@ -339,8 +339,7 @@
             });
 
             $mainModal.on('hidden', function() {
-                ## Stop spinner
-                resetModalSpinner();
+                stopModalSpinner();
                 ## Remove previous invited email
                 $("#modal-invitee-email").val('');
             });
@@ -588,60 +587,23 @@
                 }
             }
 
-            ##################################
-            ## Spinner related functions
-            ##################################
-
-            function resetModalSpinner() {
-                var spin = $('#modal-spinner');
-                if (spin.data().spinner) spin.data().spinner.stop();
-            }
-
-            function startModalSpinner() {
-                $('#modal-spinner').spin(spinnerOpts);
-            }
-
-            function stopModalSpinner() {
-                $('#modal-spinner').data().spinner.stop();
-            }
-
             function displayModalError(errorHeader, error) {
                 showErrorMessage(errorHeader + error + ".");
             }
 
-            ## spin.js jQuery plugin copied from http://fgnass.github.com/spin.js/
-            $.fn.spin = function(opts) {
-                this.each(function() {
-                    var $this = $(this), data = $this.data();
+            ##################################
+            ## Spinner related functions
+            ##################################
 
-                    if (data.spinner) {
-                        data.spinner.stop();
-                        delete data.spinner;
-                    }
-                    if (opts !== false) {
-                        data.spinner = new Spinner($.extend({color: $this.css('color')}, opts)).spin(this);
-                    }
-                });
-                return this;
-            };
+            initializeSpinners();
 
-            var spinnerOpts = {
-                lines: 11,
-                length: 5,
-                width: 1.6,
-                radius: 4,
-                corners: 1,
-                rotate: 0,
-                color: '#000',
-                speed: 1,
-                trail: 60,
-                shadow: false,
-                hwaccel: true,
-                className: 'spinner',
-                zIndex: 2e9,
-                top: 3,
-                left: 0
-            };
+            function startModalSpinner() {
+                startSpinner($('#modal-spinner'), 3);
+            }
+
+            function stopModalSpinner() {
+                stopSpinner($('#modal-spinner'));
+            }
         });
     </script>
 </%block>

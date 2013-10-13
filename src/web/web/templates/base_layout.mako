@@ -116,11 +116,6 @@
     <script src="${request.static_path('web:static/js/jquery.easing.1.3.js')}"></script>
     <script src="${request.static_path('web:static/js/bootstrap.min.js')}"></script>
     <script src="${request.static_path('web:static/js/aerofs.js')}"></script>
-    <script type="text/javascript">
-                    $('#jobsCarousel').carousel({
-                        interval: 5000
-                    })
-    </script> 
     <%
         from web.util import get_last_flash_message_and_empty_queue
         ret = get_last_flash_message_and_empty_queue(request)
