@@ -16,11 +16,11 @@ BOOTSTRAP_PIPE_FILE = "/tmp/bootstrap"
 log = logging.getLogger("web")
 
 @view_config(
-    route_name='site_config',
+    route_name='setup',
     permission='admin',
-    renderer='site_config.mako'
+    renderer='setup.mako'
 )
-def site_config_view(request):
+def setup_view(request):
 
     settings = {}
     configuration = Configuration()
@@ -42,11 +42,11 @@ def hostname_resolves(hostname):
         return False
 
 @view_config(
-    route_name = 'json_config_hostname',
+    route_name = 'json_setup_hostname',
     permission='admin',
     renderer = 'json'
 )
-def json_config_hostname(request):
+def json_setup_hostname(request):
     base_host_unified = request.params['base.host.unified']
 
     if not hostname_resolves(base_host_unified):
@@ -65,11 +65,11 @@ def json_config_hostname(request):
 # ------------------------------------------------------------------------
 
 @view_config(
-    route_name = 'json_config_email',
+    route_name = 'json_setup_email',
     permission='admin',
     renderer = 'json'
 )
-def json_config_email(request):
+def json_setup_email(request):
     base_www_support_email_address = request.params['base.www.support_email_address']
     email_sender_public_host       = request.params['email.sender.public_host']
     email_sender_public_username   = request.params['email.sender.public_username']
@@ -94,11 +94,11 @@ def format_pem(string):
     return string.strip().replace('\n', '\\n');
 
 @view_config(
-    route_name = 'json_config_certificate',
+    route_name = 'json_setup_certificate',
     permission='admin',
     renderer = 'json'
 )
-def json_config_certificate(request):
+def json_setup_certificate(request):
     certificate = format_pem(request.params['server.browser.certificate'])
     key = format_pem(request.params['server.browser.key'])
 
@@ -116,11 +116,11 @@ def json_config_certificate(request):
 # ------------------------------------------------------------------------
 
 @view_config(
-    route_name = 'json_config_apply',
+    route_name = 'json_setup_apply',
     permission='admin',
     renderer = 'json'
 )
-def json_config_apply(request):
+def json_setup_apply(request):
     log.warn("Applying configuration.")
     shutil.copyfile('/opt/bootstrap/tasks/manual.tasks', BOOTSTRAP_PIPE_FILE)
 
@@ -131,11 +131,11 @@ def json_config_apply(request):
 # ------------------------------------------------------------------------
 
 @view_config(
-    route_name = 'json_config_poll',
+    route_name = 'json_setup_poll',
     permission='admin',
     renderer = 'json'
 )
-def json_config_poll(request):
+def json_setup_poll(request):
     running = os.stat(BOOTSTRAP_PIPE_FILE).st_size != 0
     log.warn("Poll, running:" + str(running))
 
@@ -146,11 +146,11 @@ def json_config_poll(request):
 # ------------------------------------------------------------------------
 
 @view_config(
-    route_name = 'json_config_finalize',
+    route_name = 'json_setup_finalize',
     permission='admin',
     renderer = 'json'
 )
-def json_config_finalize(request):
+def json_setup_finalize(request):
     log.warn("Finalizing configuration...")
 
     configuration = Configuration()
@@ -167,8 +167,8 @@ def json_config_finalize(request):
 # ------------------------------------------------------------------------
 
 @view_config(
-    route_name = 'site_config_redirect',
+    route_name = 'setup_redirect',
     permission='admin'
 )
-def site_config_redirect(request):
-    return HTTPFound(location='/site_config')
+def setup_redirect(request):
+    return HTTPFound(location='/setup')

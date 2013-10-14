@@ -4,7 +4,7 @@ __all__ = [
         'marketing',
         'signup',
         'status',
-        'site_config',
+        'setup',
         'login',
         'download',
         'devices',

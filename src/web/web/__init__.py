@@ -9,7 +9,6 @@ from root_factory import RootFactory
 from web.util import is_private_deployment, is_configuration_initialized
 from pyramid.httpexceptions import HTTPFound
 from pyramid.request import Request
-from views.site_config.site_config_view import site_config_redirect
 import views
 
 class RedirectMiddleware(object):
@@ -22,14 +21,14 @@ class RedirectMiddleware(object):
 
     def needs_redirect(self, environ):
         redirect_not_required = [
-                '/site_config',
-                '/site_config_redirect',
-                '/json_config_hostname',
-                '/json_config_email',
-                '/json_config_certificate',
-                '/json_config_apply',
-                '/json_config_poll',
-                '/json_config_finalize']
+                '/setup',
+                '/setup_redirect',
+                '/json_setup_hostname',
+                '/json_setup_email',
+                '/json_setup_certificate',
+                '/json_setup_apply',
+                '/json_setup_poll',
+                '/json_setup_finalize']
 
         # Need redirect if:
         #  1. Private deployment, and
@@ -42,7 +41,7 @@ class RedirectMiddleware(object):
     def __call__(self, environ, start_response):
         if self.needs_redirect(environ):
             request = self.app.request_factory(environ)
-            response = self.app.invoke_subrequest(Request.blank('/site_config_redirect'))
+            response = self.app.invoke_subrequest(Request.blank('/setup_redirect'))
             return response(environ, start_response)
 
         return self.app(environ, start_response)

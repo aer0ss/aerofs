@@ -18,6 +18,6 @@
 
 %>
 
-<%! page_title = "Site Configuration" %>
+<%! page_title = "Site Setup" %>
 
 <%inherit file="${include}"/>

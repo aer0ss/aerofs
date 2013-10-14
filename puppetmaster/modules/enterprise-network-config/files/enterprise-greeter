@@ -208,7 +208,7 @@ def print_network_state_and_next_instructions():
     print "                      Gateway: {}".format(gateway)
     print ""
     if address:
-        url = centered("https://{}/site_config".format(address))
+        url = centered("https://{}".format(address))
         colored_url = "{}{}{}".format(CYAN, url, NORMAL)
         print centered("To continue configuring this node, point your browser at:")
         print colored_url
