@@ -40,7 +40,6 @@ class RedirectMiddleware(object):
 
     def __call__(self, environ, start_response):
         if self.needs_redirect(environ):
-            request = self.app.request_factory(environ)
             response = self.app.invoke_subrequest(Request.blank('/setup_redirect'))
             return response(environ, start_response)
 
