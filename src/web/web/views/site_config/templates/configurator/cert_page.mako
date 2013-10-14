@@ -6,7 +6,7 @@
 <p>You can optionally provide a certificate and key to be used by the AeroFS web server. This will eliminate any certification related error messages when using the AeroFS web interface.</p>
 
 <hr/>
-<form id="certificateForm">
+<form id="certificateForm" method="POST">
     ${csrf.token_input()}
 
     <input type='radio' name='cert.option' value='existing' checked="checked">

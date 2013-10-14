@@ -6,7 +6,7 @@
 <p>AeroFS sends emails to users for many different purposes. On this page you can configure your support email address and SMTP credentials. If you do not specify SMTP information, AeroFS will use its own mail setup.</p>
 
 <hr/>
-<form id="emailForm">
+<form id="emailForm" method="POST">
     ${csrf.token_input()}
     <table width="100%">
         <tr>

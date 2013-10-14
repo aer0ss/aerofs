@@ -9,7 +9,7 @@
 <p>For example, at the AeroFS office we might choose share.aerofs.com. Once you have your DNS set up, enter the hostname you used press "Next".</p>
 
 <hr/>
-<form id="hostnameForm">
+<form id="hostnameForm" method="POST">
     ${csrf.token_input()}
     <table width="100%">
         <tr>

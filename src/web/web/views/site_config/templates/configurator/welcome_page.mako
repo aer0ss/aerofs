@@ -4,7 +4,7 @@
 <p>You can start over at any time. Changes will not be visible until they are applied during the final stage.</p>
 <hr/>
 
-<form method="get">
+<form method="get" method="POST">
     <input type="hidden" name="page" value="1"/>
     <button id="submitButton" class="btn btn-primary" type="submit">Let's get started!</button>
 </form>

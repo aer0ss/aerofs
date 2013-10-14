@@ -10,7 +10,7 @@
 <p>Your changes will be propagated to various AeroFS system components.
     This might take a short while.</p>
 
-<form id="applyForm">
+<form id="applyForm" method="POST">
     ${csrf.token_input()}
     <hr/>
     ${common.render_previous_button(page)}
