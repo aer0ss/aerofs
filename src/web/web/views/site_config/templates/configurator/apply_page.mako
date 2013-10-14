@@ -107,15 +107,10 @@
     ## Stage 2: wait until the configuration process is complete
     ## TODO (WW) add timeouts
     var interval;
-    var firstRun = true;
     function pollForBootstrap() {
         interval = window.setInterval(function() {
-            if (firstRun) {
-                firstRun = false;
-            } else {
-                doPost("${request.route_path('json_config_poll')}",
-                        serializedData, finalizeConfigurationIfCompleted);
-            }
+            doPost("${request.route_path('json_config_poll')}",
+                    serializedData, finalizeConfigurationIfCompleted);
         }, 1000);
     }
 
