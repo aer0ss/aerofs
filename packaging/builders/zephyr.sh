@@ -1,25 +1,19 @@
-#!/bin/bash -ue
-rm -rf zephyr
+#!/bin/bash
+set -ue
 
 RESOURCES=../src/zephyr/resources
-OPT=zephyr/opt/zephyr
+SCRIPT_DIR="$( cd -P "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+CONFIG="$RESOURCES/logback.xml $RESOURCES/banner.txt"
+JAVA_ARGS="-d64 -Xms712m -Xmx1536m"
+SERVICE_ARGS="0.0.0.0 8888"
+
+"$SCRIPT_DIR"/generate_service_deb_template.sh zephyr "$CONFIG" "$JAVA_ARGS" "$SERVICE_ARGS"
+
 INIT=zephyr/etc/init
-DEBIAN=zephyr/DEBIAN
 
-# Debian-related file copies.
-mkdir -p $DEBIAN
-for f in control conffiles preinst prerm postrm
-do
-    # cp -r is BAD, prefer cp -a or cp -R for OSX compatibility; man 1 cp
-    cp -a $RESOURCES/$f $DEBIAN
-done
-
-# Java-related file copies.
-mkdir -p $OPT
-cp ../out.ant/artifacts/zephyr/*.jar $OPT
-
-# Upstart-related file copies.
-mkdir -p $INIT
-cp $RESOURCES/zephyr.conf $INIT
-cp $RESOURCES/logback.xml $OPT
-cp $RESOURCES/banner.txt $OPT
+# tweak upstart config
+cat << EOF >> $INIT/zephyr.conf
+# Set a high ulimit for no files to allow a huge # of users to connect
+limit nofile 1024000 1024000
+EOF

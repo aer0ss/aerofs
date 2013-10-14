@@ -35,4 +35,5 @@ class web (
         require => Package["aerofs-web"],
         notify => Service["uwsgi"]
     }
+    logrotate::log{"web": }
 }

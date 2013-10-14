@@ -1,24 +1,11 @@
-#!/bin/bash -ue
-rm -rf devman
+#!/bin/bash
+set -ue
 
 RESOURCES=../src/devman/resources
-OPT=devman/opt/devman
-INIT=devman/etc/init
-DEBIAN=devman/DEBIAN
+SCRIPT_DIR="$( cd -P "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-# Debian-related file copies.
-mkdir -p $DEBIAN
-for f in control conffiles preinst prerm postrm
-do
-    # cp -r is BAD, prefer cp -a or cp -R for OSX compatibility; man 1 cp
-    cp -a $RESOURCES/$f $DEBIAN
-done
+CONFIG="$RESOURCES/devman.yml"
+JAVA_ARGS="-XX:+AggressiveOpts -XX:+UseFastAccessorMethods"
+SERVICE_ARGS="devman.yml"
 
-# Java-related file copies.
-mkdir -p $OPT
-cp ../out.ant/artifacts/devman/*.jar $OPT
-
-# Upstart-related file copies.
-mkdir -p $INIT
-cp $RESOURCES/devman.conf $INIT
-cp $RESOURCES/devman.yml $OPT
+"$SCRIPT_DIR"/generate_service_deb_template.sh devman "$CONFIG" "$JAVA_ARGS" "$SERVICE_ARGS"

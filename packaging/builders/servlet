@@ -33,21 +33,6 @@ do
     cp -R "$RESOURCES"/$F "$DEBIAN"
 done
 
-# Logging directory for aerofs tomcat applications.
-cat << EOF >> "$DEBIAN"/preinst
-#!/bin/bash
-mkdir -p /var/log/aerofs
-EOF
-
-# Must be done after install to ensure existance of the tomcat package.
-cat << EOF >> "$DEBIAN"/postinst
-#!/bin/bash
-chown -R tomcat6:tomcat6 /var/log/aerofs
-EOF
-
-chmod 0755 "$DEBIAN"/postinst
-chmod 0755 "$DEBIAN"/preinst
-
 # package-data files
 cp -R "$BASEDIR"/out.ant/artifacts/"$SERVLET_NAME"/exploded/* "$INSTALL"/
 
@@ -58,4 +43,3 @@ if [ $SERVLET_NAME == "sv" ]
 then
     CONTEXT_FILENAME="sv_beta.xml"
 fi
-

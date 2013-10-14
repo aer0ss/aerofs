@@ -36,7 +36,7 @@ class servlet::config::sv(
         require => Package["aerofs-sv"]
     }
 
-    servlet::log{"/var/log/aerofs/sv.log":
+    servlet::log{"sv":
         config_filename => "/usr/share/aerofs-sv/sv/WEB-INF/classes/logback.xml",
         log_level       => "INFO",
         require         => Package["aerofs-sv"]

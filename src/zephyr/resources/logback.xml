@@ -1,16 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <configuration>
-    <appender name="LOGFILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <File>/var/log/aerofs/zephyr.log</File>
+    <appender name="LOGFILE" class="ch.qos.logback.core.FileAppender">
+        <File>/var/log/zephyr/zephyr.log</File>
         <Append>true</Append>
         <encoder>
             <pattern>%d{HHmmss.SSS}%-0.1p %t, %m%n</pattern>
         </encoder>
-
-        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <fileNamePattern>/var/log/aerofs/zephyr.log.%d{yyyy-MM-dd}</fileNamePattern>
-        </rollingPolicy>
     </appender>
 
     <appender name="ASYNC" class="ch.qos.logback.classic.AsyncAppender">

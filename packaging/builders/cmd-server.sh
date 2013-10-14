@@ -1,26 +1,15 @@
-#!/bin/bash -ue
-rm -rf cmd-server
+#!/bin/bash
+set -ue
 
 RESOURCES=../src/command/resources
-OPT=cmd-server/opt/cmd-server
-INIT=cmd-server/etc/init
+SCRIPT_DIR="$( cd -P "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+CONFIG="$RESOURCES/cmd-server.yml $RESOURCES/logback.xml"
+JAVA_ARGS="-XX:+AggressiveOpts -XX:+UseFastAccessorMethods -Dlogback.configurationFile=./logback.xml"
+SERVICE_ARGS="cmd-server.yml 2>> /var/log/cmd-server/cmd-server.err.log"
+
+"$SCRIPT_DIR"/generate_service_deb_template.sh cmd-server "$CONFIG" "$JAVA_ARGS" "$SERVICE_ARGS"
+
 DEBIAN=cmd-server/DEBIAN
 
-# Debian-related file copies.
-mkdir -p $DEBIAN
-for f in control conffiles preinst postinst prerm postrm
-do
-    # cp -r is BAD, prefer cp -a or cp -R for OSX compatibility; man 1 cp
-    cp -a $RESOURCES/$f $DEBIAN
-done
-
-# Java-related file copies.
-mkdir -p $OPT
-cp ../out.ant/artifacts/cmd-server/*.jar $OPT
-
-# Upstart-related file copies.
-mkdir -p $INIT
-cp $RESOURCES/cmd-server.conf $INIT
-cp $RESOURCES/cmd-server $OPT
-cp $RESOURCES/cmd-server.yml $OPT
-cp $RESOURCES/logback.xml $OPT
+echo "service cmd-server start" >> $DEBIAN/postinst

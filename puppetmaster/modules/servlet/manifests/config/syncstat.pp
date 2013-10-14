@@ -39,7 +39,7 @@ class servlet::config::syncstat(
     }
 
     $config_filename = "/usr/share/aerofs-syncstat/syncstat/WEB-INF/classes/logback.xml"
-    servlet::log{"/var/log/aerofs/syncstat.log":
+    servlet::log{"syncstat":
         config_filename => $config_filename,
         log_level       => "WARN",
         require => Package["aerofs-syncstat"],
