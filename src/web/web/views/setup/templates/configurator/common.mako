@@ -63,7 +63,7 @@
         }
 
         function gotoPage(page) {
-            window.location.href = "${request.route_path('site_config')}" +
+            window.location.href = "${request.route_path('setup')}" +
                     "?page=" + page;
         }
 

@@ -45,7 +45,7 @@
             var $form = $('#emailForm');
             var serializedData = $form.serialize();
 
-            doPost("${request.route_path('json_config_email')}",
+            doPost("${request.route_path('json_setup_email')}",
                 serializedData, gotoNextPage);
         }
 

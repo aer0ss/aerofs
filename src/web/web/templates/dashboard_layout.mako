@@ -120,7 +120,7 @@
     <%
         links = [
             ('status', _("Service Status")),
-            ('site_config', _("Site Configuration"))
+            ('setup', _("Site Setup"))
         ]
     %>
     % for link in links:

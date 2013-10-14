@@ -111,7 +111,7 @@
         var $form = $('#certificateForm');
         var serializedData = $form.serialize();
 
-        doPost("${request.route_path('json_config_certificate')}",
+        doPost("${request.route_path('json_setup_certificate')}",
             serializedData + "&server.browser.certificate=" + certificateData + "&server.browser.key=" + keyData,
             gotoNextPage);
     }

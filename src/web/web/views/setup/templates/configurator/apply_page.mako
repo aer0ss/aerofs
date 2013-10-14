@@ -100,7 +100,7 @@
         });
 
         ## Stage 1: kick off the configuration process
-        doPost("${request.route_path('json_config_apply')}",
+        doPost("${request.route_path('json_setup_apply')}",
                 serializedData, pollForBootstrap, hideProgressModal);
     }
 
@@ -109,7 +109,7 @@
     var interval;
     function pollForBootstrap() {
         interval = window.setInterval(function() {
-            doPost("${request.route_path('json_config_poll')}",
+            doPost("${request.route_path('json_setup_poll')}",
                     serializedData, finalizeConfigurationIfCompleted);
         }, 1000);
     }
@@ -122,7 +122,7 @@
             ## TODO (MP) not sure why the finalize call fails sometimes after
             ## the poller finishes.
             setTimeout(function() {
-                doPost("${request.route_path('json_config_finalize')}",
+                doPost("${request.route_path('json_setup_finalize')}",
                         serializedData, pollForRedirecting);
             }, 1000);
         } else {

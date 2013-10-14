@@ -1,4 +1,4 @@
-<h3>Site Configuration</h3>
+<h3>Site Setup</h3>
 
 <%
     page = request.params.get('page')

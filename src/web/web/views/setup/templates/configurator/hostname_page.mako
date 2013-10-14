@@ -34,7 +34,7 @@
             var $form = $('#hostnameForm');
             var serializedData = $form.serialize();
 
-            doPost("${request.route_path('json_config_hostname')}",
+            doPost("${request.route_path('json_setup_hostname')}",
                 serializedData, gotoNextPage);
         }
 

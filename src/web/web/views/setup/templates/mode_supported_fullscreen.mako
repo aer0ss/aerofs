@@ -1,7 +1,7 @@
 <%inherit file="base_layout.mako"/>
 
 <%block name="home_url">
-    ${request.route_path('site_config')}
+    ${request.route_path('setup')}
 </%block>
 
 <div class="span9 offset1">
