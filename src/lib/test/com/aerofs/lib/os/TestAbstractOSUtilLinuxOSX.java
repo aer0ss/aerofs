@@ -4,36 +4,29 @@
 
 package com.aerofs.lib.os;
 
-import com.aerofs.lib.injectable.InjectableFile.Factory;
 import com.google.common.collect.ImmutableMap;
-import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
+import static com.aerofs.lib.os.AbstractOSUtilLinuxOSX.replaceEnvironmentVariables;
+import static org.junit.Assert.assertEquals;
 import static org.powermock.api.mockito.PowerMockito.mockStatic;
 import static org.powermock.api.mockito.PowerMockito.when;
 
-@Ignore
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({OSUtil.class, OSUtilOSX.class})
-@PowerMockIgnore({"ch.qos.logback.*", "org.slf4j.*"})
-public class TestOSUtilOSX
+public class TestAbstractOSUtilLinuxOSX
 {
-    final private OSUtilOSX _util = new OSUtilOSX(new Factory());
-
     @Test
     public void shouldSubstituteEnvironmentVariable() throws Exception
     {
         mockOSX();
 
-        Assert.assertEquals("/Users/user//Users/root/AeroFS",
-                _util.replaceEnvironmentVariables("${HOME}/${MY_HOME}/AeroFS"));
-        Assert.assertEquals("/Users/root/AeroFS",
-                _util.replaceEnvironmentVariables("${MY_HOME}/AeroFS"));
+        assertEquals("/Users/user//Users/root/AeroFS",
+                replaceEnvironmentVariables("${HOME}/${MY_HOME}/AeroFS"));
+        assertEquals("/Users/root/AeroFS", replaceEnvironmentVariables("${MY_HOME}/AeroFS"));
     }
 
     @Test
@@ -41,10 +34,9 @@ public class TestOSUtilOSX
     {
         mockOSX();
 
-        Assert.assertEquals("${WHATISLOVE}",
-                _util.replaceEnvironmentVariables("${WHATISLOVE}"));
-        Assert.assertEquals("/Users/user/${WHATISLOVE}/AeroFS",
-                _util.replaceEnvironmentVariables("${HOME}/${WHATISLOVE}/AeroFS"));
+        assertEquals("${WHATISLOVE}", replaceEnvironmentVariables("${WHATISLOVE}"));
+        assertEquals("/Users/user/${WHATISLOVE}/AeroFS",
+                replaceEnvironmentVariables("${HOME}/${WHATISLOVE}/AeroFS"));
     }
 
     @Test
@@ -52,10 +44,9 @@ public class TestOSUtilOSX
     {
         mockOSX();
 
-        Assert.assertEquals("/Users/userhome/AeroFS",
-                _util.replaceEnvironmentVariables("~/AeroFS"));
-        Assert.assertEquals("/Users/userhome//Users/user/AeroFS",
-                _util.replaceEnvironmentVariables("~/${HOME}/AeroFS"));
+        assertEquals("/Users/userhome/AeroFS", replaceEnvironmentVariables("~/AeroFS"));
+        assertEquals("/Users/userhome//Users/user/AeroFS",
+                replaceEnvironmentVariables("~/${HOME}/AeroFS"));
     }
 
     // N.B. this method mocks just enough environment settings that we rely on for the internal

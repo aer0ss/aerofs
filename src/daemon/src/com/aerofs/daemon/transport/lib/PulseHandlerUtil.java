@@ -10,7 +10,6 @@ import com.aerofs.daemon.event.net.EOTpSubsequentPulse;
 import com.aerofs.daemon.event.net.IPulseEvent;
 import com.aerofs.daemon.transport.exception.ExTransport;
 import com.aerofs.lib.sched.IScheduler;
-import com.aerofs.lib.sched.Scheduler;
 import org.slf4j.Logger;
 
 import static com.aerofs.daemon.lib.DaemonParam.INIT_PULSE_TIMEOUT;

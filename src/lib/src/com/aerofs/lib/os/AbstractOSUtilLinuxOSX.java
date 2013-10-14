@@ -41,8 +41,7 @@ abstract class AbstractOSUtilLinuxOSX implements IOSUtil
                 : getUserHomeDir();
     }
 
-    @Override
-    public String getUserHomeDir()
+    private static String getUserHomeDir()
     {
         return System.getProperty("user.home");
     }
@@ -119,7 +118,7 @@ abstract class AbstractOSUtilLinuxOSX implements IOSUtil
      * @param path - the input, possibly containing environment variables.
      * @return the resulting path with environment variables replaced with their values.
      */
-    protected @Nonnull String replaceEnvironmentVariables(@Nonnull String path)
+    static @Nonnull String replaceEnvironmentVariables(@Nonnull String path)
     {
         if (path.startsWith("~")) {
             path = path.replaceFirst("~", getUserHomeDir());

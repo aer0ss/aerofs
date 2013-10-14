@@ -5,16 +5,15 @@
 package com.aerofs.lib.os;
 
 import com.google.common.collect.ImmutableMap;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.io.File;
 
+import static com.aerofs.lib.os.OSUtilWindows.replaceEnvironmentVariables;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -22,14 +21,10 @@ import static org.powermock.api.mockito.PowerMockito.mockStatic;
 import static org.powermock.api.mockito.PowerMockito.when;
 import static org.powermock.api.mockito.PowerMockito.whenNew;
 
-@Ignore
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({OSUtil.class, OSUtilWindows.class})
-@PowerMockIgnore({"ch.qos.logback.*", "org.slf4j.*"})
 public class TestOSUtilWindows
 {
-    private OSUtilWindows _util = new OSUtilWindows();
-
     @Test
     public void shouldDisallowInvalidFiles()
     {
@@ -48,6 +43,7 @@ public class TestOSUtilWindows
             assertFalse("Should be illegal: " + s, OSUtilWindows.isValidFileName(s));
         }
     }
+
     @Test
     public void shouldAllowValidFiles()
     {
@@ -71,9 +67,9 @@ public class TestOSUtilWindows
         mockWindowsXP();
 
         assertEquals("C:\\Documents and Settings\\User\\AeroFS",
-                _util.replaceEnvironmentVariables("${USERPROFILE}\\AeroFS"));
+                replaceEnvironmentVariables("${USERPROFILE}\\AeroFS"));
         assertEquals("C:\\Documents and Settings\\User\\Application Data\\AeroFS",
-                _util.replaceEnvironmentVariables("${APPDATA}\\AeroFS"));
+                replaceEnvironmentVariables("${APPDATA}\\AeroFS"));
     }
 
     @Test
@@ -82,7 +78,7 @@ public class TestOSUtilWindows
         mockWindowsXP();
 
         assertEquals("C:\\Documents and Settings\\User\\Local Settings\\Application Data\\AeroFS",
-                _util.replaceEnvironmentVariables("${LOCALAPPDATA}\\AeroFS"));
+                replaceEnvironmentVariables("${LOCALAPPDATA}\\AeroFS"));
     }
 
     @Test
@@ -91,9 +87,9 @@ public class TestOSUtilWindows
         mockWindowsXP();
 
         assertEquals("${WHATISLOVE}\\AeroFS",
-                _util.replaceEnvironmentVariables("${WHATISLOVE}\\AeroFS"));
+                replaceEnvironmentVariables("${WHATISLOVE}\\AeroFS"));
         assertEquals("C:\\Documents and Settings\\User\\${WHATISLOVE}\\AeroFS",
-                _util.replaceEnvironmentVariables("${USERPROFILE}\\${WHATISLOVE}\\AeroFS"));
+                replaceEnvironmentVariables("${USERPROFILE}\\${WHATISLOVE}\\AeroFS"));
     }
 
     @Test
@@ -101,7 +97,7 @@ public class TestOSUtilWindows
     {
         mockWindowsXP();
 
-        assertEquals("~", _util.replaceEnvironmentVariables("~"));
+        assertEquals("~", replaceEnvironmentVariables("~"));
     }
 
     // N.B. this method mocks just enough environment settings that we rely on for the internal

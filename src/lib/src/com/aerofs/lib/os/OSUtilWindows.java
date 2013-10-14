@@ -43,17 +43,17 @@ public class OSUtilWindows implements IOSUtil
     }
 
     /**
-     * On Windows Vista and later, %LocalAppData% is defined and is the canonical folder for
-     *   local application data. On earlier version %LocalAppData% is not defined.
+     * On Windows Vista and later, %LOCALAPPDATA% is defined and is the canonical folder for
+     *   local application data. On earlier version %LOCALAPPDATA% is not defined.
      * On Windows XP, the canonical place to put local application data is
-     *   "%UserProfile%\Local Settings\Application Data".
-     * Note that %UserProfile% should be defined on XP and later.
+     *   "%USERPROFILE%\Local Settings\Application Data".
+     * Note that %USERPROFILE% should be defined on XP and later.
      *
      * @return path to the platform's local application data folder,
      * @throws FileNotFoundException - if we are unable to determine the platform's local application
      *   data folder.
      */
-    private @Nullable String getLocalAppDataPath() throws FileNotFoundException
+    private static @Nullable String getLocalAppDataPath() throws FileNotFoundException
     {
         // Before you update this method, please take a look at ULTRtrootMigration first.
         String path = System.getenv(LOCAL_APP_DATA);
@@ -159,8 +159,7 @@ public class OSUtilWindows implements IOSUtil
         }
     }
 
-    @Override
-    public String getUserHomeDir()
+    private static String getUserHomeDir()
     {
         return System.getenv("USERPROFILE");
     }
@@ -370,7 +369,7 @@ public class OSUtilWindows implements IOSUtil
      * @param path - the input, possibly containing environment variables.
      * @return the resulting path with environment variables replaced with their values.
      */
-    protected @Nonnull String replaceEnvironmentVariables(@Nonnull String path)
+    static @Nonnull String replaceEnvironmentVariables(@Nonnull String path)
     {
         Map<String, String> env = Maps.newHashMap(System.getenv());
 
