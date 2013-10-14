@@ -7,6 +7,7 @@ package com.aerofs.lib.os;
 import com.aerofs.lib.injectable.InjectableFile.Factory;
 import com.google.common.collect.ImmutableMap;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
@@ -16,6 +17,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
 import static org.powermock.api.mockito.PowerMockito.mockStatic;
 import static org.powermock.api.mockito.PowerMockito.when;
 
+@Ignore
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({OSUtil.class, OSUtilOSX.class})
 @PowerMockIgnore({"ch.qos.logback.*", "org.slf4j.*"})

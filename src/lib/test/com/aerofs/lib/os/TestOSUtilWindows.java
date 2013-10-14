@@ -5,6 +5,7 @@
 package com.aerofs.lib.os;
 
 import com.google.common.collect.ImmutableMap;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.api.mockito.PowerMockito;
@@ -21,6 +22,7 @@ import static org.powermock.api.mockito.PowerMockito.mockStatic;
 import static org.powermock.api.mockito.PowerMockito.when;
 import static org.powermock.api.mockito.PowerMockito.whenNew;
 
+@Ignore
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({OSUtil.class, OSUtilWindows.class})
 @PowerMockIgnore({"ch.qos.logback.*", "org.slf4j.*"})
