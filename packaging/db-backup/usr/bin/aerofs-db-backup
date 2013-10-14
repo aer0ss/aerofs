@@ -6,6 +6,10 @@ mkdir -p $tempdir/aerofs-db-backup
 pushd $tempdir 1>/dev/null 2>/dev/null
 
 echo ">>> Backing up redis database..."
+if [ ! -f /data/redis/redis.aof ]
+then
+    touch /data/redis/redis.aof
+fi
 cp /data/redis/redis.aof aerofs-db-backup/redis.aof
 
 echo ">>> Backing up mysql database..."
