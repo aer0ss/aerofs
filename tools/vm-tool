@@ -111,7 +111,12 @@ function _vm-deploy()
 
 function _vm-kick()
 {
-    _package-and-upload-versions
+    if [ $# -eq 0 ]
+    then
+        _package-and-upload-versions
+    elif [ "x$1" != "x--no-package" ] ; then
+        usage
+    fi
     _local-prod-cmd vm-ctrl kick
 }
 
@@ -167,7 +172,7 @@ function usage()
     echo "    ssh" >&2
     echo "    halt" >&2
     echo "    kill" >&2
-    echo "    kick" >&2
+    echo "    kick [--no-package]" >&2
     echo "    deploy <package_name>" >&2
 
     exit 1
@@ -221,8 +226,8 @@ function main()
             _vm-kill
             ;;
         "kick")
-            check_no_args ${@:-}
-            _vm-kick
+            check_zero_or_one_args ${@:-}
+            _vm-kick ${1:-}
             ;;
         "deploy")
             if [ $# -ne 1 ]
