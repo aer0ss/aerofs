@@ -10,7 +10,7 @@ base.verkehr.host={{ base_host }}
 base.verkehr.port.publish=9293
 base.verkehr.port.admin=25234
 base.verkehr.port.subscribe=29438
-base.xmpp.address={{ base_host }}:8139
+base.xmpp.address={{ base_host }}:5222
 base.zephyr.address={{ base_host }}:8888
 daemon.stun.address={{ base_host }}:3478
 
