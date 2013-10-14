@@ -39,12 +39,16 @@ public abstract class AbstractRestEBIMC extends AbstractEBIMC
 
     public Response execute()
     {
+        ResponseBuilder bd;
         try {
             execute(Prio.LO);
-            return response().build();
+            bd = response();
         } catch (Exception e) {
-            return handleException(e).type(MediaType.APPLICATION_JSON_TYPE).build();
+            bd = handleException(e).type(MediaType.APPLICATION_JSON_TYPE);
         }
+        return bd
+                .header("Access-Control-Allow-Origin", "*")  // Cross-Origin Resource Sharing
+                .build();
     }
 
     protected ResponseBuilder response()
