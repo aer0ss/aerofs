@@ -107,6 +107,7 @@ public class TestFileResource extends AbstractRestTest
         .expect()
                 .statusCode(200)
                 .contentType("application/octet-stream")
+                .header("Content-Length", Integer.toString(FILE_CONTENT.length))
                 .header("Etag", String.format("\"%s\"", BaseUtil.hexEncode(VERSION_HASH)))
         .when().get(RESOURCE + "/content", object("f1").toStringFormal())
                 .body().asByteArray();
@@ -137,6 +138,7 @@ public class TestFileResource extends AbstractRestTest
         .expect()
                 .statusCode(200)
                 .contentType("application/octet-stream")
+                .header("Content-Length", Integer.toString(FILE_CONTENT.length))
                 .header("Etag", String.format("\"%s\"", BaseUtil.hexEncode(VERSION_HASH)))
         .when().get(RESOURCE + "/content", object("f1").toStringFormal())
                 .body().asByteArray();
@@ -154,6 +156,7 @@ public class TestFileResource extends AbstractRestTest
         .expect()
                 .statusCode(200)
                 .contentType("application/octet-stream")
+                .header("Content-Length", Integer.toString(FILE_CONTENT.length))
                 .header("Etag", String.format("\"%s\"", BaseUtil.hexEncode(VERSION_HASH)))
         .when().get(RESOURCE + "/content", object("f1").toStringFormal())
                 .body().asByteArray();
@@ -191,6 +194,7 @@ public class TestFileResource extends AbstractRestTest
         .expect()
                 .statusCode(200)
                 .contentType("application/octet-stream")
+                .header("Content-Length", Integer.toString(FILE_CONTENT.length))
                 .header("Etag", String.format("\"%s\"", BaseUtil.hexEncode(VERSION_HASH)))
         .when().get(RESOURCE + "/content", object("f1").toStringFormal())
                 .body().asByteArray();
@@ -229,6 +233,7 @@ public class TestFileResource extends AbstractRestTest
         .expect()
                 .statusCode(200)
                 .contentType("application/octet-stream")
+                .header("Content-Length", Integer.toString(FILE_CONTENT.length))
                 .header("Etag", String.format("\"%s\"", BaseUtil.hexEncode(VERSION_HASH)))
         .when().get(RESOURCE + "/content", object("f1").toStringFormal())
                 .body().asByteArray();
