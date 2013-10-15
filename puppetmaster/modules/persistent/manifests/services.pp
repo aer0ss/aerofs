@@ -18,26 +18,6 @@ class persistent::services (
     include db-backup
 
     # --------------
-    # Cfg/CA Server
-    # --------------
-
-    package { [
-        "php5-common",
-        "php5-cli",
-        "php5-fpm"
-        ]:
-        ensure => latest,
-    }
-
-    service { "php5-fpm":
-        ensure => running,
-        enable => true,
-        hasstatus => true,
-        hasrestart => true,
-        require => Package["php5-fpm"],
-    }
-
-    # --------------
     # Nginx
     # --------------
 
