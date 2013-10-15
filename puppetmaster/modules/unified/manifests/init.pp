@@ -84,6 +84,10 @@ class unified {
         require => Package["aerofs-bootstrap"]
     }
 
+    file { "/etc/aerofs-private-deployment-flag":
+        ensure => present
+    }
+
     # --------------
     # Admin Panel
     # --------------
