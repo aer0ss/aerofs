@@ -119,8 +119,6 @@
         if (response['completed'] == true) {
             window.clearInterval(interval);
 
-            ## TODO (MP) not sure why the finalize call fails sometimes after
-            ## the poller finishes.
             setTimeout(function() {
                 doPost("${request.route_path('json_setup_finalize')}",
                         serializedData, pollForRedirecting);
