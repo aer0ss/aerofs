@@ -46,9 +46,7 @@ public abstract class AbstractRestEBIMC extends AbstractEBIMC
         } catch (Exception e) {
             bd = handleException(e).type(MediaType.APPLICATION_JSON_TYPE);
         }
-        return bd
-                .header("Access-Control-Allow-Origin", "*")  // Cross-Origin Resource Sharing
-                .build();
+        return bd.build();
     }
 
     protected ResponseBuilder response()

@@ -12,6 +12,7 @@ import com.aerofs.daemon.rest.stream.MultipartStream;
 import com.aerofs.daemon.rest.stream.SimpleStream;
 import com.aerofs.daemon.rest.util.AccessChecker;
 import com.aerofs.daemon.rest.util.HttpStatus;
+import com.aerofs.daemon.rest.util.MimeTypeDetector;
 import com.aerofs.daemon.rest.util.Ranges;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.id.SOID;
@@ -24,7 +25,6 @@ import com.sun.jersey.core.header.MatchingEntityTag;
 
 import javax.annotation.Nullable;
 import javax.ws.rs.core.EntityTag;
-import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
 import java.sql.SQLException;
@@ -35,12 +35,14 @@ public class HdFileContent extends AbstractHdIMC<EIFileContent>
 {
     private final AccessChecker _access;
     private final NativeVersionControl _nvc;
+    private final MimeTypeDetector _detector;
 
     @Inject
-    public HdFileContent(AccessChecker access, NativeVersionControl nvc)
+    public HdFileContent(AccessChecker access, NativeVersionControl nvc, MimeTypeDetector detector)
     {
         _access = access;
         _nvc = nvc;
+        _detector = detector;
     }
 
     /**
@@ -78,7 +80,7 @@ public class HdFileContent extends AbstractHdIMC<EIFileContent>
     private ResponseBuilder fullContent(ResponseBuilder ok, String name, CA ca)
     {
         return ok
-                .type(MediaType.APPLICATION_OCTET_STREAM_TYPE)
+                .type(_detector.detect(name))
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + name + "\"")
                 .header(HttpHeaders.CONTENT_LENGTH, ca.length())
                 .entity(new SimpleStream(ca, 0, ca.length()));

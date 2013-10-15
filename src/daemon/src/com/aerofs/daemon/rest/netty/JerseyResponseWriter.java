@@ -77,6 +77,9 @@ class JerseyResponseWriter implements ContainerResponseWriter
             values.clear();
         }
 
+        // Cross-Origin Resource Sharing
+        r.setHeader(Names.ACCESS_CONTROL_ALLOW_ORIGIN, "*");
+
         if ((r.getHeader(Names.CONTENT_LENGTH) == null)) {
             // if no explicit Content-Length is set, use chunked transfer-encoding
             // -> can stream content of unknown length on a persistent connection

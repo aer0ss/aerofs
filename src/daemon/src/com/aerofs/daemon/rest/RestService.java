@@ -38,7 +38,7 @@ public class RestService extends AbstractNettyServer
         SLF4JBridgeHandler.install();
     }
 
-    public static final String VERSION = "/v0.8";
+    public static final String VERSION = "/v0.9";
 
     // Port for the service. 0 to use any available port (default)
     // configurable for firewall-friendliness

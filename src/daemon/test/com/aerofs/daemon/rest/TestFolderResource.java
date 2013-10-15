@@ -9,7 +9,7 @@ import static org.hamcrest.Matchers.equalTo;
 
 public class TestFolderResource extends AbstractRestTest
 {
-    private final String RESOURCE = "/v0.8/folders/{folder}";
+    private final String RESOURCE = "/v0.9/folders/{folder}";
 
     @Test
     public void shouldReturn400ForInvalidId() throws Exception

@@ -24,12 +24,16 @@ public class File
     // size of file in bytes
     public final long size;
 
-    public File(String name, String id, Date last_modified, long size)
+    // MIME type
+    public final String mime_type;
+
+    public File(String name, String id, Date last_modified, long size, String mime_type)
     {
         this.name = name;
         this.id = id;
         this.size = size;
         this.last_modified = last_modified;
+        this.mime_type = mime_type;
     }
 
     public static final Comparator<File> BY_NAME = new Comparator<File>() {

@@ -19,10 +19,10 @@ public class NotFoundMapper implements ExceptionMapper<NotFoundException>
 {
     @Override
     public Response toResponse(NotFoundException exception){
-
         return Response.status(Response.Status.NOT_FOUND)
                 .type(MediaType.APPLICATION_JSON_TYPE)
                 .entity(new Error(Type.NOT_FOUND.name(), "No such resource"))
+                .header("Access-Control-Allow-Origin", "*")  // Cross-Origin Resource Sharing
                 .build();
     }
 }

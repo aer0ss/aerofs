@@ -12,7 +12,7 @@ import static org.hamcrest.Matchers.*;
 
 public class TestChildrenResource extends AbstractRestTest
 {
-    private final String RESOURCE = "/v0.8/children/{folder}";
+    private final String RESOURCE = "/v0.9/children/{folder}";
 
     @Test
     public void shouldReturn400ForInvalidId() throws Exception
@@ -100,6 +100,7 @@ public class TestChildrenResource extends AbstractRestTest
                 .body("files[0].id", equalTo(object("a/f").toStringFormal()))
                 .body("files[0].last_modified", equalTo(ISO_8601.format(new Date(0xdeadbeef))))
                 .body("files[0].size", equalTo(42))
+                .body("files[0].mime_type", equalTo("application/octet-stream"))
                 .body("folders", hasSize(1))
                 .body("folders[0].name", equalTo("d"))
                 .body("folders[0].id", equalTo(object("a/d").toStringFormal()))

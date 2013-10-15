@@ -25,7 +25,7 @@ import static org.mockito.Mockito.when;
 
 public class TestFileResource extends AbstractRestTest
 {
-    private final String RESOURCE = "/v0.8/files/{file}";
+    private final String RESOURCE = "/v0.9/files/{file}";
 
     private static long FILE_MTIME = 0xdeadbeef;
     private static byte[] FILE_CONTENT = { 'H', 'e', 'l', 'l', 'o'};
@@ -35,6 +35,7 @@ public class TestFileResource extends AbstractRestTest
     public void mockFile() throws Exception
     {
         mds.root().file("f1").caMaster(FILE_CONTENT.length, FILE_MTIME).content(FILE_CONTENT);
+        mds.root().file("f1.txt").caMaster(FILE_CONTENT.length, FILE_MTIME).content(FILE_CONTENT);
         when(nvc.getVersionHash_(any(SOID.class))).thenReturn(VERSION_HASH);
     }
 
@@ -43,6 +44,7 @@ public class TestFileResource extends AbstractRestTest
     {
         expect()
                 .statusCode(400)
+                .header("Access-Control-Allow-Origin", "*")
                 .body("type", equalTo("BAD_ARGS"))
         .when().get(RESOURCE, "bla");
     }
@@ -52,6 +54,7 @@ public class TestFileResource extends AbstractRestTest
     {
         expect()
                 .statusCode(404)
+                .header("Access-Control-Allow-Origin", "*")
                 .body("type", equalTo("NOT_FOUND"))
         .when().get(RESOURCE, new RestObject(SID.generate(), OID.generate()).toStringFormal());
     }
@@ -61,6 +64,7 @@ public class TestFileResource extends AbstractRestTest
     {
         expect()
                 .statusCode(404)
+                .header("Access-Control-Allow-Origin", "*")
                 .body("type", equalTo("NOT_FOUND"))
         .when().get(RESOURCE, new RestObject(rootSID, OID.generate()).toStringFormal());
     }
@@ -72,6 +76,7 @@ public class TestFileResource extends AbstractRestTest
 
         expect()
                 .statusCode(404)
+                .header("Access-Control-Allow-Origin", "*")
                 .body("type", equalTo("NOT_FOUND"))
         .when().get(RESOURCE, object("d0").toStringFormal());
     }
@@ -81,11 +86,27 @@ public class TestFileResource extends AbstractRestTest
     {
         expect()
                 .statusCode(200)
+                .header("Access-Control-Allow-Origin", "*")
                 .body("id", equalTo(object("f1").toStringFormal()))
                 .body("name", equalTo("f1"))
                 .body("size", equalTo(FILE_CONTENT.length))
                 .body("last_modified", equalTo(ISO_8601.format(new Date(FILE_MTIME))))
+                .body("mime_type", equalTo("application/octet-stream"))
         .when().get(RESOURCE, object("f1").toStringFormal());
+    }
+
+    @Test
+    public void shouldGetMetadataWithMIME() throws Exception
+    {
+        expect()
+                .statusCode(200)
+                .header("Access-Control-Allow-Origin", "*")
+                .body("id", equalTo(object("f1.txt").toStringFormal()))
+                .body("name", equalTo("f1.txt"))
+                .body("size", equalTo(FILE_CONTENT.length))
+                .body("last_modified", equalTo(ISO_8601.format(new Date(FILE_MTIME))))
+                .body("mime_type", equalTo("text/plain"))
+                .when().get(RESOURCE, object("f1.txt").toStringFormal());
     }
 
     @Test
@@ -95,6 +116,7 @@ public class TestFileResource extends AbstractRestTest
                 .header("Accept", "application/json")
         .expect()
                 .statusCode(406)
+                .header("Access-Control-Allow-Origin", "*")
         .when().get(RESOURCE + "/content", object("f1").toStringFormal());
     }
 
@@ -107,9 +129,28 @@ public class TestFileResource extends AbstractRestTest
         .expect()
                 .statusCode(200)
                 .contentType("application/octet-stream")
+                .header("Access-Control-Allow-Origin", "*")
                 .header("Content-Length", Integer.toString(FILE_CONTENT.length))
                 .header("Etag", String.format("\"%s\"", BaseUtil.hexEncode(VERSION_HASH)))
         .when().get(RESOURCE + "/content", object("f1").toStringFormal())
+                .body().asByteArray();
+
+        Assert.assertArrayEquals(FILE_CONTENT, content);
+    }
+
+    @Test
+    public void shouldGetContentWithMIME() throws Exception
+    {
+        byte[] content =
+        given()
+                .header("Accept", "*/*")
+        .expect()
+                .statusCode(200)
+                .contentType("text/plain")
+                .header("Access-Control-Allow-Origin", "*")
+                .header("Content-Length", Integer.toString(FILE_CONTENT.length))
+                .header("Etag", String.format("\"%s\"", BaseUtil.hexEncode(VERSION_HASH)))
+        .when().get(RESOURCE + "/content", object("f1.txt").toStringFormal())
                 .body().asByteArray();
 
         Assert.assertArrayEquals(FILE_CONTENT, content);
@@ -123,6 +164,7 @@ public class TestFileResource extends AbstractRestTest
                 .header("If-None-Match", String.format("\"%s\"", BaseUtil.hexEncode(VERSION_HASH)))
         .expect()
                 .statusCode(304)
+                .header("Access-Control-Allow-Origin", "*")
                 .header("Etag", String.format("\"%s\"", BaseUtil.hexEncode(VERSION_HASH)))
                 .content(isEmptyString())
         .when().get(RESOURCE + "/content", object("f1").toStringFormal());
@@ -138,6 +180,7 @@ public class TestFileResource extends AbstractRestTest
         .expect()
                 .statusCode(200)
                 .contentType("application/octet-stream")
+                .header("Access-Control-Allow-Origin", "*")
                 .header("Content-Length", Integer.toString(FILE_CONTENT.length))
                 .header("Etag", String.format("\"%s\"", BaseUtil.hexEncode(VERSION_HASH)))
         .when().get(RESOURCE + "/content", object("f1").toStringFormal())
@@ -156,6 +199,7 @@ public class TestFileResource extends AbstractRestTest
         .expect()
                 .statusCode(200)
                 .contentType("application/octet-stream")
+                .header("Access-Control-Allow-Origin", "*")
                 .header("Content-Length", Integer.toString(FILE_CONTENT.length))
                 .header("Etag", String.format("\"%s\"", BaseUtil.hexEncode(VERSION_HASH)))
         .when().get(RESOURCE + "/content", object("f1").toStringFormal())
@@ -175,6 +219,7 @@ public class TestFileResource extends AbstractRestTest
         .expect()
                 .statusCode(206)
                 .contentType("application/octet-stream")
+                .header("Access-Control-Allow-Origin", "*")
                 .header("Content-Range", "bytes 0-1/" + FILE_CONTENT.length)
                 .header("Etag", String.format("\"%s\"", BaseUtil.hexEncode(VERSION_HASH)))
         .when().get(RESOURCE + "/content", object("f1").toStringFormal())
@@ -194,6 +239,7 @@ public class TestFileResource extends AbstractRestTest
         .expect()
                 .statusCode(200)
                 .contentType("application/octet-stream")
+                .header("Access-Control-Allow-Origin", "*")
                 .header("Content-Length", Integer.toString(FILE_CONTENT.length))
                 .header("Etag", String.format("\"%s\"", BaseUtil.hexEncode(VERSION_HASH)))
         .when().get(RESOURCE + "/content", object("f1").toStringFormal())
@@ -215,6 +261,7 @@ public class TestFileResource extends AbstractRestTest
         .expect()
                 .statusCode(200)
                 .contentType("application/octet-stream")
+                .header("Access-Control-Allow-Origin", "*")
                 .header("Etag", String.format("\"%s\"", BaseUtil.hexEncode(VERSION_HASH)))
         .when().get(RESOURCE + "/content", object("f1").toStringFormal())
                 .body().asByteArray();
@@ -233,6 +280,7 @@ public class TestFileResource extends AbstractRestTest
         .expect()
                 .statusCode(200)
                 .contentType("application/octet-stream")
+                .header("Access-Control-Allow-Origin", "*")
                 .header("Content-Length", Integer.toString(FILE_CONTENT.length))
                 .header("Etag", String.format("\"%s\"", BaseUtil.hexEncode(VERSION_HASH)))
         .when().get(RESOURCE + "/content", object("f1").toStringFormal())
@@ -250,6 +298,7 @@ public class TestFileResource extends AbstractRestTest
         .expect()
                 .statusCode(416)
                 .content(isEmptyString())
+                .header("Access-Control-Allow-Origin", "*")
                 .header("Content-Range", "bytes */" + String.valueOf(FILE_CONTENT.length))
         .when().get(RESOURCE + "/content", object("f1").toStringFormal());
     }
@@ -265,6 +314,7 @@ public class TestFileResource extends AbstractRestTest
         .expect()
                 .statusCode(206)
                 .contentType("application/octet-stream")
+                .header("Access-Control-Allow-Origin", "*")
                 .header("Content-Range", "bytes 0-" + String.valueOf(FILE_CONTENT.length - 1)
                         + "/" + String.valueOf(FILE_CONTENT.length))
                 .header("Etag", String.format("\"%s\"", BaseUtil.hexEncode(VERSION_HASH)))
@@ -285,6 +335,7 @@ public class TestFileResource extends AbstractRestTest
         .expect()
                 .statusCode(206)
                 .contentType("multipart/byteranges")
+                .header("Access-Control-Allow-Origin", "*")
                 .header("Etag", String.format("\"%s\"", BaseUtil.hexEncode(VERSION_HASH)))
         .when().get(RESOURCE + "/content", object("f1").toStringFormal());
 
