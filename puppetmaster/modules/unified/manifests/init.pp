@@ -81,6 +81,7 @@ class unified {
         command => "/usr/bin/aerofs-bootstrap-taskfile /opt/bootstrap/tasks/startup.tasks",
         user    => "root",
         special => "reboot",
+        environment => "PATH=/usr/sbin:/usr/bin:/sbin:/bin",
         require => Package["aerofs-bootstrap"]
     }
 
