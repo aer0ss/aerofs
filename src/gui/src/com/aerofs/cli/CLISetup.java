@@ -125,7 +125,7 @@ public class CLISetup
     private void getPassword(CLI cli) throws Exception
     {
         if (LibParam.OpenId.enabled() == false) {
-            cli.show(MessageType.INFO, "If you forgot your password, go to " +
+            cli.show(MessageType.INFO, "If you forgot your password, go to\n" +
                     WWW.PASSWORD_RESET_REQUEST_URL + " to reset it.");
             _model.setPassword(String.valueOf(
                     cli.askPasswd(L.isMultiuser() ? S.ADMIN_PASSWD : S.SETUP_PASSWD)));

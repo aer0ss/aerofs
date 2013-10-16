@@ -12,7 +12,6 @@ import com.aerofs.ui.UIGlobals;
 import com.aerofs.ui.error.ErrorMessages;
 import com.aerofs.ui.IUI;
 import com.aerofs.ui.UIParam;
-import org.apache.commons.lang.WordUtils;
 
 import javax.annotation.Nonnull;
 import java.io.IOError;
@@ -95,7 +94,7 @@ public class CLI implements IUI {
         exec(new Runnable() {
             @Override
             public void run() {
-                _out.println(WordUtils.wrap(mt2hdr(mt) + msg, 79));
+                _out.println(mt2hdr(mt) + msg);
             }
         });
     }
@@ -110,7 +109,7 @@ public class CLI implements IUI {
             @Override
             public void run()
             {
-                _out.println(WordUtils.wrap(mt2hdr(mt) + msg, 79));
+                _out.println(mt2hdr(mt) + msg);
                 _out.println("[Press ENTER to continue]");
                 String line;
                 line = readLine();

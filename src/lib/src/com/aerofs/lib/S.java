@@ -81,13 +81,10 @@ public class S
 
             BAD_CREDENTIAL_CAP       = "Email or password is incorrect",
 
-            OPENID_SETUP_MESSAGE     = "To complete " + L.product() + " setup, please sign in " +
-                    "your OpenID Provider",
             OPENID_AUTH_BAD_CRED     = L.product() + " didn't receive a valid authorization from " +
                     "your OpenID Provider.",
             OPENID_AUTH_TIMEOUT      = L.product() + " has timed out while waiting to hear from " +
                     "your OpenID Provider.",
-            OPENID_AUTH_MESSAGE      = "Waiting for your OpenID Provider...",
 
             SERVER_INTERNAL_ERROR    = "Sorry, the " + L.brand() + " servers have encountered " +
                     "an error while processing your request.",
