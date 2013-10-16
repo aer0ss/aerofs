@@ -4,6 +4,7 @@
 package com.aerofs.daemon.rest.netty;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.lib.log.LogUtil;
 import com.sun.jersey.core.header.InBoundHeaders;
 import com.sun.jersey.spi.container.ContainerRequest;
 import com.sun.jersey.spi.container.WebApplication;
@@ -21,6 +22,7 @@ import javax.ws.rs.WebApplicationException;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.channels.ClosedChannelException;
 
 public class JerseyHandler extends SimpleChannelUpstreamHandler
 {
@@ -69,7 +71,8 @@ public class JerseyHandler extends SimpleChannelUpstreamHandler
             // In any case, the only correct way to treat such an exception is to forcefully close
             // the connection which the client which the client will interpret as an unspecified
             // error.
-            l.warn("exception after response committed", e.getMessage());
+            l.warn("exception after response committed: ",
+                    LogUtil.suppress(e, ClosedChannelException.class));
             inbound.close();
         }
     }
@@ -78,8 +81,11 @@ public class JerseyHandler extends SimpleChannelUpstreamHandler
     public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e)
     {
         // Close the connection when an exception is raised.
-        l.warn("Rest service: unexpected exception:", e.getCause());
-        e.getChannel().close();
+        l.warn("Rest service: unexpected exception:",
+                LogUtil.suppress(e.getCause(), ClosedChannelException.class));
+        if (e.getChannel().isConnected()) {
+            e.getChannel().close();
+        }
     }
 
     private InBoundHeaders getHeaders(final HttpRequest request)
