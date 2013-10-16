@@ -8,6 +8,7 @@ import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.base.net.MagicHeader.ExBadMagicHeader;
+import com.aerofs.base.net.NettyUtil;
 import com.aerofs.base.ssl.CNameVerificationHandler.CNameListener;
 import com.aerofs.lib.log.LogUtil;
 import org.jboss.netty.buffer.ChannelBuffer;
@@ -18,6 +19,7 @@ import org.jboss.netty.channel.ChannelStateEvent;
 import org.jboss.netty.channel.ExceptionEvent;
 import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.SimpleChannelHandler;
+import org.jboss.netty.handler.ssl.NotSslRecordException;
 import org.slf4j.Logger;
 
 import javax.net.ssl.SSLException;
@@ -125,11 +127,12 @@ public class ServerHandler extends SimpleChannelHandler implements CNameListener
         // This is the only place where _channel can potentially be null
         if (_channel == null) _channel = e.getChannel();
 
-        // Close the connection when an exception is raised.
-        l.warn("server: caught ex from: {} {}", _did, _channel, LogUtil.suppress(e.getCause(),
+        Throwable cause = NettyUtil.truncateMessageIfNecessary(e.getCause());
+        l.warn("server: caught ex from: {} {}", _did, _channel, LogUtil.suppress(cause,
                 ExBadMagicHeader.class, UnresolvedAddressException.class, IOException.class,
                 SSLException.class, SSLHandshakeException.class));
 
+        // Close the connection when an exception is raised.
         disconnect();
     }
 }

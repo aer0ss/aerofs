@@ -9,6 +9,7 @@ import com.aerofs.base.async.UncancellableFuture;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.base.net.MagicHeader.ExBadMagicHeader;
+import com.aerofs.base.net.NettyUtil;
 import com.aerofs.base.ssl.CNameVerificationHandler.CNameListener;
 import com.aerofs.lib.log.LogUtil;
 import com.google.common.collect.Queues;
@@ -194,8 +195,9 @@ public class ClientHandler extends SimpleChannelHandler implements CNameListener
         // This is the only place where _channel can potentially be null
         if (_channel == null) _channel = e.getChannel();
 
+        Throwable cause = NettyUtil.truncateMessageIfNecessary(e.getCause());
         l.warn("client: caught ex from:{} {}", _did, _channel,
-                LogUtil.suppress(e.getCause(),
+                LogUtil.suppress(cause,
                         ExBadMagicHeader.class,
                         UnresolvedAddressException.class,
                         IOException.class,
