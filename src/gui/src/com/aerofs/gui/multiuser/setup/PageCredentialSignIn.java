@@ -5,56 +5,43 @@
 package com.aerofs.gui.multiuser.setup;
 
 import com.aerofs.base.BaseParam.WWW;
+import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.controller.SetupModel;
-import com.aerofs.gui.GUIUtil;
+import com.aerofs.gui.CompSpin;
 import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
+import com.aerofs.ui.error.ErrorMessage;
 import com.google.common.base.Objects;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.events.ModifyEvent;
 import org.eclipse.swt.events.ModifyListener;
-import org.eclipse.swt.events.SelectionAdapter;
-import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
+import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Link;
 import org.eclipse.swt.widgets.Text;
+import org.slf4j.Logger;
 
-public class PageCredentialSignIn extends AbstractSignInPage
+import javax.annotation.Nonnull;
+
+import static com.aerofs.gui.GUIUtil.createUrlLaunchListener;
+
+public class PageCredentialSignIn extends AbstractSetupWorkPage
 {
     private Text        _txtUserID;
     private Text        _txtPasswd;
-    private Link        _lnkPasswd;
     private Text        _txtDeviceName;
+    private Link        _lnkPasswd;
+
+    private CompSpin    _compSpin;
+    private Button      _btnContinue;
 
     public PageCredentialSignIn(Composite parent)
     {
-        super(parent);
-
-        ModifyListener onTextChanged = new ModifyListener()
-        {
-            @Override
-            public void modifyText(ModifyEvent modifyEvent)
-            {
-                validateInput();
-            }
-        };
-
-        _txtUserID.addModifyListener(onTextChanged);
-        _txtPasswd.addModifyListener(onTextChanged);
-        _txtDeviceName.addModifyListener(onTextChanged);
-
-        _lnkPasswd.addSelectionListener(new SelectionAdapter()
-        {
-            @Override
-            public void widgetSelected(SelectionEvent selectionEvent)
-            {
-                GUIUtil.launch(WWW.PASSWORD_RESET_REQUEST_URL);
-            }
-        });
+        super(parent, SWT.NONE);
     }
 
     @Override
@@ -78,6 +65,7 @@ public class PageCredentialSignIn extends AbstractSignInPage
 
         _lnkPasswd = new Link(composite, SWT.NONE);
         _lnkPasswd.setText(S.SETUP_LINK_FORGOT_PASSWD);
+        _lnkPasswd.addSelectionListener(createUrlLaunchListener(WWW.PASSWORD_RESET_REQUEST_URL));
 
         Label lblDeviceName = new Label(composite, SWT.NONE);
         lblDeviceName.setText(S.SETUP_DEV_ALIAS + ':');
@@ -102,7 +90,25 @@ public class PageCredentialSignIn extends AbstractSignInPage
         lblDeviceName.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false));
         _txtDeviceName.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
 
+        ModifyListener onInputChanged = createListenerToValidateInput();
+
+        _txtUserID.addModifyListener(onInputChanged);
+        _txtPasswd.addModifyListener(onInputChanged);
+        _txtDeviceName.addModifyListener(onInputChanged);
+
         return composite;
+    }
+
+    @Override
+    protected void populateButtonBar(Composite parent)
+    {
+        _compSpin = new CompSpin(parent, SWT.NONE);
+
+        Button btnQuit = createButton(parent, S.BTN_QUIT, false);
+        btnQuit.addSelectionListener(createListenerToGoBack());
+
+        _btnContinue = createButton(parent, S.BTN_CONTINUE, true);
+        _btnContinue.addSelectionListener(createListenerToDoWork());
     }
 
     @Override
@@ -123,13 +129,35 @@ public class PageCredentialSignIn extends AbstractSignInPage
     }
 
     @Override
-    protected void setControlState(boolean enabled)
+    protected @Nonnull Logger getLogger()
     {
-        super.setControlState(enabled);
-        _txtUserID.setEnabled(enabled);
-        _txtPasswd.setEnabled(enabled);
-        _txtDeviceName.setEnabled(enabled);
-        _lnkPasswd.setEnabled(enabled);
+        return Loggers.getLogger(PageCredentialSignIn.class);
+    }
+
+    @Override
+    protected @Nonnull Button getDefaultButton()
+    {
+        return _btnContinue;
+    }
+
+    @Override
+    protected @Nonnull Control[] getControls()
+    {
+        return new Control[] {
+                _btnContinue, _txtUserID, _txtPasswd, _txtDeviceName, _lnkPasswd
+        };
+    }
+
+    @Override
+    protected @Nonnull CompSpin getSpinner()
+    {
+        return _compSpin;
+    }
+
+    @Override
+    protected void doWorkImpl() throws Exception
+    {
+        _model.doSignIn();
     }
 
     @Override
@@ -144,9 +172,17 @@ public class PageCredentialSignIn extends AbstractSignInPage
     }
 
     @Override
-    protected String formatSignInException(Exception e)
+    protected ErrorMessage[] getErrorMessages(Exception e)
     {
-        if (e instanceof ExBadCredential) return S.BAD_CREDENTIAL_CAP;
-        else return super.formatSignInException(e);
+        return new ErrorMessage[] {
+                new ErrorMessage(ExBadCredential.class, S.BAD_CREDENTIAL_CAP + ". " +
+                        S.TRY_AGAIN_LATER)
+        };
+    }
+
+    @Override
+    protected String getDefaultErrorMessage()
+    {
+        return S.SETUP_DEFAULT_SIGNIN_ERROR;
     }
 }

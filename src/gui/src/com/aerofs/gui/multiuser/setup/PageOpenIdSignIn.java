@@ -4,29 +4,32 @@
 
 package com.aerofs.gui.multiuser.setup;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.base.ex.ExTimeout;
-import com.aerofs.controller.SetupModel;
-import com.aerofs.gui.GUIParam;
-import com.aerofs.labeling.L;
+import com.aerofs.gui.CompSpin;
+import com.aerofs.gui.GUIUtil;
+import com.aerofs.lib.LibParam.OpenId;
 import com.aerofs.lib.S;
-import com.google.common.base.Objects;
+import com.aerofs.ui.error.ErrorMessage;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.events.ModifyEvent;
-import org.eclipse.swt.events.ModifyListener;
-import org.eclipse.swt.layout.GridData;
-import org.eclipse.swt.layout.GridLayout;
+import org.eclipse.swt.layout.RowData;
+import org.eclipse.swt.layout.RowLayout;
+import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Label;
-import org.eclipse.swt.widgets.Text;
+import org.eclipse.swt.widgets.Control;
+import org.slf4j.Logger;
 
-public class PageOpenIdSignIn extends AbstractSignInPage
+import javax.annotation.Nonnull;
+
+public class PageOpenIdSignIn extends AbstractSetupWorkPage
 {
-    private Text _txtDeviceName;
+    private Button      _btnContinue;
+    private CompSpin    _compSpin;
 
     public PageOpenIdSignIn(Composite parent)
     {
-        super(parent);
+        super(parent, SWT.NONE);
     }
 
     @Override
@@ -34,87 +37,70 @@ public class PageOpenIdSignIn extends AbstractSignInPage
     {
         Composite content = new Composite(parent, SWT.NONE);
 
-        Label lblWelcome = new Label(content, SWT.WRAP);
-        lblWelcome.setText("Welcome to " + L.product() + " setup.\n\n"
-                + "Click Continue to sign in with your OpenID Provider and "
-                + "configure this device.");
+        _btnContinue = GUIUtil.createButton(content, SWT.PUSH);
+        _btnContinue.setText("Sign in using the Team Administrator's\n" +
+                OpenId.SERVICE_IDENTIFIER + " account.");
+        _btnContinue.addSelectionListener(createListenerToDoWork());
+        getShell().setDefaultButton(_btnContinue);
 
-        Composite compDeviceName = createDeviceNameComposite(content);
-
-        GridLayout layout = new GridLayout();
-        layout.marginWidth = 80;
-        layout.marginHeight = 0;
-        layout.verticalSpacing = GUIParam.MAJOR_SPACING;
-        content.setLayout(layout);
-
-        lblWelcome.setLayoutData(new GridData(SWT.CENTER, SWT.CENTER, true, true));
-        compDeviceName.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
+        content.setLayout(new RowLayout(SWT.VERTICAL));
+        _btnContinue.setLayoutData(new RowData(360, 70));
 
         return content;
     }
 
-    protected Composite createDeviceNameComposite(Composite parent)
+    @Override
+    protected void populateButtonBar(Composite parent)
     {
-        Composite composite = new Composite(parent, SWT.NONE);
+        _compSpin = new CompSpin(parent, SWT.NONE);
 
-        Label lblDeviceName = new Label(composite, SWT.NONE);
-        lblDeviceName.setText(S.SETUP_DEV_ALIAS + ':');
-
-        _txtDeviceName = new Text(composite, SWT.BORDER);
-        _txtDeviceName.addModifyListener(new ModifyListener()
-        {
-            @Override
-            public void modifyText(ModifyEvent modifyEvent)
-            {
-                validateInput();
-            }
-        });
-
-        GridLayout layout = new GridLayout(2, false);
-        layout.marginWidth = 60;
-        layout.marginHeight = 0;
-        layout.horizontalSpacing = 10;
-        composite.setLayout(layout);
-
-        lblDeviceName.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, false));
-        _txtDeviceName.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
-
-        return composite;
+        Button btnQuit = createButton(parent, S.BTN_QUIT, false);
+        btnQuit.addSelectionListener(createListenerToGoBack());
     }
 
     @Override
-    protected void readFromModel(SetupModel model)
+    protected @Nonnull Logger getLogger()
     {
-        _txtDeviceName.setText(Objects.firstNonNull(model.getDeviceName(), ""));
-        validateInput();
+        return Loggers.getLogger(PageOpenIdSignIn.class);
     }
 
     @Override
-    protected void writeToModel(SetupModel model)
+    protected @Nonnull Button getDefaultButton()
     {
-        model.setDeviceName(_txtDeviceName.getText().trim());
+        return _btnContinue;
     }
 
     @Override
-    protected boolean isInputValid()
+    protected @Nonnull Control[] getControls()
     {
-        String deviceName = _txtDeviceName.getText().trim();
-        return !deviceName.isEmpty();
+        return new Control[] { _btnContinue };
     }
 
     @Override
-    protected void setControlState(boolean enabled)
+    protected @Nonnull CompSpin getSpinner()
     {
-        super.setControlState(enabled);
-        _btnQuit.setEnabled(true);
-        _txtDeviceName.setEnabled(enabled);
+        return _compSpin;
     }
 
     @Override
-    protected String formatSignInException(Exception e)
+    protected void doWorkImpl() throws Exception
     {
-        if (e instanceof ExBadCredential) return S.OPENID_AUTH_BAD_CRED;
-        else if (e instanceof ExTimeout) return  S.OPENID_AUTH_TIMEOUT;
-        else return super.formatSignInException(e);
+        _model.doSignIn();
+    }
+
+    @Override
+    protected ErrorMessage[] getErrorMessages(Exception e)
+    {
+        return new ErrorMessage[] {
+                new ErrorMessage(ExBadCredential.class, S.OPENID_AUTH_BAD_CRED + " " +
+                        S.TRY_AGAIN_LATER),
+                new ErrorMessage(ExTimeout.class, S.OPENID_AUTH_TIMEOUT + " " + S.TRY_AGAIN_LATER)
+        };
+    }
+
+    @Override
+    protected String getDefaultErrorMessage()
+    {
+        return S.SETUP_DEFAULT_SIGNIN_ERROR;
     }
 }

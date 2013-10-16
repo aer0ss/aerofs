@@ -8,60 +8,37 @@ import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.controller.SetupModel;
 import com.aerofs.gui.CompSpin;
-import com.aerofs.gui.GUI;
-import com.aerofs.gui.GUI.ISWTWorker;
 import com.aerofs.gui.GUIParam;
 import com.aerofs.gui.GUIUtil;
-import com.aerofs.gui.Images;
 import com.aerofs.lib.RootAnchorUtil;
 import com.aerofs.lib.S;
-import com.aerofs.lib.ex.ExUIMessage;
-import com.aerofs.ui.error.ErrorMessages;
-import com.swtdesigner.SWTResourceManager;
+import com.aerofs.ui.error.ErrorMessage;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.layout.RowData;
-import org.eclipse.swt.layout.RowLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.DirectoryDialog;
-import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Link;
-import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Text;
 import org.slf4j.Logger;
 
-import java.net.ConnectException;
+import javax.annotation.Nonnull;
 
-public class PageLocalStorage extends AbstractSetupPage
+public class PageLocalStorage extends AbstractSetupWorkPage
 {
-    private Logger l = Loggers.getLogger(PageLocalStorage.class);
-
-    private boolean _inProgress;
-
-    private Composite   _compHeader;
-    private Composite   _compContent;
-    private Composite   _compRootAnchor;
-    private Composite   _compRootAnchorButton;
-    private Composite   _compType;
-    private Composite   _compButton;
-
-    private Label       _lblTitle;
-    private Label       _lblLogo;
-    private Label       _lblRootAnchor;
     private Text        _txtRootAnchor;
     private Button      _btnUseDefault;
     private Button      _btnChangeRootAnchor;
-    private Label       _lblDescription;
-    private Button      _btnLink;
-    private Label       _lblLinkDesc;
-    private Button      _btnBlock;
-    private Label       _lblBlockDesc;
-    private Link        _lnkLearnMore;
+
+    private Button      _btnLinkStorage;
+    private Button      _btnBlockStorage;
+
     private CompSpin    _compSpin;
     private Button      _btnInstall;
     private Button      _btnBack;
@@ -71,18 +48,66 @@ public class PageLocalStorage extends AbstractSetupPage
     public PageLocalStorage(Composite parent)
     {
         super(parent, SWT.NONE);
+    }
 
-        createPage();
+    @Override
+    protected Composite createContent(Composite parent)
+    {
+        Composite content = new Composite(parent, SWT.NONE);
 
-        getShell().addListener(SWT.Close, new Listener()
-        {
-            @Override
-            public void handleEvent(Event event)
-            {
-                if (_inProgress) event.doit = false;
-            }
-        });
+        Composite compRootAnchor = createRootAnchorComposite(content);
 
+        Label lblDescription = new Label(content, SWT.NONE);
+        lblDescription.setText(S.SETUP_TYPE_DESC);
+
+        Composite compType = createTypeComposite(content);
+
+        GridLayout layout = new GridLayout();
+        layout.marginWidth = 0;
+        layout.marginHeight = 0;
+        layout.marginTop = GUIParam.SETUP_PAGE_MARGIN_HEIGHT;
+        layout.verticalSpacing = 10;
+        content.setLayout(layout);
+
+        compRootAnchor.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
+        lblDescription.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, true, false));
+        compType.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
+
+        return content;
+    }
+
+    protected Composite createRootAnchorComposite(Composite parent)
+    {
+        Composite composite = new Composite(parent, SWT.NONE);
+
+        Label lblRootAnchor = new Label(composite, SWT.NONE);
+        lblRootAnchor.setText(S.SETUP_ROOT_ANCHOR_LABEL);
+
+        _txtRootAnchor = new Text(composite, SWT.BORDER);
+        _txtRootAnchor.setEditable(false);
+
+        Composite compButtons = createRootAnchorButtons(composite);
+
+        GridLayout layout = new GridLayout(2, false);
+        layout.marginWidth = 0;
+        layout.marginHeight = 0;
+        layout.horizontalSpacing = 10;
+        layout.verticalSpacing = 6;
+        composite.setLayout(layout);
+
+        lblRootAnchor.setLayoutData(new GridData(SWT.CENTER, SWT.CENTER, false, false));
+        _txtRootAnchor.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
+        compButtons.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, true, false, 2, 1));
+
+        return composite;
+    }
+
+    protected Composite createRootAnchorButtons(Composite parent)
+    {
+        Composite composite = GUIUtil.newButtonContainer(parent, false);
+
+        _btnUseDefault = GUIUtil.createButton(composite, SWT.NONE);
+        _btnUseDefault.setText(S.SETUP_USE_DEFAULT);
         _btnUseDefault.addSelectionListener(new SelectionAdapter()
         {
             @Override
@@ -92,6 +117,9 @@ public class PageLocalStorage extends AbstractSetupPage
             }
         });
 
+        _btnChangeRootAnchor = GUIUtil.createButton(composite, SWT.NONE);
+        _btnChangeRootAnchor.setText(S.BTN_CHANGE);
+        _btnChangeRootAnchor.setFocus();
         _btnChangeRootAnchor.addSelectionListener(new SelectionAdapter()
         {
             @Override
@@ -107,173 +135,48 @@ public class PageLocalStorage extends AbstractSetupPage
             }
         });
 
-        _lnkLearnMore.addSelectionListener(new SelectionAdapter()
-        {
-            @Override
-            public void widgetSelected(SelectionEvent e)
-            {
-                GUIUtil.launch(STORAGE_OPTIONS_URL);
-            }
-        });
-
-        _btnBack.addSelectionListener(new SelectionAdapter()
-        {
-            @Override
-            public void widgetSelected(SelectionEvent e)
-            {
-                traverse(SWT.TRAVERSE_PAGE_PREVIOUS);
-            }
-        });
-
-        _btnInstall.addSelectionListener(new SelectionAdapter()
-        {
-            @Override
-            public void widgetSelected(SelectionEvent e)
-            {
-                doWork();
-            }
-        });
-    }
-
-    protected void createPage()
-    {
-        createHeader(this);
-        createContent(this);
-        createButtonBar(this);
-
-        GridLayout layout = new GridLayout();
-        layout.marginWidth = 0;
-        layout.marginHeight = 0;
-        layout.verticalSpacing = 0;
-        setLayout(layout);
-
-        _compHeader.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
-        _compContent.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
-        _compButton.setLayoutData(new GridData(SWT.RIGHT, SWT.BOTTOM, true, false));
-    }
-
-    protected void createHeader(Composite parent)
-    {
-        _compHeader = new Composite(parent, SWT.NONE);
-        _compHeader.setBackgroundMode(SWT.INHERIT_FORCE);
-        _compHeader.setBackground(SWTResourceManager.getColor(0xFF, 0xFF, 0xFF));
-
-        _lblTitle = new Label(_compHeader, SWT.NONE);
-        _lblTitle.setText(S.SETUP_TITLE);
-        GUIUtil.changeFont(_lblTitle, 16, SWT.BOLD);
-
-        // n.b. when rendering images on a label, setImage clears the alignment bits,
-        //   hence we have to call setAlignment AFTER setImage to display image on the right
-        _lblLogo = new Label(_compHeader, SWT.NONE);
-        _lblLogo.setImage(Images.get(Images.IMG_SETUP));
-
-        GridLayout layout = new GridLayout(2, false);
-        layout.marginWidth = 0;
-        layout.marginHeight = 0;
-        _compHeader.setLayout(layout);
-
-        GridData titleLayout = new GridData(SWT.LEFT, SWT.TOP, false, true);
-        titleLayout.verticalIndent = 20;
-        titleLayout.horizontalIndent = 20;
-        _lblTitle.setLayoutData(titleLayout);
-        _lblLogo.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, true, true));
-    }
-
-    protected void createContent(Composite parent)
-    {
-        _compContent = new Composite(parent, SWT.NONE);
-
-        createRootAnchorComposite(_compContent);
-
-        _lblDescription = new Label(_compContent, SWT.NONE);
-        _lblDescription.setText(S.SETUP_TYPE_DESC);
-
-        createTypeComposite(_compContent);
-
-        GridLayout layout = new GridLayout();
-        layout.marginWidth = 40;
-        layout.marginHeight = 0;
-        layout.marginTop = GUIParam.SETUP_PAGE_MARGIN_HEIGHT;
-        layout.verticalSpacing = 10;
-        _compContent.setLayout(layout);
-
-        _compRootAnchor.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
-        _lblDescription.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, true, false));
-        _compType.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
-    }
-
-    protected void createRootAnchorComposite(Composite parent)
-    {
-        _compRootAnchor = new Composite(parent, SWT.NONE);
-
-        _lblRootAnchor = new Label(_compRootAnchor, SWT.NONE);
-        _lblRootAnchor.setText(S.SETUP_ROOT_ANCHOR_LABEL);
-
-        _txtRootAnchor = new Text(_compRootAnchor, SWT.BORDER);
-        _txtRootAnchor.setEditable(false);
-
-        createRootAnchorButtons(_compRootAnchor);
-
-        GridLayout layout = new GridLayout(2, false);
-        layout.marginWidth = 0;
-        layout.marginHeight = 0;
-        layout.horizontalSpacing = 10;
-        layout.verticalSpacing = 6;
-        _compRootAnchor.setLayout(layout);
-
-        _lblRootAnchor.setLayoutData(new GridData(SWT.CENTER, SWT.CENTER, false, false));
-        _txtRootAnchor.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
-        _compRootAnchorButton.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, true, false, 2, 1));
-    }
-
-    protected void createRootAnchorButtons(Composite parent)
-    {
-        _compRootAnchorButton = GUIUtil.newButtonContainer(parent, false);
-
-        _btnUseDefault = GUIUtil.createButton(_compRootAnchorButton, SWT.NONE);
-        _btnUseDefault.setText(S.SETUP_USE_DEFAULT);
-
-        _btnChangeRootAnchor = GUIUtil.createButton(_compRootAnchorButton, SWT.NONE);
-        _btnChangeRootAnchor.setText(S.BTN_CHANGE);
-        _btnChangeRootAnchor.setFocus();
-
         _btnUseDefault.setLayoutData(new RowData(100, SWT.DEFAULT));
         _btnChangeRootAnchor.setLayoutData(new RowData(100, SWT.DEFAULT));
+
+        return composite;
     }
 
-    protected void createTypeComposite(Composite parent)
+    protected Composite createTypeComposite(Composite parent)
     {
-        _compType = new Composite(parent, SWT.NONE);
+        Composite composite = new Composite(parent, SWT.NONE);
 
-        _btnLink = GUIUtil.createButton(_compType, SWT.RADIO | SWT.WRAP);
-        _btnLink.setText(S.SETUP_LINK);
-        _btnLink.setFont(GUIUtil.makeBold(_btnLink.getFont()));
+        _btnLinkStorage = GUIUtil.createButton(composite, SWT.RADIO | SWT.WRAP);
+        _btnLinkStorage.setText(S.SETUP_LINK);
+        _btnLinkStorage.setFont(GUIUtil.makeBold(_btnLinkStorage.getFont()));
 
-        _lblLinkDesc = new Label(_compType, SWT.WRAP);
-        _lblLinkDesc.setText(S.SETUP_LINK_DESC);
+        Label lblLinkDesc = new Label(composite, SWT.WRAP);
+        lblLinkDesc.setText(S.SETUP_LINK_DESC);
 
-        _btnBlock = GUIUtil.createButton(_compType, SWT.RADIO | SWT.WRAP);
-        _btnBlock.setText(S.SETUP_BLOCK);
-        _btnBlock.setFont(GUIUtil.makeBold(_btnBlock.getFont()));
+        _btnBlockStorage = GUIUtil.createButton(composite, SWT.RADIO | SWT.WRAP);
+        _btnBlockStorage.setText(S.SETUP_BLOCK);
+        _btnBlockStorage.setFont(GUIUtil.makeBold(_btnBlockStorage.getFont()));
 
-        _lblBlockDesc = new Label(_compType, SWT.WRAP);
-        _lblBlockDesc.setText(S.SETUP_BLOCK_DESC);
+        Label lblBlockDesc = new Label(composite, SWT.WRAP);
+        lblBlockDesc.setText(S.SETUP_BLOCK_DESC);
 
-        _lnkLearnMore = new Link(_compType, SWT.NONE);
-        _lnkLearnMore.setText(S.SETUP_STORAGE_LINK);
+        Link lnkLearnMore = new Link(composite, SWT.NONE);
+        lnkLearnMore.setText(S.SETUP_STORAGE_LINK);
+        lnkLearnMore.addSelectionListener(GUIUtil.createUrlLaunchListener(STORAGE_OPTIONS_URL));
 
         GridLayout layout = new GridLayout();
         layout.marginWidth = 5;
         layout.marginHeight = 0;
         layout.verticalSpacing = 6;
         layout.horizontalSpacing = 0;
-        _compType.setLayout(layout);
+        composite.setLayout(layout);
 
-        _btnLink.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
-        _lblLinkDesc.setLayoutData(createDescLayoutData());
-        _btnBlock.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
-        _lblBlockDesc.setLayoutData(createDescLayoutData());
-        _lnkLearnMore.setLayoutData(new GridData(SWT.RIGHT, SWT.BOTTOM, true, false));
+        _btnLinkStorage.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
+        lblLinkDesc.setLayoutData(createDescLayoutData());
+        _btnBlockStorage.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
+        lblBlockDesc.setLayoutData(createDescLayoutData());
+        lnkLearnMore.setLayoutData(new GridData(SWT.RIGHT, SWT.BOTTOM, true, false));
+
+        return composite;
     }
 
     protected GridData createDescLayoutData()
@@ -283,114 +186,75 @@ public class PageLocalStorage extends AbstractSetupPage
         return data;
     }
 
-    protected void createButtonBar(Composite parent)
+    @Override
+    protected void populateButtonBar(Composite parent)
     {
-        _compButton = new Composite(parent, SWT.NONE);
+        _compSpin = new CompSpin(parent, SWT.NONE);
 
-        _compSpin = new CompSpin(_compButton, SWT.NONE);
+        _btnBack = createButton(parent, S.BTN_BACK, false);
+        _btnBack.addSelectionListener(createListenerToGoBack());
 
-        _btnBack = GUIUtil.createButton(_compButton, SWT.NONE);
-        _btnBack.setText(S.BTN_BACK);
-
-        _btnInstall = GUIUtil.createButton(_compButton, SWT.NONE);
-        _btnInstall.setText(S.SETUP_BTN_INSTALL);
-        getShell().setDefaultButton(_btnInstall);
-
-        RowLayout layout = new RowLayout(SWT.HORIZONTAL);
-        layout.marginTop = 0;
-        layout.marginBottom = GUIParam.SETUP_PAGE_MARGIN_HEIGHT;
-        layout.marginLeft = 0;
-        layout.marginRight = 40;
-        layout.center = true;
-        _compButton.setLayout(layout);
-
-        _btnBack.setLayoutData(new RowData(100, SWT.DEFAULT));
-        _btnInstall.setLayoutData(new RowData(100, SWT.DEFAULT));
+        _btnInstall = createButton(parent, S.SETUP_BTN_INSTALL, true);
+        _btnInstall.addSelectionListener(createListenerToDoWork());
     }
 
     @Override
     protected void readFromModel(SetupModel model)
     {
         _txtRootAnchor.setText(model._localOptions._rootAnchorPath);
-        _btnLink.setSelection(!model._localOptions._useBlockStorage);
-        _btnBlock.setSelection(model._localOptions._useBlockStorage);
+        _btnLinkStorage.setSelection(!model._localOptions._useBlockStorage);
+        _btnBlockStorage.setSelection(model._localOptions._useBlockStorage);
     }
 
     @Override
     protected void writeToModel(SetupModel model)
     {
         model._localOptions._rootAnchorPath = _txtRootAnchor.getText();
-        model._localOptions._useBlockStorage = _btnBlock.getSelection();
+        model._localOptions._useBlockStorage = _btnBlockStorage.getSelection();
     }
 
-    private void setProgress(boolean inProgress)
+    @Override
+    protected @Nonnull Logger getLogger()
     {
-        _inProgress = inProgress;
-
-        if (_inProgress) {
-            updateStatus("", true, false);
-            setControlState(false);
-        } else {
-            updateStatus("", false, false);
-            setControlState(true);
-        }
+        return Loggers.getLogger(PageLocalStorage.class);
     }
 
-    private void setControlState(boolean enable)
+    @Override
+    protected @Nonnull Button getDefaultButton()
     {
-        _txtRootAnchor.setEnabled(enable);
-        _btnUseDefault.setEnabled(enable);
-        _btnChangeRootAnchor.setEnabled(enable);
-        _btnLink.setEnabled(enable);
-        _btnBlock.setEnabled(enable);
-        _btnInstall.setEnabled(enable);
-        _btnBack.setEnabled(enable);
+        return _btnInstall;
     }
 
-    private void updateStatus(String status, boolean indicateProgress, boolean indicateError)
+    @Override
+    protected Control[] getControls()
     {
-        if (indicateProgress) _compSpin.start();
-        else if (indicateError) _compSpin.error();
-        else _compSpin.stop();
+        return new Control[] {
+                _txtRootAnchor, _btnUseDefault, _btnChangeRootAnchor,
+                _btnLinkStorage, _btnBlockStorage, _btnInstall, _btnBack
+        };
     }
 
-    private void doWork()
+    @Override
+    protected CompSpin getSpinner()
     {
-        setProgress(true);
+        return _compSpin;
+    }
 
-        writeToModel(_model);
+    @Override
+    protected void doWorkImpl() throws Exception
+    {
+        _model.doInstall();
+    }
 
-        GUI.get().safeWork(_btnInstall, new ISWTWorker()
-        {
-            @Override
-            public void run()
-                    throws Exception
-            {
-                _model.doInstall();
-            }
+    @Override
+    protected ErrorMessage[] getErrorMessages(Exception e)
+    {
+        return new ErrorMessage[] { new ErrorMessage(ExNoPerm.class, S.SETUP_NOT_ADMIN) };
+    }
 
-            @Override
-            public void okay()
-            {
-                setProgress(false);
-                traverse(SWT.TRAVERSE_PAGE_NEXT);
-            }
-
-            @Override
-            public void error(Exception e)
-            {
-                l.error("Setup error", e);
-                ErrorMessages.show(getShell(), e, formatException(e));
-                setProgress(false);
-            }
-
-            private String formatException(Exception e)
-            {
-                if (e instanceof ConnectException) return S.SETUP_ERR_CONN;
-                else if (e instanceof ExUIMessage) return e.getMessage();
-                else if (e instanceof ExNoPerm) return S.SETUP_NOT_ADMIN;
-                else return S.SETUP_INSTALL_MESSAGE + "...";
-            }
-        });
+    @Override
+    protected String getDefaultErrorMessage()
+    {
+        return S.SETUP_DEFAULT_INSTALL_ERROR;
     }
 }
