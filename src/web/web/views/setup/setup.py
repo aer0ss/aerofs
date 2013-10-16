@@ -1,11 +1,12 @@
 import logging
-import re
+import tempfile
 import shutil
 import time
 import os
 import socket
 from aerofs_common.configuration import Configuration
 from pyramid.view import view_config
+from subprocess import call, Popen, PIPE
 from pyramid.httpexceptions import HTTPFound
 from web.util import *
 
@@ -13,16 +14,20 @@ BOOTSTRAP_PIPE_FILE = "/tmp/bootstrap"
 
 log = logging.getLogger("web")
 
+def get_settings():
+    settings = {}
+    configuration = Configuration()
+    configuration.fetch_and_populate(settings)
+
+    return settings
+
 @view_config(
     route_name='setup',
     permission='admin',
     renderer='setup.mako'
 )
 def setup_view(request):
-
-    settings = {}
-    configuration = Configuration()
-    configuration.fetch_and_populate(settings)
+    settings = get_settings()
 
     return {
         'current_config': settings
@@ -94,8 +99,37 @@ def json_setup_email(request):
 # Certificate
 # ------------------------------------------------------------------------
 
+def is_certificate_formatted_correctly(certificate_filename):
+    return call(["/usr/bin/openssl", "x509", "-in", certificate_filename, "-noout"]) == 0
+
+def is_key_formatted_correctly(key_filename):
+    return call(["/usr/bin/openssl", "rsa", "-in", key_filename, "-noout"]) == 0
+
+def write_pem_to_file(pem_string):
+     os_handle, filename = tempfile.mkstemp()
+     os.write(os_handle, pem_string)
+     os.close(os_handle)
+     return filename
+
+def _get_modulus_helper(cmd):
+    p = Popen(cmd, stdout=PIPE, stderr=PIPE)
+    stdout, stderr = p.communicate()
+    return stdout.split('=')[1]
+
+# Expects as input a filename pointing to a valid PEM certtificate file.
+def get_modulus_of_certificate_file(certificate_filename):
+    cmd = ["/usr/bin/openssl", "x509", "-noout", "-modulus", "-in", certificate_filename]
+    return _get_modulus_helper(cmd)
+
+# Expects as input a filename pointing to a valid PEM key file.
+def get_modulus_of_key_file(key_filename):
+    cmd = ["/usr/bin/openssl", "rsa", "-noout", "-modulus", "-in", key_filename]
+    return _get_modulus_helper(cmd)
+
+# Format certificate and key using this function before saving to the
+# configuration service.
 def format_pem(string):
-    return string.strip().replace('\n', '\\n');
+        return string.strip().replace('\n', '\\n');
 
 @view_config(
     route_name = 'json_setup_certificate',
@@ -103,17 +137,40 @@ def format_pem(string):
     renderer = 'json'
 )
 def json_setup_certificate(request):
-    certificate = format_pem(request.params['server.browser.certificate'])
-    key = format_pem(request.params['server.browser.key'])
+    certificate = request.params['server.browser.certificate']
+    key = request.params['server.browser.key']
 
-    # TODO (MP) need better sanity checking on the values of the cert & key (need to make sure nginx can parse these).
+    certificate_filename = write_pem_to_file(certificate)
+    key_filename = write_pem_to_file(key)
 
-    configuration = Configuration()
+    try:
+        is_certificate_valid = is_certificate_formatted_correctly(certificate_filename)
+        is_key_valid = is_key_formatted_correctly(key_filename)
 
-    configuration.set_persistent_value('browser_cert', certificate)
-    configuration.set_persistent_value('browser_key', key)
+        if not is_certificate_valid and not is_key_valid:
+            return {'error': "The certificate and key you provided is invalid."}
+        elif not is_certificate_valid:
+            return {'error': "The certificate you provided is invalid."}
+        elif not is_key_valid:
+            return {'error': "The key you provided is invalid."}
 
-    return {}
+        # Check that key matches the certificate.
+        certificate_modulus = get_modulus_of_certificate_file(certificate_filename)
+        key_modulus = get_modulus_of_key_file(key_filename)
+
+        if certificate_modulus != key_modulus:
+            return {'error': "The certificate and key you provided do not match."}
+
+        # All is well - set the external properties.
+        configuration = Configuration()
+        configuration.set_persistent_value('browser_cert', format_pem(certificate))
+        configuration.set_persistent_value('browser_key', format_pem(key))
+
+        return {}
+
+    finally:
+        os.unlink(certificate_filename)
+        os.unlink(key_filename)
 
 # ------------------------------------------------------------------------
 # Apply

@@ -36,22 +36,17 @@
         }
 
         ## @param onSuccess the function called when the request is successful
-        ## @param onFailure the function called when the request failed. Note
-        ##      that the function should NOT display errors. doPost() does so by
-        ##      calling displayError().
-        function doPost(postRoute, postData, onSuccess, onFailure) {
+        function doPost(postRoute, postData, onSuccess) {
             ## TODO (WW) use the unified error displaying framework
             $.post(postRoute, postData)
             .done(function (response) {
                 var error = response['error'];
                 if (error) {
-                    onFailure();
                     displayError(error);
                 } else {
                     onSuccess(response);
                 }
             }).fail(function (jqXHR, textStatus, errorThrown) {
-                onFailure();
                 displayError("Error: " + textStatus + " " + errorThrown);
             });
         }
