@@ -31,7 +31,7 @@
             var serializedData = $form.serialize();
 
             doPost("${request.route_path('json_setup_hostname')}",
-                serializedData, gotoNextPage);
+                serializedData, gotoNextPage, enableButtons);
         }
 
         event.preventDefault();

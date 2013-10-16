@@ -95,7 +95,7 @@
         var serializedData = $form.serialize();
 
         doPost("${request.route_path('json_setup_email')}",
-            serializedData, gotoNextPage);
+            serializedData, gotoNextPage, enableButtons);
         return false;
     }
 </script>
