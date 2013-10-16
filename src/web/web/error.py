@@ -7,7 +7,6 @@ from pyramid.httpexceptions import HTTPBadRequest
 
 log = logging.getLogger(__name__)
 
-
 def error(message, type="unspecified", data=None):
     """
     Raise an HTTPBadRequest object with a JSON body with the following format:
@@ -36,7 +35,6 @@ def error(message, type="unspecified", data=None):
     response.content_type = 'application/json'
     response.body = json.dumps(json_map)
     raise response
-
 
 def _normalize(message):
     """

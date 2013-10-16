@@ -94,11 +94,6 @@
         var $form = $('#applyForm');
         serializedData = $form.serialize();
 
-        $(document).ready(function() {
-            $("a").css("cursor", "arrow").click(false);
-            $(":input").prop("disabled", true);
-        });
-
         ## Stage 1: kick off the configuration process
         doPost("${request.route_path('json_setup_apply')}",
                 serializedData, pollForBootstrap, hideProgressModal);
@@ -109,8 +104,14 @@
     var interval;
     function pollForBootstrap() {
         interval = window.setInterval(function() {
-            doPost("${request.route_path('json_setup_poll')}",
-                    serializedData, finalizeConfigurationIfCompleted);
+
+            $.post("${request.route_path('json_setup_poll')}", serializedData)
+            .done(function (response) {
+                finalizeConfigurationIfCompleted(response);
+            }).fail(function (xhr) {
+                ## TODO (MP) If 200 or 503 continue, otherwise bail. Need smarter integration with bootstrap here.
+            });
+
         }, 1000);
     }
 

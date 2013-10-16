@@ -53,10 +53,10 @@ def json_setup_hostname(request):
     base_host_unified = request.params['base.host.unified']
 
     if not hostname_resolves(base_host_unified):
-        return {'error': 'Unable to resolve ' + base_host_unified + '. Please check your settings.'}
+        error('Unable to resolve ' + base_host_unified + '. Please check your settings.')
 
     if base_host_unified == "localhost":
-        return {'error': "Localhost is not an acceptable name."}
+        error("Localhost is not an acceptable name. Please configure your DNS.")
 
     configuration = Configuration()
     configuration.set_persistent_value('base_host', base_host_unified)
@@ -148,18 +148,18 @@ def json_setup_certificate(request):
         is_key_valid = is_key_formatted_correctly(key_filename)
 
         if not is_certificate_valid and not is_key_valid:
-            return {'error': "The certificate and key you provided is invalid."}
+            error("The certificate and key you provided is invalid.")
         elif not is_certificate_valid:
-            return {'error': "The certificate you provided is invalid."}
+            error("The certificate you provided is invalid.")
         elif not is_key_valid:
-            return {'error': "The key you provided is invalid."}
+            error("The key you provided is invalid.")
 
         # Check that key matches the certificate.
         certificate_modulus = get_modulus_of_certificate_file(certificate_filename)
         key_modulus = get_modulus_of_key_file(key_filename)
 
         if certificate_modulus != key_modulus:
-            return {'error': "The certificate and key you provided do not match."}
+            error("The certificate and key you provided do not match.")
 
         # All is well - set the external properties.
         configuration = Configuration()

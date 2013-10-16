@@ -19,13 +19,11 @@
 <%def name="scripts(page)">
     <script type="text/javascript">
         function verifyAbsence(elementID) {
-            ## TODO (WW) why doens't $('#' + elementID) work here?
             var v = document.getElementById(elementID).value;
             return v == null || v == "";
         }
 
         function verifyPresence(elementID, message) {
-            ## TODO (WW) why doens't $('#' + elementID) work here?
             var v = document.getElementById(elementID).value;
             if (v == null || v == "") {
                 displayError(message);
@@ -36,18 +34,15 @@
         }
 
         ## @param onSuccess the function called when the request is successful
-        function doPost(postRoute, postData, onSuccess) {
-            ## TODO (WW) use the unified error displaying framework
+        function doPost(postRoute, postData, onSuccess, onFailure) {
             $.post(postRoute, postData)
             .done(function (response) {
-                var error = response['error'];
-                if (error) {
-                    displayError(error);
-                } else {
-                    onSuccess(response);
+                onSuccess(response);
+            }).fail(function (xhr) {
+                if (typeof onFailure != 'undefined') {
+                    onFailure();
                 }
-            }).fail(function (jqXHR, textStatus, errorThrown) {
-                displayError("Error: " + textStatus + " " + errorThrown);
+                showErrorMessageFromResponse(xhr);
             });
         }
 

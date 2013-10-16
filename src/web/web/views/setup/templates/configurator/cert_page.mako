@@ -109,6 +109,6 @@
 
         doPost("${request.route_path('json_setup_certificate')}",
             serializedData + "&server.browser.certificate=" + certificateData + "&server.browser.key=" + keyData,
-            gotoNextPage);
+            gotoNextPage, enableButtons);
     }
 </script>
