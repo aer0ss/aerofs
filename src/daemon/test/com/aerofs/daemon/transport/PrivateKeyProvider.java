@@ -6,6 +6,7 @@ package com.aerofs.daemon.transport;
 
 import com.aerofs.base.BaseSecUtil;
 import com.aerofs.base.ssl.IPrivateKeyProvider;
+import com.aerofs.testlib.SecTestUtil;
 import com.google.common.base.Preconditions;
 import org.bouncycastle.operator.OperatorCreationException;
 

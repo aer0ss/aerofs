@@ -2,9 +2,8 @@
  * Copyright (c) Air Computing Inc., 2013.
  */
 
-package aerofs.base.acl;
+package com.aerofs.base.acl;
 
-import com.aerofs.base.acl.Role;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.proto.Common.PBRole;
 import org.junit.Test;

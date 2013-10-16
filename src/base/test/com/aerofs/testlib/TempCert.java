@@ -1,17 +1,21 @@
-package com.aerofs.daemon.rest;
+package com.aerofs.testlib;
 
 import com.aerofs.base.BaseSecUtil;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UserID;
-import com.aerofs.daemon.transport.SecTestUtil;
+import com.aerofs.base.ssl.ICertificateProvider;
+import com.aerofs.base.ssl.IPrivateKeyProvider;
 
+import javax.annotation.Nonnull;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.security.KeyPair;
 import java.security.KeyStore;
 import java.security.PrivateKey;
 import java.security.SecureRandom;
 import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 
 /**
@@ -19,7 +23,7 @@ import java.security.cert.X509Certificate;
  *
  * Also export it into a temporary keystore for use by HTTPClient
  */
-public class TempCert
+public class TempCert implements IPrivateKeyProvider, ICertificateProvider
 {
     // for some reason that eludes me HTTPClient barfs when given
     // a keystore with an empty password
@@ -39,6 +43,18 @@ public class TempCert
     public void cleanup()
     {
         if (keyStore != null) new File(keyStore).delete();
+    }
+
+    @Override
+    public @Nonnull PrivateKey getPrivateKey() throws IOException
+    {
+        return key;
+    }
+
+    @Override
+    public @Nonnull Certificate getCert() throws CertificateException, IOException
+    {
+        return cert;
     }
 
     public static TempCert generateCA()
