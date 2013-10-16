@@ -69,24 +69,17 @@ function _package()
     local repo=''
     repo=$(_uppercase_repo)
 
-    _check-aerofs-apt-reachable
-
-    local package=$(echo $1 | sed 's/-/_/g')
-    do_in $AEROFS_ROOT ant package_${package} \
-        -Dmode=PRIVATE \
-        -Dproduct=CLIENT \
-        -Drepo="$repo"
-    do_in $AEROFS_ROOT/packaging make packagelist
-}
-
-function _package-and-upload-versions()
-{
-    local repo=''
-    repo=$(_uppercase_repo)
+    local clean='clean'
+    local target='servers'
+    if [ $# -eq 1 ]
+    then
+        target="$1"
+        clean=""
+    fi
 
     _check-aerofs-apt-reachable
 
-    do_in $AEROFS_ROOT ant clean package_servers upload_versions \
+    do_in $AEROFS_ROOT ant ${clean} package_${target} upload_versions \
         -Dproduct=CLIENT \
         -Dmode=PRIVATE \
         -Drepo="$repo"
@@ -113,9 +106,9 @@ function _vm-kick()
 {
     if [ $# -eq 0 ]
     then
-        _package-and-upload-versions
+        _package
     elif [ "x$1" != "x--no-package" ] ; then
-        usage
+        _package $1
     fi
     _local-prod-cmd vm-ctrl kick
 }
@@ -129,7 +122,7 @@ function _vm-create()
     local repo=''
     repo=$(_lowercase_repo)
 
-    _package-and-upload-versions
+    _package
     _local-prod-cmd vm-make "$repo" ${@:-}
 }
 
@@ -172,7 +165,7 @@ function usage()
     echo "    ssh" >&2
     echo "    halt" >&2
     echo "    kill" >&2
-    echo "    kick [--no-package]" >&2
+    echo "    kick [<package_name>|--no-package]" >&2
     echo "    deploy <package_name>" >&2
 
     exit 1
