@@ -66,6 +66,7 @@ public class TrayIcon implements ITrayMenuListener
     private String _tooltip;
     private boolean _isOnline;
     private RitualNotificationClient _rnc;
+    private String _iconName;
 
     TrayIcon(SystemTray st)
     {
@@ -241,7 +242,6 @@ public class TrayIcon implements ITrayMenuListener
             _notificationReasons.remove(reason);
         }
 
-
         GUI.get().safeAsyncExec(iconImpl(), new Runnable() {
             @Override
             public void run()
@@ -255,11 +255,34 @@ public class TrayIcon implements ITrayMenuListener
     {
         String iconName = Images.getTrayIconName(_isOnline, !_notificationReasons.isEmpty(),
                 _iconIndex);
-        if (_uti != null) {
-            _uti.setIcon(iconName, L.product());
-        }
-        if (_ti != null) {
-            _ti.setImage(Images.getTrayIcon(iconName));
+
+        /*
+         * This optimization is necessary to prevent tray icon from flickering at start up.
+         *
+         * The root cause is a combination of 3 reasonble things that sums up to a SNAFU:
+         * - we aggressive refresh tray icon whenever the icon state _can_ change.
+         * - at start up, there's a burst of events that requires us to check if the tray icon
+         *   has changed:
+         *   * RNC trying to connect to daemon, who is not up yet, causing the channel to break
+         *     immediately triggering a refresh.
+         *   * when the connection is established, 2-3 notifications come in from initial connect
+         *     casuing the tray icon to refresh.
+         * - since we use asyncExec to refresh, we end up queuing 2-3 refresh requests in a short
+         *   period of time. When the SWT event thread resumes, it refreshes many times in quick
+         *   succession.
+         *
+         * SWT doesn't handle that well even though we are setting it to the same image most of
+         * the times.
+         */
+        if (!iconName.equals(_iconName)) {
+            _iconName = iconName;
+
+            if (_uti != null) {
+                _uti.setIcon(iconName, L.product());
+            }
+            if (_ti != null) {
+                _ti.setImage(Images.getTrayIcon(iconName));
+            }
         }
     }
 
