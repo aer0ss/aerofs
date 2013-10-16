@@ -88,7 +88,7 @@ public class AbstractSPFolderTest extends AbstractSPTest
 
     protected void joinSharedFolderImpl(User sharee, SID sid, boolean ext) throws Exception
     {
-        User oldUser = sessionUser.exists() ? sessionUser.get() : null;
+        User oldUser = sessionUser.exists() ? sessionUser.getUser() : null;
 
         setSessionUser(sharee);
         service.joinSharedFolder(sid.toPB(), ext);
@@ -98,7 +98,7 @@ public class AbstractSPFolderTest extends AbstractSPTest
 
     protected void leaveSharedFolder(User sharee, SID sid) throws Exception
     {
-        User oldUser = sessionUser.exists() ? sessionUser.get() : null;
+        User oldUser = sessionUser.exists() ? sessionUser.getUser() : null;
 
         setSessionUser(sharee);
         service.leaveSharedFolder(sid.toPB());

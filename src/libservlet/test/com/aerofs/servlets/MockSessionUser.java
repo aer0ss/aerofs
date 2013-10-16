@@ -29,7 +29,7 @@ public class MockSessionUser implements ISessionUser
     }
 
     @Override
-    public @Nonnull User get()
+    public @Nonnull User getUser()
             throws ExNotAuthenticated
     {
         if (_user == null) throw new ExNotAuthenticated();
@@ -37,10 +37,10 @@ public class MockSessionUser implements ISessionUser
     }
 
     @Override
-    public void set(@Nonnull User user)
+    public void setUser(@Nonnull User userID)
     {
-        _user = user;
-        assertFalse(_user.toString().isEmpty());
+        _user = userID;
+        assertFalse(_user.id().getString().isEmpty());
     }
 
     @Override

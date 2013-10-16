@@ -20,7 +20,6 @@ public class TestSP_InviteToSignUp extends AbstractSPTest
             throws Exception
     {
         setSessionUser(USER_1);
-
         service.inviteToSignUp(Collections.<String>emptyList());
     }
 
@@ -29,7 +28,6 @@ public class TestSP_InviteToSignUp extends AbstractSPTest
             throws Exception
     {
         setSessionUser(USER_1);
-
         service.inviteToSignUp(Collections.singletonList(USER_2.id().getString()));
 
         Mockito.verifyZeroInteractions(factEmailer);

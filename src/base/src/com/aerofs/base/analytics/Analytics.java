@@ -106,7 +106,7 @@ public class Analytics
             {
                 Map<String, String> properties = Maps.newHashMap();
 
-                UserID user = _properties.getUser();
+                UserID user = _properties.getUserID();
                 DID did = _properties.getDid();
 
                 String userStr = (user != null) ? user.getString() : null;

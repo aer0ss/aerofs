@@ -24,9 +24,7 @@ log = logging.getLogger(__name__)
 def groupfinder(userid, request):
     # Must reload auth level on every request, because not all pages that
     # require authentication make SP calls.
-
-    # TODO (MP) uncomment this later, once sp sessions are persistent.
-    #reload_auth_level(request)
+    reload_auth_level(request)
 
     return [request.session.get('group')]
 

@@ -26,7 +26,7 @@ public class TestSP_GetTeamServerUserID extends AbstractSPTest
             throws ExNotAuthenticated
     {
         setSessionUser(USER_1);
-        user = sessionUser.get();
+        user = USER_1;
     }
 
     @Test (expected = ExNoPerm.class)

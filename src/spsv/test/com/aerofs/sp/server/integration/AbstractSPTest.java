@@ -262,7 +262,7 @@ public class AbstractSPTest extends AbstractTestWithDatabase
     // TODO (WW) remove this method as it doesn't do much
     protected void setSessionUser(User user)
     {
-        sessionUser.set(user);
+        sessionUser.setUser(user);
     }
 
     protected void mockCertificateGeneratorAndIncrementSerialNumber() throws Exception

@@ -27,7 +27,7 @@ public class DesktopAnalyticsProperties implements IAnalyticsPlatformProperties
     private static final Logger l = Loggers.getLogger(DesktopAnalyticsProperties.class);
 
     @Override
-    public @Nullable UserID getUser()
+    public @Nullable UserID getUserID()
     {
         return Cfg.user();
     }

@@ -35,7 +35,6 @@ public class TestSP_ListUserShareFolders extends AbstractSPFolderTest
             throws Exception
     {
         setSessionUser(USER_1);
-
         service.listUserSharedFolders(USER_2.id().getString());
     }
 
@@ -44,7 +43,6 @@ public class TestSP_ListUserShareFolders extends AbstractSPFolderTest
             throws Exception
     {
         setSessionUser(USER_1);
-
         service.listUserSharedFolders("non-existing");
     }
 
@@ -53,7 +51,6 @@ public class TestSP_ListUserShareFolders extends AbstractSPFolderTest
             throws Exception
     {
         setSessionUser(USER_1);
-
         service.listUserSharedFolders("non-existing");
     }
 
@@ -62,7 +59,6 @@ public class TestSP_ListUserShareFolders extends AbstractSPFolderTest
             throws Exception
     {
         setSessionUser(USER_1);
-
         service.listUserSharedFolders(USER_2.id().getString());
     }
 
