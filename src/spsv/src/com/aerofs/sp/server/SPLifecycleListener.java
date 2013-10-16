@@ -2,13 +2,13 @@ package com.aerofs.sp.server;
 
 import com.aerofs.base.BaseParam.Verkehr;
 import com.aerofs.base.Loggers;
+import com.aerofs.base.id.UserID;
+import com.aerofs.sp.server.lib.session.HttpSessionUserID;
 import com.aerofs.lib.properties.Configuration;
 import com.aerofs.base.ssl.FileBasedCertificateProvider;
 import com.aerofs.base.ssl.ICertificateProvider;
 import com.aerofs.lib.Util;
-import com.aerofs.sp.server.lib.user.User;
 import com.aerofs.servlets.lib.NoopConnectionListener;
-import com.aerofs.sp.server.lib.session.HttpSessionUser;
 import com.aerofs.sp.server.lib.session.IHttpSessionProvider;
 import com.aerofs.sp.server.session.SPActiveTomcatSessionTracker;
 import com.aerofs.sp.server.session.SPActiveUserSessionTracker;
@@ -180,7 +180,7 @@ public class SPLifecycleListener implements ServletContextListener, HttpSessionL
 
         // If a sign in has occurred for this specific session, update the user session tracker
         // as well.
-        HttpSessionUser sessionUser = new HttpSessionUser(new IHttpSessionProvider()
+        HttpSessionUserID sessionUserID = new HttpSessionUserID(new IHttpSessionProvider()
         {
             @Override
             public HttpSession get()
@@ -189,10 +189,10 @@ public class SPLifecycleListener implements ServletContextListener, HttpSessionL
             }
         });
 
-        User user = sessionUser.getNullable();
+        UserID userID = sessionUserID.getUserIDNullable();
 
-        if (user != null) {
-            _userSessionTracker.signOut(user.id(), event.getSession().getId());
+        if (userID != null) {
+            _userSessionTracker.signOut(userID, event.getSession().getId());
         }
     }
 }

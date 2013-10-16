@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Air Computing Inc., 2012.
+ * Copyright (c) Air Computing Inc., 2013.
  */
 
 package com.aerofs.sp.server.lib.user;
@@ -15,19 +15,19 @@ public interface ISessionUser
 {
     /**
      * @return the user of this session
-     * @throws ExNotAuthenticated if no user has been set for the session (i.e. does not exist).
+     * @throws ExNotAuthenticated if no user has been setUser for the session (i.e. does not exist).
      */
-    @Nonnull User get() throws ExNotAuthenticated;
+    @Nonnull User getUser() throws ExNotAuthenticated;
 
     /**
-     * Return whether set() has been called
+     * Return whether setUser() has been called
      */
     boolean exists();
 
     /**
-     * Set the session user
+     * Set the session user.
      */
-    void set(User user);
+    void setUser(User user);
 
     /**
      * Remove the user ID from this session. A subsequent call to getUserNullable() should throw

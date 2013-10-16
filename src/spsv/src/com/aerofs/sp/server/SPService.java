@@ -94,6 +94,7 @@ import com.aerofs.sp.server.email.DeviceRegistrationEmailer;
 import com.aerofs.sp.server.email.InvitationEmailer;
 import com.aerofs.sp.server.email.RequestToSignUpEmailer;
 import com.aerofs.sp.server.email.SharedFolderNotificationEmailer;
+import com.aerofs.sp.server.lib.user.ISessionUser;
 import com.aerofs.sp.server.shared_folder_rules.ISharedFolderRules;
 import com.aerofs.sp.server.lib.EmailSubscriptionDatabase;
 import com.aerofs.sp.server.lib.SPDatabase;
@@ -109,7 +110,6 @@ import com.aerofs.sp.server.lib.id.StripeCustomerID;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.organization.OrganizationInvitation;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
-import com.aerofs.sp.server.lib.user.ISessionUser;
 import com.aerofs.sp.server.lib.user.User;
 import com.aerofs.sp.server.lib.user.User.PendingSharedFolder;
 import com.aerofs.sp.server.session.SPActiveUserSessionTracker;
@@ -167,7 +167,7 @@ public class SPService implements ISPService
     // Several methods in this SPService require access to the HttpSession's user id.
     // Since the Protobuf plugin cannot get access to the session user,
     // we use this interface to gain access to the user Id of the current SPServlet thread.
-    // _sessionUser.get() returns the userId associated with the current HttpSession.
+    // _sessionUser.getUser() returns the userId associated with the current HttpSession.
     // Note that the session is set externally in SPServlet.
     private final ISessionUser _sessionUser;
 
@@ -289,7 +289,7 @@ public class SPService implements ISPService
     {
         String user;
         try {
-            user = _sessionUser.exists() ? _sessionUser.get().id().getString() : "user unknown";
+            user = _sessionUser.exists() ? _sessionUser.getUser().id().getString() : "user unknown";
         } catch (ExNotAuthenticated e2) {
             throw SystemUtil.fatalWithReturn(e2);
         }
@@ -331,7 +331,7 @@ public class SPService implements ISPService
     {
         _sqlTrans.begin();
 
-        User user = _sessionUser.get();
+        User user = _sessionUser.getUser();
         FullName fn = user.getFullName();
 
         GetUserPreferencesReply.Builder reply = GetUserPreferencesReply.newBuilder()
@@ -362,7 +362,10 @@ public class SPService implements ISPService
         _sqlTrans.begin();
 
         // WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE remove the test (as userID will become required)
-        User user = userID == null ? _sessionUser.get() : _factUser.createFromExternalID(userID);
+        User user = userID == null ?
+                _sessionUser.getUser() :
+                _factUser.createFromExternalID(userID);
+
         throwIfSessionUserIsNotOrAdminOf(user);
 
         if (firstName != null || lastName != null) {
@@ -371,7 +374,8 @@ public class SPService implements ISPService
             }
 
             FullName fullName = sanitizeName(firstName, lastName);
-            l.info("{} set full name: {}, session user {}", user, fullName.getString(), _sessionUser.get());
+            l.info("{} set full name: {}, session user {}", user, fullName.getString(),
+                    _sessionUser.getUser());
             user.setName(fullName);
             userNameUpdated = true;
         }
@@ -381,7 +385,8 @@ public class SPService implements ISPService
             throwIfNotOwner(user, device);
 
             // TODO (WW) print session user in log headers
-            l.info("{} set device name: {}, session user {}", user, deviceName, _sessionUser.get());
+            l.info("{} set device name: {}, session user {}", user, deviceName,
+                    _sessionUser.getUser());
             device.setName(deviceName);
             deviceNameUpdated = true;
         }
@@ -417,7 +422,7 @@ public class SPService implements ISPService
             throws Exception
     {
         _sqlTrans.begin();
-        User user = _sessionUser.get();
+        User user = _sessionUser.getUser();
 
         String orgID = user.getOrganization().id().toHexString();
         _sqlTrans.commit();
@@ -440,7 +445,7 @@ public class SPService implements ISPService
 
         _sqlTrans.begin();
 
-        User user = _sessionUser.get();
+        User user = _sessionUser.getUser();
         user.throwIfNotAdmin();
 
         Organization org = user.getOrganization();
@@ -478,7 +483,7 @@ public class SPService implements ISPService
 
         _sqlTrans.begin();
 
-        User user = _sessionUser.get();
+        User user = _sessionUser.getUser();
         user.throwIfNotAdmin();
         Organization org = user.getOrganization();
 
@@ -500,7 +505,7 @@ public class SPService implements ISPService
     {
         _sqlTrans.begin();
 
-        User user = _sessionUser.get();
+        User user = _sessionUser.getUser();
         user.throwIfNotAdmin();
 
         ListOrganizationInvitedUsersReply.Builder builder =
@@ -523,8 +528,9 @@ public class SPService implements ISPService
         User user = _factUser.createFromExternalID(userID);
         throwIfSessionUserIsNotOrAdminOf(user);
 
+        User sessionUser = _sessionUser.getUser();
         List<PBSharedFolder> pbs = sharedFolders2pb(user.getSharedFolders(),
-                _sessionUser.get().getOrganization());
+                sessionUser.getOrganization());
 
         _sqlTrans.commit();
 
@@ -562,7 +568,7 @@ public class SPService implements ISPService
     private void throwIfSessionUserIsNotOrAdminOf(User user)
             throws ExNoPerm, SQLException, ExNotFound, ExNotAuthenticated
     {
-        User currentUser = _sessionUser.get();
+        User currentUser = _sessionUser.getUser();
 
         if (user.equals(currentUser)) return;
 
@@ -661,7 +667,7 @@ public class SPService implements ISPService
     {
         _sqlTrans.begin();
 
-        User requester = _sessionUser.get();
+        User requester = _sessionUser.getUser();
         User subject = _factUser.createFromExternalID(userIdString);
         AuthorizationLevel newAuth = AuthorizationLevel.fromPB(authLevel);
 
@@ -698,7 +704,7 @@ public class SPService implements ISPService
     {
         _sqlTrans.begin();
 
-        User user = _sessionUser.get();
+        User user = _sessionUser.getUser();
 
         List<OrganizationInvitation> invitations = user.getOrganizationInvitations();
 
@@ -731,7 +737,7 @@ public class SPService implements ISPService
     {
         _sqlTrans.begin();
 
-        final Organization org = _sessionUser.get().getOrganization();
+        final Organization org = _sessionUser.getUser().getOrganization();
 
         final GetOrgPreferencesReply.Builder replyBuilder = GetOrgPreferencesReply.newBuilder()
                 .setOrganizationName(org.getName())
@@ -749,7 +755,7 @@ public class SPService implements ISPService
     {
         _sqlTrans.begin();
 
-        User user = _sessionUser.get();
+        User user = _sessionUser.getUser();
         user.throwIfNotAdmin();
 
         final Organization organization = user.getOrganization();
@@ -790,9 +796,7 @@ public class SPService implements ISPService
             throws Exception
     {
         _sqlTrans.begin();
-
-        AuthorizationLevel level = _sessionUser.get().getLevel();
-
+        AuthorizationLevel level = _sessionUser.getUser().getLevel();
         _sqlTrans.commit();
 
         return createReply(GetAuthorizationLevelReply.newBuilder().setLevel(level.toPB()).build());
@@ -804,7 +808,7 @@ public class SPService implements ISPService
     {
         _sqlTrans.begin();
 
-        User user = _sessionUser.get();
+        User user = _sessionUser.getUser();
 
         if (!user.getLevel().covers(AuthorizationLevel.ADMIN)) {
             throw new ExNoPerm();
@@ -831,7 +835,7 @@ public class SPService implements ISPService
         osName = Strings.nullToEmpty(osName);
         deviceName = Strings.nullToEmpty(deviceName);
 
-        User user = _sessionUser.get();
+        User user = _sessionUser.getUser();
         Device device = _factDevice.create(deviceId);
 
         CertificationResult cert = device.certify(new PKCS10CertificationRequest(csr.toByteArray()),
@@ -859,7 +863,7 @@ public class SPService implements ISPService
             String osFamily, String osName)
             throws Exception
     {
-        User user = _sessionUser.get();
+        User user = _sessionUser.getUser();
         Device device = _factDevice.create(deviceId);
 
         _sqlTrans.begin();
@@ -885,7 +889,7 @@ public class SPService implements ISPService
         if (Strings.isNullOrEmpty(stripeCustomerId)) throw new ExBadArgs();
 
         _sqlTrans.begin();
-        User user = _sessionUser.get();
+        User user = _sessionUser.getUser();
         user.throwIfNotAdmin();
         user.getOrganization().setStripeCustomerID(stripeCustomerId);
         _sqlTrans.commit();
@@ -898,7 +902,7 @@ public class SPService implements ISPService
             throws Exception
     {
         _sqlTrans.begin();
-        User user = _sessionUser.get();
+        User user = _sessionUser.getUser();
         user.throwIfNotAdmin();
         user.getOrganization().deleteStripeCustomerID();
         _sqlTrans.commit();
@@ -925,7 +929,7 @@ public class SPService implements ISPService
         osName = Strings.nullToEmpty(osName);
         deviceName = Strings.nullToEmpty(deviceName);
 
-        User user = _sessionUser.get();
+        User user = _sessionUser.getUser();
 
         // We need two transactions. The first is read only, so no rollback ability needed. In
         // between the transaction we make an RPC call.
@@ -980,7 +984,7 @@ public class SPService implements ISPService
     {
         _sqlTrans.begin();
 
-        User user = _sessionUser.get();
+        User user = _sessionUser.getUser();
         List<String> names = Lists.newArrayListWithCapacity(shareIds.size());
         for (ByteString shareId : shareIds) {
             SharedFolder sf = _factSharedFolder.create(shareId);
@@ -1005,7 +1009,7 @@ public class SPService implements ISPService
         _sqlTrans.begin();
 
         EmailSender.sendPublicEmailFromSupport(SPParam.EMAIL_FROM_NAME,
-                _sessionUser.get().id().getString(), null, UserID.fromExternal(userId).getString(),
+                _sessionUser.getUser().id().getString(), null, UserID.fromExternal(userId).getString(),
                 body, null, EmailCategory.SUPPORT);
 
         _sqlTrans.commit();
@@ -1025,7 +1029,7 @@ public class SPService implements ISPService
         SharedFolder sf = _factSharedFolder.create(shareId);
         if (sf.id().isUserRoot()) throw new ExBadArgs("Cannot share root");
 
-        User sharer = _sessionUser.get();
+        User sharer = _sessionUser.getUser();
         List<SubjectRolePair> srps = SubjectRolePairs.listFromPB(rolePairs);
 
         l.info("{} shares {} [{}] with {}", sharer, sf, external, srps);
@@ -1156,7 +1160,7 @@ public class SPService implements ISPService
 
         _sqlTrans.begin();
 
-        User user = _sessionUser.get();
+        User user = _sessionUser.getUser();
         SharedFolder sf = _factSharedFolder.create(new SID(sid));
 
         l.info(user + " joins " + sf);
@@ -1204,7 +1208,7 @@ public class SPService implements ISPService
     {
         _sqlTrans.begin();
 
-        User user = _sessionUser.get();
+        User user = _sessionUser.getUser();
         SharedFolder sf = _factSharedFolder.create(new SID(sid));
 
         l.info(user + " ignore " + sf);
@@ -1232,7 +1236,7 @@ public class SPService implements ISPService
     {
         _sqlTrans.begin();
 
-        User user = _sessionUser.get();
+        User user = _sessionUser.getUser();
         SharedFolder sf = _factSharedFolder.create(new SID(sid));
 
         l.info(user + " leave " + sf);
@@ -1267,7 +1271,7 @@ public class SPService implements ISPService
     {
         _sqlTrans.begin();
 
-        User user = _sessionUser.get();
+        User user = _sessionUser.getUser();
 
         Collection<PendingSharedFolder> psfs = user.getPendingSharedFolders();
 
@@ -1349,7 +1353,7 @@ public class SPService implements ISPService
 
         _sqlTrans.begin();
 
-        User inviter = _sessionUser.get();
+        User inviter = _sessionUser.getUser();
         l.info("invite {} users by {}", userIdStrings.size(), inviter);
 
         // The sending of invitation emails is deferred to the end of the transaction to ensure
@@ -1378,7 +1382,7 @@ public class SPService implements ISPService
     {
         _sqlTrans.begin();
 
-        User inviter = _sessionUser.get();
+        User inviter = _sessionUser.getUser();
         User invitee = _factUser.create(UserID.fromExternal(userIdString));
         Organization org = inviter.getOrganization();
 
@@ -1439,7 +1443,7 @@ public class SPService implements ISPService
     {
         _sqlTrans.begin();
 
-        User accepter = _sessionUser.get();
+        User accepter = _sessionUser.getUser();
 
         Organization orgOld = accepter.getOrganization();
         Organization orgNew = _factOrg.create(orgID);
@@ -1481,7 +1485,7 @@ public class SPService implements ISPService
     {
         _sqlTrans.begin();
 
-        User user = _sessionUser.get();
+        User user = _sessionUser.getUser();
         Organization org = _factOrg.create(orgID);
         l.info("Delete org invite by " + user);
 
@@ -1501,7 +1505,7 @@ public class SPService implements ISPService
     {
         _sqlTrans.begin();
 
-        User user = _sessionUser.get();
+        User user = _sessionUser.getUser();
         user.throwIfNotAdmin();
 
         Organization org = user.getOrganization();
@@ -1526,7 +1530,7 @@ public class SPService implements ISPService
             throw new ExNoPerm("Removing users isn't supported in enterprise deployment");
         }
 
-        User admin = _sessionUser.get();
+        User admin = _sessionUser.getUser();
         User user = _factUser.createFromExternalID(userId);
 
         if (admin.equals(user)) throw new ExNoPerm("You can't remove yourself from an organization");
@@ -1548,7 +1552,7 @@ public class SPService implements ISPService
             ByteString csr)
             throws Exception
     {
-        User user = _sessionUser.get();
+        User user = _sessionUser.getUser();
         Device device = _factDevice.create(deviceId);
 
         // We need two transactions. The first is read only, so no rollback ability needed. In
@@ -1559,7 +1563,7 @@ public class SPService implements ISPService
         }
         _sqlTrans.commit();
 
-        // Perform RPC to CA to get CSR signed.
+        // Perform RPC to CA to get the CSR signed.
         CertificationResult cert = device.certify(new PKCS10CertificationRequest(csr.toByteArray()),
                 user);
 
@@ -1578,7 +1582,7 @@ public class SPService implements ISPService
             ByteString csr)
             throws Exception
     {
-        User user = _sessionUser.get();
+        User user = _sessionUser.getUser();
         Device device = _factDevice.create(deviceId);
 
         // We need two transactions. The first is read only, so no rollback ability needed. In
@@ -1687,7 +1691,7 @@ public class SPService implements ISPService
     {
         _sqlTrans.begin();
 
-        User user = _sessionUser.get();
+        User user = _sessionUser.getUser();
         user.throwIfNotAdmin();
 
         GetStripeDataReply.Builder builder = GetStripeDataReply.newBuilder()
@@ -1715,7 +1719,7 @@ public class SPService implements ISPService
     private ListenableFuture<GetACLReply> getACLImpl(final Long epoch, boolean includeExternal)
             throws SQLException, ExNoPerm, ExNotAuthenticated
     {
-        User user = _sessionUser.get();
+        User user = _sessionUser.getUser();
         GetACLReply.Builder bd = GetACLReply.newBuilder();
 
         l.info("get acl u: {}", user.id());
@@ -1757,7 +1761,7 @@ public class SPService implements ISPService
     {
         supressWarnings = firstNonNull(supressWarnings, false);
 
-        User user = _sessionUser.get();
+        User user = _sessionUser.getUser();
         User subject = _factUser.createFromExternalID(subjectString);
         Role role = Role.fromPB(pbRole);
         SharedFolder sf = _factSharedFolder.create(storeId);
@@ -1791,7 +1795,7 @@ public class SPService implements ISPService
     public ListenableFuture<Void> deleteACL(final ByteString storeId, String subjectString)
             throws Exception
     {
-        User user = _sessionUser.get();
+        User user = _sessionUser.getUser();
         SharedFolder sf = _factSharedFolder.create(storeId);
 
         User subject = _factUser.createFromExternalID(subjectString);
@@ -1888,10 +1892,9 @@ public class SPService implements ISPService
         }
 
         // Set the session cookie.
-        _sessionUser.set(user);
+        _sessionUser.setUser(user);
         // Update the user tracker so we can invalidate sessions if needed.
         _userTracker.signIn(user.id(), _sessionUser.getSessionID());
-
 
         return createVoidReply();
     }
@@ -1933,8 +1936,7 @@ public class SPService implements ISPService
             throws Exception
     {
         _sqlTrans.begin();
-        _passwordManagement.changePassword(_sessionUser.get().id(), old_credentials,
-                new_credentials);
+        _passwordManagement.changePassword(_sessionUser.getUser().id(), old_credentials, new_credentials);
         _sqlTrans.commit();
 
         return createVoidReply();
@@ -2060,7 +2062,7 @@ public class SPService implements ISPService
         _authenticator.authenticateUser(user, credentials.toByteArray(), _sqlTrans);
 
         // Set the session cookie.
-        _sessionUser.set(user);
+        _sessionUser.setUser(user);
         // Update the user tracker so we can invalidate sessions if needed.
         _userTracker.signIn(user.id(), _sessionUser.getSessionID());
 
@@ -2089,7 +2091,7 @@ public class SPService implements ISPService
         _sqlTrans.begin();
 
         user.throwIfBadCertificate(_certauth, device);
-        _sessionUser.set(user);
+        _sessionUser.setUser(user);
         _userTracker.signIn(user.id(), _sessionUser.getSessionID());
 
         _sqlTrans.commit();
@@ -2140,7 +2142,7 @@ public class SPService implements ISPService
         l.info("SI (OpenID): " + user.toString());
 
         // Set the session cookie.
-        _sessionUser.set(user);
+        _sessionUser.setUser(user);
 
         // Update the user tracker so we can invalidate sessions if needed.
         _userTracker.signIn(user.id(), _sessionUser.getSessionID());
@@ -2215,13 +2217,13 @@ public class SPService implements ISPService
     {
         _sqlTrans.begin();
 
-        User user = _sessionUser.get();
+        User user = _sessionUser.getUser();
         Device device = _factDevice.create(deviceId);
         throwIfSessionUserIsNotOrAdminOf(device.getOwner());
 
         // TODO (WW) print session user in log headers
         l.info("{} unlinks {}, erase {}, session user {}", user, device.id().toStringFormal(),
-                erase, _sessionUser.get());
+                erase, _sessionUser.getUser());
 
         unlinkDeviceImplementation(device, erase);
 
@@ -2330,7 +2332,7 @@ public class SPService implements ISPService
         // N.B. verification here is very important.
         _sqlTrans.begin();
         device.throwIfNotFound();
-        device.throwIfNotOwner(_sessionUser.get());
+        device.throwIfNotOwner(_sessionUser.getUser());
         _sqlTrans.commit();
 
         l.info("cmd ack: " + device.id().toStringFormal() + " epoch=" + epoch + " error=" + error);
@@ -2393,7 +2395,7 @@ public class SPService implements ISPService
     {
         _sqlTrans.begin();
 
-        Set<UserID> sharedUsers = _db.getSharedUsersSet(_sessionUser.get().id());
+        Set<UserID> sharedUsers = _db.getSharedUsersSet(_sessionUser.getUser().id());
 
         GetDeviceInfoReply.Builder builder = GetDeviceInfoReply.newBuilder();
         for (ByteString did : dids) {

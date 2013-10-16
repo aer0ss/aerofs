@@ -125,7 +125,6 @@ public class TestSP_ListOrganizationShareFolders extends AbstractSPFolderTest
             throws Exception
     {
         shareAndJoinFolder(USER_1, SID_1, USER_2, Role.EDITOR);
-
         shareAndJoinFolder(USER_1, SID_2, USER_3, Role.EDITOR);
 
         setSessionUser(USER_1);

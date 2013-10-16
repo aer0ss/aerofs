@@ -21,10 +21,10 @@ public class SPAnalyticsProperties implements IAnalyticsPlatformProperties
     }
 
     @Override
-    public @Nullable UserID getUser()
+    public @Nullable UserID getUserID()
     {
         try {
-            return _sessionUser.get().id();
+            return _sessionUser.getUser().id();
         } catch (Throwable e) {
             // we don't want to crash SP if there's anything wrong with the analytics system.
             // This is why we catch Throwable and return a default value.
@@ -60,7 +60,7 @@ public class SPAnalyticsProperties implements IAnalyticsPlatformProperties
     public long getSignupDate()
     {
         try {
-            return _sessionUser.get().getSignupDate();
+            return _sessionUser.getUser().getSignupDate();
         } catch (Throwable e) {
             // See comment on why we catch Throwable above.
             return 0;
@@ -72,7 +72,7 @@ public class SPAnalyticsProperties implements IAnalyticsPlatformProperties
     public String getOrgID()
     {
         try {
-            return _sessionUser.get().getOrganization().id().toHexString();
+            return _sessionUser.getUser().getOrganization().id().toHexString();
         } catch (Throwable e) {
             return null;
         }

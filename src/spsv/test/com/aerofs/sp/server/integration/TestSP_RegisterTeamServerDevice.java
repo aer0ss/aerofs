@@ -34,7 +34,7 @@ public class TestSP_RegisterTeamServerDevice extends AbstractSPTest
             throws Exception
     {
         setSessionUser(USER_1);
-        user = sessionUser.get();
+        user = USER_1;
 
         sqlTrans.begin();
         tsUser = user.getOrganization().getTeamServerUser();

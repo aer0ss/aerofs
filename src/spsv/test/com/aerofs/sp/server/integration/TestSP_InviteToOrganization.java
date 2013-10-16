@@ -18,7 +18,7 @@ public class TestSP_InviteToOrganization extends AbstractSPTest
     @Before
     public void setup()
     {
-        sessionUser.set(USER_1);
+        sessionUser.setUser(USER_1);
     }
 
     @Test

@@ -18,7 +18,7 @@ public interface IAnalyticsPlatformProperties
     /**
      * User id, or null if not signed up yet or this information isn't available
      */
-    @Nullable UserID getUser();
+    @Nullable UserID getUserID();
 
     /**
      * did, or null if not signed up yet or this information isn't available

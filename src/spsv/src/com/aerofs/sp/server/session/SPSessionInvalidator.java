@@ -12,13 +12,13 @@ public class SPSessionInvalidator
     private static final Logger l = Loggers.getLogger(SPSessionInvalidator.class);
 
     private final SPActiveUserSessionTracker _userTracker;
-    private final SPActiveTomcatSessionTracker _tomcatTracker;
+    private final SPActiveTomcatSessionTracker _sessionTracker;
 
     public SPSessionInvalidator(SPActiveUserSessionTracker userTracker,
             SPActiveTomcatSessionTracker tomcatTracker)
     {
         _userTracker = userTracker;
-        _tomcatTracker = tomcatTracker;
+        _sessionTracker = tomcatTracker;
     }
 
     /**
@@ -32,7 +32,7 @@ public class SPSessionInvalidator
 
         if (sessionSet != null) {
             for (String sessionID : sessionSet) {
-                HttpSession session = _tomcatTracker.sessionDestroyed(sessionID);
+                HttpSession session = _sessionTracker.sessionDestroyed(sessionID);
 
                 if (session != null) {
                     l.info("Invalidate: " + userID + " " + sessionID);

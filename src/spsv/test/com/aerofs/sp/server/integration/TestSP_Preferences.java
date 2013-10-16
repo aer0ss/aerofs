@@ -35,7 +35,7 @@ public class TestSP_Preferences extends AbstractSPTest
         Device device = saveDevice(USER_1);
         sqlTrans.commit();
 
-        service.setUserPreferences(sessionUser.get().id().getString(),
+        service.setUserPreferences(sessionUser.getUser().id().getString(),
                 "   first ", " last   ", device.id().toPB(), "  device names  ").get();
         GetUserPreferencesReply reply = service.getUserPreferences(device.id().toPB()).get();
 
@@ -48,7 +48,7 @@ public class TestSP_Preferences extends AbstractSPTest
     public void shouldThrowIfDeviceDoesntExistWhenSettingName()
             throws Exception
     {
-        service.setUserPreferences(sessionUser.get().id().getString(),
+        service.setUserPreferences(sessionUser.getUser().id().getString(),
                 "first", "last", new DID(UniqueID.generate()).toPB(), "device").get();
     }
 

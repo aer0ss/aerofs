@@ -89,7 +89,6 @@ public class SPServlet extends AeroServlet
 
     private final ThreadLocalHttpSessionProvider _sessionProvider =
             new ThreadLocalHttpSessionProvider();
-    private final HttpSessionUser _sessionUser = new HttpSessionUser(_sessionProvider);
 
     private final CertificateGenerator _certgen = new CertificateGenerator();
     private final CertificateAuthenticator _certauth =
@@ -110,6 +109,8 @@ public class SPServlet extends AeroServlet
         _factSharedFolder.inject(_sfdb, _factUser);
     }
 
+    private final HttpSessionUser _sessionUser = new HttpSessionUser(_factUser, _sessionProvider);
+
     private final InvitationEmailer.Factory _factEmailer = new InvitationEmailer.Factory();
 
     private final PasswordManagement _passwordManagement =
@@ -123,7 +124,8 @@ public class SPServlet extends AeroServlet
             new JedisThreadLocalTransaction(_jedisConProvider);
     private final JedisEpochCommandQueue _commandQueue = new JedisEpochCommandQueue(_jedisTrans);
 
-    private final Analytics _analytics = new Analytics(new SPAnalyticsProperties(_sessionUser));
+    private final Analytics _analytics =
+            new Analytics(new SPAnalyticsProperties(_sessionUser));
 
     private final InvitationReminderEmailer _invitationReminderEmailer = new InvitationReminderEmailer();
     private final SharedFolderNotificationEmailer _sfnEmailer = new SharedFolderNotificationEmailer();
