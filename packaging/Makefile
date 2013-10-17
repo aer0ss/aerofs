@@ -6,13 +6,10 @@ BIN?=$(shell whoami | tr [a-z] [A-Z])
 TARGET_REPOSITORY=$(BIN) # The target repository is set to the bin.
 
 PACKAGES= \
-	admin \
 	ca-server \
 	ca-tools \
 	cmd-server \
 	cmd-tools \
-	common \
-	kvm \
 	middleman \
 	pagerduty \
 	rocklog \
@@ -26,7 +23,6 @@ PACKAGES= \
 	verkehr \
 	bootstrap \
 	devman \
-	vmhost \
 	web \
 	zephyr \
 	stun \

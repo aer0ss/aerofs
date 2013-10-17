@@ -1,2 +1,0 @@
-# For AeroFS shares.
-share -fstype=9p,trans=virtio :/share

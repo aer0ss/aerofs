@@ -1,7 +1,0 @@
-Package: aerofs-admin
-Section: admin
-Priority: required
-Depends: aerofs-common
-Maintainer: AeroFS <team@aerofs.com>
-Description: AeroFS admin panel package.
-Architecture: all

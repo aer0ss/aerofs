@@ -1,4 +1,0 @@
-#!/bin/bash
-
-# Start/restart the vmhosts manager application.
-sudo service aerofs-vmhosts-manager restart

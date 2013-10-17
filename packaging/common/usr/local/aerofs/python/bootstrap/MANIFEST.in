@@ -1,2 +1,0 @@
-include *.txt *.ini
-recursive-include bootstrap *.ico *.png *.css *.gif *.jpg *.pt *.txt *.js *.html *.xml *.mako
