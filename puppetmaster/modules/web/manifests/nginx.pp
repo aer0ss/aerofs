@@ -1,4 +1,18 @@
 class web::nginx {
+    file {"/etc/nginx/sites-available/aerofs-web":
+        ensure => present,
+        owner  => "root",
+        group  => "root",
+        mode   => "0644",
+        source => "puppet://web/nginx-web",
+        notify => Service["nginx"],
+    }
+    file {"/etc/nginx/sites-enabled/aerofs-web":
+        ensure  => link,
+        target  => "/etc/nginx/sites-available/aerofs-web",
+        require => Package["aerofs-web"]
+        notify  => Service["nginx"]
+    }
     file {"/etc/nginx/certs":
         ensure => directory,
         owner  => "root",
