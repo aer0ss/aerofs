@@ -61,7 +61,7 @@ import javax.annotation.Nullable;
  *
  * ----
  *
- * N.B.: All descendants of AbstractExWirable, except itself, _must_ provide a constructor that
+ * N.B. All descendants of AbstractExWirable, except itself, _must_ provide a constructor that
  * takes in a single argument of type PBException and the implementation of said constructor should
  * be to call AbstractExWirable(PBException).
  *
@@ -72,6 +72,12 @@ import javax.annotation.Nullable;
  * PBException.
  *
  * For details, see Exceptions.fromPB(PBException).
+ *
+ * ----
+ *
+ * N.B. For the client to recover the exception type, the exception needs to be registered in
+ * either Util.registerLibExceptions() or in the static initializer of Exceptions.
+ * Otherwise, the client will unmarshal it as ExInternalError.
  */
 public abstract class AbstractExWirable extends Exception
 {

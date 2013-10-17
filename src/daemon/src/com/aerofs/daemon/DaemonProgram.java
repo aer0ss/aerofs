@@ -52,6 +52,11 @@ public class DaemonProgram implements IProgram
 
     public DaemonProgram()
     {
+        registerExceptionTypes();
+    }
+
+    static void registerExceptionTypes()
+    {
         // Register exception types from the daemon
         Exceptions.registerExceptionTypes(
                 new ImmutableMap.Builder<Type, Class<? extends AbstractExWirable>>()

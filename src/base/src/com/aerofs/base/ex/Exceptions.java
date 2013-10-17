@@ -30,6 +30,7 @@ public class Exceptions
     private final static Map<Type, Class<? extends AbstractExWirable>> _types = Maps.newHashMap();
     static {
         // Initialize the map with the base types
+        // N.B. these exception types will be accessible to Android clients
         _types.put(Type.ALREADY_EXIST,       ExAlreadyExist.class);
         _types.put(Type.EMPTY_EMAIL_ADDRESS, ExEmptyEmailAddress.class);
         _types.put(Type.BAD_ARGS,            ExBadArgs.class);
@@ -40,6 +41,7 @@ public class Exceptions
         _types.put(Type.TIMEOUT,             ExTimeout.class);
         _types.put(Type.BAD_CREDENTIAL,      ExBadCredential.class);
         _types.put(Type.INTERNAL_ERROR,      ExInternalError.class);
+        _types.put(Type.EXTERNAL_SERVICE_UNAVAILABLE, ExExternalServiceUnavailable.class);
         _types.put(Type.CANNOT_RESET_PASSWORD, ExCannotResetPassword.class);
         _types.put(Type.EXTERNAL_AUTH_FAILURE, ExExternalAuthFailure.class);
     }
@@ -108,6 +110,8 @@ public class Exceptions
             // getDeclaredConstructor() as some exceptions may have package-private constructors
             return exClass.getDeclaredConstructor(PBException.class).newInstance(pb);
         } catch (Exception e) {
+            l.error("Unable to create a new instance for exception type {} - {}",
+                    type.getNumber(), type);
             throw Throwables.propagate(e);
         }
     }
