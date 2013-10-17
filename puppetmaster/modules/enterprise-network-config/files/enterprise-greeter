@@ -24,27 +24,27 @@ STATIC_CONFIG_TEMPLATE = """iface static inet static
 # pretty display things
 CYAN = "\033[01;36m"
 NORMAL = "\033[0m"
-DEFAULT_WIDTH = 72
+DEFAULT_WIDTH = 80
 
 def centered(s, width=DEFAULT_WIDTH):
     padding = " " * ((width - len(s)) / 2 )
     return padding + s
 
+# Use this URL to generate the ASCII art:
+#   http://patorjk.com/software/taag/#p=display&f=Standard&t=aerofs%20%20appliance
 BANNER = CYAN + "\n".join([
+        # Print couple of newlines to push old text out of the screen
+        # TODO (WW) issue a clear-screen command?
         "",
         "",
-        centered(r"    ___    __________  ____  ___________"),
-        centered(r"   /   |  / ____/ __ \/ __ \/ ____/ ___/"),
-        centered(r"  / /| | / __/ / /_/ / / / / /_   \__ \ "),
-        centered(r" / ___ |/ /___/ _, _/ /_/ / __/  ___/ / "),
-        centered(r"/_/  |_/_____/_/ |_|\____/_/    /____/  "),
         "",
-        centered(r"   ___  ___  _____   _____ __________  _______   ____  __  _____ "),
-        centered(r"  / _ \/ _ \/  _/ | / / _ /_  __/ __/ / ___/ /  / __ \/ / / / _ " + "\\"),
-        centered(r" / ___/ , _// / | |/ / __ |/ / / _/  / /__/ /__/ /_/ / /_/ / // /"),
-        centered(r"/_/  /_/|_/___/ |___/_/ |_/_/ /___/  \___/____/\____/\____/____/ "),
+centered(r"                        __                          _ _                       "),
+centered(r"   __ _  ___ _ __ ___  / _|___     __ _ _ __  _ __ | (_) __ _ _ __   ___ ___  "),
+centered(r"  / _` |/ _ \ '__/ _ \| |_/ __|   / _` | '_ \| '_ \| | |/ _` | '_ \ / __/ _ \ "),
+centered(r" | (_| |  __/ | | (_) |  _\__ \  | (_| | |_) | |_) | | | (_| | | | | (_|  __/ "),
+centered(r"  \__,_|\___|_|  \___/|_| |___/   \__,_| .__/| .__/|_|_|\__,_|_| |_|\___\___| "),
+centered(r"                                       |_|   |_|                              "),
         "",
-        "-" * DEFAULT_WIDTH,
     ]) + NORMAL
 
 def current_netconfig():
@@ -132,10 +132,10 @@ def ifup():
     subprocess.call("ifup eth0", shell=True)
 
 def dhcp_menu_text():
-    return "DHCP [selected]" if current_netconfig() == "dhcp" else "DHCP"
+    return "Use DHCP" + (" [selected]" if current_netconfig() == "dhcp" else "")
 
 def static_menu_text():
-    return "Static [selected]" if current_netconfig() == "static" else "Static"
+    return "Use Static IP" + (" [selected]" if current_netconfig() == "static" else "")
 
 def current_static_value(search_key):
     if os.path.exists(STATIC_CONF):
@@ -201,11 +201,11 @@ def get_current_network_state():
 
 def print_network_state_and_next_instructions():
     address, netmask, broadcast, mac_address, gateway = get_current_network_state()
-    print "                  MAC Address: {}".format(mac_address)
-    print "                   IP Address: {}".format(address)
-    print "                      Netmask: {}".format(netmask)
-    print "                    Broadcast: {}".format(broadcast)
-    print "                      Gateway: {}".format(gateway)
+    print "                        MAC Address: {}".format(mac_address)
+    print "                         IP Address: {}".format(address)
+    print "                            Netmask: {}".format(netmask)
+    print "                          Broadcast: {}".format(broadcast)
+    print "                            Gateway: {}".format(gateway)
     print ""
     if address:
         url = centered("https://{}".format(address))
@@ -302,17 +302,18 @@ def shutdown():
     sys.exit(0)
 
 def main():
-    menu = Menu("Network Configuration:")
+    print BANNER
+    print_network_state_and_next_instructions()
+    print ""
+    menu = Menu("Or select an option below:")
     menu.add_choice(MenuOption(dhcp_menu_text(), select_dhcp))
     menu.add_choice(MenuOption(static_menu_text(), show_static_menu))
-    menu.add_choice(MenuOption("DNS", show_dns_menu))
+    menu.add_choice(MenuOption("Set DNS server", show_dns_menu))
     menu.add_choice(MenuOption("Reboot system", restart))
     menu.add_choice(MenuOption("Shutdown system", shutdown))
     menu.interact()
 
 if __name__ == "__main__":
-    print BANNER
-    print_network_state_and_next_instructions()
     while True:
         try:
             main()
