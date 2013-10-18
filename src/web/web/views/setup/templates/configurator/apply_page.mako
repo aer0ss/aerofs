@@ -24,8 +24,8 @@
     <div class="modal-body">
         <span id="progress-modal-spinner" class="pull-left"
               style="margin-right: 28px; padding-top: -10px">&nbsp;</span>
-        Please wait for about 90 seconds.
-        Grab a coffee and relax...
+        <span id="count-down-text">Please wait for about <strong><span id="count-down-number"></span></strong> seconds while the system is initializing...</span>
+        <span id="be-patient-text">It should be done very shortly...</span>
     </div>
 </div>
 
@@ -71,6 +71,7 @@
             show: false
         });
 
+        var countDownInterval;
         $progressModal.modal({
             ## See above
             backdrop: 'static',
@@ -78,34 +79,56 @@
             show: false
         }).on('shown', function() {
             startSpinner($spinner, 0);
+
+            ## Sgtart countdown
+            var countDown = 90;
+            printCountDown();
+            countDownInterval = window.setInterval(function() {
+                countDown--;
+                printCountDown();
+            }, 1000);
+
+            function printCountDown() {
+                if (countDown > 0) {
+                    ## Show "please wait for <N> secs" message
+                    $('#count-down-text').show();
+                    $('#be-patient-text').hide();
+                    $('#count-down-number').text(countDown);
+                } else {
+                    ## Show "it should be done shortly" message
+                    $('#count-down-text').hide();
+                    $('#be-patient-text').show();
+                }
+            }
         }).on('hidden', function() {
+            ## Stop countdown
+            window.clearInterval(countDownInterval);
             stopSpinner($spinner);
         });
     }
 
-    var serializedData;
+    function getSerializedFormData() {
+        return $('#applyForm').serialize();
+    }
+
     function submitApplyForm() {
         lazyInitialize();
 
         ## Show the progress modal
         $('#progress-modal').modal('show');
 
-        var $form = $('#applyForm');
-        serializedData = $form.serialize();
-
         ## Stage 1: kick off the configuration process
         doPost("${request.route_path('json_setup_apply')}",
-                serializedData, pollForBootstrap, hideProgressModal);
+                getSerializedFormData(), pollForBootstrap, hideProgressModal);
     }
 
     ## Stage 2: wait until the configuration process is complete
     ## TODO (WW) add timeouts
-    var interval;
     function pollForBootstrap() {
-        interval = window.setInterval(function() {
-
-            $.post("${request.route_path('json_setup_poll')}", serializedData)
+        var bootstrapPollInterval = window.setInterval(function() {
+            $.post("${request.route_path('json_setup_poll')}", getSerializedFormData())
             .done(function (response) {
+                window.clearInterval(bootstrapPollInterval);
                 finalizeConfigurationIfCompleted(response);
             }).fail(function (xhr) {
                 ## TODO (MP) If 200 or 503 continue, otherwise bail. Need smarter integration with bootstrap here.
@@ -117,8 +140,6 @@
     ## Stage 3: ask the system to finalize the configuration
     function finalizeConfigurationIfCompleted(response) {
         if (response['completed'] == true) {
-            window.clearInterval(interval);
-
             setTimeout(function() {
                 doPost("${request.route_path('json_setup_finalize')}",
                         serializedData, pollForRedirecting);
