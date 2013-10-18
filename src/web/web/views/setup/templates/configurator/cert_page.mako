@@ -3,6 +3,12 @@
 
 <h4>Browser certificate:</h4>
 
+<style type="text/css">
+    .post-input {
+        margin-top: 8px;
+    }
+</style>
+
 <form id="certificateForm" method="POST">
     ${csrf.token_input()}
 
@@ -14,24 +20,24 @@
         %else:
             Use pre-installed, self-signed certificate and key
         %endif
-        <span class="muted">(use your browser to check certificate details)</span>
+        <p class="post-input"><small>Use your Web browser to check certificate details</small></p>
     </label>
     <label class="radio">
         <input type='radio' name='cert.option' value='new'
                 onchange="useNewCertSelected()">
         Upload new certificate and key
-    </label>
 
-    <div class="row-fluid">
-        <div class="span6">
-            <label for="server.browser.certificate">Certificate file:</label>
-            <input type="file" id="server.browser.certificate" name="server.browser.certificate" disabled/>
+        <div class="row-fluid post-input">
+            <div class="span6">
+                <label for="server.browser.certificate">Certificate file:</label>
+                <input type="file" id="server.browser.certificate" name="server.browser.certificate" disabled/>
+            </div>
+            <div class="span6">
+                <label for="server.browser.certificate">Key file:</label>
+                <input type="file" id="server.browser.key" name="server.browser.key" disabled/>
+            </div>
         </div>
-        <div class="span6">
-            <label for="server.browser.certificate">Key file:</label>
-            <input type="file" id="server.browser.key" name="server.browser.key" disabled/>
-        </div>
-    </div>
+    </label>
 
     <p style="margin-top: 10px">Provide properly signed certificate and key to eliminate certification error messages when browsing the AeroFS Web interface. We require valid x509 SSL certificate and private key files in PEM format.</p>
     <hr />

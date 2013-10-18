@@ -4,7 +4,7 @@ Basic unit tests for each view so that we can catch stupid errors such as
 missing import statements.
 """
 import logging
-from pyramid.httpexceptions import HTTPBadRequest, HTTPOk
+from pyramid.httpexceptions import HTTPBadRequest
 from pyramid.security import NO_PERMISSION_REQUIRED
 from pyramid.view import view_config
 
@@ -99,7 +99,7 @@ def json_signup(request):
         sp = get_rpc_stub(request)
         result = sp.sign_up_with_code(code, cred, first_name, last_name)
 
-        # NOTE: We don't verify that the lead was succesfully captured because we don't want to
+        # NOTE: We don't verify that the lead was successfully captured because we don't want to
         #       prevent the user from signing up even if salesforce fails
         #       Also, we don't want to run this code if we're in private mode.
 

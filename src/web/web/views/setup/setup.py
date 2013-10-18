@@ -8,6 +8,7 @@ from pyramid.view import view_config
 from subprocess import call, Popen, PIPE
 from pyramid.httpexceptions import HTTPFound
 from web.util import *
+from web.views.login.login_view import URL_PARAM_EMAIL
 
 BOOTSTRAP_PIPE_FILE = "/tmp/bootstrap"
 
@@ -30,7 +31,9 @@ def setup_view(request):
 
     return {
         'current_config': settings,
-        'is_configuration_initialized': is_configuration_initialized(settings)
+        'is_configuration_initialized': is_configuration_initialized(settings),
+        # This parameter is referred to by apply_and_create_user_page.mako
+        'url_param_email': URL_PARAM_EMAIL
     }
 
 # ------------------------------------------------------------------------
@@ -129,7 +132,7 @@ def get_modulus_of_key_file(key_filename):
 # Format certificate and key using this function before saving to the
 # configuration service.
 def format_pem(string):
-        return string.strip().replace('\n', '\\n');
+        return string.strip().replace('\n', '\\n')
 
 @view_config(
     route_name = 'json_setup_certificate',
@@ -159,7 +162,7 @@ def json_setup_certificate(request):
         key_modulus = get_modulus_of_key_file(key_filename)
 
         if certificate_modulus != key_modulus:
-            error("The certificate and key you provided do not match.")
+            error("The certificate and key you provided do not match each other.")
 
         # All is well - set the external properties.
         configuration = Configuration()

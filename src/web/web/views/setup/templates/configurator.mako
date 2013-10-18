@@ -24,7 +24,7 @@
     <%cert_page:body/>
 %elif page == 4:
     <h3>Step 4 of 4</h3>
-    <%namespace name="apply_page" file="configurator/apply_page.mako"/>
+    <%namespace name="apply_page" file="configurator/apply_and_create_user_page.mako"/>
     <%apply_page:body/>
 %endif
 

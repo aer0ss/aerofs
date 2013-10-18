@@ -3,7 +3,7 @@
 
 <div class="row">
     <div class="span12">
-        <h1 style="text-align: center">Create an account</h1>
+        <h1 style="text-align: center">Create an AeroFS account</h1>
     </div>
 </div>
 

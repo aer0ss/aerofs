@@ -90,8 +90,7 @@
             return false;
         }
 
-        var $form = $('#emailForm');
-        var serializedData = $form.serialize();
+        var serializedData = $('#emailForm').serialize();
 
         doPost("${request.route_path('json_setup_email')}",
             serializedData, gotoNextPage, enableButtons);
