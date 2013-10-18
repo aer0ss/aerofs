@@ -4,7 +4,7 @@ class web::nginx {
         owner  => "root",
         group  => "root",
         mode   => "0644",
-        source => "puppet://web/nginx-web",
+        source => "puppet:///web/nginx-web",
     }
     file {"/etc/nginx/sites-enabled/aerofs-web":
         ensure  => link,
