@@ -28,10 +28,8 @@
         </div>
     </div>
 
-    <p style="margin-top: 10px">You can optionally provide your own certificate and key to be used by the AeroFS web server. This will eliminate certification related error messages when using the AeroFS Web interface. Valid x509 SSL certificate and private key files are required. The certificate must be in PEM format.</p>
-
-    <hr/>
-
+    <p style="margin-top: 10px">You can provide your own certificate and key to eliminate certification related error messages when using the AeroFS Web interface. Valid x509 SSL certificate and private key files are required. The certificate must be in PEM format.</p>
+    <hr />
     ${common.render_previous_button(page)}
     ${common.render_next_button("submitCertificateForm()")}
 </form>

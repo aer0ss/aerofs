@@ -1,5 +1,3 @@
-<h3>Site Setup</h3>
-
 <%
     page = request.params.get('page')
     if not page:
@@ -9,18 +7,23 @@
 %>
 
 %if page == 0:
+    <h3>Welcome</h3>
     <%namespace name="welcome_page" file="configurator/welcome_page.mako"/>
     <%welcome_page:body/>
 %elif page == 1:
+    <h3>Step 1 of 4</h3>
     <%namespace name="hostname_page" file="configurator/hostname_page.mako"/>
     <%hostname_page:body/>
 %elif page == 2:
+    <h3>Step 2 of 4</h3>
     <%namespace name="email_page" file="configurator/email_page.mako"/>
     <%email_page:body/>
 %elif page == 3:
+    <h3>Step 3 of 4</h3>
     <%namespace name="cert_page" file="configurator/cert_page.mako"/>
     <%cert_page:body/>
 %elif page == 4:
+    <h3>Step 4 of 4</h3>
     <%namespace name="apply_page" file="configurator/apply_page.mako"/>
     <%apply_page:body/>
 %endif

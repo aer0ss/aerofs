@@ -2,17 +2,16 @@
 <%namespace name="spinner" file="../spinner.mako"/>
 <%namespace name="common" file="common.mako"/>
 
-<h4>Sit back and enjoy the ride</h4>
+<h4>Sit back and relax</h4>
 
 ## N.B. When adding or removing content, adjust the modals' "top" style
 ## to match the content's position.
 
-<p>Your changes will be propagated to various AeroFS system components.
+<p>Your changes will be applied to various AeroFS system components.
     This might take a short while.</p>
-
+<hr />
 <form id="applyForm" method="POST">
     ${csrf.token_input()}
-    <hr/>
     ${common.render_previous_button(page)}
     <button
         onclick='submitApplyForm(); return false;'
@@ -25,23 +24,23 @@
     <div class="modal-body">
         <span id="progress-modal-spinner" class="pull-left"
               style="margin-right: 28px; padding-top: -10px">&nbsp;</span>
-        Please wait for about 30 seconds.
-        Grab a Philz coffee and relax...
+        Please wait for about 90 seconds.
+        Grab a coffee and relax...
     </div>
 </div>
 
 <div id="success-modal" class="modal hide" tabindex="-1" role="dialog"
         style="top: 150px; width: 440px; margin-left: -220px;">
     <div class="modal-header">
-        <h4 class="text-success">The system is ready!</h4>
+        <h4 class="text-success">Your system is ready!</h4>
     </div>
     <div class="modal-body">
-        <p>Hooray! System configuration is complete.
-            You will be redirected to the login page.</p>
+        <p>Sweet! System configuration is complete.
+            You will set up the first user account on the next page.</p>
     </div>
     <div class="modal-footer">
         <a href="#" class="btn btn-primary"
-           onclick="redirectToHome(); return false;">Let's Roll</a>
+           onclick="redirectToHome(); return false;">Create First User</a>
     </div>
 </div>
 

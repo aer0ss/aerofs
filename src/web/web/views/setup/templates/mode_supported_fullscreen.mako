@@ -4,6 +4,6 @@
     ${request.route_path('setup')}
 </%block>
 
-<div class="span9 offset1">
+<div class="span8 offset2">
     <%include file="configurator.mako"/>
 </div>

@@ -54,7 +54,7 @@
             </div>
         </div>
 
-        <p>AeroFS sends emails to users for many purposes such as sign-up verification and folder invitations. A functional email server is required.</p>
+        <p>AeroFS sends emails to users for various purposes: sign up verification, folder invitations, and so on. A functional email server is required.</p>
     </div>
 
     <div class="page_block">
@@ -62,8 +62,7 @@
         <input class="input-block-level" id="base.www.support_email_address" name="base.www.support_email_address" type="text" value=${current_config['base.www.support_email_address']}>
         <p>This email address is used for all "support" links. Set it to an email address you want users to send support requests to. The default value is <code>support@aerofs.com</code>.</p>
     </div>
-
-    <hr/>
+    <hr />
     ${common.render_previous_button(page)}
     ${common.render_next_button("submitEmailForm()")}
 </form>
