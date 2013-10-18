@@ -11,6 +11,7 @@
     <orderEntry type="module" module-name="base" />
     <orderEntry type="module" module-name="tunnel" />
     <orderEntry type="library" name="logback" level="project" />
+    <orderEntry type="library" scope="TEST" name="rest-assured" level="project" />
   </component>
 </module>
 
