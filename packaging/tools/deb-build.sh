@@ -13,22 +13,43 @@ readonly ERRFAKEROOTFAILED=4
 #
 # Instructions:
 # - "brew install dpkg" if you don't have dpkg-deb on your system.
-# - "brew install $HOME/repos/aerofs/tools/fakeroot.rb" if you lack fakeroot
-# - "brew install fakeroot" if the previous command doesn't work
+# - "brew install fakeroot" if you don't have fakeroot on your ssytem
 #
 ###############################################################################
 
-# Check if a builder script exists for the requested package
+# Check that prerequisite exectuables exist(
+check_for_executable() {
+    # $1 is executable to test for
+    # $2 is package name
+    which $1 > /dev/null
+    if [ $? -ne 0 ] ; then
+        case $(uname) in
+            Darwin)
+                echo "Please install the $2 package from homebrew:"
+                echo "    brew install $2"
+                ;;
+            Linux)
+                echo "Please install the $2 package from apt:"
+                echo "    sudo apt-get install $2"
+                ;;
+            *)
+                echo "Please install a package to provide $1"
+                ;;
+        esac
+        exit 1
+    fi
+}
+
+# Check if a expanded deb exists under build/$DEBNAME
 # Params:
 #   None
 # Return:
-#   0 when the builder script exists
-#   2 when the builder script doesn't exist
-function check_for_builder_script() {
-    test -d $DEBNAME
-    if [ $? -ne 0 ]
+#   0 if the deb looks okay
+#   2 if the folder or control file are missing
+function check_for_package_assets_dir() {
+    if [ ! -f $CONTROL_FILE ] ;
     then
-        echo "Don't know how to build '$DEBNAME'."
+        echo "Missing $CONTROL_FILE.  Stop."
         exit $ERRNODEB
     fi
 }
@@ -45,8 +66,9 @@ function check_for_builder_script() {
 #   The current version number.
 function get_version_number_from_repository()
 {
+    version_file=$1.current.ver
     wget \
-        --output-document $1.current.ver \
+        --output-document $version_file \
         --no-check-certificate -q \
         --no-cache http://apt.aerofs.com/ubuntu/$2/versions/$1.current.ver
 
@@ -54,8 +76,8 @@ function get_version_number_from_repository()
 
     if [ $error_code -eq 0 ]
     then
-        cat $1.current.ver
-        rm $1.current.ver
+        cat $version_file
+        rm $version_file
         return 0
     elif [ $error_code -eq 8 ]
     then
@@ -99,7 +121,7 @@ function compute_new_version_number() {
 # Returns:
 #   0: Successfully created the control file
 #   non-zero: Any other error condition
-function create_deb_control_file() {
+function add_version_to_deb_control_file() {
     echo "Current $DEBNAME version is $VERSION. New version is $NEW_VERSION."
     echo $NEW_VERSION > aerofs-$DEBNAME.current.ver
     echo "Version: $NEW_VERSION" >> $CONTROL_FILE
@@ -113,26 +135,18 @@ function create_deb_control_file() {
 #   4: fakeroot failed to run
 #   other: Any other failure condition
 function build_deb() {
-    local tmpdir=$(mktemp -d "$DEBNAME-XXXXXX")
-    # We have to do the copy and chown under the fakeroot environment so the
+    # We have to chown under the fakeroot environment so the
     # package unpacks to files with root's uid/gid.
     fakeroot << EOF
     set -e
-    cp -a $DEBNAME/* $tmpdir/
-    chown -R 0:0 ${tmpdir}
-    dpkg-deb --build ${tmpdir} aerofs-${DEBNAME}.deb
+    chown -R 0:0 $DEBNAME
+    dpkg-deb --build $DEBNAME aerofs-${DEBNAME}.deb
 EOF
-
     if [ $? -ne 0 ]
     then
         echo "Failure in fakeroot. (Do you have dpkg and fakeroot installed?)."
         exit $ERRFAKEROOTFAILED
     fi
-
-    rm -rf ${tmpdir}
-
-    # Clean up the control file (remove the version number, i.e. the last line).
-    cat $CONTROL_FILE | grep -v "$(cat $CONTROL_FILE | tail -1)" > $CONTROL_FILE
 }
 
 ###############################################################################
@@ -165,12 +179,14 @@ then
     print_usage
 fi
 
-cd $(dirname $0)/.. # move up to the packaging script root
+cd $(dirname $0)/../build # move into the build/ directory
 readonly DEBNAME="$1"
 readonly TARGET_REPOSITORY=$( echo "$2" | tr [A-Z] [a-z] ) # convert to lowercase
 readonly CONTROL_FILE=./"$DEBNAME"/DEBIAN/control
 
-check_for_builder_script
+check_for_executable dpkg-deb dpkg
+check_for_executable fakeroot fakeroot
+check_for_package_assets_dir
 compute_new_version_number
-create_deb_control_file
+add_version_to_deb_control_file
 build_deb

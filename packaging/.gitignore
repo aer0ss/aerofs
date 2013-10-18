@@ -1,21 +1,3 @@
 debs
-*.ver
-*.deb
-
-zephyr
-verkehr
-bootstrap
-devman
-web
-sp
-sv
-syncstat
-rocklog
-cmd-server
-
-# Python stuff:
-*.pyc
-*.egg-info
-gen
-
+build
 client-installer-cache

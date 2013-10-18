@@ -1,8 +1,10 @@
 #!/bin/bash
-set -ue
+set -e -u
 
-RESOURCES=../src/verkehr/resources
 SCRIPT_DIR="$( cd -P "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+OUTPUT_DIR=build/verkehr
+RESOURCES=../src/verkehr/resources
 
 CONFIG="$RESOURCES/verkehr.yml"
 #-XX:+UseBiasedLocking -XX:+UseStringCache -XX:+OptimizeStringConcat
@@ -13,8 +15,8 @@ SERVICE_ARGS="server verkehr.yml"
 
 "$SCRIPT_DIR"/generate_service_deb_template.sh verkehr "$CONFIG" "$JAVA_ARGS" "$SERVICE_ARGS"
 
-OPT=verkehr/opt/verkehr
-INIT=verkehr/etc/init
+OPT=$OUTPUT_DIR/opt/verkehr
+INIT=$OUTPUT_DIR/etc/init
 
 # tweak upstart config
 cat << EOF >> $INIT/verkehr.conf

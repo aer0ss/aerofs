@@ -1,6 +1,7 @@
 #!/bin/bash
-set -ue
+set -e -u
 
+OUTPUT_DIR=build/zephyr
 RESOURCES=../src/zephyr/resources
 SCRIPT_DIR="$( cd -P "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
@@ -10,7 +11,7 @@ SERVICE_ARGS="0.0.0.0 8888"
 
 "$SCRIPT_DIR"/generate_service_deb_template.sh zephyr "$CONFIG" "$JAVA_ARGS" "$SERVICE_ARGS"
 
-INIT=zephyr/etc/init
+INIT=$OUTPUT_DIR/etc/init
 
 # tweak upstart config
 cat << EOF >> $INIT/zephyr.conf

@@ -10,6 +10,6 @@ SERVICE_ARGS="cmd-server.yml 2>> /var/log/cmd-server/cmd-server.err.log"
 
 "$SCRIPT_DIR"/generate_service_deb_template.sh cmd-server "$CONFIG" "$JAVA_ARGS" "$SERVICE_ARGS"
 
-DEBIAN=cmd-server/DEBIAN
+DEBIAN=build/cmd-server/DEBIAN
 
 echo "service cmd-server start" >> $DEBIAN/postinst

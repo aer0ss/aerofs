@@ -1,11 +1,12 @@
-#!/bin/bash -ue
-rm -rf bootstrap
+#!/bin/bash
+set -eu
+OUTPUT_DIR=build/bootstrap
 
 RESOURCES=../src/bootstrap/resources
-OPT=bootstrap/opt/bootstrap
-BIN=bootstrap/usr/bin
-DEBIAN=bootstrap/DEBIAN
-INIT=bootstrap/etc/init
+OPT=$OUTPUT_DIR/opt/bootstrap
+BIN=$OUTPUT_DIR/usr/bin
+DEBIAN=$OUTPUT_DIR/DEBIAN
+INIT=$OUTPUT_DIR/etc/init
 
 # Debian-related file copies.
 mkdir -p $DEBIAN
@@ -15,7 +16,7 @@ do
     cp -a $RESOURCES/$f $DEBIAN
 done
 
-mkdir -p bootstrap/var/log/bootstrap
+mkdir -p $OUTPUT_DIR/var/log/bootstrap
 
 # Java-related file copies.
 mkdir -p $OPT

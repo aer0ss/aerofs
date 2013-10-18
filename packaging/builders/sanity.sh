@@ -1,12 +1,15 @@
 #!/bin/bash
 set -e -u
 
-REQUIREMENTS=sanity/opt/sanity/requirements.txt
-SDIST=sanity/opt/sanity/sdist
-SDIST_CACHE=$HOME/.aerofs-cache/pip/sanity
+OUTPUT_DIR=build/sanity
+mkdir -p $OUTPUT_DIR
 
-rm -rf $SDIST
+# Fetch dependencies
+REQUIREMENTS=$OUTPUT_DIR/opt/sanity/requirements.txt
+SDIST_CACHE=$HOME/.aerofs-cache/pip/sanity
 tools/pip-prefetch.sh "$REQUIREMENTS" "$SDIST_CACHE"
 
+# Add deps to package
+SDIST=$OUTPUT_DIR/opt/sanity/sdist
 mkdir -p $SDIST
 cp -a "$SDIST_CACHE"/* "$SDIST"/

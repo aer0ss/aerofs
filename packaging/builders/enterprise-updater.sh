@@ -1,14 +1,12 @@
-#!/bin/bash -e
+#!/bin/bash
+set -e -u
 
-OPT=enterprise-updater/opt/enterprise-updater
+OPT=build/enterprise-updater/opt/enterprise-updater
 DEBIANS=$OPT/debians
 INSTALLERS=$OPT/installers
 
 mkdir -p $DEBIANS
 mkdir -p $INSTALLERS
-
-# Pull in debians.
-rm -f $DEBIANS/*
 
 # Copy over the debs that we require.
 for required in \
