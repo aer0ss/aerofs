@@ -1,8 +1,10 @@
 Configuration Properties
 ========================
 
-**Note**: Property values shown in the following text are default values. When no
-default values are available, `<mandatory>` is used.
+**Note**: Property values shown in property syntax indicate default values.
+`property=` indicates that the default value is an empty string;
+`property=<mandatory>` indicates specifying a value is mandatory and no default
+values is provided.
 
 # common.properties
 
@@ -128,7 +130,7 @@ See class-level comments in ReadOnlyExternalFolderRules for more explanation on 
 
     email.sender.public_host=
 
-Hostname of the outbound email server. Special handling occurs if this is "localhost".
+Hostname of the outbound email server. Special handling occurs if this is `localhost`.
 
 Example: `email.sender.public_host=smtp.sendgrid.net`
 
@@ -140,13 +142,13 @@ Port number to use on the email server. Defaults to 25, like a gentleman.
 
     email.sender.public_username=
 
-If provided, the username to authenticate with the smtp server.
+If provided, the username to authenticate with the SMTP server.
 
 Default is blank, which indicates no authentication.
 
-    email.sender.public_password
+    email.sender.public_password=
 
-If provided, the password to use to authenticate with the smtp server.
+If provided, the password to use to authenticate with the STMP server.
 
     email.sender.timeout=10000
 
