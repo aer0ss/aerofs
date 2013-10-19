@@ -4,7 +4,8 @@ Configuration Properties
 **Note**: Property values shown in property syntax indicate default values.
 `property=` indicates that the default value is an empty string;
 `property=<mandatory>` indicates specifying a value is mandatory and no default
-values is provided.
+values is provided. Not specifying a mandatory property would cause unexpected
+system behavior.
 
 # common.properties
 
@@ -128,7 +129,7 @@ to determine internal vs external users. Therefore, the rules are enabled only i
 These rules are specific to certain enterprise deployments and are not normally enabled.
 See class-level comments in ReadOnlyExternalFolderRules for more explanation on the rules.
 
-    email.sender.public_host=
+    email.sender.public_host=<mandatory>
 
 Hostname of the outbound email server. Special handling occurs if this is `localhost`.
 
