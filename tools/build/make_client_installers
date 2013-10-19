@@ -10,20 +10,30 @@ set -x
 ###############################################################################
 
 function DieUsage {
+    set +x
     echo "usage: $0 <build_mode> <build_product> <release_version> <sign_mode>" >&2
+    echo "       [--build-linux-tgz] [--build-linux-update-tgzs] [--build-linux-deb]" >&2
+    echo "       [--build-windows-exe] [--build-osx-packages] [--build-all]" >&2
     echo " " >&2
     echo "<build_mode>: PUBLIC|PRIVATE" >&2
     echo "<build_product>: CLIENT|TEAM_SERVER" >&2
     echo "<release_version>: release version (for example: 0.1.0)" >&2
     echo "<sign_mode>: SIGNED|UNSIGNED" >&2
+    echo "[--build-linux-tgz]: build the Linux installer .tgz" >&2
+    echo "[--build-linux-update-tgzs]: build the Linux updater .tgzs" >&2
+    echo "[--build-linux-deb]: build the Linux installer .deb " >&2
+    echo "[--build-windows-exe]: build the Windows installer .exe " >&2
+    echo "[--build-osx-packages]: build the OSX installer/updater packages" >&2
+    echo "[--build-all]: build all of the above (the others do not need to be specified)" >&2
     echo " " >&2
-    echo "example: $0 PRIVATE CLIENT 0.1.0 UNSIGNED" >&2
-    echo "example: $0 PUBLIC TEAM_SERVER 0.1.0 UNSIGNED" >&2
+    echo "example: $0 PRIVATE CLIENT 0.1.0 UNSIGNED --build-all" >&2
+    echo "example: $0 PUBLIC TEAM_SERVER 0.1.0 UNSIGNED --build-linux-tgz --build-linux-update-tgzs" >&2
     exit $ERRBADARGS
 }
 
-[[ $# -eq 4 ]] || DieUsage
-
+##
+# Parse positional args
+##
 case ${1:-} in
     PUBLIC|PRIVATE) BUILD_MODE=$1;;
     *) DieUsage;;
@@ -41,6 +51,37 @@ case ${4:-} in
     UNSIGNED) SIGNED=false;;
     *) DieUsage;;
 esac
+shift 4
+
+##
+# Parse long opts
+##
+BUILD_LINUX_INSTALL_TGZ=false
+BUILD_LINUX_UPDATE_TGZS=false
+BUILD_LINUX_INSTALL_DEB=false
+BUILD_WINDOWS_EXE=false
+BUILD_OSX_PACKAGES=false
+while [ "${1:-}" != "" ]; do
+    case "$1" in
+        "--build-linux-tgz") BUILD_LINUX_INSTALL_TGZ=true ;;
+        "--build-linux-update-tgzs") BUILD_LINUX_UPDATE_TGZS=true ;;
+        "--build-linux-deb") BUILD_LINUX_INSTALL_DEB=true ;;
+        "--build-windows-exe") BUILD_WINDOWS_EXE=true ;;
+        "--build-osx-packages") BUILD_OSX_PACKAGES=true ;;
+        "--build-all")
+            BUILD_LINUX_INSTALL_TGZ=true
+            BUILD_LINUX_UPDATE_TGZS=true
+            BUILD_LINUX_INSTALL_DEB=true
+            BUILD_WINDOWS_EXE=true
+            BUILD_OSX_PACKAGES=true
+            ;;
+        *)
+            echo "Unknown argument: $1" >&2
+            DieUsage
+            ;;
+    esac
+    shift
+done
 
 include include/common $BUILD_MODE $BUILD_PRODUCT
 
@@ -111,13 +152,6 @@ function make_linux_update_tgz() {
     cp -a "${LOCAL_RELEASE_DIR}/aerofs.linux/${local_ARCH}"/* "${ARCH_TGZ_TEMP_DIR}/aerofs"
     mkdir -p ${PACKAGE_DIR}
     tar -C "${ARCH_TGZ_TEMP_DIR}" -zcf "${PACKAGE_DIR}/${VERSIONED_ARCH_TGZ_FILENAME}" aerofs
-}
-
-function make_linux_installers() {
-    make_linux_installer_deb
-    make_linux_installer_tgz
-    make_linux_update_tgz i386
-    make_linux_update_tgz amd64
 }
 
 function make_windows_installers() {
@@ -323,9 +357,12 @@ function create_release_version_file() {
 echo ">> make client installers and packages in $PACKAGE_DIR"
 
 compute_product_names
-make_linux_installers
-make_windows_installers
-make_osx_packages
+$BUILD_LINUX_INSTALL_DEB && make_linux_installer_deb
+$BUILD_LINUX_INSTALL_TGZ && make_linux_installer_tgz
+$BUILD_LINUX_UPDATE_TGZS && make_linux_update_tgz i386 \
+                         && make_linux_update_tgz amd64
+$BUILD_WINDOWS_EXE && make_windows_installers
+$BUILD_OSX_PACKAGES && make_osx_packages
 make_unversioned_symlinks
 create_release_version_file
 

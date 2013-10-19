@@ -17,18 +17,23 @@ include include/common ${1:-} ${2:-}
 # arguments and usage
 #
 ###############################################################################
-if [[ $# -ne 3 ]]; then
-    echo "usage: $0 [build mode] [build product] [release version]" >&2
+function DieUsage() {
+    set +x
+    echo "usage: $0 [build mode] [build product] [release version] [--no-obfuscate]" >&2
     echo " " >&2
     echo "[build mode]: PUBLIC|PRIVATE" >&2
     echo "[build product]: CLIENT|TEAM_SERVER" >&2
     echo "[release version]: major.minor.build" >&2
+    echo "--no-obfuscate: optional (default is to obfuscate)" >&2
     echo " " >&2
     echo "example: $0 PUBLIC TEAM_SERVER 0.4.99" >&2
     exit $ERRBADARGS
-fi
+}
 
+[[ $# -eq 3 || $# -eq 4 ]] || DieUsage
 readonly RELEASE_VERSION="$3"
+
+if [ $# -eq 4 ] && [ "$4" != "--no-obfuscate" ]; then DieUsage; fi
 
 ######################################################################
 #
@@ -278,7 +283,7 @@ echo ">> make release resources"
 compute_product_names
 copy_resources_to_local_release_directories
 create_java_jar
-obfuscate_java
+[ "$4" == "--no-obfuscate" ] || obfuscate_java
 write_version_and_checksums
 
 exit 0
