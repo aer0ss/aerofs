@@ -35,16 +35,20 @@
                     <input class="span6" id="inputFirstName" type="text" name="${url_param_first_name}">
                     <label for="inputLastName">Last name: *</label>
                     <input class="span6" id="inputLastName" type="text" name="${url_param_last_name}">
-                    <label for="inputTitle">Title:</label>
-                    <input class="span6" id="inputTitle" type="text" name="${url_param_title}">
-                    <label for="inputCompany">Company:</label>
-                    <input class="span6" id="inputCompany" type="text" name="${url_param_company}">
-                    <label for="inputCompanySize">Size:</label>
-                    <input class="span6" id="inputCompanySize" type="text" name="${url_param_company_size}">
-                    <label for="inputCountry">Country:</label>
-                    <input class="span6" id="inputCountry" type="text" name="${url_param_country}">
-                    <label for="inputPhone">Phone:</label>
-                    <input class="span6" id="inputPhone" type="text" name="${url_param_phone}">
+
+                    %if not is_private_deployment:
+                        <label for="inputTitle">Title:</label>
+                        <input class="span6" id="inputTitle" type="text" name="${url_param_title}">
+                        <label for="inputCompany">Company:</label>
+                        <input class="span6" id="inputCompany" type="text" name="${url_param_company}">
+                        <label for="inputCompanySize">Size:</label>
+                        <input class="span6" id="inputCompanySize" type="text" name="${url_param_company_size}">
+                        <label for="inputCountry">Country:</label>
+                        <input class="span6" id="inputCountry" type="text" name="${url_param_country}">
+                        <label for="inputPhone">Phone:</label>
+                        <input class="span6" id="inputPhone" type="text" name="${url_param_phone}">
+                    %endif
+
                     <label for="inputPasswd">Create password: *</label>
                     <input class="span6" id="inputPasswd" type="password" name="${url_param_password}">
 

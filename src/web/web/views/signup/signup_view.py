@@ -52,7 +52,7 @@ def signup(request):
             'url_param_email': URL_PARAM_EMAIL,
             'url_param_first_name': URL_PARAM_FIRST_NAME,
             'url_param_last_name': URL_PARAM_LAST_NAME,
-            'url_param_title' : URL_PARAM_TITLE,
+            'url_param_title': URL_PARAM_TITLE,
             'url_param_company': URL_PARAM_COMPANY,
             'url_param_company_size': URL_PARAM_COMPANY_SIZE,
             'url_param_phone': URL_PARAM_PHONE,
@@ -60,8 +60,9 @@ def signup(request):
             'url_param_password': URL_PARAM_PASSWORD,
             'url_param_remember_me': URL_PARAM_REMEMBER_ME,
             'url_param_next': URL_PARAM_NEXT,
-            'email_address' : sp.resolve_sign_up_code(code).email_address,
-            'code' : code
+            'is_private_deployment': is_private_deployment(request.registry.settings),
+            'email_address': sp.resolve_sign_up_code(code).email_address,
+            'code': code
         }
     except ExceptionReply:
         # I can use HTTPServerError. But the error will be commonly caused by
@@ -86,11 +87,6 @@ def json_signup(request):
     email_address = request.params[URL_PARAM_EMAIL]
     first_name = request.params[URL_PARAM_FIRST_NAME]
     last_name = request.params[URL_PARAM_LAST_NAME]
-    title = request.params[URL_PARAM_TITLE]
-    company = request.params[URL_PARAM_COMPANY]
-    company_size = request.params[URL_PARAM_COMPANY_SIZE]
-    phone = request.params[URL_PARAM_PHONE]
-    country = request.params[URL_PARAM_COUNTRY]
     password = request.params[URL_PARAM_PASSWORD]
 
     (is_valid_password, invalid_message) = valid_password_test(request, password)
@@ -105,7 +101,7 @@ def json_signup(request):
 
         # NOTE: We don't verify that the lead was succesfully captured because we don't want to
         #       prevent the user from signing up even if salesforce fails
-        #       Also, we don't want to run this code if we're in enterprise mode.
+        #       Also, we don't want to run this code if we're in private mode.
 
         if not is_private_deployment(request.registry.settings):
             try:
@@ -116,14 +112,15 @@ def json_signup(request):
                         'email': email_address,
                         'first_name': first_name,
                         'last_name': last_name,
-                        'company': company,
-                        'title': title,
-                        'employees': company_size,
-                        'phone': request.params['phone'],
-                        'country': request.params['country']
+                        'company': request.params[URL_PARAM_COMPANY],
+                        'title': request.params[URL_PARAM_TITLE],
+                        'employees': request.params[URL_PARAM_COMPANY_SIZE],
+                        'phone': request.params[URL_PARAM_PHONE],
+                        'country': request.params[URL_PARAM_COUNTRY]
                     }))
             except Exception as e:
                 log.warn(e)
+
         return {
             'team_id': result.org_id,
             'existing_team': result.existing_team
