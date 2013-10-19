@@ -21,8 +21,6 @@ INSTALL="$BUILDROOT"/usr/share/aerofs-"$PACKAGE_NAME"/"$SERVLET_NAME"
 CONTEXT="$BUILDROOT"/etc/tomcat6/Catalina/localhost
 DEBIAN="$BUILDROOT"/DEBIAN
 
-rm -rf "$BUILDROOT"
-
 mkdir -p "$BUILDROOT"
 mkdir -p "$INSTALL"
 mkdir -p "$CONTEXT"
