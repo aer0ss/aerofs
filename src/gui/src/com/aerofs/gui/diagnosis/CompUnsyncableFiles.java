@@ -454,7 +454,7 @@ public class CompUnsyncableFiles extends Composite
         } else if (ret == DriverConstants.GETFID_SPECIAL) {
             return cb.add(sid, path, Type.SPECIAL);
         } else if (!OSUtil.isWindows() &&
-                !OSUtilWindows.isValidFileName(new File(path).getName())) {
+                OSUtilWindows.isInvalidWin32FileName(new File(path).getName())) {
             return cb.add(sid, path, Type.WINDOWS_INVALID_CHARS);
         } else if (ret == DriverConstants.GETFID_DIR) {
             // the file might be changed or deleted after the ret == ... test

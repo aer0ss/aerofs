@@ -8,57 +8,69 @@ import java.sql.SQLException;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.ds.ResolvedPath;
+import com.aerofs.daemon.core.phy.TransUtil;
+import com.aerofs.daemon.core.phy.TransUtil.IPhysicalOperation;
+import com.aerofs.daemon.core.phy.linked.RepresentabilityHelper.PathType;
 import com.aerofs.daemon.lib.db.trans.Trans;
-import static com.aerofs.lib.LibParam.AuxFolder.CONFLICT;
 import com.aerofs.lib.ex.ExFileNotFound;
+import com.aerofs.lib.id.KIndex;
+import com.aerofs.lib.id.SOID;
+import com.aerofs.lib.injectable.InjectableFile;
 import org.slf4j.Logger;
 
 import com.aerofs.daemon.core.phy.IPhysicalFile;
-import com.aerofs.daemon.core.phy.IPhysicalObject;
 import com.aerofs.daemon.core.phy.PhysicalOp;
-import com.aerofs.daemon.core.phy.linked.LinkedStorage.IRollbackHandler;
 import com.aerofs.daemon.core.phy.linked.fid.IFIDMaintainer;
 
-import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.SOKID;
-import com.aerofs.lib.injectable.InjectableFile;
-import com.aerofs.lib.Path;
 
-public class LinkedFile implements IPhysicalFile
+public class LinkedFile extends AbstractLinkedObject implements IPhysicalFile
 {
     private static final Logger l = Loggers.getLogger(LinkedFile.class);
 
-    private final LinkedStorage _s;
-    private final IFIDMaintainer _fidm;
-
-    final InjectableFile _f;
-    final Path _path;
     final SOKID _sokid;
+    private IFIDMaintainer _fidm;
 
-    public LinkedFile(LinkedStorage s, ResolvedPath path, KIndex kidx)
+    public LinkedFile(LinkedStorage s, SOKID sokid, LinkedPath path) throws SQLException
     {
-        _s = s;
-        _path = path;
-        _sokid = new SOKID(path.soid(), kidx);
-        _f = _s._factFile.create(kidx.equals(KIndex.MASTER) ?
-                _s.physicalPath(path) :
-                _s.auxFilePath(path.sid(), _sokid, CONFLICT));
+        super(s);
+        _sokid = sokid;
+        setPath(path);
+    }
+
+    @Override
+    public void setPath(LinkedPath path)
+    {
+        super.setPath(path);
         _fidm = _s._factFIDMan.create_(_sokid, _f);
+    }
+
+    @Override
+    SOID soid()
+    {
+        return _sokid.soid();
     }
 
     @SuppressWarnings("fallthrough")
     @Override
     public void create_(PhysicalOp op, Trans t) throws IOException, SQLException
     {
-        if (l.isDebugEnabled()) l.debug("create " + this);
+        l.debug("create {} {}", this, op);
 
         switch (op) {
         case APPLY:
-            // for files this is only actually called via ObjectCreator for FSIFile and some test cases
-            _f.createNewFile();
-            LinkedStorage.onRollback_(_f, t, new IRollbackHandler() {
+            _s.try_(this, t, new IPhysicalOperation()
+            {
                 @Override
-                public void rollback_() throws IOException
+                public void run_()
+                        throws IOException
+                {
+                    _f.createNewFile();
+                }
+            });
+            TransUtil.onRollback_(_f, t, new IPhysicalOperation() {
+                @Override
+                public void run_() throws IOException
                 {
                     _f.delete();
                 }
@@ -83,18 +95,20 @@ public class LinkedFile implements IPhysicalFile
 
     @SuppressWarnings("fallthrough")
     @Override
-    public void move_(IPhysicalObject po, PhysicalOp op, Trans t)
+    public void move_(ResolvedPath path, KIndex kidx, PhysicalOp op, Trans t)
             throws IOException, SQLException
     {
-        if (l.isDebugEnabled()) l.debug("move " + this + " -> " + po);
-
-        LinkedFile lf = (LinkedFile) po;
+        LinkedFile lf = _s.newFile_(path, kidx, PathType.Destination);
+        l.debug("move {} -> {} {}", this, lf, op);
 
         switch (op) {
         case APPLY:
-            LinkedStorage.moveWithRollback_(_f, lf._f, t);
+            _fidm.throwIfFIDInconsistent_();
+
+            _s.move_(this, lf, t);
             // fallthrough
         case MAP:
+            _s.onDeletion_(this, t);
             _fidm.physicalObjectMoved_(lf._fidm, t);
             break;
         default:
@@ -106,18 +120,42 @@ public class LinkedFile implements IPhysicalFile
     @Override
     public void delete_(PhysicalOp op, Trans t) throws IOException, SQLException
     {
-        if (l.isDebugEnabled()) l.debug("delete " + this);
+        l.debug("delete {} {}", this, op);
 
         switch (op) {
         case APPLY:
+            _fidm.throwIfFIDInconsistent_();
+
             _s.moveToRev_(this, t);
             // fallthrough
         case MAP:
+            _s.onDeletion_(this, t);
             _fidm.physicalObjectDeleted_(t);
             break;
         default:
             assert op == PhysicalOp.NOP;
         }
+    }
+
+    @Override
+    public void updateSOID_(SOID soid, Trans t) throws IOException, SQLException
+    {
+        l.debug("update {} {} {}", _sokid, soid, _path);
+        final String newName;
+        SOKID sokid = new SOKID(soid.sidx(), soid.oid(), _sokid.kidx());
+        // if the physical filename contains the OID, rename it to use the new canonical OID
+        // conflict branches and non-representable objects are the only such cases at this time
+        if (!_sokid.kidx().isMaster()) {
+            newName = LinkedPath.makeAuxFileName(sokid);
+        } else if (!_path.isRepresentable()) {
+            newName = LinkedPath.makeAuxFileName(sokid.soid());
+        } else {
+            return;
+        }
+
+        final InjectableFile to = _f.getParentFile().newChild(newName);
+        if (to.exists()) throw new IOException("destination already exists");
+        TransUtil.moveWithRollback_(_f, to, t);
     }
 
     @Override

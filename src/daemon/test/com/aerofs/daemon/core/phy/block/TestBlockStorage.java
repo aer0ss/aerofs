@@ -8,7 +8,6 @@ import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.ds.ResolvedPath;
 import com.aerofs.daemon.core.phy.IPhysicalFile;
-import com.aerofs.daemon.core.phy.IPhysicalFolder;
 import com.aerofs.daemon.core.phy.IPhysicalPrefix;
 import com.aerofs.daemon.core.phy.IPhysicalRevProvider.Child;
 import com.aerofs.daemon.core.phy.IPhysicalRevProvider.Revision;
@@ -203,9 +202,8 @@ public class TestBlockStorage extends AbstractBlockTest
     private void moveFile(String pathFrom, SOKID sokidFrom, String pathTo, SOKID sokidTo)
             throws Exception
     {
-        IPhysicalFile from = bs.newFile_(mkpath(pathFrom, sokidFrom.soid()), sokidFrom.kidx()) ;
-        IPhysicalFile to = bs.newFile_(mkpath(pathTo, sokidTo.soid()), sokidTo.kidx()) ;
-        from.move_(to, PhysicalOp.APPLY, t);
+        bs.newFile_(mkpath(pathFrom, sokidFrom.soid()), sokidFrom.kidx())
+                .move_(mkpath(pathTo, sokidTo.soid()), sokidTo.kidx(), PhysicalOp.APPLY, t);
     }
 
     private boolean exists(String path, SOKID sokid) throws IOException
@@ -560,8 +558,8 @@ public class TestBlockStorage extends AbstractBlockTest
     @Test
     public void shouldIgnoreFolderMovement() throws Exception
     {
-        IPhysicalFolder to = bs.newFolder_(mkpath("hellow/world", newSOID()));
-        bs.newFolder_(mkpath("foo/bar", newSOID())).move_(to, PhysicalOp.APPLY, t);
+        bs.newFolder_(mkpath("foo/bar", newSOID()))
+                .move_(mkpath("hellow/world", newSOID()), PhysicalOp.APPLY, t);
     }
 
     @Test

@@ -609,7 +609,7 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase, IMe
             if (_psGSCC == null) {
                 _psGSCC = c().prepareStatement(DBUtil.selectWhere(T_OA,
                         C_OA_SIDX + "=? and " + C_OA_PARENT + "=? and " + C_OA_FLAGS + "=0",
-                        "count(1)"));
+                        "count(*)"));
             }
             _psGSCC.setInt(1, soid.sidx().getInt());
             _psGSCC.setBytes(2, soid.oid().getBytes());

@@ -82,7 +82,8 @@ public class ObjectMover
             moveInSameStore_(soid, soidToParent.oid(), toName, op, false, true, t);
             return soid;
         } else {
-            return _imc.createImmigrantRecursively_(soid, soidToParent, toName, op, t);
+            return _imc.createImmigrantRecursively_(
+                    _ds.resolve_(soid).parent(), soid, soidToParent, toName, op, t);
         }
     }
 }

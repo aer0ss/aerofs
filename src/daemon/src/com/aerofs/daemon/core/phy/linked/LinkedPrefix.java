@@ -7,22 +7,28 @@ import java.io.InputStream;
 import java.io.OutputStream;
 
 import com.aerofs.daemon.core.phy.IPhysicalPrefix;
+import com.aerofs.daemon.core.phy.TransUtil;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.ContentHash;
-import com.aerofs.lib.LibParam;
-import com.aerofs.lib.Util;
-import com.aerofs.lib.id.SOCKID;
-import com.aerofs.lib.injectable.InjectableFile;
+import com.aerofs.lib.id.SOID;
+import com.aerofs.lib.id.SOKID;
 
-public class LinkedPrefix implements IPhysicalPrefix
+public class LinkedPrefix extends AbstractLinkedObject implements IPhysicalPrefix
 {
-    final InjectableFile _f;
+    private final SOKID _sokid;
 
-    public LinkedPrefix(InjectableFile.Factory factFile, SOCKID k, String pathAuxRoot)
+    public LinkedPrefix(LinkedStorage s, SOKID sokid, LinkedPath path)
     {
-        _f = factFile.create(Util.join(pathAuxRoot, LibParam.AuxFolder.PREFIX._name,
-                LinkedStorage.makeAuxFileName(k.sokid())));
+        super(s);
+        _sokid = sokid;
+        setPath(path);
+    }
+
+    @Override
+    SOID soid()
+    {
+        return _sokid.soid();
     }
 
     @Override
@@ -46,7 +52,7 @@ public class LinkedPrefix implements IPhysicalPrefix
     @Override
     public void moveTo_(IPhysicalPrefix pf, Trans t) throws IOException
     {
-        LinkedStorage.moveWithRollback_(_f, ((LinkedPrefix) pf)._f, t);
+        TransUtil.moveWithRollback_(_f, ((LinkedPrefix)pf)._f, t);
     }
 
     @Override

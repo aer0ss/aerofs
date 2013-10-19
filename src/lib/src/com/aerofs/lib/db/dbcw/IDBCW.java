@@ -46,8 +46,6 @@ public interface IDBCW
 
     public String charSet();
 
-    public String collateIgnoreCase();
-
     public String autoIncrement();
 
     public String chunkType();

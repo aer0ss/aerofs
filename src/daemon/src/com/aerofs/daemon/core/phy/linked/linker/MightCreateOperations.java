@@ -22,6 +22,7 @@ import com.aerofs.daemon.core.ex.ExExpelled;
 import com.aerofs.daemon.core.first_launch.OIDGenerator;
 import com.aerofs.daemon.core.object.ObjectCreator;
 import com.aerofs.daemon.core.object.ObjectMover;
+import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.phy.linked.SharedFolderTagFileAndIcon;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.lib.db.trans.Trans;
@@ -58,6 +59,7 @@ import java.util.Set;
 import static com.aerofs.daemon.core.ds.OA.Type.ANCHOR;
 import static com.aerofs.daemon.core.ds.OA.Type.DIR;
 import static com.aerofs.daemon.core.ds.OA.Type.FILE;
+import static com.aerofs.daemon.core.phy.PhysicalOp.APPLY;
 import static com.aerofs.daemon.core.phy.PhysicalOp.MAP;
 import static com.aerofs.lib.obfuscate.ObfuscatingFormatters.obfuscatePath;
 
@@ -89,10 +91,13 @@ class MightCreateOperations
 
         // the following "flags" can be combined with some of the above ops
         RenameTarget,
+        NonRepresentableTarget,
         RandomizeSourceFID;
 
-        static private final EnumSet<Operation> PRE = EnumSet.of(RenameTarget, RandomizeSourceFID);
-        static private final EnumSet<Operation> CORE = EnumSet.complementOf(PRE);
+        static private final EnumSet<Operation> FLAGS =
+                EnumSet.of(RenameTarget, NonRepresentableTarget, RandomizeSourceFID);
+        static private final EnumSet<Operation> CORE =
+                EnumSet.complementOf(FLAGS);
 
         // extract core operation (assume exactly one core operation is present)
         static private Operation core(Set<Operation> ops)
@@ -136,7 +141,16 @@ class MightCreateOperations
         if (ops.contains(Operation.RandomizeSourceFID)) assignRandomFID_(sourceSOID, t);
 
         if (ops.contains(Operation.RenameTarget)) {
-            renameConflictingLogicalObject_(_ds.getOA_(targetSOID), pc, fnt._fid, t);
+            PhysicalOp op = MAP;
+            if (ops.contains(Operation.NonRepresentableTarget)) {
+                // when the target is non representable it is garanteed to still exist and also
+                // garanteed to NOT appear in the scan, hence:
+                //   1. APPLY the rename to make the object visible again
+                //   2. remove the target from TDB to prevent it from being deleted
+                op = APPLY;
+                delBuffer.remove_(targetSOID);
+            }
+            renameConflictingLogicalObject_(_ds.getOA_(targetSOID), pc, fnt._fid, op, t);
         }
 
         switch (Operation.core(ops)) {
@@ -236,15 +250,16 @@ class MightCreateOperations
      * @param pc the path to the logical object, must be identical to what _ds.resolve_(oa) would
      * return
      */
-    private void renameConflictingLogicalObject_(@Nonnull OA oa, PathCombo pc, FID fid, Trans t)
+    private void renameConflictingLogicalObject_(@Nonnull OA oa, PathCombo pc, FID fid,
+            PhysicalOp op, Trans t)
             throws Exception
     {
         l.info("rename conflict {} {}", oa.soid(), pc);
 
         // can't rename the root
-        assert !pc._path.isEmpty();
-        assert pc._path.equalsIgnoreCase(_ds.resolve_(oa)) :
-                "pc._path " + pc._path + " does not match resolved oa " + _ds.resolve_(oa);
+        Preconditions.checkState(!pc._path.isEmpty());
+        Preconditions.checkState(pc._path.equals(_ds.resolve_(oa)),
+                "pc._path " + pc._path + " does not match resolved oa " + _ds.resolve_(oa));
 
         // generate a new name for the logical object
         String name = oa.name();
@@ -268,7 +283,7 @@ class MightCreateOperations
         }
 
         // rename the logical object
-        _om.moveInSameStore_(oa.soid(), oa.parent(), name, MAP, false, true, t);
+        _om.moveInSameStore_(oa.soid(), oa.parent(), name, op, false, true, t);
     }
 
     /**
@@ -324,8 +339,7 @@ class MightCreateOperations
 
             // identify name conflict
             SOID soidConflict = _ds.resolveNullable_(pPhysical);
-            assert soidConflict == null ||
-                    (soid.equals(soidConflict) && pPhysical.equalsIgnoreCase(pLogical))
+            assert soidConflict == null
                     : soid + " " + pLogical + " " + soidConflict + " " + pPhysical;
 
 

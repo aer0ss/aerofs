@@ -13,6 +13,7 @@ import com.aerofs.daemon.event.admin.EIExportFile;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.SOID;
+import com.aerofs.lib.os.IOSUtil;
 
 public class HdExportFile extends AbstractHdExport<EIExportFile>
 {
@@ -20,9 +21,10 @@ public class HdExportFile extends AbstractHdExport<EIExportFile>
     private final IPhysicalStorage _ps;
 
     @Inject
-    public HdExportFile(CoreLockReleasingExecutor clre, DirectoryService ds, IPhysicalStorage ps)
+    public HdExportFile(IOSUtil os, CoreLockReleasingExecutor clre, DirectoryService ds,
+            IPhysicalStorage ps)
     {
-        super(clre);
+        super(os, clre);
         _ds = ds;
         _ps = ps;
     }

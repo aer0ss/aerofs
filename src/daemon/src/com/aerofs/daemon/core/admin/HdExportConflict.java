@@ -12,6 +12,7 @@ import com.aerofs.daemon.core.tc.CoreLockReleasingExecutor;
 import com.aerofs.daemon.event.admin.EIExportConflict;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.id.SOID;
+import com.aerofs.lib.os.IOSUtil;
 
 import javax.inject.Inject;
 import java.io.File;
@@ -22,9 +23,10 @@ public class HdExportConflict extends AbstractHdExport<EIExportConflict>
     private final IPhysicalStorage _ps;
 
     @Inject
-    public HdExportConflict(CoreLockReleasingExecutor clre, DirectoryService ds, IPhysicalStorage ps)
+    public HdExportConflict(IOSUtil os, CoreLockReleasingExecutor clre, DirectoryService ds,
+            IPhysicalStorage ps)
     {
-        super(clre);
+        super(os, clre);
         _ds = ds;
         _ps = ps;
     }

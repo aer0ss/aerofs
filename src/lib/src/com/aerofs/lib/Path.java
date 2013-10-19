@@ -107,22 +107,6 @@ public class Path implements Comparable<Path>
                     _sid.equals(((Path)o)._sid) && Arrays.equals(_elems, ((Path) o)._elems));
     }
 
-    public boolean equalsIgnoreCase(Path path)
-    {
-        if (this == path) return true;
-        if (path == null) return false;
-        if (!_sid.equals(path._sid)) return false;
-
-        String [] s1 = this.elements();
-        String [] s2 = path.elements();
-        if (s1.length != s2.length) return false;
-
-        for (int i = 0; i < this.elements().length; i++) {
-            if (!s1[i].equalsIgnoreCase(s2[i])) return false;
-        }
-        return true;
-    }
-
     public boolean isEmpty()
     {
         return _elems.length == 0;

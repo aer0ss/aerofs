@@ -12,10 +12,12 @@ import static com.aerofs.daemon.core.phy.linked.linker.MightCreateOperations.*;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.first_launch.OIDGenerator;
+import com.aerofs.daemon.core.phy.linked.RepresentabilityHelper;
 import com.aerofs.daemon.core.phy.linked.SharedFolderTagFileAndIcon;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.obfuscate.ObfuscatingFormatters;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.Sets;
 import org.slf4j.Logger;
 
 import com.aerofs.daemon.core.ds.DirectoryService;
@@ -59,11 +61,12 @@ public class MightCreate
     private final MightCreateOperations _mcop;
     private final LinkerRootMap _lrm;
     private final ILinkerFilter _filter;
+    private final RepresentabilityHelper _rh;
 
     @Inject
     public MightCreate(IgnoreList ignoreList, DirectoryService ds, InjectableDriver driver,
             SharedFolderTagFileAndIcon sfti, MightCreateOperations mcop, LinkerRootMap lrm,
-            ILinkerFilter filter)
+            ILinkerFilter filter, RepresentabilityHelper rh)
     {
         _il = ignoreList;
         _ds = ds;
@@ -72,6 +75,7 @@ public class MightCreate
         _mcop = mcop;
         _lrm = lrm;
         _filter = filter;
+        _rh = rh;
     }
 
     public static enum Result {
@@ -196,16 +200,15 @@ public class MightCreate
     private boolean detectHardLink_(Path sourcePath, Path targetPath, FID physicalFID)
             throws SQLException
     {
-        // If the logical and physical paths are not equal and the
-        // physical file with that logical path has the same FID as the current file
-        // then we detected a hard link between the logical object and the current
-        // physical object.
+        // If the source and target paths are not equal but the corresponding FIDs are equal then
+        // we detected a hard link
+        //
+        // However we have to be careful to ignore cases where the two filenames are equivalent
+        // on the underlying physical storage (e.g. if case-insensitive or unicode-normalizing)
 
-        if (targetPath.equalsIgnoreCase(sourcePath)) return false;
-        // Do a case insensitive equals to tolerate both case preserving and insensitive
-        // file systems to make sure we don't ignore mv operations on files that have
-        // the same letters in their name.
-        // Example scenario is: mv ./hello.txt ./HELLO.txt
+        if (_lrm.isPhysicallyEquivalent_(targetPath, sourcePath)) {
+            return false;
+        }
 
         try {
             String absRootAnchor = _lrm.absRootAnchor_(sourcePath.sid());
@@ -248,6 +251,30 @@ public class MightCreate
         }
 
         OA targetOA = _ds.getOA_(targetSOID);
+
+        // It is possible to run into a non-representable object during a scan, e.g. :
+        //
+        // virtual:
+        //      foo/
+        //          bar
+        //          BAR
+        //
+        // physical:
+        //      foo/
+        //          bar
+        //      .aerofs.aux.<SID>/
+        //          <soid:BAR>
+        //
+        // user deletes "bar" and create new "BAR" before AeroFS picks up deletion (either because
+        // AeroFS is not running or because the creation happens before the "bar" leaves the
+        // TimeoutDeletionBuffer).
+        //
+        // The only safe way to deal with such corner cases is to rename the NRO
+        if (_rh.isNonRepresentable(targetOA)) {
+            return Sets.union(renameTargetOp(sourceSOID, targetSOID),
+                    EnumSet.of(NonRepresentableTarget));
+        }
+
         boolean sameType = (targetOA.isDirOrAnchor() == fnt._dir);
 
         if (sameType && targetSOID.equals(sourceSOID)) return EnumSet.of(Update);
@@ -260,9 +287,14 @@ public class MightCreate
         }
 
         // The logical object can't simply link to the physical object by replacing the FID.
-        return EnumSet.of(RenameTarget,
-                sourceSOID == null || targetSOID.equals(sourceSOID) ? Create : Update);
+        return renameTargetOp(sourceSOID, targetSOID);
     }
+
+    private static Set<Operation> renameTargetOp(SOID source, SOID target)
+    {
+        return EnumSet.of(RenameTarget, source == null || target.equals(source) ? Create : Update);
+    }
+
 
     /**
      * For locally present files, we can always safely use the Replace operation that adjusts the

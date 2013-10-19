@@ -174,8 +174,6 @@ public class MockDS
 
     private SOID resolve(Path path)
     {
-        Loggers.getLogger(MockDS.class).info("resolve {}", path);
-
         MockDSRoot r = _roots.get(path.sid());
         if (r == null) return null;
 
@@ -268,9 +266,11 @@ public class MockDS
             // The path of a root object should be resolved into the anchor's SOID. So we skip
             // mocking the path resolution for roots.
             if (!root) {
-                when(_ds.resolve_(_oa)).thenAnswer(new Answer<ResolvedPath>() {
+                when(_ds.resolve_(_oa)).thenAnswer(new Answer<ResolvedPath>()
+                {
                     @Override
-                    public ResolvedPath answer(InvocationOnMock invocation) throws Throwable
+                    public ResolvedPath answer(InvocationOnMock invocation)
+                            throws Throwable
                     {
                         return resolved();
                     }
@@ -385,7 +385,7 @@ public class MockDS
 
     public class MockDSFile extends MockDSObject
     {
-        private final SortedMap<KIndex, CA> cas;
+        private final SortedMap<KIndex, CA> cas = Maps.newTreeMap();
 
         MockDSFile(String name, MockDSDir parent) throws Exception
         {
@@ -394,15 +394,24 @@ public class MockDS
 
         MockDSFile(String name, MockDSDir parent, Integer branches) throws Exception
         {
-            super(name, parent);
+            super(name, parent, branches < 0);
+            init(branches);
+        }
 
+        MockDSFile(String name, MockDSDir parent, Integer branches, SOID soid) throws Exception
+        {
+            super(name, parent, branches < 0, soid);
+            init(branches);
+        }
+
+        void init(int branches) throws Exception
+        {
             when(_oa.type()).thenReturn(Type.FILE);
             when(_oa.isFile()).thenReturn(true);
             when(_oa.isDir()).thenReturn(false);
             when(_oa.isAnchor()).thenReturn(false);
             when(_oa.isDirOrAnchor()).thenReturn(false);
 
-            cas = Maps.newTreeMap();
             if (_oa.isExpelled() || branches == 0) {
                 when(_oa.caMaster()).thenThrow(new AssertionError());
                 when(_oa.caMasterNullable()).thenReturn(null);
@@ -541,7 +550,7 @@ public class MockDS
                                 throws Throwable
                         {
                             Object[] args = invocation.getArguments();
-                            String name = (String) args[2];
+                            String name = (String)args[2];
                             MockDSObject o = _this._children.get(name);
                             return o != null ? o.soid().oid() : null;
                         }
@@ -652,6 +661,11 @@ public class MockDS
             return child(name, MockDSFile.class, branches);
         }
 
+        public MockDSFile file(SOID soid, String name, int branches) throws Exception
+        {
+            return child(name, MockDSFile.class, branches, soid);
+        }
+
         public MockDSDir dir(String name) throws Exception
         {
             return child(name, MockDSDir.class);
@@ -660,6 +674,11 @@ public class MockDS
         public MockDSDir dir(String name, boolean expelled) throws Exception
         {
             return child(name, MockDSDir.class, expelled);
+        }
+
+        public MockDSDir dir(SOID soid, String name, boolean expelled) throws Exception
+        {
+            return child(name, MockDSDir.class, expelled, soid);
         }
 
         public MockDSAnchor anchor(String name) throws Exception
@@ -789,6 +808,11 @@ public class MockDS
             assert _sidx2dbm != null;
             when(_sidx2dbm.getDeviceMapping_(eq(_root.soid().sidx()))).thenReturn(dbm);
             return this;
+        }
+
+        public MockDSDir root()
+        {
+            return _root;
         }
     }
 

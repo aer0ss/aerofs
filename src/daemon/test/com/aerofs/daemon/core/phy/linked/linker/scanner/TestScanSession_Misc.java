@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.phy.linked.linker.scanner;
 
+import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.first_launch.OIDGenerator;
 import com.aerofs.daemon.core.phy.linked.linker.IDeletionBuffer;
 import com.aerofs.daemon.core.phy.linked.linker.PathCombo;
@@ -19,10 +20,13 @@ import com.aerofs.lib.Path;
 import com.aerofs.daemon.core.phy.linked.linker.MightCreate.Result;
 
 import com.google.common.collect.ImmutableSet;
+import org.hamcrest.BaseMatcher;
+import org.hamcrest.Description;
 import org.junit.Test;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
+import java.sql.SQLException;
 import java.util.Collections;
 import java.util.Set;
 
@@ -291,5 +295,91 @@ public class TestScanSession_Misc extends AbstractTestScanSession
     public void shouldNotInfiniteLoopIfBatchContainsNonDirs() throws Exception
     {
         assertTrue(factSS.create_(root, Collections.singleton(Util.join(pRoot, "f1")), false).scan_());
+    }
+
+    @Test
+    public void shouldIgnoreFilteredObjects() throws Exception
+    {
+        mockPhysicalDir(pRoot);
+
+        SOID d2 = soidFor("d2");
+        when(filter.shouldIgnoreChilren_(any(PathCombo.class), oaFor(d2)))
+                .thenReturn(true);
+
+        factSS.create_(root, Collections.singleton(pRoot), true).scan_();
+
+        verify(h).hold_(soidFor("f1"));
+        verify(h).hold_(soidFor("d2"));
+        verify(h, never()).hold_(soidFor("d2/f2.1"));
+        verify(h, never()).hold_(soidFor("d2/d2.2"));
+        verify(h, never()).hold_(soidFor("d2/d2.3"));
+        verify(h).releaseAll_();
+        verify(h, never()).removeAll_();
+    }
+
+    @Test
+    public void shouldIgnoreNonRepresentableObjects() throws Exception
+    {
+        mockPhysicalDir(pRoot);
+
+        when(rh.isNonRepresentable(oaFor("d2")))
+                .thenReturn(true);
+
+        factSS.create_(root, Collections.singleton(pRoot), true).scan_();
+
+        verify(h).hold_(soidFor("f1"));
+        verify(h, never()).hold_(soidFor("d2"));
+        verify(h, never()).hold_(soidFor("d2/f2.1"));
+        verify(h, never()).hold_(soidFor("d2/d2.2"));
+        verify(h, never()).hold_(soidFor("d2/d2.3"));
+        verify(h).releaseAll_();
+        verify(h, never()).removeAll_();
+    }
+
+    @Test
+    public void shouldIgnoreNonRepresentableObjectsWhenConflictingPhysical() throws Exception
+    {
+        mockPhysicalDir(pRoot);
+        mockPhysicalDir(Util.join(pRoot, "d2"));
+
+        when(rh.isNonRepresentable(oaFor("d2")))
+                .thenReturn(true);
+
+        factSS.create_(root, Collections.singleton(pRoot), true).scan_();
+
+        verify(h).hold_(soidFor("f1"));
+        verify(h, never()).hold_(soidFor("d2"));
+        verify(h, never()).hold_(soidFor("d2/f2.1"));
+        verify(h, never()).hold_(soidFor("d2/d2.2"));
+        verify(h, never()).hold_(soidFor("d2/d2.3"));
+        verify(h).releaseAll_();
+        verify(h, never()).removeAll_();
+    }
+
+    SOID soidFor(String path) throws SQLException
+    {
+        return ds.resolveNullable_(Path.fromString(rootSID, path));
+    }
+
+    OA oaFor(String path) throws SQLException
+    {
+        return oaFor(soidFor(path));
+    }
+
+    static OA oaFor(final SOID soid)
+    {
+        return argThat(new BaseMatcher<OA>() {
+            @Override
+            public boolean matches(Object o)
+            {
+                return o instanceof OA && ((OA)o).soid().equals(soid);
+            }
+
+            @Override
+            public void describeTo(Description description)
+            {
+
+            }
+        });
     }
 }

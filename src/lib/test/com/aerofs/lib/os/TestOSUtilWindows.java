@@ -4,6 +4,7 @@
 
 package com.aerofs.lib.os;
 
+import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -25,6 +26,8 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 @PrepareForTest({OSUtil.class, OSUtilWindows.class})
 public class TestOSUtilWindows
 {
+    static final String LARGER_THAN_MAXPATH = Strings.repeat("x", 256);
+
     @Test
     public void shouldDisallowInvalidFiles()
     {
@@ -35,12 +38,14 @@ public class TestOSUtilWindows
                 "CLOCK$",
                 "foo:", "foo\"", "foo/",
                 "foo\\", "foo|", "foo?", "foo*",
-                "...", "....", ".....",
-                "LPT1.txt", "CON.whatever", "nul.something"
+                "a.", "...", "....", ".....",
+                "a ", "   ", "    ", "     ",
+                "LPT1.txt", "CON.whatever", "nul.something",
+                LARGER_THAN_MAXPATH
         };
 
         for (String s : IllegalNames) {
-            assertFalse("Should be illegal: " + s, OSUtilWindows.isValidFileName(s));
+            assertTrue("Should be illegal: " + s, OSUtilWindows.isInvalidWin32FileName(s));
         }
     }
 
@@ -57,7 +62,7 @@ public class TestOSUtilWindows
         };
 
         for (String s : LegalNames) {
-            assertTrue("Should be legal: " + s, OSUtilWindows.isValidFileName(s));
+            assertFalse("Should be legal: " + s, OSUtilWindows.isInvalidWin32FileName(s));
         }
     }
 

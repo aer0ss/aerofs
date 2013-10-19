@@ -7,6 +7,8 @@ package com.aerofs.daemon.core.phy.linked.linker.scanner;
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.first_launch.ScanProgressReporter;
+import com.aerofs.daemon.core.phy.linked.RepresentabilityHelper;
+import com.aerofs.daemon.core.phy.linked.db.NRODatabase;
 import com.aerofs.daemon.core.phy.linked.linker.LinkerRoot;
 import com.aerofs.daemon.core.phy.linked.linker.ILinkerFilter;
 import com.aerofs.daemon.core.phy.linked.linker.MightCreate;
@@ -16,17 +18,22 @@ import com.aerofs.daemon.core.mock.logical.MockRoot;
 import com.aerofs.daemon.core.mock.physical.MockPhysicalDir;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.injectable.InjectableFile;
+import com.aerofs.lib.injectable.InjectableFile.Factory;
+import com.aerofs.lib.os.IOSUtil;
+import com.aerofs.lib.os.OSUtilLinux;
 import com.aerofs.testlib.AbstractTest;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.junit.Before;
+import org.mockito.Spy;
 
 import static org.mockito.Mockito.RETURNS_MOCKS;
 import static org.mockito.Mockito.when;
 
 public abstract class AbstractTestScanSession extends AbstractTest
 {
-
+    @Spy IOSUtil os = new OSUtilLinux(new Factory());
+    @Mock NRODatabase nro;
     @Mock DirectoryService ds;
     @Mock MightCreate mc;
     @Mock TransManager tm;
@@ -35,6 +42,7 @@ public abstract class AbstractTestScanSession extends AbstractTest
     @Mock InjectableFile.Factory factFile;
     @Mock ScanProgressReporter spr;
     @Mock ILinkerFilter filter;
+    @Mock RepresentabilityHelper rh;
     @InjectMocks ScanSession.Factory factSS;
 
     protected final String pRoot;

@@ -14,7 +14,6 @@ import com.aerofs.daemon.core.phy.linked.linker.LinkerRootMap;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.IStores;
 import com.aerofs.daemon.lib.db.trans.Trans;
-import com.aerofs.lib.Path;
 import com.aerofs.lib.S;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
@@ -23,6 +22,7 @@ import com.aerofs.lib.cfg.CfgAbsRoots;
 import com.aerofs.lib.cfg.CfgStoragePolicy;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.injectable.InjectableFile;
+import com.aerofs.lib.os.IOSUtil;
 import com.google.inject.Inject;
 
 import java.io.IOException;
@@ -36,21 +36,26 @@ public class FlatLinkedStorage extends LinkedStorage
     private final InjectableFile _usersDir;
     private final InjectableFile _sharedDir;
     private final LocalACL _lacl;
+    private final IOSUtil _os;
 
     @Inject
     public FlatLinkedStorage(InjectableFile.Factory factFile,
             IFIDMaintainer.Factory factFIDMan,
             LinkerRootMap lrm,
             IStores stores,
+            RepresentabilityHelper rh,
             IMapSIndex2SID sidx2sid,
             CfgAbsRoots cfgAbsRoots,
             CfgAbsDefaultRoot cfgAbsDefaultRoot,
             CfgStoragePolicy cfgStoragePolicy,
             IgnoreList il,
             SharedFolderTagFileAndIcon sfti,
-            LocalACL lacl)
+            LocalACL lacl,
+            IOSUtil os)
     {
-        super(factFile, factFIDMan, lrm, stores, sidx2sid, cfgAbsRoots, cfgStoragePolicy, il, sfti);
+        super(factFile, factFIDMan, lrm, rh, stores, sidx2sid, cfgAbsRoots,
+                cfgStoragePolicy, il, sfti);
+        _os = os;
         _lacl = lacl;
         _usersDir = _factFile.create(Util.join(cfgAbsDefaultRoot.get(), S.USERS_DIR));
         _sharedDir = _factFile.create(Util.join(cfgAbsDefaultRoot.get(), S.SHARED_DIR));
@@ -84,7 +89,6 @@ public class FlatLinkedStorage extends LinkedStorage
         l.info("create store {} {} {}", sidx, sid.toStringFormal(), name);
 
         String absPath = ensureStoreRootExists_(sidx, sid, name);
-        ensureSaneAuxRoot_(sid, absPath);
         _sfti.addTagFileAndIconIn(sid, absPath, t);
         _lrm.link_(sid, absPath, t);
     }
@@ -109,7 +113,7 @@ public class FlatLinkedStorage extends LinkedStorage
         if (sid.isUserRoot()) {
             // root in $defaultAbsRoot/users
             UserID uid = storeOwner_(sidx, sid);
-            return _factFile.create(_usersDir, purifyEmail(uid.getString()));
+            return _factFile.create(_usersDir, _os.cleanFileName(uid.getString()));
         } else {
             // root in $defaultAbsRoot/shared
 
@@ -144,22 +148,8 @@ public class FlatLinkedStorage extends LinkedStorage
         throw new AssertionError("store not accessible " + sidx + " " + sid);
     }
 
-    public String purifyEmail(String email)
-    {
-        // Email addresses can have characters that are forbidden in file names.  Here, we strip
-        // out the characters listed at
-        // http://msdn.microsoft.com/en-us/library/windows/desktop/aa365247(v=vs.85).aspx
-        // (which conveniently also covers all the characters forbidden on Unix systems)
-        // I'm not going to deal with NFC/NFD here because that's over-the-top and the autoexport
-        // folder is write-only, so it shouldn't matter.
-
-        // Note: regex replacement is 3x as fast as chaining String.replace()
-        // Note: the backslash is double-escaped: once for the compiler, and once for the regex.
-        return email.replaceAll("[<>:\"/\\\\|?*]", "_");
-    }
-
     @Override
-    void promoteToAnchor_(SID sid, Path path, Trans t) throws SQLException, IOException
+    void promoteToAnchor_(SID sid, String path, Trans t) throws SQLException, IOException
     {
         // TODO:
         /**
@@ -185,7 +175,7 @@ public class FlatLinkedStorage extends LinkedStorage
     }
 
     @Override
-    void demoteToRegularFolder_(SID sid, Path path, Trans t) throws SQLException, IOException
+    void demoteToRegularFolder_(SID sid, String path, Trans t) throws SQLException, IOException
     {
         throw new AssertionError("demotion not supported: " + sid + " " + path);
     }

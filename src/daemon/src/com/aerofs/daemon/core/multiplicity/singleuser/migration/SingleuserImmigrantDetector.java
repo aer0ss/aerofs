@@ -108,6 +108,6 @@ public class SingleuserImmigrantDetector extends ImmigrantDetector
         _ss.addParent_(sidx, soidTo.sidx(), t);
 
         // move physical objects
-        _ps.newFolder_(_ds.resolve_(oaFrom)).move_(_ps.newFolder_(_ds.resolve_(oaTo)), op, t);
+        _ps.newFolder_(_ds.resolve_(oaFrom)).move_(_ds.resolve_(oaTo), op, t);
     }
 }

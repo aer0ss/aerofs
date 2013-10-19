@@ -6,6 +6,7 @@ import com.aerofs.lib.LibParam.PostUpdate;
 import com.aerofs.lib.cfg.CfgDatabase;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.cfg.CfgLocalUser;
+import com.aerofs.lib.injectable.InjectableDriver;
 
 import javax.inject.Inject;
 
@@ -21,7 +22,8 @@ public class DaemonPostUpdateTasks
     private final IDaemonPostUpdateTask[] _tasks;
 
     @Inject
-    public DaemonPostUpdateTasks(CfgDatabase cfgDB, CoreDBCW dbcw,  CfgLocalUser cfgUser)
+    public DaemonPostUpdateTasks(CfgDatabase cfgDB, CoreDBCW dbcw,  CfgLocalUser cfgUser,
+            InjectableDriver dr)
     {
         _cfgDB = cfgDB;
 
@@ -62,7 +64,8 @@ public class DaemonPostUpdateTasks
             new DPUTCleanupGhostKML(dbcw),
             new DPUTRefreshBloomFilters(dbcw),
             new DPUTDeleteLargeLibjingleLog(),
-            new DPUTAddTamperingDetectionTable(dbcw)
+            new DPUTAddTamperingDetectionTable(dbcw),
+            new DPUTCaseSensitivityHellYeah(dbcw, dr)
             // new tasks go here - also, update DAEMON_POST_UPDATE_TASKS counter value below!
         };
 

@@ -36,6 +36,11 @@ public class BaseUtil
         return new String(utf, CHARSET_UTF);
     }
 
+    public static String truncateIfLongerThan(String s, int maxLength)
+    {
+        return s.length() <= maxLength ? s : s.substring(0, maxLength);
+    }
+
     public static String hexEncode(byte[] bs, int offset, int length)
     {
         char[] hex = new char[length * 2];

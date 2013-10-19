@@ -5,7 +5,7 @@
 package com.aerofs.daemon.core.phy.block;
 
 import com.aerofs.daemon.core.phy.IPhysicalPrefix;
-import com.aerofs.daemon.core.phy.linked.LinkedStorage;
+import com.aerofs.daemon.core.phy.TransUtil;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.ContentHash;
@@ -55,7 +55,7 @@ class BlockPrefix implements IPhysicalPrefix
     {
         BlockPrefix to = (BlockPrefix)pf;
         // TODO: do we need the rollback to preserve the destination prefix?
-        LinkedStorage.moveWithRollback_(_f, to._f, t);
+        TransUtil.moveWithRollback_(_f, to._f, t);
     }
 
     @Override

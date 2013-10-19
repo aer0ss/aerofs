@@ -15,7 +15,6 @@ import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.lib.ContentHash;
-import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.base.acl.Role;
 import com.aerofs.daemon.core.ex.ExAborted;
@@ -267,9 +266,6 @@ public class GetComponentCall
 
         OA oa = _ds.getAliasedOANullable_(k.soid());
         assert oa != null : k;
-
-        // verify that the name we send is in Normalized Form C
-        FileUtil.logIfNotNFC(oa.name(), oa.toString());
 
         PBMeta.Builder bdMeta = PBMeta.newBuilder()
             .setType(toPB(oa.type()))

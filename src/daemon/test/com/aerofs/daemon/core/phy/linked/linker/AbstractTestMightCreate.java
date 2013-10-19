@@ -6,6 +6,7 @@ import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ds.ResolvedPath;
 import com.aerofs.daemon.core.ds.ResolvedPathTestUtil;
 import com.aerofs.daemon.core.first_launch.OIDGenerator;
+import com.aerofs.daemon.core.phy.linked.RepresentabilityHelper;
 import com.aerofs.daemon.core.phy.linked.linker.ILinkerFilter.AcceptAll;
 import com.aerofs.daemon.core.phy.linked.linker.MightCreate.Result;
 import com.aerofs.daemon.core.mock.logical.MockDir;
@@ -27,6 +28,7 @@ import com.aerofs.lib.injectable.InjectableDriver.FIDAndType;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.testlib.AbstractTest;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Sets;
 import org.junit.Before;
 import org.mockito.Mock;
@@ -112,8 +114,22 @@ public abstract class AbstractTestMightCreate extends AbstractTest
                 });
 
         when(lrm.absRootAnchor_(rootSID)).thenReturn(pRoot);
+        LinkerRoot root = mock(LinkerRoot.class);
+        when(root.sid()).thenReturn(rootSID);
+        when(lrm.getAllRoots_()).thenReturn(ImmutableList.of(root));
+        when(lrm.isPhysicallyEquivalent_(any(Path.class), any(Path.class)))
+                .thenAnswer(new Answer<Boolean>() {
+            @Override
+            public Boolean answer(InvocationOnMock invocation)
+                    throws Throwable
+            {
+                Object[] args = invocation.getArguments();
+                return args[0].equals(args[1]);
+            }
+        });
 
-        mc = new MightCreate(il, ds, dr, sfti, mcop, lrm, new AcceptAll());
+        mc = new MightCreate(il, ds, dr, sfti, mcop, lrm, new AcceptAll(),
+                mock(RepresentabilityHelper.class));
 
         osRoot.mock(factFile, dr);
         logicRoot.mock(rootSID, ds, null, null);

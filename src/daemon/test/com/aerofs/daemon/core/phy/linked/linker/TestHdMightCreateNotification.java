@@ -6,6 +6,7 @@ package com.aerofs.daemon.core.phy.linked.linker;
 
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.first_launch.OIDGenerator;
+import com.aerofs.daemon.core.phy.linked.FileSystemProber;
 import com.aerofs.daemon.core.phy.linked.linker.event.EIMightCreateNotification;
 import com.aerofs.daemon.core.phy.linked.linker.scanner.ScanSessionQueue;
 import com.aerofs.lib.Util;
@@ -39,6 +40,7 @@ public class TestHdMightCreateNotification extends AbstractTest
     @Mock ScanSessionQueue ssq;
     @Mock ScanSessionQueue.Factory factSSQ;
     @Mock LinkerRootMap lrm;
+    @Mock FileSystemProber prober;
 
     @InjectMocks LinkerRoot.Factory factLR;
     @InjectMocks HdMightCreateNotification mcn;
@@ -85,7 +87,7 @@ public class TestHdMightCreateNotification extends AbstractTest
     }
 
 
-    private void callHandle()
+    private void callHandle() throws Exception
     {
         mcn.handle_(new EIMightCreateNotification(factLR.create_(rootSID, absRootAnchor),
                 Util.join(absRootAnchor, "test")), Prio.LO);

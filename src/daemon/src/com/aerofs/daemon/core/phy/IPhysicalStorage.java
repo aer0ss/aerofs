@@ -17,9 +17,9 @@ import com.aerofs.lib.id.SOKID;
  */
 public interface IPhysicalStorage
 {
-    IPhysicalFile newFile_(ResolvedPath path, KIndex kidx);
+    IPhysicalFile newFile_(ResolvedPath path, KIndex kidx) throws SQLException;
 
-    IPhysicalFolder newFolder_(ResolvedPath path);
+    IPhysicalFolder newFolder_(ResolvedPath path) throws SQLException;
 
     IPhysicalPrefix newPrefix_(SOCKID k) throws SQLException;
 

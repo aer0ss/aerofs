@@ -5,25 +5,22 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.List;
-import java.util.Map.Entry;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.ds.ResolvedPath;
-import com.aerofs.daemon.core.phy.linked.linker.LinkerRoot;
+import com.aerofs.daemon.core.phy.TransUtil;
+import com.aerofs.daemon.core.phy.TransUtil.IPhysicalOperation;
+import com.aerofs.daemon.core.phy.linked.RepresentabilityHelper.PathType;
 import com.aerofs.daemon.core.phy.linked.linker.LinkerRootMap;
-import com.aerofs.daemon.core.phy.linked.linker.LinkerRootMap.IListener;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.IStores;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransLocal;
 import com.aerofs.lib.LibParam;
-import com.aerofs.lib.SystemUtil;
-import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgStoragePolicy;
 import com.aerofs.lib.cfg.CfgAbsRoots;
 import com.aerofs.lib.id.KIndex;
-import com.aerofs.lib.os.OSUtil;
 import com.google.common.collect.Lists;
 import org.slf4j.Logger;
 
@@ -38,16 +35,14 @@ import com.aerofs.daemon.core.phy.linked.LinkedRevProvider.LinkedRevFile;
 import com.aerofs.daemon.core.phy.linked.fid.IFIDMaintainer;
 import com.aerofs.daemon.lib.db.AbstractTransListener;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.Path;
 import com.aerofs.lib.LibParam.AuxFolder;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOCKID;
-import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.id.SOKID;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.google.inject.Inject;
 
-public class LinkedStorage implements IPhysicalStorage, IListener
+public class LinkedStorage implements IPhysicalStorage
 {
     protected static Logger l = Loggers.getLogger(LinkedStorage.class);
 
@@ -61,11 +56,21 @@ public class LinkedStorage implements IPhysicalStorage, IListener
     private final IStores _stores;
     private final IMapSIndex2SID _sidx2sid;
     private final LinkedRevProvider _revProvider;
+    private final RepresentabilityHelper _rh;
+
+    private final TransLocal<Boolean> _tlUseHistory = new TransLocal<Boolean>() {
+        @Override
+        protected Boolean initialValue(Trans t)
+        {
+            return _cfgStoragePolicy.useHistory();
+        }
+    };
 
     @Inject
     public LinkedStorage(InjectableFile.Factory factFile,
             IFIDMaintainer.Factory factFIDMan,
             LinkerRootMap lrm,
+            RepresentabilityHelper rh,
             IStores stores,
             IMapSIndex2SID sidx2sid,
             CfgAbsRoots cfgAbsRoots,
@@ -74,6 +79,7 @@ public class LinkedStorage implements IPhysicalStorage, IListener
             SharedFolderTagFileAndIcon sfti)
     {
         _il = il;
+        _rh = rh;
         _lrm = lrm;
         _factFile = factFile;
         _factFIDMan = factFIDMan;
@@ -82,104 +88,52 @@ public class LinkedStorage implements IPhysicalStorage, IListener
         _stores = stores;
         _sidx2sid = sidx2sid;
         _cfgAbsRoots = cfgAbsRoots;
-        _revProvider = new LinkedRevProvider(this, factFile);
-
-        _lrm.addListener_(this);
+        _revProvider = new LinkedRevProvider(lrm, factFile);
     }
 
     @Override
     public void init_() throws IOException, SQLException
     {
-        for (Entry<SID, String> e : _cfgAbsRoots.get().entrySet()) {
-            ensureSaneAuxRoot_(e.getKey(), e.getValue());
-        }
-
         _revProvider.startCleaner_();
     }
 
     @Override
-    public void addingRoot_(LinkerRoot root) throws IOException
+    public IPhysicalFile newFile_(ResolvedPath path, KIndex kidx) throws SQLException
     {
-        ensureSaneAuxRoot_(root.sid(), root.absRootAnchor());
+        return newFile_(path, kidx, PathType.Source);
+    }
+
+    LinkedFile newFile_(ResolvedPath path, KIndex kidx, PathType type) throws SQLException
+    {
+        SOKID sokid = new SOKID(path.soid(), kidx);
+        return new LinkedFile(this, sokid, kidx.equals(KIndex.MASTER)
+                ? _rh.physicalPath(path, type)
+                : LinkedPath.auxiliary(path, _lrm.auxFilePath_(path.sid(), sokid, AuxFolder.CONFLICT)));
     }
 
     @Override
-    public void removingRoot_(LinkerRoot root) throws IOException
+    public IPhysicalFolder newFolder_(ResolvedPath path) throws SQLException
     {
+        return newFolder_(path, PathType.Source);
     }
 
-    protected void ensureSaneAuxRoot_(SID sid, String absRoot) throws IOException
+    LinkedFolder newFolder_(ResolvedPath path, PathType type) throws SQLException
     {
-        ensureSaneAuxRoot_(Cfg.absAuxRootForPath(absRoot, sid));
+        return new LinkedFolder(this, path.soid(), _rh.physicalPath(path, type));
     }
 
-    private void ensureSaneAuxRoot_(String absAuxRoot) throws IOException
-    {
-        l.info("aux root {}", absAuxRoot);
-
-        // create aux folders. other codes assume these folders already exist.
-        for (AuxFolder af : LibParam.AuxFolder.values()) {
-            _factFile.create(Util.join(absAuxRoot, af._name)).ensureDirExists();
-        }
-
-        OSUtil.get().markHiddenSystemFile(absAuxRoot);
-    }
-
-    String physicalPath(ResolvedPath path)
-    {
-        return Util.join(_lrm.absRootAnchor_(path.sid()), path.toStringRelative());
-    }
-
-    String auxFilePath(SID sid, SOKID soid, AuxFolder folder)
-    {
-        return Util.join(auxRootForStore_(sid), folder._name,
-                LinkedStorage.makeAuxFileName(soid));
-    }
-
-    String auxFilePath(SOKID sokid, AuxFolder folder) throws SQLException
-    {
-        return Util.join(auxRootForStore_(sokid.sidx()), folder._name,
-                LinkedStorage.makeAuxFileName(sokid));
-    }
-
-
-    @Override
-    public IPhysicalFile newFile_(ResolvedPath path, KIndex kidx)
-    {
-        return new LinkedFile(this, path, kidx);
-    }
-
-    @Override
-    public IPhysicalFolder newFolder_(ResolvedPath path)
-    {
-        return new LinkedFolder(this, path);
-    }
 
     @Override
     public IPhysicalPrefix newPrefix_(SOCKID k) throws SQLException
     {
-        return new LinkedPrefix(_factFile, k, auxRootForStore_(k.sidx()));
+        return new LinkedPrefix(this, k.sokid(),
+                LinkedPath.auxiliary(null, auxFilePath(k.sokid(), AuxFolder.PREFIX)));
     }
 
     @Override
     public void deletePrefix_(SOKID sokid) throws SQLException, IOException
     {
         _factFile.create(auxFilePath(sokid, AuxFolder.PREFIX)).deleteIgnoreError();
-    }
-
-    private SID rootSID_(SIndex sidx) throws SQLException
-    {
-        return _sidx2sid.get_(_stores.getPhysicalRoot_(sidx));
-    }
-
-    private String auxRootForStore_(SIndex sidx) throws SQLException
-    {
-        return auxRootForStore_(rootSID_(sidx));
-    }
-
-    String auxRootForStore_(SID root)
-    {
-        return Cfg.absAuxRootForPath(_lrm.absRootAnchor_(root), root);
     }
 
     @Override
@@ -202,36 +156,26 @@ public class LinkedStorage implements IPhysicalStorage, IListener
 
         // delete aux files other than revision files. no need to register for deletion rollback
         // since these files are not important.
-        String prefix = makeAuxFilePrefix(sidx);
+        String prefix = LinkedPath.makeAuxFilePrefix(sidx);
         String absAuxRoot = auxRootForStore_(sidx);
         deleteFiles_(absAuxRoot, LibParam.AuxFolder.CONFLICT, prefix);
         deleteFiles_(absAuxRoot, LibParam.AuxFolder.PREFIX, prefix);
     }
 
-    TransLocal<Boolean> _tlUseHistory = new TransLocal<Boolean>() {
-        @Override
-        protected Boolean initialValue(Trans t)
-        {
-            return _cfgStoragePolicy.useHistory();
-        }
-    };
-
-    @Override
-    public void discardRevForTrans_(Trans t)
+    String auxFilePath(SOKID sokid, AuxFolder folder) throws SQLException
     {
-        _tlUseHistory.set(t, false);
+        return Util.join(auxRootForStore_(sokid.sidx()), folder._name,
+                LinkedPath.makeAuxFileName(sokid));
     }
 
-    void promoteToAnchor_(SID sid, Path path, Trans t) throws SQLException, IOException
+    private String auxRootForStore_(SIndex sidx) throws SQLException
     {
-        _sfti.addTagFileAndIconIn(sid,
-                path.toAbsoluteString(_lrm.absRootAnchor_(path.sid())), t);
+        return _lrm.auxRoot_(rootSID_(sidx));
     }
 
-    void demoteToRegularFolder_(SID sid, Path path, Trans t) throws SQLException, IOException
+    private SID rootSID_(SIndex sidx) throws SQLException
     {
-        _sfti.removeTagFileAndIconIn(sid,
-                path.toAbsoluteString(_lrm.absRootAnchor_(path.sid())), t);
+        return _sidx2sid.get_(_stores.getPhysicalRoot_(sidx));
     }
 
     private void deleteFiles_(String absAuxRoot, AuxFolder af, final String prefix)
@@ -249,29 +193,20 @@ public class LinkedStorage implements IPhysicalStorage, IListener
         if (fs != null) for (InjectableFile f : fs) f.deleteOrThrowIfExist();
     }
 
-    /**
-     * Move the file to the revision history storage area.
-     */
-    void moveToRev_(LinkedFile f, Trans t) throws IOException
+    @Override
+    public void discardRevForTrans_(Trans t)
     {
-        final LinkedRevFile rev = _revProvider.newLocalRevFile_(f._path, f._f.getAbsolutePath(),
-                f._sokid.kidx());
-        rev.save_();
+        _tlUseHistory.set(t, false);
+    }
 
-        onRollback_(f._f, t, new IRollbackHandler() {
-            @Override
-            public void rollback_() throws IOException
-            {
-                if (rev != null) rev.rollback_();
-            }
-        });
+    void promoteToAnchor_(SID sid, String path, Trans t) throws SQLException, IOException
+    {
+        _sfti.addTagFileAndIconIn(sid, path, t);
+    }
 
-        // wait until commit in case we need to put this file back (as in a delete operation
-        // that rolls back). This is an unsubtle limit - more nuanced storage policies will
-        // be implemented by the history cleaner.
-        if (!_tlUseHistory.get(t)) {
-            _tlDel.get(t).add(rev);
-        }
+    void demoteToRegularFolder_(SID sid, String path, Trans t) throws SQLException, IOException
+    {
+        _sfti.removeTagFileAndIconIn(sid, path, t);
     }
 
     @Override
@@ -285,51 +220,36 @@ public class LinkedStorage implements IPhysicalStorage, IListener
 
         if (wasPresent) moveToRev_(f, t);
 
-        LinkedStorage.moveWithRollback_(p._f, f._f, t);
+        move_(p, f, t);
         f._f.setLastModified(mtime);
         f.created_(t);
 
         return f._f.lastModified();
     }
 
-    static String makeAuxFilePrefix(SIndex sidx)
-    {
-        return Integer.toString(sidx.getInt()) + '-';
-    }
-
-    static String makeAuxFileName(SOID soid)
-    {
-        return makeAuxFilePrefix(soid.sidx()) + soid.oid().toStringFormal();
-    }
-
-    static String makeAuxFileName(SOKID sokid)
-    {
-        return makeAuxFileName(sokid.soid()) + '-' + sokid.kidx();
-    }
-
-    public static interface IRollbackHandler
-    {
-        void rollback_() throws IOException;
-    }
-
     /**
-     * N.B. this must be called *after* the actual file operation is done
+     * Move the file to the revision history storage area.
      */
-    public static void onRollback_(final InjectableFile f, Trans t, final IRollbackHandler rh)
+    void moveToRev_(LinkedFile f, Trans t) throws SQLException, IOException
     {
-        t.addListener_(new AbstractTransListener() {
+        final LinkedRevFile rev = _revProvider.newLocalRevFile_(
+                f._path.virtual, f._f.getAbsolutePath(), f._sokid.kidx());
+        rev.save_();
+
+        TransUtil.onRollback_(f._f, t, new IPhysicalOperation() {
             @Override
-            public void aborted_()
+            public void run_() throws IOException
             {
-                try {
-                    rh.rollback_();
-                } catch (IOException e) {
-                    SystemUtil.fatal(
-                            "db/fs inconsistent on " + (f.isDirectory() ? "dir " : "file ") +
-                                    f.getAbsolutePath() + ": " + Util.e(e));
-                }
+                if (rev != null) rev.rollback_();
             }
         });
+
+        // wait until commit in case we need to put this file back (as in a delete operation
+        // that rolls back). This is an unsubtle limit - more nuanced storage policies will
+        // be implemented by the history cleaner.
+        if (!_tlUseHistory.get(t)) {
+            _tlDel.get(t).add(rev);
+        }
     }
 
     /**
@@ -360,18 +280,40 @@ public class LinkedStorage implements IPhysicalStorage, IListener
         }
     };
 
-    public static void moveWithRollback_(
-            final InjectableFile from, final InjectableFile to, Trans t)
-            throws IOException
+    void move_(final AbstractLinkedObject from, final AbstractLinkedObject to, final Trans t)
+        throws IOException, SQLException
     {
-        from.moveInSameFileSystem(to);
-
-        LinkedStorage.onRollback_(from, t, new IRollbackHandler() {
-            @Override
-            public void rollback_() throws IOException
+        // if the source and destination path are physically equivalent we need to bypass the
+        // default retry logic
+        if (isPhysicallyEquivalent(from._path, to._path)) {
+            TransUtil.moveWithRollback_(from._f, to._f, t);
+        } else {
+            try_(to, t, new IPhysicalOperation()
             {
-                to.moveInSameFileSystem(from);
-            }
-        });
+                @Override
+                public void run_()
+                        throws IOException
+                {
+                    TransUtil.moveWithRollback_(from._f, to._f, t);
+                }
+            });
+        }
+    }
+
+    private boolean isPhysicallyEquivalent(LinkedPath from, LinkedPath to)
+    {
+        return from.virtual != null && to.virtual != null
+                && _lrm.isPhysicallyEquivalent_(from.virtual, to.virtual);
+    }
+
+    void try_(AbstractLinkedObject dest, Trans t, IPhysicalOperation op)
+            throws SQLException, IOException
+    {
+        _rh.try_(dest, t, op);
+    }
+
+    void onDeletion_(AbstractLinkedObject o, Trans t) throws SQLException, IOException
+    {
+        _rh.updateNonRepresentableObjectsOnDeletion_(o, t);
     }
 }

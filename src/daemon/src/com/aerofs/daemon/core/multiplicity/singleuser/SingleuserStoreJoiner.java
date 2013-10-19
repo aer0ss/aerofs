@@ -26,8 +26,7 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgRootSID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
-import com.aerofs.lib.os.CfgOS;
-import com.aerofs.lib.os.OSUtilWindows;
+import com.aerofs.lib.os.IOSUtil;
 import com.aerofs.ritual_notification.RitualNotificationServer;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
@@ -52,13 +51,12 @@ public class SingleuserStoreJoiner implements IStoreJoiner
     private final RitualNotificationServer _rns;
     private final SharedFolderAutoLeaver _lod;
     private final IMapSIndex2SID _sidx2sid;
-    private final CfgOS _cfgOS;
     private final PendingRootDatabase _prdb;
 
     @Inject
     public SingleuserStoreJoiner(DirectoryService ds, SingleuserStores stores, ObjectCreator oc,
             ObjectDeleter od, ObjectSurgeon os, CfgRootSID cfgRootSID, RitualNotificationServer rns,
-            SharedFolderAutoLeaver lod, StoreDeleter sd, IMapSIndex2SID sidx2sid, CfgOS cfgOS,
+            SharedFolderAutoLeaver lod, StoreDeleter sd, IMapSIndex2SID sidx2sid,
             PendingRootDatabase prdb)
     {
         _ds = ds;
@@ -71,7 +69,6 @@ public class SingleuserStoreJoiner implements IStoreJoiner
         _rns = rns;
         _lod = lod;
         _sidx2sid = sidx2sid;
-        _cfgOS = cfgOS;
         _prdb = prdb;
     }
 
@@ -154,24 +151,21 @@ public class SingleuserStoreJoiner implements IStoreJoiner
             }
         }
 
-        // TODO: this should be a physical storage property rather than OSUtil
-        String cleanName = _cfgOS.isWindows() ? OSUtilWindows.cleanName(folderName) : folderName;
-
-        l.info("joining share: " + sidx + " " + cleanName);
+        l.info("joining share: " + sidx + " " + folderName);
 
         while (true) {
             try {
-                _oc.createMeta_(Type.ANCHOR, anchor, OID.ROOT, cleanName, 0, PhysicalOp.APPLY,
+                _oc.createMeta_(Type.ANCHOR, anchor, OID.ROOT, folderName, 0, PhysicalOp.APPLY,
                         false, updateVersion, t);
                 break;
             } catch (ExAlreadyExist e) {
-                cleanName = Util.nextFileName(cleanName);
+                folderName = Util.nextFileName(folderName);
             }
         }
 
-        l.debug("joined " + sid + " at " + cleanName);
+        l.debug("joined " + sid + " at " + folderName);
 
-        final Path path = new Path(_cfgRootSID.get(), cleanName);
+        final Path path = new Path(_cfgRootSID.get(), folderName);
         t.addListener_(new AbstractTransListener() {
             @Override
             public void committed_()

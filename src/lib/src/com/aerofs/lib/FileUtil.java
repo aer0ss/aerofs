@@ -1,10 +1,8 @@
 package com.aerofs.lib;
 
-import com.aerofs.base.BaseUtil;
 import com.aerofs.lib.ex.ExFileIO;
 import com.aerofs.lib.os.OSUtilWindows;
 import com.google.common.base.CharMatcher;
-import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
@@ -15,8 +13,6 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.channels.FileChannel;
-import java.text.Normalizer;
-import java.text.Normalizer.Form;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -67,7 +63,6 @@ public abstract class FileUtil
 
     private static boolean shutdownHookAdded = false;
     private static Set<File> _filesToDelete = Sets.newLinkedHashSet();
-    private static FrequentDefectSender _defectSender = new FrequentDefectSender();
 
     /**
      * Returns a string of characters whose positions and values represent attributes of
@@ -87,7 +82,7 @@ public abstract class FileUtil
                 (f.canWrite() ? "w" : "-") +
                 (f.canExecute() ? "x" : "-") +
                 (CharMatcher.ASCII.matchesAllOf(f.getAbsolutePath()) ? "a" : "-") +
-                (OSUtilWindows.isValidFileName(f.getName()) ? "v" : "-");
+                (OSUtilWindows.isInvalidWin32FileName(f.getName()) ? "-" : "v");
     }
 
     /**
@@ -508,35 +503,5 @@ public abstract class FileUtil
         // If we fail to delete the file, and the file still exists (rather than failing because
         // e.g. the file was already deleted), then flag the file to be deleted at JVM shutdown
         if (!f.delete() && f.exists()) deleteOnExit(f);
-    }
-
-    // TODO (MJ) This method barely belongs in this class.
-    // Once we determine what we're doing about (and handle) Normalization for string compares,
-    // they can be moved or removed and replace with definitive asserts.
-    public static void logIfNotNFC(String name, String extraLogs)
-    {
-        String error;
-        try {
-            error = Normalizer.isNormalized(name, Form.NFC) ? null : "Not NFC";
-        } catch (ArrayIndexOutOfBoundsException e) {
-            /** Two users have hit this bizaar exception so far:
-
-             java.lang.ArrayIndexOutOfBoundsException: 9
-                 at sun.text.normalizer.NormalizerImpl.strCompare(NormalizerImpl.java:2183)
-                 at sun.text.normalizer.NormalizerImpl.quickCheck(NormalizerImpl.java:894)
-                 at sun.text.normalizer.NormalizerBase$NFCMode.quickCheck(NormalizerBase.java:428)
-                 at sun.text.normalizer.NormalizerBase.isNormalized(NormalizerBase.java:1651)
-                 at sun.text.normalizer.NormalizerBase.isNormalized(NormalizerBase.java:1632)
-                 at java.text.Normalizer.isNormalized(Normalizer.java:163)
-             */
-            error = "Not NFC: isNormalized() failed: " + e;
-        }
-
-        if (error != null) {
-            _defectSender.logSendAsync(Joiner.on(' ').useForNull("null").join(
-                    error,
-                    BaseUtil.hexEncode(BaseUtil.string2utf(name)),
-                    extraLogs));
-        }
     }
 }

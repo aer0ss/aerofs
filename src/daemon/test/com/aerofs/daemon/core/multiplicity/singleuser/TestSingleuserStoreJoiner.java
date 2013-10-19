@@ -22,7 +22,7 @@ import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.cfg.CfgRootSID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
-import com.aerofs.lib.os.CfgOS;
+import com.aerofs.lib.os.IOSUtil;
 import com.aerofs.ritual_notification.RitualNotifier;
 import com.aerofs.ritual_notification.RitualNotificationServer;
 import com.aerofs.testlib.AbstractTest;
@@ -31,7 +31,10 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -52,7 +55,6 @@ public class TestSingleuserStoreJoiner extends AbstractTest
     @Mock RitualNotificationServer rns;
     @Mock SharedFolderAutoLeaver lod;
     @Mock IMapSIndex2SID sidx2sid;
-    @Mock CfgOS cfgOS;
     @Mock PendingRootDatabase prdb;
     @Mock RitualNotifier _ritualNotifier;
 
@@ -116,28 +118,10 @@ public class TestSingleuserStoreJoiner extends AbstractTest
     {
         SID sid = SID.generate();
 
-        when(cfgOS.isWindows()).thenReturn(false);
-
         ssj.joinStore_(sidx, sid, "*test", false, t);
 
         verify(lod).removeFromQueue_(sid, t);
         verifyAnchorCreated(sid, "*test");
-
-        verifyZeroInteractions(od, os, sd, prdb);
-    }
-
-    @Test
-    public void joinStore_shouldCleanStoreNameWhenJoiningOnWin() throws Exception
-    {
-        SID sid = SID.generate();
-
-        // pretend to be on windows to test name-cleaning
-        when(cfgOS.isWindows()).thenReturn(true);
-
-        ssj.joinStore_(sidx, sid, "*test", false, t);
-
-        verify(lod).removeFromQueue_(sid, t);
-        verifyAnchorCreated(sid, "_test");
 
         verifyZeroInteractions(od, os, sd, prdb);
     }

@@ -43,6 +43,7 @@ import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOCKID;
+import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.id.SOKID;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.google.common.base.Preconditions;
@@ -514,13 +515,14 @@ class BlockStorage implements IPhysicalStorage
         updateFileInfo_(file._path, info, t);
     }
 
-    void move_(BlockFile from, BlockFile to, Trans t) throws IOException, SQLException
+    void move_(BlockFile from, ResolvedPath to, KIndex kidx, Trans t)
+            throws IOException, SQLException
     {
         SOKID fromObjId = from._sokid;
         Path fromPath = from._path;
 
-        SOKID toObjId = to._sokid;
-        Path toPath = to._path;
+        SOKID toObjId = new SOKID(to.soid(), kidx);
+        Path toPath = to;
 
         if (l.isDebugEnabled()) {
             if (!fromObjId.equals(toObjId)) l.debug(fromObjId + " -> " + toObjId);
@@ -547,6 +549,12 @@ class BlockStorage implements IPhysicalStorage
         if (toId != fromInfo._id) {
             delete_(from, t);
         }
+    }
+
+    void updateSOID_(SOKID oldId, SOID newId, Trans t) throws SQLException
+    {
+        _bsdb.updateInternalName_(makeFileName(oldId),
+                makeFileName(new SOKID(newId.sidx(), newId.oid(), oldId.kidx())), t);
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////

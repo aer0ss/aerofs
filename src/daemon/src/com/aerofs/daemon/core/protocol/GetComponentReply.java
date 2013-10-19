@@ -22,7 +22,6 @@ import com.aerofs.daemon.core.net.IncomingStreams;
 import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
-import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.Version;
@@ -164,9 +163,6 @@ public class GetComponentReply
 
             // We don't gracefully handle the parent OID being the same as that sent in the msg
             assert !oidParent.equals(socid.oid()) : "p msg " + oidParent + " socid " + socid;
-
-            // Verify that encoding of the received meta is UTF-8 Normal Form C
-            FileUtil.logIfNotNFC(meta.getName(), socid.toString());
 
             metaDiff = _mdiff.computeMetaDiff_(socid.soid(), meta, oidParent);
 

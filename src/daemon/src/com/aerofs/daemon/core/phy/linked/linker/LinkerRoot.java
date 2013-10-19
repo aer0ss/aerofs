@@ -9,16 +9,19 @@ import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.first_launch.OIDGenerator;
 import com.aerofs.daemon.core.phy.ScanCompletionCallback;
+import com.aerofs.daemon.core.phy.linked.FileSystemProber;
 import com.aerofs.daemon.core.phy.linked.linker.MightCreate.Result;
 import com.aerofs.daemon.core.phy.linked.linker.scanner.ScanSessionQueue;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.Util;
+import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExFileNoPerm;
 import com.aerofs.lib.ex.ExFileNotFound;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 
+import java.io.IOException;
 import java.util.Collections;
 import java.util.Set;
 
@@ -38,19 +41,21 @@ public class LinkerRoot
         private final ScanSessionQueue.Factory _factSSQ;
         private final TransManager _tm;
         private final IDeletionBuffer _globalBuffer;
+        private final FileSystemProber _prober;
 
         @Inject
         public Factory(ScanSessionQueue.Factory factSSQ, MightCreate mc, MightDelete md,
-                IDeletionBuffer globalBuffer, TransManager tm)
+                IDeletionBuffer globalBuffer, TransManager tm, FileSystemProber prober)
         {
             _mc = mc;
             _md = md;
             _factSSQ = factSSQ;
             _globalBuffer = globalBuffer;
             _tm = tm;
+            _prober = prober;
         }
 
-        public LinkerRoot create_(SID sid, String absRoot)
+        public LinkerRoot create_(SID sid, String absRoot) throws IOException
         {
             return new LinkerRoot(this, sid, absRoot);
         }
@@ -74,13 +79,16 @@ public class LinkerRoot
     private final Factory _f;
     private final ScanSessionQueue _ssq;
 
-    private LinkerRoot(Factory f, SID sid, String absRootAnchor)
+    private final boolean _caseSensitive;
+
+    private LinkerRoot(Factory f, SID sid, String absRootAnchor) throws IOException
     {
         _f = f;
         _sid = sid;
         _absRootAnchor = absRootAnchor;
         _ssq = _f._factSSQ.create_(this);
         _og = new OIDGenerator(sid, absRootAnchor);
+        _caseSensitive = _f._prober.isCaseSensitive(absAuxRoot());
     }
 
     public SID sid()
@@ -91,6 +99,11 @@ public class LinkerRoot
     public String absRootAnchor()
     {
         return _absRootAnchor;
+    }
+
+    public String absAuxRoot()
+    {
+        return Cfg.absAuxRootForPath(_absRootAnchor, _sid);
     }
 
     public int watchId()
@@ -108,10 +121,15 @@ public class LinkerRoot
         return _og;
     }
 
+    boolean isPhysicallyEquivalent(String a, String b)
+    {
+        return _caseSensitive ? a.equals(b) : a.equalsIgnoreCase(b);
+    }
+
     @Override
     public String toString()
     {
-        return "LinkerRoot(" + _sid + ", " + _absRootAnchor + ")";
+        return "LinkerRoot(" + _sid + ", " + _absRootAnchor + ", " + _caseSensitive + ")";
     }
 
     public void mightDelete_(String absPath)

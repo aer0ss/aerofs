@@ -6,6 +6,7 @@ package com.aerofs.daemon.core.phy.block;
 
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
+import com.aerofs.base.id.OID;
 import com.aerofs.daemon.core.phy.IPhysicalRevProvider.Child;
 import com.aerofs.daemon.core.phy.IPhysicalRevProvider.Revision;
 import com.aerofs.daemon.lib.db.AbstractDatabase;
@@ -20,6 +21,7 @@ import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.db.PreparedStatementWrapper;
 import com.aerofs.lib.db.dbcw.IDBCW;
 import com.aerofs.base.ex.ExFormatError;
+import com.aerofs.lib.id.SOKID;
 import com.google.inject.Inject;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
@@ -651,6 +653,26 @@ public class BlockStorageDatabase extends AbstractDatabase
         } catch (SQLException e) {
             _psCreateFileEntry = null;
             DBUtil.close(ps);
+            throw detectCorruption(e);
+        }
+    }
+
+    private final PreparedStatementWrapper _pswAliasFileEntry = new PreparedStatementWrapper();
+    void updateInternalName_(String internalName, String newInternalName, Trans t) throws SQLException
+    {
+        try {
+            PreparedStatement ps = _pswAliasFileEntry.get();
+            if (ps == null) {
+                _pswAliasFileEntry.set(ps = c().prepareStatement(DBUtil.updateWhere(T_FileInfo,
+                        C_FileInfo_InternalName + "=?",
+                        C_FileInfo_InternalName)));
+            }
+
+            ps.setString(1, newInternalName);
+            ps.setString(2, internalName);
+            Util.verify(ps.executeUpdate() == 1);
+        } catch (SQLException e) {
+            _pswAliasFileEntry.close();
             throw detectCorruption(e);
         }
     }

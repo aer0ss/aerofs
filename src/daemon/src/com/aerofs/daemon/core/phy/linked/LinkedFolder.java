@@ -6,50 +6,66 @@ import java.sql.SQLException;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.ds.ResolvedPath;
+import com.aerofs.daemon.core.phy.TransUtil;
+import com.aerofs.daemon.core.phy.TransUtil.IPhysicalOperation;
+import com.aerofs.daemon.core.phy.linked.RepresentabilityHelper.PathType;
 import com.aerofs.daemon.lib.db.trans.Trans;
+import com.aerofs.lib.id.SOID;
 import org.slf4j.Logger;
 
 import com.aerofs.daemon.core.phy.IPhysicalFolder;
-import com.aerofs.daemon.core.phy.IPhysicalObject;
 import com.aerofs.daemon.core.phy.PhysicalOp;
-import com.aerofs.daemon.core.phy.linked.LinkedStorage.IRollbackHandler;
 import com.aerofs.daemon.core.phy.linked.fid.IFIDMaintainer;
-import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.injectable.InjectableFile;
-import com.aerofs.lib.Path;
 
-public class LinkedFolder implements IPhysicalFolder
+public class LinkedFolder extends AbstractLinkedObject implements IPhysicalFolder
 {
     private static Logger l = Loggers.getLogger(LinkedFolder.class);
 
     private final SOID _soid;
-    private final Path _path;
-    private final InjectableFile _f;
-    private final IFIDMaintainer _fidm;
+    private IFIDMaintainer _fidm;
 
-    private final LinkedStorage _s;
-
-    public LinkedFolder(LinkedStorage s, ResolvedPath path)
+    public LinkedFolder(LinkedStorage s, SOID soid, LinkedPath path) throws SQLException
     {
-        _s = s;
-        _soid = path.soid();
-        _path = path;
-        _f = _s._factFile.create(_s.physicalPath(path));
+        super(s);
+        _soid = soid;
+        setPath(path);
+    }
+
+    @Override
+    public void setPath(LinkedPath path)
+    {
+        super.setPath(path);
         _fidm = _s._factFIDMan.create_(_soid, _f);
+    }
+
+    @Override
+    SOID soid()
+    {
+        return _soid;
     }
 
     @SuppressWarnings("fallthrough")
     @Override
     public void create_(PhysicalOp op, Trans t) throws IOException, SQLException
     {
-        if (l.isDebugEnabled()) l.debug("create " + this + " " + op);
+        l.debug("create {} {}", this, op);
 
         switch (op) {
         case APPLY:
-            _f.mkdir();
-            LinkedStorage.onRollback_(_f, t, new IRollbackHandler() {
+            _s.try_(this, t, new IPhysicalOperation()
+            {
                 @Override
-                public void rollback_() throws IOException
+                public void run_()
+                        throws IOException
+                {
+                    _f.mkdir();
+                }
+            });
+
+            TransUtil.onRollback_(_f, t, new IPhysicalOperation() {
+                @Override
+                public void run_() throws IOException
                 {
                     // delete recursively in case files are created within the
                     // folder after it's created and before the rollback
@@ -67,18 +83,20 @@ public class LinkedFolder implements IPhysicalFolder
 
     @SuppressWarnings("fallthrough")
     @Override
-    public void move_(IPhysicalObject po, PhysicalOp op, Trans t)
+    public void move_(ResolvedPath to, PhysicalOp op, Trans t)
             throws IOException, SQLException
     {
-        if (l.isDebugEnabled()) l.debug("move " + this + " -> " + po);
-
-        LinkedFolder lf = (LinkedFolder) po;
+        LinkedFolder lf = _s.newFolder_(to, PathType.Destination);
+        l.debug("move {} -> {} {}", this, lf, op);
 
         switch (op) {
         case APPLY:
-            LinkedStorage.moveWithRollback_(_f, lf._f, t);
+            _fidm.throwIfFIDInconsistent_();
+
+            _s.move_(this, lf, t);
             // fallthrough
         case MAP:
+            _s.onDeletion_(this, t);
             _fidm.physicalObjectMoved_(lf._fidm, t);
             break;
         default:
@@ -90,10 +108,12 @@ public class LinkedFolder implements IPhysicalFolder
     @Override
     public void delete_(PhysicalOp op, Trans t) throws IOException, SQLException
     {
-        if (l.isDebugEnabled()) l.debug("delete " + this);
+        l.debug("delete {} {}", this, op);
 
         switch (op) {
         case APPLY:
+            _fidm.throwIfFIDInconsistent_();
+
             deleteIgnoredChildren_();
 
             // throw if the folder is not empty after ignored children has been deleted, so that we
@@ -107,9 +127,9 @@ public class LinkedFolder implements IPhysicalFolder
             final boolean exists = _f.exists();
             _f.deleteOrThrowIfExist();
 
-            LinkedStorage.onRollback_(_f, t, new IRollbackHandler() {
+            TransUtil.onRollback_(_f, t, new IPhysicalOperation() {
                 @Override
-                public void rollback_() throws IOException
+                public void run_() throws IOException
                 {
                     try {
                         if (exists) _f.mkdir();
@@ -127,10 +147,23 @@ public class LinkedFolder implements IPhysicalFolder
             });
             // fallthrough
         case MAP:
+            _s.onDeletion_(this, t);
             _fidm.physicalObjectDeleted_(t);
             break;
         default:
             assert op == PhysicalOp.NOP;
+        }
+    }
+
+    @Override
+    public void updateSOID_(SOID soid, Trans t) throws IOException, SQLException
+    {
+        l.debug("update {} {} {}", _soid, soid, _path);
+        if (!_path.isRepresentable()) {
+            String newName = LinkedPath.makeAuxFileName(soid);
+            InjectableFile to = _f.getParentFile().newChild(newName);
+            if (to.exists()) throw new IOException("destination already exists");
+            TransUtil.moveWithRollback_(_f, to, t);
         }
     }
 
@@ -153,13 +186,13 @@ public class LinkedFolder implements IPhysicalFolder
     @Override
     public void promoteToAnchor_(SID sid, PhysicalOp op, Trans t) throws IOException, SQLException
     {
-        _s.promoteToAnchor_(sid, _path, t);
+        _s.promoteToAnchor_(sid, _path.physical, t);
     }
 
     @Override
     public void demoteToRegularFolder_(SID sid, PhysicalOp op, Trans t) throws IOException, SQLException
     {
-        _s.demoteToRegularFolder_(sid, _path, t);
+        _s.demoteToRegularFolder_(sid, _path.physical, t);
     }
 
     @Override

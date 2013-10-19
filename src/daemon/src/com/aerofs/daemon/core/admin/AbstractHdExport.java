@@ -9,6 +9,7 @@ import com.aerofs.daemon.event.IEBIMC;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.FileUtil.FileName;
+import com.aerofs.lib.os.IOSUtil;
 import com.google.common.io.ByteStreams;
 
 import java.io.File;
@@ -24,10 +25,12 @@ import java.util.concurrent.Callable;
  */
 public abstract class AbstractHdExport<T extends IEBIMC> extends AbstractHdIMC<T>
 {
+    private final IOSUtil _os;
     private final CoreLockReleasingExecutor _coreLockReleasingExecutor;
 
-    protected AbstractHdExport(CoreLockReleasingExecutor coreLockReleasingExecutor)
+    protected AbstractHdExport(IOSUtil os, CoreLockReleasingExecutor coreLockReleasingExecutor)
     {
+        _os = os;
         _coreLockReleasingExecutor = coreLockReleasingExecutor;
     }
 
@@ -37,7 +40,8 @@ public abstract class AbstractHdExport<T extends IEBIMC> extends AbstractHdIMC<T
      */
     protected File createTempFileWithSameExtension(String fileName) throws IOException
     {
-        FileName file = FileName.fromBaseName(fileName);
+        FileName file = FileName.fromBaseName(_os.cleanFileName(fileName));
+        l.info("temp {} {}", file.base, file.extension);
         return FileUtil.createTempFile(file.base, file.extension, null);
     }
 

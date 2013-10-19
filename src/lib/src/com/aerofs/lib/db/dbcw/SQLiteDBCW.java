@@ -113,12 +113,6 @@ public class SQLiteDBCW extends AbstractDBCW implements IDBCW
     }
 
     @Override
-    public String collateIgnoreCase()
-    {
-        return " nocase ";
-    }
-
-    @Override
     public String autoIncrement()
     {
         return " autoincrement ";

@@ -18,6 +18,34 @@ import java.sql.SQLException;
  */
 public interface IFIDMaintainer
 {
+    public static class InconsistentFIDException extends IOException
+    {
+        private static final long serialVersionUID = 0L;
+    }
+
+    /**
+     * On case-insensitive filesystems there are numerous opportunities for race conditions
+     * to break typical consistency expectations. When applying changes from logical filesystem
+     * to physical filesystem it is necessary to to check that the file on which the change
+     * is about to be applied has not changed.
+     *
+     * For instance, if a user creates two files 'foo' and 'FOO' only one will be visible
+     * on a case-insensitive system, say 'foo'. Now if the user delete that visible file 'foo'
+     * and immediately create a new file 'FOO' the existing 'FOO' will be renamed to 'FOO (2)'.
+     *
+     * So far so good. Now imagine the client receives an update form the network asking to
+     * delete the original 'foo' while it is still in the TimeoutDeletionBuffer.
+     *
+     * If FID consistency is not checked before acting upon the deletion this will have the
+     * unintended result of deleting 'FOO'. Similar issues can arise with moves.
+     *
+     * Throwing will prevent the remote logical operation from being applied until the core
+     * DB catches up with local physical changes.
+     *
+     * @throws InconsistentFIDException if DB and FS FID do not match
+     */
+    void throwIfFIDInconsistent_() throws IOException, SQLException;
+
     /**
      * Called when the physical object has been created.
      */

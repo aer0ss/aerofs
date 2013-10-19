@@ -5,13 +5,15 @@
 package com.aerofs.daemon.core.phy.block;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.daemon.core.ds.ResolvedPath;
 import com.aerofs.daemon.core.phy.IPhysicalFile;
-import com.aerofs.daemon.core.phy.IPhysicalObject;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.phy.block.BlockStorageDatabase.FileInfo;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.ex.ExFileNotFound;
+import com.aerofs.lib.id.KIndex;
+import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.id.SOKID;
 import org.slf4j.Logger;
 
@@ -91,21 +93,29 @@ class BlockFile implements IPhysicalFile
     @Override
     public void create_(PhysicalOp op, Trans t) throws IOException, SQLException
     {
-        if (l.isDebugEnabled()) l.debug(this + ".create_(" + op + ")");
+        l.debug("{}.create_({})", this, op);
         if (op == PhysicalOp.APPLY) _s.create_(this, t);
     }
 
     @Override
     public void delete_(PhysicalOp op, Trans t) throws IOException, SQLException
     {
-        if (l.isDebugEnabled()) l.debug(this + ".delete_(" + op + ")");
+        l.debug("{}.delete_({})", this, op);
         if (op == PhysicalOp.APPLY) _s.delete_(this, t);
     }
 
     @Override
-    public void move_(IPhysicalObject to, PhysicalOp op, Trans t) throws IOException, SQLException
+    public void move_(ResolvedPath to, KIndex kidx, PhysicalOp op, Trans t)
+            throws IOException, SQLException
     {
-        if (l.isDebugEnabled()) l.debug(this + ".move_(" + to + ", " + op + ")");
-        if (op == PhysicalOp.APPLY) _s.move_(this, (BlockFile)to, t);
+        l.debug("{}.move_({}, {}, {})", this, to, kidx, op);
+        if (op == PhysicalOp.APPLY) _s.move_(this, to, kidx, t);
+    }
+
+    @Override
+    public void updateSOID_(SOID soid, Trans t) throws IOException, SQLException
+    {
+        l.debug("{}.alias_({})", soid);
+        _s.updateSOID_(_sokid, soid, t);
     }
 }

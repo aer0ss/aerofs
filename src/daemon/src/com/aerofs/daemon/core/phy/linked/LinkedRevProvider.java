@@ -4,8 +4,9 @@ import com.aerofs.base.Base64;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
-import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.phy.IPhysicalRevProvider;
+import com.aerofs.daemon.core.phy.linked.linker.LinkerRoot;
+import com.aerofs.daemon.core.phy.linked.linker.LinkerRootMap;
 import com.aerofs.lib.ExternalSorter;
 import com.aerofs.lib.LibParam.AuxFolder;
 import com.aerofs.lib.Path;
@@ -23,7 +24,6 @@ import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.Serializable;
 import java.nio.ByteBuffer;
-import java.sql.SQLException;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
@@ -157,7 +157,7 @@ public class LinkedRevProvider implements IPhysicalRevProvider
         }
     }
 
-    private final LinkedStorage _s;
+    private final LinkerRootMap _lrm;
     private final InjectableFile.Factory _factFile;
 
     CleanerScheduler _cleanerScheduler;
@@ -171,9 +171,9 @@ public class LinkedRevProvider implements IPhysicalRevProvider
 
     TimeSource _ts = new TimeSource();
 
-    public LinkedRevProvider(LinkedStorage s, InjectableFile.Factory factFile)
+    public LinkedRevProvider(LinkerRootMap lrm, InjectableFile.Factory factFile)
     {
-        _s = s;
+        _lrm = lrm;
         _factFile = factFile;
     }
 
@@ -185,7 +185,7 @@ public class LinkedRevProvider implements IPhysicalRevProvider
 
     String revPath(Path path)
     {
-        return Util.join(_s.auxRootForStore_(path.sid()), AuxFolder.REVISION._name,
+        return Util.join(_lrm.auxRoot_(path.sid()), AuxFolder.REVISION._name,
                 Util.join(path.elements()));
     }
 
@@ -195,6 +195,8 @@ public class LinkedRevProvider implements IPhysicalRevProvider
         InjectableFile f = _factFile.create(absPath);
         RevInfo rev = new RevInfo(revPath(path.removeLast()), f.getName(), kidx.getInt(),
                 _ts.getTime(), f.lastModified(), f.getLengthOrZeroIfNotFile());
+
+        // TODO use alternate folder for history of NROs
 
         String pathRev = rev.getAbsolutePath();
 
@@ -354,13 +356,8 @@ public class LinkedRevProvider implements IPhysicalRevProvider
         private void loop()
         {
             while (true) {
-                try {
-                    for (SID sid : _s._cfgAbsRoots.get().keySet()) {
-                        sweep(Util.join(_s.auxRootForStore_(sid), AuxFolder.REVISION._name));
-                    }
-                } catch (SQLException e) {
-                    l.error("ignored exception, e");
-                    ThreadUtil.sleepUninterruptable(5 * C.SEC);
+                for (LinkerRoot root : _lrm.getAllRoots_()) {
+                    sweep(Util.join(_lrm.auxRoot_(root.sid()), AuxFolder.REVISION._name));
                 }
             }
         }

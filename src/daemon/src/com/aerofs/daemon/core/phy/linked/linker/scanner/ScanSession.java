@@ -5,6 +5,7 @@ import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.first_launch.ScanProgressReporter;
+import com.aerofs.daemon.core.phy.linked.RepresentabilityHelper;
 import com.aerofs.daemon.core.phy.linked.linker.LinkerRoot;
 import com.aerofs.daemon.core.phy.linked.linker.ILinkerFilter;
 import com.aerofs.daemon.core.phy.linked.linker.MightCreate;
@@ -56,6 +57,7 @@ class ScanSession
     static class Factory
     {
         private final DirectoryService _ds;
+        private final RepresentabilityHelper _rh;
         private final MightCreate _mc;
         private final TimeoutDeletionBuffer _delBuffer;
         private final TransManager _tm;
@@ -66,6 +68,7 @@ class ScanSession
 
         @Inject
         public Factory(DirectoryService ds,
+                RepresentabilityHelper rh,
                 MightCreate mc,
                 TransManager tm,
                 TimeoutDeletionBuffer delBuffer,
@@ -76,6 +79,7 @@ class ScanSession
             _ds = ds;
             _mc = mc;
             _tm = tm;
+            _rh = rh;
             _spr = spr;
             _pi = ProgressIndicators.get();  // sigh, this should be injected...
             _delBuffer = delBuffer;
@@ -300,7 +304,6 @@ class ScanSession
 
         if (l.isInfoEnabled()) l.info("on " + soidParent + ":" + pcParent);
 
-
         OA oaParent = _f._ds.getOA_(soidParent);
         if (_f._filter.shouldIgnoreChilren_(pcParent, oaParent)) return 0;
 
@@ -363,6 +366,27 @@ class ScanSession
     private void addLogicalChildrenToDeletionBuffer_(OA oaParent)
             throws SQLException, ExNotDir, ExNotFound
     {
+        // It is possible to run into a non-representable object durin a scan, e.g. :
+        //
+        // virtual:
+        //      foo/
+        //          bar
+        //          BAR
+        //
+        // physical:
+        //      foo/
+        //          bar
+        //      .aerofs.aux.<SID>/
+        //          <soid:BAR>
+        //
+        // user deletes "bar" and create new "BAR" before AeroFS picks up deletion (either because
+        // AeroFS is not running or because the creation happens before the "bar" leaves the
+        // TimeoutDeletionBuffer).
+        //
+        // In such cases, we MUST NOT add the children of BAR to the deletion buffer. MightCreate
+        // will then take care of renaming the old "BAR" to avoid a conflict.
+        if (!oaParent.soid().oid().isRoot() && _f._rh.isNonRepresentable(oaParent)) return;
+
         // the caller guarantees that the OA is not null
         SOID soidParent = oaParent.soid();
         if (oaParent.isAnchor()) {
@@ -378,7 +402,11 @@ class ScanSession
             for (OID oid : _f._ds.getChildren_(soidParent)) {
                 SOID soid = new SOID(soidParent.sidx(), oid);
                 OA oa = _f._ds.getOA_(soid);
-                if (!MightDelete.shouldNotDelete(oa)) {
+                // avoid placing objects in deletion buffer if we know they won't appear in a scan:
+                // 1. expelled objects
+                // 2. files whose master branch was not succcessfully downloaded yet
+                // 3. non-representable objects
+                if (!(MightDelete.shouldNotDelete(oa) || _f._rh.isNonRepresentable(oa))) {
                     l.debug("hold_ on {}", soid);
                     _holder.hold_(soid);
                 }

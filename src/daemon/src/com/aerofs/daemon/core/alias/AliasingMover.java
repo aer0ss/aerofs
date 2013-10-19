@@ -249,8 +249,8 @@ public class AliasingMover
             OA oaTo = _ds.getOA_(target.soid());
             oaTo.ca(kidxTarget);
 
-            _ps.newFile_(_ds.resolve_(oaFrom), kidxAlias).move_(
-                    _ps.newFile_(_ds.resolve_(oaTo), kidxTarget), PhysicalOp.APPLY, t);
+            _ps.newFile_(_ds.resolve_(oaFrom), kidxAlias)
+                    .move_(_ds.resolve_(oaTo), kidxTarget, PhysicalOp.APPLY, t);
 
             SOCKID kTarget = new SOCKID(target, kidxTarget);
             _ds.setCA_(kTarget.sokid(), caFrom.length(), caFrom.mtime(), hAlias, t);
@@ -393,7 +393,6 @@ public class AliasingMover
             // some physical storages use the OID to address objects so we need to
             // rename or we may end up in a broken state
             ResolvedPath src = _ds.resolve_(oaAlias);
-            ResolvedPath dest = src.substituteLastSOID(target);
 
             _os.replaceOID_(alias, target, t);
 
@@ -409,12 +408,11 @@ public class AliasingMover
 
                 _pvc.deleteAllPrefixVersions_(alias, t);
                 _nvc.moveAllLocalVersions_(cAlias, cTarget, t);
-
                 for (KIndex kidx : oaAlias.cas().keySet()) {
-                    _ps.newFile_(src, kidx).move_(_ps.newFile_(dest, kidx), PhysicalOp.APPLY, t);
+                    _ps.newFile_(src, kidx).updateSOID_(target, t);
                 }
             } else {
-                _ps.newFolder_(src).move_(_ps.newFolder_(dest), PhysicalOp.APPLY, t);
+                _ps.newFolder_(src).updateSOID_(target, t);
             }
         } else {
             if (oaTarget.isDir()) {

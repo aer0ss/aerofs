@@ -98,7 +98,7 @@ public abstract class DirectoryService implements IDumpStatMisc, IStoreDeletionO
     }
 
     /**
-     * @return the SOID corresponding to the path. Do NOT follow anchor if the path points to an anchor.
+     * @return the path corresponding to the soid
      */
     @Nonnull public final ResolvedPath resolve_(SOID soid) throws SQLException
     {

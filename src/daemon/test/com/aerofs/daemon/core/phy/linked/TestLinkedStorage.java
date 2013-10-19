@@ -12,32 +12,34 @@ import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ds.ResolvedPath;
 import com.aerofs.daemon.core.phy.IPhysicalFile;
 import com.aerofs.daemon.core.phy.PhysicalOp;
+import com.aerofs.daemon.core.phy.linked.db.NRODatabase;
 import com.aerofs.daemon.core.phy.linked.fid.IFIDMaintainer;
 import com.aerofs.daemon.core.phy.linked.linker.IgnoreList;
 import com.aerofs.daemon.core.phy.linked.linker.LinkerRootMap;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.IStores;
 import com.aerofs.daemon.lib.db.CoreDBCW;
+import com.aerofs.daemon.lib.db.IMetaDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.FileUtil;
-import com.aerofs.lib.LibParam;
+import com.aerofs.lib.LibParam.AuxFolder;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgAbsRoots;
 import com.aerofs.lib.cfg.CfgDatabase;
 import com.aerofs.lib.cfg.CfgStoragePolicy;
+import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.ex.ExFileIO;
-import com.aerofs.lib.id.CID;
 import com.aerofs.lib.id.FID;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.SIndex;
-import com.aerofs.lib.id.SOCKID;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.id.SOKID;
 import com.aerofs.lib.injectable.InjectableDriver;
 import com.aerofs.lib.injectable.InjectableDriver.FIDAndType;
 import com.aerofs.lib.injectable.InjectableFile;
+import com.aerofs.lib.os.IOSUtil;
 import com.aerofs.testlib.AbstractTest;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -72,6 +74,7 @@ public class TestLinkedStorage extends AbstractTest
     @Mock private OA oa;
     @Mock private CoreDBCW dbcw;
     @Mock LinkerRootMap lrm;
+    @Mock IOSUtil os;
 
     SOID soid = new SOID(new SIndex(1), new OID(UniqueID.generate()));
     SOKID sokid = new SOKID(soid, KIndex.MASTER);
@@ -97,11 +100,12 @@ public class TestLinkedStorage extends AbstractTest
 
         factFile = new InjectableFile.Factory();
         InjectableFile tmpDir = factFile.create(tempFolder.getRoot().getPath());
-        rootDir = factFile.create(tmpDir, "data");
+        rootDir = factFile.create(tmpDir, "AeroFS");
         rootDir.mkdirs();
         String auxDir = Cfg.absAuxRootForPath(rootDir.getAbsolutePath(), rootSID);
-        revDir = factFile.create(auxDir, LibParam.AuxFolder.REVISION._name);
-        revDir.mkdirs();
+        revDir = factFile.create(auxDir, AuxFolder.REVISION._name);
+        revDir.ensureDirExists();
+        factFile.create(auxDir, AuxFolder.PREFIX._name).ensureDirExists();
 
         l.info("{} {}", rootDir.getAbsolutePath(), revDir.getAbsolutePath());
 
@@ -130,9 +134,45 @@ public class TestLinkedStorage extends AbstractTest
         IMapSIndex2SID sidx2sid = mock(IMapSIndex2SID.class);
         when(sidx2sid.get_(sidx)).thenReturn(rootSID);
 
+        IStores stores = mock(IStores.class);
+        when(stores.getPhysicalRoot_(any(SIndex.class))).thenReturn(sidx);
+
+        NRODatabase nro = mock(NRODatabase.class);
+        IDBIterator<SOID> it = new IDBIterator<SOID>() {
+            @Override
+            public SOID get_() throws SQLException
+            {
+                return null;
+            }
+
+            @Override
+            public boolean next_() throws SQLException
+            {
+                return false;
+            }
+
+            @Override
+            public void close_() throws SQLException
+            {
+            }
+
+            @Override
+            public boolean closed_()
+            {
+                throw new UnsupportedOperationException();
+            }
+        };
+
+        when(nro.getConflicts_(any(SOID.class))).thenReturn(it);
+
+        // NB: this is to avoid running afoul of the FID consistency check
+        when(ds.getSOIDNullable_(any(FID.class))).thenReturn(sokid.soid());
+
+        RepresentabilityHelper rh = new RepresentabilityHelper(os, dr, lrm,
+                mock(IMetaDatabase.class), nro, factFile);
+
         storage = new LinkedStorage(factFile, new IFIDMaintainer.Factory(dr, ds), lrm,
-                mock(IStores.class), sidx2sid, cfgAbsRoots, cfgStoragePolicy, il, null);
-        storage.init_();
+                rh, stores, sidx2sid, cfgAbsRoots, cfgStoragePolicy, il, null);
 
         tm = new TransManager(new Trans.Factory(dbcw));
 
@@ -150,20 +190,18 @@ public class TestLinkedStorage extends AbstractTest
     {
         int fcount =  rootDir.listFiles().length;
         IPhysicalFile pre;
-        IPhysicalFile post;
         Trans trans;
 
         // create premove & create the PhysicalFile object. Only create the PhysicalFile
         // for post to have a "to" destination in the move call.
         pre = createNamedFile("premove");
-        post = storage.newFile_(new ResolvedPath(rootSID,
+        ResolvedPath post = new ResolvedPath(rootSID,
                 ImmutableList.of(sokid.soid()),
-                ImmutableList.of("postmove")),
-                sokid.kidx());
+                ImmutableList.of("postmove"));
 
         assert rootDir.list().length == (fcount + 1) : "Wrong # files";
         trans = tm.begin_();
-        pre.move_(post, PhysicalOp.APPLY, trans);
+        pre.move_(post, sokid.kidx(), PhysicalOp.APPLY, trans);
         trans.end_();
         assert rootDir.list().length == (fcount + 1) : "Wrong # files";
 
@@ -171,7 +209,7 @@ public class TestLinkedStorage extends AbstractTest
         FileUtil.getLength(new File(pre.getAbsPath_()));
         try
         {
-            FileUtil.getLength(new File(post.getAbsPath_()));
+            FileUtil.getLength(new File(storage.newFile_(post, sokid.kidx()).getAbsPath_()));
             assert false : "Should have thrown ExFileIO. postfile exists?";
         } catch (ExFileIO expected) {}
     }
@@ -215,9 +253,10 @@ public class TestLinkedStorage extends AbstractTest
         checkRevDirContents(0);
 
         // update & check that the revision dir is populated:
-        SOCKID sockid = new SOCKID(sokid,  CID.CONTENT);
-        prefix = new LinkedPrefix(factFile, sockid, storage.auxRootForStore_(rootSID));
-        FileUtil.createNewFile(new File(prefix._f.getAbsolutePath()));
+        prefix = new LinkedPrefix(storage, sokid,
+                LinkedPath.auxiliary(null, storage.auxFilePath(sokid, AuxFolder.PREFIX)));
+        System.out.println(prefix._f.getAbsolutePath());
+        prefix._f.createNewFile();
 
         txn = tm.begin_();
         storage.apply_(prefix, pfile, true, new Date().getTime(), txn);
@@ -240,8 +279,8 @@ public class TestLinkedStorage extends AbstractTest
 
         checkRevDirContents(0);
 
-        SOCKID sockid = new SOCKID(sokid,  CID.CONTENT);
-        prefix = new LinkedPrefix(factFile, sockid, storage.auxRootForStore_(rootSID));
+        prefix = new LinkedPrefix(storage, sokid,
+                LinkedPath.auxiliary(null, storage.auxFilePath(sokid, AuxFolder.PREFIX)));
         FileUtil.createNewFile(new File(prefix._f.getAbsolutePath()));
 
         txn = tm.begin_();
@@ -311,9 +350,8 @@ public class TestLinkedStorage extends AbstractTest
 
         // apply a few updates, checking that after each commit there is no growth in
         // revisions dir:
-        SOCKID sockid = new SOCKID(sokid,  CID.CONTENT);
-
-        prefix = new LinkedPrefix(factFile, sockid, storage.auxRootForStore_(rootSID));
+        prefix = new LinkedPrefix(storage, sokid,
+                LinkedPath.auxiliary(null, storage.auxFilePath(sokid, AuxFolder.PREFIX)));
         FileUtil.createNewFile(new File(prefix._f.getAbsolutePath()));
 
         txn = tm.begin_();
@@ -324,7 +362,8 @@ public class TestLinkedStorage extends AbstractTest
         checkRevDirContents(0);
 
         // test the original file is replaced on rollback:
-        prefix = new LinkedPrefix(factFile, sockid, storage.auxRootForStore_(rootSID));
+        prefix = new LinkedPrefix(storage, sokid,
+                LinkedPath.auxiliary(null, storage.auxFilePath(sokid, AuxFolder.PREFIX)));
         FileUtil.createNewFile(new File(prefix._f.getAbsolutePath()));
         txn = tm.begin_();
         storage.apply_(prefix, pfile, true, 0, txn);
@@ -358,7 +397,7 @@ public class TestLinkedStorage extends AbstractTest
         // should commit without rethrowing.
     }
 
-    private IPhysicalFile createNamedFile(String fname) throws IOException
+    private IPhysicalFile createNamedFile(String fname) throws IOException, SQLException
     {
         IPhysicalFile retval = storage.newFile_(new ResolvedPath(rootSID,
                 ImmutableList.of(sokid.soid()),

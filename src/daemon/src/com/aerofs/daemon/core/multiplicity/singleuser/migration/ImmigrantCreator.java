@@ -1,11 +1,13 @@
 package com.aerofs.daemon.core.multiplicity.singleuser.migration;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.UniqueID;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.DirectoryService.IObjectWalker;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ds.OA.Type;
+import com.aerofs.daemon.core.ds.ResolvedPath;
 import com.aerofs.daemon.core.object.ObjectCreator;
 import com.aerofs.daemon.core.object.ObjectDeleter;
 import com.aerofs.daemon.core.object.ObjectMover;
@@ -18,8 +20,11 @@ import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExNotDir;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.SID;
+import com.aerofs.lib.id.KIndex;
+import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
 import com.google.inject.Inject;
+import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
@@ -36,6 +41,8 @@ import static com.aerofs.daemon.core.ds.OA.FLAG_EXPELLED_ORG_OR_INH;
  */
 public class ImmigrantCreator
 {
+    private final static Logger l = Loggers.getLogger(ImmigrantCreator.class);
+
     private DirectoryService _ds;
     private IPhysicalStorage _ps;
     private ObjectCreator _oc;
@@ -79,6 +86,23 @@ public class ImmigrantCreator
         return oid.isAnchor() ? new OID(UniqueID.generate()) : oid;
     }
 
+    static class MigratedPath
+    {
+        public final ResolvedPath from;
+        public final ResolvedPath to;
+
+        MigratedPath(ResolvedPath from, ResolvedPath to)
+        {
+            this.from = from;
+            this.to = to;
+        }
+
+        MigratedPath join(OA from, SOID to, String name)
+        {
+            return new MigratedPath(this.from.join(from), this.to.join(to, name));
+        }
+    }
+
     /**
      * Recursively migrate the object corresponding to {@code soidFromRoot} to
      * under {@code soidToRootParent}.
@@ -89,15 +113,19 @@ public class ImmigrantCreator
      * @param soidToRootParent the SOID of the parent to which the root object will be migrated
      * @return the new SOID of the root object
      */
-    public SOID createImmigrantRecursively_(final SOID soidFromRoot, SOID soidToRootParent,
-            final String toRootName, final PhysicalOp op, final Trans t)
+    public SOID createImmigrantRecursively_(ResolvedPath pathFromParent, final SOID soidFromRoot,
+            SOID soidToRootParent, final String toRootName, final PhysicalOp op, final Trans t)
             throws ExStreamInvalid, IOException, ExNotFound, ExAlreadyExist, SQLException, ExNotDir
     {
         assert !soidFromRoot.sidx().equals(soidToRootParent.sidx());
 
-        _ds.walk_(soidFromRoot, soidToRootParent, new IObjectWalker<SOID>() {
+        MigratedPath pathParent = new MigratedPath(
+                pathFromParent,
+                _ds.resolve_(soidToRootParent).substituteLastSOID(soidToRootParent));
+
+        _ds.walk_(soidFromRoot, pathParent, new IObjectWalker<MigratedPath>() {
             @Override
-            public SOID prefixWalk_(SOID soidToParent, OA oaFrom)
+            public MigratedPath prefixWalk_(MigratedPath pathParent, OA oaFrom)
                     throws SQLException, IOException, ExNotFound, ExAlreadyExist, ExNotDir,
                     ExStreamInvalid
             {
@@ -107,10 +135,23 @@ public class ImmigrantCreator
                 // when walking across store boundary (i.e through an anchor), we do not need
                 // to re-create the root dir in the destination, however we need to make sure
                 // any physical trace of the former anchor disappears
-                if (oaFrom.soid().oid().isRoot()) return soidToParent;
+                if (oaFrom.soid().oid().isRoot()) return pathParent;
 
+                SOID soidToParent = pathParent.to.soid();
                 SOID soidTo = new SOID(soidToParent.sidx(), migratedOID(oaFrom.soid().oid()));
                 String name = soidFromRoot.equals(oaFrom.soid()) ? toRootName : oaFrom.name();
+
+                // make sure the physical file reflect the migrated SOID before any MAP operation
+                if (op == PhysicalOp.MAP) {
+                    ResolvedPath pathFrom = pathParent.from.join(oaFrom);
+                    if (oaFrom.isFile()) {
+                        for (KIndex kidx : oaFrom.cas().keySet()) {
+                            _ps.newFile_(pathFrom, kidx).updateSOID_(soidTo, t);
+                        }
+                    } else {
+                        _ps.newFolder_(pathFrom).updateSOID_(soidTo, t);
+                    }
+                }
 
                 OA oaToExisting = _ds.getOANullable_(soidTo);
                 Type typeTo = migratedType(oaFrom.type());
@@ -141,19 +182,19 @@ public class ImmigrantCreator
                             .demoteToRegularFolder_(SID.anchorOID2storeSID(oaFrom.soid().oid()), op, t);
                 }
 
-                return soidTo;
+                return pathParent.join(oaFrom, soidTo, name);
             }
 
             @Nullable SID _sid;
 
             @Override
-            public void postfixWalk_(SOID soidToParent, OA oaFrom)
+            public void postfixWalk_(MigratedPath pathParent, OA oaFrom)
                     throws IOException, ExAlreadyExist, SQLException, ExNotDir, ExNotFound,
                     ExStreamInvalid
             {
                 if (oaFrom.soid().oid().isRoot() || oaFrom.soid().oid().isTrash()) return;
 
-                if (_sid == null) _sid = _sidx2sid.get_(soidToParent.sidx());
+                if (_sid == null) _sid = _sidx2sid.get_(pathParent.to.soid().sidx());
                 if (oaFrom.isAnchor()) {
                     // NB: to properly leave the store we must not keep track of the emigration
                     _od.delete_(oaFrom.soid(), op, t);

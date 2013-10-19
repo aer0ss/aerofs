@@ -25,7 +25,6 @@ import com.aerofs.daemon.lib.db.trans.TransLocal;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.BitVector;
 import com.aerofs.lib.CounterVector;
-import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.FrequentDefectSender;
 import com.aerofs.lib.StorageType;
 import com.aerofs.lib.cfg.CfgStorageType;
@@ -260,7 +259,6 @@ public class DirectoryServiceImpl extends DirectoryService implements ObjectSurg
         OA oaParent = getOAThrows_(soidParent);
 
         assert oaParent.isDir();
-        FileUtil.logIfNotNFC(name, soid.toString());
 
         _mdb.insertOA_(sidx, oid, oidParent, name, type, flags, t);
 
@@ -420,9 +418,6 @@ public class DirectoryServiceImpl extends DirectoryService implements ObjectSurg
         assert !oa.soid().equals(oaParent.soid()) : oa + " " + oaParent;
 
         if (!oaParent.isDir()) throw new ExNotDir();
-
-        // verify the encoding of "name" is NFC
-        FileUtil.logIfNotNFC(name, oa + " " + oaParent);
 
         Path pathFrom = resolve_(oa);
         Path pathTo = resolve_(oaParent).append(name);

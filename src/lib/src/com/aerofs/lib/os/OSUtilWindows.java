@@ -8,6 +8,7 @@ import java.io.StringReader;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.*;
@@ -16,6 +17,8 @@ import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.lib.os.OSUtil.Icon;
 import com.aerofs.swig.driver.Driver;
 import com.google.common.base.Optional;
+import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
 import org.apache.commons.lang.text.StrSubstitutor;
 import org.slf4j.Logger;
@@ -164,52 +167,70 @@ public class OSUtilWindows implements IOSUtil
         return System.getenv("USERPROFILE");
     }
 
-    final static private Pattern RESERVED_FILENAME_PATTERN;
-    final static private Pattern INVALID_FILENAME_CHARS;
+    // The ? on the final group makes the suffix optional (zero or one of these)
+    private final static Pattern RESERVED_FILENAME_PATTERN = Pattern.compile(
+            "(CON|CLOCK\\$|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(\\..*)?",
+            Pattern.CASE_INSENSITIVE);
 
-    static {
-        // "I know, I'll use regexes!" Well, now you have two problems.
-        // Note the use of groups; this pattern matches:
-        // - a filename made up entirely of "."s (the first group),
-        // OR
-        //   - one of the Illegal Filenames,
-        //   or one of the Illegal Filenames with a suffix.
-        // The ? on the final group makes the suffix optional (zero or one of these)
-        // and does not apply to the first, ".+" group.
-        RESERVED_FILENAME_PATTERN = Pattern.compile(
-                "(\\.+)|((CON|CLOCK\\$|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(\\..*)?)",
-                Pattern.CASE_INSENSITIVE);
+    // This regex is simpler, just checking for certain characters that are forbidden.
+    private final static Pattern INVALID_FILENAME_CHARS = Pattern.compile(
+            "[/\\\\:*?\"<>|\0-\\x1f]");
 
-        // This regex is simpler, just checking for certain characters that are forbidden.
-        INVALID_FILENAME_CHARS = Pattern.compile("[/\\\\:*?\"<>|]");
-    }
+    private final static ImmutableList FORBIDDEN_TRAILERS = ImmutableList.of('.', ' ');
 
     /**
      * Check if this filename has a chance at being valid on Windows.
-     * Specific failures checked for are: illegal characters for filenames
-     * on Windows, as well as reserved filenames (COM1, NUL, PRN...)
-     * or a filename made up of dots.
+     * Specific failures checked for are:
+     *   - length <= 255
+     *   - illegal characters
+     *   - trailing space or dot
+     *   - reserved filenames: COM1, NUL, PRN... (with optional suffix)
      *
-     * See http://msdn.microsoft.com/en-us/library/windows/desktop/aa365247(v=vs.85).aspx
+     * See
+     * docs/design/filesystem_restrictions.md
+     * http://msdn.microsoft.com/en-us/library/windows/desktop/aa365247(v=vs.85).aspx
      *
      * The caller should throw ExInvalidCharacter if an exception is needed.
      */
-    public static boolean isValidFileName(String name)
+    public static boolean isInvalidWin32FileName(String name)
     {
-        return !(INVALID_FILENAME_CHARS.matcher(name).find()
-                 || RESERVED_FILENAME_PATTERN.matcher(name).matches());
+        Preconditions.checkState(!name.isEmpty());
+        return name.length() > 255
+                || FORBIDDEN_TRAILERS.contains(name.charAt(name.length() - 1))
+                || INVALID_FILENAME_CHARS.matcher(name).find()
+                || RESERVED_FILENAME_PATTERN.matcher(name).matches();
     }
+
+    private final static String RESERVED_SUFFIX = " - reserved name";
 
     /**
      * If the input name is not a valid file name, return a valid name derived from it
      *
-     * 1. append a " - reserved" suffix to reserved names (old MSDOS relics)
-     * 2. replace any invalid characters by an underscore
+     * 1. replace any invalid characters by an underscore
+     * 2. append a " - reserved" suffix to reserved names (old MSDOS relics)
+     * 3. remove trailing spaces and periods
+     * 4. return "empty" if input is empty after trimming
      */
-    public static String cleanName(String name)
+    @Override
+    public String cleanFileName(String name)
     {
-        if (RESERVED_FILENAME_PATTERN.matcher(name).matches()) return name + " - reserved";
-        return INVALID_FILENAME_CHARS.matcher(name).replaceAll("_");
+        name = INVALID_FILENAME_CHARS.matcher(name).replaceAll("_");
+
+        if (RESERVED_FILENAME_PATTERN.matcher(name).matches()) {
+            return BaseUtil.truncateIfLongerThan(name, 255 - RESERVED_SUFFIX.length()) + RESERVED_SUFFIX;
+        }
+
+        int n = 0, len = name.length();
+        while (n < len && FORBIDDEN_TRAILERS.contains(name.charAt(len - 1 - n))) ++n;
+        name = name.substring(0, name.length() - n);
+
+        return BaseUtil.truncateIfLongerThan(name.isEmpty() ? "no name" : name, 255);
+    }
+
+    @Override
+    public boolean isInvalidFileName(String path)
+    {
+        return isInvalidWin32FileName(path);
     }
 
     @Override

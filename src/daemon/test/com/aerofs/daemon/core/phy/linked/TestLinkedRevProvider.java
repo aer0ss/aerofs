@@ -2,6 +2,8 @@ package com.aerofs.daemon.core.phy.linked;
 
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.phy.linked.LinkedRevProvider.LinkedRevFile;
+import com.aerofs.daemon.core.phy.linked.linker.LinkerRoot;
+import com.aerofs.daemon.core.phy.linked.linker.LinkerRootMap;
 import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.Path;
@@ -10,6 +12,7 @@ import com.aerofs.lib.cfg.CfgAbsRoots;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.testlib.AbstractTest;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import org.junit.After;
@@ -57,7 +60,7 @@ public class TestLinkedRevProvider extends AbstractTest
         factFile = new InjectableFile.Factory();
 
         rootDir = factFile.create(tempFolder.getRoot().getPath());
-        dataDir = factFile.create(rootDir, "data");
+        dataDir = factFile.create(rootDir, "AeroFS");
         dataDir.mkdirs();
         String auxDir = Cfg.absAuxRootForPath(dataDir.getAbsolutePath(), rootSID);
         revDir = factFile.create(auxDir, LibParam.AuxFolder.REVISION._name);
@@ -66,10 +69,13 @@ public class TestLinkedRevProvider extends AbstractTest
         when(cfgAbsRoots.getNullable(rootSID)).thenReturn(rootDir.getAbsolutePath());
         when(cfgAbsRoots.get()).thenReturn(ImmutableMap.of(rootSID, rootDir.getAbsolutePath()));
 
-        LinkedStorage s = mock(LinkedStorage.class);
-        when(s.auxRootForStore_(rootSID)).thenReturn(auxDir);
+        LinkerRoot root = mock(LinkerRoot.class);
+        when(root.sid()).thenReturn(rootSID);
+        LinkerRootMap lrm = mock(LinkerRootMap.class);
+        when(lrm.getAllRoots_()).thenReturn(ImmutableList.of(root));
+        when(lrm.absRootAnchor_(rootSID)).thenReturn(dataDir.getAbsolutePath());
 
-        localRevProvider = new LinkedRevProvider(s, factFile);
+        localRevProvider = new LinkedRevProvider(lrm, factFile);
     }
 
     @After

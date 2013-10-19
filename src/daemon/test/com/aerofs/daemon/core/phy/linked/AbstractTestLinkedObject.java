@@ -5,6 +5,8 @@ import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ds.ResolvedPath;
+import com.aerofs.daemon.core.phy.PhysicalOp;
+import com.aerofs.daemon.core.phy.linked.db.NRODatabase;
 import com.aerofs.daemon.core.phy.linked.fid.IFIDMaintainer;
 import com.aerofs.daemon.core.phy.linked.linker.IgnoreList;
 import com.aerofs.daemon.core.phy.IPhysicalObject;
@@ -13,18 +15,22 @@ import static com.aerofs.daemon.core.phy.PhysicalOp.MAP;
 import com.aerofs.daemon.core.phy.linked.linker.LinkerRootMap;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.IStores;
+import com.aerofs.daemon.lib.db.IMetaDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.lib.cfg.CfgAbsRoots;
 import com.aerofs.lib.cfg.CfgStoragePolicy;
+import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.id.*;
 import com.aerofs.lib.injectable.InjectableDriver;
 import com.aerofs.lib.injectable.InjectableDriver.FIDAndType;
 import com.aerofs.lib.injectable.InjectableFile;
+import com.aerofs.lib.os.IOSUtil;
 import com.aerofs.testlib.AbstractTest;
 import com.google.common.collect.ImmutableList;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import java.io.IOException;
 import java.sql.SQLException;
@@ -40,6 +46,10 @@ public abstract class AbstractTestLinkedObject<T extends IPhysicalObject> extend
     @Mock private InjectableFile.Factory factFile;
     @Mock private IgnoreList il;
     @Mock private OA oa;
+    @Mock private IOSUtil os;
+    @Mock private IMetaDatabase mdb;
+    @Mock private NRODatabase nrodb;
+    @InjectMocks private RepresentabilityHelper rh;
 
     LinkedStorage s;
 
@@ -52,6 +62,7 @@ public abstract class AbstractTestLinkedObject<T extends IPhysicalObject> extend
     ResolvedPath path = new ResolvedPath(rootSID,
             ImmutableList.of(parent, soid),
             ImmutableList.of("foo", "bar"));
+    LinkedPath lp = LinkedPath.representable(path, "/ROOT");
     private final FID fid = new FID(new byte[0]);
 
     private T obj;
@@ -59,7 +70,12 @@ public abstract class AbstractTestLinkedObject<T extends IPhysicalObject> extend
     /**
      * @return the specialized physical object under test
      */
-    protected abstract T createPhysicalObject(LinkedStorage s, ResolvedPath path, KIndex kidx);
+    protected abstract T createPhysicalObject(LinkedStorage s, SOKID sokid, LinkedPath path)
+            throws SQLException;
+
+    protected abstract void move(IPhysicalObject obj,
+            ResolvedPath path, SOKID sokid, PhysicalOp op, Trans t)
+            throws IOException, SQLException;
 
     @Before
     public void setupAbstractTestLocalObject() throws IOException, SQLException, ExNotFound
@@ -73,11 +89,38 @@ public abstract class AbstractTestLinkedObject<T extends IPhysicalObject> extend
         when(ds.getOANullable_(soid)).thenReturn(oa);
         when(oa.fid()).thenReturn(fid);
 
+        when(nrodb.getConflicts_(any(SOID.class))).thenReturn(new IDBIterator<SOID>() {
+            @Override
+            public SOID get_() throws SQLException
+            {
+                return null;
+            }
+
+            @Override
+            public boolean next_() throws SQLException
+            {
+                return false;
+            }
+
+            @Override
+            public void close_() throws SQLException
+            {
+            }
+
+            @Override
+            public boolean closed_()
+            {
+                throw new UnsupportedOperationException();
+            }
+        });
+
         s = new LinkedStorage(factFile, new IFIDMaintainer.Factory(dr, ds), lrm,
+                rh,
                 mock(IStores.class), mock(IMapSIndex2SID.class), mock(CfgAbsRoots.class),
                 mock(CfgStoragePolicy.class), il, mock(SharedFolderTagFileAndIcon.class));
 
-        obj = createPhysicalObject(s, path, KIndex.MASTER);
+
+        obj = createPhysicalObject(s, sokid, lp);
     }
 
     @Test
@@ -101,9 +144,7 @@ public abstract class AbstractTestLinkedObject<T extends IPhysicalObject> extend
     @Test
     public void shouldNotUpdateFIDWhenMovingTheSameObject() throws IOException, SQLException
     {
-        T obj2 = createPhysicalObject(s, path, KIndex.MASTER);
-
-        obj.move_(obj2, MAP, t);
+        move(obj, path, sokid, MAP, t);
 
         verify(ds, never()).setFID_(any(SOID.class), any(FID.class), any(Trans.class));
     }
@@ -116,9 +157,7 @@ public abstract class AbstractTestLinkedObject<T extends IPhysicalObject> extend
                 ImmutableList.of(parent, soid2),
                 ImmutableList.of("foo", "baz"));
 
-        T obj2 = createPhysicalObject(s, path2, KIndex.MASTER);
-
-        obj.move_(obj2, MAP, t);
+        move(obj, path2, new SOKID(soid2, KIndex.MASTER), MAP, t);
 
         verify(ds).unsetFID_(soid, t);
         verify(ds).setFID_(soid2, fid, t);

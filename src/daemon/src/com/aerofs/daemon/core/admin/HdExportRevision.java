@@ -7,6 +7,7 @@ import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.tc.CoreLockReleasingExecutor;
 import com.aerofs.daemon.event.admin.EIExportRevision;
 import com.aerofs.lib.event.Prio;
+import com.aerofs.lib.os.IOSUtil;
 import com.google.inject.Inject;
 
 public class HdExportRevision extends AbstractHdExport<EIExportRevision>
@@ -14,9 +15,9 @@ public class HdExportRevision extends AbstractHdExport<EIExportRevision>
     private final IPhysicalStorage _ps;
 
     @Inject
-    public HdExportRevision(CoreLockReleasingExecutor clre, IPhysicalStorage ps)
+    public HdExportRevision(IOSUtil os, CoreLockReleasingExecutor clre, IPhysicalStorage ps)
     {
-        super(clre);
+        super(os, clre);
         _ps = ps;
     }
 

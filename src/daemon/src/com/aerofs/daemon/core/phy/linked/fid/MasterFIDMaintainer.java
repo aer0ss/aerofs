@@ -53,6 +53,15 @@ public class MasterFIDMaintainer implements IFIDMaintainer
     }
 
     @Override
+    public void throwIfFIDInconsistent_() throws IOException, SQLException
+    {
+        FID fid = getFIDFromFilesystem_(_f);
+        SOID soid = _ds.getSOIDNullable_(fid);
+        l.debug("fid check {} {} : expected {} {}", fid, soid, _soid, _f);
+        if (!_soid.equals(soid)) throw new InconsistentFIDException();
+    }
+
+    @Override
     public void physicalObjectCreated_(Trans t) throws IOException, SQLException
     {
         FID fid = getFIDFromFilesystem_(_f);

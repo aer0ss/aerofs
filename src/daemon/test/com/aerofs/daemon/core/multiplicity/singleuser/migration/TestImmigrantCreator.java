@@ -1,10 +1,16 @@
 package com.aerofs.daemon.core.multiplicity.singleuser.migration;
 
+import com.aerofs.base.id.SID;
+import com.aerofs.base.id.UserID;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ds.OA.Type;
+import com.aerofs.daemon.core.ds.ResolvedPath;
+import com.aerofs.daemon.core.mock.logical.LogicalObjectsPrinter;
+import com.aerofs.daemon.core.mock.logical.MockDS;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.OID;
+import com.aerofs.lib.Path;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.base.id.UniqueID;
@@ -23,7 +29,6 @@ import com.aerofs.testlib.AbstractTest;
 
 import java.sql.SQLException;
 
-import static com.aerofs.daemon.core.mock.TestUtilCore.*;
 import static org.junit.Assert.assertFalse;
 import static org.mockito.Mockito.*;
 
@@ -39,20 +44,31 @@ public class TestImmigrantCreator extends AbstractTest
     @Mock ObjectMover om;
 
     @Mock Trans t;
-    @Mock OA oaFromRoot;
 
     @InjectMocks ImmigrantCreator imc;
 
-    SOID soidFromRoot = new SOID(new SIndex(1), new OID(UniqueID.generate()));
-    SOID soidToRootParent = new SOID(new SIndex(2), new OID(UniqueID.generate()));
-    SOID soidToRoot = new SOID(soidToRootParent.sidx(), soidFromRoot.oid());
+    MockDS mds;
+
+    SID rootSID = SID.rootSID(UserID.fromInternal("foo"));
+
+    SOID soidFromRoot;
+    SOID soidToRootParent;
+    SOID soidToRoot;
     String toRootName = "Foo";
     PhysicalOp op = PhysicalOp.APPLY;
 
     @Before
     public void setup() throws Exception
     {
-        mockOA(oaFromRoot, soidFromRoot, Type.FILE, false, null, null, ds);
+        mds = new MockDS(rootSID, ds);
+    }
+
+    private void setupMockDS(int branches) throws Exception
+    {
+        soidFromRoot = mds.root().file("from", branches).soid();
+        soidToRootParent = mds.root().anchor("to").root().soid();
+        soidToRoot = new SOID(soidToRootParent.sidx(), soidFromRoot.oid());
+
     }
 
     ////////
@@ -61,14 +77,18 @@ public class TestImmigrantCreator extends AbstractTest
     @Test(expected = AssertionError.class)
     public void shouldAssertDifferentStores() throws Exception
     {
+        setupMockDS(0);
         SOID soidToRootParent = new SOID(soidFromRoot.sidx(),
                 new OID(UniqueID.generate()));
-        imc.createImmigrantRecursively_(soidFromRoot, soidToRootParent, toRootName, op, t);
+        imc.createImmigrantRecursively_(ResolvedPath.root(SID.generate()),
+                soidFromRoot, soidToRootParent,
+                toRootName, op, t);
     }
 
     @Test(expected = AssertionError.class)
     public void shouldAssertSourceAndTargetAreOfSameObjectType() throws Exception
     {
+        setupMockDS(0);
         mockTarget(true, false, false);
         initiateMigration();
     }
@@ -76,6 +96,7 @@ public class TestImmigrantCreator extends AbstractTest
     @Test(expected = AssertionError.class)
     public void shouldAssertAtMostOneObjectIsAdmitted() throws Exception
     {
+        setupMockDS(0);
         mockTarget(false, false);
         initiateMigration();
     }
@@ -86,7 +107,7 @@ public class TestImmigrantCreator extends AbstractTest
     @Test
     public void shouldMigratePresentSourceToExpelledTarget() throws Exception
     {
-        mockBranches(oaFromRoot, 2, 0, 0, null);
+        setupMockDS(2);
         mockTarget(true, false);
         shouldInitiateMigration(false);
     }
@@ -94,7 +115,7 @@ public class TestImmigrantCreator extends AbstractTest
     @Test
     public void shouldMigratePresentSourceToNonExistingTarget() throws Exception
     {
-        mockBranches(oaFromRoot, 2, 0, 0, null);
+        setupMockDS(2);
         shouldInitiateMigration(true);
     }
 
@@ -102,7 +123,7 @@ public class TestImmigrantCreator extends AbstractTest
     public void shouldMigrateAdmittedAndAbsentSourceToExpelledTarget()
             throws Exception
     {
-        // not mocking branches makes the object absent
+        setupMockDS(0);
         mockTarget(true, false);
         shouldInitiateMigration(false);
     }
@@ -111,7 +132,7 @@ public class TestImmigrantCreator extends AbstractTest
     public void shouldMigrateAdmittedAndAbsentSourceToNonExistingTarget()
             throws Exception
     {
-        // not mocking branches makes the object absent
+        setupMockDS(0);
         shouldInitiateMigration(true);
     }
 
@@ -119,8 +140,8 @@ public class TestImmigrantCreator extends AbstractTest
     public void shouldMigrateExpelledSourceToPresentTarget()
             throws Exception
     {
+        setupMockDS(-1);
         mockTarget(false, true);
-        mockOA(oaFromRoot, soidFromRoot, Type.FILE, true, null, null, ds);
         shouldInitiateMigration(false);
     }
 
@@ -128,8 +149,8 @@ public class TestImmigrantCreator extends AbstractTest
     public void shouldMigrateExpelledSourceToAdmittedAndAbsentTarget()
             throws Exception
     {
+        setupMockDS(-1);
         mockTarget(false, false);
-        mockOA(oaFromRoot, soidFromRoot, Type.FILE, true, null, null, ds);
         shouldInitiateMigration(false);
     }
 
@@ -137,8 +158,8 @@ public class TestImmigrantCreator extends AbstractTest
     public void shouldMigrateExpelledSourceToExpelledTarget()
             throws Exception
     {
+        setupMockDS(-1);
         mockTarget(true, false);
-        mockOA(oaFromRoot, soidFromRoot, Type.FILE, true, null, null, ds);
         shouldInitiateMigration(false);
     }
 
@@ -146,34 +167,35 @@ public class TestImmigrantCreator extends AbstractTest
     public void shouldMigrateExpelledSourceToNonExistingTarget()
             throws Exception
     {
-        mockOA(oaFromRoot, soidFromRoot, Type.FILE, true, null, null, ds);
+        setupMockDS(-1);
         shouldInitiateMigration(true);
     }
 
     private void mockTarget(boolean expelled, boolean present)
-            throws SQLException, ExNotFound
+            throws Exception
     {
         mockTarget(expelled, present, true);
     }
 
     private void mockTarget(boolean expelled, boolean present, boolean sameType)
-            throws SQLException, ExNotFound
+            throws Exception
     {
         if (expelled) assertFalse(present);
-        OA oaToRoot = mock(OA.class);
 
-        mockOA(oaToRoot, soidToRoot, sameType ? Type.FILE : Type.DIR, expelled, null, null, ds);
-        if (present) mockBranches(oaToRoot, 2, 0, 0, null);
-
-        when(ds.getOANullable_(soidToRoot)).thenReturn(oaToRoot);
+        if (sameType) {
+            mds.root().cd("to").file(soidToRoot, soidToRoot.toString(), expelled ? -1 : (present ? 2 : 0));
+        } else {
+            mds.root().cd("to").dir(soidToRoot, soidToRoot.toString(), expelled);
+        }
     }
 
     private void shouldInitiateMigration(boolean createTarget) throws Exception
     {
         initiateMigration();
         if (createTarget) {
-            verify(oc).createImmigrantMeta_(oaFromRoot.type(), oaFromRoot.soid(), soidToRoot,
-                    soidToRootParent.oid(), toRootName, oaFromRoot.flags(), op, true, t);
+            OA from = ds.getOA_(soidFromRoot);
+            verify(oc).createImmigrantMeta_(from.type(), soidFromRoot, soidToRoot,
+                    soidToRootParent.oid(), toRootName, from.flags(), op, true, t);
         } else {
             verify(om).moveInSameStore_(soidToRoot, soidToRootParent.oid(), toRootName,
                     op, false, true, t);
@@ -182,6 +204,9 @@ public class TestImmigrantCreator extends AbstractTest
 
     private void initiateMigration() throws Exception
     {
-        imc.createImmigrantRecursively_(soidFromRoot, soidToRootParent, toRootName, op, t);
+        LogicalObjectsPrinter.printRecursively(rootSID, ds);
+        l.info("{} {}", soidFromRoot, ds.getOANullable_(soidFromRoot));
+        imc.createImmigrantRecursively_(ds.resolve_(soidFromRoot).parent(),
+                soidFromRoot, soidToRootParent, toRootName, op, t);
     }
 }

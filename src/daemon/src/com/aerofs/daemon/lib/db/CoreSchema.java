@@ -356,29 +356,7 @@ public class CoreSchema implements ISchema
                     C_SID_SID + dbcw.uniqueIdType() + " unique not null" +
                 ")" + dbcw.charSet());
 
-        s.executeUpdate(
-                "create table " + T_OA  + "(" +
-                    C_OA_SIDX + " integer not null," +
-                    C_OA_OID + dbcw.uniqueIdType() + " not null," +
-                    C_OA_NAME + dbcw.nameType() + " not null collate " +
-                            dbcw.collateIgnoreCase() + "," +
-                    C_OA_PARENT + dbcw.uniqueIdType() + " not null," +
-                    C_OA_TYPE + " integer not null, " +
-                    C_OA_FID + dbcw.fidType(_dr.getFIDLength()) + "," +
-                    C_OA_FLAGS + " integer not null," +
-                    C_OA_SYNC + " blob," +
-                    C_OA_AG_SYNC + " blob," +
-                    "primary key (" + C_OA_SIDX + "," + C_OA_OID + ")" +
-                ")" + dbcw.charSet());
-
-        // for name conflict detection and getChild()
-        s.executeUpdate(
-                "create unique index " + T_OA + "0 on " + T_OA +
-                    "(" + C_OA_SIDX + "," + C_OA_PARENT + "," + C_OA_NAME + ")");
-
-        // for getSOID_(FID), and for uniqueness constraint on FIDs
-        s.executeUpdate(
-                "create unique index " + T_OA + "1 on " + T_OA + "(" + C_OA_FID + ")");
+        createOATableAndIndices_(s, dbcw, _dr);
 
         s.executeUpdate(
                 "create table " + T_CA + "(" +
@@ -548,6 +526,33 @@ public class CoreSchema implements ISchema
         createLeaveQueueTable(s, dbcw);
         createPendingRootTable(s, dbcw);
         createStoreContributorsTable(s, dbcw);
+    }
+
+    public static void createOATableAndIndices_(Statement s, IDBCW dbcw, InjectableDriver dr)
+            throws SQLException
+    {
+        s.executeUpdate(
+                "create table " + T_OA  + "(" +
+                        C_OA_SIDX + " integer not null," +
+                        C_OA_OID + dbcw.uniqueIdType() + " not null," +
+                        C_OA_NAME + dbcw.nameType() + " not null," +
+                        C_OA_PARENT + dbcw.uniqueIdType() + " not null," +
+                        C_OA_TYPE + " integer not null, " +
+                        C_OA_FID + dbcw.fidType(dr.getFIDLength()) + "," +
+                        C_OA_FLAGS + " integer not null," +
+                        C_OA_SYNC + " blob," +
+                        C_OA_AG_SYNC + " blob," +
+                        "primary key (" + C_OA_SIDX + "," + C_OA_OID + ")" +
+                        ")" + dbcw.charSet());
+
+        // for name conflict detection and getChild()
+        s.executeUpdate(
+                "create unique index " + T_OA + "0 on " + T_OA +
+                        "(" + C_OA_SIDX + "," + C_OA_PARENT + "," + C_OA_NAME + ")");
+
+        // for getSOID_(FID), and for uniqueness constraint on FIDs
+        s.executeUpdate(
+                "create unique index " + T_OA + "1 on " + T_OA + "(" + C_OA_FID + ")");
     }
 
     public static void createStoreContributorsTable(Statement s, IDBCW dbcw)

@@ -107,7 +107,9 @@ public class LibParam extends BaseParam
     {
         PREFIX("p"),
         CONFLICT("c"),
-        REVISION("r");
+        REVISION("r"),
+        PROBE("probe"),
+        NON_REPRESENTABLE("nro");
 
         /**
          * the base name of the auxiliary folder
@@ -170,7 +172,7 @@ public class LibParam extends BaseParam
     {
         // These variables are saved here rather than *PostUpdateTasks classes so that both
         // UI and processes can access them.
-        public static final int DAEMON_POST_UPDATE_TASKS = 37;
+        public static final int DAEMON_POST_UPDATE_TASKS = 38;
         public static final int UI_POST_UPDATE_TASKS = 2;
     }
 

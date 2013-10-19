@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.sql.SQLException;
 
 import com.aerofs.daemon.lib.db.trans.Trans;
+import com.aerofs.lib.id.SOID;
 
 /**
  * instances of this interface represent a combination of SOKIDs and file or directory paths.
@@ -28,11 +29,13 @@ public interface IPhysicalObject
     void delete_(PhysicalOp op, Trans t) throws IOException, SQLException;
 
     /**
-     * @throws IOException if the destination object doesn't exist, or the target object already
-     * exists, or other I/O error occurs
+     * If the physical storage uses OID in any way, update any and all information relative to
+     * this physical object to account for the fact that the logical filesystem stopped using
+     * the old OID in favor of a new one.
      *
-     * N.B. must roll back the operation if the transaction is aborted
+     *
+     * @param soid new OID used by the logical filesystem to refer to this physical object
+     * @pre the object must have been created with the previously used OID
      */
-    void move_(IPhysicalObject to, PhysicalOp op, Trans t)
-            throws IOException, SQLException;
+    void updateSOID_(SOID soid, Trans t) throws IOException, SQLException;
 }

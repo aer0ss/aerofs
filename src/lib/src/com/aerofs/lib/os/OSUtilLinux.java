@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.LibParam.RootAnchor;
 import com.aerofs.lib.OutArg;
@@ -281,5 +282,20 @@ public class OSUtilLinux extends AbstractOSUtilLinuxOSX
         } catch (IOException e) {
             l.warn("showInFolder failed: " + Util.e(e));
         }
+    }
+
+    final static private Pattern INVALID_FILENAME_CHARS = Pattern.compile("[/\0]");
+
+    @Override
+    public String cleanFileName(String name)
+    {
+        return BaseUtil.truncateIfLongerThan(INVALID_FILENAME_CHARS.matcher(name).replaceAll("_"),
+                255);
+    }
+
+    @Override
+    public boolean isInvalidFileName(String name)
+    {
+        return name.length() > 255 || INVALID_FILENAME_CHARS.matcher(name).find();
     }
 }

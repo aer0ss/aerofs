@@ -6,13 +6,12 @@ import java.sql.SQLException;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ds.ResolvedPath;
-import com.aerofs.daemon.core.phy.IPhysicalFile;
-import com.aerofs.daemon.core.phy.IPhysicalFolder;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.SOID;
+import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 
 class AdmittedToAdmittedAdjuster implements IExpulsionAdjuster
@@ -31,7 +30,7 @@ class AdmittedToAdmittedAdjuster implements IExpulsionAdjuster
     public void adjust_(boolean emigrate, PhysicalOp op, SOID soid, ResolvedPath pOld, int flags, Trans t)
             throws IOException, SQLException
     {
-        assert !emigrate;
+        Preconditions.checkState(!emigrate);
 
         _ds.setOAFlags_(soid, flags, t);
 
@@ -39,15 +38,11 @@ class AdmittedToAdmittedAdjuster implements IExpulsionAdjuster
         ResolvedPath pNew = _ds.resolve_(oa);
         if (oa.isFile()) {
             for (KIndex kidx : oa.cas().keySet()) {
-                IPhysicalFile pfOld = _ps.newFile_(pOld, kidx);
-                IPhysicalFile pfNew = _ps.newFile_(pNew, kidx);
-                pfOld.move_(pfNew, op, t);
+                _ps.newFile_(pOld, kidx).move_(pNew, kidx, op, t);
             }
         } else {
-            assert oa.isDirOrAnchor();
-            IPhysicalFolder pfOld = _ps.newFolder_(pOld);
-            IPhysicalFolder pfNew = _ps.newFolder_(pNew);
-            pfOld.move_(pfNew, op, t);
+            Preconditions.checkState(oa.isDirOrAnchor());
+            _ps.newFolder_(pOld).move_(pNew, op, t);
         }
     }
 }

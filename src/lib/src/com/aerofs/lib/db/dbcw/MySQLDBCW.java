@@ -67,12 +67,6 @@ public class MySQLDBCW extends AbstractDBCW implements IDBCW
     }
 
     @Override
-    public String collateIgnoreCase()
-    {
-        return " utf8_general_ci ";
-    }
-
-    @Override
     public String autoIncrement()
     {
         return " auto_increment ";

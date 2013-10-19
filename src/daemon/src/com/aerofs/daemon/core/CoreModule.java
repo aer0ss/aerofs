@@ -51,6 +51,8 @@ import com.aerofs.daemon.lib.db.ver.NativeVersionDatabase;
 import com.aerofs.daemon.lib.db.ver.PrefixVersionDatabase;
 import com.aerofs.lib.analytics.DesktopAnalyticsProperties;
 import com.aerofs.lib.guice.GuiceUtil;
+import com.aerofs.lib.os.IOSUtil;
+import com.aerofs.lib.os.OSUtil;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.internal.Scoping;
@@ -132,5 +134,11 @@ public class CoreModule extends AbstractModule
     public ClientSocketChannelFactory provideClientSocketChannelFactory()
     {
         return _clientChannelFactory;
+    }
+
+    @Provides
+    public IOSUtil provideIOSUtil()
+    {
+        return OSUtil.get();
     }
 }

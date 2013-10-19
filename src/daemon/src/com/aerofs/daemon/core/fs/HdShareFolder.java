@@ -11,6 +11,7 @@ import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import static com.aerofs.daemon.core.ds.OA.Type.ANCHOR;
 
+import com.aerofs.daemon.core.ds.ResolvedPath;
 import com.aerofs.daemon.core.multiplicity.singleuser.migration.ImmigrantCreator;
 import com.aerofs.daemon.core.object.ObjectCreator;
 import com.aerofs.daemon.core.object.ObjectDeleter;
@@ -20,6 +21,7 @@ import static com.aerofs.daemon.core.phy.PhysicalOp.APPLY;
 import static com.aerofs.daemon.core.phy.PhysicalOp.MAP;
 import static com.aerofs.daemon.core.phy.PhysicalOp.NOP;
 
+import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.store.DescendantStores;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IStores;
@@ -60,6 +62,7 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
     private final TransManager _tm;
     private final ObjectCreator _oc;
     private final DirectoryService _ds;
+    private final IPhysicalStorage _ps;
     private final ImmigrantCreator _imc;
     private final ObjectMover _om;
     private final ObjectDeleter _od;
@@ -72,7 +75,7 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
     private final CfgAbsRoots _absRoots;
 
     @Inject
-    public HdShareFolder(TC tc, TransManager tm, ObjectCreator oc,
+    public HdShareFolder(TC tc, TransManager tm, ObjectCreator oc, IPhysicalStorage ps,
             DirectoryService ds, ImmigrantCreator imc, ObjectMover om, ObjectDeleter od,
             IMapSID2SIndex sid2sidx, IStores ss, DescendantStores dss, ACLSynchronizer aclsync,
             SPBlockingClient.Factory factSP, CfgLocalUser localUser, CfgAbsRoots cfgAbsRoots)
@@ -82,6 +85,7 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
         _tm = tm;
         _oc = oc;
         _ds = ds;
+        _ps = ps;
         _imc = imc;
         _om = om;
         _od = od;
@@ -263,6 +267,9 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
         // Step 1: rename the folder into a temporary name, without incrementing its version.
         assert !path.isEmpty(); // the caller guarantees this
         Path pathTemp = path;
+
+        ResolvedPath from = _ds.resolve_(soid);
+
         do {
             pathTemp = path.removeLast().append(Util.nextFileName(pathTemp.last()));
         } while (_ds.resolveNullable_(pathTemp) != null);
@@ -277,7 +284,7 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
         for (OID oidChild : _ds.getChildren_(soid)) {
             SOID soidChild = new SOID(soid.sidx(), oidChild);
             OA oaChild = _ds.getOA_(soidChild);
-            _imc.createImmigrantRecursively_(soidChild, soidToRoot, oaChild.name(), MAP, t);
+            _imc.createImmigrantRecursively_(from, soidChild, soidToRoot, oaChild.name(), MAP, t);
         }
 
         // Step 4: delete the root folder
@@ -289,6 +296,8 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
     {
         l.debug("new store: " + sid + " " + path);
         SOID soidAnchor = new SOID(soid.sidx(), SID.storeSID2anchorOID(sid));
+
+        _ps.newFolder_(_ds.resolve_(soid)).updateSOID_(soidAnchor, t);
 
         OA oaAnchor = _ds.getOANullable_(soidAnchor);
         if (oaAnchor != null) {

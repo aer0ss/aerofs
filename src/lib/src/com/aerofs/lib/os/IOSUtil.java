@@ -104,4 +104,14 @@ public interface IOSUtil
      * This action is commonly implemented as "Show in folder" in the UI
      */
     void showInFolder(String path);
+
+    /**
+     * @return a "clean" name guarenteed to be representable on this OS
+     */
+    String cleanFileName(String name);
+
+    /**
+     * whether a filename is invalid (i.e. inherently non-representable) on this OS
+     */
+    boolean isInvalidFileName(String name);
 }

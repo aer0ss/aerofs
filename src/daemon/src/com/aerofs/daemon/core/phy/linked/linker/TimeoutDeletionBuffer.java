@@ -8,6 +8,8 @@ import com.aerofs.daemon.core.object.ObjectDeleter;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
+import com.aerofs.lib.id.FID;
+import com.aerofs.lib.injectable.InjectableDriver;
 import com.aerofs.rocklog.RockLog;
 import com.aerofs.lib.sched.Scheduler;
 import com.aerofs.daemon.lib.db.trans.Trans;
@@ -23,6 +25,7 @@ import com.google.inject.Inject;
 import org.slf4j.Logger;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -46,6 +49,7 @@ public class TimeoutDeletionBuffer implements IDeletionBuffer
     private final Scheduler _sched;
     private final DirectoryService _ds;
     private final LinkerRootMap _lrm;
+    private final InjectableDriver _dr;
     private final RockLog _rocklog;
 
     private boolean _deletionScheduled = false;
@@ -160,12 +164,13 @@ public class TimeoutDeletionBuffer implements IDeletionBuffer
 
     @Inject
     TimeoutDeletionBuffer(ObjectDeleter od, CoreScheduler sched, TransManager tm,
-            DirectoryService ds, LinkerRootMap lrm, RockLog rocklog)
+            DirectoryService ds, LinkerRootMap lrm, InjectableDriver dr, RockLog rocklog)
     {
         _od = od;
         _sched = sched;
         _tm = tm;
         _ds = ds;
+        _dr = dr;
         _lrm = lrm;
         _rocklog = rocklog;
     }
@@ -344,16 +349,34 @@ public class TimeoutDeletionBuffer implements IDeletionBuffer
         Path path = _ds.resolve_(oa);
         String absRoot = _lrm.absRootAnchor_(path.sid());
         if (absRoot != null) {
-            File f = new File(path.toAbsoluteString(absRoot));
+            String absPath = path.toAbsoluteString(absRoot);
+            File f = new File(absPath);
             if (f.exists()) {
-                l.warn("here be dragons {} {}", ObfuscatingFormatters.obfuscatePath(path), oa);
-                // in the event that the path is occupied by an object of a different
-                // type, proceed with the deletion
-                if (f.isFile() == oa.isFile()) {
-                    // a physical object of the same type exist at the given path:
+                // ok, so the file we're supposed to be deleting exists, but wait, is it actually
+                // the same file? Path are pretty useless on case-insensitive filesystems so we
+                // check type and FID instead.
+                FID fid;
+                try {
+                    fid = _dr.getFID(absPath);
+                    if (fid == null) return true;
+                } catch (IOException e) {
+                    l.warn("failed to get FID, assuming disappeared {} {}", oa.soid(), absPath);
+                    return true;
+                }
+
+                l.warn("here be dragons {} {}", oa.soid(), oa.fid(), fid,
+                        ObfuscatingFormatters.obfuscatePath(path));
+                // if the physical object has different type or FID, proceed with the deletion
+                if (f.isFile() == oa.isFile() && fid.equals(oa.fid())) {
+                    // physical object with same FID and same type at the same path:
                     // 1. submit a defect
                     // 2. prevent deletion of logical object
                     // 3. allow removal of object from deletion buffer
+                    //
+                    // NB: this can happen if a remote-initiated deletion or a locally initiated
+                    // expulsion affects a large tree and fails. In that case the MCN may take too
+                    // long to reach the core so the TDB is full of OIDs not actually deleted.
+                    //
                     // TODO: schedule full scan?
                     _rocklog.newDefect("daemon.linker.tdb")
                             .setMessage(ObfuscatingFormatters.obfuscatePath(path) + " " + oa)

@@ -11,6 +11,12 @@ import com.aerofs.daemon.lib.db.trans.Trans;
 public class NonMasterFIDMaintainer implements IFIDMaintainer
 {
     @Override
+    public void throwIfFIDInconsistent_() throws IOException, SQLException
+    {
+        // noop
+    }
+
+    @Override
     public void physicalObjectCreated_(Trans t)
     {
         // No-op since we don't store in the DB the FID of the physical files that correspond to

@@ -6,17 +6,25 @@ package com.aerofs.daemon.core.phy.linked.linker;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.SID;
+import com.aerofs.daemon.core.phy.linked.LinkedPath;
 import com.aerofs.daemon.lib.db.AbstractTransListener;
 import com.aerofs.daemon.lib.db.PendingRootDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.labeling.L;
+import com.aerofs.lib.LibParam;
+import com.aerofs.lib.LibParam.AuxFolder;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.SystemUtil.ExitCode;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgAbsRoots;
+import com.aerofs.lib.id.SOID;
+import com.aerofs.lib.id.SOKID;
+import com.aerofs.lib.injectable.InjectableFile;
+import com.aerofs.lib.os.IOSUtil;
 import com.aerofs.ritual_notification.RitualNotificationServer;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
@@ -40,6 +48,8 @@ public class LinkerRootMap
 {
     private static final Logger l = Loggers.getLogger(LinkerRootMap.class);
 
+    private final IOSUtil _os;
+    private final InjectableFile.Factory _factFile;
     private final CfgAbsRoots _cfgAbsRoots;
     private final PendingRootDatabase _prdb;
     private final RitualNotificationServer _rns;
@@ -63,9 +73,11 @@ public class LinkerRootMap
     private List<IListener> _listeners = Lists.newArrayList();
 
     @Inject
-    public LinkerRootMap(CfgAbsRoots cfgAbsRoots, PendingRootDatabase prdb,
-            RitualNotificationServer rns)
+    public LinkerRootMap(IOSUtil os, InjectableFile.Factory factFile, CfgAbsRoots cfgAbsRoots,
+            PendingRootDatabase prdb, RitualNotificationServer rns)
     {
+        _os = os;
+        _factFile = factFile;
         _prdb = prdb;
         _cfgAbsRoots = cfgAbsRoots;
         _rns = rns;
@@ -145,7 +157,8 @@ public class LinkerRootMap
         _cfgAbsRoots.add(sid, absRoot);
         _prdb.removePendingRoot(sid, t);
 
-        t.addListener_(new AbstractTransListener() {
+        t.addListener_(new AbstractTransListener()
+        {
             @Override
             public void aborted_()
             {
@@ -265,11 +278,42 @@ public class LinkerRootMap
 
     public @Nullable String absRootAnchor_(SID sid)
     {
-        LinkerRoot root = _map.get(sid);
+        LinkerRoot root = get_(sid);
         return root != null ? root.absRootAnchor() : null;
     }
 
-    Collection<LinkerRoot> getAllRoots_()
+    public final String auxRoot_(SID root)
+    {
+        return Cfg.absAuxRootForPath(absRootAnchor_(root), root);
+    }
+
+    public final String auxFilePath_(SID sid, SOID soid, AuxFolder folder)
+    {
+        return Util.join(auxRoot_(sid), folder._name, LinkedPath.makeAuxFileName(soid));
+    }
+
+    public final String auxFilePath_(SID sid, SOKID sokid, AuxFolder folder)
+    {
+        return Util.join(auxRoot_(sid), folder._name, LinkedPath.makeAuxFileName(sokid));
+    }
+
+    /**
+     * @pre both Path must be non-empty
+     * @return whether two Path are physically equivalent
+     *
+     * physical equivalence is defined by
+     *   * equality of logical parent
+     *   * filesystem-specific equivalence check of the last path component
+     */
+    public boolean isPhysicallyEquivalent_(Path a, Path b)
+    {
+        Preconditions.checkArgument(!a.isEmpty());
+        Preconditions.checkArgument(!b.isEmpty());
+        return a.removeLast().equals(b.removeLast())
+                && get_(a.sid()).isPhysicallyEquivalent(a.last(), b.last());
+    }
+
+    public Collection<LinkerRoot> getAllRoots_()
     {
         return _map.values();
     }
@@ -281,10 +325,14 @@ public class LinkerRootMap
 
     private IOException add_(SID sid, String absRoot)
     {
-        assert !_map.containsKey(sid) : _map.get(sid) + " " + absRoot;
+        Preconditions.checkState(!_map.containsKey(sid), _map.get(sid) + " " + absRoot);
         l.info("add root {} {}", sid, absRoot);
 
         try {
+            // must ensure existence of aux root before creating LinkerRoot as
+            // filesystem properties are probed in the aux root
+            // NB: can't use auxRoot_ method as the root is not in the map yet
+            ensureSaneAuxRoot_(Cfg.absAuxRootForPath(absRoot, sid));
             LinkerRoot root = _factLR.create_(sid, absRoot);
             for (IListener listener : _listeners) listener.addingRoot_(root);
             _map.put(root.sid(), root);
@@ -314,5 +362,17 @@ public class LinkerRootMap
     {
         IOException e = remove_(sid);
         return e != null ? e : add_(sid, newAbsPath);
+    }
+
+    private void ensureSaneAuxRoot_(String absAuxRoot) throws IOException
+    {
+        l.info("aux root {}", absAuxRoot);
+
+        // create aux folders. other codes assume these folders already exist.
+        for (AuxFolder af : LibParam.AuxFolder.values()) {
+            _factFile.create(Util.join(absAuxRoot, af._name)).ensureDirExists();
+        }
+
+        _os.markHiddenSystemFile(absAuxRoot);
     }
 }

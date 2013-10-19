@@ -7,16 +7,20 @@ package com.aerofs.daemon.core.fs;
 import com.aerofs.base.acl.Role;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.ex.ExNoPerm;
+import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.daemon.core.acl.ACLSynchronizer;
 import com.aerofs.daemon.core.acl.LocalACL;
 import com.aerofs.daemon.core.ds.DirectoryService;
+import com.aerofs.daemon.core.ds.ResolvedPath;
 import com.aerofs.daemon.core.mock.logical.MockDS;
 import com.aerofs.daemon.core.multiplicity.singleuser.migration.ImmigrantCreator;
 import com.aerofs.daemon.core.object.ObjectCreator;
 import com.aerofs.daemon.core.object.ObjectDeleter;
 import com.aerofs.daemon.core.object.ObjectMover;
+import com.aerofs.daemon.core.phy.IPhysicalFolder;
+import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.store.DescendantStores;
 import com.aerofs.daemon.core.store.IStores;
 import com.aerofs.daemon.core.store.SIDMap;
@@ -35,6 +39,7 @@ import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.ex.ExChildAlreadyShared;
 import com.aerofs.lib.ex.ExNotDir;
 import com.aerofs.lib.ex.ExParentAlreadyShared;
+import com.aerofs.lib.id.SOID;
 import com.aerofs.proto.Common.PBSubjectRolePair;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.testlib.AbstractTest;
@@ -50,6 +55,7 @@ import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
@@ -66,6 +72,7 @@ public class TestHdShareFolder extends AbstractTest
     @Mock TransManager tm;
     @Mock ObjectCreator oc;
     @Mock DirectoryService ds;
+    @Mock IPhysicalStorage ps;
     @Mock ImmigrantCreator imc;
     @Mock ObjectMover om;
     @Mock ObjectDeleter od;
@@ -200,10 +207,17 @@ public class TestHdShareFolder extends AbstractTest
     @Test
     public void shouldShare() throws Exception
     {
-        handle(Path.fromString(rootSID, "d/d"), user1);
+        IPhysicalFolder pf = mock(IPhysicalFolder.class);
+        when(ps.newFolder_(any(ResolvedPath.class))).thenReturn(pf);
+
+        Path path = Path.fromString(rootSID, "d/d");
+        SOID soid = ds.resolveThrows_(path);
+        OID anchor = SID.storeSID2anchorOID(SID.folderOID2convertedStoreSID(soid.oid()));
+        handle(path, user1);
 
         verify(sp).shareFolder(eq("d"), any(ByteString.class),
                 anyIterableOf(PBSubjectRolePair.class), anyString(), eq(false), any(Boolean.class));
+        verify(pf).updateSOID_(new SOID(soid.sidx(), anchor), t);
     }
 
     @Test

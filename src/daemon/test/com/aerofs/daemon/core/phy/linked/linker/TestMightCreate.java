@@ -16,18 +16,22 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExFileNotFound;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.injectable.InjectableDriver.FIDAndType;
+import com.aerofs.lib.injectable.InjectableFile.Factory;
+import com.aerofs.lib.os.IOSUtil;
+import com.aerofs.lib.os.OSUtilLinux;
 import com.google.common.collect.Sets;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
 import java.util.EnumSet;
 import java.util.Set;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anySetOf;
@@ -40,6 +44,7 @@ public class TestMightCreate extends AbstractMightCreateTest
     @Mock Trans t;
     @Mock IDeletionBuffer delBuffer;
 
+    @Spy IOSUtil os = new OSUtilLinux(new Factory());
     @Mock IgnoreList il;
     @Mock SharedFolderTagFileAndIcon sfti;
     @Mock MightCreateOperations mcop;
@@ -103,25 +108,25 @@ public class TestMightCreate extends AbstractMightCreateTest
     @Test
     public void shouldIgnoreNameInIgnoreList() throws Exception
     {
-        Assert.assertEquals(Result.IGNORED, mightCreate("ignored", generateFileFnt()));
+        assertEquals(Result.IGNORED, mightCreate("ignored", generateFileFnt()));
     }
 
     @Test
     public void shouldIgnoreNullFID() throws Exception
     {
-        Assert.assertEquals(Result.IGNORED, mightCreate("f1", null));
+        assertEquals(Result.IGNORED, mightCreate("f1", null));
     }
 
     @Test
     public void shouldIgnoreFileWithNoParent() throws Exception
     {
-        Assert.assertEquals(Result.IGNORED, mightCreate("foo/bar", generateFileFnt()));
+        assertEquals(Result.IGNORED, mightCreate("foo/bar", generateFileFnt()));
     }
 
     @Test
     public void shouldIgnoreFileWithExpelledParent() throws Exception
     {
-        Assert.assertEquals(Result.IGNORED, mightCreate("d-expelled/f", generateFileFnt()));
+        assertEquals(Result.IGNORED, mightCreate("d-expelled/f", generateFileFnt()));
     }
 
     @Test
@@ -129,7 +134,7 @@ public class TestMightCreate extends AbstractMightCreateTest
     {
         OA oa = ds.getOA_(ds.resolveNullable_(mkpath("d0")));
         when(mcf.shouldIgnoreChilren_(any(PathCombo.class), eq(oa))).thenReturn(true);
-        Assert.assertEquals(Result.IGNORED, mightCreate("d0/f", generateFileFnt()));
+        assertEquals(Result.IGNORED, mightCreate("d0/f", generateFileFnt()));
     }
 
     @Test
@@ -150,7 +155,7 @@ public class TestMightCreate extends AbstractMightCreateTest
         SOID soid = ds.resolveNullable_(mkpath("f1"));
         FIDAndType fnt = generateFileFnt(soid);
 
-        Assert.assertEquals(Result.FILE, mightCreate("f1", fnt));
+        assertEquals(Result.FILE, mightCreate("f1", fnt));
 
         verifyOperationExecuted(Operation.Update, soid, soid, "f1");
     }
@@ -161,7 +166,7 @@ public class TestMightCreate extends AbstractMightCreateTest
         SOID soid = ds.resolveNullable_(mkpath("d0"));
         FIDAndType fnt = generateDirFnt(soid);
 
-        Assert.assertEquals(Result.EXISTING_FOLDER, mightCreate("d0", fnt));
+        assertEquals(Result.EXISTING_FOLDER, mightCreate("d0", fnt));
 
         verifyOperationExecuted(Operation.Update, soid, soid, "d0");
     }
@@ -172,7 +177,7 @@ public class TestMightCreate extends AbstractMightCreateTest
         SOID soid = ds.resolveNullable_(mkpath("f1"));
         FIDAndType fnt = generateFileFnt(soid);
 
-        Assert.assertEquals(Result.FILE, mightCreate("f1-moved", fnt));
+        assertEquals(Result.FILE, mightCreate("f1-moved", fnt));
 
         verifyOperationExecuted(Operation.Update, soid, null, "f1-moved");
     }
@@ -183,7 +188,7 @@ public class TestMightCreate extends AbstractMightCreateTest
         SOID soid = ds.resolveNullable_(mkpath("d0"));
         FIDAndType fnt = generateDirFnt(soid);
 
-        Assert.assertEquals(Result.EXISTING_FOLDER, mightCreate("d0-moved", fnt));
+        assertEquals(Result.EXISTING_FOLDER, mightCreate("d0-moved", fnt));
 
         verifyOperationExecuted(Operation.Update, soid, null, "d0-moved");
     }
@@ -193,7 +198,7 @@ public class TestMightCreate extends AbstractMightCreateTest
     {
         FIDAndType fnt = generateFileFnt();
 
-        Assert.assertEquals(Result.FILE, mightCreate("f0", fnt));
+        assertEquals(Result.FILE, mightCreate("f0", fnt));
 
         verifyOperationExecuted(Operation.Create, null, null, "f0");
     }
@@ -203,9 +208,35 @@ public class TestMightCreate extends AbstractMightCreateTest
     {
         FIDAndType fnt = generateDirFnt();
 
-        Assert.assertEquals(Result.NEW_OR_REPLACED_FOLDER, mightCreate("d1", fnt));
+        assertEquals(Result.NEW_OR_REPLACED_FOLDER, mightCreate("d1", fnt));
 
         verifyOperationExecuted(Operation.Create, null, null, "d1");
+    }
+
+    @Test
+    public void shouldCreateNewFileCaseSensitive() throws Exception
+    {
+        SOID soid = ds.resolveNullable_(mkpath("f1"));
+        generateFileFnt(soid);
+        FIDAndType fnt = generateFileFnt();
+
+        assertEquals(Result.FILE, mightCreate("F1", fnt));
+
+        verifyOperationExecuted(EnumSet.of(Operation.Create),
+                null, null, "F1");
+    }
+
+    @Test
+    public void shouldCreateNewFolderCaseSensitive() throws Exception
+    {
+        SOID soid = ds.resolveNullable_(mkpath("d0"));
+        generateDirFnt(soid);
+        FIDAndType fnt = generateDirFnt();
+
+        assertEquals(Result.NEW_OR_REPLACED_FOLDER, mightCreate("D0", fnt));
+
+        verifyOperationExecuted(EnumSet.of(Operation.Create),
+                null, null, "D0");
     }
 
     @Test
@@ -215,7 +246,7 @@ public class TestMightCreate extends AbstractMightCreateTest
         generateFileFnt(soid);
         FIDAndType fnt = generateFileFnt();
 
-        Assert.assertEquals(Result.FILE, mightCreate("f1", fnt));
+        assertEquals(Result.FILE, mightCreate("f1", fnt));
 
         verifyOperationExecuted(Operation.Replace, null, soid, "f1");
     }
@@ -228,7 +259,7 @@ public class TestMightCreate extends AbstractMightCreateTest
         generateFileFnt(soid);
         FIDAndType fnt2 = generateFileFnt(src);
 
-        Assert.assertEquals(Result.FILE, mightCreate("f1", fnt2));
+        assertEquals(Result.FILE, mightCreate("f1", fnt2));
 
         verifyOperationExecuted(EnumSet.of(Operation.Replace), src, soid, "f1");
     }
@@ -240,7 +271,7 @@ public class TestMightCreate extends AbstractMightCreateTest
         generateDirFnt(soid);
         FIDAndType fnt = generateDirFnt();
 
-        Assert.assertEquals(Result.NEW_OR_REPLACED_FOLDER, mightCreate("d0", fnt));
+        assertEquals(Result.NEW_OR_REPLACED_FOLDER, mightCreate("d0", fnt));
 
         verifyOperationExecuted(EnumSet.of(Operation.Replace),
                 null, soid, "d0");
@@ -254,7 +285,7 @@ public class TestMightCreate extends AbstractMightCreateTest
         generateDirFnt(soid);
         FIDAndType fnt = generateDirFnt(src);
 
-        Assert.assertEquals(Result.EXISTING_FOLDER, mightCreate("d0", fnt));
+        assertEquals(Result.EXISTING_FOLDER, mightCreate("d0", fnt));
 
         verifyOperationExecuted(EnumSet.of(Operation.Update, Operation.RenameTarget),
                 src, soid, "d0");
@@ -268,7 +299,7 @@ public class TestMightCreate extends AbstractMightCreateTest
         generateDirFnt(soid);
         FIDAndType fnt = generateDirFnt(src);
 
-        Assert.assertEquals(Result.EXISTING_FOLDER, mightCreate("d0", fnt));
+        assertEquals(Result.EXISTING_FOLDER, mightCreate("d0", fnt));
 
         verifyOperationExecuted(EnumSet.of(Operation.Update, Operation.RenameTarget),
                 src, soid, "d0");
@@ -281,7 +312,7 @@ public class TestMightCreate extends AbstractMightCreateTest
         generateDirFnt(soid);
         FIDAndType fnt = generateDirFnt();
 
-        Assert.assertEquals(Result.NEW_OR_REPLACED_FOLDER, mightCreate("a2", fnt));
+        assertEquals(Result.NEW_OR_REPLACED_FOLDER, mightCreate("a2", fnt));
 
         verifyOperationExecuted(EnumSet.of(Operation.Create, Operation.RenameTarget),
                 null, soid, "a2");
@@ -296,7 +327,7 @@ public class TestMightCreate extends AbstractMightCreateTest
         when(sfti.isSharedFolderRoot(eq(Util.join(absRootAnchor, "a2")), any(SID.class)))
                 .thenReturn(true);
 
-        Assert.assertEquals(Result.NEW_OR_REPLACED_FOLDER, mightCreate("a2", fnt));
+        assertEquals(Result.NEW_OR_REPLACED_FOLDER, mightCreate("a2", fnt));
 
         verifyOperationExecuted(EnumSet.of(Operation.Replace),
                 null, soid, "a2");
@@ -308,7 +339,7 @@ public class TestMightCreate extends AbstractMightCreateTest
         SOID soid = ds.resolveNullable_(mkpath("f1"));
         FIDAndType fnt = generateDirFnt(soid);
 
-        Assert.assertEquals(Result.NEW_OR_REPLACED_FOLDER, mightCreate("f2", fnt));
+        assertEquals(Result.NEW_OR_REPLACED_FOLDER, mightCreate("f2", fnt));
 
         verifyOperationExecuted(EnumSet.of(Operation.Create, Operation.RandomizeSourceFID),
                 soid, null, "f2");
@@ -320,7 +351,7 @@ public class TestMightCreate extends AbstractMightCreateTest
         SOID soid = ds.resolveNullable_(mkpath("d0"));
         FIDAndType fnt = generateFileFnt(soid);
 
-        Assert.assertEquals(Result.FILE, mightCreate("d2", fnt));
+        assertEquals(Result.FILE, mightCreate("d2", fnt));
 
         verifyOperationExecuted(EnumSet.of(Operation.Create, Operation.RandomizeSourceFID),
                 soid, null, "d2");
@@ -333,7 +364,7 @@ public class TestMightCreate extends AbstractMightCreateTest
         generateFileFnt(soid);
         FIDAndType fnt = generateDirFnt();
 
-        Assert.assertEquals(Result.NEW_OR_REPLACED_FOLDER, mightCreate("f1", fnt));
+        assertEquals(Result.NEW_OR_REPLACED_FOLDER, mightCreate("f1", fnt));
 
         verifyOperationExecuted(EnumSet.of(Operation.Create, Operation.RenameTarget),
                 null, soid, "f1");
@@ -346,7 +377,7 @@ public class TestMightCreate extends AbstractMightCreateTest
         generateDirFnt(soid);
         FIDAndType fnt = generateFileFnt();
 
-        Assert.assertEquals(Result.FILE, mightCreate("d0", fnt));
+        assertEquals(Result.FILE, mightCreate("d0", fnt));
 
         verifyOperationExecuted(EnumSet.of(Operation.Create, Operation.RenameTarget),
                 null, soid, "d0");
@@ -359,7 +390,7 @@ public class TestMightCreate extends AbstractMightCreateTest
         generateDirFnt(soid);
         FIDAndType fnt = generateDirFnt();
 
-        Assert.assertEquals(Result.NEW_OR_REPLACED_FOLDER, mightCreate("d-expelled", fnt));
+        assertEquals(Result.NEW_OR_REPLACED_FOLDER, mightCreate("d-expelled", fnt));
 
         verifyOperationExecuted(EnumSet.of(Operation.Create, Operation.RenameTarget),
                 null, soid, "d-expelled");
@@ -374,7 +405,7 @@ public class TestMightCreate extends AbstractMightCreateTest
         SOID source = ds.resolveNullable_(mkpath("d0"));
         FIDAndType fnt = generateDirFnt(source);
 
-        Assert.assertEquals(Result.EXISTING_FOLDER, mightCreate("f1", fnt));
+        assertEquals(Result.EXISTING_FOLDER, mightCreate("f1", fnt));
 
         verifyOperationExecuted(EnumSet.of(Operation.Update, Operation.RenameTarget),
                 source, target, "f1");
@@ -389,7 +420,7 @@ public class TestMightCreate extends AbstractMightCreateTest
         SOID source = ds.resolveNullable_(mkpath("f1"));
         FIDAndType fnt = generateFileFnt(source);
 
-        Assert.assertEquals(Result.FILE, mightCreate("d0", fnt));
+        assertEquals(Result.FILE, mightCreate("d0", fnt));
 
         verifyOperationExecuted(EnumSet.of(Operation.Update, Operation.RenameTarget),
                 source, target, "d0");
@@ -404,9 +435,79 @@ public class TestMightCreate extends AbstractMightCreateTest
         SOID source = ds.resolveNullable_(mkpath("d0"));
         FIDAndType fnt = generateDirFnt(source);
 
-        Assert.assertEquals(Result.EXISTING_FOLDER, mightCreate("d-expelled", fnt));
+        assertEquals(Result.EXISTING_FOLDER, mightCreate("d-expelled", fnt));
 
         verifyOperationExecuted(EnumSet.of(Operation.Update, Operation.RenameTarget),
                 source, target, "d-expelled");
+    }
+
+    @Test
+    public void shouldCreateNewFileAndRenameNonRepresentableTarget() throws Exception
+    {
+        SOID soid = ds.resolveNullable_(mkpath("f1"));
+        generateFileFnt(soid);
+        FIDAndType fnt = generateFileFnt();
+
+        when(rh.isNonRepresentable(oaAt("f1"))).thenReturn(true);
+
+        assertEquals(Result.FILE, mightCreate("f1", fnt));
+
+        verifyOperationExecuted(
+                EnumSet.of(Operation.Create, Operation.RenameTarget,
+                        Operation.NonRepresentableTarget),
+                null, soid, "f1");
+    }
+
+    @Test
+    public void shouldCreateNewFolderAndRenameNonRepresentableTarget() throws Exception
+    {
+        SOID soid = ds.resolveNullable_(mkpath("d0"));
+        generateDirFnt(soid);
+        FIDAndType fnt = generateDirFnt();
+
+        when(rh.isNonRepresentable(oaAt("d0"))).thenReturn(true);
+
+        assertEquals(Result.NEW_OR_REPLACED_FOLDER, mightCreate("d0", fnt));
+
+        verifyOperationExecuted(
+                EnumSet.of(Operation.Create, Operation.RenameTarget,
+                        Operation.NonRepresentableTarget),
+                null, soid, "d0");
+    }
+
+    @Test
+    public void shouldIgnoreHardlink() throws Exception
+    {
+        SOID soid = ds.resolveNullable_(mkpath("f1"));
+        FIDAndType fnt = generateFileFnt(soid);
+
+        when(dr.getFIDAndType(Util.join(lrm.absRootAnchor_(rootSID), "f1"))).thenReturn(fnt);
+
+        assertEquals(Result.IGNORED, mightCreate("f42", fnt));
+    }
+
+    @Test
+    public void shouldIgnoreHardlinkCaseSensitive() throws Exception
+    {
+        SOID soid = ds.resolveNullable_(mkpath("f1"));
+        FIDAndType fnt = generateFileFnt(soid);
+
+        when(dr.getFIDAndType(Util.join(lrm.absRootAnchor_(rootSID), "f1"))).thenReturn(fnt);
+
+        assertEquals(Result.IGNORED, mightCreate("F1", fnt));
+    }
+
+    @Test
+    public void shouldRenameCaseInsensitive() throws Exception
+    {
+        caseInsensitive();
+        SOID soid = ds.resolveNullable_(mkpath("f1"));
+        FIDAndType fnt = generateFileFnt(soid);
+
+        when(dr.getFIDAndType(Util.join(lrm.absRootAnchor_(rootSID), "f1"))).thenReturn(fnt);
+
+        assertEquals(Result.FILE, mightCreate("F1", fnt));
+        verifyOperationExecuted(EnumSet.of(Operation.Update),
+                soid, null, "F1");
     }
 }

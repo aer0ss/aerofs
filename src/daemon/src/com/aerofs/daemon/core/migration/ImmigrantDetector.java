@@ -10,7 +10,6 @@ import com.aerofs.daemon.core.ds.CA;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ds.ResolvedPath;
-import com.aerofs.daemon.core.phy.IPhysicalFile;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.lib.db.trans.Trans;
@@ -132,8 +131,7 @@ public abstract class ImmigrantDetector
             vLocalSum = vLocalSum.add_(vFrom);
 
             // move physical files
-            IPhysicalFile pfTo = _ps.newFile_(pathTo, kidx);
-            _ps.newFile_(pathFrom, kidx).move_(pfTo, op, t);
+            _ps.newFile_(pathFrom, kidx).move_(pathTo, kidx, op, t);
 
             // TODO send NEW_UPDATE-like messages for migrated branches, but
             // only from the initiating peer of the migration. this will speed

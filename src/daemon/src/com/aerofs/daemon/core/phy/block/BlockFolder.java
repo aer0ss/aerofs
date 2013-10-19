@@ -6,8 +6,8 @@ package com.aerofs.daemon.core.phy.block;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.SID;
+import com.aerofs.daemon.core.ds.ResolvedPath;
 import com.aerofs.daemon.core.phy.IPhysicalFolder;
-import com.aerofs.daemon.core.phy.IPhysicalObject;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.Path;
@@ -39,21 +39,28 @@ class BlockFolder implements IPhysicalFolder
     @Override
     public void create_(PhysicalOp op, Trans t) throws IOException, SQLException
     {
-        if (l.isDebugEnabled()) l.debug(this + ".create_(" + op + ")");
+        l.debug("{}.create_({})", this, op);
         // Noop: we do not need to maintain any explicit folder structure
     }
 
     @Override
     public void delete_(PhysicalOp op, Trans t) throws IOException, SQLException
     {
-        if (l.isDebugEnabled()) l.debug(this + ".delete_(" + op + ")");
+        l.debug("{}.delete_({})", this, op);
         // Noop: we do not need to maintain any explicit folder structure
     }
 
     @Override
-    public void move_(IPhysicalObject to, PhysicalOp op, Trans t) throws IOException, SQLException
+    public void move_(ResolvedPath to, PhysicalOp op, Trans t) throws IOException, SQLException
     {
-        if (l.isDebugEnabled()) l.debug(this + ".move_(" + to + ", " + op + ")");
+        l.debug("{}.move_({}, {})", this, to, op);
+        // Noop: we do not need to maintain any explicit folder structure
+    }
+
+    @Override
+    public void updateSOID_(SOID soid, Trans t) throws IOException, SQLException
+    {
+        l.debug("{}.alias_({})", soid);
         // Noop: we do not need to maintain any explicit folder structure
     }
 

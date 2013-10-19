@@ -3,8 +3,11 @@ package com.aerofs.lib.os;
 import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
+import java.text.Normalizer;
+import java.text.Normalizer.Form;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.regex.Pattern;
 
 import com.aerofs.base.BaseUtil;
 import com.aerofs.lib.AppRoot;
@@ -303,4 +306,27 @@ public class OSUtilOSX extends AbstractOSUtilLinuxOSX
         return Util.cstring2string(buffer, false);
     }
 
+    /**
+     * The colon is allowed at the filesystem layer in HFS+ but not HFS and it is problematic at the
+     * Carbon layer anyway so we treat it as an invalid character.
+     */
+    final static private Pattern INVALID_FILENAME_CHARS = Pattern.compile("[/:]");
+
+    @Override
+    public String cleanFileName(String name)
+    {
+        return BaseUtil.truncateIfLongerThan(
+                Normalizer.normalize(INVALID_FILENAME_CHARS.matcher(name).replaceAll("_"),
+                        Form.NFD), 255);
+    }
+
+    @Override
+    public boolean isInvalidFileName(String name)
+    {
+        // NB: OSX normalizes filenames to NFD so we treat any non-NFD filenames as inherently
+        // Non-Representable to avoid unintended renaming upon scan
+        return name.length() > 255
+                || INVALID_FILENAME_CHARS.matcher(name).find()
+                || !Normalizer.isNormalized(name, Form.NFD);
+    }
 }
