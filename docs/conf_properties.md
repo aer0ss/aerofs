@@ -156,13 +156,13 @@ Default: 10 seconds (10000 ms)
 
 Example: `email.sender.timeout=10000`
 
-    email.sender.connectiontimeout=60000
+    email.sender.connection_timeout=60000
 
 Timeout value, in milliseconds, for a connection to the outbound SMTP server.
 
 Default: 60 seconds (60000 ms)
 
-Example: `email.sender.connectiontimeout=60000`
+Example: `email.sender.connection_timeout=60000`
 
 
 ## OpenID properties

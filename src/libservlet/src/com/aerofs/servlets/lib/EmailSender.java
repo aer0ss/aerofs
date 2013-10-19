@@ -64,7 +64,7 @@ public class EmailSender
             getStringProperty("email.sender.timeout", String.valueOf(10 * C.SEC));
     // SMTP connection timeout, expressed in milliseconds.
     private static String CONNECTION_TIMEOUT =
-            getStringProperty("email.sender.connectiontimeout", String.valueOf(60 * C.SEC));
+            getStringProperty("email.sender.connection_timeout", String.valueOf(60 * C.SEC));
 
     private static final String INTERNAL_HOST = "svmail.aerofs.com";
     private static final String INTERNAL_USERNAME = "noreply";
@@ -84,6 +84,12 @@ public class EmailSender
         props.put("mail.smtp.timeout", TIMEOUT);
         props.put("mail.smtp.connectiontimeout", CONNECTION_TIMEOUT);
         props.put("mail.smtp.port", PUBLIC_PORT);
+
+        // Without it Java Mail would sene "EHLO" rather thant "EHLO <hostname>". The former
+        // is not supported by some mail relays include postfix which is used as the local mail
+        // relay for AeroFS Appliance.
+        props.put("mail.smtp.localhost", "localhost");
+
         if (relayIsLocalhost()) {
             props.put("mail.stmp.host", "127.0.0.1");
             props.put("mail.stmp.auth", "false");
@@ -153,7 +159,7 @@ public class EmailSender
         }
 
         try {
-            return sendEmail(msg, usingSendGrid, session);
+            return sendMessage(msg, usingSendGrid, session);
         } catch (RejectedExecutionException e) {
             throw new MessagingException(e.getCause().getMessage());
         }
@@ -200,52 +206,56 @@ public class EmailSender
      * Emails are sent using the executor service which will always send one email at a time.
      * This method is non blocking.
      */
-    private static Future<Void> sendEmail(final Message msg, final boolean publicFacingEmail,
+    private static Future<Void> sendMessage(final Message msg, final boolean publicFacingEmail,
             final Session session)
         throws RejectedExecutionException
     {
-        return executor.submit(new Callable<Void>()
-        {
+        return executor.submit(new Callable<Void>() {
             @Override
-            public Void call()
-                    throws MessagingException
+            public Void call() throws MessagingException
             {
-                try {
-                    Transport t = session.getTransport("smtp");
-                    // We use SendGrid for any publically facing emails (like signup codes, device
-                    // certification notifications, etc.), and our own mail servers for internal
-                    // emails (for notifying us that a user has signed up, shared a folder, etc.)
-                    try {
-                        if (publicFacingEmail) {
-                            if (relayIsLocalhost()) {
-                                // localhost does not require authentication.
-                                // In fact, it generally requires the lack thereof.
-                                t.connect();
-                            } else {
-                                t.connect(PUBLIC_HOST, PUBLIC_USERNAME, PUBLIC_PASSWORD);
-                            }
-                        } else {
-                            t.connect(INTERNAL_HOST, INTERNAL_USERNAME, INTERNAL_PASSWORD);
-                        }
-
-                        t.sendMessage(msg, msg.getAllRecipients());
-                        l.info("{} emailed {}", msg.getFrom(), msg.getAllRecipients());
-                    } finally {
-                        t.close();
-                    }
-                    return null;
-                } catch (MessagingException e) {
-                    try {
-                        String to = msg.getRecipients(Message.RecipientType.TO)[0].toString();
-                        l.error("cannot send message to {} : {} ", to , e);
-                        l.error(Exceptions.getStackTraceAsString(e));
-                    } catch (Exception e1) {
-                        l.error("cannot report email exception: {} ", e1);
-                    }
-
-                    throw e;
-                }
+                sendMessageImpl(session, publicFacingEmail, msg);
+                return null;
             }
         });
+    }
+
+    private static void sendMessageImpl(Session session, boolean publicFacingEmail, Message msg)
+            throws MessagingException
+    {
+        try {
+            Transport t = session.getTransport("smtp");
+            // We use SendGrid for any publically facing emails (like signup codes, device
+            // certification notifications, etc.), and our own mail servers for internal
+            // emails (for notifying us that a user has signed up, shared a folder, etc.)
+            try {
+                if (publicFacingEmail) {
+                    if (relayIsLocalhost()) {
+                        // localhost does not require authentication.
+                        // In fact, it generally requires the lack thereof.
+                        t.connect();
+                    } else {
+                        t.connect(PUBLIC_HOST, PUBLIC_USERNAME, PUBLIC_PASSWORD);
+                    }
+                } else {
+                    t.connect(INTERNAL_HOST, INTERNAL_USERNAME, INTERNAL_PASSWORD);
+                }
+
+                t.sendMessage(msg, msg.getAllRecipients());
+                l.info("{} emailed {}", msg.getFrom(), msg.getAllRecipients());
+            } finally {
+                t.close();
+            }
+        } catch (MessagingException e) {
+            try {
+                String to = msg.getRecipients(Message.RecipientType.TO)[0].toString();
+                l.error("cannot send message to {} : {} ", to , e);
+                l.error(Exceptions.getStackTraceAsString(e));
+            } catch (Exception e1) {
+                l.error("cannot report email exception: {} ", e1);
+            }
+
+            throw e;
+        }
     }
 }
