@@ -58,7 +58,7 @@ public class InMemorySQLiteDBCW extends SQLiteDBCW
     public void init_() throws SQLException
     {
         super.init_();
-        new CoreSchema(_core, _dr).create_(getConnection().createStatement());
+        new CoreSchema(_dr).create_(getConnection().createStatement(), _core.get());
     }
 
     @Override

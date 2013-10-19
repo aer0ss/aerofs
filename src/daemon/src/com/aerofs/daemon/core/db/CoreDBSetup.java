@@ -50,7 +50,7 @@ public class CoreDBSetup
         // setup all DB schemas, in no particular order
         Statement stmt = c.createStatement();
         try {
-            for (ISchema s : _schemas) s.create_(stmt);
+            for (ISchema s : _schemas) s.create_(stmt, _idbcw);
         } finally {
             stmt.close();
         }

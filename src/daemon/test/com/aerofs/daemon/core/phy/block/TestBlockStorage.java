@@ -88,7 +88,7 @@ public class TestBlockStorage extends AbstractBlockTest
     // use in-memory DB
     InjectableFile.Factory fileFactory = new InjectableFile.Factory();
     InMemorySQLiteDBCW idbcw = new InMemorySQLiteDBCW();
-    BlockStorageDatabase bsdb = new BlockStorageDatabase(idbcw.getCoreDBCW().get());
+    BlockStorageDatabase bsdb = new BlockStorageDatabase(idbcw);
 
     @Mock IBlockStorageBackend bsb;
 
@@ -102,8 +102,8 @@ public class TestBlockStorage extends AbstractBlockTest
     public void setUp() throws Exception
     {
         idbcw.init_();
-        new BlockStorageSchema(idbcw.getCoreDBCW())
-                .create_(idbcw.getConnection().createStatement());
+        new BlockStorageSchema()
+                .create_(idbcw.getConnection().createStatement(), idbcw);
 
         when(tm.begin_()).thenReturn(t);
         when(tc.acquire_(any(Cat.class), anyString())).thenReturn(tk);

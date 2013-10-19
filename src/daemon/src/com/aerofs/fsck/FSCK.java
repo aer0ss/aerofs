@@ -9,6 +9,7 @@ import com.aerofs.sv.client.SVClient;
 import com.google.inject.Inject;
 
 import java.sql.SQLException;
+import java.sql.Statement;
 
 public class FSCK
 {
@@ -65,15 +66,22 @@ public class FSCK
                         new Exception(), null, false);
             }
 
-        } else if ("attr".equals(tableName)) {
-            _dump.dumpAttr_(System.out, formal);
-        } else if ("ver".equals(tableName)) {
-            _dump.dumpVer_(System.out, formal);
-        } else if ("alias".equals(tableName)) {
-            _dump.dumpAlias_(System.out, formal);
         } else {
-            _dump.dumpAll_(System.out, formal);
+            Statement s = _dbcw.getConnection().createStatement();
+            try {
+                if ("attr".equals(tableName)) {
+                    _dump.dumpAttr_(s, System.out, formal);
+                } else if ("ver".equals(tableName)) {
+                    _dump.dumpVer_(s, System.out, formal);
+                } else if ("alias".equals(tableName)) {
+                    _dump.dumpAlias_(s, System.out, formal);
+                } else {
+                    _dump.dumpAll_(s, System.out, formal);
+                }
+            } catch (SQLException e) {
+                System.err.println("An error occured while dumping the db: " + e);
+                s.close();
+            }
         }
-
     }
 }
