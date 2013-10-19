@@ -1,23 +1,20 @@
 <%!
+    from web.util import is_private_deployment, is_configuration_initialized
     import pyramid
-    mode = pyramid.threadlocal.get_current_registry().settings['deployment.mode']
 
-    dashboard = False
-    if 'base.configuration.initialized' in pyramid.threadlocal.get_current_registry().settings:
-        initialized = pyramid.threadlocal.get_current_registry().settings['base.configuration.initialized']
-        if initialized == 'true':
-            dashboard = True
-
-    if mode == 'private':
-        if dashboard:
-            include = "mode_supported_dashboard.mako"
+    # Because <%inherit> works at the module level rather than request level,
+    # we can't use template parameters to determine which file to inherit but
+    # call Python methods directly.
+    settings = pyramid.threadlocal.get_current_registry().settings
+    if is_private_deployment(settings):
+        if is_configuration_initialized(settings):
+            inherit = "mode_supported_dashboard.mako"
         else:
-            include = "mode_supported_fullscreen.mako"
+            inherit = "mode_supported_fullscreen.mako"
     else:
-        include = "mode_unsupported.mako"
-
+        inherit = "mode_unsupported.mako"
 %>
 
-<%! page_title = "Site Setup" %>
+<%! page_title = "Setup" %>
 
-<%inherit file="${include}"/>
+<%inherit file="${inherit}"/>

@@ -9,12 +9,17 @@
     <label class="radio">
         <input type='radio' name='cert.option' value='existing' checked
                 onchange="useInstalledCertSelected()">
-        Use installed certificate and key
+        %if is_configuration_initialized:
+            Use installed certificate and key
+        %else:
+            Use pre-installed, self-signed certificate and key
+        %endif
+        <span class="muted">(use your browser to check certificate details)</span>
     </label>
     <label class="radio">
         <input type='radio' name='cert.option' value='new'
                 onchange="useNewCertSelected()">
-        Use new certificate and key
+        Upload new certificate and key
     </label>
 
     <div class="row-fluid">
@@ -28,7 +33,7 @@
         </div>
     </div>
 
-    <p style="margin-top: 10px">You can provide your own certificate and key to eliminate certification related error messages when using the AeroFS Web interface. Valid x509 SSL certificate and private key files are required. The certificate must be in PEM format.</p>
+    <p style="margin-top: 10px">Provide properly signed certificate and key to eliminate certification error messages when browsing the AeroFS Web interface. We require valid x509 SSL certificate and private key files in PEM format.</p>
     <hr />
     ${common.render_previous_button(page)}
     ${common.render_next_button("submitCertificateForm()")}

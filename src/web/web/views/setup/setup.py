@@ -1,7 +1,6 @@
 import logging
 import tempfile
 import shutil
-import time
 import os
 import socket
 from aerofs_common.configuration import Configuration
@@ -14,7 +13,7 @@ BOOTSTRAP_PIPE_FILE = "/tmp/bootstrap"
 
 log = logging.getLogger("web")
 
-def get_settings():
+def _get_settings():
     settings = {}
     configuration = Configuration()
     configuration.fetch_and_populate(settings)
@@ -27,10 +26,11 @@ def get_settings():
     renderer='setup.mako'
 )
 def setup_view(request):
-    settings = get_settings()
+    settings = _get_settings()
 
     return {
-        'current_config': settings
+        'current_config': settings,
+        'is_configuration_initialized': is_configuration_initialized(settings)
     }
 
 # ------------------------------------------------------------------------
