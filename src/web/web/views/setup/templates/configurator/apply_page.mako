@@ -142,7 +142,7 @@
         if (response['completed'] == true) {
             setTimeout(function() {
                 doPost("${request.route_path('json_setup_finalize')}",
-                        serializedData, pollForRedirecting);
+                        getSerializedFormData(), pollForRedirecting);
             }, 1000);
         } else {
             ## TODO (WW) add error handling, or do we need the "completed"
