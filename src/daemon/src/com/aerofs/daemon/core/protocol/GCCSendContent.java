@@ -15,6 +15,7 @@ import com.aerofs.daemon.core.net.NSL;
 import com.aerofs.daemon.core.net.OutgoingStreams;
 import com.aerofs.daemon.core.net.OutgoingStreams.OutgoingStream;
 import com.aerofs.daemon.core.phy.IPhysicalFile;
+import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.core.tc.TokenManager;
@@ -56,6 +57,7 @@ public class GCCSendContent
     private static final Logger l = Loggers.getLogger(GCCSendContent.class);
 
     private final DirectoryService _ds;
+    private final IPhysicalStorage _ps;
     private final Metrics _m;
     private final NSL _nsl;
     private final OutgoingStreams _oss;
@@ -103,7 +105,7 @@ public class GCCSendContent
     private final Ongoing _ongoing = new Ongoing();
 
     @Inject
-    public GCCSendContent(UploadState ulstate, OutgoingStreams oss, NSL nsl,
+    public GCCSendContent(UploadState ulstate, OutgoingStreams oss, NSL nsl, IPhysicalStorage ps,
             NativeVersionControl nvc, Metrics m, DirectoryService ds, TokenManager tokenManager)
     {
         _ulstate = ulstate;
@@ -111,6 +113,7 @@ public class GCCSendContent
         _nsl = nsl;
         _m = m;
         _ds = ds;
+        _ps = ps;
         _tokenManager = tokenManager;
 
         nvc.addListener_(new IVersionControlListener() {
@@ -131,12 +134,12 @@ public class GCCSendContent
         // guaranteed by the caller
         assert _ds.isPresent_(k);
         OA oa = _ds.getOA_(k.soid());
-        CA ca = oa.ca(k.kidx());
+        CA ca = oa.caThrows(k.kidx());
         long mtime = ca.mtime();
         // N.B. this is the length of the complete file contents, regardless of whether we're
         // skipping prefixLen bytes at the beginning of the content or not.
         long fileLength = ca.length();
-        IPhysicalFile pf = ca.physicalFile();
+        IPhysicalFile pf = _ps.newFile_(_ds.resolve_(oa), k.kidx());
 
         assert mtime >= 0 : Joiner.on(' ').join(k, oa, mtime);
         bdReply.setMtime(mtime);

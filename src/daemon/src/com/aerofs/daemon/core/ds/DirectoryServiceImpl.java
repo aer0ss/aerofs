@@ -8,7 +8,6 @@ import java.io.PrintStream;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 
 import com.aerofs.base.Loggers;
@@ -16,8 +15,6 @@ import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UniqueID;
 import com.aerofs.daemon.core.alias.MapAlias2Target;
-import com.aerofs.daemon.core.phy.IPhysicalStorage;
-import com.aerofs.daemon.core.phy.linked.LinkedStorage;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.StoreDeletionOperators;
 import com.aerofs.daemon.lib.LRUCache.IDataReader;
@@ -30,6 +27,8 @@ import com.aerofs.lib.BitVector;
 import com.aerofs.lib.CounterVector;
 import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.FrequentDefectSender;
+import com.aerofs.lib.StorageType;
+import com.aerofs.lib.cfg.CfgStorageType;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.lib.id.*;
@@ -56,9 +55,9 @@ public class DirectoryServiceImpl extends DirectoryService implements ObjectSurg
 {
     private static final Logger l = Loggers.getLogger(DirectoryService.class);
 
+    private CfgStorageType _storageType;
     private IMetaDatabase _mdb;
     private MapAlias2Target _alias2target;
-    private IPhysicalStorage _ps;
     private IMapSID2SIndex _sid2sidx;
     private FrequentDefectSender _fds;
     private AbstractPathResolver _pathResolver;
@@ -80,12 +79,13 @@ public class DirectoryServiceImpl extends DirectoryService implements ObjectSurg
             // TODO (MJ) this is a hack to support non-linked storage, which doesn't want to
             // verify consistency of FIDs. For non-linked storage, memory is wasted and cpu cycles
             // burned unnecessarily, but at least the consistency will never be verified.
-            // * An alternate solution is to recognize that LinkedStorage cares about FID<->CA
-            // consistency, and cares about FIDs at all, whereas NonLinked Storage doesn't use
-            // FIDs. This suggests that we may want 2 (mostly similar) implementations of
-            // DirectoryService that are injected depending on the type of Storage. One would
-            // define setFID, etc. and would also run a consistency verifier. The other would not.
-            if (_ps instanceof LinkedStorage) t.addListener_(verifier);
+            // TODO(HB) Ideally either:
+            //  * all FID-related logic should be extruded from DS and moved to LinkedStorage
+            //  * the concept of FID should be refactored to encompass non-linked storage
+            // On a related note, FID consistency verification is not scalable when transactions
+            // involve large number of objects and its very existence is indicative of deeper
+            // design issues.
+            if (_storageType.get() == StorageType.LINKED) t.addListener_(verifier);
             return verifier;
         }
     };
@@ -97,11 +97,12 @@ public class DirectoryServiceImpl extends DirectoryService implements ObjectSurg
     }
 
     @Inject
-    public void inject_(IPhysicalStorage ps, IMetaDatabase mdb, MapAlias2Target alias2target,
+    public void inject_(IMetaDatabase mdb, MapAlias2Target alias2target,
             TransManager tm, IMapSID2SIndex sid2sidx, FrequentDefectSender fds,
-            StoreDeletionOperators storeDeletionOperators, AbstractPathResolver pathResolver)
+            StoreDeletionOperators storeDeletionOperators, AbstractPathResolver pathResolver,
+            CfgStorageType storageType)
     {
-        _ps = ps;
+        _storageType = storageType;
         _mdb = mdb;
         _alias2target = alias2target;
         _sid2sidx = sid2sidx;
@@ -166,7 +167,7 @@ public class DirectoryServiceImpl extends DirectoryService implements ObjectSurg
      * @return unlike other versions of resolve(), it never returns null
      */
     @Override
-    @Nonnull public Path resolve_(@Nonnull OA oa) throws SQLException
+    @Nonnull public ResolvedPath resolve_(@Nonnull OA oa) throws SQLException
     {
         return _pathResolver.resolve_(oa);
     }
@@ -192,18 +193,7 @@ public class DirectoryServiceImpl extends DirectoryService implements ObjectSurg
                     OA oldOA = _soidAncestorChain.put(soid, oa);
                     assert oldOA == null : oldOA + " " + _soidAncestorChain;
 
-                    Path path = resolve_(oa);
-                    if (oa.isFile()) {
-                        for (Entry<KIndex, CA> en : oa.cas().entrySet()) {
-                            en.getValue().setPhysicalFile_(
-                                    _ps.newFile_(new SOKID(soid, en.getKey()), path));
-                        }
-                    } else {
-                        oa.setPhyFolder_(_ps.newFolder_(soid, path));
-                    }
-
                     return oa;
-
                 } finally {
                     OA oaRemoved = _soidAncestorChain.remove(soid);
                     if (oaRemoved == null) {
@@ -588,10 +578,9 @@ public class DirectoryServiceImpl extends DirectoryService implements ObjectSurg
     @Override
     public ContentHash getCAHash_(SOKID sokid) throws SQLException, ExNotFound
     {
-        CA ca = getOAThrows_(sokid.soid()).caThrows(sokid.kidx());
-
-        ContentHash ret = ca.physicalFile().getHash_();
-        if (ret == null) ret = _mdb.getCAHash_(sokid.soid(), sokid.kidx());
+        OA oa = getOAThrows_(sokid.soid());
+        oa.caThrows(sokid.kidx());
+        ContentHash ret = _mdb.getCAHash_(sokid.soid(), sokid.kidx());
 
         // Hashes of non-master branches should never be null.
         assert sokid.kidx().equals(KIndex.MASTER) || ret != null : sokid;

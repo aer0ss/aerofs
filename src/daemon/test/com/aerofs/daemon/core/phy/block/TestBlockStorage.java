@@ -6,6 +6,7 @@ package com.aerofs.daemon.core.phy.block;
 
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.CoreScheduler;
+import com.aerofs.daemon.core.ds.ResolvedPath;
 import com.aerofs.daemon.core.phy.IPhysicalFile;
 import com.aerofs.daemon.core.phy.IPhysicalFolder;
 import com.aerofs.daemon.core.phy.IPhysicalPrefix;
@@ -41,6 +42,8 @@ import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.id.SOKID;
 import com.aerofs.base.id.UniqueID;
 import com.aerofs.lib.injectable.InjectableFile;
+import com.google.common.base.Function;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.common.io.ByteStreams;
@@ -52,6 +55,7 @@ import org.mockito.Mock;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
+import javax.annotation.Nullable;
 import java.io.ByteArrayInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -96,7 +100,25 @@ public class TestBlockStorage extends AbstractBlockTest
     boolean useHistory;
 
     static final SID rootSID = SID.generate();
-    Path mkpath(String path) { return Path.fromString(rootSID, path); }
+
+    Path mkpath(String path)
+    {
+        return Path.fromString(rootSID, path);
+    }
+
+    ResolvedPath mkpath(String path, final SOID soid)
+    {
+        List<String> elems = ImmutableList.copyOf(path.split("/"));
+        List<SOID> soids = Lists.newArrayList(Lists.transform(elems, new Function<String, SOID>() {
+            @Override
+            public SOID apply(@Nullable String s)
+            {
+                return new SOID(soid.sidx(), OID.generate());
+            }
+        }));
+        soids.set(elems.size() - 1, soid);
+        return new ResolvedPath(rootSID, soids, elems);
+    }
 
     @Before
     public void setUp() throws Exception
@@ -168,27 +190,27 @@ public class TestBlockStorage extends AbstractBlockTest
 
     private void createFile(String path, SOKID sokid) throws Exception
     {
-        IPhysicalFile file = bs.newFile_(sokid, mkpath(path));
+        IPhysicalFile file = bs.newFile_(mkpath(path, sokid.soid()), sokid.kidx());
         file.create_(PhysicalOp.APPLY, t);
     }
 
     private void deleteFile(String path, SOKID sokid) throws Exception
     {
-        IPhysicalFile file = bs.newFile_(sokid, mkpath(path));
+        IPhysicalFile file = bs.newFile_(mkpath(path, sokid.soid()), sokid.kidx());
         file.delete_(PhysicalOp.APPLY, t);
     }
 
     private void moveFile(String pathFrom, SOKID sokidFrom, String pathTo, SOKID sokidTo)
             throws Exception
     {
-        IPhysicalFile from = bs.newFile_(sokidFrom, mkpath(pathFrom));
-        IPhysicalFile to = bs.newFile_(sokidTo, mkpath(pathTo));
+        IPhysicalFile from = bs.newFile_(mkpath(pathFrom, sokidFrom.soid()), sokidFrom.kidx()) ;
+        IPhysicalFile to = bs.newFile_(mkpath(pathTo, sokidTo.soid()), sokidTo.kidx()) ;
         from.move_(to, PhysicalOp.APPLY, t);
     }
 
     private boolean exists(String path, SOKID sokid) throws IOException
     {
-        IPhysicalFile file = bs.newFile_(sokid, mkpath(path));
+        IPhysicalFile file = bs.newFile_(mkpath(path, sokid.soid()), sokid.kidx()) ;
         try {
             file.newInputStream_().close();
         } catch (FileNotFoundException e) {
@@ -204,7 +226,7 @@ public class TestBlockStorage extends AbstractBlockTest
     {
         SOCKID sockid = new SOCKID(sokid, CID.CONTENT);
         IPhysicalPrefix prefix = bs.newPrefix_(sockid);
-        IPhysicalFile file = bs.newFile_(sokid, mkpath(path));
+        IPhysicalFile file = bs.newFile_(mkpath(path, sokid.soid()), sokid.kidx()) ;
 
         OutputStream out = prefix.newOutputStream_(false);
         out.write(content);
@@ -216,7 +238,7 @@ public class TestBlockStorage extends AbstractBlockTest
 
     private byte[] fetch(String path, SOKID sokid) throws Exception
     {
-        IPhysicalFile file = bs.newFile_(sokid, mkpath(path));
+        IPhysicalFile file = bs.newFile_(mkpath(path, sokid.soid()), sokid.kidx()) ;
         InputStream in = file.newInputStream_();
         return ByteStreams.toByteArray(in);
     }
@@ -515,14 +537,14 @@ public class TestBlockStorage extends AbstractBlockTest
     @Test
     public void shouldIgnoreFolderFolderCreationConflict() throws Exception
     {
-        bs.newFolder_(newSOID(), mkpath("foo/bar")).create_(PhysicalOp.APPLY, t);
-        bs.newFolder_(newSOID(), mkpath("foo/bar")).create_(PhysicalOp.APPLY, t);
+        bs.newFolder_(mkpath("foo/bar", newSOID())).create_(PhysicalOp.APPLY, t);
+        bs.newFolder_(mkpath("foo/bar", newSOID())).create_(PhysicalOp.APPLY, t);
     }
 
     @Test
     public void shouldIgnoreFolderFileCreationConflict() throws Exception
     {
-        bs.newFolder_(newSOID(), mkpath("foo/bar")).create_(PhysicalOp.APPLY, t);
+        bs.newFolder_(mkpath("foo/bar", newSOID())).create_(PhysicalOp.APPLY, t);
         createFile("foo/bar", newSOKID());
     }
 
@@ -530,20 +552,20 @@ public class TestBlockStorage extends AbstractBlockTest
     public void shouldIgnoreFileFolderCreationConflict() throws Exception
     {
         createFile("foo/bar", newSOKID());
-        bs.newFolder_(newSOID(), mkpath("foo/bar")).create_(PhysicalOp.APPLY, t);
+        bs.newFolder_(mkpath("foo/bar", newSOID())).create_(PhysicalOp.APPLY, t);
     }
 
     @Test
     public void shouldIgnoreFolderDeletion() throws Exception
     {
-        bs.newFolder_(newSOID(), mkpath("foo/bar")).delete_(PhysicalOp.APPLY, t);
+        bs.newFolder_(mkpath("foo/bar", newSOID())).delete_(PhysicalOp.APPLY, t);
     }
 
     @Test
     public void shouldIgnoreFolderMovement() throws Exception
     {
-        IPhysicalFolder to = bs.newFolder_(newSOID(), mkpath("hellow/world"));
-        bs.newFolder_(newSOID(), mkpath("foo/bar")).move_(to, PhysicalOp.APPLY, t);
+        IPhysicalFolder to = bs.newFolder_(mkpath("hellow/world", newSOID()));
+        bs.newFolder_(mkpath("foo/bar", newSOID())).move_(to, PhysicalOp.APPLY, t);
     }
 
     @Test

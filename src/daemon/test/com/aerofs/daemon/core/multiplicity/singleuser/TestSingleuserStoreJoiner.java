@@ -11,6 +11,7 @@ import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ds.OA.Type;
 import com.aerofs.daemon.core.ds.ObjectSurgeon;
+import com.aerofs.daemon.core.ds.ResolvedPathTestUtil;
 import com.aerofs.daemon.core.object.ObjectCreator;
 import com.aerofs.daemon.core.object.ObjectDeleter;
 import com.aerofs.daemon.core.phy.PhysicalOp;
@@ -18,7 +19,6 @@ import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.StoreDeleter;
 import com.aerofs.daemon.lib.db.PendingRootDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
-import com.aerofs.lib.Path;
 import com.aerofs.lib.cfg.CfgRootSID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
@@ -161,7 +161,7 @@ public class TestSingleuserStoreJoiner extends AbstractTest
         when(ds.getOANullable_(eq(soid))).thenReturn(oa);
         when(oa.type()).thenReturn(Type.ANCHOR);
         when(oa.soid()).thenReturn(soid);
-        when(ds.resolve_(oa)).thenReturn(Path.fromString(rootSID, "foo"));
+        when(ds.resolve_(oa)).thenReturn(ResolvedPathTestUtil.fromString(rootSID, "foo"));
 
         ssj.leaveStore_(sidx, sid, t);
 

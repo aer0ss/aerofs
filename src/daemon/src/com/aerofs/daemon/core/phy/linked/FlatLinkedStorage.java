@@ -22,7 +22,6 @@ import com.aerofs.lib.cfg.CfgAbsDefaultRoot;
 import com.aerofs.lib.cfg.CfgAbsRoots;
 import com.aerofs.lib.cfg.CfgStoragePolicy;
 import com.aerofs.lib.id.SIndex;
-import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.google.inject.Inject;
 
@@ -160,7 +159,7 @@ public class FlatLinkedStorage extends LinkedStorage
     }
 
     @Override
-    void promoteToAnchor_(SOID soid, Path path, Trans t) throws SQLException, IOException
+    void promoteToAnchor_(SID sid, Path path, Trans t) throws SQLException, IOException
     {
         // TODO:
         /**
@@ -186,8 +185,8 @@ public class FlatLinkedStorage extends LinkedStorage
     }
 
     @Override
-    void demoteToRegularFolder_(SOID soid, Path path, Trans t) throws SQLException, IOException
+    void demoteToRegularFolder_(SID sid, Path path, Trans t) throws SQLException, IOException
     {
-        throw new AssertionError("demotion not supported: " + soid + " " + path);
+        throw new AssertionError("demotion not supported: " + sid + " " + path);
     }
 }

@@ -90,9 +90,9 @@ public abstract class DirectoryService implements IDumpStatMisc, IStoreDeletionO
     /**
      * @return the SOID corresponding to the path. Do NOT follow anchor if the path points to an anchor.
      */
-    @Nonnull public final Path resolveThrows_(SOID soid) throws SQLException, ExNotFound
+    @Nonnull public final ResolvedPath resolveThrows_(SOID soid) throws SQLException, ExNotFound
     {
-        Path ret = resolveNullable_(soid);
+        ResolvedPath ret = resolveNullable_(soid);
         if (ret == null) throw new ExNotFound();
         return ret;
     }
@@ -100,9 +100,9 @@ public abstract class DirectoryService implements IDumpStatMisc, IStoreDeletionO
     /**
      * @return the SOID corresponding to the path. Do NOT follow anchor if the path points to an anchor.
      */
-    @Nonnull public final Path resolve_(SOID soid) throws SQLException
+    @Nonnull public final ResolvedPath resolve_(SOID soid) throws SQLException
     {
-        Path ret = resolveNullable_(soid);
+        ResolvedPath ret = resolveNullable_(soid);
         assert ret != null : soid;
         return ret;
     }
@@ -111,7 +111,7 @@ public abstract class DirectoryService implements IDumpStatMisc, IStoreDeletionO
      * N.B. an anchor has the same path as the root folder of its anchored store
      * @return null if not found
      */
-    @Nullable public final Path resolveNullable_(SOID soid) throws SQLException
+    @Nullable public final ResolvedPath resolveNullable_(SOID soid) throws SQLException
     {
         OA oa = getOANullable_(soid);
         return oa == null ? null : resolve_(oa);
@@ -121,7 +121,7 @@ public abstract class DirectoryService implements IDumpStatMisc, IStoreDeletionO
      * N.B. an anchor has the same path as the root folder of its anchored store
      * @return unlike other versions of resolve(), it never returns null
      */
-    @Nonnull public abstract Path resolve_(@Nonnull OA oa) throws SQLException;
+    @Nonnull public abstract ResolvedPath resolve_(@Nonnull OA oa) throws SQLException;
 
 
     @Nonnull public final OA getOAThrows_(SOID soid)

@@ -11,7 +11,6 @@ import com.aerofs.daemon.core.alias.MapAlias2Target;
 import com.aerofs.daemon.core.ds.OA.Type;
 import com.aerofs.daemon.core.multiplicity.singleuser.SingleuserPathResolver;
 import com.aerofs.daemon.core.multiplicity.singleuser.SingleuserStores;
-import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.SIDMap;
 import com.aerofs.daemon.core.store.StoreDeletionOperators;
@@ -20,6 +19,7 @@ import com.aerofs.daemon.lib.db.MetaDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.FrequentDefectSender;
+import com.aerofs.lib.cfg.CfgStorageType;
 import com.aerofs.lib.db.InMemorySQLiteDBCW;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
@@ -70,9 +70,9 @@ public class TestDirectoryService_SwapOIDs extends AbstractTest
 
         final AbstractPathResolver pr = new SingleuserPathResolver(sss, ds, sm, sm);
 
-        ds.inject_(mock(IPhysicalStorage.class), mdb, mock(MapAlias2Target.class),
-                mock(TransManager.class), mock(IMapSID2SIndex.class),
-                mock(FrequentDefectSender.class), mock(StoreDeletionOperators.class), pr);
+        ds.inject_(mdb, mock(MapAlias2Target.class), mock(TransManager.class),
+                mock(IMapSID2SIndex.class), mock(FrequentDefectSender.class),
+                mock(StoreDeletionOperators.class), pr, mock(CfgStorageType.class));
 
         setupSwapTest();
     }

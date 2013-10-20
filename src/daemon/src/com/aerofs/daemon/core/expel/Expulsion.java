@@ -10,6 +10,7 @@ import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
+import com.aerofs.daemon.core.ds.ResolvedPath;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.store.MapSIndex2Store;
 import com.aerofs.daemon.lib.db.AbstractTransListener;
@@ -30,7 +31,6 @@ import com.aerofs.lib.id.CID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOCID;
 import com.aerofs.lib.id.SOID;
-import com.aerofs.lib.Path;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
@@ -109,7 +109,7 @@ public class Expulsion
      * name changing alone doesn't affect expulsion state, the method should still be called to
      * rename physical objects. See {@Link IAdjuster} for operational details and parameter list.
      */
-    public void objectMoved_(boolean emigrate, PhysicalOp op, SOID soid, Path pathOld, Trans t)
+    public void objectMoved_(boolean emigrate, PhysicalOp op, SOID soid, ResolvedPath pathOld, Trans t)
             throws SQLException, ExNotFound, IOException, ExNotDir, ExStreamInvalid, ExAlreadyExist
     {
         OA oa = _ds.getOA_(soid);
@@ -156,7 +156,7 @@ public class Expulsion
         else _exdb.deleteExpelledObject_(soid, t);
 
         IExpulsionAdjuster adj = getAdjuster(flagsOld, flagsNew);
-        Path path = _ds.resolve_(oa);
+        ResolvedPath path = _ds.resolve_(oa);
         adj.adjust_(false, PhysicalOp.APPLY, soid, path, flagsNew, t);
     }
 

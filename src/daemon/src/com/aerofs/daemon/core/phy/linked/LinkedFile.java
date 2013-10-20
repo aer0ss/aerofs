@@ -7,6 +7,7 @@ import java.io.InputStream;
 import java.sql.SQLException;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.daemon.core.ds.ResolvedPath;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import static com.aerofs.lib.LibParam.AuxFolder.CONFLICT;
 import com.aerofs.lib.ex.ExFileNotFound;
@@ -17,9 +18,6 @@ import com.aerofs.daemon.core.phy.IPhysicalObject;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.phy.linked.LinkedStorage.IRollbackHandler;
 import com.aerofs.daemon.core.phy.linked.fid.IFIDMaintainer;
-import com.aerofs.lib.ContentHash;
-
-import static com.aerofs.lib.Util.join;
 
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.SOKID;
@@ -37,15 +35,15 @@ public class LinkedFile implements IPhysicalFile
     final Path _path;
     final SOKID _sokid;
 
-    public LinkedFile(LinkedStorage s, SOKID sokid, Path path)
+    public LinkedFile(LinkedStorage s, ResolvedPath path, KIndex kidx)
     {
         _s = s;
         _path = path;
-        _sokid = sokid;
-        _f = _s._factFile.create(sokid.kidx().equals(KIndex.MASTER) ?
-                join(_s._lrm.absRootAnchor_(path.sid()), join(path.elements())) :
-                join(_s.auxRootForStore_(path.sid()), CONFLICT._name, LinkedStorage.makeAuxFileName(sokid)));
-        _fidm = _s._factFIDMan.create_(sokid, _f);
+        _sokid = new SOKID(path.soid(), kidx);
+        _f = _s._factFile.create(kidx.equals(KIndex.MASTER) ?
+                _s.physicalPath(path) :
+                _s.auxFilePath(path.sid(), _sokid, CONFLICT));
+        _fidm = _s._factFIDMan.create_(_sokid, _f);
     }
 
     @SuppressWarnings("fallthrough")
@@ -126,12 +124,6 @@ public class LinkedFile implements IPhysicalFile
     public long getLength_()
     {
         return _f.getLengthOrZeroIfNotFile();
-    }
-
-    @Override
-    public ContentHash getHash_()
-    {
-        return null;
     }
 
     @Override

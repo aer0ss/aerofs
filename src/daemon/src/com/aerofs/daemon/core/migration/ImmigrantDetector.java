@@ -9,6 +9,7 @@ import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.ds.CA;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
+import com.aerofs.daemon.core.ds.ResolvedPath;
 import com.aerofs.daemon.core.phy.IPhysicalFile;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.phy.PhysicalOp;
@@ -16,7 +17,6 @@ import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.exception.ExStreamInvalid;
 import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.lib.ContentHash;
-import com.aerofs.lib.Path;
 import com.aerofs.lib.Version;
 import com.aerofs.lib.ex.ExNotDir;
 import com.aerofs.base.ex.ExNotFound;
@@ -42,10 +42,10 @@ public abstract class ImmigrantDetector
 {
     static final Logger l = Loggers.getLogger(ImmigrantDetector.class);
 
-    private DirectoryService _ds;
+    protected DirectoryService _ds;
     private NativeVersionControl _nvc;
     private ImmigrantVersionControl _ivc;
-    private IPhysicalStorage _ps;
+    protected IPhysicalStorage _ps;
 
     protected void baseInject_(DirectoryService ds, NativeVersionControl nvc,
             ImmigrantVersionControl ivc, IPhysicalStorage ps)
@@ -99,7 +99,8 @@ public abstract class ImmigrantDetector
         assert oaFrom.isFile() && oaTo.isFile();
         assert !oaFrom.isExpelled() && !oaTo.isExpelled();
 
-        Path pathTo = _ds.resolve_(oaTo.soid());
+        ResolvedPath pathFrom = _ds.resolve_(oaFrom.soid());
+        ResolvedPath pathTo = _ds.resolve_(oaTo.soid());
 
         SOCID socidFrom = new SOCID(oaFrom.soid(), CID.CONTENT);
         SOCID socidTo = new SOCID(oaTo.soid(), CID.CONTENT);
@@ -131,8 +132,8 @@ public abstract class ImmigrantDetector
             vLocalSum = vLocalSum.add_(vFrom);
 
             // move physical files
-            IPhysicalFile pfTo = _ps.newFile_(kTo.sokid(), pathTo);
-            caFrom.physicalFile().move_(pfTo, op, t);
+            IPhysicalFile pfTo = _ps.newFile_(pathTo, kidx);
+            _ps.newFile_(pathFrom, kidx).move_(pfTo, op, t);
 
             // TODO send NEW_UPDATE-like messages for migrated branches, but
             // only from the initiating peer of the migration. this will speed

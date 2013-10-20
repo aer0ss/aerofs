@@ -10,6 +10,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.CoreScheduler;
+import com.aerofs.daemon.core.ds.ResolvedPath;
 import com.aerofs.daemon.core.phy.IPhysicalFile;
 import com.aerofs.daemon.core.phy.IPhysicalFolder;
 import com.aerofs.daemon.core.phy.IPhysicalPrefix;
@@ -39,9 +40,9 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.daemon.core.ex.ExAborted;
 import com.aerofs.base.ex.ExNotFound;
+import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOCKID;
-import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.id.SOKID;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.google.common.base.Preconditions;
@@ -138,15 +139,15 @@ class BlockStorage implements IPhysicalStorage
     }
 
     @Override
-    public IPhysicalFile newFile_(SOKID sokid, Path path)
+    public IPhysicalFile newFile_(ResolvedPath path, KIndex kidx)
     {
-        return new BlockFile(this, sokid, path);
+        return new BlockFile(this, new SOKID(path.soid(), kidx), path);
     }
 
     @Override
-    public IPhysicalFolder newFolder_(SOID soid, Path path)
+    public IPhysicalFolder newFolder_(ResolvedPath path)
     {
-        return new BlockFolder(soid, path);
+        return new BlockFolder(path.soid(), path);
     }
 
     @Override

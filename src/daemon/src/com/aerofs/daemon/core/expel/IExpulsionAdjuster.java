@@ -1,9 +1,9 @@
 package com.aerofs.daemon.core.expel;
 
+import com.aerofs.daemon.core.ds.ResolvedPath;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.exception.ExStreamInvalid;
-import com.aerofs.lib.Path;
 import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExNotDir;
 import com.aerofs.base.ex.ExNotFound;
@@ -31,6 +31,6 @@ interface IExpulsionAdjuster
      * by movement, it should be identical to the new path.
      * @param flags the new flags to be set on the object identified by {@code soid}.
      */
-    void adjust_(boolean emigrate, PhysicalOp op, SOID soid, Path pOld, int flags, Trans t)
+    void adjust_(boolean emigrate, PhysicalOp op, SOID soid, ResolvedPath pOld, int flags, Trans t)
             throws IOException, ExNotFound, SQLException, ExNotDir, ExStreamInvalid, ExAlreadyExist;
 }

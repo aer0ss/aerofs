@@ -7,9 +7,9 @@ package com.aerofs.daemon.core.multiplicity.multiuser;
 import com.aerofs.daemon.core.ds.AbstractPathResolver;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
+import com.aerofs.daemon.core.ds.ResolvedPath;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
-import com.aerofs.lib.Path;
 import com.aerofs.lib.id.SOID;
 import com.google.common.collect.Lists;
 
@@ -28,15 +28,17 @@ public class MultiuserPathResolver extends AbstractPathResolver
     }
 
     @Override
-    public @Nonnull Path resolve_(@Nonnull OA oa) throws SQLException
+    public @Nonnull ResolvedPath resolve_(@Nonnull OA oa) throws SQLException
     {
+        List<SOID> soids = Lists.newArrayListWithCapacity(16);
         List<String> elems = Lists.newArrayListWithCapacity(16);
 
         while (!oa.soid().oid().isRoot()) {
+            soids.add(oa.soid());
             elems.add(oa.name());
             oa = _ds.getOA_(new SOID(oa.soid().sidx(), oa.parent()));
         }
 
-        return makePath_(oa.soid().sidx(), elems);
+        return makePath_(oa.soid().sidx(), soids, elems);
     }
 }

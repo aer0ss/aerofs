@@ -9,6 +9,7 @@ import java.util.Map.Entry;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.SID;
+import com.aerofs.daemon.core.ds.ResolvedPath;
 import com.aerofs.daemon.core.phy.linked.linker.LinkerRoot;
 import com.aerofs.daemon.core.phy.linked.linker.LinkerRootMap;
 import com.aerofs.daemon.core.phy.linked.linker.LinkerRootMap.IListener;
@@ -21,6 +22,7 @@ import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgStoragePolicy;
 import com.aerofs.lib.cfg.CfgAbsRoots;
+import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.os.OSUtil;
 import com.google.common.collect.Lists;
 import org.slf4j.Logger;
@@ -123,17 +125,34 @@ public class LinkedStorage implements IPhysicalStorage, IListener
         OSUtil.get().markHiddenSystemFile(absAuxRoot);
     }
 
+    String physicalPath(ResolvedPath path)
+    {
+        return Util.join(_lrm.absRootAnchor_(path.sid()), path.toStringRelative());
+    }
+
+    String auxFilePath(SID sid, SOKID soid, AuxFolder folder)
+    {
+        return Util.join(auxRootForStore_(sid), folder._name,
+                LinkedStorage.makeAuxFileName(soid));
+    }
+
+    String auxFilePath(SOKID sokid, AuxFolder folder) throws SQLException
+    {
+        return Util.join(auxRootForStore_(sokid.sidx()), folder._name,
+                LinkedStorage.makeAuxFileName(sokid));
+    }
+
 
     @Override
-    public IPhysicalFile newFile_(SOKID sokid, Path path)
+    public IPhysicalFile newFile_(ResolvedPath path, KIndex kidx)
     {
-        return new LinkedFile(this, sokid, path);
+        return new LinkedFile(this, path, kidx);
     }
 
     @Override
-    public IPhysicalFolder newFolder_(SOID soid, Path path)
+    public IPhysicalFolder newFolder_(ResolvedPath path)
     {
-        return new LinkedFolder(this, soid, path);
+        return new LinkedFolder(this, path);
     }
 
     @Override
@@ -145,8 +164,7 @@ public class LinkedStorage implements IPhysicalStorage, IListener
     @Override
     public void deletePrefix_(SOKID sokid) throws SQLException, IOException
     {
-        _factFile.create(Util.join(auxRootForStore_(sokid.sidx()), LibParam.AuxFolder.PREFIX._name,
-                LinkedStorage.makeAuxFileName(sokid))).deleteIgnoreError();
+        _factFile.create(auxFilePath(sokid, AuxFolder.PREFIX)).deleteIgnoreError();
     }
 
     private SID rootSID_(SIndex sidx) throws SQLException
@@ -204,15 +222,15 @@ public class LinkedStorage implements IPhysicalStorage, IListener
         _tlUseHistory.set(t, false);
     }
 
-    void promoteToAnchor_(SOID soid, Path path, Trans t) throws SQLException, IOException
+    void promoteToAnchor_(SID sid, Path path, Trans t) throws SQLException, IOException
     {
-        _sfti.addTagFileAndIconIn(SID.anchorOID2storeSID(soid.oid()),
+        _sfti.addTagFileAndIconIn(sid,
                 path.toAbsoluteString(_lrm.absRootAnchor_(path.sid())), t);
     }
 
-    void demoteToRegularFolder_(SOID soid, Path path, Trans t) throws SQLException, IOException
+    void demoteToRegularFolder_(SID sid, Path path, Trans t) throws SQLException, IOException
     {
-        _sfti.removeTagFileAndIconIn(SID.anchorOID2storeSID(soid.oid()),
+        _sfti.removeTagFileAndIconIn(sid,
                 path.toAbsoluteString(_lrm.absRootAnchor_(path.sid())), t);
     }
 
@@ -279,10 +297,14 @@ public class LinkedStorage implements IPhysicalStorage, IListener
         return Integer.toString(sidx.getInt()) + '-';
     }
 
+    static String makeAuxFileName(SOID soid)
+    {
+        return makeAuxFilePrefix(soid.sidx()) + soid.oid().toStringFormal();
+    }
+
     static String makeAuxFileName(SOKID sokid)
     {
-        return makeAuxFilePrefix(sokid.sidx()) + sokid.oid().toStringFormal() + '-' +
-                sokid.kidx();
+        return makeAuxFileName(sokid.soid()) + '-' + sokid.kidx();
     }
 
     public static interface IRollbackHandler

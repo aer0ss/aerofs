@@ -9,6 +9,7 @@ import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.ObjectSurgeon;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.expel.Expulsion;
+import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.protocol.PrefixVersionControl;
 import com.aerofs.daemon.core.object.BranchDeleter;
 import com.aerofs.daemon.core.object.ObjectMover;
@@ -42,6 +43,7 @@ public class AliasingMover
     private static final Logger l = Loggers.getLogger(AliasingMover.class);
 
     private final DirectoryService _ds;
+    private final IPhysicalStorage _ps;
     private final ObjectSurgeon _os;
     private final PrefixVersionControl _pvc;
     private final NativeVersionControl _nvc;
@@ -53,9 +55,10 @@ public class AliasingMover
     @Inject
     public AliasingMover(DirectoryService ds, ObjectSurgeon os, Hasher hasher, ObjectMover om,
             Expulsion expulsion, PrefixVersionControl pvc, NativeVersionControl nvc,
-            BranchDeleter bd)
+            BranchDeleter bd, IPhysicalStorage ps)
     {
         _ds = ds;
+        _ps = ps;
         _os = os;
         _hasher = hasher;
         _om = om;
@@ -239,10 +242,13 @@ public class AliasingMover
             // Create CA for the new branch on the target.
             _ds.createCA_(target.soid(), kidxTarget, t);
 
-            CA caFrom = _ds.getOA_(alias.soid()).ca(kidxAlias);
-            CA caTo = _ds.getOA_(target.soid()).ca(kidxTarget);
+            OA oaFrom = _ds.getOA_(alias.soid());
+            CA caFrom = oaFrom.ca(kidxAlias);
+            OA oaTo = _ds.getOA_(target.soid());
+            oaTo.ca(kidxTarget);
 
-            caFrom.physicalFile().move_(caTo.physicalFile(), PhysicalOp.APPLY, t);
+            _ps.newFile_(_ds.resolve_(oaFrom), kidxAlias).move_(
+                    _ps.newFile_(_ds.resolve_(oaTo), kidxTarget), PhysicalOp.APPLY, t);
 
             SOCKID kTarget = new SOCKID(target, kidxTarget);
             _ds.setCA_(kTarget.sokid(), caFrom.length(), caFrom.mtime(), hAlias, t);
@@ -401,7 +407,7 @@ public class AliasingMover
                 moveChildrenFromAliasToTargetDir_(alias, target, t);
                 if (oaAlias != null && !oaAlias.isExpelled()) {
                     l.info("del alias dir {} {}", alias, Util.crc32(oaAlias.name()));
-                    oaAlias.physicalFolder().delete_(PhysicalOp.APPLY, t);
+                    _ps.newFolder_(_ds.resolve_(oaAlias)).delete_(PhysicalOp.APPLY, t);
                 }
             } else {
                 moveContent_(alias, target, t);

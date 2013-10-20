@@ -4,11 +4,11 @@ import java.io.IOException;
 import java.sql.SQLException;
 
 import com.aerofs.base.id.SID;
+import com.aerofs.daemon.core.ds.ResolvedPath;
 import com.aerofs.daemon.lib.db.trans.Trans;
-import com.aerofs.lib.Path;
+import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOCKID;
-import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.id.SOKID;
 
 /**
@@ -17,9 +17,9 @@ import com.aerofs.lib.id.SOKID;
  */
 public interface IPhysicalStorage
 {
-    IPhysicalFile newFile_(SOKID sokid, Path path);
+    IPhysicalFile newFile_(ResolvedPath path, KIndex kidx);
 
-    IPhysicalFolder newFolder_(SOID soid, Path path);
+    IPhysicalFolder newFolder_(ResolvedPath path);
 
     IPhysicalPrefix newPrefix_(SOCKID k) throws SQLException;
 

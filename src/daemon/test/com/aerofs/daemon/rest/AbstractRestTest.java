@@ -13,6 +13,7 @@ import com.aerofs.daemon.core.acl.LocalACL;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.mock.logical.MockDS;
 import com.aerofs.daemon.core.net.ClientSSLEngineFactory;
+import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.IStores;
@@ -47,7 +48,6 @@ import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.slf4j.Logger;
 
-import java.nio.channels.ServerSocketChannel;
 import java.sql.SQLException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -91,6 +91,8 @@ public class AbstractRestTest extends AbstractTest
     protected @Mock NativeVersionControl nvc;
 
     protected @InjectMocks ClientSSLEngineFactory clientSslEngineFactory;
+
+    protected @Mock IPhysicalStorage ps;
 
     private static TempCert ca;
     private static TempCert client;
@@ -164,6 +166,7 @@ public class AbstractRestTest extends AbstractTest
                 bind(LocalACL.class).toInstance(acl);
                 bind(IMapSID2SIndex.class).toInstance(sm);
                 bind(IMapSIndex2SID.class).toInstance(sm);
+                bind(IPhysicalStorage.class).toInstance(ps);
                 bind(CoreIMCExecutor.class).toInstance(new CoreIMCExecutor(imce));
             }
         });

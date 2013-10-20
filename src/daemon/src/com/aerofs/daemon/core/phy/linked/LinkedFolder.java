@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.sql.SQLException;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.base.id.SID;
+import com.aerofs.daemon.core.ds.ResolvedPath;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import org.slf4j.Logger;
 
@@ -15,7 +17,6 @@ import com.aerofs.daemon.core.phy.linked.fid.IFIDMaintainer;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.lib.Path;
-import com.aerofs.lib.Util;
 
 public class LinkedFolder implements IPhysicalFolder
 {
@@ -28,14 +29,13 @@ public class LinkedFolder implements IPhysicalFolder
 
     private final LinkedStorage _s;
 
-    public LinkedFolder(LinkedStorage s, SOID soid, Path path)
+    public LinkedFolder(LinkedStorage s, ResolvedPath path)
     {
         _s = s;
-        _soid = soid;
+        _soid = path.soid();
         _path = path;
-        _f = _s._factFile.create(Util.join(_s._lrm.absRootAnchor_(path.sid()),
-                Util.join(path.elements())));
-        _fidm = _s._factFIDMan.create_(soid, _f);
+        _f = _s._factFile.create(_s.physicalPath(path));
+        _fidm = _s._factFIDMan.create_(_soid, _f);
     }
 
     @SuppressWarnings("fallthrough")
@@ -151,15 +151,15 @@ public class LinkedFolder implements IPhysicalFolder
     }
 
     @Override
-    public void promoteToAnchor_(PhysicalOp op, Trans t) throws IOException, SQLException
+    public void promoteToAnchor_(SID sid, PhysicalOp op, Trans t) throws IOException, SQLException
     {
-        _s.promoteToAnchor_(_soid, _path, t);
+        _s.promoteToAnchor_(sid, _path, t);
     }
 
     @Override
-    public void demoteToRegularFolder_(PhysicalOp op, Trans t) throws IOException, SQLException
+    public void demoteToRegularFolder_(SID sid, PhysicalOp op, Trans t) throws IOException, SQLException
     {
-        _s.demoteToRegularFolder_(_soid, _path, t);
+        _s.demoteToRegularFolder_(sid, _path, t);
     }
 
     @Override

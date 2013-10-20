@@ -6,10 +6,10 @@ import java.util.Set;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
+import com.aerofs.daemon.core.ds.ResolvedPath;
 import com.aerofs.daemon.core.phy.linked.linker.TimeoutDeletionBuffer.Holder;
 import com.aerofs.daemon.core.object.ObjectDeleter;
 import com.aerofs.daemon.core.phy.PhysicalOp;
-import com.aerofs.lib.Path;
 import com.aerofs.lib.event.IEvent;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.base.id.OID;
@@ -20,6 +20,7 @@ import com.aerofs.base.id.UniqueID;
 import com.aerofs.rocklog.RockLog;
 import com.aerofs.testlib.AbstractTest;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import org.junit.Before;
@@ -54,7 +55,7 @@ public class TestTimeoutDeletionBuffer extends AbstractTest
         when(ds.getOANullable_(any(SOID.class))).thenReturn(oa);
         when(ds.getAliasedOANullable_(any(SOID.class))).thenReturn(oa);
         when(oa.name()).thenReturn("name");
-        when(ds.resolve_(oa)).thenReturn(Path.fromString(rootSID, "name"));
+        when(ds.resolve_(oa)).thenReturn(new ResolvedPath(rootSID, ImmutableList.of(soid), ImmutableList.of("name")));
         when(lrm.absRootAnchor_(rootSID)).thenReturn("/AeroFS");
     }
 

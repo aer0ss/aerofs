@@ -7,10 +7,15 @@ import static org.mockito.Mockito.*;
 
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 
+import com.aerofs.daemon.core.ds.ResolvedPath;
+import com.aerofs.daemon.core.ds.ResolvedPathTestUtil;
 import com.aerofs.daemon.lib.db.trans.Trans;
-import com.aerofs.lib.Path;
+import com.google.common.base.Function;
+import com.google.common.collect.Lists;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InjectMocks;
@@ -30,6 +35,8 @@ import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.id.SOKID;
 import com.aerofs.base.id.UniqueID;
 import com.aerofs.testlib.AbstractTest;
+
+import javax.annotation.Nullable;
 
 public class TestStoreDeleter extends AbstractTest
 {
@@ -61,21 +68,36 @@ public class TestStoreDeleter extends AbstractTest
 
     SID rootSID = SID.generate();
 
-    Path pNewRoot = new Path(rootSID, "n1", "n2", "n3");
-    Path pNewChild = pNewRoot.append(nChild);
-    Path pNewGrandChild = pNewChild.append(nGrandChild1)
-            .append(nGrandChild2);
+    ResolvedPath mkpath(String... elems)
+    {
+        List<String> l = Arrays.asList(elems);
+        return new ResolvedPath(rootSID, Lists.transform(l, new Function<String, SOID>() {
+            @Override
+            public @Nullable SOID apply(@Nullable String s)
+            {
+                return new SOID(new SIndex(1), OID.generate());
+            }
+        }), l);
+    }
 
-    Path pOldRoot = new Path(rootSID, "1", "2", "3");
-    Path pOldChild = pOldRoot.append(nChild);
-    Path pOldGrandChild = pOldChild.append(nGrandChild1)
-            .append(nGrandChild2);
+    ResolvedPath append(ResolvedPath p, String name)
+    {
+        return p.join(new SOID(new SIndex(1), OID.generate()), name);
+    }
 
-    Path pOldFile = pOldGrandChild.append(nFile);
-    Path pOldFolder = pOldGrandChild.append(nFolder);
-    Path pOldAnchor = pOldGrandChild.append(nAnchor);
-    Path pOldFolderExpelled = pOldGrandChild.append(nFolderExpelled);
-    Path pOldAnchorExpelled = pOldGrandChild.append(nAnchorExpelled);
+    ResolvedPath pNewRoot = ResolvedPathTestUtil.fromString(rootSID, "n1/n2/n3");
+    ResolvedPath pNewChild = append(pNewRoot, nChild);
+    ResolvedPath pNewGrandChild = append(append(pNewChild, nGrandChild1), nGrandChild2);
+
+    ResolvedPath pOldRoot = mkpath("1", "2", "3");
+    ResolvedPath pOldChild = append(pOldRoot, nChild);
+    ResolvedPath pOldGrandChild = append(append(pOldChild, nGrandChild1), nGrandChild2);
+
+    ResolvedPath pOldFile = append(pOldGrandChild, nFile);
+    ResolvedPath pOldFolder = append(pOldGrandChild, nFolder);
+    ResolvedPath pOldAnchor = append(pOldGrandChild, nAnchor);
+    ResolvedPath pOldFolderExpelled = append(pOldGrandChild, nFolderExpelled);
+    ResolvedPath pOldAnchorExpelled = append(pOldGrandChild, nAnchorExpelled);
 
     SIndex sidxRootParent = new SIndex(4);
     SIndex sidxRoot = new SIndex(3);
@@ -108,8 +130,8 @@ public class TestStoreDeleter extends AbstractTest
 
         mockBranches(oaFile, 2, 0, 0, null);
 
-        when(ps.newFile_(any(SOKID.class), any(Path.class))).then(RETURNS_MOCKS);
-        when(ps.newFolder_(any(SOID.class), any(Path.class))).then(RETURNS_MOCKS);
+        when(ps.newFile_(any(ResolvedPath.class), any(KIndex.class))).then(RETURNS_MOCKS);
+        when(ps.newFolder_(any(ResolvedPath.class))).then(RETURNS_MOCKS);
 
         OA dummy = mock(OA.class);
         when(ds.getOANullable_(soidAnchorChild)).thenReturn(dummy);
@@ -131,7 +153,7 @@ public class TestStoreDeleter extends AbstractTest
         when(ds.getChildren_(new SOID(sidxGrandChild, OID.ROOT))).thenReturn(children);
     }
 
-    private void mockPathResolution(SOID soid, Path path) throws SQLException
+    private void mockPathResolution(SOID soid, ResolvedPath path) throws SQLException
     {
         OA dummy = mock(OA.class);
         when(ds.getOANullable_(soid)).thenReturn(dummy);
@@ -153,12 +175,12 @@ public class TestStoreDeleter extends AbstractTest
     {
         delete(PhysicalOp.APPLY);
 
-        verify(ps).newFolder_(soidFolder, pOldFolder);
-        verify(ps).newFolder_(soidAnchor, pOldAnchor);
+        verify(ps).newFolder_(pOldFolder);
+        verify(ps).newFolder_(pOldAnchor);
 
         for (KIndex kidx : oaFile.cas().keySet()) {
             SOKID sokid = new SOKID(oaFile.soid(), kidx);
-            verify(ps).newFile_(sokid, pOldFile);
+            verify(ps).newFile_(pOldFile, sokid.kidx());
         }
     }
 
@@ -167,8 +189,8 @@ public class TestStoreDeleter extends AbstractTest
     {
         delete(PhysicalOp.APPLY);
 
-        verify(ps, never()).newFolder_(oaFolderExpelled.soid(), pOldFolderExpelled);
-        verify(ps, never()).newFolder_(oaAnchorExpelled.soid(), pOldAnchorExpelled);
+        verify(ps, never()).newFolder_(pOldFolderExpelled);
+        verify(ps, never()).newFolder_(pOldAnchorExpelled);
     }
 
     @Test (expected = ExArbitrary.class)

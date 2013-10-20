@@ -7,6 +7,7 @@ package com.aerofs.daemon.core.transfers.download.dependence;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UniqueID;
+import com.aerofs.daemon.core.ds.ResolvedPathTestUtil;
 import com.aerofs.daemon.core.transfers.download.IDownloadContext;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
@@ -62,7 +63,8 @@ public class TestDownloadDeadlockResolver extends AbstractTest
         OA oa = mock(OA.class);
         when(_ds.getOA_(soid)).thenReturn(oa);
         when(_ds.getOANullable_(soid)).thenReturn(oa);
-        when(_ds.resolve_(oa)).thenReturn(Path.fromString(rootSID, "dummy/" + soid));
+        when(_ds.resolve_(oa)).thenReturn(
+                ResolvedPathTestUtil.fromString(rootSID, "dummy" + soid.toString()));
         return oa;
     }
 

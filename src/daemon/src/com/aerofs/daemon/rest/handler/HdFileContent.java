@@ -5,7 +5,10 @@ import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.ds.CA;
+import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
+import com.aerofs.daemon.core.phy.IPhysicalFile;
+import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.daemon.rest.event.EIFileContent;
 import com.aerofs.daemon.rest.stream.MultipartStream;
@@ -15,6 +18,7 @@ import com.aerofs.daemon.rest.util.HttpStatus;
 import com.aerofs.daemon.rest.util.MimeTypeDetector;
 import com.aerofs.daemon.rest.util.Ranges;
 import com.aerofs.lib.event.Prio;
+import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.SOID;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Range;
@@ -33,13 +37,18 @@ import java.util.Set;
 
 public class HdFileContent extends AbstractHdIMC<EIFileContent>
 {
+    private final DirectoryService _ds;
+    private final IPhysicalStorage _ps;
     private final AccessChecker _access;
     private final NativeVersionControl _nvc;
     private final MimeTypeDetector _detector;
 
     @Inject
-    public HdFileContent(AccessChecker access, NativeVersionControl nvc, MimeTypeDetector detector)
+    public HdFileContent(AccessChecker access, DirectoryService ds, IPhysicalStorage ps,
+            NativeVersionControl nvc, MimeTypeDetector detector)
     {
+        _ds = ds;
+        _ps = ps;
         _access = access;
         _nvc = nvc;
         _detector = detector;
@@ -72,21 +81,23 @@ public class HdFileContent extends AbstractHdIMC<EIFileContent>
         // base response template
         ResponseBuilder bd = Response.ok().tag(etag).lastModified(new Date(ca.mtime()));
 
+        IPhysicalFile pf = _ps.newFile_(_ds.resolve_(oa), KIndex.MASTER);
+
         ev.setResult_(ranges != null
-                ? partialContent(bd, ca, ranges)
-                : fullContent(bd, oa.name(), ca));
+                ? partialContent(bd, pf, ca, ranges)
+                : fullContent(bd, oa.name(), pf, ca));
     }
 
-    private ResponseBuilder fullContent(ResponseBuilder ok, String name, CA ca)
+    private ResponseBuilder fullContent(ResponseBuilder ok, String name, IPhysicalFile pf, CA ca)
     {
         return ok
                 .type(_detector.detect(name))
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + name + "\"")
                 .header(HttpHeaders.CONTENT_LENGTH, ca.length())
-                .entity(new SimpleStream(ca, 0, ca.length()));
+                .entity(new SimpleStream(pf, ca, 0, ca.length()));
     }
 
-    private ResponseBuilder partialContent(ResponseBuilder ok, CA ca, RangeSet<Long> ranges)
+    private ResponseBuilder partialContent(ResponseBuilder ok, IPhysicalFile pf, CA ca, RangeSet<Long> ranges)
     {
         // if rangeset is empty, the request is not satisfiable
         if (ranges.isEmpty()) {
@@ -105,10 +116,10 @@ public class HdFileContent extends AbstractHdIMC<EIFileContent>
             return ok.status(HttpStatus.PARTIAL_CONTENT)
                     .header(HttpHeaders.CONTENT_RANGE,
                             "bytes " + skip + "-" + last + "/" + ca.length())
-                    .entity(new SimpleStream(ca, skip, span));
+                    .entity(new SimpleStream(pf, ca, skip, span));
         } else {
             // multiple ranges -> multipart response
-            MultipartStream stream = new MultipartStream(ca, parts);
+            MultipartStream stream = new MultipartStream(pf, ca, parts);
             return ok.status(HttpStatus.PARTIAL_CONTENT)
                     .type("multipart/byteranges; boundary=" + stream._boundary)
                     .entity(stream);

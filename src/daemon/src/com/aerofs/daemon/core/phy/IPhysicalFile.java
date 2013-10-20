@@ -3,21 +3,12 @@ package com.aerofs.daemon.core.phy;
 import java.io.IOException;
 import java.io.InputStream;
 
-import javax.annotation.Nullable;
-
-import com.aerofs.lib.ContentHash;
-
 public interface IPhysicalFile extends IPhysicalObject
 {
     /**
      * @return 0 if the file doesn't exist
      */
     long getLength_();
-
-    /**
-     * @return the file hash if the implementation remembers it, or null otherwise
-     */
-    @Nullable ContentHash getHash_();
 
     /**
      * @return LocalFile must return the last modification time of the physical

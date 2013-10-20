@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Set;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.daemon.core.ds.ResolvedPath;
 import com.aerofs.daemon.lib.exception.ExStreamInvalid;
 import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExNotDir;
@@ -21,13 +22,11 @@ import com.aerofs.daemon.core.ds.OA.Type;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.lib.db.trans.Trans;
-import com.aerofs.lib.Path;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
-import com.aerofs.lib.id.SOKID;
 import org.slf4j.Logger;
 
 public class StoreDeleter
@@ -61,7 +60,7 @@ public class StoreDeleter
      * @param pathOld the old path of the store's anchor before the caller moves it. It's used to
      * locate physical files.
      */
-    public void removeParentStoreReference_(SIndex sidx, SIndex sidxParent, Path pathOld,
+    public void removeParentStoreReference_(SIndex sidx, SIndex sidxParent, ResolvedPath pathOld,
             PhysicalOp op, Trans t)
             throws SQLException, ExNotFound, ExNotDir, ExStreamInvalid, IOException, ExAlreadyExist
     {
@@ -80,27 +79,28 @@ public class StoreDeleter
             throws SQLException, ExNotFound, ExNotDir, ExStreamInvalid, IOException, ExAlreadyExist
     {
         assert _ss.isRoot_(sidx);
-        deleteRecursively_(sidx, Path.root(_sidx2sid.get_(sidx)), op, t);
+        deleteRecursively_(sidx, ResolvedPath.root(_sidx2sid.get_(sidx)), op, t);
     }
 
-    private void deleteRecursively_(SIndex sidx, Path pathOld, PhysicalOp op, Trans t)
+    private void deleteRecursively_(SIndex sidx, ResolvedPath pathOld, PhysicalOp op, Trans t)
             throws SQLException, ExNotFound, ExNotDir, ExStreamInvalid, IOException, ExAlreadyExist
     {
         // delete child stores. go through the store list before actual
         // operations to avoid concurrent modification exceptions
         ArrayList<SIndex> sidxChildren = Lists.newArrayList();
-        ArrayList<Path> pathChildren = Lists.newArrayList();
+        ArrayList<ResolvedPath> pathChildren = Lists.newArrayList();
 
-        final Path pathNew = _ds.resolve_(new SOID(sidx, OID.ROOT));
+        final ResolvedPath pathNew = _ds.resolve_(new SOID(sidx, OID.ROOT));
 
         for (SIndex sidxChild : _ss.getChildren_(sidx)) {
             OID oidAnchor = SID.storeSID2anchorOID(_sidx2sid.get_(sidxChild));
-            Path pathNewChild = _ds.resolve_(new SOID(sidx, oidAnchor));
-            Path pathOldChild = pathOld;
+            ResolvedPath pathNewChild = _ds.resolve_(new SOID(sidx, oidAnchor));
+            ResolvedPath pathOldChild = pathOld;
 
             for (int i = pathNew.elements().length; i < pathNewChild.elements().length; i++) {
                 // creating a new Path object on every iteration is a bit inefficient...
-                pathOldChild = pathOldChild.append(pathNewChild.elements()[i]);
+                pathOldChild = pathOldChild.join(pathNewChild.soids.get(i),
+                        pathNewChild.elements()[i]);
             }
             assert pathOldChild.elements().length > pathOld.elements().length;
 
@@ -125,14 +125,14 @@ public class StoreDeleter
         delete_(sidx, op, t);
     }
 
-    private void deletePhysicalObjectsRecursively_(final SOID soidRoot, Path pathOldRoot,
+    private void deletePhysicalObjectsRecursively_(final SOID soidRoot, ResolvedPath pathOldRoot,
             final PhysicalOp op, final Trans t)
             throws IOException, ExNotFound, SQLException, ExNotDir, ExStreamInvalid, ExAlreadyExist
     {
-        _ds.walk_(soidRoot, pathOldRoot, new IObjectWalker<Path>()
+        _ds.walk_(soidRoot, pathOldRoot, new IObjectWalker<ResolvedPath>()
         {
             @Override
-            public Path prefixWalk_(Path pathOldParent, OA oa)
+            public ResolvedPath prefixWalk_(ResolvedPath pathOldParent, OA oa)
             {
                 l.debug("del {} {}", pathOldParent, oa);
                 if (oa.type() != Type.DIR) {
@@ -140,21 +140,21 @@ public class StoreDeleter
                 } else if (oa.isExpelled()) {
                     return null;
                 } else {
-                    return pathOldParent.append(oa.name());
+                    return pathOldParent.join(oa);
                 }
             }
 
             @Override
-            public void postfixWalk_(Path pathOldParent, OA oa)
+            public void postfixWalk_(ResolvedPath pathOldParent, OA oa)
                     throws IOException, SQLException
             {
-                Path path = pathOldParent.append(oa.name());
+                ResolvedPath path = pathOldParent.join(oa);
                 l.info("del {}", ObfuscatingFormatters.obfuscatePath(path));
                 switch (oa.type()) {
                 case DIR:
                 case ANCHOR:
                     if (!oa.isExpelled()) {
-                        _ps.newFolder_(oa.soid(), path).delete_(op, t);
+                        _ps.newFolder_(path).delete_(op, t);
                     }
                     break;
                 case FILE:
@@ -164,8 +164,7 @@ public class StoreDeleter
                     // file.
                     assert !oa.isExpelled();
                     for (KIndex kidx : oa.cas().keySet()) {
-                        SOKID sokid = new SOKID(oa.soid(), kidx);
-                        _ps.newFile_(sokid, path).delete_(op, t);
+                        _ps.newFile_(path, kidx).delete_(op, t);
                     }
                     break;
                 default:

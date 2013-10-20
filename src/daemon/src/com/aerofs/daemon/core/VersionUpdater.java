@@ -9,6 +9,7 @@ import javax.inject.Inject;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.ds.DirectoryService;
+import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.protocol.NewUpdates;
 import com.aerofs.daemon.core.phy.IPhysicalFile;
 import com.aerofs.daemon.lib.db.trans.Trans;
@@ -42,14 +43,16 @@ public class VersionUpdater
     private NativeVersionControl _nvc;
     private NewUpdates _nu;
     private DirectoryService _ds;
+    private IPhysicalStorage _ps;
 
     @Inject
     public void inject_(NewUpdates nu, NativeVersionControl nvc, DirectoryService ds,
-            CoreScheduler sched)
+            IPhysicalStorage ps, CoreScheduler sched)
     {
         _nu = nu;
         _nvc = nvc;
         _ds = ds;
+        _ps = ps;
 
         _dsNewUpdateMessage = new DelayedScheduler(sched, DaemonParam.NEW_UPDATE_MESSAGE_DELAY,
                 new Runnable() {
@@ -101,7 +104,7 @@ public class VersionUpdater
         if (!k.cid().isMeta()) {
             // Update length and mtime on the logical file to be consistent with the physical file.
             // The linker relies on these fields to detect file changes.
-            IPhysicalFile pf = _ds.getOA_(k.soid()).ca(k.kidx()).physicalFile();
+            IPhysicalFile pf = _ps.newFile_(_ds.resolve_(k.soid()), k.kidx());
 
             long mtime = pf.getLastModificationOrCurrentTime_();
 

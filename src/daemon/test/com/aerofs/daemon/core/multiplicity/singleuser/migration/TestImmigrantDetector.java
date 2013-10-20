@@ -7,6 +7,8 @@ import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UniqueID;
 import com.aerofs.daemon.core.Hasher;
+import com.aerofs.daemon.core.ds.ResolvedPath;
+import com.aerofs.daemon.core.ds.ResolvedPathTestUtil;
 import com.aerofs.daemon.core.migration.ImmigrantVersionControl;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
@@ -18,7 +20,6 @@ import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.multiplicity.singleuser.SingleuserStores;
 import com.aerofs.daemon.lib.db.trans.Trans;
-import com.aerofs.lib.Path;
 import com.aerofs.lib.Tick;
 import com.aerofs.lib.Version;
 import com.aerofs.base.ex.ExNotFound;
@@ -75,8 +76,8 @@ public class TestImmigrantDetector extends AbstractTest
     SID sidFrom = SID.generate();
     SID sidTo = SID.generate();
     SID sidAnchored = SID.anchorOID2storeSID(oid);
-    Path pFrom = new Path(rootSID, "fooFrom", "barFrom", "bazFrom");
-    Path pTo = new Path(rootSID, "fooTo", "barTo", "bazTo");
+    ResolvedPath pFrom = ResolvedPathTestUtil.fromString(rootSID, "fooFrom/barFrom/bazFrom");
+    ResolvedPath pTo = ResolvedPathTestUtil.fromString(rootSID, "fooTo/barTo/bazTo");
     Version vKMLFrom = Version.of(DID.generate(), new Tick(100));
     Version vKMLTo = Version.of(DID.generate(), new Tick(100));
     PhysicalOp op = PhysicalOp.APPLY;
@@ -99,6 +100,9 @@ public class TestImmigrantDetector extends AbstractTest
 
         when(ds.resolve_(oaFrom)).thenReturn(pFrom);
         when(ds.resolve_(oaTo)).thenReturn(pTo);
+
+        when(ps.newFile_(any(ResolvedPath.class), any(KIndex.class))).then(RETURNS_MOCKS);
+        when(ps.newFolder_(any(ResolvedPath.class))).then(RETURNS_MOCKS);
 
         SOCID socidFrom = new SOCID(soidFrom, CID.CONTENT);
         SOCID socidTo = new SOCID(soidTo, CID.CONTENT);

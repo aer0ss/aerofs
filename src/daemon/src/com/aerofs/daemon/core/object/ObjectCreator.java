@@ -9,6 +9,7 @@ import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.expel.Expulsion;
 import com.aerofs.daemon.core.migration.ImmigrantDetector;
 import com.aerofs.daemon.core.phy.IPhysicalFolder;
+import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.store.StoreCreator;
 import com.aerofs.daemon.lib.db.trans.Trans;
@@ -28,6 +29,7 @@ import static com.aerofs.daemon.core.ds.OA.*;
 public class ObjectCreator
 {
     private DirectoryService _ds;
+    private IPhysicalStorage _ps;
     private VersionUpdater _vu;
     private ImmigrantDetector _imd;
     private Expulsion _ex;
@@ -35,13 +37,14 @@ public class ObjectCreator
 
     @Inject
     public void inject_(DirectoryService ds, VersionUpdater vu, ImmigrantDetector imd, Expulsion ex,
-            StoreCreator sc)
+            StoreCreator sc, IPhysicalStorage ps)
     {
         _ds = ds;
         _vu = vu;
         _imd = imd;
         _ex = ex;
         _sc = sc;
+        _ps = ps;
     }
 
     /**
@@ -69,7 +72,7 @@ public class ObjectCreator
 
             _ds.createCA_(soid, kidx, t);
 
-            _ds.getOA_(soid).caMaster().physicalFile().create_(op, t);
+            _ps.newFile_(_ds.resolve_(soid), kidx).create_(op, t);
 
             _vu.update_(new SOCKID(soid, CID.CONTENT, kidx), t);
         }
@@ -146,13 +149,13 @@ public class ObjectCreator
         if (!expelled && !immigrated) {
             // create physical object and sub-store
             if (oa.isDir()) {
-                oa.physicalFolder().create_(op, t);
+                _ps.newFolder_(_ds.resolve_(oa)).create_(op, t);
             } else if (oa.isAnchor()) {
-                IPhysicalFolder pf = oa.physicalFolder();
+                SID sid =SID.anchorOID2storeSID(oa.soid().oid());
+                IPhysicalFolder pf = _ps.newFolder_(_ds.resolve_(oa));
                 pf.create_(op, t);
-                _sc.addParentStoreReference_(SID.anchorOID2storeSID(oa.soid().oid()),
-                        oa.soid().sidx(), oa.name(), t);
-                pf.promoteToAnchor_(op, t);
+                _sc.addParentStoreReference_(sid, oa.soid().sidx(), oa.name(), t);
+                pf.promoteToAnchor_(sid, op, t);
             } else {
                 assert oa.isFile();
             }

@@ -137,8 +137,8 @@ public class ImmigrantCreator
                     // the IPhysicalFolder needs to be created with the anchor OID
                     // but we cannot simply reuse that of the old OA because it probably does not
                     // point to the correct path...
-                    _ps.newFolder_(oaFrom.soid(), _ds.resolve_(soidTo))
-                            .demoteToRegularFolder_(op, t);
+                    _ps.newFolder_(_ds.resolve_(soidTo))
+                            .demoteToRegularFolder_(SID.anchorOID2storeSID(oaFrom.soid().oid()), op, t);
                 }
 
                 return soidTo;

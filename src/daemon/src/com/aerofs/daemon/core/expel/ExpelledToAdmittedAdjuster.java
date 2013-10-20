@@ -5,13 +5,14 @@ import static com.aerofs.daemon.core.expel.Expulsion.effectivelyExpelled;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.DirectoryService.ObjectWalkerAdapter;
 import com.aerofs.daemon.core.ds.OA;
+import com.aerofs.daemon.core.ds.ResolvedPath;
 import com.aerofs.daemon.core.migration.ImmigrantDetector;
 import com.aerofs.daemon.core.phy.IPhysicalFolder;
+import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.store.StoreCreator;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.exception.ExStreamInvalid;
-import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
 import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExNotDir;
@@ -26,34 +27,38 @@ import java.sql.SQLException;
 class ExpelledToAdmittedAdjuster implements IExpulsionAdjuster
 {
     private final DirectoryService _ds;
+    private final IPhysicalStorage _ps;
     private final ImmigrantDetector _imd;
     private final Expulsion _expulsion;
     private final StoreCreator _sc;
 
     @Inject
     public ExpelledToAdmittedAdjuster(StoreCreator sc, Expulsion expulsion, ImmigrantDetector imd,
-            DirectoryService ds)
+            DirectoryService ds, IPhysicalStorage ps)
     {
         _sc = sc;
         _expulsion = expulsion;
         _imd = imd;
         _ds = ds;
+        _ps = ps;
     }
 
     @Override
-    public void adjust_(boolean emigrate, final PhysicalOp op, final SOID soidRoot, Path pOld,
+    public void adjust_(boolean emigrate, final PhysicalOp op, final SOID soidRoot, ResolvedPath pOld,
             final int flagsRoot, final Trans t)
             throws IOException, ExNotFound, SQLException, ExStreamInvalid, ExAlreadyExist,
             ExNotDir
     {
         assert !emigrate;
 
-        _ds.walk_(soidRoot, null, new ObjectWalkerAdapter<SOID>() {
+        _ds.walk_(soidRoot, pOld, new ObjectWalkerAdapter<ResolvedPath>() {
             @Override
-            public SOID prefixWalk_(SOID unused, OA oa)
+            public ResolvedPath prefixWalk_(ResolvedPath parentPath, OA oa)
                     throws SQLException, IOException, ExNotFound, ExAlreadyExist, ExNotDir,
                     ExStreamInvalid {
                 boolean isRoot = soidRoot.equals(oa.soid());
+
+                ResolvedPath path = isRoot ? parentPath : parentPath.join(oa);
 
                 // set the flags _before_ physically creating folders, since physical file
                 // implementations may assume that the corresponding logical object has been
@@ -72,16 +77,16 @@ class ExpelledToAdmittedAdjuster implements IExpulsionAdjuster
                     _expulsion.fileAdmitted_(oa.soid(), t);
                     return null;
                 case DIR:
-                    oa.physicalFolder().create_(op, t);
-                    return oa.soid();
+                    _ps.newFolder_(path).create_(op, t);
+                    return path;
                 case ANCHOR:
                     boolean immigrated = _imd.detectAndPerformImmigration_(oa, op, t);
                     if (!immigrated) {
-                        IPhysicalFolder pf = oa.physicalFolder();
+                        SID sid = SID.anchorOID2storeSID(oa.soid().oid());
+                        IPhysicalFolder pf = _ps.newFolder_(path);
                         pf.create_(op, t);
-                        _sc.addParentStoreReference_(SID.anchorOID2storeSID(oa.soid().oid()),
-                                oa.soid().sidx(), oa.name(), t);
-                        pf.promoteToAnchor_(op, t);
+                        _sc.addParentStoreReference_(sid, oa.soid().sidx(), oa.name(), t);
+                        pf.promoteToAnchor_(sid, op, t);
                     }
                     return null;
                 default:

@@ -1,7 +1,5 @@
 package com.aerofs.daemon.core.ds;
 
-import com.aerofs.daemon.core.phy.IPhysicalFile;
-
 /**
  * Content Attribute
  */
@@ -9,7 +7,6 @@ public class CA
 {
     private volatile long _len;
     private volatile long _mtime;
-    private IPhysicalFile _pf;
 
     public CA(long len, long mtime)
     {
@@ -47,19 +44,5 @@ public class CA
     public long mtime()
     {
         return _mtime;
-    }
-
-    /**
-     * internal use. only DirectoryService should call this.
-     */
-    void setPhysicalFile_(IPhysicalFile pf)
-    {
-        assert _pf == null;
-        _pf = pf;
-    }
-
-    public IPhysicalFile physicalFile()
-    {
-        return _pf;
     }
 }

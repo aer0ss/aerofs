@@ -7,6 +7,7 @@ package com.aerofs.daemon.core.fs;
 import com.aerofs.daemon.core.VersionUpdater;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
+import com.aerofs.daemon.core.ds.ResolvedPath;
 import com.aerofs.daemon.core.object.ObjectCreator;
 import com.aerofs.daemon.core.phy.IPhysicalFile;
 import com.aerofs.daemon.core.phy.IPhysicalPrefix;
@@ -22,7 +23,6 @@ import com.aerofs.lib.event.Prio;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.ContentHash;
-import com.aerofs.lib.Path;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.daemon.core.ex.ExExpelled;
 import com.aerofs.lib.ex.ExNotFile;
@@ -138,8 +138,8 @@ public class HdImportFile  extends AbstractHdIMC<EIImportFile>
         try {
             // Values might have changed while the core lock was released
             oa = _ds.getOA_(soid);
-            Path path = _ds.resolve_(oa);
-            IPhysicalFile pf = _ps.newFile_(sockid.sokid(), path);
+            ResolvedPath path = _ds.resolve_(oa);
+            IPhysicalFile pf = _ps.newFile_(path, sockid.kidx());
 
             // move prefix to persistent storage
             _ps.apply_(pp, pf, wasPresent, mtime, t);

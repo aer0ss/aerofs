@@ -10,6 +10,7 @@ import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
+import com.google.common.collect.Lists;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -55,15 +56,11 @@ public abstract class AbstractPathResolver
      * convention is to simplify the implementation of this method.
      */
     @Nonnull
-    protected abstract Path resolve_(@Nonnull OA oa) throws SQLException;
+    protected abstract ResolvedPath resolve_(@Nonnull OA oa) throws SQLException;
 
-    protected Path makePath_(SIndex sidx, List<String> elems) throws SQLException
+    protected ResolvedPath makePath_(SIndex sidx, List<SOID> soids, List<String> elems)
     {
-        // The first element in the list is the last element in the path. The following code creates
-        // the path by reversing the list order
-        String[] path = new String[elems.size()];
-        for (int i = 0; i < path.length; i++) path[i] = elems.get(path.length - i - 1);
-        return new Path(_sidx2sid.get_(sidx), path);
+        return new ResolvedPath(_sidx2sid.get_(sidx), Lists.reverse(soids), Lists.reverse(elems));
     }
 
     /**

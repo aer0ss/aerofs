@@ -16,6 +16,7 @@ import com.aerofs.daemon.core.multiplicity.singleuser.SingleuserPathResolver;
 import com.aerofs.daemon.core.multiplicity.singleuser.SingleuserStores;
 import com.aerofs.lib.FrequentDefectSender;
 import com.aerofs.base.id.UniqueID;
+import com.aerofs.lib.cfg.CfgStorageType;
 import org.junit.Assert;
 
 import org.junit.After;
@@ -44,6 +45,7 @@ import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.testlib.AbstractTest;
 
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class TestLocalSyncStatus extends AbstractTest
@@ -92,7 +94,7 @@ public class TestLocalSyncStatus extends AbstractTest
 
         DirectoryServiceImpl ds = new DirectoryServiceImpl();
         SingleuserPathResolver pathResolver = new SingleuserPathResolver(sss, ds, sm, sm);
-        ds.inject_(ps, mdb, alias2target, tm, sm, fds, sdo, pathResolver);
+        ds.inject_(mdb, alias2target, tm, sm, fds, sdo, pathResolver, mock(CfgStorageType.class));
         lsync = new LocalSyncStatus(ds, ssdb, sidx2dbm, assc, sdo, dss);
     }
 

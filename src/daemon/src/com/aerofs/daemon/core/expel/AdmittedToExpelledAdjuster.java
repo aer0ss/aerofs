@@ -5,6 +5,7 @@ import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.DirectoryService.IObjectWalker;
 import com.aerofs.daemon.core.ds.OA;
+import com.aerofs.daemon.core.ds.ResolvedPath;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.protocol.PrefixVersionControl;
@@ -12,7 +13,6 @@ import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.StoreDeleter;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.exception.ExStreamInvalid;
-import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.Version;
 import com.aerofs.base.ex.ExAlreadyExist;
@@ -59,21 +59,21 @@ public class AdmittedToExpelledAdjuster implements IExpulsionAdjuster
     }
 
     @Override
-    public void adjust_(final boolean emigrate, final PhysicalOp op, final SOID soidRoot, Path pOld,
-            final int flagsRoot, final Trans t)
+    public void adjust_(final boolean emigrate, final PhysicalOp op, final SOID soidRoot,
+            ResolvedPath pOld, final int flagsRoot, final Trans t)
             throws IOException, ExNotFound, SQLException, ExNotDir, ExStreamInvalid, ExAlreadyExist
     {
         l.info("adm->exp {} {} {}", soidRoot, pOld, op);
-        _ds.walk_(soidRoot, pOld, new IObjectWalker<Path>() {
+        _ds.walk_(soidRoot, pOld, new IObjectWalker<ResolvedPath>() {
             @Override
-            public @Nullable Path prefixWalk_(Path pOldParent, OA oa)
+            public @Nullable ResolvedPath prefixWalk_(ResolvedPath pOldParent, OA oa)
                     throws IOException, SQLException, ExStreamInvalid, ExNotFound, ExNotDir,
                     ExAlreadyExist
             {
                 boolean isRoot = soidRoot.equals(oa.soid());
                 boolean oldExpelled = oa.isExpelled();
 
-                Path pathOld = isRoot ? pOldParent : pOldParent.append(oa.name());
+                ResolvedPath pathOld = isRoot ? pOldParent : pOldParent.join(oa);
 
                 switch (oa.type()) {
                 case FILE:
@@ -87,7 +87,7 @@ public class AdmittedToExpelledAdjuster implements IExpulsionAdjuster
                     Version vKMLAdd = Version.empty();
                     for (KIndex kidx : oa.cas(false).keySet()) {
                         SOCKID k = new SOCKID(socid, kidx);
-                        if (!emigrate) _ps.newFile_(k.sokid(), pathOld).delete_(op, t);
+                        if (!emigrate) _ps.newFile_(pathOld, kidx).delete_(op, t);
                         Version vBranch = _nvc.getLocalVersion_(k);
                         vKMLAdd = vKMLAdd.add_(vBranch);
                         _nvc.deleteLocalVersion_(k, vBranch, t);
@@ -114,7 +114,7 @@ public class AdmittedToExpelledAdjuster implements IExpulsionAdjuster
                         // delete the anchored store
                         SIndex sidx = _sid2sidx.get_(SID.anchorOID2storeSID(oa.soid().oid()));
                         _sd.removeParentStoreReference_(sidx, oa.soid().sidx(), pathOld, op, t);
-                        _ps.newFolder_(oa.soid(), pathOld).delete_(op, t);
+                        _ps.newFolder_(pathOld).delete_(op, t);
                     }
                     return null;
 
@@ -125,16 +125,16 @@ public class AdmittedToExpelledAdjuster implements IExpulsionAdjuster
             }
 
             @Override
-            public void postfixWalk_(Path pOldParent, OA oa)
+            public void postfixWalk_(ResolvedPath pOldParent, OA oa)
                     throws IOException, SQLException
             {
                 boolean isRoot = soidRoot.equals(oa.soid());
 
                 if (!oa.isExpelled() && oa.isDir()) {
-                    Path pathOld = isRoot ? pOldParent : pOldParent.append(oa.name());
+                    ResolvedPath pathOld = isRoot ? pOldParent : pOldParent.join(oa);
                     // have to do it in postfixWalk rather than prefixWalk because otherwise child
                     // objects under the folder would prevent us from deleting the folder.
-                    _ps.newFolder_(oa.soid(), pathOld).delete_(op, t);
+                    _ps.newFolder_(pathOld).delete_(op, t);
                 }
 
                 // set the flags _after_ physically deleting folders, since physical file

@@ -3,6 +3,8 @@ package com.aerofs.daemon.core.phy.linked.linker;
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
+import com.aerofs.daemon.core.ds.ResolvedPath;
+import com.aerofs.daemon.core.ds.ResolvedPathTestUtil;
 import com.aerofs.daemon.core.first_launch.OIDGenerator;
 import com.aerofs.daemon.core.phy.linked.linker.ILinkerFilter.AcceptAll;
 import com.aerofs.daemon.core.phy.linked.linker.MightCreate.Result;
@@ -117,9 +119,9 @@ public abstract class AbstractTestMightCreate extends AbstractTest
         logicRoot.mock(rootSID, ds, null, null);
     }
 
-    Path mkpath(String path)
+    ResolvedPath mkpath(String path)
     {
-        return Path.fromString(rootSID, path);
+        return ResolvedPathTestUtil.fromString(rootSID, path);
     }
 
     /**

@@ -2,7 +2,6 @@ package com.aerofs.daemon.core.ds;
 
 import java.util.SortedMap;
 
-import com.aerofs.daemon.core.phy.IPhysicalFolder;
 import com.aerofs.lib.Util;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.lib.id.FID;
@@ -57,7 +56,6 @@ public class OA
     private final String _name;
     private final Type _type;
     @Nullable private final FID _fid;
-    private IPhysicalFolder _pf;
     private int _flags;
 
     // Sorted map of KIndices and corresponding CAs.
@@ -254,23 +252,5 @@ public class OA
     {
         assert fidIsConsistentWithCAsOrExpulsion() : this;
         return _fid;
-    }
-
-    /**
-     * internal use. only DirectoryService should call this.
-     */
-    void setPhyFolder_(IPhysicalFolder pf)
-    {
-        assert !isFile() && _pf == null;
-        _pf = pf;
-    }
-
-    /**
-     * only folders and anchors have phyical folders
-     */
-    public IPhysicalFolder physicalFolder()
-    {
-        assert !isFile();
-        return _pf;
     }
 }

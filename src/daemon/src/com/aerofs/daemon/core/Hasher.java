@@ -12,6 +12,7 @@ import java.util.Map.Entry;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.ds.DirectoryService;
+import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.LibParam;
@@ -63,17 +64,19 @@ public class Hasher
     private final NativeVersionControl _nvc;
     private final BranchDeleter _bd;
     private final TransManager _tm;
+    private final IPhysicalStorage _ps;
     private final TC _tc;
 
     @Inject
     public Hasher(TransManager tm, BranchDeleter bd, TC tc, DirectoryService ds,
-            NativeVersionControl nvc)
+            NativeVersionControl nvc, IPhysicalStorage ps)
     {
         _tm = tm;
         _bd = bd;
         _nvc = nvc;
         _ds = ds;
         _tc = tc;
+        _ps = ps;
     }
 
     private final Map<SOKID, Set<TCB>> _map = Maps.newHashMap();
@@ -370,7 +373,7 @@ public class Hasher
     private PrepareToComputeHashResult prepareToComputeHash_(SOCKID k)
             throws SQLException, ExNotFound, ExAborted, IOException
     {
-        final IPhysicalFile pf = _ds.getOAThrows_(k.soid()).caThrows(k.kidx()).physicalFile();
+        final IPhysicalFile pf = _ps.newFile_(_ds.resolveThrows_(k.soid()), k.kidx());
 
         final long len = pf.getLength_();
         final long mtime = pf.getLastModificationOrCurrentTime_();

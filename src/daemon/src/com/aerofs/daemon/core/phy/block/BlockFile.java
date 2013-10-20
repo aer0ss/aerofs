@@ -10,7 +10,6 @@ import com.aerofs.daemon.core.phy.IPhysicalObject;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.phy.block.BlockStorageDatabase.FileInfo;
 import com.aerofs.daemon.lib.db.trans.Trans;
-import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.ex.ExFileNotFound;
 import com.aerofs.lib.id.SOKID;
@@ -52,12 +51,6 @@ class BlockFile implements IPhysicalFile
             l.warn("Failed to determine length", e);
             return 0;
         }
-    }
-
-    @Override
-    public ContentHash getHash_()
-    {
-        return null;
     }
 
     @Override

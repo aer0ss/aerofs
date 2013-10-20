@@ -35,9 +35,9 @@ public class MultipartStream implements ContentStream
     // null before first chunk, to simplify boundary writing logic
     private @Nullable FileChunker _chunker;
 
-    public MultipartStream(CA ca, Set<Range<Long>> parts)
+    public MultipartStream(IPhysicalFile pf, CA ca, Set<Range<Long>> parts)
     {
-        _pf = ca.physicalFile();
+        _pf = pf;
         _length = ca.length();
         _mtime = ca.mtime();
         // random boundary string to reduce likelihood of boundary appearing within a part

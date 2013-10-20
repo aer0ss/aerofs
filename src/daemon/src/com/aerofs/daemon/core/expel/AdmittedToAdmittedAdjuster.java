@@ -2,11 +2,10 @@ package com.aerofs.daemon.core.expel;
 
 import java.io.IOException;
 import java.sql.SQLException;
-import java.util.Map.Entry;
 
-import com.aerofs.daemon.core.ds.CA;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
+import com.aerofs.daemon.core.ds.ResolvedPath;
 import com.aerofs.daemon.core.phy.IPhysicalFile;
 import com.aerofs.daemon.core.phy.IPhysicalFolder;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
@@ -14,8 +13,6 @@ import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.SOID;
-import com.aerofs.lib.id.SOKID;
-import com.aerofs.lib.Path;
 import com.google.inject.Inject;
 
 class AdmittedToAdmittedAdjuster implements IExpulsionAdjuster
@@ -31,7 +28,7 @@ class AdmittedToAdmittedAdjuster implements IExpulsionAdjuster
     }
 
     @Override
-    public void adjust_(boolean emigrate, PhysicalOp op, SOID soid, Path pOld, int flags, Trans t)
+    public void adjust_(boolean emigrate, PhysicalOp op, SOID soid, ResolvedPath pOld, int flags, Trans t)
             throws IOException, SQLException
     {
         assert !emigrate;
@@ -39,17 +36,17 @@ class AdmittedToAdmittedAdjuster implements IExpulsionAdjuster
         _ds.setOAFlags_(soid, flags, t);
 
         OA oa = _ds.getOA_(soid);
+        ResolvedPath pNew = _ds.resolve_(oa);
         if (oa.isFile()) {
-            for (Entry<KIndex, CA> en : oa.cas().entrySet()) {
-                SOKID sokid = new SOKID(soid, en.getKey());
-                IPhysicalFile pfOld = _ps.newFile_(sokid, pOld);
-                IPhysicalFile pfNew = en.getValue().physicalFile();
+            for (KIndex kidx : oa.cas().keySet()) {
+                IPhysicalFile pfOld = _ps.newFile_(pOld, kidx);
+                IPhysicalFile pfNew = _ps.newFile_(pNew, kidx);
                 pfOld.move_(pfNew, op, t);
             }
         } else {
             assert oa.isDirOrAnchor();
-            IPhysicalFolder pfOld = _ps.newFolder_(soid, pOld);
-            IPhysicalFolder pfNew = oa.physicalFolder();
+            IPhysicalFolder pfOld = _ps.newFolder_(pOld);
+            IPhysicalFolder pfNew = _ps.newFolder_(pNew);
             pfOld.move_(pfNew, op, t);
         }
     }

@@ -4,13 +4,13 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import com.aerofs.daemon.core.acl.LocalACL;
+import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
 
 import com.google.inject.Inject;
 
 import com.aerofs.daemon.core.NativeVersionControl;
-import com.aerofs.daemon.core.ds.CA;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.phy.IPhysicalFile;
@@ -28,15 +28,18 @@ public class HdDownloadPacket extends AbstractHdIMC<EIDownloadPacket>
 {
     private final LocalACL _acl;
     private final DirectoryService _ds;
+    private final IPhysicalStorage _ps;
     private final NativeVersionControl _nvc;
 
     @Inject
     public HdDownloadPacket(LocalACL acl,
             DirectoryService ds,
+            IPhysicalStorage ps,
             NativeVersionControl nvc)
     {
         _acl = acl;
         _ds = ds;
+        _ps = ps;
         _nvc = nvc;
     }
 
@@ -49,8 +52,8 @@ public class HdDownloadPacket extends AbstractHdIMC<EIDownloadPacket>
         ev._localVersion = _nvc.getLocalVersion_(sockid);
 
         OA oa = _ds.getOAThrows_(soid);
-        CA ca = oa.caMasterThrows();
-        IPhysicalFile pf = ca.physicalFile();
+        oa.caMasterThrows();
+        IPhysicalFile pf = _ps.newFile_(_ds.resolve_(oa), KIndex.MASTER);
         ev._fileLength = pf.getLength_();
         ev._fileModTime = pf.getLastModificationOrCurrentTime_();
 

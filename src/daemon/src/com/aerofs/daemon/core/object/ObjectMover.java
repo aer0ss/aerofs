@@ -3,6 +3,7 @@ package com.aerofs.daemon.core.object;
 import com.aerofs.daemon.core.*;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
+import com.aerofs.daemon.core.ds.ResolvedPath;
 import com.aerofs.daemon.core.expel.Expulsion;
 import com.aerofs.daemon.core.multiplicity.singleuser.migration.ImmigrantCreator;
 import com.aerofs.daemon.core.phy.PhysicalOp;
@@ -16,7 +17,6 @@ import com.aerofs.lib.id.CID;
 import com.aerofs.base.id.OID;
 import com.aerofs.lib.id.SOCKID;
 import com.aerofs.lib.id.SOID;
-import com.aerofs.lib.Path;
 
 import javax.inject.Inject;
 import java.io.IOException;
@@ -51,7 +51,7 @@ public class ObjectMover
         OA oaOld = _ds.getOA_(soid);
         OA oaParent = _ds.getOA_(new SOID(soid.sidx(), oidParent));
 
-        final Path pOld = _ds.resolve_(oaOld);
+        final ResolvedPath pOld = _ds.resolve_(oaOld);
 
         _ds.setOAParentAndName_(oaOld, oaParent, name, t);
 

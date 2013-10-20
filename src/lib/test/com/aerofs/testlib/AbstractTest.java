@@ -3,6 +3,7 @@ package com.aerofs.testlib;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.config.ConfigurationProperties;
 import com.aerofs.lib.log.LogUtil;
+import com.aerofs.lib.log.LogUtil.Level;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -23,7 +24,7 @@ public abstract class AbstractTest
     static {
         LogUtil.enableConsoleLogging();
         // Change to DEBUG if you're writing a test, but keep at NONE otherwise.
-        LogUtil.setLevel(LogUtil.Level.NONE);
+        LogUtil.setLevel(Level.NONE);
 
         // Initialize ConfigurationProperties to avoid NullPointerException when using BaseParam
         // (for example when instantiating InvitationEmailers).

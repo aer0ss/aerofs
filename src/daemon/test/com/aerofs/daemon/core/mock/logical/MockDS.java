@@ -4,14 +4,14 @@
 
 package com.aerofs.daemon.core.mock.logical;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.ds.CA;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.IDirectoryServiceListener;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ds.OA.Type;
-import com.aerofs.daemon.core.phy.IPhysicalFile;
-import com.aerofs.daemon.core.phy.IPhysicalFolder;
+import com.aerofs.daemon.core.ds.ResolvedPath;
 import com.aerofs.daemon.core.store.DeviceBitMap;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
@@ -28,19 +28,17 @@ import com.aerofs.base.id.SID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.base.id.UniqueID;
+import com.google.common.base.Preconditions;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import org.junit.Assert;
-import org.mockito.ArgumentMatcher;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
 import javax.annotation.Nullable;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
@@ -48,7 +46,6 @@ import java.util.SortedMap;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.argThat;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
@@ -87,25 +84,6 @@ public class MockDS
 
     private final Map<SID, MockDSRoot> _roots = Maps.newHashMap();
 
-    /**
-     * A Mockito argument matcher for matching Paths in a case-insensitive way (as the
-     * DirectoryService does)
-     */
-    private static class IsEqualPathIgnoringCase extends ArgumentMatcher<Path>
-    {
-        private final Path _path;
-
-        IsEqualPathIgnoringCase(Path path) { _path = path;}
-
-        // In reality, when passed a path of same name, but different case, the DS returns the SOID
-        // for the case that is stored in the DB. This matcher helps reflect that behaviour
-        @Override
-        public boolean matches(Object path)
-        {
-            return _path.equalsIgnoreCase((Path) path);
-        }
-    }
-
     public MockDS(SID rootSID, DirectoryService ds) throws  Exception
     {
         this(rootSID, ds, null, null, null);
@@ -130,6 +108,14 @@ public class MockDS
         _nextSidx = 1;
         _rootSID = rootSID;
 
+        when(ds.resolveNullable_(any(Path.class))).thenAnswer(new Answer<SOID>() {
+            @Override
+            public SOID answer(InvocationOnMock invocation) throws Throwable
+            {
+                return resolve((Path)invocation.getArguments()[0]);
+            }
+        });
+
         /*
          * update mocks reactively
          *
@@ -150,7 +136,8 @@ public class MockDS
                 when(_ds.getSyncStatus_(eq(soid))).thenAnswer(new Answer<BitVector>()
                 {
                     @Override
-                    public BitVector answer(InvocationOnMock invocation) throws Throwable
+                    public BitVector answer(InvocationOnMock invocation)
+                            throws Throwable
                     {
                         return new BitVector(bv);
                     }
@@ -183,6 +170,28 @@ public class MockDS
         }).when(_ds).setAggregateSyncStatus_(any(SOID.class), any(CounterVector.class),
                 any(Trans.class));
 
+    }
+
+    private SOID resolve(Path path)
+    {
+        Loggers.getLogger(MockDS.class).info("resolve {}", path);
+
+        MockDSRoot r = _roots.get(path.sid());
+        if (r == null) return null;
+
+        MockDSObject o = r;
+        for (String elem : path.elements()) {
+            if (o != null && o instanceof MockDSAnchor) {
+                o = ((MockDSAnchor)o)._root;
+            }
+            if (o == null || !(o instanceof MockDSDir)) {
+                Loggers.getLogger(MockDS.class).warn("not a dir");
+                return null;
+            }
+            o = ((MockDSDir)o)._children.get(elem);
+            Loggers.getLogger(MockDS.class).warn("  {} -> {}", elem, o != null ? o._soid : null);
+        }
+        return o != null ? o.soid() : null;
     }
 
     /**
@@ -259,10 +268,33 @@ public class MockDS
             // The path of a root object should be resolved into the anchor's SOID. So we skip
             // mocking the path resolution for roots.
             if (!root) {
-                Path path = getPath();
-                when(_ds.resolve_(_oa)).thenReturn(path);
-                mockPathResolution(path, _soid);
+                when(_ds.resolve_(_oa)).thenAnswer(new Answer<ResolvedPath>() {
+                    @Override
+                    public ResolvedPath answer(InvocationOnMock invocation) throws Throwable
+                    {
+                        return resolved();
+                    }
+                });
             }
+        }
+
+        private ResolvedPath resolved()
+        {
+            List<SOID> soids = Lists.newArrayList();
+            List<String> elems = Lists.newArrayList();
+
+            MockDSObject obj = this;
+
+            do {
+                if (obj._name.equals(OA.ROOT_DIR_NAME)) {
+                    Preconditions.checkState(obj._parent instanceof MockDSAnchor);
+                } else {
+                    soids.add(obj._soid);
+                    elems.add(obj._name);
+                }
+            } while (!((obj = obj._parent) instanceof MockDSRoot));
+
+            return new ResolvedPath(getPath().sid(), Lists.reverse(soids), Lists.reverse(elems));
         }
 
         public SOID soid()
@@ -290,17 +322,6 @@ public class MockDS
             return _soid.oid().isRoot() ? p : p.append(_name);
         }
 
-        protected void mockPathResolution(Path path, @Nullable SOID soid) throws Exception
-        {
-            if (soid == null) {
-                when(_ds.resolveNullable_(argThat(new IsEqualPathIgnoringCase(path))))
-                        .thenReturn(null);
-            } else {
-                when(_ds.resolveNullable_(argThat(new IsEqualPathIgnoringCase(path))))
-                        .thenReturn(soid);
-            }
-        }
-
         public void move(MockDSDir newParent, String newName,
                 Trans t, IDirectoryServiceListener... listeners) throws Exception
         {
@@ -312,7 +333,6 @@ public class MockDS
 
             if (newParent == oldParent) {
                 when(_oa.name()).thenReturn(newName);
-                updatePathResolution(oldPath, oldPath.removeLast().append(newName));
                 return;
             }
 
@@ -328,8 +348,6 @@ public class MockDS
             _parent.add(this);
 
             Path newPath = getPath();
-            when(_ds.resolve_(_oa)).thenReturn(newPath);
-            updatePathResolution(oldPath, newPath);
 
 
             if (_ds.isTrashOrDeleted_(_parent.soid())) {
@@ -347,12 +365,6 @@ public class MockDS
                     listener.objectMoved_(_soid, oldParent.soid().oid(), _parent.soid().oid(),
                             oldPath, newPath, t);
             }
-        }
-
-        public void updatePathResolution(Path oldPath, Path newPath) throws Exception
-        {
-            mockPathResolution(oldPath, null);
-            mockPathResolution(newPath, _soid);
         }
 
         public void delete(Trans t, IDirectoryServiceListener... listeners) throws Exception
@@ -411,8 +423,6 @@ public class MockDS
                 int kMaster = KIndex.MASTER.getInt();
                 for (int i = kMaster; i < kMaster + branches; ++i) {
                     CA ca = mock(CA.class);
-                    IPhysicalFile pf = mock(IPhysicalFile.class);
-                    when(ca.physicalFile()).thenReturn(pf);
                     cas.put(new KIndex(i), ca);
                 }
 
@@ -477,26 +487,6 @@ public class MockDS
             when(ca.mtime()).thenReturn(mtime);
             return this;
         }
-
-        public MockDSFile content(byte[] d) throws IOException
-        {
-            return content(KIndex.MASTER, d);
-        }
-
-        public MockDSFile content(KIndex kidx, byte[] d) throws IOException
-        {
-            final byte[] data = Arrays.copyOf(d, d.length);
-            IPhysicalFile pf = cas.get(kidx).physicalFile();
-            when(pf.newInputStream_()).thenAnswer(new Answer<InputStream>() {
-                @Override
-                public InputStream answer(InvocationOnMock invocation) throws Throwable
-                {
-                    return new ByteArrayInputStream(data);
-                }
-            });
-
-            return this;
-        }
     }
 
     public class MockDSDir extends MockDSObject
@@ -535,9 +525,6 @@ public class MockDS
             when(_oa.isDirOrAnchor()).thenReturn(true);
             when(_oa.isAnchor()).thenReturn(false);
 
-            IPhysicalFolder pf = mock(IPhysicalFolder.class);
-            when(_oa.physicalFolder()).thenReturn(pf);
-
             when(_ds.getSyncableChildCount_(eq(_soid))).thenAnswer(new Answer<Integer>() {
                 @Override
                 public Integer answer(InvocationOnMock invocation) throws Throwable
@@ -566,17 +553,6 @@ public class MockDS
                             return o != null ? o.soid().oid() : null;
                         }
                     });
-        }
-
-        @Override
-        public void updatePathResolution(Path oldPath, Path newPath) throws Exception
-        {
-            super.updatePathResolution(oldPath, newPath);
-
-            // recursively update path resolution for children
-            for (MockDSObject o : _children.values()) {
-                o.updatePathResolution(oldPath.append(o._name), newPath.append(o._name));
-            }
         }
 
         @Override
@@ -733,6 +709,7 @@ public class MockDS
             // create root dir
             _root = new MockDSDir(OA.ROOT_DIR_NAME, this, new SOID(sidx, OID.ROOT));
             _trash = new MockDSDir(LibParam.TRASH, _root, true, new SOID(sidx, OID.TRASH));
+            _root._children.put(LibParam.TRASH, _trash);
 
             if (!expelled) {
                 when(_ds.followAnchorNullable_(_oa)).thenReturn(_root.soid());
@@ -743,9 +720,6 @@ public class MockDS
             if (_sidx2dbm != null) {
                 when(_sidx2dbm.getDeviceMapping_(eq(sidx))).thenReturn(new DeviceBitMap());
             }
-
-            // make sure we resolve...
-            mockPathResolution(getPath(), _soid);
         }
 
         @Override
@@ -836,16 +810,11 @@ public class MockDS
 
             _sid = sid;
             _trash = new MockDSDir(LibParam.TRASH, this, true, new SOID(sidx, OID.TRASH));
+            _children.put(LibParam.TRASH, _trash);
+
+            when(_ds.resolve_(_oa)).thenReturn(ResolvedPath.root(_sid));
 
             mockSIDMap(sid, sidx);
-
-            when(_ds.resolve_(_oa)).thenReturn(Path.root(_sid));
-
-            // mock path resolution for root and trash
-            when(_ds.resolveNullable_(Path.root(sid))).thenReturn(soid());
-            when(_ds.resolveNullable_(
-                    argThat(new IsEqualPathIgnoringCase(Path.fromString(sid, LibParam.TRASH)))))
-                    .thenReturn(_trash.soid());
         }
 
         @Override

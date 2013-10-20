@@ -23,6 +23,7 @@ import com.aerofs.daemon.core.alias.MapAlias2Target;
 import com.aerofs.daemon.core.ds.CA;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
+import com.aerofs.daemon.core.ds.ResolvedPath;
 import com.aerofs.daemon.core.ex.ExAborted;
 import com.aerofs.daemon.core.ex.ExOutOfSpace;
 import com.aerofs.daemon.core.net.DigestedMessage;
@@ -845,8 +846,8 @@ public class ReceiveAndApplyUpdate
                 _iss.end_(msg.streamKey());
 
                 // Use the content from the local branch
-                IPhysicalFile file = _ds.getOA_(k.soid()).ca(localBranchWithMatchingContent)
-                        .physicalFile();
+                IPhysicalFile file = _ps.newFile_(_ds.resolve_(k.soid()),
+                        localBranchWithMatchingContent);
 
                 try {
                     InputStream is = file.newInputStream_();
@@ -1001,8 +1002,8 @@ public class ReceiveAndApplyUpdate
             // can't use the old values as the attributes might have changed
             // during pauses, due to aliasing and such
             OA oa = _ds.getOAThrows_(k.soid());
-            Path path = _ds.resolve_(oa);
-            IPhysicalFile pf = _ps.newFile_(k.sokid(), path);
+            ResolvedPath path = _ds.resolve_(oa);
+            IPhysicalFile pf = _ps.newFile_(path, k.kidx());
 
             // abort if the object is expelled. Although Download.java checks
             // for this condition before starting the download, but the object

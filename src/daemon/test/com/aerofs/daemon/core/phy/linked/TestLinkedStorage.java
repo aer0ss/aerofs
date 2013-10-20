@@ -9,6 +9,7 @@ import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UniqueID;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
+import com.aerofs.daemon.core.ds.ResolvedPath;
 import com.aerofs.daemon.core.phy.IPhysicalFile;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.phy.linked.fid.IFIDMaintainer;
@@ -22,7 +23,6 @@ import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.LibParam;
-import com.aerofs.lib.Path;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgAbsRoots;
 import com.aerofs.lib.cfg.CfgDatabase;
@@ -39,6 +39,7 @@ import com.aerofs.lib.injectable.InjectableDriver;
 import com.aerofs.lib.injectable.InjectableDriver.FIDAndType;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.testlib.AbstractTest;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import org.junit.After;
 import org.junit.Before;
@@ -155,7 +156,10 @@ public class TestLinkedStorage extends AbstractTest
         // create premove & create the PhysicalFile object. Only create the PhysicalFile
         // for post to have a "to" destination in the move call.
         pre = createNamedFile("premove");
-        post = storage.newFile_(sokid, Path.fromString(rootSID, "postmove"));
+        post = storage.newFile_(new ResolvedPath(rootSID,
+                ImmutableList.of(sokid.soid()),
+                ImmutableList.of("postmove")),
+                sokid.kidx());
 
         assert rootDir.list().length == (fcount + 1) : "Wrong # files";
         trans = tm.begin_();
@@ -356,7 +360,10 @@ public class TestLinkedStorage extends AbstractTest
 
     private IPhysicalFile createNamedFile(String fname) throws IOException
     {
-        IPhysicalFile retval = storage.newFile_(sokid, Path.fromString(rootSID, fname));
+        IPhysicalFile retval = storage.newFile_(new ResolvedPath(rootSID,
+                ImmutableList.of(sokid.soid()),
+                ImmutableList.of(fname)),
+                sokid.kidx());
         FileUtil.createNewFile(new File(retval.getAbsPath_()));
         return retval;
     }

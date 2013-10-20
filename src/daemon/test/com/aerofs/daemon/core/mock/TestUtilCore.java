@@ -15,9 +15,6 @@ import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ds.OA.Type;
 
-import com.aerofs.daemon.core.phy.IPhysicalFile;
-import com.aerofs.daemon.core.phy.IPhysicalFolder;
-
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.Tick;
 import com.aerofs.lib.Version;
@@ -72,13 +69,11 @@ public class TestUtilCore
                 // don't use .then(RETURNS_MOCKS) here so the client can verify
                 // on the mocked object
                 when(oa.isDir()).thenReturn(true);
-                when(oa.physicalFolder()).thenReturn(mock(IPhysicalFolder.class));
                 break;
             case ANCHOR:
                 // don't use .then(RETURNS_MOCKS) here so the client can verify
                 // on the mocked object
                 when(oa.isAnchor()).thenReturn(true);
-                when(oa.physicalFolder()).thenReturn(mock(IPhysicalFolder.class));
                 break;
             default:
                 assertFalse(true);
@@ -96,10 +91,6 @@ public class TestUtilCore
             throws ExNotFound
     {
         CA ca = mock(CA.class);
-
-        // don't use .then(RETURNS_MOCKS) here so the client can verify
-        // on the mocked object
-        when(ca.physicalFile()).thenReturn(mock(IPhysicalFile.class));
 
         when(ca.length()).thenReturn(len);
         when(ca.mtime()).thenReturn(mtime);

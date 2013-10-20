@@ -4,15 +4,22 @@ import com.aerofs.base.BaseSecUtil;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
+import com.aerofs.daemon.core.phy.IPhysicalFile;
+import com.aerofs.lib.Path;
+import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.SOID;
 import com.google.common.io.ByteStreams;
 import com.jayway.restassured.response.Response;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 
 import javax.mail.internet.MimeMultipart;
 import javax.mail.util.ByteArrayDataSource;
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Date;
 
@@ -21,6 +28,8 @@ import static com.jayway.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.isEmptyString;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class TestFileResource extends AbstractRestTest
@@ -36,11 +45,27 @@ public class TestFileResource extends AbstractRestTest
         super(useProxy);
     }
 
+    void mockContent(String path, final byte[] content) throws Exception
+    {
+        mds.root().file(path).caMaster(content.length, FILE_MTIME);
+        IPhysicalFile pf = mock(IPhysicalFile.class);
+        when(pf.newInputStream_()).thenAnswer(new Answer<InputStream>() {
+            @Override
+            public InputStream answer(InvocationOnMock invocation) throws Throwable
+            {
+                return new ByteArrayInputStream(content);
+            }
+        });
+        when(ps.newFile_(eq(ds.resolve_(ds.resolveThrows_(Path.fromString(rootSID, path)))),
+                eq(KIndex.MASTER)))
+                .thenReturn(pf);
+    }
+
     @Before
     public void mockFile() throws Exception
     {
-        mds.root().file("f1").caMaster(FILE_CONTENT.length, FILE_MTIME).content(FILE_CONTENT);
-        mds.root().file("f1.txt").caMaster(FILE_CONTENT.length, FILE_MTIME).content(FILE_CONTENT);
+        mockContent("f1", FILE_CONTENT);
+        mockContent("f1.txt", FILE_CONTENT);
         when(nvc.getVersionHash_(any(SOID.class))).thenReturn(VERSION_HASH);
     }
 
