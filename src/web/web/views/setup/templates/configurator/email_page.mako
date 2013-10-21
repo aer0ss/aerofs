@@ -54,7 +54,11 @@
             </div>
         </div>
 
-        <p>AeroFS sends emails to users for various purposes: sign up verification, folder invitations, and so on. A functional email server is required.</p>
+        <label for="foo" class="checkbox">
+            <input name="foo" type="checkbox" checked disabled>Enable TLS encryption <small>(plaintext STMP not supported at this moment)</small>
+        </label>
+
+        <p style="margin-top: 8px">AeroFS sends emails to users for various purposes: sign up verification, folder invitations, and so on. A functional email server is required.</p>
     </div>
 
     <div class="page_block">
