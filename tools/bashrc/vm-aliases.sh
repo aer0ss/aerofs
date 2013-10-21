@@ -8,7 +8,8 @@ fi
 alias lp-create="$VMTOOL create"
 alias lp-start="$VMTOOL start"
 alias lp-halt="$VMTOOL halt"
-alias lp-kill="$VMTOOL kill"
+# Avoid lp-kill as it is often misused by novice users (i.e. WW) when they attempt to shutdown the VM.
+alias lp-destroy="$VMTOOL kill"
 alias lp-kick="$VMTOOL kick"
 alias lp-deploy="$VMTOOL deploy"
 alias lp-ssh="$VMTOOL ssh"
