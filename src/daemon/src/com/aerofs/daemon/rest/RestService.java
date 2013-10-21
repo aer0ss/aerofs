@@ -78,17 +78,6 @@ public class RestService extends AbstractNettyServer
         return super.start();
     }
 
-    public void addShutdownHook()
-    {
-        Runtime.getRuntime().addShutdownHook(new Thread() {
-            @Override
-            public void run()
-            {
-                RestService.this.stop();
-            }
-        });
-    }
-
     @Override
     protected ChannelPipelineFactory pipelineFactory()
     {

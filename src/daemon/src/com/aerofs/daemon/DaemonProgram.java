@@ -125,7 +125,6 @@ public class DaemonProgram implements IProgram
         if (Cfg.user().isAeroFSUser()) {
             RestService rest = injCore.getInstance(RestService.class);
             rest.start();
-            rest.addShutdownHook();
         }
 
         return d;
