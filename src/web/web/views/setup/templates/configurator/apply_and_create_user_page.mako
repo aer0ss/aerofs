@@ -205,11 +205,11 @@
 
     ## Stage 2: wait until the configuration process is complete
     ## TODO (WW) add timeouts
+    var bootstrapPollInterval;
     function pollForBootstrap() {
-        var bootstrapPollInterval = window.setInterval(function() {
+        bootstrapPollInterval = window.setInterval(function() {
             $.post("${request.route_path('json_setup_poll')}", getSerializedFormData())
             .done(function (response) {
-                window.clearInterval(bootstrapPollInterval);
                 finalizeConfigurationIfCompleted(response);
             }).fail(function (xhr) {
                 ## TODO (MP) If 200 or 503 continue, otherwise bail. Need smarter integration with bootstrap here.
@@ -221,6 +221,7 @@
     ## Stage 3: ask the system to finalize the configuration
     function finalizeConfigurationIfCompleted(response) {
         if (response['completed'] == true) {
+            window.clearInterval(bootstrapPollInterval);
             setTimeout(function() {
                 doPost("${request.route_path('json_setup_finalize')}",
                         getSerializedFormData(), pollForWebServerReadiness);
