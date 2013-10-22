@@ -237,21 +237,19 @@ public class CoreSchema implements ISchema
             C_UN_TIME        = "un_t";      // long. the time when the entry is added
 
 
-    private final IDBCW _dbcw;
     private final InjectableDriver _dr;
 
     @Inject
-    public CoreSchema(CoreDBCW dbcw, InjectableDriver dr)
+    public CoreSchema(InjectableDriver dr)
     {
-        _dbcw = dbcw.get();
         _dr = dr;
     }
 
     @Override
-    public void create_(Statement s) throws SQLException
+    public void create_(Statement s, IDBCW dbcw) throws SQLException
     {
         // TODO (AAG) all updates have to detect MySQL and use engine=InnoDB
-        assert !_dbcw.isMySQL();
+        assert !dbcw.isMySQL();
 
         // TODO use strict affinity once it's implemented in sqlite
 
@@ -260,14 +258,14 @@ public class CoreSchema implements ISchema
         s.executeUpdate(
                 "create table " + T_VER + "(" +
                     C_VER_SIDX + " integer not null," +
-                    C_VER_OID + _dbcw.uniqueIdType() + " not null,"+
+                    C_VER_OID + dbcw.uniqueIdType() + " not null,"+
                     C_VER_CID + " integer not null," +
                     C_VER_KIDX + " integer not null," +
-                    C_VER_DID + _dbcw.uniqueIdType() + "not null, "+
-                    C_VER_TICK + _dbcw.longType() + " not null," +
+                    C_VER_DID + dbcw.uniqueIdType() + "not null, "+
+                    C_VER_TICK + dbcw.longType() + " not null," +
                     "primary key (" + C_VER_SIDX + "," + C_VER_OID + "," +
                         C_VER_CID + "," + C_VER_DID + "," + C_VER_KIDX + ")" +
-                ")" + _dbcw.charSet());
+                ")" + dbcw.charSet());
 
         /*
          * used by:
@@ -293,34 +291,34 @@ public class CoreSchema implements ISchema
         s.executeUpdate(
                 "create table " + T_BKUPT + "(" +
                     C_BKUPT_SIDX + " integer not null," +
-                    C_BKUPT_OID + _dbcw.uniqueIdType() + " not null," +
+                    C_BKUPT_OID + dbcw.uniqueIdType() + " not null," +
                     C_BKUPT_CID + " integer not null," +
-                    C_BKUPT_TICK + _dbcw.longType() + " not null," +
+                    C_BKUPT_TICK + dbcw.longType() + " not null," +
                     "primary key (" + C_BKUPT_SIDX + "," + C_BKUPT_OID + "," +
                         C_BKUPT_CID + ")" +
-                ")" + _dbcw.charSet());
+                ")" + dbcw.charSet());
 
 
         s.executeUpdate(
                 "create table " + T_KWLG + "(" +
                     C_KWLG_SIDX + " integer not null," +
-                    C_KWLG_DID + _dbcw.uniqueIdType() + " not null," +
-                    C_KWLG_TICK + _dbcw.longType() + " not null," +
+                    C_KWLG_DID + dbcw.uniqueIdType() + " not null," +
+                    C_KWLG_TICK + dbcw.longType() + " not null," +
                     "primary key (" + C_KWLG_SIDX + "," + C_KWLG_DID + ")" +
-                ")" + _dbcw.charSet());
+                ")" + dbcw.charSet());
 
         s.executeUpdate(
                 "create table " + T_IV + "(" +
                     C_IV_SIDX + " integer not null," +
-                    C_IV_OID + _dbcw.uniqueIdType() + " not null," +
+                    C_IV_OID + dbcw.uniqueIdType() + " not null," +
                     C_IV_CID + " integer not null," +
-                    C_IV_DID + _dbcw.uniqueIdType() + "not null, " +
-                    C_IV_TICK + _dbcw.longType() + " not null," +
-                    C_IV_IMM_DID + _dbcw.uniqueIdType() + " not null, " +
-                    C_IV_IMM_TICK + _dbcw.longType() + " not null," +
+                    C_IV_DID + dbcw.uniqueIdType() + "not null, " +
+                    C_IV_TICK + dbcw.longType() + " not null," +
+                    C_IV_IMM_DID + dbcw.uniqueIdType() + " not null, " +
+                    C_IV_IMM_TICK + dbcw.longType() + " not null," +
                     "primary key (" + C_IV_SIDX + "," + C_IV_OID + "," +
                         C_IV_CID + "," + C_IV_DID + ")" +
-                ")" + _dbcw.charSet());
+                ")" + dbcw.charSet());
 
         /* used by:
          * 1. getImmigrantTicks_()
@@ -334,44 +332,44 @@ public class CoreSchema implements ISchema
         s.executeUpdate(
                 "create table " + T_IK + "(" +
                     C_IK_SIDX + " integer not null," +
-                    C_IK_IMM_DID + _dbcw.uniqueIdType() + " not null,"+
-                    C_IK_IMM_TICK + _dbcw.longType() + " not null," +
+                    C_IK_IMM_DID + dbcw.uniqueIdType() + " not null,"+
+                    C_IK_IMM_TICK + dbcw.longType() + " not null," +
                     "primary key (" + C_IK_SIDX + "," + C_IK_IMM_DID + ")" +
-                ")" + _dbcw.charSet());
+                ")" + dbcw.charSet());
 
 
         s.executeUpdate(
                 "create table " + T_IBT + "(" +
                     C_IBT_SIDX + " integer not null," +
-                    C_IBT_OID + _dbcw.uniqueIdType() + " not null," +
+                    C_IBT_OID + dbcw.uniqueIdType() + " not null," +
                     C_IBT_CID + " integer not null," +
-                    C_IBT_DID + _dbcw.uniqueIdType() + " not null, " +
-                    C_IBT_TICK + _dbcw.longType() + " not null," +
-                    C_IBT_IMM_TICK + _dbcw.longType() + " not null," +
+                    C_IBT_DID + dbcw.uniqueIdType() + " not null, " +
+                    C_IBT_TICK + dbcw.longType() + " not null," +
+                    C_IBT_IMM_TICK + dbcw.longType() + " not null," +
                     "primary key (" + C_IBT_SIDX + "," + C_IBT_OID + "," + C_IBT_CID + "," +
                     C_IBT_DID + ")" +
-                ")" + _dbcw.charSet());
+                ")" + dbcw.charSet());
 
         s.executeUpdate(
                 "create table " + T_SID + "(" +
-                    C_SID_SIDX + " integer primary key " + _dbcw.autoIncrement() +"," +
-                    C_SID_SID + _dbcw.uniqueIdType() + " unique not null" +
-                ")" + _dbcw.charSet());
+                    C_SID_SIDX + " integer primary key " + dbcw.autoIncrement() +"," +
+                    C_SID_SID + dbcw.uniqueIdType() + " unique not null" +
+                ")" + dbcw.charSet());
 
         s.executeUpdate(
                 "create table " + T_OA  + "(" +
                     C_OA_SIDX + " integer not null," +
-                    C_OA_OID + _dbcw.uniqueIdType() + " not null," +
-                    C_OA_NAME + _dbcw.nameType() + " not null collate " +
-                            _dbcw.collateIgnoreCase() + "," +
-                    C_OA_PARENT + _dbcw.uniqueIdType() + " not null," +
+                    C_OA_OID + dbcw.uniqueIdType() + " not null," +
+                    C_OA_NAME + dbcw.nameType() + " not null collate " +
+                            dbcw.collateIgnoreCase() + "," +
+                    C_OA_PARENT + dbcw.uniqueIdType() + " not null," +
                     C_OA_TYPE + " integer not null, " +
-                    C_OA_FID + _dbcw.fidType(_dr.getFIDLength()) + "," +
+                    C_OA_FID + dbcw.fidType(_dr.getFIDLength()) + "," +
                     C_OA_FLAGS + " integer not null," +
                     C_OA_SYNC + " blob," +
                     C_OA_AG_SYNC + " blob," +
                     "primary key (" + C_OA_SIDX + "," + C_OA_OID + ")" +
-                ")" + _dbcw.charSet());
+                ")" + dbcw.charSet());
 
         // for name conflict detection and getChild()
         s.executeUpdate(
@@ -385,14 +383,14 @@ public class CoreSchema implements ISchema
         s.executeUpdate(
                 "create table " + T_CA + "(" +
                     C_CA_SIDX + " integer not null," +
-                    C_CA_OID + _dbcw.uniqueIdType() + " not null," +
+                    C_CA_OID + dbcw.uniqueIdType() + " not null," +
                     C_CA_KIDX + " integer not null," +
-                    C_CA_LENGTH + _dbcw.longType() + " not null," +
+                    C_CA_LENGTH + dbcw.longType() + " not null," +
                     C_CA_HASH +  " blob,  " +
-                    C_CA_MTIME + _dbcw.longType() + ", " +
+                    C_CA_MTIME + dbcw.longType() + ", " +
                     "primary key (" + C_CA_SIDX + "," + C_CA_OID + "," +
                     C_CA_KIDX + ")" +
-                ")" + _dbcw.charSet());
+                ")" + dbcw.charSet());
 
         // for getAllNonMasterBranches_()
         createCAIndex(s);
@@ -400,13 +398,13 @@ public class CoreSchema implements ISchema
         s.executeUpdate(
                 "create table " + T_PRE + "(" +
                     C_PRE_SIDX + " integer not null," +
-                    C_PRE_OID + _dbcw.uniqueIdType() + " not null," +
+                    C_PRE_OID + dbcw.uniqueIdType() + " not null," +
                     C_PRE_KIDX + " integer not null," +
-                    C_PRE_DID + _dbcw.uniqueIdType() + " not null," +
-                    C_PRE_TICK + _dbcw.longType() + " not null," +
+                    C_PRE_DID + dbcw.uniqueIdType() + " not null," +
+                    C_PRE_TICK + dbcw.longType() + " not null," +
                     "primary key (" + C_PRE_SIDX + "," + C_PRE_OID + "," +
                         C_PRE_KIDX + "," + C_PRE_DID + ")" +
-                ")" + _dbcw.charSet());
+                ")" + dbcw.charSet());
 
         /*
          * The mt (maxticks) table was created to solve performance problems with the GetVers query.
@@ -426,13 +424,13 @@ public class CoreSchema implements ISchema
         s.executeUpdate(
                 "create table " + T_MAXTICK + "(" +
                     C_MAXTICK_SIDX + " integer not null, " +
-                    C_MAXTICK_OID + _dbcw.uniqueIdType() + " not null, " +
+                    C_MAXTICK_OID + dbcw.uniqueIdType() + " not null, " +
                     C_MAXTICK_CID + " integer not null, " +
-                    C_MAXTICK_DID + _dbcw.uniqueIdType() + " not null, " +
-                    C_MAXTICK_MAX_TICK + _dbcw.longType() + " not null, " +
+                    C_MAXTICK_DID + dbcw.uniqueIdType() + " not null, " +
+                    C_MAXTICK_MAX_TICK + dbcw.longType() + " not null, " +
                     "primary key (" + C_MAXTICK_SIDX + ", " + C_MAXTICK_OID +
                     ", " + C_MAXTICK_CID + ", " + C_MAXTICK_DID + ")" +
-                    ")" + _dbcw.charSet());
+                    ")" + dbcw.charSet());
 
         // for getTicks_()
         s.executeUpdate(
@@ -443,38 +441,38 @@ public class CoreSchema implements ISchema
 
         s.executeUpdate(
                 "create table " + T_CS + "(" +
-                C_CS_CS + _dbcw.longType() + " primary key " + _dbcw.autoIncrement() + "," +
+                C_CS_CS + dbcw.longType() + " primary key " + dbcw.autoIncrement() + "," +
                 C_CS_SIDX + " integer not null," +
-                C_CS_OID + _dbcw.uniqueIdType() + "not null," +
+                C_CS_OID + dbcw.uniqueIdType() + "not null," +
                 C_CS_CID + " integer not null," +
                 "unique (" + C_CS_SIDX + "," + C_CS_OID + "," + C_CS_CID + ")" +
-                ")" + _dbcw.charSet());
+                ")" + dbcw.charSet());
 
         createIndexForCSTable(s);
 
         s.executeUpdate(
                 "create table " + T_CF + " (" +
                 C_CF_SIDX + " integer not null," +
-                C_CF_DID + _dbcw.uniqueIdType() + "not null," +
-                C_CF_FILTER + _dbcw.bloomFilterType() + " not null," +
+                C_CF_DID + dbcw.uniqueIdType() + "not null," +
+                C_CF_FILTER + dbcw.bloomFilterType() + " not null," +
                 "primary key (" + C_CF_SIDX + "," + C_CF_DID + ")" +
-                ")" + _dbcw.charSet());
+                ")" + dbcw.charSet());
 
         s.executeUpdate(
                 "create table " + T_SF + " (" +
                 C_SF_SIDX + " integer not null," +
-                C_SF_SFIDX + _dbcw.longType() + "not null," +
-                C_SF_FILTER + _dbcw.bloomFilterType() + " not null," +
+                C_SF_SFIDX + dbcw.longType() + "not null," +
+                C_SF_FILTER + dbcw.bloomFilterType() + " not null," +
                 "primary key (" + C_SF_SIDX + "," + C_SF_SFIDX + ")" +
-                ")" + _dbcw.charSet());
+                ")" + dbcw.charSet());
 
         s.executeUpdate(
                 "create table " + T_SD + " (" +
                 C_SD_SIDX + " integer not null," +
-                C_SD_DID + _dbcw.uniqueIdType() + " not null," +
-                C_SD_SFIDX + _dbcw.longType() + " not null," +
+                C_SD_DID + dbcw.uniqueIdType() + " not null," +
+                C_SD_SFIDX + dbcw.longType() + " not null," +
                 "primary key (" + C_SD_SIDX + "," + C_SD_DID + ")" +
-                ")" + _dbcw.charSet());
+                ")" + dbcw.charSet());
 
         // for getSenderDeviceIndexCount()
         s.executeUpdate(
@@ -485,10 +483,10 @@ public class CoreSchema implements ISchema
         s.executeUpdate(
                 "create table " + T_ALIAS + " (" +
                  C_ALIAS_SIDX + " integer not null," +
-                 C_ALIAS_SOURCE_OID + _dbcw.uniqueIdType() + " not null, " +
-                 C_ALIAS_TARGET_OID + _dbcw.uniqueIdType() + " not null, " +
+                 C_ALIAS_SOURCE_OID + dbcw.uniqueIdType() + " not null, " +
+                 C_ALIAS_TARGET_OID + dbcw.uniqueIdType() + " not null, " +
                  "primary key (" + C_ALIAS_SIDX + "," + C_ALIAS_SOURCE_OID + ")" +
-                 ")" + _dbcw.charSet());
+                 ")" + dbcw.charSet());
 
         // for resolveAliasChaining_()
         s.executeUpdate(
@@ -497,8 +495,8 @@ public class CoreSchema implements ISchema
 
         s.executeUpdate(
                 "create table " + T_GT + " (" +
-                C_GT_NATIVE + _dbcw.longType() + "," +
-                C_GT_IMMIGRANT + _dbcw.longType() + ")" + _dbcw.charSet());
+                C_GT_NATIVE + dbcw.longType() + "," +
+                C_GT_IMMIGRANT + dbcw.longType() + ")" + dbcw.charSet());
         s.executeUpdate(
                 "insert into " + T_GT + " (" + C_GT_NATIVE + "," +
                         C_GT_IMMIGRANT + ") values (0,0)");
@@ -506,31 +504,31 @@ public class CoreSchema implements ISchema
         s.executeUpdate(
                 "create table " + T_PD + " (" +
                 C_PD_SIDX + " integer not null, " +
-                C_PD_DID + _dbcw.uniqueIdType() + " not null, " +
+                C_PD_DID + dbcw.uniqueIdType() + " not null, " +
                 "primary key (" + C_PD_SIDX + "," + C_PD_DID + ")" +
-                ")" + _dbcw.charSet());
+                ")" + dbcw.charSet());
 
         s.executeUpdate(
                 "create table " + T_EX + " (" +
                 C_EX_SIDX + " integer not null, " +
-                C_EX_OID + _dbcw.uniqueIdType() + " not null, " +
+                C_EX_OID + dbcw.uniqueIdType() + " not null, " +
                 "primary key (" + C_EX_SIDX + "," + C_EX_OID + ")" +
-                ")" + _dbcw.charSet());
+                ")" + dbcw.charSet());
 
         s.executeUpdate(
                 "create table " + T_ACL + " (" +
                 C_ACL_SIDX + " integer not null, " +
-                C_ACL_SUBJECT + _dbcw.userIdType() + " not null, " +
-                C_ACL_ROLE + _dbcw.roleType() + " not null, " +
+                C_ACL_SUBJECT + dbcw.userIdType() + " not null, " +
+                C_ACL_ROLE + dbcw.roleType() + " not null, " +
                 "primary key (" + C_ACL_SIDX + "," + C_ACL_SUBJECT + ")" +
-                ")" + _dbcw.charSet());
+                ")" + dbcw.charSet());
 
         s.executeUpdate(
                 "create table " + T_EPOCH + " (" +
-                        C_EPOCH_ACL + _dbcw.longType() + " not null," +
-                        C_EPOCH_SYNC_PULL + _dbcw.longType() + " not null," +
-                        C_EPOCH_SYNC_PUSH + _dbcw.longType() + " not null" +
-                        ")" + _dbcw.charSet());
+                        C_EPOCH_ACL + dbcw.longType() + " not null," +
+                        C_EPOCH_SYNC_PULL + dbcw.longType() + " not null," +
+                        C_EPOCH_SYNC_PUSH + dbcw.longType() + " not null" +
+                        ")" + dbcw.charSet());
         s.executeUpdate(
                 "insert into " + T_EPOCH +
                         " (" +
@@ -544,12 +542,12 @@ public class CoreSchema implements ISchema
                             LibParam.INITIAL_SYNC_PUSH_EPOCH +
                         ")");
 
-        createStoreTables(s, _dbcw);
-        createActivityLogTables(s, _dbcw);
-        createSyncStatusPushQueueTable(s, _dbcw);
-        createLeaveQueueTable(s, _dbcw);
-        createPendingRootTable(s, _dbcw);
-        createStoreContributorsTable(s, _dbcw);
+        createStoreTables(s, dbcw);
+        createActivityLogTables(s, dbcw);
+        createSyncStatusPushQueueTable(s, dbcw);
+        createLeaveQueueTable(s, dbcw);
+        createPendingRootTable(s, dbcw);
+        createStoreContributorsTable(s, dbcw);
     }
 
     public static void createStoreContributorsTable(Statement s, IDBCW dbcw)
@@ -564,9 +562,9 @@ public class CoreSchema implements ISchema
     }
 
     @Override
-    public void dump_(PrintStream ps) throws IOException, SQLException
+    public void dump_(Statement s, PrintStream ps) throws IOException, SQLException
     {
-        new CoreDatabaseDumper(_dbcw, _dr).dumpAll_(ps, true);
+        new CoreDatabaseDumper(_dr).dumpAll_(s, ps, true);
     }
 
     public static void createStoreTables(Statement s, IDBCW dbcw)

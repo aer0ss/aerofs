@@ -5,6 +5,7 @@ import static com.aerofs.daemon.lib.db.CoreSchema.*;
 import java.io.PrintStream;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
@@ -37,20 +38,13 @@ import com.google.inject.Inject;
  * This class dumps the core database in an application specific way, e.g. it uses short format for
  * UniqueIDs and custom format for bloom filters.
  */
-public class CoreDatabaseDumper extends AbstractDatabase
+public class CoreDatabaseDumper
 {
     private final InjectableDriver _dr;
 
-    public CoreDatabaseDumper(IDBCW dbcw, InjectableDriver dr)
-    {
-        super(dbcw);
-        _dr = dr;
-    }
-
     @Inject
-    public CoreDatabaseDumper(CoreDBCW dbcw, InjectableDriver dr)
+    public CoreDatabaseDumper(InjectableDriver dr)
     {
-        super(dbcw.get());
         _dr = dr;
     }
 
@@ -58,66 +52,66 @@ public class CoreDatabaseDumper extends AbstractDatabase
     // caller could instantiate class of required table and call over-ridden
     // dump method. This would require having separate dump class for each
     // table in Database.
-    public void dumpAll_(PrintStream ps, boolean formal)
+    public void dumpAll_(Statement s, PrintStream ps, boolean formal)
         throws SQLException
     {
-        dumpSID_(ps, formal);
+        dumpSID_(s, ps, formal);
         ps.println();
-        dumpStore_(ps);
+        dumpStore_(s, ps);
         ps.println();
-        dumpStoreParent_(ps);
+        dumpStoreParent_(s, ps);
         ps.println();
-        dumpPrefix_(ps, formal);
+        dumpPrefix_(s, ps, formal);
         ps.println();
-        dumpVer_(ps, formal);
+        dumpVer_(s, ps, formal);
         ps.println();
-        dumpMaxTick_(ps, formal);
+        dumpMaxTick_(s, ps, formal);
         ps.println();
-        dumpIV_(ps, formal);
+        dumpIV_(s, ps, formal);
         ps.println();
-        dumpAttr_(ps, formal);
+        dumpAttr_(s, ps, formal);
         ps.println();
-        dumpContent_(ps, formal);
+        dumpContent_(s, ps, formal);
         ps.println();
-        dumpKwlg_(ps, formal);
+        dumpKwlg_(s, ps, formal);
         ps.println();
-        dumpIK_(ps, formal);
+        dumpIK_(s, ps, formal);
         ps.println();
-        dumpGreatestTick_(ps);
+        dumpGreatestTick_(s, ps);
         ps.println();
-        dumpSF_(ps);
+        dumpSF_(s, ps);
         ps.println();
-        dumpSD_(ps);
+        dumpSD_(s, ps);
         ps.println();
-        dumpCF_(ps);
+        dumpCF_(s, ps);
         ps.println();
-        dumpCS_(ps);
+        dumpCS_(s, ps);
         ps.println();
-        dumpAlias_(ps, formal);
+        dumpAlias_(s, ps, formal);
         ps.println();
-        dumpNativeBackupTicks_(ps);
+        dumpNativeBackupTicks_(s, ps);
         ps.println();
-        dumpImmigrantBackupTicks_(ps, formal);
+        dumpImmigrantBackupTicks_(s, ps, formal);
         ps.println();
-        dumpPulledDevice(ps, formal);
+        dumpPulledDevice(s, ps, formal);
         ps.println();
-        dumpExpulsion_(ps, formal);
+        dumpExpulsion_(s, ps, formal);
         ps.println();
-        dumpACL_(ps);
+        dumpACL_(s, ps);
         ps.println();
-        dumpEpoch_(ps);
+        dumpEpoch_(s, ps);
         ps.println();
-        dumpD2U_(ps, formal);
+        dumpD2U_(s, ps, formal);
         ps.println();
-        dumpAL_(ps, formal);
+        dumpAL_(s, ps, formal);
         ps.println();
-        dumpSyncStatPushQueue_(ps, formal);
+        dumpSyncStatPushQueue_(s, ps, formal);
         ps.println();
     }
 
-    private void dumpKwlg_(PrintStream ps, boolean formal) throws SQLException
+    private void dumpKwlg_(Statement s, PrintStream ps, boolean formal) throws SQLException
     {
-        ResultSet rs = c().createStatement().executeQuery(
+        ResultSet rs = s.executeQuery(
                 "select " + C_KWLG_SIDX + "," + C_KWLG_DID + "," + C_KWLG_TICK
                         + " from " + T_KWLG);
         ps.println("============ " + T_KWLG + " ===============");
@@ -137,9 +131,9 @@ public class CoreDatabaseDumper extends AbstractDatabase
         }
     }
 
-    private void dumpIK_(PrintStream ps, boolean formal) throws SQLException
+    private void dumpIK_(Statement s, PrintStream ps, boolean formal) throws SQLException
     {
-        ResultSet rs = c().createStatement().executeQuery(
+        ResultSet rs = s.executeQuery(
                 "select " + C_IK_SIDX + "," + C_IK_IMM_DID + "," + C_IK_IMM_TICK
                         + " from " + T_IK);
         ps.println("============ " + T_IK + " ==============");
@@ -159,12 +153,12 @@ public class CoreDatabaseDumper extends AbstractDatabase
         }
     }
 
-    public void dumpAttr_(PrintStream ps, boolean formal) throws SQLException
+    public void dumpAttr_(Statement s, PrintStream ps, boolean formal) throws SQLException
     {
         StringBuilder sbNullFID = new StringBuilder("null");
         for (int i = 0; i < _dr.getFIDLength() * 2 - 4; i++) sbNullFID.append(' ');
 
-        ResultSet rs = c().createStatement().executeQuery(
+        ResultSet rs = s.executeQuery(
                 "select " + C_OA_SIDX + "," + C_OA_OID + "," + C_OA_NAME
                         + "," + C_OA_PARENT + "," + C_OA_TYPE + "," +
                         C_OA_FLAGS + "," + C_OA_FID + "," + C_OA_SYNC + "," + C_OA_AG_SYNC +
@@ -214,12 +208,12 @@ public class CoreDatabaseDumper extends AbstractDatabase
         }
     }
 
-    public void dumpSyncStatPushQueue_(PrintStream ps, boolean formal) throws SQLException
+    public void dumpSyncStatPushQueue_(Statement s, PrintStream ps, boolean formal) throws SQLException
     {
         StringBuilder sbNullFID = new StringBuilder("null");
         for (int i = 0; i < _dr.getFIDLength() * 2 - 4; i++) sbNullFID.append(' ');
 
-        ResultSet rs = c().createStatement().executeQuery(
+        ResultSet rs = s.executeQuery(
                 "select " + C_SSPQ_SIDX + "," + C_SSPQ_OID + " from " + T_SSPQ +
                         " order by " + C_SSPQ_IDX);
         ps.println("================== " + T_SSPQ + " =====================");
@@ -238,9 +232,9 @@ public class CoreDatabaseDumper extends AbstractDatabase
         }
     }
 
-    private void dumpContent_(PrintStream ps, boolean formal) throws SQLException
+    private void dumpContent_(Statement s, PrintStream ps, boolean formal) throws SQLException
     {
-        ResultSet rs = c().createStatement().executeQuery(
+        ResultSet rs = s.executeQuery(
                 "select " + C_CA_SIDX + "," + C_CA_OID + "," + C_CA_KIDX + ","
                         + C_CA_LENGTH + "," + C_CA_MTIME +  "," + C_CA_HASH +
                         " from " + T_CA + " order by " + C_CA_SIDX + ", " +
@@ -271,9 +265,9 @@ public class CoreDatabaseDumper extends AbstractDatabase
         }
     }
 
-    private void dumpPrefix_(PrintStream ps, boolean formal) throws SQLException
+    private void dumpPrefix_(Statement s, PrintStream ps, boolean formal) throws SQLException
     {
-        ResultSet rs = c().createStatement().executeQuery(
+        ResultSet rs = s.executeQuery(
                 "select " + C_PRE_SIDX + "," + C_PRE_OID
                         + "," + C_PRE_KIDX + "," + C_PRE_DID + "," + C_PRE_TICK
                         + " from " + T_PRE);
@@ -298,9 +292,9 @@ public class CoreDatabaseDumper extends AbstractDatabase
         }
     }
 
-    public void dumpVer_(PrintStream ps, boolean formal) throws SQLException
+    public void dumpVer_(Statement s, PrintStream ps, boolean formal) throws SQLException
     {
-        ResultSet rs = c().createStatement().executeQuery(
+        ResultSet rs = s.executeQuery(
                 "select " + C_VER_SIDX + "," + C_VER_OID + "," + C_VER_CID
                         + "," + C_VER_DID + "," + C_VER_TICK + "," + C_VER_KIDX
                         + " from " + T_VER + " order by "
@@ -329,9 +323,9 @@ public class CoreDatabaseDumper extends AbstractDatabase
         }
     }
 
-    private void dumpMaxTick_(PrintStream ps, boolean formal) throws SQLException
+    private void dumpMaxTick_(Statement s, PrintStream ps, boolean formal) throws SQLException
     {
-        ResultSet rs = c().createStatement().executeQuery(
+        ResultSet rs = s.executeQuery(
                 "select " + C_MAXTICK_SIDX + "," + C_MAXTICK_OID + "," + C_MAXTICK_CID
                         + "," + C_MAXTICK_DID + "," + C_MAXTICK_MAX_TICK
                         + " from " + T_MAXTICK);
@@ -356,9 +350,9 @@ public class CoreDatabaseDumper extends AbstractDatabase
         }
     }
 
-    private void dumpGreatestTick_(PrintStream ps) throws SQLException
+    private void dumpGreatestTick_(Statement s, PrintStream ps) throws SQLException
     {
-        ResultSet rs = c().createStatement().executeQuery(
+        ResultSet rs = s.executeQuery(
                 "select " + C_GT_NATIVE + "," + C_GT_IMMIGRANT + " from " + T_GT);
         ps.println("============ " + T_GT + " ==============");
         ps.println(C_GT_NATIVE + "\t" + C_GT_IMMIGRANT);
@@ -371,9 +365,9 @@ public class CoreDatabaseDumper extends AbstractDatabase
         }
     }
 
-    private void dumpIV_(PrintStream ps, boolean formal) throws SQLException
+    private void dumpIV_(Statement s, PrintStream ps, boolean formal) throws SQLException
     {
-        ResultSet rs = c().createStatement().executeQuery(
+        ResultSet rs = s.executeQuery(
                 "select " + C_IV_SIDX + "," + C_IV_IMM_DID + "," + C_IV_IMM_TICK +
                     "," + C_IV_OID + "," + C_IV_CID + "," + C_IV_DID + "," +
                         C_IV_TICK + " from " + T_IV);
@@ -402,10 +396,10 @@ public class CoreDatabaseDumper extends AbstractDatabase
         }
     }
 
-    private void dumpSID_(PrintStream ps, boolean formal)
+    private void dumpSID_(Statement s, PrintStream ps, boolean formal)
             throws SQLException
     {
-        ResultSet rs = c().createStatement().executeQuery(
+        ResultSet rs = s.executeQuery(
                 "select " + C_SID_SIDX + "," + C_SID_SID + " from " + T_SID);
         ps.println("================== " + T_SID + " =====================");
         ps.println(C_SID_SIDX + "\t" + C_SID_SID);
@@ -417,10 +411,10 @@ public class CoreDatabaseDumper extends AbstractDatabase
         }
     }
 
-    private void dumpStore_(PrintStream ps)
+    private void dumpStore_(Statement s, PrintStream ps)
             throws SQLException
     {
-        ResultSet rs = c().createStatement().executeQuery(
+        ResultSet rs = s.executeQuery(
                 "select " + C_STORE_SIDX + "," + C_STORE_DIDS +
                 " from " + T_STORE);
         ps.println("================== " + T_STORE + " =====================");
@@ -439,10 +433,10 @@ public class CoreDatabaseDumper extends AbstractDatabase
         }
     }
 
-    private void dumpStoreParent_(PrintStream ps)
+    private void dumpStoreParent_(Statement s, PrintStream ps)
             throws SQLException
     {
-        ResultSet rs = c().createStatement().executeQuery(
+        ResultSet rs = s.executeQuery(
                 "select " + C_SH_SIDX + "," + C_SH_PARENT_SIDX +
                         " from " + T_SH);
         ps.println("================== " + T_SH + " =====================");
@@ -455,9 +449,9 @@ public class CoreDatabaseDumper extends AbstractDatabase
         }
     }
 
-    private void dumpSF_(PrintStream ps) throws SQLException
+    private void dumpSF_(Statement s, PrintStream ps) throws SQLException
     {
-        ResultSet rs = c().createStatement().executeQuery(
+        ResultSet rs = s.executeQuery(
                 "select " + C_SF_SIDX + "," + C_SF_SFIDX + ","
                         + C_SF_FILTER + " from " + T_SF);
         ps.println("================== " + T_SF + " =====================");
@@ -472,9 +466,9 @@ public class CoreDatabaseDumper extends AbstractDatabase
         }
     }
 
-    private void dumpSD_(PrintStream ps) throws SQLException
+    private void dumpSD_(Statement s, PrintStream ps) throws SQLException
     {
-        ResultSet rs = c().createStatement().executeQuery(
+        ResultSet rs = s.executeQuery(
                 "select " + C_SD_SIDX + "," + C_SD_DID + ","
                         + C_SD_SFIDX + " from " + T_SD);
         ps.println("================== " + T_SD + " =====================");
@@ -489,9 +483,9 @@ public class CoreDatabaseDumper extends AbstractDatabase
         }
     }
 
-    private void dumpCF_(PrintStream ps) throws SQLException
+    private void dumpCF_(Statement s, PrintStream ps) throws SQLException
     {
-        ResultSet rs = c().createStatement().executeQuery(
+        ResultSet rs = s.executeQuery(
                 "select " + C_CF_SIDX + "," + C_CF_DID + ","
                         + C_CF_FILTER + " from " + T_CF);
         ps.println("================== " + T_CF + " =====================");
@@ -506,9 +500,9 @@ public class CoreDatabaseDumper extends AbstractDatabase
         }
     }
 
-    private void dumpCS_(PrintStream ps) throws SQLException
+    private void dumpCS_(Statement s, PrintStream ps) throws SQLException
     {
-        ResultSet rs = c().createStatement().executeQuery(
+        ResultSet rs = s.executeQuery(
                 "select " + C_CS_CS + "," + C_CS_SIDX + "," + C_CS_OID + ","
                         + C_CS_CID + " from " + T_CS);
         ps.println("================== " + T_CS + " =====================");
@@ -524,9 +518,9 @@ public class CoreDatabaseDumper extends AbstractDatabase
         }
     }
 
-    public void dumpAlias_(PrintStream ps, boolean formal) throws SQLException
+    public void dumpAlias_(Statement s, PrintStream ps, boolean formal) throws SQLException
     {
-        ResultSet rs = c().createStatement().executeQuery(
+        ResultSet rs = s.executeQuery(
                 "select " + C_ALIAS_SIDX + ", " + C_ALIAS_SOURCE_OID +  ", " +
                 C_ALIAS_TARGET_OID + " from " + T_ALIAS +
                 " order by " + C_ALIAS_SIDX + ", " + C_ALIAS_SOURCE_OID + ", " +
@@ -545,9 +539,9 @@ public class CoreDatabaseDumper extends AbstractDatabase
         }
     }
 
-    public void dumpExpulsion_(PrintStream ps, boolean formal) throws SQLException
+    public void dumpExpulsion_(Statement s, PrintStream ps, boolean formal) throws SQLException
     {
-        ResultSet rs = c().createStatement().executeQuery(
+        ResultSet rs = s.executeQuery(
                 "select " + C_EX_SIDX + ", " + C_EX_OID + " from " + T_EX);
 
         ps.println("================== " + T_EX + " =====================");
@@ -561,9 +555,9 @@ public class CoreDatabaseDumper extends AbstractDatabase
         }
     }
 
-    public void dumpACL_(PrintStream ps) throws SQLException
+    public void dumpACL_(Statement s, PrintStream ps) throws SQLException
     {
-        ResultSet rs = c().createStatement().executeQuery(
+        ResultSet rs = s.executeQuery(
                 "select " + C_ACL_SIDX + ", " + C_ACL_SUBJECT + ", " + C_ACL_ROLE + " from " +
                         T_ACL);
 
@@ -579,9 +573,9 @@ public class CoreDatabaseDumper extends AbstractDatabase
         }
     }
 
-    private void dumpEpoch_(PrintStream ps) throws SQLException
+    private void dumpEpoch_(Statement s, PrintStream ps) throws SQLException
     {
-        ResultSet rs = c().createStatement().executeQuery(
+        ResultSet rs = s.executeQuery(
                 "select " + C_EPOCH_ACL + "," + C_EPOCH_SYNC_PULL + "," + C_EPOCH_SYNC_PUSH +
                 " from " + T_EPOCH);
         ps.println("============ " + T_EPOCH + " ==============");
@@ -595,9 +589,9 @@ public class CoreDatabaseDumper extends AbstractDatabase
         }
     }
 
-    public void dumpNativeBackupTicks_(PrintStream ps) throws SQLException
+    public void dumpNativeBackupTicks_(Statement s, PrintStream ps) throws SQLException
     {
-        ResultSet rs = c().createStatement().executeQuery(
+        ResultSet rs = s.executeQuery(
                 "select " + C_BKUPT_SIDX + ", " + C_BKUPT_OID + ", " +
                 C_BKUPT_CID + ", " + C_BKUPT_TICK + " from " + T_BKUPT +
                 " order by " + C_BKUPT_SIDX + ", " + C_BKUPT_OID + ", " +
@@ -618,10 +612,10 @@ public class CoreDatabaseDumper extends AbstractDatabase
     }
 
 
-    private void dumpImmigrantBackupTicks_(PrintStream ps, boolean formal)
+    private void dumpImmigrantBackupTicks_(Statement s, PrintStream ps, boolean formal)
             throws SQLException
     {
-        ResultSet rs = c().createStatement().executeQuery(
+        ResultSet rs = s.executeQuery(
                 "select " + C_IBT_SIDX + "," + C_IBT_IMM_TICK +
                     "," + C_IBT_OID + "," + C_IBT_CID + "," + C_IBT_DID + "," +
                         C_IBT_TICK + " from " + T_IBT);
@@ -648,10 +642,10 @@ public class CoreDatabaseDumper extends AbstractDatabase
         }
     }
 
-    private void dumpPulledDevice(PrintStream ps, boolean formal)
+    private void dumpPulledDevice(Statement s, PrintStream ps, boolean formal)
             throws SQLException
     {
-        ResultSet rs = c().createStatement().executeQuery(
+        ResultSet rs = s.executeQuery(
                 "select " + C_PD_SIDX + "," + C_PD_DID +
                         " from " + T_PD);
         ps.println("=================== " + T_PD + " =====================");
@@ -669,9 +663,9 @@ public class CoreDatabaseDumper extends AbstractDatabase
         }
     }
 
-    private void dumpD2U_(PrintStream ps, boolean formal) throws SQLException
+    private void dumpD2U_(Statement s, PrintStream ps, boolean formal) throws SQLException
     {
-        ResultSet rs = c().createStatement().executeQuery(
+        ResultSet rs = s.executeQuery(
                 "select " + C_D2U_DID + "," + C_D2U_USER + " from " + T_D2U);
         ps.println("============ " + T_D2U + " ===============");
         ps.println(C_D2U_DID + "\t" + C_D2U_USER);
@@ -689,9 +683,9 @@ public class CoreDatabaseDumper extends AbstractDatabase
         }
     }
 
-    private void dumpAL_(PrintStream ps, boolean formal) throws SQLException
+    private void dumpAL_(Statement s, PrintStream ps, boolean formal) throws SQLException
     {
-        ResultSet rs = c().createStatement().executeQuery(
+        ResultSet rs = s.executeQuery(
                 "select " + C_AL_IDX + "," + C_AL_SIDX + "," + C_AL_OID + "," +
                         C_AL_TYPE + "," + C_AL_TIME + "," + C_AL_DIDS + "," + C_AL_PATH + ","
                         + C_AL_PATH_TO + " from " + T_AL);

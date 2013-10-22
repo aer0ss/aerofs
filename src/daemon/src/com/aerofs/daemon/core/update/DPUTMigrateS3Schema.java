@@ -10,6 +10,7 @@ import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.cfg.CfgDatabase;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
+import com.aerofs.lib.db.dbcw.IDBCW;
 import com.google.common.collect.Maps;
 
 import static com.aerofs.daemon.core.phy.block.BlockStorageSchema.*;
@@ -76,12 +77,12 @@ public class DPUTMigrateS3Schema implements IDaemonPostUpdateTask
     private static final String
             T_S3_ChunkCache            = "s3ca";
 
-    private final CoreDBCW _dbcw;
+    private final IDBCW _dbcw;
     private final CfgDatabase _cfgdb;
 
     public DPUTMigrateS3Schema(CoreDBCW dbcw, CfgDatabase cfgdb)
     {
-        _dbcw = dbcw;
+        _dbcw = dbcw.get();
         _cfgdb = cfgdb;
     }
 
@@ -89,17 +90,17 @@ public class DPUTMigrateS3Schema implements IDaemonPostUpdateTask
     public void run() throws Exception
     {
         // this migration is only required for S3 clients
-        if (!_dbcw.get().tableExists(T_S3_FileInfo)) return;
+        if (!_dbcw.tableExists(T_S3_FileInfo)) return;
 
-        Connection c = _dbcw.get().getConnection();
+        Connection c = _dbcw.getConnection();
         assert !c.getAutoCommit();
 
         Statement s = c.createStatement();
 
         try {
             // create new tables
-            new BlockStorageSchema(_dbcw).create_(s);
-            new CacheSchema(_dbcw).create_(s);
+            new BlockStorageSchema().create_(s, _dbcw);
+            new CacheSchema().create_(s, _dbcw);
 
             // migrate data (NB: order matters)
             migrateFileIndices(s);
