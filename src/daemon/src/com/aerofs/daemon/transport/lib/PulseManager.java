@@ -7,13 +7,13 @@ package com.aerofs.daemon.transport.lib;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
+import com.aerofs.base.id.IntegerID;
 import com.aerofs.daemon.event.net.EIPulseStopped;
 import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
 import com.aerofs.lib.event.IEvent;
 import com.aerofs.lib.event.Prio;
-import com.aerofs.base.id.IntegerID;
 import com.aerofs.proto.Transport;
 import org.slf4j.Logger;
 
@@ -47,17 +47,6 @@ import static com.aerofs.proto.Transport.PBTPHeader.Type.TRANSPORT_CHECK_PULSE_R
 public class PulseManager
 {
     /**
-     * Add a class to the list of listeners to be notified if an in-progress
-     * pulse is deleted.
-     *
-     * @param w an object that implements {@link IPulseDeletionWatcher}
-     */
-    public synchronized void addPulseDeletionWatcher(IPulseDeletionWatcher w)
-    {
-        _watchers.add(w);
-    }
-
-    /**
      * Add a {@link GenericPulseDeletionWatcher} to the list of listeners
      * to be notified if a pulse was deleted.
      *
@@ -66,7 +55,18 @@ public class PulseManager
      */
     public synchronized void addGenericPulseDeletionWatcher(ITransport tp, IBlockingPrioritizedEventSink<IEvent> tpsink)
     {
-        _watchers.add(new GenericPulseDeletionWatcher(tp, tpsink));
+        addPulseDeletionWatcher(new GenericPulseDeletionWatcher(tp, tpsink));
+    }
+
+    /**
+     * Add a class to the list of listeners to be notified if an in-progress
+     * pulse is deleted.
+     *
+     * @param w an object that implements {@link IPulseDeletionWatcher}
+     */
+    public synchronized void addPulseDeletionWatcher(IPulseDeletionWatcher w)
+    {
+        _watchers.add(w);
     }
 
     /**
@@ -155,12 +155,14 @@ public class PulseManager
      * @param forcenotify true if we want to notify the core regardless of whether
      * an outstanding pulse exists for this remote peer or not, false if we only
      * want to notify the core if an outstanding pulse exists.
+     * @return true if a pulse was stopped, false if no outstanding pulse existed
      */
-    public synchronized void stopPulse(DID did, boolean forcenotify)
+    public synchronized boolean stopPulse(DID did, boolean forcenotify)
     {
         boolean existed = delInProgressPulse(did);
         if (existed || forcenotify) notifyWatchers_(did);
         if (existed) l.info("d:" + did + " stopped pulse");
+        return existed;
     }
 
     /**

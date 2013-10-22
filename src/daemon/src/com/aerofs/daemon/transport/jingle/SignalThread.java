@@ -2,10 +2,10 @@ package com.aerofs.daemon.transport.jingle;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.lib.DaemonParam;
+import com.aerofs.daemon.transport.ExSendFailed;
+import com.aerofs.daemon.transport.ExTransport;
 import com.aerofs.daemon.transport.TransportThreadGroup;
-import com.aerofs.daemon.transport.exception.ExSendFailed;
-import com.aerofs.daemon.transport.exception.ExTransport;
-import com.aerofs.daemon.transport.xmpp.XMPPConnectionService;
+import com.aerofs.daemon.transport.lib.IUnicastListener;
 import com.aerofs.j.Jid;
 import com.aerofs.j.Message;
 import com.aerofs.j.MessageHandlerBase;
@@ -60,7 +60,6 @@ class SignalThread extends Thread
     private final byte[] _logPathUTF8;
     private final Jid _xmppUsername;
     private final String _xmppPassword;
-    private final XMPPConnectionService _xmppServer;
     private final InetSocketAddress _stunServerAddress;
     private final InetSocketAddress _xmppServerAddress;
     private final String _absRTRoot;
@@ -68,19 +67,19 @@ class SignalThread extends Thread
     private final ArrayList<Runnable> _postRunners = Lists.newArrayList(); // st thread only
     private final Object _mxMain = new Object(); // lock object
     private final BlockingQueue<ISignalThreadTask> _tasks = new LinkedBlockingQueue<ISignalThreadTask>(DaemonParam.QUEUE_LENGTH_DEFAULT);
-    private ISignalThreadListener _listener;
-    private volatile boolean _connectedToXMPP;
 
-    public SignalThread(Jid localjid, InetSocketAddress stunServerAddress, InetSocketAddress xmppServerAddress, XMPPConnectionService xmppServer, String absRtRoot, boolean enableJingleLibraryLogging)
+    private ISignalThreadListener _signalThreadListener;
+    private IUnicastListener _unicastConnectionServiceListener;
+
+    public SignalThread(Jid localjid, String xmppPassword, InetSocketAddress stunServerAddress, InetSocketAddress xmppServerAddress, String absRtRoot, boolean enableJingleLibraryLogging)
     {
         super(TransportThreadGroup.get(), "j-st");
         _stunServerAddress = stunServerAddress;
         _xmppServerAddress = xmppServerAddress;
         _absRTRoot = absRtRoot;
         _logPathUTF8 = getLogPath();
-        _xmppServer = xmppServer;
         _xmppUsername = localjid;
-        _xmppPassword = xmppServer.getXmppPassword();
+        _xmppPassword = xmppPassword;
         _enableJingleLibraryLogging = enableJingleLibraryLogging;
     }
 
@@ -90,8 +89,18 @@ class SignalThread extends Thread
         // not make much sense to have several Netty server channels getting notified when a client
         // is accepted. However, this highlights that the coupling between the signal thread and
         // the server channel isn't very well defined. We should revisit this later.
-        checkState(_listener == null);
-        _listener = listener;
+        checkState(_signalThreadListener == null);
+        _signalThreadListener = listener;
+    }
+
+    void setListener(IUnicastListener listener)
+    {
+        // Note: for now, we only allow one listener to the signal thread. This is because it would
+        // not make much sense to have several Netty server channels getting notified when a client
+        // is accepted. However, this highlights that the coupling between the signal thread and
+        // the server channel isn't very well defined. We should revisit this later.
+        checkState(_unicastConnectionServiceListener == null);
+        _unicastConnectionServiceListener = listener;
     }
 
     private byte[] getLogPath()
@@ -102,11 +111,6 @@ class SignalThread extends Thread
         } catch (UnsupportedEncodingException e) {
             throw SystemUtil.fatalWithReturn("cannot convert path:" + ljlogpath + " to UTF-8");
         }
-    }
-
-    public boolean isReady()
-    {
-        return _connectedToXMPP;
     }
 
     StreamInterface createTunnel(Jid to, String description)
@@ -195,6 +199,7 @@ class SignalThread extends Thread
         // SMACK do the DNS query on its thread.
         // TODO (WW) XmppMain() should use int rather than short as the datatype of jingleRelayPort
         // as Java's unsigned short may overflow on big port numbers.
+
         _main = new XmppMain(
                 _xmppServerAddress.getHostName(), _xmppServerAddress.getPort(),
                 _stunServerAddress.getHostName(), _stunServerAddress.getPort(),
@@ -328,21 +333,19 @@ class SignalThread extends Thread
 
         private void handleXMPPEngineClosed()
         {
-            _connectedToXMPP = false;
-
             int[] subcode = {0};
             XmppEngine.Error error = _main.xmpp_client().engine().GetError(subcode);
 
             l.warn("engine state changed to closed. err:{} subcode:{}", error, subcode[0]);
 
-            _xmppServer.linkStateChanged(false);
+            _unicastConnectionServiceListener.onUnicastUnavailable();
 
             if (_tsc != null) {
                 _tsc.delete();
                 _tsc = null;
             }
 
-            _listener.closeAllAcceptedChannels();
+            _signalThreadListener.closeAllAcceptedChannels();
 
             if (_incomingTunnelSlot != null) {
                 _incomingTunnelSlot.delete();
@@ -382,8 +385,8 @@ class SignalThread extends Thread
                     try {
                         l.info("handle incoming tunnel j:{}", jid);
 
-                        if (_listener != null) {
-                            _listener.onIncomingTunnel(client, jid, sess);
+                        if (_signalThreadListener != null) {
+                            _signalThreadListener.onIncomingTunnel(client, jid, sess);
                         } else {
                             l.warn("no listener for incoming tunnel j:{}", jid);
                         }
@@ -396,12 +399,7 @@ class SignalThread extends Thread
 
             _incomingTunnelSlot.connect(_tsc);
 
-            // Now that Jingle is initialized and ready, we start the connection to the xmpp
-            // server. If we started it earlier the core would get presence information and try
-            // to connect to peers before jingle is ready.
-            _xmppServer.linkStateChanged(true);
-
-            _connectedToXMPP = true;
+            _unicastConnectionServiceListener.onUnicastReady();
         }
     };
 }

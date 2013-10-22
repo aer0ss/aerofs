@@ -13,6 +13,8 @@ import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -30,6 +32,8 @@ import java.util.Date;
 
 public abstract class SecTestUtil
 {
+    private static final Logger l = LoggerFactory.getLogger(SecTestUtil.class);
+
     private SecTestUtil()
     {
         // private to enforce uninstantiability
@@ -85,6 +89,10 @@ public abstract class SecTestUtil
         X509CertificateHolder certificateHolder = certificateBuilder.build(signer);
 
         CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
-        return certificateFactory.generateCertificate(new ByteArrayInputStream(certificateHolder.getEncoded()));
+        Certificate certificate = certificateFactory.generateCertificate(new ByteArrayInputStream(certificateHolder.getEncoded()));
+
+        l.trace("generated certificate:{}", certificate);
+
+        return certificate;
     }
 }

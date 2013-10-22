@@ -76,7 +76,7 @@ public class TestOnlineStatusNotifier
 
         ArgumentCaptor<ILinkStateListener> linkStateCaptor =
                 ArgumentCaptor.forClass(ILinkStateListener.class);
-        verify(_lss).addListener_(linkStateCaptor.capture(), eq(_coreExecutor));
+        verify(_lss).addListener(linkStateCaptor.capture(), eq(_coreExecutor));
         _linkStateListener = linkStateCaptor.getValue();
     }
 
@@ -182,9 +182,7 @@ public class TestOnlineStatusNotifier
     // effectively using the same thread executor.
     private void triggerLinkStateCallback(boolean isOnline)
     {
-        _linkStateListener.onLinkStateChanged_(
-                _empty, isOnline ? _nonEmpty : _empty, _empty, _empty
-        );
+        _linkStateListener.onLinkStateChanged(_empty, isOnline ? _nonEmpty : _empty, _empty, _empty);
     }
 
     // method awkwardly named to go along with Mockito speak

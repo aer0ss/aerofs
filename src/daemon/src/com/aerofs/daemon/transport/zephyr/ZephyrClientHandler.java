@@ -4,8 +4,11 @@ import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.base.ssl.CNameVerificationHandler.CNameListener;
-import com.aerofs.daemon.transport.exception.ExSendFailed;
-import com.aerofs.daemon.transport.netty.handlers.IOStatsHandler;
+import com.aerofs.daemon.transport.ExSendFailed;
+import com.aerofs.daemon.transport.lib.IUnicastListener;
+import com.aerofs.daemon.transport.lib.handlers.ChannelTeardownHandler.ChannelDIDProvider;
+import com.aerofs.daemon.transport.lib.handlers.IOStatsHandler;
+import com.aerofs.daemon.transport.lib.handlers.TransportMessage;
 import com.aerofs.lib.log.LogUtil;
 import com.aerofs.zephyr.client.IZephyrSignallingClient;
 import com.aerofs.zephyr.client.exceptions.ExBadZephyrMessage;
@@ -15,7 +18,6 @@ import com.aerofs.zephyr.client.handlers.ZephyrProtocolHandler;
 import com.aerofs.zephyr.proto.Zephyr.ZephyrHandshake;
 import com.google.common.collect.Queues;
 import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.buffer.ChannelBufferInputStream;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureListener;
@@ -32,14 +34,15 @@ import java.util.concurrent.atomic.AtomicReference;
 import static com.aerofs.base.net.ChannelUtil.pretty;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
+import static org.jboss.netty.channel.Channels.fireMessageReceived;
 import static org.jboss.netty.channel.Channels.write;
 
-final class ZephyrClientHandler extends SimpleChannelHandler implements CNameListener
+final class ZephyrClientHandler extends SimpleChannelHandler implements CNameListener, ChannelDIDProvider
 {
     private static final Logger l = Loggers.getLogger(ZephyrClientHandler.class);
 
     private final DID localdid;
-    private final IConnectionServiceListener connectionServiceListener;
+    private final IUnicastListener unicastListener;
     private final ZephyrProtocolHandler zephyrProtocolHandler;
     private final AtomicReference<UserID> remoteid = new AtomicReference<UserID>(null); // set when cname verification completes
     private final AtomicReference<Throwable> disconnectCause = new AtomicReference<Throwable>(null); // set once, to the first exception thrown, or first disconnection reason
@@ -59,10 +62,10 @@ final class ZephyrClientHandler extends SimpleChannelHandler implements CNameLis
     /**
      * @param zephyrProtocolHandler this is the instance of {@link ZephyrProtocolHandler} used in this pipeline
      */
-    ZephyrClientHandler(DID localdid, IConnectionServiceListener connectionServiceListener, ZephyrProtocolHandler zephyrProtocolHandler)
+    ZephyrClientHandler(DID localdid, IUnicastListener unicastListener, ZephyrProtocolHandler zephyrProtocolHandler)
     {
         this.localdid = localdid;
-        this.connectionServiceListener = connectionServiceListener;
+        this.unicastListener = unicastListener;
         this.zephyrProtocolHandler = zephyrProtocolHandler;
     }
 
@@ -95,7 +98,8 @@ final class ZephyrClientHandler extends SimpleChannelHandler implements CNameLis
         });
     }
 
-    DID getRemote()
+    @Override
+    public DID getRemoteDID()
     {
         checkValid();
 
@@ -154,7 +158,7 @@ final class ZephyrClientHandler extends SimpleChannelHandler implements CNameLis
         checkValid();
 
         checkState(!ctx.getChannel().getCloseFuture().isDone());
-        connectionServiceListener.onDeviceConnected(remotedid);
+        unicastListener.onDeviceConnected(remotedid);
         sendPendingWrites();
 
         super.channelConnected(ctx, e);
@@ -170,8 +174,7 @@ final class ZephyrClientHandler extends SimpleChannelHandler implements CNameLis
 
         checkValid();
 
-        ChannelBufferInputStream is = new ChannelBufferInputStream((ChannelBuffer) e.getMessage());
-        connectionServiceListener.onIncomingMessage(remotedid, remoteid.get(), is, is.available());
+        fireMessageReceived(ctx, new TransportMessage((ChannelBuffer)e.getMessage(), remotedid, remoteid.get()));
     }
 
     @Override
@@ -257,7 +260,7 @@ final class ZephyrClientHandler extends SimpleChannelHandler implements CNameLis
 
         if (isConnected()) {
             l.info("{} channel closed - notify listener", this);
-            connectionServiceListener.onDeviceDisconnected(remotedid);
+            unicastListener.onDeviceDisconnected(remotedid);
         }
 
         super.channelClosed(ctx, e);

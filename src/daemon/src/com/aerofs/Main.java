@@ -229,7 +229,7 @@ public class Main
         else if (prog.equals(DMON_PROGRAM_NAME)) cls = com.aerofs.daemon.DaemonProgram.class;
         else if (prog.equals(FSCK_PROGRAM_NAME)) cls = com.aerofs.fsck.FSCKProgram.class;
         else if (prog.equals(UMDC_PROGRAM_NAME)) cls = com.aerofs.umdc.UMDCProgram.class;
-        else if (prog.equals(PUMP_PROGRAM_NAME)) cls = com.aerofs.daemon.transport.pump.Pump.class;
+        else if (prog.equals(PUMP_PROGRAM_NAME)) cls = com.aerofs.daemon.transport.debug.Pump.class;
         else cls = Class.forName("com.aerofs.Program"); // fail over to UI programs
 
         // launch the program

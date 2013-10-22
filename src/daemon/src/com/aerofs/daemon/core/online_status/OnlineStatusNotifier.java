@@ -79,11 +79,13 @@ public class OnlineStatusNotifier
             }
         }, _executor);
 
-        _lss.addListener_(new ILinkStateListener()
+        _lss.addListener(new ILinkStateListener()
         {
             @Override
-            public void onLinkStateChanged_(ImmutableSet<NetworkInterface> previous,
-                    ImmutableSet<NetworkInterface> current, ImmutableSet<NetworkInterface> added,
+            public void onLinkStateChanged(
+                    ImmutableSet<NetworkInterface> previous,
+                    ImmutableSet<NetworkInterface> current,
+                    ImmutableSet<NetworkInterface> added,
                     ImmutableSet<NetworkInterface> removed)
             {
                 checkStates_(_isVerkehrConnected, !current.isEmpty());

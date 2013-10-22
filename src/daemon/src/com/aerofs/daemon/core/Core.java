@@ -213,7 +213,7 @@ public class Core implements IModule
         // transports
 
         _tps.start_();
-        _lss.start_();
+        _lss.start();
 
         // rest of the system
 

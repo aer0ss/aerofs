@@ -8,6 +8,7 @@ import com.aerofs.base.Loggers;
 import org.slf4j.Logger;
 
 import java.io.IOException;
+import java.nio.channels.CancelledKeyException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
@@ -97,7 +98,7 @@ public class Dispatcher implements Runnable
         }
     }
 
-    public final void stop()
+    public final void shutdown()
     {
         _stop = true;
         _sel.wakeup(); // wake up the selector so that it stops
@@ -108,7 +109,17 @@ public class Dispatcher implements Runnable
     public final SelectionKey register(SelectableChannel c, IIOEventHandler ioe, int... ists)
             throws ClosedChannelException
     {
-        int istmask = ZUtil.getInterestMask(ists);
+        if (_stop) {
+            throw new ClosedChannelException();
+        }
+
+        int istmask;
+        if (ists.length == 1 && ists[0] == 0) {
+            istmask = 0;
+        } else {
+            istmask = ZUtil.getInterestMask(ists);
+        }
+
         return c.register(_sel, istmask, ioe);
     }
 
@@ -170,6 +181,9 @@ public class Dispatcher implements Runnable
         } catch (FatalIOEventHandlerException e) {
             l.error("zd: k:{}: fataled during handle", k);
             throw e;
+        } catch (CancelledKeyException e) {
+            l.error("zd: k:{}: fail handle due to cancelled key:", k, e);
+            closeChannel(k.channel());
         } catch (IllegalStateException e) {
             l.error("zd: k:{}: fail handle with unexpected ise:", k, e);
             commitMessySuicide(e);

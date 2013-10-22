@@ -4,8 +4,8 @@
 
 package com.aerofs.daemon.transport.tcp;
 
-import com.aerofs.daemon.transport.netty.TransportMessage;
-import com.aerofs.daemon.transport.netty.Unicast;
+import com.aerofs.daemon.transport.lib.Unicast;
+import com.aerofs.daemon.transport.lib.handlers.TransportMessage;
 import com.aerofs.proto.Transport.PBTPHeader;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.MessageEvent;
@@ -20,15 +20,15 @@ import java.net.InetSocketAddress;
  *
  * This handler is sharable accross all connections for a given TCP instance
  */
-class TCPProtocolHandler extends SimpleChannelUpstreamHandler
+final class TCPProtocolHandler extends SimpleChannelUpstreamHandler
 {
-    private final TCP _tcp;
-    private final Unicast _ucast;
+    private final Stores stores;
+    private final Unicast unicast;
 
-    TCPProtocolHandler(TCP tcp, Unicast ucast)
+    TCPProtocolHandler(Stores stores, Unicast unicast)
     {
-        _tcp = tcp;
-        _ucast = ucast;
+        this.stores = stores;
+        this.unicast = unicast;
     }
 
     @Override
@@ -42,23 +42,24 @@ class TCPProtocolHandler extends SimpleChannelUpstreamHandler
 
         switch (message.getHeader().getType()) {
         case TCP_PING:
-            reply = _tcp.processPing(false);
+            reply = stores.processPing(false);
             break;
         case TCP_PONG:
             InetAddress remote = ((InetSocketAddress)e.getRemoteAddress()).getAddress();
-            _tcp.processPong(remote, message.getDID(), message.getHeader().getTcpPong());
+            stores.processPong(remote, message.getDID(), message.getHeader().getTcpPong());
             break;
         case TCP_GO_OFFLINE:
-            _tcp.processGoOffline(message.getDID());
+            stores.processGoOffline(message.getDID());
             break;
         case TCP_NOP:
             break;
-        default:
-            // Unknown control, send upstream
+        default: // unknown control message, pass it on
             ctx.sendUpstream(e);
             return;
         }
 
-        if (reply != null) _ucast.sendControl(message.getDID(), reply);
+        if (reply != null) {
+            unicast.sendControl(message.getDID(), reply);
+        }
     }
 }

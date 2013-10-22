@@ -23,9 +23,9 @@ public class StartPulse implements IPulseHandler<EOTpStartPulse>
 
     private final IScheduler scheduler;
     private final PulseManager pulseManager;
-    private final IPresenceManager presenceManager;
+    private final IDevicePresenceService presenceManager;
 
-    public StartPulse(IScheduler scheduler, PulseManager pulseManager, IPresenceManager presenceManager)
+    public StartPulse(IScheduler scheduler, PulseManager pulseManager, IDevicePresenceService presenceManager)
     {
         this.scheduler = scheduler;
         this.pulseManager = pulseManager;
@@ -41,7 +41,7 @@ public class StartPulse implements IPulseHandler<EOTpStartPulse>
 
         // stop pulses if the device is offline from the transport's POV
 
-        if (!presenceManager.isPresent(did)) {
+        if (!presenceManager.isPotentiallyAvailable(did)) {
             l.info("d:" + did + " offline during pulse; term pulse");
             notifypulsestopped_(did);
             return false;

@@ -110,9 +110,6 @@ public class UnicastInputTopLayer implements IUnicastInputLayer
                 _f._d2u.processMappingFromPeer_(did, pc.user());
             }
 
-            // TODO: make this able to deal with a fragmented PBCore
-            // it's silly that upper layers have to guarantee that the content PBCore is smaller
-            // than the transport's max unicast packet size; that's the job of a network layer
             PBCore pb = PBCore.parseDelimitedFrom(r._is);
             DigestedMessage msg = new DigestedMessage(pb, r._is, pc.ep(), pc.user(), null);
             process_(msg);

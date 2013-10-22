@@ -2,6 +2,7 @@ package com.aerofs.daemon.transport.tcp;
 
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
+import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.event.net.EITransportMetricsUpdated;
@@ -9,10 +10,12 @@ import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.event.net.rx.EIMaxcastMessage;
 import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.daemon.lib.exception.ExBadCRC;
+import com.aerofs.daemon.link.ILinkStateListener;
 import com.aerofs.daemon.transport.TransportThreadGroup;
 import com.aerofs.daemon.transport.lib.CRCByteArrayInputStream;
 import com.aerofs.daemon.transport.lib.CRCByteArrayOutputStream;
 import com.aerofs.daemon.transport.lib.IMaxcast;
+import com.aerofs.daemon.transport.lib.IMulticastListener;
 import com.aerofs.daemon.transport.lib.MaxcastFilterReceiver;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.ThreadUtil;
@@ -21,7 +24,7 @@ import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.log.LogUtil;
 import com.aerofs.proto.Transport.PBTPHeader;
 import com.aerofs.proto.Transport.PBTPHeader.Type;
-import org.apache.commons.lang.exception.ExceptionUtils;
+import com.google.common.collect.ImmutableSet;
 import org.slf4j.Logger;
 
 import java.io.DataInputStream;
@@ -34,47 +37,56 @@ import java.net.MulticastSocket;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.util.Enumeration;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import static java.util.Collections.synchronizedMap;
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.collect.Maps.newConcurrentMap;
 
-// TODO: checksum
-
-/* multicast header:
- *
- * +-----------------+------------+---
- * | TCP_MCAST_MAGIC | PBTPHeader | payload (if and only if type == payload
- * +-----------------+------------+---
- */
-
-class Multicast implements IMaxcast
+// FIXME (AG): Remove call from Stores and make final
+class Multicast implements IMaxcast, ILinkStateListener
 {
     private static final Logger l = Loggers.getLogger(Multicast.class);
 
-    private final DID _localdid;
-    private final TCP _tcp;
-    private final boolean _listenToMulticastOnLoopback;
-    private final MaxcastFilterReceiver _mcfr;
-    private final Map<NetworkInterface, MulticastSocket> _iface2sock = synchronizedMap(new HashMap<NetworkInterface, MulticastSocket>());
+    private final DID localdid;
+    private final TCP tcp;
+    private final boolean listenToMulticastOnLoopback;
+    private final MaxcastFilterReceiver maxcastFilterReceiver;
+    private final Map<NetworkInterface, MulticastSocket> ifaceToMulticastSocket = newConcurrentMap();
+    private final int multicastPort;
+    private final String multicastAddress;
+    private final int maxMulticastDatagramSize;
+    private final long multicastReconnectInterval;
 
-    private Stores _stores; // the only reason this isn't final is because of a circular dependency between the two
+    private Stores stores; // the only reason this isn't final is because of a circular dependency between the two
+    private IMulticastListener multicastListener;
 
-    Multicast(DID localdid, TCP tcp, boolean listenToMulticastOnLoopback, MaxcastFilterReceiver mcfr)
+    Multicast(DID localdid, TCP tcp, boolean listenToMulticastOnLoopback, MaxcastFilterReceiver maxcastFilterReceiver)
     {
-        _localdid = localdid;
-        _tcp = tcp;
-        _listenToMulticastOnLoopback = listenToMulticastOnLoopback;
-        _mcfr = mcfr;
+        this.localdid = localdid;
+        this.tcp = tcp;
+        this.listenToMulticastOnLoopback = listenToMulticastOnLoopback;
+        this.maxcastFilterReceiver = maxcastFilterReceiver;
+
+        // FIXME (AG): expose all these parameters
+        multicastPort = DaemonParam.TCP.MCAST_PORT;
+        multicastAddress = DaemonParam.TCP.MCAST_ADDRESS;
+        maxMulticastDatagramSize = DaemonParam.TCP.MCAST_MAX_DGRAM_SIZE;
+        multicastReconnectInterval = DaemonParam.TCP.RETRY_INTERVAL;
     }
 
     public void setStores(Stores stores)
     {
-        _stores = stores;
+        this.stores = stores;
     }
 
-    void init_() throws IOException
+    public void setListener(IMulticastListener multicastListener)
+    {
+        this.multicastListener = multicastListener;
+    }
+
+    void init() throws IOException
     {
         // send offline notification on exiting
         Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
@@ -82,7 +94,7 @@ class Multicast implements IMaxcast
             public void run()
             {
                 try {
-                    sendControlMessage(_tcp.newGoOfflineMessage());
+                    sendControlMessage(tcp.newGoOfflineMessage());
                 } catch (IOException e) {
                     l.warn("error sending offline notification. ignored" + e);
                 }
@@ -90,11 +102,12 @@ class Multicast implements IMaxcast
         }));
     }
 
-    void start_()
+    void start()
     {
+        // FIXME (AG): remove this until we actually do something with this
         // we don't dynamically detect preferred multicast size (TODO?)
-        _tcp.sink().enqueueBlocking(new EITransportMetricsUpdated(
-                DaemonParam.TCP.MCAST_MAX_DGRAM_SIZE
+        tcp.sink().enqueueBlocking(new EITransportMetricsUpdated(
+                maxMulticastDatagramSize
                     - C.INTEGER_SIZE    // for magic
                     - 1                 // for core_message
                     - DID.LENGTH        // for device id
@@ -104,28 +117,31 @@ class Multicast implements IMaxcast
     private void close(MulticastSocket s)
     {
         try {
-            s.leaveGroup(InetAddress.getByName(DaemonParam.TCP.MCAST_ADDRESS));
+            s.leaveGroup(InetAddress.getByName(multicastAddress));
             s.close();
         } catch (Exception e) {
             l.warn("error closing mcast socket. ignored: " + e);
         }
     }
 
-    void linkStateChanged(Set<NetworkInterface> added, Set<NetworkInterface> removed,
-            boolean becameLinkDown)
+    @Override
+    public void onLinkStateChanged(
+            ImmutableSet<NetworkInterface> previous,
+            ImmutableSet<NetworkInterface> current,
+            ImmutableSet<NetworkInterface> added,
+            ImmutableSet<NetworkInterface> removed)
     {
         for (NetworkInterface iface : added) {
             try {
                 if (!iface.supportsMulticast()) continue;
 
-                final MulticastSocket s = new MulticastSocket(DaemonParam.TCP.MCAST_PORT); // bind to *:TCP_MCAST_PORT
+                final MulticastSocket s = new MulticastSocket(multicastPort); // bind to *:TCP_MCAST_PORT
                 // N.B. Setting loopback mode to true _disables_ TCP multicast on local loopback
                 // See http://docs.oracle.com/javase/6/docs/api/java/net/MulticastSocket.html#setLoopbackMode(boolean)
-                s.setLoopbackMode(!_listenToMulticastOnLoopback);
-                s.joinGroup(new InetSocketAddress(DaemonParam.TCP.MCAST_ADDRESS,
-                        DaemonParam.TCP.MCAST_PORT), iface);
+                s.setLoopbackMode(!listenToMulticastOnLoopback);
+                s.joinGroup(new InetSocketAddress(multicastAddress, multicastPort), iface);
 
-                MulticastSocket old = _iface2sock.put(iface, s);
+                MulticastSocket old = ifaceToMulticastSocket.put(iface, s);
                 if (old != null) close(old);
 
                 l.info("linkStateChanged->mc:add:" + iface.getName());
@@ -136,39 +152,40 @@ class Multicast implements IMaxcast
                     {
                         thdRecv(s);
                     }
-                }, _tcp.id() + "-mcast.recv." + iface.getName()).start();
+                }, tcp.id() + "-mcast.recv." + iface.getName()).start();
 
             } catch (IOException e) {
-                l.warn("can't add mcast iface_name:{} inet_addr:{} iface_addr:{} err:{}",
-                        iface, iface.getInetAddresses(), iface.getInterfaceAddresses(),
-                        ExceptionUtils.getStackTrace(e));
+                l.warn("can't add mcast iface_name:{} inet_addr:{} iface_addr:{}",
+                        iface,
+                        iface.getInetAddresses(),
+                        iface.getInterfaceAddresses(),
+                        e
+                );
             }
         }
 
         if (!added.isEmpty()) {
             try {
-                sendControlMessage(_tcp.newPingMessage());
-                PBTPHeader pong = _stores.newPongMessage(true);
+                sendControlMessage(newPingMessage());
+                PBTPHeader pong = stores.newPongMessage(true);
                 if (pong != null) sendControlMessage(pong);
             } catch (IOException e) {
                 l.warn("send ping or pong: " + Util.e(e));
             }
         }
 
-        if (becameLinkDown) {
-            // We don't have to send offline messages if the the links are physically down. But in
-            // case of a logical mark-down (LinkStateService#markLinksDown_()), we need manual
-            // disconnection. N.B. this needs to be done *before* closing the sockets.
+        // We don't have to send offline messages if the the links are physically down. But in
+        // case of a logical mark-down (LinkStateService#markLinksDown()), we need manual
+        // disconnection. N.B. this needs to be done *before* closing the sockets.
 
-            try {
-                sendControlMessage(_tcp.newGoOfflineMessage());
-            } catch (IOException e) {
-                l.warn("send offline: " + Util.e(e));
-            }
+        try {
+            sendControlMessage(tcp.newGoOfflineMessage());
+        } catch (IOException e) {
+            l.warn("send offline: " + Util.e(e));
         }
 
         for (NetworkInterface iface : removed) {
-            MulticastSocket s = _iface2sock.remove(iface);
+            MulticastSocket s = ifaceToMulticastSocket.remove(iface);
             if (s == null) continue;
 
             l.info("linkStateChanged->mc:rem:");
@@ -177,30 +194,46 @@ class Multicast implements IMaxcast
             close(s);
         }
 
-        l.debug("mc:current ifs:");
-        Set<Map.Entry<NetworkInterface, MulticastSocket>> entries = _iface2sock.entrySet();
+        l.trace("mc:current ifs:");
+        Set<Map.Entry<NetworkInterface, MulticastSocket>> entries = ifaceToMulticastSocket.entrySet();
         int i = 0;
         for (Map.Entry<NetworkInterface, MulticastSocket> e : entries) {
             int sval = (e.getValue() == null ? 0 : 1);
-            l.debug("if{}: {} s:{} {}", i, e.getKey().getDisplayName(), sval, e.getKey());
+            l.trace("if{}: {} s:{} {}", i, e.getKey().getDisplayName(), sval, e.getKey());
             i++;
         }
+
+        if (previous.isEmpty() && !current.isEmpty()) {
+            multicastListener.onMulticastReady();
+        } else if (!previous.isEmpty() && current.isEmpty()) {
+            multicastListener.onMulticastUnavailable();
+        }
+    }
+
+    /**
+     * Generate a new <code>TCP_PING</code> message
+     *
+     * @return {@link PBTPHeader} of type <code>TCP_PING</code>
+     */
+    PBTPHeader newPingMessage()
+    {
+        return PBTPHeader.newBuilder()
+                .setType(Type.TCP_PING)
+                .setTcpMulticastDeviceId(localdid.toPB())
+                .build();
     }
 
     private void thdRecv(MulticastSocket s)
     {
         while (true) {
             try {
-                byte buf[] = new byte[DaemonParam.TCP.MCAST_MAX_DGRAM_SIZE];
+                byte buf[] = new byte[maxMulticastDatagramSize];
                 DatagramPacket pkt = new DatagramPacket(buf, buf.length);
                 s.receive(pkt);
 
-                //_bytesIn += pkt.getLength();
-
                 CRCByteArrayInputStream is;
                 try {
-                    is = new CRCByteArrayInputStream(
-                            pkt.getData(), pkt.getOffset(), pkt.getLength());
+                    is = new CRCByteArrayInputStream(pkt.getData(), pkt.getOffset(), pkt.getLength());
                 } catch (ExBadCRC e) {
                     l.warn("bad crc from " + pkt.getSocketAddress());
                     continue;
@@ -216,33 +249,30 @@ class Multicast implements IMaxcast
                 // read header
                 PBTPHeader h = PBTPHeader.parseDelimitedFrom(is);
 
-                assert h.hasTcpMulticastDeviceId();
+                checkArgument(h.hasTcpMulticastDeviceId());
 
                 // ignore messages from myself
                 DID did = new DID(h.getTcpMulticastDeviceId());
-                if (did.equals(_localdid)) continue;
+                if (did.equals(localdid)) continue;
 
                 if (h.getType() == Type.DATAGRAM)
                 {
-                    assert h.hasMcastId();
+                    checkArgument(h.hasMcastId());
                     // filter packets from core that were sent on other interface
-                    if (!_mcfr.isRedundant(did, h.getMcastId())) {
-                        _tcp.sink().enqueueThrows(
-                                new EIMaxcastMessage(new Endpoint(_tcp, did), is, pkt.getLength()),
-                                        Prio.LO);
+                    if (!maxcastFilterReceiver.isRedundant(did, h.getMcastId())) {
+                        tcp.sink().enqueueThrows( new EIMaxcastMessage(new Endpoint(tcp, did), is, pkt.getLength()), Prio.LO);
                     }
                 } else {
                     InetAddress rem = ((InetSocketAddress) pkt.getSocketAddress()).getAddress();
-                    PBTPHeader ret = _tcp.processMulticastControl(rem, did, h);
+                    PBTPHeader ret = processMulticastControl(rem, did, h);
                     if (ret != null) sendControlMessage(ret);
                 }
-
             } catch (Exception e) {
                 l.error("thdRecv() err", LogUtil.suppress(e, SocketException.class));
 
                 if (!s.isClosed()) {
-                    l.info("retry in {} ms", DaemonParam.TCP.RETRY_INTERVAL);
-                    ThreadUtil.sleepUninterruptable(DaemonParam.TCP.RETRY_INTERVAL);
+                    l.info("retry in {} ms", multicastReconnectInterval);
+                    ThreadUtil.sleepUninterruptable(multicastReconnectInterval);
                 } else {
                     l.info("socket closed by lsc; exit");
                     return;
@@ -255,17 +285,18 @@ class Multicast implements IMaxcast
     public void sendPayload(SID sid, int mcastid, byte[] buf)
             throws IOException
     {
-        PBTPHeader h = PBTPHeader.newBuilder()
-            .setType(Type.DATAGRAM)
-            .setMcastId(mcastid)
-            .setTcpMulticastDeviceId(_localdid.toPB())
-            .build();
+        PBTPHeader h = PBTPHeader
+                .newBuilder()
+                .setType(Type.DATAGRAM)
+                .setMcastId(mcastid)
+                .setTcpMulticastDeviceId(localdid.toPB())
+                .build();
         send(h, buf);
     }
 
     void sendControlMessage(PBTPHeader h) throws IOException
     {
-        assert h.hasTcpMulticastDeviceId();
+        checkArgument(h.hasTcpMulticastDeviceId());
         send(h, null);
     }
 
@@ -274,7 +305,6 @@ class Multicast implements IMaxcast
         CRCByteArrayOutputStream cos = new CRCByteArrayOutputStream();
         DataOutputStream dos = new DataOutputStream(cos);
         try {
-             // magic
             dos.writeInt(LibParam.CORE_MAGIC);
             dos.flush();
 
@@ -283,18 +313,14 @@ class Multicast implements IMaxcast
             if (h.getType() == Type.DATAGRAM) {
                 cos.write(buf);  // TODO: avoid copying
             } else {
-                assert buf == null;
+                checkState(buf == null);
             }
 
             byte[] bs = cos.toByteArray();
 
-            DatagramPacket pkt = new DatagramPacket(bs, bs.length,
-                    InetAddress.getByName(DaemonParam.TCP.MCAST_ADDRESS),
-                    DaemonParam.TCP.MCAST_PORT);
-            //_bytesOut += bs.length;
-
-            synchronized (_iface2sock) {
-                for (Map.Entry<NetworkInterface, MulticastSocket> entry : _iface2sock.entrySet()) {
+            DatagramPacket pkt = new DatagramPacket(bs, bs.length, InetAddress.getByName(multicastAddress), multicastPort);
+            synchronized (ifaceToMulticastSocket) {
+                for (Map.Entry<NetworkInterface, MulticastSocket> entry : ifaceToMulticastSocket.entrySet()) {
                     NetworkInterface iface = entry.getKey();
                     Enumeration<InetAddress> inetAddresses = iface.getInetAddresses();
                     MulticastSocket s = entry.getValue();
@@ -304,14 +330,13 @@ class Multicast implements IMaxcast
                         sendingAddress = inetAddresses.nextElement();
 
                         try {
-                            l.debug("attempt mc send iface:{} send_addr:{} dest_addr:{} t:{}",
+                            l.trace("attempt mc send iface:{} send_addr:{} dest_addr:{} t:{}",
                                     iface, sendingAddress, pkt.getSocketAddress(), h.getType().name());
 
                             s.setInterface(sendingAddress);
                             s.send(pkt);
                         } catch (IOException e) {
-                            l.error("fail send mc iface:{} send_addr:{} dest_addr:{}",
-                                    iface, sendingAddress, pkt.getSocketAddress());
+                            l.error("fail send mc iface:{} send_addr:{} dest_addr:{}", iface, sendingAddress, pkt.getSocketAddress());
 
                             throw e;
                         }
@@ -323,4 +348,39 @@ class Multicast implements IMaxcast
         }
     }
 
+    /**
+     * Processes control messages received on a <code>tcp</code> unicast channel
+     *
+     *
+     * @param rem {@link java.net.InetAddress} of the remote peer from which the message
+     * @param did {@link com.aerofs.base.id.DID} from which the message was received
+     * @param hdr {@link com.aerofs.proto.Transport.PBTPHeader} message that was received
+     * @return PBTPHeader response to be sent as a control message to the remote peer
+     * @throws com.aerofs.base.ex.ExProtocolError for an unrecognized control message
+     */
+    PBTPHeader processMulticastControl(InetAddress rem, DID did, PBTPHeader hdr)
+        throws ExProtocolError
+    {
+        PBTPHeader ret = null;
+
+        Type type = hdr.getType();
+        switch (type)
+        {
+        case TCP_PING:
+            ret = stores.processPing(true);
+            break;
+        case TCP_PONG:
+            stores.processPong(rem, did, hdr.getTcpPong());
+            break;
+        case TCP_GO_OFFLINE:
+            stores.processGoOffline(did);
+            break;
+        case TCP_NOP:
+            break;
+        default:
+            throw new ExProtocolError("unrecognized multicast packet with type:" + type.name());
+        }
+
+        return ret;
+    }
 }

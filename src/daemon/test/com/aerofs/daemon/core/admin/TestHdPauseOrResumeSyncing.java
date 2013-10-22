@@ -52,7 +52,7 @@ public class TestHdPauseOrResumeSyncing extends AbstractTest
         InOrder inOrder = inOrder(_tc, _token, _tcb, _lss);
         inOrder.verify(_tc).acquire_(eq(Cat.UNLIMITED), anyString());
         inOrder.verify(_token).pseudoPause_(anyString());
-        inOrder.verify(_lss).markLinksDown_();
+        inOrder.verify(_lss).markLinksDown();
         inOrder.verify(_tcb).pseudoResumed_();
         inOrder.verify(_token).reclaim_();
     }
@@ -67,7 +67,7 @@ public class TestHdPauseOrResumeSyncing extends AbstractTest
         InOrder inOrder = inOrder(_tc, _token, _tcb, _lss);
         inOrder.verify(_tc).acquire_(eq(Cat.UNLIMITED), anyString());
         inOrder.verify(_token).pseudoPause_(anyString());
-        inOrder.verify(_lss).markLinksUp_();
+        inOrder.verify(_lss).markLinksUp();
         inOrder.verify(_tcb).pseudoResumed_();
         inOrder.verify(_token).reclaim_();
     }

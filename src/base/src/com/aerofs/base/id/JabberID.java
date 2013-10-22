@@ -57,6 +57,11 @@ public abstract class JabberID
         return String.format("%s@%s/%s", did2user(did), xmppServerDomain, xmppTransportId);
     }
 
+    public static String did2BareJid(DID did, String xmppServerDomain)
+    {
+        return String.format("%s@%s", did2user(did), xmppServerDomain);
+    }
+
     /**
      * This is the nickname we use when joining a multicast room. It is very similar to the Form A
      * jid, except instead of having the xmpp transport ID as a resource we append it to the did

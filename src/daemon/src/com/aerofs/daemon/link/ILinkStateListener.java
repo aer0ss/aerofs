@@ -14,7 +14,7 @@ public interface ILinkStateListener
      * WARNING never pause during execution of this method
      * e.g. tk.pause_(Cfg.timeout(), reason);
      */
-    void onLinkStateChanged_(ImmutableSet<NetworkInterface> previous,
+    void onLinkStateChanged(ImmutableSet<NetworkInterface> previous,
             ImmutableSet<NetworkInterface> current, ImmutableSet<NetworkInterface> added,
             ImmutableSet<NetworkInterface> removed);
 }

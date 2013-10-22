@@ -12,7 +12,7 @@ import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.link.LinkStateService;
 import com.aerofs.daemon.transport.ConfigurationPropertiesResource;
 import com.aerofs.daemon.transport.ITransport;
-import com.aerofs.daemon.transport.LoggerResource;
+import com.aerofs.daemon.transport.TransportLoggerSetup;
 import com.aerofs.daemon.transport.jingle.Jingle;
 import com.aerofs.daemon.transport.lib.MaxcastFilterReceiver;
 import com.aerofs.daemon.transport.zephyr.Zephyr;
@@ -43,6 +43,11 @@ import static org.mockito.Mockito.when;
 
 public class TestCoreTransports
 {
+    static
+    {
+        TransportLoggerSetup.init();
+    }
+
     private final CfgAbsRTRoot _absRTRoot = mock(CfgAbsRTRoot.class);
     private final CfgLocalUser _localUser = mock(CfgLocalUser.class);
     private final CfgLocalDID _localDID = mock(CfgLocalDID.class);
@@ -57,9 +62,6 @@ public class TestCoreTransports
     private final ServerSSLEngineFactory _serverSSLEngineFactory = mock(ServerSSLEngineFactory.class);
     private final ClientSocketChannelFactory _clientSocketChannelFactory = mock(ClientSocketChannelFactory.class);
     private final ServerSocketChannelFactory _serverSocketChannelFactory = mock(ServerSocketChannelFactory.class);
-
-    @ClassRule
-    public static LoggerResource _loggerResource = new LoggerResource(TestCoreTransports.class);
 
     @ClassRule
     public static ConfigurationPropertiesResource _configurationPropertiesResource = new ConfigurationPropertiesResource();

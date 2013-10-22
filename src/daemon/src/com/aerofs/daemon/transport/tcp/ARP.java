@@ -4,10 +4,7 @@ import com.aerofs.base.C;
 import com.aerofs.base.ElapsedTimer;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
-import com.aerofs.daemon.transport.lib.IPresenceManager;
 import com.aerofs.lib.ex.ExDeviceOffline;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
 import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
@@ -16,22 +13,49 @@ import java.util.Map;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 import static com.aerofs.daemon.transport.lib.TransportUtil.prettyPrint;
-import static com.aerofs.daemon.transport.tcp.ARP.ARPChange.ADD;
-import static com.aerofs.daemon.transport.tcp.ARP.ARPChange.REM;
-import static com.aerofs.daemon.transport.tcp.ARP.ARPChange.UPD;
+import static com.google.common.collect.Maps.newConcurrentMap;
+import static com.google.common.collect.Maps.newHashMap;
+import static com.google.common.collect.Sets.newCopyOnWriteArraySet;
 
-class ARP implements IPresenceManager
+final class ARP
 {
-    void addARPChangeListener(IARPChangeListener listener)
+    interface IARPVisitor
     {
-        _listeners.add(listener);
+        void visit(DID did, ARPEntry arp);
+    }
+
+    interface IARPListener
+    {
+        void onARPEntryChange(DID did, boolean added);
+    }
+
+    static class ARPEntry
+    {
+        final InetSocketAddress remoteAddress;
+        final ElapsedTimer lastUpdatedTimer;
+
+        ARPEntry(InetSocketAddress remoteAddress, ElapsedTimer timer)
+        {
+            this.remoteAddress = remoteAddress;
+            this.lastUpdatedTimer = timer;
+        }
+    }
+
+    private static final Logger l = Loggers.getLogger(ARP.class);
+
+    private final Map<DID, ARPEntry> arpEntries = newConcurrentMap();
+    private final CopyOnWriteArraySet<IARPListener> listeners = newCopyOnWriteArraySet();
+
+    void addListener(IARPListener listener)
+    {
+        listeners.add(listener);
     }
 
     synchronized @Nullable ARPEntry get(DID did)
     {
-        ARPEntry en = _did2en.get(did);
-        if (en != null && en._isa.isUnresolved()) {
-            throw new IllegalStateException("unresolved addr:" + en._isa);
+        ARPEntry en = arpEntries.get(did);
+        if (en != null && en.remoteAddress.isUnresolved()) {
+            throw new IllegalStateException("unresolved addr:" + en.remoteAddress);
         }
         return en;
     }
@@ -50,19 +74,18 @@ class ARP implements IPresenceManager
     /**
      * this overwrites old entries.
      */
-    void put(DID did, InetSocketAddress isa)
+    void put(DID did, InetSocketAddress remoteAddress)
     {
         boolean isNew;
         synchronized (this) {
             ElapsedTimer timer = new ElapsedTimer();
-            ARPEntry oldEntry = _did2en.put(did, new ARPEntry(isa, timer));
+            ARPEntry oldEntry = arpEntries.put(did, new ARPEntry(remoteAddress, timer));
             isNew = (oldEntry == null);
         }
 
-        notifyListeners(did, isNew ? ADD : UPD);
-
         if (isNew) {
-            l.info("arp: add: d{} rem:{}", did, prettyPrint(isa));
+            l.info("arp: add: d{} rem:{}", did, prettyPrint(remoteAddress));
+            notifyListeners(did, true);
         }
     }
 
@@ -76,13 +99,13 @@ class ARP implements IPresenceManager
     {
         ARPEntry oldEntry;
         synchronized (this) {
-            oldEntry = _did2en.remove(did);
+            oldEntry = arpEntries.remove(did);
         }
 
-        notifyListeners(did, REM);
+        notifyListeners(did, false);
 
         if (oldEntry != null) {
-            l.info("arp: rem: d:{} rem:{}", did, prettyPrint(oldEntry._isa));
+            l.info("arp: rem: d:{} rem:{}", did, prettyPrint(oldEntry.remoteAddress));
         }
 
         return oldEntry;
@@ -93,28 +116,22 @@ class ARP implements IPresenceManager
         return get(did) != null;
     }
 
-    @Override
-    public boolean isPresent(DID did)
-    {
-        return exists(did);
-    }
-
     void visitARPEntries(IARPVisitor v)
     {
         Map<DID, ARPEntry> arpEntries;
         synchronized (this) {
-            arpEntries = Maps.newHashMap(_did2en);
+            arpEntries = newHashMap(this.arpEntries);
         }
 
         for (Map.Entry<DID, ARPEntry> e : arpEntries.entrySet()) {
-            v.visit_(e.getKey(), e.getValue());
+            v.visit(e.getKey(), e.getValue());
         }
     }
 
-    private void notifyListeners(DID did, ARPChange chg)
+    private void notifyListeners(DID did, boolean isOnline)
     {
-        for (IARPChangeListener w : _listeners) {
-            w.onArpChange_(did, chg);
+        for (IARPListener listener : listeners) {
+            listener.onARPEntryChange(did, isOnline);
         }
     }
 
@@ -122,78 +139,16 @@ class ARP implements IPresenceManager
     public synchronized String toString()
     {
         StringBuilder sb = new StringBuilder();
-        for (Map.Entry<DID, ARPEntry> en : _did2en.entrySet()) {
+        for (Map.Entry<DID, ARPEntry> en : arpEntries.entrySet()) {
             String a = en.getKey().toString();
             sb.append(a)
               .append(" -> ")
-              .append(en.getValue()._isa)
+              .append(en.getValue().remoteAddress)
               .append(", ")
-              .append((en.getValue()._lastUpdatedTimer.elapsed()) / C.SEC)
+              .append((en.getValue().lastUpdatedTimer.elapsed()) / C.SEC)
               .append("s");
             sb.append('\n');
         }
         return sb.toString();
     }
-
-    //
-    // types
-    //
-
-    interface IARPVisitor
-    {
-        void visit_(DID did, ARPEntry arp);
-    }
-
-    /**
-     * Type of {@link ARPEntry} change
-     */
-    enum ARPChange
-    {
-        /** Add a <strong>new</strong> ARPEntry */
-        ADD,
-        /** Update an <strong>existing</strong> ARPEntry */
-        UPD,
-        /** Remove an <strong>existing</strong> ARPEntry */
-        REM,
-    }
-
-    /**
-     * To be implemented by classes that want to know about ARP changes
-     */
-    interface IARPChangeListener
-    {
-        /**
-         * Called whenever an ARP entry changes. Changes can take 3 forms:
-         * <ul>
-         *     <li>Add</li>
-         *     <li>Update</li>
-         *     <li>Remove</li>
-         * </ul>
-         *
-         * @param did {@link DID} for which the change occurs
-         * @param chg {@link ARPChange} indicating what type the change is
-         */
-        void onArpChange_(DID did, ARPChange chg);
-    }
-
-    static class ARPEntry
-    {
-        final InetSocketAddress _isa;
-        final ElapsedTimer _lastUpdatedTimer;
-
-        ARPEntry(InetSocketAddress isa, ElapsedTimer timer)
-        {
-            _isa = isa;
-            _lastUpdatedTimer = timer;
-        }
-    }
-
-    //
-    // members
-    //
-
-    private final Map<DID, ARPEntry> _did2en = Maps.newConcurrentMap();
-    private final CopyOnWriteArraySet<IARPChangeListener> _listeners = Sets.newCopyOnWriteArraySet();
-
-    private static final Logger l = Loggers.getLogger(ARP.class);
 }

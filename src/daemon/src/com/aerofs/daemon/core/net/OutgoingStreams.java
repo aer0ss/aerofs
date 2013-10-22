@@ -34,7 +34,7 @@ public class OutgoingStreams
 {
     private static final Logger l = Loggers.getLogger(OutgoingStreams.class);
 
-    public final class OutgoingStream
+    public final class OutgoingStream implements IOutgoingStreamFeedback
     {
         private final Endpoint _ep;
         private final Token _tk;
@@ -54,7 +54,7 @@ public class OutgoingStreams
         }
 
         // Only for debugging performance issues
-        //private final Tput _tput = new Tput("send chunk");
+        //private final ThroughputCounter _tput = new ThroughputCounter("send chunk");
 
         public void sendChunk_(byte[] bs) throws Exception
         {
@@ -105,11 +105,13 @@ public class OutgoingStreams
             return "ostrm " + _ep.tp() + ":" + _ep.did() + ":" + _strmid + " seq:" + _seq;
         }
 
+        @Override
         public void incChunkCount()
         {
             _chunksCounter.incChunkCount();
         }
 
+        @Override
         public void decChunkCount()
         {
             _chunksCounter.decChunkCount();
@@ -120,6 +122,7 @@ public class OutgoingStreams
             _chunksCounter.waitIfTooManyChunks_(_tk);
         }
 
+        @Override
         public void setFirstFailedChunk(EOChunk chunk)
         {
             if (_firstFailedChunk == null) {
