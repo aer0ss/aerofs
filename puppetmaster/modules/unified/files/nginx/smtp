@@ -1,0 +1,12 @@
+server {
+    # Email verification tomcat proxy. Used by setup.py in the site conf UI.
+    listen localhost:4434;
+
+    access_log /var/log/nginx/email.access.log;
+
+    location /email {
+        proxy_pass http://127.0.0.1:8080;
+        proxy_read_timeout 10;
+        proxy_send_timeout 10;
+    }
+}

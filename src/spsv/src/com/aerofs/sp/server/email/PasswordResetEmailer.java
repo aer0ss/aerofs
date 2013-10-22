@@ -8,7 +8,7 @@ import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.Util;
 import com.aerofs.base.id.UserID;
-import com.aerofs.servlets.lib.EmailSender;
+import com.aerofs.servlets.lib.AsyncEmailSender;
 import com.aerofs.sp.server.lib.SPParam;
 import com.aerofs.sv.common.EmailCategory;
 
@@ -17,6 +17,8 @@ import java.io.IOException;
 
 public class PasswordResetEmailer
 {
+    private static final AsyncEmailSender _emailSender = new AsyncEmailSender();
+
     public void sendPasswordResetEmail(UserID userId, String resetToken)
             throws IOException, MessagingException
 
@@ -33,9 +35,8 @@ public class PasswordResetEmailer
         email.addSection(L.brand() + " Password Request", body);
         email.addDefaultSignature();
 
-        EmailSender.sendPublicEmailFromSupport(SPParam.EMAIL_FROM_NAME, userId.getString(),
-                null, subject, email.getTextEmail(), email.getHTMLEmail(),
-                EmailCategory.PASSWORD_RESET);
+        _emailSender.sendPublicEmailFromSupport(SPParam.EMAIL_FROM_NAME, userId.getString(), null,
+                subject, email.getTextEmail(), email.getHTMLEmail(), EmailCategory.PASSWORD_RESET);
 
         EmailUtil.emailSPNotification(userId + " initiated a password reset ", "");
     }
@@ -56,9 +57,8 @@ public class PasswordResetEmailer
         email.addSection(subject, body);
         email.addDefaultSignature();
 
-        EmailSender.sendPublicEmailFromSupport(SPParam.EMAIL_FROM_NAME, userId.getString(),
-                null, subject, email.getTextEmail(), email.getHTMLEmail(),
-                EmailCategory.PASSWORD_RESET);
+        _emailSender.sendPublicEmailFromSupport(SPParam.EMAIL_FROM_NAME, userId.getString(), null,
+                subject, email.getTextEmail(), email.getHTMLEmail(), EmailCategory.PASSWORD_RESET);
 
         EmailUtil.emailSPNotification(userId + " completed a password reset ", "");
     }

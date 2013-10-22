@@ -23,6 +23,11 @@
     <servlet-class>com.aerofs.sp.server.IdentityServlet</servlet-class>
   </servlet>
 
+  <servlet>
+    <servlet-name>ServletSmtpVerification</servlet-name>
+    <servlet-class>com.aerofs.sp.server.SmtpVerificationServlet</servlet-class>
+  </servlet>
+
   <!-- URL mapping -->
   <servlet-mapping>
     <servlet-name>ServletSP</servlet-name>
@@ -32,4 +37,9 @@
   <servlet-mapping>
     <servlet-name>ServletIdentity</servlet-name>
     <url-pattern>/openid/*</url-pattern>
+  </servlet-mapping>
+
+  <servlet-mapping>
+    <servlet-name>ServletSmtpVerification</servlet-name>
+    <url-pattern>/email</url-pattern>
   </servlet-mapping>

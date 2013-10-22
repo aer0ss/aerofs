@@ -10,7 +10,7 @@ import com.aerofs.base.id.SID;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.Util;
 import com.aerofs.base.ex.ExNotFound;
-import com.aerofs.servlets.lib.EmailSender;
+import com.aerofs.servlets.lib.AsyncEmailSender;
 import com.aerofs.sv.common.EmailCategory;
 import com.aerofs.sp.server.lib.user.User;
 import com.google.common.base.Strings;
@@ -31,6 +31,7 @@ import java.util.concurrent.Callable;
 public class InvitationEmailer
 {
     private final static String ACCEPT_INVITATION_LINK = WWW.DASHBOARD_HOST_URL + "/accept";
+    private static final AsyncEmailSender _emailSender = new AsyncEmailSender();
 
     public static class Factory
     {
@@ -61,9 +62,9 @@ public class InvitationEmailer
                 @Override
                 public Void call() throws Exception
                 {
-                    EmailSender.sendPublicEmailFromSupport(nsInviter.nameOnly(),
-                            invitee.id().getString(), getReplyTo(inviter),
-                            subject, email.getTextEmail(), email.getHTMLEmail(),
+                    _emailSender.sendPublicEmailFromSupport(nsInviter.nameOnly(),
+                            invitee.id().getString(), getReplyTo(inviter), subject,
+                            email.getTextEmail(), email.getHTMLEmail(),
                             EmailCategory.FOLDERLESS_INVITE);
 
                     EmailUtil.emailSPNotification(
@@ -134,10 +135,9 @@ public class InvitationEmailer
                 @Override
                 public Void call() throws Exception
                 {
-                    EmailSender.sendPublicEmailFromSupport(nsSharer.nameOnly(),
-                            sharee.id().getString(), getReplyTo(sharer),
-                            subject, email.getTextEmail(), email.getHTMLEmail(),
-                            EmailCategory.FOLDER_INVITE);
+                    _emailSender.sendPublicEmailFromSupport(nsSharer.nameOnly(),
+                            sharee.id().getString(), getReplyTo(sharer), subject,
+                            email.getTextEmail(), email.getHTMLEmail(), EmailCategory.FOLDER_INVITE);
 
                     EmailUtil.emailSPNotification(sharer + " shared " + folderName + " with " + sharee,
                             "code " + sid.toStringFormal());
@@ -169,9 +169,8 @@ public class InvitationEmailer
                 @Override
                 public Void call() throws Exception
                 {
-                    EmailSender.sendPublicEmailFromSupport(ns.nameOnly(), invitee.id().getString(),
-                            getReplyTo(inviter),
-                            subject, email.getTextEmail(),
+                    _emailSender.sendPublicEmailFromSupport(ns.nameOnly(), invitee.id().getString(),
+                            getReplyTo(inviter), subject, email.getTextEmail(),
                             email.getHTMLEmail(), EmailCategory.ORGANIZATION_INVITATION);
 
                     return null;

@@ -1,6 +1,6 @@
 server {
     # For AeroFS clients and servers to connect to directly, with trust rooted
-    # in the AeroFS CA
+    # in the AeroFS CA.
     listen *:4433;
 
     access_log /var/log/nginx/service.access.log;

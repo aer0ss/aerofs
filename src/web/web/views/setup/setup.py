@@ -3,6 +3,8 @@ import tempfile
 import shutil
 import os
 import socket
+import requests
+import random
 from aerofs_common.configuration import Configuration
 from pyramid.view import view_config
 from subprocess import call, Popen, PIPE
@@ -10,7 +12,21 @@ from pyramid.httpexceptions import HTTPFound
 from web.util import *
 from web.views.login.login_view import URL_PARAM_EMAIL
 
-BOOTSTRAP_PIPE_FILE = "/tmp/bootstrap"
+# Bootstrap pipe constants
+_BOOTSTRAP_PIPE_FILE = "/tmp/bootstrap"
+
+# Email verification interface constants.
+
+# This is a tomcat servlet that is part of the SP package.
+_SMTP_VERIFICATION_URL = "http://localhost:4434/email"
+# N.B. these params are defined in Java land in SmtpVerifiationServlet.java. They must match.
+_SMTP_VERIFICATION_TO_EMAIL = "to_email"
+_SMTP_VERIFICATION_CODE = "code"
+_SMTP_VERIFICATION_SMTP_HOST = "smtp_host"
+_SMTP_VERIFICATION_SMTP_USERNAME = "smtp_username"
+_SMTP_VERIFICATION_SMTP_PASSWORD = "smtp_password"
+
+_SESSION_KEY_EMAIL_VERIFICATION_CODE = 'email_verification_code'
 
 log = logging.getLogger("web")
 
@@ -29,18 +45,28 @@ def _get_settings():
 def setup_view(request):
     settings = _get_settings()
 
+    # Genearate email verification code. Keep the code constant across the
+    # session so if the user sends multiple verification emails the user can use
+    # the code from any email.
+    code = request.session.get(_SESSION_KEY_EMAIL_VERIFICATION_CODE)
+    if not code:
+        code = random.randint(100000, 999999)
+        request.session[_SESSION_KEY_EMAIL_VERIFICATION_CODE] = code
+
     return {
         'current_config': settings,
         'is_configuration_initialized': is_configuration_initialized(settings),
-        # This parameter is referred to by apply_and_create_user_page.mako
-        'url_param_email': URL_PARAM_EMAIL
+        # This parameter is used by apply_and_create_user_page.mako
+        'url_param_email': URL_PARAM_EMAIL,
+        # This parameter is used by email_page.mako
+        'email_verification_code': code
     }
 
 # ------------------------------------------------------------------------
 # Hostname
 # ------------------------------------------------------------------------
 
-def hostname_resolves(hostname):
+def _is_hostname_resolvable(hostname):
     try:
         socket.gethostbyname(hostname)
         return True
@@ -55,7 +81,7 @@ def hostname_resolves(hostname):
 def json_setup_hostname(request):
     base_host_unified = request.params['base.host.unified']
 
-    if not hostname_resolves(base_host_unified):
+    if not _is_hostname_resolvable(base_host_unified):
         error('Unable to resolve ' + base_host_unified + '. Please check your settings.')
 
     if base_host_unified == "localhost":
@@ -70,31 +96,63 @@ def json_setup_hostname(request):
 # Email
 # ------------------------------------------------------------------------
 
+def _parse_email_request(request):
+    if request.params['email.server'] == 'remote':
+        host       = request.params['email.sender.public_host']
+        username   = request.params['email.sender.public_username']
+        password   = request.params['email.sender.public_password']
+    else:
+        host = 'localhost'
+        username = ''
+        password = ''
+
+    return host,username,password
+
+def _send_verification_email(to_email, code, host, username, password):
+    payload = {
+        _SMTP_VERIFICATION_TO_EMAIL: to_email,
+        _SMTP_VERIFICATION_CODE: code,
+        _SMTP_VERIFICATION_SMTP_HOST: host,
+        _SMTP_VERIFICATION_SMTP_USERNAME: username,
+        _SMTP_VERIFICATION_SMTP_PASSWORD: password
+    }
+
+    return requests.post(_SMTP_VERIFICATION_URL, data=payload)
+
+@view_config(
+    route_name = 'json_verify_smtp',
+    permission='admin',
+    renderer = 'json'
+)
+def json_verify_smtp(request):
+    host, username, password = _parse_email_request(request)
+
+    r = _send_verification_email(
+            request.params['verification.to.email'],
+            request.session[_SESSION_KEY_EMAIL_VERIFICATION_CODE],
+            host,
+            username,
+            password)
+
+    if r.status_code != 200:
+        error("Unable to send email. Please check your SMTP settings.")
+
+    return {}
+
 @view_config(
     route_name = 'json_setup_email',
     permission='admin',
     renderer = 'json'
 )
 def json_setup_email(request):
-    base_www_support_email_address = request.params['base.www.support_email_address']
-
-    if request.params['email.server'] == 'remote':
-        email_sender_public_host       = request.params['email.sender.public_host']
-        email_sender_public_username   = request.params['email.sender.public_username']
-        email_sender_public_password   = request.params['email.sender.public_password']
-    else:
-        email_sender_public_host = ''
-        email_sender_public_username = ''
-        email_sender_public_password = ''
+    support_address = request.params['base.www.support_email_address']
+    host,username,password = _parse_email_request(request)
 
     configuration = Configuration()
-
-    # TODO (MP) need better sanity checking here. Need to make sure SMTP creds will work.
-
-    configuration.set_persistent_value('support_address',   base_www_support_email_address)
-    configuration.set_persistent_value('email_host',        email_sender_public_host)
-    configuration.set_persistent_value('email_user',        email_sender_public_username)
-    configuration.set_persistent_value('email_password',    email_sender_public_password)
+    configuration.set_persistent_value('support_address', support_address)
+    configuration.set_persistent_value('email_host',      host)
+    configuration.set_persistent_value('email_user',      username)
+    configuration.set_persistent_value('email_password',  password)
 
     return {}
 
@@ -102,13 +160,13 @@ def json_setup_email(request):
 # Certificate
 # ------------------------------------------------------------------------
 
-def is_certificate_formatted_correctly(certificate_filename):
+def _is_certificate_formatted_correctly(certificate_filename):
     return call(["/usr/bin/openssl", "x509", "-in", certificate_filename, "-noout"]) == 0
 
-def is_key_formatted_correctly(key_filename):
+def _is_key_formatted_correctly(key_filename):
     return call(["/usr/bin/openssl", "rsa", "-in", key_filename, "-noout"]) == 0
 
-def write_pem_to_file(pem_string):
+def _write_pem_to_file(pem_string):
      os_handle, filename = tempfile.mkstemp()
      os.write(os_handle, pem_string)
      os.close(os_handle)
@@ -120,18 +178,18 @@ def _get_modulus_helper(cmd):
     return stdout.split('=')[1]
 
 # Expects as input a filename pointing to a valid PEM certtificate file.
-def get_modulus_of_certificate_file(certificate_filename):
+def _get_modulus_of_certificate_file(certificate_filename):
     cmd = ["/usr/bin/openssl", "x509", "-noout", "-modulus", "-in", certificate_filename]
     return _get_modulus_helper(cmd)
 
 # Expects as input a filename pointing to a valid PEM key file.
-def get_modulus_of_key_file(key_filename):
+def _get_modulus_of_key_file(key_filename):
     cmd = ["/usr/bin/openssl", "rsa", "-noout", "-modulus", "-in", key_filename]
     return _get_modulus_helper(cmd)
 
 # Format certificate and key using this function before saving to the
 # configuration service.
-def format_pem(string):
+def _format_pem(string):
         return string.strip().replace('\n', '\\n')
 
 @view_config(
@@ -143,12 +201,12 @@ def json_setup_certificate(request):
     certificate = request.params['server.browser.certificate']
     key = request.params['server.browser.key']
 
-    certificate_filename = write_pem_to_file(certificate)
-    key_filename = write_pem_to_file(key)
+    certificate_filename = _write_pem_to_file(certificate)
+    key_filename = _write_pem_to_file(key)
 
     try:
-        is_certificate_valid = is_certificate_formatted_correctly(certificate_filename)
-        is_key_valid = is_key_formatted_correctly(key_filename)
+        is_certificate_valid = _is_certificate_formatted_correctly(certificate_filename)
+        is_key_valid = _is_key_formatted_correctly(key_filename)
 
         if not is_certificate_valid and not is_key_valid:
             error("The certificate and key you provided is invalid.")
@@ -158,16 +216,16 @@ def json_setup_certificate(request):
             error("The key you provided is invalid.")
 
         # Check that key matches the certificate.
-        certificate_modulus = get_modulus_of_certificate_file(certificate_filename)
-        key_modulus = get_modulus_of_key_file(key_filename)
+        certificate_modulus = _get_modulus_of_certificate_file(certificate_filename)
+        key_modulus = _get_modulus_of_key_file(key_filename)
 
         if certificate_modulus != key_modulus:
             error("The certificate and key you provided do not match each other.")
 
         # All is well - set the external properties.
         configuration = Configuration()
-        configuration.set_persistent_value('browser_cert', format_pem(certificate))
-        configuration.set_persistent_value('browser_key', format_pem(key))
+        configuration.set_persistent_value('browser_cert', _format_pem(certificate))
+        configuration.set_persistent_value('browser_key', _format_pem(key))
 
         return {}
 
@@ -186,7 +244,7 @@ def json_setup_certificate(request):
 )
 def json_setup_apply(request):
     log.warn("Applying configuration.")
-    shutil.copyfile('/opt/bootstrap/tasks/manual.tasks', BOOTSTRAP_PIPE_FILE)
+    shutil.copyfile('/opt/bootstrap/tasks/manual.tasks', _BOOTSTRAP_PIPE_FILE)
 
     return {}
 
@@ -200,7 +258,7 @@ def json_setup_apply(request):
     renderer = 'json'
 )
 def json_setup_poll(request):
-    running = os.stat(BOOTSTRAP_PIPE_FILE).st_size != 0
+    running = os.stat(_BOOTSTRAP_PIPE_FILE).st_size != 0
     log.warn("Poll, running:" + str(running))
 
     return {'completed': not running}
@@ -220,7 +278,7 @@ def json_setup_finalize(request):
     configuration = Configuration()
     configuration.set_persistent_value('configuration_initialized', 'true')
 
-    with open(BOOTSTRAP_PIPE_FILE, 'w') as f:
+    with open(_BOOTSTRAP_PIPE_FILE, 'w') as f:
         # Add the delay so that we have time to return this call before we reload.
         f.write('delay\nuwsgi-reload')
 

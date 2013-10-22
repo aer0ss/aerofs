@@ -28,7 +28,7 @@ import com.aerofs.labeling.L;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.log.LogUtil;
-import com.aerofs.servlets.lib.EmailSender;
+import com.aerofs.servlets.lib.AsyncEmailSender;
 import com.aerofs.servlets.lib.db.IThreadLocalTransaction;
 import com.yammer.metrics.Metrics;
 import com.yammer.metrics.core.Meter;
@@ -67,6 +67,8 @@ public class SVReactor
     private static final int FILE_BUF_SIZE = C.MB;
     private final SVDatabase _db;
     private final IThreadLocalTransaction<SQLException> _transaction;
+
+    private static final AsyncEmailSender _emailSender = new AsyncEmailSender();
 
     private String _pathDefect;
     private String _pathArchive;
@@ -152,7 +154,7 @@ public class SVReactor
     public static void emailSVNotification(final String subject, final String body)
     {
         try {
-            EmailSender.sendNotificationEmail(SV_NOTIFICATION_SENDER, SV_NOTIFICATION_SENDER,
+            _emailSender.sendNotificationEmail(SV_NOTIFICATION_SENDER, SV_NOTIFICATION_SENDER,
                     SV_NOTIFICATION_RECEIVER, null, subject, body, null);
         } catch (Exception e) {
             l.error("cannot email notification: ", e);
@@ -300,13 +302,13 @@ public class SVReactor
                 "contact email: " + contactEmail + "\n" +
                 "device: " + did;
 
-        Future<Void> f = EmailSender.sendPublicEmail(contactEmail, contactEmail,
+        Future<Void> f = _emailSender.sendPublicEmail(contactEmail, contactEmail,
                 WWW.SUPPORT_EMAIL_ADDRESS, null, L.brand() + " Problem # " + id, body, null,
                 EmailCategory.SUPPORT);
         try {
             f.get(); // block to make sure email reaches support system
         } catch (Exception e) {
-            // the only type of exception that EmailSender.sendEmail() can throw throw the
+            // the only type of exception that AsyncEmailSender.sendEmail() can throw throw the
             // executor service is a MessagingException
             throw new MessagingException(e.getCause().getMessage());
         }

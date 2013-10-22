@@ -9,7 +9,7 @@ import com.aerofs.base.acl.Role;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.Util;
-import com.aerofs.servlets.lib.EmailSender;
+import com.aerofs.servlets.lib.AsyncEmailSender;
 import com.aerofs.sp.server.lib.SPParam;
 import com.aerofs.sp.server.lib.SharedFolder;
 import com.aerofs.sp.server.lib.user.User;
@@ -22,6 +22,8 @@ import java.sql.SQLException;
 
 public class SharedFolderNotificationEmailer
 {
+    private static final AsyncEmailSender _emailSender = new AsyncEmailSender();
+
     /**
      * Notify the inviter of a shared folder when the person he/she invited accepts the invitation
      */
@@ -46,7 +48,7 @@ public class SharedFolderNotificationEmailer
         email.addSection(subject, body);
         email.addDefaultSignature();
 
-        EmailSender.sendPublicEmailFromSupport(SPParam.EMAIL_FROM_NAME, inviter.id().getString(),
+        _emailSender.sendPublicEmailFromSupport(SPParam.EMAIL_FROM_NAME, inviter.id().getString(),
                 null, subject, email.getTextEmail(), email.getHTMLEmail(),
                 EmailCategory.SHARED_FOLDER_INVITATION_ACCEPTED_NOTIFICATION);
     }
@@ -73,7 +75,7 @@ public class SharedFolderNotificationEmailer
         email.addSection(title, body);
         email.addDefaultSignature();
 
-        EmailSender.sendPublicEmailFromSupport(SPParam.EMAIL_FROM_NAME, subject.id().getString(),
+        _emailSender.sendPublicEmailFromSupport(SPParam.EMAIL_FROM_NAME, subject.id().getString(),
                 null, title, email.getTextEmail(), email.getHTMLEmail(),
                 EmailCategory.SHARED_FOLDER_ROLE_CHANGE_NOTIFICATION);
     }

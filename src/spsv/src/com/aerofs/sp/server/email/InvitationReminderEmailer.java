@@ -6,11 +6,13 @@ package com.aerofs.sp.server.email;
 
 import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.labeling.L;
-import com.aerofs.servlets.lib.EmailSender;
+import com.aerofs.servlets.lib.AsyncEmailSender;
 import com.aerofs.sv.common.EmailCategory;
 
 public class InvitationReminderEmailer
 {
+    private static final AsyncEmailSender _emailSender = new AsyncEmailSender();
+
     public void send(String fromName, final String to, String signUpCode, String unsubscribeId)
             throws Exception
     {
@@ -43,8 +45,7 @@ public class InvitationReminderEmailer
         email.addSection("Reminder: You're invited to " + L.brand() +"!", body);
         email.addDefaultSignature();
 
-        EmailSender.sendPublicEmailFromSupport(fromName, to, null, subject,
-                email.getTextEmail(), email.getHTMLEmail(),
-                EmailCategory.AEROFS_INVITATION_REMINDER);
+        _emailSender.sendPublicEmailFromSupport(fromName, to, null, subject, email.getTextEmail(),
+                email.getHTMLEmail(), EmailCategory.AEROFS_INVITATION_REMINDER);
     }
 }

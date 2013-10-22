@@ -7,7 +7,7 @@ package com.aerofs.sp.server.email;
 import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.LibParam.PrivateDeploymentConfig;
-import com.aerofs.servlets.lib.EmailSender;
+import com.aerofs.servlets.lib.AsyncEmailSender;
 import com.aerofs.sp.server.lib.SPParam;
 import com.aerofs.sv.common.EmailCategory;
 
@@ -19,6 +19,8 @@ public class RequestToSignUpEmailer
     // See web/__init__.py for the reason we have different URLs for private and public deployment
     static private String DASHBOARD_HOME = WWW.DASHBOARD_HOST_URL +
             (PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT ? "/" : "/home");
+
+    private static final AsyncEmailSender _emailSender = new AsyncEmailSender();
 
     static String getSignUpLink(String signUpCode)
     {
@@ -41,7 +43,7 @@ public class RequestToSignUpEmailer
         email.addSection("You're almost ready to go!", body);
         email.addDefaultSignature();
 
-        EmailSender.sendPublicEmailFromSupport(SPParam.EMAIL_FROM_NAME, emailAddress, null,
+        _emailSender.sendPublicEmailFromSupport(SPParam.EMAIL_FROM_NAME, emailAddress, null,
                 subject, email.getTextEmail(), email.getHTMLEmail(),
                 EmailCategory.REQUEST_TO_SIGN_UP);
     }
@@ -64,7 +66,7 @@ public class RequestToSignUpEmailer
         email.addSection("You already have an " + L.product() + " account", body);
         email.addDefaultSignature();
 
-        EmailSender.sendPublicEmailFromSupport(SPParam.EMAIL_FROM_NAME, emailAddress, null,
+        _emailSender.sendPublicEmailFromSupport(SPParam.EMAIL_FROM_NAME, emailAddress, null,
                 subject, email.getTextEmail(), email.getHTMLEmail(),
                 EmailCategory.REQUEST_TO_SIGN_UP);
     }

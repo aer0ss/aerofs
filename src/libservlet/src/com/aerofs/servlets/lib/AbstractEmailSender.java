@@ -26,39 +26,39 @@ import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
 import java.io.UnsupportedEncodingException;
 import java.util.Properties;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
-import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 
 import static com.aerofs.base.config.ConfigurationProperties.getBooleanProperty;
 import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
 
 /**
- * The EmailSender class allows you to send emails (either through local or remote SMTP).
+ * This class allows you to send emails (either through local or remote SMTP).
  *
- * The class utilizes a single threaded executor with a queue size of EMAIL_QUEUE_SIZE.
- * If the queue becomes full, the executor throws a runtime RejectedExecutionException
+ * TODO (MP) Need to move the sendgrid creds out of here and into hiera...
+ * TODO (MP) This class needs some general refactoring love...
  */
-public class EmailSender
+public abstract class AbstractEmailSender
 {
-    private static final Logger l = Loggers.getLogger(EmailSender.class);
+    private static final Logger l = Loggers.getLogger(AbstractEmailSender.class);
 
-    private static final int EMAIL_QUEUE_SIZE = 1000;
-    private static final ExecutorService executor = new ThreadPoolExecutor(1, 1, 0L,
-            TimeUnit.MILLISECONDS, new LinkedBlockingDeque<Runnable>(EMAIL_QUEUE_SIZE));
+    private final String _host;
+    private final String _username;
+    private final String _password;
 
-    private static String PUBLIC_HOST =
-            getStringProperty("email.sender.public_host", "smtp.sendgrid.net");
-    private static String PUBLIC_PORT =
+    /**
+     * @param host when using local mail relay, set this to localhost.
+     */
+    public AbstractEmailSender(String host, String username, String password)
+    {
+        _host = host;
+        _username = username;
+        _password = password;
+    }
+
+    private static String PORT =
             getStringProperty("email.sender.public_port", "25");
-    private static String PUBLIC_USERNAME =
-            getStringProperty("email.sender.public_username", "mXSiiSbCMMYVG38E");
-    private static String PUBLIC_PASSWORD =
-            getStringProperty("email.sender.public_password", "6zovnhQuLMwNJlx8");
+
     // SMTP command timeout, expressed in milliseconds.
     private static String TIMEOUT =
             getStringProperty("email.sender.timeout", String.valueOf(10 * C.SEC));
@@ -75,15 +75,15 @@ public class EmailSender
     public static final Boolean ENABLED =
             getBooleanProperty("lib.notifications.enabled", true);
 
-    public static boolean relayIsLocalhost() {
-        return PUBLIC_HOST.equals("localhost");
+    public boolean relayIsLocalhost() {
+        return _host.equals("localhost");
     }
 
-    public static Session getMailSession() {
+    public Session getMailSession() {
         Properties props = new Properties();
         props.put("mail.smtp.timeout", TIMEOUT);
         props.put("mail.smtp.connectiontimeout", CONNECTION_TIMEOUT);
-        props.put("mail.smtp.port", PUBLIC_PORT);
+        props.put("mail.smtp.port", PORT);
 
         // Without it Java Mail would sene "EHLO" rather thant "EHLO <hostname>". The former
         // is not supported by some mail relays include postfix which is used as the local mail
@@ -102,7 +102,7 @@ public class EmailSender
         return Session.getInstance(props);
     }
 
-    public static Future<Void> sendNotificationEmail(String from, @Nullable String fromName,
+    public Future<Void> sendNotificationEmail(String from, @Nullable String fromName,
             String to, @Nullable String replyTo, String subject, String textBody,
             @Nullable String htmlBody)
             throws MessagingException, UnsupportedEncodingException
@@ -119,7 +119,7 @@ public class EmailSender
      * Similar to sendPublicEmail(), except that it always uses WWW.SUPPORT_EMAIL_ADDRESS as the
      * from address.
      */
-    public static Future<Void> sendPublicEmailFromSupport(@Nullable String fromName, String to,
+    public Future<Void> sendPublicEmailFromSupport(@Nullable String fromName, String to,
             @Nullable String replyTo, String subject, String textBody, @Nullable String htmlBody,
             @Nonnull EmailCategory category)
             throws MessagingException, UnsupportedEncodingException
@@ -128,7 +128,7 @@ public class EmailSender
                 htmlBody, true, category);
     }
 
-    public static Future<Void> sendPublicEmail(String from,
+    public Future<Void> sendPublicEmail(String from,
             @Nullable String fromName, String to, @Nullable String replyTo, String subject,
             String textBody, @Nullable String htmlBody, @Nonnull EmailCategory category)
             throws MessagingException, UnsupportedEncodingException
@@ -136,7 +136,7 @@ public class EmailSender
         return sendEmail(from, fromName, to, replyTo, subject, textBody, htmlBody, true, category);
     }
 
-    private static Future<Void> sendEmail(String from, @Nullable String fromName, String to,
+    private Future<Void> sendEmail(String from, @Nullable String fromName, String to,
             @Nullable String replyTo, String subject, String textBody, @Nullable String htmlBody,
             boolean usingSendGrid, @Nullable EmailCategory category)
             throws MessagingException, UnsupportedEncodingException
@@ -165,7 +165,7 @@ public class EmailSender
         }
     }
 
-    private static MimeMessage composeMessage(String from, String fromName, String to,
+    private MimeMessage composeMessage(String from, String fromName, String to,
             @Nullable String replyTo, String subject, Session sess)
             throws MessagingException, UnsupportedEncodingException
     {
@@ -180,7 +180,7 @@ public class EmailSender
         return msg;
     }
 
-    private static MimeMultipart createMultipartEmail(String textBody, @Nullable String htmlBody)
+    private MimeMultipart createMultipartEmail(String textBody, @Nullable String htmlBody)
             throws MessagingException
     {
         MimeMultipart multiPart = new MimeMultipart("alternative");
@@ -198,29 +198,14 @@ public class EmailSender
             multiPart.addBodyPart(htmlPart);
         }
 
-
         return multiPart;
     }
 
-    /**
-     * Emails are sent using the executor service which will always send one email at a time.
-     * This method is non blocking.
-     */
-    private static Future<Void> sendMessage(final Message msg, final boolean publicFacingEmail,
+    protected abstract Future<Void> sendMessage(final Message msg, final boolean publicFacingEmail,
             final Session session)
-        throws RejectedExecutionException
-    {
-        return executor.submit(new Callable<Void>() {
-            @Override
-            public Void call() throws MessagingException
-            {
-                sendMessageImpl(session, publicFacingEmail, msg);
-                return null;
-            }
-        });
-    }
+        throws RejectedExecutionException, MessagingException;
 
-    private static void sendMessageImpl(Session session, boolean publicFacingEmail, Message msg)
+    protected void sendMessageImpl(Session session, boolean publicFacingEmail, Message msg)
             throws MessagingException
     {
         try {
@@ -235,7 +220,7 @@ public class EmailSender
                         // In fact, it generally requires the lack thereof.
                         t.connect();
                     } else {
-                        t.connect(PUBLIC_HOST, PUBLIC_USERNAME, PUBLIC_PASSWORD);
+                        t.connect(_host, _username, _password);
                     }
                 } else {
                     t.connect(INTERNAL_HOST, INTERNAL_USERNAME, INTERNAL_PASSWORD);

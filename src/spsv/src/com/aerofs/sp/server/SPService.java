@@ -78,7 +78,7 @@ import com.aerofs.proto.Sp.RemoveUserFromOrganizationReply;
 import com.aerofs.proto.Sp.ResolveSignUpCodeReply;
 import com.aerofs.proto.Sp.SignUpWithCodeReply;
 import com.aerofs.proto.SpNotifications.PBACLNotification;
-import com.aerofs.servlets.lib.EmailSender;
+import com.aerofs.servlets.lib.AsyncEmailSender;
 import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue;
 import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue.Epoch;
 import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue.QueueElement;
@@ -205,6 +205,8 @@ public class SPService implements ISPService
 
     private final Boolean INVITATION_ONLY_SIGNUP =
             getBooleanProperty("invitation_only_signup", false);
+
+    private static final AsyncEmailSender _emailSender = new AsyncEmailSender();
 
     public SPService(SPDatabase db, SQLThreadLocalTransaction sqlTrans,
             JedisThreadLocalTransaction jedisTrans, ISessionUser sessionUser,
@@ -1011,9 +1013,9 @@ public class SPService implements ISPService
     {
         _sqlTrans.begin();
 
-        EmailSender.sendPublicEmailFromSupport(SPParam.EMAIL_FROM_NAME,
-                _sessionUser.getUser().id().getString(), null, UserID.fromExternal(userId).getString(),
-                body, null, EmailCategory.SUPPORT);
+        _emailSender.sendPublicEmailFromSupport(SPParam.EMAIL_FROM_NAME,
+                _sessionUser.getUser().id().getString(), null,
+                UserID.fromExternal(userId).getString(), body, null, EmailCategory.SUPPORT);
 
         _sqlTrans.commit();
 

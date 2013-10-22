@@ -23,6 +23,7 @@ class RedirectMiddleware(object):
                 '/setup_redirect',
                 '/json_setup_hostname',
                 '/json_setup_email',
+                '/json_verify_smtp',
                 '/json_setup_certificate',
                 '/json_setup_apply',
                 '/json_setup_poll',

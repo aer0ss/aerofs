@@ -28,7 +28,7 @@ import static org.junit.Assert.fail;
  * This is using "Wiser" which is a test server from the SubEthaSMTP project. Be gentle
  * with Wiser, it's not very smart.
  *
- * In an ideal world, we would use more mocking of the EmailSender internals. However, that
+ * In an ideal world, we would use more mocking of the AsyncEmailSender internals. However, that
  * would let us escape without testing our use of javax.mail, which is occasionally problematic.
  */
 public class TestEmailSender extends AbstractTest
@@ -38,6 +38,7 @@ public class TestEmailSender extends AbstractTest
     static Wiser _wiser;
     static int _port;
     static TimeoutFactory _idFactory;
+    static final AsyncEmailSender _emailSender = new AsyncEmailSender();
 
     // create one Wiser server for all the test cases in this class...
     // We use a 2-second command timeout for all tests in this class.
@@ -67,7 +68,7 @@ public class TestEmailSender extends AbstractTest
     @Test
     public void testSendPublicEmail() throws Exception
     {
-        EmailSender.sendPublicEmail(
+        _emailSender.sendPublicEmail(
                 "f1@example.com", null, "to1@example.com", "r1@example.com",
                 "Subject subject", "Body body", null, EmailCategory.PASSWORD_RESET);
         waitForMessages(1);
@@ -83,7 +84,7 @@ public class TestEmailSender extends AbstractTest
     public void testSendPublicEmailFromSupport()
             throws Exception
     {
-        EmailSender.sendPublicEmailFromSupport(null, "to2@example.com", "r2@example.com",
+        _emailSender.sendPublicEmailFromSupport(null, "to2@example.com", "r2@example.com",
                 "Subject2 subject2", "Body body", null, EmailCategory.PASSWORD_RESET);
         waitForMessages(1);
 
@@ -103,13 +104,13 @@ public class TestEmailSender extends AbstractTest
     public void testTimeout() throws Exception
     {
         _idFactory.delayMsec = 180000;
-        EmailSender.sendPublicEmailFromSupport(null, "die@bart.die", "I@said.die",
+        _emailSender.sendPublicEmailFromSupport(null, "die@bart.die", "I@said.die",
                 "It's German", "For 'the bart, the'", null, EmailCategory.DEVICE_CERTIFIED);
-        EmailSender.sendPublicEmailFromSupport(null, "to3@example.com", "r@example.com",
+        _emailSender.sendPublicEmailFromSupport(null, "to3@example.com", "r@example.com",
                 "This mail is ok", "Oh yes it is", null, EmailCategory.DEVICE_CERTIFIED);
-        EmailSender.sendPublicEmailFromSupport(null, "to3@example.com", "r@example.com",
+        _emailSender.sendPublicEmailFromSupport(null, "to3@example.com", "r@example.com",
                 "This mail is ok", "Oh yes it is", null, EmailCategory.DEVICE_CERTIFIED);
-        EmailSender.sendPublicEmailFromSupport(null, "to3@example.com", "r@example.com",
+        _emailSender.sendPublicEmailFromSupport(null, "to3@example.com", "r@example.com",
                 "This mail is ok", "Oh yes it is", null, EmailCategory.DEVICE_CERTIFIED);
         waitForMessages(3);
 

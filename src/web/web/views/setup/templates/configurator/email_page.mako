@@ -71,6 +71,44 @@
     ${common.render_next_button("submitEmailForm()")}
 </form>
 
+<div id="verify-modal-email-input" class="modal hide small-modal" tabindex="-1" role="dialog">
+    <div class="modal-header">
+        <h4>Verify Your SMTP Settings</h4>
+    </div>
+
+    <div class="modal-body">
+        <p>You must verify your email settings before you can continue. Enter your email address so that we can send a verification email.</p>
+        <form id="verify-modal-email-input-form" method="post" class="form-inline"
+                onsubmit="sendVerificationCodeAndEnableCodeModal(); return false;">
+            <label for="verification.to.email">Email address:</label>
+            <input id="verification.to.email" name="verification.to.email" type="text">
+        </form>
+    </div>
+    <div class="modal-footer">
+        <a href="#" id="sendVerificationCodeButton" class="btn btn-primary"
+           onclick="sendVerificationCodeAndEnableCodeModal(); return false;">Send verification code</a>
+    </div>
+</div>
+
+<div id="verify-modal-code-input" class="modal hide small-modal" tabindex="-1" role="dialog">
+    <div class="modal-header">
+        <h4>Verify Your SMTP Settings</h4>
+    </div>
+
+    <div class="modal-body">
+        <p>Enter the verification code you received in your email to continue.</p>
+        <form id="verify-modal-code-iput-form" method="post" class="form-inline"
+                onsubmit="checkVerificationCodeAndSetConfiguration();">
+            <label for="verification.code">Verification code:</label>
+            <input id="verification.code" name="verification.code" type="text">
+        </form>
+    </div>
+    <div class="modal-footer">
+        <a href="#" id="continueButton" class="btn btn-primary"
+           onclick="checkVerificationCodeAndSetConfiguration();">Continue</a>
+    </div>
+</div>
+
 <script type="text/javascript">
     function localMailServerSelected() {
         $('.public-host-option').attr("disabled", "disabled");
@@ -78,6 +116,20 @@
 
     function externalMailServerSelected() {
         $('.public-host-option').removeAttr("disabled");
+    }
+
+    function hideAllModals() {
+        $('div.modal').modal('hide');
+        enableButtons();
+
+        setEnabled($('#sendVerificationCodeButton'), true);
+        setEnabled($('#continueButton'), true);
+    }
+
+    function disableModalButtons()
+    {
+       setEnabled($('#sendVerificationCodeButton'), false);
+       setEnabled($('#continueButton'), false);
     }
 
     function submitEmailForm() {
@@ -94,10 +146,75 @@
             return false;
         }
 
-        var serializedData = $('#emailForm').serialize();
+        var host = document.getElementById("email.sender.public_host").value;
+        var username = document.getElementById("email.sender.public_username").value;
+        var password = document.getElementById("email.sender.public_password").value;
 
-        doPost("${request.route_path('json_setup_email')}",
-            serializedData, gotoNextPage, enableButtons);
+        var current_host = "${current_config['email.sender.public_host']}";
+        var current_username = "${current_config['email.sender.public_username']}";
+        var current_password = "${current_config['email.sender.public_password']}";
+
+        ## Only enable smtp verification modal if something has changed.
+        if ((remote &&
+                (host != current_host ||
+                username != current_username ||
+                password != current_password)) ||
+            (!remote &&
+                (current_host != "localhost" ||
+                current_username != "" ||
+                current_password != "")))
+        {
+            enableVerifyModalEmailInput();
+        }
+        else
+        {
+            gotoNextPage()
+        }
+
         return false;
+    }
+
+    var serializedData;
+    function sendVerificationCodeAndEnableCodeModal()
+    {
+        if (!verifyPresence("verification.to.email",
+                    "Please specify an email address.")) return false;
+
+        var verificationEmail = document.getElementById("verification.to.email").value;
+        serializedData = $('#emailForm').serialize() + "&verification.to.email=" + verificationEmail;
+
+        disableModalButtons();
+        doPost("${request.route_path('json_verify_smtp')}",
+            serializedData, enableVerifyModalCodeInput, hideAllModals);
+    }
+
+    function enableVerifyModalEmailInput()
+    {
+        hideAllModals();
+        $('#verify-modal-email-input').modal('show');
+        return false;
+    }
+
+    function enableVerifyModalCodeInput()
+    {
+        hideAllModals();
+        $('#verify-modal-code-input').modal('show');
+        return false;
+    }
+
+    function checkVerificationCodeAndSetConfiguration()
+    {
+        var inputtedCode = document.getElementById("verification.code").value;
+        var actualCode = parseInt("${email_verification_code}");
+
+        if (inputtedCode == actualCode)
+        {
+            doPost("${request.route_path('json_setup_email')}",
+                serializedData, gotoNextPage, hideAllModals);
+        }
+        else
+        {
+            displayError("The verification code you provided was not correct.");
+        }
     }
 </script>

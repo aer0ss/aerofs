@@ -8,7 +8,7 @@ import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.base.id.DID;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.Util;
-import com.aerofs.servlets.lib.EmailSender;
+import com.aerofs.servlets.lib.AsyncEmailSender;
 import com.aerofs.sp.server.lib.SPParam;
 import com.aerofs.sv.common.EmailCategory;
 
@@ -17,6 +17,8 @@ import java.io.IOException;
 
 public class DeviceRegistrationEmailer
 {
+    private static AsyncEmailSender _emailSender = new AsyncEmailSender();
+
     public void sendTeamServerDeviceCertifiedEmail(String emailAddress, String firstName,
             String osFamily, String deviceName, DID did)
             throws IOException, MessagingException
@@ -58,9 +60,8 @@ public class DeviceRegistrationEmailer
         email.addSection(subject, body);
         email.addDefaultSignature();
 
-        EmailSender.sendPublicEmailFromSupport(SPParam.EMAIL_FROM_NAME, emailAddress, null,
-                subject, email.getTextEmail(), email.getHTMLEmail(),
-                EmailCategory.DEVICE_CERTIFIED);
+        _emailSender.sendPublicEmailFromSupport(SPParam.EMAIL_FROM_NAME, emailAddress, null,
+                subject, email.getTextEmail(), email.getHTMLEmail(), EmailCategory.DEVICE_CERTIFIED);
 
         EmailUtil.emailSPNotification(emailAddress + " device certified email.",
                 "device id: " + did.toStringFormal());

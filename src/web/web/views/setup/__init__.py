@@ -6,6 +6,7 @@ def includeme(config):
 
     # Intermediate configuration steps.
     config.add_route('json_setup_hostname', 'json_setup_hostname')
+    config.add_route('json_verify_smtp', 'json_verify_smtp')
     config.add_route('json_setup_email', 'json_setup_email')
     config.add_route('json_setup_certificate', 'json_setup_certificate')
 
