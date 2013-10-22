@@ -99,8 +99,8 @@
         <p>Enter the verification code you received in your email to continue.</p>
         <form id="verify-modal-code-iput-form" method="post" class="form-inline"
                 onsubmit="checkVerificationCodeAndSetConfiguration();">
-            <label for="verification.code">Verification code:</label>
-            <input id="verification.code" name="verification.code" type="text">
+            <label for="verification-code">Verification code:</label>
+            <input id="verification-code" name="verification-code" type="text">
         </form>
     </div>
     <div class="modal-footer">
@@ -196,7 +196,7 @@
     }
 
     function checkVerificationCodeAndSetConfiguration() {
-        var inputtedCode = document.getElementById("verification.code").value;
+        var inputtedCode = document.getElementById("verification-code").value;
         var actualCode = parseInt("${email_verification_code}");
 
         if (inputtedCode == actualCode) {
