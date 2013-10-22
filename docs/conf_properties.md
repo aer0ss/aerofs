@@ -253,7 +253,7 @@ client, plus the max latency of the session query.
 The security realm for which we are requesting authorization.
 This is an OpenId concept, * is supported.
 
-Example: `https://*.syncfs.com`
+Example: `https://*.example.com`
 
     openid.idp.discovery.enabled=false
 
@@ -351,7 +351,7 @@ Example:    `ldap.server.ca_certificate=-----BEGIN CERTIFICATE-----\nMIIFKjCCBBK
 
 Host name of the LDAP server. Required.
 
-Example:    `ldap.server.host=ad.arrowfs.org`
+Example:    `ldap.server.host=ad.example.com`
 
     ldap.server.port=389
 
@@ -409,7 +409,7 @@ Example:    `ldap.server.credential=secret`
 Distinguished Name (dn) of the root of the tree within the LDAP server in which
 user accounts are found. More specific DNs are preferred.
 
-Example:    `ldap.server.schema.user.base=dc=users,dc=example,dc=org`
+Example:    `ldap.server.schema.user.base=dc=users,dc=example,dc=com`
 
     ldap.server.schema.user.scope=subtree
 
@@ -479,8 +479,8 @@ Example:
     openid.service.timeout=300
     openid.service.session.timeout=10
     openid.service.session.interval=1
-    openid.service.url=https://transient.syncfs.com/openid
-    openid.service.realm=https://*.syncfs.com
+    openid.service.url=https://share.example.com/openid
+    openid.service.realm=https://*.example.com
     openid.idp.discovery.enabled=false
     openid.idp.discovery.url=
     openid.idp.endpoint.url=https://www.google.com/accounts/o8/ud
@@ -495,7 +495,7 @@ Example:
 
 This example parses an OpenId identifier of the form:
 
-     https://exauth.example.com/user/jpile9/
+     https://openid.example.com/user/jpile9/
 
 Into:
 
@@ -509,14 +509,14 @@ Into:
     openid.service.timeout=300
     openid.service.session.timeout=10
     openid.service.session.interval=1
-    openid.service.url=https://sync.example.com/openid
+    openid.service.url=https://share.example.com/openid
     openid.service.realm=https://*.example.com
     openid.idp.discovery.enabled=false
     openid.idp.discovery.url=
-    openid.idp.endpoint.url=https://exauth.example.com/auth
+    openid.idp.endpoint.url=https://openid.example.com/auth
     openid.idp.endpoint.stateful=false
     openid.idp.user.uid.attribute=openid.identity
-    openid.idp.user.uid.pattern=^https://exauth.example.com/user/((\\w)([a-zA-Z-_\\.\\+]*)\\d*)/$
+    openid.idp.user.uid.pattern=^https://openid.example.com/user/((\\w)([a-zA-Z-_\\.\\+]*)\\d*)/$
     openid.idp.user.extension=
     openid.idp.user.email=uid[1]@example.com
     openid.idp.user.name.first=uid[2]
@@ -528,12 +528,12 @@ Into:
 
     lib.authenticator=external_credential
     ldap.server.ca_certificate=-----BEGIN CERTIFICATE-----\nMIIFKjCCBBKgAwIBAgID...075\n-----END CERTIFICATE-----
-    ldap.server.host=ldap.arrowfs.org
+    ldap.server.host=ldap.example.com
     ldap.server.port=389
     ldap.server.security=ssl
     ldap.server.principal=CN=admin
     ldap.server.credential=secret
-    ldap.server.schema.user.base=dc=users,dc=example,dc=org
+    ldap.server.schema.user.base=dc=users,dc=example,dc=com
     ldap.server.schema.user.scope=subtree
     ldap.server.schema.user.field.firstname=givenName
     ldap.server.schema.user.field.lastname=sn
@@ -547,15 +547,15 @@ Into:
 
     lib.authenticator=external_credential
     ldap.server.ca_certificate=-----BEGIN CERTIFICATE-----\nMIIFKjCCBBKgAwIBAgID...075\n-----END CERTIFICATE-----
-    ldap.server.host=AD.arrowfs.org
-    ldap.server.port=686
+    ldap.server.host=ad.example.com
+    ldap.server.port=636
     ldap.server.security=ssl
     ldap.server.principal=Administrator@borg.jonco.lan
     # Also valid:
     #    ldap.server.principal=DOMAIN\\Administrator
     #
     ldap.server.credential=secret
-    ldap.server.schema.user.base=CN=Users,dc=borg,dc=jonco,dc=lan
+    ldap.server.schema.user.base=cn=Users,dc=borg,dc=jonco,dc=lan
     ldap.server.schema.user.scope=subtree
     ldap.server.schema.user.field.firstname=givenName
     ldap.server.schema.user.field.lastname=sn
