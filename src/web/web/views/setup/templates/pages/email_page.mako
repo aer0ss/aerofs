@@ -126,8 +126,7 @@
         setEnabled($('#continueButton'), true);
     }
 
-    function disableModalButtons()
-    {
+    function disableModalButtons() {
        setEnabled($('#sendVerificationCodeButton'), false);
        setEnabled($('#continueButton'), false);
     }
@@ -162,23 +161,19 @@
             (!remote &&
                 (current_host != "localhost" ||
                 current_username != "" ||
-                current_password != "")))
-        {
+                current_password != ""))) {
             enableVerifyModalEmailInput();
-        }
-        else
-        {
-            gotoNextPage()
+        } else {
+            gotoNextPage();
         }
 
         return false;
     }
 
     var serializedData;
-    function sendVerificationCodeAndEnableCodeModal()
-    {
+    function sendVerificationCodeAndEnableCodeModal() {
         if (!verifyPresence("verification.to.email",
-                    "Please specify an email address.")) return false;
+                    "Please specify an email address.")) return;
 
         var verificationEmail = document.getElementById("verification.to.email").value;
         serializedData = $('#emailForm').serialize() + "&verification.to.email=" + verificationEmail;
@@ -188,32 +183,26 @@
             serializedData, enableVerifyModalCodeInput, hideAllModals);
     }
 
-    function enableVerifyModalEmailInput()
-    {
+    function enableVerifyModalEmailInput() {
         hideAllModals();
         $('#verify-modal-email-input').modal('show');
         return false;
     }
 
-    function enableVerifyModalCodeInput()
-    {
+    function enableVerifyModalCodeInput() {
         hideAllModals();
         $('#verify-modal-code-input').modal('show');
         return false;
     }
 
-    function checkVerificationCodeAndSetConfiguration()
-    {
+    function checkVerificationCodeAndSetConfiguration() {
         var inputtedCode = document.getElementById("verification.code").value;
         var actualCode = parseInt("${email_verification_code}");
 
-        if (inputtedCode == actualCode)
-        {
+        if (inputtedCode == actualCode) {
             doPost("${request.route_path('json_setup_email')}",
                 serializedData, gotoNextPage, hideAllModals);
-        }
-        else
-        {
+        } else {
             displayError("The verification code you provided was not correct.");
         }
     }

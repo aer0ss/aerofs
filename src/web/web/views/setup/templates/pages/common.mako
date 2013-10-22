@@ -60,19 +60,13 @@
         }
 
         function disableButtons() {
-            var $nextButton = $("#nextButton");
-            $nextButton.attr("disabled", "disabled");
-
-            var $previousButton = $("#previousButton");
-            $previousButton.attr("disabled", "disabled");
+            setEnabled($("#nextButton"), false);
+            setEnabled($("#previousButton"), false);
         }
 
         function enableButtons() {
-            var $nextButton = $("#nextButton");
-            $nextButton.removeAttr("disabled");
-
-            var $previousButton = $("#previousButton");
-            $previousButton.removeAttr("disabled");
+            setEnabled($("#nextButton"), true);
+            setEnabled($("#previousButton"), true);
         }
 
         function displayError(error) {

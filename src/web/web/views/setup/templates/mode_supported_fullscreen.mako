@@ -5,5 +5,5 @@
 </%block>
 
 <div class="span8 offset2">
-    <%include file="configurator.mako"/>
+    <%include file="pages.mako"/>
 </div>

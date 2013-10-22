@@ -123,7 +123,7 @@
 <%spinner:scripts/>
 
 <script type="text/javascript">
-    ## Because the special arrangement of configurator pages
+    ## Because the special arrangement of pages
     ## (see mode_supported_*.mako), inclusion of jQuery is after this block.
     ## Therefore, we can't initialize components at document loading time.
     var initialized;
