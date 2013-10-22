@@ -21,5 +21,5 @@ lib.sss.url=
 lib.rocklog.url=
 lib.sv.url=
 lib.notifications.enabled=false
-lib.authenticator=local_credential
+lib.authenticator={{ autehnticator }}
 sp.payment.enabled=false

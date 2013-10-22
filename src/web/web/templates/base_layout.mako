@@ -27,7 +27,7 @@
     ##
     ## N.B. to support private deployment, all static assets must be hosted
     ## locally as opposed to on 3rd-party servers.
-    <link href="${request.static_path('web:static/css/google-open-sans.css')}" rel='stylesheet' type='text/css'>
+    <link href="${request.static_path('web:static/css/google-open-sans.css')}" rel='stylesheet'>
     <link href="${request.static_path('web:static/css/bootstrap.css')}" rel="stylesheet">
     <link href="${request.static_path('web:static/css/responsive.css')}" rel="stylesheet">
     <link href="${request.static_path('web:static/css/aerofs.css')}" rel="stylesheet">

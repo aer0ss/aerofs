@@ -10,8 +10,6 @@
     }
 </style>
 
-<h4>Sit back and relax</h4>
-
 ## N.B. When adding or removing content, adjust the modals' "top" style
 ## to match the content's position.
 

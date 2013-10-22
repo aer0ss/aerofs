@@ -6,7 +6,7 @@ AeroFS managed accounts (i.e., scrypted credential is matched against aerofs_sp.
 ### Internal vs. external users
 
 We distinguish **internal** and **external** users by email address pattern matching
-against the `internal_email_pattern` configuration property.
+against the `internal_email_pattern` [configuration property](../conf_properties.html).
 
 External users always log in with AeroFS managed accounts.
 

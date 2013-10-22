@@ -89,7 +89,11 @@ The file common.properties contains properties used by both AeroFS clients and s
 
     internal_email_pattern=
 
-This property specifies a regular expression string. User IDs that match this pattern  are treated as "internal" addresses. The concepts of internal and external email addresses are used by read-only external shared folder rules, identity management, and potentially other subsystems. The expression syntax follows [Java standards](http://docs.oracle.com/javase/6/docs/api/java/util/regex/Pattern.html). Note that if you want literal `.`, use `\\.`
+This property specifies a regular expression string. User IDs that match this pattern  are treated as "internal" addresses. The concepts of internal and external email addresses are used by read-only external shared folder rules, identity management (see [here](requirements/id_management.html)), and potentially other subsystems.
+
+The expression syntax follows [Java standards](http://docs.oracle.com/javase/6/docs/api/java/util/regex/Pattern.html). Note that if you want literal `.`, use `\\.`
+
+If the string is emtpy, all the users are treated as internal users.
 
 Example: `.*@google\\.com|.*@google-corp\\.net`
 
@@ -360,16 +364,16 @@ Set port to 636 for ldaps.
 
 Example:    `ldap.server.port=389`
 
-    ldap.server.security=TLS
+    ldap.server.security=tls
 
 Configure the socket-level security type used by the LDAP server. The options are:
 
-- None : use unencrypted socket (Not recommended, as this could expose user credentials
+- `none`: use unencrypted socket (Not recommended, as this could expose user credentials
 to network snoopers)
 
-- SSL : use LDAP over SSL (the ldaps protocol).
+- `ssl`: use LDAP over SSL (the ldaps protocol).
 
-- TLS : use the LDAP StartTLS extension.
+- `tls`: use the LDAP StartTLS extension.
 
 Example:    `ldap.server.security=ssl`
 

@@ -8,7 +8,7 @@ import random
 from aerofs_common.configuration import Configuration
 from pyramid.view import view_config
 from subprocess import call, Popen, PIPE
-from pyramid.httpexceptions import HTTPFound
+from pyramid.httpexceptions import HTTPFound, HTTPOk
 from web.util import *
 from web.views.login.login_view import URL_PARAM_EMAIL
 
@@ -77,7 +77,8 @@ def _is_hostname_resolvable(hostname):
 @view_config(
     route_name = 'json_setup_hostname',
     permission='admin',
-    renderer = 'json'
+    renderer = 'json',
+    request_method = 'POST'
 )
 def json_setup_hostname(request):
     base_host_unified = request.params['base.host.unified']
@@ -109,7 +110,7 @@ def _parse_email_request(request):
         username = ''
         password = ''
 
-    return host,port,username,password
+    return host, port, username, password
 
 def _send_verification_email(to_email, code, host, port, username, password):
     payload = {
@@ -147,11 +148,12 @@ def json_verify_smtp(request):
 @view_config(
     route_name = 'json_setup_email',
     permission='admin',
-    renderer = 'json'
+    renderer = 'json',
+    request_method = 'POST'
 )
 def json_setup_email(request):
     support_address = request.params['base-www-support-email-address']
-    host,port,username,password = _parse_email_request(request)
+    host, port, username, password = _parse_email_request(request)
 
     configuration = Configuration()
     configuration.set_persistent_value('support_address', support_address)
@@ -173,10 +175,10 @@ def _is_key_formatted_correctly(key_filename):
     return call(["/usr/bin/openssl", "rsa", "-in", key_filename, "-noout"]) == 0
 
 def _write_pem_to_file(pem_string):
-     os_handle, filename = tempfile.mkstemp()
-     os.write(os_handle, pem_string)
-     os.close(os_handle)
-     return filename
+    os_handle, filename = tempfile.mkstemp()
+    os.write(os_handle, pem_string)
+    os.close(os_handle)
+    return filename
 
 def _get_modulus_helper(cmd):
     p = Popen(cmd, stdout=PIPE, stderr=PIPE)
@@ -195,13 +197,15 @@ def _get_modulus_of_key_file(key_filename):
 
 # Format certificate and key using this function before saving to the
 # configuration service.
+# See also the code in identity_page.mako that convert the string to HTML format.
 def _format_pem(string):
-        return string.strip().replace('\n', '\\n')
+        return string.strip().replace('\n', '\\n').replace('\r', '')
 
 @view_config(
     route_name = 'json_setup_certificate',
     permission='admin',
-    renderer = 'json'
+    renderer = 'json',
+    request_method = 'POST'
 )
 def json_setup_certificate(request):
     certificate = request.params['server.browser.certificate']
@@ -240,16 +244,60 @@ def json_setup_certificate(request):
         os.unlink(key_filename)
 
 # ------------------------------------------------------------------------
+# Identity
+# ------------------------------------------------------------------------
+
+@view_config(
+    route_name = 'json_setup_identity',
+    permission='admin',
+    renderer = 'json',
+    request_method = 'POST'
+)
+def json_setup_identity(request):
+    log.info("setup identity")
+
+    auth = request.params['authenticator']
+
+    ldap = auth == 'external_credential'
+    if ldap: _verify_ldap_properties(request.params)
+
+    # All is well - set the external properties.
+    conf = Configuration()
+    conf.set_persistent_value('authenticator', auth)
+    if ldap: _write_ldap_properties(conf, request.params)
+
+    return HTTPOk()
+
+def _verify_ldap_properties(request_params):
+    cert = request_params['ldap_server_ca_certificate']
+    if cert and not _is_certificate_formatted_correctly(_write_pem_to_file(cert)):
+        error("The certificate you provided is invalid.")
+
+def _write_ldap_properties(conf, request_params):
+    """
+    N.B. This method assumes that an HTTP parameter is LDAP specific iff. it has
+    the "ldap_" prefix.
+    """
+    for key in request_params:
+        if key == 'ldap_server_ca_certificate':
+            cert = request_params[key]
+            if cert: conf.set_persistent_value(key, _format_pem(cert))
+            else: conf.set_persistent_value(key, '')
+        elif key[:5] == 'ldap_':
+            conf.set_persistent_value(key, request_params[key])
+
+# ------------------------------------------------------------------------
 # Apply
 # ------------------------------------------------------------------------
 
 @view_config(
     route_name = 'json_setup_apply',
     permission='admin',
-    renderer = 'json'
+    renderer = 'json',
+    request_method = 'POST'
 )
 def json_setup_apply(request):
-    log.warn("Applying configuration.")
+    log.info("applying configuration")
     shutil.copyfile('/opt/bootstrap/tasks/manual.tasks', _BOOTSTRAP_PIPE_FILE)
 
     return {}
@@ -261,7 +309,8 @@ def json_setup_apply(request):
 @view_config(
     route_name = 'json_setup_poll',
     permission='admin',
-    renderer = 'json'
+    renderer = 'json',
+    request_method = 'POST'
 )
 def json_setup_poll(request):
     running = os.stat(_BOOTSTRAP_PIPE_FILE).st_size != 0
@@ -276,7 +325,8 @@ def json_setup_poll(request):
 @view_config(
     route_name = 'json_setup_finalize',
     permission='admin',
-    renderer = 'json'
+    renderer = 'json',
+    request_method = 'POST'
 )
 def json_setup_finalize(request):
     log.warn("Finalizing configuration...")

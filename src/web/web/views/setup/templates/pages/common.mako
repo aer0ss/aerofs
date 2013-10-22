@@ -10,10 +10,10 @@
 
 <%def name="render_next_button(javascriptCallback)">
     <button
-        onclick='return ${javascriptCallback};'
+        onclick='${javascriptCallback}; return false;'
         id='nextButton'
-        class='btn btn-primary pull-right'
-        type='submit'>Next ></button>
+        class='btn btn-primary pull-right'>
+        Next ></button>
 </%def>
 
 <%def name="scripts(page)">
@@ -39,9 +39,7 @@
             .done(function (response) {
                 onSuccess(response);
             }).fail(function (xhr) {
-                if (typeof onFailure != 'undefined') {
-                    onFailure();
-                }
+                if (onFailure) onFailure();
                 showErrorMessageFromResponse(xhr);
             });
         }

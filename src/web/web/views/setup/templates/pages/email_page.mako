@@ -149,15 +149,15 @@
         serializedData = $('#emailForm').serialize();
 
         if (!verifyPresence("base-www-support-email-address",
-                    "Please specify a support email address.")) return false;
+                    "Please specify a support email address.")) return;
 
-        var remote = $("input[name=email-server]:checked", '#emailForm').val() == 'remote';
+        var remote = $(":input[name=email-server]:checked", '#emailForm').val() == 'remote';
         if (remote && (
                 !verifyPresence("email-sender-public-host", "Please specify SMTP host.") ||
                 !verifyPresence("email-sender-public-port", "Please specify SMTP port.") ||
                 !verifyPresence("email-sender-public-username", "Please specify SMTP username.") ||
                 !verifyPresence("email-sender-public-password", "Please specify SMTP password."))) {
-            return false;
+            return;
         }
 
         var host = $("#email-sender-public-host").val();
@@ -193,8 +193,6 @@
                 gotoNextPage();
             }
         }
-
-        return false;
     }
 
     function sendVerificationCodeAndEnableCodeModal() {

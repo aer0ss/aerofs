@@ -4,7 +4,8 @@
 <form id="hostnameForm" method="POST">
     ${csrf.token_input()}
 
-    <label for="base.host.unified"><h4>Hostname:</h4></label>
+    <h4>Hostname:</h4>
+
     ## current_config is a template parameter
     <input class="input-block-level" id="base.host.unified" name="base.host.unified" type="text" value=${current_config['base.host.unified']}>
 
@@ -16,19 +17,15 @@
 </form>
 
 <script type="text/javascript">
-    function submitHostnameForm()
-    {
+    function submitHostnameForm() {
         disableButtons();
 
-        if (verifyPresence("base.host.unified", "Please specify a hostname."))
-        {
+        if (verifyPresence("base.host.unified", "Please specify a hostname.")) {
             var $form = $('#hostnameForm');
             var serializedData = $form.serialize();
 
             doPost("${request.route_path('json_setup_hostname')}",
                 serializedData, gotoNextPage, enableButtons);
         }
-
-        event.preventDefault();
     }
 </script>

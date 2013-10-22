@@ -3,12 +3,6 @@
 
 <h4>Browser certificate:</h4>
 
-<style type="text/css">
-    .post-input {
-        margin-top: 8px;
-    }
-</style>
-
 <form id="certificateForm" method="POST">
     ${csrf.token_input()}
 
@@ -20,14 +14,14 @@
         %else:
             Use pre-installed, self-signed certificate and key
         %endif
-        <p class="post-input"><small>Use your Web browser to check certificate details</small></p>
+        <p class="main-option-footnote">Use your Web browser to check certificate details</p>
     </label>
     <label class="radio">
         <input type='radio' name='cert.option' value='new'
                 onchange="useNewCertSelected()">
         Upload new certificate and key
 
-        <div class="row-fluid post-input">
+        <div class="row-fluid" style="margin-top: 8px;">
             <div class="span6">
                 <label for="server.browser.certificate">Certificate file:</label>
                 <input type="file" id="server.browser.certificate" name="server.browser.certificate" disabled/>
@@ -39,7 +33,7 @@
         </div>
     </label>
 
-    <p style="margin-top: 10px">Provide properly signed certificate and key to eliminate certification error messages when browsing the AeroFS Web interface. We require valid x509 SSL certificate and private key files in PEM format.</p>
+    <p style="margin-top: 10px">Provide publicly signed certificate and key to eliminate certification error messages when browsing the AeroFS Web interface. We require valid x509 SSL certificate and private key files in PEM format.</p>
     <hr />
     ${common.render_previous_button(page)}
     ${common.render_next_button("submitCertificateForm()")}
@@ -57,7 +51,7 @@
     function submitCertificateForm() {
         disableButtons();
 
-        var choice = $('input[name="cert.option"]:checked').val();
+        var choice = $(':input[name=cert.option]:checked').val();
         if (choice == 'existing') {
             if (verifyAbsence("server.browser.certificate") && verifyAbsence("server.browser.key")) {
                 gotoNextPage();
@@ -73,7 +67,7 @@
                 var certificateReader = new FileReader();
                 certificateReader.onload = function() {
                     setCertificateData(this.result);
-                }
+                };
                 certificateReader.readAsBinaryString(certificateFile);
 
                 ## Key.
@@ -81,17 +75,16 @@
                 var keyReader = new FileReader();
                 keyReader.onload = function() {
                     setKeyData(this.result);
-                }
+                };
                 keyReader.readAsBinaryString(keyFile);
             }
         }
-
-        event.preventDefault();
     }
 
     var certificateData = null;
     var keyData = null;
 
+    ## TOOD (WW) use builtin JS methods to format the data.
     function formatPostData(data) {
         return data.replace(/\+/g, '%2B');
     }

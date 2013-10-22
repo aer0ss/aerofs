@@ -8,21 +8,21 @@ from cStringIO import StringIO
 SERVER_URL = "http://localhost:5436/"
 SET_URL = "http://localhost:5437/"
 
-"""
-Class that fetches and manages configuration.
-"""
 class Configuration(object):
-
     """
-    Fetch and populate the configuration values specified by the configuration
-    URL and store those values in the passed configuration dictionary.
-
-    Params:
-        configuration:
-            A dictionary that we will use to store the configuration values
-            pulled from the server.
+    Class that fetches and manages configuration.
     """
+
     def fetch_and_populate(self, configuration):
+        """
+        Fetch and populate the configuration values specified by the configuration
+        URL and store those values in the passed configuration dictionary.
+
+        Params:
+            configuration:
+                A dictionary that we will use to store the configuration values
+                pulled from the server.
+        """
 
         # Pull down configuration values and store them in our temporary dictionary.
         tmp = {}
@@ -48,15 +48,12 @@ class Configuration(object):
             else:
                 configuration[key] = tmp[key]
 
-    """
-    Sets a key value pair on the persistent configuration server.
-
-    Params:
-        key:
-            The key to set.
-        value:
-            The value to set.
-    """
     def set_persistent_value(self, key, value):
+        """
+        Sets a key value pair on the persistent configuration server.
+
+        @param key the key to set.
+        @param value the value to set.
+        """
         payload = {'key': key, 'value': value}
         requests.post(SET_URL, data=payload)
