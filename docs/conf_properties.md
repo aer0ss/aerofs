@@ -1,24 +1,95 @@
 Configuration Properties
 ========================
 
-**Note**: Property values shown in property syntax indicate default values.
-`property=` indicates that the default value is an empty string;
-`property=<mandatory>` indicates specifying a value is mandatory and no default
-values is provided. Not specifying a mandatory property would cause unexpected
-system behavior.
+# Overview
 
-# common.properties
+The configuration system uses a flask templating mechanism. Properties are stored in the file /opt/config/properties/external.properties. Templates are stored in /opt/config/templates/*. The only file that should be edited by site engineers is the external.properties file. Similarly, the site configuration interface only edits the external.properties file. Templates are part of the confiuration package and will be overwritten on package update. Thus, never edit them.
+
+                     -----------------------
+                     | external.properties |
+                     -----------------------
+                               |
+                               v
+           -----------------------------------------
+           |                   |                   |
+           v                   v                   v
+    --------------      --------------      --------------
+    |client.tmplt|      |common.tmplt|      |server.tmplt|
+    --------------      --------------      --------------
+
+The key values stored in the external.properties file are substituted into the templates by flask. Key names in external.properties are not visible to configuration clients.
+
+Example:
+
+external.properties:
+
+    base_host=aerofs.com
+
+client.tmplt
+
+    updater.server.url=https://{{ base_host }}:8080/
+
+common.tmplt
+
+    web.server.url=https://{{ base_host }}/
+
+server.tmplt
+
+    ca.server.url=http://{{ base_host }}:1029/
+
+Then the client configuration interface will give you:
+
+https://aerofs.com:5435/
+
+    updater.server.url=https://aerofs.com:8080/
+    web.server.url=https://aerofs.com/
+
+And the server configuration interface will give you (not that the server interface is only accessable from the server itself):
+
+http://localhost:5436/
+
+    updater.server.url=https://aerofs.com:8080/
+    ca.server.url=http://aerofs.com:1029/
+
+**Note**: "Extra" templates are provied in /opt/config/template/extras/*. In the case where you need to add a site specific property that will NEVER be common and included in the default package (this should rarely happen) you can use the extra templates. They will not be overwritten on update.
+
+# external.properties
+
+All externally configurable properties (described above).
+
+    configuration_initialized=false
+
+A boolean flag indicating whether or not the private deployment configuration system has been initialized or not. Used by the web module to redirect to the setup page when we have not configured the system yet.
+
+    support_address=support.aerofs.com
+
+The "From Email" in our email communications.
+
+    base_host=
+
+The private deployment system hostname.
+
+    email_host=
+    email_password=
+    email_user=
+
+SMTP credentials. When set to "localhost", "", "" respectively, the system used local mail relay.
+
+# client.tmplt
+
+Generally propreties in this category are related to the updater, or are environment variable specific.
+
+Example: This disables the defect sending dialogue on the client:
+
+    gui.tray.enable_defect_dialogue=false
+
+# common.tmplt
 
 The file common.properties contains properties used by both AeroFS clients and servers.
 
     internal_email_pattern=
 
-This property specifies a regular expression string. User IDs that match this pattern 
-are treated as "internal" addresses. The concepts of internal and
-external email addresses are used by read-only external shared folder rules, identity
-management, and potentially other subsystems. The expression syntax follows
-[Java standards](http://docs.oracle.com/javase/6/docs/api/java/util/regex/Pattern.html).
-Note that if you want literal `.`, use `\\.`
+This property specifies a regular expression string. User IDs that match this pattern  are treated as "internal" addresses. The concepts of internal and external email addresses are used by read-only external shared folder rules, identity management, and potentially other subsystems. The expression syntax follows [Java standards](http://docs.oracle.com/javase/6/docs/api/java/util/regex/Pattern.html). Note that if you want literal `.`, use `\\.`
 
 Example: `.*@google\\.com|.*@google-corp\\.net`
 
@@ -26,9 +97,7 @@ Example: `.*@google\\.com|.*@google-corp\\.net`
     lib.anchor.default_location_osx=
     lib.anchor.default_location_linux=
 
-The default location for the parent of the root anchor folder. This allows a site
-operator to override the default location for all installations (or only for
-certain operating systems).
+The default location for the parent of the root anchor folder. This allows a site operator to override the default location for all installations (or only for certain operating systems).
 
 Note that this describes the _parent_ of the AeroFS folder that will be synced.
 Also note the character formatting needed for backslashes.
@@ -60,7 +129,7 @@ be %LOCALAPPDATA%\arrow\AeroFS on Windows Vista and up and it will be
 
 Example: `lib.anchor.default_location_osx=~` - the default location will be $HOME/AeroFS.
 
-## Identity properties
+### Identity properties
 
     lib.authenticator=local_credential
 
@@ -70,18 +139,17 @@ The authentication mechanism used by AeroFS to validate end-users. Possible opti
 locally (on the signin server). This requires the user to be created in advance through
 the normal signup process.
 
-- `external_credential` : The user will prove their identity using a username and credential 
-that will be passed through to an identity authority (LDAP). This implies the credential 
+- `external_credential` : The user will prove their identity using a username and credential
+that will be passed through to an identity authority (LDAP). This implies the credential
 should not be hashed on the client side.
 
 - `openid` : The user will prove their identity out-of-band with a URI-based signin mechanism.
-This means the client will use the SessionNonce/DelegateNonce mechanism and poll for the 
-asynchronous authentication completion. The client can expect some user-agent redirect 
-to the IdentityServlet. Client should poll on the session nonce for the out-of-band 
+This means the client will use the SessionNonce/DelegateNonce mechanism and poll for the
+asynchronous authentication completion. The client can expect some user-agent redirect
+to the IdentityServlet. Client should poll on the session nonce for the out-of-band
 authentication to complete.
 
-
-## OpenID properties
+### OpenID properties
 
 OpenID configuration is used if the `lib.authenticator` is set to `openid`.
 Otherwise these properties will be ignored.
@@ -112,17 +180,15 @@ A short phrase that will guide external users to sign in with a local credential
 
 Example: `AeroFS user without an OpenID credential?`
 
+# server.tmplt
 
-
-# server.properties
-
-The file server.properties contains properties used only by AeroFS servers. There may 
+The file server.properties contains properties used only by AeroFS servers. There may
 be sensitive information stored in this file such as service credentials,
 AeroFS clients should not be able to access this file.
 
     shared_folder_rules.readonly_external_folders=false
 
-Whether to enable read-only external folder rules. The system uses `internal_email_pattern` 
+Whether to enable read-only external folder rules. The system uses `internal_email_pattern`
 to determine internal vs external users. Therefore, the rules are enabled only if
 `internal_email_pattern` is non-empty _and_ this property is true.
 
@@ -164,7 +230,7 @@ Timeout value, in milliseconds, for a connection to the outbound SMTP server.
 Whether to block account creation unless users are invited to the system by
 existing users (either folder owners or team administrators).
 
-## OpenID properties
+### OpenID properties
 
 (Please See Appendix for complete examples.)
 
@@ -265,7 +331,7 @@ Example: `openid.ext1.value.lastname` for ax
 
 Example: `openid.sreg.fullname` for sreg; fullname only
 
-## LDAP authentication properties
+### LDAP authentication properties
 
 LDAP configuration is used if the `lib.authenticator` is set to `external_credential`.
 Otherwise these properties will be ignored.
@@ -407,7 +473,7 @@ Example:
 
 # Appendix: OpenID properties examples
 
-## Google
+### Google
 
     lib.authenticator=openid
     openid.service.timeout=300
@@ -425,7 +491,7 @@ Example:
     openid.idp.user.name.first=openid.ext1.value.firstname
     openid.idp.user.name.last=openid.ext1.value.lastname
 
-## Private deployment
+### Private deployment
 
 This example parses an OpenId identifier of the form:
 
@@ -458,7 +524,7 @@ Into:
 
 # Appendix: LDAP properties examples
 
-## UNIX-style LDAP server
+### UNIX-style LDAP server
 
     lib.authenticator=external_credential
     ldap.server.ca_certificate=-----BEGIN CERTIFICATE-----\nMIIFKjCCBBKgAwIBAgID...075\n-----END CERTIFICATE-----
@@ -475,7 +541,7 @@ Into:
     ldap.server.schema.user.field.rdn=dn
     ldap.server.schema.user.class=inetOrgPerson
 
-## ActiveDirectory server
+### ActiveDirectory server
 
     The following example searches a Windows domain called "borg.jonco.lan"
 
@@ -485,7 +551,7 @@ Into:
     ldap.server.port=686
     ldap.server.security=ssl
     ldap.server.principal=Administrator@borg.jonco.lan
-    # Also valid: 
+    # Also valid:
     #    ldap.server.principal=DOMAIN\\Administrator
     #
     ldap.server.credential=secret
