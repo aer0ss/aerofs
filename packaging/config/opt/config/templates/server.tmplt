@@ -14,7 +14,7 @@ sp.redis.address=localhost:6379
 
 bootstrap.spdb.username=aerofs_sp
 bootstrap.spdb.password=password
-bootstrap.spdb.host={{ base_host }}
+bootstrap.spdb.host=localhost
 bootstrap.spdb.schema=aerofs_sp
 
 email.sender.public_host={{ email_host }}
