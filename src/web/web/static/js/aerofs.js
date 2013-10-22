@@ -1,4 +1,4 @@
-
+// HTML code is allowed in the message
 function showErrorMessage(message) {
     cancelSlideUpTimer();
     var $bar = $("#message_bar");
@@ -6,13 +6,14 @@ function showErrorMessage(message) {
         $bar.empty();
         $bar.append($('<div></div>')
             .addClass('flash_message error_message')
-            .text(normalize(message)));
+            .html(normalize(message)));
         $bar.slideDown("normal", "easeInOutBack", function() {
             delayedSlideUp($bar);
         });
     });
 }
 
+// HTML code is allowed in the message
 function showSuccessMessage(message) {
     cancelSlideUpTimer();
     var $bar = $("#message_bar");
@@ -20,7 +21,7 @@ function showSuccessMessage(message) {
         $bar.empty();
         $bar.append($('<div></div>')
             .addClass('flash_message success_message')
-            .text(normalize(message)));
+            .html(normalize(message)));
         $bar.slideDown("normal", "easeInOutBack", function() {
             delayedSlideUp($bar);
         });
@@ -56,7 +57,9 @@ function showErrorMessageFromResponse(xhr) {
         showErrorMessage(getAeroFSErrorMessage(xhr));
     } else if (xhr.status == 403) {
         // See error_view.py:_force_login on generation of 403
-        window.location.href = "/login?next=" + encodeURIComponent(document.URL);
+        window.location.href = "/login?next=" +
+            encodeURIComponent(window.location.pathname +
+                window.location.search + window.location.hash);
     } else {
         showErrorMessage(getInternalErrorText());
         console.log("status: " + xhr.status +
