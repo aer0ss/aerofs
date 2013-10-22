@@ -10,6 +10,11 @@ from pyramid.request import Request
 import views
 
 class RedirectMiddleware(object):
+    """
+    This class exists to redirect the application to the setup page when the
+    configuration system has not been initialized.
+    """
+
     def __init__(self, application, settings):
         self.app = application
         self.settings = settings
