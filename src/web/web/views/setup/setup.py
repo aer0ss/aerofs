@@ -98,9 +98,9 @@ def json_setup_hostname(request):
 
 def _parse_email_request(request):
     if request.params['email.server'] == 'remote':
-        host       = request.params['email.sender.public_host']
-        username   = request.params['email.sender.public_username']
-        password   = request.params['email.sender.public_password']
+        host       = request.params['email-sender-public-host']
+        username   = request.params['email-sender-public-username']
+        password   = request.params['email-sender-public-password']
     else:
         host = 'localhost'
         username = ''
@@ -128,7 +128,7 @@ def json_verify_smtp(request):
     host, username, password = _parse_email_request(request)
 
     r = _send_verification_email(
-            request.params['verification.to.email'],
+            request.params['verification-to-email'],
             request.session[_SESSION_KEY_EMAIL_VERIFICATION_CODE],
             host,
             username,
@@ -145,7 +145,7 @@ def json_verify_smtp(request):
     renderer = 'json'
 )
 def json_setup_email(request):
-    support_address = request.params['base.www.support_email_address']
+    support_address = request.params['base-www-support-email-address']
     host,username,password = _parse_email_request(request)
 
     configuration = Configuration()
