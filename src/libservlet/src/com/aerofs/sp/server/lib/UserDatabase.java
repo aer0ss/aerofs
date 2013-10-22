@@ -116,6 +116,18 @@ public class UserDatabase extends AbstractSQLDatabase
         }
     }
 
+    public boolean hasUsers()
+            throws SQLException
+    {
+        PreparedStatement ps = prepareStatement("select count(*) from " + T_USER);
+        ResultSet rs = ps.executeQuery();
+        try {
+            return DBUtil.count(rs) > 0;
+        } finally {
+            rs.close();
+        }
+    }
+
     public @Nonnull OrganizationID getOrganizationID(UserID userId)
             throws SQLException, ExNotFound
     {

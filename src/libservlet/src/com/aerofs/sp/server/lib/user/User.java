@@ -93,6 +93,14 @@ public class User
                     AuthorizationLevel.USER);
             return tsUser;
         }
+
+        /**
+         * @return whether the system has one or more users
+         */
+        public boolean hasUsers() throws SQLException
+        {
+            return _udb.hasUsers();
+        }
     }
 
     private final UserID _id;
