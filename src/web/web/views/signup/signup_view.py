@@ -134,7 +134,7 @@ def json_signup(request):
                   " '>click here</a> to reset it."
         else:
             msg = get_error(e)
-        return { 'error' : msg }
+        return {'error': msg}
 
 @view_config(
     route_name = 'json.request_to_signup',

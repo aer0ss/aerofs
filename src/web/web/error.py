@@ -18,6 +18,9 @@ def error(message, type="unspecified", data=None):
 
     Note that the defualt "unspecified" type is not consumed by any code but is
     supposed be read by humans.
+
+    @param message If the frontend uses aerofs.js:showErrorMessage() to display
+    the error, HTML code is allowed in the message.
     """
     message = _normalize(message)
 

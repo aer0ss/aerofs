@@ -16,8 +16,10 @@ URL_PARAM_FORM_SUBMITTED = 'form_submitted'
 URL_PARAM_EMAIL = 'email'
 URL_PARAM_PASSWORD = 'password'
 URL_PARAM_REMEMBER_ME = 'remember_me'
-URL_PARAM_NEXT = 'next' # N.B. the string "next" is also used in aerofs.js.
 
+# N.B. This parameter is also used in aerofs.js. Remember to update this and all
+# other references to this parameter when modifying handling of the next parameter.
+URL_PARAM_NEXT = 'next'
 
 log = logging.getLogger(__name__)
 
