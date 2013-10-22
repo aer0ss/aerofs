@@ -4,7 +4,7 @@ from pyramid.url import route_url
 from pyramid.authentication import SessionAuthenticationPolicy
 from pyramid.authorization import ACLAuthorizationPolicy
 from pyramid_beaker import session_factory_from_settings
-from views.login.login_view import groupfinder
+from views.login.login_view import get_group
 from root_factory import RootFactory
 from web.util import is_private_deployment, is_configuration_initialized
 from pyramid.httpexceptions import HTTPFound
@@ -59,7 +59,7 @@ def main(global_config, **settings):
     for view in views.__all__:
         settings['mako.directories'] += '\n{}.{}:templates'.format(views.__name__, view)
 
-    authentication_policy = SessionAuthenticationPolicy(callback=groupfinder)
+    authentication_policy = SessionAuthenticationPolicy(callback=get_group)
     authorization_policy = ACLAuthorizationPolicy()
 
     if is_private_deployment(settings) and not is_configuration_initialized(settings):

@@ -5,6 +5,7 @@ from pyramid.exceptions import NotFound
 from pyramid.security import NO_PERMISSION_REQUIRED, authenticated_userid
 from pyramid.view import view_config, forbidden_view_config
 from pyramid.httpexceptions import HTTPFound, HTTPForbidden
+from web.views.login.login_view import URL_PARAM_NEXT
 
 log = logging.getLogger(__name__)
 
@@ -74,12 +75,17 @@ def _force_login(request):
     # redirect to login page. Also see datatables.js:forceLogout().
     if request.is_xhr: return HTTPForbidden()
 
-    # So that we don't get annoying next=%2F in the url when we click on the
-    # home button.
-    # TODO (WW) include request parameters to the next URL
-    next = request.path.strip()
-    if next and next != '/':
-        loc = request.route_url('login', _query={'next': next})
+    # path_qs: the request path without host but with query string
+    #
+    # N.B.: never include host in the string, as login_view:resolve_next_url()
+    # always prefix the host URL to this string before redirection. See that
+    # method for detail.
+    next_url = request.path_qs
+
+    # Test against '/' so that we don't get annoying next=%2F in the url when we
+    # click on the home button.
+    if next_url and next_url != '/':
+        loc = request.route_url('login', _query={URL_PARAM_NEXT: next_url})
     else:
         loc = request.route_url('login')
 

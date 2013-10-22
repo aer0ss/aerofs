@@ -2,13 +2,13 @@ import logging
 from aerofs_sp.gen.common_pb2 import PBException
 from pyramid import url
 from pyramid.httpexceptions import HTTPFound
-from pyramid.security import remember, forget, NO_PERMISSION_REQUIRED
+from pyramid.security import remember, NO_PERMISSION_REQUIRED
 from pyramid.view import view_config
 
 from aerofs_sp.gen.sp_pb2 import SPServiceRpcStub
 from aerofs_sp.connection import SyncConnectionService
 
-from login_view import get_next_url
+from login_view import resolve_next_url
 from web.util import *
 
 log = logging.getLogger(__name__)
@@ -28,7 +28,7 @@ def _begin_sp_auth(request):
 
     nonces = sp.open_id_begin_transaction()
     request.session['sp_session_nonce'] = nonces.sessionNonce
-    request.session['next'] = get_next_url(request)
+    request.session['next'] = resolve_next_url(request)
     _next = request.route_url('login_openid_complete')
 
     _url = "{0}/oa?{1}".format(settings['openid.service.url'],
@@ -94,5 +94,5 @@ def login_openid_complete(request):
     """
     Complete the signin procedure with SP.
     """
-    _get_sp_auth(request=request, stay_signed_in=True);
+    _get_sp_auth(request=request, stay_signed_in=True)
     return HTTPFound(location=request.session['next'])

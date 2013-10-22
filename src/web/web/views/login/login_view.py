@@ -21,34 +21,29 @@ URL_PARAM_NEXT = 'next' # N.B. the string "next" is also used in aerofs.js.
 
 log = logging.getLogger(__name__)
 
-def groupfinder(userid, request):
+def get_group(userid, request):
     # Must reload auth level on every request, because not all pages that
     # require authentication make SP calls.
     reload_auth_level(request)
 
     return [request.session.get('group')]
 
-def get_next_url(request):
+def _get_next_url(request):
     """
-    Return a value for the 'next' parameter; which is dashboard_home
-    if the next param is not set (or set to a login page).
-    Never redirect to the login page (in any of its forms).
-    Handles null or empty requested_url.
+    Return the value of the 'next' parameter in the request. Return the
+    dashboard home URL if the parameter is absent. It never returns None
     """
-    _next = request.params.get('next')
+    next_url = request.params.get(URL_PARAM_NEXT)
+    return next_url if next_url else request.route_path('dashboard_home')
 
-    if not _next:
-        _next = request.url
-        login_urls = [
-            request.resource_url(request.context, ''),
-            request.resource_url(request.context, 'login'),
-            request.resource_url(request.context, 'login_openid_begin'),
-            request.resource_url(request.context, 'login_openid_complete'),
-        ]
-
-        if len(_next) == 0 or _next in login_urls:
-            _next = request.route_path('dashboard_home')
-    return _next
+def resolve_next_url(request):
+    """
+    Return the value of the 'next' parameter in the request. Return
+    dashboard_home if the next param is not set. Always prefix with the host URL
+    to prevent attackers to insert arbitrary URLs in the parameter, e.g.:
+    aerofs.com/login?next=http%3A%2F%2Fcnn.com
+    """
+    return request.host_url + _get_next_url(request)
 
 def _is_openid_enabled(request):
     """
@@ -80,52 +75,66 @@ def _format_password(request, password, login):
                 return str(password)
     return scrypt(password, login)
 
+def _do_login(request):
+    """
+    Log in the user. Return HTTPFound if login is successful; otherwise call
+    flash_error() to insert error messages and then return None.
+    """
+    _ = request.translate
+
+    # Remember to normalize the email address.
+    login = request.params[URL_PARAM_EMAIL]
+    password = request.params[URL_PARAM_PASSWORD]
+    hashed_password = _format_password(request, password, login)
+    stay_signed_in = URL_PARAM_REMEMBER_ME in request.params
+    try:
+        try:
+            headers = _log_in_user(request, login, hashed_password,
+                                   stay_signed_in)
+            redirect = resolve_next_url(request)
+            log.debug(login + " logged in. redirect to " + redirect)
+            return HTTPFound(location=redirect, headers=headers)
+        except ExceptionReply as e:
+            if e.get_type() == PBException.BAD_CREDENTIAL:
+                log.warn(login + " attempts to login w/ bad password")
+                flash_error(request, _("Email or password is incorrect."))
+            elif e.get_type() == PBException.EMPTY_EMAIL_ADDRESS:
+                flash_error(request, _("The email address cannot be empty."))
+            else:
+                raise e
+    except Exception as e:
+        log.error("error during logging in:", exc_info=e)
+        support_email = request.registry.settings.get(
+                'base.www.support_email_address', 'support@aerofs.com')
+        flash_error(request, _("An error occurred processing your request." +
+                " Please try again later. Contact " + support_email + " if the" +
+                " problem persists."))
+
+
 @view_config(
     route_name='login',
     permission=NO_PERMISSION_REQUIRED,
     renderer='login.mako'
 )
 def login_view(request):
-    # FIXME: a handful of non-idiomatic python follows. Please clean up when the skies are clear.
     _ = request.translate
     settings = request.registry.settings
-    next = get_next_url(request)
+    next_url = _get_next_url(request)
 
-    login = ''
-    # N.B. the all following parameter keys are used by signup.mako as well.
-    # Keep them consistent!
     if URL_PARAM_FORM_SUBMITTED in request.params:
-        # Remember to normalize the email address.
-        login = request.params[URL_PARAM_EMAIL]
-        password = request.params[URL_PARAM_PASSWORD]
-        hashed_password = _format_password(request, password, login)
-        stay_signed_in = URL_PARAM_REMEMBER_ME in request.params
-
-        try:
-            try:
-                headers = _log_in_user(request, login, hashed_password, stay_signed_in)
-                log.debug(login + " logged in")
-                return HTTPFound(location=next, headers=headers)
-            except ExceptionReply as e:
-                if e.get_type() == PBException.BAD_CREDENTIAL:
-                    log.warn(login + " attempts to login w/ bad password")
-                    flash_error(request, _("Email or password is incorrect."))
-                elif e.get_type() == PBException.EMPTY_EMAIL_ADDRESS:
-                    flash_error(request, _("The email address cannot be empty."))
-                else:
-                    raise e
-        except Exception as e:
-            log.error("error during logging in:", exc_info=e)
-            support_email = settings.get('base.www.support_email_address', 'support@aerofs.com')
-            flash_error(request, _("An error occurred processing your request." +
-                   " Please try again later. Contact " + support_email + " if the" +
-                   " problem persists."))
+        ret = _do_login(request)
+        if ret: return ret
 
     openid_enabled = _is_openid_enabled(request)
     # if openid_enabled is false we don't need to do any of the following. :(
-    openid_url = "{0}?{1}".format(request.route_url('login_openid_begin'), url.urlencode({'next' : next}))
+    openid_url = "{0}?{1}".format(request.route_url('login_openid_begin'),
+                                  url.urlencode({'next': next_url}))
     openid_identifier = settings.get('openid.service.identifier', 'OpenID')
-    external_hint = settings.get('openid.service.external.hint', 'AeroFS user without an OpenID account?')
+    external_hint = settings.get('openid.service.external.hint',
+                                 'AeroFS user without an OpenID account?')
+
+    login = request.params.get(URL_PARAM_EMAIL)
+    if not login: login = ''
 
     return {
         'url_param_form_submitted': URL_PARAM_FORM_SUBMITTED,
@@ -138,7 +147,7 @@ def login_view(request):
         'openid_service_identifier': openid_identifier,
         'openid_service_external_hint': external_hint,
         'login': login,
-        'next': next,
+        'next': next_url,
     }
 
 def _log_in_user(request, login, creds, stay_signed_in):
