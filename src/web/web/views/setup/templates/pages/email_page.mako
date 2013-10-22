@@ -28,35 +28,31 @@
             Use external mail relay
         </label>
 
-        <label for="email-sender-public-host">SMTP host:</label>
-        <input class="input-block-level public-host-option" id="email-sender-public-host" name="email-sender-public-host" type="text" value="${public_host}"
+        ## The slide down options
+        <div id="public-host-options"
             %if not public_host:
-                disabled
+                class="hide"
             %endif
         >
 
-        <div class="row-fluid">
-            <div class="span6">
-                <label for="email-sender-public-username">SMTP username:</label>
-                <input class="input-block-level public-host-option" id="email-sender-public-username" name="email-sender-public-username" type="text" value="${current_config['email.sender.public_username']}"
-                    %if not public_host:
-                        disabled
-                    %endif
-                >
-            </div>
-            <div class="span6">
-                <label for="email-sender-public-password">SMTP password:</label>
-                <input class="input-block-level public-host-option" id="email-sender-public-password" name="email-sender-public-password" type="password" value="${current_config['email.sender.public_password']}"
-                    %if not public_host:
-                        disabled
-                    %endif
-                >
-            </div>
-        </div>
+            <label for="email-sender-public-host">SMTP host:</label>
+            <input class="input-block-level public-host-option" id="email-sender-public-host" name="email-sender-public-host" type="text" value="${public_host}">
 
-        <label for="foo" class="checkbox">
-            <input name="foo" type="checkbox" checked disabled>Enable TLS encryption <small>(plaintext STMP not supported at this moment)</small>
-        </label>
+            <div class="row-fluid">
+                <div class="span6">
+                    <label for="email-sender-public-username">SMTP username:</label>
+                    <input class="input-block-level public-host-option" id="email-sender-public-username" name="email-sender-public-username" type="text" value="${current_config['email.sender.public_username']}">
+                </div>
+                <div class="span6">
+                    <label for="email-sender-public-password">SMTP password:</label>
+                    <input class="input-block-level public-host-option" id="email-sender-public-password" name="email-sender-public-password" type="password" value="${current_config['email.sender.public_password']}">
+                </div>
+            </div>
+
+            <label for="foo" class="checkbox">
+                <input name="foo" type="checkbox" checked disabled>Enable TLS encryption <small>(plaintext STMP not supported at this moment)</small>
+            </label>
+        </div>
 
         <p style="margin-top: 8px">AeroFS sends emails to users for various purposes: sign up verification, folder invitations, and so on. A functional email server is required.</p>
     </div>
@@ -73,11 +69,12 @@
 
 <div id="verify-modal-email-input" class="modal hide small-modal" tabindex="-1" role="dialog">
     <div class="modal-header">
-        <h4>Verify Your SMTP Settings</h4>
+        <h4>Test your SMTP settings</h4>
     </div>
 
     <div class="modal-body">
-        <p>You must verify your email settings before you can continue. Enter your email address so that we can send a verification email.</p>
+        <p>Please test the email settings before proceeding. Enter your email
+            address so that we can send you a test email.</p>
         <form id="verify-modal-email-input-form" method="post" class="form-inline"
                 onsubmit="sendVerificationCodeAndEnableCodeModal(); return false;">
             <label for="verification-to-email">Email address:</label>
@@ -85,6 +82,7 @@
         </form>
     </div>
     <div class="modal-footer">
+        <a href="#" class="btn" data-dismiss="modal">Close</a>
         <a href="#" id="send-verification-code-button" class="btn btn-primary"
            onclick="sendVerificationCodeAndEnableCodeModal(); return false;">Send verification code</a>
     </div>
@@ -92,11 +90,11 @@
 
 <div id="verify-modal-code-input" class="modal hide small-modal" tabindex="-1" role="dialog">
     <div class="modal-header">
-        <h4>Verify Your SMTP Settings</h4>
+        <h4>Enter test verification code</h4>
     </div>
 
     <div class="modal-body">
-        <p>Enter the verification code you received in your email to continue.</p>
+        <p>Enter the verification code you received in the test email to continue.</p>
         <form id="verify-modal-code-iput-form" method="post" class="form-inline"
                 onsubmit="checkVerificationCodeAndSetConfiguration();">
             <label for="verification-code">Verification code:</label>
@@ -104,6 +102,7 @@
         </form>
     </div>
     <div class="modal-footer">
+        <a href="#" class="btn" data-dismiss="modal">Close</a>
         <a href="#" id="continue-button" class="btn btn-primary"
            onclick="checkVerificationCodeAndSetConfiguration();">Continue</a>
     </div>
@@ -111,11 +110,11 @@
 
 <script type="text/javascript">
     function localMailServerSelected() {
-        $('.public-host-option').attr("disabled", "disabled");
+        $('#public-host-options').slideUp();
     }
 
     function externalMailServerSelected() {
-        $('.public-host-option').removeAttr("disabled");
+        $('#public-host-options').slideDown();
     }
 
     function hideAllModals() {
@@ -196,13 +195,12 @@
     function enableVerifyModalEmailInput() {
         hideAllModals();
         $('#verify-modal-email-input').modal('show');
-        return false;
+        $('#verification-to-email').focus();
     }
 
     function enableVerifyModalCodeInput() {
         hideAllModals();
         $('#verify-modal-code-input').modal('show');
-        return false;
     }
 
     function checkVerificationCodeAndSetConfiguration() {
