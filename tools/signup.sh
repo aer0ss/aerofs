@@ -38,7 +38,7 @@ Usage()
 
 DieUsage()
 {
-    Usage "$@"
+    Usage "ERROR: $@"
     exit 1
 }
 
@@ -66,8 +66,8 @@ function DoArgs()
         esac
     done
 
-    test -n ${Passwd} || DieUsage "Hey tough guy, you need a password!"
-    test -n ${Userid} || DieUsage "Who do you want me to create?"
+    [ -n ${Passwd} ] || DieUsage "Hey tough guy, you need a password!"
+    [ -n ${Userid} ] || DieUsage "UserId required! Who do you want me to create?"
 }
 
 GetCode()
@@ -87,6 +87,7 @@ CreateAccount()
     curl -s ${CurlOutput} \
         -d "email=${Userid}" -d "c=${Code}" \
         -d "first_name=Jon" -d "last_name=Testo" -d "password=${Passwd}" \
+        -d "title=" -d "company=" -d "company_size=" -d "country=" -d "phone=" \
         https://${WebHost}/json.signup \
              || Die "Curl reported an error creating the account"
 
