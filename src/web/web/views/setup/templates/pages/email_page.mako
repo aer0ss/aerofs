@@ -28,8 +28,8 @@
             Use external mail relay
         </label>
 
-        <label for="email.sender.public_host">SMTP host:</label>
-        <input class="input-block-level public-host-option" id="email.sender.public_host" name="email.sender.public_host" type="text" value="${public_host}"
+        <label for="email-sender-public-host">SMTP host:</label>
+        <input class="input-block-level public-host-option" id="email-sender-public-host" name="email-sender-public-host" type="text" value="${public_host}"
             %if not public_host:
                 disabled
             %endif
@@ -37,16 +37,16 @@
 
         <div class="row-fluid">
             <div class="span6">
-                <label for="email.sender.public_username">SMTP username:</label>
-                <input class="input-block-level public-host-option" id="email.sender.public_username" name="email.sender.public_username" type="text" value="${current_config['email.sender.public_username']}"
+                <label for="email-sender-public-username">SMTP username:</label>
+                <input class="input-block-level public-host-option" id="email-sender-public-username" name="email-sender-public-username" type="text" value="${current_config['email.sender.public_username']}"
                     %if not public_host:
                         disabled
                     %endif
                 >
             </div>
             <div class="span6">
-                <label for="email.sender.public_password">SMTP password:</label>
-                <input class="input-block-level public-host-option" id="email.sender.public_password" name="email.sender.public_password" type="password" value="${current_config['email.sender.public_password']}"
+                <label for="email-sender-public-password">SMTP password:</label>
+                <input class="input-block-level public-host-option" id="email-sender-public-password" name="email-sender-public-password" type="password" value="${current_config['email.sender.public_password']}"
                     %if not public_host:
                         disabled
                     %endif
@@ -63,7 +63,7 @@
 
     <div class="page_block">
         <h4>Support email address:</h4>
-        <input class="input-block-level" id="base.www.support_email_address" name="base.www.support_email_address" type="text" value=${current_config['base.www.support_email_address']}>
+        <input class="input-block-level" id="base-www-support-email-address" name="base-www-support-email-address" type="text" value=${current_config['base.www.support_email_address']}>
         <p>This email address is used for all "support" links. Set it to an email address you want users to send support requests to. The default value is <code>support@aerofs.com</code>.</p>
     </div>
     <hr />
@@ -80,12 +80,12 @@
         <p>You must verify your email settings before you can continue. Enter your email address so that we can send a verification email.</p>
         <form id="verify-modal-email-input-form" method="post" class="form-inline"
                 onsubmit="sendVerificationCodeAndEnableCodeModal(); return false;">
-            <label for="verification.to.email">Email address:</label>
-            <input id="verification.to.email" name="verification.to.email" type="text">
+            <label for="verification-to-email">Email address:</label>
+            <input id="verification-to-email" name="verification-to-email" type="text">
         </form>
     </div>
     <div class="modal-footer">
-        <a href="#" id="sendVerificationCodeButton" class="btn btn-primary"
+        <a href="#" id="send-verification-code-button" class="btn btn-primary"
            onclick="sendVerificationCodeAndEnableCodeModal(); return false;">Send verification code</a>
     </div>
 </div>
@@ -104,7 +104,7 @@
         </form>
     </div>
     <div class="modal-footer">
-        <a href="#" id="continueButton" class="btn btn-primary"
+        <a href="#" id="continue-button" class="btn btn-primary"
            onclick="checkVerificationCodeAndSetConfiguration();">Continue</a>
     </div>
 </div>
@@ -122,32 +122,34 @@
         $('div.modal').modal('hide');
         enableButtons();
 
-        setEnabled($('#sendVerificationCodeButton'), true);
-        setEnabled($('#continueButton'), true);
+        setEnabled($('#send-verification-code-button'), true);
+        setEnabled($('#continue-button'), true);
     }
 
     function disableModalButtons() {
-       setEnabled($('#sendVerificationCodeButton'), false);
-       setEnabled($('#continueButton'), false);
+       setEnabled($('#send-verification-code-button'), false);
+       setEnabled($('#continue-button'), false);
     }
 
+    var serializedData;
     function submitEmailForm() {
         disableButtons();
+        serializedData = $('#emailForm').serialize();
 
-        if (!verifyPresence("base.www.support_email_address",
+        if (!verifyPresence("base-www-support-email-address",
                     "Please specify a support email address.")) return false;
 
         var remote = $("input[name=email.server]:checked", '#emailForm').val() == 'remote';
         if (remote && (
-                !verifyPresence("email.sender.public_host", "Please specify SMTP host.") ||
-                !verifyPresence("email.sender.public_username", "Please specify SMTP username.") ||
-                !verifyPresence("email.sender.public_password", "Please specify SMTP password."))) {
+                !verifyPresence("email-sender-public-host", "Please specify SMTP host.") ||
+                !verifyPresence("email-sender-public-username", "Please specify SMTP username.") ||
+                !verifyPresence("email-sender-public-password", "Please specify SMTP password."))) {
             return false;
         }
 
-        var host = document.getElementById("email.sender.public_host").value;
-        var username = document.getElementById("email.sender.public_username").value;
-        var password = document.getElementById("email.sender.public_password").value;
+        var host = $("#email-sender-public-host").val();
+        var username = $("#email-sender-public-username").val();
+        var password = $("#email-sender-public-password").val();
 
         var current_host = "${current_config['email.sender.public_host']}";
         var current_username = "${current_config['email.sender.public_username']}";
@@ -164,19 +166,27 @@
                 current_password != ""))) {
             enableVerifyModalEmailInput();
         } else {
-            gotoNextPage();
+            var support_email = $("#base-www-support-email-address").val();
+            var current_support_email = "${current_config['base.www.support_email_address']}";
+
+
+            if (support_email != current_support_email) {
+                doPost("${request.route_path('json_setup_email')}",
+                    serializedData, gotoNextPage, enableButtons);
+            } else {
+                gotoNextPage();
+            }
         }
 
         return false;
     }
 
-    var serializedData;
     function sendVerificationCodeAndEnableCodeModal() {
-        if (!verifyPresence("verification.to.email",
+        if (!verifyPresence("verification-to-email",
                     "Please specify an email address.")) return;
 
-        var verificationEmail = document.getElementById("verification.to.email").value;
-        serializedData = $('#emailForm').serialize() + "&verification.to.email=" + verificationEmail;
+        var verificationToEmail = $("#verification-to-email").val();
+        serializedData = serializedData + "&verification-to-email=" + verificationToEmail;
 
         disableModalButtons();
         doPost("${request.route_path('json_verify_smtp')}",
@@ -196,7 +206,7 @@
     }
 
     function checkVerificationCodeAndSetConfiguration() {
-        var inputtedCode = document.getElementById("verification-code").value;
+        var inputtedCode = $("#verification-code").val();
         var actualCode = parseInt("${email_verification_code}");
 
         if (inputtedCode == actualCode) {
