@@ -1,9 +1,9 @@
-#!/bin/bash -ue
+#!/bin/bash
+set -e -u
 
-rm -rf rocklog
-
-DEBIAN=rocklog/DEBIAN
-OPT=rocklog/opt/rocklog
+OUTPUT_DIR=build/rocklog
+DEBIAN=$OUTPUT_DIR/DEBIAN
+OPT=$OUTPUT_DIR/opt/rocklog
 RESOURCES=../src/rocklog/resources
 
 mkdir -p $DEBIAN
@@ -14,7 +14,4 @@ do
 done
 
 mkdir -p $OPT
-cp -a ../src/rocklog/ $OPT
-
-# Remove unnecessary files
-rm -rf $OPT/resources
+cp -a ../src/rocklog/{README.txt,retrace_client.py,rocklog.cfg,rocklog.py} $OPT/

@@ -12,8 +12,6 @@
 #   - generate upstart service configuration
 #   - copy Java build artifacts from ant output dir
 #
-# NB: For sanity, the package dir (i.e. ./$SERVICE) is cleared beforehand
-#
 
 set -ue
 
@@ -48,12 +46,12 @@ then
     SERVICE_ARGS="$4"
 fi
 
-rm -rf $SERVICE
+OUTPUT_DIR=build/$SERVICE
 
-DEBIAN="$SERVICE/DEBIAN"
+DEBIAN="$OUTPUT_DIR/DEBIAN"
 
 mkdir -p "$DEBIAN"
-mkdir -p "$SERVICE/var/log/$SERVICE"
+mkdir -p "$OUTPUT_DIR/var/log/$SERVICE"
 
 cat << EOF >> "$DEBIAN"/control
 Package: aerofs-$SERVICE
@@ -106,9 +104,9 @@ do
     chmod 755 "$DEBIAN"/$f
 done
 
-mkdir -p $SERVICE/etc/init
+mkdir -p $OUTPUT_DIR/etc/init
 
-cat << EOF >> "$SERVICE"/etc/init/$SERVICE.conf
+cat << EOF >> "$OUTPUT_DIR"/etc/init/$SERVICE.conf
 # $SERVICE service script
 
 description "$SERVICE server"
@@ -139,7 +137,7 @@ exec /usr/bin/java -XX:+HeapDumpOnOutOfMemoryError      \\
 
 EOF
 
-OPT="$SERVICE/opt/$SERVICE"
+OPT="$OUTPUT_DIR/opt/$SERVICE"
 mkdir -p $OPT
 
 # conf files

@@ -5,39 +5,40 @@
 BIN?=$(shell whoami | tr [a-z] [A-Z])
 TARGET_REPOSITORY=$(BIN) # The target repository is set to the bin.
 
+# List of known packages that can be built in alphabetical order.
 PACKAGES= \
+	bootstrap \
 	ca-server \
 	ca-tools \
 	cmd-server \
 	cmd-tools \
+	config \
+	db-backup \
+	devman \
+	enterprise-updater \
+	jeq-tools \
 	middleman \
 	pagerduty \
+	repackaging \
 	rocklog \
+	sanity \
 	servlet-tools \
 	sp \
 	spdb \
+	stun \
 	sv \
 	syncstat \
 	syncstat-tools \
-	jeq-tools \
 	verkehr \
-	bootstrap \
-	devman \
 	web \
 	zephyr \
-	stun \
-	config \
-	sanity \
-	repackaging \
-	enterprise-updater \
-	db-backup \
 
 DEBS=$(addprefix debs/, ${PACKAGES:=.deb})
 
 all: ${PACKAGES}
 
 ${PACKAGES}: %: %.deb
-	@for file in $$(ls *.deb *.ver); do mv $$file debs; done
+	@for file in build/*.deb build/*.ver; do mv $$file debs; done
 
 debs:
 	@mkdir -p debs
@@ -46,14 +47,18 @@ packagelist: debs
 	@echo "updating package list debs/Packages ..."
 	@cd debs && dpkg-scanpackages . > Packages && cd ../
 
-# Execute package "builder" scripts. These scripts are used to "build" the
-# package, that is, to move any required files over from other places in the
-# repository into the required directory structure in packaging/*.
-%.sh:
-	@test -f builders/$(shell basename ${@:.deb=.sh}); \
-		if [ $$? -eq 0 ]; then ./builders/$(shell basename ${@:.deb=.sh}); fi
-
-%.deb: %.sh
+%.deb:
+	@# Ensure build folder exists
+	@mkdir -p build
+	@# Wipe out the work folder in the build dir.
+	@rm -rf build/$(shell basename ${@:.deb=})
+	@# If one exists, copy all the resources from packaging/<packagename> to packaging/build/<packagename>
+	@[ -d $(shell basename ${@:.deb=}) ] && cp -a $(shell basename ${@:.deb=}) build/ || true
+	@# If there's an additional builder script for this package, run it.
+	@[ -x ./builders/$(shell basename ${@:.deb=.sh}) ] && ./builders/$(shell basename ${@:.deb=.sh}) || true
+	@# build/<packagename> should now look like a raw-extracted .deb package,
+	@# with a DEBIAN folder and all the other files to be packaged.
+	@# Fetch the .ver, patch the DEBIAN/control, and build the .deb
 	@./tools/deb-build.sh ${@:.deb=} $(TARGET_REPOSITORY)
 	@mkdir -p debs
 
@@ -64,7 +69,5 @@ upload-versions:
 	@./tools/deb-upload.sh $(TARGET_REPOSITORY) true
 
 clean:
-	@rm -rf debs versions *.deb *.ver *.txt
+	@rm -rf build debs versions *.deb *.ver *.txt
 
-test:
-	@./tools/run-packaging-tests.sh

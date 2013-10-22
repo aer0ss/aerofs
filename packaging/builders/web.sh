@@ -1,39 +1,45 @@
-#!/bin/bash -ue
-rm -rf web
+#!/bin/bash
+set -e -u
 
-RESOURCES=../src/web/resources
-OPT=web/opt/web
-DEBIAN=web/DEBIAN
-NGINX=web/etc/nginx
-UWSGI=web/etc/uwsgi
-EXTRA=web/opt/web/extra
+SOURCE_DIR=../src/web
+OUTPUT_DIR=build/web
+mkdir -p $OUTPUT_DIR
 
-# PIP_CACHE is a flat directory of .tar.gz source files from PyPI.
-PIP_CACHE=$HOME/.aerofs-cache/pip/web
+OPT=$OUTPUT_DIR/opt/web
+DEBIAN=$OUTPUT_DIR/DEBIAN
 
-# Debian-related file copies.
+# files for dpkg
 mkdir -p $DEBIAN
+RESOURCES=$SOURCE_DIR/resources
 for f in control postinst prerm conffiles
 do
     cp $RESOURCES/$f $DEBIAN
 done
+# The postinst script logs to this folder, so ensure it exists
+mkdir -p $OUTPUT_DIR/var/log/web
 
-mkdir -p web/var/log/web
-
-# Web repo and python-lib copy
-mkdir -p $OPT
+# Include the entirety of the src/python-lib repo, since we don't package it
+# TODO: package python-lib as tarball and add to requirements.txt?
+EXTRA=$OPT/extra
 mkdir -p $EXTRA
-# cp -r is BAD, prefer cp -a or cp -R for OSX compatibility; man 1 cp
-cp -a ../src/web/* $OPT
-rm -rf $OPT/development
 cp -a ../src/python-lib $EXTRA
 
-# Fetch pip source packages, if needed
-tools/pip-prefetch.sh "../src/web/requirements.txt" "$PIP_CACHE"
-# Copy source packages to /opt/web/sdist, so they'll be available at package
-# install time.
-mkdir -p $OPT/sdist
-cp $PIP_CACHE/* $OPT/sdist/
+# Copy the actual web module to the output dir
+# cp -r is BAD, prefer cp -a or cp -R for OSX compatibility; man 1 cp
+mkdir -p $OPT
+cp -a $SOURCE_DIR/web $OPT/
+# Also include stuff needed for package installation
+cp -a $SOURCE_DIR/{MANIFEST.in,README.txt,CHANGES.txt,setup.py,requirements.txt} $OPT/
+# Include the wsgi application file that uwsgi will run
+cp -a $SOURCE_DIR/production.wsgi $OPT/
 
-# remove unnecessary files
-rm -r $OPT/resources
+# Fetch other dependency source packages, if needed
+# PIP_CACHE is a flat directory of .tar.gz source files from PyPI.
+SDIST=$OPT/sdist
+SDIST_CACHE=$HOME/.aerofs-cache/pip/web
+tools/pip-prefetch.sh "../src/web/requirements.txt" "$SDIST_CACHE"
+
+# Copy dependency packages to /opt/web/sdist, so they'll be available at
+# package install time.
+mkdir -p $SDIST
+cp $SDIST_CACHE/* $SDIST/

@@ -1,4 +1,5 @@
-#!/bin/bash -ue
+#!/bin/bash
+set -e -u
 
 if [[ $# -ne 3 || "$1x" == "x" || "$2x" == "x" || "$3x" == "x" ]]
 then
@@ -13,7 +14,7 @@ BASEDIR="$2"
 PROJDIR="$3"
 
 PACKAGE_NAME="$SERVLET_NAME"
-BUILDROOT="$PACKAGE_NAME"
+BUILDROOT="build/$PACKAGE_NAME"
 
 RESOURCES="$BASEDIR"/src/"$PROJDIR"/resources/"$SERVLET_NAME"
 INSTALL="$BUILDROOT"/usr/share/aerofs-"$PACKAGE_NAME"/"$SERVLET_NAME"
