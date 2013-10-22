@@ -200,8 +200,11 @@ public class SPService implements ISPService
     private int _maxFreeCollaboratorsPerFolder = 1;
 
     // If false, no payment checks will be enforced.
-    private static final Boolean ENABLE_PAYMENT =
+    private final Boolean ENABLE_PAYMENT =
             getBooleanProperty("sp.payment.enabled", true);
+
+    private final Boolean INVITATION_ONLY_SIGNUP =
+            getBooleanProperty("invitation_only_signup", false);
 
     public SPService(SPDatabase db, SQLThreadLocalTransaction sqlTrans,
             JedisThreadLocalTransaction jedisTrans, ISessionUser sessionUser,
@@ -1326,6 +1329,12 @@ public class SPService implements ISPService
         User user = _factUser.createFromExternalID(emailAddress);
 
         _sqlTrans.begin();
+
+        // If it's an invitation-only system, only allow the first user to self sign up
+        // (via site setup UI).
+        if (INVITATION_ONLY_SIGNUP && _factUser.hasUsers()) {
+            throw new ExNoPerm("invitation-only sign up");
+        }
 
         @Nullable String signUpCode = user.exists() ? null : user.addSignUpCode();
 

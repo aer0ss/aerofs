@@ -22,7 +22,6 @@ import com.aerofs.base.acl.Role;
 import com.aerofs.lib.Tick;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.bf.BFOID;
-import com.aerofs.lib.db.dbcw.IDBCW;
 import com.aerofs.lib.id.CID;
 import com.aerofs.lib.id.FID;
 import com.aerofs.lib.id.KIndex;

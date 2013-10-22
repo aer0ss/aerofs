@@ -155,18 +155,14 @@ If provided, the password to use to authenticate with the STMP server.
 
 Timeout value, in milliseconds, for a response from SMTP commands.
 
-Default: 10 seconds (10000 ms)
-
-Example: `email.sender.timeout=10000`
-
     email.sender.connection_timeout=60000
 
 Timeout value, in milliseconds, for a connection to the outbound SMTP server.
 
-Default: 60 seconds (60000 ms)
+    invitation_only_signup=true
 
-Example: `email.sender.connection_timeout=60000`
-
+Whether to block account creation unless users are invited to the system by
+existing users (either folder owners or team administrators).
 
 ## OpenID properties
 
@@ -432,8 +428,11 @@ Example:
 ## Private deployment
 
 This example parses an OpenId identifier of the form:
+
      https://exauth.example.com/user/jpile9/
+
 Into:
+
      email: jpile9@example.com
      first: J
      last: Pile

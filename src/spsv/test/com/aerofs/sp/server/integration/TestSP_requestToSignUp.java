@@ -4,9 +4,15 @@
 
 package com.aerofs.sp.server.integration;
 
+import com.aerofs.base.config.ConfigurationProperties;
+import com.aerofs.base.ex.ExNoPerm;
+import com.aerofs.sp.server.SPService;
 import com.aerofs.sp.server.lib.user.User;
 import org.junit.Test;
 
+import java.util.Properties;
+
+import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.verify;
@@ -36,5 +42,30 @@ public class TestSP_requestToSignUp extends AbstractSPTest
         service.requestToSignUp(email);
         verify(requestToSignUpEmailer).sendAlreadySignedUpEmail(email);
         verifyNoMoreInteractions(requestToSignUpEmailer);
+    }
+
+    @Test
+    public void shouldSupportInvitationOnlySignUp() throws Exception
+    {
+        Properties props = new Properties();
+        props.put("invitation_only_signup", "true");
+        ConfigurationProperties.setProperties(props);
+
+        // reconstruct SP using the new shared folder rules
+        service = new SPService(db, sqlTrans, jedisTrans, sessionUser, passwordManagement,
+                certificateAuthenticator, factUser, factOrg, factOrgInvite, factDevice, certdb,
+                esdb, factSharedFolder, factEmailer, _deviceRegistrationEmailer,
+                requestToSignUpEmailer, commandQueue, analytics, identitySessionManager,
+                authenticator, sharedFolderRules, sharedFolderNotificationEmailer);
+        wireSPService();
+
+        try {
+            // It should fail because AbstractSPTest already created a bunch of users
+            service.requestToSignUp("user@gmail.com");
+            fail();
+        } catch (ExNoPerm e) {}
+
+        // Reset the property so subsequent tests can construct SP with the default properties.
+        ConfigurationProperties.setProperties(new Properties());
     }
 }
