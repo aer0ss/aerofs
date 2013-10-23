@@ -1,5 +1,0 @@
-actors:
-  - address: ci-ubuntu-f.local
-    TS:
-      storage_type: 'LINKED'
-  - address: ci-ubuntu-g.local

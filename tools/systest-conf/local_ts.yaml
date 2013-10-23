@@ -1,5 +1,0 @@
-actors:
-  - address: ci-ubuntu-f.local
-    TS:
-      storage_type: 'LOCAL'
-  - address: ci-ubuntu-g.local
