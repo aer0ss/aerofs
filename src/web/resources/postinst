@@ -6,17 +6,12 @@ chown www-data:www-data /var/log/web -R
 PYHOME=/opt/web/pythonenv
 PYTHON=$PYHOME/bin/python
 
-# Enter temp directory to build python packages
-TMPDIR=/tmp/aerofs_web_build
-mkdir $TMPDIR
-pushd $TMPDIR
-
 # Produce clean virtualenv from scratch
+pushd /opt/web
 rm -rf $PYHOME
 mkdir -p $PYHOME
 virtualenv $PYHOME
 
-cd /opt/web
 $PYHOME/bin/pip install --find-links file:///opt/web/sdist      \
                         --no-index                              \
                         --log /var/log/web/web.install.log   \
@@ -33,6 +28,5 @@ popd
 # not writable by www-data. Explicitly setting it fixes the problem.
 export PYTHON_EGG_CACHE=/var/www/.python-eggs
 
-# Back to original directory, clean up temp directory
+# Return to initial starting folder
 popd
-rm -r $TMPDIR
