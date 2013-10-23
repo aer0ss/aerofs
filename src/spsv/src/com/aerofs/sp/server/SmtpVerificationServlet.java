@@ -37,18 +37,24 @@ public class SmtpVerificationServlet extends HttpServlet
     {
         // N.B. these params are defined in python land in setup.py. They must match.
 
-        // The email we will send the verificaiton code to.
         String toEmail = req.getParameter("to_email");
-        // The actual verificaiton code, generated in python land.
         String code = req.getParameter("code");
-        // These are passed verbatim to the AbstractEmailSender.
         String host = req.getParameter("smtp_host");
+        String port = req.getParameter("smtp_port");
         String username = req.getParameter("smtp_username");
         String password = req.getParameter("smtp_password");
 
         try {
-            l.warn("Sending SMTP verification email to:" + toEmail + " code:" + code);
-            SmtpVerificationEmailer.sendSmtpVerificationEmail(toEmail, code, host, username, password);
+            l.debug("Sending SMTP verification email.\n" +
+                    "to_email: " + toEmail + "\n" +
+                    "code: " + code + "\n" +
+                    "smtp_host: " + host + "\n" +
+                    "smtp_port: " + port + "\n" +
+                    "smtp_username: " + username + "\n" +
+                    "smtp_password: " + password);
+
+            SmtpVerificationEmailer.sendSmtpVerificationEmail(toEmail, code, host, port, username,
+                    password);
         }
         catch (Exception e) {
             l.error("Unable to send email: " + Util.stackTraceToString(e));

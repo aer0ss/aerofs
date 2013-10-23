@@ -23,6 +23,7 @@ _SMTP_VERIFICATION_URL = "http://localhost:4434/email"
 _SMTP_VERIFICATION_TO_EMAIL = "to_email"
 _SMTP_VERIFICATION_CODE = "code"
 _SMTP_VERIFICATION_SMTP_HOST = "smtp_host"
+_SMTP_VERIFICATION_SMTP_PORT = "smtp_port"
 _SMTP_VERIFICATION_SMTP_USERNAME = "smtp_username"
 _SMTP_VERIFICATION_SMTP_PASSWORD = "smtp_password"
 
@@ -99,20 +100,23 @@ def json_setup_hostname(request):
 def _parse_email_request(request):
     if request.params['email-server'] == 'remote':
         host       = request.params['email-sender-public-host']
+        port       = request.params['email-sender-public-port']
         username   = request.params['email-sender-public-username']
         password   = request.params['email-sender-public-password']
     else:
         host = 'localhost'
+        port = '25'
         username = ''
         password = ''
 
-    return host,username,password
+    return host,port,username,password
 
-def _send_verification_email(to_email, code, host, username, password):
+def _send_verification_email(to_email, code, host, port, username, password):
     payload = {
         _SMTP_VERIFICATION_TO_EMAIL: to_email,
         _SMTP_VERIFICATION_CODE: code,
         _SMTP_VERIFICATION_SMTP_HOST: host,
+        _SMTP_VERIFICATION_SMTP_PORT: port,
         _SMTP_VERIFICATION_SMTP_USERNAME: username,
         _SMTP_VERIFICATION_SMTP_PASSWORD: password
     }
@@ -125,12 +129,13 @@ def _send_verification_email(to_email, code, host, username, password):
     renderer = 'json'
 )
 def json_verify_smtp(request):
-    host, username, password = _parse_email_request(request)
+    host,port,username,password = _parse_email_request(request)
 
     r = _send_verification_email(
             request.params['verification-to-email'],
             request.session[_SESSION_KEY_EMAIL_VERIFICATION_CODE],
             host,
+            port,
             username,
             password)
 
@@ -146,11 +151,12 @@ def json_verify_smtp(request):
 )
 def json_setup_email(request):
     support_address = request.params['base-www-support-email-address']
-    host,username,password = _parse_email_request(request)
+    host,port,username,password = _parse_email_request(request)
 
     configuration = Configuration()
     configuration.set_persistent_value('support_address', support_address)
     configuration.set_persistent_value('email_host',      host)
+    configuration.set_persistent_value('email_port',      port)
     configuration.set_persistent_value('email_user',      username)
     configuration.set_persistent_value('email_password',  password)
 

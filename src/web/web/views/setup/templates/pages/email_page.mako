@@ -38,8 +38,16 @@
             %endif
         >
 
-            <label for="email-sender-public-host">SMTP host:</label>
-            <input class="input-block-level" id="email-sender-public-host" name="email-sender-public-host" type="text" value="${public_host_name}">
+            <div class="row-fluid">
+                <div class="span6">
+                    <label for="email-sender-public-host">SMTP host:</label>
+                    <input class="input-block-level" id="email-sender-public-host" name="email-sender-public-host" type="text" value="${public_host_name}">
+                </div>
+                <div class="span6">
+                    <label for="email-sender-public-port">SMTP port:</label>
+                    <input class="input-block-level" id="email-sender-public-port" name="email-sender-public-port" type="text" value="${current_config['email.sender.public_port']}">
+                </div>
+            </div>
 
             <div class="row-fluid">
                 <div class="span6">
@@ -146,26 +154,31 @@
         var remote = $("input[name=email-server]:checked", '#emailForm').val() == 'remote';
         if (remote && (
                 !verifyPresence("email-sender-public-host", "Please specify SMTP host.") ||
+                !verifyPresence("email-sender-public-port", "Please specify SMTP port.") ||
                 !verifyPresence("email-sender-public-username", "Please specify SMTP username.") ||
                 !verifyPresence("email-sender-public-password", "Please specify SMTP password."))) {
             return false;
         }
 
         var host = $("#email-sender-public-host").val();
+        var port = $("#email-sender-public-port").val();
         var username = $("#email-sender-public-username").val();
         var password = $("#email-sender-public-password").val();
 
         var current_host = "${current_config['email.sender.public_host']}";
+        var current_port = "${current_config['email.sender.public_port']}";
         var current_username = "${current_config['email.sender.public_username']}";
         var current_password = "${current_config['email.sender.public_password']}";
 
         ## Only enable smtp verification modal if something has changed.
         if ((remote &&
                 (host != current_host ||
+                port != current_port ||
                 username != current_username ||
                 password != current_password)) ||
             (!remote &&
                 (current_host != "localhost" ||
+                current_port != "25" ||
                 current_username != "" ||
                 current_password != ""))) {
             enableVerifyModalEmailInput();

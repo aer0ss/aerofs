@@ -43,21 +43,20 @@ public abstract class AbstractEmailSender
     private static final Logger l = Loggers.getLogger(AbstractEmailSender.class);
 
     private final String _host;
+    private final String _port;
     private final String _username;
     private final String _password;
 
     /**
      * @param host when using local mail relay, set this to localhost.
      */
-    public AbstractEmailSender(String host, String username, String password)
+    public AbstractEmailSender(String host, String port, String username, String password)
     {
         _host = host;
+        _port = port;
         _username = username;
         _password = password;
     }
-
-    private static String PORT =
-            getStringProperty("email.sender.public_port", "25");
 
     // SMTP command timeout, expressed in milliseconds.
     private static String TIMEOUT =
@@ -83,7 +82,7 @@ public abstract class AbstractEmailSender
         Properties props = new Properties();
         props.put("mail.smtp.timeout", TIMEOUT);
         props.put("mail.smtp.connectiontimeout", CONNECTION_TIMEOUT);
-        props.put("mail.smtp.port", PORT);
+        props.put("mail.smtp.port", _port);
 
         // Without it Java Mail would sene "EHLO" rather thant "EHLO <hostname>". The former
         // is not supported by some mail relays include postfix which is used as the local mail
@@ -226,20 +225,13 @@ public abstract class AbstractEmailSender
                     t.connect(INTERNAL_HOST, INTERNAL_USERNAME, INTERNAL_PASSWORD);
                 }
 
+                l.info("{} emailing {}", msg.getFrom(), msg.getAllRecipients());
                 t.sendMessage(msg, msg.getAllRecipients());
-                l.info("{} emailed {}", msg.getFrom(), msg.getAllRecipients());
             } finally {
                 t.close();
             }
         } catch (MessagingException e) {
-            try {
-                String to = msg.getRecipients(Message.RecipientType.TO)[0].toString();
-                l.error("cannot send message to {} : {} ", to , e);
-                l.error(Exceptions.getStackTraceAsString(e));
-            } catch (Exception e1) {
-                l.error("cannot report email exception: {} ", e1);
-            }
-
+            l.error("cannot send message: " + Exceptions.getStackTraceAsString(e));
             throw e;
         }
     }

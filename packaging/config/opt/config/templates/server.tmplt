@@ -18,6 +18,7 @@ bootstrap.spdb.host=localhost
 bootstrap.spdb.schema=aerofs_sp
 
 email.sender.public_host={{ email_host }}
+email.sender.public_port={{ email_port }}
 email.sender.public_username={{ email_user }}
 email.sender.public_password={{ email_password }}
 

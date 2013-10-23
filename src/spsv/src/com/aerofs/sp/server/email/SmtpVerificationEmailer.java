@@ -13,8 +13,8 @@ import java.io.IOException;
 
 public class SmtpVerificationEmailer
 {
-    public static void sendSmtpVerificationEmail(String toEmail, String code, String host, String username,
-            String password)
+    public static void sendSmtpVerificationEmail(String toEmail, String code, String host,
+            String port, String username, String password)
             throws IOException, MessagingException
     {
         String subject = "Your SMTP Verification Code";
@@ -31,7 +31,7 @@ public class SmtpVerificationEmailer
 
         // N.B. need to use this specific email sender constructor because the configuration
         // system is not up to date.
-        SyncEmailSender emailSender = new SyncEmailSender(host, username, password);
+        SyncEmailSender emailSender = new SyncEmailSender(host, port, username, password);
         emailSender.sendPublicEmailFromSupport(SPParam.EMAIL_FROM_NAME, toEmail, null, subject,
                 email.getTextEmail(), email.getHTMLEmail(), EmailCategory.SMTP_VERIFICATION);
     }

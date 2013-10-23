@@ -33,6 +33,7 @@ public class AsyncEmailSender extends AbstractEmailSender
     {
         super(
             getStringProperty("email.sender.public_host", "smtp.sendgrid.net"),
+            getStringProperty("email.sender.public_port", "25"),
             getStringProperty("email.sender.public_username", "mXSiiSbCMMYVG38E"),
             getStringProperty("email.sender.public_password", "6zovnhQuLMwNJlx8"));
     }
