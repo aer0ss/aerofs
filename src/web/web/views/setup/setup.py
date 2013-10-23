@@ -21,11 +21,11 @@ _BOOTSTRAP_PIPE_FILE = "/tmp/bootstrap"
 _SMTP_VERIFICATION_URL = "http://localhost:8080/verify/email"
 # N.B. these params are defined in Java land in SmtpVerifiationServlet.java. They must match.
 _SMTP_VERIFICATION_TO_EMAIL = "to_email"
-_SMTP_VERIFICATION_CODE = "code"
-_SMTP_VERIFICATION_SMTP_HOST = "smtp_host"
-_SMTP_VERIFICATION_SMTP_PORT = "smtp_port"
-_SMTP_VERIFICATION_SMTP_USERNAME = "smtp_username"
-_SMTP_VERIFICATION_SMTP_PASSWORD = "smtp_password"
+_SMTP_VERIFICATION_CODE = "verification_code"
+_SMTP_VERIFICATION_SMTP_HOST = "email_sender_public_host"
+_SMTP_VERIFICATION_SMTP_PORT = "email_sender_public_port"
+_SMTP_VERIFICATION_SMTP_USERNAME = "email_sender_public_username"
+_SMTP_VERIFICATION_SMTP_PASSWORD = "email_sender_public_password"
 
 _SESSION_KEY_EMAIL_VERIFICATION_CODE = 'email_verification_code'
 

@@ -38,11 +38,11 @@ public class SmtpVerificationServlet extends HttpServlet
         // N.B. these params are defined in python land in setup.py. They must match.
 
         String toEmail = req.getParameter("to_email");
-        String code = req.getParameter("code");
-        String host = req.getParameter("smtp_host");
-        String port = req.getParameter("smtp_port");
-        String username = req.getParameter("smtp_username");
-        String password = req.getParameter("smtp_password");
+        String code = req.getParameter("verification_code");
+        String host = req.getParameter("email_sender_public_host");
+        String port = req.getParameter("email_sender_public_port");
+        String username = req.getParameter("email_sender_public_username");
+        String password = req.getParameter("email_sender_public_password");
 
         try {
             l.debug("Sending SMTP verification email.\n" +
