@@ -82,19 +82,13 @@ class unified::network {
         dport => 5222,
         action => "accept",
     }->
-    firewall {"205 allow config service https":
-        table => "filter",
-        chain => "INPUT",
-        dport => 5435,
-        action => "accept",
-    }->
-    firewall {"206 allow zephyr":
+    firewall {"205 allow zephyr":
         table => "filter",
         chain => "INPUT",
         dport => 8888,
         action => "accept",
     }->
-    firewall {"207 allow verkehr subscribe":
+    firewall {"206 allow verkehr subscribe":
         table => "filter",
         chain => "INPUT",
         dport => 29438 ,
