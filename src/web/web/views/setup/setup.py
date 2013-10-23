@@ -18,7 +18,7 @@ _BOOTSTRAP_PIPE_FILE = "/tmp/bootstrap"
 # Email verification interface constants.
 
 # This is a tomcat servlet that is part of the SP package.
-_SMTP_VERIFICATION_URL = "http://localhost:4434/email"
+_SMTP_VERIFICATION_URL = "http://localhost:8080/verify/email"
 # N.B. these params are defined in Java land in SmtpVerifiationServlet.java. They must match.
 _SMTP_VERIFICATION_TO_EMAIL = "to_email"
 _SMTP_VERIFICATION_CODE = "code"
