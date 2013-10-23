@@ -283,7 +283,7 @@ echo ">> make release resources"
 compute_product_names
 copy_resources_to_local_release_directories
 create_java_jar
-[ "$4" == "--no-obfuscate" ] || obfuscate_java
+[ "${4:-}" == "--no-obfuscate" ] || obfuscate_java
 write_version_and_checksums
 
 exit 0
