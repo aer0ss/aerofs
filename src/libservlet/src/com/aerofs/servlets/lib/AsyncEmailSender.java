@@ -4,9 +4,7 @@
 
 package com.aerofs.servlets.lib;
 
-import com.aerofs.base.Loggers;
 import com.aerofs.proto.Common.Void;
-import org.slf4j.Logger;
 
 import javax.mail.Message;
 import javax.mail.MessagingException;
@@ -27,10 +25,8 @@ import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
  */
 public class AsyncEmailSender extends AbstractEmailSender
 {
-    private static final Logger l = Loggers.getLogger(AsyncEmailSender.class);
-
-    private static final int EMAIL_QUEUE_SIZE = 1000;
-    private static final ExecutorService executor = new ThreadPoolExecutor(1, 1, 0L,
+    private final int EMAIL_QUEUE_SIZE = 1000;
+    private final ExecutorService executor = new ThreadPoolExecutor(1, 1, 0L,
             TimeUnit.MILLISECONDS, new LinkedBlockingDeque<Runnable>(EMAIL_QUEUE_SIZE));
 
     public AsyncEmailSender()

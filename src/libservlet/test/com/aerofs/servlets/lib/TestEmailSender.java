@@ -38,7 +38,7 @@ public class TestEmailSender extends AbstractTest
     static Wiser _wiser;
     static int _port;
     static TimeoutFactory _idFactory;
-    static final AsyncEmailSender _emailSender = new AsyncEmailSender();
+    static AbstractEmailSender _emailSender;
 
     // create one Wiser server for all the test cases in this class...
     // We use a 2-second command timeout for all tests in this class.
@@ -56,6 +56,8 @@ public class TestEmailSender extends AbstractTest
         properties.setProperty("email.sender.public_port", String.valueOf(_port));
         properties.setProperty("email.sender.timeout", String.valueOf(2 * C.SEC));
         ConfigurationProperties.setProperties(properties);
+
+        _emailSender = new AsyncEmailSender();
     }
 
     @AfterClass
@@ -74,7 +76,6 @@ public class TestEmailSender extends AbstractTest
         waitForMessages(1);
 
         for (WiserMessage msg : _wiser.getMessages()) {
-            // msg.dumpMessage(System.out);
             Assert.assertEquals("f1@example.com", msg.getEnvelopeSender());
             Assert.assertEquals("to1@example.com", msg.getEnvelopeReceiver());
         }
