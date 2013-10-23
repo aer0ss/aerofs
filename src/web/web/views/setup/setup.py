@@ -97,7 +97,7 @@ def json_setup_hostname(request):
 # ------------------------------------------------------------------------
 
 def _parse_email_request(request):
-    if request.params['email.server'] == 'remote':
+    if request.params['email-server'] == 'remote':
         host       = request.params['email-sender-public-host']
         username   = request.params['email-sender-public-username']
         password   = request.params['email-sender-public-password']

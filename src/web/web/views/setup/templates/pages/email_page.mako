@@ -1,7 +1,10 @@
 <%namespace name="csrf" file="../csrf.mako"/>
 <%namespace name="common" file="common.mako"/>
 
-<% public_host = current_config['email.sender.public_host'] %>
+<%
+    public_host_name = current_config['email.sender.public_host']
+    is_public_host = public_host_name != "" and public_host_name != "localhost"
+%>
 
 <h4>Email server:</h4>
 
@@ -9,20 +12,20 @@
     <div class="page_block">
         ${csrf.token_input()}
         <label class="radio">
-            <input type='radio' id='local-mail-server' name='email.server' value='local'
+            <input type='radio' name='email-server' value='local'
                    onchange="localMailServerSelected()"
-               %if not public_host:
-                   checked
+               %if not is_public_host:
+                   checked="checked"
                %endif
             >
             Use AeroFS Service Appliance's local mail relay
         </label>
 
         <label class="radio">
-            <input type='radio' name='email.server' value='remote'
+            <input type='radio' name='email-server' value='remote'
                    onchange="externalMailServerSelected()"
-                %if public_host:
-                   checked
+                %if is_public_host:
+                   checked="checked"
                 %endif
             >
             Use external mail relay
@@ -30,22 +33,22 @@
 
         ## The slide down options
         <div id="public-host-options"
-            %if not public_host:
+            %if not is_public_host:
                 class="hide"
             %endif
         >
 
             <label for="email-sender-public-host">SMTP host:</label>
-            <input class="input-block-level public-host-option" id="email-sender-public-host" name="email-sender-public-host" type="text" value="${public_host}">
+            <input class="input-block-level" id="email-sender-public-host" name="email-sender-public-host" type="text" value="${public_host_name}">
 
             <div class="row-fluid">
                 <div class="span6">
                     <label for="email-sender-public-username">SMTP username:</label>
-                    <input class="input-block-level public-host-option" id="email-sender-public-username" name="email-sender-public-username" type="text" value="${current_config['email.sender.public_username']}">
+                    <input class="input-block-level" id="email-sender-public-username" name="email-sender-public-username" type="text" value="${current_config['email.sender.public_username']}">
                 </div>
                 <div class="span6">
                     <label for="email-sender-public-password">SMTP password:</label>
-                    <input class="input-block-level public-host-option" id="email-sender-public-password" name="email-sender-public-password" type="password" value="${current_config['email.sender.public_password']}">
+                    <input class="input-block-level" id="email-sender-public-password" name="email-sender-public-password" type="password" value="${current_config['email.sender.public_password']}">
                 </div>
             </div>
 
@@ -77,6 +80,8 @@
             address so that we can send you a test email.</p>
         <form id="verify-modal-email-input-form" method="post" class="form-inline"
                 onsubmit="sendVerificationCodeAndEnableCodeModal(); return false;">
+            ${csrf.token_input()}
+
             <label for="verification-to-email">Email address:</label>
             <input id="verification-to-email" name="verification-to-email" type="text">
         </form>
@@ -138,7 +143,7 @@
         if (!verifyPresence("base-www-support-email-address",
                     "Please specify a support email address.")) return false;
 
-        var remote = $("input[name=email.server]:checked", '#emailForm').val() == 'remote';
+        var remote = $("input[name=email-server]:checked", '#emailForm').val() == 'remote';
         if (remote && (
                 !verifyPresence("email-sender-public-host", "Please specify SMTP host.") ||
                 !verifyPresence("email-sender-public-username", "Please specify SMTP username.") ||
@@ -168,7 +173,6 @@
             var support_email = $("#base-www-support-email-address").val();
             var current_support_email = "${current_config['base.www.support_email_address']}";
 
-
             if (support_email != current_support_email) {
                 doPost("${request.route_path('json_setup_email')}",
                     serializedData, gotoNextPage, enableButtons);
@@ -184,8 +188,7 @@
         if (!verifyPresence("verification-to-email",
                     "Please specify an email address.")) return;
 
-        var verificationToEmail = $("#verification-to-email").val();
-        serializedData = serializedData + "&verification-to-email=" + verificationToEmail;
+        serializedData = serializedData + "&" + $('#verify-modal-email-input-form').serialize();
 
         disableModalButtons();
         doPost("${request.route_path('json_verify_smtp')}",
