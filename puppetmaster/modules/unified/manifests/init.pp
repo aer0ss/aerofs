@@ -39,10 +39,6 @@ class unified {
         source => "puppet:///modules/unified/nginx/cfg-private",
         require => Package["nginx"],
     }
-    file {"/etc/nginx/sites-available/aerofs-smtp":
-        source => "puppet:///modules/unified/nginx/smtp",
-        require => Package["nginx"],
-    }
     file {"/etc/nginx/sites-available/aerofs-service":
         source => "puppet:///modules/unified/nginx/service",
         require => Package["nginx"],
@@ -56,11 +52,6 @@ class unified {
         ensure  => link,
         target  => "/etc/nginx/sites-available/aerofs-cfg-private",
         require => File["/etc/nginx/sites-available/aerofs-cfg-private"],
-    }
-    file{ "/etc/nginx/sites-enabled/aerofs-smtp":
-        ensure  => link,
-        target  => "/etc/nginx/sites-available/aerofs-smtp",
-        require => File["/etc/nginx/sites-available/aerofs-smtp"],
     }
     file{ "/etc/nginx/sites-enabled/aerofs-ca":
         ensure  => link,

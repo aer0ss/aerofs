@@ -28,6 +28,11 @@
     <servlet-class>com.aerofs.sp.server.SmtpVerificationServlet</servlet-class>
   </servlet>
 
+  <servlet>
+    <servlet-name>ServletLdapVerification</servlet-name>
+    <servlet-class>com.aerofs.sp.server.LdapVerificationServlet</servlet-class>
+  </servlet>
+
   <!-- URL mapping -->
   <servlet-mapping>
     <servlet-name>ServletSP</servlet-name>
@@ -41,5 +46,11 @@
 
   <servlet-mapping>
     <servlet-name>ServletSmtpVerification</servlet-name>
-    <url-pattern>/email</url-pattern>
+    <url-pattern>/verify/email</url-pattern>
   </servlet-mapping>
+
+  <servlet-mapping>
+    <servlet-name>ServletLdapVerification</servlet-name>
+    <url-pattern>/verify/ldap</url-pattern>
+  </servlet-mapping>
+
