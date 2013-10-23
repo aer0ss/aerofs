@@ -11,7 +11,7 @@ DEBIAN=$OUTPUT_DIR/DEBIAN
 # files for dpkg
 mkdir -p $DEBIAN
 RESOURCES=$SOURCE_DIR/resources
-for f in control postinst prerm conffiles
+for f in control postinst prerm postrm conffiles
 do
     cp $RESOURCES/$f $DEBIAN
 done

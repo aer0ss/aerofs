@@ -1,0 +1,10 @@
+#!/bin/bash
+if [ $1 == purge ]
+then
+    rm -rf /opt/web/build
+    rm -rf /opt/web/dist
+    rm -rf /opt/web/extra
+    rm -rf /opt/web/pythonenv
+    rm -rf /opt/web/web
+    rm -rf /opt/web/web.egg-info
+fi
