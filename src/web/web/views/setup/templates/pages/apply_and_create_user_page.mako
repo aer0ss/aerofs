@@ -1,5 +1,4 @@
 <%namespace name="csrf" file="../csrf.mako"/>
-<%namespace name="spinner" file="../spinner.mako"/>
 <%namespace name="common" file="common.mako"/>
 
 <style type="text/css">
@@ -25,17 +24,12 @@
         class='btn btn-primary pull-right'>Apply and Finish</button>
 </form>
 
-<div id="progress-modal" class="modal hide" tabindex="-1" role="dialog"
-        style="top: 200px">
-    <div class="modal-body">
-        <span id="progress-modal-spinner" class="pull-left"
-              style="margin-right: 28px; padding-top: -10px">&nbsp;</span>
-        <span id="count-down-text">Please wait for about
-            <strong><span id="count-down-number"></span></strong>
-            seconds while the system is being configured...</span>
-        <span id="be-patient-text">It should be done very shortly...</span>
-    </div>
-</div>
+<%common:progress_modal_html>
+    <span id="count-down-text">Please wait for about
+        <strong><span id="count-down-number"></span></strong>
+        seconds while the system is being configured...</span>
+    <span id="be-patient-text">It should be done very shortly...</span>
+</%common:progress_modal_html>
 
 <div id="success-modal" class="modal hide small-modal" tabindex="-1" role="dialog">
     <div class="modal-header">
@@ -118,39 +112,20 @@
     </div>
 </div>
 
-<%spinner:scripts/>
+<%common:progress_modal_scripts/>
 
-<script type="text/javascript">
-    ## Because the special arrangement of pages
-    ## (see mode_supported_*.mako), inclusion of jQuery is after this block.
-    ## Therefore, we can't initialize components at document loading time.
-    var initialized;
-    function lazyInitialize() {
-        if (initialized) return;
-        initialized = true;
-        initializeSpinners();
+<script>
+    $(document).ready(function() {
+        initializeProgressModal();
+        ## Disalbe esaping from all modals
+        disableEsapingFromModal($('div.modal'));
         initializeModals();
-    }
+    });
 
     function initializeModals() {
-        var $progressModal = $('#progress-modal');
-        var $spinner = $('#progress-modal-spinner');
-        var $createUserModal = $('#create-user-modal');
-
-        ## For all the modals on this page, prevent ESC or mouse clicking on the
-        ## background to close the modal.
-        ## See http://stackoverflow.com/questions/9894339/disallow-twitter-bootstrap-modal-window-from-closing
-        $('div.modal').modal({
-            backdrop: 'static',
-            keyboard: false,
-            show: false
-        });
-
         var countDownInterval;
-        $progressModal.on('shown', function() {
-            startSpinner($spinner, 0);
-
-            ## Sgtart countdown
+        $('#${common.progress_modal_id()}').on('shown', function() {
+            ## Start countdown
             var countDown = 90;
             printCountDown();
             countDownInterval = window.setInterval(function() {
@@ -173,10 +148,9 @@
         }).on('hidden', function() {
             ## Stop countdown
             window.clearInterval(countDownInterval);
-            stopSpinner($spinner);
         });
 
-        $createUserModal.on('shown', function () {
+        $('#create-user-modal').on('shown', function () {
             $('#create-user-email').focus();
         });
 
@@ -191,8 +165,6 @@
     }
 
     function submitApplyForm() {
-        lazyInitialize();
-
         ## Show the progress modal
         $('#progress-modal').modal('show');
 

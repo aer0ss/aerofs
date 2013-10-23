@@ -1,3 +1,10 @@
+
+## TODO (WW) This is a hack to get around the fact that JS in setup pages can't
+## be included *after* base_layout.mako includes jQuery. A proper fix is to
+## change how these pages are included/inherited to allow standard
+## <%block name="script">'s to be defined here.
+<script src="${request.static_path('web:static/js/jquery.min.js')}"></script>
+
 <style type="text/css">
     ## For footnotes under main options
     .main-option-footnote {

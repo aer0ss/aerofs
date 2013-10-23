@@ -4,7 +4,6 @@ from pyramid import testing
 from mock import Mock
 from web import util
 from aerofs_sp.gen.sp_pb2 import SPServiceRpcStub
-import inspect
 
 class TestBase(unittest.TestCase):
     def setup_common(self):

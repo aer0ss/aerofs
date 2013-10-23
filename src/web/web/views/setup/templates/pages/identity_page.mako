@@ -247,10 +247,25 @@
             >${current_config['ldap.server.ca_certificate'].replace('\\n', '&#13;&#10;')}</textarea>
     <div class="input-footnote">Supply the LDAP server's certificate here only
         if the certificate is not publicly signed.</div>
-
 </%def>
 
+<%common:progress_modal_html>
+    Please wait while we are testing the LDAP server...
+</%common:progress_modal_html>
+
+<%common:progress_modal_scripts/>
+
 <script>
+    var ldapOptionChanged = false;
+    $(document).ready(function() {
+        initializeProgressModal();
+
+        ## Listen to any changes to LDAP options.
+        $('.ldap-opt').change(function () {
+            ldapOptionChanged = true;
+        })
+    });
+
     function localSelected() {
         $('#ldap-options').hide();
     }
@@ -276,20 +291,30 @@
         var authenticator = $(':input[name=lib.authenticator]:checked').val();
         if (authenticator == 'local_credential') {
             post(gotoNextPage, enableButtons);
+        } else {
+            validateAndSubmitLDAPForm(gotoNextPage, enableButtons);
         }
-        else validateAndSubmitLDAPForm(gotoNextPage, enableButtons);
-    }
-
-    function submitLocalAuthenticatorForm(done, error) {
-        console.log("local");
     }
 
     function validateAndSubmitLDAPForm(done, error) {
-        if (!validateLDAPForm()) error();
-        else submitLDAPForm(done, error);
-    }
+        if (!validateLDAPForm()) {
+            error();
+            return;
+        }
 
-    function submitLDAPForm(done, error) {
+        ## Show the dialog for testing LDAP
+        if (ldapOptionChanged) {
+            console.log("ldap opt changed. test new opts");
+            var $progressModal = $('#${common.progress_modal_id()}');
+            $progressModal.modal('show');
+            error = function() {
+                $progressModal.modal('hide');
+                error();
+            };
+
+            ## TOOD (WW) insert ldap verification code here
+        }
+
         post(done, error);
     }
 
