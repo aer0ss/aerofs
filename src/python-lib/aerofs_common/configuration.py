@@ -48,8 +48,9 @@ class Configuration(object):
             else:
                 configuration[key] = tmp[key]
 
-    def set_persistent_value(self, key, value):
+    def set_external_property(self, key, value):
         """
+        Sets an external property on the persistent configuration server.
         Sets a key value pair on the persistent configuration server.
 
         @param key the key to set.

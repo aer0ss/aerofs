@@ -12,14 +12,21 @@ from pyramid.httpexceptions import HTTPFound, HTTPOk
 from web.util import *
 from web.views.login.login_view import URL_PARAM_EMAIL
 
+log = logging.getLogger("web")
+
+# ------------------------------------------------------------------------
 # Bootstrap pipe constants
+# ------------------------------------------------------------------------
+
 _BOOTSTRAP_PIPE_FILE = "/tmp/bootstrap"
 
+# ------------------------------------------------------------------------
 # Email verification interface constants.
+# ------------------------------------------------------------------------
 
 # This is a tomcat servlet that is part of the SP package.
 _SMTP_VERIFICATION_URL = "http://localhost:8080/verify/email"
-# N.B. these params are defined in Java land in SmtpVerifiationServlet.java. They must match.
+# N.B. these params are also defined in Java land in SmtpVerifiationServlet.java
 _SMTP_VERIFICATION_TO_EMAIL = "to_email"
 _SMTP_VERIFICATION_CODE = "verification_code"
 _SMTP_VERIFICATION_SMTP_HOST = "email_sender_public_host"
@@ -27,16 +34,32 @@ _SMTP_VERIFICATION_SMTP_PORT = "email_sender_public_port"
 _SMTP_VERIFICATION_SMTP_USERNAME = "email_sender_public_username"
 _SMTP_VERIFICATION_SMTP_PASSWORD = "email_sender_public_password"
 
+# ------------------------------------------------------------------------
+# LDAP email verification interfact constants.
+# ------------------------------------------------------------------------
+
+# TODO (MP) finish this section.
+
+# ------------------------------------------------------------------------
+# Session keys
+# ------------------------------------------------------------------------
+
 _SESSION_KEY_EMAIL_VERIFICATION_CODE = 'email_verification_code'
 
-log = logging.getLogger("web")
+# ------------------------------------------------------------------------
+# Settings utilities
+# ------------------------------------------------------------------------
 
-def _get_settings():
+def _get_settings_from_configuration():
     settings = {}
     configuration = Configuration()
     configuration.fetch_and_populate(settings)
 
     return settings
+
+# ------------------------------------------------------------------------
+# Setup View
+# ------------------------------------------------------------------------
 
 @view_config(
     route_name='setup',
@@ -44,7 +67,7 @@ def _get_settings():
     renderer='setup.mako'
 )
 def setup_view(request):
-    settings = _get_settings()
+    settings = _get_settings_from_configuration()
 
     # Genearate email verification code. Keep the code constant across the
     # session so if the user sends multiple verification emails the user can use
@@ -90,7 +113,7 @@ def json_setup_hostname(request):
         error("Localhost is not an acceptable name. Please configure your DNS.")
 
     configuration = Configuration()
-    configuration.set_persistent_value('base_host', base_host_unified)
+    configuration.set_external_property('base_host', base_host_unified)
 
     return {}
 
@@ -156,11 +179,11 @@ def json_setup_email(request):
     host, port, username, password = _parse_email_request(request)
 
     configuration = Configuration()
-    configuration.set_persistent_value('support_address', support_address)
-    configuration.set_persistent_value('email_host',      host)
-    configuration.set_persistent_value('email_port',      port)
-    configuration.set_persistent_value('email_user',      username)
-    configuration.set_persistent_value('email_password',  password)
+    configuration.set_external_property('support_address', support_address)
+    configuration.set_external_property('email_host',      host)
+    configuration.set_external_property('email_port',      port)
+    configuration.set_external_property('email_user',      username)
+    configuration.set_external_property('email_password',  password)
 
     return {}
 
@@ -234,8 +257,8 @@ def json_setup_certificate(request):
 
         # All is well - set the external properties.
         configuration = Configuration()
-        configuration.set_persistent_value('browser_cert', _format_pem(certificate))
-        configuration.set_persistent_value('browser_key', _format_pem(key))
+        configuration.set_external_property('browser_cert', _format_pem(certificate))
+        configuration.set_external_property('browser_key', _format_pem(key))
 
         return {}
 
@@ -263,7 +286,7 @@ def json_setup_identity(request):
 
     # All is well - set the external properties.
     conf = Configuration()
-    conf.set_persistent_value('authenticator', auth)
+    conf.set_external_property('authenticator', auth)
     if ldap: _write_ldap_properties(conf, request.params)
 
     return HTTPOk()
@@ -281,10 +304,10 @@ def _write_ldap_properties(conf, request_params):
     for key in request_params:
         if key == 'ldap_server_ca_certificate':
             cert = request_params[key]
-            if cert: conf.set_persistent_value(key, _format_pem(cert))
-            else: conf.set_persistent_value(key, '')
+            if cert: conf.set_external_property(key, _format_pem(cert))
+            else: conf.set_external_property(key, '')
         elif key[:5] == 'ldap_':
-            conf.set_persistent_value(key, request_params[key])
+            conf.set_external_property(key, request_params[key])
 
 # ------------------------------------------------------------------------
 # Apply
@@ -332,7 +355,7 @@ def json_setup_finalize(request):
     log.warn("Finalizing configuration...")
 
     configuration = Configuration()
-    configuration.set_persistent_value('configuration_initialized', 'true')
+    configuration.set_external_property('configuration_initialized', 'true')
 
     with open(_BOOTSTRAP_PIPE_FILE, 'w') as f:
         # Add the delay so that we have time to return this call before we reload.
