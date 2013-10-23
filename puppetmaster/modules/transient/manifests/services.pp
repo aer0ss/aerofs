@@ -63,6 +63,12 @@ class transient::services {
         port => 5222,
     }
 
+    #---------------
+    # REST Gateway
+    #---------------
+
+    include havre
+
     # --------------
     # Admin Panel
     # --------------
@@ -110,6 +116,11 @@ class transient::services {
 
     file {"/opt/sanity/probes/zephyr.sh":
         source => "puppet:///modules/transient/probes/zephyr.sh",
+        require => Package["aerofs-sanity"],
+    }
+
+    file {"/opt/sanity/probes/havre.sh":
+        source => "puppet:///modules/transient/probes/havre.sh",
         require => Package["aerofs-sanity"],
     }
 

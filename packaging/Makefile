@@ -27,6 +27,7 @@ PACKAGES= \
 	spdb \
 	stun \
 	sv \
+	havre \
 	syncstat \
 	syncstat-tools \
 	verkehr \

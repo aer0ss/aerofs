@@ -6,6 +6,7 @@ package com.aerofs.base.id;
 
 import com.aerofs.base.ex.ExEmptyEmailAddress;
 import com.aerofs.base.ex.ExFormatError;
+import com.google.common.base.Preconditions;
 
 public class UserID extends StringID
 {
@@ -13,6 +14,9 @@ public class UserID extends StringID
      * Must be conssitent with src/web/web/util.py:is_team_server_user_id()
      */
     public final static char TEAM_SERVER_PREFIX = ':';
+
+    // NB: must not be empty
+    public final static UserID DUMMY = new UserID("@");
 
     public final static UserID UNKNOWN = UserID.fromInternal("(unknown)");
 
@@ -42,9 +46,9 @@ public class UserID extends StringID
      */
     public static UserID fromInternal(String str)
     {
-        assert !str.isEmpty();
+        Preconditions.checkState(!str.isEmpty());
         // assert the string is already normalized
-        assert isNormalized(str);
+        Preconditions.checkState(isNormalized(str));
         return new UserID(str);
     }
 

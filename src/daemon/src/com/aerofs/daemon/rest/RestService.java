@@ -8,6 +8,7 @@ import com.aerofs.base.net.AbstractNettyServer;
 import com.aerofs.daemon.rest.providers.GsonProvider;
 import com.aerofs.daemon.rest.netty.JerseyHandler;
 import com.aerofs.daemon.rest.resources.FilesResource;
+import com.aerofs.lib.ChannelFactories;
 import com.aerofs.lib.cfg.CfgKeyManagersProvider;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
@@ -18,17 +19,17 @@ import com.sun.jersey.guice.spi.container.GuiceComponentProviderFactory;
 import com.sun.jersey.spi.container.WebApplication;
 import com.sun.jersey.spi.container.WebApplicationFactory;
 import org.jboss.netty.channel.ChannelPipeline;
-import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.channel.Channels;
+import org.jboss.netty.channel.socket.ServerSocketChannelFactory;
 import org.jboss.netty.handler.codec.http.HttpServerCodec;
 import org.jboss.netty.handler.stream.ChunkedWriteHandler;
 import org.slf4j.bridge.SLF4JBridgeHandler;
 
+import java.net.InetSocketAddress;
 import java.util.Map;
 
 import static com.aerofs.base.config.ConfigurationProperties.getIntegerProperty;
 import static com.google.common.base.Preconditions.checkNotNull;
-import static com.aerofs.base.net.NettyUtil.newSslHandler;
 
 public class RestService extends AbstractNettyServer
 {
@@ -42,7 +43,7 @@ public class RestService extends AbstractNettyServer
 
     // Port for the service. 0 to use any available port (default)
     // configurable for firewall-friendliness
-    private static final int PORT = getIntegerProperty("rest.port", 8080);
+    private static final int PORT = getIntegerProperty("api.daemon.port", 0);
 
     // Array of package names that Jersey will scan for annotated classes
     private static final String[] RESOURCES_PACKAGES = {
@@ -59,7 +60,7 @@ public class RestService extends AbstractNettyServer
         // NB: at this stage we intentionally do not set the CA cert to allow any clients
         // to connect as it is useful for quick curl tests
         // This will change when the public rest gateway is operational
-        super("rest", PORT, kmgr, null);
+        super("rest", new InetSocketAddress(PORT), kmgr, null);
 
         _injector = injector;
         _application = WebApplicationFactory.createWebApplication();
@@ -69,29 +70,28 @@ public class RestService extends AbstractNettyServer
     }
 
     @Override
-    public int start()
+    public void start()
     {
         if (!_application.isInitiated()) {
             ResourceConfig cfg = getResourceConfiguration();
             _application.initiate(cfg, new GuiceComponentProviderFactory(cfg, _injector));
         }
-        return super.start();
+        super.start();
     }
 
     @Override
-    protected ChannelPipelineFactory pipelineFactory()
+    protected ServerSocketChannelFactory getServerSocketFactory()
     {
-        return new ChannelPipelineFactory() {
-            @Override
-            public ChannelPipeline getPipeline() throws Exception
-            {
-                return Channels.pipeline(
-                        newSslHandler(_serverSslEngineFactory),
-                        new HttpServerCodec(),
-                        new ChunkedWriteHandler(),
-                        new JerseyHandler(_application));
-            }
-        };
+        return ChannelFactories.getServerChannelFactory();
+    }
+
+    @Override
+    public ChannelPipeline getSpecializedPipeline()
+    {
+        return Channels.pipeline(
+                new HttpServerCodec(),
+                new ChunkedWriteHandler(),
+                new JerseyHandler(_application));
     }
 
     private ResourceConfig getResourceConfiguration()
