@@ -54,9 +54,9 @@ packagelist: debs
 	@# Wipe out the work folder in the build dir.
 	@rm -rf build/$(shell basename ${@:.deb=})
 	@# If one exists, copy all the resources from packaging/<packagename> to packaging/build/<packagename>
-	@[ -d $(shell basename ${@:.deb=}) ] && cp -a $(shell basename ${@:.deb=}) build/ || true
+	@if [ -d $(shell basename ${@:.deb=}) ] ; then cp -a $(shell basename ${@:.deb=}) build/ ; fi
 	@# If there's an additional builder script for this package, run it.
-	@[ -x ./builders/$(shell basename ${@:.deb=.sh}) ] && ./builders/$(shell basename ${@:.deb=.sh}) || true
+	@if [ -x ./builders/$(shell basename ${@:.deb=.sh}) ] ; then ./builders/$(shell basename ${@:.deb=.sh}) ; fi
 	@# build/<packagename> should now look like a raw-extracted .deb package,
 	@# with a DEBIAN folder and all the other files to be packaged.
 	@# Fetch the .ver, patch the DEBIAN/control, and build the .deb
