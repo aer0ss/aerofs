@@ -5,9 +5,12 @@
     ${csrf.token_input()}
 
     <h4>Hostname:</h4>
-
+    <%
+        val = current_config['base.host.unified']
+        if not val: val = 'share.'
+    %>
     ## current_config is a template parameter
-    <input class="input-block-level" id="base.host.unified" name="base.host.unified" type="text" value=${current_config['base.host.unified']}>
+    <input class="input-block-level" id="base-host-unified" name="base.host.unified" type="text" value=${val}>
 
     <p>This is your AeroFS Appliance's hostname. You need to configure the hostname's DNS entry to point to the IP assigned to the appliance.</p>
     <p>If you're using VirtualBox, get the appliance's IP from its console. If you're using OpenStack, configure a floating IP for this instance.</p>
@@ -16,11 +19,15 @@
     ${common.render_next_button("submitHostnameForm()")}
 </form>
 
-<script type="text/javascript">
+<script>
+    $(document).ready(function() {
+        $('#base-host-unified').focus();
+    });
+
     function submitHostnameForm() {
         disableButtons();
 
-        if (verifyPresence("base.host.unified", "Please specify a hostname.")) {
+        if (verifyPresence("base-host-unified", "Please specify a hostname.")) {
             var $form = $('#hostnameForm');
             var serializedData = $form.serialize();
 
