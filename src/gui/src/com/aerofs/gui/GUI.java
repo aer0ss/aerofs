@@ -17,6 +17,7 @@ import com.aerofs.gui.tray.SystemTray;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.InOutArg;
 import com.aerofs.lib.S;
+import com.aerofs.lib.StorageType;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExNoConsole;
 import com.aerofs.lib.os.OSUtil;
@@ -543,6 +544,19 @@ public class GUI implements IUI
             model.setDeviceName(defaults.getDeviceName());
 
             unattendedSetup.populateModelFromSetupFile(model);
+
+            if (L.isMultiuser()) {
+                if (model._storageType == StorageType.S3) {
+                    model._isLocal = false;
+                } else {
+                    model._isLocal = true;
+                    model._localOptions._useBlockStorage = model._storageType == StorageType.LOCAL;
+                }
+            } else {
+                if (model._storageType == null) model._storageType = StorageType.LINKED;
+                model._isLocal = true;
+                model._localOptions._useBlockStorage = false;
+            }
 
             model.doSignIn();
             model.doInstall();
