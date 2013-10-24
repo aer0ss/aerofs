@@ -137,10 +137,14 @@ function add_version_to_deb_control_file() {
 function build_deb() {
     # We have to chown under the fakeroot environment so the
     # package unpacks to files with root's uid/gid.
+    # We use gzip because it's about twice as fast to build the package, and
+    # it's (as of this writing) better to have 10% larger packages (that add 42
+    # seconds to upload) than to have 50% longer build times (that add 60
+    # seconds to package_servers).
     fakeroot << EOF
     set -e
     chown -R 0:0 $DEBNAME
-    dpkg-deb --build $DEBNAME aerofs-${DEBNAME}.deb
+    dpkg-deb -Zgzip --build $DEBNAME aerofs-${DEBNAME}.deb
 EOF
     if [ $? -ne 0 ]
     then
