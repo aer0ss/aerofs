@@ -54,27 +54,26 @@ def _is_openid_enabled(request):
     return is_private_deployment(request.registry.settings) \
         and request.registry.settings.get('lib.authenticator', 'local_credential').lower() == 'openid'
 
-def _is_external_cred_enabled(request):
+def _is_external_cred_enabled(settings):
     """
     True if the server allows external authentication, usually LDAP.
     This determines whether we should scrypt the user password.
     """
-    return is_private_deployment(request.registry.settings) \
-        and request.registry.settings.get('lib.authenticator', 'local_credential').lower() == 'external_credential'
+    return is_private_deployment(settings) \
+        and settings.get('lib.authenticator', 'local_credential').lower() == 'external_credential'
 
-def _format_password(request, password, login):
+def _format_password(settings, password, login):
     """
     If the server configuration expects an scrypt'ed credential for this user, do so here;
     otherwise return the cleartext password as provided.
     NOTE the logic embedded here is also found in IUserFilter/UserFilterFactory; any
     changes need to be reflected in both places.
     """
-    if _is_external_cred_enabled(request):
-        internal_pattern = request.registry.settings.get('internal_email_pattern')
-        if internal_pattern is not None:
-            reg = re.compile(internal_pattern)
-            if reg.search(login) is not None:
-                return str(password)
+    if _is_external_cred_enabled(settings):
+        internal_pattern = settings.get('internal_email_pattern')
+        if internal_pattern is None or re.compile(internal_pattern).search(login) is not None:
+            return str(password)
+
     return scrypt(password, login)
 
 def _do_login(request):
