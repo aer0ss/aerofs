@@ -5,6 +5,7 @@
 package com.aerofs.daemon.transport;
 
 import com.aerofs.base.ssl.ICertificateProvider;
+import com.aerofs.testlib.SecTestUtil;
 import org.bouncycastle.operator.OperatorCreationException;
 
 import javax.annotation.Nonnull;
@@ -25,7 +26,8 @@ public final class CACertificateProvider implements ICertificateProvider
     public CACertificateProvider(SecureRandom secureRandom, String caName, KeyPair caKeyPair)
             throws CertificateException, OperatorCreationException, IOException, NoSuchProviderException, NoSuchAlgorithmException, InvalidKeyException, SignatureException // [sigh] definitely bad practice
     {
-        this.caCertificate = SecTestUtil.generateCertificate(caName, caName, caKeyPair.getPublic(), caKeyPair.getPrivate(), secureRandom, true);
+        this.caCertificate = SecTestUtil.generateCertificate(caName, caName, caKeyPair.getPublic(),
+                caKeyPair.getPrivate(), secureRandom, true);
     }
 
     @Nonnull

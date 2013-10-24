@@ -2,7 +2,7 @@
  * Copyright (c) Air Computing Inc., 2013.
  */
 
-package com.aerofs.daemon.transport;
+package com.aerofs.testlib;
 
 import com.google.common.base.Preconditions;
 import org.bouncycastle.asn1.x500.X500Name;

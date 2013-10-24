@@ -11,6 +11,7 @@ import com.aerofs.base.id.UserID;
 import com.aerofs.daemon.core.net.TransportFactory.TransportType;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.rocklog.RockLog;
+import com.aerofs.testlib.SecTestUtil;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;

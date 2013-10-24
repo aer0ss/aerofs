@@ -29,6 +29,7 @@ import com.aerofs.lib.event.IEvent;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.testlib.AbstractTest;
+import com.aerofs.testlib.TempCert;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
