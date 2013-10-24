@@ -31,6 +31,7 @@ import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 import org.jboss.netty.handler.codec.http.HttpVersion;
 import org.slf4j.Logger;
 
+import javax.annotation.Nullable;
 import java.nio.channels.ClosedChannelException;
 import java.util.Map;
 
@@ -65,7 +66,7 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
     }
 
     private static final String COOKIE_SERVER = "server";
-    private static final String STRICT_CONSISTENCY = "X-Aero-Strict-Consistency";
+    private static final String HEADER_CONSISTENCY = "X-Aero-Consistency";
 
     private static Map<String, String> getCookies(HttpRequest r)
     {
@@ -77,7 +78,7 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
         return m;
     }
 
-    private static DID getLastServer(Map<String, String> c)
+    private static @Nullable DID getLastServer(Map<String, String> c)
     {
         String id = c.get(COOKIE_SERVER);
         try {
@@ -85,12 +86,6 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
         } catch (ExFormatError e) {
             return null;
         }
-    }
-
-    private static boolean shouldEnforceStrictConsistency(HttpRequest r)
-    {
-        String flag = r.getHeader(STRICT_CONSISTENCY);
-        return flag != null ? Boolean.valueOf(flag) : false;
     }
 
     @Override
@@ -103,27 +98,30 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
         if (message instanceof HttpRequest) {
             HttpRequest req = (HttpRequest)message;
             if (_upstream == null || !_upstream.isConnected()) {
-                if ((_upstream = ensureConnected(req)) == null) {
-                    sendError(downstream, HttpResponseStatus.SERVICE_UNAVAILABLE);
+                if ((_upstream = getUpstreamChannel(req)) == null) {
+                    sendError(downstream, _user == null
+                            ? HttpResponseStatus.UNAUTHORIZED
+                            : HttpResponseStatus.SERVICE_UNAVAILABLE);
                     return;
                 }
             }
 
             // remove gateway-specific header
             req.removeHeader(Names.COOKIE);
-            req.removeHeader(STRICT_CONSISTENCY);
+            req.removeHeader(HEADER_CONSISTENCY);
 
             _upstream.write(message);
         } else {
+            // HttpChunk
             if (_upstream == null) {
-                l.info("ignore incoming message on {}", downstream);
+                l.warn("ignore incoming message on {}", downstream);
             } else {
                 _upstream.write(message);
             }
         }
     }
 
-    private Channel ensureConnected(HttpRequest req)
+    private @Nullable Channel getUpstreamChannel(HttpRequest req)
     {
         Map<String, String> cookies = getCookies(req);
 
@@ -139,13 +137,21 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
         }
 
         DID did = getLastServer(cookies);
-        boolean strictConsistency = shouldEnforceStrictConsistency(req);
+        boolean strictConsistency = shouldEnforceStrictConsistency(req) && did != null;
+
+        l.info("{} {}", did, strictConsistency);
 
         return _endpoints.connect(_user, did, strictConsistency,
                 Channels.pipeline(
                         new HttpClientCodec(),
                         new HttpResponseProxyHandler()
                 ));
+    }
+
+    private static boolean shouldEnforceStrictConsistency(HttpRequest r)
+    {
+        String flag = r.getHeader(HEADER_CONSISTENCY);
+        return flag != null && "strict".equals(flag);
     }
 
     private void sendError(Channel downstream, HttpResponseStatus status)
@@ -168,7 +174,7 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
         l.warn("exception on downstream channel {} {}", e.getChannel(), e.getCause());
         if (!(e.getCause() instanceof ClosedChannelException)) {
             l.warn("", e.getCause());
-            if (e.getChannel().isConnected()) e.getChannel().close();
+            e.getChannel().close();
         }
     }
 

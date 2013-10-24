@@ -23,7 +23,7 @@ import com.aerofs.daemon.lib.exception.ExStreamInvalid;
 import com.aerofs.daemon.mobile.MobileModule;
 import com.aerofs.daemon.rest.RestModule;
 import com.aerofs.daemon.rest.RestService;
-import com.aerofs.daemon.rest.RestTunnel;
+import com.aerofs.daemon.rest.RestTunnelClient;
 import com.aerofs.daemon.ritual.RitualServer;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.IProgram;
@@ -125,7 +125,7 @@ public class DaemonProgram implements IProgram
         // throws a fit
         if (Cfg.user().isAeroFSUser()) {
             injCore.getInstance(RestService.class).start();
-            injCore.getInstance(RestTunnel.class).start();
+            injCore.getInstance(RestTunnelClient.class).start();
         }
 
         return d;

@@ -32,7 +32,8 @@ public class TunnelEndpointConnector implements ITunnelConnectionListener, Endpo
     private final Map<UserID, Map<DID, TunnelHandler>> _endpointsByUser = Maps.newHashMap();
 
     @Override
-    public Channel connect(UserID user, DID did, boolean strictMatch, ChannelPipeline pipeline)
+    public synchronized @Nullable Channel connect(UserID user, DID did, boolean strictMatch,
+            ChannelPipeline pipeline)
     {
         TunnelHandler tunnel = getEndpoint(new TunnelAddress(user, did), strictMatch);
         return tunnel != null ? tunnel.newVirtualChannel(pipeline) : null;
@@ -45,37 +46,26 @@ public class TunnelEndpointConnector implements ITunnelConnectionListener, Endpo
     }
 
     @Override
-    public void tunnelOpen(TunnelAddress addr, TunnelHandler handler)
-    {
-        addEndpoint(addr, handler);
-    }
-
-    @Override
-    public void tunnelClosed(TunnelAddress addr, TunnelHandler handler)
-    {
-        removeEndpoint(addr, handler);
-    }
-
-
-    private synchronized void addEndpoint(TunnelAddress addr, TunnelHandler tunnel)
+    public synchronized void tunnelOpen(TunnelAddress addr, TunnelHandler handler)
     {
         Map<DID, TunnelHandler> connectedDevices = _endpointsByUser.get(addr.user);
         if (connectedDevices == null) {
             connectedDevices = Maps.newHashMap();
             _endpointsByUser.put(addr.user, connectedDevices);
         }
-        connectedDevices.put(addr.did, tunnel);
+        connectedDevices.put(addr.did, handler);
     }
 
-    private synchronized void removeEndpoint(TunnelAddress addr, TunnelHandler tunnel)
+    @Override
+    public synchronized void tunnelClosed(TunnelAddress addr, TunnelHandler handler)
     {
         Map<DID, TunnelHandler> connectedDevices = _endpointsByUser.get(addr.user);
-        if (connectedDevices != null && connectedDevices.get(addr.did) == tunnel) {
+        if (connectedDevices != null && connectedDevices.get(addr.did) == handler) {
             connectedDevices.remove(addr.did);
         }
     }
 
-    private synchronized @Nullable TunnelHandler getEndpoint(TunnelAddress addr,
+    private @Nullable TunnelHandler getEndpoint(TunnelAddress addr,
             boolean strictMatch)
     {
         Map<DID, TunnelHandler> connectedDevices = _endpointsByUser.get(addr.user);
