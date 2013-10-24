@@ -13,6 +13,10 @@ import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
 
 /**
  * LDAP server and schema configuration.
+ *
+ * TODO (MP) refactor this class.
+ * We should really only try to pull these values out of configuration if we're in LDAP mode. Trying
+ * to parse them every time is just annoying.
  */
 public class LdapConfiguration
 {
@@ -166,6 +170,7 @@ public class LdapConfiguration
         } else if (value.equals("SSL")) {
             return SecurityType.SSL;
         }
+
         // Uhh, so...who will catch this?
         throw new ExLdapConfigurationError("Unknown security type " + value);
     }
