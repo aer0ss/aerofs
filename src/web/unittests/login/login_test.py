@@ -3,7 +3,7 @@ from web.util import is_private_deployment
 from web.views.login.login_view import URL_PARAM_NEXT, resolve_next_url, _is_external_cred_enabled, _format_password
 
 
-class ErrorTest(TestBase):
+class LoginTest(TestBase):
 
     def test_resolve_next_url_should_prefix_with_host_url(self):
         """
@@ -24,26 +24,38 @@ class ErrorTest(TestBase):
         This test verifies that if internal_email_pattern is None, we treat all
         addresses as internal.
         """
-
-        settings = {
-            "config.loader.is_private_deployment": "true",
-            "internal_email_pattern": None,
-            "lib.authenticator": "external_credential"
-        }
+        settings = {"config.loader.is_private_deployment": "true",
+                    "internal_email_pattern": None,
+                    "lib.authenticator": "external_credential" }
 
         self.assertTrue(is_private_deployment(settings))
         self.assertTrue(_is_external_cred_enabled(settings))
-
-        # no internal_email_pattern: everything is internal
         self._assert_internal(settings, "joe@example.com")
         self._assert_internal(settings, "a@b.c")
 
-        settings["internal_email_pattern"] = ".*"
+    def test_internal_matches(self):
+        """
+        This test verifies that if internal_email_pattern is .*, we treat all
+        addresses as internal.
+        """
+        settings = {"config.loader.is_private_deployment": "true",
+                    "internal_email_pattern": ".*",
+                    "lib.authenticator": "external_credential" }
+
         self._assert_internal(settings, "joe@example.com")
         self._assert_internal(settings, "a@b.c")
 
-        settings["internal_email_pattern"] = ".example.com"
+    def test_external_matches(self):
+        """
+        This test verifies that internal_email_pattern return scrypt'ed passwords
+        for external addresses.
+        """
+        settings = {"config.loader.is_private_deployment": "true",
+                    "internal_email_pattern": ".example.com",
+                    "lib.authenticator": "external_credential"}
+
         self._assert_internal(settings, "joe@example.com")
+        self._assert_internal(settings, "blah@example.com")
         self._assert_external(settings, "a@b.c")
 
     def _assert_internal(self, settings, username):
