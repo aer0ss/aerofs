@@ -70,7 +70,7 @@ public class LdapConfiguration
      *
      */
     public SecurityType                             SERVER_SECURITY =
-            convertProperty(                        "ldap.server.security", "TLS");
+            convertPropertyNameToSecurityType("ldap.server.security", "TLS");
 
     /**
      * Maximum number of LDAP connection instances to keep in the pool.
@@ -90,13 +90,13 @@ public class LdapConfiguration
      * Timeout, in seconds, after which a server read operation will be cancelled.
      */
     public Integer                                  SERVER_TIMEOUT_READ =
-            getIntegerProperty(                     "ldap.server.timeout.read", 180);
+            getIntegerProperty(                     "ldap.server.timeout.read", 5);
 
     /**
      * Timeout, in seconds, after which a server connect attempt will be abandoned.
      */
     public Integer                                  SERVER_TIMEOUT_CONNECT =
-            getIntegerProperty(                     "ldap.server.timeout.connect", 60);
+            getIntegerProperty(                     "ldap.server.timeout.connect", 5);
 
     /**
      * Principal on the LDAP server to use for the initial user search.
@@ -156,22 +156,36 @@ public class LdapConfiguration
     public String                                   USER_OBJECTCLASS =
             getStringProperty(                      "ldap.server.schema.user.class", "");
 
-    // A quick converter to an enum that falls back to a default rather than throw IllegalArg
-    static SecurityType convertProperty(String paramName, String paramDefault)
+    /**
+     * A quick converter from a configuration property name to an enum that falls back to a default
+     * rather than throw IllegalArg.
+     */
+    public static SecurityType convertPropertyNameToSecurityType(String propertyName,
+            String defaultValue)
     {
         // Maintain this code carefully! The valid configuration names are maintained separately
         // from the actual enum - one is public-visible and the other is developers only.
-        String value = getStringProperty(paramName, paramDefault).toUpperCase();
+        String value = getStringProperty(propertyName, defaultValue).toUpperCase();
+        return convertStringToSecurityType(value);
+    }
 
-        if (value.equals("TLS")) {
+    /**
+     * Convert a string to a security type.
+     * TODO (MP) this is used by the LdapVerificationServlet. Might want to refactor to be more user friendly.
+     */
+    public static SecurityType convertStringToSecurityType(String inputString)
+    {
+        inputString = inputString.toUpperCase();
+
+        if (inputString.equals("TLS")) {
             return SecurityType.STARTTLS;
-        } else if (value.equals("NONE")) {
+        } else if (inputString.equals("NONE")) {
             return SecurityType.NONE;
-        } else if (value.equals("SSL")) {
+        } else if (inputString.equals("SSL")) {
             return SecurityType.SSL;
         }
 
         // Uhh, so...who will catch this?
-        throw new ExLdapConfigurationError("Unknown security type " + value);
+        throw new ExLdapConfigurationError("Unknown security type " + inputString);
     }
 }

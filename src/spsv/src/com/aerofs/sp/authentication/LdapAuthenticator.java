@@ -61,6 +61,17 @@ public class LdapAuthenticator implements IAuthenticator
     }
 
     /**
+     * Test the LDAP connection.
+     */
+    public void testConnection()
+        throws ExExternalServiceUnavailable
+    {
+        // For now to test the connection we just verify a call to the getPool() function works.
+        // In the future we can query users, and do other fancy things to verify sanity.
+        getPool();
+    }
+
+    /**
      * Authenticate a user/credential pair by referring to an external LDAP server.
      */
     @Override
@@ -216,28 +227,31 @@ public class LdapAuthenticator implements IAuthenticator
                 switch (_cfg.SERVER_SECURITY) {
                 case NONE:
                     _l.warn("Using insecure external LDAP configuration, no SSL or TLS");
-                    _pool = connectPool();
+                    _pool = connectPool(options);
                     break;
                 case SSL:
                     _l.info("Configured LDAP connection for SSL");
-                    _pool = connectSSLPool(getSSLEngineFactory());
+                    _pool = connectSSLPool(getSSLEngineFactory(), options);
                     break;
                 case STARTTLS:
                     _l.info("Configured LDAP connection for StartTLS");
-                    _pool = connectTLSPool(getSSLEngineFactory());
+                    _pool = connectTLSPool(getSSLEngineFactory(), options);
                     break;
                 default: assert false : "SecurityType maintenance error";
                 }
 
             } catch (LDAPException lde) {
+                // N.B. the exceptions thrown below need to have helpful error messages, since these
+                // error messages are passed right back up to the site configuratio UI. Therefore
+                // please do not remove the getMessage() calls!
                 _l.warn("LDAP connection error", lde);
-                throw new ExExternalServiceUnavailable("LDAP connection error");
+                throw new ExExternalServiceUnavailable(lde.getMessage());
             } catch (GeneralSecurityException e) {
                 _l.warn("LDAP security error", e);
-                throw new ExExternalServiceUnavailable("LDAP security error");
+                throw new ExExternalServiceUnavailable(e.getMessage());
             } catch (IOException e) {
                 _l.warn("LDAP cert reading error", e);
-                throw new ExLdapConfigurationError();
+                throw new ExLdapConfigurationError(e.getMessage());
             }
 
             cacheUserScope();
@@ -259,18 +273,20 @@ public class LdapAuthenticator implements IAuthenticator
                 null);
     }
 
-    private LDAPConnectionPool connectPool() throws LDAPException
+    private LDAPConnectionPool connectPool(LDAPConnectionOptions options) throws LDAPException
     {
-        LDAPConnection conn = new LDAPConnection(
+        LDAPConnection conn = new LDAPConnection(options,
                 _cfg.SERVER_HOST, _cfg.SERVER_PORT,
                 _cfg.SERVER_PRINCIPAL, _cfg.SERVER_CREDENTIAL);
+
         return new LDAPConnectionPool(conn, 1, _cfg.SERVER_MAXCONN);
     }
 
-    private LDAPConnectionPool connectTLSPool(SSLEngineFactory factory)
+    private LDAPConnectionPool connectTLSPool(SSLEngineFactory factory,
+            LDAPConnectionOptions options)
             throws GeneralSecurityException, LDAPException, IOException
     {
-        LDAPConnection conn = new LDAPConnection(_cfg.SERVER_HOST, _cfg.SERVER_PORT);
+        LDAPConnection conn = new LDAPConnection(options, _cfg.SERVER_HOST, _cfg.SERVER_PORT);
 
         conn.processExtendedOperation(new StartTLSExtendedRequest(factory.getSSLContext()));
 
@@ -280,11 +296,13 @@ public class LdapAuthenticator implements IAuthenticator
                 new StartTLSPostConnectProcessor(factory.getSSLContext()));
     }
 
-    private LDAPConnectionPool connectSSLPool(SSLEngineFactory factory)
+    private LDAPConnectionPool connectSSLPool(SSLEngineFactory factory,
+            LDAPConnectionOptions options)
             throws IOException, GeneralSecurityException, LDAPException
     {
         LDAPConnection conn = new LDAPConnection(
                 factory.getSSLContext().getSocketFactory(),
+                options,
                 _cfg.SERVER_HOST, _cfg.SERVER_PORT,
                 _cfg.SERVER_PRINCIPAL, _cfg.SERVER_CREDENTIAL);
 
