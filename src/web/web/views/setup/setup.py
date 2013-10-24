@@ -8,7 +8,7 @@ import random
 from aerofs_common.configuration import Configuration
 from pyramid.view import view_config
 from subprocess import call, Popen, PIPE
-from pyramid.httpexceptions import HTTPFound, HTTPOk
+from pyramid.httpexceptions import HTTPFound, HTTPOk, HTTPInternalServerError
 from web.util import *
 from web.views.login.login_view import URL_PARAM_EMAIL
 
@@ -300,9 +300,24 @@ def json_verify_ldap(request):
         error("The certificate you provided is invalid. "
               "Please provide one in PEM format.")
 
-    print 'TODO (MP) verify ldap parameters'
+    payload = {}
+    for key in _get_ldap_specific_parameters(request.params):
+        # N.B. need to convert to ascii. The request params given to us in
+        # unicode format.
+        payload[key] = request.params[key].encode('ascii', 'ignore')
 
-    return {}
+    r = requests.post(_LDAP_VERIFICATION_URL, data=payload)
+
+    if r.status_code == 200:
+        return {}
+
+    # In this case we have a human readable error. Hopefully it will help them
+    # debug their LDAP issues. Return the error string.
+    if r.status_code == 400:
+        error("LDAP verification failed: " + r.text)
+
+    # Server failure. No human readable error message is available.
+    raise HTTPInternalServerError()
 
 @view_config(
     route_name = 'json_setup_identity',
@@ -324,17 +339,25 @@ def json_setup_identity(request):
     return HTTPOk()
 
 def _write_ldap_properties(conf, request_params):
-    """
-    N.B. This method assumes that an HTTP parameter is LDAP specific iff. it has
-    the "ldap_" prefix.
-    """
-    for key in request_params:
+    for key in _get_ldap_specific_parameters(request_params):
         if key == 'ldap_server_ca_certificate':
             cert = request_params[key]
             if cert: conf.set_external_property(key, _format_pem(cert))
             else: conf.set_external_property(key, '')
-        elif key[:5] == 'ldap_':
+        else:
             conf.set_external_property(key, request_params[key])
+
+def _get_ldap_specific_parameters(request_params):
+    """
+    N.B. This method assumes that an HTTP parameter is LDAP specific iff. it has
+    the "ldap_" prefix.
+    """
+    ldap_params = []
+    for key in request_params:
+        if key[:5] == 'ldap_':
+            ldap_params.append(key)
+
+    return ldap_params
 
 # ------------------------------------------------------------------------
 # Apply

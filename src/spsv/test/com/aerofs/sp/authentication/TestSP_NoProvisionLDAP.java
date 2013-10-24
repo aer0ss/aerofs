@@ -59,7 +59,8 @@ public class TestSP_NoProvisionLDAP extends AbstractSPTest
     @Test(expected = ExLdapConfigurationError.class)
     public void shouldCheckSecurityType()
     {
-        _cfg.SERVER_SECURITY = LdapConfiguration.convertProperty("does.not.exist", "hi mom");
+        _cfg.SERVER_SECURITY = LdapConfiguration.convertPropertyNameToSecurityType("does.not.exist",
+                "hi mom");
     }
 
     LdapConfiguration _cfg = new LdapConfiguration();
