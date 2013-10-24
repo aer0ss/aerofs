@@ -4,7 +4,7 @@
 <%
     authenticator = current_config['lib.authenticator']
     # default is local credential if the system is uninitialized
-    local = authenticator == '' or authenticator == 'local_credential'
+    local_auth = authenticator == '' or authenticator == 'local_credential'
 %>
 
 ############################################
@@ -20,7 +20,7 @@
     <label class="radio">
         <input type='radio' name='authenticator' value='local_credential'
                onchange="localSelected()"
-           %if local:
+           %if local_auth:
                checked
            %endif
         >
@@ -36,7 +36,7 @@
     <label class="radio">
         <input type='radio' name='authenticator' value='external_credential'
                onchange="ldapSelected()"
-            %if not local:
+            %if not local_auth:
                checked
             %endif
         >
@@ -45,7 +45,7 @@
 
     ## The slide down options
     <div id="ldap-options"
-        %if local:
+        %if local_auth:
             class="hide"
         %endif
     >
@@ -302,9 +302,11 @@
             return;
         }
 
+        ## Verify LDAP if any LDAP options have changed or the user switches
+        ## from local auth to LDAP.
         ## The logic needs to make sure the verification is performed on
         ## initial setups.
-        if (ldapOptionChanged) {
+        if (ldapOptionChanged || ${str(local_auth).lower()}) {
             console.log("ldap opt changed. test new opts");
 
             ## Show the progress dialog for testing LDAP
