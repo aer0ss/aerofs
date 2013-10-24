@@ -286,7 +286,8 @@ def json_setup_certificate(request):
 def json_verify_ldap(request):
     cert = request.params['ldap_server_ca_certificate']
     if cert and not _is_certificate_formatted_correctly(_write_pem_to_file(cert)):
-        error("The certificate you provided is invalid.")
+        error("The certificate you provided is invalid. "
+              "Please provide a valid certificate in PEM format.")
 
     print 'TODO (MP) verify ldap parameters'
 

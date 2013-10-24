@@ -13,3 +13,7 @@ dirent.h - Windows port
   License:  MIT License
 
 Some diagrams on the Web use images from http://www.wpzoom.com/wpzoom/new-freebie-wpzoom-developer-icon-set-154-free-icons/
+
+python-ib/aerofs_common/properties.py is from:
+http://code.activestate.com/recipes/496795-a-python-replacement-for-javautilproperties/
+under the PSF license

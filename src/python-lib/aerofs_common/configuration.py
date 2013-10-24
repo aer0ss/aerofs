@@ -1,8 +1,6 @@
-import array
-from pprint import pprint
 import re
 import requests
-import jprops
+import properties
 from cStringIO import StringIO
 
 SERVER_URL = "http://localhost:5436/"
@@ -25,28 +23,41 @@ class Configuration(object):
         """
 
         # Pull down configuration values and store them in our temporary dictionary.
-        tmp = {}
         res = requests.get(SERVER_URL)
-        if res.ok:
-            props = jprops.load_properties(StringIO(res.text))
-            for key in props:
-                # XXX Need to fix up string string formatting coming out of jprops.
-                tmp[key.replace(b'\0', "")] = props[key].replace(b'\0', "")
-        else:
+        if not res.ok:
             raise IOError("Couldn't reach configuration server: {}".format(res.status_code))
+
+        sio = StringIO(res.text)
+        try:
+            props = properties.Properties()
+            props.load(sio)
+        finally:
+            sio.close()
+
+        fixed_props = {}
+        for key in props.propertyNames():
+            value = props.getProperty(key)
+            # Convert unicode strings returned from props to ascii. This is
+            # required as client code uses ascii as keys to query properties.
+            fixed_props[key.replace(b'\0', "")] = value.replace(b'\0', "")
+
+        # Exclude the browser key to avoid keeping it around in the python
+        # process's memory, in case a stacktrace somewhere winds up doing a
+        # state dump and exposing the SSL key
+        del fixed_props['server.browser.key']
 
         # Resolve variable references. Just like in java land, we only support
         # one level of resolution.
-        for key in tmp:
-            # TODO (MP) need a cleaner way of excluding this value.
-            if key == "server.browser.key":
-                continue
-
-            match = re.search(r'\${(.*)}', tmp[key])
+        for key in fixed_props:
+            value = fixed_props[key]
+            match = re.search(r'\${(.*)}', value)
             if match:
-                configuration[key] = tmp[key].replace(match.group(0), tmp[match.group(1)])
+                # The prop contains variable. Dereference it.
+                configuration[key] = value.replace(match.group(0),
+                                                 fixed_props[match.group(1)])
             else:
-                configuration[key] = tmp[key]
+                # The prop doesn't contain variable.
+                configuration[key] = value
 
     def set_external_property(self, key, value):
         """

@@ -1,13 +1,13 @@
-#! /usr/bin/env python
-
 """
 A Python replacement for java.util.Properties class
 This is modelled as closely as possible to the Java original.
 
 Created - Anand B Pillai <abpillai@gmail.com>
+License - PSF
+Source - http://code.activestate.com/recipes/496795-a-python-replacement-for-javautilproperties/
 """
 
-import sys,os
+import sys
 import re
 import time
 
@@ -220,13 +220,6 @@ class Properties(object):
 
     def load(self, stream):
         """ Load properties from an open file stream """
-
-        # For the time being only accept file input streams
-        if type(stream) is not file:
-            raise TypeError,'Argument should be a file object!'
-        # Check for the opened mode
-        if stream.mode != 'r':
-            raise ValueError,'Stream should be opened in read-only mode!'
 
         try:
             lines = stream.readlines()
