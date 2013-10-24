@@ -30,6 +30,8 @@ class RedirectMiddleware(object):
                 '/json_setup_email',
                 '/json_verify_smtp',
                 '/json_setup_certificate',
+                '/json_setup_identity',
+                '/json_verify_ldap',
                 '/json_setup_apply',
                 '/json_setup_poll',
                 '/json_setup_finalize']

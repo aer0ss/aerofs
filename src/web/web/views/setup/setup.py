@@ -150,7 +150,8 @@ def _send_verification_email(to_email, code, host, port, username, password):
 @view_config(
     route_name = 'json_verify_smtp',
     permission='admin',
-    renderer = 'json'
+    renderer = 'json',
+    request_method = 'POST'
 )
 def json_verify_smtp(request):
     host,port,username,password = _parse_email_request(request)
@@ -271,6 +272,21 @@ def json_setup_certificate(request):
 # ------------------------------------------------------------------------
 
 @view_config(
+    route_name = 'json_verify_ldap',
+    permission='admin',
+    renderer = 'json',
+    request_method = 'POST'
+)
+def json_verify_ldap(request):
+    cert = request_params['ldap_server_ca_certificate']
+    if cert and not _is_certificate_formatted_correctly(_write_pem_to_file(cert)):
+        error("The certificate you provided is invalid.")
+
+    # TODO (MP) verify ldap parameters.
+
+    return {}
+
+@view_config(
     route_name = 'json_setup_identity',
     permission='admin',
     renderer = 'json',
@@ -280,9 +296,7 @@ def json_setup_identity(request):
     log.info("setup identity")
 
     auth = request.params['authenticator']
-
     ldap = auth == 'external_credential'
-    if ldap: _verify_ldap_properties(request.params)
 
     # All is well - set the external properties.
     conf = Configuration()
@@ -290,11 +304,6 @@ def json_setup_identity(request):
     if ldap: _write_ldap_properties(conf, request.params)
 
     return HTTPOk()
-
-def _verify_ldap_properties(request_params):
-    cert = request_params['ldap_server_ca_certificate']
-    if cert and not _is_certificate_formatted_correctly(_write_pem_to_file(cert)):
-        error("The certificate you provided is invalid.")
 
 def _write_ldap_properties(conf, request_params):
     """

@@ -9,6 +9,7 @@ def includeme(config):
     config.add_route('json_verify_smtp', 'json_verify_smtp')
     config.add_route('json_setup_email', 'json_setup_email')
     config.add_route('json_setup_certificate', 'json_setup_certificate')
+    config.add_route('json_verify_ldap', 'json_verify_ldap')
     config.add_route('json_setup_identity', 'json_setup_identity')
 
     # Final configuration steps.
