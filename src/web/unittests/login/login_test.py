@@ -66,7 +66,7 @@ class LoginTest(TestBase):
 
     def _assert_external(self, settings, username):
         """
-        Internal username means it should be scrypted: not equal to the input string, and 64 characters long.
+        External username means it should be scrypted: not equal to the input string, and 64 characters long.
         """
         passwd = "hellosecret"
         self.assertNotEqual(passwd, _format_password(settings, passwd, username))

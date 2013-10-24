@@ -86,12 +86,11 @@ def _do_login(request):
     # Remember to normalize the email address.
     login = request.params[URL_PARAM_EMAIL]
     password = request.params[URL_PARAM_PASSWORD]
-    hashed_password = _format_password(request, password, login)
+    hashed_password = _format_password(request.registry.settings, password, login)
     stay_signed_in = URL_PARAM_REMEMBER_ME in request.params
     try:
         try:
-            headers = _log_in_user(request, login, hashed_password,
-                                   stay_signed_in)
+            headers = _log_in_user(request, login, hashed_password, stay_signed_in)
             redirect = resolve_next_url(request)
             log.debug(login + " logged in. redirect to " + redirect)
             return HTTPFound(location=redirect, headers=headers)
