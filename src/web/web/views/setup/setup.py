@@ -88,9 +88,19 @@ def setup_view(request):
         'is_configuration_initialized': is_configuration_initialized(settings),
         # This parameter is used by apply_and_create_user_page.mako
         'url_param_email': URL_PARAM_EMAIL,
-        # This parameter is used by email_page.mako
-        'email_verification_code': code
+        # These two parameters are used by email_page.mako
+        'email_verification_code': code,
+        'default_support_email': _get_default_support_email(settings['base.host.unified'])
     }
+
+def _get_default_support_email(hostname):
+    if not hostname: hostname = 'localhost'
+
+    # Get the hostname excluding the first level (left-most) subdomain. e.g.
+    # given "share.google.com" return "google.com". See the test code for the
+    # exact spec.
+    match = re.search(r'^[^\.]+\.(.+)', hostname)
+    return 'support@{}'.format(match.group(1) if match else hostname)
 
 # ------------------------------------------------------------------------
 # Hostname
@@ -171,6 +181,7 @@ def json_verify_smtp(request):
             password)
 
     if r.status_code != 200:
+        log.error("send stmp verification email returns {}".format(r.status_code))
         error("Unable to send email. Please check your SMTP settings.")
 
     return {}
@@ -287,7 +298,7 @@ def json_verify_ldap(request):
     cert = request.params['ldap_server_ca_certificate']
     if cert and not _is_certificate_formatted_correctly(_write_pem_to_file(cert)):
         error("The certificate you provided is invalid. "
-              "Please provide a valid certificate in PEM format.")
+              "Please provide one in PEM format.")
 
     print 'TODO (MP) verify ldap parameters'
 

@@ -245,8 +245,8 @@
             ## the .replace() converts the cert from properties format to HTML format.
             ## Also see setup.py:_format_pem() for the reversed convertion.
             >${current_config['ldap.server.ca_certificate'].replace('\\n', '\n')}</textarea>
-    <div class="input-footnote">Supply the LDAP server's certificate here only
-        if the certificate is not publicly signed.</div>
+    <div class="input-footnote">Supply the LDAP server's certificate only
+        if the certificate is <strong>not</strong> publicly signed.</div>
 </%def>
 
 <%common:progress_modal_html>
@@ -302,12 +302,15 @@
             return;
         }
 
-        ## Show the dialog for testing LDAP
+        ## The logic needs to make sure the verification is performed on
+        ## initial setups.
         if (ldapOptionChanged) {
             console.log("ldap opt changed. test new opts");
+
+            ## Show the progress dialog for testing LDAP
             var $progressModal = $('#${common.progress_modal_id()}');
             $progressModal.modal('show');
-            onError = function() {
+            var onError = function() {
                 $progressModal.modal('hide');
                 error();
             };

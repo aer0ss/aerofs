@@ -3,7 +3,7 @@
 
 <%
     public_host_name = current_config['email.sender.public_host']
-    is_public_host = public_host_name != "" and public_host_name != "localhost"
+    is_remote_host = public_host_name != "" and public_host_name != "localhost"
 %>
 
 <h4>Email server:</h4>
@@ -14,7 +14,7 @@
         <label class="radio">
             <input type='radio' name='email-server' value='local'
                    onchange="localMailServerSelected()"
-               %if not is_public_host:
+               %if not is_remote_host:
                    checked="checked"
                %endif
             >
@@ -24,7 +24,7 @@
         <label class="radio">
             <input type='radio' name='email-server' value='remote'
                    onchange="externalMailServerSelected()"
-                %if is_public_host:
+                %if is_remote_host:
                    checked="checked"
                 %endif
             >
@@ -33,19 +33,29 @@
 
         ## The slide down options
         <div id="public-host-options"
-            %if not is_public_host:
+            %if not is_remote_host:
                 class="hide"
             %endif
         >
 
             <div class="row-fluid">
-                <div class="span6">
+                <div class="span8">
                     <label for="email-sender-public-host">SMTP host:</label>
-                    <input class="input-block-level" id="email-sender-public-host" name="email-sender-public-host" type="text" value="${public_host_name}">
+                    <input class="input-block-level" id="email-sender-public-host" name="email-sender-public-host" type="text"
+                           ## We don't want to show "localhost" as the remote host
+                           ## if the local mail relay is used.
+                           value="${public_host_name if is_remote_host else ''}">
                 </div>
-                <div class="span6">
+                <div class="span4">
+                    <%
+                        # We don't want to show the local relay's port as the
+                        # remote port if the local mail relay is used.
+                        val = current_config['email.sender.public_port'] \
+                            if is_remote_host else ''
+                        if not val: val = '25'
+                    %>
                     <label for="email-sender-public-port">SMTP port:</label>
-                    <input class="input-block-level" id="email-sender-public-port" name="email-sender-public-port" type="text" value="${current_config['email.sender.public_port']}">
+                    <input class="input-block-level" id="email-sender-public-port" name="email-sender-public-port" type="text" value="${val}">
                 </div>
             </div>
 
@@ -69,9 +79,13 @@
     </div>
 
     <div class="page_block">
+        <%
+            val = current_config['base.www.support_email_address']
+            if not val: val = default_support_email
+        %>
         <h4>Support email address:</h4>
-        <input class="input-block-level" id="base-www-support-email-address" name="base-www-support-email-address" type="text" value=${current_config['base.www.support_email_address']}>
-        <p>This email address is used for all "support" links. Set it to an email address you want users to send support requests to. The default value is <code>support@aerofs.com</code>.</p>
+        <input class="input-block-level" id="base-www-support-email-address" name="base-www-support-email-address" type="text" value=${val}>
+        <p>This email address is used for all "support" links. Set it to an email address you want users to send support requests to. The default value is <code>${default_support_email}</code>.</p>
     </div>
     <hr />
     ${common.render_previous_button(page)}
@@ -107,9 +121,9 @@
     </div>
 
     <div class="modal-body">
-        <p>Enter the verification code you received in the test email to continue.</p>
+        <p>Please enter the verification code you received in the test email.</p>
         <form id="verify-modal-code-iput-form" method="post" class="form-inline"
-                onsubmit="checkVerificationCodeAndSetConfiguration();">
+                onsubmit="checkVerificationCodeAndSetConfiguration(); return false;">
             <label for="verification-code">Verification code:</label>
             <input id="verification-code" name="verification-code" type="text">
         </form>
@@ -117,17 +131,33 @@
     <div class="modal-footer">
         <a href="#" class="btn" data-dismiss="modal">Close</a>
         <a href="#" id="continue-button" class="btn btn-primary"
-           onclick="checkVerificationCodeAndSetConfiguration();">Continue</a>
+            onclick="checkVerificationCodeAndSetConfiguration(); return false;">
+            Verify</a>
+    </div>
+</div>
+
+<div id="verify-succeed-modal" class="modal hide small-modal" tabindex="-1" role="dialog">
+    <div class="modal-header">
+        <h4 class="text-success">Test succeeded</h4>
+    </div>
+
+    <div class="modal-body">
+        <p>Sweet. Your email server works perfectly. Let's move on to the next page.</p>
+    </div>
+    <div class="modal-footer">
+        <a href="#" class="btn btn-primary"
+            onclick="gotoNextPage(); return false;">
+            Continue</a>
     </div>
 </div>
 
 <script type="text/javascript">
     function localMailServerSelected() {
-        $('#public-host-options').slideUp();
+        $('#public-host-options').hide();
     }
 
     function externalMailServerSelected() {
-        $('#public-host-options').slideDown();
+        $('#public-host-options').show();
     }
 
     function hideAllModals() {
@@ -171,16 +201,13 @@
         var current_password = "${current_config['email.sender.public_password']}";
 
         ## Only enable smtp verification modal if something has changed.
-        if ((remote &&
+        var initial = ${str(not is_configuration_initialized).lower()};
+        var toggled = remote != ${str(is_remote_host).lower()};
+        if (initial || toggled || (remote &&
                 (host != current_host ||
                 port != current_port ||
                 username != current_username ||
-                password != current_password)) ||
-            (!remote &&
-                (current_host != "localhost" ||
-                current_port != "25" ||
-                current_username != "" ||
-                current_password != ""))) {
+                password != current_password))) {
             enableVerifyModalEmailInput();
         } else {
             var support_email = $("#base-www-support-email-address").val();
@@ -215,6 +242,7 @@
     function enableVerifyModalCodeInput() {
         hideAllModals();
         $('#verify-modal-code-input').modal('show');
+        $('#verification-code').focus();
     }
 
     function checkVerificationCodeAndSetConfiguration() {
@@ -223,9 +251,14 @@
 
         if (inputtedCode == actualCode) {
             doPost("${request.route_path('json_setup_email')}",
-                serializedData, gotoNextPage, hideAllModals);
+                serializedData, showVerificationSuccessModal, hideAllModals);
         } else {
             displayError("The verification code you provided was not correct.");
         }
+    }
+
+    function showVerificationSuccessModal() {
+        hideAllModals();
+        $('#verify-succeed-modal').modal('show');
     }
 </script>

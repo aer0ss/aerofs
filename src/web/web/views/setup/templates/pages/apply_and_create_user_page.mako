@@ -1,14 +1,6 @@
 <%namespace name="csrf" file="../csrf.mako"/>
 <%namespace name="common" file="common.mako"/>
 
-<style type="text/css">
-    .small-modal {
-        top: 150px;
-        width: 440px;
-        margin-left: -220px;
-    }
-</style>
-
 ## N.B. When adding or removing content, adjust the modals' "top" style
 ## to match the content's position.
 
@@ -38,18 +30,31 @@
     <div class="modal-body">
         <p>Sweet! System configuration is complete.</p>
 
-        %if not is_configuration_initialized:
+        %if is_configuration_initialized:
+            ## It's a reconfiguration. Do nothing. Write something here otherwise
+            ## the renderer would complain.
+            <!---->
+        %elif current_config['lib.authenticator'] == 'local_credential':
+            ## It's an initial setup with local authentication
             <p>Next, you will create the system's first user.</p>
+        %else:
+            ## It's an initial setup with LDAP or OpenID
+            <p>Next, you will log in to become the first administrator.
+                All subsequent users will be regular users until promoted by an
+                administrator.</p>
         %endif
+
     </div>
     <div class="modal-footer">
-        ## Instruct to create the first user only during initial setup
         %if is_configuration_initialized:
             <a href="${request.route_path('setup')}" class="btn btn-primary">Close</a>
-        %else:
+        %elif current_config['lib.authenticator'] == 'local_credential':
             <a href="#" class="btn btn-primary"
                 onclick="hideAllModals(); $('#create-user-modal').modal('show'); return false;">
                 Create First User</a>
+        %else:
+            <a href="${request.route_path('login')}" class="btn btn-primary">
+                Login to Become First Admin</a>
         %endif
     </div>
 </div>

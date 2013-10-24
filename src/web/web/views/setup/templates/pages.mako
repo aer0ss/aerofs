@@ -17,6 +17,11 @@
         margin-bottom: 8px;
         font-size: small;
     }
+    .small-modal {
+        top: 150px;
+        width: 440px;
+        margin-left: -220px;
+    }
 </style>
 
 <%

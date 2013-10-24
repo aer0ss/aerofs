@@ -34,30 +34,16 @@ class Configuration(object):
         finally:
             sio.close()
 
-        fixed_props = {}
         for key in props.propertyNames():
             value = props.getProperty(key)
             # Convert unicode strings returned from props to ascii. This is
             # required as client code uses ascii as keys to query properties.
-            fixed_props[key.replace(b'\0', "")] = value.replace(b'\0', "")
+            configuration[key.replace(b'\0', "")] = value.replace(b'\0', "")
 
         # Exclude the browser key to avoid keeping it around in the python
         # process's memory, in case a stacktrace somewhere winds up doing a
         # state dump and exposing the SSL key
-        del fixed_props['server.browser.key']
-
-        # Resolve variable references. Just like in java land, we only support
-        # one level of resolution.
-        for key in fixed_props:
-            value = fixed_props[key]
-            match = re.search(r'\${(.*)}', value)
-            if match:
-                # The prop contains variable. Dereference it.
-                configuration[key] = value.replace(match.group(0),
-                                                 fixed_props[match.group(1)])
-            else:
-                # The prop doesn't contain variable.
-                configuration[key] = value
+        del configuration['server.browser.key']
 
     def set_external_property(self, key, value):
         """

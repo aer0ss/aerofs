@@ -2,7 +2,6 @@ from unittests.test_base import TestBase
 from web.util import is_private_deployment
 from web.views.login.login_view import URL_PARAM_NEXT, resolve_next_url, _is_external_cred_enabled, _format_password
 
-
 class LoginTest(TestBase):
 
     def test_resolve_next_url_should_prefix_with_host_url(self):
