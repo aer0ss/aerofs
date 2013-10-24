@@ -16,6 +16,8 @@ public interface EndpointConnector
     /**
      * Open a client connection to a REST endpoint on behalf of a given user
      *
+     * NB: MUST be threadsafe
+     *
      * @param user user for which the endpoint should be suitable
      * @param did prefered endpoint, if not null
      * @param strictMatch whether to fail if the prefered endpoint is not available
@@ -26,6 +28,8 @@ public interface EndpointConnector
             ChannelPipeline pipeline);
 
     /**
+     * NB: MUST be threadsafe
+     *
      * @return the device to which a channel obtained from {@link #connect} is associated
      */
     public DID device(Channel channel);

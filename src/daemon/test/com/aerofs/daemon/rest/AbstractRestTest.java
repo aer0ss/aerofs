@@ -127,7 +127,7 @@ public class AbstractRestTest extends AbstractTest
 
     private RestService service;
 
-    private RestTunnel tunnel;
+    private RestTunnelClient tunnel;
     private Havre havre;
 
     protected static DateFormat ISO_8601 = utcFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
@@ -155,7 +155,8 @@ public class AbstractRestTest extends AbstractTest
         final IIMCExecutor imce = mock(IIMCExecutor.class);
 
         // inject mock objects into service
-        Injector inj = Guice.createInjector(new AbstractModule() {
+        Injector inj = Guice.createInjector(new AbstractModule()
+        {
             @Override
             protected void configure()
             {
@@ -218,7 +219,7 @@ public class AbstractRestTest extends AbstractTest
             l.info("REST gateway at {}", RestAssured.port);
 
             // open tunnel between gateway and rest service
-            tunnel = new RestTunnel(localUser, localDID, clientSslEngineFactory, service);
+            tunnel = new RestTunnelClient(localUser, localDID, clientSslEngineFactory, service);
             tunnel.start().awaitUninterruptibly();
         }
     }

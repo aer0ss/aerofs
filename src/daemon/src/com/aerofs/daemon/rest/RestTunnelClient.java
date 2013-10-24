@@ -30,9 +30,9 @@ import static com.aerofs.base.config.ConfigurationProperties.getIntegerProperty;
 import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
 import static com.aerofs.lib.ChannelFactories.getClientChannelFactory;
 
-public class RestTunnel extends TunnelClient
+public class RestTunnelClient extends TunnelClient
 {
-    private static final Logger l = Loggers.getLogger(RestTunnel.class);
+    private static final Logger l = Loggers.getLogger(RestTunnelClient.class);
 
     private final String TUNNEL_HOST = getStringProperty("api.tunnel.host", "aerofs.com");
     private final int TUNNEL_PORT = getIntegerProperty("api.tunnel.port", 8084);
@@ -43,8 +43,8 @@ public class RestTunnel extends TunnelClient
     private static final Timer _timer = new HashedWheelTimer();
 
     private volatile Channel _channel;
-    private volatile boolean _started;
-    private volatile boolean _closing;
+    private volatile boolean _running;
+    private volatile boolean _closeRequested;
 
     private int _reconnectDelay = MIN_RETRY_DELAY;
 
@@ -63,9 +63,9 @@ public class RestTunnel extends TunnelClient
         @Override
         public void operationComplete(ChannelFuture cf) throws Exception
         {
-            if (_closing) {
+            if (_closeRequested) {
                 l.info("REST tunnel closed");
-                _closing = false;
+                _running = false;
             } else {
                 scheduleReconnect(selfOrClosedChannelException(cf.getCause()));
             }
@@ -73,8 +73,8 @@ public class RestTunnel extends TunnelClient
     };
 
     @Inject
-    public RestTunnel(CfgLocalUser user, CfgLocalDID did, ClientSSLEngineFactory sslEngineFactory,
-            final RestService service)
+    public RestTunnelClient(CfgLocalUser user, CfgLocalDID did,
+            ClientSSLEngineFactory sslEngineFactory, final RestService service)
     {
         super(user.get(), did.get(), getClientChannelFactory(), sslEngineFactory,
                 new ChannelPipelineFactory() {
@@ -88,8 +88,8 @@ public class RestTunnel extends TunnelClient
 
     public ChannelFuture start()
     {
-        Preconditions.checkState(!_started && !_closing);
-        _started = true;
+        Preconditions.checkState(!_running);
+        _running = true;
         _reconnectDelay = MIN_RETRY_DELAY;
         return tryConnect();
     }
@@ -119,7 +119,12 @@ public class RestTunnel extends TunnelClient
             @Override
             public void run(Timeout timeout) throws Exception
             {
-                if (!_closing) tryConnect();
+                if (_closeRequested) {
+                    l.info("REST tunnel closed");
+                    _running = false;
+                } else {
+                    tryConnect();
+                }
             }
         }, _reconnectDelay, TimeUnit.SECONDS);
 
@@ -128,10 +133,11 @@ public class RestTunnel extends TunnelClient
 
     public void stop()
     {
-        _started = false;
-        _closing = true;
-        if (_channel != null && _channel.isConnected()) {
-            _channel.close().awaitUninterruptibly(500, TimeUnit.MILLISECONDS);
+        Preconditions.checkState(_running);
+        Channel c = _channel;
+        _closeRequested = true;
+        if (c != null) {
+            c.close().awaitUninterruptibly(500, TimeUnit.MILLISECONDS);
         }
     }
 }
