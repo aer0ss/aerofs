@@ -307,15 +307,25 @@
             console.log("ldap opt changed. test new opts");
             var $progressModal = $('#${common.progress_modal_id()}');
             $progressModal.modal('show');
-            error = function() {
+            onError = function() {
                 $progressModal.modal('hide');
                 error();
             };
 
-            ## TOOD (WW) insert ldap verification code here
+            $.post('${request.route_path('json_verify_ldap')}',
+                    $('#id-form').serialize())
+            .done(function (response) {
+                post(done, onError);
+            })
+            .error(function (xhr) {
+                showErrorMessageFromResponse(xhr);
+                onError();
+            });
+        } else {
+            ## This post is required to write changes in _other_ option values,
+            ## even if ldap-specific options are not changed.
+            post(done, error);
         }
-
-        post(done, error);
     }
 
     function post(done, error) {

@@ -21,11 +21,14 @@ log = logging.getLogger("web")
 _BOOTSTRAP_PIPE_FILE = "/tmp/bootstrap"
 
 # ------------------------------------------------------------------------
-# Email verification interface constants.
+# Verification interface constants.
 # ------------------------------------------------------------------------
 
+# Base URL for all calls to the tomcat verification servlet.
+_VERIFICATION_BASE_URL = "http://localhost:8080/verify/"
+
 # This is a tomcat servlet that is part of the SP package.
-_SMTP_VERIFICATION_URL = "http://localhost:8080/verify/email"
+_SMTP_VERIFICATION_URL = _VERIFICATION_BASE_URL + "email"
 # N.B. these params are also defined in Java land in SmtpVerifiationServlet.java
 _SMTP_VERIFICATION_TO_EMAIL = "to_email"
 _SMTP_VERIFICATION_CODE = "verification_code"
@@ -33,6 +36,9 @@ _SMTP_VERIFICATION_SMTP_HOST = "email_sender_public_host"
 _SMTP_VERIFICATION_SMTP_PORT = "email_sender_public_port"
 _SMTP_VERIFICATION_SMTP_USERNAME = "email_sender_public_username"
 _SMTP_VERIFICATION_SMTP_PASSWORD = "email_sender_public_password"
+
+# LDAP verification servlet URL.
+_LDAP_VERIFICATION_URL = _VERIFICATION_BASE_URL + "ldap"
 
 # ------------------------------------------------------------------------
 # LDAP email verification interfact constants.
@@ -278,11 +284,11 @@ def json_setup_certificate(request):
     request_method = 'POST'
 )
 def json_verify_ldap(request):
-    cert = request_params['ldap_server_ca_certificate']
+    cert = request.params['ldap_server_ca_certificate']
     if cert and not _is_certificate_formatted_correctly(_write_pem_to_file(cert)):
         error("The certificate you provided is invalid.")
 
-    # TODO (MP) verify ldap parameters.
+    print 'TODO (MP) verify ldap parameters'
 
     return {}
 
