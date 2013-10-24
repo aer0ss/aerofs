@@ -142,7 +142,7 @@
     </div>
 
     <div class="modal-body">
-        <p>Sweet. Your email server works perfectly. Let's move on to the next page.</p>
+        <p>Great! Your email server works. Let's move on to the next page.</p>
     </div>
     <div class="modal-footer">
         <a href="#" class="btn btn-primary"

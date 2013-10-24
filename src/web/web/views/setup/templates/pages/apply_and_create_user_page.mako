@@ -28,7 +28,7 @@
         <h4 class="text-success">The system is ready!</h4>
     </div>
     <div class="modal-body">
-        <p>Sweet! System configuration is complete.</p>
+        <p>System configuration is complete.</p>
 
         %if is_configuration_initialized:
             ## It's a reconfiguration. Do nothing. Write something here otherwise
@@ -39,9 +39,9 @@
             <p>Next, you will create the system's first user.</p>
         %else:
             ## It's an initial setup with LDAP or OpenID
-            <p>Next, you will log in to become the first administrator.
-                All subsequent users will be regular users until promoted by an
-                administrator.</p>
+            <p>Next, you will create your first administrator account.
+               All subsequent users will be regular users until promoted by an
+               administrator.</p>
         %endif
 
     </div>
