@@ -1,7 +1,6 @@
 add-loopback-hosts-entry-unified
 nginx-certificate-generate-unified
 browser-cert-pull
-nginx-restart
 spdb-schema-init
 verkehr-certify
 havre-certify
@@ -14,3 +13,4 @@ zephyr-restart
 sanity-pull-config
 repackage-installers
 sanity-check
+nginx-restart

@@ -25,13 +25,17 @@
 <%def name="progress_modal_html()">
     <div id="${progress_modal_id()}" class="modal hide" tabindex="-1" role="dialog"
             style="top: 200px">
-        <div class="modal-body">
-            <span id="progress-modal-spinner" class="pull-left"
-                  style="margin-right: 28px; padding-top: -10px">&nbsp;</span>
-            ${caller.body()}
+        <div class="modal-body" style="margin-top: 7px;">
+            ## "display: table-cell" is needed for caller.body()s that have more
+            ## than one line of text.
+            ## TODO (WW) a better approach
+            <div id="progress-modal-spinner" class="pull-left"
+                  style="display: table-cell; margin-right: 28px; padding-top: -10px">&nbsp;</div>
+            <div style="display: table-cell;">
+                ${caller.body()}
+            </div>
         </div>
     </div>
-
 </%def>
 
 <%def name="progress_modal_scripts()">

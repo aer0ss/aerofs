@@ -11,17 +11,29 @@
     ${csrf.token_input()}
     ${common.render_previous_button(page)}
     <button
-        onclick='submitApplyForm(); return false;'
+        onclick='submitForm(); return false;'
         id='nextButton'
         class='btn btn-primary pull-right'>Apply and Finish</button>
 </form>
 
 <%common:progress_modal_html>
-    <span id="count-down-text">Please wait for about
+    <p><span id="count-down-text">Please wait for about
         <strong><span id="count-down-number"></span></strong>
         seconds while the system is being configured...</span>
-    <span id="be-patient-text">It should be done very shortly...</span>
+        <span id="be-patient-text">It should be done very shortly...</span>
+    </p>
+    <p>
+        Once configuration finishes, your browser will automatically refresh.
+    </p>
 </%common:progress_modal_html>
+
+## TODO (WW) use progress_modal
+<div id="finalizing-modal" class="modal hide" tabindex="-1" role="dialog"
+        style="top: 200px">
+    <div class="modal-body">
+        Finalizing the configuration...
+    </div>
+</div>
 
 <div id="success-modal" class="modal hide small-modal" tabindex="-1" role="dialog">
     <div class="modal-header">
@@ -120,11 +132,18 @@
 <%common:progress_modal_scripts/>
 
 <script>
+    var andFinalizeParam = '&finalize=1';
+
     $(document).ready(function() {
         initializeProgressModal();
         ## Disalbe esaping from all modals
         disableEsapingFromModal($('div.modal'));
         initializeModals();
+
+        if (window.location.search.indexOf(andFinalizeParam) != -1) {
+            $('#finalizing-modal').modal('show');
+            finalize();
+        }
     });
 
     function initializeModals() {
@@ -169,45 +188,73 @@
         return $('#applyForm').serialize();
     }
 
-    function submitApplyForm() {
-        ## Show the progress modal
-        $('#progress-modal').modal('show');
+    ########
+    ## There are three steps to setup the system:
+    ##  1. Kick-off the bootstrap process
+    ##  2. Wait by polling until bootstrap is done
+    ##  3. Set configuration_initialized to true (needed for initial setup)
+    ## See step sepcific comments for details.
 
-        ## Stage 1: kick off the configuration process
+    ########
+    ## Step 1: kick off the configuration process
+
+    function submitForm() {
+        ## Show the progress modal
+        $('#${common.progress_modal_id()}').modal('show');
+
         doPost("${request.route_path('json_setup_apply')}",
                 getSerializedFormData(), pollForBootstrap, hideAllModals);
     }
 
-    ## Stage 2: wait until the configuration process is complete
-    ## TODO (WW) add timeouts
-    var bootstrapPollInterval;
+    ########
+    ## Step 2: wait until the configuration process is complete.
+    ##
+    ## This step is tricky because the user may uploads new browser certificates.
+
     function pollForBootstrap() {
-        bootstrapPollInterval = window.setInterval(function() {
+        ## the number of consecutive 0-status responses
+        var statusZeroCount = 0;
+        var bootstrapPollInterval = window.setInterval(function() {
             $.post("${request.route_path('json_setup_poll')}", getSerializedFormData())
             .done(function (response) {
-                finalizeConfigurationIfCompleted(response);
+                statusZeroCount = 0;
+                if (response['completed'] == true) {
+                    console.log("poll complete");
+                    window.clearInterval(bootstrapPollInterval);
+                    reloadToFinalize();
+                } else {
+                    console.log("poll incomplete");
+                    ## TODO (WW) add timeout?
+                }
             }).fail(function (xhr) {
-                ## TODO (MP) If 200 or 503 continue, otherwise bail. Need smarter integration with bootstrap here.
+                console.log("status: " + xhr.status + " statusText: " + xhr.statusText);
+                ## TODO (WW) add comments. nginx restart itself can cause zero status responses
+                if (xhr.status == 0 && statusZeroCount++ == 10) {
+                    reloadToFinalize();
+                }
             });
 
         }, 1000);
     }
 
-    ## Stage 3: ask the system to finalize the configuration
-    function finalizeConfigurationIfCompleted(response) {
-        if (response['completed'] == true) {
-            window.clearInterval(bootstrapPollInterval);
-            setTimeout(function() {
-                doPost("${request.route_path('json_setup_finalize')}",
-                        getSerializedFormData(), pollForWebServerReadiness);
-            }, 1000);
-        } else {
-            ## TODO (WW) add error handling, or do we need the "completed"
-            ## flag at all?
-        }
+    ########
+    ## Step 3: reload the page and finalize
+
+    function reloadToFinalize() {
+        ## We expect non-empty window.location.search here (i.e. '?page=X')
+        window.location.href = 'https://${current_config['base.host.unified']}' +
+                window.location.pathname + window.location.search + andFinalizeParam;
     }
 
-    ## Stage 4: wait until the Web server is ready to serve requests
+    function finalize() {
+        doPost("${request.route_path('json_setup_finalize')}",
+                getSerializedFormData(), pollForWebServerReadiness);
+    }
+
+    ########
+    ## Last, wait until uwsgi finishes reloading, which is caused by
+    ## json_setup_finalize().
+
     ## TODO (WW) poll an actual URL, and add timeouts
     function pollForWebServerReadiness() {
         setTimeout(function() {

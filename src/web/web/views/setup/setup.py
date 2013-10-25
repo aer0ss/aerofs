@@ -372,6 +372,8 @@ def _get_ldap_specific_parameters(request_params):
 )
 def json_setup_apply(request):
     log.info("applying configuration")
+    # kick off bootstrap by placing the task list at the designated location.
+    # (the bootstrap process is watching!)
     shutil.copyfile('/opt/bootstrap/tasks/manual.tasks', _BOOTSTRAP_PIPE_FILE)
 
     return {}
@@ -387,8 +389,9 @@ def json_setup_apply(request):
     request_method = 'POST'
 )
 def json_setup_poll(request):
+    # bootstrap is complete if the task list file is removed by the process.
     running = os.stat(_BOOTSTRAP_PIPE_FILE).st_size != 0
-    log.warn("Poll, running:" + str(running))
+    log.warn("bootstrap in-progress: {}".format(running))
 
     return {'completed': not running}
 
@@ -408,6 +411,7 @@ def json_setup_finalize(request):
     configuration = Configuration()
     configuration.set_external_property('configuration_initialized', 'true')
 
+    # Finally, ask ourselves to reload the new configuration values. This
     with open(_BOOTSTRAP_PIPE_FILE, 'w') as f:
         # Add the delay so that we have time to return this call before we reload.
         f.write('delay\nuwsgi-reload')
