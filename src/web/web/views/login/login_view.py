@@ -43,9 +43,15 @@ def resolve_next_url(request):
     Return the value of the 'next' parameter in the request. Return
     dashboard_home if the next param is not set. Always prefix with the host URL
     to prevent attackers to insert arbitrary URLs in the parameter, e.g.:
-    aerofs.com/login?next=http%3A%2F%2Fcnn.com
+    aerofs.com/login?next=http%3A%2F%2Fcnn.com.
     """
-    return request.host_url + _get_next_url(request)
+    next_url = _get_next_url(request)
+
+    # If _get_next_url()'s return value doesn't include a leading slash, add it.
+    # This is to prevent the next_url being things like .cnn.com and @cnn.com
+    if next_url[:1] != '/': next_url = '/' + next_url
+
+    return request.host_url + next_url
 
 def _is_openid_enabled(request):
     """
