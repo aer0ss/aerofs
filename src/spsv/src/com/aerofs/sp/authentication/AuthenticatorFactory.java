@@ -6,6 +6,8 @@ package com.aerofs.sp.authentication;
 
 import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.lib.FullName;
+import com.aerofs.lib.LibParam.Identity;
+import com.aerofs.lib.LibParam.Identity.Authenticator;
 import com.aerofs.sp.server.lib.user.User;
 
 /**
@@ -24,9 +26,10 @@ import com.aerofs.sp.server.lib.user.User;
  */
 public class AuthenticatorFactory
 {
-    public static IAuthenticator create(LdapConfiguration ldapConf)
+    public static IAuthenticator create()
     {
-        if (LdapConfiguration.enabled()) {
+        if (Identity.AUTHENTICATOR == Authenticator.EXTERNAL_CREDENTIAL) {
+            LdapConfiguration ldapConf = new LdapConfiguration();
             LdapAuthenticator ldapAuth = new LdapAuthenticator(ldapConf,
                     ldapConf.SERVER_AUTOPROVISION ? new AutoProvisioning() : new NoProvisioning());
 

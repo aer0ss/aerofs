@@ -4,9 +4,6 @@
 
 package com.aerofs.sp.authentication;
 
-import com.aerofs.lib.LibParam.Identity;
-import com.aerofs.lib.LibParam.Identity.Authenticator;
-
 import static com.aerofs.base.config.ConfigurationProperties.getBooleanProperty;
 import static com.aerofs.base.config.ConfigurationProperties.getIntegerProperty;
 import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
@@ -20,12 +17,6 @@ import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
  */
 public class LdapConfiguration
 {
-    /** True if the server is configured to use LDAP to authenticate endusers. */
-    public static boolean enabled()
-    {
-        return Identity.AUTHENTICATOR == Authenticator.EXTERNAL_CREDENTIAL;
-    }
-
     public enum SecurityType
     {
         /** The server does not support any socket-level security. Strongly not recommended. */

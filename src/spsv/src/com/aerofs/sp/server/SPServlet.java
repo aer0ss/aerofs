@@ -134,7 +134,7 @@ public class SPServlet extends AeroServlet
             _passwordManagement, _certauth, _factUser, _factOrg, _factOrgInvite, _factDevice,
             _certdb, _esdb, _factSharedFolder, _factEmailer, _deviceRegistrationEmailer,
             _requestToSignUpEmailer, _commandQueue, _analytics, new IdentitySessionManager(),
-            AuthenticatorFactory.create(new LdapConfiguration()),
+            AuthenticatorFactory.create(),
             SharedFolderRulesFactory.create(_factUser, _sfnEmailer), _sfnEmailer);
     private final SPServiceReactor _reactor = new SPServiceReactor(_service);
 
