@@ -31,7 +31,7 @@
 <div id="finalizing-modal" class="modal hide" tabindex="-1" role="dialog"
         style="top: 200px">
     <div class="modal-body">
-        Finalizing the configuration...
+        Finalizing configuration...
     </div>
 </div>
 
