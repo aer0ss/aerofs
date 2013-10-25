@@ -37,6 +37,7 @@ public class SmtpVerificationServlet extends HttpServlet
     {
         // N.B. these params are defined in python land in setup.py. They must match.
 
+        String fromEmail = req.getParameter("from_email");
         String toEmail = req.getParameter("to_email");
         String code = req.getParameter("verification_code");
         String host = req.getParameter("email_sender_public_host");
@@ -46,15 +47,16 @@ public class SmtpVerificationServlet extends HttpServlet
 
         try {
             l.debug("Sending SMTP verification email.\n" +
+                    "from_email: " + fromEmail + '\n' +
                     "to_email: " + toEmail + "\n" +
                     "code: " + code + "\n" +
                     "smtp_host: " + host + "\n" +
                     "smtp_port: " + port + "\n" +
                     "smtp_username: " + username + "\n" +
-                    "smtp_password: " + password);
+                    "smtp_password length: " + password.length());
 
-            SmtpVerificationEmailer.sendSmtpVerificationEmail(toEmail, code, host, port, username,
-                    password);
+            SmtpVerificationEmailer.sendSmtpVerificationEmail(fromEmail, toEmail, code, host, port,
+                    username, password);
         }
         catch (Exception e) {
             l.error("Unable to send email: " + Util.stackTraceToString(e));

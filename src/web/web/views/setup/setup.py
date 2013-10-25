@@ -30,6 +30,7 @@ _VERIFICATION_BASE_URL = "http://localhost:8080/verify/"
 # This is a tomcat servlet that is part of the SP package.
 _SMTP_VERIFICATION_URL = _VERIFICATION_BASE_URL + "email"
 # N.B. these params are also defined in Java land in SmtpVerifiationServlet.java
+_SMTP_VERIFICATION_FROM_EMAIL = "from_email"
 _SMTP_VERIFICATION_TO_EMAIL = "to_email"
 _SMTP_VERIFICATION_CODE = "verification_code"
 _SMTP_VERIFICATION_SMTP_HOST = "email_sender_public_host"
@@ -149,10 +150,13 @@ def _parse_email_request(request):
         username = ''
         password = ''
 
-    return host, port, username, password
+    support_address = request.params['base-www-support-email-address']
+    return host, port, username, password, support_address
 
-def _send_verification_email(to_email, code, host, port, username, password):
+def _send_verification_email(from_email, to_email, code, host, port,
+                             username, password):
     payload = {
+        _SMTP_VERIFICATION_FROM_EMAIL: from_email,
         _SMTP_VERIFICATION_TO_EMAIL: to_email,
         _SMTP_VERIFICATION_CODE: code,
         _SMTP_VERIFICATION_SMTP_HOST: host,
@@ -170,9 +174,10 @@ def _send_verification_email(to_email, code, host, port, username, password):
     request_method = 'POST'
 )
 def json_verify_smtp(request):
-    host,port,username,password = _parse_email_request(request)
+    host, port, username, password, support_address = _parse_email_request(request)
 
     r = _send_verification_email(
+            support_address,
             request.params['verification-to-email'],
             request.session[_SESSION_KEY_EMAIL_VERIFICATION_CODE],
             host,
@@ -193,8 +198,7 @@ def json_verify_smtp(request):
     request_method = 'POST'
 )
 def json_setup_email(request):
-    support_address = request.params['base-www-support-email-address']
-    host, port, username, password = _parse_email_request(request)
+    host, port, username, password, support_address = _parse_email_request(request)
 
     configuration = Configuration()
     configuration.set_external_property('support_address', support_address)
