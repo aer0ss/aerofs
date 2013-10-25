@@ -1,10 +1,11 @@
 /*
  * Copyright (c) Air Computing Inc., 2013.
  */
-package com.aerofs.daemon.rest.netty;
+package com.aerofs.restless.netty;
 
+import com.aerofs.base.BaseLogUtil;
 import com.aerofs.base.Loggers;
-import com.aerofs.lib.log.LogUtil;
+import com.aerofs.restless.Configuration;
 import com.sun.jersey.core.header.InBoundHeaders;
 import com.sun.jersey.spi.container.ContainerRequest;
 import com.sun.jersey.spi.container.WebApplication;
@@ -28,14 +29,16 @@ public class JerseyHandler extends SimpleChannelUpstreamHandler
 {
     private static final Logger l = Loggers.getLogger(JerseyHandler.class);
 
+    private final Configuration _config;
     private final WebApplication _application;
 
     // NB: for some reason Jersey's ContainerRequest requires a base URI to be provided
     // in all cases although we absolutely don't need it for any reason whatsoever...
     private final URI _baseURI = URI.create("https://dummy/");
 
-    public JerseyHandler(final WebApplication application)
+    public JerseyHandler(final WebApplication application, Configuration config)
     {
+        _config = config;
         _application = application;
     }
 
@@ -44,7 +47,7 @@ public class JerseyHandler extends SimpleChannelUpstreamHandler
             throws URISyntaxException, IOException
     {
         // TODO: support chunked requests (for PUT/POST)
-        HttpRequest request = (HttpRequest) me.getMessage();
+        HttpRequest request = (HttpRequest)me.getMessage();
         URI requestUri = URI.create(_baseURI + request.getUri().substring(1));
 
         ContainerRequest cRequest = new ContainerRequest(_application,
@@ -58,7 +61,7 @@ public class JerseyHandler extends SimpleChannelUpstreamHandler
             // (HTTP pipelining). JerseyResponseWriter is responsible for re-enabling reads
             inbound.setReadable(false);
 
-            _application.handleRequest(cRequest, new JerseyResponseWriter(inbound, keepAlive));
+            _application.handleRequest(cRequest, new JerseyResponseWriter(inbound, keepAlive, _config));
         } catch (WebApplicationException e) {
             // When a WebApplicationException (or really any exception whatsoever) is thrown
             // after the response is committed (i.e. the first byte has been written on a Netty
@@ -72,7 +75,7 @@ public class JerseyHandler extends SimpleChannelUpstreamHandler
             // the connection which the client which the client will interpret as an unspecified
             // error.
             l.warn("exception after response committed: ",
-                    LogUtil.suppress(e, ClosedChannelException.class));
+                    BaseLogUtil.suppress(e, ClosedChannelException.class));
             inbound.close();
         }
     }
@@ -81,8 +84,8 @@ public class JerseyHandler extends SimpleChannelUpstreamHandler
     public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e)
     {
         // Close the connection when an exception is raised.
-        l.warn("Rest service: unexpected exception:",
-                LogUtil.suppress(e.getCause(), ClosedChannelException.class));
+        l.warn("unexpected exception:",
+                BaseLogUtil.suppress(e.getCause(), ClosedChannelException.class));
         if (e.getChannel().isConnected()) {
             e.getChannel().close();
         }

@@ -1,4 +1,4 @@
-package com.aerofs.daemon.rest.stream;
+package com.aerofs.restless.stream;
 
 import java.io.IOException;
 import java.io.OutputStream;

@@ -1,6 +1,7 @@
-package com.aerofs.daemon.rest.providers;
+package com.aerofs.restless.providers;
 
-import com.aerofs.daemon.rest.stream.ContentStream;
+
+import com.aerofs.restless.stream.ContentStream;
 
 import javax.ws.rs.Produces;
 import javax.ws.rs.WebApplicationException;
@@ -16,7 +17,7 @@ import java.lang.reflect.Type;
 /**
  * Dummy message body writer for {@link ContentStream} entity
  *
- * The actual writing is done by {@link com.aerofs.daemon.rest.netty.ChunkedContentStream}
+ * The actual writing is done by {@link com.aerofs.restless.netty.ChunkedContentStream}
  */
 @Provider
 @Produces(MediaType.WILDCARD)  // handle all ContentStream entities regardless of Content-Type

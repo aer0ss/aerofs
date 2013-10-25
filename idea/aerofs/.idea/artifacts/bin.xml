@@ -16,6 +16,7 @@
       <element id="module-output" name="rest-api" />
       <element id="module-output" name="havre" />
       <element id="module-output" name="tunnel" />
+      <element id="module-output" name="restless" />
     </root>
   </artifact>
 </component>

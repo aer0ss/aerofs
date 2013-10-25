@@ -1,9 +1,10 @@
 /*
  * Copyright (c) Air Computing Inc., 2013.
  */
-package com.aerofs.daemon.rest.netty;
+package com.aerofs.restless.netty;
 
-import com.aerofs.daemon.rest.stream.ContentStream;
+import com.aerofs.restless.Configuration;
+import com.aerofs.restless.stream.ContentStream;
 import com.google.common.collect.Lists;
 import com.google.common.io.ByteStreams;
 import com.sun.jersey.spi.container.ContainerResponse;
@@ -30,6 +31,8 @@ import java.util.Map;
 
 class JerseyResponseWriter implements ContainerResponseWriter
 {
+    private final Configuration _config;
+
     private final Channel _channel;
     private final boolean _keepAlive;
 
@@ -38,8 +41,10 @@ class JerseyResponseWriter implements ContainerResponseWriter
 
     private static final HttpChunk EMPTY = new DefaultHttpChunk(ChannelBuffers.EMPTY_BUFFER);
 
-    public JerseyResponseWriter(final Channel channel, boolean keepAlive)
+    public JerseyResponseWriter(final Channel channel, boolean keepAlive, Configuration config)
     {
+        _config = config;
+
         _channel = channel;
         _keepAlive = keepAlive;
         _trailer = new ChannelFutureListener() {
@@ -77,9 +82,7 @@ class JerseyResponseWriter implements ContainerResponseWriter
             values.clear();
         }
 
-        // Cross-Origin Resource Sharing
-        r.setHeader(Names.ACCESS_CONTROL_ALLOW_ORIGIN, "*");
-        r.setHeader(Names.CACHE_CONTROL, Values.NO_CACHE + "," + Values.NO_TRANSFORM);
+        _config.addGlobalHeaders(r);
 
         if ((r.getHeader(Names.CONTENT_LENGTH) == null)) {
             // if no explicit Content-Length is set, use chunked transfer-encoding

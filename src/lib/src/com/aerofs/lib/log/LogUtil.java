@@ -8,6 +8,7 @@ import ch.qos.logback.core.ConsoleAppender;
 import ch.qos.logback.core.rolling.DefaultTimeBasedFileNamingAndTriggeringPolicy;
 import ch.qos.logback.core.rolling.RollingFileAppender;
 import ch.qos.logback.core.rolling.TimeBasedRollingPolicy;
+import com.aerofs.base.BaseLogUtil;
 import com.aerofs.base.Loggers;
 import org.slf4j.LoggerFactory;
 
@@ -15,7 +16,7 @@ import org.slf4j.LoggerFactory;
  * Helpers for dealing with logback
  * IMPORTANT: DO NOT USE "L" in here!!!
  */
-public abstract class LogUtil
+public abstract class LogUtil extends BaseLogUtil
 {
     public static enum Level
     {
@@ -121,35 +122,6 @@ public abstract class LogUtil
         case NONE:  return ch.qos.logback.classic.Level.OFF;
         default:    throw new IllegalArgumentException("Illegal log level " + logLevel.toString());
         }
-    }
-
-    /**
-     * Suppress the stack trace for the given throwable.
-     *
-     * This is useful to pass an abbreviated exception on to the logging subsystem.
-     *
-     * Example: l.warn("Oh noes! Bad {}", thing, LogUtil.suppress(myEx));
-     *
-     * TODO(jP): This should replace usage of Util.e() throughout. No new uses of Util.e!
-     */
-    public static <T extends Throwable> T suppress(T throwable)
-    {
-        throwable.setStackTrace(new StackTraceElement[0]);
-        return throwable;
-    }
-
-    /**
-     * Suppress the stack trace if the throwable is an instance of one of the given
-     * exception types.
-     */
-    public static <T extends Throwable> T suppress(T throwable, Class<?>... suppressTypes)
-    {
-        for (Class<?> clazz : suppressTypes) {
-            if (clazz.isInstance(throwable)) {
-                return suppress(throwable);
-            }
-        }
-        return throwable;
     }
 
     private LogUtil() { /* private to enforce uninstantiability */ }

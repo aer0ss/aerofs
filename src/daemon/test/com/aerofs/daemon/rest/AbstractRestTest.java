@@ -28,6 +28,7 @@ import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.event.IEvent;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.id.SOID;
+import com.aerofs.restless.Configuration;
 import com.aerofs.testlib.AbstractTest;
 import com.aerofs.testlib.TempCert;
 import com.google.inject.AbstractModule;
@@ -170,6 +171,7 @@ public class AbstractRestTest extends AbstractTest
                 bind(IMapSIndex2SID.class).toInstance(sm);
                 bind(IPhysicalStorage.class).toInstance(ps);
                 bind(CoreIMCExecutor.class).toInstance(new CoreIMCExecutor(imce));
+                bind(Configuration.class).to(RestConfiguration.class);
             }
         });
 
