@@ -23,7 +23,7 @@ mkdir -p $OUTPUT_DIR/var/log/web
 mkdir -p $OPT
 cp -a $SOURCE_DIR/web $OPT/
 # Also include stuff needed for package installation
-cp -a $SOURCE_DIR/{MANIFEST.in,README.txt,CHANGES.txt,setup.py,requirements.txt} $OPT/
+cp -a $SOURCE_DIR/requirements.txt $OPT/
 # Include the wsgi application file that uwsgi will run
 cp -a $SOURCE_DIR/production.wsgi $OPT/
 
@@ -40,3 +40,6 @@ cp $SDIST_CACHE/* $SDIST/
 
 # Also include the aerofs-py-lib package.
 tools/python-buildpackage.sh "../src/python-lib" "$SDIST" "$OPT/requirements.txt"
+
+# Also include the aerofs-web package
+tools/python-buildpackage.sh "../src/web" "$SDIST" "$OPT/requirements.txt"

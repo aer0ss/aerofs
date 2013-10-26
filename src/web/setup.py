@@ -26,8 +26,8 @@ for package in find_packages():
         ('**.mako', 'mako', None),
     ]
 
-setup(name='web',
-      version='0.0',
+setup(name='aerofs-web',
+      version='0.0.1',
       description='web',
       long_description=README + '\n\n' +  CHANGES,
       classifiers=[

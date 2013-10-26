@@ -17,8 +17,6 @@ $PYHOME/bin/pip install --find-links file:///opt/web/sdist      \
                         --log /var/log/web/web.install.log   \
                         --requirement /opt/web/requirements.txt
 
-$PYTHON setup.py install
-
 # For some reason this value gets set to /root/.python-eggs which is
 # not writable by www-data. Explicitly setting it fixes the problem.
 export PYTHON_EGG_CACHE=/var/www/.python-eggs
