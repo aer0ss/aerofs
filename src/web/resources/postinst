@@ -16,13 +16,8 @@ $PYHOME/bin/pip install --find-links file:///opt/web/sdist      \
                         --no-index                              \
                         --log /var/log/web/web.install.log   \
                         --requirement /opt/web/requirements.txt
-$PYTHON setup.py install
 
-# Install aerofs.python-lib
-# cd to directory first because setuptools can't find setup.py otherwise
-pushd /opt/web/extra/python-lib
 $PYTHON setup.py install
-popd
 
 # For some reason this value gets set to /root/.python-eggs which is
 # not writable by www-data. Explicitly setting it fixes the problem.
