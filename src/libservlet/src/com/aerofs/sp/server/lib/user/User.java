@@ -181,7 +181,7 @@ public class User
     public boolean isCredentialCorrect(byte[] shaedSP)
             throws ExNotFound, SQLException
     {
-        return Arrays.equals(_f._udb.getShaedSP(_id), shaedSP);
+        return BaseSecUtil.constantTimeIsEqual(_f._udb.getShaedSP(_id), shaedSP);
     }
 
     public AuthorizationLevel getLevel()
