@@ -69,6 +69,12 @@ class transient::services {
 
     include havre
 
+    #---------------
+    # OAuth server
+    #---------------
+
+    include bifrost
+
     # --------------
     # Admin Panel
     # --------------
@@ -121,6 +127,11 @@ class transient::services {
 
     file {"/opt/sanity/probes/havre.sh":
         source => "puppet:///modules/transient/probes/havre.sh",
+        require => Package["aerofs-sanity"],
+    }
+
+    file {"/opt/sanity/probes/bifrost.sh":
+        source => "puppet:///modules/transient/probes/bifrost.sh",
         require => Package["aerofs-sanity"],
     }
 

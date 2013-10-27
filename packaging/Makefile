@@ -8,6 +8,7 @@ TARGET_REPOSITORY=$(BIN) # The target repository is set to the bin.
 # List of known packages that can be built in alphabetical order.
 PACKAGES= \
 	bootstrap \
+	bifrost \
 	ca-server \
 	ca-tools \
 	cmd-server \
@@ -16,6 +17,7 @@ PACKAGES= \
 	db-backup \
 	devman \
 	enterprise-updater \
+	havre \
 	jeq-tools \
 	middleman \
 	pagerduty \
@@ -27,7 +29,6 @@ PACKAGES= \
 	spdb \
 	stun \
 	sv \
-	havre \
 	syncstat \
 	syncstat-tools \
 	verkehr \

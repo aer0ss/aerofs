@@ -4,6 +4,8 @@ nginx-restart
 spdb-schema-init
 verkehr-certify
 havre-certify
+bifrost-schema-init
+bifrost-restart
 ejabberd-metadata-reset
 ejabberd-fix-config
 ejabberd-certify

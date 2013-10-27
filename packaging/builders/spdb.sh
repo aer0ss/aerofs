@@ -7,4 +7,4 @@ OPT=$OUTPUT_DIR/opt/spdb
 SCHEMAS=../src/spsv/resources/schemas
 
 mkdir -p $OPT
-cp $SCHEMAS/sp.sql $OPT/sp.sql
+cp $SCHEMAS/sp.sql $OPT/spdb.sql

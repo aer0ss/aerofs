@@ -1,4 +1,4 @@
-CREATE TABLE `AbstractEntity` (
+CREATE TABLE IF NOT EXISTS `AbstractEntity` (
   `id` bigint(20) NOT NULL,
   `creationDate` datetime DEFAULT NULL,
   `modificationDate` datetime DEFAULT NULL,
@@ -7,44 +7,44 @@ CREATE TABLE `AbstractEntity` (
   KEY `I_BSTRTTY_DTYPE` (`DTYPE`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `AccessToken_scopes` (
+CREATE TABLE IF NOT EXISTS `AccessToken_scopes` (
   `ACCESSTOKEN_ID` bigint(20) DEFAULT NULL,
   `scopes` varchar(255) DEFAULT NULL,
   KEY `I_CCSSCPS_ACCESSTOKEN_ID` (`ACCESSTOKEN_ID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `AuthorizationRequest_grantedScopes` (
+CREATE TABLE IF NOT EXISTS `AuthorizationRequest_grantedScopes` (
   `AUTHORIZATIONREQUEST_ID` bigint(20) DEFAULT NULL,
   `grantedScopes` varchar(255) DEFAULT NULL,
   KEY `I_THRZCPS_AUTHORIZATIONREQUEST_ID` (`AUTHORIZATIONREQUEST_ID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `AuthorizationRequest_requestedScopes` (
+CREATE TABLE IF NOT EXISTS `AuthorizationRequest_requestedScopes` (
   `AUTHORIZATIONREQUEST_ID` bigint(20) DEFAULT NULL,
   `requestedScopes` varchar(255) DEFAULT NULL,
   KEY `I_THRZCPS_AUTHORIZATIONREQUEST_ID1` (`AUTHORIZATIONREQUEST_ID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `Client_redirectUris` (
+CREATE TABLE IF NOT EXISTS `Client_redirectUris` (
   `CLIENT_ID` bigint(20) DEFAULT NULL,
   `redirectUris` varchar(255) DEFAULT NULL,
   KEY `I_CLNTTRS_CLIENT_ID` (`CLIENT_ID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `Client_scopes` (
+CREATE TABLE IF NOT EXISTS `Client_scopes` (
   `CLIENT_ID` bigint(20) DEFAULT NULL,
   `scopes` varchar(255) DEFAULT NULL,
   KEY `I_CLNTCPS_CLIENT_ID` (`CLIENT_ID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `hibernate_sequence` (
+CREATE TABLE IF NOT EXISTS `hibernate_sequence` (
   `ID` tinyint(4) NOT NULL,
   `next_val` bigint(20) DEFAULT NULL,
   PRIMARY KEY (`ID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-INSERT into hibernate_sequence (id,next_val) values (0, 100000);
+# INSERT into hibernate_sequence (id,next_val) values (0, 100000);
 
-CREATE TABLE `ResourceServer_scopes` (
+CREATE TABLE IF NOT EXISTS `ResourceServer_scopes` (
   `RESOURCESERVER_ID` bigint(20) DEFAULT NULL,
   `scopes` varchar(255) DEFAULT NULL,
   KEY `I_RSRCCPS_RESOURCESERVER_ID` (`RESOURCESERVER_ID`)
@@ -69,7 +69,7 @@ CREATE TABLE `accesstoken` (
   KEY `I_CCSSTKN_CLIENT` (`client_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `authorizationrequest` (
+CREATE TABLE IF NOT EXISTS `authorizationrequest` (
   `id` bigint(20) NOT NULL,
   `creationDate` datetime DEFAULT NULL,
   `modificationDate` datetime DEFAULT NULL,
@@ -84,7 +84,7 @@ CREATE TABLE `authorizationrequest` (
   KEY `I_THRZQST_CLIENT` (`client_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `client` (
+CREATE TABLE IF NOT EXISTS `client` (
   `id` bigint(20) NOT NULL,
   `creationDate` datetime DEFAULT NULL,
   `modificationDate` datetime DEFAULT NULL,
@@ -107,14 +107,14 @@ CREATE TABLE `client` (
   KEY `I_CLIENT_RESOURCESERVER` (`resourceserver_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `client_attributes` (
+CREATE TABLE IF NOT EXISTS `client_attributes` (
   `client_id` bigint(20) DEFAULT NULL,
   `attribute_name` varchar(255) NOT NULL,
   `attribute_value` varchar(255) DEFAULT NULL,
   KEY `I_CLNTBTS_CLIENT_ID` (`client_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `resourceserver` (
+CREATE TABLE IF NOT EXISTS `resourceserver` (
   `id` bigint(20) NOT NULL,
   `creationDate` datetime DEFAULT NULL,
   `modificationDate` datetime DEFAULT NULL,
