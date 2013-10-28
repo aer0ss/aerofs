@@ -70,8 +70,12 @@ def set_external_variable():
     return ""
 
 # ----------------------------------------------------------------------
-# Main
+# Main.  Only use this for internal testing; in production, use cherrypy
+# or some other WSGI server that scales better.
 # ----------------------------------------------------------------------
 
 if __name__ == '__main__':
-    app.run(host="127.0.0.1", port=5434)
+    try:
+        app.run(host="127.0.0.1", port=5434)
+    except KeyboardInterrupt:
+        app.stop()
