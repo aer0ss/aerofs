@@ -18,18 +18,12 @@ done
 # The postinst script logs to this folder, so ensure it exists
 mkdir -p $OUTPUT_DIR/var/log/web
 
-# Include the entirety of the src/python-lib repo, since we don't package it
-# TODO: package python-lib as tarball and add to requirements.txt?
-EXTRA=$OPT/extra
-mkdir -p $EXTRA
-cp -a ../src/python-lib $EXTRA
-
 # Copy the actual web module to the output dir
 # cp -r is BAD, prefer cp -a or cp -R for OSX compatibility; man 1 cp
 mkdir -p $OPT
 cp -a $SOURCE_DIR/web $OPT/
 # Also include stuff needed for package installation
-cp -a $SOURCE_DIR/{MANIFEST.in,README.txt,CHANGES.txt,setup.py,requirements.txt} $OPT/
+cp -a $SOURCE_DIR/requirements.txt $OPT/
 # Include the wsgi application file that uwsgi will run
 cp -a $SOURCE_DIR/production.wsgi $OPT/
 
@@ -39,7 +33,13 @@ SDIST=$OPT/sdist
 SDIST_CACHE=$HOME/.aerofs-cache/pip/web
 tools/pip-prefetch.sh "../src/web/requirements.txt" "$SDIST_CACHE"
 
-# Copy dependency packages to /opt/web/sdist, so they'll be available at
+# Copy PyPI dependency packages to /opt/web/sdist, so they'll be available at
 # package install time.
 mkdir -p $SDIST
 cp $SDIST_CACHE/* $SDIST/
+
+# Also include the aerofs-py-lib package.
+tools/python-buildpackage.sh "../src/python-lib" "$SDIST" "$OPT/requirements.txt"
+
+# Also include the aerofs-web package
+tools/python-buildpackage.sh "../src/web" "$SDIST" "$OPT/requirements.txt"
