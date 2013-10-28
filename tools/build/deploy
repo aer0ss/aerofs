@@ -1,4 +1,5 @@
-#!/bin/bash -e -u
+#!/bin/bash
+set -e -u
 
 ###############################################################################
 #
@@ -63,21 +64,24 @@ function create_version_file_on_release_server() {
 ENDCMDS
 }
 
+function upload_version_to_release_server() {
+    echo ">>> rsyncing version to $RELEASE_SERVER:$INSTALLERS_DOWNLOAD_DIR/$RELEASE_VERSION/"
+    rsync --archive --verbose "$PACKAGE_DIR"/current.ver $RELEASE_SERVER_LOGIN:$INSTALLERS_DOWNLOAD_DIR/$RELEASE_VERSION/
+}
+
 function upload_packages_to_release_server() {
     echo ">>> rsyncing packages to $RELEASE_SERVER:$INSTALLERS_DOWNLOAD_DIR/$RELEASE_VERSION/"
     rsync --archive --verbose "$PACKAGE_DIR"/* $RELEASE_SERVER_LOGIN:$INSTALLERS_DOWNLOAD_DIR/$RELEASE_VERSION/
 }
 
 function upload_packages_to_antivirus_firms() {
-    if is_public ; then
-        # Upload latest version of script
-        kscp $BUILD_SCRIPT_DIR/send_package_to_antivirus_firms.sh $RELEASE_SERVER_LOGIN:
-        # Spawn script in background - script will delete self on completion.
-        kssh $RELEASE_SERVER_LOGIN $RELEASE_SERVER_SHELL << ENDCMDS
-            chmod a+x \$HOME/send_package_to_antivirus_firms.sh
-            screen -d -m \$HOME/send_package_to_antivirus_firms.sh $INSTALLERS_DOWNLOAD_DIR/$RELEASE_VERSION/AeroFSInstall.exe
+    # Upload latest version of script
+    kscp $BUILD_SCRIPT_DIR/send_package_to_antivirus_firms.sh $RELEASE_SERVER_LOGIN:
+    # Spawn script in background - script will delete self on completion.
+    kssh $RELEASE_SERVER_LOGIN $RELEASE_SERVER_SHELL << ENDCMDS
+        chmod a+x \$HOME/send_package_to_antivirus_firms.sh
+        screen -d -m \$HOME/send_package_to_antivirus_firms.sh $INSTALLERS_DOWNLOAD_DIR/$RELEASE_VERSION/AeroFSInstall.exe
 ENDCMDS
-    fi
 }
 
 # Emails team@aerofs.com about this deployment and sends message to Dev Team
@@ -125,8 +129,11 @@ echo '+--------------------------'
 call exec_prepublish_checks $MODE $RELEASE_VERSION
 upload_map
 lock_release_server
-upload_packages_to_release_server
-upload_packages_to_antivirus_firms
+upload_version_to_release_server
+if is_public ; then
+    upload_packages_to_release_server
+    upload_packages_to_antivirus_firms
+fi
 publish_to_s3 $RELEASE_VERSION $INSTALLER_DOWNLOAD_BUCKET
 unlock_release_server
 tag_release
