@@ -1,5 +1,9 @@
 add-loopback-hosts-entry-unified
+# This populates /etc/nginx/certs with the appropriate service cert for port
+# 4433, so services can reach each other.
 nginx-certificate-generate-unified
+# We need to restart nginx immediately so the new service cert will be loaded
+# for example, verkehr's connection to sp relies on the new service cert
 nginx-restart
 spdb-schema-init
 verkehr-certify
@@ -15,5 +19,9 @@ zephyr-restart
 sanity-pull-config
 repackage-installers
 sanity-check
+# We make populating the browser cert (and restarting nginx to load it) the
+# last thing that happens, because when we do, the JS notices that the cert has
+# changed and can no longer poll for progress status. See
+# apply_and_create_user.mako in the web module for more info.
 browser-cert-pull
 nginx-restart
