@@ -13,6 +13,7 @@ import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.lib.ex.ExNoAdminOrOwner;
+import com.aerofs.sp.common.SharedFolderState;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.user.User;
 import com.google.common.collect.ImmutableCollection;
@@ -152,7 +153,7 @@ public class SharedFolder
     {
         ImmutableCollection<UserID> affectedUsers = _f._db.getMembers(_sid);
 
-        _f._db.setPending(_sid, user.id(), true);
+        _f._db.setState(_sid, user.id(), SharedFolderState.PENDING);
 
         // in terms of ACL, marking a user as pending is the same as kicking him out of the folder
         // so we need to update team server ACLs to reflect that change
@@ -167,7 +168,7 @@ public class SharedFolder
     public ImmutableCollection<UserID> setMember(User user)
             throws SQLException, ExNotFound, ExAlreadyExist
     {
-        _f._db.setPending(_sid, user.id(), false);
+        _f._db.setState(_sid, user.id(), SharedFolderState.JOINED);
 
         addTeamServerACLImpl(user);
 

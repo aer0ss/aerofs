@@ -65,7 +65,7 @@ public final class SPSchema
             C_AC_STORE_ID                   = "a_sid",
             C_AC_USER_ID                    = "a_id",
             C_AC_ROLE                       = "a_role",
-            C_AC_PENDING                    = "a_pending",
+            C_AC_STATE                      = "a_state",
             C_AC_SHARER                     = "a_sharer",
             // see docs/design/sharing_and_migration.txt for information about this flag
             C_AC_EXTERNAL                   = "a_external",
