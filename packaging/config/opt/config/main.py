@@ -1,4 +1,5 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, Response
+from functools import wraps
 import os
 
 # ----------------------------------------------------------------------
@@ -15,6 +16,13 @@ app.config.from_object(__name__)
 # ----------------------------------------------------------------------
 # Utils
 # ----------------------------------------------------------------------
+
+def returns_plaintext(f):
+    @wraps(f)
+    def wrapped(*args, **kwargs):
+        r = f(*args, **kwargs)
+        return Response(r, content_type='text/plain; charset=utf-8')
+    return wrapped
 
 def read_dict_from_file(filename):
     d = {}
@@ -53,14 +61,17 @@ def get_template_kv_pairs():
 # ----------------------------------------------------------------------
 
 @app.route("/client")
+@returns_plaintext
 def client_properties():
     return render_template("client.tmplt", **get_template_kv_pairs())
 
 @app.route("/server")
+@returns_plaintext
 def server_properties():
     return render_template("server.tmplt", **get_template_kv_pairs())
 
 @app.route("/set", methods=["POST"])
+@returns_plaintext
 def set_external_variable():
     key = request.form['key']
     value = request.form['value']
