@@ -4,13 +4,12 @@
 
 package com.aerofs.controller;
 
-import com.aerofs.base.Base64;
 import com.aerofs.base.ex.ExEmptyEmailAddress;
 import com.aerofs.base.id.UserID;
 import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.StorageType;
-import com.aerofs.proto.ControllerProto.PBS3Config;
 import com.aerofs.sp.client.SPBlockingClient;
+import com.aerofs.ui.UIGlobals;
 
 /**
  * This class acts as the model and supports the operations done on
@@ -20,13 +19,13 @@ public class SetupModel
 {
     public SetupModel()
     {
-        _setup = ControllerService.get().getSetup();
+        _setup = UIGlobals.setup();
 
-        _devAlias = _setup.getDefaultDeviceName();
+        _devAlias = Setup.getDefaultDeviceName();
         _isLocal = true;
         // TODO: storage options should use inheritance
         _localOptions = new LocalOptions();
-        _s3Options = new S3Options();
+        _s3Config = new S3Config();
         _sp = null;
     }
 
@@ -98,32 +97,21 @@ public class SetupModel
 
         public LocalOptions()
         {
-            _rootAnchorPath = _setup.getDefaultAnchorRoot();
+            _rootAnchorPath = Setup.getDefaultAnchorRoot();
         }
         public String getDefaultRootAnchorPath()
         {
-            return _setup.getDefaultAnchorRoot();
+            return Setup.getDefaultAnchorRoot();
         }
     }
 
     // handles the setup for using S3 storage
-    public class S3Options
+    public static class S3Config
     {
         public String _bucketID;
         public String _accessKey;
         public String _secretKey;
         public String _passphrase;
-        PBS3Config getConfig() throws ExEmptyEmailAddress
-        {
-            String scrypted = Base64.encodeBytes(
-                    SecUtil.scrypt(_passphrase.toCharArray(), getUserID()));
-            return PBS3Config.newBuilder()
-                    .setBucketId(_bucketID)
-                    .setAccessKey(_accessKey)
-                    .setSecretKey(_secretKey)
-                    .setEncryptionKey(scrypted)
-                    .build();
-        }
     }
 
     private String getPasswordValue() { return (_password == null) ? "" : _password; }
@@ -139,7 +127,7 @@ public class SetupModel
     private String          _devAlias;
     public boolean          _isLocal;
     public LocalOptions     _localOptions;
-    public S3Options        _s3Options;
+    public S3Config _s3Config;
 
     private SPBlockingClient _sp;
 

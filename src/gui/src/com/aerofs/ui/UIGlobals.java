@@ -1,7 +1,7 @@
 package com.aerofs.ui;
 
 import com.aerofs.base.analytics.Analytics;
-import com.aerofs.controller.ControllerClient;
+import com.aerofs.controller.Setup;
 import com.aerofs.gui.TransferState;
 import com.aerofs.gui.shellext.ShellextService;
 import com.aerofs.lib.analytics.DesktopAnalyticsProperties;
@@ -49,7 +49,11 @@ public final class UIGlobals
         return _shellext == null;
     }
 
+    public static void initSetup_(String rtRoot) { s_setup = new Setup(rtRoot); }
+
     private static final Updater s_updater = Updater.getInstance_();
+    private static Setup s_setup;
+
     private static final UINotifier s_notifier = new UINotifier();
     private static final RitualNotificationClient s_rnc = new RitualNotificationClient(
             new RitualNotificationSystemConfiguration());
@@ -62,8 +66,6 @@ public final class UIGlobals
     private static final Analytics s_analytics = new Analytics(new DesktopAnalyticsProperties());
     private static final RockLog s_rockLog = new RockLog();
 
-    private static ControllerClient s_controller;
-
     public static Updater updater() { return s_updater; }
 
     public static RitualNotificationClient rnc() { return s_rnc; }
@@ -74,11 +76,9 @@ public final class UIGlobals
 
     public static UINotifier notifier() { return s_notifier; }
 
-    public static ControllerClient controller()
-    {
-        if (s_controller == null) { s_controller = new ControllerClient(); }
-        return s_controller;
-    }
+    // TODO (hugues): this is indicative of design issues in the setup logic
+    // a refactoring of that code would be nice but I don't have time for this now
+    public static Setup setup() { return s_setup; }
 
     public static IDaemonMonitor dm() { return IDaemonMonitor.Factory.get(); }
 

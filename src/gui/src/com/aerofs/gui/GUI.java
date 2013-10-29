@@ -1,5 +1,6 @@
 package com.aerofs.gui;
 
+import com.aerofs.controller.Setup;
 import com.aerofs.controller.UnattendedSetup;
 import com.aerofs.base.Loggers;
 import com.aerofs.controller.ExLaunchAborted;
@@ -21,7 +22,6 @@ import com.aerofs.lib.StorageType;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExNoConsole;
 import com.aerofs.lib.os.OSUtil;
-import com.aerofs.proto.ControllerProto.GetSetupSettingsReply;
 import com.aerofs.sv.client.SVClient;
 import com.aerofs.ui.UI;
 import com.aerofs.ui.UIGlobals;
@@ -535,13 +535,11 @@ public class GUI implements IUI
         UnattendedSetup unattendedSetup = new UnattendedSetup(rtRoot);
 
         if (unattendedSetup.setupFileExists()) {
-            GetSetupSettingsReply defaults = UIGlobals.controller().getSetupSettings();
-
             SetupModel model = new SetupModel()
                     .setSignInActor(new SignInActor.CredentialActor())
                     .setInstallActor(new InstallActor.SingleUser());
-            model._localOptions._rootAnchorPath = defaults.getRootAnchor();
-            model.setDeviceName(defaults.getDeviceName());
+            model._localOptions._rootAnchorPath = Setup.getDefaultAnchorRoot();
+            model.setDeviceName(Setup.getDefaultDeviceName());
 
             unattendedSetup.populateModelFromSetupFile(model);
 

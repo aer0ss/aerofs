@@ -13,6 +13,7 @@ import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.id.UserID;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.labeling.L;
+import com.aerofs.lib.ChannelFactories;
 import com.aerofs.lib.LibParam.PrivateDeploymentConfig;
 import com.aerofs.ui.UI;
 import com.aerofs.ui.UIGlobals;
@@ -25,15 +26,12 @@ import com.aerofs.lib.cfg.Cfg.PortType;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.lib.os.OSUtil;
-import com.aerofs.proto.ControllerProto.GetInitialStatusReply;
-import com.aerofs.proto.ControllerProto.GetInitialStatusReply.Status;
 import com.aerofs.sv.client.SVClient;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.logs.LogArchiver;
 import com.aerofs.ui.update.PostUpdate;
 import com.aerofs.ui.update.uput.UIPostUpdateTasks;
 import org.eclipse.jface.dialogs.IDialogConstants;
-import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.slf4j.Logger;
 
 import java.io.File;
@@ -44,20 +42,12 @@ import java.sql.SQLException;
 
 import static com.aerofs.lib.cfg.Cfg.absRTRoot;
 
-class Launcher
+public class Launcher
 {
     private static final Logger l = Loggers.getLogger(Launcher.class);
     private static final InjectableFile.Factory s_factFile = new InjectableFile.Factory();
 
     private static ServerSocket _ss;
-    private final String _rtRoot;
-    private final ClientSocketChannelFactory _clientChannelFactory;
-
-    Launcher(String rtRoot, ClientSocketChannelFactory clientChannelFactory)
-    {
-        _rtRoot = rtRoot;
-        _clientChannelFactory = clientChannelFactory;
-    }
 
     public static void destroySingletonSocket()
     {
@@ -68,30 +58,14 @@ class Launcher
         }
     }
 
-    GetInitialStatusReply getInitialStatus()
+    public static boolean needsSetup() throws Exception
     {
-        GetInitialStatusReply.Builder reply = GetInitialStatusReply.newBuilder();
-        try {
-            checkPlatformSupported();
+        checkPlatformSupported();
 
-            if (!isSetupDone()) {
-                reply.setStatus(Status.NEEDS_SETUP);
-            } else {
-                checkNoOtherInstanceRunning();
-                reply.setStatus(Status.READY_TO_LAUNCH);
-            }
-        } catch (Exception e) {
-            String msg = e.getLocalizedMessage() != null ? e.getLocalizedMessage()
-                    : "Sorry, an internal error happened, preventing " + L.product() + " to launch";
-            reply.setStatus(Status.NOT_LAUNCHABLE);
-            reply.setErrorMessage(msg);
-            if (!(e instanceof ExAlreadyRunning)) {
-                SVClient.logSendDefectSyncNoCfgIgnoreErrors(true, "getInitialStatus", e,
-                        UserID.UNKNOWN, _rtRoot);
-            }
-        }
+        if (!isSetupDone()) return true;
 
-        return reply.build();
+        checkNoOtherInstanceRunning();
+        return false;
     }
 
     /**
@@ -100,7 +74,7 @@ class Launcher
      *  - there is a 'su' file under rtRoot (previous setup aborted)
      *  - device.conf not found
      */
-    private boolean isSetupDone()
+    private static boolean isSetupDone()
     {
         if (!Cfg.inited()) return false;
 
@@ -111,7 +85,7 @@ class Launcher
      * Check if the platform is supported
      * @throws ExLaunchAborted with an appropriate error message
      */
-    private void checkPlatformSupported() throws ExLaunchAborted
+    private static void checkPlatformSupported() throws ExLaunchAborted
     {
         // Check that OS and arch are supported
         String msg = null;
@@ -141,7 +115,7 @@ class Launcher
         }
     }
 
-    private void checkNoOtherInstanceRunning() throws IOException, ExAlreadyRunning
+    private static void checkNoOtherInstanceRunning() throws IOException, ExAlreadyRunning
     {
         // make sure only one instance of the application is running
         try {
@@ -151,7 +125,7 @@ class Launcher
         }
     }
 
-    void launch(final boolean isFirstTime) throws Exception
+    public static void launch(final boolean isFirstTime) throws Exception
     {
         try {
             // verify checksums *before* launching the daemon to avoid reporting daemon launching
@@ -222,7 +196,7 @@ class Launcher
      * @throws ExLaunchAborted
      * @throws ExFormatError
      */
-    private void verifyChecksums() throws IOException, ExLaunchAborted, ExFormatError
+    private static void verifyChecksums() throws IOException, ExLaunchAborted, ExFormatError
     {
         UIGlobals.analytics().track(new UpdateEvent(Cfg.db().get(Key.LAST_VER)));
 
@@ -249,7 +223,7 @@ class Launcher
     /**
      * Run any pending post-update tasks
      */
-    private void runPostUpdateTasks() throws Exception
+    private static void runPostUpdateTasks() throws Exception
     {
         new UIPostUpdateTasks(Cfg.db()).run();
         if (PostUpdate.updated()) Cfg.db().set(Key.LAST_VER, Cfg.ver());
@@ -258,7 +232,7 @@ class Launcher
     /**
      * Clean logs generated by native C libraries (CLI Native, Daemon Native, Gui Native)
      */
-    private void cleanNativeLogs()
+    private static void cleanNativeLogs()
     {
         long now = System.currentTimeMillis();
         if (now - Cfg.db().getLong(Key.LAST_LOG_CLEANING) > 1 * C.WEEK) {
@@ -272,7 +246,7 @@ class Launcher
         }
     }
 
-    private void startWorkerThreads()
+    private static void startWorkerThreads()
     {
         // There is no SV in enterprise, so the archiver's gzipped logs will stick around
         // forever. Don't compress on enterprise, and let logback delete old logs
@@ -282,7 +256,7 @@ class Launcher
         }
 
         new CommandNotificationSubscriber(
-                _clientChannelFactory,
+                ChannelFactories.getClientChannelFactory(),
                 UIGlobals.scheduler(),
                 Cfg.did())
             .start();

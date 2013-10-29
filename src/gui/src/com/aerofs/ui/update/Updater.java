@@ -4,7 +4,7 @@ import com.aerofs.base.Loggers;
 import com.aerofs.base.ssl.SSLEngineFactory;
 import com.aerofs.base.ssl.SSLEngineFactory.Mode;
 import com.aerofs.base.ssl.SSLEngineFactory.Platform;
-import com.aerofs.controller.ControllerService;
+import com.aerofs.controller.IViewNotifier.Type;
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.tray.TrayIcon.NotificationReason;
 import com.aerofs.labeling.L;
@@ -24,10 +24,6 @@ import com.aerofs.lib.ex.ExNoConsole;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.lib.os.OSUtil.OSArch;
-import com.aerofs.proto.ControllerNotifications.Type;
-import com.aerofs.proto.ControllerNotifications.UpdateNotification;
-import com.aerofs.proto.ControllerNotifications.UpdateNotification.Builder;
-import com.aerofs.proto.ControllerNotifications.UpdateNotification.Status;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.UI;
 import com.aerofs.ui.UIGlobals;
@@ -68,6 +64,27 @@ import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
 
 public abstract class Updater
 {
+    public static enum Status
+    {
+        NONE,
+        ONGOING,
+        APPLY,
+        LATEST,
+        ERROR
+    }
+
+    public static class UpdaterNotification
+    {
+        public final Status status;
+        public final int progress;
+
+        UpdaterNotification(Status s, int p)
+        {
+            status = s;
+            progress = p;
+        }
+    }
+
     private String _installationFilename = "";
 
     private boolean _ongoing = false;
@@ -619,9 +636,7 @@ public abstract class Updater
     {
         _status = (status == Status.ERROR || status == Status.LATEST) ? Status.NONE : status;
 
-        Builder notification = UpdateNotification.newBuilder().setStatus(status);
-        if (progress != -1) notification.setProgress(progress);
-        ControllerService.get().notifyUI(Type.UPDATE_NOTIFICATION, notification.build());
+        UIGlobals.notifier().notify(Type.UPDATE, new UpdaterNotification(status, progress));
     }
 
     private boolean hasPermissions()

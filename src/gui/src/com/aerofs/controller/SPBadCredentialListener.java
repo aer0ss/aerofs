@@ -6,10 +6,10 @@ package com.aerofs.controller;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.sp.client.IBadCredentialListener;
-import com.aerofs.proto.ControllerNotifications.Type;
+import com.aerofs.ui.UIGlobals;
 import org.slf4j.Logger;
 
-public class ControllerBadCredentialListener implements IBadCredentialListener
+public class SPBadCredentialListener implements IBadCredentialListener
 {
     private static final Logger l = Loggers.getLogger(IBadCredentialListener.class);
 
@@ -17,6 +17,6 @@ public class ControllerBadCredentialListener implements IBadCredentialListener
     public void exceptionReceived()
     {
         l.warn("Bad Credential Exception received");
-        ControllerService.get().notifyUI(Type.SHOW_RETYPE_PASSWORD_NOTIFICATION, null);
+        UIGlobals.notifier().notify(IViewNotifier.Type.SHOW_RETYPE_PASSWORD, null);
     }
 }

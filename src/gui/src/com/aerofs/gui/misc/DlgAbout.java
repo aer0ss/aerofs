@@ -1,13 +1,12 @@
 package com.aerofs.gui.misc;
 
 import com.aerofs.base.BaseParam.WWW;
+import com.aerofs.controller.IViewNotifier.Type;
 import com.aerofs.labeling.L;
-import com.aerofs.proto.ControllerNotifications.Type;
-import com.aerofs.proto.ControllerNotifications.UpdateNotification;
-import com.aerofs.proto.ControllerNotifications.UpdateNotification.Status;
 import com.aerofs.ui.IUINotificationListener;
 import com.aerofs.ui.UIGlobals;
-import com.google.protobuf.GeneratedMessageLite;
+import com.aerofs.ui.update.Updater.Status;
+import com.aerofs.ui.update.Updater.UpdaterNotification;
 import org.eclipse.swt.widgets.Shell;
 
 import com.aerofs.gui.AeroFSDialog;
@@ -115,11 +114,11 @@ public class DlgAbout extends AeroFSDialog
             @Override
             public void shellClosed(ShellEvent e)
             {
-                UIGlobals.notifier().removeListener(Type.UPDATE_NOTIFICATION, _updateListener);
+                UIGlobals.notifier().removeListener(Type.UPDATE, _updateListener);
             }
         });
 
-        UIGlobals.notifier().addListener(Type.UPDATE_NOTIFICATION, _updateListener);
+        UIGlobals.notifier().addListener(Type.UPDATE, _updateListener);
         setUpdateStatus(UIGlobals.updater().getUpdateStatus(), 0);
     }
 
@@ -144,10 +143,10 @@ public class DlgAbout extends AeroFSDialog
 
     private final IUINotificationListener _updateListener = new IUINotificationListener() {
         @Override
-        public void onNotificationReceived(GeneratedMessageLite notification)
+        public void onNotificationReceived(Object notification)
         {
-            UpdateNotification n = (UpdateNotification)notification;
-            setUpdateStatus(n.getStatus(), n.hasProgress() ? n.getProgress() : -1);
+            UpdaterNotification n = (UpdaterNotification)notification;
+            setUpdateStatus(n.status, n.progress);
         }
     };
 

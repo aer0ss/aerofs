@@ -199,9 +199,9 @@ public class PageS3Storage extends AbstractSetupWorkPage
     @Override
     protected void readFromModel(SetupModel model)
     {
-        _txtBucketID.setText(Objects.firstNonNull(model._s3Options._bucketID, ""));
-        _txtAccessKey.setText(Objects.firstNonNull(model._s3Options._accessKey, ""));
-        _txtSecretKey.setText(Objects.firstNonNull(model._s3Options._secretKey, ""));
+        _txtBucketID.setText(Objects.firstNonNull(model._s3Config._bucketID, ""));
+        _txtAccessKey.setText(Objects.firstNonNull(model._s3Config._accessKey, ""));
+        _txtSecretKey.setText(Objects.firstNonNull(model._s3Config._secretKey, ""));
         // do not load the passphrase
 
         validateInput();
@@ -210,10 +210,10 @@ public class PageS3Storage extends AbstractSetupWorkPage
     @Override
     protected void writeToModel(SetupModel model)
     {
-        model._s3Options._bucketID = _txtBucketID.getText().trim();
-        model._s3Options._accessKey = _txtAccessKey.getText();
-        model._s3Options._secretKey = _txtSecretKey.getText();
-        model._s3Options._passphrase = _txtPass1.getText();
+        model._s3Config._bucketID = _txtBucketID.getText().trim();
+        model._s3Config._accessKey = _txtAccessKey.getText();
+        model._s3Config._secretKey = _txtSecretKey.getText();
+        model._s3Config._passphrase = _txtPass1.getText();
     }
 
     @Override

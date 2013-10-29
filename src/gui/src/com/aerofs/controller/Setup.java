@@ -4,11 +4,13 @@
 
 package com.aerofs.controller;
 
+import com.aerofs.base.Base64;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.analytics.AnalyticsEvents.SimpleEvents;
 import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UserID;
+import com.aerofs.controller.SetupModel.S3Config;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.LibParam;
@@ -25,14 +27,11 @@ import com.aerofs.lib.injectable.InjectableDriver;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.lib.os.OSUtil.Icon;
-import com.aerofs.proto.ControllerProto.PBS3Config;
 import com.aerofs.proto.Sp.GetUserPreferencesReply;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.sv.client.SVClient;
 import com.aerofs.ui.UIGlobals;
 import com.google.common.collect.Maps;
-import com.google.protobuf.ByteString;
-import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.slf4j.Logger;
 
 import java.io.File;
@@ -48,23 +47,21 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static org.apache.commons.lang.StringUtils.isEmpty;
 
-class Setup
+public class Setup
 {
     private static final Logger l = Loggers.getLogger(Setup.class);
     private final String _rtRoot;
     private final InjectableFile.Factory _factFile = new InjectableFile.Factory();
-    private final ClientSocketChannelFactory _clientChannelFactory;
 
-    public Setup(String rtRoot, ClientSocketChannelFactory clientChannelFactory)
+    public Setup(String rtRoot)
     {
         _rtRoot = checkNotNull(rtRoot);
-        _clientChannelFactory = clientChannelFactory;
     }
 
     /**
      * @return the default anchor root that we suggest to use for AeroFS.
      */
-    String getDefaultAnchorRoot()
+    public static String getDefaultAnchorRoot()
     {
         String parent = OSUtil.get().getDefaultRootAnchorParent();
         return new File(parent, L.rootAnchorName()).getAbsolutePath();
@@ -73,7 +70,7 @@ class Setup
     /**
      * @return a default name for this device, that the user can accept or change
      */
-    String getDefaultDeviceName()
+    public static String getDefaultDeviceName()
     {
         try {
             String host = java.net.InetAddress.getLocalHost().getHostName();
@@ -92,7 +89,7 @@ class Setup
     void setupSingleuser(
             SPBlockingClient client, UserID userId, byte[] scrypted,
             String rootAnchorPath, String deviceName,
-            StorageType storageType, PBS3Config s3cfg)
+            StorageType storageType, S3Config s3cfg)
             throws Exception
     {
         try {
@@ -117,7 +114,7 @@ class Setup
     void setupMultiuser(
             SPBlockingClient client, UserID userId,
             String rootAnchorPath, String deviceName,
-            StorageType storageType, PBS3Config s3cfg) throws Exception
+            StorageType storageType, S3Config s3cfg) throws Exception
     {
         try {
             preSetup(rootAnchorPath, storageType);
@@ -133,20 +130,6 @@ class Setup
         } catch (Exception e) {
             handleSetupException(userId, e);
         }
-    }
-
-    /**
-     * This method can be called to verify the correctness of login information
-     *
-     * It attempts to sign in into SP, and if everything goes well, it will complete
-     *   without error.
-     */
-    SPBlockingClient signInUser(UserID userID, byte[] scrypted) throws Exception
-    {
-        SPBlockingClient sp = new SPBlockingClient.Factory()
-                .create_(Cfg.user(), SPBlockingClient.ONE_WAY_AUTH_CONNECTION_CONFIGURATOR);
-        sp.signInUser(userID.getString(), ByteString.copyFrom(scrypted));
-        return sp;
     }
 
     /**
@@ -170,7 +153,7 @@ class Setup
      * @param sp must have been signed in
      */
     private void setupSingluserImpl(UserID userID, String rootAnchorPath, String deviceName,
-            StorageType storageType, PBS3Config s3config, byte[] scrypted, SPBlockingClient sp)
+            StorageType storageType, S3Config s3config, byte[] scrypted, SPBlockingClient sp)
             throws Exception
     {
         assert deviceName != null; // can be empty, but can't be null
@@ -186,7 +169,7 @@ class Setup
     }
 
     private void setupMultiuserImpl(UserID userID, String rootAnchorPath, String deviceName,
-            StorageType storageType, PBS3Config s3config, SPBlockingClient sp)
+            StorageType storageType, S3Config s3config, SPBlockingClient sp)
             throws Exception
     {
         assert deviceName != null; // can be empty, but can't be null
@@ -213,7 +196,7 @@ class Setup
         _factFile.create(_rtRoot, LibParam.SETTING_UP).deleteOrOnExit();
 
         // Proceed with AeroFS launch
-        new Launcher(_rtRoot, _clientChannelFactory).launch(true);
+        Launcher.launch(true);
 
         setRootAnchorIcon(rootAnchorPath);
     }
@@ -289,7 +272,7 @@ class Setup
      * initialize the configuration database and the in-memory Cfg object
      */
     private void initializeConfiguration(UserID userId, String contactEmail, DID did,
-            String rootAnchorPath, StorageType storageType, PBS3Config s3config, byte[] scrypted,
+            String rootAnchorPath, StorageType storageType, S3Config s3config, byte[] scrypted,
             SPBlockingClient userSp)
             throws Exception
     {
@@ -305,10 +288,11 @@ class Setup
         map.put(Key.UI_POST_UPDATES, Integer.toString(PostUpdate.UI_POST_UPDATE_TASKS));
         map.put(Key.SIGNUP_DATE, Long.toString(getUserSignUpDate(userSp)));
         if (s3config != null) {
-            map.put(Key.S3_BUCKET_ID, s3config.getBucketId());
-            map.put(Key.S3_ACCESS_KEY, s3config.getAccessKey());
-            map.put(Key.S3_SECRET_KEY, s3config.getSecretKey());
-            map.put(Key.S3_ENCRYPTION_PASSWORD, s3config.getEncryptionKey());
+            map.put(Key.S3_BUCKET_ID, s3config._bucketID);
+            map.put(Key.S3_ACCESS_KEY, s3config._accessKey);
+            map.put(Key.S3_SECRET_KEY, s3config._secretKey);
+            map.put(Key.S3_ENCRYPTION_PASSWORD, Base64.encodeBytes(
+                    SecUtil.scrypt(s3config._passphrase.toCharArray(), userId)));
         }
 
         Cfg.recreateSchema_();

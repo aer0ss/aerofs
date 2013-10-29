@@ -5,8 +5,7 @@
 package com.aerofs.ui;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.proto.ControllerNotifications;
-import com.google.protobuf.GeneratedMessageLite;
+import com.aerofs.controller.IViewNotifier.Type;
 import org.slf4j.Logger;
 
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -23,15 +22,14 @@ public class RetypePasswordDialogDisplayer
 
     public RetypePasswordDialogDisplayer()
     {
-        IUINotificationListener l = new IUINotificationListener()
-        {
+        IUINotificationListener l = new IUINotificationListener() {
             @Override
-            public void onNotificationReceived(GeneratedMessageLite notification)
+            public void onNotificationReceived(Object notification)
             {
                 showDialog();
             }
         };
-        UIGlobals.notifier().addListener(ControllerNotifications.Type.SHOW_RETYPE_PASSWORD_NOTIFICATION, l);
+        UIGlobals.notifier().addListener(Type.SHOW_RETYPE_PASSWORD, l);
     }
 
     private void showDialog()

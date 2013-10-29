@@ -4,9 +4,8 @@
 //
 package com.aerofs.gui;
 
+import com.aerofs.controller.SPBadCredentialListener;
 import com.aerofs.lib.ChannelFactories;
-import com.aerofs.controller.ControllerBadCredentialListener;
-import com.aerofs.controller.ControllerService;
 import com.aerofs.gui.shellext.ShellextService;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.IProgram;
@@ -60,8 +59,8 @@ public class GUIProgram implements IProgram
         //
 
         ClientSocketChannelFactory clientChannelFactory = ChannelFactories.getClientChannelFactory();
-        ControllerService.init(rtRoot, clientChannelFactory, UIGlobals.notifier());
-        SPBlockingClient.setBadCredentialListener(new ControllerBadCredentialListener());
+        UIGlobals.initSetup_(rtRoot);
+        SPBlockingClient.setBadCredentialListener(new SPBadCredentialListener());
         RitualClientProvider ritualProvider = new RitualClientProvider(clientChannelFactory);
 
         ShellextService sextservice = new ShellextService(ChannelFactories.getServerChannelFactory(), ritualProvider);
