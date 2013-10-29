@@ -1,5 +1,6 @@
 package com.aerofs.gui;
 
+import com.aerofs.controller.InstallActor.MultiUser;
 import com.aerofs.controller.Setup;
 import com.aerofs.controller.UnattendedSetup;
 import com.aerofs.base.Loggers;
@@ -535,9 +536,12 @@ public class GUI implements IUI
         UnattendedSetup unattendedSetup = new UnattendedSetup(rtRoot);
 
         if (unattendedSetup.setupFileExists()) {
+            InstallActor installActor =
+                    L.isMultiuser() ? new InstallActor.MultiUser() : new InstallActor.SingleUser();
+
             SetupModel model = new SetupModel()
                     .setSignInActor(new SignInActor.CredentialActor())
-                    .setInstallActor(new InstallActor.SingleUser());
+                    .setInstallActor(installActor);
             model._localOptions._rootAnchorPath = Setup.getDefaultAnchorRoot();
             model.setDeviceName(Setup.getDefaultDeviceName());
 
