@@ -3,6 +3,8 @@ package com.aerofs.gui;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
+import org.eclipse.swt.widgets.Event;
+import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.custom.CLabel;
@@ -46,6 +48,7 @@ public class AeroFSMessageBox extends AeroFSJFaceDialog {
     private final ButtonType _bt;
     private Button _okayBtn, _cancelBtn;
     private final String _okayLabel, _cancelLabel;
+    private final boolean _allowClose;
 
     public AeroFSMessageBox(Shell parentShell, boolean sheet, String msg, IconType it)
     {
@@ -68,6 +71,7 @@ public class AeroFSMessageBox extends AeroFSJFaceDialog {
         _okayLabel = okayLabel;
         _cancelLabel = cancelLabel;
         _msg = msg;
+        _allowClose = allowClose;
     }
 
     /**
@@ -110,6 +114,18 @@ public class AeroFSMessageBox extends AeroFSJFaceDialog {
         gd__text.widthHint = 360;
         _lblMessage.setLayoutData(gd__text);
         _lblMessage.setText(_msg);
+
+        if (!_allowClose) {
+            getShell().addListener(SWT.Traverse, new Listener() {
+                @Override
+                public void handleEvent(Event e)
+                {
+                    if (e.detail == SWT.TRAVERSE_ESCAPE) {
+                        e.doit = false;
+                    }
+                }
+            });
+        }
 
         return container;
     }

@@ -68,6 +68,7 @@ public class LibParam extends BaseParam
     public static final String UPDATE_DIR              = "update";
     public static final String UPDATE_VER              = "update_ver";
     public static final String SETTING_UP              = "su";
+    public static final String IGNORE_DB_TAMPERING     = "ignoredbtampering";
     public static final String PROFILER                = "profiler";
     public static final String NO_FS_TYPE_CHECK        = "nofstypecheck";
     public static final String SHARED_FOLDER_TAG       = ".aerofs";
@@ -169,7 +170,7 @@ public class LibParam extends BaseParam
     {
         // These variables are saved here rather than *PostUpdateTasks classes so that both
         // UI and processes can access them.
-        public static final int DAEMON_POST_UPDATE_TASKS = 36;
+        public static final int DAEMON_POST_UPDATE_TASKS = 37;
         public static final int UI_POST_UPDATE_TASKS = 2;
     }
 

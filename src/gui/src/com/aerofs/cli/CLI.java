@@ -197,7 +197,7 @@ public class CLI implements IUI {
                 while (noLabel.charAt(noKey) == yesLabel.charAt(yesKey)) { noKey++; }
 
                 while (true) {
-                    _out.print(mt2hdr(mt) + msg + " " +
+                    _out.print(mt2hdr(mt) + msg + "\n" +
                             getLabelString(yesLabel, yesKey) + " / " +
                             getLabelString(noLabel, noKey) + ": ");
 
@@ -228,6 +228,13 @@ public class CLI implements IUI {
             throw new ExNoConsole();
         }
         return ret.get();
+    }
+
+    @Override
+    public boolean askNoDismiss(final MessageType mt, final String msg, final String yesLabel,
+            final String noLabel) throws ExNoConsole
+    {
+        return ask(mt, msg, yesLabel, noLabel);
     }
 
     private static String mt2hdr(MessageType mt)

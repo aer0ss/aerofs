@@ -1,6 +1,7 @@
 package com.aerofs.daemon.core;
 
 import com.aerofs.base.analytics.IAnalyticsPlatformProperties;
+import com.aerofs.daemon.core.db.TamperingDetectionSchema;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.DirectoryServiceImpl;
 import com.aerofs.daemon.core.ds.ObjectSurgeon;
@@ -53,7 +54,6 @@ import com.aerofs.lib.guice.GuiceUtil;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.internal.Scoping;
-import com.google.inject.multibindings.Multibinder;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jboss.netty.channel.socket.ServerSocketChannelFactory;
 
@@ -107,7 +107,8 @@ public class CoreModule extends AbstractModule
         // we use multibindings to allow splitting DB schemas cleanly, only setting up
         // exactly as much as required depending on Module instantiation and preventing
         // schemas from leaking outside of the packages that actually use them
-        Multibinder.newSetBinder(binder(), ISchema.class).addBinding().to(CoreSchema.class);
+        GuiceUtil.multibind(binder(), ISchema.class, CoreSchema.class);
+        GuiceUtil.multibind(binder(), ISchema.class, TamperingDetectionSchema.class);
 
         // RunAtLeastOnce tasks can be run in any order so we use a set binder to simplify their
         // instanciation. However we don't want to leak the specific classes outside the package

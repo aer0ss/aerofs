@@ -61,7 +61,8 @@ public class DaemonPostUpdateTasks
             null,  // used to be DPUTCleanupGhostKML
             new DPUTCleanupGhostKML(dbcw),
             new DPUTRefreshBloomFilters(dbcw),
-            new DPUTDeleteLargeLibjingleLog()
+            new DPUTDeleteLargeLibjingleLog(),
+            new DPUTAddTamperingDetectionTable(dbcw)
             // new tasks go here - also, update DAEMON_POST_UPDATE_TASKS counter value below!
         };
 

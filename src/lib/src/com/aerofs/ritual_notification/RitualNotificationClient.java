@@ -6,6 +6,7 @@ import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.notifier.ConcurrentlyModifiableListeners;
 import com.aerofs.proto.RitualNotifications.PBNotification;
+import com.google.common.base.Preconditions;
 import org.slf4j.Logger;
 
 import java.io.BufferedInputStream;
@@ -39,8 +40,8 @@ public class RitualNotificationClient
      */
     public void start()
     {
-        assert !_started;
-        assert !_stopping;
+        Preconditions.checkState(!_started);
+        Preconditions.checkState(!_stopping);
         _started = true;
 
         ThreadUtil.startDaemonThread("rnc", new Runnable()
@@ -81,6 +82,7 @@ public class RitualNotificationClient
 
     public void stop()
     {
+        if (!_started) l.warn("closing rnc before starting");
         _stopping = true;
     }
 

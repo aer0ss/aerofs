@@ -2,6 +2,7 @@ package com.aerofs.lib;
 
 import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.labeling.L;
+import com.aerofs.lib.cfg.Cfg;
 
 public class S
 {
@@ -91,6 +92,16 @@ public class S
 
             SETUP_DEFAULT_SIGNIN_ERROR = "Sorry, " + L.product() + " has failed to sign in.",
             SETUP_DEFAULT_INSTALL_ERROR = "Sorry, " + L.product() + " has failed to install.",
+
+            MANUAL_REINSTALL = "\nPlease delete \"" + Cfg.absRTRoot() + "\" and restart "
+                    + L.product(),
+            CORE_DB_TAMPERING = "It looks like the database file may have been tampered with. This"
+                    + " can happen when restoring from a backup or using a migration tool.\n\n"
+                    + "It is strongly recommended that you reinstall " + L.product() + ".",
+            CONFIRM_FORCE_LAUNCH = "Forcing launch could have dire consequences such as missing"
+                    + " files and unpredictable behaviors in all folders managed by " + L.product()
+                    + ".",
+            FORCE_LAUNCH = "Force Launch",
 
             // transfers dialog
 

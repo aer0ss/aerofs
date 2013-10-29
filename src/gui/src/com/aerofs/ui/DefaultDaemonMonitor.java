@@ -16,12 +16,15 @@ import com.aerofs.lib.LibParam.Daemon;
 import com.aerofs.lib.LibParam.RitualNotification;
 import com.aerofs.lib.S;
 import com.aerofs.lib.SystemUtil;
+import com.aerofs.lib.SystemUtil.ExitCode;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.Cfg.PortType;
+import com.aerofs.lib.cfg.ExNotSetup;
 import com.aerofs.lib.ex.ExDaemonFailedToStart;
 import com.aerofs.lib.ex.ExIndexing;
+import com.aerofs.lib.ex.ExNoConsole;
 import com.aerofs.lib.ex.ExUIMessage;
 import com.aerofs.lib.ex.ExUpdating;
 import com.aerofs.lib.injectable.InjectableDriver;
@@ -34,12 +37,14 @@ import com.aerofs.ui.IUI.MessageType;
 import org.slf4j.Logger;
 
 import javax.annotation.Nonnull;
+import java.io.File;
 import java.io.IOException;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.util.concurrent.TimeUnit;
 
+import static com.aerofs.lib.SystemUtil.ExitCode.CORE_DB_TAMPERING;
 import static com.aerofs.lib.SystemUtil.ExitCode.CORRUPTED_DB;
 import static com.aerofs.lib.SystemUtil.ExitCode.DPUT_MIGRATE_AUX_ROOT_FAILED;
 import static com.aerofs.lib.SystemUtil.ExitCode.FAIL_TO_LAUNCH;
@@ -70,7 +75,7 @@ class DefaultDaemonMonitor implements IDaemonMonitor
      * @return the daemon process.
      */
     private @Nonnull Process startDaemon()
-            throws ExUIMessage, IOException, ExTimeout, ExDaemonFailedToStart
+            throws ExUIMessage, ExNotSetup, IOException, ExTimeout, ExDaemonFailedToStart
     {
         String aerofsd;
         if (OSUtil.isWindows()) {
@@ -80,12 +85,7 @@ class DefaultDaemonMonitor implements IDaemonMonitor
             aerofsd = Util.join(AppRoot.abs(), "aerofsd");
         }
 
-        Process proc;
-        try {
-            proc = SystemUtil.execBackground(aerofsd, Cfg.absRTRoot());
-        } catch (Exception e) {
-            throw new ExDaemonFailedToStart(e);
-        }
+        Process proc = tryExec(aerofsd);
 
         IWaiter waiter = null;
         int retries = UIParam.DM_LAUNCH_PING_RETRIES;
@@ -94,7 +94,11 @@ class DefaultDaemonMonitor implements IDaemonMonitor
                 // the SanityPoller can stop the daemon before a successful ping
                 if (_stopping) return proc;
 
-                throwIfDaemonExits(proc);
+                try {
+                    throwIfDaemonExits(proc);
+                } catch (ShouldRestart ee) {
+                    proc = tryExec(aerofsd);
+                }
 
                 switch (getDaemonState()) {
                 case INDEXING:
@@ -130,12 +134,21 @@ class DefaultDaemonMonitor implements IDaemonMonitor
         }
     }
 
+    private Process tryExec(String aerofsd) throws ExDaemonFailedToStart
+    {
+        try {
+            return SystemUtil.execBackground(aerofsd, Cfg.absRTRoot());
+        } catch (Exception e) {
+            throw new ExDaemonFailedToStart(e);
+        }
+    }
+
     /**
      * Silently return if the specified daemon process is still running, or exits because Windows is
      * shutting down. Otherwise throw appropriate error messages.
      */
     private void throwIfDaemonExits(Process proc)
-            throws ExUIMessage, IOException
+            throws ExUIMessage, ExNotSetup, ShouldRestart, IOException
     {
         int exitCode;
         try {
@@ -196,10 +209,53 @@ class DefaultDaemonMonitor implements IDaemonMonitor
         } else if (exitCode == CORRUPTED_DB.getNumber()) {
             // TODO: use custom dialog to streamline reinstall process
             // w/ unlink, seed file gen if possible, ...
-            throw new ExUIMessage(L.product() + " couldn't launch because of a corrupted " +
-                    "database. Please delete \"" + Cfg.absRTRoot() + "\" and reinstall");
+            throw new ExUIMessage(L.product() + " couldn't launch because of a corrupted database."
+                    + S.MANUAL_REINSTALL);
+        } else if (exitCode == CORE_DB_TAMPERING.getNumber()) {
+            handlCoreDBTampering();
         } else {
             throw new IOException(getMessage(exitCode));
+        }
+    }
+
+    /**
+     * See class-level comment in TamperingDetection
+     *
+     * @throws ExNotSetup to force the GUI to abort the laucnh and show the setup dialog instead
+     * @throws ShouldRestart to force the caller to restart the daemon
+     */
+    private void handlCoreDBTampering() throws ExUIMessage, ExNotSetup, ShouldRestart
+    {
+        boolean reinstall;
+        try {
+            reinstall = UI.get().askNoDismiss(MessageType.ERROR, S.CORE_DB_TAMPERING,
+                    "Reinstall", "Ignore");
+            if (!reinstall) {
+                if (!UI.get().ask(MessageType.WARN, S.CONFIRM_FORCE_LAUNCH,
+                        S.FORCE_LAUNCH, "Cancel")) {
+                    ExitCode.CORE_DB_TAMPERING.exit();
+                }
+            }
+        } catch (ExNoConsole e) {
+            throw new ExUIMessage(S.CORE_DB_TAMPERING + S.MANUAL_REINSTALL);
+        }
+        if (reinstall) {
+            try {
+                UnlinkUtil.cleanRtRootAndAuxRoots();
+            } catch (Exception e) {
+                throw new ExUIMessage(L.product() + " failed to automatically reinstall."
+                        + S.MANUAL_REINSTALL);
+            }
+            // this will be caught by the launch logic and branch into setup
+            throw new ExNotSetup();
+        } else {
+            try {
+                new File(Cfg.absRTRoot(), LibParam.IGNORE_DB_TAMPERING).createNewFile();
+            } catch (IOException e) {
+                throw new ExUIMessage(L.product() + " could not ignore database tampering."
+                        + S.MANUAL_REINSTALL);
+            }
+            throw new ShouldRestart();
         }
     }
 
@@ -241,7 +297,7 @@ class DefaultDaemonMonitor implements IDaemonMonitor
 
     @Override
     public void start()
-            throws IOException, ExUIMessage, ExDaemonFailedToStart, ExTimeout
+            throws IOException, ExUIMessage, ExNotSetup, ExDaemonFailedToStart, ExTimeout
     {
         // if we were stopped, simply let the monitor thread restart the daemon
         if (!_firstStart && _stopping) {
@@ -353,6 +409,8 @@ class DefaultDaemonMonitor implements IDaemonMonitor
                 } catch (ExUIMessage e) {
                     UI.get().show(MessageType.ERROR, e.getMessage());
                     FAIL_TO_LAUNCH.exit();
+                } catch (ExNotSetup e) {
+                    CORE_DB_TAMPERING.exit();
                 } catch (Exception e) {
                     _fdsRestartFail.logSendAsync("restart daemon", e);
                 }
@@ -470,5 +528,10 @@ class DefaultDaemonMonitor implements IDaemonMonitor
         if (_driver.killDaemon() == DriverConstants.DRIVER_FAILURE) {
             throw new IOException("failed to kill daemon process");
         }
+    }
+
+    private static class ShouldRestart extends Exception
+    {
+        private static final long serialVersionUID = 0L;
     }
 }

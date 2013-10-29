@@ -388,13 +388,19 @@ public class GUI implements IUI
     public boolean ask(MessageType mt, String msg)
     {
         return askImpl(_sh, false, mt, msg, IDialogConstants.YES_LABEL, IDialogConstants.NO_LABEL,
-                ButtonType.OKAY_CANCEL);
+                ButtonType.OKAY_CANCEL, true);
     }
 
     @Override
     public boolean ask(MessageType mt, String msg, String yesLabel, String noLabel)
     {
-        return askImpl(_sh, false, mt, msg, yesLabel, noLabel, ButtonType.OKAY_CANCEL);
+        return askImpl(_sh, false, mt, msg, yesLabel, noLabel, ButtonType.OKAY_CANCEL, true);
+    }
+
+    @Override
+    public boolean askNoDismiss(MessageType mt, String msg, String yesLabel, String noLabel)
+    {
+        return askImpl(_sh, false, mt, msg, yesLabel, noLabel, ButtonType.OKAY_CANCEL, false);
     }
 
     /**
@@ -410,7 +416,7 @@ public class GUI implements IUI
             sheet = true;
         }
 
-        return askImpl(sh, sheet, mt, msg, yesLabel, noLabel, ButtonType.OKAY_CANCEL);
+        return askImpl(sh, sheet, mt, msg, yesLabel, noLabel, ButtonType.OKAY_CANCEL, true);
     }
 
     /**
@@ -428,7 +434,7 @@ public class GUI implements IUI
         }
 
         return askImpl(sh, sheet, mt, msg, yesLabel, noLabel,
-                ButtonType.OKAY_CANCEL_DEFAULT_ON_CANCEL);
+                ButtonType.OKAY_CANCEL_DEFAULT_ON_CANCEL, true);
     }
 
     /**
@@ -446,7 +452,7 @@ public class GUI implements IUI
 
     private boolean askImpl(final Shell sh, final boolean sheet, final MessageType mt,
             final String msg, final String yesLabel, final String noLabel,
-            final ButtonType buttonType)
+            final ButtonType buttonType, final boolean allowDismiss)
     {
         final InOutArg<Boolean> yes = new InOutArg<Boolean>(false);
         exec(new Runnable()
@@ -455,7 +461,7 @@ public class GUI implements IUI
             public void run()
             {
                 AeroFSMessageBox amb = new AeroFSMessageBox(sh, sheet, msg, mt2it(mt),
-                        buttonType, yesLabel, noLabel, true);
+                        buttonType, yesLabel, noLabel, allowDismiss);
                 yes.set(amb.open() == IDialogConstants.OK_ID);
             }
         });

@@ -54,6 +54,14 @@ public interface IUI {
     boolean ask(MessageType mt, String msg, String yesLabel, String noLabel)
             throws ExNoConsole;
 
+    /**
+     * @return true if the user answered yes, false otherwise
+     * @throws ExNoConsole if no console is found. the method show()s an error
+     * message before throwing.
+     */
+    boolean askNoDismiss(MessageType mt, String msg, String yesLabel, String noLabel)
+            throws ExNoConsole;
+
     boolean isUIThread();
 
     void exec(Runnable runnable);

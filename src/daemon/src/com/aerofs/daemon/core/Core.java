@@ -3,6 +3,7 @@ package com.aerofs.daemon.core;
 import com.aerofs.daemon.IModule;
 import com.aerofs.daemon.core.acl.ACLNotificationSubscriber;
 import com.aerofs.daemon.core.db.CoreDBSetup;
+import com.aerofs.daemon.core.db.TamperingDetection;
 import com.aerofs.daemon.core.first_launch.FirstLaunch;
 import com.aerofs.daemon.core.health_check.HealthCheckService;
 import com.aerofs.daemon.core.launch_tasks.DaemonLaunchTasks;
@@ -48,6 +49,7 @@ public class Core implements IModule
     private final RitualNotificationServer _rns;
     private final DaemonPostUpdateTasks _dput;
     private final CoreDBSetup _dbsetup;
+    private final TamperingDetection _tamperingDetection;
     private final HealthCheckService _hcs;
     private final DaemonLaunchTasks _dlts;
 
@@ -71,6 +73,7 @@ public class Core implements IModule
             ILinker linker,
             DaemonPostUpdateTasks dput,
             CoreDBSetup dbsetup,
+            TamperingDetection tamperingDetection,
             IStores ss,
             HealthCheckService hcs,
             DaemonLaunchTasks dlts)
@@ -94,6 +97,7 @@ public class Core implements IModule
         _ns = ns;
         _dput = dput;
         _dbsetup = dbsetup;
+        _tamperingDetection = tamperingDetection;
         _hcs = hcs;
         _dlts = dlts;
     }
@@ -107,6 +111,9 @@ public class Core implements IModule
         // must run dput immediately after database initialization and before other components, as
         // required by IDaemonPostUpdateTask.run()
         _dput.run();
+        // detect DB tampering before launch tasks as they may interact with the outside world
+        // but after DPUTs in case the detection schema changes
+        _tamperingDetection.init_();
         _dlts.run();
 
         _nvc.init_();

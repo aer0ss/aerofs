@@ -48,6 +48,9 @@ public class SanityPoller
 
     public void start()
     {
+        // start must be idempotent to handle launch->setup backtracking
+        if (_t != null) return;
+
         // S3 storage only uses the prefix folder in the auxroot...
         StorageType storageType = Cfg.storageType();
         if (storageType == StorageType.S3) return;

@@ -50,7 +50,9 @@ public abstract class SystemUtil
         // this enum for more information.
         S3_JAVA_KEY_LENGTH_MAYBE_TOO_LIMITED(),
         // Failed to create a jnotify watch on the root anchor (or an external root)
-        JNOTIFY_WATCH_CREATION_FAILED();
+        JNOTIFY_WATCH_CREATION_FAILED(),
+        // Core DB was restored from a backup or otherwise tampered with
+        CORE_DB_TAMPERING();
         ////////
 
         // Exit code when we try to relaunch the daemon while Windows is shutting down

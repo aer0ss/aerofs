@@ -13,8 +13,6 @@ import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.SID;
 import com.aerofs.lib.FileUtil;
-import com.aerofs.lib.LibParam;
-import com.aerofs.lib.RootAnchorUtil;
 import com.aerofs.lib.StorageType;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
@@ -23,7 +21,6 @@ import com.aerofs.lib.cfg.CfgCACertificateProvider;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.cfg.CfgKeyManagersProvider;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
-import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.lib.sched.ExponentialRetry;
 import com.aerofs.lib.sched.IScheduler;
 import com.aerofs.proto.Cmd.Command;
@@ -34,6 +31,7 @@ import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.sv.client.SVClient;
 import com.aerofs.ui.UI;
 import com.aerofs.ui.UIGlobals;
+import com.aerofs.ui.UnlinkUtil;
 import com.aerofs.verkehr.client.lib.IConnectionListener;
 import com.aerofs.verkehr.client.lib.subscriber.ClientFactory;
 import com.aerofs.verkehr.client.lib.subscriber.ISubscriptionListener;
@@ -49,7 +47,6 @@ import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Collections;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
@@ -93,7 +90,6 @@ public final class CommandNotificationSubscriber
     private final VerkehrSubscriber _subscriber;
 
     private final VerkehrListener _listener;
-    private final InjectableFile.Factory _factFile = new InjectableFile.Factory();
 
     public CommandNotificationSubscriber(
             ClientSocketChannelFactory clientChannelFactory,
@@ -416,7 +412,7 @@ public final class CommandNotificationSubscriber
 
         tryCreateSeedFiles();
 
-        unlinkImplementation();
+        UnlinkUtil.unlink();
 
         UI.get().shutdown();
     }
@@ -426,7 +422,7 @@ public final class CommandNotificationSubscriber
     {
         UIGlobals.analytics().track(SimpleEvents.UNLINK_AND_WIPE);
 
-        unlinkImplementation();
+        UnlinkUtil.unlink();
 
         // Delete Root Anchor.
         // TODO (MP) possibly implement secure delete.
@@ -455,43 +451,6 @@ public final class CommandNotificationSubscriber
 
         // Log threads for the daemon process
         UIGlobals.ritual().logThreads();
-    }
-
-    //
-    // Implementation helpers.
-    //
-
-    /**
-     * Helper function to share code between the unlink and unlink & wipe commands.
-     */
-    private void unlinkImplementation()
-            throws SQLException, IOException
-    {
-        // Stop the daemon and other GUI services before deleting any files.
-        UIGlobals.rap().stop();
-        UIGlobals.rnc().stop();
-        UIGlobals.dm().stopIgnoreException();
-
-        // TODO (MP) possibly implement secure delete.
-        // Delete aux roots (partial downloads, conflicts and revision history)
-        if (Cfg.storageType() == StorageType.LINKED) {
-            for (Entry<SID, String> e : Cfg.getRoots().entrySet()) {
-                RootAnchorUtil.cleanAuxRootForPath(e.getValue(), e.getKey());
-            }
-        } else {
-            RootAnchorUtil.cleanAuxRootForPath(Cfg.absDefaultRootAnchor(), Cfg.rootSID());
-        }
-
-        // Delete device key and certificate.
-        FileUtil.deleteIgnoreErrorRecursively(new File(Cfg.absRTRoot(), LibParam.DEVICE_KEY));
-        FileUtil.deleteIgnoreErrorRecursively(new File(Cfg.absRTRoot(), LibParam.DEVICE_CERT));
-
-        // Delete the password.
-        Cfg.db().set(Key.CRED, Key.CRED.defaultValue());
-        // Delete the device id
-        Cfg.db().set(Key.DEVICE_ID, Key.DEVICE_ID.defaultValue());
-        // Create the setup file.
-        _factFile.create(Util.join(Cfg.absRTRoot(), LibParam.SETTING_UP)).createNewFile();
     }
 
     private static class CommandFailed extends Exception

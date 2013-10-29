@@ -15,6 +15,7 @@ import com.aerofs.gui.GUIUtil;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.ChannelFactories;
 import com.aerofs.lib.LibParam.PrivateDeploymentConfig;
+import com.aerofs.lib.cfg.ExNotSetup;
 import com.aerofs.ui.UI;
 import com.aerofs.ui.UIGlobals;
 import com.aerofs.ui.launch_tasks.UILaunchTasks;
@@ -31,6 +32,7 @@ import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.logs.LogArchiver;
 import com.aerofs.ui.update.PostUpdate;
 import com.aerofs.ui.update.uput.UIPostUpdateTasks;
+import com.google.common.base.Preconditions;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.slf4j.Logger;
 
@@ -54,7 +56,12 @@ public class Launcher
         if (_ss != null) {
             try {
                 _ss.close();
-            } catch (Exception e) {}
+            } catch (Exception e) {
+                // swallow exception on purpose
+                l.error("failed to cleanly close singleton socket", e);
+            }
+            // for launch -> setup backtracking we need to be able to recreate the socket
+            _ss = null;
         }
     }
 
@@ -139,12 +146,17 @@ public class Launcher
 
             if (isFirstTime) {
                 // need to bind to singleton port
-                assert _ss == null;
+                Preconditions.checkState(_ss == null);
                 checkNoOtherInstanceRunning();
             } else {
                 // should already be bound to singleton port
-                assert _ss != null;
-                UIGlobals.dm().start();
+                Preconditions.checkNotNull(_ss);
+                try {
+                    UIGlobals.dm().start();
+                } catch (ExNotSetup e) {
+                    destroySingletonSocket();
+                    throw e;
+                }
                 UIGlobals.analytics().track(SimpleEvents.SIGN_IN);
             }
 
@@ -153,7 +165,7 @@ public class Launcher
                 public void run()
                 {
                     // delete the socket so another instance can run while we're sending the event
-                    Launcher.destroySingletonSocket();
+                    destroySingletonSocket();
                     // Shutdown the scheduler.
                     UIGlobals.scheduler().shutdown();
                 }

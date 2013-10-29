@@ -21,10 +21,9 @@ import com.aerofs.lib.os.OSUtil;
 import com.aerofs.proto.RitualNotifications.PBNotification;
 import com.aerofs.proto.RitualNotifications.PBNotification.Type;
 import com.aerofs.ritual_notification.IRitualNotificationListener;
-import com.aerofs.ritual_notification.RitualNotificationClient;
-import com.aerofs.ritual_notification.RitualNotificationSystemConfiguration;
 import com.aerofs.sv.client.SVClient;
 import com.aerofs.swig.driver.Driver;
+import com.aerofs.ui.UIGlobals;
 import com.google.common.base.Objects;
 import com.google.common.collect.Sets;
 import org.eclipse.swt.SWT;
@@ -65,7 +64,6 @@ public class TrayIcon implements ITrayMenuListener
     // device is offline, the offline message takes precedence over other messages.
     private String _tooltip;
     private boolean _isOnline;
-    private RitualNotificationClient _rnc;
     private String _iconName;
 
     TrayIcon(SystemTray st)
@@ -181,7 +179,6 @@ public class TrayIcon implements ITrayMenuListener
     {
         if (_ti != null) _ti.dispose();
         if (_uti != null) _uti.dispose();
-        _rnc.stop();
     }
 
     public boolean isDisposed()
@@ -357,9 +354,7 @@ public class TrayIcon implements ITrayMenuListener
 
     public void addOnlineStatusListener()
     {
-        _rnc = new RitualNotificationClient(new RitualNotificationSystemConfiguration());
-        _rnc.addListener(new IRitualNotificationListener()
-        {
+        UIGlobals.rnc().addListener(new IRitualNotificationListener() {
             @Override
             public void onNotificationReceived(PBNotification notification)
             {
@@ -390,6 +385,5 @@ public class TrayIcon implements ITrayMenuListener
                 });
             }
         });
-        _rnc.start();
     }
 }

@@ -2,7 +2,6 @@ package com.aerofs.ui;
 
 import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.base.Loggers;
-import com.aerofs.base.async.UncancellableFuture;
 import com.aerofs.base.id.SID;
 import com.aerofs.controller.ExLaunchAborted;
 import com.aerofs.controller.Launcher;
@@ -20,6 +19,7 @@ import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgAbsRoots;
+import com.aerofs.lib.cfg.ExNotSetup;
 import com.aerofs.lib.ex.ExUIMessage;
 import com.aerofs.lib.id.CID;
 import com.aerofs.lib.os.OSUtil;
@@ -33,9 +33,6 @@ import com.aerofs.ui.launch_tasks.ULTRtrootMigration;
 import com.aerofs.ui.launch_tasks.ULTRtrootMigration.ExFailedToMigrate;
 import com.aerofs.ui.launch_tasks.ULTRtrootMigration.ExFailedToReloadCfg;
 import com.google.common.base.Preconditions;
-import com.google.common.util.concurrent.FutureCallback;
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
 import com.google.protobuf.ByteString;
 import org.slf4j.Logger;
 
@@ -158,13 +155,13 @@ public class UIUtil
         launchImpl(rtRoot, preLaunch, postLaunch);
     }
 
-    public static void launchImpl(String rtRoot, Runnable preLaunch, Runnable postLaunch)
+    private static void launchImpl(String rtRoot, Runnable preLaunch, Runnable postLaunch)
     {
         try {
             if (needsSetup()) {
                 setup(rtRoot, preLaunch, postLaunch);
             } else {
-                launch(preLaunch, postLaunch);
+                scheduleLaunch(rtRoot, preLaunch, postLaunch);
             }
         } catch (ExLaunchAborted e) {
             // User clicked on cancel, exit without error messages
@@ -232,45 +229,40 @@ public class UIUtil
         }
     }
 
-    private static void launch(Runnable preLaunch, final Runnable postLaunch)
+    private static void scheduleLaunch(final String rtRoot, Runnable preLaunch, final Runnable postLaunch)
     {
         if (preLaunch != null) { UI.get().asyncExec(preLaunch); }
-        Futures.addCallback(launchInWorkerThread(),
-                new FutureCallback<Void>()
-                {
-                    @Override
-                    public void onSuccess(Void aVoid)
-                    {
-                        finishLaunch(postLaunch);
-                    }
-
-                    @Override
-                    public void onFailure(Throwable e)
-                    {
-                        logAndShowLaunchError(e);
-                        System.exit(0);
-                    }
-                });
-    }
-
-    public static ListenableFuture<Void> launchInWorkerThread()
-    {
-        final UncancellableFuture<Void> reply = UncancellableFuture.create();
-        ThreadUtil.startDaemonThread("launcher-worker", new Runnable()
-        {
+        ThreadUtil.startDaemonThread("launcher-worker", new Runnable() {
             @Override
             public void run()
             {
-                try {
-                    Launcher.launch(false);
-                } catch (Exception e) {
-                    reply.setException(e);
+                if (launchInWorkerThread()) {
+                    finishLaunch(postLaunch);
+                } else {
+                    // we get there if the user choose to reinstall due to a tampered/corrupted DB
+                    UI.get().asyncExec(new Runnable() {
+                        @Override
+                        public void run()
+                        {
+                            launchImpl(rtRoot, null, postLaunch);
+                        }
+                    });
                 }
-                reply.set(null);
             }
         });
+    }
 
-        return reply;
+    private static boolean launchInWorkerThread()
+    {
+        try {
+            Launcher.launch(false);
+        } catch (ExNotSetup e) {
+            return false;
+        } catch (Exception e) {
+            logAndShowLaunchError(e);
+            System.exit(0);
+        }
+        return true;
     }
 
     private static void setup(String rtRoot, Runnable preLaunch, Runnable postLaunch)
