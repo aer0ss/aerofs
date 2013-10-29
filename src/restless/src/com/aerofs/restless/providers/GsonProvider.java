@@ -1,6 +1,7 @@
-package com.aerofs.daemon.rest.providers;
+package com.aerofs.restless.providers;
 
 import com.google.common.base.Charsets;
+import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
@@ -36,6 +37,7 @@ public class GsonProvider implements MessageBodyReader<Object>, MessageBodyWrite
 {
     private final Gson _gson = new GsonBuilder()
             .registerTypeAdapter(Date.class, new DateTypeAdapter())
+            .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
             .create();
 
     /**

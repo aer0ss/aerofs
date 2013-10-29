@@ -2,9 +2,9 @@
  * Copyright (c) Air Computing Inc., 2013.
  */
 
-package com.aerofs.daemon.rest.netty;
+package com.aerofs.restless.netty;
 
-import com.aerofs.daemon.rest.stream.ContentStream;
+import com.aerofs.restless.stream.ContentStream;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBufferOutputStream;
 import org.jboss.netty.buffer.ChannelBuffers;
