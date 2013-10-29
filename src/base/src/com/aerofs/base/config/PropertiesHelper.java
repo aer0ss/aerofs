@@ -86,6 +86,17 @@ public class PropertiesHelper
     }
 
     /**
+     * Retrieves the integer value corresponding to key from properties. If key has no entry in
+     * properties, then returns defaultValue.
+     */
+    public Long getLongWithDefaultValueFromPropertiesObj(Properties properties, String key,
+            Long defaultValue)
+    {
+        String val = properties.getProperty(key);
+        return (val == null) ? defaultValue : Long.valueOf(val);
+    }
+
+    /**
      * Loads properties from filename, first looking in the current folder, and if filename isn't
      * there, looking in the classpath.
      *

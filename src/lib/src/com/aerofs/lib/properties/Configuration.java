@@ -31,15 +31,21 @@ public final class Configuration
      */
     public static class Server
     {
-        public static void initialize()
-                throws Exception
+        public static void initialize() throws Exception
+        {
+            initialize(new Properties());
+        }
+
+        public static void initialize(Properties extra) throws Exception
         {
             PropertiesHelper helper = new PropertiesHelper();
             Properties properties = System.getProperties();
 
             File flagfile = new File(PRIVATE_DEPLOYMENT_FLAG_FILE);
             if (flagfile.exists()) {
-                properties = helper.unionProperties(properties, getHttpProperties());
+                properties = helper.unionOfThreeProperties(properties, extra, getHttpProperties());
+            } else {
+                properties = helper.unionProperties(properties, extra);
             }
 
             // Initialize ConfigurationProperties. Perform variable resolution.

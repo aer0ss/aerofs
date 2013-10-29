@@ -1,0 +1,15 @@
+<component name="libraryTable">
+  <library name="apisecure">
+    <CLASSES>
+      <root url="file://$PROJECT_DIR$/../../resource/server/lib.apisec" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="file://$PROJECT_DIR$/../../resource/server/lib.apisec" />
+      <root url="file://$PROJECT_DIR$/../../resource/server/lib.apisec" />
+    </SOURCES>
+    <jarDirectory url="file://$PROJECT_DIR$/../../resource/server/lib.apisec" recursive="false" />
+    <jarDirectory url="file://$PROJECT_DIR$/../../resource/server/lib.apisec" recursive="false" type="SOURCES" />
+    <jarDirectory url="file://$PROJECT_DIR$/../../resource/server/lib.apisec" recursive="false" type="SOURCES" />
+  </library>
+</component>

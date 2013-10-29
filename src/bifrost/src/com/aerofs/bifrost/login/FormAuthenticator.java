@@ -1,0 +1,174 @@
+/*
+ * Copyright (c) Air Computing Inc., 2013.
+ */
+
+package com.aerofs.bifrost.login;
+
+import com.aerofs.base.BaseSecUtil;
+import com.aerofs.base.BaseUtil;
+import com.aerofs.base.id.UserID;
+import com.aerofs.bifrost.core.URLConnectionConfigurator;
+import com.aerofs.bifrost.oaaas.auth.AbstractAuthenticator;
+import com.aerofs.bifrost.oaaas.auth.principal.AuthenticatedPrincipal;
+import com.aerofs.sp.client.SPBlockingClient;
+import com.aerofs.sp.client.SPBlockingClient.Factory;
+import com.lambdaworks.crypto.SCrypt;
+import com.sun.jersey.api.representation.Form;
+import com.sun.jersey.spi.container.ContainerRequest;
+
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
+import java.io.InputStream;
+import java.util.Scanner;
+
+/**
+ * This authenticator is responsible for displaying a login form, authenticating the user,
+ * and returning the appropriate session contents if the user authenticates.
+ *
+ * TODO: if indicated by server config, forward to an OpenId signin instead
+ * TODO: LDAP integration (skip scrypt)
+ */
+public class FormAuthenticator extends AbstractAuthenticator
+{
+    private static final String FORM_RESOURCE = "templates/loginform.xml";
+
+    /**
+     * Does this request have enough context to authenticate a user?
+     */
+    @Override
+    public boolean canCommence(ContainerRequest request)
+    {
+        return request.getMethod().equalsIgnoreCase("POST")
+                && request.getFormParameters().containsKey("j_username");
+    }
+
+    /**
+     * Response type for OAuth Requests.
+     */
+    static class OAuthResponse
+    {
+        OAuthResponse(String authState)
+        {
+            this.authRequired = true;
+            this.authState = authState;
+        }
+        String getAuthState() { return authState; }
+        void setAuthState(String authState) { this.authState = authState; }
+
+        String authState;
+        boolean authRequired;
+    }
+
+    /**
+     * Handle user authentication.
+     *
+     * Based on the request type, we might:
+     *  - return the auth_state so the user can submit authentication credentials
+     *  - return a web form the user can fill to authenticate
+     *  - attempt to authenticate using the request parameters and authorization request context.
+     */
+    @Override
+    public void authenticate(ContainerRequest request, String authStateValue, String returnUri)
+    {
+        if (request.getMethod().equals("GET")) {
+            throw new WebApplicationException(
+                    Response.ok(new OAuthResponse(authStateValue), MediaType.APPLICATION_JSON_TYPE)
+                            .build());
+        }
+
+        try {
+            processForm(request);
+        } catch (Exception e) {
+            throw new WebApplicationException(
+                    Response.status(Status.INTERNAL_SERVER_ERROR)
+                            .entity("Bad credential.")
+                            .build());
+        }
+    }
+
+    /**
+     * Build and display a login form.
+     */
+    private void renderForm(ContainerRequest request, String returnUri, String authStateValue)
+    {
+        request.getProperties().put(AUTH_STATE, authStateValue);
+        request.getProperties().put("actionUri", returnUri);
+
+        throw new WebApplicationException(
+                Response.ok()
+                        .entity(decorateForm(request))
+                        .build());
+    }
+
+    /**
+     * Hook for actually validating the username/ password against a database,
+     * ldap, external webservice or whatever to perform authentication
+     *
+     * @param request the {@link ContainerRequest}
+     */
+    protected void processForm(final ContainerRequest request) throws Exception
+    {
+        SPBlockingClient.Factory spfactory = new Factory();
+        SPBlockingClient client= spfactory.create_(
+                URLConnectionConfigurator.CONNECTION_CONFIGURATOR);
+        Form formParams = request.getFormParameters();
+
+        setAuthStateValue(request, formParams.getFirst(AUTH_STATE));
+        UserID user = UserID.fromExternal(formParams.getFirst("j_username"));
+        String cred = formParams.getFirst("j_password");
+
+        byte[] scrypted = SCrypt.scrypt(
+                BaseSecUtil.getPasswordBytes(cred.toCharArray()),
+                BaseUtil.string2utf(user.getString()),
+                8192,
+                8,
+                1,
+                64);
+
+//        client.validateCredential(user.getString(), ByteString.copyFromUtf8(scrypt_cred));
+
+        // If we get here, the client authenticated successfully
+        AuthenticatedPrincipal principal = new AuthenticatedPrincipal(user.getString());
+        setPrincipal(request, principal);
+    }
+
+
+    /*
+     * FIXME: An inefficient (though functional) chunk follows.
+     * Instead, precompile and cache the regex'es.
+     */
+
+    /**
+     * Decorate a text template by replacing marked-up variables with actual values from
+     * the request attributes.
+     */
+    private String decorateForm(ContainerRequest request)
+    {
+        return getTemplate()
+                .replaceAll("\\$\\{AUTH_STATE\\}", (String)request.getProperties().get(AUTH_STATE))
+                .replaceAll("\\$\\{actionUri\\}", (String)request.getProperties().get("actionUri"));
+    }
+
+    /**
+     * Return the contents of the form template. The form template is loaded via
+     * the classloader getResource mechanism, meaning it should be found
+     * at a predictable location in the classpath.
+     *
+     * FIXME: cache this resource content instead of scanning it every time?
+     */
+    private String getTemplate()
+    {
+        InputStream istr = Thread.currentThread()
+                .getContextClassLoader()
+                .getResourceAsStream(FORM_RESOURCE);
+        if (istr == null) {
+            throw new WebApplicationException(
+                    Response.serverError()
+                            .entity("Can't load form resource!")
+                            .build());
+        }
+        return new Scanner(istr).useDelimiter("\\A").next();
+    }
+}
