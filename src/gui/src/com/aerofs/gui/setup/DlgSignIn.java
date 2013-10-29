@@ -11,6 +11,7 @@ import com.aerofs.base.ex.ExExternalAuthFailure;
 import com.aerofs.base.ex.ExInternalError;
 import com.aerofs.base.ex.ExTimeout;
 import com.aerofs.controller.InstallActor;
+import com.aerofs.controller.Setup;
 import com.aerofs.controller.SetupModel;
 import com.aerofs.controller.SignInActor.CredentialActor;
 import com.aerofs.controller.SignInActor.OpenIdGUIActor;
@@ -31,10 +32,8 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExNoConsole;
 import com.aerofs.lib.ex.ExUIMessage;
 import com.aerofs.lib.os.OSUtil;
-import com.aerofs.proto.ControllerProto.GetSetupSettingsReply;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.UI;
-import com.aerofs.ui.UIGlobals;
 import com.aerofs.ui.error.ErrorMessages;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.swt.SWT;
@@ -79,14 +78,12 @@ public class DlgSignIn extends AeroFSTitleAreaDialog
     {
         super(null, parentShell, false, shouldAlwaysOnTop(), false);
 
-        GetSetupSettingsReply defaults = UIGlobals.controller().getSetupSettings();
-
         setTitleImage(Images.get(Images.IMG_SETUP));
 
         _model = new SetupModel();
-        _model._localOptions._rootAnchorPath = defaults.getRootAnchor();
+        _model._localOptions._rootAnchorPath = Setup.getDefaultAnchorRoot();
         _model.setInstallActor(new InstallActor.SingleUser());
-        _model.setDeviceName(defaults.getDeviceName());
+        _model.setDeviceName(Setup.getDefaultDeviceName());
         _showOpenIdDialog = (Identity.AUTHENTICATOR == Authenticator.OPENID);
     }
 

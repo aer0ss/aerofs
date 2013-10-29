@@ -2,9 +2,11 @@ package com.aerofs.ui;
 
 import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.base.Loggers;
+import com.aerofs.base.async.UncancellableFuture;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.controller.ExLaunchAborted;
+import com.aerofs.controller.Launcher;
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.gui.setup.DlgJoinSharedFolders;
@@ -15,15 +17,14 @@ import com.aerofs.lib.FullName;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.SystemUtil;
+import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgAbsRoots;
 import com.aerofs.lib.ex.ExUIMessage;
 import com.aerofs.lib.id.CID;
 import com.aerofs.lib.os.OSUtil;
-import com.aerofs.proto.Common;
 import com.aerofs.proto.Common.PBPath;
-import com.aerofs.proto.ControllerProto.GetInitialStatusReply;
 import com.aerofs.proto.RitualNotifications.PBSOCID;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.sv.client.SVClient;
@@ -35,6 +36,7 @@ import com.aerofs.ui.launch_tasks.ULTRtrootMigration.ExFailedToReloadCfg;
 import com.google.common.base.Preconditions;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
 import com.google.protobuf.ByteString;
 import org.slf4j.Logger;
 
@@ -173,20 +175,10 @@ public class UIUtil
     public static void launchImpl(String rtRoot, Runnable preLaunch, Runnable postLaunch)
     {
         try {
-            GetInitialStatusReply reply = UIGlobals.controller().getInitialStatus();
-            switch (reply.getStatus()) {
-
-            case NOT_LAUNCHABLE:
-                failToLaunch(reply);
-                break;
-
-            case NEEDS_SETUP:
+            if (needsSetup()) {
                 setup(rtRoot, preLaunch, postLaunch);
-                break;
-
-            case READY_TO_LAUNCH:
+            } else {
                 launch(preLaunch, postLaunch);
-                break;
             }
         } catch (ExLaunchAborted e) {
             // User clicked on cancel, exit without error messages
@@ -194,6 +186,18 @@ public class UIUtil
         } catch (Exception e) {
             logAndShowLaunchError(e);
             System.exit(0);
+        }
+    }
+
+    private static boolean needsSetup()
+    {
+        try {
+            return Launcher.needsSetup();
+        } catch (Exception e) {
+            UI.get().show(MessageType.ERROR, e.getLocalizedMessage() != null ? e.getLocalizedMessage()
+                    : "Sorry, an internal error happened, preventing " + L.product() + " to launch");
+            System.exit(0);
+            return false;
         }
     }
 
@@ -242,21 +246,14 @@ public class UIUtil
         }
     }
 
-    private static void failToLaunch(GetInitialStatusReply reply)
-    {
-        UI.get().show(MessageType.ERROR, reply.hasErrorMessage() ? reply.getErrorMessage() :
-                LAUNCH_ERROR_STRING + ".");
-        System.exit(0);
-    }
-
     private static void launch(Runnable preLaunch, final Runnable postLaunch)
     {
         if (preLaunch != null) { UI.get().asyncExec(preLaunch); }
-        Futures.addCallback(UIGlobals.controller().async().launch(),
-                new FutureCallback<Common.Void>()
+        Futures.addCallback(launchInWorkerThread(),
+                new FutureCallback<Void>()
                 {
                     @Override
-                    public void onSuccess(Common.Void aVoid)
+                    public void onSuccess(Void aVoid)
                     {
                         finishLaunch(postLaunch);
                     }
@@ -268,6 +265,26 @@ public class UIUtil
                         System.exit(0);
                     }
                 });
+    }
+
+    public static ListenableFuture<Void> launchInWorkerThread()
+    {
+        final UncancellableFuture<Void> reply = UncancellableFuture.create();
+        ThreadUtil.startDaemonThread("launcher-worker", new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                try {
+                    Launcher.launch(false);
+                } catch (Exception e) {
+                    reply.setException(e);
+                }
+                reply.set(null);
+            }
+        });
+
+        return reply;
     }
 
     private static void setup(String rtRoot, Runnable preLaunch, Runnable postLaunch)

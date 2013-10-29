@@ -1,5 +1,7 @@
 package com.aerofs.cli;
 
+import com.aerofs.base.id.UserID;
+import com.aerofs.controller.CredentialUtil;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.S;
 import com.aerofs.lib.SystemUtil;
@@ -456,7 +458,8 @@ public class CLI implements IUI {
         while (true) {
             String passwd = new String(askPasswd(S.PASSWORD_HAS_CHANGED));
             try {
-                UIGlobals.controller().updateStoredPassword(Cfg.user().getString(), passwd);
+                CredentialUtil.updateStoredPassword(UserID.fromExternal(Cfg.user().getString()),
+                        passwd.toCharArray());
                 break;
             } catch (ExBadCredential ebc) {
                 ThreadUtil.sleepUninterruptable(UIParam.LOGIN_PASSWD_RETRY_DELAY);

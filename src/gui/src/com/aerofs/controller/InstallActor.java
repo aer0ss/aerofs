@@ -44,10 +44,10 @@ public abstract class InstallActor
                 setup.setupMultiuser(
                         model.getClient(),
                         model.getUserID(),
-                        setup.getDefaultAnchorRoot(),
+                        Setup.getDefaultAnchorRoot(),
                         model.getDeviceName(),
                         StorageType.S3,
-                        model._s3Options.getConfig());
+                        model._s3Config);
             }
         }
     }

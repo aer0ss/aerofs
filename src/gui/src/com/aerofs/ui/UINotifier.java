@@ -2,9 +2,7 @@ package com.aerofs.ui;
 
 import com.aerofs.controller.IViewNotifier;
 import com.aerofs.lib.notifier.ConcurrentlyModifiableListeners;
-import com.aerofs.proto.ControllerNotifications.Type;
 import com.google.common.collect.Maps;
-import com.google.protobuf.GeneratedMessageLite;
 
 import javax.annotation.Nullable;
 
@@ -48,7 +46,7 @@ public class UINotifier implements IViewNotifier
     }
 
     @Override
-    public void notify(final Type type, final @Nullable GeneratedMessageLite notification)
+    public void notify(final Type type, final @Nullable Object notification)
     {
         if (UI.get() != null) {
             // We're running a Java UI. Notify in the context of the UI thread
@@ -67,7 +65,7 @@ public class UINotifier implements IViewNotifier
         }
     }
 
-    private void doNotify(Type type, GeneratedMessageLite notification)
+    private void doNotify(Type type, Object notification)
     {
         synchronized (map) {
             ConcurrentlyModifiableListeners<IUINotificationListener> ls = map.get(type);

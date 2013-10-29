@@ -4,10 +4,10 @@
 
 package com.aerofs.gui.setup;
 
+import com.aerofs.controller.Setup;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.lib.RootAnchorUtil;
 import com.aerofs.lib.S;
-import com.aerofs.ui.UIGlobals;
 import com.google.common.collect.Lists;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
@@ -56,7 +56,7 @@ public class CompLocalStorage
             public void widgetSelected(SelectionEvent e)
             {
                 try {
-                    _absRootAnchor = UIGlobals.controller().getSetupSettings().getRootAnchor();
+                    _absRootAnchor = Setup.getDefaultAnchorRoot();
                 } catch (Exception e1) {
                     assert false;
                 }

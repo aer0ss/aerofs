@@ -32,39 +32,10 @@ import java.security.PublicKey;
 
 public class CredentialUtil
 {
-    static void sendPasswordResetEmail(String userid)
-            throws Exception
-    {
-        SPBlockingClient.Factory fact = new SPBlockingClient.Factory();
-        SPBlockingClient sp = fact.create_(Cfg.user());
-        sp.sendPasswordResetEmail(userid);
-    }
-
-    static void resetPassword(UserID userId, String token, char[] password)
-            throws Exception
-    {
-        byte[] scrypted = SecUtil.scrypt(password, userId);
-        SPBlockingClient.Factory fact = new SPBlockingClient.Factory();
-        SPBlockingClient sp = fact.create_(Cfg.user());
-        sp.resetPassword(token, ByteString.copyFrom(scrypted));
-    }
-
-    static void changePassword(UserID userID, char[] oldPassword, char[] newPassword)
-        throws Exception
-    {
-        SPBlockingClient.Factory fact = new SPBlockingClient.Factory();
-        SPBlockingClient sp = fact.create_(Cfg.user());
-        sp.signInRemote();
-        byte[] oldScrypted = SecUtil.scrypt(oldPassword, userID);
-        byte[] newScrypted = SecUtil.scrypt(newPassword, userID);
-        sp.changePassword(ByteString.copyFrom(oldScrypted), ByteString.copyFrom(newScrypted));
-        updateStoredPassword(userID, newPassword);
-    }
-
     // updateStoredPassword updated the credentials stored locally.  This must be called
     // when a password is changed so the client can authenticate successfully.  It also
     // is called when a new password is provided (after ExBadCredentials).
-    static void updateStoredPassword(UserID userId, char[] password)
+    static public void updateStoredPassword(UserID userId, char[] password)
             throws Exception
     {
         SPBlockingClient.Factory fact = new SPBlockingClient.Factory();

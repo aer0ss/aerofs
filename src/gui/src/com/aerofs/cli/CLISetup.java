@@ -1,11 +1,12 @@
 package com.aerofs.cli;
 
+import com.aerofs.controller.Setup;
 import com.aerofs.controller.UnattendedSetup;
 import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.base.ex.ExEmptyEmailAddress;
 import com.aerofs.controller.InstallActor;
 import com.aerofs.controller.SetupModel;
-import com.aerofs.controller.SetupModel.S3Options;
+import com.aerofs.controller.SetupModel.S3Config;
 import com.aerofs.controller.SignInActor.CredentialActor;
 import com.aerofs.controller.SignInActor.OpenIdCLIActor;
 import com.aerofs.labeling.L;
@@ -16,11 +17,9 @@ import com.aerofs.lib.StorageType;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExNoConsole;
 import com.aerofs.lib.os.OSUtil;
-import com.aerofs.proto.ControllerProto.GetSetupSettingsReply;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.S3DataEncryptionPasswordVerifier;
 import com.aerofs.ui.S3DataEncryptionPasswordVerifier.PasswordVerifierResult;
-import com.aerofs.ui.UIGlobals;
 
 public class CLISetup
 {
@@ -30,14 +29,15 @@ public class CLISetup
 
     CLISetup(CLI cli, String rtRoot) throws Exception
     {
-        GetSetupSettingsReply defaults = UIGlobals.controller().getSetupSettings();
+        String defaultRootAnchor = Setup.getDefaultAnchorRoot();
+        String defaultDeviceName = Setup.getDefaultDeviceName();
 
         _model = new SetupModel()
                 .setSignInActor(LibParam.OpenId.enabled() ?
                         new OpenIdCLIActor(cli) : new CredentialActor());
 
-        _model._localOptions._rootAnchorPath = defaults.getRootAnchor();
-        _model.setDeviceName(defaults.getDeviceName());
+        _model._localOptions._rootAnchorPath = defaultRootAnchor;
+        _model.setDeviceName(defaultDeviceName);
 
         UnattendedSetup unattendedSetup = new UnattendedSetup(rtRoot);
         _isUnattendedSetup = unattendedSetup.setupFileExists();
@@ -85,7 +85,7 @@ public class CLISetup
             getDeviceName(cli);
             getStorageType(cli);
             if (_model._storageType == StorageType.S3) {
-                getS3Config(cli, _model._s3Options);
+                getS3Config(cli, _model._s3Config);
             } else {
                 getRootAnchor(cli);
             }
@@ -169,7 +169,7 @@ public class CLISetup
         _model.setDeviceName(cli.askText(S.SETUP_DEV_ALIAS, _model.getDeviceName()));
     }
 
-    private void getS3Config(CLI cli, S3Options options) throws ExNoConsole
+    private void getS3Config(CLI cli, S3Config options) throws ExNoConsole
     {
         while (options._bucketID == null || options._bucketID.isEmpty()) {
             options._bucketID = cli.askText(S.SETUP_S3_BUCKET_NAME, null);

@@ -1,8 +1,7 @@
 package com.aerofs.cli;
 
+import com.aerofs.controller.SPBadCredentialListener;
 import com.aerofs.lib.ChannelFactories;
-import com.aerofs.controller.ControllerBadCredentialListener;
-import com.aerofs.controller.ControllerService;
 import com.aerofs.lib.IProgram;
 import com.aerofs.lib.SystemUtil.ExitCode;
 import com.aerofs.lib.Util;
@@ -28,8 +27,8 @@ public class CLIProgram implements IProgram
         //
 
         ClientSocketChannelFactory clientChannelFactory = ChannelFactories.getClientChannelFactory();
-        ControllerService.init(rtRoot, clientChannelFactory, UIGlobals.notifier());
-        SPBlockingClient.setBadCredentialListener(new ControllerBadCredentialListener());
+        UIGlobals.initSetup_(rtRoot);
+        SPBlockingClient.setBadCredentialListener(new SPBadCredentialListener());
         RitualClientProvider ritualProvider = new RitualClientProvider(clientChannelFactory);
 
         CLI cli = new CLI();

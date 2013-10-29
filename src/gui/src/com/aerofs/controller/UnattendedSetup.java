@@ -68,10 +68,10 @@ public class UnattendedSetup
 
         String s3BucketId = props.getProperty(Key.S3_BUCKET_ID.keyString());
         if (s3BucketId != null) {
-            model._s3Options._bucketID = s3BucketId;
-            model._s3Options._accessKey = props.getProperty(Key.S3_ACCESS_KEY.keyString());
-            model._s3Options._secretKey = props.getProperty(Key.S3_SECRET_KEY.keyString());
-            model._s3Options._passphrase = props.getProperty(Key.S3_ENCRYPTION_PASSWORD.keyString());
+            model._s3Config._bucketID = s3BucketId;
+            model._s3Config._accessKey = props.getProperty(Key.S3_ACCESS_KEY.keyString());
+            model._s3Config._secretKey = props.getProperty(Key.S3_SECRET_KEY.keyString());
+            model._s3Config._passphrase = props.getProperty(Key.S3_ENCRYPTION_PASSWORD.keyString());
 
             if (model._storageType == null) model._storageType = StorageType.S3;
         }
