@@ -6,6 +6,7 @@ import java.util.Date;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
+import com.aerofs.base.BaseUtil;
 import org.junit.Assert;
 
 import org.junit.Test;
@@ -68,9 +69,9 @@ public class TestExternalSorter extends AbstractTest
             public int compare(Item o1, Item o2)
             {
                 int c;
-                if ((c = Util.compare(o1._date, o2._date)) != 0) return c;
-                if ((c = Util.compare(o1._name, o2._name)) != 0) return c;
-                if ((c = Util.compare(o1._seq, o2._seq)) != 0) return c;
+                if ((c = BaseUtil.compare(o1._date, o2._date)) != 0) return c;
+                if ((c = BaseUtil.compare(o1._name, o2._name)) != 0) return c;
+                if ((c = BaseUtil.compare(o1._seq, o2._seq)) != 0) return c;
                 return 0;
             }
         };

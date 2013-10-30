@@ -24,7 +24,7 @@ import com.aerofs.restless.jersey.ServletFilter;
 import com.sun.jersey.spi.container.ContainerRequest;
 import com.sun.jersey.spi.container.ContainerRequestFilter;
 import org.apache.commons.lang.StringUtils;
-import com.aerofs.bifrost.oaaas.auth.principal.AuthenticatedPrincipal;
+import com.aerofs.oauth.AuthenticatedPrincipal;
 import com.aerofs.bifrost.oaaas.model.AuthorizationRequest;
 import com.aerofs.bifrost.oaaas.repository.AuthorizationRequestRepository;
 

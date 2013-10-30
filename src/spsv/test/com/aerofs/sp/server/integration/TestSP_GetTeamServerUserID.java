@@ -7,7 +7,7 @@ package com.aerofs.sp.server.integration;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.id.UserID;
 import com.aerofs.lib.ex.ExNotAuthenticated;
-import com.aerofs.sp.server.lib.id.OrganizationID;
+import com.aerofs.base.id.OrganizationID;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.aerofs.sp.server.lib.user.User;
 import org.junit.Before;

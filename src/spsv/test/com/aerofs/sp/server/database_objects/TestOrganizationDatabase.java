@@ -13,7 +13,7 @@ import com.aerofs.base.id.UserID;
 import com.aerofs.sp.server.AbstractAutoTransactionedTestWithSPDatabase;
 import com.aerofs.sp.server.lib.OrganizationDatabase;
 import com.aerofs.sp.server.lib.SharedFolderDatabase;
-import com.aerofs.sp.server.lib.id.OrganizationID;
+import com.aerofs.base.id.OrganizationID;
 import org.junit.Test;
 
 import java.sql.SQLException;

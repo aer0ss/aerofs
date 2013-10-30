@@ -22,7 +22,7 @@ import com.aerofs.bifrost.oaaas.auth.AbstractAuthenticator;
 import com.aerofs.bifrost.oaaas.auth.AbstractUserConsentHandler;
 import com.aerofs.bifrost.oaaas.auth.OAuth2Validator;
 import com.aerofs.bifrost.oaaas.auth.ValidationResponseException;
-import com.aerofs.bifrost.oaaas.auth.principal.AuthenticatedPrincipal;
+import com.aerofs.oauth.AuthenticatedPrincipal;
 import com.aerofs.bifrost.oaaas.auth.principal.UserPassCredentials;
 import com.aerofs.bifrost.oaaas.model.*;
 import com.aerofs.bifrost.oaaas.repository.AccessTokenRepository;

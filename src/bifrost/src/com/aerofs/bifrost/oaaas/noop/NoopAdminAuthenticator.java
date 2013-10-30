@@ -16,7 +16,7 @@
 
 package com.aerofs.bifrost.oaaas.noop;
 
-import com.aerofs.bifrost.oaaas.auth.principal.AuthenticatedPrincipal;
+import com.aerofs.oauth.AuthenticatedPrincipal;
 
 /**
  * Grants isAdmin authority to the Principal

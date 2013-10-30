@@ -23,10 +23,11 @@ import java.util.Set;
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
 
+import com.aerofs.bifrost.oaaas.auth.principal.PrincipalUtils;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
 import org.apache.commons.lang.StringUtils;
-import com.aerofs.bifrost.oaaas.auth.principal.AuthenticatedPrincipal;
+import com.aerofs.oauth.AuthenticatedPrincipal;
 
 /**
  * Representation of an <a
@@ -94,7 +95,7 @@ public class AccessToken extends AbstractEntity {
   @PrePersist
   public void encodePrincipal() {
     if (principal != null) {
-      this.encodedPrincipal = principal.serialize();
+      this.encodedPrincipal = PrincipalUtils.serialize(principal);
     }
   }
 
@@ -103,7 +104,7 @@ public class AccessToken extends AbstractEntity {
   @PostUpdate
   public void decodePrincipal() {
     if (StringUtils.isNotBlank(encodedPrincipal)) {
-      this.principal = AuthenticatedPrincipal.deserialize(encodedPrincipal);
+      this.principal = PrincipalUtils.deserialize(encodedPrincipal);
     }
   }
 

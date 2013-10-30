@@ -16,7 +16,7 @@
 
 package com.aerofs.bifrost.oaaas.auth;
 
-import com.aerofs.bifrost.oaaas.auth.principal.AuthenticatedPrincipal;
+import com.aerofs.oauth.AuthenticatedPrincipal;
 import com.sun.jersey.spi.container.ContainerRequest;
 
 /**

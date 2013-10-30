@@ -18,7 +18,7 @@ package com.aerofs.bifrost.oaaas.noop;
 
 import com.sun.jersey.spi.container.ContainerRequest;
 import com.aerofs.bifrost.oaaas.auth.AbstractAuthenticator;
-import com.aerofs.bifrost.oaaas.auth.principal.AuthenticatedPrincipal;
+import com.aerofs.oauth.AuthenticatedPrincipal;
 
 /**
  * A minimalistic implementation of AbstractAuthenticator that contains no authentication but only fulfills the

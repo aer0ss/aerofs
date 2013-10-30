@@ -1,6 +1,6 @@
 package com.aerofs.daemon.lib.id;
 
-import com.aerofs.lib.id.IntegerID;
+import com.aerofs.base.id.IntegerID;
 
 public class StreamID extends IntegerID
 {

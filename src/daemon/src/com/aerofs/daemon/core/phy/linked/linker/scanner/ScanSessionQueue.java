@@ -1,5 +1,6 @@
 package com.aerofs.daemon.core.phy.linked.linker.scanner;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.CoreScheduler;
@@ -60,8 +61,8 @@ public class ScanSessionQueue implements IDumpStatMisc
         @Override
         public int compareTo(TimeKey timeKey)
         {
-            int comp = Util.compare(_time, timeKey._time);
-            return comp == 0 ? Util.compare(_seq, timeKey._seq) : comp;
+            int comp = BaseUtil.compare(_time, timeKey._time);
+            return comp == 0 ? BaseUtil.compare(_seq, timeKey._seq) : comp;
         }
 
         @Override

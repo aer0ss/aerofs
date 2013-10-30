@@ -1,6 +1,6 @@
 package com.aerofs.daemon.core.collector;
 
-import com.aerofs.lib.id.AbstractLongId;
+import com.aerofs.base.id.AbstractLongId;
 
 // this index is scoped by the store index
 public class SenderFilterIndex extends AbstractLongId<SenderFilterIndex>

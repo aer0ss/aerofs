@@ -13,7 +13,7 @@ import com.aerofs.base.id.UniqueID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.proto.Common;
 import com.aerofs.sp.server.lib.device.Device;
-import com.aerofs.sp.server.lib.id.OrganizationID;
+import com.aerofs.base.id.OrganizationID;
 import com.aerofs.sp.server.lib.user.User;
 import com.google.common.collect.ImmutableList;
 import com.google.protobuf.ByteString;

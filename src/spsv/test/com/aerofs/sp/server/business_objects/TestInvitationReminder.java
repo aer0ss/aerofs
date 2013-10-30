@@ -11,7 +11,7 @@ import com.aerofs.sp.common.SubscriptionCategory;
 import com.aerofs.sp.server.InvitationReminder;
 import com.aerofs.sp.server.email.InvitationReminderEmailer;
 import com.aerofs.sp.server.lib.SPParam;
-import com.aerofs.sp.server.lib.id.OrganizationID;
+import com.aerofs.base.id.OrganizationID;
 import com.google.common.collect.Sets;
 import org.junit.Before;
 import org.junit.Test;

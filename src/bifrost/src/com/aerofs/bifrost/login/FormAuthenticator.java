@@ -9,7 +9,7 @@ import com.aerofs.base.BaseUtil;
 import com.aerofs.base.id.UserID;
 import com.aerofs.bifrost.core.URLConnectionConfigurator;
 import com.aerofs.bifrost.oaaas.auth.AbstractAuthenticator;
-import com.aerofs.bifrost.oaaas.auth.principal.AuthenticatedPrincipal;
+import com.aerofs.oauth.AuthenticatedPrincipal;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.sp.client.SPBlockingClient.Factory;
 import com.lambdaworks.crypto.SCrypt;
@@ -131,6 +131,12 @@ public class FormAuthenticator extends AbstractAuthenticator
 
         // If we get here, the client authenticated successfully
         AuthenticatedPrincipal principal = new AuthenticatedPrincipal(user.getString());
+        principal.setUserID(user);
+        // TODO: AuthenticatedPrincipal should contain at least:
+        //  - user id
+        //  - org id
+        //  - first and last name
+        //principal.setOrganizationID();
         setPrincipal(request, principal);
     }
 
