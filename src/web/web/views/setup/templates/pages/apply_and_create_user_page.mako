@@ -196,7 +196,7 @@
     ## See step sepcific comments for details.
 
     ########
-    ## Step 1: kick off the configuration process
+    ## Step 1: kick off the configuration process.
 
     function submitForm() {
         ## Show the progress modal
@@ -207,12 +207,53 @@
     }
 
     ########
-    ## Step 2: wait until the configuration process is complete.
+    ## Step 2: wait until the bootstrap process is complete. This step is tricky
+    ## because of two issues:
     ##
-    ## This step is tricky because the user may uploads new browser certificates.
+    ## Issue 1: certificate change in the middle of bootstrap
+    ## ======
+    ##
+    ## the user may uploads new browser
+    ## certificates, and part of bootstrap is to restart nginx which is a
+    ## front-end of the uwsgi server. On restart, nginx will server Web requests
+    ## with the new browser cert. This may cause subsequent AJAX calls (including
+    ## the call in finalize() below) to fail if:
+    ##
+    ##  1. the new browser cert provided by the user is self-signed, or
+    ##  2. the cert's cname doesn't match the current page's hostname, which is
+    ##     the case at least for initial setup where the IP address is
+    ##     used intead of the hostname.
+    ##
+    ## In both cases, the browser will block AJAX calls, causing $.post() to
+    ## fail with a status code 0. The trick we employ to overcome this issue is
+    ## to reload the current page with the new hostname before proceeding to the
+    ## next step. The reloads allows the browser to 1) warn the user about a
+    ## self-signed cert, and thus gives the user an opportunity to whitelist the
+    ## cert for the browser, 2) use the hostname to match the new cert.
+    ##
+    ## See reloadToFinalize() below for the implementation of the trick.
+    ##
+    ## Issue 2: determinng bootstrap completion
+    ## ======
+    ##
+    ## We rely on json_setup_poll() to tell whether the bootstrap process is
+    ## complete. However, once nginx reloads the certificate, the AJAX call may
+    ## fail with status code 0 until we reload the page (see issue 1).
+    ##
+    ## To workaround, we place nginx restart as the last step of the bootstrap
+    ## process (see manual.tasks), and if we receive status code 0 consecutively
+    ## several times, then we assume the bootstrap is done and it's time to
+    ## reload the page. (The call may occasionally fail with code 0 due to
+    ## restarts of other services.) If nginx restart doesn't cause AJAX calls to
+    ## fail, we use normal returns from json_setup_poll() to determin completion.
+    ##
+    ## TODO (WW) a better alternative? split the bootstrap process into two
+    ## parts. The first part only restarts nginx, and the second does the
+    ## rest. JS calls the two parts separately. This can avoid forcing nginx
+    ## restart to be the last step.
 
     function pollForBootstrap() {
-        ## the number of consecutive 0-status responses
+        ## the number of consecutive status-code-0 responses. See comments above
         var statusZeroCount = 0;
         var bootstrapPollInterval = window.setInterval(function() {
             $.post("${request.route_path('json_setup_poll')}", getSerializedFormData())
@@ -228,7 +269,6 @@
                 }
             }).fail(function (xhr) {
                 console.log("status: " + xhr.status + " statusText: " + xhr.statusText);
-                ## TODO (WW) add comments. nginx restart itself can cause zero status responses
                 if (xhr.status == 0 && statusZeroCount++ == 10) {
                     reloadToFinalize();
                 }
@@ -237,14 +277,22 @@
         }, 1000);
     }
 
-    ########
-    ## Step 3: reload the page and finalize
-
+    ## See the comments above.
     function reloadToFinalize() {
-        ## We expect non-empty window.location.search here (i.e. '?page=X')
+        ## N.B. We expect a non-empty window.location.search here (i.e. '?page=X')
         window.location.href = 'https://${current_config['base.host.unified']}' +
                 window.location.pathname + window.location.search + andFinalizeParam;
     }
+
+    ########
+    ## Step 3: finalize the process after reloading the page.
+    ##
+    ## This step marks the system as initialized, so that browsing the AeroFS
+    ## Web site will no longer be redirected to the setup page. This step can't
+    ## be merged with step 2, because finalizing has to be done *after* boostrap
+    ## completes. If in the middle of the bootstrap nginx reload causes AJAX
+    ## calls to fail (see comments in step 2), we will not be able to call the
+    ## server to finalize until the page is reloaded.
 
     function finalize() {
         doPost("${request.route_path('json_setup_finalize')}",
@@ -253,7 +301,7 @@
 
     ########
     ## Last, wait until uwsgi finishes reloading, which is caused by
-    ## json_setup_finalize().
+    ## json_setup_finalize(). See that method for detail.
 
     ## TODO (WW) poll an actual URL, and add timeouts
     function pollForWebServerReadiness() {

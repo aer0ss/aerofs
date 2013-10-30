@@ -394,6 +394,7 @@ def json_setup_apply(request):
 )
 def json_setup_poll(request):
     # bootstrap is complete if the task list file is removed by the process.
+    # TODO (WW) add error detection and handling.
     running = os.stat(_BOOTSTRAP_PIPE_FILE).st_size != 0
     log.warn("bootstrap in-progress: {}".format(running))
 
@@ -415,7 +416,20 @@ def json_setup_finalize(request):
     configuration = Configuration()
     configuration.set_external_property('configuration_initialized', 'true')
 
-    # Finally, ask ourselves to reload the new configuration values. This
+    # Finally, ask ourselves to load new configuration values. Doing so in
+    # json_setup_apply() (i.e. placing uwsgi-reload in manual.tasks) would be
+    # ideal. However, we can't because:
+    #
+    # o During initial setup the Web session is not authenticated (thanks to
+    #   the redirect middleware).
+    # o Once configuration_initialized is set to true, we (the Python server)
+    #   will require an admin credential to access json_setup_*().
+    # o JavaScript calls json_setup_apply/poll/finalize in a single HTML page
+    #   in that order to perform the setup process.
+    # o As a result, if the reload is done in json_setup_apply(), the JS during
+    #   initial setup wouldn't be able to call json_setup_poll or finalize after
+    #   calling apply.
+    #
     with open(_BOOTSTRAP_PIPE_FILE, 'w') as f:
         # Add the delay so that we have time to return this call before we reload.
         f.write('delay\nuwsgi-reload')
