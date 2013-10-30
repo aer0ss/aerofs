@@ -9,11 +9,10 @@ import com.aerofs.base.ssl.FileBasedCertificateProvider;
 import com.aerofs.base.ssl.FileBasedKeyManagersProvider;
 import com.aerofs.base.ssl.ICertificateProvider;
 import com.aerofs.base.ssl.IPrivateKeyProvider;
+import com.aerofs.havre.auth.OAuthAuthenticator;
 import com.aerofs.havre.proxy.HttpProxyServer;
 import com.aerofs.havre.tunnel.TunnelEndpointConnector;
 import com.aerofs.tunnel.TunnelServer;
-import org.jboss.netty.handler.codec.http.HttpRequest;
-import org.jboss.netty.handler.codec.http.QueryStringDecoder;
 import org.jboss.netty.util.HashedWheelTimer;
 import org.slf4j.Logger;
 
@@ -21,7 +20,6 @@ import javax.annotation.Nullable;
 import java.io.FileInputStream;
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.net.InetSocketAddress;
-import java.util.List;
 import java.util.Properties;
 
 import static com.aerofs.base.config.ConfigurationProperties.getIntegerProperty;
@@ -59,33 +57,15 @@ public class Havre
 
     private final HttpProxyServer _proxy;
     private final TunnelServer _tunnel;
-    private final TunnelEndpointConnector _connector;
 
     public Havre(final UserID user, DID did, @Nullable IPrivateKeyProvider proxyKey,
             IPrivateKeyProvider tunnelKey, ICertificateProvider cacert)
     {
-        _connector = new TunnelEndpointConnector();
+        TunnelEndpointConnector connector = new TunnelEndpointConnector();
         _tunnel = new TunnelServer(new InetSocketAddress(TUNNEL_HOST, TUNNEL_PORT),
-                tunnelKey, cacert, user, did, new HashedWheelTimer(), _connector);
+                tunnelKey, cacert, user, did, new HashedWheelTimer(), connector);
         _proxy = new HttpProxyServer(new InetSocketAddress(PROXY_HOST, PROXY_PORT),
-                proxyKey, new Authenticator() {
-            @Override
-            public UserID authenticate(HttpRequest request) throws UnauthorizedUserException
-            {
-                // TODO: OAuth
-                // code below is temporary to enable testing
-                QueryStringDecoder decoder = new QueryStringDecoder(request.getUri());
-                List<String> users = decoder.getParameters().get("user");
-                if (users == null || users.isEmpty()) return user;
-                try {
-                    UserID user = UserID.fromExternal(users.get(0));
-                    Havre.l.info("auth {} -> {}", request.getUri(), user);
-                    return user;
-                } catch (Exception e) {
-                    throw new UnauthorizedUserException();
-                }
-            }
-        }, _connector);
+                proxyKey, new OAuthAuthenticator(cacert), connector);
     }
 
     public void start()

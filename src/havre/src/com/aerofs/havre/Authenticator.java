@@ -1,6 +1,6 @@
 package com.aerofs.havre;
 
-import com.aerofs.base.id.UserID;
+import com.aerofs.oauth.AuthenticatedPrincipal;
 import org.jboss.netty.handler.codec.http.HttpRequest;
 
 public interface Authenticator
@@ -17,5 +17,5 @@ public interface Authenticator
      * @return user associated with request
      * @throws UnauthorizedUserException
      */
-    UserID authenticate(HttpRequest request) throws UnauthorizedUserException;
+    AuthenticatedPrincipal authenticate(HttpRequest request) throws UnauthorizedUserException;
 }

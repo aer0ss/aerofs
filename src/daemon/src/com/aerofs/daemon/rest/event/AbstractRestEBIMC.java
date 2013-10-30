@@ -1,16 +1,15 @@
 package com.aerofs.daemon.rest.event;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.base.ex.AbstractExWirable;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.UserID;
 import com.aerofs.daemon.event.lib.imc.AbstractEBIMC;
 import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
-import com.aerofs.proto.Common.PBException.Type;
 import com.aerofs.rest.api.Error;
 import com.aerofs.lib.event.Prio;
+import com.aerofs.rest.api.Error.Type;
 import org.slf4j.Logger;
 
 import javax.ws.rs.core.MediaType;
@@ -59,21 +58,22 @@ public abstract class AbstractRestEBIMC extends AbstractEBIMC
     protected ResponseBuilder handleException(Exception e)
     {
         if (e instanceof ExNotFound){
-            return Response.status(Status.NOT_FOUND)
-                    .entity(new Error(Type.NOT_FOUND.name(), e.getMessage()));
+            return Response
+                    .status(Status.NOT_FOUND)
+                    .entity(new Error(Type.NOT_FOUND, e.getMessage()));
         } else if (e instanceof ExNoPerm) {
-            return Response.status(Status.FORBIDDEN)
-                 .entity(new Error(Type.NO_PERM.name(), e.getMessage()));
+            return Response
+                    .status(Status.FORBIDDEN)
+                    .entity(new Error(Type.FORBIDDEN, e.getMessage()));
         } else if (e instanceof ExBadArgs) {
-            return Response.status(Status.BAD_REQUEST)
-                    .entity(new Error(Type.BAD_ARGS.name(), e.getMessage()));
-        } else if (e instanceof AbstractExWirable) {
-            return Response.status(Status.BAD_REQUEST)
-                    .entity(new Error(((AbstractExWirable)e).getWireType().name(), e.getMessage()));
+            return Response
+                    .status(Status.BAD_REQUEST)
+                    .entity(new Error(Type.BAD_ARGS, e.getMessage()));
         } else {
             l.error("internal error", e);
-            return Response.status(Status.INTERNAL_SERVER_ERROR)
-                    .entity(new Error(Type.INTERNAL_ERROR.name(),
+            return Response
+                    .status(Status.INTERNAL_SERVER_ERROR)
+                    .entity(new Error(Type.INTERNAL_ERROR,
                             "The server encountered an unexpected error while servicing the request"));
         }
     }

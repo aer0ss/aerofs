@@ -11,7 +11,8 @@ import com.aerofs.daemon.rest.RestService;
 import com.aerofs.daemon.rest.event.EIFileContent;
 import com.aerofs.daemon.rest.event.EIFileInfo;
 import com.aerofs.daemon.rest.jersey.RestObjectParam;
-import com.aerofs.lib.cfg.CfgLocalUser;
+import com.aerofs.oauth.AuthenticatedPrincipal;
+import com.aerofs.restless.Auth;
 import com.google.common.net.HttpHeaders;
 import com.sun.jersey.core.header.MatchingEntityTag;
 import com.sun.jersey.core.header.reader.HttpHeaderReader;
@@ -34,31 +35,31 @@ import java.util.Set;
 public class FilesResource
 {
     private final IIMCExecutor _imce;
-    private final CfgLocalUser _localUser;
 
     @Inject
-    public FilesResource(CoreIMCExecutor imce, CfgLocalUser localUser)
+    public FilesResource(CoreIMCExecutor imce)
     {
         _imce = imce.imce();
-        _localUser = localUser;
     }
 
     @GET
-    public Response metadata(@PathParam("object") RestObjectParam object)
+    public Response metadata(@Auth AuthenticatedPrincipal principal,
+            @PathParam("object") RestObjectParam object)
     {
-        UserID userid = _localUser.get(); // TODO: get from auth
+        UserID userid = principal.getUserID();
         return new EIFileInfo(_imce, userid, object.get()).execute();
     }
 
     @GET
     @Path("/content")
     @Produces({MediaType.APPLICATION_OCTET_STREAM, "multipart/byteranges"})
-    public Response content(@PathParam("object") RestObjectParam object,
+    public Response content(@Auth AuthenticatedPrincipal principal,
+            @PathParam("object") RestObjectParam object,
             @HeaderParam(HttpHeaders.IF_RANGE) String ifRange,
             @HeaderParam(HttpHeaders.RANGE) String range,
             @HeaderParam(HttpHeaders.IF_NONE_MATCH) String ifNoneMatch)
     {
-        UserID userid = _localUser.get(); // TODO: get from auth
+        UserID userid = principal.getUserID();
         EntityTag etIfRange = parseEtag(ifRange);
         Set<MatchingEntityTag> etIfNoneMatch = parseEtags(ifNoneMatch);
         return new EIFileContent(_imce, userid, object.get(), etIfRange, range, etIfNoneMatch).execute();

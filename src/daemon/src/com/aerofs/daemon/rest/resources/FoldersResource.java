@@ -10,7 +10,8 @@ import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
 import com.aerofs.daemon.rest.RestService;
 import com.aerofs.daemon.rest.event.EIFolderInfo;
 import com.aerofs.daemon.rest.jersey.RestObjectParam;
-import com.aerofs.lib.cfg.CfgLocalUser;
+import com.aerofs.oauth.AuthenticatedPrincipal;
+import com.aerofs.restless.Auth;
 
 import javax.inject.Inject;
 import javax.ws.rs.GET;
@@ -25,19 +26,18 @@ import javax.ws.rs.core.Response;
 public class FoldersResource
 {
     private final IIMCExecutor _imce;
-    private final CfgLocalUser _localUser;
 
     @Inject
-    public FoldersResource(CoreIMCExecutor imce, CfgLocalUser localUser)
+    public FoldersResource(CoreIMCExecutor imce)
     {
         _imce = imce.imce();
-        _localUser = localUser;
     }
 
     @GET
-    public Response metadata(@PathParam("object") RestObjectParam object)
+    public Response metadata(@Auth AuthenticatedPrincipal principal,
+            @PathParam("object") RestObjectParam object)
     {
-        UserID userid = _localUser.get(); // TODO: get from auth
+        UserID userid = principal.getUserID();
         return new EIFolderInfo(_imce, userid, object.get()).execute();
     }
 }

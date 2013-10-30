@@ -4,8 +4,8 @@
 
 package com.aerofs.daemon.rest;
 
-import com.aerofs.proto.Common.PBException.Type;
 import com.aerofs.rest.api.Error;
+import com.aerofs.rest.api.Error.Type;
 import com.aerofs.restless.Configuration;
 import org.jboss.netty.handler.codec.http.HttpHeaders.Names;
 import org.jboss.netty.handler.codec.http.HttpHeaders.Values;
@@ -30,7 +30,7 @@ public class RestConfiguration implements Configuration
     {
         return Response.status(Response.Status.NOT_FOUND)
                 .type(MediaType.APPLICATION_JSON_TYPE)
-                .entity(new Error(Type.NOT_FOUND.name(), "No such resource"))
+                .entity(new Error(Type.NOT_FOUND, "No such resource"))
                 .build();
     }
 }

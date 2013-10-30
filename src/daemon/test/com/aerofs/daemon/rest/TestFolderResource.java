@@ -19,7 +19,8 @@ public class TestFolderResource extends AbstractRestTest
     @Test
     public void shouldReturn400ForInvalidId() throws Exception
     {
-        expect()
+        givenAcces()
+        .expect()
                 .statusCode(400)
                 .body("type", equalTo("BAD_ARGS"))
         .when().get(RESOURCE, "bla");
@@ -28,7 +29,8 @@ public class TestFolderResource extends AbstractRestTest
     @Test
     public void shouldReturn404ForNonExistingStore() throws Exception
     {
-        expect()
+        givenAcces()
+        .expect()
                 .statusCode(404)
                 .body("type", equalTo("NOT_FOUND"))
         .when().get(RESOURCE, new RestObject(SID.generate(), OID.generate()).toStringFormal());
@@ -37,7 +39,8 @@ public class TestFolderResource extends AbstractRestTest
     @Test
     public void shouldReturn404ForNonExistingDir() throws Exception
     {
-        expect()
+        givenAcces()
+        .expect()
                 .statusCode(404)
                 .body("type", equalTo("NOT_FOUND"))
         .when().get(RESOURCE, new RestObject(rootSID, OID.generate()).toStringFormal());
@@ -48,7 +51,8 @@ public class TestFolderResource extends AbstractRestTest
     {
         mds.root().dir("d0").file("f1");
 
-        expect()
+        givenAcces()
+        .expect()
                 .statusCode(200)
                 .body("id", equalTo(object("d0").toStringFormal()))
                 .body("name", equalTo("d0"))
@@ -61,7 +65,8 @@ public class TestFolderResource extends AbstractRestTest
     {
         mds.root().file("f1");
 
-        expect()
+        givenAcces()
+        .expect()
                 .statusCode(404)
                 .body("type", equalTo("NOT_FOUND"))
         .when().get(RESOURCE, object("f1").toStringFormal());

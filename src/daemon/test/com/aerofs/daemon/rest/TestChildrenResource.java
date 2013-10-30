@@ -22,7 +22,8 @@ public class TestChildrenResource extends AbstractRestTest
     @Test
     public void shouldReturn400ForInvalidId() throws Exception
     {
-        expect()
+        givenAcces()
+        .expect()
                 .statusCode(400)
                 .body("type", equalTo("BAD_ARGS"))
         .when().get(RESOURCE, "bla");
@@ -31,7 +32,8 @@ public class TestChildrenResource extends AbstractRestTest
     @Test
     public void shouldReturn404ForNonExistingStore() throws Exception
     {
-        expect()
+        givenAcces()
+        .expect()
                 .statusCode(404)
                 .body("type", equalTo("NOT_FOUND"))
         .when().get(RESOURCE, new RestObject(SID.generate(), OID.generate()).toStringFormal());
@@ -40,7 +42,8 @@ public class TestChildrenResource extends AbstractRestTest
     @Test
     public void shouldReturn404ForNonExistingDir() throws Exception
     {
-        expect()
+        givenAcces()
+        .expect()
                 .statusCode(404)
                 .body("type", equalTo("NOT_FOUND"))
         .when().get(RESOURCE, new RestObject(rootSID, OID.generate()).toStringFormal());
@@ -54,7 +57,8 @@ public class TestChildrenResource extends AbstractRestTest
                 .file("f").parent()
                 .anchor("a");
 
-        expect()
+        givenAcces()
+        .expect()
                 .statusCode(200)
                 .body("files", hasSize(1)).body("files.name", hasItems("f"))
                 .body("folders", hasSize(2)).body("folders.name", hasItems("d", "a"))
@@ -67,7 +71,8 @@ public class TestChildrenResource extends AbstractRestTest
         mds.root()
                 .dir("d");
 
-        expect()
+        givenAcces()
+        .expect()
                 .statusCode(200)
                 .body("files", empty())
                 .body("folders", empty())
@@ -81,7 +86,8 @@ public class TestChildrenResource extends AbstractRestTest
         a.dir("d").parent()
                 .file("f");
 
-        expect()
+        givenAcces()
+        .expect()
                 .statusCode(200)
                 .body("files", empty())
                 .body("folders", hasSize(1))
@@ -98,7 +104,8 @@ public class TestChildrenResource extends AbstractRestTest
         a.dir("d").parent()
                 .file("f").caMaster(42, 0xdeadbeef);
 
-        expect()
+        givenAcces()
+        .expect()
                 .statusCode(200)
                 .body("files", hasSize(1))
                 .body("files[0].name", equalTo("f"))

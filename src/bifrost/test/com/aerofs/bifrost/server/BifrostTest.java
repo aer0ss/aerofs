@@ -4,17 +4,24 @@
 
 package com.aerofs.bifrost.server;
 
+import com.aerofs.base.id.OrganizationID;
+import com.aerofs.base.id.UserID;
+import com.aerofs.base.ssl.IPrivateKeyProvider;
 import com.aerofs.bifrost.module.AccessTokenDAO;
 import com.aerofs.bifrost.module.AuthorizationRequestDAO;
 import com.aerofs.bifrost.module.ClientDAO;
 import com.aerofs.bifrost.module.ResourceServerDAO;
+import com.aerofs.bifrost.oaaas.model.AccessToken;
 import com.aerofs.bifrost.oaaas.model.Client;
 import com.aerofs.bifrost.oaaas.model.ResourceServer;
+import com.aerofs.bifrost.oaaas.repository.AccessTokenRepository;
 import com.aerofs.bifrost.oaaas.repository.ClientRepository;
 import com.aerofs.bifrost.oaaas.repository.ResourceServerRepository;
-import com.aerofs.lib.cfg.CfgKeyManagersProvider;
+import com.aerofs.oauth.AuthenticatedPrincipal;
 import com.aerofs.testlib.AbstractTest;
 import com.aerofs.testlib.TempCert;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Sets;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -29,10 +36,7 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.mockito.Mock;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -48,19 +52,22 @@ import static org.mockito.Mockito.when;
  */
 public abstract class BifrostTest extends AbstractTest
 {
-    final static String RESOURCEID = "authorization-server-admin";
-    final static String CLIENTSECRET = "secret";
-    final static String RESOURCESECRET = "rs_secret";
-    final static String CLIENTREDIRECT = "http://client.example.com:9000/redirect";
-    private static TempCert ca;
+    public final static String RESOURCEID = "authorization-server-admin";
+    protected final static String CLIENTSECRET = "secret";
+    public final static String RESOURCESECRET = "rs_secret";
+    protected final static String CLIENTREDIRECT = "http://client.example.com:9000/redirect";
+    protected final static String USERNAME = "user";
+    public final static String TOKEN = "token";
+    protected final static String AUTH_URL = "/authorize";
+    protected final static String CLIENTID = "testapp";
+
+    protected static TempCert ca;
     private static TempCert cert;
-    protected final String AUTH_URL = "/authorize";
-    protected final String CLIENTID = "testapp";
-    @Mock CfgKeyManagersProvider _kmgr;
+    @Mock IPrivateKeyProvider _kmgr;
     @Mock SessionFactory _sessionFactory;
     @Mock Session _session;
     Bifrost _service;
-    private int _port;
+    protected int _port;
     private Injector _injector;
 
     @BeforeClass
@@ -79,9 +86,9 @@ public abstract class BifrostTest extends AbstractTest
     }
 
     @Before
-    public void setUp()
+    public void setUp() throws Exception
     {
-        _injector = Guice.createInjector(Bifrost.bifrostModule(), mockDatabaseModule());
+        _injector = Guice.createInjector(Bifrost.bifrostModule(), mockDatabaseModule(_sessionFactory));
 
         _service = new Bifrost(_injector, _kmgr);
         _service.start();
@@ -95,9 +102,9 @@ public abstract class BifrostTest extends AbstractTest
         RestAssured.port = _port;
         RestAssured.config = newConfig().redirect(redirectConfig().followRedirects(false));
 
-        createTestEntities();
+        createTestEntities(UserID.fromInternal(USERNAME), _injector);
 
-        l.info("REST service started at {}", RestAssured.port);
+        l.info("Bifrost service started at {}", RestAssured.port);
     }
 
     @After
@@ -125,12 +132,12 @@ public abstract class BifrostTest extends AbstractTest
      * client: use CLIENTID, CLIENTSECRET
      * resourceserver: use
      */
-    private void createTestEntities()
+    public static void createTestEntities(UserID user, Injector inj)
     {
         Client client = new Client();
         ResourceServer rs = new ResourceServer();
-        Set<Client> clients = new HashSet<Client>();
-        Set<String> scopes = new HashSet<String>();
+        Set<Client> clients = Sets.newHashSet();
+        Set<String> scopes = Sets.newHashSet();
 
         rs.updateTimeStamps();
         rs.setContactEmail("localadmin@example.com");
@@ -141,7 +148,7 @@ public abstract class BifrostTest extends AbstractTest
 
         client.setClientId(CLIENTID);
         client.setSecret(CLIENTSECRET);
-        client.setRedirectUris(new ArrayList<String>(Arrays.asList(new String[]{CLIENTREDIRECT})));
+        client.setRedirectUris(ImmutableList.of(CLIENTREDIRECT));
         client.updateTimeStamps();
         client.setContactEmail("test@example.com");
         client.setName("Test contact");
@@ -158,20 +165,31 @@ public abstract class BifrostTest extends AbstractTest
 
         rs.setClients(clients);
 
-        _injector.getInstance(ResourceServerRepository.class).save(rs);
-        _injector.getInstance(ClientRepository.class).save(client);
+        AuthenticatedPrincipal principal = new AuthenticatedPrincipal(USERNAME);
+        principal.setUserID(user);
+        principal.setOrganizationID(OrganizationID.PRIVATE_ORGANIZATION);
+        AccessToken token = new AccessToken(TOKEN,
+                principal,
+                client,
+                0,
+                scopes,
+                "");
+
+        inj.getInstance(ResourceServerRepository.class).save(rs);
+        inj.getInstance(ClientRepository.class).save(client);
+        inj.getInstance(AccessTokenRepository.class).save(token);
     }
 
-    private Module mockDatabaseModule()
+    public static Module mockDatabaseModule(final SessionFactory sessionFactory)
     {
         return new AbstractModule()
         {
             @Override
             protected void configure()
             {
-                bind(SessionFactory.class).toInstance(_sessionFactory);
+                bind(SessionFactory.class).toInstance(sessionFactory);
 
-                bind(ClientDAO.class).toInstance(new MockClientDAO(_sessionFactory));
+                bind(ClientDAO.class).toInstance(new MockClientDAO(sessionFactory));
                 bind(AccessTokenDAO.class).to(MockAccessTokenDAO.class);
                 bind(AuthorizationRequestDAO.class).to(MockAuthRequestDAO.class);
                 bind(ResourceServerDAO.class).to(MockResourceServerDAO.class);

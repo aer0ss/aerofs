@@ -7,6 +7,7 @@ package com.aerofs.havre.tunnel;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.havre.EndpointConnector;
+import com.aerofs.oauth.AuthenticatedPrincipal;
 import com.aerofs.tunnel.ITunnelConnectionListener;
 import com.aerofs.tunnel.TunnelAddress;
 import com.aerofs.tunnel.TunnelHandler;
@@ -32,10 +33,10 @@ public class TunnelEndpointConnector implements ITunnelConnectionListener, Endpo
     private final Map<UserID, Map<DID, TunnelHandler>> _endpointsByUser = Maps.newHashMap();
 
     @Override
-    public synchronized @Nullable Channel connect(UserID user, DID did, boolean strictMatch,
-            ChannelPipeline pipeline)
+    public synchronized @Nullable Channel connect(AuthenticatedPrincipal principal, DID did,
+            boolean strictMatch, ChannelPipeline pipeline)
     {
-        TunnelHandler tunnel = getEndpoint(new TunnelAddress(user, did), strictMatch);
+        TunnelHandler tunnel = getEndpoint(principal, did, strictMatch);
         return tunnel != null ? tunnel.newVirtualChannel(pipeline) : null;
     }
 
@@ -65,9 +66,18 @@ public class TunnelEndpointConnector implements ITunnelConnectionListener, Endpo
         }
     }
 
-    private @Nullable TunnelHandler getEndpoint(TunnelAddress addr,
+    private @Nullable TunnelHandler getEndpoint(AuthenticatedPrincipal principal, DID did,
             boolean strictMatch)
     {
+        TunnelHandler handler = getEndpoint(principal.getUserID(), did, strictMatch);
+        return handler != null
+                ? handler
+                : getEndpoint(principal.getOrganizationID().toTeamServerUserID(), did, strictMatch);
+    }
+
+    private @Nullable TunnelHandler getEndpoint(UserID user, DID did, boolean strictMatch)
+    {
+        TunnelAddress addr = new TunnelAddress(user, did);
         Map<DID, TunnelHandler> connectedDevices = _endpointsByUser.get(addr.user);
         if (connectedDevices == null || connectedDevices.isEmpty()) return null;
 
