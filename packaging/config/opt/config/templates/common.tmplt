@@ -28,3 +28,6 @@ lib.sv.url=
 lib.notifications.enabled=false
 lib.authenticator={{ authenticator }}
 sp.payment.enabled=false
+
+{# TODO (WW) once scrypt is removed from the client side, move this property to server.tmplt #}
+internal_email_pattern={{ internal_email_pattern }}
