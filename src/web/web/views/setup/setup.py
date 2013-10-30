@@ -121,18 +121,28 @@ def _is_hostname_resolvable(hostname):
     request_method = 'POST'
 )
 def json_setup_hostname(request):
-    base_host_unified = request.params['base.host.unified']
+    hostname = request.params['base.host.unified']
 
-    if not _is_hostname_resolvable(base_host_unified):
-        error('Unable to resolve ' + base_host_unified + '. Please check your settings.')
-
-    if base_host_unified == "localhost":
+    if hostname == "localhost":
         error("Localhost is not an acceptable name. Please configure your DNS.")
+    elif _is_valid_ipv4_address(hostname):
+        # We can't use IP addresses as hostnames, because the Java security
+        # library can't verify certificates with IP addresses as their CNames.
+        error("IP addresses are not allowed. Please configure your DNS.")
+    elif not _is_hostname_resolvable(hostname):
+        error("Unable to resolve " + hostname + ". Please check your settings.")
 
-    configuration = Configuration()
-    configuration.set_external_property('base_host', base_host_unified)
+    Configuration().set_external_property('base_host', hostname)
 
     return {}
+
+def _is_valid_ipv4_address(string):
+    import socket
+    try:
+        socket.inet_aton(string)
+        return True
+    except socket.error:
+        return False
 
 # ------------------------------------------------------------------------
 # Email

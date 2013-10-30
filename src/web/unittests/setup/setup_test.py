@@ -1,9 +1,10 @@
-import unittest
-from web.views.setup.setup import _get_default_support_email
+from pyramid.httpexceptions import HTTPBadRequest
+from unittests.test_base import TestBase
+from web.views.setup.setup import _get_default_support_email, json_setup_hostname
 
-class SetupTest(unittest.TestCase):
+class SetupTest(TestBase):
 
-    def test_get_default_support_email__should_work_as_expected(self):
+    def test__get_default_support_email__should_work_as_expected(self):
         self._verify_default_support_email('', 'localhost')
         self._verify_default_support_email('a', 'a')
         self._verify_default_support_email('haha', 'haha')
@@ -21,3 +22,28 @@ class SetupTest(unittest.TestCase):
     def _verify_default_support_email(self, hostname, expected):
         self.assertEqual(_get_default_support_email(hostname),
                          'support@' + expected)
+
+    def test__json_setup_hostname__should_disallow_ip(self):
+        try:
+            self._call_setup_hostname('1.2.3.4')
+            self.fail()
+        except HTTPBadRequest:
+            pass
+
+        try:
+            self._call_setup_hostname('1.2')
+            self.fail()
+        except HTTPBadRequest:
+            pass
+
+    def test__json_setup_hostname__should_disallow_localhost(self):
+        try:
+            self._call_setup_hostname('localhost')
+            self.fail()
+        except HTTPBadRequest:
+            pass
+
+    def _call_setup_hostname(self, hostname):
+        json_setup_hostname(self.create_dummy_request({
+            'base.host.unified': hostname
+        }))
