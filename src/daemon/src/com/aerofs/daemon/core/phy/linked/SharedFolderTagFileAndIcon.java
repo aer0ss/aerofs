@@ -155,6 +155,11 @@ public class SharedFolderTagFileAndIcon
         }
     }
 
+    public boolean isSharedFolderRoot(String absPath, SID sid) throws IOException
+    {
+        return isSharedFolderRoot(_factFile.create(absPath), sid);
+    }
+
     public boolean isSharedFolderRoot(InjectableFile dir, SID sid) throws IOException
     {
         InjectableFile tag = _factFile.create(dir, LibParam.SHARED_FOLDER_TAG);

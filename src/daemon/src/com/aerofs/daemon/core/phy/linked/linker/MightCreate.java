@@ -10,6 +10,7 @@ import static com.aerofs.daemon.core.phy.linked.linker.MightCreateOperations.Ope
 import static com.aerofs.daemon.core.phy.linked.linker.MightCreateOperations.*;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.first_launch.OIDGenerator;
 import com.aerofs.daemon.core.phy.linked.SharedFolderTagFileAndIcon;
 import com.aerofs.lib.LibParam;
@@ -116,8 +117,6 @@ public class MightCreate
         // OS-specific files should be ignored
         if (fnt == null) return Result.IGNORED;
 
-        // TODO acl checking
-
         SOID parent = _ds.resolveNullable_(pcPhysical._path.removeLast());
         if (shouldIgnoreChildren_(pcPhysical,  parent)) {
             l.debug("ignored {}:{}", pcPhysical, fnt._fid);
@@ -151,9 +150,9 @@ public class MightCreate
             return Result.IGNORED;
         }
 
-        Set<Operation> ops = determineUpdateOperation_(sourceSOID, targetSOID, fnt);
+        Set<Operation> ops = determineUpdateOperation_(pcPhysical, sourceSOID, targetSOID, fnt);
 
-        // reduce log volume by ignoring updateo p on existing object
+        // reduce log volume by ignoring update op on existing object
         if (!(sourceSOID != null && sourceSOID.equals(targetSOID) && ops.equals(EnumSet.of(Update)))) {
             l.info("{} {} {} {}", pcPhysical, ops, sourceSOID, targetSOID);
         }
@@ -232,7 +231,7 @@ public class MightCreate
      * @param targetSOID logical object whose path coincide with the target physical object, if any
      * @return update operations required to bring the logical mapping up-to-date
      */
-    private Set<Operation> determineUpdateOperation_(@Nullable SOID sourceSOID,
+    private Set<Operation> determineUpdateOperation_(PathCombo pc, @Nullable SOID sourceSOID,
             @Nullable SOID targetSOID, FIDAndType fnt) throws SQLException
     {
         if (targetSOID == null) {
@@ -240,10 +239,11 @@ public class MightCreate
             OA sourceOA = _ds.getOA_(sourceSOID);
             if (sourceOA.isDirOrAnchor() == fnt._dir) return EnumSet.of(Update);
             // same FID, diff path, diff types
-            // This may happen if 1) the OS deletes an object and soon reuses the same FID to
-            // create a new object of a different type (this has been observed on a Ubuntu test
-            // VM). This can also happen 2) on filesystems with ephemeral FIDs such as FAT on
-            // Linux. In either case, we need to assign the logical object with a random FID
+            // This may happen if either:
+            //    1) the OS deletes an object and soon reuses the same FID to create a new object
+            //       of a different type. This has been observed on a Ubuntu test VM.
+            //    2) the filesystems has ephemeral FIDs, such as FAT on Linux.
+            // In either case, we need to assign the logical object with a random FID
             return EnumSet.of(Create, RandomizeSourceFID);
         }
 
@@ -252,45 +252,63 @@ public class MightCreate
 
         if (sameType && targetSOID.equals(sourceSOID)) return EnumSet.of(Update);
 
-        // Locally present files, we can use the Replace operation that adjusts the FID of the
-        // target and update the master CA if necessary
-        //
-        // Folders cannot simply be replaced because that would break too many corner cases Most
-        // importantly, this will have extremely un-intuitive results when shared folders are
-        // involved.
-        //
-        // Consider for instance, 2 anchors:
-        //    o1:foo
-        //      \-> baz
-        //    o2:bar
-        //      \-> qux
-        //
-        // Now the user deletes bar and rename foo to bar. The expected result is:
-        //    o1:bar
-        //      \-> baz
-        //    sp.leave(o2)
-        //
-        // But allowing a replace operation on folders would lead to
-        //    o2:bar
-        //      \-> baz
-        //    sp.leave(o1)
-        // i.e. we would leave the wrong shared folder, mistakenly delete all files previously under
-        // o2:bar and replace them with files previously under o1:foo
-        //
-        // Not only is this unintuitive but from a user's perspective it is a spurious deletion
-        // for remote users and an ACL "breach" for the local user
-
-        if (sameType && !fnt._dir && !targetOA.isExpelled()) {
+        if (canSafelyReplaceFID(pc, targetOA, sameType)) {
             // The assertion below is guaranteed by the above code. N.B. oa.fid() may be null if
-            // no branch is present. See also detectAndApplyModification_()
+            // no branch is present.
             Preconditions.checkState(!fnt._fid.equals(targetOA.fid()));
             return EnumSet.of(Replace);
-        } else {
-            // The logical object can't simply link to the physical object by replacing the FID.
-            // NB: do not remove the target object from the deletion buffer, so it will be deleted
-            // if it's not moved to other locations later on.
-            return EnumSet.of(RenameTarget,
-                    sourceSOID == null || targetSOID.equals(sourceSOID) ? Create : Update);
         }
+
+        // The logical object can't simply link to the physical object by replacing the FID.
+        return EnumSet.of(RenameTarget,
+                sourceSOID == null || targetSOID.equals(sourceSOID) ? Create : Update);
+    }
+
+    /**
+     * For locally present files, we can use the Replace operation that adjusts the FID of the
+     * target and update the master CA if necessary
+     *
+     * Folders are trickier to handle and shared folders especially so.
+     *
+     * Consider for instance, 2 anchors:
+     *    o1:foo
+     *      \-> baz
+     *    o2:bar
+     *      \-> qux
+     *
+     * Now the user deletes bar and rename foo to bar. The expected result is:
+     *    o1:bar
+     *      \-> baz
+     *    sp.leave(o2)
+     *
+     * But allowing a replace operation on folders would lead to
+     *    o2:bar
+     *      \-> baz
+     *    sp.leave(o1)
+     * i.e. we would leave the wrong shared folder, mistakenly delete all files previously under
+     * o2:bar and replace them with files previously under o1:foo
+     *
+     * Not only is this unintuitive but from a user's perspective it is a spurious deletion
+     * for remote users and an ACL "breach" for the local user.
+     *
+     * In the case of shared folders however we can exploit the presence of the .aerofs tag file
+     * to check whether the OA and the physical folder match despite the FIDs suggesting they don't.
+     * This is important to avoid breaking shared folders on filesystems with ephemeral FIDs.
+     */
+    private boolean canSafelyReplaceFID(PathCombo pc, OA target, boolean sameType)
+    {
+        if (target.isExpelled()) return false;
+        if (target.isAnchor()) {
+            try {
+                // if the tag file matches the anchor we can replace the FID
+                return _sfti.isSharedFolderRoot(pc._absPath,
+                        SID.anchorOID2storeSID(target.soid().oid()));
+            } catch (IOException e) {
+                return false;
+            }
+        }
+
+        // we can safely replace FID for files
+        return sameType && target.isFile();
     }
 }

@@ -12,6 +12,7 @@ import com.aerofs.daemon.core.phy.linked.linker.MightCreateOperations.Operation;
 import com.aerofs.daemon.core.mock.logical.MockDS;
 import com.aerofs.daemon.core.phy.linked.SharedFolderTagFileAndIcon;
 import com.aerofs.daemon.lib.db.trans.Trans;
+import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExFileNotFound;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.injectable.InjectableDriver.FIDAndType;
@@ -42,7 +43,6 @@ public class TestMightCreate extends AbstractMightCreateTest
     @Mock IgnoreList il;
     @Mock SharedFolderTagFileAndIcon sfti;
     @Mock MightCreateOperations mcop;
-
 
     @InjectMocks MightCreate mc;
 
@@ -241,6 +241,21 @@ public class TestMightCreate extends AbstractMightCreateTest
         Assert.assertEquals(Result.NEW_OR_REPLACED_FOLDER, mightCreate("a2", fnt));
 
         verifyOperationExecuted(EnumSet.of(Operation.Create, Operation.RenameTarget),
+                null, soid, "a2");
+    }
+
+    @Test
+    public void shouldRepaceFIDForAnchorWithMatchingTag() throws Exception
+    {
+        SOID soid = ds.resolveNullable_(mkpath("a2"));
+        generateDirFnt(soid);
+        FIDAndType fnt = generateDirFnt();
+        when(sfti.isSharedFolderRoot(eq(Util.join(absRootAnchor, "a2")), any(SID.class)))
+                .thenReturn(true);
+
+        Assert.assertEquals(Result.NEW_OR_REPLACED_FOLDER, mightCreate("a2", fnt));
+
+        verifyOperationExecuted(EnumSet.of(Operation.Replace),
                 null, soid, "a2");
     }
 

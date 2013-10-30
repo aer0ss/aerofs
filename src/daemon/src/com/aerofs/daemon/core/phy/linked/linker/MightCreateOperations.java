@@ -11,6 +11,7 @@ import com.aerofs.base.analytics.AnalyticsEvents.FileSavedEvent;
 import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.OID;
+import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.VersionUpdater;
 import com.aerofs.daemon.core.ds.CA;
 import com.aerofs.daemon.core.ds.DirectoryService;
@@ -37,6 +38,7 @@ import com.aerofs.lib.id.SOKID;
 import com.aerofs.lib.injectable.InjectableDriver;
 import com.aerofs.lib.injectable.InjectableDriver.FIDAndType;
 import com.aerofs.lib.injectable.InjectableFile;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
@@ -133,16 +135,31 @@ class MightCreateOperations
             createLogicalObject_(pc, fnt._dir, og, t);
             return true;
         case Update:
-            assert sourceSOID != null;
+            Preconditions.checkNotNull(sourceSOID);
             updateLogicalObject_(sourceSOID, pc, fnt._dir, t);
+            fixTagFileIfNeeded(sourceSOID.oid(), pc._absPath, t);
             delBuffer.remove_(sourceSOID);
             return false;
         case Replace:
-            assert targetSOID != null;
+            Preconditions.checkNotNull(targetSOID);
             replaceObject_(pc, fnt, delBuffer, sourceSOID, targetSOID, t);
+            fixTagFileIfNeeded(targetSOID.oid(), pc._absPath, t);
             return true;
         default:
             throw SystemUtil.fatalWithReturn("unhandled op:" + ops);
+        }
+    }
+
+    private void fixTagFileIfNeeded(OID oid, String absPath, Trans t)
+    {
+        if (!oid.isAnchor()) return;
+        SID sid = SID.anchorOID2storeSID(oid);
+        try {
+            if (!_sfti.isSharedFolderRoot(absPath, sid)) {
+                _sfti.addTagFileAndIconIn(sid, absPath, t);
+            }
+        } catch (Exception e) {
+            l.error("failed to fix tag file for {} {}", oid.toStringFormal(), absPath, e);
         }
     }
 
@@ -287,7 +304,17 @@ class MightCreateOperations
     private void replaceObject_(PathCombo pc, FIDAndType fnt, IDeletionBuffer delBuffer,
             @Nullable SOID sourceSOID, @Nonnull SOID targetSOID, Trans t) throws Exception
     {
-        if (sourceSOID != null) cleanup_(sourceSOID, targetSOID, t);
+        if (sourceSOID != null) {
+            // When an existing object is moved over another existing (admitted) object we want
+            // this to be treated as an update to the target object and a deletion of the source
+            // object instead of causing a rename of the target and a move of the source. This
+            // is important to prevent the creation of duplicate files when a user tries to seed
+            // a shared folder *after* some metadata was retrieved but before content could be
+            // downloaded. It also helps avoiding unnecessary transfers in such a scenario and
+            // can reduce the amount of aliasing performed.
+            l.info("move over {} {}", sourceSOID, targetSOID);
+            cleanup_(sourceSOID, t);
+        }
 
         // Link the physical object to the logical object by replacing the FID.
         l.info("replace {} {}", targetSOID, pc);
@@ -304,17 +331,8 @@ class MightCreateOperations
         delBuffer.remove_(targetSOID);
     }
 
-    private void cleanup_(SOID sourceSOID, SOID targetSOID, Trans t) throws SQLException
+    private void cleanup_(SOID sourceSOID, Trans t) throws SQLException
     {
-        // When an existing object is moved over another existing (admitted) object we want
-        // this to be treated as an update to the target object and a deletion of the source
-        // object instead of causing a rename of the target and a move of the source. This
-        // is important to prevent the creation of duplicate files when a user tries to seed
-        // a shared folder *after* some metadata was retrieved but before content could be
-        // downloaded. It also helps avoiding unnecessary transfers in such a scenario and
-        // can reduce the amount of aliasing performed.
-        l.info("move over {} {}", sourceSOID, targetSOID);
-
         // We have to change the FID associated with the source object before we assign it to
         // the target.
         // Ideally we'd just reset the FID of the target but that would require cleaning up all

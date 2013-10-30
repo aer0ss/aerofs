@@ -72,7 +72,8 @@ public class TestMightCreateOperations extends AbstractMightCreateTest
                         .dir("bar")
                                 .file("hello").caMaster(42, 0).parent()
                                 .file("world").caMaster(42, 0).parent().parent().parent()
-                .dir("baz");
+                .dir("baz").parent()
+                .anchor("shared");
 
         LogicalObjectsPrinter.printRecursively(rootSID, ds);
 
@@ -158,7 +159,7 @@ public class TestMightCreateOperations extends AbstractMightCreateTest
         op("baz/new", fnt, Create);
 
         verify(oc).create_(eq(FILE), any(OID.class), soidAt("baz"), eq("new"), eq(MAP), eq(t));
-        verifyZeroInteractions(vu, om, delBuffer);
+        verifyZeroInteractions(vu, om, delBuffer, sfti);
     }
 
     @Test
@@ -168,6 +169,7 @@ public class TestMightCreateOperations extends AbstractMightCreateTest
         op("baz/new", fnt, Create);
 
         verify(oc).create_(eq(DIR), any(OID.class), soidAt("baz"), eq("new"), eq(MAP), eq(t));
+        verify(sfti).getOIDForAnchor_(any(PathCombo.class), eq(t));
         verifyZeroInteractions(vu, om, delBuffer);
     }
 
@@ -184,7 +186,7 @@ public class TestMightCreateOperations extends AbstractMightCreateTest
 
         verify(vu).update_(new SOCKID(soid, CID.CONTENT), t);
         verify(delBuffer).remove_(soid);
-        verifyZeroInteractions(oc, om);
+        verifyZeroInteractions(oc, om, sfti);
     }
 
     @Test
@@ -197,7 +199,7 @@ public class TestMightCreateOperations extends AbstractMightCreateTest
         op("foo/bar", fnt, Update);
 
         verify(delBuffer).remove_(soid);
-        verifyZeroInteractions(oc, om, vu);
+        verifyZeroInteractions(oc, om, vu, sfti);
     }
 
     @Test
@@ -213,7 +215,7 @@ public class TestMightCreateOperations extends AbstractMightCreateTest
 
         verify(om).move_(eq(soid), soidAt("foo"), eq("hello2"), eq(MAP), eq(t));
         verify(delBuffer).remove_(soid);
-        verifyZeroInteractions(oc, vu);
+        verifyZeroInteractions(oc, vu, sfti);
     }
 
     @Test
@@ -230,7 +232,7 @@ public class TestMightCreateOperations extends AbstractMightCreateTest
         verify(om).move_(eq(soid), soidAt("foo"), eq("hello2"), eq(MAP), eq(t));
         verify(vu).update_(new SOCKID(soid, CID.CONTENT), t);
         verify(delBuffer).remove_(soid);
-        verifyZeroInteractions(oc);
+        verifyZeroInteractions(oc, sfti);
     }
 
     @Test
@@ -244,7 +246,7 @@ public class TestMightCreateOperations extends AbstractMightCreateTest
 
         verify(om).move_(eq(soid), soidAt(""), eq("qux"), eq(MAP), eq(t));
         verify(delBuffer).remove_(soid);
-        verifyZeroInteractions(oc, vu);
+        verifyZeroInteractions(oc, vu, sfti);
     }
 
     @Test
@@ -261,7 +263,7 @@ public class TestMightCreateOperations extends AbstractMightCreateTest
         verify(ds).setFID_(soid, fnt._fid, t);
         verify(vu).update_(new SOCKID(soid, CID.CONTENT), t);
         verify(delBuffer).remove_(soid);
-        verifyZeroInteractions(oc, om);
+        verifyZeroInteractions(oc, om, sfti);
     }
 
     @Test
@@ -275,7 +277,7 @@ public class TestMightCreateOperations extends AbstractMightCreateTest
 
         verify(ds).setFID_(soid, fnt._fid, t);
         verify(delBuffer).remove_(soid);
-        verifyZeroInteractions(oc, om, vu);
+        verifyZeroInteractions(oc, om, vu, sfti);
     }
 
     @Test
@@ -293,7 +295,7 @@ public class TestMightCreateOperations extends AbstractMightCreateTest
         verify(om).moveInSameStore_(soidAt("foo/bar"), oidAt("foo"), eq("bar (3)"), eq(MAP),
                 eq(false), eq(true), eq(t));
         verify(oc).create_(eq(FILE), any(OID.class), soidAt("foo"), eq("bar"), eq(MAP), eq(t));
-        verifyZeroInteractions(delBuffer, vu);
+        verifyZeroInteractions(delBuffer, vu, sfti);
     }
 
     @Test
@@ -313,7 +315,7 @@ public class TestMightCreateOperations extends AbstractMightCreateTest
         verify(om).moveInSameStore_(soidAt("foo/bar"), oidAt("foo"), eq("bar (2)"), eq(MAP),
                 eq(false), eq(true), eq(t));
         verify(oc).create_(eq(FILE), any(OID.class), soidAt("foo"), eq("bar"), eq(MAP), eq(t));
-        verifyZeroInteractions(delBuffer, vu);
+        verifyZeroInteractions(delBuffer, vu, sfti);
     }
 
     @Test
@@ -327,7 +329,7 @@ public class TestMightCreateOperations extends AbstractMightCreateTest
 
         verify(ds).setFID_(eq(soid), any(FID.class), eq(t));
         verify(oc).create_(eq(FILE), any(OID.class), soidAt(""), eq("new"), eq(MAP), eq(t));
-        verifyZeroInteractions(delBuffer, om, vu);
+        verifyZeroInteractions(delBuffer, om, vu, sfti);
     }
 
     @Test
@@ -343,7 +345,7 @@ public class TestMightCreateOperations extends AbstractMightCreateTest
 
         verify(ds).setFID_(eq(source), any(FID.class), eq(t));
         verify(ds).setFID_(eq(target), eq(fnt._fid), eq(t));
-        verifyZeroInteractions(vu, om, oc);
+        verifyZeroInteractions(vu, om, oc, sfti);
     }
 
     @Test
@@ -361,6 +363,68 @@ public class TestMightCreateOperations extends AbstractMightCreateTest
         verify(ds).setCA_(new SOKID(source, KIndex.MASTER), -1L, 0L, null, t);
         verify(ds).setFID_(eq(target), eq(fnt._fid), eq(t));
         verify(vu).update_(new SOCKID(target, CID.CONTENT), t);
-        verifyZeroInteractions(vu, om, oc);
+        verifyZeroInteractions(vu, om, oc, sfti);
+    }
+
+    @Test
+    public void shouldFixTagFileWhenUpdatingAnchor() throws Exception
+    {
+        Path path = mkpath("shared");
+        SOID soid = ds.resolveNullable_(path);
+        FIDAndType fnt = generateDirFnt(soid);
+
+        String absPath = Util.join(absRootAnchor, "shared");
+        SID sid = SID.anchorOID2storeSID(soid.oid());
+
+        when(sfti.isSharedFolderRoot(absPath, sid)).thenReturn(false);
+
+        op("shared", fnt, Update);
+
+        verify(delBuffer).remove_(soid);
+        verify(sfti).isSharedFolderRoot(absPath, sid);
+        verify(sfti).addTagFileAndIconIn(sid, absPath, t);
+        verifyZeroInteractions(oc, om, vu);
+    }
+
+    @Test
+    public void shouldFixTagFileWhenRenamingAnchor() throws Exception
+    {
+        Path path = mkpath("shared");
+        SOID soid = ds.resolveNullable_(path);
+        FIDAndType fnt = generateDirFnt(soid);
+
+        String absPath = Util.join(absRootAnchor, "quux");
+        SID sid = SID.anchorOID2storeSID(soid.oid());
+
+        when(sfti.isSharedFolderRoot(absPath, sid)).thenReturn(false);
+
+        op("quux", fnt, Update);
+
+        verify(om).move_(eq(soid), soidAt(""), eq("quux"), eq(MAP), eq(t));
+        verify(delBuffer).remove_(soid);
+        verify(sfti).isSharedFolderRoot(absPath, sid);
+        verify(sfti).addTagFileAndIconIn(sid, absPath, t);
+        verifyZeroInteractions(oc, om, vu);
+    }
+
+    @Test
+    public void shouldFixTagFileWhenReplacingAnchor() throws Exception
+    {
+        Path path = mkpath("shared");
+        SOID soid = ds.resolveNullable_(path);
+        FIDAndType fnt = generateDirFnt();
+
+        String absPath = Util.join(absRootAnchor, "shared");
+        SID sid = SID.anchorOID2storeSID(soid.oid());
+
+        when(sfti.isSharedFolderRoot(absPath, sid)).thenReturn(false);
+
+        op("shared", fnt, Replace);
+
+        verify(ds).setFID_(soid, fnt._fid, t);
+        verify(delBuffer).remove_(soid);
+        verify(sfti).isSharedFolderRoot(absPath, sid);
+        verify(sfti).addTagFileAndIconIn(sid, absPath, t);
+        verifyZeroInteractions(oc, om, vu);
     }
 }
