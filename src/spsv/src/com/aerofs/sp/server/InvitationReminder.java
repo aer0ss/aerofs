@@ -140,7 +140,7 @@ public class InvitationReminder
                     SubscriptionCategory.AEROFS_INVITATION_REMINDER) >= TWO_DAYS) {
 
                 l.info("notifying " + user);
-                String signupCode = _db.getOnePendingFolderInvitationCode(user);
+                String signupCode = _db.getOneSignUpCode(user);
 
                 _db.setLastEmailTime(user, SubscriptionCategory.AEROFS_INVITATION_REMINDER,
                         System.currentTimeMillis());

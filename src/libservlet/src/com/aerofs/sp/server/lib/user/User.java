@@ -28,7 +28,9 @@ import com.aerofs.sp.server.lib.device.Device;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.base.id.OrganizationID;
 import com.aerofs.sp.server.lib.organization.OrganizationInvitation;
+import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import org.slf4j.Logger;
@@ -307,15 +309,19 @@ public class User
     }
 
     /**
-     * Create a new organization, add the user to the organization as an admin
+     * In public deployment: create a new organization, add the user to the organization as an admin.
+     * In private deployment: join the user to the private organization. Create the org if it
+     * doesn't exist. When this method concludes, the organiztion invitation associated with this
+     * user will no longer exist in the database.
+     *
      * @param shaedSP sha256(scrypt(p|u)|passwdSalt)
      * @throws ExAlreadyExist if the user ID already exists.
      */
     public void save(byte[] shaedSP, FullName fullName)
-            throws ExAlreadyExist, SQLException
+            throws ExAlreadyExist, SQLException, ExNotFound
     {
         if (PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT) {
-            // Private deployment: all users are created in the same organization (the "main
+            // Private deployment: all users are created in the same organization (the "private
             // organization").
             Organization privateOrg = _f._factOrg.create(OrganizationID.PRIVATE_ORGANIZATION);
             AuthorizationLevel authLevel = AuthorizationLevel.USER;
@@ -329,9 +335,23 @@ public class User
 
             saveImpl(shaedSP, fullName, privateOrg, authLevel);
 
+            // Remove organization invitations if any. Why we do this:
+            //
+            // Even though there is only one private organization, the system uses the same code
+            // path as in the public deployemnt when the organization's admin invites users
+            // (either external or internal) to the organization. Once the user joins the org, the
+            // user should disappear from the member management Web interface. The interface calls
+            // SP.listOrganizationInvitedUsers() to list all the invitations belonging to that org.
+            //
+            OrganizationInvitation oi = _f._factOrgInvite.create(this, privateOrg);
+            if (oi.exists()) oi.delete();
+
         } else {
             // Public deployment: create a new organization for this user and make them an admin
             saveImpl(shaedSP, fullName, _f._factOrg.save(), AuthorizationLevel.ADMIN);
+
+            // Because a brand new org is create, we don't need to delete any organization invite as
+            // what we do in the case of private deployment (see the other conditional branch).
         }
     }
 
@@ -456,32 +476,47 @@ public class User
      * Move the user to a new organization, set appropriate auth level, and adjust ACLs of shared
      * folders for the team server.
      */
-    public Collection<UserID> setOrganization(Organization org, AuthorizationLevel level)
+    public ImmutableCollection<UserID> setOrganization(Organization org, AuthorizationLevel level)
             throws SQLException, ExNotFound, ExAlreadyExist, ExNoAdminOrOwner
     {
         Organization orgOld = getOrganization();
-        AuthorizationLevel levelOld = getLevel();
+        if (orgOld.equals(org)) {
+            // no organization change? only set the level and skip the rest. This optimization is
+            // important for private deployments, where everyone automatically becomes a member of
+            // the same private org during signup, and therefore all calls to setOrganization are
+            // unuseful.
+            setLevel(level);
+            return ImmutableList.of();
+        }
+
+        // Delete organization invitation if any
+        OrganizationInvitation oi = _f._factOrgInvite.create(this, org);
+        if (oi.exists()) oi.delete();
 
         Collection<SharedFolder> sfs = getSharedFolders();
 
-        Set<UserID> users = Sets.newHashSet();
+        ImmutableSet.Builder<UserID> builder = ImmutableSet.builder();
 
-        for (SharedFolder sf : sfs) users.addAll(sf.deleteTeamServerACL(this));
+        for (SharedFolder sf : sfs) builder.addAll(sf.deleteTeamServerACL(this));
 
         _f._udb.setOrganizationID(_id, org.id());
 
+        // Set the level _after_ moving to the new org; otherwise setLevel() may fail if the user
+        // was the last member of the old org.
+        AuthorizationLevel levelOld = getLevel();
         setLevel(level);
 
-        for (SharedFolder sf : sfs) users.addAll(sf.addTeamServerACL(this));
+        for (SharedFolder sf : sfs) builder.addAll(sf.addTeamServerACL(this));
 
+        //noinspection StatementWithEmptyBody
         if (orgOld.countUsers() == 0) {
-            // TODO (WW) delete orgOld
+            // TODO (WW) delete the old organization
         } else if (levelOld.covers(AuthorizationLevel.ADMIN)) {
             // There must be one admin left for a non-empty team
             orgOld.throwIfNoAdmin();
         }
 
-        return users;
+        return builder.build();
     }
 
     public Collection<SharedFolder> getSharedFolders()
@@ -541,11 +576,5 @@ public class User
         String code = Base62CodeGenerator.generate();
         _f._udb.insertSignupCode(code, _id);
         return code;
-    }
-
-    public boolean isInvitedToSignUp()
-            throws SQLException
-    {
-        return _f._udb.isInvitedToSignUp(_id);
     }
 }

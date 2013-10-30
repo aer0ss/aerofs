@@ -9,6 +9,7 @@ import com.aerofs.base.acl.Role;
 import com.aerofs.lib.ex.ExNoAdminOrOwner;
 import com.aerofs.sp.server.lib.SharedFolder;
 import com.aerofs.sp.server.lib.organization.Organization;
+import com.aerofs.sp.server.lib.organization.OrganizationInvitation;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.aerofs.sp.server.lib.user.User;
 
@@ -16,7 +17,9 @@ import static com.aerofs.sp.server.lib.user.AuthorizationLevel.*;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public class TestUser_setOrganization extends AbstractBusinessObjectTest
@@ -68,6 +71,36 @@ public class TestUser_setOrganization extends AbstractBusinessObjectTest
             fail();
         } catch (ExNoAdminOrOwner e) {
         }
+    }
+
+    @Test
+    public void shouldDeleteOrganizationInvite()
+            throws Exception
+    {
+        User user = saveUser();
+        Organization org = saveUser().getOrganization();
+
+        OrganizationInvitation oi = factOrgInvite.save(saveUser(), user, org, null);
+        assertTrue(oi.exists());
+        user.setOrganization(org, USER);
+        assertFalse(oi.exists());
+    }
+
+    @Test
+    public void shouldOnlySetLevelForSameTeam()
+            throws Exception
+    {
+        User user = saveUser();
+        // add another admin to the org so setLevel() wouldn't complain about no-admin orgs when
+        // called by setOrganization().
+        saveUser().setOrganization(user.getOrganization(), ADMIN);
+
+        assertEquals(user.getLevel(), ADMIN);
+        // It should not touch ACLs. This optimization is important for private deployments, where
+        // everyone automatically becomes a member of the same private org during signup, and
+        // therefore all calls to setOrganization are unuseful.
+        assertEquals(user.setOrganization(user.getOrganization(), USER).size(), 0);
+        assertEquals(user.getLevel(), USER);
     }
 
     @Test

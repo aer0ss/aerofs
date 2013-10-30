@@ -17,7 +17,7 @@ import java.io.IOException;
 public class RequestToSignUpEmailer
 {
     // See web/__init__.py for the reason we have different URLs for private and public deployment
-    static private String DASHBOARD_HOME = WWW.DASHBOARD_HOST_URL +
+    static String DASHBOARD_HOME = WWW.DASHBOARD_HOST_URL +
             (PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT ? "/" : "/home");
 
     private static final AsyncEmailSender _emailSender = new AsyncEmailSender();

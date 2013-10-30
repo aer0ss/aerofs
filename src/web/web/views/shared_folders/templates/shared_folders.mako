@@ -369,7 +369,7 @@
                         showOwnerCanShareExternallyWarningModal(xhr, function() {
                             setRole(email, role, true);
                         });
-                    } else if (type == "SHARED_FOLDER_RULES_EDITORS_DISALLOWED_IN_EXTERNALL_SHARED_FOLDER") {
+                    } else if (type == "SHARED_FOLDER_RULES_EDITORS_DISALLOWED_IN_EXTERNALLY_SHARED_FOLDER") {
                         showEditorsDisallowedErrorModal(xhr, false);
                     } else {
                         showErrorMessageFromResponse(xhr);
@@ -490,7 +490,7 @@
                             inviteToFolder(email, role, true, done, always);
                         });
 
-                    } else if (type == "SHARED_FOLDER_RULES_EDITORS_DISALLOWED_IN_EXTERNALL_SHARED_FOLDER") {
+                    } else if (type == "SHARED_FOLDER_RULES_EDITORS_DISALLOWED_IN_EXTERNALLY_SHARED_FOLDER") {
                         showEditorsDisallowedErrorModal(xhr, true);
 
                     } else {

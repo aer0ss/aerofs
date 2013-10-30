@@ -29,6 +29,6 @@ public class ExSharedFolderRulesEditorsDisallowedInExternallySharedFolders
     @Override
     public Type getWireType()
     {
-        return Type.SHARED_FOLDER_RULES_EDITORS_DISALLOWED_IN_EXTERNALL_SHARED_FOLDER;
+        return Type.SHARED_FOLDER_RULES_EDITORS_DISALLOWED_IN_EXTERNALLY_SHARED_FOLDER;
     }
 }

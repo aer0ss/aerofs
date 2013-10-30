@@ -119,8 +119,6 @@ public class TestIdentityServlet extends AbstractTest
         properties.setProperty("openid.service.session.interval", "1");
         properties.setProperty("openid.service.url", "");
         properties.setProperty("openid.service.realm", "https://*.fakerealm.com");
-        properties.setProperty("openid.idp.discovery.enabled", "false");
-        properties.setProperty("openid.idp.discovery.url", "");
         properties.setProperty("openid.idp.endpoint.url", "https://www.fakeendpoint.com");
         properties.setProperty("openid.idp.user.uid.attribute", "openid.identity");
         properties.setProperty("openid.idp.user.uid.pattern", "");

@@ -148,8 +148,8 @@ public class AbstractSPTest extends AbstractTestWithDatabase
 
     @Spy protected IdentitySessionManager identitySessionManager = new IdentitySessionManager();
     @Spy protected IAuthenticator authenticator = new LocalAuthenticator();
-    @Spy protected ISharedFolderRules sharedFolderRules = SharedFolderRulesFactory.create(factUser,
-            sharedFolderNotificationEmailer);
+    @Spy protected ISharedFolderRules sharedFolderRules = SharedFolderRulesFactory.create(userFilter,
+            factUser, sharedFolderNotificationEmailer);
 
     // Subclasses can declare a @Mock'd or @Spy'd object for
     // - PasswordManagement,

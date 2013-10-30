@@ -110,10 +110,6 @@ public class OrganizationInvitation
     public void delete()
             throws ExNotFound, SQLException
     {
-        if (!exists()) {
-            throw new ExNotFound();
-        }
-
         _db.delete(_invitee.id(), _org.id());
     }
 }

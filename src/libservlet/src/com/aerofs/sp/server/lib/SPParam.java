@@ -31,15 +31,6 @@ public class SPParam
     // Email related constants.
     public static final String EMAIL_FROM_NAME = L.brand();
 
-    // Notification-related constants.
-    public static class Notifications
-    {
-        public static final String SENDER_EMAIL_ADDRESS =
-                getStringProperty("sp.notification.sender_email_address", "sp@aerofs.com");
-        public static final String RECEIVER_EMAIL_ADDRESS =
-                getStringProperty("sp.notification.receiver_email_address", "team@aerofs.com");
-    }
-
     /**
      * Number of bytes we use for the salt
      */

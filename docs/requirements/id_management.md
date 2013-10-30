@@ -1,6 +1,6 @@
 # Identity management
 
-AeroFS provides three ways to manage user accounts: OpenID, LDAP/AD, and 
+AeroFS Private Cloud provides three ways to manage user accounts: OpenID, LDAP/AD, and 
 AeroFS managed accounts (i.e., scrypted credential is matched against aerofs_sp.sp_user).
 
 ### Internal vs. external users

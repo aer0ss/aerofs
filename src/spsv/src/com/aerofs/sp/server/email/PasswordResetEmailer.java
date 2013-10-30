@@ -38,7 +38,7 @@ public class PasswordResetEmailer
         _emailSender.sendPublicEmailFromSupport(SPParam.EMAIL_FROM_NAME, userId.getString(), null,
                 subject, email.getTextEmail(), email.getHTMLEmail(), EmailCategory.PASSWORD_RESET);
 
-        EmailUtil.emailSPNotification(userId + " initiated a password reset ", "");
+        EmailUtil.emailInternalNotification(userId + " initiated a password reset ", "");
     }
 
     public void sendPasswordResetConfirmation(UserID userId)
@@ -60,6 +60,6 @@ public class PasswordResetEmailer
         _emailSender.sendPublicEmailFromSupport(SPParam.EMAIL_FROM_NAME, userId.getString(), null,
                 subject, email.getTextEmail(), email.getHTMLEmail(), EmailCategory.PASSWORD_RESET);
 
-        EmailUtil.emailSPNotification(userId + " completed a password reset ", "");
+        EmailUtil.emailInternalNotification(userId + " completed a password reset ", "");
     }
 }

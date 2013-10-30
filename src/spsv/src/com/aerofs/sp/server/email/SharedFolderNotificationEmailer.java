@@ -42,9 +42,11 @@ public class SharedFolderNotificationEmailer
                 " folder " + quotedFolderName + ".\n" +
                 "\n" +
                 "To view or manage the members of your shared folders, please go to " +
-                WWW.url() + "/shared_folders.";
+                // For autolinker to work, either leave a whitespace between the URL and the period
+                // for the end of sentence, or don't add periods at all. TODO (WW) fix this!
+                WWW.SHARED_FOLDERS_URL;
 
-        Email email = new Email();
+                Email email = new Email();
         email.addSection(subject, body);
         email.addDefaultSignature();
 

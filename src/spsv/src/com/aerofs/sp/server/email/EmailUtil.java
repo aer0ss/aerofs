@@ -4,6 +4,7 @@
 
 package com.aerofs.sp.server.email;
 
+import com.aerofs.lib.LibParam.PrivateDeploymentConfig;
 import com.aerofs.servlets.lib.AsyncEmailSender;
 import com.aerofs.sp.server.lib.SPParam;
 import com.aerofs.base.Loggers;
@@ -14,12 +15,18 @@ public class EmailUtil
     private static final Logger l = Loggers.getLogger(EmailUtil.class);
     private static final AsyncEmailSender _emailSender = new AsyncEmailSender();
 
-    public static void emailSPNotification(final String subject, final String body)
+    /**
+     * Send email notification to the AeroFS team.
+     */
+    public static void emailInternalNotification(final String subject, final String body)
     {
+        // Don't send notification in private deployment
+        if (PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT) return;
+
         try {
-            _emailSender.sendNotificationEmail(SPParam.Notifications.SENDER_EMAIL_ADDRESS,
-                    SPParam.Notifications.SENDER_EMAIL_ADDRESS,
-                    SPParam.Notifications.RECEIVER_EMAIL_ADDRESS, null, subject, body, null);
+            String sender = "sp@aerofs.com";
+            _emailSender.sendNotificationEmail(sender, sender, "team@aerofs.com", null, subject,
+                    body, null);
         } catch (Exception e) {
             l.error("cannot email notification: ", e);
         }

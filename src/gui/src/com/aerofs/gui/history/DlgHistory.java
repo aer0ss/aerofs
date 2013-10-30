@@ -1,6 +1,5 @@
 package com.aerofs.gui.history;
 
-import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.SID;
 import com.aerofs.gui.AeroFSDialog;
@@ -143,7 +142,7 @@ public class DlgHistory extends AeroFSDialog
             @Override
             public void widgetSelected(SelectionEvent selectionEvent)
             {
-                GUIUtil.launch(WWW.FAQ_SYNC_HISTORY_URL);
+                GUIUtil.launch("https://support.aerofs.com/entries/23753136");
             }
         });
 

@@ -7,7 +7,6 @@ package com.aerofs.lib;
 import com.aerofs.base.BaseParam;
 import com.aerofs.base.C;
 import com.aerofs.base.id.SID;
-import com.aerofs.labeling.L;
 import com.google.common.base.Optional;
 
 import java.net.InetAddress;
@@ -265,7 +264,7 @@ public class LibParam extends BaseParam
              * to complete.
              */
             OPENID
-        };
+        }
 
         /**
          * Choose a user authenticator style - this will determine the sign-in options
@@ -296,6 +295,15 @@ public class LibParam extends BaseParam
                 return Authenticator.LOCAL_CREDENTIAL;
             }
         }
+
+        /**
+         * A short, user-visible name for the OpenID service. This will be displayed
+         * to end-users in the context of "Sign in with {}", "A user without {} accounts", etc.
+         */
+        public static final String                      SERVICE_IDENTIFIER =
+                getStringProperty(                      "identity_service_identifier",
+                        // The default value
+                        OpenId.enabled() ? "OpenID" : "LDAP");
     }
 
     /**
@@ -336,21 +344,6 @@ public class LibParam extends BaseParam
         public static final String                      IDENTITY_URL =
                 getStringProperty(                      "openid.service.url", "");
 
-        /**
-         * A short, user-visible name for the OpenID service. This will be displayed
-         * to end-users in the form "Sign in with " + SERVICE_IDENTIFIER.
-         */
-        public static final String                      SERVICE_IDENTIFIER =
-                getStringProperty(                      "openid.service.identifier", "OpenID");
-
-        /**
-         * A short phrase that will guide external users to sign in with a local credential.
-         */
-        public static final String                      SERVICE_EXTERNAL_HINT =
-                getStringProperty(                      "openid.service.external.hint",
-                                                        L.product() + " user without an "
-                                                                + SERVICE_IDENTIFIER + " account?");
-
         /** The security realm for which we are requesting authorization */
         public static final String                      IDENTITY_REALM =
                 getStringProperty(                      "openid.service.realm", "");
@@ -377,14 +370,6 @@ public class LibParam extends BaseParam
          * try to close the browser (and suggest the user do so).
          */
         public static final String                      OPENID_ONCOMPLETE_URL = "sp.oncomplete";
-
-        /** OpenID discovery may be disabled if YADIS discovery is not supported. */
-        public static final Boolean                     DISCOVERY_ENABLED =
-                getBooleanProperty(                     "openid.idp.discovery.enabled", false);
-
-        /** Discovery URL for the OpenID provider. Only used if discovery is enabled. */
-        public static final String                      DISCOVERY_URL =
-                getStringProperty(                      "openid.idp.discovery.url", "");
 
         /** Endpoint URL used if discovery is not enabled for this OpenID Provider */
         public static final String                      ENDPOINT_URL =

@@ -9,10 +9,8 @@ import com.google.common.base.Throwables;
 
 import java.net.InetSocketAddress;
 import java.net.URL;
-import java.security.cert.X509Certificate;
 
 import static com.aerofs.base.config.ConfigurationProperties.getAddressProperty;
-import static com.aerofs.base.config.ConfigurationProperties.getCertificateProperty;
 import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
 import static com.aerofs.base.config.ConfigurationProperties.getUrlProperty;
 
@@ -30,9 +28,6 @@ public class BaseParam
 
     public static class Cacert
     {
-        public static final X509Certificate CACERT = getCertificateProperty(
-                "config.loader.base_ca_certificate", null);
-
         // TODO (MP) need create ServerParam.java (or something) and move this there.
         public static final String FILE = "/etc/ssl/certs/AeroFS_CA.pem";
     }
@@ -63,8 +58,6 @@ public class BaseParam
 
     public static class Zephyr
     {
-        public static final String TRANSPORT_ID = "z";
-
         // this value is dynamic but clients will not pick up the new value on failure
         public static final InetSocketAddress SERVER_ADDRESS = getAddressProperty("base.zephyr.address",
                 InetSocketAddress.createUnresolved("relay.aerofs.com", 443));
@@ -72,51 +65,33 @@ public class BaseParam
 
     public static class WWW
     {
-        public static final URL URL = getUrlProperty("base.www.url",
-                "https://www.aerofs.com");
-
-        public static String url()
-        {
-            return URL.toExternalForm();
-        }
+        public static final String DASHBOARD_HOST_URL = getStringProperty("base.www.url", "https://www.aerofs.com");
 
         public static final String SUPPORT_EMAIL_ADDRESS = getStringProperty(
                 "base.www.support_email_address", "support@aerofs.com");
 
+        // the marketing Web's location is independent from the URL parameter. It should always
+        // points to the product's public home page.
         public static final String MARKETING_HOST_URL = getStringProperty(
-                "base.www.marketing_host_url", url());
+                "base.www.marketing_host_url", "https://www.aerofs.com");
 
-        public static final String DASHBOARD_HOST_URL = getStringProperty(
-                "base.www.dashboard_host_url", url());
+        public static final String PASSWORD_RESET_REQUEST_URL = DASHBOARD_HOST_URL + "/request_password_reset";
 
-        public static final String PASSWORD_RESET_REQUEST_URL = getStringProperty(
-                "base.www.password_reset_request_url",
-                        url() + "/request_password_reset");
+        public static final String PASSWORD_RESET_URL = DASHBOARD_HOST_URL + "/password_reset";
 
-        public static final String PASSWORD_RESET_URL = getStringProperty(
-                "base.www.password_reset_request_url",
-                url() + "/password_reset");
+        public static final String UPGRADE_URL = DASHBOARD_HOST_URL + "/upgrade";
 
-        public static final String UPGRADE_URL = getStringProperty("base.www.upgrade_url",
-                url() + "/upgrade");
+        public static final String SHARED_FOLDERS_URL = DASHBOARD_HOST_URL + "/shared_folders";
 
-        public static final String TEAM_MEMBERS_URL = getStringProperty("base.www.team_members_url",
-                url() + "/admin/team_members");
+        public static final String TEAM_MEMBERS_URL = DASHBOARD_HOST_URL + "/admin/team_members";
 
-        public static final String DEVICES_URL = getStringProperty("base.www.devices_url",
-                url() + "/devices");
+        public static final String DEVICES_URL = DASHBOARD_HOST_URL + "/devices";
 
-        public static final String TEAM_SERVER_DEVICES_URL = getStringProperty(
-                "base.www.team_server_devices_url", url() + "/admin/team_servers");
+        public static final String TEAM_SERVER_DEVICES_URL = DASHBOARD_HOST_URL + "/admin/team_servers";
 
-        public static final String DOWNLOAD_URL = getStringProperty("base.www.download_url",
-                url() + "/download");
+        public static final String DOWNLOAD_URL = DASHBOARD_HOST_URL + "/download";
 
-        public static final String TOS_URL = getStringProperty("base.www.tos_url",
-                url() + "/terms#privacy");
-
-        public static final String FAQ_SYNC_HISTORY_URL
-                = "https://aerofs.zendesk.com/entries/23753136";
+        public static final String TOS_URL = MARKETING_HOST_URL+ "/terms#privacy";
     }
 
     public static class SV

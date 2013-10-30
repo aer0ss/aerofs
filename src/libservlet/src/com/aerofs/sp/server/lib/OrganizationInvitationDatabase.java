@@ -56,7 +56,7 @@ public class OrganizationInvitationDatabase extends AbstractSQLDatabase
     }
 
     public void delete(UserID invitee, OrganizationID org)
-            throws SQLException
+            throws SQLException, ExNotFound
     {
         PreparedStatement ps = prepareStatement(
                 DBUtil.deleteWhere(T_OI, C_OI_INVITEE + " =? and " + C_OI_ORG_ID + " =?"));
@@ -64,7 +64,9 @@ public class OrganizationInvitationDatabase extends AbstractSQLDatabase
         ps.setString(1, invitee.getString());
         ps.setInt(2, org.getInt());
 
-        ps.executeUpdate();
+        int count = ps.executeUpdate();
+        assert count <= 1;
+        if (count == 0) throw new ExNotFound();
     }
 
     public UserID getInviter(UserID invitee, OrganizationID org)
@@ -77,12 +79,8 @@ public class OrganizationInvitationDatabase extends AbstractSQLDatabase
         ps.setInt(2, org.getInt());
 
         ResultSet rs = ps.executeQuery();
-        if (!rs.next()) {
-            rs.close();
-            throw new ExNotFound();
-        }
-
         try {
+            if (!rs.next()) throw new ExNotFound();
             return UserID.fromInternal(rs.getString(1));
         } finally {
             rs.close();

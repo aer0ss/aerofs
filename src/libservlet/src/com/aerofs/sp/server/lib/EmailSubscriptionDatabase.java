@@ -285,7 +285,7 @@ public class EmailSubscriptionDatabase extends AbstractSQLDatabase
      * Used to retrieve a folder invitation code to use in the email reminders
      * We don't care which code it is, so long as it can be used to sign up
      */
-    public String getOnePendingFolderInvitationCode(UserID to)
+    public String getOneSignUpCode(UserID to)
             throws SQLException
     {
         PreparedStatement ps = prepareStatement(selectWhere(T_SIGNUP_CODE, C_SIGNUP_CODE_TO + "=?",

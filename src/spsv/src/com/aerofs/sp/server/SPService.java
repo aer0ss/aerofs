@@ -1121,17 +1121,18 @@ public class SPService implements ISPService
             emailer = _factInvitationEmailer.createFolderInvitationEmailer(sharer, sharee,
                     folderName, note, sf.id(), role);
         } else {
+            // send sign-up email
             emailer = inviteToSignUp(sharer, sharee, folderName, role, note)._emailer;
         }
         return emailer;
     }
 
-    static class InviteToSignUpResult
+    private static class InviteToSignUpResult
     {
         final InvitationEmailer _emailer;
-        final String _signUpCode;
+        @Nullable final String _signUpCode;
 
-        InviteToSignUpResult(InvitationEmailer emailer, String signUpCode)
+        InviteToSignUpResult(InvitationEmailer emailer, @Nullable String signUpCode)
         {
             _emailer = emailer;
             _signUpCode = signUpCode;
@@ -1141,15 +1142,27 @@ public class SPService implements ISPService
     /**
      * Call this method to use an inviter name different from inviter.getFullName()._first
      */
-    InviteToSignUpResult inviteToSignUp(User inviter, User invitee, @Nullable String folderName,
+    private InviteToSignUpResult inviteToSignUp(User inviter, User invitee, @Nullable String folderName,
             @Nullable Role role, @Nullable String note)
             throws SQLException, IOException, ExNotFound
     {
         assert !invitee.exists();
 
-        String code = invitee.addSignUpCode();
+        String code;
+        if (_authenticator.isAutoProvisioned(invitee.id())) {
+            // No signup code is needed for auto-provisioned users. They can simply sign in using
+            // LDAP or OpenID credentials.
+            code = null;
 
-        _esdb.insertEmailSubscription(invitee.id(), SubscriptionCategory.AEROFS_INVITATION_REMINDER);
+            // We can't set up reminder emails as what the other conditional branch does, because
+            // reminder email implementation requires valid signup codes. We can implement
+            // different reminder emails if we'd like. In doing that, we need to remove the
+            // reminder when creating the user during auto-provisioning.
+
+        } else {
+            code = invitee.addSignUpCode();
+            _esdb.insertEmailSubscription(invitee.id(), SubscriptionCategory.AEROFS_INVITATION_REMINDER);
+        }
 
         InvitationEmailer emailer = _factInvitationEmailer.createSignUpInvitationEmailer(inviter,
                 invitee, folderName, role, note, code);
@@ -1324,9 +1337,7 @@ public class SPService implements ISPService
     public ListenableFuture<Void> requestToSignUp(String emailAddress)
             throws Exception
     {
-        if (!Util.isValidEmailAddress(emailAddress)) {
-            throw new ExInvalidEmailAddress();
-        }
+        if (!Util.isValidEmailAddress(emailAddress)) throw new ExInvalidEmailAddress();
 
         User user = _factUser.createFromExternalID(emailAddress);
 
@@ -1336,6 +1347,8 @@ public class SPService implements ISPService
         // (via site setup UI).
         if (INVITATION_ONLY_SIGNUP && _factUser.hasUsers()) {
             throw new ExNoPerm("invitation-only sign up");
+        } else if (_authenticator.isAutoProvisioned(user.id())) {
+            throw new ExNoPerm("auto-provisioned users don't need to request for sign-up");
         }
 
         @Nullable String signUpCode = user.exists() ? null : user.addSignUpCode();
@@ -1376,14 +1389,17 @@ public class SPService implements ISPService
             // signup code with the team invitation. See signUpWithCode() on how this association is
             // consumed.
             InviteToSignUpResult res = inviteToSignUp(inviter, invitee, null, null, null);
+            // ignore the emailer returned by inviteToOrganization(), so we only send one email
+            // rather than two.
             inviteToOrganization(inviter, invitee, org, res._signUpCode);
             emailer = res._emailer;
-        } else {
-            // The user exists. Send him a team invitation email.
-            if (invitee.belongsTo(org)) {
-                throw new ExAlreadyExist(invitee + " is already a member of the team");
-            }
+
+        } else if (!invitee.belongsTo(org)) {
+            // the invitee exists and doesn't belong to the org. Send an invite.
             emailer = inviteToOrganization(inviter, invitee, org, null);
+
+        } else {
+            throw new ExAlreadyExist(invitee + " is already a member of the team");
         }
 
         PBStripeData sd = getStripeData(org);
@@ -1400,9 +1416,9 @@ public class SPService implements ISPService
     /**
      * Note that the invitee may not exist when the method is called.
      *
-     * @param signUpCode The signUp code to be associated with the team invitation. As soon as the
-     *  user signs up with the associated code, the system will automatically accept the team
-     *  invitation. See signUpWithCode().
+     * @param signUpCode The signUp code to be associated with the team invitation. If the user
+     * signs up with the associated code, the system will automatically accept the team invitation.
+     * See signUpWithCode().
      */
     InvitationEmailer inviteToOrganization(User inviter, User invitee, Organization org,
             @Nullable String signUpCode)
@@ -1428,7 +1444,14 @@ public class SPService implements ISPService
         Organization orgOld = accepter.getOrganization();
         Organization orgNew = _factOrg.create(orgID);
 
-        Collection<UserID> users = acceptOrganizationInvitation(accepter, orgNew);
+        l.info("{} accept org invite to {}", accepter, orgNew);
+
+        // Check to see if the user was actually invited to this organization.
+        if (!_factOrgInvite.create(accepter, orgNew).exists()) throw new ExNotFound();
+
+        // This will delete the organization invite
+        // TODO (WW) this comment points to poor naming (or cohesion) in setOrganization
+        Collection<UserID> users = accepter.setOrganization(orgNew, AuthorizationLevel.USER);
 
         // retrieve the stripe data for the old team _after_ the user moves out.
         PBStripeData sd = getStripeData(orgOld);
@@ -1438,24 +1461,6 @@ public class SPService implements ISPService
         _sqlTrans.commit();
 
         return createReply(AcceptOrganizationInvitationReply.newBuilder().setStripeData(sd).build());
-    }
-
-    /**
-     * @return a collection of users to be passed into publishACLs_()
-     */
-    private Collection<UserID> acceptOrganizationInvitation(User accepter, Organization org)
-            throws Exception
-    {
-        l.info("{} accept org invite to {}", accepter, org);
-
-        OrganizationInvitation invite = _factOrgInvite.create(accepter, org);
-
-        // Check to see if the user was actually invited to this organization.
-        if (!invite.exists()) throw new ExNotFound();
-
-        invite.delete();
-
-        return accepter.setOrganization(invite.getOrganization(), AuthorizationLevel.USER);
     }
 
     @Override
@@ -1507,7 +1512,7 @@ public class SPService implements ISPService
         _sqlTrans.begin();
 
         if (PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT) {
-            throw new ExNoPerm("Removing users isn't supported in enterprise deployment");
+            throw new ExNoPerm("Removing users isn't supported in private deployment");
         }
 
         User admin = _sessionUser.getUser();
@@ -1939,16 +1944,16 @@ public class SPService implements ISPService
         Collection<UserID> users;
         if (isExistingUserWithMatchingPassword(user, shaedSP)) {
             // If the user already exists and the password matches the existing password, we do an
-            // no-op. This is needed for invited users to retry signing up using the link in
-            // their email. That link points to the user signup page with business signup as the
-            // followup page.
+            // no-op. This is needed for the user to retry signing up using the link in the signup
+            // verification email.
             users = Collections.emptyList();
             joinExistingTeam = true;
+
         } else {
             SignUpWithCodeImplResult result = signUpWithCodeImpl(signUpCode, user, firstName,
                     lastName, shaedSP);
-            users = result.getUsers();
-            joinExistingTeam = result.isExistingTeam();
+            users = result._users;
+            joinExistingTeam = result._joinedExistingTeam;
         }
 
         OrganizationID orgID = user.getOrganization().id();
@@ -1965,23 +1970,13 @@ public class SPService implements ISPService
 
     private class SignUpWithCodeImplResult
     {
-        private final Collection<UserID> users;
-        private final boolean existingTeam; // is the user joining a new team or an existing team?
+        final Collection<UserID> _users;
+        final boolean _joinedExistingTeam; // is the user joining a new team or an existing team?
 
-        private SignUpWithCodeImplResult(Collection<UserID> users, boolean existingTeam)
+        private SignUpWithCodeImplResult(Collection<UserID> users, boolean joinedExistingTeam)
         {
-            this.users = users;
-            this.existingTeam = existingTeam;
-        }
-
-        private Collection<UserID> getUsers()
-        {
-            return users;
-        }
-
-        private boolean isExistingTeam()
-        {
-            return existingTeam;
+            _users = users;
+            _joinedExistingTeam = joinedExistingTeam;
         }
     }
     /**
@@ -2000,25 +1995,29 @@ public class SPService implements ISPService
 
         _analytics.track(new SignUpEvent(user.id()));
 
-        // N.B. do not remove the sign up invitation code so we can support the case in the
-        // above "if user.exist()" branch.
+        // N.B. do not remove the sign up invitation code so users can retry signing up using the
+        // same link in the signup verification email. See this method's caller for detail.
 
         // Accept team invitation if there is one associated with the signup code.
         OrganizationInvitation oi = _factOrgInvite.getBySignUpCodeNullable(signUpCode);
         if (oi == null) {
             return new SignUpWithCodeImplResult(Collections.<UserID>emptyList(), false);
 
+        } else if (!oi.getInvitee().equals(user)) {
+            l.error("the org invite ({} => {} to {}) associated with the signup code {} " +
+                    "doesn't match the signup user {}. how possible?", oi.getInviter(),
+                    oi.getInvitee(), oi.getOrganization(), signUpCode, user);
+            throw new ExNotFound();
+
         } else {
             l.info("{} automatically accepts team invitation to {}", user, oi.getOrganization());
 
-            if (!oi.getInvitee().equals(user)) {
-                l.error("the org invite ({} => {} to {}) associated with the signup code {} " +
-                        "doesn't match the signup user {}. how possible?", oi.getInviter(),
-                        oi.getInvitee(), oi.getOrganization(), signUpCode, user);
-                throw new ExNotFound();
-            }
-            return new SignUpWithCodeImplResult(
-                    acceptOrganizationInvitation(user, oi.getOrganization()), true);
+            Collection<UserID> users = user.setOrganization(oi.getOrganization(),
+                    AuthorizationLevel.USER);
+            // setOrganization() should delete the invitation
+            assert !oi.exists();
+
+            return new SignUpWithCodeImplResult(users, true);
         }
     }
 
@@ -2081,10 +2080,6 @@ public class SPService implements ISPService
 
     /**
      * FIXME
-     * @param userID
-     * @param credentials
-     * @return
-     * @throws Exception
      */
     @Override
     public ListenableFuture<Void> validateCredential(String userID, ByteString credentials)
@@ -2138,6 +2133,7 @@ public class SPService implements ISPService
 
         User user = _factUser.createFromExternalID(attrs.getEmail());
 
+        // TODO (WW) shouldn't it use IAuthenticator?
         _sqlTrans.begin();
         if (!user.exists()) {
             user.save(new byte[0], new FullName(attrs.getFirstName(), attrs.getLastName()));

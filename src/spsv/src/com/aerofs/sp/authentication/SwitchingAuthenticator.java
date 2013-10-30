@@ -4,6 +4,7 @@
 
 package com.aerofs.sp.authentication;
 
+import com.aerofs.base.id.UserID;
 import com.aerofs.servlets.lib.db.IThreadLocalTransaction;
 import com.aerofs.sp.common.UserFilter;
 import com.aerofs.sp.server.lib.user.User;
@@ -26,6 +27,7 @@ public class SwitchingAuthenticator implements IAuthenticator
     {
         _ldap = ldap;
         _local = local;
+        // TODO (WW) query the LDAP server to detemrine internal vs. external users.
         _filter = new UserFilter();
     }
 
@@ -41,6 +43,13 @@ public class SwitchingAuthenticator implements IAuthenticator
             _l.debug("Auth external user {} ...", user.id());
             _local.authenticateUser(user, credential, trans);
         }
+    }
+
+    @Override
+    public boolean isAutoProvisioned(UserID userID)
+    {
+        return _filter.isInternalUser(userID) ? _ldap.isAutoProvisioned(userID) :
+                _local.isAutoProvisioned(userID);
     }
 
     private final LdapAuthenticator _ldap;

@@ -9,7 +9,7 @@ import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.base.ex.ExTimeout;
 import com.aerofs.gui.CompSpin;
 import com.aerofs.gui.GUIUtil;
-import com.aerofs.lib.LibParam.OpenId;
+import com.aerofs.lib.LibParam.Identity;
 import com.aerofs.lib.S;
 import com.aerofs.ui.error.ErrorMessage;
 import org.eclipse.swt.SWT;
@@ -39,7 +39,7 @@ public class PageOpenIdSignIn extends AbstractSetupWorkPage
 
         _btnContinue = GUIUtil.createButton(content, SWT.PUSH);
         _btnContinue.setText("Sign in using the Team Administrator's\n" +
-                OpenId.SERVICE_IDENTIFIER + " account.");
+                Identity.SERVICE_IDENTIFIER + " account.");
         _btnContinue.addSelectionListener(createListenerToDoWork());
         getShell().setDefaultButton(_btnContinue);
 

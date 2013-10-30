@@ -108,7 +108,7 @@ public abstract class Util
                                 ExSharedFolderRulesWarningAddExternalUser.class)
                         .put(Type.SHARED_FOLDER_RULES_WARNING_OWNER_CAN_SHARE_WITH_EXTERNAL_USERS,
                                 ExSharedFolderRulesWarningOwnerCanShareWithExternalUsers.class)
-                        .put(Type.SHARED_FOLDER_RULES_EDITORS_DISALLOWED_IN_EXTERNALL_SHARED_FOLDER,
+                        .put(Type.SHARED_FOLDER_RULES_EDITORS_DISALLOWED_IN_EXTERNALLY_SHARED_FOLDER,
                                 ExSharedFolderRulesEditorsDisallowedInExternallySharedFolders.class)
 
                         // The following exceptions are consumed by Python clients only. No need to
@@ -421,6 +421,8 @@ public abstract class Util
      */
     public static boolean isValidEmailAddress(String email)
     {
+        if (email.isEmpty()) return false;
+
         boolean hasAt = false;
         for (int i = 0; i < email.length(); i++) {
             if (email.charAt(i) == '@') {
@@ -445,12 +447,9 @@ public abstract class Util
             }
         }
 
-        if (!hasDot || domain.charAt(0) == '.' ||
-                domain.charAt(domain.length() - 1) == '.') {
-            return false;
-        }
-
-        return true;
+        return hasDot
+                && domain.charAt(0) != '.'
+                && domain.charAt(domain.length() - 1) != '.';
     }
 
     public static void checkPB(boolean has, Class<?> c) throws ExProtocolError

@@ -153,6 +153,18 @@ asynchronous authentication completion. The client can expect some user-agent re
 to the IdentityServlet. Client should poll on the session nonce for the out-of-band
 authentication to complete.
 
+&nbsp; <!--I don't know why, but this extra line is necessary to render the next line properly-->
+
+    identity_service_identifier=OpenID or LDAP
+
+A short, user-visible name for the external identity service. 
+This will be displayed to end-users in the context of "sign in with {}", 
+"a user without {} accounts", etc, where {} is replaced with the identifier.
+The default value depends on the authenticator type.
+
+Example: `SAuth`
+Example: `OpenID`
+
 ### OpenID properties
 
 OpenID configuration is used if the `lib.authenticator` is set to `openid`.
@@ -169,20 +181,6 @@ Polling frequency of the client waiting for OpenId authorization to complete, in
 URL of the Identity service. Note: This is the URL of the actual IdentityServlet.
 
 Example: `https://transient.syncfs.com/openid`
-
-    openid.service.identifier=OpenID
-
-A short, user-visible name for the OpenID service. This will be displayed
-to end-users in the form "Sign in with " + SERVICE_IDENTIFIER.
-
-Example: `SAuth`
-Example: `OpenID`
-
-    openid.service.external.hint=AeroFS user without an OpenID account?
-
-A short phrase that will guide external users to sign in with a local credential.
-
-Example: `AeroFS user without an OpenID credential?`
 
 # server.tmplt
 
@@ -258,16 +256,6 @@ The security realm for which we are requesting authorization.
 This is an OpenId concept, * is supported.
 
 Example: `https://*.example.com`
-
-    openid.idp.discovery.enabled=false
-
-Whether to enable OpenID discovery. It may be disabled if YADIS discovery is not supported.
-
-    openid.idp.discovery.url=
-
-Discovery URL for the OpenId provider. Only used if discovery is enabled.
-
-Example: `https://www.google.com/accounts/o8/id`
 
     openid.idp.endpoint.url=
 
@@ -478,8 +466,6 @@ Example:
     openid.service.session.interval=1
     openid.service.url=https://share.example.com/openid
     openid.service.realm=https://*.example.com
-    openid.idp.discovery.enabled=false
-    openid.idp.discovery.url=
     openid.idp.endpoint.url=https://www.google.com/accounts/o8/ud
     openid.idp.user.uid.attribute=openid.identity
     openid.idp.user.uid.pattern=
@@ -508,8 +494,6 @@ Into:
     openid.service.session.interval=1
     openid.service.url=https://share.example.com/openid
     openid.service.realm=https://*.example.com
-    openid.idp.discovery.enabled=false
-    openid.idp.discovery.url=
     openid.idp.endpoint.url=https://openid.example.com/auth
     openid.idp.endpoint.stateful=false
     openid.idp.user.uid.attribute=openid.identity

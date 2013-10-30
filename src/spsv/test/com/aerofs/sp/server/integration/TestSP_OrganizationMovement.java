@@ -15,7 +15,6 @@ import com.aerofs.base.id.OrganizationID;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.aerofs.sp.server.lib.user.User;
-import org.junit.After;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -23,9 +22,6 @@ import static org.junit.Assert.fail;
 
 public class TestSP_OrganizationMovement extends AbstractSPTest
 {
-    @After
-    public void resetParams() { PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT = false; }
-
     private void sendInvitation(User user)
             throws Exception
     {
@@ -101,42 +97,38 @@ public class TestSP_OrganizationMovement extends AbstractSPTest
     }
 
     @Test
-    public void shouldAllowInviteToDefaultOrg() throws Exception
+    public void shouldAllowInviteToPrivateOrg() throws Exception
     {
-        PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT = true;
-
         sqlTrans.begin();
-        User admin = saveUser();
+        // create the accepter in his own organization
         User accepter = saveUser();
 
-        Organization adminOrg = admin.getOrganization();
-        assertEquals(OrganizationID.PRIVATE_ORGANIZATION, adminOrg.id());
-        sqlTrans.commit();
+        PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT = true;
+        try {
+            // now, force private deployment so the admin is created in the private organization.
+            User admin = saveUser();
+            Organization adminOrg = admin.getOrganization();
+            assertEquals(OrganizationID.PRIVATE_ORGANIZATION, adminOrg.id());
+            sqlTrans.commit();
 
-        setSessionUser(admin);
+            setSessionUser(admin);
+            sendInvitation(accepter);
 
-        sqlTrans.begin();
-        accepter.setOrganization(USER_1.getOrganization(), AuthorizationLevel.ADMIN);
-        sqlTrans.commit();
+            setSessionUser(accepter);
+            acceptOrganizationInvitation(adminOrg, accepter);
 
-        sendInvitation(accepter);
+            // Verify accepter is indeed in the new organization.
+            sqlTrans.begin();
+            assertEquals(OrganizationID.PRIVATE_ORGANIZATION, accepter.getOrganization().id());
+            sqlTrans.commit();
 
-        sqlTrans.begin();
-        accepter.setOrganization(adminOrg, AuthorizationLevel.USER);
-        sqlTrans.commit();
-
-        setSessionUser(accepter);
-        acceptOrganizationInvitation(adminOrg, accepter);
-
-        sqlTrans.begin();
-        // Verify accepter is indeed in the new organization.
-        assertEquals(OrganizationID.PRIVATE_ORGANIZATION, accepter.getOrganization().id());
-        sqlTrans.commit();
-
-        // Verify get organization invitations call does not return any new invitations, since the
-        // user has already been moved over.
-        GetOrganizationInvitationsReply invites = service.getOrganizationInvitations().get();
-        assertEquals(0, invites.getOrganizationInvitationsList().size());
+            // Verify get organization invitations call does not return any new invitations, since
+            // the user has already been moved over.
+            GetOrganizationInvitationsReply invites = service.getOrganizationInvitations().get();
+            assertEquals(0, invites.getOrganizationInvitationsList().size());
+        } finally {
+            PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT = false;
+        }
     }
 
     @Test

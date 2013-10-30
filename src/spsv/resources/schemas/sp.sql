@@ -80,19 +80,12 @@ CREATE TABLE IF NOT EXISTS `sp_signup_code` (
   INDEX `t_ts_idx` (`t_ts`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
-CREATE TABLE IF NOT EXISTS `sp_password_reset_token` (
-  `r_token` CHAR(44),
-  `r_user_id` VARCHAR(320) NOT NULL,
-  `r_ts` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`r_token`),
-  CONSTRAINT `r_user_foreign` FOREIGN KEY (`r_user_id`) REFERENCES `sp_user` (`u_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-
 CREATE TABLE IF NOT EXISTS `sp_organization_invite` (
+  `m_from` VARCHAR(320) NOT NULL, -- i.e. inviter
   `m_to` VARCHAR(320) NOT NULL, -- i.e. invitee
   `m_org_id` INTEGER NOT NULL,
-  `m_from` VARCHAR(320), -- i.e. inviter
-  `m_signup_code` CHAR(8),  -- the signup code associated with the organization
+  `m_signup_code` CHAR(8),  -- the signup code associated with the organization, null if the user
+                            -- already exists by the time the user is invited to the org.
   `m_ts` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`m_to`, `m_org_id`),
   UNIQUE KEY (`m_signup_code`),
@@ -102,6 +95,14 @@ CREATE TABLE IF NOT EXISTS `sp_organization_invite` (
   -- See http://dev.mysql.com/doc/refman/4.1/en/innodb-foreign-key-constraints.html
   CONSTRAINT `m_org_foreign` FOREIGN KEY (`m_org_id`) REFERENCES `sp_organization` (`o_id`),
   CONSTRAINT `m_signup_code_foreign` FOREIGN KEY (`m_signup_code`) REFERENCES `sp_signup_code` (`t_code`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+CREATE TABLE IF NOT EXISTS `sp_password_reset_token` (
+  `r_token` CHAR(44),
+  `r_user_id` VARCHAR(320) NOT NULL,
+  `r_ts` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`r_token`),
+  CONSTRAINT `r_user_foreign` FOREIGN KEY (`r_user_id`) REFERENCES `sp_user` (`u_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 CREATE TABLE IF NOT EXISTS `sp_email_subscriptions` (

@@ -4,14 +4,24 @@
 
 package com.aerofs.sp.server.integration;
 
+import com.aerofs.base.acl.Role;
 import com.aerofs.base.ex.ExAlreadyExist;
+import com.aerofs.base.id.UserID;
 import com.aerofs.lib.ex.ExAlreadyInvited;
 import com.aerofs.lib.ex.ExNoStripeCustomerID;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
+import com.aerofs.sp.server.lib.user.User;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class TestSP_InviteToOrganization extends AbstractSPTest
 {
@@ -70,6 +80,36 @@ public class TestSP_InviteToOrganization extends AbstractSPTest
         service.setStripeCustomerID("123");
 
         service.inviteToOrganization("paid@invitee.com");
+    }
+
+    @Captor ArgumentCaptor<String> signUpCodeCaptor;
+
+    @Test
+    public void shouldSendEmailWithSignUpCodeForNewNonAutoProvisionedUser()
+            throws Exception
+    {
+        // By default all the users are non-auto provisioned
+
+        User user = newUser();
+        service.inviteToOrganization(user.id().getString());
+
+        verify(factEmailer).createSignUpInvitationEmailer(eq(USER_1), eq(user),
+                eq((String) null), eq((Role) null), eq((String) null), signUpCodeCaptor.capture());
+
+        assertNotNull(signUpCodeCaptor.getValue());
+    }
+
+    @Test
+    public void shouldSendEmailWithNoSignUpCodeForNewAutoProvisionedUser()
+            throws Exception
+    {
+        when(authenticator.isAutoProvisioned(any(UserID.class))).thenReturn(true);
+
+        User user = newUser();
+        service.inviteToOrganization(user.id().getString());
+
+        verify(factEmailer).createSignUpInvitationEmailer(eq(USER_1), eq(user),
+                eq((String) null), eq((Role) null), eq((String) null), eq((String) null));
     }
 
     private void inviteMaximumFreeUsers()

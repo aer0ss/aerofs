@@ -181,7 +181,7 @@ public class IdentityServlet extends HttpServlet
                 throws Exception
         {
             OpenIdUser user = OpenIdUser.populate(
-                    OpenId.DISCOVERY_URL,
+                    "", // no discovery URL
                     YadisDiscovery.IDENTIFIER_SELECT,
                     OpenId.ENDPOINT_URL);
 

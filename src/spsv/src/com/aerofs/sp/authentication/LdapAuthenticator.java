@@ -13,6 +13,7 @@ import com.aerofs.base.ssl.SSLEngineFactory.Mode;
 import com.aerofs.base.ssl.SSLEngineFactory.Platform;
 import com.aerofs.base.ssl.StringBasedCertificateProvider;
 import com.aerofs.lib.FullName;
+import com.aerofs.lib.log.LogUtil;
 import com.aerofs.servlets.lib.db.IThreadLocalTransaction;
 import com.aerofs.sp.server.lib.user.User;
 import com.unboundid.ldap.sdk.Filter;
@@ -88,6 +89,13 @@ public class LdapAuthenticator implements IAuthenticator
         trans.commit();
     }
 
+    @Override
+    public boolean isAutoProvisioned(UserID userID)
+    {
+        // All the users are auto provisioned
+        return true;
+    }
+
     /**
      * Attempt to bind to the LDAP server using the given userid and credential.
      * If the connection cannot be set up (bad credential etc.) an exception will be
@@ -116,8 +124,7 @@ public class LdapAuthenticator implements IAuthenticator
                             entry.getAttributeValue(_cfg.USER_LASTNAME));
                 } catch (LDAPException lde) {
                     // this just means that this record was not the login record.
-                    _l.debug("LDAP bind error", lde);
-                    continue;
+                    _l.info("LDAP bind error", lde);
                 }
             }
 
@@ -165,17 +172,16 @@ public class LdapAuthenticator implements IAuthenticator
         try {
             return pool.getConnection();
         } catch (LDAPException e) {
-            _l.error("Cannot get connection to LDAP server", e);
+            _l.error("Cannot get connection to LDAP server", LogUtil.suppress(e));
             throw new ExExternalServiceUnavailable("Cannot connect to LDAP server");
         }
     }
 
     private Filter buildFilter(UserID userId)
     {
-        Filter filter = Filter.createANDFilter(
+        return Filter.createANDFilter(
                 Filter.createEqualityFilter(_cfg.USER_EMAIL, userId.getString()),
                 Filter.createEqualityFilter("objectClass", _cfg.USER_OBJECTCLASS));
-        return filter;
     }
 
 

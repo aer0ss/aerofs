@@ -21,7 +21,7 @@ import static com.aerofs.proto.Common.PBException.Type.LAUNCH_ABORTED;
 import static com.aerofs.proto.Common.PBException.Type.NOT_DIR;
 import static com.aerofs.proto.Common.PBException.Type.NOT_FILE;
 import static com.aerofs.proto.Common.PBException.Type.NO_ADMIN_OR_OWNER;
-import static com.aerofs.proto.Common.PBException.Type.SHARED_FOLDER_RULES_EDITORS_DISALLOWED_IN_EXTERNALL_SHARED_FOLDER;
+import static com.aerofs.proto.Common.PBException.Type.SHARED_FOLDER_RULES_EDITORS_DISALLOWED_IN_EXTERNALLY_SHARED_FOLDER;
 import static com.aerofs.proto.Common.PBException.Type.SHARED_FOLDER_RULES_WARNING_ADD_EXTERNAL_USER;
 import static com.aerofs.proto.Common.PBException.Type.SHARED_FOLDER_RULES_WARNING_OWNER_CAN_SHARE_WITH_EXTERNAL_USERS;
 import static com.google.protobuf.ByteString.copyFrom;
@@ -81,7 +81,7 @@ public class TestExceptions
 
     private boolean isAbstractExSharedFolderRules(Type t)
     {
-        return t == SHARED_FOLDER_RULES_EDITORS_DISALLOWED_IN_EXTERNALL_SHARED_FOLDER
+        return t == SHARED_FOLDER_RULES_EDITORS_DISALLOWED_IN_EXTERNALLY_SHARED_FOLDER
                 || t == SHARED_FOLDER_RULES_WARNING_ADD_EXTERNAL_USER
                 || t == SHARED_FOLDER_RULES_WARNING_OWNER_CAN_SHARE_WITH_EXTERNAL_USERS;
     }

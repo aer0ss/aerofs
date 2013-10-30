@@ -42,6 +42,7 @@ import com.aerofs.sp.server.lib.user.User;
 import com.aerofs.sp.server.session.SPActiveUserSessionTracker;
 import com.aerofs.sp.server.session.SPSessionExtender;
 import com.aerofs.sp.server.session.SPSessionInvalidator;
+import com.aerofs.sp.server.shared_folder_rules.ISharedFolderRules;
 import com.aerofs.sp.server.shared_folder_rules.SharedFolderRulesFactory;
 import com.aerofs.verkehr.client.lib.admin.VerkehrAdmin;
 import com.aerofs.verkehr.client.lib.publisher.VerkehrPublisher;
@@ -105,8 +106,9 @@ public class SPServlet extends AeroServlet
 
     private final InvitationEmailer.Factory _factEmailer = new InvitationEmailer.Factory();
 
+    private final UserFilter _userFilter = new UserFilter();
     private final PasswordManagement _passwordManagement =
-            new PasswordManagement(_db, _factUser, new PasswordResetEmailer(), new UserFilter());
+            new PasswordManagement(_db, _factUser, new PasswordResetEmailer(), _userFilter);
     private final DeviceRegistrationEmailer _deviceRegistrationEmailer = new DeviceRegistrationEmailer();
     private final RequestToSignUpEmailer _requestToSignUpEmailer = new RequestToSignUpEmailer();
 
@@ -122,12 +124,15 @@ public class SPServlet extends AeroServlet
     private final InvitationReminderEmailer _invitationReminderEmailer = new InvitationReminderEmailer();
     private final SharedFolderNotificationEmailer _sfnEmailer = new SharedFolderNotificationEmailer();
 
+    private final ISharedFolderRules _sfRules = SharedFolderRulesFactory
+            .create(_userFilter, _factUser, _sfnEmailer);
+
     private final SPService _service = new SPService(_db, _sqlTrans, _jedisTrans, _sessionUser,
             _passwordManagement, _certauth, _factUser, _factOrg, _factOrgInvite, _factDevice,
             _certdb, _esdb, _factSharedFolder, _factEmailer, _deviceRegistrationEmailer,
             _requestToSignUpEmailer, _commandQueue, _analytics, new IdentitySessionManager(),
-            AuthenticatorFactory.create(),
-            SharedFolderRulesFactory.create(_factUser, _sfnEmailer), _sfnEmailer);
+            AuthenticatorFactory.create(), _sfRules, _sfnEmailer);
+
     private final SPServiceReactor _reactor = new SPServiceReactor(_service);
 
     private final DoPostDelegate _postDelegate = new DoPostDelegate(SP.SP_POST_PARAM_PROTOCOL,

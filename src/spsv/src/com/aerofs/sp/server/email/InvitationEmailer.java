@@ -13,7 +13,6 @@ import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.servlets.lib.AsyncEmailSender;
 import com.aerofs.sv.common.EmailCategory;
 import com.aerofs.sp.server.lib.user.User;
-import com.google.common.base.Strings;
 import org.apache.commons.lang.WordUtils;
 
 import javax.annotation.Nonnull;
@@ -36,26 +35,22 @@ public class InvitationEmailer
     public static class Factory
     {
         /**
-         * @param inviter null if the invite is sent from the AeroFS team.
-         *
-         * TODO (WW) use a separate method rather than a null inviter for AeroFS initiated invites.
+         * @param folderName non-null if the invitation is triggered by sharing a folder, in which
+         *      case {@code role} must be non-null as well.
+         * @param signUpCode null if the user is auto-provisioned.
          */
         public InvitationEmailer createSignUpInvitationEmailer(final User inviter,
                 final User invitee, @Nullable final String folderName, @Nullable Role role,
-                @Nullable String note, final String signUpCode)
+                @Nullable String note, @Nullable final String signUpCode)
                 throws IOException, SQLException, ExNotFound
         {
-            String url = RequestToSignUpEmailer.getSignUpLink(signUpCode);
-
-            // TODO Ideally static email contents should be separate from Java files.
-            final String subject = (folderName != null)
-                    ? "Join my " + L.brand() + " folder"
-                    : "Invitation to " + L.brand();
+            final InvitationEmailContentStrategy cs = new InvitationEmailContentStrategy(
+                    invitee.id(), folderName, role, note, signUpCode);
 
             final Email email = new Email();
             final NameFormatter nsInviter = new NameFormatter(inviter);
 
-            composeSignUpInvitationEmail(nsInviter, folderName, role, note, url, email);
+            composeSignUpInvitationEmail(cs, nsInviter, email);
 
             return new InvitationEmailer(new Callable<Void>()
             {
@@ -63,37 +58,32 @@ public class InvitationEmailer
                 public Void call() throws Exception
                 {
                     _emailSender.sendPublicEmailFromSupport(nsInviter.nameOnly(),
-                            invitee.id().getString(), getReplyTo(inviter), subject,
+                            invitee.id().getString(), getReplyTo(inviter), cs.subject(),
                             email.getTextEmail(), email.getHTMLEmail(),
                             EmailCategory.FOLDERLESS_INVITE);
 
-                    EmailUtil.emailSPNotification(
-                            inviter + " invited " + invitee +
-                                    (folderName != null ? " to " + folderName : " folderless"),
-                            "code " + signUpCode);
+                    EmailUtil.emailInternalNotification(inviter + " invited " + invitee +
+                            " to " + folderName, "code " + signUpCode);
                     return null;
                 }
             });
         }
 
-        private void composeSignUpInvitationEmail(NameFormatter nsInviter, String folderName,
-                Role role, String note, String url, Email email)
+        private void composeSignUpInvitationEmail(InvitationEmailContentStrategy cs,
+                NameFormatter nsInviter, Email email)
                 throws IOException
         {
             String body = "\n" +
                 nsInviter.nameAndEmail() + " has invited you to " +
-                (folderName != null ? "a shared " + L.brand() + " folder " + Util.quote(folderName) +
-                        " as " + WordUtils.capitalizeFully(role.getDescription())
-                         : L.brand()) +
-                (isNoteEmpty(note) ? "." : ":\n\n" + note) + "\n" +
+                cs.invitedTo() + cs.noteAndEndOfSentence() + "\n" +
                 "\n" +
                 L.brand() + " is a file syncing, sharing, and collaboration tool that" +
                 " lets you sync files privately without using public cloud. You can learn more" +
-                    // Whitespace required after URL for autolinker
+                    // Whitespace required after URL for autolinker. TODO (WW) fix this!
                 " about it at " + WWW.MARKETING_HOST_URL + " ." + "\n" +
                 "\n" +
                 "Get started with " + L.brand() + " at:\n" +
-                "\n" + url;
+                "\n" + cs.signUpURLAndInstruction();
 
             // If fromPerson is empty (user didn't set his name), use his email address instead
             email.addSection(nsInviter.nameOnly() + " invited you to " + L.brand() + "!",
@@ -101,26 +91,20 @@ public class InvitationEmailer
             email.addDefaultSignature();
         }
 
-        private boolean isNoteEmpty(@Nullable String note)
-        {
-            return Strings.nullToEmpty(note).trim().isEmpty();
-        }
-
         public InvitationEmailer createFolderInvitationEmailer(@Nonnull final User sharer,
                 final User sharee, @Nullable final String folderName,
                 @Nullable final String note, final SID sid, Role role)
                 throws IOException, SQLException, ExNotFound
         {
-            final String subject = "Join my " + L.brand() + " folder";
-
             final Email email = new Email();
-
             final NameFormatter nsSharer = new NameFormatter(sharer);
+            final InvitationEmailContentStrategy cs =
+                    new InvitationEmailContentStrategy(sharee.id(), folderName, role, note, null);
 
             String body = "\n" +
                     nsSharer.nameAndEmail() + " has invited you to a shared " + L.brand() +
                     " folder as " + WordUtils.capitalizeFully(role.getDescription()) +
-                    (isNoteEmpty(note) ? "." : (":\n\n" + note)) + "\n" +
+                    cs.noteAndEndOfSentence() + "\n" +
                     "\n" +
                     "Click on this link to view and accept the invitation: " +
                     ACCEPT_INVITATION_LINK;
@@ -136,10 +120,11 @@ public class InvitationEmailer
                 public Void call() throws Exception
                 {
                     _emailSender.sendPublicEmailFromSupport(nsSharer.nameOnly(),
-                            sharee.id().getString(), getReplyTo(sharer), subject,
+                            sharee.id().getString(), getReplyTo(sharer), cs.subject(),
                             email.getTextEmail(), email.getHTMLEmail(), EmailCategory.FOLDER_INVITE);
 
-                    EmailUtil.emailSPNotification(sharer + " shared " + folderName + " with " + sharee,
+                    EmailUtil.emailInternalNotification(
+                            sharer + " shared " + folderName + " with " + sharee,
                             "code " + sid.toStringFormal());
 
                     return null;
@@ -182,8 +167,7 @@ public class InvitationEmailer
 
     private static String getReplyTo(User inviter)
     {
-        return inviter.id().isTeamServerID() ?
-                WWW.SUPPORT_EMAIL_ADDRESS : inviter.id().getString();
+        return inviter.id().isTeamServerID() ? WWW.SUPPORT_EMAIL_ADDRESS : inviter.id().getString();
     }
 
     private final @Nonnull Callable<Void> _call;

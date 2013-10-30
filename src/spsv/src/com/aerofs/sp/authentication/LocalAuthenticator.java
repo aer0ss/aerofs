@@ -5,6 +5,7 @@
 package com.aerofs.sp.authentication;
 
 import com.aerofs.base.ex.ExBadCredential;
+import com.aerofs.base.id.UserID;
 import com.aerofs.servlets.lib.db.IThreadLocalTransaction;
 import com.aerofs.sp.server.lib.SPParam;
 import com.aerofs.sp.server.lib.user.User;
@@ -26,5 +27,12 @@ public class LocalAuthenticator implements IAuthenticator
         trans.begin();
         user.throwIfBadCredential(SPParam.getShaedSP(credential));
         trans.commit();
+    }
+
+    @Override
+    public boolean isAutoProvisioned(UserID userID)
+    {
+        // All users must go through standard signup workflow -- they are manually provisioned.
+        return false;
     }
 }

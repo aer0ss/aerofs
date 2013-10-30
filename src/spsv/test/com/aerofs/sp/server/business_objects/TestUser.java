@@ -4,7 +4,6 @@
 
 package com.aerofs.sp.server.business_objects;
 
-import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.DID;
@@ -12,12 +11,9 @@ import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UniqueID;
 import com.aerofs.lib.FullName;
 import com.aerofs.base.acl.Role;
-import com.aerofs.lib.LibParam.PrivateDeploymentConfig;
 import com.aerofs.lib.ex.ExNoAdminOrOwner;
 import com.aerofs.sp.server.lib.SharedFolder;
 import com.aerofs.sp.server.lib.device.Device;
-import com.aerofs.base.id.OrganizationID;
-import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.aerofs.sp.server.lib.user.User;
 import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException;
@@ -27,10 +23,6 @@ import org.junit.Test;
 import java.sql.SQLException;
 import java.util.Collection;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public class TestUser extends AbstractBusinessObjectTest
@@ -96,85 +88,6 @@ public class TestUser extends AbstractBusinessObjectTest
         factUser.saveTeamServerUser(newOrganization());
     }
 
-    @Test(expected = ExAlreadyExist.class)
-    public void save_shouldThrowIfCreatingDuplicate()
-            throws Exception
-    {
-        User user = newUser();
-        saveUser(user);
-        saveUser(user);
-    }
-
-    // see User.addRootStoreAndCheckForCollision for detail
-    @Test
-    public void save_shouldCorrectRootStoreCollision()
-            throws Exception
-    {
-        // create the players
-        User attacker = newUser("attacker");
-        User attacker2 = newUser("attacker2");
-        saveUser(attacker);
-        saveUser(attacker2);
-
-        User user = newUser();
-
-        // insert the colliding root store
-        SharedFolder sf = factSharedFolder.create(SID.rootSID(user.id()));
-        sf.save("haha", attacker);
-        sf.addMemberACL(attacker2, Role.EDITOR);
-        assertEquals(sf.getMemberRoleThrows(attacker), Role.OWNER);
-        assertEquals(sf.getMemberRoleThrows(attacker2), Role.EDITOR);
-
-        // create the ligitimate user
-        saveUser(user);
-
-        // the collision should have been corrected
-        assertNull(sf.getMemberRoleNullable(attacker));
-        assertNull(sf.getMemberRoleNullable(attacker2));
-    }
-
-    @Test
-    public void save_shouldCreateNewOrgIfPublicDeployment() throws Exception
-    {
-        User user = saveUser();
-
-        // Check that the user is *not* in the private org and that he's an admin
-        assertFalse(user.getOrganization().id().equals(OrganizationID.PRIVATE_ORGANIZATION));
-        assertEquals(AuthorizationLevel.ADMIN, user.getLevel());
-    }
-
-    @Test
-    public void save_shouldSaveToPrivateOrgIfEnterpriseDeployment() throws Exception
-    {
-        PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT = true;
-
-        try {
-            Organization privateOrg = factOrg.create(OrganizationID.PRIVATE_ORGANIZATION);
-
-            // Check that the private organization doesn't exist yet.
-            // This is important because we want to test that the first user is created with admin
-            // privileges
-            // Note: this test may fail if some earlier test create the private org. In this case,
-            // we either have to get the ordering right, or provide a method for deleting an org.
-            assertFalse(privateOrg.exists());
-
-            // Create a new user
-            User user = saveUser();
-
-            assertTrue(privateOrg.exists());
-
-            // Check that the user *is* in the private org and that he's an admin
-            assertEquals(OrganizationID.PRIVATE_ORGANIZATION, user.getOrganization().id());
-            assertEquals(AuthorizationLevel.ADMIN, user.getLevel());
-
-            // Now create an additional user; check he's also in private org but as a regular user
-            user = saveUser();
-            assertEquals(OrganizationID.PRIVATE_ORGANIZATION, user.getOrganization().id());
-            assertEquals(AuthorizationLevel.USER, user.getLevel());
-        } finally {
-            PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT = false;
-        }
-    }
 
     @Test(expected = ExBadCredential.class)
     public void signIn_shouldThrowBadCredentialIfUserNotFound()

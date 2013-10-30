@@ -26,7 +26,6 @@ import com.aerofs.gui.singleuser.SingleuserDlgSetupAdvanced;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.LibParam.Identity;
 import com.aerofs.lib.LibParam.Identity.Authenticator;
-import com.aerofs.lib.LibParam.OpenId;
 import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExNoConsole;
@@ -155,7 +154,7 @@ public class DlgSignIn extends AeroFSTitleAreaDialog
         Composite composite = new Composite(parent, SWT.NONE);
 
         Button signInButton = GUIUtil.createButton(composite, SWT.PUSH);
-        signInButton.setText("Sign in with " + OpenId.SERVICE_IDENTIFIER);
+        signInButton.setText("Sign in with " + Identity.SERVICE_IDENTIFIER);
         signInButton.addSelectionListener(new SelectionAdapter()
         {
             @Override
@@ -207,7 +206,7 @@ public class DlgSignIn extends AeroFSTitleAreaDialog
 
         if (_showOpenIdDialog) {
             Label label = new Label(composite, SWT.NONE);
-            label.setText(OpenId.SERVICE_EXTERNAL_HINT);
+            label.setText(L.product() + " user without " + Identity.SERVICE_IDENTIFIER + " accounts?");
             label.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, true, false));
         }
 
@@ -341,12 +340,9 @@ public class DlgSignIn extends AeroFSTitleAreaDialog
      */
     private boolean isReady(@Nullable String email)
     {
-        String trimmed = ((email == null) ? _txtUserID.getText() : email)
-                .trim();
+        String trimmed = ((email == null) ? _txtUserID.getText() : email).trim();
 
-        if (trimmed.isEmpty() || _txtPasswd.getText().isEmpty()) {
-            return false;
-        } else return Util.isValidEmailAddress(trimmed);
+        return !_txtPasswd.getText().isEmpty() && Util.isValidEmailAddress(trimmed);
     }
 
     private void setInProgressStatus()

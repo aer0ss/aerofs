@@ -25,7 +25,7 @@ email.sender.public_password={{ email_password }}
 server.browser.certificate={{ browser_cert }}
 server.browser.key={{ browser_key }}
 
-invitation_only_sign_up=true
+invitation_only_signup=true
 
 ldap.server.ca_certificate={{ ldap_server_ca_certificate }}
 ldap.server.host={{ ldap_server_host }}

@@ -59,6 +59,7 @@ public abstract class AbstractBusinessObjectTest extends AbstractAutoTransaction
         factOrg.inject(odb, oidb, factUser, factSharedFolder, factOrgInvite);
         factSharedFolder.inject(sfdb, factUser);
         factDevice.inject(ddb, cdb, cgen, factUser, factCert);
+        factOrgInvite.inject(oidb, factUser, factOrg);
     }
 
     private int nextUserID;

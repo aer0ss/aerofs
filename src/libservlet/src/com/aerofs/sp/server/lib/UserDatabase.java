@@ -32,7 +32,6 @@ import java.sql.Timestamp;
 import java.util.Collection;
 import java.util.List;
 
-import static com.aerofs.lib.db.DBUtil.count;
 import static com.aerofs.lib.db.DBUtil.selectWhere;
 import static com.aerofs.lib.db.DBUtil.updateWhere;
 import static com.aerofs.sp.server.lib.SPSchema.C_AC_PENDING;
@@ -281,25 +280,6 @@ public class UserDatabase extends AbstractSQLDatabase
         ps.setString(2, to.getString());
         ps.setTimestamp(3, new Timestamp(currentTime), UTC_CALANDER);
         ps.executeUpdate();
-    }
-
-    /**
-     * Check whether a user has already been invited (with a targeted signup code).
-     * This is used by us to avoid spamming people when doing mass-invite
-     */
-    public boolean isInvitedToSignUp(UserID userId)
-            throws SQLException
-    {
-        PreparedStatement ps = prepareStatement(
-                DBUtil.selectWhere(T_SIGNUP_CODE, C_SIGNUP_CODE_TO + "=?", "count(*)"));
-
-        ps.setString(1, userId.getString());
-        ResultSet rs = ps.executeQuery();
-        try {
-            return count(rs) != 0;
-        } finally {
-            rs.close();
-        }
     }
 
     public Collection<SID> getSharedFolders(UserID userId) throws SQLException

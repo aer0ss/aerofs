@@ -4,6 +4,7 @@
 
 package com.aerofs.sp.authentication;
 
+import com.aerofs.base.id.UserID;
 import com.aerofs.servlets.lib.db.IThreadLocalTransaction;
 import com.aerofs.sp.server.lib.user.User;
 
@@ -37,4 +38,14 @@ public interface IAuthenticator
             User user, byte[] credential,
             IThreadLocalTransaction<SQLException> trans)
             throws Exception;
+
+    /**
+     * Check if the given userId is able to be automatically provisioned on first signin.
+     *
+     * @return whether the user can be automatically provisioned on first signin (i.e. without
+     * explicitly requesting for signup or being invited).
+     *
+     * TODO (WW) support OpenID
+     */
+    public boolean isAutoProvisioned(UserID userID);
 }

@@ -6,6 +6,7 @@ package com.aerofs.sp.server.integration;
 
 import com.aerofs.base.config.ConfigurationProperties;
 import com.aerofs.base.ex.ExNoPerm;
+import com.aerofs.base.id.UserID;
 import com.aerofs.sp.server.SPService;
 import com.aerofs.sp.server.lib.user.User;
 import org.junit.Test;
@@ -17,6 +18,7 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
 
 public class TestSP_requestToSignUp extends AbstractSPTest
 {
@@ -67,5 +69,17 @@ public class TestSP_requestToSignUp extends AbstractSPTest
 
         // Reset the property so subsequent tests can construct SP with the default properties.
         ConfigurationProperties.setProperties(new Properties());
+    }
+
+    @Test
+    public void shouldRejectAutoProsivionedUsers() throws Exception
+    {
+        when(authenticator.isAutoProvisioned(any(UserID.class))).thenReturn(true);
+
+        try {
+            // It should fail because AbstractSPTest already created a bunch of users
+            service.requestToSignUp("user@gmail.com");
+            fail();
+        } catch (ExNoPerm e) {}
     }
 }

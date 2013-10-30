@@ -36,14 +36,14 @@ public class SharedFolderRulesFactory
         }
     }
 
-    public static ISharedFolderRules create(User.Factory factUser,
+    public static ISharedFolderRules create(UserFilter userFilter, User.Factory factUser,
             SharedFolderNotificationEmailer sfnEmailer)
     {
         boolean readOnlyExternalFolders =
                 getBooleanProperty("shared_folder_rules.readonly_external_folders", false);
 
         return readOnlyExternalFolders ?
-                new ReadOnlyExternalFolderRules(new UserFilter(), factUser, sfnEmailer) :
+                new ReadOnlyExternalFolderRules(userFilter, factUser, sfnEmailer) :
                 new NullSharedFolderRules();
     }
 }
