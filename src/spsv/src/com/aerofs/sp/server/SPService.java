@@ -1357,37 +1357,6 @@ public class SPService implements ISPService
     }
 
     @Override
-    public ListenableFuture<Void> inviteToSignUp(List<String> userIdStrings)
-            throws Exception
-    {
-        if (userIdStrings.isEmpty()) throw new ExBadArgs("Must specify one or more invitees");
-
-        _sqlTrans.begin();
-
-        User inviter = _sessionUser.getUser();
-        l.info("invite {} users by {}", userIdStrings.size(), inviter);
-
-        // The sending of invitation emails is deferred to the end of the transaction to ensure
-        // that all business logic checks pass and the changes are sucessfully committed to the DB
-        List<InvitationEmailer> emailers = Lists.newLinkedList();
-        for (String inviteeString : userIdStrings) {
-            User invitee = _factUser.createFromExternalID(inviteeString);
-
-            if (invitee.exists()) {
-                l.info(inviter + " invites " + invitee + ": already exists. skip.");
-            } else {
-                emailers.add(inviteToSignUp(inviter, invitee, null, null, null)._emailer);
-            }
-        }
-
-        _sqlTrans.commit();
-
-        for (InvitationEmailer emailer : emailers) emailer.send();
-
-        return createVoidReply();
-    }
-
-    @Override
     public ListenableFuture<InviteToOrganizationReply> inviteToOrganization(String userIdString)
             throws Exception
     {
@@ -1407,14 +1376,14 @@ public class SPService implements ISPService
             // signup code with the team invitation. See signUpWithCode() on how this association is
             // consumed.
             InviteToSignUpResult res = inviteToSignUp(inviter, invitee, null, null, null);
-            inviteToTeam(inviter, invitee, org, res._signUpCode);
+            inviteToOrganization(inviter, invitee, org, res._signUpCode);
             emailer = res._emailer;
         } else {
             // The user exists. Send him a team invitation email.
             if (invitee.belongsTo(org)) {
                 throw new ExAlreadyExist(invitee + " is already a member of the team");
             }
-            emailer = inviteToTeam(inviter, invitee, org, null);
+            emailer = inviteToOrganization(inviter, invitee, org, null);
         }
 
         PBStripeData sd = getStripeData(org);
@@ -1435,7 +1404,7 @@ public class SPService implements ISPService
      *  user signs up with the associated code, the system will automatically accept the team
      *  invitation. See signUpWithCode().
      */
-    InvitationEmailer inviteToTeam(User inviter, User invitee, Organization org,
+    InvitationEmailer inviteToOrganization(User inviter, User invitee, Organization org,
             @Nullable String signUpCode)
             throws ExAlreadyExist, SQLException, ExNotFound, ExAlreadyInvited, IOException
     {
@@ -2569,5 +2538,12 @@ public class SPService implements ISPService
     public ListenableFuture<Void> noop10()
     {
         return null;
+    }
+
+    @Override
+    public ListenableFuture<Void> noop11()
+    {
+        // return non-null for backward compatibility with the client
+        return createVoidReply();
     }
 }

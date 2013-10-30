@@ -18,7 +18,9 @@ service SPService {
     rpc __error__(Void) returns(PBException);
 
     /**
-     * Similar to InviteToSignUp except that no inviter is included in the email sent to the user.
+     * Send the specified email address a signup verification email that contains the link to
+     * complete signup. If the user is an AeroFS user, a different email is sent indicating that the
+     * user already exists.
      *
      * Required Auth Level: none
      *
@@ -112,20 +114,7 @@ service SPService {
      */
     rpc RegisterDevice(RegisterDeviceCall) returns (RegisterDeviceReply);
 
-    /**
-     * Send the specified user a signup invitation email. The request is silently ignored if the
-     * user is already an AeroFS user.
-     *
-     * Required Auth Level: user
-     *
-     * Throws:
-     *   ExBadArgs if the caller does not specify one or more invitees.
-     *   ExEmptyEmailAddress if the user id is empty
-     *   ExEmailSendingFailed if we were unable to send the invitation email.
-     *   ExNoPerm if the user has used up their invitation quota.
-     *   ExEmailNotVerified if the user's email hasn't been verified
-     */
-    rpc InviteToSignUp(InviteToSignUpCall) returns(Void);
+    rpc Noop11(Void) returns (Void);
 
     /**
      * Invite a person to become a member of the caller's organization. An email will be sent to the
@@ -166,7 +155,7 @@ service SPService {
     /**
      * Shares a folder with another user.
      *
-     * If the user doesn't exist yet, this method calls InviteToSignUp.
+     * If the user doesn't exist yet, this method invites the user to sign up AeroFS first.
      *
      * See docs/design/sharing_and_migration.txt for high-level design.
      *
@@ -820,10 +809,6 @@ message ResolveSignUpCodeReply {
 
 message VerifyBatchSignUpCodeCall {
     required string bsc = 1;
-}
-
-message InviteToSignUpCall {
-    repeated string email_addresses = 1;
 }
 
 message RequestToSignUpCall {

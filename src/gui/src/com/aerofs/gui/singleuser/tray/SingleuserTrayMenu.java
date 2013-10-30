@@ -9,9 +9,7 @@ import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIExecutor;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.gui.GUIUtil.AbstractListener;
-import com.aerofs.gui.Images;
 import com.aerofs.gui.diagnosis.DlgDiagnosis;
-import com.aerofs.gui.misc.DlgInviteToSignUp;
 import com.aerofs.gui.sharing.DlgManageSharedFolder;
 import com.aerofs.gui.sharing.folders.DlgFolders;
 import com.aerofs.gui.singleuser.preferences.SingleuserDlgPreferences;
@@ -24,11 +22,9 @@ import com.aerofs.gui.tray.TrayIcon;
 import com.aerofs.gui.tray.TrayIcon.NotificationReason;
 import com.aerofs.gui.tray.TrayMenuPopulator;
 import com.aerofs.labeling.L;
-import com.aerofs.lib.LibParam.PrivateDeploymentConfig;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.os.OSUtil;
 import com.aerofs.proto.Ritual.ListSharedFoldersReply;
 import com.aerofs.proto.Ritual.PBSharedFolder;
 import com.aerofs.proto.RitualNotifications.PBNotification;
@@ -62,8 +58,6 @@ public class SingleuserTrayMenu extends AbstractTrayMenu implements IRitualNotif
             = new ClickEvent(Action.SHARE_FOLDER, Source.TASKBAR);
     private static final ClickEvent MANAGE_SHARED_FOLDER
             = new ClickEvent(Action.MANAGE_SHARED_FOLDER, Source.TASKBAR);
-    private static final ClickEvent INVITE_TO_SIGNUP
-            = new ClickEvent(Action.INVITE_TO_SIGNUP, Source.TASKBAR);
     private static final ClickEvent WHY_NOT_SYNCED
             = new ClickEvent(Action.WHY_NOT_SYNCED, Source.TASKBAR);
 
@@ -76,7 +70,7 @@ public class SingleuserTrayMenu extends AbstractTrayMenu implements IRitualNotif
         super(icon, rebuildDisposition);
         Preconditions.checkState(_indexingPoller != null);
 
-        // delay start of the shellext service to avoid spamming
+        // Delay start of the shellext service to avoid spamming
         // daemon with status requests while it is busy indexing...
         _indexingPoller.addListener(new IIndexingCompletionListener() {
             @Override
@@ -155,11 +149,6 @@ public class SingleuserTrayMenu extends AbstractTrayMenu implements IRitualNotif
         }
 
         createHelpMenu(trayMenuPopulator);
-
-        // Don't add the "Invite a friend" menu item for private deployments.
-        if (!PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT) {
-            addInviteToSignUpMenuItem(trayMenuPopulator);
-        }
 
         trayMenuPopulator.addMenuSeparator();
 
@@ -345,22 +334,6 @@ public class SingleuserTrayMenu extends AbstractTrayMenu implements IRitualNotif
                         });
                     }
                 });
-    }
-
-    private void addInviteToSignUpMenuItem(TrayMenuPopulator trayMenuPopulator)
-    {
-        MenuItem mi = trayMenuPopulator.addMenuItem(
-                (OSUtil.isLinux() ? "\u2665 " : "") + "Invite a Friend to AeroFS...",
-                new AbstractListener(INVITE_TO_SIGNUP)
-                {
-                    @Override
-                    protected void handleEventImpl(Event event)
-                    {
-                        new DlgInviteToSignUp(GUI.get().sh()).openDialog();
-                    }
-                });
-
-        if (!OSUtil.isLinux()) mi.setImage(Images.get(Images.ICON_HEART));
     }
 
     public void createHelpMenu(TrayMenuPopulator trayMenuPopulator)

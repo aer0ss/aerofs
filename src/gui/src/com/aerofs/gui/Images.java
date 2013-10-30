@@ -52,19 +52,15 @@ public class Images {
     public static final String ICON_SPIN = "spin.gif";
     public static final String ICON_BRICK = "brick.png";
     public static final String ICON_LINK = "link.png";
-    public static final String ICON_HEART = "heart.png";
     public static final String SS_IN_SYNC = "ss_in_sync.png";
     public static final String SS_IN_PROGRESS = "ss_in_progress.png";
     public static final String SS_OFFLINE_NOSYNC = "ss_offline_nosync.png";
     // N.B. visually, signal1, 2, 3, has 2, 3, 4 bars respectively.
-    public static final String ICON_SIGNAL0 = "signal0.png";
     public static final String ICON_SIGNAL1 = "signal1.png";
     public static final String ICON_SIGNAL2 = "signal2.png";
     public static final String ICON_SIGNAL3 = "signal3.png";
 
     public static final String IMG_SETUP = "setup.png";
-
-    public static final int CURSOR_BUSY = 0;
 
     private static final Map<String, Image> s_imgs = new HashMap<String, Image>();
 

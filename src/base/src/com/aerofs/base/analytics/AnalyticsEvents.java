@@ -192,7 +192,6 @@ public class AnalyticsEvents
             SHARE_FOLDER("Share Folder"),
             MANAGE_SHARED_FOLDER("Manage Shared Folder"),
             PREFERENCES("Preferences"),
-            INVITE_TO_SIGNUP("Invite to Signup"),
             EXIT("Exit"),
             DEFAULT_SELECTION("Default Selection"),
             APPLY_UPDATE("Apply Update"),
