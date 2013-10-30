@@ -20,15 +20,14 @@ package com.aerofs.bifrost.oaaas.noop;
 
 import com.sun.jersey.spi.container.ContainerRequest;
 import com.aerofs.bifrost.oaaas.auth.AbstractUserConsentHandler;
-import com.aerofs.bifrost.oaaas.auth.UserConsentFilter;
 import com.aerofs.bifrost.oaaas.model.Client;
 
 /**
  * A noop implementation of {@link AbstractUserConsentHandler} that
  * contains no consent handling but only fulfills the contract of the
- * {@link UserConsentFilter}. Useful for testing and demonstration purposes
- * only, of course not safe for production.
- * 
+ * {@link com.aerofs.bifrost.oaaas.auth.UserConsentFilter}. Useful for testing and demonstration
+ * purposes only, of course not safe for production.
+ *
  */
 public class NoopUserConsentHandler extends AbstractUserConsentHandler {
 

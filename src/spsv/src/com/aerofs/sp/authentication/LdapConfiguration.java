@@ -4,7 +4,6 @@
 
 package com.aerofs.sp.authentication;
 
-import static com.aerofs.base.config.ConfigurationProperties.getBooleanProperty;
 import static com.aerofs.base.config.ConfigurationProperties.getIntegerProperty;
 import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
 
@@ -68,14 +67,6 @@ public class LdapConfiguration
      */
     public Integer                                  SERVER_MAXCONN =
             getIntegerProperty(                     "ldap.server.maxconn", 10);
-
-    /**
-     * If true, a user with no record in AeroFS will be created the first time they
-     * successfully authenticate with the configured LDAP server.
-     * If false, the user will be denied login until they are explicitly provisioned.
-     */
-    public Boolean                                  SERVER_AUTOPROVISION =
-            getBooleanProperty(                     "ldap.server.autoprovision", true);
 
     /**
      * Timeout, in seconds, after which a server read operation will be cancelled.

@@ -36,7 +36,6 @@ import org.slf4j.LoggerFactory;
 import javax.inject.Inject;
 import javax.ws.rs.*;
 import javax.ws.rs.core.*;
-import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 

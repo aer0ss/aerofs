@@ -54,9 +54,8 @@ public class LdapAuthenticator implements IAuthenticator
     /**
      * Initialize this authenticator with a provisioning strategy.
      */
-    public LdapAuthenticator(LdapConfiguration cfg, IProvisioningStrategy provisioner)
+    public LdapAuthenticator(LdapConfiguration cfg)
     {
-        _provisioner = provisioner;
         _cfg = cfg;
     }
 
@@ -83,8 +82,9 @@ public class LdapAuthenticator implements IAuthenticator
 
         _l.info("Authenticated LDAP user {}", user.id());
         trans.begin();
-        if (!user.exists())
-            _provisioner.saveUser(user, fullName, credential);
+        // Save the user record in the database with an empty password (which cannot be used to sign
+        // in)
+        if (!user.exists()) user.save(new byte[0], fullName);
         trans.commit();
     }
 
@@ -328,6 +328,5 @@ public class LdapAuthenticator implements IAuthenticator
 
     private SearchScope                 _scope = SearchScope.SUB;
     private LdapConfiguration _cfg;
-    private final IProvisioningStrategy _provisioner;
     private static Logger               _l = LoggerFactory.getLogger(LdapAuthenticator.class);
 }

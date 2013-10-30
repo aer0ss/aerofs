@@ -15,13 +15,13 @@ import com.aerofs.base.id.UserID;
  */
 public class OrganizationID extends IntegerID
 {
-    // In enterprise deployment, new users are all created by default in the same organization,
-    // also known as the main organization.
+    // In private deployment, new users are all created by default in the same organization,
+    // also known as the private organization.
     //
     // Note: we use "2" as the id instead of "1" because 1 is already assigned to our own internal
     // AeroFS organization. It really shouldn't matter though since those ids should never coexist
     // together, but having different numbers makes reading log files easier.
-    public static final OrganizationID MAIN_ORGANIZATION = new OrganizationID(2);
+    public static final OrganizationID PRIVATE_ORGANIZATION = new OrganizationID(2);
 
     static {
         // assert the team server prefix is an invalid email address char. This check can be done

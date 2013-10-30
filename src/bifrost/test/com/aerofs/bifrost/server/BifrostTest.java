@@ -5,17 +5,11 @@
 package com.aerofs.bifrost.server;
 
 import com.aerofs.bifrost.module.AccessTokenDAO;
-import com.aerofs.bifrost.module.AccessTokenRepositoryImpl;
 import com.aerofs.bifrost.module.AuthorizationRequestDAO;
-import com.aerofs.bifrost.module.AuthorizationRequestRepositoryImpl;
 import com.aerofs.bifrost.module.ClientDAO;
-import com.aerofs.bifrost.module.ClientRepositoryImpl;
 import com.aerofs.bifrost.module.ResourceServerDAO;
-import com.aerofs.bifrost.module.ResourceServerRepositoryImpl;
 import com.aerofs.bifrost.oaaas.model.Client;
 import com.aerofs.bifrost.oaaas.model.ResourceServer;
-import com.aerofs.bifrost.oaaas.repository.AccessTokenRepository;
-import com.aerofs.bifrost.oaaas.repository.AuthorizationRequestRepository;
 import com.aerofs.bifrost.oaaas.repository.ClientRepository;
 import com.aerofs.bifrost.oaaas.repository.ResourceServerRepository;
 import com.aerofs.lib.cfg.CfgKeyManagersProvider;

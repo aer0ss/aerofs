@@ -381,13 +381,6 @@ Example:    `ldap.server.security=ssl`
 
 Maximum number of LDAP connection instances to keep in the pool.
 
-    ldap.server.autoprovision=true
-
-If true, a user with no record in AeroFS will be created the first time they
-successfully authenticate with the configured LDAP server.
-
-If false, the user will be denied login until they are explicitly provisioned.
-
     ldap.server.timeout.read=180
 
 Timeout, in seconds, after which a server read operation will be cancelled.

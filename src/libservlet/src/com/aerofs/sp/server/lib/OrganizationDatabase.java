@@ -60,26 +60,6 @@ public class OrganizationDatabase extends AbstractSQLDatabase
     }
 
     /**
-     * Aug 2013:
-     * Disposable code for migrating all users to the main organization at Bloomberg.
-     * Remove when this is done - search keyword ORGMIGBB
-     */
-    public List<OrganizationID> listAllOrganizations()
-            throws SQLException
-    {
-        PreparedStatement psLAO = prepareStatement("select " + C_O_ID + " from " + T_ORGANIZATION);
-
-        ResultSet rs = psLAO.executeQuery();
-        try {
-            List<OrganizationID> orgs = Lists.newArrayList();
-            while (rs.next()) orgs.add(new OrganizationID(rs.getInt(1)));
-            return orgs;
-        } finally {
-            rs.close();
-        }
-    }
-
-    /**
      * @throws ExAlreadyExist if the organization ID already exists
      */
     public void insert(OrganizationID organizationId)

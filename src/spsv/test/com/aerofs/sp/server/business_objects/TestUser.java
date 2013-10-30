@@ -138,38 +138,38 @@ public class TestUser extends AbstractBusinessObjectTest
     {
         User user = saveUser();
 
-        // Check that the user is *not* in the main org and that he's an admin
-        assertFalse(user.getOrganization().id().equals(OrganizationID.MAIN_ORGANIZATION));
+        // Check that the user is *not* in the private org and that he's an admin
+        assertFalse(user.getOrganization().id().equals(OrganizationID.PRIVATE_ORGANIZATION));
         assertEquals(AuthorizationLevel.ADMIN, user.getLevel());
     }
 
     @Test
-    public void save_shouldSaveToMainOrgIfEnterpriseDeployment() throws Exception
+    public void save_shouldSaveToPrivateOrgIfEnterpriseDeployment() throws Exception
     {
         PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT = true;
 
         try {
-            Organization mainOrg = factOrg.create(OrganizationID.MAIN_ORGANIZATION);
+            Organization privateOrg = factOrg.create(OrganizationID.PRIVATE_ORGANIZATION);
 
-            // Check that the main organization doesn't exist yet.
+            // Check that the private organization doesn't exist yet.
             // This is important because we want to test that the first user is created with admin
             // privileges
-            // Note: this test may fail if some earlier test create the main org. In this case, we
-            // either have to get the ordering right, or provide a method for deleting an org.
-            assertFalse(mainOrg.exists());
+            // Note: this test may fail if some earlier test create the private org. In this case,
+            // we either have to get the ordering right, or provide a method for deleting an org.
+            assertFalse(privateOrg.exists());
 
             // Create a new user
             User user = saveUser();
 
-            assertTrue(mainOrg.exists());
+            assertTrue(privateOrg.exists());
 
-            // Check that the user *is* in the main org and that he's an admin
-            assertEquals(OrganizationID.MAIN_ORGANIZATION, user.getOrganization().id());
+            // Check that the user *is* in the private org and that he's an admin
+            assertEquals(OrganizationID.PRIVATE_ORGANIZATION, user.getOrganization().id());
             assertEquals(AuthorizationLevel.ADMIN, user.getLevel());
 
-            // Now create an additional user; check he's also in main org but as a regular user
+            // Now create an additional user; check he's also in private org but as a regular user
             user = saveUser();
-            assertEquals(OrganizationID.MAIN_ORGANIZATION, user.getOrganization().id());
+            assertEquals(OrganizationID.PRIVATE_ORGANIZATION, user.getOrganization().id());
             assertEquals(AuthorizationLevel.USER, user.getLevel());
         } finally {
             PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT = false;

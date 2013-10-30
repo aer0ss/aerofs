@@ -3,8 +3,6 @@ package com.aerofs.sp.server;
 import com.aerofs.base.BaseParam.SP;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.analytics.Analytics;
-import com.aerofs.base.id.UserID;
-import com.aerofs.lib.FullName;
 import com.aerofs.lib.LibParam.REDIS;
 import com.aerofs.lib.Util;
 import com.aerofs.proto.Sp.SPServiceReactor;
@@ -17,7 +15,6 @@ import com.aerofs.servlets.lib.db.sql.PooledSQLConnectionProvider;
 import com.aerofs.servlets.lib.db.sql.SQLThreadLocalTransaction;
 import com.aerofs.servlets.lib.ssl.CertificateAuthenticator;
 import com.aerofs.sp.authentication.AuthenticatorFactory;
-import com.aerofs.sp.authentication.LdapConfiguration;
 import com.aerofs.sp.common.UserFilter;
 import com.aerofs.sp.server.email.DeviceRegistrationEmailer;
 import com.aerofs.sp.server.email.InvitationEmailer;
@@ -37,12 +34,10 @@ import com.aerofs.sp.server.lib.cert.CertificateDatabase;
 import com.aerofs.sp.server.lib.cert.CertificateGenerator;
 import com.aerofs.sp.server.lib.device.Device;
 import com.aerofs.sp.server.lib.device.DeviceDatabase;
-import com.aerofs.sp.server.lib.id.OrganizationID;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.organization.OrganizationInvitation;
 import com.aerofs.sp.server.lib.session.HttpSessionUser;
 import com.aerofs.sp.server.lib.session.ThreadLocalHttpSessionProvider;
-import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.aerofs.sp.server.lib.user.User;
 import com.aerofs.sp.server.session.SPActiveUserSessionTracker;
 import com.aerofs.sp.server.session.SPSessionExtender;
@@ -57,8 +52,6 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.sql.SQLException;
 
 import static com.aerofs.sp.server.lib.SPParam.SESSION_EXTENDER;
 import static com.aerofs.sp.server.lib.SPParam.SESSION_INVALIDATOR;
@@ -66,7 +59,6 @@ import static com.aerofs.sp.server.lib.SPParam.SESSION_USER_TRACKER;
 import static com.aerofs.sp.server.lib.SPParam.SP_DATABASE_REFERENCE_PARAMETER;
 import static com.aerofs.sp.server.lib.SPParam.VERKEHR_ADMIN_ATTRIBUTE;
 import static com.aerofs.sp.server.lib.SPParam.VERKEHR_PUBLISHER_ATTRIBUTE;
-import static com.google.common.base.Preconditions.checkState;
 
 public class SPServlet extends AeroServlet
 {
@@ -249,115 +241,10 @@ public class SPServlet extends AeroServlet
             _jedisTrans.begin();
             _jedisTrans.get().get("");
             _jedisTrans.commit();
-
-            // ORGMIGBB
-            String mainUser = req.getParameter("do_org_migration");
-            if (mainUser != null) {
-                doOrgMigration(_factUser.createFromExternalID(mainUser), rsp);
-            }
-
         } catch (Exception e) {
             l.warn("Database check error: " + Util.e(e));
             throw new IOException(e);
         }
     }
 
-    /**
-     * Aug 2013:
-     * Disposable code for migrating all users to the main organization at Bloomberg.
-     * Remove when this is done - search keyword ORGMIGBB
-     */
-    private void doOrgMigration(User mainUser, HttpServletResponse rsp)
-            throws IOException, SQLException
-    {
-        PrintWriter printer = rsp.getWriter();
-        printer.println("<pre>");
-
-        try {
-            _sqlTrans.begin();
-
-            final Organization mainOrg = _factOrg.create(OrganizationID.MAIN_ORGANIZATION);
-            User tmpUser = null;
-
-            // Create the main org if it doesn't exist. This should be the default
-            if (!mainOrg.exists()) {
-                printer.println("Creating main organization with temporary user as admin");
-                tmpUser = _factUser.create(UserID.fromExternal("temporary_migration_user@aerofs.com"));
-                tmpUser.save(new byte[]{}, new FullName("Temporary", "User"));
-
-            } else {
-                // If the main org already exists, it means a new user was created before we had a
-                // chance to run the migration script. In this case, warn and continue.
-
-                printer.println("## WARNING: The main organization already exists. This means " +
-                        "that one or more users may have admin privileges when they shouldn't.");
-                printer.println("## Here's a list of all ADMIN users in the main organization:");
-                for (User user : mainOrg.listUsers(Integer.MAX_VALUE, 0)) {
-                    if (user.getLevel().covers(AuthorizationLevel.ADMIN)) printer.println(user);
-                }
-                printer.println(
-                        "## After the migration is done, please review carefully whether the " +
-                                "users listed above should indeed have admin privileges\n\n");
-            }
-
-            // Move everybody from the main user's organization into the main org with the same privileges
-
-            printer.println("Migrating users from " + mainUser.id() + "'s organization retaining privileges.");
-
-            Organization mainUserOrg = mainUser.getOrganization();
-            checkState(mainUser.getLevel().equals(AuthorizationLevel.ADMIN));
-
-            if (!mainUserOrg.id().equals(OrganizationID.MAIN_ORGANIZATION)) {
-                for (User user : mainUserOrg.listUsers(Integer.MAX_VALUE, 0)) {
-
-                    // Skip the main user, we want to move it last. This is to satisfy the
-                    // requirement from setOrganization() that there must be at least one admin in a
-                    // non-empty team
-                    if (user.equals(mainUser)) continue;
-
-                    migrateOne(user, mainOrg, user.getLevel(), printer);
-                }
-
-                // Now move the main user
-                migrateOne(mainUser, mainOrg, mainUser.getLevel(), printer);
-
-                // Since we know that we have at least one admin in the main org now, set the temp
-                // user as non-admin.
-                if (tmpUser != null) tmpUser.setLevel(AuthorizationLevel.USER);
-            }
-
-            // Move all other users to the main org at USER level
-
-            printer.println("\n\nMigrating everybody else.");
-
-            for (Organization org : _factOrg.listOrganizations()) {
-                if (org.equals(mainOrg) || org.equals(mainUserOrg)) continue;
-                for (User user : org.listUsers(Integer.MAX_VALUE, 0)) {
-                    migrateOne(user, mainOrg, AuthorizationLevel.USER, printer);
-                }
-            }
-
-            _sqlTrans.commit();
-
-            printer.print("\n\n ## SUCCESS !");
-
-        } catch (Exception e) {
-            printer.println("\n\n\n##### AN ERROR OCCURRED ####");
-            printer.println(Util.e(e));
-
-            _sqlTrans.rollback();
-
-        } finally {
-            printer.println("</pre>");
-            printer.flush();
-        }
-    }
-
-    // ORGMIGBB
-    private void migrateOne(User user, Organization mainOrg, AuthorizationLevel level, PrintWriter printer)
-            throws Exception
-    {
-        printer.println("Migrating " + user.id() + " as " + level);
-        user.setOrganization(mainOrg, level);
-    }
 }

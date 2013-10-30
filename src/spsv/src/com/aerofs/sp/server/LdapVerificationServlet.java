@@ -7,12 +7,9 @@ package com.aerofs.sp.server;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExExternalServiceUnavailable;
 import com.aerofs.base.ex.Exceptions;
-import com.aerofs.lib.FullName;
 import com.aerofs.sp.authentication.ExLdapConfigurationError;
-import com.aerofs.sp.authentication.IProvisioningStrategy;
 import com.aerofs.sp.authentication.LdapAuthenticator;
 import com.aerofs.sp.authentication.LdapConfiguration;
-import com.aerofs.sp.server.lib.user.User;
 import org.slf4j.Logger;
 
 import javax.annotation.Nonnull;
@@ -73,15 +70,7 @@ public class LdapVerificationServlet extends HttpServlet
             lcfg.USER_OBJECTCLASS  = getParameter(req, "ldap_server_schema_user_class");
             lcfg.SERVER_CA_CERT    = getParameter(req, "ldap_server_ca_certificate");
 
-            LdapAuthenticator lauth = new LdapAuthenticator(lcfg, new IProvisioningStrategy()
-            {
-                @Override
-                public void saveUser(User user, FullName fullName, byte[] credential)
-                        throws Exception
-                {
-                    // Noop. Not required for our tests.
-                }
-            });
+            LdapAuthenticator lauth = new LdapAuthenticator(lcfg);
 
             try {
                 lauth.testConnection();

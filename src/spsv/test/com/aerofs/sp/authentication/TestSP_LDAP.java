@@ -5,7 +5,6 @@
 package com.aerofs.sp.authentication;
 
 import com.aerofs.base.ex.ExBadCredential;
-import com.aerofs.sp.authentication.AuthenticatorFactory.AutoProvisioning;
 import com.aerofs.sp.authentication.InMemoryServer.LdapSchema;
 import com.aerofs.sp.server.integration.AbstractSPTest;
 import com.aerofs.sp.server.lib.user.User;
@@ -18,10 +17,10 @@ import org.mockito.Spy;
 
 import static org.junit.Assert.assertEquals;
 
-public class TestSP_AutoProvisionLDAP extends AbstractSPTest
+public class TestSP_LDAP extends AbstractSPTest
 {
     LdapConfiguration _cfg = new LdapConfiguration();
-    @Spy IAuthenticator _authenticator = new LdapAuthenticator(_cfg, new AutoProvisioning());
+    @Spy IAuthenticator _authenticator = new LdapAuthenticator(_cfg);
 
     @BeforeClass
     public static void beforeClass() throws Exception { _server = new LdapSchema(false, false); }
@@ -81,6 +80,12 @@ public class TestSP_AutoProvisionLDAP extends AbstractSPTest
     public void shouldDisallowEmptyPw() throws Exception
     {
         service.signInUser("random@users.example.org", ByteString.copyFrom(new byte[0]));
+    }
+
+    @Test(expected = ExLdapConfigurationError.class)
+    public void shouldCheckSecurityType()
+    {
+        LdapConfiguration.convertPropertyNameToSecurityType("does.not.exist", "hi mom");
     }
 
     private static InMemoryServer _server;

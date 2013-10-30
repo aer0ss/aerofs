@@ -110,7 +110,7 @@ public class TestSP_OrganizationMovement extends AbstractSPTest
         User accepter = saveUser();
 
         Organization adminOrg = admin.getOrganization();
-        assertEquals(OrganizationID.MAIN_ORGANIZATION, adminOrg.id());
+        assertEquals(OrganizationID.PRIVATE_ORGANIZATION, adminOrg.id());
         sqlTrans.commit();
 
         setSessionUser(admin);
@@ -130,7 +130,7 @@ public class TestSP_OrganizationMovement extends AbstractSPTest
 
         sqlTrans.begin();
         // Verify accepter is indeed in the new organization.
-        assertEquals(OrganizationID.MAIN_ORGANIZATION, accepter.getOrganization().id());
+        assertEquals(OrganizationID.PRIVATE_ORGANIZATION, accepter.getOrganization().id());
         sqlTrans.commit();
 
         // Verify get organization invitations call does not return any new invitations, since the

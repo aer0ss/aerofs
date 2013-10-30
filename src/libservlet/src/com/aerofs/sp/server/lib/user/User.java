@@ -36,7 +36,6 @@ import org.slf4j.Logger;
 import javax.annotation.Nonnull;
 import javax.inject.Inject;
 import java.sql.SQLException;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
@@ -316,18 +315,19 @@ public class User
             throws ExAlreadyExist, SQLException
     {
         if (PrivateDeploymentConfig.IS_PRIVATE_DEPLOYMENT) {
-            // Enterprise deployment: all users are created in the same organization (the "main
+            // Private deployment: all users are created in the same organization (the "main
             // organization").
-            Organization mainOrg = _f._factOrg.create(OrganizationID.MAIN_ORGANIZATION);
+            Organization privateOrg = _f._factOrg.create(OrganizationID.PRIVATE_ORGANIZATION);
             AuthorizationLevel authLevel = AuthorizationLevel.USER;
 
-            // But if the main organization doesn't exist yet, create it and make the user an admin
-            if (!mainOrg.exists()) {
-                mainOrg = _f._factOrg.save(OrganizationID.MAIN_ORGANIZATION);
+            // But if the private organization doesn't exist yet, create it and make the user an
+            // admin
+            if (!privateOrg.exists()) {
+                privateOrg = _f._factOrg.save(OrganizationID.PRIVATE_ORGANIZATION);
                 authLevel = AuthorizationLevel.ADMIN;
             }
 
-            saveImpl(shaedSP, fullName, mainOrg, authLevel);
+            saveImpl(shaedSP, fullName, privateOrg, authLevel);
 
         } else {
             // Public deployment: create a new organization for this user and make them an admin

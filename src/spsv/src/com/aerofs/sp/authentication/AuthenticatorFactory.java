@@ -4,11 +4,8 @@
 
 package com.aerofs.sp.authentication;
 
-import com.aerofs.base.ex.ExBadCredential;
-import com.aerofs.lib.FullName;
 import com.aerofs.lib.LibParam.Identity;
 import com.aerofs.lib.LibParam.Identity.Authenticator;
-import com.aerofs.sp.server.lib.user.User;
 
 /**
  * Create an IAuthenticator implementation that is appropriate for the current config
@@ -30,33 +27,11 @@ public class AuthenticatorFactory
     {
         if (Identity.AUTHENTICATOR == Authenticator.EXTERNAL_CREDENTIAL) {
             LdapConfiguration ldapConf = new LdapConfiguration();
-            LdapAuthenticator ldapAuth = new LdapAuthenticator(ldapConf,
-                    ldapConf.SERVER_AUTOPROVISION ? new AutoProvisioning() : new NoProvisioning());
+            LdapAuthenticator ldapAuth = new LdapAuthenticator(ldapConf);
 
             return new SwitchingAuthenticator(ldapAuth, new LocalAuthenticator());
         } else {
             return new LocalAuthenticator();
-        }
-    }
-
-    static class NoProvisioning implements IProvisioningStrategy
-    {
-        @Override
-        public void saveUser(User user, FullName fullName, byte[] credential) throws Exception
-        {
-            throw new ExBadCredential("User does not exist");
-        }
-    }
-
-    static class AutoProvisioning implements IProvisioningStrategy
-    {
-        @Override
-        public void saveUser(User user, FullName fullName, byte[] credential) throws Exception
-        {
-            // This user can be auto-provisioned with an external credential authenticator.
-            // save the user record in the database with an empty password (which cannot
-            // be used to sign in)
-            user.save(new byte[0], fullName);
         }
     }
 }
