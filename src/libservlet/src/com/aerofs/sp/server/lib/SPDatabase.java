@@ -24,13 +24,13 @@ import static com.aerofs.sp.server.lib.SPSchema.C_AC_USER_ID;
 import static com.aerofs.sp.server.lib.SPSchema.C_PASS_TOKEN;
 import static com.aerofs.sp.server.lib.SPSchema.C_PASS_TS;
 import static com.aerofs.sp.server.lib.SPSchema.C_PASS_USER;
-import static com.aerofs.sp.server.lib.SPSchema.C_TI_TIC;
-import static com.aerofs.sp.server.lib.SPSchema.C_TI_TO;
+import static com.aerofs.sp.server.lib.SPSchema.C_SIGNUP_CODE_CODE;
+import static com.aerofs.sp.server.lib.SPSchema.C_SIGNUP_CODE_TO;
 import static com.aerofs.sp.server.lib.SPSchema.C_USER_CREDS;
 import static com.aerofs.sp.server.lib.SPSchema.C_USER_ID;
 import static com.aerofs.sp.server.lib.SPSchema.T_AC;
 import static com.aerofs.sp.server.lib.SPSchema.T_PASSWORD_RESET;
-import static com.aerofs.sp.server.lib.SPSchema.T_TI;
+import static com.aerofs.sp.server.lib.SPSchema.T_SIGNUP_CODE;
 import static com.aerofs.sp.server.lib.SPSchema.T_USER;
 
 // TODO (WW) move ALL methods to appropriate classes.
@@ -162,7 +162,8 @@ public class SPDatabase extends AbstractSQLDatabase
     public @Nonnull UserID getSignUpCode(String tsc)
         throws SQLException, ExNotFound
     {
-        PreparedStatement ps = prepareStatement(DBUtil.selectWhere(T_TI, C_TI_TIC + "=?", C_TI_TO));
+        PreparedStatement ps = prepareStatement(DBUtil.selectWhere(T_SIGNUP_CODE, C_SIGNUP_CODE_CODE + "=?",
+                C_SIGNUP_CODE_TO));
 
         ps.setString(1, tsc);
         ResultSet rs = ps.executeQuery();

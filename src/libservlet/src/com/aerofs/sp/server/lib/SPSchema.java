@@ -39,11 +39,10 @@ public final class SPSchema
             C_DEVICE_OWNER_ID               = "d_owner_id",
             C_DEVICE_UNLINKED               = "d_unlinked",
 
-            // TODO rename TI BI and FI to reflect new table/column names
-            T_TI                            = "sp_signup_code",
-            C_TI_TIC                        = "t_code",
-            C_TI_TO                         = "t_to",
-            C_TI_TS                         = "t_ts", //auto generated
+            T_SIGNUP_CODE                   = "sp_signup_code",
+            C_SIGNUP_CODE_CODE              = "t_code",
+            C_SIGNUP_CODE_TO                = "t_to",
+            C_SIGNUP_CODE_TS                = "t_ts", // auto generated
 
             T_CERT                          = "sp_cert",
             C_CERT_SERIAL                   = "c_serial",

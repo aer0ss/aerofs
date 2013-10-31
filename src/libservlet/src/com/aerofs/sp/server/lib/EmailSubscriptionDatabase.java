@@ -27,12 +27,12 @@ import static com.aerofs.sp.server.lib.SPSchema.C_ES_EMAIL;
 import static com.aerofs.sp.server.lib.SPSchema.C_ES_LAST_EMAILED;
 import static com.aerofs.sp.server.lib.SPSchema.C_ES_SUBSCRIPTION;
 import static com.aerofs.sp.server.lib.SPSchema.C_ES_TOKEN_ID;
-import static com.aerofs.sp.server.lib.SPSchema.C_TI_TIC;
-import static com.aerofs.sp.server.lib.SPSchema.C_TI_TO;
-import static com.aerofs.sp.server.lib.SPSchema.C_TI_TS;
+import static com.aerofs.sp.server.lib.SPSchema.C_SIGNUP_CODE_CODE;
+import static com.aerofs.sp.server.lib.SPSchema.C_SIGNUP_CODE_TO;
+import static com.aerofs.sp.server.lib.SPSchema.C_SIGNUP_CODE_TS;
 import static com.aerofs.sp.server.lib.SPSchema.C_USER_ID;
 import static com.aerofs.sp.server.lib.SPSchema.T_ES;
-import static com.aerofs.sp.server.lib.SPSchema.T_TI;
+import static com.aerofs.sp.server.lib.SPSchema.T_SIGNUP_CODE;
 import static com.aerofs.sp.server.lib.SPSchema.T_USER;
 
 /**
@@ -237,12 +237,12 @@ public class EmailSubscriptionDatabase extends AbstractSQLDatabase
             throws SQLException
     {
         PreparedStatement ps = prepareStatement(
-                "select " + C_TI_TO +
-                        " from " + T_TI +
+                "select " + C_SIGNUP_CODE_TO +
+                        " from " + T_SIGNUP_CODE +
                         " left join " + T_USER + " on " + C_USER_ID + "=" +
-                        C_TI_TO +
+                        C_SIGNUP_CODE_TO +
                         " where " + C_USER_ID + " is null " +
-                        " and DATEDIFF(CURRENT_DATE(),DATE(" + C_TI_TS +")) =?" +
+                        " and DATEDIFF(CURRENT_DATE(),DATE(" + C_SIGNUP_CODE_TS +")) =?" +
                         " limit ? offset ?");
 
         ps.setInt(1, days);
@@ -288,7 +288,8 @@ public class EmailSubscriptionDatabase extends AbstractSQLDatabase
     public String getOnePendingFolderInvitationCode(UserID to)
             throws SQLException
     {
-        PreparedStatement ps = prepareStatement(selectWhere(T_TI, C_TI_TO + "=?", C_TI_TIC));
+        PreparedStatement ps = prepareStatement(selectWhere(T_SIGNUP_CODE, C_SIGNUP_CODE_TO + "=?",
+                C_SIGNUP_CODE_CODE));
 
         ps.setString(1, to.getString());
         ResultSet rs = ps.executeQuery();

@@ -42,9 +42,9 @@ import static com.aerofs.sp.server.lib.SPSchema.C_AC_USER_ID;
 import static com.aerofs.sp.server.lib.SPSchema.C_DEVICE_ID;
 import static com.aerofs.sp.server.lib.SPSchema.C_DEVICE_OWNER_ID;
 import static com.aerofs.sp.server.lib.SPSchema.C_DEVICE_UNLINKED;
-import static com.aerofs.sp.server.lib.SPSchema.C_TI_TIC;
-import static com.aerofs.sp.server.lib.SPSchema.C_TI_TO;
-import static com.aerofs.sp.server.lib.SPSchema.C_TI_TS;
+import static com.aerofs.sp.server.lib.SPSchema.C_SIGNUP_CODE_CODE;
+import static com.aerofs.sp.server.lib.SPSchema.C_SIGNUP_CODE_TO;
+import static com.aerofs.sp.server.lib.SPSchema.C_SIGNUP_CODE_TS;
 import static com.aerofs.sp.server.lib.SPSchema.C_USER_ACL_EPOCH;
 import static com.aerofs.sp.server.lib.SPSchema.C_USER_AUTHORIZATION_LEVEL;
 import static com.aerofs.sp.server.lib.SPSchema.C_USER_CREDS;
@@ -55,7 +55,7 @@ import static com.aerofs.sp.server.lib.SPSchema.C_USER_ORG_ID;
 import static com.aerofs.sp.server.lib.SPSchema.C_USER_SIGNUP_TS;
 import static com.aerofs.sp.server.lib.SPSchema.T_AC;
 import static com.aerofs.sp.server.lib.SPSchema.T_DEVICE;
-import static com.aerofs.sp.server.lib.SPSchema.T_TI;
+import static com.aerofs.sp.server.lib.SPSchema.T_SIGNUP_CODE;
 import static com.aerofs.sp.server.lib.SPSchema.T_USER;
 
 /**
@@ -203,8 +203,9 @@ public class UserDatabase extends AbstractSQLDatabase
     public ImmutableList<DID> getDevices(UserID userId)
             throws SQLException, ExFormatError
     {
-        PreparedStatement ps = prepareStatement(selectWhere(T_DEVICE,
-                C_DEVICE_OWNER_ID + "=? and " + C_DEVICE_UNLINKED + "=0", C_DEVICE_ID));
+        PreparedStatement ps = prepareStatement(
+                selectWhere(T_DEVICE, C_DEVICE_OWNER_ID + "=? and " + C_DEVICE_UNLINKED + "=0",
+                        C_DEVICE_ID));
 
         ps.setString(1, userId.getString());
 
@@ -274,7 +275,7 @@ public class UserDatabase extends AbstractSQLDatabase
             throws SQLException
     {
         PreparedStatement ps = prepareStatement(
-                DBUtil.insert(T_TI, C_TI_TIC, C_TI_TO, C_TI_TS));
+                DBUtil.insert(T_SIGNUP_CODE, C_SIGNUP_CODE_CODE, C_SIGNUP_CODE_TO, C_SIGNUP_CODE_TS));
 
         ps.setString(1, code);
         ps.setString(2, to.getString());
@@ -290,7 +291,7 @@ public class UserDatabase extends AbstractSQLDatabase
             throws SQLException
     {
         PreparedStatement ps = prepareStatement(
-                DBUtil.selectWhere(T_TI, C_TI_TO + "=?", "count(*)"));
+                DBUtil.selectWhere(T_SIGNUP_CODE, C_SIGNUP_CODE_TO + "=?", "count(*)"));
 
         ps.setString(1, userId.getString());
         ResultSet rs = ps.executeQuery();
