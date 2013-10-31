@@ -6,7 +6,7 @@ package com.aerofs.sp.server.business_objects;
 
 import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.base.ex.ExNotFound;
-import com.aerofs.sp.server.lib.id.OrganizationID;
+import com.aerofs.base.id.OrganizationID;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.user.User;
 import org.junit.Test;

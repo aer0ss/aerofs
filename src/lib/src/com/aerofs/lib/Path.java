@@ -80,7 +80,7 @@ public class Path implements Comparable<Path>
     public int compareTo(Path otherPath)
     {
         int diff = _sid.compareTo(otherPath._sid);
-        return diff == 0 ? Util.compare(_elems, otherPath._elems) : diff;
+        return diff == 0 ? BaseUtil.compare(_elems, otherPath._elems) : diff;
     }
 
     public Path append(String elem)

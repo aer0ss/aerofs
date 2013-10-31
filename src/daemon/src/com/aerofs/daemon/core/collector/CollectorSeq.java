@@ -1,6 +1,6 @@
 package com.aerofs.daemon.core.collector;
 
-import com.aerofs.lib.id.AbstractLongId;
+import com.aerofs.base.id.AbstractLongId;
 
 public class CollectorSeq extends AbstractLongId<CollectorSeq> {
 

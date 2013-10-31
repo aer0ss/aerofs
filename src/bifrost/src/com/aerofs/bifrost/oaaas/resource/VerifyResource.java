@@ -23,7 +23,7 @@ import org.slf4j.LoggerFactory;
 import com.aerofs.bifrost.oaaas.auth.principal.UserPassCredentials;
 import com.aerofs.bifrost.oaaas.model.AccessToken;
 import com.aerofs.bifrost.oaaas.model.ResourceServer;
-import com.aerofs.bifrost.oaaas.model.VerifyTokenResponse;
+import com.aerofs.oauth.VerifyTokenResponse;
 import com.aerofs.bifrost.oaaas.repository.AccessTokenRepository;
 import com.aerofs.bifrost.oaaas.repository.ResourceServerRepository;
 
@@ -50,74 +50,60 @@ import static com.aerofs.bifrost.oaaas.resource.TokenResource.WWW_AUTHENTICATE;
 @Produces(MediaType.APPLICATION_JSON)
 public class VerifyResource {
 
-  private static final Logger LOG = LoggerFactory.getLogger(VerifyResource.class);
+    private static final Logger LOG = LoggerFactory.getLogger(VerifyResource.class);
 
-  @Inject
-  private AccessTokenRepository accessTokenRepository;
+    @Inject
+    private AccessTokenRepository accessTokenRepository;
 
-  @Inject
-  private ResourceServerRepository resourceServerRepository;
+    @Inject
+    private ResourceServerRepository resourceServerRepository;
 
-  @GET
-  public Response verifyToken(@HeaderParam(HttpHeaders.AUTHORIZATION)
-                              String authorization, @QueryParam("access_token")
-                              String accessToken) throws IOException {
+    @GET
+    public Response verifyToken(
+            @HeaderParam(HttpHeaders.AUTHORIZATION) String authorization,
+            @QueryParam("access_token") String accessToken)
+            throws IOException
+    {
+        UserPassCredentials credentials = new UserPassCredentials(authorization);
+        LOG.debug("verify-token token: {}, credentials: {}", accessToken, credentials);
 
-    UserPassCredentials credentials = new UserPassCredentials(authorization);
+        ResourceServer rs = resourceServerRepository.findByKey(credentials.getUsername());
+        if (rs == null || !rs.getSecret().equals(credentials.getPassword())) {
+            LOG.warn("no resource server for credentials {}", credentials);
+            return Response
+                    .status(Status.UNAUTHORIZED)
+                    .header(WWW_AUTHENTICATE, BASIC_REALM)
+                    .build();
+        }
 
-    if (LOG.isDebugEnabled()) {
-      LOG.debug("Incoming verify-token request, access token: {}, credentials from authorization header: {}", accessToken, credentials);
+        AccessToken token = accessTokenRepository.findByToken(accessToken);
+        if (token == null || !rs.containsClient(token.getClient())) {
+            LOG.warn("Access token {} not found for resource server '{}'", accessToken, rs.getName());
+            return Response
+                    .status(Status.NOT_FOUND)
+                    .entity(VerifyTokenResponse.NOT_FOUND)
+                    .build();
+        }
+
+        if (tokenExpired(token)) {
+            LOG.warn("Token {} is expired.", accessToken);
+            return Response
+                    .status(Status.GONE)
+                    .entity(VerifyTokenResponse.EXPIRED)
+                    .build();
+        }
+
+        LOG.debug("access token {} valid for user {}", accessToken, credentials);
+        return Response
+                .ok(new VerifyTokenResponse(
+                        token.getClient().getName(),
+                        token.getScopes(),
+                        token.getExpires(),
+                        token.getPrincipal()))
+                .build();
     }
 
-    ResourceServer resourceServer = getResourceServer(credentials);
-    if (resourceServer == null || !resourceServer.getSecret().equals(credentials.getPassword())) {
-      LOG.warn("For access token {}: Resource server not found for credentials {}. Responding with 401 in VerifyResource#verifyToken.", accessToken, credentials);
-      return unauthorized();
+    private boolean tokenExpired(AccessToken token) {
+        return token.getExpires() != 0 && token.getExpires() < System.currentTimeMillis();
     }
-
-    AccessToken token = accessTokenRepository.findByToken(accessToken);
-    if (token == null || !resourceServer.containsClient(token.getClient())) {
-      LOG.warn("Access token {} not found for resource server '{}'. Responding with 404 in VerifyResource#verifyToken for user {}", accessToken, resourceServer.getName(), credentials);
-      return Response.status(Status.NOT_FOUND).entity(new VerifyTokenResponse("not_found")).build();
-    }
-    if (tokenExpired(token)) {
-      LOG.warn("Token {} is expired. Responding with 410 in VerifyResource#verifyToken for user {}", accessToken, credentials);
-      return Response.status(Status.GONE).entity(new VerifyTokenResponse("token_expired")).build();
-    }
-
-    final VerifyTokenResponse verifyTokenResponse = new VerifyTokenResponse(token.getClient().getName(),
-            token.getScopes(), token.getPrincipal(), token.getExpires());
-
-    if (LOG.isDebugEnabled()) {
-      LOG.debug("Responding with 200 in VerifyResource#verifyToken for access token {} and user {}", accessToken, credentials);
-    }
-    return Response.ok(verifyTokenResponse).build();
-  }
-
-  private boolean tokenExpired(AccessToken token) {
-    return token.getExpires() != 0 && token.getExpires() < System.currentTimeMillis();
-  }
-
-  private ResourceServer getResourceServer(UserPassCredentials credentials) {
-    String key = credentials.getUsername();
-    return resourceServerRepository.findByKey(key);
-  }
-
-  protected Response unauthorized() {
-    return Response.status(Status.UNAUTHORIZED).header(WWW_AUTHENTICATE, BASIC_REALM).build();
-  }
-
-  /**
-   * @param accessTokenRepository the accessTokenRepository to set
-   */
-  public void setAccessTokenRepository(AccessTokenRepository accessTokenRepository) {
-    this.accessTokenRepository = accessTokenRepository;
-  }
-
-  /**
-   * @param resourceServerRepository the resourceServerRepository to set
-   */
-  public void setResourceServerRepository(ResourceServerRepository resourceServerRepository) {
-    this.resourceServerRepository = resourceServerRepository;
-  }
 }

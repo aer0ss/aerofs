@@ -1,6 +1,6 @@
-package com.aerofs.lib.id;
+package com.aerofs.base.id;
 
-import com.aerofs.lib.Util;
+import com.aerofs.base.BaseUtil;
 
 public abstract class AbstractLongId<T extends AbstractLongId<T>> implements Comparable<T>
 {
@@ -18,7 +18,7 @@ public abstract class AbstractLongId<T extends AbstractLongId<T>> implements Com
 
     public int compareTo(T o)
     {
-        return Util.compare(_id, o._id);
+        return BaseUtil.compare(_id, o._id);
     }
 
     @Override

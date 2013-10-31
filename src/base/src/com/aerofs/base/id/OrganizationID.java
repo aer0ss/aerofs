@@ -2,16 +2,14 @@
  * Copyright (c) Air Computing Inc., 2013.
  */
 
-package com.aerofs.sp.server.lib.id;
+package com.aerofs.base.id;
 
-import com.aerofs.lib.Util;
-import com.aerofs.lib.id.IntegerID;
-import com.aerofs.base.id.UserID;
+import com.aerofs.base.BaseUtil;
 
 /**
  * Organization ID.
  *
- * Since clients are oblivious to organization IDs, this class should be only visible to servers.
+ * This class is in base because org ids are exposed in OAuth
  */
 public class OrganizationID extends IntegerID
 {
@@ -26,7 +24,7 @@ public class OrganizationID extends IntegerID
     static {
         // assert the team server prefix is an invalid email address char. This check can be done
         // in UserID. But I don't really want to slow down client launch time any further.
-        assert !Util.isValidEmailAddressToken(String.valueOf(UserID.TEAM_SERVER_PREFIX));
+        assert !BaseUtil.isValidEmailAddressToken(String.valueOf(UserID.TEAM_SERVER_PREFIX));
     }
 
     public OrganizationID(int i)

@@ -13,7 +13,7 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
 import com.aerofs.lib.event.IEvent;
 import com.aerofs.lib.event.Prio;
-import com.aerofs.lib.id.IntegerID;
+import com.aerofs.base.id.IntegerID;
 import com.aerofs.proto.Transport;
 import org.slf4j.Logger;
 

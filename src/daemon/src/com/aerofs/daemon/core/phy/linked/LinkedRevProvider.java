@@ -562,8 +562,8 @@ public class LinkedRevProvider implements IPhysicalRevProvider
             @Override
             public int compare(RevInfo o1, RevInfo o2)
             {
-                int r = Util.compare(o1._suffix._rtime, o2._suffix._rtime);
-                if (r == 0) r = Util.compare(o1._suffix._mtime, o2._suffix._mtime);
+                int r = BaseUtil.compare(o1._suffix._rtime, o2._suffix._rtime);
+                if (r == 0) r = BaseUtil.compare(o1._suffix._mtime, o2._suffix._mtime);
                 return r;
             }
         };

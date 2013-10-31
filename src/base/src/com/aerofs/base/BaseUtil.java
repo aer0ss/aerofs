@@ -22,6 +22,9 @@ public class BaseUtil
 {
 
     private static final Charset CHARSET_UTF = Charset.forName("UTF-8");
+    public static final char[] VALID_EMAIL_CHARS =
+        new char[] { '.', '!', '#', '$', '%', '&', '\'', '*', '+', '-', '/',
+                     '=', '?', '^', '_', '`', '{', '|', '}', '~' };
 
     public static byte[] string2utf(String str)
     {
@@ -168,5 +171,59 @@ public class BaseUtil
         // whole string
         java.util.Scanner scanner = new Scanner(is, checkNotNull(charset)).useDelimiter("\\A");
         return scanner.hasNext() ? scanner.next() : "";
+    }
+
+    // the caller should throw ExInvalidCharacter if exception is needed
+    public static boolean isValidEmailAddressToken(String part)
+    {
+        if (part.isEmpty()) return false;
+        for (int i = 0; i < part.length(); i++) {
+            char ch = part.charAt(i);
+            if (ch >= 128) return false;    // must be ASCII
+            if (Character.isLetterOrDigit(ch)) continue;
+            boolean isValid = false;
+            for (char valid : VALID_EMAIL_CHARS) {
+                if (ch == valid) { isValid = true; break; }
+            }
+            if (!isValid) return false;
+        }
+        return true;
+    }
+
+    public static <T extends Comparable<T>> int compare(T[] a, T[] b)
+    {
+        int min = Math.min(a.length, b.length);
+        for (int i = 0; i < min; i++) {
+            int comp = a[i].compareTo(b[i]);
+            if (comp != 0) return comp;
+        }
+
+        return a.length - b.length;
+    }
+
+    /** Compare, where T is comparable to U (though not necessarily vice versa) */
+    public static <U, T extends Comparable<? super U>> int compare(T a, U b)
+    {
+        if (a == null) {
+            if (b == null) return 0;
+            else return -1;
+        } else {
+            if (b == null) return 1;
+            return a.compareTo(b);
+        }
+    }
+
+    public static int compare(long a, long b)
+    {
+        if (a > b) return 1;
+        else if (a == b) return 0;
+        else return -1;
+    }
+
+    public static int compare(int a, int b)
+    {
+        if (a > b) return 1;
+        else if (a == b) return 0;
+        else return -1;
     }
 }

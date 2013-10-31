@@ -1,6 +1,6 @@
-package com.aerofs.lib.id;
+package com.aerofs.base.id;
 
-import com.aerofs.lib.Util;
+import com.aerofs.base.BaseUtil;
 
 public class IntegerID implements Comparable<IntegerID> {
 
@@ -14,7 +14,7 @@ public class IntegerID implements Comparable<IntegerID> {
     @Override
     public int compareTo(IntegerID arg0)
     {
-        return Util.compare(_i, arg0._i);
+        return BaseUtil.compare(_i, arg0._i);
     }
 
     public int getInt()
