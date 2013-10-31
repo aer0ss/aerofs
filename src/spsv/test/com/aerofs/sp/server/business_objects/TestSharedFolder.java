@@ -71,7 +71,8 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
     {
         SharedFolder sf = saveUserAndSharedFolder();
         assertTrue(sf.exists());
-        sf.destroy();
+        // why 2? the user and his team server
+        assertEquals(sf.destroy().size(), 2);
         assertFalse(sf.exists());
     }
 
@@ -269,6 +270,53 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
     }
 
     @Test
+    public void setState_shouldNotifyAppropriateUsers()
+            throws Exception
+    {
+        User owner = saveUser();
+        SharedFolder sf = saveSharedFolder(owner);
+
+        User user = saveUser();
+        sf.addPendingUser(user, Role.EDITOR, owner);
+
+        // pending => joined
+        // why 4? the owner, the user, and their team servers
+        assertEquals(sf.setState(user, SharedFolderState.JOINED).size(), 4);
+
+        // joined => joined
+        // why 0? no state has changed
+        assertEquals(sf.setState(user, SharedFolderState.JOINED).size(), 0);
+
+        // joined => left
+        // why 4? the owner, the user, and their team servers
+        assertEquals(sf.setState(user, SharedFolderState.LEFT).size(), 4);
+
+        // left => left
+        // why 0? no state has changed
+        assertEquals(sf.setState(user, SharedFolderState.LEFT).size(), 0);
+
+        // left => joined
+        // why 4? the owner, the user, and their team servers
+        assertEquals(sf.setState(user, SharedFolderState.JOINED).size(), 4);
+
+        // joined => pending
+        // why 4? the owner, the user, and their team servers
+        assertEquals(sf.setState(user, SharedFolderState.PENDING).size(), 4);
+
+        // pending => pending
+        // why 0? no state has changed
+        assertEquals(sf.setState(user, SharedFolderState.PENDING).size(), 0);
+
+        // pending => left
+        // why 0? no state has changed
+        assertEquals(sf.setState(user, SharedFolderState.LEFT).size(), 0);
+
+        // left => pending
+        // why 0? no state has changed
+        assertEquals(sf.setState(user, SharedFolderState.PENDING).size(), 0);
+    }
+
+    @Test
     public void addTeamServerForUser_shouldNotAddIfAlreadyExists()
             throws Exception
     {
@@ -279,10 +327,12 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
         // Move the two users to the same org
         user2.setOrganization(user1.getOrganization(), AuthorizationLevel.USER);
 
-        sf.addTeamServerForUser(user1);
+        // why 3? owner, owner's TS, and user1's TSs
+        assertEquals(sf.addTeamServerForUser(user1).size(), 3);
         List<User> users = Lists.newArrayList(sf.getJoinedUsers());
 
-        sf.addTeamServerForUser(user2);
+        // why 0? the team server is already added. so no one will be affected
+        assertEquals(sf.addTeamServerForUser(user2).size(), 0);
         assertEquals(users, sf.getJoinedUsers());
 
         assertJoinedRole(sf, getTeamServerUser(user1), Role.EDITOR);
@@ -299,7 +349,7 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
         User user1 = saveUser();
         // why 4? owner, user, and their team servers
         addJoinedUser(sf, user1, Role.OWNER, owner, 4);
-        sf.setRole(owner, Role.EDITOR);
+        assertEquals(sf.setRole(owner, Role.EDITOR).size(), 4);
 
         try {
             sf.removeUser(user1);
@@ -379,7 +429,8 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
         assertJoinedRole(sf, tsUser, Role.OWNER);
 
         // make sure TS not kicked out when last org member leaves
-        sf.removeUser(user);
+        // why 2? the user and the team server
+        assertEquals(sf.removeUser(user).size(), 2);
         assertJoinedRole(sf, tsUser, Role.OWNER);
     }
 
@@ -453,7 +504,7 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
         }
     }
 
-    @Test(expected = ExNotFound.class)
+    @Test
     public void setRole_shouldThrowIfNoUserNotFound()
             throws Exception
     {
@@ -461,7 +512,10 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
 
         User user = saveUser();
 
-        sf.setRole(user, Role.EDITOR);
+        try {
+            sf.setRole(user, Role.EDITOR);
+            fail();
+        } catch (ExNotFound e) {}
     }
 
     @Test
@@ -487,6 +541,23 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
         // wh 6? owner, user1, user2, and their perspective team servers
         assertEquals(sf.setRole(user2, Role.EDITOR).size(), 6);
         assertJoinedRole(sf, user2, Role.EDITOR);
+    }
+
+    @Test
+    public void setRole_shouldNotifyNobodyIfSubjectIsNotJoined()
+            throws Exception
+    {
+        User owner = saveUser();
+        SharedFolder sf = saveSharedFolder(owner);
+
+        User user = saveUser();
+        sf.addPendingUser(user, Role.EDITOR, owner);
+        assertEquals(sf.setRole(user, Role.OWNER).size(), 0);
+
+        // why 0? no joined users are affected
+        assertEquals(sf.setState(user, SharedFolderState.LEFT).size(), 0);
+
+        assertEquals(sf.setRole(user, Role.VIEWER).size(), 0);
     }
 
     private User getTeamServerUser(User user)
