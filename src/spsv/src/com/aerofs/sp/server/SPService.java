@@ -199,12 +199,13 @@ public class SPService implements ISPService
     // and pricing.mako when changing this number.
     private int _maxFreeCollaboratorsPerFolder = 1;
 
-    // If false, no payment checks will be enforced.
+    // Whether to enforce payment checks
     private final Boolean ENABLE_PAYMENT =
             getBooleanProperty("sp.payment.enabled", true);
 
-    private final Boolean INVITATION_ONLY_SIGNUP =
-            getBooleanProperty("invitation_only_signup", false);
+    // Whether to allow self sign-ups via RequestToSignUp()
+    private final Boolean OPEN_SIGNUP =
+            getBooleanProperty("open_signup", true);
 
     private static final AsyncEmailSender _emailSender = new AsyncEmailSender();
 
@@ -1344,8 +1345,8 @@ public class SPService implements ISPService
         _sqlTrans.begin();
 
         // If it's an invitation-only system, only allow the first user to self sign up
-        // (via site setup UI).
-        if (INVITATION_ONLY_SIGNUP && _factUser.hasUsers()) {
+        // (via the setup UI).
+        if (!OPEN_SIGNUP && _factUser.hasUsers()) {
             throw new ExNoPerm("invitation-only sign up");
         } else if (_authenticator.isAutoProvisioned(user.id())) {
             throw new ExNoPerm("auto-provisioned users don't need to request for sign-up");

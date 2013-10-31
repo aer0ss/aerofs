@@ -227,10 +227,10 @@ Timeout value, in milliseconds, for a response from SMTP commands.
 
 Timeout value, in milliseconds, for a connection to the outbound SMTP server.
 
-    invitation_only_signup=true
+    open_signup=false
 
-Whether to block account creation unless users are invited to the system by
-existing users (either folder owners or team administrators).
+Whether to allow self sign-ups. Otherwise, users must be invited by existing users
+(either administrators or folder owners) to join the system.
 
 ### OpenID properties
 

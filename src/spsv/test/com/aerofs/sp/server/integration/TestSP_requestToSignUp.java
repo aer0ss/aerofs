@@ -50,7 +50,7 @@ public class TestSP_requestToSignUp extends AbstractSPTest
     public void shouldSupportInvitationOnlySignUp() throws Exception
     {
         Properties props = new Properties();
-        props.put("invitation_only_signup", "true");
+        props.put("open_signup", "false");
         ConfigurationProperties.setProperties(props);
 
         // reconstruct SP using the new shared folder rules
