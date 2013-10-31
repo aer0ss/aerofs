@@ -40,3 +40,10 @@ ldap.server.schema.user.field.lastname={{ ldap_server_schema_user_field_lastname
 ldap.server.schema.user.field.email={{ ldap_server_schema_user_field_email }}
 ldap.server.schema.user.field.rdn={{ ldap_server_schema_user_field_rdn }}
 ldap.server.schema.user.class={{ ldap_server_schema_user_class }}
+
+{# This section will be filled with all key-value pairs stored in the
+ # license-info file inside the license file.  On first boot, it will be empty;
+ # otherwise, it will contain a set of key-value pairs, including at least
+ # `customer_id` and `license_type`
+ #}
+{{ license_lines }}
