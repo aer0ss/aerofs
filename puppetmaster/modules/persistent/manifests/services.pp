@@ -10,6 +10,13 @@ class persistent::services (
         ensure  => latest,
         require => Apt::Source["aerofs"],
     }
+    cron { "license_enforcement":
+        command => "/opt/config/pythonenv/bin/python /opt/config/enforce_license.py",
+        user    => "root",
+        minute  => 0,
+        environment => "PATH=/usr/sbin:/usr/bin:/sbin:/bin",
+        require => Package["aerofs-config"]
+    }
 
     # --------------
     # DB Backup
