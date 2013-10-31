@@ -24,11 +24,9 @@ URL_PARAM_NEXT = 'next'
 log = logging.getLogger(__name__)
 
 def get_group(userid, request):
-    # Must reload auth level on every request, because not all pages that
-    # require authentication make SP calls.
-    reload_auth_level(request)
-
-    return [request.session.get('group')]
+    # Always fetch the latest authorization level from SP
+    refersh_auth_level_cache(request)
+    return [get_auth_level(request)]
 
 def _get_next_url(request):
     """
@@ -176,7 +174,6 @@ def _log_in_user(request, login, creds, stay_signed_in):
     request.session['sp_cookies'] = con._session.cookies
     request.session['username'] = login
     request.session['team_id'] = sp.get_organization_id().org_id
-    reload_auth_level(request)
 
     return remember(request, login)
 

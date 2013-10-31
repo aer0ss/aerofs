@@ -94,8 +94,6 @@ def accept_team_invitation(request):
     # downgrade subscription for the user's previous org
     stripe_util.update_stripe_subscription(reply.stripe_data)
 
-    reload_auth_level(request)
-
     return HTTPOk()
 
 @view_config(

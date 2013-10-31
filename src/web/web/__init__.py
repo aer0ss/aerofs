@@ -14,6 +14,18 @@ class RedirectMiddleware(object):
     This class exists to redirect the application to the setup page when the
     configuration system has not been initialized.
     """
+    redirect_not_required = [
+            '/setup',
+            '/setup_redirect',
+            '/json_setup_hostname',
+            '/json_setup_email',
+            '/json_verify_smtp',
+            '/json_setup_certificate',
+            '/json_setup_identity',
+            '/json_verify_ldap',
+            '/json_setup_apply',
+            '/json_setup_poll',
+            '/json_setup_finalize']
 
     def __init__(self, application, settings):
         self.app = application
@@ -23,26 +35,13 @@ class RedirectMiddleware(object):
         self.app.complete = True
 
     def needs_redirect(self, environ):
-        redirect_not_required = [
-                '/setup',
-                '/setup_redirect',
-                '/json_setup_hostname',
-                '/json_setup_email',
-                '/json_verify_smtp',
-                '/json_setup_certificate',
-                '/json_setup_identity',
-                '/json_verify_ldap',
-                '/json_setup_apply',
-                '/json_setup_poll',
-                '/json_setup_finalize']
-
         # Need redirect if:
         #  1. Private deployment, and
         #  2. Configuration has not been initialized (first run), and
         #  3. The path requires a redirect.
         return is_private_deployment(self.settings) and \
-               is_configuration_initialized(self.settings) == False and \
-               environ['PATH_INFO'] not in redirect_not_required
+               not is_configuration_initialized(self.settings) and \
+               environ['PATH_INFO'] not in self.redirect_not_required
 
     def __call__(self, environ, start_response):
         if self.needs_redirect(environ):

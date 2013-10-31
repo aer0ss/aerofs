@@ -70,7 +70,6 @@ def _get_sp_auth(request, stay_signed_in):
     request.session['sp_cookies'] = con._session.cookies
     request.session['username'] = login
     request.session['team_id'] = sp.get_organization_id().org_id
-    reload_auth_level(request)
 
     return remember(request, login)
 

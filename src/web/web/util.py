@@ -39,8 +39,34 @@ def domain_sanity_check(domain):
 def is_logged_in(request):
     return 'username' in request.session
 
+# We cache the auth level in the session to avoid frequent queries to SP
+# N.B. an attacker could forge the group field in the cookie, but because
+# login_view.py:get_group() calls invalidate_auth_level_cache() everytime a
+# request is made, it is not a problem.
+_AUTH_LEVEL_KEY = 'auth_level'
+
+def get_auth_level(request):
+    """
+    Return the authorization level cached in the session. Make an SP call if the
+    value is not cached.
+    @return: aerofs_sp.gen.sp_pb2.USER or ADMIN.
+    @see invalidate_auth_level_cache()
+    """
+    if _AUTH_LEVEL_KEY not in request.session:
+        refersh_auth_level_cache(request)
+    return request.session[_AUTH_LEVEL_KEY]
+
 def is_admin(request):
-    return request.session['group'] == ADMIN
+    return get_auth_level(request) == ADMIN
+
+def refersh_auth_level_cache(request):
+    """
+    Invalidate the auth level cached in the session and refetch from SP.
+    @see get_auth_level()
+    """
+    sp = get_rpc_stub(request)
+    level = int(sp.get_authorization_level().level)
+    request.session[_AUTH_LEVEL_KEY] = level
 
 def get_session_user(request):
     return request.session['username']
@@ -106,10 +132,14 @@ def get_rpc_stub(request):
     request.session['sp_cookies'] to be set (should be by login)
     """
     settings = request.registry.settings
-    if 'sp_cookies' in request.session: # attempt session recovery
-        con = SyncConnectionService(settings['base.sp.url'], settings['sp.version'], request.session['sp_cookies'])
+    if 'sp_cookies' in request.session:
+        con = SyncConnectionService(settings['base.sp.url'],
+                                    settings['sp.version'],
+                                    request.session['sp_cookies'])
     else:
-        con = SyncConnectionService(settings['base.sp.url'], settings['sp.version'])
+        # attempt session recovery
+        con = SyncConnectionService(settings['base.sp.url'],
+                                    settings['sp.version'])
     return SPServiceRpcStub(con)
 
 def flash_error(request, error_msg):
@@ -137,19 +167,6 @@ def get_last_flash_message_and_empty_queue(request):
     successes = request.session.pop_flash(queue='success_queue')
     return (successes[-1], True) if successes else \
             ((errors[-1], False) if errors else None)
-
-def reload_auth_level(request):
-    """
-    Invalidate the auth level cached in the session and refetch from the database.
-    """
-    # N.B. an attacker could forge the group field in the cookie, but that would
-    # only change the nav options displayed by the python. SP would still keep
-    # all sensitive info private. Therefore keeping the authlevel here is fine.
-    # We prefer to keep it here because we avoid an unnecessary call to SP
-    # whenever we need to check authlevel.
-    sp = get_rpc_stub(request)
-    authlevel = int(sp.get_authorization_level().level)
-    request.session['group'] = authlevel
 
 def send_internal_email(subject, body):
     """
