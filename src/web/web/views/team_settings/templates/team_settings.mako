@@ -8,7 +8,7 @@
           rel="stylesheet">
 </%block>
 
-<div class="page_block">
+<div class="page-block">
     <h2>Team Settings</h2>
     ## TODO (WW) use form-horizontal when adding new fields. see login.mako
     Change team name:
@@ -25,7 +25,7 @@
 ## Include subscription management only for public deployment
 %if request.registry.settings['deployment.mode'] == 'public':
 
-    <div class="page_block">
+    <div class="page-block">
         %if has_customer_id:
             <p><a href="${request.route_path('manage_subscription')}">
                 Manage subscription and payment</a></p>

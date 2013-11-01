@@ -17,3 +17,7 @@ Some diagrams on the Web use images from http://www.wpzoom.com/wpzoom/new-freebi
 python-ib/aerofs_common/properties.py is from:
 http://code.activestate.com/recipes/496795-a-python-replacement-for-javautilproperties/
 under the PSF license
+
+The video play icon (images/web/play.*) is bought from iconfinder.com
+https://www.iconfinder.com/icons/97616/film_media_movie_music_play_player_stop_video_youtube_icon#
+https://www.iconfinder.com/licenses/basic

@@ -97,33 +97,17 @@ def json_signup(request):
 
     try:
         sp = get_rpc_stub(request)
-        result = sp.sign_up_with_code(code, password, first_name, last_name)
-
-        # NOTE: We don't verify that the lead was successfully captured because we don't want to
-        #       prevent the user from signing up even if salesforce fails
-        #       Also, we don't want to run this code if we're in private mode.
-
-        if not is_private_deployment(request.registry.settings):
-            try:
-                urlopen(
-                    'https://www.salesforce.com/servlet/servlet.WebToLead?encoding=UTF-8',
-                    urlencode({
-                        'oid': '00Dd0000000gsmN',
-                        'email': email_address,
-                        'first_name': first_name,
-                        'last_name': last_name,
-                        'company': request.params[URL_PARAM_COMPANY],
-                        'title': request.params[URL_PARAM_TITLE],
-                        'employees': request.params[URL_PARAM_COMPANY_SIZE],
-                        'phone': request.params[URL_PARAM_PHONE],
-                        'country': request.params[URL_PARAM_COUNTRY]
-                    }))
-            except Exception as e:
-                log.warn(e)
+        sp.sign_up_with_code(code, password, first_name, last_name)
 
         return {
-            'team_id': result.org_id,
-            'existing_team': result.existing_team
+            'email_address': email_address,
+            'first_name': first_name,
+            'last_name': last_name,
+            'company': request.params[URL_PARAM_COMPANY],
+            'title': request.params[URL_PARAM_TITLE],
+            'employees': request.params[URL_PARAM_COMPANY_SIZE],
+            'phone': request.params[URL_PARAM_PHONE],
+            'country': request.params[URL_PARAM_COUNTRY]
         }
     except ExceptionReply as e:
         if e.get_type() == common.PBException.BAD_CREDENTIAL:

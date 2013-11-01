@@ -8,11 +8,11 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="P2P file sharing and file sync lets you create your own private cloud. Secure, unlimited data transfer for large or sensitive files on Windows, Mac, Linux, and Android.">
+    <meta name="description" content="P2P file sharing and file sync lets you create your own hybrid and private cloud. Secure, unlimited data transfer for large or sensitive files on Windows, Mac, Linux, and Android.">
 
     <title>
         ## This title is recommended by Beth to maximize keyword matching for SEO
-        Secure File Sharing and File Sync | AeroFS
+        Private and Secure File Sharing and File Sync | AeroFS
         ## The following code requires _every_ page to define a page title.
         ##
         ## Place the title definition to the top of the file:
@@ -31,7 +31,7 @@
     ## locally as opposed to on 3rd-party servers.
     <link href="${request.static_path('web:static/css/google-open-sans.css')}" rel='stylesheet'>
     <link href="${request.static_path('web:static/css/bootstrap.css')}" rel="stylesheet">
-    <link href="${request.static_path('web:static/css/responsive.css')}" rel="stylesheet">
+    <link href="${request.static_path('web:static/css/unresponsive.css')}" rel="stylesheet">
     <link href="${request.static_path('web:static/css/aerofs.css')}" rel="stylesheet">
 
     <%block name="css"/>
@@ -47,38 +47,18 @@
     %if not is_private_deployment(request.registry.settings):
         ${tracking_codes()}
     % else:
-        ## Set the global mixpanel object to `false` so that we can do `if (mixpanel)` to check if mixpanel is enabled
-        <script>window.mixpanel = false;</script>
+        ## Set the global analytics object to `false` so that we can do `if (analytics)` to check if mixpanel is enabled
+        <script>window.analytics = false;</script>
     %endif
 
     <script><%block name="page_view_tracker"/></script>
 </head>
 
 <%def name="tracking_codes()">
-    ## Google Analytics. Put it to header rather than footer: http://stackoverflow.com/questions/10712908/google-analytics-in-header-or-footer
-    ## TODO (WW) use different API keys for prod and dev as Mixpanel does?
-    <script>
-        var _gaq = _gaq || [];
-        _gaq.push(['_setAccount', 'UA-24554389-1']);
-        _gaq.push(['_trackPageview']);
-        _gaq.push(['_trackPageLoadTime']);
-
-        (function() {
-            var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-            ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-            var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
-        })();
-    </script>
-
-    ## Mixpanel. Put this to header rather than footer as required by Mixpanel.
-    <script>(function(e,b){if(!b.__SV){var a,f,i,g;window.mixpanel=b;a=e.createElement("script");a.type="text/javascript";a.async=!0;a.src=("https:"===e.location.protocol?"https:":"http:")+'//cdn.mxpnl.com/libs/mixpanel-2.2.min.js';f=e.getElementsByTagName("script")[0];f.parentNode.insertBefore(a,f);b._i=[];b.init=function(a,e,d){function f(b,h){var a=h.split(".");2==a.length&&(b=b[a[0]],h=a[1]);b[h]=function(){b.push([h].concat(Array.prototype.slice.call(arguments,0)))}}var c=b;"undefined"!==
-        typeof d?c=b[d]=[]:d="mixpanel";c.people=c.people||[];c.toString=function(b){var a="mixpanel";"mixpanel"!==d&&(a+="."+d);b||(a+=" (stub)");return a};c.people.toString=function(){return c.toString(1)+".people (stub)"};i="disable track track_pageview track_links track_forms register register_once alias unregister identify name_tag set_config people.set people.increment people.append people.track_charge people.clear_charges people.delete_user".split(" ");for(g=0;g<i.length;g++)f(c,i[g]);b._i.push([a,
-        e,d])};b.__SV=1.2}})(document,window.mixpanel||[]);
-        mixpanel.init("${request.registry.settings['mixpanel.api_key']}");
-
-        %if 'team_id' in request.session:
-            mixpanel.identify("${request.session['team_id']}");
-        %endif
+    ## Segment.IO - Put in the header rather than footer as required by Segment.IO
+    <script type="text/javascript">
+        window.analytics||(window.analytics=[]),window.analytics.methods=["identify","track","trackLink","trackForm","trackClick","trackSubmit","page","pageview","ab","alias","ready","group","on","once","off"],window.analytics.factory=function(a){return function(){var t=Array.prototype.slice.call(arguments);return t.unshift(a),window.analytics.push(t),window.analytics}};for(var i=0;i<window.analytics.methods.length;i++){var method=window.analytics.methods[i];window.analytics[method]=window.analytics.factory(method)}window.analytics.load=function(a){var t=document.createElement("script");t.type="text/javascript",t.async=!0,t.src=("https:"===document.location.protocol?"https://":"http://")+"d2dq2ahtl5zl1z.cloudfront.net/analytics.js/v1/"+a+"/analytics.min.js";var n=document.getElementsByTagName("script")[0];n.parentNode.insertBefore(t,n)},window.analytics.SNIPPET_VERSION="2.0.6",
+        window.analytics.load("${request.registry.settings['segmentio.api_key']}");
     </script>
 </%def>
 
@@ -146,6 +126,11 @@
             });
         </script>
     %endif
+
+    ## Unlike the "scripts" block which is supposed to be overridden by leaf
+    ## mako files in the inheritance tree, "layout_scripts" is meant to be
+    ## overridden by *_layout.mako.
+    <%block name="layout_scripts"/>
 
     <%block name="scripts"/>
 </body>

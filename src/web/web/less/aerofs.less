@@ -1,5 +1,6 @@
 @import "bootstrap/variables.less";
 @import "bootstrap/mixins.less";    // for buttonBackground()
+@import "bootstrap/scaffolding.less";    // for .img-rounded
 
 // We use h4 for modal titles. A normal font weight is not pretty for titles.
 h4 {
@@ -52,8 +53,17 @@ footer {
   border-top: @blockSeparator;
 }
 
-.page_block + .page_block {
+.bottom-divider {
+  border-bottom: @blockSeparator;
+}
+
+.page-block + .page-block {
   margin-top: 30px;
+}
+
+.page-headline-banner {
+  padding-bottom: 40px;
+  .bottom-divider;
 }
 
 ////////
@@ -81,7 +91,7 @@ footer {
 .left-nav > .active > a:hover {
   background: transparent;
   text-shadow: none;
-  font-weight: bold;
+  font-weight: bolder;
   color: @linkColorHover;
 }
 
@@ -97,6 +107,42 @@ footer {
 #nav-btn-sign-up {
   // Values of the last two parameters are copied from Bootstrap's .btn style.
   .buttonBackground(@yellow, spin(@yellow, -5%), @grayDark, 0 1px 1px rgba(255,255,255,.75));
+}
+
+.side-bar-accordion .accordion-toggle {
+  font-weight: bold;
+  color: #555;
+}
+
+.accordion-down-arrow {
+  color: #d3d3d3;
+}
+
+.media-bulletin .media {
+  margin-top: 40px;
+}
+.media-bulletin .media + .media {
+  .top-divider;
+  padding-top: 40px;
+}
+.media-bulletin ul, .media-bulletin p {
+  // to make space between title and bulletin points
+  margin-top: 10px;
+}
+.media-bulletin li {
+  margin-left: -6px;
+}
+.media-bulletin li + li {
+  margin-top: 10px;
+}
+.media-bulletin img.pull-right + .media-body {
+  padding-right: 10px;
+}
+.media-bulletin img.pull-left + .media-body {
+  // slightly bigger than the above padding for "img.pull-right + .media-body",
+  // since the right side of a text block is not justified, giving the
+  // impression of a larger padding than the left side of the text.
+  padding-left: 15px;
 }
 
 ////////
@@ -244,6 +290,8 @@ div.jumbo_banner > h2 {
 .aerofs-icon-windows          { background-position: -24px  0; }
 .aerofs-icon-linux            { background-position: -48px  0; }
 .aerofs-icon-android          { background-position: -72px  0; }
+.aerofs-icon-earphone         { background-position: -96px  0; }
+.aerofs-icon-twitter          { background-position: -120px  0; }
 
 ////////
 // Datatables
@@ -264,6 +312,11 @@ div.jumbo_banner > h2 {
 
 ////////
 // Misc
+
+img.screenshot {
+  .img-rounded;
+  .img-bordered;
+}
 
 .full_name {
   font-weight: bold;
@@ -293,63 +346,7 @@ code {
   border: 1px solid @grayLight;
 }
 
-////////////////
-// Page-specific styles. Save them here instead of in mako files to take
-// advantage of LESS variables.
-
-////////
-// The front page
-
-form#fp-sign-up-form .input-placeholder {
-  position: absolute;
-  // These two values are determined empirically
-  top: 13px;
-  left: 22px;
-  font-size: @fontSizeLarge;
-  color: @grayLight;
-}
-
-// Use .btn-large's stype for the input fields on the front page
-form#fp-sign-up-form input {
-  padding: @paddingLarge;
-  font-size: @fontSizeLarge;
-  .border-radius(@borderRadiusLarge);
-  // Undo Bootstrap's height for input fields, and calculate height based on
-  // text size and padding (the same as how btn-large's height is calculated)
-  height: inherit;
-  margin-bottom: 20px;
-}
-
-h1#fp-heading {
-  // Similar style to Bootstrap's .hero-unit > h1.
-  font-size: 52px;
-  color: @heroUnitHeadingColor;
-  line-height: 1.2;
-  letter-spacing: -1px;
-}
-
-p#fp-tag-line {
-  // The same color as Bootstrap's h1 > small.
-  margin-top: 15px;
-  font-size: 140%;
-  color: @grayLight;
-}
-
-img.fp-icon {
-  position: absolute;
-  top: -27px;
-  left: 111px;
-}
-
-ul.fp-thumbnails .thumbnail {
-  position: relative;
-  padding-top: 30px;
-}
-
-////////
-// The Features page
-
-#features-tabs .active a {
-  border-right-color: @yellow;
-  background-color: white;
+.sign-up-text-highlight {
+  color: @green;
+  font-weight: bold;
 }

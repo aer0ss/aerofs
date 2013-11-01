@@ -11,7 +11,7 @@
     </style>
 </%block>
 
-<div class="page_block">
+<div class="page-block">
     <h2>Current Subscription</h2>
 
     <p>You are paying (in US dollars):</p>
@@ -35,7 +35,7 @@
     </p>
 </div>
 
-<div class="page_block">
+<div class="page-block">
     <h2>Payment Method</h2>
     <div class="row">
         <div class="span3">
@@ -51,7 +51,7 @@
     </div>
 </div>
 
-<div class="page_block">
+<div class="page-block">
     <h2>Billing History</h2>
     <table class="table">
         <thead>
@@ -86,7 +86,7 @@
     </table>
 </div>
 
-<div class="page_block">
+<div class="page-block">
     <a class="btn" href="#" onclick="cancelSubscription(); return false;">
         Cancel Subscription
     </a>

@@ -3,7 +3,7 @@
 
 <h2>Service status</h2>
 
-<div class="page_block" id="server-status-div">
+<div class="page-block" id="server-status-div">
     <table class="table table-hover" style="border: 1px">
         <tbody id="server-status-tbody">
             % for server_status in server_statuses:

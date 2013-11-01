@@ -11,11 +11,11 @@
     </style>
 </%block>
 
-<div class="hidden page_block" id="no-invitation-div">
+<div class="hidden page-block" id="no-invitation-div">
     <h2>No Pending Invitations</h2>
 </div>
 
-<div class="hidden page_block" id="team-invitations-div">
+<div class="hidden page-block" id="team-invitations-div">
     <h2 style="margin-bottom: 15px;">Invitations to Teams</h2>
     <table class="table" style="border: 1px dotted #ccc;">
         <tbody id="team-invitations-tbody">
@@ -26,7 +26,7 @@
     </table>
 </div>
 
-<div class="hidden page_block" id="folder-invitations-div">
+<div class="hidden page-block" id="folder-invitations-div">
     <h2 style="margin-bottom: 15px;">Invitations to Shared Folders</h2>
     <table class="table" style="border: 1px dotted #ccc;">
         <tbody id="folder-invitations-tbody">

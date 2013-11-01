@@ -5,6 +5,8 @@ o Use ".text-error" for dialog titles that indicates errors. When using modal.ma
 
 o Use btn-primary only for positive features, e.g. add a user, join a team, etc. Don't use it for negative features like removing users and leaving a team. Use btn instead, or btn-danger when appropriate.
 
+o Use <h4> for all dialog titles. Only capitalize the first letter of the entire title. Do NOT use Camel case.
+
 o Disable buttons on form submission:
             $('#foo-form').submit(function() {
                 setEnabled($("#submit-foo-button"), false);

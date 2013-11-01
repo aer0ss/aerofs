@@ -96,13 +96,32 @@
                     } else {
                         ## automatically sign in once the AJAX call succeeds
 
-                        if (mixpanel) {
-                            if (response['existing_team'] == false) mixpanel.alias(response['team_id']);
-                            mixpanel.name_tag(response['team_id']);
+                        if (analytics) {
+                            var context = {
+                                providers: {
+                                    'Salesforce': true
+                                },
+                                'Salesforce': {
+                                    object: 'Lead',
+                                    lookup: { email: response['email_address'] }
+                                }
+                            }
 
-                            mixpanel.track("Signed Up", {'user_id': '${email_address}'});
+                            analytics.identify(
+                                response['email_address'], {
+                                        email: response['email_address'],
+                                        firstName: response['first_name'],
+                                        lastName: response['last_name'],
+                                        company: response['company'],
+                                        title: response['title'],
+                                        employees: response['employees'],
+                                        phone: response['phone'],
+                                        country: response['country']
+                                    }, context);
 
-                            ## Wait 300 ms for the Mixpanel call to succeed and then proceed to sign in.
+                            analytics.track("Signed Up For Hybrid Cloud");
+
+                            ## Wait 300 ms for the Analytics call to succeed and then proceed to sign in.
                             ## This is the delay they recommend in their track_forms API.
                             ## See: https://mixpanel.com/docs/integration-libraries/javascript-full-api#track_forms
                             setTimeout(sign_in, 300);

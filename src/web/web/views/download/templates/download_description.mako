@@ -4,7 +4,7 @@
     }
 </style>
 
-<div class="page_block" style="margin-top: 15px;">
+<div class="page-block" style="margin-top: 15px;">
     <div class="media">
         <img class="pull-right media-object img-rounded img-bordered"
              src="${request.static_path('web:static/img/features/finder.png')}">
@@ -15,10 +15,10 @@
                     AeroFS creates a "magic" folder. Anything you place in the folder will automatically sync between your computers.
                 </li>
                 <li>
-                    Share files with your teammates easily with a right click.
+                    Share files easily with a right click.
                 </li>
                 <li>
-                    We do not host your files in the cloud. We can't even see your file names.
+                    We, as a service provider, do not host your files in the cloud. We can't even see your file names.
                 </li>
             </ul>
         </div>

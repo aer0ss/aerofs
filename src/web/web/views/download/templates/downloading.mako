@@ -68,7 +68,7 @@
 %endfor
 
 <%def name="instruction(step, index)">
-    <div class="row-fluid page_block">
+    <div class="row-fluid page-block">
         <div class="span6">
             <img src="${request.static_path('web:static/img/download/{}{}.png'
             .format(data['id'], index))}">

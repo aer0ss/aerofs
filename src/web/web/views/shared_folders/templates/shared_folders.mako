@@ -28,7 +28,7 @@
     </style>
 </%block>
 
-<div class="row page_block">
+<div class="row page-block">
     <div class="span8">
         <h2>${page_heading}</h2>
         <div class="well well-small footnote">

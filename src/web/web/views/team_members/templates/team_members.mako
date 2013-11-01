@@ -7,7 +7,7 @@
     <link href="${request.static_path('web:static/css/datatables-bootstrap.css')}" rel="stylesheet">
 </%block>
 
-<div class="page_block">
+<div class="page-block">
     <h2>Team Members</h2>
     <table id="users_table" class="table table-hover">
         ## thead is required by datatables
@@ -132,7 +132,6 @@
                 addInvitedUserRow(email);
                 $('#invite_user_email').val('');
                 if (done) done();
-                if (mixpanel) mixpanel.track("Invited User to Team");
 
             }).fail(function (xhr) {
                 if (getErrorTypeNullable(xhr) == 'NO_STRIPE_CUSTOMER_ID') {

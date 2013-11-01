@@ -1,0 +1,2 @@
+Each icon is 14x14, each icon is separate from each other by 10 pixels.
+

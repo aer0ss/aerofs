@@ -16,8 +16,8 @@
 
 <h4>Email server:</h4>
 
-<form method="POST" onsubmit="submitForm(); return false;">
-    <div class="page_block">
+<form method="post" onsubmit="submitForm(); return false;">
+    <div class="page-block">
         ${csrf.token_input()}
         <label class="radio">
             <input type='radio' name='email-server' value='local'
@@ -90,7 +90,7 @@
         <p style="margin-top: 8px">AeroFS sends emails to users for various purposes such as sign up verification and folder invitations. A functional email server is required.</p>
     </div>
 
-    <div class="page_block">
+    <div class="page-block">
         <%
             val = current_config['base.www.support_email_address']
             if not val: val = default_support_email

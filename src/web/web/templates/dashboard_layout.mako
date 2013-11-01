@@ -28,8 +28,7 @@
 </div>
 
 <%block name="top_navigation_bar">
-    <li><a href="http://support.aerofs.com" target="_blank">Support</a></li>
-    <li><a href="http://blog.aerofs.com" target="_blank">Blog</a></li>
+    <%navigation:marketing_links/>
     <li class="pull-right"><a href="${request.route_path('logout')}">Sign out</a></li>
     <li class="pull-right disabled"><a href="#">${authenticated_userid(request)}</a></li>
     % if is_admin(request):
