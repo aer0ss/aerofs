@@ -354,6 +354,7 @@ message LeaveSharedFolderCall {
 message PBSharedFolder {
     required PBPath path = 1;
     required string name = 2;
+    required bytes store_id = 3;
 }
 
 message ListUserRootsReply {

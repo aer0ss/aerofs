@@ -41,6 +41,7 @@ public class HdListSharedFolders extends AbstractHdIMC<EIListSharedFolders>
             sharedFolders.add(PBSharedFolder.newBuilder()
                     .setName(_ss.getName_(sidx))
                     .setPath(_ds.resolve_(new SOID(sidx, OID.ROOT)).toPB())
+                    .setStoreId(_sidx2sid.get_(sidx).toPB())
                     .build());
         }
 
