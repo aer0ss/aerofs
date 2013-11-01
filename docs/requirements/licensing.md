@@ -12,6 +12,7 @@
 - Enforce the number of users (and AeroFS should support user deletion)
 - Allow addition of feature-based enforcement in the future. However for the time being we don't have any feature enforcement.
 - Display license data on one of the adminstration Web pages as well as the license's current status.
+- Forbid the user to upload licenses belonging to different customer IDs than the customer ID of the previous license.
 
 **When the license is about to expire, the licensing service should:**
 

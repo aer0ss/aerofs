@@ -59,7 +59,7 @@
     </div>
     <div class="modal-footer">
         %if is_configuration_initialized:
-            <a href="${request.route_path('setup')}" class="btn btn-primary">Close</a>
+            <a href="${request.route_path('dashboard_home')}" class="btn btn-primary">Close</a>
         %elif current_config['lib.authenticator'] == 'local_credential':
             <a href="#" class="btn btn-primary"
                 onclick="hideAllModals(); $('#create-user-modal').modal('show'); return false;">

@@ -1,9 +1,12 @@
 <%namespace name="spinner" file="../spinner.mako"/>
 
+<%def name="next_button_id()">next-btn</%def>
+<%def name="prev_button_id()">prev-btn</%def>
+
 <%def name="render_previous_button(page)">
     <button
-        onclick="gotoPrevPage(); return false"
-        id='previousButton'
+        onclick="if (!$(this).hasClass('disabled')) gotoPrevPage(); return false"
+        id='${prev_button_id()}'
         class='btn'
         ## make it the last element in tab order (max allowed value is 32767)
         tabindex='10000'
@@ -12,8 +15,8 @@
 
 <%def name="render_next_button(javascriptCallback)">
     <button
-        onclick='${javascriptCallback}; return false;'
-        id='nextButton'
+        onclick="if (!$(this).hasClass('disabled')) ${javascriptCallback}; return false;"
+        id='${next_button_id()}'
         class='btn btn-primary pull-right'>
         Next ></button>
 </%def>
@@ -97,30 +100,31 @@
         }
 
         function gotoPrevPage() {
-            gotoPage(parseInt("${page}") - 1);
+            gotoPage(${page - 1});
         }
 
         function gotoNextPage() {
-            gotoPage(parseInt("${page}") + 1);
+            gotoPage(${page + 1});
         }
 
         function gotoPage(page) {
-            window.location.href = "${request.route_path('setup')}" +
-                    "?page=" + page;
+            ## If the user can navigate cross pages, he's guaranteed to be authenticated.
+            ## Therefore we use setup_authorized rather than setup to avoid redirects.
+            window.location.href = "${request.route_path('setup_authorized')}?page=" + page;
         }
 
-        function disableButtons() {
-            setEnabled($("#nextButton"), false);
-            setEnabled($("#previousButton"), false);
+        function disableNavButtons() {
+            setEnabled($("#${next_button_id()}"), false);
+            setEnabled($("#${prev_button_id()}"), false);
         }
 
-        function enableButtons() {
-            setEnabled($("#nextButton"), true);
-            setEnabled($("#previousButton"), true);
+        function enableNavButtons() {
+            setEnabled($("#${next_button_id()}"), true);
+            setEnabled($("#${prev_button_id()}"), true);
         }
 
         function displayError(error) {
-            enableButtons();
+            enableNavButtons();
             showErrorMessage(error);
         }
     </script>

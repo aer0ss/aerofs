@@ -164,7 +164,7 @@
 
     function hideAllModals() {
         $('div.modal').modal('hide');
-        enableButtons();
+        enableNavButtons();
 
         setEnabled($('#send-verification-code-button'), true);
         setEnabled($('#continue-button'), true);
@@ -177,7 +177,7 @@
 
     var serializedData;
     function submitEmailForm() {
-        disableButtons();
+        disableNavButtons();
         serializedData = $('#emailForm').serialize();
 
         if (!verifyPresence("base-www-support-email-address",
@@ -217,7 +217,7 @@
 
             if (support_email != current_support_email) {
                 doPost("${request.route_path('json_setup_email')}",
-                    serializedData, gotoNextPage, enableButtons);
+                    serializedData, gotoNextPage, enableNavButtons);
             } else {
                 gotoNextPage();
             }
