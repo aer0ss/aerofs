@@ -2,43 +2,44 @@ package com.aerofs.gui.sharing.manage;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.acl.Role;
-import com.aerofs.base.acl.SubjectRolePair;
+import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.ex.ExNoPerm;
+import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.gui.CompSpin;
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUI.ISWTWorker;
-import com.aerofs.gui.SimpleContentProvider;
 import com.aerofs.gui.sharing.manage.RoleMenu.RoleChangeListener;
-import com.aerofs.labeling.L;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.os.OSUtil;
-import com.aerofs.proto.Common.PBSubjectRolePair;
-import com.aerofs.proto.Ritual.GetACLReply;
+import com.aerofs.lib.cfg.CfgLocalUser;
+import com.aerofs.proto.Ritual;
+import com.aerofs.proto.Sp;
+import com.aerofs.proto.Sp.PBSharedFolder.PBUserRoleAndState;
+import com.aerofs.proto.Sp.PBSharedFolderState;
+import com.aerofs.sp.client.SPBlockingClient;
+import com.aerofs.sp.client.SPBlockingClient.Factory;
+import com.aerofs.ui.UI;
 import com.aerofs.ui.UIGlobals;
-import com.aerofs.ui.UIUtil;
 import com.aerofs.ui.error.ErrorMessage;
 import com.aerofs.ui.error.ErrorMessages;
-import com.google.common.util.concurrent.FutureCallback;
-import com.google.common.util.concurrent.Futures;
+import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableList;
+import org.eclipse.jface.layout.TableColumnLayout;
+import org.eclipse.jface.viewers.ArrayContentProvider;
+import org.eclipse.jface.viewers.ColumnViewerToolTipSupport;
+import org.eclipse.jface.viewers.ColumnWeightData;
 import org.eclipse.jface.viewers.StructuredSelection;
 import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.TableViewerColumn;
-import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.jface.viewers.ViewerCell;
-import org.eclipse.jface.viewers.ViewerComparator;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.events.ControlAdapter;
-import org.eclipse.swt.events.ControlEvent;
 import org.eclipse.swt.events.MouseAdapter;
 import org.eclipse.swt.events.MouseEvent;
 import org.eclipse.swt.graphics.Point;
-import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.ScrollBar;
+import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
 import org.slf4j.Logger;
@@ -49,11 +50,24 @@ import static com.aerofs.gui.sharing.SharedFolderRulesExceptionHandlers.canHandl
 import static com.aerofs.gui.sharing.SharedFolderRulesExceptionHandlers.promptUserToSuppressWarning;
 import static com.google.common.base.Preconditions.checkState;
 
+/**
+ * SharedFolder and ACL are terms that are closely related: SharedFolder is the product feature to
+ * meet the business requirements, whereas ACL is the implementation detail to facilitate syncing.
+ *
+ * A key decision to adding support for showing pending users is that we want to keep ACL as is,
+ * the bare minimum information required to facilitate syncing. Thus the pending user information
+ * was not propagated to ACLSynchronizers via GetACL. Instead, it was exposed via the
+ * ListUserSharedFolders call on SP.
+ *
+ * Previously, CompUserList only talks to the daemon. It obtains and updates shared folder info
+ * from the daemon in the form of ACLs & SubjectRolePairs, which does not contain pending users.
+ * Thus, CompUserList now queries SP directly for shared folder information.
+ */
 public class CompUserList extends Composite
 {
     private static final Logger l = Loggers.getLogger(CompUserList.class);
 
-    public static interface ILoadListener
+    public interface ILoadListener
     {
         // this method is called within the GUI thread
         void loaded(int memberCount, Role localUserRole);
@@ -61,6 +75,7 @@ public class CompUserList extends Composite
 
     private final TableViewer _tv;
 
+    private final TableColumnLayout _layout;
     private final TableColumn _tcSubject;
     private final TableColumn _tcRole;
     private final TableColumn _tcArrow;
@@ -74,11 +89,11 @@ public class CompUserList extends Composite
     {
         super(parent, SWT.NONE);
 
-        setLayout(new FillLayout(SWT.HORIZONTAL));
         _tv = new TableViewer(this, SWT.BORDER | SWT.FULL_SELECTION);
-        final Table t = _tv.getTable();
-        t.setBackground(getShell().getDisplay().getSystemColor(SWT.COLOR_WHITE));
-        t.setHeaderVisible(false);
+        ColumnViewerToolTipSupport.enableFor(_tv);
+        final Table table = _tv.getTable();
+        table.setBackground(getShell().getDisplay().getSystemColor(SWT.COLOR_WHITE));
+        table.setHeaderVisible(false);
 
         ////////
         // add columns
@@ -93,13 +108,20 @@ public class CompUserList extends Composite
         _tcRole.setAlignment(SWT.RIGHT);
 
         TableViewerColumn tvcArrow = new TableViewerColumn(_tv, SWT.NONE);
-        tvcArrow.setLabelProvider(new ArrowLabelProvider(this));
+        tvcArrow.setLabelProvider(new ArrowLabelProvider());
         _tcArrow = tvcArrow.getColumn();
+
+        ////////
+        // layout table columns
+        _layout = new TableColumnLayout();
+        setLayout(_layout);
+        layoutTableColumns();
 
         ////////
         // table-wise operations
 
-        t.addMouseListener(new MouseAdapter() {
+        table.addMouseListener(new MouseAdapter()
+        {
             @Override
             public void mouseUp(MouseEvent ev)
             {
@@ -107,14 +129,14 @@ public class CompUserList extends Composite
                 if (vc == null) return;
 
                 Object elem = vc.getElement();
-                if (!(elem instanceof SubjectRolePair)) return;
+                if (!(elem instanceof SharedFolderMember)) return;
 
                 _tv.setSelection(new StructuredSelection(elem), true);
 
-                SubjectRolePair srp = (SubjectRolePair) elem;
-                if (!hasContextMenu(srp)) return;
+                SharedFolderMember member = (SharedFolderMember)elem;
+                if (!RoleMenu.hasContextMenu(member)) return;
 
-                RoleMenu menu = new RoleMenu(_tv.getTable(),  srp, shouldShowUpdateACLMenuItems());
+                RoleMenu menu = new RoleMenu(_tv.getTable(), _rSelf, member);
                 menu.setRoleChangeListener(new RoleChangeListener()
                 {
                     @Override
@@ -127,22 +149,8 @@ public class CompUserList extends Composite
             }
         });
 
-        _tv.setContentProvider(new SimpleContentProvider());
-        _tv.setComparator(new ViewerComparator() {
-            @Override
-            public int compare(Viewer v, Object e1, Object e2)
-            {
-                return UIUtil.compareUser(((SubjectRolePair) e1)._subject,
-                        ((SubjectRolePair) e2)._subject);
-            }
-        });
-
-        t.addControlListener(new ControlAdapter() {
-            @Override
-            public void controlResized(ControlEvent e) {
-                recalcUserColumnWidth();
-            }
-        });
+        _tv.setContentProvider(new ArrayContentProvider());
+        _tv.setComparator(new SharedFolderMemberComparator());
     }
 
     // the spinner control is a separate public method because this way we can construct the
@@ -153,113 +161,136 @@ public class CompUserList extends Composite
         _compSpin = compSpin;
     }
 
+    // updates the layout of table columns, should be called every time the width of _tcRole
+    // or _tcArrow changes
+    private void layoutTableColumns()
+    {
+        _tcArrow.pack();
+        _tcRole.pack();
+
+        _layout.setColumnData(_tcSubject, new ColumnWeightData(100));
+        _layout.setColumnData(_tcRole, new ColumnWeightData(0, _tcRole.getWidth()));
+        _layout.setColumnData(_tcArrow, new ColumnWeightData(0, _tcArrow.getWidth()));
+        layout(new Control[]{ _tv.getTable() });
+    }
+
     /**
-     * FIXME There is an edge case, while running team server, that we show the update ACL menu
-     * items even though the team server doesn't have the necessary permission to update the ACL.
+     * In general, these 3 states need to stay in sync and should all be updated at the same time
      *
-     * It occurs when the team server sees a particular shared folder because someone in the
-     * organization is a member but none of the owners of the said shared folder is in the
-     * organization.
+     * @pre must be called from UI thread so we can serialize the write access to these 3 states.
      */
-    private boolean shouldShowUpdateACLMenuItems()
+    private void setState(Object input, Role selfRole, Path path)
     {
-        return _rSelf == Role.OWNER // regular client
-                || L.isMultiuser(); // team server
-    }
+        checkState(UI.isGUI());
 
-    public boolean hasContextMenu(SubjectRolePair srp)
-    {
-        // we have a context menu iff we are not the current user, because we can always send e-mail
-        return !srp._subject.equals(Cfg.user());
-    }
-
-    private boolean _recalcing;
-
-    private void recalcUserColumnWidth()
-    {
-        // this is to prevent an infinite recursion bug found in production
-        if (_recalcing) return;
-
-        _recalcing = true;
-        try {
-            _tcArrow.pack();
-
-            Table t = _tv.getTable();
-            ScrollBar sb = t.getVerticalBar();
-            int scroll = OSUtil.isOSX() ? 1 : 0;
-            scroll += sb != null && sb.isVisible() ? sb.getSize().x : 0;
-            int width = t.getBounds().width - 2 * t.getBorderWidth() -
-                    _tcArrow.getWidth() - scroll;
-            _tcSubject.setWidth(width * 618 / 1000);
-            _tcRole.setWidth(width * 382 / 1000);
-        } finally {
-            _recalcing = false;
-        }
+        _tv.setInput(input);
+        _rSelf = selfRole;
+        _path = path;
     }
 
     /**
+     * {@paramref path} must be passed in because _path can change while the worker does work
+     *
      * @pre must be invoked from UI threads.
      */
-    public void load(Path path, final @Nullable ILoadListener listener)
+    public void load(final Path path, final @Nullable ILoadListener listener)
     {
         checkState(GUI.get().isUIThread());
 
-        _tv.setInput(new Object[] { S.GUI_LOADING });
+        setState(new Object[] { S.GUI_LOADING }, null, null);
 
-        _path = path;
-        _rSelf = null;
+        GUI.get().safeWork(_tv.getTable(), new ISWTWorker()
+        {
+            ImmutableList<SharedFolderMember> _members;
+            Role _localUserRole;
 
-        Futures.addCallback(UIGlobals.ritualNonBlocking().getACL(path.toPB()),
-                new FutureCallback<GetACLReply>()
-                {
-                    @Override
-                    public void onSuccess(GetACLReply reply)
-                    {
-                        try {
-                            final Object[] elems = new Object[reply.getSubjectRoleCount()];
+            @Override
+            public void run()
+                    throws Exception
+            {
+                CfgLocalUser localUser = new CfgLocalUser();
+                SID sid = getStoreID(path);
+                Sp.PBSharedFolder pbFolder = getSharedFolderWithSID(localUser, sid);
+                SharedFolderMember.Factory factory = new SharedFolderMember.Factory(localUser);
 
-                            for (int i = 0; i < elems.length; i++) {
-                                PBSubjectRolePair srp = reply.getSubjectRole(i);
-                                UserID subject = UserID.fromExternal(srp.getSubject());
-                                Role role = Role.fromPB(srp.getRole());
+                _members = createMemberList(factory, pbFolder);
+                _localUserRole = findLocalUserRoleNullable(_members);
+            }
 
-                                elems[i] = new SubjectRolePair(subject, role);
+            // makes a ritual call to retrieve the list of shared folders and their sids and
+            // find the sid for the given path.
+            private SID getStoreID(Path path) throws Exception
+            {
+                Ritual.ListSharedFoldersReply reply = UIGlobals.ritual().listSharedFolders();
 
-                                if (subject.equals(Cfg.user())) _rSelf = role;
-                            }
-
-                            GUI.get().safeAsyncExec(CompUserList.this, new Runnable()
-                            {
-                                @Override
-                                public void run()
-                                {
-                                    _tv.setInput(elems);
-                                    recalcUserColumnWidth();
-                                    if (listener != null) listener.loaded(elems.length, _rSelf);
-                                }
-                            });
-                        } catch (Exception e) {
-                            ErrorMessages.show(getShell(), e, "Failed to retrieve user list: " + e);
-                        }
+                for (Ritual.PBSharedFolder folder : reply.getSharedFolderList()) {
+                    if (path.equals(Path.fromPB(folder.getPath()))) {
+                        return new SID(folder.getStoreId());
                     }
+                }
 
-                    @Override
-                    public void onFailure(Throwable t)
-                    {
-                        GUI.get().safeAsyncExec(CompUserList.this, new Runnable()
-                        {
-                            @Override
-                            public void run()
-                            {
-                                _tv.setInput(new Object[0]);
-                            }
-                        });
+                throw new ExBadArgs("Invalid shared folder path.");
+            }
 
-                        ErrorMessages.show(getShell(), t, "Failed to retrieve user list: " + t,
-                                new ErrorMessage(ExNoPerm.class,
-                                        "You are no longer a member of this shared folder"));
-                    }
-                });
+            // make a SP call to retrieve the shared folder associated with the store ID
+            // @param userID - the user ID of the local user
+            private Sp.PBSharedFolder getSharedFolderWithSID(CfgLocalUser localUser, SID sid)
+                    throws Exception
+            {
+                SPBlockingClient sp = new Factory().create_(localUser.get());
+                sp.signInRemote();
+
+                Sp.ListSharedFoldersReply reply = sp.listSharedFolders(ImmutableList.of(sid.toPB()));
+                // assert the contract of the sp call
+                Preconditions.checkArgument(reply.getSharedFolderCount() == 1);
+
+                return reply.getSharedFolder(0);
+            }
+
+            private ImmutableList<SharedFolderMember> createMemberList(
+                    SharedFolderMember.Factory factory, Sp.PBSharedFolder pbFolder) throws ExBadArgs
+            {
+                ImmutableList.Builder<SharedFolderMember> membersBuilder = ImmutableList.builder();
+                for (PBUserRoleAndState urs : pbFolder.getUserRoleAndStateList()) {
+                    if (urs.getState() == PBSharedFolderState.LEFT) continue;
+                    membersBuilder.add(factory.fromPB(urs));
+                }
+
+                return membersBuilder.build();
+            }
+
+            // returns null if the local user is not found (not a member / team server)
+            @Nullable
+            private Role findLocalUserRoleNullable(ImmutableList<SharedFolderMember> members)
+            {
+                for (SharedFolderMember member : members) {
+                    if (member.isLocalUser()) return member._role;
+                }
+
+                return null;
+            }
+
+            @Override
+            public void okay()
+            {
+                setState(_members, _localUserRole, path);
+
+                layoutTableColumns();
+
+                if (listener != null) listener.loaded(_members.size(), _localUserRole);
+            }
+
+            @Override
+            public void error(Exception e)
+            {
+                setState(new Object[0], null, null);
+
+                ErrorMessages.show(getShell(), e, "Failed to retrieve user list: " + e,
+                        new ErrorMessage(ExNoPerm.class, "You are no longer a member of this shared folder."),
+                        new ErrorMessage(ExBadArgs.class, "The application has received invalid data: " + e)
+                );
+            }
+        });
     }
 
     /**

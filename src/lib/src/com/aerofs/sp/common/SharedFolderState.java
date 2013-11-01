@@ -40,7 +40,7 @@ public enum SharedFolderState
         case PENDING: return PENDING;
         case JOINED: return JOINED;
         case LEFT: return LEFT;
-        // Since the intput comes from external soruces, we should not throw runtime exceptions
+        // Since the input comes from external sources, we should not throw runtime exceptions
         // which may crash the process.
         default: throw new ExBadArgs("Unknown state: " + pb.toString());
         }

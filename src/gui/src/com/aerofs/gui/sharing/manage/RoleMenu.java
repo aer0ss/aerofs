@@ -1,15 +1,14 @@
 package com.aerofs.gui.sharing.manage;
 
 import com.aerofs.base.acl.Role;
-import com.aerofs.base.acl.SubjectRolePair;
 import com.aerofs.base.id.UserID;
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIUtil;
+import com.aerofs.labeling.L;
 import com.aerofs.ui.IUI.MessageType;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
-import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.MenuItem;
@@ -19,42 +18,42 @@ import javax.annotation.Nullable;
 public class RoleMenu
 {
     private final Menu _menu;
-    private final UserID _subject;
 
     private RoleChangeListener _listener;
 
-    public RoleMenu(final Control parent, SubjectRolePair srp,
-            boolean showUpdateACLMenuItems)
+    public RoleMenu(Control parent, Role selfRole, SharedFolderMember member)
     {
         _menu = new Menu(parent);
-        _subject = srp._subject;
 
-        if (showUpdateACLMenuItems) {
-            if (srp._role != Role.OWNER) {
+        final UserID subject = member._userID;
+        Role subjectRole = member._role;
+
+        if (shouldShowUpdateACLMenuItems(selfRole)) {
+            if (subjectRole != Role.OWNER) {
                 MenuItem miOwner = new MenuItem(_menu, SWT.PUSH);
                 miOwner.setText("Set as Owner");
                 miOwner.addSelectionListener(new SelectionAdapter() {
                     @Override
                     public void widgetSelected(SelectionEvent e)
                     {
-                        select(Role.OWNER);
+                        select(subject, Role.OWNER);
                     }
                 });
             }
 
-            if (srp._role != Role.EDITOR) {
+            if (subjectRole != Role.EDITOR) {
                 MenuItem miEditor = new MenuItem(_menu, SWT.PUSH);
                 miEditor.setText("Set as Editor");
                 miEditor.addSelectionListener(new SelectionAdapter() {
                     @Override
                     public void widgetSelected(SelectionEvent e)
                     {
-                        select(Role.EDITOR);
+                        select(subject, Role.EDITOR);
                     }
                 });
             }
 
-            if (srp._role != Role.VIEWER) {
+            if (subjectRole != Role.VIEWER) {
                 MenuItem miViewer = new MenuItem(_menu, SWT.PUSH);
                 miViewer.setText("Set as Viewer");
                 miViewer.addSelectionListener(new SelectionAdapter()
@@ -62,7 +61,7 @@ public class RoleMenu
                     @Override
                     public void widgetSelected(SelectionEvent e)
                     {
-                        select(Role.VIEWER);
+                        select(subject, Role.VIEWER);
                     }
                 });
             }
@@ -73,9 +72,9 @@ public class RoleMenu
         MenuItem miEmail = new MenuItem(_menu, SWT.PUSH);
         miEmail.setText("Email User");
         miEmail.addSelectionListener(GUIUtil.createUrlLaunchListener(
-                "mailto:" + _subject.getString()));
+                "mailto:" + subject));
 
-        if (showUpdateACLMenuItems) {
+        if (shouldShowUpdateACLMenuItems(selfRole)) {
             MenuItem miKickout = new MenuItem(_menu, SWT.PUSH);
             miKickout.setText("Remove User");
             miKickout.addSelectionListener(new SelectionAdapter()
@@ -83,15 +82,15 @@ public class RoleMenu
                 @Override
                 public void widgetSelected(SelectionEvent e)
                 {
-                    if (GUI.get().ask(parent.getShell(), MessageType.QUESTION,
+                    if (GUI.get().ask(_menu.getShell(), MessageType.QUESTION,
                             // The text should be consistent with the text in shared_folders.mako
-                            "Are you sure you want to remove " + _subject +
+                            "Are you sure you want to remove " + subject +
                                     " from the shared folder?\n" +
                                     "\n" +
                                     "This will delete the folder from the person's computers." +
                                     " However, old content may be still accessible from the" +
                                     " person's sync history.")) {
-                        select(null);
+                        select(subject, null);
                     }
                 }
             });
@@ -106,20 +105,36 @@ public class RoleMenu
         _menu.setVisible(true);
     }
 
-    public void open(Point leftTopCorner)
-    {
-        _menu.setLocation(leftTopCorner.x, leftTopCorner.y);
-        _menu.setVisible(true);
-    }
-
     /**
      * @param role set to null to remove the user
      */
-    private void select(@Nullable Role role)
+    private void select(UserID subject, @Nullable Role role)
     {
         _menu.dispose();
 
-        if (_listener != null) _listener.onRoleChangeSelected(_subject, role);
+        if (_listener != null) _listener.onRoleChangeSelected(subject, role);
+    }
+
+    public static boolean hasContextMenu(SharedFolderMember member)
+    {
+        // we can always send e-mail, except for the local user
+        return !member.isLocalUser();
+    }
+
+    /**
+     * FIXME Edge case: Team Servers show the menu to update ACL even though the team server may
+     * not necessarily have the permission to update the ACL.
+     *
+     * It occurs when the team server sees a particular shared folder because someone in the
+     * organization is a member but none of the owners of the said shared folder is in the
+     * organization.
+     *
+     * TODO: team servers should get "effective" ACLs from SP which would neatly solve this mess
+     */
+    private boolean shouldShowUpdateACLMenuItems(Role selfRole)
+    {
+        return L.isMultiuser()              // team server only
+                || selfRole == Role.OWNER;  // regular client
     }
 
     public void setRoleChangeListener(RoleChangeListener listener)

@@ -57,7 +57,7 @@ public class GUIUtil
 
     // this is the Unicode character that looks like a downward solid triangle, we use it
     // on some widgets to indicate that there's a drop-down menu.
-    public static final char TRIANGLE_DOWNWARD = '\u25BE';
+    public static final String TRIANGLE_DOWNWARD = "\u25BE";
 
     public static String getNewText(Text txt, VerifyEvent ev)
     {

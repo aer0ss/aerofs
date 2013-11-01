@@ -4,7 +4,6 @@ import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.async.UncancellableFuture;
 import com.aerofs.base.id.SID;
-import com.aerofs.base.id.UserID;
 import com.aerofs.controller.ExLaunchAborted;
 import com.aerofs.controller.Launcher;
 import com.aerofs.gui.GUI;
@@ -71,19 +70,6 @@ public class UIUtil
             }
         }
         return false;
-    }
-
-    // this is used to sort user lists
-    public static int compareUser(UserID u1, UserID u2)
-    {
-        int comp = u1.compareTo(u2);
-        if (comp == 0) return 0;
-
-        UserID me = Cfg.user();
-        if (u1.equals(me)) return -1;
-        if (u2.equals(me)) return 1;
-
-        return comp;
     }
 
     /**
