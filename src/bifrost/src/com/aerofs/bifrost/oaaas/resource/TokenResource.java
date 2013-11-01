@@ -18,15 +18,29 @@
  */
 package com.aerofs.bifrost.oaaas.resource;
 
+import com.aerofs.base.id.OrganizationID;
+import com.aerofs.base.id.UniqueID;
+import com.aerofs.base.id.UserID;
+import com.aerofs.bifrost.core.URLConnectionConfigurator;
 import com.aerofs.bifrost.oaaas.auth.AbstractAuthenticator;
 import com.aerofs.bifrost.oaaas.auth.AbstractUserConsentHandler;
 import com.aerofs.bifrost.oaaas.auth.OAuth2Validator;
 import com.aerofs.bifrost.oaaas.auth.ValidationResponseException;
-import com.aerofs.oauth.AuthenticatedPrincipal;
 import com.aerofs.bifrost.oaaas.auth.principal.UserPassCredentials;
-import com.aerofs.bifrost.oaaas.model.*;
+import com.aerofs.bifrost.oaaas.model.AccessToken;
+import com.aerofs.bifrost.oaaas.model.AccessTokenRequest;
+import com.aerofs.bifrost.oaaas.model.AccessTokenResponse;
+import com.aerofs.bifrost.oaaas.model.AuthorizationRequest;
+import com.aerofs.bifrost.oaaas.model.Client;
+import com.aerofs.bifrost.oaaas.model.ErrorResponse;
 import com.aerofs.bifrost.oaaas.repository.AccessTokenRepository;
 import com.aerofs.bifrost.oaaas.repository.AuthorizationRequestRepository;
+import com.aerofs.lib.log.LogUtil;
+import com.aerofs.oauth.AuthenticatedPrincipal;
+import com.aerofs.proto.Sp.AuthorizeMobileDeviceReply;
+import com.aerofs.sp.client.SPBlockingClient;
+import com.aerofs.sp.client.SPBlockingClient.Factory;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
 import com.sun.jersey.api.core.HttpContext;
 import org.apache.commons.lang.StringUtils;
@@ -34,12 +48,24 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
-import javax.ws.rs.*;
-import javax.ws.rs.core.*;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
+import javax.ws.rs.HeaderParam;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriBuilder;
 import java.util.Set;
-import java.util.UUID;
 
-import static com.aerofs.bifrost.oaaas.auth.OAuth2Validator.*;
+import static com.aerofs.bifrost.oaaas.auth.OAuth2Validator.BEARER;
+import static com.aerofs.bifrost.oaaas.auth.OAuth2Validator.GRANT_TYPE_AUTHORIZATION_CODE;
+import static com.aerofs.bifrost.oaaas.auth.OAuth2Validator.GRANT_TYPE_CLIENT_CREDENTIALS;
+import static com.aerofs.bifrost.oaaas.auth.OAuth2Validator.GRANT_TYPE_REFRESH_TOKEN;
+import static com.aerofs.bifrost.oaaas.auth.OAuth2Validator.ValidationResponse;
 
 /**
  * Resource for handling all calls related to tokens. It adheres to <a
@@ -52,6 +78,8 @@ public class TokenResource {
   public static final String BASIC_REALM = "Basic realm=\"OAuth2 Secure\"";
 
   public static final String WWW_AUTHENTICATE = "WWW-Authenticate";
+
+  private static Logger l = LoggerFactory.getLogger(TokenResource.class);
 
   @Inject
   private AuthorizationRequestRepository authorizationRequestRepository;
@@ -98,7 +126,7 @@ public class TokenResource {
   private Response doProcess(HttpContext request) {
     AuthorizationRequest authReq = findAuthorizationRequest(request);
     if (authReq == null) {
-      return serverError("Not a valid AbstractAuthenticator.AUTH_STATE on the Request");
+      return serverError("No valid auth_state in the Request");
     }
     processScopes(authReq, request);
     if (authReq.getResponseType().equals(OAuth2Validator.IMPLICIT_GRANT_RESPONSE_TYPE)) {
@@ -190,20 +218,76 @@ public class TokenResource {
 
   }
 
-  private AuthorizationRequest authorizationCodeToken(AccessTokenRequest accessTokenRequest) {
-    AuthorizationRequest authReq = authorizationRequestRepository.findByAuthorizationCode(accessTokenRequest.getCode());
-    if (authReq == null) {
-      throw new ValidationResponseException(ValidationResponse.INVALID_GRANT_AUTHORIZATION_CODE);
+    private AuthorizationRequest authorizationCodeToken(AccessTokenRequest accessTokenRequest)
+    {
+        return (accessTokenRequest.hasDeviceAuthorizationNonce()) ?
+                handleDeviceAuthorization(accessTokenRequest)
+                : handleAccessCode(accessTokenRequest);
     }
-    String uri = accessTokenRequest.getRedirectUri();
-    if (!authReq.getRedirectUri().equalsIgnoreCase(uri)) {
-      throw new ValidationResponseException(ValidationResponse.REDIRECT_URI_DIFFERENT);
-    }
-    authorizationRequestRepository.delete(authReq);
-    return authReq;
-  }
 
-  private AuthorizationRequest refreshTokenToken(AccessTokenRequest accessTokenRequest) {
+    private AuthorizationRequest handleDeviceAuthorization(AccessTokenRequest accessTokenRequest)
+    {
+        AuthenticatedPrincipal principal;
+        try {
+            principal = getDeviceAuthorization(accessTokenRequest);
+        } catch (Exception e) {
+            l.info("Error handling device authorization nonce {}.",
+                    accessTokenRequest.getDeviceAuthorizationNonce(), LogUtil.suppress(e));
+            throw new ValidationResponseException(
+                    ValidationResponse.INVALID_GRANT_AUTHORIZATION_CODE);
+        }
+
+        AuthorizationRequest authReq = new AuthorizationRequest();
+        authReq.setPrincipal(principal);
+        authReq.setClient(accessTokenRequest.getClient());
+        authReq.setGrantedScopes(accessTokenRequest.getClient().getScopes());
+
+        String uri = accessTokenRequest.getRedirectUri();
+        if (!authReq.getRedirectUri().equalsIgnoreCase(uri)) {
+            throw new ValidationResponseException(ValidationResponse.REDIRECT_URI_DIFFERENT);
+        }
+
+        return authReq;
+    }
+
+    private AuthorizationRequest handleAccessCode(AccessTokenRequest accessTokenRequest)
+    {
+        AuthorizationRequest authReq = authorizationRequestRepository.findByAuthorizationCode(
+                accessTokenRequest.getCode());
+        if (authReq == null) {
+            l.info("Error handling access code {}.", accessTokenRequest.getCode());
+            throw new ValidationResponseException(
+                    ValidationResponse.INVALID_GRANT_AUTHORIZATION_CODE);
+        }
+        String uri = accessTokenRequest.getRedirectUri();
+        if (!authReq.getRedirectUri().equalsIgnoreCase(uri)) {
+            throw new ValidationResponseException(ValidationResponse.REDIRECT_URI_DIFFERENT);
+        }
+        authorizationRequestRepository.delete(authReq);
+        return authReq;
+    }
+
+    private AuthenticatedPrincipal getDeviceAuthorization(AccessTokenRequest tokenRequest)
+            throws Exception
+    {
+        SPBlockingClient.Factory spfact = new Factory();
+        SPBlockingClient client= spfact.create_(URLConnectionConfigurator.CONNECTION_CONFIGURATOR);
+
+        AuthorizeMobileDeviceReply authReply = client.authorizeMobileDevice(
+                tokenRequest.getDeviceAuthorizationNonce(), "todo");
+
+        AuthenticatedPrincipal principal = new AuthenticatedPrincipal();
+        principal.setName(authReply.getUserId());
+
+        principal.setUserID(UserID.fromExternal(authReply.getUserId()));
+        principal.setOrganizationID(new OrganizationID(Integer.valueOf(authReply.getOrgId())));
+        principal.setAdminPrincipal(authReply.getIsOrgAdmin());
+        principal.setAttributes(ImmutableMap.of("organizationId", authReply.getOrgId()));
+
+        return principal;
+    }
+
+    private AuthorizationRequest refreshTokenToken(AccessTokenRequest accessTokenRequest) {
     AccessToken accessToken = accessTokenRepository.findByRefreshToken(accessTokenRequest.getRefreshToken());
     if (accessToken == null) {
       throw new ValidationResponseException(ValidationResponse.INVALID_GRANT_REFRESH_TOKEN);
@@ -239,7 +323,7 @@ public class TokenResource {
   }
 
   protected String getTokenValue(boolean isRefreshToken) {
-    return UUID.randomUUID().toString();
+    return UniqueID.generate().toStringFormal();
   }
 
   protected String getAuthorizationCodeValue() {
@@ -262,8 +346,6 @@ public class TokenResource {
       fragment += String.format("&principal=%s", authReq.getPrincipal().getDisplayName()) ;
     }
     return Response.seeOther(UriBuilder.fromUri(uri).fragment(fragment).build()).build();
-
-
   }
 
   private String appendQueryMark(String uri) {

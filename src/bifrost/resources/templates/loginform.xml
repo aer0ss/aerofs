@@ -36,7 +36,6 @@
               name="j_username" rel="popover"
               data-content="Enter your identifier."
               data-original-title="Identifier" />
-            <p class="help-block">Hint: can be anything</p>
           </div>
         </div>
 
@@ -49,7 +48,7 @@
               data-original-title="Password" />
           </div>
         </div>
-        <input type="hidden" name="AUTH_STATE" value="${AUTH_STATE}" />
+        <input type="hidden" name="auth_state" value="${AUTH_STATE}" />
       </fieldset>
 
       <div class="form-actions">

@@ -6,18 +6,23 @@ package com.aerofs.bifrost.login;
 
 import com.aerofs.base.BaseSecUtil;
 import com.aerofs.base.BaseUtil;
+import com.aerofs.base.Loggers;
+import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.base.id.UserID;
 import com.aerofs.bifrost.core.URLConnectionConfigurator;
 import com.aerofs.bifrost.oaaas.auth.AbstractAuthenticator;
 import com.aerofs.oauth.AuthenticatedPrincipal;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.sp.client.SPBlockingClient.Factory;
+import com.google.protobuf.ByteString;
 import com.lambdaworks.crypto.SCrypt;
 import com.sun.jersey.api.representation.Form;
 import com.sun.jersey.spi.container.ContainerRequest;
+import org.slf4j.Logger;
 
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import java.io.InputStream;
@@ -32,6 +37,7 @@ import java.util.Scanner;
  */
 public class FormAuthenticator extends AbstractAuthenticator
 {
+    private static final Logger l = Loggers.getLogger(FormAuthenticator.class);
     private static final String FORM_RESOURCE = "templates/loginform.xml";
 
     /**
@@ -110,34 +116,43 @@ public class FormAuthenticator extends AbstractAuthenticator
      */
     protected void processForm(final ContainerRequest request) throws Exception
     {
-        SPBlockingClient.Factory spfactory = new Factory();
-        SPBlockingClient client= spfactory.create_(
-                URLConnectionConfigurator.CONNECTION_CONFIGURATOR);
         Form formParams = request.getFormParameters();
 
         setAuthStateValue(request, formParams.getFirst(AUTH_STATE));
+
+        UserID user = validateCredential(formParams);
+
+        // If we get here, the client authenticated successfully
+        AuthenticatedPrincipal principal = new AuthenticatedPrincipal(user.getString());
+        setPrincipal(request, principal);
+    }
+
+    private static UserID validateCredential(MultivaluedMap<String, String> formParams)
+            throws Exception
+    {
+        SPBlockingClient.Factory spfactory = new Factory();
+        SPBlockingClient client= spfactory.create_(URLConnectionConfigurator.CONNECTION_CONFIGURATOR);
+
         UserID user = UserID.fromExternal(formParams.getFirst("j_username"));
         String cred = formParams.getFirst("j_password");
 
-        byte[] scrypted = SCrypt.scrypt(
-                BaseSecUtil.getPasswordBytes(cred.toCharArray()),
+        l.info("Validate user credential {}", user.getString());
+        byte[] scrypted = SCrypt.scrypt(BaseSecUtil.getPasswordBytes(cred.toCharArray()),
                 BaseUtil.string2utf(user.getString()),
                 8192,
                 8,
                 1,
                 64);
 
-//        client.validateCredential(user.getString(), ByteString.copyFromUtf8(scrypt_cred));
-
-        // If we get here, the client authenticated successfully
-        AuthenticatedPrincipal principal = new AuthenticatedPrincipal(user.getString());
-        principal.setUserID(user);
-        // TODO: AuthenticatedPrincipal should contain at least:
-        //  - user id
-        //  - org id
-        //  - first and last name
-        //principal.setOrganizationID();
-        setPrincipal(request, principal);
+        try {
+            client.validateCredential(user.getString(), ByteString.copyFrom(scrypted));
+        } catch (ExBadCredential badCredential) {
+            throw new WebApplicationException(
+                    Response.status(Status.UNAUTHORIZED)
+                            .entity("Bad credential.")
+                            .build());
+        }
+        return user;
     }
 
 

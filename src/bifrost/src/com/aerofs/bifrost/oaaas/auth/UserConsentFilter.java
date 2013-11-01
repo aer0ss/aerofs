@@ -55,7 +55,7 @@ public class UserConsentFilter extends ServletFilter
         if (authorizationRequest == null) {
             throw new WebApplicationException(
                     Response.status(Response.Status.BAD_REQUEST)
-                            .entity("No valid AbstractAuthenticator.AUTH_STATE on the Request")
+                            .entity("No valid auth_state in the Request")
                             .build());
         }
         if (initialRequest(request)) {

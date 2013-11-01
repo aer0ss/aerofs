@@ -25,6 +25,7 @@ import javax.validation.ConstraintValidatorContext;
 import javax.validation.constraints.NotNull;
 
 import com.aerofs.bifrost.oaaas.auth.principal.PrincipalUtils;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import org.apache.commons.lang.StringUtils;
 import com.aerofs.oauth.AuthenticatedPrincipal;
@@ -168,7 +169,7 @@ public class AuthorizationRequest extends AbstractEntity {
    *          the requestedScopes to set
    */
   public void setRequestedScopes(Set<String> requestedScopes) {
-    this.requestedScopes = requestedScopes;
+    this.requestedScopes = ImmutableSet.copyOf(requestedScopes);
   }
 
   /**
@@ -183,7 +184,7 @@ public class AuthorizationRequest extends AbstractEntity {
    *          the grantedScopes to set
    */
   public void setGrantedScopes(Set<String> grantedScopes) {
-    this.grantedScopes = grantedScopes;
+    this.grantedScopes = ImmutableSet.copyOf(grantedScopes);
   }
 
   /**
