@@ -1,36 +1,94 @@
 #!/usr/bin/env python
 from aerofs_licensing.crypto import sign, verify
 from aerofs_licensing import license_file
+import argparse
+import datetime
 import sys
+import random
+
+def check_arg_present(args, name):
+    if not getattr(args, name):
+        raise ValueError("action {} requires argument {}".format(args.action, name))
+
+def signfile_tool(args):
+    check_arg_present(args, "infile")
+    check_arg_present(args, "outfile")
+    f = args.infile
+    with open(args.outfile, "wb") as g:
+        sigs = sign(f, g, gpg_homedir=args.gpg_dir)
+        print sigs
+
+def verify_tool(args):
+    check_arg_present(args, "infile")
+    f = args.infile
+    sigs = verify(f, sys.stdout, gpg_homedir=args.gpg_dir)
+    print >>sys.stderr, sigs
+
+def extract_tool(args):
+    check_arg_present(args, "infile")
+    check_arg_present(args, "outfile")
+    f = args.infile
+    output_filename = args.outfile
+    print "extracting {} to {}".format(f.name, output_filename)
+    files = license_file.verify_and_extract(f, output_filename, gpg_homedir=args.gpg_dir)
+    print files
+
+def prompt_for(prompt):
+    sys.stdout.write(prompt)
+    sys.stdout.flush()
+    return sys.stdin.readline().rstrip()
+
+def build_tool(args):
+    check_arg_present(args, "outfile")
+    output_filename = args.outfile
+    d = {}
+    d["license_type"] = "normal"
+    customer_id_override = prompt_for("Enter customer id (empty string will use a random one): ")
+    d["customer_id"] = customer_id_override if len(customer_id_override) > 0 else str(random.Random().randint(0, 2 ** 24 - 1))
+    license_days_s = prompt_for("Enter number of days license should be valid for: ")
+    license_days = int(license_days_s)
+    license_expiry_date = (datetime.datetime.today() + datetime.timedelta(days=license_days)).date().isoformat()
+    d["license_valid_until"] = license_expiry_date
+    license_seats_s = prompt_for("Enter number of seats license should provide: ")
+    license_seats = int(license_seats_s)
+    d["license_seats"] = str(license_seats)
+    print "Will create license with the following license-info:"
+    print "\n".join(["{}={}".format(k, v) for k,v in d.iteritems()])
+    with open(output_filename, "wb") as f:
+        license_file.generate(d, f, gpg_homedir=args.gpg_dir)
+
+def signcsv_tool(args):
+    # TODO: implement the rest of this
+    check_arg_present(args, "infile")
+    f = args.infile
+    # for each line in f:
+    #     generate new license
+
+def load_tool(args):
+    check_arg_present(args, "infile")
+    f = args.infile
+    print args.gpg_dir
+    d  = license_file.verify_and_load(f, gpg_homedir=args.gpg_dir)
+    print d
+
+actions = {
+        "signfile": signfile_tool,
+        "verify": verify_tool,
+        "extract": extract_tool,
+        "build": build_tool,
+        "signcsv": signcsv_tool,
+        "load": load_tool,
+        }
 
 if __name__ == "__main__":
-    action = sys.argv[1]
-    input_filename = sys.argv[2]
-    output_filename = sys.argv[3]
-    if action == "sign":
-        with open(input_filename) as f:
-            with open(output_filename, "wb") as g:
-                sigs = sign(f, g)
-                print sigs
-    elif action == "verify":
-        with open(input_filename) as f:
-            with open(output_filename, "wb") as g:
-                sigs = verify(f, g)
-                print sigs
-    elif action == "extract":
-        print "extracting {} to {}".format(input_filename, output_filename)
-        with open(input_filename) as f:
-            files = license_file.verify_and_extract(f, output_filename)
-            print files
-    elif action == "signcsv":
-        # for each line in input_filename:
-        #     generate new license
-        with open(input_filename) as f:
-            pass
-    elif action == "test":
-        with open(input_filename) as f:
-            d  = license_file.verify_and_load(f)
-            print d
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--gpg-dir", help="use a specific gpg homedir")
+    parser.add_argument("--outfile", help="output file or folder path")
+    parser.add_argument("action", help="one of {}".format(", ".join(actions.keys())))
+    parser.add_argument("infile", nargs="?", type=argparse.FileType('r'))
+    args = parser.parse_args()
+    if args.action in actions:
+        actions[args.action](args)
     else:
-        print "Sorry, I don't know that action."
-
+        print "invalid action '{}'".format(args.action)
+        parser.print_help()
