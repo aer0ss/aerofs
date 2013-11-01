@@ -519,7 +519,7 @@ service SPService {
      * Throws:
      *   ExNoPerm       if the user calling this does not have enough privileges (see above)
      */
-    rpc ListUserSharedFolders(ListUserSharedFoldersCall) returns(ListUserSharedFoldersReply);
+    rpc ListUserSharedFolders(ListUserSharedFoldersCall) returns(ListSharedFoldersReply);
 
     /**
      * List all the users who have been invited to the current user's organization.
@@ -745,6 +745,22 @@ service SPService {
      * Required Auth Level: None
      */
     rpc AuthorizeMobileDevice(AuthorizeMobileDeviceCall) returns (AuthorizeMobileDeviceReply);
+
+    /**
+     * Lists the shared folder information associated with the given list of Store IDs. The
+     * caller must be a member of every shared folder.
+     *
+     * The returned shared folders will match the input store IDs by the indices in the list.
+     * Alternatively, the client can also inspect the store ID of the returned folders.
+     *
+     * See Also: ListUserSharedFolders, ListOrganizationSharedFolders
+     *
+     * Required Auth Level: user (see above)
+     *
+     * Throws:
+     *   ExNoPerm if the caller does not have the required privileges for any store inquired
+     */
+    rpc ListSharedFolders(ListSharedFoldersCall) returns (ListSharedFoldersReply);
 }
 
 message SetStripeCustomerIDCall {
@@ -1124,14 +1140,9 @@ message ListUserSharedFoldersCall {
     required string user_id = 1;
 }
 
-message ListUserSharedFoldersReply {
-    repeated PBSharedFolder shared_folder = 1;
-}
-
 message PBSharedFolder {
 
     message PBUserRoleAndState {
-        // Since only the Web UI uses this method, we include the full name for pretty display.
         required PBUser user = 1;
         required PBRole role = 2;
         required PBSharedFolderState state = 3;
@@ -1295,6 +1306,14 @@ message AuthorizeMobileDeviceReply {
     optional string userId = 1;
     optional string orgId = 2;
     optional bool isOrgAdmin = 3;
+}
+
+message ListSharedFoldersCall {
+    repeated bytes store_id = 1;
+}
+
+message ListSharedFoldersReply {
+    repeated PBSharedFolder shared_folder = 1;
 }
 
 enum PBSharedFolderState {

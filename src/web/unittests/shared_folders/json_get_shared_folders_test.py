@@ -1,6 +1,6 @@
 from mock import Mock
 from aerofs_sp.gen.sp_pb2 import \
-    ListOrganizationSharedFoldersReply, ListUserSharedFoldersReply
+    ListOrganizationSharedFoldersReply, ListSharedFoldersReply
 from aerofs_common._gen.common_pb2 import EDITOR, OWNER
 from aerofs_sp.gen.sp_pb2 import ADMIN, JOINED
 from ..test_base import TestBase
@@ -28,7 +28,7 @@ class GetSharedFoldersTest(TestBase):
         self.sp_rpc_stub.list_organization_shared_folders = Mock(return_value=reply)
 
     def _mock_list_user_shared_folders(self):
-        reply = ListUserSharedFoldersReply()
+        reply = ListSharedFoldersReply()
         self._add_shared_folder(reply)
         self._add_shared_folder(reply)
 

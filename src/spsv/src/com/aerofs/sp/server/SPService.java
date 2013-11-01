@@ -63,9 +63,9 @@ import com.aerofs.proto.Sp.ListOrganizationMembersReply;
 import com.aerofs.proto.Sp.ListOrganizationMembersReply.PBUserAndLevel;
 import com.aerofs.proto.Sp.ListOrganizationSharedFoldersReply;
 import com.aerofs.proto.Sp.ListPendingFolderInvitationsReply;
+import com.aerofs.proto.Sp.ListSharedFoldersReply;
 import com.aerofs.proto.Sp.ListUserDevicesReply;
 import com.aerofs.proto.Sp.ListUserDevicesReply.PBDevice;
-import com.aerofs.proto.Sp.ListUserSharedFoldersReply;
 import com.aerofs.proto.Sp.MobileAccessCode;
 import com.aerofs.proto.Sp.Noop12Reply;
 import com.aerofs.proto.Sp.OpenIdSessionAttributes;
@@ -534,7 +534,7 @@ public class SPService implements ISPService
     }
 
     @Override
-    public ListenableFuture<ListUserSharedFoldersReply> listUserSharedFolders(String userID)
+    public ListenableFuture<ListSharedFoldersReply> listUserSharedFolders(String userID)
             throws Exception
     {
         _sqlTrans.begin();
@@ -548,7 +548,7 @@ public class SPService implements ISPService
 
         _sqlTrans.commit();
 
-        return createReply(ListUserSharedFoldersReply.newBuilder().addAllSharedFolder(pbs).build());
+        return createReply(ListSharedFoldersReply.newBuilder().addAllSharedFolder(pbs).build());
     }
 
     @Override
@@ -650,9 +650,9 @@ public class SPService implements ISPService
         }
 
         builder.addUserRoleAndState(PBUserRoleAndState.newBuilder()
-                        .setRole(role.toPB())
-                        .setState(state.toPB())
-                        .setUser(user2pb(user, getUserFullName(user, user2nameCache))));
+                .setRole(role.toPB())
+                .setState(state.toPB())
+                .setUser(user2pb(user, getUserFullName(user, user2nameCache))));
     }
 
     /**
@@ -2491,6 +2491,29 @@ public class SPService implements ISPService
         _sqlTrans.commit();
 
         return createReply(builder.build());
+    }
+
+    @Override
+    public ListenableFuture<ListSharedFoldersReply> listSharedFolders(List<ByteString> sids)
+            throws Exception
+    {
+        User sessionUser = _sessionUser.getUser();
+        ImmutableList.Builder<SharedFolder> foldersBuilder = ImmutableList.builder();
+
+        _sqlTrans.begin();
+        for (ByteString sid : sids) {
+            SharedFolder folder = _factSharedFolder.create(sid);
+            if (folder.getRoleNullable(sessionUser) == null) throw new ExNoPerm();
+            foldersBuilder.add(folder);
+        }
+
+        List<PBSharedFolder> pbFolders = sharedFolders2pb(foldersBuilder.build(),
+                sessionUser.getOrganization());
+        _sqlTrans.commit();
+
+        return createReply(ListSharedFoldersReply.newBuilder()
+                .addAllSharedFolder(pbFolders)
+                .build());
     }
 
     /**
