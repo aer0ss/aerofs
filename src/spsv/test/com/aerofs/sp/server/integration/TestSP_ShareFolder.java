@@ -15,6 +15,8 @@ import com.aerofs.base.id.SID;
 import com.aerofs.proto.Cmd.CommandType;
 import com.aerofs.proto.Common.PBSubjectRolePair;
 import com.aerofs.proto.Sp.GetACLReply;
+import com.aerofs.sp.common.SharedFolderState;
+import com.aerofs.sp.server.lib.SharedFolder;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.aerofs.sp.server.lib.user.User;
@@ -25,6 +27,7 @@ import org.junit.Test;
 import java.util.Collections;
 import java.util.List;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
@@ -75,7 +78,7 @@ public class TestSP_ShareFolder extends AbstractSPACLTest
         shareFolder(USER_1, SID_1, USER_2, Role.EDITOR);
 
         assertVerkehrPublishOnlyContains(USER_1);
-        verifyFolderInvitation(USER_1, USER_2, SID_1, true);
+        verifyFolderInvitation(USER_1, USER_2, SID_1, 1);
         verifyNewUserAccountInvitation(USER_1, USER_2, SID_1, false);
     }
 
@@ -86,7 +89,7 @@ public class TestSP_ShareFolder extends AbstractSPACLTest
         shareFolderExternal(USER_1, SID_1, USER_2, Role.EDITOR);
 
         assertVerkehrPublishOnlyContains(USER_1);
-        verifyFolderInvitation(USER_1, USER_2, SID_1, true);
+        verifyFolderInvitation(USER_1, USER_2, SID_1, 1);
         verifyNewUserAccountInvitation(USER_1, USER_2, SID_1, false);
     }
 
@@ -99,7 +102,7 @@ public class TestSP_ShareFolder extends AbstractSPACLTest
         shareFolder(USER_1, SID_1, user, Role.EDITOR);
 
         assertVerkehrPublishOnlyContains(USER_1);
-        verifyFolderInvitation(USER_1, user, SID_1, false);
+        verifyFolderInvitation(USER_1, user, SID_1, 0);
         verifyNewUserAccountInvitation(USER_1, user, SID_1, true);
     }
 
@@ -345,14 +348,41 @@ public class TestSP_ShareFolder extends AbstractSPACLTest
         } catch (ExNoPerm e) {}
     }
 
-    /**
-     * Verifies that a folder invitation email would (shouldBeSent=true) or wouldn't
-     * (shouldBeSent=false) have been sent
-     */
-    private void verifyFolderInvitation(User sharer, User sharee, SID sid, boolean shouldBeSent)
+    @Test
+    public void shouldAllowInvitingLeftUsers()
             throws Exception
     {
-        verify(factEmailer, shouldBeSent ? times(1) : never())
+        sqlTrans.begin();
+        User owner = saveUser();
+        User leftUser = saveUser();
+        sqlTrans.commit();
+
+        SID sid = SID.generate();
+        SharedFolder folder = factSharedFolder.create(sid);
+
+        shareAndJoinFolder(owner, sid, leftUser, Role.EDITOR);
+        verifyFolderInvitation(owner, leftUser, sid, 1);
+
+        leaveSharedFolder(leftUser, sid);
+        shareFolder(owner, sid, leftUser, Role.VIEWER);
+
+        sqlTrans.begin();
+        SharedFolderState state = folder.getStateNullable(leftUser);
+        sqlTrans.commit();
+
+        assertEquals(SharedFolderState.PENDING, state);
+
+        // twice because we've verified that it's been sent once during the setup
+        verifyFolderInvitation(owner, leftUser, sid, 2);
+    }
+
+    /**
+     * Verifies that a folder invitation email has been sent numEmails times.
+     */
+    private void verifyFolderInvitation(User sharer, User sharee, SID sid, int numEmails)
+            throws Exception
+    {
+        verify(factEmailer, times(numEmails))
                 .createFolderInvitationEmailer(eq(sharer), eq(sharee), eq(sid.toStringFormal()),
                         eq(""), any(SID.class), any(Role.class));
     }

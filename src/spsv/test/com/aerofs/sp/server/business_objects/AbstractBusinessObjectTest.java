@@ -4,6 +4,8 @@
 
 package com.aerofs.sp.server.business_objects;
 
+import com.aerofs.base.acl.Role;
+import com.aerofs.sp.common.SharedFolderState;
 import com.aerofs.sp.server.lib.cert.CertificateDatabase;
 import com.aerofs.sp.server.lib.cert.CertificateGenerator;
 import com.aerofs.sp.server.lib.device.DeviceDatabase;
@@ -31,6 +33,8 @@ import org.mockito.Spy;
 
 import java.io.IOException;
 import java.sql.SQLException;
+
+import static org.junit.Assert.assertEquals;
 
 public abstract class AbstractBusinessObjectTest extends AbstractAutoTransactionedTestWithSPDatabase
 {
@@ -134,5 +138,12 @@ public abstract class AbstractBusinessObjectTest extends AbstractAutoTransaction
         SharedFolder sf = factSharedFolder.create(sid);
         sf.save("shared folder", owner);
         return sf;
+    }
+
+    void assertJoinedRole(SharedFolder sf, User user, Role role)
+            throws SQLException
+    {
+        assertEquals(sf.getRoleNullable(user), role);
+        assertEquals(sf.getStateNullable(user), SharedFolderState.JOINED);
     }
 }

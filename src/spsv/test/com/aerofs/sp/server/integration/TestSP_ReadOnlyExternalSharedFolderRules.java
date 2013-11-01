@@ -277,8 +277,8 @@ public class TestSP_ReadOnlyExternalSharedFolderRules extends AbstractSPFolderTe
 
         // make sure both users are an editor
         sqlTrans.begin();
-        assertEquals(sf.getRole(internalUser1), Role.EDITOR);
-        assertEquals(sf.getRole(internalUser2), Role.EDITOR);
+        assertEquals(sf.getRoleNullable(internalUser1), Role.EDITOR);
+        assertEquals(sf.getRoleNullable(internalUser2), Role.EDITOR);
         sqlTrans.commit();
 
         // convert the folder to an external folder
@@ -286,8 +286,8 @@ public class TestSP_ReadOnlyExternalSharedFolderRules extends AbstractSPFolderTe
 
         // make sure both users are converted to viewers
         sqlTrans.begin();
-        assertEquals(sf.getRole(internalUser1), Role.VIEWER);
-        assertEquals(sf.getRole(internalUser2), Role.VIEWER);
+        assertEquals(sf.getRoleNullable(internalUser1), Role.VIEWER);
+        assertEquals(sf.getRoleNullable(internalUser2), Role.VIEWER);
         sqlTrans.commit();
 
         // make sure role change notification emails are sent

@@ -91,8 +91,9 @@ import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue.SuccessError;
 import com.aerofs.servlets.lib.db.jedis.JedisThreadLocalTransaction;
 import com.aerofs.servlets.lib.db.sql.SQLThreadLocalTransaction;
 import com.aerofs.servlets.lib.ssl.CertificateAuthenticator;
-import com.aerofs.sp.authentication.IAuthenticator;
+import com.aerofs.sp.common.SharedFolderState;
 import com.aerofs.sp.common.SubscriptionCategory;
+import com.aerofs.sp.authentication.IAuthenticator;
 import com.aerofs.sp.server.email.DeviceRegistrationEmailer;
 import com.aerofs.sp.server.email.InvitationEmailer;
 import com.aerofs.sp.server.email.RequestToSignUpEmailer;
@@ -139,6 +140,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
@@ -618,8 +620,8 @@ public class SPService implements ISPService
                     .setOwnedByTeam(false);
 
             // fill in folder members
-            for (SubjectRolePair srp : sf.getMemberACL()) {
-                sharedFolderMember2pb(sessionOrg, user2nameCache, builder, srp);
+            for (Entry<User, Role> en : sf.getJoinedUsersAndRoles().entrySet()) {
+                sharedFolderMember2pb(sessionOrg, user2nameCache, builder, en.getKey(), en.getValue());
             }
 
             pbs.add(builder.build());
@@ -628,19 +630,15 @@ public class SPService implements ISPService
     }
 
     private void sharedFolderMember2pb(Organization sessionOrg,
-            Map<User, FullName> user2nameCache, Builder builder, SubjectRolePair srp)
+            Map<User, FullName> user2nameCache, Builder builder, User subject, Role role)
             throws ExNotFound, SQLException
     {
         // don't add team server to the list.
-        if (srp._subject.isTeamServerID()) return;
-
-        User subject = _factUser.create(srp._subject);
+        if (subject.id().isTeamServerID()) return;
 
         // the folder is owned by the session organization if an owner of the folder belongs to
         // the org.
-        if (srp._role.covers(Role.OWNER) && subject.belongsTo(sessionOrg)) {
-            builder.setOwnedByTeam(true);
-        }
+        if (role.covers(Role.OWNER) && subject.belongsTo(sessionOrg)) builder.setOwnedByTeam(true);
 
         // retrieve the full name
         FullName fn = user2nameCache.get(subject);
@@ -650,7 +648,7 @@ public class SPService implements ISPService
         }
 
         builder.addUserAndRole(PBUserAndRole.newBuilder()
-                .setRole(srp._role.toPB())
+                .setRole(role.toPB())
                 .setUser(user2pb(subject, fn)));
     }
 
@@ -1092,10 +1090,17 @@ public class SPService implements ISPService
             User sharee, Role role, String note, String folderName)
             throws SQLException, IOException, ExNotFound, ExAlreadyExist
     {
-        if (sf.isMember(sharee)) throw new ExAlreadyExist(sharee.id() + " is already a member");
-
-        // Add a pending ACL entry if the user doesn't exist in the ACL
-        if (!sf.isPending(sharee)) sf.addPendingACL(sharer, sharee, role);
+        SharedFolderState state = sf.getStateNullable(sharee);
+        if (state == SharedFolderState.JOINED) {
+            // TODO (WW) throw ExAlreadyJoined?
+            throw new ExAlreadyExist(sharee.id() + " is already joined");
+        } else if (state != null) {
+            // Set user as pending if the user exists but in a non-joined state
+            sf.setState(sharee, SharedFolderState.PENDING);
+        } else {
+            // Add a pending ACL entry if the user doesn't exist
+            sf.addPendingUser(sharee, role, sharer);
+        }
 
         InvitationEmailer emailer;
         if (sharee.exists()) {
@@ -1158,25 +1163,34 @@ public class SPService implements ISPService
     {
         external = firstNonNull(external, false);
 
-        _sqlTrans.begin();
-
         User user = _sessionUser.getUser();
         SharedFolder sf = _factSharedFolder.create(new SID(sid));
 
-        l.info(user + " joins " + sf);
+        _sqlTrans.begin();
+        joinSharedFolderImpl(external, user, sf);
+        _sqlTrans.commit();
 
-        if (!sf.exists()) throw new ExNotFound("No such shared folder");
+        return createVoidReply();
+    }
 
-        if (sf.isMember(user)) {
-            throw new ExAlreadyExist("You are already a member of this shared folder");
+    private void joinSharedFolderImpl(Boolean external, User user, SharedFolder sf)
+            throws Exception
+    {
+        l.info("{} joins {}", user, sf);
+
+        SharedFolderState state = sf.getStateNullable(user);
+
+        if (state == SharedFolderState.JOINED) {
+            l.info("already joined. ignore");
+            return;
         }
 
-        if (!sf.isPending(user)) {
-            throw new ExNoPerm("Your have not been invited to this shared folder");
-        }
+        // Note 1. it also throws if the folder doesn't exist
+        // Note 2. we allow users who have left the folder to rejoin
+        if (state == null) throw new ExNotFound("No such invitation");
 
         // reset pending bit to make user a member of the shared folder
-        Collection <UserID> users = sf.setMember(user);
+        ImmutableCollection<UserID> users = sf.setState(user, SharedFolderState.JOINED);
 
         // set the external bit for consistent auto-join behavior across devices
         sf.setExternal(user, external);
@@ -1185,7 +1199,7 @@ public class SPService implements ISPService
         // Refresh CRLs for peer devices once this user joins the shared folder (since the peer user
         // map may have changed).
         for (Device peer : peerDevices) {
-            l.info(peer.id().toStringFormal() + ": crl refresh");
+            l.info("{} crl refresh", peer.id());
             addToCommandQueueAndSendVerkehrMessage(peer.id(), CommandType.REFRESH_CRL);
         }
 
@@ -1197,10 +1211,6 @@ public class SPService implements ISPService
 
         // always call this method as the last step of the transaction
         publishACLs_(users);
-
-        _sqlTrans.commit();
-
-        return createVoidReply();
     }
 
     @Override
@@ -1213,18 +1223,13 @@ public class SPService implements ISPService
 
         l.info(user + " ignore " + sf);
 
-        if (!sf.exists()) {
-            throw new ExNotFound("No such shared folder");
-        }
-        if (sf.isMember(user)) {
-            throw new ExAlreadyExist("You have already accepted this invitation");
-        }
-        if (!sf.isPending(user)) {
-            throw new ExNoPerm("You have not been invited to this shared folder");
+        // Note that it also throws if the folder or the user doesn't exist
+        if (sf.getStateNullable(user) != SharedFolderState.PENDING) {
+            throw new ExNotFound("No such invitation");
         }
 
-        // Ignore the invitation by deleting the ACL.
-        sf.deleteMemberOrPendingACL(user);
+        // Ignore the invitation by deleting the user.
+        sf.removeUser(user);
 
         _sqlTrans.commit();
 
@@ -1239,22 +1244,24 @@ public class SPService implements ISPService
         User user = _sessionUser.getUser();
         SharedFolder sf = _factSharedFolder.create(new SID(sid));
 
-        l.info(user + " leave " + sf);
-
-        if (!sf.exists()) throw new ExNotFound("No such shared folder");
+        l.info("{} leaves {}", user, sf);
 
         if (sf.id().isUserRoot()) throw new ExBadArgs("Cannot leave root folder");
+
+        SharedFolderState state = sf.getStateNullable(user);
+
+        if (state == null) throw new ExNotFound("No such folder or you're not member of the folder");
 
         // silently ignore leave call from pending users as multiple device of the same user
         // may make the call depending on the relative speeds of deletion propagation vs ACL
         // propagation
-        if (!sf.isPending(user)) {
-            if (!sf.isMember(user)) {
+        if (state != SharedFolderState.PENDING) {
+            if (state != SharedFolderState.JOINED) {
                 throw new ExNotFound("You are not a member of this shared folder");
             }
 
-            // set pending bit
-            Collection<UserID> users = sf.setPending(user);
+            // set state
+            Collection<UserID> users = sf.setState(user, SharedFolderState.LEFT);
 
             // always call this method as the last step of the transaction
             publishACLs_(users);
@@ -1676,7 +1683,7 @@ public class SPService implements ISPService
         User user = _sessionUser.getUser();
         GetACLReply.Builder bd = GetACLReply.newBuilder();
 
-        l.info("get acl u: {}", user.id());
+        l.info("getACL for {}", user.id());
 
         _sqlTrans.begin();
 
@@ -1690,9 +1697,10 @@ public class SPService implements ISPService
                 aclBuilder.setStoreId(sf.id().toPB());
                 aclBuilder.setExternal(sf.isExternal(user));
                 aclBuilder.setName(sf.getName());
-                for (SubjectRolePair srp : sf.getMemberACL()) {
-                    l.trace("add subject {} role {}", srp._subject, srp._role.getDescription());
-                    aclBuilder.addSubjectRole(srp.toPB());
+                for (Entry<User, Role> en : sf.getJoinedUsersAndRoles().entrySet()) {
+                    aclBuilder.addSubjectRole(PBSubjectRolePair.newBuilder()
+                        .setSubject(en.getKey().id().getString())
+                        .setRole(en.getValue().toPB()));
                 }
                 bd.addStoreAcl(aclBuilder);
             }
@@ -1728,7 +1736,7 @@ public class SPService implements ISPService
 
             _sharedFolderRules.onUpdatingACL(sf, role, supressWarnings);
 
-            ImmutableCollection<UserID> users = sf.updateMemberACL(subject, role);
+            ImmutableCollection<UserID> users = sf.setRole(subject, role);
 
             _sfnEmailer.sendRoleChangedNotificationEmail(sf, user, subject, oldRole, role);
 
@@ -1753,7 +1761,7 @@ public class SPService implements ISPService
         _sqlTrans.begin();
         sf.throwIfNoPrivilegeToChangeACL(user);
         // always call this method as the last step of the transaction
-        publishACLs_(sf.deleteMemberOrPendingACL(subject));
+        publishACLs_(sf.removeUser(subject));
         _sqlTrans.commit();
 
         return createVoidReply();
@@ -2601,7 +2609,7 @@ public class SPService implements ISPService
         for (ByteString shareId : shareIds) {
             SharedFolder sf = _factSharedFolder.create(shareId);
             // throws ExNoPerm if the user doesn't have permission to view the name
-            sf.getMemberRoleThrows(user);
+            if (sf.getRoleNullable(user) == null) throw new ExNoPerm();
             names.add(sf.getName());
         }
 

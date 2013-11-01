@@ -1299,5 +1299,5 @@ message AuthorizeMobileDeviceReply {
 enum PBSharedFolderState {
     PENDING = 0;
     JOINED = 1;
-    DELETED = 2;
+    LEFT = 2;
 }

@@ -52,16 +52,16 @@ public class TestUser_Save extends AbstractBusinessObjectTest
         // insert the colliding root store
         SharedFolder sf = factSharedFolder.create(SID.rootSID(user.id()));
         sf.save("haha", attacker);
-        sf.addMemberACL(attacker2, Role.EDITOR);
-        assertEquals(sf.getMemberRoleThrows(attacker), Role.OWNER);
-        assertEquals(sf.getMemberRoleThrows(attacker2), Role.EDITOR);
+        sf.addJoinedUser(attacker2, Role.EDITOR);
+        assertEquals(sf.getRoleNullable(attacker), Role.OWNER);
+        assertEquals(sf.getRoleNullable(attacker2), Role.EDITOR);
 
         // create the ligitimate user
         saveUser(user);
 
         // the collision should have been corrected
-        assertNull(sf.getMemberRoleNullable(attacker));
-        assertNull(sf.getMemberRoleNullable(attacker2));
+        assertNull(sf.getRoleNullable(attacker));
+        assertNull(sf.getRoleNullable(attacker2));
     }
 
     @Test

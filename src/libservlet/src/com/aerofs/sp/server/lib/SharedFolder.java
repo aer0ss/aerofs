@@ -1,10 +1,9 @@
 /*
- * Copyright (c) Air Computing Inc., 2012.
+ * Copyright (c) Air Computing Inc., 2013.
  */
 
 package com.aerofs.sp.server.lib;
 
-import com.aerofs.lib.SystemUtil;
 import com.aerofs.base.acl.Role;
 import com.aerofs.base.acl.SubjectRolePair;
 import com.aerofs.base.ex.ExAlreadyExist;
@@ -12,22 +11,23 @@ import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
+import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.ex.ExNoAdminOrOwner;
 import com.aerofs.sp.common.SharedFolderState;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.user.User;
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableList.Builder;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.protobuf.ByteString;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.sql.SQLException;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+
+import static com.aerofs.sp.common.SharedFolderState.*;
+import com.google.common.collect.ImmutableList.Builder;
+
+import javax.annotation.Nullable;
 
 public class SharedFolder
 {
@@ -100,8 +100,8 @@ public class SharedFolder
     /**
      * Add the shared folder to db. Also add {@code owner} as the first owner.
      * @return A map of user IDs to epochs to be published via verkehr.
-     * @throws ExAlreadyExist if the store already exists
-     * @throws ExNotFound if the owner is not found
+     * @throws com.aerofs.base.ex.ExAlreadyExist if the store already exists
+     * @throws com.aerofs.base.ex.ExNotFound if the owner is not found
      */
     public ImmutableCollection<UserID> save(String folderName, User owner)
             throws ExNotFound, SQLException, ExAlreadyExist
@@ -109,70 +109,87 @@ public class SharedFolder
         _f._db.insert(_sid, folderName);
 
         try {
-            return addMemberACL(owner, Role.OWNER);
+            return addJoinedUser(owner, Role.OWNER);
         } catch (ExAlreadyExist e) {
             throw SystemUtil.fatalWithReturn(e);
         }
     }
 
-    public void delete()
+    /**
+     * Delete the folder completely from the universe. It will cause the folder to disappear from
+     * all the devices.
+     * @return A set of user IDs for which epoch should be increased and published via verkehr
+     */
+    public ImmutableCollection<UserID> destroy()
             throws SQLException
     {
-        _f._db.delete(_sid);
+        ImmutableCollection<UserID> joined = getJoinedUserIDs();
+        _f._db.destroy(_sid);
+        return joined;
     }
 
     /**
      * @return A set of user IDs for which epoch should be increased and published via verkehr
-     * @throws ExAlreadyExist if the user is already added.
+     * @throws com.aerofs.base.ex.ExAlreadyExist if the user is already added.
      */
-    public ImmutableCollection<UserID> addMemberACL(User user, Role role)
+    public ImmutableCollection<UserID> addJoinedUser(User user, Role role)
             throws ExAlreadyExist, SQLException, ExNotFound
     {
-        if (isMemberOrPending(user)) throw new ExAlreadyExist(user + " is already invited");
+        _f._db.insertUser(_sid, user.id(), role, JOINED, null);
 
-        _f._db.insertMemberACL(_sid, Collections.singletonList(new SubjectRolePair(user.id(), role)));
+        addTeamServerForUserImpl(user);
 
-        addTeamServerACLImpl(user);
-
-        return _f._db.getMembers(_sid);
+        return getJoinedUserIDs();
     }
 
-    public void addPendingACL(@Nonnull User sharer, User sharee, Role role)
+    public void addPendingUser(User user, Role role, User sharer)
             throws SQLException, ExAlreadyExist
     {
-        if (isMemberOrPending(sharee)) throw new ExAlreadyExist(sharee + " is already invited");
-
-        _f._db.insertPendingACL(_sid, sharer.id(),
-                Collections.singletonList(new SubjectRolePair(sharee.id(), role)));
+        _f._db.insertUser(_sid, user.id(), role, PENDING, sharer.id());
     }
 
-    /**
-     * Set a user as pending
-     */
-    public ImmutableCollection<UserID> setPending(User user) throws SQLException, ExNotFound
+    public ImmutableCollection<UserID> setState(User user, SharedFolderState newState)
+            throws SQLException, ExNotFound, ExAlreadyExist
     {
-        ImmutableCollection<UserID> affectedUsers = _f._db.getMembers(_sid);
+        boolean wasJoined = getStateNullable(user) == JOINED;
 
-        _f._db.setState(_sid, user.id(), SharedFolderState.PENDING);
+        ImmutableCollection <UserID> affectedUsers;
+        if (newState == JOINED) {
+            // adding the reference to TS if the user joins
+            if (!wasJoined) {
+                _f._db.setState(_sid, user.id(), newState);
+                addTeamServerForUserImpl(user);
 
-        // in terms of ACL, marking a user as pending is the same as kicking him out of the folder
-        // so we need to update team server ACLs to reflect that change
-        deleteTeamServerACLImpl(user);
+                // retrieve the affected users _after_ the user's state is changed
+                affectedUsers = getJoinedUserIDs();
+            } else {
+                affectedUsers = ImmutableList.of();
+            }
+        } else {
+            // deleting the reference to TS if the user leaves
+            if (wasJoined) {
+                // retrieve the affected users _before_ the user's state is changed
+                affectedUsers = getJoinedUserIDs();
+
+                _f._db.setState(_sid, user.id(), newState);
+                removeTeamServerForUserImpl(user);
+            } else {
+                _f._db.setState(_sid, user.id(), newState);
+                // joined users are not affected
+                affectedUsers = ImmutableList.of();
+            }
+        }
 
         return affectedUsers;
     }
 
     /**
-     * Set a user as member
+     * @return null iff the user doesn't exist
      */
-    public ImmutableCollection<UserID> setMember(User user)
-            throws SQLException, ExNotFound, ExAlreadyExist
+    public @Nullable SharedFolderState getStateNullable(User user)
+            throws SQLException
     {
-        _f._db.setState(_sid, user.id(), SharedFolderState.JOINED);
-
-        addTeamServerACLImpl(user);
-
-        return _f._db.getMembers(_sid);
+        return _f._db.getStateNullable(_sid, user.id());
     }
 
     /**
@@ -195,11 +212,11 @@ public class SharedFolder
      * Add the user's team server ID to the ACL. No-op if there are other users on the shared folder
      * belonging to the same team server.
      */
-    public ImmutableCollection<UserID> addTeamServerACL(User user)
+    public ImmutableCollection<UserID> addTeamServerForUser(User user)
             throws ExNotFound, ExAlreadyExist, SQLException
     {
-        if (addTeamServerACLImpl(user)) {
-            return _f._db.getMembers(_sid);
+        if (addTeamServerForUserImpl(user)) {
+            return getJoinedUserIDs();
         } else {
             return ImmutableSet.of();
         }
@@ -210,48 +227,50 @@ public class SharedFolder
      *
      * @return whether actual operations are performed
      */
-    private boolean addTeamServerACLImpl(User user)
+    private boolean addTeamServerForUserImpl(User user)
             throws ExNotFound, SQLException, ExAlreadyExist
     {
         User tsUser = user.getOrganization().getTeamServerUser();
-        if (getMemberRoleNullable(tsUser) == null) {
-            SubjectRolePair srp = new SubjectRolePair(tsUser.id(), Role.EDITOR);
-            _f._db.insertMemberACL(_sid, Collections.singletonList(srp));
+        if (getRoleNullable(tsUser) == null) {
+            // Don't call this.addJoinedUser() here as it would cause recursion
+            _f._db.insertUser(_sid, tsUser.id(), Role.EDITOR, JOINED, null);
             return true;
         } else {
             return false;
         }
     }
 
-    public ImmutableCollection<UserID> deleteMemberOrPendingACL(User user)
+    public ImmutableCollection<UserID> removeUser(User user)
             throws SQLException, ExNotFound, ExNoAdminOrOwner
     {
+        boolean isJoined = getStateNullable(user) == JOINED;
+
         // retrieve the list of affected users _before_ performing the deletion, so that all the
-        // users including the deleted ones will get notifications.
-        ImmutableCollection<UserID> members = _f._db.getMembers(_sid);
+        // users including the removed ones will get notified. Don't notify any one if the user
+        // was not joined.
+        ImmutableCollection<UserID> affectedUsers =
+                isJoined ? getJoinedUserIDs() : ImmutableList.<UserID>of();
 
-        _f._db.deleteMemberOrPendingACL(_sid, user.id());
+        _f._db.delete(_sid, user.id());
 
-        // delete the team server only if the user is a member
-        if (members.contains(user.id())) {
-            deleteTeamServerACLImpl(_f._factUser.create(user.id()));
-        }
+        // remove the team server only if the user has joined the folder
+        if (isJoined) removeTeamServerForUserImpl(user);
 
-        throwIfNoOwnerMemberOrPendingLeft();
+        throwIfNoOwnerLeft();
 
-        return members;
+        return affectedUsers;
     }
 
     /**
-     * Remove the user's team server ID to the ACL. No-op if there are other users on the shared
+     * Remove the user's team server from the folder. No-op if there are other users on the shared
      * folder belonging to the same team server.
      */
-    public ImmutableCollection<UserID> deleteTeamServerACL(User user)
+    public ImmutableCollection<UserID> removeTeamServerForUser(User user)
             throws SQLException, ExNotFound
     {
-        ImmutableCollection<UserID> affectedUsers = _f._db.getMembers(_sid);
+        ImmutableCollection<UserID> affectedUsers = getJoinedUserIDs();
 
-        if (deleteTeamServerACLImpl(user)) {
+        if (removeTeamServerForUserImpl(user)) {
             return affectedUsers;
         } else {
             return ImmutableSet.of();
@@ -260,8 +279,10 @@ public class SharedFolder
 
     /**
      * @return whether actual operations are performed.
+     *
+     * This method is idempotent if called multiple times with the same parameter
      */
-    private boolean deleteTeamServerACLImpl(User user)
+    private boolean removeTeamServerForUserImpl(User user)
             throws SQLException, ExNotFound
     {
         Organization org = user.getOrganization();
@@ -269,126 +290,84 @@ public class SharedFolder
         // the TeamServer user can only be an OWNER of a shared folder if the shared folder
         // was created from a TeamServer, in which case we don't want the TeamServer ACL to be
         // affected by the coming and going of users of the organization
-        if (getMemberRoleNullable(org.getTeamServerUser()) == Role.OWNER) return false;
+        if (getRoleNullable(org.getTeamServerUser()) == Role.OWNER) return false;
 
-        for (User otherUser : getMembers()) {
-            if (otherUser.equals(user)) continue;
-            if (otherUser.id().isTeamServerID()) continue;
-            if (otherUser.belongsTo(org)) return false;
+        for (UserID otherUser : getJoinedUserIDs()) {
+            if (otherUser.equals(user.id())) continue;
+            if (otherUser.isTeamServerID()) continue;
+            if (_f._factUser.create(otherUser).belongsTo(org)) return false;
         }
 
-        try {
-            _f._db.deleteMemberOrPendingACL(_sid, org.id().toTeamServerUserID());
-        } catch (ExNotFound e) {
-            // the team server id must exists.
-            assert false : this + " doesn't have team server ACL for " + user;
-        }
-
+        _f._db.delete(_sid, org.id().toTeamServerUserID());
         return true;
     }
 
     /**
      * N.B the return value include Team Servers
      */
-    public ImmutableCollection<User> getMembers()
+    public ImmutableMap<User, Role> getJoinedUsersAndRoles()
             throws SQLException
     {
-        return userIDs2users(_f._db.getMembers(_sid));
-    }
-
-    public ImmutableCollection<User> userIDs2users(Collection<UserID> userIDs)
-    {
-        Builder<User> builder = ImmutableList.builder();
-        for (UserID userID : userIDs) builder.add(_f._factUser.create(userID));
+        ImmutableMap.Builder<User, Role> builder = ImmutableMap.builder();
+        for (SubjectRolePair srp : _f._db.getJoinedUsersAndRoles(_sid)) {
+            builder.put(_f._factUser.create(srp._subject), srp._role);
+        }
         return builder.build();
-
     }
 
-    /**
-     * N.B the return value include Team Servers
-     */
-    public List<SubjectRolePair> getMemberACL() throws SQLException
+    public ImmutableCollection<User> getJoinedUsers()
+            throws SQLException
     {
-        return _f._db.getMemberACL(_sid);
+        ImmutableList.Builder<User> builder = ImmutableList.builder();
+        for (UserID userID : _f._db.getJoinedUsers(_sid)) builder.add(_f._factUser.create(userID));
+        return builder.build();
+    }
+
+    private ImmutableCollection<UserID> getJoinedUserIDs()
+            throws SQLException
+    {
+        return _f._db.getJoinedUsers(_sid);
     }
 
     /**
-     * @return all the users, including members, pending users, and Team Servers
+     * @return all the users including Team Servers
      */
     public ImmutableCollection<User> getAllUsers() throws SQLException
     {
-        return userIDs2users(_f._db.getAllUsers(_sid));
+        Builder<User> builder = ImmutableList.builder();
+        for (UserID userID : _f._db.getAllUsers(_sid)) {
+            builder.add(_f._factUser.create(userID));
+        }
+        return builder.build();
     }
 
     /**
      * @return new ACL epochs for each affected user id, to be published via verkehr
-     * @throws ExNotFound if trying to add new users to the store or update a pending user's ACL
+     * @throws com.aerofs.base.ex.ExNotFound if trying to add new users to the store or update a pending user's ACL
      */
-    public ImmutableCollection<UserID> updateMemberACL(User user, Role role)
+    public ImmutableCollection<UserID> setRole(User user, Role role)
             throws ExNoAdminOrOwner, ExNotFound, SQLException
     {
-        _f._db.updateMemberACL(_sid, user.id(), role);
+        _f._db.setRole(_sid, user.id(), role);
 
-        throwIfNoOwnerMemberOrPendingLeft();
+        throwIfNoOwnerLeft();
 
-        return _f._db.getMembers(_sid);
+        return getStateNullable(user) == JOINED ? getJoinedUserIDs() : ImmutableList.<UserID>of();
     }
 
     /**
-     * @return new ACL epochs for each affected user id, to be published via verkehr
-     * @throws ExNotFound if trying to add new users to the store or update a pending user's ACL
-     */
-    public ImmutableCollection<UserID> updateACL(User user, Role role)
-            throws ExNoAdminOrOwner, ExNotFound, SQLException
-    {
-        _f._db.updateACL(_sid, user.id(), role);
-
-        throwIfNoOwnerMemberOrPendingLeft();
-
-        return _f._db.getMembers(_sid);
-    }
-
-
-    public @Nullable Role getMemberRoleNullable(User user)
-            throws SQLException
-    {
-        return _f._db.getMemberRoleNullable(_sid, user.id());
-    }
-
-    /**
-     * @throws ExNoPerm if the user is pending or not found
-     */
-    public @Nonnull Role getMemberRoleThrows(User user)
-            throws SQLException, ExNoPerm
-    {
-        Role role = getMemberRoleNullable(user);
-        if (role == null) throw new ExNoPerm();
-        return role;
-    }
-
-    /**
-     * @return the role of the given user. The user must be an existing member or pending user.
-     */
-    public @Nonnull Role getRole(User user) throws SQLException
-    {
-        Role role = getRoleNullable(user);
-        assert role != null;
-        return role;
-    }
-
-    /**
-     * @return the role of the given user. Return null if the user doesn't exist
+     * @return the role of the given user. Return null iff. the user doesn't exist
      */
     public @Nullable Role getRoleNullable(User user)
             throws SQLException
     {
-        return _f._db.getMemberOrPendingRoleNullable(_sid, user.id());
+        return _f._db.getRoleNullable(_sid, user.id());
     }
 
-    private void throwIfNoOwnerMemberOrPendingLeft()
+    private void throwIfNoOwnerLeft()
             throws ExNoAdminOrOwner, SQLException
     {
-        if (!_f._db.hasOwnerMemberOrPending(_sid)) {
+        if (!_f._db.hasOwner(_sid)) {
             throw new ExNoAdminOrOwner("there must be at least one owner");
         }
     }
@@ -402,13 +381,13 @@ public class SharedFolder
             throws SQLException, ExNoPerm, ExNotFound
     {
         // Bypass the following expensive tests for common cases.
-        if (isOwner(user)) return;
+        if (isJoinedOwner(user)) return;
 
         // See if the user is the team admin of a non-pending owner of the folder.
         // NB: TeamServer user is treated as an org admin as it can only be setup by an org admin...
         if (user.isAdmin() || user.id().isTeamServerID()) {
             Organization org = user.getOrganization();
-            for (SubjectRolePair srp: getMemberACL()) {
+            for (SubjectRolePair srp : _f._db.getJoinedUsersAndRoles(_sid)) {
                 if (srp._role.covers(Role.OWNER)) {
                     User member = _f._factUser.create(srp._subject);
                     if (member.belongsTo(org)) return;
@@ -419,26 +398,11 @@ public class SharedFolder
         throw new ExNoPerm();
     }
 
-    private boolean isOwner(User user)
+    private boolean isJoinedOwner(User user)
             throws SQLException
     {
-        Role role = getMemberRoleNullable(user);
-        return role != null && role.covers(Role.OWNER);
-    }
-
-    public boolean isMember(User user) throws SQLException
-    {
-        return _f._db.getMemberRoleNullable(_sid, user.id()) != null;
-    }
-
-    public boolean isPending(User user) throws SQLException
-    {
-        return _f._db.getPendingRoleNullable(_sid, user.id()) != null;
-    }
-
-    public boolean isMemberOrPending(User user) throws SQLException
-    {
-        return getRoleNullable(user) != null;
+        Role role = getRoleNullable(user);
+        return role != null && role.covers(Role.OWNER) && getStateNullable(user) == JOINED;
     }
 
     /**

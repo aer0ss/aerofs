@@ -36,9 +36,9 @@ public abstract class AbstractSPACLTest extends AbstractSPFolderTest
         sqlTrans.begin();
 
         // remove all root stores to simplify test verifications.
-        sfdb.delete(SID.rootSID(USER_1.id()));
-        sfdb.delete(SID.rootSID(USER_2.id()));
-        sfdb.delete(SID.rootSID(USER_3.id()));
+        sfdb.destroy(SID.rootSID(USER_1.id()));
+        sfdb.destroy(SID.rootSID(USER_2.id()));
+        sfdb.destroy(SID.rootSID(USER_3.id()));
 
         sqlTrans.commit();
     }

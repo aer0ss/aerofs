@@ -12,6 +12,7 @@ import com.aerofs.base.id.UniqueID;
 import com.aerofs.lib.FullName;
 import com.aerofs.base.acl.Role;
 import com.aerofs.lib.ex.ExNoAdminOrOwner;
+import com.aerofs.sp.common.SharedFolderState;
 import com.aerofs.sp.server.lib.SharedFolder;
 import com.aerofs.sp.server.lib.device.Device;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
@@ -88,7 +89,6 @@ public class TestUser extends AbstractBusinessObjectTest
         factUser.saveTeamServerUser(newOrganization());
     }
 
-
     @Test(expected = ExBadCredential.class)
     public void signIn_shouldThrowBadCredentialIfUserNotFound()
             throws SQLException, ExBadCredential
@@ -117,8 +117,10 @@ public class TestUser extends AbstractBusinessObjectTest
         SharedFolder sf = factSharedFolder.create(SID.generate());
 
         sf.save("Test Folder", user1);
-        sf.addMemberACL(user2, Role.EDITOR);
-        sf.addMemberACL(user3, Role.EDITOR);
+        sf.addPendingUser(user2, Role.EDITOR, user1);
+        sf.setState(user2, SharedFolderState.JOINED);
+        sf.addPendingUser(user3, Role.EDITOR, user1);
+        sf.setState(user3, SharedFolderState.JOINED);
 
         Collection<Device> userDevices = user1.getDevices();
         Collection<Device> peerDevices = user1.getPeerDevices();

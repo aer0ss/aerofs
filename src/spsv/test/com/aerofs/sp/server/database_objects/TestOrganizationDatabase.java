@@ -5,11 +5,11 @@
 package com.aerofs.sp.server.database_objects;
 
 import com.aerofs.base.acl.Role;
-import com.aerofs.base.acl.SubjectRolePair;
 import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
+import com.aerofs.sp.common.SharedFolderState;
 import com.aerofs.sp.server.AbstractAutoTransactionedTestWithSPDatabase;
 import com.aerofs.sp.server.lib.OrganizationDatabase;
 import com.aerofs.sp.server.lib.SharedFolderDatabase;
@@ -17,7 +17,6 @@ import com.aerofs.base.id.OrganizationID;
 import org.junit.Test;
 
 import java.sql.SQLException;
-import java.util.Collections;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -60,8 +59,8 @@ public class TestOrganizationDatabase extends AbstractAutoTransactionedTestWithS
             throws SQLException, ExAlreadyExist
     {
         sfdb.insert(rootsid, "test");
-        sfdb.insertMemberACL(rootsid, Collections.singleton(
-                new SubjectRolePair(orgID.toTeamServerUserID(), Role.EDITOR)));
+        sfdb.insertUser(rootsid, orgID.toTeamServerUserID(), Role.EDITOR, SharedFolderState.JOINED,
+                null);
     }
 
 }

@@ -229,9 +229,7 @@ public class User
         Set<User> peerUsers = Sets.newHashSet();
 
         for (SharedFolder sharedFolder : sharedFolders) {
-            Collection<User> users = sharedFolder.getMembers();
-
-            for (User user : users) {
+            for (User user : sharedFolder.getJoinedUsers()) {
                 peerUsers.add(user);
             }
         }
@@ -243,9 +241,7 @@ public class User
         List<Device> peerDevices = Lists.newLinkedList();
 
         for (User peerUser : peerUsers) {
-            Collection<Device> userDevices = peerUser.getDevices();
-
-            for (Device userDevice : userDevices) {
+            for (Device userDevice : peerUser.getDevices()) {
                 peerDevices.add(userDevice);
             }
         }
@@ -260,7 +256,7 @@ public class User
     public Collection<Device> getPeerDevices(SharedFolder sharedFolder)
             throws SQLException, ExFormatError
     {
-        Collection<User> peerUsers = sharedFolder.getMembers();
+        Collection<User> peerUsers = sharedFolder.getJoinedUsers();
         List<Device> peerDevices = Lists.newLinkedList();
 
         for (User peerUser : peerUsers) {
@@ -387,7 +383,7 @@ public class User
              * we should do in this case is left as an exercise to the reader.
              */
             l.warn("existing shared folder collides with root store id for " + this);
-            rootStore.delete();
+            rootStore.destroy();
         }
 
         // Ignore the return value and do not publish verkehr notifications, as this newly added
@@ -497,7 +493,7 @@ public class User
 
         ImmutableSet.Builder<UserID> builder = ImmutableSet.builder();
 
-        for (SharedFolder sf : sfs) builder.addAll(sf.deleteTeamServerACL(this));
+        for (SharedFolder sf : sfs) builder.addAll(sf.removeTeamServerForUser(this));
 
         _f._udb.setOrganizationID(_id, org.id());
 
@@ -506,7 +502,7 @@ public class User
         AuthorizationLevel levelOld = getLevel();
         setLevel(level);
 
-        for (SharedFolder sf : sfs) builder.addAll(sf.addTeamServerACL(this));
+        for (SharedFolder sf : sfs) builder.addAll(sf.addTeamServerForUser(this));
 
         //noinspection StatementWithEmptyBody
         if (orgOld.countUsers() == 0) {

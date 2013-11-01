@@ -110,8 +110,8 @@ public class ReadOnlyExternalFolderRules implements ISharedFolderRules
         ImmutableSet.Builder<UserID> builder = ImmutableSet.builder();
         for (User user : sf.getAllUsers()) {
             if (user.id().isTeamServerID()) continue;
-            if (sf.getRole(user).equals(Role.EDITOR)) {
-                builder.addAll(sf.updateACL(user, Role.VIEWER));
+            if (sf.getRoleNullable(user) == Role.EDITOR) {
+                builder.addAll(sf.setRole(user, Role.VIEWER));
                 // Notify the user about the role change
                 _sfnEmailer.sendRoleChangedNotificationEmail(sf, sharer, user, Role.EDITOR,
                         Role.VIEWER);

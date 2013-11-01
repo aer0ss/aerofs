@@ -8,6 +8,7 @@ import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.proto.Sp.PBSharedFolderState;
 
 /**
+ * This enum describes the per-user state of a shared folder.
  * See docs/design/sharing_and_migration.txt for information about shared folder states.
  *
  * Note that this enum's structure is very similar to Role, so does its test class.
@@ -19,7 +20,7 @@ public enum SharedFolderState
 
     JOINED(PBSharedFolderState.JOINED),
     PENDING(PBSharedFolderState.PENDING),
-    DELETED(PBSharedFolderState.DELETED);
+    LEFT(PBSharedFolderState.LEFT);
 
     private final PBSharedFolderState _pb;
 
@@ -38,7 +39,7 @@ public enum SharedFolderState
         switch (pb) {
         case PENDING: return PENDING;
         case JOINED: return JOINED;
-        case DELETED: return DELETED;
+        case LEFT: return LEFT;
         // Since the intput comes from external soruces, we should not throw runtime exceptions
         // which may crash the process.
         default: throw new ExBadArgs("Unknown state: " + pb.toString());

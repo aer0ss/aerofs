@@ -18,7 +18,6 @@ import com.aerofs.sp.common.SharedFolderState;
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableCollection.Builder;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -27,7 +26,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
-import java.util.List;
 
 import static com.aerofs.lib.db.DBUtil.binaryCount;
 import static com.aerofs.lib.db.DBUtil.count;
@@ -44,7 +42,6 @@ import static com.aerofs.sp.server.lib.SPSchema.C_SF_ID;
 import static com.aerofs.sp.server.lib.SPSchema.C_SF_NAME;
 import static com.aerofs.sp.server.lib.SPSchema.T_AC;
 import static com.aerofs.sp.server.lib.SPSchema.T_SF;
-import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * N.B. only User.java may refer to this class
@@ -89,83 +86,35 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
         }
     }
 
-    public void insertMemberACL(SID sid, Iterable<SubjectRolePair> pairs)
-            throws SQLException, ExAlreadyExist
-    {
-        insertACL(sid, pairs, null, SharedFolderState.JOINED);
-    }
-
-    public void insertPendingACL(SID sid, @Nonnull UserID sharer, Iterable<SubjectRolePair> pairs)
-            throws SQLException, ExAlreadyExist
-    {
-        checkNotNull(sharer);
-        insertACL(sid, pairs, sharer, SharedFolderState.PENDING);
-    }
-
-    private void insertACL(SID sid, Iterable<SubjectRolePair> pairs, @Nullable UserID sharer,
-            SharedFolderState state)
+    public void insertUser(SID sid, UserID user, Role role, SharedFolderState state,
+            @Nullable UserID sharer)
             throws SQLException, ExAlreadyExist
     {
         PreparedStatement ps = prepareStatement(DBUtil.insert(T_AC, C_AC_STORE_ID, C_AC_USER_ID,
                 C_AC_ROLE, C_AC_STATE, C_AC_SHARER));
 
-        int pairCount = 0;
-        for (SubjectRolePair pair : pairs) {
-            ps.setBytes(1, sid.getBytes());
-            ps.setString(2, pair._subject.getString());
-            ps.setInt(3, pair._role.ordinal());
-            ps.setInt(4, state.ordinal());
-            if (sharer != null) {
-                ps.setString(5, sharer.getString());
-            } else {
-                ps.setNull(5, Types.VARCHAR);
-            }
-            ps.addBatch();
-            ++pairCount;
+        ps.setBytes(1, sid.getBytes());
+        ps.setString(2, user.getString());
+        ps.setInt(3, role.ordinal());
+        ps.setInt(4, state.ordinal());
+        if (sharer != null) {
+            ps.setString(5, sharer.getString());
+        } else {
+            ps.setNull(5, Types.VARCHAR);
         }
 
+        /**
+         * We enforce a strict API distinction between ACL creation and ACL update
+         * To ensure that SP calls are not abused (i.e shareFolder should not be used to change
+         * existing permissions and updateACL should not give access to new users (as it would
+         * leave the DB in an intermediate state where users have access to a folder but did not
+         * receive an email about it)
+         */
         try {
-            // throw if any query's affected rows != 1, meaning ACL entry already exists
-            // TODO (WW) this is not a proper design. Reconsider.
-            executeBatch(ps, pairCount, 1); // update the roles for all users
-        } catch (ExBatchSizeMismatch e) {
-            /**
-             * We enforce a strict API distinction between ACL creation and ACL update
-             * To ensure that SP calls are not abused (i.e shareFolder should not be used to change
-             * existing permissions and updateACL should not give access to new users (as it would
-             * leave the DB in an intermediate state where users have access to a folder but did not
-             * receive an email about it)
-             */
-            throw new ExAlreadyExist();
-        }
-    }
-
-    private static class ExBatchSizeMismatch extends SQLException
-    {
-        private static final long serialVersionUID = 0;
-
-        ExBatchSizeMismatch(String s) { super(s); }
-    }
-
-    /**
-     * Execute a batch DB update and check for size mismatch in the result
-     * TODO (WW) this method is not a proper design. Reconsider.
-     */
-    private static void executeBatch(PreparedStatement ps, int batchSize,
-            int expectedRowsAffectedPerBatchEntry)
-            throws SQLException
-    {
-        int[] batchUpdates = ps.executeBatch();
-        if (batchUpdates.length != batchSize) {
-            throw new ExBatchSizeMismatch("mismatch in batch size exp:" + batchSize + " act:"
-                    + batchUpdates.length);
-        }
-
-        for (int rowsPerBatchEntry : batchUpdates) {
-            if (rowsPerBatchEntry != expectedRowsAffectedPerBatchEntry) {
-                throw new ExBatchSizeMismatch("unexpected number of affected rows " +
-                        "exp:" + expectedRowsAffectedPerBatchEntry + " act:" + rowsPerBatchEntry);
-            }
+            Util.verify(ps.executeUpdate() == 1);
+        } catch (SQLException e) {
+            throwOnConstraintViolation(e, "the user already exists in shared folder");
+            throw e;
         }
     }
 
@@ -179,9 +128,7 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
         ps.setBytes(2, sid.getBytes());
         ps.setString(3, userId.getString());
 
-        int rows = ps.executeUpdate();
-
-        if (rows != 1) throw new ExNotFound();
+        if (ps.executeUpdate() != 1) throw new ExNotFound();
     }
 
     // see docs/design/sharing_and_migration.txt for information about the external flag
@@ -195,9 +142,7 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
         ps.setBytes(2, sid.getBytes());
         ps.setString(3, userId.getString());
 
-        int rows = ps.executeUpdate();
-
-        if (rows != 1) throw new ExNotFound();
+        if (ps.executeUpdate() != 1) throw new ExNotFound();
     }
 
     // see docs/design/sharing_and_migration.txt for information about the external flag
@@ -217,31 +162,11 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
         }
     }
 
-    public @Nullable Role getMemberRoleNullable(SID sid, UserID userId)
+    public @Nullable Role getRoleNullable(SID sid, UserID userId)
             throws SQLException
     {
-        return getRoleNullable(sid, userId, C_AC_STATE + "=" + SharedFolderState.JOINED.ordinal());
-    }
-
-    public @Nullable Role getPendingRoleNullable(SID sid, UserID userId)
-            throws SQLException
-    {
-        return getRoleNullable(sid, userId, C_AC_STATE + "=" + SharedFolderState.PENDING.ordinal());
-    }
-
-    public @Nullable Role getMemberOrPendingRoleNullable(SID sid, UserID userId)
-            throws SQLException
-    {
-        return getRoleNullable(sid, userId, "");
-    }
-
-    private @Nullable Role getRoleNullable(SID sid, UserID userId, String filter)
-            throws SQLException
-    {
-        String pendingFilter = filter.isEmpty() ? "" : " and " + filter;
         PreparedStatement ps = prepareStatement(selectWhere(T_AC,
-                C_AC_STORE_ID + "=? and " + C_AC_USER_ID + "=?" + pendingFilter,
-                C_AC_ROLE));
+                C_AC_STORE_ID + "=? and " + C_AC_USER_ID + "=?", C_AC_ROLE));
 
         ps.setBytes(1, sid.getBytes());
         ps.setString(2, userId.getString());
@@ -254,6 +179,29 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
                 Role userRole = Role.fromOrdinal(rs.getInt(1));
                 assert !rs.next();
                 return userRole;
+            }
+        } finally {
+            rs.close();
+        }
+    }
+
+    public @Nullable SharedFolderState getStateNullable(SID sid, UserID userId)
+            throws SQLException
+    {
+        PreparedStatement ps = prepareStatement(selectWhere(T_AC,
+                C_AC_STORE_ID + "=? and " + C_AC_USER_ID + "=?", C_AC_STATE));
+
+        ps.setBytes(1, sid.getBytes());
+        ps.setString(2, userId.getString());
+
+        ResultSet rs = ps.executeQuery();
+        try {
+            if (!rs.next()) { // there is no entry in the ACL table for this storeid/userid
+                return null;
+            } else {
+                SharedFolderState state = SharedFolderState.fromOrdinal(rs.getInt(1));
+                assert !rs.next();
+                return state;
             }
         } finally {
             rs.close();
@@ -284,19 +232,13 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
         }
     }
 
-    public ImmutableCollection<UserID> getMembers(SID sid) throws SQLException
-    {
-        return getUsers(sid, SharedFolderState.JOINED);
-    }
-
-    private ImmutableCollection<UserID> getUsers(SID sid, SharedFolderState state)
-            throws SQLException
+    public ImmutableCollection<UserID> getJoinedUsers(SID sid) throws SQLException
     {
         PreparedStatement ps = prepareStatement(
-                selectWhere(T_AC, C_AC_STORE_ID + "=? and " + C_AC_STATE + "=?", C_AC_USER_ID));
+                selectWhere(T_AC, C_AC_STORE_ID + "=? and " + C_AC_STATE + "=" +
+                        SharedFolderState.JOINED.ordinal(), C_AC_USER_ID));
 
         ps.setBytes(1, sid.getBytes());
-        ps.setInt(2, state.ordinal());
 
         ResultSet rs = ps.executeQuery();
         try {
@@ -309,7 +251,7 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
     }
 
     /**
-     * @return all the users, including members, pending users, and Team Servers
+     * @return all the users including Team Servers
      */
     public ImmutableCollection<UserID> getAllUsers(SID sid)
             throws SQLException
@@ -329,29 +271,30 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
         }
     }
 
-    public List<SubjectRolePair> getMemberACL(SID sid) throws SQLException
+    public Iterable<SubjectRolePair> getJoinedUsersAndRoles(SID sid) throws SQLException
     {
         PreparedStatement ps = prepareStatement(selectWhere(T_AC,
-                C_AC_STORE_ID + "=? and " + C_AC_STATE + "=?",
-                C_AC_USER_ID, C_AC_ROLE));
+                C_AC_STORE_ID + "=? and " + C_AC_STATE + "=?", C_AC_USER_ID, C_AC_ROLE));
 
         ps.setBytes(1, sid.getBytes());
         ps.setInt(2, SharedFolderState.JOINED.ordinal());
 
         ResultSet rs = ps.executeQuery();
         try {
-            List<SubjectRolePair> srps = Lists.newArrayList();
+            ImmutableList.Builder<SubjectRolePair> builder = ImmutableList.builder();
             while (rs.next()) {
-                srps.add(new SubjectRolePair(UserID.fromInternal(rs.getString(1)),
-                        Role.fromOrdinal(rs.getInt(2))));
+                UserID userID = UserID.fromInternal(rs.getString(1));
+                Role role = Role.fromOrdinal(rs.getInt(2));
+
+                builder.add(new SubjectRolePair(userID, role));
             }
-            return srps;
+            return builder.build();
         } finally {
             rs.close();
         }
     }
 
-    public void deleteMemberOrPendingACL(SID sid, UserID userID)
+    public void delete(SID sid, UserID userID)
             throws ExNotFound, SQLException
     {
         PreparedStatement ps = prepareStatement(
@@ -362,15 +305,13 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
         if (ps.executeUpdate() != 1) throw new ExNotFound();
     }
 
-    public boolean hasOwnerMemberOrPending(SID sid)
+    public boolean hasOwner(SID sid)
             throws SQLException
     {
         PreparedStatement ps = prepareStatement(selectWhere(T_AC,
-                C_AC_STORE_ID + "=? and " + C_AC_ROLE + "=?",
-                "count(*)"));
+                C_AC_STORE_ID + "=? and " + C_AC_ROLE + "=" + Role.OWNER.ordinal(), "count(*)"));
 
         ps.setBytes(1, sid.getBytes());
-        ps.setInt(2, Role.OWNER.ordinal());
 
         ResultSet rs = ps.executeQuery();
         try {
@@ -380,22 +321,7 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
         }
     }
 
-    public void updateMemberACL(SID sid, UserID userID, Role role)
-            throws SQLException, ExNotFound
-    {
-        PreparedStatement ps = prepareStatement(updateWhere(T_AC,
-                C_AC_STORE_ID + "=? and " + C_AC_USER_ID + "=? and " + C_AC_STATE + "=?",
-                C_AC_ROLE));
-
-        ps.setInt(1, role.ordinal());
-        ps.setBytes(2, sid.getBytes());
-        ps.setString(3, userID.getString());
-        ps.setInt(4, SharedFolderState.JOINED.ordinal());
-
-        if (ps.executeUpdate() != 1) throw new ExNotFound();
-    }
-
-    public void updateACL(SID sid, UserID userID, Role role)
+    public void setRole(SID sid, UserID userID, Role role)
             throws SQLException, ExNotFound
     {
         PreparedStatement ps = prepareStatement(updateWhere(T_AC,
@@ -408,7 +334,7 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
         if (ps.executeUpdate() != 1) throw new ExNotFound();
     }
 
-    public void delete(SID sid)
+    public void destroy(SID sid)
             throws SQLException
     {
         PreparedStatement ps;

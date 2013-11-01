@@ -4,13 +4,12 @@
 
 package com.aerofs.sp.server.integration;
 
+import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.acl.Role;
-import com.aerofs.base.ex.ExAlreadyExist;
-import com.aerofs.base.ex.ExNoPerm;
-import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.lib.ex.ExNoAdminOrOwner;
 import com.aerofs.proto.Common.PBFolderInvitation;
+import com.aerofs.sp.common.SharedFolderState;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -44,23 +43,23 @@ public class TestSP_JoinSharedFolder extends AbstractSPFolderTest
     }
 
     @Test
-    public void shouldThrowExAlreadyExistWhenJoinFolderTwice() throws Exception
+    public void shouldPassWhenJoinFolderTwice() throws Exception
     {
         shareFolder(USER_1, SID_1, USER_2, Role.EDITOR);
         joinSharedFolder(USER_2, SID_1);
-        clearVerkehrPublish();
 
-        try {
-            joinSharedFolder(USER_2, SID_1);
-            fail();
-        } catch (ExAlreadyExist e) {
-            sqlTrans.handleException();
-        }
+        sqlTrans.begin();
+        assertEquals(factSharedFolder.create(SID_1).getStateNullable(USER_2),
+                SharedFolderState.JOINED);
+        sqlTrans.commit();
+
+        clearVerkehrPublish();
+        joinSharedFolder(USER_2, SID_1);
         assertVerkehrPublishIsEmpty();
     }
 
     @Test
-    public void shouldThrowExNotFoundWhenTryingToJoinNonExistingFolder() throws Exception
+    public void shouldThrowWhenTryingToJoinNonExistingFolder() throws Exception
     {
         try {
             joinSharedFolder(USER_2, SID.generate());
@@ -72,7 +71,7 @@ public class TestSP_JoinSharedFolder extends AbstractSPFolderTest
     }
 
     @Test
-    public void shouldThrowExNoPermWhenTryingToJoinWithoutBeingInvited() throws Exception
+    public void shouldThrowWhenTryingToJoinWithoutBeingInvited() throws Exception
     {
         shareFolder(USER_1, SID_1, USER_2, Role.EDITOR);
         clearVerkehrPublish();
@@ -80,7 +79,7 @@ public class TestSP_JoinSharedFolder extends AbstractSPFolderTest
         try {
             joinSharedFolder(USER_3, SID_1);
             fail();
-        } catch (ExNoPerm e) {
+        } catch (ExNotFound e) {
             sqlTrans.handleException();
         }
         assertVerkehrPublishIsEmpty();
@@ -106,31 +105,28 @@ public class TestSP_JoinSharedFolder extends AbstractSPFolderTest
 
         setSessionUser(USER_1);
 
-        // Leave first to avoid the "You have already accepted this invitation" error
-        service.leaveSharedFolder(SID_1.toPB());
+        sqlTrans.begin();
+        factSharedFolder.create(SID_1).setState(USER_1, SharedFolderState.PENDING);
+        sqlTrans.commit();
 
         try {
             service.ignoreSharedFolderInvitation(SID_1.toPB());
             fail();
-        } catch (ExNoAdminOrOwner e) {
-            sqlTrans.handleException();
-        }
+        } catch (ExNoAdminOrOwner e) {}
     }
 
     @Test
-    public void shouldThrowExNotFoundWhenTryingToIgnoreInvitationToNonExistingFolder() throws Exception
+    public void shouldThrowWhenTryingToIgnoreInvitationToNonExistingFolder() throws Exception
     {
         setSessionUser(USER_1);
         try {
             service.ignoreSharedFolderInvitation(SID_1.toPB());
             fail();
-        } catch (ExNotFound e) {
-            sqlTrans.handleException();
-        }
+        } catch (ExNotFound e) {}
     }
 
     @Test
-    public void shouldThrowExNoPermWhenTryingToIgnoreInvitationWithoutBeingInvited() throws Exception
+    public void shouldThrowWhenTryingToIgnoreInvitationWithoutBeingInvited() throws Exception
     {
         shareFolder(USER_1, SID_1, USER_2, Role.EDITOR);
 
@@ -138,13 +134,11 @@ public class TestSP_JoinSharedFolder extends AbstractSPFolderTest
         try {
             service.ignoreSharedFolderInvitation(SID_1.toPB());
             fail();
-        } catch (ExNoPerm e) {
-            sqlTrans.handleException();
-        }
+        } catch (ExNotFound e) {}
     }
 
     @Test
-    public void shouldThrowExNotFoundWhenTryingToIgnoreAlreadyAcceptedInvitation() throws Exception
+    public void shouldThrowWhenTryingToIgnoreAlreadyAcceptedInvitation() throws Exception
     {
         shareFolder(USER_1, SID_1, USER_2, Role.EDITOR);
 
@@ -152,8 +146,6 @@ public class TestSP_JoinSharedFolder extends AbstractSPFolderTest
         try {
             service.ignoreSharedFolderInvitation(SID_1.toPB());
             fail();
-        } catch (ExAlreadyExist e) {
-            sqlTrans.handleException();
-        }
+        } catch (ExNotFound e) {}
     }
 }

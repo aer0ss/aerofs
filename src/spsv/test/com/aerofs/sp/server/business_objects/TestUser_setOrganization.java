@@ -128,9 +128,9 @@ public class TestUser_setOrganization extends AbstractBusinessObjectTest
         sf1.save("haha", user);
         sf2.save("haha", user);
 
-        assertEquals(sfRoot.getMemberRoleNullable(tsUserOld), Role.EDITOR);
-        assertEquals(sf1.getMemberRoleNullable(tsUserOld), Role.EDITOR);
-        assertEquals(sf2.getMemberRoleNullable(tsUserOld), Role.EDITOR);
+        assertJoinedRole(sfRoot, tsUserOld, Role.EDITOR);
+        assertJoinedRole(sf1, tsUserOld, Role.EDITOR);
+        assertJoinedRole(sf2, tsUserOld, Role.EDITOR);
 
         // Create a new org with an admin otherwise setOrganization would fail with ExNoAdmin.
         User admin = saveUser();
@@ -139,11 +139,11 @@ public class TestUser_setOrganization extends AbstractBusinessObjectTest
 
         user.setOrganization(orgNew, AuthorizationLevel.USER);
 
-        assertNull(sfRoot.getMemberRoleNullable(tsUserOld));
-        assertNull(sf1.getMemberRoleNullable(tsUserOld));
-        assertNull(sf2.getMemberRoleNullable(tsUserOld));
-        assertEquals(sfRoot.getMemberRoleNullable(tsUserNew), Role.EDITOR);
-        assertEquals(sf1.getMemberRoleNullable(tsUserNew), Role.EDITOR);
-        assertEquals(sf2.getMemberRoleNullable(tsUserNew), Role.EDITOR);
+        assertNull(sfRoot.getRoleNullable(tsUserOld));
+        assertNull(sf1.getRoleNullable(tsUserOld));
+        assertNull(sf2.getRoleNullable(tsUserOld));
+        assertJoinedRole(sfRoot, tsUserNew, Role.EDITOR);
+        assertJoinedRole(sf1, tsUserNew, Role.EDITOR);
+        assertJoinedRole(sf2, tsUserNew, Role.EDITOR);
     }
 }

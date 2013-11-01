@@ -18,8 +18,8 @@ public class TestSharedFolderState
     {
         assertEquals(SharedFolderState.fromPB(PBSharedFolderState.PENDING), SharedFolderState.PENDING);
         assertEquals(SharedFolderState.fromPB(PBSharedFolderState.JOINED), SharedFolderState.JOINED);
-        assertEquals(SharedFolderState.fromPB(PBSharedFolderState.DELETED),
-                SharedFolderState.DELETED);
+        assertEquals(SharedFolderState.fromPB(PBSharedFolderState.LEFT),
+                SharedFolderState.LEFT);
     }
 
     @Test
@@ -27,9 +27,9 @@ public class TestSharedFolderState
             throws ExBadArgs
     {
         // DO keep these hard-coded numbers (rather than changing them to use
-        // SharedFolderState.DELETED.ordinal(), since our database saves the numbers persistently.
+        // SharedFolderState.LEFT.ordinal(), since our database saves the numbers persistently.
         // This test guarantee these persistently stored numbers matches the ordinals.
-        assertEquals(SharedFolderState.fromOrdinal(2), SharedFolderState.DELETED);
+        assertEquals(SharedFolderState.fromOrdinal(2), SharedFolderState.LEFT);
         assertEquals(SharedFolderState.fromOrdinal(1), SharedFolderState.PENDING);
         assertEquals(SharedFolderState.fromOrdinal(0), SharedFolderState.JOINED);
     }
