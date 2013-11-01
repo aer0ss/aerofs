@@ -76,7 +76,7 @@ def password_reset(request):
     # Only POST requests can modify state. See README.security.txt
     # TOOD (WW) separate POST and GET handling to different view callables
     if request.method == 'POST' and 'form.submitted' in request.params:
-        (valid_password, error) = valid_password_test(request, password)
+        (valid_password, error) = is_valid_password(request, password)
         if valid_password:
             sp = get_rpc_stub(request)
             scrypted = scrypt(password,user_id)

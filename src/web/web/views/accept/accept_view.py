@@ -1,11 +1,14 @@
-
 import logging
-from aerofs_sp.gen.common_pb2 import PBException
+
 from pyramid.httpexceptions import HTTPOk
 from pyramid.view import view_config
+
+from aerofs_sp.gen.common_pb2 import PBException
+from web.auth import is_admin
 from web.sp_util import exception2error
 from web.util import *
 from web.views.payment import stripe_util
+
 
 log = logging.getLogger(__name__)
 

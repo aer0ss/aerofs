@@ -89,7 +89,7 @@ def json_signup(request):
     last_name = request.params[URL_PARAM_LAST_NAME]
     password = request.params[URL_PARAM_PASSWORD]
 
-    (is_valid_password, invalid_message) = valid_password_test(request, password)
+    (is_valid_password, invalid_message) = is_valid_password(request, password)
     if not is_valid_password:
         return { 'error': invalid_message }
 

@@ -4,7 +4,7 @@ from aerofs_sp.gen.sp_pb2 import \
 from aerofs_common._gen.common_pb2 import EDITOR, OWNER
 from aerofs_sp.gen.sp_pb2 import ADMIN
 from ..test_base import TestBase
-from web.util import _AUTH_LEVEL_KEY
+from web.auth import _USER_ID_KEY, _AUTH_LEVEL_KEY
 
 class GetSharedFoldersTest(TestBase):
     def setUp(self):
@@ -62,7 +62,7 @@ class GetSharedFoldersTest(TestBase):
             'iDisplayLength': 10,
             'iDisplayStart': 0
         })
-        request.session['username'] = 'test@email'
+        request.session[_USER_ID_KEY] = 'test@email'
         request.session[_AUTH_LEVEL_KEY] = ADMIN
 
         response = json_get_team_shared_folders(request)
@@ -76,7 +76,7 @@ class GetSharedFoldersTest(TestBase):
             'sEcho': 'hoho',
             URL_PARAM_USER: 'some@email'
         })
-        request.session['username'] = 'test@email'
+        request.session[_USER_ID_KEY] = 'test@email'
         request.session[_AUTH_LEVEL_KEY] = ADMIN
 
         response = json_get_user_shared_folders(request)

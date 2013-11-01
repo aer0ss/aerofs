@@ -2,14 +2,15 @@
 Helper functions for AeroFS website
 """
 
-import re, logging
+import re
+import logging
+import smtplib
+from email.mime.text import MIMEText
+
 from error import error
 from aerofs_sp.connection import SyncConnectionService
 from aerofs_common.exception import ExceptionReply
-from aerofs_sp.gen.sp_pb2 import SPServiceRpcStub, ADMIN
-
-import smtplib
-from email.mime.text import MIMEText
+from aerofs_sp.gen.sp_pb2 import SPServiceRpcStub
 
 log = logging.getLogger("web")
 
@@ -35,45 +36,9 @@ def domain_sanity_check(domain):
     """
     return len(domain) > 3 and domain.find(' ') < 0 <= domain.find('.')
 
-# TODO (WW) move this three functions to security/authentication related modules
-def is_logged_in(request):
-    return 'username' in request.session
-
-# We cache the auth level in the session to avoid frequent queries to SP
-# N.B. an attacker could forge the group field in the cookie, but because
-# login_view.py:get_group() calls invalidate_auth_level_cache() everytime a
-# request is made, it is not a problem.
-_AUTH_LEVEL_KEY = 'auth_level'
-
-def get_auth_level(request):
-    """
-    Return the authorization level cached in the session. Make an SP call if the
-    value is not cached.
-    @return: aerofs_sp.gen.sp_pb2.USER or ADMIN.
-    @see invalidate_auth_level_cache()
-    """
-    if _AUTH_LEVEL_KEY not in request.session:
-        refersh_auth_level_cache(request)
-    return request.session[_AUTH_LEVEL_KEY]
-
-def is_admin(request):
-    return get_auth_level(request) == ADMIN
-
-def refersh_auth_level_cache(request):
-    """
-    Invalidate the auth level cached in the session and refetch from SP.
-    @see get_auth_level()
-    """
-    sp = get_rpc_stub(request)
-    level = int(sp.get_authorization_level().level)
-    request.session[_AUTH_LEVEL_KEY] = level
-
-def get_session_user(request):
-    return request.session['username']
-
 def _is_ascii(string):
     """
-    Checks if a given string is ascii (used by valid_password_test)
+    Checks if a given string is ascii (used by is_valid_password)
     """
 
     # http://stackoverflow.com/a/196391 (plus first comment) explains how to
@@ -85,7 +50,7 @@ def _is_ascii(string):
     else:
         return True
 
-def valid_password_test(request, password):
+def is_valid_password(request, password):
     """
     Returns a tuple of the format (password_is_valid, error_msg) where
     password_is_valid is a boolean set True if the password is valid or False

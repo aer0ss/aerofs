@@ -1,10 +1,11 @@
-import logging, urllib
+import logging
 from cgi import escape
-from pyramid.httpexceptions import HTTPOk, HTTPMovedPermanently
+from pyramid.httpexceptions import HTTPOk
 from pyramid.view import view_config
 from pyramid.renderers import render
 from aerofs_sp.gen.common_pb2 import PBException
 from web import util
+from web.auth import get_session_user
 from web.sp_util import exception2error
 from web.util import *
 from web.views.payment import stripe_util

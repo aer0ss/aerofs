@@ -3,8 +3,8 @@ from pyramid.config import Configurator
 from pyramid.authentication import SessionAuthenticationPolicy
 from pyramid.authorization import ACLAuthorizationPolicy
 from pyramid_beaker import session_factory_from_settings
-from views.login.login_view import get_group
 from root_factory import RootFactory
+from web.auth import get_group
 from web.util import is_private_deployment, is_configuration_initialized
 from pyramid.request import Request
 import views

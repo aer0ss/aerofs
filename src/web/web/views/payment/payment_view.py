@@ -1,9 +1,10 @@
 import logging
 
 from pyramid.view import view_config
-from pyramid.httpexceptions import HTTPBadRequest, HTTPOk
+from pyramid.httpexceptions import HTTPBadRequest
 
 from stripe import CardError
+from web.auth import get_session_user
 
 from web.util import *
 from web.error import error

@@ -4,7 +4,7 @@
 <%inherit file="base_layout.mako"/>
 
 <%!
-    from web.util import is_admin
+    from web.auth import is_admin, get_session_user
 %>
 
 <div class="row">
@@ -28,7 +28,7 @@
     <li><a href="http://support.aerofs.com" target="_blank">Support</a></li>
     <li><a href="http://blog.aerofs.com" target="_blank">Blog</a></li>
     <li class="pull-right"><a href="${request.route_path('logout')}">Sign out</a></li>
-    <li class="pull-right disabled"><a href="#">${request.session['username']}</a></li>
+    <li class="pull-right disabled"><a href="#">${get_session_user(request)}</a></li>
     % if is_admin(request):
         ${render_download_links(True)}
     % else:

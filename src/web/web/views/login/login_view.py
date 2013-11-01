@@ -1,14 +1,15 @@
 import logging
-from aerofs_sp.gen.common_pb2 import PBException
+
 from pyramid import url
 from pyramid.httpexceptions import HTTPFound
 from pyramid.security import remember, forget, NO_PERMISSION_REQUIRED
 from pyramid.view import view_config
 
+from aerofs_sp.gen.common_pb2 import PBException
 from aerofs_sp.gen.sp_pb2 import SPServiceRpcStub
 from aerofs_sp.connection import SyncConnectionService
 from aerofs_sp.scrypt import scrypt
-
+from web.auth import set_session_user
 from web.util import *
 
 # URL param keys.
@@ -22,11 +23,6 @@ URL_PARAM_REMEMBER_ME = 'remember_me'
 URL_PARAM_NEXT = 'next'
 
 log = logging.getLogger(__name__)
-
-def get_group(userid, request):
-    # Always fetch the latest authorization level from SP
-    refersh_auth_level_cache(request)
-    return [get_auth_level(request)]
 
 def _get_next_url(request):
     """
@@ -171,9 +167,10 @@ def _log_in_user(request, login, creds, stay_signed_in):
         log.debug("Extending session")
         sp.extend_session()
 
+    # TOOD (WW) consolidate how we save authorization data in the session
     request.session['sp_cookies'] = con._session.cookies
-    request.session['username'] = login
     request.session['team_id'] = sp.get_organization_id().org_id
+    set_session_user(request, login)
 
     return remember(request, login)
 

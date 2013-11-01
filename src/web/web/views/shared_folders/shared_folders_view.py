@@ -4,18 +4,23 @@ Basic unit tests for each view so that we can catch stupid errors such as
 missing import statements.
 """
 
-import logging, base64, json
+import logging
+import base64
+import json
 from cgi import escape
+
 from pyramid.view import view_config
+
 import aerofs_sp.gen.common_pb2 as common
+from web.auth import get_session_user, is_admin
 from web.sp_util import exception2error
 from web.util import *
 from ..team_members.team_members_view import URL_PARAM_USER, URL_PARAM_FULL_NAME
 from web import util
 from aerofs_sp.gen.common_pb2 import PBException
-
 from web.views.payment.stripe_util\
     import URL_PARAM_STRIPE_CARD_TOKEN, STRIPE_PUBLISHABLE_KEY
+
 
 log = logging.getLogger("web")
 

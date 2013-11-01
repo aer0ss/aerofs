@@ -1,5 +1,4 @@
 import logging
-from aerofs_sp.gen.common_pb2 import PBException
 from pyramid import url
 from pyramid.httpexceptions import HTTPFound
 from pyramid.security import remember, NO_PERMISSION_REQUIRED
@@ -9,6 +8,7 @@ from aerofs_sp.gen.sp_pb2 import SPServiceRpcStub
 from aerofs_sp.connection import SyncConnectionService
 
 from login_view import resolve_next_url
+from web.auth import set_session_user
 from web.util import *
 
 log = logging.getLogger(__name__)
@@ -59,7 +59,6 @@ def _get_sp_auth(request, stay_signed_in):
             " if the problem persists.", {'support_email': support_email }))
         raise ExceptionReply('Authentication error')
 
-
     login = attrs.userId
     log.debug('SP auth returned ' + login)
 
@@ -67,9 +66,10 @@ def _get_sp_auth(request, stay_signed_in):
         log.debug("Extending session")
         sp.extend_session()
 
+    # TOOD (WW) consolidate how we save authorization data in the session
     request.session['sp_cookies'] = con._session.cookies
-    request.session['username'] = login
     request.session['team_id'] = sp.get_organization_id().org_id
+    set_session_user(request, login)
 
     return remember(request, login)
 
