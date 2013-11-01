@@ -149,7 +149,7 @@
             ## N.B. updates to the return value will be propagated back to the
             ## Options link and persists throughout the link's lifecycle.
             function modalUserAndRoleList() {
-                return $link.data('${link_data_user_and_role_list}');
+                return $link.data('${link_data_user_role_and_state_list}');
             }
 
             function modalSID() {
@@ -216,9 +216,9 @@
                 var urs = modalUserAndRoleList();
                 for (var email in urs) {
                     var ur = urs[email];
-                    var role = ur.${user_and_role_role_key};
-                    var name = ur.${user_and_role_first_name_key} + " " +
-                            ur.${user_and_role_last_name_key};
+                    var role = ur.${user_role_and_state_role_key};
+                    var name = ur.${user_role_and_state_first_name_key} + " " +
+                            ur.${user_role_and_state_last_name_key};
 
                     var actions, roleStr;
                     if (email === '${session_user}') {
@@ -360,7 +360,7 @@
                     }
                 ).done(function() {
                     modalUserAndRoleList()[email]
-                            .${user_and_role_role_key} = role;
+                            .${user_role_and_state_role_key} = role;
                     refreshModal();
                 })
                 .fail(function(xhr) {

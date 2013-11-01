@@ -73,7 +73,7 @@ import com.aerofs.proto.Sp.OpenIdSessionNonces;
 import com.aerofs.proto.Sp.PBAuthorizationLevel;
 import com.aerofs.proto.Sp.PBSharedFolder;
 import com.aerofs.proto.Sp.PBSharedFolder.Builder;
-import com.aerofs.proto.Sp.PBSharedFolder.PBUserAndRole;
+import com.aerofs.proto.Sp.PBSharedFolder.PBUserRoleAndState;
 import com.aerofs.proto.Sp.PBStripeData;
 import com.aerofs.proto.Sp.PBUser;
 import com.aerofs.proto.Sp.RecertifyDeviceReply;
@@ -98,6 +98,9 @@ import com.aerofs.sp.server.email.DeviceRegistrationEmailer;
 import com.aerofs.sp.server.email.InvitationEmailer;
 import com.aerofs.sp.server.email.RequestToSignUpEmailer;
 import com.aerofs.sp.server.email.SharedFolderNotificationEmailer;
+import com.aerofs.sp.server.lib.SharedFolder.UserRoleAndState;
+import com.aerofs.sp.server.lib.user.ISessionUser;
+import com.aerofs.sp.server.shared_folder_rules.ISharedFolderRules;
 import com.aerofs.sp.server.lib.EmailSubscriptionDatabase;
 import com.aerofs.sp.server.lib.SPDatabase;
 import com.aerofs.sp.server.lib.SPParam;
@@ -133,6 +136,7 @@ import org.apache.commons.lang.StringUtils;
 import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 import org.slf4j.Logger;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.sql.SQLException;
@@ -599,6 +603,8 @@ public class SPService implements ISPService
     }
 
     /**
+     * populate the builder with shared folder information including members and pending members.
+     *
      * @param sessionOrg the organization of the session user
      */
     private List<PBSharedFolder> sharedFolders2pb(Collection<SharedFolder> sfs,
@@ -620,8 +626,9 @@ public class SPService implements ISPService
                     .setOwnedByTeam(false);
 
             // fill in folder members
-            for (Entry<User, Role> en : sf.getJoinedUsersAndRoles().entrySet()) {
-                sharedFolderMember2pb(sessionOrg, user2nameCache, builder, en.getKey(), en.getValue());
+            for (UserRoleAndState entry : sf.getAllUsersRolesAndStates()) {
+                sharedFolderMember2pb(sessionOrg, user2nameCache, builder,
+                        entry._user, entry._role, entry._state);
             }
 
             pbs.add(builder.build());
@@ -629,27 +636,49 @@ public class SPService implements ISPService
         return pbs;
     }
 
-    private void sharedFolderMember2pb(Organization sessionOrg,
-            Map<User, FullName> user2nameCache, Builder builder, User subject, Role role)
+    private void sharedFolderMember2pb(Organization sessionOrg, Map<User, FullName> user2nameCache,
+            Builder builder, User user, Role role, SharedFolderState state)
             throws ExNotFound, SQLException
     {
         // don't add team server to the list.
-        if (subject.id().isTeamServerID()) return;
+        if (user.id().isTeamServerID()) return;
 
         // the folder is owned by the session organization if an owner of the folder belongs to
         // the org.
-        if (role.covers(Role.OWNER) && subject.belongsTo(sessionOrg)) builder.setOwnedByTeam(true);
-
-        // retrieve the full name
-        FullName fn = user2nameCache.get(subject);
-        if (fn == null) {
-            fn = subject.getFullName();
-            user2nameCache.put(subject, fn);
+        if (role.covers(Role.OWNER) && user.exists() && user.belongsTo(sessionOrg)) {
+            builder.setOwnedByTeam(true);
         }
 
-        builder.addUserAndRole(PBUserAndRole.newBuilder()
-                .setRole(role.toPB())
-                .setUser(user2pb(subject, fn)));
+        builder.addUserRoleAndState(PBUserRoleAndState.newBuilder()
+                        .setRole(role.toPB())
+                        .setState(state.toPB())
+                        .setUser(user2pb(user, getUserFullName(user, user2nameCache))));
+    }
+
+    /**
+     * Caches and returns the user's fullname.
+     *
+     * @return the user's fullname, either from cache or from db, or Fullname("", "") if the
+     *   user does not exist.
+     */
+    private @Nonnull FullName getUserFullName(User user, Map<User, FullName> user2nameCache)
+            throws SQLException
+    {
+        FullName fullname = user2nameCache.get(user);
+
+        if (fullname == null) {
+            try {
+                fullname = user.getFullName();
+            } catch (ExNotFound e) {
+                // the user doesn't exist, which is realistic when we try to resolve pending
+                //   members of a shared folder
+                fullname = new FullName("", "");
+            }
+
+            user2nameCache.put(user, fullname);
+        }
+
+        return fullname;
     }
 
     private static PBUser.Builder user2pb(User user)

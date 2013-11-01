@@ -294,6 +294,32 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
         }
     }
 
+    public Iterable<UserIDRoleAndState> getAllUsersRolesAndStates(SID sid)
+            throws SQLException
+    {
+        PreparedStatement ps = prepareStatement(selectWhere(T_AC, C_AC_STORE_ID + "=?",
+                C_AC_USER_ID, C_AC_ROLE, C_AC_STATE));
+
+        ps.setBytes(1, sid.getBytes());
+
+        ResultSet rs = ps.executeQuery();
+        try {
+            ImmutableList.Builder<UserIDRoleAndState> builder =
+                    ImmutableList.builder();
+
+            while (rs.next()) {
+                UserID userID = UserID.fromInternal(rs.getString(1));
+                Role role = Role.fromOrdinal(rs.getInt(2));
+                SharedFolderState state = SharedFolderState.fromOrdinal(rs.getInt(3));
+
+                builder.add(new UserIDRoleAndState(userID, role, state));
+            }
+            return builder.build();
+        } finally {
+            rs.close();
+        }
+    }
+
     public void delete(SID sid, UserID userID)
             throws ExNotFound, SQLException
     {
@@ -372,6 +398,38 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
             throw new ExNotFound("shared folder " + sid);
         } else {
             return rs;
+        }
+    }
+
+    // the only purpose of this class is to carry data from getAllUsersRolesAndStates()
+    public static class UserIDRoleAndState
+    {
+        @Nonnull public final UserID _userID;
+        @Nonnull public final Role _role;
+        @Nonnull public final SharedFolderState _state;
+
+        public UserIDRoleAndState(@Nonnull UserID userID, @Nonnull Role role,
+                @Nonnull SharedFolderState state)
+        {
+            _userID = userID;
+            _role = role;
+            _state = state;
+        }
+
+        @Override
+        public boolean equals(Object that)
+        {
+            return this == that ||
+                    (that instanceof UserIDRoleAndState &&
+                            _userID.equals(((UserIDRoleAndState)that)._userID) &&
+                            _role.equals(((UserIDRoleAndState)that)._role) &&
+                            _state.equals(((UserIDRoleAndState)that)._state));
+        }
+
+        @Override
+        public int hashCode()
+        {
+            return _userID.hashCode() ^ _role.hashCode() ^ _state.hashCode();
         }
     }
 }

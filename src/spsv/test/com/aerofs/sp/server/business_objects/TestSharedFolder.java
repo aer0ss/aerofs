@@ -12,8 +12,11 @@ import com.aerofs.base.id.SID;
 import com.aerofs.lib.ex.ExNoAdminOrOwner;
 import com.aerofs.sp.common.SharedFolderState;
 import com.aerofs.sp.server.lib.SharedFolder;
+import com.aerofs.sp.server.lib.SharedFolder.UserRoleAndState;
+import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.aerofs.sp.server.lib.user.User;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import org.junit.Test;
 
@@ -99,7 +102,7 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
     }
 
     @Test
-    public void shouldAllowTeamServerIfOneMemberOfSameOrgIsOWNER() throws Exception
+    public void shouldAllowTeamServerIfOneMemberOfSameOrgIsOwner() throws Exception
     {
         User owner = saveUser();
         SharedFolder sf = saveSharedFolder(owner);
@@ -123,7 +126,7 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
     }
 
     @Test
-    public void shouldRejectTeamServerIfNoJoinedUsersOfSameOrgIsOWNER() throws Exception
+    public void shouldRejectTeamServerIfNoJoinedUsersOfSameOrgIsOwner() throws Exception
     {
         User owner = saveUser();
         SharedFolder sf = saveSharedFolder(owner);
@@ -227,7 +230,7 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
     }
 
     @Test
-    public void setStateAwayFromJoined_shouldNotRemoveTeamServerIfOWNER()
+    public void setStateAwayFromJoined_shouldNotRemoveTeamServerIfOwner()
             throws Exception
     {
         User user = saveUser();
@@ -415,7 +418,7 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
     }
 
     @Test
-    public void removeUser_shouldNotRemoveTeamServerIfOWNER()
+    public void removeUser_shouldNotRemoveTeamServerIfOwner()
             throws Exception
     {
         User user = saveUser();
@@ -505,7 +508,7 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
     }
 
     @Test
-    public void setRole_shouldThrowIfNoUserNotFound()
+    public void setRole_shouldThrowIfUserNotFound()
             throws Exception
     {
         SharedFolder sf = saveUserAndSharedFolder();
@@ -558,6 +561,65 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
         assertEquals(sf.setState(user, SharedFolderState.LEFT).size(), 0);
 
         assertEquals(sf.setRole(user, Role.VIEWER).size(), 0);
+    }
+
+    @Test
+    public void getAllUsersRolesAndStates_shouldListAllUsersRegardlessOfState()
+            throws Exception
+    {
+        User owner = saveUser();
+        User pendingMember = saveUser();
+        User joinedMember = saveUser();
+        User leftMember = saveUser();
+
+        Organization org = owner.getOrganization();
+        pendingMember.setOrganization(org, AuthorizationLevel.USER);
+        joinedMember.setOrganization(org, AuthorizationLevel.USER);
+        leftMember.setOrganization(org, AuthorizationLevel.USER);
+
+        SharedFolder folder = saveSharedFolder(owner);
+        folder.addPendingUser(pendingMember, Role.EDITOR, owner);
+        folder.addPendingUser(joinedMember, Role.EDITOR, owner);
+        folder.addPendingUser(leftMember, Role.EDITOR, owner);
+
+        folder.setState(joinedMember, SharedFolderState.JOINED);
+        folder.setState(leftMember, SharedFolderState.JOINED);
+        folder.setState(leftMember, SharedFolderState.LEFT);
+
+        ImmutableList<UserRoleAndState> expected =
+                ImmutableList.of(
+                        new UserRoleAndState(org.getTeamServerUser(),
+                                Role.EDITOR, SharedFolderState.JOINED),
+                        new UserRoleAndState(owner, Role.OWNER, SharedFolderState.JOINED),
+                        new UserRoleAndState(pendingMember, Role.EDITOR, SharedFolderState.PENDING),
+                        new UserRoleAndState(joinedMember, Role.EDITOR, SharedFolderState.JOINED),
+                        new UserRoleAndState(leftMember, Role.EDITOR, SharedFolderState.LEFT)
+                );
+
+        assertEquals(expected, folder.getAllUsersRolesAndStates());
+    }
+
+    @Test
+    public void getAllUsersRolesAndStates_shouldIncludePendingAndNonExistingUsers()
+            throws Exception
+    {
+        User owner = saveUser();
+        User nonExistingUser = newUser();
+
+        SharedFolder folder = saveSharedFolder(owner);
+        folder.addPendingUser(nonExistingUser, Role.EDITOR, owner);
+
+        ImmutableList<UserRoleAndState> expected =
+                ImmutableList.of(
+                        new UserRoleAndState(owner.getOrganization().getTeamServerUser(),
+                                Role.EDITOR, SharedFolderState.JOINED),
+                        new UserRoleAndState(owner, Role.OWNER, SharedFolderState.JOINED),
+                        new UserRoleAndState(nonExistingUser,
+                                Role.EDITOR, SharedFolderState.PENDING)
+                );
+
+        assertFalse(nonExistingUser.exists());
+        assertEquals(expected, folder.getAllUsersRolesAndStates());
     }
 
     private User getTeamServerUser(User user)

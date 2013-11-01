@@ -1,5 +1,5 @@
 import unittest
-from aerofs_sp.gen.sp_pb2 import PBSharedFolder
+from aerofs_sp.gen.sp_pb2 import PBSharedFolder, JOINED
 from aerofs_common._gen.common_pb2 import OWNER
 
 BASE_USER_ID = 'hahaha@ahaha'
@@ -25,16 +25,17 @@ class RenderSharedFolderUsersTest(unittest.TestCase):
             session_user)
 
     def _compose_user_list(self, first_names):
-        user_and_role_list = []
+        user_role_and_state_list = []
         for i in range(len(first_names)):
-            user_and_role = PBSharedFolder.PBUserAndRole()
-            user_and_role.user.user_email = self._get_user_id(i)
-            user_and_role.user.first_name = first_names[i]
-            user_and_role.user.last_name = ""
-            user_and_role.role = OWNER
-            user_and_role_list.append(user_and_role)
+            user_role_and_state = PBSharedFolder.PBUserRoleAndState()
+            user_role_and_state.user.user_email = self._get_user_id(i)
+            user_role_and_state.user.first_name = first_names[i]
+            user_role_and_state.user.last_name = ""
+            user_role_and_state.role = OWNER
+            user_role_and_state.state = JOINED
+            user_role_and_state_list.append(user_role_and_state)
 
-        return user_and_role_list
+        return user_role_and_state_list
 
     def _get_user_id(self, index):
         return BASE_USER_ID + str(index)

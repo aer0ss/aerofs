@@ -9,7 +9,7 @@ import com.aerofs.base.id.UserID;
 import com.aerofs.base.acl.Role;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.proto.Sp.PBSharedFolder;
-import com.aerofs.proto.Sp.PBSharedFolder.PBUserAndRole;
+import com.aerofs.proto.Sp.PBSharedFolder.PBUserRoleAndState;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.aerofs.sp.server.lib.user.User;
 import com.google.common.collect.Lists;
@@ -80,8 +80,8 @@ public class TestSP_ListUserShareFolders extends AbstractSPFolderTest
         createSharedFolders();
 
         for (PBSharedFolder sf : queryCurrentAndOtherUsers()) {
-            for (PBUserAndRole ur : sf.getUserAndRoleList()) {
-                assertFalse(UserID.fromInternal(ur.getUser().getUserEmail()).isTeamServerID());
+            for (PBUserRoleAndState urs : sf.getUserRoleAndStateList()) {
+                assertFalse(UserID.fromInternal(urs.getUser().getUserEmail()).isTeamServerID());
             }
         }
     }
@@ -126,8 +126,8 @@ public class TestSP_ListUserShareFolders extends AbstractSPFolderTest
 
         for (PBSharedFolder sf : sfs) {
             boolean hasUser = false;
-            for (PBUserAndRole ur : sf.getUserAndRoleList()) {
-                if (UserID.fromInternal(ur.getUser().getUserEmail()).equals(user.id())) {
+            for (PBUserRoleAndState urs : sf.getUserRoleAndStateList()) {
+                if (UserID.fromInternal(urs.getUser().getUserEmail()).equals(user.id())) {
                     hasUser = true;
                 }
             }
@@ -139,7 +139,6 @@ public class TestSP_ListUserShareFolders extends AbstractSPFolderTest
             throws Exception
     {
         shareAndJoinFolder(USER_1, SID_1, USER_2, Role.EDITOR);
-
         shareAndJoinFolder(USER_2, SID_2, USER_3, Role.EDITOR);
 
         setSessionUser(USER_1);

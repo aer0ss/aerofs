@@ -14,6 +14,7 @@ import com.aerofs.base.id.UserID;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.ex.ExNoAdminOrOwner;
 import com.aerofs.sp.common.SharedFolderState;
+import com.aerofs.sp.server.lib.SharedFolderDatabase.UserIDRoleAndState;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.user.User;
 import com.google.common.collect.ImmutableCollection;
@@ -27,6 +28,7 @@ import java.sql.SQLException;
 import static com.aerofs.sp.common.SharedFolderState.*;
 import com.google.common.collect.ImmutableList.Builder;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 public class SharedFolder
@@ -315,11 +317,21 @@ public class SharedFolder
         return builder.build();
     }
 
+    public Iterable<UserRoleAndState> getAllUsersRolesAndStates() throws SQLException
+    {
+        ImmutableList.Builder<UserRoleAndState> builder = ImmutableList.builder();
+        for (UserIDRoleAndState entry : _f._db.getAllUsersRolesAndStates(_sid)) {
+            builder.add(new UserRoleAndState(_f._factUser.create(entry._userID), entry._role,
+                    entry._state));
+        }
+        return builder.build();
+    }
+
     public ImmutableCollection<User> getJoinedUsers()
             throws SQLException
     {
         ImmutableList.Builder<User> builder = ImmutableList.builder();
-        for (UserID userID : _f._db.getJoinedUsers(_sid)) builder.add(_f._factUser.create(userID));
+        for (UserID userID : getJoinedUserIDs()) builder.add(_f._factUser.create(userID));
         return builder.build();
     }
 
@@ -373,7 +385,7 @@ public class SharedFolder
     }
 
     /**
-     * A user has privileges to chagne ACLs if and only if:
+     * A user has privileges to change ACLs if and only if:
      *  1. the user is the owner of the folder, or
      *  2. the user is the team admin of at least one non-pending owner of the folder.
      */
@@ -414,5 +426,36 @@ public class SharedFolder
     {
         UserID sharer = _f._db.getSharerNullable(_sid, user.id());
         return sharer == null ? null : _f._factUser.create(sharer);
+    }
+
+    // the only purpose of this class is to hold the result of getAllUsersRolesAndStates()
+    public static class UserRoleAndState
+    {
+        @Nonnull public final User _user;
+        @Nonnull public final Role _role;
+        @Nonnull public final SharedFolderState _state;
+
+        public UserRoleAndState(User user, Role role, SharedFolderState state)
+        {
+            _user = user;
+            _role = role;
+            _state = state;
+        }
+
+        @Override
+        public boolean equals(Object that)
+        {
+            return this == that ||
+                    (that instanceof UserRoleAndState &&
+                            _user.equals(((UserRoleAndState)that)._user) &&
+                            _role.equals(((UserRoleAndState)that)._role) &&
+                            _state.equals(((UserRoleAndState)that)._state));
+        }
+
+        @Override
+        public int hashCode()
+        {
+            return _user.hashCode() ^ _role.hashCode() ^ _state.hashCode();
+        }
     }
 }

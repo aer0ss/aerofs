@@ -2,7 +2,7 @@ from mock import Mock
 from aerofs_sp.gen.sp_pb2 import \
     ListOrganizationSharedFoldersReply, ListUserSharedFoldersReply
 from aerofs_common._gen.common_pb2 import EDITOR, OWNER
-from aerofs_sp.gen.sp_pb2 import ADMIN
+from aerofs_sp.gen.sp_pb2 import ADMIN, JOINED
 from ..test_base import TestBase
 from web.auth import _USER_ID_KEY, _AUTH_LEVEL_KEY
 
@@ -13,7 +13,7 @@ class GetSharedFoldersTest(TestBase):
         self._mock_list_user_shared_folders()
 
         # TestBase.setup_common() mocks global methods. Therefore, reload the
-        # module under test to reset its referecnes to these methods, in case
+        # module under test to reset its references to these methods, in case
         # the module has been loaded before by other test cases.
         # TODO (WW) a better way to do it?
         from web.views.shared_folders import shared_folders_view
@@ -41,17 +41,19 @@ class GetSharedFoldersTest(TestBase):
         folder.store_id = '0'
         folder.name = 'whatever'
 
-        ur = folder.user_and_role.add()
-        ur.role = OWNER
-        ur.user.user_email = 'test1@aerofs.com'
-        ur.user.first_name = 'first'
-        ur.user.last_name = 'last'
+        urs = folder.user_role_and_state.add()
+        urs.role = OWNER
+        urs.state = JOINED
+        urs.user.user_email = 'test1@aerofs.com'
+        urs.user.first_name = 'first'
+        urs.user.last_name = 'last'
 
-        ur = folder.user_and_role.add()
-        ur.role = EDITOR
-        ur.user.user_email = 'test2@aerofs.com'
-        ur.user.first_name = 'first'
-        ur.user.last_name = 'last'
+        urs = folder.user_role_and_state.add()
+        urs.role = EDITOR
+        urs.state = JOINED
+        urs.user.user_email = 'test2@aerofs.com'
+        urs.user.first_name = 'first'
+        urs.user.last_name = 'last'
 
     def test_get_team_shared_folders(self):
         from web.views.shared_folders.shared_folders_view import \

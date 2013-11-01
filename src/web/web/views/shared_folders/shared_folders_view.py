@@ -18,6 +18,8 @@ from web.util import *
 from ..team_members.team_members_view import URL_PARAM_USER, URL_PARAM_FULL_NAME
 from web import util
 from aerofs_sp.gen.common_pb2 import PBException
+from aerofs_sp.gen.sp_pb2 import JOINED
+
 from web.views.payment.stripe_util\
     import URL_PARAM_STRIPE_CARD_TOKEN, STRIPE_PUBLISHABLE_KEY
 
@@ -39,12 +41,12 @@ _OPEN_MODAL_CLASS = 'open-modal'
 _LINK_DATA_SID = 's'
 _LINK_DATA_NAME = 'n'
 _LINK_DATA_PRIVILEGED = 'p'
-_LINK_DATA_USER_AND_ROLE_LIST = 'r'
+_LINK_DATA_USER_ROLE_AND_STATE_LIST = 'r'
 
 # JSON keys
-_USER_AND_ROLE_FIRST_NAME_KEY = 'first_name'
-_USER_AND_ROLE_LAST_NAME_KEY = 'last_name'
-_USER_AND_ROLE_ROLE_KEY = 'role'
+_USER_ROLE_AND_STATE_FIRST_NAME_KEY = 'first_name'
+_USER_ROLE_AND_STATE_LAST_NAME_KEY = 'last_name'
+_USER_ROLE_AND_STATE_ROLE_KEY = 'role'
 
 class DatatablesPaginate:
     YES, NO = range(2)
@@ -121,10 +123,10 @@ def _shared_folders(datatables_paginate, request,
         'link_data_sid': _LINK_DATA_SID,
         'link_data_name': _LINK_DATA_NAME,
         'link_data_privileged': _LINK_DATA_PRIVILEGED,
-        'link_data_user_and_role_list': _LINK_DATA_USER_AND_ROLE_LIST,
-        'user_and_role_first_name_key': _USER_AND_ROLE_FIRST_NAME_KEY,
-        'user_and_role_last_name_key': _USER_AND_ROLE_LAST_NAME_KEY,
-        'user_and_role_role_key': _USER_AND_ROLE_ROLE_KEY,
+        'link_data_user_role_and_state_list': _LINK_DATA_USER_ROLE_AND_STATE_LIST,
+        'user_role_and_state_first_name_key': _USER_ROLE_AND_STATE_FIRST_NAME_KEY,
+        'user_role_and_state_last_name_key': _USER_ROLE_AND_STATE_LAST_NAME_KEY,
+        'user_role_and_state_role_key': _USER_ROLE_AND_STATE_ROLE_KEY,
         'stripe_publishable_key': STRIPE_PUBLISHABLE_KEY,
         'url_param_stripe_card_token': URL_PARAM_STRIPE_CARD_TOKEN,
         'owner_role': common.OWNER,
@@ -166,9 +168,9 @@ def _session_user_privileger(folder, session_user):
     return _get_role(folder, session_user) == common.OWNER
 
 def _get_role(folder, user):
-    for user_and_role in folder.user_and_role:
-        if user_and_role.user.user_email == user:
-            return user_and_role.role
+    for user_role_and_state in folder.user_role_and_state:
+        if user_role_and_state.user.user_email == user:
+            return user_role_and_state.role
 
 
 @view_config(
@@ -218,10 +220,16 @@ def _sp_reply2datatables(folders, privileger, total_count, echo, session_user):
     """
     data = []
     for folder in folders:
+        # a workaround to filter folder.user_role_and_state to leave only joined users
+        # using del & extend because setting folder.user_role_and_state doesn't work
+        # due to Protobuf magic
+        filtered_urss = filter(lambda urs: urs.state == JOINED, folder.user_role_and_state)
+        del folder.user_role_and_state[:]
+        folder.user_role_and_state.extend(filtered_urss)
+
         data.append({
             'name': escape(folder.name),
-            'users': _render_shared_folder_users(folder.user_and_role,
-                session_user),
+            'users': _render_shared_folder_users(folder.user_role_and_state, session_user),
             'options': _render_shared_folder_options_link(folder, session_user,
                 privileger(folder, session_user)),
         })
@@ -234,14 +242,14 @@ def _sp_reply2datatables(folders, privileger, total_count, echo, session_user):
     }
 
 
-def _render_shared_folder_users(user_and_role_list, session_user):
+def _render_shared_folder_users(user_role_and_state_list, session_user):
 
     # Place 'me' to the end of the list so that if the list is too long we show
     # "Foo, Bar, and 10 others" instead of "Foo, me, and 10 others"
     #
     # Also, it's polite to place "me" last.
     #
-    reordered_list = list(user_and_role_list)
+    reordered_list = list(user_role_and_state_list)
     for i in range(len(reordered_list)):
         if reordered_list[i].user.user_email == session_user:
             myself = reordered_list.pop(i)
@@ -280,7 +288,7 @@ def _render_shared_folder_options_link(folder, session_user, privileged):
     @param privileged whether the session user has the privilege to modify ACL
     """
     id = _encode_store_id(folder.store_id)
-    urs = to_json(folder.user_and_role, session_user)
+    urs = to_json(folder.user_role_and_state, session_user)
     escaped_folder_name = escape(folder.name)
 
     # The data tags must be consistent with the ones in loadModalData() in
@@ -295,39 +303,39 @@ def _render_shared_folder_options_link(folder, session_user, privileged):
             _LINK_DATA_SID, escape(id),
             _LINK_DATA_PRIVILEGED, 1 if privileged else 0,
             _LINK_DATA_NAME, escaped_folder_name,
-            _LINK_DATA_USER_AND_ROLE_LIST, escape(urs).replace('"', '&#34;'),
+            _LINK_DATA_USER_ROLE_AND_STATE_LIST, escape(urs).replace('"', '&#34;'),
             "Manage Folder" if privileged else "View Members")
 
 
-def to_json(user_and_role_list, session_user):
+def to_json(user_role_and_state_list, session_user):
 
     # json.dumps() can't convert the object so we have to do it manually.
-    urs = {}
-    for ur in user_and_role_list:
-        urs[ur.user.user_email] = {
-            _USER_AND_ROLE_FIRST_NAME_KEY:  _get_first_name(ur, session_user),
-            _USER_AND_ROLE_LAST_NAME_KEY:   _get_last_name(ur, session_user),
-            _USER_AND_ROLE_ROLE_KEY:        ur.role
+    urss = {}
+    for urs in user_role_and_state_list:
+        urss[urs.user.user_email] = {
+            _USER_ROLE_AND_STATE_FIRST_NAME_KEY:  _get_first_name(urs, session_user),
+            _USER_ROLE_AND_STATE_LAST_NAME_KEY:   _get_last_name(urs, session_user),
+            _USER_ROLE_AND_STATE_ROLE_KEY:        urs.role
         }
 
     # dump to a compact-format JSON string
-    return json.dumps(urs, separators=(',',':'))
+    return json.dumps(urss, separators=(',',':'))
 
 
-def _get_first_name(user_and_role, session_user):
+def _get_first_name(user_role_and_state, session_user):
     """
-    @param user_and_role a PBUserAndRole object
+    @param user_role_and_state a PBUserAndRole object
     """
-    user = user_and_role.user
+    user = user_role_and_state.user
     return "me" if user.user_email == session_user else user.first_name
 
 
-def _get_last_name(user_and_role, session_user):
+def _get_last_name(user_role_and_state, session_user):
     """
     otherwise.
-    @param user_and_role a PBUserAndRole object
+    @param user_role_and_state a PBUserAndRole object
     """
-    user = user_and_role.user
+    user = user_role_and_state.user
     return "" if user.user_email == session_user else user.last_name
 
 
