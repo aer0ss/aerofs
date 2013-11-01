@@ -70,8 +70,8 @@
                 </div>
             </div>
 
-            <label for="foo" class="checkbox">
-                <input name="foo" type="checkbox" checked disabled>Enable TLS encryption <small>(plaintext STMP not supported at this moment)</small>
+            <label for="email-sender-public-enable-tls" class="checkbox">
+                <input id="email-sender-public-enable-tls" name="email-sender-public-enable-tls" type="checkbox" checked>Use STARTTLS encryption
             </label>
         </div>
 
@@ -186,9 +186,7 @@
         var remote = $(":input[name=email-server]:checked", '#emailForm').val() == 'remote';
         if (remote && (
                 !verifyPresence("email-sender-public-host", "Please specify SMTP host.") ||
-                !verifyPresence("email-sender-public-port", "Please specify SMTP port.") ||
-                !verifyPresence("email-sender-public-username", "Please specify SMTP username.") ||
-                !verifyPresence("email-sender-public-password", "Please specify SMTP password."))) {
+                !verifyPresence("email-sender-public-port", "Please specify SMTP port."))) {
             return;
         }
 
@@ -196,11 +194,13 @@
         var port = $("#email-sender-public-port").val();
         var username = $("#email-sender-public-username").val();
         var password = $("#email-sender-public-password").val();
+        var enable_tls = $("#email-sender-public-enable-tls").val();
 
         var current_host = "${current_config['email.sender.public_host']}";
         var current_port = "${current_config['email.sender.public_port']}";
         var current_username = "${current_config['email.sender.public_username']}";
         var current_password = "${current_config['email.sender.public_password']}";
+        var current_enable_tls = "${current_config['email.sender.public_enable_tls']}";
 
         ## Only enable smtp verification modal if something has changed.
         var initial = ${str(not is_configuration_initialized).lower()};
@@ -209,7 +209,8 @@
                 (host != current_host ||
                 port != current_port ||
                 username != current_username ||
-                password != current_password))) {
+                password != current_password ||
+                enable_tls != current_enable_tls))) {
             enableVerifyModalEmailInput();
         } else {
             var support_email = $("#base-www-support-email-address").val();

@@ -44,6 +44,15 @@ public class SmtpVerificationServlet extends HttpServlet
         String port = req.getParameter("email_sender_public_port");
         String username = req.getParameter("email_sender_public_username");
         String password = req.getParameter("email_sender_public_password");
+        String _enable_tls = req.getParameter("email_sender_public_enable_tls").toLowerCase();
+
+        if (!_enable_tls.equals("true") && !_enable_tls.equals("false")) {
+            String _error = "got invalid parameter email_sender_public_enable_tls = "  + _enable_tls;
+            l.error(_error);
+            resp.sendError(400, _error);
+            return;
+        }
+        boolean enable_tls = _enable_tls.equals("true");
 
         try {
             l.debug("Sending SMTP verification email.\n" +
@@ -53,10 +62,11 @@ public class SmtpVerificationServlet extends HttpServlet
                     "smtp_host: " + host + "\n" +
                     "smtp_port: " + port + "\n" +
                     "smtp_username: " + username + "\n" +
-                    "smtp_password length: " + password.length());
+                    "smtp_password length: " + password.length() + "\n" +
+                    "smtp_enable_tls: " + enable_tls);
 
             SmtpVerificationEmailer.sendSmtpVerificationEmail(fromEmail, toEmail, code, host, port,
-                    username, password);
+                    username, password, enable_tls);
         }
         catch (Exception e) {
             l.error("Unable to send email: " + Util.stackTraceToString(e));

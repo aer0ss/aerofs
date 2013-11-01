@@ -17,6 +17,7 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import static com.aerofs.base.config.ConfigurationProperties.getBooleanProperty;
 import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
 
 /**
@@ -35,7 +36,8 @@ public class AsyncEmailSender extends AbstractEmailSender
             getStringProperty("email.sender.public_host", "smtp.sendgrid.net"),
             getStringProperty("email.sender.public_port", "25"),
             getStringProperty("email.sender.public_username", "mXSiiSbCMMYVG38E"),
-            getStringProperty("email.sender.public_password", "6zovnhQuLMwNJlx8"));
+            getStringProperty("email.sender.public_password", "6zovnhQuLMwNJlx8"),
+            getBooleanProperty("email.sender.public_enable_tls", true));
     }
 
     /**
