@@ -5,11 +5,14 @@
 package com.aerofs.sp.server;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.base.ex.ExEmptyEmailAddress;
 import com.aerofs.base.ex.ExExternalAuthFailure;
 import com.aerofs.base.id.UniqueID;
+import com.aerofs.base.id.UserID;
 import com.aerofs.lib.LibParam.OpenId;
 import com.aerofs.lib.LibParam.REDIS;
 import com.aerofs.servlets.lib.db.jedis.PooledJedisConnectionProvider;
+import com.aerofs.sp.server.lib.user.User;
 import com.dyuproject.openid.Association;
 import com.dyuproject.openid.Constants;
 import com.dyuproject.openid.DiffieHellmanAssociation;
@@ -38,6 +41,12 @@ import java.util.concurrent.ConcurrentMap;
  * request through to approval, and may involve two client-side actors: the actual client and the
  * User-Agent.
  *
+ * FIX THIS: I would like to uses some typeinfo to avoid accidental confusion between
+ * Session nonces and DeviceAuthorization nonces. Or perhaps extract some common functions
+ * into generics and provide two different views of this class.
+ *
+ * --
+ *
  * The session is identified by two nonces:
  *
  * Session nonce can be queried many times. It can successfully get user attributes at most once.
@@ -53,7 +62,7 @@ public class IdentitySessionManager
     public IdentitySessionManager()
     {
         _jedisConProvider = new PooledJedisConnectionProvider();
-        // TODO: configure this better: could be a transient redis install
+        // TODO: configure this better: should be a transient redis instance
         _jedisConProvider.init_(
                 REDIS.ADDRESS.getHostName(),
                 (short)REDIS.ADDRESS.getPort());
@@ -98,35 +107,8 @@ public class IdentitySessionManager
      */
     IdentitySessionAttributes getSession(String sessionNonce) throws ExExternalAuthFailure
     {
-        JedisPooledConnection connection = _jedisConProvider.getConnection();
-
-        try {
-            // just an anonymous scope block. You know, for style.
-            {
-                String session = connection.get(getSessionKey(sessionNonce));
-
-                if ((session == null) || session.equals(REDIS_DELETING)) {
-                    l.warn("Invalid session nonce {}", sessionNonce);
-                    throw new ExExternalAuthFailure();
-                }
-
-                if (session.isEmpty()) { // Valid but unauthenticated
-                    return null;
-                }
-            }
-
-            // DOUBLE-CHECKED LOCK: aha! So the session is authenticated. Can we own it?
-            String session = connection.getSet(getSessionKey(sessionNonce), REDIS_DELETING);
-            if (session == null || session.equals(REDIS_DELETING)) {
-                throw new ExExternalAuthFailure();
-            }
-            assert session.isEmpty() == false : "Impossible state";
-
-            // delete the session nonce, it has now been used once...
-            connection.del(getSessionKey(sessionNonce));
-
-            return unmarshallUser(session);
-        } finally { connection.returnResource(); }
+        String session = getAndDelete(getSessionKey(sessionNonce));
+        return (session == null) ? null : unmarshallUser(session);
     }
 
     /**
@@ -170,6 +152,79 @@ public class IdentitySessionManager
         String[] userElems = userStr.split("\n");
         assert userElems.length == 3 : "Marshalling error";
         return new IdentitySessionAttributes(userElems[0], userElems[1], userElems[2]);
+    }
+
+    /**
+     * The Redis missing method: get the value of key and then delete it.
+     * Throws an exception if the key is unset or already deleted.
+     *
+     * Returns null if the key is associated with an empty string.
+     */
+    private String getAndDelete(String key) throws ExExternalAuthFailure
+    {
+        JedisPooledConnection connection = _jedisConProvider.getConnection();
+
+        try {
+            // just an anonymous scope block. You know, for style.
+            {
+                String val = connection.get(key);
+
+                if ((val == null) || val.equals(REDIS_DELETING)) {
+                    l.warn("Invalid nonce {}");
+                    throw new ExExternalAuthFailure();
+                }
+
+                if (val.isEmpty()) return null;
+            }
+
+            // DOUBLE-CHECKED LOCK: aha! So the nonce is associated. Can we own it?
+            String val = connection.getSet(key, REDIS_DELETING);
+            if (val == null || val.equals(REDIS_DELETING)) {
+                throw new ExExternalAuthFailure();
+            }
+            assert val.isEmpty() == false : "Impossible state";
+
+            // delete the nonce, it has now been used once...
+            connection.del(val);
+            return val;
+        } finally { connection.returnResource(); }
+    }
+
+    /** Generate a securely-random string for use as a nonce. */
+    private String generateNonce() {return UniqueID.generate().toStringFormal();}
+
+    /**
+     * Create a device-authorization record for this user.
+     *
+     * For locality, we count on the caller to validate that the user in question actually exists.
+     * If you send me a user that doesn't exist, you are a bad person.
+     *
+     * Returns a self-destructing nonce that can be used to authorize a single device.
+     */
+    String createDeviceAuthorizationNonce(User user, int lifetimeSecs)
+    {
+        String deviceAuthNonce = generateNonce();
+
+        JedisPooledConnection connection = _jedisConProvider.getConnection();
+        connection.setex(toDeviceAuthKey(deviceAuthNonce), lifetimeSecs, user.id().getString());
+        connection.returnResource();
+
+        return deviceAuthNonce;
+    }
+
+    /**
+     * For a given device authorization, return the user that auth'ed the device and remove
+     * the authorization nonce. This throws an exception if the nonce is invalid.
+     * @throws ExExternalAuthFailure the given authorization nonce is not valid for
+     * authorizing devices.
+     */
+    UserID getAuthorizedDevice(String deviceAuthNonce)
+            throws ExExternalAuthFailure, ExEmptyEmailAddress
+    {
+        String userid = getAndDelete(toDeviceAuthKey(deviceAuthNonce));
+        assert userid != null : "Impossible backing-store state";
+
+        return UserID.fromExternal(userid);
     }
 
     /**
@@ -283,6 +338,7 @@ public class IdentitySessionManager
         }
     }
 
+    private static String toDeviceAuthKey(final String val) { return PREFIX_DEVICEAUTH + val; }
     private static String getSessionKey(final String val) { return PREFIX_SESSION + val; }
     private static String getDelegateKey(final String val) { return PREFIX_DELEGATE + val; }
 
@@ -291,5 +347,6 @@ public class IdentitySessionManager
     private static final Logger l = Loggers.getLogger(IdentitySessionManager.class);
     private static final String PREFIX_SESSION    = "sp:op:s:/";
     private static final String PREFIX_DELEGATE   = "sp:op:d:/";
+    private static final String PREFIX_DEVICEAUTH = "sp:op:a:/";
     private static final String REDIS_DELETING    = "d";
 }

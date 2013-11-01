@@ -10,6 +10,7 @@ import com.aerofs.base.async.UncancellableFuture;
 import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.ex.ExBadCredential;
+import com.aerofs.base.ex.ExCannotResetPassword;
 import com.aerofs.base.ex.ExEmptyEmailAddress;
 import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.ex.ExInviteeListEmpty;
@@ -17,11 +18,12 @@ import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.ex.Exceptions;
 import com.aerofs.base.id.DID;
+import com.aerofs.base.id.OrganizationID;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.lib.FullName;
-import com.aerofs.lib.LibParam.PrivateDeploymentConfig;
 import com.aerofs.lib.LibParam.OpenId;
+import com.aerofs.lib.LibParam.PrivateDeploymentConfig;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExAlreadyInvited;
@@ -37,6 +39,7 @@ import com.aerofs.proto.Common.PBSubjectRolePair;
 import com.aerofs.proto.Common.Void;
 import com.aerofs.proto.Sp.AcceptOrganizationInvitationReply;
 import com.aerofs.proto.Sp.AckCommandQueueHeadReply;
+import com.aerofs.proto.Sp.AuthorizeMobileDeviceReply;
 import com.aerofs.proto.Sp.DeleteOrganizationInvitationForUserReply;
 import com.aerofs.proto.Sp.DeleteOrganizationInvitationReply;
 import com.aerofs.proto.Sp.GetACLReply;
@@ -64,6 +67,7 @@ import com.aerofs.proto.Sp.ListPendingFolderInvitationsReply;
 import com.aerofs.proto.Sp.ListUserDevicesReply;
 import com.aerofs.proto.Sp.ListUserDevicesReply.PBDevice;
 import com.aerofs.proto.Sp.ListUserSharedFoldersReply;
+import com.aerofs.proto.Sp.MobileAccessCode;
 import com.aerofs.proto.Sp.OpenIdSessionAttributes;
 import com.aerofs.proto.Sp.OpenIdSessionNonces;
 import com.aerofs.proto.Sp.PBAuthorizationLevel;
@@ -87,15 +91,12 @@ import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue.SuccessError;
 import com.aerofs.servlets.lib.db.jedis.JedisThreadLocalTransaction;
 import com.aerofs.servlets.lib.db.sql.SQLThreadLocalTransaction;
 import com.aerofs.servlets.lib.ssl.CertificateAuthenticator;
-import com.aerofs.base.ex.ExCannotResetPassword;
-import com.aerofs.sp.common.SubscriptionCategory;
 import com.aerofs.sp.authentication.IAuthenticator;
+import com.aerofs.sp.common.SubscriptionCategory;
 import com.aerofs.sp.server.email.DeviceRegistrationEmailer;
 import com.aerofs.sp.server.email.InvitationEmailer;
 import com.aerofs.sp.server.email.RequestToSignUpEmailer;
 import com.aerofs.sp.server.email.SharedFolderNotificationEmailer;
-import com.aerofs.sp.server.lib.user.ISessionUser;
-import com.aerofs.sp.server.shared_folder_rules.ISharedFolderRules;
 import com.aerofs.sp.server.lib.EmailSubscriptionDatabase;
 import com.aerofs.sp.server.lib.SPDatabase;
 import com.aerofs.sp.server.lib.SPParam;
@@ -105,16 +106,17 @@ import com.aerofs.sp.server.lib.cert.Certificate;
 import com.aerofs.sp.server.lib.cert.CertificateDatabase;
 import com.aerofs.sp.server.lib.cert.CertificateGenerator.CertificationResult;
 import com.aerofs.sp.server.lib.device.Device;
-import com.aerofs.base.id.OrganizationID;
 import com.aerofs.sp.server.lib.id.StripeCustomerID;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.organization.OrganizationInvitation;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
+import com.aerofs.sp.server.lib.user.ISessionUser;
 import com.aerofs.sp.server.lib.user.User;
 import com.aerofs.sp.server.lib.user.User.PendingSharedFolder;
 import com.aerofs.sp.server.session.SPActiveUserSessionTracker;
 import com.aerofs.sp.server.session.SPSessionExtender;
 import com.aerofs.sp.server.session.SPSessionInvalidator;
+import com.aerofs.sp.server.shared_folder_rules.ISharedFolderRules;
 import com.aerofs.sv.common.EmailCategory;
 import com.aerofs.verkehr.client.lib.admin.VerkehrAdmin;
 import com.aerofs.verkehr.client.lib.publisher.VerkehrPublisher;
@@ -1922,7 +1924,8 @@ public class SPService implements ISPService
             throws Exception
     {
         _sqlTrans.begin();
-        _passwordManagement.changePassword(_sessionUser.getUser().id(), old_credentials, new_credentials);
+        _passwordManagement.changePassword(_sessionUser.getUser().id(), old_credentials,
+                new_credentials);
         _sqlTrans.commit();
 
         return createVoidReply();
@@ -2080,7 +2083,9 @@ public class SPService implements ISPService
     }
 
     /**
-     * FIXME
+     * Validate the given userid/credential pair without signing in the user.
+     *
+     * @throws ExBadCredential if the user can not be authenticated
      */
     @Override
     public ListenableFuture<Void> validateCredential(String userID, ByteString credentials)
@@ -2096,7 +2101,80 @@ public class SPService implements ISPService
 
         if (!userOk) {throw new ExBadCredential();}
 
+        l.info("SI: validated credential for {}", user.id().getString());
+
         return createVoidReply();
+    }
+
+    /**
+     * A device authorization is a bearer token that you will be able to use exactly once
+     * to sign in exactly one device. Because it is not limited to a particular device id
+     * (how could it be, we are using to initial-set-up a device) it is very very sensitive!
+     *
+     * If you let someone see an authorization nonce, and don't use it,
+     * an attacker can sign in one device as if they were you.
+     *
+     * Authorization nonces auto-expire if not used in N seconds.
+     */
+    @Override
+    public ListenableFuture<MobileAccessCode> getMobileAccessCode()
+            throws Exception
+    {
+        // this function requires User-level authentication
+        _sqlTrans.begin();
+        boolean userExists = _sessionUser.exists() && _sessionUser.getUser().exists();
+        _sqlTrans.commit();
+
+        if (!userExists) throw new ExNoPerm("Attempt to create device auth for non-existent user");
+
+        // Important: recall that IdentitySessionManager speaks seconds, not milliseconds,
+        // due to the underlying key-expiration technology.
+        return createReply(MobileAccessCode.newBuilder()
+                .setAccessCode(_identitySessionManager.createDeviceAuthorizationNonce(
+                        _sessionUser.getUser(), 180))
+                .build());
+    }
+
+    /**
+     * Authorize a device by providing a device authorization nonce previously generated by
+     * a signed-in user. The nonce is auto-deleted on first use (it is also self-destructing
+     * after a short time).
+     *
+     * If the nonce is invalid, or it refers to a non-existing user, this method will throw
+     * an appropriate exception.
+     *
+     * @throws ExBadCredential the nonce refers to a non-existing user
+     * @throws com.aerofs.base.ex.ExExternalAuthFailure the nonce does not exist (used or expired)
+     */
+    @Override
+    public ListenableFuture<AuthorizeMobileDeviceReply> authorizeMobileDevice(
+            String nonce, String deviceInfo)
+            throws Exception
+    {
+        if (_sessionUser.exists()) throw new ExNoPerm("User/device session state conflict");
+
+        User user = _factUser.create(_identitySessionManager.getAuthorizedDevice(nonce));
+
+        // avoid craziness if the user existed when the nonce was generated, but since deleted
+        _sqlTrans.begin();
+        if (!user.exists())
+        {
+            // TODO: can't easily unit-test this case until we can delete users
+            l.warn("Authorized device nonce {} has invalid user {}", nonce, user.id().getString());
+            throw new ExBadCredential("Authorized user does not exist.");
+        }
+
+        ListenableFuture<AuthorizeMobileDeviceReply> reply = createReply(
+                AuthorizeMobileDeviceReply.newBuilder()
+                        .setUserId(user.id().getString())
+                        .setOrgId(user.getOrganization().id().toString())
+                        .setIsOrgAdmin(user.isAdmin())
+                        .build());
+        _sqlTrans.commit();
+
+        l.info("SI: authorized device for {}", user.id().getString());
+
+        return reply;
     }
 
     @Override

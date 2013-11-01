@@ -727,7 +727,7 @@ service SPService {
     rpc OpenIdGetSessionAttributes(OpenIdSessionQuery) returns (OpenIdSessionAttributes);
 
     /**
-     * Validate the given username/credential pair.
+     * Validate the given username/credential pair without signing the user in.
      *
      *   ExEmptyEmailAddress if the user id is empty
      *   ExBadCredential if username/password combination is incorrect, or in the case of the team
@@ -735,6 +735,28 @@ service SPService {
      *                   authentication.
      */
     rpc ValidateCredential(SignInUserCall) returns (Void);
+
+    /**
+     * Generate an access code that can be used to request an access token for a mobile device.
+     * The access code will be valid for a short time. Each access code can be used
+     * only once to generate an access token.
+     *
+     * TODO: configure and document access code lifetime; currently 3 minutes.
+     * Required Auth Level: User
+     */
+    rpc GetMobileAccessCode(Void) returns (MobileAccessCode);
+
+    /**
+     * Given a valid mobile access code, get the user attributes to be cached
+     * for the user account. This will implicitly invalidate the access code so it cannot
+     * be reused.
+     *
+     * The mobile client that will own the access token should submit a name
+     * ("Greg's iPad") along with the authorization request in the deviceName field.
+     *
+     * Required Auth Level: None
+     */
+    rpc AuthorizeMobileDevice(AuthorizeMobileDeviceCall) returns (AuthorizeMobileDeviceReply);
 }
 
 message SetStripeCustomerIDCall {
@@ -1262,4 +1284,19 @@ message OpenIdSessionAttributes {
     optional string userId = 1;
     optional string firstName = 2;
     optional string lastName = 3;
+}
+
+message MobileAccessCode {
+    optional string accessCode = 1;
+}
+
+message AuthorizeMobileDeviceCall {
+    optional string accessCode = 1;
+    optional string deviceName = 2;
+}
+
+message AuthorizeMobileDeviceReply {
+    optional string userId = 1;
+    optional string orgId = 2;
+    optional bool isOrgAdmin = 3;
 }
