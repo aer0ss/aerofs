@@ -25,6 +25,7 @@ import javax.validation.constraints.NotNull;
 
 import com.aerofs.bifrost.oaaas.auth.principal.PrincipalUtils;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import org.apache.commons.lang.StringUtils;
 import com.aerofs.oauth.AuthenticatedPrincipal;
@@ -79,10 +80,12 @@ public class AccessToken extends AbstractEntity {
     this.resourceOwnerId = principal.getName();
     this.client = client;
     this.expires = expires;
-    this.scopes = scopes;
+    this.scopes = ImmutableSet.copyOf(scopes);
     this.refreshToken = refreshToken;
     invariant();
   }
+
+  public AccessToken() { }
 
   private void invariant() {
     Preconditions.checkNotNull(token, "Token may not be null");

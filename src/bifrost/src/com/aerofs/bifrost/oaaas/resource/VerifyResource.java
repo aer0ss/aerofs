@@ -58,6 +58,8 @@ public class VerifyResource {
     @Inject
     private ResourceServerRepository resourceServerRepository;
 
+    // FIXME: we should probably call over to SP to get updated value for Organization ID...
+    // but maybe not every time. Do we need a "detailed=true" param?
     @GET
     public Response verifyToken(
             @HeaderParam(HttpHeaders.AUTHORIZATION) String authorization,

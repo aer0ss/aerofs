@@ -21,6 +21,8 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
 import org.apache.commons.lang.StringUtils;
 import com.aerofs.bifrost.oaaas.model.AccessTokenRequest;
 import com.aerofs.bifrost.oaaas.model.AuthorizationRequest;
@@ -65,7 +67,7 @@ public class OAuth2ValidatorImpl implements OAuth2Validator {
       authorizationRequest.setRedirectUri(redirectUri);
 
       Set<String> scopes = determineScopes(authorizationRequest, client);
-      authorizationRequest.setRequestedScopes(scopes);
+      authorizationRequest.setRequestedScopes(ImmutableSet.copyOf(scopes));
 
     } catch (ValidationResponseException e) {
       return e.v;

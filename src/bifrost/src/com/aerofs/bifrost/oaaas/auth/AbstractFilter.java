@@ -41,7 +41,7 @@ public abstract class AbstractFilter implements ContainerRequestFilter
    * authenticator filter. Part of the contract with the authenticator Filter is
    * that we expect to get the value back when authentication is done.
    */
-  public static final String AUTH_STATE = "AUTH_STATE";
+  public static final String AUTH_STATE = "auth_state";
 
     /**
    * Get the attribute value that serves as session state.
